@@ -30,8 +30,8 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "_comment": "TEMPLATE_PLACEHOLDER: Update destination to your actual backend URL",
-      "destination": "https://PLEASE_UPDATE_THIS.onrender.com/api/:path*"
+      "_comment": "TEMPLATE_PLACEHOLDER: Replace with your full backend URL (e.g., https://my-api.onrender.com)",
+      "destination": "YOUR_FULL_BACKEND_URL/api/:path*"
     }
   ],
   

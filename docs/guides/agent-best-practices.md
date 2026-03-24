@@ -65,12 +65,12 @@ Agents can selectively load files based on names. Use descriptive names:
 .context/state/current.md
 ```
 
-#### 3. Provide a Context Summary
+#### 3. Provide a Context Summary (Optional for Large Projects)
 
-For large projects, create a summary file that agents can read first:
+For large projects with many context files, consider creating a summary file that agents can read first. This is **optional** - the template's `00_INDEX.md` already serves as the primary entry point:
 
 ```markdown
-# .context/SUMMARY.md
+# .context/SUMMARY.md (optional - create if needed)
 
 ## Quick Reference
 - Auth: See rules/domain_auth.md
@@ -79,10 +79,12 @@ For large projects, create a summary file that agents can read first:
 - Blocked by: Waiting for design review
 
 ## What to Read
-1. This file (you're here)
-2. state/_active.md or task_*.md (current work)
+1. Start with 00_INDEX.md (the default entry point)
+2. Check state/_active.md or task_*.md (current work)
 3. Only load rules/* files when making changes to those domains
 ```
+
+**Note:** For most projects, `00_INDEX.md` is sufficient. Only add `SUMMARY.md` if your context grows large enough to need an additional quick-reference layer.
 
 #### 4. Use the Priority Hierarchy
 

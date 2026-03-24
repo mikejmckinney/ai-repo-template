@@ -38,24 +38,39 @@ if command -v git &> /dev/null && git rev-parse --is-inside-work-tree &> /dev/nu
         # Extract owner/repo from various URL formats
         # SSH: git@github.com:owner/repo.git
         # HTTPS: https://github.com/owner/repo.git
-        if [[ "$REMOTE_URL" =~ github\.com[:/]([^/]+)/([^/.]+)(\.git)?$ ]]; then
+        # Match repo names with dots (e.g., my.repo.name) - strip .git suffix separately
+        if [[ "$REMOTE_URL" =~ github\.com[:/]([^/]+)/(.+)$ ]]; then
             REPO_OWNER="${BASH_REMATCH[1]}"
             REPO_NAME="${BASH_REMATCH[2]}"
-            FULL_REPO="${REPO_OWNER}/${REPO_NAME}"
-            log_info "Detected repository: $FULL_REPO"
+            # Strip trailing .git if present
+            REPO_NAME="${REPO_NAME%.git}"
             
-            # Update issue template config with correct discussions URL
-            # Note: Using temp file for portability (BSD sed on macOS differs from GNU sed)
-            CONFIG_FILE=".github/ISSUE_TEMPLATE/config.yml"
-            if [[ -f "$CONFIG_FILE" ]]; then
-                if grep -q "PLEASE_UPDATE_THIS/URL" "$CONFIG_FILE"; then
-                    sed "s|PLEASE_UPDATE_THIS/URL|${REPO_OWNER}/${REPO_NAME}|g" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-                    log_info "Updated $CONFIG_FILE with repository URL"
-                elif grep -q "YOUR_USERNAME/YOUR_REPOSITORY" "$CONFIG_FILE"; then
-                    sed "s|YOUR_USERNAME/YOUR_REPOSITORY|${REPO_OWNER}/${REPO_NAME}|g" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-                    log_info "Updated $CONFIG_FILE with repository URL"
-                else
-                    log_info "$CONFIG_FILE already configured"
+            # Sanitize variables to prevent command injection (security fix)
+            # Use printf instead of echo (echo interprets options like -n)
+            # Put hyphen at end of tr character class to avoid range ambiguity
+            SAFE_OWNER=$(printf "%s" "$REPO_OWNER" | tr -cd '[:alnum:]_.-')
+            SAFE_NAME=$(printf "%s" "$REPO_NAME" | tr -cd '[:alnum:]_.-')
+            
+            # Validate non-empty before using in sed
+            if [[ -z "$SAFE_OWNER" || -z "$SAFE_NAME" ]]; then
+                log_warn "Could not extract valid owner/repo from remote URL"
+            else
+                FULL_REPO="${SAFE_OWNER}/${SAFE_NAME}"
+                log_info "Detected repository: $FULL_REPO"
+            
+                # Update issue template config with correct discussions URL
+                # Note: Using temp file for portability (BSD sed on macOS differs from GNU sed)
+                CONFIG_FILE=".github/ISSUE_TEMPLATE/config.yml"
+                if [[ -f "$CONFIG_FILE" ]]; then
+                    if grep -q "PLEASE_UPDATE_THIS/URL" "$CONFIG_FILE"; then
+                        sed "s|PLEASE_UPDATE_THIS/URL|${SAFE_OWNER}/${SAFE_NAME}|g" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+                        log_info "Updated $CONFIG_FILE with repository URL"
+                    elif grep -q "YOUR_USERNAME/YOUR_REPOSITORY" "$CONFIG_FILE"; then
+                        sed "s|YOUR_USERNAME/YOUR_REPOSITORY|${SAFE_OWNER}/${SAFE_NAME}|g" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+                        log_info "Updated $CONFIG_FILE with repository URL"
+                    else
+                        log_info "$CONFIG_FILE already configured"
+                    fi
                 fi
             fi
         else
@@ -128,7 +143,25 @@ log_info "No database configuration detected (customize setup.sh if needed)"
 log_step "Building project"
 
 # Check specifically for scripts.build to avoid false positives
-if [[ -f "package.json" ]] && grep -q '"scripts"' package.json && grep -A20 '"scripts"' package.json | grep -q '"build"'; then
+# Use node to properly parse JSON if available, otherwise fall back to grep
+BUILD_EXISTS=false
+if [[ -f "package.json" ]]; then
+    if command -v node &> /dev/null; then
+        # Use node to properly check for scripts.build
+        # Avoid optional chaining (?.) for compatibility with Node <14
+        BUILD_EXISTS=$(node -e "var p=require('./package.json'); console.log(!!(p.scripts && p.scripts.build))" 2>/dev/null || echo "false")
+    fi
+    
+    # Fallback to grep if node failed or not available
+    if [[ "$BUILD_EXISTS" != "true" ]]; then
+        # Options before pattern for BSD grep compatibility
+        if grep -q '"scripts"' package.json && grep -A100 '"scripts"' package.json | grep -q '^\s*"build":'; then
+            BUILD_EXISTS="true"
+        fi
+    fi
+fi
+
+if [[ "$BUILD_EXISTS" == "true" ]]; then
     log_info "Running build..."
     npm run build
     log_info "Build complete"

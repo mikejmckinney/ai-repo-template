@@ -128,7 +128,14 @@ echo ""
 
 # --- Template Verification ---
 echo "Checking for template placeholders..."
-PLACEHOLDER_COUNT=$(grep -rl "TEMPLATE_PLACEHOLDER" . --exclude-dir={.git,node_modules,venv,.venv,__pycache__} 2>/dev/null | wc -l | tr -d ' ')
+# Prefer excluding directories during traversal; fall back to find-based scan
+if grep --help 2>&1 | grep -q -- "--exclude-dir"; then
+    # grep supports --exclude-dir (GNU grep)
+    PLACEHOLDER_COUNT=$(grep -rl --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ "TEMPLATE_PLACEHOLDER" . 2>/dev/null | wc -l | tr -d ' ')
+else
+    # Portable fallback using find -prune to avoid descending into heavy directories
+    PLACEHOLDER_COUNT=$(find . \( -name .git -o -name node_modules -o -name venv -o -name .venv -o -name __pycache__ \) -prune -o -type f -exec grep -l "TEMPLATE_PLACEHOLDER" {} + 2>/dev/null | wc -l | tr -d ' ')
+fi
 if [[ "$PLACEHOLDER_COUNT" -gt 0 ]]; then
     warn "$PLACEHOLDER_COUNT files still contain TEMPLATE_PLACEHOLDER"
 else
