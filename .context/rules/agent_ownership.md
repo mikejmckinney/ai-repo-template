@@ -21,7 +21,7 @@
 | PM         | AGENTS.md, .context/state/**, .context/rules/agent_ownership.md             | nothing (dispatch-only)       |
 | QA         | `tests/**`, `e2e/**`                                                 | nothing                       |
 | DevOps     | .github/workflows/**, config/**, install.sh, test.sh, scripts/**, .pre-commit-config.yaml.template, .cursorignore | nothing                       |
-| Docs       | `README.md`, `AI_REPO_GUIDE.md`, `CLAUDE.md`, `AGENT.md`, `docs/**`  | nothing                       |
+| Docs       | README.md, AI_REPO_GUIDE.md, CLAUDE.md, AGENT.md, docs/** (except docs/decisions/**)  | nothing                       |
 | Judge      | nothing (review-only, `.github/agents/judge.agent.md`)               | nothing                       |
 | Critic     | nothing (review-only, `.github/agents/critic.agent.md`)              | nothing                       |
 
