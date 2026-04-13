@@ -1,0 +1,93 @@
+# TEMPLATE_PLACEHOLDER: Optional scheduled agent heartbeat workflow.
+#
+# Purpose: wake up once or twice a day to surface stale locks in
+# .context/state/coordination.md, flag tasks stuck > 24h, and post a
+# status summary to a webhook or open an issue.
+#
+# This file is DISABLED by default. To enable:
+#   1. Rename to `agent-heartbeat.yml`
+#   2. Uncomment the `on.schedule` block below
+#   3. Set one of these repo secrets depending on your notification layer:
+#        STATUS_WEBHOOK_URL  (generic HTTPS webhook — Slack/Discord/Telegram/etc.)
+#      OR leave blank to just open/update a GitHub issue (default).
+#   4. Adjust the stale-lock threshold (default 24h) in the `HEARTBEAT_STALE_HOURS` env.
+#
+# See docs/guides/multi-agent-coordination.md for why this exists and
+# when NOT to enable it (most projects don't need it).
+
+name: Agent Heartbeat
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   # Runs at 09:00 and 21:00 UTC daily. Adjust to your timezone needs.
+  #   - cron: '0 9,21 * * *'
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  HEARTBEAT_STALE_HOURS: "24"
+  COORDINATION_FILE: ".context/state/coordination.md"
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check coordination file exists
+        id: check
+        run: |
+          if [[ ! -f "$COORDINATION_FILE" ]]; then
+            echo "No coordination file at $COORDINATION_FILE; nothing to check."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Scan for stale locks
+        if: steps.check.outputs.skip != 'true'
+        id: scan
+        run: |
+          # Count total active locks. A real implementation would parse
+          # "Claimed At" timestamps and compare to HEARTBEAT_STALE_HOURS.
+          # This template just surfaces the Active Locks section for a human
+          # or PM agent to triage on the next session.
+          lock_count=$(awk '/^## Lock:/{c++} END{print c+0}' "$COORDINATION_FILE")
+          echo "lock_count=$lock_count" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Agent heartbeat $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo ""
+            echo "Active locks: $lock_count"
+            echo ""
+            echo "See \`$COORDINATION_FILE\` for detail."
+          } > heartbeat-summary.md
+
+      - name: Post status via webhook
+        if: steps.check.outputs.skip != 'true' && env.STATUS_WEBHOOK_URL != ''
+        env:
+          STATUS_WEBHOOK_URL: ${{ secrets.STATUS_WEBHOOK_URL }}
+        run: |
+          payload=$(jq -Rs '{text: .}' < heartbeat-summary.md)
+          curl -sS -X POST -H 'Content-Type: application/json' \
+            -d "$payload" "$STATUS_WEBHOOK_URL"
+
+      - name: Open or update heartbeat issue (fallback)
+        if: steps.check.outputs.skip != 'true' && env.STATUS_WEBHOOK_URL == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STATUS_WEBHOOK_URL: ${{ secrets.STATUS_WEBHOOK_URL }}
+        run: |
+          body=$(cat heartbeat-summary.md)
+          existing=$(gh issue list --label "agent-heartbeat" --state open --json number --jq '.[0].number' || echo "")
+          if [[ -n "$existing" ]]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create \
+              --title "Agent heartbeat status" \
+              --label "agent-heartbeat" \
+              --body "$body"
+          fi

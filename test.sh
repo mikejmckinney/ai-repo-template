@@ -44,12 +44,21 @@ REQUIRED_FILES=(
     "AI_REPO_GUIDE.md"
     "AGENTS.md"
     "AGENT.md"
+    "CLAUDE.md"
     "README.md"
     "install.sh"
     ".cursor/BUGBOT.md"
     ".gemini/styleguide.md"
     ".github/copilot-instructions.md"
     ".github/agents/judge.agent.md"
+    ".github/agents/critic.agent.md"
+    ".github/agents/architect.agent.md"
+    ".github/agents/pm.agent.md"
+    ".github/agents/frontend.agent.md"
+    ".github/agents/backend.agent.md"
+    ".github/agents/qa.agent.md"
+    ".github/agents/devops.agent.md"
+    ".github/agents/docs.agent.md"
     ".github/prompts/copilot-onboarding.md"
     ".github/prompts/repo-onboarding.md"
 )
@@ -71,10 +80,13 @@ CONTEXT_FILES=(
     ".context/00_INDEX.md"
     ".context/roadmap.md"
     ".context/rules/README.md"
+    ".context/rules/agent_ownership.md"
+    ".context/rules/domain_code_quality.md"
     ".context/sessions/README.md"
     ".context/sessions/latest_summary.md"
     ".context/state/README.md"
     ".context/state/_active.md"
+    ".context/state/coordination.md"
     ".context/state/task_template.md"
     ".context/vision/README.md"
 )
@@ -113,6 +125,8 @@ DOCS_FILES=(
     "docs/README.md"
     "docs/guides/agent-best-practices.md"
     "docs/guides/context-files-explained.md"
+    "docs/guides/multi-agent-coordination.md"
+    "docs/guides/optional-skills.md"
     "docs/decisions/adr-template.md"
     "docs/decisions/adr-001-context-pack-structure.md"
 )
@@ -149,6 +163,7 @@ WORKFLOW_FILES=(
     ".github/workflows/ci-tests.yml"
     ".github/workflows/keep-warm.yml"
     ".github/workflows/validate-connections.yml"
+    ".github/workflows/agent-heartbeat.yml.template"
 )
 
 for file in "${WORKFLOW_FILES[@]}"; do

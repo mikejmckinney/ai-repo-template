@@ -1,0 +1,204 @@
+# Multi-Agent Coordination
+
+> **Purpose**: How role-specialized AI agents work in parallel on this repo without stepping on each other. Read this once; reference the ownership map and coordination board during every session.
+
+## The Roles
+
+| Role       | File                                     | Writes code? |
+|------------|------------------------------------------|--------------|
+| Architect  | `.github/agents/architect.agent.md`      | No — plans + ADRs only |
+| Judge      | `.github/agents/judge.agent.md`          | No — procedural plan-gate + diff-gate |
+| Critic     | `.github/agents/critic.agent.md`         | No — subjective-quality devil's advocate |
+| PM         | `.github/agents/pm.agent.md`             | No — dispatch only |
+| Frontend   | `.github/agents/frontend.agent.md`       | Yes — UI layer |
+| Backend    | `.github/agents/backend.agent.md`        | Yes — server layer |
+| QA         | `.github/agents/qa.agent.md`             | Yes — test code only |
+| DevOps     | `.github/agents/devops.agent.md`         | Yes — CI, infra, scripts |
+| Docs       | `.github/agents/docs.agent.md`           | Yes — docs + READMEs |
+
+**Judge vs Critic**: Judge is procedural (criteria met? tests present? ownership respected?). Critic is subjective (is this actually good? hand-wavy reasoning? hidden assumptions? AI clichés?). Both run during plan-gate and diff-gate; Judge integrates Critic's notes into the final `DECISION`.
+
+## The Three Coordination Files
+
+1. **`.context/rules/agent_ownership.md`** — canonical "who owns what" table. Static; rarely changes.
+2. **`.context/state/coordination.md`** — live claim board. Dynamic; updated every session.
+3. **`.context/state/task_*.md`** — per-task detail files created by PM.
+
+## End-to-End Flow
+
+```
+  user request
+       │
+       ▼
+  ┌──────────┐   plan    ┌───────┐  notes  ┌──────────┐  approve  ┌────┐
+  │Architect │──────────▶│ Judge │◀────────│  Critic  │──────────▶│ PM │
+  └──────────┘           └───┬───┘         └──────────┘           └─┬──┘
+                             │                                      │ dispatch
+                             │ plan-gate                             ▼
+                             │                            ┌────────────────┐
+                             │                            │ Implementers   │
+                             │                            │ FE / BE / DO / │
+                             │                            │ Docs (parallel)│
+                             │                            └────────┬───────┘
+                             │                                     │
+                             │                                     ▼
+                             │                                  ┌────┐
+                             │                                  │ QA │  peer_review
+                             │                                  └──┬─┘
+                             │                                     │ coverage + green CI
+                             │                                     ▼
+                             │                               ┌──────────┐
+                             │                               │  Critic  │  peer_review
+                             │                               └────┬─────┘
+                             │                                    │ subjective notes
+                             │                                    ▼
+                             └──────────────▶ ┌───────┐  judge_review
+                                              │ Judge │
+                                              └───┬───┘
+                                                  │ APPROVE
+                                                  ▼
+                                                merge
+```
+
+1. **Architect** turns a request into a plan + ADR.
+2. **Judge** plan-gates (procedural) and integrates **Critic**'s subjective notes. Outputs APPROVE / REQUEST_CHANGES / BLOCK.
+3. **PM** splits the approved plan into role-owned `task_*.md` files and records claims in `coordination.md` using the state machine below.
+4. **Implementers** (Frontend / Backend / DevOps / Docs) work in parallel on separate branches, each inside their owned paths.
+5. **QA** verifies coverage + CI green (`peer_review` state).
+6. **Critic** reviews the diff for subjective quality (`peer_review` state).
+7. **Judge** diff-gates with Critic's notes in hand (`judge_review` state).
+8. Merge.
+
+## Task State Machine
+
+The canonical list of states, their gates, and the role that owns each transition is in `.context/state/coordination.md` → "Task States". In short: `backlog → planned → assigned → in_progress → peer_review → judge_review → approved → merged`, no skipping, any reviewer can kick a task back to `in_progress`.
+
+## Branch-Per-Role Model
+
+Each implementer works on a branch named `feature/<role>-<task-id>`. For example:
+
+```
+feature/frontend-login-form
+feature/backend-auth-api
+feature/docs-auth-guide
+```
+
+This refines the "Use Git Branches" pattern in `docs/guides/agent-best-practices.md`. It greatly reduces the chance of merge conflicts — two agents editing different roles' files normally end up in disjoint directories on disjoint branches — but conflicts can still occur in shared or generated files (lockfiles, coordination board, shared rules), which is why the PM arbitration and Judge diff-gate layers below still matter.
+
+## Conflict-Avoidance Hierarchy
+
+Conflicts are prevented by layered defenses. Earlier layers are cheaper.
+
+1. **Path ownership** (agent_ownership.md) — two roles physically cannot share a file by default.
+2. **Live locks** (coordination.md) — within a role's owned paths, claims prevent two sessions of the same role from overlapping.
+3. **Branch isolation** — each role works on its own branch, so unrelated changes never touch.
+4. **PM arbitration** — when a task genuinely needs a cross-role edit, PM decides: sequence, split, or shared claim.
+5. **Judge diff-gate** — the last check: Judge blocks merges that violate ownership.
+
+## Worked Example: Two Agents in Parallel
+
+**Scenario**: Add a login form (UI) + auth endpoint (API). Both need to exist before the feature works.
+
+### Step 1 — Architect plans
+
+```
+PLAN: Add login
+
+PHASES:
+1. Backend owns POST /auth/login → files: src/api/auth/**, migrations/005_sessions.sql
+2. Frontend owns LoginForm → files: src/components/LoginForm.tsx, src/pages/login.tsx
+3. Docs owns auth guide → files: docs/guides/auth.md
+```
+
+### Step 2 — Judge plan-gate
+
+`DECISION: APPROVE`
+
+### Step 3 — PM dispatches
+
+PM creates three task files and three locks:
+
+```markdown
+## Lock: login-backend
+**Role**: backend
+**Session**: feature/backend-login
+**Claimed At**: 2026-04-13T09:00:00Z
+**Expected Duration**: 4h
+**Paths**:
+- src/api/auth/**
+- migrations/005_sessions.sql
+**Depends On**: none
+**Blocks**: login-frontend, login-docs
+**State**: in_progress
+
+## Lock: login-frontend
+**Role**: frontend
+**Session**: feature/frontend-login
+**Claimed At**: 2026-04-13T09:05:00Z
+**Expected Duration**: 3h
+**Paths**:
+- src/components/LoginForm.tsx
+- src/pages/login.tsx
+**Depends On**: login-backend   (API contract must exist)
+**Blocks**: none
+**State**: planned
+
+## Lock: login-docs
+**Role**: docs
+**Session**: feature/docs-login
+**Claimed At**: 2026-04-13T09:10:00Z
+**Expected Duration**: 1h
+**Paths**:
+- docs/guides/auth.md
+**Depends On**: login-backend
+**Blocks**: none
+**State**: planned
+```
+
+### Step 4 — Parallel execution
+
+- Backend agent starts immediately on its branch.
+- Frontend agent waits for Backend's API contract commit, then starts.
+- Docs agent waits for Backend, then starts.
+- All three branches have **zero shared files**, so no merge conflicts.
+
+### Step 5 — QA + Judge + merge
+
+Each branch goes through QA → Judge → merge independently.
+
+## Rules That Prevent Disasters
+
+- **Never edit outside your owned paths without a PM claim.** This is the single most important rule.
+- **Never silently resolve** a lock conflict — escalate to PM.
+- **Never mark a task complete with CI red** (see the "Testing requirements" section in `AGENTS.md`).
+- **Always** release or hand-off your lock at end of session.
+- **Always** add/update tests alongside behavior changes.
+
+## Onboarding Checklist (Every Session)
+
+1. `AGENTS.md` — universal rules.
+2. `.context/00_INDEX.md` — where everything lives.
+3. `.context/state/coordination.md` — what's in flight right now.
+4. `.context/rules/agent_ownership.md` — what you may touch.
+5. `.github/agents/<your-role>.agent.md` — your specific responsibilities.
+6. Your assigned `.context/state/task_*.md`.
+7. Report readiness (see the "Report readiness (The Report Step)" subsection in `docs/guides/agent-best-practices.md`).
+
+## Optional: Scheduled Heartbeat
+
+For teams that want an autonomous daily check on stuck work, the template ships `.github/workflows/agent-heartbeat.yml.template` — a scheduled GitHub Action (disabled by default) that surfaces stale locks in `coordination.md` and posts a summary via webhook or a GitHub issue.
+
+**When to enable**: you have multiple agent sessions running against the repo over multiple days and want a safety net for forgotten locks or stuck tasks.
+
+**When NOT to enable**: single-developer projects or short-lived repos — the workflow will just add noise. Most projects don't need it.
+
+Enable steps are in the template file header.
+
+**Need more than scheduled nudges?** For continuously-running autonomous agents (cron-driven, with a persistent task DB and webhook notifications), see the **OpenClaw** entry in `docs/guides/optional-skills.md`. It's an opt-in runtime, not vendored.
+
+## See Also
+
+- `docs/guides/agent-best-practices.md` — token limits, session handoff, secrets.
+- `.github/agents/judge.agent.md` — plan-gate + diff-gate details.
+- `.github/agents/critic.agent.md` — subjective-quality devil's advocate review.
+- `.github/prompts/repo-onboarding.md` — full onboarding workflow.

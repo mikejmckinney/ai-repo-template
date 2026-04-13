@@ -34,6 +34,7 @@ bash install.sh
 ├── AI_REPO_GUIDE.md          # This file - canonical AI reference
 ├── AGENTS.md                 # Root agent instructions (always read first)
 ├── AGENT.md                  # Deprecated redirect to AGENTS.md
+├── CLAUDE.md                 # Claude Code native memory pointer to AGENTS.md
 ├── README.md                 # User-facing documentation
 ├── install.sh                # Codespace bootstrap script
 ├── test.sh                   # Verification script
@@ -79,10 +80,19 @@ bash install.sh
 | File | Tool/Platform | Purpose |
 |------|--------------|---------|
 | `AGENTS.md` | Most AI tools | Root instructions, points to this file |
+| `CLAUDE.md` | Claude Code | Native memory-file pointer to AGENTS.md |
 | `.github/copilot-instructions.md` | GitHub Copilot | Copilot-specific instructions |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |
-| `.github/agents/judge.agent.md` | GitHub Copilot | Plan/diff gate agent |
+| `.github/agents/judge.agent.md` | Multi-tool | Procedural plan/diff gate reviewer (no code) |
+| `.github/agents/critic.agent.md` | Multi-tool | Devil's Advocate — subjective quality review (no code) |
+| `.github/agents/architect.agent.md` | Multi-tool | Plan + ADR author (no code) |
+| `.github/agents/pm.agent.md` | Multi-tool | Task dispatcher + ownership enforcer (no code) |
+| `.github/agents/frontend.agent.md` | Multi-tool | UI layer implementer |
+| `.github/agents/backend.agent.md` | Multi-tool | Server layer implementer |
+| `.github/agents/qa.agent.md` | Multi-tool | Test author + CI gate |
+| `.github/agents/devops.agent.md` | Multi-tool | Workflows, configs, install scripts |
+| `.github/agents/docs.agent.md` | Multi-tool | README, AI_REPO_GUIDE.md, guides |
 
 ### Context Pack (project memory)
 | File | Purpose |
@@ -90,6 +100,9 @@ bash install.sh
 | `.context/00_INDEX.md` | Entry point, project summary |
 | `.context/roadmap.md` | Phase-by-phase plan |
 | `.context/rules/` | Domain constraints (never violate) |
+| `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
+| `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
+| `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
 | `.context/state/task_*.md` | Current task(s) for session handoff |
 | `.context/vision/` | Mockups and architecture diagrams |
 
@@ -125,6 +138,9 @@ bash install.sh
 | `.pre-commit-config.yaml.template` | Pre-commit hooks (linting, secrets) |
 | `docs/decisions/adr-template.md` | Architecture Decision Record template |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets |
+| `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
+| `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |
+| `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
 
 ### CI/CD Workflows
 | File | Purpose |
