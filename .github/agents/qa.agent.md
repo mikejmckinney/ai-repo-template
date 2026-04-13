@@ -59,5 +59,5 @@ INTEGRATION: <added/updated count>
 E2E:         <added/updated count>
 CI STATUS:   green | red | flaky
 COVERAGE:    <old% → new%> on changed files
-NEXT:        judge (diff-gate)
+NEXT:        critic | judge (diff-gate)
 ```
