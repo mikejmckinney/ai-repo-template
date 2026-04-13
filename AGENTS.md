@@ -16,6 +16,14 @@ When information conflicts, use this priority order:
 2. `./docs/**` — supporting detail and reference material
 3. Codebase — current implementation reality
 
+## Role selection (multi-agent workflow)
+This template supports parallel role-specialized agents. Before editing any file:
+1. Identify your role (or ask the user which role to adopt). Role definitions live in `.github/agents/*.agent.md` — Architect, Judge, PM, Frontend, Backend, QA, DevOps, Docs.
+2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
+3. Read `.context/state/coordination.md` to see active locks and claim your task before editing.
+4. Stay inside your owned paths. Any cross-role edit requires a PM claim. **Never guess ownership silently** — escalate to PM.
+5. Full workflow (plan-gate → dispatch → parallel implementation → QA → diff-gate → merge) is documented in `docs/guides/multi-agent-coordination.md`.
+
 ## Context pack usage
 - Start with `.context/00_INDEX.md` for project overview
 - Check `.context/state/_active.md` or `task_*.md` for current work in progress

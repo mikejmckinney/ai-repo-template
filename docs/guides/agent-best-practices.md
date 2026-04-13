@@ -103,11 +103,17 @@ Authentication must use bcrypt with cost factor 12...
 
 ## State File Conflict Prevention
 
+> **Primary mechanism**: role-based path ownership (`.context/rules/agent_ownership.md`). The mitigations below are secondary defenses for conflicts within a single role. For the full parallel-agent workflow, see `docs/guides/multi-agent-coordination.md`.
+
 ### The Problem
 
 If multiple agents work simultaneously (or a human and agent), task files can have merge conflicts.
 
 ### Mitigations
+
+#### 0. Role-Based Path Ownership (Primary)
+
+The strongest defense is making conflicts structurally impossible. Each role in `.github/agents/*.agent.md` owns disjoint path globs defined in `.context/rules/agent_ownership.md`. Two agents with different roles cannot edit the same file by default. Any cross-role edit must be claimed through the PM agent in `.context/state/coordination.md`. This is the primary mechanism — the fallbacks below only apply when two sessions of the **same role** overlap.
 
 #### 1. One Active Task at a Time
 

@@ -15,6 +15,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 ## Features
 
 - **AI Agent Prompts** - Pre-configured prompts for onboarding AI assistants to any codebase
+- **Multi-Agent Roles** - Role-specialized agent files (Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge) with an ownership map so multiple agents can work in parallel without code conflicts
 - **Context Pack** - Structured directory (`.context/`) for project memory across LLM sessions
 - **Automatic Extension Installation** - Essential VS Code extensions installed on Codespace start
 - **Multi-Platform Support** - Works with Cursor, GitHub Copilot, Gemini Code Assist, and more
@@ -96,7 +97,14 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | `.github/copilot-instructions.md` | GitHub Copilot | Copilot-specific instructions |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | Strict PR review rules with verification |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review with severity labels |
-| `.github/agents/judge.agent.md` | GitHub Copilot | Plan-gate + diff-gate reviewer |
+| `.github/agents/judge.agent.md` | Multi-tool | Plan-gate + diff-gate reviewer |
+| `.github/agents/architect.agent.md` | Multi-tool | Plan + ADR author (no code) |
+| `.github/agents/pm.agent.md` | Multi-tool | Task dispatcher + ownership enforcer (no code) |
+| `.github/agents/frontend.agent.md` | Multi-tool | UI layer implementer |
+| `.github/agents/backend.agent.md` | Multi-tool | Server layer implementer |
+| `.github/agents/qa.agent.md` | Multi-tool | Test author + CI gate |
+| `.github/agents/devops.agent.md` | Multi-tool | Workflows, configs, install scripts |
+| `.github/agents/docs.agent.md` | Multi-tool | README, AI_REPO_GUIDE.md, guides |
 
 ### Context Pack (LLM memory)
 
@@ -105,6 +113,8 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | `.context/00_INDEX.md` | Entry point - project summary and key decisions |
 | `.context/roadmap.md` | Phase-by-phase plan with acceptance criteria |
 | `.context/rules/` | Immutable constraints (domain rules) |
+| `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
+| `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
 | `.context/state/task_*.md` | Current task(s) for cognitive handoff |
 | `.context/sessions/` | Session history to prevent repeating mistakes |
 | `.context/vision/` | Mockups and architecture diagrams |
@@ -138,6 +148,8 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 |------|---------|
 | `.pre-commit-config.yaml.template` | Pre-commit hooks for linting, secrets, formatting |
 | `docs/decisions/adr-template.md` | Template for Architecture Decision Records |
+| `docs/guides/multi-agent-coordination.md` | How role-based agents work in parallel without conflicts |
+| `docs/guides/optional-skills.md` | Curated optional Claude Code skills (SOLID, everything-claude-code) |
 
 ## Included VS Code Extensions
 

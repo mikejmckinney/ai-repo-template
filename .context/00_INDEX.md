@@ -20,12 +20,14 @@ The `.context/` directory contains **canonical project truth**.
 ├── 00_INDEX.md          # This file - start here (The Map)
 ├── roadmap.md           # Phase-by-phase plan with acceptance criteria (The Plan)
 ├── rules/               # Immutable constraints and domain rules
+│   ├── agent_ownership.md # Canonical role → owned paths map (read before editing)
 │   └── domain_*.md      # Domain-specific rules (e.g., domain_auth.md)
 ├── sessions/            # Session history to prevent repeating mistakes
 │   └── latest_summary.md # Most recent session summary
 ├── state/               # Task tracking (supports parallel work)
 │   ├── README.md        # How to create and manage tasks
 │   ├── _active.md       # Points to current priority task
+│   ├── coordination.md  # Live claim board for parallel multi-agent work
 │   ├── task_template.md # Copy this to create new tasks
 │   └── task_<id>.md     # Individual task files
 └── vision/              # Design artifacts (mockups, diagrams)
@@ -36,13 +38,17 @@ The `.context/` directory contains **canonical project truth**.
 ## Quick Start for Agents (Lazy Load Pattern)
 
 1. Read this file first (The Map)
-2. Check `state/_active.md` or `state/task_*.md` for current work
-3. Read `sessions/latest_summary.md` for what happened last session
-4. Read `roadmap.md` to understand project phases (The Plan)
-5. Reference `rules/` ONLY when making changes to those domains
-6. Reference `vision/` for design guidance
+2. Check `state/coordination.md` for live locks — confirm your intended paths aren't claimed by another role
+3. Read `rules/agent_ownership.md` to know which files your role may touch
+4. Check `state/_active.md` or `state/task_*.md` for current work
+5. Read `sessions/latest_summary.md` for what happened last session
+6. Read `roadmap.md` to understand project phases (The Plan)
+7. Reference `rules/` ONLY when making changes to those domains
+8. Reference `vision/` for design guidance
 
 **Note:** Don't read everything at once. This index tells you what exists; load files on-demand to save tokens.
+
+**Multi-agent workflow**: See `docs/guides/multi-agent-coordination.md` for how role-specialized agents (Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge) coordinate in parallel without conflicts.
 
 **For full documentation on file purposes**, see `docs/guides/context-files-explained.md`.
 
