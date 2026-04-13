@@ -10,6 +10,7 @@ owned_paths:
   # role that owns the enclosing source path. See
   # .context/rules/agent_ownership.md -> "Colocated test files".
 handoff_targets:
+  - critic          # subjective quality review
   - judge           # diff-gate review once coverage is adequate
   - frontend        # if UI tests reveal regressions (via PM)
   - backend         # if API tests reveal regressions (via PM)
