@@ -39,7 +39,8 @@ These files require **PM coordination** regardless of role, because any role may
 | `CLAUDE.md` / `AGENT.md`          | Docs           | Tool-specific redirect pointers; edit in lockstep with `AGENTS.md` headers only |
 | `.context/00_INDEX.md`            | PM             | Lazy-load map; append-only in most cases         |
 | `.context/rules/agent_ownership.md` | PM           | This file. PM records cross-role decisions; Architect may propose via ADR |
-| `.context/rules/**` (except `agent_ownership.md`) | Architect  | Architect owns domain rules; PM records claims in `coordination.md` before edits |
+| docs/decisions/**              | Architect      | Architect defines decisions; Docs polishes prose |
+| .context/rules/** (except agent_ownership.md) | Architect  | Architect owns domain rules; PM records claims in coordination.md before edits |
 | `.context/state/coordination.md`  | PM (writes), all (read-then-self-claim) | See lock protocol below |
 | `test.sh`                         | DevOps         | Must be updated in lockstep with template structure changes |
 
