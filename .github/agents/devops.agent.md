@@ -6,6 +6,7 @@ owned_paths:
   - '.github/workflows/**'
   - 'config/**'
   - 'install.sh'
+  - 'test.sh'
   - 'scripts/**'
   - '.pre-commit-config.yaml.template'
   - '.cursorignore'

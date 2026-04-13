@@ -4,6 +4,7 @@ description: Dispatcher. Creates task_*.md files, assigns roles, enforces owners
 tools: ['read', 'write', 'search', 'githubRepo']
 owned_paths:
   - '.context/state/**'
+  - '.context/rules/agent_ownership.md'
 handoff_targets:
   - architect       # when scope is unclear or requires design
   - judge           # when a plan needs review
