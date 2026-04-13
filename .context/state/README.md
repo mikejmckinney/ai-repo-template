@@ -112,6 +112,32 @@ To prevent conflicts:
 3. Use clear, unique task IDs
 4. Communicate via PR comments if needed
 
+### Multi-Agent Orchestration Patterns
+
+For structured multi-agent work, see the full guides:
+- **Rules**: `.context/rules/domain_multi_agent.md` (file ownership, coordination rules)
+- **Orchestration**: `.context/rules/domain_orchestration.md` (routing, quality gates)
+- **Role definitions**: `.context/vision/architecture/agent-roles.md`
+- **Setup runbook**: `.github/prompts/parallel-agents.md`
+- **Orchestration runbook**: `.github/prompts/multi-agent-orchestration.md`
+
+#### Quick Reference: Orchestration Patterns
+
+| Pattern | When to Use | Agents |
+|---------|------------|--------|
+| **Solo** | Trivial tasks (bug fix, config, docs) | 1 |
+| **Pair** | Moderate tasks with quality needs | 2 (implementer + reviewer) |
+| **Hub-and-Spoke** | Complex multi-component work | 3-5 (coordinator + specialists + reviewer) |
+| **Pipeline** | Sequential work (design → build → test) | 3-4 (one per phase) |
+| **Adversarial** | Critical/security changes | 2+ (implementer + adversary) |
+
+#### Key Principles
+
+1. **File ownership**: Each task file declares `Owned Files/Dirs` — only that agent may modify those files
+2. **Interface-first**: Define shared contracts before parallel implementation begins
+3. **Adversarial review**: For 3+ agents, at least one should be a dedicated reviewer
+4. **State-based coordination**: Agents communicate through task files, not assumptions
+
 ## Archived Tasks
 
 When a task is complete, you can either:

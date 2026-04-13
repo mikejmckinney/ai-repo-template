@@ -42,12 +42,16 @@ bash install.sh
 │   ├── 00_INDEX.md           # Context entry point
 │   ├── roadmap.md            # Phase-by-phase plan
 │   ├── rules/                # Immutable domain constraints
+│   │   ├── domain_code_quality.md    # SOLID, TDD, clean code rules
+│   │   ├── domain_multi_agent.md     # Multi-agent coordination rules
+│   │   └── domain_orchestration.md   # Agent routing and quality gates
 │   ├── state/                # Task tracking (supports parallel work)
 │   │   ├── _active.md        # Points to current priority task
 │   │   └── task_*.md         # Individual task files
 │   └── vision/               # Design artifacts
 │       ├── mockups/          # UI/UX mockups
 │       └── architecture/     # System diagrams
+│           └── agent-roles.md  # Standard agent role definitions
 │
 ├── docs/                     # Human reference documentation
 │   ├── README.md             # Documentation index
@@ -65,7 +69,9 @@ bash install.sh
     │   └── judge.agent.md        # Plan-gate + diff-gate reviewer agent
     ├── prompts/
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
-    │   └── repo-onboarding.md    # Comprehensive repo onboarding prompt
+    │   ├── repo-onboarding.md    # Comprehensive repo onboarding prompt
+    │   ├── parallel-agents.md    # Multi-agent work decomposition
+    │   └── multi-agent-orchestration.md  # Orchestration runbook
     └── workflows/
         ├── auto-resolve-on-merge.yml  # Auto-resolve PR comments on merge
         ├── ci-tests.yml               # CI pipeline template (customize)
@@ -90,14 +96,20 @@ bash install.sh
 | `.context/00_INDEX.md` | Entry point, project summary |
 | `.context/roadmap.md` | Phase-by-phase plan |
 | `.context/rules/` | Domain constraints (never violate) |
+| `.context/rules/domain_code_quality.md` | SOLID, TDD, clean code rules |
+| `.context/rules/domain_multi_agent.md` | Multi-agent file ownership and coordination rules |
+| `.context/rules/domain_orchestration.md` | Agent routing, patterns, quality gates |
 | `.context/state/task_*.md` | Current task(s) for session handoff |
 | `.context/vision/` | Mockups and architecture diagrams |
+| `.context/vision/architecture/agent-roles.md` | Standard agent role definitions for multi-agent work |
 
 ### Prompts (user-triggered, not auto-loaded)
 | File | Purpose |
 |------|---------|
 | `.github/prompts/copilot-onboarding.md` | Guide for customizing copilot-instructions.md |
 | `.github/prompts/repo-onboarding.md` | Comprehensive repo onboarding workflow |
+| `.github/prompts/parallel-agents.md` | Decompose work across multiple agents |
+| `.github/prompts/multi-agent-orchestration.md` | Multi-agent orchestration runbook |
 
 ### Setup Scripts
 | File | Purpose |
@@ -124,7 +136,8 @@ bash install.sh
 |------|---------|
 | `.pre-commit-config.yaml.template` | Pre-commit hooks (linting, secrets) |
 | `docs/decisions/adr-template.md` | Architecture Decision Record template |
-| `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets |
+| `docs/guides/agent-best-practices.md` | Token limits, session handoff, multi-agent collaboration, secrets |
+| `docs/reference/agent-tools-and-resources.md` | External tools, plugins, and resources for agent workflows |
 
 ### CI/CD Workflows
 | File | Purpose |

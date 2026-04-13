@@ -42,6 +42,6 @@ Files should be named `domain_<area>.md`:
 
 ## Current Rules
 
-<!-- Add links to domain rule files as they're created -->
-
-No domain rules defined yet. Create files like `domain_auth.md` as needed.
+- [`domain_code_quality.md`](domain_code_quality.md) — SOLID principles, TDD, clean code fundamentals
+- [`domain_multi_agent.md`](domain_multi_agent.md) — File ownership, coordination, conflict prevention for parallel agent work
+- [`domain_orchestration.md`](domain_orchestration.md) — Agent routing, orchestration patterns, quality gates

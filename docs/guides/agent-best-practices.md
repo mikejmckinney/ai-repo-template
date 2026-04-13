@@ -306,3 +306,155 @@ Follow these steps in order:
 
 **Wrong**: Copy the same information to multiple files
 **Right**: Put it in one authoritative place and reference it elsewhere
+
+---
+
+## Multi-Agent Collaboration
+
+> For detailed rules, see `.context/rules/domain_multi_agent.md` and `.context/rules/domain_orchestration.md`.  
+> For role definitions, see `.context/vision/architecture/agent-roles.md`.
+
+### When to Use Multiple Agents
+
+| Complexity | Approach |
+|-----------|----------|
+| **Simple** (bug fix, doc update, config change) | Solo agent — coordination overhead isn't worth it |
+| **Moderate** (single feature, 2-5 files) | 1-2 agents + 1 reviewer |
+| **Complex** (multi-component feature, new system) | 3-5 agents + adversary reviewer |
+| **Critical** (security, data migration, breaking changes) | Full team with mandatory adversarial review |
+
+**Rule of thumb**: If you're unsure, start with one agent. Add more only if the work clearly decomposes into independent streams.
+
+### File-Ownership Model for Conflict Prevention
+
+The single biggest source of multi-agent failure is **merge conflicts from overlapping file edits**. Prevent this with explicit file ownership:
+
+1. Each agent's task file declares `Owned Files/Dirs` — these are the *only* files that agent may modify
+2. No two agents may own the same file
+3. Shared files (types, interfaces, configs) are listed under `Shared Interfaces` — read-only by default
+4. If an agent needs a shared file changed, it adds a coordination note and waits for acknowledgment
+
+### Interface-First Design
+
+When multiple agents will build interacting components, **define the interfaces before implementation**:
+
+1. The architect (or first agent) defines API contracts, type definitions, and schemas
+2. These are committed to a shared branch or merged to main
+3. Implementer agents code against these contracts
+4. Changes to contracts require coordination across all dependent agents
+
+This mirrors the real-world practice of "API-first" development and is critical for parallel work.
+
+### The Adversarial Review Pattern
+
+For complex or critical work, assign one agent the **Adversary** role:
+
+- The adversary does **not** implement features
+- Instead, it actively tries to **break** other agents' implementations
+- It tests edge cases, invalid inputs, race conditions, and security vulnerabilities
+- Findings are documented in PR reviews
+- Implementer agents must address all findings before merge
+
+This catches bugs that self-review misses and produces significantly higher-quality output.
+
+### Coordination Overhead Trade-offs
+
+Multi-agent work has real costs:
+
+| Benefit | Cost |
+|---------|------|
+| Parallelism (faster completion) | Coordination time (defining interfaces, reviewing) |
+| Specialization (deeper expertise) | Context switching (reading other agents' state) |
+| Quality (adversarial review) | Merge complexity (integrating branches) |
+
+**When coordination cost > benefit**: Stick to a single agent. This is usually the case for:
+- Changes to fewer than 5 files
+- Work that doesn't cross system boundaries
+- Tasks with tight deadlines where setup time matters
+
+---
+
+## Agent Session Hooks
+
+> Inspired by the hook patterns from [Everything Claude Code](https://github.com/affaan-m/everything-claude-code). Adapted here as a tool-agnostic protocol.
+
+### Session Start Hook
+
+When an agent session begins, it should automatically:
+
+1. **Load context**: Read `_active.md` → task file → `00_INDEX.md`
+2. **Check for stale locks**: If a task file shows "In Progress" but was last updated > 2 hours ago, treat it as potentially abandoned
+3. **Verify environment**: Run the project's verification command (e.g., `./test.sh`, `npm test`)
+4. **Report readiness**: Output a brief status confirming context was loaded (see Session Handoff Protocol above)
+
+### Session Stop Hook
+
+When a session ends (normally or due to timeout):
+
+1. **Save progress**: Update the task file with completed/remaining items
+2. **Record lessons**: Update `sessions/latest_summary.md` with decisions and failures
+3. **Commit WIP**: Push work-in-progress to the feature branch
+4. **Release locks**: If using the lock mechanism in `_active.md`, clear the lock
+
+### Checkpoint Verification
+
+Don't wait until the end to verify — validate at each intermediate step:
+
+```markdown
+## Checkpoint Verification
+
+| Checkpoint | Command | Status |
+|-----------|---------|--------|
+| Dependencies installed | `npm install` | ✅ |
+| Unit tests pass | `npm test` | ✅ |
+| New feature works | `npm run test:feature-x` | ⏳ |
+| Lint clean | `npm run lint` | ❌ (fixing) |
+| Build succeeds | `npm run build` | ⬜ |
+```
+
+This catches issues early, when they're cheap to fix, rather than discovering a cascade of failures at the end.
+
+---
+
+## Parallelization with Git Worktrees
+
+> For significant parallel work, git worktrees offer an alternative to branch switching.
+
+### What Are Worktrees?
+
+Git worktrees let you check out multiple branches simultaneously in separate directories. Each worktree is a full working copy sharing the same `.git` history.
+
+### When to Use Worktrees
+
+- Multiple agents need to work on the same repo at the same time
+- You want to avoid the overhead of `git stash` / `git switch` between branches
+- Each agent needs its own filesystem context
+
+### Setup
+
+```bash
+# From the main repo:
+git worktree add ../project-frontend feature/frontend
+git worktree add ../project-backend feature/backend
+git worktree add ../project-tests feature/tests
+
+# Each directory is a full checkout of its branch
+# Run different agents in different directories
+```
+
+### Cleanup
+
+```bash
+# After merging branches:
+git worktree remove ../project-frontend
+git worktree remove ../project-backend
+```
+
+### Trade-offs vs. Branches
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **Branches** (one checkout) | Simple, familiar | Must switch context to check other work |
+| **Worktrees** (multiple checkouts) | True parallelism, no switching | Uses more disk space, more setup |
+
+For most multi-agent template work, **branches are sufficient**. Use worktrees when agents are literally running simultaneously on the same machine.
