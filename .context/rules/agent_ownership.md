@@ -15,10 +15,10 @@
 
 | Role       | Owned path globs                                                     | May also edit (with PM claim) |
 |------------|----------------------------------------------------------------------|-------------------------------|
-| Architect  | `docs/decisions/**`, `.context/roadmap.md`, `.context/vision/architecture/**`, `.context/rules/**` (except `agent_ownership.md`) | nothing (plan-only) |
+| Architect  | `AGENTS.md`, `docs/decisions/**`, `.context/roadmap.md`, `.context/vision/architecture/**`, `.context/rules/**` (except `agent_ownership.md`) | nothing (plan-only) |
 | Frontend   | `src/frontend/**`, `src/components/**`, `src/pages/**`, `src/styles/**`, `public/**`, colocated `*.test.*` / `*.spec.*` under those paths | UI-adjacent tests in `tests/ui/**` |
 | Backend    | `src/backend/**`, `src/api/**`, `src/server/**`, `src/models/**`, `migrations/**`, `db/**`, colocated `*.test.*` / `*.spec.*` under those paths | API-adjacent tests in `tests/api/**` |
-| PM         | AGENTS.md, .context/state/**, .context/rules/agent_ownership.md             | nothing (dispatch-only)       |
+| PM         | `.context/state/**`, `.context/rules/agent_ownership.md`            | nothing (dispatch-only)       |
 | QA         | `tests/**`, `e2e/**`                                                 | nothing                       |
 | DevOps     | .github/workflows/**, config/**, install.sh, test.sh, scripts/**, .pre-commit-config.yaml.template, .cursorignore | nothing                       |
 | Docs       | README.md, AI_REPO_GUIDE.md, CLAUDE.md, AGENT.md, docs/** (except docs/decisions/**)  | nothing                       |
@@ -35,8 +35,7 @@ These files require **PM coordination** regardless of role, because any role may
 
 | File                              | Coordinated by | Notes                                            |
 |-----------------------------------|----------------|--------------------------------------------------|
-| `AGENTS.md`                       | PM             | Rules that bind every agent; rarely changes      |
-| `CLAUDE.md` / `AGENT.md`          | Docs           | Tool-specific redirect pointers; edit in lockstep with `AGENTS.md` headers only |
+| `CLAUDE.md` / `AGENT.md`          | Docs           | Tool-specific redirect pointers; edit in lockstep with `AGENTS.md` headers only (see ADR-002) |
 | `.context/00_INDEX.md`            | PM             | Lazy-load map; append-only in most cases         |
 | `.context/rules/agent_ownership.md` | PM           | This file. PM records cross-role decisions; Architect may propose via ADR |
 | docs/decisions/**              | Architect      | Architect defines decisions; Docs polishes prose |

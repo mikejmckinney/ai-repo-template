@@ -3,6 +3,7 @@ name: Architect
 description: Decomposes work, designs solutions, writes ADRs, produces plans for Judge to gate. Review-and-plan only (no implementation).
 tools: ['read', 'search', 'fetch', 'githubRepo', 'usages']
 owned_paths:
+  - 'AGENTS.md'                  # canonical process-rules file; see ADR-002
   - 'docs/decisions/**'
   - '.context/roadmap.md'
   - '.context/vision/architecture/**'
