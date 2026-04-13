@@ -70,5 +70,5 @@ FILES (owned scope only):
 DEPENDS ON: <task-id or 'none'>
 BLOCKS: <task-id or 'none'>
 ACCEPTANCE: <1-3 bullets from the plan>
-HANDOFF AT END: <qa | judge>
+HANDOFF AT END: <qa | critic | judge>
 ```
