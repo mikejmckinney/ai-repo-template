@@ -205,7 +205,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ## Verification Commands
 
 ```bash
-# Check all required files exist (58 checks)
+# Check all required files exist (91 checks)
 ./test.sh
 
 # Validate shell scripts (if shellcheck installed)

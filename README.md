@@ -24,7 +24,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 - **Issue Templates** - Bug reports, feature requests, and agent initialization
 - **Pre-commit Hooks** - Template for linting, secret detection, and commit standards
 - **ADR Templates** - Architecture Decision Record templates with examples
-- **Verification Scripts** - Built-in testing (58 checks) to ensure template integrity
+- **Verification Scripts** - Built-in testing (91 checks) to ensure template integrity
 
 ## Repository Structure
 
