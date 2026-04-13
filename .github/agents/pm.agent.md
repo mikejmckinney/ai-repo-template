@@ -10,6 +10,7 @@ handoff_targets:
   - frontend
   - backend
   - qa
+  - critic
   - devops
   - docs
 ---
