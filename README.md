@@ -90,7 +90,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
     │   └── qa.agent.md, devops.agent.md, docs.agent.md
     ├── prompts/
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
-    │   └── repo-onboarding.md    # Comprehensive repo onboarding prompt
+    │   └── repo-onboarding.md    # Repo onboarding workflow prompt
     ├── ISSUE_TEMPLATE/           # Issue templates
     │   ├── bug_report.md         # Bug report template
     │   ├── feature_request.md    # Feature request template
@@ -145,7 +145,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | File | Purpose |
 |------|---------|
 | `.github/prompts/copilot-onboarding.md` | Guide for customizing copilot-instructions.md |
-| `.github/prompts/repo-onboarding.md` | Comprehensive onboarding workflow |
+| `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
 ### Issue Templates
 

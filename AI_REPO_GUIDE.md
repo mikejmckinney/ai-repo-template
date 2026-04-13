@@ -83,7 +83,7 @@ bash install.sh
     │   └── architect|backend|critic|devops|docs|frontend|judge|pm|qa.agent.md
     ├── prompts/
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
-    │   └── repo-onboarding.md    # Comprehensive repo onboarding prompt
+    │   └── repo-onboarding.md    # Repo onboarding workflow prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
         ├── auto-resolve-on-merge.yml
@@ -130,7 +130,7 @@ bash install.sh
 | File | Purpose |
 |------|---------|
 | `.github/prompts/copilot-onboarding.md` | Guide for customizing copilot-instructions.md |
-| `.github/prompts/repo-onboarding.md` | Comprehensive repo onboarding workflow |
+| `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
 ### Setup Scripts
 | File | Purpose |
