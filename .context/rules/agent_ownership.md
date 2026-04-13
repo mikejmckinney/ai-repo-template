@@ -23,6 +23,7 @@
 | DevOps     | `.github/workflows/**`, `config/**`, `install.sh`, `scripts/**`, `.pre-commit-config.yaml.template`, `.cursorignore` | nothing                       |
 | Docs       | `README.md`, `AI_REPO_GUIDE.md`, `docs/**`                           | nothing                       |
 | Judge      | nothing (review-only, `.github/agents/judge.agent.md`)               | nothing                       |
+| Critic     | nothing (review-only, `.github/agents/critic.agent.md`)              | nothing                       |
 
 ## Shared / Contested Files
 

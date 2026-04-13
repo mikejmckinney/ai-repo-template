@@ -97,7 +97,8 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | `.github/copilot-instructions.md` | GitHub Copilot | Copilot-specific instructions |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | Strict PR review rules with verification |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review with severity labels |
-| `.github/agents/judge.agent.md` | Multi-tool | Plan-gate + diff-gate reviewer |
+| `.github/agents/judge.agent.md` | Multi-tool | Procedural plan-gate + diff-gate reviewer |
+| `.github/agents/critic.agent.md` | Multi-tool | Devil's Advocate — subjective quality review |
 | `.github/agents/architect.agent.md` | Multi-tool | Plan + ADR author (no code) |
 | `.github/agents/pm.agent.md` | Multi-tool | Task dispatcher + ownership enforcer (no code) |
 | `.github/agents/frontend.agent.md` | Multi-tool | UI layer implementer |
@@ -150,6 +151,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | `docs/decisions/adr-template.md` | Template for Architecture Decision Records |
 | `docs/guides/multi-agent-coordination.md` | How role-based agents work in parallel without conflicts |
 | `docs/guides/optional-skills.md` | Curated optional Claude Code skills (SOLID, everything-claude-code) |
+| `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
 
 ## Included VS Code Extensions
 

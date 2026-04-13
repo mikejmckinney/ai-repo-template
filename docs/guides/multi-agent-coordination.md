@@ -7,13 +7,16 @@
 | Role       | File                                     | Writes code? |
 |------------|------------------------------------------|--------------|
 | Architect  | `.github/agents/architect.agent.md`      | No — plans + ADRs only |
-| Judge      | `.github/agents/judge.agent.md`          | No — plan-gate + diff-gate |
+| Judge      | `.github/agents/judge.agent.md`          | No — procedural plan-gate + diff-gate |
+| Critic     | `.github/agents/critic.agent.md`         | No — subjective-quality devil's advocate |
 | PM         | `.github/agents/pm.agent.md`             | No — dispatch only |
 | Frontend   | `.github/agents/frontend.agent.md`       | Yes — UI layer |
 | Backend    | `.github/agents/backend.agent.md`        | Yes — server layer |
 | QA         | `.github/agents/qa.agent.md`             | Yes — test code only |
 | DevOps     | `.github/agents/devops.agent.md`         | Yes — CI, infra, scripts |
 | Docs       | `.github/agents/docs.agent.md`           | Yes — docs + READMEs |
+
+**Judge vs Critic**: Judge is procedural (criteria met? tests present? ownership respected?). Critic is subjective (is this actually good? hand-wavy reasoning? hidden assumptions? AI clichés?). Both run during plan-gate and diff-gate; Judge integrates Critic's notes into the final `DECISION`.
 
 ## The Three Coordination Files
 
@@ -27,33 +30,48 @@
   user request
        │
        ▼
-  ┌──────────┐   plan    ┌───────┐  approve   ┌────┐  dispatch  ┌────────────────┐
-  │Architect │──────────▶│ Judge │───────────▶│ PM │───────────▶│ Implementers   │
-  └──────────┘           └───────┘            └────┘            │ FE / BE / DO / │
-                                                                │ Docs (parallel)│
-                                                                └────────┬───────┘
-                                                                         │
-                                                                         ▼
-                                                                      ┌────┐
-                                                                      │ QA │
-                                                                      └──┬─┘
-                                                                         │ green CI
-                                                                         ▼
-                                                                      ┌───────┐
-                                                                      │ Judge │
-                                                                      └───┬───┘
-                                                                          │ approve
-                                                                          ▼
-                                                                        merge
+  ┌──────────┐   plan    ┌───────┐  notes  ┌──────────┐  approve  ┌────┐
+  │Architect │──────────▶│ Judge │◀────────│  Critic  │──────────▶│ PM │
+  └──────────┘           └───┬───┘         └──────────┘           └─┬──┘
+                             │                                      │ dispatch
+                             │ plan-gate                             ▼
+                             │                            ┌────────────────┐
+                             │                            │ Implementers   │
+                             │                            │ FE / BE / DO / │
+                             │                            │ Docs (parallel)│
+                             │                            └────────┬───────┘
+                             │                                     │
+                             │                                     ▼
+                             │                                  ┌────┐
+                             │                                  │ QA │  peer_review
+                             │                                  └──┬─┘
+                             │                                     │ coverage + green CI
+                             │                                     ▼
+                             │                               ┌──────────┐
+                             │                               │  Critic  │  peer_review
+                             │                               └────┬─────┘
+                             │                                    │ subjective notes
+                             │                                    ▼
+                             └──────────────▶ ┌───────┐  judge_review
+                                              │ Judge │
+                                              └───┬───┘
+                                                  │ APPROVE
+                                                  ▼
+                                                merge
 ```
 
 1. **Architect** turns a request into a plan + ADR.
-2. **Judge** plan-gates: APPROVE / REQUEST_CHANGES / BLOCK.
-3. **PM** splits the approved plan into role-owned `task_*.md` files and records claims in `coordination.md`.
+2. **Judge** plan-gates (procedural) and integrates **Critic**'s subjective notes. Outputs APPROVE / REQUEST_CHANGES / BLOCK.
+3. **PM** splits the approved plan into role-owned `task_*.md` files and records claims in `coordination.md` using the state machine below.
 4. **Implementers** (Frontend / Backend / DevOps / Docs) work in parallel on separate branches, each inside their owned paths.
-5. **QA** verifies coverage + CI green.
-6. **Judge** diff-gates.
-7. Merge.
+5. **QA** verifies coverage + CI green (`peer_review` state).
+6. **Critic** reviews the diff for subjective quality (`peer_review` state).
+7. **Judge** diff-gates with Critic's notes in hand (`judge_review` state).
+8. Merge.
+
+## Task State Machine
+
+The canonical list of states, their gates, and the role that owns each transition is in `.context/state/coordination.md` → "Task States". In short: `backlog → planned → assigned → in_progress → peer_review → judge_review → approved → merged`, no skipping, any reviewer can kick a task back to `in_progress`.
 
 ## Branch-Per-Role Model
 
@@ -148,8 +166,19 @@ Each branch goes through QA → Judge → merge independently.
 6. Your assigned `.context/state/task_*.md`.
 7. Report readiness (see `agent-best-practices.md:236-279`).
 
+## Optional: Scheduled Heartbeat
+
+For teams that want an autonomous daily check on stuck work, the template ships `.github/workflows/agent-heartbeat.yml.template` — a scheduled GitHub Action (disabled by default) that surfaces stale locks in `coordination.md` and posts a summary via webhook or a GitHub issue.
+
+**When to enable**: you have multiple agent sessions running against the repo over multiple days and want a safety net for forgotten locks or stuck tasks.
+
+**When NOT to enable**: single-developer projects or short-lived repos — the workflow will just add noise. Most projects don't need it.
+
+Enable steps are in the template file header.
+
 ## See Also
 
 - `docs/guides/agent-best-practices.md` — token limits, session handoff, secrets.
 - `.github/agents/judge.agent.md` — plan-gate + diff-gate details.
+- `.github/agents/critic.agent.md` — subjective-quality devil's advocate review.
 - `.github/prompts/repo-onboarding.md` — full onboarding workflow.

@@ -50,6 +50,7 @@ REQUIRED_FILES=(
     ".gemini/styleguide.md"
     ".github/copilot-instructions.md"
     ".github/agents/judge.agent.md"
+    ".github/agents/critic.agent.md"
     ".github/agents/architect.agent.md"
     ".github/agents/pm.agent.md"
     ".github/agents/frontend.agent.md"
@@ -160,6 +161,7 @@ WORKFLOW_FILES=(
     ".github/workflows/ci-tests.yml"
     ".github/workflows/keep-warm.yml"
     ".github/workflows/validate-connections.yml"
+    ".github/workflows/agent-heartbeat.yml.template"
 )
 
 for file in "${WORKFLOW_FILES[@]}"; do

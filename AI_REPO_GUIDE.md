@@ -82,7 +82,8 @@ bash install.sh
 | `.github/copilot-instructions.md` | GitHub Copilot | Copilot-specific instructions |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |
-| `.github/agents/judge.agent.md` | Multi-tool | Plan/diff gate reviewer (no code) |
+| `.github/agents/judge.agent.md` | Multi-tool | Procedural plan/diff gate reviewer (no code) |
+| `.github/agents/critic.agent.md` | Multi-tool | Devil's Advocate — subjective quality review (no code) |
 | `.github/agents/architect.agent.md` | Multi-tool | Plan + ADR author (no code) |
 | `.github/agents/pm.agent.md` | Multi-tool | Task dispatcher + ownership enforcer (no code) |
 | `.github/agents/frontend.agent.md` | Multi-tool | UI layer implementer |
@@ -134,8 +135,9 @@ bash install.sh
 | `.pre-commit-config.yaml.template` | Pre-commit hooks (linting, secrets) |
 | `docs/decisions/adr-template.md` | Architecture Decision Record template |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets |
-| `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Architect/FE/BE/PM/QA/DevOps/Docs/Judge) |
+| `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |
+| `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
 
 ### CI/CD Workflows
 | File | Purpose |
