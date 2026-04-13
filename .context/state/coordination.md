@@ -35,7 +35,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ```markdown
 ## Lock: <task-id>
-**Role**: <architect|frontend|backend|pm|qa|devops|docs|critic>
+**Role**: <architect|frontend|backend|pm|qa|devops|docs|critic|judge>
 **Session**: <branch name or agent session id>
 **Claimed At**: <ISO-8601>
 **Expected Duration**: <e.g., 30m, 2h>
