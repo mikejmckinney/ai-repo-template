@@ -7,7 +7,9 @@ owned_paths:
   - 'AI_REPO_GUIDE.md'
   - 'CLAUDE.md'
   - 'AGENT.md'
-  - 'docs/**'
+  - 'docs/README.md'
+  - 'docs/guides/**'
+  - 'docs/reference/**'
 handoff_targets:
   - judge           # diff-gate review
   - architect       # if docs reveal an architectural gap
