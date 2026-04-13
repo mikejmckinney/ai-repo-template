@@ -1,3 +1,13 @@
+# Auto-Resolve Conversations on Merge
+# -----------------------------------
+# When a PR is merged, iterate unresolved review threads and resolve them via
+# the GraphQL API.
+#
+# Known limitation: the GraphQL query fetches `reviewThreads(first: 100)` with
+# NO pagination. A PR with more than 100 unresolved review threads will have
+# its older threads left un-resolved. This is rare in practice (most PRs have
+# <20 threads); if your team routinely exceeds 100, add a paginated query
+# using `pageInfo { hasNextPage endCursor }`.
 name: Auto-Resolve Conversations on Merge
 
 on:
