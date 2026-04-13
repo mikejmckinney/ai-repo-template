@@ -207,6 +207,23 @@ else
     fail "install.sh missing bash shebang"
 fi
 
+# Check install.sh documents the legacy $DOTFILES variable (Codespaces convention)
+if grep -q "About the \$DOTFILES variable (legacy naming, intentional):" install.sh; then
+    pass "install.sh has \$DOTFILES legacy-convention comment block"
+else
+    fail "install.sh missing \$DOTFILES legacy-convention comment block"
+fi
+
+# Guard against "Dotfiles" log strings resurfacing in install.sh user-facing
+# output (we rewrote these to "Template" during the ai-repo-template rebrand).
+# The variable $DOTFILES and comment-block mentions are fine; any quoted
+# "Dotfiles" as the first word of a log/echo message is a regression.
+if grep -E '(log_info|log_warn|log_error|echo)[[:space:]]+"Dotfiles' install.sh > /dev/null; then
+    fail "install.sh contains \"Dotfiles\" log strings (should be \"Template\")"
+else
+    pass "install.sh has no \"Dotfiles\" log strings (rebrand intact)"
+fi
+
 # Check judge.agent.md has required sections
 if grep -q "PLAN-GATE" .github/agents/judge.agent.md 2>/dev/null; then
     pass "judge.agent.md has PLAN-GATE section"
