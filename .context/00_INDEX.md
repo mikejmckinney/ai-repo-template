@@ -20,8 +20,9 @@ The `.context/` directory contains **canonical project truth**.
 ├── 00_INDEX.md          # This file - start here (The Map)
 ├── roadmap.md           # Phase-by-phase plan with acceptance criteria (The Plan)
 ├── rules/               # Immutable constraints and domain rules
-│   ├── agent_ownership.md # Canonical role → owned paths map (read before editing)
-│   └── domain_*.md      # Domain-specific rules (e.g., domain_auth.md)
+│   ├── agent_ownership.md    # Canonical role → owned paths map (read before editing)
+│   ├── domain_code_quality.md # Built-in language-neutral SOLID/TDD/clean-code floor
+│   └── domain_*.md           # Add your own stack-specific rules (e.g., domain_auth.md)
 ├── sessions/            # Session history to prevent repeating mistakes
 │   └── latest_summary.md # Most recent session summary
 ├── state/               # Task tracking (supports parallel work)
@@ -43,7 +44,7 @@ The `.context/` directory contains **canonical project truth**.
 4. Check `state/_active.md` or `state/task_*.md` for current work
 5. Read `sessions/latest_summary.md` for what happened last session
 6. Read `roadmap.md` to understand project phases (The Plan)
-7. Reference `rules/` ONLY when making changes to those domains
+7. Reference `rules/` ONLY when making changes to those domains. `rules/domain_code_quality.md` is the built-in SOLID/TDD/clean-code floor — read it before any non-trivial refactor.
 8. Reference `vision/` for design guidance
 
 **Note:** Don't read everything at once. This index tells you what exists; load files on-demand to save tokens.

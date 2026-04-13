@@ -27,7 +27,8 @@ You are the **JUDGE** in a role-specialized pipeline. You **do not implement**. 
 
 1. Read `/AI_REPO_GUIDE.md` if it exists. Treat it as the canonical "map" unless contradicted by the repo.
 2. Also read any repository instructions like `.github/copilot-instructions.md` if present.
-3. Use search/usages to validate claims about entrypoints, configs, tests, and workflows.
+3. Read `.context/rules/domain_code_quality.md` — unjustified Hard-rule (H1–H8) violations are a `BLOCK` condition during diff-gate.
+4. Use search/usages to validate claims about entrypoints, configs, tests, and workflows.
 
 ---
 

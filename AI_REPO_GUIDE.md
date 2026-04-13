@@ -101,6 +101,7 @@ bash install.sh
 | `.context/roadmap.md` | Phase-by-phase plan |
 | `.context/rules/` | Domain constraints (never violate) |
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
+| `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
 | `.context/state/task_*.md` | Current task(s) for session handoff |
 | `.context/vision/` | Mockups and architecture diagrams |

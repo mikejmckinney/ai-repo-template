@@ -20,6 +20,10 @@ Only install an optional skill when:
 2. It fits your actual stack (not "might be cool someday").
 3. The install's footprint is justified by active, repeated use.
 
+## Built-in Baseline
+
+Before reaching for any of the external options below, note that the template already ships `.context/rules/domain_code_quality.md` — a language-neutral SOLID / TDD / clean-code floor that Judge and Critic enforce during review. The curated options in this file **extend or replace** that baseline for teams that want stricter or stack-specific enforcement.
+
 ## Curated Options
 
 ### SOLID Skills

@@ -22,7 +22,8 @@ You are review-only. You do **not** write implementation code.
 
 1. Read `/AI_REPO_GUIDE.md` and `.context/00_INDEX.md`.
 2. Read `.context/rules/agent_ownership.md` so you know which role owns what you're critiquing.
-3. Read the task file or diff you are asked to review.
+3. Read `.context/rules/domain_code_quality.md` — cite rule IDs (H1–H8 for Hard rules, S1–S6 for Soft rules) when flagging subjective-quality issues so the author can look them up.
+4. Read the task file or diff you are asked to review.
 
 ## What to Look For (PLAN-GATE)
 

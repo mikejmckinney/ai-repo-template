@@ -81,6 +81,7 @@ CONTEXT_FILES=(
     ".context/roadmap.md"
     ".context/rules/README.md"
     ".context/rules/agent_ownership.md"
+    ".context/rules/domain_code_quality.md"
     ".context/sessions/README.md"
     ".context/sessions/latest_summary.md"
     ".context/state/README.md"

@@ -210,6 +210,7 @@ MULTIAGENT_FILES=(
     ".github/agents/devops.agent.md"
     ".github/agents/docs.agent.md"
     ".context/rules/agent_ownership.md"
+    ".context/rules/domain_code_quality.md"
     ".context/state/coordination.md"
     "docs/guides/multi-agent-coordination.md"
     "docs/guides/optional-skills.md"

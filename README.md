@@ -117,6 +117,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | `.context/roadmap.md` | Phase-by-phase plan with acceptance criteria |
 | `.context/rules/` | Immutable constraints (domain rules) |
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
+| `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
 | `.context/state/task_*.md` | Current task(s) for cognitive handoff |
 | `.context/sessions/` | Session history to prevent repeating mistakes |

@@ -44,4 +44,6 @@ Files should be named `domain_<area>.md`:
 
 <!-- Add links to domain rule files as they're created -->
 
-No domain rules defined yet. Create files like `domain_auth.md` as needed.
+- [`domain_code_quality.md`](./domain_code_quality.md) — built-in, language-neutral SOLID / TDD / clean-code floor. Architect-owned. Read before any non-trivial refactor; Judge blocks diff-gate on unjustified Hard-rule violations.
+
+Add further rules as `domain_<area>.md` (for example `domain_auth.md`, `domain_api.md`) following the naming convention above.
