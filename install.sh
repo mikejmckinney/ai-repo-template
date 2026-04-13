@@ -146,6 +146,81 @@ if [[ -f "$AGENTS_SRC" ]]; then
     fi
 fi
 
+# ---------------------------------------------------------------------------
+# Multi-agent kit: role files, ownership map, coordination board, CLAUDE.md
+# ---------------------------------------------------------------------------
+# AGENTS.md tells agents to read .github/agents/*.agent.md, the ownership map,
+# and the coordination board before editing. Without these files in the target
+# workspace the mandatory onboarding flow is non-actionable, so we copy the
+# full kit (skipping anything that already exists so we never clobber a repo
+# that was created from this template).
+#
+# Each copy is best-effort: a missing source is a warning, not a fatal error,
+# so Codespaces bootstrap does not fail for users of older template versions.
+
+# Helper: copy a relative path from $DOTFILES into $WORKSPACE, skipping if the
+# destination already exists and warning if the source is missing. Creates the
+# destination directory when needed. Tracks pass/skip counts for the summary.
+MULTIAGENT_COPIED=0
+MULTIAGENT_SKIPPED=0
+MULTIAGENT_MISSING=0
+
+copy_template_file() {
+    local rel_path="$1"
+    local src="$DOTFILES/$rel_path"
+    local dst="$WORKSPACE/$rel_path"
+
+    if [[ ! -f "$src" ]]; then
+        log_warn "  ⚠ Source missing: $rel_path"
+        MULTIAGENT_MISSING=$((MULTIAGENT_MISSING + 1))
+        return
+    fi
+
+    if [[ -f "$dst" ]]; then
+        log_info "  = Exists: $rel_path (skipping)"
+        MULTIAGENT_SKIPPED=$((MULTIAGENT_SKIPPED + 1))
+        return
+    fi
+
+    local dst_dir
+    dst_dir="$(dirname "$dst")"
+    if [[ ! -d "$dst_dir" ]]; then
+        mkdir -p "$dst_dir"
+    fi
+
+    if cp "$src" "$dst"; then
+        log_info "  ✓ Copied: $rel_path"
+        MULTIAGENT_COPIED=$((MULTIAGENT_COPIED + 1))
+    else
+        log_warn "  ⚠ Failed to copy: $rel_path"
+    fi
+}
+
+log_info "Installing multi-agent kit (role files + coordination)..."
+
+MULTIAGENT_FILES=(
+    "CLAUDE.md"
+    ".github/agents/architect.agent.md"
+    ".github/agents/judge.agent.md"
+    ".github/agents/critic.agent.md"
+    ".github/agents/pm.agent.md"
+    ".github/agents/frontend.agent.md"
+    ".github/agents/backend.agent.md"
+    ".github/agents/qa.agent.md"
+    ".github/agents/devops.agent.md"
+    ".github/agents/docs.agent.md"
+    ".context/rules/agent_ownership.md"
+    ".context/state/coordination.md"
+    "docs/guides/multi-agent-coordination.md"
+    "docs/guides/optional-skills.md"
+)
+
+for rel in "${MULTIAGENT_FILES[@]}"; do
+    copy_template_file "$rel"
+done
+
+log_info "Multi-agent kit: copied=$MULTIAGENT_COPIED skipped=$MULTIAGENT_SKIPPED missing=$MULTIAGENT_MISSING"
+
 # =============================================================================
 # 3. Verification
 # =============================================================================

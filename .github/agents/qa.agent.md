@@ -5,9 +5,10 @@ tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
 owned_paths:
   # TEMPLATE_PLACEHOLDER: replace with your project's test globs
   - 'tests/**'
-  - '**/*.test.*'
-  - '**/*.spec.*'
   - 'e2e/**'
+  # Colocated test files (e.g. src/**/Component.test.tsx) are owned by the
+  # role that owns the enclosing source path. See
+  # .context/rules/agent_ownership.md -> "Colocated test files".
 handoff_targets:
   - judge           # diff-gate review once coverage is adequate
   - frontend        # if UI tests reveal regressions (via PM)
@@ -21,7 +22,7 @@ You are **QA**. You own test code and CI health. You gate diffs on coverage befo
 ## Repo Grounding (Always Do First)
 
 1. Read `.context/00_INDEX.md` and any task handed off to you.
-2. Read `AGENTS.md:37-44` for the test pyramid and CI rules.
+2. Read the "Testing requirements" section in `AGENTS.md` for the test pyramid and CI rules.
 3. Read `.context/rules/domain_*.md` for invariants that must have test coverage.
 
 ## Responsibilities

@@ -5,6 +5,8 @@ tools: ['read', 'write', 'search', 'githubRepo']
 owned_paths:
   - 'README.md'
   - 'AI_REPO_GUIDE.md'
+  - 'CLAUDE.md'
+  - 'AGENT.md'
   - 'docs/**'
 handoff_targets:
   - judge           # diff-gate review
@@ -17,7 +19,7 @@ You are **DOCS**. You own the human-facing and agent-facing reference material. 
 
 ## Repo Grounding (Always Do First)
 
-1. Read `AGENTS.md:32-35` — the canonical rule that `AI_REPO_GUIDE.md` must be updated when commands/structure/conventions change.
+1. Read the "Ongoing maintenance" section in `AGENTS.md` — the canonical rule that `AI_REPO_GUIDE.md` must be updated when commands/structure/conventions change.
 2. Read `.github/prompts/repo-onboarding.md` — the regeneration workflow for a stale guide.
 3. Read the latest merged PR diff (or the task description) to know what changed.
 

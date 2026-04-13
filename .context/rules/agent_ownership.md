@@ -15,15 +15,19 @@
 
 | Role       | Owned path globs                                                     | May also edit (with PM claim) |
 |------------|----------------------------------------------------------------------|-------------------------------|
-| Architect  | `docs/decisions/**`, `.context/roadmap.md`, `.context/vision/architecture/**` | nothing (plan-only)           |
-| Frontend   | `src/frontend/**`, `src/components/**`, `src/pages/**`, `src/styles/**`, `public/**` | UI-adjacent tests in `tests/ui/**` |
-| Backend    | `src/backend/**`, `src/api/**`, `src/server/**`, `src/models/**`, `migrations/**`, `db/**` | API-adjacent tests in `tests/api/**` |
-| PM         | `.context/state/**`                                                  | nothing (dispatch-only)       |
-| QA         | `tests/**`, `**/*.test.*`, `**/*.spec.*`, `e2e/**`                   | nothing                       |
+| Architect  | `docs/decisions/**`, `.context/roadmap.md`, `.context/vision/architecture/**`, `.context/rules/**` (except `agent_ownership.md`) | nothing (plan-only) |
+| Frontend   | `src/frontend/**`, `src/components/**`, `src/pages/**`, `src/styles/**`, `public/**`, colocated `*.test.*` / `*.spec.*` under those paths | UI-adjacent tests in `tests/ui/**` |
+| Backend    | `src/backend/**`, `src/api/**`, `src/server/**`, `src/models/**`, `migrations/**`, `db/**`, colocated `*.test.*` / `*.spec.*` under those paths | API-adjacent tests in `tests/api/**` |
+| PM         | `.context/state/**`, `.context/rules/agent_ownership.md`             | nothing (dispatch-only)       |
+| QA         | `tests/**`, `e2e/**`                                                 | nothing                       |
 | DevOps     | `.github/workflows/**`, `config/**`, `install.sh`, `scripts/**`, `.pre-commit-config.yaml.template`, `.cursorignore` | nothing                       |
-| Docs       | `README.md`, `AI_REPO_GUIDE.md`, `docs/**`                           | nothing                       |
+| Docs       | `README.md`, `AI_REPO_GUIDE.md`, `CLAUDE.md`, `AGENT.md`, `docs/**`  | nothing                       |
 | Judge      | nothing (review-only, `.github/agents/judge.agent.md`)               | nothing                       |
 | Critic     | nothing (review-only, `.github/agents/critic.agent.md`)              | nothing                       |
+
+### Colocated test files
+
+Test files colocated under a source tree (e.g. `src/components/LoginForm.test.tsx`, `src/api/auth/login.spec.ts`) are owned by the role that owns the enclosing source path. QA ownership is limited to the dedicated test directories (`tests/**`, `e2e/**`) unless PM records a temporary shared-edit claim.
 
 ## Shared / Contested Files
 
@@ -32,14 +36,16 @@ These files require **PM coordination** regardless of role, because any role may
 | File                              | Coordinated by | Notes                                            |
 |-----------------------------------|----------------|--------------------------------------------------|
 | `AGENTS.md`                       | PM             | Rules that bind every agent; rarely changes      |
+| `CLAUDE.md` / `AGENT.md`          | Docs           | Tool-specific redirect pointers; edit in lockstep with `AGENTS.md` headers only |
 | `.context/00_INDEX.md`            | PM             | Lazy-load map; append-only in most cases         |
-| `.context/rules/**` (except this file) | Architect + PM | Immutable domain constraints                  |
+| `.context/rules/agent_ownership.md` | PM           | This file. PM records cross-role decisions; Architect may propose via ADR |
+| `.context/rules/**` (except `agent_ownership.md`) | Architect  | Architect owns domain rules; PM records claims in `coordination.md` before edits |
 | `.context/state/coordination.md`  | PM (writes), all (read-then-self-claim) | See lock protocol below |
 | `test.sh`                         | DevOps         | Must be updated in lockstep with template structure changes |
 
 ## Lock Protocol (for `coordination.md`)
 
-A role **self-claims** by appending a lock block; only PM edits or removes other roles' locks. Lock format (also defined in `docs/guides/agent-best-practices.md:129-144`):
+A role **self-claims** by appending a lock block; only PM edits or removes other roles' locks. The canonical lock format is defined in `.context/state/coordination.md` → "Lock Template" (with background in `docs/guides/agent-best-practices.md` → "Lock Before Working"):
 
 ```markdown
 ## Lock: <task-id>

@@ -83,7 +83,7 @@ feature/backend-auth-api
 feature/docs-auth-guide
 ```
 
-This is a refinement of the pattern already in `docs/guides/agent-best-practices.md:147-158`. It guarantees that two agents editing different roles' files cannot produce a merge conflict — their changes are in disjoint directories on disjoint branches.
+This refines the "Use Git Branches" pattern in `docs/guides/agent-best-practices.md`. It greatly reduces the chance of merge conflicts — two agents editing different roles' files normally end up in disjoint directories on disjoint branches — but conflicts can still occur in shared or generated files (lockfiles, coordination board, shared rules), which is why the PM arbitration and Judge diff-gate layers below still matter.
 
 ## Conflict-Avoidance Hierarchy
 
@@ -120,21 +120,39 @@ PM creates three task files and three locks:
 
 ```markdown
 ## Lock: login-backend
-Role: backend
-Session: feature/backend-login
-Paths: src/api/auth/**, migrations/005_sessions.sql
+**Role**: backend
+**Session**: feature/backend-login
+**Claimed At**: 2026-04-13T09:00:00Z
+**Expected Duration**: 4h
+**Paths**:
+- src/api/auth/**
+- migrations/005_sessions.sql
+**Depends On**: none
+**Blocks**: login-frontend, login-docs
+**State**: in_progress
 
 ## Lock: login-frontend
-Role: frontend
-Session: feature/frontend-login
-Paths: src/components/LoginForm.tsx, src/pages/login.tsx
-Depends On: login-backend  (API contract must exist)
+**Role**: frontend
+**Session**: feature/frontend-login
+**Claimed At**: 2026-04-13T09:05:00Z
+**Expected Duration**: 3h
+**Paths**:
+- src/components/LoginForm.tsx
+- src/pages/login.tsx
+**Depends On**: login-backend   (API contract must exist)
+**Blocks**: none
+**State**: planned
 
 ## Lock: login-docs
-Role: docs
-Session: feature/docs-login
-Paths: docs/guides/auth.md
-Depends On: login-backend
+**Role**: docs
+**Session**: feature/docs-login
+**Claimed At**: 2026-04-13T09:10:00Z
+**Expected Duration**: 1h
+**Paths**:
+- docs/guides/auth.md
+**Depends On**: login-backend
+**Blocks**: none
+**State**: planned
 ```
 
 ### Step 4 — Parallel execution
@@ -152,7 +170,7 @@ Each branch goes through QA → Judge → merge independently.
 
 - **Never edit outside your owned paths without a PM claim.** This is the single most important rule.
 - **Never silently resolve** a lock conflict — escalate to PM.
-- **Never mark a task complete with CI red** (see `AGENTS.md:41-44`).
+- **Never mark a task complete with CI red** (see the "Testing requirements" section in `AGENTS.md`).
 - **Always** release or hand-off your lock at end of session.
 - **Always** add/update tests alongside behavior changes.
 
@@ -164,7 +182,7 @@ Each branch goes through QA → Judge → merge independently.
 4. `.context/rules/agent_ownership.md` — what you may touch.
 5. `.github/agents/<your-role>.agent.md` — your specific responsibilities.
 6. Your assigned `.context/state/task_*.md`.
-7. Report readiness (see `agent-best-practices.md:236-279`).
+7. Report readiness (see the "Report readiness (The Report Step)" subsection in `docs/guides/agent-best-practices.md`).
 
 ## Optional: Scheduled Heartbeat
 

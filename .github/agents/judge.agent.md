@@ -2,13 +2,15 @@
 name: Judge
 description: Plan-gate + diff-gate reviewer. Outputs APPROVE / REQUEST_CHANGES / BLOCK. Review-only (no implementation).
 tools: ['read', 'search', 'fetch', 'githubRepo', 'usages']
-handoffs:
-  - label: Start Implementation
-    agent: agent
-    prompt: >
-      Implement the approved plan. Keep diffs minimal, add/update tests, and update AI_REPO_GUIDE.md if anything changes.
-    send: false
+handoff_targets:
+  - pm              # approved plans go to PM for dispatch to implementers
+  - architect       # rejected plans bounce back to Architect for revision
+  - critic          # Judge may pull in Critic's subjective notes during plan/diff gate
 ---
+
+> **Handoff action (for harnesses that render a "Start Implementation" button)**:
+> when `DECISION: APPROVE`, forward the plan to the PM agent with the prompt
+> *"Implement the approved plan. Keep diffs minimal, add/update tests, and update AI_REPO_GUIDE.md if anything changes."*
 
 # Judge Agent (Review-Only)
 

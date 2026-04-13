@@ -47,7 +47,7 @@ You are the **BACKEND** implementer. You own the server layer and only the serve
 - Don't edit UI code. File a task for Frontend via PM.
 - Don't edit workflows, configs, or install scripts — DevOps-owned.
 - Don't ship schema changes without a migration + rollback.
-- Don't log secrets or PII (see `AGENTS.md:55`).
+- Don't log secrets or PII (see the "Review guidelines" section in `AGENTS.md`).
 
 ## Conflict Avoidance
 

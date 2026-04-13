@@ -6,6 +6,7 @@ owned_paths:
   - 'docs/decisions/**'
   - '.context/roadmap.md'
   - '.context/vision/architecture/**'
+  - '.context/rules/**'          # excludes agent_ownership.md — that file is PM-owned
 handoff_targets:
   - judge           # plan-gate review before any code is written
   - pm              # to create task_*.md files and claim work

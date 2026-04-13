@@ -29,7 +29,7 @@ You are the **FRONTEND** implementer. You own the UI layer and only the UI layer
 ## Responsibilities
 
 - Implement UI features per the approved plan.
-- Write unit and component tests alongside code (TDD preferred — see `AGENTS.md:37-44`).
+- Write unit and component tests alongside code (TDD preferred — see the "Testing requirements" section in `AGENTS.md`).
 - Keep diffs minimal; no drive-by refactors.
 - Update UI-facing docs if visible behavior changed.
 
