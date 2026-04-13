@@ -200,6 +200,7 @@ log_info "Installing multi-agent kit (role files + coordination)..."
 
 MULTIAGENT_FILES=(
     "CLAUDE.md"
+    "AGENT.md"
     ".github/agents/architect.agent.md"
     ".github/agents/judge.agent.md"
     ".github/agents/critic.agent.md"
