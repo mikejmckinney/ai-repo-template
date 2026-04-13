@@ -383,7 +383,7 @@ Multi-agent work has real costs:
 When an agent session begins, it should automatically:
 
 1. **Load context**: Read `_active.md` → task file → `00_INDEX.md`
-2. **Check for stale locks**: If a task file shows "In Progress" but was last updated > 2 hours ago, treat it as potentially abandoned
+2. **Check for stale locks**: If a task file shows "In Progress" but was last updated significantly ago (suggested default: 2 hours; adjust based on your team's workflow), treat it as potentially abandoned
 3. **Verify environment**: Run the project's verification command (e.g., `./test.sh`, `npm test`)
 4. **Report readiness**: Output a brief status confirming context was loaded (see Session Handoff Protocol above)
 

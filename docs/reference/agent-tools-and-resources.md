@@ -55,8 +55,8 @@
 - Shared state coordination via task files
 
 **Reference articles**:
-- [Building Multi-Agent AI Systems](https://dev.to/jarradbermingham/i-built-a-13-agent-ai-system-that-reviews-its-own-decisions-heres-the-architecture-pbd) — DEV Community
-- [Multi-Agent Orchestration with Claude Code](https://sjramblings.io/multi-agent-orchestration-claude-code-when-ai-teams-beat-solo-acts/) — SJRamblings
+- [I Built a 13-Agent AI System That Reviews Its Own Decisions — Architecture Deep Dive](https://dev.to/jarradbermingham/i-built-a-13-agent-ai-system-that-reviews-its-own-decisions-heres-the-architecture-pbd) — DEV Community
+- [Multi-Agent Orchestration: When AI Teams Beat Solo Acts](https://sjramblings.io/multi-agent-orchestration-claude-code-when-ai-teams-beat-solo-acts/) — SJRamblings
 
 ---
 

@@ -30,7 +30,7 @@ When TDD is not practical (e.g., exploratory prototyping), write tests alongside
 
 1. **Meaningful names**: Variables, functions, and classes should reveal intent. Avoid abbreviations, single-letter names (except loop counters), and misleading names.
 
-2. **Small functions**: Functions should do one thing. Target ≤ 20 lines; if a function exceeds 30 lines, consider splitting it.
+2. **Small functions**: Functions should do one thing. As a guideline, aim for functions short enough to fit on one screen (~20 lines). If a function grows beyond ~30 lines, consider whether it has multiple responsibilities that could be extracted. Exact thresholds vary by language — a 30-line Python function is more complex than a 30-line Java function due to line density differences.
 
 3. **No magic values**: Replace magic numbers and strings with named constants or enums.
 
