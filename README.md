@@ -42,8 +42,14 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 │   ├── 00_INDEX.md               # Context entry point
 │   ├── roadmap.md                # Phase-by-phase plan
 │   ├── rules/                    # Immutable domain constraints
+│   │   ├── agent_ownership.md    # Role → owned paths map
+│   │   └── domain_code_quality.md # Language-neutral quality floor
+│   ├── sessions/                 # Session history for handoff
+│   │   └── latest_summary.md     # Most recent session summary
 │   ├── state/                    # Mutable progress tracking
 │   │   ├── _active.md            # Points to current priority task
+│   │   ├── coordination.md       # Live claim board for parallel agents
+│   │   ├── task_template.md      # Template for new tasks
 │   │   └── task_*.md             # Individual task files
 │   └── vision/                   # Design artifacts
 │       ├── mockups/              # UI/UX mockups
@@ -53,7 +59,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 │   ├── README.md                 # Documentation guide
 │   ├── reference/                # Specs, research
 │   ├── guides/                   # How-to guides
-│   └── decisions/                # Architecture Decision Records
+│   └── decisions/                # Architecture Decision Records (adr-*.md)
 │
 ├── .cursor/
 │   └── BUGBOT.md                 # Cursor Bugbot PR review rules
@@ -65,14 +71,23 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 │   ├── README.md                 # Platform recommendations
 │   ├── vercel.json.template      # Vercel frontend config
 │   ├── railway.toml.template     # Railway backend config
-│   └── render.yaml.template      # Render blueprint config
+│   ├── render.yaml.template      # Render blueprint config
+│   └── docker-compose.yml.template # Local dev compose stack
+│
+├── scripts/                      # Project bootstrap + verification scripts
+│   ├── README.md                 # Script catalog
+│   ├── setup.sh                  # First-run project customization
+│   ├── verify-env.sh             # Environment & placeholder sanity check
+│   └── db-reset.sh               # Optional DB reset stub
 │
 ├── .pre-commit-config.yaml.template  # Pre-commit hooks template
 │
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
-    ├── agents/
-    │   └── judge.agent.md        # GitHub Copilot plan/diff gate agent
+    ├── agents/                   # Role-specialized agent files (9 files)
+    │   ├── architect.agent.md, critic.agent.md, judge.agent.md,
+    │   ├── pm.agent.md, frontend.agent.md, backend.agent.md,
+    │   └── qa.agent.md, devops.agent.md, docs.agent.md
     ├── prompts/
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
     │   └── repo-onboarding.md    # Comprehensive repo onboarding prompt
@@ -85,7 +100,9 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
         ├── auto-resolve-on-merge.yml  # Auto-resolve PR comments
         ├── ci-tests.yml               # CI pipeline (customize for project)
         ├── keep-warm.yml              # Ping backend to prevent suspension
-        └── validate-connections.yml   # Daily connectivity checks
+        ├── lint-and-format.yml        # Lint & format check
+        ├── validate-connections.yml   # Daily connectivity checks
+        └── agent-heartbeat.yml.template # Optional: stale-lock surfacer
 ```
 
 ## AI Agent Files
@@ -137,6 +154,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | `.github/ISSUE_TEMPLATE/bug_report.md` | Structured bug reports |
 | `.github/ISSUE_TEMPLATE/feature_request.md` | Feature requests with acceptance criteria |
 | `.github/ISSUE_TEMPLATE/agent_init.md` | Initialize repo from template (agent task) |
+| `.github/ISSUE_TEMPLATE/config.yml` | Chooser config (rewritten by `scripts/setup.sh` at init) |
 
 ### Deployment Configs
 
@@ -145,6 +163,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | `config/vercel.json.template` | Vercel | Frontend, serverless functions |
 | `config/railway.toml.template` | Railway | Backend services |
 | `config/render.yaml.template` | Render | Full-stack blueprints |
+| `config/docker-compose.yml.template` | Docker Compose | Local dev stack |
 
 ### Development Tools
 
@@ -152,9 +171,16 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 |------|---------|
 | `.pre-commit-config.yaml.template` | Pre-commit hooks for linting, secrets, formatting |
 | `docs/decisions/adr-template.md` | Template for Architecture Decision Records |
+| `docs/decisions/adr-001-context-pack-structure.md` | Rationale for the `.context/` layout |
+| `docs/decisions/adr-002-agents-md-ownership.md` | AGENTS.md ownership assignment |
 | `docs/guides/multi-agent-coordination.md` | How role-based agents work in parallel without conflicts |
+| `docs/guides/agent-best-practices.md` | Token limits, handoff, secrets |
+| `docs/guides/context-files-explained.md` | What every file in the context pack is for |
 | `docs/guides/optional-skills.md` | Curated optional Claude Code skills (SOLID, everything-claude-code) |
 | `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
+| `scripts/setup.sh` | First-run project customization helper |
+| `scripts/verify-env.sh` | Environment & `TEMPLATE_PLACEHOLDER` sanity check |
+| `scripts/db-reset.sh` | Optional database reset stub |
 
 ## Included VS Code Extensions
 
@@ -170,9 +196,11 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | Workflow | Purpose | Customization Required |
 |----------|---------|------------------------|
 | `ci-tests.yml` | Build, lint, test on push/PR | Yes - add your commands |
+| `lint-and-format.yml` | Markdown + script lint/format | None |
 | `keep-warm.yml` | Ping backend every 14 min | Set `BACKEND_URL` secret |
 | `validate-connections.yml` | Daily connectivity check | Set `BACKEND_URL` secret |
 | `auto-resolve-on-merge.yml` | Resolve threads on merge | None |
+| `agent-heartbeat.yml.template` | Optional: stale-lock surfacer | Rename to `.yml` to enable |
 
 ## Setup
 

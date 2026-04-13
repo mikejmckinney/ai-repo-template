@@ -47,9 +47,14 @@ bash install.sh
 │   ├── 00_INDEX.md           # Context entry point
 │   ├── roadmap.md            # Phase-by-phase plan
 │   ├── rules/                # Immutable domain constraints
+│   │   ├── agent_ownership.md, domain_code_quality.md
+│   ├── sessions/             # Session history for handoff
+│   │   └── latest_summary.md
 │   ├── state/                # Task tracking (supports parallel work)
-│   │   ├── _active.md        # Points to current priority task
-│   │   └── task_*.md         # Individual task files
+│   │   ├── _active.md            # Current priority task pointer
+│   │   ├── coordination.md       # Live claim board
+│   │   ├── task_template.md      # Template for new tasks
+│   │   └── task_*.md             # Individual task files
 │   └── vision/               # Design artifacts
 │       ├── mockups/          # UI/UX mockups
 │       └── architecture/     # System diagrams
@@ -57,8 +62,16 @@ bash install.sh
 ├── docs/                     # Human reference documentation
 │   ├── README.md             # Documentation index
 │   ├── reference/            # Specs, research, external docs
-│   ├── guides/               # How-to guides
-│   └── decisions/            # Architecture Decision Records
+│   ├── guides/               # How-to guides (agent-best-practices, context-files-explained, multi-agent-coordination, optional-skills)
+│   └── decisions/            # Architecture Decision Records (adr-001, adr-002, adr-template)
+│
+├── scripts/                  # Bootstrap + verification scripts
+│   ├── README.md
+│   ├── setup.sh              # First-run project customization
+│   ├── verify-env.sh         # Environment & placeholder sanity check
+│   └── db-reset.sh           # Optional DB reset stub
+│
+├── config/                   # Deployment config templates (see table below)
 │
 ├── .cursor/
 │   └── BUGBOT.md             # Cursor Bugbot PR review rules
@@ -66,16 +79,19 @@ bash install.sh
 │   └── styleguide.md         # Gemini Code Assist review style
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
-    ├── agents/
-    │   └── judge.agent.md        # Plan-gate + diff-gate reviewer agent
+    ├── agents/                   # 9 role-specialized agent files
+    │   └── architect|backend|critic|devops|docs|frontend|judge|pm|qa.agent.md
     ├── prompts/
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
     │   └── repo-onboarding.md    # Comprehensive repo onboarding prompt
+    ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
-        ├── auto-resolve-on-merge.yml  # Auto-resolve PR comments on merge
-        ├── ci-tests.yml               # CI pipeline template (customize)
-        ├── keep-warm.yml              # Ping backend to prevent suspension
-        └── validate-connections.yml   # Daily connectivity checks
+        ├── auto-resolve-on-merge.yml
+        ├── ci-tests.yml
+        ├── keep-warm.yml
+        ├── lint-and-format.yml
+        ├── validate-connections.yml
+        └── agent-heartbeat.yml.template
 ```
 
 ## Key Files by Purpose
@@ -120,7 +136,10 @@ bash install.sh
 | File | Purpose |
 |------|---------|
 | `install.sh` | Runs on Codespace start; installs extensions, copies prompts |
-| `test.sh` | Verifies template integrity (58 checks) |
+| `test.sh` | Verifies template integrity (see Verification Commands below for live check count) |
+| `scripts/setup.sh` | First-run project customization helper |
+| `scripts/verify-env.sh` | Environment & placeholder sanity check |
+| `scripts/db-reset.sh` | Optional database reset stub |
 
 ### Issue Templates
 | File | Purpose |
@@ -128,6 +147,7 @@ bash install.sh
 | `.github/ISSUE_TEMPLATE/bug_report.md` | Structured bug reports |
 | `.github/ISSUE_TEMPLATE/feature_request.md` | Feature requests with acceptance criteria |
 | `.github/ISSUE_TEMPLATE/agent_init.md` | Initialize repo from template |
+| `.github/ISSUE_TEMPLATE/config.yml` | Chooser config (rewritten by `scripts/setup.sh`) |
 
 ### Deployment Configs
 | File | Platform | Purpose |
@@ -135,6 +155,7 @@ bash install.sh
 | `config/vercel.json.template` | Vercel | Frontend, serverless |
 | `config/railway.toml.template` | Railway | Backend services |
 | `config/render.yaml.template` | Render | Full-stack blueprint |
+| `config/docker-compose.yml.template` | Docker Compose | Local dev stack |
 
 ### Development Tools
 | File | Purpose |
@@ -150,16 +171,16 @@ bash install.sh
 | File | Purpose |
 |------|---------|
 | `ci-tests.yml` | Build, lint, test pipeline (customize for project) |
+| `lint-and-format.yml` | Markdown + script lint/format pass |
 | `keep-warm.yml` | Prevents free-tier backend suspension |
 | `validate-connections.yml` | Daily backend/DB connectivity check |
 | `auto-resolve-on-merge.yml` | Resolves PR threads on merge |
+| `agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks |
 
 ## Truth Hierarchy
 
-When information conflicts, use this priority:
-1. **`.context/**`** — canonical project direction and constraints
-2. **`docs/**`** — supporting reference material
-3. **Codebase** — current implementation reality
+See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
+`.context/**` > `docs/**` > codebase.
 
 ## Conventions
 

@@ -9,6 +9,10 @@
   - If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
     replace it with the actual repository path (e.g., `owner/repo`) detected from `git remote -v`.
 
+## Truth hierarchy
+- When sources conflict, prioritize `.context/**` > `docs/**` > codebase.
+  See `AGENTS.md` §"Truth hierarchy" for rationale and the full onboarding procedure.
+
 ## Required context
 - Always read `/AI_REPO_GUIDE.md` first.
 - If AI_REPO_GUIDE.md is missing/stale: follow `.github/prompts/repo-onboarding.md` and update AI_REPO_GUIDE.md in the same PR.

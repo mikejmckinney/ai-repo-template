@@ -6,12 +6,12 @@
 
 ## How to Use This Directory
 
-The `.context/` directory contains **canonical project truth**. 
+The `.context/` directory contains **canonical project truth**.
 
 ### Priority Order (when conflicts arise)
-1. `.context/**` takes precedence over `/docs/**` (highest priority)
-2. `/docs/**` takes precedence over code comments
-3. Code comments take precedence over inferred behavior
+
+See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
+`.context/**` > `docs/**` > codebase.
 
 ## Directory Structure
 
