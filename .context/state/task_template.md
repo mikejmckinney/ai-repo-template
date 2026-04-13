@@ -15,6 +15,17 @@
 **Status**: [ ] Not Started / [ ] In Progress / [ ] Blocked / [ ] Complete  
 **Assigned**: [Agent/Developer, optional]
 
+## Multi-Agent Coordination
+
+<!-- Remove this section if working solo. Required when multiple agents work in parallel. -->
+<!-- See .context/vision/architecture/agent-roles.md for role definitions. -->
+
+**Agent Role**: [architect | frontend | backend | testing | devops | reviewer | adversary | PM | solo]  
+**Owned Files/Dirs**: [List of files/directories this agent may modify]  
+**Shared Interfaces**: [Files/APIs multiple agents depend on — read-only unless coordinated]  
+**Dependencies**: [Other task IDs that must complete before this task can start]  
+**Coordination Notes**: [How to communicate blockers — PR comments, state file updates, etc.]
+
 ## Objective
 
 <!-- One sentence: what are we trying to accomplish? -->
@@ -32,6 +43,16 @@
 ### Remaining
 - [ ] Define the task objective
 - [ ] Break down into steps
+
+## Checkpoint Verification
+
+<!-- Verify after each subtask, not just at the end -->
+
+| Checkpoint | Verification Command | Status |
+|-----------|---------------------|--------|
+| After setup | `./test.sh` | [ ] |
+| After implementation | `npm test` (or equivalent) | [ ] |
+| After cleanup | `npm run lint` (or equivalent) | [ ] |
 
 ## Files Being Modified
 
@@ -59,7 +80,10 @@ When this task is complete, verify by:
 <!-- Point to relevant context files for this task -->
 
 - Rules: `.context/rules/` (if modifying constrained areas)
+- Multi-agent rules: `.context/rules/domain_multi_agent.md` (if working in parallel)
+- Orchestration rules: `.context/rules/domain_orchestration.md` (if coordinated work)
 - Design: `.context/vision/` (if implementing UI/architecture)
+- Agent roles: `.context/vision/architecture/agent-roles.md`
 - Last session: `.context/sessions/latest_summary.md`
 
 ---
