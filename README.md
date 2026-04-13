@@ -1,4 +1,4 @@
-<!-- TEMPLATE_PLACEHOLDER: GENERATED FROM mikejmckinney/dotfiles. -->
+<!-- TEMPLATE_PLACEHOLDER: GENERATED FROM mikejmckinney/ai-repo-template. -->
 <!-- THIS REPO IS NOT THE TEMPLATE ITSELF. Replace this README for the actual project. -->
 
 # AI-Ready Repository Template
@@ -176,7 +176,13 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 
 ## Setup
 
-### Option 1: Use as Codespaces Dotfiles
+### Option 1: Link as your Codespaces "Dotfiles" repo
+
+> Note: GitHub Codespaces has a feature literally named **Dotfiles** that runs
+> an install script at Codespace startup. This template is not a Unix dotfiles
+> repo (no `~/.bashrc` etc.) — it just uses that Codespaces hook to bootstrap
+> the multi-agent kit. The quoted strings below are the exact labels in the
+> GitHub Codespaces settings UI.
 
 1. Go to [GitHub Codespaces settings](https://github.com/settings/codespaces)
 2. Under "Dotfiles", select this repository
@@ -285,7 +291,7 @@ bash install.sh
 
 ### In a Codespace
 
-1. Create a new Codespace with this as your dotfiles repo
+1. Create a new Codespace with this repo linked as your Codespaces "Dotfiles" repo
 2. Check that extensions are installed: `code --list-extensions`
 3. Verify prompts are copied to workspace
 

@@ -8,7 +8,7 @@ assignees: ''
 
 ## Repository Initialization Task
 
-This repository was created from the dotfiles template. Please initialize it for the actual project.
+This repository was created from the `ai-repo-template`. Please initialize it for the actual project.
 
 ## Truth Hierarchy
 

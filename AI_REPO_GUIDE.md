@@ -10,7 +10,11 @@
 
 ## Overview
 
-This is a **dotfiles template repository** for GitHub Codespaces and AI-assisted development. It provides:
+This is the **AI repo template** (`mikejmckinney/ai-repo-template`) for GitHub
+Codespaces and AI-assisted development. It plugs into the GitHub Codespaces
+"Dotfiles" feature (which runs an install script at Codespace startup) to
+bootstrap a multi-agent development kit. It is not a Unix dotfiles repo. It
+provides:
 - Pre-configured AI agent prompts for onboarding and code review
 - Context management structure for LLM memory across sessions
 - Automatic VS Code extension installation on Codespace startup
@@ -215,7 +219,11 @@ See the "Easiest way to initialize new repo" prompt in the main README or create
 
 ## Gotchas / Known Issues
 
-- `install.sh` requires the `$DOTFILES` environment variable (set automatically by GitHub Codespaces)
+- `install.sh` reads the `$DOTFILES` environment variable (set automatically by
+  the GitHub Codespaces "Dotfiles" feature when this repo is linked as the
+  user's dotfiles repo). The variable name is a Codespaces convention — it
+  points at this template, not at Unix dotfiles. If `$DOTFILES` is not set,
+  `install.sh` falls back to the script's own directory.
 - The `code` command may not be available outside of VS Code/Codespaces environments
 - Some AI tools only read files from specific paths (see tool documentation)
 - Workflow files (`.github/workflows/`) contain `TEMPLATE_PLACEHOLDER` and must be customized

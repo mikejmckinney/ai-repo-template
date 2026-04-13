@@ -1,17 +1,27 @@
 #!/bin/bash
 # =============================================================================
-# Codespace Dotfiles Install Script
+# AI Repo Template — Codespace Install Script
 # =============================================================================
-# This script runs automatically when a GitHub Codespace starts.
-# It installs VS Code extensions and copies AI prompts to the workspace.
+# This script runs automatically when a GitHub Codespace starts (via the
+# Codespaces "Dotfiles" feature). It installs VS Code extensions and copies
+# the multi-agent kit into the workspace.
+#
+# About the $DOTFILES variable (legacy naming, intentional):
+#   The GitHub Codespaces "Dotfiles" feature sets $DOTFILES to the path of the
+#   repository the user linked as their Codespaces dotfiles repo. The name is
+#   a Codespaces convention and has nothing to do with Unix dotfiles
+#   (~/.bashrc, ~/.vimrc, etc.). This template uses that hook purely as a
+#   bootstrap mechanism; we keep the variable name as-is so the script still
+#   works with Codespaces unmodified.
 #
 # Environment:
-#   $DOTFILES - Path to dotfiles repo (set automatically by GitHub Codespaces)
-#   $HOME     - User home directory
+#   $DOTFILES - Path to the template repo (set by GitHub Codespaces; falls
+#               back to the script's own directory if unset).
+#   $HOME     - User home directory.
 #
 # Usage:
-#   Automatic: Linked via GitHub Codespaces settings
-#   Manual:    DOTFILES=/path/to/dotfiles bash install.sh
+#   Automatic: Linked via GitHub Codespaces "Dotfiles" setting.
+#   Manual:    DOTFILES=/path/to/ai-repo-template bash install.sh
 # =============================================================================
 
 set -e  # Exit on error
@@ -47,9 +57,10 @@ else
     SKIP_EXTENSIONS=false
 fi
 
-# Determine dotfiles path
+# Determine template path. $DOTFILES is set by the Codespaces "Dotfiles"
+# feature (see header note); outside Codespaces we fall back to the script's
+# own directory so the script still works for local testing.
 if [[ -z "$DOTFILES" ]]; then
-    # Fallback: use script's directory
     DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     log_warn "DOTFILES not set. Using script directory: $DOTFILES"
 fi
@@ -72,7 +83,7 @@ if [[ -z "$WORKSPACE" ]]; then
     exit 1
 fi
 
-log_info "Dotfiles path: $DOTFILES"
+log_info "Template path: $DOTFILES"
 log_info "Workspace path: $WORKSPACE"
 
 # =============================================================================
@@ -271,7 +282,7 @@ echo ""
 echo "========================================"
 echo "Installation Complete"
 echo "========================================"
-echo "Dotfiles: $DOTFILES"
+echo "Template: $DOTFILES"
 echo "Workspace: $WORKSPACE"
 
 if [[ "$SKIP_EXTENSIONS" == "false" ]]; then
@@ -279,4 +290,4 @@ if [[ "$SKIP_EXTENSIONS" == "false" ]]; then
 fi
 
 echo ""
-log_info "✅ Dotfiles installation complete!"
+log_info "✅ Template installation complete!"
