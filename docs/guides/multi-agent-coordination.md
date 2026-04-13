@@ -176,6 +176,8 @@ For teams that want an autonomous daily check on stuck work, the template ships 
 
 Enable steps are in the template file header.
 
+**Need more than scheduled nudges?** For continuously-running autonomous agents (cron-driven, with a persistent task DB and webhook notifications), see the **OpenClaw** entry in `docs/guides/optional-skills.md`. It's an opt-in runtime, not vendored.
+
 ## See Also
 
 - `docs/guides/agent-best-practices.md` — token limits, session handoff, secrets.

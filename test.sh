@@ -44,6 +44,7 @@ REQUIRED_FILES=(
     "AI_REPO_GUIDE.md"
     "AGENTS.md"
     "AGENT.md"
+    "CLAUDE.md"
     "README.md"
     "install.sh"
     ".cursor/BUGBOT.md"

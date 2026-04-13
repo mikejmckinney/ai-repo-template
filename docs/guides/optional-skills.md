@@ -56,6 +56,19 @@ Only install an optional skill when:
   ./install.sh --profile full   # or a language-specific profile
   ```
 
+### OpenClaw (optional runtime framework)
+
+- **Repo**: https://github.com/ramziddin/openclaw
+- **What it is**: A Python-based agent runtime with a persistent task DB (PocketBase), cron-driven heartbeats, and webhook notifications (e.g. Telegram, Slack). Wraps Claude to run multi-agent teams autonomously between sessions.
+- **Fits**: You need **continuously-running autonomous agents** — e.g. a marketing-ops or research team that wakes itself up every N minutes without a human triggering it. You're comfortable running a Python + PocketBase service alongside your app.
+- **Skip if**: The opt-in `agent-heartbeat.yml.template` GitHub Action already covers your "nudge on stuck tasks" needs (it usually does); you want to keep the template language-agnostic and dependency-free; you don't want a message-bus dependency.
+- **Interaction with this template's roles**:
+  - OpenClaw's *coordinator / boss* maps to `pm.agent.md`. Pick one to own dispatch — don't run both.
+  - Its *review gates* map to `judge.agent.md` (procedural) and `critic.agent.md` (subjective). Reuse the existing role files inside OpenClaw rather than recreating them.
+  - Its task DB duplicates `.context/state/**`. Pick one as canonical — the markdown files are git-native and survive without the runtime; the DB is live but requires OpenClaw to read.
+- **Install**: Follow the OpenClaw repo's instructions. This template intentionally does not vendor the runtime — see "Why Not Vendor?" above.
+- **Record the decision**: If you adopt OpenClaw, add an ADR under `docs/decisions/` noting which system owns dispatch and state, to prevent future agents from drifting.
+
 ## Recommended Integration Pattern
 
 If you install one of these and it conflicts with a role agent in `.github/agents/**`:

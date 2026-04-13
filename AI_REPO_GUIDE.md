@@ -34,6 +34,7 @@ bash install.sh
 ├── AI_REPO_GUIDE.md          # This file - canonical AI reference
 ├── AGENTS.md                 # Root agent instructions (always read first)
 ├── AGENT.md                  # Deprecated redirect to AGENTS.md
+├── CLAUDE.md                 # Claude Code native memory pointer to AGENTS.md
 ├── README.md                 # User-facing documentation
 ├── install.sh                # Codespace bootstrap script
 ├── test.sh                   # Verification script
@@ -79,6 +80,7 @@ bash install.sh
 | File | Tool/Platform | Purpose |
 |------|--------------|---------|
 | `AGENTS.md` | Most AI tools | Root instructions, points to this file |
+| `CLAUDE.md` | Claude Code | Native memory-file pointer to AGENTS.md |
 | `.github/copilot-instructions.md` | GitHub Copilot | Copilot-specific instructions |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |

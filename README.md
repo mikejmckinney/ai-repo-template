@@ -33,6 +33,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 ├── AI_REPO_GUIDE.md              # Canonical AI reference (create in target repos)
 ├── AGENTS.md                     # Root agent instructions
 ├── AGENT.md                      # Deprecated redirect
+├── CLAUDE.md                     # Claude Code native memory pointer to AGENTS.md
 ├── README.md                     # This file
 ├── install.sh                    # Codespace bootstrap script
 ├── test.sh                       # Template verification script
@@ -94,6 +95,7 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 | File | Platform | Purpose |
 |------|----------|---------|
 | `AGENTS.md` | Most AI tools | Root instructions, references AI_REPO_GUIDE.md |
+| `CLAUDE.md` | Claude Code | Native memory-file pointer to AGENTS.md |
 | `.github/copilot-instructions.md` | GitHub Copilot | Copilot-specific instructions |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | Strict PR review rules with verification |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review with severity labels |
