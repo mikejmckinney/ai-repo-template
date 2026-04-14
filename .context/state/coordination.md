@@ -16,6 +16,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 | State                | Gate to advance                                       | Owner of transition |
 |----------------------|-------------------------------------------------------|---------------------|
+| `analyzing`          | Analysis complete + Analyst handoff to Architect/PM   | Analyst             |
 | `backlog`            | Architect plan exists + Judge plan-gate APPROVE       | PM                  |
 | `planned`            | Role assigned + task file created + lock claimed      | PM                  |
 | `assigned`           | Implementer starts work + sets `Status: in-progress`  | Implementer         |
@@ -31,7 +32,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - **No skipping**: a task in `in_progress` cannot jump to `judge_review` without passing through `peer_review`.
 - **Reversible**: any reviewer (QA, Critic, Judge) may kick a task back to `in_progress` with `REQUEST_CHANGES`. Record the reason in the task file before the kickback.
 - **Stakeholder review is optional**: after `merged`, PM decides whether to enter `stakeholder_review` or move the task directly to done (Recent History). Small fixes, dependency bumps, and maintenance tasks typically skip this state.
-- **Stakeholder review is terminal**: `stakeholder_review` closes out the original task — once feedback is captured, the task file moves to Recent History. Any follow-up work becomes *new* `task_*.md` entries in `backlog`, created using `.context/state/feedback_template.md` and routed to Analyst (if assumptions changed) or Architect (if design feedback only).
+- **Stakeholder review is terminal**: `stakeholder_review` closes out the original task — once feedback is captured, the task file moves to Recent History. Any follow-up work becomes *new* `task_*.md` entries: routed to Analyst (entering `analyzing`) if assumptions need re-validation, or placed directly into `backlog` if the feedback is design-only and goes straight to Architect. New entries are created using `.context/state/feedback_template.md`.
 - **Stuck detection**: any state other than `merged` or `stakeholder_review` held for > 24 hours is a "stuck" signal. PM should investigate on the next session or via the optional heartbeat workflow (`.github/workflows/agent-heartbeat.yml.template`).
 
 ## Lock Template
@@ -46,7 +47,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - <glob or file>
 **Depends On**: <task-id or 'none'>
 **Blocks**: <task-id or 'none'>
-**State**: backlog | planned | assigned | in_progress | peer_review | judge_review | approved | merged | stakeholder_review
+**State**: analyzing | backlog | planned | assigned | in_progress | peer_review | judge_review | approved | merged | stakeholder_review
 ```
 
 ## Active Locks
