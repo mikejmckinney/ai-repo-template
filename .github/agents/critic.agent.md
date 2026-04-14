@@ -1,6 +1,6 @@
 ---
 name: Critic
-description: Devil's Advocate reviewer. Catches subjective-quality issues that a procedural gatekeeper misses. Review-only (no implementation).
+description: Use as a devil's-advocate reviewer alongside judge. Catches subjective-quality issues, hidden assumptions, and AI clichés.
 tools: ['read', 'search', 'fetch', 'githubRepo', 'usages']
 handoff_targets:
   - judge           # Critic's notes feed into Judge's final decision

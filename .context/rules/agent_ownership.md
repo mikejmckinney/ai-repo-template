@@ -42,6 +42,7 @@ These files require **PM coordination** regardless of role, because any role may
 | .context/rules/** (except agent_ownership.md) | Architect  | Architect owns domain rules; PM records claims in coordination.md before edits |
 | `.context/state/coordination.md`  | PM (writes), all (read-then-self-claim) | See lock protocol below |
 | `test.sh`                         | DevOps         | Must be updated in lockstep with template structure changes |
+| `.github/agents/**` / `.claude/agents/**` | Architect | Role definitions; changes require an ADR, must update both mirrors in lockstep, and `test.sh` enforces `description:` parity between them. See `docs/decisions/adr-003-claude-code-subagent-registration.md`. |
 
 ## Lock Protocol (for `coordination.md`)
 

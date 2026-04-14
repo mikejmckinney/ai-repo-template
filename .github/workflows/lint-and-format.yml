@@ -8,6 +8,20 @@
 # Options:
 # 1. Auto-fix and commit (default) - Fixes issues and commits changes
 # 2. Check only - Fails if issues exist (for stricter workflows)
+#
+# Design notes
+# ------------
+# * Markdownlint runs with `continue-on-error: true`. This is INTENTIONAL for
+#   template use: downstream projects created from this template often have
+#   many markdown issues during initial setup, and we don't want the first CI
+#   run to fail on cosmetic linting. Flip to `continue-on-error: false` once
+#   the project has reached a stable state.
+# * The `[skip lint]` check below uses
+#     !contains(github.event.head_commit.message, '[skip lint]')
+#   which is safe on both push and pull_request triggers: on PR events
+#   `github.event.head_commit` is null, and GitHub Actions' `contains(null, ...)`
+#   returns false, so the overall condition evaluates to true (= run the job).
+#   Do NOT wrap with `message != null && ...` — that inverts PR behavior.
 
 name: Lint and Format
 

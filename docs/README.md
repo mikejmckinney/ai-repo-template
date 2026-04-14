@@ -6,15 +6,9 @@
 
 ## Priority Note for AI Agents
 
-This directory contains **supporting documentation**. When conflicts arise:
-
-| Priority | Source | Purpose |
-|----------|--------|---------|
-| 1 (highest) | `.context/**` | Canonical project direction, constraints, current state |
-| 2 | `docs/**` | Reference material, specifications, research |
-| 3 (lowest) | Codebase | Current implementation reality |
-
-**If `.context/` and `docs/` conflict, prefer `.context/`.**
+This directory contains **supporting documentation**. When sources conflict,
+see `AGENTS.md` §"Truth hierarchy" for the canonical order (summary:
+`.context/**` > `docs/**` > codebase).
 
 ## Directory Structure
 

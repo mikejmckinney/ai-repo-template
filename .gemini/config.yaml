@@ -1,0 +1,64 @@
+# Gemini Code Assist — GitHub App configuration
+#
+# This file is read by the `gemini-code-assist[bot]` GitHub App when it reviews
+# pull requests on this repo. It tunes the reviewer's verbosity and scope so
+# a single pass surfaces a comprehensive list of issues instead of trickling
+# them across multiple review invocations.
+#
+# Schema reference:
+#   developers.google.com/gemini-code-assist/docs/customize-gemini-behavior-github
+#
+# Style guide: `.gemini/styleguide.md` (review format, severity labels, output
+# structure). This config file controls WHEN Gemini reviews and HOW MUCH it
+# surfaces; the style guide controls HOW it writes the review.
+
+have_fun: false
+
+code_review:
+  # Master switch. Leave false so /gemini review and auto-review on PR open
+  # both work.
+  disable: false
+
+  # Severity floor for surfaced comments. MEDIUM keeps the review focused on
+  # real bugs, regressions, and security issues without burying the signal
+  # under style nits. Bump to LOW if you want an exhaustive polish pass.
+  # Valid values: LOW | MEDIUM | HIGH | CRITICAL.
+  comment_severity_threshold: MEDIUM
+
+  # Soft cap on comments per review. -1 = unlimited, so Gemini surfaces every
+  # issue it finds in a single pass instead of batching across repeated
+  # /gemini review invocations.
+  max_review_comments: -1
+
+  pull_request_opened:
+    # Don't post the "How to use Gemini" help text on every new PR.
+    help: false
+    # Post a one-paragraph summary on PR open (separate from the review).
+    summary: true
+    # Auto-run a full review on PR open. This is the behavior that saves you
+    # from manually typing /gemini review on every PR.
+    code_review: true
+    # Skip draft PRs — review them on /gemini review or when marked ready.
+    include_drafts: false
+
+# Glob patterns Gemini will not review. Generated/vendored files waste review
+# budget and clutter the "Remaining Issues" table. Add project-specific
+# patterns here as the template evolves.
+ignore_patterns:
+  - "**/*.lock"
+  - "**/*.lockb"
+  - "package-lock.json"
+  - "yarn.lock"
+  - "pnpm-lock.yaml"
+  - "bun.lockb"
+  - "Pipfile.lock"
+  - "poetry.lock"
+  - "Cargo.lock"
+  - "go.sum"
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/.next/**"
+  - "**/coverage/**"
+  - "**/*.min.js"
+  - "**/*.min.css"

@@ -10,13 +10,32 @@
 
 ## Role selection
 
-Before editing any file, identify your role (Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs) and consult:
+Before editing any file, identify your role (architect, judge, critic, pm, frontend, backend, qa, devops, docs) and consult:
 
-- `.github/agents/<your-role>.agent.md` — your responsibilities and Do / Don't list.
+- `.github/agents/<your-role>.agent.md` — your responsibilities and Do / Don't list (canonical).
+- `.claude/agents/<your-role>.md` — the Claude Code subagent registration mirror (points back to the canonical file).
 - `.context/rules/agent_ownership.md` — the canonical path-ownership map.
 - `.context/state/coordination.md` — live claim board and task state machine.
 
 Full multi-agent workflow: `docs/guides/multi-agent-coordination.md`.
+
+## Native subagents
+
+The 9 roles above are registered as native Claude Code subagents in `.claude/agents/**`. You can dispatch each via the `Task` tool:
+
+```
+Task(subagent_type: 'architect', ...)
+Task(subagent_type: 'judge', ...)
+Task(subagent_type: 'critic', ...)
+Task(subagent_type: 'pm', ...)
+Task(subagent_type: 'frontend', ...)
+Task(subagent_type: 'backend', ...)
+Task(subagent_type: 'qa', ...)
+Task(subagent_type: 'devops', ...)
+Task(subagent_type: 'docs', ...)
+```
+
+Claude Code will also auto-invoke the right role when a user request matches a subagent's `description:` frontmatter. The same `description:` string is used by GitHub Copilot's SDK custom-agent runtime when it reads `.github/agents/*.agent.md` — `test.sh` enforces that both copies stay byte-identical so the two loaders dispatch on the same text. See `docs/decisions/adr-003-claude-code-subagent-registration.md`.
 
 ## Why a pointer and not a full copy
 

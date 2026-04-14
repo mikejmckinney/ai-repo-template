@@ -1,6 +1,6 @@
 ---
 name: Judge
-description: Plan-gate + diff-gate reviewer. Outputs APPROVE / REQUEST_CHANGES / BLOCK. Review-only (no implementation).
+description: Use to gate a plan (before code) or review a diff/PR (after code). Outputs APPROVE / REQUEST_CHANGES / BLOCK.
 tools: ['read', 'search', 'fetch', 'githubRepo', 'usages']
 handoff_targets:
   - pm              # approved plans go to PM for dispatch to implementers

@@ -35,9 +35,14 @@ if command -v git &> /dev/null && git rev-parse --is-inside-work-tree &> /dev/nu
     REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
     
     if [[ -n "$REMOTE_URL" ]]; then
-        # Extract owner/repo from various URL formats
-        # SSH: git@github.com:owner/repo.git
-        # HTTPS: https://github.com/owner/repo.git
+        # Extract owner/repo from various URL formats. Supported examples:
+        #   SSH:            git@github.com:owner/repo.git         -> owner/repo
+        #   HTTPS:          https://github.com/owner/repo.git     -> owner/repo
+        #   HTTPS no .git:  https://github.com/owner/repo         -> owner/repo
+        #   Repo with dot:  git@github.com:owner/my.repo.name.git -> owner/my.repo.name
+        # Not supported (intentional): GitHub Enterprise Server on custom
+        # domains (e.g., github.mycorp.com) — the regex requires the literal
+        # "github.com" host. Set FULL_REPO manually if you need Enterprise.
         # Match repo names with dots (e.g., my.repo.name) - strip .git suffix separately
         if [[ "$REMOTE_URL" =~ github\.com[:/]([^/]+)/(.+)$ ]]; then
             REPO_OWNER="${BASH_REMATCH[1]}"

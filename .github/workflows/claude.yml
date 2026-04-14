@@ -1,0 +1,110 @@
+# Claude Code — automated PR review + @claude mention handler
+#
+# Two jobs:
+#   1. claude-auto-review — runs on PR open / reopen / ready_for_review.
+#      Invokes the judge subagent (`.claude/agents/judge.md`) to post a
+#      single comprehensive review comment. Mirrors Gemini Code Assist's
+#      auto-review-on-PR-open behavior.
+#   2. claude-mention — runs when someone writes `@claude <instruction>` in
+#      a PR comment, review comment, or review body. Lets you ask follow-up
+#      questions ("@claude re-check the auth logic after my last commit")
+#      or request scoped reviews without opening a new PR.
+#
+# One-time setup required before this workflow does anything:
+#   1. Install the Claude GitHub App on this repo:
+#        https://github.com/apps/claude
+#   2. Add a repo secret named ANTHROPIC_API_KEY (Settings → Secrets and
+#      variables → Actions → New repository secret). The value is an
+#      Anthropic API key with enough quota to cover PR reviews.
+#
+# Cost note: claude-auto-review runs on every non-draft, non-bot PR open.
+# For a high-traffic repo, narrow the `if:` conditions further (e.g. require
+# a label, restrict to specific authors, or skip paths-only changes).
+
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+# Prevent concurrent reviews from racing on the same PR.
+concurrency:
+  group: claude-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  # ----------------------------------------------------------------------
+  # Auto-review on PR open / reopen / ready_for_review.
+  # ----------------------------------------------------------------------
+  claude-auto-review:
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude diff-gate review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are performing an automated diff-gate review on this pull request.
+
+            1. Read `.claude/agents/judge.md` and follow its DIFF-GATE procedure.
+            2. Also consult `.claude/agents/critic.md` for subjective-quality
+               concerns (hand-wavy reasoning, hidden assumptions, AI clichés).
+            3. Format the review using the structure in `.gemini/styleguide.md`
+               (Overall Assessment → severity-bucketed Findings → Remaining
+               Issues table → Verification Checklist → Testing Recommendations).
+            4. End with one of: APPROVE / REQUEST_CHANGES / BLOCK, matching
+               judge.md's decision format.
+            5. Post the entire review as a single PR review comment. Do not
+               push commits, do not edit files, do not open sub-issues.
+
+  # ----------------------------------------------------------------------
+  # @claude mention handler — lets reviewers request follow-ups interactively.
+  # ----------------------------------------------------------------------
+  claude-mention:
+    if: >
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request != null &&
+       contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' &&
+       contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' &&
+       contains(github.event.review.body, '@claude'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude mention handler
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # No `prompt:` here — the action extracts instructions from the
+          # @claude mention body and dispatches accordingly. Claude will
+          # auto-select the appropriate subagent from .claude/agents/
+          # based on the mention's intent (e.g. "@claude re-review" uses
+          # judge, "@claude fix this" uses an implementer role).

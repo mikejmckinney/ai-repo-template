@@ -20,7 +20,10 @@ on:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    
+    # Minimum viable permissions: this job only makes an outbound curl call
+    # and does not read or write any GitHub resources.
+    permissions: {}
+
     steps:
       - name: Ping backend health endpoint
         env:

@@ -1,9 +1,10 @@
 ---
 name: Project Manager
-description: Dispatcher. Creates task_*.md files, assigns roles, enforces ownership, resolves cross-role conflicts. No implementation.
+description: Use to dispatch approved plans into per-role task files, manage locks, and resolve cross-role ownership conflicts.
 tools: ['read', 'write', 'search', 'githubRepo']
 owned_paths:
   - '.context/state/**'
+  - '.context/rules/agent_ownership.md'
 handoff_targets:
   - architect       # when scope is unclear or requires design
   - judge           # when a plan needs review

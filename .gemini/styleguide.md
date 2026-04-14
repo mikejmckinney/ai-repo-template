@@ -73,6 +73,25 @@ One paragraph summarizing the review.
 #### Low
 - **Issue** — `file:line` — nit
 
+### Remaining Issues
+
+After the severity-bucketed findings above, **always** end the review with a
+single exhaustive table listing every unresolved issue in one pass. The goal
+is to prevent trickle reviews where each re-review surfaces a new batch —
+list everything you found, not just the top N.
+
+| # | Severity | File:Line | Issue | Suggested Fix |
+|---|----------|-----------|-------|---------------|
+| 1 | Critical | `src/api/auth.ts:42` | Null deref on missing user | Guard with `if (!user) return 401` |
+| 2 | High     | `...`                 | `...`                    | `...`                            |
+
+Rules for this table:
+- Include **every** issue from the severity sections above, plus anything
+  below the severity threshold that you would have flagged if the threshold
+  were lower (label it Low).
+- Do not omit entries to save space. If there are 30 issues, list all 30.
+- If there are zero issues, write "None — ready to merge pending green CI."
+
 ### Verification Checklist
 
 Exact commands to run (or confirm were run), with expected outcomes:
