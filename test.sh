@@ -60,6 +60,7 @@ REQUIRED_FILES=(
     ".github/agents/qa.agent.md"
     ".github/agents/devops.agent.md"
     ".github/agents/docs.agent.md"
+    ".github/agents/analyst.agent.md"
     ".claude/agents/architect.md"
     ".claude/agents/judge.md"
     ".claude/agents/critic.md"
@@ -69,6 +70,7 @@ REQUIRED_FILES=(
     ".claude/agents/qa.md"
     ".claude/agents/devops.md"
     ".claude/agents/docs.md"
+    ".claude/agents/analyst.md"
     ".github/prompts/copilot-onboarding.md"
     ".github/prompts/repo-onboarding.md"
 )

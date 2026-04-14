@@ -17,6 +17,8 @@ docs/
 ├── README.md           # This file
 ├── reference/          # Historical specs, research, external references
 │   └── *.md            # Specification documents
+├── research/           # Analyst output (analysis artifacts)
+│   └── *.md            # Needs analysis, competitive landscape, impact scores
 ├── guides/             # How-to guides for developers
 │   └── *.md            # Setup, deployment, contribution guides
 └── decisions/          # Architecture Decision Records (ADRs)
@@ -31,6 +33,12 @@ docs/
 - External API documentation
 - Competitor analysis
 - Historical context
+
+### `research/`
+- Analyst output (needs analysis, competitive landscape, impact scores)
+- Problem validation artifacts
+- Stakeholder feedback summaries
+- Market research findings
 
 ### `guides/`
 - Development setup instructions
@@ -78,6 +86,7 @@ What are the positive and negative consequences?
 
 ### Decisions (ADRs)
 - [ADR-001: Context Pack Structure](decisions/adr-001-context-pack-structure.md) - Why we use `.context/` for LLM memory
+- [ADR-004: Analyst Role and Feedback Loop](decisions/adr-004-analyst-role-and-feedback-loop.md) - Adding pre-Architect validation and iterative feedback
 - [ADR Template](decisions/adr-template.md) - Template for new architecture decisions
 
 ### Reference

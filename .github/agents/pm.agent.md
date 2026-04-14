@@ -6,6 +6,7 @@ owned_paths:
   - '.context/state/**'
   - '.context/rules/agent_ownership.md'
 handoff_targets:
+  - analyst          # when feedback requires re-validation of assumptions
   - architect       # when scope is unclear or requires design
   - judge           # when a plan needs review
   - frontend

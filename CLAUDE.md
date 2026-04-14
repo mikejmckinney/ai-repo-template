@@ -10,7 +10,7 @@
 
 ## Role selection
 
-Before editing any file, identify your role (architect, judge, critic, pm, frontend, backend, qa, devops, docs) and consult:
+Before editing any file, identify your role (analyst, architect, judge, critic, pm, frontend, backend, qa, devops, docs) and consult:
 
 - `.github/agents/<your-role>.agent.md` — your responsibilities and Do / Don't list (canonical).
 - `.claude/agents/<your-role>.md` — the Claude Code subagent registration mirror (points back to the canonical file).
@@ -21,9 +21,10 @@ Full multi-agent workflow: `docs/guides/multi-agent-coordination.md`.
 
 ## Native subagents
 
-The 9 roles above are registered as native Claude Code subagents in `.claude/agents/**`. You can dispatch each via the `Task` tool:
+The 10 roles above are registered as native Claude Code subagents in `.claude/agents/**`. You can dispatch each via the `Task` tool:
 
 ```
+Task(subagent_type: 'analyst', ...)
 Task(subagent_type: 'architect', ...)
 Task(subagent_type: 'judge', ...)
 Task(subagent_type: 'critic', ...)

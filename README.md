@@ -35,7 +35,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 ## Features
 
 - **AI Agent Prompts** - Pre-configured prompts for onboarding AI assistants to any codebase
-- **Multi-Agent Roles** - Role-specialized agent files (Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge) with an ownership map so multiple agents can work in parallel without code conflicts
+- **Multi-Agent Roles** - Role-specialized agent files (Analyst, Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge, Critic) with an ownership map so multiple agents can work in parallel without code conflicts
 - **Context Pack** - Structured directory (`.context/`) for project memory across LLM sessions
 - **Automatic Extension Installation** - Essential VS Code extensions installed on Codespace start
 - **Multi-Platform Support** - Works with Cursor, GitHub Copilot, Gemini Code Assist, and more
@@ -69,6 +69,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 │   ├── state/                    # Mutable progress tracking
 │   │   ├── _active.md            # Points to current priority task
 │   │   ├── coordination.md       # Live claim board for parallel agents
+│   │   ├── feedback_template.md  # Stakeholder feedback template
 │   │   ├── task_template.md      # Template for new tasks
 │   │   └── task_*.md             # Individual task files
 │   └── vision/                   # Design artifacts
@@ -78,6 +79,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 ├── docs/                         # Human reference documentation
 │   ├── README.md                 # Documentation guide
 │   ├── reference/                # Specs, research
+│   ├── research/                 # Analyst output (analysis artifacts)
 │   ├── guides/                   # How-to guides
 │   └── decisions/                # Architecture Decision Records (adr-*.md)
 │
@@ -104,10 +106,11 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 │
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
-    ├── agents/                   # Role-specialized agent files (9 files)
-    │   ├── architect.agent.md, critic.agent.md, judge.agent.md,
-    │   ├── pm.agent.md, frontend.agent.md, backend.agent.md,
-    │   └── qa.agent.md, devops.agent.md, docs.agent.md
+    ├── agents/                   # Role-specialized agent files (10 files)
+    │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
+    │   ├── judge.agent.md, pm.agent.md, frontend.agent.md,
+    │   ├── backend.agent.md, qa.agent.md, devops.agent.md,
+    │   └── docs.agent.md
     ├── prompts/
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
     │   └── repo-onboarding.md    # Repo onboarding workflow prompt
@@ -139,6 +142,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `.github/agents/judge.agent.md` | Multi-tool | Procedural plan-gate + diff-gate reviewer |
 | `.github/agents/critic.agent.md` | Multi-tool | Devil's Advocate — subjective quality review |
 | `.github/agents/architect.agent.md` | Multi-tool | Plan + ADR author (no code) |
+| `.github/agents/analyst.agent.md` | Multi-tool | Needs analysis, market research, problem validation (no code) |
 | `.github/agents/pm.agent.md` | Multi-tool | Task dispatcher + ownership enforcer (no code) |
 | `.github/agents/frontend.agent.md` | Multi-tool | UI layer implementer |
 | `.github/agents/backend.agent.md` | Multi-tool | Server layer implementer |
@@ -156,6 +160,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
+| `.context/state/feedback_template.md` | Stakeholder feedback capture template |
 | `.context/state/task_*.md` | Current task(s) for cognitive handoff |
 | `.context/sessions/` | Session history to prevent repeating mistakes |
 | `.context/vision/` | Mockups and architecture diagrams |
@@ -193,6 +198,8 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `docs/decisions/adr-template.md` | Template for Architecture Decision Records |
 | `docs/decisions/adr-001-context-pack-structure.md` | Rationale for the `.context/` layout |
 | `docs/decisions/adr-002-agents-md-ownership.md` | AGENTS.md ownership assignment |
+| `docs/decisions/adr-003-claude-code-subagent-registration.md` | Claude Code subagent registration rationale |
+| `docs/decisions/adr-004-analyst-role-and-feedback-loop.md` | Analyst role and agile feedback loop |
 | `docs/guides/multi-agent-coordination.md` | How role-based agents work in parallel without conflicts |
 | `docs/guides/agent-best-practices.md` | Token limits, handoff, secrets |
 | `docs/guides/context-files-explained.md` | What every file in the context pack is for |

@@ -15,6 +15,7 @@
 
 | Role       | Owned path globs                                                     | May also edit (with PM claim) |
 |------------|----------------------------------------------------------------------|-------------------------------|
+| Analyst    | `docs/research/**`                                                   | nothing (research-only)       |
 | Architect  | `AGENTS.md`, `docs/decisions/**`, `.context/roadmap.md`, `.context/vision/architecture/**`, `.context/rules/**` (except `agent_ownership.md`) | nothing (plan-only) |
 | Frontend   | `src/frontend/**`, `src/components/**`, `src/pages/**`, `src/styles/**`, `public/**`, colocated `*.test.*` / `*.spec.*` under those paths | UI-adjacent tests in `tests/ui/**` |
 | Backend    | `src/backend/**`, `src/api/**`, `src/server/**`, `src/models/**`, `migrations/**`, `db/**`, colocated `*.test.*` / `*.spec.*` under those paths | API-adjacent tests in `tests/api/**` |

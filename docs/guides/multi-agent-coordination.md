@@ -6,6 +6,7 @@
 
 | Role       | File                                     | Writes code? |
 |------------|------------------------------------------|--------------|
+| Analyst    | `.github/agents/analyst.agent.md`        | No — research + analysis only |
 | Architect  | `.github/agents/architect.agent.md`      | No — plans + ADRs only |
 | Judge      | `.github/agents/judge.agent.md`          | No — procedural plan-gate + diff-gate |
 | Critic     | `.github/agents/critic.agent.md`         | No — subjective-quality devil's advocate |
@@ -17,6 +18,8 @@
 | Docs       | `.github/agents/docs.agent.md`           | Yes — docs + READMEs |
 
 **Judge vs Critic**: Judge is procedural (criteria met? tests present? ownership respected?). Critic is subjective (is this actually good? hand-wavy reasoning? hidden assumptions? AI clichés?). Both run during plan-gate and diff-gate; Judge integrates Critic's notes into the final `DECISION`.
+
+**Analyst vs Architect**: Analyst validates the "what" and "why" (problem definition, competitive landscape, impact scoring). Architect designs the "how" (solution plan, ADRs, file touch list). Analyst runs first; its output feeds Architect.
 
 ## The Three Coordination Files
 
@@ -33,7 +36,7 @@ Both GitHub Copilot and Claude Code auto-delegate to a role when a user's reques
 | Copilot SDK custom-agent runtime | `.github/agents/<role>.agent.md` | Copilot schema (`read`, `write`, `search`, `fetch`, `githubRepo`, `usages`; `name`, `description`, `tools`, optional `target`/`user-invocable`/`disable-model-invocation`). Auto-dispatch matches the user's intent against each agent's `description:`. |
 | Claude Code native subagents     | `.claude/agents/<role>.md`       | Claude Code schema (`Read`, `Write`, `Edit`, `Grep`, `Glob`, `Bash`, `Task`, `WebFetch`; kebab-case `name`, `description`, `tools`, optional `model`). Auto-dispatch matches on `description:`; explicit dispatch via `Task(subagent_type: '<role>', ...)`. |
 
-Both registries describe the **same 9 roles**. The `.claude/` files are short pointers that delegate to the canonical `.github/agents/<role>.agent.md` for responsibilities, Do/Don't lists, and output formats — so the detailed role definition lives in **one** place.
+Both registries describe the **same 10 roles**. The `.claude/` files are short pointers that delegate to the canonical `.github/agents/<role>.agent.md` for responsibilities, Do/Don't lists, and output formats — so the detailed role definition lives in **one** place.
 
 `test.sh` enforces that the `description:` frontmatter line is byte-identical between the two copies. Any drift between the Copilot-facing and Claude-Code-facing description is a hard failure — see the "Agent Mirror Sanity Checks" section of `test.sh`.
 
@@ -49,48 +52,59 @@ See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the ration
   user request
        │
        ▼
-  ┌──────────┐   plan    ┌───────┐  notes  ┌──────────┐  approve  ┌────┐
-  │Architect │──────────▶│ Judge │◀────────│  Critic  │──────────▶│ PM │
-  └──────────┘           └───┬───┘         └──────────┘           └─┬──┘
-                             │                                      │ dispatch
-                             │ plan-gate                             ▼
-                             │                            ┌────────────────┐
-                             │                            │ Implementers   │
-                             │                            │ FE / BE / DO / │
-                             │                            │ Docs (parallel)│
-                             │                            └────────┬───────┘
-                             │                                     │
-                             │                                     ▼
-                             │                                  ┌────┐
-                             │                                  │ QA │  peer_review
-                             │                                  └──┬─┘
-                             │                                     │ coverage + green CI
-                             │                                     ▼
-                             │                               ┌──────────┐
-                             │                               │  Critic  │  peer_review
-                             │                               └────┬─────┘
-                             │                                    │ subjective notes
-                             │                                    ▼
-                             └──────────────▶ ┌───────┐  judge_review
-                                              │ Judge │
-                                              └───┬───┘
-                                                  │ APPROVE
-                                                  ▼
-                                                merge
+  ┌──────────┐  analysis  ┌──────────┐   plan    ┌───────┐  notes  ┌──────────┐  approve  ┌────┐
+  │ Analyst  │───────────▶│Architect │──────────▶│ Judge │◀────────│  Critic  │──────────▶│ PM │
+  └────▲─────┘            └──────────┘           └───┬───┘         └──────────┘           └─┬──┘
+       │                                             │                                      │ dispatch
+       │                                             │ plan-gate                             ▼
+       │                                             │                            ┌────────────────┐
+       │                                             │                            │ Implementers   │
+       │                                             │                            │ FE / BE / DO / │
+       │                                             │                            │ Docs (parallel)│
+       │                                             │                            └────────┬───────┘
+       │                                             │                                     │
+       │                                             │                                     ▼
+       │                                             │                                  ┌────┐
+       │                                             │                                  │ QA │  peer_review
+       │                                             │                                  └──┬─┘
+       │                                             │                                     │ coverage + green CI
+       │                                             │                                     ▼
+       │                                             │                               ┌──────────┐
+       │                                             │                               │  Critic  │  peer_review
+       │                                             │                               └────┬─────┘
+       │                                             │                                    │ subjective notes
+       │                                             │                                    ▼
+       │                                             └──────────────▶ ┌───────┐  judge_review
+       │                                                              │ Judge │
+       │                                                              └───┬───┘
+       │                                                                  │ APPROVE
+       │                                                                  ▼
+       │                                                                merge
+       │                                                                  │
+       │                                                                  ▼
+       │                                                     ┌─────────────────────┐
+       │                                                     │ stakeholder_review  │ (optional)
+       │                                                     │ PM captures feedback│
+       │                                                     └─────────┬───────────┘
+       │                                                               │
+       └───────────────────────────────────────────────────────────────┘
+                    feedback loop (if assumptions changed)
 ```
 
-1. **Architect** turns a request into a plan + ADR.
-2. **Judge** plan-gates (procedural) and integrates **Critic**'s subjective notes. Outputs APPROVE / REQUEST_CHANGES / BLOCK.
-3. **PM** splits the approved plan into role-owned `task_*.md` files and records claims in `coordination.md` using the state machine below.
-4. **Implementers** (Frontend / Backend / DevOps / Docs) work in parallel on separate branches, each inside their owned paths.
-5. **QA** verifies coverage + CI green (`peer_review` state).
-6. **Critic** reviews the diff for subjective quality (`peer_review` state).
-7. **Judge** diff-gates with Critic's notes in hand (`judge_review` state).
-8. Merge.
+1. **Analyst** validates the problem: needs analysis, competitive landscape, impact scoring, and (on iterations) re-validates assumptions against stakeholder feedback.
+2. **Architect** turns validated findings into a plan + ADR.
+3. **Judge** plan-gates (procedural) and integrates **Critic**'s subjective notes. Outputs APPROVE / REQUEST_CHANGES / BLOCK.
+4. **PM** splits the approved plan into role-owned `task_*.md` files and records claims in `coordination.md` using the state machine below.
+5. **Implementers** (Frontend / Backend / DevOps / Docs) work in parallel on separate branches, each inside their owned paths.
+6. **QA** verifies coverage + CI green (`peer_review` state).
+7. **Critic** reviews the diff for subjective quality (`peer_review` state).
+8. **Judge** diff-gates with Critic's notes in hand (`judge_review` state).
+9. Merge.
+10. **Stakeholder review** (optional): PM decides whether to capture feedback. If triggered, findings feed back to Analyst (if assumptions changed) or Architect (if design feedback only) for the next iteration.
 
 ## Task State Machine
 
-The canonical list of states, their gates, and the role that owns each transition is in `.context/state/coordination.md` → "Task States". In short: `backlog → planned → assigned → in_progress → peer_review → judge_review → approved → merged`, no skipping, any reviewer can kick a task back to `in_progress`.
+The canonical list of states, their gates, and the role that owns each transition is in `.context/state/coordination.md` → "Task States". In short: `backlog → planned → assigned → in_progress → peer_review → judge_review → approved → merged → [stakeholder_review]`, no skipping, any reviewer can kick a task back to `in_progress`. The `stakeholder_review` state is optional — PM decides whether a merged task enters the feedback loop or goes straight to done.
 
 ## Branch-Per-Role Model
 
@@ -220,4 +234,6 @@ Enable steps are in the template file header.
 - `docs/guides/agent-best-practices.md` — token limits, session handoff, secrets.
 - `.github/agents/judge.agent.md` — plan-gate + diff-gate details.
 - `.github/agents/critic.agent.md` — subjective-quality devil's advocate review.
+- `.github/agents/analyst.agent.md` — needs analysis, market research, problem validation.
+- `.context/state/feedback_template.md` — stakeholder feedback capture template.
 - `.github/prompts/repo-onboarding.md` — full onboarding workflow.
