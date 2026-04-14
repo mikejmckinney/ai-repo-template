@@ -22,7 +22,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `AI_REPO_GUIDE.md` | AI agents | Token-optimized command/structure/convention reference |
 | `docs/` | Humans | Deep reference: guides, ADRs, research |
 | `.context/` | AI agents | Canonical project truth: rules, state, roadmap, vision (lazy-loaded) |
-| `CLAUDE.md` (root) | Claude Code native loader | Must stay at repo root — Claude Code auto-discovers it there |
+| `CLAUDE.md` (root) | Claude Code native loader | Project memory pointer to `AGENTS.md`. Kept at root by convention; `./.claude/CLAUDE.md` would also work ([memory docs](https://code.claude.com/docs/en/memory#choose-where-to-put-claude-md-files)) |
 | `AGENTS.md` (root) | Most other AI tools | Root agent instructions (Copilot, Cursor, Gemini, etc.) |
 | `.claude/agents/` | Claude Code subagent loader | Role mirrors registered as native subagents (see ADR-003) |
 | `.github/agents/` | Copilot SDK custom-agent runtime | Canonical role files for multi-agent work |
@@ -30,7 +30,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `test.sh` (root) | `.github/workflows/ci-tests.yml` | Template verification, invoked by CI as `./test.sh` |
 | `scripts/` | Project consumers (post-clone) | One-time project customization (`setup.sh`, `verify-env.sh`) |
 
-**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md`. `CLAUDE.md` cannot move to `.claude/` because Claude Code's native memory loader only auto-discovers it at the repo root. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow.
+**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow. `CLAUDE.md` is a soft convention — it *could* live at `./.claude/CLAUDE.md` and Claude Code would still auto-discover it, but we keep it at the root alongside `AGENTS.md` and `AI_REPO_GUIDE.md` for visibility.
 
 ## Features
 

@@ -94,19 +94,26 @@ These are NOT redundant with project docs—they explain their specific director
 4. `.context/sessions/latest_summary.md` — Recent history
 5. Load other files on-demand (rules, vision) as needed
 
-## Why some files can't move
+## Why some things look duplicated but aren't
 
-A recurring question is whether duplicated-looking docs should be merged, or whether root-level scripts and `CLAUDE.md` should move into subdirectories. Each of these layouts is load-bearing:
+A recurring question is whether duplicated-looking docs should be merged, or whether root-level scripts and `CLAUDE.md` should move into subdirectories. Some of these layouts are load-bearing; others are convention. Here's the breakdown:
 
-| File / location | Why it must stay where it is |
-|-----------------|------------------------------|
+### Hard constraints (moving would break something)
+
+| File / location | Why it has to stay |
+|-----------------|--------------------|
 | `README.md` + `AI_REPO_GUIDE.md` (not merged) | Different audiences. README is verbose human onboarding; AI_REPO_GUIDE is token-optimized for agents. Merging was explicitly rejected in `docs/decisions/adr-001-context-pack-structure.md` as "unwieldy". |
 | `docs/` + `.context/` (not merged) | Different audiences **and** a truth hierarchy. `AGENTS.md` codifies `.context/** > docs/** > codebase` for conflict resolution. `.context/` is canonical project memory for agents; `docs/` is human reference. ADR-001 rejected reusing `docs/` for agent context because it "mixes human docs with agent context, no clear priority." |
-| `CLAUDE.md` at the repo root (not under `.claude/`) | Claude Code's **native memory loader** only auto-discovers `CLAUDE.md` at the repository root. Moving it to `.claude/CLAUDE.md` would break local Claude Code sessions and the `anthropics/claude-code-action@v1` GitHub Action. `.claude/agents/**` is a **separate** loader for subagent registrations (see `docs/decisions/adr-003-claude-code-subagent-registration.md`). |
-| `install.sh` at the repo root (not in `scripts/`) | GitHub Codespaces' "Dotfiles" feature expects the bootstrap script at the repo root and runs it automatically when a Codespace starts. This is a platform convention, not a repo choice. |
-| `test.sh` at the repo root (not in `scripts/`) | Invoked by `.github/workflows/ci-tests.yml` as `./test.sh`, referenced from `README.md`, `AI_REPO_GUIDE.md`, `CLAUDE.md`, `.context/rules/agent_ownership.md`, and the devops role files. `scripts/` is scoped to **post-clone project customization** (`setup.sh`, `verify-env.sh`) — a different role from template-level bootstrap and integrity tooling. |
+| `install.sh` at the repo root | GitHub Codespaces' "Dotfiles" feature expects the bootstrap script at the repo root and runs it automatically when a Codespace starts. Platform convention, not a repo choice. |
+| `test.sh` at the repo root | Invoked by `.github/workflows/ci-tests.yml` as `./test.sh`, referenced from `README.md`, `AI_REPO_GUIDE.md`, `CLAUDE.md`, `.context/rules/agent_ownership.md`, and the devops role files. `scripts/` is scoped to **post-clone project customization** (`setup.sh`, `verify-env.sh`) — a different role from template-level bootstrap and integrity tooling. |
 
-**Rule of thumb**: before proposing to merge or move any of the above, read ADR-001 and ADR-003 first. Both explicitly evaluated simpler layouts and rejected them.
+### Soft convention (could move, we keep it where it is)
+
+| File / location | Why we keep it where it is |
+|-----------------|---------------------------|
+| `CLAUDE.md` at the repo root | Claude Code's memory loader auto-discovers **either** `./CLAUDE.md` **or** `./.claude/CLAUDE.md` — see the ["Choose where to put CLAUDE.md files" table in the memory docs](https://code.claude.com/docs/en/memory#choose-where-to-put-claude-md-files). Both locations work for the standalone CLI and for `anthropics/claude-code-action@v1` (the Action runs the CLI under the hood). We keep it at the root because it's the `/init` default and it sits visibly next to `AGENTS.md` / `AI_REPO_GUIDE.md` / `README.md`. Moving it to `.claude/CLAUDE.md` would be functionally equivalent; `.claude/agents/**` (the 9 role subagent registrations from ADR-003) is a separate slot and can coexist with a `.claude/CLAUDE.md`. |
+
+**Rule of thumb**: before merging or moving `docs/`, `.context/`, `README.md`, `AI_REPO_GUIDE.md`, `install.sh`, or `test.sh`, read ADR-001 and ADR-003 first. `CLAUDE.md` is flexible — move it if it helps your repo, but confirm the chosen location is on Anthropic's [CLAUDE.md location table](https://code.claude.com/docs/en/memory#choose-where-to-put-claude-md-files).
 
 ## When to Update Each File
 
