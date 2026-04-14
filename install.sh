@@ -221,6 +221,7 @@ MULTIAGENT_FILES=(
     ".github/agents/qa.agent.md"
     ".github/agents/devops.agent.md"
     ".github/agents/docs.agent.md"
+    ".github/agents/analyst.agent.md"
     ".claude/agents/architect.md"
     ".claude/agents/judge.md"
     ".claude/agents/critic.md"
@@ -230,11 +231,14 @@ MULTIAGENT_FILES=(
     ".claude/agents/qa.md"
     ".claude/agents/devops.md"
     ".claude/agents/docs.md"
+    ".claude/agents/analyst.md"
     ".context/rules/agent_ownership.md"
     ".context/rules/domain_code_quality.md"
     ".context/state/coordination.md"
+    ".context/state/feedback_template.md"
     "docs/guides/multi-agent-coordination.md"
     "docs/guides/optional-skills.md"
+    "docs/research/.gitkeep"
 )
 
 for rel in "${MULTIAGENT_FILES[@]}"; do

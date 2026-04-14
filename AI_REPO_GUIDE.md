@@ -55,6 +55,7 @@ bash install.sh
 │   │   ├── _active.md            # Current priority task pointer
 │   │   ├── coordination.md       # Live claim board
 │   │   ├── task_template.md      # Template for new tasks
+│   │   ├── feedback_template.md  # Stakeholder feedback template
 │   │   └── task_*.md             # Individual task files
 │   └── vision/               # Design artifacts
 │       ├── mockups/          # UI/UX mockups
@@ -63,8 +64,9 @@ bash install.sh
 ├── docs/                     # Human reference documentation
 │   ├── README.md             # Documentation index
 │   ├── reference/            # Specs, research, external docs
+│   ├── research/             # Analyst output (analysis artifacts)
 │   ├── guides/               # How-to guides (agent-best-practices, context-files-explained, multi-agent-coordination, optional-skills)
-│   └── decisions/            # Architecture Decision Records (adr-001, adr-002, adr-template)
+│   └── decisions/            # Architecture Decision Records (adr-001, adr-002, adr-003, adr-004, adr-template)
 │
 ├── scripts/                  # Bootstrap + verification scripts
 │   ├── README.md
@@ -80,10 +82,11 @@ bash install.sh
 │   └── styleguide.md         # Gemini Code Assist review style
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
-    ├── agents/                   # 9 role-specialized agent files
-    │   ├── architect.agent.md, critic.agent.md, judge.agent.md,
-    │   ├── pm.agent.md, frontend.agent.md, backend.agent.md,
-    │   └── qa.agent.md, devops.agent.md, docs.agent.md
+    ├── agents/                   # 10 role-specialized agent files
+    │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
+    │   ├── judge.agent.md, pm.agent.md, frontend.agent.md,
+    │   ├── backend.agent.md, qa.agent.md, devops.agent.md,
+    │   └── docs.agent.md
     ├── prompts/
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
     │   └── repo-onboarding.md    # Repo onboarding workflow prompt
@@ -110,6 +113,7 @@ bash install.sh
 | `.github/agents/judge.agent.md` | Multi-tool | Procedural plan/diff gate reviewer (no code) |
 | `.github/agents/critic.agent.md` | Multi-tool | Devil's Advocate — subjective quality review (no code) |
 | `.github/agents/architect.agent.md` | Multi-tool | Plan + ADR author (no code) |
+| `.github/agents/analyst.agent.md` | Multi-tool | Needs analysis, market research, problem validation (no code) |
 | `.github/agents/pm.agent.md` | Multi-tool | Task dispatcher + ownership enforcer (no code) |
 | `.github/agents/frontend.agent.md` | Multi-tool | UI layer implementer |
 | `.github/agents/backend.agent.md` | Multi-tool | Server layer implementer |
@@ -126,6 +130,7 @@ bash install.sh
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
+| `.context/state/feedback_template.md` | Stakeholder feedback capture template |
 | `.context/state/task_*.md` | Current task(s) for session handoff |
 | `.context/vision/` | Mockups and architecture diagrams |
 
@@ -166,7 +171,7 @@ bash install.sh
 | `.pre-commit-config.yaml.template` | Pre-commit hooks (linting, secrets) |
 | `docs/decisions/adr-template.md` | Architecture Decision Record template |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets |
-| `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
+| `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Analyst/Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |
 | `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
 
