@@ -28,7 +28,7 @@ We will make two coupled changes:
 
 ### A. Add a single "Analyst" agent role
 
-A new research-only, no-code role called **Analyst** sits before Architect in the pipeline. Its responsibilities: needs analysis, market/competitive research, target audience definition, and lightweight impact scoring using a consistent composite method: score Reach, Severity, Feasibility, and Differentiation from 1–5 each, then calculate the composite as the average of the four scores. On subsequent iterations, the Analyst also re-validates assumptions against stakeholder feedback.
+A new research-only, no-code role called **Analyst** sits before Architect in the pipeline. Its core responsibilities are needs analysis, market/competitive research, target audience definition, and lightweight impact scoring. For scoring, the Analyst rates Reach, Severity, Feasibility, and Differentiation from 1–5 each, then calculates the composite as the average of the four scores. On subsequent iterations, the Analyst also re-validates assumptions against stakeholder feedback.
 
 The Analyst owns `docs/research/**` for persisting analysis artifacts. To keep analyses comparable, Analyst outputs should record the four component scores and the composite average in a consistent format before handing off to Architect (for solution design) and PM (for task-level items discovered during analysis).
 
