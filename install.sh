@@ -235,8 +235,10 @@ MULTIAGENT_FILES=(
     ".context/rules/agent_ownership.md"
     ".context/rules/domain_code_quality.md"
     ".context/state/coordination.md"
+    ".context/state/feedback_template.md"
     "docs/guides/multi-agent-coordination.md"
     "docs/guides/optional-skills.md"
+    "docs/research/.gitkeep"
 )
 
 for rel in "${MULTIAGENT_FILES[@]}"; do
