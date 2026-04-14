@@ -59,6 +59,15 @@ REQUIRED_FILES=(
     ".github/agents/qa.agent.md"
     ".github/agents/devops.agent.md"
     ".github/agents/docs.agent.md"
+    ".claude/agents/architect.md"
+    ".claude/agents/judge.md"
+    ".claude/agents/critic.md"
+    ".claude/agents/pm.md"
+    ".claude/agents/frontend.md"
+    ".claude/agents/backend.md"
+    ".claude/agents/qa.md"
+    ".claude/agents/devops.md"
+    ".claude/agents/docs.md"
     ".github/prompts/copilot-onboarding.md"
     ".github/prompts/repo-onboarding.md"
 )
@@ -256,6 +265,48 @@ if grep -q "priority" .context/00_INDEX.md 2>/dev/null; then
 else
     warn ".context/00_INDEX.md missing priority information"
 fi
+
+echo ""
+
+# --- Agent Mirror Sanity Checks ---
+# The template ships two parallel agent registries so both Copilot's custom-
+# agent runtime and Claude Code's native subagent loader dispatch on the same
+# 9 roles. Canonical role files live in .github/agents/<role>.agent.md
+# (Copilot schema); Claude Code mirrors live in .claude/agents/<role>.md
+# (Claude Code schema). See docs/decisions/adr-002-claude-code-subagent-
+# registration.md for rationale.
+echo "Checking .claude/agents mirror of .github/agents..."
+
+# Check A: every canonical .github/agents/*.agent.md has a matching
+# .claude/agents/*.md mirror. This prevents future role additions from
+# silently skipping Claude Code registration.
+for gh_file in .github/agents/*.agent.md; do
+    [[ -f "$gh_file" ]] || continue
+    role="$(basename "$gh_file" .agent.md)"
+    claude_file=".claude/agents/${role}.md"
+    if [[ -f "$claude_file" ]]; then
+        pass "$claude_file mirrors $gh_file"
+    else
+        fail "$claude_file is missing (every .github/agents/<role>.agent.md needs a .claude/agents/<role>.md mirror)"
+    fi
+done
+
+# Check B: description: frontmatter line must be byte-identical between the
+# two copies for every role, so Copilot SDK intent-matching and Claude Code
+# auto-dispatch route on the same string. Drift is a hard failure.
+for gh_file in .github/agents/*.agent.md; do
+    [[ -f "$gh_file" ]] || continue
+    role="$(basename "$gh_file" .agent.md)"
+    claude_file=".claude/agents/${role}.md"
+    [[ -f "$claude_file" ]] || continue  # Check A already flagged this
+    gh_desc="$(grep -m1 '^description:' "$gh_file" || true)"
+    cc_desc="$(grep -m1 '^description:' "$claude_file" || true)"
+    if [[ -n "$gh_desc" && "$gh_desc" == "$cc_desc" ]]; then
+        pass "$role description: matches between .github and .claude"
+    else
+        fail "$role description: differs between $gh_file and $claude_file"
+    fi
+done
 
 echo ""
 

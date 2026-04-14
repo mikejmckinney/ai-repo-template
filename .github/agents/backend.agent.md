@@ -1,6 +1,6 @@
 ---
 name: Backend
-description: Owns the server layer. Implements APIs, data models, migrations, and backend tests within approved plans.
+description: Use to implement server code (APIs, models, migrations). Consumes a dispatched task; stays inside backend-owned paths.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
 owned_paths:
   # TEMPLATE_PLACEHOLDER: replace with your project's backend globs

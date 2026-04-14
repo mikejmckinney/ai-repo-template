@@ -1,6 +1,6 @@
 ---
 name: DevOps
-description: Owns workflows, deploy configs, install scripts, secrets hygiene, and infra.
+description: Use to edit workflows, install scripts, config, or CI files. Stays inside devops-owned paths.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo']
 owned_paths:
   - '.github/workflows/**'

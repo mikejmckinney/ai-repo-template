@@ -1,6 +1,6 @@
 ---
 name: Docs
-description: Owns README, AI_REPO_GUIDE.md, ADR text, and guides. Keeps human + agent docs in sync with code reality.
+description: Use to update README, AI_REPO_GUIDE, CLAUDE.md, or docs/. Runs in parallel with implementers when visible behavior changes.
 tools: ['read', 'write', 'search', 'githubRepo']
 owned_paths:
   - 'README.md'

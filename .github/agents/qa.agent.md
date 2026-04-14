@@ -1,6 +1,6 @@
 ---
 name: QA
-description: Writes tests, monitors CI, enforces the test pyramid, gates merges on coverage. Complements (does not replace) Judge.
+description: Use to write/update tests, gate merges on coverage, and triage CI failures. Runs after implementation, before judge diff-gate.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
 owned_paths:
   # TEMPLATE_PLACEHOLDER: replace with your project's test globs
