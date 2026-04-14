@@ -40,3 +40,7 @@ Claude Code will also auto-invoke the right role when a user request matches a s
 ## Why a pointer and not a full copy
 
 `AGENTS.md` is the single source of truth for agent instructions in this repo. Duplicating its content here would just create a drift hazard. This file is a minimal entry point so Claude Code's native `CLAUDE.md` auto-load convention routes to the canonical source.
+
+## Why at the repo root and not under `.claude/`
+
+Claude Code's native memory loader auto-discovers `CLAUDE.md` at the **repository root**; it does not scan `.claude/` for a memory file. Moving this file to `.claude/CLAUDE.md` would silently break auto-loading in both standalone Claude Code sessions and the `anthropics/claude-code-action@v1` GitHub Action, which relies on the same discovery rule. `.claude/` is reserved for subagent registrations (`.claude/agents/*.md`), a separate, schema-incompatible loader — see `docs/decisions/adr-003-claude-code-subagent-registration.md`.

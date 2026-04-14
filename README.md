@@ -12,6 +12,26 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 
 > **For AI Agents**: See `AI_REPO_GUIDE.md` for a concise reference optimized for agent consumption.
 
+## Repo map
+
+The repo looks like it has duplicated documentation. It doesn't — each location targets a different audience or loader. See `docs/guides/context-files-explained.md` for the full rationale and ADR references.
+
+| Location | Audience / Loader | Role |
+|----------|-------------------|------|
+| `README.md` (this file) | Humans | Setup, features, customization — verbose on purpose |
+| `AI_REPO_GUIDE.md` | AI agents | Token-optimized command/structure/convention reference |
+| `docs/` | Humans | Deep reference: guides, ADRs, research |
+| `.context/` | AI agents | Canonical project truth: rules, state, roadmap, vision (lazy-loaded) |
+| `CLAUDE.md` (root) | Claude Code native loader | Must stay at repo root — Claude Code auto-discovers it there |
+| `AGENTS.md` (root) | Most other AI tools | Root agent instructions (Copilot, Cursor, Gemini, etc.) |
+| `.claude/agents/` | Claude Code subagent loader | Role mirrors registered as native subagents (see ADR-003) |
+| `.github/agents/` | Copilot SDK custom-agent runtime | Canonical role files for multi-agent work |
+| `install.sh` (root) | GitHub Codespaces "Dotfiles" | Bootstrap script — Codespaces expects it at repo root |
+| `test.sh` (root) | `.github/workflows/ci-tests.yml` | Template verification, invoked by CI as `./test.sh` |
+| `scripts/` | Project consumers (post-clone) | One-time project customization (`setup.sh`, `verify-env.sh`) |
+
+**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md`. `CLAUDE.md` cannot move to `.claude/` because Claude Code's native memory loader only auto-discovers it at the repo root. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow.
+
 ## Features
 
 - **AI Agent Prompts** - Pre-configured prompts for onboarding AI assistants to any codebase
