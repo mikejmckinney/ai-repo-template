@@ -49,6 +49,7 @@ jobs:
       github.event.pull_request.user.type != 'Bot'
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
       pull-requests: write
       issues: write
@@ -90,6 +91,7 @@ jobs:
        contains(github.event.review.body, '@claude'))
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
       pull-requests: write
       issues: write
