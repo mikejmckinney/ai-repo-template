@@ -47,7 +47,8 @@ bash install.sh
 │   ├── 00_INDEX.md           # Context entry point
 │   ├── roadmap.md            # Phase-by-phase plan
 │   ├── rules/                # Immutable domain constraints
-│   │   ├── agent_ownership.md, domain_code_quality.md
+│   │   ├── agent_ownership.md
+│   │   └── domain_code_quality.md
 │   ├── sessions/             # Session history for handoff
 │   │   └── latest_summary.md
 │   ├── state/                # Task tracking (supports parallel work)
@@ -80,7 +81,9 @@ bash install.sh
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
     ├── agents/                   # 9 role-specialized agent files
-    │   └── architect|backend|critic|devops|docs|frontend|judge|pm|qa.agent.md
+    │   ├── architect.agent.md, critic.agent.md, judge.agent.md,
+    │   ├── pm.agent.md, frontend.agent.md, backend.agent.md,
+    │   └── qa.agent.md, devops.agent.md, docs.agent.md
     ├── prompts/
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
     │   └── repo-onboarding.md    # Repo onboarding workflow prompt
@@ -205,7 +208,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ## Verification Commands
 
 ```bash
-# Check all required files exist (91 checks)
+# Check all required files exist
 ./test.sh
 
 # Validate shell scripts (if shellcheck installed)

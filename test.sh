@@ -207,8 +207,11 @@ else
     fail "install.sh missing bash shebang"
 fi
 
-# Check install.sh documents the legacy $DOTFILES variable (Codespaces convention)
-if grep -q "About the \$DOTFILES variable (legacy naming, intentional):" install.sh; then
+# Check install.sh documents the legacy $DOTFILES variable (Codespaces convention).
+# Two loose substring matches: the file must mention both "$DOTFILES variable"
+# and "Codespaces". Using separate greps (instead of an exact header-line
+# match) keeps the assertion robust to cosmetic rewording of the comment.
+if grep -q '\$DOTFILES variable' install.sh && grep -q 'Codespaces' install.sh; then
     pass "install.sh has \$DOTFILES legacy-convention comment block"
 else
     fail "install.sh missing \$DOTFILES legacy-convention comment block"
@@ -216,9 +219,12 @@ fi
 
 # Guard against "Dotfiles" log strings resurfacing in install.sh user-facing
 # output (we rewrote these to "Template" during the ai-repo-template rebrand).
-# The variable $DOTFILES and comment-block mentions are fine; any quoted
-# "Dotfiles" as the first word of a log/echo message is a regression.
-if grep -E '(log_info|log_warn|log_error|echo)[[:space:]]+"Dotfiles' install.sh > /dev/null; then
+# The variable $DOTFILES (all-caps) and comment-block mentions are fine; any
+# log/echo message whose quoted string *contains* "Dotfiles" (mixed case) is
+# a regression — even with a leading emoji/whitespace, and regardless of
+# single vs double quotes. Case-sensitive grep means `"Template: $DOTFILES"`
+# is correctly ignored because the pattern is `Dotfiles`, not `DOTFILES`.
+if grep -E "(log_info|log_warn|log_error|echo)[[:space:]]+[\"'][^\"']*Dotfiles" install.sh > /dev/null; then
     fail "install.sh contains \"Dotfiles\" log strings (should be \"Template\")"
 else
     pass "install.sh has no \"Dotfiles\" log strings (rebrand intact)"
