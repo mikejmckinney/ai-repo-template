@@ -1,7 +1,7 @@
 ---
 name: analyst
 description: Use for needs analysis, market research, competitive analysis, and validating whether a project should be built. Produces research artifacts — never writes implementation code.
-tools: [Read, Grep, Glob, WebFetch, Task]
+tools: [Read, Grep, Glob, WebFetch, Write, Edit, Task]
 model: inherit
 ---
 

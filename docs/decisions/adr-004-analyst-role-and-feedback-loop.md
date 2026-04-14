@@ -28,9 +28,9 @@ We will make two coupled changes:
 
 ### A. Add a single "Analyst" agent role
 
-A new research-only, no-code role called **Analyst** sits before Architect in the pipeline. Its responsibilities: needs analysis, market/competitive research, target audience definition, lightweight impact scoring (Reach × Severity × Feasibility × Differentiation, each 1–5), and — on subsequent iterations — re-validating assumptions against stakeholder feedback.
+A new research-only, no-code role called **Analyst** sits before Architect in the pipeline. Its responsibilities: needs analysis, market/competitive research, target audience definition, and lightweight impact scoring using a consistent composite method: score Reach, Severity, Feasibility, and Differentiation from 1–5 each, then calculate the composite as the average of the four scores. On subsequent iterations, the Analyst also re-validates assumptions against stakeholder feedback.
 
-The Analyst owns `docs/research/**` for persisting analysis artifacts. It hands off to Architect (for solution design) and PM (for task-level items discovered during analysis).
+The Analyst owns `docs/research/**` for persisting analysis artifacts. To keep analyses comparable, Analyst outputs should record the four component scores and the composite average in a consistent format before handing off to Architect (for solution design) and PM (for task-level items discovered during analysis).
 
 Files created:
 - `.github/agents/analyst.agent.md` — canonical role definition (Copilot schema)
@@ -41,10 +41,10 @@ Files created:
 A new state `stakeholder_review` sits between `merged` and the next iteration's `backlog`:
 
 ```
-... → approved → merged → [stakeholder_review] → backlog (next iteration)
+... → approved → merged → [stakeholder_review] → (task closed; new task_*.md entries in backlog)
 ```
 
-PM decides whether a merged task enters stakeholder review or goes straight to done. Small fixes and maintenance tasks typically skip this state.
+PM decides whether a merged task enters stakeholder review or goes straight to done. `stakeholder_review` is terminal for the original task — once feedback is captured, the task file moves to Recent History. Any follow-up work becomes *new* `task_*.md` backlog entries, routed to Analyst (if assumptions changed) or Architect (if design feedback only). Small fixes and maintenance tasks typically skip this state.
 
 A feedback template (`.context/state/feedback_template.md`) provides structure for capturing stakeholder reactions, requested changes, new requirements, and assumption changes.
 

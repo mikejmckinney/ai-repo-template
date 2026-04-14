@@ -30,7 +30,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 - **No skipping**: a task in `in_progress` cannot jump to `judge_review` without passing through `peer_review`.
 - **Reversible**: any reviewer (QA, Critic, Judge) may kick a task back to `in_progress` with `REQUEST_CHANGES`. Record the reason in the task file before the kickback.
-- **Stakeholder review is optional**: after `merged`, PM decides whether to enter `stakeholder_review` or move the task directly to done (Recent History). Small fixes, dependency bumps, and maintenance tasks typically skip this state. When stakeholder review is triggered, PM creates a feedback record using `.context/state/feedback_template.md` and routes findings to Analyst (if assumptions changed) or Architect (if design feedback only) for the next iteration's `backlog`.
+- **Stakeholder review is optional**: after `merged`, PM decides whether to enter `stakeholder_review` or move the task directly to done (Recent History). Small fixes, dependency bumps, and maintenance tasks typically skip this state. `stakeholder_review` is terminal for the original task — once feedback is captured, the task file moves to Recent History. When stakeholder review produces follow-up work, PM creates *new* `task_*.md` entries in `backlog` (using `.context/state/feedback_template.md` to capture findings) and routes them to Analyst (if assumptions changed) or Architect (if design feedback only).
 - **Stuck detection**: any state other than `merged` or `stakeholder_review` held for > 24 hours is a "stuck" signal. PM should investigate on the next session or via the optional heartbeat workflow (`.github/workflows/agent-heartbeat.yml.template`).
 
 ## Lock Template

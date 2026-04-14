@@ -100,6 +100,7 @@ CONTEXT_FILES=(
     ".context/state/_active.md"
     ".context/state/coordination.md"
     ".context/state/task_template.md"
+    ".context/state/feedback_template.md"
     ".context/vision/README.md"
 )
 
@@ -141,6 +142,7 @@ DOCS_FILES=(
     "docs/guides/optional-skills.md"
     "docs/decisions/adr-template.md"
     "docs/decisions/adr-001-context-pack-structure.md"
+    "docs/decisions/adr-004-analyst-role-and-feedback-loop.md"
 )
 
 for file in "${DOCS_FILES[@]}"; do
@@ -153,6 +155,7 @@ done
 
 DOCS_DIRS=(
     "docs/reference"
+    "docs/research"
     "docs/guides"
     "docs/decisions"
 )
