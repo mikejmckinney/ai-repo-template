@@ -19,11 +19,16 @@
 #   - Only acts on draft PRs (no-op if already ready)
 #   - Short timeout (5 min) since this is a quick API call
 #   - Respects `no-auto-ready` label if you want manual control
+#
+# Auth: Uses CLAUDE_PAT (fine-grained PAT) instead of GITHUB_TOKEN.
+#   The default GITHUB_TOKEN cannot call markPullRequestReadyForReview
+#   on draft PRs created by bot actors (like Copilot). A PAT owned by
+#   a user with write access bypasses this restriction.
 
 name: Auto-Ready Copilot PRs
 
 on:
-  pull_request_target:
+  pull_request:
     types: [review_requested]
 
 concurrency:
@@ -49,7 +54,7 @@ jobs:
       - name: Check for opt-out label
         id: check
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           labels=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" \
@@ -65,7 +70,7 @@ jobs:
       - name: Mark PR as ready for review
         if: steps.check.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           echo "Marking PR #$PR_NUMBER as ready for review..."
@@ -78,7 +83,7 @@ jobs:
       - name: Post notification
         if: steps.check.outputs.skip != 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
