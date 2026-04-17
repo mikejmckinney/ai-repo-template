@@ -25,7 +25,9 @@ works autonomously in a GitHub Actions environment.
 
 ### Step 2: Copilot opens a PR (automatic)
 Copilot creates a `copilot/issue-{number}` branch, implements the feature,
-and opens a draft PR. When done, it marks the PR ready for review.
+and opens a draft PR. After the Copilot run finishes, the
+`agent-auto-ready.yml` workflow transitions the PR from draft to ready
+for review automatically (Copilot itself leaves PRs as drafts).
 
 ### Step 3: Review bots fire (automatic)
 With workflow approval disabled (see Setup below), these fire immediately:
@@ -83,17 +85,36 @@ Create these in **Settings → Labels**:
 |-------|-------|---------|
 | `agent-complete` | `#0E8A16` (green) | Merged and done |
 | `no-auto-merge` | `#E4E669` (yellow) | Pause auto-merge for manual review |
+| `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
 
 ### 8. Install the workflow files
 Copy to `.github/workflows/`:
 - `agent-fix-reviews.yml` — auto-triggers Claude on review comments
+- `agent-auto-ready.yml` — flips Copilot draft PRs to ready for review
 - `agent-auto-merge.yml` — auto-merges when ready
+
+Also add this repository secret in **Settings → Secrets and variables → Actions**:
+- `CLAUDE_PAT` — fine-grained PAT required by `agent-fix-reviews.yml` so
+  Claude can push review fixes when the trigger is a bot review. See the
+  auth notes in `agent-fix-reviews.yml` for the exact token scope.
 
 These work alongside your existing workflows:
 - `claude.yml` — auto-review on PR open (already in your repo)
 - `ci-tests.yml` — CI checks (already in your repo)
 
-## Running the POC Build
+## Running a POC Build (example workflow)
+
+> **Note**: The six issues below reference prompt files like
+> `.github/prompts/01-init-project.md` and `.github/prompts/00-PROJECT-BRIEF.md`.
+> Those files are **project-specific** and are **not included in this
+> template** — they are example content from a Cloud Migration POC build
+> that used this pipeline. To follow this pattern for your own project,
+> author the prompt files first (one per implementation stage, plus a
+> shared project brief) and then file issues that reference them.
+>
+> The only prompt file shipped with the template is
+> `.github/prompts/pr-resolve-all.md`, which the review-resolution
+> workflow uses internally.
 
 ### Create the six issues
 
@@ -240,5 +261,5 @@ for Gemini to finish posting.
 | `.github/workflows/ci-tests.yml` | CI checks | No |
 | `.gemini/config.yaml` | Gemini review config | No (free GitHub App) |
 | `.github/prompts/pr-resolve-all.md` | Review resolution procedure | Used by Claude |
-| `.github/prompts/00-PROJECT-BRIEF.md` | Project context | Used by Copilot + Claude |
-| `.github/prompts/01–06-*.md` | Implementation prompts | Used by Copilot |
+| `.github/prompts/00-PROJECT-BRIEF.md` *(not in template)* | Project context | Used by Copilot + Claude |
+| `.github/prompts/01–06-*.md` *(not in template)* | Per-stage implementation prompts | Used by Copilot |

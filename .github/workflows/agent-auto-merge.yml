@@ -41,7 +41,11 @@ on:
   pull_request:
     types: [synchronize, ready_for_review]
 
-  # Re-evaluate when review threads are resolved
+  # Re-evaluate when review threads are resolved/unresolved
+  pull_request_review_thread:
+    types: [resolved, unresolved]
+
+  # Re-evaluate when labels change
   pull_request_target:
     types: [labeled, unlabeled]
 
@@ -160,11 +164,18 @@ jobs:
             exit 0
           fi
 
-          # Check for unresolved review threads
-          unresolved=$(gh api "repos/$REPO/pulls/$pr_number/reviews" \
-            --jq '[.[] | select(.state == "CHANGES_REQUESTED")] | length' 2>/dev/null || echo "0")
+          # Check for unresolved review threads/conversations via GraphQL.
+          # The REST reviews endpoint only exposes review state, not thread
+          # resolution status, so we query reviewThreads.isResolved directly.
+          owner="${REPO%%/*}"
+          name="${REPO##*/}"
+          unresolved=$(gh api graphql \
+            -f query='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){reviewThreads(first:100){nodes{isResolved}}}}}' \
+            -F owner="$owner" -F name="$name" -F number="$pr_number" \
+            --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length' \
+            2>/dev/null || echo "0")
           if [[ "$unresolved" -gt 0 ]]; then
-            echo "$unresolved unresolved change-request reviews. Not ready."
+            echo "$unresolved unresolved review threads. Not ready."
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
