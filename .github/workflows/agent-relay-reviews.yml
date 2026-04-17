@@ -132,8 +132,9 @@ jobs:
           REPO: ${{ github.repository }}
           CYCLE: ${{ steps.budget.outputs.cycle }}
           # Known AI reviewer logins that may NOT end with [bot] in GraphQL.
-          # Pipe-separated list of base logins. The jq filter matches these
-          # in addition to the generic [bot] suffix catch-all.
+          # Pipe-separated list of base logins. The jq filter splits this into
+          # an array and checks exact string membership, in addition to the
+          # generic [bot] suffix catch-all.
           # Update this variable when adding new AI reviewer bots.
           AI_REVIEWERS: "copilot-pull-request-reviewer|gemini-code-assist|codex"
         run: |
@@ -296,12 +297,13 @@ jobs:
 
           # ── Extract actionable inline comments (unresolved threads only) ──
           inline_comments=$(echo "$threads_json" | jq --arg ai "$AI_REVIEWERS" '
+            ($ai | split("|")) as $ai_list |
             [ (.reviewThreads.nodes // [])[]
               | select(.isResolved == false)
               | . as $thread
               | ($thread.comments.nodes // [])[]
               | select(
-                  ((.author.login | test("\\[bot\\]$")) or (.author.login | test("^(" + $ai + ")$")))
+                  ((.author.login | test("\\[bot\\]$")) or (.author.login as $l | $ai_list | any(. == $l)))
                   and (.author.login != "copilot[bot]")
                 )
               | {
@@ -315,9 +317,10 @@ jobs:
 
           # ── Extract review-level summaries (no isResolved on reviews) ──
           review_comments=$(echo "$threads_json" | jq --arg ai "$AI_REVIEWERS" '
+            ($ai | split("|")) as $ai_list |
             [ (.reviews.nodes // [])[]
               | select(
-                  ((.author.login | test("\\[bot\\]$")) or (.author.login | test("^(" + $ai + ")$")))
+                  ((.author.login | test("\\[bot\\]$")) or (.author.login as $l | $ai_list | any(. == $l)))
                   and (.author.login != "copilot[bot]")
                   and (.state == "CHANGES_REQUESTED" or .state == "COMMENTED")
                   and (.body != null) and (.body != "")
