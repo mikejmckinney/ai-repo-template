@@ -138,7 +138,7 @@ jobs:
 
           # Known AI reviewer logins (GraphQL returns these without the [bot]
           # suffix). Update this single list when new AI reviewers are added.
-          AI_REVIEWERS="copilot-pull-request-reviewer|gemini-code-assist|codex|chatgpt-codex-connector"
+          AI_REVIEWERS="copilot-pull-request-reviewer|gemini-code-assist|codex|chatgpt-codex-connector|claude"
 
           # ── Fetch unresolved review threads via GraphQL (paginated) ──
           # Review threads carry the ground-truth isResolved flag that REST
