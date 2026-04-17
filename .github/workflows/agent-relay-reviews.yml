@@ -135,41 +135,153 @@ jobs:
           owner="${REPO%/*}"
           name="${REPO#*/}"
 
-          # ── Fetch unresolved review threads via GraphQL ──
+          # ── Fetch unresolved review threads via GraphQL (paginated) ──
           # Review threads carry the ground-truth isResolved flag that REST
-          # endpoints don't expose. We fetch threads + top-level reviews in
-          # one round trip and filter downstream with jq.
-          threads_json=$(gh api graphql \
-            -F owner="$owner" -F name="$name" -F number="$PR_NUMBER" \
-            -f query='
-              query($owner:String!, $name:String!, $number:Int!) {
-                repository(owner:$owner, name:$name) {
-                  pullRequest(number:$number) {
-                    reviewThreads(first: 100) {
-                      nodes {
-                        isResolved
-                        path
-                        line
-                        comments(first: 50) {
+          # endpoints don't expose. We paginate both reviewThreads and the
+          # per-thread comments so PRs with > 100 threads or > 50 comments
+          # per thread are fully covered.
+          threads_acc='[]'
+          cursor=""
+          while :; do
+            if [[ -n "$cursor" ]]; then
+              page=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$PR_NUMBER" -F after="$cursor" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!, $after:String!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviewThreads(first: 100, after: $after) {
                           nodes {
-                            author { login }
-                            body
-                            url
+                            id
+                            isResolved
+                            path
+                            line
+                            comments(first: 50) {
+                              nodes { author { login } body url }
+                              pageInfo { hasNextPage endCursor }
+                            }
                           }
+                          pageInfo { hasNextPage endCursor }
                         }
                       }
                     }
-                    reviews(first: 100) {
-                      nodes {
-                        state
-                        body
-                        author { login }
+                  }' 2>/dev/null) || { page=''; break; }
+            else
+              page=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$PR_NUMBER" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviewThreads(first: 100) {
+                          nodes {
+                            id
+                            isResolved
+                            path
+                            line
+                            comments(first: 50) {
+                              nodes { author { login } body url }
+                              pageInfo { hasNextPage endCursor }
+                            }
+                          }
+                          pageInfo { hasNextPage endCursor }
+                        }
                       }
                     }
-                  }
-                }
-              }' \
-            --jq '.data.repository.pullRequest' 2>/dev/null || echo '{}')
+                  }' 2>/dev/null) || { page=''; break; }
+            fi
+
+            page_nodes=$(echo "$page" | jq '.data.repository.pullRequest.reviewThreads.nodes // []')
+            threads_acc=$(jq -n --argjson a "$threads_acc" --argjson b "$page_nodes" '$a + $b')
+
+            has_next=$(echo "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+            if [[ "$has_next" != "true" ]]; then
+              break
+            fi
+            cursor=$(echo "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor // empty')
+            if [[ -z "$cursor" ]]; then
+              break
+            fi
+          done
+
+          # For any thread whose first page of comments was truncated, fetch
+          # the remaining comment pages and merge them into the thread.
+          truncated_thread_ids=$(echo "$threads_acc" | jq -r '.[] | select(.comments.pageInfo.hasNextPage == true) | .id')
+          for thread_id in $truncated_thread_ids; do
+            comment_cursor=$(echo "$threads_acc" | jq -r --arg id "$thread_id" '.[] | select(.id == $id) | .comments.pageInfo.endCursor // empty')
+            while [[ -n "$comment_cursor" ]]; do
+              cpage=$(gh api graphql \
+                -F threadId="$thread_id" -F after="$comment_cursor" \
+                -f query='
+                  query($threadId:ID!, $after:String!) {
+                    node(id:$threadId) {
+                      ... on PullRequestReviewThread {
+                        comments(first: 100, after: $after) {
+                          nodes { author { login } body url }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
+                    }
+                  }' 2>/dev/null) || break
+              extra_nodes=$(echo "$cpage" | jq '.data.node.comments.nodes // []')
+              threads_acc=$(jq --arg id "$thread_id" --argjson extra "$extra_nodes" \
+                'map(if .id == $id then .comments.nodes += $extra else . end)' <<<"$threads_acc")
+              has_next=$(echo "$cpage" | jq -r '.data.node.comments.pageInfo.hasNextPage')
+              if [[ "$has_next" != "true" ]]; then
+                comment_cursor=""
+              else
+                comment_cursor=$(echo "$cpage" | jq -r '.data.node.comments.pageInfo.endCursor // empty')
+              fi
+            done
+          done
+
+          # ── Fetch top-level reviews (paginated) ──
+          reviews_acc='[]'
+          cursor=""
+          while :; do
+            if [[ -n "$cursor" ]]; then
+              rpage=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$PR_NUMBER" -F after="$cursor" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!, $after:String!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviews(first: 100, after: $after) {
+                          nodes { state body author { login } }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
+                    }
+                  }' 2>/dev/null) || break
+            else
+              rpage=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$PR_NUMBER" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviews(first: 100) {
+                          nodes { state body author { login } }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
+                    }
+                  }' 2>/dev/null) || break
+            fi
+            page_nodes=$(echo "$rpage" | jq '.data.repository.pullRequest.reviews.nodes // []')
+            reviews_acc=$(jq -n --argjson a "$reviews_acc" --argjson b "$page_nodes" '$a + $b')
+            has_next=$(echo "$rpage" | jq -r '.data.repository.pullRequest.reviews.pageInfo.hasNextPage')
+            if [[ "$has_next" != "true" ]]; then
+              break
+            fi
+            cursor=$(echo "$rpage" | jq -r '.data.repository.pullRequest.reviews.pageInfo.endCursor // empty')
+            if [[ -z "$cursor" ]]; then
+              break
+            fi
+          done
+
+          threads_json=$(jq -n --argjson t "$threads_acc" --argjson r "$reviews_acc" \
+            '{reviewThreads: {nodes: $t}, reviews: {nodes: $r}}')
 
           # ── Extract actionable inline comments (unresolved threads only) ──
           inline_comments=$(echo "$threads_json" | jq '
@@ -232,7 +344,7 @@ jobs:
           if [[ "$inline_count" -gt 0 ]]; then
             comment+="### Inline Comments${nl}${nl}"
             inline_section=$(echo "$inline_comments" | jq -r '
-              group_by(.file) | .[] |
+              sort_by(.file) | group_by(.file) | .[] |
               "**\(.[0].file)**\n" +
               ([.[] |
                 "- **Line \(.line)** (\(.reviewer)): \(.body | split("\n") | join(" ") | .[0:500])"

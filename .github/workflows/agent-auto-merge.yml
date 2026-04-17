@@ -171,20 +171,54 @@ jobs:
           # reviewDecision above already accounts for).
           owner="${REPO%/*}"
           name="${REPO#*/}"
-          unresolved=$(gh api graphql \
-            -F owner="$owner" -F name="$name" -F number="$pr_number" \
-            -f query='
-              query($owner:String!, $name:String!, $number:Int!) {
-                repository(owner:$owner, name:$name) {
-                  pullRequest(number:$number) {
-                    reviewThreads(first: 100) {
-                      nodes { isResolved }
+          # Paginate reviewThreads so PRs with > 100 threads are evaluated
+          # correctly; otherwise unresolved threads beyond the first page
+          # would be silently ignored and we could auto-merge prematurely.
+          unresolved=0
+          cursor=""
+          while :; do
+            if [[ -n "$cursor" ]]; then
+              page=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$pr_number" -F after="$cursor" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!, $after:String!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviewThreads(first: 100, after: $after) {
+                          nodes { isResolved }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
                     }
-                  }
-                }
-              }' \
-            --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length' \
-            2>/dev/null || echo "0")
+                  }' 2>/dev/null) || { unresolved=0; break; }
+            else
+              page=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$pr_number" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviewThreads(first: 100) {
+                          nodes { isResolved }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
+                    }
+                  }' 2>/dev/null) || { unresolved=0; break; }
+            fi
+
+            page_unresolved=$(echo "$page" | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length')
+            unresolved=$((unresolved + page_unresolved))
+
+            has_next=$(echo "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+            if [[ "$has_next" != "true" ]]; then
+              break
+            fi
+            cursor=$(echo "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor // empty')
+            if [[ -z "$cursor" ]]; then
+              break
+            fi
+          done
           if [[ "$unresolved" -gt 0 ]]; then
             echo "$unresolved unresolved review thread(s). Not ready."
             echo "eligible=false" >> "$GITHUB_OUTPUT"
