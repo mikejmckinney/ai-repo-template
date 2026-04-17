@@ -1,0 +1,230 @@
+# Relay Bot Reviews to Copilot
+# --------------------------------
+# Reads review comments from ALL bots (Gemini, Claude, Copilot code review)
+# and reposts them as a single @copilot comment from your user account (via PAT).
+#
+# Why this exists:
+#   - Copilot cloud agent only sees @copilot mentions from collaborators
+#   - Copilot ignores review comments posted by other bots (Gemini, Claude)
+#   - Copilot CAN write to .github/workflows/ files (Claude's app token cannot)
+#   - This relay bridges the gap: bots review → relay reposts → Copilot fixes
+#
+# How it works:
+#   1. Triggers when a review is submitted on a copilot/* branch PR
+#   2. Waits 90s for all reviewers to finish posting
+#   3. Reads ALL review threads via GitHub API
+#   4. Filters to unresolved comments from bot reviewers
+#   5. Formats them into a structured @copilot comment
+#   6. Posts the comment using CLAUDE_PAT (appears as your user)
+#   7. Copilot picks up the @copilot mention and fixes the issues
+#
+# Cost: $0 — no AI API calls. Just GitHub API reads + one comment post.
+#
+# Safety:
+#   - Only runs on copilot/* branches
+#   - Skips if no actionable bot comments found
+#   - Max 3 relay cycles per PR (prevents infinite loops)
+#   - Won't relay comments from copilot itself (it already sees its own)
+#   - Won't relay if copilot is the review author (it can see its own reviews)
+#
+# Required secrets:
+#   - CLAUDE_PAT: Fine-grained PAT with Contents + Pull requests + Issues RW
+#
+# Optional labels:
+#   - no-auto-ready: Skip auto-ready (on agent-auto-ready.yml)
+#   - no-auto-merge: Skip auto-merge (on agent-auto-merge.yml)
+
+name: Relay Bot Reviews to Copilot
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+  pull_request_review_comment:
+    types: [created]
+
+concurrency:
+  group: relay-reviews-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    # Only on copilot/* branches, only for change-request reviews or inline comments
+    if: >
+      startsWith(github.event.pull_request.head.ref, 'copilot/') &&
+      (
+        (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested') ||
+        github.event_name == 'pull_request_review_comment'
+      )
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      pull-requests: read
+      contents: read
+
+    steps:
+      # Skip if the review came from copilot (it sees its own comments)
+      # or from the relay itself (loop prevention)
+      - name: Check review author
+        id: author
+        run: |
+          reviewer=""
+          if [[ "${{ github.event_name }}" == "pull_request_review" ]]; then
+            reviewer="${{ github.event.review.user.login }}"
+          elif [[ "${{ github.event_name }}" == "pull_request_review_comment" ]]; then
+            reviewer="${{ github.event.comment.user.login }}"
+          fi
+
+          echo "reviewer=$reviewer"
+
+          # Skip copilot's own reviews (it sees them already)
+          # Skip our own relayed comments (they come from the PAT owner)
+          if [[ "$reviewer" == "copilot" || "$reviewer" == "github-actions[bot]" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Check relay cycle budget
+      - name: Check relay budget
+        if: steps.author.outputs.skip != 'true'
+        id: budget
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          MAX_CYCLES=3
+          relay_count=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json comments \
+            --jq '[.comments[] | select(.body | contains("📋 **Review Relay"))] | length' 2>/dev/null || echo "0")
+
+          echo "Relay cycles: $relay_count / $MAX_CYCLES"
+
+          if [[ "$relay_count" -ge "$MAX_CYCLES" ]]; then
+            echo "exceeded=true" >> "$GITHUB_OUTPUT"
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
+              --body "⚠️ **Relay budget exhausted** ($relay_count/$MAX_CYCLES). Remaining bot comments need manual review or direct @copilot tagging."
+          else
+            echo "exceeded=false" >> "$GITHUB_OUTPUT"
+            echo "cycle=$(( relay_count + 1 ))" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Wait for all reviewers to finish posting
+      - name: Wait for reviewers to settle
+        if: >
+          steps.author.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        run: |
+          echo "Waiting 90 seconds for all reviewers to finish posting..."
+          sleep 90
+
+      # Collect and relay bot review comments
+      - name: Collect and relay bot comments
+        if: >
+          steps.author.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          CYCLE: ${{ steps.budget.outputs.cycle }}
+        run: |
+          echo "Collecting review comments from all bot reviewers..."
+
+          # ── Collect inline review comments (diff-anchored) ──
+          # These are the detailed line-level comments from Gemini, Claude, etc.
+          inline_comments=$(gh api "repos/$REPO/pulls/$PR_NUMBER/comments" \
+            --paginate --jq '
+              [.[] |
+                select(
+                  (.user.login | test("\\[bot\\]$")) and
+                  (.user.login != "copilot") and
+                  (.user.login != "copilot[bot]")
+                ) |
+                {
+                  reviewer: .user.login,
+                  file: .path,
+                  line: (.original_line // .line // "N/A"),
+                  body: .body,
+                  url: .html_url
+                }
+              ]' 2>/dev/null || echo "[]")
+
+          # ── Collect review-level comments (top-level review bodies) ──
+          review_comments=$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
+            --paginate --jq '
+              [.[] |
+                select(
+                  (.user.login | test("\\[bot\\]$")) and
+                  (.user.login != "copilot") and
+                  (.user.login != "copilot[bot]") and
+                  (.state == "CHANGES_REQUESTED" or .state == "COMMENTED") and
+                  (.body != null) and
+                  (.body != "")
+                ) |
+                {
+                  reviewer: .user.login,
+                  state: .state,
+                  body: .body
+                }
+              ]' 2>/dev/null || echo "[]")
+
+          # ── Count actionable items ──
+          inline_count=$(echo "$inline_comments" | jq 'length' 2>/dev/null || echo "0")
+          review_count=$(echo "$review_comments" | jq 'length' 2>/dev/null || echo "0")
+          total=$((inline_count + review_count))
+
+          echo "Found $inline_count inline comments and $review_count review-level comments from bots."
+
+          if [[ "$total" -eq 0 ]]; then
+            echo "No actionable bot comments found. Skipping relay."
+            exit 0
+          fi
+
+          # ── Build the relay comment ──
+          comment="📋 **Review Relay (cycle $CYCLE/3)** — Forwarding $total comment(s) from bot reviewers.\n\n"
+          comment+="@copilot Please address the following review feedback. "
+          comment+="Read the referenced prompt file \`.github/prompts/pr-resolve-all.md\` for the resolution procedure, then fix each item below:\n\n"
+          comment+="---\n\n"
+
+          # Add review-level comments
+          if [[ "$review_count" -gt 0 ]]; then
+            echo "$review_comments" | jq -r '.[] |
+              "### Review from \(.reviewer) (\(.state))\n\(.body)\n\n---\n"
+            ' | while IFS= read -r line; do
+              comment+="$line\n"
+            done
+
+            # Re-read since pipe subshell loses variable
+            review_section=$(echo "$review_comments" | jq -r '.[] |
+              "### Review from \(.reviewer) (\(.state))\n\(.body)\n\n---\n"
+            ')
+            comment+="$review_section\n\n"
+          fi
+
+          # Add inline comments grouped by file
+          if [[ "$inline_count" -gt 0 ]]; then
+            comment+="### Inline Comments\n\n"
+
+            inline_section=$(echo "$inline_comments" | jq -r '
+              group_by(.file) | .[] |
+              "**\(.[0].file)**\n" +
+              ([.[] |
+                "- **Line \(.line)** (\(.reviewer)): \(.body | split("\n") | join(" ") | .[0:500])"
+              ] | join("\n")) +
+              "\n"
+            ')
+            comment+="$inline_section\n"
+          fi
+
+          comment+="\n---\n"
+          comment+="*This comment was auto-generated by the review relay workflow. "
+          comment+="Bot reviewers' comments were collected and forwarded so Copilot can act on them.*"
+
+          # ── Post the comment ──
+          # Using CLAUDE_PAT so it appears as the repo owner, not a bot.
+          # Copilot will see the @copilot mention and act on it.
+          echo -e "$comment" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
+
+          echo "✅ Relayed $total bot review comments to Copilot via @copilot mention."
