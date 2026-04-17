@@ -21,19 +21,19 @@
 When a user's comment or issue body contains the pattern `@copilot follow <path>`
 (e.g. `@copilot follow .github/prompts/pr-resolve-all.md`):
 
-1. Read the entire file at `<path>` before doing anything else.
-2. Treat that file's contents as your primary task instructions for this run,
-   overriding any shorter instruction in the mention.
-3. Execute every phase/step in the referenced file in order. Do not skip phases.
-4. If the file's "Rules" or "Verification" section conflicts with defaults
-   elsewhere in this repo, the referenced file wins for this task.
-5. If your cumulative response would exceed GitHub's per-comment size limit
-   (~65 KB of rendered markdown), split it across multiple sequential PR
-   comments labeled `Part 1/N`, `Part 2/N`, … rather than truncating. Post
-   each part as soon as it's ready so the author can read along.
-6. Only one `@copilot follow <path>` reference is expected per comment. If the
+1. Only one `@copilot follow <path>` reference is expected per comment. If the
    path doesn't exist or isn't under `.github/prompts/`, post a single comment
    explaining that and stop.
+2. Read the entire file at `<path>` before doing anything else after that validation.
+3. Treat that file's contents as your primary task instructions for this run,
+   overriding any shorter instruction in the mention.
+4. Execute every phase/step in the referenced file in order. Do not skip phases.
+5. If the file's "Rules" or "Verification" section conflicts with defaults
+   elsewhere in this repo, the referenced file wins for this task.
+6. If your cumulative response would exceed GitHub's per-comment size limit
+   (approximately 65 KB of raw comment body text), split it across multiple
+   sequential PR comments labeled `Part 1/N`, `Part 2/N`, … rather than
+   truncating. Post each part as soon as it's ready so the author can read along.
 
 This mirrors the `@claude follow <path>` convention wired through
 `.github/workflows/claude.yml`, so either agent can be invoked with the same
