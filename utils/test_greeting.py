@@ -16,6 +16,10 @@ class TestGreet(unittest.TestCase):
         result = greet("World")
         self.assertIsInstance(result, str)
 
+    def test_greet_none_raises(self):
+        with self.assertRaises(TypeError):
+            greet(None)  # type: ignore[arg-type]
+
 
 if __name__ == "__main__":
     unittest.main()
