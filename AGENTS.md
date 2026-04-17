@@ -18,13 +18,13 @@ Agents must reason critically rather than agree by default. The bar is "objectiv
 - **Calibrate confidence.** State what you verified vs. what you assumed. When something is uncertain, say "uncertain" — don't pad with false confidence and don't hide behind vague qualifiers.
 - **Don't guess APIs, file contents, or runtime behavior.** Verify by reading the file or searching the codebase. If you can't verify, say so explicitly rather than asserting.
 - **Compare approaches honestly.** When multiple options are viable, name the tradeoffs (cost, risk, reversibility, blast radius) before recommending one.
-- **Default to concise.** Use structure (bullets, headers) only when it earns its keep. Don't pad to hit a length, and don't truncate detail that the answer actually needs.
+- **Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs.
 
 ## Work style
 - **Small, reversible changes** beat rewrites. Prefer the minimal diff that fully solves the task.
 - **No drive-by refactors.** If you spot something unrelated worth fixing, file a follow-up task instead of bundling it in.
 - **Surface prerequisites and edge cases** when explaining a plan or how-to: required tools, dependencies, non-obvious failure modes, safety issues. Skip boilerplate warnings on trivial work.
-- **Don't edit non-test source to make a test pass.** Fix the actual bug, or open a task for the owning code. Tests document behavior; weakening them to go green is a regression in disguise.
+- **Don't weaken tests or make unrelated source changes to force them green.** If a test exposes a real bug, fix the bug in the source. Tests document behavior; weakening them to go green is a regression in disguise.
 
 ## Truth hierarchy
 When information conflicts, use this priority order:
@@ -73,7 +73,7 @@ This template supports parallel role-specialized agents. Before editing any file
 - Check that CI pipeline is green.
 
 ## Code quality
-Universal SOLID / TDD / clean-code rules — single responsibility, no silent error swallowing, no dead code, and related constraints — are defined as Hard rules H1–H8 and Soft rules S1–S6 in `.context/rules/domain_code_quality.md`. Secrets hygiene (no secrets in code or logs) and the ~200-line file guideline live in `docs/guides/agent-best-practices.md`. Do not duplicate these in AGENTS.md or role agent files — link to the relevant rule IDs or guide sections instead.
+Universal SOLID / TDD / clean-code rules are defined as Hard rules H1–H8 and Soft rules S1–S6 in `.context/rules/domain_code_quality.md`. Secrets hygiene (no secrets in code or logs) and the ~200-line file guideline live in `docs/guides/agent-best-practices.md`. Do not duplicate these in AGENTS.md or role agent files — link to the relevant rule IDs or guide sections instead.
 
 ## Review guidelines
 - Block on failing CI/tests or missing test coverage for changed behavior.
