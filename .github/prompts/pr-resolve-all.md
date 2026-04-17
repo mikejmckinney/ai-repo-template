@@ -1,12 +1,23 @@
 # PR Issue Resolution — Systematic Verify-and-Fix
 
-> **Usage**: Post `@claude follow .github/prompts/pr-resolve-all.md` as a PR comment.
-> Works with the `claude.yml` workflow's `@claude` mention handler.
-> For Copilot: post `@copilot` followed by the content of this prompt.
+> **Usage**: Post one of these as a PR comment:
+>   - `@claude follow .github/prompts/pr-resolve-all.md`
+>   - `@copilot follow .github/prompts/pr-resolve-all.md`
+>
+> Both agents will read this file and execute the Phase 1–3 procedure below.
+> Claude is wired via `.github/workflows/claude.yml`'s `claude-mention` job.
+> Copilot follows the `@copilot follow <path>` rule documented in
+> `.github/copilot-instructions.md`.
 
 ---
 
 You are resolving every open issue, suggestion, and TODO in this pull request. Your job is to find them all, verify each one, fix the valid ones, and produce a traceable audit trail. Do not guess — verify everything against the actual code.
+
+> **How to run this prompt**: Read this entire file before starting. Execute
+> Phase 1, then Phase 2, then Phase 3, in that order. Do not interleave or
+> skip phases. If your cumulative response would exceed GitHub's per-comment
+> size limit, post sequential `Part 1/N`, `Part 2/N`, … comments rather than
+> truncating. Apply the Rules section to every phase.
 
 ## Phase 1: Build the Issue/Suggestion Index
 

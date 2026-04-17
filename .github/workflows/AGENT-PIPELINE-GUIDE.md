@@ -48,6 +48,28 @@ issues, runs verification, and pushes.
 no outstanding change requests remain, and the PR isn't draft, it
 squash-merges, deletes the branch, and closes the linked issue.
 
+## Invoking a prompt file manually
+
+Both Claude and Copilot support a symmetric one-liner for running any prompt
+under `.github/prompts/` against the current PR:
+
+```
+@claude follow .github/prompts/pr-resolve-all.md
+@copilot follow .github/prompts/pr-resolve-all.md
+```
+
+- `@claude follow <path>` is handled by `.github/workflows/claude.yml`'s
+  `claude-mention` job — it triggers the Claude Code action on the comment,
+  and Claude itself dereferences the path and reads the file.
+- `@copilot follow <path>` is handled by a rule in
+  `.github/copilot-instructions.md` ("Following referenced prompt files"),
+  which Copilot's cloud agent loads on every run. No workflow or PAT is
+  required; it's a pure prompt-file convention.
+
+Both agents are instructed to execute every phase of the referenced prompt
+in order and, when supported by the invocation path/tooling, should continue
+in sequential `Part 1/N`, `Part 2/N` comments rather than truncating.
+
 ## Setup (One-Time)
 
 ### 1. Copilot subscription

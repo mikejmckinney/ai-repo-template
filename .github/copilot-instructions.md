@@ -17,6 +17,28 @@
 - Always read `/AI_REPO_GUIDE.md` first.
 - If AI_REPO_GUIDE.md is missing/stale: follow `.github/prompts/repo-onboarding.md` and update AI_REPO_GUIDE.md in the same PR.
 
+## Following referenced prompt files
+When a user's comment or issue body contains the pattern `@copilot follow <path>`
+(e.g. `@copilot follow .github/prompts/pr-resolve-all.md`):
+
+1. Only one `@copilot follow <path>` reference is supported per comment (only
+   the first one will be processed). If the path doesn't exist or isn't under
+   `.github/prompts/`, post a single comment explaining that and stop.
+2. Read the entire file at `<path>` before doing anything else after that validation.
+3. Treat that file's contents as your primary task instructions for this run,
+   overriding any shorter instruction in the mention.
+4. Execute every phase/step in the referenced file in order. Do not skip phases.
+5. If the file's "Rules" or "Verification" section conflicts with defaults
+   elsewhere in this repo, the referenced file wins for this task.
+6. If your cumulative response would exceed GitHub's per-comment size limit
+   (approximately 65 KB of raw comment body text), split it across multiple
+   sequential PR comments labeled `Part 1/N`, `Part 2/N`, ... rather than
+   truncating. Post each part as soon as it's ready so the author can read along.
+
+This mirrors the `@claude follow <path>` convention wired through
+`.github/workflows/claude.yml`, so either agent can be invoked with the same
+one-liner.
+
 ## Onboarding / refresh instructions (only when needed)
 - If this file (`.github/copilot-instructions.md`) is missing or clearly generic/stale: follow `.github/prompts/copilot-onboarding.md` to regenerate it *after* AI_REPO_GUIDE.md is accurate.
 

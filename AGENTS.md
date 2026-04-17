@@ -18,7 +18,7 @@ Agents must reason critically rather than agree by default. The bar is "objectiv
 - **Calibrate confidence.** State what you verified vs. what you assumed. When something is uncertain, say "uncertain" — don't pad with false confidence and don't hide behind vague qualifiers.
 - **Don't guess APIs, file contents, or runtime behavior.** Verify by reading the file or searching the codebase. If you can't verify, say so explicitly rather than asserting.
 - **Compare approaches honestly.** When multiple options are viable, name the tradeoffs (cost, risk, reversibility, blast radius) before recommending one.
-- **Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs.
+- **Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs. If a complete answer genuinely requires length, use multiple parts or multiple responses rather than cutting corners.
 
 ## Work style
 - **Small, reversible changes** beat rewrites. Prefer the minimal diff that fully solves the task.
