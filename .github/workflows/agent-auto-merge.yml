@@ -1,0 +1,243 @@
+# Agent Auto-Merge — Merge Copilot PRs When Ready
+# --------------------------------------------------
+# Monitors PRs on copilot/* branches. When ALL conditions are met,
+# squash-merges automatically:
+#   1. All CI checks passing
+#   2. No unresolved review threads
+#   3. No outstanding REQUEST_CHANGES reviews
+#   4. PR is not in draft state
+#   5. No `no-auto-merge` label
+#
+# After merge:
+#   - Closes the linked issue (via "closes #N" in PR body)
+#   - Deletes the copilot/* branch
+#   - Posts a summary comment
+#
+# Safety:
+#   - Only acts on copilot/* branches (never human PRs)
+#   - Requires ALL CI to pass — not just some
+#   - Respects `no-auto-merge` label for manual review
+#   - Uses squash merge for clean history
+#   - Branch protection rules still apply
+#
+# Setup:
+#   - If you have branch protection requiring reviews, either:
+#     (a) Add github-actions[bot] to bypass list, OR
+#     (b) Count the bot reviewers (Gemini/Claude/Copilot) as approvals
+#   - To pause auto-merge on any PR, add the `no-auto-merge` label
+
+name: Auto-Merge Copilot PRs
+
+on:
+  # Re-evaluate when checks complete
+  check_suite:
+    types: [completed]
+
+  # Re-evaluate when reviews change
+  pull_request_review:
+    types: [submitted, dismissed]
+
+  # Re-evaluate when PR is synchronized or marked ready
+  pull_request:
+    types: [synchronize, ready_for_review]
+
+  # Re-evaluate when review threads are resolved/unresolved
+  pull_request_review_thread:
+    types: [resolved, unresolved]
+
+  # Re-evaluate when labels change
+  pull_request_target:
+    types: [labeled, unlabeled]
+
+# Prevent race conditions
+concurrency:
+  group: auto-merge-${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number || 'none' }}
+  cancel-in-progress: true
+
+jobs:
+  merge-if-ready:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      checks: read
+
+    steps:
+      - name: Find Copilot PRs ready to merge
+        id: find
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          pr_number=""
+
+          # Determine PR number from event type
+          if [[ -n "${{ github.event.pull_request.number }}" ]]; then
+            pr_number="${{ github.event.pull_request.number }}"
+          elif [[ -n '${{ toJSON(github.event.check_suite.pull_requests) }}' ]]; then
+            pr_number=$(echo '${{ toJSON(github.event.check_suite.pull_requests) }}' | jq -r '.[0].number // empty' 2>/dev/null || echo "")
+          fi
+
+          if [[ -z "$pr_number" ]]; then
+            echo "No PR number found. Skipping."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Evaluating PR #$pr_number..."
+
+          # Fetch all PR data in one call
+          pr_json=$(gh pr view "$pr_number" --repo "$REPO" \
+            --json headRefName,isDraft,state,mergeable,reviewDecision,statusCheckRollup,labels,title,body \
+            2>/dev/null || echo "")
+
+          if [[ -z "$pr_json" ]]; then
+            echo "Could not fetch PR. Skipping."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          branch=$(echo "$pr_json" | jq -r '.headRefName // ""')
+
+          # Must be a copilot/* branch
+          if [[ ! "$branch" == copilot/* ]]; then
+            echo "Branch '$branch' is not copilot/*. Skipping."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Must not have no-auto-merge label
+          has_block_label=$(echo "$pr_json" | jq -r '[.labels[].name] | any(. == "no-auto-merge")' 2>/dev/null || echo "false")
+          if [[ "$has_block_label" == "true" ]]; then
+            echo "PR has no-auto-merge label. Skipping."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Must not be draft
+          is_draft=$(echo "$pr_json" | jq -r '.isDraft // true')
+          if [[ "$is_draft" == "true" ]]; then
+            echo "PR is draft. Skipping."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Must be open
+          state=$(echo "$pr_json" | jq -r '.state // "CLOSED"')
+          if [[ "$state" != "OPEN" ]]; then
+            echo "PR is $state. Skipping."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # All checks must pass (none failing, none pending)
+          failing=$(echo "$pr_json" | jq -r '[.statusCheckRollup[] | select(.status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED")] | length' 2>/dev/null || echo "999")
+          pending=$(echo "$pr_json" | jq -r '[.statusCheckRollup[] | select(.status != "COMPLETED")] | length' 2>/dev/null || echo "999")
+
+          if [[ "$pending" -gt 0 ]]; then
+            echo "Checks still pending ($pending). Will re-evaluate later."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [[ "$failing" -gt 0 ]]; then
+            echo "Checks failing ($failing). Not ready."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # No outstanding change requests
+          review_decision=$(echo "$pr_json" | jq -r '.reviewDecision // "NONE"')
+          if [[ "$review_decision" == "CHANGES_REQUESTED" ]]; then
+            echo "Outstanding change requests. Not ready."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # No merge conflicts
+          mergeable=$(echo "$pr_json" | jq -r '.mergeable // "UNKNOWN"')
+          if [[ "$mergeable" == "CONFLICTING" ]]; then
+            echo "Merge conflicts. Not ready."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Check for unresolved review threads/conversations via GraphQL.
+          # The REST reviews endpoint only exposes review state, not thread
+          # resolution status, so we query reviewThreads.isResolved directly.
+          owner="${REPO%%/*}"
+          name="${REPO##*/}"
+          unresolved=$(gh api graphql \
+            -f query='query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){reviewThreads(first:100){nodes{isResolved}}}}}' \
+            -F owner="$owner" -F name="$name" -F number="$pr_number" \
+            --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length' \
+            2>/dev/null || echo "0")
+          if [[ "$unresolved" -gt 0 ]]; then
+            echo "$unresolved unresolved review threads. Not ready."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "✅ PR #$pr_number is ready for auto-merge!"
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
+          echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+          title=$(echo "$pr_json" | jq -r '.title // "Copilot implementation"')
+          echo "title=$title" >> "$GITHUB_OUTPUT"
+
+          body=$(echo "$pr_json" | jq -r '.body // ""')
+          echo "body<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$body" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      # Merge
+      - name: Squash and merge
+        if: steps.find.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.find.outputs.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          echo "Merging PR #$PR_NUMBER..."
+
+          gh pr merge "$PR_NUMBER" \
+            --repo "$REPO" \
+            --squash \
+            --subject "${{ steps.find.outputs.title }}" \
+            --body "Auto-merged by agent pipeline.
+          Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            --delete-branch
+
+          echo "✅ Merged and branch deleted."
+
+      # Update linked issues
+      - name: Close linked issues
+        if: steps.find.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.find.outputs.number }}
+          PR_BODY: ${{ steps.find.outputs.body }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Find "closes #N" / "fixes #N" / "resolves #N" in PR body
+          linked=$(echo "$PR_BODY" | grep -oiP '(?:closes|fixes|resolves)\s+#\K\d+' || echo "")
+
+          for issue in $linked; do
+            echo "Updating issue #$issue..."
+            gh issue edit "$issue" --repo "$REPO" --add-label "agent-complete" 2>/dev/null || true
+            gh issue comment "$issue" --repo "$REPO" \
+              --body "✅ **Done.** PR #$PR_NUMBER merged automatically." 2>/dev/null || true
+          done
+
+      - name: Post merge confirmation
+        if: steps.find.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.find.outputs.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$REPO" \
+            --body "🎉 **Auto-merged.** All CI checks passed, all review comments resolved."
