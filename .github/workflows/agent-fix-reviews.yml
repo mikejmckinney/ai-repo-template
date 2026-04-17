@@ -1,0 +1,247 @@
+# Agent Fix Reviews — Auto-Resolve with Claude
+# -----------------------------------------------
+# Automatically triggers Claude Code Action to resolve ALL review
+# comments (from Gemini, Copilot, Claude auto-review, and humans)
+# on PRs created by Copilot cloud agent.
+#
+# Why Claude and not Copilot for this step:
+#   Copilot's cloud agent can only see comments that @mention it.
+#   Claude Code Action has full GitHub API access and can read every
+#   review thread from every reviewer, including gemini-code-assist[bot].
+#   This is the one step where the Anthropic API key is needed.
+#
+# Trigger logic:
+#   Fires when a review is submitted on any PR whose branch starts
+#   with "copilot/" (Copilot cloud agent's branch naming convention).
+#   Waits 90 seconds after trigger to let all reviewers finish posting
+#   (Gemini, Copilot review, and Claude auto-review often fire within
+#   60s of each other — we want to batch them into one fix pass).
+#
+# Safety:
+#   - Only runs on copilot/* branches (never touches human PRs)
+#   - Max 3 fix cycles per PR
+#   - 45-minute timeout per cycle
+#   - Skips if the review was posted by Claude itself (prevents loops)
+#
+# Setup required:
+#   1. ANTHROPIC_API_KEY repo secret (Settings → Secrets → Actions)
+#   2. Claude GitHub App installed: https://github.com/apps/claude
+#   3. Copilot cloud agent workflow approval disabled:
+#      Settings → Copilot → Cloud agent → disable "Require approval"
+
+name: Auto-Fix Reviews (Claude)
+
+on:
+  # Fires when any reviewer submits a review
+  pull_request_review:
+    types: [submitted]
+
+  # Fires when inline review comments are posted
+  pull_request_review_comment:
+    types: [created]
+
+  # Also fires when check suites complete (catches CI failures)
+  check_suite:
+    types: [completed]
+
+# One fix cycle at a time per PR
+concurrency:
+  group: auto-fix-${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number || 'none' }}
+  cancel-in-progress: false
+
+jobs:
+  resolve-reviews:
+    # Only run if:
+    #   - It's a review event with changes requested, OR
+    #   - It's an inline comment on a PR, OR
+    #   - It's a failed check suite
+    # AND the PR branch starts with "copilot/" (Copilot's convention)
+    if: >
+      (
+        github.event_name == 'pull_request_review' &&
+        github.event.review.state == 'changes_requested' &&
+        startsWith(github.event.pull_request.head.ref, 'copilot/')
+      ) ||
+      (
+        github.event_name == 'pull_request_review_comment' &&
+        startsWith(github.event.pull_request.head.ref, 'copilot/')
+      ) ||
+      (
+        github.event_name == 'check_suite' &&
+        github.event.check_suite.conclusion == 'failure'
+      )
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Determine PR number and branch
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [[ "${{ github.event_name }}" == "check_suite" ]]; then
+            # Extract from check_suite's associated PRs
+            pr_number=$(echo '${{ toJSON(github.event.check_suite.pull_requests) }}' | jq -r '.[0].number // empty' 2>/dev/null || echo "")
+            if [[ -z "$pr_number" ]]; then
+              echo "No PR associated with this check suite. Skipping."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            branch=$(gh pr view "$pr_number" --repo "${{ github.repository }}" --json headRefName --jq '.headRefName' 2>/dev/null || echo "")
+            if [[ ! "$branch" == copilot/* ]]; then
+              echo "PR #$pr_number branch '$branch' is not a copilot branch. Skipping."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          else
+            pr_number="${{ github.event.pull_request.number }}"
+            branch="${{ github.event.pull_request.head.ref }}"
+          fi
+
+          echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      # Don't respond to our own reviews (prevents infinite loops)
+      - name: Check review author
+        if: steps.pr.outputs.skip != 'true'
+        id: author_check
+        run: |
+          reviewer=""
+          if [[ "${{ github.event_name }}" == "pull_request_review" ]]; then
+            reviewer="${{ github.event.review.user.login }}"
+          elif [[ "${{ github.event_name }}" == "pull_request_review_comment" ]]; then
+            reviewer="${{ github.event.comment.user.login }}"
+          fi
+
+          # Skip if the comment came from Claude's bot account
+          if [[ "$reviewer" == "claude[bot]" || "$reviewer" == "github-actions[bot]" ]]; then
+            echo "Review posted by $reviewer — skipping to prevent loop."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Review posted by $reviewer — proceeding."
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Check fix cycle budget (max 3)
+      - name: Check fix cycle budget
+        if: steps.pr.outputs.skip != 'true' && steps.author_check.outputs.skip != 'true'
+        id: budget
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          MAX_CYCLES=3
+          fix_count=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json comments \
+            --jq '[.comments[] | select(.body | contains("🔧 Claude fix cycle"))] | length' 2>/dev/null || echo "0")
+
+          echo "Fix cycles: $fix_count / $MAX_CYCLES"
+          echo "fix_count=$fix_count" >> "$GITHUB_OUTPUT"
+
+          if [[ "$fix_count" -ge "$MAX_CYCLES" ]]; then
+            echo "exceeded=true" >> "$GITHUB_OUTPUT"
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
+              --body "⚠️ **Fix cycle budget exhausted** ($fix_count/$MAX_CYCLES). Remaining comments need human review."
+          else
+            echo "exceeded=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Wait for all reviewers to finish posting
+      # Gemini, Copilot, and Claude auto-review typically complete within 60s
+      - name: Wait for reviewers to settle
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        run: |
+          echo "Waiting 90 seconds for all reviewers to finish posting..."
+          sleep 90
+
+      - name: Checkout PR branch
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.pr.outputs.branch }}
+
+      # Install tools Claude might need for verification
+      - name: Setup Python
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Terraform
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: hashicorp/setup-terraform@v3
+
+      # Post cycle marker
+      - name: Mark fix cycle start
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          cycle=$(( ${{ steps.budget.outputs.fix_count }} + 1 ))
+          gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
+            --body "🔧 **Claude fix cycle $cycle/3** — Reading all review comments (Gemini, Copilot, Claude, human) and resolving. [Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+      # Claude reads ALL review threads and fixes them
+      - name: Resolve all review comments
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-6
+          claude_args: "--max-turns 100 --permission-mode auto"
+          prompt: |
+            You are resolving review comments on PR #${{ steps.pr.outputs.number }}.
+
+            Follow the procedure in `.github/prompts/pr-resolve-all.md` exactly:
+
+            1. Scan ALL review threads — from every reviewer (gemini-code-assist[bot],
+               copilot, claude[bot], and any human reviewers). Use the GitHub API to
+               fetch the complete list of review comments and review threads.
+            2. Build an issue index with sequential IDs.
+            3. For each item: verify it exists in the current code, implement the fix,
+               run verification (tests, lint, build).
+            4. Post a resolution report as a PR comment.
+
+            Rules:
+            - Read `AGENTS.md` first for repo conventions.
+            - Fix ONLY what reviewers flagged. No drive-by changes.
+            - If a suggestion is unclear or requires a design decision, mark it
+              "Needs clarification" — do not guess.
+            - Commit with message: "fix: resolve review comments (cycle ${{ steps.budget.outputs.fix_count }})"
+            - Push to the existing branch. Do NOT create a new PR.
