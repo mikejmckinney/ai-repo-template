@@ -156,7 +156,7 @@ jobs:
                             isResolved
                             path
                             line
-                            comments(first: 50) {
+                            comments(first: 100) {
                               nodes { author { login } body url }
                               pageInfo { hasNextPage endCursor }
                             }
@@ -179,7 +179,7 @@ jobs:
                             isResolved
                             path
                             line
-                            comments(first: 50) {
+                            comments(first: 100) {
                               nodes { author { login } body url }
                               pageInfo { hasNextPage endCursor }
                             }
@@ -206,8 +206,10 @@ jobs:
 
           # For any thread whose first page of comments was truncated, fetch
           # the remaining comment pages and merge them into the thread.
-          truncated_thread_ids=$(echo "$threads_acc" | jq -r '.[] | select(.comments.pageInfo.hasNextPage == true) | .id')
-          for thread_id in $truncated_thread_ids; do
+          # Use NUL-delimited iteration so node IDs with unusual characters
+          # are handled safely.
+          while IFS= read -r thread_id; do
+            [[ -z "$thread_id" ]] && continue
             comment_cursor=$(echo "$threads_acc" | jq -r --arg id "$thread_id" '.[] | select(.id == $id) | .comments.pageInfo.endCursor // empty')
             while [[ -n "$comment_cursor" ]]; do
               cpage=$(gh api graphql \
@@ -224,16 +226,18 @@ jobs:
                     }
                   }' 2>/dev/null) || break
               extra_nodes=$(echo "$cpage" | jq '.data.node.comments.nodes // []')
-              threads_acc=$(jq --arg id "$thread_id" --argjson extra "$extra_nodes" \
-                'map(if .id == $id then .comments.nodes += $extra else . end)' <<<"$threads_acc")
               has_next=$(echo "$cpage" | jq -r '.data.node.comments.pageInfo.hasNextPage')
+              # Append nodes and refresh pageInfo so it reflects the merged
+              # state (no stale hasNextPage/endCursor left behind).
+              threads_acc=$(jq --arg id "$thread_id" --argjson extra "$extra_nodes" --argjson hn "$([[ "$has_next" == "true" ]] && echo true || echo false)" \
+                'map(if .id == $id then .comments.nodes += $extra | .comments.pageInfo.hasNextPage = $hn else . end)' <<<"$threads_acc")
               if [[ "$has_next" != "true" ]]; then
                 comment_cursor=""
               else
                 comment_cursor=$(echo "$cpage" | jq -r '.data.node.comments.pageInfo.endCursor // empty')
               fi
             done
-          done
+          done <<<"$(echo "$threads_acc" | jq -r '.[] | select(.comments.pageInfo.hasNextPage == true) | .id')"
 
           # ── Fetch top-level reviews (paginated) ──
           reviews_acc='[]'
