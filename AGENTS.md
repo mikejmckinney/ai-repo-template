@@ -73,7 +73,7 @@ This template supports parallel role-specialized agents. Before editing any file
 - Check that CI pipeline is green.
 
 ## Code quality
-Universal SOLID / TDD / clean-code rules — including single responsibility, no silent error swallowing, no dead code, no secrets in code or logs, and the ~200-line file guideline — live in `.context/rules/domain_code_quality.md` (Hard rules H1–H8, Soft rules S1–S6). That file is the single source of truth; do not duplicate its rules here or in role agent files — link to specific rule IDs instead.
+Universal SOLID / TDD / clean-code rules — single responsibility, no silent error swallowing, no dead code, and related constraints — are defined as Hard rules H1–H8 and Soft rules S1–S6 in `.context/rules/domain_code_quality.md`. Secrets hygiene (no secrets in code or logs) and the ~200-line file guideline live in `docs/guides/agent-best-practices.md`. Do not duplicate these in AGENTS.md or role agent files — link to the relevant rule IDs or guide sections instead.
 
 ## Review guidelines
 - Block on failing CI/tests or missing test coverage for changed behavior.
