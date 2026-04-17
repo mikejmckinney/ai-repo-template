@@ -136,6 +136,10 @@ jobs:
           owner="${REPO%/*}"
           name="${REPO#*/}"
 
+          # Known AI reviewer logins (GraphQL returns these without the [bot]
+          # suffix). Update this single list when new AI reviewers are added.
+          AI_REVIEWERS="copilot-pull-request-reviewer|gemini-code-assist|codex|chatgpt-codex-connector"
+
           # ── Fetch unresolved review threads via GraphQL (paginated) ──
           # Review threads carry the ground-truth isResolved flag that REST
           # endpoints don't expose. We paginate both reviewThreads and the
@@ -293,7 +297,7 @@ jobs:
           # convention) OR known AI reviewer logins that the GraphQL API returns
           # without the [bot] suffix. Exclude the Copilot SWE agent itself
           # (login "copilot" or "copilot[bot]") to prevent relaying its own reviews.
-          inline_comments=$(echo "$threads_json" | jq '
+          inline_comments=$(echo "$threads_json" | jq --arg bots "$AI_REVIEWERS" '
             [ (.reviewThreads.nodes // [])[]
               | select(.isResolved == false)
               | . as $thread
@@ -301,7 +305,7 @@ jobs:
               | select(
                   (
                     (.author.login | test("\\[bot\\]$"))
-                    or (.author.login | test("^(copilot-pull-request-reviewer|gemini-code-assist|codex|chatgpt-codex-connector)$"))
+                    or (.author.login | test("^(" + $bots + ")$"))
                   )
                   and (.author.login | test("^copilot(\\[bot\\])?$") | not)
                 )
@@ -315,12 +319,12 @@ jobs:
             ]' 2>/dev/null || echo "[]")
 
           # ── Extract review-level summaries (no isResolved on reviews) ──
-          review_comments=$(echo "$threads_json" | jq '
+          review_comments=$(echo "$threads_json" | jq --arg bots "$AI_REVIEWERS" '
             [ (.reviews.nodes // [])[]
               | select(
                   (
                     (.author.login | test("\\[bot\\]$"))
-                    or (.author.login | test("^(copilot-pull-request-reviewer|gemini-code-assist|codex|chatgpt-codex-connector)$"))
+                    or (.author.login | test("^(" + $bots + ")$"))
                   )
                   and (.author.login | test("^copilot(\\[bot\\])?$") | not)
                   and (.state == "CHANGES_REQUESTED" or .state == "COMMENTED")
