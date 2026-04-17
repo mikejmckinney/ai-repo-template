@@ -45,7 +45,7 @@ on:
 
 concurrency:
   group: relay-reviews-${{ github.event.pull_request.number }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   relay:
@@ -81,7 +81,7 @@ jobs:
 
           # Skip copilot's own reviews (it sees them already)
           # Skip our own relayed comments (they come from the PAT owner)
-          if [[ "$reviewer" == "copilot" || "$reviewer" == "github-actions[bot]" ]]; then
+          if [[ "$reviewer" == "copilot" || "$reviewer" == "copilot[bot]" || "$reviewer" == "github-actions[bot]" ]]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
@@ -130,101 +130,240 @@ jobs:
           REPO: ${{ github.repository }}
           CYCLE: ${{ steps.budget.outputs.cycle }}
         run: |
-          echo "Collecting review comments from all bot reviewers..."
+          echo "Collecting unresolved review threads from all bot reviewers..."
 
-          # ── Collect inline review comments (diff-anchored) ──
-          # These are the detailed line-level comments from Gemini, Claude, etc.
-          inline_comments=$(gh api "repos/$REPO/pulls/$PR_NUMBER/comments" \
-            --paginate --jq '
-              [.[] |
-                select(
-                  (.user.login | test("\\[bot\\]$")) and
-                  (.user.login != "copilot") and
-                  (.user.login != "copilot[bot]")
-                ) |
-                {
-                  reviewer: .user.login,
-                  file: .path,
-                  line: (.original_line // .line // "N/A"),
-                  body: .body,
-                  url: .html_url
+          owner="${REPO%/*}"
+          name="${REPO#*/}"
+
+          # ── Fetch unresolved review threads via GraphQL (paginated) ──
+          # Review threads carry the ground-truth isResolved flag that REST
+          # endpoints don't expose. We paginate both reviewThreads and the
+          # per-thread comments so PRs with > 100 threads or > 50 comments
+          # per thread are fully covered.
+          threads_acc='[]'
+          cursor=""
+          while :; do
+            if [[ -n "$cursor" ]]; then
+              page=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$PR_NUMBER" -F after="$cursor" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!, $after:String!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviewThreads(first: 100, after: $after) {
+                          nodes {
+                            id
+                            isResolved
+                            path
+                            line
+                            comments(first: 100) {
+                              nodes { author { login } body url }
+                              pageInfo { hasNextPage endCursor }
+                            }
+                          }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
+                    }
+                  }' 2>/dev/null) || { page=''; break; }
+            else
+              page=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$PR_NUMBER" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviewThreads(first: 100) {
+                          nodes {
+                            id
+                            isResolved
+                            path
+                            line
+                            comments(first: 100) {
+                              nodes { author { login } body url }
+                              pageInfo { hasNextPage endCursor }
+                            }
+                          }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
+                    }
+                  }' 2>/dev/null) || { page=''; break; }
+            fi
+
+            page_nodes=$(echo "$page" | jq '.data.repository.pullRequest.reviewThreads.nodes // []')
+            threads_acc=$(jq -n --argjson a "$threads_acc" --argjson b "$page_nodes" '$a + $b')
+
+            has_next=$(echo "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage')
+            if [[ "$has_next" != "true" ]]; then
+              break
+            fi
+            cursor=$(echo "$page" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.endCursor // empty')
+            if [[ -z "$cursor" ]]; then
+              break
+            fi
+          done
+
+          # For any thread whose first page of comments was truncated, fetch
+          # the remaining comment pages and merge them into the thread.
+          # Use NUL-delimited iteration so node IDs with unusual characters
+          # are handled safely.
+          while IFS= read -r thread_id; do
+            [[ -z "$thread_id" ]] && continue
+            comment_cursor=$(echo "$threads_acc" | jq -r --arg id "$thread_id" '.[] | select(.id == $id) | .comments.pageInfo.endCursor // empty')
+            while [[ -n "$comment_cursor" ]]; do
+              cpage=$(gh api graphql \
+                -F threadId="$thread_id" -F after="$comment_cursor" \
+                -f query='
+                  query($threadId:ID!, $after:String!) {
+                    node(id:$threadId) {
+                      ... on PullRequestReviewThread {
+                        comments(first: 100, after: $after) {
+                          nodes { author { login } body url }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
+                    }
+                  }' 2>/dev/null) || break
+              extra_nodes=$(echo "$cpage" | jq '.data.node.comments.nodes // []')
+              has_next=$(echo "$cpage" | jq -r '.data.node.comments.pageInfo.hasNextPage')
+              # Append nodes and refresh pageInfo so it reflects the merged
+              # state (no stale hasNextPage/endCursor left behind).
+              threads_acc=$(jq --arg id "$thread_id" --argjson extra "$extra_nodes" --argjson hn "$([[ "$has_next" == "true" ]] && echo true || echo false)" \
+                'map(if .id == $id then .comments.nodes += $extra | .comments.pageInfo.hasNextPage = $hn else . end)' <<<"$threads_acc")
+              if [[ "$has_next" != "true" ]]; then
+                comment_cursor=""
+              else
+                comment_cursor=$(echo "$cpage" | jq -r '.data.node.comments.pageInfo.endCursor // empty')
+              fi
+            done
+          done <<<"$(echo "$threads_acc" | jq -r '.[] | select(.comments.pageInfo.hasNextPage == true) | .id')"
+
+          # ── Fetch top-level reviews (paginated) ──
+          reviews_acc='[]'
+          cursor=""
+          while :; do
+            if [[ -n "$cursor" ]]; then
+              rpage=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$PR_NUMBER" -F after="$cursor" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!, $after:String!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviews(first: 100, after: $after) {
+                          nodes { state body author { login } }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
+                    }
+                  }' 2>/dev/null) || break
+            else
+              rpage=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$PR_NUMBER" \
+                -f query='
+                  query($owner:String!, $name:String!, $number:Int!) {
+                    repository(owner:$owner, name:$name) {
+                      pullRequest(number:$number) {
+                        reviews(first: 100) {
+                          nodes { state body author { login } }
+                          pageInfo { hasNextPage endCursor }
+                        }
+                      }
+                    }
+                  }' 2>/dev/null) || break
+            fi
+            page_nodes=$(echo "$rpage" | jq '.data.repository.pullRequest.reviews.nodes // []')
+            reviews_acc=$(jq -n --argjson a "$reviews_acc" --argjson b "$page_nodes" '$a + $b')
+            has_next=$(echo "$rpage" | jq -r '.data.repository.pullRequest.reviews.pageInfo.hasNextPage')
+            if [[ "$has_next" != "true" ]]; then
+              break
+            fi
+            cursor=$(echo "$rpage" | jq -r '.data.repository.pullRequest.reviews.pageInfo.endCursor // empty')
+            if [[ -z "$cursor" ]]; then
+              break
+            fi
+          done
+
+          threads_json=$(jq -n --argjson t "$threads_acc" --argjson r "$reviews_acc" \
+            '{reviewThreads: {nodes: $t}, reviews: {nodes: $r}}')
+
+          # ── Extract actionable inline comments (unresolved threads only) ──
+          inline_comments=$(echo "$threads_json" | jq '
+            [ (.reviewThreads.nodes // [])[]
+              | select(.isResolved == false)
+              | . as $thread
+              | ($thread.comments.nodes // [])[]
+              | select(
+                  (.author.login | test("\\[bot\\]$"))
+                  and (.author.login != "copilot[bot]")
+                )
+              | {
+                  reviewer: .author.login,
+                  file:     ($thread.path // "N/A"),
+                  line:     ($thread.line // "N/A"),
+                  body:     .body,
+                  url:      .url
                 }
-              ]' 2>/dev/null || echo "[]")
+            ]' 2>/dev/null || echo "[]")
 
-          # ── Collect review-level comments (top-level review bodies) ──
-          review_comments=$(gh api "repos/$REPO/pulls/$PR_NUMBER/reviews" \
-            --paginate --jq '
-              [.[] |
-                select(
-                  (.user.login | test("\\[bot\\]$")) and
-                  (.user.login != "copilot") and
-                  (.user.login != "copilot[bot]") and
-                  (.state == "CHANGES_REQUESTED" or .state == "COMMENTED") and
-                  (.body != null) and
-                  (.body != "")
-                ) |
-                {
-                  reviewer: .user.login,
-                  state: .state,
-                  body: .body
-                }
-              ]' 2>/dev/null || echo "[]")
+          # ── Extract review-level summaries (no isResolved on reviews) ──
+          review_comments=$(echo "$threads_json" | jq '
+            [ (.reviews.nodes // [])[]
+              | select(
+                  (.author.login | test("\\[bot\\]$"))
+                  and (.author.login != "copilot[bot]")
+                  and (.state == "CHANGES_REQUESTED" or .state == "COMMENTED")
+                  and (.body != null) and (.body != "")
+                )
+              | { reviewer: .author.login, state: .state, body: .body }
+            ]' 2>/dev/null || echo "[]")
 
-          # ── Count actionable items ──
           inline_count=$(echo "$inline_comments" | jq 'length' 2>/dev/null || echo "0")
           review_count=$(echo "$review_comments" | jq 'length' 2>/dev/null || echo "0")
           total=$((inline_count + review_count))
 
-          echo "Found $inline_count inline comments and $review_count review-level comments from bots."
+          echo "Found $inline_count unresolved inline comments and $review_count review-level comments from bots."
 
           if [[ "$total" -eq 0 ]]; then
             echo "No actionable bot comments found. Skipping relay."
             exit 0
           fi
 
-          # ── Build the relay comment ──
-          comment="📋 **Review Relay (cycle $CYCLE/3)** — Forwarding $total comment(s) from bot reviewers.\n\n"
+          # ── Build the relay comment with real newlines ──
+          # Using $'\n' + printf '%s' so reviewer bodies containing
+          # backslash sequences (\c, \t, \0NNN, …) pass through verbatim.
+          nl=$'\n'
+
+          comment="📋 **Review Relay (cycle ${CYCLE}/3)** — Forwarding ${total} comment(s) from bot reviewers.${nl}${nl}"
           comment+="@copilot Please address the following review feedback. "
-          comment+="Read the referenced prompt file \`.github/prompts/pr-resolve-all.md\` for the resolution procedure, then fix each item below:\n\n"
-          comment+="---\n\n"
+          comment+="Read the referenced prompt file \`.github/prompts/pr-resolve-all.md\` for the resolution procedure, then fix each item below:${nl}${nl}"
+          comment+="---${nl}${nl}"
 
-          # Add review-level comments
           if [[ "$review_count" -gt 0 ]]; then
-            echo "$review_comments" | jq -r '.[] |
-              "### Review from \(.reviewer) (\(.state))\n\(.body)\n\n---\n"
-            ' | while IFS= read -r line; do
-              comment+="$line\n"
-            done
-
-            # Re-read since pipe subshell loses variable
             review_section=$(echo "$review_comments" | jq -r '.[] |
-              "### Review from \(.reviewer) (\(.state))\n\(.body)\n\n---\n"
-            ')
-            comment+="$review_section\n\n"
+              "### Review from \(.reviewer) (\(.state))\n\(.body)\n\n---\n"')
+            comment+="${review_section}${nl}${nl}"
           fi
 
-          # Add inline comments grouped by file
           if [[ "$inline_count" -gt 0 ]]; then
-            comment+="### Inline Comments\n\n"
-
+            comment+="### Inline Comments${nl}${nl}"
             inline_section=$(echo "$inline_comments" | jq -r '
-              group_by(.file) | .[] |
+              sort_by(.file) | group_by(.file) | .[] |
               "**\(.[0].file)**\n" +
               ([.[] |
                 "- **Line \(.line)** (\(.reviewer)): \(.body | split("\n") | join(" ") | .[0:500])"
               ] | join("\n")) +
-              "\n"
-            ')
-            comment+="$inline_section\n"
+              "\n"')
+            comment+="${inline_section}${nl}"
           fi
 
-          comment+="\n---\n"
+          comment+="${nl}---${nl}"
           comment+="*This comment was auto-generated by the review relay workflow. "
           comment+="Bot reviewers' comments were collected and forwarded so Copilot can act on them.*"
 
           # ── Post the comment ──
           # Using CLAUDE_PAT so it appears as the repo owner, not a bot.
           # Copilot will see the @copilot mention and act on it.
-          echo -e "$comment" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
+          printf '%s' "$comment" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
 
           echo "✅ Relayed $total bot review comments to Copilot via @copilot mention."
