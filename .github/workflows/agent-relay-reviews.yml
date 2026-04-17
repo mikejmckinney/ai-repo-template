@@ -1,11 +1,12 @@
 # Relay Bot Reviews to Copilot
 # --------------------------------
-# Reads review comments from ALL bots (Gemini, Claude, Copilot code review)
-# and reposts them as a single @copilot comment from your user account (via PAT).
+# Reads review comments from ALL bots (Gemini, Claude, Copilot code review,
+# ChatGPT Codex) and reposts them as a single @copilot comment from your user
+# account (via PAT).
 #
 # Why this exists:
 #   - Copilot cloud agent only sees @copilot mentions from collaborators
-#   - Copilot ignores review comments posted by other bots (Gemini, Claude)
+#   - Copilot ignores review comments posted by other bots (Gemini, Claude, Codex)
 #   - Copilot CAN write to .github/workflows/ files (Claude's app token cannot)
 #   - This relay bridges the gap: bots review → relay reposts → Copilot fixes
 #
@@ -130,6 +131,11 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           CYCLE: ${{ steps.budget.outputs.cycle }}
+          # Known AI reviewer logins that may NOT end with [bot] in GraphQL.
+          # Pipe-separated list of base logins. The jq filter matches these
+          # in addition to the generic [bot] suffix catch-all.
+          # Update this variable when adding new AI reviewer bots.
+          AI_REVIEWERS: "copilot-pull-request-reviewer|gemini-code-assist|codex"
         run: |
           echo "Collecting unresolved review threads from all bot reviewers..."
 
@@ -289,13 +295,13 @@ jobs:
             '{reviewThreads: {nodes: $t}, reviews: {nodes: $r}}')
 
           # ── Extract actionable inline comments (unresolved threads only) ──
-          inline_comments=$(echo "$threads_json" | jq '
+          inline_comments=$(echo "$threads_json" | jq --arg ai "$AI_REVIEWERS" '
             [ (.reviewThreads.nodes // [])[]
               | select(.isResolved == false)
               | . as $thread
               | ($thread.comments.nodes // [])[]
               | select(
-                  (.author.login | test("\\[bot\\]$"))
+                  ((.author.login | test("\\[bot\\]$")) or (.author.login | test("^(" + $ai + ")$")))
                   and (.author.login != "copilot[bot]")
                 )
               | {
@@ -308,10 +314,10 @@ jobs:
             ]' 2>/dev/null || echo "[]")
 
           # ── Extract review-level summaries (no isResolved on reviews) ──
-          review_comments=$(echo "$threads_json" | jq '
+          review_comments=$(echo "$threads_json" | jq --arg ai "$AI_REVIEWERS" '
             [ (.reviews.nodes // [])[]
               | select(
-                  (.author.login | test("\\[bot\\]$"))
+                  ((.author.login | test("\\[bot\\]$")) or (.author.login | test("^(" + $ai + ")$")))
                   and (.author.login != "copilot[bot]")
                   and (.state == "CHANGES_REQUESTED" or .state == "COMMENTED")
                   and (.body != null) and (.body != "")
