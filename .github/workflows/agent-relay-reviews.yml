@@ -1,11 +1,11 @@
 # Relay Bot Reviews to Copilot
 # --------------------------------
-# Reads review comments from ALL bots (Gemini, Claude, Copilot code review)
+# Reads review comments from ALL bots (Gemini, Claude, Copilot code review, ChatGPT Codex)
 # and reposts them as a single @copilot comment from your user account (via PAT).
 #
 # Why this exists:
 #   - Copilot cloud agent only sees @copilot mentions from collaborators
-#   - Copilot ignores review comments posted by other bots (Gemini, Claude)
+#   - Copilot ignores review comments posted by other bots (Gemini, Claude, ChatGPT Codex)
 #   - Copilot CAN write to .github/workflows/ files (Claude's app token cannot)
 #   - This relay bridges the gap: bots review → relay reposts → Copilot fixes
 #
@@ -289,14 +289,21 @@ jobs:
             '{reviewThreads: {nodes: $t}, reviews: {nodes: $r}}')
 
           # ── Extract actionable inline comments (unresolved threads only) ──
+          # Bot detection: match logins ending with [bot] (standard GitHub App
+          # convention) OR known AI reviewer logins that the GraphQL API returns
+          # without the [bot] suffix. Exclude the Copilot SWE agent itself
+          # (login "copilot" or "copilot[bot]") to prevent relaying its own reviews.
           inline_comments=$(echo "$threads_json" | jq '
             [ (.reviewThreads.nodes // [])[]
               | select(.isResolved == false)
               | . as $thread
               | ($thread.comments.nodes // [])[]
               | select(
-                  (.author.login | test("\\[bot\\]$"))
-                  and (.author.login != "copilot[bot]")
+                  (
+                    (.author.login | test("\\[bot\\]$"))
+                    or (.author.login | test("^(copilot-pull-request-reviewer|gemini-code-assist|codex|chatgpt-codex-connector)$"))
+                  )
+                  and (.author.login | test("^copilot(\\[bot\\])?$") | not)
                 )
               | {
                   reviewer: .author.login,
@@ -311,8 +318,11 @@ jobs:
           review_comments=$(echo "$threads_json" | jq '
             [ (.reviews.nodes // [])[]
               | select(
-                  (.author.login | test("\\[bot\\]$"))
-                  and (.author.login != "copilot[bot]")
+                  (
+                    (.author.login | test("\\[bot\\]$"))
+                    or (.author.login | test("^(copilot-pull-request-reviewer|gemini-code-assist|codex|chatgpt-codex-connector)$"))
+                  )
+                  and (.author.login | test("^copilot(\\[bot\\])?$") | not)
                   and (.state == "CHANGES_REQUESTED" or .state == "COMMENTED")
                   and (.body != null) and (.body != "")
                 )
