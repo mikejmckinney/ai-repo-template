@@ -17,9 +17,10 @@
 #      variables → Actions → New repository secret). The value is an
 #      Anthropic API key with enough quota to cover PR reviews.
 #
-# Cost note: claude-auto-review runs on every non-draft, non-bot PR open.
-# For a high-traffic repo, narrow the `if:` conditions further (e.g. require
-# a label, restrict to specific authors, or skip paths-only changes).
+# Cost note: claude-auto-review runs on every non-draft PR open, including
+# bot-authored PRs (e.g. Copilot). For a high-traffic repo, narrow the `if:`
+# conditions further (e.g. require a label, restrict to specific authors, or
+# skip paths-only changes).
 
 name: Claude Code Review
 
@@ -45,8 +46,7 @@ jobs:
   claude-auto-review:
     if: >
       github.event_name == 'pull_request' &&
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.user.type != 'Bot'
+      github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       id-token: write

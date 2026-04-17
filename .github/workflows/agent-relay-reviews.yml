@@ -49,11 +49,12 @@ concurrency:
 
 jobs:
   relay:
-    # Only on copilot/* branches, only for change-request reviews or inline comments
+    # Only on copilot/* branches, for change-request or commented reviews and inline comments
     if: >
       startsWith(github.event.pull_request.head.ref, 'copilot/') &&
       (
-        (github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested') ||
+        (github.event_name == 'pull_request_review' &&
+          (github.event.review.state == 'changes_requested' || github.event.review.state == 'commented')) ||
         github.event_name == 'pull_request_review_comment'
       )
 

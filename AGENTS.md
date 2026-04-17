@@ -11,6 +11,21 @@
   - If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
     replace it with the actual repository path (e.g., `owner/repo`) detected from `git remote -v`.
 
+## Critical thinking and communication
+Agents must reason critically rather than agree by default. The bar is "objective and evidence-based," not "agreeable."
+
+- **Push back when warranted.** If the user's plan, premise, or proposed code has a flaw, say so directly and explain why. Don't hedge to be polite. If a better approach exists, recommend it and justify the tradeoff.
+- **Calibrate confidence.** State what you verified vs. what you assumed. When something is uncertain, say "uncertain" — don't pad with false confidence and don't hide behind vague qualifiers.
+- **Don't guess APIs, file contents, or runtime behavior.** Verify by reading the file or searching the codebase. If you can't verify, say so explicitly rather than asserting.
+- **Compare approaches honestly.** When multiple options are viable, name the tradeoffs (cost, risk, reversibility, blast radius) before recommending one.
+- **Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs.
+
+## Work style
+- **Small, reversible changes** beat rewrites. Prefer the minimal diff that fully solves the task.
+- **No drive-by refactors.** If you spot something unrelated worth fixing, file a follow-up task instead of bundling it in.
+- **Surface prerequisites and edge cases** when explaining a plan or how-to: required tools, dependencies, non-obvious failure modes, safety issues. Skip boilerplate warnings on trivial work.
+- **Don't weaken tests or make unrelated source changes to force them green.** If a test exposes a real bug, fix the bug in the source. Tests document behavior; weakening them to go green is a regression in disguise.
+
 ## Truth hierarchy
 When information conflicts, use this priority order:
 1. `./.context/**` — canonical project direction and constraints
@@ -56,6 +71,9 @@ This template supports parallel role-specialized agents. Before editing any file
 - Run the repo's verification commands (prefer those documented in AI_REPO_GUIDE.md) before declaring done.
 - Ensure all tests pass locally before pushing.
 - Check that CI pipeline is green.
+
+## Code quality
+Universal SOLID / TDD / clean-code rules are defined as Hard rules H1–H8 and Soft rules S1–S6 in `.context/rules/domain_code_quality.md`. Secrets hygiene (no secrets in code or logs) and the ~200-line file guideline live in `docs/guides/agent-best-practices.md`. Do not duplicate these in AGENTS.md or role agent files — link to the relevant rule IDs or guide sections instead.
 
 ## Review guidelines
 - Block on failing CI/tests or missing test coverage for changed behavior.
