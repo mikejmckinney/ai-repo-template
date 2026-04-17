@@ -7,6 +7,7 @@ def test_hello_output():
         [sys.executable, "test/hello.py"],
         capture_output=True,
         text=True,
+        timeout=10,
     )
     assert result.stdout.strip() == "Hello, World!"
     assert result.returncode == 0
