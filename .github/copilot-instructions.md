@@ -21,9 +21,9 @@
 When a user's comment or issue body contains the pattern `@copilot follow <path>`
 (e.g. `@copilot follow .github/prompts/pr-resolve-all.md`):
 
-1. Only one `@copilot follow <path>` reference is expected per comment. If the
-   path doesn't exist or isn't under `.github/prompts/`, post a single comment
-   explaining that and stop.
+1. Only one `@copilot follow <path>` reference is supported per comment (only
+   the first one will be processed). If the path doesn't exist or isn't under
+   `.github/prompts/`, post a single comment explaining that and stop.
 2. Read the entire file at `<path>` before doing anything else after that validation.
 3. Treat that file's contents as your primary task instructions for this run,
    overriding any shorter instruction in the mention.
@@ -32,7 +32,7 @@ When a user's comment or issue body contains the pattern `@copilot follow <path>
    elsewhere in this repo, the referenced file wins for this task.
 6. If your cumulative response would exceed GitHub's per-comment size limit
    (approximately 65 KB of raw comment body text), split it across multiple
-   sequential PR comments labeled `Part 1/N`, `Part 2/N`, … rather than
+   sequential PR comments labeled `Part 1/N`, `Part 2/N`, ... rather than
    truncating. Post each part as soon as it's ready so the author can read along.
 
 This mirrors the `@claude follow <path>` convention wired through
