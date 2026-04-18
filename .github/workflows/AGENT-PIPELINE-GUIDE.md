@@ -36,12 +36,21 @@ With workflow approval disabled (see Setup below), these fire immediately:
 - **Copilot code review** — posts review if configured as a required reviewer
 - **CI checks** — your `ci-tests.yml` runs
 
-### Step 4: Claude resolves ALL review comments (automatic)
-`agent-fix-reviews.yml` triggers when any reviewer submits changes.
-It waits 90 seconds for all reviewers to finish, then runs Claude Code
-Action with `pr-resolve-all.md`. Claude reads comments from **every**
-reviewer (including Gemini — something Copilot can't do), fixes the
-issues, runs verification, and pushes.
+### Step 4: Claude resolves ALL review comments (automatic, default)
+`agent-fix-reviews.yml` triggers when any reviewer submits changes on a
+`copilot/*` PR. It waits 90 seconds for all reviewers to finish, then runs
+Claude Code Action (Sonnet) with `pr-resolve-all.md`. Claude reads
+comments from **every** reviewer (including Gemini — something Copilot
+can't do), fixes the issues, runs verification, and pushes.
+
+When a review item requires editing a file under `.github/workflows/**`,
+Claude can't push the change itself (the GitHub App token blocks workflow
+edits). Instead it posts a single `@copilot` comment summarizing the
+delegated items so Copilot's cloud agent can take care of them.
+
+To skip Claude resolution on a particular PR, add the `no-claude-fix`
+label. To use the legacy Copilot-relay path instead, add `copilot-relay`
+(see `agent-relay-reviews.yml`).
 
 ### Step 5: Auto-merge (automatic)
 `agent-auto-merge.yml` triggers when checks complete. If CI is green,
@@ -108,10 +117,23 @@ Create these in **Settings → Labels**:
 | `agent-complete` | `#0E8A16` (green) | Merged and done |
 | `no-auto-merge` | `#E4E669` (yellow) | Pause auto-merge for manual review |
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
+| `no-claude-fix` | `#FBCA04` (amber) | Opt PR out of `agent-fix-reviews.yml` (Claude resolution) |
+| `copilot-relay` | `#5319E7` (purple) | Opt PR in to legacy `agent-relay-reviews.yml` (Copilot resolution) |
+
+**Resolution-path selection:**
+- Default: Claude (Sonnet) resolves all bot/human review comments via
+  `agent-fix-reviews.yml`. Workflow-file changes (`.github/workflows/**`)
+  are auto-delegated to Copilot via an `@copilot` comment, because the
+  Claude app token cannot push workflow edits.
+- Add `no-claude-fix` to skip Claude resolution on a specific PR.
+- Add `copilot-relay` to enable the legacy relay path that forwards bot
+  review comments to Copilot. Both labels can be combined when you want
+  Copilot — not Claude — to drive resolution end-to-end.
 
 ### 8. Install the workflow files
 Copy to `.github/workflows/`:
-- `agent-fix-reviews.yml` — auto-triggers Claude on review comments
+- `agent-fix-reviews.yml` — Claude (Sonnet) resolves review comments (default)
+- `agent-relay-reviews.yml` — legacy Copilot relay (opt-in via `copilot-relay`)
 - `agent-auto-ready.yml` — flips Copilot draft PRs to ready for review
 - `agent-auto-merge.yml` — auto-merges when ready
 
@@ -230,6 +252,8 @@ Assign all three to `@copilot` at once. Issues 5 and 6 should wait.
 | Situation | What to do |
 |-----------|-----------|
 | Want to review before merge | Add `no-auto-merge` label to the PR |
+| Skip Claude review resolution on this PR | Add `no-claude-fix` label |
+| Use Copilot (not Claude) for review resolution | Add `copilot-relay` label (and `no-claude-fix` if you don't want both running) |
 | Fix cycle exhausted (3/3) | Review remaining comments yourself, merge manually |
 | Copilot's implementation is wrong | Comment on the PR with corrections, Copilot picks them up |
 | Claude can't resolve a comment | Marked as "Needs clarification" in the resolution report — address manually |
@@ -282,7 +306,8 @@ for Gemini to finish posting.
 
 | File | Purpose | Needs API key? |
 |------|---------|---------------|
-| `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude on reviews | Yes (ANTHROPIC_API_KEY) |
+| `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews — default resolver | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
+| `.github/workflows/agent-relay-reviews.yml` | Legacy Copilot relay (opt-in via `copilot-relay` label) | No (uses CLAUDE_PAT for posting) |
 | `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready | No |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |
 | `.github/workflows/ci-tests.yml` | CI checks | No |
