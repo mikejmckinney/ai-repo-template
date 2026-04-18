@@ -36,6 +36,8 @@ on:
   # (GitHub suppresses them to prevent recursive loops). workflow_run is
   # the correct trigger for re-evaluating after Actions-based CI finishes.
   # This trigger requires the workflow file to be on the default branch.
+  # IMPORTANT: names below must match the `name:` fields in ci-tests.yml
+  # and lint-and-format.yml — if those are renamed, update here too.
   workflow_run:
     workflows: ["CI Tests", "Lint and Format"]
     types: [completed]
@@ -78,14 +80,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}
+          # Pass event data via env vars (not inline interpolation) to
+          # prevent code-injection from untrusted PR metadata.
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_WFR_PR_JSON: ${{ toJSON(github.event.workflow_run.pull_requests) }}
         run: |
           pr_number=""
 
           # Determine PR number from event type
-          if [[ -n "${{ github.event.pull_request.number }}" ]]; then
-            pr_number="${{ github.event.pull_request.number }}"
-          elif [[ -n '${{ toJSON(github.event.workflow_run.pull_requests) }}' ]]; then
-            pr_number=$(echo '${{ toJSON(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number // empty' 2>/dev/null || echo "")
+          if [[ -n "$EVENT_PR_NUMBER" ]]; then
+            pr_number="$EVENT_PR_NUMBER"
+          elif [[ -n "$EVENT_WFR_PR_JSON" ]]; then
+            pr_number=$(echo "$EVENT_WFR_PR_JSON" | jq -r '.[0].number // empty' 2>/dev/null || echo "")
           fi
 
           if [[ -z "$pr_number" ]]; then
@@ -144,6 +150,7 @@ jobs:
           # Exclude this workflow's own check run from the count — it is
           # always IN_PROGRESS while this step executes, which would
           # create a deadlock (pending >= 1 forever).
+          # NOTE: must match the workflow `name:` on line 31 of this file.
           self_wf="Auto-Merge Copilot PRs"
           failing=$(echo "$pr_json" | jq -r --arg self "$self_wf" '[.statusCheckRollup[] | select(.workflowName != $self and .status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED")] | length' 2>/dev/null || echo "999")
           pending=$(echo "$pr_json" | jq -r --arg self "$self_wf" '[.statusCheckRollup[] | select(.workflowName != $self and .status != "COMPLETED")] | length' 2>/dev/null || echo "999")
