@@ -1,14 +1,17 @@
 # Claude Code — automated PR review + @claude mention handler
 #
 # Two jobs:
-#   1. claude-auto-review — runs on PR open / reopen / ready_for_review.
-#      Invokes the judge subagent (`.claude/agents/judge.md`) to post a
-#      single comprehensive review comment. Mirrors Gemini Code Assist's
-#      auto-review-on-PR-open behavior.
+#   1. claude-auto-review — opt-in via the `claude-review` label. Runs on PR
+#      open / reopen / ready_for_review *or* when the `claude-review` label is
+#      applied to an existing PR. Invokes the judge subagent
+#      (`.claude/agents/judge.md`) to post a single comprehensive review
+#      comment. To trigger a review, apply the `claude-review` label to the
+#      PR. The label must already exist (or be created by someone with
+#      label-management permissions) before it can be applied.
 #   2. claude-mention — runs when someone writes `@claude <instruction>` in
-#      a PR comment, review comment, or review body. Lets you ask follow-up
-#      questions ("@claude re-check the auth logic after my last commit")
-#      or request scoped reviews without opening a new PR.
+#      a PR comment, review comment, or review body. Always available
+#      regardless of the `claude-review` label, so it doubles as the escape
+#      hatch for one-off reviews on PRs that aren't labeled.
 #
 # One-time setup required before this workflow does anything:
 #   1. Install the Claude GitHub App on this repo:
@@ -16,17 +19,12 @@
 #   2. Add a repo secret named ANTHROPIC_API_KEY (Settings → Secrets and
 #      variables → Actions → New repository secret). The value is an
 #      Anthropic API key with enough quota to cover PR reviews.
-#
-# Cost note: claude-auto-review runs on every non-draft PR open, including
-# bot-authored PRs (e.g. Copilot). For a high-traffic repo, narrow the `if:`
-# conditions further (e.g. require a label, restrict to specific authors, or
-# skip paths-only changes).
 
 name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review]
+    types: [opened, reopened, ready_for_review, labeled]
   issue_comment:
     types: [created]
   pull_request_review_comment:
@@ -41,12 +39,18 @@ concurrency:
 
 jobs:
   # ----------------------------------------------------------------------
-  # Auto-review on PR open / reopen / ready_for_review.
+  # Auto-review — opt-in via the `claude-review` label. Fires on PR
+  # open / reopen / ready_for_review when the label is already applied,
+  # or on the `labeled` event when the label is added to an existing PR.
   # ----------------------------------------------------------------------
   claude-auto-review:
     if: >
       github.event_name == 'pull_request' &&
-      github.event.pull_request.draft == false
+      github.event.pull_request.draft == false &&
+      (
+        (github.event.action == 'labeled' && github.event.label.name == 'claude-review') ||
+        (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'claude-review'))
+      )
     runs-on: ubuntu-latest
     permissions:
       id-token: write
