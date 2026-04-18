@@ -73,6 +73,7 @@ REQUIRED_FILES=(
     ".claude/agents/analyst.md"
     ".github/prompts/copilot-onboarding.md"
     ".github/prompts/repo-onboarding.md"
+    ".github/workflows/AGENT-PIPELINE-GUIDE.md"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do
@@ -372,48 +373,43 @@ echo ""
 # Validates the autonomous agent pipeline (issue → PR → review → fix → merge).
 # These tests verify the key safety and correctness properties described in
 # .github/workflows/AGENT-PIPELINE-GUIDE.md.
+# Grep patterns target the actual enforcement tokens (if: conditions, shell
+# checks, CLI flags) rather than broad substrings that could match comments.
 echo "Checking workflow automation pipeline..."
 
-# Pipeline guide must exist
-if [[ -f ".github/workflows/AGENT-PIPELINE-GUIDE.md" ]]; then
-    pass "AGENT-PIPELINE-GUIDE.md exists"
-else
-    fail "AGENT-PIPELINE-GUIDE.md is missing"
-fi
-
 # agent-auto-ready.yml: must only act on copilot/* branches and drafts
-if grep -q "copilot/" .github/workflows/agent-auto-ready.yml 2>/dev/null; then
+if grep -Fq "startsWith(github.event.pull_request.head.ref, 'copilot/')" .github/workflows/agent-auto-ready.yml 2>/dev/null; then
     pass "agent-auto-ready.yml filters on copilot/* branches"
 else
     fail "agent-auto-ready.yml missing copilot/* branch filter"
 fi
-if grep -q "draft" .github/workflows/agent-auto-ready.yml 2>/dev/null; then
+if grep -Fq "github.event.pull_request.draft == true" .github/workflows/agent-auto-ready.yml 2>/dev/null; then
     pass "agent-auto-ready.yml checks draft state"
 else
     fail "agent-auto-ready.yml missing draft state check"
 fi
 
 # agent-relay-reviews.yml: must have relay budget (loop prevention)
-if grep -q "MAX_CYCLES" .github/workflows/agent-relay-reviews.yml 2>/dev/null; then
+if grep -q "MAX_CYCLES=" .github/workflows/agent-relay-reviews.yml 2>/dev/null; then
     pass "agent-relay-reviews.yml has relay budget (MAX_CYCLES)"
 else
     fail "agent-relay-reviews.yml missing relay budget (MAX_CYCLES)"
 fi
 # agent-relay-reviews.yml: must filter on copilot/* branches
-if grep -q "copilot/" .github/workflows/agent-relay-reviews.yml 2>/dev/null; then
+if grep -Fq "startsWith(github.event.pull_request.head.ref, 'copilot/')" .github/workflows/agent-relay-reviews.yml 2>/dev/null; then
     pass "agent-relay-reviews.yml filters on copilot/* branches"
 else
     fail "agent-relay-reviews.yml missing copilot/* branch filter"
 fi
 # agent-relay-reviews.yml: must define AI_REVIEWERS for bot detection
-if grep -q "AI_REVIEWERS" .github/workflows/agent-relay-reviews.yml 2>/dev/null; then
+if grep -q "AI_REVIEWERS=" .github/workflows/agent-relay-reviews.yml 2>/dev/null; then
     pass "agent-relay-reviews.yml defines AI_REVIEWERS list"
 else
     fail "agent-relay-reviews.yml missing AI_REVIEWERS list"
 fi
 
 # agent-auto-merge.yml: must filter on copilot/* branches
-if grep -q "copilot/" .github/workflows/agent-auto-merge.yml 2>/dev/null; then
+if grep -Fq '== copilot/*' .github/workflows/agent-auto-merge.yml 2>/dev/null; then
     pass "agent-auto-merge.yml filters on copilot/* branches"
 else
     fail "agent-auto-merge.yml missing copilot/* branch filter"
@@ -425,7 +421,7 @@ else
     fail "agent-auto-merge.yml missing CI status check"
 fi
 # agent-auto-merge.yml: must respect no-auto-merge label
-if grep -q "no-auto-merge" .github/workflows/agent-auto-merge.yml 2>/dev/null; then
+if grep -Fq "no-auto-merge" .github/workflows/agent-auto-merge.yml 2>/dev/null; then
     pass "agent-auto-merge.yml respects no-auto-merge label"
 else
     fail "agent-auto-merge.yml missing no-auto-merge label check"
@@ -437,7 +433,7 @@ else
     fail "agent-auto-merge.yml missing unresolved review threads check"
 fi
 # agent-auto-merge.yml: must use squash merge for clean history
-if grep -q "squash" .github/workflows/agent-auto-merge.yml 2>/dev/null; then
+if grep -Fq -- "--squash" .github/workflows/agent-auto-merge.yml 2>/dev/null; then
     pass "agent-auto-merge.yml uses squash merge"
 else
     fail "agent-auto-merge.yml missing squash merge strategy"
