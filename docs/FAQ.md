@@ -51,7 +51,7 @@ Solo work is fine. The 10 roles (analyst, architect, judge, critic, pm, frontend
 
 ### What does `TEMPLATE_PLACEHOLDER` mean and how do I find every instance?
 
-It's a marker used by this template to flag scaffolding that derived projects should replace. Run [`scripts/verify-env.sh`](../scripts/verify-env.sh) to list all files containing the marker.
+It's a marker used by this template to flag scaffolding that derived projects should replace. Run [`scripts/verify-env.sh`](../scripts/verify-env.sh) to check for the marker and report how many matches it finds.
 
 ### Why are there deployment templates for Vercel, Railway, and Render — do I need all three?
 
