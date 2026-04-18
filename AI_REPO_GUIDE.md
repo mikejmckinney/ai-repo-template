@@ -89,6 +89,7 @@ bash install.sh
     │   └── docs.agent.md
     ├── prompts/
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
+    │   ├── fleet.md              # Copilot Fleet (/fleet) prompt template
     │   └── repo-onboarding.md    # Repo onboarding workflow prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
@@ -139,6 +140,7 @@ bash install.sh
 |------|---------|
 | `.github/prompts/copilot-onboarding.md` | Guide for customizing copilot-instructions.md |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
+| `.github/prompts/fleet.md` | Copilot Fleet (`/fleet`) prompt template with worked examples |
 
 ### Setup Scripts
 | File | Purpose |

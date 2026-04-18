@@ -73,6 +73,7 @@ REQUIRED_FILES=(
     ".claude/agents/analyst.md"
     ".github/prompts/copilot-onboarding.md"
     ".github/prompts/repo-onboarding.md"
+    ".github/prompts/fleet.md"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do

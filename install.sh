@@ -239,6 +239,7 @@ MULTIAGENT_FILES=(
     "docs/guides/multi-agent-coordination.md"
     "docs/guides/optional-skills.md"
     "docs/research/.gitkeep"
+    ".github/prompts/fleet.md"
 )
 
 for rel in "${MULTIAGENT_FILES[@]}"; do

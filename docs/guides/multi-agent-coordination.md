@@ -229,8 +229,21 @@ Enable steps are in the template file header.
 
 **Need more than scheduled nudges?** For continuously-running autonomous agents (cron-driven, with a persistent task DB and webhook notifications), see the **OpenClaw** entry in `docs/guides/optional-skills.md`. It's an opt-in runtime, not vendored.
 
+## Using Copilot Fleet (`/fleet`)
+
+[Copilot Fleet](https://github.blog/ai-and-ml/github-copilot/run-multiple-agents-at-once-with-fleet-in-copilot-cli/) is a Copilot CLI slash command that dispatches multiple sub-agents in parallel — automating the "PM dispatches implementers" step described above.
+
+**How it relates to this template**: Fleet's orchestrator can reference the 10 role agents in `.github/agents/` by name (e.g., `@backend.agent.md`). Each agent's `owned_paths` frontmatter tells Fleet which files that agent should touch, enabling clean file-boundary partitioning across sub-agents.
+
+**When to use Fleet vs. manual dispatch**:
+- **Fleet**: Multi-file features with clear file boundaries and natural parallelism. Fleet handles decomposition, dispatch, and polling automatically.
+- **Manual** (PM + `coordination.md`): Complex cross-cutting work, long-running multi-day tasks, or situations needing explicit lock management and session handoff.
+
+For prompt examples, best practices, and common pitfalls, see `.github/prompts/fleet.md`.
+
 ## See Also
 
+- `.github/prompts/fleet.md` — fleet prompt template with worked examples.
 - `docs/guides/agent-best-practices.md` — token limits, session handoff, secrets.
 - `.github/agents/judge.agent.md` — plan-gate + diff-gate details.
 - `.github/agents/critic.agent.md` — subjective-quality devil's advocate review.
