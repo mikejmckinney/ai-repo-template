@@ -84,6 +84,8 @@ jobs:
           # prevent code-injection from untrusted PR metadata.
           EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
           EVENT_WFR_PR_JSON: ${{ toJSON(github.event.workflow_run.pull_requests) }}
+          # Used to exclude this workflow's own check run from status counts.
+          SELF_WORKFLOW: ${{ github.workflow }}
         run: |
           pr_number=""
 
@@ -150,10 +152,8 @@ jobs:
           # Exclude this workflow's own check run from the count — it is
           # always IN_PROGRESS while this step executes, which would
           # create a deadlock (pending >= 1 forever).
-          # NOTE: must match the workflow `name:` on line 31 of this file.
-          self_wf="Auto-Merge Copilot PRs"
-          failing=$(echo "$pr_json" | jq -r --arg self "$self_wf" '[.statusCheckRollup[] | select(.workflowName != $self and .status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED")] | length' 2>/dev/null || echo "999")
-          pending=$(echo "$pr_json" | jq -r --arg self "$self_wf" '[.statusCheckRollup[] | select(.workflowName != $self and .status != "COMPLETED")] | length' 2>/dev/null || echo "999")
+          failing=$(echo "$pr_json" | jq -r --arg self "$SELF_WORKFLOW" '[.statusCheckRollup[] | select(.workflowName != $self and .status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED")] | length' 2>/dev/null || echo "999")
+          pending=$(echo "$pr_json" | jq -r --arg self "$SELF_WORKFLOW" '[.statusCheckRollup[] | select(.workflowName != $self and .status != "COMPLETED")] | length' 2>/dev/null || echo "999")
 
           if [[ "$pending" -gt 0 ]]; then
             echo "Checks still pending ($pending). Will re-evaluate later."
