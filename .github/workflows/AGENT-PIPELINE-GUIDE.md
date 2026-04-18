@@ -108,6 +108,7 @@ Create these in **Settings → Labels**:
 | `agent-complete` | `#0E8A16` (green) | Merged and done |
 | `no-auto-merge` | `#E4E669` (yellow) | Pause auto-merge for manual review |
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
+| `no-claude-review` | `#D93F0B` (orange) | Skip Claude auto-review and @claude mentions |
 
 ### 8. Install the workflow files
 Copy to `.github/workflows/`:

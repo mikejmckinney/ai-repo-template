@@ -21,6 +21,9 @@
 # bot-authored PRs (e.g. Copilot). For a high-traffic repo, narrow the `if:`
 # conditions further (e.g. require a label, restrict to specific authors, or
 # skip paths-only changes).
+#
+# Opt-out: add the `no-claude-review` label to a PR to skip both the
+# automatic review and the @claude mention handler for that PR.
 
 name: Claude Code Review
 
@@ -46,7 +49,8 @@ jobs:
   claude-auto-review:
     if: >
       github.event_name == 'pull_request' &&
-      github.event.pull_request.draft == false
+      github.event.pull_request.draft == false &&
+      !contains(github.event.pull_request.labels.*.name, 'no-claude-review')
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -84,11 +88,14 @@ jobs:
     if: >
       (github.event_name == 'issue_comment' &&
        github.event.issue.pull_request != null &&
-       contains(github.event.comment.body, '@claude')) ||
+       contains(github.event.comment.body, '@claude') &&
+       !contains(github.event.issue.labels.*.name, 'no-claude-review')) ||
       (github.event_name == 'pull_request_review_comment' &&
-       contains(github.event.comment.body, '@claude')) ||
+       contains(github.event.comment.body, '@claude') &&
+       !contains(github.event.pull_request.labels.*.name, 'no-claude-review')) ||
       (github.event_name == 'pull_request_review' &&
-       contains(github.event.review.body, '@claude'))
+       contains(github.event.review.body, '@claude') &&
+       !contains(github.event.pull_request.labels.*.name, 'no-claude-review'))
     runs-on: ubuntu-latest
     permissions:
       id-token: write
