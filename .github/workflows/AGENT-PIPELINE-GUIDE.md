@@ -264,8 +264,13 @@ Check that `ANTHROPIC_API_KEY` is set in repo secrets. Check that the
 PR branch starts with `copilot/` (the workflow filters on this).
 
 **Auto-merge doesn't fire:**
-Check branch protection. If reviews are required, bot reviews may not
-count. Add `github-actions[bot]` to the bypass list.
+The workflow uses `workflow_run` (not `check_suite`) to detect CI
+completion — GitHub suppresses `check_suite` events for Actions-based
+workflows to prevent recursive loops. The `workflow_run` trigger
+requires the workflow file to be on the default branch (`main`). If
+you recently added the file, merge it to `main` first. Also check
+branch protection: if reviews are required, bot reviews may not count.
+Add `github-actions[bot]` to the bypass list.
 
 **Gemini comments still not getting fixed:**
 Verify that the `agent-fix-reviews.yml` workflow ran (Actions tab).

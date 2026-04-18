@@ -31,8 +31,13 @@
 name: Auto-Merge Copilot PRs
 
 on:
-  # Re-evaluate when checks complete
-  check_suite:
+  # Re-evaluate when CI workflow runs complete.
+  # NOTE: check_suite events are NOT fired for GitHub Actions workflows
+  # (GitHub suppresses them to prevent recursive loops). workflow_run is
+  # the correct trigger for re-evaluating after Actions-based CI finishes.
+  # This trigger requires the workflow file to be on the default branch.
+  workflow_run:
+    workflows: ["CI Tests", "Lint and Format"]
     types: [completed]
 
   # Re-evaluate when reviews change
@@ -53,7 +58,7 @@ on:
 
 # Prevent race conditions
 concurrency:
-  group: auto-merge-${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number || 'none' }}
+  group: auto-merge-${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number || 'none' }}
   cancel-in-progress: true
 
 jobs:
@@ -79,8 +84,8 @@ jobs:
           # Determine PR number from event type
           if [[ -n "${{ github.event.pull_request.number }}" ]]; then
             pr_number="${{ github.event.pull_request.number }}"
-          elif [[ -n '${{ toJSON(github.event.check_suite.pull_requests) }}' ]]; then
-            pr_number=$(echo '${{ toJSON(github.event.check_suite.pull_requests) }}' | jq -r '.[0].number // empty' 2>/dev/null || echo "")
+          elif [[ -n '${{ toJSON(github.event.workflow_run.pull_requests) }}' ]]; then
+            pr_number=$(echo '${{ toJSON(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number // empty' 2>/dev/null || echo "")
           fi
 
           if [[ -z "$pr_number" ]]; then
@@ -135,9 +140,13 @@ jobs:
             exit 0
           fi
 
-          # All checks must pass (none failing, none pending)
-          failing=$(echo "$pr_json" | jq -r '[.statusCheckRollup[] | select(.status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED")] | length' 2>/dev/null || echo "999")
-          pending=$(echo "$pr_json" | jq -r '[.statusCheckRollup[] | select(.status != "COMPLETED")] | length' 2>/dev/null || echo "999")
+          # All checks must pass (none failing, none pending).
+          # Exclude this workflow's own check run from the count — it is
+          # always IN_PROGRESS while this step executes, which would
+          # create a deadlock (pending >= 1 forever).
+          self_wf="Auto-Merge Copilot PRs"
+          failing=$(echo "$pr_json" | jq -r --arg self "$self_wf" '[.statusCheckRollup[] | select(.workflowName != $self and .status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED")] | length' 2>/dev/null || echo "999")
+          pending=$(echo "$pr_json" | jq -r --arg self "$self_wf" '[.statusCheckRollup[] | select(.workflowName != $self and .status != "COMPLETED")] | length' 2>/dev/null || echo "999")
 
           if [[ "$pending" -gt 0 ]]; then
             echo "Checks still pending ($pending). Will re-evaluate later."
