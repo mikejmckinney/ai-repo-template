@@ -6,7 +6,8 @@
 #      applied to an existing PR. Invokes the judge subagent
 #      (`.claude/agents/judge.md`) to post a single comprehensive review
 #      comment. To trigger a review, apply the `claude-review` label to the
-#      PR (the label is created on first use if it doesn't exist).
+#      PR. The label must already exist (or be created by someone with
+#      label-management permissions) before it can be applied.
 #   2. claude-mention — runs when someone writes `@claude <instruction>` in
 #      a PR comment, review comment, or review body. Always available
 #      regardless of the `claude-review` label, so it doubles as the escape
