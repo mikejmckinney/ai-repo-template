@@ -24,22 +24,38 @@
 #   Copilot's cloud agent will then pick it up.
 #
 # Trigger logic:
-#   Fires when a review or inline review comment is posted, or a check
-#   suite fails, on a `copilot/*` branch PR. Waits 90s after the trigger
-#   so Gemini, Copilot review, and Claude auto-review all post first and
-#   get batched into one fix pass.
+#   Fires when a review or inline review comment is posted on a
+#   `copilot/*` branch PR. Waits 90s after the trigger so Gemini,
+#   Copilot review, and Claude auto-review all post first and get
+#   batched into one fix pass.
+#
+#   We deliberately do NOT trigger on `check_suite` failures: this
+#   workflow's prompt resolves *reviewer feedback*, and a CI failure
+#   without a corresponding review comment is better surfaced via the
+#   reviewer (Claude auto-review / Gemini / Copilot review) so it
+#   becomes part of a normal review-resolution cycle. Triggering
+#   directly on CI failures also creates a loop hazard, because every
+#   push from a fix cycle produces another `check_suite`.
 #
 # Opt out:
-#   Add the `no-claude-fix` label to a PR (or its linked issue) to skip
-#   this workflow. Use this when you want to drive resolution manually,
-#   or when running the legacy Copilot-relay path (see
-#   `agent-relay-reviews.yml`, gated on the `copilot-relay` label).
+#   Add the `no-claude-fix` label directly to the PR to skip this
+#   workflow. Use this when you want to drive resolution manually, or
+#   when running the legacy Copilot-relay path (see
+#   `agent-relay-reviews.yml`, gated on the PR's `copilot-relay` label).
 #
 # Safety:
 #   - Only runs on `copilot/*` branches (never touches human PRs)
 #   - Max 3 fix cycles per PR (budget marker comment counts)
 #   - 45-minute timeout per cycle
-#   - Skips when the trigger came from Claude itself (loop prevention)
+#   - Skips reviews/comments authored by Claude or by GitHub Actions
+#     bots (loop prevention)
+#   - Skips events where the actor is `Copilot` itself. The Anthropic
+#     Claude Code Action calls
+#     `GET /repos/.../collaborators/Copilot/permission` for the actor
+#     of the triggering event and exits 1 with "Copilot is not a user"
+#     before `allowed_bots: "*"` is consulted (404 from that endpoint).
+#     Copilot's own pushes/comments don't represent reviewer feedback
+#     anyway, so skipping is the right behavior even apart from the bug.
 #
 # Required setup:
 #   1. ANTHROPIC_API_KEY repo secret
@@ -56,35 +72,28 @@ on:
   pull_request_review_comment:
     types: [created]
 
-  check_suite:
-    types: [completed]
-
 # One fix cycle at a time per PR
 concurrency:
-  group: auto-fix-${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number || 'none' }}
+  group: auto-fix-${{ github.event.pull_request.number || 'none' }}
   cancel-in-progress: false
 
 jobs:
   resolve-reviews:
-    # Trigger on:
-    #   - Submitted reviews on copilot/* PRs that don't carry the no-claude-fix label
-    #   - Inline review comments on copilot/* PRs (same opt-out)
-    #   - Failed check suites with an associated PR (label/branch checked at runtime)
+    # Skip events where the actor is Copilot itself. The Claude Code
+    # Action's permission probe (GET .../collaborators/<actor>/permission)
+    # 404s with "Copilot is not a user" before allowed_bots is consulted,
+    # which would otherwise fail every Copilot-triggered run. Copilot's
+    # own pushes/comments aren't reviewer feedback anyway.
     if: >
+      github.actor != 'Copilot' &&
+      github.actor != 'copilot-swe-agent[bot]' &&
+      startsWith(github.event.pull_request.head.ref, 'copilot/') &&
+      !contains(github.event.pull_request.labels.*.name, 'no-claude-fix') &&
       (
-        github.event_name == 'pull_request_review' &&
-        startsWith(github.event.pull_request.head.ref, 'copilot/') &&
-        !contains(github.event.pull_request.labels.*.name, 'no-claude-fix')
-      ) ||
-      (
-        github.event_name == 'pull_request_review_comment' &&
-        startsWith(github.event.pull_request.head.ref, 'copilot/') &&
-        !contains(github.event.pull_request.labels.*.name, 'no-claude-fix')
-      ) ||
-      (
-        github.event_name == 'check_suite' &&
-        github.event.check_suite.conclusion == 'failure' &&
-        github.event.check_suite.pull_requests[0].number != null
+        (github.event_name == 'pull_request_review' &&
+          (github.event.review.state == 'changes_requested' ||
+           github.event.review.state == 'commented')) ||
+        github.event_name == 'pull_request_review_comment'
       )
 
     runs-on: ubuntu-latest
@@ -97,42 +106,15 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Determine PR number, branch, and label state
+      - name: Determine PR number and branch
         id: pr
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EVENT_NAME: ${{ github.event_name }}
           EVENT_HEAD_REF: ${{ github.event.pull_request.head.ref }}
           EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
-          CHECK_SUITE_PRS: ${{ toJSON(github.event.check_suite.pull_requests) }}
         run: |
-          if [[ "$EVENT_NAME" == "check_suite" ]]; then
-            pr_number=$(echo "$CHECK_SUITE_PRS" | jq -r '.[0].number // empty' 2>/dev/null || echo "")
-            if [[ -z "$pr_number" ]]; then
-              echo "No PR associated with this check suite. Skipping."
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            pr_json=$(gh pr view "$pr_number" --repo "${{ github.repository }}" --json headRefName,labels 2>/dev/null || echo '{}')
-            branch=$(echo "$pr_json" | jq -r '.headRefName // empty')
-            if [[ ! "$branch" == copilot/* ]]; then
-              echo "PR #$pr_number branch '$branch' is not a copilot branch. Skipping."
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-            if echo "$pr_json" | jq -e '.labels[]?.name | select(. == "no-claude-fix")' >/dev/null 2>&1; then
-              echo "PR #$pr_number carries no-claude-fix label. Skipping."
-              echo "skip=true" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          else
-            pr_number="$EVENT_PR_NUMBER"
-            branch="$EVENT_HEAD_REF"
-          fi
-
           {
-            echo "number=$pr_number"
-            echo "branch=$branch"
+            echo "number=$EVENT_PR_NUMBER"
+            echo "branch=$EVENT_HEAD_REF"
             echo "skip=false"
           } >> "$GITHUB_OUTPUT"
 
@@ -140,22 +122,31 @@ jobs:
       - name: Check review author
         if: steps.pr.outputs.skip != 'true'
         id: author_check
+        env:
+          REVIEW_AUTHOR: ${{ github.event.review.user.login }}
+          COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           reviewer=""
-          if [[ "${{ github.event_name }}" == "pull_request_review" ]]; then
-            reviewer="${{ github.event.review.user.login }}"
-          elif [[ "${{ github.event_name }}" == "pull_request_review_comment" ]]; then
-            reviewer="${{ github.event.comment.user.login }}"
+          if [[ "$EVENT_NAME" == "pull_request_review" ]]; then
+            reviewer="$REVIEW_AUTHOR"
+          elif [[ "$EVENT_NAME" == "pull_request_review_comment" ]]; then
+            reviewer="$COMMENT_AUTHOR"
           fi
 
-          # Skip when the comment came from Claude / our own automation
-          if [[ "$reviewer" == "claude[bot]" || "$reviewer" == "github-actions[bot]" ]]; then
-            echo "Review posted by $reviewer — skipping to prevent loop."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "Review posted by $reviewer — proceeding."
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
+          # Skip when the comment came from Claude / our own automation /
+          # Copilot (whose actor causes the action's permission probe to
+          # 404 — see the header note).
+          case "$reviewer" in
+            claude[bot]|github-actions[bot]|Copilot|copilot-swe-agent[bot])
+              echo "Review posted by $reviewer — skipping to prevent loop / known bug."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Review posted by $reviewer — proceeding."
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
 
       # Check fix cycle budget (max 3)
       - name: Check fix cycle budget

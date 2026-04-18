@@ -37,11 +37,20 @@ With workflow approval disabled (see Setup below), these fire immediately:
 - **CI checks** — your `ci-tests.yml` runs
 
 ### Step 4: Claude resolves ALL review comments (automatic, default)
-`agent-fix-reviews.yml` triggers when any reviewer submits changes on a
-`copilot/*` PR. It waits 90 seconds for all reviewers to finish, then runs
-Claude Code Action (Sonnet) with `pr-resolve-all.md`. Claude reads
-comments from **every** reviewer (including Gemini — something Copilot
-can't do), fixes the issues, runs verification, and pushes.
+`agent-fix-reviews.yml` triggers for `copilot/*` PRs when a reviewer
+submits a `commented` / `changes_requested` review or posts an inline
+review comment. It waits 90 seconds for related review activity to
+settle, then runs Claude Code Action (Sonnet) with `pr-resolve-all.md`.
+Claude reads comments from **every** reviewer (including Gemini —
+something Copilot can't do), fixes the issues, runs verification, and
+pushes.
+
+The workflow is intentionally **not** triggered on `check_suite`
+failures: a CI failure without a corresponding review comment is
+better surfaced via Claude auto-review or Gemini, which then turns
+into a normal review-resolution cycle. Triggering on `check_suite`
+also creates a loop hazard since each fix-cycle push produces another
+check suite.
 
 When a review item requires editing a file under `.github/workflows/**`,
 Claude can't push the change itself (the GitHub App token blocks workflow
@@ -49,8 +58,9 @@ edits). Instead it posts a single `@copilot` comment summarizing the
 delegated items so Copilot's cloud agent can take care of them.
 
 To skip Claude resolution on a particular PR, add the `no-claude-fix`
-label. To use the legacy Copilot-relay path instead, add `copilot-relay`
-(see `agent-relay-reviews.yml`).
+label directly to the PR. To use the legacy Copilot-relay path instead,
+add `copilot-relay` directly to the PR (issue labels are not
+automatically copied to Copilot's PR). See `agent-relay-reviews.yml`.
 
 ### Step 5: Auto-merge (automatic)
 `agent-auto-merge.yml` triggers when checks complete. If CI is green,

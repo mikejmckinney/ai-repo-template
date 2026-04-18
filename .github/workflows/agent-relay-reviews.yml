@@ -12,8 +12,9 @@
 #   token can't push to, and you don't want Claude to delegate piecemeal).
 #
 # How to enable:
-#   Add the `copilot-relay` label to the PR (or the linked issue, before the
-#   PR is opened). The relay only runs when the label is present.
+#   Add the `copilot-relay` label directly to the PR. The relay only
+#   runs when the label is present on the PR. (Issue labels are not
+#   automatically copied onto Copilot's PR.)
 #
 # Why this exists:
 #   - Copilot cloud agent only sees @copilot mentions from collaborators
