@@ -85,14 +85,16 @@ jobs:
           EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
           EVENT_WFR_PR_JSON: ${{ toJSON(github.event.workflow_run.pull_requests) }}
           # Used to exclude this workflow's own check run from status counts.
+          # Belt-and-suspenders: match by workflowName OR by job name.
           SELF_WORKFLOW: ${{ github.workflow }}
+          SELF_JOB: ${{ github.job }}
         run: |
           pr_number=""
 
           # Determine PR number from event type
           if [[ -n "$EVENT_PR_NUMBER" ]]; then
             pr_number="$EVENT_PR_NUMBER"
-          elif [[ -n "$EVENT_WFR_PR_JSON" ]]; then
+          elif [[ -n "$EVENT_WFR_PR_JSON" && "$EVENT_WFR_PR_JSON" != "null" && "$EVENT_WFR_PR_JSON" != "[]" ]]; then
             pr_number=$(echo "$EVENT_WFR_PR_JSON" | jq -r '.[0].number // empty' 2>/dev/null || echo "")
           fi
 
@@ -106,7 +108,7 @@ jobs:
 
           # Fetch all PR data in one call
           pr_json=$(gh pr view "$pr_number" --repo "$REPO" \
-            --json headRefName,isDraft,state,mergeable,reviewDecision,statusCheckRollup,labels,title,body \
+            --json headRefName,headRepositoryOwner,isDraft,state,mergeable,reviewDecision,statusCheckRollup,labels,title,body \
             2>/dev/null || echo "")
 
           if [[ -z "$pr_json" ]]; then
@@ -120,6 +122,17 @@ jobs:
           # Must be a copilot/* branch
           if [[ ! "$branch" == copilot/* ]]; then
             echo "Branch '$branch' is not copilot/*. Skipping."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Must NOT be from a fork — workflow_run triggers execute in the
+          # base repo context with access to secrets, so a malicious fork
+          # could name a branch copilot/* and get auto-merged.
+          repo_owner="${REPO%/*}"
+          head_owner=$(echo "$pr_json" | jq -r '.headRepositoryOwner.login // ""')
+          if [[ -n "$head_owner" && "$head_owner" != "$repo_owner" ]]; then
+            echo "PR is from fork ($head_owner). Refusing to auto-merge."
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -152,8 +165,12 @@ jobs:
           # Exclude this workflow's own check run from the count — it is
           # always IN_PROGRESS while this step executes, which would
           # create a deadlock (pending >= 1 forever).
-          failing=$(echo "$pr_json" | jq -r --arg self "$SELF_WORKFLOW" '[.statusCheckRollup[] | select(.workflowName != $self and .status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED")] | length' 2>/dev/null || echo "999")
-          pending=$(echo "$pr_json" | jq -r --arg self "$SELF_WORKFLOW" '[.statusCheckRollup[] | select(.workflowName != $self and .status != "COMPLETED")] | length' 2>/dev/null || echo "999")
+          # Match by workflowName (primary) and also by .name containing
+          # the job id (fallback), since GitHub formats check names as
+          # "workflow / job" in some contexts.
+          self_check="$SELF_WORKFLOW / $SELF_JOB"
+          failing=$(echo "$pr_json" | jq -r --arg self "$SELF_WORKFLOW" --arg self_job "$SELF_JOB" --arg self_check "$self_check" '[.statusCheckRollup[] | select((.workflowName != $self) and (.name != $self_job) and (.name != $self_check) and .status == "COMPLETED" and .conclusion != "SUCCESS" and .conclusion != "NEUTRAL" and .conclusion != "SKIPPED")] | length' 2>/dev/null || echo "999")
+          pending=$(echo "$pr_json" | jq -r --arg self "$SELF_WORKFLOW" --arg self_job "$SELF_JOB" --arg self_check "$self_check" '[.statusCheckRollup[] | select((.workflowName != $self) and (.name != $self_job) and (.name != $self_check) and .status != "COMPLETED")] | length' 2>/dev/null || echo "999")
 
           if [[ "$pending" -gt 0 ]]; then
             echo "Checks still pending ($pending). Will re-evaluate later."
