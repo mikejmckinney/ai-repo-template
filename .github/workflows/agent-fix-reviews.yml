@@ -1,0 +1,187 @@
+# Agent Fix Reviews — Claude-powered review resolution
+# -------------------------------------------------------
+# Automatically resolves review comments from ALL bot reviewers (Gemini, Copilot,
+# ChatGPT Codex, etc.) by running Claude Code with the pr-resolve-all.md prompt.
+#
+# Why this exists:
+#   - Claude Code can see and respond to review comments from ALL bot reviewers
+#   - Claude systematically verifies, fixes, and validates each issue
+#   - Uses Sonnet model to keep costs affordable ($1-3 per PR)
+#   - For workflow file issues, can delegate to Copilot (Claude's GitHub App
+#     token doesn't have permission to modify .github/workflows/)
+#
+# How it works:
+#   1. Triggers when a review is submitted on a copilot/* branch PR
+#   2. Waits 90s for all reviewers to finish posting
+#   3. Runs Claude Code Action with pr-resolve-all.md prompt
+#   4. Claude reads all review threads, fixes issues, validates with tests
+#   5. If workflow issues are found, Claude can call Copilot via comment
+#   6. Max 3 fix cycles per PR (prevents infinite loops)
+#
+# Cost: ~$1-3 per PR using Sonnet model
+#
+# Safety:
+#   - Only runs on copilot/* branches
+#   - Max 3 fix cycles per PR
+#   - Skips if no actionable comments found
+#   - Can be disabled with `no-claude-fix` label
+#
+# Required secrets:
+#   - ANTHROPIC_API_KEY: Anthropic API key for Claude Code
+#
+# Optional labels:
+#   - no-claude-fix: Skip Claude fix cycle
+#   - no-auto-ready: Skip auto-ready (on agent-auto-ready.yml)
+#   - no-auto-merge: Skip auto-merge (on agent-auto-merge.yml)
+
+name: Agent Fix Reviews
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+  pull_request_review_comment:
+    types: [created]
+
+concurrency:
+  group: fix-reviews-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  fix-reviews:
+    # Only on copilot/* branches, for change-request or commented reviews and inline comments
+    # Skip if no-claude-fix label is present
+    if: >
+      startsWith(github.event.pull_request.head.ref, 'copilot/') &&
+      !contains(github.event.pull_request.labels.*.name, 'no-claude-fix') &&
+      (
+        (github.event_name == 'pull_request_review' &&
+          (github.event.review.state == 'changes_requested' || github.event.review.state == 'commented')) ||
+        github.event_name == 'pull_request_review_comment'
+      )
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      # Skip if the review came from claude itself (prevent loops)
+      - name: Check review author
+        id: author
+        run: |
+          reviewer=""
+          if [[ "${{ github.event_name }}" == "pull_request_review" ]]; then
+            reviewer="${{ github.event.review.user.login }}"
+          elif [[ "${{ github.event_name }}" == "pull_request_review_comment" ]]; then
+            reviewer="${{ github.event.comment.user.login }}"
+          fi
+
+          echo "reviewer=$reviewer"
+
+          # Skip Claude's own reviews (prevent loops)
+          if [[ "$reviewer" == "claude" || "$reviewer" == "claude[bot]" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Check fix cycle budget
+      - name: Check fix cycle budget
+        if: steps.author.outputs.skip != 'true'
+        id: budget
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          MAX_CYCLES=3
+
+          # Count how many times Claude has posted fix cycle comments
+          fix_count=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json comments \
+            --jq '[.comments[] | select(.body | contains("🔧 Claude fix cycle"))] | length' 2>/dev/null || echo "0")
+
+          echo "Fix cycles: $fix_count / $MAX_CYCLES"
+
+          if [[ "$fix_count" -ge "$MAX_CYCLES" ]]; then
+            echo "exceeded=true" >> "$GITHUB_OUTPUT"
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
+              --body "⚠️ **Fix cycle budget exhausted** ($fix_count/$MAX_CYCLES). Remaining review comments need manual resolution or direct \`@claude\` tagging."
+          else
+            echo "exceeded=false" >> "$GITHUB_OUTPUT"
+            echo "cycle=$(( fix_count + 1 ))" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Wait for all reviewers to finish posting
+      - name: Wait for reviewers to settle
+        if: >
+          steps.author.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        run: |
+          echo "Waiting 90 seconds for all reviewers to finish posting..."
+          sleep 90
+
+      # Checkout the PR
+      - name: Checkout PR
+        if: >
+          steps.author.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Run Claude Code to resolve all review comments
+      - name: Claude fix cycle
+        if: >
+          steps.author.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-5  # Use Sonnet to keep costs down
+          prompt: |
+            🔧 **Claude fix cycle ${{ steps.budget.outputs.cycle }}/3**
+
+            You are resolving review comments on this pull request. Follow these steps:
+
+            1. Read `.github/prompts/pr-resolve-all.md` and execute ALL three phases:
+               - Phase 1: Build the Issue/Suggestion Index
+               - Phase 2: Verify, Fix, Validate Each Item
+               - Phase 3: Resolution Report
+
+            2. Pay special attention to review comments from ALL bot reviewers:
+               - Gemini Code Assist
+               - Copilot code review
+               - ChatGPT Codex
+               - Any other bots
+
+            3. For each issue you fix:
+               - Verify the issue exists
+               - Make the minimal fix
+               - Run tests/linters to validate
+               - Report status in your resolution report
+
+            4. IMPORTANT — Workflow file delegation:
+               If you encounter issues in `.github/workflows/*.yml` files that need
+               fixing, you CANNOT directly modify those files (Claude's GitHub App
+               token lacks permission). Instead:
+               - Document the workflow issue in your resolution report
+               - Post a follow-up comment tagging @copilot to fix it:
+                 "@copilot Please fix the following workflow issue: [description]"
+               - Mark the issue as "⚠️ Delegated to Copilot"
+
+            5. After fixing all resolvable issues:
+               - Commit your changes with a clear message
+               - Push to the PR branch
+               - Post your Resolution Report as a PR comment
+
+            6. Format your final comment to start with:
+               "🔧 **Claude fix cycle ${{ steps.budget.outputs.cycle }}/3** — Resolution Report"
+
+            Remember: You have full read/write access to all files EXCEPT .github/workflows/.
+            For workflow issues, delegate to Copilot as described above.

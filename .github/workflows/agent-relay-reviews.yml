@@ -9,19 +9,25 @@
 #   - Copilot CAN write to .github/workflows/ files (Claude's app token cannot)
 #   - This relay bridges the gap: bots review → relay reposts → Copilot fixes
 #
+# ⚠️ NOTE: This workflow is now DISABLED BY DEFAULT. The agent-fix-reviews.yml
+#   workflow uses Claude to resolve review comments directly, which is more
+#   effective. This relay is kept as a fallback option that can be enabled
+#   per-PR with the `copilot-relay` label.
+#
 # How it works:
 #   1. Triggers when a review is submitted on a copilot/* branch PR
-#   2. Waits 90s for all reviewers to finish posting
-#   3. Reads ALL review threads via GitHub API
-#   4. Filters to unresolved comments from bot reviewers
-#   5. Formats them into a structured @copilot comment
-#   6. Posts the comment using CLAUDE_PAT (appears as your user)
-#   7. Copilot picks up the @copilot mention and fixes the issues
+#   2. Only runs if the PR has the `copilot-relay` label
+#   3. Waits 90s for all reviewers to finish posting
+#   4. Reads ALL review threads via GitHub API
+#   5. Filters to unresolved comments from bot reviewers
+#   6. Formats them into a structured @copilot comment
+#   7. Posts the comment using CLAUDE_PAT (appears as your user)
+#   8. Copilot picks up the @copilot mention and fixes the issues
 #
 # Cost: $0 — no AI API calls. Just GitHub API reads + one comment post.
 #
 # Safety:
-#   - Only runs on copilot/* branches
+#   - Only runs on copilot/* branches with `copilot-relay` label
 #   - Skips if no actionable bot comments found
 #   - Max 3 relay cycles per PR (prevents infinite loops)
 #   - Won't relay comments from copilot itself (it already sees its own)
@@ -31,6 +37,7 @@
 #   - CLAUDE_PAT: Fine-grained PAT with Contents + Pull requests + Issues RW
 #
 # Optional labels:
+#   - copilot-relay: ENABLE this relay workflow (disabled by default)
 #   - no-auto-ready: Skip auto-ready (on agent-auto-ready.yml)
 #   - no-auto-merge: Skip auto-merge (on agent-auto-merge.yml)
 
@@ -49,9 +56,10 @@ concurrency:
 
 jobs:
   relay:
-    # Only on copilot/* branches, for change-request or commented reviews and inline comments
+    # Only on copilot/* branches with copilot-relay label, for change-request or commented reviews and inline comments
     if: >
       startsWith(github.event.pull_request.head.ref, 'copilot/') &&
+      contains(github.event.pull_request.labels.*.name, 'copilot-relay') &&
       (
         (github.event_name == 'pull_request_review' &&
           (github.event.review.state == 'changes_requested' || github.event.review.state == 'commented')) ||
