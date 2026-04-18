@@ -136,6 +136,7 @@ echo "Checking docs structure..."
 
 DOCS_FILES=(
     "docs/README.md"
+    "docs/FAQ.md"
     "docs/guides/agent-best-practices.md"
     "docs/guides/context-files-explained.md"
     "docs/guides/multi-agent-coordination.md"
@@ -271,6 +272,34 @@ if grep -q "priority" .context/00_INDEX.md 2>/dev/null; then
     pass ".context/00_INDEX.md has priority information"
 else
     warn ".context/00_INDEX.md missing priority information"
+fi
+
+# Check README.md has Limitations, Future Improvements, and FAQ sections.
+# These are required for the template itself and derived projects are
+# instructed (by .github/ISSUE_TEMPLATE/agent_init.md) to preserve them.
+if grep -q "^## Limitations" README.md 2>/dev/null; then
+    pass "README.md has Limitations section"
+else
+    fail "README.md missing ## Limitations section"
+fi
+
+if grep -q "^## Future Improvements" README.md 2>/dev/null; then
+    pass "README.md has Future Improvements section"
+else
+    fail "README.md missing ## Future Improvements section"
+fi
+
+if grep -q "^## FAQ" README.md 2>/dev/null; then
+    pass "README.md has FAQ section"
+else
+    fail "README.md missing ## FAQ section"
+fi
+
+# FAQ section in README should link to the dedicated docs/FAQ.md file.
+if grep -q "docs/FAQ.md" README.md 2>/dev/null; then
+    pass "README.md links to docs/FAQ.md"
+else
+    fail "README.md should link to docs/FAQ.md"
 fi
 
 echo ""

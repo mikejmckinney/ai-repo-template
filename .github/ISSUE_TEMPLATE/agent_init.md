@@ -50,8 +50,17 @@ Include:
 - Setup instructions
 - Usage examples
 - Tech stack
+- `## Limitations` — known constraints of the project
+- `## Future Improvements` — forward-looking items not on the active roadmap
+- `## FAQ` — short section or link to `docs/FAQ.md`
 
-### 4. Regenerate AI_REPO_GUIDE.md
+### 4. Customize docs/FAQ.md
+
+- Remove template-specific entries (those prefixed with "Template:")
+- Add project-specific questions surfaced during onboarding
+- If the project will keep the FAQ in README instead, delete `docs/FAQ.md`
+
+### 5. Regenerate AI_REPO_GUIDE.md
 
 Create a new AI_REPO_GUIDE.md for THIS repo (not the template), including:
 - Project summary
@@ -61,13 +70,13 @@ Create a new AI_REPO_GUIDE.md for THIS repo (not the template), including:
 - Build/test/lint commands
 - Next steps
 
-### 5. Update Issue Template Config
+### 6. Update Issue Template Config
 
 Update `.github/ISSUE_TEMPLATE/config.yml`:
 - Replace `PLEASE_UPDATE_THIS/URL` with the actual `owner/repo` from `git remote -v`
 - This enables the "Discussions" link on the New Issue page
 
-### 6. Customize CI Pipeline
+### 7. Customize CI Pipeline
 
 Update `.github/workflows/ci-tests.yml`:
 - Add project-specific build commands
@@ -75,14 +84,14 @@ Update `.github/workflows/ci-tests.yml`:
 - Add lint commands
 - Remove placeholder comments
 
-### 7. Fill in Context Pack
+### 8. Fill in Context Pack
 
 Update `.context/` files:
 - `00_INDEX.md` — project summary and key decisions
 - `roadmap.md` — define project phases
 - `state/task_*.md` — current work (if any)
 
-### 8. Configure Secrets (if needed)
+### 9. Configure Secrets (if needed)
 
 Document any required repository secrets:
 - `BACKEND_URL` for keep-warm workflow
