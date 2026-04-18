@@ -273,6 +273,38 @@ else
     warn ".context/00_INDEX.md missing priority information"
 fi
 
+# Check README.md has Limitations, Future Improvements, and FAQ sections.
+# These are required for the template itself and derived projects are
+# instructed (by .github/ISSUE_TEMPLATE/agent_init.md) to preserve them.
+if grep -q "^## Limitations" README.md 2>/dev/null; then
+    pass "README.md has Limitations section"
+else
+    fail "README.md missing ## Limitations section"
+fi
+
+if grep -q "^## Future Improvements" README.md 2>/dev/null; then
+    pass "README.md has Future Improvements section"
+else
+    fail "README.md missing ## Future Improvements section"
+fi
+
+if grep -q "^## FAQ" README.md 2>/dev/null; then
+    pass "README.md has FAQ section"
+else
+    fail "README.md missing ## FAQ section"
+fi
+
+# FAQ section in README may link to docs/FAQ.md or keep content inline — both are valid.
+if [ -f "docs/FAQ.md" ]; then
+    if grep -q "docs/FAQ.md" README.md 2>/dev/null; then
+        pass "README.md links to docs/FAQ.md"
+    else
+        warn "docs/FAQ.md exists but README.md does not link to it"
+    fi
+else
+    pass "README.md keeps FAQ content inline (docs/FAQ.md not present)"
+fi
+
 echo ""
 
 # --- Agent Mirror Sanity Checks ---
