@@ -235,7 +235,10 @@ Enable steps are in the template file header.
 
 **How it relates to this template**: Fleet's orchestrator can reference the 10 role agents in `.github/agents/` by name (e.g., `@backend.agent.md`). Each agent's `owned_paths` frontmatter tells Fleet which files that agent should touch, enabling clean file-boundary partitioning across sub-agents.
 
+> **Important**: In downstream repos, update any template `owned_paths` values first. The starter agent files may include `TEMPLATE_PLACEHOLDER` entries, so Fleet partitioning is only meaningful after you customize `.github/agents/*.agent.md` and, if you use it, align `.context/rules/agent_ownership.md` with the real repo boundaries.
+
 **When to use Fleet vs. manual dispatch**:
+
 - **Fleet**: Multi-file features with clear file boundaries and natural parallelism. Fleet handles decomposition, dispatch, and polling automatically.
 - **Manual** (PM + `coordination.md`): Complex cross-cutting work, long-running multi-day tasks, or situations needing explicit lock management and session handoff.
 

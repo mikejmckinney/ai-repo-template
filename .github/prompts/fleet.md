@@ -7,10 +7,11 @@
 > ```bash
 > # Interactive
 > /fleet <YOUR OBJECTIVE PROMPT>
->
-> # Non-interactive (CI / scripting)
-> copilot -p "/fleet <YOUR TASK>" --no-ask-user
 > ```
+>
+> For non-interactive usage (CI / scripting), consult the
+> [official Copilot CLI documentation](https://docs.github.com/en/copilot/copilot-in-the-cli)
+> for the flags supported by your installed version.
 >
 > For background on how `/fleet` works, see
 > [Run multiple agents at once with /fleet in Copilot CLI](https://github.blog/ai-and-ml/github-copilot/run-multiple-agents-at-once-with-fleet-in-copilot-cli/).
@@ -36,8 +37,10 @@ This template ships 10 role-specialized agents in `.github/agents/`:
 
 Fleet's orchestrator can reference these agents by name in your prompt
 using the `@<filename>` syntax (e.g., `@backend.agent.md`). Each agent
-already declares `owned_paths` in its frontmatter, which tells Fleet
-(and you) exactly which files that agent should touch.
+already declares `owned_paths` in its frontmatter, but in this template
+those entries are starter placeholders/default globs that you must
+customize for your repository. Only after that customization do they tell
+Fleet (and you) which files that agent should touch.
 
 ---
 
@@ -159,7 +162,7 @@ While Fleet is running:
 | Two agents write the same file | Assign each agent distinct files in your prompt. Use `owned_paths` from agent frontmatter as a guide. |
 | Sub-agent missing context | Fleet sub-agents can't see the orchestrator's conversation history. Include everything the sub-agent needs in the `/fleet` prompt, or reference files it can read. |
 | Linear execution despite parallel intent | Be explicit: list deliverables as numbered tracks, state which can run in parallel, and name the files each track owns. |
-| Agent uses wrong model | Specify `model:` in the agent's frontmatter (e.g., `model: claude-sonnet-4`) or reference it in your prompt. |
+| Agent uses wrong model | Copilot Fleet uses the `.github/agents/*.agent.md` schema, which does not support a `model:` frontmatter field. Instead, pick the appropriate agent definition and state any model/tooling expectations directly in your `/fleet` prompt. |
 
 ---
 
