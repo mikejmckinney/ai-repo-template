@@ -121,20 +121,30 @@ jobs:
       #   continue-on-error: true
 
       # =====================================================
-      # PLACEHOLDER: Remove after customizing
+      # Python + pytest
       # =====================================================
-      - name: Run tests (placeholder)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run pytest
         id: tests
         run: |
-          echo "CI pipeline placeholder - customize for your project"
-          echo "See comments in this file for Node.js and Python examples"
-          
-          # Verify template files exist (useful for template repo itself)
+          set -o pipefail
+          pytest test/ utils/ -v 2>&1 | tee test-output.log
+
+      # =====================================================
+      # Template integrity check
+      # =====================================================
+      - name: Run test.sh
+        if: always()
+        run: |
           if [ -f "./test.sh" ]; then
-            set -o pipefail
-            ./test.sh 2>&1 | tee test-output.log
-          else
-            echo "No test.sh found - add project-specific tests"
+            ./test.sh 2>&1 | tee -a test-output.log
           fi
 
       # =====================================================
