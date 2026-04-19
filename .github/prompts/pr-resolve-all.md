@@ -32,7 +32,7 @@ Scan ALL of these sources for issues, suggestions, requested changes, and TODOs:
 
 **For each item found, assign a sequential ID** (e.g., `ISS-01`, `ISS-02`, ...).
 
-**If the PR has more than 10 items**: Post the index first as a comment before starting fixes. Wait for confirmation, then proceed in batches of 5. This prevents token exhaustion and lets the author course-correct early.
+**Always post the index as a standalone PR comment before starting fixes**, regardless of item count. This comment must precede any fix commits and must be distinct from the Phase 3 Resolution Report. **If the PR has more than 10 items**, additionally proceed in batches of 5 to prevent token exhaustion and let the author course-correct early.
 
 **If an item was already addressed** in a subsequent commit or resolved thread: mark it `✅ Already resolved` with a link to the resolving commit, and skip to the next item.
 

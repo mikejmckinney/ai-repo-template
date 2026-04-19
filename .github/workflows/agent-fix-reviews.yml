@@ -293,10 +293,16 @@ jobs:
                copilot, claude[bot], chatgpt-codex-connector, and any human
                reviewers). Use the GitHub API to fetch the complete list of
                review comments and review threads.
-            2. Build an issue index with sequential IDs.
+            2. Build an issue index with sequential IDs. **Post the Phase-1
+               Issue/Suggestion Index as a separate PR comment immediately,
+               before any fixes or commits, even if there are fewer than 10
+               items.** Do not fold it into the Phase-3 Resolution Report.
             3. For each item: verify it exists in the current code, implement the fix,
                run verification (tests, lint, build).
-            4. Post a resolution report as a PR comment.
+            4. Post the Phase-3 Resolution Report as a distinct, later PR
+               comment after fixes are pushed. The index (step 2) and the
+               resolution report (step 4) must be two separate comments, in
+               that order.
 
             Rules:
             - Read `AGENTS.md` first for repo conventions.
