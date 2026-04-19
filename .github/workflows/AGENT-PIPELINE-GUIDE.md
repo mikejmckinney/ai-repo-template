@@ -38,12 +38,16 @@ With workflow approval disabled (see Setup below), these fire immediately:
 
 ### Step 4: Claude resolves ALL review comments (automatic, default)
 `agent-fix-reviews.yml` triggers for `copilot/*` PRs when a reviewer
-submits a `commented` / `changes_requested` review or posts an inline
-review comment. It waits 90 seconds for related review activity to
-settle, then runs Claude Code Action (Sonnet) with `pr-resolve-all.md`.
-Claude reads comments from **every** reviewer (including Gemini —
-something Copilot can't do), fixes the issues, runs verification, and
-pushes.
+submits a `commented` / `changes_requested` review. It waits 90 seconds
+for related review activity to settle, then runs Claude Code Action
+(Sonnet) with `pr-resolve-all.md`. Claude reads comments from **every**
+reviewer (including Gemini — something Copilot can't do), fixes the
+issues, runs verification, and pushes.
+
+Note: the workflow triggers only on `pull_request_review` (submitted),
+not on `pull_request_review_comment`. A review with N inline comments
+fires N comment events plus one review-submitted event; triggering on
+both would cause Claude to run twice per review cycle.
 
 The workflow is intentionally **not** triggered on `check_suite`
 failures: a CI failure without a corresponding review comment is
