@@ -1,8 +1,9 @@
 # Agent Fix Reviews — Auto-Resolve with Claude (Sonnet)
 # ------------------------------------------------------
-# Default review-resolution workflow. Triggers Claude Code Action to read
+# Opt-in review-resolution workflow. Triggers Claude Code Action to read
 # review comments from ALL reviewers (Gemini, Copilot review, Claude
 # auto-review, ChatGPT Codex, humans) and push fixes to the PR branch.
+# Only runs on PRs labeled `claude-fix`.
 #
 # Why Claude (not Copilot) for resolution:
 #   Copilot's cloud agent can only see comments that @mention it.
@@ -46,11 +47,12 @@
 #   directly on CI failures also creates a loop hazard, because every
 #   push from a fix cycle produces another `check_suite`.
 #
-# Opt out:
-#   Add the `no-claude-fix` label directly to the PR to skip this
-#   workflow. Use this when you want to drive resolution manually, or
-#   when running the legacy Copilot-relay path (see
-#   `agent-relay-reviews.yml`, gated on the PR's `copilot-relay` label).
+# Opt in:
+#   Add the `claude-fix` label directly to the PR to enable this
+#   workflow. Without the label, Claude resolution does not run — use
+#   this when you want to drive resolution manually, or when running
+#   the legacy Copilot-relay path (see `agent-relay-reviews.yml`, gated
+#   on the PR's `copilot-relay` label).
 #
 # Safety:
 #   - Only runs on `copilot/*` branches (never touches human PRs)
@@ -94,7 +96,7 @@ jobs:
       github.actor != 'Copilot' &&
       github.actor != 'copilot-swe-agent[bot]' &&
       startsWith(github.event.pull_request.head.ref, 'copilot/') &&
-      !contains(github.event.pull_request.labels.*.name, 'no-claude-fix') &&
+      contains(github.event.pull_request.labels.*.name, 'claude-fix') &&
       (github.event.review.state == 'changes_requested' ||
        github.event.review.state == 'commented')
 
