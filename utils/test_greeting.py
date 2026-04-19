@@ -1,9 +1,12 @@
-import sys
-import os
+import importlib.util
+from pathlib import Path
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from utils.greeting import greet
+_GREETING_PATH = Path(__file__).with_name("greeting.py")
+_GREETING_SPEC = importlib.util.spec_from_file_location("greeting", _GREETING_PATH)
+_GREETING_MODULE = importlib.util.module_from_spec(_GREETING_SPEC)
+assert _GREETING_SPEC is not None and _GREETING_SPEC.loader is not None
+_GREETING_SPEC.loader.exec_module(_GREETING_MODULE)
+greet = _GREETING_MODULE.greet
 
 
 def test_greet_name():
@@ -15,4 +18,4 @@ def test_greet_different_name():
 
 
 def test_greet_empty_string():
-    assert greet("") == "Hello, !"
+    assert greet("") == "Hello, World!"
