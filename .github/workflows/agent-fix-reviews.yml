@@ -1,0 +1,328 @@
+# Agent Fix Reviews — Auto-Resolve with Claude (Sonnet)
+# ------------------------------------------------------
+# Opt-in review-resolution workflow. Triggers Claude Code Action to read
+# review comments from ALL reviewers (Gemini, Copilot review, Claude
+# auto-review, ChatGPT Codex, humans) and push fixes to the PR branch.
+# Only runs on PRs labeled `claude-fix`.
+#
+# Why Claude (not Copilot) for resolution:
+#   Copilot's cloud agent can only see comments that @mention it.
+#   Claude Code Action has full GitHub API access and can read every
+#   review thread from every reviewer in one pass. In practice this
+#   produces higher-quality, more complete fixes than the relay-to-Copilot
+#   approach (see agent-relay-reviews.yml).
+#
+# Why Sonnet:
+#   Held to claude-sonnet-4-5 to keep the API cost predictable
+#   (~$1–3 per PR for resolution, vs $3–10+ on Opus).
+#
+# Workflow file edits are delegated to Copilot:
+#   The Claude GitHub App token cannot push changes to files under
+#   `.github/workflows/**` (GitHub blocks workflow edits from app tokens
+#   for security). When the review feedback requires touching a workflow
+#   file, Claude is instructed to leave a structured `@copilot` comment
+#   on the PR describing the exact change instead of attempting the edit.
+#   Copilot's cloud agent will then pick it up.
+#
+# Trigger logic:
+#   Fires when a review is submitted on a `copilot/*` branch PR.
+#   Waits 90s after the trigger so Gemini, Copilot review, and Claude
+#   auto-review all post first and get batched into one fix pass.
+#
+#   We deliberately do NOT trigger on `pull_request_review_comment`
+#   (individual inline comments): when a reviewer submits a review with
+#   N inline comments, GitHub fires N separate `pull_request_review_comment`
+#   events AND one `pull_request_review` event. With `cancel-in-progress:
+#   false`, both trigger paths can queue independently and run Claude
+#   twice for a single review cycle. Triggering only on
+#   `pull_request_review` (submitted) eliminates this duplication while
+#   still capturing all inline comments (they appear in the review thread
+#   and are visible to Claude when it runs).
+#
+#   We deliberately do NOT trigger on `check_suite` failures: this
+#   workflow's prompt resolves *reviewer feedback*, and a CI failure
+#   without a corresponding review comment is better surfaced via the
+#   reviewer (Claude auto-review / Gemini / Copilot review) so it
+#   becomes part of a normal review-resolution cycle. Triggering
+#   directly on CI failures also creates a loop hazard, because every
+#   push from a fix cycle produces another `check_suite`.
+#
+# Opt in:
+#   Add the `claude-fix` label directly to the PR to enable this
+#   workflow. Without the label, Claude resolution does not run — use
+#   this when you want to drive resolution manually, or when running
+#   the legacy Copilot-relay path (see `agent-relay-reviews.yml`, gated
+#   on the PR's `copilot-relay` label).
+#
+# Safety:
+#   - Only runs on `copilot/*` branches (never touches human PRs)
+#   - Max 3 fix cycles per PR (budget marker comment counts)
+#   - 45-minute timeout per cycle
+#   - Skips reviews/comments authored by Claude or by GitHub Actions
+#     bots (loop prevention)
+#   - Skips events where the actor is `Copilot` itself. The Anthropic
+#     Claude Code Action calls
+#     `GET /repos/.../collaborators/Copilot/permission` for the actor
+#     of the triggering event and exits 1 with "Copilot is not a user"
+#     before `allowed_bots: "*"` is consulted (404 from that endpoint).
+#     Copilot's own pushes/comments don't represent reviewer feedback
+#     anyway, so skipping is the right behavior even apart from the bug.
+#
+# Required setup:
+#   1. ANTHROPIC_API_KEY repo secret
+#   2. CLAUDE_PAT repo secret (fine-grained PAT — see auth notes below)
+#   3. Claude GitHub App installed: https://github.com/apps/claude
+#   4. Disable Copilot cloud-agent workflow approval (Settings → Copilot)
+
+name: Auto-Fix Reviews (Claude)
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+# One fix cycle at a time per PR
+concurrency:
+  group: auto-fix-${{ github.event.pull_request.number || 'none' }}
+  cancel-in-progress: false
+
+jobs:
+  resolve-reviews:
+    # Skip events where the actor is Copilot itself. The Claude Code
+    # Action's permission probe (GET .../collaborators/<actor>/permission)
+    # 404s with "Copilot is not a user" before allowed_bots is consulted,
+    # which would otherwise fail every Copilot-triggered run. Copilot's
+    # own pushes/comments aren't reviewer feedback anyway.
+    if: >
+      github.actor != 'Copilot' &&
+      github.actor != 'copilot-swe-agent[bot]' &&
+      startsWith(github.event.pull_request.head.ref, 'copilot/') &&
+      contains(github.event.pull_request.labels.*.name, 'claude-fix') &&
+      (github.event.review.state == 'changes_requested' ||
+       github.event.review.state == 'commented')
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    permissions:
+      id-token: write
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Determine PR number and branch
+        id: pr
+        env:
+          EVENT_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo "number=$EVENT_PR_NUMBER"
+            echo "branch=$EVENT_HEAD_REF"
+            echo "skip=false"
+          } >> "$GITHUB_OUTPUT"
+
+      # Don't respond to our own reviews (prevents infinite loops)
+      - name: Check review author
+        if: steps.pr.outputs.skip != 'true'
+        id: author_check
+        env:
+          REVIEW_AUTHOR: ${{ github.event.review.user.login }}
+        run: |
+          reviewer="$REVIEW_AUTHOR"
+
+          # Skip when the review came from Claude / our own automation /
+          # Copilot (whose actor causes the action's permission probe to
+          # 404 — see the header note).
+          case "$reviewer" in
+            claude[bot]|github-actions[bot]|Copilot|copilot-swe-agent[bot])
+              echo "Review posted by $reviewer — skipping to prevent loop / known bug."
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Review posted by $reviewer — proceeding."
+              echo "skip=false" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+      # Check fix cycle budget (max 3)
+      - name: Check fix cycle budget
+        if: steps.pr.outputs.skip != 'true' && steps.author_check.outputs.skip != 'true'
+        id: budget
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          MAX_CYCLES=3
+          fix_count=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json comments \
+            --jq '[.comments[] | select(.body | contains("🔧 Claude fix cycle"))] | length' 2>/dev/null || echo "0")
+
+          cycle=$(( fix_count + 1 ))
+          echo "Fix cycles: $fix_count / $MAX_CYCLES"
+          {
+            echo "fix_count=$fix_count"
+            echo "cycle=$cycle"
+          } >> "$GITHUB_OUTPUT"
+
+          if [[ "$fix_count" -ge "$MAX_CYCLES" ]]; then
+            echo "exceeded=true" >> "$GITHUB_OUTPUT"
+            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
+              --body "⚠️ **Fix cycle budget exhausted** ($fix_count/$MAX_CYCLES). Remaining comments need human review."
+          else
+            echo "exceeded=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Wait for all reviewers to finish posting
+      # Gemini, Copilot, and Claude auto-review typically complete within 60s
+      - name: Wait for reviewers to settle
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        run: |
+          echo "Waiting 90 seconds for all reviewers to finish posting..."
+          sleep 90
+
+      - name: Checkout PR branch
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.pr.outputs.branch }}
+
+      # Install tools Claude might need for verification
+      - name: Setup Python
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Terraform
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: hashicorp/setup-terraform@v3
+
+      # Post cycle marker
+      - name: Mark fix cycle start
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
+            --body "🔧 **Claude fix cycle ${{ steps.budget.outputs.cycle }}/3** — Reading all review comments (Gemini, Copilot, Claude, human) and resolving. [Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+      # Claude reads ALL review threads and fixes them.
+      #
+      # Auth notes (important — read before changing):
+      #
+      # The OIDC app-token exchange that Claude Code Action uses by default
+      # checks the TRIGGERING ACTOR's write permissions. When the trigger is
+      # a review comment from gemini-code-assist[bot] or copilot, the check
+      # returns "none" and the action fails with:
+      #   App token exchange failed: 401 Unauthorized - User does not have
+      #   write access on this repository
+      #
+      # See anthropics/claude-code-action#351 for the full bug report.
+      #
+      # The fix is two-part:
+      #   1. Pass a fine-grained PAT via github_token: — this carries write
+      #      access regardless of who triggered the workflow.
+      #   2. Set allowed_bots: "*" — tells the action to trust bot triggers
+      #      (otherwise even with a valid PAT, it refuses bot-originated runs).
+      #
+      # Required secret: CLAUDE_PAT
+      #   Fine-grained PAT, this repository only, with:
+      #     - Contents: Read and write
+      #     - Pull requests: Read and write
+      #     - Issues: Read and write
+      #     - Actions: Read
+      #     - Metadata: Read (auto-selected)
+      #
+      # Trade-off: comments appear as the PAT owner, not claude[bot]; the
+      # use_sticky_comment feature won't work with custom tokens.
+      #
+      # Permission mode: bypassPermissions
+      #   Claude runs with --permission-mode bypassPermissions so it can
+      #   execute bash commands (run tests, git push, etc.) without human
+      #   approval prompts. In CI there is no human to approve interactive
+      #   prompts, so acceptEdits mode results in every non-edit tool call
+      #   being auto-denied (permission_denials_count > 0 in the SDK result).
+      #   bypassPermissions is safe here because the workflow only runs on
+      #   copilot/* branches and the PR branch is already checked out.
+      - name: Resolve all review comments
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.author_check.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.CLAUDE_PAT }}
+          allowed_bots: "*"
+          claude_args: "--model claude-sonnet-4-5 --max-turns 100 --permission-mode bypassPermissions"
+          prompt: |
+            You are resolving review comments on PR #${{ steps.pr.outputs.number }}.
+
+            Follow the procedure in `.github/prompts/pr-resolve-all.md` exactly:
+
+            1. Scan ALL review threads — from every reviewer (gemini-code-assist[bot],
+               copilot, claude[bot], chatgpt-codex-connector, and any human
+               reviewers). Use the GitHub API to fetch the complete list of
+               review comments and review threads.
+            2. Build an issue index with sequential IDs. **Post the Phase-1
+               Issue/Suggestion Index as a separate PR comment immediately,
+               before any fixes or commits, even if there are fewer than 10
+               items.** Do not fold it into the Phase-3 Resolution Report.
+            3. For each item: verify it exists in the current code, implement the fix,
+               run verification (tests, lint, build).
+            4. Post the Phase-3 Resolution Report as a distinct, later PR
+               comment after fixes are pushed. The index (step 2) and the
+               resolution report (step 4) must be two separate comments, in
+               that order.
+
+            Rules:
+            - Read `AGENTS.md` first for repo conventions.
+            - Fix ONLY what reviewers flagged. No drive-by changes.
+            - If a suggestion is unclear or requires a design decision, mark it
+              "Needs clarification" — do not guess.
+            - Commit with message: "fix: resolve review comments (cycle ${{ steps.budget.outputs.cycle }})"
+            - Push to the existing branch. Do NOT create a new PR.
+
+            Workflow-file changes (IMPORTANT):
+            - The GitHub App token used here cannot push edits to files under
+              `.github/workflows/**`. Do NOT attempt to edit those files yourself.
+            - If any review item requires a workflow change, instead post a single
+              PR comment of the form:
+
+                @copilot The following review item(s) require edits under
+                `.github/workflows/` which I cannot push from the Claude app token.
+                Please address them and push to this branch:
+
+                - **<file>** (line N, reviewer): <verbatim quote of the request>
+                  Suggested change: <concise description of the fix>
+
+              Group all workflow-file items into ONE such comment. Then continue
+              resolving every other (non-workflow) review item normally and include
+              the delegated items in your resolution report under a
+              "Delegated to Copilot" section so the audit trail is complete.

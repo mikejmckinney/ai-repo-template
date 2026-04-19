@@ -1,7 +1,20 @@
-# Relay Bot Reviews to Copilot
-# --------------------------------
+# Relay Bot Reviews to Copilot (legacy / opt-in)
+# ----------------------------------------------
 # Reads review comments from ALL bots (Gemini, Claude, Copilot code review, ChatGPT Codex)
 # and reposts them as a single @copilot comment from your user account (via PAT).
+#
+# Status:
+#   This workflow is OPT-IN. By default, review resolution is handled by
+#   `agent-fix-reviews.yml` (Claude with Sonnet), which produces higher-quality
+#   fixes in practice. Enable this relay only when you specifically want
+#   Copilot — not Claude — to drive resolution (for example, when the fixes
+#   are concentrated in `.github/workflows/**` files that the Claude app
+#   token can't push to, and you don't want Claude to delegate piecemeal).
+#
+# How to enable:
+#   Add the `copilot-relay` label directly to the PR. The relay only
+#   runs when the label is present on the PR. (Issue labels are not
+#   automatically copied onto Copilot's PR.)
 #
 # Why this exists:
 #   - Copilot cloud agent only sees @copilot mentions from collaborators
@@ -11,12 +24,18 @@
 #
 # How it works:
 #   1. Triggers when a review is submitted on a copilot/* branch PR
-#   2. Waits 90s for all reviewers to finish posting
+#      (NOT on individual inline review comments — see the `on:` block
+#      for why; an N-comment review would otherwise burn N budget cycles)
+#   2. Waits 180s for all reviewers to finish posting (longer settle
+#      lets `cancel-in-progress: true` coalesce multiple reviewers'
+#      reviews into a single relay comment)
 #   3. Reads ALL review threads via GitHub API
 #   4. Filters to unresolved comments from bot reviewers
-#   5. Formats them into a structured @copilot comment
-#   6. Posts the comment using CLAUDE_PAT (appears as your user)
-#   7. Copilot picks up the @copilot mention and fixes the issues
+#   5. Computes a fingerprint of the unresolved set; skips if the prior
+#      relay's fingerprint matches (no new content → don't burn budget)
+#   6. Formats them into a structured @copilot comment
+#   7. Posts the comment using CLAUDE_PAT (appears as your user)
+#   8. Copilot picks up the @copilot mention and fixes the issues
 #
 # Cost: $0 — no AI API calls. Just GitHub API reads + one comment post.
 #
@@ -39,9 +58,14 @@ name: Relay Bot Reviews to Copilot
 on:
   pull_request_review:
     types: [submitted]
-
-  pull_request_review_comment:
-    types: [created]
+  # NOTE: `pull_request_review_comment` is intentionally NOT listed here.
+  # A review with N inline comments fires N comment events + 1 review
+  # event. Triggering on both burns the 3-cycle relay budget fast — each
+  # reviewer's stream of inline-comment events would post a separate
+  # relay before Copilot has had a chance to act on the prior one. The
+  # `pull_request_review` (submitted) trigger fires once per reviewer
+  # and is sufficient: the relay step reads ALL unresolved threads via
+  # GraphQL, so inline comments are still picked up.
 
 concurrency:
   group: relay-reviews-${{ github.event.pull_request.number }}
@@ -49,14 +73,14 @@ concurrency:
 
 jobs:
   relay:
-    # Only on copilot/* branches, for change-request or commented reviews and inline comments
+    # Only on copilot/* branches, only when explicitly enabled by the
+    # `copilot-relay` label, for change-request or commented reviews and
+    # inline comments.
     if: >
       startsWith(github.event.pull_request.head.ref, 'copilot/') &&
-      (
-        (github.event_name == 'pull_request_review' &&
-          (github.event.review.state == 'changes_requested' || github.event.review.state == 'commented')) ||
-        github.event_name == 'pull_request_review_comment'
-      )
+      contains(github.event.pull_request.labels.*.name, 'copilot-relay') &&
+      (github.event.review.state == 'changes_requested' ||
+       github.event.review.state == 'commented')
 
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -71,12 +95,7 @@ jobs:
       - name: Check review author
         id: author
         run: |
-          reviewer=""
-          if [[ "${{ github.event_name }}" == "pull_request_review" ]]; then
-            reviewer="${{ github.event.review.user.login }}"
-          elif [[ "${{ github.event_name }}" == "pull_request_review_comment" ]]; then
-            reviewer="${{ github.event.comment.user.login }}"
-          fi
+          reviewer="${{ github.event.review.user.login }}"
 
           echo "reviewer=$reviewer"
 
@@ -111,14 +130,20 @@ jobs:
             echo "cycle=$(( relay_count + 1 ))" >> "$GITHUB_OUTPUT"
           fi
 
-      # Wait for all reviewers to finish posting
+      # Wait for all reviewers to finish posting.
+      # Bumped from 90s → 180s: with cancel-in-progress: true, a longer
+      # settle window gives more chance for the next reviewer's review
+      # event to land and cancel this run, coalescing 3 reviewers'
+      # near-simultaneous reviews into a single relay comment instead
+      # of three. This is the main lever against budget exhaustion when
+      # several bot reviewers post within a few minutes of each other.
       - name: Wait for reviewers to settle
         if: >
           steps.author.outputs.skip != 'true' &&
           steps.budget.outputs.exceeded != 'true'
         run: |
-          echo "Waiting 90 seconds for all reviewers to finish posting..."
-          sleep 90
+          echo "Waiting 180 seconds for all reviewers to finish posting..."
+          sleep 180
 
       # Collect and relay bot review comments
       - name: Collect and relay bot comments
@@ -344,14 +369,38 @@ jobs:
             exit 0
           fi
 
+          # ── Dedup gate ──
+          # Compute a fingerprint of the unresolved bot-comment URL set.
+          # If the most recent prior relay has the same fingerprint, the
+          # set of things to fix hasn't changed since we last asked
+          # Copilot — re-posting would burn another budget cycle without
+          # giving Copilot any new information. Skip in that case.
+          fingerprint=$(jq -n --argjson i "$inline_comments" --argjson r "$review_comments" '
+            ([ ($i // [])[].url, ($r // [])[] | (.reviewer + ":" + (.body // "" | tostring))[0:200] ]
+              | sort | join("|"))' | sha256sum | awk '{print $1}')
+          echo "Relay fingerprint: $fingerprint"
+
+          prev_fingerprint=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+            --jq '[.comments[] | select(.body | contains("📋 **Review Relay"))] | last | .body
+                  | capture("<!-- relay-fingerprint:(?<fp>[a-f0-9]+) -->") | .fp' 2>/dev/null || echo "")
+          if [[ -n "$prev_fingerprint" && "$prev_fingerprint" == "$fingerprint" ]]; then
+            echo "Unresolved bot-comment set unchanged since last relay (fingerprint $fingerprint). Skipping to preserve budget."
+            exit 0
+          fi
+
           # ── Build the relay comment with real newlines ──
           # Using $'\n' + printf '%s' so reviewer bodies containing
           # backslash sequences (\c, \t, \0NNN, …) pass through verbatim.
           nl=$'\n'
 
-          comment="📋 **Review Relay (cycle ${CYCLE}/3)** — Forwarding ${total} comment(s) from bot reviewers.${nl}${nl}"
-          comment+="@copilot Please address the following review feedback. "
-          comment+="Read the referenced prompt file \`.github/prompts/pr-resolve-all.md\` for the resolution procedure, then fix each item below:${nl}${nl}"
+          comment="📋 **Review Relay (cycle ${CYCLE}/3)** — Forwarding ${total} comment(s) from bot reviewers.${nl}"
+          comment+="<!-- relay-fingerprint:${fingerprint} -->${nl}${nl}"
+          comment+="@copilot follow .github/prompts/pr-resolve-all.md${nl}${nl}"
+          comment+="Apply that procedure to the review feedback collected below. In particular:${nl}${nl}"
+          comment+="1. **Phase 1 — Issue/Suggestion Index**: Build a sequentially-numbered index (\`ISS-01\`, \`ISS-02\`, …) of every item below, and **post it as a standalone PR comment before any fixes or commits**, regardless of count. Do not fold the index into the resolution report.${nl}"
+          comment+="2. **Phase 2 — Verify, Fix, Validate**: For each item, link → verify → fix → run tests/lint/build → assign a status.${nl}"
+          comment+="3. **Phase 3 — Resolution Report**: After all fixes are pushed, post a separate, later PR comment with the final summary table and per-item details.${nl}${nl}"
+          comment+="The Phase-1 Index and Phase-3 Resolution Report MUST be two distinct PR comments, in that order — same shape Claude uses on the default fix path.${nl}${nl}"
           comment+="---${nl}${nl}"
 
           if [[ "$review_count" -gt 0 ]]; then

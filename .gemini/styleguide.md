@@ -54,6 +54,18 @@ Prefer documented commands over guessing. If commands aren't available, explicit
 
 ## Output Format
 
+**Markdown formatting rules (apply to every comment body — top-level review,
+inline review comments, and any code suggestions):**
+
+- Emit **real newline characters** between sections, list items, headings,
+  and paragraphs. Do **not** emit the literal two-character sequence `\n`
+  (backslash + `n`) or `\\n` as a stand-in for a line break — GitHub renders
+  those as visible text and produces a cramped, run-on comment.
+- Do not JSON-escape the markdown body. The body is rendered as plain
+  GitHub-flavored markdown, not as a JSON string.
+- Separate adjacent block elements (headings, lists, tables, fenced code
+  blocks) with a blank line so they render correctly.
+
 Always use this exact structure:
 
 ### Overall Assessment
@@ -75,10 +87,14 @@ One paragraph summarizing the review.
 
 ### Remaining Issues
 
-After the severity-bucketed findings above, **always** end the review with a
-single exhaustive table listing every unresolved issue in one pass. The goal
-is to prevent trickle reviews where each re-review surfaces a new batch —
-list everything you found, not just the top N.
+At the end of the **top-level review body only** (not in any inline review
+comment), include a single exhaustive table listing every unresolved issue
+in one pass. The goal is to prevent trickle reviews where each re-review
+surfaces a new batch — list everything you found, not just the top N.
+
+Inline review comments must contain only one finding each and must NOT
+repeat the summary table — the table belongs solely in the top-level
+review body.
 
 | # | Severity | File:Line | Issue | Suggested Fix |
 |---|----------|-----------|-------|---------------|
