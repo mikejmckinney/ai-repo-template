@@ -1,4 +1,4 @@
-from greeting import greet
+from utils.greeting import greet
 
 
 def test_greet_simple_name():

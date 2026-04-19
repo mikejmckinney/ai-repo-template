@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 
@@ -7,6 +8,7 @@ def test_hello_output():
         [sys.executable, "hello.py"],
         capture_output=True,
         text=True,
-        cwd=__file__.rsplit("/", 1)[0],
+        cwd=os.path.dirname(__file__),
     )
+    assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "Hello, World!"
