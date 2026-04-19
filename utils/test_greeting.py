@@ -1,5 +1,4 @@
-import pytest
-from utils.greeting import greet
+from greeting import greet
 
 
 def test_greet_basic():
