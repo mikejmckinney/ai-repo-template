@@ -24,10 +24,19 @@
 #   Copilot's cloud agent will then pick it up.
 #
 # Trigger logic:
-#   Fires when a review or inline review comment is posted on a
-#   `copilot/*` branch PR. Waits 90s after the trigger so Gemini,
-#   Copilot review, and Claude auto-review all post first and get
-#   batched into one fix pass.
+#   Fires when a review is submitted on a `copilot/*` branch PR.
+#   Waits 90s after the trigger so Gemini, Copilot review, and Claude
+#   auto-review all post first and get batched into one fix pass.
+#
+#   We deliberately do NOT trigger on `pull_request_review_comment`
+#   (individual inline comments): when a reviewer submits a review with
+#   N inline comments, GitHub fires N separate `pull_request_review_comment`
+#   events AND one `pull_request_review` event. With `cancel-in-progress:
+#   false`, both trigger paths can queue independently and run Claude
+#   twice for a single review cycle. Triggering only on
+#   `pull_request_review` (submitted) eliminates this duplication while
+#   still capturing all inline comments (they appear in the review thread
+#   and are visible to Claude when it runs).
 #
 #   We deliberately do NOT trigger on `check_suite` failures: this
 #   workflow's prompt resolves *reviewer feedback*, and a CI failure
@@ -69,9 +78,6 @@ on:
   pull_request_review:
     types: [submitted]
 
-  pull_request_review_comment:
-    types: [created]
-
 # One fix cycle at a time per PR
 concurrency:
   group: auto-fix-${{ github.event.pull_request.number || 'none' }}
@@ -89,12 +95,8 @@ jobs:
       github.actor != 'copilot-swe-agent[bot]' &&
       startsWith(github.event.pull_request.head.ref, 'copilot/') &&
       !contains(github.event.pull_request.labels.*.name, 'no-claude-fix') &&
-      (
-        (github.event_name == 'pull_request_review' &&
-          (github.event.review.state == 'changes_requested' ||
-           github.event.review.state == 'commented')) ||
-        github.event_name == 'pull_request_review_comment'
-      )
+      (github.event.review.state == 'changes_requested' ||
+       github.event.review.state == 'commented')
 
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -124,17 +126,10 @@ jobs:
         id: author_check
         env:
           REVIEW_AUTHOR: ${{ github.event.review.user.login }}
-          COMMENT_AUTHOR: ${{ github.event.comment.user.login }}
-          EVENT_NAME: ${{ github.event_name }}
         run: |
-          reviewer=""
-          if [[ "$EVENT_NAME" == "pull_request_review" ]]; then
-            reviewer="$REVIEW_AUTHOR"
-          elif [[ "$EVENT_NAME" == "pull_request_review_comment" ]]; then
-            reviewer="$COMMENT_AUTHOR"
-          fi
+          reviewer="$REVIEW_AUTHOR"
 
-          # Skip when the comment came from Claude / our own automation /
+          # Skip when the review came from Claude / our own automation /
           # Copilot (whose actor causes the action's permission probe to
           # 404 — see the header note).
           case "$reviewer" in
