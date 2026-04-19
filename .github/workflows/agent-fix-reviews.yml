@@ -264,6 +264,15 @@ jobs:
       #
       # Trade-off: comments appear as the PAT owner, not claude[bot]; the
       # use_sticky_comment feature won't work with custom tokens.
+      #
+      # Permission mode: bypassPermissions
+      #   Claude runs with --permission-mode bypassPermissions so it can
+      #   execute bash commands (run tests, git push, etc.) without human
+      #   approval prompts. In CI there is no human to approve interactive
+      #   prompts, so acceptEdits mode results in every non-edit tool call
+      #   being auto-denied (permission_denials_count > 0 in the SDK result).
+      #   bypassPermissions is safe here because the workflow only runs on
+      #   copilot/* branches and the PR branch is already checked out.
       - name: Resolve all review comments
         if: >
           steps.pr.outputs.skip != 'true' &&
@@ -274,7 +283,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.CLAUDE_PAT }}
           allowed_bots: "*"
-          claude_args: "--model claude-sonnet-4-5 --max-turns 100 --permission-mode acceptEdits"
+          claude_args: "--model claude-sonnet-4-5 --max-turns 100 --permission-mode bypassPermissions"
           prompt: |
             You are resolving review comments on PR #${{ steps.pr.outputs.number }}.
 
