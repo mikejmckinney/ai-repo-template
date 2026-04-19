@@ -366,8 +366,12 @@ jobs:
           nl=$'\n'
 
           comment="📋 **Review Relay (cycle ${CYCLE}/3)** — Forwarding ${total} comment(s) from bot reviewers.${nl}${nl}"
-          comment+="@copilot Please address the following review feedback. "
-          comment+="Read the referenced prompt file \`.github/prompts/pr-resolve-all.md\` for the resolution procedure, then fix each item below:${nl}${nl}"
+          comment+="@copilot follow .github/prompts/pr-resolve-all.md${nl}${nl}"
+          comment+="Apply that procedure to the review feedback collected below. In particular:${nl}${nl}"
+          comment+="1. **Phase 1 — Issue/Suggestion Index**: Build a sequentially-numbered index (\`ISS-01\`, \`ISS-02\`, …) of every item below, and **post it as a standalone PR comment before any fixes or commits**, regardless of count. Do not fold the index into the resolution report.${nl}"
+          comment+="2. **Phase 2 — Verify, Fix, Validate**: For each item, link → verify → fix → run tests/lint/build → assign a status.${nl}"
+          comment+="3. **Phase 3 — Resolution Report**: After all fixes are pushed, post a separate, later PR comment with the final summary table and per-item details.${nl}${nl}"
+          comment+="The Phase-1 Index and Phase-3 Resolution Report MUST be two distinct PR comments, in that order — same shape Claude uses on the default fix path.${nl}${nl}"
           comment+="---${nl}${nl}"
 
           if [[ "$review_count" -gt 0 ]]; then
