@@ -5,18 +5,48 @@
 This pipeline automates the full development loop with **zero manual steps** after you create and assign an issue:
 
 ```
-You assign issue       Copilot implements     Review bots fire       Claude fixes all
-to @copilot       →    and opens PR      →    automatically     →    review comments
-                                                                          │
-                                                                          ▼
-                       Issue closed ◀── Auto-merge ◀── CI green + reviews clear
+backlog.yaml          Issue auto-created       Gated assignment        Copilot implements
+(machine-readable) →  (copilot:ready label) →  (concurrent + daily →   and opens PR
+                                                budget; queue if full)         │
+                                                                               ▼
+                              Issue closed ◀── Auto-merge ◀── CI green + reviews clear
+                                                       ▲
+                                                       │
+                                       Claude fixes review comments ◀── Review bots fire
 ```
+
+**Backlog → issue → assignment** (Step 0) and **Copilot → review → fix → merge** (Steps 1–5) are two halves of one loop:
 
 **Copilot** handles implementation (included in your subscription).
 **Claude** handles review resolution (small API cost — $1-3 per PR).
 **GitHub Actions** handles auto-merge (free).
 
 ## How It Works
+
+### Step 0: Backlog → issue (optional, automatic)
+
+`.context/backlog.yaml` is the machine-readable task list. Each entry
+becomes one GitHub issue via `.github/workflows/backlog-to-issues.yml`,
+which fires on push to `main` (when `backlog.yaml` changes) or on
+manual `workflow_dispatch`. Entries support `depends_on:` (waits until
+the dependency's issue is closed), `auto_assign: false` (creates the
+issue but holds it for human review), and Claude-assisted expansion of
+missing `body` / `acceptance_criteria` when `ANTHROPIC_API_KEY` is
+present. Newly-created issues are tagged `from-backlog` and (unless
+`auto_assign: false`) `copilot:ready`.
+
+After an issue carries the `copilot:ready` label —
+whether it came from the backlog, a `workflow_dispatch`, or a human
+applying the label in the web UI — `.github/workflows/agent-assign-copilot.yml`
+takes over: it checks the concurrent budget (`MAX_COPILOT_CONCURRENT`,
+default 3) and the rolling 24-hour daily cap (`MAX_COPILOT_DAILY`,
+default 20), then either assigns Copilot via GraphQL, swaps the label
+to `copilot:queued`, or hard-stops with `copilot:daily-cap-hit`. The
+queue drains automatically when a Copilot PR merges or a slot is
+released (see `agent-release-slot.yml`).
+
+Schema: validate `backlog.yaml` locally with
+`pip install check-jsonschema && check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml`.
 
 ### Step 1: You create an issue and assign to Copilot
 Write an issue with the prompt instructions. Assign `@copilot` as the assignee.

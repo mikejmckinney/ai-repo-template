@@ -45,6 +45,8 @@ bash install.sh
 │
 ├── .context/                 # Project context (canonical truth)
 │   ├── 00_INDEX.md           # Context entry point
+│   ├── backlog.yaml          # Machine-readable task list (dispatched into issues)
+│   ├── backlog.schema.json   # JSON Schema for backlog.yaml
 │   ├── roadmap.md            # Phase-by-phase plan
 │   ├── rules/                # Immutable domain constraints
 │   │   ├── agent_ownership.md
@@ -125,6 +127,8 @@ bash install.sh
 | File | Purpose |
 |------|---------|
 | `.context/00_INDEX.md` | Entry point, project summary |
+| `.context/backlog.yaml` | Machine-readable task list dispatched into issues by `.github/workflows/backlog-to-issues.yml`. Validate with `pip install check-jsonschema && check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml` |
+| `.context/backlog.schema.json` | JSON Schema for `backlog.yaml` (Draft-07) |
 | `.context/roadmap.md` | Phase-by-phase plan |
 | `.context/rules/` | Domain constraints (never violate) |
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |

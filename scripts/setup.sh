@@ -174,7 +174,45 @@ else
     log_info "No build step configured"
 fi
 
-# --- Step 5: Verify Environment ---
+# --- Step 5: Pipeline Labels & Repo Variables ---
+# Labels and budget knobs consumed by the autonomous agent pipeline (see
+# .github/workflows/AGENT-PIPELINE-GUIDE.md). Safe to re-run: `gh label
+# create` returns non-zero when a label already exists, which we swallow.
+# Requires `gh auth login` first; otherwise the whole step is skipped.
+log_step "Configuring pipeline labels and repo variables"
+
+if command -v gh &> /dev/null && gh auth status &> /dev/null; then
+    # Six copilot:* state labels + from-backlog marker. `needs-human` is
+    # referenced by ci-tests.yml and the backlog dispatch workflow, so
+    # ensure it exists too.
+    gh label create "copilot:ready"          --color "0E8A16" --description "Assign Copilot when budget allows"                              2>/dev/null || true
+    gh label create "copilot:in-progress"    --color "1D76DB" --description "Assigned to Copilot, counts toward concurrent budget"           2>/dev/null || true
+    gh label create "copilot:queued"         --color "FBCA04" --description "Waiting for an open Copilot slot"                               2>/dev/null || true
+    gh label create "copilot:daily-cap-hit"  --color "D93F0B" --description "Hit daily assignment cap; manual re-queue required"             2>/dev/null || true
+    gh label create "from-backlog"           --color "5319E7" --description "Issue auto-created from .context/backlog.yaml"                  2>/dev/null || true
+    gh label create "needs-human"            --color "B60205" --description "Requires human input (e.g., empty roadmap phase, CI failure)"   2>/dev/null || true
+    log_info "Pipeline labels ensured (copilot:* + from-backlog + needs-human)"
+
+    # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
+    # re-run of setup.sh doesn't clobber tuned values.
+    if ! gh variable list --json name --jq '.[].name' 2>/dev/null | grep -q "^MAX_COPILOT_CONCURRENT$"; then
+        gh variable set MAX_COPILOT_CONCURRENT --body "3"  >/dev/null && log_info "Set MAX_COPILOT_CONCURRENT=3"
+    else
+        log_info "MAX_COPILOT_CONCURRENT already set (leaving as-is)"
+    fi
+    if ! gh variable list --json name --jq '.[].name' 2>/dev/null | grep -q "^MAX_COPILOT_DAILY$"; then
+        gh variable set MAX_COPILOT_DAILY      --body "20" >/dev/null && log_info "Set MAX_COPILOT_DAILY=20"
+    else
+        log_info "MAX_COPILOT_DAILY already set (leaving as-is)"
+    fi
+else
+    log_warn "gh CLI not authenticated; skipping label/variable creation."
+    log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
+    log_warn "  Labels: copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
+    log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
+fi
+
+# --- Step 6: Verify Environment ---
 log_step "Verifying environment"
 
 if [[ -f "scripts/verify-env.sh" ]]; then

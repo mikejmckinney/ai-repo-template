@@ -90,6 +90,8 @@ echo "Checking context pack structure..."
 
 CONTEXT_FILES=(
     ".context/00_INDEX.md"
+    ".context/backlog.yaml"
+    ".context/backlog.schema.json"
     ".context/roadmap.md"
     ".context/rules/README.md"
     ".context/rules/agent_ownership.md"
