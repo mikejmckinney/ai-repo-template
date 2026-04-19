@@ -1,6 +1,3 @@
-import io
-import sys
-
 from hello import main
 
 
