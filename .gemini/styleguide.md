@@ -75,10 +75,14 @@ One paragraph summarizing the review.
 
 ### Remaining Issues
 
-After the severity-bucketed findings above, **always** end the review with a
-single exhaustive table listing every unresolved issue in one pass. The goal
-is to prevent trickle reviews where each re-review surfaces a new batch —
-list everything you found, not just the top N.
+At the end of the **top-level review body only** (not in any inline review
+comment), include a single exhaustive table listing every unresolved issue
+in one pass. The goal is to prevent trickle reviews where each re-review
+surfaces a new batch — list everything you found, not just the top N.
+
+Inline review comments must contain only one finding each and must NOT
+repeat the summary table — the table belongs solely in the top-level
+review body.
 
 | # | Severity | File:Line | Issue | Suggested Fix |
 |---|----------|-----------|-------|---------------|
