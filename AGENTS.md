@@ -52,8 +52,10 @@ This template supports parallel role-specialized agents. Before editing any file
 ### Analyst pre-flight gate (REQUIRED before implementation)
 
 If the issue assigned to you references a prompt file in `.github/prompts/NN-*.md`
-(a project implementation prompt — not a shared procedural prompt like
-`pr-resolve-all.md`, `repo-onboarding.md`, or `copilot-onboarding.md`),
+(where `NN` is a two-digit number prefix — for example `01-init-project.md` or
+`05-portfolio-demo-app.md`; this is a project implementation prompt — not a shared
+procedural prompt like `pr-resolve-all.md`, `repo-onboarding.md`,
+`copilot-onboarding.md`, or `expand-backlog-entry.md`),
 you must dispatch the Analyst role first and wait for a passing Pre-Flight
 Report before writing any code.
 

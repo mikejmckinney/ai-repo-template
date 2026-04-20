@@ -98,18 +98,20 @@ catches code quality but not scope mismatch.
 
 ### When pre-flight is required
 
-- The issue references a file in `.github/prompts/` (any pattern like
-  `NN-*.md`, not the shared procedural prompts like `pr-resolve-all.md` or
-  `repo-onboarding.md`).
+- The issue references a project prompt file under `.github/prompts/` whose
+  basename follows the numbered project-prompt convention (for example
+  `NN-*.md` where `NN` is a two-digit prefix like `01`, `05`).
 - The prompt describes a deliverable — a UI, a service, a pipeline, a
   dataset, anything interactive or operational.
 
 ### When pre-flight is NOT required
 
 - The issue is a simple bug fix, dependency bump, or doc typo.
-- The prompt references a shared procedure file (`pr-resolve-all.md`,
-  `repo-onboarding.md`, `copilot-onboarding.md`) — these have their own
-  verification and don't produce novel deliverables.
+- The prompt reference is not a numbered project prompt under
+  `.github/prompts/` — for example, shared procedural prompts
+  (`pr-resolve-all.md`, `repo-onboarding.md`, `copilot-onboarding.md`,
+  `expand-backlog-entry.md`) and prompt documentation (`README.md`) are
+  all exempt; they describe procedures, not deliverables.
 - The issue body is ad-hoc instructions with no referenced prompt file.
 
 ### The 15-minute test
@@ -143,7 +145,9 @@ security..."
 >
 
 ### 15-minute test result
-A user spending 15 minutes with this deliverable will: **experience the outcome** | **read about the outcome**
+Select one — a user spending 15 minutes with this deliverable will:
+- [ ] **experience the outcome** (working interactive artifact)
+- [ ] **read about the outcome** (documentation, design doc, ADR)
 
 Because: <one sentence>
 

@@ -19,9 +19,11 @@ See `AGENTS.md` §"Truth hierarchy" for rationale and the full onboarding proced
 
 ## Analyst pre-flight (before implementing from a prompt file)
 
-If an assigned issue references `.github/prompts/NN-*.md` (a project
-implementation prompt — NOT a shared procedure like `pr-resolve-all.md`,
-`repo-onboarding.md`, or `copilot-onboarding.md`), run pre-flight before
+If an assigned issue references `.github/prompts/NN-*.md` (where `NN` is a
+two-digit number prefix — for example `01-init-project.md` or
+`05-portfolio-demo-app.md`; a project implementation prompt — NOT a shared
+procedure like `pr-resolve-all.md`, `repo-onboarding.md`,
+`copilot-onboarding.md`, or `expand-backlog-entry.md`), run pre-flight before
 writing any code. Skip for bug fixes, dep bumps, doc typos, and ad-hoc
 issues without a prompt reference.
 
