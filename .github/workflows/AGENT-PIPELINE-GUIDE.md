@@ -23,15 +23,7 @@ backlog.yaml          Issue auto-created       Gated assignment        Copilot i
 
 ## How It Works
 
-### Step 0: Backlog → issue (optional, automatic — backlog dispatch added in PR 3)
-
-> **Status note (PR 2)**: `agent-assign-copilot.yml` and
-> `agent-release-slot.yml` are now present in the repository.
-> `.github/workflows/backlog-to-issues.yml` ships in PR 3 of the same
-> series. Until that lands, `.context/backlog.yaml` exists as a planning
-> artifact only; it is not auto-dispatched. You can still trigger the
-> assign pipeline manually by applying the `copilot:ready` label to any
-> issue.
+### Step 0: Backlog → issue (optional, automatic)
 
 `.context/backlog.yaml` is the machine-readable task list. Each entry
 will become one GitHub issue via `.github/workflows/backlog-to-issues.yml`,
@@ -359,6 +351,9 @@ for Gemini to finish posting.
 
 | File | Purpose | Needs API key? |
 |------|---------|---------------|
+| `.context/backlog.yaml` | Machine-readable task list dispatched by backlog-to-issues.yml | No |
+| `.context/backlog.schema.json` | JSON Schema for backlog.yaml; validated on every dispatch run | No |
+| `.github/workflows/backlog-to-issues.yml` | Dispatches backlog entries into GitHub issues; Claude-expands sparse entries | Optional (ANTHROPIC_API_KEY for expansion) |
 | `.github/workflows/agent-assign-copilot.yml` | Gated Copilot assignment (concurrent + daily budget) | No (uses CLAUDE_PAT) |
 | `.github/workflows/agent-release-slot.yml` | Releases slot on PR close/issue close, drains queue | No (uses CLAUDE_PAT) |
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
@@ -368,5 +363,6 @@ for Gemini to finish posting.
 | `.github/workflows/ci-tests.yml` | CI checks | No |
 | `.gemini/config.yaml` | Gemini review config | No (free GitHub App) |
 | `.github/prompts/pr-resolve-all.md` | Review resolution procedure | Used by Claude |
+| `.github/prompts/expand-backlog-entry.md` | Prompt for Claude to fill in sparse backlog entries | Used by Claude |
 | `.github/prompts/00-PROJECT-BRIEF.md` *(not in template)* | Project context | Used by Copilot + Claude |
 | `.github/prompts/01–06-*.md` *(not in template)* | Per-stage implementation prompts | Used by Copilot |
