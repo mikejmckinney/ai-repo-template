@@ -182,7 +182,7 @@ fi
 log_step "Configuring pipeline labels and repo variables"
 
 if command -v gh &> /dev/null && gh auth status &> /dev/null; then
-    # Six copilot:* state labels + from-backlog marker. `needs-human` is
+    # Four copilot:* state labels + from-backlog marker. `needs-human` is
     # referenced by ci-tests.yml and the backlog dispatch workflow, so
     # ensure it exists too.
     gh label create "copilot:ready"          --color "0E8A16" --description "Assign Copilot when budget allows"                              2>/dev/null || true
@@ -196,12 +196,20 @@ if command -v gh &> /dev/null && gh auth status &> /dev/null; then
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values.
     if ! gh variable list --json name --jq '.[].name' 2>/dev/null | grep -q "^MAX_COPILOT_CONCURRENT$"; then
-        gh variable set MAX_COPILOT_CONCURRENT --body "3"  >/dev/null && log_info "Set MAX_COPILOT_CONCURRENT=3"
+        if gh variable set MAX_COPILOT_CONCURRENT --body "3" >/dev/null 2>&1; then
+            log_info "Set MAX_COPILOT_CONCURRENT=3"
+        else
+            log_warn "Could not set MAX_COPILOT_CONCURRENT automatically; continuing. Set it manually to 3 if needed."
+        fi
     else
         log_info "MAX_COPILOT_CONCURRENT already set (leaving as-is)"
     fi
     if ! gh variable list --json name --jq '.[].name' 2>/dev/null | grep -q "^MAX_COPILOT_DAILY$"; then
-        gh variable set MAX_COPILOT_DAILY      --body "20" >/dev/null && log_info "Set MAX_COPILOT_DAILY=20"
+        if gh variable set MAX_COPILOT_DAILY --body "20" >/dev/null 2>&1; then
+            log_info "Set MAX_COPILOT_DAILY=20"
+        else
+            log_warn "Could not set MAX_COPILOT_DAILY automatically; continuing. Set it manually to 20 if needed."
+        fi
     else
         log_info "MAX_COPILOT_DAILY already set (leaving as-is)"
     fi

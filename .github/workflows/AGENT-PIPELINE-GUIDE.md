@@ -23,22 +23,30 @@ backlog.yaml          Issue auto-created       Gated assignment        Copilot i
 
 ## How It Works
 
-### Step 0: Backlog → issue (optional, automatic)
+### Step 0: Backlog → issue (optional, automatic — workflows added in PR 2 and PR 3)
+
+> **Status note (PR 1)**: This step describes the planned end-state. The
+> referenced workflows (`.github/workflows/backlog-to-issues.yml`,
+> `.github/workflows/agent-assign-copilot.yml`,
+> `.github/workflows/agent-release-slot.yml`) are **not yet present** in
+> the repository — they ship in PR 2 (gated assign) and PR 3 (backlog
+> dispatch) of the same series. Until those land, `.context/backlog.yaml`
+> exists as a planning artifact only; it is not auto-dispatched.
 
 `.context/backlog.yaml` is the machine-readable task list. Each entry
-becomes one GitHub issue via `.github/workflows/backlog-to-issues.yml`,
-which fires on push to `main` (when `backlog.yaml` changes) or on
-manual `workflow_dispatch`. Entries support `depends_on:` (waits until
-the dependency's issue is closed), `auto_assign: false` (creates the
-issue but holds it for human review), and Claude-assisted expansion of
-missing `body` / `acceptance_criteria` when `ANTHROPIC_API_KEY` is
-present. Newly-created issues are tagged `from-backlog` and (unless
+will become one GitHub issue via `.github/workflows/backlog-to-issues.yml`,
+which is planned to fire on push to `main` (when `backlog.yaml` changes)
+or on manual `workflow_dispatch`. Entries support `depends_on:` (waits
+until the dependency's issue is closed), `auto_assign: false` (creates
+the issue but holds it for human review), and Claude-assisted expansion
+of missing `body` / `acceptance_criteria` when `ANTHROPIC_API_KEY` is
+present. Newly-created issues will be tagged `from-backlog` and (unless
 `auto_assign: false`) `copilot:ready`.
 
 After an issue carries the `copilot:ready` label —
 whether it came from the backlog, a `workflow_dispatch`, or a human
 applying the label in the web UI — `.github/workflows/agent-assign-copilot.yml`
-takes over: it checks the concurrent budget (`MAX_COPILOT_CONCURRENT`,
+will take over: it checks the concurrent budget (`MAX_COPILOT_CONCURRENT`,
 default 3) and the rolling 24-hour daily cap (`MAX_COPILOT_DAILY`,
 default 20), then either assigns Copilot via GraphQL, swaps the label
 to `copilot:queued`, or hard-stops with `copilot:daily-cap-hit`. The

@@ -127,7 +127,7 @@ bash install.sh
 | File | Purpose |
 |------|---------|
 | `.context/00_INDEX.md` | Entry point, project summary |
-| `.context/backlog.yaml` | Machine-readable task list dispatched into issues by `.github/workflows/backlog-to-issues.yml`. Validate with `pip install check-jsonschema && check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml` |
+| `.context/backlog.yaml` | Machine-readable task list. Planned for dispatch into issues by `.github/workflows/backlog-to-issues.yml` once that workflow lands (added in PR 3 of the backlog-pipeline series). Validate with `pip install check-jsonschema && check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml` |
 | `.context/backlog.schema.json` | JSON Schema for `backlog.yaml` (Draft-07) |
 | `.context/roadmap.md` | Phase-by-phase plan |
 | `.context/rules/` | Domain constraints (never violate) |
