@@ -22,61 +22,22 @@
 # `issue:` already set are skipped.
 
 entries:
-  # ── Issue #68 verification fixtures (removed before final commit) ──────────
-  # Scenario 2 re-trigger: verify-51-happy already has issue: 75 → should be skipped.
-  - id: verify-51-happy
-    title: "[verify-51] Happy path — full entry dispatch"
-    role: backend
+  - id: example-auth-login
+    title: "Add email+password login"
+    role: backend                # maps to .github/agents/<role>.agent.md
+    phase: 2                     # matches a phase number in roadmap.md
     labels: [enhancement]
-    auto_assign: true
+    depends_on: []               # other entry ids; dispatch waits until each
+                                 # listed entry has `issue:` set AND that
+                                 # issue is closed
+    auto_assign: true            # default; false = create the issue but
+                                 # withhold `copilot:ready` for human review
     body: |
-      Happy-path verification for issue #68 (testing backlog-driven issue
-      creation). This entry has a fully-populated body + acceptance
-      criteria so the dispatch workflow should create an issue with the
-      `copilot:ready` + `from-backlog` labels and write the issue number
-      back to this file. This test issue will be closed immediately.
+      Short description of what to build and why. The dispatch workflow
+      uses this verbatim as the issue body, then appends a rendered
+      acceptance criteria checklist and a `<!-- backlog-entry-id: <id> -->`
+      footer used for the duplicate-issue guard.
     acceptance_criteria:
-      - "Issue created with `from-backlog` + `copilot:ready` labels"
-      - "`issue: N` written back to .context/backlog.yaml on this branch"
-      - "Job summary shows ✅ dispatched row"
-    issue: 75
-  # Scenario 3: sparse entry — only id + title. Claude should expand body + AC.
-  # Re-dispatched on Sonnet 4.6 after Haiku 3.5 retirement 404 (commit 1bc4331).
-  - id: verify-51-sparse
-    title: "[verify-51] Sparse entry — Claude expands body and acceptance criteria"
-    role: qa
-    labels: [documentation]
-    auto_assign: true
-  # Scenario 4: auto_assign: false — issue created WITHOUT copilot:ready label.
-  - id: verify-51-hold
-    title: "[verify-51] auto_assign=false — held for human review"
-    role: backend
-    labels: [enhancement]
-    auto_assign: false
-    body: |
-      Verifies that auto_assign: false creates the issue with ONLY
-      `from-backlog` (plus any manually-specified labels), and does NOT
-      add `copilot:ready`. The issue should sit in the "held for human
-      review" state until a human manually applies `copilot:ready`.
-    acceptance_criteria:
-      - "Issue created with `from-backlog` label"
-      - "Issue does NOT have `copilot:ready` label"
-      - "Job summary row notes 'held for human review (auto_assign: false)'"
-    issue: 76
-  # Scenario 5: depends_on — verify-51-hold (created above) will be OPEN when this
-  # entry is evaluated. Dispatch should skip this entry with a clear reason.
-  - id: verify-51-blocked
-    title: "[verify-51] Dependency gating — blocked because verify-51-hold is still open"
-    role: backend
-    labels: [enhancement]
-    auto_assign: true
-    depends_on: [verify-51-hold]
-    body: |
-      Verifies the depends_on gate: this entry depends on verify-51-hold,
-      which is created earlier in the same run but stays OPEN. The
-      dispatch workflow must skip this entry and record the reason in the
-      job summary.
-    acceptance_criteria:
-      - "No issue is created for verify-51-blocked in this run"
-      - "Job summary row is ⏸️ with reason mentioning verify-51-hold is not closed"
-      - "`issue:` field is NOT written back for verify-51-blocked"
+      - "POST /login returns 200 with valid credentials"
+      - "Rate limit: 5 attempts / 15 min per IP"
+    # issue: 42                  # ← filled in by the workflow; do not edit
