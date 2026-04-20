@@ -319,3 +319,19 @@ jobs:
         run: |
           gh pr comment "$PR_NUMBER" --repo "$REPO" \
             --body "🎉 **Auto-merged.** All CI checks passed, all review comments resolved."
+
+      - name: Drain Copilot queue
+        if: steps.find.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+        run: |
+          next=$(gh issue list --repo "$REPO" --state open \
+            --label "copilot:queued" --json number,createdAt \
+            --jq 'sort_by(.createdAt) | .[0].number // empty')
+          if [[ -n "$next" ]]; then
+            echo "Promoting issue #$next from queued to ready"
+            gh issue edit "$next" --repo "$REPO" \
+              --remove-label "copilot:queued" \
+              --add-label "copilot:ready"
+          fi

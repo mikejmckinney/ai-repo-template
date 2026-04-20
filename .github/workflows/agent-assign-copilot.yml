@@ -1,0 +1,184 @@
+name: Assign Copilot (Gated)
+# Fires when an issue receives the `copilot:ready` label (or on manual dispatch).
+# Checks concurrent + daily budgets, then either:
+#   - Assigns copilot-swe-agent via GraphQL and swaps label to copilot:in-progress
+#   - Swaps label to copilot:queued when the concurrent budget is full
+#   - Swaps label to copilot:daily-cap-hit when the daily cap is reached
+#
+# Budget variables (set via scripts/setup.sh or manually):
+#   MAX_COPILOT_CONCURRENT  — max open copilot/* PRs + in-progress issues (default 3)
+#   MAX_COPILOT_DAILY       — max assignments in a rolling 24h window (default 20)
+#
+# Requires: CLAUDE_PAT repo secret (fine-grained PAT with issues:write + pull-requests:read)
+
+on:
+  issues:
+    types: [labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Force re-evaluate a specific issue'
+        required: false
+
+concurrency:
+  group: assign-copilot
+  cancel-in-progress: false
+
+jobs:
+  assign:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'copilot:ready')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Resolve issue number
+        id: target
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          EVENT_ISSUE: ${{ github.event.issue.number }}
+          INPUT_ISSUE: ${{ inputs.issue_number }}
+        run: |
+          issue="${EVENT_ISSUE:-$INPUT_ISSUE}"
+          if [[ -z "$issue" ]]; then
+            echo "::error::No issue number available."
+            exit 1
+          fi
+          echo "issue=$issue" >> "$GITHUB_OUTPUT"
+
+      - name: Check concurrent budget
+        id: budget
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          MAX: ${{ vars.MAX_COPILOT_CONCURRENT || '3' }}
+        run: |
+          open_prs=$(gh pr list --repo "$REPO" --state open \
+            --search "head:copilot/" --json number --jq 'length')
+          open_issues=$(gh issue list --repo "$REPO" --state open \
+            --label "copilot:in-progress" --json number --jq 'length')
+          in_flight=$(( open_prs + open_issues ))
+          echo "In flight: $in_flight / $MAX (PRs=$open_prs, issues=$open_issues)"
+          echo "in_flight=$in_flight" >> "$GITHUB_OUTPUT"
+          echo "max=$MAX" >> "$GITHUB_OUTPUT"
+          if (( in_flight >= MAX )); then
+            echo "has_slot=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_slot=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check daily budget
+        id: daily
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          MAX_DAILY: ${{ vars.MAX_COPILOT_DAILY || '20' }}
+        run: |
+          owner="${REPO%/*}"
+          name="${REPO#*/}"
+          since=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
+            || date -u -v-24H +%Y-%m-%dT%H:%M:%SZ)
+          count=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/$owner/$name/issues/events?per_page=100" \
+            --paginate --slurp \
+            --jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length" \
+            2>/dev/null || echo "0")
+          echo "Assignments in last 24h: $count / $MAX_DAILY"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "max=$MAX_DAILY" >> "$GITHUB_OUTPUT"
+          if (( count >= MAX_DAILY )); then
+            echo "over_daily=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "over_daily=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Hard-stop on daily cap
+        if: steps.daily.outputs.over_daily == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ steps.target.outputs.issue }}
+          COUNT: ${{ steps.daily.outputs.count }}
+          MAX: ${{ steps.daily.outputs.max }}
+        run: |
+          gh issue edit "$ISSUE" --repo "$REPO" \
+            --remove-label "copilot:ready" \
+            --remove-label "copilot:queued" \
+            --add-label "copilot:daily-cap-hit"
+          gh issue comment "$ISSUE" --repo "$REPO" \
+            --body "🛑 **Daily cap reached** ($COUNT / $MAX assignments in last 24h). Remove the \`copilot:daily-cap-hit\` label and add \`copilot:ready\` to re-queue manually. Raise the cap by setting the \`MAX_COPILOT_DAILY\` repo variable."
+          exit 0
+
+      - name: Queue if budget full
+        if: steps.budget.outputs.has_slot == 'false' && steps.daily.outputs.over_daily != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ steps.target.outputs.issue }}
+          IN_FLIGHT: ${{ steps.budget.outputs.in_flight }}
+          MAX: ${{ steps.budget.outputs.max }}
+        run: |
+          gh issue edit "$ISSUE" --repo "$REPO" \
+            --remove-label "copilot:ready" \
+            --add-label "copilot:queued"
+          gh issue comment "$ISSUE" --repo "$REPO" \
+            --body "⏸ **Queued.** Concurrent Copilot budget full ($IN_FLIGHT / $MAX). Will auto-assign when a PR merges."
+
+      - name: Assign Copilot
+        if: steps.budget.outputs.has_slot == 'true' && steps.daily.outputs.over_daily != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ steps.target.outputs.issue }}
+        run: |
+          owner="${REPO%/*}"
+          name="${REPO#*/}"
+          bot_id=$(gh api graphql \
+            -H "GraphQL-Features: issues_copilot_assignment_api_support" \
+            -F owner="$owner" -F name="$name" \
+            -f query='
+              query($owner:String!, $name:String!) {
+                repository(owner:$owner, name:$name) {
+                  suggestedActors(capabilities:[CAN_BE_ASSIGNED], first:100) {
+                    nodes { __typename login ... on Bot { id } }
+                  }
+                }
+              }' \
+            --jq '.data.repository.suggestedActors.nodes[] | select(.login=="copilot-swe-agent") | .id')
+
+          if [[ -z "$bot_id" ]]; then
+            gh issue comment "$ISSUE" --repo "$REPO" \
+              --body "❌ **Assignment failed.** \`copilot-swe-agent\` not available. Check that Copilot coding agent is enabled in repo settings and \`CLAUDE_PAT\` belongs to a Copilot-enabled user."
+            exit 1
+          fi
+
+          issue_id=$(gh api graphql \
+            -F owner="$owner" -F name="$name" -F num="$ISSUE" \
+            -f query='
+              query($owner:String!,$name:String!,$num:Int!){
+                repository(owner:$owner,name:$name){issue(number:$num){id}}
+              }' \
+            --jq '.data.repository.issue.id')
+
+          gh api graphql \
+            -H "GraphQL-Features: issues_copilot_assignment_api_support" \
+            -F assignableId="$issue_id" -F actorId="$bot_id" \
+            -f query='
+              mutation($assignableId:ID!, $actorId:ID!) {
+                replaceActorsForAssignable(input:{
+                  assignableId:$assignableId, actorIds:[$actorId]
+                }) { assignable { ... on Issue { number } } }
+              }'
+
+          gh issue edit "$ISSUE" --repo "$REPO" \
+            --remove-label "copilot:ready" \
+            --remove-label "copilot:queued" \
+            --add-label "copilot:in-progress"
+
+          gh issue comment "$ISSUE" --repo "$REPO" \
+            --body "🤖 **Assigned to Copilot.** Budget: $(( ${{ steps.budget.outputs.in_flight }} + 1 )) / ${{ steps.budget.outputs.max }} in flight."
