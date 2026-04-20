@@ -21,6 +21,12 @@ concurrency:
 
 jobs:
   release:
+    # Guard: for pull_request events, only run when the PR is from the same
+    # repository (not a fork). Fork PRs don't have access to CLAUDE_PAT.
+    # For issues events, always run (issues are always in the base repo).
+    if: >
+      github.event_name == 'issues' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -73,7 +79,16 @@ jobs:
             --remove-label "copilot:queued" 2>/dev/null || true
 
       - name: Drain queue
-        if: always()
+        # Only drain when a slot was actually freed, to avoid spurious queue
+        # promotions (and comment spam) on non-Copilot PR/issue closes.
+        # Mirrors the exact conditions under which the two preceding steps run.
+        if: >
+          (github.event_name == 'pull_request' &&
+           github.event.pull_request.merged == false &&
+           startsWith(github.event.pull_request.head.ref, 'copilot/')) ||
+          (github.event_name == 'issues' &&
+           (contains(github.event.issue.labels.*.name, 'copilot:in-progress') ||
+            contains(github.event.issue.labels.*.name, 'copilot:queued')))
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}

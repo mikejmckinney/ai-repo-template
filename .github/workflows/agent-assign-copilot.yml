@@ -86,12 +86,13 @@ jobs:
           # --paginate --slurp fetches all pages before filtering.
           # Event volume stays low in practice: the daily cap itself (MAX_COPILOT_DAILY,
           # default 20) means at most ~20 relevant events per 24 h window.
+          # stderr is NOT suppressed: API failures propagate and fail the step
+          # (fail-closed — do not treat a broken API call as zero assignments).
           count=$(gh api \
             -H "Accept: application/vnd.github+json" \
             "/repos/$owner/$name/issues/events?per_page=100" \
             --paginate --slurp \
-            --jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length" \
-            2>/dev/null || echo "0")
+            --jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length")
           echo "Assignments in last 24h: $count / $MAX_DAILY"
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "max=$MAX_DAILY" >> "$GITHUB_OUTPUT"
@@ -149,7 +150,7 @@ jobs:
               query($owner:String!, $name:String!) {
                 repository(owner:$owner, name:$name) {
                   suggestedActors(capabilities:[CAN_BE_ASSIGNED], first:100) {
-                    nodes { __typename login ... on Bot { id } }
+                    nodes { __typename login ... on Bot { id } ... on User { id } }
                   }
                 }
               }' \
@@ -169,13 +170,33 @@ jobs:
               }' \
             --jq '.data.repository.issue.id')
 
+          # Preserve existing human assignees: fetch current assignees and include
+          # them alongside copilot-swe-agent so replaceActorsForAssignable does not
+          # silently wipe triagers or other maintainers already on the issue.
+          existing_ids=$(gh api graphql \
+            -F owner="$owner" -F name="$name" -F num="$ISSUE" \
+            -f query='
+              query($owner:String!,$name:String!,$num:Int!){
+                repository(owner:$owner,name:$name){
+                  issue(number:$num){
+                    assignees(first:10){nodes{id login}}
+                  }
+                }
+              }' \
+            --jq '[.data.repository.issue.assignees.nodes[]
+                    | select(.login != "copilot-swe-agent") | .id]')
+
+          # Merge existing IDs with bot_id into a JSON array for the mutation.
+          actor_ids=$(echo "$existing_ids" | jq --arg bot "$bot_id" '. + [$bot]')
+
           gh api graphql \
             -H "GraphQL-Features: issues_copilot_assignment_api_support" \
-            -F assignableId="$issue_id" -F actorId="$bot_id" \
+            -F assignableId="$issue_id" \
+            -F "actorIds=$actor_ids" \
             -f query='
-              mutation($assignableId:ID!, $actorId:ID!) {
+              mutation($assignableId:ID!, $actorIds:[ID!]!) {
                 replaceActorsForAssignable(input:{
-                  assignableId:$assignableId, actorIds:[$actorId]
+                  assignableId:$assignableId, actorIds:$actorIds
                 }) { assignable { ... on Issue { number } } }
               }'
 
