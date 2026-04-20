@@ -122,8 +122,15 @@ jobs:
 
           echo "reviewer=$reviewer"
 
-          # Skip copilot's own reviews (it sees them already)
-          # Skip our own relayed comments (they come from the PAT owner)
+          # Skip the Copilot SWE agent's own reviews (loop prevention) and
+          # our own relayed comments (they come from the PAT owner, posting
+          # as github-actions[bot]).
+          # Note: `copilot-pull-request-reviewer` is intentionally NOT
+          # skipped — it's the Copilot Code Review bot that posts inline
+          # suggestions, and its review comments SHOULD be relayed to the
+          # SWE agent so it can act on them. The fingerprint dedup gate
+          # (further down) prevents redundant relays of unchanged comment
+          # sets.
           if [[ "$reviewer" == "copilot" || "$reviewer" == "copilot[bot]" || "$reviewer" == "github-actions[bot]" ]]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else

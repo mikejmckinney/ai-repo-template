@@ -66,9 +66,9 @@
 # Safety:
 #   - Only runs on same-repo (non-fork) PRs. Fork PRs would otherwise
 #     get Claude + CLAUDE_PAT write access via this workflow; requiring
-#     the label (which needs pull_requests:write — maintainers only) is
-#     already a strong gate, but we add an explicit fork guard for
-#     defense in depth.
+#     the label (which only collaborators with Write or higher repo
+#     access can apply) is already a strong gate, but we add an explicit
+#     fork guard for defense in depth.
 #   - Max 3 fix cycles per PR (budget marker comment counts)
 #   - 45-minute timeout per cycle
 #   - Skips reviews/comments authored by Claude or by GitHub Actions
@@ -206,13 +206,41 @@ jobs:
             echo "exceeded=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # Pre-flight check for the `labeled` (retroactive) trigger only:
+      # avoid burning a fix-cycle budget slot when `claude-fix` is applied
+      # to a PR that has no actionable reviews yet. The `pull_request_review`
+      # path is implicitly gated on a fresh review existing, but the
+      # `labeled` path can fire on a freshly-opened PR with zero reviews,
+      # which would post a "🔧 Claude fix cycle 1/3" marker and consume a
+      # cycle for nothing.
+      - name: Check for actionable reviews (labeled trigger)
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          steps.budget.outputs.exceeded != 'true' &&
+          github.event_name == 'pull_request'
+        id: actionable
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          actionable_count=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json reviews \
+            --jq '[.reviews[] | select(.state == "CHANGES_REQUESTED" or .state == "COMMENTED")] | length' 2>/dev/null || echo "0")
+          echo "Actionable reviews (CHANGES_REQUESTED or COMMENTED): $actionable_count"
+          if [[ "$actionable_count" -eq 0 ]]; then
+            echo "No actionable reviews found — skipping to preserve fix-cycle budget. Re-trigger by submitting a review or re-applying the label after reviews land."
+            echo "no_reviews=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "no_reviews=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # Wait for all reviewers to finish posting
       # Gemini, Copilot, and Claude auto-review typically complete within 60s
       - name: Wait for reviewers to settle
         if: >
           steps.pr.outputs.skip != 'true' &&
           steps.author_check.outputs.skip != 'true' &&
-          steps.budget.outputs.exceeded != 'true'
+          steps.budget.outputs.exceeded != 'true' &&
+          steps.actionable.outputs.no_reviews != 'true'
         run: |
           echo "Waiting 90 seconds for all reviewers to finish posting..."
           sleep 90
@@ -221,7 +249,8 @@ jobs:
         if: >
           steps.pr.outputs.skip != 'true' &&
           steps.author_check.outputs.skip != 'true' &&
-          steps.budget.outputs.exceeded != 'true'
+          steps.budget.outputs.exceeded != 'true' &&
+          steps.actionable.outputs.no_reviews != 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -232,7 +261,8 @@ jobs:
         if: >
           steps.pr.outputs.skip != 'true' &&
           steps.author_check.outputs.skip != 'true' &&
-          steps.budget.outputs.exceeded != 'true'
+          steps.budget.outputs.exceeded != 'true' &&
+          steps.actionable.outputs.no_reviews != 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -241,7 +271,8 @@ jobs:
         if: >
           steps.pr.outputs.skip != 'true' &&
           steps.author_check.outputs.skip != 'true' &&
-          steps.budget.outputs.exceeded != 'true'
+          steps.budget.outputs.exceeded != 'true' &&
+          steps.actionable.outputs.no_reviews != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -250,7 +281,8 @@ jobs:
         if: >
           steps.pr.outputs.skip != 'true' &&
           steps.author_check.outputs.skip != 'true' &&
-          steps.budget.outputs.exceeded != 'true'
+          steps.budget.outputs.exceeded != 'true' &&
+          steps.actionable.outputs.no_reviews != 'true'
         uses: hashicorp/setup-terraform@v3
 
       # Post cycle marker
@@ -258,7 +290,8 @@ jobs:
         if: >
           steps.pr.outputs.skip != 'true' &&
           steps.author_check.outputs.skip != 'true' &&
-          steps.budget.outputs.exceeded != 'true'
+          steps.budget.outputs.exceeded != 'true' &&
+          steps.actionable.outputs.no_reviews != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.pr.outputs.number }}
@@ -308,7 +341,8 @@ jobs:
         if: >
           steps.pr.outputs.skip != 'true' &&
           steps.author_check.outputs.skip != 'true' &&
-          steps.budget.outputs.exceeded != 'true'
+          steps.budget.outputs.exceeded != 'true' &&
+          steps.actionable.outputs.no_reviews != 'true'
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
