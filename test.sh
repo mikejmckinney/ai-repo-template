@@ -275,6 +275,17 @@ else
     warn ".context/00_INDEX.md missing priority information"
 fi
 
+# Validate backlog.yaml against its schema (requires check-jsonschema)
+if command -v check-jsonschema &>/dev/null; then
+    if check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml 2>/dev/null; then
+        pass "backlog.yaml validates against backlog.schema.json"
+    else
+        fail "backlog.yaml failed schema validation against backlog.schema.json"
+    fi
+else
+    warn "check-jsonschema not installed; skipping backlog.yaml schema validation (run: pip install check-jsonschema)"
+fi
+
 # Check README.md has Limitations, Future Improvements, and FAQ sections.
 # These are required for the template itself and derived projects are
 # instructed (by .github/ISSUE_TEMPLATE/agent_init.md) to preserve them.

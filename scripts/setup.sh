@@ -182,20 +182,32 @@ fi
 log_step "Configuring pipeline labels and repo variables"
 
 if command -v gh &> /dev/null && gh auth status &> /dev/null; then
+    # Helper: create a label idempotently, surfacing real failures.
+    # `gh label create` exits non-zero for both "already exists" and real errors;
+    # check existence on failure so genuine permission/API errors aren't swallowed.
+    _ensure_label() {
+        local name="$1" color="$2" desc="$3"
+        if ! gh label create "$name" --color "$color" --description "$desc" 2>/dev/null; then
+            gh label list --json name --jq '.[].name' 2>/dev/null | grep -qF "$name" || \
+                log_warn "Could not create label '$name' — check repo permissions"
+        fi
+    }
+
     # Four copilot:* state labels + from-backlog marker. `needs-human` is
     # referenced by ci-tests.yml and the backlog dispatch workflow, so
     # ensure it exists too.
-    gh label create "copilot:ready"          --color "0E8A16" --description "Assign Copilot when budget allows"                              2>/dev/null || true
-    gh label create "copilot:in-progress"    --color "1D76DB" --description "Assigned to Copilot, counts toward concurrent budget"           2>/dev/null || true
-    gh label create "copilot:queued"         --color "FBCA04" --description "Waiting for an open Copilot slot"                               2>/dev/null || true
-    gh label create "copilot:daily-cap-hit"  --color "D93F0B" --description "Hit daily assignment cap; manual re-queue required"             2>/dev/null || true
-    gh label create "from-backlog"           --color "5319E7" --description "Issue auto-created from .context/backlog.yaml"                  2>/dev/null || true
-    gh label create "needs-human"            --color "B60205" --description "Requires human input (e.g., empty roadmap phase, CI failure)"   2>/dev/null || true
+    _ensure_label "copilot:ready"         "0E8A16" "Assign Copilot when budget allows"
+    _ensure_label "copilot:in-progress"   "1D76DB" "Assigned to Copilot, counts toward concurrent budget"
+    _ensure_label "copilot:queued"        "FBCA04" "Waiting for an open Copilot slot"
+    _ensure_label "copilot:daily-cap-hit" "D93F0B" "Hit daily assignment cap; manual re-queue required"
+    _ensure_label "from-backlog"          "5319E7" "Issue auto-created from .context/backlog.yaml"
+    _ensure_label "needs-human"           "B60205" "Requires human input (e.g., empty roadmap phase, CI failure)"
     log_info "Pipeline labels ensured (copilot:* + from-backlog + needs-human)"
 
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
-    # re-run of setup.sh doesn't clobber tuned values.
-    if ! gh variable list --json name --jq '.[].name' 2>/dev/null | grep -q "^MAX_COPILOT_CONCURRENT$"; then
+    # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is
+    # used instead of `gh variable list | grep` to avoid pagination limits.
+    if ! gh variable get MAX_COPILOT_CONCURRENT &>/dev/null; then
         if gh variable set MAX_COPILOT_CONCURRENT --body "3" >/dev/null 2>&1; then
             log_info "Set MAX_COPILOT_CONCURRENT=3"
         else
@@ -204,7 +216,7 @@ if command -v gh &> /dev/null && gh auth status &> /dev/null; then
     else
         log_info "MAX_COPILOT_CONCURRENT already set (leaving as-is)"
     fi
-    if ! gh variable list --json name --jq '.[].name' 2>/dev/null | grep -q "^MAX_COPILOT_DAILY$"; then
+    if ! gh variable get MAX_COPILOT_DAILY &>/dev/null; then
         if gh variable set MAX_COPILOT_DAILY --body "20" >/dev/null 2>&1; then
             log_info "Set MAX_COPILOT_DAILY=20"
         else
