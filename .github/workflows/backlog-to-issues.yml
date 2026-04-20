@@ -72,7 +72,7 @@ jobs:
             "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_ASSET}"
           wget -qO /tmp/yq_checksums \
             "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/checksums"
-          grep " ${YQ_ASSET}\$" /tmp/yq_checksums > /tmp/yq_checksums_filtered
+          grep " ${YQ_ASSET}"'$' /tmp/yq_checksums > /tmp/yq_checksums_filtered
           (cd /tmp && sha256sum -c yq_checksums_filtered)
           sudo install -m 0755 /tmp/yq /usr/local/bin/yq
 
@@ -331,8 +331,8 @@ jobs:
                                   f'| Claude returned invalid body (expected non-empty string) |'
                               )
                               continue
-                          if (not isinstance(ac, list)
-                                  or not all(isinstance(item, str) and item for item in ac)):
+                          if (not isinstance(ac, list) or not ac
+                                  or not all(isinstance(item, str) and item.strip() for item in ac)):
                               summary_rows.append(
                                   f'| ❌ | `{entry_id}` | {title} '
                                   f'| Claude returned invalid acceptance_criteria '
