@@ -22,22 +22,19 @@
 # `issue:` already set are skipped.
 
 entries:
-  - id: example-auth-login
-    title: "Add email+password login"
-    role: backend                # maps to .github/agents/<role>.agent.md
-    phase: 2                     # matches a phase number in roadmap.md
+  # ── Issue #68 verification fixtures (removed before final commit) ──────────
+  - id: verify-51-happy
+    title: "[verify-51] Happy path — full entry dispatch"
+    role: backend
     labels: [enhancement]
-    depends_on: []               # other entry ids; dispatch waits until each
-                                 # listed entry has `issue:` set AND that
-                                 # issue is closed
-    auto_assign: true            # default; false = create the issue but
-                                 # withhold `copilot:ready` for human review
+    auto_assign: true
     body: |
-      Short description of what to build and why. The dispatch workflow
-      uses this verbatim as the issue body, then appends a rendered
-      acceptance criteria checklist and a `<!-- backlog-entry-id: <id> -->`
-      footer used for the duplicate-issue guard.
+      Happy-path verification for issue #68 (testing backlog-driven issue
+      creation). This entry has a fully-populated body + acceptance
+      criteria so the dispatch workflow should create an issue with the
+      `copilot:ready` + `from-backlog` labels and write the issue number
+      back to this file. This test issue will be closed immediately.
     acceptance_criteria:
-      - "POST /login returns 200 with valid credentials"
-      - "Rate limit: 5 attempts / 15 min per IP"
-    # issue: 42                  # ← filled in by the workflow; do not edit
+      - "Issue created with `from-backlog` + `copilot:ready` labels"
+      - "`issue: N` written back to .context/backlog.yaml on this branch"
+      - "Job summary shows ✅ dispatched row"
