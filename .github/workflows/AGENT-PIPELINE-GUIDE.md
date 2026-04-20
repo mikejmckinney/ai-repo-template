@@ -158,7 +158,35 @@ If `main` has branch protection requiring approvals:
 - OR set required approvals to 0 (since bot reviews don't count as approvals)
 
 ### 7. Create labels
-Create these in **Settings → Labels**:
+
+**Easiest:** run `./scripts/setup.sh` after `gh auth login`. The script
+creates every label below idempotently (existing labels are left
+untouched) and also seeds the `MAX_COPILOT_CONCURRENT` / `MAX_COPILOT_DAILY`
+repo variables. See `scripts/setup.sh` lines 177–233 for the exact
+commands.
+
+If you'd rather create them by hand in **Settings → Labels**:
+
+**Backlog → assignment pipeline labels** — required by
+`backlog-to-issues.yml`, `agent-assign-copilot.yml`, and
+`agent-release-slot.yml`. All six must exist in the repo: `from-backlog`
+and `copilot:ready` are applied by the dispatch workflow on every
+created issue (so `gh issue create --label …` fails without them, and
+no issue is filed); the remaining four are applied by the assignment /
+release-slot workflows during their normal lifecycle and are required
+for queue management to function:
+
+| Label | Color | Purpose |
+|-------|-------|---------|
+| `from-backlog` | `#5319E7` (purple) | Applied to every issue auto-created from `.context/backlog.yaml` |
+| `copilot:ready` | `#0E8A16` (green) | Hand-off marker: `agent-assign-copilot.yml` watches for this label and assigns Copilot when budget allows |
+| `copilot:in-progress` | `#1D76DB` (blue) | Counts toward `MAX_COPILOT_CONCURRENT`; cleared by `agent-release-slot.yml` on PR/issue close |
+| `copilot:queued` | `#FBCA04` (amber) | Concurrent budget was full at assignment time; queue is drained automatically when a slot frees |
+| `copilot:daily-cap-hit` | `#D93F0B` (red) | Hit `MAX_COPILOT_DAILY` cap; manual re-queue (swap label back to `copilot:ready`) required |
+| `needs-human` | `#B60205` (red) | Set by `ci-tests.yml` and the backlog dispatch workflow when human input is required (e.g., empty roadmap phase, repeated CI failure) |
+
+**Review-resolution / merge labels** — workflow opt-ins for the
+post-PR loop:
 
 | Label | Color | Purpose |
 |-------|-------|---------|
