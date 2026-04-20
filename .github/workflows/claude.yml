@@ -105,10 +105,32 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Auth notes (mirror of agent-fix-reviews.yml):
+      #
+      # Without `github_token:`, this action falls back to the Claude
+      # GitHub App installation token. That token has two limitations
+      # that make `@claude follow ...` mentions unreliable as a
+      # retroactive run path:
+      #   1. The OIDC app-token exchange checks the triggering actor's
+      #      write permissions, so mentions from bot reviewers
+      #      (gemini-code-assist[bot], copilot) fail with 401.
+      #   2. The app token cannot post some comment shapes the
+      #      labeled `agent-fix-reviews.yml` path can.
+      #
+      # Passing CLAUDE_PAT + allowed_bots: "*" gives the mention
+      # handler the same write surface as the labeled run, so
+      # `@claude follow ...` behaves consistently with applying the
+      # `claude-fix` label.
+      #
+      # Note: GitHub still blocks ALL app/PAT writes under
+      # `.github/workflows/**` — workflow-file edits delegate to
+      # Copilot regardless of which token is used here.
       - name: Claude mention handler
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.CLAUDE_PAT }}
+          allowed_bots: "*"
           # No `prompt:` here — the action extracts instructions from the
           # @claude mention body and dispatches accordingly. Claude will
           # auto-select the appropriate subagent from .claude/agents/
