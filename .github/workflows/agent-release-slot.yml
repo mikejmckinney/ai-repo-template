@@ -39,6 +39,8 @@ jobs:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          # grep -P (PCRE) is available on ubuntu-latest (GNU grep). This extracts
+          # "closes #N", "fixes #N", "resolves #N" issue references from the PR body.
           linked=$(echo "$PR_BODY" | grep -oiP '(?:closes|fixes|resolves)\s+#\K\d+' || true)
           if [[ -z "$linked" ]]; then
             echo "PR #$PR_NUMBER closed without merge, no linked issues found."

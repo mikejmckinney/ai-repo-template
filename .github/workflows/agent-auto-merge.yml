@@ -321,6 +321,9 @@ jobs:
             --body "🎉 **Auto-merged.** All CI checks passed, all review comments resolved."
 
       - name: Drain Copilot queue
+        # NOTE: this drain logic is intentionally duplicated from agent-release-slot.yml.
+        # Per issue #51 authoritative decisions: do NOT extract to a composite action
+        # (YAGNI until a fourth trigger needs it).
         if: steps.find.outputs.eligible == 'true'
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}

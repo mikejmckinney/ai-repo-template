@@ -80,8 +80,12 @@ jobs:
         run: |
           owner="${REPO%/*}"
           name="${REPO#*/}"
+          # GNU coreutils (ubuntu-latest); BSD fallback retained for local macOS testing.
           since=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null \
             || date -u -v-24H +%Y-%m-%dT%H:%M:%SZ)
+          # --paginate --slurp fetches all pages before filtering.
+          # Event volume stays low in practice: the daily cap itself (MAX_COPILOT_DAILY,
+          # default 20) means at most ~20 relevant events per 24 h window.
           count=$(gh api \
             -H "Accept: application/vnd.github+json" \
             "/repos/$owner/$name/issues/events?per_page=100" \
