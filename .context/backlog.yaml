@@ -41,6 +41,7 @@ entries:
       - "Job summary shows ✅ dispatched row"
     issue: 75
   # Scenario 3: sparse entry — only id + title. Claude should expand body + AC.
+  # Re-dispatched on Sonnet 4.6 after Haiku 3.5 retirement 404 (commit 1bc4331).
   - id: verify-51-sparse
     title: "[verify-51] Sparse entry — Claude expands body and acceptance criteria"
     role: qa
