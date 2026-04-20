@@ -17,6 +17,53 @@
 - Always read `/AI_REPO_GUIDE.md` first.
 - If AI_REPO_GUIDE.md is missing/stale: follow `.github/prompts/repo-onboarding.md` and update AI_REPO_GUIDE.md in the same PR.
 
+## Analyst pre-flight (before implementing work from a prompt file)
+
+When an issue assigned to you references a project implementation prompt
+(any file matching `.github/prompts/NN-*.md`, e.g. `02-infrastructure-terraform.md`,
+`05-portfolio-demo-app.md`), run Analyst pre-flight validation **before**
+writing any code.
+
+This does NOT apply when:
+- The issue body is ad-hoc instructions with no prompt file reference.
+- The prompt file is a shared procedure (`pr-resolve-all.md`,
+  `repo-onboarding.md`, `copilot-onboarding.md`).
+- The task is a simple bug fix, dependency bump, or doc typo.
+
+### Procedure
+
+1. Read `.github/agents/analyst.agent.md` — specifically the "Prompt Pre-Flight
+   Validation" section. This defines the 15-minute test and the Pre-Flight
+   Report template.
+2. Check the issue for an existing Pre-Flight Report comment with verdict PASS.
+3. If none exists, you act as the Analyst role for this step: read the
+   referenced prompt file, apply the 15-minute test, and post a Pre-Flight
+   Report as a comment on the issue using the exact template in the Analyst
+   role file.
+4. If your report's verdict is PASS, proceed with implementation.
+5. If FAIL (scope mismatch), stop. Post the mismatch explanation and wait
+   for the issue author to rewrite the prompt.
+6. If HOLD (ambiguities), stop. Post the ambiguities as a numbered list and
+   wait for answers.
+
+### Why this matters
+
+Prompts that describe deliverables without specifying user outcomes produce
+technically correct implementations that deliver the wrong artifact. A prompt
+that says "build 6 React pages about the architecture" is a deliverable
+description; "build a demo a client can interact with that proves the
+solution works" is an outcome. The first ships a presentation; the second
+ships a working demo. Automated review catches code quality but not this
+distinction.
+
+The 15-minute test is: "If a user spent 15 minutes with the final
+deliverable, would they *experience* the outcome, or would they *read about*
+it?" Answer must match the request's intent. If a portfolio demo fails the
+"experience" bar, the prompt is wrong, not the implementation.
+
+If you are tempted to skip pre-flight because the prompt "looks clear
+enough," that is the signal to run it anyway.
+
 ## Following referenced prompt files
 When a user's comment or issue body contains the pattern `@copilot follow <path>`
 (e.g. `@copilot follow .github/prompts/pr-resolve-all.md`):
