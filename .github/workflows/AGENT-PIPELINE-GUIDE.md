@@ -23,15 +23,15 @@ backlog.yaml          Issue auto-created       Gated assignment        Copilot i
 
 ## How It Works
 
-### Step 0: Backlog → issue (optional, automatic — workflows added in PR 2 and PR 3)
+### Step 0: Backlog → issue (optional, automatic — backlog dispatch added in PR 3)
 
-> **Status note (PR 1)**: This step describes the planned end-state. The
-> referenced workflows (`.github/workflows/backlog-to-issues.yml`,
-> `.github/workflows/agent-assign-copilot.yml`,
-> `.github/workflows/agent-release-slot.yml`) are **not yet present** in
-> the repository — they ship in PR 2 (gated assign) and PR 3 (backlog
-> dispatch) of the same series. Until those land, `.context/backlog.yaml`
-> exists as a planning artifact only; it is not auto-dispatched.
+> **Status note (PR 2)**: `agent-assign-copilot.yml` and
+> `agent-release-slot.yml` are now present in the repository.
+> `.github/workflows/backlog-to-issues.yml` ships in PR 3 of the same
+> series. Until that lands, `.context/backlog.yaml` exists as a planning
+> artifact only; it is not auto-dispatched. You can still trigger the
+> assign pipeline manually by applying the `copilot:ready` label to any
+> issue.
 
 `.context/backlog.yaml` is the machine-readable task list. Each entry
 will become one GitHub issue via `.github/workflows/backlog-to-issues.yml`,
@@ -359,9 +359,11 @@ for Gemini to finish posting.
 
 | File | Purpose | Needs API key? |
 |------|---------|---------------|
+| `.github/workflows/agent-assign-copilot.yml` | Gated Copilot assignment (concurrent + daily budget) | No (uses CLAUDE_PAT) |
+| `.github/workflows/agent-release-slot.yml` | Releases slot on PR close/issue close, drains queue | No (uses CLAUDE_PAT) |
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
 | `.github/workflows/agent-relay-reviews.yml` | Legacy Copilot relay (opt-in via `copilot-relay` label) | No (uses CLAUDE_PAT for posting) |
-| `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready | No |
+| `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready; drains Copilot queue after merge | No (uses CLAUDE_PAT) |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |
 | `.github/workflows/ci-tests.yml` | CI checks | No |
 | `.gemini/config.yaml` | Gemini review config | No (free GitHub App) |
