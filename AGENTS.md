@@ -43,11 +43,51 @@ When information conflicts, use this priority order:
 
 ## Role selection (multi-agent workflow)
 This template supports parallel role-specialized agents. Before editing any file:
-1. Identify your role (or ask the user which role to adopt). Role definitions live in `.github/agents/*.agent.md` — Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs.
+1. Identify your role (or ask the user which role to adopt). Role definitions live in `.github/agents/*.agent.md` — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
 3. Read `.context/state/coordination.md` to see active locks and claim your task before editing.
 4. Stay inside your owned paths. Any cross-role edit requires a PM claim. **Never guess ownership silently** — escalate to PM.
-5. Full workflow (plan-gate → dispatch → parallel implementation → QA → diff-gate → merge) is documented in `docs/guides/multi-agent-coordination.md`.
+5. Full workflow (analysis → plan-gate → dispatch → parallel implementation → QA → diff-gate → merge) is documented in `docs/guides/multi-agent-coordination.md`.
+
+### Analyst pre-flight gate (REQUIRED before implementation)
+
+If the issue assigned to you references a prompt file in `.github/prompts/NN-*.md`
+(where `NN` is a two-digit number prefix — for example `01-init-project.md` or
+`05-portfolio-demo-app.md`; this is a project implementation prompt — not a shared
+procedural prompt like `pr-resolve-all.md`, `repo-onboarding.md`,
+`copilot-onboarding.md`, or `expand-backlog-entry.md`),
+you must dispatch the Analyst role first and wait for a passing Pre-Flight
+Report before writing any code.
+
+**Why this exists**: Prompt files that describe deliverables without
+specifying user outcomes produce technically correct but scope-mismatched
+implementations. Automated review catches code quality; it does not catch
+"shipped the wrong artifact." The Analyst's Pre-Flight Report applies the
+15-minute test before implementation begins, which is the only cheap point
+to catch this failure mode.
+
+**Procedure**:
+
+1. Check the issue for an existing Pre-Flight Report comment matching the
+   template in `.github/agents/analyst.agent.md` → "Prompt Pre-Flight Validation".
+2. If one exists with verdict **PASS**, proceed to Architect handoff as normal.
+3. If one exists with verdict **FAIL** or **HOLD**, stop. Do not implement.
+   Address the mismatch or ambiguity first.
+4. If no report exists, dispatch Analyst yourself (or, if you are running as
+   Copilot's cloud agent, post a comment: "Dispatching Analyst for pre-flight
+   validation before implementation" and proceed to run the analysis per
+   the Analyst role file). Wait for the report. Then re-evaluate.
+
+**When this gate does NOT apply**:
+
+- Ad-hoc issues that don't reference a `.github/prompts/NN-*.md` file.
+- Simple bug fixes, dependency bumps, typo corrections, doc edits.
+- Issues that reference shared procedural prompts (`pr-resolve-all.md`, etc.) —
+  those have their own verification and don't produce novel deliverables.
+
+Skipping this gate on a prompt-referenced issue is a known failure mode.
+If you find yourself reasoning "this prompt looks clear enough, I'll skip
+pre-flight," that's the signal to run pre-flight anyway.
 
 ## Context pack usage
 - Start with `.context/00_INDEX.md` for project overview

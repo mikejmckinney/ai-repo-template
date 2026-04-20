@@ -61,6 +61,7 @@ If ambiguous, ask **one** question: "Is this a plan review or a code/diff review
 - [ ] Concrete validation steps (exact commands)
 - [ ] Identified risks + mitigations
 - [ ] If repo uses/maintains `AI_REPO_GUIDE.md`, the plan includes updating it when behavior/commands/structure changes
+- [ ] **If the issue references a numbered project prompt file matching `.github/prompts/NN-*.md` (where `NN` is a two-digit prefix, e.g., `01-init.md`) and the prompt describes an interactive/operational deliverable, an Analyst Pre-Flight Report is posted on the issue with verdict PASS.** Do not apply this gate to shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `copilot-onboarding.md`, `expand-backlog-entry.md`) or prompt documentation (`README.md`) under `.github/prompts/`. BLOCK if the report is missing, or if the report exists with verdict FAIL or HOLD. The Pre-Flight Report validates the prompt's user outcome against the 15-minute test (see `analyst.agent.md` → "Prompt Pre-Flight Validation") — without it, the plan may faithfully implement a deliverable that doesn't match the underlying goal.
 
 ## Output Format (Exact)
 
@@ -101,6 +102,7 @@ QUESTIONS (max 3; only if truly blocking):
 5. **Performance & Reliability**: Obvious inefficiencies, retries/timeouts, resource leaks
 6. **Compatibility**: APIs/contracts, migrations, config, versioning
 7. **Docs**: Update README/docs and `AI_REPO_GUIDE.md` if behavior/commands/conventions changed
+8. **Outcome match** (if a Pre-Flight Report exists): does the merged artifact actually deliver the user outcome the Analyst specified? If the Pre-Flight said "user should be able to run a live query against Snowflake" and the implementation returns JSON fixtures, that's a BLOCK-level scope mismatch — not a code-quality issue. Automated review doesn't catch this; you do.
 
 ## Output Format (Exact)
 
