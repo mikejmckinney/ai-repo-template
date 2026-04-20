@@ -40,14 +40,12 @@ entries:
       - "`issue: N` written back to .context/backlog.yaml on this branch"
       - "Job summary shows ✅ dispatched row"
     issue: 75
-
   # Scenario 3: sparse entry — only id + title. Claude should expand body + AC.
   - id: verify-51-sparse
     title: "[verify-51] Sparse entry — Claude expands body and acceptance criteria"
     role: qa
     labels: [documentation]
     auto_assign: true
-
   # Scenario 4: auto_assign: false — issue created WITHOUT copilot:ready label.
   - id: verify-51-hold
     title: "[verify-51] auto_assign=false — held for human review"
@@ -63,7 +61,7 @@ entries:
       - "Issue created with `from-backlog` label"
       - "Issue does NOT have `copilot:ready` label"
       - "Job summary row notes 'held for human review (auto_assign: false)'"
-
+    issue: 76
   # Scenario 5: depends_on — verify-51-hold (created above) will be OPEN when this
   # entry is evaluated. Dispatch should skip this entry with a clear reason.
   - id: verify-51-blocked
