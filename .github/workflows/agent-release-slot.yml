@@ -48,8 +48,17 @@ jobs:
           # grep -P (PCRE) is available on ubuntu-latest (GNU grep). This extracts
           # "closes #N", "fixes #N", "resolves #N" issue references from the PR body.
           linked=$(echo "$PR_BODY" | grep -oiP '(?:closes|fixes|resolves)\s+#\K\d+' || true)
+
+          # Fallback: extract issue number from the branch name when the PR body
+          # has no closing keywords. Copilot names branches copilot/issue-NNN-*
+          # or copilot/issue-NNN (e.g. copilot/issue-51-assign-gating).
           if [[ -z "$linked" ]]; then
-            echo "PR #$PR_NUMBER closed without merge, no linked issues found."
+            branch_ref="${{ github.event.pull_request.head.ref }}"
+            linked=$(echo "$branch_ref" | grep -oP '(?:^|/)issue-\K\d+(?=[-/]|$)' || true)
+          fi
+
+          if [[ -z "$linked" ]]; then
+            echo "PR #$PR_NUMBER closed without merge, no linked issues found (body + branch name checked)."
             exit 0
           fi
           for issue in $linked; do
