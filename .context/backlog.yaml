@@ -23,7 +23,7 @@
 
 entries:
   # ── Issue #68 verification fixtures (removed before final commit) ──────────
-  # Scenario 1 re-trigger after yq install fix (commit 4933624).
+  # Scenario 2 re-trigger: verify-51-happy already has issue: 75 → should be skipped.
   - id: verify-51-happy
     title: "[verify-51] Happy path — full entry dispatch"
     role: backend
