@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "urn:ai-repo:schemas:backlog",
+  "title": "Backlog (.context/backlog.yaml)",
+  "description": "Schema for the machine-readable task backlog dispatched into GitHub issues by .github/workflows/backlog-to-issues.yml.",
+  "type": "object",
+  "required": ["entries"],
+  "additionalProperties": false,
+  "properties": {
+    "entries": {
+      "type": "array",
+      "description": "Ordered list of backlog entries. Each entry becomes at most one GitHub issue.",
+      "items": { "$ref": "#/definitions/entry" }
+    }
+  },
+  "definitions": {
+    "entry": {
+      "type": "object",
+      "required": ["id", "title"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable, unique identifier for this entry. Used as the dedup key and emitted in the issue body footer as <!-- backlog-entry-id: <id> -->.",
+          "pattern": "^[a-z0-9][a-z0-9_-]*$",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "title": {
+          "type": "string",
+          "description": "Issue title.",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "role": {
+          "type": "string",
+          "description": "Maps to .github/agents/<role>.agent.md.",
+          "enum": [
+            "analyst",
+            "architect",
+            "backend",
+            "critic",
+            "devops",
+            "docs",
+            "frontend",
+            "judge",
+            "pm",
+            "qa"
+          ]
+        },
+        "phase": {
+          "type": "integer",
+          "description": "Phase number from .context/roadmap.md.",
+          "minimum": 0
+        },
+        "labels": {
+          "type": "array",
+          "description": "Additional issue labels (added on top of copilot:ready and from-backlog).",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "depends_on": {
+          "type": "array",
+          "description": "Entry ids this entry depends on. Dispatch is skipped until each listed entry has `issue:` set AND that issue is in the closed state.",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "auto_assign": {
+          "type": "boolean",
+          "description": "When true (default) the issue is created with the copilot:ready label so it enters the gated assignment workflow. When false the issue is created without copilot:ready and held for human review.",
+          "default": true
+        },
+        "body": {
+          "type": "string",
+          "description": "Issue body. If omitted and ANTHROPIC_API_KEY is set, expand-backlog-entry.md fills it in. If omitted and ANTHROPIC_API_KEY is missing, the dispatch workflow does NOT create the issue."
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "description": "Bullet list rendered as a Markdown checklist appended to the issue body. Same fill-in rules as `body`.",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "issue": {
+          "type": "integer",
+          "description": "Filled in by the dispatch workflow after the issue is created. Do not set by hand.",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

@@ -18,6 +18,8 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ```
 .context/
 ├── 00_INDEX.md          # This file - start here (The Map)
+├── backlog.yaml         # Machine-readable task list dispatched into issues
+├── backlog.schema.json  # JSON Schema for backlog.yaml
 ├── roadmap.md           # Phase-by-phase plan with acceptance criteria (The Plan)
 ├── rules/               # Immutable constraints and domain rules
 │   ├── agent_ownership.md    # Canonical role → owned paths map (read before editing)

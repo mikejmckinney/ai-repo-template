@@ -90,6 +90,8 @@ echo "Checking context pack structure..."
 
 CONTEXT_FILES=(
     ".context/00_INDEX.md"
+    ".context/backlog.yaml"
+    ".context/backlog.schema.json"
     ".context/roadmap.md"
     ".context/rules/README.md"
     ".context/rules/agent_ownership.md"
@@ -271,6 +273,17 @@ if grep -q "priority" .context/00_INDEX.md 2>/dev/null; then
     pass ".context/00_INDEX.md has priority information"
 else
     warn ".context/00_INDEX.md missing priority information"
+fi
+
+# Validate backlog.yaml against its schema (requires check-jsonschema)
+if command -v check-jsonschema &>/dev/null; then
+    if check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml 2>/dev/null; then
+        pass "backlog.yaml validates against backlog.schema.json"
+    else
+        fail "backlog.yaml failed schema validation against backlog.schema.json"
+    fi
+else
+    warn "check-jsonschema not installed; skipping backlog.yaml schema validation (run: pip install check-jsonschema)"
 fi
 
 # Check README.md has Limitations, Future Improvements, and FAQ sections.
