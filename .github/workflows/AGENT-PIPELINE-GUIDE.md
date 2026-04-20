@@ -67,12 +67,14 @@ With workflow approval disabled (see Setup below), these fire immediately:
 - **CI checks** — your `ci-tests.yml` runs
 
 ### Step 4: Claude resolves ALL review comments (opt-in via `claude-fix` label)
-`agent-fix-reviews.yml` triggers for `copilot/*` PRs labeled `claude-fix`
-when a reviewer submits a `commented` / `changes_requested` review. It
-waits 90 seconds for related review activity to settle, then runs Claude
-Code Action (Sonnet) with `pr-resolve-all.md`. Claude reads comments
-from **every** reviewer (including Gemini — something Copilot can't do),
-fixes the issues, runs verification, and pushes.
+`agent-fix-reviews.yml` triggers for same-repo PRs labeled `claude-fix`
+when a reviewer submits a `commented` / `changes_requested` review, or
+when the `claude-fix` label is added to a PR retroactively (useful if
+you forgot to opt in at PR-open time). It waits 90 seconds for related
+review activity to settle, then runs Claude Code Action (Sonnet) with
+`pr-resolve-all.md`. Claude reads comments from **every** reviewer
+(including Gemini — something Copilot can't do), fixes the issues,
+runs verification, and pushes.
 
 Note: the workflow triggers only on `pull_request_review` (submitted),
 not on `pull_request_review_comment`. A review with N inline comments
@@ -92,9 +94,11 @@ edits). Instead it posts a single `@copilot` comment summarizing the
 delegated items so Copilot's cloud agent can take care of them.
 
 To enable Claude resolution on a particular PR, add the `claude-fix`
-label directly to the PR. To use the legacy Copilot-relay path instead,
-add `copilot-relay` directly to the PR (issue labels are not
-automatically copied to Copilot's PR). See `agent-relay-reviews.yml`.
+label directly to the PR — either at PR-open time or retroactively. To
+use the legacy Copilot-relay path instead, add `copilot-relay` directly
+to the PR (issue labels are not automatically copied to Copilot's PR,
+and both labels can also be applied retroactively on an existing PR).
+See `agent-relay-reviews.yml`.
 
 ### Step 5: Auto-merge (automatic)
 `agent-auto-merge.yml` triggers when checks complete. If CI is green,

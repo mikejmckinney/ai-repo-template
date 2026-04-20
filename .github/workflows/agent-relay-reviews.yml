@@ -12,8 +12,10 @@
 #   token can't push to, and you don't want Claude to delegate piecemeal).
 #
 # How to enable:
-#   Add the `copilot-relay` label directly to the PR. The relay only
-#   runs when the label is present on the PR. (Issue labels are not
+#   Add the `copilot-relay` label directly to the PR. The label can be
+#   applied either when the PR is opened or retroactively — adding it
+#   later fires the `pull_request.labeled` trigger below, which runs a
+#   relay pass over the existing reviews. (Issue labels are not
 #   automatically copied onto Copilot's PR.)
 #
 # Why this exists:
@@ -23,9 +25,11 @@
 #   - This relay bridges the gap: bots review → relay reposts → Copilot fixes
 #
 # How it works:
-#   1. Triggers when a review is submitted on a copilot/* branch PR
-#      (NOT on individual inline review comments — see the `on:` block
-#      for why; an N-comment review would otherwise burn N budget cycles)
+#   1. Triggers when a review is submitted on a same-repo PR that carries
+#      the `copilot-relay` label, OR when the `copilot-relay` label is
+#      added to a PR retroactively. (NOT on individual inline review
+#      comments — see the `on:` block for why; an N-comment review
+#      would otherwise burn N budget cycles.)
 #   2. Waits 180s for all reviewers to finish posting (longer settle
 #      lets `cancel-in-progress: true` coalesce multiple reviewers'
 #      reviews into a single relay comment)
@@ -40,7 +44,7 @@
 # Cost: $0 — no AI API calls. Just GitHub API reads + one comment post.
 #
 # Safety:
-#   - Only runs on copilot/* branches
+#   - Only runs on same-repo (non-fork) PRs
 #   - Skips if no actionable bot comments found
 #   - Max 3 relay cycles per PR (prevents infinite loops)
 #   - Won't relay comments from copilot itself (it already sees its own)
@@ -58,6 +62,12 @@ name: Relay Bot Reviews to Copilot
 on:
   pull_request_review:
     types: [submitted]
+  # Retroactive enablement: if the PR was opened without `copilot-relay`
+  # and a maintainer adds it later, fire a relay pass over all existing
+  # reviews. The job's `if` filters to `label.name == 'copilot-relay'`
+  # so other label events don't trigger a relay.
+  pull_request:
+    types: [labeled]
   # NOTE: `pull_request_review_comment` is intentionally NOT listed here.
   # A review with N inline comments fires N comment events + 1 review
   # event. Triggering on both burns the 3-cycle relay budget fast — each
@@ -73,14 +83,24 @@ concurrency:
 
 jobs:
   relay:
-    # Only on copilot/* branches, only when explicitly enabled by the
-    # `copilot-relay` label, for change-request or commented reviews and
-    # inline comments.
+    # Only on same-repo PRs, only when explicitly enabled by the
+    # `copilot-relay` label, for change-request / commented reviews or
+    # for the label being added retroactively.
+    #
+    # Fork guard: CLAUDE_PAT is a write-capable secret used to post the
+    # relay comment. Requiring the label (maintainers only) is already a
+    # strong gate, but we add an explicit fork check for defense in depth.
     if: >
-      startsWith(github.event.pull_request.head.ref, 'copilot/') &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.labels.*.name, 'copilot-relay') &&
-      (github.event.review.state == 'changes_requested' ||
-       github.event.review.state == 'commented')
+      (
+        (github.event_name == 'pull_request_review' &&
+         (github.event.review.state == 'changes_requested' ||
+          github.event.review.state == 'commented')) ||
+        (github.event_name == 'pull_request' &&
+         github.event.action == 'labeled' &&
+         github.event.label.name == 'copilot-relay')
+      )
 
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -91,9 +111,12 @@ jobs:
 
     steps:
       # Skip if the review came from copilot (it sees its own comments)
-      # or from the relay itself (loop prevention)
+      # or from the relay itself (loop prevention).
+      # Only meaningful for `pull_request_review` events — the `labeled`
+      # trigger has no review to inspect, so we skip this step there.
       - name: Check review author
         id: author
+        if: github.event_name == 'pull_request_review'
         run: |
           reviewer="${{ github.event.review.user.login }}"
 

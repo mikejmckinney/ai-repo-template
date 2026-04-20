@@ -25,9 +25,15 @@
 #   Copilot's cloud agent will then pick it up.
 #
 # Trigger logic:
-#   Fires when a review is submitted on a `copilot/*` branch PR.
+#   Fires when a review is submitted on a same-repo PR that carries the
+#   `claude-fix` label, OR when the `claude-fix` label is added to a PR
+#   retroactively (so existing reviews can be resolved even if the label
+#   wasn't set at PR-open time).
+#
 #   Waits 90s after the trigger so Gemini, Copilot review, and Claude
-#   auto-review all post first and get batched into one fix pass.
+#   auto-review all post first and get batched into one fix pass. For
+#   the `labeled` trigger this sleep is usually unnecessary (reviews
+#   have already settled) but it's harmless and keeps the flow uniform.
 #
 #   We deliberately do NOT trigger on `pull_request_review_comment`
 #   (individual inline comments): when a reviewer submits a review with
@@ -49,13 +55,20 @@
 #
 # Opt in:
 #   Add the `claude-fix` label directly to the PR to enable this
-#   workflow. Without the label, Claude resolution does not run — use
+#   workflow. The label can be applied either when the PR is opened
+#   or retroactively — adding it later fires the `pull_request.labeled`
+#   trigger below, which will run a resolution pass over all existing
+#   reviews. Without the label, Claude resolution does not run — use
 #   this when you want to drive resolution manually, or when running
 #   the legacy Copilot-relay path (see `agent-relay-reviews.yml`, gated
 #   on the PR's `copilot-relay` label).
 #
 # Safety:
-#   - Only runs on `copilot/*` branches (never touches human PRs)
+#   - Only runs on same-repo (non-fork) PRs. Fork PRs would otherwise
+#     get Claude + CLAUDE_PAT write access via this workflow; requiring
+#     the label (which needs pull_requests:write — maintainers only) is
+#     already a strong gate, but we add an explicit fork guard for
+#     defense in depth.
 #   - Max 3 fix cycles per PR (budget marker comment counts)
 #   - 45-minute timeout per cycle
 #   - Skips reviews/comments authored by Claude or by GitHub Actions
@@ -79,6 +92,12 @@ name: Auto-Fix Reviews (Claude)
 on:
   pull_request_review:
     types: [submitted]
+  # Retroactive enablement: if the PR was opened without `claude-fix`
+  # and a maintainer adds it later, fire a resolution pass over all
+  # existing reviews. The job's `if` filters to `label.name ==
+  # 'claude-fix'` so other label events don't run Claude.
+  pull_request:
+    types: [labeled]
 
 # One fix cycle at a time per PR
 concurrency:
@@ -92,13 +111,24 @@ jobs:
     # 404s with "Copilot is not a user" before allowed_bots is consulted,
     # which would otherwise fail every Copilot-triggered run. Copilot's
     # own pushes/comments aren't reviewer feedback anyway.
+    #
+    # Fork guard: CLAUDE_PAT is a powerful write-capable secret. Limit
+    # to same-repo PRs. For fork PRs, a human maintainer can still drive
+    # resolution via `@claude follow .github/prompts/pr-resolve-all.md`
+    # on the PR.
     if: >
       github.actor != 'Copilot' &&
       github.actor != 'copilot-swe-agent[bot]' &&
-      startsWith(github.event.pull_request.head.ref, 'copilot/') &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.labels.*.name, 'claude-fix') &&
-      (github.event.review.state == 'changes_requested' ||
-       github.event.review.state == 'commented')
+      (
+        (github.event_name == 'pull_request_review' &&
+         (github.event.review.state == 'changes_requested' ||
+          github.event.review.state == 'commented')) ||
+        (github.event_name == 'pull_request' &&
+         github.event.action == 'labeled' &&
+         github.event.label.name == 'claude-fix')
+      )
 
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -122,9 +152,13 @@ jobs:
             echo "skip=false"
           } >> "$GITHUB_OUTPUT"
 
-      # Don't respond to our own reviews (prevents infinite loops)
+      # Don't respond to our own reviews (prevents infinite loops).
+      # Only meaningful for `pull_request_review` events — the `labeled`
+      # trigger has no review to inspect, so we skip this step there.
       - name: Check review author
-        if: steps.pr.outputs.skip != 'true'
+        if: >
+          steps.pr.outputs.skip != 'true' &&
+          github.event_name == 'pull_request_review'
         id: author_check
         env:
           REVIEW_AUTHOR: ${{ github.event.review.user.login }}
