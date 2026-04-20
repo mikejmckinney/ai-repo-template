@@ -65,10 +65,16 @@ jobs:
         run: |
           pip install check-jsonschema --quiet
           # Pin yq to a known-good v4 release (preserves YAML comments on -i writes).
+          # Verify sha256 checksum from the release's checksums file before installing.
           YQ_VERSION=v4.44.3
-          sudo wget -qO /usr/local/bin/yq \
-            "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
-          sudo chmod +x /usr/local/bin/yq
+          YQ_ASSET=yq_linux_amd64
+          wget -qO /tmp/yq \
+            "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_ASSET}"
+          wget -qO /tmp/yq_checksums \
+            "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/checksums"
+          grep " ${YQ_ASSET}\$" /tmp/yq_checksums > /tmp/yq_checksums_filtered
+          (cd /tmp && sha256sum -c yq_checksums_filtered)
+          sudo install -m 0755 /tmp/yq /usr/local/bin/yq
 
       - name: Validate backlog schema
         run: |
@@ -245,6 +251,13 @@ jobs:
                           break
                       r = gh('issue', 'view', str(dep_issue),
                              '--repo', REPO, '--json', 'state', '--jq', '.state')
+                      if r.returncode != 0:
+                          err = (r.stderr or '').strip().replace('\n', ' ')[:120]
+                          skip_reason = (
+                              f'Could not check dependency `{dep_id}` '
+                              f'(issue #{dep_issue}): {err or "gh issue view failed"}'
+                          )
+                          break
                       if r.stdout.strip() != 'CLOSED':
                           skip_reason = (
                               f'Dependency `{dep_id}` (issue #{dep_issue}) is not closed yet'
@@ -266,13 +279,26 @@ jobs:
                       '--json', 'number',
                       '--jq', '.[0].number // empty',
                   )
+                  if r.returncode != 0:
+                      err = (r.stderr or '').strip().replace('\n', ' ')[:200]
+                      summary_rows.append(
+                          f'| ❌ | `{entry_id}` | {title} '
+                          f'| Duplicate check failed: {err or "gh issue list failed"} |'
+                      )
+                      continue
                   existing_num_str = r.stdout.strip()
                   if existing_num_str and existing_num_str.isdigit():
                       num = int(existing_num_str)
-                      write_backs.append((i, num))
+                      # Update in-memory entry so downstream depends_on checks in the
+                      # same run see this issue number (ISS-09).
+                      entry['issue'] = num
+                      if not DRY_RUN:
+                          write_backs.append((i, num))
+                          note = f'Found existing issue #{num} — write-back queued'
+                      else:
+                          note = f'Found existing issue #{num} — would write-back (dry run)'
                       summary_rows.append(
-                          f'| 🔗 | `{entry_id}` | {title} '
-                          f'| Found existing issue #{num} — write-back queued |'
+                          f'| 🔗 | `{entry_id}` | {title} | {note} |'
                       )
                       continue
 
@@ -297,6 +323,22 @@ jobs:
                               continue
                           body = expanded.get('body') or body
                           ac = expanded.get('acceptance_criteria') or ac
+                          # Validate shapes returned by Claude before trusting them.
+                          # body must be a non-empty str; ac must be a list of non-empty strs.
+                          if not isinstance(body, str) or not body.strip():
+                              summary_rows.append(
+                                  f'| ❌ | `{entry_id}` | {title} '
+                                  f'| Claude returned invalid body (expected non-empty string) |'
+                              )
+                              continue
+                          if (not isinstance(ac, list)
+                                  or not all(isinstance(item, str) and item for item in ac)):
+                              summary_rows.append(
+                                  f'| ❌ | `{entry_id}` | {title} '
+                                  f'| Claude returned invalid acceptance_criteria '
+                                  f'(expected list of non-empty strings) |'
+                              )
+                              continue
                       else:
                           summary_rows.append(
                               f'| ⚠️ | `{entry_id}` | {title} '
@@ -369,6 +411,9 @@ jobs:
                       continue
 
                   write_backs.append((i, new_num))
+                  # Update in-memory entry so downstream depends_on checks in the
+                  # same run see this issue number (ISS-09).
+                  entry['issue'] = new_num
 
                   action = (
                       'copilot:ready applied'
@@ -381,12 +426,14 @@ jobs:
                   )
 
               # ── Write back issue numbers (yq preserves comments) ─────────────
-              for (idx, num) in write_backs:
-                  yq_set_issue(idx, num)
+              # Guard with DRY_RUN: dry runs must not mutate backlog.yaml (ISS-05).
+              if not DRY_RUN:
+                  for (idx, num) in write_backs:
+                      yq_set_issue(idx, num)
 
-              if write_backs and not DRY_RUN:
-                  with open(GITHUB_OUTPUT, 'a') as f:
-                      f.write('changed=true\n')
+                  if write_backs:
+                      with open(GITHUB_OUTPUT, 'a') as f:
+                          f.write('changed=true\n')
 
               # ── Job summary ──────────────────────────────────────────────────
               with open(GITHUB_STEP_SUMMARY, 'a') as f:
