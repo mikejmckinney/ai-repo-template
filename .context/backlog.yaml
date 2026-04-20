@@ -39,3 +39,4 @@ entries:
       - "Issue created with `from-backlog` + `copilot:ready` labels"
       - "`issue: N` written back to .context/backlog.yaml on this branch"
       - "Job summary shows ✅ dispatched row"
+    issue: 75
