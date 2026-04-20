@@ -67,15 +67,15 @@ jobs:
         run: |
           pip install check-jsonschema --quiet
           # Pin yq to a known-good v4 release (preserves YAML comments on -i writes).
-          # Verify sha256 checksum from the release's checksums file before installing.
+          # SHA-256 is pinned inline — mikefarah/yq's upstream `checksums` file is a
+          # multi-column format incompatible with `sha256sum -c`. Verify the pinned
+          # hash in-place with a single-line checksum check.
           YQ_VERSION=v4.44.3
           YQ_ASSET=yq_linux_amd64
+          YQ_SHA256=a2c097180dd884a8d50c956ee16a9cec070f30a7947cf4ebf87d5f36213e9ed7
           wget -qO /tmp/yq \
             "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_ASSET}"
-          wget -qO /tmp/yq_checksums \
-            "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/checksums"
-          grep " ${YQ_ASSET}"'$' /tmp/yq_checksums > /tmp/yq_checksums_filtered
-          (cd /tmp && sha256sum -c yq_checksums_filtered)
+          echo "${YQ_SHA256}  /tmp/yq" | sha256sum -c -
           sudo install -m 0755 /tmp/yq /usr/local/bin/yq
 
       - name: Validate backlog schema
