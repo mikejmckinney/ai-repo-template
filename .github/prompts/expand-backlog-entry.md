@@ -32,9 +32,9 @@ message:
 4. **Domain code quality rules** — `.context/rules/domain_code_quality.md`.
    Hard rules H1–H8 and Soft rules S1–S6 constrain all acceptance criteria.
 
-After reading, answer silently: "Do I have enough context to write a
-meaningful, non-fabricated `body` and `acceptance_criteria`?" If no, emit
-`needs_human: true` in the output and stop — do not invent requirements.
+After reading, determine if you have enough context to write a
+meaningful, non-fabricated `body` and `acceptance_criteria`. If no,
+proceed to Phase 3 and emit `needs_human: true` — do not invent requirements.
 
 ## Phase 2: Expand the Entry
 
@@ -59,7 +59,7 @@ entry for human review than to create a misleading issue.
 
 ## Phase 3: Output
 
-Output **only** a fenced YAML code block containing the completed entry.
+Output **only** a fenced YAML code block (using the `yaml` language identifier) containing the completed entry.
 Include all original fields from the input entry YAML, plus the newly-generated
 `body` and `acceptance_criteria`. Do not add the `issue:` field — that is
 written back by the workflow. Do not add fields not in the schema.
@@ -96,8 +96,9 @@ acceptance_criteria:
   `.context/backlog.schema.json` (id, title, role, phase, labels, depends_on,
   auto_assign, body, acceptance_criteria, issue).
 - **Do not include the `issue:` field** — the workflow writes it back.
-- **Do not include comments** in the output YAML — the workflow writes the
-  output to a temp file and parses it; comments are discarded.
+- **Do not include comments** in the output YAML — the workflow extracts the
+  fenced YAML block from your response and parses it directly; comments are
+  not preserved.
 - **Output exactly one fenced YAML block** and nothing else after it. The
   workflow uses a regex to extract the YAML block from your response.
 - **Keep body concise**: 2–4 sentences. Acceptance criteria are the place for
