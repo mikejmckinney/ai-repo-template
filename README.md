@@ -45,7 +45,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 - **Pre-commit Hooks** - Template for linting, secret detection, and commit standards
 - **ADR Templates** - Architecture Decision Record templates with examples
 - **Verification Scripts** - Built-in testing (see `./test.sh` output for current check count) to ensure template integrity
-- **Backlog-Ready Issue Pipeline** - `.context/backlog.yaml` is a machine-readable task list (validated by `.context/backlog.schema.json`). Once the dispatch and gating workflows land (added in PR 2 and PR 3 of the backlog-pipeline series), the backlog will be auto-converted into GitHub issues and routed through a gated Copilot assignment workflow with concurrent + daily budgets and a queue. See `.github/workflows/AGENT-PIPELINE-GUIDE.md` for the intended end-to-end flow.
+- **Backlog-Ready Issue Pipeline** - `.context/backlog.yaml` is a machine-readable task list (validated by `.context/backlog.schema.json`). Once the dispatch and gating workflows land (added in PR 2 and PR 3 of the backlog-pipeline series), the backlog will be auto-converted into GitHub issues and routed through a gated Copilot assignment workflow with concurrent + daily budgets and a queue. The pipeline relies on state labels (`copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) which `scripts/setup.sh` creates automatically. See `.github/workflows/AGENT-PIPELINE-GUIDE.md` for the intended end-to-end flow.
 
 ## Repository Structure
 

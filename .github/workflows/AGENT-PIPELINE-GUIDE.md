@@ -158,7 +158,8 @@ If `main` has branch protection requiring approvals:
 - OR set required approvals to 0 (since bot reviews don't count as approvals)
 
 ### 7. Create labels
-Create these in **Settings → Labels**:
+
+The six backlog-pipeline labels below (`copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) are created automatically by `scripts/setup.sh`. Manual creation via **Settings → Labels** is only needed if you skipped that step or the setup.sh label-creation call failed (e.g., missing repo permissions).
 
 | Label | Color | Purpose |
 |-------|-------|---------|
@@ -167,6 +168,12 @@ Create these in **Settings → Labels**:
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
 | `claude-fix` | `#FBCA04` (amber) | Opt PR in to `agent-fix-reviews.yml` (Claude resolution) |
 | `copilot-relay` | `#5319E7` (purple) | Opt PR in to legacy `agent-relay-reviews.yml` (Copilot resolution) |
+| `copilot:ready` | `#0E8A16` (green) | Assign Copilot when budget allows (applied to backlog issues unless `auto_assign: false`) |
+| `copilot:in-progress` | `#1D76DB` (blue) | Assigned to Copilot; counts toward `MAX_COPILOT_CONCURRENT` |
+| `copilot:queued` | `#FBCA04` (amber) | Waiting for an open Copilot slot (swapped in by `agent-assign-copilot.yml` when concurrent cap is hit) |
+| `copilot:daily-cap-hit` | `#D93F0B` (red-orange) | Hit `MAX_COPILOT_DAILY`; requires manual re-queue |
+| `from-backlog` | `#5319E7` (purple) | Issue auto-created from `.context/backlog.yaml` |
+| `needs-human` | `#B60205` (red) | Requires human input (e.g., empty roadmap phase, CI failure, sparse entry that couldn't be expanded) |
 
 **Resolution-path selection:**
 - Default: no automated resolution. Add a label to opt in.
