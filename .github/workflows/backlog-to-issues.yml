@@ -32,7 +32,9 @@ name: Backlog → Issues
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - claude/testing-and-verification-for-issue-51-backlog-driv-74TFZ  # TEMP: issue #68 verification, revert before merge
     paths: ['.context/backlog.yaml']
   workflow_dispatch:
     inputs:
