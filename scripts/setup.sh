@@ -194,7 +194,9 @@ log_step "Configuring pipeline labels and repo variables"
 # Metadata + Pull requests = read/write, and Workflows = read/write if you
 # edit workflows. Set it once at https://github.com/settings/codespaces.
 _pipeline_setup_skip_reason=""
+_gh_auth_ok=""
 if command -v gh &> /dev/null && gh auth status &> /dev/null; then
+    _gh_auth_ok="true"
     # Only treat the `(GITHUB_TOKEN)` auth source as the Codespaces-limited
     # case when we're actually running inside a Codespace (`CODESPACES=true`).
     # In GitHub Actions or when a user has set `GITHUB_TOKEN` manually, the
@@ -250,7 +252,7 @@ if [[ -n "$_pipeline_setup_skip_reason" ]]; then
     log_warn "Or create the following manually:"
     log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, copilot-relay, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
     log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
-elif command -v gh &> /dev/null && gh auth status &> /dev/null; then
+elif [[ -n "$_gh_auth_ok" ]]; then
     # Helper: create a label idempotently, surfacing real failures.
     # `gh label create` exits non-zero for both "already exists" and real errors;
     # check existence on failure so genuine permission/API errors aren't swallowed.
@@ -287,24 +289,22 @@ elif command -v gh &> /dev/null && gh auth status &> /dev/null; then
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is
     # used instead of `gh variable list | grep` to avoid pagination limits.
-    if ! gh variable get MAX_COPILOT_CONCURRENT &>/dev/null; then
-        _err=$(gh variable set MAX_COPILOT_CONCURRENT --body "3" 2>&1 >/dev/null) && \
-            log_info "Set MAX_COPILOT_CONCURRENT=3" || {
-                _first=$(printf '%s\n' "$_err" | grep -v '^$' | head -n1)
-                log_warn "Could not set MAX_COPILOT_CONCURRENT — ${_first:-unknown error}. Set it manually to 3 if needed."
-            }
-    else
-        log_info "MAX_COPILOT_CONCURRENT already set (leaving as-is)"
-    fi
-    if ! gh variable get MAX_COPILOT_DAILY &>/dev/null; then
-        _err=$(gh variable set MAX_COPILOT_DAILY --body "20" 2>&1 >/dev/null) && \
-            log_info "Set MAX_COPILOT_DAILY=20" || {
-                _first=$(printf '%s\n' "$_err" | grep -v '^$' | head -n1)
-                log_warn "Could not set MAX_COPILOT_DAILY — ${_first:-unknown error}. Set it manually to 20 if needed."
-            }
-    else
-        log_info "MAX_COPILOT_DAILY already set (leaving as-is)"
-    fi
+    _ensure_variable() {
+        local name="$1" value="$2" err first_err
+        if gh variable get "$name" &>/dev/null; then
+            log_info "$name already set (leaving as-is)"
+            return 0
+        fi
+        err=$(gh variable set "$name" --body "$value" 2>&1 >/dev/null)
+        if [[ $? -eq 0 ]]; then
+            log_info "Set $name=$value"
+        else
+            first_err=$(printf '%s\n' "$err" | grep -v '^$' | head -n1)
+            log_warn "Could not set $name — ${first_err:-unknown error}. Set it manually to $value if needed."
+        fi
+    }
+    _ensure_variable MAX_COPILOT_CONCURRENT 3
+    _ensure_variable MAX_COPILOT_DAILY 20
 else
     log_warn "gh CLI not authenticated; skipping label/variable creation."
     log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
