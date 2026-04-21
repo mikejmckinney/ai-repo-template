@@ -179,7 +179,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
 | `claude-fix` | `#FBCA04` (amber) | Opt PR in to `agent-fix-reviews.yml` (Claude resolution) |
 | `claude-review` | `#1D76DB` (blue) | Opt PR in to `claude.yml` auto-review (invokes judge subagent on open/reopen/ready_for_review) |
-| `auto-resolve-threads` | `#0E8A16` (green) | Also auto-resolve bot-authored review threads after the resolution agent (Claude or Copilot) finishes. Works with either `claude-fix` or `copilot-relay`; no effect without one of them. |
+| `auto-resolve-threads` | `#0E8A16` (green) | Also auto-resolve bot-authored review threads after the resolution agent (Claude or Copilot) finishes. Takes effect when a supported resolution run is triggered via `claude-fix`, `copilot-relay`, or a direct `@claude follow` / `@copilot follow` invocation. |
 | `copilot-relay` | `#5319E7` (purple) | Opt PR in to legacy `agent-relay-reviews.yml` (Copilot resolution) |
 | `copilot:ready` | `#0E8A16` (green) | Assign Copilot when budget allows (applied to backlog issues unless `auto_assign: false`) |
 | `copilot:in-progress` | `#1D76DB` (blue) | Assigned to Copilot; counts toward `MAX_COPILOT_CONCURRENT` |
