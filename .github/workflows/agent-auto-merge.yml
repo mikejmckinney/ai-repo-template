@@ -30,8 +30,17 @@
 #   - Branch protection rules still apply
 #
 # Setup:
-#   - CLAUDE_PAT repo secret required (same PAT used by fix-reviews).
-#     The default GITHUB_TOKEN cannot merge PRs created by bot actors.
+#   - CLAUDE_PAT repo secret required for the merge step only. A merge
+#     performed with the built-in GITHUB_TOKEN does NOT fire downstream
+#     workflow_run events on main, which would break
+#     auto-resolve-on-merge. CLAUDE_PAT only needs: `contents: write` +
+#     `pull-requests: write` (plus `issues: write` if you want the
+#     linked-issue comment/label to post under your user).
+#   - All READ operations (gh pr view, GraphQL reviewThreads, etc.) use
+#     the built-in GITHUB_TOKEN with scopes declared in this workflow's
+#     `permissions:` block. This keeps CLAUDE_PAT's blast radius narrow
+#     and avoids the trap where the PAT silently lacks Checks/Statuses
+#     read — `statusCheckRollup` requires both.
 #   - If you have branch protection requiring reviews, either:
 #     (a) Add github-actions[bot] to bypass list, OR
 #     (b) Count the bot reviewers (Gemini/Claude/Copilot) as approvals
@@ -88,13 +97,21 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      # statusCheckRollup aggregates both Check Runs (checks:) and
+      # Commit Statuses (statuses:). Declare both so GITHUB_TOKEN can
+      # read it without needing a PAT.
       checks: read
+      statuses: read
 
     steps:
       - name: Find PRs ready to merge
         id: find
         env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          # Read-only step: use the built-in GITHUB_TOKEN with the
+          # workflow-declared permissions. Do NOT use CLAUDE_PAT here —
+          # fine-grained PATs frequently lack Checks/Statuses read,
+          # which silently breaks the statusCheckRollup query.
+          GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           # Pass event data via env vars (not inline interpolation) to
           # prevent code-injection from untrusted PR metadata.
@@ -122,15 +139,11 @@ jobs:
 
           echo "Evaluating PR #$pr_number..."
 
-          # === DIAGNOSTIC (to be removed once gh pr view failure is understood) ===
-          echo "=== gh auth status ==="
-          gh auth status || true
-          echo "=== /gh auth status ==="
-          # === END DIAGNOSTIC ===
-
-          # Fetch all PR data in one call. Diagnostic: capture stderr to
-          # a temp file and preserve exit code so the real error is visible
-          # in the workflow log on failure.
+          # Fetch all PR data in one call. Surface stderr on failure
+          # (captured to a temp file) so the real error is visible in
+          # the workflow log — the old `2>/dev/null` swallowed it and
+          # made permission failures indistinguishable from transient
+          # network errors.
           set +e
           pr_json=$(gh pr view "$pr_number" --repo "$REPO" \
             --json headRefName,headRepositoryOwner,isDraft,state,mergeable,reviewDecision,statusCheckRollup,labels,title,body \
@@ -139,11 +152,8 @@ jobs:
           set -e
 
           if [[ $gh_exit -ne 0 || -z "$pr_json" ]]; then
-            echo "=== gh pr view FAILED (exit=$gh_exit) ==="
-            echo "--- stderr ---"
-            cat /tmp/gh-pr-view.err 2>/dev/null || echo "(no stderr file)"
-            echo "--- /stderr ---"
-            echo "Could not fetch PR. Skipping."
+            echo "gh pr view failed (exit=$gh_exit):"
+            cat /tmp/gh-pr-view.err 2>/dev/null || true
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
