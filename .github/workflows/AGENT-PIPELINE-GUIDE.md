@@ -2,10 +2,12 @@
 
 ## Overview
 
-This pipeline automates the full development loop end-to-end. The only
-manual gate is applying the `auto-merge` label to a PR when you want it
-to land automatically — everything else (implementation, review,
-resolution, queue management) runs without intervention:
+This pipeline automates the full development loop. Two per-PR opt-in
+gates are the only manual steps: add the `auto-merge` label to enable
+auto-merge, and add the `claude-fix` label to enable Claude-driven
+review resolution. Everything else (implementation, draft→ready
+transition, CI, bot reviews, queue management) runs without
+intervention:
 
 ```
 backlog.yaml          Issue auto-created       Gated assignment        Copilot implements
