@@ -1,22 +1,31 @@
-# Agent Auto-Merge — Merge Copilot PRs When Ready
+# Agent Auto-Merge — Opt-in Merge When Ready
 # --------------------------------------------------
-# Monitors PRs on copilot/* branches. When ALL conditions are met,
-# squash-merges automatically:
+# Monitors PRs carrying the `auto-merge` label. When ALL conditions are
+# met, squash-merges automatically:
 #   1. All CI checks passing
 #   2. No unresolved review threads
 #   3. No outstanding REQUEST_CHANGES reviews
 #   4. PR is not in draft state
-#   5. No `no-auto-merge` label
+#   5. PR is mergeable (no conflicts)
 #
 # After merge:
 #   - Closes the linked issue (via "closes #N" in PR body)
-#   - Deletes the copilot/* branch
+#   - Deletes the head branch
 #   - Posts a summary comment
+#   - Drains the Copilot queue if the merged branch was copilot/*
+#
+# Activation model (opt-in):
+#   - PR does NOT auto-merge by default.
+#   - Maintainer (or automation) applies the `auto-merge` label to the PR
+#     to enable auto-merge.
+#   - Removing the label re-disables auto-merge for that PR.
+#   - No branch-prefix restriction: any branch with the label is eligible
+#     (the label itself is the allow-list). Fork PRs are still refused.
 #
 # Safety:
-#   - Only acts on copilot/* branches (never human PRs)
+#   - Requires explicit `auto-merge` label (no runaway merging)
+#   - Refuses fork-origin PRs (workflow_run runs in base repo with secrets)
 #   - Requires ALL CI to pass — not just some
-#   - Respects `no-auto-merge` label for manual review
 #   - Uses squash merge for clean history
 #   - Branch protection rules still apply
 #
@@ -26,9 +35,9 @@
 #   - If you have branch protection requiring reviews, either:
 #     (a) Add github-actions[bot] to bypass list, OR
 #     (b) Count the bot reviewers (Gemini/Claude/Copilot) as approvals
-#   - To pause auto-merge on any PR, add the `no-auto-merge` label
+#   - The `auto-merge` label is created idempotently by scripts/setup.sh.
 
-name: Auto-Merge Copilot PRs
+name: Auto-Merge PRs (opt-in via auto-merge label)
 
 on:
   # Re-evaluate when CI workflow runs complete.
@@ -54,7 +63,7 @@ on:
   pull_request_review_thread:
     types: [resolved, unresolved]
 
-  # Re-evaluate when labels change (no-auto-merge add/remove)
+  # Re-evaluate when labels change (auto-merge add/remove)
   pull_request_target:
     types: [labeled, unlabeled]
 
@@ -75,7 +84,7 @@ jobs:
       checks: read
 
     steps:
-      - name: Find Copilot PRs ready to merge
+      - name: Find PRs ready to merge
         id: find
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
@@ -119,16 +128,10 @@ jobs:
 
           branch=$(echo "$pr_json" | jq -r '.headRefName // ""')
 
-          # Must be a copilot/* branch
-          if [[ ! "$branch" == copilot/* ]]; then
-            echo "Branch '$branch' is not copilot/*. Skipping."
-            echo "eligible=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # Must NOT be from a fork — workflow_run triggers execute in the
-          # base repo context with access to secrets, so a malicious fork
-          # could name a branch copilot/* and get auto-merged.
+          # Must NOT be from a fork — workflow_run / pull_request_target
+          # triggers execute in the base repo context with access to secrets,
+          # so a fork PR that somehow acquired the auto-merge label must
+          # still be refused. Defense in depth.
           repo_owner="${REPO%/*}"
           head_owner=$(echo "$pr_json" | jq -r '.headRepositoryOwner.login // ""')
           if [[ -n "$head_owner" && "$head_owner" != "$repo_owner" ]]; then
@@ -137,10 +140,11 @@ jobs:
             exit 0
           fi
 
-          # Must not have no-auto-merge label
-          has_block_label=$(echo "$pr_json" | jq -r '[.labels[].name] | any(. == "no-auto-merge")' 2>/dev/null || echo "false")
-          if [[ "$has_block_label" == "true" ]]; then
-            echo "PR has no-auto-merge label. Skipping."
+          # Must carry the auto-merge label (opt-in).
+          # Absence of the label is the default — we do nothing.
+          has_auto_merge_label=$(echo "$pr_json" | jq -r '[.labels[].name] | any(. == "auto-merge")' 2>/dev/null || echo "false")
+          if [[ "$has_auto_merge_label" != "true" ]]; then
+            echo "PR does not have auto-merge label. Skipping."
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -324,7 +328,11 @@ jobs:
         # NOTE: this drain logic is intentionally duplicated from agent-release-slot.yml.
         # Per issue #51 authoritative decisions: do NOT extract to a composite action
         # (YAGNI until a fourth trigger needs it).
-        if: steps.find.outputs.eligible == 'true'
+        #
+        # Only drain when the merged branch was copilot/*. A non-copilot PR
+        # doesn't consume a Copilot slot, so draining on its merge would
+        # promote a queued issue without freeing a slot (off-by-one).
+        if: steps.find.outputs.eligible == 'true' && startsWith(steps.find.outputs.branch, 'copilot/')
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}
