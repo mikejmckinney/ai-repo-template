@@ -181,16 +181,91 @@ fi
 # Requires `gh auth login` first; otherwise the whole step is skipped.
 log_step "Configuring pipeline labels and repo variables"
 
+# Pre-flight: detect the Codespaces auto-injected GITHUB_TOKEN case. That
+# token is scoped to `contents:write, metadata:read` by default, which means
+# every `gh label create` (needs `issues:write`) and every `gh variable set`
+# (needs admin) will 403. Rather than spam ~13 warnings, print one clear
+# remediation block and skip Step 5.
+#
+# If the user has set a Codespaces user secret named GH_PAT (or one of the
+# common aliases), prefer it: unset GITHUB_TOKEN and `gh auth login --with-token`
+# so subsequent gh calls use the elevated PAT automatically. Recommended PAT:
+# fine-grained, scoped to this repo, with Issues + Variables + Contents +
+# Metadata + Pull requests = read/write, and Workflows = read/write if you
+# edit workflows. Set it once at https://github.com/settings/codespaces.
+_pipeline_setup_skip_reason=""
+_gh_auth_ok=""
 if command -v gh &> /dev/null && gh auth status &> /dev/null; then
+    _gh_auth_ok="true"
+    # Only treat the `(GITHUB_TOKEN)` auth source as the Codespaces-limited
+    # case when we're actually running inside a Codespace (`CODESPACES=true`).
+    # In GitHub Actions or when a user has set `GITHUB_TOKEN` manually, the
+    # same auth-source string shows up but the remediation below (Codespaces
+    # user secret) doesn't apply — fall through to the normal per-command
+    # error reporting instead.
+    # `gh auth status` writes the token-source line to stderr.
+    if [[ "${CODESPACES:-}" == "true" ]] && \
+       gh auth status 2>&1 | grep -qE 'Logged in to github\.com.*\(GITHUB_TOKEN\)'; then
+        # Try to upgrade auth using a Codespaces user secret if one is set.
+        _user_pat=""
+        for _var in GH_PAT GH_TOKEN_PAT CODESPACES_GH_PAT GITHUB_PAT; do
+            if [[ -n "${!_var:-}" ]]; then
+                _user_pat="${!_var}"
+                _user_pat_var="$_var"
+                break
+            fi
+        done
+        if [[ -n "$_user_pat" ]]; then
+            log_info "Found Codespaces secret \$$_user_pat_var; logging gh in with it."
+            unset GITHUB_TOKEN
+            if printf '%s' "$_user_pat" | gh auth login --with-token 2>/dev/null; then
+                log_info "gh re-authenticated with \$$_user_pat_var"
+            else
+                log_warn "Failed to authenticate gh with \$$_user_pat_var; falling back to skip."
+            fi
+            unset _user_pat
+        fi
+
+        # Re-probe permission after potential upgrade. Only skip when the
+        # probe succeeds AND explicitly returns "false" (token is
+        # authenticated against the repo but lacks admin). If the probe
+        # errors or returns empty (network blip, repo not found, jq miss),
+        # fall through so per-command errors get surfaced rather than
+        # silently swallowed behind the remediation block.
+        _repo_admin=$(gh api "repos/{owner}/{repo}" --jq '.permissions.admin' 2>/dev/null || echo "")
+        if [[ "$_repo_admin" == "false" ]]; then
+            _pipeline_setup_skip_reason="codespaces-token"
+        fi
+    fi
+fi
+
+if [[ -n "$_pipeline_setup_skip_reason" ]]; then
+    log_warn "gh is using the Codespaces-injected GITHUB_TOKEN, which lacks 'issues:write' and admin scopes."
+    log_warn "Skipping label/variable creation to avoid noisy 403 errors."
+    log_warn "Recommended (one-time setup, auto-applies to every future Codespace):"
+    log_warn "  1) Create a fine-grained PAT: https://github.com/settings/personal-access-tokens/new"
+    log_warn "     Repo permissions: Issues r/w, Variables r/w, Contents r/w, Metadata r, Pull requests r/w, Workflows r/w"
+    log_warn "  2) Add as a Codespaces user secret named GH_PAT: https://github.com/settings/codespaces"
+    log_warn "     Grant it access to this repo, then rebuild the Codespace (or re-run setup.sh in a new one)."
+    log_warn "Ad-hoc alternative (current Codespace only):"
+    log_warn "  unset GITHUB_TOKEN && gh auth login -s repo,workflow && ./scripts/setup.sh"
+    log_warn "Or create the following manually:"
+    log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, copilot-relay, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
+    log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
+elif [[ -n "$_gh_auth_ok" ]]; then
     # Helper: create a label idempotently, surfacing real failures.
     # `gh label create` exits non-zero for both "already exists" and real errors;
     # check existence on failure so genuine permission/API errors aren't swallowed.
+    # Capture stderr so the WARN includes the actual gh/API error message.
     _ensure_label() {
-        local name="$1" color="$2" desc="$3"
-        if ! gh label create "$name" --color "$color" --description "$desc" 2>/dev/null; then
-            gh label list --json name --jq '.[].name' 2>/dev/null | grep -qF "$name" || \
-                log_warn "Could not create label '$name' — check repo permissions"
+        local name="$1" color="$2" desc="$3" err first_err
+        err=$(gh label create "$name" --color "$color" --description "$desc" 2>&1 >/dev/null) && return 0
+        # Failure path: confirm whether the label already exists (quiet) or report real error.
+        if gh label list --json name --jq '.[].name' 2>/dev/null | grep -qF "$name"; then
+            return 0
         fi
+        first_err=$(printf '%s\n' "$err" | grep -v '^$' | head -n1)
+        log_warn "Could not create label '$name' — ${first_err:-unknown error}"
     }
 
     # Create every pipeline label surfaced in AGENT-PIPELINE-GUIDE.md's
@@ -214,24 +289,22 @@ if command -v gh &> /dev/null && gh auth status &> /dev/null; then
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is
     # used instead of `gh variable list | grep` to avoid pagination limits.
-    if ! gh variable get MAX_COPILOT_CONCURRENT &>/dev/null; then
-        if gh variable set MAX_COPILOT_CONCURRENT --body "3" >/dev/null 2>&1; then
-            log_info "Set MAX_COPILOT_CONCURRENT=3"
-        else
-            log_warn "Could not set MAX_COPILOT_CONCURRENT automatically; continuing. Set it manually to 3 if needed."
+    _ensure_variable() {
+        local name="$1" value="$2" err first_err
+        if gh variable get "$name" &>/dev/null; then
+            log_info "$name already set (leaving as-is)"
+            return 0
         fi
-    else
-        log_info "MAX_COPILOT_CONCURRENT already set (leaving as-is)"
-    fi
-    if ! gh variable get MAX_COPILOT_DAILY &>/dev/null; then
-        if gh variable set MAX_COPILOT_DAILY --body "20" >/dev/null 2>&1; then
-            log_info "Set MAX_COPILOT_DAILY=20"
+        err=$(gh variable set "$name" --body "$value" 2>&1 >/dev/null)
+        if [[ $? -eq 0 ]]; then
+            log_info "Set $name=$value"
         else
-            log_warn "Could not set MAX_COPILOT_DAILY automatically; continuing. Set it manually to 20 if needed."
+            first_err=$(printf '%s\n' "$err" | grep -v '^$' | head -n1)
+            log_warn "Could not set $name — ${first_err:-unknown error}. Set it manually to $value if needed."
         fi
-    else
-        log_info "MAX_COPILOT_DAILY already set (leaving as-is)"
-    fi
+    }
+    _ensure_variable MAX_COPILOT_CONCURRENT 3
+    _ensure_variable MAX_COPILOT_DAILY 20
 else
     log_warn "gh CLI not authenticated; skipping label/variable creation."
     log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
