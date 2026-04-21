@@ -195,8 +195,15 @@ log_step "Configuring pipeline labels and repo variables"
 # edit workflows. Set it once at https://github.com/settings/codespaces.
 _pipeline_setup_skip_reason=""
 if command -v gh &> /dev/null && gh auth status &> /dev/null; then
+    # Only treat the `(GITHUB_TOKEN)` auth source as the Codespaces-limited
+    # case when we're actually running inside a Codespace (`CODESPACES=true`).
+    # In GitHub Actions or when a user has set `GITHUB_TOKEN` manually, the
+    # same auth-source string shows up but the remediation below (Codespaces
+    # user secret) doesn't apply — fall through to the normal per-command
+    # error reporting instead.
     # `gh auth status` writes the token-source line to stderr.
-    if gh auth status 2>&1 | grep -qE 'Logged in to github\.com.*\(GITHUB_TOKEN\)'; then
+    if [[ "${CODESPACES:-}" == "true" ]] && \
+       gh auth status 2>&1 | grep -qE 'Logged in to github\.com.*\(GITHUB_TOKEN\)'; then
         # Try to upgrade auth using a Codespaces user secret if one is set.
         _user_pat=""
         for _var in GH_PAT GH_TOKEN_PAT CODESPACES_GH_PAT GITHUB_PAT; do
@@ -217,9 +224,14 @@ if command -v gh &> /dev/null && gh auth status &> /dev/null; then
             unset _user_pat
         fi
 
-        # Re-probe permission after potential upgrade.
+        # Re-probe permission after potential upgrade. Only skip when the
+        # probe succeeds AND explicitly returns "false" (token is
+        # authenticated against the repo but lacks admin). If the probe
+        # errors or returns empty (network blip, repo not found, jq miss),
+        # fall through so per-command errors get surfaced rather than
+        # silently swallowed behind the remediation block.
         _repo_admin=$(gh api "repos/{owner}/{repo}" --jq '.permissions.admin' 2>/dev/null || echo "")
-        if [[ "$_repo_admin" != "true" ]]; then
+        if [[ "$_repo_admin" == "false" ]]; then
             _pipeline_setup_skip_reason="codespaces-token"
         fi
     fi
