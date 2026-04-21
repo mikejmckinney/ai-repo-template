@@ -146,7 +146,7 @@ so new repos pick it up automatically.
 
 ## References
 
-- Issue #50 — the request this ADR answers.
+- [Issue #50](https://github.com/mikejmckinney/ai-repo-template/issues/50) — the request this ADR answers.
 - `.github/workflows/AGENT-PIPELINE-GUIDE.md` — operator-facing
   description of the pipeline.
 - ADR-003 — prior precedent for keeping custom pipeline workflows
