@@ -122,12 +122,27 @@ jobs:
 
           echo "Evaluating PR #$pr_number..."
 
-          # Fetch all PR data in one call
+          # === DIAGNOSTIC (to be removed once gh pr view failure is understood) ===
+          echo "=== gh auth status ==="
+          gh auth status || true
+          echo "=== /gh auth status ==="
+          # === END DIAGNOSTIC ===
+
+          # Fetch all PR data in one call. Diagnostic: capture stderr to
+          # a temp file and preserve exit code so the real error is visible
+          # in the workflow log on failure.
+          set +e
           pr_json=$(gh pr view "$pr_number" --repo "$REPO" \
             --json headRefName,headRepositoryOwner,isDraft,state,mergeable,reviewDecision,statusCheckRollup,labels,title,body \
-            2>/dev/null || echo "")
+            2>/tmp/gh-pr-view.err)
+          gh_exit=$?
+          set -e
 
-          if [[ -z "$pr_json" ]]; then
+          if [[ $gh_exit -ne 0 || -z "$pr_json" ]]; then
+            echo "=== gh pr view FAILED (exit=$gh_exit) ==="
+            echo "--- stderr ---"
+            cat /tmp/gh-pr-view.err 2>/dev/null || echo "(no stderr file)"
+            echo "--- /stderr ---"
             echo "Could not fetch PR. Skipping."
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
