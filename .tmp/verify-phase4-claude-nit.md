@@ -8,13 +8,12 @@ Attempt history:
 
 This file contains two deliberate nits to attract inline bot comments:
 
-1. **Typo**: this sentance has a intentional typo to bait a reviewer.
-2. **Grammar**: the following bullet have a subject-verb agreement problem
-   that bot reviewers reliably flags as a nit.
+1. **Typo**: this sentence has an intentional typo to bait a reviewer.
+2. **Grammar**: the following bullet has a subject-verb agreement problem
+   that bot reviewers reliably flag as a nit.
 
-Once bot reviews land, this PR will be labeled
-`claude-fix` + `auto-resolve-threads` to trigger `agent-fix-reviews.yml`
-end-to-end. V2 pass criteria:
+Once bot reviews land, we apply `claude-fix` + `auto-resolve-threads` to
+trigger `agent-fix-reviews.yml` end-to-end. V2 pass criteria:
 
 - Workflow fires on the `labeled` event (retroactive trigger path).
 - Claude posts a Phase-1 Issue/Suggestion Index as its own PR comment.

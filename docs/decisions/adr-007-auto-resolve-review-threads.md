@@ -98,7 +98,7 @@ Per-thread gate (all four must hold):
 1. Root comment author is in the allow-list.
 2. Phase 2 status for the matching `ISS-NN` item is `✅ Fixed`.
 3. Phase 2 verification (tests, lint, build, typecheck) passed for the fix.
-4. Thread is not already resolved or outdated.
+4. Thread is not already resolved.
 
 Before resolving, the resolving agent (Claude or Copilot, whichever ran
 the prompt) posts an audit-trail reply on the thread citing the resolving
