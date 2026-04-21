@@ -14,10 +14,11 @@
 You are resolving every open issue, suggestion, and TODO in this pull request. Your job is to find them all, verify each one, fix the valid ones, and produce a traceable audit trail. Do not guess — verify everything against the actual code.
 
 > **How to run this prompt**: Read this entire file before starting. Execute
-> Phase 1, then Phase 2, then Phase 3, in that order. Do not interleave or
-> skip phases. If your cumulative response would exceed GitHub's per-comment
-> size limit, post sequential `Part 1/N`, `Part 2/N`, … comments rather than
-> truncating. Apply the Rules section to every phase.
+> Phase 1, then Phase 2, then Phase 3, in that order. Phase 4 runs after
+> Phase 3 **only if** the PR carries the `auto-resolve-threads` label.
+> Do not interleave or skip phases. If your cumulative response would exceed
+> GitHub's per-comment size limit, post sequential `Part 1/N`, `Part 2/N`, …
+> comments rather than truncating. Apply the Rules section to every phase.
 
 ## Phase 1: Build the Issue/Suggestion Index
 
@@ -139,6 +140,108 @@ After all items are processed, post a final summary comment:
 
 (continue for each item)
 ```
+
+## Phase 4: Resolve bot-authored review threads (opt-in)
+
+> **Only execute Phase 4 if the PR carries the `auto-resolve-threads` label.**
+> Without the label, skip this phase entirely and leave every review thread open for human review.
+
+When the opt-in label is present, resolve review threads whose backing item cleared Phase 2 with status `✅ Fixed` and whose top-level review comment was authored by an allow-listed bot. The point is to trim noise from CI-only reviewers after the fix has landed — never to silence a human.
+
+### Allow-list (bot reviewers only)
+
+Resolve threads whose root comment `user.login` (or `author.login` in GraphQL) matches one of:
+
+- `gemini-code-assist[bot]`
+- `copilot-pull-request-reviewer[bot]`
+- `Copilot`
+- `chatgpt-codex-connector[bot]`
+- `claude[bot]` (only when the thread was opened by Claude's auto-review workflow, not a human reviewer speaking through Claude)
+
+Threads opened by any other login — including humans, unknown bots, and GitHub Actions user accounts — **must be left open**, even if the corresponding Phase 2 item was fixed.
+
+### Per-thread gate
+
+Resolve a thread only when **all** of the following hold:
+
+1. The thread's root comment was authored by an allow-listed bot.
+2. The Phase 2 status for the matching `ISS-NN` item is `✅ Fixed` (never `⚠️`, `❌`, `Already resolved`, or `Needs clarification`).
+3. Phase 2 verification passed — tests, lint, build, and typecheck were all green for the batch that contained the fix.
+4. The thread is not already resolved or outdated.
+
+If any condition fails, skip the thread and record why in the Phase 4 log. Do not attempt to resolve threads you did not fix in this run.
+
+### Resolve procedure
+
+For each eligible thread:
+
+1. **Fetch the thread node ID** via the GraphQL `pullRequest.reviewThreads` query. The REST review-comments endpoint does not return the node ID required by `resolveReviewThread`, so GraphQL is mandatory here. Example:
+
+   ```graphql
+   query($owner:String!, $repo:String!, $num:Int!) {
+     repository(owner:$owner, name:$repo) {
+       pullRequest(number:$num) {
+         reviewThreads(first:100) {
+           nodes {
+             id
+             isResolved
+             isOutdated
+             comments(first:1) {
+               nodes { author { login } path line databaseId }
+             }
+           }
+         }
+       }
+     }
+   }
+   ```
+
+   Paginate if the PR has more than 100 threads.
+
+2. **Post an audit-trail reply** on the thread before resolving, so the resolution is traceable without digging through workflow logs. Use `addPullRequestReviewThreadReply` (GraphQL) or the REST `POST /repos/{owner}/{repo}/pulls/{num}/comments/{comment_id}/replies` endpoint. Reply body format:
+
+   ```
+   Resolved by agent-fix-reviews in <SHORT_SHA> (ISS-NN, cycle N/3).
+   If this wasn't addressed correctly, re-open the thread.
+   ```
+
+   Substitute the actual resolving commit SHA and the `ISS-NN` ID from your Phase 1 index.
+
+3. **Fire the `resolveReviewThread` mutation** with the thread node ID:
+
+   ```graphql
+   mutation($id:ID!) {
+     resolveReviewThread(input:{threadId:$id}) { thread { id isResolved } }
+   }
+   ```
+
+   Confirm `isResolved: true` in the response. If the mutation fails, leave the thread open and log the error — do not retry silently.
+
+### Phase 4 report
+
+Append a section to the Phase 3 Resolution Report listing every thread considered:
+
+```markdown
+### Phase 4 — Thread auto-resolution
+
+Label `auto-resolve-threads` present: ✅
+
+| Thread | ISS | Author | Action | Notes |
+|--------|-----|--------|--------|-------|
+| [link](#) | ISS-01 | gemini-code-assist[bot] | ✅ Resolved | Fixed in abc1234 |
+| [link](#) | ISS-02 | copilot-pull-request-reviewer[bot] | ✅ Resolved | Fixed in abc1234 |
+| [link](#) | ISS-03 | human-reviewer | ⏭️ Skipped | Human-authored — left open |
+| [link](#) | ISS-04 | gemini-code-assist[bot] | ⏭️ Skipped | Phase 2 status was "Needs clarification" |
+```
+
+If the label is absent, include a single line instead: `Label \`auto-resolve-threads\` not present — skipping thread resolution.`
+
+### Safety rules
+
+- **Never resolve a human-authored thread**, even if you fixed what they asked for. Humans expect to click Resolve themselves.
+- **Never resolve a thread whose Phase 2 item is not `✅ Fixed`.** "Not reproducible" and "Out of scope" still warrant human acknowledgement.
+- **Never resolve a thread without first posting the audit reply.** The reply is the paper trail; resolution without it leaves reviewers guessing.
+- **Do not resolve threads from a previous fix cycle.** Scope Phase 4 to items fixed in the current run only — the `ISS-NN` IDs from this run's Phase 1 index are your scope.
 
 ## Rules
 
