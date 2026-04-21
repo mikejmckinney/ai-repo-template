@@ -169,6 +169,18 @@ jobs:
 
           branch=$(echo "$pr_json" | jq -r '.headRefName // ""')
 
+          # DIAGNOSTIC: dump raw pr_json so we can see why downstream
+          # fields (isDraft, state) are coming back null. Remove once
+          # the root cause is fixed.
+          echo "=== pr_json (first 3000 chars) ==="
+          echo "$pr_json" | head -c 3000
+          echo ""
+          echo "=== /pr_json ==="
+          echo "parsed keys: $(echo "$pr_json" | jq -r 'keys | join(",")')"
+          echo "isDraft raw: $(echo "$pr_json" | jq '.isDraft')"
+          echo "state raw: $(echo "$pr_json" | jq '.state')"
+          # /DIAGNOSTIC
+
           # Must NOT be from a fork — workflow_run / pull_request_target
           # triggers execute in the base repo context with access to secrets,
           # so a fork PR that somehow acquired the auto-merge label must
