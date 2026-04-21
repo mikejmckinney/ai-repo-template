@@ -63,11 +63,26 @@ to the running agent, not permission-model changes:
 
 - `agent-fix-reviews.yml` already supplies `CLAUDE_PAT`,
   `pull-requests: write`, and `allowed_bots: "*"`, which are the only
-  permissions the Claude invocation of Phase 4 needs.
-- `agent-relay-reviews.yml` already forwards bot reviewers' comments to
-  Copilot via `@copilot follow .github/prompts/pr-resolve-all.md`. Copilot's
-  cloud agent, on picking up the mention, reads the prompt file and executes
-  Phase 4 with its own PR write permissions — no secrets handoff needed.
+  permissions the Claude invocation of Phase 4 needs. **V2 verification
+  on PR #97 confirmed end-to-end**: 7 bot threads resolved with canonical
+  audit replies, human thread left open, `isOutdated == true` correctly
+  not a blocker.
+- `agent-relay-reviews.yml` forwards bot reviewers' comments to Copilot
+  via `@copilot follow .github/prompts/pr-resolve-all.md`. The Copilot
+  cloud agent can read the prompt file and **correctly runs the
+  Phase 4 gate logic** (allow-list check, `✅ Fixed` status match,
+  audit-reply drafting), but in this repo its token **does not** carry
+  the `pull-requests:write` scope required by the `addPullRequestReviewThreadReply`
+  and `resolveReviewThread` GraphQL mutations. V3 verification on PR #99
+  produced 3× `FORBIDDEN` on these mutations, confirming Copilot-path
+  Phase 4 is **not functional end-to-end** as currently designed — the
+  fix commit lands, but the threads don't close. See
+  [issue #100](https://github.com/mikejmckinney/ai-repo-template/issues/100)
+  for the options under consideration (relay-side fallback via
+  `CLAUDE_PAT`, scope narrowing, or a two-step `copilot-relay` →
+  `claude-fix` UX). Until #100 lands a fix, applying
+  `auto-resolve-threads` alongside `copilot-relay` is best understood as
+  a **no-op** on the Copilot path.
 
 The label is created by `scripts/setup.sh` alongside the other pipeline
 labels, and documented in `.github/workflows/AGENT-PIPELINE-GUIDE.md`.
@@ -175,9 +190,10 @@ commit SHA and the `ISS-NN` ID, then fires the GraphQL
 
 ### Positive
 
-- Bot-authored threads close themselves once the fix is verified, so
+- **Claude path (`claude-fix` + `auto-resolve-threads`)**: Bot-authored
+  threads close themselves once the fix is verified, so
   `agent-auto-merge.yml`'s unresolved-thread gate stops blocking PRs that
-  were actually fixed.
+  were actually fixed. Validated end-to-end on PR #97 (V2).
 - Human reviewers still own their own threads — Phase 4 never touches a
   thread whose root comment was human-authored.
 - Audit-trail replies (`Resolved by agent-fix-reviews in <sha> (ISS-NN,
@@ -196,6 +212,23 @@ commit SHA and the `ISS-NN` ID, then fires the GraphQL
 - Very large PRs (>100 review threads) require GraphQL pagination in the
   Phase 4 query — the prompt mentions this but agents must actually
   implement it correctly.
+- **Copilot-path Phase 4 is currently non-functional** — V3 verification
+  (PR #99) showed `FORBIDDEN` on both `addPullRequestReviewThreadReply`
+  and `resolveReviewThread` when invoked by the Copilot cloud agent in
+  this repo. The Copilot-path Phase 4 gate logic is correct; only the
+  mutations fail. Tracked in
+  [issue #100](https://github.com/mikejmckinney/ai-repo-template/issues/100).
+  Until resolved, `copilot-relay` + `auto-resolve-threads` is a no-op
+  combination; maintainers needing bot-thread auto-resolution should
+  use the Claude path.
+- Applying `copilot-relay` and `auto-resolve-threads` to a PR in a
+  single API call (as opposed to one-at-a-time in the UI) fires two
+  `pull_request.labeled` events in quick succession.
+  `agent-relay-reviews.yml` uses `concurrency.cancel-in-progress: true`,
+  so the first (matching) relay run is cancelled by the second
+  (non-matching) event and the `@copilot follow` comment is never
+  posted. Workaround: apply labels one-at-a-time, with `copilot-relay`
+  applied last. Documented in `AGENT-PIPELINE-GUIDE.md`.
 
 ### Neutral
 
@@ -216,11 +249,15 @@ commit SHA and the `ISS-NN` ID, then fires the GraphQL
 - [x] Add the label to `.github/workflows/AGENT-PIPELINE-GUIDE.md`'s label
       table, resolution-path selection prose, and Manual Intervention table.
 - [x] Create this ADR.
-- [ ] Verify on a real PR by labeling `claude-fix` + `auto-resolve-threads`
+- [x] Verify on a real PR by labeling `claude-fix` + `auto-resolve-threads`
       (Claude path) and separately `copilot-relay` + `auto-resolve-threads`
-      (Copilot path), confirming bot-authored threads close with audit
-      replies while human-authored threads stay open in both cases.
-      (Deferred to post-merge exercise; not pre-gated on this ADR.)
+      (Copilot path). **Claude path ✅ passed end-to-end** on PR #97 (V2)
+      — 7 bot threads resolved with canonical audit replies, human
+      thread stayed open. **Copilot path partial pass** on PR #99 (V3) —
+      gate logic correct but mutations return `FORBIDDEN`; tracked as
+      [issue #100](https://github.com/mikejmckinney/ai-repo-template/issues/100).
+      See the Verification Report comment on PR #93 for the consolidated
+      V1–V6 results.
 
 ## References
 
