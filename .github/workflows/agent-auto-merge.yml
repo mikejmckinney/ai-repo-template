@@ -59,11 +59,18 @@ on:
   pull_request:
     types: [synchronize, ready_for_review]
 
-  # Re-evaluate when review threads are resolved or unresolved
-  pull_request_review_thread:
-    types: [resolved, unresolved]
-
   # Re-evaluate when labels change (auto-merge add/remove)
+  #
+  # NOTE: `pull_request_review_thread` (resolved / unresolved) is a valid
+  # GitHub webhook event but is NOT a supported GitHub Actions workflow
+  # trigger. Adding it makes Actions reject the whole file with
+  # "Unexpected value 'pull_request_review_thread'" and NO runs fire at
+  # all — invalidating every trigger below it. If you want auto-merge to
+  # re-evaluate after a thread is resolved, the workarounds are:
+  #   - push any commit (fires workflow_run after CI),
+  #   - remove + re-add the `auto-merge` label (fires pull_request_target
+  #     labeled/unlabeled), or
+  #   - submit/dismiss a review (fires pull_request_review).
   pull_request_target:
     types: [labeled, unlabeled]
 
