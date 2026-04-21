@@ -4,16 +4,19 @@
 >   - `@claude follow .github/prompts/pr-resolve-all.md`
 >   - `@copilot follow .github/prompts/pr-resolve-all.md`
 >
-> Both agents will read this file and execute the Phase 1–3 procedure below.
+> Both agents will read this file and execute the Phase 1–4 procedure below
+> (Phase 4 is opt-in via the `auto-resolve-threads` label).
 > Claude is wired via `.github/workflows/claude.yml`'s `claude-mention` job.
 > Copilot follows the `@copilot follow <path>` rule documented in
 > `.github/copilot-instructions.md`.
 >
 > **Phase 4** (auto-resolve bot-authored review threads) is opt-in per PR
 > via the `auto-resolve-threads` label and runs only when that label is
-> present. It applies equally to both agents — Claude invoked via
+> present. It is intended to apply to both agents — Claude invoked via
 > `agent-fix-reviews.yml` or `@claude follow`, and Copilot invoked via
-> `agent-relay-reviews.yml` or `@copilot follow`.
+> `agent-relay-reviews.yml` or `@copilot follow` — subject to token
+> permissions (the Copilot path currently cannot execute the required
+> GraphQL mutations; see issue #100).
 
 ---
 
