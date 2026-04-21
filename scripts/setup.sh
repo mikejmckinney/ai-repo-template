@@ -195,14 +195,16 @@ if command -v gh &> /dev/null && gh auth status &> /dev/null; then
 
     # Four copilot:* state labels + from-backlog marker. `needs-human` is
     # referenced by ci-tests.yml and the backlog dispatch workflow, so
-    # ensure it exists too.
+    # ensure it exists too. `auto-merge` is the opt-in gate for
+    # agent-auto-merge.yml (any branch).
+    _ensure_label "auto-merge"            "0E8A16" "Enable auto-merge workflow for this PR"
     _ensure_label "copilot:ready"         "0E8A16" "Assign Copilot when budget allows"
     _ensure_label "copilot:in-progress"   "1D76DB" "Assigned to Copilot, counts toward concurrent budget"
     _ensure_label "copilot:queued"        "FBCA04" "Waiting for an open Copilot slot"
     _ensure_label "copilot:daily-cap-hit" "D93F0B" "Hit daily assignment cap; manual re-queue required"
     _ensure_label "from-backlog"          "5319E7" "Issue auto-created from .context/backlog.yaml"
     _ensure_label "needs-human"           "B60205" "Requires human input (e.g., empty roadmap phase, CI failure)"
-    log_info "Pipeline labels ensured (copilot:* + from-backlog + needs-human)"
+    log_info "Pipeline labels ensured (auto-merge + copilot:* + from-backlog + needs-human)"
 
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is
@@ -228,7 +230,7 @@ if command -v gh &> /dev/null && gh auth status &> /dev/null; then
 else
     log_warn "gh CLI not authenticated; skipping label/variable creation."
     log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
-    log_warn "  Labels: copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
+    log_warn "  Labels: auto-merge, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
     log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
 fi
 

@@ -55,7 +55,7 @@
 #
 # Optional labels:
 #   - no-auto-ready: Skip auto-ready (on agent-auto-ready.yml)
-#   - no-auto-merge: Skip auto-merge (on agent-auto-merge.yml)
+#   - auto-merge: Enable auto-merge (on agent-auto-merge.yml; opt-in)
 
 name: Relay Bot Reviews to Copilot
 

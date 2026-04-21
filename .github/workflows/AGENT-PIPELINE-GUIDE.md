@@ -2,7 +2,10 @@
 
 ## Overview
 
-This pipeline automates the full development loop with **zero manual steps** after you create and assign an issue:
+This pipeline automates the full development loop end-to-end. The only
+manual gate is applying the `auto-merge` label to a PR when you want it
+to land automatically — everything else (implementation, review,
+resolution, queue management) runs without intervention:
 
 ```
 backlog.yaml          Issue auto-created       Gated assignment        Copilot implements
@@ -100,10 +103,16 @@ to the PR (issue labels are not automatically copied to Copilot's PR,
 and both labels can also be applied retroactively on an existing PR).
 See `agent-relay-reviews.yml`.
 
-### Step 5: Auto-merge (automatic)
-`agent-auto-merge.yml` triggers when checks complete. If CI is green,
-no outstanding change requests remain, and the PR isn't draft, it
-squash-merges, deletes the branch, and closes the linked issue.
+### Step 5: Auto-merge (opt-in via `auto-merge` label)
+`agent-auto-merge.yml` triggers when checks complete, reviews change, or
+labels change. It is **opt-in**: a PR only auto-merges when a maintainer
+(or automation) applies the `auto-merge` label to it. The label applies
+to PRs on **any** branch — the label itself is the allow-list, not the
+branch name. Once labeled, and when CI is green, no outstanding change
+requests remain, all review threads are resolved, the PR is not draft,
+and there are no merge conflicts, the workflow squash-merges, deletes
+the head branch, and closes the linked issue. Fork PRs are refused
+regardless of the label (defense in depth).
 
 ## Invoking a prompt file manually
 
@@ -159,12 +168,12 @@ If `main` has branch protection requiring approvals:
 
 ### 7. Create labels
 
-The six backlog-pipeline labels below (`copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) are created automatically by `scripts/setup.sh`. Manual creation via **Settings → Labels** is only needed if you skipped that step or the setup.sh label-creation call failed (e.g., missing repo permissions).
+The pipeline labels below (`auto-merge`, `copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) are created automatically by `scripts/setup.sh`. Manual creation via **Settings → Labels** is only needed if you skipped that step or the setup.sh label-creation call failed (e.g., missing repo permissions).
 
 | Label | Color | Purpose |
 |-------|-------|---------|
 | `agent-complete` | `#0E8A16` (green) | Merged and done |
-| `no-auto-merge` | `#E4E669` (yellow) | Pause auto-merge for manual review |
+| `auto-merge` | `#0E8A16` (green) | Opt PR in to `agent-auto-merge.yml` (applies to any branch) |
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
 | `claude-fix` | `#FBCA04` (amber) | Opt PR in to `agent-fix-reviews.yml` (Claude resolution) |
 | `copilot-relay` | `#5319E7` (purple) | Opt PR in to legacy `agent-relay-reviews.yml` (Copilot resolution) |
@@ -307,7 +316,8 @@ Assign all three to `@copilot` at once. Issues 5 and 6 should wait.
 
 | Situation | What to do |
 |-----------|-----------|
-| Want to review before merge | Add `no-auto-merge` label to the PR |
+| Want the PR to auto-merge when ready | Add `auto-merge` label to the PR |
+| Pause auto-merge on a labeled PR | Remove the `auto-merge` label |
 | Enable Claude review resolution on this PR | Add `claude-fix` label |
 | Use Copilot (not Claude) for review resolution | Add `copilot-relay` label |
 | Fix cycle exhausted (3/3) | Review remaining comments yourself, merge manually |
@@ -344,13 +354,15 @@ Check that `ANTHROPIC_API_KEY` is set in repo secrets. Check that the
 PR branch starts with `copilot/` (the workflow filters on this).
 
 **Auto-merge doesn't fire:**
-The workflow uses `workflow_run` (not `check_suite`) to detect CI
-completion — GitHub suppresses `check_suite` events for Actions-based
-workflows to prevent recursive loops. The `workflow_run` trigger
-requires the workflow file to be on the default branch (`main`). If
-you recently added the file, merge it to `main` first. Also check
-branch protection: if reviews are required, bot reviews may not count.
-Add `github-actions[bot]` to the bypass list.
+First confirm the PR carries the `auto-merge` label — the workflow is
+opt-in and does nothing without it. If the label is applied and the
+workflow still doesn't act, the workflow uses `workflow_run` (not
+`check_suite`) to detect CI completion — GitHub suppresses `check_suite`
+events for Actions-based workflows to prevent recursive loops. The
+`workflow_run` trigger requires the workflow file to be on the default
+branch (`main`). If you recently added the file, merge it to `main`
+first. Also check branch protection: if reviews are required, bot
+reviews may not count. Add `github-actions[bot]` to the bypass list.
 
 **Gemini comments still not getting fixed:**
 Verify that the `agent-fix-reviews.yml` workflow ran (Actions tab).
