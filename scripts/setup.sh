@@ -202,7 +202,7 @@ if command -v gh &> /dev/null && gh auth status &> /dev/null; then
     _ensure_label "agent-complete"        "0E8A16" "PR merged and linked issue closed"
     _ensure_label "no-auto-ready"         "BFDADC" "Opt out of automatic ready-state handling"
     _ensure_label "claude-fix"            "FBCA04" "Opt PR in to agent-fix-reviews.yml (Claude resolution)"
-    _ensure_label "auto-resolve-threads"  "0E8A16" "Also auto-resolve bot-authored review threads after claude-fix cycles"
+    _ensure_label "auto-resolve-threads"  "0E8A16" "Also auto-resolve bot-authored review threads (works with claude-fix or copilot-relay)"
     _ensure_label "copilot-relay"         "5319E7" "Opt PR in to legacy agent-relay-reviews.yml (Copilot resolution)"
     _ensure_label "copilot:ready"         "0E8A16" "Assign Copilot when budget allows"
     _ensure_label "copilot:in-progress"   "1D76DB" "Assigned to Copilot, counts toward concurrent budget"

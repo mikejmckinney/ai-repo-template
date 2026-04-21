@@ -8,6 +8,12 @@
 > Claude is wired via `.github/workflows/claude.yml`'s `claude-mention` job.
 > Copilot follows the `@copilot follow <path>` rule documented in
 > `.github/copilot-instructions.md`.
+>
+> **Phase 4** (auto-resolve bot-authored review threads) is opt-in per PR
+> via the `auto-resolve-threads` label and runs only when that label is
+> present. It applies equally to both agents — Claude invoked via
+> `agent-fix-reviews.yml` or `@claude follow`, and Copilot invoked via
+> `agent-relay-reviews.yml` or `@copilot follow`.
 
 ---
 
@@ -146,6 +152,8 @@ After all items are processed, post a final summary comment:
 > **Only execute Phase 4 if the PR carries the `auto-resolve-threads` label.**
 > Without the label, skip this phase entirely and leave every review thread open for human review.
 
+This phase applies to **every agent that runs this prompt** — Claude via `.github/workflows/agent-fix-reviews.yml`, Copilot via `@copilot follow` comments posted by `.github/workflows/agent-relay-reviews.yml` or by a human, and any agent invoked through a direct `@claude follow` / `@copilot follow` mention. If you are running this prompt, the gate below applies to you.
+
 When the opt-in label is present, resolve review threads whose backing item cleared Phase 2 with status `✅ Fixed` and whose top-level review comment was authored by an allow-listed bot. The point is to trim noise from CI-only reviewers after the fix has landed — never to silence a human.
 
 ### Allow-list (bot reviewers only)
@@ -201,11 +209,16 @@ For each eligible thread:
 2. **Post an audit-trail reply** on the thread before resolving, so the resolution is traceable without digging through workflow logs. Use `addPullRequestReviewThreadReply` (GraphQL) or the REST `POST /repos/{owner}/{repo}/pulls/{num}/comments/{comment_id}/replies` endpoint. Reply body format:
 
    ```
-   Resolved by agent-fix-reviews in <SHORT_SHA> (ISS-NN, cycle N/3).
+   Resolved by <agent> in <SHORT_SHA> (ISS-NN).
    If this wasn't addressed correctly, re-open the thread.
    ```
 
-   Substitute the actual resolving commit SHA and the `ISS-NN` ID from your Phase 1 index.
+   Substitute:
+   - `<agent>` — the agent that ran this procedure. Use `claude (agent-fix-reviews)` when invoked by `.github/workflows/agent-fix-reviews.yml`, `copilot (via agent-relay-reviews)` when invoked by an `@copilot follow` comment from `.github/workflows/agent-relay-reviews.yml`, `claude (@claude mention)` / `copilot (@copilot mention)` when invoked by a direct human mention, or your own agent name if invoked by other tooling.
+   - `<SHORT_SHA>` — the resolving commit SHA (first 7 chars).
+   - `ISS-NN` — the ID from your Phase 1 index.
+
+   If you know your fix-cycle number (e.g. the Claude path exposes cycle `N/3`), append `, cycle N/3` after the `ISS-NN` for additional traceability. Omit it if unknown.
 
 3. **Fire the `resolveReviewThread` mutation** with the thread node ID:
 

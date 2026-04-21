@@ -178,7 +178,7 @@ The pipeline labels below (`auto-merge`, `auto-resolve-threads`, `copilot:ready`
 | `auto-merge` | `#0E8A16` (green) | Opt PR in to `agent-auto-merge.yml` (applies to any branch) |
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
 | `claude-fix` | `#FBCA04` (amber) | Opt PR in to `agent-fix-reviews.yml` (Claude resolution) |
-| `auto-resolve-threads` | `#0E8A16` (green) | Also auto-resolve bot-authored review threads after `claude-fix` cycles. Has no effect without `claude-fix`. |
+| `auto-resolve-threads` | `#0E8A16` (green) | Also auto-resolve bot-authored review threads after the resolution agent (Claude or Copilot) finishes. Works with either `claude-fix` or `copilot-relay`; no effect without one of them. |
 | `copilot-relay` | `#5319E7` (purple) | Opt PR in to legacy `agent-relay-reviews.yml` (Copilot resolution) |
 | `copilot:ready` | `#0E8A16` (green) | Assign Copilot when budget allows (applied to backlog issues unless `auto_assign: false`) |
 | `copilot:in-progress` | `#1D76DB` (blue) | Assigned to Copilot; counts toward `MAX_COPILOT_CONCURRENT` |
@@ -194,14 +194,19 @@ The pipeline labels below (`auto-merge`, `auto-resolve-threads`, `copilot:ready`
   (`.github/workflows/**`) are auto-delegated to Copilot via an
   `@copilot` comment, because the Claude app token cannot push workflow
   edits.
-- Add `auto-resolve-threads` (in addition to `claude-fix`) to also
-  auto-resolve review threads opened by allow-listed bots
-  (`gemini-code-assist[bot]`, `copilot-pull-request-reviewer[bot]`,
-  `Copilot`, `chatgpt-codex-connector[bot]`, `claude[bot]`) once Phase 2
-  marks the matching `ISS-NN` item as `✅ Fixed` with passing
-  verification. Human-authored threads are never auto-resolved. The
-  label has no effect without `claude-fix`. See
-  `.github/prompts/pr-resolve-all.md` Phase 4 for the exact gate.
+- Add `auto-resolve-threads` (in addition to either `claude-fix` or
+  `copilot-relay`) to also auto-resolve review threads opened by
+  allow-listed bots (`gemini-code-assist[bot]`,
+  `copilot-pull-request-reviewer[bot]`, `Copilot`,
+  `chatgpt-codex-connector[bot]`, `claude[bot]`) once Phase 2 marks the
+  matching `ISS-NN` item as `✅ Fixed` with passing verification.
+  Human-authored threads are never auto-resolved. Phase 4 is defined in
+  `.github/prompts/pr-resolve-all.md` and runs whichever agent (Claude or
+  Copilot) executes that prompt on the PR — the `auto-resolve-threads`
+  label is agent-agnostic and has no effect unless one of the resolution
+  paths (`claude-fix`, `copilot-relay`, or a direct `@claude follow` /
+  `@copilot follow` mention pointing at `pr-resolve-all.md`) is also
+  active.
 - Add `copilot-relay` to enable the legacy relay path that forwards bot
   review comments to Copilot. Both labels can be combined when you want
   both paths running, though typically you'll pick one.
@@ -330,7 +335,7 @@ Assign all three to `@copilot` at once. Issues 5 and 6 should wait.
 | Want the PR to auto-merge when ready | Add `auto-merge` label to the PR |
 | Pause auto-merge on a labeled PR | Remove the `auto-merge` label |
 | Enable Claude review resolution on this PR | Add `claude-fix` label |
-| Also auto-resolve bot-authored review threads after Claude fixes them | Add `auto-resolve-threads` label (requires `claude-fix`) |
+| Also auto-resolve bot-authored review threads after the agent fixes them | Add `auto-resolve-threads` label (works with either `claude-fix` or `copilot-relay`) |
 | Use Copilot (not Claude) for review resolution | Add `copilot-relay` label |
 | Fix cycle exhausted (3/3) | Review remaining comments yourself, merge manually |
 | Copilot's implementation is wrong | Comment on the PR with corrections, Copilot picks them up |

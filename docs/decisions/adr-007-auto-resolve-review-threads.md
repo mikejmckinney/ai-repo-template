@@ -10,13 +10,19 @@ Accepted
 
 ## Context
 
-`.github/workflows/agent-fix-reviews.yml` invokes Claude (Sonnet) to read
-every review comment on a PR and push fixes, following the Phase 1–3
-procedure in `.github/prompts/pr-resolve-all.md`. It pushes commits, posts an
-Issue/Suggestion Index, and posts a Resolution Report — but it **leaves every
-review thread open**. The human (or subsequent automation) has to click
-"Resolve conversation" on each thread before the PR looks clean, even though
-the fix already landed in a referenced commit.
+`.github/prompts/pr-resolve-all.md` is the canonical review-resolution
+procedure for this repo and is run by **two different agents**:
+
+- **Claude** via `.github/workflows/agent-fix-reviews.yml` (opt-in via the
+  `claude-fix` label), or via a direct `@claude follow .github/prompts/pr-resolve-all.md` mention wired through `.github/workflows/claude.yml`.
+- **Copilot** via `.github/workflows/agent-relay-reviews.yml` (opt-in via the
+  `copilot-relay` label — the relay posts an `@copilot follow .github/prompts/pr-resolve-all.md` comment that the Copilot cloud agent picks up), or via a direct human `@copilot follow` mention.
+
+Either agent reads the prompt, pushes commits, posts an Issue/Suggestion
+Index, and posts a Resolution Report — but **leaves every review thread
+open**. The human (or subsequent automation) has to click "Resolve
+conversation" on each thread before the PR looks clean, even though the fix
+already landed in a referenced commit.
 
 On PRs with dense bot review (Gemini + Copilot review + Claude auto-review +
 Codex Connector), this leaves 10–30 unresolved threads after a successful fix
@@ -42,14 +48,23 @@ Issue #91 tracks this gap.
 
 We will extend the existing `pr-resolve-all.md` procedure with a **Phase 4**
 that runs only when the PR carries an opt-in `auto-resolve-threads` label
-(applied in addition to `claude-fix`). Phase 4 resolves review threads whose
-root comment was authored by an allow-listed bot **and** whose matching
-Phase 2 item cleared with status `✅ Fixed`. Every other thread is left
-open.
+(applied in addition to either `claude-fix` or `copilot-relay`, or alongside
+a direct `@claude follow` / `@copilot follow` mention). Because Phase 4 lives
+in the shared prompt file, it is **agent-agnostic** — whichever agent is
+executing the prompt on a given PR (Claude or Copilot) performs the
+thread-resolution step. Phase 4 resolves review threads whose root comment
+was authored by an allow-listed bot **and** whose matching Phase 2 item
+cleared with status `✅ Fixed`. Every other thread is left open.
 
-No workflow-file changes are required — `agent-fix-reviews.yml` already
-supplies `CLAUDE_PAT`, `pull-requests: write`, and `allowed_bots: "*"`, which
-are the only permissions Phase 4 needs.
+No workflow-file changes are required:
+
+- `agent-fix-reviews.yml` already supplies `CLAUDE_PAT`,
+  `pull-requests: write`, and `allowed_bots: "*"`, which are the only
+  permissions the Claude invocation of Phase 4 needs.
+- `agent-relay-reviews.yml` already forwards bot reviewers' comments to
+  Copilot via `@copilot follow .github/prompts/pr-resolve-all.md`. Copilot's
+  cloud agent, on picking up the mention, reads the prompt file and executes
+  Phase 4 with its own PR write permissions — no secrets handoff needed.
 
 The label is created by `scripts/setup.sh` alongside the other pipeline
 labels, and documented in `.github/workflows/AGENT-PIPELINE-GUIDE.md`.
@@ -81,9 +96,12 @@ resolving commit SHA and the `ISS-NN` ID, then fires the GraphQL
 - **Pros**:
   - Zero workflow changes — the prompt-file edit is the entire mechanism.
   - Opt-in is per-PR via label, mirroring the ADR-006 `auto-merge` pattern.
-  - Two-label separation (`claude-fix` + `auto-resolve-threads`) lets
-    repo owners run the fix procedure without resolution if they want to
-    audit every thread manually.
+  - Agent-agnostic: because both Claude (via `agent-fix-reviews.yml`) and
+    Copilot (via `agent-relay-reviews.yml` → `@copilot follow`) execute the
+    same prompt file, a single edit covers both resolution paths.
+  - Two-label separation (`claude-fix`/`copilot-relay` + `auto-resolve-threads`)
+    lets repo owners run the fix procedure without resolution if they want
+    to audit every thread manually.
   - Allow-list plus the Phase 2 `✅ Fixed` gate means human threads and
     ambiguous fixes are never silenced.
   - Audit-trail reply preserves traceability — a reviewer who disagrees can
@@ -92,8 +110,13 @@ resolving commit SHA and the `ISS-NN` ID, then fires the GraphQL
   - The prompt-file is now the load-bearing specification for a
     behavior-changing workflow step; schema drift risk if the prompt is
     edited without updating the ADR.
-  - Claude has to make extra GraphQL calls per thread (mutation + reply),
-    which slightly increases API token usage on PRs with many bot threads.
+  - The resolving agent has to make extra GraphQL calls per thread
+    (mutation + reply), which slightly increases API / premium-request usage
+    on PRs with many bot threads.
+  - Two agents interpreting one prompt file means the Phase 4 instructions
+    must stay strictly declarative — agent-specific behavior (cycle
+    numbering, workflow names in the audit reply) is parameterized rather
+    than assumed.
 
 ### Option 2: Always auto-resolve bot threads whenever `claude-fix` is set, without a second label
 
@@ -176,9 +199,10 @@ resolving commit SHA and the `ISS-NN` ID, then fires the GraphQL
       table, resolution-path selection prose, and Manual Intervention table.
 - [x] Create this ADR.
 - [ ] Verify on a real PR by labeling `claude-fix` + `auto-resolve-threads`
-      and confirming bot-authored threads close with audit replies while
-      human-authored threads stay open. (Deferred to post-merge exercise;
-      not pre-gated on this ADR.)
+      (Claude path) and separately `copilot-relay` + `auto-resolve-threads`
+      (Copilot path), confirming bot-authored threads close with audit
+      replies while human-authored threads stay open in both cases.
+      (Deferred to post-merge exercise; not pre-gated on this ADR.)
 
 ## References
 
