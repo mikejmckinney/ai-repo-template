@@ -158,13 +158,18 @@ When the opt-in label is present, resolve review threads whose backing item clea
 
 ### Allow-list (bot reviewers only)
 
-Resolve threads whose root comment `user.login` (or `author.login` in GraphQL) matches one of:
+**Normalization rule:** GitHub's REST and GraphQL APIs disagree on bot login formatting — REST returns `gemini-code-assist[bot]`, while GraphQL often returns the same identity as `gemini-code-assist` (no `[bot]` suffix). Before comparing, **strip any trailing `[bot]` from the login** and then compare case-insensitively against the normalized allow-list below. `.github/workflows/agent-relay-reviews.yml` uses the same normalization — mirror it here so Phase 4 doesn't silently skip threads when GraphQL is the source of the login.
 
-- `gemini-code-assist[bot]`
-- `copilot-pull-request-reviewer[bot]`
-- `Copilot`
-- `chatgpt-codex-connector[bot]`
-- `claude[bot]` (only when the thread was opened by Claude's auto-review workflow, not a human reviewer speaking through Claude)
+Normalized allow-list (match with `[bot]` stripped and compared case-insensitively):
+
+- `gemini-code-assist`
+- `copilot-pull-request-reviewer`
+- `copilot` (the Copilot SWE agent; REST returns `Copilot`, GraphQL returns `copilot`)
+- `chatgpt-codex-connector`
+- `codex` (the shorter form Codex sometimes emits)
+- `claude` (only when the thread was opened by Claude's auto-review workflow, not a human reviewer speaking through Claude)
+
+Worked example: a GraphQL-returned author `gemini-code-assist` → strip `[bot]` (no-op) → lowercase → matches `gemini-code-assist` ✅. A REST-returned author `gemini-code-assist[bot]` → strip `[bot]` → `gemini-code-assist` → lowercase → matches ✅.
 
 Threads opened by any other login — including humans, unknown bots, and GitHub Actions user accounts — **must be left open**, even if the corresponding Phase 2 item was fixed.
 

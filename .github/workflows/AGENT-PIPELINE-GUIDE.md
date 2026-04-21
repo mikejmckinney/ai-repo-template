@@ -170,7 +170,7 @@ If `main` has branch protection requiring approvals:
 
 ### 7. Create labels
 
-The pipeline labels below (`auto-merge`, `auto-resolve-threads`, `copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) are created automatically by `scripts/setup.sh`. Manual creation via **Settings → Labels** is only needed if you skipped that step or the setup.sh label-creation call failed (e.g., missing repo permissions).
+The labels in the table below are created automatically by `scripts/setup.sh`. Manual creation via **Settings → Labels** is only needed if you skipped that step or the setup.sh label-creation call failed (e.g., missing repo permissions).
 
 | Label | Color | Purpose |
 |-------|-------|---------|

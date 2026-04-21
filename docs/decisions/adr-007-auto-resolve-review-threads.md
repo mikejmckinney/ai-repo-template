@@ -56,7 +56,10 @@ thread-resolution step. Phase 4 resolves review threads whose root comment
 was authored by an allow-listed bot **and** whose matching Phase 2 item
 cleared with status `✅ Fixed`. Every other thread is left open.
 
-No workflow-file changes are required:
+No new permissions or secrets are required for the workflows that invoke
+the prompt — the inline-prompt edits in `agent-fix-reviews.yml` and
+`agent-relay-reviews.yml` are documentation-only updates surfacing Phase 4
+to the running agent, not permission-model changes:
 
 - `agent-fix-reviews.yml` already supplies `CLAUDE_PAT`,
   `pull-requests: write`, and `allowed_bots: "*"`, which are the only
@@ -183,11 +186,13 @@ resolving commit SHA and the `ISS-NN` ID, then fires the GraphQL
 
 ### Neutral
 
-- No workflow-file changes mean no new secrets, permissions, or triggers.
-  All existing Phase B test coverage for `agent-fix-reviews.yml` still
-  applies.
-- The `auto-resolve-threads` label has no effect without `claude-fix`;
-  applying it alone is a no-op rather than an error.
+- No new secrets, permissions, or triggers are introduced. The
+  workflow-file edits in this ADR are documentation-only (inline-prompt
+  updates surfacing Phase 4 to the running agent), so all existing Phase B
+  test coverage for `agent-fix-reviews.yml` still applies.
+- The `auto-resolve-threads` label has no effect unless a resolution path
+  runs `.github/prompts/pr-resolve-all.md`; applying the label alone is a
+  no-op rather than an error.
 
 ## Implementation
 
