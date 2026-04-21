@@ -169,16 +169,24 @@ jobs:
 
           branch=$(echo "$pr_json" | jq -r '.headRefName // ""')
 
-          # DIAGNOSTIC: dump raw pr_json so we can see why downstream
-          # fields (isDraft, state) are coming back null. Remove once
-          # the root cause is fixed.
-          echo "=== pr_json (first 3000 chars) ==="
-          echo "$pr_json" | head -c 3000
-          echo ""
-          echo "=== /pr_json ==="
-          echo "parsed keys: $(echo "$pr_json" | jq -r 'keys | join(",")')"
+          # DIAGNOSTIC: log parsed structural fields so we can see why
+          # downstream checks (isDraft, state) are coming back null.
+          # Intentionally does NOT dump raw .title / .body / .statusCheckRollup
+          # contents — those can contain user-authored text (including
+          # accidentally posted secrets) and we don't need them to
+          # diagnose null primitives. Remove once root cause is fixed.
+          echo "=== pr_json diagnostic ==="
+          echo "keys: $(echo "$pr_json" | jq -r 'keys | join(",")')"
           echo "isDraft raw: $(echo "$pr_json" | jq '.isDraft')"
           echo "state raw: $(echo "$pr_json" | jq '.state')"
+          echo "mergeable raw: $(echo "$pr_json" | jq '.mergeable')"
+          echo "reviewDecision raw: $(echo "$pr_json" | jq '.reviewDecision')"
+          echo "headRefName raw: $(echo "$pr_json" | jq '.headRefName')"
+          echo "headRepositoryOwner.login raw: $(echo "$pr_json" | jq '.headRepositoryOwner.login')"
+          echo "labels names: $(echo "$pr_json" | jq -c '[.labels[]?.name]')"
+          echo "statusCheckRollup type: $(echo "$pr_json" | jq -r '.statusCheckRollup | type')"
+          echo "statusCheckRollup length (if array): $(echo "$pr_json" | jq 'if (.statusCheckRollup|type) == "array" then (.statusCheckRollup|length) else -1 end')"
+          echo "=== /pr_json diagnostic ==="
           # /DIAGNOSTIC
 
           # Must NOT be from a fork — workflow_run / pull_request_target
