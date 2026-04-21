@@ -30,6 +30,22 @@ echo "========================================"
 # --- Step 0: Auto-detect repo and update config ---
 log_step "Auto-detecting repository"
 
+# FULL_REPO is the canonical "owner/repo" slug used by Step 5 to scope every
+# `gh` call (labels, variables). Initialized empty; populated below from any
+# of: explicit env override, parsed git remote, or (later, in Step 5)
+# `gh repo view` once gh is authenticated.
+FULL_REPO=""
+
+# Honor explicit overrides first. GH_REPO is gh's own convention; in
+# Codespaces/Actions GITHUB_REPOSITORY is auto-set by the platform.
+if [[ -n "${GH_REPO:-}" ]]; then
+    FULL_REPO="$GH_REPO"
+    log_info "Using GH_REPO override: $FULL_REPO"
+elif [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
+    FULL_REPO="$GITHUB_REPOSITORY"
+    log_info "Using GITHUB_REPOSITORY: $FULL_REPO"
+fi
+
 # Try to detect the GitHub repository from git remote
 if command -v git &> /dev/null && git rev-parse --is-inside-work-tree &> /dev/null; then
     REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
@@ -60,13 +76,28 @@ if command -v git &> /dev/null && git rev-parse --is-inside-work-tree &> /dev/nu
             if [[ -z "$SAFE_OWNER" || -z "$SAFE_NAME" ]]; then
                 log_warn "Could not extract valid owner/repo from remote URL"
             else
-                FULL_REPO="${SAFE_OWNER}/${SAFE_NAME}"
-                log_info "Detected repository: $FULL_REPO"
+                # Don't clobber an explicit GH_REPO/GITHUB_REPOSITORY override.
+                if [[ -z "$FULL_REPO" ]]; then
+                    FULL_REPO="${SAFE_OWNER}/${SAFE_NAME}"
+                    log_info "Detected repository: $FULL_REPO"
+                else
+                    log_info "Git remote points at ${SAFE_OWNER}/${SAFE_NAME}; keeping override $FULL_REPO"
+                fi
             
                 # Update issue template config with correct discussions URL
                 # Note: Using temp file for portability (BSD sed on macOS differs from GNU sed)
+                # Template-detection guard: when the current repo IS the template
+                # itself, leave placeholders intact so the template's source files
+                # don't get rewritten with the template owner's slug. See
+                # .github/copilot-instructions.md "Template detection" section.
                 CONFIG_FILE=".github/ISSUE_TEMPLATE/config.yml"
-                if [[ -f "$CONFIG_FILE" ]]; then
+                _is_template_repo=false
+                case "$FULL_REPO" in
+                    mikejmckinney/ai-repo-template|mikejmckinney/dotfiles) _is_template_repo=true ;;
+                esac
+                if [[ "$_is_template_repo" == "true" ]]; then
+                    log_info "Detected template repo ($FULL_REPO); leaving $CONFIG_FILE placeholders intact"
+                elif [[ -f "$CONFIG_FILE" ]]; then
                     if grep -q "PLEASE_UPDATE_THIS/URL" "$CONFIG_FILE"; then
                         sed "s|PLEASE_UPDATE_THIS/URL|${SAFE_OWNER}/${SAFE_NAME}|g" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
                         log_info "Updated $CONFIG_FILE with repository URL"
@@ -253,6 +284,39 @@ if [[ -n "$_pipeline_setup_skip_reason" ]]; then
     log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, copilot-relay, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
     log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
 elif [[ -n "$_gh_auth_ok" ]]; then
+    # Last-resort FULL_REPO fallback: if Step 0 couldn't parse a remote and
+    # no env override was provided, ask gh itself. This works when gh has
+    # been authenticated against a repo via some out-of-band mechanism
+    # (e.g., default repo set via `gh repo set-default`).
+    if [[ -z "$FULL_REPO" ]]; then
+        FULL_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")
+        if [[ -n "$FULL_REPO" ]]; then
+            log_info "Resolved repository from gh: $FULL_REPO"
+        fi
+    fi
+
+    # If we still don't know which repo to target, every `gh label`/`gh
+    # variable` call below would emit the raw "no git remotes found" error.
+    # Surface one consolidated remediation block instead.
+    if [[ -z "$FULL_REPO" ]]; then
+        log_warn "No GitHub repo target found; cannot create labels/variables."
+        log_warn "Cause: no 'origin' git remote, and neither GH_REPO nor GITHUB_REPOSITORY is set."
+        log_warn "Pick one:"
+        log_warn "  a) Add a remote, then re-run:"
+        log_warn "       git remote add origin https://github.com/<owner>/<repo>.git"
+        log_warn "       ./scripts/setup.sh"
+        log_warn "  b) One-shot override:"
+        log_warn "       GH_REPO=<owner>/<repo> ./scripts/setup.sh"
+        log_warn "Or create the following manually in the GitHub UI:"
+        log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, copilot-relay, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
+        log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
+    else
+        # Scope every `gh` call in this block to FULL_REPO. gh respects
+        # GH_REPO as the "default repo" override, which avoids having to
+        # thread `--repo "$FULL_REPO"` through each helper.
+        export GH_REPO="$FULL_REPO"
+        log_info "Targeting $FULL_REPO for label/variable creation"
+
     # Helper: create a label idempotently, surfacing real failures.
     # `gh label create` exits non-zero for both "already exists" and real errors;
     # check existence on failure so genuine permission/API errors aren't swallowed.
@@ -305,6 +369,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     }
     _ensure_variable MAX_COPILOT_CONCURRENT 3
     _ensure_variable MAX_COPILOT_DAILY 20
+    fi
 else
     log_warn "gh CLI not authenticated; skipping label/variable creation."
     log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
