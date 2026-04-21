@@ -4,7 +4,7 @@
 >   - `@claude follow .github/prompts/pr-resolve-all.md`
 >   - `@copilot follow .github/prompts/pr-resolve-all.md`
 >
-> Both agents will read this file and execute the Phase 1–3 procedure below.
+> Both agents will read this file and execute the Phase 1–3 procedure (with optional Phase 4 when the `auto-resolve-threads` label is present) below.
 > Claude is wired via `.github/workflows/claude.yml`'s `claude-mention` job.
 > Copilot follows the `@copilot follow <path>` rule documented in
 > `.github/copilot-instructions.md`.
@@ -196,16 +196,20 @@ For each eligible thread:
 1. **Fetch the thread node ID** via the GraphQL `pullRequest.reviewThreads` query. The REST review-comments endpoint does not return the node ID required by `resolveReviewThread`, so GraphQL is mandatory here. Example:
 
    ```graphql
-   query($owner:String!, $repo:String!, $num:Int!) {
+   query($owner:String!, $repo:String!, $num:Int!, $cursor:String) {
      repository(owner:$owner, name:$repo) {
        pullRequest(number:$num) {
-         reviewThreads(first:100) {
+         reviewThreads(first:100, after:$cursor) {
+           pageInfo {
+             hasNextPage
+             endCursor
+           }
            nodes {
              id
              isResolved
              isOutdated
              comments(first:1) {
-               nodes { author { login } path line databaseId }
+               nodes { author { login } path line databaseId url }
              }
            }
          }
