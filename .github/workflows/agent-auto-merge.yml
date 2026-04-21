@@ -30,12 +30,11 @@
 #   - Branch protection rules still apply
 #
 # Setup:
-#   - CLAUDE_PAT repo secret required for the merge step only. A merge
-#     performed with the built-in GITHUB_TOKEN does NOT fire downstream
-#     workflow_run events on main, which would break
-#     auto-resolve-on-merge. CLAUDE_PAT only needs: `contents: write` +
-#     `pull-requests: write` (plus `issues: write` if you want the
-#     linked-issue comment/label to post under your user).
+#   - CLAUDE_PAT repo secret is required for the merge and post-merge
+#     issue/comment steps. A merge performed with the built-in
+#     GITHUB_TOKEN does NOT fire downstream workflow_run events on main,
+#     which would break auto-resolve-on-merge. CLAUDE_PAT needs:
+#     `contents: write` + `pull-requests: write` + `issues: write`.
 #   - All READ operations (gh pr view, GraphQL reviewThreads, etc.) use
 #     the built-in GITHUB_TOKEN with scopes declared in this workflow's
 #     `permissions:` block. This keeps CLAUDE_PAT's blast radius narrow
@@ -94,9 +93,14 @@ jobs:
     timeout-minutes: 10
 
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
+      # GITHUB_TOKEN is only used by the read-only eligibility step —
+      # all write operations (merge, linked-issue close, drain queue,
+      # post-merge comment) explicitly use CLAUDE_PAT. Keeping
+      # GITHUB_TOKEN read-only shrinks the blast radius of
+      # pull_request_target runs on label events.
+      contents: read
+      pull-requests: read
+      issues: read
       # statusCheckRollup aggregates both Check Runs (checks:) and
       # Commit Statuses (statuses:). Declare both so GITHUB_TOKEN can
       # read it without needing a PAT.
@@ -243,6 +247,9 @@ jobs:
           # Paginate reviewThreads so PRs with > 100 threads are evaluated
           # correctly; otherwise unresolved threads beyond the first page
           # would be silently ignored and we could auto-merge prematurely.
+          # Fail closed on GraphQL errors: a permission/config/network
+          # regression must not silently bypass the unresolved-thread
+          # guard. Surface stderr for diagnosis and mark ineligible.
           unresolved=0
           cursor=""
           while :; do
@@ -259,7 +266,13 @@ jobs:
                         }
                       }
                     }
-                  }' 2>/dev/null) || { unresolved=0; break; }
+                  }' 2>/tmp/gh-graphql.err) || {
+                echo "GraphQL reviewThreads query failed (paginated):"
+                cat /tmp/gh-graphql.err 2>/dev/null || true
+                echo "Failing closed — treating as unresolved to block merge."
+                echo "eligible=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              }
             else
               page=$(gh api graphql \
                 -F owner="$owner" -F name="$name" -F number="$pr_number" \
@@ -273,7 +286,13 @@ jobs:
                         }
                       }
                     }
-                  }' 2>/dev/null) || { unresolved=0; break; }
+                  }' 2>/tmp/gh-graphql.err) || {
+                echo "GraphQL reviewThreads query failed:"
+                cat /tmp/gh-graphql.err 2>/dev/null || true
+                echo "Failing closed — treating as unresolved to block merge."
+                echo "eligible=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              }
             fi
 
             page_unresolved=$(echo "$page" | jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)] | length')
