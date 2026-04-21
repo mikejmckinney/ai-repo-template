@@ -20,11 +20,14 @@
 You are resolving every open issue, suggestion, and TODO in this pull request. Your job is to find them all, verify each one, fix the valid ones, and produce a traceable audit trail. Do not guess — verify everything against the actual code.
 
 > **How to run this prompt**: Read this entire file before starting. Execute
-> Phase 1, then Phase 2, then Phase 3, in that order. Phase 4 runs after
-> Phase 3 **only if** the PR carries the `auto-resolve-threads` label.
-> Do not interleave or skip phases. If your cumulative response would exceed
-> GitHub's per-comment size limit, post sequential `Part 1/N`, `Part 2/N`, …
-> comments rather than truncating. Apply the Rules section to every phase.
+> Phase 1, then Phase 2. If the PR carries the `auto-resolve-threads` label,
+> execute Phase 4 **before** posting the Phase 3 Resolution Report so
+> Phase 3 can include the Phase 4 results. If the label is absent, skip
+> Phase 4 entirely and move directly from Phase 2 to Phase 3. Do not
+> interleave or skip the other phases. If your cumulative response would
+> exceed GitHub's per-comment size limit, post sequential `Part 1/N`,
+> `Part 2/N`, … comments rather than truncating. Apply the Rules section to
+> every phase.
 
 ## Phase 1: Build the Issue/Suggestion Index
 
@@ -158,7 +161,7 @@ When the opt-in label is present, resolve review threads whose backing item clea
 
 ### Allow-list (bot reviewers only)
 
-**Normalization rule:** GitHub's REST and GraphQL APIs disagree on bot login formatting — REST returns `gemini-code-assist[bot]`, while GraphQL often returns the same identity as `gemini-code-assist` (no `[bot]` suffix). Before comparing, **strip any trailing `[bot]` from the login** and then compare case-insensitively against the normalized allow-list below. `.github/workflows/agent-relay-reviews.yml` uses the same normalization — mirror it here so Phase 4 doesn't silently skip threads when GraphQL is the source of the login.
+**Normalization rule:** GitHub's REST and GraphQL APIs disagree on bot login formatting — REST returns `gemini-code-assist[bot]`, while GraphQL often returns the same identity as `gemini-code-assist` (no `[bot]` suffix). Before comparing, **strip any trailing `[bot]` from the login** and then compare case-insensitively against the normalized allow-list below. This is the canonical matching rule for Phase 4; apply it whichever API (REST or GraphQL) you sourced the login from. (`.github/workflows/agent-relay-reviews.yml` has separate bot-detection logic that matches on either a `[bot]` suffix **or** a literal allow-regex rather than stripping and normalizing — do not rely on that workflow's matcher as a reference for Phase 4.)
 
 Normalized allow-list (match with `[bot]` stripped and compared case-insensitively):
 
@@ -180,7 +183,9 @@ Resolve a thread only when **all** of the following hold:
 1. The thread's root comment was authored by an allow-listed bot.
 2. The Phase 2 status for the matching `ISS-NN` item is `✅ Fixed` (never `⚠️`, `❌`, `Already resolved`, or `Needs clarification`).
 3. Phase 2 verification passed — tests, lint, build, and typecheck were all green for the batch that contained the fix.
-4. The thread is not already resolved or outdated.
+4. The thread is not already resolved (`isResolved == false`).
+
+Note: do **not** skip threads solely because they are `isOutdated`. Phase 4 runs **after** the fix commit is pushed, and a thread's commented line is frequently moved or replaced by that commit, which flips `isOutdated` to `true`. Condition 2 (Phase 2 marked the item `✅ Fixed`) is what guarantees the concern was actually addressed; `isOutdated` is just a side-effect of the fix and is not a blocker. `agent-auto-merge.yml` blocks on `isResolved == false` without considering `isOutdated`, so leaving outdated-but-fixed bot threads unresolved would defeat the entire purpose of Phase 4.
 
 If any condition fails, skip the thread and record why in the Phase 4 log. Do not attempt to resolve threads you did not fix in this run.
 
@@ -237,7 +242,7 @@ For each eligible thread:
 
 ### Phase 4 report
 
-Append a section to the Phase 3 Resolution Report listing every thread considered:
+Because Phase 4 runs **before** Phase 3 posts the Resolution Report (see "How to run this prompt" at the top of this file), include the following section within the Phase 3 Resolution Report itself, listing every thread considered. Do not post Phase 4 as a separate comment.
 
 ```markdown
 ### Phase 4 — Thread auto-resolution

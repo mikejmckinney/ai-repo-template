@@ -197,10 +197,12 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
   edits.
 - Add `auto-resolve-threads` (in addition to either `claude-fix` or
   `copilot-relay`) to also auto-resolve review threads opened by
-  allow-listed bots (`gemini-code-assist[bot]`,
-  `copilot-pull-request-reviewer[bot]`, `Copilot`,
-  `chatgpt-codex-connector[bot]`, `claude[bot]`) once Phase 2 marks the
-  matching `ISS-NN` item as `✅ Fixed` with passing verification.
+  allow-listed bots. Phase 4 matches reviewer identity by stripping any
+  trailing `[bot]` from the login and comparing case-insensitively
+  against the normalized allow-list (`gemini-code-assist`,
+  `copilot-pull-request-reviewer`, `copilot`, `chatgpt-codex-connector`,
+  `codex`, `claude`), once Phase 2 marks the matching `ISS-NN` item as
+  `✅ Fixed` with passing verification.
   Human-authored threads are never auto-resolved. Phase 4 is defined in
   `.github/prompts/pr-resolve-all.md` and runs whichever agent (Claude or
   Copilot) executes that prompt on the PR — the `auto-resolve-threads`

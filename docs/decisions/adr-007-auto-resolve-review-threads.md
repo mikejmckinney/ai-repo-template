@@ -72,14 +72,26 @@ to the running agent, not permission-model changes:
 The label is created by `scripts/setup.sh` alongside the other pipeline
 labels, and documented in `.github/workflows/AGENT-PIPELINE-GUIDE.md`.
 
-Allow-listed bots (matched by `user.login` / GraphQL `author.login`):
+Allow-listed bots are matched from `user.login` / GraphQL `author.login`
+using the same normalization rule as Phase 4 in
+`.github/prompts/pr-resolve-all.md`: strip any trailing `[bot]` from the
+login, then compare case-insensitively against the normalized allow-list
+below. (REST and GraphQL disagree on whether the `[bot]` suffix is
+present, and login casing is inconsistent, so the normalized form is
+the canonical one.)
 
-- `gemini-code-assist[bot]`
-- `copilot-pull-request-reviewer[bot]`
-- `Copilot`
-- `chatgpt-codex-connector[bot]`
-- `claude[bot]` (only when the thread was opened by Claude's auto-review
-  workflow, not a human speaking through Claude)
+Normalized allow-list:
+
+- `gemini-code-assist`
+- `copilot-pull-request-reviewer`
+- `copilot` (the Copilot SWE agent)
+- `chatgpt-codex-connector`
+- `codex`
+- `claude` (only when the thread's root comment was authored directly by
+  the `claude[bot]` / `claude` identity — e.g., Claude's auto-review
+  workflow. If a human opened the thread and `claude[bot]` merely
+  replied, the root author is the human and Phase 4 must leave the
+  thread open.)
 
 Per-thread gate (all four must hold):
 
@@ -88,8 +100,9 @@ Per-thread gate (all four must hold):
 3. Phase 2 verification (tests, lint, build, typecheck) passed for the fix.
 4. Thread is not already resolved or outdated.
 
-Before resolving, Claude posts an audit-trail reply on the thread citing the
-resolving commit SHA and the `ISS-NN` ID, then fires the GraphQL
+Before resolving, the resolving agent (Claude or Copilot, whichever ran
+the prompt) posts an audit-trail reply on the thread citing the resolving
+commit SHA and the `ISS-NN` ID, then fires the GraphQL
 `resolveReviewThread` mutation.
 
 ## Options Considered
