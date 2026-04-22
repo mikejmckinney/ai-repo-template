@@ -2,7 +2,23 @@
 
 ## Status
 
-Accepted
+Accepted (superseded by [ADR-008](./adr-008-phase4-default-and-copilot-fallback.md))
+
+> **Note**: ADR-008 (2026-04-22) supersedes two specific design choices
+> in this ADR:
+>
+> 1. The `auto-resolve-threads` opt-in label is removed; Phase 4 runs
+>    by default whenever `pr-resolve-all.md` is invoked. The per-thread
+>    gate is preserved verbatim and remains the only safety mechanism.
+> 2. The Copilot-path Phase 4 — described below as non-functional
+>    pending issue #100 — is now functional via a relay-side fallback
+>    job in `agent-relay-reviews.yml` that fires the GraphQL mutations
+>    under `CLAUDE_PAT` after parsing the `⚠️ Errored` rows from
+>    Copilot's Phase 3 Resolution Report.
+>
+> The rest of this ADR's body (Context, Decision, Options Considered,
+> Consequences) is left intact for historical context. Read ADR-008 for
+> the current design.
 
 ## Date
 
