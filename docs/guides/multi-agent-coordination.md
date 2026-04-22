@@ -288,6 +288,24 @@ The role files in `.github/agents/**` and `.claude/agents/**` describe **the sam
 
 Practical implication: when "parallel multi-agent execution" is discussed in this repo, it almost always means **cross-session parallelism** (separate PRs from separate sessions), not in-session `Task()`-style fan-out. Claude Code CLI is the exception. The cross-PR overlap CI (layer 6 of the conflict-avoidance hierarchy) is what makes the cross-session model safe at scale.
 
+## Verifying overlap workflow changes
+
+Any PR that modifies `.github/workflows/agent-parallelism-report.yml`, the parser in `scripts/test-parallelism-report-parser.sh`, or the role table in `.context/rules/agent_ownership.md` should run the live smoke test below before merge. Unit tests cover the parser logic but cannot exercise the GitHub API calls (PR list, file fetch, comment upsert) or real-world path classification.
+
+**Setup.** Branch each scratch PR off the *workflow's source branch* (the PR being verified) and target it back at the same source branch. Targeting `main` defeats the test because PRs branched from `main` won't have the workflow file yet, and PRs targeting `main` will show every parent-branch file as a "diff" and trip every classification as `hard`. Targeting the source branch isolates each scratch PR to a single-file diff.
+
+**The five checks.** Open three scratch PRs (label them `[SMOKE TEST — DO NOT MERGE]`):
+
+1. **Hard overlap** — touch any one file the source branch also modifies. Expect `hard` with that file as evidence.
+2. **Soft overlap** — touch a different file inside an owned-path glob the source branch also touches (e.g., the source branch edits `docs/guides/foo.md`, your scratch PR edits `docs/FAQ.md`; both fall under Docs `docs` prefix). Expect `soft` with the role + prefix as evidence.
+3. **None** — touch a file outside every prefix the source branch hits (e.g., `config/README.md` when the source branch only touches `docs/`, `scripts/`, `.context/rules/`). Expect `none`.
+4. **Upsert idempotency** — push a second commit to the hard-overlap scratch PR. Capture the parallelism-report comment ID before and after; it must be unchanged (the workflow edits, never duplicates).
+5. **Fail-soft on broken table** — on the same scratch PR, mangle the role names in `agent_ownership.md` so the parser regex no longer matches (e.g., `s/^| Analyst /| ZZAnalyst/`). Push. The next report must include the `> ⚠️ Parser warning:` block AND must still detect hard overlaps (which don't depend on the prefix table).
+
+**Cleanup.** Close all scratch PRs unmerged and delete their branches. Record the run in the PR description (5 ✅/❌ rows is enough — no separate doc needed).
+
+When to skip: trivial doc-only edits to comments inside the workflow file, or test-only edits that the unit tests already cover. When in doubt, run it — three scratch PRs cost about ten minutes of CI and are reversible.
+
 ## See Also
 
 - `docs/guides/agent-best-practices.md` — token limits, session handoff, secrets.
