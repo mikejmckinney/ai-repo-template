@@ -840,9 +840,10 @@ jobs:
 
           # Patterns matching the canonical comment shapes that Copilot
           # has historically used for these phases. Both `##` and `###`
-          # forms appear in practice (V7 evidence).
-          INDEX_PATTERN='## (Phase 1: )?Issue/Suggestion Index'
-          REPORT_PATTERN='## (Phase 3: )?Resolution Report|### Phase 4 — Thread auto-resolution'
+          # forms appear in practice (V7 evidence), so accept either
+          # heading level. (Addresses PR #110 review thread on line 844.)
+          INDEX_PATTERN='#{2,3} (Phase 1: )?Issue/Suggestion Index'
+          REPORT_PATTERN='#{2,3} (Phase 3: )?Resolution Report|#{2,3} Phase 4 — Thread auto-resolution'
 
           for i in $(seq 1 "$MAX_POLLS"); do
             comments=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
@@ -852,6 +853,14 @@ jobs:
             # latest relay (use the relay fingerprint's appearance as a
             # rough timestamp anchor; comments are returned in created
             # order so we can scan tail-first).
+            # Login filter must match the same Copilot identities the
+            # phase4-fallback job's allowlist accepts: `Copilot`,
+            # `copilot[bot]`, `copilot-swe-agent`, and
+            # `copilot-swe-agent[bot]`. If we filter narrower than the
+            # fallback, we'll miss Index/Report comments authored under
+            # the swe-agent identity and either nudge spuriously or fail
+            # to nudge a real stall. (Addresses PR #110 review threads
+            # on lines 862 and 867.)
             copilot_comments=$(printf '%s' "$comments" | jq -r --arg fp "$relay_fp" '
               # Find the index of the most recent relay comment by
               # looking for our fingerprint marker.
@@ -859,7 +868,7 @@ jobs:
               | if $relay_idx == null then []
                 else [
                   .[$relay_idx + 1 :][]
-                  | select((.user.login // "") | test("^copilot(\\[bot\\])?$"; "i"))
+                  | select((.user.login // "") | test("^(copilot|copilot-swe-agent)(\\[bot\\])?$"; "i"))
                   | .body
                 ]
                 end
