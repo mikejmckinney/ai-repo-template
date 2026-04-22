@@ -44,6 +44,7 @@ These files require **PM coordination** regardless of role, because any role may
 | `.context/state/coordination.md`  | PM (writes), all (read-then-self-claim) | See lock protocol below |
 | `test.sh`                         | DevOps         | Must be updated in lockstep with template structure changes |
 | `.github/agents/**` / `.claude/agents/**` | Architect | Role definitions; changes require an ADR, must update both mirrors in lockstep, and `test.sh` enforces `description:` parity between them. See `docs/decisions/adr-003-claude-code-subagent-registration.md`. |
+| `.github/workflows/agent-parallelism-report.yml` | DevOps | Cross-PR overlap detector; parses this ownership table to classify overlaps. Format-changing PRs must keep the table parser-friendly (covered by the live-format assertion in `scripts/test-parallelism-report-parser.sh` and `test.sh`). See ADR-009. |
 
 ## Lock Protocol (for `coordination.md`)
 

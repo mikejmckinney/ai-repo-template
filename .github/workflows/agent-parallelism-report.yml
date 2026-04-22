@@ -1,0 +1,264 @@
+name: Parallelism Report
+
+# Posts a "Parallelism Report" comment on every PR listing every other
+# open PR and classifying the path overlap with the current PR as:
+#
+#   hard — the two PRs touch at least one identical file path.
+#   soft — different files but inside the same top-level owned-path
+#          glob from .context/rules/agent_ownership.md (so they're in
+#          the same role's territory and merge-order may matter).
+#   none — disjoint paths.
+#
+# Comment-only and non-blocking (see ADR-009 §Decision 2 for rationale).
+# Single comment per PR (upserted by marker), so subsequent commits
+# edit the existing report rather than spam new comments.
+#
+# Triggers:
+#   - pull_request: opened, synchronize, reopened, ready_for_review
+#
+# Skips on:
+#   - PRs from forks (mutation token isn't available there)
+#   - draft PRs that aren't being marked ready
+#
+# Requires:
+#   - CLAUDE_PAT repo secret (pull-requests:write to upsert the comment)
+#
+# Related:
+#   - ADR-009 — design rationale and dispatch reality matrix
+#   - .context/rules/agent_ownership.md — parsed for owned-path globs
+#   - scripts/test-parallelism-report-parser.sh — unit test for the parser
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: parallelism-report-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: read
+  contents: read
+
+jobs:
+  report:
+    name: Parallelism Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Skip:
+    #   - Fork PRs: CLAUDE_PAT is not exposed to forks; the comment
+    #     write would fail with a misleading error.
+    #   - Draft PRs that aren't being explicitly marked ready: avoids
+    #     spamming the report on every WIP push. The first run will
+    #     happen on the `ready_for_review` event.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository
+      && (github.event.pull_request.draft == false
+          || github.event.action == 'ready_for_review')
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Just need agent_ownership.md and ADR — shallow is fine.
+          fetch-depth: 1
+
+      - name: Build and upsert Parallelism Report
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # set -e: surface gh/jq failures (other workflows in this repo
+          # use the same setting). Commands we deliberately allow to
+          # "fail-soft" (e.g. fetching another PR's files when GitHub
+          # returns 404) are explicitly guarded with `|| { ... }` below.
+          set -euo pipefail
+          # Marker for the upsert: exactly one report comment per PR.
+          MARKER='<!-- parallelism-report -->'
+
+          owner="${REPO%/*}"
+          name="${REPO#*/}"
+
+          # ── 1. Parse owned-path globs from agent_ownership.md ──
+          # The file's "Ownership Table" is a markdown table of the form:
+          #   | Role | Owned path globs | May also edit ... |
+          # We extract the second column for each row whose first column
+          # is a known role name. Globs in the second column may be
+          # wrapped in backticks and comma-separated. We split on commas,
+          # strip backticks and whitespace, and reduce each glob to its
+          # top-level prefix (everything before the first `/**` or `/*`).
+          # The top-level prefix is what we use for soft-overlap matching:
+          # two PRs are "soft" if they touch *different* files but share
+          # at least one top-level prefix.
+          #
+          # Fail-soft: if parsing produces zero prefixes for any role,
+          # the report still posts but skips soft classification and
+          # logs a warning (per ADR-009: do not block on parser failure).
+          OWNERSHIP_FILE='.context/rules/agent_ownership.md'
+          parse_warning=""
+          if [[ ! -f "$OWNERSHIP_FILE" ]]; then
+            parse_warning="ownership map ($OWNERSHIP_FILE) not found; soft-overlap classification disabled"
+            echo "::warning::$parse_warning"
+            ROLE_PREFIXES=""
+          else
+            ROLE_PREFIXES=$(awk -F'|' '
+              /^\| *(Analyst|Architect|Frontend|Backend|PM|QA|DevOps|Docs|Judge|Critic) +\|/ {
+                role=$2
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", role)
+                globs=$3
+                gsub(/`/, "", globs)
+                # Strip inline parenthetical qualifiers BEFORE the comma
+                # split. Some rows contain notes like
+                #   `docs/** (except docs/decisions/**, docs/research/**)`
+                # whose interior commas would otherwise corrupt the
+                # split. ADR-009 §Decision 2: prefer simple+noisy
+                # (false-positive softs) over precise+risky.
+                gsub(/ *\([^)]*\)/, "", globs)
+                # Split comma-separated globs.
+                n=split(globs, parts, ",")
+                for (i=1;i<=n;i++) {
+                  g=parts[i]
+                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", g)
+                  if (g == "" || g == "nothing (research-only)" || g ~ /^nothing/) continue
+                  # Reduce to top-level prefix: strip /** or /* suffix.
+                  sub(/\/\*\*$/, "", g)
+                  sub(/\/\*$/, "", g)
+                  if (g != "") print role "\t" g
+                }
+              }
+            ' "$OWNERSHIP_FILE" | sort -u)
+
+            if [[ -z "$ROLE_PREFIXES" ]]; then
+              parse_warning="ownership table parsed to zero prefixes; soft-overlap classification disabled"
+              echo "::warning::$parse_warning"
+            fi
+          fi
+
+          # ── 2. Get the current PR's changed file paths. ──
+          gh pr view "$PR_NUMBER" --repo "$REPO" --json files \
+            --jq '.files[].path' > /tmp/me_files.txt
+          me_count=$(wc -l < /tmp/me_files.txt)
+          echo "Current PR ($PR_NUMBER) touches $me_count file(s)."
+
+          # ── 3. List other open PRs (not me, not drafts). ──
+          others=$(gh pr list --repo "$REPO" --state open --limit 100 \
+            --json number,headRefName,isDraft,author \
+            --jq "[.[] | select(.number != $PR_NUMBER and .isDraft == false)]")
+          other_count=$(printf '%s' "$others" | jq 'length')
+          echo "Comparing against $other_count other open PR(s)."
+
+          # ── 4. For each other PR, classify overlap. ──
+          rows=""
+          hard_total=0
+          soft_total=0
+
+          for i in $(seq 0 $((other_count - 1))); do
+            other_num=$(printf '%s' "$others" | jq -r ".[$i].number")
+            other_head=$(printf '%s' "$others" | jq -r ".[$i].headRefName")
+            other_author=$(printf '%s' "$others" | jq -r ".[$i].author.login // \"unknown\"")
+
+            gh pr view "$other_num" --repo "$REPO" --json files \
+              --jq '.files[].path' > /tmp/other_files.txt 2>/dev/null \
+              || { echo "  PR #$other_num: could not fetch files; skipping"; continue; }
+
+            # Hard overlap = at least one identical path.
+            hard_files=$(comm -12 <(sort -u /tmp/me_files.txt) <(sort -u /tmp/other_files.txt))
+
+            classification="none"
+            evidence=""
+            matched_roles=""
+
+            if [[ -n "$hard_files" ]]; then
+              classification="hard"
+              hard_count=$(printf '%s\n' "$hard_files" | grep -c .)
+              first=$(printf '%s\n' "$hard_files" | head -1)
+              evidence="$hard_count shared file(s); first: \`$first\`"
+              hard_total=$((hard_total + 1))
+            elif [[ -n "$ROLE_PREFIXES" ]]; then
+              # Soft overlap = different files, but at least one prefix
+              # in ROLE_PREFIXES is a top-level prefix of at least one
+              # file in BOTH PRs.
+              soft_prefixes=""
+              while IFS=$'\t' read -r role prefix; do
+                [[ -z "$prefix" ]] && continue
+                me_hit=$(awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {found=1; exit} END{exit !found}' /tmp/me_files.txt && echo y || echo n)
+                ot_hit=$(awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {found=1; exit} END{exit !found}' /tmp/other_files.txt && echo y || echo n)
+                if [[ "$me_hit" == "y" && "$ot_hit" == "y" ]]; then
+                  soft_prefixes="$soft_prefixes $role:$prefix"
+                fi
+              done <<< "$ROLE_PREFIXES"
+
+              if [[ -n "$soft_prefixes" ]]; then
+                classification="soft"
+                # Take the first matched role for the column.
+                first_match=$(echo "$soft_prefixes" | awk '{print $1}')
+                matched_roles=$(echo "$first_match" | cut -d: -f1)
+                first_prefix=$(echo "$first_match" | cut -d: -f2)
+                evidence="shared owned-path: \`$first_prefix\` (role: $matched_roles)"
+                soft_total=$((soft_total + 1))
+              fi
+            fi
+
+            # Action recommendation per classification.
+            case "$classification" in
+              hard) action="Sequence (decide which merges first), or capture a PM shared-edit claim." ;;
+              soft) action="Likely fine; verify merge order if one renames or changes a shared interface." ;;
+              none) action="No coordination needed." ;;
+            esac
+
+            rows+="| [#$other_num]($GITHUB_SERVER_URL/$REPO/pull/$other_num) | \`$other_head\` | $other_author | **$classification** | $evidence | $action |"$'\n'
+          done
+
+          # ── 5. Build the report body. ──
+          {
+            echo "$MARKER"
+            echo ""
+            echo "## 🔀 Parallelism Report"
+            echo ""
+            echo "_Cross-PR overlap classification against the $other_count other open PR(s) at the time of this report. **Comment-only — does not block this PR.** See [ADR-009]($GITHUB_SERVER_URL/$REPO/blob/main/docs/decisions/adr-009-parallel-multi-agent-execution.md) for rationale._"
+            echo ""
+            if [[ -n "$parse_warning" ]]; then
+              echo "> ⚠️ **Parser warning**: $parse_warning. Hard overlap is still detected; soft overlap is unavailable for this run."
+              echo ""
+            fi
+            if [[ "$other_count" -eq 0 ]]; then
+              echo "_No other open PRs to compare against. ✅_"
+            elif [[ -z "$rows" ]]; then
+              echo "_No overlaps detected with any other open PR. ✅_"
+            else
+              echo "**Summary:** $hard_total hard, $soft_total soft, $((other_count - hard_total - soft_total)) none."
+              echo ""
+              echo "| PR | Branch | Author | Overlap | Evidence | Suggested action |"
+              echo "|----|--------|--------|---------|----------|------------------|"
+              printf '%s' "$rows"
+              echo ""
+              echo "**Legend:** **hard** = same file path. **soft** = same owned-path glob, different files. **none** = disjoint paths."
+            fi
+            echo ""
+            echo "<sub>This PR touches $me_count file(s). Re-runs on every push.</sub>"
+          } > /tmp/report_body.md
+
+          # ── 6. Upsert: find existing comment by marker; edit or create. ──
+          # `per_page=100` is large enough for any realistic PR comment
+          # count, so `--paginate` (and the SIGPIPE-prone `head -1`)
+          # aren't needed. The jq already collapses to at most one value.
+          existing_id=$(gh api \
+            "/repos/$REPO/issues/$PR_NUMBER/comments?per_page=100" \
+            --jq "[.[] | select(.body | startswith(\"$MARKER\"))] | .[0].id // empty")
+
+          if [[ -n "$existing_id" ]]; then
+            echo "Editing existing report comment ($existing_id)..."
+            gh api --method PATCH \
+              "/repos/$REPO/issues/comments/$existing_id" \
+              -F body=@/tmp/report_body.md > /dev/null
+          else
+            echo "Creating new report comment..."
+            gh pr comment "$PR_NUMBER" --repo "$REPO" \
+              --body-file /tmp/report_body.md > /dev/null
+          fi
+
+          echo "Done. Hard: $hard_total, Soft: $soft_total, Compared: $other_count."
