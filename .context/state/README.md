@@ -2,6 +2,23 @@
 
 > **Purpose**: Track active tasks and their progress. Supports both single-task and parallel-task workflows.
 
+## Cadence (read this first)
+
+These files are the agent working-memory layer; stale or unbounded files defeat the point. Follow the cadence below; the same rules are summarized in `AGENTS.md` §"Ongoing maintenance".
+
+- **`_active.md`** — rewrite (don't append) at every task boundary. Max ~20 lines.
+  - Required schema: `Active Task` (one line), `File` (path to `task_*.md` or N/A), `Role` (current owner), `Blockers` (or "None"), `Next 1–3 actions`.
+  - Anything beyond that schema belongs in `task_<slug>.md`, not here.
+- **`task_<slug>.md`** — create from `task_template.md` at task start. Update Progress / Files / Blockers as work proceeds. Delete (or move to `../sessions/`) at task end.
+- **`handoff_<slug>.md`** — write one before any of:
+  - Single conversation has exceeded ~30 turns;
+  - Handoff to a different role or agent;
+  - End-of-session pause where you expect another agent to pick up.
+  Use `handoff_template.md`. Delete after the receiving role has read it and updated `_active.md`.
+- **`coordination.md`** — PM-owned. Live claim board. Other roles only self-claim; PM does everything else.
+
+Keep this directory small. If you need a permanent record of "what we decided", that belongs in `docs/decisions/<adr>.md`, not here.
+
 ## File Naming Convention
 
 ```

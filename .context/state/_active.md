@@ -1,29 +1,28 @@
-# Active Task Pointer
+<!-- Schema (rewrite at every task boundary; max ~20 lines):
+     Active Task | File | Role | Blockers | Next 1–3 actions.
+     Anything else belongs in task_<slug>.md, not here.
+     See .context/state/README.md "Cadence" for rules. -->
 
-> **Purpose**: When multiple tasks exist, this file indicates the current priority.
+# Active Task
 
-## Current Priority Task
-
-**Active Task**: None  
-**File**: N/A  
-**Last Updated**: N/A
-
-## How to Use
-
-When you have multiple task files, update this to point to the current priority:
-
-```markdown
-**Active Task**: Implement user authentication  
-**File**: `task_auth.md`  
-**Last Updated**: 2025-01-25
-```
-
-## All Tasks
-
-| Task | Status | File |
-|------|--------|------|
-| (none) | - | - |
+**Active Task**: None
+**File**: N/A
+**Role**: N/A
+**Blockers**: None
+**Next 1–3 actions**:
+1. (none)
 
 ---
 
-*This file is optional. If you only have one task at a time, you don't need it.*
+*When you start work, rewrite this file (don't append). Example:*
+
+```markdown
+**Active Task**: Add login form
+**File**: task_login-frontend.md
+**Role**: frontend
+**Blockers**: waiting on backend API contract (login-backend)
+**Next 1–3 actions**:
+1. Stub LoginForm component with form fields
+2. Wire up form validation
+3. Pause until login-backend lands
+```

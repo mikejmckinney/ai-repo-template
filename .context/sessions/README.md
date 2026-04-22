@@ -62,6 +62,21 @@ Always maintain `latest_summary.md` with the most recent session info. Agents sh
 2. Update it when ending a session
 3. Optionally archive to dated file for history
 
+## Close-out entry (post-merge, required)
+
+When a task merges, the role that led the work appends a **close-out entry** to `latest_summary.md`. PM verifies the entry exists before marking the task done in `coordination.md` (see `.github/agents/pm.agent.md`). Format:
+
+```markdown
+## Close-out: <task-id> (YYYY-MM-DD, <role>)
+
+- **Shipped**: <one line: what is now true that wasn't before>
+- **Harder than expected**: <one line, or "nothing notable">
+- **Generalizable lesson**: <one line; "none" is a valid answer>
+- **Follow-up**: <link to issue/PR for any rule/ADR/guide update this implies, or "none">
+```
+
+Keep entries short. The point is searchable lessons, not a changelog — the git history is already the changelog.
+
 ## Token Efficiency
 
 - Keep summaries brief (< 100 lines)

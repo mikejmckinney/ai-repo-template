@@ -133,8 +133,10 @@ bash install.sh
 | `.context/rules/` | Domain constraints (never violate) |
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
+| `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
 | `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
 | `.context/state/feedback_template.md` | Stakeholder feedback capture template |
+| `.context/state/handoff_template.md` | Cross-session/cross-role handoff template (used at ~30 turns or before role swap) |
 | `.context/state/task_*.md` | Current task(s) for session handoff |
 | `.context/vision/` | Mockups and architecture diagrams |
 
@@ -173,7 +175,9 @@ bash install.sh
 | File | Purpose |
 |------|---------|
 | `.pre-commit-config.yaml.template` | Pre-commit hooks (linting, secrets) |
-| `docs/decisions/adr-template.md` | Architecture Decision Record template |
+| `docs/decisions/README.md` | ADR index, supersession discipline, what a well-documented ADR looks like |
+| `docs/decisions/adr-template.md` | Architecture Decision Record template (with "When to write" header) |
+| `.github/pull_request_template.md` | PR template with required doc-sync checklist |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets |
 | `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Analyst/Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |
