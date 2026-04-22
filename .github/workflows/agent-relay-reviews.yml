@@ -684,10 +684,18 @@ jobs:
 
             # 7a. Find the matching ISS-NN for this thread ID (best-effort
             # parse from the original Phase 4 table for the audit reply).
+            # Strip surrounding backticks from the table's Thread ID cell
+            # the same way the main extractor does, otherwise the equality
+            # check `cur == target` always fails when Copilot wraps IDs in
+            # backticks (e.g. `PRRT_…`) — which produces "(ISS-?)" in the
+            # audit reply (see #108).
             iss=$(printf '%s' "$phase4" | awk -F'|' -v target="$tid" '
               /^\|/ && !/^\|[[:space:]]*-+/ {
                 if (NF >= 7) {
-                  cur=$3; gsub(/^[[:space:]]+|[[:space:]]+$/, "", cur)
+                  cur=$3
+                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", cur)
+                  gsub(/`/, "", cur)
+                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", cur)
                   if (cur == target) {
                     out=$4; gsub(/^[[:space:]]+|[[:space:]]+$/, "", out)
                     print out; exit

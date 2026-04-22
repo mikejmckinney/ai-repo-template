@@ -420,6 +420,22 @@ done
 
 echo ""
 
+# --- Phase 4 fallback parser unit tests (issue #108 regression cover) ---
+echo "Running Phase 4 fallback parser unit tests..."
+if [[ -x scripts/test-phase4-fallback-parser.sh ]]; then
+    if bash scripts/test-phase4-fallback-parser.sh > /tmp/phase4-parser-test.log 2>&1; then
+        parser_passed=$(grep -c '^  ✅ ' /tmp/phase4-parser-test.log || echo 0)
+        pass "scripts/test-phase4-fallback-parser.sh ($parser_passed assertions passed)"
+    else
+        fail "scripts/test-phase4-fallback-parser.sh failed (see /tmp/phase4-parser-test.log)"
+        cat /tmp/phase4-parser-test.log
+    fi
+else
+    fail "scripts/test-phase4-fallback-parser.sh missing or not executable"
+fi
+
+echo ""
+
 # --- Issue Templates Check ---
 echo "Checking issue templates..."
 
