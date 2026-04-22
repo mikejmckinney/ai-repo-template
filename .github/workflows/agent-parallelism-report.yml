@@ -84,20 +84,18 @@ jobs:
           name="${REPO#*/}"
 
           # ── 1. Parse owned-path globs from agent_ownership.md ──
-          # The file's "Ownership Table" is a markdown table of the form:
-          #   | Role | Owned path globs | May also edit ... |
-          # We extract the second column for each row whose first column
-          # is a known role name. Globs in the second column may be
-          # wrapped in backticks and comma-separated. We split on commas,
-          # strip backticks and whitespace, and reduce each glob to its
-          # top-level prefix (everything before the first `/**` or `/*`).
-          # The top-level prefix is what we use for soft-overlap matching:
-          # two PRs are "soft" if they touch *different* files but share
-          # at least one top-level prefix.
+          # Delegated to scripts/parse-ownership-table.sh (single source
+          # of truth for the parser; the unit test
+          # scripts/test-parallelism-report-parser.sh calls the same
+          # script). The script emits one `role<TAB>top-level-prefix`
+          # line per (role, glob) pair, sorted unique. Top-level prefix
+          # is what we use for soft-overlap matching: two PRs are "soft"
+          # if they touch *different* files but share at least one
+          # top-level prefix.
           #
-          # Fail-soft: if parsing produces zero prefixes for any role,
-          # the report still posts but skips soft classification and
-          # logs a warning (per ADR-009: do not block on parser failure).
+          # Fail-soft: if parsing produces zero prefixes, the report
+          # still posts but skips soft classification and logs a
+          # warning (per ADR-009: do not block on parser failure).
           OWNERSHIP_FILE='.context/rules/agent_ownership.md'
           parse_warning=""
           if [[ ! -f "$OWNERSHIP_FILE" ]]; then
@@ -105,32 +103,7 @@ jobs:
             echo "::warning::$parse_warning"
             ROLE_PREFIXES=""
           else
-            ROLE_PREFIXES=$(awk -F'|' '
-              /^\| *(Analyst|Architect|Frontend|Backend|PM|QA|DevOps|Docs|Judge|Critic) +\|/ {
-                role=$2
-                gsub(/^[[:space:]]+|[[:space:]]+$/, "", role)
-                globs=$3
-                gsub(/`/, "", globs)
-                # Strip inline parenthetical qualifiers BEFORE the comma
-                # split. Some rows contain notes like
-                #   `docs/** (except docs/decisions/**, docs/research/**)`
-                # whose interior commas would otherwise corrupt the
-                # split. ADR-009 §Decision 2: prefer simple+noisy
-                # (false-positive softs) over precise+risky.
-                gsub(/ *\([^)]*\)/, "", globs)
-                # Split comma-separated globs.
-                n=split(globs, parts, ",")
-                for (i=1;i<=n;i++) {
-                  g=parts[i]
-                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", g)
-                  if (g == "" || g == "nothing (research-only)" || g ~ /^nothing/) continue
-                  # Reduce to top-level prefix: strip /** or /* suffix.
-                  sub(/\/\*\*$/, "", g)
-                  sub(/\/\*$/, "", g)
-                  if (g != "") print role "\t" g
-                }
-              }
-            ' "$OWNERSHIP_FILE" | sort -u)
+            ROLE_PREFIXES=$(./scripts/parse-ownership-table.sh < "$OWNERSHIP_FILE")
 
             if [[ -z "$ROLE_PREFIXES" ]]; then
               parse_warning="ownership table parsed to zero prefixes; soft-overlap classification disabled"
