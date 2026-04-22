@@ -4,20 +4,33 @@
 >   - `@claude follow .github/prompts/pr-resolve-all.md`
 >   - `@copilot follow .github/prompts/pr-resolve-all.md`
 >
-> Both agents will read this file and execute the Phase 1–3 procedure below.
+> Both agents will read this file and execute the Phase 1–4 procedure below
+> (Phase 4 is opt-in via the `auto-resolve-threads` label).
 > Claude is wired via `.github/workflows/claude.yml`'s `claude-mention` job.
 > Copilot follows the `@copilot follow <path>` rule documented in
 > `.github/copilot-instructions.md`.
+>
+> **Phase 4** (auto-resolve bot-authored review threads) is opt-in per PR
+> via the `auto-resolve-threads` label and runs only when that label is
+> present. It is intended to apply to both agents — Claude invoked via
+> `agent-fix-reviews.yml` or `@claude follow`, and Copilot invoked via
+> `agent-relay-reviews.yml` or `@copilot follow` — subject to token
+> permissions (the Copilot path currently cannot execute the required
+> GraphQL mutations; see issue #100).
 
 ---
 
 You are resolving every open issue, suggestion, and TODO in this pull request. Your job is to find them all, verify each one, fix the valid ones, and produce a traceable audit trail. Do not guess — verify everything against the actual code.
 
 > **How to run this prompt**: Read this entire file before starting. Execute
-> Phase 1, then Phase 2, then Phase 3, in that order. Do not interleave or
-> skip phases. If your cumulative response would exceed GitHub's per-comment
-> size limit, post sequential `Part 1/N`, `Part 2/N`, … comments rather than
-> truncating. Apply the Rules section to every phase.
+> Phase 1, then Phase 2. If the PR carries the `auto-resolve-threads` label,
+> execute Phase 4 **before** posting the Phase 3 Resolution Report so
+> Phase 3 can include the Phase 4 results. If the label is absent, skip
+> Phase 4 entirely and move directly from Phase 2 to Phase 3. Do not
+> interleave or skip the other phases. If your cumulative response would
+> exceed GitHub's per-comment size limit, post sequential `Part 1/N`,
+> `Part 2/N`, … comments rather than truncating. Apply the Rules section to
+> every phase.
 
 ## Phase 1: Build the Issue/Suggestion Index
 
@@ -139,6 +152,122 @@ After all items are processed, post a final summary comment:
 
 (continue for each item)
 ```
+
+## Phase 4: Resolve bot-authored review threads (opt-in)
+
+> **Only execute Phase 4 if the PR carries the `auto-resolve-threads` label.**
+> Without the label, skip this phase entirely and leave every review thread open for human review.
+
+This phase applies to **every agent that runs this prompt** — Claude via `.github/workflows/agent-fix-reviews.yml`, Copilot via `@copilot follow` comments posted by `.github/workflows/agent-relay-reviews.yml` or by a human, and any agent invoked through a direct `@claude follow` / `@copilot follow` mention. If you are running this prompt, the gate below applies to you.
+
+When the opt-in label is present, resolve review threads whose backing item cleared Phase 2 with status `✅ Fixed` and whose top-level review comment was authored by an allow-listed bot. The point is to trim noise from CI-only reviewers after the fix has landed — never to silence a human.
+
+### Allow-list (bot reviewers only)
+
+**Normalization rule:** GitHub's REST and GraphQL APIs disagree on bot login formatting — REST returns `gemini-code-assist[bot]`, while GraphQL often returns the same identity as `gemini-code-assist` (no `[bot]` suffix). Before comparing, **strip any trailing `[bot]` from the login** and then compare case-insensitively against the normalized allow-list below. This is the canonical matching rule for Phase 4; apply it whichever API (REST or GraphQL) you sourced the login from. (`.github/workflows/agent-relay-reviews.yml` has separate bot-detection logic that matches on either a `[bot]` suffix **or** a literal allow-regex rather than stripping and normalizing — do not rely on that workflow's matcher as a reference for Phase 4.)
+
+Normalized allow-list (match with `[bot]` stripped and compared case-insensitively):
+
+- `gemini-code-assist`
+- `copilot-pull-request-reviewer`
+- `copilot` (the Copilot SWE agent; REST returns `Copilot`, GraphQL returns `copilot`)
+- `chatgpt-codex-connector`
+- `codex` (the shorter form Codex sometimes emits)
+- `claude` — **only when the thread's root comment was authored directly by the `claude[bot]` / `claude` identity** (e.g., Claude's auto-review workflow posted the review). If a human opened the thread and `claude[bot]` merely replied (for example because the human wrote `@claude fix this` mid-thread), the root author is the human and Phase 4 must leave the thread open. The per-thread gate below already enforces "root author is allow-listed" — this bullet is a reminder that the root-author test is what keeps human-initiated dialogues from being silenced.
+
+Worked example: a GraphQL-returned author `gemini-code-assist` → strip `[bot]` (no-op) → lowercase → matches `gemini-code-assist` ✅. A REST-returned author `gemini-code-assist[bot]` → strip `[bot]` → `gemini-code-assist` → lowercase → matches ✅.
+
+Threads opened by any other login — including humans, unknown bots, and GitHub Actions user accounts — **must be left open**, even if the corresponding Phase 2 item was fixed.
+
+### Per-thread gate
+
+Resolve a thread only when **all** of the following hold:
+
+1. The thread's root comment was authored by an allow-listed bot.
+2. The Phase 2 status for the matching `ISS-NN` item is `✅ Fixed` (never `⚠️`, `❌`, `Already resolved`, or `Needs clarification`).
+3. Phase 2 verification passed — tests, lint, build, and typecheck were all green for the batch that contained the fix.
+4. The thread is not already resolved (`isResolved == false`).
+
+Note: do **not** skip threads solely because they are `isOutdated`. Phase 4 runs **after** the fix commit is pushed, and a thread's commented line is frequently moved or replaced by that commit, which flips `isOutdated` to `true`. Condition 2 (Phase 2 marked the item `✅ Fixed`) is what guarantees the concern was actually addressed; `isOutdated` is just a side-effect of the fix and is not a blocker. `agent-auto-merge.yml` blocks on `isResolved == false` without considering `isOutdated`, so leaving outdated-but-fixed bot threads unresolved would defeat the entire purpose of Phase 4.
+
+If any condition fails, skip the thread and record why in the Phase 4 log. Do not attempt to resolve threads you did not fix in this run.
+
+### Resolve procedure
+
+For each eligible thread:
+
+1. **Fetch the thread node ID** via the GraphQL `pullRequest.reviewThreads` query. The REST review-comments endpoint does not return the node ID required by `resolveReviewThread`, so GraphQL is mandatory here. Example:
+
+   ```graphql
+   query($owner:String!, $repo:String!, $num:Int!) {
+     repository(owner:$owner, name:$repo) {
+       pullRequest(number:$num) {
+         reviewThreads(first:100) {
+           nodes {
+             id
+             isResolved
+             isOutdated
+             comments(first:1) {
+               nodes { author { login } path line databaseId }
+             }
+           }
+         }
+       }
+     }
+   }
+   ```
+
+   Paginate if the PR has more than 100 threads.
+
+2. **Post an audit-trail reply** on the thread before resolving, so the resolution is traceable without digging through workflow logs. Use `addPullRequestReviewThreadReply` (GraphQL) or the REST `POST /repos/{owner}/{repo}/pulls/{num}/comments/{comment_id}/replies` endpoint. Reply body format:
+
+   ```
+   Resolved by <agent> in <SHORT_SHA> (ISS-NN).
+   If this wasn't addressed correctly, re-open the thread.
+   ```
+
+   Substitute:
+   - `<agent>` — the agent that ran this procedure. Use `claude (agent-fix-reviews)` when invoked by `.github/workflows/agent-fix-reviews.yml`, `copilot (via agent-relay-reviews)` when invoked by an `@copilot follow` comment from `.github/workflows/agent-relay-reviews.yml`, `claude (@claude mention)` / `copilot (@copilot mention)` when invoked by a direct human mention, or your own agent name if invoked by other tooling.
+   - `<SHORT_SHA>` — the resolving commit SHA (first 7 chars).
+   - `ISS-NN` — the ID from your Phase 1 index.
+
+   If you know your fix-cycle number (e.g. the Claude path exposes cycle `N/3`), append `, cycle N/3` after the `ISS-NN` for additional traceability. Omit it if unknown.
+
+3. **Fire the `resolveReviewThread` mutation** with the thread node ID:
+
+   ```graphql
+   mutation($id:ID!) {
+     resolveReviewThread(input:{threadId:$id}) { thread { id isResolved } }
+   }
+   ```
+
+   Confirm `isResolved: true` in the response. If the mutation fails, leave the thread open and log the error — do not retry silently.
+
+### Phase 4 report
+
+Because Phase 4 runs **before** Phase 3 posts the Resolution Report (see "How to run this prompt" at the top of this file), include the following section within the Phase 3 Resolution Report itself, listing every thread considered. Do not post Phase 4 as a separate comment.
+
+```markdown
+### Phase 4 — Thread auto-resolution
+
+Label `auto-resolve-threads` present: ✅
+
+| Thread | ISS | Author | Action | Notes |
+|--------|-----|--------|--------|-------|
+| [link](#) | ISS-01 | gemini-code-assist[bot] | ✅ Resolved | Fixed in abc1234 |
+| [link](#) | ISS-02 | copilot-pull-request-reviewer[bot] | ✅ Resolved | Fixed in abc1234 |
+| [link](#) | ISS-03 | human-reviewer | ⏭️ Skipped | Human-authored — left open |
+| [link](#) | ISS-04 | gemini-code-assist[bot] | ⏭️ Skipped | Phase 2 status was "Needs clarification" |
+```
+
+If the label is absent, include a single line instead: `Label \`auto-resolve-threads\` not present — skipping thread resolution.`
+
+### Safety rules
+
+- **Never resolve a human-authored thread**, even if you fixed what they asked for. Humans expect to click Resolve themselves.
+- **Never resolve a thread whose Phase 2 item is not `✅ Fixed`.** "Not reproducible" and "Out of scope" still warrant human acknowledgement.
+- **Never resolve a thread without first posting the audit reply.** The reply is the paper trail; resolution without it leaves reviewers guessing.
+- **Do not resolve threads from a previous fix cycle.** Scope Phase 4 to items fixed in the current run only — the `ISS-NN` IDs from this run's Phase 1 index are your scope.
 
 ## Rules
 

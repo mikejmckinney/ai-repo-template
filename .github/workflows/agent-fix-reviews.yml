@@ -364,10 +364,26 @@ jobs:
                items.** Do not fold it into the Phase-3 Resolution Report.
             3. For each item: verify it exists in the current code, implement the fix,
                run verification (tests, lint, build).
-            4. Post the Phase-3 Resolution Report as a distinct, later PR
-               comment after fixes are pushed. The index (step 2) and the
-               resolution report (step 4) must be two separate comments, in
-               that order.
+            4. **Phase 4 (opt-in) — runs BEFORE Phase 3 posts**: If this
+               PR carries the `auto-resolve-threads` label, execute
+               Phase 4 from the prompt file — for each thread whose
+               root comment was authored by an allow-listed bot and
+               whose matching `ISS-NN` status is `✅ Fixed`, post an
+               audit-trail reply citing the resolving commit SHA and
+               then fire the `resolveReviewThread` GraphQL mutation.
+               Never resolve human-authored threads; skip the entire
+               phase if the label is absent. Collect the Phase 4
+               results (resolved / skipped / errored threads) so you
+               can include them as a subsection of the Phase 3
+               Resolution Report in step 5.
+            5. Post the Phase-3 Resolution Report as a distinct, later
+               PR comment after fixes are pushed **and** Phase 4 (if
+               applicable) has completed. When the
+               `auto-resolve-threads` label was present, the report
+               must include the Phase 4 subsection listing every
+               thread considered. The index (step 2) and the
+               resolution report (step 5) must be two separate
+               comments, in that order.
 
             Rules:
             - Read `AGENTS.md` first for repo conventions.

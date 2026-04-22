@@ -170,7 +170,7 @@ If `main` has branch protection requiring approvals:
 
 ### 7. Create labels
 
-The pipeline labels below (`auto-merge`, `copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) are created automatically by `scripts/setup.sh`. Manual creation via **Settings → Labels** is only needed if you skipped that step or the setup.sh label-creation call failed (e.g., missing repo permissions).
+The labels in the table below are created automatically by `scripts/setup.sh`. Manual creation via **Settings → Labels** is only needed if you skipped that step or the setup.sh label-creation call failed (e.g., missing repo permissions).
 
 | Label | Color | Purpose |
 |-------|-------|---------|
@@ -178,6 +178,8 @@ The pipeline labels below (`auto-merge`, `copilot:ready`, `copilot:in-progress`,
 | `auto-merge` | `#0E8A16` (green) | Opt PR in to `agent-auto-merge.yml` (applies to any branch) |
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
 | `claude-fix` | `#FBCA04` (amber) | Opt PR in to `agent-fix-reviews.yml` (Claude resolution) |
+| `claude-review` | `#1D76DB` (blue) | Opt PR in to `claude.yml` auto-review (invokes judge subagent on open/reopen/ready_for_review) |
+| `auto-resolve-threads` | `#0E8A16` (green) | Also auto-resolve bot-authored review threads after the resolution agent finishes. **Currently effective on the Claude path only** (`claude-fix` or direct `@claude follow` of `pr-resolve-all.md`). On the Copilot path the gate logic runs but the GraphQL mutations return `FORBIDDEN` — see issue #100. |
 | `copilot-relay` | `#5319E7` (purple) | Opt PR in to legacy `agent-relay-reviews.yml` (Copilot resolution) |
 | `copilot:ready` | `#0E8A16` (green) | Assign Copilot when budget allows (applied to backlog issues unless `auto_assign: false`) |
 | `copilot:in-progress` | `#1D76DB` (blue) | Assigned to Copilot; counts toward `MAX_COPILOT_CONCURRENT` |
@@ -193,6 +195,34 @@ The pipeline labels below (`auto-merge`, `copilot:ready`, `copilot:in-progress`,
   (`.github/workflows/**`) are auto-delegated to Copilot via an
   `@copilot` comment, because the Claude app token cannot push workflow
   edits.
+- Add `auto-resolve-threads` (in addition to `claude-fix`, or alongside
+  a direct `@claude follow` mention of `pr-resolve-all.md`) to also
+  auto-resolve review threads opened by allow-listed bots. Phase 4
+  matches reviewer identity by stripping any trailing `[bot]` from the
+  login and comparing case-insensitively against the normalized
+  allow-list (`gemini-code-assist`, `copilot-pull-request-reviewer`,
+  `copilot`, `chatgpt-codex-connector`, `codex`, `claude`), once Phase 2
+  marks the matching `ISS-NN` item as `✅ Fixed` with passing
+  verification. Human-authored threads are never auto-resolved. Phase 4
+  is defined in `.github/prompts/pr-resolve-all.md`.
+  > **Known limitation (as of ADR-007 / V3 verification on PR #99):** the
+  > Copilot path (`copilot-relay` or `@copilot follow`) runs Phase 4's
+  > gate logic correctly but cannot fire the GraphQL mutations — the
+  > Copilot cloud agent token returns `FORBIDDEN` on
+  > `addPullRequestReviewThreadReply` and `resolveReviewThread`. Threads
+  > stay open even though the fix commit lands. Use the Claude path if
+  > you need auto-resolution today; tracked in
+  > [issue #100](https://github.com/mikejmckinney/ai-repo-template/issues/100).
+- **Label-application gotcha**: apply `copilot-relay` and
+  `auto-resolve-threads` **one at a time** (e.g., in the GitHub UI)
+  rather than in a single API call. A single API call that adds both
+  labels fires two `pull_request.labeled` events in quick succession;
+  `agent-relay-reviews.yml` uses `concurrency.cancel-in-progress: true`,
+  so the first (matching) run gets cancelled by the second
+  (non-matching) event and the `@copilot follow` comment is never
+  posted. Applying labels sequentially — with `copilot-relay` last —
+  avoids the race. No equivalent race on the Claude path
+  (`agent-fix-reviews.yml` doesn't use `cancel-in-progress`).
 - Add `copilot-relay` to enable the legacy relay path that forwards bot
   review comments to Copilot. Both labels can be combined when you want
   both paths running, though typically you'll pick one.
@@ -321,6 +351,8 @@ Assign all three to `@copilot` at once. Issues 5 and 6 should wait.
 | Want the PR to auto-merge when ready | Add `auto-merge` label to the PR |
 | Pause auto-merge on a labeled PR | Remove the `auto-merge` label |
 | Enable Claude review resolution on this PR | Add `claude-fix` label |
+| Also auto-resolve bot-authored review threads after the agent fixes them | Add `auto-resolve-threads` label (effective on the Claude path today; Copilot path is non-functional pending [#100](https://github.com/mikejmckinney/ai-repo-template/issues/100)) |
+| Enable Copilot-relay + auto-resolve-threads together | Apply the two labels **one at a time** in the UI (`copilot-relay` last) to avoid the concurrency race that cancels the relay — see the Label-application gotcha note above |
 | Use Copilot (not Claude) for review resolution | Add `copilot-relay` label |
 | Fix cycle exhausted (3/3) | Review remaining comments yourself, merge manually |
 | Copilot's implementation is wrong | Comment on the PR with corrections, Copilot picks them up |
