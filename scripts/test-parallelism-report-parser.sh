@@ -251,9 +251,9 @@ if [[ -f "$LIVE_OWNERSHIP" ]]; then
   echo ""
   echo "── Role-list sync check ──"
 
-  parser_roles=$(./scripts/parse-ownership-table.sh --list-roles | sort -u)
+  parser_roles=$("$(dirname "$0")/parse-ownership-table.sh" --list-roles | sort -u)
   table_roles=$(awk -F'|' '
-    /^\| *[A-Z][A-Za-z]+ +\|/ {
+    /^\| *[A-Z][A-Za-z]* +\|/ {
       role=$2
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", role)
       if (role != "" && role != "Role" && role != "File") print role

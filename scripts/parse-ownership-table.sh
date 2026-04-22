@@ -40,10 +40,38 @@ set -euo pipefail
 # "Role-list sync" block).
 ROLES='Analyst|Architect|Frontend|Backend|PM|QA|DevOps|Docs|Judge|Critic'
 
-if [[ "${1:-}" == "--list-roles" ]]; then
-  printf '%s\n' "$ROLES" | tr '|' '\n'
-  exit 0
+usage() {
+  cat >&2 <<'EOF'
+Usage: parse-ownership-table.sh [--list-roles]
+
+  (no args)      Read markdown on stdin, emit `role<TAB>prefix` lines.
+  --list-roles   Print the canonical role list (one per line).
+EOF
+}
+
+if (( $# > 1 )); then
+  echo "parse-ownership-table.sh: too many arguments" >&2
+  usage
+  exit 2
 fi
+
+case "${1:-}" in
+  '')
+    ;;  # default mode: stdin -> role/prefix
+  --list-roles)
+    printf '%s\n' "$ROLES" | tr '|' '\n'
+    exit 0
+    ;;
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "parse-ownership-table.sh: unknown argument: $1" >&2
+    usage
+    exit 2
+    ;;
+esac
 
 awk -F'|' -v roles="$ROLES" '
   $0 ~ "^\\| *(" roles ") +\\|" {
