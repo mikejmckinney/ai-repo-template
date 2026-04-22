@@ -114,7 +114,9 @@ Steps:
 The new job has its own `concurrency` group
 (`phase4-fallback-${{ github.event.issue.number }}`) and its own
 permissions block (`pull-requests: write`, `contents: read`). The
-existing `relay` job is not modified.
+existing `relay` job's `concurrency` block is moved from the
+workflow level to the job level so the two jobs can run
+concurrently on the same PR without cancelling each other.
 
 ## Options Considered
 
