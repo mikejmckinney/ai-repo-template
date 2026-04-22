@@ -740,3 +740,184 @@ jobs:
 
           printf '%s' "$summary" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
           echo "✅ Phase 4 fallback complete."
+
+  # ──────────────────────────────────────────────────────────────────
+  # copilot-stall-watcher
+  # ──────────────────────────────────────────────────────────────────
+  # Fixes the failure mode found during V7 (issue #107): Copilot's cloud
+  # SWE-agent session sometimes ends after pushing a fix commit and
+  # posting only the Phase 1 Issue Index, never emitting the Phase 3
+  # Resolution Report. The phase4-fallback job triggers on the Phase 3
+  # comment itself, so when that comment never arrives the entire
+  # auto-resolve pipeline silently stalls and bot threads stay open.
+  #
+  # This watcher fires after a successful relay and waits for Copilot's
+  # full pipeline to complete. If after ~24 minutes the Issue Index has
+  # been posted but the Resolution Report has NOT, it posts one (and
+  # only one, per relay cycle) directed nudge asking Copilot to finish.
+  # That nudge is itself an `@copilot follow` comment, so it re-engages
+  # the same SWE agent.
+  #
+  # Idempotency: keyed on the relay fingerprint marker so each relay
+  # cycle produces at most one nudge ever, even across re-runs.
+  #
+  # Cost: up to ~24 ubuntu-runner-minutes per relay cycle (mostly
+  # sleeping). Concurrency-cancelled by later relays on the same PR.
+  #
+  # See ADR-008 §"Implementation checklist" and #107 for context.
+  copilot-stall-watcher:
+    needs: relay
+    if: >
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'copilot-relay') &&
+      (
+        (github.event_name == 'pull_request_review' &&
+         (github.event.review.state == 'changes_requested' ||
+          github.event.review.state == 'commented')) ||
+        (github.event_name == 'pull_request' &&
+         github.event.action == 'labeled' &&
+         github.event.label.name == 'copilot-relay')
+      )
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    concurrency:
+      group: copilot-stall-watcher-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+
+    permissions:
+      pull-requests: read
+      contents: read
+
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      REPO: ${{ github.repository }}
+
+    steps:
+      - name: Watch for Copilot Phase 3 Resolution Report
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+        run: |
+          set -euo pipefail
+
+          # ── 1. Pin to the most recent relay comment on this PR. The
+          # nudge is keyed on this comment's fingerprint so the dedup
+          # is per-relay-cycle, not per-PR. ──
+          relay_body=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+            --jq '[.comments[] | select(.body | contains("📋 **Review Relay"))] | last | .body // ""')
+
+          if [[ -z "$relay_body" ]]; then
+            echo "No relay comment found on PR #$PR_NUMBER. Nothing to watch."
+            exit 0
+          fi
+
+          relay_fp=$(printf '%s' "$relay_body" \
+            | grep -oE '<!-- relay-fingerprint:[a-f0-9]+ -->' \
+            | head -1 \
+            | sed -E 's/<!-- relay-fingerprint:([a-f0-9]+) -->/\1/')
+
+          if [[ -z "$relay_fp" ]]; then
+            echo "Latest relay comment has no fingerprint marker. Aborting watcher."
+            exit 0
+          fi
+
+          echo "Watching relay fingerprint: $relay_fp"
+
+          # ── 2. Initial settle: give Copilot time to start posting.
+          # On V7 the first Copilot comment landed ~2-3 minutes after
+          # the relay; the Issue Index typically posts within ~5 minutes
+          # and the Resolution Report within ~10. 8 minutes is a
+          # conservative starting point that avoids most spurious early
+          # checks. ──
+          echo "Sleeping 480s to let Copilot start its pipeline..."
+          sleep 480
+
+          # ── 3. Poll every 2 minutes for up to 8 cycles (~16 more
+          # minutes, ~24 minutes total). Exit early on success. ──
+          MAX_POLLS=8
+          POLL_INTERVAL=120
+
+          # Patterns matching the canonical comment shapes that Copilot
+          # has historically used for these phases. Both `##` and `###`
+          # forms appear in practice (V7 evidence).
+          INDEX_PATTERN='## (Phase 1: )?Issue/Suggestion Index'
+          REPORT_PATTERN='## (Phase 3: )?Resolution Report|### Phase 4 — Thread auto-resolution'
+
+          for i in $(seq 1 "$MAX_POLLS"); do
+            comments=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+              --jq '.comments')
+
+            # Only consider Copilot-authored comments posted AFTER the
+            # latest relay (use the relay fingerprint's appearance as a
+            # rough timestamp anchor; comments are returned in created
+            # order so we can scan tail-first).
+            copilot_comments=$(printf '%s' "$comments" | jq -r --arg fp "$relay_fp" '
+              # Find the index of the most recent relay comment by
+              # looking for our fingerprint marker.
+              (map(.body | contains("<!-- relay-fingerprint:" + $fp + " -->")) | index(true)) as $relay_idx
+              | if $relay_idx == null then []
+                else [
+                  .[$relay_idx + 1 :][]
+                  | select((.user.login // "") | test("^copilot(\\[bot\\])?$"; "i"))
+                  | .body
+                ]
+                end
+              | .[]
+            ')
+
+            has_index="false"
+            has_report="false"
+
+            if printf '%s' "$copilot_comments" | grep -qE "$INDEX_PATTERN"; then
+              has_index="true"
+            fi
+            if printf '%s' "$copilot_comments" | grep -qE "$REPORT_PATTERN"; then
+              has_report="true"
+            fi
+
+            echo "Poll $i/$MAX_POLLS: index=$has_index report=$has_report"
+
+            if [[ "$has_report" == "true" ]]; then
+              echo "✅ Copilot posted Resolution Report. No nudge needed."
+              exit 0
+            fi
+
+            if [[ "$i" -lt "$MAX_POLLS" ]]; then
+              sleep "$POLL_INTERVAL"
+            fi
+          done
+
+          # ── 4. Window expired. Decide whether to nudge. Only nudge if
+          # Copilot got partway (Index posted) but stopped before Phase
+          # 3. If the Index never appeared, Copilot didn't engage at
+          # all — that's a different failure mode and a nudge won't
+          # help. ──
+          if [[ "$has_index" != "true" ]]; then
+            echo "ℹ️  Copilot never posted an Issue Index — likely never engaged. Not nudging (a stall nudge would be inappropriate here)."
+            exit 0
+          fi
+
+          # ── 5. Idempotency: ensure we only nudge once per relay cycle.
+          nudge_marker="<!-- copilot-stall-nudge:${relay_fp} -->"
+          prev_nudge=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+            --jq "[.comments[] | select(.body | contains(\"$nudge_marker\"))] | length" 2>/dev/null || echo "0")
+          if [[ "$prev_nudge" -gt 0 ]]; then
+            echo "Already nudged for relay $relay_fp. Skipping."
+            exit 0
+          fi
+
+          # ── 6. Post the nudge as @copilot follow so the SWE agent
+          # picks it up and resumes from where it left off. ──
+          nl=$'\n'
+          body="@copilot follow .github/prompts/pr-resolve-all.md${nl}${nl}"
+          body+="Your previous session on this PR posted the **Phase 1 Issue Index** and pushed a fix commit, but did not emit the **Phase 3 Resolution Report**. The relay-fallback job watches for that report to retry any \`⚠️ Errored\` Phase 4 mutations under \`CLAUDE_PAT\` — without it, bot review threads stay open even though the underlying issues are fixed.${nl}${nl}"
+          body+="Please complete the remaining phases:${nl}"
+          body+="- **Phase 2**: Confirm CI is green for the fix commit you already pushed.${nl}"
+          body+="- **Phase 3**: Post the Resolution Report as a separate comment with the canonical \`## Resolution Report\` heading.${nl}"
+          body+="- **Phase 4**: Run the thread auto-resolution mutations and include the \`Thread ID\` column in the table per the prompt's Phase 4 spec.${nl}${nl}"
+          body+="${nudge_marker}${nl}"
+          body+="_Posted automatically by \`copilot-stall-watcher\` (agent-relay-reviews.yml) — see ADR-008 and #107._"
+
+          printf '%s' "$body" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
+          echo "✅ Posted stall nudge for relay $relay_fp."
