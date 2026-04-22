@@ -68,6 +68,13 @@ on:
   # so other label events don't trigger a relay.
   pull_request:
     types: [labeled]
+  # Phase 4 fallback: when Copilot posts its Phase 3 Resolution Report
+  # comment, the `phase4-fallback` job below scans it for `⚠️ Errored`
+  # rows and retries the GraphQL mutations under CLAUDE_PAT. Filtered
+  # to copilot-authored comments on `copilot-relay` PRs at the job
+  # level so unrelated PR comments are no-ops.
+  issue_comment:
+    types: [created]
   # NOTE: `pull_request_review_comment` is intentionally NOT listed here.
   # A review with N inline comments fires N comment events + 1 review
   # event. Triggering on both burns the 3-cycle relay budget fast — each
@@ -77,9 +84,10 @@ on:
   # and is sufficient: the relay step reads ALL unresolved threads via
   # GraphQL, so inline comments are still picked up.
 
-concurrency:
-  group: relay-reviews-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+# Concurrency is set per-job: the `relay` and `phase4-fallback` jobs
+# need different group keys (different event payloads expose the PR
+# number differently — `pull_request.number` vs `issue.number`) and
+# must not cancel each other.
 
 jobs:
   relay:
@@ -104,6 +112,10 @@ jobs:
 
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    concurrency:
+      group: relay-reviews-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
 
     permissions:
       pull-requests: read
@@ -429,8 +441,8 @@ jobs:
           comment+="Apply that procedure to the review feedback collected below. In particular:${nl}${nl}"
           comment+="1. **Phase 1 — Issue/Suggestion Index**: Build a sequentially-numbered index (\`ISS-01\`, \`ISS-02\`, …) of every item below, and **post it as a standalone PR comment before any fixes or commits**, regardless of count. Do not fold the index into the resolution report.${nl}"
           comment+="2. **Phase 2 — Verify, Fix, Validate**: For each item, link → verify → fix → run tests/lint/build → assign a status.${nl}"
-          comment+="3. **Phase 4 — Auto-resolve bot-authored threads (opt-in, runs BEFORE Phase 3 posts)**: If the PR carries the \`auto-resolve-threads\` label, run Phase 4 as defined in the prompt file — post an audit-trail reply and fire the \`resolveReviewThread\` mutation for each thread whose root comment was authored by an allow-listed bot and whose matching \`ISS-NN\` status is \`✅ Fixed\`. Skip this phase entirely if the label is absent, and never resolve human-authored threads. Collect the Phase 4 results (resolved / skipped / errored threads) so Phase 3 can include them as a subsection of its report.${nl}"
-          comment+="4. **Phase 3 — Resolution Report**: After all fixes are pushed **and** Phase 4 (if applicable) has completed, post a separate, later PR comment with the final summary table, per-item details, and — when the \`auto-resolve-threads\` label was present — the Phase 4 subsection.${nl}${nl}"
+          comment+="3. **Phase 4 — Auto-resolve bot-authored threads (runs BEFORE Phase 3 posts)**: Run Phase 4 as defined in the prompt file — post an audit-trail reply and fire the \`resolveReviewThread\` mutation for each thread whose root comment was authored by an allow-listed bot and whose matching \`ISS-NN\` status is \`✅ Fixed\`. Never resolve human-authored threads. The Phase 4 report MUST include the canonical \`Thread ID\` column (GraphQL node ID, \`PRRT_…\`); on this Copilot path the mutations may return \`FORBIDDEN\` (your token lacks \`pull-requests:write\`), in which case mark those rows \`⚠️ Errored\` and the relay-fallback job will retry them under \`CLAUDE_PAT\`. Collect the Phase 4 results so Phase 3 can include them as a subsection of its report.${nl}"
+          comment+="4. **Phase 3 — Resolution Report**: After all fixes are pushed **and** Phase 4 has completed, post a separate, later PR comment with the final summary table, per-item details, and the Phase 4 subsection.${nl}${nl}"
           comment+="The Phase-1 Index and Phase-3 Resolution Report MUST be two distinct PR comments, in that order — same shape Claude uses on the default fix path.${nl}${nl}"
           comment+="---${nl}${nl}"
 
@@ -462,3 +474,168 @@ jobs:
           printf '%s' "$comment" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
 
           echo "✅ Relayed $total bot review comments to Copilot via @copilot mention."
+
+  # ──────────────────────────────────────────────────────────────────
+  # phase4-fallback
+  # ──────────────────────────────────────────────────────────────────
+  # Runs when Copilot posts its Phase 3 Resolution Report. Parses the
+  # Phase 4 table for `⚠️ Errored` rows (Copilot's mutations returned
+  # FORBIDDEN because its cloud-agent token lacks `pull-requests:write`)
+  # and re-fires the GraphQL audit-reply + resolveReviewThread mutations
+  # under CLAUDE_PAT. Idempotent via fingerprint of the errored Thread
+  # IDs — re-runs are no-ops when the set is unchanged.
+  #
+  # See ADR-008 for the design rationale and #100 for the FORBIDDEN
+  # evidence on the Copilot path.
+  phase4-fallback:
+    if: >
+      github.event_name == 'issue_comment' &&
+      github.event.issue.pull_request != null &&
+      github.event.repository.full_name == github.repository &&
+      contains(github.event.issue.labels.*.name, 'copilot-relay') &&
+      (github.event.comment.user.login == 'copilot' ||
+       github.event.comment.user.login == 'Copilot' ||
+       github.event.comment.user.login == 'copilot-swe-agent[bot]') &&
+      contains(github.event.comment.body, '### Phase 4 — Thread auto-resolution')
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    concurrency:
+      group: phase4-fallback-${{ github.event.issue.number }}
+      cancel-in-progress: false
+
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Run Phase 4 fallback
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+        run: |
+          set -euo pipefail
+
+          owner="${REPO%/*}"
+          name="${REPO#*/}"
+
+          # ── 1. Re-fetch comment body (event payload may truncate) ──
+          body=$(gh api "/repos/${REPO}/issues/comments/${COMMENT_ID}" --jq '.body')
+          if [[ -z "$body" ]]; then
+            echo "❌ Empty comment body — abort."
+            exit 1
+          fi
+
+          # ── 2. Extract the Phase 4 section ──
+          # Slice from the Phase 4 header to the next `### ` header (or EOF).
+          phase4=$(printf '%s' "$body" | awk '
+            /^### Phase 4 — Thread auto-resolution/ {flag=1; next}
+            flag && /^### / {exit}
+            flag {print}')
+
+          if [[ -z "$phase4" ]]; then
+            echo "Phase 4 section not found in comment body. Nothing to do."
+            exit 0
+          fi
+
+          # ── 3. Parse table rows where Action == ⚠️ Errored ──
+          # Expected columns (after stripping leading/trailing pipes):
+          # Thread | Thread ID | ISS | Author | Action | Notes
+          errored_ids=$(printf '%s' "$phase4" | awk -F'|' '
+            /^\|/ && !/^\|[[:space:]]*-+/ && !/^\|[[:space:]]*Thread[[:space:]]*\|/ {
+              # NF includes leading + trailing empty fields from the outer pipes.
+              # Columns 2..7 = Thread, Thread ID, ISS, Author, Action, Notes.
+              if (NF >= 7) {
+                action=$6
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", action)
+                if (action ~ /Errored/) {
+                  tid=$3
+                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", tid)
+                  if (tid ~ /^PRRT_/) print tid
+                }
+              }
+            }')
+
+          if [[ -z "$errored_ids" ]]; then
+            echo "✅ No errored rows in Phase 4 report. Nothing to retry."
+            exit 0
+          fi
+
+          # ── 4. Compute fingerprint and dedup against prior fallback comments ──
+          fingerprint=$(printf '%s' "$errored_ids" | sort -u | sha256sum | awk '{print $1}')
+          echo "Fallback fingerprint: $fingerprint"
+
+          prev=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+            --jq "[.comments[] | select(.body | contains(\"<!-- relay-fallback-fingerprint:${fingerprint} -->\"))] | length" 2>/dev/null || echo "0")
+          if [[ "$prev" -gt 0 ]]; then
+            echo "Fallback already ran for fingerprint $fingerprint. Skipping."
+            exit 0
+          fi
+
+          # ── 5. Get latest commit SHA on PR head for audit reply ──
+          short_sha=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid --jq '.headRefOid' | cut -c1-7)
+
+          # ── 6. For each errored thread, post audit reply + resolve ──
+          nl=$'\n'
+          summary="🔁 **Phase 4 fallback (cycle 1)** — relayed under \`CLAUDE_PAT\` because the Copilot cloud-agent token returned \`FORBIDDEN\` on the Phase 4 mutations.${nl}"
+          summary+="<!-- relay-fallback-fingerprint:${fingerprint} -->${nl}${nl}"
+          summary+="| Thread ID | Action | Result |${nl}"
+          summary+="|-----------|--------|--------|${nl}"
+
+          while IFS= read -r tid; do
+            [[ -z "$tid" ]] && continue
+            row_result=""
+
+            # 6a. Find the matching ISS-NN for this thread ID (best-effort
+            # parse from the original Phase 4 table for the audit reply).
+            iss=$(printf '%s' "$phase4" | awk -F'|' -v target="$tid" '
+              /^\|/ && !/^\|[[:space:]]*-+/ {
+                if (NF >= 7) {
+                  cur=$3; gsub(/^[[:space:]]+|[[:space:]]+$/, "", cur)
+                  if (cur == target) {
+                    out=$4; gsub(/^[[:space:]]+|[[:space:]]+$/, "", out)
+                    print out; exit
+                  }
+                }
+              }')
+            [[ -z "$iss" ]] && iss="ISS-?"
+
+            audit_body="Resolved by relay-fallback (agent-relay-reviews) in ${short_sha} (${iss})."$'\n'"If this wasn't addressed correctly, re-open the thread."
+
+            # 6b. POST audit reply via GraphQL.
+            reply_resp=$(gh api graphql \
+              -f query='mutation($id:ID!, $body:String!) { addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$id, body:$body}) { comment { id } } }' \
+              -f id="$tid" \
+              -f body="$audit_body" 2>&1) || {
+              echo "Audit reply failed for $tid: $reply_resp"
+              row_result="❌ audit reply failed"
+              summary+="| \`${tid}\` | reply | ${row_result} |${nl}"
+              continue
+            }
+
+            # 6c. Fire resolveReviewThread.
+            resolve_resp=$(gh api graphql \
+              -f query='mutation($id:ID!) { resolveReviewThread(input:{threadId:$id}) { thread { id isResolved } } }' \
+              -f id="$tid" 2>&1) || {
+              echo "Resolve failed for $tid: $resolve_resp"
+              row_result="❌ resolve failed (audit reply posted)"
+              summary+="| \`${tid}\` | resolve | ${row_result} |${nl}"
+              continue
+            }
+
+            is_resolved=$(printf '%s' "$resolve_resp" | jq -r '.data.resolveReviewThread.thread.isResolved // false')
+            if [[ "$is_resolved" == "true" ]]; then
+              row_result="✅ resolved"
+            else
+              row_result="❌ resolveReviewThread returned isResolved=${is_resolved}"
+            fi
+            summary+="| \`${tid}\` | reply+resolve | ${row_result} |${nl}"
+          done <<< "$errored_ids"
+
+          summary+="${nl}_See ADR-008 for why this fallback exists._"
+
+          printf '%s' "$summary" | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
+          echo "✅ Phase 4 fallback complete."

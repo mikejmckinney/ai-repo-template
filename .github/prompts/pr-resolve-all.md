@@ -4,31 +4,31 @@
 >   - `@claude follow .github/prompts/pr-resolve-all.md`
 >   - `@copilot follow .github/prompts/pr-resolve-all.md`
 >
-> Both agents will read this file and execute the Phase 1–4 procedure below
-> (Phase 4 is opt-in via the `auto-resolve-threads` label).
+> Both agents will read this file and execute the Phase 1–4 procedure below.
 > Claude is wired via `.github/workflows/claude.yml`'s `claude-mention` job.
 > Copilot follows the `@copilot follow <path>` rule documented in
 > `.github/copilot-instructions.md`.
 >
-> **Phase 4** (auto-resolve bot-authored review threads) is opt-in per PR
-> via the `auto-resolve-threads` label and runs only when that label is
-> present. It is intended to apply to both agents — Claude invoked via
-> `agent-fix-reviews.yml` or `@claude follow`, and Copilot invoked via
-> `agent-relay-reviews.yml` or `@copilot follow` — subject to token
-> permissions (the Copilot path currently cannot execute the required
-> GraphQL mutations; see issue #100).
+> **Phase 4** (auto-resolve bot-authored review threads) runs by default
+> on every invocation of this prompt. The per-thread gate (allow-listed
+> bot author + Phase 2 status `✅ Fixed` + verification green + thread
+> not already resolved) is the only safety mechanism — there is no
+> opt-in label. On the Copilot path, the GraphQL mutations may return
+> `FORBIDDEN` because the Copilot cloud agent token lacks
+> `pull-requests:write` in this repo; in that case, the relay-fallback
+> job in `.github/workflows/agent-relay-reviews.yml` re-fires the
+> mutations under `CLAUDE_PAT` after parsing the `⚠️ Errored` rows from
+> the Phase 4 report table. See ADR-008 for the design.
 
 ---
 
 You are resolving every open issue, suggestion, and TODO in this pull request. Your job is to find them all, verify each one, fix the valid ones, and produce a traceable audit trail. Do not guess — verify everything against the actual code.
 
 > **How to run this prompt**: Read this entire file before starting. Execute
-> Phase 1, then Phase 2. If the PR carries the `auto-resolve-threads` label,
-> execute Phase 4 **before** posting the Phase 3 Resolution Report so
-> Phase 3 can include the Phase 4 results. If the label is absent, skip
-> Phase 4 entirely and move directly from Phase 2 to Phase 3. Do not
-> interleave or skip the other phases. If your cumulative response would
-> exceed GitHub's per-comment size limit, post sequential `Part 1/N`,
+> Phase 1, then Phase 2. Execute Phase 4 **before** posting the Phase 3
+> Resolution Report so Phase 3 can include the Phase 4 results. Do not
+> interleave or skip phases. If your cumulative response would exceed
+> GitHub's per-comment size limit, post sequential `Part 1/N`,
 > `Part 2/N`, … comments rather than truncating. Apply the Rules section to
 > every phase.
 
@@ -153,14 +153,11 @@ After all items are processed, post a final summary comment:
 (continue for each item)
 ```
 
-## Phase 4: Resolve bot-authored review threads (opt-in)
+## Phase 4: Resolve bot-authored review threads
 
-> **Only execute Phase 4 if the PR carries the `auto-resolve-threads` label.**
-> Without the label, skip this phase entirely and leave every review thread open for human review.
+Phase 4 runs on every invocation of this prompt — Claude via `.github/workflows/agent-fix-reviews.yml`, Copilot via `@copilot follow` comments posted by `.github/workflows/agent-relay-reviews.yml` or by a human, and any agent invoked through a direct `@claude follow` / `@copilot follow` mention. If you are running this prompt, the gate below applies to you.
 
-This phase applies to **every agent that runs this prompt** — Claude via `.github/workflows/agent-fix-reviews.yml`, Copilot via `@copilot follow` comments posted by `.github/workflows/agent-relay-reviews.yml` or by a human, and any agent invoked through a direct `@claude follow` / `@copilot follow` mention. If you are running this prompt, the gate below applies to you.
-
-When the opt-in label is present, resolve review threads whose backing item cleared Phase 2 with status `✅ Fixed` and whose top-level review comment was authored by an allow-listed bot. The point is to trim noise from CI-only reviewers after the fix has landed — never to silence a human.
+Resolve review threads whose backing item cleared Phase 2 with status `✅ Fixed` and whose top-level review comment was authored by an allow-listed bot. The point is to trim noise from CI-only reviewers after the fix has landed — never to silence a human. The per-thread gate below is the only safety mechanism.
 
 ### Allow-list (bot reviewers only)
 
@@ -245,22 +242,20 @@ For each eligible thread:
 
 ### Phase 4 report
 
-Because Phase 4 runs **before** Phase 3 posts the Resolution Report (see "How to run this prompt" at the top of this file), include the following section within the Phase 3 Resolution Report itself, listing every thread considered. Do not post Phase 4 as a separate comment.
+Because Phase 4 runs **before** Phase 3 posts the Resolution Report (see "How to run this prompt" at the top of this file), include the following section within the Phase 3 Resolution Report itself, listing every thread considered. Do not post Phase 4 as a separate comment. The `Thread ID` column is **required** — it is the GraphQL node ID (`PRRT_…`) that the relay-fallback job in `agent-relay-reviews.yml` parses to retry mutations on the Copilot path; omitting it breaks the fallback.
 
 ```markdown
 ### Phase 4 — Thread auto-resolution
 
-Label `auto-resolve-threads` present: ✅
-
-| Thread | ISS | Author | Action | Notes |
-|--------|-----|--------|--------|-------|
-| [link](#) | ISS-01 | gemini-code-assist[bot] | ✅ Resolved | Fixed in abc1234 |
-| [link](#) | ISS-02 | copilot-pull-request-reviewer[bot] | ✅ Resolved | Fixed in abc1234 |
-| [link](#) | ISS-03 | human-reviewer | ⏭️ Skipped | Human-authored — left open |
-| [link](#) | ISS-04 | gemini-code-assist[bot] | ⏭️ Skipped | Phase 2 status was "Needs clarification" |
+| Thread | Thread ID | ISS | Author | Action | Notes |
+|--------|-----------|-----|--------|--------|-------|
+| [link](#) | PRRT_kwDOExampleA | ISS-01 | gemini-code-assist[bot] | ✅ Resolved | Fixed in abc1234 |
+| [link](#) | PRRT_kwDOExampleB | ISS-02 | copilot-pull-request-reviewer[bot] | ⚠️ Errored | addPullRequestReviewThreadReply returned FORBIDDEN |
+| [link](#) | PRRT_kwDOExampleC | ISS-03 | human-reviewer | ⏭️ Skipped | Human-authored — left open |
+| [link](#) | PRRT_kwDOExampleD | ISS-04 | gemini-code-assist[bot] | ⏭️ Skipped | Phase 2 status was "Needs clarification" |
 ```
 
-If the label is absent, include a single line instead: `Label \`auto-resolve-threads\` not present — skipping thread resolution.`
+Use `⚠️ Errored` when the per-thread gate passed but the GraphQL mutation failed (e.g. `FORBIDDEN`). On the Copilot path, the relay-fallback job will pick up `⚠️ Errored` rows by Thread ID, post the audit reply under `CLAUDE_PAT`, and fire `resolveReviewThread`. Use `⏭️ Skipped` only when the per-thread gate failed (human author, status not `✅ Fixed`, etc.) — that signals the fallback to leave the thread alone.
 
 ### Safety rules
 

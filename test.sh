@@ -154,6 +154,7 @@ DOCS_FILES=(
     "docs/decisions/adr-005-analyst-preflight-gate.md"
     "docs/decisions/adr-006-auto-merge-opt-in-model.md"
     "docs/decisions/adr-007-auto-resolve-review-threads.md"
+    "docs/decisions/adr-008-phase4-default-and-copilot-fallback.md"
 )
 
 for file in "${DOCS_FILES[@]}"; do
