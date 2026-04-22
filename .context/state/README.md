@@ -9,6 +9,17 @@ These files are the agent working-memory layer; stale or unbounded files defeat 
 - **`_active.md`** — rewrite (don't append) at every task boundary. Max ~20 lines.
   - Required schema: `Active Task` (one line), `File` (path to `task_*.md` or N/A), `Role` (current owner), `Blockers` (or "None"), `Next 1–3 actions`.
   - Anything beyond that schema belongs in `task_<slug>.md`, not here.
+  - Example:
+    ```markdown
+    **Active Task**: Add login form
+    **File**: task_login-frontend.md
+    **Role**: frontend
+    **Blockers**: waiting on backend API contract (login-backend)
+    **Next 1–3 actions**:
+    1. Stub LoginForm component with form fields
+    2. Wire up form validation
+    3. Pause until login-backend lands
+    ```
 - **`task_<slug>.md`** — create from `task_template.md` at task start. Update Progress / Files / Blockers as work proceeds. Delete (or move to `../sessions/`) at task end.
 - **`handoff_<slug>.md`** — write one before any of:
   - Single conversation has exceeded ~30 turns;

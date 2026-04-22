@@ -117,7 +117,7 @@ Doc-sync triggers (which files must update together) live in a single source of 
 ### Session-state cadence
 Keep agent working memory current so the next session (or next role) can resume cleanly:
 
-- **`.context/state/_active.md`** — rewrite (don't append) at every task boundary. Max ~20 lines. Schema: current task ID, current role, blockers, next 1–3 actions. Schema and examples in `.context/state/README.md`.
+- **`.context/state/_active.md`** — rewrite (don't append) at every task boundary. Max ~20 lines. Schema: Active Task, File, Role, Blockers, Next 1–3 actions. Schema and examples in `.context/state/README.md`.
 - **`.context/state/task_<slug>.md`** — create from `.context/state/task_template.md` at task start. Delete (or move to `.context/sessions/`) at task end.
 - **Handoff trigger** — when a single agent conversation exceeds ~30 turns OR before any handoff to a different role/agent, write a structured handoff to `.context/state/handoff_<slug>.md` (template: `.context/state/handoff_template.md`) and start a fresh session. The handoff is the baton; the next session reads it instead of replaying the full chat.
 - **Close-out (post-merge)** — the role that led the work updates `.context/sessions/latest_summary.md` with a 3–5 line entry: what shipped, what was harder than expected, what generalizes (→ open a follow-up to update rules/ADRs/guides if applicable). PM verifies this exists before marking the task done in `coordination.md`.

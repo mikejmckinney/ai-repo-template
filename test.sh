@@ -148,7 +148,12 @@ DOCS_FILES=(
     "docs/decisions/adr-template.md"
     "docs/decisions/README.md"
     "docs/decisions/adr-001-context-pack-structure.md"
+    "docs/decisions/adr-002-agents-md-ownership.md"
+    "docs/decisions/adr-003-claude-code-subagent-registration.md"
     "docs/decisions/adr-004-analyst-role-and-feedback-loop.md"
+    "docs/decisions/adr-005-analyst-preflight-gate.md"
+    "docs/decisions/adr-006-auto-merge-opt-in-model.md"
+    "docs/decisions/adr-007-auto-resolve-review-threads.md"
 )
 
 for file in "${DOCS_FILES[@]}"; do

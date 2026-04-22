@@ -115,7 +115,7 @@ Modern LLM providers offer prompt caching: long, stable prefixes (e.g., a full s
 |---|---|---|
 | **Anthropic API / Claude Code (direct API use)** | Mark stable prefixes with `cache_control: { type: "ephemeral" }` in the request. TTL ~5 min (rolling). | None — opt in at the call site. |
 | **GitHub Copilot Chat** | Opaque/automatic. No user-facing knob. | None. |
-| **Claude Code CLI (via `anthropics/claude-code-action`)** | Caching applied automatically by the CLI for the system prompt + `CLAUDE.md` chain. | None — already benefits from this repo's stable `AGENTS.md` / `CLAUDE.md`. |
+| **Claude Code CLI (via `anthropic/claude-code-action`)** | Caching applied automatically by the CLI for the system prompt + `CLAUDE.md` chain. | None — already benefits from this repo's stable `AGENTS.md` / `CLAUDE.md`. |
 | **Custom orchestrators / SDK callers** | Use the provider's caching primitive when assembling `AGENTS.md` + role file + task context. Cache the first two; leave task context uncached. | None. |
 
 ### What helps caching at the repo level

@@ -14,7 +14,7 @@
 | [ADR-004](./adr-004-analyst-role-and-feedback-loop.md) | Analyst role + feedback loop | Accepted |
 | [ADR-005](./adr-005-analyst-preflight-gate.md) | Analyst Pre-Flight gate | Accepted |
 | [ADR-006](./adr-006-auto-merge-opt-in-model.md) | Auto-merge opt-in model | Accepted |
-| [ADR-007](./adr-007-auto-resolve-review-threads.md) | Auto-resolve bot-authored review threads (opt-in label) | Accepted (Copilot-path gap tracked in #100) |
+| [ADR-007](./adr-007-auto-resolve-review-threads.md) | Auto-resolve bot-authored review threads (opt-in label; Copilot-path gap tracked in #100) | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.

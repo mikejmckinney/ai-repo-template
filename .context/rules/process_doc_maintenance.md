@@ -11,8 +11,8 @@ every PR.
 ## Hard rule
 
 If your PR matches a row in the trigger table below, the listed companion
-file(s) must be updated in the same PR — or the PR description / commit
-message must contain the explicit phrase
+file(s) must be updated in the same PR — or the PR description must
+contain the explicit phrase
 `<companion-file>: no changes required` and a one-line justification.
 
 Judge enforces this at diff-gate (see
