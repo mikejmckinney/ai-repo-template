@@ -224,7 +224,7 @@ For each eligible thread:
    ```
 
    Substitute:
-   - `<agent>` — the agent that ran this procedure. Use `claude (agent-fix-reviews)` when invoked by `.github/workflows/agent-fix-reviews.yml`, `copilot (via agent-relay-reviews)` when invoked by an `@copilot follow` comment from `.github/workflows/agent-relay-reviews.yml`, `claude (@claude mention)` / `copilot (@copilot mention)` when invoked by a direct human mention, or your own agent name if invoked by other tooling.
+   - `<agent>` — the agent that ran this procedure. **Always backtick-wrap any literal `@`-handle** in the reply body (write `` `@copilot` ``, `` `@claude` ``, `` `@copilot follow ...` `` — not the raw `@copilot` / `@claude` strings). An un-escaped handle in a thread reply is parsed by GitHub as a real mention and re-triggers the bot (Copilot cloud agent on `@copilot`; `.github/workflows/claude.yml`'s `claude-mention` job on `@claude`), which then re-fixes everything you just fixed and posts duplicate Resolution Reports. The top-level trigger comment (`@copilot follow ...` / `@claude follow ...`) stays un-backticked — that's the intended dispatch; the audit reply must not re-dispatch. Use `claude (agent-fix-reviews)` when invoked by `.github/workflows/agent-fix-reviews.yml`, `copilot (via agent-relay-reviews)` when invoked by an `` `@copilot follow` `` comment from `.github/workflows/agent-relay-reviews.yml`, `` claude (`@claude` mention) `` / `` copilot (`@copilot` mention) `` when invoked by a direct human mention, or your own agent name if invoked by other tooling.
    - `<SHORT_SHA>` — the resolving commit SHA (first 7 chars).
    - `ISS-NN` — the ID from your Phase 1 index.
 
@@ -262,6 +262,7 @@ Use `⚠️ Errored` when the per-thread gate passed but the GraphQL mutation fa
 - **Never resolve a human-authored thread**, even if you fixed what they asked for. Humans expect to click Resolve themselves.
 - **Never resolve a thread whose Phase 2 item is not `✅ Fixed`.** "Not reproducible" and "Out of scope" still warrant human acknowledgement.
 - **Never resolve a thread without first posting the audit reply.** The reply is the paper trail; resolution without it leaves reviewers guessing.
+- **Never include a live `@`-handle in the audit reply body.** Backtick-wrap every `@copilot` / `@claude` / `@copilot follow ...` / `@claude follow ...` reference in the reply so GitHub treats it as code, not a mention. An un-wrapped handle re-dispatches the bot (Copilot cloud agent + `.github/workflows/claude.yml`'s `claude-mention` job both listen for raw `@`-strings anywhere in a PR comment or review reply body) and produces duplicate fix runs. The **top-level trigger comment** that invoked `pr-resolve-all.md` in the first place stays un-backticked — that one is supposed to dispatch.
 - **Do not resolve threads from a previous fix cycle.** Scope Phase 4 to items fixed in the current run only — the `ISS-NN` IDs from this run's Phase 1 index are your scope.
 
 ## Rules
