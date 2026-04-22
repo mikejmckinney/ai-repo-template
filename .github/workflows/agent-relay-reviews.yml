@@ -658,7 +658,7 @@ jobs:
             exit 1
           fi
 
-          # ── 4. Compute fingerprint and dedup against prior fallback comments ──
+          # ── 5. Compute fingerprint and dedup against prior fallback comments ──
           fingerprint=$(printf '%s' "$errored_ids" | sort -u | sha256sum | awk '{print $1}')
           echo "Fallback fingerprint: $fingerprint"
 
@@ -669,10 +669,10 @@ jobs:
             exit 0
           fi
 
-          # ── 5. Get latest commit SHA on PR head for audit reply ──
+          # ── 6. Get latest commit SHA on PR head for audit reply ──
           short_sha=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid --jq '.headRefOid' | cut -c1-7)
 
-          # ── 6. For each errored thread, post audit reply + resolve ──
+          # ── 7. For each errored thread, post audit reply + resolve ──
           summary="🔁 **Phase 4 fallback (cycle 1)** — relayed under \`CLAUDE_PAT\` because the Copilot cloud-agent token returned \`FORBIDDEN\` on the Phase 4 mutations.${nl}"
           summary+="<!-- relay-fallback-fingerprint:${fingerprint} -->${nl}${nl}"
           summary+="| Thread ID | Action | Result |${nl}"
@@ -682,7 +682,7 @@ jobs:
             [[ -z "$tid" ]] && continue
             row_result=""
 
-            # 6a. Find the matching ISS-NN for this thread ID (best-effort
+            # 7a. Find the matching ISS-NN for this thread ID (best-effort
             # parse from the original Phase 4 table for the audit reply).
             iss=$(printf '%s' "$phase4" | awk -F'|' -v target="$tid" '
               /^\|/ && !/^\|[[:space:]]*-+/ {
@@ -698,7 +698,7 @@ jobs:
 
             audit_body="Resolved by relay-fallback (agent-relay-reviews) in ${short_sha} (${iss})."$'\n'"If this wasn't addressed correctly, re-open the thread."
 
-            # 6b. POST audit reply via GraphQL.
+            # 7b. POST audit reply via GraphQL.
             reply_resp=$(gh api graphql \
               -f query='mutation($id:ID!, $body:String!) { addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$id, body:$body}) { comment { id } } }' \
               -f id="$tid" \
@@ -709,7 +709,7 @@ jobs:
               continue
             }
 
-            # 6c. Fire resolveReviewThread.
+            # 7c. Fire resolveReviewThread.
             resolve_resp=$(gh api graphql \
               -f query='mutation($id:ID!) { resolveReviewThread(input:{threadId:$id}) { thread { id isResolved } } }' \
               -f id="$tid" 2>&1) || {
