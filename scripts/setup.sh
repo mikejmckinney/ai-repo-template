@@ -39,10 +39,10 @@ FULL_REPO=""
 # Honor explicit overrides first. GH_REPO is gh's own convention; in
 # Codespaces/Actions GITHUB_REPOSITORY is auto-set by the platform.
 if [[ -n "${GH_REPO:-}" ]]; then
-    FULL_REPO="$GH_REPO"
+    FULL_REPO=$(printf "%s" "$GH_REPO" | tr -cd '[:alnum:]_./-')
     log_info "Using GH_REPO override: $FULL_REPO"
 elif [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
-    FULL_REPO="$GITHUB_REPOSITORY"
+    FULL_REPO=$(printf "%s" "$GITHUB_REPOSITORY" | tr -cd '[:alnum:]_./-')
     log_info "Using GITHUB_REPOSITORY: $FULL_REPO"
 fi
 
@@ -83,31 +83,6 @@ if command -v git &> /dev/null && git rev-parse --is-inside-work-tree &> /dev/nu
                 else
                     log_info "Git remote points at ${SAFE_OWNER}/${SAFE_NAME}; keeping override $FULL_REPO"
                 fi
-            
-                # Update issue template config with correct discussions URL
-                # Note: Using temp file for portability (BSD sed on macOS differs from GNU sed)
-                # Template-detection guard: when the current repo IS the template
-                # itself, leave placeholders intact so the template's source files
-                # don't get rewritten with the template owner's slug. See
-                # .github/copilot-instructions.md "Template detection" section.
-                CONFIG_FILE=".github/ISSUE_TEMPLATE/config.yml"
-                _is_template_repo=false
-                case "$FULL_REPO" in
-                    mikejmckinney/ai-repo-template|mikejmckinney/dotfiles) _is_template_repo=true ;;
-                esac
-                if [[ "$_is_template_repo" == "true" ]]; then
-                    log_info "Detected template repo ($FULL_REPO); leaving $CONFIG_FILE placeholders intact"
-                elif [[ -f "$CONFIG_FILE" ]]; then
-                    if grep -q "PLEASE_UPDATE_THIS/URL" "$CONFIG_FILE"; then
-                        sed "s|PLEASE_UPDATE_THIS/URL|${SAFE_OWNER}/${SAFE_NAME}|g" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-                        log_info "Updated $CONFIG_FILE with repository URL"
-                    elif grep -q "YOUR_USERNAME/YOUR_REPOSITORY" "$CONFIG_FILE"; then
-                        sed "s|YOUR_USERNAME/YOUR_REPOSITORY|${SAFE_OWNER}/${SAFE_NAME}|g" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-                        log_info "Updated $CONFIG_FILE with repository URL"
-                    else
-                        log_info "$CONFIG_FILE already configured"
-                    fi
-                fi
             fi
         else
             log_warn "Could not parse repository from remote URL: $REMOTE_URL"
@@ -117,6 +92,33 @@ if command -v git &> /dev/null && git rev-parse --is-inside-work-tree &> /dev/nu
     fi
 else
     log_warn "Not a git repository, skipping repo auto-detection"
+fi
+
+# Update config.yml placeholder using FULL_REPO. Runs after all detection paths
+# so env overrides (GH_REPO/GITHUB_REPOSITORY) work even without a git remote.
+if [[ -n "$FULL_REPO" ]]; then
+    CONFIG_FILE=".github/ISSUE_TEMPLATE/config.yml"
+    # Template-detection guard: when the current repo IS the template itself,
+    # leave placeholders intact so source files don't get rewritten.
+    # See .github/copilot-instructions.md "Template detection" section.
+    _is_template_repo=false
+    case "$FULL_REPO" in
+        mikejmckinney/ai-repo-template|mikejmckinney/dotfiles) _is_template_repo=true ;;
+    esac
+    if [[ "$_is_template_repo" == "true" ]]; then
+        log_info "Detected template repo ($FULL_REPO); leaving $CONFIG_FILE placeholders intact"
+    elif [[ -f "$CONFIG_FILE" ]]; then
+        # Note: Using temp file for portability (BSD sed on macOS differs from GNU sed)
+        if grep -q "PLEASE_UPDATE_THIS/URL" "$CONFIG_FILE"; then
+            sed "s|PLEASE_UPDATE_THIS/URL|${FULL_REPO}|g" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+            log_info "Updated $CONFIG_FILE with repository URL"
+        elif grep -q "YOUR_USERNAME/YOUR_REPOSITORY" "$CONFIG_FILE"; then
+            sed "s|YOUR_USERNAME/YOUR_REPOSITORY|${FULL_REPO}|g" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
+            log_info "Updated $CONFIG_FILE with repository URL"
+        else
+            log_info "$CONFIG_FILE already configured"
+        fi
+    fi
 fi
 
 # --- Step 1: Environment File ---
@@ -289,8 +291,15 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     # been authenticated against a repo via some out-of-band mechanism
     # (e.g., default repo set via `gh repo set-default`).
     if [[ -z "$FULL_REPO" ]]; then
-        FULL_REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")
-        if [[ -n "$FULL_REPO" ]]; then
+        _repo_nwo=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || echo "")
+        if [[ -n "$_repo_nwo" ]]; then
+            # Prefix with GH_HOST for GHES / multi-host setups so the exported
+            # GH_REPO value resolves against the correct GitHub instance.
+            if [[ -n "${GH_HOST:-}" ]]; then
+                FULL_REPO="${GH_HOST}/${_repo_nwo}"
+            else
+                FULL_REPO="$_repo_nwo"
+            fi
             log_info "Resolved repository from gh: $FULL_REPO"
         fi
     fi
