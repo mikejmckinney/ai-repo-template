@@ -14,9 +14,9 @@
 # workflow itself, but this test hard-fails so format-changing PRs
 # trip CI at the change rather than later.
 #
-# The awk pipeline is duplicated inline below — the source of truth
-# remains the workflow file. If you change the workflow's parser, also
-# change this test.
+# The parser itself lives in scripts/parse-ownership-table.sh (single
+# source of truth, also called by the workflow). This test calls the
+# same script so the workflow and the test can never drift.
 #
 # Run: bash scripts/test-parallelism-report-parser.sh
 
@@ -64,30 +64,11 @@ assert_not_contains() {
   fi
 }
 
-# ── Awk pipeline: parse role + top-level prefix from ownership table ──
-# Mirrors the parser in .github/workflows/agent-parallelism-report.yml.
+# ── Parser: shell out to the shared script (single source of truth). ──
+# Reading from stdin keeps the call sites identical to the inline
+# function this replaced (`printf ... | parse_ownership`).
 parse_ownership() {
-  awk -F'|' '
-    /^\| *(Analyst|Architect|Frontend|Backend|PM|QA|DevOps|Docs|Judge|Critic) +\|/ {
-      role=$2
-      gsub(/^[[:space:]]+|[[:space:]]+$/, "", role)
-      globs=$3
-      gsub(/`/, "", globs)
-      # Strip inline parenthetical qualifiers BEFORE the comma split.
-      # Some rows contain notes like
-      #   `docs/** (except docs/decisions/**, docs/research/**)`
-      # whose interior commas would otherwise corrupt the split.
-      gsub(/ *\([^)]*\)/, "", globs)
-      n=split(globs, parts, ",")
-      for (i=1;i<=n;i++) {
-        g=parts[i]
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", g)
-        if (g == "" || g == "nothing (research-only)" || g ~ /^nothing/) continue
-        sub(/\/\*\*$/, "", g)
-        sub(/\/\*$/, "", g)
-        if (g != "") print role "\t" g
-      }
-    }' | sort -u
+  "$(dirname "$0")/parse-ownership-table.sh"
 }
 
 # ── Classification helpers (mirror the workflow's comm + awk logic) ──
