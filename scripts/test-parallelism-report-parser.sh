@@ -231,6 +231,51 @@ else
   printf '  ✅ skipped: %s not present (test fixture isolation)\n' "$LIVE_OWNERSHIP"
 fi
 
+# ── Test group 4: role-list sync ──
+#
+# The parser script hardcodes the role list its awk regex matches. If a
+# new role is added to the ownership table but not added to the parser's
+# ROLES variable, the row is silently dropped from the parsed output and
+# soft-overlap classification ignores that role. The live-anchor block
+# above only catches this if someone also adds an anchor for the new
+# role — which the same forgetful PR would also miss.
+#
+# This block scrapes the role names from the ownership table using a
+# deliberately *looser* regex (any first column that's a single
+# capitalized word, excluding the table header) and compares against
+# `parse-ownership-table.sh --list-roles`. Any drift fails loudly with
+# a diff so the next reader sees exactly which role was added/renamed.
+# See #119 and ADR-009 §Implementation.
+
+if [[ -f "$LIVE_OWNERSHIP" ]]; then
+  echo ""
+  echo "── Role-list sync check ──"
+
+  parser_roles=$(./scripts/parse-ownership-table.sh --list-roles | sort -u)
+  table_roles=$(awk -F'|' '
+    /^\| *[A-Z][A-Za-z]+ +\|/ {
+      role=$2
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", role)
+      if (role != "" && role != "Role" && role != "File") print role
+    }
+  ' "$LIVE_OWNERSHIP" | sort -u)
+
+  if [[ "$parser_roles" == "$table_roles" ]]; then
+    PASS=$((PASS + 1))
+    printf '  ✅ parser ROLES list matches roles defined in %s (%d role(s))\n' \
+      "$LIVE_OWNERSHIP" "$(printf '%s\n' "$parser_roles" | grep -c .)"
+  else
+    FAIL=$((FAIL + 1))
+    FAILED_NAMES+=("role-list sync: parser vs ownership table")
+    printf '  ❌ parser ROLES list does not match roles defined in %s\n' "$LIVE_OWNERSHIP"
+    printf '       diff (< parser, > table):\n'
+    diff <(printf '%s\n' "$parser_roles") <(printf '%s\n' "$table_roles") \
+      | sed 's/^/         /' || true
+    printf '       Fix: update ROLES in scripts/parse-ownership-table.sh OR\n'
+    printf '       update the row in %s. See #119.\n' "$LIVE_OWNERSHIP"
+  fi
+fi
+
 # ── Summary ──
 
 echo ""

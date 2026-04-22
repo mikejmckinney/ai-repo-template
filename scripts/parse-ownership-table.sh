@@ -17,6 +17,14 @@
 #            (the workflow logs a warning and skips soft classification
 #            when the output is empty; the unit test hard-fails).
 #
+# Modes:
+#   (no args)      Default. Read markdown on stdin, emit role/prefix lines.
+#   --list-roles   Print the canonical role list (one per line) that this
+#                  parser will match. Used by the unit test to sync-check
+#                  against the actual roles defined in agent_ownership.md
+#                  so a new role added to the table doesn't silently get
+#                  dropped from soft-overlap classification (#119).
+#
 # Source of truth for the parser. Callers:
 #   - .github/workflows/agent-parallelism-report.yml  (producer)
 #   - scripts/test-parallelism-report-parser.sh        (unit test)
@@ -25,8 +33,20 @@
 
 set -euo pipefail
 
-awk -F'|' '
-  /^\| *(Analyst|Architect|Frontend|Backend|PM|QA|DevOps|Docs|Judge|Critic) +\|/ {
+# Single source of truth for the role list. Both the awk regex below and
+# `--list-roles` read from this one variable, so adding a role is a
+# one-line edit. The unit test cross-checks this against the live
+# ownership table (see scripts/test-parallelism-report-parser.sh →
+# "Role-list sync" block).
+ROLES='Analyst|Architect|Frontend|Backend|PM|QA|DevOps|Docs|Judge|Critic'
+
+if [[ "${1:-}" == "--list-roles" ]]; then
+  printf '%s\n' "$ROLES" | tr '|' '\n'
+  exit 0
+fi
+
+awk -F'|' -v roles="$ROLES" '
+  $0 ~ "^\\| *(" roles ") +\\|" {
     role=$2
     gsub(/^[[:space:]]+|[[:space:]]+$/, "", role)
     globs=$3
