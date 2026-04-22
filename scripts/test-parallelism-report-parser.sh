@@ -68,7 +68,7 @@ assert_not_contains() {
 # Reading from stdin keeps the call sites identical to the inline
 # function this replaced (`printf ... | parse_ownership`).
 parse_ownership() {
-  ./scripts/parse-ownership-table.sh
+  "$(dirname "$0")/parse-ownership-table.sh"
 }
 
 # ── Classification helpers (mirror the workflow's comm + awk logic) ──
