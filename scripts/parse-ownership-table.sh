@@ -40,7 +40,7 @@ awk -F'|' '
     for (i=1;i<=n;i++) {
       g=parts[i]
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", g)
-      if (g == "" || g == "nothing (research-only)" || g ~ /^nothing/) continue
+      if (g == "" || g ~ /^nothing/) continue
       sub(/\/\*\*$/, "", g)
       sub(/\/\*$/, "", g)
       if (g != "") print role "\t" g
