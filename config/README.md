@@ -131,3 +131,5 @@ In Vercel dashboard:
 - **Service suspended**: Free tier suspends after 15 min inactivity (use `keep-warm.yml`)
 - **Slow builds**: Add `.dockerignore` to exclude `node_modules`, etc.
 - **Health check fails**: Ensure `/health` endpoint returns 200
+
+<!-- smoke-test marker C (PR #113 verification, will be closed unmerged) -->
