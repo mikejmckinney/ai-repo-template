@@ -20,6 +20,15 @@
 
 set -euo pipefail
 
+# Cleanup any tmp files we mktemp below.
+TMP_FILES=()
+cleanup() {
+  if [[ ${#TMP_FILES[@]} -gt 0 ]]; then
+    rm -f "${TMP_FILES[@]}"
+  fi
+}
+trap cleanup EXIT
+
 PASS=0
 FAIL=0
 FAILED_NAMES=()
@@ -64,22 +73,30 @@ assert_empty() {
 
 # ── Awk replicas (mirror the workflow inline awk; keep in sync) ──
 
-# Mirror of on-close-stale awk: emit lock blocks matching branch or
-# managed-for-pr marker.
+# Mirror of on-close-stale awk: emit lock blocks under "## Active Locks"
+# matching the PR's branch (literal compare on the parsed Session value
+# — NOT a regex, so branch names with metacharacters like `.`, `(`, `[`
+# are safe) or carrying a managed-for-pr:NNN marker.
 extract_stale_blocks() {
   local file="$1" branch="$2" pr="$3"
   awk -v branch="$branch" -v pr="$pr" '
+    function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
+    /^## Active Locks/ { in_section=1; next }
+    /^## / && !/^## Active Locks/ && !/^## Lock:/ {
+      if (in_block && matched) print block
+      in_section=0; in_block=0; block=""; matched=0; next
+    }
+    !in_section { next }
     /^## Lock:/ {
       if (in_block && matched) print block
       in_block=1; block=$0"\n"; matched=0; next
     }
-    in_block && /^## / && !/^## Lock:/ {
-      if (matched) print block;
-      in_block=0; block=""; matched=0
-    }
     in_block {
       block = block $0 "\n"
-      if ($0 ~ ("\\*\\*Session\\*\\*: *" branch "( |$)")) matched=1
+      if (index($0, "**Session**:") == 1) {
+        sess = trim(substr($0, length("**Session**:") + 1))
+        if (sess == branch) matched=1
+      }
       if ($0 ~ ("<!-- managed-for-pr:" pr " -->")) matched=1
     }
     END { if (in_block && matched) print block }
@@ -87,22 +104,25 @@ extract_stale_blocks() {
 }
 
 # Mirror of daily-reconciliation awk: emit task<TAB>session<TAB>claimed
-# for each lock under "## Active Locks".
+# for each lock under "## Active Locks". Trims trailing whitespace on
+# each value so a markdown line ending in stray spaces doesn't make a
+# session compare-unequal to its corresponding open-PR head branch.
 parse_active_locks() {
   local file="$1"
   awk '
+    function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
     /^## Active Locks/ { in_section=1; next }
     /^## / && !/^## Active Locks/ && !/^## Lock:/ { in_section=0 }
     in_section && /^## Lock:/ {
       if (task != "") print task "\t" session "\t" claimed
-      task=$0; sub(/^## Lock: */, "", task)
+      task=trim(substr($0, length("## Lock:") + 1))
       session=""; claimed=""; next
     }
-    in_section && /^\*\*Session\*\*:/ {
-      session=$0; sub(/^\*\*Session\*\*: */, "", session); next
+    in_section && index($0, "**Session**:") == 1 {
+      session=trim(substr($0, length("**Session**:") + 1)); next
     }
-    in_section && /^\*\*Claimed At\*\*:/ {
-      claimed=$0; sub(/^\*\*Claimed At\*\*: */, "", claimed); next
+    in_section && index($0, "**Claimed At**:") == 1 {
+      claimed=trim(substr($0, length("**Claimed At**:") + 1)); next
     }
     END { if (task != "") print task "\t" session "\t" claimed }
   ' "$file"
@@ -144,6 +164,12 @@ FIXTURE_BASIC=$(cat <<'EOF'
 **Role**: frontend
 **Session**: feat/old
 **Claimed At**: 2026-03-01T10:00:00Z
+
+## Lock: pr-99
+<!-- managed-for-pr:99 -->
+**Role**: backend
+**Session**: feat/recently-merged
+**Claimed At**: 2026-03-15T08:00:00Z
 EOF
 )
 
@@ -182,7 +208,7 @@ EOF
 
 echo "extract_stale_blocks (on-close-stale logic)"
 
-tmp=$(mktemp); printf '%s\n' "$FIXTURE_BASIC" > "$tmp"
+tmp=$(mktemp); TMP_FILES+=("$tmp"); printf '%s\n' "$FIXTURE_BASIC" > "$tmp"
 
 # 1. Match by managed-for-pr marker.
 out=$(extract_stale_blocks "$tmp" "some-other-branch" "126")
@@ -197,23 +223,56 @@ out=$(extract_stale_blocks "$tmp" "no-such-branch" "999")
 assert_empty "no match for unrelated branch+pr" "$out"
 
 # 4. Empty Active Locks → no match.
-tmp2=$(mktemp); printf '%s\n' "$FIXTURE_EMPTY" > "$tmp2"
+tmp2=$(mktemp); TMP_FILES+=("$tmp2"); printf '%s\n' "$FIXTURE_EMPTY" > "$tmp2"
 out=$(extract_stale_blocks "$tmp2" "any-branch" "126")
 assert_empty "empty Active Locks → no match" "$out"
 
 # 5. Human-note inside a lock block doesn't break parsing (block ends at
-#    next "## " heading, so the trailing "PM note:" paragraph stays in
-#    the block but the next "## Recent History" closes it cleanly).
-tmp3=$(mktemp); printf '%s\n' "$FIXTURE_HUMAN_NOTE" > "$tmp3"
+#    next "## " non-Lock heading, which closes the section).
+tmp3=$(mktemp); TMP_FILES+=("$tmp3"); printf '%s\n' "$FIXTURE_HUMAN_NOTE" > "$tmp3"
 out=$(extract_stale_blocks "$tmp3" "chore/manual-edit" "999")
 assert_contains "matches block even with trailing human note" "hand-shaped" "$out"
 assert_contains "block includes the human note line" "PM note:" "$out"
 
 # 6. Branch-name prefix collision: 'feat/auth' should NOT match
-#    Session 'feat/auth-flow'. Awk regex anchors with "( |$)" after
-#    the branch name to prevent partial matches.
+#    Session 'feat/auth-flow' (we compare the parsed Session value
+#    as a literal string, not as a regex prefix).
 out=$(extract_stale_blocks "$tmp" "feat/auth" "999")
 assert_empty "branch-name prefix does not partial-match Session" "$out"
+
+# 7. Regression: a lock under "## Recent History" with a matching
+#    Session must NOT be returned as stale. The basic fixture has
+#    `feat/recently-merged` in Recent History; querying with that
+#    branch should yield nothing because the awk is section-scoped.
+out=$(extract_stale_blocks "$tmp" "feat/recently-merged" "999")
+assert_empty "Recent-History Session does not produce a stale match" "$out"
+
+# 8. Regression: a managed-for-pr marker that lives under Recent
+#    History (e.g. on a re-opened-then-closed PR) must not produce a
+#    stale match either.
+out=$(extract_stale_blocks "$tmp" "some-other-branch" "99")
+assert_empty "Recent-History managed-for-pr marker does not match" "$out"
+
+# 9. Regression: branch names with regex metacharacters (`.`, `(`,
+#    `[`) must compare literally. A query for `feat.1` must NOT match
+#    a Session of `feat-1` (which a naive regex would).
+tmp_regex=$(mktemp); TMP_FILES+=("$tmp_regex")
+printf '%s\n' \
+  '# Coordination Board' \
+  '' \
+  '## Active Locks' \
+  '' \
+  '## Lock: regex-meta' \
+  '**Role**: backend' \
+  '**Session**: feat-1' \
+  '**Claimed At**: 2026-04-22T10:00:00Z' \
+  '**State**: in_progress' \
+  '' \
+  '## Recent History' > "$tmp_regex"
+out=$(extract_stale_blocks "$tmp_regex" "feat.1" "999")
+assert_empty "regex-metachar branch (feat.1) does not match feat-1" "$out"
+out=$(extract_stale_blocks "$tmp_regex" "feat-1" "999")
+assert_contains "literal branch (feat-1) does match feat-1" "regex-meta" "$out"
 
 echo ""
 
@@ -247,6 +306,26 @@ assert_empty "empty Active Locks → no rows" "$out"
 # 4. Human-note fixture: lock parsed despite trailing prose.
 out=$(parse_active_locks "$tmp3")
 assert_contains "human-note fixture parses the lock" "hand-shaped	chore/manual-edit	2026-04-20T09:00:00Z" "$out"
+
+# 5. Trailing-whitespace fixture: parsed values must be trimmed so a
+#    downstream literal compare to an open-PR head branch succeeds.
+tmp_ws=$(mktemp); TMP_FILES+=("$tmp_ws")
+printf '%s\n' \
+  '# Coordination Board' \
+  '' \
+  '## Active Locks' \
+  '' \
+  '## Lock: trailing-ws-lock   ' \
+  '**Role**: backend' \
+  '**Session**: feat/with-trailing-ws  ' \
+  '**Claimed At**: 2026-04-22T10:00:00Z   ' \
+  '**State**: in_progress' \
+  '' \
+  '## Recent History' > "$tmp_ws"
+out=$(parse_active_locks "$tmp_ws")
+assert_eq "trimmed task field" "trailing-ws-lock" "$(printf '%s' "$out" | cut -f1)"
+assert_eq "trimmed session field" "feat/with-trailing-ws" "$(printf '%s' "$out" | cut -f2)"
+assert_eq "trimmed claimed-at field" "2026-04-22T10:00:00Z" "$(printf '%s' "$out" | cut -f3)"
 
 echo ""
 

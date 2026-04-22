@@ -112,18 +112,32 @@ jobs:
           # Find lock blocks matching the PR's branch or carrying a
           # managed-for-pr:NNN marker for this PR. A "lock block" starts
           # at "## Lock:" and runs until the next "## " heading.
+          # Find lock blocks under "## Active Locks" matching the PR's
+          # branch (literal compare on the parsed Session value, NOT a
+          # regex — branch names can contain regex metacharacters like
+          # `.`, `(`, `[`) or carrying a managed-for-pr:NNN marker for
+          # this PR. Section-scoped so a stale match in Recent History
+          # / Blocked / PM Notes can never trigger a false positive.
+          # A "lock block" starts at "## Lock:" and runs until the next
+          # "## " heading.
           stale_blocks=$(awk -v branch="$BRANCH" -v pr="$PR_NUMBER" '
+            function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
+            /^## Active Locks/ { in_section=1; next }
+            /^## / && !/^## Active Locks/ && !/^## Lock:/ {
+              if (in_block && matched) print block
+              in_section=0; in_block=0; block=""; matched=0; next
+            }
+            !in_section { next }
             /^## Lock:/ {
               if (in_block && matched) print block
               in_block=1; block=$0"\n"; matched=0; next
             }
-            in_block && /^## / && !/^## Lock:/ {
-              if (matched) print block;
-              in_block=0; block=""; matched=0
-            }
             in_block {
               block = block $0 "\n"
-              if ($0 ~ ("\\*\\*Session\\*\\*: *" branch "( |$)")) matched=1
+              if (index($0, "**Session**:") == 1) {
+                sess = trim(substr($0, length("**Session**:") + 1))
+                if (sess == branch) matched=1
+              }
               if ($0 ~ ("<!-- managed-for-pr:" pr " -->")) matched=1
             }
             END { if (in_block && matched) print block }
@@ -202,8 +216,21 @@ jobs:
             exit 0
           fi
 
-          # Skip if a lock already references this branch.
-          if grep -qE "^\*\*Session\*\*: *${BRANCH}( |$)" "$COORD"; then
+          # Skip if an Active Lock already references this branch.
+          # Section-scoped + literal-string compare on the Session value
+          # so that (a) a stale Session line in Recent History can't
+          # suppress a legitimate suggestion, and (b) branch names
+          # containing regex metacharacters (`.`, `[`, `(`) don't
+          # produce false matches.
+          existing_lock=$(awk -v branch="$BRANCH" '
+            function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
+            /^## Active Locks/ { in_section=1; next }
+            /^## / && !/^## Active Locks/ && !/^## Lock:/ { in_section=0 }
+            in_section && index($0, "**Session**:") == 1 {
+              if (trim(substr($0, length("**Session**:") + 1)) == branch) { print "yes"; exit }
+            }
+          ' "$COORD")
+          if [[ -n "$existing_lock" ]]; then
             echo "Active lock already references branch=$BRANCH; nothing to suggest."
             exit 0
           fi
@@ -330,20 +357,24 @@ jobs:
             --json headRefName --jq '.[].headRefName' > /tmp/open_branches.txt
 
           # Parse Active Locks blocks: extract task-id, session, claimed-at.
+          # Trims trailing whitespace on each value so a markdown line
+          # ending in stray spaces doesn't make a session compare-unequal
+          # to its corresponding open-PR head branch.
           # Format produced: "task_id<TAB>session<TAB>claimed_at"
           awk '
+            function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t]+$/, "", s); return s }
             /^## Active Locks/ { in_section=1; next }
             /^## / && !/^## Active Locks/ && !/^## Lock:/ { in_section=0 }
             in_section && /^## Lock:/ {
               if (task != "") print task "\t" session "\t" claimed
-              task=$0; sub(/^## Lock: */, "", task)
+              task=trim(substr($0, length("## Lock:") + 1))
               session=""; claimed=""; next
             }
-            in_section && /^\*\*Session\*\*:/ {
-              session=$0; sub(/^\*\*Session\*\*: */, "", session); next
+            in_section && index($0, "**Session**:") == 1 {
+              session=trim(substr($0, length("**Session**:") + 1)); next
             }
-            in_section && /^\*\*Claimed At\*\*:/ {
-              claimed=$0; sub(/^\*\*Claimed At\*\*: */, "", claimed); next
+            in_section && index($0, "**Claimed At**:") == 1 {
+              claimed=trim(substr($0, length("**Claimed At**:") + 1)); next
             }
             END { if (task != "") print task "\t" session "\t" claimed }
           ' "$COORD" > /tmp/locks.tsv
@@ -410,13 +441,18 @@ jobs:
           else
             # Append today's section to the existing issue body, but only
             # if today's date isn't already present (idempotent within
-            # 24h: a same-day re-run is a no-op).
+            # 24h: a same-day re-run is a no-op). Use --body-file rather
+            # than --body to avoid shell argument-length limits as the
+            # tracking issue grows over time (each daily scan appends).
             current=$(gh issue view "$existing" --repo "$REPO" --json body --jq '.body')
             if printf '%s' "$current" | grep -qF "### $today scan"; then
               echo "Today's section already present in #$existing; skipping append."
               exit 0
             fi
-            new_body=$(printf '%s\n\n%s' "$current" "$(cat /tmp/recon_section.md)")
-            gh issue edit "$existing" --repo "$REPO" --body "$new_body" > /dev/null
+            {
+              printf '%s\n\n' "$current"
+              cat /tmp/recon_section.md
+            } > /tmp/updated_issue_body.md
+            gh issue edit "$existing" --repo "$REPO" --body-file /tmp/updated_issue_body.md > /dev/null
             echo "Appended today's section to #$existing."
           fi
