@@ -60,3 +60,5 @@ No. Pick one (or none). The templates in `config/` each have a `.template` suffi
 ### Template: Where should I file limitations or known issues I've hit?
 
 If it's an agent-facing gotcha, add it to `AI_REPO_GUIDE.md § Gotchas / Known Issues`. If it's human-facing, add it to `README.md § Limitations`. If it's a decision-specific follow-up, add it to the relevant ADR's "Future Work" subsection.
+
+<!-- smoke-test marker B (PR #113 verification, will be closed unmerged) -->
