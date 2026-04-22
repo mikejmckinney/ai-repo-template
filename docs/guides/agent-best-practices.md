@@ -2,6 +2,29 @@
 
 > **Purpose**: Guidance for working effectively with AI coding agents, including known limitations and mitigations.
 
+## Issue and PR Granularity
+
+Splitting many small follow-ups into separate issues and PRs is more expensive than the engineering work they wrap. Bundle by default; split only when there's a real reason.
+
+### Bundle into one issue / one PR when **all** of these hold
+
+- Same files or same subsystem.
+- Same reviewer or same review pass surfaced them.
+- Each piece is small (~50 lines of diff or less).
+- They would land in the same week regardless of how they're filed.
+
+### Split into separate issues / PRs when **any** of these hold
+
+- Different domains (e.g. workflow internals vs. user-facing docs).
+- Independently mergeable — one might be rejected on its own merits without blocking the other.
+- Different blast radius (one is a pure refactor, one changes behavior).
+- Likely to take more than a few days each.
+- Want a separate paper trail (ADR, release note, security advisory).
+
+### Worked example
+
+PR #113's reviewer surfaced two medium findings about the ownership-table parser (extract shared script + sync-check role list). Both were ~50-line diffs in the same files from the same reviewer on the same theme. They were filed as #118 and #119 and shipped as PRs #123 and #124 — two issue overheads, two PR overheads, two CI rounds, two review passes. Per the bundling rule above they should have been **one** issue with two checkboxes and **one** PR. The split was correct for #114 / #115 / #116 (different subsystems, independently mergeable).
+
 ## Token Limits and Context Management
 
 ### The Problem
