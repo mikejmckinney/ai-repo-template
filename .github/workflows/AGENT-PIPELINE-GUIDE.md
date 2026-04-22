@@ -186,6 +186,8 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `copilot:daily-cap-hit` | `#D93F0B` (red-orange) | Hit `MAX_COPILOT_DAILY`; requires manual re-queue |
 | `from-backlog` | `#5319E7` (purple) | Issue auto-created from `.context/backlog.yaml` |
 | `needs-human` | `#B60205` (red) | Requires human input (e.g., empty roadmap phase, CI failure, sparse entry that couldn't be expanded) |
+| `coordination-sync` | `#BFDADC` (light blue) | Auto-filed by `agent-coordination-sync.yml` on the daily stale-lock tracking issue |
+| `no-coordination-check` | `#EDEDED` (gray) | Opt PR out of `agent-coordination-sync.yml` suggestions |
 
 **Resolution-path selection:**
 - Default: no automated resolution. Add a label to opt in.
