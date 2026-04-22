@@ -553,3 +553,5 @@ else
 fi
 
 # smoke-test marker A (PR #113 verification, will be closed unmerged)
+
+# second commit to test upsert idempotency
