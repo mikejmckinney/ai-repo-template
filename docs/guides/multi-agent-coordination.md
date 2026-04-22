@@ -129,6 +129,7 @@ Conflicts are prevented by layered defenses. Earlier layers are cheaper.
 4. **PM arbitration** — when a task genuinely needs a cross-role edit, PM decides: sequence, split, or shared claim.
 5. **Judge diff-gate** — Judge blocks merges that violate ownership.
 6. **Cross-PR overlap CI** (`agent-parallelism-report.yml`) — runs on every PR, posts a "Parallelism Report" comment listing every other open PR and classifying overlap as **hard** (same file), **soft** (same owned-path glob), or **none**. Comment-only, non-blocking; surfaces conflicts at PR-open time so reviewers/PM can sequence intentionally rather than discover them at merge. See ADR-009 and "Parallel Copilot Fan-Out" below.
+7. **Coordination board reconciliation** (`agent-coordination-sync.yml`) — comment-first reconciler for `.context/state/coordination.md`. On PR close, suggests which Active Lock blocks should move to Recent History. On PR open (non-draft, non-fork), suggests a lock block when the PR touches owned paths but no Active Lock references its branch. A scheduled daily job appends stale-lock rows (older than 7 days with no matching open PR) to a single tracking issue labeled `coordination-sync`. Never edits `coordination.md` itself in v1; opt out per-PR with the `no-coordination-check` label. See issue #115.
 
 ## Worked Example: Two Agents in Parallel
 

@@ -358,7 +358,9 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "copilot:daily-cap-hit" "D93F0B" "Hit daily assignment cap; manual re-queue required"
     _ensure_label "from-backlog"          "5319E7" "Issue auto-created from .context/backlog.yaml"
     _ensure_label "needs-human"           "B60205" "Requires human input (e.g., empty roadmap phase, CI failure)"
-    log_info "Pipeline labels ensured (auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, copilot:*, from-backlog, needs-human)"
+    _ensure_label "coordination-sync"     "BFDADC" "Auto-filed by Coordination Sync workflow (stale lock tracking)"
+    _ensure_label "no-coordination-check" "EDEDED" "Opt PR out of agent-coordination-sync.yml suggestions"
+    log_info "Pipeline labels ensured (auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, copilot:*, from-backlog, needs-human, coordination-sync, no-coordination-check)"
 
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is
