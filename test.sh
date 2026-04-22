@@ -422,16 +422,18 @@ echo ""
 
 # --- Phase 4 fallback parser unit tests (issue #108 regression cover) ---
 echo "Running Phase 4 fallback parser unit tests..."
-if [[ -x scripts/test-phase4-fallback-parser.sh ]]; then
-    if bash scripts/test-phase4-fallback-parser.sh > /tmp/phase4-parser-test.log 2>&1; then
-        parser_passed=$(grep -c '^  ✅ ' /tmp/phase4-parser-test.log || echo 0)
+if [[ -f scripts/test-phase4-fallback-parser.sh ]]; then
+    PARSER_LOG=$(mktemp)
+    if bash scripts/test-phase4-fallback-parser.sh > "$PARSER_LOG" 2>&1; then
+        parser_passed=$(grep -c '^  ✅ ' "$PARSER_LOG" || true)
         pass "scripts/test-phase4-fallback-parser.sh ($parser_passed assertions passed)"
     else
-        fail "scripts/test-phase4-fallback-parser.sh failed (see /tmp/phase4-parser-test.log)"
-        cat /tmp/phase4-parser-test.log
+        fail "scripts/test-phase4-fallback-parser.sh failed (see log below)"
+        cat "$PARSER_LOG"
     fi
+    rm -f "$PARSER_LOG"
 else
-    fail "scripts/test-phase4-fallback-parser.sh missing or not executable"
+    fail "scripts/test-phase4-fallback-parser.sh missing"
 fi
 
 echo ""

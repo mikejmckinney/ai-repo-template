@@ -49,7 +49,6 @@ extract_errored_ids() {
           tid=$3
           gsub(/^[[:space:]]+|[[:space:]]+$/, "", tid)
           gsub(/`/, "", tid)
-          gsub(/^[[:space:]]+|[[:space:]]+$/, "", tid)
           if (tid ~ /^PRRT_/) print tid
         }
       }
