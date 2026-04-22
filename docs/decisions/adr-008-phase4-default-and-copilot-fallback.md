@@ -275,19 +275,31 @@ documentation tax (Label-application gotcha note in
       the "Claude path only" caveats from the resolution-path prose.
 - [x] Edit `test.sh`: add `docs/decisions/adr-008-...md` to
       `DOCS_FILES`.
-- [ ] **V7 (Copilot path)**: scratch PR, label only `copilot-relay`,
+- [x] **V7 (Copilot path)**: scratch PR, label only `copilot-relay`,
       3 planted bot threads. Confirm: relay → Copilot fix → Resolution
       Report with errored rows including `Thread ID` column → fallback
       job runs → audit replies + mutations succeed → all 3 threads
       `isResolved: true` → re-trigger is idempotent.
-- [ ] **V8 (Claude path)**: scratch PR, label only `claude-fix`,
+      *V7 PASS, with two follow-ups filed: #107 (Copilot occasionally
+      stops after Phase 1) and #108 (audit reply rendered `(ISS-?)`).
+      Both addressed in PR follow-ups; #107 added the
+      `copilot-stall-watcher` job in the same workflow file, and #108
+      fixed the awk lookup with parser unit tests in
+      `scripts/test-phase4-fallback-parser.sh`.*
+- [x] **V8 (Claude path)**: scratch PR, label only `claude-fix`,
       3 planted bot threads. Confirm Phase 4 runs by default
       (no extra label needed) → 3 bot threads resolved with audit
       replies. Mirrors V2 minus the second label.
-- [ ] **V9 (negative)**: scratch PR, label only `claude-fix`,
+      *V8 PASS — 9/9 threads resolved.*
+- [x] **V9 (negative)**: scratch PR, label only `claude-fix`,
       1 human thread + 1 bot thread whose Phase 2 status is
       `Needs clarification`. Confirm both stay open (per-thread gate
       preserved).
+      *V9 case (a) PASS (human-author skip verified end-to-end);
+      case (b) close-covered by parser/filter unit tests under #108
+      because Claude correctly judged the planted ambiguous line as
+      fixable rather than emitting `Needs clarification` on a bot
+      thread.*
 
 ## References
 
