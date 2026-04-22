@@ -73,13 +73,19 @@ If this file is missing or clearly generic/stale: follow
 
 ## Templates and conventions
 GitHub auto-populates issue and PR templates only in the browser flow, not
-when an agent uses `gh` / MCP / API. Apply them explicitly:
+when an agent uses `gh` / MCP / API. Apply them explicitly. The issue
+templates start with a YAML front-matter block delimited by `---`; that
+block is metadata for GitHub's template chooser, not body text. Strip the
+front-matter and pass only the Markdown content after the closing `---`
+to `gh` / MCP / API.
 
 - When creating issues programmatically, use the body skeleton from
-  `.github/ISSUE_TEMPLATE/{feature_request,bug_report,agent_init}.md`.
+  `.github/ISSUE_TEMPLATE/{feature_request,bug_report,agent_init}.md`
+  (Markdown body only; strip the leading YAML front-matter).
 - When creating PRs programmatically, use the body skeleton from
-  `.github/pull_request_template.md`. The **Doc sync** checklist is
-  REQUIRED — Judge enforces it at diff-gate.
+  `.github/pull_request_template.md` (no front-matter to strip in this
+  file). The **Doc sync** checklist is REQUIRED — Judge enforces it at
+  diff-gate.
 - When addressing review feedback on a PR you authored, follow
   `.github/prompts/pr-resolve-all.md` (Phases 1–4) so the Resolution
   Report and Phase 4 thread-resolution land consistently — even when no

@@ -4,7 +4,7 @@
 
 ## Issue and PR Granularity
 
-Many small follow-ups split into separate issues and PRs is more expensive than the engineering work they wrap. Bundle by default; split only when there's a real reason.
+Splitting many small follow-ups into separate issues and PRs is more expensive than the engineering work they wrap. Bundle by default; split only when there's a real reason.
 
 ### Bundle into one issue / one PR when **all** of these hold
 
