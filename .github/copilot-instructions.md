@@ -70,3 +70,21 @@ If this file is missing or clearly generic/stale: follow
 - Run verification commands (prefer those in AI_REPO_GUIDE.md).
 - If changes affect commands/layout/conventions/troubleshooting, update
   AI_REPO_GUIDE.md (or state "no changes required").
+
+## Templates and conventions
+GitHub auto-populates issue and PR templates only in the browser flow, not
+when an agent uses `gh` / MCP / API. Apply them explicitly:
+
+- When creating issues programmatically, use the body skeleton from
+  `.github/ISSUE_TEMPLATE/{feature_request,bug_report,agent_init}.md`.
+- When creating PRs programmatically, use the body skeleton from
+  `.github/pull_request_template.md`. The **Doc sync** checklist is
+  REQUIRED — Judge enforces it at diff-gate.
+- When addressing review feedback on a PR you authored, follow
+  `.github/prompts/pr-resolve-all.md` (Phases 1–4) so the Resolution
+  Report and Phase 4 thread-resolution land consistently — even when no
+  `@copilot follow` mention has been posted.
+- For bundling small follow-ups vs. splitting them, see
+  `docs/guides/agent-best-practices.md` → "Issue and PR Granularity."
+- If a section the work needs is missing from a template, **update the
+  template in the same PR** rather than skipping the section.
