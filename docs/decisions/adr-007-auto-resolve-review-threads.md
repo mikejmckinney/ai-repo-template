@@ -251,13 +251,17 @@ commit SHA and the `ISS-NN` ID, then fires the GraphQL
 - [x] Create this ADR.
 - [x] Verify on a real PR by labeling `claude-fix` + `auto-resolve-threads`
       (Claude path) and separately `copilot-relay` + `auto-resolve-threads`
-      (Copilot path). **Claude path ✅ passed end-to-end** on PR #97 (V2)
-      — 7 bot threads resolved with canonical audit replies, human
-      thread stayed open. **Copilot path partial pass** on PR #99 (V3) —
-      gate logic correct but mutations return `FORBIDDEN`; tracked as
+      (Copilot path), plus the unlabeled-negative case. **Claude path
+      ✅ passed end-to-end** on PR #97 (V2) — 7 bot threads resolved with
+      canonical audit replies, human thread stayed open. **Copilot path
+      partial pass** on PR #99 (V3) — gate logic correct but mutations
+      return `FORBIDDEN`; tracked as
       [issue #100](https://github.com/mikejmckinney/ai-repo-template/issues/100).
-      See the Verification Report comment on PR #93 for the consolidated
-      V1–V6 results.
+      **Unlabeled negative ✅ passed** on PR #101 (V4) — Phase 3 report
+      contained the canonical `Label auto-resolve-threads not present —
+      skipping thread resolution.` line and no threads were touched.
+      Consolidated V1–V6 results:
+      [Verification Report comment on PR #93](https://github.com/mikejmckinney/ai-repo-template/pull/93#issuecomment-4292631375).
 
 ## References
 
