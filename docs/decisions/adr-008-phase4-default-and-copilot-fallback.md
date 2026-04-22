@@ -76,14 +76,29 @@ report includes the Phase 4 table.
 ### 2. Relay-side fallback for the Copilot path.
 
 `agent-relay-reviews.yml` gains a second job, `phase4-fallback`,
-triggered by `issue_comment.created`. Job-level guards:
+triggered by `issue_comment.created`. Job-level guards (`if:`):
 
-- The comment is on a same-repo PR (fork guard).
 - The PR carries `copilot-relay`.
-- The comment author is the Copilot SWE agent identity (`copilot[bot]`
-  / `copilot`).
-- The comment body contains the canonical Phase 4 section header
-  (`### Phase 4 — Thread auto-resolution`).
+- The comment author is one of the Copilot SWE-agent identities
+  (`copilot`, `Copilot`, `copilot[bot]`, `copilot-swe-agent`,
+  `copilot-swe-agent[bot]`) — every form GitHub may emit across
+  REST/GraphQL and the Copilot product surfaces.
+
+Runtime guards (job steps, fail-closed, before any `CLAUDE_PAT` use):
+
+- **Fork guard.** A first step uses the default read-only
+  `GITHUB_TOKEN` to fetch the PR's `isCrossRepository` flag and aborts
+  if the head ref is from a fork. The job-level `if:` cannot perform
+  this check — `github.event.repository.full_name` always equals
+  `github.repository` on `issue_comment` because the comment lives on
+  the upstream PR — so the runtime check is the actual fork guard for
+  `CLAUDE_PAT`.
+- **Phase 4 header presence.** Checked **after** re-fetching the
+  comment body (step 1 below), not in the job-level `if:`. The
+  `issue_comment` event payload may truncate long comment bodies, so a
+  job-level `contains(github.event.comment.body, '…')` check can
+  false-negative when the Phase 4 section sits past the truncation
+  cutoff.
 
 Steps:
 
@@ -107,9 +122,12 @@ Steps:
    - Fire `resolveReviewThread`. Confirm `isResolved: true`.
 5. Post a single fingerprinted summary comment listing per-row outcomes
    (`✅ resolved` / `❌ still errored: <reason>`).
-6. On parse failure (table malformed, columns missing, no `Thread ID`),
-   post a single comment flagging the parse error. Do not retry; do not
-   silently skip.
+6. On parse failure (table malformed, columns missing, no `Thread ID`,
+   or `⚠️ Errored` row(s) present but no extractable `PRRT_…` ID),
+   post a single fingerprinted parse-error comment on the PR and exit
+   non-zero. Do not retry; do not silently skip. The fingerprint is
+   computed over the Phase 4 section so that re-fires on a malformed
+   table don't spam the PR.
 
 The new job has its own `concurrency` group
 (`phase4-fallback-${{ github.event.issue.number }}`) and its own

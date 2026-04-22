@@ -488,15 +488,33 @@ jobs:
   # See ADR-008 for the design rationale and #100 for the FORBIDDEN
   # evidence on the Copilot path.
   phase4-fallback:
+    # Job-level filter:
+    #   - Comment is on a PR (issue_comment fires on issues + PRs)
+    #   - PR carries `copilot-relay` (single-label gate, per ADR-008)
+    #   - Comment author is one of the Copilot identities. We accept the
+    #     full set of forms GitHub may emit across REST/GraphQL and the
+    #     two Copilot product surfaces (the SWE agent and the cloud
+    #     agent). Mirrors the normalization rule in
+    #     `pr-resolve-all.md` Phase 4.
+    #
+    # Intentionally NOT in the if:
+    #   - Repository fork check: `github.event.repository.full_name ==
+    #     github.repository` is always true on `issue_comment` (the
+    #     comment lives on the upstream repo). The real fork guard
+    #     requires fetching the PR's `headRepository` — done in the
+    #     "Fork guard" step below before any CLAUDE_PAT use.
+    #   - Phase 4 header presence: `issue_comment` event payloads may
+    #     truncate long comment bodies. The "Run Phase 4 fallback" step
+    #     re-fetches the full body via the API and checks for the
+    #     header there.
     if: >
       github.event_name == 'issue_comment' &&
       github.event.issue.pull_request != null &&
-      github.event.repository.full_name == github.repository &&
       contains(github.event.issue.labels.*.name, 'copilot-relay') &&
-      (github.event.comment.user.login == 'copilot' ||
-       github.event.comment.user.login == 'Copilot' ||
-       github.event.comment.user.login == 'copilot-swe-agent[bot]') &&
-      contains(github.event.comment.body, '### Phase 4 — Thread auto-resolution')
+      contains(
+        fromJSON('["copilot","Copilot","copilot[bot]","copilot-swe-agent","copilot-swe-agent[bot]"]'),
+        github.event.comment.user.login
+      )
 
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -510,6 +528,31 @@ jobs:
       contents: read
 
     steps:
+      # Fork guard — must run BEFORE any step that uses CLAUDE_PAT.
+      # Uses the default GITHUB_TOKEN (read-only on forks) to fetch the
+      # PR head ref. Fails closed if the PR can't be fetched or is
+      # cross-repository.
+      - name: Fork guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          meta=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
+            --json isCrossRepository,headRepositoryOwner,headRepository 2>&1) || {
+            echo "❌ Could not fetch PR metadata for fork guard. Refusing to proceed."
+            echo "$meta"
+            exit 1
+          }
+          is_cross=$(printf '%s' "$meta" | jq -r '.isCrossRepository')
+          if [[ "$is_cross" != "false" ]]; then
+            echo "❌ Refusing to run phase4-fallback on cross-repository (fork) PR."
+            echo "    CLAUDE_PAT must not be exposed when the PR head is from a fork."
+            printf '%s\n' "$meta"
+            exit 1
+          fi
+
       - name: Run Phase 4 fallback
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
@@ -521,12 +564,21 @@ jobs:
 
           owner="${REPO%/*}"
           name="${REPO#*/}"
+          nl=$'\n'
 
           # ── 1. Re-fetch comment body (event payload may truncate) ──
           body=$(gh api "/repos/${REPO}/issues/comments/${COMMENT_ID}" --jq '.body')
           if [[ -z "$body" ]]; then
             echo "❌ Empty comment body — abort."
             exit 1
+          fi
+
+          # ── 1b. Header check (moved here from job-level if: because
+          # issue_comment event payloads may truncate the body before
+          # the header byte) ──
+          if ! printf '%s' "$body" | grep -qF '### Phase 4 — Thread auto-resolution'; then
+            echo "Phase 4 header not found in re-fetched comment body. Nothing to do."
+            exit 0
           fi
 
           # ── 2. Extract the Phase 4 section ──
@@ -537,13 +589,29 @@ jobs:
             flag {print}')
 
           if [[ -z "$phase4" ]]; then
-            echo "Phase 4 section not found in comment body. Nothing to do."
+            echo "Phase 4 section was empty after extraction. Nothing to do."
             exit 0
           fi
 
-          # ── 3. Parse table rows where Action == ⚠️ Errored ──
+          # ── 3. Count Errored rows independently from valid Thread ID
+          # extraction. This lets us distinguish "no errored rows" (a
+          # legit no-op) from "errored rows present but the Thread ID
+          # column was malformed" (a parse error that ADR-008 requires
+          # we loud-fail on rather than silently skip). ──
+          errored_row_count=$(printf '%s' "$phase4" | awk -F'|' '
+            /^\|/ && !/^\|[[:space:]]*-+/ && !/^\|[[:space:]]*Thread[[:space:]]*\|/ {
+              if (NF >= 7) {
+                action=$6
+                gsub(/^[[:space:]]+|[[:space:]]+$/, "", action)
+                if (action ~ /Errored/) print "x"
+              }
+            }' | wc -l | tr -d ' ')
+
+          # ── 4. Parse table rows where Action == ⚠️ Errored. Strip
+          # optional surrounding backticks (e.g. `PRRT_…`) before the
+          # PRRT_ prefix check.
           # Expected columns (after stripping leading/trailing pipes):
-          # Thread | Thread ID | ISS | Author | Action | Notes
+          # Thread | Thread ID | ISS | Author | Action | Notes ──
           errored_ids=$(printf '%s' "$phase4" | awk -F'|' '
             /^\|/ && !/^\|[[:space:]]*-+/ && !/^\|[[:space:]]*Thread[[:space:]]*\|/ {
               # NF includes leading + trailing empty fields from the outer pipes.
@@ -554,14 +622,40 @@ jobs:
                 if (action ~ /Errored/) {
                   tid=$3
                   gsub(/^[[:space:]]+|[[:space:]]+$/, "", tid)
+                  gsub(/`/, "", tid)
+                  gsub(/^[[:space:]]+|[[:space:]]+$/, "", tid)
                   if (tid ~ /^PRRT_/) print tid
                 }
               }
             }')
 
-          if [[ -z "$errored_ids" ]]; then
+          valid_id_count=$(printf '%s\n' "$errored_ids" | grep -c '^PRRT_' || true)
+
+          if [[ "$errored_row_count" -eq 0 ]]; then
             echo "✅ No errored rows in Phase 4 report. Nothing to retry."
             exit 0
+          fi
+
+          if [[ "$valid_id_count" -lt "$errored_row_count" ]]; then
+            # Loud-fail on parse errors per ADR-008. Dedup the parse-
+            # error comment via a fingerprint of the Phase 4 section so
+            # re-fires (e.g. comment edits) don't spam the PR.
+            parse_fp=$(printf '%s' "$phase4" | sha256sum | awk '{print $1}')
+            prev_parse=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+              --jq "[.comments[] | select(.body | contains(\"<!-- relay-fallback-parse-error:${parse_fp} -->\"))] | length" 2>/dev/null || echo "0")
+            if [[ "$prev_parse" -gt 0 ]]; then
+              echo "Parse-error comment already posted for fingerprint $parse_fp. Skipping."
+              exit 1
+            fi
+            {
+              printf '❌ **Phase 4 fallback parse error**%s%s' "$nl" "$nl"
+              printf 'The Phase 4 table had **%d** `⚠️ Errored` row(s) but only **%d** valid `PRRT_…` Thread ID(s) could be extracted.%s%s' \
+                "$errored_row_count" "$valid_id_count" "$nl" "$nl"
+              printf 'Per ADR-008 the `Thread ID` column is required and must contain a GraphQL node ID (`PRRT_…`), with no surrounding markup beyond optional backticks. Re-post the Phase 4 table with a valid Thread ID for each errored row, or resolve the threads manually.%s%s' "$nl" "$nl"
+              printf '<!-- relay-fallback-parse-error:%s -->%s' "$parse_fp" "$nl"
+            } | gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file -
+            echo "❌ Posted parse-error comment (fingerprint $parse_fp). Aborting."
+            exit 1
           fi
 
           # ── 4. Compute fingerprint and dedup against prior fallback comments ──
@@ -579,7 +673,6 @@ jobs:
           short_sha=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefOid --jq '.headRefOid' | cut -c1-7)
 
           # ── 6. For each errored thread, post audit reply + resolve ──
-          nl=$'\n'
           summary="🔁 **Phase 4 fallback (cycle 1)** — relayed under \`CLAUDE_PAT\` because the Copilot cloud-agent token returned \`FORBIDDEN\` on the Phase 4 mutations.${nl}"
           summary+="<!-- relay-fallback-fingerprint:${fingerprint} -->${nl}${nl}"
           summary+="| Thread ID | Action | Result |${nl}"
