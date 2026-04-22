@@ -181,16 +181,18 @@ extract_scope() {
     done <<< "$labels"
     if [[ -n "$picked_role" ]]; then
       # Emit prefixes for that role from the ownership map. Compare
-      # case-insensitively against the role column. Filter to
-      # path-shaped lines only — the underlying parser preserves some
+      # case-insensitively against the role column. Filter out
       # English-prose rows (e.g. `colocated *.test.* / *.spec.* under
-      # those paths`) that aren't real globs and would otherwise
-      # collide across roles.
+      # those paths`) by rejecting any prefix that contains internal
+      # whitespace — real path globs never have spaces, prose always
+      # does. This preserves glob metacharacters (`*`, `?`, `[`, `]`)
+      # so future ownership rows with explicit globs aren't dropped
+      # (gemini #7).
       local prefixes
       prefixes=$(printf '%s\n' "$_mds_role_prefixes" \
         | awk -F'\t' -v r="$picked_role" '
             { role=tolower($1); if (role==r) print $2 }
-          ' | grep -E '^[A-Za-z0-9._/-]+$' | sort -u || true)
+          ' | grep -v '[[:space:]]' | awk 'NF' | sort -u || true)
       if [[ -n "$prefixes" ]]; then
         echo "MODE: role-glob (role:$picked_role)" >&2
         printf '%s\n' "$prefixes"
@@ -213,10 +215,14 @@ extract_depends_on() {
   local n="$1"
   local body
   body="$(_mds_issue_body "$n")"
+  # Require at least one space after the colon so `Depends-on:#N`
+  # (no space) is rejected. Drop the end-of-line anchor so trailing
+  # context like `Depends-on: #123 (backend)` is tolerated. The sed
+  # below extracts the first `#NNN` token regardless of suffix.
   # `|| true` so set -e doesn't trip when there are zero matches.
   printf '%s\n' "$body" \
-    | { grep -iE '^[[:space:]]*Depends-on:[[:space:]]*#[0-9]+[[:space:]]*$' || true; } \
-    | sed -E 's/.*#([0-9]+).*/\1/' \
+    | { grep -iE '^[[:space:]]*Depends-on:[[:space:]]+#[0-9]+' || true; } \
+    | sed -E 's/^[[:space:]]*[Dd]epends-on:[[:space:]]+#([0-9]+).*/\1/' \
     | awk 'NF' \
     | sort -un
 }
@@ -269,7 +275,14 @@ classify_overlap() {
 #   - depends-on target outside the input set AND not closed → refuse.
 #   - depends-on target inside the input set but earlier and refused
 #     → refuse (transitive refusal).
-#   - soft overlap is permitted (logged in the reason field).
+#   - soft overlap (different files under the same owned-path prefix)
+#     is permitted. NOTE: this only fires when at least one of the two
+#     issues has an explicit architect file list. Two issues that both
+#     fall back to the same `role:<name>` label resolve to identical
+#     prefix lists, which classify_overlap reports as HARD overlap, so
+#     the later issue is refused. To dispatch two same-role issues
+#     together, post an architect-plan-files comment on at least one
+#     of them naming the specific files it touches.
 select_dispatchable() {
   # Collect inputs.
   local issues=("$@")
@@ -279,10 +292,13 @@ select_dispatchable() {
   fi
 
   # Working dir for per-issue scope files.
+  # Cleanup is handled at every exit path below (explicit `rm -rf` rather
+  # than `trap RETURN` because this library is sourced by callers and a
+  # RETURN trap would leak into and fire on every subsequent function
+  # return in the caller's shell).
   local work
   work=$(mktemp -d)
-  # shellcheck disable=SC2064
-  trap "rm -rf '$work'" RETURN
+  _mds_select_cleanup() { rm -rf "$work"; }
 
   # 1. Pre-compute scope for each input issue.
   local i
@@ -372,6 +388,8 @@ select_dispatchable() {
     mode=$(head -1 "$work/mode.$iss" 2>/dev/null | sed 's/^MODE: //' || echo "unknown")
     printf '%s\tdispatch\tscope=%s\n' "$iss" "$mode"
   done
+
+  _mds_select_cleanup
 }
 
 # ── Internal: cycle detection ──
@@ -407,10 +425,11 @@ _mds_find_cycles() {
       local rest="${iter[-1]}"
       if [[ -z "${rest// /}" ]]; then
         color["$u"]=2
+        # `unset arr[-1]` removes the last element and decrements the
+        # length, which is all the stack/iter logic needs (we only
+        # ever read [-1]). No need to copy-rebuild the arrays.
         unset 'stack[-1]'
         unset 'iter[-1]'
-        stack=("${stack[@]}")
-        iter=("${iter[@]}")
         continue
       fi
       v="${rest%% *}"

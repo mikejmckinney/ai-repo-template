@@ -100,8 +100,19 @@ assert_eq "two Depends-on lines parsed in numeric order" $'50\n51' "$out"
 
 make_issue 101 $'Depends-on: #50\nDepends-on: #50\nDepends-on:#50\n' "" "" "open"
 out=$(extract_depends_on 101)
-# `Depends-on:#50` lacks the required space, must be ignored.
-assert_eq "duplicates collapsed; missing-space form ignored" "50" "$out"
+# `Depends-on:#50` (no space) is mixed in but the valid lines also
+# resolve to 50 — this only proves de-dup, not that the missing-space
+# form is rejected. The dedicated assertion against issue 105 below
+# is the real test.
+assert_eq "duplicates collapsed" "50" "$out"
+
+make_issue 105 $'Depends-on:#52\n' "" "" "open"
+out=$(extract_depends_on 105)
+assert_eq "missing-space form rejected when it is the only line" "" "$out"
+
+make_issue 106 $'Depends-on: #77 (backend bookkeeping)\n' "" "" "open"
+out=$(extract_depends_on 106)
+assert_eq "trailing context after #N tolerated (gemini #8)" "77" "$out"
 
 make_issue 102 $'No deps here. Closes #99 (not a depends).\n' "" "" "open"
 out=$(extract_depends_on 102)
@@ -159,7 +170,16 @@ echo ""
 
 echo "classify_overlap"
 
-mk_list() { local f; f=$(mktemp); TMP_DIRS+=("$(dirname "$f")"); printf '%s\n' "$@" > "$f"; printf '%s' "$f"; }
+# All `mk_list` outputs land inside a single FIXTURE-adjacent dir so
+# the EXIT trap rm-rfs that one dir, never `dirname $(mktemp)` which
+# would be /tmp on most systems (caught in PR review).
+LIST_DIR=$(mktemp -d); TMP_DIRS+=("$LIST_DIR")
+mk_list() {
+  local f
+  f=$(mktemp -p "$LIST_DIR" list.XXXXXX)
+  printf '%s\n' "$@" > "$f"
+  printf '%s' "$f"
+}
 
 A=$(mk_list "src/api/users.py" "src/api/auth.py")
 B=$(mk_list "src/api/users.py" "src/api/billing.py")
