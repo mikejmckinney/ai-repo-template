@@ -178,7 +178,7 @@ bash install.sh
 | `docs/decisions/README.md` | ADR index, supersession discipline, what a well-documented ADR looks like |
 | `docs/decisions/adr-template.md` | Architecture Decision Record template (with "When to write" header) |
 | `.github/pull_request_template.md` | PR template with required doc-sync checklist |
-| `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets |
+| `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching |
 | `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Analyst/Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |
 | `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
