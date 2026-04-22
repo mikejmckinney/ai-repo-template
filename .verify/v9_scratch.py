@@ -7,20 +7,19 @@ def compute(a, b, c):
     return total
 
 def double_all(items):
-    out = []
-    for i in range(0, len(items)):
-        out.append(items[i] * 2)
-    return out
+    return [item * 2 for item in items]
 
 def load(url):
     import urllib.request
     try:
-        return urllib.request.urlopen(url).read()
-    except:
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            return resp.read()
+    except Exception:
         return None
 
 # AMBIGUOUS: this exact threshold is load-bearing for downstream consumers.
 # TODO: confirm semantics with @owner before changing — DO NOT auto-refactor.
 RETRY_LIMIT = 7
 
-print(compute(1, 2, 3))
+if __name__ == "__main__":
+    print(compute(1, 2, 3))
