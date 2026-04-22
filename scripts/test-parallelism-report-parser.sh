@@ -73,6 +73,11 @@ parse_ownership() {
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", role)
       globs=$3
       gsub(/`/, "", globs)
+      # Strip inline parenthetical qualifiers BEFORE the comma split.
+      # Some rows contain notes like
+      #   `docs/** (except docs/decisions/**, docs/research/**)`
+      # whose interior commas would otherwise corrupt the split.
+      gsub(/ *\([^)]*\)/, "", globs)
       n=split(globs, parts, ",")
       for (i=1;i<=n;i++) {
         g=parts[i]
@@ -125,6 +130,19 @@ FIXTURE_MALFORMED='Some prose without a table.
 | --- | --- |
 | NotAValidRole | `src/x/**` | extra |'
 
+# Regression fixture for the qualifier-stripping bug (codex P1 on PR #113).
+# Without the `gsub(/ *\([^)]*\)/, "", globs)` step, the comma inside
+# the `(except ...)` clause splits the Docs row into 3 broken pieces
+# (`docs/** (except docs/decisions`, `docs/research/**)`, etc.) and
+# the soft-overlap classification disappears for the entire `docs/`
+# subtree. With the fix, we expect a single clean `Docs<TAB>docs`
+# entry and nothing else from the qualified part.
+FIXTURE_QUALIFIERS='| Role       | Owned path globs                                                     | May also edit |
+|------------|----------------------------------------------------------------------|---------------|
+| Architect  | `.context/rules/**` (except `agent_ownership.md`)                    | nothing       |
+| Docs       | README.md, AI_REPO_GUIDE.md, docs/** (except docs/decisions/**, docs/research/**)  | nothing |
+| Judge      | nothing (review-only, `.github/agents/judge.agent.md`)               | nothing       |'
+
 # ── Test group 1: parser ──
 
 echo "── Parser unit tests ──"
@@ -141,13 +159,21 @@ assert_not_contains "parser: 'nothing' globs are dropped" "Judge	nothing"       
 malformed_prefixes=$(printf '%s\n' "$FIXTURE_MALFORMED" | parse_ownership)
 assert_eq "parser: malformed table yields zero prefixes (fail-soft)" "" "$malformed_prefixes"
 
+# Qualifier-stripping regression check (codex P1 on PR #113).
+q_prefixes=$(printf '%s\n' "$FIXTURE_QUALIFIERS" | parse_ownership)
+assert_contains "parser (qualifier): Docs -> docs (single clean prefix)"  "Docs	docs"            "$q_prefixes"
+assert_contains "parser (qualifier): Architect -> .context/rules"         "Architect	.context/rules" "$q_prefixes"
+assert_not_contains "parser (qualifier): no broken 'docs/research' fragment" "docs/research"      "$q_prefixes"
+assert_not_contains "parser (qualifier): no broken 'except' fragment"        "except"             "$q_prefixes"
+assert_not_contains "parser (qualifier): Judge 'nothing' globs still dropped" "Judge"             "$q_prefixes"
+
 # ── Test group 2: classification ──
 
 echo ""
 echo "── Classification unit tests ──"
 
 # Build temp file lists for two PRs.
-ME=$(mktemp); ME2=$(mktemp); ME3=$(mktemp)
+ME=$(mktemp)
 OTHER_HARD=$(mktemp); OTHER_SOFT=$(mktemp); OTHER_NONE=$(mktemp)
 
 # PR-A: touches docs/foo.md
@@ -172,7 +198,7 @@ assert_eq "classify: soft -> none when prefixes are empty (fail-soft mode)" \
 assert_eq "classify: hard still detected when prefixes are empty" \
                                                 "hard" "$(classify_overlap "$ME" "$OTHER_HARD" "")"
 
-rm -f "$ME" "$ME2" "$ME3" "$OTHER_HARD" "$OTHER_SOFT" "$OTHER_NONE"
+rm -f "$ME" "$OTHER_HARD" "$OTHER_SOFT" "$OTHER_NONE"
 
 # ── Test group 3: live agent_ownership.md must parse cleanly ──
 #
@@ -195,6 +221,30 @@ if [[ -f "$LIVE_OWNERSHIP" ]]; then
     FAILED_NAMES+=("live agent_ownership.md parse")
     printf '  ❌ live agent_ownership.md parses to only %d prefix(es); expected >= 4. Did the table format change? See ADR-009 §Implementation.\n' "$live_count"
   fi
+
+  # Per-role anchor assertions: hard-fail if a known-stable row
+  # disappears from the parsed output. Catches a class of malformed-
+  # row drift (e.g. broken qualifier, role rename, column reorder)
+  # that the count-only check above can miss — a few entries can
+  # survive while specific roles silently lose their prefix. See
+  # ADR-009 §Implementation and codex P2 on PR #113.
+  for anchor in \
+      "Analyst	docs/research" \
+      "Architect	docs/decisions" \
+      "Backend	src/api" \
+      "DevOps	scripts" \
+      "Docs	docs" \
+      "PM	.context/state" \
+      "QA	tests"; do
+    if printf '%s\n' "$live_prefixes" | grep -qF "$anchor"; then
+      PASS=$((PASS + 1))
+      printf '  ✅ live anchor present: %s\n' "$anchor"
+    else
+      FAIL=$((FAIL + 1))
+      FAILED_NAMES+=("live anchor missing: $anchor")
+      printf '  ❌ live anchor missing: %s. The ownership table changed in a way that drops this prefix. See ADR-009 §Implementation.\n' "$anchor"
+    fi
+  done
 else
   PASS=$((PASS + 1))
   printf '  ✅ skipped: %s not present (test fixture isolation)\n' "$LIVE_OWNERSHIP"

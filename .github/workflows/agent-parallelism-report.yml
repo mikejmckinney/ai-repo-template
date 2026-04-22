@@ -45,9 +45,16 @@ jobs:
     name: Parallelism Report
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Skip fork PRs (CLAUDE_PAT is not exposed to forks; the comment
-    # write would fail with a misleading error).
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Skip:
+    #   - Fork PRs: CLAUDE_PAT is not exposed to forks; the comment
+    #     write would fail with a misleading error.
+    #   - Draft PRs that aren't being explicitly marked ready: avoids
+    #     spamming the report on every WIP push. The first run will
+    #     happen on the `ready_for_review` event.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository
+      && (github.event.pull_request.draft == false
+          || github.event.action == 'ready_for_review')
     permissions:
       pull-requests: write
       contents: read
@@ -65,7 +72,11 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
-          set -uo pipefail
+          # set -e: surface gh/jq failures (other workflows in this repo
+          # use the same setting). Commands we deliberately allow to
+          # "fail-soft" (e.g. fetching another PR's files when GitHub
+          # returns 404) are explicitly guarded with `|| { ... }` below.
+          set -euo pipefail
           # Marker for the upsert: exactly one report comment per PR.
           MARKER='<!-- parallelism-report -->'
 
@@ -100,6 +111,13 @@ jobs:
                 gsub(/^[[:space:]]+|[[:space:]]+$/, "", role)
                 globs=$3
                 gsub(/`/, "", globs)
+                # Strip inline parenthetical qualifiers BEFORE the comma
+                # split. Some rows contain notes like
+                #   `docs/** (except docs/decisions/**, docs/research/**)`
+                # whose interior commas would otherwise corrupt the
+                # split. ADR-009 §Decision 2: prefer simple+noisy
+                # (false-positive softs) over precise+risky.
+                gsub(/ *\([^)]*\)/, "", globs)
                 # Split comma-separated globs.
                 n=split(globs, parts, ",")
                 for (i=1;i<=n;i++) {
@@ -128,7 +146,7 @@ jobs:
 
           # ── 3. List other open PRs (not me, not drafts). ──
           others=$(gh pr list --repo "$REPO" --state open --limit 100 \
-            --json number,title,headRefName,isDraft,author \
+            --json number,headRefName,isDraft,author \
             --jq "[.[] | select(.number != $PR_NUMBER and .isDraft == false)]")
           other_count=$(printf '%s' "$others" | jq 'length')
           echo "Comparing against $other_count other open PR(s)."
@@ -140,7 +158,6 @@ jobs:
 
           for i in $(seq 0 $((other_count - 1))); do
             other_num=$(printf '%s' "$others" | jq -r ".[$i].number")
-            other_title=$(printf '%s' "$others" | jq -r ".[$i].title")
             other_head=$(printf '%s' "$others" | jq -r ".[$i].headRefName")
             other_author=$(printf '%s' "$others" | jq -r ".[$i].author.login // \"unknown\"")
 
@@ -193,8 +210,6 @@ jobs:
               none) action="No coordination needed." ;;
             esac
 
-            # Truncate title to keep table tidy.
-            short_title=$(printf '%s' "$other_title" | head -c 60)
             rows+="| [#$other_num]($GITHUB_SERVER_URL/$REPO/pull/$other_num) | \`$other_head\` | $other_author | **$classification** | $evidence | $action |"$'\n'
           done
 
@@ -204,7 +219,7 @@ jobs:
             echo ""
             echo "## 🔀 Parallelism Report"
             echo ""
-            echo "_Cross-PR overlap classification against the $other_count other open PR(s) at the time of this report. **Comment-only — does not block this PR.** See [ADR-009](../blob/main/docs/decisions/adr-009-parallel-multi-agent-execution.md) for rationale._"
+            echo "_Cross-PR overlap classification against the $other_count other open PR(s) at the time of this report. **Comment-only — does not block this PR.** See [ADR-009]($GITHUB_SERVER_URL/$REPO/blob/main/docs/decisions/adr-009-parallel-multi-agent-execution.md) for rationale._"
             echo ""
             if [[ -n "$parse_warning" ]]; then
               echo "> ⚠️ **Parser warning**: $parse_warning. Hard overlap is still detected; soft overlap is unavailable for this run."
@@ -228,11 +243,12 @@ jobs:
           } > /tmp/report_body.md
 
           # ── 6. Upsert: find existing comment by marker; edit or create. ──
+          # `per_page=100` is large enough for any realistic PR comment
+          # count, so `--paginate` (and the SIGPIPE-prone `head -1`)
+          # aren't needed. The jq already collapses to at most one value.
           existing_id=$(gh api \
             "/repos/$REPO/issues/$PR_NUMBER/comments?per_page=100" \
-            --paginate \
-            --jq "[.[] | select(.body | startswith(\"$MARKER\"))] | .[0].id // empty" \
-            | head -1)
+            --jq "[.[] | select(.body | startswith(\"$MARKER\"))] | .[0].id // empty")
 
           if [[ -n "$existing_id" ]]; then
             echo "Editing existing report comment ($existing_id)..."
