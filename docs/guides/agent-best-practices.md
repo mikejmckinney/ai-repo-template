@@ -101,6 +101,41 @@ Authentication must use bcrypt with cost factor 12...
 
 ---
 
+## Prompt Caching (Provider-Level)
+
+> **TL;DR**: Caching is a runner/provider concern, not a repo-content concern. The repo is already structured to benefit (stable `AGENTS.md` + role files cited by reference, not copy-pasted). No repo changes are needed to opt in. This section just documents what callers *can* do.
+
+### What it is
+
+Modern LLM providers offer prompt caching: long, stable prefixes (e.g., a full system prompt) can be hashed and reused across calls within a TTL window, so the model only re-processes the *new* portion. This cuts both latency and per-token cost on repeat reads.
+
+### Provider-by-provider
+
+| Provider / runner | Caching mechanism | Repo-side action |
+|---|---|---|
+| **Anthropic API / Claude Code (direct API use)** | Mark stable prefixes with `cache_control: { type: "ephemeral" }` in the request. TTL ~5 min (rolling). | None — opt in at the call site. |
+| **GitHub Copilot Chat** | Opaque/automatic. No user-facing knob. | None. |
+| **Claude Code CLI (via `anthropic/claude-code-action`)** | Caching applied automatically by the CLI for the system prompt + `CLAUDE.md` chain. | None — already benefits from this repo's stable `AGENTS.md` / `CLAUDE.md`. |
+| **Custom orchestrators / SDK callers** | Use the provider's caching primitive when assembling `AGENTS.md` + role file + task context. Cache the first two; leave task context uncached. | None. |
+
+### What helps caching at the repo level
+
+The single biggest cache-friendliness lever is **stability of long prefixes**. This repo already does the right things:
+
+- `AGENTS.md` and `.github/agents/*.agent.md` change rarely; behavioral overrides go in role-scoped sections rather than rewriting the canonical text.
+- Role files cite shared rules by reference (`.context/rules/domain_code_quality.md` H1–H8, etc.) instead of copy-pasting them. Copy-paste defeats caching because each call inlines a slightly different snapshot.
+- The `description:` frontmatter line is byte-identical between `.github/agents/` and `.claude/agents/` mirrors (gated by `test.sh`), so multi-runner setups dispatch on the same hashable string.
+
+### What would *hurt* caching (don't do this)
+
+- Inlining the full text of a shared rule file into a role file "for convenience." It defeats reuse, drifts on edit, and is a known cache-buster.
+- Adding timestamps, run IDs, or git SHAs to the system prompt prefix. Anything that changes per-call invalidates the cache.
+- Reordering top-level sections of `AGENTS.md` without a strong reason. Even semantically equivalent reorderings break the cache hash.
+
+### When to revisit
+
+If a future runner becomes the primary one and exposes new caching knobs (e.g., named cache breakpoints, longer TTLs), document the call-site recipe here. Repo content should not change to chase caching behavior.
+
 ## State File Conflict Prevention
 
 > **Primary mechanism**: role-based path ownership (`.context/rules/agent_ownership.md`). The mitigations below are secondary defenses for conflicts within a single role. For the full parallel-agent workflow, see `docs/guides/multi-agent-coordination.md`.

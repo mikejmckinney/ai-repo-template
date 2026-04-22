@@ -73,6 +73,7 @@ REQUIRED_FILES=(
     ".claude/agents/analyst.md"
     ".github/prompts/copilot-onboarding.md"
     ".github/prompts/repo-onboarding.md"
+    ".github/pull_request_template.md"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do
@@ -96,12 +97,14 @@ CONTEXT_FILES=(
     ".context/rules/README.md"
     ".context/rules/agent_ownership.md"
     ".context/rules/domain_code_quality.md"
+    ".context/rules/process_doc_maintenance.md"
     ".context/sessions/README.md"
     ".context/sessions/latest_summary.md"
     ".context/state/README.md"
     ".context/state/_active.md"
     ".context/state/coordination.md"
     ".context/state/task_template.md"
+    ".context/state/handoff_template.md"
     ".context/state/feedback_template.md"
     ".context/vision/README.md"
 )
@@ -143,8 +146,14 @@ DOCS_FILES=(
     "docs/guides/multi-agent-coordination.md"
     "docs/guides/optional-skills.md"
     "docs/decisions/adr-template.md"
+    "docs/decisions/README.md"
     "docs/decisions/adr-001-context-pack-structure.md"
+    "docs/decisions/adr-002-agents-md-ownership.md"
+    "docs/decisions/adr-003-claude-code-subagent-registration.md"
     "docs/decisions/adr-004-analyst-role-and-feedback-loop.md"
+    "docs/decisions/adr-005-analyst-preflight-gate.md"
+    "docs/decisions/adr-006-auto-merge-opt-in-model.md"
+    "docs/decisions/adr-007-auto-resolve-review-threads.md"
 )
 
 for file in "${DOCS_FILES[@]}"; do

@@ -36,6 +36,7 @@ You are the **PM**. You are the only agent that writes to `.context/state/coordi
 - Enforce ownership boundaries. Any cross-role edit goes through you.
 - Update `.context/state/_active.md` to point at the current priority task.
 - Record session summaries in `.context/sessions/latest_summary.md` at session end.
+- **Verify the post-merge close-out entry exists** in `.context/sessions/latest_summary.md` before marking a task as done in `coordination.md`. The role that led the work is responsible for writing the entry (format defined in `.context/sessions/README.md` §"Close-out entry"); PM blocks the state transition `merged → done` until it's present.
 
 ## Do
 

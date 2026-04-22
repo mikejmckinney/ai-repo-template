@@ -18,6 +18,7 @@ Agents must reason critically rather than agree by default. The bar is "objectiv
 - **Calibrate confidence.** State what you verified vs. what you assumed. When something is uncertain, say "uncertain" — don't pad with false confidence and don't hide behind vague qualifiers.
 - **Don't guess APIs, file contents, or runtime behavior.** Verify by reading the file or searching the codebase. If you can't verify, say so explicitly rather than asserting.
 - **Compare approaches honestly.** When multiple options are viable, name the tradeoffs (cost, risk, reversibility, blast radius) before recommending one.
+- **Cite your sources.** When stating a fact about the codebase or docs, include a relative path (and a line number when precision matters: `path/to/file.md:42`). Statements without a citation are treated as assumptions and must be marked `uncertain`. Judge and Critic reject uncited claims of fact.
 - **Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs. If a complete answer genuinely requires length, use multiple parts or multiple responses rather than cutting corners.
 
 ## Work style
@@ -40,6 +41,14 @@ When information conflicts, use this priority order:
 1. `./.context/**` — canonical project direction and constraints
 2. `./docs/**` — supporting detail and reference material
 3. Codebase — current implementation reality
+
+### Conflict-resolution procedure
+When you detect a conflict between two sources at adjacent priorities, do **not** silently pick one. Instead:
+
+1. **Note the conflict** in your output (a one-line callout naming both sources).
+2. **Follow the higher-priority source** for the current task.
+3. **File a follow-up** issue or open a PR updating the lower-priority source so it matches.
+4. **Never edit the higher-priority source to match the lower one** without an ADR. If the lower source is what's actually correct, that's an architectural change that needs `docs/decisions/`.
 
 ## Role selection (multi-agent workflow)
 This template supports parallel role-specialized agents. Before editing any file:
@@ -103,9 +112,15 @@ pre-flight," that's the signal to run pre-flight anyway.
 4. If AI_REPO_GUIDE.md missing or stale: follow `.github/prompts/repo-onboarding.md` to rebuild context.
 
 ## Ongoing maintenance
-- If your PR changes build/run/test/lint commands, layout, entry points, configs, conventions, or troubleshooting:
-  update `/AI_REPO_GUIDE.md` in the same PR (or explicitly say "AI_REPO_GUIDE.md: no changes required").
-- Update `.context/state/task_*.md` when switching tasks to enable session handoff.
+Doc-sync triggers (which files must update together) live in a single source of truth: **`.context/rules/process_doc_maintenance.md`**. Read it before opening a PR; Judge enforces it at diff-gate.
+
+### Session-state cadence
+Keep agent working memory current so the next session (or next role) can resume cleanly:
+
+- **`.context/state/_active.md`** — rewrite (don't append) at every task boundary. Max ~20 lines. Schema: Active Task, File, Role, Blockers, Next 1–3 actions. Schema and examples in `.context/state/README.md`.
+- **`.context/state/task_<slug>.md`** — create from `.context/state/task_template.md` at task start. Delete (or move to `.context/sessions/`) at task end.
+- **Handoff trigger** — when a single agent conversation exceeds ~30 turns OR before any handoff to a different role/agent, write a structured handoff to `.context/state/handoff_<slug>.md` (template: `.context/state/handoff_template.md`) and start a fresh session. The handoff is the baton; the next session reads it instead of replaying the full chat.
+- **Close-out (post-merge)** — the role that led the work updates `.context/sessions/latest_summary.md` with a 3–5 line entry: what shipped, what was harder than expected, what generalizes (→ open a follow-up to update rules/ADRs/guides if applicable). PM verifies this exists before marking the task done in `coordination.md`.
 
 ## Testing requirements
 - Follow the test pyramid: many unit tests, fewer integration tests, minimal E2E tests.
