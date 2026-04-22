@@ -551,3 +551,5 @@ else
     echo -e "${GREEN}Template verification PASSED${NC}"
     exit 0
 fi
+
+# smoke-test marker A (PR #113 verification, will be closed unmerged)
