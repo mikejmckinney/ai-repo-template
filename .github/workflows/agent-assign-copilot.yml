@@ -88,11 +88,14 @@ jobs:
           # default 20) means at most ~20 relevant events per 24 h window.
           # stderr is NOT suppressed: API failures propagate and fail the step
           # (fail-closed — do not treat a broken API call as zero assignments).
+          # NOTE: gh ≥ 2.46 rejects --slurp combined with --jq ("the `--slurp`
+          # option is not supported with `--jq` or `--template`"). Pipe to jq
+          # instead so the same script works across gh versions. See #112.
           count=$(gh api \
             -H "Accept: application/vnd.github+json" \
             "/repos/$owner/$name/issues/events?per_page=100" \
             --paginate --slurp \
-            --jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length")
+            | jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length")
           echo "Assignments in last 24h: $count / $MAX_DAILY"
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "max=$MAX_DAILY" >> "$GITHUB_OUTPUT"
