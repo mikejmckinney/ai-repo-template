@@ -8,8 +8,13 @@ owned_paths:
   - 'CLAUDE.md'
   - 'AGENT.md'
   - 'docs/README.md'
+  - 'docs/FAQ.md'
+  - 'docs/smoke-a.md'
+  - 'docs/smoke-e.md'
   - 'docs/guides/**'
   - 'docs/reference/**'
+  # Note: docs/decisions/**, docs/postmortems/**, docs/research/** are excluded
+  # per .context/rules/agent_ownership.md (Architect / Analyst own those).
 handoff_targets:
   - judge           # diff-gate review
   - architect       # if docs reveal an architectural gap

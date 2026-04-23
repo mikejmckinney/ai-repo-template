@@ -5,6 +5,7 @@ tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
 owned_paths:
   - 'AGENTS.md'                  # canonical process-rules file; see ADR-002
   - 'docs/decisions/**'
+  - 'docs/postmortems/**'        # Architect ratifies "What generalizes"; see agent_ownership.md Shared/Contested
   - '.context/roadmap.md'
   - '.context/vision/architecture/**'
   - '.context/rules/**'          # excludes agent_ownership.md — that file is PM-owned
