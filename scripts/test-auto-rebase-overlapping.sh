@@ -192,6 +192,20 @@ build_repo "$clean_repo"
 result=$(attempt_rebase featurebr deadbeef "$clean_repo")
 assert_eq "clean rebase reports 'clean'" "clean" "$result"
 
+# 15b. Clean rebase via `git worktree` (regression for Codex P1: in
+#       worktrees, `.git` is a *file* not a directory; the workflow
+#       always uses `git worktree add`).
+worktree_parent=$(mktemp -d); TMP_DIRS+=("$worktree_parent")
+build_repo "$worktree_parent"
+worktree_path="$worktree_parent/wt-feature"
+git -C "$worktree_parent" worktree add -B featurebr "$worktree_path" featurebr >/dev/null 2>&1
+# Sanity: this is the codex bug surface — `.git` is a file in worktrees.
+assert_eq "worktree's .git is a file (not dir) — guard regression surface" \
+  "file" \
+  "$(test -f "$worktree_path/.git" && echo file || echo dir)"
+result=$(attempt_rebase featurebr deadbeef "$worktree_path")
+assert_eq "clean rebase via git worktree reports 'clean' (Codex P1 fix)" "clean" "$result"
+
 # 16. Conflict rebase.
 conflict_repo=$(mktemp -d); TMP_DIRS+=("$conflict_repo")
 (

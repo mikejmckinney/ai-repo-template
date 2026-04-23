@@ -26,10 +26,9 @@
 #         clean                    — rebase succeeded; new HEAD is on top
 #         conflict:path1,path2,... — rebase aborted; comma-separated
 #                                    list of conflicting paths
-#       The caller is responsible for the subsequent
-#       `git push --force-with-lease=<branch>:<expected_sha>` and for
-#       running `git rebase --abort` cleanup is performed in this
-#       function on the conflict path.
+#       This function performs `git rebase --abort` cleanup on conflict.
+#       The caller is responsible only for the subsequent
+#       `git push --force-with-lease=<branch>:<expected_sha>` on success.
 #
 #   format_success_comment <merged_pr> <new_sha>
 #       Print the canonical success-comment body to stdout, with the
@@ -118,17 +117,21 @@ _aro_pr_files() {
 # 100 threads — same limitation already documented in
 # auto-resolve-on-merge.yml — which is acceptable: a PR with >100
 # threads almost certainly has unresolved ones.
+#
+# Fail-closed: if the API call fails (network, rate-limit, perms), emit a
+# sentinel value (`999`) so the > 0 gate trips and the PR is skipped.
+# Better to skip a rebase we could have done than to force-push to a PR
+# with unresolved review threads we couldn't see.
 _aro_pr_unresolved_threads() {
   local n="$1"
   if [[ "${AUTO_REBASE_TEST_MODE:-0}" == "1" ]]; then
     cat "${FIXTURE_DIR}/${n}.unresolved" 2>/dev/null || echo "0"
   else
-    local repo owner name
+    local repo owner name result
     repo="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
     owner="${repo%/*}"
     name="${repo#*/}"
-    set -o pipefail
-    gh api graphql -f query='
+    result=$(set -o pipefail; gh api graphql -f query='
       query($owner: String!, $name: String!, $pr: Int!) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $pr) {
@@ -139,8 +142,14 @@ _aro_pr_unresolved_threads() {
         }
       }' -F owner="$owner" -F name="$name" -F pr="$n" 2>/dev/null \
       | jq '[.data.repository.pullRequest.reviewThreads.nodes[]
-             | select(.isResolved == false)] | length' \
-      || echo "0"
+             | select(.isResolved == false)] | length' 2>/dev/null) \
+      || result=""
+    if [[ -z "$result" || ! "$result" =~ ^[0-9]+$ ]]; then
+      # Fail-closed sentinel: caller treats > 0 as "skip".
+      echo "999"
+    else
+      echo "$result"
+    fi
   fi
 }
 
@@ -219,7 +228,12 @@ attempt_rebase() {
   local expected_sha="$2"  # informational: caller uses for --force-with-lease
   local work_dir="$3"
 
-  if [[ ! -d "$work_dir/.git" ]]; then
+  # Accept both regular checkouts (`.git` is a directory) and `git
+  # worktree add` checkouts (`.git` is a file pointing at the parent
+  # repo's worktrees/ entry). The workflow always uses `git worktree`
+  # so directory-only check would fail every real-world invocation
+  # (Codex P1, PR #143).
+  if ! git -C "$work_dir" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     echo "conflict:not-a-git-repo"
     return 0
   fi
@@ -236,7 +250,13 @@ attempt_rebase() {
       echo "conflict:dirty-worktree"
       exit 0
     fi
-    if git rebase origin/main >/tmp/aro-rebase.log 2>&1; then
+    # Write the rebase log to a unique tempfile (not under work_dir, so
+    # it doesn't show up as untracked in `git status`; not /tmp/foo.log
+    # so concurrent runs don't collide — Gemini #4 + Codex P1 followup).
+    local log
+    log=$(mktemp -t aro-rebase.XXXXXX.log)
+    if git rebase origin/main >"$log" 2>&1; then
+      rm -f "$log"
       echo "clean"
       exit 0
     fi
@@ -244,6 +264,7 @@ attempt_rebase() {
     local conflicts
     conflicts=$(git diff --name-only --diff-filter=U 2>/dev/null | paste -sd, -)
     git rebase --abort >/dev/null 2>&1 || true
+    rm -f "$log"
     if [[ -z "$conflicts" ]]; then
       conflicts="unknown"
     fi
