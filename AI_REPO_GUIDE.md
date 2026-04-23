@@ -49,49 +49,71 @@ bash install.sh
 │   ├── backlog.schema.json   # JSON Schema for backlog.yaml
 │   ├── roadmap.md            # Phase-by-phase plan
 │   ├── rules/                # Immutable domain constraints
+│   │   ├── README.md
 │   │   ├── agent_ownership.md
-│   │   └── domain_code_quality.md
+│   │   ├── domain_code_quality.md
+│   │   └── process_doc_maintenance.md
 │   ├── sessions/             # Session history for handoff
+│   │   ├── README.md
 │   │   └── latest_summary.md
 │   ├── state/                # Task tracking (supports parallel work)
+│   │   ├── README.md
 │   │   ├── _active.md            # Current priority task pointer
 │   │   ├── coordination.md       # Live claim board
-│   │   ├── task_template.md      # Template for new tasks
 │   │   ├── feedback_template.md  # Stakeholder feedback template
+│   │   ├── handoff_template.md   # Cross-session/role handoff template
+│   │   ├── task_template.md      # Template for new tasks
 │   │   └── task_*.md             # Individual task files
 │   └── vision/               # Design artifacts
+│       ├── README.md
 │       ├── mockups/          # UI/UX mockups
 │       └── architecture/     # System diagrams
 │
 ├── docs/                     # Human reference documentation
 │   ├── README.md             # Documentation index
-│   ├── reference/            # Specs, research, external docs
-│   ├── research/             # Analyst output (analysis artifacts)
-│   ├── guides/               # How-to guides (agent-best-practices, context-files-explained, multi-agent-coordination, optional-skills)
-│   └── decisions/            # Architecture Decision Records (adr-001, adr-002, adr-003, adr-004, adr-template)
+│   ├── FAQ.md                # Common questions
+│   ├── smoke-a.md            # Smoke test scenario A
+│   ├── smoke-e.md            # Smoke test scenario E
+│   ├── decisions/            # Architecture Decision Records (adr-001 … adr-010, adr-template)
+│   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, multi-agent-coordination, optional-skills)
+│   ├── postmortems/          # Postmortems (template + project-specific)
+│   ├── reference/            # Specs, external docs
+│   └── research/             # Analyst output (analysis artifacts)
 │
 ├── scripts/                  # Bootstrap + verification scripts
 │   ├── README.md
 │   ├── setup.sh              # First-run project customization
 │   ├── verify-env.sh         # Environment & placeholder sanity check
-│   └── db-reset.sh           # Optional DB reset stub
+│   ├── db-reset.sh           # Optional DB reset stub
+│   ├── auto-rebase-overlapping.sh    # Auto-rebase library (ADR-010)
+│   ├── multi-dispatch-safety.sh      # Parallel-dispatch safety classifier
+│   ├── parse-ownership-table.sh      # Ownership-table parser used by workflows
+│   └── test-*.sh             # Unit tests for the helper scripts above
 │
 ├── config/                   # Deployment config templates (see table below)
 │
+├── .claude/
+│   └── agents/               # Claude Code subagent registry (10 mirrors of .github/agents/, see ADR-003)
 ├── .cursor/
 │   └── BUGBOT.md             # Cursor Bugbot PR review rules
 ├── .gemini/
 │   └── styleguide.md         # Gemini Code Assist review style
+├── .pre-commit-config.yaml.template  # Pre-commit hooks template
+├── .cursorignore             # Files Cursor should not index
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
+    ├── pull_request_template.md  # Default PR body skeleton (Doc-sync checklist required)
     ├── agents/                   # 10 role-specialized agent files
     │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
     │   ├── judge.agent.md, pm.agent.md, frontend.agent.md,
     │   ├── backend.agent.md, qa.agent.md, devops.agent.md,
     │   └── docs.agent.md
     ├── prompts/
+    │   ├── README.md             # Prompt catalog
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
-    │   └── repo-onboarding.md    # Repo onboarding workflow prompt
+    │   ├── repo-onboarding.md    # Repo onboarding workflow prompt
+    │   ├── pr-resolve-all.md     # PR-review resolution procedure
+    │   └── expand-backlog-entry.md # Backlog → issue expansion prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
         ├── ci-tests.yml
