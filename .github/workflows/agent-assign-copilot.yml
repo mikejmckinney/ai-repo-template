@@ -78,6 +78,11 @@ jobs:
           REPO: ${{ github.repository }}
           MAX_DAILY: ${{ vars.MAX_COPILOT_DAILY || '20' }}
         run: |
+          # Fail-closed: pipefail ensures a failing `gh api` call (token,
+          # rate limit, network) propagates through the `| jq` pipe instead
+          # of letting jq see empty stdin and emit 0 (which would bypass
+          # the daily cap). See PR #139 / Codex P1.
+          set -o pipefail
           owner="${REPO%/*}"
           name="${REPO#*/}"
           # GNU coreutils (ubuntu-latest); BSD fallback retained for local macOS testing.
@@ -88,11 +93,14 @@ jobs:
           # default 20) means at most ~20 relevant events per 24 h window.
           # stderr is NOT suppressed: API failures propagate and fail the step
           # (fail-closed — do not treat a broken API call as zero assignments).
+          # NOTE: gh ≥ 2.46 rejects --slurp combined with --jq ("the `--slurp`
+          # option is not supported with `--jq` or `--template`"). Pipe to jq
+          # instead so the same script works across gh versions. See #112.
           count=$(gh api \
             -H "Accept: application/vnd.github+json" \
             "/repos/$owner/$name/issues/events?per_page=100" \
             --paginate --slurp \
-            --jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length")
+            | jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length")
           echo "Assignments in last 24h: $count / $MAX_DAILY"
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "max=$MAX_DAILY" >> "$GITHUB_OUTPUT"

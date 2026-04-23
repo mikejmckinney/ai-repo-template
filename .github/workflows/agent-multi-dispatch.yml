@@ -93,6 +93,11 @@ jobs:
           MAX_CONC: ${{ vars.MAX_COPILOT_CONCURRENT || '3' }}
           MAX_DAILY: ${{ vars.MAX_COPILOT_DAILY || '20' }}
         run: |
+          # Fail-closed: pipefail ensures a failing `gh api` call propagates
+          # through the `| jq` pipe instead of letting jq see empty stdin
+          # and emit 0 (which would over-report remaining capacity and
+          # bypass the daily cap). See PR #139 / Codex P1.
+          set -o pipefail
           # Mirror agent-assign-copilot.yml's budget logic.
           open_prs=$(gh pr list --repo "$REPO" --state open \
             --search "head:copilot/" --json number --jq 'length')
@@ -105,11 +110,13 @@ jobs:
           owner="${REPO%/*}"
           name="${REPO#*/}"
           since=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          # NOTE: gh ≥ 2.46 rejects --slurp combined with --jq. Pipe to jq
+          # instead so this works across gh versions. See #112.
           daily_used=$(gh api \
             -H "Accept: application/vnd.github+json" \
             "/repos/$owner/$name/issues/events?per_page=100" \
             --paginate --slurp \
-            --jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length")
+            | jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length")
           daily_remaining=$(( MAX_DAILY - daily_used ))
           (( daily_remaining < 0 )) && daily_remaining=0
 
