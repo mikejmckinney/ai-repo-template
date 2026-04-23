@@ -22,6 +22,8 @@
 | [ADR-006](./adr-006-auto-merge-opt-in-model.md) | Auto-merge opt-in model | Accepted |
 | [ADR-007](./adr-007-auto-resolve-review-threads.md) | Auto-resolve bot-authored review threads (opt-in label; Copilot-path gap tracked in #100) | Superseded by ADR-008 |
 | [ADR-008](./adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 runs by default; Copilot-path relay-side fallback | Accepted |
+| [ADR-009](./adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution (patterns, dispatch reality, conflict enforcement) | Accepted |
+| [ADR-010](./adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge for parallel agent PRs | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.

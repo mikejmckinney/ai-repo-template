@@ -11,7 +11,21 @@
 
 ## Ownership Table
 
-<!-- TEMPLATE_PLACEHOLDER: replace path globs with your project's real structure -->
+<!--
+NOTE: This table is both (a) ai-repo-template's own ownership map AND
+(b) the example for projects derived from this template. When deriving
+this template for a new project:
+- KEEP the template-governance roles (Analyst / Architect / PM / QA /
+  DevOps / Docs / Judge / Critic) and the `docs/**`, `.context/**`,
+  `.github/**`, `scripts/**`, `config/**`, `install.sh`, `test.sh` rows
+  — they are load-bearing for the multi-agent workflow.
+- ADD rows / extend globs for your project's actual source paths (e.g.
+  `src/frontend/**`, `src/backend/**`, `tests/**`, `e2e/**`). The Frontend
+  / Backend / QA rows below are shown with illustrative globs; replace
+  them with the real paths once your project has a source tree.
+- DO NOT delete this file or wholesale replace the table — `test.sh`,
+  Judge, the parallelism-report parser, and every role consult it.
+-->
 
 | Role       | Owned path globs                                                     | May also edit (with PM claim) |
 |------------|----------------------------------------------------------------------|-------------------------------|

@@ -155,6 +155,8 @@ DOCS_FILES=(
     "docs/decisions/adr-006-auto-merge-opt-in-model.md"
     "docs/decisions/adr-007-auto-resolve-review-threads.md"
     "docs/decisions/adr-008-phase4-default-and-copilot-fallback.md"
+    "docs/decisions/adr-009-parallel-multi-agent-execution.md"
+    "docs/decisions/adr-010-auto-rebase-on-merge.md"
     "docs/postmortems/README.md"
     "docs/postmortems/postmortem-template.md"
 )
