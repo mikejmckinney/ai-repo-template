@@ -567,8 +567,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          owner="${REPO%/*}"
-          name="${REPO#*/}"
           nl=$'\n'
 
           # ── 1. Re-fetch comment body (event payload may truncate) ──

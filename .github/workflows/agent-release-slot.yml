@@ -44,6 +44,7 @@ jobs:
           REPO: ${{ github.repository }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           # grep -P (PCRE) is available on ubuntu-latest (GNU grep). This extracts
           # "closes #N", "fixes #N", "resolves #N" issue references from the PR body.
@@ -52,9 +53,12 @@ jobs:
           # Fallback: extract issue number from the branch name when the PR body
           # has no closing keywords. Copilot names branches copilot/issue-NNN-*
           # or copilot/issue-NNN (e.g. copilot/issue-51-assign-gating).
+          # NOTE: read HEAD_REF from env (not via inline expression
+          # interpolation) to avoid script-injection via untrusted PR
+          # branch names (actionlint `expression` rule; GitHub Security
+          # Hardening guide).
           if [[ -z "$linked" ]]; then
-            branch_ref="${{ github.event.pull_request.head.ref }}"
-            linked=$(echo "$branch_ref" | grep -oP '(?:^|/)issue-\K\d+(?=[-/]|$)' || true)
+            linked=$(echo "$HEAD_REF" | grep -oP '(?:^|/)issue-\K\d+(?=[-/]|$)' || true)
           fi
 
           if [[ -z "$linked" ]]; then

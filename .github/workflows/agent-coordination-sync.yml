@@ -277,7 +277,6 @@ jobs:
 
           # Build suggested lock block.
           primary=$(printf '%s' "$implementer_roles" | head -1 | tr 'A-Z' 'a-z')
-          first_path=$(head -1 /tmp/changed.txt)
           claimed_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
 
           {
