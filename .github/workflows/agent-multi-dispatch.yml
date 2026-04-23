@@ -53,6 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      contents: read       # actions/checkout needs this when permissions: is set explicitly
       issues: write
       pull-requests: read
 
