@@ -32,7 +32,7 @@ events in quick succession; `agent-relay-reviews.yml` has
 `concurrency.cancel-in-progress: true`, so the first matching relay run
 gets cancelled and the `@copilot follow` comment is never posted. We
 documented the workaround ("apply labels one-at-a-time, with
-`copilot-relay` last") in `AGENT-PIPELINE-GUIDE.md` rather than fix the
+`copilot-relay` last") in `docs/guides/agent-pipeline.md` rather than fix the
 underlying friction. There is no real workflow where a maintainer would
 want the fix procedure to run **and** mark items `✅ Fixed` **and** leave
 the corresponding bot threads dangling. Maintainers who disagree with a
@@ -193,7 +193,7 @@ keep the same UX.
 Doesn't eliminate the "two labels in order" gotcha. The label adds no
 safety the per-thread gate doesn't already provide. We keep paying the
 documentation tax (Label-application gotcha note in
-`AGENT-PIPELINE-GUIDE.md`) without a corresponding benefit.
+`docs/guides/agent-pipeline.md`) without a corresponding benefit.
 
 ## Consequences
 
@@ -268,7 +268,7 @@ documentation tax (Label-application gotcha note in
 - [x] Edit `scripts/setup.sh`: remove
       `_ensure_label "auto-resolve-threads"` (and the fallback warning
       list entry).
-- [x] Edit `.github/workflows/AGENT-PIPELINE-GUIDE.md`: remove
+- [x] Edit `docs/guides/agent-pipeline.md`: remove
       `auto-resolve-threads` from the label table and Manual
       Intervention table; remove the Label-application gotcha note;
       add the `phase4-fallback` job to the workflow inventory; drop

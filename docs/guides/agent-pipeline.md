@@ -100,10 +100,13 @@ delegated items so Copilot's cloud agent can take care of them.
 
 To enable Claude resolution on a particular PR, add the `claude-fix`
 label directly to the PR — either at PR-open time or retroactively. To
-use the legacy Copilot-relay path instead, add `copilot-relay` directly
-to the PR (issue labels are not automatically copied to Copilot's PR,
-and both labels can also be applied retroactively on an existing PR).
-See `agent-relay-reviews.yml`.
+use the Copilot-relay path instead (free with your Copilot subscription;
+no Anthropic API cost), add `copilot-relay` directly to the PR (issue
+labels are not automatically copied to Copilot's PR, and both labels
+can also be applied retroactively on an existing PR). The two paths
+are alternatives, not deprecations — `claude-fix` is faster and reads
+all reviewers in one pass; `copilot-relay` avoids the Anthropic API
+cost. See `agent-relay-reviews.yml`.
 
 ### Step 5: Auto-merge (opt-in via `auto-merge` label)
 `agent-auto-merge.yml` triggers when checks complete, reviews change, or
@@ -149,7 +152,7 @@ Get one from https://console.anthropic.com.
 Add as repo secret: **Settings → Secrets and variables → Actions → `ANTHROPIC_API_KEY`**
 
 This is ONLY used for review resolution (Step 4), not implementation.
-Expected cost: $1-3 per PR, or roughly $10-20 for the entire six-prompt POC build.
+Expected cost: $1-3 per PR.
 
 ### 3. Claude GitHub App
 Install from https://github.com/apps/claude on your repo.
@@ -179,7 +182,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
 | `claude-fix` | `#FBCA04` (amber) | Opt PR in to `agent-fix-reviews.yml` (Claude resolution) |
 | `claude-review` | `#1D76DB` (blue) | Opt PR in to `claude.yml` auto-review (invokes judge subagent on open/reopen/ready_for_review) |
-| `copilot-relay` | `#5319E7` (purple) | Opt PR in to legacy `agent-relay-reviews.yml` (Copilot resolution) |
+| `copilot-relay` | `#5319E7` (purple) | Opt PR in to `agent-relay-reviews.yml` (Copilot resolution; included in subscription) |
 | `copilot:ready` | `#0E8A16` (green) | Assign Copilot when budget allows (applied to backlog issues unless `auto_assign: false`) |
 | `copilot:in-progress` | `#1D76DB` (blue) | Assigned to Copilot; counts toward `MAX_COPILOT_CONCURRENT` |
 | `copilot:queued` | `#FBCA04` (amber) | Waiting for an open Copilot slot (swapped in by `agent-assign-copilot.yml` when concurrent cap is hit) |
@@ -212,14 +215,16 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
   > `phase4-fallback` job in `agent-relay-reviews.yml` parses the
   > Phase 3 Resolution Report's `⚠️ Errored` rows by Thread ID and
   > retries the mutations under `CLAUDE_PAT`. See ADR-008.
-- Add `copilot-relay` to enable the legacy relay path that forwards bot
-  review comments to Copilot. Both labels can be combined when you want
-  both paths running, though typically you'll pick one.
+- Add `copilot-relay` to enable the Copilot-relay path that forwards bot
+  review comments to Copilot's cloud agent. Both labels can be combined
+  when you want both paths running, though typically you'll pick one
+  (Claude for speed and multi-reviewer coverage; Copilot to avoid the
+  Anthropic API cost).
 
 ### 8. Install the workflow files
 Copy to `.github/workflows/`:
 - `agent-fix-reviews.yml` — Claude (Sonnet) resolves review comments (opt-in via `claude-fix`)
-- `agent-relay-reviews.yml` — legacy Copilot relay (opt-in via `copilot-relay`)
+- `agent-relay-reviews.yml` — Copilot relay (opt-in via `copilot-relay`)
 - `agent-auto-ready.yml` — flips Copilot draft PRs to ready for review
 - `agent-auto-merge.yml` — auto-merges when ready
 
@@ -232,106 +237,95 @@ These work alongside your existing workflows:
 - `claude.yml` — auto-review on PR open (already in your repo)
 - `ci-tests.yml` — CI checks (already in your repo)
 
-## Running a POC Build (example workflow)
+## Using this pipeline for your project
 
-> **Note**: The six issues below reference prompt files like
-> `.github/prompts/01-init-project.md` and `.github/prompts/00-PROJECT-BRIEF.md`.
-> Those files are **project-specific** and are **not included in this
-> template** — they are example content from a Cloud Migration POC build
-> that used this pipeline. To follow this pattern for your own project,
-> author the prompt files first (one per implementation stage, plus a
-> shared project brief) and then file issues that reference them.
->
-> The only prompt file shipped with the template is
-> `.github/prompts/pr-resolve-all.md`, which the review-resolution
-> workflow uses internally.
+The pipeline ships ready-to-run, but the **per-stage prompt files** that
+drive a multi-issue build are project-specific. The template ships only
+the procedural prompts needed by the pipeline itself:
 
-### Create the six issues
+| Prompt file | Ships with template? | Purpose |
+|-------------|----------------------|---------|
+| `.github/prompts/pr-resolve-all.md` | ✅ Yes | Used internally by `agent-fix-reviews.yml` and the `@copilot follow` / `@claude follow` convention |
+| `.github/prompts/expand-backlog-entry.md` | ✅ Yes | Used internally by `backlog-to-issues.yml` to expand sparse `backlog.yaml` entries |
+| `.github/prompts/repo-onboarding.md` | ✅ Yes | Procedural — refresh `AI_REPO_GUIDE.md` from the live repo |
+| `.github/prompts/copilot-onboarding.md` | ✅ Yes | Procedural — refresh `.github/copilot-instructions.md` |
+| `.github/prompts/NN-<stage>.md` (e.g. `01-init-project.md`, `05-portfolio-demo-app.md`) | ❌ No — author per project | One per implementation stage; each becomes one issue |
+| `.github/prompts/00-PROJECT-BRIEF.md` | ❌ No — author per project | Shared project context referenced from every stage prompt |
 
-Format each issue body with the prompt instructions and a reference to
-the prompt file. Include `closes #N` so auto-merge closes the issue.
+### Step-by-step
 
-**Issue 1:**
+**1. Author per-stage prompt files in your derived repo.**
+
+Create `.github/prompts/00-PROJECT-BRIEF.md` (shared project context)
+and one `.github/prompts/NN-<stage>.md` per implementation stage. The
+recommended pattern is a short numeric prefix (`01-`, `02-`, …) so the
+order stays obvious in directory listings and the Analyst pre-flight
+gate (defined in `AGENTS.md` → "Analyst pre-flight gate") can detect
+them by pattern.
+
+A stage prompt should be self-contained: deliverables, constraints,
+verification commands, and a reference back to `00-PROJECT-BRIEF.md`
+for context. See `.github/prompts/pr-resolve-all.md` in this template
+for an example of the level of detail that works well in practice.
+
+**2. (Optional) Mirror the prompts into `.context/backlog.yaml`.**
+
+If you want the pipeline to file the issues for you (instead of doing
+it manually), add one entry per stage to `.context/backlog.yaml` (the
+machine-readable task list — schema in `.context/backlog.schema.json`).
+On push to `main`, `backlog-to-issues.yml` files an issue per entry,
+labels it `from-backlog` + `copilot:ready`, and lets
+`agent-assign-copilot.yml` route it through the budget gates.
+
+Use `depends_on:` on each stage entry to enforce the build order, and
+`auto_assign: false` on any stage that should hold for human review
+before assignment.
+
+**3. File issues that reference each stage prompt.**
+
+Whether filed manually or via the backlog, each issue body needs three
+things: a one-line title, a `Read and follow .github/prompts/<file>`
+directive, and `closes #N` so auto-merge closes the linked tracking
+issue if applicable.
+
 ```markdown
-Title: Initialize project from ai-repo-template
+Title: <Stage name>
 
-Read and follow `.github/prompts/01-init-project.md`.
+Read and follow `.github/prompts/NN-<stage>.md`.
 Also read `.github/prompts/00-PROJECT-BRIEF.md` for project context.
 
-Initialize the Cloud Migration POC. Create directory structure, fill in
-context files, set up CI pipeline. Run `./test.sh` to verify.
+<Any extra acceptance criteria specific to this issue.>
 ```
 
-**Issue 2:**
-```markdown
-Title: Build Terraform infrastructure modules
+**4. Assign each issue and let the pipeline drive.**
 
-Read and follow `.github/prompts/02-infrastructure-terraform.md`.
-Also read `.github/prompts/00-PROJECT-BRIEF.md` for project context.
+- **Sequential (recommended for first run):** assign one issue at a
+  time, watch the implement → review → fix → merge cycle, then assign
+  the next. This is the safest mode while you verify the pipeline
+  works end-to-end in your repo.
+- **Parallel (faster):** assign multiple issues at once. Stages whose
+  ownership globs (per `.context/rules/agent_ownership.md`) don't
+  overlap are safe to run concurrently. The Parallelism Report
+  workflow (ADR-009) classifies overlap and posts a comment per PR;
+  the auto-rebase-on-merge workflow (ADR-010) handles soft overlaps
+  automatically post-merge.
 
-Create all Terraform modules for Snowflake and AWS. Verify with
-`terraform fmt -check` and `terraform validate`.
-```
+**5. Monitor progress.**
 
-**Issue 3:**
-```markdown
-Title: Build data pipeline (dbt + Airflow + sample data)
+- **Agents panel** — github.com → your repo → Copilot tab shows active
+  Copilot sessions.
+- **Actions tab** — workflow runs for fix-reviews, relay-reviews, and
+  auto-merge.
+- **PR timeline** — fix-cycle markers ("🔧 Claude fix cycle 1/3") and
+  the Parallelism Report comment.
+- **Issue timeline** — `agent-complete` label and "✅ Done" when merged.
 
-Read and follow `.github/prompts/03-data-pipeline.md`.
-Also read `.github/prompts/00-PROJECT-BRIEF.md` for project context.
-
-Create dbt project, Airflow DAGs, and sample data. Verify with
-`dbt seed && dbt run && dbt test`.
-```
-
-**Issue 4:**
-```markdown
-Title: Build security and RBAC model
-
-Read and follow `.github/prompts/04-security-rbac.md`.
-Also read `.github/prompts/00-PROJECT-BRIEF.md` for project context.
-
-Create RBAC documentation, SQL policy examples, and governance schema.
-```
-
-**Issue 5:**
-```markdown
-Title: Build interactive portfolio demo app
-
-Read and follow `.github/prompts/05-portfolio-demo-app.md`.
-Also read `.github/prompts/00-PROJECT-BRIEF.md` for project context.
-
-Create the React demo application. Verify with `npm run build`.
-```
-
-**Issue 6:**
-```markdown
-Title: Documentation and portfolio polish
-
-Read and follow `.github/prompts/06-documentation-polish.md`.
-Also read `.github/prompts/00-PROJECT-BRIEF.md` for project context.
-
-Create solution architecture doc, runbooks, and final README.
-```
-
-### Assign to Copilot
-
-**Sequential (recommended for first run):**
-1. Assign Issue 1 to `@copilot`
-2. Watch the Agents panel on GitHub.com — you'll see Copilot working
-3. Wait for it to merge (the full implement → review → fix → merge loop)
-4. Assign Issue 2
-5. Repeat
-
-**Parallel (faster, possible conflicts):**
-Issues 2, 3, and 4 touch different directories and can run simultaneously.
-Assign all three to `@copilot` at once. Issues 5 and 6 should wait.
-
-### Monitor progress
-- **Agents panel**: github.com → your repo → Copilot tab shows active sessions
-- **Actions tab**: shows workflow runs for fix-reviews and auto-merge
-- **PR timeline**: shows cycle markers ("🔧 Claude fix cycle 1/3")
-- **Issue timeline**: shows "✅ Done" when merged
+> **Why no concrete example here?** Earlier versions of this guide
+> shipped a six-issue Cloud-Migration POC walkthrough. Those prompts
+> are not in the template, so the example walked through files that
+> don't exist in your repo, which created more confusion than it
+> solved. The skeleton above is the actual pipeline contract; the
+> specifics are project-specific.
 
 ## Manual Intervention Points
 
@@ -356,9 +350,10 @@ Assign all three to `@copilot` at once. Issues 5 and 6 should wait.
 | Claude auto-review (claude.yml) | $0.05–0.10 per PR | Uses ANTHROPIC_API_KEY |
 | Claude review resolution | $1–3 per PR | The main API cost |
 | Auto-merge workflow | Free | GitHub Actions minutes only |
-| **Total for 6-prompt POC** | **~$10–20 API + subscription** | |
+| **Total per PR** | **~$1–3 API + subscription** | Scales linearly with PR count |
 
-Compare to the all-Claude approach: $20–60 in API costs alone.
+Compare to the all-Claude approach (Claude implements as well as resolves
+reviews): roughly 4–6× the per-PR API cost.
 
 ## Troubleshooting
 
@@ -402,12 +397,12 @@ for Gemini to finish posting.
 | `.github/workflows/agent-multi-dispatch.yml` | Manual fan-out: assigns a list of issues to Copilot in priority order, refuses conflicts (issue #114) | No (uses CLAUDE_PAT) |
 | `.github/workflows/agent-release-slot.yml` | Releases slot on PR close/issue close, drains queue | No (uses CLAUDE_PAT) |
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
-| `.github/workflows/agent-relay-reviews.yml` | Legacy Copilot relay (opt-in via `copilot-relay` label); also hosts the `phase4-fallback` job that retries Copilot's `⚠️ Errored` Phase 4 mutations under `CLAUDE_PAT` (see ADR-008) | No (uses CLAUDE_PAT for posting + fallback mutations) |
+| `.github/workflows/agent-relay-reviews.yml` | Copilot relay (opt-in via `copilot-relay` label); also hosts the `phase4-fallback` job that retries Copilot's `⚠️ Errored` Phase 4 mutations under `CLAUDE_PAT` (see ADR-008) | No (uses CLAUDE_PAT for posting + fallback mutations) |
 | `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready; drains Copilot queue after merge | No (uses CLAUDE_PAT) |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |
 | `.github/workflows/ci-tests.yml` | CI checks | No |
 | `.gemini/config.yaml` | Gemini review config | No (free GitHub App) |
 | `.github/prompts/pr-resolve-all.md` | Review resolution procedure | Used by Claude |
 | `.github/prompts/expand-backlog-entry.md` | Prompt for Claude to fill in sparse backlog entries | Used by Claude |
-| `.github/prompts/00-PROJECT-BRIEF.md` *(not in template)* | Project context | Used by Copilot + Claude |
-| `.github/prompts/01–06-*.md` *(not in template)* | Per-stage implementation prompts | Used by Copilot |
+| `.github/prompts/00-PROJECT-BRIEF.md` *(author per project)* | Shared project context referenced by every stage prompt | Used by Copilot + Claude |
+| `.github/prompts/NN-<stage>.md` *(author per project)* | One per implementation stage; each becomes one issue | Used by Copilot |

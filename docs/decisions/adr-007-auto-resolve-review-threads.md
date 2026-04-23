@@ -101,7 +101,7 @@ to the running agent, not permission-model changes:
   a **no-op** on the Copilot path.
 
 The label is created by `scripts/setup.sh` alongside the other pipeline
-labels, and documented in `.github/workflows/AGENT-PIPELINE-GUIDE.md`.
+labels, and documented in `docs/guides/agent-pipeline.md`.
 
 Allow-listed bots are matched from `user.login` / GraphQL `author.login`
 using the same normalization rule as Phase 4 in
@@ -244,7 +244,7 @@ commit SHA and the `ISS-NN` ID, then fires the GraphQL
   so the first (matching) relay run is cancelled by the second
   (non-matching) event and the `@copilot follow` comment is never
   posted. Workaround: apply labels one-at-a-time, with `copilot-relay`
-  applied last. Documented in `AGENT-PIPELINE-GUIDE.md`.
+  applied last. Documented in `docs/guides/agent-pipeline.md`.
 
 ### Neutral
 
@@ -262,7 +262,7 @@ commit SHA and the `ISS-NN` ID, then fires the GraphQL
       per-thread gate, audit-trail reply format, and Phase 4 report template.
 - [x] Add `_ensure_label "auto-resolve-threads"` to `scripts/setup.sh` and
       include it in the fallback warning list.
-- [x] Add the label to `.github/workflows/AGENT-PIPELINE-GUIDE.md`'s label
+- [x] Add the label to `docs/guides/agent-pipeline.md`'s label
       table, resolution-path selection prose, and Manual Intervention table.
 - [x] Create this ADR.
 - [x] Verify on a real PR by labeling `claude-fix` + `auto-resolve-threads`
