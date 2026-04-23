@@ -138,7 +138,7 @@ so new repos pick it up automatically.
 - [x] Keep the fork-origin guard.
 - [x] Gate the "Drain Copilot queue" step on
       `startsWith(steps.find.outputs.branch, 'copilot/')`.
-- [x] Update `.github/workflows/AGENT-PIPELINE-GUIDE.md` (Step 5, label
+- [x] Update `docs/guides/agent-pipeline.md` (Step 5, label
       table, troubleshooting, manual-intervention table).
 - [x] Update the labels comment in `.github/workflows/agent-relay-reviews.yml`.
 - [x] Add `_ensure_label "auto-merge"` to `scripts/setup.sh` and update
@@ -147,7 +147,7 @@ so new repos pick it up automatically.
 ## References
 
 - [Issue #50](https://github.com/mikejmckinney/ai-repo-template/issues/50) — the request this ADR answers.
-- `.github/workflows/AGENT-PIPELINE-GUIDE.md` — operator-facing
+- `docs/guides/agent-pipeline.md` — operator-facing
   description of the pipeline.
 - ADR-003 — prior precedent for keeping custom pipeline workflows
   instead of delegating to GitHub features.

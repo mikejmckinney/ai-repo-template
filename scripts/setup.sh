@@ -209,7 +209,7 @@ fi
 
 # --- Step 5: Pipeline Labels & Repo Variables ---
 # Labels and budget knobs consumed by the autonomous agent pipeline (see
-# .github/workflows/AGENT-PIPELINE-GUIDE.md). Safe to re-run: `gh label
+# docs/guides/agent-pipeline.md). Safe to re-run: `gh label
 # create` returns non-zero when a label already exists, which we swallow.
 # Requires `gh auth login` first; otherwise the whole step is skipped.
 log_step "Configuring pipeline labels and repo variables"
@@ -341,7 +341,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         log_warn "Could not create label '$name' — ${first_err:-unknown error}"
     }
 
-    # Create every pipeline label surfaced in AGENT-PIPELINE-GUIDE.md's
+    # Create every pipeline label surfaced in docs/guides/agent-pipeline.md's
     # label table so the doc's "created automatically by setup.sh" claim
     # is literally true. Split into two groups for readability:
     #   - Opt-in / state labels driving the workflows.
