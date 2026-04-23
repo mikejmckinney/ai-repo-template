@@ -12,9 +12,13 @@
 name: Keep Backend Warm
 
 on:
-  schedule:
-    # Every 14 minutes (free Render suspends after 15 min inactivity)
-    - cron: '*/14 * * * *'
+  # Scheduled trigger DISABLED — this workflow is not in use by any
+  # current downstream project and was burning Actions minutes every
+  # 14 minutes. Re-enable by uncommenting the `schedule:` block below.
+  # See #74 for context.
+  # schedule:
+  #   # Every 14 minutes (free Render suspends after 15 min inactivity)
+  #   - cron: '*/14 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:

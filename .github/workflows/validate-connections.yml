@@ -13,9 +13,13 @@
 name: Validate Connections
 
 on:
-  schedule:
-    # Run daily at 6:00 AM UTC
-    - cron: '0 6 * * *'
+  # Scheduled trigger DISABLED — this workflow is not in use by any
+  # current downstream project and was burning Actions minutes daily.
+  # Re-enable by uncommenting the `schedule:` block below.
+  # See #74 for context.
+  # schedule:
+  #   # Run daily at 6:00 AM UTC
+  #   - cron: '0 6 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:

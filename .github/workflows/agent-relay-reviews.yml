@@ -1,15 +1,19 @@
-# Relay Bot Reviews to Copilot (legacy / opt-in)
-# ----------------------------------------------
+# Relay Bot Reviews to Copilot (opt-in)
+# --------------------------------------
 # Reads review comments from ALL bots (Gemini, Claude, Copilot code review, ChatGPT Codex)
 # and reposts them as a single @copilot comment from your user account (via PAT).
 #
 # Status:
 #   This workflow is OPT-IN. By default, review resolution is handled by
 #   `agent-fix-reviews.yml` (Claude with Sonnet), which produces higher-quality
-#   fixes in practice. Enable this relay only when you specifically want
-#   Copilot — not Claude — to drive resolution (for example, when the fixes
-#   are concentrated in `.github/workflows/**` files that the Claude app
-#   token can't push to, and you don't want Claude to delegate piecemeal).
+#   resolutions on complex/structural feedback at the cost of Claude API
+#   spend. The two paths are alternatives — pick `copilot-relay` for cheap
+#   mechanical fixes (Copilot is included in subscription); pick
+#   `claude-fix` for nuanced design feedback. Neither is deprecated.
+#   Enable this relay specifically when you want Copilot — not Claude
+#   — to drive resolution (for example, when the fixes are concentrated
+#   in `.github/workflows/**` files that the Claude app token can't push
+#   to, and you don't want Claude to delegate piecemeal).
 #
 # How to enable:
 #   Add the `copilot-relay` label directly to the PR. The label can be
@@ -101,6 +105,7 @@ jobs:
     if: >
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.labels.*.name, 'copilot-relay') &&
+      !contains(github.event.pull_request.labels.*.name, 'smoke-test') &&
       (
         (github.event_name == 'pull_request_review' &&
          (github.event.review.state == 'changes_requested' ||
@@ -770,6 +775,7 @@ jobs:
     if: >
       github.event.pull_request.head.repo.full_name == github.repository &&
       contains(github.event.pull_request.labels.*.name, 'copilot-relay') &&
+      !contains(github.event.pull_request.labels.*.name, 'smoke-test') &&
       (
         (github.event_name == 'pull_request_review' &&
          (github.event.review.state == 'changes_requested' ||
