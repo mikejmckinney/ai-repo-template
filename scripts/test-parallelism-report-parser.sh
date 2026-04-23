@@ -83,7 +83,7 @@ classify_overlap() {
     return
   fi
   if [[ -n "$prefixes" ]]; then
-    while IFS=$'\t' read -r role prefix; do
+    while IFS=$'\t' read -r _ prefix; do
       [[ -z "$prefix" ]] && continue
       if awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {found=1; exit} END{exit !found}' "$me" \
          && awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {found=1; exit} END{exit !found}' "$other"; then
@@ -97,6 +97,7 @@ classify_overlap() {
 
 # ── Fixtures ──
 
+# shellcheck disable=SC2016  # backticks in markdown table fixtures are literal
 FIXTURE_NORMAL='| Role       | Owned path globs                                                     | May also edit (with PM claim) |
 |------------|----------------------------------------------------------------------|-------------------------------|
 | Analyst    | `docs/research/**`                                                   | nothing (research-only)       |
@@ -105,6 +106,7 @@ FIXTURE_NORMAL='| Role       | Owned path globs                                 
 | Docs       | README.md, AI_REPO_GUIDE.md, docs/**                                 | nothing                       |
 | Judge      | nothing (review-only)                                                | nothing                       |'
 
+# shellcheck disable=SC2016  # backticks in markdown fixture are literal
 FIXTURE_MALFORMED='Some prose without a table.
 
 | Role | Owned |
@@ -118,6 +120,7 @@ FIXTURE_MALFORMED='Some prose without a table.
 # the soft-overlap classification disappears for the entire `docs/`
 # subtree. With the fix, we expect a single clean `Docs<TAB>docs`
 # entry and nothing else from the qualified part.
+# shellcheck disable=SC2016  # backticks in markdown fixture are literal
 FIXTURE_QUALIFIERS='| Role       | Owned path globs                                                     | May also edit |
 |------------|----------------------------------------------------------------------|---------------|
 | Architect  | `.context/rules/**` (except `agent_ownership.md`)                    | nothing       |

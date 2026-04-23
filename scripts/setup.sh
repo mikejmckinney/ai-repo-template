@@ -18,10 +18,10 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-log_info() { printf "${GREEN}[INFO]${NC} %s\n" "$1"; }
-log_warn() { printf "${YELLOW}[WARN]${NC} %s\n" "$1"; }
-log_error() { printf "${RED}[ERROR]${NC} %s\n" "$1"; }
-log_step() { printf "\n${GREEN}==>${NC} %s\n" "$1"; }
+log_info() { printf '%b[INFO]%b %s\n' "$GREEN" "$NC" "$1"; }
+log_warn() { printf '%b[WARN]%b %s\n' "$YELLOW" "$NC" "$1"; }
+log_error() { printf '%b[ERROR]%b %s\n' "$RED" "$NC" "$1"; }
+log_step() { printf '\n%b==>%b %s\n' "$GREEN" "$NC" "$1"; }
 
 echo "========================================"
 echo "Project Setup"
@@ -372,8 +372,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
             log_info "$name already set (leaving as-is)"
             return 0
         fi
-        err=$(gh variable set "$name" --body "$value" 2>&1 >/dev/null)
-        if [[ $? -eq 0 ]]; then
+        if err=$(gh variable set "$name" --body "$value" 2>&1 >/dev/null); then
             log_info "Set $name=$value"
         else
             first_err=$(printf '%s\n' "$err" | grep -v '^$' | head -n1)
@@ -402,7 +401,7 @@ fi
 # --- Done ---
 echo ""
 echo "========================================"
-printf "${GREEN}Setup Complete!${NC}\n"
+printf '%bSetup Complete!%b\n' "$GREEN" "$NC"
 echo "========================================"
 echo ""
 echo "Next steps:"

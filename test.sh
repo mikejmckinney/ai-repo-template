@@ -255,6 +255,7 @@ fi
 # Two loose substring matches: the file must mention both "$DOTFILES variable"
 # and "Codespaces". Using separate greps (instead of an exact header-line
 # match) keeps the assertion robust to cosmetic rewording of the comment.
+# shellcheck disable=SC2016  # `\$DOTFILES` is a literal we're grepping for in install.sh
 if grep -q '\$DOTFILES variable' install.sh && grep -q 'Codespaces' install.sh; then
     pass "install.sh has \$DOTFILES legacy-convention comment block"
 else

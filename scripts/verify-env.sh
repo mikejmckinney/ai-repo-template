@@ -17,9 +17,9 @@ PASS=0
 FAIL=0
 WARN=0
 
-pass() { printf "${GREEN}✓${NC} %s\n" "$1"; PASS=$((PASS + 1)); }
-fail() { printf "${RED}✗${NC} %s\n" "$1"; FAIL=$((FAIL + 1)); }
-warn() { printf "${YELLOW}⚠${NC} %s\n" "$1"; WARN=$((WARN + 1)); }
+pass() { printf '%b✓%b %s\n' "$GREEN" "$NC" "$1"; PASS=$((PASS + 1)); }
+fail() { printf '%b✗%b %s\n' "$RED" "$NC" "$1"; FAIL=$((FAIL + 1)); }
+warn() { printf '%b⚠%b %s\n' "$YELLOW" "$NC" "$1"; WARN=$((WARN + 1)); }
 
 echo "========================================"
 echo "Environment Verification"
@@ -148,19 +148,19 @@ echo ""
 echo "========================================"
 echo "Summary"
 echo "========================================"
-printf "${GREEN}Passed:${NC} %d\n" "$PASS"
-printf "${YELLOW}Warnings:${NC} %d\n" "$WARN"
-printf "${RED}Failed:${NC} %d\n" "$FAIL"
+printf '%bPassed:%b %d\n' "$GREEN" "$NC" "$PASS"
+printf '%bWarnings:%b %d\n' "$YELLOW" "$NC" "$WARN"
+printf '%bFailed:%b %d\n' "$RED" "$NC" "$FAIL"
 echo ""
 
 if [[ $FAIL -gt 0 ]]; then
-    printf "${RED}Environment verification FAILED${NC}\n"
+    printf '%bEnvironment verification FAILED%b\n' "$RED" "$NC"
     echo "Fix the failed checks before proceeding."
     exit 1
 elif [[ $WARN -gt 0 ]]; then
-    printf "${YELLOW}Environment verification PASSED with warnings${NC}\n"
+    printf '%bEnvironment verification PASSED with warnings%b\n' "$YELLOW" "$NC"
     exit 0
 else
-    printf "${GREEN}Environment verification PASSED${NC}\n"
+    printf '%bEnvironment verification PASSED%b\n' "$GREEN" "$NC"
     exit 0
 fi

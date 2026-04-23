@@ -21,6 +21,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Cleanup any tmp dirs we mktemp below.
 TMP_DIRS=()
+# shellcheck disable=SC2317  # invoked via `trap cleanup EXIT` below
 cleanup() {
   if [[ ${#TMP_DIRS[@]} -gt 0 ]]; then
     rm -rf "${TMP_DIRS[@]}"
@@ -59,6 +60,7 @@ assert_contains() {
   fi
 }
 
+# shellcheck disable=SC2317  # reserved test helper, retained for symmetry with assert_contains
 assert_not_contains() {
   local name="$1" needle="$2" haystack="$3"
   if printf '%s' "$haystack" | grep -qF "$needle"; then
