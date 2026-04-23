@@ -25,6 +25,24 @@ Splitting many small follow-ups into separate issues and PRs is more expensive t
 
 PR #113's reviewer surfaced two medium findings about the ownership-table parser (extract shared script + sync-check role list). Both were ~50-line diffs in the same files from the same reviewer on the same theme. They were filed as #118 and #119 and shipped as PRs #123 and #124 — two issue overheads, two PR overheads, two CI rounds, two review passes. Per the bundling rule above they should have been **one** issue with two checkboxes and **one** PR. The split was correct for #114 / #115 / #116 (different subsystems, independently mergeable).
 
+## Smoke-test PR convention
+
+Workflow-validation / smoke-test PRs (the kind we ran for #114, #116) exist to *observe* what the workflows do, not to ship behavior. They must NOT have their behavior modified mid-test by the auto-fix or auto-merge pipelines.
+
+**Rule**: any PR whose purpose is to exercise CI/workflow behavior must carry the `smoke-test` label.
+
+**What the label does** (enforced in workflow `if:` gates):
+
+- `agent-auto-merge.yml` skips eligibility — the smoke PR will not auto-merge
+- `agent-relay-reviews.yml` skips both `relay` and `copilot-stall-watcher` jobs — Copilot won't be summoned to "fix" comments
+- `agent-fix-reviews.yml` skips — Claude won't be summoned either
+
+**Naming convention** (in addition to the label): smoke PR titles should start with `smoke(...)` so they're searchable and obvious in PR lists. The label is the enforcement gate; the title is the convenience.
+
+**Cleanup**: smoke-test PRs are typically closed-without-merge after the validation completes. Branches deleted, issue smoke-test report posted to the relevant tracking issue (see #116 §"smoke test" comment for the canonical shape).
+
+If you forget the label and a smoke PR auto-merges or gets a Claude fix during the test, that test is contaminated — close it, file a new one, label correctly.
+
 ## Token Limits and Context Management
 
 ### The Problem

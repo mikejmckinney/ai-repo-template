@@ -1,21 +1,31 @@
 # TEMPLATE_PLACEHOLDER: Update URLs and add database connection test for your project
 #
-# Daily Connection Validation
-# ---------------------------
-# Runs daily to verify backend API and database connectivity.
-# Catches infrastructure issues before they affect users.
+# Connection Validation
+# ---------------------
+# Verifies backend API and database connectivity. When enabled on a
+# schedule, catches infrastructure issues before they affect users.
+#
+# Status: MANUAL-ONLY by default — the `schedule:` trigger is
+# intentionally commented out below (no current downstream project
+# uses this; daily cron was burning Actions minutes). Re-enable by
+# uncommenting the `schedule:` block. See #74 for context.
 #
 # Setup:
 # 1. Set BACKEND_URL secret (e.g., https://your-app.onrender.com)
 # 2. Set DATABASE_URL secret if using database health endpoint
 # 3. Customize health check endpoints for your API
+# 4. Uncomment the `schedule:` block below if you want daily runs
 
 name: Validate Connections
 
 on:
-  schedule:
-    # Run daily at 6:00 AM UTC
-    - cron: '0 6 * * *'
+  # Scheduled trigger DISABLED — this workflow is not in use by any
+  # current downstream project and was burning Actions minutes daily.
+  # Re-enable by uncommenting the `schedule:` block below.
+  # See #74 for context.
+  # schedule:
+  #   # Run daily at 6:00 AM UTC
+  #   - cron: '0 6 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:

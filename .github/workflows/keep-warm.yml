@@ -3,18 +3,29 @@
 # Keep Backend Warm
 # -----------------
 # Prevents free-tier services (Render, Railway, etc.) from suspending
-# due to inactivity. Pings the health endpoint every 14 minutes.
+# due to inactivity. When enabled, pings the health endpoint every
+# 14 minutes.
+#
+# Status: MANUAL-ONLY by default — the `schedule:` trigger is
+# intentionally commented out below (no current downstream project
+# uses this; cron was burning Actions minutes). Re-enable by
+# uncommenting the `schedule:` block. See #74 for context.
 #
 # Setup:
 # 1. Create a repository secret named BACKEND_URL with your backend URL
 # 2. Or replace the secret reference with a hardcoded URL (less secure)
+# 3. Uncomment the `schedule:` block below if you want recurring pings
 
 name: Keep Backend Warm
 
 on:
-  schedule:
-    # Every 14 minutes (free Render suspends after 15 min inactivity)
-    - cron: '*/14 * * * *'
+  # Scheduled trigger DISABLED — this workflow is not in use by any
+  # current downstream project and was burning Actions minutes every
+  # 14 minutes. Re-enable by uncommenting the `schedule:` block below.
+  # See #74 for context.
+  # schedule:
+  #   # Every 14 minutes (free Render suspends after 15 min inactivity)
+  #   - cron: '*/14 * * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
