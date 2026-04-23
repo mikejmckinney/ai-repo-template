@@ -72,10 +72,12 @@ jobs:
             echo "::error::No issue numbers parsed from input."
             exit 1
           fi
-          # Validate every token is a positive integer.
+          # Validate every token is a positive integer (≥ 1). GitHub
+          # issue numbers are 1-based, so `0` would pass `^[0-9]+$` and
+          # blow up later in `gh issue view`. Reject it here.
           for tok in $list; do
-            if ! [[ "$tok" =~ ^[0-9]+$ ]]; then
-              echo "::error::Invalid issue token: $tok (must be a positive integer)"
+            if ! [[ "$tok" =~ ^[1-9][0-9]*$ ]]; then
+              echo "::error::Invalid issue token: $tok (must be a positive integer ≥ 1)"
               exit 1
             fi
           done
