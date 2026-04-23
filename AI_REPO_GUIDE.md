@@ -188,6 +188,8 @@ bash install.sh
 | `.pre-commit-config.yaml.template` | Pre-commit hooks (linting, secrets) |
 | `docs/decisions/README.md` | ADR index, supersession discipline, what a well-documented ADR looks like |
 | `docs/decisions/adr-template.md` | Architecture Decision Record template (with "When to write" header) |
+| `docs/postmortems/README.md` | Postmortem index, when to write, ADR-vs-postmortem split, "What generalizes" promotion gate |
+| `docs/postmortems/postmortem-template.md` | Postmortem / lessons-learned template (Trigger, Expected vs Actual, Root cause, What generalizes, Action items) |
 | `.github/pull_request_template.md` | PR template with required doc-sync checklist |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching, issue/PR granularity |
 | `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Analyst/Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |

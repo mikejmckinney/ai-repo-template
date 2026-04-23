@@ -155,6 +155,8 @@ DOCS_FILES=(
     "docs/decisions/adr-006-auto-merge-opt-in-model.md"
     "docs/decisions/adr-007-auto-resolve-review-threads.md"
     "docs/decisions/adr-008-phase4-default-and-copilot-fallback.md"
+    "docs/postmortems/README.md"
+    "docs/postmortems/postmortem-template.md"
 )
 
 for file in "${DOCS_FILES[@]}"; do
@@ -170,6 +172,7 @@ DOCS_DIRS=(
     "docs/research"
     "docs/guides"
     "docs/decisions"
+    "docs/postmortems"
 )
 
 for dir in "${DOCS_DIRS[@]}"; do

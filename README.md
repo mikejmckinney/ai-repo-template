@@ -208,6 +208,8 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 |------|---------|
 | `.pre-commit-config.yaml.template` | Pre-commit hooks for linting, secrets, formatting |
 | `docs/decisions/adr-template.md` | Template for Architecture Decision Records |
+| `docs/postmortems/README.md` | Postmortems / lessons-learned index and "What generalizes" promotion gate |
+| `docs/postmortems/postmortem-template.md` | Template for retrospective lessons (Trigger, Expected vs Actual, Root cause, Action items) |
 | `docs/decisions/adr-001-context-pack-structure.md` | Rationale for the `.context/` layout |
 | `docs/decisions/adr-002-agents-md-ownership.md` | AGENTS.md ownership assignment |
 | `docs/decisions/adr-003-claude-code-subagent-registration.md` | Claude Code subagent registration rationale |

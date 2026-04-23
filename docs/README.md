@@ -21,8 +21,10 @@ docs/
 │   └── *.md            # Needs analysis, competitive landscape, impact scores
 ├── guides/             # How-to guides for developers
 │   └── *.md            # Setup, deployment, contribution guides
-└── decisions/          # Architecture Decision Records (ADRs)
-    └── adr-*.md        # Decision records
+├── decisions/          # Architecture Decision Records (ADRs)
+│   └── adr-*.md        # Decision records
+└── postmortems/        # Retrospective lessons learned
+    └── postmortem-*.md # Postmortem records (see postmortems/README.md)
 ```
 
 ## What Belongs Here
@@ -50,6 +52,11 @@ docs/
 - Architecture Decision Records (ADRs)
 - Design rationale
 - Trade-off analysis
+
+### `postmortems/`
+- Retrospective lessons learned (incidents, surprises, friction)
+- Paired with ADRs: ADRs are prospective, postmortems are retrospective
+- See `postmortems/README.md` for the "What generalizes" promotion gate
 
 ## What Does NOT Belong Here
 
@@ -88,6 +95,10 @@ What are the positive and negative consequences?
 - [ADR-001: Context Pack Structure](decisions/adr-001-context-pack-structure.md) - Why we use `.context/` for LLM memory
 - [ADR-004: Analyst Role and Feedback Loop](decisions/adr-004-analyst-role-and-feedback-loop.md) - Adding pre-Architect validation and iterative feedback
 - [ADR Template](decisions/adr-template.md) - Template for new architecture decisions
+
+### Postmortems / Lessons Learned
+- [Postmortems Index](postmortems/README.md) - When to write a postmortem; ADR-vs-postmortem split; "What generalizes" promotion gate
+- [Postmortem Template](postmortems/postmortem-template.md) - Template for retrospective lessons
 
 ### Reference
 - Add specification documents as needed
