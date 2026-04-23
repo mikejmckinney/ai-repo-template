@@ -262,6 +262,23 @@ Every PR receives a single upserted comment with the `<!-- parallelism-report --
 
 The report is **comment-only and non-blocking**. Overlap is not intrinsically wrong — sequential merges resolve cleanly, and PM-arbitrated shared claims are legitimate. The report's purpose is to make the overlap visible at PR-open time. See ADR-009 for the rationale and the future hardening path.
 
+### Multi-issue dispatcher
+
+For deliberately fanning out a planned set of issues to Copilot in one shot, use the `Multi-Issue Dispatch (Parallel Copilot Fan-Out)` workflow (`.github/workflows/agent-multi-dispatch.yml`, issue [#114](https://github.com/mikejmckinney/ai-repo-template/issues/114)). Trigger from the Actions UI with a whitespace- or comma-separated list of issue numbers in **priority order**. The workflow:
+
+1. Resolves each issue's scope from (a) the first comment carrying an `<!-- architect-plan-files -->` marker followed by a fenced path list, or (b) the first `role:<name>` label whose name matches a row in `agent_ownership.md`. Issues with neither are dispatched but flagged with a WARN.
+2. Walks the input list **sequentially first-fit**: each issue is dispatched unless it hard-overlaps something already dispatched in this run, fails a `Depends-on: #N` body-line check, or sits in a depends-on cycle within the input set. Soft overlap (different files under the same owned-path prefix) is permitted **when at least one of the two issues has an explicit architect file list**. Two issues that both fall back to the same `role:<name>` label resolve to identical prefix lists, which the classifier reports as **hard** overlap, so the later issue is refused. To dispatch two same-role issues together, post a `<!-- architect-plan-files -->` comment on at least one of them naming the specific files it touches.
+3. Caps total dispatches at `min(MAX_COPILOT_CONCURRENT − in-flight, MAX_COPILOT_DAILY − last-24h)`. Anything past the cap is reported as **Skipped (budget cap)** and gets a comment so the human knows to retrigger after a slot frees up.
+4. Labels each ✅ issue `copilot:ready` and lets `agent-assign-copilot.yml` do the actual GraphQL assignment — there is no second assignment path.
+
+Conventions surfaced by this workflow:
+
+- **`Depends-on: #N`** body line, one per dependency. Multiple allowed. Cycles within an input set are rejected (all members refused). External dependencies must be closed.
+- **`<!-- architect-plan-files -->`** HTML-comment marker followed by a fenced code block of paths. Any commenter can post one; the dispatcher uses the first match found.
+- **`role:<name>`** label (lowercase role name from `agent_ownership.md`) is the fallback when no architect marker is present. Only one role label per issue is honored (first match wins).
+
+A `dry_run: true` input posts the dispatch report to the workflow run summary without applying any labels — useful for previewing what an ordering would do.
+
 ## Subagent nesting
 
 A "nested subagent" is a dispatched subagent that itself dispatches another subagent (e.g. PM dispatches Architect, Architect dispatches Judge). The VS Code subagents preview ([docs](https://code.visualstudio.com/docs/copilot/agents/subagents)) makes nesting newly easy in runtimes that implement the dispatch primitive.

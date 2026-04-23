@@ -399,6 +399,7 @@ for Gemini to finish posting.
 | `.context/backlog.schema.json` | JSON Schema for backlog.yaml; validated on every dispatch run | No |
 | `.github/workflows/backlog-to-issues.yml` | Dispatches backlog entries into GitHub issues; Claude-expands sparse entries | Optional (ANTHROPIC_API_KEY for expansion) |
 | `.github/workflows/agent-assign-copilot.yml` | Gated Copilot assignment (concurrent + daily budget) | No (uses CLAUDE_PAT) |
+| `.github/workflows/agent-multi-dispatch.yml` | Manual fan-out: assigns a list of issues to Copilot in priority order, refuses conflicts (issue #114) | No (uses CLAUDE_PAT) |
 | `.github/workflows/agent-release-slot.yml` | Releases slot on PR close/issue close, drains queue | No (uses CLAUDE_PAT) |
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
 | `.github/workflows/agent-relay-reviews.yml` | Legacy Copilot relay (opt-in via `copilot-relay` label); also hosts the `phase4-fallback` job that retries Copilot's `⚠️ Errored` Phase 4 mutations under `CLAUDE_PAT` (see ADR-008) | No (uses CLAUDE_PAT for posting + fallback mutations) |

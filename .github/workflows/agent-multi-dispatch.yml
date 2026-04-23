@@ -1,0 +1,255 @@
+name: Multi-Issue Dispatch (Parallel Copilot Fan-Out)
+# Issue #114. Manual fan-out: take a list of issue numbers and assign
+# each to Copilot in input order (= priority), refusing only the issues
+# that conflict with something already dispatched in the same run.
+#
+# How dispatch works
+# ------------------
+# This workflow does NOT call the Copilot GraphQL API itself. It labels
+# each ✅ issue `copilot:ready` and lets agent-assign-copilot.yml do the
+# actual assignment via its existing budget gates (MAX_COPILOT_CONCURRENT
+# / MAX_COPILOT_DAILY) and GraphQL call. That keeps a single source of
+# truth for assignment and avoids double-counting.
+#
+# Conflict rules (see scripts/multi-dispatch-safety.sh)
+#   - Hard overlap (any identical file path in scope) → refuse later issue
+#   - `Depends-on: #N` body line: target must be closed OR earlier in the
+#     same dispatch input. Cycles within the input → all members refused.
+#   - Soft overlap (same role-glob, different files) is permitted.
+#
+# Scope source per issue (resolved in order)
+#   1. First comment carrying `<!-- architect-plan-files -->` followed by
+#      a fenced code block of paths (any author).
+#   2. First `role:<name>` label whose name matches a role in
+#      .context/rules/agent_ownership.md.
+#   3. None — the issue is dispatched (no overlap claim) but the dispatch
+#      report flags it with a WARN so the user can add a label or marker.
+#
+# Inputs
+# ------
+# `issues`     Whitespace-/comma-separated issue numbers, in priority
+#              order. Example: `120, 121, 122` or `120 121 122`.
+# `dry_run`    If `true`, only post the dispatch report — do not label.
+#
+# Requires: CLAUDE_PAT secret (issues:write, pull-requests:read).
+
+on:
+  workflow_dispatch:
+    inputs:
+      issues:
+        description: 'Whitespace- or comma-separated issue numbers, in priority order'
+        required: true
+      dry_run:
+        description: 'Post the dispatch report but do not apply copilot:ready'
+        type: boolean
+        default: false
+
+concurrency:
+  group: multi-dispatch
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse input list
+        id: parse
+        env:
+          RAW: ${{ inputs.issues }}
+        run: |
+          # Normalize commas → spaces, collapse whitespace.
+          list=$(printf '%s' "$RAW" | tr ',' ' ' | tr -s '[:space:]' ' ' \
+            | sed 's/^ //; s/ $//')
+          if [[ -z "$list" ]]; then
+            echo "::error::No issue numbers parsed from input."
+            exit 1
+          fi
+          # Validate every token is a positive integer (≥ 1). GitHub
+          # issue numbers are 1-based, so `0` would pass `^[0-9]+$` and
+          # blow up later in `gh issue view`. Reject it here.
+          for tok in $list; do
+            if ! [[ "$tok" =~ ^[1-9][0-9]*$ ]]; then
+              echo "::error::Invalid issue token: $tok (must be a positive integer ≥ 1)"
+              exit 1
+            fi
+          done
+          echo "list=$list" >> "$GITHUB_OUTPUT"
+          echo "Parsed input: $list"
+
+      - name: Check budget headroom
+        id: budget
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          MAX_CONC: ${{ vars.MAX_COPILOT_CONCURRENT || '3' }}
+          MAX_DAILY: ${{ vars.MAX_COPILOT_DAILY || '20' }}
+        run: |
+          # Mirror agent-assign-copilot.yml's budget logic.
+          open_prs=$(gh pr list --repo "$REPO" --state open \
+            --search "head:copilot/" --json number --jq 'length')
+          open_issues=$(gh issue list --repo "$REPO" --state open \
+            --label "copilot:in-progress" --json number --jq 'length')
+          in_flight=$(( open_prs + open_issues ))
+          conc_remaining=$(( MAX_CONC - in_flight ))
+          (( conc_remaining < 0 )) && conc_remaining=0
+
+          owner="${REPO%/*}"
+          name="${REPO#*/}"
+          since=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          daily_used=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/$owner/$name/issues/events?per_page=100" \
+            --paginate --slurp \
+            --jq "[.[][] | select(.event==\"labeled\" and .label.name==\"copilot:in-progress\" and .created_at >= \"$since\")] | length")
+          daily_remaining=$(( MAX_DAILY - daily_used ))
+          (( daily_remaining < 0 )) && daily_remaining=0
+
+          # Cap = min(conc_remaining, daily_remaining).
+          cap=$conc_remaining
+          (( daily_remaining < cap )) && cap=$daily_remaining
+
+          echo "Budget: in_flight=$in_flight/$MAX_CONC, daily_used=$daily_used/$MAX_DAILY"
+          echo "Dispatch cap this run: $cap"
+          echo "in_flight=$in_flight" >> "$GITHUB_OUTPUT"
+          echo "max_conc=$MAX_CONC" >> "$GITHUB_OUTPUT"
+          echo "daily_used=$daily_used" >> "$GITHUB_OUTPUT"
+          echo "max_daily=$MAX_DAILY" >> "$GITHUB_OUTPUT"
+          echo "cap=$cap" >> "$GITHUB_OUTPUT"
+
+      - name: Compute dispatch plan
+        id: plan
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          GH_REPO: ${{ github.repository }}
+          ISSUES: ${{ steps.parse.outputs.list }}
+        run: |
+          # shellcheck disable=SC1091
+          source scripts/multi-dispatch-safety.sh
+          # `select_dispatchable` emits TSV: <issue><TAB><verdict><TAB><reason>
+          # We capture it to a file so we can both print it and re-use it in
+          # later steps without re-running the (potentially slow) gh-touching
+          # scope/dependency probes.
+          tsv=$(mktemp)
+          # shellcheck disable=SC2086
+          select_dispatchable $ISSUES > "$tsv"
+          echo "Dispatch plan:"
+          cat "$tsv"
+          echo "tsv=$tsv" >> "$GITHUB_OUTPUT"
+
+      - name: Apply labels and post report
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          TSV: ${{ steps.plan.outputs.tsv }}
+          CAP: ${{ steps.budget.outputs.cap }}
+          IN_FLIGHT: ${{ steps.budget.outputs.in_flight }}
+          MAX_CONC: ${{ steps.budget.outputs.max_conc }}
+          DAILY_USED: ${{ steps.budget.outputs.daily_used }}
+          MAX_DAILY: ${{ steps.budget.outputs.max_daily }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          dispatched=()
+          dispatched_skipped_for_budget=()
+          refused_rows=()
+          n_used=0
+          while IFS=$'\t' read -r issue verdict reason; do
+            [[ -z "$issue" ]] && continue
+            if [[ "$verdict" == "dispatch" ]]; then
+              if (( n_used < CAP )); then
+                dispatched+=("$issue|$reason")
+                n_used=$((n_used + 1))
+              else
+                dispatched_skipped_for_budget+=("$issue|$reason")
+              fi
+            else
+              refused_rows+=("$issue|$reason")
+            fi
+          done < "$TSV"
+
+          # ── Build job-summary report ──
+          {
+            echo "## 🚀 Multi-Issue Dispatch Report"
+            echo ""
+            echo "**Input order (= priority):** \`${{ steps.parse.outputs.list }}\`"
+            echo ""
+            echo "**Budget**: concurrent ${IN_FLIGHT}/${MAX_CONC}, daily ${DAILY_USED}/${MAX_DAILY}, cap this run = ${CAP}."
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo ""
+              echo "> ℹ️ **Dry run** — no labels applied."
+            fi
+            echo ""
+            echo "### Dispatched"
+            if (( ${#dispatched[@]} == 0 )); then
+              echo "_None._"
+            else
+              echo "| Issue | Scope mode |"
+              echo "|------:|------------|"
+              for row in "${dispatched[@]}"; do
+                iss="${row%%|*}"; rsn="${row#*|}"
+                echo "| #$iss | $rsn |"
+              done
+            fi
+            echo ""
+            if (( ${#dispatched_skipped_for_budget[@]} > 0 )); then
+              echo "### Skipped (budget cap)"
+              echo "| Issue | Scope mode |"
+              echo "|------:|------------|"
+              for row in "${dispatched_skipped_for_budget[@]}"; do
+                iss="${row%%|*}"; rsn="${row#*|}"
+                echo "| #$iss | $rsn |"
+              done
+              echo ""
+            fi
+            echo "### Refused"
+            if (( ${#refused_rows[@]} == 0 )); then
+              echo "_None._"
+            else
+              echo "| Issue | Reason |"
+              echo "|------:|--------|"
+              for row in "${refused_rows[@]}"; do
+                iss="${row%%|*}"; rsn="${row#*|}"
+                echo "| #$iss | $rsn |"
+              done
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # ── Comment on each refused issue (no double-noise on success;
+          #    agent-assign-copilot.yml will comment when it acts) ──
+          for row in "${refused_rows[@]}"; do
+            iss="${row%%|*}"; rsn="${row#*|}"
+            body=$(printf '🛑 **Refused by multi-dispatch run [%s](%s)**: %s\n\nDispatched alongside: `%s`. Re-trigger the workflow with a different ordering or after the conflict clears.' \
+              "${{ github.run_id }}" \
+              "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+              "$rsn" \
+              "${{ steps.parse.outputs.list }}")
+            if [[ "$DRY_RUN" != "true" ]]; then
+              gh issue comment "$iss" --repo "$REPO" --body "$body" || true
+            fi
+          done
+
+          # ── Comment on each budget-skipped issue ──
+          for row in "${dispatched_skipped_for_budget[@]}"; do
+            iss="${row%%|*}"
+            body="⏸ **Skipped by multi-dispatch (budget cap reached)**: ${IN_FLIGHT}/${MAX_CONC} concurrent, ${DAILY_USED}/${MAX_DAILY} daily. Re-trigger after a slot frees up."
+            if [[ "$DRY_RUN" != "true" ]]; then
+              gh issue comment "$iss" --repo "$REPO" --body "$body" || true
+            fi
+          done
+
+          # ── Apply copilot:ready to dispatched issues (gated by dry run) ──
+          if [[ "$DRY_RUN" != "true" ]]; then
+            for row in "${dispatched[@]}"; do
+              iss="${row%%|*}"
+              echo "Labeling #$iss copilot:ready"
+              gh issue edit "$iss" --repo "$REPO" --add-label "copilot:ready"
+            done
+          fi
