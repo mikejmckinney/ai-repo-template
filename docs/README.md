@@ -89,5 +89,9 @@ What are the positive and negative consequences?
 - [ADR-004: Analyst Role and Feedback Loop](decisions/adr-004-analyst-role-and-feedback-loop.md) - Adding pre-Architect validation and iterative feedback
 - [ADR Template](decisions/adr-template.md) - Template for new architecture decisions
 
+### Postmortems / Lessons Learned
+- [Postmortems Index](postmortems/README.md) - When to write a postmortem; ADR-vs-postmortem split; "What generalizes" promotion gate
+- [Postmortem Template](postmortems/postmortem-template.md) - Template for retrospective lessons
+
 ### Reference
 - Add specification documents as needed

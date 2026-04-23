@@ -3,6 +3,12 @@
 > **Purpose**: Durable record of "why we chose X over Y." Every nontrivial
 > architectural or process decision lives here. Code is the *what*; ADRs
 > are the *why*.
+>
+> ADRs are *prospective* ("we will do X because we expect Y").
+> *Retrospective* lessons ("we did X, and Z happened") live in
+> [`docs/postmortems/`](../postmortems/README.md). A postmortem may
+> trigger a new ADR (or supersede one), but the two artifacts are kept
+> separate so the audit trail stays honest.
 
 ## Index
 
