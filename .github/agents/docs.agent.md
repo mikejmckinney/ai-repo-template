@@ -7,14 +7,13 @@ owned_paths:
   - 'AI_REPO_GUIDE.md'
   - 'CLAUDE.md'
   - 'AGENT.md'
-  - 'docs/README.md'
-  - 'docs/FAQ.md'
-  - 'docs/smoke-a.md'
-  - 'docs/smoke-e.md'
+  - 'docs/*.md'                  # top-level docs files (FAQ.md, README.md, smoke-*.md, etc.)
   - 'docs/guides/**'
   - 'docs/reference/**'
   # Note: docs/decisions/**, docs/postmortems/**, docs/research/** are excluded
   # per .context/rules/agent_ownership.md (Architect / Analyst own those).
+  # The non-recursive 'docs/*.md' glob intentionally does not match files in
+  # those subdirectories.
 handoff_targets:
   - judge           # diff-gate review
   - architect       # if docs reveal an architectural gap
