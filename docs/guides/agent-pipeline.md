@@ -71,7 +71,15 @@ With workflow approval disabled (see Setup below), these fire immediately:
 - **Copilot code review** — posts review if configured as a required reviewer
 - **CI checks** — your `ci-tests.yml` runs
 
-### Step 4: Claude resolves ALL review comments (opt-in via `claude-fix` label)
+### Step 4: Resolve review comments (opt-in via `claude-fix` or `copilot-relay` label)
+`agent-fix-reviews.yml` (Claude path) and `agent-relay-reviews.yml`
+(Copilot path) are alternative review-resolution workflows. Pick one
+per PR by adding the corresponding label — see
+§"Resolution-path selection" under Setup for the tradeoff. The
+Claude-path description below applies symmetrically to the Copilot path,
+except that Copilot reads its own review comments and the Phase 4
+thread-resolution mutations may need the `phase4-fallback` job (ADR-008).
+
 `agent-fix-reviews.yml` triggers for same-repo PRs labeled `claude-fix`
 when a reviewer submits a `commented` / `changes_requested` review, or
 when the `claude-fix` label is added to a PR retroactively (useful if
@@ -239,54 +247,91 @@ These work alongside your existing workflows:
 
 ## Using this pipeline for your project
 
-The pipeline ships ready-to-run, but the **per-stage prompt files** that
-drive a multi-issue build are project-specific. The template ships only
-the procedural prompts needed by the pipeline itself:
+The end-to-end intent is **autonomous (or near-autonomous) project
+build from a series of prompts**: a human (or upstream planning agent)
+authors the per-stage prompt files, the backlog pipeline turns them
+into issues, and the rest of this guide drives each issue to merge.
+Manual issue filing is the fallback when you don't want the backlog
+automation in the loop.
 
-| Prompt file | Ships with template? | Purpose |
-|-------------|----------------------|---------|
-| `.github/prompts/pr-resolve-all.md` | ✅ Yes | Used internally by `agent-fix-reviews.yml` and the `@copilot follow` / `@claude follow` convention |
-| `.github/prompts/expand-backlog-entry.md` | ✅ Yes | Used internally by `backlog-to-issues.yml` to expand sparse `backlog.yaml` entries |
-| `.github/prompts/repo-onboarding.md` | ✅ Yes | Procedural — refresh `AI_REPO_GUIDE.md` from the live repo |
-| `.github/prompts/copilot-onboarding.md` | ✅ Yes | Procedural — refresh `.github/copilot-instructions.md` |
-| `.github/prompts/NN-<stage>.md` (e.g. `01-init-project.md`, `05-portfolio-demo-app.md`) | ❌ No — author per project | One per implementation stage; each becomes one issue |
-| `.github/prompts/00-PROJECT-BRIEF.md` | ❌ No — author per project | Shared project context referenced from every stage prompt |
+### Pipeline anatomy
+
+The template ships the **infrastructure** (workflows, labels,
+backlog schema, procedural prompts). Each derived project supplies its
+own **content** (per-stage prompt files + backlog entries). The split:
+
+| Layer | Ships with template? | Per-project content |
+|-------|----------------------|---------------------|
+| `agent-*.yml` workflows, labels, `setup.sh` | ✅ Yes | — |
+| `.context/backlog.schema.json` + `backlog-to-issues.yml` + `agent-assign-copilot.yml` | ✅ Yes | — |
+| `.github/prompts/pr-resolve-all.md` (review resolution) | ✅ Yes | — |
+| `.github/prompts/expand-backlog-entry.md` (sparse-entry expansion) | ✅ Yes | — |
+| `.github/prompts/repo-onboarding.md` / `copilot-onboarding.md` (procedural) | ✅ Yes | — |
+| `.context/backlog.yaml` | Stub with one example entry | Replace with your project's stage entries |
+| `.github/prompts/00-PROJECT-BRIEF.md` (shared project context) | ❌ No | Author once per project |
+| `.github/prompts/NN-<stage>.md` (one per implementation stage) | ❌ No | Author one per build stage; each becomes one issue |
+
+### Worked example: cloud_migration_POC
+
+A real downstream project built end-to-end with this pipeline lives at
+[`mikejmckinney/cloud_migration_POC`](https://github.com/mikejmckinney/cloud_migration_POC).
+It used **seven** stage prompts plus one project brief:
+
+- [`.context/vision/00-PROJECT-BRIEF.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/main/.context/vision/00-PROJECT-BRIEF.md) — shared context referenced from every stage.
+- [`.github/prompts/01-*.md` through `07-*.md`](https://github.com/mikejmckinney/cloud_migration_POC/tree/main/.github/prompts) — one stage per prompt (init, infrastructure, data pipeline, security/RBAC, demo app, documentation, polish).
+
+The motivation for this template's backlog pipeline (`backlog.yaml` +
+`backlog-to-issues.yml` + `agent-assign-copilot.yml`) and the
+review-resolution path (`auto-merge`, `claude-fix`, `copilot-relay`
+labels) came directly from operating that project: the backlog
+automates the otherwise-manual step of filing one issue per prompt,
+and the resolution labels automate the otherwise-manual step of
+responding to review feedback. Lessons learned from running this and
+future downstream projects are tracked under issue #150. A related
+discovery — whether prompt files themselves should be the dispatch
+source of truth (skipping `backlog.yaml`) — is tracked under issue
+#155.
 
 ### Step-by-step
 
-**1. Author per-stage prompt files in your derived repo.**
+**1. Author the per-stage prompt files in your derived repo.**
 
 Create `.github/prompts/00-PROJECT-BRIEF.md` (shared project context)
-and one `.github/prompts/NN-<stage>.md` per implementation stage. The
-recommended pattern is a short numeric prefix (`01-`, `02-`, …) so the
-order stays obvious in directory listings and the Analyst pre-flight
-gate (defined in `AGENTS.md` → "Analyst pre-flight gate") can detect
-them by pattern.
+and one `.github/prompts/NN-<stage>.md` per implementation stage. Use
+a two-digit numeric prefix (`01-`, `02-`, …) so the order is obvious
+in directory listings and the Analyst pre-flight gate (defined in
+`AGENTS.md` → "Analyst pre-flight gate") detects them by pattern. A
+stage prompt should be self-contained: deliverables, constraints,
+verification commands, and a reference back to `00-PROJECT-BRIEF.md`.
+See the cloud_migration_POC prompts linked above for production-grade
+examples.
 
-A stage prompt should be self-contained: deliverables, constraints,
-verification commands, and a reference back to `00-PROJECT-BRIEF.md`
-for context. See `.github/prompts/pr-resolve-all.md` in this template
-for an example of the level of detail that works well in practice.
+**2. Mirror the prompts into `.context/backlog.yaml` (recommended primary path).**
 
-**2. (Optional) Mirror the prompts into `.context/backlog.yaml`.**
-
-If you want the pipeline to file the issues for you (instead of doing
-it manually), add one entry per stage to `.context/backlog.yaml` (the
+For each stage prompt, add one entry to `.context/backlog.yaml` (the
 machine-readable task list — schema in `.context/backlog.schema.json`).
 On push to `main`, `backlog-to-issues.yml` files an issue per entry,
 labels it `from-backlog` + `copilot:ready`, and lets
-`agent-assign-copilot.yml` route it through the budget gates.
+`agent-assign-copilot.yml` route it through the budget gates
+(`MAX_COPILOT_CONCURRENT`, `MAX_COPILOT_DAILY`).
 
-Use `depends_on:` on each stage entry to enforce the build order, and
+Use `depends_on:` to enforce build order between stages, and
 `auto_assign: false` on any stage that should hold for human review
-before assignment.
+before Copilot picks it up. If `ANTHROPIC_API_KEY` is set, sparse
+entries (missing `body` / `acceptance_criteria`) are auto-expanded
+via `expand-backlog-entry.md`.
 
-**3. File issues that reference each stage prompt.**
+This is the intended primary path — it's what makes the pipeline
+end-to-end automated. Skip to step 3 only if you want manual control
+over issue filing for a specific project.
 
-Whether filed manually or via the backlog, each issue body needs three
-things: a one-line title, a `Read and follow .github/prompts/<file>`
-directive, and `closes #N` so auto-merge closes the linked tracking
-issue if applicable.
+**3. (Fallback) File issues manually instead of via the backlog.**
+
+If you don't want the backlog in the loop for a particular project,
+file one issue per stage by hand. Each issue body needs three things:
+a one-line title, a `Read and follow .github/prompts/<file>`
+directive, and `closes #N` so auto-merge closes any linked tracking
+issue.
 
 ```markdown
 Title: <Stage name>
@@ -297,35 +342,34 @@ Also read `.github/prompts/00-PROJECT-BRIEF.md` for project context.
 <Any extra acceptance criteria specific to this issue.>
 ```
 
-**4. Assign each issue and let the pipeline drive.**
+**4. Let the pipeline drive each issue to merge.**
 
-- **Sequential (recommended for first run):** assign one issue at a
-  time, watch the implement → review → fix → merge cycle, then assign
-  the next. This is the safest mode while you verify the pipeline
-  works end-to-end in your repo.
-- **Parallel (faster):** assign multiple issues at once. Stages whose
-  ownership globs (per `.context/rules/agent_ownership.md`) don't
-  overlap are safe to run concurrently. The Parallelism Report
-  workflow (ADR-009) classifies overlap and posts a comment per PR;
-  the auto-rebase-on-merge workflow (ADR-010) handles soft overlaps
-  automatically post-merge.
+Once issues exist (whether from the backlog dispatch or filed by
+hand), Copilot is assigned automatically by `agent-assign-copilot.yml`
+as slots open up. From there, Steps 1–5 above run unattended:
+Copilot opens a draft PR → `agent-auto-ready.yml` flips it to ready
+→ review bots fire → the chosen resolution path (`claude-fix` or
+`copilot-relay`) addresses comments → `agent-auto-merge.yml`
+squash-merges when CI is green.
+
+For the first project on the pipeline, run **sequentially** (one
+issue at a time) until you've verified the loop works end-to-end in
+your repo. After that, run **in parallel** — assign multiple issues
+at once. Stages whose ownership globs (per
+`.context/rules/agent_ownership.md`) don't overlap are safe to run
+concurrently. The Parallelism Report workflow (ADR-009) classifies
+overlap per PR; auto-rebase-on-merge (ADR-010) handles soft overlaps
+automatically post-merge.
 
 **5. Monitor progress.**
 
 - **Agents panel** — github.com → your repo → Copilot tab shows active
   Copilot sessions.
-- **Actions tab** — workflow runs for fix-reviews, relay-reviews, and
-  auto-merge.
+- **Actions tab** — workflow runs for backlog dispatch, fix-reviews,
+  relay-reviews, and auto-merge.
 - **PR timeline** — fix-cycle markers ("🔧 Claude fix cycle 1/3") and
   the Parallelism Report comment.
 - **Issue timeline** — `agent-complete` label and "✅ Done" when merged.
-
-> **Why no concrete example here?** Earlier versions of this guide
-> shipped a six-issue Cloud-Migration POC walkthrough. Those prompts
-> are not in the template, so the example walked through files that
-> don't exist in your repo, which created more confusion than it
-> solved. The skeleton above is the actual pipeline contract; the
-> specifics are project-specific.
 
 ## Manual Intervention Points
 
