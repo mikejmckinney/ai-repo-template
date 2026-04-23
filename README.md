@@ -61,28 +61,43 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 │
 ├── .context/                     # Project context (canonical truth)
 │   ├── 00_INDEX.md               # Context entry point
+│   ├── backlog.yaml              # Machine-readable task list (dispatched into issues)
+│   ├── backlog.schema.json       # JSON Schema for backlog.yaml
 │   ├── roadmap.md                # Phase-by-phase plan
 │   ├── rules/                    # Immutable domain constraints
+│   │   ├── README.md
 │   │   ├── agent_ownership.md    # Role → owned paths map
-│   │   └── domain_code_quality.md # Language-neutral quality floor
+│   │   ├── domain_code_quality.md # Language-neutral quality floor
+│   │   └── process_doc_maintenance.md # Doc-sync trigger map
 │   ├── sessions/                 # Session history for handoff
+│   │   ├── README.md
 │   │   └── latest_summary.md     # Most recent session summary
 │   ├── state/                    # Mutable progress tracking
+│   │   ├── README.md
 │   │   ├── _active.md            # Points to current priority task
 │   │   ├── coordination.md       # Live claim board for parallel agents
 │   │   ├── feedback_template.md  # Stakeholder feedback template
+│   │   ├── handoff_template.md   # Cross-session/role handoff template
 │   │   ├── task_template.md      # Template for new tasks
 │   │   └── task_*.md             # Individual task files
 │   └── vision/                   # Design artifacts
+│       ├── README.md
 │       ├── mockups/              # UI/UX mockups
 │       └── architecture/         # System diagrams
 │
 ├── docs/                         # Human reference documentation
 │   ├── README.md                 # Documentation guide
-│   ├── reference/                # Specs, research
-│   ├── research/                 # Analyst output (analysis artifacts)
-│   ├── guides/                   # How-to guides
-│   └── decisions/                # Architecture Decision Records (adr-*.md)
+│   ├── FAQ.md                    # Common questions about this template
+│   ├── smoke-a.md                # Smoke test scenario A
+│   ├── smoke-e.md                # Smoke test scenario E
+│   ├── decisions/                # Architecture Decision Records (adr-001 … adr-010, adr-template)
+│   ├── guides/                   # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, multi-agent-coordination, optional-skills)
+│   ├── postmortems/              # Postmortems (template + project-specific)
+│   ├── reference/                # Specs, external docs
+│   └── research/                 # Analyst output (analysis artifacts)
+│
+├── .claude/
+│   └── agents/                   # Claude Code subagent registry (10 mirrors of .github/agents/, see ADR-003)
 │
 ├── .cursor/
 │   └── BUGBOT.md                 # Cursor Bugbot PR review rules
@@ -101,20 +116,29 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 │   ├── README.md                 # Script catalog
 │   ├── setup.sh                  # First-run project customization
 │   ├── verify-env.sh             # Environment & placeholder sanity check
-│   └── db-reset.sh               # Optional DB reset stub
+│   ├── db-reset.sh               # Optional DB reset stub
+│   ├── auto-rebase-overlapping.sh    # Auto-rebase library (ADR-010)
+│   ├── multi-dispatch-safety.sh      # Parallel-dispatch safety classifier
+│   ├── parse-ownership-table.sh      # Ownership-table parser used by workflows
+│   └── test-*.sh                 # Unit tests for the helper scripts above
 │
 ├── .pre-commit-config.yaml.template  # Pre-commit hooks template
+├── .cursorignore                 # Files Cursor should not index
 │
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
+    ├── pull_request_template.md  # Default PR body skeleton (Doc-sync checklist required)
     ├── agents/                   # Role-specialized agent files (10 files)
     │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
     │   ├── judge.agent.md, pm.agent.md, frontend.agent.md,
     │   ├── backend.agent.md, qa.agent.md, devops.agent.md,
     │   └── docs.agent.md
     ├── prompts/
+    │   ├── README.md             # Prompt catalog
     │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
-    │   └── repo-onboarding.md    # Repo onboarding workflow prompt
+    │   ├── repo-onboarding.md    # Repo onboarding workflow prompt
+    │   ├── pr-resolve-all.md     # PR-review resolution procedure
+    │   └── expand-backlog-entry.md # Backlog → issue expansion prompt
     ├── ISSUE_TEMPLATE/           # Issue templates
     │   ├── bug_report.md         # Bug report template
     │   ├── feature_request.md    # Feature request template
