@@ -372,8 +372,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
             log_info "$name already set (leaving as-is)"
             return 0
         fi
-        err=$(gh variable set "$name" --body "$value" 2>&1 >/dev/null)
-        if [[ $? -eq 0 ]]; then
+        if err=$(gh variable set "$name" --body "$value" 2>&1 >/dev/null); then
             log_info "Set $name=$value"
         else
             first_err=$(printf '%s\n' "$err" | grep -v '^$' | head -n1)
@@ -402,7 +401,7 @@ fi
 # --- Done ---
 echo ""
 echo "========================================"
-printf "${GREEN}Setup Complete!${NC}\n"
+printf '%bSetup Complete!%b\n' "$GREEN" "$NC"
 echo "========================================"
 echo ""
 echo "Next steps:"

@@ -154,13 +154,13 @@ printf "${RED}Failed:${NC} %d\n" "$FAIL"
 echo ""
 
 if [[ $FAIL -gt 0 ]]; then
-    printf "${RED}Environment verification FAILED${NC}\n"
+    printf '%bEnvironment verification FAILED%b\n' "$RED" "$NC"
     echo "Fix the failed checks before proceeding."
     exit 1
 elif [[ $WARN -gt 0 ]]; then
-    printf "${YELLOW}Environment verification PASSED with warnings${NC}\n"
+    printf '%bEnvironment verification PASSED with warnings%b\n' "$YELLOW" "$NC"
     exit 0
 else
-    printf "${GREEN}Environment verification PASSED${NC}\n"
+    printf '%bEnvironment verification PASSED%b\n' "$GREEN" "$NC"
     exit 0
 fi

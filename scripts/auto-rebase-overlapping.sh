@@ -133,6 +133,7 @@ _aro_pr_unresolved_threads() {
     repo="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
     owner="${repo%/*}"
     name="${repo#*/}"
+    # shellcheck disable=SC2016  # GraphQL variables (`$owner` etc.) are literal in the query string
     raw=$(set -o pipefail; gh api graphql -f query='
       query($owner: String!, $name: String!, $pr: Int!) {
         repository(owner: $owner, name: $name) {

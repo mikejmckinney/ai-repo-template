@@ -77,6 +77,7 @@ lookup_iss() {
 # ── Fixtures ──
 # Canonical column order: Thread | Thread ID | ISS | Author | Action | Notes
 
+# shellcheck disable=SC2016  # backticks in markdown table fixtures are literal
 FIXTURE_BACKTICKED='| Thread | Thread ID | ISS | Author | Action | Notes |
 |--------|-----------|-----|--------|--------|-------|
 | [link](#) | `PRRT_kwDOQ1tpTM58q-s1` | ISS-01 | gemini-code-assist | ⚠️ Errored | FORBIDDEN |
@@ -87,12 +88,14 @@ FIXTURE_PLAIN='| Thread | Thread ID | ISS | Author | Action | Notes |
 |--------|-----------|-----|--------|--------|-------|
 | [link](#) | PRRT_plain01 | ISS-04 | copilot-pull-request-reviewer | ⚠️ Errored | FORBIDDEN |'
 
+# shellcheck disable=SC2016  # backticks in markdown fixture are literal
 FIXTURE_MIXED='| Thread | Thread ID | ISS | Author | Action | Notes |
 |--------|-----------|-----|--------|--------|-------|
 | [link](#) | `PRRT_mix1` | ISS-05 | gemini-code-assist | ✅ Resolved | Fixed in abc1234 |
 | [link](#) | `PRRT_mix2` | ISS-06 | copilot-pull-request-reviewer | ⚠️ Errored | FORBIDDEN |
 | [link](#) | `PRRT_mix3` | ISS-07 | mikejmckinney | ⏭️ Skipped | Human-authored |'
 
+# shellcheck disable=SC2016  # backticks in markdown fixture are literal
 FIXTURE_ALL_RESOLVED='| Thread | Thread ID | ISS | Author | Action | Notes |
 |--------|-----------|-----|--------|--------|-------|
 | [link](#) | `PRRT_ok1` | ISS-08 | gemini-code-assist | ✅ Resolved | Fixed |'

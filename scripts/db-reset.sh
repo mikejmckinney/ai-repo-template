@@ -24,9 +24,9 @@ echo "========================================"
 echo ""
 
 # Safety check
-printf "${RED}WARNING: This will DELETE all data in the database!${NC}\n"
+printf '%bWARNING: This will DELETE all data in the database!%b\n' "$RED" "$NC"
 echo ""
-read -p "Are you sure? Type 'yes' to continue: " confirm
+read -r -p "Are you sure? Type 'yes' to continue: " confirm
 
 if [[ "$confirm" != "yes" ]]; then
     log_info "Aborted."

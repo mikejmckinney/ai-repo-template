@@ -248,7 +248,7 @@ classify_overlap() {
     echo "none"
     return 0
   fi
-  while IFS=$'\t' read -r role prefix; do
+  while IFS=$'\t' read -r _ prefix; do
     [[ -z "$prefix" ]] && continue
     local a_hit b_hit
     a_hit=$(awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {print "y"; exit}' "$a")
@@ -325,7 +325,6 @@ select_dispatchable() {
 
   # 4. Sequential first-fit walk.
   declare -A selected=()      # issue -> 1
-  declare -A refused=()       # issue -> reason
   local order=()              # selected, in input order
 
   for ((i=0; i<n; i++)); do
@@ -335,7 +334,6 @@ select_dispatchable() {
     if printf '%s\n' "$cycle_members" | grep -qx "$iss"; then
       printf '%s\trefuse\tDepends-on cycle within input set: %s\n' \
         "$iss" "$(printf '%s\n' "$cycle_members" | tr '\n' ' ' | sed 's/ $//')"
-      refused["$iss"]="cycle"
       continue
     fi
 
@@ -361,7 +359,6 @@ select_dispatchable() {
     done
     if [[ -n "$dep_blocker" ]]; then
       printf '%s\trefuse\t%s\n' "$iss" "$dep_blocker"
-      refused["$iss"]="dep"
       continue
     fi
 
@@ -377,7 +374,6 @@ select_dispatchable() {
     done
     if [[ -n "$hard_with" ]]; then
       printf '%s\trefuse\thard overlap with already-dispatched #%s\n' "$iss" "$hard_with"
-      refused["$iss"]="hard:$hard_with"
       continue
     fi
 
