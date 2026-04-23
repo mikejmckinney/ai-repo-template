@@ -5,7 +5,7 @@
 # backlog-driven issue creation pipeline). Each entry becomes one GitHub
 # issue and is then funneled through the gated Copilot assignment workflow
 # (added in PR 2) and the existing downstream pipeline documented in
-# .github/workflows/AGENT-PIPELINE-GUIDE.md.
+# docs/guides/agent-pipeline.md.
 #
 # Schema:    .context/backlog.schema.json
 # Validate:  pip install check-jsonschema && \

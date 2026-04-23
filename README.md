@@ -45,7 +45,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 - **Pre-commit Hooks** - Template for linting, secret detection, and commit standards
 - **ADR Templates** - Architecture Decision Record templates with examples
 - **Verification Scripts** - Built-in testing (see `./test.sh` output for current check count) to ensure template integrity
-- **Backlog-Ready Issue Pipeline** - `.context/backlog.yaml` is a machine-readable task list (validated by `.context/backlog.schema.json`). The backlog is auto-converted into GitHub issues and routed through a gated Copilot assignment workflow with concurrent + daily budgets and a queue. The pipeline relies on state labels (`copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) which `scripts/setup.sh` creates automatically. See `docs/guides/agent-pipeline.md` for the intended end-to-end flow.
+- **Backlog-Ready Issue Pipeline** - `.context/backlog.yaml` is a machine-readable task list (validated by `.context/backlog.schema.json`). The backlog is auto-converted into GitHub issues and routed through a gated Copilot assignment workflow with concurrent + daily budgets and a queue. The pipeline relies on state labels (`copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) which `scripts/setup.sh` creates automatically. See [`docs/guides/agent-pipeline.md`](docs/guides/agent-pipeline.md) for the intended end-to-end flow.
 
 ## Repository Structure
 
@@ -183,6 +183,8 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 |------|---------|
 | `.github/prompts/copilot-onboarding.md` | Guide for customizing copilot-instructions.md |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
+| `.github/prompts/pr-resolve-all.md` | Procedural — review-resolution playbook used by `agent-fix-reviews.yml` and the `@copilot follow` / `@claude follow` convention |
+| `.github/prompts/expand-backlog-entry.md` | Procedural — used by `backlog-to-issues.yml` to expand sparse `backlog.yaml` entries |
 
 ### Issue Templates
 
@@ -215,6 +217,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `docs/decisions/adr-003-claude-code-subagent-registration.md` | Claude Code subagent registration rationale |
 | `docs/decisions/adr-004-analyst-role-and-feedback-loop.md` | Analyst role and agile feedback loop |
 | `docs/guides/multi-agent-coordination.md` | How role-based agents work in parallel without conflicts |
+| `docs/guides/agent-pipeline.md` | End-to-end operations guide for the autonomous agent pipeline (Copilot/Claude/auto-merge/backlog) |
 | `docs/guides/agent-best-practices.md` | Token limits, handoff, secrets |
 | `docs/guides/context-files-explained.md` | What every file in the context pack is for |
 | `docs/guides/optional-skills.md` | Curated optional Claude Code skills (SOLID, everything-claude-code) |
