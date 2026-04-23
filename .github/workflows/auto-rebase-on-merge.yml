@@ -1,0 +1,154 @@
+name: Auto-Rebase on Merge
+# Issue #116. After a PR merges to `main`, walk every other open PR
+# that opted in via the `auto-rebase` label and decide what to do:
+#
+#   - soft overlap (same owned-path prefix, different files) →
+#     attempt `git rebase origin/main`; on success force-push-with-lease
+#     and post a one-line success comment; on conflict, leave the branch
+#     alone and post a structured `auto-rebase-conflict` comment +
+#     apply the `rebase-conflict` label.
+#   - hard overlap (identical file path) → do NOT attempt the rebase;
+#     post an `auto-rebase-overlap` advisory comment + apply the
+#     `rebase-conflict` label so the owning agent can plan resolution.
+#   - none → skip silently.
+#
+# Skip conditions: forks, drafts, `do-not-rebase` label, unresolved
+# review threads, the merged PR itself.
+#
+# All decision logic lives in scripts/auto-rebase-overlapping.sh and is
+# unit-tested via scripts/test-auto-rebase-overlapping.sh.
+#
+# Requires: CLAUDE_PAT secret with cross-branch write access.
+
+on:
+  pull_request:
+    types: [closed]
+
+concurrency:
+  group: auto-rebase
+  cancel-in-progress: false
+
+jobs:
+  rebase:
+    # Only run on real merges to main (not closed-without-merge).
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write          # required to force-push to other branches
+      pull-requests: write     # required to comment + label
+
+    steps:
+      - name: Checkout main (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.CLAUDE_PAT }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Walk open PRs and rebase or comment
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          MERGED_PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC1091
+          source scripts/auto-rebase-overlapping.sh
+
+          echo "PR #${MERGED_PR} merged. Scanning open PRs for rebase candidates..."
+
+          # Fetch open PR numbers via the REST API with pagination so we
+          # don't silently miss PRs past the gh-pr-list 200-cap (Copilot
+          # review #JWm on PR #143).
+          mapfile -t OPEN_PRS < <(
+            set -o pipefail
+            gh api --paginate \
+              "repos/${REPO}/pulls?state=open&per_page=100" \
+              | jq -r '.[].number'
+          )
+
+          echo "Found ${#OPEN_PRS[@]} open PR(s)."
+
+          for pr in "${OPEN_PRS[@]}"; do
+            verdict=$(should_rebase_pr "$pr" "$MERGED_PR")
+            echo "PR #${pr}: ${verdict}"
+
+            case "$verdict" in
+              attempt-rebase)
+                # Capture branch + pre-rebase SHA so we can use a
+                # --force-with-lease that fails if anyone else pushed
+                # mid-flight.
+                pr_meta=$(gh pr view "$pr" --json headRefName,headRefOid)
+                branch=$(printf '%s' "$pr_meta" | jq -r '.headRefName')
+                expected_sha=$(printf '%s' "$pr_meta" | jq -r '.headRefOid')
+                echo "  branch=${branch} pre-rebase-sha=${expected_sha}"
+
+                # Make sure we have the branch locally and origin/main is fresh.
+                git fetch origin "$branch:refs/remotes/origin/$branch" 2>/dev/null || {
+                  echo "  fetch failed for $branch — skipping"; continue
+                }
+                git fetch origin main 2>/dev/null || true
+
+                # Use a per-PR worktree so concurrent iterations don't trip
+                # over each other (also keeps the original main checkout intact).
+                worktree="../wt-${pr}"
+                git worktree add -B "$branch" "$worktree" "origin/$branch" >/dev/null
+
+                rebase_result=$(attempt_rebase "$branch" "$expected_sha" "$worktree")
+                echo "  attempt_rebase: ${rebase_result}"
+
+                if [[ "$rebase_result" == "clean" ]]; then
+                  new_sha=$(git -C "$worktree" rev-parse --short HEAD)
+                  if git -C "$worktree" push --force-with-lease="${branch}:${expected_sha}" origin "$branch"; then
+                    body=$(format_success_comment "$MERGED_PR" "$new_sha")
+                    gh pr comment "$pr" --body "$body"
+                    # Best-effort: drop the rebase-conflict label if it was set previously.
+                    gh pr edit "$pr" --remove-label "rebase-conflict" 2>/dev/null || true
+                    echo "  ✅ rebased and force-pushed"
+                  else
+                    echo "  ⚠️ force-with-lease refused — upstream changed mid-flight; skipping"
+                  fi
+                else
+                  conflict_paths="${rebase_result#conflict:}"
+                  body=$(format_conflict_comment "$MERGED_PR" "$conflict_paths")
+                  gh pr comment "$pr" --body "$body"
+                  gh pr edit "$pr" --add-label "rebase-conflict" 2>/dev/null || true
+                  echo "  ⚠️ conflict — comment posted, label applied"
+                fi
+
+                git worktree remove --force "$worktree" 2>/dev/null || true
+                ;;
+
+              comment-only)
+                # Hard overlap — list the overlapping paths in the comment.
+                merged_files=$(mktemp)
+                pr_files=$(mktemp)
+                gh pr view "$MERGED_PR" --json files --jq '.files[].path' | sort -u > "$merged_files"
+                gh pr view "$pr" --json files --jq '.files[].path' | sort -u > "$pr_files"
+                overlap_paths=$(comm -12 "$merged_files" "$pr_files")
+                rm -f "$merged_files" "$pr_files"
+
+                body=$(format_overlap_warning_comment "$MERGED_PR" "$overlap_paths")
+                gh pr comment "$pr" --body "$body"
+                gh pr edit "$pr" --add-label "rebase-conflict" 2>/dev/null || true
+                echo "  ⚠️ hard overlap — advisory comment posted, label applied"
+                ;;
+
+              skip:*)
+                : # nothing to do; verdict already logged
+                ;;
+
+              *)
+                echo "::warning::Unknown verdict for PR #${pr}: ${verdict}"
+                ;;
+            esac
+          done
+
+          echo "Done."

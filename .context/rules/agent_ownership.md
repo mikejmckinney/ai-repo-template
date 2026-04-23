@@ -45,6 +45,8 @@ These files require **PM coordination** regardless of role, because any role may
 | `test.sh`                         | DevOps         | Must be updated in lockstep with template structure changes |
 | `.github/agents/**` / `.claude/agents/**` | Architect | Role definitions; changes require an ADR, must update both mirrors in lockstep, and `test.sh` enforces `description:` parity between them. See `docs/decisions/adr-003-claude-code-subagent-registration.md`. |
 | `.github/workflows/agent-parallelism-report.yml` | DevOps | Cross-PR overlap detector; parses this ownership table to classify overlaps. Format-changing PRs must keep the table parser-friendly (covered by the live-format assertion in `scripts/test-parallelism-report-parser.sh` and `test.sh`). See ADR-009. |
+| `.github/workflows/auto-rebase-on-merge.yml` | DevOps | Post-merge auto-rebase for soft-overlap PRs and advisory-comment for hard-overlap PRs. Reuses `classify_overlap` from `scripts/multi-dispatch-safety.sh`. Decision logic lives in `scripts/auto-rebase-overlapping.sh` (unit-tested via `scripts/test-auto-rebase-overlapping.sh`). See ADR-010. |
+| `scripts/auto-rebase-overlapping.sh` | DevOps | Pure-bash library backing the auto-rebase workflow. Format/behavior changes must keep the unit tests green. See ADR-010. |
 
 ## Lock Protocol (for `coordination.md`)
 

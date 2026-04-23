@@ -129,7 +129,8 @@ Conflicts are prevented by layered defenses. Earlier layers are cheaper.
 4. **PM arbitration** — when a task genuinely needs a cross-role edit, PM decides: sequence, split, or shared claim.
 5. **Judge diff-gate** — Judge blocks merges that violate ownership.
 6. **Cross-PR overlap CI** (`agent-parallelism-report.yml`) — runs on every PR, posts a "Parallelism Report" comment listing every other open PR and classifying overlap as **hard** (same file), **soft** (same owned-path glob), or **none**. Comment-only, non-blocking; surfaces conflicts at PR-open time so reviewers/PM can sequence intentionally rather than discover them at merge. See ADR-009 and "Parallel Copilot Fan-Out" below.
-7. **Coordination board reconciliation** (`agent-coordination-sync.yml`) — comment-first reconciler for `.context/state/coordination.md`. On PR close, suggests which Active Lock blocks should move to Recent History. On PR open (non-draft, non-fork), suggests a lock block when the PR touches owned paths but no Active Lock references its branch. A scheduled daily job appends stale-lock rows (older than 7 days with no matching open PR) to a single tracking issue labeled `coordination-sync`. Never edits `coordination.md` itself in v1; opt out per-PR with the `no-coordination-check` label. See issue #115.
+7. **Auto-rebase on merge** (`auto-rebase-on-merge.yml`) — runs after every merge to `main`. Walks every other open PR that opted in via the `auto-rebase` label. Soft overlap → attempts `git rebase origin/main` and force-pushes-with-lease on success, posts a structured `auto-rebase-conflict` comment + applies `rebase-conflict` label on conflict. Hard overlap → no rebase attempted; posts an `auto-rebase-overlap` advisory comment + applies `rebase-conflict` label so the owning agent can plan resolution. Skips forks, drafts, PRs with `do-not-rebase`, and PRs with unresolved review threads. See ADR-010 and "Auto-rebase on merge" below.
+8. **Coordination board reconciliation** (`agent-coordination-sync.yml`) — comment-first reconciler for `.context/state/coordination.md`. On PR close, suggests which Active Lock blocks should move to Recent History. On PR open (non-draft, non-fork), suggests a lock block when the PR touches owned paths but no Active Lock references its branch. A scheduled daily job appends stale-lock rows (older than 7 days with no matching open PR) to a single tracking issue labeled `coordination-sync`. Never edits `coordination.md` itself in v1; opt out per-PR with the `no-coordination-check` label. See issue #115.
 
 ## Worked Example: Two Agents in Parallel
 
@@ -278,6 +279,38 @@ Conventions surfaced by this workflow:
 - **`role:<name>`** label (lowercase role name from `agent_ownership.md`) is the fallback when no architect marker is present. Only one role label per issue is honored (first match wins).
 
 A `dry_run: true` input posts the dispatch report to the workflow run summary without applying any labels — useful for previewing what an ordering would do.
+
+### Auto-rebase on merge
+
+When two agent PRs run in parallel and the first merges, the second usually needs a `git rebase origin/main` before it can merge cleanly. For most parallel agent PRs this is mechanical busywork — they touch *different files* (soft overlap), so the rebase succeeds with no conflicts. The `Auto-Rebase on Merge` workflow (`.github/workflows/auto-rebase-on-merge.yml`, issue [#116](https://github.com/mikejmckinney/ai-repo-template/issues/116)) does this automatically.
+
+After every merge to `main`, the workflow walks every other open PR and:
+
+| Overlap with merged PR | PR opted in? | Action |
+|---|---|---|
+| **soft** (same owned-path prefix, different files) | `auto-rebase` label | `git rebase origin/main` → on clean, `git push --force-with-lease` + post `auto-rebase-success` comment; on conflict, abort + post `auto-rebase-conflict` comment + apply `rebase-conflict` label |
+| **hard** (identical file path) | `auto-rebase` label | Do **not** attempt rebase. Post `auto-rebase-overlap` advisory comment listing the overlapping paths + apply `rebase-conflict` label |
+| **none** | (any) | Skip silently |
+| any | `do-not-rebase` label | Skip silently |
+| any | `auto-rebase` label absent | Skip silently |
+
+Always-skip conditions, evaluated before the overlap check: the merged PR itself, fork PRs, draft PRs, and PRs with at least one unresolved review thread.
+
+**Three labels** govern this workflow:
+
+- **`auto-rebase`** — *opt-in*. Apply this label to a PR to grant the workflow permission to rebase + force-push-with-lease on its head branch. There is no repo-level "always rebase everything" toggle; consent is per-PR.
+- **`do-not-rebase`** — *opt-out*. Wins over `auto-rebase` if both are present. Use when the branch is in a delicate state (mid-rewrite, in active local checkout, etc.).
+- **`rebase-conflict`** — *output signal*. Applied automatically when the workflow hits a conflict (soft or hard). Filterable in the UI. Remove it once the owning agent resolves the conflict.
+
+**Safety invariants:**
+
+- `git push --force-with-lease=<branch>:<pre-rebase-sha>` — the SHA is captured before the rebase starts, so a mid-flight push from anyone else aborts the force-push cleanly rather than overwriting their commit.
+- `git rebase --abort` runs on every conflict; the working tree (and the branch on origin) is left exactly as it was before the workflow ran.
+- The `auto-rebase` label is required per-PR; absence is the default.
+
+When a `rebase-conflict` is posted, the owning agent's next move is the standard `git fetch origin && git rebase origin/main`, resolve, `git push --force-with-lease` — exactly as it would be without the workflow, just with a structured comment as the trigger instead of a CI failure.
+
+Full rationale: ADR-010.
 
 ## Subagent nesting
 
