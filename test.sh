@@ -71,8 +71,11 @@ REQUIRED_FILES=(
     ".claude/agents/devops.md"
     ".claude/agents/docs.md"
     ".claude/agents/analyst.md"
+    ".github/prompts/README.md"
     ".github/prompts/copilot-onboarding.md"
     ".github/prompts/repo-onboarding.md"
+    ".github/prompts/pr-resolve-all.md"
+    ".github/prompts/expand-backlog-entry.md"
     ".github/pull_request_template.md"
 )
 
@@ -141,7 +144,11 @@ echo "Checking docs structure..."
 
 DOCS_FILES=(
     "docs/README.md"
+    "docs/FAQ.md"
+    "docs/smoke-a.md"
+    "docs/smoke-e.md"
     "docs/guides/agent-best-practices.md"
+    "docs/guides/agent-pipeline.md"
     "docs/guides/context-files-explained.md"
     "docs/guides/multi-agent-coordination.md"
     "docs/guides/optional-skills.md"
@@ -593,6 +600,9 @@ SCRIPT_FILES=(
     "scripts/setup.sh"
     "scripts/verify-env.sh"
     "scripts/db-reset.sh"
+    "scripts/auto-rebase-overlapping.sh"
+    "scripts/multi-dispatch-safety.sh"
+    "scripts/parse-ownership-table.sh"
 )
 
 for file in "${SCRIPT_FILES[@]}"; do
