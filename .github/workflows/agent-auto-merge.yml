@@ -192,8 +192,9 @@ jobs:
           fi
 
           # Smoke-test guard: PRs labeled `smoke-test` are exercising
-          # workflow behavior and must not be auto-merged or auto-fixed
-          # mid-test. See docs/guides/agent-best-practices.md
+          # workflow behavior and must not be auto-merged mid-test.
+          # (The auto-fix and relay workflows have parallel guards.)
+          # See docs/guides/agent-best-practices.md
           # §"Smoke-test PR convention" and #74.
           has_smoke_test_label=$(echo "$pr_json" | jq -r '[.labels[].name] | any(. == "smoke-test")' 2>/dev/null || echo "false")
           if [[ "$has_smoke_test_label" == "true" ]]; then

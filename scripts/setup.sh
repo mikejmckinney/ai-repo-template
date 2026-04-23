@@ -283,7 +283,7 @@ if [[ -n "$_pipeline_setup_skip_reason" ]]; then
     log_warn "Ad-hoc alternative (current Codespace only):"
     log_warn "  unset GITHUB_TOKEN && gh auth login -s repo,workflow && ./scripts/setup.sh"
     log_warn "Or create the following manually:"
-    log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
+    log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check"
     log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
 elif [[ -n "$_gh_auth_ok" ]]; then
     # Last-resort FULL_REPO fallback: if Step 0 couldn't parse a remote and
@@ -317,7 +317,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         log_warn "  b) One-shot override:"
         log_warn "       GH_REPO=<owner>/<repo> ./scripts/setup.sh"
         log_warn "Or create the following manually in the GitHub UI:"
-        log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
+        log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check"
         log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
     else
         # Scope every `gh` call in this block to FULL_REPO. gh respects
@@ -351,8 +351,8 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "no-auto-ready"         "BFDADC" "Opt out of automatic ready-state handling"
     _ensure_label "claude-fix"            "FBCA04" "Opt PR in to agent-fix-reviews.yml (Claude resolution)"
     _ensure_label "claude-review"         "1D76DB" "Opt PR in to claude.yml auto-review (invokes judge subagent)"
-    _ensure_label "copilot-relay"         "5319E7" "Opt PR in to agent-relay-reviews.yml (Copilot resolution; included in Copilot subscription, no extra API cost)"
-    _ensure_label "smoke-test"            "E99695" "Workflow-validation PR; agent-{auto-merge,relay-reviews,fix-reviews} skip these to avoid mid-test interference"
+    _ensure_label "copilot-relay"         "5319E7" "Opt PR in to agent-relay-reviews.yml (Copilot resolution; included in subscription)"
+    _ensure_label "smoke-test"            "E99695" "Workflow-validation PR; auto-merge/relay/fix-reviews skip to avoid mid-test interference"
     _ensure_label "copilot:ready"         "0E8A16" "Assign Copilot when budget allows"
     _ensure_label "copilot:in-progress"   "1D76DB" "Assigned to Copilot, counts toward concurrent budget"
     _ensure_label "copilot:queued"        "FBCA04" "Waiting for an open Copilot slot"
@@ -361,7 +361,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "needs-human"           "B60205" "Requires human input (e.g., empty roadmap phase, CI failure)"
     _ensure_label "coordination-sync"     "BFDADC" "Auto-filed by Coordination Sync workflow (stale lock tracking)"
     _ensure_label "no-coordination-check" "EDEDED" "Opt PR out of agent-coordination-sync.yml suggestions"
-    log_info "Pipeline labels ensured (auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, copilot:*, from-backlog, needs-human, coordination-sync, no-coordination-check)"
+    log_info "Pipeline labels ensured (auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:*, from-backlog, needs-human, coordination-sync, no-coordination-check)"
 
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is
@@ -386,7 +386,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
 else
     log_warn "gh CLI not authenticated; skipping label/variable creation."
     log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
-    log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human"
+    log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check"
     log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
 fi
 
