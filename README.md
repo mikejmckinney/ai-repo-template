@@ -417,7 +417,7 @@ When using this template in a new repository:
 3. **Create domain rules** - Add constraints to `.context/rules/`
 4. **Start with mockups** - Add design artifacts to `.context/vision/` before coding
 5. **Create task files** - Use `state/task_*.md` for cognitive handoff between sessions
-6. **Keep AGENTS.md minimal** - It should just point to AI_REPO_GUIDE.md
+6. **Keep AGENTS.md as the canonical agent instructions** - Per [`docs/decisions/adr-002-agents-md-ownership.md`](docs/decisions/adr-002-agents-md-ownership.md), AGENTS.md is read by most AI tools (Copilot, Cursor, Gemini, Claude Code via `CLAUDE.md`) and references `AI_REPO_GUIDE.md` for structured detail. Edit it directly when agent-facing rules change; do not strip it down to a pointer.
 7. **Customize CI pipeline** - Update `ci-tests.yml` for your tech stack
 8. **Run tests** - Use `./test.sh` to verify your customizations
 

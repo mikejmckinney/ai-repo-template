@@ -48,4 +48,4 @@ Claude Code's memory loader auto-discovers **either** `./CLAUDE.md` **or** `./.c
 
 We keep this file at the repo root by convention — it's the `/init` default, it's the location most contributors expect, and it keeps `CLAUDE.md` visible next to `AGENTS.md` / `AI_REPO_GUIDE.md` / `README.md` in directory listings and GitHub's file browser. Moving it to `.claude/CLAUDE.md` would be functionally equivalent; it's a preference, not a requirement.
 
-Note that `.claude/agents/*.md` (the 9 role subagent registrations) is a **different** slot — that's a separate schema-incompatible loader for subagents, described in `docs/decisions/adr-003-claude-code-subagent-registration.md`. `.claude/CLAUDE.md` and `.claude/agents/*.md` can coexist.
+Note that `.claude/agents/*.md` (the 10 role subagent registrations) is a **different** slot — that's a separate schema-incompatible loader for subagents, described in `docs/decisions/adr-003-claude-code-subagent-registration.md`. `.claude/CLAUDE.md` and `.claude/agents/*.md` can coexist.
