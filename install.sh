@@ -33,15 +33,15 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 log_info() {
-    printf "${GREEN}[INFO]${NC} %s\n" "$1"
+    printf '%b[INFO]%b %s\n' "$GREEN" "$NC" "$1"
 }
 
 log_warn() {
-    printf "${YELLOW}[WARN]${NC} %s\n" "$1"
+    printf '%b[WARN]%b %s\n' "$YELLOW" "$NC" "$1"
 }
 
 log_error() {
-    printf "${RED}[ERROR]${NC} %s\n" "$1"
+    printf '%b[ERROR]%b %s\n' "$RED" "$NC" "$1"
 }
 
 # =============================================================================
