@@ -24,14 +24,14 @@
 entries:
   - id: example-auth-login
     title: "Add email+password login"
-    role: backend                # maps to .github/agents/<role>.agent.md
-    phase: 2                     # matches a phase number in roadmap.md
+    role: backend # maps to .github/agents/<role>.agent.md
+    phase: 2 # matches a phase number in roadmap.md
     labels: [enhancement]
-    depends_on: []               # other entry ids; dispatch waits until each
-                                 # listed entry has `issue:` set AND that
-                                 # issue is closed
-    auto_assign: true            # default; false = create the issue but
-                                 # withhold `copilot:ready` for human review
+    depends_on: [] # other entry ids; dispatch waits until each
+    # listed entry has `issue:` set AND that
+    # issue is closed
+    auto_assign: true # default; false = create the issue but
+    # withhold `copilot:ready` for human review
     body: |
       Short description of what to build and why. The dispatch workflow
       uses this verbatim as the issue body, then appends a rendered
@@ -41,3 +41,5 @@ entries:
       - "POST /login returns 200 with valid credentials"
       - "Rate limit: 5 attempts / 15 min per IP"
     # issue: 42                  # ← filled in by the workflow; do not edit
+
+    issue: 51
