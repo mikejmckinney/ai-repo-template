@@ -80,9 +80,6 @@ jobs:
           # Marker for the upsert: exactly one report comment per PR.
           MARKER='<!-- parallelism-report -->'
 
-          owner="${REPO%/*}"
-          name="${REPO#*/}"
-
           # ── 1. Parse owned-path globs from agent_ownership.md ──
           # Delegated to scripts/parse-ownership-table.sh (single source
           # of truth for the parser; the unit test
