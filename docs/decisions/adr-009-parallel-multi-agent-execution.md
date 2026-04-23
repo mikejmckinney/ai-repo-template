@@ -309,9 +309,9 @@ The plan landing alongside this ADR (one PR, milestone 1 of #49) ships:
 
 Out of scope (filed as follow-up issues):
 
-- Multi-issue dispatcher (Option 1 above).
+- Multi-issue dispatcher (Option 1 above) — **shipped** (#114).
 - Coordination board ↔ open-PR sync check.
-- Conflict auto-rebase on safe (non-overlapping) histories.
+- Conflict auto-rebase on safe (non-overlapping) histories — **shipped** as ADR-010 (#116).
 - VS Code Copilot Chat dispatch wiring — see [#111](https://github.com/mikejmckinney/ai-repo-template/issues/111).
 
 ## Verification
