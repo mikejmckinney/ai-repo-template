@@ -15,14 +15,17 @@
 NOTE: This table is both (a) ai-repo-template's own ownership map AND
 (b) the example for projects derived from this template. When deriving
 this template for a new project:
-- KEEP the template-governance roles (Analyst / Architect / PM / QA /
-  DevOps / Docs / Judge / Critic) and the `docs/**`, `.context/**`,
-  `.github/**`, `scripts/**`, `config/**`, `install.sh`, `test.sh` rows
-  — they are load-bearing for the multi-agent workflow.
-- ADD rows / extend globs for your project's actual source paths (e.g.
-  `src/frontend/**`, `src/backend/**`, `tests/**`, `e2e/**`). The Frontend
-  / Backend / QA rows below are shown with illustrative globs; replace
-  them with the real paths once your project has a source tree.
+- KEEP every template-governance role row (Analyst / Architect / PM /
+  QA / DevOps / Docs / Judge / Critic) and the `docs/**`, `.context/**`,
+  `.github/**`, `scripts/**`, `config/**`, `install.sh`, `test.sh` globs
+  on the DevOps / Docs / Architect / PM rows — they are load-bearing
+  for the multi-agent workflow.
+- ADJUST the project-specific globs to match your source tree. The
+  Frontend / Backend / QA rows below are shown with illustrative globs:
+  keep the role rows themselves (they are load-bearing), but replace
+  the path globs (`src/frontend/**`, `src/backend/**`, `tests/**`,
+  `e2e/**`, etc.) with your project's real paths once a source tree
+  exists.
 - DO NOT delete this file or wholesale replace the table — `test.sh`,
   Judge, the parallelism-report parser, and every role consult it.
 -->
