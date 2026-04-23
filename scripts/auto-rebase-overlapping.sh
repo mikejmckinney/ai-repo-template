@@ -113,42 +113,52 @@ _aro_pr_files() {
   fi
 }
 
-# Count of unresolved review threads on a PR. GraphQL only returns first
-# 100 threads — same limitation already documented in
-# auto-resolve-on-merge.yml — which is acceptable: a PR with >100
-# threads almost certainly has unresolved ones.
+# Count of unresolved review threads on a PR. The GraphQL query asks for
+# the first 100 threads AND `pageInfo.hasNextPage`; if there's a next
+# page we fail-closed (return sentinel `999`) so the > 0 gate trips and
+# the PR is skipped — better to skip a rebase we could have done than
+# to force-push to a PR with hidden unresolved review threads (Copilot
+# review #JWJ on PR #143).
 #
-# Fail-closed: if the API call fails (network, rate-limit, perms), emit a
-# sentinel value (`999`) so the > 0 gate trips and the PR is skipped.
-# Better to skip a rebase we could have done than to force-push to a PR
-# with unresolved review threads we couldn't see.
+# Fail-closed: if the API call fails (network, rate-limit, perms), also
+# emit sentinel `999`. Better to skip a rebase we could have done than
+# to force-push to a PR with unresolved review threads we couldn't see
+# (Gemini review medium #3 on PR #143).
 _aro_pr_unresolved_threads() {
   local n="$1"
   if [[ "${AUTO_REBASE_TEST_MODE:-0}" == "1" ]]; then
     cat "${FIXTURE_DIR}/${n}.unresolved" 2>/dev/null || echo "0"
   else
-    local repo owner name result
+    local repo owner name raw count has_next
     repo="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner --jq .nameWithOwner)}"
     owner="${repo%/*}"
     name="${repo#*/}"
-    result=$(set -o pipefail; gh api graphql -f query='
+    raw=$(set -o pipefail; gh api graphql -f query='
       query($owner: String!, $name: String!, $pr: Int!) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $pr) {
             reviewThreads(first: 100) {
+              pageInfo { hasNextPage }
               nodes { isResolved }
             }
           }
         }
-      }' -F owner="$owner" -F name="$name" -F pr="$n" 2>/dev/null \
-      | jq '[.data.repository.pullRequest.reviewThreads.nodes[]
-             | select(.isResolved == false)] | length' 2>/dev/null) \
-      || result=""
-    if [[ -z "$result" || ! "$result" =~ ^[0-9]+$ ]]; then
-      # Fail-closed sentinel: caller treats > 0 as "skip".
+      }' -F owner="$owner" -F name="$name" -F pr="$n" 2>/dev/null) \
+      || raw=""
+    if [[ -z "$raw" ]]; then
+      echo "999"; return 0
+    fi
+    has_next=$(printf '%s' "$raw" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage' 2>/dev/null)
+    if [[ "$has_next" == "true" ]]; then
+      # Pagination would be needed; fail-closed.
+      echo "999"; return 0
+    fi
+    count=$(printf '%s' "$raw" | jq '[.data.repository.pullRequest.reviewThreads.nodes[]
+             | select(.isResolved == false)] | length' 2>/dev/null)
+    if [[ -z "$count" || ! "$count" =~ ^[0-9]+$ ]]; then
       echo "999"
     else
-      echo "$result"
+      echo "$count"
     fi
   fi
 }
@@ -201,16 +211,20 @@ should_rebase_pr() {
   fi
 
   # 5. Overlap classification.
+  #
+  # Use explicit cleanup rather than `trap ... RETURN` because this
+  # library is sourced by callers and a RETURN trap would leak into
+  # the caller's shell and fire on every subsequent function return
+  # (Copilot review #JWY on PR #143; same lesson as multi-dispatch-
+  # safety.sh::select_dispatchable).
   local work
   work=$(mktemp -d)
-  # Belt-and-braces cleanup; bash doesn't auto-cleanup mktemp dirs.
-  # shellcheck disable=SC2064
-  trap "rm -rf '$work'" RETURN
   _aro_pr_files "$pr"        | sort -u > "$work/a"
   _aro_pr_files "$merged_pr" | sort -u > "$work/b"
 
   local overlap
   overlap=$(classify_overlap "$work/a" "$work/b")
+  rm -rf "$work"
   case "$overlap" in
     soft) echo "attempt-rebase" ;;
     hard) echo "comment-only" ;;

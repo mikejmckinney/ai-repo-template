@@ -230,6 +230,7 @@ assert_contains "conflict rebase names shared.txt" "shared.txt" "$result"
 
 # 16b. After a conflict, rebase is aborted: working tree should be clean
 #       and HEAD on the original feature branch.
+status_file=$(mktemp); TMP_DIRS+=("$status_file")
 (
   cd "$conflict_repo"
   if git status --porcelain | grep -q .; then
@@ -237,8 +238,8 @@ assert_contains "conflict rebase names shared.txt" "shared.txt" "$result"
   else
     echo "CLEAN"
   fi
-) > /tmp/aro-status.txt
-assert_eq "conflict rebase aborts cleanly (no dirty worktree)" "CLEAN" "$(cat /tmp/aro-status.txt)"
+) > "$status_file"
+assert_eq "conflict rebase aborts cleanly (no dirty worktree)" "CLEAN" "$(cat "$status_file")"
 
 # ── Tests: comment formatters ──
 

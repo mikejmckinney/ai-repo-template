@@ -64,11 +64,14 @@ jobs:
 
           echo "PR #${MERGED_PR} merged. Scanning open PRs for rebase candidates..."
 
-          # Fetch open PR numbers. We don't filter by label here so the
-          # 'skip:not-opted-in' path remains visible in the workflow log
-          # for debugging — the cost is a tiny extra API hit per PR.
+          # Fetch open PR numbers via the REST API with pagination so we
+          # don't silently miss PRs past the gh-pr-list 200-cap (Copilot
+          # review #JWm on PR #143).
           mapfile -t OPEN_PRS < <(
-            gh pr list --state open --limit 200 --json number --jq '.[].number'
+            set -o pipefail
+            gh api --paginate \
+              "repos/${REPO}/pulls?state=open&per_page=100" \
+              | jq -r '.[].number'
           )
 
           echo "Found ${#OPEN_PRS[@]} open PR(s)."
