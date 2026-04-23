@@ -2,8 +2,9 @@
 
 <!--
 Postmortem / Lessons Learned Template
-Copy this file and rename to postmortem-NNN-short-title.md
-Numbering: sequential, zero-padded (postmortem-001, postmortem-002, …)
+Copy this file and rename to postmortem-NNN-short-title.md, where NNN is
+the zero-padded three-digit sequence number (for example: 001, 002, …).
+Use the same NNN value in the H1 title and the filename.
 Title: short, descriptive ("docs sync drift", "auth migration rollback", …)
 -->
 
@@ -112,6 +113,10 @@ YYYY-MM-DD
 
      - **Unclear** → say "unclear, revisit after N more occurrences." A
        pattern that appears once is an anecdote. -->
+
+**Status**: `[Yes | No | Unclear]`
+
+<!-- Use this value in the index row in docs/postmortems/README.md. -->
 
 ## Action items
 

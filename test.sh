@@ -172,6 +172,7 @@ DOCS_DIRS=(
     "docs/research"
     "docs/guides"
     "docs/decisions"
+    "docs/postmortems"
 )
 
 for dir in "${DOCS_DIRS[@]}"; do
