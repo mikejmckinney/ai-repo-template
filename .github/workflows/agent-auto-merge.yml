@@ -33,7 +33,8 @@
 #   - CLAUDE_PAT repo secret is required for the merge and post-merge
 #     issue/comment steps. A merge performed with the built-in
 #     GITHUB_TOKEN does NOT fire downstream workflow_run events on main,
-#     which would break auto-resolve-on-merge. CLAUDE_PAT needs:
+#     which would break any post-merge automation that depends on them.
+#     CLAUDE_PAT needs:
 #     `contents: write` + `pull-requests: write` + `issues: write`.
 #   - All READ operations (gh pr view, GraphQL reviewThreads, etc.) use
 #     the built-in GITHUB_TOKEN with scopes declared in this workflow's

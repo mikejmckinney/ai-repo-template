@@ -94,7 +94,6 @@ bash install.sh
     │   └── repo-onboarding.md    # Repo onboarding workflow prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
-        ├── auto-resolve-on-merge.yml
         ├── ci-tests.yml
         ├── keep-warm.yml
         ├── lint-and-format.yml
@@ -190,7 +189,6 @@ bash install.sh
 | `lint-and-format.yml` | Markdown + script lint/format pass |
 | `keep-warm.yml` | Prevents free-tier backend suspension |
 | `validate-connections.yml` | Daily backend/DB connectivity check |
-| `auto-resolve-on-merge.yml` | Resolves PR threads on merge |
 | `agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks |
 
 ## Truth Hierarchy

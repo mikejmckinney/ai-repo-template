@@ -186,7 +186,6 @@ echo ""
 echo "Checking workflow files..."
 
 WORKFLOW_FILES=(
-    ".github/workflows/auto-resolve-on-merge.yml"
     ".github/workflows/ci-tests.yml"
     ".github/workflows/claude.yml"
     ".github/workflows/keep-warm.yml"

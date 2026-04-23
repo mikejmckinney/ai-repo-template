@@ -121,7 +121,6 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
     │   ├── agent_init.md         # Agent initialization task
     │   └── config.yml            # Template chooser config
     └── workflows/
-        ├── auto-resolve-on-merge.yml  # Auto-resolve PR comments
         ├── ci-tests.yml               # CI pipeline (customize for project)
         ├── keep-warm.yml              # Ping backend to prevent suspension
         ├── lint-and-format.yml        # Lint & format check
@@ -227,7 +226,6 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `lint-and-format.yml` | Markdown + script lint/format | None |
 | `keep-warm.yml` | Ping backend every 14 min | Set `BACKEND_URL` secret |
 | `validate-connections.yml` | Daily connectivity check | Set `BACKEND_URL` secret |
-| `auto-resolve-on-merge.yml` | Resolve threads on merge | None |
 | `agent-heartbeat.yml.template` | Optional: stale-lock surfacer | Rename to `.yml` to enable |
 
 ## Setup
