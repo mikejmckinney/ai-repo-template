@@ -121,11 +121,22 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
     │   ├── agent_init.md         # Agent initialization task
     │   └── config.yml            # Template chooser config
     └── workflows/
-        ├── auto-resolve-on-merge.yml  # Auto-resolve PR comments
         ├── ci-tests.yml               # CI pipeline (customize for project)
+        ├── claude.yml                 # Claude Code agent triggers (review, mention)
         ├── keep-warm.yml              # Ping backend to prevent suspension
         ├── lint-and-format.yml        # Lint & format check
         ├── validate-connections.yml   # Daily connectivity checks
+        ├── agent-assign-copilot.yml   # Gated Copilot PR assignment
+        ├── agent-auto-merge.yml       # Opt-in auto-merge via auto-merge label
+        ├── agent-auto-ready.yml       # Mark Copilot PRs ready when complete
+        ├── agent-coordination-sync.yml # Sync coordination.md state
+        ├── agent-fix-reviews.yml      # Run pr-resolve-all.md (Claude)
+        ├── agent-multi-dispatch.yml   # Parallel Copilot fan-out
+        ├── agent-parallelism-report.yml # Cross-PR overlap classifier
+        ├── agent-relay-reviews.yml    # Relay bot review comments to Copilot
+        ├── agent-release-slot.yml     # Release Copilot slot on PR close
+        ├── auto-rebase-on-merge.yml   # Opt-in auto-rebase via auto-rebase label
+        ├── backlog-to-issues.yml      # Materialize backlog.yaml entries as issues
         └── agent-heartbeat.yml.template # Optional: stale-lock surfacer
 ```
 
@@ -227,7 +238,18 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `lint-and-format.yml` | Markdown + script lint/format | None |
 | `keep-warm.yml` | Ping backend every 14 min | Set `BACKEND_URL` secret |
 | `validate-connections.yml` | Daily connectivity check | Set `BACKEND_URL` secret |
-| `auto-resolve-on-merge.yml` | Resolve threads on merge | None |
+| `claude.yml` | Claude Code triggers (`@claude` mention, auto-review on PR) | Set `ANTHROPIC_API_KEY` secret |
+| `agent-assign-copilot.yml` | Gated Copilot PR assignment when issues are labeled `copilot:ready` | Set `CLAUDE_PAT` secret |
+| `agent-auto-merge.yml` | Opt-in auto-merge when CI green + threads resolved (`auto-merge` label) | Set `CLAUDE_PAT` secret |
+| `agent-auto-ready.yml` | Mark Copilot PRs ready for review when implementation completes | None |
+| `agent-coordination-sync.yml` | Reconcile `.context/state/coordination.md` with live PR/issue state | None |
+| `agent-fix-reviews.yml` | Trigger Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` |
+| `agent-multi-dispatch.yml` | Parallel Copilot fan-out (multi-issue dispatch with overlap safety) | Set `CLAUDE_PAT` secret |
+| `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts comment on each open PR | None |
+| `agent-relay-reviews.yml` | Relay bot review comments to Copilot via `@copilot follow` | Set `CLAUDE_PAT` secret |
+| `agent-release-slot.yml` | Release Copilot slot + drain queue on PR close | Set `CLAUDE_PAT` secret |
+| `auto-rebase-on-merge.yml` | Opt-in auto-rebase of overlapping PRs after merge (`auto-rebase` label) | Set `CLAUDE_PAT` secret |
+| `backlog-to-issues.yml` | Materialize `.context/backlog.yaml` entries as GitHub issues | Set `CLAUDE_PAT` secret |
 | `agent-heartbeat.yml.template` | Optional: stale-lock surfacer | Rename to `.yml` to enable |
 
 ## Setup
