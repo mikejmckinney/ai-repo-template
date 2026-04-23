@@ -197,16 +197,24 @@ jobs:
           # Merge existing IDs with bot_id into a JSON array for the mutation.
           actor_ids=$(echo "$existing_ids" | jq --arg bot "$bot_id" '. + [$bot]')
 
-          gh api graphql \
-            -H "GraphQL-Features: issues_copilot_assignment_api_support" \
-            -F assignableId="$issue_id" \
-            -F "actorIds=$actor_ids" \
-            -f query='
-              mutation($assignableId:ID!, $actorIds:[ID!]!) {
-                replaceActorsForAssignable(input:{
-                  assignableId:$assignableId, actorIds:$actorIds
-                }) { assignable { ... on Issue { number } } }
-              }'
+          # Build the GraphQL request body as JSON and pipe via --input. We
+          # cannot use `gh api graphql -F actorIds=$actor_ids` here because
+          # `-F` always passes the value as a string, but the GraphQL
+          # variable is typed `[ID!]!` (array) and the API rejects a quoted
+          # JSON-string-as-array with `Could not resolve to a node with the
+          # global id of '["BOT_..."]'`. Building the full {query,variables}
+          # payload with jq guarantees `actorIds` is serialized as a real
+          # JSON array. See PR #140.
+          jq -n \
+            --arg aid "$issue_id" \
+            --argjson actors "$actor_ids" \
+            '{
+              query: "mutation($assignableId:ID!,$actorIds:[ID!]!){replaceActorsForAssignable(input:{assignableId:$assignableId,actorIds:$actorIds}){assignable{... on Issue {number}}}}",
+              variables: { assignableId: $aid, actorIds: $actors }
+            }' \
+          | gh api graphql \
+              -H "GraphQL-Features: issues_copilot_assignment_api_support" \
+              --input -
 
           gh issue edit "$ISSUE" --repo "$REPO" \
             --remove-label "copilot:ready" \
