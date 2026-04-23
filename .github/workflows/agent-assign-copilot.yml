@@ -78,6 +78,11 @@ jobs:
           REPO: ${{ github.repository }}
           MAX_DAILY: ${{ vars.MAX_COPILOT_DAILY || '20' }}
         run: |
+          # Fail-closed: pipefail ensures a failing `gh api` call (token,
+          # rate limit, network) propagates through the `| jq` pipe instead
+          # of letting jq see empty stdin and emit 0 (which would bypass
+          # the daily cap). See PR #139 / Codex P1.
+          set -o pipefail
           owner="${REPO%/*}"
           name="${REPO#*/}"
           # GNU coreutils (ubuntu-latest); BSD fallback retained for local macOS testing.

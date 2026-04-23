@@ -93,6 +93,11 @@ jobs:
           MAX_CONC: ${{ vars.MAX_COPILOT_CONCURRENT || '3' }}
           MAX_DAILY: ${{ vars.MAX_COPILOT_DAILY || '20' }}
         run: |
+          # Fail-closed: pipefail ensures a failing `gh api` call propagates
+          # through the `| jq` pipe instead of letting jq see empty stdin
+          # and emit 0 (which would over-report remaining capacity and
+          # bypass the daily cap). See PR #139 / Codex P1.
+          set -o pipefail
           # Mirror agent-assign-copilot.yml's budget logic.
           open_prs=$(gh pr list --repo "$REPO" --state open \
             --search "head:copilot/" --json number --jq 'length')
