@@ -95,9 +95,21 @@ bash install.sh
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
         ├── ci-tests.yml
+        ├── claude.yml
         ├── keep-warm.yml
         ├── lint-and-format.yml
         ├── validate-connections.yml
+        ├── agent-assign-copilot.yml
+        ├── agent-auto-merge.yml
+        ├── agent-auto-ready.yml
+        ├── agent-coordination-sync.yml
+        ├── agent-fix-reviews.yml
+        ├── agent-multi-dispatch.yml
+        ├── agent-parallelism-report.yml
+        ├── agent-relay-reviews.yml
+        ├── agent-release-slot.yml
+        ├── auto-rebase-on-merge.yml
+        ├── backlog-to-issues.yml
         └── agent-heartbeat.yml.template
 ```
 
@@ -189,6 +201,18 @@ bash install.sh
 | `lint-and-format.yml` | Markdown + script lint/format pass |
 | `keep-warm.yml` | Prevents free-tier backend suspension |
 | `validate-connections.yml` | Daily backend/DB connectivity check |
+| `claude.yml` | Claude Code triggers (`@claude` mention + auto-review on PR open) |
+| `agent-assign-copilot.yml` | Gated Copilot PR assignment for `copilot:ready` issues |
+| `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved) |
+| `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes |
+| `agent-coordination-sync.yml` | Reconciles `.context/state/coordination.md` with live PR/issue state |
+| `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback |
+| `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier |
+| `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR |
+| `agent-relay-reviews.yml` | Relays bot review comments to Copilot via `@copilot follow` |
+| `agent-release-slot.yml` | Releases Copilot slot + drains queue on PR close |
+| `auto-rebase-on-merge.yml` | Opt-in auto-rebase of overlapping PRs via `auto-rebase` label |
+| `backlog-to-issues.yml` | Materializes `.context/backlog.yaml` entries as GitHub issues |
 | `agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks |
 
 ## Truth Hierarchy
