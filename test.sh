@@ -77,6 +77,7 @@ REQUIRED_FILES=(
     ".github/prompts/pr-resolve-all.md"
     ".github/prompts/expand-backlog-entry.md"
     ".github/pull_request_template.md"
+    ".github/PLAN_TEMPLATE.md"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do
@@ -164,6 +165,7 @@ DOCS_FILES=(
     "docs/decisions/adr-008-phase4-default-and-copilot-fallback.md"
     "docs/decisions/adr-009-parallel-multi-agent-execution.md"
     "docs/decisions/adr-010-auto-rebase-on-merge.md"
+    "docs/decisions/adr-011-plan-as-comment-requirement.md"
     "docs/postmortems/README.md"
     "docs/postmortems/postmortem-template.md"
 )

@@ -44,6 +44,28 @@ Procedure:
 If a prompt "looks clear enough" to skip pre-flight, run it anyway — that's
 the signal, not the exemption.
 
+## Plan-as-comment requirement (before implementing any non-exempt issue)
+
+Before writing code for any issue, post an Implementation Plan as a
+comment on that issue using `.github/PLAN_TEMPLATE.md`. See ADR-011 and
+AGENTS.md → "Plan-as-comment requirement" for the full rules.
+
+Quick rules:
+
+1. Default: plan required.
+2. Skip when: issue is labeled `chore:no-plan`, author is
+   Renovate/Dependabot, or the work is a revert of a prior PR.
+3. Single template, no tiering. Sections that don't apply get
+   `N/A — <reason>`, not silent omission.
+4. Implement after posting (no formal approval gate in v1; reviewed at
+   PR time). If your diff diverges from the plan by ~30%+ in file count
+   or scope, post a "Plan revision" comment before pushing.
+5. PR body MUST link the issue or a parent PR (`Closes #NN`, `Refs #NN`).
+   Judge BLOCKs at diff-gate when missing and no exemption applies.
+
+The Analyst pre-flight gate above runs *in addition to* this plan
+requirement on prompt-referenced project issues — it is not replaced.
+
 ## Following referenced prompt files
 When a comment or issue body contains `@copilot follow <path>` (e.g.
 `@copilot follow .github/prompts/pr-resolve-all.md`):

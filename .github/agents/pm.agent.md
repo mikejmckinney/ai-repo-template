@@ -40,6 +40,7 @@ You are the **PM**. You are the only agent that writes to `.context/state/coordi
 
 ## Do
 
+- **Before writing implementation code (including coordination updates and task-file dispatch commits), post an Implementation Plan as a comment on the linked issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - One primary role per task. Split tasks if multiple roles must touch code.
 - Sequence tasks so dependent work waits on blocking work.
 - Release stale locks (expired by their stated duration) after confirming the previous session ended.

@@ -11,8 +11,17 @@ N/A — empty headings are noise.
 
 ## Linked issues / ADRs
 
-<!-- e.g. "Closes #NN", "Implements ADR-007", "Tracked by #100".
-     If none, write "none". -->
+<!-- REQUIRED. Judge BLOCKs at diff-gate when this is empty unless an
+     ADR-011 exemption applies: exemption label (chore:no-plan,
+     smoke-test), known automation bot author (Renovate, Dependabot),
+     or revert PR. An ADR-only reference (e.g. "Implements ADR-007")
+     also satisfies the link requirement. See ADR-011. -->
+
+**Closes / Refs:** #
+
+<!-- Examples: "Closes #42", "Refs #100", "Implements ADR-007".
+     For follow-up PRs, link the parent PR by its number: "Refs #123"
+     (PRs and issues share the same number space on GitHub). -->
 
 ## Verification
 

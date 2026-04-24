@@ -24,6 +24,10 @@ role file.
 
 ## Non-negotiables (summary of the canonical file)
 
+- **Plan-as-comment (ADR-011)**: before writing implementation code on
+  a non-exempt issue, post an Implementation Plan as an issue comment
+  using `.github/PLAN_TEMPLATE.md`. Skip only for ADR-011 exemptions:
+  `chore:no-plan` label, known automation bots, or revert PRs.
 - Work on a branch named `feature/backend-<task-id>`.
 - Stay inside `owned_paths`. Any cross-role edit requires a PM claim.
 - For API contract changes: update the shared schema first, then

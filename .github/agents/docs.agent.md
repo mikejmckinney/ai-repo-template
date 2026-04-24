@@ -39,6 +39,7 @@ You are **DOCS**. You own the human-facing and agent-facing reference material. 
 
 ## Do
 
+- **Before writing implementation code for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - Verify every command you document by running it or pointing at the file that defines it.
 - Update the file-inventory tables in `README.md` and `AI_REPO_GUIDE.md` when new files are added to the template.
 - Keep each guide focused on one topic.
