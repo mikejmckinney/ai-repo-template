@@ -402,7 +402,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _required_secrets=(CLAUDE_PAT ANTHROPIC_API_KEY)
     _repo_secrets=""
     _org_secrets=""
-    if _repo_secrets=$(gh secret list --json name --jq '.[].name' 2>/dev/null); then
+    if _repo_secrets=$(gh secret list --limit 100 --json name --jq '.[].name' 2>/dev/null); then
         :
     else
         log_warn "Could not list repo secrets (gh secret list returned non-zero)."
@@ -410,20 +410,25 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         log_warn "  Skipping repo-secret presence check; org-level still attempted."
         _repo_secrets="__unknown__"
     fi
-    if _org_secrets=$(gh api "/repos/${FULL_REPO}/actions/organization-secrets" \
+    # Extract owner/repo (strip host prefix if present for GitHub Enterprise)
+    _repo_path="${FULL_REPO#*/}"  # Remove host if format is host/owner/repo
+    [[ "$_repo_path" == */* ]] || _repo_path="$FULL_REPO"  # Use original if no host
+    if _org_secrets=$(gh api "/repos/${_repo_path}/actions/organization-secrets?per_page=100" \
         --jq '.secrets[].name' 2>/dev/null); then
         :
     else
-        # Personal repos don't have org secrets; this is expected, not an error.
-        _org_secrets=""
+        # Personal repos don't have org secrets, or token lacks permission.
+        # Set to special marker to distinguish "no secrets" from "query failed".
+        _org_secrets="__unknown__"
     fi
     for _secret in "${_required_secrets[@]}"; do
         if [[ "$_repo_secrets" != "__unknown__" ]] && \
            printf '%s\n' "$_repo_secrets" | grep -qx "$_secret"; then
             log_info "  $_secret — present (repo-level)"
-        elif printf '%s\n' "$_org_secrets" | grep -qx "$_secret"; then
+        elif [[ "$_org_secrets" != "__unknown__" ]] && \
+             printf '%s\n' "$_org_secrets" | grep -qx "$_secret"; then
             log_info "  $_secret — present (org-level, granted to this repo)"
-        elif [[ "$_repo_secrets" == "__unknown__" ]]; then
+        elif [[ "$_repo_secrets" == "__unknown__" || "$_org_secrets" == "__unknown__" ]]; then
             log_warn "  $_secret — presence unknown (could not query). If workflows fail with"
             log_warn "             'Missing required secret: $_secret', add it via either:"
             log_warn "             Per-repo: Settings → Secrets and variables → Actions"

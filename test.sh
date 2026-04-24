@@ -635,7 +635,7 @@ echo ""
 echo "Checking workflow secret-presence guards..."
 for wf in .github/workflows/*.yml; do
     [[ -f "$wf" ]] || continue
-    if grep -qE 'secrets\.(CLAUDE_PAT|ANTHROPIC_API_KEY)' "$wf"; then
+    if grep -qE 'secrets\.(CLAUDE_PAT|ANTHROPIC_API_KEY)\b' "$wf"; then
         if grep -q 'Verify required secrets' "$wf"; then
             pass "$wf has Verify required secrets guard"
         else
