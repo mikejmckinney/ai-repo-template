@@ -45,7 +45,7 @@ Scan ALL of these sources for issues, suggestions, requested changes, and TODOs:
 
 **For each item found, assign a sequential ID** (e.g., `ISS-01`, `ISS-02`, ...).
 
-**Index every item, then assign status. Never drop an item before indexing it.** Items that are optional, deferred, advisory, framed as live-verification follow-ups, or otherwise non-actionable still get an `ISS-NN` ID and an explicit terminal status — `❌ Out of scope` (with a one-line reason) is the default for these. The full set of terminal statuses available at indexing time is the same set Phase 2 Step 5 uses: `✅ Already resolved`, `⚠️ Needs clarification`, `❌ Not reproducible`, `❌ Out of scope`. Items still being worked stay `🔍 Pending` until Phase 2 resolves them. Silent omission is a Phase 1 failure: if the author can't tell whether you saw an item, you didn't run Phase 1 correctly.
+**Index every item, then assign status. Never drop an item before indexing it.** Items that are optional, deferred, advisory, framed as live-verification follow-ups, or otherwise non-actionable still get an `ISS-NN` ID and an explicit terminal status — `❌ Out of scope` (with a one-line reason) is the default for these. The terminal statuses available at indexing time are: `✅ Already resolved`, `⚠️ Needs clarification`, `❌ Not reproducible`, `❌ Out of scope`. Items still being worked stay `🔍 Pending` until Phase 2 resolves them. Silent omission is a Phase 1 failure: if the author can't tell whether you saw an item, you didn't run Phase 1 correctly.
 
 **Always post the index as a standalone PR comment before starting fixes**, regardless of item count. This comment must precede any fix commits and must be distinct from the Phase 3 Resolution Report. **If the PR has more than 10 items**, additionally proceed in batches of 5 to prevent token exhaustion and let the author course-correct early.
 
@@ -109,7 +109,7 @@ Assign one of:
 - `⚠️ Needs clarification` — issue is ambiguous, or the right fix depends on a design decision the author should make. Describe what's unclear and suggest options.
 - `⚠️ Partial fix` — fix addresses part of the issue but something remains. Explain what's left.
 - `❌ Not reproducible` — the issue does not exist in the current code. Explain why.
-- `❌ Out of scope` — fix requires changes to files/systems outside this PR. Describe what's needed so the author can file a follow-up.
+- `❌ Out of scope` — fix requires changes to files/systems outside this PR, OR the item is purely advisory/optional with no clear action, OR it's a live-verification step that cannot be addressed in the diff. Describe what's needed (or why it's non-actionable) so the author can file a follow-up or defer appropriately.
 
 ## Phase 3: Resolution Report
 
