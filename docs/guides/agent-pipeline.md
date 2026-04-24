@@ -165,6 +165,22 @@ in sequential `Part 1/N`, `Part 2/N` comments rather than truncating.
 
 ## Setup (One-Time)
 
+### Required secrets
+
+The agent workflows depend on two repository secrets. Every workflow that consumes them runs a `Verify required secrets` guard step that fails fast with an actionable message if a secret is missing (see issue #162). `scripts/setup.sh` reports presence after creating labels.
+
+| Secret | Required by | Scopes / Source |
+|--------|-------------|-----------------|
+| `CLAUDE_PAT` | All 12 agent workflows that call `gh` (assignment, auto-merge, auto-ready, coordination-sync, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Metadata R |
+| `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
+
+**Two ways to provide them**, in order of preference for users running multiple derived repos:
+
+1. **Org-level (recommended for org users).** Org settings → Secrets and variables → Actions → New organization secret → grant access to the relevant repos. New repos in the org pick up the secrets automatically. The `Verify required secrets` guard treats org-granted secrets identically to per-repo ones.
+2. **Per-repo.** Settings → Secrets and variables → Actions → New repository secret. Required for personal accounts and any repo not granted access to an org-level secret.
+
+When a workflow fails with `Missing required secret: <NAME>`, the error annotation lists both remediation paths. `scripts/setup.sh` also prints a presence report at the end of its run.
+
 ### 1. Copilot subscription
 Any paid plan works: Pro ($10/mo), Pro+ ($39/mo), or Business ($21/seat/mo).
 The cloud agent is included.

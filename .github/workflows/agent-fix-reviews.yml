@@ -141,6 +141,22 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Verify required secrets
+        env:
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          missing=()
+          [[ -z "$CLAUDE_PAT" ]] && missing+=(CLAUDE_PAT)
+          [[ -z "$ANTHROPIC_API_KEY" ]] && missing+=(ANTHROPIC_API_KEY)
+          if (( ${#missing[@]} > 0 )); then
+            echo "::error::Missing required secret(s): ${missing[*]}"
+            echo "::error::Per-repo:  Settings → Secrets and variables → Actions → New repository secret"
+            echo "::error::Org-wide:  Org settings → Secrets and variables → Actions → New organization secret (then grant this repo access)"
+            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
+            exit 1
+          fi
+
       - name: Determine PR number and branch
         id: pr
         env:
