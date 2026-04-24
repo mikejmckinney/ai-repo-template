@@ -45,6 +45,8 @@ Scan ALL of these sources for issues, suggestions, requested changes, and TODOs:
 
 **For each item found, assign a sequential ID** (e.g., `ISS-01`, `ISS-02`, ...).
 
+**Index every item, then assign status. Never drop an item before indexing it.** Items that are optional, deferred, advisory, framed as live-verification follow-ups, or otherwise non-actionable still get an `ISS-NN` ID and an explicit terminal status — `❌ Out of scope` (with a one-line reason) is the default for these. The full set of terminal statuses available at indexing time is the same set Phase 2 Step 5 uses: `✅ Already resolved`, `⚠️ Needs clarification`, `❌ Not reproducible`, `❌ Out of scope`. Items still being worked stay `🔍 Pending` until Phase 2 resolves them. Silent omission is a Phase 1 failure: if the author can't tell whether you saw an item, you didn't run Phase 1 correctly.
+
 **Always post the index as a standalone PR comment before starting fixes**, regardless of item count. This comment must precede any fix commits and must be distinct from the Phase 3 Resolution Report. **If the PR has more than 10 items**, additionally proceed in batches of 5 to prevent token exhaustion and let the author course-correct early.
 
 **If an item was already addressed** in a subsequent commit or resolved thread: mark it `✅ Already resolved` with a link to the resolving commit, and skip to the next item.
@@ -63,6 +65,8 @@ Post this as a PR comment before starting fixes:
 | ISS-03 | [Code comment](link) | FIXME in src/auth.ts:42 | 🔍 Pending |
 | ISS-04 | [CI failure](link) | TypeScript build error | 🔍 Pending |
 | ISS-05 | [Review comment](link) | Suggestion: extract helper fn | ✅ Already resolved in abc1234 |
+| ISS-06 | [Review body](link) | Optional: rename `foo` → `bar` for clarity | ❌ Out of scope — purely advisory; defer to follow-up |
+| ISS-07 | [Review body](link) | Live-verify multiple-reviews edge case post-merge | ❌ Out of scope — verification step, not a diff change |
 
 **Total**: X items found, Y already resolved, Z to address.
 Proceeding with fixes for remaining items.
