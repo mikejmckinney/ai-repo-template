@@ -19,6 +19,15 @@
 #   2. Add a repo secret named ANTHROPIC_API_KEY (Settings → Secrets and
 #      variables → Actions → New repository secret). The value is an
 #      Anthropic API key with enough quota to cover PR reviews.
+#   3. Add a repo secret named CLAUDE_PAT (required for both jobs).
+#      Fine-grained PAT, this repository only, with:
+#        - Contents: Read and write
+#        - Pull requests: Read and write
+#        - Issues: Read and write
+#        - Actions: Read
+#        - Metadata: Read (auto-selected)
+#      Without this, the `claude-review` label runs to completion but
+#      silently posts nothing (issue #117).
 
 name: Claude Code Review
 
@@ -47,6 +56,7 @@ jobs:
     if: >
       github.event_name == 'pull_request' &&
       github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
       (
         (github.event.action == 'labeled' && github.event.label.name == 'claude-review') ||
         (github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'claude-review'))
@@ -63,12 +73,40 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Auth + permission notes (issue #117 — read before changing):
+      #
+      # The default config (no github_token, no claude_args) puts the
+      # action in "review mode" with permission-mode `acceptEdits`,
+      # which auto-denies every non-edit tool call in CI (no human to
+      # approve interactive prompts). The prompt below tells Claude to
+      # post a single comprehensive review via `gh pr comment`, which
+      # requires a Bash tool call — so without `bypassPermissions`,
+      # every post attempt is silently denied (12 denials in the PR
+      # #113 run, $0.99 wasted, no comment posted).
+      #
+      # Three coupled fixes, mirroring the working `claude-mention`
+      # job below and `agent-fix-reviews.yml` → `resolve-reviews`:
+      #   1. github_token: CLAUDE_PAT — avoids the OIDC bot-trigger
+      #      401 (see claude-mention auth notes).
+      #   2. allowed_bots: "*" — bot-originated triggers (e.g. another
+      #      automation re-applying the label) don't fail.
+      #   3. claude_args with --permission-mode bypassPermissions —
+      #      lets Claude actually call `gh` to post the review.
+      #
+      # Trade-off: review comment is authored by the PAT owner, not
+      # claude[bot]. Same trade-off as claude-mention and
+      # agent-fix-reviews; documented for consistency.
       - name: Claude diff-gate review
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.CLAUDE_PAT }}
+          allowed_bots: "*"
+          claude_args: "--model claude-sonnet-4-5 --max-turns 40 --permission-mode bypassPermissions"
           prompt: |
-            You are performing an automated diff-gate review on this pull request.
+            You are performing an automated diff-gate review on PR
+            #${{ github.event.pull_request.number }} in
+            ${{ github.repository }}.
 
             1. Read `.claude/agents/judge.md` and follow its DIFF-GATE procedure.
             2. Also consult `.claude/agents/critic.md` for subjective-quality
@@ -78,8 +116,18 @@ jobs:
                Issues table → Verification Checklist → Testing Recommendations).
             4. End with one of: APPROVE / REQUEST_CHANGES / BLOCK, matching
                judge.md's decision format.
-            5. Post the entire review as a single PR review comment. Do not
-               push commits, do not edit files, do not open sub-issues.
+            5. Post the entire review as ONE PR comment. Use a
+               single-quoted heredoc so backticks, `$()`, and other
+               shell metacharacters in your review markdown are NOT
+               interpolated by the shell:
+                  cat > /tmp/review.md <<'CLAUDE_REVIEW_EOF'
+                  <your review markdown here>
+                  CLAUDE_REVIEW_EOF
+                  gh pr comment ${{ github.event.pull_request.number }} \
+                    --repo ${{ github.repository }} --body-file /tmp/review.md
+               Do not push commits, do not edit files, do not open
+               sub-issues, do not post inline review comments. Exactly
+               one `gh pr comment` call.
 
   # ----------------------------------------------------------------------
   # @claude mention handler — lets reviewers request follow-ups interactively.
