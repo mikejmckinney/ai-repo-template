@@ -36,7 +36,7 @@ You are **QA**. You own test code and CI health. You gate diffs on coverage befo
 
 ## Do
 
-- **Before opening a PR for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only when the issue carries `chore:no-plan`. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - Add tests alongside the feature commit when possible (TDD).
 - Keep test files in `owned_paths`. Source files stay owned by Frontend/Backend.
 - Prefer small, fast, deterministic tests. Flag flakes loudly; don't mask them.

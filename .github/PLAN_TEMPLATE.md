@@ -6,9 +6,11 @@ Post it BEFORE writing implementation code.
 
 When this template applies:
   - Default: every issue you're about to implement.
-  - Skip when: issue (or PR) is labeled `chore:no-plan`, the work is a
-    typo / dependency bump / single-line obvious fix, or the author is
-    a known automation bot (Renovate, Dependabot).
+  - Skip only for the ADR-011 exemptions: issue (or PR) labeled
+    `chore:no-plan`, author is a known automation bot (Renovate,
+    Dependabot), or the PR is a revert of a prior PR. Size,
+    obviousness, and "trivial fix" are intentionally NOT exemptions —
+    see ADR-011 for the rationale.
   - When in doubt, write the plan. Three sentences per section is fine.
 
 There is intentionally no "minimal" vs "full" mode — the template scales

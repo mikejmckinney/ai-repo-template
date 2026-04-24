@@ -25,10 +25,10 @@ role file.
 
 ## Non-negotiables (summary of the canonical file)
 
-- **Plan-as-comment (ADR-011)**: before opening a PR on a non-exempt
-  issue, post an Implementation Plan as an issue comment using
-  `.github/PLAN_TEMPLATE.md`. Skip only when the issue carries
-  `chore:no-plan`.
+- **Plan-as-comment (ADR-011)**: before writing implementation code on
+  a non-exempt issue, post an Implementation Plan as an issue comment
+  using `.github/PLAN_TEMPLATE.md`. Skip only for ADR-011 exemptions:
+  `chore:no-plan` label, known automation bots, or revert PRs.
 - Run `bash -n` on every shell change.
 - Run `./test.sh` after any change touching its REQUIRED_FILES arrays.
 - No real secret values in commits — use `${{ secrets.NAME }}`.

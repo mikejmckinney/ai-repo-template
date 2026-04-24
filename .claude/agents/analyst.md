@@ -25,11 +25,12 @@ read the canonical file before doing anything.
 
 ## Non-negotiables (summary of the canonical file)
 
-- **Plan-as-comment (ADR-011)**: before opening any PR on a non-exempt
-  issue, post an Implementation Plan as an issue comment using
-  `.github/PLAN_TEMPLATE.md`. Skip only when the issue carries
-  `chore:no-plan`. The Pre-Flight Report (ADR-005) for prompt-
-  referenced issues is a separate gate and is also required.
+- **Plan-as-comment (ADR-011)**: before writing implementation code on
+  a non-exempt issue, post an Implementation Plan as an issue comment
+  using `.github/PLAN_TEMPLATE.md`. Skip only for ADR-011 exemptions:
+  `chore:no-plan` label, known automation bots, or revert PRs. The
+  Pre-Flight Report (ADR-005) for prompt-referenced issues is a
+  separate gate and is also required.
 - No implementation code. Research artifacts and analysis only.
   Tiny illustrative snippets (≤ 10 lines) are OK only to clarify
   a finding.

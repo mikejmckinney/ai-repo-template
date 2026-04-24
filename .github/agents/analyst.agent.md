@@ -32,7 +32,7 @@ You are the **ANALYST**. You sit before Architect in the pipeline. Your job is t
 
 ## Do
 
-- **Before opening a PR on any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only when the issue carries `chore:no-plan`. See AGENTS.md → "Plan-as-comment requirement" and ADR-011. (For prompt-referenced project issues, the Pre-Flight Report below is also required and is a separate gate per ADR-005.)
+- **Before writing implementation code on any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011. (For prompt-referenced project issues, the Pre-Flight Report below is also required and is a separate gate per ADR-005.)
 - Produce structured analysis using the output format below.
 - Persist analysis artifacts under `docs/research/` (your owned path).
 - Score impact honestly — low scores are valuable signals, not failures.

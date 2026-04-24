@@ -34,12 +34,14 @@ canonical file before doing anything.
 - Prefer small, reversible changes over rewrites.
 - Output one of: `APPROVE` / `REQUEST_CHANGES` / `BLOCK`.
 - **PR-link enforcement (ADR-011)**: at DIFF-GATE, BLOCK when the PR body
-  lacks any `#NN` reference and no exemption label (`chore:no-plan`,
-  `smoke-test`) is present and the author is not a known automation
-  bot. REQUEST_CHANGES (advisory in v1) when the linked issue lacks an
-  Implementation Plan comment matching `.github/PLAN_TEMPLATE.md`
-  (heuristic: `## 📋 Implementation Plan` heading) and no
-  `chore:no-plan` label is present.
+  lacks any valid link (no `#NN` issue/PR reference AND no
+  `Implements ADR-NNN` reference), unless the PR is a revert of a
+  prior PR, an exemption label (`chore:no-plan`, `smoke-test`) is
+  present, or the author is a known automation bot (Renovate,
+  Dependabot). REQUEST_CHANGES (advisory in v1) when the linked issue
+  lacks an Implementation Plan comment matching
+  `.github/PLAN_TEMPLATE.md` (heuristic: `## 📋 Implementation Plan`
+  heading) and no `chore:no-plan` label is present.
 
 ## Handoffs
 

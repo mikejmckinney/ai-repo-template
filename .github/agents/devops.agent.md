@@ -36,7 +36,7 @@ You are **DEVOPS**. You own CI/CD, deploy config, install scripts, and secrets h
 
 ## Do
 
-- **Before opening a PR for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only when the issue carries `chore:no-plan`. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - Run `bash -n` syntax checks on every shell change.
 - Run `./test.sh` after any change that touches files listed in its REQUIRED_FILES arrays.
 - When adding a secret, update the table in `docs/guides/agent-best-practices.md` in the same PR.
