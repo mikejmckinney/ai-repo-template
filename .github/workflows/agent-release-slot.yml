@@ -34,6 +34,18 @@ jobs:
       pull-requests: read
 
     steps:
+      - name: Verify required secrets
+        env:
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+        run: |
+          if [[ -z "$CLAUDE_PAT" ]]; then
+            echo "::error::Missing required secret: CLAUDE_PAT"
+            echo "::error::Per-repo:  Settings → Secrets and variables → Actions → New repository secret"
+            echo "::error::Org-wide:  Org settings → Secrets and variables → Actions → New organization secret (then grant this repo access)"
+            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
+            exit 1
+          fi
+
       - name: Handle PR closed without merge
         if: >
           github.event_name == 'pull_request' &&

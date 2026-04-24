@@ -55,6 +55,21 @@ jobs:
       contents: write
 
     steps:
+      - name: Verify required secrets
+        env:
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+        run: |
+          if [[ -z "$CLAUDE_PAT" ]]; then
+            echo "::error::Missing required secret: CLAUDE_PAT"
+            echo "::error::Per-repo:  Settings → Secrets and variables → Actions → New repository secret"
+            echo "::error::Org-wide:  Org settings → Secrets and variables → Actions → New organization secret (then grant this repo access)"
+            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
+            exit 1
+          fi
+          # ANTHROPIC_API_KEY is optional here — only required for sparse
+          # backlog entries that need Claude expansion. The dispatch step
+          # already skips entries gracefully when it's absent.
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
