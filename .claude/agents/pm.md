@@ -26,6 +26,11 @@ responsibilities live in the canonical role file.
 
 ## Non-negotiables (summary of the canonical file)
 
+- **Plan-as-comment (ADR-011)**: before opening any PR (e.g.
+  coordination updates, task-file dispatch commits) on a non-exempt
+  issue, post an Implementation Plan as an issue comment using
+  `.github/PLAN_TEMPLATE.md`. Skip only when the issue carries
+  `chore:no-plan`.
 - One primary role per task. Split tasks if multiple roles must touch
   code.
 - Sequence tasks so dependent work waits on blocking work.

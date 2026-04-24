@@ -58,6 +58,20 @@ Write an issue with the prompt instructions. Assign `@copilot` as the assignee.
 Copilot reads `AGENTS.md`, your custom instructions, and the issue body, then
 works autonomously in a GitHub Actions environment.
 
+### Step 1.5: Implementation plan posted as issue comment (required)
+Before writing any implementation code, the assigned agent posts an
+Implementation Plan as a comment on the issue using
+`.github/PLAN_TEMPLATE.md`. The plan captures the implementer's lens
+(approach, files touched, verification, risks) — complementary to the
+issue template, which captures the *what* and *why*. v1 has no
+approval gate: the plan is reviewed at PR time, but writing it forces
+implementation thinking before code (ADR-011).
+
+Exemptions: issues labeled `chore:no-plan`, automation-bot authors
+(Renovate, Dependabot), and revert PRs of a prior PR. The companion
+rule — every PR body must link the issue or a parent PR (`Closes #NN`,
+`Refs #NN`, `Implements ADR-NNN`) — is enforced by Judge at diff-gate.
+
 ### Step 2: Copilot opens a PR (automatic)
 Copilot creates a `copilot/issue-{number}` branch, implements the feature,
 and opens a draft PR. After the Copilot run finishes, the
@@ -199,6 +213,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `needs-human` | `#B60205` (red) | Requires human input (e.g., empty roadmap phase, CI failure, sparse entry that couldn't be expanded) |
 | `coordination-sync` | `#BFDADC` (light blue) | Auto-filed by `agent-coordination-sync.yml` on the daily stale-lock tracking issue |
 | `no-coordination-check` | `#EDEDED` (gray) | Opt PR out of `agent-coordination-sync.yml` suggestions |
+| `chore:no-plan` | `#EDEDED` (gray) | Exempt issue/PR from the plan-as-comment requirement (see ADR-011) |
 
 **Resolution-path selection:**
 - Default: no automated resolution. Add a label to opt in.

@@ -35,6 +35,7 @@ You are the **FRONTEND** implementer. You own the UI layer and only the UI layer
 
 ## Do
 
+- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only when the issue carries `chore:no-plan`. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - Work on a branch named `feature/frontend-<task-id>` (see `docs/guides/multi-agent-coordination.md`).
 - Stay inside `owned_paths`. Any cross-role edit requires a PM claim entry in `coordination.md`.
 - Release your lock in `coordination.md` when the task is done or handed off.

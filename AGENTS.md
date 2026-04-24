@@ -100,6 +100,57 @@ Skipping this gate on a prompt-referenced issue is a known failure mode.
 If you find yourself reasoning "this prompt looks clear enough, I'll skip
 pre-flight," that's the signal to run pre-flight anyway.
 
+### Plan-as-comment requirement (REQUIRED before implementation)
+
+Before writing implementation code for any non-exempt issue, post an
+Implementation Plan as a comment on that issue using the template at
+`.github/PLAN_TEMPLATE.md`. The plan captures the implementation lens
+(approach, files, verification, risks) — complementary to the issue
+template which captures the *what* and *why*. See ADR-011.
+
+**Why this exists**: issue templates capture user-facing intent;
+implementer-side decisions about approach, scope, and verification are
+invisible until PR review. Posting the plan as an artifact catches three
+recurring failure modes pre-implementation: wrong approach to the right
+problem, hidden scope, and missing verification. v1 has no formal
+approval gate (deferred to #155) — the plan is reviewed at PR time, but
+the act of writing it forces the implementation thinking before code.
+
+**Procedure**:
+
+1. Pick up the issue. Read it end-to-end.
+2. Post a comment using `.github/PLAN_TEMPLATE.md`. Sections that don't
+   apply get `N/A — <one-phrase reason>`, never silent omission.
+3. Implement. No waiting on approval in v1 — but if your actual diff
+   diverges from the plan by more than ~30% in file count or scope,
+   post a "Plan revision" comment on the same issue before pushing.
+4. Open the PR. Body MUST link the issue or a parent PR (`Closes #NN`,
+   `Refs #NN`, `Implements ADR-NNN`). Judge BLOCKs at diff-gate when
+   no link is present and no exemption label applies.
+
+**Exemptions** (plan is NOT required):
+
+- Issue is labeled `chore:no-plan` (the explicit opt-out).
+- Author is Renovate, Dependabot, or another automation bot.
+- Work is a `revert` of a prior PR (the prior PR's plan still applies).
+
+The PR-must-link rule has the same exemptions plus PRs labeled
+`smoke-test` (existing convention; smoke tests intentionally don't link
+issues).
+
+**Single template, no tiering**: there is no "minimal" vs "full" plan
+mode. The template scales with the work — five lines for trivial fixes,
+25–40 lines for typical work. Tiered modes invite agents to default to
+the lower-effort option, which defeats the gate. When a section
+genuinely doesn't apply, write `N/A — <reason>`. Explicit
+acknowledgment beats silent omission.
+
+**Relationship to the Analyst pre-flight gate**: ADR-005's Pre-Flight
+Report is a stricter gate that runs *in addition to* the plan
+requirement on prompt-referenced project issues. It is not replaced or
+weakened by this requirement. The two gates have different trigger
+conditions and will be unified in #155.
+
 ## Context pack usage
 - Start with `.context/00_INDEX.md` for project overview
 - Check `.context/state/_active.md` or `task_*.md` for current work in progress

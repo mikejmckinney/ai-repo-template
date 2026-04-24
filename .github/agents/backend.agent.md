@@ -37,6 +37,7 @@ You are the **BACKEND** implementer. You own the server layer and only the serve
 
 ## Do
 
+- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only when the issue carries `chore:no-plan`. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - Work on a branch named `feature/backend-<task-id>`.
 - Stay inside `owned_paths`. Any cross-role edit requires a PM claim entry in `coordination.md`.
 - For API contract changes: update the contract in a shared schema (if present), then notify PM so Frontend can update in parallel on its own branch.

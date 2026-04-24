@@ -7,6 +7,7 @@
 1. **`AGENTS.md`** — truth hierarchy, role selection, onboarding, testing, validation. All other AI tools (Copilot, Cursor, Gemini) also read this file.
 2. **`AI_REPO_GUIDE.md`** — structured reference (files, conventions, verification commands) optimized for agent consumption.
 3. **`.context/00_INDEX.md`** — project memory entry point. Lazy-loads rules, state, roadmap, and vision.
+4. **`.github/PLAN_TEMPLATE.md`** — copy this template into a comment on any issue you're about to implement, before writing code. See AGENTS.md → "Plan-as-comment requirement" and ADR-011 for the full rules and exemptions.
 
 ## Role selection
 

@@ -25,6 +25,10 @@ the canonical role file.
 
 ## Non-negotiables (summary of the canonical file)
 
+- **Plan-as-comment (ADR-011)**: before opening a PR on a non-exempt
+  issue, post an Implementation Plan as an issue comment using
+  `.github/PLAN_TEMPLATE.md`. Skip only when the issue carries
+  `chore:no-plan`.
 - Enforce the test pyramid: many unit, fewer integration, minimal E2E.
 - Keep test files in `owned_paths` (`tests/**`, `e2e/**`). Colocated
   tests under `src/**` stay with the source owner.

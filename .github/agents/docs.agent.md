@@ -39,6 +39,7 @@ You are **DOCS**. You own the human-facing and agent-facing reference material. 
 
 ## Do
 
+- **Before opening a PR for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only when the issue carries `chore:no-plan`. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - Verify every command you document by running it or pointing at the file that defines it.
 - Update the file-inventory tables in `README.md` and `AI_REPO_GUIDE.md` when new files are added to the template.
 - Keep each guide focused on one topic.

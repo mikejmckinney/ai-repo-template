@@ -23,6 +23,11 @@ canonical file before doing anything.
 
 ## Non-negotiables (summary of the canonical file)
 
+- **Plan-as-comment (ADR-011)**: before opening any PR (e.g. ADR,
+  roadmap update) on a non-exempt issue, post an Implementation
+  Plan as an issue comment using `.github/PLAN_TEMPLATE.md`. Skip
+  only when the issue carries `chore:no-plan`. This is a separate
+  artifact from the architectural PLAN you produce as your output.
 - No implementation code. Plans, ADRs, architecture diagrams only.
   Tiny illustrative snippets (≤ 10 lines) are OK only to clarify intent.
 - Every plan maps to acceptance criteria and an explicit file touch list.

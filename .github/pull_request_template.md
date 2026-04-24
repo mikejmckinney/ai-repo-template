@@ -11,8 +11,13 @@ N/A — empty headings are noise.
 
 ## Linked issues / ADRs
 
-<!-- e.g. "Closes #NN", "Implements ADR-007", "Tracked by #100".
-     If none, write "none". -->
+<!-- REQUIRED. Judge BLOCKs at diff-gate when this is empty and no
+     exemption label (chore:no-plan, smoke-test) is present. See ADR-011. -->
+
+**Closes / Refs:** #
+
+<!-- Examples: "Closes #42", "Refs #100", "Implements ADR-007".
+     For follow-up PRs, link the parent PR: "Refs #PR-NNN". -->
 
 ## Verification
 
