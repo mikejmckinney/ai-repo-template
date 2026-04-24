@@ -5,8 +5,8 @@
 #      open / reopen / ready_for_review *or* when the `claude-review` label is
 #      applied to an existing PR. Invokes the judge subagent
 #      (`.claude/agents/judge.md`) to submit a single comprehensive PR
-#      review (via `gh api POST /pulls/{N}/reviews`, NOT `gh pr comment` —
-#      see issue #168). To trigger a review, apply the `claude-review`
+#      review (via `gh api POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews`,
+#      NOT `gh pr comment` — see issue #168). To trigger a review, apply the `claude-review`
 #      label to the PR. The label must already exist (or be created by
 #      someone with label-management permissions) before it can be applied.
 #   2. claude-mention — runs when someone writes `@claude <instruction>` in
