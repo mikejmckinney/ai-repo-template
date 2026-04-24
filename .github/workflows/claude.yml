@@ -4,10 +4,11 @@
 #   1. claude-auto-review — opt-in via the `claude-review` label. Runs on PR
 #      open / reopen / ready_for_review *or* when the `claude-review` label is
 #      applied to an existing PR. Invokes the judge subagent
-#      (`.claude/agents/judge.md`) to post a single comprehensive review
-#      comment. To trigger a review, apply the `claude-review` label to the
-#      PR. The label must already exist (or be created by someone with
-#      label-management permissions) before it can be applied.
+#      (`.claude/agents/judge.md`) to submit a single comprehensive PR
+#      review (via `gh api POST /pulls/{N}/reviews`, NOT `gh pr comment` —
+#      see issue #168). To trigger a review, apply the `claude-review`
+#      label to the PR. The label must already exist (or be created by
+#      someone with label-management permissions) before it can be applied.
 #   2. claude-mention — runs when someone writes `@claude <instruction>` in
 #      a PR comment, review comment, or review body. Always available
 #      regardless of the `claude-review` label, so it doubles as the escape
@@ -95,10 +96,11 @@ jobs:
       # action in "review mode" with permission-mode `acceptEdits`,
       # which auto-denies every non-edit tool call in CI (no human to
       # approve interactive prompts). The prompt below tells Claude to
-      # post a single comprehensive review via `gh pr comment`, which
-      # requires a Bash tool call — so without `bypassPermissions`,
-      # every post attempt is silently denied (12 denials in the PR
-      # #113 run, $0.99 wasted, no comment posted).
+      # submit a single comprehensive PR review via `gh api POST
+      # /pulls/{N}/reviews`, which requires a Bash tool call — so
+      # without `bypassPermissions`, every post attempt is silently
+      # denied (12 denials in the PR #113 run, $0.99 wasted, no review
+      # posted).
       #
       # Three coupled fixes, mirroring the working `claude-mention`
       # job below and `agent-fix-reviews.yml` → `resolve-reviews`:
@@ -107,9 +109,19 @@ jobs:
       #   2. allowed_bots: "*" — bot-originated triggers (e.g. another
       #      automation re-applying the label) don't fail.
       #   3. claude_args with --permission-mode bypassPermissions —
-      #      lets Claude actually call `gh` to post the review.
+      #      lets Claude actually call `gh` to submit the review.
       #
-      # Trade-off: review comment is authored by the PAT owner, not
+      # Why a real review (not `gh pr comment`) — issue #168:
+      #   `gh pr comment` creates an issue comment, which fires
+      #   `issue_comment`, NOT `pull_request_review:submitted`.
+      #   `agent-fix-reviews.yml` triggers only on the latter, so a
+      #   review posted as a comment was invisible to claude-fix.
+      #   Submitting via `gh api POST /pulls/{N}/reviews` mirrors
+      #   what Gemini and Copilot Code Review already do: lands the
+      #   body in `.reviews[]` (where the fix-cycle prompt looks)
+      #   and fires the trigger claude-fix listens on.
+      #
+      # Trade-off: review is authored by the PAT owner, not
       # claude[bot]. Same trade-off as claude-mention and
       # agent-fix-reviews; documented for consistency.
       - name: Claude diff-gate review
@@ -132,18 +144,37 @@ jobs:
                Issues table → Verification Checklist → Testing Recommendations).
             4. End with one of: APPROVE / REQUEST_CHANGES / BLOCK, matching
                judge.md's decision format.
-            5. Post the entire review as ONE PR comment. Use a
-               single-quoted heredoc so backticks, `$()`, and other
-               shell metacharacters in your review markdown are NOT
-               interpolated by the shell:
+            5. Submit the entire review as ONE PR review (NOT a PR
+               comment — see issue #168). The review must land in
+               `.reviews[]` so `agent-fix-reviews.yml` can ingest it
+               on the `pull_request_review:submitted` event it
+               already triggers on. Use this exact two-step shell:
+
+                  # Step A: write the review body to a file. Use a
+                  # single-quoted heredoc so backticks, $(), and other
+                  # shell metacharacters in your review markdown are
+                  # NOT interpolated by the shell.
                   cat > /tmp/review.md <<'CLAUDE_REVIEW_EOF'
                   <your review markdown here>
                   CLAUDE_REVIEW_EOF
-                  gh pr comment ${{ github.event.pull_request.number }} \
-                    --repo ${{ github.repository }} --body-file /tmp/review.md
+
+                  # Step B: submit as a real PR review. `event=COMMENT`
+                  # keeps neutral semantics (does not change
+                  # reviewDecision, mirrors Gemini's behavior). The
+                  # `-F body=@/tmp/review.md` form file-loads the body,
+                  # avoiding the JSON-escape hazards of inline
+                  # `body="..."`.
+                  gh api \
+                    --method POST \
+                    -H "Accept: application/vnd.github+json" \
+                    "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews" \
+                    -F body=@/tmp/review.md \
+                    -f event=COMMENT
+
                Do not push commits, do not edit files, do not open
-               sub-issues, do not post inline review comments. Exactly
-               one `gh pr comment` call.
+               sub-issues, do not post inline review comments, do not
+               call `gh pr comment`. Exactly one `gh api ... POST
+               .../pulls/<N>/reviews` call.
 
   # ----------------------------------------------------------------------
   # @claude mention handler — lets reviewers request follow-ups interactively.
