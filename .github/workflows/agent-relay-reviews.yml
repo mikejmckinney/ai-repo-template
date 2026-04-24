@@ -545,18 +545,6 @@ jobs:
       contents: read
 
     steps:
-      - name: Verify required secrets
-        env:
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
-        run: |
-          if [[ -z "$CLAUDE_PAT" ]]; then
-            echo "::error::Missing required secret: CLAUDE_PAT"
-            echo "::error::Per-repo:  Settings → Secrets and variables → Actions → New repository secret"
-            echo "::error::Org-wide:  Org settings → Secrets and variables → Actions → New organization secret (then grant this repo access)"
-            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
-            exit 1
-          fi
-
       # Fork guard — must run BEFORE any step that uses CLAUDE_PAT.
       # Uses the default GITHUB_TOKEN (read-only on forks) to fetch the
       # PR head ref. Fails closed if the PR can't be fetched or is
@@ -579,6 +567,18 @@ jobs:
             echo "❌ Refusing to run phase4-fallback on cross-repository (fork) PR."
             echo "    CLAUDE_PAT must not be exposed when the PR head is from a fork."
             printf '%s\n' "$meta"
+            exit 1
+          fi
+
+      - name: Verify required secrets
+        env:
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+        run: |
+          if [[ -z "$CLAUDE_PAT" ]]; then
+            echo "::error::Missing required secret: CLAUDE_PAT"
+            echo "::error::Per-repo:  Settings → Secrets and variables → Actions → New repository secret"
+            echo "::error::Org-wide:  Org settings → Secrets and variables → Actions → New organization secret (then grant this repo access)"
+            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
             exit 1
           fi
 
