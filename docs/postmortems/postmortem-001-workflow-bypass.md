@@ -309,3 +309,32 @@ the branch-precondition rule (see Action items).
 - [`/.context/roadmap.md`](../../.context/roadmap.md) — phase acceptance criteria
 - [`/.context/sessions/latest_summary.md`](../../.context/sessions/latest_summary.md) — updated with Phases 2–7 close-out and bypass note
 - Template repo: `mikejmckinney/ai-repo-template` (where the corrective ADR + rule should land)
+
+## Follow-up — template-mirror notes (added 2026-04-25)
+
+Notes for readers of this mirror in the `ai-repo-template` repo. The body
+above is verbatim from the source postmortem; this appended section is
+allowed under the "Numbering and immutability" rule in
+[docs/postmortems/README.md](../README.md) (the body is append-only for
+facts, but a clearly-labelled Follow-up section at the bottom is permitted).
+
+- **ADR numbering** — The Action items above reference "ADR-011" for the
+  branch precondition. In this template repo, ADR-011 is "Plan-as-comment
+  requirement"; the corrective ADR for the branch/cadence work is
+  **[ADR-012](../decisions/adr-012-explicit-workflow-preconditions.md)**.
+  Treat references to "ADR-011" in the body above as the source-repo
+  numbering; the equivalent template-repo decision is ADR-012.
+
+- **Relative links that resolve in this repo** — `test.sh`, `AGENTS.md`,
+  `.context/roadmap.md`, `.context/sessions/latest_summary.md`,
+  `.context/state/coordination.md`, and the `.github/**` paths all exist
+  here, so the `../../...` links in the body work.
+
+- **Relative links that 404 here** (downstream-only paths). Use these
+  absolute remaps to read the source files in the originating repo
+  `mikejmckinney/cmmc-level2-aws-enclave-reference2` on branch
+  `recovery/phases-1-7-uncommitted-work`:
+  - `../../scripts/check-ssp.sh` → <https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/recovery/phases-1-7-uncommitted-work/scripts/check-ssp.sh>
+  - `../../ssp/SSP.md` → <https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/recovery/phases-1-7-uncommitted-work/ssp/SSP.md>
+  - `../../.context/state/handoff_phases-1-7-recovery.md` → <https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/recovery/phases-1-7-uncommitted-work/.context/state/handoff_phases-1-7-recovery.md>
+  - `../../controls/nist-800-171-mapping.csv` → <https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/recovery/phases-1-7-uncommitted-work/controls/nist-800-171-mapping.csv>
