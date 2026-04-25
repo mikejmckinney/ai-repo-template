@@ -642,18 +642,22 @@ jobs:
           # Find the most recent comment authored by a Copilot identity
           # whose body contains the canonical Phase 4 header. The author
           # filter mirrors the issue_comment-path allow-list.
-          # --paginate with --slurp collects all pages into a single array
-          # of arrays before jq processing, preventing multi-line output
-          # when there are multiple comment pages; `.[][]` flattens them.
-          # `last` returns the most recent matching comment (REST issues
-          # comments endpoint returns oldest-first by default).
-          cid=$(gh api "/repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate --slurp \
-            --jq '[.[][]
-                   | select(.user.login
-                       | ascii_downcase
-                       | test("^copilot(\\[bot\\])?$|^copilot-swe-agent(\\[bot\\])?$"))
-                   | select(.body | contains("### Phase 4 — Thread auto-resolution"))
-                  ] | last | .id // empty')
+          #
+          # `gh api --paginate` emits one JSON array per page (concatenated
+          # JSON documents), and `gh api` rejects `--slurp` together with
+          # `--jq` ("the --slurp option is not supported with --jq or
+          # --template"). To merge pages safely we pipe the raw paginated
+          # output through an external `jq -s` (slurp) which collects the
+          # per-page arrays into one array of arrays; `.[][]` then
+          # flattens. `last` returns the most recent matching comment
+          # (REST issues-comments returns oldest-first by default).
+          cid=$(gh api "/repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            | jq -r -s '[.[][]
+                         | select(.user.login
+                             | ascii_downcase
+                             | test("^copilot(\\[bot\\])?$|^copilot-swe-agent(\\[bot\\])?$"))
+                         | select(.body | contains("### Phase 4 — Thread auto-resolution"))
+                        ] | last | .id // empty')
           if [[ -z "$cid" ]]; then
             echo "No Copilot Phase 3 comment found on PR ${PR_NUMBER}. Nothing to do."
             echo "comment_id=" >> "$GITHUB_OUTPUT"
