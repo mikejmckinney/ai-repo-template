@@ -70,8 +70,17 @@ on:
   # and a maintainer adds it later, fire a relay pass over all existing
   # reviews. The job's `if` filters to `label.name == 'copilot-relay'`
   # so other label events don't trigger a relay.
+  #
+  # `synchronize` (push to PR head) is included for the `phase4-fallback`
+  # job below: when a delegate (typically Copilot) pushes a fix commit
+  # *after* the last Phase 4 cycle ran, a synchronize event re-fires the
+  # fallback so any orphaned bot-authored review threads (from `⚠️ Errored`
+  # rows in the most recent Copilot Phase 3 comment) get retried under
+  # CLAUDE_PAT. The `relay`
+  # job's own `if:` keeps it from running on synchronize — only
+  # `phase4-fallback` consumes the synchronize trigger. See #177.
   pull_request:
-    types: [labeled]
+    types: [labeled, synchronize]
   # Phase 4 fallback: when Copilot posts its Phase 3 Resolution Report
   # comment, the `phase4-fallback` job below scans it for `⚠️ Errored`
   # rows and retries the GraphQL mutations under CLAUDE_PAT. Filtered
@@ -505,44 +514,83 @@ jobs:
   # See ADR-008 for the design rationale and #100 for the FORBIDDEN
   # evidence on the Copilot path.
   phase4-fallback:
-    # Job-level filter:
-    #   - Comment is on a PR (issue_comment fires on issues + PRs)
-    #   - PR carries `copilot-relay` (single-label gate, per ADR-008)
-    #   - Comment author is one of the Copilot identities. We accept the
-    #     full set of forms GitHub may emit across REST/GraphQL and the
-    #     two Copilot product surfaces (the SWE agent and the cloud
-    #     agent). Mirrors the normalization rule in
-    #     `pr-resolve-all.md` Phase 4.
+    # Job-level filter — fires on either of two trigger paths:
+    #
+    # (a) `issue_comment` (original path, ADR-008): when Copilot posts
+    #     its Phase 3 Resolution Report comment, fire immediately to
+    #     retry any `⚠️ Errored` Thread IDs.
+    #     Filters: comment is on a PR, PR carries `copilot-relay` OR
+    #     `claude-fix` (mirrors the synchronize path's OR gate),
+    #     comment author is one of the Copilot identities. The Copilot
+    #     identity allow-list accepts the full set of forms GitHub may
+    #     emit across REST/GraphQL and the two Copilot product surfaces
+    #     (the SWE agent and the cloud agent). Mirrors the normalization
+    #     rule in `pr-resolve-all.md` Phase 4.
+    #
+    # (b) `pull_request.synchronize` (added for #177): when a delegate
+    #     pushes a fix commit *after* the last Phase 4 cycle ran, fire
+    #     and look up the most recent Copilot Phase 3 comment via the
+    #     "Discover triggering Copilot comment" step. Closes the race
+    #     window where claude-fix's Phase 4 N+1 marks a delegated item
+    #     `⏭️ Skipped — waiting for fix` *before* Copilot's actual fix
+    #     commit lands, after which no event re-triggered Phase 4 (see
+    #     ADR-008 addendum risk #2).
+    #     Filters: same-repo PR (no fork), PR carries either
+    #     `copilot-relay` OR `claude-fix`. The `claude-fix` gate covers
+    #     the post-#170 case where claude-fix delegations to Copilot
+    #     intentionally do NOT apply `copilot-relay` (per ISS-04 in
+    #     PR #173) yet still produce a Copilot Phase 3 with errored
+    #     rows that need fallback recovery.
+    #     Re-runs are idempotent: the existing fingerprint dedup
+    #     (sha256 of sorted Errored Thread IDs) short-circuits when the
+    #     same set has already been processed.
     #
     # Intentionally NOT in the if:
-    #   - Repository fork check: `github.event.repository.full_name ==
-    #     github.repository` is always true on `issue_comment` (the
-    #     comment lives on the upstream repo). The real fork guard
-    #     requires fetching the PR's `headRepository` — done in the
-    #     "Fork guard" step below before any CLAUDE_PAT use.
+    #   - Repository fork check on `issue_comment`:
+    #     `github.event.repository.full_name == github.repository` is
+    #     always true on `issue_comment` (the comment lives on the
+    #     upstream repo). The real fork guard requires fetching the
+    #     PR's `headRepository` — done in the "Fork guard" step below
+    #     before any CLAUDE_PAT use. The synchronize path's payload
+    #     does expose `head.repo.full_name` so we gate on it inline.
     #   - Phase 4 header presence: `issue_comment` event payloads may
     #     truncate long comment bodies. The "Run Phase 4 fallback" step
     #     re-fetches the full body via the API and checks for the
-    #     header there.
+    #     header there. The synchronize path discovers comments via the
+    #     API directly and applies the same header check.
     if: >
-      github.event_name == 'issue_comment' &&
-      github.event.issue.pull_request != null &&
-      contains(github.event.issue.labels.*.name, 'copilot-relay') &&
-      contains(
-        fromJSON('["copilot","Copilot","copilot[bot]","copilot-swe-agent","copilot-swe-agent[bot]"]'),
-        github.event.comment.user.login
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request != null &&
+        (contains(github.event.issue.labels.*.name, 'copilot-relay') ||
+         contains(github.event.issue.labels.*.name, 'claude-fix')) &&
+        contains(
+          fromJSON('["copilot","Copilot","copilot[bot]","copilot-swe-agent","copilot-swe-agent[bot]"]'),
+          github.event.comment.user.login
+        )
+      )
+      ||
+      (
+        github.event_name == 'pull_request' &&
+        github.event.action == 'synchronize' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        (
+          contains(github.event.pull_request.labels.*.name, 'copilot-relay') ||
+          contains(github.event.pull_request.labels.*.name, 'claude-fix')
+        )
       )
 
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
     concurrency:
-      group: phase4-fallback-${{ github.event.issue.number }}
+      group: phase4-fallback-${{ github.event.issue.number || github.event.pull_request.number }}
       cancel-in-progress: false
 
     permissions:
       pull-requests: write
       contents: read
+      issues: read
 
     steps:
       # Fork guard — must run BEFORE any step that uses CLAUDE_PAT.
@@ -553,7 +601,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.issue.number }}
+          PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
         run: |
           set -euo pipefail
           meta=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
@@ -582,12 +630,52 @@ jobs:
             exit 1
           fi
 
+      - name: Discover triggering Copilot Phase 3 comment (synchronize path)
+        id: discover
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # Find the most recent comment authored by a Copilot identity
+          # whose body contains the canonical Phase 4 header. The author
+          # filter mirrors the issue_comment-path allow-list.
+          #
+          # `gh api --paginate` emits one JSON array per page (concatenated
+          # JSON documents), and `gh api` rejects `--slurp` together with
+          # `--jq` ("the --slurp option is not supported with --jq or
+          # --template"). To merge pages safely we pipe the raw paginated
+          # output through an external `jq -s` (slurp) which collects the
+          # per-page arrays into one array of arrays; `.[][]` then
+          # flattens. `last` returns the most recent matching comment
+          # (REST issues-comments returns oldest-first by default).
+          cid=$(gh api "/repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
+            | jq -r -s '[.[][]
+                         | select(.user.login
+                             | ascii_downcase
+                             | test("^copilot(\\[bot\\])?$|^copilot-swe-agent(\\[bot\\])?$"))
+                         | select(.body | contains("### Phase 4 — Thread auto-resolution"))
+                        ] | last | .id // empty')
+          if [[ -z "$cid" ]]; then
+            echo "No Copilot Phase 3 comment found on PR ${PR_NUMBER}. Nothing to do."
+            echo "comment_id=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found Copilot Phase 3 comment: $cid"
+            echo "comment_id=$cid" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run Phase 4 fallback
+        # Skip cleanly when the synchronize path found no eligible
+        # Copilot Phase 3 comment. The issue_comment path always has a
+        # valid COMMENT_ID from the event payload.
+        if: github.event_name == 'issue_comment' || steps.discover.outputs.comment_id != ''
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ github.event.issue.number }}
-          COMMENT_ID: ${{ github.event.comment.id }}
+          PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+          COMMENT_ID: ${{ github.event.comment.id || steps.discover.outputs.comment_id }}
         run: |
           set -euo pipefail
 
