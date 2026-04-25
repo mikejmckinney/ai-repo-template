@@ -447,7 +447,7 @@ jobs:
             pr-resolve-all.md. Without that structure, the `phase4-fallback` job
             in agent-relay-reviews.yml cannot retry the `resolveReviewThread`
             mutations Copilot's sandbox token cannot make (FORBIDDEN — the token
-            lacks the pull-requests:write permission scope),
+            lacks the pull-requests: write permission scope),
             so bot-authored review threads stay open and auto-merge stalls.
             The direct @copilot follow comment triggers the same Copilot
             pr-resolve-all → phase4-fallback → resolveReviewThread chain without
