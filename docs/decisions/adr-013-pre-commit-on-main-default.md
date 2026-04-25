@@ -26,7 +26,7 @@ ADR-012 already shipped the explicit AGENTS.md branch-and-commit rule — the *l
 
 ## Decision
 
-**Do not install a pre-commit hook by default.** The template continues to ship `.pre-commit-config.yaml.template` (the existing heavyweight config — `detect-secrets`, `commitizen`, `check-added-large-files`, etc.) as opt-in scaffolding. Derived repos that want hook-based `main` protection rename it to `.pre-commit-config.yaml`, install `pre-commit` (`pip install pre-commit && pre-commit install`), and add a `no-commit-to-branch` hook configured for `main`.
+**Do not install a pre-commit hook by default.** The template continues to ship `.pre-commit-config.yaml.template` (the existing heavyweight config — `detect-secrets`, `commitizen`, `check-added-large-files`, etc.) as opt-in scaffolding. Derived repos that want hook-based `main` protection rename it to `.pre-commit-config.yaml`, install `pre-commit` for both the `pre-commit` and `commit-msg` stages (`pip install pre-commit && pre-commit install && pre-commit install --hook-type commit-msg`), and add a `no-commit-to-branch` hook configured for `main`. The `--hook-type commit-msg` step is required because the shipped template config uses `stages: [commit-msg]` for the `commitizen` hook; bare `pre-commit install` only registers the `pre-commit` stage and would leave commit-message linting silently disabled.
 
 The AGENTS.md rule shipped in ADR-012 is the primary backstop. This ADR records that the mechanical guardrail is *available* but *opt-in*, with the rationale below.
 
@@ -48,6 +48,21 @@ The AGENTS.md rule shipped in ADR-012 is the primary backstop. This ADR records 
 
 - The existing `.pre-commit-config.yaml.template` is heavyweight (commit-msg linting, secret detection, large-file checks). Adding a `no-commit-to-branch` hook to it is a one-line addition for any derived repo that opts in. We do not need to ship a separate minimal config to make the opt-in path easy.
 - ADR-012 and this ADR together close the issue #180 acceptance criterion for "pre-commit-on-main decision recorded" without weakening the rule-text fix.
+
+## Verification
+
+- [x] **V1 (No silent un-tracking)**: `git ls-files | xargs -I{} git check-ignore {} 2>/dev/null` returned empty on commit `33fb5c3` — no currently-tracked file is matched by the new `.gitignore` patterns. Evidence: PR #188 description.
+- [x] **V2 (`.env.example` negation)**: `git check-ignore -q .env.example` exited `1` (NOT ignored), confirming the `!.env.example` negation works.
+- [x] **V3 (`.terraform/` is ignored)**: `git check-ignore -q .terraform/anything` exited `0` (matched), confirming the acceptance-criteria minimum pattern fires.
+- [x] **V4 (template integrity)**: `bash test.sh` → 207 passed / 0 failed / 1 warning, matching the PR #187 baseline.
+
+## Implementation checklist
+
+- [x] Add default `.gitignore` at repo root (PR #188).
+- [x] Header documents the "extend, don't replace" contract for derived repos and cites postmortem-001 + ADR-012/013.
+- [x] Record this decision (ADR-013).
+- [x] Add ADR-013 row to `docs/decisions/README.md` index.
+- [ ] **Re-evaluation trigger** (manual): if a future postmortem traces another bypass to "the AGENTS.md rule was ignored," reopen this decision and promote `.pre-commit-config.yaml.template` to an installed default.
 
 ## References
 

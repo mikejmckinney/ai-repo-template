@@ -37,8 +37,13 @@
 # --- Editor / IDE configs (per-developer; commit project-wide settings
 #     deliberately under .vscode/settings.json if needed, then add an
 #     explicit `!` exception in a derived repo) ---
-.vscode/
-.idea/
+#     Wildcard form (`.vscode/*`, not `.idea/`) is intentional: Git does
+#     not recurse into a directory ignored by `dir/`, so `!.vscode/settings.json`
+#     in a derived repo would not work against `.vscode/`. Using `.vscode/*`
+#     ignores the contents while keeping the directory itself searchable
+#     for `!file` re-includes.
+.vscode/*
+.idea/*
 
 # --- Build / dist outputs ---
 dist/
