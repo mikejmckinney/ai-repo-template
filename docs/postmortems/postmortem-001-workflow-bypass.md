@@ -6,7 +6,7 @@ docs/postmortems/postmortem-001-workflow-bypass.md because the lessons
 generalize to every repo built from ai-repo-template.
 
 Source: https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/recovery/phases-1-7-uncommitted-work/docs/postmortems/postmortem-001-workflow-bypass.md
-Mirrored: 2026-04-25 in PR for issue #180.
+Mirrored: 2026-04-25 in PR #181 for issue #180.
 Triggered: ADR-012 (explicit workflow preconditions).
 
 Per docs/postmortems/README.md "Numbering and immutability", postmortems are
@@ -18,15 +18,16 @@ Inline links in the body below use the original repo's relative paths
 own AGENTS.md / .context/ / scripts/, which is the correct target for
 template-side readers; the references section retains the absolute source URL
 for the original context.
-
-The "Action items" section near the bottom is **historical from the source
-repo** (it references the downstream project's tracking and an as-yet-unwritten
-"ADR-011 for the branch precondition"). Do NOT action those items in this
-template repo. Template-side tracking for the lessons in this postmortem is:
-issue #180 (parent), ADR-012 (explicit workflow preconditions, shipped in
-PR #181), follow-up issue #184 (PR-A.1 review-finding fixes), and the
-sequenced PR-B / PR-C work items enumerated on issue #180.
 -->
+
+> [!IMPORTANT]
+> The "Action items" section near the bottom is **historical from the source
+> repo** (it references the downstream project's tracking and an as-yet-unwritten
+> "ADR-011 for the branch precondition"). Do NOT action those items in this
+> template repo. Template-side tracking for the lessons in this postmortem is:
+> issue #180 (parent), ADR-012 (explicit workflow preconditions, shipped in
+> PR #181), follow-up issue #184 (PR-A.1 review-finding fixes), and the
+> sequenced PR-B / PR-C work items enumerated on issue #180.
 
 # Postmortem-001: Workflow bypass on Phases 2–7
 
