@@ -52,7 +52,18 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
-<!-- No active locks. Add new locks here using the template above. -->
+## Lock: pr-179
+<!-- managed-for-pr:179 -->
+**Role**: architect
+**Session**: fix/177-phase4-fallback-on-push
+**Claimed At**: 2026-04-25T02:53:28Z
+**Expected Duration**: TBD
+**Paths**:
+- .github/workflows/agent-relay-reviews.yml
+- docs/decisions/adr-008-phase4-default-and-copilot-fallback.md
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
 
 ## Recent History
 

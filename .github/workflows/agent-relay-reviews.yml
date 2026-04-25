@@ -74,8 +74,9 @@ on:
   # `synchronize` (push to PR head) is included for the `phase4-fallback`
   # job below: when a delegate (typically Copilot) pushes a fix commit
   # *after* the last Phase 4 cycle ran, a synchronize event re-fires the
-  # fallback so any orphaned `⚠️ Errored` rows in the most recent
-  # Copilot Phase 3 comment get retried under CLAUDE_PAT. The `relay`
+  # fallback so any orphaned bot-authored review threads (from `⚠️ Errored`
+  # rows in the most recent Copilot Phase 3 comment) get retried under
+  # CLAUDE_PAT. The `relay`
   # job's own `if:` keeps it from running on synchronize — only
   # `phase4-fallback` consumes the synchronize trigger. See #177.
   pull_request:
@@ -587,6 +588,7 @@ jobs:
     permissions:
       pull-requests: write
       contents: read
+      issues: read
 
     steps:
       # Fork guard — must run BEFORE any step that uses CLAUDE_PAT.
@@ -637,12 +639,14 @@ jobs:
           set -euo pipefail
           # Find the most recent comment authored by a Copilot identity
           # whose body contains the canonical Phase 4 header. The author
-          # filter mirrors the issue_comment-path allow-list. Using
-          # --paginate is overkill for a single-page lookup but harmless.
+          # filter mirrors the issue_comment-path allow-list.
+          # --paginate with --slurp collects all pages into a single array
+          # of arrays before jq processing, preventing multi-line output
+          # when there are multiple comment pages; `.[][][]` flattens them.
           # `last` returns the most recent matching comment (REST issues
           # comments endpoint returns oldest-first by default).
-          cid=$(gh api "/repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate \
-            --jq '[.[]
+          cid=$(gh api "/repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate --slurp \
+            --jq '[.[][]
                    | select(.user.login
                        | ascii_downcase
                        | test("^copilot(\\[bot\\])?$|^copilot-swe-agent(\\[bot\\])?$"))
