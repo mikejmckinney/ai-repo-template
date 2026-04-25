@@ -488,7 +488,7 @@ Rejected alternatives:
 
 ### Verification (V12)
 
-V12 dog-foods on PR #179 (the PR that ships this fix). The PR will
+V12 dog-foods on the PR that implements issue #177. That PR will
 likely trigger claude-fix (workflow-file edit), which will likely
 delegate to Copilot. When Copilot pushes its fix commit *after*
 claude-fix's last Phase 4 cycle ran, the new synchronize trigger fires,
@@ -514,6 +514,8 @@ without manual thread resolution.
   manually resolved.
 - `.github/workflows/agent-relay-reviews.yml` — `phase4-fallback` job
   (the trigger and discovery step changes).
+- PR [#179](https://github.com/mikejmckinney/ai-repo-template/pull/179)
+  — the PR that ships this fix.
 
 ## References
 
