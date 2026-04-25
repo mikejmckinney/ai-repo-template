@@ -1,0 +1,58 @@
+# =============================================================================
+# .gitignore — ai-repo-template default
+# =============================================================================
+# This is the template's *default* .gitignore. Derived repos should EXTEND
+# this file with project-specific patterns rather than replacing it.
+#
+# Why this file exists:
+#   postmortem-001 (docs/postmortems/postmortem-001-workflow-bypass.md)
+#   documented a contributing factor: the downstream repo shipped without a
+#   .gitignore, so `terraform init` left ~90 MB of provider binaries in the
+#   working tree. If the agent had committed everything, those binaries
+#   would have entered git history.
+#
+# Sibling decisions:
+#   - ADR-012 (docs/decisions/adr-012-explicit-workflow-preconditions.md)
+#     adds the AGENTS.md branch-precondition rule.
+#   - ADR-013 (docs/decisions/adr-013-pre-commit-on-main-default.md)
+#     records why we ship .pre-commit-config.yaml.template only and do NOT
+#     install a block-commits-to-main hook by default.
+#
+# What's intentionally NOT here:
+#   - .terraform.lock.hcl — convention is to commit dependency lock files.
+#   - .env.example — explicitly negated (see `!.env.example` below) so the
+#     example file remains tracked even when its `.env*` siblings are not.
+# =============================================================================
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- OS / editor cruft ---
+.DS_Store
+*.swp
+*.log
+
+# --- Editor / IDE configs (per-developer; commit project-wide settings
+#     deliberately under .vscode/settings.json if needed, then add an
+#     explicit `!` exception in a derived repo) ---
+.vscode/
+.idea/
+
+# --- Build / dist outputs ---
+dist/
+build/
+coverage/
+
+# --- Node ---
+node_modules/
+
+# --- Python ---
+__pycache__/
+*.pyc
+
+# --- Terraform (state files only — lock files are committed) ---
+**/.terraform/
+*.tfstate
+*.tfstate.*
