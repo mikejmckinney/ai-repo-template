@@ -13,7 +13,7 @@ happened was Z." Without the second half, the same mistakes recur.
 
 | Postmortem | Title | Date | Generalizes? |
 |---|---|---|---|
-| [postmortem-001](./postmortem-001-workflow-bypass.md) | Workflow bypass on Phases 2–7 (downstream `cmmc-level2-aws-enclave-reference2`) | 2026-04-24 | Yes — triggered [ADR-012](../decisions/adr-012-explicit-workflow-preconditions.md) |
+| _(none yet)_ | | | |
 
 When you add a new postmortem, add a row above. The "Generalizes?" column is
 the only one that affects the template — see "What generalizes" below.
