@@ -362,11 +362,12 @@ mention triggers. Both paths invoke the same Copilot pr-resolve-all flow.
 
 ### Verification (V10)
 
-**Pre-merge constraint**: V10 cannot run before PR #173 is merged. The
-smoke-test PR must use the updated `agent-fix-reviews.yml` delegation
-logic (the one that posts `@copilot follow .github/prompts/pr-resolve-all.md`
-instead of a free-form mention) — but that change lives in PR #173. V10
-is committed to the first dog-food PR after merge.
+**Pre-merge constraint (resolved — PR #173 merged 2026-04-25)**: V10 was
+blocked until PR #173 merged because the smoke-test PR had to use the
+updated `agent-fix-reviews.yml` delegation logic (the one that posts
+`@copilot follow .github/prompts/pr-resolve-all.md` instead of a
+free-form mention) — and that change lived in PR #173 itself. V10 is
+now committed to the first dog-food PR after merge.
 
 Live on a smoke-test PR that introduces a workflow-file issue:
 
@@ -383,11 +384,14 @@ Live on a smoke-test PR that introduces a workflow-file issue:
 5. Confirm the bot-authored thread is now `isResolved=true` and
    auto-merge proceeds.
 
-**V10 FAILS if**: Copilot posts "Done in `<SHA>`" with no Phase 4 table
-(old broken behavior); `phase4-fallback` no-ops when the table is
-present (malformed parse); the bot-authored review thread stays
-`isResolved=false` after `phase4-fallback` runs; auto-merge does not
-proceed after thread resolution.
+**V10 FAILS if** any of the following hold:
+
+- Copilot posts "Done in `<SHA>`" with no Phase 4 table (old broken
+  behavior).
+- `phase4-fallback` no-ops when the table is present (malformed parse).
+- The bot-authored review thread stays `isResolved=false` after
+  `phase4-fallback` runs.
+- Auto-merge does not proceed after thread resolution.
 
 Regression: separately, on a PR that opens with `copilot-relay`
 (no `claude-fix`), the existing flow must still work unchanged.
@@ -403,17 +407,42 @@ Regression: separately, on a PR that opens with `copilot-relay`
    `pr-resolve-all` Phase 2 Step 2 verifies the issue still exists
    before applying any fix. V10 will confirm this assumption.
 
-2. **Phase 4 race on late-arriving delegate commits**: If a delegate's
-   fix commit lands *after* the last Phase 4 cycle ran, no mechanism
-   re-triggers thread resolution on subsequent commits. claude-fix's
-   Phase 4 evaluates the working tree at the moment its run started;
-   `phase4-fallback` only retries `⚠️ Errored` rows from Copilot's
-   Phase 4 comment. Observed on PR #173 itself, where Copilot's
+2. **Phase 4 race on late-arriving delegate commits** (tracked in
+   [#177](https://github.com/mikejmckinney/ai-repo-template/issues/177)):
+   If a delegate's fix commit lands *after* the last Phase 4 cycle ran,
+   no mechanism re-triggers thread resolution on subsequent commits.
+   Two coupled gaps cause this:
+
+   - **claude-fix's Phase 4** evaluates the working tree at the moment
+     its workflow run started. A subsequent push doesn't re-trigger it
+     (no `push` trigger on `agent-fix-reviews.yml` for already-reviewed
+     PRs).
+   - **`phase4-fallback`** only retries `⚠️ Errored` rows from
+     Copilot's most recent Phase 3 Resolution Report. Once a later
+     claude-fix cycle has overwritten the resolution status with its
+     own Phase 4 table (typically marking the still-pending item
+     `⏭️ Skipped — waiting for fix`), the fallback can no longer find
+     the Errored rows to retry.
+
+   The window opens whenever claude-fix Phase 4 N+1 fires *after*
+   Copilot's Phase 4 (consuming the Errored signal) but *before*
+   Copilot's actual fix commit. Observed on PR #173 itself: Copilot's
    ISS-01 fix in `b1d4ebe` (00:42:12Z) landed 8 seconds after
    claude-fix's last Phase 4 cycle (00:42:04Z) and the thread stayed
-   open until manually resolved. Filed as a follow-up issue.
+   open until manually resolved via the GraphQL `resolveReviewThread`
+   mutation. See #177 for the proposed fix (re-trigger
+   `phase4-fallback` on `pull_request.synchronize`).
 
-**Addendum references:** Issue [#170](https://github.com/mikejmckinney/ai-repo-template/issues/170); PR [#169](https://github.com/mikejmckinney/ai-repo-template/pull/169) (the failure mode in production — see [delegation comment](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316786637) and [Copilot's unstructured response](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316791298)).
+**Addendum references:**
+
+- Issue [#170](https://github.com/mikejmckinney/ai-repo-template/issues/170)
+  — the parent fix this addendum documents.
+- Issue [#177](https://github.com/mikejmckinney/ai-repo-template/issues/177)
+  — follow-up tracking the Phase 4 race documented in Risk #2.
+- PR [#169](https://github.com/mikejmckinney/ai-repo-template/pull/169)
+  — the failure mode in production. See the
+  [delegation comment](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316786637)
+  and [Copilot's unstructured response](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316791298).
 
 ## References
 
