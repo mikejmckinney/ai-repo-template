@@ -18,6 +18,14 @@ Inline links in the body below use the original repo's relative paths
 own AGENTS.md / .context/ / scripts/, which is the correct target for
 template-side readers; the references section retains the absolute source URL
 for the original context.
+
+The "Action items" section near the bottom is **historical from the source
+repo** (it references the downstream project's tracking and an as-yet-unwritten
+"ADR-011 for the branch precondition"). Do NOT action those items in this
+template repo. Template-side tracking for the lessons in this postmortem is:
+issue #180 (parent), ADR-012 (explicit workflow preconditions, shipped in
+PR #181), follow-up issue #184 (PR-A.1 review-finding fixes), and the
+sequenced PR-B / PR-C work items enumerated on issue #180.
 -->
 
 # Postmortem-001: Workflow bypass on Phases 2–7

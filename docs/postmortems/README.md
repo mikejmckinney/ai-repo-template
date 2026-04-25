@@ -86,12 +86,19 @@ If your postmortem is missing one of these, the postmortem isn't done.
 - **Rules** (`.context/rules/`) — prescriptive. A postmortem may justify a new rule, but the rule lives there, not here.
 - **Issues** — operational. A postmortem may file an issue for follow-up, but is not itself an issue.
 
-## Downstream-project lessons (future)
+## Downstream-project lessons
 
 The postmortem schema is intentionally project-agnostic so it can also
-capture lessons from projects built *from* this template. The mechanism
-for collecting those lessons doesn't exist yet — see
+capture lessons from projects built *from* this template. The automated
+mechanism for collecting those lessons doesn't exist yet — see
 [issue #150](https://github.com/mikejmckinney/ai-repo-template/issues/150)
-for the planned feedback loop (registry, opt-in, promotion gate). Until
-that mechanism ships, this directory holds postmortems about the
-template itself only.
+for the planned feedback loop (registry, opt-in, promotion gate).
+
+Until that mechanism ships, downstream postmortems may still be **mirrored
+here manually** when (1) the lesson generalizes to every repo built from
+this template, and (2) the same PR ships a concrete follow-up — a new ADR,
+a rule update, or a prompt edit. The provenance header on the mirrored file
+must cite the source repo and PR. `postmortem-001` is the first such
+mirror; it triggered ADR-012. Mirroring without a follow-up is not
+permitted — that's a journal entry, and per "What generalizes" above, a
+postmortem alone changes nothing.
