@@ -330,14 +330,18 @@ the existing `copilot-relay` flow:
 When `agent-fix-reviews.yml` detects a workflow-file change is
 required, it now:
 
-1. Applies the `copilot-relay` label to the PR.
-2. Posts `@copilot follow .github/prompts/pr-resolve-all.md` with the
+1. Posts `@copilot follow .github/prompts/pr-resolve-all.md` with the
    workflow items scoped in the comment body.
-3. Marks the delegated items `🔄 Delegated to Copilot` in its own
+2. Marks the delegated items `🔄 Delegated to Copilot` in its own
    Phase 3 Resolution Report (no change from prior behavior).
 
+Note: The `copilot-relay` label is NOT applied by claude-fix to avoid
+double-dispatching Copilot (the label's `pull_request.labeled` trigger in
+`agent-relay-reviews.yml` would post a second `@copilot follow` comment,
+causing competing resolution runs). The direct comment is sufficient.
+
 Copilot then runs `pr-resolve-all` end-to-end, attempts Phase 4,
-hits FORBIDDEN, marks rows `⚠️ Errored`, and posts its Phase 3 with
+hits FORBIDDEN, marks rows ⚠️ Errored, and posts its Phase 3 with
 the Errored Phase 4 table. `phase4-fallback` fires on that comment
 **unchanged** and retries the mutations under `CLAUDE_PAT`. Threads
 close. Auto-merge proceeds.
@@ -348,12 +352,11 @@ step.
 
 ### Semantic update to `copilot-relay`
 
-`copilot-relay` was originally "Copilot drives end-to-end resolution
-from PR open." It now also means "claude-fix has delegated a
-workflow-file edit mid-cycle and Copilot is finishing the resolution."
-Both forms invoke the same Copilot pr-resolve-all flow, so the gate
-logic in `phase4-fallback` and `copilot-stall-watcher` does not need
-to distinguish them. The label remains the single signal.
+`copilot-relay` continues to mean "Copilot drives end-to-end resolution
+from PR open." Claude-fix delegation (workflow-file edits mid-cycle) now
+routes through a direct `@copilot follow` comment rather than applying
+the label, to avoid double-dispatching Copilot via competing label and
+mention triggers. Both paths invoke the same Copilot pr-resolve-all flow.
 
 ### Verification (V10, planned)
 
@@ -361,8 +364,9 @@ Live on a smoke-test PR that introduces a workflow-file issue:
 
 1. Apply `claude-review` + `claude-fix` (no `copilot-relay`).
 2. Confirm claude-fix's Phase 3 marks the workflow item
-   `🔄 Delegated to Copilot` AND applies `copilot-relay` AND posts the
-   `@copilot follow` comment.
+   `🔄 Delegated to Copilot` AND posts the scoped `@copilot follow`
+   comment (does NOT apply the `copilot-relay` label to avoid
+   double-dispatching).
 3. Confirm Copilot's cloud agent runs `pr-resolve-all`, posts its
    own Phase 1 Index, pushes the workflow fix, posts Phase 3 with
    the Phase 4 table marked `⚠️ Errored`.
@@ -374,12 +378,12 @@ Live on a smoke-test PR that introduces a workflow-file issue:
 Regression: separately, on a PR that opens with `copilot-relay`
 (no `claude-fix`), the existing flow must still work unchanged.
 
-### References
+**Addendum references:** Issue [#170](https://github.com/mikejmckinney/ai-repo-template/issues/170), PR #169 (the failure mode in production).
 
-- Issue [#170](https://github.com/mikejmckinney/ai-repo-template/issues/170).
-- PR #169 (the failure mode in production).
+## References
 
-
+- ADR-007 (adr-007-auto-resolve-review-threads.md) — superseded by
+  this ADR. Body intact for historical context.
 - Issue [#100](https://github.com/mikejmckinney/ai-repo-template/issues/100)
   — primary trigger for this ADR.
 - PR #99 (V3 verification) — primary evidence that Copilot-path Phase 4
