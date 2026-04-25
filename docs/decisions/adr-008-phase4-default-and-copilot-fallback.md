@@ -464,7 +464,7 @@ ID into the existing parse-and-mutate logic via the existing
 `COMMENT_ID` env var. The parsing, fingerprint dedup, and mutation
 logic are reused unchanged.
 
-The synchronize path's job-level `if:` gate filters by either
+Both trigger paths' job-level `if:` gate filter by either
 `copilot-relay` OR `claude-fix` label — those are the only labels that
 signal Copilot might have posted a Phase 4 table on the PR. The
 `claude-fix` gate covers the post-#170 case where claude-fix
