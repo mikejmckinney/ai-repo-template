@@ -49,15 +49,30 @@
 name: Auto-Merge PRs (opt-in via auto-merge label)
 
 on:
-  # Re-evaluate when CI workflow runs complete.
+  # Re-evaluate when CI and automation workflow runs complete.
   # NOTE: check_suite events are NOT fired for GitHub Actions workflows
   # (GitHub suppresses them to prevent recursive loops). workflow_run is
   # the correct trigger for re-evaluating after Actions-based CI finishes.
   # This trigger requires the workflow file to be on the default branch.
-  # IMPORTANT: names below must match the `name:` fields in ci-tests.yml
-  # and lint-and-format.yml — if those are renamed, update here too.
+  #
+  # The three names below must match the `name:` fields in:
+  #   - ci-tests.yml              → "CI Tests"
+  #   - lint-and-format.yml       → "Lint and Format"
+  #   - agent-fix-reviews.yml     → "Auto-Fix Reviews (Claude)"
+  #
+  # If ANY of those names are changed, update here too — an exact string
+  # match is required for `workflow_run` to fire. Without the match,
+  # auto-merge silently stops re-evaluating on that workflow's completion
+  # (the specific failure mode that motivated #175: `Auto-Fix Reviews
+  # (Claude)` was omitted from this list, so when it finished after an
+  # auto-merge run had already deferred on its pending state, no event
+  # ever re-fired auto-merge and the PR stalled indefinitely). See #175
+  # for the full repro.
   workflow_run:
-    workflows: ["CI Tests", "Lint and Format"]
+    workflows:
+      - "CI Tests"
+      - "Lint and Format"
+      - "Auto-Fix Reviews (Claude)"
     types: [completed]
 
   # Re-evaluate when reviews change
