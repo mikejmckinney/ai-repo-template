@@ -311,14 +311,18 @@ path went undocumented and became broken in practice:
 **(c) Claude-fix runs that delegate a workflow-file edit to Copilot.**
 The Claude GitHub App token cannot push to `.github/workflows/**`.
 The pre-#170 implementation handled this by posting a free-form
-`@copilot The following review item(s) require edits…` comment.
+`@copilot The following review item(s) require edits…` comment
+(the prior delegation instruction lived in `agent-fix-reviews.yml`'s
+workflow-file block; replaced in PR #173).
 Copilot's cloud agent picked up the mention, applied the edit,
 pushed, and posted a "Done in `<SHA>`" comment with no Phase 1 / 3 / 4
 structure. `phase4-fallback` only parses Copilot's Phase 3 Resolution
 Report for the Phase 4 table — without that table, the fallback
 no-ops, the bot-authored thread that motivated the delegation stays
 open, and auto-merge stalls indefinitely. Observed end-to-end on PR
-#169 (the dog-food PR for #168).
+#169 (the dog-food PR for #168): see the
+[claude-fix delegation comment](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316786637)
+and [Copilot's unstructured "Done in" response](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316791298).
 
 The fix is **not** to broaden the fallback's `if:` gate (the fallback
 parses the triggering comment and there is no Phase 4 table to parse
@@ -342,9 +346,11 @@ the Errored Phase 4 table. `phase4-fallback` fires on that comment
 **unchanged** and retries the mutations under `CLAUDE_PAT`. Threads
 close. Auto-merge proceeds.
 
-Workflow YAML for `phase4-fallback` is unchanged. The diff for #170
-lives entirely in `agent-fix-reviews.yml`'s prompt — the delegation
-step.
+The `phase4-fallback` job in `agent-relay-reviews.yml` requires no
+changes — it already parses the Phase 4 table from any Copilot
+comment. The diff for #170 lives entirely in `agent-fix-reviews.yml`'s
+workflow-file delegation block (the Claude prompt, not the workflow
+YAML structure).
 
 ### Semantic update to `copilot-relay`
 
@@ -355,7 +361,13 @@ Both forms invoke the same Copilot pr-resolve-all flow, so the gate
 logic in `phase4-fallback` and `copilot-stall-watcher` does not need
 to distinguish them. The label remains the single signal.
 
-### Verification (V10, planned)
+### Verification (V10)
+
+**Pre-merge constraint**: V10 cannot run before this PR is merged. The
+smoke-test PR must use the updated `agent-fix-reviews.yml` delegation
+logic (the one that applies `copilot-relay` and posts `@copilot follow`
+instead of a free-form mention) — but that change lives in this PR.
+Committing to V10 on the first dog-food PR after merge.
 
 Live on a smoke-test PR that introduces a workflow-file issue:
 
@@ -371,14 +383,46 @@ Live on a smoke-test PR that introduces a workflow-file issue:
 5. Confirm the bot-authored thread is now `isResolved=true` and
    auto-merge proceeds.
 
+**V10 FAILS if**: Copilot posts "Done in `<SHA>`" with no Phase 4 table
+(old broken behavior); `phase4-fallback` no-ops when the table is
+present (malformed parse); the bot-authored review thread stays
+`isResolved=false` after `phase4-fallback` runs; auto-merge does not
+proceed after thread resolution.
+
 Regression: separately, on a PR that opens with `copilot-relay`
 (no `claude-fix`), the existing flow must still work unchanged.
+
+### Risks and known limitations
+
+1. **Copilot's Phase 1 and already-resolved items**: The delegation
+   comment scopes workflow items explicitly and asks Copilot to mark
+   Claude's already-pushed fixes as `✅ Already resolved` in its own
+   Phase 1 scan. This is a behavioral assumption, not a verified
+   contract. If Copilot re-fixes items Claude already resolved, the
+   cost is duplicated API calls and commits, not a correctness issue —
+   `pr-resolve-all` Phase 2 Step 2 verifies the issue still exists
+   before applying any fix. V10 will confirm this assumption.
+
+2. **Concurrent relay and claude-fix workflows**: When
+   `agent-fix-reviews.yml` applies the `copilot-relay` label mid-cycle,
+   it fires a `pull_request.labeled` event that triggers the `relay` job
+   in `agent-relay-reviews.yml` (`agent-relay-reviews.yml` lines 113–115
+   — no `claude-fix` exclusion gate). The two workflows run on different
+   concurrency groups (`auto-fix-<N>` vs `relay-reviews-<N>`) and do
+   not cancel each other. In practice the 180s settle sleep in the relay
+   job (`agent-relay-reviews.yml` line 205) means `agent-fix-reviews.yml`'s
+   own `@copilot follow` comment lands and Copilot begins work before
+   the relay runs. By the time the relay fires, all threads may already
+   be resolved — the relay's dedup gate (zero actionable bot comments)
+   then skips silently. If Copilot is still working when the relay fires,
+   it posts a second `@copilot` mention — duplicate work but idempotent
+   (everything already fixed becomes `✅ Already resolved`). No
+   correctness issue.
 
 ### References
 
 - Issue [#170](https://github.com/mikejmckinney/ai-repo-template/issues/170).
-- PR #169 (the failure mode in production).
-
+- PR [#169](https://github.com/mikejmckinney/ai-repo-template/pull/169) (the failure mode in production — see [delegation comment](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316786637) and [Copilot's unstructured response](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316791298)).
 
 - Issue [#100](https://github.com/mikejmckinney/ai-repo-template/issues/100)
   — primary trigger for this ADR.
