@@ -301,10 +301,85 @@ documentation tax (Label-application gotcha note in
       fixable rather than emitting `Needs clarification` on a bot
       thread.*
 
-## References
+## Addendum (2026-04-25, issue #170): Claude-fix delegations route through `copilot-relay`
 
-- ADR-007 (`adr-007-auto-resolve-review-threads.md`) — superseded by
-  this ADR. Body intact for historical context.
+ADR-008 originally covered two trigger paths into the
+`phase4-fallback` retry: (a) PRs labeled `copilot-relay` from open,
+and (b) Claude-fix runs that complete without delegating. A third
+path went undocumented and became broken in practice:
+
+**(c) Claude-fix runs that delegate a workflow-file edit to Copilot.**
+The Claude GitHub App token cannot push to `.github/workflows/**`.
+The pre-#170 implementation handled this by posting a free-form
+`@copilot The following review item(s) require edits…` comment.
+Copilot's cloud agent picked up the mention, applied the edit,
+pushed, and posted a "Done in `<SHA>`" comment with no Phase 1 / 3 / 4
+structure. `phase4-fallback` only parses Copilot's Phase 3 Resolution
+Report for the Phase 4 table — without that table, the fallback
+no-ops, the bot-authored thread that motivated the delegation stays
+open, and auto-merge stalls indefinitely. Observed end-to-end on PR
+#169 (the dog-food PR for #168).
+
+The fix is **not** to broaden the fallback's `if:` gate (the fallback
+parses the triggering comment and there is no Phase 4 table to parse
+on a "Done in `<SHA>`" comment), and **not** to give Copilot extra
+permissions (we cannot inject secrets into GitHub's hosted
+SWE-agent environment). The fix is to route the delegation through
+the existing `copilot-relay` flow:
+
+When `agent-fix-reviews.yml` detects a workflow-file change is
+required, it now:
+
+1. Applies the `copilot-relay` label to the PR.
+2. Posts `@copilot follow .github/prompts/pr-resolve-all.md` with the
+   workflow items scoped in the comment body.
+3. Marks the delegated items `🔄 Delegated to Copilot` in its own
+   Phase 3 Resolution Report (no change from prior behavior).
+
+Copilot then runs `pr-resolve-all` end-to-end, attempts Phase 4,
+hits FORBIDDEN, marks rows `⚠️ Errored`, and posts its Phase 3 with
+the Errored Phase 4 table. `phase4-fallback` fires on that comment
+**unchanged** and retries the mutations under `CLAUDE_PAT`. Threads
+close. Auto-merge proceeds.
+
+Workflow YAML for `phase4-fallback` is unchanged. The diff for #170
+lives entirely in `agent-fix-reviews.yml`'s prompt — the delegation
+step.
+
+### Semantic update to `copilot-relay`
+
+`copilot-relay` was originally "Copilot drives end-to-end resolution
+from PR open." It now also means "claude-fix has delegated a
+workflow-file edit mid-cycle and Copilot is finishing the resolution."
+Both forms invoke the same Copilot pr-resolve-all flow, so the gate
+logic in `phase4-fallback` and `copilot-stall-watcher` does not need
+to distinguish them. The label remains the single signal.
+
+### Verification (V10, planned)
+
+Live on a smoke-test PR that introduces a workflow-file issue:
+
+1. Apply `claude-review` + `claude-fix` (no `copilot-relay`).
+2. Confirm claude-fix's Phase 3 marks the workflow item
+   `🔄 Delegated to Copilot` AND applies `copilot-relay` AND posts the
+   `@copilot follow` comment.
+3. Confirm Copilot's cloud agent runs `pr-resolve-all`, posts its
+   own Phase 1 Index, pushes the workflow fix, posts Phase 3 with
+   the Phase 4 table marked `⚠️ Errored`.
+4. Confirm `phase4-fallback` fires on Copilot's Phase 3 comment,
+   audit-replies, calls `resolveReviewThread`, succeeds.
+5. Confirm the bot-authored thread is now `isResolved=true` and
+   auto-merge proceeds.
+
+Regression: separately, on a PR that opens with `copilot-relay`
+(no `claude-fix`), the existing flow must still work unchanged.
+
+### References
+
+- Issue [#170](https://github.com/mikejmckinney/ai-repo-template/issues/170).
+- PR #169 (the failure mode in production).
+
+
 - Issue [#100](https://github.com/mikejmckinney/ai-repo-template/issues/100)
   — primary trigger for this ADR.
 - PR #99 (V3 verification) — primary evidence that Copilot-path Phase 4
