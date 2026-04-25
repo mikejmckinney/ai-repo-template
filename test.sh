@@ -327,8 +327,7 @@ fi
 # instructed (by .github/ISSUE_TEMPLATE/agent_init.md) to preserve them.
 # Header matching is case-insensitive: `## Limitations` and `## limitations`
 # both pass. The assertion is that the section exists, not that contributors
-# memorized the canonical casing. See postmortem-001 + ADR-013 + the
-# "Cross-check guards (CI)" section in docs/guides/agent-best-practices.md.
+# memorized the canonical casing. See postmortem-001 + ADR-013.
 if grep -qi "^## Limitations" README.md 2>/dev/null; then
     pass "README.md has Limitations section"
 else

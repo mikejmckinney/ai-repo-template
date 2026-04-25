@@ -43,41 +43,19 @@ Workflow-validation / smoke-test PRs (the kind we ran for #114, #116) exist to *
 
 If you forget the label and a smoke PR auto-merges or gets a Claude fix during the test, that test is contaminated — close it, file a new one, label correctly.
 
-## CSV parsing in shell — avoid `awk -F,`
-
-**Rule**: any shell guard that parses a CSV with `awk -F,` (or `cut -d,`, or `IFS=,`) will silently miss rows whose cells contain commas. Quoted commas, embedded commas, multi-value cells — all of them. The guard appears to work because the *count* of rows looks plausible; the failure mode is missing rows, not crashing rows. Use Python `csv.DictReader` (heredoc) instead.
-
-**Concrete example** (downstream postmortem-001): a `scripts/check-ssp.sh` cross-check used `awk -F,` over `controls/nist-800-171-mapping.csv` to assert every control ID appeared in `ssp/SSP.md`. Two controls (3.1.1 and 3.13.1) had cells containing commas, so `awk` parsed them as the wrong column entirely and never compared them. The drift went undetected for weeks because the script reported PASS.
-
-**Remediation pattern**:
-
-```bash
-python3 - <<'PY'
-import csv, sys
-with open("controls/nist-800-171-mapping.csv") as f:
-    for row in csv.DictReader(f):
-        # row["control_id"] is parsed correctly even when other cells contain commas
-        ...
-PY
-```
-
-If shell-only is a hard requirement (no Python available), use a CSV-aware tool like `xsv` or `mlr --csv` rather than field splitters. Plain `awk -F,` over user-authored CSVs is a latent bug, not a style preference.
-
 ## Cross-check guards (CI)
 
-**Rule**: if your PR introduces a generator (or hand-edited artifact) that shares an invariant with another artifact, the cross-check guard ships in **the same PR as the second generator that creates the dependency** — not bolted on later when the drift is noticed.
+**Rule**: when two artifacts in the same repo encode a shared invariant — the same set of identifiers, route names, env-var names, schema fields, etc. — the cross-check guard ships in **the same PR as the second artifact**, not bolted on later when drift is noticed.
 
-The failure mode is structural: artifact A and artifact B both encode the same set (control IDs, route names, env-var names, schema fields). Each is edited by a different agent or workflow. Without a guard that asserts `set(A) == set(B)`, drift is invisible until something breaks downstream — and by then it's a postmortem, not a code review.
-
-**Concrete example** (downstream postmortem-001): `controls/nist-800-171-mapping.csv` and `ssp/SSP.md` both list NIST 800-171 control IDs. They were created in separate PRs, weeks apart. No guard asserted the two lists matched. Mappings drifted. The remediation was to add `scripts/check-ssp.sh` — but that script then shipped with the `awk -F,` bug above (see previous section), so the drift continued anyway. **Two generalizable lessons in one incident**: ship the guard with the second artifact, *and* parse the CSV correctly.
+The failure mode is structural: each artifact is edited by a different agent or workflow, and without a guard that asserts `set(A) == set(B)`, drift stays invisible until something downstream breaks. By then it's a postmortem, not a code review.
 
 **Sequencing rule**:
 
-1. PR adds artifact A → no guard needed yet (nothing to cross-check against).
-2. PR adds artifact B that shares an invariant with A → the guard ships **in this PR**, in the same commit set, before merge. Reviewers should block on a missing guard.
-3. PR adds artifact C that shares an invariant with both → extend the existing guard, don't add a parallel one.
+1. PR adds artifact A → no guard needed yet.
+2. PR adds artifact B that shares an invariant with A → the guard ships **in this PR**, before merge. Reviewers should block on a missing guard.
+3. PR adds artifact C that shares the same invariant → extend the existing guard, don't add a parallel one.
 
-**Where the guard lives**: prefer a shell or Python script under `scripts/` that runs in CI (`.github/workflows/`). Don't bury cross-check logic inside one of the generators — the guard must be runnable independently to be debuggable.
+**Where the guard lives**: a standalone script under `scripts/` (any language appropriate to the repo) wired into CI. Don't bury cross-check logic inside one of the generators — the guard must be runnable independently to be debuggable. When parsing structured data formats (CSV, YAML, etc.), use a format-aware parser rather than field-splitting with `awk`/`cut`/`IFS` — silent miss-parses defeat the guard.
 
 ## Token Limits and Context Management
 
