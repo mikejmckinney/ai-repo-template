@@ -444,6 +444,77 @@ Regression: separately, on a PR that opens with `copilot-relay`
   [delegation comment](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316786637)
   and [Copilot's unstructured response](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316791298).
 
+## Addendum (2026-04-25, issue #177): `phase4-fallback` self-triggers on push
+
+The first addendum (Risk #2) noted that when a delegate's fix commit
+lands *after* the last Phase 4 cycle ran, no mechanism re-triggers
+thread resolution on subsequent commits. Concretely: on PR #173,
+Copilot's ISS-01 fix in `b1d4ebe` (00:42:12Z) landed 8 seconds after
+claude-fix's last Phase 4 cycle (00:42:04Z), and the bot-authored
+review thread stayed open until manually resolved.
+
+This addendum documents the fix shipped in #177:
+
+`phase4-fallback` now triggers on `pull_request.synchronize` in addition
+to its existing `issue_comment` trigger. On the synchronize path, a new
+"Discover triggering Copilot Phase 3 comment" step queries the PR's
+comments for the most recent Copilot-authored comment containing the
+canonical `### Phase 4 — Thread auto-resolution` header, and feeds its
+ID into the existing parse-and-mutate logic via the existing
+`COMMENT_ID` env var. The parsing, fingerprint dedup, and mutation
+logic are reused unchanged.
+
+The synchronize path's job-level `if:` gate filters by either
+`copilot-relay` OR `claude-fix` label — those are the only labels that
+signal Copilot might have posted a Phase 4 table on the PR. The
+`claude-fix` gate covers the post-#170 case where claude-fix
+delegations to Copilot intentionally do NOT apply `copilot-relay` (per
+ISS-04 in PR #173) yet still produce a Copilot Phase 3 comment with
+`⚠️ Errored` rows.
+
+Re-runs are idempotent: the existing fingerprint dedup (sha256 of
+sorted Errored Thread IDs) short-circuits when the same set has
+already been processed. Cost: ~30s of runner time per push to a
+qualifying PR; bounded.
+
+Rejected alternatives:
+
+- **Option A** (new dedicated workflow file): adds a moving piece
+  without reusing the tested parser.
+- **Option C** (have claude-fix consult Copilot's Phase 4 table): only
+  fixes the claude-fix→Copilot path; leaves the symmetric pure-relay
+  path with the same structural gap; couples claude-fix more tightly
+  to Copilot's output format.
+
+### Verification (V12)
+
+V12 dog-foods on PR #179 (the PR that ships this fix). The PR will
+likely trigger claude-fix (workflow-file edit), which will likely
+delegate to Copilot. When Copilot pushes its fix commit *after*
+claude-fix's last Phase 4 cycle ran, the new synchronize trigger fires,
+discovers Copilot's Phase 3 comment, parses the `⚠️ Errored` rows, and
+resolves the orphaned thread under `CLAUDE_PAT`. Auto-merge proceeds
+without manual thread resolution.
+
+**V12 FAILS if** any of the following hold:
+
+- A delegate's commit lands after the last Phase 4 cycle, the
+  synchronize trigger does not fire, and the orphan thread persists.
+- The synchronize trigger fires but the discovery step fails to find
+  the Copilot Phase 3 comment.
+- The fingerprint dedup mis-fires and re-runs spam the PR with
+  duplicate fallback comments.
+
+**Addendum references:**
+
+- Issue [#177](https://github.com/mikejmckinney/ai-repo-template/issues/177)
+  — the bug this addendum closes.
+- PR [#173](https://github.com/mikejmckinney/ai-repo-template/pull/173)
+  — the dog-food where the race surfaced; ISS-01's thread had to be
+  manually resolved.
+- `.github/workflows/agent-relay-reviews.yml` — `phase4-fallback` job
+  (the trigger and discovery step changes).
+
 ## References
 
 - ADR-007 (adr-007-auto-resolve-review-threads.md) — superseded by
