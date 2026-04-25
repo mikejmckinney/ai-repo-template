@@ -301,9 +301,88 @@ documentation tax (Label-application gotcha note in
       fixable rather than emitting `Needs clarification` on a bot
       thread.*
 
+## Addendum (2026-04-25, issue #170): Claude-fix delegations route through `copilot-relay`
+
+ADR-008 originally covered two trigger paths into the
+`phase4-fallback` retry: (a) PRs labeled `copilot-relay` from open,
+and (b) Claude-fix runs that complete without delegating. A third
+path went undocumented and became broken in practice:
+
+**(c) Claude-fix runs that delegate a workflow-file edit to Copilot.**
+The Claude GitHub App token cannot push to `.github/workflows/**`.
+The pre-#170 implementation handled this by posting a free-form
+`@copilot The following review item(s) require edits…` comment.
+Copilot's cloud agent picked up the mention, applied the edit,
+pushed, and posted a "Done in `<SHA>`" comment with no Phase 1 / 3 / 4
+structure. `phase4-fallback` only parses Copilot's Phase 3 Resolution
+Report for the Phase 4 table — without that table, the fallback
+no-ops, the bot-authored thread that motivated the delegation stays
+open, and auto-merge stalls indefinitely. Observed end-to-end on PR
+#169 (the dog-food PR for #168).
+
+The fix is **not** to broaden the fallback's `if:` gate (the fallback
+parses the triggering comment and there is no Phase 4 table to parse
+on a "Done in `<SHA>`" comment), and **not** to give Copilot extra
+permissions (we cannot inject secrets into GitHub's hosted
+SWE-agent environment). The fix is to route the delegation through
+the existing `copilot-relay` flow:
+
+When `agent-fix-reviews.yml` detects a workflow-file change is
+required, it now:
+
+1. Posts `@copilot follow .github/prompts/pr-resolve-all.md` with the
+   workflow items scoped in the comment body.
+2. Marks the delegated items `🔄 Delegated to Copilot` in its own
+   Phase 3 Resolution Report (no change from prior behavior).
+
+Note: The `copilot-relay` label is NOT applied by claude-fix to avoid
+double-dispatching Copilot (the label's `pull_request.labeled` trigger in
+`agent-relay-reviews.yml` would post a second `@copilot follow` comment,
+causing competing resolution runs). The direct comment is sufficient.
+
+Copilot then runs `pr-resolve-all` end-to-end, attempts Phase 4,
+hits FORBIDDEN, marks rows ⚠️ Errored, and posts its Phase 3 with
+the Errored Phase 4 table. `phase4-fallback` fires on that comment
+**unchanged** and retries the mutations under `CLAUDE_PAT`. Threads
+close. Auto-merge proceeds.
+
+Workflow YAML for `phase4-fallback` is unchanged. The diff for #170
+lives entirely in `agent-fix-reviews.yml`'s prompt — the delegation
+step.
+
+### Semantic update to `copilot-relay`
+
+`copilot-relay` continues to mean "Copilot drives end-to-end resolution
+from PR open." Claude-fix delegation (workflow-file edits mid-cycle) now
+routes through a direct `@copilot follow` comment rather than applying
+the label, to avoid double-dispatching Copilot via competing label and
+mention triggers. Both paths invoke the same Copilot pr-resolve-all flow.
+
+### Verification (V10, planned)
+
+Live on a smoke-test PR that introduces a workflow-file issue:
+
+1. Apply `claude-review` + `claude-fix` (no `copilot-relay`).
+2. Confirm claude-fix's Phase 3 marks the workflow item
+   `🔄 Delegated to Copilot` AND posts the scoped `@copilot follow`
+   comment (does NOT apply the `copilot-relay` label to avoid
+   double-dispatching).
+3. Confirm Copilot's cloud agent runs `pr-resolve-all`, posts its
+   own Phase 1 Index, pushes the workflow fix, posts Phase 3 with
+   the Phase 4 table marked `⚠️ Errored`.
+4. Confirm `phase4-fallback` fires on Copilot's Phase 3 comment,
+   audit-replies, calls `resolveReviewThread`, succeeds.
+5. Confirm the bot-authored thread is now `isResolved=true` and
+   auto-merge proceeds.
+
+Regression: separately, on a PR that opens with `copilot-relay`
+(no `claude-fix`), the existing flow must still work unchanged.
+
+**Addendum references:** Issue [#170](https://github.com/mikejmckinney/ai-repo-template/issues/170), PR #169 (the failure mode in production).
+
 ## References
 
-- ADR-007 (`adr-007-auto-resolve-review-threads.md`) — superseded by
+- ADR-007 (adr-007-auto-resolve-review-threads.md) — superseded by
   this ADR. Body intact for historical context.
 - Issue [#100](https://github.com/mikejmckinney/ai-repo-template/issues/100)
   — primary trigger for this ADR.

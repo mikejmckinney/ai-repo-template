@@ -16,13 +16,16 @@
 #   Held to claude-sonnet-4-5 to keep the API cost predictable
 #   (~$1–3 per PR for resolution, vs $3–10+ on Opus).
 #
-# Workflow file edits are delegated to Copilot:
+# Workflow file edits are delegated to Copilot via copilot-relay (issue #170):
 #   The Claude GitHub App token cannot push changes to files under
 #   `.github/workflows/**` (GitHub blocks workflow edits from app tokens
 #   for security). When the review feedback requires touching a workflow
-#   file, Claude is instructed to leave a structured `@copilot` comment
-#   on the PR describing the exact change instead of attempting the edit.
-#   Copilot's cloud agent will then pick it up.
+#   file, Claude is instructed to apply the `copilot-relay` label and
+#   post `@copilot follow .github/prompts/pr-resolve-all.md` so Copilot's
+#   cloud agent runs the full resolution flow (Phase 1–4). This routes
+#   through the existing relay → pr-resolve-all → phase4-fallback chain
+#   so bot-authored review threads get resolved (under CLAUDE_PAT) once
+#   Copilot's Phase 4 mutations FORBIDDEN-fail. See ADR-008 and #170.
 #
 # Trigger logic:
 #   Fires when a review is submitted on a same-repo PR that carries the
@@ -410,20 +413,42 @@ jobs:
             - Commit with message: "fix: resolve review comments (cycle ${{ steps.budget.outputs.cycle }})"
             - Push to the existing branch. Do NOT create a new PR.
 
-            Workflow-file changes (IMPORTANT):
+            Workflow-file changes (IMPORTANT — see issue #170):
             - The GitHub App token used here cannot push edits to files under
               `.github/workflows/**`. Do NOT attempt to edit those files yourself.
-            - If any review item requires a workflow change, instead post a single
-              PR comment of the form:
+            - If any review item requires a workflow change, delegate those
+              specific workflow-file items to Copilot (which CAN push workflow
+              files) via a direct @copilot follow comment. Do NOT apply the
+              `copilot-relay` label — the label triggers agent-relay-reviews.yml
+              which would post a second @copilot follow comment, double-dispatching
+              Copilot and producing competing resolution runs. Continue resolving
+              every non-workflow item yourself in this cycle.
 
-                @copilot The following review item(s) require edits under
-                `.github/workflows/` which I cannot push from the Claude app token.
-                Please address them and push to this branch:
+              1. Post a single PR comment of the form:
 
-                - **<file>** (line N, reviewer): <verbatim quote of the request>
-                  Suggested change: <concise description of the fix>
+                   @copilot follow .github/prompts/pr-resolve-all.md
 
-              Group all workflow-file items into ONE such comment. Then continue
-              resolving every other (non-workflow) review item normally and include
-              the delegated items in your resolution report under a
-              "Delegated to Copilot" section so the audit trail is complete.
+                   Scope: address the workflow-file item(s) listed below (and any
+                   other unresolved review items you discover during your own
+                   Phase 1 scan). Items I already resolved in this cycle's commits
+                   should be marked `✅ Already resolved` in your Phase 1 index.
+
+                   Workflow-file items I could not push:
+                   - **<file>** (line N, reviewer): <verbatim quote of the request>
+                     Suggested change: <concise description of the fix>
+
+              2. In your own Phase 3 Resolution Report, mark each delegated item
+                 `🔄 Delegated to Copilot` with a link to the `@copilot follow`
+                 comment.
+
+            Why use `@copilot follow .github/prompts/pr-resolve-all.md` instead
+            of a free-form @copilot mention (issue #170): Copilot's cloud agent
+            only emits structured Phase 3 / Phase 4 output when it follows
+            pr-resolve-all.md. Without that structure, the `phase4-fallback` job
+            in agent-relay-reviews.yml cannot retry the `resolveReviewThread`
+            mutations Copilot's sandbox token cannot make (FORBIDDEN — the token
+            lacks the pull-requests: write permission scope),
+            so bot-authored review threads stay open and auto-merge stalls.
+            The direct @copilot follow comment triggers the same Copilot
+            pr-resolve-all → phase4-fallback → resolveReviewThread chain without
+            applying the `copilot-relay` label (which would cause double-dispatch).
