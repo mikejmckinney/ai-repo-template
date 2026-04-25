@@ -24,6 +24,7 @@ Agents must reason critically rather than agree by default. The bar is "objectiv
 - **Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs. If a complete answer genuinely requires length, use multiple parts or multiple responses rather than cutting corners.
 
 ## Work style
+- **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: `feature/<role>-<task-id>` is defined in `docs/guides/multi-agent-coordination.md` §"Branch-Per-Role Model"; the `fix/<issue>-<slug>` form is shown by example in `.context/state/coordination.md` (no formal definition — follow the pattern). See ADR-012 for why this rule needs explicit statement.
 - **Small, reversible changes** beat rewrites. Prefer the minimal diff that fully solves the task.
 - **No drive-by refactors.** If you spot something unrelated worth fixing, file a follow-up task instead of bundling it in.
 - **Surface prerequisites and edge cases** when explaining a plan or how-to: required tools, dependencies, non-obvious failure modes, safety issues. Skip boilerplate warnings on trivial work.
@@ -168,12 +169,18 @@ conditions and will be unified in #155.
 Doc-sync triggers (which files must update together) live in a single source of truth: **`.context/rules/process_doc_maintenance.md`**. Read it before opening a PR; Judge enforces it at diff-gate.
 
 ### Session-state cadence
-Keep agent working memory current so the next session (or next role) can resume cleanly:
+Keep agent working memory current so the next session (or next role) can resume cleanly. **Working state must live in `.context/state/`** — the LLM tool's in-conversation todo list and `/memories/session/` are agent-private scratch surfaces invisible to any other session, and are never substitutes for the checked-in files below. If your only record of in-progress work is in scratch surfaces, that work is lost the moment the session ends.
 
 - **`.context/state/_active.md`** — rewrite (don't append) at every task boundary. Max ~20 lines. Schema: Active Task, File, Role, Blockers, Next 1–3 actions. Schema and examples in `.context/state/README.md`.
+  - **What counts as a "task boundary"** for prompt-driven work: each `.github/prompts/NN-*.md` file is its own boundary. If you process prompts 02 → 03 → 04 in one session, that is *three* boundaries — rewrite `_active.md` between each, even if the same agent continues. Treating multiple prompts as one continuous task is a known failure mode (see ADR-012 + `docs/postmortems/postmortem-001-workflow-bypass.md`).
 - **`.context/state/task_<slug>.md`** — create from `.context/state/task_template.md` at task start. Delete (or move to `.context/sessions/`) at task end.
-- **Handoff trigger** — when a single agent conversation exceeds ~30 turns OR before any handoff to a different role/agent, write a structured handoff to `.context/state/handoff_<slug>.md` (template: `.context/state/handoff_template.md`) and start a fresh session. The handoff is the baton; the next session reads it instead of replaying the full chat.
-- **Close-out (post-merge)** — the role that led the work updates `.context/sessions/latest_summary.md` with a 3–5 line entry: what shipped, what was harder than expected, what generalizes (→ open a follow-up to update rules/ADRs/guides if applicable). PM verifies this exists before marking the task done in `coordination.md`.
+- **Handoff trigger** — write a structured handoff to `.context/state/handoff_<slug>.md` (template: `.context/state/handoff_template.md`) and start a fresh session whenever ANY of the following fires:
+  - A single agent conversation exceeds ~30 turns.
+  - You're about to hand off to a different role/agent.
+  - **The LLM runtime auto-summarizes your conversation mid-flight.** This is the loudest possible signal that you've blown past the ~30-turn threshold; treat it as an explicit trigger and write the handoff *before* responding to the next user message, not after.
+
+  The handoff is the baton; the next session reads it instead of replaying the full chat.
+- **Close-out (at session end OR task close-out, whichever comes first)** — the role that led the work updates `.context/sessions/latest_summary.md` with a 3–5 line entry: what shipped, what was harder than expected, what generalizes (→ open a follow-up to update rules/ADRs/guides if applicable). Do NOT defer this until merge — write it now even if the PR isn't merged yet, and amend later if the merge changes the outcome. The spirit of the rule is "leave the next session a baton," which applies at session-end regardless of merge status. PM verifies this entry exists before marking the task done in `coordination.md`.
 
 ## Testing requirements
 - Follow the test pyramid: many unit tests, fewer integration tests, minimal E2E tests.

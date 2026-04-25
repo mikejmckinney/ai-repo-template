@@ -13,7 +13,7 @@ happened was Z." Without the second half, the same mistakes recur.
 
 | Postmortem | Title | Date | Generalizes? |
 |---|---|---|---|
-| _(none yet)_ | | | |
+| [postmortem-001](./postmortem-001-workflow-bypass.md) | Workflow bypass on Phases 2–7 (downstream `cmmc-level2-aws-enclave-reference2`) | 2026-04-24 | Yes — triggered [ADR-012](../decisions/adr-012-explicit-workflow-preconditions.md) |
 
 When you add a new postmortem, add a row above. The "Generalizes?" column is
 the only one that affects the template — see "What generalizes" below.
@@ -86,12 +86,22 @@ If your postmortem is missing one of these, the postmortem isn't done.
 - **Rules** (`.context/rules/`) — prescriptive. A postmortem may justify a new rule, but the rule lives there, not here.
 - **Issues** — operational. A postmortem may file an issue for follow-up, but is not itself an issue.
 
-## Downstream-project lessons (future)
+## Downstream-project lessons
 
 The postmortem schema is intentionally project-agnostic so it can also
-capture lessons from projects built *from* this template. The mechanism
-for collecting those lessons doesn't exist yet — see
+capture lessons from projects built *from* this template. The automated
+mechanism for collecting those lessons doesn't exist yet — see
 [issue #150](https://github.com/mikejmckinney/ai-repo-template/issues/150)
-for the planned feedback loop (registry, opt-in, promotion gate). Until
-that mechanism ships, this directory holds postmortems about the
-template itself only.
+for the planned feedback loop (registry, opt-in, promotion gate).
+
+Until that mechanism ships, downstream postmortems may still be **mirrored
+here manually** when both:
+
+1. The lesson generalizes to every repo built from this template, and
+2. The same PR ships a concrete template-side follow-up — a new ADR, a
+   rule update, or a prompt edit.
+
+The provenance header on the mirrored file must cite the source repo and
+the PR that mirrored it. `postmortem-001` is the first such mirror; it
+triggered ADR-012. Mirroring without a follow-up is not permitted — per
+"What generalizes" above, a postmortem alone changes nothing.
