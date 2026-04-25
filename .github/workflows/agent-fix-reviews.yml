@@ -441,13 +441,14 @@ jobs:
                  `🔄 Delegated to Copilot` with a link to the `@copilot follow`
                  comment.
 
-            Why route through `copilot-relay` instead of a free-form @copilot
-            mention (issue #170): Copilot's cloud agent only emits structured
-            Phase 3 / Phase 4 output when it follows pr-resolve-all.md. Without
-            that structure, the `phase4-fallback` job in agent-relay-reviews.yml
-            cannot retry the `resolveReviewThread` mutations Copilot's sandbox
-            token cannot make (FORBIDDEN — the token lacks the
-            pull-requests:write permission scope),
+            Why use `@copilot follow .github/prompts/pr-resolve-all.md` instead
+            of a free-form @copilot mention (issue #170): Copilot's cloud agent
+            only emits structured Phase 3 / Phase 4 output when it follows
+            pr-resolve-all.md. Without that structure, the `phase4-fallback` job
+            in agent-relay-reviews.yml cannot retry the `resolveReviewThread`
+            mutations Copilot's sandbox token cannot make (FORBIDDEN — the token
+            lacks the pull-requests:write permission scope),
             so bot-authored review threads stay open and auto-merge stalls.
-            Routing through `copilot-relay` reuses the existing relay → Copilot
-            pr-resolve-all → phase4-fallback → resolveReviewThread chain.
+            The direct @copilot follow comment triggers the same Copilot
+            pr-resolve-all → phase4-fallback → resolveReviewThread chain without
+            applying the `copilot-relay` label (which would cause double-dispatch).
