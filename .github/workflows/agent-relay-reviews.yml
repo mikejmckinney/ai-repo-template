@@ -642,7 +642,7 @@ jobs:
           # filter mirrors the issue_comment-path allow-list.
           # --paginate with --slurp collects all pages into a single array
           # of arrays before jq processing, preventing multi-line output
-          # when there are multiple comment pages; `.[][][]` flattens them.
+          # when there are multiple comment pages; `.[][]` flattens them.
           # `last` returns the most recent matching comment (REST issues
           # comments endpoint returns oldest-first by default).
           cid=$(gh api "/repos/${REPO}/issues/${PR_NUMBER}/comments" --paginate --slurp \
