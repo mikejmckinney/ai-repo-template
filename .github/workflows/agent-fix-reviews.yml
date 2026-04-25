@@ -416,17 +416,15 @@ jobs:
             Workflow-file changes (IMPORTANT — see issue #170):
             - The GitHub App token used here cannot push edits to files under
               `.github/workflows/**`. Do NOT attempt to edit those files yourself.
-            - If any review item requires a workflow change, hand the entire
-              resolution off to Copilot (which CAN push workflow files) by
-              routing the PR through the existing `copilot-relay` flow:
+            - If any review item requires a workflow change, delegate those
+              specific workflow-file items to Copilot (which CAN push workflow
+              files) via a direct @copilot follow comment. Do NOT apply the
+              `copilot-relay` label — the label triggers agent-relay-reviews.yml
+              which would post a second @copilot follow comment, double-dispatching
+              Copilot and producing competing resolution runs. Continue resolving
+              every non-workflow item yourself in this cycle.
 
-              1. Apply the `copilot-relay` label to the PR. From the bash tool:
-
-                   gh pr edit ${{ steps.pr.outputs.number }} \
-                     --repo ${{ github.repository }} \
-                     --add-label copilot-relay
-
-              2. Post a single PR comment of the form:
+              1. Post a single PR comment of the form:
 
                    @copilot follow .github/prompts/pr-resolve-all.md
 
@@ -439,17 +437,17 @@ jobs:
                    - **<file>** (line N, reviewer): <verbatim quote of the request>
                      Suggested change: <concise description of the fix>
 
-              3. In your own Phase 3 Resolution Report, mark each delegated item
+              2. In your own Phase 3 Resolution Report, mark each delegated item
                  `🔄 Delegated to Copilot` with a link to the `@copilot follow`
-                 comment. Continue resolving every non-workflow item normally
-                 in this cycle.
+                 comment.
 
             Why route through `copilot-relay` instead of a free-form @copilot
             mention (issue #170): Copilot's cloud agent only emits structured
             Phase 3 / Phase 4 output when it follows pr-resolve-all.md. Without
             that structure, the `phase4-fallback` job in agent-relay-reviews.yml
             cannot retry the `resolveReviewThread` mutations Copilot's sandbox
-            token cannot make (FORBIDDEN — the token lacks `pull-requests:write`),
+            token cannot make (FORBIDDEN — the token lacks the
+            pull-requests:write permission scope),
             so bot-authored review threads stay open and auto-merge stalls.
             Routing through `copilot-relay` reuses the existing relay → Copilot
             pr-resolve-all → phase4-fallback → resolveReviewThread chain.
