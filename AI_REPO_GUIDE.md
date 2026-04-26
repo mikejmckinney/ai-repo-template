@@ -212,7 +212,7 @@ bash install.sh
 | `docs/decisions/adr-template.md` | Architecture Decision Record template (with "When to write" header) |
 | `docs/postmortems/README.md` | Postmortem index, when to write, ADR-vs-postmortem split, "What generalizes" promotion gate |
 | `docs/postmortems/postmortem-template.md` | Postmortem / lessons-learned template (Trigger, Expected vs Actual, Root cause, What generalizes, Action items) |
-| `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalink to plan comment + 1–2 sentence summary; advisory per ADR-011), `## Plan revision sync` checkbox (advisory), and required doc-sync checklist |
+| `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalinks to original plan and revisions + 1–2 sentence summary; advisory per ADR-011), `## Plan revision sync` checkbox (advisory), and required doc-sync checklist |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching, issue/PR granularity |
 | `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Analyst/Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |

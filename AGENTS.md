@@ -128,10 +128,10 @@ the act of writing it forces the implementation thinking before code.
 4. Open the PR. Body MUST link the issue or a parent PR (`Closes #NN`,
    `Refs #NN`, `Implements ADR-NNN`). Judge BLOCKs at diff-gate when
    no link is present and no exemption label applies. Populate the PR
-   template's `## Plan` section with a permalink to the plan comment
-   and a 1–2 sentence summary of the latest version. Judge advises
-   (REQUEST_CHANGES) at diff-gate when this is missing or stale; it
-   is not a v1 BLOCK.
+   template's `## Plan` section with permalinks to the original plan
+   and any revisions, plus a 1–2 sentence summary of the latest
+   version. Judge advises (REQUEST_CHANGES) at diff-gate when this is
+   missing or stale; it is not a v1 BLOCK.
 5. If the plan is revised after the PR is open, edit the PR body's
    `## Plan` section in the same push as the divergent code, link the
    revision comment, and tick the matching box in `## Plan revision
