@@ -119,7 +119,16 @@ jobs:
     # to same-repo PRs. For fork PRs, a human maintainer can still drive
     # resolution via `@claude follow .github/prompts/pr-resolve-all.md`
     # on the PR.
+    # PR-state guard: when a `pull_request_review` arrives after the PR
+    # has been merged and its head branch auto-deleted (race with
+    # auto-merge — see issue #183), `actions/checkout` fails with "branch
+    # or tag with the name '...' could not be found" after burning ~2
+    # minutes of runner time. Gating the whole job on `state == 'open'`
+    # short-circuits cleanly (no runner, no red X) before checkout. This
+    # is defense-in-depth — even after the upstream race is fixed, bot
+    # reviewers can post late for any reason (rate limits, retries).
     if: >
+      github.event.pull_request.state == 'open' &&
       github.actor != 'Copilot' &&
       github.actor != 'copilot-swe-agent[bot]' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
