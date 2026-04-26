@@ -141,11 +141,16 @@ cost. See `agent-relay-reviews.yml`.
 labels change. It is **opt-in**: a PR only auto-merges when a maintainer
 (or automation) applies the `auto-merge` label to it. The label applies
 to PRs on **any** branch — the label itself is the allow-list, not the
-branch name. Once labeled, and when CI is green, no outstanding change
-requests remain, all review threads are resolved, the PR is not draft,
-and there are no merge conflicts, the workflow squash-merges, deletes
-the head branch, and closes the linked issue. Fork PRs are refused
-regardless of the label (defense in depth).
+branch name. By default, auto-merge includes a bounded bot-review settle
+window (up to ~4 minutes) so slower reviewers (for example Gemini Code
+Assist and Copilot code review) can post before merge. For trivial /
+low-risk changes, add `auto-merge-fast` to bypass that settle wait.
+
+Once labeled, and when CI is green, no outstanding change requests
+remain, all review threads are resolved, the PR is not draft, and there
+are no merge conflicts, the workflow squash-merges, deletes the head
+branch, and closes the linked issue. Fork PRs are refused regardless of
+label (defense in depth).
 
 ## Invoking a prompt file manually
 
@@ -223,6 +228,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 |-------|-------|---------|
 | `agent-complete` | `#0E8A16` (green) | Merged and done |
 | `auto-merge` | `#0E8A16` (green) | Opt PR in to `agent-auto-merge.yml` (applies to any branch) |
+| `auto-merge-fast` | `#1D76DB` (blue) | Bypass auto-merge bot-review settle wait for this PR |
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
 | `claude-fix` | `#FBCA04` (amber) | Opt PR in to `agent-fix-reviews.yml` (Claude resolution) |
 | `claude-review` | `#1D76DB` (blue) | Opt PR in to `claude.yml` auto-review (invokes judge subagent on open/reopen/ready_for_review) |

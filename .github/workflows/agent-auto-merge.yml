@@ -18,6 +18,8 @@
 #   - PR does NOT auto-merge by default.
 #   - Maintainer (or automation) applies the `auto-merge` label to the PR
 #     to enable auto-merge.
+#   - Optional bypass: add `auto-merge-fast` to skip the bot-review settle
+#     wait window for trivial/low-risk PRs.
 #   - Removing the label re-disables auto-merge for that PR.
 #   - No branch-prefix restriction: any branch with the label is eligible
 #     (the label itself is the allow-list). Fork PRs are still refused.
@@ -218,6 +220,10 @@ jobs:
             exit 0
           fi
 
+          # Optional fast-path bypass for trivial/low-risk PRs.
+          # When present, skip the settle window for slow bot reviewers.
+          has_auto_merge_fast_label=$(echo "$pr_json" | jq -r '[.labels[].name] | any(. == "auto-merge-fast")' 2>/dev/null || echo "false")
+
           # Smoke-test guard: PRs labeled `smoke-test` are exercising
           # workflow behavior and must not be auto-merged mid-test.
           # (The auto-fix and relay workflows have parallel guards.)
@@ -361,6 +367,101 @@ jobs:
             echo "$unresolved unresolved review thread(s). Not ready."
             echo "eligible=false" >> "$GITHUB_OUTPUT"
             exit 0
+          fi
+
+          # Slow-bot settle window (issue #182): on fast PRs, CI can finish
+          # before Gemini/Copilot reviewers post. Give them a bounded chance
+          # to weigh in before merge so findings can flow through claude-fix.
+          # Settle is anchored on the PR's head SHA — a review only counts
+          # toward "settled" if it was submitted against the current head
+          # commit. This closes the rebase/cherry-pick gap where an older
+          # `committedDate` could let stale reviews on a previous head pass
+          # the filter (Codex review on PR #194). The 240s budget covers
+          # the recorded 3m06s copilot-pr-reviewer worst case from PR #181
+          # with margin (Gemini review on PR #195).
+          if [[ "$has_auto_merge_fast_label" == "true" ]]; then
+            echo "auto-merge-fast label present — skipping bot-review settle wait."
+          else
+            settle_max_cycles=4
+            settle_sleep_seconds=60
+            settled="false"
+
+            set +e
+            head_page=$(gh api graphql \
+              -F owner="$owner" -F name="$name" -F number="$pr_number" \
+              -f query='query($owner:String!, $name:String!, $number:Int!) { repository(owner:$owner, name:$name) { pullRequest(number:$number) { headRefOid } } }' \
+              2>/tmp/gh-head-commit.err)
+            head_exit=$?
+            set -e
+
+            head_sha=""
+            if [[ $head_exit -eq 0 && -n "$head_page" ]]; then
+              head_sha=$(echo "$head_page" | jq -r '.data.repository.pullRequest.headRefOid // empty')
+            fi
+
+            if [[ -z "$head_sha" ]]; then
+              echo "WARN: Could not determine head SHA for settle window."
+              cat /tmp/gh-head-commit.err 2>/dev/null || true
+              echo "Proceeding with bounded timeout fallback (${settle_max_cycles}x${settle_sleep_seconds}s)."
+            else
+              echo "Bot-review settle window armed (up to ${settle_max_cycles}x${settle_sleep_seconds}s) for head SHA $head_sha"
+            fi
+
+            for cycle in $(seq 1 "$settle_max_cycles"); do
+              set +e
+              reviews_page=$(gh api graphql \
+                -F owner="$owner" -F name="$name" -F number="$pr_number" \
+                -f query='query($owner:String!, $name:String!, $number:Int!) { repository(owner:$owner, name:$name) { pullRequest(number:$number) { reviews(last: 100) { nodes { author { login } submittedAt state commit { oid } } } } } }' \
+                2>/tmp/gh-reviews-settle.err)
+              reviews_exit=$?
+              set -e
+
+              if [[ $reviews_exit -ne 0 || -z "$reviews_page" ]]; then
+                echo "WARN: bot-review settle query failed on cycle $cycle/$settle_max_cycles"
+                cat /tmp/gh-reviews-settle.err 2>/dev/null || true
+              else
+                # Match reviews against the current head SHA (when known).
+                # Reviews without a tied commit (.commit == null) and reviews
+                # tied to a previous head do NOT count toward "settled" —
+                # this is the rebase/cherry-pick safety property. Only when
+                # head SHA lookup failed do we degrade to "any review counts"
+                # so we don't burn the full window on a transient API error.
+                seen_reviewers=$(echo "$reviews_page" | jq -r --arg head "$head_sha" '
+                  [.data.repository.pullRequest.reviews.nodes[]
+                   | select(.author.login != null)
+                   | select(.author.login == "gemini-code-assist[bot]" or .author.login == "copilot-pull-request-reviewer[bot]")
+                   | select(($head == "") or (.commit != null and .commit.oid == $head))
+                   | .author.login] | unique[]?')
+
+                seen_gemini="false"
+                seen_copilot="false"
+                if echo "$seen_reviewers" | grep -Fxq "gemini-code-assist[bot]"; then
+                  seen_gemini="true"
+                fi
+                if echo "$seen_reviewers" | grep -Fxq "copilot-pull-request-reviewer[bot]"; then
+                  seen_copilot="true"
+                fi
+
+                if [[ "$seen_gemini" == "true" && "$seen_copilot" == "true" ]]; then
+                  echo "Bot-review settle complete on cycle $cycle/$settle_max_cycles (Gemini + Copilot reviewer observed)."
+                  settled="true"
+                  break
+                fi
+
+                missing=()
+                [[ "$seen_gemini" != "true" ]] && missing+=("gemini-code-assist[bot]")
+                [[ "$seen_copilot" != "true" ]] && missing+=("copilot-pull-request-reviewer[bot]")
+                echo "Bot-review settle cycle $cycle/$settle_max_cycles: waiting for ${missing[*]}"
+              fi
+
+              if [[ "$cycle" -lt "$settle_max_cycles" ]]; then
+                sleep "$settle_sleep_seconds"
+              fi
+            done
+
+            if [[ "$settled" != "true" ]]; then
+              echo "WARN: Bot-review settle timeout reached (${settle_max_cycles}x${settle_sleep_seconds}s). Proceeding with merge readiness as-is."
+            fi
           fi
 
           echo "✅ PR #$pr_number is ready for auto-merge!"
