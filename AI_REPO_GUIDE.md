@@ -102,7 +102,7 @@ bash install.sh
 ├── .cursorignore             # Files Cursor should not index
 └── .github/
     ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
-    ├── pull_request_template.md  # Default PR body skeleton (Plan pointer + Doc-sync checklist required)
+    ├── pull_request_template.md  # Default PR body skeleton (Plan pointer [advisory] + Doc-sync checklist required)
     ├── agents/                   # 10 role-specialized agent files
     │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
     │   ├── judge.agent.md, pm.agent.md, frontend.agent.md,
@@ -212,7 +212,7 @@ bash install.sh
 | `docs/decisions/adr-template.md` | Architecture Decision Record template (with "When to write" header) |
 | `docs/postmortems/README.md` | Postmortem index, when to write, ADR-vs-postmortem split, "What generalizes" promotion gate |
 | `docs/postmortems/postmortem-template.md` | Postmortem / lessons-learned template (Trigger, Expected vs Actual, Root cause, What generalizes, Action items) |
-| `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalink to plan comment + 1-line summary; advisory per ADR-011) and required doc-sync checklist |
+| `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalink to plan comment + 1–2 sentence summary; advisory per ADR-011), `## Plan revision sync` checkbox (advisory), and required doc-sync checklist |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching, issue/PR granularity |
 | `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Analyst/Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |

@@ -31,6 +31,11 @@ permalink into the PR's `## Plan` section and refresh the
 "Latest in 1–2 sentences" line. The PR body is the breadcrumb that
 sends reviewers to the canonical version on the issue; an out-of-date
 breadcrumb is the failure mode this template is here to prevent.
+
+If the revision happens after a PR is already open, do that refresh in
+the same push as the divergent code and tick the matching box in the
+PR template's `## Plan revision sync` section, so re-runs don't
+evaluate stale intent.
 -->
 
 ## 📋 Implementation Plan

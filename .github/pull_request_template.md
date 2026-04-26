@@ -29,14 +29,26 @@ N/A — empty headings are noise.
      Per ADR-011, the plan lives on the issue, not here — this section
      is the breadcrumb so reviewers always land on the latest version.
      Update this when you post a "Plan revision" comment.
-     Skip (or write "N/A — <reason>") only when an ADR-011 exemption
-     applies (chore:no-plan, smoke-test, automation bot, revert).
+     Skip (or write "N/A — <reason>") only when an ADR-011 plan
+     exemption applies (chore:no-plan, automation bot, revert).
+     Note: smoke-test exempts only from the PR-link rule, not from
+     the plan requirement.
      Judge advises (REQUEST_CHANGES) at diff-gate when missing or
      stale; not a v1 BLOCK. -->
 
 - **Original plan:** <link to plan comment, e.g. https://github.com/.../issues/42#issuecomment-NNN>
 - **Revisions:** <links to any "Plan revision" comments, or "none">
 - **Latest in 1–2 sentences:** <current outcome + approach>
+
+## Plan revision sync (REQUIRED when applicable)
+
+<!-- If a plan revision comment was posted on the linked issue AFTER this
+     PR was opened, the `## Plan` section above must include the revision
+     link and a refreshed "Latest in 1–2 sentences" line. Tick the matching
+     box below so reviewers don't evaluate stale intent. -->
+
+- [ ] No post-open plan revision comment was posted on the linked issue.
+- [ ] Post-open plan revision comment was posted; `## Plan` section above is updated with the revision link and a refreshed summary.
 
 ## Verification
 

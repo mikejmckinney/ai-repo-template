@@ -44,7 +44,11 @@ canonical file before doing anything.
   heading) and no `chore:no-plan` label is present, OR when the PR
   body's `## Plan` section is empty, has no link to a plan comment, or
   carries a stale "Latest in 1–2 sentences" line clearly contradicted
-  by the diff.
+  by the diff. Also REQUEST_CHANGES (advisory in v1) when the linked
+  issue has a "Plan revision" comment posted after the PR was opened
+  but the PR body's `## Plan` section lacks that revision link / a
+  refreshed summary, or the `## Plan revision sync` checklist isn't
+  ticked accordingly.
 
 ## Handoffs
 
