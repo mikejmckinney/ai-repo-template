@@ -119,7 +119,17 @@ jobs:
     # to same-repo PRs. For fork PRs, a human maintainer can still drive
     # resolution via `@claude follow .github/prompts/pr-resolve-all.md`
     # on the PR.
+    #
+    # Closed-PR guard: bot reviews can arrive after auto-merge has
+    # closed the PR and deleted the head branch (see #183). Without
+    # this guard, the run proceeds to `actions/checkout` and fails
+    # noisily with "branch could not be found", burning ~2 min of
+    # runner time and posting a red X. Gating at the job-level `if:`
+    # short-circuits before the runner spins up — clean "skipped"
+    # state in the Actions UI, zero runner cost. Field is populated
+    # for both `pull_request_review` and `pull_request.labeled` events.
     if: >
+      github.event.pull_request.state == 'open' &&
       github.actor != 'Copilot' &&
       github.actor != 'copilot-swe-agent[bot]' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
