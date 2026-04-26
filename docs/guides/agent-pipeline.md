@@ -142,9 +142,9 @@ labels change. It is **opt-in**: a PR only auto-merges when a maintainer
 (or automation) applies the `auto-merge` label to it. The label applies
 to PRs on **any** branch — the label itself is the allow-list, not the
 branch name. By default, auto-merge includes a bounded bot-review settle
-window (up to ~3 minutes) so slower reviewers (for example Gemini and
-Copilot reviewer) can post before merge. For trivial/low-risk changes,
-add `auto-merge-fast` to bypass that settle wait.
+window (up to ~4 minutes) so slower reviewers (for example Gemini Code
+Assist and Copilot code review) can post before merge. For trivial /
+low-risk changes, add `auto-merge-fast` to bypass that settle wait.
 
 Once labeled, and when CI is green, no outstanding change requests
 remain, all review threads are resolved, the PR is not draft, and there

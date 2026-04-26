@@ -445,7 +445,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
 else
     log_warn "gh CLI not authenticated; skipping label/variable creation."
     log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
-    log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
+    log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
     log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
 fi
 

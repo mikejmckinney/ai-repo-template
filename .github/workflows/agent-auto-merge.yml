@@ -372,41 +372,46 @@ jobs:
           # Slow-bot settle window (issue #182): on fast PRs, CI can finish
           # before Gemini/Copilot reviewers post. Give them a bounded chance
           # to weigh in before merge so findings can flow through claude-fix.
+          # Settle is anchored on the PR's head SHA — a review only counts
+          # toward "settled" if it was submitted against the current head
+          # commit. This closes the rebase/cherry-pick gap where an older
+          # `committedDate` could let stale reviews on a previous head pass
+          # the filter (Codex review on PR #194). The 240s budget covers
+          # the recorded 3m06s copilot-pr-reviewer worst case from PR #181
+          # with margin (Gemini review on PR #195).
           if [[ "$has_auto_merge_fast_label" == "true" ]]; then
             echo "auto-merge-fast label present — skipping bot-review settle wait."
           else
-            settle_max_cycles=3
+            settle_max_cycles=4
             settle_sleep_seconds=60
             settled="false"
 
-            # We anchor on head commit timestamp so "settled" means a review
-            # posted after the current head landed, not stale review history.
             set +e
             head_page=$(gh api graphql \
               -F owner="$owner" -F name="$name" -F number="$pr_number" \
-              -f query='query($owner:String!, $name:String!, $number:Int!) { repository(owner:$owner, name:$name) { pullRequest(number:$number) { commits(last: 1) { nodes { commit { committedDate } } } } } }' \
+              -f query='query($owner:String!, $name:String!, $number:Int!) { repository(owner:$owner, name:$name) { pullRequest(number:$number) { headRefOid } } }' \
               2>/tmp/gh-head-commit.err)
             head_exit=$?
             set -e
 
-            head_commit_date=""
+            head_sha=""
             if [[ $head_exit -eq 0 && -n "$head_page" ]]; then
-              head_commit_date=$(echo "$head_page" | jq -r '.data.repository.pullRequest.commits.nodes[0].commit.committedDate // empty')
+              head_sha=$(echo "$head_page" | jq -r '.data.repository.pullRequest.headRefOid // empty')
             fi
 
-            if [[ -z "$head_commit_date" ]]; then
-              echo "WARN: Could not determine head commit timestamp for settle window."
+            if [[ -z "$head_sha" ]]; then
+              echo "WARN: Could not determine head SHA for settle window."
               cat /tmp/gh-head-commit.err 2>/dev/null || true
               echo "Proceeding with bounded timeout fallback (${settle_max_cycles}x${settle_sleep_seconds}s)."
             else
-              echo "Bot-review settle window armed (up to ${settle_max_cycles}x${settle_sleep_seconds}s) for head commit at $head_commit_date"
+              echo "Bot-review settle window armed (up to ${settle_max_cycles}x${settle_sleep_seconds}s) for head SHA $head_sha"
             fi
 
             for cycle in $(seq 1 "$settle_max_cycles"); do
               set +e
               reviews_page=$(gh api graphql \
                 -F owner="$owner" -F name="$name" -F number="$pr_number" \
-                -f query='query($owner:String!, $name:String!, $number:Int!) { repository(owner:$owner, name:$name) { pullRequest(number:$number) { reviews(last: 100) { nodes { author { login } submittedAt state } } } } }' \
+                -f query='query($owner:String!, $name:String!, $number:Int!) { repository(owner:$owner, name:$name) { pullRequest(number:$number) { reviews(last: 100) { nodes { author { login } submittedAt state commit { oid } } } } } }' \
                 2>/tmp/gh-reviews-settle.err)
               reviews_exit=$?
               set -e
@@ -415,11 +420,17 @@ jobs:
                 echo "WARN: bot-review settle query failed on cycle $cycle/$settle_max_cycles"
                 cat /tmp/gh-reviews-settle.err 2>/dev/null || true
               else
-                seen_reviewers=$(echo "$reviews_page" | jq -r --arg since "$head_commit_date" '
+                # Match reviews against the current head SHA (when known).
+                # Reviews without a tied commit (.commit == null) and reviews
+                # tied to a previous head do NOT count toward "settled" —
+                # this is the rebase/cherry-pick safety property. Only when
+                # head SHA lookup failed do we degrade to "any review counts"
+                # so we don't burn the full window on a transient API error.
+                seen_reviewers=$(echo "$reviews_page" | jq -r --arg head "$head_sha" '
                   [.data.repository.pullRequest.reviews.nodes[]
                    | select(.author.login != null)
                    | select(.author.login == "gemini-code-assist[bot]" or .author.login == "copilot-pull-request-reviewer[bot]")
-                   | select(($since == "") or (.submittedAt >= $since))
+                   | select(($head == "") or (.commit != null and .commit.oid == $head))
                    | .author.login] | unique[]?')
 
                 seen_gemini="false"
