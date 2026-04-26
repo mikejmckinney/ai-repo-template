@@ -62,6 +62,13 @@ Quick rules:
    or scope, post a "Plan revision" comment before pushing.
 5. PR body MUST link the issue or a parent PR (`Closes #NN`, `Refs #NN`).
    Judge BLOCKs at diff-gate when missing and no exemption applies.
+6. PR body's `## Plan` section should link the plan comment (and any
+   revisions) and summarize the latest version in 1–2 sentences. Populate
+   it when you open the PR; if a "Plan revision" comment is posted after
+   the PR is already open, refresh that section and tick the matching
+   box in `## Plan revision sync` in the same push as the divergent code.
+   Judge advises (REQUEST_CHANGES, not BLOCK) at diff-gate when missing
+   or stale.
 
 The Analyst pre-flight gate above runs *in addition to* this plan
 requirement on prompt-referenced project issues — it is not replaced.

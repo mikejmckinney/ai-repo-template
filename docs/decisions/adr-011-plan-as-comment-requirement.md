@@ -151,6 +151,12 @@ We will require:
 - Implementer thinking happens before code is written, when redirection
   is cheap.
 - PR audit trail is complete: every PR points back to a documented intent.
+  The PR template's `## Plan` section (added post-PR-#189) makes that
+  pointer specific — a permalink to the plan comment plus a one-line
+  summary — so reviewers don't have to scan the issue thread to find
+  the latest revision. Judge advises (REQUEST_CHANGES, not BLOCK) at
+  diff-gate when this section is empty or stale; this stays in the
+  v1 advisory tier alongside the plan-comment-presence check.
 - The `chore:no-plan` label creates explicit, auditable exemption
   decisions rather than silent skips.
 - Judge's existing diff-gate machinery enforces both rules with no new
