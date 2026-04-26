@@ -227,7 +227,7 @@ bash install.sh
 | `validate-connections.yml` | Daily backend/DB connectivity check |
 | `claude.yml` | Claude Code triggers (`@claude` mention + auto-review on PR open) |
 | `agent-assign-copilot.yml` | Gated Copilot PR assignment for `copilot:ready` issues |
-| `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved) |
+| `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved), with default bounded bot-review settle window and `auto-merge-fast` bypass label |
 | `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes |
 | `agent-coordination-sync.yml` | Reconciles `.context/state/coordination.md` with live PR/issue state |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback |

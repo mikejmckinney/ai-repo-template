@@ -283,7 +283,7 @@ if [[ -n "$_pipeline_setup_skip_reason" ]]; then
     log_warn "Ad-hoc alternative (current Codespace only):"
     log_warn "  unset GITHUB_TOKEN && gh auth login -s repo,workflow && ./scripts/setup.sh"
     log_warn "Or create the following manually:"
-    log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
+    log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
     log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
 elif [[ -n "$_gh_auth_ok" ]]; then
     # Last-resort FULL_REPO fallback: if Step 0 couldn't parse a remote and
@@ -317,7 +317,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         log_warn "  b) One-shot override:"
         log_warn "       GH_REPO=<owner>/<repo> ./scripts/setup.sh"
         log_warn "Or create the following manually in the GitHub UI:"
-        log_warn "  Labels: auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
+        log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
         log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
     else
         # Scope every `gh` call in this block to FULL_REPO. gh respects
@@ -347,6 +347,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     #   - Opt-in / state labels driving the workflows.
     #   - copilot:* state labels driving the backlog pipeline.
     _ensure_label "auto-merge"            "0E8A16" "Enable auto-merge workflow for this PR"
+    _ensure_label "auto-merge-fast"       "1D76DB" "Bypass auto-merge bot-review settle wait for this PR"
     _ensure_label "agent-complete"        "0E8A16" "PR merged and linked issue closed"
     _ensure_label "no-auto-ready"         "BFDADC" "Opt out of automatic ready-state handling"
     _ensure_label "claude-fix"            "FBCA04" "Opt PR in to agent-fix-reviews.yml (Claude resolution)"
@@ -362,7 +363,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "coordination-sync"     "BFDADC" "Auto-filed by Coordination Sync workflow (stale lock tracking)"
     _ensure_label "no-coordination-check" "EDEDED" "Opt PR out of agent-coordination-sync.yml suggestions"
     _ensure_label "chore:no-plan"         "EDEDED" "Exempt this issue/PR from the plan-as-comment requirement (ADR-011)"
-    log_info "Pipeline labels ensured (auto-merge, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:*, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan)"
+    log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:*, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan)"
 
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is
