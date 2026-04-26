@@ -15,6 +15,17 @@ You are a senior software engineer joining an existing codebase. Your job is to 
 
 ---
 
+## First-Session Bootstrap
+
+Run this section once when an agent first encounters the repo (fresh clone, new session in a derived project, or any time `AI_REPO_GUIDE.md` is missing or contains `TEMPLATE_PLACEHOLDER`). Skip if you have already onboarded this repo in a prior session and `AI_REPO_GUIDE.md` is current.
+
+1. **Detect template state.** Follow `AGENTS.md` §"Template detection" — do not duplicate that logic here. It tells you whether you are in the template repo itself (`ai-repo-template` / legacy `dotfiles`), in which case `README.md`, `AI_REPO_GUIDE.md`, and `CLAUDE.md` are template docs and must NOT be regenerated, or in a derived project where stub docs containing `TEMPLATE_PLACEHOLDER` should be replaced.
+2. **Build context.** Complete Phase 1 below: read docs, map the codebase, produce the repo brief, and create or regenerate `AI_REPO_GUIDE.md` if needed.
+3. **Chain to Copilot onboarding.** After Phase 1, run `.github/prompts/copilot-onboarding.md` to rebuild `.github/copilot-instructions.md` against the now-accurate `AI_REPO_GUIDE.md`.
+4. **Report readiness** using the format in Step 1.7 below before accepting the next user instruction.
+
+---
+
 # Phase 1: Build Context (Repo Brief)
 
 ## Step 1.1: Read Key Documentation
@@ -119,6 +130,21 @@ If this repo was created from a template, update placeholder values:
 2. If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
    - Replace with actual `owner/repo` (e.g., `myorg/myproject`)
 3. Search for any remaining `TEMPLATE_PLACEHOLDER` markers and replace with project-specific content
+
+## Step 1.7: Report Readiness
+
+After Phase 1 completes (and after running `copilot-onboarding.md` if this is a first-session bootstrap), post a single-line readiness report:
+
+> I have reviewed the context. Current task is **<task name or "awaiting instructions">**. Environment is **<Stable | Unstable: \<reason\>>**. Ready for instructions.
+
+"Stable" means all of:
+
+- `git status` is clean, or only contains expected agent edits.
+- `./scripts/verify-env.sh` exits 0.
+- No file in `test.sh`'s `REQUIRED_FILES` array is missing.
+- `.context/state/_active.md` and `.context/sessions/latest_summary.md` exist (these are agent working memory; their absence indicates a broken bootstrap).
+
+Otherwise report **Unstable** and name the specific failure (e.g., `Unstable: verify-env.sh exited 1 — missing PYTHONPATH`).
 
 ---
 
