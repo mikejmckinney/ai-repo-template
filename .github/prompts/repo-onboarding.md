@@ -2,221 +2,113 @@
 agent: agent
 ---
 
-# Repository Onboarding Prompt
+# Repo Onboarding Prompt (New + Existing Repos)
 
-You are a senior software engineer joining an existing codebase. Your job is to build an accurate mental model of this repo BEFORE making changes, then implement the requested work with minimal, well-tested diffs.
+## Purpose
+Onboard an agent to this repository with deterministic, non-destructive steps.
+This prompt supports:
+1. Template-derived repositories that still contain placeholders.
+2. Existing repositories with established docs and source.
 
-## Core Principles
+## Inputs
+- Repository working tree
+- `AGENTS.md`
+- `AI_REPO_GUIDE.md` (if present)
+- `./.context/**`
+- `./docs/**`
+- Source code files
+- Optional session state files in `./.context/state/**`
 
-- **Do NOT guess** APIs, file contents, or behavior. Verify everything in the repo.
-- **Prefer small, reversible changes**. Keep style consistent with the repo.
-- **Before editing**: Summarize understanding → propose a plan → identify files to touch.
-- **After editing**: Provide rationale, the diff, and exact commands to test.
-
----
-
-# Phase 1: Build Context (Repo Brief)
-
-## Step 1.1: Read Key Documentation
-
-- [ ] `README.md`
-- [ ] `CONTRIBUTING.md`
-- [ ] `AI_REPO_GUIDE.md` (if exists — treat as canonical)
-- [ ] `.github/copilot-instructions.md` (if exists)
-- [ ] Any docs in `/docs`, `ARCHITECTURE.md`, `SECURITY.md`
-
-## Step 1.2: Map the Codebase
-
-Use search and file exploration (not linear reading) to identify:
-
-### Directory Structure
-```
-Top-level directories and their purposes:
-├── src/           # <purpose>
-├── tests/         # <purpose>
-├── docs/          # <purpose>
-└── ...
-```
-
-### Entry Points
-- **Web apps**: Main server file, routers, app bootstrap
-- **CLI**: Bin directory, command registry
-- **Libraries**: Public API surface, exports
-
-### Test Infrastructure
-- Test framework used
-- Test file locations
-- How to run tests
-
-## Step 1.3: Identify Build Commands
-
-Find and verify these commands from `package.json`, `Makefile`, `pyproject.toml`, etc.:
-
-| Task | Command | Verified |
-|------|---------|----------|
-| Install dependencies | | [ ] |
-| Build | | [ ] |
-| Test | | [ ] |
-| Lint | | [ ] |
-| Type check | | [ ] |
-
-## Step 1.4: Produce Repo Brief
-
-Output a structured summary:
-
-```markdown
-## What This Repo Does
-<1-3 sentences>
-
-## Tech Stack
-- Language: 
-- Framework:
-- Build tool:
-- Test framework:
-
-## Folder Map
-- `/src` — 
-- `/tests` — 
-- `/docs` — 
-
-## Key Entry Points
-- Main: 
-- CLI: 
-- API: 
-
-## Configuration Files
-- Build config:
-- Lint config:
-- CI config:
-
-## How to Run Locally
-<commands>
-
-## How to Test
-<commands>
-
-## Known Risks/Gotchas
-- <item>
-```
-
-## Step 1.5: Create/Update AI_REPO_GUIDE.md
-
-If `/AI_REPO_GUIDE.md` does NOT exist, create it with:
-- Overview (what this is)
-- Quickstart (run/test commands)
-- Folder map + key entry points
-- Conventions (lint/format, branching, commit style)
-- Where to add things (routes, services, components)
-- Troubleshooting / common gotchas
-
-If it exists, verify accuracy and update if needed.
-
-## Step 1.6: Update Template Placeholders
-
-If this repo was created from a template, update placeholder values:
-
-1. Run `git remote -v` to get the repository owner/name
-2. If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
-   - Replace with actual `owner/repo` (e.g., `myorg/myproject`)
-3. Search for any remaining `TEMPLATE_PLACEHOLDER` markers and replace with project-specific content
+## Hard Rules
+1. Follow `AGENTS.md` first.
+2. Use the truth hierarchy when inferring intent:
+   1. `./.context/**`
+   2. `./docs/**`
+   3. source code
+3. Do not treat placeholder docs as project truth.
+4. Do not overwrite docs unless conditions below explicitly require it.
+5. If a referenced command or script is missing, report that and continue.
 
 ---
 
-# Phase 2: Clarify the Task
+## Step 0 — Detect Repository Identity and Onboarding Mode
 
-Ask at most **3 targeted questions** that unblock implementation.
+Determine:
+- repository name (from folder name and/or `git remote -v`)
+- whether this repository identity is a template identity:
+  - `ai-repo-template` or `mikejmckinney/ai-repo-template`
+  - legacy `dotfiles` or `mikejmckinney/dotfiles`
+- whether `README.md` or `AI_REPO_GUIDE.md` contains `TEMPLATE_PLACEHOLDER`
 
-If no questions are required, proceed to Phase 3.
+Set one mode:
 
-Examples of good questions:
-- "Should this change be backward compatible?"
-- "Which test file should I add tests to?"
-- "Is there an existing pattern for <X> I should follow?"
+### Mode A — Template Identity Repository
+- Treat `README.md`, `AI_REPO_GUIDE.md`, and `CLAUDE.md` as template docs.
+- Do **not** regenerate or overwrite those template docs.
+- Continue with operational onboarding only.
 
----
+### Mode B — Non-template Repository with Placeholders
+- Treat placeholder docs as stubs.
+- Replace `README.md` with repository-specific content.
+- Regenerate `AI_REPO_GUIDE.md` from real project assets (`./.context/**`, `./docs/**`, code).
+- If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`, replace with the real `owner/repo`.
 
-# Phase 3: Implement
-
-## Step 3.1: Re-read AI_REPO_GUIDE.md
-
-Cite which sections guide your approach.
-
-## Step 3.2: Propose a Plan
-
-Before making changes, provide:
-
-```markdown
-## Implementation Plan
-
-### Changes
-1. [ ] `path/to/file.ext` — <what changes>
-2. [ ] `path/to/file.ext` — <what changes>
-
-### Tests to Add/Update
-- [ ] `test/path/file.test.ext` — <what to test>
-
-### Risks
-- <potential issues>
-
-### Verification
-- `<command>` — what it proves
-```
-
-## Step 3.3: Make the Changes
-
-- Follow existing code style and patterns
-- Add/update tests for behavioral changes
-- Update docs if behavior changed
-
-## Step 3.4: Update AI_REPO_GUIDE.md
-
-If your changes affect:
-- Commands
-- File structure
-- Conventions
-- Entry points
-
-Update `AI_REPO_GUIDE.md` to reflect this.
+### Mode C — Existing Non-template Repository (No Placeholders)
+- Keep current docs unchanged.
+- Continue with operational onboarding only.
 
 ---
 
-# Phase 4: Deliver
+## Step 1 — Read Immediate Working Context
+1. Read `.context/state/_active.md` if present.
+2. Read relevant `task_*.md` files in `.context/state/` if present.
+3. Extract:
+   - active task
+   - role
+   - blockers
+   - next actions
 
-Provide:
+If missing, report: `No active task state file found.`
 
-````markdown
-## Summary
-<What changed and why>
+## Step 2 — Read Project Index and Constraints
+1. Read `.context/00_INDEX.md` if present.
+2. Read constraints from `.context/rules/**` relevant to the active task.
+3. Identify process gates to honor (ownership, coordination, QA, doc sync, etc.).
 
-## Files Changed
-- `path/to/file.ext` — <description>
+## Step 3 — Read Recent Session Baton
+1. Read `.context/sessions/latest_summary.md` if present.
+2. Summarize recent decisions and carry-forward risks in up to 5 bullets.
 
-## Test Commands
-```bash
-<commands to verify changes work>
-```
+## Step 4 — Environment Stability Check (Best-effort)
+1. Run `git status --short` to detect unexpected working tree changes.
+2. If `./scripts/verify-env.sh` exists and is executable, run it.
+3. If missing/non-executable, report: `verify-env skipped (missing or non-executable).`
 
-## Expected Outcome
-<What should happen when tests pass>
+Classify environment:
+- **Stable**: expected working tree + no environment check failures.
+- **Unstable**: unexpected changes and/or environment check failure.
 
-## AI_REPO_GUIDE.md Status
-- [ ] Up to date
-- [ ] Updated (describe what changed)
-- [ ] N/A (no structural changes)
-
-## Follow-ups (optional)
-- <Future improvements>
-````
+## Step 5 — Optional Secondary Onboarding Prompt
+If `.github/prompts/copilot-onboarding.md` exists, run it after this prompt and merge findings.
+If not present, continue.
 
 ---
 
-# Verification Checklist
+## Required Output Format (Must Follow)
 
-Before considering the task complete:
+### Onboarding Report
+- **Repository Type:** `[Template identity | Non-template]`
+- **Onboarding Mode:** `[A | B | C]`
+- **Truth Sources Used:** `[key .context/.docs/code paths]`
+- **Active Task:** `[task name or "none found"]`
+- **Role / Ownership Context:** `[role + owned paths or "not yet assigned"]`
+- **Blockers:** `[list or "none"]`
+- **Environment:** `[Stable | Unstable]` with one-line reason
+- **Doc Actions Taken:** `[none | README replaced | AI_REPO_GUIDE regenerated | issue-template config updated]`
+- **Next 1–3 Actions:** `[actionable bullets]`
+- **Ready Statement:** `I have reviewed the context. Current task is [Task Name]. Environment is [Stable/Unstable]. Ready for instructions.`
 
-- [ ] All tests pass
-- [ ] Linting passes
-- [ ] Build succeeds
-- [ ] Changes are minimal (no unrelated modifications)
-- [ ] Docs updated if behavior changed
-- [ ] `AI_REPO_GUIDE.md` is accurate
+## Safety Checks
+- If sources conflict, call out the conflict and follow truth hierarchy.
+- If required files are missing, continue best-effort and list missing files.
+- Do not invent APIs, paths, or ownership mappings; mark unknowns explicitly.
