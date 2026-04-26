@@ -133,16 +133,15 @@ If this repo was created from a template, update placeholder values:
 
 ## Step 1.7: Report Readiness
 
-After Phase 1 completes (and after running `copilot-onboarding.md` if this is a first-session bootstrap), post a single-line readiness report:
+After Phase 1 completes (and after running `.github/prompts/copilot-onboarding.md` if this is a first-session bootstrap), post a single-line readiness report:
 
-> I have reviewed the context. Current task is **<task name or "awaiting instructions">**. Environment is **<Stable | Unstable: \<reason\>>**. Ready for instructions.
+> I have reviewed the context. Current task is **<task name or "awaiting instructions">**. Environment is **<Stable | Unstable: <reason>>**. Ready for instructions.
 
 "Stable" means all of:
 
 - `git status` is clean, or only contains expected agent edits.
 - `./scripts/verify-env.sh` exits 0.
-- No file in `test.sh`'s `REQUIRED_FILES` array is missing.
-- `.context/state/_active.md` and `.context/sessions/latest_summary.md` exist (these are agent working memory; their absence indicates a broken bootstrap).
+- Phase 1 above completed without missing-file errors. (`bash test.sh` is the deeper structural check — it iterates `REQUIRED_FILES` and the context-pack files. Its single environmental failure on commit signing in some sandboxes is unrelated to onboarding state.)
 
 Otherwise report **Unstable** and name the specific failure (e.g., `Unstable: verify-env.sh exited 1 — missing PYTHONPATH`).
 

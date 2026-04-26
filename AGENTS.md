@@ -171,7 +171,7 @@ conditions and will be unified in #155.
 1. Read `/AI_REPO_GUIDE.md`.
 2. Read `.context/00_INDEX.md` if it exists.
 3. Check `.context/state/_active.md` or `task_*.md` for cognitive handoff from previous sessions.
-4. If AI_REPO_GUIDE.md is missing or stale, OR if this is your first session in a derived (non-template) repo: follow `.github/prompts/repo-onboarding.md` §"First-Session Bootstrap" to rebuild context and chain to `copilot-onboarding.md`.
+4. If AI_REPO_GUIDE.md is missing or stale, OR if this is your first session in a derived (non-template) repo: follow `.github/prompts/repo-onboarding.md` §"First-Session Bootstrap" to rebuild context and chain to `.github/prompts/copilot-onboarding.md`.
 
 ## Ongoing maintenance
 Doc-sync triggers (which files must update together) live in a single source of truth: **`.context/rules/process_doc_maintenance.md`**. Read it before opening a PR; Judge enforces it at diff-gate.
