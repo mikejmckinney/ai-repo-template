@@ -25,6 +25,12 @@ automated CI enforcement are deferred to issue #155.
 If your actual diff diverges from the plan by more than ~30% in file count
 or scope, post a "Plan revision" comment on the same issue before pushing
 the divergent code, so reviewers see what changed and why.
+
+After posting the plan comment (or any revision), copy the comment's
+permalink into the PR's `## Plan` section and refresh the
+"Latest in 1–2 sentences" line. The PR body is the breadcrumb that
+sends reviewers to the canonical version on the issue; an out-of-date
+breadcrumb is the failure mode this template is here to prevent.
 -->
 
 ## 📋 Implementation Plan

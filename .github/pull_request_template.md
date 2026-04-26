@@ -23,6 +23,21 @@ N/A — empty headings are noise.
      For follow-up PRs, link the parent PR by its number: "Refs #123"
      (PRs and issues share the same number space on GitHub). -->
 
+## Plan
+
+<!-- Pointer to the implementation plan comment(s) on the linked issue.
+     Per ADR-011, the plan lives on the issue, not here — this section
+     is the breadcrumb so reviewers always land on the latest version.
+     Update this when you post a "Plan revision" comment.
+     Skip (or write "N/A — <reason>") only when an ADR-011 exemption
+     applies (chore:no-plan, smoke-test, automation bot, revert).
+     Judge advises (REQUEST_CHANGES) at diff-gate when missing or
+     stale; not a v1 BLOCK. -->
+
+- **Original plan:** <link to plan comment, e.g. https://github.com/.../issues/42#issuecomment-NNN>
+- **Revisions:** <links to any "Plan revision" comments, or "none">
+- **Latest in 1–2 sentences:** <current outcome + approach>
+
 ## Verification
 
 <!-- REQUIRED. Exact commands you ran (or N/A for docs-only). -->

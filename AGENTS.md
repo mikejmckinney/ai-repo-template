@@ -124,10 +124,19 @@ the act of writing it forces the implementation thinking before code.
    apply get `N/A — <one-phrase reason>`, never silent omission.
 3. Implement. No waiting on approval in v1 — but if your actual diff
    diverges from the plan by more than ~30% in file count or scope,
-   post a "Plan revision" comment on the same issue before pushing.
+   post a "Plan revision" comment on the same issue before pushing,
+   and update the PR's `## Plan` section to link the revision and
+   refresh the one-line summary so reviewers see what changed and why.
 4. Open the PR. Body MUST link the issue or a parent PR (`Closes #NN`,
    `Refs #NN`, `Implements ADR-NNN`). Judge BLOCKs at diff-gate when
-   no link is present and no exemption label applies.
+   no link is present and no exemption label applies. Populate the PR
+   template's `## Plan` section with a permalink to the plan comment
+   and a one-line summary of the latest version. Judge advises
+   (REQUEST_CHANGES) at diff-gate when this is missing or stale; it
+   is not a v1 BLOCK.
+5. If the plan is revised after the PR opens, edit the PR body's
+   `## Plan` section in the same push as the divergent code so the
+   breadcrumb never points at a stale revision.
 
 **Exemptions** (plan is NOT required):
 

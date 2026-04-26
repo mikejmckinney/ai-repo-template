@@ -71,6 +71,10 @@ Exemptions: issues labeled `chore:no-plan`, automation-bot authors
 (Renovate, Dependabot), and revert PRs of a prior PR. The companion
 rule — every PR body must link the issue or a parent PR (`Closes #NN`,
 `Refs #NN`, `Implements ADR-NNN`) — is enforced by Judge at diff-gate.
+The PR body's `## Plan` section is the reviewer-facing breadcrumb to
+the canonical plan comment — when the plan is revised, refresh that
+section in the same push as the divergent code (Judge advises, does
+not BLOCK, on missing or stale entries in v1).
 
 ### Step 2: Copilot opens a PR (automatic)
 Copilot creates a `copilot/issue-{number}` branch, implements the feature,
