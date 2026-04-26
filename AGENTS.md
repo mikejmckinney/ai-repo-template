@@ -125,7 +125,11 @@ the act of writing it forces the implementation thinking before code.
 3. Implement. No waiting on approval in v1 — but if your actual diff
    diverges from the plan by more than ~30% in file count or scope,
    post a "Plan revision" comment on the same issue before pushing.
-4. Open the PR. Body MUST link the issue or a parent PR (`Closes #NN`,
+4. If you posted a "Plan revision" comment after opening the PR, update
+   the PR body in the same push cycle with a short `Revision history`
+   note and a link to that issue comment, so reviewers don't evaluate
+   stale intent.
+5. Open/update the PR. Body MUST link the issue or a parent PR (`Closes #NN`,
    `Refs #NN`, `Implements ADR-NNN`). Judge BLOCKs at diff-gate when
    no link is present and no exemption label applies.
 

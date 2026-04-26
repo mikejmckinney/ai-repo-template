@@ -25,6 +25,10 @@ automated CI enforcement are deferred to issue #155.
 If your actual diff diverges from the plan by more than ~30% in file count
 or scope, post a "Plan revision" comment on the same issue before pushing
 the divergent code, so reviewers see what changed and why.
+
+If that revision happens after a PR is already open, update the PR body in
+that same push cycle with a short `Revision history` note and a link to the
+issue's plan-revision comment, so re-runs don't evaluate stale context.
 -->
 
 ## 📋 Implementation Plan

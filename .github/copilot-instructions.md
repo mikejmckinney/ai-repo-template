@@ -60,7 +60,10 @@ Quick rules:
 4. Implement after posting (no formal approval gate in v1; reviewed at
    PR time). If your diff diverges from the plan by ~30%+ in file count
    or scope, post a "Plan revision" comment before pushing.
-5. PR body MUST link the issue or a parent PR (`Closes #NN`, `Refs #NN`).
+5. If a "Plan revision" comment is posted after PR open, update the PR
+   body in the same push cycle with a short `Revision history` note and
+   a link to that issue comment.
+6. PR body MUST link the issue or a parent PR (`Closes #NN`, `Refs #NN`).
    Judge BLOCKs at diff-gate when missing and no exemption applies.
 
 The Analyst pre-flight gate above runs *in addition to* this plan

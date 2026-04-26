@@ -41,7 +41,10 @@ canonical file before doing anything.
   Dependabot). REQUEST_CHANGES (advisory in v1) when the linked issue
   lacks an Implementation Plan comment matching
   `.github/PLAN_TEMPLATE.md` (heuristic: `## 📋 Implementation Plan`
-  heading) and no `chore:no-plan` label is present.
+  heading) and no `chore:no-plan` label is present. Also REQUEST_CHANGES
+  (advisory in v1) when the linked issue has a post-open "Plan revision"
+  comment but the PR body is missing a short `Revision history` note
+  linking that comment.
 
 ## Handoffs
 

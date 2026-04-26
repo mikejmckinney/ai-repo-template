@@ -23,6 +23,15 @@ N/A — empty headings are noise.
      For follow-up PRs, link the parent PR by its number: "Refs #123"
      (PRs and issues share the same number space on GitHub). -->
 
+## Plan revision sync (REQUIRED when applicable)
+
+<!-- If a plan revision comment was posted on the linked issue after this PR
+     was opened, include a short "Revision history" note in this PR body and
+     link that issue comment. If no revision was posted, say so explicitly. -->
+
+- [ ] No post-open plan revision comment was posted on the linked issue.
+- [ ] Post-open plan revision comment was posted; PR body includes `Revision history` + issue-comment link.
+
 ## Verification
 
 <!-- REQUIRED. Exact commands you ran (or N/A for docs-only). -->
