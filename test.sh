@@ -325,22 +325,25 @@ fi
 # Check README.md has Limitations, Future Improvements, and FAQ sections.
 # These are required for the template itself and derived projects are
 # instructed (by .github/ISSUE_TEMPLATE/agent_init.md) to preserve them.
-if grep -q "^## Limitations" README.md 2>/dev/null; then
+# Header matching is case-insensitive: `## Limitations` and `## limitations`
+# both pass. The assertion is that the section exists, not that contributors
+# memorized the canonical casing. See postmortem-001 + ADR-013.
+if grep -qi "^## Limitations" README.md 2>/dev/null; then
     pass "README.md has Limitations section"
 else
-    fail "README.md missing ## Limitations section"
+    fail "README.md missing ## Limitations section (case-insensitive)"
 fi
 
-if grep -q "^## Future Improvements" README.md 2>/dev/null; then
+if grep -qi "^## Future Improvements" README.md 2>/dev/null; then
     pass "README.md has Future Improvements section"
 else
-    fail "README.md missing ## Future Improvements section"
+    fail "README.md missing ## Future Improvements section (case-insensitive)"
 fi
 
-if grep -q "^## FAQ" README.md 2>/dev/null; then
+if grep -qi "^## FAQ" README.md 2>/dev/null; then
     pass "README.md has FAQ section"
 else
-    fail "README.md missing ## FAQ section"
+    fail "README.md missing ## FAQ section (case-insensitive)"
 fi
 
 # FAQ section in README may link to docs/FAQ.md or keep content inline — both are valid.

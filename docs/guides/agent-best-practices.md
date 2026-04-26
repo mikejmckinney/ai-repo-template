@@ -43,6 +43,20 @@ Workflow-validation / smoke-test PRs (the kind we ran for #114, #116) exist to *
 
 If you forget the label and a smoke PR auto-merges or gets a Claude fix during the test, that test is contaminated — close it, file a new one, label correctly.
 
+## Cross-check guards (CI)
+
+**Rule**: when two artifacts in the same repo encode a shared invariant — the same set of identifiers, route names, env-var names, schema fields, etc. — the cross-check guard ships in **the same PR as the second artifact**, not bolted on later when drift is noticed.
+
+The failure mode is structural: each artifact is edited by a different agent or workflow, and without a guard that asserts `set(A) == set(B)`, drift stays invisible until something downstream breaks. By then it's a postmortem, not a code review.
+
+**Sequencing rule**:
+
+1. PR adds artifact A → no guard needed yet.
+2. PR adds artifact B that shares an invariant with A → the guard ships **in this PR**, before merge. Reviewers should block on a missing guard.
+3. PR adds artifact C that shares the same invariant → extend the existing guard, don't add a parallel one.
+
+**Where the guard lives**: a standalone script under `scripts/` (any language appropriate to the repo) wired into CI. Don't bury cross-check logic inside one of the generators — the guard must be runnable independently to be debuggable. When parsing structured data formats (CSV, YAML, etc.), use a format-aware parser rather than field-splitting with `awk`/`cut`/`IFS` — silent miss-parses defeat the guard.
+
 ## Token Limits and Context Management
 
 ### The Problem
