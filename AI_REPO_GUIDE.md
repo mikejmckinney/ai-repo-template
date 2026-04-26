@@ -74,7 +74,7 @@ bash install.sh
 │   ├── FAQ.md                # Common questions
 │   ├── smoke-a.md            # Smoke test scenario A
 │   ├── smoke-e.md            # Smoke test scenario E
-│   ├── decisions/            # Architecture Decision Records (adr-001 … adr-010, adr-template)
+│   ├── decisions/            # Architecture Decision Records (adr-001 … adr-014, adr-template)
 │   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, multi-agent-coordination, optional-skills)
 │   ├── postmortems/          # Postmortems (template + project-specific)
 │   ├── reference/            # Specs, external docs
@@ -227,7 +227,7 @@ bash install.sh
 | `validate-connections.yml` | Daily backend/DB connectivity check |
 | `claude.yml` | Claude Code triggers (`@claude` mention + auto-review on PR open) |
 | `agent-assign-copilot.yml` | Gated Copilot PR assignment for `copilot:ready` issues |
-| `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved) |
+| `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved). Holds merge ~180 s after readiness for slow bot reviews to land (ADR-014); `auto-merge-fast` label skips the wait. |
 | `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes |
 | `agent-coordination-sync.yml` | Reconciles `.context/state/coordination.md` with live PR/issue state |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback |

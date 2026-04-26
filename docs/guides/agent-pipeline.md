@@ -147,6 +147,18 @@ and there are no merge conflicts, the workflow squash-merges, deletes
 the head branch, and closes the linked issue. Fork PRs are refused
 regardless of the label (defense in depth).
 
+**Bot-review grace period (ADR-014).** Before the squash-merge call,
+auto-merge holds the merge for up to 180 s (3 cycles × 60 s) to give
+slow bot reviewers (`gemini-code-assist`, `copilot-pull-request-reviewer`,
+`chatgpt-codex-connector`, `codex`) a chance to land their reviews —
+they typically post 1–3 min after CI completes via webhooks that don't
+trigger any GitHub Actions workflow, so without the wait their reviews
+land on a closed PR and are silently lost from the resolution pipeline
+(see PR #181 incident in issue #182). The wait exits early on the first
+poll where ≥1 in-allowlist review has been submitted since the head
+commit. PRs labeled `auto-merge-fast` skip the wait entirely — use this
+for trivial PRs where slow-bot feedback is acceptable to lose.
+
 ## Invoking a prompt file manually
 
 Both Claude and Copilot support a symmetric one-liner for running any prompt
@@ -223,6 +235,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 |-------|-------|---------|
 | `agent-complete` | `#0E8A16` (green) | Merged and done |
 | `auto-merge` | `#0E8A16` (green) | Opt PR in to `agent-auto-merge.yml` (applies to any branch) |
+| `auto-merge-fast` | `#5319E7` (purple) | Skip the 180 s bot-review wait in `agent-auto-merge.yml` (ADR-014; use only for trivial PRs) |
 | `no-auto-ready` | `#BFDADC` (light blue) | Opt out of automatic ready-state handling |
 | `claude-fix` | `#FBCA04` (amber) | Opt PR in to `agent-fix-reviews.yml` (Claude resolution) |
 | `claude-review` | `#1D76DB` (blue) | Opt PR in to `claude.yml` auto-review (invokes judge subagent on open/reopen/ready_for_review) |

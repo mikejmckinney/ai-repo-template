@@ -376,6 +376,101 @@ jobs:
           echo "$body" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
+      # Bot-review grace period (issue #182, ADR-014)
+      #
+      # Auto-merge fires from the workflow_run trigger on CI completion,
+      # which on small/fast PRs (~30s CI) runs before slow bot reviewers
+      # (gemini-code-assist, copilot-pull-request-reviewer, chatgpt-codex-
+      # connector) post their reviews 1–3 min later via webhooks that do
+      # NOT trigger any of our workflows. Without a grace period, those
+      # reviews land on a closed PR and are silently dropped from the
+      # resolution pipeline.
+      #
+      # `claude` is intentionally excluded from the allow-list: claude.yml
+      # already gates merge via the existing workflow_run trigger on
+      # "Auto-Fix Reviews (Claude)", so adding it here would double-count.
+      #
+      # Per-PR escape hatch: `auto-merge-fast` label skips the wait. Use
+      # only for trivial PRs where slow-bot feedback is acceptable to lose.
+      - name: Wait for late bot reviews
+        if: steps.find.outputs.eligible == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.find.outputs.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          # Re-fetch PR json: the eligibility-check json is in steps.find
+          # but we need fresh review data and the head-commit timestamp.
+          pr_json=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
+            --json labels,reviews,headRefOid,commits 2>/dev/null) || {
+            echo "::warning::Could not re-fetch PR data; proceeding to merge."
+            exit 0
+          }
+
+          # Fast-path: skip wait entirely if the escape-hatch label is set.
+          has_fast_label=$(echo "$pr_json" | jq -r \
+            '[.labels[].name] | any(. == "auto-merge-fast")' 2>/dev/null || echo "false")
+          if [[ "$has_fast_label" == "true" ]]; then
+            echo "fast-path: auto-merge-fast label present, skipping bot-review wait."
+            exit 0
+          fi
+
+          # Slow-bot allow-list. Mirrors agent-relay-reviews.yml AI_REVIEWERS
+          # (minus 'claude', see comment above).
+          # Per .github/prompts/pr-resolve-all.md normalization rule, the
+          # `[bot]` suffix is stripped and compared case-insensitively.
+          ALLOWLIST_REGEX='^(gemini-code-assist|copilot-pull-request-reviewer|chatgpt-codex-connector|codex)$'
+
+          # Head-commit timestamp: only count reviews submitted AFTER the
+          # latest commit. A review on a stale commit is irrelevant to
+          # whether the current head is reviewed.
+          head_committed_at=$(echo "$pr_json" | jq -r \
+            '.commits[-1].committedDate // empty' 2>/dev/null || true)
+          if [[ -z "$head_committed_at" ]]; then
+            echo "::warning::Could not read head-commit timestamp; proceeding to merge."
+            exit 0
+          fi
+          echo "Head-commit timestamp: $head_committed_at"
+
+          MAX_POLLS=3
+          POLL_INTERVAL=60
+
+          count_in_allowlist_reviews() {
+            # Count reviews whose author (lowercased, [bot] stripped) is in
+            # the allow-list AND whose submittedAt > head_committed_at.
+            gh pr view "$PR_NUMBER" --repo "$REPO" --json reviews \
+              --jq --arg since "$head_committed_at" --arg re "$ALLOWLIST_REGEX" '
+                [
+                  .reviews[]
+                  | select(.submittedAt > $since)
+                  | (.author.login // "") | ascii_downcase | sub("\\[bot\\]$"; "")
+                  | select(test($re))
+                ] | length
+              ' 2>/dev/null || echo "0"
+          }
+
+          for i in $(seq 1 "$MAX_POLLS"); do
+            n=$(count_in_allowlist_reviews)
+            n=${n:-0}
+            echo "poll $i/$MAX_POLLS: $n in-allowlist review(s) found since head commit."
+            if [[ "$n" -ge 1 ]]; then
+              echo "At least one slow-bot review has landed; proceeding to merge."
+              exit 0
+            fi
+            if [[ "$i" -lt "$MAX_POLLS" ]]; then
+              echo "Sleeping ${POLL_INTERVAL}s for late reviewers..."
+              sleep "$POLL_INTERVAL"
+            fi
+          done
+
+          # Graceful timeout: proceed to merge even if no review arrived.
+          # The workflow re-fires on pull_request_review, so a review that
+          # arrives after the merge call is racing the merge — but at least
+          # we waited the documented grace period.
+          echo "Timeout reached after $((MAX_POLLS * POLL_INTERVAL))s; proceeding to merge (graceful)."
+
       # Merge
       - name: Squash and merge
         if: steps.find.outputs.eligible == 'true'
