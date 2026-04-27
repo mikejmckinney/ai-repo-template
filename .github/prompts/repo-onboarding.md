@@ -23,18 +23,31 @@ This phase only applies when the repo was just cloned from
 yet been customized for the actual project. If none of the detection signals
 below fire, skip directly to Phase 1.
 
-## Step 0.1: Detect template state
+## Step 0.1: Classify the repo (Mode A / B / C)
 
-Run these checks (any one positive ⇒ template-bootstrap mode):
+Run these checks once and record the result. The mode determines whether
+Phase 0 does any work and is reported at the start of Step 1.0:
 
-- `git remote -v` shows the repo name is `ai-repo-template` itself
-  (the template repo — do NOT regenerate; skip to Phase 1).
-- `README.md` or `AI_REPO_GUIDE.md` contains `TEMPLATE_PLACEHOLDER`.
-- `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`.
-- `grep -RIl TEMPLATE_PLACEHOLDER .` returns one or more matches outside
-  `.github/prompts/` (which legitimately documents the marker).
+- **Mode A — Template repo itself.** `git remote -v` (or the folder name)
+  shows this repo *is* `ai-repo-template` (or legacy `dotfiles`). README,
+  AI_REPO_GUIDE.md, and CLAUDE.md are the template's canonical docs and
+  **must NOT be regenerated**. Skip directly to Phase 1.
+- **Mode B — Derived repo, bootstrap not yet run.** Any of:
+  - `README.md` or `AI_REPO_GUIDE.md` contains `TEMPLATE_PLACEHOLDER`.
+  - `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`.
+  - `grep -RIl TEMPLATE_PLACEHOLDER .` returns matches outside
+    `.github/prompts/` (which legitimately documents the marker).
 
-## Step 0.2: Apply template-bootstrap rules
+  Do the work in Step 0.2, then continue to Phase 1.
+- **Mode C — Derived repo, already customized.** No Mode B signals fire
+  and the repo isn't `ai-repo-template`. Skip Phase 0 work; continue to
+  Phase 1.
+
+If signals are ambiguous (e.g. `ai-repo-template` *and* a stray
+`TEMPLATE_PLACEHOLDER`), prefer Mode A — never regenerate the template's
+own docs. Note the ambiguity in the Mode field of the Step 1.0 status line.
+
+## Step 0.2: Apply template-bootstrap rules (Mode B only)
 
 Do NOT duplicate the rules here — they live in **`.github/copilot-instructions.md`**
 (“Template detection” block) and **`AGENTS.md`** (“Template detection” section).
@@ -76,7 +89,7 @@ Phase 1 has accurate state:
 4. Skim `.context/sessions/latest_summary.md` for recent decisions and
    handoffs from prior sessions.
 5. Report a one-line status:
-   `"Context reviewed. Current task is <name>. Environment is <Stable|Unstable: <reason>>. Ready for instructions."`
+   `"Context reviewed. Onboarding Mode: <A|B|C>. Current task is <name>. Environment is <Stable|Unstable: <reason>>. Ready for instructions."`
 
 **"Stable" means all of:**
 
