@@ -20,7 +20,7 @@ You are a senior software engineer joining an existing codebase. Your job is to 
 Run this section once when an agent first encounters the repo (fresh clone, new session in a derived project, or any time `AI_REPO_GUIDE.md` is missing or contains `TEMPLATE_PLACEHOLDER`). Skip if you have already onboarded this repo in a prior session and `AI_REPO_GUIDE.md` is current.
 
 1. **Detect template state.** Follow `AGENTS.md` §"Template detection" — do not duplicate that logic here. It tells you whether you are in the template repo itself (`ai-repo-template` / legacy `dotfiles`), in which case `README.md`, `AI_REPO_GUIDE.md`, and `CLAUDE.md` are template docs and must NOT be regenerated, or in a derived project where stub docs containing `TEMPLATE_PLACEHOLDER` should be replaced.
-2. **Build context.** Complete Phase 1 below: read docs, map the codebase, produce the repo brief, and create or regenerate `AI_REPO_GUIDE.md` if needed.
+2. **Build context.** Complete Phase 1 below: read docs, map the codebase, produce the repo brief, and create or regenerate `AI_REPO_GUIDE.md` only as permitted by Step 1's template-detection result (the template repo itself does NOT regenerate; derived projects do).
 3. **Chain to Copilot onboarding.** After Phase 1, run `.github/prompts/copilot-onboarding.md` to rebuild `.github/copilot-instructions.md` against the now-accurate `AI_REPO_GUIDE.md`.
 4. **Report readiness** using the format in Step 1.7 below before accepting the next user instruction.
 
@@ -140,10 +140,10 @@ After Phase 1 completes (and after running `.github/prompts/copilot-onboarding.m
 "Stable" means all of:
 
 - `git status` is clean, or only contains expected agent edits.
-- `./scripts/verify-env.sh` exits 0.
+- `./scripts/verify-env.sh` exits 0 **and** reports no onboarding-blocking WARNs. In particular, treat any `TEMPLATE_PLACEHOLDER`-still-present WARN (the script exits 0 with `WARN > 0`, see `scripts/verify-env.sh:134-142,159-165`) as Unstable when running in a derived repo — it means stub docs haven't been replaced yet.
 - Phase 1 above completed without missing-file errors. (`bash test.sh` is the deeper structural check — it iterates `REQUIRED_FILES` and the context-pack files. Its single environmental failure on commit signing in some sandboxes is unrelated to onboarding state.)
 
-Otherwise report **Unstable** and name the specific failure (e.g., `Unstable: verify-env.sh exited 1 — missing PYTHONPATH`).
+Otherwise report **Unstable** and name the specific failure or blocking WARN (e.g., `Unstable: verify-env.sh exited 1 — missing PYTHONPATH`, or `Unstable: verify-env.sh warned TEMPLATE_PLACEHOLDER remains in 3 files`).
 
 ---
 
