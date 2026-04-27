@@ -1,5 +1,5 @@
 ---
-description: Systematic verify-and-fix procedure for every open issue, suggestion, and TODO on a PR. Produces an Issue/Suggestion Index, Resolution Report, and (Phase 4) auto-resolves bot review threads.
+description: Resolve every open issue, suggestion, and TODO on a PR; produce Index + Resolution Report and auto-resolve bot threads.
 agent: agent
 ---
 

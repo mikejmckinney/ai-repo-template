@@ -1,5 +1,5 @@
 ---
-description: Onboard an AI agent to a repo (template-clone or existing). Builds a repo brief, regenerates template-owned docs when needed, and chains to copilot-onboarding.md.
+description: Onboard an AI agent to a repo (template-clone or existing); produce repo brief and chain to copilot-onboarding.md.
 agent: agent
 ---
 
@@ -49,9 +49,12 @@ own docs. Note the ambiguity in the Mode field of the Step 1.0 status line.
 
 ## Step 0.2: Apply template-bootstrap rules (Mode B only)
 
-Do NOT duplicate the rules here — they live in **`.github/copilot-instructions.md`**
-(“Template detection” block) and **`AGENTS.md`** (“Template detection” section).
-Read both, then follow them. The short version:
+The canonical rules live in **`.github/copilot-instructions.md`**
+(“Template detection” block) and **`AGENTS.md`** (“Template detection”
+section) — read them first. The bullets below are a non-canonical
+recap to anchor the work; if they ever drift from those two sources,
+the canonical sources win and this list should be re-synced in the
+same PR:
 
 1. **Replace `README.md`** with project-specific content (delete the template
    stub language; preserve repo-specific structure if any already exists).
@@ -98,8 +101,9 @@ Phase 1 has accurate state:
   WARNs. In particular, treat any `TEMPLATE_PLACEHOLDER`-still-present
   WARN as **Unstable** when running in a derived (non-template) repo —
   it means stub docs haven't been replaced yet (Phase 0 is incomplete).
-- Phase 1 below completed without missing-file errors. (`bash test.sh`
-  is the deeper structural check.)
+- Steps 1–4 above completed without missing-file errors. (`bash test.sh`
+  is the deeper structural check; run it later in Phase 1 if you want
+  full coverage.)
 
 Otherwise report **Unstable** and name the specific failure or blocking
 WARN (e.g. `Unstable: verify-env.sh exited 1 — missing PYTHONPATH`, or
@@ -205,11 +209,34 @@ If it exists, verify accuracy and update if needed.
 
 ## Step 1.6: Confirm template placeholders are gone
 
-Template-placeholder cleanup is handled in **Phase 0**. As a final check,
-run `grep -RIl 'TEMPLATE_PLACEHOLDER\|PLEASE_UPDATE_THIS' .` and confirm
-the only remaining matches are inside `.github/prompts/` (which
-legitimately documents the markers). If matches appear elsewhere, return
-to Phase 0 Step 0.2 and finish the cleanup before continuing.
+Template-placeholder cleanup is handled in **Phase 0**. As a final
+check, re-run the **Mode B detection signals** from Step 0.1 and
+confirm none still fire. In a derived repo, all three should now be
+clean:
+
+```bash
+# Signal 1 — README and AI_REPO_GUIDE no longer carry the template stub.
+grep -El 'TEMPLATE_PLACEHOLDER' README.md AI_REPO_GUIDE.md 2>/dev/null \
+  && echo "FAIL: stub README or AI_REPO_GUIDE still has TEMPLATE_PLACEHOLDER"
+
+# Signal 2 — issue-template config points at the real repo.
+grep -E 'PLEASE_UPDATE_THIS/URL' .github/ISSUE_TEMPLATE/config.yml 2>/dev/null \
+  && echo "FAIL: ISSUE_TEMPLATE/config.yml still has PLEASE_UPDATE_THIS/URL"
+```
+
+If either signal fires, return to Phase 0 Step 0.2 and finish the
+cleanup before continuing.
+
+A broad `grep -RIl 'TEMPLATE_PLACEHOLDER|PLEASE_UPDATE_THIS' .` is
+**not** a useful test — these markers are intentionally referenced in
+many files as part of the template-detection logic itself
+(`.github/copilot-instructions.md`, `.github/prompts/**`, `AGENTS.md`,
+`.github/ISSUE_TEMPLATE/agent_init.md`, the agent role files, and the
+`*.template` config samples). Trust the targeted checks above.
+
+Use `grep -E` (extended regex) rather than `grep` with `\|` — the
+basic-regex alternation is not portable across all `grep`
+implementations.
 
 ---
 

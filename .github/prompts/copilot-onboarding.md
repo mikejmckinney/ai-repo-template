@@ -1,5 +1,5 @@
 ---
-description: One-time generator for .github/copilot-instructions.md. Run after repo-onboarding.md so the per-repo Copilot context reflects the project's real commands and structure.
+description: Generate .github/copilot-instructions.md after repo-onboarding.md so per-repo Copilot context matches the project.
 agent: agent
 ---
 

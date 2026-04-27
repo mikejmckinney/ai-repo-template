@@ -1,5 +1,5 @@
 ---
-description: Expand a sparse .context/backlog.yaml entry into a complete actionable issue body and acceptance criteria. Invoked programmatically by .github/workflows/backlog-to-issues.yml.
+description: Expand a sparse .context/backlog.yaml entry into a full issue body with acceptance criteria; called by backlog-to-issues.yml.
 agent: agent
 ---
 

@@ -30,11 +30,13 @@ lists come after, not before.
 
 ## Frontmatter schema
 
-Every prompt file in this directory must start with a YAML frontmatter
-block. This is what VS Code's prompt picker, Claude Code's loader, and
-the `@copilot follow` / `@claude follow` runtimes consume to surface and
-dispatch the prompt. Keep the schema minimal so we don't lock in
-tool-specific fields prematurely:
+Every **prompt file** in this directory (every `*.md` other than this
+`README.md`) must start with a YAML frontmatter block. `README.md` is an
+intentional exception — it documents the schema rather than being a
+prompt itself. The frontmatter is what VS Code's prompt picker, Claude
+Code's loader, and the `@copilot follow` / `@claude follow` runtimes
+consume to surface and dispatch the prompt. Keep the schema minimal so
+we don't lock in tool-specific fields prematurely:
 
 ```yaml
 ---
@@ -56,5 +58,12 @@ Field rules:
   prompts stay consistent.
 
 When you add a new prompt, copy this block as the first lines of the
-file. The verification check `grep -L "^---$" .github/prompts/*.md`
-should always return empty.
+file. The verification check below should print nothing — `README.md`
+is filtered out because it is the documented exception:
+
+```bash
+for f in .github/prompts/*.md; do
+  [ "$(basename "$f")" = "README.md" ] && continue
+  head -1 "$f" | grep -q '^---$' || echo "missing frontmatter: $f"
+done
+```
