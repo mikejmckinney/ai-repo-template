@@ -1,4 +1,5 @@
 ---
+description: Onboard an AI agent to a repo (template-clone or existing); produce repo brief and chain to copilot-onboarding.md.
 agent: agent
 ---
 
@@ -15,7 +16,102 @@ You are a senior software engineer joining an existing codebase. Your job is to 
 
 ---
 
+# Phase 0: Template Bootstrap (skip if not a fresh template clone)
+
+This phase only applies when the repo was just cloned from
+`mikejmckinney/ai-repo-template` (or its predecessor `dotfiles`) and has not
+yet been customized for the actual project. If none of the detection signals
+below fire, skip directly to Phase 1.
+
+## Step 0.1: Classify the repo (Mode A / B / C)
+
+Run these checks once and record the result. The mode determines whether
+Phase 0 does any work and is reported at the start of Step 1.0:
+
+- **Mode A — Template repo itself.** `git remote -v` (or the folder name)
+  shows this repo *is* `ai-repo-template` (or legacy `dotfiles`). README,
+  AI_REPO_GUIDE.md, and CLAUDE.md are the template's canonical docs and
+  **must NOT be regenerated**. Skip directly to Phase 1.
+- **Mode B — Derived repo, bootstrap not yet run.** Any of:
+  - `README.md` or `AI_REPO_GUIDE.md` contains `TEMPLATE_PLACEHOLDER`.
+  - `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`.
+  - `grep -RIl TEMPLATE_PLACEHOLDER .` returns matches outside
+    `.github/prompts/` (which legitimately documents the marker).
+
+  Do the work in Step 0.2, then continue to Phase 1.
+- **Mode C — Derived repo, already customized.** No Mode B signals fire
+  and the repo isn't `ai-repo-template`. Skip Phase 0 work; continue to
+  Phase 1.
+
+If signals are ambiguous (e.g. `ai-repo-template` *and* a stray
+`TEMPLATE_PLACEHOLDER`), prefer Mode A — never regenerate the template's
+own docs. Note the ambiguity in the Mode field of the Step 1.0 status line.
+
+## Step 0.2: Apply template-bootstrap rules (Mode B only)
+
+The canonical rules live in **`.github/copilot-instructions.md`**
+(“Template detection” block) and **`AGENTS.md`** (“Template detection”
+section) — read them first. The bullets below are a non-canonical
+recap to anchor the work; if they ever drift from those two sources,
+the canonical sources win and this list should be re-synced in the
+same PR:
+
+1. **Replace `README.md`** with project-specific content (delete the template
+   stub language; preserve repo-specific structure if any already exists).
+2. **Regenerate `AI_REPO_GUIDE.md`** from the repo's real assets
+   (`./.context/**`, `./docs/**`, source). This file is canonical for agents
+   and must not retain template placeholder language.
+3. **Replace placeholders** wherever they occur:
+   - `TEMPLATE_PLACEHOLDER` markers → project-specific text or remove.
+   - `PLEASE_UPDATE_THIS/URL` in `.github/ISSUE_TEMPLATE/config.yml` →
+     actual `owner/repo` from `git remote -v`.
+4. **Extend `.context/rules/agent_ownership.md`** with rows for the project's
+   real source paths (e.g. `src/frontend/**`, `src/backend/**`, `tests/**`).
+   Do NOT remove the template-governance roles
+   (Analyst / Architect / PM / QA / DevOps / Docs / Judge / Critic) —
+   they remain load-bearing.
+5. **Customize `docs/FAQ.md`** — strip entries prefixed with `Template:` and
+   replace with project-specific Q&A.
+
+When Phase 0 work is complete, continue to Phase 1.
+
+---
+
 # Phase 1: Build Context (Repo Brief)
+
+## Step 1.0: Quick context check (always run first)
+
+Before the deep dive in Step 1.1, do a fast sanity pass so the rest of
+Phase 1 has accurate state:
+
+1. Read `.context/state/_active.md` (note the leading underscore) or any
+   `.context/state/task_*.md` to understand the immediate goal.
+2. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
+3. Run `git status` and `./scripts/verify-env.sh` to confirm the working
+   tree and environment are stable.
+4. Skim `.context/sessions/latest_summary.md` for recent decisions and
+   handoffs from prior sessions.
+5. Report a one-line status:
+   `"Context reviewed. Onboarding Mode: <A|B|C>. Current task is <name>. Environment is <Stable|Unstable: <reason>>. Ready for instructions."`
+
+**"Stable" means all of:**
+
+- `git status` is clean, or only contains expected agent edits.
+- `./scripts/verify-env.sh` exits 0 **and** reports no onboarding-blocking
+  WARNs. In particular, treat any `TEMPLATE_PLACEHOLDER`-still-present
+  WARN as **Unstable** when running in a derived (non-template) repo —
+  it means stub docs haven't been replaced yet (Phase 0 is incomplete).
+- Steps 1–4 above completed without missing-file errors. (`bash test.sh`
+  is the deeper structural check; run it later in Phase 1 if you want
+  full coverage.)
+
+Otherwise report **Unstable** and name the specific failure or blocking
+WARN (e.g. `Unstable: verify-env.sh exited 1 — missing PYTHONPATH`, or
+`Unstable: verify-env.sh warned TEMPLATE_PLACEHOLDER remains in 3 files`).
+
+If any of these files are missing, note it explicitly — do not invent
+content, and do not block on it. Continue with the rest of Phase 1.
+
 
 ## Step 1.1: Read Key Documentation
 
@@ -111,14 +207,36 @@ If `/AI_REPO_GUIDE.md` does NOT exist, create it with:
 
 If it exists, verify accuracy and update if needed.
 
-## Step 1.6: Update Template Placeholders
+## Step 1.6: Confirm template placeholders are gone
 
-If this repo was created from a template, update placeholder values:
+Template-placeholder cleanup is handled in **Phase 0**. As a final
+check, re-run the **Mode B detection signals** from Step 0.1 and
+confirm none still fire. In a derived repo, all three should now be
+clean:
 
-1. Run `git remote -v` to get the repository owner/name
-2. If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
-   - Replace with actual `owner/repo` (e.g., `myorg/myproject`)
-3. Search for any remaining `TEMPLATE_PLACEHOLDER` markers and replace with project-specific content
+```bash
+# Signal 1 — README and AI_REPO_GUIDE no longer carry the template stub.
+grep -El 'TEMPLATE_PLACEHOLDER' README.md AI_REPO_GUIDE.md 2>/dev/null \
+  && echo "FAIL: stub README or AI_REPO_GUIDE still has TEMPLATE_PLACEHOLDER"
+
+# Signal 2 — issue-template config points at the real repo.
+grep -E 'PLEASE_UPDATE_THIS/URL' .github/ISSUE_TEMPLATE/config.yml 2>/dev/null \
+  && echo "FAIL: ISSUE_TEMPLATE/config.yml still has PLEASE_UPDATE_THIS/URL"
+```
+
+If either signal fires, return to Phase 0 Step 0.2 and finish the
+cleanup before continuing.
+
+A broad `grep -RIl 'TEMPLATE_PLACEHOLDER|PLEASE_UPDATE_THIS' .` is
+**not** a useful test — these markers are intentionally referenced in
+many files as part of the template-detection logic itself
+(`.github/copilot-instructions.md`, `.github/prompts/**`, `AGENTS.md`,
+`.github/ISSUE_TEMPLATE/agent_init.md`, the agent role files, and the
+`*.template` config samples). Trust the targeted checks above.
+
+Use `grep -E` (extended regex) rather than `grep` with `\|` — the
+basic-regex alternation is not portable across all `grep`
+implementations.
 
 ---
 
@@ -220,3 +338,13 @@ Before considering the task complete:
 - [ ] Changes are minimal (no unrelated modifications)
 - [ ] Docs updated if behavior changed
 - [ ] `AI_REPO_GUIDE.md` is accurate
+
+---
+
+# Next: Generate Copilot Instructions
+
+When onboarding is finished (especially after a Phase 0 bootstrap), chain
+into **`.github/prompts/copilot-onboarding.md`** to generate or refresh
+`.github/copilot-instructions.md` so Copilot's per-repo context matches
+the new project shape. Skip this step only if `copilot-instructions.md`
+is already accurate for the post-onboarding state.

@@ -1,3 +1,8 @@
+---
+description: Expand a sparse .context/backlog.yaml entry into a full issue body with acceptance criteria; called by backlog-to-issues.yml.
+agent: agent
+---
+
 # Expand Backlog Entry
 
 > **Usage**: This prompt is invoked programmatically by

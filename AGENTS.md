@@ -1,5 +1,22 @@
 # AGENTS.md
 
+<!-- AGENTS_MD_VERSION: 1 -->
+<!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
+     handshake below proves agents loaded the *current* copy, not a stale one. -->
+
+## Session handshake (read-receipt)
+When you have read this file at the start of a session, open your first
+substantive reply with the exact token `Session handshake v1` (matching
+the `AGENTS_MD_VERSION` value above) on its own line before any other
+content. Do not paraphrase, translate, or omit the token. The number is
+the canary — if it doesn't match the version above, your AGENTS.md copy
+is stale and you should re-read this file before proceeding.
+
+This is a per-session signal, not a per-reply one. Emit it once at the
+start of the session; suppress it on subsequent replies in the same
+conversation. If a user explicitly says "skip the handshake," honor that
+for the rest of the session.
+
 ## Template detection (important)
 - Determine the current repository name (e.g., via `git remote -v` or folder name).
 - If the repo is named `ai-repo-template` (or `mikejmckinney/ai-repo-template`), or the

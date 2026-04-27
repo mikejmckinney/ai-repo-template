@@ -1,3 +1,8 @@
+---
+description: Generate .github/copilot-instructions.md after repo-onboarding.md so per-repo Copilot context matches the project.
+agent: agent
+---
+
 # Copilot Repository Onboarding Prompt
 
 Your task is to onboard this repository to GitHub Copilot by creating a `.github/copilot-instructions.md` file that helps AI coding agents work efficiently with this codebase.

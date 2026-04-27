@@ -1,3 +1,8 @@
+---
+description: Resolve every open issue, suggestion, and TODO on a PR; produce Index + Resolution Report and auto-resolve bot threads.
+agent: agent
+---
+
 # PR Issue Resolution — Systematic Verify-and-Fix
 
 > **Usage**: Post one of these as a PR comment:
