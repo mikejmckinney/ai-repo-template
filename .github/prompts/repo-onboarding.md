@@ -76,7 +76,21 @@ Phase 1 has accurate state:
 4. Skim `.context/sessions/latest_summary.md` for recent decisions and
    handoffs from prior sessions.
 5. Report a one-line status:
-   `"Context reviewed. Current task is <name>. Environment is <stable|unstable>. Ready for instructions."`
+   `"Context reviewed. Current task is <name>. Environment is <Stable|Unstable: <reason>>. Ready for instructions."`
+
+**"Stable" means all of:**
+
+- `git status` is clean, or only contains expected agent edits.
+- `./scripts/verify-env.sh` exits 0 **and** reports no onboarding-blocking
+  WARNs. In particular, treat any `TEMPLATE_PLACEHOLDER`-still-present
+  WARN as **Unstable** when running in a derived (non-template) repo —
+  it means stub docs haven't been replaced yet (Phase 0 is incomplete).
+- Phase 1 below completed without missing-file errors. (`bash test.sh`
+  is the deeper structural check.)
+
+Otherwise report **Unstable** and name the specific failure or blocking
+WARN (e.g. `Unstable: verify-env.sh exited 1 — missing PYTHONPATH`, or
+`Unstable: verify-env.sh warned TEMPLATE_PLACEHOLDER remains in 3 files`).
 
 If any of these files are missing, note it explicitly — do not invent
 content, and do not block on it. Continue with the rest of Phase 1.
