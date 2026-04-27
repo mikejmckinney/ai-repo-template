@@ -1,17 +1,31 @@
 ---
-agent: agent
+description: "Primary onboarding prompt for new and existing repositories. Initializes agent context and builds repo understanding."
+type: "prompt"
+agent: "agent"
 ---
 
 # Repository Onboarding Prompt
 
-You are a senior software engineer joining an existing codebase. Your job is to build an accurate mental model of this repo BEFORE making changes, then implement the requested work with minimal, well-tested diffs.
+You are a senior software engineer joining a codebase. Your job is to build an accurate mental model of this repo BEFORE making changes, then implement the requested work with minimal, well-tested diffs.
 
 ## Core Principles
 
+- **Template Repositories:** This repository may have been created from a template. Any file containing `TEMPLATE_PLACEHOLDER` is NOT project truth. Determine the actual project purpose from `./.context/**`, `./docs/**`, and the codebase itself.
 - **Do NOT guess** APIs, file contents, or behavior. Verify everything in the repo.
 - **Prefer small, reversible changes**. Keep style consistent with the repo.
 - **Before editing**: Summarize understanding → propose a plan → identify files to touch.
 - **After editing**: Provide rationale, the diff, and exact commands to test.
+
+---
+
+# Phase 0: Preflight & Context Sync
+
+Before exploring the codebase, you must ground yourself in the active state of the project.
+
+1. **Check State**: Read `.context/state/_active.md` or `task_*.md` to understand the immediate goal.
+2. **Check Rules**: Read `.context/00_INDEX.md` to locate relevant rules and constraints.
+3. **Verify Stability**: Run `git status` and `./scripts/verify-env.sh` (if it exists) to ensure the environment is stable.
+4. **Review History**: Skim `.context/sessions/latest_summary.md` for recent decisions and context.
 
 ---
 
@@ -99,9 +113,26 @@ Output a structured summary:
 - <item>
 ```
 
-## Step 1.5: Create/Update AI_REPO_GUIDE.md
+---
 
-If `/AI_REPO_GUIDE.md` does NOT exist, create it with:
+# Phase 2: Codebase Initialization & Regeneration
+
+If you are onboarding to this repo for the first time, or if the repo is in an uninitialized state from a template:
+
+## Step 2.1: Update Template Placeholders
+
+1. Run `git remote -v` to get the repository owner/name.
+2. If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
+   - Replace with actual `owner/repo` (e.g., `myorg/myproject`).
+3. Search for any remaining `TEMPLATE_PLACEHOLDER` markers and replace with project-specific content.
+
+## Step 2.2: Rewrite README.md
+
+Replace `README.md` entirely with project-specific content based on your findings in `.context/**` and `docs/**`, ensuring it accurately reflects the *actual* project, not the template.
+
+## Step 2.3: Regenerate AI_REPO_GUIDE.md
+
+Regenerate `AI_REPO_GUIDE.md` to reflect the newly gathered context:
 - Overview (what this is)
 - Quickstart (run/test commands)
 - Folder map + key entry points
@@ -109,114 +140,16 @@ If `/AI_REPO_GUIDE.md` does NOT exist, create it with:
 - Where to add things (routes, services, components)
 - Troubleshooting / common gotchas
 
-If it exists, verify accuracy and update if needed.
+## Step 2.4: Execute Copilot Onboarding
 
-## Step 1.6: Update Template Placeholders
-
-If this repo was created from a template, update placeholder values:
-
-1. Run `git remote -v` to get the repository owner/name
-2. If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
-   - Replace with actual `owner/repo` (e.g., `myorg/myproject`)
-3. Search for any remaining `TEMPLATE_PLACEHOLDER` markers and replace with project-specific content
+If the file `.github/prompts/copilot-onboarding.md` exists, you must run it now to generate `.github/copilot-instructions.md`.
 
 ---
 
-# Phase 2: Clarify the Task
+# Phase 3: Delivery & Readiness Report
 
-Ask at most **3 targeted questions** that unblock implementation.
+Once Phase 0-2 are complete, you must report your readiness back to the user EXACTLY in this format:
 
-If no questions are required, proceed to Phase 3.
+> I have reviewed the context. Current task is [Task Name]. Environment is [Stable/Unstable]. Ready for instructions.
 
-Examples of good questions:
-- "Should this change be backward compatible?"
-- "Which test file should I add tests to?"
-- "Is there an existing pattern for <X> I should follow?"
-
----
-
-# Phase 3: Implement
-
-## Step 3.1: Re-read AI_REPO_GUIDE.md
-
-Cite which sections guide your approach.
-
-## Step 3.2: Propose a Plan
-
-Before making changes, provide:
-
-```markdown
-## Implementation Plan
-
-### Changes
-1. [ ] `path/to/file.ext` — <what changes>
-2. [ ] `path/to/file.ext` — <what changes>
-
-### Tests to Add/Update
-- [ ] `test/path/file.test.ext` — <what to test>
-
-### Risks
-- <potential issues>
-
-### Verification
-- `<command>` — what it proves
-```
-
-## Step 3.3: Make the Changes
-
-- Follow existing code style and patterns
-- Add/update tests for behavioral changes
-- Update docs if behavior changed
-
-## Step 3.4: Update AI_REPO_GUIDE.md
-
-If your changes affect:
-- Commands
-- File structure
-- Conventions
-- Entry points
-
-Update `AI_REPO_GUIDE.md` to reflect this.
-
----
-
-# Phase 4: Deliver
-
-Provide:
-
-````markdown
-## Summary
-<What changed and why>
-
-## Files Changed
-- `path/to/file.ext` — <description>
-
-## Test Commands
-```bash
-<commands to verify changes work>
-```
-
-## Expected Outcome
-<What should happen when tests pass>
-
-## AI_REPO_GUIDE.md Status
-- [ ] Up to date
-- [ ] Updated (describe what changed)
-- [ ] N/A (no structural changes)
-
-## Follow-ups (optional)
-- <Future improvements>
-````
-
----
-
-# Verification Checklist
-
-Before considering the task complete:
-
-- [ ] All tests pass
-- [ ] Linting passes
-- [ ] Build succeeds
-- [ ] Changes are minimal (no unrelated modifications)
-- [ ] Docs updated if behavior changed
-- [ ] `AI_REPO_GUIDE.md` is accurate
+*(Wait for user instructions or proceed to clarify the task if it was already provided).*

@@ -1,3 +1,9 @@
+---
+description: "Instructions for onboarding this repository to GitHub Copilot."
+type: "prompt"
+agent: "agent"
+---
+
 # Copilot Repository Onboarding Prompt
 
 Your task is to onboard this repository to GitHub Copilot by creating a `.github/copilot-instructions.md` file that helps AI coding agents work efficiently with this codebase.
