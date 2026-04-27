@@ -261,7 +261,7 @@ else
 fi
 
 if grep -q "Session handshake" AGENTS.md 2>/dev/null \
-   && grep -q '🤝 AGENTS.md v' AGENTS.md 2>/dev/null; then
+   && grep -qE 'Session handshake v[0-9]+' AGENTS.md 2>/dev/null; then
     pass "AGENTS.md has Session handshake instruction with token"
 else
     fail "AGENTS.md missing Session handshake instruction or token"
@@ -269,7 +269,7 @@ fi
 
 # Verify the version inside the handshake token matches AGENTS_MD_VERSION
 agents_md_version=$(grep -oE '^<!-- AGENTS_MD_VERSION: [0-9]+ -->' AGENTS.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
-handshake_version=$(grep -oE '🤝 AGENTS.md v[0-9]+' AGENTS.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
+handshake_version=$(grep -oE 'Session handshake v[0-9]+' AGENTS.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
 if [ -n "$agents_md_version" ] && [ "$agents_md_version" = "$handshake_version" ]; then
     pass "AGENTS.md handshake token version matches AGENTS_MD_VERSION ($agents_md_version)"
 else
