@@ -1,3 +1,8 @@
+---
+description: Systematic verify-and-fix procedure for every open issue, suggestion, and TODO on a PR. Produces an Issue/Suggestion Index, Resolution Report, and (Phase 4) auto-resolves bot review threads.
+agent: agent
+---
+
 # PR Issue Resolution — Systematic Verify-and-Fix
 
 > **Usage**: Post one of these as a PR comment:

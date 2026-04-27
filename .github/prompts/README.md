@@ -27,3 +27,34 @@ lists come after, not before.
   These describe procedures, not deliverables, and don't require pre-flight.
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.
+
+## Frontmatter schema
+
+Every prompt file in this directory must start with a YAML frontmatter
+block. This is what VS Code's prompt picker, Claude Code's loader, and
+the `@copilot follow` / `@claude follow` runtimes consume to surface and
+dispatch the prompt. Keep the schema minimal so we don't lock in
+tool-specific fields prematurely:
+
+```yaml
+---
+description: <one-line summary of what this prompt does and when to use it>
+agent: agent
+---
+```
+
+Field rules:
+
+- **`description`** (required) — single line, ~140 chars max. Lead with
+  the verb (e.g. "Onboard…", "Generate…", "Resolve…"). This is what the
+  picker shows; treat it like a short PR title.
+- **`agent`** (required) — set to `agent` for now. Reserved for future
+  per-prompt role pinning (e.g. `agent: judge`); leave as `agent` unless
+  you have a specific reason to override.
+- Additional fields (`mode`, `tools`, `model`) — do not add yet. If a
+  future tool needs them, propose the addition in an ADR so all four
+  prompts stay consistent.
+
+When you add a new prompt, copy this block as the first lines of the
+file. The verification check `grep -L "^---$" .github/prompts/*.md`
+should always return empty.
