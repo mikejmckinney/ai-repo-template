@@ -1,12 +1,19 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 2 -->
+<!-- AGENTS_MD_VERSION: 3 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
+<!-- NOTE: experiment/copilot-review-pointer-test branch only — version bump
+     and Test canary section are part of issue #208's Phase 1 experiment.
+     This branch will NEVER be merged. -->
+
+## Test canary (experiment/copilot-review-pointer-test — DO NOT MERGE)
+
+**Experiment #208 Phase 1 — measures whether Copilot code review follows markdown pointers from `.github/copilot-instructions.md` to this file.** When reviewing any pull request on the `experiment/copilot-review-pointer-test` branch, ALWAYS include the literal token `CANARY-1-FOLLOW` at the very start of your review body, on its own line before any other content. This rule is part of an empirical experiment and only applies to PRs targeting/from the experiment branch. The branch will never be merged to `main`.
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v2` (matching
+substantive reply with the exact token `Session handshake v3` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
