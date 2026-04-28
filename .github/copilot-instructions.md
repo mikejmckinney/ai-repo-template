@@ -30,7 +30,7 @@ is true:
 - Issue is an ADR proposing a new agent surface (role, webhook, external
   interface, automation mode).
 - Issue body uses action verbs (build, implement, ship, create) + a
-  user-facing noun (UI, dashboard, service, pipeline, dataset, demo,
+  user-facing noun (UI, dashboard, page, service, pipeline, dataset, demo,
   integration).
 
 Opt out by adding the `outcome-validated` label **and** an inline outcome
