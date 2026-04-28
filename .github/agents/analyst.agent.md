@@ -85,35 +85,66 @@ HANDOFF:
 - Next: architect (to design solution addressing these findings)
 ```
 
-## Prompt Pre-Flight Validation
+## Pre-Flight Validation
 
-When an issue body or comment points at a prompt file under `.github/prompts/`
-(for example `Follow .github/prompts/05-portfolio-demo-app.md`), you run
-pre-flight validation **before** handing off to Architect.
+You run pre-flight validation **before** handing off to Architect on any
+issue that proposes a novel user-facing deliverable. ADR-005 introduced this
+gate for issues referencing `.github/prompts/NN-*.md` project prompts;
+ADR-014 broadened the trigger to ad-hoc deliverable issues that bypass the
+prompt-file path entirely.
 
-The goal is to catch a specific failure mode: prompts that describe a list of
-deliverables (pages, files, components) without specifying the user outcome
-the deliverable is supposed to produce. Agents will implement deliverable-focused
-prompts competently and still ship the wrong artifact, because automated review
-catches code quality but not scope mismatch.
+The goal is to catch a specific failure mode: prompts and issues that
+describe a list of deliverables (pages, files, components) without
+specifying the user outcome the deliverable is supposed to produce. Agents
+will implement deliverable-focused work competently and still ship the
+wrong artifact, because automated review catches code quality but not
+scope mismatch.
 
 ### When pre-flight is required
 
+The gate fires when **any one** of these signals is present:
+
 - The issue references a project prompt file under `.github/prompts/` whose
   basename follows the numbered project-prompt convention (for example
-  `NN-*.md` where `NN` is a two-digit prefix like `01`, `05`).
-- The prompt describes a deliverable — a UI, a service, a pipeline, a
-  dataset, anything interactive or operational.
+  `NN-*.md` where `NN` is a two-digit prefix like `01`, `05`), and the
+  prompt describes a deliverable — a UI, a service, a pipeline, a dataset,
+  anything interactive or operational. (Original ADR-005 trigger.)
+- The issue uses the `feature_request.md` template **and** carries the
+  `enhancement` label. (ADR-014.)
+- The issue is an ADR proposing a new agent surface — a new role, a new
+  webhook, a new external interface, a new automation mode, or any other
+  surface that other agents/users will interact with. (ADR-014.)
+- The issue body contains action verbs (build, implement, ship, create)
+  combined with a user-facing noun (UI, dashboard, page, service, pipeline,
+  dataset, demo, integration). (ADR-014.)
 
-### When pre-flight is NOT required
+### Opt-out
 
-- The issue is a simple bug fix, dependency bump, or doc typo.
-- The prompt reference is not a numbered project prompt under
-  `.github/prompts/` — for example, shared procedural prompts
-  (`pr-resolve-all.md`, `repo-onboarding.md`, `copilot-onboarding.md`,
-  `expand-backlog-entry.md`) and prompt documentation (`README.md`) are
-  all exempt; they describe procedures, not deliverables.
-- The issue body is ad-hoc instructions with no referenced prompt file.
+The gate can be opted out of when **both** of these are true:
+
+- The issue carries the `outcome-validated` label, **and**
+- The issue body contains an inline outcome paragraph — one paragraph
+  describing what a user will be able to **do** when this is shipped, not
+  just what files will exist.
+
+The label without the inline paragraph is not sufficient. Reviewers can
+(and should) verify the inline outcome when the label is present. The
+`feature_request.md` and `agent_init.md` issue templates include a
+"User outcome (15-minute test)" section to make this easy.
+
+### When pre-flight is NOT required (no opt-out needed)
+
+- `bug` label — bug reports define the outcome implicitly (the bug stops
+  happening).
+- `docs` label with no new behavior.
+- `dependencies` label (Renovate, Dependabot).
+- Reverts.
+- `chore:*` labels (including the existing `chore:no-plan`).
+- Internal refactors with no user-facing change.
+- Issues referencing only shared procedural prompts (`pr-resolve-all.md`,
+  `repo-onboarding.md`, `copilot-onboarding.md`, `expand-backlog-entry.md`)
+  or prompt documentation (`README.md`) under `.github/prompts/` — these
+  describe procedures, not deliverables.
 
 ### The 15-minute test
 
@@ -133,7 +164,7 @@ this exact template:
 ```
 ## 🔬 Analyst Pre-Flight Report
 
-**Prompt file:** `<path>`
+**Prompt file:** `<path>` (or `N/A — ad-hoc issue` for ADR-014 triggers)
 **Issue:** #<number>
 
 ### User outcome

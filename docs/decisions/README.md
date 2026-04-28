@@ -18,7 +18,7 @@
 | [ADR-002](./adr-002-agents-md-ownership.md) | AGENTS.md ownership | Accepted |
 | [ADR-003](./adr-003-claude-code-subagent-registration.md) | Claude Code subagent registration (two-registry design) | Accepted |
 | [ADR-004](./adr-004-analyst-role-and-feedback-loop.md) | Analyst role + feedback loop | Accepted |
-| [ADR-005](./adr-005-analyst-preflight-gate.md) | Analyst Pre-Flight gate | Accepted |
+| [ADR-005](./adr-005-analyst-preflight-gate.md) | Analyst Pre-Flight gate | Superseded in part by ADR-014 |
 | [ADR-006](./adr-006-auto-merge-opt-in-model.md) | Auto-merge opt-in model | Accepted |
 | [ADR-007](./adr-007-auto-resolve-review-threads.md) | Auto-resolve bot-authored review threads (opt-in label; Copilot-path gap tracked in #100) | Superseded by ADR-008 |
 | [ADR-008](./adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 runs by default; Copilot-path relay-side fallback | Accepted |
@@ -27,6 +27,7 @@
 | [ADR-011](./adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement + PR-must-link-issue (v1) | Accepted |
 | [ADR-012](./adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions in AGENTS.md (branch-and-commit, cadence sharpenings) | Accepted |
 | [ADR-013](./adr-013-pre-commit-on-main-default.md) | Pre-commit hook for `main` protection — not installed by default | Accepted |
+| [ADR-014](./adr-014-extend-preflight-to-adhoc-deliverables.md) | Extend Analyst Pre-Flight gate to ad-hoc deliverable issues | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.
@@ -43,13 +44,19 @@ When ADR-NNN replaces ADR-XXX, both files must be updated in the **same PR**:
 
 1. **New ADR (`adr-NNN-...md`)**:
    - `Status: Accepted` (or `Proposed` if not yet ratified).
-   - Body includes `Supersedes ADR-XXX` (in Context or References).
+   - Body includes `Supersedes ADR-XXX` (or `Supersedes ADR-XXX in part`
+     for partial supersession) in Context or References.
 2. **Old ADR (`adr-XXX-...md`)**:
-   - `Status: Superseded by ADR-NNN` (replaces the previous status line).
+   - `Status: Superseded by ADR-NNN` (full supersession) **or**
+     `Status: Accepted (superseded in part by ADR-NNN)` (partial
+     supersession — use when only some sections/triggers/scope are
+     replaced and the rest of the original decision still stands).
+     Replaces the previous status line.
    - Body is left otherwise intact — preserve the original rationale; the
      new ADR explains what changed.
 3. **This README** — flip the old ADR's status column to `Superseded by
-   ADR-NNN` and add a row for the new one.
+   ADR-NNN` (or `Superseded in part by ADR-NNN`) and add a row for the
+   new one.
 4. **Deprecation without replacement**: set the old ADR's `Status:
    Deprecated` and explain in the body. No new ADR required.
 

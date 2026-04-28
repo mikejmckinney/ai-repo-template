@@ -7,7 +7,8 @@ Prompt files referenced from GitHub issues and PR comments.
 Project prompts (like `NN-<stage>.md`) are validated by the **Analyst role**
 before any implementation starts. Analyst applies the "15-minute test" from
 [`.github/agents/analyst.agent.md`](../agents/analyst.agent.md) →
-"Prompt Pre-Flight Validation":
+"Pre-Flight Validation" (the gate also applies to ad-hoc deliverable
+issues per ADR-014):
 
 > If the intended audience spent 15 minutes with the final deliverable,
 > would they *experience* the outcome, or would they *read about* it?

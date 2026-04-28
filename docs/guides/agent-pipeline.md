@@ -349,6 +349,18 @@ verification commands, and a reference back to `00-PROJECT-BRIEF.md`.
 See the cloud_migration_POC prompts linked above for production-grade
 examples.
 
+Per ADR-014, the same Pre-Flight gate also fires on issues that
+propose a novel user-facing deliverable without referencing an
+`NN-*.md` prompt — ad-hoc feature issues using `feature_request.md`
+with the `enhancement` label, ADRs proposing new agent surfaces, or
+issue bodies pairing action verbs (build, implement, ship, create)
+with user-facing nouns (UI, dashboard, page, service, pipeline,
+dataset, demo, integration). Authors who have already validated the
+outcome inline can opt out with the `outcome-validated` label plus an
+inline outcome paragraph; see `AGENTS.md` → "Analyst pre-flight gate"
+and `.github/agents/analyst.agent.md` → "Pre-Flight Validation" for
+the full trigger / exemption list.
+
 **2. Mirror the prompts into `.context/backlog.yaml` (recommended primary path).**
 
 For each stage prompt, add one entry to `.context/backlog.yaml` (the

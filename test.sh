@@ -327,6 +327,51 @@ else
     pass "judge.agent.md is clean of artifacts"
 fi
 
+# --- Pre-flight gate extension (ADR-014) ---
+# Four invariants ensure the broadened Pre-Flight gate stays wired up
+# end-to-end. See ADR-014.
+#
+#   1. The outcome-validated opt-out label is declared in setup.sh so a
+#      fresh `bash scripts/setup.sh` run creates it on the target repo.
+#   2. ADR-014 exists with the expected Status line.
+#   3. ADR-005's Status line marks partial supersession by ADR-014, so the
+#      supersession trail is one grep away (per docs/decisions/README.md
+#      "Supersession discipline").
+#   4. AGENTS.md names the opt-out label literally inside the "Analyst
+#      pre-flight gate" section, so the trigger condition is documented
+#      where agents read it.
+ADR014_PATH="docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md"
+
+if grep -q '_ensure_label "outcome-validated"' scripts/setup.sh 2>/dev/null; then
+    pass "scripts/setup.sh declares the outcome-validated label (ADR-014)"
+else
+    fail "scripts/setup.sh missing _ensure_label \"outcome-validated\" (ADR-014)"
+fi
+
+if [[ -f "$ADR014_PATH" ]] \
+    && grep -qE '^Accepted$' "$ADR014_PATH" 2>/dev/null; then
+    pass "ADR-014 exists with Status: Accepted"
+else
+    fail "ADR-014 missing or Status line is not 'Accepted' ($ADR014_PATH)"
+fi
+
+if grep -q 'superseded in part by ADR-014' docs/decisions/adr-005-analyst-preflight-gate.md 2>/dev/null; then
+    pass "ADR-005 Status line marks partial supersession by ADR-014"
+else
+    fail "ADR-005 Status line missing 'superseded in part by ADR-014' (supersession discipline)"
+fi
+
+# Extract the "Analyst pre-flight gate" subsection from AGENTS.md (between
+# its H3 heading and the next H3) and confirm it mentions the opt-out label
+# literally. awk range pattern: print from the first marker through the
+# second marker (inclusive of both matching heading lines).
+gate_section=$(awk '/^### Analyst pre-flight gate/,/^### Plan-as-comment requirement/' AGENTS.md 2>/dev/null)
+if printf '%s' "$gate_section" | grep -q 'outcome-validated'; then
+    pass "AGENTS.md \"Analyst pre-flight gate\" section names outcome-validated (ADR-014)"
+else
+    fail "AGENTS.md \"Analyst pre-flight gate\" section does not mention outcome-validated (ADR-014)"
+fi
+
 # Check context 00_INDEX.md has truth hierarchy
 if grep -q "priority" .context/00_INDEX.md 2>/dev/null; then
     pass ".context/00_INDEX.md has priority information"

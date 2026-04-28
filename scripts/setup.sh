@@ -363,7 +363,8 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "coordination-sync"     "BFDADC" "Auto-filed by Coordination Sync workflow (stale lock tracking)"
     _ensure_label "no-coordination-check" "EDEDED" "Opt PR out of agent-coordination-sync.yml suggestions"
     _ensure_label "chore:no-plan"         "EDEDED" "Exempt this issue/PR from the plan-as-comment requirement (ADR-011)"
-    log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:*, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan)"
+    _ensure_label "outcome-validated"     "0E8A16" "Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)"
+    log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:*, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated)"
 
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is

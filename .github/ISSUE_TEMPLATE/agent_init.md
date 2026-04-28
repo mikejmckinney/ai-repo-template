@@ -10,6 +10,18 @@ assignees: ''
 
 This repository was created from the `ai-repo-template`. Please initialize it for the actual project.
 
+## User outcome (15-minute test)
+
+<!--
+Optional but recommended. If you can answer this clearly here, you may
+add the `outcome-validated` label to opt out of the Analyst pre-flight
+gate (see ADR-014).
+
+The test: "If a user spent 15 minutes with the initialized repo, what
+would they be able to DO?" Focus on user actions (run, build, deploy,
+onboard), not files created.
+-->
+
 ## Truth Hierarchy
 
 Use this priority order when information conflicts:
