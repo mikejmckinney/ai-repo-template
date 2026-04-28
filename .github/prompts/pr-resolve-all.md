@@ -24,6 +24,11 @@ agent: agent
 > job in `.github/workflows/agent-relay-reviews.yml` re-fires the
 > mutations under `CLAUDE_PAT` after parsing the `⚠️ Errored` rows from
 > the Phase 4 report table. See ADR-008 for the design.
+>
+> **When to stop**: this prompt covers *how* to fix bot findings;
+> AGENTS.md → "PR completion criteria (interactive sessions)" covers
+> *when the PR is done* (CI green + threads resolved or explicitly
+> deferred). Read both before declaring work complete.
 
 ---
 

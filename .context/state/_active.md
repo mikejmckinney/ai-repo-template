@@ -5,9 +5,11 @@
 
 # Active Task
 
-**Active Task**: None
-**File**: N/A
-**Role**: N/A
+**Active Task**: #206 — PR completion criteria for interactive sessions
+**File**: AGENTS.md, test.sh, .github/prompts/pr-resolve-all.md
+**Role**: Docs
 **Blockers**: None
 **Next 1–3 actions**:
-1. (none)
+1. Open PR with plan link in body
+2. Wait for CI + bot reviews; iterate per the new section
+3. Close out via `latest_summary.md` after merge
