@@ -44,13 +44,19 @@ When ADR-NNN replaces ADR-XXX, both files must be updated in the **same PR**:
 
 1. **New ADR (`adr-NNN-...md`)**:
    - `Status: Accepted` (or `Proposed` if not yet ratified).
-   - Body includes `Supersedes ADR-XXX` (in Context or References).
+   - Body includes `Supersedes ADR-XXX` (or `Supersedes ADR-XXX in part`
+     for partial supersession) in Context or References.
 2. **Old ADR (`adr-XXX-...md`)**:
-   - `Status: Superseded by ADR-NNN` (replaces the previous status line).
+   - `Status: Superseded by ADR-NNN` (full supersession) **or**
+     `Status: Accepted (superseded in part by ADR-NNN)` (partial
+     supersession — use when only some sections/triggers/scope are
+     replaced and the rest of the original decision still stands).
+     Replaces the previous status line.
    - Body is left otherwise intact — preserve the original rationale; the
      new ADR explains what changed.
 3. **This README** — flip the old ADR's status column to `Superseded by
-   ADR-NNN` and add a row for the new one.
+   ADR-NNN` (or `Superseded in part by ADR-NNN`) and add a row for the
+   new one.
 4. **Deprecation without replacement**: set the old ADR's `Status:
    Deprecated` and explain in the body. No new ADR required.
 

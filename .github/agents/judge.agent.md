@@ -64,12 +64,12 @@ If ambiguous, ask **one** question: "Is this a plan review or a code/diff review
 - [ ] **Doc trigger check** — walk `.context/rules/process_doc_maintenance.md`'s trigger table against the plan's proposed changes / file touch list. For every matching row, the listed companion file(s) appear in the file touch list (or the plan explicitly states `<file>: no changes required` with a one-line justification).
 - [ ] **ADR supersession check** — if the plan changes a previously documented decision (any ADR under `docs/decisions/`), the existing ADR's `Status` line is updated to `Superseded by ADR-NNN` in the same PR, and a new ADR is added.
 - [ ] **Provenance check** — claims of fact about the repo cite `path/to/file:line` (or are explicitly marked `uncertain`). Reject uncited "the repo does X" assertions.
-- [ ] **Pre-Flight Report present with verdict PASS when the gate applies (REQUIRED).** BLOCK if the gate applies, no opt-out is in effect, and the report is missing OR has verdict FAIL/HOLD. The Pre-Flight Report validates the user outcome against the 15-minute test — without it, the plan may faithfully implement a deliverable that doesn't match the underlying goal. See `analyst.agent.md` → "Pre-Flight Validation" for the canonical list and ADR-014 for rationale.
+- [ ] **Pre-Flight Report present with verdict PASS when the gate applies (REQUIRED).** BLOCK if the gate applies, no opt-out is in effect, and the report is missing OR has verdict FAIL/HOLD. The Pre-Flight Report validates the user outcome against the 15-minute test — without it, the plan may faithfully implement a deliverable that doesn't match the underlying goal. See `.github/agents/analyst.agent.md` → "Pre-Flight Validation" for the canonical list and ADR-014 for rationale.
     - **Gate applies when any one signal is present:**
         - (a) Issue references a numbered project prompt (`.github/prompts/NN-*.md`) for an interactive/operational deliverable (ADR-005).
         - (b) Issue uses `feature_request.md` template with `enhancement` label (ADR-014).
         - (c) Issue is an ADR proposing a new agent surface — role, webhook, external interface, automation mode (ADR-014).
-        - (d) Issue body contains action verbs (build, implement, ship, create) plus a user-facing noun (UI, dashboard, service, pipeline, dataset, demo, integration) (ADR-014).
+        - (d) Issue body contains action verbs (build, implement, ship, create) plus a user-facing noun (UI, dashboard, page, service, pipeline, dataset, demo, integration) (ADR-014).
     - **Opt-out when both are true** (label alone is insufficient — verify the inline paragraph exists):
         - Issue has the `outcome-validated` label.
         - Issue body contains an inline outcome paragraph (one paragraph describing what a user can *do* when shipped).

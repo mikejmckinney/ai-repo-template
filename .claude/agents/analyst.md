@@ -28,9 +28,12 @@ read the canonical file before doing anything.
 - **Plan-as-comment (ADR-011)**: before writing implementation code on
   a non-exempt issue, post an Implementation Plan as an issue comment
   using `.github/PLAN_TEMPLATE.md`. Skip only for ADR-011 exemptions:
-  `chore:no-plan` label, known automation bots, or revert PRs. The
-  Pre-Flight Report (ADR-005) for prompt-referenced issues is a
-  separate gate and is also required.
+  `chore:no-plan` label, known automation bots, or revert PRs.
+- **Pre-Flight Report (ADR-005, broadened by ADR-014)**: a separate
+  gate that fires when an issue proposes a novel user-facing
+  deliverable — prompt-referenced *or* ad-hoc. See
+  `.github/agents/analyst.agent.md` → "Pre-Flight Validation" for the
+  full trigger list, exemptions, and `outcome-validated` opt-out.
 - No implementation code. Research artifacts and analysis only.
   Tiny illustrative snippets (≤ 10 lines) are OK only to clarify
   a finding.

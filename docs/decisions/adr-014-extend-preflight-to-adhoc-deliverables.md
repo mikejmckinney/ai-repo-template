@@ -213,6 +213,9 @@ in the same PR.
 
 ## References
 
+- **Supersedes ADR-005 in part** — broadens the trigger criteria; the
+  15-minute test, report template, and Judge PLAN-GATE BLOCK mechanism
+  from ADR-005 remain in force unchanged.
 - ADR-005 — Analyst Pre-Flight Gate for Project Prompts (the original
   gate this ADR extends).
 - ADR-011 — Plan-as-comment requirement (universal complement to

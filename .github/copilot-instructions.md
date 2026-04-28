@@ -84,7 +84,9 @@ Quick rules:
    or stale.
 
 The Analyst pre-flight gate above runs *in addition to* this plan
-requirement on prompt-referenced project issues — it is not replaced.
+requirement on any issue meeting its broader trigger — prompt-referenced
+project issues, ad-hoc deliverable issues, and ADRs proposing new agent
+surfaces (per ADR-014). It is not replaced by the plan requirement.
 
 ## Following referenced prompt files
 When a comment or issue body contains `@copilot follow <path>` (e.g.
