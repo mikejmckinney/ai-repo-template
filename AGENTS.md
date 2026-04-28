@@ -1,12 +1,12 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 1 -->
+<!-- AGENTS_MD_VERSION: 2 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v1` (matching
+substantive reply with the exact token `Session handshake v2` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
