@@ -80,16 +80,34 @@ This template supports parallel role-specialized agents. Before editing any file
 
 ### Analyst pre-flight gate (REQUIRED before implementation)
 
-If the issue assigned to you references a prompt file in `.github/prompts/NN-*.md`
-(where `NN` is a two-digit number prefix — for example `01-init-project.md` or
-`05-portfolio-demo-app.md`; this is a project implementation prompt — not a shared
-procedural prompt like `pr-resolve-all.md`, `repo-onboarding.md`,
-`copilot-onboarding.md`, or `expand-backlog-entry.md`),
-you must dispatch the Analyst role first and wait for a passing Pre-Flight
-Report before writing any code.
+The gate (ADR-005, broadened by ADR-014) fires on any issue proposing a
+novel user-facing deliverable. Dispatch the Analyst role first and wait
+for a passing Pre-Flight Report before writing any code.
 
-**Why this exists**: Prompt files that describe deliverables without
-specifying user outcomes produce technically correct but scope-mismatched
+**Trigger** (any one signal is sufficient):
+
+1. Issue references `.github/prompts/NN-*.md` (two-digit project prompt
+   like `01-init-project.md`, `05-portfolio-demo-app.md`) and the prompt
+   describes a deliverable. (ADR-005.)
+2. Issue uses `feature_request.md` template **and** carries the
+   `enhancement` label. (ADR-014.)
+3. Issue is an ADR proposing a new agent surface (role, webhook, external
+   interface, automation mode). (ADR-014.)
+4. Issue body contains action verbs (build, implement, ship, create) plus
+   a user-facing noun (UI, dashboard, page, service, pipeline, dataset,
+   demo, integration). (ADR-014.)
+
+**Opt-out** (both required):
+
+- Issue carries the `outcome-validated` label, **and**
+- Issue body contains an inline outcome paragraph (one paragraph describing
+  what a user will be able to *do* when shipped, not just what files will
+  exist). The `feature_request.md` and `agent_init.md` templates include a
+  "User outcome (15-minute test)" section for this. The label alone is
+  not sufficient.
+
+**Why this exists**: Issues that describe deliverables without specifying
+user outcomes produce technically correct but scope-mismatched
 implementations. Automated review catches code quality; it does not catch
 "shipped the wrong artifact." The Analyst's Pre-Flight Report applies the
 15-minute test before implementation begins, which is the only cheap point
@@ -98,7 +116,7 @@ to catch this failure mode.
 **Procedure**:
 
 1. Check the issue for an existing Pre-Flight Report comment matching the
-   template in `.github/agents/analyst.agent.md` → "Prompt Pre-Flight Validation".
+   template in `.github/agents/analyst.agent.md` → "Pre-Flight Validation".
 2. If one exists with verdict **PASS**, proceed to Architect handoff as normal.
 3. If one exists with verdict **FAIL** or **HOLD**, stop. Do not implement.
    Address the mismatch or ambiguity first.
@@ -107,16 +125,18 @@ to catch this failure mode.
    validation before implementation" and proceed to run the analysis per
    the Analyst role file). Wait for the report. Then re-evaluate.
 
-**When this gate does NOT apply**:
+**Exemptions** (gate does NOT apply, no opt-out needed):
 
-- Ad-hoc issues that don't reference a `.github/prompts/NN-*.md` file.
-- Simple bug fixes, dependency bumps, typo corrections, doc edits.
-- Issues that reference shared procedural prompts (`pr-resolve-all.md`, etc.) —
-  those have their own verification and don't produce novel deliverables.
+- `bug` label, `docs` label (no new behavior), `dependencies` label,
+  reverts, `chore:*` labels, internal refactors with no user-facing change.
+- Issues referencing only shared procedural prompts (`pr-resolve-all.md`,
+  `repo-onboarding.md`, `copilot-onboarding.md`, `expand-backlog-entry.md`)
+  or prompt documentation (`README.md`) under `.github/prompts/` — those
+  describe procedures, not deliverables.
 
-Skipping this gate on a prompt-referenced issue is a known failure mode.
-If you find yourself reasoning "this prompt looks clear enough, I'll skip
-pre-flight," that's the signal to run pre-flight anyway.
+Skipping this gate when it applies is a known failure mode. If you find
+yourself reasoning "this issue looks clear enough, I'll skip pre-flight,"
+that's the signal to run pre-flight anyway.
 
 ### Plan-as-comment requirement (REQUIRED before implementation)
 
@@ -172,10 +192,10 @@ genuinely doesn't apply, write `N/A — <reason>`. Explicit
 acknowledgment beats silent omission.
 
 **Relationship to the Analyst pre-flight gate**: ADR-005's Pre-Flight
-Report is a stricter gate that runs *in addition to* the plan
-requirement on prompt-referenced project issues. It is not replaced or
-weakened by this requirement. The two gates have different trigger
-conditions and will be unified in #155.
+Report (broadened by ADR-014 to ad-hoc deliverable issues) is a stricter
+gate that runs *in addition to* the plan requirement on any issue meeting
+the pre-flight trigger. It is not replaced or weakened by this requirement.
+The two gates have different trigger conditions and will be unified in #155.
 
 ## Context pack usage
 - Start with `.context/00_INDEX.md` for project overview

@@ -19,15 +19,28 @@ See `AGENTS.md` §"Truth hierarchy" for rationale and the full onboarding proced
 - Always read `/AI_REPO_GUIDE.md` first.
 - If AI_REPO_GUIDE.md is missing/stale: follow `.github/prompts/repo-onboarding.md` and update AI_REPO_GUIDE.md in the same PR.
 
-## Analyst pre-flight (before implementing from a prompt file)
+## Analyst pre-flight (before implementing a novel user-facing deliverable)
 
-If an assigned issue references `.github/prompts/NN-*.md` (where `NN` is a
-two-digit number prefix — for example `01-init-project.md` or
-`05-portfolio-demo-app.md`; a project implementation prompt — NOT a shared
-procedure like `pr-resolve-all.md`, `repo-onboarding.md`,
-`copilot-onboarding.md`, or `expand-backlog-entry.md`), run pre-flight before
-writing any code. Skip for bug fixes, dep bumps, doc typos, and ad-hoc
-issues without a prompt reference.
+The gate (ADR-005, broadened by ADR-014) fires when **any one** of these
+is true:
+
+- Issue references `.github/prompts/NN-*.md` (a numbered project prompt
+  like `01-init-project.md`) and the prompt describes a deliverable.
+- Issue uses `feature_request.md` template and carries `enhancement` label.
+- Issue is an ADR proposing a new agent surface (role, webhook, external
+  interface, automation mode).
+- Issue body uses action verbs (build, implement, ship, create) + a
+  user-facing noun (UI, dashboard, service, pipeline, dataset, demo,
+  integration).
+
+Opt out by adding the `outcome-validated` label **and** an inline outcome
+paragraph in the issue body (one paragraph describing what a user can
+*do* when shipped). Label alone is not sufficient.
+
+Skip entirely for: `bug`, `docs` (no new behavior), `dependencies`,
+`chore:*`, reverts, internal refactors, and issues referencing only
+shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`,
+`copilot-onboarding.md`, `expand-backlog-entry.md`).
 
 Procedure:
 
@@ -35,13 +48,13 @@ Procedure:
 2. If it exists with verdict **PASS**, proceed to implementation.
 3. If it exists with **FAIL** or **HOLD**, stop — wait for the author.
 4. If none exists, act as Analyst: read `.github/agents/analyst.agent.md`
-   ("Prompt Pre-Flight Validation" section) for the 15-minute test and the
+   ("Pre-Flight Validation" section) for the 15-minute test and the
    exact report template. Post the report as an issue comment. Then:
    - **PASS** → implement.
    - **FAIL** (scope mismatch) → post the mismatch, stop.
    - **HOLD** (ambiguities) → post a numbered list, stop.
 
-If a prompt "looks clear enough" to skip pre-flight, run it anyway — that's
+If an issue "looks clear enough" to skip pre-flight, run it anyway — that's
 the signal, not the exemption.
 
 ## Plan-as-comment requirement (before implementing any non-exempt issue)

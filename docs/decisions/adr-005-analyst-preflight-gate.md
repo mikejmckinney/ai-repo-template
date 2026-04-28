@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted
+Superseded in part by ADR-014 — trigger criteria broadened to ad-hoc
+deliverable issues. The 15-minute test, report template, and Judge
+PLAN-GATE BLOCK mechanism remain in force; only the trigger scope
+changed. See `adr-014-extend-preflight-to-adhoc-deliverables.md`.
 
 ## Date
 
