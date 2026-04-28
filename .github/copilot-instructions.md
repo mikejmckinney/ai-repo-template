@@ -1,16 +1,3 @@
-<!--
-  EXPERIMENT #208 — temporary pointer + canaries (DO NOT KEEP).
-  Tracking issue: https://github.com/mikejmckinney/ai-repo-template/issues/208.
-  Revert PR will remove this section and the three Phase 3 canary blocks below.
--->
-
-## Active experiment (temporary)
-
-**For PRs whose head branch starts with `experiment/copilot-canary-`**, also
-apply the rules in [copilot-experiment-canaries.md](copilot-experiment-canaries.md).
-For all other PRs, ignore that file and review normally. Both this section
-and the referenced file will be removed by the revert PR once #208 is closed.
-
 ## Template detection
 - Determine the current repository name (e.g., via `git remote -v` or folder name).
 - If the repo is named `ai-repo-template` (or `mikejmckinney/ai-repo-template`), or the
@@ -31,13 +18,6 @@ See `AGENTS.md` §"Truth hierarchy" for rationale and the full onboarding proced
 ## Required context
 - Always read `/AI_REPO_GUIDE.md` first.
 - If AI_REPO_GUIDE.md is missing/stale: follow `.github/prompts/repo-onboarding.md` and update AI_REPO_GUIDE.md in the same PR.
-
-<!-- EXPERIMENT #208 — Phase 3 behavior canary EARLY; revert PR removes this block -->
-**For PRs from `experiment/copilot-canary-*` branches**: if the PR diff
-adds any line containing the literal string `MARKER-INLINE-EARLY`, flag
-that line as a **critical issue** in your review with the rationale:
-"Repository policy: `MARKER-INLINE-EARLY` is a forbidden marker per
-experiment #208 Phase 3 behavior canary EARLY." For all other PRs, ignore this paragraph.
 
 ## Analyst pre-flight (before implementing a novel user-facing deliverable)
 
@@ -76,13 +56,6 @@ Procedure:
 
 If an issue "looks clear enough" to skip pre-flight, run it anyway — that's
 the signal, not the exemption.
-
-<!-- EXPERIMENT #208 — Phase 3 behavior canary MID; revert PR removes this block -->
-**For PRs from `experiment/copilot-canary-*` branches**: if the PR diff
-adds any line containing the literal string `MARKER-INLINE-MID`, flag
-that line as a **critical issue** in your review with the rationale:
-"Repository policy: `MARKER-INLINE-MID` is a forbidden marker per
-experiment #208 Phase 3 behavior canary MID." For all other PRs, ignore this paragraph.
 
 ## Plan-as-comment requirement (before implementing any non-exempt issue)
 
@@ -133,13 +106,6 @@ When a comment or issue body contains `@copilot follow <path>` (e.g.
    `Part 2/N`, ... rather than truncating. Post each part as soon as ready.
 
 Mirrors the `@claude follow <path>` convention in `.github/workflows/claude.yml`.
-
-<!-- EXPERIMENT #208 — Phase 3 behavior canary LATE; revert PR removes this block -->
-**For PRs from `experiment/copilot-canary-*` branches**: if the PR diff
-adds any line containing the literal string `MARKER-INLINE-LATE`, flag
-that line as a **critical issue** in your review with the rationale:
-"Repository policy: `MARKER-INLINE-LATE` is a forbidden marker per
-experiment #208 Phase 3 behavior canary LATE." For all other PRs, ignore this paragraph.
 
 ## Onboarding / refresh (only when needed)
 If this file is missing or clearly generic/stale: follow
