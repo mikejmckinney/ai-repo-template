@@ -309,7 +309,7 @@ own **content** (per-stage prompt files + backlog entries). The split:
 | `.context/backlog.schema.json` + `backlog-to-issues.yml` + `agent-assign-copilot.yml` | ✅ Yes | — |
 | `.github/prompts/pr-resolve-all.md` (review resolution) | ✅ Yes | — |
 | `.github/prompts/expand-backlog-entry.md` (sparse-entry expansion) | ✅ Yes | — |
-| `.github/prompts/repo-onboarding.md` / `copilot-onboarding.md` (procedural) | ✅ Yes | — |
+| `.github/prompts/repo-onboarding.md` (procedural) | ✅ Yes | — |
 | `.context/backlog.yaml` | Stub with one example entry | Replace with your project's stage entries |
 | `.github/prompts/00-PROJECT-BRIEF.md` (shared project context) | ❌ No | Author once per project |
 | `.github/prompts/NN-<stage>.md` (one per implementation stage) | ❌ No | Author one per build stage; each becomes one issue |

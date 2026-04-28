@@ -1,12 +1,18 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 2 -->
+<!-- AGENTS_MD_VERSION: 3 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
+> **Pointer files**: [`CLAUDE.md`](CLAUDE.md) and
+> [`.github/copilot-instructions.md`](.github/copilot-instructions.md) are
+> thin pointers into this file. When you change a section heading here,
+> verify their pointer tables still resolve — see
+> `.context/rules/process_doc_maintenance.md`.
+
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v2` (matching
+substantive reply with the exact token `Session handshake v3` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -130,7 +136,7 @@ to catch this failure mode.
 - `bug` label, `docs` label (no new behavior), `dependencies` label,
   reverts, `chore:*` labels, internal refactors with no user-facing change.
 - Issues referencing only shared procedural prompts (`pr-resolve-all.md`,
-  `repo-onboarding.md`, `copilot-onboarding.md`, `expand-backlog-entry.md`)
+  `repo-onboarding.md`, `expand-backlog-entry.md`)
   or prompt documentation (`README.md`) under `.github/prompts/` — those
   describe procedures, not deliverables.
 

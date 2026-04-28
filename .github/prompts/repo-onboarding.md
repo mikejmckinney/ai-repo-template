@@ -1,5 +1,5 @@
 ---
-description: Onboard an AI agent to a repo (template-clone or existing); produce repo brief and chain to copilot-onboarding.md.
+description: Onboard an AI agent to a repo (template-clone or existing); produce repo brief.
 agent: agent
 ---
 
@@ -49,11 +49,10 @@ own docs. Note the ambiguity in the Mode field of the Step 1.0 status line.
 
 ## Step 0.2: Apply template-bootstrap rules (Mode B only)
 
-The canonical rules live in **`.github/copilot-instructions.md`**
-(“Template detection” block) and **`AGENTS.md`** (“Template detection”
-section) — read them first. The bullets below are a non-canonical
-recap to anchor the work; if they ever drift from those two sources,
-the canonical sources win and this list should be re-synced in the
+The canonical rules live in **`AGENTS.md`** (“Template detection
+(important)” section) — read it first. The bullets below are a
+non-canonical recap to anchor the work; if they ever drift from
+AGENTS.md, AGENTS.md wins and this list should be re-synced in the
 same PR:
 
 1. **Replace `README.md`** with project-specific content (delete the template
@@ -338,13 +337,3 @@ Before considering the task complete:
 - [ ] Changes are minimal (no unrelated modifications)
 - [ ] Docs updated if behavior changed
 - [ ] `AI_REPO_GUIDE.md` is accurate
-
----
-
-# Next: Generate Copilot Instructions
-
-When onboarding is finished (especially after a Phase 0 bootstrap), chain
-into **`.github/prompts/copilot-onboarding.md`** to generate or refresh
-`.github/copilot-instructions.md` so Copilot's per-repo context matches
-the new project shape. Skip this step only if `copilot-instructions.md`
-is already accurate for the post-onboarding state.

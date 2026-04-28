@@ -100,7 +100,7 @@ if [[ -n "$FULL_REPO" ]]; then
     CONFIG_FILE=".github/ISSUE_TEMPLATE/config.yml"
     # Template-detection guard: when the current repo IS the template itself,
     # leave placeholders intact so source files don't get rewritten.
-    # See .github/copilot-instructions.md "Template detection" section.
+    # See AGENTS.md "Template detection (important)" section.
     _is_template_repo=false
     case "$FULL_REPO" in
         mikejmckinney/ai-repo-template|mikejmckinney/dotfiles) _is_template_repo=true ;;

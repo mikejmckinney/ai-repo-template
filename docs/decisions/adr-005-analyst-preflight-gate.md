@@ -56,7 +56,7 @@ under `.github/prompts/`, where `NN` is a two-digit number prefix such as
 
 **Out of scope** (gate does NOT apply):
 - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`,
-  `copilot-onboarding.md`, `expand-backlog-entry.md`) — these describe
+  `expand-backlog-entry.md`) — these describe
   agent procedures, not project deliverables, and have their own
   verification.
 - Prompt documentation (`README.md`) under `.github/prompts/`.

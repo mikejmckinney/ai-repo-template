@@ -126,7 +126,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 ├── .cursorignore                 # Files Cursor should not index
 │
 └── .github/
-    ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
+    ├── copilot-instructions.md   # Pointer to AGENTS.md (auto-read by Copilot)
     ├── pull_request_template.md  # Default PR body skeleton (Doc-sync checklist required)
     ├── agents/                   # Role-specialized agent files (10 files)
     │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
@@ -135,7 +135,6 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
     │   └── docs.agent.md
     ├── prompts/
     │   ├── README.md             # Prompt catalog
-    │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
     │   ├── repo-onboarding.md    # Repo onboarding workflow prompt
     │   ├── pr-resolve-all.md     # PR-review resolution procedure
     │   └── expand-backlog-entry.md # Backlog → issue expansion prompt
@@ -172,7 +171,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 |------|----------|---------|
 | `AGENTS.md` | Most AI tools | Root instructions, references AI_REPO_GUIDE.md |
 | `CLAUDE.md` | Claude Code | Native memory-file pointer to AGENTS.md |
-| `.github/copilot-instructions.md` | GitHub Copilot | Copilot-specific instructions |
+| `.github/copilot-instructions.md` | GitHub Copilot | Pointer to AGENTS.md + Copilot-specific rules (e.g., `@copilot follow`) |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | Strict PR review rules with verification |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review with severity labels |
 | `.github/agents/judge.agent.md` | Multi-tool | Procedural plan-gate + diff-gate reviewer |
@@ -205,7 +204,6 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 
 | File | Purpose |
 |------|---------|
-| `.github/prompts/copilot-onboarding.md` | Guide for customizing copilot-instructions.md |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 | `.github/prompts/pr-resolve-all.md` | Procedural — review-resolution playbook used by `agent-fix-reviews.yml` and the `@copilot follow` / `@claude follow` convention |
 | `.github/prompts/expand-backlog-entry.md` | Procedural — used by `backlog-to-issues.yml` to expand sparse `backlog.yaml` entries |
@@ -327,7 +325,7 @@ Please:
 1. Verify .context/00_INDEX.md and .github/prompts/*.md exist
 2. Scan and list all files containing TEMPLATE_PLACEHOLDER
 3. Determine project purpose from .context/**, docs/**, and codebase
-4. Run .github/prompts/repo-onboarding.md then copilot-onboarding.md
+4. Run .github/prompts/repo-onboarding.md
 5. Replace README.md with project-specific content, including
    `## Limitations`, `## Future Improvements`, and a `## FAQ` section
    (or link to docs/FAQ.md — replace the template's FAQ entries with
@@ -453,7 +451,6 @@ Known constraints of this template. Agent-facing detail (environment variables, 
 - **No runtime code.** This is a docs/config template, not a language-specific starter. Your project brings its own build, test, and deploy toolchain; `ci-tests.yml` ships with placeholder commands you must replace.
 - **Codespaces-centric bootstrap.** `install.sh` is wired to the GitHub Codespaces "Dotfiles" feature (via the `$DOTFILES` env var). It falls back to its own directory elsewhere, but some convenience features (extension install, prompt copy) assume a Codespace.
 - **Template placeholders are text, not schema.** The `TEMPLATE_PLACEHOLDER` marker is grep-discoverable but not validated for correctness. Running `scripts/verify-env.sh` lists them; the agent still has to make the judgement call on replacement content.
-- **Copilot instructions are length-capped.** Per GitHub's constraint, `.github/copilot-instructions.md` must stay ≤ 2 pages and non-task-specific. See [`.github/prompts/copilot-onboarding.md`](.github/prompts/copilot-onboarding.md).
 
 ## Future Improvements
 
