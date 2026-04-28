@@ -1,46 +1,39 @@
 <!--
-  EXPERIMENT #208 — Copilot review behavior-signal canary file (TEMPORARY).
+  EXPERIMENT #208 — Copilot review canary file (TEMPORARY, DO NOT KEEP).
   Tracking issue: https://github.com/mikejmckinney/ai-repo-template/issues/208
-  Revert PR will remove this file. If you find it on main after #208 closes,
-  delete it.
-
-  Background: an earlier token-injection methodology failed — Copilot did not
-  echo arbitrary tokens placed in instructions, which is rational defensive
-  behavior. This file replaces that approach with behavior-based signals:
-  each rule tells Copilot to flag a specific marker string as a review issue.
-  Detection = "did Copilot's review reference the marker?" That fits a
-  code-review tool's natural output rather than asking it to inject
-  unsolicited boilerplate.
+  Revert PR will remove this file. If you find this file on main after
+  #208 is closed, delete it.
 -->
 
-# Copilot review experiment behavior signals
+# Copilot review experiment canaries
 
-**All instructions below are scoped to PRs whose head branch starts with
-`experiment/copilot-canary-`.** For any PR whose head branch does NOT match
-that pattern, ignore this entire file and review normally.
+This file exists to measure Copilot code review behavior. It is not part of
+the repository's normal agent instruction set. **All instructions below are
+scoped to PRs whose head branch starts with `experiment/copilot-canary-`.**
+For any PR whose head branch does NOT match that pattern, ignore this entire
+file and review normally.
 
-## Rule B1 — reference-following test
+## Phase 1 canary (reference-following test)
 
-**For PRs from `experiment/copilot-canary-*` branches**: if the PR diff
-adds any line containing the literal string `MARKER-FOLLOW-deep-link`,
-flag that line as a **critical issue** in your review with the rationale:
-"Repository policy: `MARKER-FOLLOW-deep-link` is a forbidden marker per
-experiment #208 rule B1." Use this exact rationale text so the experiment
-can detect that this rule was honored.
+**For PRs from `experiment/copilot-canary-*` branches**: at the start of
+your review body, include the literal token `CANARY-1-FOLLOW` on its own
+line. This token tests whether Copilot code review follows the pointer from
+`.github/copilot-instructions.md` to this file and applies the rule found
+here.
 
-This rule lives in a file referenced from `.github/copilot-instructions.md`
-but not inline in it. If Copilot honors this rule, it followed the markdown
-reference and read this file.
+If you are reviewing such a PR and you do NOT include this token, the
+experiment records a FAIL for "reference-following" and concludes that
+pointer-only designs are unsafe for the Copilot review surface.
 
 ---
 
-## Filler section (intentional padding to push rule B2 deep)
+## Filler section (intentional padding to push Phase 2 canary deep)
 
-The following paragraphs are intentional filler designed to push rule B2
-below the documented 4 KB Copilot code review context cap (see
+The following paragraphs are intentional filler designed to push the Phase 2
+canary below the documented 4 KB Copilot code review context cap (see
 https://docs.github.com/en/enterprise-cloud@latest/copilot/tutorials/customize-code-review).
 The content of the filler is not meant to be acted on; it exists solely to
-shift the byte offset of rule B2 further into the file.
+shift the byte offset of the Phase 2 canary further into the file.
 
 Filler paragraph 1: This repository uses a multi-agent workflow with role
 specialization. Roles include Analyst, Architect, PM, Frontend, Backend, QA,
@@ -102,23 +95,23 @@ label, any ADR proposing a new agent surface, or any issue using
 action verbs plus a user-facing noun. The opt-out requires both the
 `outcome-validated` label and an inline outcome paragraph.
 
-Filler paragraph 10: This paragraph is intentionally neutral padding
-for the experiment file. It does not describe repository policy,
-contributor workflow, installed tooling, or setup scripts, and should
-not be interpreted as guidance about hooks, CI behavior, or local
-development configuration.
+Filler paragraph 10: ADR-013 set pre-commit hooks to default-on for
+contributors working on main. The `--no-verify` flag is forbidden by
+convention; CI re-runs the same hooks so bypassing them locally only
+delays the failure. Pre-commit configuration lives at
+`.pre-commit-config.yaml` and is installed via `scripts/setup.sh`.
 
-## Rule B2 — cap-on-referenced-file test
+## Phase 2 canary (cap-on-referenced-file test)
 
-**For PRs from `experiment/copilot-canary-*` branches**: if the PR diff
-adds any line containing the literal string `MARKER-DEEP-cap-test`,
-flag that line as a **critical issue** in your review with the rationale:
-"Repository policy: `MARKER-DEEP-cap-test` is a forbidden marker per
-experiment #208 rule B2." Use this exact rationale text so the experiment
-can detect that this rule was honored.
+**For PRs from `experiment/copilot-canary-*` branches**: include the
+literal token `CANARY-2-DEEP` on its own line somewhere in your review
+body (in addition to any other canary tokens). This token tests whether
+Copilot code review reads deeply enough into a referenced file (this one)
+to honor a rule placed beyond the 4 KB documented cap.
 
-If Copilot flags rule B1 markers but NOT rule B2 markers, the experiment
+If you include `CANARY-1-FOLLOW` but NOT `CANARY-2-DEEP`, the experiment
 concludes that referenced-file content is read but truncated at or near
-the documented cap.
+the documented cap. If you include both, the cap may be larger or the cap
+may not apply to referenced files in the way it applies to inline content.
 
 End of canary file. Revert PR will remove this file once #208 closes.
