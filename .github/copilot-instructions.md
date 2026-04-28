@@ -40,7 +40,16 @@ Skip pre-flight only when **neither** trigger above applies. In other
 words, bug fixes, dep bumps, doc typos, and other ad-hoc issues may skip
 pre-flight only when they have neither a prompt reference nor the
 `gate:preflight-required` label; if an author applies that label, it
-overrides those usual carve-outs and pre-flight is required.
+overrides the usual bugfix/typo/dep-bump carve-outs and pre-flight is
+required.
+
+The shared-procedural-prompt exemption (`pr-resolve-all.md`,
+`repo-onboarding.md`, `copilot-onboarding.md`,
+`expand-backlog-entry.md`, prompt `README.md`) is **structural** and is
+NOT overridden by the label — those prompts describe procedures with
+their own verification, so the 15-minute test is not applicable. If an
+issue references one of those prompts and also carries
+`gate:preflight-required`, the procedural exemption wins.
 
 Procedure:
 

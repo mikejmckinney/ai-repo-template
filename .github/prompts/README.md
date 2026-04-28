@@ -36,11 +36,17 @@ Apply this label when filing:
 
 If you're unsure whether the label applies, apply it. False-positive
 cost is one Pre-Flight Report; false-negative cost is rework of the
-wrong artifact. The label generally does not apply to bug fixes,
-dependency bumps, typo corrections, doc edits, or shared procedural
-prompts unless an author explicitly opts in with
-`gate:preflight-required` — those default carve-outs are preserved from
-ADR-005.
+wrong artifact.
+
+The label generally does not apply to bug fixes, dependency bumps,
+typo corrections, or doc edits — but an author may explicitly opt in
+with `gate:preflight-required` and pre-flight then runs. The shared
+procedural-prompt exemption is different: `pr-resolve-all.md`,
+`repo-onboarding.md`, `copilot-onboarding.md`,
+`expand-backlog-entry.md`, and this `README.md` are exempt
+**structurally** (they describe procedures, not deliverables), so the
+label does NOT override their exemption — the 15-minute test isn't
+applicable to them. All ADR-005 carve-outs are preserved.
 
 ## Files here
 

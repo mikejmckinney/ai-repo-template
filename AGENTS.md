@@ -128,7 +128,10 @@ below.
 - Simple bug fixes, dependency bumps, typo corrections, doc edits —
   unless the issue carries the `gate:preflight-required` label.
 - Issues that reference shared procedural prompts (`pr-resolve-all.md`, etc.) —
-  those have their own verification and don't produce novel deliverables.
+  those have their own verification and don't produce novel
+  deliverables. This exemption is structural and is NOT overridden by
+  `gate:preflight-required`; the 15-minute test isn't applicable to
+  procedure-describing prompts.
 
 The label is opt-in: absence is the default and means business as usual.
 Skipping this gate when a trigger condition holds is a known failure mode.
