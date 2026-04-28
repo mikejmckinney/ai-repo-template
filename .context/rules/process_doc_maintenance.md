@@ -32,6 +32,7 @@ Judge enforces this at diff-gate (see
 | Add a pipeline label to `docs/guides/agent-pipeline.md`'s label table | `scripts/setup.sh` `_ensure_label` list (and the fallback warning's manual-label list in the same script) | Labels documented but not auto-created cause silent setup drift |
 | Add or remove a top-level template file expected on every install | `test.sh` `REQUIRED_FILES` (or `CONTEXT_FILES` / `DOCS_FILES`) **and** `install.sh` if it ships from the dotfiles install | `test.sh` is the only enforcement gate |
 | Change cadence / format of `.context/state/_active.md`, `task_*.md`, `handoff_*.md`, or `sessions/latest_summary.md` | `.context/state/README.md` (or `.context/sessions/README.md`) and the affected templates | These files are agent-consumed; format drift breaks parsing |
+| Rename or restructure a section heading in `AGENTS.md` | The pointer tables in `CLAUDE.md` and `.github/copilot-instructions.md` (verify each cited heading still resolves) **and** bump `AGENTS_MD_VERSION` + the handshake token in the same PR | Pointer files cite AGENTS.md headings verbatim; silent drift breaks the pointer pattern (#207, #208) |
 
 ## Soft rule
 

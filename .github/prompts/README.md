@@ -24,7 +24,7 @@ lists come after, not before.
 ## Files here
 
 - **Shared procedural prompts** (template-provided; e.g.) — `pr-resolve-all.md`,
-  `repo-onboarding.md`, `copilot-onboarding.md`, `expand-backlog-entry.md`.
+  `repo-onboarding.md`, `expand-backlog-entry.md`.
   These describe procedures, not deliverables, and don't require pre-flight.
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.

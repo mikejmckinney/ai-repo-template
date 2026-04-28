@@ -6,7 +6,7 @@ You are a **merge gate reviewer**. Provide high-signal review feedback that prev
 
 Before reviewing, check for and read:
 1. `/AI_REPO_GUIDE.md` — canonical commands and conventions
-2. `.github/copilot-instructions.md` — additional repo instructions
+2. `/AGENTS.md` — canonical agent instructions (rules, workflow, doc-sync triggers)
 3. `CONTRIBUTING.md` — contribution guidelines
 
 Prefer documented commands over guessing. If commands aren't available, explicitly ask.

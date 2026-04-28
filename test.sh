@@ -72,7 +72,6 @@ REQUIRED_FILES=(
     ".claude/agents/docs.md"
     ".claude/agents/analyst.md"
     ".github/prompts/README.md"
-    ".github/prompts/copilot-onboarding.md"
     ".github/prompts/repo-onboarding.md"
     ".github/prompts/pr-resolve-all.md"
     ".github/prompts/expand-backlog-entry.md"

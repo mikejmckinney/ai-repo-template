@@ -101,7 +101,7 @@ bash install.sh
 ├── .pre-commit-config.yaml.template  # Pre-commit hooks template
 ├── .cursorignore             # Files Cursor should not index
 └── .github/
-    ├── copilot-instructions.md   # GitHub Copilot instructions (auto-read)
+    ├── copilot-instructions.md   # Pointer to AGENTS.md (auto-read by Copilot)
     ├── pull_request_template.md  # Default PR body skeleton (Plan pointer [advisory] + Doc-sync checklist required)
     ├── agents/                   # 10 role-specialized agent files
     │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
@@ -110,7 +110,6 @@ bash install.sh
     │   └── docs.agent.md
     ├── prompts/
     │   ├── README.md             # Prompt catalog
-    │   ├── copilot-onboarding.md # Guide for customizing copilot-instructions.md
     │   ├── repo-onboarding.md    # Repo onboarding workflow prompt
     │   ├── pr-resolve-all.md     # PR-review resolution procedure
     │   └── expand-backlog-entry.md # Backlog → issue expansion prompt
@@ -142,7 +141,7 @@ bash install.sh
 |------|--------------|---------|
 | `AGENTS.md` | Most AI tools | Root instructions, points to this file |
 | `CLAUDE.md` | Claude Code | Native memory-file pointer to AGENTS.md |
-| `.github/copilot-instructions.md` | GitHub Copilot | Copilot-specific instructions |
+| `.github/copilot-instructions.md` | GitHub Copilot | Pointer to AGENTS.md + Copilot-specific rules (e.g., `@copilot follow`) |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |
 | `.github/agents/judge.agent.md` | Multi-tool | Procedural plan/diff gate reviewer (no code) |
@@ -176,7 +175,6 @@ bash install.sh
 ### Prompts (user-triggered, not auto-loaded)
 | File | Purpose |
 |------|---------|
-| `.github/prompts/copilot-onboarding.md` | Guide for customizing copilot-instructions.md |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
 ### Setup Scripts

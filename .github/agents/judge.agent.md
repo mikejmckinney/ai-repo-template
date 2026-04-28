@@ -74,7 +74,7 @@ If ambiguous, ask **one** question: "Is this a plan review or a code/diff review
         - Issue has the `outcome-validated` label.
         - Issue body contains an inline outcome paragraph (one paragraph describing what a user can *do* when shipped).
     - **Exemptions (gate does NOT apply):**
-        - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `copilot-onboarding.md`, `expand-backlog-entry.md`) and prompt documentation (`README.md`).
+        - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `expand-backlog-entry.md`) and prompt documentation (`README.md`).
         - `bug`-labeled issues, `docs`-labeled issues with no new behavior, `dependencies`-labeled issues, `chore:*`-labeled issues, reverts, internal refactors with no user-facing change.
         - Note: a `docs` label does not exempt an issue if its body still proposes a new user-facing deliverable — in that case the gate applies and the canonical `analyst.agent.md` "When NOT required" list governs.
 

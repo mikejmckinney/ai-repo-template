@@ -65,26 +65,6 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Blocks**: none
 **State**: in_progress
 
-## Lock: pr-193
-<!-- managed-for-pr:193 -->
-**Role**: architect
-**Session**: claude/sync-pr-body-plan-eufnx
-**Claimed At**: 2026-04-26T01:48:59Z
-**Expected Duration**: TBD
-**Paths**:
-- .claude/agents/judge.md
-- .github/PLAN_TEMPLATE.md
-- .github/agents/judge.agent.md
-- .github/copilot-instructions.md
-- .github/pull_request_template.md
-- AGENTS.md
-- AI_REPO_GUIDE.md
-- docs/decisions/adr-011-plan-as-comment-requirement.md
-- docs/guides/agent-pipeline.md
-**Depends On**: none
-**Blocks**: none
-**State**: in_progress
-
 ## Recent History
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->

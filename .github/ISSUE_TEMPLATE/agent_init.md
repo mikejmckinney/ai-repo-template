@@ -33,7 +33,6 @@ Use this priority order when information conflicts:
 
 - [ ] Verify `.context/00_INDEX.md` exists
 - [ ] Verify `.github/prompts/repo-onboarding.md` exists
-- [ ] Verify `.github/prompts/copilot-onboarding.md` exists
 - [ ] Scan and list all files containing `TEMPLATE_PLACEHOLDER`
 - [ ] Run `git remote -v` to detect repository owner/name
 
@@ -48,9 +47,8 @@ Determine the project purpose and current status from:
 
 ### 2. Run Onboarding Prompts
 
-Execute in order:
+Execute:
 1. `.github/prompts/repo-onboarding.md`
-2. `.github/prompts/copilot-onboarding.md`
 
 ### 3. Update README.md
 
