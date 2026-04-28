@@ -85,6 +85,28 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Blocks**: none
 **State**: in_progress
 
+## Lock: pr-202
+<!-- managed-for-pr:202 -->
+**Role**: architect
+**Session**: claude/extend-preflight-gate-label
+**Claimed At**: 2026-04-28T02:55:34Z
+**Expected Duration**: complete pending merge
+**Paths**:
+- .claude/agents/analyst.md
+- .github/agents/analyst.agent.md
+- .github/agents/judge.agent.md
+- .github/copilot-instructions.md
+- .github/prompts/README.md
+- AGENTS.md
+- docs/decisions/adr-005-analyst-preflight-gate.md
+- docs/decisions/adr-014-extend-analyst-preflight-to-labeled-issues.md
+- docs/guides/agent-pipeline.md
+- scripts/setup.sh
+- test.sh
+**Depends On**: none
+**Blocks**: none
+**State**: judge_review
+
 ## Recent History
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
