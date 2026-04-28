@@ -80,21 +80,6 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Blocks**: none
 **State**: in_progress
 
-## Lock: pr-216
-<!-- managed-for-pr:216 -->
-**Role**: architect
-**Session**: fix/206-pr-completion-criteria
-**Claimed At**: 2026-04-28T22:54:03Z
-**Expected Duration**: TBD
-**Paths**:
-- .context/state/_active.md
-- .github/prompts/pr-resolve-all.md
-- AGENTS.md
-- test.sh
-**Depends On**: none
-**Blocks**: none
-**State**: in_progress
-
 ## Recent History
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
