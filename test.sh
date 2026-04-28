@@ -327,6 +327,49 @@ else
     pass "judge.agent.md is clean of artifacts"
 fi
 
+# --- Pre-flight gate extension (ADR-014) ---
+# Four invariants ensure the label-triggered Pre-Flight gate stays wired up
+# end-to-end. See ADR-014.
+#
+#   1. The gate:preflight-required label is declared in setup.sh so a fresh
+#      `bash scripts/setup.sh` run creates it on the target repo.
+#   2. ADR-014 exists with an Accepted/supersedes status. (DOCS_FILES doesn't
+#      enumerate ADRs past 011 — separate gap; not addressed here.)
+#   3. ADR-005's Status line references ADR-014, so the supersession trail
+#      is one grep away (per docs/decisions/adr-template.md supersession discipline).
+#   4. AGENTS.md names the label literally inside the "Analyst pre-flight gate"
+#      section, so the trigger condition is documented where agents read it.
+ADR014_PATH="docs/decisions/adr-014-extend-analyst-preflight-to-labeled-issues.md"
+
+if grep -q '_ensure_label "gate:preflight-required"' scripts/setup.sh 2>/dev/null; then
+    pass "scripts/setup.sh declares the gate:preflight-required label (ADR-014)"
+else
+    fail "scripts/setup.sh missing _ensure_label \"gate:preflight-required\" (ADR-014)"
+fi
+
+if [[ -f "$ADR014_PATH" ]] \
+    && grep -qE '^Accepted \(supersedes ADR-005\)' "$ADR014_PATH" 2>/dev/null; then
+    pass "ADR-014 exists and Status reads 'Accepted (supersedes ADR-005)'"
+else
+    fail "ADR-014 missing or Status line is not 'Accepted (supersedes ADR-005)' ($ADR014_PATH)"
+fi
+
+if grep -q 'Superseded by \[ADR-014\]' docs/decisions/adr-005-analyst-preflight-gate.md 2>/dev/null; then
+    pass "ADR-005 Status line references 'Superseded by ADR-014'"
+else
+    fail "ADR-005 Status line missing 'Superseded by ADR-014' (supersession discipline, see adr-template.md)"
+fi
+
+# Extract the "Analyst pre-flight gate" subsection from AGENTS.md (between its
+# H3 heading and the next H3) and confirm it mentions the label literally.
+# awk pattern: print lines between the two markers exclusive on the second.
+gate_section=$(awk '/^### Analyst pre-flight gate/,/^### Plan-as-comment requirement/' AGENTS.md 2>/dev/null)
+if printf '%s' "$gate_section" | grep -q 'gate:preflight-required'; then
+    pass "AGENTS.md \"Analyst pre-flight gate\" section names gate:preflight-required (ADR-014)"
+else
+    fail "AGENTS.md \"Analyst pre-flight gate\" section does not mention gate:preflight-required (ADR-014)"
+fi
+
 # Check context 00_INDEX.md has truth hierarchy
 if grep -q "priority" .context/00_INDEX.md 2>/dev/null; then
     pass ".context/00_INDEX.md has priority information"

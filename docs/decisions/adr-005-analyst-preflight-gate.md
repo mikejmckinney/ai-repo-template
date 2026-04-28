@@ -2,11 +2,11 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR-014](./adr-014-extend-analyst-preflight-to-labeled-issues.md)
 
 ## Date
 
-2026-04-20
+2026-04-20 (superseded 2026-04-28)
 
 ## Context
 

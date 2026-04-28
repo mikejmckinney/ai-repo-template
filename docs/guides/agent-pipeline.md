@@ -349,6 +349,12 @@ verification commands, and a reference back to `00-PROJECT-BRIEF.md`.
 See the cloud_migration_POC prompts linked above for production-grade
 examples.
 
+Per ADR-014, the same Pre-Flight gate also fires on issues carrying the
+`gate:preflight-required` label, even when no `NN-*.md` prompt is
+referenced. Apply that label when filing ad-hoc feature issues, ADR
+proposals introducing new agent surfaces, or chat-originated work — see
+`.github/prompts/README.md` for the full guidance.
+
 **2. Mirror the prompts into `.context/backlog.yaml` (recommended primary path).**
 
 For each stage prompt, add one entry to `.context/backlog.yaml` (the

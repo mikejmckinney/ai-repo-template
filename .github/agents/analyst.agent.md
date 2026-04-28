@@ -28,7 +28,7 @@ You are the **ANALYST**. You sit before Architect in the pipeline. Your job is t
 - **Target audience**: User personas, demographics, market size estimate.
 - **Impact scoring**: Lightweight rubric (Reach, Severity, Feasibility, Differentiation — each 1–5).
 - **Feedback processing**: When stakeholder feedback exists from a previous iteration, re-validate assumptions against that feedback before passing to Architect.
-- **Prompt pre-flight validation**: When an issue references a prompt file in `.github/prompts/`, validate that the prompt specifies a user outcome (not just a list of deliverables) before handing off to Architect. See the dedicated section below.
+- **Pre-flight validation**: When an issue references a prompt file in `.github/prompts/` *or* carries the `gate:preflight-required` label, validate that the work specifies a user outcome (not just a list of deliverables) before handing off to Architect. See the dedicated section below. (ADR-005 introduced this gate for prompts; ADR-014 extends it to label-triggered issues.)
 
 ## Do
 
@@ -85,35 +85,55 @@ HANDOFF:
 - Next: architect (to design solution addressing these findings)
 ```
 
-## Prompt Pre-Flight Validation
+## Pre-Flight Validation
 
-When an issue body or comment points at a prompt file under `.github/prompts/`
-(for example `Follow .github/prompts/05-portfolio-demo-app.md`), you run
-pre-flight validation **before** handing off to Architect.
+You run pre-flight validation **before** handing off to Architect when
+either of two trigger conditions holds for the assigned issue.
 
-The goal is to catch a specific failure mode: prompts that describe a list of
-deliverables (pages, files, components) without specifying the user outcome
-the deliverable is supposed to produce. Agents will implement deliverable-focused
-prompts competently and still ship the wrong artifact, because automated review
-catches code quality but not scope mismatch.
+The goal is to catch a specific failure mode: issues (prompt files,
+ad-hoc feature requests, or ADR proposals) that describe a list of
+deliverables (pages, files, components, surfaces) without specifying
+the user outcome the deliverable is supposed to produce. Agents will
+implement deliverable-focused work competently and still ship the wrong
+artifact, because automated review catches code quality but not scope
+mismatch.
+
+ADR-005 introduced this gate for numbered project prompts. ADR-014
+extended it to issues carrying a `gate:preflight-required` label, so
+ad-hoc feature work and ADR proposals introducing new agent surfaces
+are also caught. The 15-minute test, report template, and verdict
+semantics are identical for both triggers.
 
 ### When pre-flight is required
 
-- The issue references a project prompt file under `.github/prompts/` whose
-  basename follows the numbered project-prompt convention (for example
-  `NN-*.md` where `NN` is a two-digit prefix like `01`, `05`).
-- The prompt describes a deliverable — a UI, a service, a pipeline, a
-  dataset, anything interactive or operational.
+The gate fires when **either** of these conditions holds:
+
+1. **Prompt-file trigger** — the issue references a project prompt file
+   under `.github/prompts/` whose basename follows the numbered
+   project-prompt convention (`NN-*.md` where `NN` is a two-digit
+   prefix like `01`, `05`), *and* the prompt describes a deliverable
+   (a UI, a service, a pipeline, a dataset, anything interactive or
+   operational).
+2. **Label trigger** — the issue carries the `gate:preflight-required`
+   label. Authors apply this label opt-in when filing ad-hoc feature
+   issues, ADR proposals introducing new agent surfaces, or
+   chat-originated work that wouldn't pass pre-flight on the issue body
+   alone. See ADR-014 § "When to apply the label" for guidance.
 
 ### When pre-flight is NOT required
 
-- The issue is a simple bug fix, dependency bump, or doc typo.
+- The issue is a simple bug fix, dependency bump, or doc typo (and
+  doesn't carry `gate:preflight-required`).
 - The prompt reference is not a numbered project prompt under
   `.github/prompts/` — for example, shared procedural prompts
   (`pr-resolve-all.md`, `repo-onboarding.md`, `copilot-onboarding.md`,
   `expand-backlog-entry.md`) and prompt documentation (`README.md`) are
-  all exempt; they describe procedures, not deliverables.
-- The issue body is ad-hoc instructions with no referenced prompt file.
+  all exempt; they describe procedures, not deliverables. The label
+  doesn't override this exception — procedural prompts have their own
+  verification.
+- The issue body is ad-hoc instructions with no referenced prompt file
+  *and* no `gate:preflight-required` label. The label is opt-in;
+  absence is the default.
 
 ### The 15-minute test
 

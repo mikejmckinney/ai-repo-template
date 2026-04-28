@@ -29,8 +29,9 @@ read the canonical file before doing anything.
   a non-exempt issue, post an Implementation Plan as an issue comment
   using `.github/PLAN_TEMPLATE.md`. Skip only for ADR-011 exemptions:
   `chore:no-plan` label, known automation bots, or revert PRs. The
-  Pre-Flight Report (ADR-005) for prompt-referenced issues is a
-  separate gate and is also required.
+  Pre-Flight Report (ADR-005, extended by ADR-014) for issues that
+  either reference a numbered project prompt or carry
+  `gate:preflight-required` is a separate gate and is also required.
 - No implementation code. Research artifacts and analysis only.
   Tiny illustrative snippets (≤ 10 lines) are OK only to clarify
   a finding.

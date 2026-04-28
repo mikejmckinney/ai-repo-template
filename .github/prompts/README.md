@@ -7,7 +7,7 @@ Prompt files referenced from GitHub issues and PR comments.
 Project prompts (like `NN-<stage>.md`) are validated by the **Analyst role**
 before any implementation starts. Analyst applies the "15-minute test" from
 [`.github/agents/analyst.agent.md`](../agents/analyst.agent.md) →
-"Prompt Pre-Flight Validation":
+"Pre-Flight Validation":
 
 > If the intended audience spent 15 minutes with the final deliverable,
 > would they *experience* the outcome, or would they *read about* it?
@@ -19,6 +19,26 @@ describing what a user will be able to *do* with those pages.
 Lead your prompt with **Client-facing outcomes** (concrete user actions)
 and **Non-negotiables** (things that must be real, not mocked). File
 lists come after, not before.
+
+## When to apply `gate:preflight-required` to non-prompt issues
+
+Per ADR-014, the Pre-Flight gate also fires on issues carrying the
+`gate:preflight-required` label, even when no prompt file is referenced.
+Apply this label when filing:
+
+- An ad-hoc feature issue (no `NN-*.md` reference) that proposes a UI,
+  service, pipeline, dataset, or operational artifact.
+- An ADR proposal that introduces a new agent surface (new role, new
+  gate, new pipeline phase, new automation surface).
+- Chat-originated work where the conversation is the only place the
+  user outcome was discussed and the issue body alone wouldn't pass
+  pre-flight.
+
+If you're unsure whether the label applies, apply it. False-positive
+cost is one Pre-Flight Report; false-negative cost is rework of the
+wrong artifact. The label does NOT apply to bug fixes, dependency
+bumps, typo corrections, doc edits, or shared procedural prompts —
+those carve-outs are preserved verbatim from ADR-005.
 
 ## Files here
 
