@@ -12,4 +12,4 @@
 **Next 1–3 actions**:
 1. Open PR with plan link in body
 2. Wait for CI + bot reviews; iterate per the new section
-3. Close out via `latest_summary.md` after merge
+3. Update `latest_summary.md` at session end / task close-out (do not defer to merge per AGENTS.md §Session-state cadence); amend post-merge if outcome changes
