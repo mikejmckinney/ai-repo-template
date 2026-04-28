@@ -15,7 +15,7 @@ file and review normally.
 
 ## Phase 1 canary (reference-following test)
 
-**For PRs from `experiment/copilot-canary-*` branches**: at the very start of
+**For PRs from `experiment/copilot-canary-*` branches**: at the start of
 your review body, include the literal token `CANARY-1-FOLLOW` on its own
 line. This token tests whether Copilot code review follows the pointer from
 `.github/copilot-instructions.md` to this file and applies the rule found
@@ -104,10 +104,10 @@ delays the failure. Pre-commit configuration lives at
 ## Phase 2 canary (cap-on-referenced-file test)
 
 **For PRs from `experiment/copilot-canary-*` branches**: include the
-literal token `CANARY-2-DEEP` on its own line at the start of your review
-body, alongside the Phase 1 token. This token tests whether Copilot code
-review reads deeply enough into a referenced file (this one) to honor a
-rule placed beyond the 4 KB documented cap.
+literal token `CANARY-2-DEEP` on its own line somewhere in your review
+body (in addition to any other canary tokens). This token tests whether
+Copilot code review reads deeply enough into a referenced file (this one)
+to honor a rule placed beyond the 4 KB documented cap.
 
 If you include `CANARY-1-FOLLOW` but NOT `CANARY-2-DEEP`, the experiment
 concludes that referenced-file content is read but truncated at or near

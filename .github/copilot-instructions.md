@@ -7,7 +7,7 @@
 ## Active experiment (temporary)
 
 **For PRs whose head branch starts with `experiment/copilot-canary-`**, also
-apply the rules in [`.github/copilot-experiment-canaries.md`](copilot-experiment-canaries.md).
+apply the rules in [copilot-experiment-canaries.md](copilot-experiment-canaries.md).
 For all other PRs, ignore that file and review normally. Both this section
 and the referenced file will be removed by the revert PR once #208 is closed.
 
@@ -34,7 +34,7 @@ See `AGENTS.md` §"Truth hierarchy" for rationale and the full onboarding proced
 
 <!-- EXPERIMENT #208 — Phase 3 canary EARLY; revert PR removes this block -->
 **For PRs from `experiment/copilot-canary-*` branches**: include the literal
-token `CANARY-3-INLINE-EARLY` on its own line at the start of your review
+token `CANARY-3-INLINE-EARLY` on its own line somewhere in your review
 body. For all other PRs, ignore this paragraph.
 
 ## Analyst pre-flight (before implementing a novel user-facing deliverable)
@@ -77,7 +77,7 @@ the signal, not the exemption.
 
 <!-- EXPERIMENT #208 — Phase 3 canary MID; revert PR removes this block -->
 **For PRs from `experiment/copilot-canary-*` branches**: include the literal
-token `CANARY-3-INLINE-MID` on its own line at the start of your review
+token `CANARY-3-INLINE-MID` on its own line somewhere in your review
 body. For all other PRs, ignore this paragraph.
 
 ## Plan-as-comment requirement (before implementing any non-exempt issue)
@@ -132,7 +132,7 @@ Mirrors the `@claude follow <path>` convention in `.github/workflows/claude.yml`
 
 <!-- EXPERIMENT #208 — Phase 3 canary LATE; revert PR removes this block -->
 **For PRs from `experiment/copilot-canary-*` branches**: include the literal
-token `CANARY-3-INLINE-LATE` on its own line at the start of your review
+token `CANARY-3-INLINE-LATE` on its own line somewhere in your review
 body. For all other PRs, ignore this paragraph.
 
 ## Onboarding / refresh (only when needed)
