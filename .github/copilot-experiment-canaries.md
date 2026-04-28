@@ -102,11 +102,11 @@ label, any ADR proposing a new agent surface, or any issue using
 action verbs plus a user-facing noun. The opt-out requires both the
 `outcome-validated` label and an inline outcome paragraph.
 
-Filler paragraph 10: ADR-013 set pre-commit hooks to default-on for
-contributors working on main. The `--no-verify` flag is forbidden by
-convention; CI re-runs the same hooks so bypassing them locally only
-delays the failure. Pre-commit configuration lives at
-`.pre-commit-config.yaml` and is installed via `scripts/setup.sh`.
+Filler paragraph 10: This paragraph is intentionally neutral padding
+for the experiment file. It does not describe repository policy,
+contributor workflow, installed tooling, or setup scripts, and should
+not be interpreted as guidance about hooks, CI behavior, or local
+development configuration.
 
 ## Rule B2 — cap-on-referenced-file test
 

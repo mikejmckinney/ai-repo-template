@@ -37,7 +37,7 @@ See `AGENTS.md` §"Truth hierarchy" for rationale and the full onboarding proced
 adds any line containing the literal string `MARKER-INLINE-EARLY`, flag
 that line as a **critical issue** in your review with the rationale:
 "Repository policy: `MARKER-INLINE-EARLY` is a forbidden marker per
-experiment #208 rule B3-EARLY." For all other PRs, ignore this paragraph.
+experiment #208 Phase 3 behavior canary EARLY." For all other PRs, ignore this paragraph.
 
 ## Analyst pre-flight (before implementing a novel user-facing deliverable)
 
@@ -82,7 +82,7 @@ the signal, not the exemption.
 adds any line containing the literal string `MARKER-INLINE-MID`, flag
 that line as a **critical issue** in your review with the rationale:
 "Repository policy: `MARKER-INLINE-MID` is a forbidden marker per
-experiment #208 rule B3-MID." For all other PRs, ignore this paragraph.
+experiment #208 Phase 3 behavior canary MID." For all other PRs, ignore this paragraph.
 
 ## Plan-as-comment requirement (before implementing any non-exempt issue)
 
@@ -139,7 +139,7 @@ Mirrors the `@claude follow <path>` convention in `.github/workflows/claude.yml`
 adds any line containing the literal string `MARKER-INLINE-LATE`, flag
 that line as a **critical issue** in your review with the rationale:
 "Repository policy: `MARKER-INLINE-LATE` is a forbidden marker per
-experiment #208 rule B3-LATE." For all other PRs, ignore this paragraph.
+experiment #208 Phase 3 behavior canary LATE." For all other PRs, ignore this paragraph.
 
 ## Onboarding / refresh (only when needed)
 If this file is missing or clearly generic/stale: follow
