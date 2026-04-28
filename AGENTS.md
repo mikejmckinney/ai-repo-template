@@ -125,7 +125,8 @@ below.
 
 - Ad-hoc issues that don't reference a `.github/prompts/NN-*.md` file
   *and* don't carry the `gate:preflight-required` label.
-- Simple bug fixes, dependency bumps, typo corrections, doc edits.
+- Simple bug fixes, dependency bumps, typo corrections, doc edits —
+  unless the issue carries the `gate:preflight-required` label.
 - Issues that reference shared procedural prompts (`pr-resolve-all.md`, etc.) —
   those have their own verification and don't produce novel deliverables.
 

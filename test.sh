@@ -362,7 +362,9 @@ fi
 
 # Extract the "Analyst pre-flight gate" subsection from AGENTS.md (between its
 # H3 heading and the next H3) and confirm it mentions the label literally.
-# awk pattern: print lines between the two markers exclusive on the second.
+# awk range pattern: print from the first marker through the second marker
+# (inclusive of both matching heading lines). The grep below tolerates the
+# trailing heading appearing in the output.
 gate_section=$(awk '/^### Analyst pre-flight gate/,/^### Plan-as-comment requirement/' AGENTS.md 2>/dev/null)
 if printf '%s' "$gate_section" | grep -q 'gate:preflight-required'; then
     pass "AGENTS.md \"Analyst pre-flight gate\" section names gate:preflight-required (ADR-014)"

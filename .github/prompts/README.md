@@ -36,9 +36,11 @@ Apply this label when filing:
 
 If you're unsure whether the label applies, apply it. False-positive
 cost is one Pre-Flight Report; false-negative cost is rework of the
-wrong artifact. The label does NOT apply to bug fixes, dependency
-bumps, typo corrections, doc edits, or shared procedural prompts —
-those carve-outs are preserved verbatim from ADR-005.
+wrong artifact. The label generally does not apply to bug fixes,
+dependency bumps, typo corrections, doc edits, or shared procedural
+prompts unless an author explicitly opts in with
+`gate:preflight-required` — those default carve-outs are preserved from
+ADR-005.
 
 ## Files here
 

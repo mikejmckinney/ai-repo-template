@@ -28,7 +28,7 @@ You are the **ANALYST**. You sit before Architect in the pipeline. Your job is t
 - **Target audience**: User personas, demographics, market size estimate.
 - **Impact scoring**: Lightweight rubric (Reach, Severity, Feasibility, Differentiation — each 1–5).
 - **Feedback processing**: When stakeholder feedback exists from a previous iteration, re-validate assumptions against that feedback before passing to Architect.
-- **Pre-flight validation**: When an issue references a prompt file in `.github/prompts/` *or* carries the `gate:preflight-required` label, validate that the work specifies a user outcome (not just a list of deliverables) before handing off to Architect. See the dedicated section below. (ADR-005 introduced this gate for prompts; ADR-014 extends it to label-triggered issues.)
+- **Pre-flight validation**: When an issue references a numbered project prompt in `.github/prompts/NN-*.md` that describes deliverables, *or* carries the `gate:preflight-required` label, validate that the work specifies a user outcome (not just a list of deliverables) before handing off to Architect. See the dedicated section below. (ADR-005 introduced this gate for project prompts; ADR-014 extends it to label-triggered issues.)
 
 ## Do
 

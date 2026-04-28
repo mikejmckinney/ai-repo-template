@@ -36,8 +36,11 @@ holds for the assigned issue:
    chat-originated work that wouldn't pass pre-flight on the issue body
    alone (see ADR-014).
 
-Skip for bug fixes, dep bumps, doc typos, and ad-hoc issues without a
-prompt reference *and* without the label.
+Skip pre-flight only when **neither** trigger above applies. In other
+words, bug fixes, dep bumps, doc typos, and other ad-hoc issues may skip
+pre-flight only when they have neither a prompt reference nor the
+`gate:preflight-required` label; if an author applies that label, it
+overrides those usual carve-outs and pre-flight is required.
 
 Procedure:
 
