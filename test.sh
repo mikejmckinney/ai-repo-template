@@ -261,32 +261,45 @@ else
 fi
 
 # Check agent-review-on-push.yml has required invariants (issue #205)
+# Patterns are tightened to match exact YAML structure / API surface so the
+# checks don't false-pass on the same keyword appearing in a comment block.
+# Reported by copilot-pull-request-reviewer on PR #217.
 RP_FILE=".github/workflows/agent-review-on-push.yml"
 if [[ -f "$RP_FILE" ]]; then
-    if grep -q "synchronize" "$RP_FILE"; then
-        pass "agent-review-on-push.yml triggers on pull_request synchronize"
+    if grep -qE '^[[:space:]]+types:[[:space:]]*\[[[:space:]]*synchronize[[:space:]]*\]' "$RP_FILE"; then
+        pass "agent-review-on-push.yml triggers on pull_request: types: [synchronize]"
     else
-        fail "agent-review-on-push.yml missing synchronize trigger"
+        fail "agent-review-on-push.yml missing 'types: [synchronize]' trigger"
     fi
-    if grep -q "cancel-in-progress: true" "$RP_FILE"; then
-        pass "agent-review-on-push.yml has concurrency cancel-in-progress"
+    if grep -qE "^[[:space:]]+cancel-in-progress:[[:space:]]+true" "$RP_FILE"; then
+        pass "agent-review-on-push.yml has concurrency cancel-in-progress: true"
     else
-        fail "agent-review-on-push.yml missing cancel-in-progress (would queue duplicate runs)"
+        fail "agent-review-on-push.yml missing 'cancel-in-progress: true'"
     fi
-    if grep -q "vars.REVIEW_ON_PUSH" "$RP_FILE"; then
-        pass "agent-review-on-push.yml gated on REVIEW_ON_PUSH variable"
+    if grep -qE "vars\.REVIEW_ON_PUSH[[:space:]]*==[[:space:]]*'true'" "$RP_FILE"; then
+        pass "agent-review-on-push.yml gated on vars.REVIEW_ON_PUSH == 'true'"
     else
-        fail "agent-review-on-push.yml missing REVIEW_ON_PUSH opt-in gate"
+        fail "agent-review-on-push.yml missing exact REVIEW_ON_PUSH opt-in gate"
     fi
-    if grep -q "copilot-pull-request-reviewer" "$RP_FILE"; then
-        pass "agent-review-on-push.yml re-requests copilot-pull-request-reviewer"
+    if grep -qE "reviewers\[\]=copilot-pull-request-reviewer" "$RP_FILE"; then
+        pass "agent-review-on-push.yml re-requests copilot-pull-request-reviewer via API"
     else
-        fail "agent-review-on-push.yml missing copilot-pull-request-reviewer reference"
+        fail "agent-review-on-push.yml missing 'reviewers[]=copilot-pull-request-reviewer' API call"
     fi
-    if grep -q "/gemini review" "$RP_FILE"; then
-        pass "agent-review-on-push.yml posts /gemini review nudge"
+    if grep -qE "body='/gemini review'" "$RP_FILE"; then
+        pass "agent-review-on-push.yml posts -f body='/gemini review' to comments API"
     else
-        fail "agent-review-on-push.yml missing /gemini review comment"
+        fail "agent-review-on-push.yml missing -f body='/gemini review' comment"
+    fi
+    if grep -qE "^[[:space:]]+issues:[[:space:]]+write" "$RP_FILE"; then
+        pass "agent-review-on-push.yml grants issues: write (required for /gemini review comment)"
+    else
+        fail "agent-review-on-push.yml missing 'issues: write' permission for issue-comments API"
+    fi
+    if grep -qE "steps\.gemini\.outcome" "$RP_FILE" && grep -qE "steps\.copilot\.outcome" "$RP_FILE"; then
+        pass "agent-review-on-push.yml fails job when both nudges fail (no silent green)"
+    else
+        fail "agent-review-on-push.yml missing both-failed outcome check (would mask outages)"
     fi
 fi
 

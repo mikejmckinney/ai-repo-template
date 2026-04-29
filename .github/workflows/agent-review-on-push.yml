@@ -36,6 +36,13 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  # `issues: write` required for the Gemini nudge: GitHub treats PR
+  # discussion comments as issue comments, and with an explicit
+  # `permissions:` block nothing is granted implicitly. Without this
+  # the POST to `/repos/{owner}/{repo}/issues/{pr}/comments` 403s
+  # and Gemini never gets nudged. Reported by copilot-pull-request-reviewer
+  # on PR #217.
+  issues: write
 
 # One nudge per PR at a time. Rapid consecutive pushes collapse to the
 # latest one — no separate sleep/debounce needed.
@@ -66,29 +73,42 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
 
     steps:
-      # Per-step continue-on-error so a transient failure on one half
-      # (Copilot API surface change, Gemini quota, etc.) does not break
-      # the other. The job overall succeeds if either step succeeds; if
-      # both fail, the run shows red and a maintainer investigates.
+      # Per-step `continue-on-error: true` so a transient failure on one
+      # half (Copilot API surface change, Gemini quota, etc.) does not
+      # block the other from running. Outcomes are captured via step ids
+      # and a final `if: always()` step fails the job iff BOTH nudges
+      # failed — so silent regressions surface, but a single-bot outage
+      # does not block the other bot's nudge. Reported by
+      # chatgpt-codex-connector and copilot-pull-request-reviewer on
+      # PR #217.
 
       - name: Nudge Gemini (/gemini review)
+        id: gemini
         continue-on-error: true
         run: |
           gh api -X POST "repos/${REPO}/issues/${PR}/comments" \
             -f body='/gemini review'
 
       - name: Re-request Copilot review (DELETE then POST)
+        id: copilot
         continue-on-error: true
         run: |
-          # Idempotent re-request. A bare POST against an already-requested
-          # reviewer is a no-op (no review_requested event fires). DELETE
-          # clears state; subsequent POST creates a real event that
-          # triggers Copilot's review pipeline.
-          #
-          # Both calls wrapped in `|| true`: DELETE returns 422 if the
-          # reviewer was not previously requested; we don't want to fail
-          # the job on that transient state.
+          # DELETE may 422 if the reviewer was not previously requested.
+          # That is an expected transient state (e.g. first push after a
+          # human un-requested Copilot), not a failure mode — swallow it
+          # with `|| true` so we always proceed to the POST.
           gh api -X DELETE "repos/${REPO}/pulls/${PR}/requested_reviewers" \
             -f 'reviewers[]=copilot-pull-request-reviewer' || true
+          # POST is the call that actually fires the review_requested
+          # event. Real errors here (auth, rate limit, endpoint change)
+          # MUST surface — no `|| true`. The step's `continue-on-error`
+          # still lets the Gemini half count toward the job's success,
+          # but the captured outcome feeds the always() check below.
           gh api -X POST "repos/${REPO}/pulls/${PR}/requested_reviewers" \
-            -f 'reviewers[]=copilot-pull-request-reviewer' || true
+            -f 'reviewers[]=copilot-pull-request-reviewer'
+
+      - name: Fail job if both nudges failed
+        if: always() && steps.gemini.outcome == 'failure' && steps.copilot.outcome == 'failure'
+        run: |
+          echo "::error::Both Gemini and Copilot nudges failed. Check token permissions, API surface changes, and recent runs of this workflow."
+          exit 1
