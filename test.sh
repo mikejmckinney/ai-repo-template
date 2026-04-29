@@ -860,7 +860,7 @@ REQUIRED_PM_KEYS=(
     "mirror_status:"
 )
 
-for pm in docs/postmortems/postmortem-[0-9][0-9][0-9]-*.md docs/postmortems/postmortem-template.md; do
+for pm in docs/postmortems/postmortem-*.md; do
     [[ -f "$pm" ]] || continue
     # Extract the YAML frontmatter block.
     # Invariants enforced (per ADR-015 + bot review feedback on PR #218):
@@ -914,14 +914,16 @@ for pm in docs/postmortems/postmortem-[0-9][0-9][0-9]-*.md docs/postmortems/post
     fi
     missing=""
     for key in "${REQUIRED_PM_KEYS[@]}"; do
-        # grep -E with ^ anchor + key + exactly-one-space + non-space:
+        # grep -E with ^ anchor + key + exactly-one-space + non-space-non-comment:
         # enforces "key at BOL followed by exactly one space and immediately
-        # a non-space character" (the repo style guide convention for YAML
-        # key-value formatting). The key already includes the trailing colon,
-        # so this catches both wrong-position-in-file and wrong-spacing drift
-        # in one check. None of our required keys take an empty value (stacks
-        # uses []), so the trailing space + non-space is safe.
-        if ! grep -qE "^${key} [^[:space:]]" <<<"$fm"; then
+        # a real value character" (the repo style guide convention for YAML
+        # key-value formatting). Rejecting '#' as the first value character
+        # prevents comment-only placeholders like 'source_commit: # TODO'
+        # from passing: YAML parses those as null/empty even though they
+        # look non-empty to a line-based grep. The key already includes the
+        # trailing colon, so this catches wrong-position, wrong-spacing, and
+        # comment-only placeholder drift in one check.
+        if ! grep -qE "^${key} [^[:space:]#]" <<<"$fm"; then
             missing="$missing $key"
         fi
     done
