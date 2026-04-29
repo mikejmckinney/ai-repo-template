@@ -219,6 +219,9 @@ The two gates have different trigger conditions and will be unified in #155.
 ## Ongoing maintenance
 Doc-sync triggers (which files must update together) live in a single source of truth: **`.context/rules/process_doc_maintenance.md`**. Read it before opening a PR; Judge enforces it at diff-gate.
 
+### Postmortem feedback loop
+When a downstream project (a repo built *from* this template) hits an incident worth a postmortem, run `.github/prompts/capture-postmortem.md` in that project repo. If the resulting postmortem's `generalizes:` is `Yes` or `Unclear`, run `.github/prompts/mirror-postmortem.md` against this template to mirror it back with a same-PR follow-up. The three-tier promotion policy (universal → AGENTS.md / `.context/rules/` / new ADR; stack-specific → mirrored postmortem only, never AGENTS.md; project-only → stays in source repo) is defined in `docs/postmortems/README.md` and ratified in [ADR-015](docs/decisions/adr-015-postmortem-feedback-loop.md). Do NOT add per-stack guidance (Terraform, Python, Rust, etc.) to this file — that is the failure mode the policy exists to prevent.
+
 ### Session-state cadence
 Keep agent working memory current so the next session (or next role) can resume cleanly. **Working state must live in `.context/state/`** — the LLM tool's in-conversation todo list and `/memories/session/` are agent-private scratch surfaces invisible to any other session, and are never substitutes for the checked-in files below. If your only record of in-progress work is in scratch surfaces, that work is lost the moment the session ends.
 

@@ -75,6 +75,8 @@ REQUIRED_FILES=(
     ".github/prompts/repo-onboarding.md"
     ".github/prompts/pr-resolve-all.md"
     ".github/prompts/expand-backlog-entry.md"
+    ".github/prompts/capture-postmortem.md"
+    ".github/prompts/mirror-postmortem.md"
     ".github/pull_request_template.md"
     ".github/PLAN_TEMPLATE.md"
 )
@@ -165,8 +167,11 @@ DOCS_FILES=(
     "docs/decisions/adr-009-parallel-multi-agent-execution.md"
     "docs/decisions/adr-010-auto-rebase-on-merge.md"
     "docs/decisions/adr-011-plan-as-comment-requirement.md"
+    "docs/decisions/adr-015-postmortem-feedback-loop.md"
     "docs/postmortems/README.md"
     "docs/postmortems/postmortem-template.md"
+    "docs/postmortems/postmortem-001-workflow-bypass.md"
+    "docs/postmortems/postmortem-002-poc-outcome-mismatch.md"
 )
 
 for file in "${DOCS_FILES[@]}"; do
@@ -831,6 +836,53 @@ for wf in .github/workflows/*.yml; do
         else
             fail "$wf references CLAUDE_PAT/ANTHROPIC_API_KEY but is missing the 'Verify required secrets' guard step (issue #162)"
         fi
+    fi
+done
+
+echo ""
+
+# --- Postmortem frontmatter check (ADR-015) ---
+# Every docs/postmortems/postmortem-*.md must carry the YAML frontmatter
+# block introduced by ADR-015. Required keys: postmortem_number, date,
+# source_repo, source_commit, stacks, generalizes, follow_up_artifact,
+# mirror_status. The template file is included intentionally — its
+# frontmatter is the canonical example.
+echo "Checking postmortem frontmatter (ADR-015)..."
+
+REQUIRED_PM_KEYS=(
+    "postmortem_number:"
+    "date:"
+    "source_repo:"
+    "source_commit:"
+    "stacks:"
+    "generalizes:"
+    "follow_up_artifact:"
+    "mirror_status:"
+)
+
+for pm in docs/postmortems/postmortem-*.md; do
+    [[ -f "$pm" ]] || continue
+    # Extract the first ---...--- block. Skip leading HTML comments and
+    # blank lines so the provenance comment block on mirrored postmortems
+    # does not break the check.
+    fm=$(awk '
+        /^---[[:space:]]*$/ { if (++c == 1) { next } else { exit } }
+        c == 1 { print }
+    ' "$pm")
+    if [[ -z "$fm" ]]; then
+        fail "$pm is missing YAML frontmatter (ADR-015)"
+        continue
+    fi
+    missing=""
+    for key in "${REQUIRED_PM_KEYS[@]}"; do
+        if ! grep -q "^${key}" <<<"$fm"; then
+            missing="$missing $key"
+        fi
+    done
+    if [[ -n "$missing" ]]; then
+        fail "$pm frontmatter missing keys:$missing"
+    else
+        pass "$pm has all required frontmatter keys"
     fi
 done
 

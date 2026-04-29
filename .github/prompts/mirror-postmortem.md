@@ -1,0 +1,181 @@
+---
+description: Mirror a downstream-project postmortem into ai-repo-template; refuses to mirror without a same-PR follow-up.
+agent: agent
+---
+
+# Mirror Postmortem
+
+> **Usage**: Run this prompt against `mikejmckinney/ai-repo-template`
+> after a downstream-project postmortem has been authored using
+> [`capture-postmortem.md`](./capture-postmortem.md) and merged in the
+> source repo. This prompt does NOT author postmortems; it copies an
+> already-merged one over and ensures the template-side follow-up
+> ships in the same PR.
+>
+> **Inputs**: the URL of the source-repo postmortem file at the
+> commit (or tag) you want to mirror.
+>
+> **Output**: a single PR against `ai-repo-template` containing
+> (a) the mirrored postmortem with a provenance header, (b) an index
+> row in `docs/postmortems/README.md`, and (c) the concrete follow-up
+> artifact (ADR edit, rules edit, prompt edit, or new ADR file).
+>
+> **Hard rule**: this prompt refuses to mirror a postmortem that has
+> no concrete follow-up. The downstream-mirroring policy in
+> `docs/postmortems/README.md` ("Mirroring without a follow-up is not
+> permitted — a postmortem alone changes nothing") is enforced
+> operationally here.
+
+---
+
+## Phase 1: Validate the source postmortem
+
+Fetch the source file. Verify all of:
+
+- [ ] File path is `docs/postmortems/postmortem-NNN-<slug>.md` in the
+      source repo.
+- [ ] First non-comment lines are a YAML frontmatter block matching
+      the schema in `capture-postmortem.md` Phase 3a.
+- [ ] `generalizes:` is `Yes` or `Unclear`. **Stop here if `No`** —
+      project-specific lessons stay in the source repo. Mirroring a
+      `No` postmortem violates the schema's intent. If you believe the
+      verdict was wrong, the fix is to amend the source postmortem
+      with a follow-up section that re-evaluates, then re-run this
+      prompt.
+- [ ] `follow_up_artifact:` is not `none`. If it is `none`,
+      `generalizes` cannot be `Yes` (per `capture-postmortem.md`
+      Phase 3a) — surface the inconsistency back to the source-repo
+      maintainer and stop. Do not mirror.
+- [ ] `mirror_status:` is `original`. If it already starts with
+      `mirrored-from:`, the file you fetched is itself a mirror — go
+      back upstream to find the original. Mirroring a mirror is not
+      supported.
+- [ ] The source file's body's "What generalizes" prose verdict
+      matches the frontmatter `generalizes:` value.
+
+If any check fails, **stop**. Post a single comment on the source-repo
+PR (or, if no PR exists, open an issue on the source repo) explaining
+which check failed and how to fix. Do not open a template-side PR.
+
+## Phase 2: Pick the template-side number
+
+Numbers in `mikejmckinney/ai-repo-template`'s `docs/postmortems/` are
+independent of the source repo's numbering. Apply the same rule as
+`capture-postmortem.md` Phase 2: highest existing + 1, zero-padded.
+
+The mirrored file's filename uses the **template-side** number; the
+H1 also uses the template-side number. The body keeps the source's
+narrative content unchanged.
+
+## Phase 3: Compose the mirrored file
+
+Create `docs/postmortems/postmortem-NNN-<slug>.md` in the template
+with this exact shape:
+
+1. A provenance HTML comment block at the top, before the
+   frontmatter — same shape as `postmortem-001-workflow-bypass.md`:
+
+   ```
+   <!--
+   Mirrored from <source-repo> (a project bootstrapped from this template)
+   under docs/postmortems/postmortem-NNN-<slug>.md.
+
+   Source URL: https://github.com/<source-repo>/blob/<commit-or-tag>/docs/postmortems/postmortem-NNN-<slug>.md
+   Mirrored: YYYY-MM-DD (in PR for issue #NNN; <any supersession context>).
+   Triggered: <ADR-NNN | rule edit | prompt edit | issue #NNN>.
+
+   Per docs/postmortems/README.md "Numbering and immutability", postmortems
+   are append-only for facts. The body below is a verbatim copy of the
+   source as of the mirror date; if new evidence appears, add a follow-up
+   section at the bottom rather than editing the original.
+   -->
+   ```
+
+2. The YAML frontmatter, **modified** from the source as follows:
+   - `postmortem_number:` — change to the template-side number.
+   - `mirror_status:` — change to `mirrored-from:<source-owner>/<source-repo>`.
+   - `follow_up_artifact:` — update to the template-side artifact ID
+     (e.g., `ADR-015`), not the source repo's issue number.
+   - All other frontmatter fields (`source_repo`, `source_commit`,
+     `date`, `stacks`, `generalizes`) **stay identical** to the source.
+     They describe the original incident and must not drift.
+
+3. The body — verbatim from the source. Do not edit. Do not "improve."
+   The immutability rule applies to mirrors as well.
+
+## Phase 4: Update the index
+
+Add a row to `docs/postmortems/README.md` "Index" table for the new
+mirrored file. Then update the "Stack-tagged index" section: for each
+tag in the postmortem's `stacks:` list, add a bullet under that
+section's matching subheading. Create the subheading if the tag is
+new. Format:
+
+```
+### terraform
+- [postmortem-NNN](./postmortem-NNN-slug.md) — short title (also: aws, bash)
+```
+
+For postmortems with `stacks: []` (universal), add them under a
+`### (universal)` subheading.
+
+## Phase 5: Draft the follow-up artifact (required, same PR)
+
+`generalizes: Yes` or `Unclear` means the lesson must produce a
+concrete change to the template **in this same PR**. Apply the
+three-tier policy from `docs/postmortems/README.md` →
+"Project-agnostic vs stack-specific vs project-only":
+
+- **Universal lesson** (the postmortem's body explains why this is not
+  stack-specific) → either:
+  - amend `AGENTS.md` (a single bullet, no per-stack content), or
+  - amend a file under `.context/rules/`, or
+  - add a new ADR under `docs/decisions/`, or
+  - amend a file under `.github/prompts/`.
+
+  Pick the smallest change that captures the rule. Do not bundle.
+
+- **Stack-specific lesson** → **do NOT** amend `AGENTS.md` or
+  `.context/rules/`. The follow-up is the mirrored postmortem itself
+  + its row in the stack-tagged index. The promotion gate is
+  intentional: AGENTS.md must not accumulate per-stack tips. If you
+  feel the urge to add a Terraform / Python / Rust / etc. tip to
+  AGENTS.md, that's the signal to stop and re-read this section.
+
+- **Unclear** → file an issue in this same PR titled
+  `Re-evaluate postmortem-NNN after second occurrence` and link it
+  from `follow_up_artifact:`. The issue is the follow-up.
+
+## Phase 6: Open the PR
+
+Title: `docs(postmortems): mirror postmortem-NNN from <source-repo>`
+
+Body must include:
+
+- Source URL (file at commit).
+- Verdict: `generalizes: Yes | Unclear`, stacks list.
+- Three-tier classification (universal / stack-specific / unclear)
+  with a one-sentence justification.
+- The follow-up artifact, named.
+- Plan-as-comment link if applicable (per `AGENTS.md` plan
+  requirement; this counts as a non-trivial change).
+
+Open the PR. Do not merge until the source-repo PR is also merged
+(provenance header references the source commit, which must exist on
+the source repo's default branch).
+
+## Phase 7: Resolution Report
+
+Post a comment on the template PR with:
+
+```
+### Postmortem mirrored
+
+- Source: <source-repo>#postmortem-NNN-<slug>
+- Template file: `docs/postmortems/postmortem-NNN-<slug>.md`
+- Tier: <universal | stack-specific | unclear>
+- Stacks: <list, or "(universal)">
+- Follow-up artifact: <named, with link>
+```
+
+This is the audit trail for the sync-back step.

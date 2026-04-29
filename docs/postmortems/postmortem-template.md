@@ -1,12 +1,30 @@
-# Postmortem-NNN: [Title]
-
 <!--
 Postmortem / Lessons Learned Template
 Copy this file and rename to postmortem-NNN-short-title.md, where NNN is
 the zero-padded three-digit sequence number (for example: 001, 002, …).
-Use the same NNN value in the H1 title and the filename.
+Use the same NNN value in the frontmatter, H1 title, and the filename.
 Title: short, descriptive ("docs sync drift", "auth migration rollback", …)
+
+The YAML frontmatter block below is REQUIRED. The schema is defined in
+ADR-015 and enforced by test.sh. Do not omit fields; use the explicit
+empty value (`[]` for stacks, `none` for follow_up_artifact when
+generalizes is No) rather than deleting the line.
+
+For walkthrough guidance, run `.github/prompts/capture-postmortem.md`.
 -->
+
+---
+postmortem_number: NNN
+date: YYYY-MM-DD
+source_repo: <owner>/<repo>
+source_commit: <sha-at-time-of-incident>
+stacks: []
+generalizes: Unclear
+follow_up_artifact: none
+mirror_status: original
+---
+
+# Postmortem-NNN: [Title]
 
 ## Status
 

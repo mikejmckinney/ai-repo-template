@@ -10,7 +10,22 @@ Per docs/postmortems/README.md "Numbering and immutability", postmortems are
 append-only for facts. The body below is a verbatim copy of the source as of
 the mirror date; if new evidence appears, add a follow-up section at the
 bottom rather than editing the original.
+
+The frontmatter block below was added 2026-04-29 in the ADR-015 / issue
+#150 PR to backfill the schema introduced by that ADR. The body below
+the frontmatter is unchanged from the original mirror.
 -->
+
+---
+postmortem_number: 001
+date: 2026-04-24
+source_repo: mikejmckinney/cmmc-level2-aws-enclave-reference2
+source_commit: recovery/phases-1-7-uncommitted-work
+stacks: [github-actions, bash]
+generalizes: Yes
+follow_up_artifact: ADR-012
+mirror_status: mirrored-from:mikejmckinney/cmmc-level2-aws-enclave-reference2
+---
 
 # Postmortem-001: Workflow bypass on Phases 2–7
 

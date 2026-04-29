@@ -1,0 +1,188 @@
+---
+description: Capture a postmortem in the current (downstream) repo using the ai-repo-template schema.
+agent: agent
+---
+
+# Capture Postmortem
+
+> **Usage**: Run this prompt in the **downstream project repo** (the one
+> built *from* `mikejmckinney/ai-repo-template`), NOT in the template
+> itself. The output is a new file at
+> `docs/postmortems/postmortem-NNN-<slug>.md` in the project repo.
+>
+> If you are already inside `mikejmckinney/ai-repo-template` and the
+> incident is template-internal, the same procedure applies; skip the
+> sync-back step (Phase 5) — there is nothing to mirror.
+>
+> **When to invoke**: a maintainer (human or agent) decides an incident
+> matches one of the criteria in the template's
+> `docs/postmortems/README.md` → "When to write a postmortem". Agents
+> may *suggest* invoking this prompt when those criteria match, but
+> should not author a postmortem unsolicited; postmortems are
+> expensive to read, the bar is "future-me would benefit."
+
+You are about to capture a postmortem. Do not write the postmortem
+free-hand. Walk this prompt end to end, in order. Each phase has a
+verification step; do not advance until it passes.
+
+---
+
+## Phase 1: Confirm the incident warrants a postmortem
+
+Read `docs/postmortems/README.md` → "When to write a postmortem"
+(present in this repo if it was bootstrapped from `ai-repo-template`;
+if the file is missing, fetch the canonical version from
+[`mikejmckinney/ai-repo-template`](https://github.com/mikejmckinney/ai-repo-template/blob/main/docs/postmortems/README.md)).
+
+State, in one sentence, which criterion this incident matches. If none
+matches, **stop**. Do not write a postmortem; surface the decision back
+to the requester with a one-line explanation. The "this is interesting"
+threshold is intentionally lower than "warrants a postmortem."
+
+## Phase 2: Pick the next postmortem number and slug
+
+1. List `docs/postmortems/postmortem-*.md` in this repo.
+2. The new number is the highest existing + 1, zero-padded to three
+   digits (`001`, `002`, ...).
+3. Slug: 2–5 words, kebab-case, descriptive of the gap (not the fix).
+   Good: `workflow-bypass`, `outcome-mismatch`, `migration-rollback`.
+   Bad: `bug-fix`, `incident`, `lessons-learned`.
+
+## Phase 3: Author the postmortem
+
+Copy the template body from
+`docs/postmortems/postmortem-template.md` (or fetch from the canonical
+template repo if absent locally) into
+`docs/postmortems/postmortem-NNN-<slug>.md`. Fill **every** section.
+
+### Phase 3a: YAML frontmatter (required)
+
+The first non-comment lines of the file must be a YAML frontmatter
+block:
+
+```yaml
+---
+postmortem_number: NNN
+date: YYYY-MM-DD
+source_repo: <owner>/<repo>
+source_commit: <sha-at-time-of-incident>
+stacks: []
+generalizes: Yes | No | Unclear
+follow_up_artifact: <ADR-NNN | issue-NNN | PR-NNN | none>
+mirror_status: original
+---
+```
+
+Field rules — every field is required:
+
+- **`postmortem_number`** — matches the `NNN` in the filename and the H1.
+- **`date`** — date the incident occurred, not the date you wrote this
+  up. ISO 8601 (`YYYY-MM-DD`).
+- **`source_repo`** — `<owner>/<repo>` of the project where the incident
+  happened. For postmortems authored in this repo, that's this repo.
+- **`source_commit`** — short or full SHA of the commit that best
+  represents the incident state. Use `git log` to find it; do not
+  invent.
+- **`stacks`** — YAML list of technology / domain tags that scope this
+  lesson. Use lowercase, kebab-case. Examples: `[terraform, aws]`,
+  `[python, fastapi, postgres]`, `[github-actions, bash]`. **Empty
+  list `[]`** means "applies regardless of stack" — only use this if
+  truly universal. If the lesson only makes sense to readers using a
+  specific tool, name the tool.
+- **`generalizes`** — see Phase 3c. The verdict here must match the
+  body's "What generalizes" section.
+- **`follow_up_artifact`** — the ID of the concrete change this
+  postmortem produces. If `generalizes: Yes` or `Unclear`, this MUST
+  NOT be `none` — every generalizable lesson must produce a follow-up
+  (see template README's "What generalizes"). If `generalizes: No`,
+  `none` is acceptable.
+- **`mirror_status`** — `original` for postmortems authored here.
+  `mirrored-from:<owner>/<repo>` is set later, by `mirror-postmortem.md`,
+  in the template-side mirror copy — never set it manually.
+
+### Phase 3b: Fill the body
+
+Follow the inline guidance in `postmortem-template.md`. Resist these
+common shortcuts:
+
+- "Code path X had a bug" is not a root cause; keep asking "and why?"
+  until you reach a process / assumption / verification gap.
+- The "What worked" section is not optional padding. Naming what worked
+  prevents the next response from accidentally regressing on it.
+- Action items without a linked issue / PR are wishes. File the issues
+  before declaring the postmortem done.
+
+### Phase 3c: The "What generalizes" decision (required, do not skip)
+
+This is the only field in the postmortem that can affect other
+projects. Three honest answers:
+
+- **Yes** — the lesson applies to other repos *regardless of stack*
+  (e.g., a workflow rule, a missing precondition in agent prompts, a
+  documentation pattern). This is rare. Yes triggers Phase 5
+  (sync-back to template) and requires `follow_up_artifact != none`.
+- **Yes, stack-specific** — the lesson applies to other repos *that
+  use the same stack* (e.g., "Terraform `for_each` on data sources
+  evaluates lazily; assume nothing is materialized at plan time"). The
+  `stacks:` field is what makes this discoverable. This still triggers
+  Phase 5 — the postmortem is mirrored — but the follow-up artifact
+  does NOT modify AGENTS.md or `.context/rules/`. It stays in the
+  postmortem; future projects find it via the stack-tagged index.
+  Mark `generalizes: Yes` and explain the stack scope in the body.
+- **No** — project-specific. Stays in this repo. Do not mirror.
+- **Unclear** — say so explicitly. State the form a confirming second
+  occurrence would take ("if this happens again on a non-`for_each`
+  resource, it generalizes"). Marking everything `Yes` to avoid the
+  decision is the failure mode this gate exists to prevent.
+
+The body's prose verdict must match the frontmatter `generalizes:`
+value. Mismatches block the next phase.
+
+## Phase 4: Self-check before posting
+
+Verify all of:
+
+- [ ] Filename matches frontmatter `postmortem_number` and H1 title number.
+- [ ] Frontmatter has all 8 fields, none empty (use `[]` and `none`
+      explicitly when applicable).
+- [ ] Every body section has content; no `<!-- … -->` template
+      comments left in their raw form.
+- [ ] "Action items" has at least one item with a linked issue or PR.
+- [ ] If `generalizes: Yes`, `follow_up_artifact != none`.
+- [ ] "Trigger" is one sentence.
+- [ ] "Expected vs Actual" is non-trivial — if Expected and Actual
+      match, you do not have a postmortem; stop.
+
+If any item fails, fix before committing.
+
+Commit on a feature branch (`postmortem/NNN-<slug>`), open a PR in
+**this** repo (the project repo, not the template), and request review.
+
+## Phase 5: Sync-back decision (only if generalizes is Yes / Unclear)
+
+- **`generalizes: No`** → done. Merge in this repo. Do not mirror.
+- **`generalizes: Yes` or `Unclear`** → after the source-repo PR is
+  merged, run [`mirror-postmortem.md`](./mirror-postmortem.md) against
+  `mikejmckinney/ai-repo-template`. That prompt validates frontmatter,
+  copies the postmortem with a provenance header, and opens the
+  template-side PR with the drafted follow-up artifact in the same PR.
+  Do not mirror by hand — the prompt's validation gate exists to
+  enforce the "no mirror without a follow-up" rule from the template's
+  postmortem README.
+
+## Phase 6: Resolution Report
+
+Post a comment on the project-repo PR with:
+
+```
+### Postmortem captured
+
+- File: `docs/postmortems/postmortem-NNN-<slug>.md`
+- Generalizes: <Yes | No | Unclear>
+- Stacks: <comma-separated list, or "(universal)">
+- Follow-up: <ADR / issue / PR / none>
+- Sync-back: <not applicable | pending mirror-postmortem.md run | template PR #NNN>
+```
+
+The report is the audit trail for whether this incident did or did not
+flow back to the template.
