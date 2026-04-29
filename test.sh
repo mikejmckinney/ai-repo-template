@@ -947,6 +947,21 @@ for pm in docs/postmortems/postmortem-*.md; do
             pass "$pm source_commit looks like a commit SHA"
         fi
     fi
+    # Validate generalizes and follow_up_artifact canonical values (ADR-015).
+    # These checks apply to all files including the template (which has
+    # valid canonical defaults: generalizes: No, follow_up_artifact: none).
+    gen=$(grep -E '^generalizes: ' <<<"$fm" | sed 's/^generalizes: //' | tr -d '[:space:]')
+    if [[ "$gen" =~ ^(Yes|No|Unclear)$ ]]; then
+        pass "$pm generalizes value is valid"
+    else
+        fail "$pm generalizes '$gen' is not one of Yes | No | Unclear (ADR-015)"
+    fi
+    fua=$(grep -E '^follow_up_artifact: ' <<<"$fm" | sed 's/^follow_up_artifact: //' | tr -d '[:space:]')
+    if [[ "$fua" =~ ^(ADR-[0-9]+|issue-[0-9]+|PR-[0-9]+|none)$ ]]; then
+        pass "$pm follow_up_artifact value matches canonical schema"
+    else
+        fail "$pm follow_up_artifact '$fua' does not match canonical schema ADR-NNN|issue-NNN|PR-NNN|none (ADR-015)"
+    fi
 done
 
 echo ""

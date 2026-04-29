@@ -31,9 +31,7 @@ before starting non-trivial work in that stack.
 
 ### (universal)
 
-_No universal postmortems mirrored yet. Universal lessons usually surface
-as AGENTS.md / `.context/rules/` edits via their `follow_up_artifact:` —
-the postmortem itself is rarely the artifact agents read._
+- [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: prompt-engineering, multi-prompt-sequence)
 
 ### github-actions
 
@@ -45,11 +43,7 @@ the postmortem itself is rarely the artifact agents read._
 
 ### prompt-engineering
 
-- [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: multi-prompt-sequence)
-
 ### multi-prompt-sequence
-
-- [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: prompt-engineering)
 
 
 ## When to write a postmortem
