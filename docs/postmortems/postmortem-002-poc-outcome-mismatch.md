@@ -1,3 +1,14 @@
+---
+postmortem_number: 002
+date: 2026-04-15
+source_repo: mikejmckinney/cloud_migration_POC
+source_commit: 4943212140cbcec760221ba405b437d678a26771
+stacks: [prompt-engineering, multi-prompt-sequence]
+generalizes: Yes
+follow_up_artifact: issue-69
+mirror_status: original
+---
+
 <!--
 Template-authored synthesized backfill, NOT a mirror of an existing
 source-repo postmortem. Authored 2026-04-29 in
@@ -32,18 +43,26 @@ something. Do not rewrite history; add follow-ups.
 This is also the first end-to-end run of the procedure introduced by
 ADR-015 (capture-postmortem.md → mirror-postmortem.md). See ADR-015
 "References" for context.
--->
 
----
-postmortem_number: 002
-date: 2026-04-15
-source_repo: mikejmckinney/cloud_migration_POC
-source_commit: 4943212140cbcec760221ba405b437d678a26771
-stacks: [prompt-engineering, multi-prompt-sequence]
-generalizes: Unclear
-follow_up_artifact: issue-219
-mirror_status: original
----
+Verdict-history note: this postmortem was originally filed in commit
+45094e9 (#218) with `generalizes: Unclear` and
+`follow_up_artifact: issue-219` on the cautious "N=1 = anecdote"
+reading. Project owner @mikejmckinney upgraded the verdict to `Yes`
+later in #218 because the underlying failure mode (designing around
+deliverables instead of user outcomes) is not stack- or
+sequence-specific — it can affect any issue type. The design-for-
+outcomes follow-ups already exist as ai-repo-template#69 (agent logic
+update) / PR #70 and #201 / PR #203, so `follow_up_artifact: issue-69`
+points at the canonical originating issue (the others append to that
+thread). Conditional issue #219 (re-evaluate after a second
+multi-prompt-sequence occurrence) is therefore superseded — the
+verdict no longer waits on a second occurrence.
+
+NOTE: frontmatter is intentionally placed at line 1 (above this comment)
+so GitHub's Markdown renderer parses it as YAML and shows the styled
+table view; HTML comments before the opening `---` would push it past
+line 1 and break that rendering.
+-->
 
 # Postmortem-002: Prompts 1–6 produced architecture instead of working demo
 
@@ -180,57 +199,90 @@ the sequence converges on the wrong thing.
 
 ## What generalizes
 
-**Status**: `Unclear` (revisit after a second multi-prompt-sequence
-deliverable mismatch — tracked in #219).
+**Status**: `Yes` (universal — not stack- or sequence-specific).
 
-The candidate lesson generalizes to **any project decomposed into a
-multi-prompt sequence whose individual prompts produce intermediate
-artifacts** (architecture, schema, plan, scaffold) rather than terminal
-artifacts (running code, deployed service, generated content the
-end-user consumes directly). For such projects, per-prompt pre-flight
-may be necessary but insufficient; a per-sequence checkpoint may also
-be needed.
+The candidate lesson generalizes to **any work whose definition is
+phrased as a list of deliverables rather than a user outcome**. The
+multi-prompt-sequence shape is one expression of the failure mode,
+but not the failure mode itself. Per-prompt pre-flight passed six
+times here because each prompt's stated outcome ("produce architecture
+for stage N") was honest about what *that prompt* would produce. The
+gap was that the **project** was never expressed as an outcome a user
+would experience — only as a sequence of deliverables.
 
-**Why `Unclear` rather than `Yes`**: this is N=1. Per
-`docs/postmortems/README.md` → "What generalizes": *"a pattern that
-appears once is an anecdote."* The shape of a confirming second
-occurrence would be: another downstream project, decomposed into a
-numbered-prompt sequence with intermediate-artifact prompts, where
-every individual pre-flight passes and the cumulative deliverable is
-still the wrong shape. Until that second case appears, the rule
-"after the last prompt in a sequence, verify the cumulative artifact
-matches the stated project deliverable" is one project's experience,
-not a template invariant.
+The same shape applies to single-issue work, multi-PR features,
+epic-style backlogs, and any other unit where the work definition
+lists artifacts ("build X, Y, Z") instead of user actions ("a user
+will be able to do A in 15 minutes"). Wherever the definition is
+deliverable-shaped, the verification gate has nothing to check
+against beyond "did the artifact get produced," which is the wrong
+question.
 
-If this had been classified as stack-specific `Yes`, ADR-015's
-three-tier policy would have left the rule in this postmortem (tagged
-`prompt-engineering` / `multi-prompt-sequence`) and never amended
-AGENTS.md. That option remains open: if #219 closes with a confirmed
-second occurrence, the verdict can be amended to `Yes` (append-only)
-and the rule promoted under either the stack-specific or universal
-tier as the second case clarifies.
+**Why `Yes` rather than `Unclear`** (verdict upgraded in #218): the
+original `Unclear` filing reasoned from N=1 of the
+multi-prompt-sequence shape. That framing was too narrow. The actual
+generalizable lesson — "design for outcomes, not deliverables" — was
+already being addressed by ai-repo-template#69 (agent logic update to
+ensure prompts describe user outcomes) / PR #70 and #201 / PR #203
+before postmortem-002 was even filed. Those follow-ups exist *because*
+the pattern recurs across issue types, not just multi-prompt
+sequences. The verdict was upgraded to match what the existing
+follow-ups already imply.
+
+**Follow-up artifact**: `issue-69` is the canonical originating issue
+for the design-for-outcomes change; PR #70, #201, and PR #203 build
+on it. They collectively codify the rule the Analyst pre-flight gate
+already expresses (15-minute test) so that prompt and issue authoring
+upstream of the gate produces work definitions the gate can
+meaningfully evaluate.
+
+**Multi-prompt-sequence as a sub-case**: per-sequence checkpointing
+(verify the cumulative artifact after the last prompt in a sequence)
+remains a worthwhile sub-question, but it's a tactic for one shape of
+the failure, not the lesson itself. If a future incident shows that
+the outcome-framing fix at the issue/prompt boundary is insufficient
+for sequences specifically, that's the moment to draft the
+per-sequence-checkpoint ADR — not now.
 
 ## Action items
 
 - [x] File [issue #219](https://github.com/mikejmckinney/ai-repo-template/issues/219)
       in `ai-repo-template`: "Re-evaluate postmortem-002 if a second
       multi-prompt-sequence deliverable mismatch occurs" — owner:
-      @mikejmckinney — filed in #218.
+      @mikejmckinney — filed in #218. **Superseded** by the verdict
+      upgrade to `Yes` later in #218; the conditional re-evaluation
+      this issue tracked is no longer blocking. Close #219 with a
+      pointer to this postmortem's "Verdict-history note" and the
+      design-for-outcomes follow-ups below.
+- [x] Design-for-outcomes enforcement at the issue / prompt authoring
+      layer is tracked by
+      [ai-repo-template#69](https://github.com/mikejmckinney/ai-repo-template/issues/69)
+      / [PR #70](https://github.com/mikejmckinney/ai-repo-template/pull/70)
+      and [#201](https://github.com/mikejmckinney/ai-repo-template/issues/201)
+      / [PR #203](https://github.com/mikejmckinney/ai-repo-template/pull/203).
+      These predate this postmortem and are the canonical follow-ups;
+      the postmortem's role is to provide the worked example that
+      explains *why* those changes matter.
 - [ ] Cross-link postmortem-002 from `cloud_migration_POC`'s own
       `docs/postmortems/` (if that repo has one) so the source-repo
       record points to this synthesized backfill — owner: @mikejmckinney.
-- [ ] (Conditional, owned by #219) If a second multi-prompt-sequence
-      deliverable-mismatch occurs, draft an ADR amending the Analyst
-      pre-flight gate to add a per-sequence checkpoint, and amend this
-      postmortem's `generalizes:` from `Unclear` to `Yes` (append-only)
-      with the new ADR linked as the secondary follow-up. Until then,
-      no template-rule edit.
+- [ ] (Conditional, lower priority) If a future incident shows that
+      design-for-outcomes at the issue / prompt boundary is
+      insufficient *specifically* for multi-prompt sequences (i.e.
+      every prompt has an honest user outcome and the cumulative
+      deliverable is still the wrong shape), draft an ADR adding a
+      per-sequence checkpoint to the Analyst pre-flight gate. Until
+      that case appears, the issue/prompt-level fix is the canonical
+      remediation.
 
 ## References
 
 - [`07-working-demo-upgrade.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/main/.github/prompts/07-working-demo-upgrade.md) — remediation prompt
 - [cloud_migration_POC#69](https://github.com/mikejmckinney/cloud_migration_POC/issues/69) — gap discovery
 - [cloud_migration_POC#70](https://github.com/mikejmckinney/cloud_migration_POC/issues/70) — gap discovery (companion)
+- [ai-repo-template#69](https://github.com/mikejmckinney/ai-repo-template/issues/69) / [PR #70](https://github.com/mikejmckinney/ai-repo-template/pull/70) — design-for-outcomes follow-up (canonical)
+- [ai-repo-template#201](https://github.com/mikejmckinney/ai-repo-template/issues/201) / [PR #203](https://github.com/mikejmckinney/ai-repo-template/pull/203) — design-for-outcomes follow-up (companion)
+- [ai-repo-template#219](https://github.com/mikejmckinney/ai-repo-template/issues/219) — conditional re-evaluation; superseded by the verdict upgrade to `Yes`
 - [ADR-005](../decisions/adr-005-analyst-preflight-gate.md) — per-issue pre-flight gate (the gate that did not catch this)
 - [ADR-014](../decisions/adr-014-extend-preflight-to-adhoc-deliverables.md) — pre-flight extension
 - [ADR-015](../decisions/adr-015-postmortem-feedback-loop.md) — the procedure that produced this mirrored postmortem
