@@ -34,13 +34,15 @@ Fetch the source file. Verify all of:
 
 - [ ] File path is `docs/postmortems/postmortem-NNN-<slug>.md` in the
       source repo.
-- [ ] **Line 1** is exactly `---` (no leading blank lines, no leading
-      HTML/Markdown comment, no BOM). The frontmatter block must run
+- [ ] **Line 1** is `---` after stripping any leading UTF-8 BOM
+      (the three bytes `\xEF\xBB\xBF` / octal `\357\273\277`; some
+      editors, especially on Windows, emit one). Strip the BOM
+      before checking, exactly as `test.sh` does — a file that
+      passes the template's own CI validator is valid here too. No
+      **other** leading content (blank lines, HTML/Markdown comments)
+      is tolerated. The frontmatter block must run
       to a closing `---` and match the schema in
-      `capture-postmortem.md` Phase 3a. This matches the
-      `test.sh` ADR-015 validator the template enforces on its own
-      postmortems, so a source repo passing mirror validation will
-      also pass the template's CI when mirrored.
+      `capture-postmortem.md` Phase 3a.
 - [ ] `generalizes:` is `Yes` or `Unclear`. **Stop here if `No`** —
       project-specific lessons stay in the source repo. Mirroring a
       `No` postmortem violates the schema's intent. If you believe the

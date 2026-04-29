@@ -27,7 +27,7 @@ By April 2026 we had two real downstream incidents to reason about:
   Mirrored ad hoc; the procedure was invented PR-by-PR.
 - **`mikejmckinney/cloud_migration_POC`** — the prompts-1-through-6-
   produced-architecture-instead-of-working-demo incident, remediated
-  by adding [`07-working-demo-upgrade.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/main/.github/prompts/07-working-demo-upgrade.md).
+  by adding [`07-working-demo-upgrade.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/4943212140cbcec760221ba405b437d678a26771/.github/prompts/07-working-demo-upgrade.md).
   Captured here as `postmortem-002`.
 
 Two cases is enough to expose the problem postmortem-001 papered over:
@@ -166,6 +166,6 @@ Specifically:
 - [PR #151](https://github.com/mikejmckinney/ai-repo-template/pull/151) — postmortem scaffolding (step 1)
 - [`docs/postmortems/postmortem-001-workflow-bypass.md`](../postmortems/postmortem-001-workflow-bypass.md) — the ad hoc precedent
 - [`docs/postmortems/postmortem-002-poc-outcome-mismatch.md`](../postmortems/postmortem-002-poc-outcome-mismatch.md) — first end-to-end run of this procedure
-- [`07-working-demo-upgrade.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/main/.github/prompts/07-working-demo-upgrade.md) — cloud_migration_POC remediation
+- [`07-working-demo-upgrade.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/4943212140cbcec760221ba405b437d678a26771/.github/prompts/07-working-demo-upgrade.md) — cloud_migration_POC remediation
 - [ADR-005](./adr-005-analyst-preflight-gate.md) — pre-flight gate (related; per-prompt outcome validation)
 - [ADR-014](./adr-014-extend-preflight-to-adhoc-deliverables.md) — pre-flight extension (related)

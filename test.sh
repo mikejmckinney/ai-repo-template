@@ -882,7 +882,7 @@ for pm in docs/postmortems/postmortem-[0-9][0-9][0-9]-*.md docs/postmortems/post
             # Without this strip, the BOM bytes would make the line not
             # match `^---$` and CI would reject a file that GitHub still
             # renders the YAML table for, producing a confusing failure.
-            sub(/^\xEF\xBB\xBF/, "")
+            sub(/^\357\273\277/, "")
             if ($0 !~ /^---[[:space:]]*$/) { bailed = 1; exit 1 }
             in_fm = 1
             next
