@@ -41,7 +41,9 @@ threshold is intentionally lower than "warrants a postmortem."
 
 ## Phase 2: Pick the next postmortem number and slug
 
-1. List `docs/postmortems/postmortem-*.md` in this repo.
+1. List `docs/postmortems/postmortem-[0-9][0-9][0-9]-*.md` in this
+   repo (the numeric pattern excludes `postmortem-template.md` so it
+   doesn't get parsed as a sequence number).
 2. The new number is the highest existing + 1, zero-padded to three
    digits (`001`, `002`, ...).
 3. Slug: 2–5 words, kebab-case, descriptive of the gap (not the fix).

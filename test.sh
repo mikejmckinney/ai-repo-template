@@ -860,38 +860,41 @@ REQUIRED_PM_KEYS=(
     "mirror_status:"
 )
 
-for pm in docs/postmortems/postmortem-*.md; do
+for pm in docs/postmortems/postmortem-[0-9][0-9][0-9]-*.md docs/postmortems/postmortem-template.md; do
     [[ -f "$pm" ]] || continue
     # Extract the YAML frontmatter block.
     # Invariants enforced (per ADR-015 + bot review feedback on PR #218):
-    #   1. The first non-comment, non-blank line MUST be `---` (the
-    #      frontmatter must precede the body, not be buried in it).
+    #   1. Line 1 of the file MUST be `---`. The YAML-line-1 rule
+    #      (commit 9c784ae) is what makes GitHub render the styled
+    #      table view; anything before the opening delimiter — blank
+    #      lines, HTML comments, BOMs — breaks that rendering. We
+    #      enforce it strictly here so CI catches drift, not GitHub's
+    #      preview.
     #   2. The block MUST be closed by a second `---`. Without this,
     #      a missing terminator would silently consume the rest of the
     #      file as "frontmatter" and key checks could pass on body text.
-    # awk exit codes: 1 = no opening delim; 2 = no closing delim.
+    # awk exit codes: 1 = line 1 is not `---`; 2 = no closing delim.
     awk_status=0
     fm=$(awk '
-        BEGIN { in_fm = 0; saw_open = 0; saw_close = 0; pre = 1 }
-        # While in the leading preamble, allow only blank lines and
-        # HTML comments. Any other content before the opening `---`
-        # means the frontmatter is not first — fail.
-        pre && /^[[:space:]]*$/ { next }
-        pre && /^[[:space:]]*<!--/ { in_comment = 1 }
-        pre && in_comment { if (/-->[[:space:]]*$/) { in_comment = 0 }; next }
-        /^---[[:space:]]*$/ {
-            if (!saw_open) { saw_open = 1; in_fm = 1; pre = 0; next }
-            saw_close = 1; exit
+        BEGIN { in_fm = 0; saw_close = 0; bailed = 0 }
+        NR == 1 {
+            if ($0 !~ /^---[[:space:]]*$/) { bailed = 1; exit 1 }
+            in_fm = 1
+            next
         }
-        pre { exit }
+        in_fm && /^---[[:space:]]*$/ { saw_close = 1; exit }
         in_fm { print }
         END {
-            if (!saw_open) { exit 1 }
+            # awk runs END even after a body `exit N`. Skip the
+            # post-processing checks if we already bailed, otherwise
+            # END would overwrite the body exit code.
+            if (bailed) { exit 1 }
+            if (NR == 0) { exit 1 }
             if (!saw_close) { exit 2 }
         }
     ' "$pm") || awk_status=$?
     if [[ $awk_status -eq 1 ]]; then
-        fail "$pm is missing YAML frontmatter or has content before it (ADR-015)"
+        fail "$pm does not begin with --- on line 1 (YAML frontmatter must be at line 1 for GitHub rendering; ADR-015)"
         continue
     elif [[ $awk_status -eq 2 ]]; then
         fail "$pm is missing the closing --- of its YAML frontmatter (ADR-015)"
