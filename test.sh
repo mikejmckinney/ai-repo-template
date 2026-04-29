@@ -266,12 +266,19 @@ fi
 # Reported by copilot-pull-request-reviewer on PR #217.
 RP_FILE=".github/workflows/agent-review-on-push.yml"
 if [[ -f "$RP_FILE" ]]; then
-    if grep -qE '^[[:space:]]+types:[[:space:]]*\[[[:space:]]*synchronize[[:space:]]*\]' "$RP_FILE"; then
-        pass "agent-review-on-push.yml triggers on pull_request: types: [synchronize]"
+    # Allow either single-line `types: [synchronize]` or multi-line list form
+    # (`types:` followed by `- synchronize`). YAML accepts both; the test
+    # should not be brittle to a stylistic reformat. Reported by
+    # gemini-code-assist on PR #217.
+    if grep -qE '^[[:space:]]+types:[[:space:]]*\[[[:space:]]*synchronize[[:space:]]*\]' "$RP_FILE" \
+       || grep -qPzo '(?s)^[[:space:]]+types:[[:space:]]*\n([[:space:]]*#[^\n]*\n)*[[:space:]]+-[[:space:]]+synchronize\b' "$RP_FILE" >/dev/null 2>&1; then
+        pass "agent-review-on-push.yml triggers on pull_request synchronize (single- or multi-line list)"
     else
-        fail "agent-review-on-push.yml missing 'types: [synchronize]' trigger"
+        fail "agent-review-on-push.yml missing 'synchronize' under pull_request types"
     fi
-    if grep -qE "^[[:space:]]+cancel-in-progress:[[:space:]]+true" "$RP_FILE"; then
+    # Tolerate quoting variants: `true`, `"true"`, `'true'`, with or without
+    # extra whitespace. Reported by gemini-code-assist on PR #217.
+    if grep -qE "^[[:space:]]+cancel-in-progress:[[:space:]]*[\"']?true[\"']?[[:space:]]*\$" "$RP_FILE"; then
         pass "agent-review-on-push.yml has concurrency cancel-in-progress: true"
     else
         fail "agent-review-on-push.yml missing 'cancel-in-progress: true'"
@@ -281,10 +288,15 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing exact REVIEW_ON_PUSH opt-in gate"
     fi
-    if grep -qE "reviewers\[\]=copilot-pull-request-reviewer" "$RP_FILE" || grep -qE 'BOT_kgDOCnlnWA' "$RP_FILE"; then
-        pass "agent-review-on-push.yml re-requests Copilot (Bot node ID via GraphQL)"
+    # Implementation switched from REST `requested_reviewers` (which 422s on
+    # Bot accounts — "Reviews may only be requested from collaborators") to
+    # GraphQL `requestReviews` with the Copilot Bot node ID. Test the actual
+    # implementation, not the historical REST shape. Reported by
+    # gemini-code-assist on PR #217.
+    if grep -qE 'BOT_kgDOCnlnWA' "$RP_FILE" && grep -qE 'requestReviews' "$RP_FILE"; then
+        pass "agent-review-on-push.yml re-requests Copilot via GraphQL requestReviews + Bot node ID"
     else
-        fail "agent-review-on-push.yml missing Copilot bot ID (BOT_kgDOCnlnWA) for GraphQL requestReviews"
+        fail "agent-review-on-push.yml missing GraphQL requestReviews mutation or Bot node ID (BOT_kgDOCnlnWA)"
     fi
     if grep -qE "body='/gemini review'" "$RP_FILE"; then
         pass "agent-review-on-push.yml posts -f body='/gemini review' to comments API"
@@ -296,10 +308,14 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing 'issues: write' permission for issue-comments API"
     fi
-    if grep -qE "steps\.gemini\.outcome" "$RP_FILE" && grep -qE "steps\.copilot\.outcome" "$RP_FILE"; then
-        pass "agent-review-on-push.yml fails job when both nudges fail (no silent green)"
+    # Verify the actual conditional logic (both outcomes failure-AND-ed),
+    # not just that the strings appear somewhere in the file. A comment
+    # could mention `steps.gemini.outcome` without the gate actually
+    # firing. Reported by gemini-code-assist on PR #217.
+    if grep -qE "steps\.gemini\.outcome[[:space:]]*==[[:space:]]*'failure'[[:space:]]*&&[[:space:]]*steps\.copilot\.outcome[[:space:]]*==[[:space:]]*'failure'" "$RP_FILE"; then
+        pass "agent-review-on-push.yml fails job when BOTH nudges fail (verified gate logic, not just string presence)"
     else
-        fail "agent-review-on-push.yml missing both-failed outcome check (would mask outages)"
+        fail "agent-review-on-push.yml missing both-failed conditional gate (steps.gemini.outcome AND steps.copilot.outcome failure check)"
     fi
     if grep -qE 'GH_TOKEN:[[:space:]]+\$\{\{[[:space:]]*secrets\.CLAUDE_PAT[[:space:]]*\}\}' "$RP_FILE"; then
         pass "agent-review-on-push.yml posts /gemini review under CLAUDE_PAT (real user identity)"

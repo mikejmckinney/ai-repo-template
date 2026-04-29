@@ -386,8 +386,11 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_variable MAX_COPILOT_DAILY 20
 
     # REVIEW_ON_PUSH (issue #205): opt-in toggle for agent-review-on-push.yml,
-    # which nudges Gemini (`/gemini review` comment) and Copilot (re-request via
-    # `requested_reviewers` API) after each push to an open non-draft PR.
+    # which nudges Gemini (`/gemini review` comment under CLAUDE_PAT) and
+    # Copilot (re-request via GraphQL `requestReviews` mutation with the bot's
+    # Bot node ID) after each push to an open non-draft PR. The REST
+    # `requested_reviewers` endpoint cannot re-request bot accounts — it
+    # returns HTTP 422 "Reviews may only be requested from collaborators".
     # Intentionally NOT auto-set: leaving the variable unset = off is the
     # desired default. Maintainers opt in with:
     #   gh variable set REVIEW_ON_PUSH --body true

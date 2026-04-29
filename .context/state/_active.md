@@ -5,7 +5,7 @@
 
 # Active Task
 
-ni**Active Task**: #205 — re-trigger Gemini & Copilot review on every push
+**Active Task**: #205 — re-trigger Gemini & Copilot review on every push
 **File**: N/A
 **Role**: devops
 **Blockers**: None
