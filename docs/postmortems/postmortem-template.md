@@ -19,10 +19,21 @@ date: YYYY-MM-DD
 source_repo: <owner>/<repo>
 source_commit: <sha-at-time-of-incident>
 stacks: []
-generalizes: Unclear
+generalizes: No
 follow_up_artifact: none
 mirror_status: original
 ---
+
+<!--
+  Default values above pair `generalizes: No` with `follow_up_artifact: none`
+  because that is the only internally consistent placeholder combination
+  (capture-postmortem.md Phase 3a: if `generalizes` is `Yes` or `Unclear`,
+  `follow_up_artifact` MUST NOT be `none`). On a real postmortem you will
+  almost always change both — set `generalizes` honestly per Phase 3c, then
+  set `follow_up_artifact` to a concrete ID (e.g. `ADR-NNN`, `issue-NNN`,
+  `PR-NNN`). Placeholder strings like `TBD`, `issue-TBD`, `todo` are
+  rejected by `mirror-postmortem.md` Phase 1.
+-->
 
 # Postmortem-NNN: [Title]
 

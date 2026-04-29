@@ -42,10 +42,18 @@ Fetch the source file. Verify all of:
       verdict was wrong, the fix is to amend the source postmortem
       with a follow-up section that re-evaluates, then re-run this
       prompt.
-- [ ] `follow_up_artifact:` is not `none`. If it is `none`,
-      `generalizes` cannot be `Yes` (per `capture-postmortem.md`
-      Phase 3a) — surface the inconsistency back to the source-repo
-      maintainer and stop. Do not mirror.
+- [ ] `follow_up_artifact:` is not `none` and is not a placeholder.
+      If it is `none`, `generalizes` cannot be `Yes` or `Unclear`
+      (per `capture-postmortem.md` Phase 3a) — surface the
+      inconsistency back to the source-repo maintainer and stop. Do
+      not mirror.
+      Placeholder strings (case-insensitive match on the value)
+      `TBD`, `issue-TBD`, `pr-TBD`, `adr-TBD`, `todo`, `pending`,
+      `<...>` (any angle-bracketed token), or any value not matching
+      `^(ADR-\d+|issue-\d+|PR-\d+|none)$` are rejected with the same
+      "no mirror without a concrete follow-up" error. The whole point
+      of this gate is that the follow-up exists *before* mirroring;
+      `issue-TBD` is the failure mode this rejects.
 - [ ] `mirror_status:` is `original`. If it already starts with
       `mirrored-from:`, the file you fetched is itself a mirror — go
       back upstream to find the original. Mirroring a mirror is not

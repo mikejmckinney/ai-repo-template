@@ -862,20 +862,53 @@ REQUIRED_PM_KEYS=(
 
 for pm in docs/postmortems/postmortem-*.md; do
     [[ -f "$pm" ]] || continue
-    # Extract the first ---...--- block. Skip leading HTML comments and
-    # blank lines so the provenance comment block on mirrored postmortems
-    # does not break the check.
+    # Extract the YAML frontmatter block.
+    # Invariants enforced (per ADR-015 + bot review feedback on PR #218):
+    #   1. The first non-comment, non-blank line MUST be `---` (the
+    #      frontmatter must precede the body, not be buried in it).
+    #   2. The block MUST be closed by a second `---`. Without this,
+    #      a missing terminator would silently consume the rest of the
+    #      file as "frontmatter" and key checks could pass on body text.
+    # awk exit codes: 1 = no opening delim; 2 = no closing delim.
+    awk_status=0
     fm=$(awk '
-        /^---[[:space:]]*$/ { if (++c == 1) { next } else { exit } }
-        c == 1 { print }
-    ' "$pm")
+        BEGIN { in_fm = 0; saw_open = 0; saw_close = 0; pre = 1 }
+        # While in the leading preamble, allow only blank lines and
+        # HTML comments. Any other content before the opening `---`
+        # means the frontmatter is not first — fail.
+        pre && /^[[:space:]]*$/ { next }
+        pre && /^[[:space:]]*<!--/ { in_comment = 1 }
+        pre && in_comment { if (/-->[[:space:]]*$/) { in_comment = 0 }; next }
+        /^---[[:space:]]*$/ {
+            if (!saw_open) { saw_open = 1; in_fm = 1; pre = 0; next }
+            saw_close = 1; exit
+        }
+        pre { exit }
+        in_fm { print }
+        END {
+            if (!saw_open) { exit 1 }
+            if (!saw_close) { exit 2 }
+        }
+    ' "$pm") || awk_status=$?
+    if [[ $awk_status -eq 1 ]]; then
+        fail "$pm is missing YAML frontmatter or has content before it (ADR-015)"
+        continue
+    elif [[ $awk_status -eq 2 ]]; then
+        fail "$pm is missing the closing --- of its YAML frontmatter (ADR-015)"
+        continue
+    elif [[ $awk_status -ne 0 ]]; then
+        fail "$pm frontmatter extraction failed with awk exit $awk_status (ADR-015)"
+        continue
+    fi
     if [[ -z "$fm" ]]; then
-        fail "$pm is missing YAML frontmatter (ADR-015)"
+        fail "$pm has an empty YAML frontmatter block (ADR-015)"
         continue
     fi
     missing=""
     for key in "${REQUIRED_PM_KEYS[@]}"; do
-        if ! grep -q "^${key}" <<<"$fm"; then
+        # grep -F: literal match; key already includes the trailing colon.
+        # Anchored to BOL to avoid matching the key as a substring of body text.
+        if ! grep -Fq "${key}" <<<"$fm"; then
             missing="$missing $key"
         fi
     done

@@ -93,8 +93,13 @@ Field rules — every field is required:
   body's "What generalizes" section.
 - **`follow_up_artifact`** — the ID of the concrete change this
   postmortem produces. If `generalizes: Yes` or `Unclear`, this MUST
-  NOT be `none` — every generalizable lesson must produce a follow-up
-  (see template README's "What generalizes"). If `generalizes: No`,
+  NOT be `none` and MUST NOT be a placeholder — file the actual
+  follow-up issue (or open the actual ADR PR) **before** committing
+  the postmortem and use its real ID. Acceptable shapes:
+  `ADR-NNN`, `issue-NNN`, `PR-NNN`, or `none` (only when
+  `generalizes: No`). Placeholders like `issue-TBD`, `TBD`, `todo`,
+  `<...>` are rejected by `mirror-postmortem.md` Phase 1; that
+  rejection is the gate, not a suggestion. If `generalizes: No`,
   `none` is acceptable.
 - **`mirror_status`** — `original` for postmortems authored here.
   `mirrored-from:<owner>/<repo>` is set later, by `mirror-postmortem.md`,

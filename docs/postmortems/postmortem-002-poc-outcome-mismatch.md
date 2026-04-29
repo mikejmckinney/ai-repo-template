@@ -1,19 +1,33 @@
 <!--
-Synthesized backfill, NOT a verbatim mirror of an existing source-repo
-postmortem. Authored 2026-04-29 in `mikejmckinney/ai-repo-template` from
-the artifacts of the cloud_migration_POC incident:
+Template-authored synthesized backfill, NOT a mirror of an existing
+source-repo postmortem. Authored 2026-04-29 in
+`mikejmckinney/ai-repo-template` (in #218) from the artifacts of the
+cloud_migration_POC incident:
 
   - Source repo: https://github.com/mikejmckinney/cloud_migration_POC
+    (pinned: commit 49432121, default branch as of 2026-04-29)
   - Remediation prompt:
-    https://github.com/mikejmckinney/cloud_migration_POC/blob/main/.github/prompts/07-working-demo-upgrade.md
+    https://github.com/mikejmckinney/cloud_migration_POC/blob/4943212140cbcec760221ba405b437d678a26771/.github/prompts/07-working-demo-upgrade.md
   - Related issues (referenced from ai-repo-template#150):
     cloud_migration_POC#69, cloud_migration_POC#70
 
-Per docs/postmortems/README.md "Numbering and immutability", the body is
-append-only for facts. Because this is a synthesized backfill rather
-than a real-time recovery write-up, the project owner is invited to
-amend with a "Follow-up" section from lived experience if the synthesis
-missed something. Do not rewrite history; add follow-ups.
+Provenance note: `mirror_status: original` because this file was
+authored in the template repo, not copied verbatim from a source-repo
+postmortem. The frontmatter `source_repo` / `source_commit` still
+point at the project where the *incident* occurred — the schema
+documents the incident, the `mirror_status` documents how this file
+came to be here. See ADR-015's "Frontmatter schema".
+
+If `cloud_migration_POC` later authors its own postmortem of this
+incident (using `capture-postmortem.md`) and mirrors it back via
+`mirror-postmortem.md`, that mirror should *supersede* this synthesized
+backfill (add a follow-up section here citing the new file; do not
+delete this file — immutability rule).
+
+Per docs/postmortems/README.md "Numbering and immutability", the body
+is append-only for facts. The project owner is invited to amend with a
+"Follow-up" section from lived experience if the synthesis missed
+something. Do not rewrite history; add follow-ups.
 
 This is also the first end-to-end run of the procedure introduced by
 ADR-015 (capture-postmortem.md → mirror-postmortem.md). See ADR-015
@@ -24,11 +38,11 @@ ADR-015 (capture-postmortem.md → mirror-postmortem.md). See ADR-015
 postmortem_number: 002
 date: 2026-04-15
 source_repo: mikejmckinney/cloud_migration_POC
-source_commit: main
+source_commit: 4943212140cbcec760221ba405b437d678a26771
 stacks: [prompt-engineering, multi-prompt-sequence]
-generalizes: Yes
-follow_up_artifact: issue-TBD
-mirror_status: mirrored-from:mikejmckinney/cloud_migration_POC
+generalizes: Unclear
+follow_up_artifact: issue-219
+mirror_status: original
 ---
 
 # Postmortem-002: Prompts 1–6 produced architecture instead of working demo
@@ -166,50 +180,50 @@ the sequence converges on the wrong thing.
 
 ## What generalizes
 
-**Status**: `Yes` (stack-specific to multi-prompt-sequence projects; see
-classification below).
+**Status**: `Unclear` (revisit after a second multi-prompt-sequence
+deliverable mismatch — tracked in #219).
 
-The lesson generalizes to **any project decomposed into a multi-prompt
-sequence whose individual prompts produce intermediate artifacts**
-(architecture, schema, plan, scaffold) rather than terminal artifacts
-(running code, deployed service, generated content the end-user
-consumes directly). For such projects, per-prompt pre-flight is
-necessary but insufficient; a per-sequence checkpoint is also needed.
+The candidate lesson generalizes to **any project decomposed into a
+multi-prompt sequence whose individual prompts produce intermediate
+artifacts** (architecture, schema, plan, scaffold) rather than terminal
+artifacts (running code, deployed service, generated content the
+end-user consumes directly). For such projects, per-prompt pre-flight
+may be necessary but insufficient; a per-sequence checkpoint may also
+be needed.
 
-This is **stack-specific** in the ADR-015 sense: it applies to projects
-using the template's `NN-*.md` numbered-prompt convention with
-intermediate-artifact prompts. It does NOT apply universally — a
-project whose every prompt produces a terminal artifact (e.g., each
-prompt = one feature behind a flag) does not need this checkpoint.
+**Why `Unclear` rather than `Yes`**: this is N=1. Per
+`docs/postmortems/README.md` → "What generalizes": *"a pattern that
+appears once is an anecdote."* The shape of a confirming second
+occurrence would be: another downstream project, decomposed into a
+numbered-prompt sequence with intermediate-artifact prompts, where
+every individual pre-flight passes and the cumulative deliverable is
+still the wrong shape. Until that second case appears, the rule
+"after the last prompt in a sequence, verify the cumulative artifact
+matches the stated project deliverable" is one project's experience,
+not a template invariant.
 
-Per ADR-015's three-tier policy: this stays in this postmortem and is
-discoverable via the `prompt-engineering` and `multi-prompt-sequence`
-stack tags. It does NOT amend AGENTS.md. The promotion-gate decision
-is deliberate: the rule "after the last prompt in a sequence, verify
-the cumulative artifact matches the stated project deliverable" has
-not yet been observed to fail in any other shape, and adding it to
-AGENTS.md preemptively would invite the per-stack drift ADR-015 was
-written to prevent.
-
-A `follow_up_artifact: issue-TBD` to be filed in the same PR will
-track the question "should this become an ADR amending the pre-flight
-gate to add a per-sequence checkpoint?" — the answer requires at least
-one more occurrence to confirm the pattern (per `What generalizes`
-README guidance: "a pattern that appears once is an anecdote").
+If this had been classified as stack-specific `Yes`, ADR-015's
+three-tier policy would have left the rule in this postmortem (tagged
+`prompt-engineering` / `multi-prompt-sequence`) and never amended
+AGENTS.md. That option remains open: if #219 closes with a confirmed
+second occurrence, the verdict can be amended to `Yes` (append-only)
+and the rule promoted under either the stack-specific or universal
+tier as the second case clarifies.
 
 ## Action items
 
-- [ ] File issue in `ai-repo-template`: "Re-evaluate postmortem-002 if
-      a second multi-prompt sequence produces a deliverable-type
-      mismatch" — owner: @mikejmckinney — issue: TBD (filed in same
-      PR; replace `issue-TBD` in frontmatter once issue number is
-      assigned)
+- [x] File [issue #219](https://github.com/mikejmckinney/ai-repo-template/issues/219)
+      in `ai-repo-template`: "Re-evaluate postmortem-002 if a second
+      multi-prompt-sequence deliverable mismatch occurs" — owner:
+      @mikejmckinney — filed in #218.
 - [ ] Cross-link postmortem-002 from `cloud_migration_POC`'s own
       `docs/postmortems/` (if that repo has one) so the source-repo
-      record points to the mirrored copy — owner: @mikejmckinney
-- [ ] (Conditional) If a second multi-prompt-sequence
+      record points to this synthesized backfill — owner: @mikejmckinney.
+- [ ] (Conditional, owned by #219) If a second multi-prompt-sequence
       deliverable-mismatch occurs, draft an ADR amending the Analyst
-      pre-flight gate to add a per-sequence checkpoint. Until then,
+      pre-flight gate to add a per-sequence checkpoint, and amend this
+      postmortem's `generalizes:` from `Unclear` to `Yes` (append-only)
+      with the new ADR linked as the secondary follow-up. Until then,
       no template-rule edit.
 
 ## References

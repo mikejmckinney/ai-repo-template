@@ -2,7 +2,8 @@
 Mirrored from mikejmckinney/cmmc-level2-aws-enclave-reference2 (a project
 bootstrapped from this template) under docs/postmortems/postmortem-001-workflow-bypass.md.
 
-Source URL: https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/recovery/phases-1-7-uncommitted-work/docs/postmortems/postmortem-001-workflow-bypass.md
+Source URL: https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/cc850a781591c517890ff4b197926c094e293df7/docs/postmortems/postmortem-001-workflow-bypass.md
+(Branch at mirror time: recovery/phases-1-7-uncommitted-work; pinned to commit cc850a78 on 2026-04-29 in #218 for immutable provenance.)
 Mirrored: 2026-04-25 (in PR for issue #180; supersedes the reverted PR #181 mirror).
 Triggered: ADR-012 (explicit workflow preconditions in AGENTS.md).
 
@@ -20,7 +21,7 @@ the frontmatter is unchanged from the original mirror.
 postmortem_number: 001
 date: 2026-04-24
 source_repo: mikejmckinney/cmmc-level2-aws-enclave-reference2
-source_commit: recovery/phases-1-7-uncommitted-work
+source_commit: cc850a781591c517890ff4b197926c094e293df7
 stacks: [github-actions, bash]
 generalizes: Yes
 follow_up_artifact: ADR-012
