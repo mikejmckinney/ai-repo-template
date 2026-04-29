@@ -505,7 +505,7 @@ for Gemini to finish posting.
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
 | `.github/workflows/agent-relay-reviews.yml` | Copilot relay (opt-in via `copilot-relay` label); also hosts the `phase4-fallback` job that retries Copilot's `⚠️ Errored` Phase 4 mutations under `CLAUDE_PAT` (see ADR-008) | No (uses CLAUDE_PAT for posting + fallback mutations) |
 | `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready; drains Copilot queue after merge | No (uses CLAUDE_PAT) |
-| `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviews` with Bot node ID) on each push to an open non-draft PR; opt-in via repo variable `REVIEW_ON_PUSH=true` | Yes (CLAUDE_PAT for Gemini comment author identity) |
+| `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-in via repo variable `REVIEW_ON_PUSH=true` | Yes (CLAUDE_PAT for Gemini comment author identity) |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |
 | `.github/workflows/ci-tests.yml` | CI checks | No |
 | `.gemini/config.yaml` | Gemini review config | No (free GitHub App) |

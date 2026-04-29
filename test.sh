@@ -288,15 +288,19 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing exact REVIEW_ON_PUSH opt-in gate"
     fi
-    # Implementation switched from REST `requested_reviewers` (which 422s on
-    # Bot accounts — "Reviews may only be requested from collaborators") to
-    # GraphQL `requestReviews` with the Copilot Bot node ID. Test the actual
-    # implementation, not the historical REST shape. Reported by
-    # gemini-code-assist on PR #217.
-    if grep -qE 'BOT_kgDOCnlnWA' "$RP_FILE" && grep -qE 'requestReviews' "$RP_FILE"; then
-        pass "agent-review-on-push.yml re-requests Copilot via GraphQL requestReviews + Bot node ID"
+    # Implementation switched (a third time) to the only mechanism that
+    # actually fires: GraphQL `requestReviewsByLogin` with `botLogins:
+    # ["copilot-pull-request-reviewer[bot]"]`. Earlier attempts: REST
+    # `requested_reviewers` 422s on bare bot login; REST with friendly
+    # aliases silently no-ops (HTTP 200, empty result); `requestReviews`
+    # with Bot node ID rejects "Could not resolve to User node" because
+    # its `userIds` field is User-only. Mechanism confirmed by reading
+    # cli/cli source. The `[bot]` suffix is REQUIRED.
+    if grep -qE 'requestReviewsByLogin' "$RP_FILE" \
+       && grep -qE 'copilot-pull-request-reviewer\[bot\]' "$RP_FILE"; then
+        pass "agent-review-on-push.yml re-requests Copilot via GraphQL requestReviewsByLogin + suffixed bot login"
     else
-        fail "agent-review-on-push.yml missing GraphQL requestReviews mutation or Bot node ID (BOT_kgDOCnlnWA)"
+        fail "agent-review-on-push.yml missing GraphQL requestReviewsByLogin mutation or 'copilot-pull-request-reviewer[bot]' login"
     fi
     if grep -qE "body='/gemini review'" "$RP_FILE"; then
         pass "agent-review-on-push.yml posts -f body='/gemini review' to comments API"
