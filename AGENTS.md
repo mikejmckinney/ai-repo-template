@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 3 -->
+<!-- AGENTS_MD_VERSION: 4 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
@@ -12,7 +12,7 @@
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v3` (matching
+substantive reply with the exact token `Session handshake v4` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -241,6 +241,35 @@ Keep agent working memory current so the next session (or next role) can resume 
   1. Read the error logs
   2. Fix the underlying issue
   3. Push and retry until green
+
+## PR completion criteria (interactive sessions)
+
+Opening a PR is **not** "done" when the same agent that opened the PR is still running in an interactive session. The PR is done when CI is green AND every bot-authored review thread is either resolved or explicitly deferred. Merging is the maintainer's call, not the agent's — do not wait on merge to declare the work complete, but do not declare it complete before the loop below converges.
+
+After pushing the PR, run this loop until it converges:
+
+1. **Wait for the CI rollup.** If anything red, read logs, fix the underlying issue, push, and re-enter the loop. Do not weaken tests or add `--no-verify` to dodge a real failure (see §Work style).
+2. **Check bot-authored reviews** (Copilot review, Gemini, etc.). If any are present, address them following `.github/prompts/pr-resolve-all.md` Phases 1–4. That prompt defines what counts as "addressed" (Phase 2 status set: `✅ Fixed`, `✅ Already resolved`, `⚠️ Needs clarification`, `⚠️ Partial fix`, `❌ Not reproducible`, `❌ Out of scope`); do not invent labels or redefine the set here.
+3. **After your fix-commit lands, re-check.** Bot re-review on push is opportunistic today (the re-review-on-push automation tracked in #205 — distinct from the existing thread-resolution relay in `agent-relay-reviews.yml` — is not yet shipped); if a re-review didn't fire, re-read the PR yourself before declaring done. Loop until clean.
+
+**Stop condition.** PR is clean when:
+
+- CI is green.
+- Every bot thread is either auto-resolved by `pr-resolve-all.md` Phase 4 (only when its Phase 2 status is `✅ Fixed`) or left open with a deferral reply (for `❌ Out of scope` / `❌ Not reproducible` / `⚠️` outcomes — humans expect to acknowledge those themselves).
+- Your Resolution Report is posted per `pr-resolve-all.md` Phase 3.
+
+**Escape valve.** If a bot finding is intentionally out-of-scope or wrong:
+
+1. Post a one-line deferral reply on the thread explaining why.
+2. **Leave the thread open** for human acknowledgement (per `pr-resolve-all.md` → "Safety rules": never resolve a thread whose Phase 2 item is not `✅ Fixed`).
+
+"Deferred with comment, awaiting human acknowledgement" counts as addressed. Silently ignoring a bot finding does not.
+
+**Does NOT apply to**:
+
+- **Copilot's cloud SWE agent.** Its session ends at PR creation; the loop is handled out-of-band by `agent-fix-reviews.yml` + `agent-relay-reviews.yml` via webhook events. See `docs/guides/multi-agent-coordination.md` → "Branch-Per-Role Model".
+- **Bot-authored PRs** (Renovate, Dependabot, etc.). Maintainer reviews those.
+- **PRs marked `draft`.** These are explicitly not "ready for review yet."
 
 ## Validation
 - Run the repo's verification commands (prefer those documented in AI_REPO_GUIDE.md) before declaring done.

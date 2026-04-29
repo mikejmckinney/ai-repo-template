@@ -252,6 +252,13 @@ else
     warn "AGENTS.md missing testing requirements section"
 fi
 
+# Check AGENTS.md has PR completion criteria section (issue #206)
+if grep -q "^## PR completion criteria" AGENTS.md 2>/dev/null; then
+    pass "AGENTS.md has PR completion criteria section"
+else
+    warn "AGENTS.md missing PR completion criteria section"
+fi
+
 # Check AGENTS.md has versioned session handshake (read-receipt canary)
 if grep -qE '^<!-- AGENTS_MD_VERSION: [0-9]+ -->' AGENTS.md 2>/dev/null; then
     pass "AGENTS.md has AGENTS_MD_VERSION marker"

@@ -5,9 +5,11 @@
 
 # Active Task
 
-**Active Task**: None
+**Active Task**: #206 — PR completion criteria for interactive sessions
 **File**: N/A
-**Role**: N/A
+**Role**: docs
 **Blockers**: None
 **Next 1–3 actions**:
-1. (none)
+1. Address bot review feedback round 2 on PR #216
+2. Wait for re-review; iterate per the new section
+3. Update `latest_summary.md` at session end / task close-out (do not defer to merge per AGENTS.md §Session-state cadence); amend post-merge if outcome changes

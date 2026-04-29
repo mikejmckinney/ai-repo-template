@@ -24,6 +24,11 @@ agent: agent
 > job in `.github/workflows/agent-relay-reviews.yml` re-fires the
 > mutations under `CLAUDE_PAT` after parsing the `⚠️ Errored` rows from
 > the Phase 4 report table. See ADR-008 for the design.
+>
+> **When to stop**: this prompt covers *how* to fix bot findings;
+> AGENTS.md → "PR completion criteria (interactive sessions)" covers
+> *when the PR is done* (CI green + threads resolved or explicitly
+> deferred). Read both before declaring work complete.
 
 ---
 
@@ -272,6 +277,7 @@ Use `⚠️ Errored` when the per-thread gate passed but the GraphQL mutation fa
 - **Never resolve a thread whose Phase 2 item is not `✅ Fixed`.** "Not reproducible" and "Out of scope" still warrant human acknowledgement.
 - **Never resolve a thread without first posting the audit reply.** The reply is the paper trail; resolution without it leaves reviewers guessing.
 - **Never include a live `@`-handle in the audit reply body.** Backtick-wrap every `@copilot` / `@claude` / `@copilot follow ...` / `@claude follow ...` reference in the reply so GitHub treats it as code, not a mention. An un-wrapped handle re-dispatches the bot (Copilot cloud agent + `.github/workflows/claude.yml`'s `claude-mention` job both listen for raw `@`-strings anywhere in a PR comment or review reply body) and produces duplicate fix runs. The **top-level trigger comment** that invoked `pr-resolve-all.md` in the first place stays un-backticked — that one is supposed to dispatch.
+  - **Nested-backtick gotcha.** GitHub Flavored Markdown does **not** honor `\`` to escape a backtick inside a code span. Writing `` `copilot (\`@copilot\` mention)` `` does not produce one nested code span — it produces an opening code span ending at the first inner `` \` ``, and the trailing `@copilot\`` falls back into plain text and dispatches a real mention. To embed a literal backtick in a code span, wrap the **outer** span in double backticks: `` ``copilot (`@copilot` mention)`` ``. When in doubt, don't nest — just write `` `@copilot` `` standalone in plain prose. (PR #216 hit this and spawned 4 spurious cloud-agent sessions.)
 - **Do not resolve threads from a previous fix cycle.** Scope Phase 4 to items fixed in the current run only — the `ISS-NN` IDs from this run's Phase 1 index are your scope.
 
 ## Rules
