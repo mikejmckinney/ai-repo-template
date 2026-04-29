@@ -906,9 +906,11 @@ for pm in docs/postmortems/postmortem-*.md; do
     fi
     missing=""
     for key in "${REQUIRED_PM_KEYS[@]}"; do
-        # grep -F: literal match; key already includes the trailing colon.
-        # Anchored to BOL to avoid matching the key as a substring of body text.
-        if ! grep -Fq "${key}" <<<"$fm"; then
+        # grep -E with ^ anchor: actually enforces BOL (the previous
+        # grep -Fq was substring-only, so e.g. update_date: would have
+        # satisfied the date: check). The key already includes the
+        # trailing colon, so the regex is safe to use unescaped.
+        if ! grep -qE "^${key}" <<<"$fm"; then
             missing="$missing $key"
         fi
     done

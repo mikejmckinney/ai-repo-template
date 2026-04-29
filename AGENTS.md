@@ -136,9 +136,9 @@ to catch this failure mode.
 - `bug` label, `docs` label (no new behavior), `dependencies` label,
   reverts, `chore:*` labels, internal refactors with no user-facing change.
 - Issues referencing only shared procedural prompts (`pr-resolve-all.md`,
-  `repo-onboarding.md`, `expand-backlog-entry.md`)
-  or prompt documentation (`README.md`) under `.github/prompts/` — those
-  describe procedures, not deliverables.
+  `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`,
+  `mirror-postmortem.md`) or prompt documentation (`README.md`) under
+  `.github/prompts/` — those describe procedures, not deliverables.
 
 Skipping this gate when it applies is a known failure mode. If you find
 yourself reasoning "this issue looks clear enough, I'll skip pre-flight,"

@@ -98,9 +98,9 @@ Field rules — every field is required:
   the postmortem and use its real ID. Acceptable shapes:
   `ADR-NNN`, `issue-NNN`, `PR-NNN`, or `none` (only when
   `generalizes: No`). Placeholders like `issue-TBD`, `TBD`, `todo`,
-  `<...>` are rejected by `mirror-postmortem.md` Phase 1; that
-  rejection is the gate, not a suggestion. If `generalizes: No`,
-  `none` is acceptable.
+  `pending`, `pr-TBD`, `adr-TBD`, `<...>` are rejected by
+  `mirror-postmortem.md` Phase 1; that rejection is the gate, not a
+  suggestion. If `generalizes: No`, `none` is acceptable.
 - **`mirror_status`** — `original` for postmortems authored here.
   `mirrored-from:<owner>/<repo>` is set later, by `mirror-postmortem.md`,
   in the template-side mirror copy — never set it manually.
@@ -153,15 +153,26 @@ Verify all of:
 - [ ] Every body section has content; no `<!-- … -->` template
       comments left in their raw form.
 - [ ] "Action items" has at least one item with a linked issue or PR.
-- [ ] If `generalizes: Yes`, `follow_up_artifact != none`.
+- [ ] If `generalizes: Yes` **or** `Unclear`, `follow_up_artifact != none`
+      and is not a placeholder (`TBD`, `issue-TBD`, `pr-TBD`, `adr-TBD`,
+      `todo`, `pending`, `<...>`). File the real issue/ADR/PR first,
+      then commit the postmortem with its real ID. This mirrors the
+      `mirror-postmortem.md` Phase 1 gate so template-internal
+      postmortems (which never run mirror validation) still get caught.
 - [ ] "Trigger" is one sentence.
 - [ ] "Expected vs Actual" is non-trivial — if Expected and Actual
       match, you do not have a postmortem; stop.
 
 If any item fails, fix before committing.
 
-Commit on a feature branch (`postmortem/NNN-<slug>`), open a PR in
-**this** repo (the project repo, not the template), and request review.
+Commit on a branch following the project's branch-naming policy. In
+repos that adopt the `ai-repo-template` AGENTS.md work-style rule, that
+means `feature/docs-postmortem-NNN-<slug>` (Docs is the owning role for
+postmortem files) or `fix/<issue>-postmortem-NNN-<slug>` if the
+postmortem is filed in response to a tracked incident. Do not invent a
+`postmortem/...` prefix — it is not in the AGENTS.md branch grammar and
+will fail review. Open a PR in **this** repo (the project repo, not the
+template), and request review.
 
 ## Phase 5: Sync-back decision (only if generalizes is Yes / Unclear)
 
