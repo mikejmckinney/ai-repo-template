@@ -878,6 +878,11 @@ for pm in docs/postmortems/postmortem-[0-9][0-9][0-9]-*.md docs/postmortems/post
     fm=$(awk '
         BEGIN { in_fm = 0; saw_close = 0; bailed = 0 }
         NR == 1 {
+            # Strip a UTF-8 BOM if present (some Windows editors add one).
+            # Without this strip, the BOM bytes would make the line not
+            # match `^---$` and CI would reject a file that GitHub still
+            # renders the YAML table for, producing a confusing failure.
+            sub(/^\xEF\xBB\xBF/, "")
             if ($0 !~ /^---[[:space:]]*$/) { bailed = 1; exit 1 }
             in_fm = 1
             next

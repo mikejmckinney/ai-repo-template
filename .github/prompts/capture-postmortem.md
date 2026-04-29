@@ -169,6 +169,14 @@ Verify all of:
       then commit the postmortem with its real ID. This mirrors the
       `mirror-postmortem.md` Phase 1 gate so template-internal
       postmortems (which never run mirror validation) still get caught.
+- [ ] `follow_up_artifact` matches the canonical schema regex
+      `^([Aa][Dd][Rr]-[0-9]+|[Ii]ssue-[0-9]+|[Pp][Rr]-[0-9]+|[Nn]one)$`
+      (POSIX ERE, bracketed character classes for case-insensitivity
+      since bash `[[ =~ ]]` has no `(?i)` flag). Malformed forms like
+      `issue69` (missing hyphen), `ticket-12` (wrong noun), or
+      `ADR15` (missing hyphen) must fail this check. Template-internal
+      postmortems skip `mirror-postmortem.md` Phase 1, so this is the
+      only gate before downstream tooling and queries see the value.
 - [ ] "Trigger" is one sentence.
 - [ ] "Expected vs Actual" is non-trivial — if Expected and Actual
       match, you do not have a postmortem; stop.

@@ -34,8 +34,13 @@ Fetch the source file. Verify all of:
 
 - [ ] File path is `docs/postmortems/postmortem-NNN-<slug>.md` in the
       source repo.
-- [ ] First non-comment lines are a YAML frontmatter block matching
-      the schema in `capture-postmortem.md` Phase 3a.
+- [ ] **Line 1** is exactly `---` (no leading blank lines, no leading
+      HTML/Markdown comment, no BOM). The frontmatter block must run
+      to a closing `---` and match the schema in
+      `capture-postmortem.md` Phase 3a. This matches the
+      `test.sh` ADR-015 validator the template enforces on its own
+      postmortems, so a source repo passing mirror validation will
+      also pass the template's CI when mirrored.
 - [ ] `generalizes:` is `Yes` or `Unclear`. **Stop here if `No`** —
       project-specific lessons stay in the source repo. Mirroring a
       `No` postmortem violates the schema's intent. If you believe the
@@ -52,15 +57,18 @@ Fetch the source file. Verify all of:
       `<...>` (any angle-bracketed token) are rejected with the
       "no mirror without a concrete follow-up" error. Any value not
       matching the POSIX ERE
-      `^([Aa][Dd][Rr]-[0-9]+|[Ii]ssue-[0-9]+|[Pp][Rr]-[0-9]+|[Nn]one)$`
+      `^([Aa][Dd][Rr]-[0-9]+|[Ii]ssue-[0-9]+|[Pp][Rr]-[0-9]+)$`
       is also rejected. The bracketed character classes are how this
       regex stays case-insensitive in bash `[[ =~ ]]` (POSIX ERE has
       no `(?i)` inline flag), so downstream variants like `adr-015`
       or `pr-123` are accepted and then normalized to canonical
       casing — uppercase `ADR-` / `PR-`, lowercase `issue-` — in
-      Phase 3 step 1 below. The whole point of this gate is that
-      the follow-up exists *before* mirroring; `issue-TBD` is the
-      failure mode this rejects.
+      Phase 3 step 1 below. Note `none` is intentionally **not** in
+      this regex: it is rejected by the separate `none`-with-Yes/Unclear
+      gate above, and this prompt only mirrors `Yes`/`Unclear` postmortems,
+      so a successful mirror by definition has a concrete artifact ID.
+      The whole point of this gate is that the follow-up exists *before*
+      mirroring; `issue-TBD` is the failure mode this rejects.
 - [ ] `mirror_status:` is `original`. If it already starts with
       `mirrored-from:`, the file you fetched is itself a mirror — go
       back upstream to find the original. Mirroring a mirror is not
