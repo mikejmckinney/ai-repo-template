@@ -51,13 +51,16 @@ Fetch the source file. Verify all of:
       `TBD`, `issue-TBD`, `pr-TBD`, `adr-TBD`, `todo`, `pending`,
       `<...>` (any angle-bracketed token) are rejected with the
       "no mirror without a concrete follow-up" error. Any value not
-      matching `^(ADR-\d+|issue-\d+|PR-\d+|none)$` is also rejected;
-      the prefix match is **case-insensitive** so downstream variants
-      like `adr-015` or `pr-123` are accepted (and normalized to the
-      canonical casing — uppercase `ADR-` / `PR-`, lowercase `issue-`
-      — in Phase 3 step 1 below). The whole point of this gate is
-      that the follow-up exists *before* mirroring; `issue-TBD` is
-      the failure mode this rejects.
+      matching the POSIX ERE
+      `^([Aa][Dd][Rr]-[0-9]+|[Ii]ssue-[0-9]+|[Pp][Rr]-[0-9]+|[Nn]one)$`
+      is also rejected. The bracketed character classes are how this
+      regex stays case-insensitive in bash `[[ =~ ]]` (POSIX ERE has
+      no `(?i)` inline flag), so downstream variants like `adr-015`
+      or `pr-123` are accepted and then normalized to canonical
+      casing — uppercase `ADR-` / `PR-`, lowercase `issue-` — in
+      Phase 3 step 1 below. The whole point of this gate is that
+      the follow-up exists *before* mirroring; `issue-TBD` is the
+      failure mode this rejects.
 - [ ] `mirror_status:` is `original`. If it already starts with
       `mirrored-from:`, the file you fetched is itself a mirror — go
       back upstream to find the original. Mirroring a mirror is not

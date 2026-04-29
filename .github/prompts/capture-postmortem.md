@@ -59,8 +59,11 @@ template repo if absent locally) into
 
 ### Phase 3a: YAML frontmatter (required)
 
-The first non-comment lines of the file must be a YAML frontmatter
-block:
+The **first line** of the file must be `---` (no leading blank lines,
+no leading HTML/Markdown comment, no shebang). The validator in
+`test.sh` (ADR-015 frontmatter check) hard-fails any postmortem whose
+line 1 is not `---`, so anything else here will be rejected by CI even
+if it parses as YAML. The full block:
 
 ```yaml
 ---
