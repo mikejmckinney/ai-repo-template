@@ -86,7 +86,7 @@ A six-prompt sequence (`01-*.md` through `06-*.md`) intended to ship a
 working cloud-migration demo for `cloud_migration_POC` instead produced
 an architecture/design presentation; the gap was only visible at the
 end of prompt 06, after the work was done. Remediation required adding
-a seventh prompt — [`07-working-demo-upgrade.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/main/.github/prompts/07-working-demo-upgrade.md)
+a seventh prompt — [`07-working-demo-upgrade.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/4943212140cbcec760221ba405b437d678a26771/.github/prompts/07-working-demo-upgrade.md)
 — to convert the architecture artifacts into a runnable demo.
 
 ## Context

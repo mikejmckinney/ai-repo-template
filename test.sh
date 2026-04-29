@@ -914,14 +914,14 @@ for pm in docs/postmortems/postmortem-[0-9][0-9][0-9]-*.md docs/postmortems/post
     fi
     missing=""
     for key in "${REQUIRED_PM_KEYS[@]}"; do
-        # grep -E with ^ anchor + literal space: enforces "key at BOL
-        # followed by exactly one space" (the repo style guide convention
-        # for YAML key-value formatting). The key already includes the
-        # trailing colon, so this catches both wrong-position-in-file
-        # and wrong-spacing drift in one check. None of our required
-        # keys take an empty value (stacks uses []), so the trailing
-        # space is safe.
-        if ! grep -qE "^${key} " <<<"$fm"; then
+        # grep -E with ^ anchor + key + exactly-one-space + non-space:
+        # enforces "key at BOL followed by exactly one space and immediately
+        # a non-space character" (the repo style guide convention for YAML
+        # key-value formatting). The key already includes the trailing colon,
+        # so this catches both wrong-position-in-file and wrong-spacing drift
+        # in one check. None of our required keys take an empty value (stacks
+        # uses []), so the trailing space + non-space is safe.
+        if ! grep -qE "^${key} [^[:space:]]" <<<"$fm"; then
             missing="$missing $key"
         fi
     done
