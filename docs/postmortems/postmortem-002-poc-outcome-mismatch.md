@@ -277,7 +277,7 @@ per-sequence-checkpoint ADR — not now.
 
 ## References
 
-- [`07-working-demo-upgrade.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/main/.github/prompts/07-working-demo-upgrade.md) — remediation prompt
+- [`07-working-demo-upgrade.md`](https://github.com/mikejmckinney/cloud_migration_POC/blob/4943212140cbcec760221ba405b437d678a26771/.github/prompts/07-working-demo-upgrade.md) — remediation prompt (pinned to incident commit, matches `source_commit` in frontmatter)
 - [cloud_migration_POC#69](https://github.com/mikejmckinney/cloud_migration_POC/issues/69) — gap discovery
 - [cloud_migration_POC#70](https://github.com/mikejmckinney/cloud_migration_POC/issues/70) — gap discovery (companion)
 - [ai-repo-template#69](https://github.com/mikejmckinney/ai-repo-template/issues/69) / [PR #70](https://github.com/mikejmckinney/ai-repo-template/pull/70) — design-for-outcomes follow-up (canonical)

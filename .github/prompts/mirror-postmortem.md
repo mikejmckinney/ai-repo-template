@@ -72,34 +72,21 @@ independent of the source repo's numbering. Apply the same rule as
 `capture-postmortem.md` Phase 2: highest existing + 1, zero-padded.
 
 The mirrored file's filename uses the **template-side** number; the
-H1 also uses the template-side number. The body keeps the source's
-narrative content unchanged.
+H1 also uses the template-side number. The body otherwise keeps the
+source's narrative content unchanged — see Phase 3 step 3 for the
+explicit H1 carve-out, which is the *only* permitted body edit.
 
 ## Phase 3: Compose the mirrored file
 
 Create `docs/postmortems/postmortem-NNN-<slug>.md` in the template
-with this exact shape:
+with this exact shape — **frontmatter first (line 1), provenance
+comment after the closing `---`** so GitHub's Markdown renderer parses
+the YAML into the styled table view (HTML comments before the opening
+`---` push it past line 1 and break that rendering):
 
-1. A provenance HTML comment block at the top, before the
-   frontmatter — same shape as `postmortem-001-workflow-bypass.md`:
-
-   ```
-   <!--
-   Mirrored from <source-repo> (a project bootstrapped from this template)
-   under docs/postmortems/postmortem-NNN-<slug>.md.
-
-   Source URL: https://github.com/<source-repo>/blob/<commit-or-tag>/docs/postmortems/postmortem-NNN-<slug>.md
-   Mirrored: YYYY-MM-DD (in PR for issue #NNN; <any supersession context>).
-   Triggered: <ADR-NNN | rule edit | prompt edit | issue #NNN>.
-
-   Per docs/postmortems/README.md "Numbering and immutability", postmortems
-   are append-only for facts. The body below is a verbatim copy of the
-   source as of the mirror date; if new evidence appears, add a follow-up
-   section at the bottom rather than editing the original.
-   -->
-   ```
-
-2. The YAML frontmatter, **modified** from the source as follows:
+1. The YAML frontmatter as the **first** content in the file (no
+   leading blank lines, no leading comment), **modified** from the
+   source as follows:
    - `postmortem_number:` — change to the template-side number.
    - `mirror_status:` — change to `mirrored-from:<source-owner>/<source-repo>`.
    - `follow_up_artifact:` — update to the template-side artifact ID
@@ -108,8 +95,55 @@ with this exact shape:
      `date`, `stacks`, `generalizes`) **stay identical** to the source.
      They describe the original incident and must not drift.
 
-3. The body — verbatim from the source. Do not edit. Do not "improve."
-   The immutability rule applies to mirrors as well.
+2. A provenance HTML comment block immediately after the closing
+   `---` of the frontmatter — same shape as
+   `postmortem-001-workflow-bypass.md`:
+
+   ```
+   <!--
+   Mirrored from <source-repo> (a project bootstrapped from this template)
+   under docs/postmortems/postmortem-NNN-<slug>.md.
+
+   Source URL: https://github.com/<source-repo>/blob/<commit-sha>/docs/postmortems/postmortem-NNN-<slug>.md
+   (Pin to a commit SHA, not a branch name — branches are moving refs
+   and weaken provenance.)
+   Mirrored: YYYY-MM-DD (in PR for issue #NNN; <any supersession context>).
+   Triggered: <ADR-NNN | rule edit | prompt edit | issue #NNN>.
+   Source H1 number: <source-NNN> (renumbered to template-NNN in the H1
+   below per Phase 3 step 3 carve-out; recorded here so nothing is lost).
+
+   Per docs/postmortems/README.md "Numbering and immutability", postmortems
+   are append-only for facts. The body below is a verbatim copy of the
+   source as of the mirror date; if new evidence appears, add a follow-up
+   section at the bottom rather than editing the original.
+
+   NOTE: frontmatter is intentionally placed at line 1 (above this comment)
+   so GitHub's Markdown renderer parses it as YAML and shows the styled
+   table view; HTML comments before the opening `---` would push it past
+   line 1 and break that rendering.
+   -->
+   ```
+
+3. The body — verbatim from the source, with **exactly one permitted
+   edit**: the H1 line. Replace `# Postmortem-<source-NNN>: <title>`
+   with `# Postmortem-<template-NNN>: <title>` so the H1 number
+   matches the filename and the (renumbered) frontmatter
+   `postmortem_number:`. Title text stays identical. No other body
+   edits are allowed. Do not "improve" wording, fix typos, or
+   reformat — the immutability rule applies to mirrors. If the source
+   H1 number already matches the template-side number you picked in
+   Phase 2 (rare but possible), no edit is needed and "verbatim"
+   is fully literal.
+
+   This single carve-out exists because the H1 is part of the body
+   *syntactically* but is metadata *semantically* — like the
+   `postmortem_number:` frontmatter field, it identifies which file
+   in *this* repo's numbering you are reading. Leaving the source
+   number in the H1 would create a within-file inconsistency
+   (`postmortem_number: 002` in frontmatter, `# Postmortem-001:` in
+   the H1) that breaks discoverability for readers who scan H1s.
+   Record the original source H1 number in the provenance comment if
+   it differs, so nothing is lost.
 
 ## Phase 4: Update the index
 

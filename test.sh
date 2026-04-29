@@ -906,11 +906,14 @@ for pm in docs/postmortems/postmortem-*.md; do
     fi
     missing=""
     for key in "${REQUIRED_PM_KEYS[@]}"; do
-        # grep -E with ^ anchor: actually enforces BOL (the previous
-        # grep -Fq was substring-only, so e.g. update_date: would have
-        # satisfied the date: check). The key already includes the
-        # trailing colon, so the regex is safe to use unescaped.
-        if ! grep -qE "^${key}" <<<"$fm"; then
+        # grep -E with ^ anchor + literal space: enforces "key at BOL
+        # followed by exactly one space" (the repo style guide convention
+        # for YAML key-value formatting). The key already includes the
+        # trailing colon, so this catches both wrong-position-in-file
+        # and wrong-spacing drift in one check. None of our required
+        # keys take an empty value (stacks uses []), so the trailing
+        # space is safe.
+        if ! grep -qE "^${key} " <<<"$fm"; then
             missing="$missing $key"
         fi
     done
