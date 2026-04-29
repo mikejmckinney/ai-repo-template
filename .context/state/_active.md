@@ -5,11 +5,11 @@
 
 # Active Task
 
-**Active Task**: #150 — postmortem feedback loop v1 (capture + mirror prompts, ADR-015, postmortem-002 backfill)
-**File**: docs/postmortems/, .github/prompts/capture-postmortem.md, .github/prompts/mirror-postmortem.md, docs/decisions/adr-015-postmortem-feedback-loop.md, AGENTS.md, test.sh
-**Role**: docs (lead) + architect (ADR-015) + qa (test.sh invariants)
-**Blockers**: None
+**Active Task**: #150 — PR #218 awaiting re-review of bot-feedback fixes
+**File**: PR #218 on `feat/150-postmortem-feedback-loop` (commit `45094e9`)
+**Role**: docs (lead)
+**Blockers**: None — Phase 1–4 of `pr-resolve-all.md` complete; all 10 bot threads resolved; awaiting re-review on push (#205/#217 workflow)
 **Next 1–3 actions**:
-1. Commit + push branch `feat/150-postmortem-feedback-loop`
-2. Open PR; link plan comment on #150
-3. Address bot review feedback per `pr-resolve-all.md`; update `latest_summary.md` at task close-out
+1. Wait for re-review; if new findings, repeat `pr-resolve-all.md`
+2. On clean re-review, await maintainer merge
+3. After merge, close task and remove from `_active.md`
