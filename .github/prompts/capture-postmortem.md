@@ -99,8 +99,13 @@ Field rules — every field is required:
   follow-up issue (or open the actual ADR PR) **before** committing
   the postmortem and use its real ID. Acceptable shapes:
   `ADR-NNN`, `issue-NNN`, `PR-NNN`, or `none` (only when
-  `generalizes: No`). Placeholders like `issue-TBD`, `TBD`, `todo`,
-  `pending`, `pr-TBD`, `adr-TBD`, `<...>` are rejected by
+  `generalizes: No`). Casing matters for downstream consumers: use
+  uppercase `ADR-` and `PR-` and lowercase `issue-` exactly as shown.
+  `mirror-postmortem.md` Phase 1 accepts case-insensitive variants
+  for compatibility but normalizes to this canonical form when it
+  mirrors back, so authoring it correctly here avoids needless
+  drift. Placeholders like `issue-TBD`, `TBD`, `todo`, `pending`,
+  `pr-TBD`, `adr-TBD`, `<...>` are rejected by
   `mirror-postmortem.md` Phase 1; that rejection is the gate, not a
   suggestion. If `generalizes: No`, `none` is acceptable.
 - **`mirror_status`** — `original` for postmortems authored here.

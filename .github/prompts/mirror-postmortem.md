@@ -49,11 +49,15 @@ Fetch the source file. Verify all of:
       not mirror.
       Placeholder strings (case-insensitive match on the value)
       `TBD`, `issue-TBD`, `pr-TBD`, `adr-TBD`, `todo`, `pending`,
-      `<...>` (any angle-bracketed token), or any value not matching
-      `^(ADR-\d+|issue-\d+|PR-\d+|none)$` are rejected with the same
-      "no mirror without a concrete follow-up" error. The whole point
-      of this gate is that the follow-up exists *before* mirroring;
-      `issue-TBD` is the failure mode this rejects.
+      `<...>` (any angle-bracketed token) are rejected with the
+      "no mirror without a concrete follow-up" error. Any value not
+      matching `^(ADR-\d+|issue-\d+|PR-\d+|none)$` is also rejected;
+      the prefix match is **case-insensitive** so downstream variants
+      like `adr-015` or `pr-123` are accepted (and normalized to the
+      canonical casing — uppercase `ADR-` / `PR-`, lowercase `issue-`
+      — in Phase 3 step 1 below). The whole point of this gate is
+      that the follow-up exists *before* mirroring; `issue-TBD` is
+      the failure mode this rejects.
 - [ ] `mirror_status:` is `original`. If it already starts with
       `mirrored-from:`, the file you fetched is itself a mirror — go
       back upstream to find the original. Mirroring a mirror is not
@@ -89,8 +93,27 @@ the YAML into the styled table view (HTML comments before the opening
    source as follows:
    - `postmortem_number:` — change to the template-side number.
    - `mirror_status:` — change to `mirrored-from:<source-owner>/<source-repo>`.
-   - `follow_up_artifact:` — update to the template-side artifact ID
-     (e.g., `ADR-015`), not the source repo's issue number.
+   - `follow_up_artifact:` — set per the **three-tier rule** below
+     (this depends on Phase 5's classification; if you haven't yet
+     decided the tier, do that now and come back). Whatever value
+     you write here, normalize the casing to canonical form:
+     uppercase `ADR-NNN` / `PR-NNN`, lowercase `issue-NNN`. The
+     Phase 1 regex accepts case-insensitive variants from the
+     source for compatibility, but the mirrored copy is canonical:
+     - **Universal lesson** — set to the template-side artifact ID
+       you create in Phase 5 (e.g. `ADR-015`, `issue-NNN` filed in
+       this PR). Do **not** carry over the source's artifact; that
+       was the source-repo follow-up, not the template-side one.
+     - **Stack-specific lesson** — keep the source's value
+       unchanged. Per Phase 5 the mirror itself + its index row are
+       the follow-up; there is no template-side artifact by design,
+       and inventing one to satisfy this field would defeat the
+       three-tier policy. The source-repo artifact is the canonical
+       reference and stays in this field.
+     - **Unclear lesson** — set to the `issue-NNN` you file in
+       Phase 5 (the conditional re-evaluation issue). Do not carry
+       over the source's value; the template-side issue is the
+       template's commitment to revisit, not the source's.
    - All other frontmatter fields (`source_repo`, `source_commit`,
      `date`, `stacks`, `generalizes`) **stay identical** to the source.
      They describe the original incident and must not drift.
