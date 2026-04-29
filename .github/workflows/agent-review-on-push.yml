@@ -9,11 +9,12 @@
 # same-repo PR:
 #   - Gemini: post a `/gemini review` issue comment (the documented
 #     manual re-review slash command).
-#   - Copilot: re-request review via the requested_reviewers REST API.
-#     A naive POST is idempotent — re-POSTing an already-requested
-#     reviewer is a no-op and does NOT fire a fresh review_requested
-#     event, so Copilot doesn't see a fresh request. We DELETE first
-#     to clear state, then POST to create a real event.
+#   - Copilot: re-request review via the GraphQL `requestReviews`
+#     mutation using Copilot's global Bot node ID. The REST endpoint
+#     `requested_reviewers` rejects bot logins with HTTP 422
+#     "Reviews may only be requested from collaborators" \u2014 only
+#     GraphQL accepts a Bot node ID via `userIds`. Discovered while
+#     smoke-testing PR #217.
 #
 # Default OFF. Opt in by setting repo variable REVIEW_ON_PUSH=true
 # (Settings → Secrets and variables → Actions → Variables tab). With
@@ -114,23 +115,40 @@ jobs:
           gh api -X POST "repos/${REPO}/issues/${PR}/comments" \
             -f body='/gemini review'
 
-      - name: Re-request Copilot review (DELETE then POST)
+      - name: Re-request Copilot review (GraphQL requestReviews)
         id: copilot
         continue-on-error: true
         run: |
-          # DELETE may 422 if the reviewer was not previously requested.
-          # That is an expected transient state (e.g. first push after a
-          # human un-requested Copilot), not a failure mode — swallow it
-          # with `|| true` so we always proceed to the POST.
-          gh api -X DELETE "repos/${REPO}/pulls/${PR}/requested_reviewers" \
-            -f 'reviewers[]=copilot-pull-request-reviewer' || true
-          # POST is the call that actually fires the review_requested
-          # event. Real errors here (auth, rate limit, endpoint change)
-          # MUST surface — no `|| true`. The step's `continue-on-error`
-          # still lets the Gemini half count toward the job's success,
-          # but the captured outcome feeds the always() check below.
-          gh api -X POST "repos/${REPO}/pulls/${PR}/requested_reviewers" \
-            -f 'reviewers[]=copilot-pull-request-reviewer'
+          # Why GraphQL, not REST: the REST endpoint
+          # `POST /repos/{o}/{r}/pulls/{n}/requested_reviewers` with
+          # `reviewers[]=copilot-pull-request-reviewer` returns
+          # `HTTP 422 Reviews may only be requested from collaborators`
+          # because Copilot is a Bot account, not a collaborator user,
+          # and REST only accepts collaborator logins. The GraphQL
+          # `requestReviews` mutation accepts a Bot's global node ID
+          # via `userIds`. Discovered while smoke-testing PR #217.
+          #
+          # The Copilot bot's node ID (BOT_kgDOCnlnWA) is GLOBAL \u2014
+          # GitHub Bot account IDs are unique per-bot, not per-repo,
+          # so this constant works for any repo where Copilot code
+          # review is enabled. If GitHub ever rotates it, the API
+          # returns "Could not resolve to a node" and this step fails
+          # loudly (caught by the always() gate below).
+          COPILOT_BOT_ID="BOT_kgDOCnlnWA"
+
+          PR_NODE_ID=$(gh api graphql \
+            -f query='query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){id}}}' \
+            -F owner="${REPO%/*}" -F name="${REPO#*/}" -F num="${PR}" \
+            --jq '.data.repository.pullRequest.id')
+
+          # `union: true` means "add this reviewer to the existing
+          # set" (does not clobber human reviewers already requested).
+          # GitHub fires a fresh review_requested event on each call
+          # even if Copilot was already in the set, so this is the
+          # one mutation we need \u2014 no DELETE-then-POST dance.
+          gh api graphql \
+            -f query='mutation($pr:ID!,$ids:[ID!]!){requestReviews(input:{pullRequestId:$pr,userIds:$ids,union:true}){pullRequest{number}}}' \
+            -F pr="${PR_NODE_ID}" -F ids="${COPILOT_BOT_ID}"
 
       - name: Fail job if both nudges failed
         if: always() && steps.gemini.outcome == 'failure' && steps.copilot.outcome == 'failure'

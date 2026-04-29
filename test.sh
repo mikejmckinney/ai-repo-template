@@ -281,10 +281,10 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing exact REVIEW_ON_PUSH opt-in gate"
     fi
-    if grep -qE "reviewers\[\]=copilot-pull-request-reviewer" "$RP_FILE"; then
-        pass "agent-review-on-push.yml re-requests copilot-pull-request-reviewer via API"
+    if grep -qE "reviewers\[\]=copilot-pull-request-reviewer" "$RP_FILE" || grep -qE 'BOT_kgDOCnlnWA' "$RP_FILE"; then
+        pass "agent-review-on-push.yml re-requests Copilot (Bot node ID via GraphQL)"
     else
-        fail "agent-review-on-push.yml missing 'reviewers[]=copilot-pull-request-reviewer' API call"
+        fail "agent-review-on-push.yml missing Copilot bot ID (BOT_kgDOCnlnWA) for GraphQL requestReviews"
     fi
     if grep -qE "body='/gemini review'" "$RP_FILE"; then
         pass "agent-review-on-push.yml posts -f body='/gemini review' to comments API"
