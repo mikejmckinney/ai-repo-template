@@ -85,11 +85,17 @@ and opens a draft PR. After the Copilot run finishes, the
 for review automatically (Copilot itself leaves PRs as drafts).
 
 ### Step 3: Review bots fire (automatic)
-With workflow approval disabled (see Setup below), these fire immediately:
+With workflow approval disabled (see Setup below), these fire immediately on PR open / `ready_for_review`:
 - **Gemini Code Assist** — posts review via `gemini-code-assist[bot]`
 - **Claude auto-review** — posts review via your `claude.yml` workflow
 - **Copilot code review** — posts review if configured as a required reviewer
 - **CI checks** — your `ci-tests.yml` runs
+
+**Re-review on push** — by default Gemini and Copilot do **not** re-review subsequent pushes (Codex does). The opt-in `agent-review-on-push.yml` workflow nudges both bots after every push to an open non-draft PR when repo variable `REVIEW_ON_PUSH=true` is set. See "Alternative: Copilot ruleset" below for a server-side option that did not work for this repo.
+
+**Manual override** — anyone (agent or human) can comment `/gemini review` directly on a PR to force a fresh Gemini review. This is documented as a belt-and-suspenders escape hatch; the workflow is the primary mechanism.
+
+**Alternative: Copilot ruleset** — GitHub offers a server-side ruleset (Settings → Rules → Rulesets → "Automatically request Copilot code review") that should re-request Copilot on every push. We tried it on this repo (April 2026) and it did **not** fire on push. Keeping it enabled is harmless (worst case, Copilot reviews twice if GitHub later fixes it). If the ruleset works for your fork, you can drop the Copilot half of `agent-review-on-push.yml`.
 
 ### Step 4: Resolve review comments (opt-in via `claude-fix` or `copilot-relay` label)
 `agent-fix-reviews.yml` (Claude path) and `agent-relay-reviews.yml`
@@ -278,6 +284,7 @@ Copy to `.github/workflows/`:
 - `agent-relay-reviews.yml` — Copilot relay (opt-in via `copilot-relay`)
 - `agent-auto-ready.yml` — flips Copilot draft PRs to ready for review
 - `agent-auto-merge.yml` — auto-merges when ready
+- `agent-review-on-push.yml` — nudges Gemini + Copilot to re-review after each push (opt-in via repo variable `REVIEW_ON_PUSH=true`)
 
 Also add this repository secret in **Settings → Secrets and variables → Actions**:
 - `CLAUDE_PAT` — fine-grained PAT required by `agent-fix-reviews.yml` so
@@ -498,6 +505,7 @@ for Gemini to finish posting.
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
 | `.github/workflows/agent-relay-reviews.yml` | Copilot relay (opt-in via `copilot-relay` label); also hosts the `phase4-fallback` job that retries Copilot's `⚠️ Errored` Phase 4 mutations under `CLAUDE_PAT` (see ADR-008) | No (uses CLAUDE_PAT for posting + fallback mutations) |
 | `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready; drains Copilot queue after merge | No (uses CLAUDE_PAT) |
+| `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment) + Copilot (re-request via `requested_reviewers` API) on each push to an open non-draft PR; opt-in via repo variable `REVIEW_ON_PUSH=true` | No (uses GITHUB_TOKEN) |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |
 | `.github/workflows/ci-tests.yml` | CI checks | No |
 | `.gemini/config.yaml` | Gemini review config | No (free GitHub App) |

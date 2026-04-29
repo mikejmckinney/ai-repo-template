@@ -5,11 +5,11 @@
 
 # Active Task
 
-**Active Task**: #206 — PR completion criteria for interactive sessions
+**Active Task**: #205 — re-trigger Gemini & Copilot review on every push
 **File**: N/A
-**Role**: docs
+**Role**: devops
 **Blockers**: None
 **Next 1–3 actions**:
-1. Address bot review feedback round 2 on PR #216
-2. Wait for re-review; iterate per the new section
-3. Update `latest_summary.md` at session end / task close-out (do not defer to merge per AGENTS.md §Session-state cadence); amend post-merge if outcome changes
+1. Open PR with plan link in body
+2. Live smoke after merge: set `REVIEW_ON_PUSH=true`, push to a test PR, confirm both bots re-review
+3. Update `latest_summary.md` at session end / task close-out

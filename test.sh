@@ -209,6 +209,7 @@ WORKFLOW_FILES=(
     ".github/workflows/agent-parallelism-report.yml"
     ".github/workflows/agent-relay-reviews.yml"
     ".github/workflows/agent-release-slot.yml"
+    ".github/workflows/agent-review-on-push.yml"
     ".github/workflows/auto-rebase-on-merge.yml"
     ".github/workflows/backlog-to-issues.yml"
     ".github/workflows/ci-tests.yml"
@@ -257,6 +258,43 @@ if grep -q "^## PR completion criteria" AGENTS.md 2>/dev/null; then
     pass "AGENTS.md has PR completion criteria section"
 else
     warn "AGENTS.md missing PR completion criteria section"
+fi
+
+# Check agent-review-on-push.yml has required invariants (issue #205)
+RP_FILE=".github/workflows/agent-review-on-push.yml"
+if [[ -f "$RP_FILE" ]]; then
+    if grep -q "synchronize" "$RP_FILE"; then
+        pass "agent-review-on-push.yml triggers on pull_request synchronize"
+    else
+        fail "agent-review-on-push.yml missing synchronize trigger"
+    fi
+    if grep -q "cancel-in-progress: true" "$RP_FILE"; then
+        pass "agent-review-on-push.yml has concurrency cancel-in-progress"
+    else
+        fail "agent-review-on-push.yml missing cancel-in-progress (would queue duplicate runs)"
+    fi
+    if grep -q "vars.REVIEW_ON_PUSH" "$RP_FILE"; then
+        pass "agent-review-on-push.yml gated on REVIEW_ON_PUSH variable"
+    else
+        fail "agent-review-on-push.yml missing REVIEW_ON_PUSH opt-in gate"
+    fi
+    if grep -q "copilot-pull-request-reviewer" "$RP_FILE"; then
+        pass "agent-review-on-push.yml re-requests copilot-pull-request-reviewer"
+    else
+        fail "agent-review-on-push.yml missing copilot-pull-request-reviewer reference"
+    fi
+    if grep -q "/gemini review" "$RP_FILE"; then
+        pass "agent-review-on-push.yml posts /gemini review nudge"
+    else
+        fail "agent-review-on-push.yml missing /gemini review comment"
+    fi
+fi
+
+# Check agent-pipeline.md documents REVIEW_ON_PUSH knob
+if grep -q "REVIEW_ON_PUSH" docs/guides/agent-pipeline.md 2>/dev/null; then
+    pass "agent-pipeline.md documents REVIEW_ON_PUSH"
+else
+    fail "agent-pipeline.md should document REVIEW_ON_PUSH knob"
 fi
 
 # Check AGENTS.md has versioned session handshake (read-receipt canary)

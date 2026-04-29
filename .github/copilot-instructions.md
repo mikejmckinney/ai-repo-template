@@ -44,3 +44,7 @@ Mirrors the `@claude follow <path>` convention in `.github/workflows/claude.yml`
 `AGENTS.md` is the single source of truth for agent instructions in this repo. Duplicating its content here would just create a drift hazard — see experiment [#208](https://github.com/mikejmckinney/ai-repo-template/issues/208), which confirmed Copilot follows markdown references from this file to AGENTS.md and other repo files. [`CLAUDE.md`](../CLAUDE.md) uses the same pointer pattern for the same reason.
 
 When AGENTS.md headings change, the references in this file's "Read first" and "Role selection" sections must be re-verified — see `.context/rules/process_doc_maintenance.md`.
+
+## Repository knobs (variables)
+
+- `REVIEW_ON_PUSH` — when set to literal `true`, the `agent-review-on-push.yml` workflow nudges Gemini + Copilot to re-review after each push to an open non-draft PR. Default unset = off. See `docs/guides/agent-pipeline.md` § Step 3.

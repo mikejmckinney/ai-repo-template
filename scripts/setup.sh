@@ -385,6 +385,15 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_variable MAX_COPILOT_CONCURRENT 3
     _ensure_variable MAX_COPILOT_DAILY 20
 
+    # REVIEW_ON_PUSH (issue #205): opt-in toggle for agent-review-on-push.yml,
+    # which nudges Gemini (`/gemini review` comment) and Copilot (re-request via
+    # `requested_reviewers` API) after each push to an open non-draft PR.
+    # Intentionally NOT auto-set: leaving the variable unset = off is the
+    # desired default. Maintainers opt in with:
+    #   gh variable set REVIEW_ON_PUSH --body true
+    # And opt out with:
+    #   gh variable delete REVIEW_ON_PUSH
+
     # --- Secret-presence report ---
     # Companion to the per-workflow `Verify required secrets` guard
     # steps (see issue #162). Reports which required secrets are
