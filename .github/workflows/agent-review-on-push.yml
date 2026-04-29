@@ -19,6 +19,14 @@
 # (Settings → Secrets and variables → Actions → Variables tab). With
 # the variable unset/empty/false the runner does not spin up.
 #
+# Auth: the Gemini step uses CLAUDE_PAT (a user-scoped fine-grained PAT,
+# already required by other workflows in this repo) instead of
+# GITHUB_TOKEN. Reason: Gemini Code Assist filters slash commands posted
+# by `github-actions[bot]` to prevent reviewer loops, so a comment posted
+# under GITHUB_TOKEN is silently ignored. Posting under a real user PAT
+# bypasses the filter. The Copilot step keeps GITHUB_TOKEN — the
+# requested_reviewers REST call doesn't care who initiates it.
+#
 # A repository ruleset ("Settings → Rules → Rulesets → Automatically
 # request Copilot code review") is a server-side alternative for the
 # Copilot half. It was tried on this repo (April 2026) and did not
@@ -73,6 +81,17 @@ jobs:
       PR: ${{ github.event.pull_request.number }}
 
     steps:
+      - name: Verify required secrets
+        env:
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+        run: |
+          if [[ -z "$CLAUDE_PAT" ]]; then
+            echo "::error::Missing required secret: CLAUDE_PAT"
+            echo "::error::Required so the /gemini review comment posts under a real user identity (Gemini ignores slash commands from github-actions[bot])."
+            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
+            exit 1
+          fi
+
       # Per-step `continue-on-error: true` so a transient failure on one
       # half (Copilot API surface change, Gemini quota, etc.) does not
       # block the other from running. Outcomes are captured via step ids
@@ -85,6 +104,12 @@ jobs:
       - name: Nudge Gemini (/gemini review)
         id: gemini
         continue-on-error: true
+        env:
+          # Override job-level GH_TOKEN with CLAUDE_PAT for this step only.
+          # Gemini Code Assist ignores slash commands from github-actions[bot]
+          # (loop-prevention filter), so the comment must be posted under a
+          # real user identity to actually trigger a re-review.
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
         run: |
           gh api -X POST "repos/${REPO}/issues/${PR}/comments" \
             -f body='/gemini review'

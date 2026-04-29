@@ -301,6 +301,16 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing both-failed outcome check (would mask outages)"
     fi
+    if grep -qE 'GH_TOKEN:[[:space:]]+\$\{\{[[:space:]]*secrets\.CLAUDE_PAT[[:space:]]*\}\}' "$RP_FILE"; then
+        pass "agent-review-on-push.yml posts /gemini review under CLAUDE_PAT (real user identity)"
+    else
+        fail "agent-review-on-push.yml Gemini step missing CLAUDE_PAT (Gemini ignores bot-authored slash commands)"
+    fi
+    if grep -qE '^[[:space:]]+- name: Verify required secrets' "$RP_FILE"; then
+        pass "agent-review-on-push.yml has 'Verify required secrets' guard step"
+    else
+        fail "agent-review-on-push.yml missing secrets-guard step (CLAUDE_PAT could silently be empty)"
+    fi
 fi
 
 # Check agent-pipeline.md documents REVIEW_ON_PUSH knob
