@@ -31,8 +31,12 @@
 # GITHUB_TOKEN. Reason: Gemini Code Assist filters slash commands posted
 # by `github-actions[bot]` to prevent reviewer loops, so a comment posted
 # under GITHUB_TOKEN is silently ignored. Posting under a real user PAT
-# bypasses the filter. The Copilot step keeps GITHUB_TOKEN — the
-# requested_reviewers REST call doesn't care who initiates it.
+# bypasses the filter. The Copilot step keeps GITHUB_TOKEN — the GraphQL
+# `requestReviewsByLogin` mutation only needs `pull-requests: write`,
+# which both GITHUB_TOKEN and CLAUDE_PAT have, and there's no bot-author
+# filter on the receiving side. (Earlier draft of this comment said
+# the Copilot step used REST `requested_reviewers` — stale, fixed in
+# the same commit that switched to GraphQL.)
 #
 # A repository ruleset ("Settings → Rules → Rulesets → Automatically
 # request Copilot code review") is a server-side alternative for the
@@ -70,6 +74,10 @@ jobs:
     # All gates collapsed at job level so the runner does not spin up
     # when off. Mirrors the actor-skip + fork-skip + smoke-test-skip
     # patterns in agent-fix-reviews.yml and agent-relay-reviews.yml.
+    # Bot-authored PRs (Dependabot, Renovate) are excluded because the
+    # `Verify required secrets` step would hard-fail when CLAUDE_PAT
+    # isn't passed to dependency-update PRs, generating noisy red CI.
+    # Reported by chatgpt-codex-connector on PR #217.
     if: >-
       vars.REVIEW_ON_PUSH == 'true' &&
       github.event.pull_request.draft == false &&
@@ -79,7 +87,9 @@ jobs:
       github.actor != 'Copilot' &&
       github.actor != 'copilot-swe-agent[bot]' &&
       github.actor != 'claude[bot]' &&
-      github.actor != 'github-actions[bot]'
+      github.actor != 'github-actions[bot]' &&
+      github.actor != 'dependabot[bot]' &&
+      github.actor != 'renovate[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:

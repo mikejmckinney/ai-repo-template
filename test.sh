@@ -268,22 +268,34 @@ RP_FILE=".github/workflows/agent-review-on-push.yml"
 if [[ -f "$RP_FILE" ]]; then
     # Allow either single-line `types: [synchronize]` or multi-line list form
     # (`types:` followed by `- synchronize`). YAML accepts both; the test
-    # should not be brittle to a stylistic reformat. Reported by
-    # gemini-code-assist on PR #217.
+    # should not be brittle to a stylistic reformat. Implementation uses
+    # awk (POSIX) instead of `grep -Pzo` so the test runs on macOS / BSD
+    # grep too \u2014 `-P` and `-z` are GNU extensions. Reported by
+    # gemini-code-assist and chatgpt-codex-connector on PR #217.
     if grep -qE '^[[:space:]]+types:[[:space:]]*\[[[:space:]]*synchronize[[:space:]]*\]' "$RP_FILE" \
-       || grep -qPzo '(?s)^[[:space:]]+types:[[:space:]]*\n([[:space:]]*#[^\n]*\n)*[[:space:]]+-[[:space:]]+synchronize\b' "$RP_FILE" >/dev/null 2>&1; then
+       || awk '
+            /^[[:space:]]+types:[[:space:]]*$/ { in_block = 1; next }
+            in_block && /^[[:space:]]*#/ { next }
+            in_block && /^[[:space:]]+-[[:space:]]+synchronize([[:space:]]|$)/ { found = 1; exit }
+            in_block && /^[[:space:]]*[^[:space:]#-]/ { in_block = 0 }
+            END { exit !found }
+         ' "$RP_FILE"; then
         pass "agent-review-on-push.yml triggers on pull_request synchronize (single- or multi-line list)"
     else
         fail "agent-review-on-push.yml missing 'synchronize' under pull_request types"
     fi
     # Tolerate quoting variants: `true`, `"true"`, `'true'`, with or without
-    # extra whitespace. Reported by gemini-code-assist on PR #217.
+    # extra whitespace. Quote class allows zero-or-one of either quote on
+    # each side independently \u2014 that's enough for any real YAML scalar
+    # form. Reported by gemini-code-assist on PR #217.
     if grep -qE "^[[:space:]]+cancel-in-progress:[[:space:]]*[\"']?true[\"']?[[:space:]]*\$" "$RP_FILE"; then
         pass "agent-review-on-push.yml has concurrency cancel-in-progress: true"
     else
         fail "agent-review-on-push.yml missing 'cancel-in-progress: true'"
     fi
-    if grep -qE "vars\.REVIEW_ON_PUSH[[:space:]]*==[[:space:]]*'true'" "$RP_FILE"; then
+    # Tolerate single OR double quotes around 'true' in the GitHub
+    # Actions expression. Reported by gemini-code-assist on PR #217.
+    if grep -qE "vars\.REVIEW_ON_PUSH[[:space:]]*==[[:space:]]*[\"']true[\"']" "$RP_FILE"; then
         pass "agent-review-on-push.yml gated on vars.REVIEW_ON_PUSH == 'true'"
     else
         fail "agent-review-on-push.yml missing exact REVIEW_ON_PUSH opt-in gate"
@@ -296,11 +308,15 @@ if [[ -f "$RP_FILE" ]]; then
     # with Bot node ID rejects "Could not resolve to User node" because
     # its `userIds` field is User-only. Mechanism confirmed by reading
     # cli/cli source. The `[bot]` suffix is REQUIRED.
-    if grep -qE 'requestReviewsByLogin' "$RP_FILE" \
-       && grep -qE 'copilot-pull-request-reviewer\[bot\]' "$RP_FILE"; then
-        pass "agent-review-on-push.yml re-requests Copilot via GraphQL requestReviewsByLogin + suffixed bot login"
+    #
+    # Anchor to the actual `gh api graphql -f query=...` line and the
+    # `-f bots=...` argument so the invariant doesn't false-pass on
+    # comment text alone. Reported by chatgpt-codex-connector on PR #217.
+    if grep -qE "requestReviewsByLogin\\(input:\\{pullRequestId:" "$RP_FILE" \
+       && grep -qE "^[[:space:]]+-f bots='copilot-pull-request-reviewer\\[bot\\]'[[:space:]]*\$" "$RP_FILE"; then
+        pass "agent-review-on-push.yml re-requests Copilot via GraphQL requestReviewsByLogin + suffixed bot login (executable line, not comment)"
     else
-        fail "agent-review-on-push.yml missing GraphQL requestReviewsByLogin mutation or 'copilot-pull-request-reviewer[bot]' login"
+        fail "agent-review-on-push.yml missing executable requestReviewsByLogin mutation call or '-f bots=...[bot]' argument"
     fi
     if grep -qE "body='/gemini review'" "$RP_FILE"; then
         pass "agent-review-on-push.yml posts -f body='/gemini review' to comments API"
@@ -313,15 +329,19 @@ if [[ -f "$RP_FILE" ]]; then
         fail "agent-review-on-push.yml missing 'issues: write' permission for issue-comments API"
     fi
     # Verify the actual conditional logic (both outcomes failure-AND-ed),
-    # not just that the strings appear somewhere in the file. A comment
-    # could mention `steps.gemini.outcome` without the gate actually
-    # firing. Reported by gemini-code-assist on PR #217.
-    if grep -qE "steps\.gemini\.outcome[[:space:]]*==[[:space:]]*'failure'[[:space:]]*&&[[:space:]]*steps\.copilot\.outcome[[:space:]]*==[[:space:]]*'failure'" "$RP_FILE"; then
-        pass "agent-review-on-push.yml fails job when BOTH nudges fail (verified gate logic, not just string presence)"
+    # not just that the strings appear somewhere in the file. Tolerate
+    # either order (gemini-then-copilot or copilot-then-gemini) and
+    # single OR double quotes around 'failure'. Reported by
+    # gemini-code-assist on PR #217.
+    if grep -qE "steps\\.gemini\\.outcome[[:space:]]*==[[:space:]]*[\"']failure[\"'][[:space:]]*&&[[:space:]]*steps\\.copilot\\.outcome[[:space:]]*==[[:space:]]*[\"']failure[\"']" "$RP_FILE" \
+       || grep -qE "steps\\.copilot\\.outcome[[:space:]]*==[[:space:]]*[\"']failure[\"'][[:space:]]*&&[[:space:]]*steps\\.gemini\\.outcome[[:space:]]*==[[:space:]]*[\"']failure[\"']" "$RP_FILE"; then
+        pass "agent-review-on-push.yml fails job when BOTH nudges fail (verified gate logic, either order, either quote style)"
     else
         fail "agent-review-on-push.yml missing both-failed conditional gate (steps.gemini.outcome AND steps.copilot.outcome failure check)"
     fi
-    if grep -qE 'GH_TOKEN:[[:space:]]+\$\{\{[[:space:]]*secrets\.CLAUDE_PAT[[:space:]]*\}\}' "$RP_FILE"; then
+    # YAML allows zero or more spaces after `GH_TOKEN:`; tolerate both.
+    # Reported by gemini-code-assist on PR #217.
+    if grep -qE 'GH_TOKEN:[[:space:]]*\$\{\{[[:space:]]*secrets\.CLAUDE_PAT[[:space:]]*\}\}' "$RP_FILE"; then
         pass "agent-review-on-push.yml posts /gemini review under CLAUDE_PAT (real user identity)"
     else
         fail "agent-review-on-push.yml Gemini step missing CLAUDE_PAT (Gemini ignores bot-authored slash commands)"
