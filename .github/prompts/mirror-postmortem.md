@@ -59,7 +59,7 @@ Fetch the source file. Verify all of:
       `<...>` (any angle-bracketed token) are rejected with the
       "no mirror without a concrete follow-up" error. Any value not
       matching the POSIX ERE
-      `^([Aa][Dd][Rr]-[0-9]+|[Ii]ssue-[0-9]+|[Pp][Rr]-[0-9]+)$`
+      `^([Aa][Dd][Rr]-[0-9]+|[Ii][Ss][Ss][Uu][Ee]-[0-9]+|[Pp][Rr]-[0-9]+)$`
       is also rejected. The bracketed character classes are how this
       regex stays case-insensitive in bash `[[ =~ ]]` (POSIX ERE has
       no `(?i)` inline flag), so downstream variants like `adr-015`

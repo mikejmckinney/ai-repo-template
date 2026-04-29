@@ -43,7 +43,11 @@ before starting non-trivial work in that stack.
 
 ### prompt-engineering
 
+- [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: multi-prompt-sequence)
+
 ### multi-prompt-sequence
+
+- [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: prompt-engineering)
 
 
 ## When to write a postmortem

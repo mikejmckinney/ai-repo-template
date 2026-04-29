@@ -170,13 +170,17 @@ Verify all of:
       `mirror-postmortem.md` Phase 1 gate so template-internal
       postmortems (which never run mirror validation) still get caught.
 - [ ] `follow_up_artifact` matches the canonical schema regex
-      `^([Aa][Dd][Rr]-[0-9]+|[Ii]ssue-[0-9]+|[Pp][Rr]-[0-9]+|[Nn]one)$`
-      (POSIX ERE, bracketed character classes for case-insensitivity
-      since bash `[[ =~ ]]` has no `(?i)` flag). Malformed forms like
-      `issue69` (missing hyphen), `ticket-12` (wrong noun), or
-      `ADR15` (missing hyphen) must fail this check. Template-internal
-      postmortems skip `mirror-postmortem.md` Phase 1, so this is the
-      only gate before downstream tooling and queries see the value.
+      `^(ADR-[0-9]+|issue-[0-9]+|PR-[0-9]+|none)$` (strict casing).
+      `test.sh` validates committed postmortems with the same strict
+      pattern, so non-canonical forms like `adr-015` or `Pr-10` that
+      mirror-postmortem.md would accept from a source repo will be
+      **rejected by CI** in this repo. Write canonical casing here
+      from the start: uppercase `ADR-` / `PR-`, lowercase `issue-`
+      and `none`. Malformed forms like `issue69` (missing hyphen),
+      `ticket-12` (wrong noun), or `ADR15` (missing hyphen) must
+      also fail this check. Template-internal postmortems skip
+      `mirror-postmortem.md` Phase 1, so this is the only gate
+      before downstream tooling and queries see the value.
 - [ ] "Trigger" is one sentence.
 - [ ] "Expected vs Actual" is non-trivial — if Expected and Actual
       match, you do not have a postmortem; stop.

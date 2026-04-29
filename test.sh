@@ -962,6 +962,12 @@ for pm in docs/postmortems/postmortem-*.md; do
     else
         fail "$pm follow_up_artifact '$fua' does not match canonical schema ADR-NNN|issue-NNN|PR-NNN|none (ADR-015)"
     fi
+    # Cross-field rule: follow_up_artifact must not be 'none' when
+    # generalizes is Yes or Unclear (capture-postmortem.md Phase 4 /
+    # mirror-postmortem.md Phase 1 policy).
+    if [[ "$gen" =~ ^(Yes|Unclear)$ ]] && [[ "$fua" == "none" ]]; then
+        fail "$pm follow_up_artifact must not be 'none' when generalizes is '$gen' (ADR-015)"
+    fi
 done
 
 echo ""
