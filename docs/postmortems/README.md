@@ -14,9 +14,41 @@ happened was Z." Without the second half, the same mistakes recur.
 | Postmortem | Title | Date | Generalizes? |
 |---|---|---|---|
 | [postmortem-001](./postmortem-001-workflow-bypass.md) | Workflow bypass on Phases 2–7 (downstream `cmmc-level2-aws-enclave-reference2`) | 2026-04-24 | Yes — triggered [ADR-012](../decisions/adr-012-explicit-workflow-preconditions.md) |
+| [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) | Prompts 1–6 produced architecture instead of working demo (downstream `cloud_migration_POC`) | 2026-04-15 | Yes — design-for-outcomes enforcement (#69 / PR #70, #201 / PR #203); supersedes [#219](https://github.com/mikejmckinney/ai-repo-template/issues/219) |
 
 When you add a new postmortem, add a row above. The "Generalizes?" column is
 the only one that affects the template — see "What generalizes" below.
+
+## Stack-tagged index
+
+Mirrored postmortems are grouped here by the `stacks:` tags in their YAML
+frontmatter so that an agent onboarding into a project using stack X can
+scan for prior lessons. This index is hand-maintained on each mirror PR
+(see ADR-015 — auto-generation deferred).
+
+If your project uses one of the stacks below, read the listed postmortems
+before starting non-trivial work in that stack.
+
+### (universal)
+
+- [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: prompt-engineering, multi-prompt-sequence)
+
+### github-actions
+
+- [postmortem-001](./postmortem-001-workflow-bypass.md) — Workflow bypass on Phases 2–7 (also: bash)
+
+### bash
+
+- [postmortem-001](./postmortem-001-workflow-bypass.md) — Workflow bypass on Phases 2–7 (also: github-actions)
+
+### prompt-engineering
+
+- [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: multi-prompt-sequence)
+
+### multi-prompt-sequence
+
+- [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: prompt-engineering)
+
 
 ## When to write a postmortem
 
@@ -89,19 +121,46 @@ If your postmortem is missing one of these, the postmortem isn't done.
 ## Downstream-project lessons
 
 The postmortem schema is intentionally project-agnostic so it can also
-capture lessons from projects built *from* this template. The automated
-mechanism for collecting those lessons doesn't exist yet — see
-[issue #150](https://github.com/mikejmckinney/ai-repo-template/issues/150)
-for the planned feedback loop (registry, opt-in, promotion gate).
+capture lessons from projects built *from* this template. The v1
+procedure (manual, prompt-driven; see [ADR-015](../decisions/adr-015-postmortem-feedback-loop.md))
+uses two prompts:
 
-Until that mechanism ships, downstream postmortems may still be **mirrored
-here manually** when both:
+- **In the downstream project** — run
+  [`.github/prompts/capture-postmortem.md`](../../.github/prompts/capture-postmortem.md).
+  Walks the agent through the template, forces an explicit
+  `What generalizes` decision, requires the YAML frontmatter (incl.
+  stack tags) introduced by ADR-015.
+- **Mirroring back to the template** — run
+  [`.github/prompts/mirror-postmortem.md`](../../.github/prompts/mirror-postmortem.md).
+  Validates the source frontmatter, refuses to mirror without a
+  concrete same-PR follow-up, copies the body verbatim with a
+  provenance header, and updates the stack-tagged index above.
 
-1. The lesson generalizes to every repo built from this template, and
-2. The same PR ships a concrete template-side follow-up — a new ADR, a
-   rule update, or a prompt edit.
+Mirroring without a follow-up is not permitted — per "What generalizes"
+above, a postmortem alone changes nothing. The mirror prompt enforces
+this operationally; do not work around it by editing files by hand.
 
-The provenance header on the mirrored file must cite the source repo and
-the PR that mirrored it. `postmortem-001` is the first such mirror; it
-triggered ADR-012. Mirroring without a follow-up is not permitted — per
-"What generalizes" above, a postmortem alone changes nothing.
+### Project-agnostic vs stack-specific vs project-only lessons
+
+Every mirrored postmortem must classify into one of three tiers. ADR-015
+records the rationale; the operational rules:
+
+- **Universal** — lesson applies to every repo built from the template,
+  regardless of stack. Follow-up artifact is an edit to `AGENTS.md`,
+  `.context/rules/`, a prompt under `.github/prompts/`, or a new ADR.
+  The mirrored postmortem documents the incident; the rule lives in
+  the conventional surface.
+- **Stack-specific** — lesson applies only to repos using the named
+  stack(s) in `stacks:`. Follow-up is the mirrored postmortem itself
+  plus its row in the stack-tagged index above. **Does NOT** modify
+  `AGENTS.md` or `.context/rules/`. This boundary is load-bearing —
+  see ADR-015. If you find yourself wanting to add a Terraform /
+  Python / Rust / etc. tip to AGENTS.md, that is the signal to stop
+  and re-read this section.
+- **Project-only** — lesson is specific to the source project's
+  domain, data, or compliance regime. Stays in the source repo's
+  postmortem. Not mirrored.
+
+When the classification is genuinely unclear, use `generalizes: Unclear`
+in the frontmatter and file an issue titled
+`Re-evaluate postmortem-NNN after second occurrence` as the follow-up.

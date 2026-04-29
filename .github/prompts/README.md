@@ -24,10 +24,27 @@ lists come after, not before.
 ## Files here
 
 - **Shared procedural prompts** (template-provided; e.g.) — `pr-resolve-all.md`,
-  `repo-onboarding.md`, `expand-backlog-entry.md`.
+  `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`,
+  `mirror-postmortem.md`.
   These describe procedures, not deliverables, and don't require pre-flight.
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.
+
+### Postmortem feedback loop
+
+Two of the shared prompts above implement the v1 downstream-postmortem
+feedback loop ratified in [ADR-015](../../docs/decisions/adr-015-postmortem-feedback-loop.md):
+
+- `capture-postmortem.md` — run in a downstream project repo when an
+  incident matches the criteria in
+  [`docs/postmortems/README.md`](../../docs/postmortems/README.md) →
+  "When to write a postmortem". Walks the agent through the template
+  with required YAML frontmatter (incl. stack tags) and an explicit
+  `What generalizes` decision.
+- `mirror-postmortem.md` — run against `mikejmckinney/ai-repo-template`
+  to mirror a generalizable downstream postmortem back. Validates the
+  source frontmatter, refuses to mirror without a concrete same-PR
+  follow-up artifact, and updates the stack-tagged index.
 
 ## Frontmatter schema
 

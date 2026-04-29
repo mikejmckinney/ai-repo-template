@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 4 -->
+<!-- AGENTS_MD_VERSION: 5 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
@@ -12,7 +12,7 @@
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v4` (matching
+substantive reply with the exact token `Session handshake v5` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -136,9 +136,9 @@ to catch this failure mode.
 - `bug` label, `docs` label (no new behavior), `dependencies` label,
   reverts, `chore:*` labels, internal refactors with no user-facing change.
 - Issues referencing only shared procedural prompts (`pr-resolve-all.md`,
-  `repo-onboarding.md`, `expand-backlog-entry.md`)
-  or prompt documentation (`README.md`) under `.github/prompts/` — those
-  describe procedures, not deliverables.
+  `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`,
+  `mirror-postmortem.md`) or prompt documentation (`README.md`) under
+  `.github/prompts/` — those describe procedures, not deliverables.
 
 Skipping this gate when it applies is a known failure mode. If you find
 yourself reasoning "this issue looks clear enough, I'll skip pre-flight,"
@@ -218,6 +218,9 @@ The two gates have different trigger conditions and will be unified in #155.
 
 ## Ongoing maintenance
 Doc-sync triggers (which files must update together) live in a single source of truth: **`.context/rules/process_doc_maintenance.md`**. Read it before opening a PR; Judge enforces it at diff-gate.
+
+### Postmortem feedback loop
+When a downstream project (a repo built *from* this template) hits an incident worth a postmortem, run `.github/prompts/capture-postmortem.md` in that project repo. If the resulting postmortem's `generalizes:` is `Yes` or `Unclear`, run `.github/prompts/mirror-postmortem.md` against this template to mirror it back with a same-PR follow-up. The three-tier promotion policy (universal → AGENTS.md / `.context/rules/` / new ADR; stack-specific → mirrored postmortem only, never AGENTS.md; project-only → stays in source repo) is defined in `docs/postmortems/README.md` and ratified in [ADR-015](docs/decisions/adr-015-postmortem-feedback-loop.md). Do NOT add per-stack guidance (Terraform, Python, Rust, etc.) to this file — that is the failure mode the policy exists to prevent.
 
 ### Session-state cadence
 Keep agent working memory current so the next session (or next role) can resume cleanly. **Working state must live in `.context/state/`** — the LLM tool's in-conversation todo list and `/memories/session/` are agent-private scratch surfaces invisible to any other session, and are never substitutes for the checked-in files below. If your only record of in-progress work is in scratch surfaces, that work is lost the moment the session ends.

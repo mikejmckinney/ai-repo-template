@@ -16,7 +16,10 @@
 
 <!-- List concrete outcomes, not just "worked on X" -->
 
-- No sessions recorded yet
+- **#150 / PR #218** — shipped postmortem feedback loop v1: `capture-postmortem.md` + `mirror-postmortem.md` prompts, ADR-015, three-tier promotion policy in `docs/postmortems/README.md`, frontmatter schema on `postmortem-template.md`, backfilled frontmatter on postmortem-001, new postmortem-002 (cloud_migration_POC), test.sh invariants, AGENTS.md pointer.
+- **Bot review round 1** — 10 findings across codex (2) / gemini (2) / copilot (6) all resolved in commit `45094e9`. Filed real follow-up #219 (re-evaluate postmortem-002 if multi-prompt-sequence mismatch recurs).
+- **What was harder than expected**: postmortem-002's frontmatter had a three-way internal inconsistency (synthesized backfill + `mirror_status: mirrored-from:...` + `generalizes: Yes` + `follow_up_artifact: issue-TBD`) that was invisible during single-pass authoring; bot review caught it. Lesson: when a file's frontmatter encodes a policy claim, the policy's own enforcement rule (here: "no `Yes` without a real follow-up artifact") needs a regex-level gate, not just prose. Pushed that gate into `mirror-postmortem.md` Phase 1 (rejects `TBD`/placeholder forms via `^(ADR-\d+|issue-\d+|PR-\d+|none)$`).
+- **What generalizes** → likely promotion candidates: (a) the placeholder-rejection pattern is reusable for any prompt that gates output on "real artifact name" — worth extracting to agent-best-practices once a second instance appears; (b) the awk frontmatter validator (positioning + closing-delimiter, distinct exit codes) is a general repo-wide pattern. No follow-up filed yet — N=1.
 
 ## Key Decisions Made
 
@@ -24,7 +27,11 @@
 
 | Decision | Rationale |
 |----------|-----------|
-| N/A | N/A |
+| postmortem-002 verdict `Yes` → `Unclear` | N=1 isn't a pattern; README's own rule says "appears once is an anecdote." Filing #219 to re-evaluate on second occurrence preserves the signal without locking in a premature template-rule edit. |
+| postmortem-002 `mirror_status: mirrored-from:...` → `original` | The file was *authored* in this template (synthesized backfill); `mirrored-from:` documents file provenance, not incident provenance. The two were conflated. Provenance comment now explains the distinction. |
+| postmortem-template.md default `generalizes: Unclear` + `follow_up_artifact: none` → `No` + `none` | Only consistent placeholder combo. `Unclear` requires a follow-up per the schema's own rule, so a template default of `Unclear` would force every copy to start in violation. |
+| Pin `source_commit` to SHA, not branch name | Branch refs move; immutability is the whole point of provenance metadata. |
+| Auto-resolve all 10 bot threads (Phase 4 default ON) | Per ADR-008/pr-resolve-all.md: every per-thread gate (allow-listed bot author + ✅ Fixed + verification green) passed; relay fallback wasn't needed (no FORBIDDEN). |
 
 ## What Didn't Work
 

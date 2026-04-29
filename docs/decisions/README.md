@@ -28,6 +28,7 @@
 | [ADR-012](./adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions in AGENTS.md (branch-and-commit, cadence sharpenings) | Accepted |
 | [ADR-013](./adr-013-pre-commit-on-main-default.md) | Pre-commit hook for `main` protection — not installed by default | Accepted |
 | [ADR-014](./adr-014-extend-preflight-to-adhoc-deliverables.md) | Extend Analyst Pre-Flight gate to ad-hoc deliverable issues | Accepted |
+| [ADR-015](./adr-015-postmortem-feedback-loop.md) | Postmortem feedback loop from downstream projects (capture + mirror prompts; three-tier promotion policy; v1 = manual) | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.
