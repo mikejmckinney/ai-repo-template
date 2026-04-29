@@ -252,15 +252,24 @@ After pushing the PR, run this loop until it converges:
 2. **Check bot-authored reviews** (Copilot review, Gemini, etc.). If any are present, address them following `.github/prompts/pr-resolve-all.md` Phases 1–4. That prompt defines what counts as "addressed" (Phase 2 status set: `✅ Fixed`, `✅ Already resolved`, `⚠️ Needs clarification`, `⚠️ Partial fix`, `❌ Not reproducible`, `❌ Out of scope`); do not invent labels or redefine the set here.
 3. **After your fix-commit lands, re-check.** Bot re-review on push is opportunistic today (the re-review-on-push automation tracked in #205 — distinct from the existing thread-resolution relay in `agent-relay-reviews.yml` — is not yet shipped); if a re-review didn't fire, re-read the PR yourself before declaring done. Loop until clean.
 
-**Stop condition.** PR is clean when: CI green + every bot thread is either auto-resolved by `pr-resolve-all.md` Phase 4 (only when its Phase 2 status is `✅ Fixed`) or left open with a deferral reply (for `❌ Out of scope` / `❌ Not reproducible` / `⚠️` outcomes — humans expect to acknowledge those themselves) + your Resolution Report is posted per `pr-resolve-all.md` Phase 3.
+**Stop condition.** PR is clean when:
 
-**Escape valve.** If a bot finding is intentionally out-of-scope or wrong, post a one-line deferral reply on the thread explaining why and **leave the thread open** for human acknowledgement (per `pr-resolve-all.md` → "Safety rules": never resolve a thread whose Phase 2 item is not `✅ Fixed`). "Deferred with comment, awaiting human acknowledgement" counts as addressed. Silently ignoring a bot finding does not.
+- CI is green.
+- Every bot thread is either auto-resolved by `pr-resolve-all.md` Phase 4 (only when its Phase 2 status is `✅ Fixed`) or left open with a deferral reply (for `❌ Out of scope` / `❌ Not reproducible` / `⚠️` outcomes — humans expect to acknowledge those themselves).
+- Your Resolution Report is posted per `pr-resolve-all.md` Phase 3.
+
+**Escape valve.** If a bot finding is intentionally out-of-scope or wrong:
+
+1. Post a one-line deferral reply on the thread explaining why.
+2. **Leave the thread open** for human acknowledgement (per `pr-resolve-all.md` → "Safety rules": never resolve a thread whose Phase 2 item is not `✅ Fixed`).
+
+"Deferred with comment, awaiting human acknowledgement" counts as addressed. Silently ignoring a bot finding does not.
 
 **Does NOT apply to**:
 
 - **Copilot's cloud SWE agent.** Its session ends at PR creation; the loop is handled out-of-band by `agent-fix-reviews.yml` + `agent-relay-reviews.yml` via webhook events. See `docs/guides/multi-agent-coordination.md` → "Branch-Per-Role Model".
 - **Bot-authored PRs** (Renovate, Dependabot, etc.). Maintainer reviews those.
-- **PRs marked `draft` or labeled `chore:no-plan`.** These are explicitly not "ready for review yet."
+- **PRs marked `draft`.** These are explicitly not "ready for review yet."
 
 ## Validation
 - Run the repo's verification commands (prefer those documented in AI_REPO_GUIDE.md) before declaring done.
