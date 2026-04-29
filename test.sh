@@ -264,13 +264,33 @@ fi
 # Patterns are tightened to match exact YAML structure / API surface so the
 # checks don't false-pass on the same keyword appearing in a comment block.
 # Reported by copilot-pull-request-reviewer on PR #217.
+#
+# Policy on regex tightness (PR #217 rounds 3-4 retrospective):
+# This block validates the SHAPE of a workflow file we author and own.
+# It is NOT validating user-supplied input. Strict regexes act as a
+# low-fidelity formatter — they keep `agent-review-on-push.yml` in a
+# consistent canonical form and surface drift fast. We deliberately
+# DO NOT relax patterns to accept every YAML-legal alternate form
+# (single vs double quotes around `'true'`, zero-or-one space after a
+# colon, single-line flow-style permissions blocks, whitespace inside
+# `gh api graphql -f query='...'` strings, etc.). Those variants are
+# valid YAML / valid bash, but nothing in this repo's toolchain emits
+# them, so any test failure caused by such a reformat is a signal worth
+# inspecting (~30 sec to re-tighten or update the test). Tolerance
+# fixes ARE applied where the tradeoff genuinely tips the other way:
+#   - POSIX portability (awk replaces grep -Pzo for BSD/macOS)
+#   - Real semantic ambiguity (gemini-then-copilot vs copilot-then-gemini)
+#   - Anchoring to executable lines, not just any occurrence in the file
+# Gemini Code Assist is configured (in .gemini/styleguide.md) to skip
+# stylistic-quote-and-whitespace nits on this file; if it flags one
+# anyway, defer with a reply pointing at this comment.
 RP_FILE=".github/workflows/agent-review-on-push.yml"
 if [[ -f "$RP_FILE" ]]; then
     # Allow either single-line `types: [synchronize]` or multi-line list form
-    # (`types:` followed by `- synchronize`). YAML accepts both; the test
-    # should not be brittle to a stylistic reformat. Implementation uses
-    # awk (POSIX) instead of `grep -Pzo` so the test runs on macOS / BSD
-    # grep too \u2014 `-P` and `-z` are GNU extensions. Reported by
+    # (`types:` followed by `- synchronize`). YAML accepts both; both are
+    # idiomatic and a contributor may legitimately choose either. Implementation
+    # uses awk (POSIX) instead of `grep -Pzo` so the test runs on macOS / BSD
+    # grep too — `-P` and `-z` are GNU extensions. Reported by
     # gemini-code-assist and chatgpt-codex-connector on PR #217.
     if grep -qE '^[[:space:]]+types:[[:space:]]*\[[[:space:]]*synchronize[[:space:]]*\]' "$RP_FILE" \
        || awk '
@@ -284,18 +304,12 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing 'synchronize' under pull_request types"
     fi
-    # Tolerate quoting variants: `true`, `"true"`, `'true'`, with or without
-    # extra whitespace. Quote class allows zero-or-one of either quote on
-    # each side independently \u2014 that's enough for any real YAML scalar
-    # form. Reported by gemini-code-assist on PR #217.
-    if grep -qE "^[[:space:]]+cancel-in-progress:[[:space:]]*[\"']?true[\"']?[[:space:]]*\$" "$RP_FILE"; then
+    if grep -qE "^[[:space:]]+cancel-in-progress:[[:space:]]+true[[:space:]]*\$" "$RP_FILE"; then
         pass "agent-review-on-push.yml has concurrency cancel-in-progress: true"
     else
         fail "agent-review-on-push.yml missing 'cancel-in-progress: true'"
     fi
-    # Tolerate single OR double quotes around 'true' in the GitHub
-    # Actions expression. Reported by gemini-code-assist on PR #217.
-    if grep -qE "vars\.REVIEW_ON_PUSH[[:space:]]*==[[:space:]]*[\"']true[\"']" "$RP_FILE"; then
+    if grep -qE "vars\.REVIEW_ON_PUSH[[:space:]]*==[[:space:]]*'true'" "$RP_FILE"; then
         pass "agent-review-on-push.yml gated on vars.REVIEW_ON_PUSH == 'true'"
     else
         fail "agent-review-on-push.yml missing exact REVIEW_ON_PUSH opt-in gate"
@@ -312,12 +326,8 @@ if [[ -f "$RP_FILE" ]]; then
     # Anchor to the actual `gh api graphql -f query=...` line and the
     # `-f bots=...` argument so the invariant doesn't false-pass on
     # comment text alone. Reported by chatgpt-codex-connector on PR #217.
-    # Regex allows optional whitespace inside the GraphQL input braces so
-    # formatting variants (e.g. `{ pullRequestId:` with a space) still match.
-    # The -f bots= check drops BOL/EOL anchors to tolerate trailing args
-    # or quote style differences. Reported by gemini-code-assist on PR #217.
-    if grep -qE 'requestReviewsByLogin\(input:[[:space:]]*\{[[:space:]]*pullRequestId:' "$RP_FILE" \
-       && grep -qE 'bots=.*copilot-pull-request-reviewer\[bot\]' "$RP_FILE"; then
+    if grep -qE 'requestReviewsByLogin\(input:\{pullRequestId:' "$RP_FILE" \
+       && grep -qE "^[[:space:]]+-f bots='copilot-pull-request-reviewer\[bot\]'[[:space:]]*\$" "$RP_FILE"; then
         pass "agent-review-on-push.yml re-requests Copilot via GraphQL requestReviewsByLogin + suffixed bot login (executable line, not comment)"
     else
         fail "agent-review-on-push.yml missing executable requestReviewsByLogin mutation call or '-f bots=...[bot]' argument"
@@ -327,27 +337,23 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing -f body='/gemini review' comment"
     fi
-    # Drop BOL anchor so single-line flow style (permissions: { issues: write })
-    # also matches. Reported by gemini-code-assist on PR #217.
-    if grep -qE "issues:[[:space:]]+write" "$RP_FILE"; then
+    if grep -qE "^[[:space:]]+issues:[[:space:]]+write" "$RP_FILE"; then
         pass "agent-review-on-push.yml grants issues: write (required for /gemini review comment)"
     else
         fail "agent-review-on-push.yml missing 'issues: write' permission for issue-comments API"
     fi
     # Verify the actual conditional logic (both outcomes failure-AND-ed),
     # not just that the strings appear somewhere in the file. Tolerate
-    # either order (gemini-then-copilot or copilot-then-gemini) and
-    # single OR double quotes around 'failure'. Reported by
-    # gemini-code-assist on PR #217.
-    if grep -qE "steps\\.gemini\\.outcome[[:space:]]*==[[:space:]]*[\"']failure[\"'][[:space:]]*&&[[:space:]]*steps\\.copilot\\.outcome[[:space:]]*==[[:space:]]*[\"']failure[\"']" "$RP_FILE" \
-       || grep -qE "steps\\.copilot\\.outcome[[:space:]]*==[[:space:]]*[\"']failure[\"'][[:space:]]*&&[[:space:]]*steps\\.gemini\\.outcome[[:space:]]*==[[:space:]]*[\"']failure[\"']" "$RP_FILE"; then
-        pass "agent-review-on-push.yml fails job when BOTH nudges fail (verified gate logic, either order, either quote style)"
+    # either order (gemini-then-copilot or copilot-then-gemini) — a
+    # refactor may legitimately swap them. Reported by gemini-code-assist
+    # on PR #217.
+    if grep -qE "steps\.gemini\.outcome[[:space:]]*==[[:space:]]*'failure'[[:space:]]*&&[[:space:]]*steps\.copilot\.outcome[[:space:]]*==[[:space:]]*'failure'" "$RP_FILE" \
+       || grep -qE "steps\.copilot\.outcome[[:space:]]*==[[:space:]]*'failure'[[:space:]]*&&[[:space:]]*steps\.gemini\.outcome[[:space:]]*==[[:space:]]*'failure'" "$RP_FILE"; then
+        pass "agent-review-on-push.yml fails job when BOTH nudges fail (verified gate logic, either order)"
     else
         fail "agent-review-on-push.yml missing both-failed conditional gate (steps.gemini.outcome AND steps.copilot.outcome failure check)"
     fi
-    # YAML allows zero or more spaces after `GH_TOKEN:`; tolerate both.
-    # Reported by gemini-code-assist on PR #217.
-    if grep -qE 'GH_TOKEN:[[:space:]]*\$\{\{[[:space:]]*secrets\.CLAUDE_PAT[[:space:]]*\}\}' "$RP_FILE"; then
+    if grep -qE 'GH_TOKEN:[[:space:]]+\$\{\{[[:space:]]*secrets\.CLAUDE_PAT[[:space:]]*\}\}' "$RP_FILE"; then
         pass "agent-review-on-push.yml posts /gemini review under CLAUDE_PAT (real user identity)"
     else
         fail "agent-review-on-push.yml Gemini step missing CLAUDE_PAT (Gemini ignores bot-authored slash commands)"
