@@ -312,8 +312,12 @@ if [[ -f "$RP_FILE" ]]; then
     # Anchor to the actual `gh api graphql -f query=...` line and the
     # `-f bots=...` argument so the invariant doesn't false-pass on
     # comment text alone. Reported by chatgpt-codex-connector on PR #217.
-    if grep -qE "requestReviewsByLogin\\(input:\\{pullRequestId:" "$RP_FILE" \
-       && grep -qE "^[[:space:]]+-f bots='copilot-pull-request-reviewer\\[bot\\]'[[:space:]]*\$" "$RP_FILE"; then
+    # Regex allows optional whitespace inside the GraphQL input braces so
+    # formatting variants (e.g. `{ pullRequestId:` with a space) still match.
+    # The -f bots= check drops BOL/EOL anchors to tolerate trailing args
+    # or quote style differences. Reported by gemini-code-assist on PR #217.
+    if grep -qE 'requestReviewsByLogin\(input:[[:space:]]*\{[[:space:]]*pullRequestId:' "$RP_FILE" \
+       && grep -qE 'bots=.*copilot-pull-request-reviewer\[bot\]' "$RP_FILE"; then
         pass "agent-review-on-push.yml re-requests Copilot via GraphQL requestReviewsByLogin + suffixed bot login (executable line, not comment)"
     else
         fail "agent-review-on-push.yml missing executable requestReviewsByLogin mutation call or '-f bots=...[bot]' argument"
@@ -323,7 +327,9 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing -f body='/gemini review' comment"
     fi
-    if grep -qE "^[[:space:]]+issues:[[:space:]]+write" "$RP_FILE"; then
+    # Drop BOL anchor so single-line flow style (permissions: { issues: write })
+    # also matches. Reported by gemini-code-assist on PR #217.
+    if grep -qE "issues:[[:space:]]+write" "$RP_FILE"; then
         pass "agent-review-on-push.yml grants issues: write (required for /gemini review comment)"
     else
         fail "agent-review-on-push.yml missing 'issues: write' permission for issue-comments API"
