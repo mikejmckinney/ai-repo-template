@@ -3,7 +3,7 @@ postmortem_number: 002
 date: 2026-04-15
 source_repo: mikejmckinney/cloud_migration_POC
 source_commit: 4943212140cbcec760221ba405b437d678a26771
-stacks: [prompt-engineering, multi-prompt-sequence]
+stacks: []
 generalizes: Yes
 follow_up_artifact: issue-69
 mirror_status: original

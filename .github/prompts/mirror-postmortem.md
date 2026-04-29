@@ -143,8 +143,8 @@ the YAML into the styled table view (HTML comments before the opening
    Source URL: https://github.com/<source-repo>/blob/<commit-sha>/docs/postmortems/postmortem-NNN-<slug>.md
    (Pin to a commit SHA, not a branch name — branches are moving refs
    and weaken provenance.)
-   Mirrored: YYYY-MM-DD (in PR for issue #NNN; <any supersession context>).
-   Triggered: <ADR-NNN | rule edit | prompt edit | issue #NNN>.
+   Mirrored: YYYY-MM-DD (use current date; in PR for issue #NNN; <any supersession context>).
+   Triggered: <ADR-NNN | rule edit | prompt edit | issue #NNN> (pick one and fill).
    Source H1 number: <source-NNN> (renumbered to template-NNN in the H1
    below per Phase 3 step 3 carve-out; recorded here so nothing is lost).
 

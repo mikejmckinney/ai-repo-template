@@ -932,6 +932,21 @@ for pm in docs/postmortems/postmortem-*.md; do
     else
         pass "$pm has all required frontmatter keys"
     fi
+    # Validate source_commit looks like a commit SHA (7-40 hex chars).
+    # Values like 'main' or 'release/latest' are mutable branch refs and
+    # weaken incident provenance (ADR-015 requires immutable SHA).
+    # The template file legitimately holds the placeholder string
+    # '<sha-at-time-of-incident>' — skip the SHA format check for it.
+    if [[ "$pm" != *postmortem-template* ]]; then
+        sc=$(grep -E '^source_commit: ' <<<"$fm" | sed 's/^source_commit: //' | tr -d '[:space:]')
+        if [[ -z "$sc" ]]; then
+            : # already caught by the required-keys loop above
+        elif [[ ! "$sc" =~ ^[0-9a-fA-F]{7,40}$ ]]; then
+            fail "$pm source_commit '$sc' does not look like a commit SHA (need 7-40 hex chars; ADR-015)"
+        else
+            pass "$pm source_commit looks like a commit SHA"
+        fi
+    fi
 done
 
 echo ""
