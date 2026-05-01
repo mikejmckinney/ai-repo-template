@@ -45,7 +45,7 @@ whether it came from the backlog, a `workflow_dispatch`, or a human
 applying the label in the web UI — `.github/workflows/agent-assign-copilot.yml`
 will take over: it checks the concurrent budget (`MAX_COPILOT_CONCURRENT`,
 default 3) and the rolling 24-hour daily cap (`MAX_COPILOT_DAILY`,
-default 20), then either assigns Copilot via GraphQL, swaps the label
+default 10), then either assigns Copilot via GraphQL, swaps the label
 to `copilot:queued`, or hard-stops with `copilot:daily-cap-hit`. The
 queue drains automatically when a Copilot PR merges or a slot is
 released (see `agent-release-slot.yml`).
@@ -210,6 +210,7 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. Per-PR override: `cap-override` label on the PR (unbounded) or `@<agent> cap-override N` comment on the PR (N rounds). Only raise from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 
+### 1. Copilot subscription
 Any paid plan works: Pro ($10/mo), Pro+ ($39/mo), or Business ($21/seat/mo).
 The cloud agent is included.
 
@@ -253,6 +254,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `copilot:ready` | `#0E8A16` (green) | Assign Copilot when budget allows (applied to backlog issues unless `auto_assign: false`) |
 | `copilot:in-progress` | `#1D76DB` (blue) | Assigned to Copilot; counts toward `MAX_COPILOT_CONCURRENT` |
 | `copilot:queued` | `#FBCA04` (amber) | Waiting for an open Copilot slot (swapped in by `agent-assign-copilot.yml` when concurrent cap is hit) |
+| `copilot:budget-paused` | `#E4E669` (yellow) | 90% daily spend threshold hit; **not** auto-drained by queue workers. Add `cap-override` + `copilot:ready` to resume manually |
 | `copilot:daily-cap-hit` | `#D93F0B` (red-orange) | Hit `MAX_COPILOT_DAILY`; requires manual re-queue |
 | `from-backlog` | `#5319E7` (purple) | Issue auto-created from `.context/backlog.yaml` |
 | `needs-human` | `#B60205` (red) | Requires human input (e.g., empty roadmap phase, CI failure, sparse entry that couldn't be expanded) |
@@ -453,6 +455,7 @@ automatically post-merge.
 | Enable Claude review resolution on this PR | Add `claude-fix` label |
 | Use Copilot (not Claude) for review resolution | Add `copilot-relay` label |
 | Fix cycle exhausted (3/3) | Review remaining comments yourself, merge manually |
+| Fix cycle exhausted, want more rounds | Add `cap-override` label to the PR (unbounded) or comment `@<agent> cap-override N` (N rounds). See `PR_RESOLVE_MAX_ROUNDS` in Repository variables above |
 | Copilot's implementation is wrong | Comment on the PR with corrections, Copilot picks them up |
 | Claude can't resolve a comment | Marked as "Needs clarification" in the resolution report — address manually |
 | Merge conflict between parallel PRs | Merge one first, then comment on the other asking Copilot to rebase |

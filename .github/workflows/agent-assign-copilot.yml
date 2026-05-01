@@ -64,6 +64,22 @@ jobs:
           fi
           echo "issue=$issue" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve issue labels
+        id: labels
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ steps.target.outputs.issue }}
+        run: |
+          # fetch labels from the resolved issue number so workflow_dispatch
+          # runs (where github.event.issue is null) get the correct label set.
+          if gh issue view "$ISSUE" --repo "$REPO" --json labels \
+              --jq '.labels[].name' | grep -q '^cap-override$'; then
+            echo "has_cap_override=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_cap_override=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check concurrent budget
         id: budget
         env:
@@ -176,7 +192,7 @@ jobs:
             --body "📊 **75% daily spend threshold** ($COUNT / $MAX Copilot assignments today). Proceeding with this assignment; agents should prefer cheaper model tiers for remaining work today."
 
       - name: Hard-pause at 90% spend threshold
-        if: steps.daily.outputs.threshold == '90' && !contains(github.event.issue.labels.*.name, 'cap-override')
+        if: steps.daily.outputs.threshold == '90' && steps.labels.outputs.has_cap_override != 'true'
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}
@@ -187,9 +203,9 @@ jobs:
           echo "::error::90% daily spend threshold: $COUNT / $MAX. Pausing new assignments."
           gh issue edit "$ISSUE" --repo "$REPO" \
             --remove-label "copilot:ready" \
-            --add-label "copilot:queued"
+            --add-label "copilot:budget-paused"
           gh issue comment "$ISSUE" --repo "$REPO" \
-            --body "⚠️ **90% daily spend threshold** ($COUNT / $MAX Copilot assignments today). Pausing new assignments until tomorrow. To override: add the \`cap-override\` label to this issue and re-apply \`copilot:ready\`."
+            --body "⚠️ **90% daily spend threshold** ($COUNT / $MAX Copilot assignments today). Pausing new assignments until tomorrow. To override: add the \`cap-override\` label to this issue and re-apply \`copilot:ready\` (the \`copilot:budget-paused\` label is intentionally not auto-drained by queue workers)."
           exit 0
 
       - name: Queue if budget full
@@ -211,7 +227,7 @@ jobs:
         if: >
           steps.budget.outputs.has_slot == 'true' &&
           steps.daily.outputs.over_daily != 'true' &&
-          (steps.daily.outputs.threshold != '90' || contains(github.event.issue.labels.*.name, 'cap-override'))
+          (steps.daily.outputs.threshold != '90' || steps.labels.outputs.has_cap_override == 'true')
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}

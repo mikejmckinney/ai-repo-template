@@ -283,8 +283,8 @@ if [[ -n "$_pipeline_setup_skip_reason" ]]; then
     log_warn "Ad-hoc alternative (current Codespace only):"
     log_warn "  unset GITHUB_TOKEN && gh auth login -s repo,workflow && ./scripts/setup.sh"
     log_warn "Or create the following manually:"
-    log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
-    log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
+    log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
+    log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10"
 elif [[ -n "$_gh_auth_ok" ]]; then
     # Last-resort FULL_REPO fallback: if Step 0 couldn't parse a remote and
     # no env override was provided, ask gh itself. This works when gh has
@@ -317,8 +317,8 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         log_warn "  b) One-shot override:"
         log_warn "       GH_REPO=<owner>/<repo> ./scripts/setup.sh"
         log_warn "Or create the following manually in the GitHub UI:"
-        log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
-        log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
+        log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
+        log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10"
     else
         # Scope every `gh` call in this block to FULL_REPO. gh respects
         # GH_REPO as the "default repo" override, which avoids having to
@@ -357,6 +357,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "copilot:ready"         "0E8A16" "Assign Copilot when budget allows"
     _ensure_label "copilot:in-progress"   "1D76DB" "Assigned to Copilot, counts toward concurrent budget"
     _ensure_label "copilot:queued"        "FBCA04" "Waiting for an open Copilot slot"
+    _ensure_label "copilot:budget-paused" "E4E669" "90% daily spend threshold hit; not auto-drained; add cap-override + copilot:ready to resume"
     _ensure_label "copilot:daily-cap-hit" "D93F0B" "Hit daily assignment cap; manual re-queue required"
     _ensure_label "from-backlog"          "5319E7" "Issue auto-created from .context/backlog.yaml"
     _ensure_label "needs-human"           "B60205" "Requires human input (e.g., empty roadmap phase, CI failure)"
@@ -364,7 +365,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "no-coordination-check" "EDEDED" "Opt PR out of agent-coordination-sync.yml suggestions"
     _ensure_label "chore:no-plan"         "EDEDED" "Exempt this issue/PR from the plan-as-comment requirement (ADR-011)"
     _ensure_label "outcome-validated"     "0E8A16" "Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)"
-    log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:*, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated)"
+    log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:*, copilot:budget-paused, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated)"
 
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is
@@ -383,7 +384,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         fi
     }
     _ensure_variable MAX_COPILOT_CONCURRENT 3
-    _ensure_variable MAX_COPILOT_DAILY 20
+    _ensure_variable MAX_COPILOT_DAILY 10
 
     # REVIEW_ON_PUSH (issue #205): opt-in toggle for agent-review-on-push.yml,
     # which nudges Gemini (`/gemini review` comment under CLAUDE_PAT) and
@@ -460,8 +461,8 @@ elif [[ -n "$_gh_auth_ok" ]]; then
 else
     log_warn "gh CLI not authenticated; skipping label/variable creation."
     log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
-    log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
-    log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=20"
+    log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan"
+    log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10"
 fi
 
 # --- Step 6: Verify Environment ---
