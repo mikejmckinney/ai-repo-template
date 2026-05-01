@@ -366,7 +366,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "chore:no-plan"         "EDEDED" "Exempt this issue/PR from the plan-as-comment requirement (ADR-011)"
     _ensure_label "outcome-validated"     "0E8A16" "Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)"
     _ensure_label "cap-override"          "FBCA04" "Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)"
-    log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:*, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated, cap-override)"
+    log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated, cap-override)"
 
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
     # re-run of setup.sh doesn't clobber tuned values. `gh variable get` is
