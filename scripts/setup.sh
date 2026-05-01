@@ -392,7 +392,8 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     if [[ "$(gh variable get MAX_COPILOT_DAILY 2>/dev/null)" == "20" ]] && \
        [[ "$(gh variable get MAX_COPILOT_DAILY_MIGRATED_V1 2>/dev/null)" != "true" ]]; then
         if gh variable set MAX_COPILOT_DAILY --body "10" 2>/dev/null; then
-            gh variable set MAX_COPILOT_DAILY_MIGRATED_V1 --body "true" 2>/dev/null || true
+            gh variable set MAX_COPILOT_DAILY_MIGRATED_V1 --body "true" 2>/dev/null \
+                || log_warn "Could not set MAX_COPILOT_DAILY_MIGRATED_V1 marker — if MAX_COPILOT_DAILY is restored to 20, re-running setup.sh may re-migrate. Set manually: gh variable set MAX_COPILOT_DAILY_MIGRATED_V1 --body true"
             log_warn "Migrated MAX_COPILOT_DAILY 20 → 10 (phase-1 cost-mitigation default). If 20 was intentional, restore it: gh variable set MAX_COPILOT_DAILY --body 20"
         else
             log_warn "Could not migrate MAX_COPILOT_DAILY — set it manually to 10 if desired."

@@ -188,7 +188,7 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 
 | Secret | Required by | Scopes / Source |
 |--------|-------------|-----------------|
-| `CLAUDE_PAT` | All 12 agent workflows that call `gh` (assignment, auto-merge, auto-ready, coordination-sync, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Metadata R |
+| `CLAUDE_PAT` | All 12 agent workflows that call `gh` (assignment, auto-merge, auto-ready, coordination-sync, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
 | `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
 
 **Two ways to provide them**, in order of preference for users running multiple derived repos:
