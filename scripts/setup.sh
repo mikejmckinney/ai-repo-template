@@ -400,6 +400,12 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         fi
     fi
     _ensure_variable MAX_COPILOT_DAILY 10
+    # Ensure the migration marker is set for ALL installs (including fresh ones that
+    # never entered the migration block above). Without this, repos seeded with
+    # MAX_COPILOT_DAILY=10 by _ensure_variable have no marker, so a maintainer who
+    # later intentionally sets the value to 20 would have it silently forced back
+    # to 10 on the next setup.sh run.
+    _ensure_variable MAX_COPILOT_DAILY_MIGRATED_V1 "true"
     _ensure_variable PR_RESOLVE_MAX_ROUNDS 3
 
     # REVIEW_ON_PUSH (issue #205): opt-out toggle for agent-review-on-push.yml,
