@@ -472,6 +472,31 @@ else
     fail "scripts/setup.sh missing _ensure_label \"outcome-validated\" (ADR-014)"
 fi
 
+# Issue #220 Phase 1: new labels and variables wired up in setup.sh and docs.
+if grep -q '_ensure_label "copilot:budget-paused"' scripts/setup.sh 2>/dev/null; then
+    pass "scripts/setup.sh declares the copilot:budget-paused label (issue #220)"
+else
+    fail "scripts/setup.sh missing _ensure_label \"copilot:budget-paused\" (issue #220)"
+fi
+
+if grep -q '_ensure_label "cap-override"' scripts/setup.sh 2>/dev/null; then
+    pass "scripts/setup.sh declares the cap-override label (issue #220)"
+else
+    fail "scripts/setup.sh missing _ensure_label \"cap-override\" (issue #220)"
+fi
+
+if grep -q '_ensure_variable PR_RESOLVE_MAX_ROUNDS' scripts/setup.sh 2>/dev/null; then
+    pass "scripts/setup.sh provisions PR_RESOLVE_MAX_ROUNDS variable (issue #220)"
+else
+    fail "scripts/setup.sh missing _ensure_variable PR_RESOLVE_MAX_ROUNDS (issue #220)"
+fi
+
+if grep -q 'PR_RESOLVE_MAX_ROUNDS' docs/guides/agent-pipeline.md 2>/dev/null; then
+    pass "agent-pipeline.md documents PR_RESOLVE_MAX_ROUNDS knob (issue #220)"
+else
+    fail "agent-pipeline.md missing PR_RESOLVE_MAX_ROUNDS documentation (issue #220)"
+fi
+
 if [[ -f "$ADR014_PATH" ]] \
     && grep -qE '^Accepted$' "$ADR014_PATH" 2>/dev/null; then
     pass "ADR-014 exists with Status: Accepted"

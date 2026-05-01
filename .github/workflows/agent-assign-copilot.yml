@@ -73,10 +73,17 @@ jobs:
         run: |
           # fetch labels from the resolved issue number so workflow_dispatch
           # runs (where github.event.issue is null) get the correct label set.
-          if gh issue view "$ISSUE" --repo "$REPO" --json labels \
-              --jq '.labels[].name' | grep -q '^cap-override$'; then
-            echo "has_cap_override=true" >> "$GITHUB_OUTPUT"
+          # Fail-closed: if gh issue view errors (transient API failure), emit
+          # a workflow warning and treat cap-override as absent so the budget
+          # guard still fires rather than silently bypassing it.
+          if labels=$(gh issue view "$ISSUE" --repo "$REPO" --json labels --jq '.labels[].name'); then
+            if echo "$labels" | grep -q '^cap-override$'; then
+              echo "has_cap_override=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "has_cap_override=false" >> "$GITHUB_OUTPUT"
+            fi
           else
+            echo "::warning::Could not fetch labels for issue $ISSUE; treating cap-override as absent"
             echo "has_cap_override=false" >> "$GITHUB_OUTPUT"
           fi
 

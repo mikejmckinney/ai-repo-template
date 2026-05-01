@@ -365,7 +365,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "no-coordination-check" "EDEDED" "Opt PR out of agent-coordination-sync.yml suggestions"
     _ensure_label "chore:no-plan"         "EDEDED" "Exempt this issue/PR from the plan-as-comment requirement (ADR-011)"
     _ensure_label "outcome-validated"     "0E8A16" "Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)"
-    _ensure_label "cap-override"          "FBCA04" "Bypass max-round cap for pr-resolve-all.md; also bypasses 90% daily spend pause in agent-assign-copilot.yml"
+    _ensure_label "cap-override"          "FBCA04" "Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)"
     log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:*, copilot:budget-paused, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated, cap-override)"
 
     # Budget knobs for agent-assign-copilot.yml. Only set if missing so a
