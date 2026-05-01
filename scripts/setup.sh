@@ -385,16 +385,18 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         fi
     }
     _ensure_variable MAX_COPILOT_CONCURRENT 3
-    # Migrate existing installs from old default (20) to new cost-mitigation default (10).
-    # _ensure_variable skips variables that already exist, so without this check a
-    # re-run of setup.sh on an existing install would leave MAX_COPILOT_DAILY at 20.
-    # NOTE: This only fires when the current value is exactly "20" (the old default).
-    # If you deliberately want MAX_COPILOT_DAILY=20, restore it after setup.sh:
-    #   gh variable set MAX_COPILOT_DAILY --body 20
-    if [[ "$(gh variable get MAX_COPILOT_DAILY 2>/dev/null)" == "20" ]]; then
-        gh variable set MAX_COPILOT_DAILY --body "10" 2>/dev/null \
-            && log_warn "Migrated MAX_COPILOT_DAILY 20 → 10 (phase-1 cost-mitigation default). If 20 was intentional, restore it: gh variable set MAX_COPILOT_DAILY --body 20" \
-            || log_warn "Could not migrate MAX_COPILOT_DAILY — set it manually to 10 if desired."
+    # One-time migration: old default was 20; new default is 10 (phase-1 cost mitigation).
+    # Gated on MAX_COPILOT_DAILY_MIGRATED_V1 so setup.sh is idempotent — if a maintainer
+    # deliberately restores MAX_COPILOT_DAILY=20 after the initial migration, subsequent
+    # setup.sh reruns will see the marker is already set and skip, preserving the choice.
+    if [[ "$(gh variable get MAX_COPILOT_DAILY 2>/dev/null)" == "20" ]] && \
+       [[ "$(gh variable get MAX_COPILOT_DAILY_MIGRATED_V1 2>/dev/null)" != "true" ]]; then
+        if gh variable set MAX_COPILOT_DAILY --body "10" 2>/dev/null; then
+            gh variable set MAX_COPILOT_DAILY_MIGRATED_V1 --body "true" 2>/dev/null || true
+            log_warn "Migrated MAX_COPILOT_DAILY 20 → 10 (phase-1 cost-mitigation default). If 20 was intentional, restore it: gh variable set MAX_COPILOT_DAILY --body 20"
+        else
+            log_warn "Could not migrate MAX_COPILOT_DAILY — set it manually to 10 if desired."
+        fi
     fi
     _ensure_variable MAX_COPILOT_DAILY 10
     _ensure_variable PR_RESOLVE_MAX_ROUNDS 3
