@@ -261,6 +261,8 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `coordination-sync` | `#BFDADC` (light blue) | Auto-filed by `agent-coordination-sync.yml` on the daily stale-lock tracking issue |
 | `no-coordination-check` | `#EDEDED` (gray) | Opt PR out of `agent-coordination-sync.yml` suggestions |
 | `chore:no-plan` | `#EDEDED` (gray) | Exempt issue/PR from the plan-as-comment requirement (see ADR-011) |
+| `outcome-validated` | `#0E8A16` (green) | Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014) |
+| `cap-override` | `#FBCA04` (amber) | Bypass max-round cap (`pr-resolve-all.md`) and 90% daily spend pause (`agent-assign-copilot.yml`) |
 
 **Resolution-path selection:**
 - Default: no automated resolution. Add a label to opt in.
