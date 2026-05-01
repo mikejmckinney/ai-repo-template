@@ -217,7 +217,10 @@ jobs:
           exit 0
 
       - name: Queue if budget full
-        if: steps.budget.outputs.has_slot == 'false' && steps.daily.outputs.over_daily != 'true'
+        if: >
+          steps.budget.outputs.has_slot == 'false' &&
+          steps.daily.outputs.over_daily != 'true' &&
+          (steps.daily.outputs.threshold != '90' || steps.labels.outputs.has_cap_override == 'true')
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}
