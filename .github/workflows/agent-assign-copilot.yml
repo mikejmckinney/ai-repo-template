@@ -203,6 +203,7 @@ jobs:
           echo "::error::90% daily spend threshold: $COUNT / $MAX. Pausing new assignments."
           gh issue edit "$ISSUE" --repo "$REPO" \
             --remove-label "copilot:ready" \
+            --remove-label "copilot:queued" \
             --add-label "copilot:budget-paused"
           gh issue comment "$ISSUE" --repo "$REPO" \
             --body "⚠️ **90% daily spend threshold** ($COUNT / $MAX Copilot assignments today). Pausing new assignments until tomorrow. To override: add the \`cap-override\` label to this issue and re-apply \`copilot:ready\` (the \`copilot:budget-paused\` label is intentionally not auto-drained by queue workers)."
