@@ -314,10 +314,10 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing 'cancel-in-progress: true'"
     fi
-    if grep -qE "vars\.REVIEW_ON_PUSH[[:space:]]*==[[:space:]]*'true'" "$RP_FILE"; then
-        pass "agent-review-on-push.yml gated on vars.REVIEW_ON_PUSH == 'true'"
+    if grep -qE "vars\.REVIEW_ON_PUSH[[:space:]]*!=[[:space:]]*'false'" "$RP_FILE"; then
+        pass "agent-review-on-push.yml gated on vars.REVIEW_ON_PUSH != 'false' (opt-out default)"
     else
-        fail "agent-review-on-push.yml missing exact REVIEW_ON_PUSH opt-in gate"
+        fail "agent-review-on-push.yml missing REVIEW_ON_PUSH opt-out gate (vars.REVIEW_ON_PUSH != 'false')"
     fi
     # Implementation switched (a third time) to the only mechanism that
     # actually fires: GraphQL `requestReviewsByLogin` with `botLogins:

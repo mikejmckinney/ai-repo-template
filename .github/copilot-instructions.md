@@ -47,4 +47,5 @@ When AGENTS.md headings change, the references in this file's "Read first" and "
 
 ## Repository knobs (variables)
 
-- `REVIEW_ON_PUSH` — when set to literal `true`, the `agent-review-on-push.yml` workflow nudges Gemini + Copilot to re-review after each push to an open non-draft PR. Default unset = off. See `docs/guides/agent-pipeline.md` § Step 3.
+- `REVIEW_ON_PUSH` — when set to literal `false`, disables the `agent-review-on-push.yml` nudges to Gemini + Copilot after each push to an open non-draft PR. Default unset = on. See `docs/guides/agent-pipeline.md` § Repository variables.
+- `PR_RESOLVE_MAX_ROUNDS` — max rounds `pr-resolve-all.md` runs per PR before escalating (integer; default `3`). Per-PR override: `cap-override` label on the PR (unbounded) or `@<agent> cap-override N` comment on the PR (N rounds). See `docs/guides/agent-pipeline.md` § Repository variables.

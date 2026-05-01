@@ -91,7 +91,7 @@ With workflow approval disabled (see Setup below), these fire immediately on PR 
 - **Copilot code review** — posts review if configured as a required reviewer
 - **CI checks** — your `ci-tests.yml` runs
 
-**Re-review on push** — by default Gemini and Copilot do **not** re-review subsequent pushes (Codex does). The opt-in `agent-review-on-push.yml` workflow nudges both bots after every push to an open non-draft PR when repo variable `REVIEW_ON_PUSH=true` is set. See "Alternative: Copilot ruleset" below for a server-side option that did not work for this repo.
+**Re-review on push** — `agent-review-on-push.yml` nudges Gemini and Copilot to re-review after every push to an open non-draft PR. Enabled by default; set repo variable `REVIEW_ON_PUSH=false` to disable. See "Alternative: Copilot ruleset" below for a server-side option that did not work for this repo.
 
 **Manual override** — anyone (agent or human) can comment `/gemini review` directly on a PR to force a fresh Gemini review. This is documented as a belt-and-suspenders escape hatch; the workflow is the primary mechanism.
 
@@ -198,7 +198,18 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 
 When a workflow fails with `Missing required secret: <NAME>`, the error annotation lists both remediation paths. `scripts/setup.sh` also prints a presence report at the end of its run.
 
-### 1. Copilot subscription
+### Repository variables
+
+Set via **Settings → Secrets and variables → Actions → Variables tab**.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REVIEW_ON_PUSH` | on (unset = on) | When set to literal `false`, disables `agent-review-on-push.yml` nudges to Gemini + Copilot after each push to an open non-draft PR. Any other value (including unset) keeps it on. |
+| `MAX_COPILOT_CONCURRENT` | `3` | Max concurrent Copilot sessions (open `copilot/` PRs + `copilot:in-progress` issues). |
+| `MAX_COPILOT_DAILY` | `10` | Max Copilot assignments in a rolling 24-hour window. Spend thresholds: informational log at 50%, warning comment on issue at 75%, hard pause on new assignments at 90% (bypassed by `cap-override` label on the issue), `copilot:daily-cap-hit` label at 100%. |
+| `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. Per-PR override: `cap-override` label on the PR (unbounded) or `@<agent> cap-override N` comment on the PR (N rounds). Only raise from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
+
+
 Any paid plan works: Pro ($10/mo), Pro+ ($39/mo), or Business ($21/seat/mo).
 The cloud agent is included.
 
@@ -284,7 +295,7 @@ Copy to `.github/workflows/`:
 - `agent-relay-reviews.yml` — Copilot relay (opt-in via `copilot-relay`)
 - `agent-auto-ready.yml` — flips Copilot draft PRs to ready for review
 - `agent-auto-merge.yml` — auto-merges when ready
-- `agent-review-on-push.yml` — nudges Gemini + Copilot to re-review after each push (opt-in via repo variable `REVIEW_ON_PUSH=true`)
+- `agent-review-on-push.yml` — nudges Gemini + Copilot to re-review after each push (opt-out via repo variable `REVIEW_ON_PUSH=false`)
 
 Also add this repository secret in **Settings → Secrets and variables → Actions**:
 - `CLAUDE_PAT` — fine-grained PAT required by `agent-fix-reviews.yml` so
@@ -505,7 +516,7 @@ for Gemini to finish posting.
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
 | `.github/workflows/agent-relay-reviews.yml` | Copilot relay (opt-in via `copilot-relay` label); also hosts the `phase4-fallback` job that retries Copilot's `⚠️ Errored` Phase 4 mutations under `CLAUDE_PAT` (see ADR-008) | No (uses CLAUDE_PAT for posting + fallback mutations) |
 | `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready; drains Copilot queue after merge | No (uses CLAUDE_PAT) |
-| `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-in via repo variable `REVIEW_ON_PUSH=true` | Yes (CLAUDE_PAT for Gemini comment author identity) |
+| `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-out via repo variable `REVIEW_ON_PUSH=false` | Yes (CLAUDE_PAT for Gemini comment author identity) |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |
 | `.github/workflows/ci-tests.yml` | CI checks | No |
 | `.gemini/config.yaml` | Gemini review config | No (free GitHub App) |

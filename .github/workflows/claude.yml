@@ -130,7 +130,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.CLAUDE_PAT }}
           allowed_bots: "*"
-          claude_args: "--model claude-sonnet-4-5 --max-turns 40 --permission-mode bypassPermissions"
+          claude_args: "--model claude-sonnet-4-6 --max-turns 40 --permission-mode bypassPermissions"
           prompt: |
             You are performing an automated diff-gate review on PR
             #${{ github.event.pull_request.number }} in

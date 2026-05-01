@@ -42,6 +42,37 @@ You are resolving every open issue, suggestion, and TODO in this pull request. Y
 > `Part 2/N`, … comments rather than truncating. Apply the Rules section to
 > every phase.
 
+## Round disciplines
+
+These three rules apply at the start of every round and override any implicit defaults:
+
+### 1 — Round cap
+
+Resolve the cap via this precedence chain (most specific wins):
+
+1. **Comment `@<agent> cap-override <N>` on this PR** → run at most N rounds (most recent matching comment wins if multiple exist).
+2. **Label `cap-override` on this PR** → run unbounded rounds for this PR.
+3. **Repo variable `PR_RESOLVE_MAX_ROUNDS`** — read via `gh variable get PR_RESOLVE_MAX_ROUNDS -R <owner>/<repo>` (empty result or non-integer → use 3).
+4. **Default** → 3 rounds.
+
+At the start of each round, check labels first, then comments, then the repo variable. When the resolved cap is reached: post a comment listing all remaining unresolved items and the escalation path (fix manually, split the PR, apply `cap-override`, or upshift to a higher-context model). Do not silently stop.
+
+### 2 — Fetch PR data once per round
+
+Fetch `currentActivePullRequest` (or its REST/GraphQL equivalent) **exactly once per round**, before the fix pass begins. Do not re-fetch between individual fixes within the same round. Re-fetching mid-round produces stale context, wastes premium tokens, and is the leading cause of duplicate fix attempts.
+
+### 3 — Classify before fixing
+
+At the front of each round, perform a cheap classification pass over all unresolved items **before** writing any code:
+
+- **nit** — style, naming, whitespace; fix silently, bundled at the end of the same commit as substantive fixes.
+- **substantive** — logic, correctness, missing behavior; fix and verify individually.
+- **out-of-scope** — requires files/systems outside this PR, or is purely advisory; mark `❌ Out of scope` immediately, do not fix.
+
+Fix substantive items first. Bundle nits at the end of the same commit. This avoids expanding the fix scope mid-round and running out of context before substantive items are addressed.
+
+---
+
 ## Phase 1: Build the Issue/Suggestion Index
 
 Scan ALL of these sources for issues, suggestions, requested changes, and TODOs:
