@@ -52,7 +52,7 @@ Resolve the cap via this precedence chain (most specific wins):
 
 1. **Comment `@<agent> cap-override <N>` on this PR** → run at most N rounds (most recent matching comment wins if multiple exist).
 2. **Label `cap-override` on this PR** → run unbounded rounds for this PR.
-3. **Repo variable `PR_RESOLVE_MAX_ROUNDS`** — read via `gh variable get PR_RESOLVE_MAX_ROUNDS -R <owner>/<repo>` (empty result or non-integer → use 3).
+3. **Repo variable `PR_RESOLVE_MAX_ROUNDS`** — read via `gh variable get PR_RESOLVE_MAX_ROUNDS` (empty result or non-integer → use 3).
 4. **Default** → 3 rounds.
 
 At the start of each round, check comments first, then labels, then the repo variable. When the resolved cap is reached: post a comment listing all remaining unresolved items and the escalation path (fix manually, split the PR, apply `cap-override`, or upshift to a higher-context model). Do not silently stop.
