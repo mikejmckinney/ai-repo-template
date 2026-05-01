@@ -385,6 +385,14 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         fi
     }
     _ensure_variable MAX_COPILOT_CONCURRENT 3
+    # Migrate existing installs from old default (20) to new cost-mitigation default (10).
+    # _ensure_variable skips variables that already exist, so without this check a
+    # re-run of setup.sh on an existing install would leave MAX_COPILOT_DAILY at 20.
+    if [[ "$(gh variable get MAX_COPILOT_DAILY 2>/dev/null)" == "20" ]]; then
+        gh variable set MAX_COPILOT_DAILY --body "10" 2>/dev/null \
+            && log_info "Migrated MAX_COPILOT_DAILY 20 → 10 (phase-1 cost-mitigation default)" \
+            || log_warn "Could not migrate MAX_COPILOT_DAILY — set it manually to 10."
+    fi
     _ensure_variable MAX_COPILOT_DAILY 10
     _ensure_variable PR_RESOLVE_MAX_ROUNDS 3
 
