@@ -66,7 +66,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - AGENTS.md
 **Depends On**: none
 **Blocks**: none
-**State**: planned
+**State**: backlog
 
 ## Recent History
 
