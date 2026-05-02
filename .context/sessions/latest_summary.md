@@ -12,6 +12,20 @@
 **Duration**: N/A  
 **Agent/Developer**: N/A
 
+---
+
+## Close-out: pr-179 (fix/177-phase4-fallback-on-push) — merged 2026-04-25
+
+**What shipped**: Phase 4 fallback parser in `agent-relay-reviews.yml`; graceful Copilot fallback when `CLAUDE_PAT` unavailable; ADR-008 updated to document new default behavior.
+**What was harder than expected**: Testing the fallback path without triggering real credential failures; mock setup for the parser edge cases required careful scaffolding.
+**What generalizes**: The primary-tool-fails → relay-via-alternate-credential pattern is reusable for any multi-credential agent workflow. Filed as a note in ADR-008 for now; no separate rule yet (N=1).
+
+## Close-out: pr-216 (fix/206-pr-completion-criteria) — merged 2026-04-29
+
+**What shipped**: PR completion criteria for interactive sessions codified in AGENTS.md §"PR completion criteria": stop condition (CI green + every bot thread resolved or deferred with comment + Resolution Report posted).
+**What was harder than expected**: Nothing unexpected — straightforward docs/policy update.
+**What generalizes**: The named convergence criterion pattern ("done when X, Y, Z are all true" rather than "done when it feels done") is broadly applicable to any iterative loop in agent workflows. Worth promoting to `agent-best-practices.md` once a second instance appears.
+
 ## What Was Accomplished
 
 <!-- List concrete outcomes, not just "worked on X" -->

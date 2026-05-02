@@ -11,5 +11,5 @@
 **Blockers**: None — awaiting kickoff
 **Next 1–3 actions**:
 1. Create Phase 2 implementation branch from `main`; draft ADR-016 with the 7 amendments and tier table
-2. Update `.claude/agents/*.md` with pinned `model:` per amendment #1 / #7
+2. Update `.claude/agents/*.md` and `.github/agents/*.agent.md` with pinned `model:` per amendments #1 / #7 (VS Code docs verified 2026-05-02: `.agent.md` accepts `model:` field; ADR-016 supersedes ADR-003)
 3. Add per-platform allowlists to `test.sh`; mark ADR-003 Superseded-by ADR-016
