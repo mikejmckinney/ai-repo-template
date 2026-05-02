@@ -5,11 +5,11 @@
 
 # Active Task
 
-**Active Task**: #150 — PR #218 awaiting re-review of bot-feedback fixes
-**File**: PR #218 on `feat/150-postmortem-feedback-loop` (commit `45094e9`)
-**Role**: docs (lead)
-**Blockers**: None — Phase 1–4 of `pr-resolve-all.md` complete; all 10 bot threads resolved; awaiting re-review on push (#205/#217 workflow)
+**Active Task**: #220 Phase 2 — per-role model tiering (ADR-016) — plan revision posted, implementation not yet started
+**File**: issue #220 (Plan revision comment 4364362566); Phase 1 shipped via PR #223 (merged)
+**Role**: architect (lead) — implementation will dispatch across docs / devops / qa
+**Blockers**: None — awaiting kickoff
 **Next 1–3 actions**:
-1. Wait for re-review; if new findings, repeat `pr-resolve-all.md`
-2. On clean re-review, await maintainer merge
-3. After merge, close task and remove from `_active.md`
+1. Create Phase 2 implementation branch from `main`; draft ADR-016 with the 7 amendments and tier table
+2. Update `.claude/agents/*.md` and `.github/agents/*.agent.md` with pinned `model:` per amendment #1 / #7
+3. Add per-platform allowlists to `test.sh`; mark ADR-003 Superseded-by ADR-016
