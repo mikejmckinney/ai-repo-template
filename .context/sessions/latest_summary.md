@@ -16,17 +16,17 @@
 
 ## Close-out: pr-225 (chore/coordination-cleanup) — in progress 2026-05-02
 
-**What shipped**: Released stale locks for pr-216 and pr-179 in `coordination.md`; added missing `Result:` lines; refreshed `_active.md` to Issue #220 Phase 2 state; added missing close-out summaries for pr-179 and pr-216 to `latest_summary.md`; expanded `issue-220-phase2` lock `Paths` to include `.github/agents/*.agent.md` and `adr-003` (to prevent concurrent edits during Phase 2).
+**What shipped**: Released stale locks for pr-216 and pr-179 in `coordination.md`; added missing `Result:` lines; refreshed `_active.md` to Issue #220 Phase 2 state; added missing close-out summaries for pr-179 and pr-216 to `latest_summary.md`; created `issue-220-phase2` lock with `Paths` including `.github/agents/*.agent.md` and `adr-003` (to prevent concurrent edits during Phase 2).
 **What was harder than expected**: Copilot relay (copilot-swe-agent) made an incorrect ISS-03 fix — removed `.github/agents/*.agent.md` from `_active.md` citing ADR-003, but live VS Code docs verify `.agent.md` supports `model:`. Required manual revert in `132452f`. The relay agent was operating on stale ADR knowledge.
 **What generalizes**: When a relay agent cites an ADR as justification for a correction, verify the cited ADR is not itself under active revision. If a Phase 2 plan is in flight that supersedes an ADR, `_active.md` should reference the plan, not the soon-to-be-obsolete ADR. Add a note to agent-best-practices once a second instance appears.
 
-## Close-out: pr-179 (fix/177-phase4-fallback-on-push) — merged 2026-04-25
+## Backfilled History: pr-179 (fix/177-phase4-fallback-on-push) — merged 2026-04-25
 
 **What shipped**: Phase 4 fallback parser in `agent-relay-reviews.yml`; graceful Copilot fallback when `CLAUDE_PAT` unavailable; ADR-008 updated to document new default behavior.
 **What was harder than expected**: Testing the fallback path without triggering real credential failures; mock setup for the parser edge cases required careful scaffolding.
 **What generalizes**: The primary-tool-fails → relay-via-alternate-credential pattern is reusable for any multi-credential agent workflow. Filed as a note in ADR-008 for now; no separate rule yet (N=1).
 
-## Close-out: pr-216 (fix/206-pr-completion-criteria) — merged 2026-04-29
+## Backfilled History: pr-216 (fix/206-pr-completion-criteria) — merged 2026-04-29
 
 **What shipped**: PR completion criteria for interactive sessions codified in AGENTS.md §"PR completion criteria": stop condition (CI green + every bot thread resolved or deferred with comment + Resolution Report posted).
 **What was harder than expected**: Nothing unexpected — straightforward docs/policy update.

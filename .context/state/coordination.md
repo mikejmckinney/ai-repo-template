@@ -54,7 +54,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Lock: issue-220-phase2
 **Role**: architect
-**Session**: chore/coordination-cleanup
+**Session**: TBD
 **Claimed At**: 2026-05-02T20:54:10Z
 **Expected Duration**: TBD
 **Paths**:
