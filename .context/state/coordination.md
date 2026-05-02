@@ -52,14 +52,53 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
-_(no active locks)_
+## Lock: issue-220-phase2
+**Role**: architect
+**Session**: chore/coordination-cleanup
+**Claimed At**: 2026-05-02T20:54:10Z
+**Expected Duration**: TBD
+**Paths**:
+- .claude/agents/*.md
+- docs/decisions/adr-016*.md
+- test.sh
+- AGENTS.md
+**Depends On**: none
+**Blocks**: none
+**State**: planned
 
 ## Recent History
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
 
-- **pr-216** (architect, `fix/206-pr-completion-criteria`) — merged 2026-04-29 as PR #216. Lock cleanup deferred; released 2026-05-02.
-- **pr-179** (architect, `fix/177-phase4-fallback-on-push`) — merged 2026-04-25 as PR #179. Lock cleanup deferred; released 2026-05-02. Triggered stale-lock alert #224.
+## Lock: pr-216
+<!-- managed-for-pr:216 -->
+**Role**: architect
+**Session**: fix/206-pr-completion-criteria
+**Claimed At**: 2026-04-28T22:54:03Z
+**Expected Duration**: TBD
+**Paths**:
+- .context/state/_active.md
+- .github/prompts/pr-resolve-all.md
+- AGENTS.md
+- test.sh
+**Depends On**: none
+**Blocks**: none
+**State**: merged
+**Result**: Merged 2026-04-29 as PR #216. Lock cleanup deferred; released 2026-05-02.
+
+## Lock: pr-179
+<!-- managed-for-pr:179 -->
+**Role**: architect
+**Session**: fix/177-phase4-fallback-on-push
+**Claimed At**: 2026-04-25T02:53:28Z
+**Expected Duration**: TBD
+**Paths**:
+- .github/workflows/agent-relay-reviews.yml
+- docs/decisions/adr-008-phase4-default-and-copilot-fallback.md
+**Depends On**: none
+**Blocks**: none
+**State**: merged
+**Result**: Merged 2026-04-25 as PR #179. Lock cleanup deferred; released 2026-05-02. Triggered stale-lock alert #224.
 
 ## Blocked / Waiting
 
