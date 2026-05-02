@@ -59,7 +59,9 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Expected Duration**: TBD
 **Paths**:
 - .claude/agents/*.md
+- .github/agents/*.agent.md
 - docs/decisions/adr-016*.md
+- docs/decisions/adr-003-claude-code-subagent-registration.md
 - test.sh
 - AGENTS.md
 **Depends On**: none

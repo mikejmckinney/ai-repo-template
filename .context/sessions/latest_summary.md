@@ -8,11 +8,17 @@
 
 ## Session Info
 
-**Date**: Not yet started  
-**Duration**: N/A  
-**Agent/Developer**: N/A
+**Date**: 2026-05-02  
+**Duration**: ~3h  
+**Agent/Developer**: GitHub Copilot (chore/coordination-cleanup)
 
 ---
+
+## Close-out: pr-225 (chore/coordination-cleanup) — in progress 2026-05-02
+
+**What shipped**: Released stale locks for pr-216 and pr-179 in `coordination.md`; added missing `Result:` lines; refreshed `_active.md` to Issue #220 Phase 2 state; added missing close-out summaries for pr-179 and pr-216 to `latest_summary.md`; expanded `issue-220-phase2` lock `Paths` to include `.github/agents/*.agent.md` and `adr-003` (to prevent concurrent edits during Phase 2).
+**What was harder than expected**: Copilot relay (copilot-swe-agent) made an incorrect ISS-03 fix — removed `.github/agents/*.agent.md` from `_active.md` citing ADR-003, but live VS Code docs verify `.agent.md` supports `model:`. Required manual revert in `132452f`. The relay agent was operating on stale ADR knowledge.
+**What generalizes**: When a relay agent cites an ADR as justification for a correction, verify the cited ADR is not itself under active revision. If a Phase 2 plan is in flight that supersedes an ADR, `_active.md` should reference the plan, not the soon-to-be-obsolete ADR. Add a note to agent-best-practices once a second instance appears.
 
 ## Close-out: pr-179 (fix/177-phase4-fallback-on-push) — merged 2026-04-25
 
