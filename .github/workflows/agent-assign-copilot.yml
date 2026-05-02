@@ -7,7 +7,9 @@ name: Assign Copilot (Gated)
 #
 # Budget variables (set via scripts/setup.sh or manually):
 #   MAX_COPILOT_CONCURRENT  — max open copilot/* PRs + in-progress issues (default 3)
-#   MAX_COPILOT_DAILY       — max assignments in a rolling 24h window (default 20)
+#   MAX_COPILOT_DAILY       — max assignments in a rolling 24h window (default 10)
+#                              Thresholds: 50%=log, 75%=warning comment, 90%=pause,
+#                              100%=daily-cap-hit. `cap-override` label bypasses 90%.
 #
 # Requires: CLAUDE_PAT repo secret (fine-grained PAT with issues:write + pull-requests:read)
 
@@ -62,6 +64,29 @@ jobs:
           fi
           echo "issue=$issue" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve issue labels
+        id: labels
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ steps.target.outputs.issue }}
+        run: |
+          # fetch labels from the resolved issue number so workflow_dispatch
+          # runs (where github.event.issue is null) get the correct label set.
+          # Fail-closed: if gh issue view errors (transient API failure), emit
+          # a workflow warning and treat cap-override as absent so the budget
+          # guard still fires rather than silently bypassing it.
+          if labels=$(gh issue view "$ISSUE" --repo "$REPO" --json labels --jq '.labels[].name'); then
+            if echo "$labels" | grep -q '^cap-override$'; then
+              echo "has_cap_override=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "has_cap_override=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "::warning::Could not fetch labels for issue $ISSUE; treating cap-override as absent"
+            echo "has_cap_override=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Check concurrent budget
         id: budget
         env:
@@ -88,7 +113,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}
-          MAX_DAILY: ${{ vars.MAX_COPILOT_DAILY || '20' }}
+          MAX_DAILY: ${{ vars.MAX_COPILOT_DAILY || '10' }}
         run: |
           # Fail-closed: pipefail ensures a failing `gh api` call (token,
           # rate limit, network) propagates through the `| jq` pipe instead
@@ -116,10 +141,23 @@ jobs:
           echo "Assignments in last 24h: $count / $MAX_DAILY"
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "max=$MAX_DAILY" >> "$GITHUB_OUTPUT"
+          # Compute spend threshold (integer arithmetic; avoids floating point).
+          # Outputs: over_daily (bool) + threshold (none|50|75|90|daily-cap)
           if (( count >= MAX_DAILY )); then
             echo "over_daily=true" >> "$GITHUB_OUTPUT"
+            echo "threshold=daily-cap" >> "$GITHUB_OUTPUT"
+          elif (( count * 10 >= MAX_DAILY * 9 )); then   # >= 90%
+            echo "over_daily=false" >> "$GITHUB_OUTPUT"
+            echo "threshold=90" >> "$GITHUB_OUTPUT"
+          elif (( count * 4 >= MAX_DAILY * 3 )); then    # >= 75%
+            echo "over_daily=false" >> "$GITHUB_OUTPUT"
+            echo "threshold=75" >> "$GITHUB_OUTPUT"
+          elif (( count * 2 >= MAX_DAILY )); then         # >= 50%
+            echo "over_daily=false" >> "$GITHUB_OUTPUT"
+            echo "threshold=50" >> "$GITHUB_OUTPUT"
           else
             echo "over_daily=false" >> "$GITHUB_OUTPUT"
+            echo "threshold=none" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Hard-stop on daily cap
@@ -139,8 +177,50 @@ jobs:
             --body "🛑 **Daily cap reached** ($COUNT / $MAX assignments in last 24h). Remove the \`copilot:daily-cap-hit\` label and add \`copilot:ready\` to re-queue manually. Raise the cap by setting the \`MAX_COPILOT_DAILY\` repo variable."
           exit 0
 
+      - name: Log 50% spend threshold
+        if: steps.daily.outputs.threshold == '50'
+        env:
+          COUNT: ${{ steps.daily.outputs.count }}
+          MAX: ${{ steps.daily.outputs.max }}
+        run: |
+          echo "::notice::50% daily spend threshold: $COUNT / $MAX Copilot assignments today. Proceeding with assignment."
+
+      - name: Warn at 75% spend threshold
+        if: steps.daily.outputs.threshold == '75'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ steps.target.outputs.issue }}
+          COUNT: ${{ steps.daily.outputs.count }}
+          MAX: ${{ steps.daily.outputs.max }}
+        run: |
+          echo "::warning::75% daily spend threshold: $COUNT / $MAX Copilot assignments today."
+          gh issue comment "$ISSUE" --repo "$REPO" \
+            --body "📊 **75% daily spend threshold** ($COUNT / $MAX Copilot assignments today). Proceeding with this assignment; agents should prefer cheaper model tiers for remaining work today."
+
+      - name: Hard-pause at 90% spend threshold
+        if: steps.daily.outputs.threshold == '90' && steps.labels.outputs.has_cap_override != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ steps.target.outputs.issue }}
+          COUNT: ${{ steps.daily.outputs.count }}
+          MAX: ${{ steps.daily.outputs.max }}
+        run: |
+          echo "::error::90% daily spend threshold: $COUNT / $MAX. Pausing new assignments."
+          gh issue edit "$ISSUE" --repo "$REPO" \
+            --remove-label "copilot:ready" \
+            --remove-label "copilot:queued" \
+            --add-label "copilot:budget-paused"
+          gh issue comment "$ISSUE" --repo "$REPO" \
+            --body "⚠️ **90% daily spend threshold** ($COUNT / $MAX Copilot assignments today). Pausing new assignments until tomorrow. To override: add the \`cap-override\` label to this issue and re-apply \`copilot:ready\` (the \`copilot:budget-paused\` label is intentionally not auto-drained by queue workers)."
+          exit 0
+
       - name: Queue if budget full
-        if: steps.budget.outputs.has_slot == 'false' && steps.daily.outputs.over_daily != 'true'
+        if: >
+          steps.budget.outputs.has_slot == 'false' &&
+          steps.daily.outputs.over_daily != 'true' &&
+          (steps.daily.outputs.threshold != '90' || steps.labels.outputs.has_cap_override == 'true')
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}
@@ -155,7 +235,10 @@ jobs:
             --body "⏸ **Queued.** Concurrent Copilot budget full ($IN_FLIGHT / $MAX). Will auto-assign when a PR merges."
 
       - name: Assign Copilot
-        if: steps.budget.outputs.has_slot == 'true' && steps.daily.outputs.over_daily != 'true'
+        if: >
+          steps.budget.outputs.has_slot == 'true' &&
+          steps.daily.outputs.over_daily != 'true' &&
+          (steps.daily.outputs.threshold != '90' || steps.labels.outputs.has_cap_override == 'true')
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           REPO: ${{ github.repository }}

@@ -314,10 +314,10 @@ if [[ -f "$RP_FILE" ]]; then
     else
         fail "agent-review-on-push.yml missing 'cancel-in-progress: true'"
     fi
-    if grep -qE "vars\.REVIEW_ON_PUSH[[:space:]]*==[[:space:]]*'true'" "$RP_FILE"; then
-        pass "agent-review-on-push.yml gated on vars.REVIEW_ON_PUSH == 'true'"
+    if grep -qE "vars\.REVIEW_ON_PUSH[[:space:]]*!=[[:space:]]*'false'" "$RP_FILE"; then
+        pass "agent-review-on-push.yml gated on vars.REVIEW_ON_PUSH != 'false' (opt-out default)"
     else
-        fail "agent-review-on-push.yml missing exact REVIEW_ON_PUSH opt-in gate"
+        fail "agent-review-on-push.yml missing REVIEW_ON_PUSH opt-out gate (vars.REVIEW_ON_PUSH != 'false')"
     fi
     # Implementation switched (a third time) to the only mechanism that
     # actually fires: GraphQL `requestReviewsByLogin` with `botLogins:
@@ -470,6 +470,31 @@ if grep -q '_ensure_label "outcome-validated"' scripts/setup.sh 2>/dev/null; the
     pass "scripts/setup.sh declares the outcome-validated label (ADR-014)"
 else
     fail "scripts/setup.sh missing _ensure_label \"outcome-validated\" (ADR-014)"
+fi
+
+# Issue #220 Phase 1: new labels and variables wired up in setup.sh and docs.
+if grep -q '_ensure_label "copilot:budget-paused"' scripts/setup.sh 2>/dev/null; then
+    pass "scripts/setup.sh declares the copilot:budget-paused label (issue #220)"
+else
+    fail "scripts/setup.sh missing _ensure_label \"copilot:budget-paused\" (issue #220)"
+fi
+
+if grep -q '_ensure_label "cap-override"' scripts/setup.sh 2>/dev/null; then
+    pass "scripts/setup.sh declares the cap-override label (issue #220)"
+else
+    fail "scripts/setup.sh missing _ensure_label \"cap-override\" (issue #220)"
+fi
+
+if grep -q '_ensure_variable PR_RESOLVE_MAX_ROUNDS' scripts/setup.sh 2>/dev/null; then
+    pass "scripts/setup.sh provisions PR_RESOLVE_MAX_ROUNDS variable (issue #220)"
+else
+    fail "scripts/setup.sh missing _ensure_variable PR_RESOLVE_MAX_ROUNDS (issue #220)"
+fi
+
+if grep -q 'PR_RESOLVE_MAX_ROUNDS' docs/guides/agent-pipeline.md 2>/dev/null; then
+    pass "agent-pipeline.md documents PR_RESOLVE_MAX_ROUNDS knob (issue #220)"
+else
+    fail "agent-pipeline.md missing PR_RESOLVE_MAX_ROUNDS documentation (issue #220)"
 fi
 
 if [[ -f "$ADR014_PATH" ]] \

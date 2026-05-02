@@ -22,9 +22,10 @@
 #     (api/queries_pr_review.go::RequestReviewsByLogin) after three
 #     other approaches silently no-op'd or failed on PR #217.
 #
-# Default OFF. Opt in by setting repo variable REVIEW_ON_PUSH=true
+# Default ON. Opt out by setting repo variable REVIEW_ON_PUSH=false
 # (Settings → Secrets and variables → Actions → Variables tab). With
-# the variable unset/empty/false the runner does not spin up.
+# the variable unset or empty the runner fires; set to literal `false`
+# to disable.
 #
 # Auth: the Gemini step uses CLAUDE_PAT (a user-scoped fine-grained PAT,
 # already required by other workflows in this repo) instead of
@@ -79,7 +80,7 @@ jobs:
     # isn't passed to dependency-update PRs, generating noisy red CI.
     # Reported by chatgpt-codex-connector on PR #217.
     if: >-
-      vars.REVIEW_ON_PUSH == 'true' &&
+      vars.REVIEW_ON_PUSH != 'false' &&
       github.event.pull_request.draft == false &&
       github.event.pull_request.state == 'open' &&
       github.event.pull_request.head.repo.full_name == github.repository &&

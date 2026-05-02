@@ -45,7 +45,7 @@ whether it came from the backlog, a `workflow_dispatch`, or a human
 applying the label in the web UI — `.github/workflows/agent-assign-copilot.yml`
 will take over: it checks the concurrent budget (`MAX_COPILOT_CONCURRENT`,
 default 3) and the rolling 24-hour daily cap (`MAX_COPILOT_DAILY`,
-default 20), then either assigns Copilot via GraphQL, swaps the label
+default 10), then either assigns Copilot via GraphQL, swaps the label
 to `copilot:queued`, or hard-stops with `copilot:daily-cap-hit`. The
 queue drains automatically when a Copilot PR merges or a slot is
 released (see `agent-release-slot.yml`).
@@ -91,7 +91,7 @@ With workflow approval disabled (see Setup below), these fire immediately on PR 
 - **Copilot code review** — posts review if configured as a required reviewer
 - **CI checks** — your `ci-tests.yml` runs
 
-**Re-review on push** — by default Gemini and Copilot do **not** re-review subsequent pushes (Codex does). The opt-in `agent-review-on-push.yml` workflow nudges both bots after every push to an open non-draft PR when repo variable `REVIEW_ON_PUSH=true` is set. See "Alternative: Copilot ruleset" below for a server-side option that did not work for this repo.
+**Re-review on push** — `agent-review-on-push.yml` nudges Gemini and Copilot to re-review after every push to an open non-draft PR. Enabled by default; set repo variable `REVIEW_ON_PUSH=false` to disable. See "Alternative: Copilot ruleset" below for a server-side option that did not work for this repo.
 
 **Manual override** — anyone (agent or human) can comment `/gemini review` directly on a PR to force a fresh Gemini review. This is documented as a belt-and-suspenders escape hatch; the workflow is the primary mechanism.
 
@@ -188,7 +188,7 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 
 | Secret | Required by | Scopes / Source |
 |--------|-------------|-----------------|
-| `CLAUDE_PAT` | All 12 agent workflows that call `gh` (assignment, auto-merge, auto-ready, coordination-sync, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Metadata R |
+| `CLAUDE_PAT` | All 12 agent workflows that call `gh` (assignment, auto-merge, auto-ready, coordination-sync, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
 | `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
 
 **Two ways to provide them**, in order of preference for users running multiple derived repos:
@@ -197,6 +197,18 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 2. **Per-repo.** Settings → Secrets and variables → Actions → New repository secret. Required for personal accounts and any repo not granted access to an org-level secret.
 
 When a workflow fails with `Missing required secret: <NAME>`, the error annotation lists both remediation paths. `scripts/setup.sh` also prints a presence report at the end of its run.
+
+### Repository variables
+
+Set via **Settings → Secrets and variables → Actions → Variables tab**.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `REVIEW_ON_PUSH` | on (unset = on) | When set to literal `false`, disables `agent-review-on-push.yml` nudges to Gemini + Copilot after each push to an open non-draft PR. Any other value (including unset) keeps it on. |
+| `MAX_COPILOT_CONCURRENT` | `3` | Max concurrent Copilot sessions (open `copilot/` PRs + `copilot:in-progress` issues). |
+| `MAX_COPILOT_DAILY` | `10` | Max Copilot assignments in a rolling 24-hour window. Spend thresholds: informational log at 50%, warning comment on issue at 75%, hard pause on new assignments at 90% (`copilot:budget-paused` label applied; bypassed by `cap-override` label on the issue — same label on a PR bypasses the round cap, see `PR_RESOLVE_MAX_ROUNDS` below), `copilot:daily-cap-hit` label at 100%. |
+| `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. Per-PR override: `cap-override` label on the PR (unbounded) or `@<agent> cap-override N` comment on the PR (N rounds). Only raise from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
+
 
 ### 1. Copilot subscription
 Any paid plan works: Pro ($10/mo), Pro+ ($39/mo), or Business ($21/seat/mo).
@@ -242,12 +254,15 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `copilot:ready` | `#0E8A16` (green) | Assign Copilot when budget allows (applied to backlog issues unless `auto_assign: false`) |
 | `copilot:in-progress` | `#1D76DB` (blue) | Assigned to Copilot; counts toward `MAX_COPILOT_CONCURRENT` |
 | `copilot:queued` | `#FBCA04` (amber) | Waiting for an open Copilot slot (swapped in by `agent-assign-copilot.yml` when concurrent cap is hit) |
+| `copilot:budget-paused` | `#E4E669` (yellow) | 90% daily spend threshold hit; **not** auto-drained by queue workers. Add `cap-override` + `copilot:ready` to resume manually |
 | `copilot:daily-cap-hit` | `#D93F0B` (red-orange) | Hit `MAX_COPILOT_DAILY`; requires manual re-queue |
 | `from-backlog` | `#5319E7` (purple) | Issue auto-created from `.context/backlog.yaml` |
 | `needs-human` | `#B60205` (red) | Requires human input (e.g., empty roadmap phase, CI failure, sparse entry that couldn't be expanded) |
 | `coordination-sync` | `#BFDADC` (light blue) | Auto-filed by `agent-coordination-sync.yml` on the daily stale-lock tracking issue |
 | `no-coordination-check` | `#EDEDED` (gray) | Opt PR out of `agent-coordination-sync.yml` suggestions |
 | `chore:no-plan` | `#EDEDED` (gray) | Exempt issue/PR from the plan-as-comment requirement (see ADR-011) |
+| `outcome-validated` | `#0E8A16` (green) | Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014) |
+| `cap-override` | `#FBCA04` (amber) | Bypass max-round cap (`pr-resolve-all.md`) and 90% daily spend pause (`agent-assign-copilot.yml`) |
 
 **Resolution-path selection:**
 - Default: no automated resolution. Add a label to opt in.
@@ -284,7 +299,7 @@ Copy to `.github/workflows/`:
 - `agent-relay-reviews.yml` — Copilot relay (opt-in via `copilot-relay`)
 - `agent-auto-ready.yml` — flips Copilot draft PRs to ready for review
 - `agent-auto-merge.yml` — auto-merges when ready
-- `agent-review-on-push.yml` — nudges Gemini + Copilot to re-review after each push (opt-in via repo variable `REVIEW_ON_PUSH=true`)
+- `agent-review-on-push.yml` — nudges Gemini + Copilot to re-review after each push (opt-out via repo variable `REVIEW_ON_PUSH=false`)
 
 Also add this repository secret in **Settings → Secrets and variables → Actions**:
 - `CLAUDE_PAT` — fine-grained PAT required by `agent-fix-reviews.yml` so
@@ -442,6 +457,7 @@ automatically post-merge.
 | Enable Claude review resolution on this PR | Add `claude-fix` label |
 | Use Copilot (not Claude) for review resolution | Add `copilot-relay` label |
 | Fix cycle exhausted (3/3) | Review remaining comments yourself, merge manually |
+| Fix cycle exhausted, want more rounds | Add `cap-override` label to the PR (unbounded) or comment `@<agent> cap-override N` (N rounds). See `PR_RESOLVE_MAX_ROUNDS` in Repository variables above |
 | Copilot's implementation is wrong | Comment on the PR with corrections, Copilot picks them up |
 | Claude can't resolve a comment | Marked as "Needs clarification" in the resolution report — address manually |
 | Merge conflict between parallel PRs | Merge one first, then comment on the other asking Copilot to rebase |
@@ -505,7 +521,7 @@ for Gemini to finish posting.
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
 | `.github/workflows/agent-relay-reviews.yml` | Copilot relay (opt-in via `copilot-relay` label); also hosts the `phase4-fallback` job that retries Copilot's `⚠️ Errored` Phase 4 mutations under `CLAUDE_PAT` (see ADR-008) | No (uses CLAUDE_PAT for posting + fallback mutations) |
 | `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready; drains Copilot queue after merge | No (uses CLAUDE_PAT) |
-| `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-in via repo variable `REVIEW_ON_PUSH=true` | Yes (CLAUDE_PAT for Gemini comment author identity) |
+| `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-out via repo variable `REVIEW_ON_PUSH=false` | Yes (CLAUDE_PAT for Gemini comment author identity) |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |
 | `.github/workflows/ci-tests.yml` | CI checks | No |
 | `.gemini/config.yaml` | Gemini review config | No (free GitHub App) |
