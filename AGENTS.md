@@ -236,9 +236,9 @@ Keep agent working memory current so the next session (or next role) can resume 
 2. `.context/00_INDEX.md` — catches roadmap or constraint changes.
 3. `.context/state/_active.md` — catches staleness in your own working state.
 4. `.context/state/coordination.md` — catches stale locks before you add new ones.
-5. Any `.context/rules/*.md` whose path-glob matches files you are about to edit.
+5. Any `.context/rules/*.md` whose domain covers the files you are about to edit — e.g., read `process_doc_maintenance.md` before changes that may trigger doc-sync requirements; read `domain_code_quality.md` before non-trivial code refactors.
 
-Reading `.context/rules/` and `.context/vision/` in their entirety every boundary is overkill — they are stable mid-session and should be read on-demand. The five items above are the minimum set that closes the loop between knowing a rule and following it: they put stale content into the agent's input rather than relying on a remembered rule.
+Reading all of `.context/rules/` and `.context/vision/` at every boundary is overkill: unlike `AGENTS.md` (the primary instruction file, most likely to be edited mid-session), rule files under `.context/rules/` change only through deliberate, reviewed PRs — ad-hoc mid-session edits to them are rare. Point 5 already covers the important case: you read a rule file when its domain intersects what you are about to change. The five items above are the minimum set that closes the loop between knowing a rule and following it.
 
 - **`.context/state/_active.md`** — rewrite (don't append) at every task boundary. Max ~20 lines. Schema: Active Task, File, Role, Blockers, Next 1–3 actions. Schema and examples in `.context/state/README.md`.
   - **What counts as a "task boundary"** for prompt-driven work: each `.github/prompts/NN-*.md` file is its own boundary. If you process prompts 02 → 03 → 04 in one session, that is *three* boundaries — rewrite `_active.md` between each, even if the same agent continues. Treating multiple prompts as one continuous task is a known failure mode (see ADR-012 + `docs/postmortems/postmortem-001-workflow-bypass.md`).
