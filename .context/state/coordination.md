@@ -68,7 +68,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Blocks**: none
 **State**: in_progress
 
-
+## Recent History
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
 
