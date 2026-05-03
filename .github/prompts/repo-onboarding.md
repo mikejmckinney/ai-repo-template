@@ -35,6 +35,14 @@ Phase 0 does any work and is reported at the start of Step 1.0:
 - **Mode B — Derived repo, bootstrap not yet run.** Any of:
   - `README.md` or `AI_REPO_GUIDE.md` contains `TEMPLATE_PLACEHOLDER`.
   - `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`.
+  - `./scripts/verify-env.sh` reports `PLACEHOLDER_COUNT > 0` (its output
+    contains a "N files still contain TEMPLATE_PLACEHOLDER" line with N > 0).
+    This catches partial-bootstrap states — e.g. `.context/**`, `docs/**`,
+    `scripts/**`, or workflow files still carrying template stubs — even when
+    the README/AI_REPO_GUIDE signals are already clear. (`verify-env.sh`
+    excludes infrastructure files and the three bootstrap state files via
+    `_PLACEHOLDER_LEGIT` and `_PLACEHOLDER_EXCLUDE`, so a fully-onboarded
+    repo reaches PLACEHOLDER_COUNT=0 and does not re-trigger Mode B.)
 
   Do the work in Step 0.2, then continue to Phase 1.
 - **Mode C — Derived repo, already customized.** No Mode B signals fire
@@ -62,8 +70,8 @@ same PR:
    - `TEMPLATE_PLACEHOLDER` markers → project-specific text or remove,
      **except** in `.context/state/_active.md`, `.context/sessions/latest_summary.md`,
      and `.context/state/coordination.md` — those files intentionally retain
-     the marker post-onboarding per item 6 below (Step 0.1 detection
-     is now limited to README/AI_REPO_GUIDE to allow this).
+     the marker post-onboarding per item 6 below (`verify-env.sh` excludes
+     them via `_PLACEHOLDER_EXCLUDE` so they do not re-trigger Mode B).
    - `PLEASE_UPDATE_THIS/URL` in `.github/ISSUE_TEMPLATE/config.yml` →
      actual `owner/repo` from `git remote -v`.
 4. **Extend `.context/rules/agent_ownership.md`** with rows for the project's
