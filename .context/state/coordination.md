@@ -61,6 +61,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Paths**:
 - .context/sessions/latest_summary.md
 - .context/state/_active.md
+- .context/state/coordination.md
 - .github/prompts/repo-onboarding.md
 - AGENTS.md
 **Depends On**: none

@@ -119,6 +119,10 @@ Phase 1 has accurate state:
   WARNs. In particular, treat any `TEMPLATE_PLACEHOLDER`-still-present
   WARN as **Unstable** when running in a derived (non-template) repo —
   it means stub docs haven't been replaced yet (Phase 0 is incomplete).
+  _Exception_: `.context/state/_active.md`, `.context/sessions/latest_summary.md`,
+  and `.context/state/coordination.md` intentionally retain the marker
+  post-bootstrap (per Step 0.2 item 6) until first project data lands;
+  warns for those three files alone are not blocking.
 - Steps 1–4 above completed without missing-file errors. (`bash test.sh`
   is the deeper structural check; run it later in Phase 1 if you want
   full coverage.)
