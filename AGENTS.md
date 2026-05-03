@@ -234,7 +234,7 @@ Keep agent working memory current so the next session (or next role) can resume 
 
 1. `AGENTS.md` — catches mid-session rule edits (e.g., this very section).
 2. `.context/00_INDEX.md` — catches roadmap or constraint changes.
-3. `.context/state/_active.md` — forces noticing staleness in your own file.
+3. `.context/state/_active.md` — catches staleness in your own working state.
 4. `.context/state/coordination.md` — catches stale locks before you add new ones.
 5. Any `.context/rules/*.md` whose path-glob matches files you are about to edit.
 
