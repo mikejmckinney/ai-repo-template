@@ -158,7 +158,7 @@ else
     pass "No unexpected TEMPLATE_PLACEHOLDER markers found"
 fi
 if [[ "$PLACEHOLDER_STATE_COUNT" -gt 0 ]]; then
-    pass "Bootstrap state files retain TEMPLATE_PLACEHOLDER ($PLACEHOLDER_STATE_COUNT file(s)) — expected until first real task/session lands"
+    warn "Bootstrap state files retain TEMPLATE_PLACEHOLDER ($PLACEHOLDER_STATE_COUNT file(s)) — replace when first real task/session lands"
 fi
 
 echo ""
