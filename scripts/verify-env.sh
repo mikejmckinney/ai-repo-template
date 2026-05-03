@@ -131,8 +131,9 @@ echo "Checking for template placeholders..."
 # Prefer excluding directories during traversal; fall back to find-based scan
 # Three state files retain TEMPLATE_PLACEHOLDER during bootstrap (per
 # repo-onboarding.md Step 0.2 item 6). Count them separately: unexpected
-# markers (all other files) trigger a blocking warn; state-file markers
-# trigger a non-blocking warn so lingering post-bootstrap markers stay visible.
+# markers (all other files) trigger an onboarding-blocking warn (non-blocking
+# for the script itself); state-file markers trigger a non-blocking warn so
+# lingering post-bootstrap markers stay visible.
 # End-anchored ERE so .context/state/_active.md.bak doesn't match state-file pattern.
 _PLACEHOLDER_EXCLUDE='\.context/state/_active\.md$|\.context/sessions/latest_summary\.md$|\.context/state/coordination\.md$'
 if grep --help 2>&1 | grep -q -- "--exclude-dir"; then
@@ -142,8 +143,8 @@ else
     # Portable fallback using find -prune to avoid descending into heavy directories
     _ALL_PLACEHOLDER_FILES=$(find . \( -name .git -o -name node_modules -o -name venv -o -name .venv -o -name __pycache__ \) -prune -o -type f -exec grep -l "TEMPLATE_PLACEHOLDER" {} + 2>/dev/null || true)
 fi
-PLACEHOLDER_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | grep -cEv "$_PLACEHOLDER_EXCLUDE" || echo 0)
-PLACEHOLDER_STATE_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | grep -cE "$_PLACEHOLDER_EXCLUDE" || echo 0)
+PLACEHOLDER_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | grep -v '^$' | grep -Ev "$_PLACEHOLDER_EXCLUDE" | wc -l | tr -d ' ')
+PLACEHOLDER_STATE_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | grep -v '^$' | grep -E "$_PLACEHOLDER_EXCLUDE" | wc -l | tr -d ' ')
 if [[ "$PLACEHOLDER_COUNT" -gt 0 ]]; then
     warn "$PLACEHOLDER_COUNT files still contain TEMPLATE_PLACEHOLDER"
 else
