@@ -71,6 +71,22 @@ same PR:
    they remain load-bearing.
 5. **Customize `docs/FAQ.md`** — strip entries prefixed with `Template:` and
    replace with project-specific Q&A.
+6. **Clear template working state.** `.context/state/*.md` and
+   `.context/sessions/*.md` ship populated with ai-repo-template's own
+   task data. Reset them so re-read cadence (AGENTS.md →
+   "Session-state cadence") doesn't ingest the template's stale state
+   as if it were this project's reality:
+   - `.context/state/_active.md` — replace body with the empty schema;
+     keep the schema comment and `TEMPLATE_PLACEHOLDER` marker until
+     the first real task lands.
+   - `.context/sessions/latest_summary.md` — replace body with a single
+     `No sessions yet` line; keep the `TEMPLATE_PLACEHOLDER` marker
+     until the first close-out.
+   - `.context/state/coordination.md` — clear all entries under
+     `## Active Locks` and `## Recent History`; keep the headers,
+     `## Lock` template block, and `TEMPLATE_PLACEHOLDER` marker.
+   - Do NOT delete `*_template.md` or `README.md` in those directories
+     — they are the schemas downstream agents copy from.
 
 When Phase 0 work is complete, continue to Phase 1.
 
