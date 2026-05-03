@@ -448,13 +448,16 @@ jobs:
                     or (.author.login | test("^(" + $bots + ")$"))
                   )
                   and (.author.login | test("^copilot(\\[bot\\])?$") | not)
-                  and (.state == "CHANGES_REQUESTED" or .state == "COMMENTED")
                   and (.body != null) and (.body != "")
                 )
               | { reviewer: .author.login, state: .state, body: .body }
             ]
+            # group_by+last sees ALL states per reviewer (not pre-filtered),
+            # so if a bot APPROVED after change-requesting, last picks APPROVED
+            # and the subsequent state filter drops it — no stale relay.
             | group_by(.reviewer)
-            | map(last)' 2>/dev/null || echo "[]")
+            | map(last)
+            | map(select(.state == "CHANGES_REQUESTED" or .state == "COMMENTED"))' 2>/dev/null || echo "[]")
 
           inline_count=$(echo "$inline_comments" | jq 'length' 2>/dev/null || echo "0")
           review_count=$(echo "$review_comments" | jq 'length' 2>/dev/null || echo "0")
@@ -522,9 +525,15 @@ jobs:
           # renders as inline code and does not notify.
           # (Bug surfaced on PR #225: a relayed Codex banner re-triggered
           # Codex into a full session against the relay comment.)
+          # (?i) = case-insensitive; (?!copilot(?:[A-Za-z0-9-])) preserves the
+          # exact @copilot handle (and @COPILOT / @copilot[bot]) while
+          # neutralizing all copilot-prefixed variants: @copilot-swe-agent,
+          # @copilot-pull-request-reviewer, @copilotX, etc.
+          # The old (?!copilot\b) used \b which matches before '-', so
+          # @copilot-swe-agent passed through as a live mention (ISS-02, PR #225).
           neutralize_mentions='
             def neutralize:
-              gsub("(?<pre>(^|[^`A-Za-z0-9_]))@(?<name>(?!copilot\\b)[A-Za-z0-9][A-Za-z0-9-]*(?:/[A-Za-z0-9._-]+)?)";
+              gsub("(?<pre>(^|[^`A-Za-z0-9_]))@(?<name>(?i)(?!copilot(?:[A-Za-z0-9-]))[A-Za-z0-9][A-Za-z0-9-]*(?:/[A-Za-z0-9._-]+)?)";
                    .pre + "`@" + .name + "`");
           '
 

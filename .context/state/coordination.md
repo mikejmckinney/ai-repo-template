@@ -52,7 +52,23 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
-## Recent History
+## Lock: pr-225
+<!-- managed-for-pr:225 -->
+**Role**: docs
+**Session**: chore/coordination-cleanup
+**Claimed At**: 2026-05-02T12:00:00Z
+**Expected Duration**: TBD
+**Paths**:
+- .context/sessions/latest_summary.md
+- .context/state/_active.md
+- .context/state/coordination.md
+- .github/workflows/agent-relay-reviews.yml
+- .github/prompts/pr-resolve-all.md
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
+
+
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
 
