@@ -35,9 +35,6 @@ Phase 0 does any work and is reported at the start of Step 1.0:
 - **Mode B — Derived repo, bootstrap not yet run.** Any of:
   - `README.md` or `AI_REPO_GUIDE.md` contains `TEMPLATE_PLACEHOLDER`.
   - `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`.
-  - `grep -RIl TEMPLATE_PLACEHOLDER . | grep -v '.github/prompts/'` returns
-    matches outside `.context/state/` and `.context/sessions/` (those files
-    legitimately retain the marker post-onboarding per the clearing rule below).
 
   Do the work in Step 0.2, then continue to Phase 1.
 - **Mode C — Derived repo, already customized.** No Mode B signals fire
@@ -89,7 +86,7 @@ same PR:
      until the first close-out.
    - `.context/state/coordination.md` — clear all entries under
      `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and
-     `## PM Notes`; keep the section headers, `## Lock` template block,
+     `## PM Notes`; keep the section headers, `## Lock Template`,
      and `TEMPLATE_PLACEHOLDER` marker.
    - Do NOT delete `*_template.md` or `README.md` in those directories
      — they are the schemas downstream agents copy from.
