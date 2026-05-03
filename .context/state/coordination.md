@@ -52,6 +52,26 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-225
+<!-- managed-for-pr:225 -->
+**Role**: docs
+**Session**: chore/coordination-cleanup
+**Claimed At**: 2026-05-02T12:00:00Z
+**Expected Duration**: TBD
+**Paths**:
+- .context/sessions/latest_summary.md
+- .context/state/_active.md
+- .context/state/coordination.md
+- .github/workflows/agent-relay-reviews.yml
+- .github/prompts/pr-resolve-all.md
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
+
+## Recent History
+
+<!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
+
 ## Lock: pr-216
 <!-- managed-for-pr:216 -->
 **Role**: architect
@@ -65,7 +85,8 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - test.sh
 **Depends On**: none
 **Blocks**: none
-**State**: in_progress
+**State**: merged
+**Result**: Merged 2026-04-29 as PR #216. Lock cleanup deferred; released 2026-05-02.
 
 ## Lock: pr-179
 <!-- managed-for-pr:179 -->
@@ -78,11 +99,8 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - docs/decisions/adr-008-phase4-default-and-copilot-fallback.md
 **Depends On**: none
 **Blocks**: none
-**State**: in_progress
-
-## Recent History
-
-<!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
+**State**: merged
+**Result**: Merged 2026-04-25 as PR #179. Lock cleanup deferred; released 2026-05-02. Triggered stale-lock alert #224.
 
 ## Blocked / Waiting
 
@@ -91,3 +109,23 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## PM Notes
 
 <!-- PM uses this area for dispatch rationale, sequencing decisions, and cross-role conflict resolutions. -->
+
+**Issue #220 Phase 2 (pre-registration)** — Not yet claimed; lock block omitted from Active Locks to avoid false stale-lock alerts before the branch exists. When work starts on `feature/architect-220-phase2`, add the lock block below to Active Locks and create `task_issue-220-phase2.md`.
+
+```
+## Lock: issue-220-phase2
+**Role**: architect
+**Session**: feature/architect-220-phase2
+**Claimed At**: <ISO-8601 when branch opens>
+**Expected Duration**: TBD
+**Paths**:
+- .claude/agents/*.md
+- .github/agents/*.agent.md
+- docs/decisions/adr-016*.md
+- docs/decisions/adr-003-claude-code-subagent-registration.md
+- test.sh
+- AGENTS.md
+**Depends On**: none
+**Blocks**: none
+**State**: backlog
+```

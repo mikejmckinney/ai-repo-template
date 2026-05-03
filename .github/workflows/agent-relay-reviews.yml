@@ -50,9 +50,14 @@
 # Safety:
 #   - Only runs on same-repo (non-fork) PRs
 #   - Skips if no actionable bot comments found
-#   - Max 3 relay cycles per PR (prevents infinite loops)
+#   - Fingerprint dedup prevents redundant relays of unchanged comment sets
+#     (the actual loop guard — see "Compute fingerprint" step below)
 #   - Won't relay comments from copilot itself (it already sees its own)
 #   - Won't relay if copilot is the review author (it can see its own reviews)
+#   - Per-round cap on Copilot's fix work is enforced by
+#     `pr-resolve-all.md` — honors `cap-override` label and the
+#     `PR_RESOLVE_MAX_ROUNDS` repo variable. The relay itself does not
+#     re-impose a cap; that would be redundant and confusing.
 #
 # Required secrets:
 #   - CLAUDE_PAT: Fine-grained PAT with Contents + Pull requests + Issues RW
@@ -90,11 +95,12 @@ on:
     types: [created]
   # NOTE: `pull_request_review_comment` is intentionally NOT listed here.
   # A review with N inline comments fires N comment events + 1 review
-  # event. Triggering on both burns the 3-cycle relay budget fast — each
-  # reviewer's stream of inline-comment events would post a separate
-  # relay before Copilot has had a chance to act on the prior one. The
-  # `pull_request_review` (submitted) trigger fires once per reviewer
-  # and is sufficient: the relay step reads ALL unresolved threads via
+  # event. Triggering on both would post a separate relay for each
+  # inline-comment event before Copilot has had a chance to act on the
+  # prior one — burning Copilot's per-round cap (enforced by
+  # `pr-resolve-all.md`) and creating thrash. The `pull_request_review`
+  # (submitted) trigger fires once per reviewer and is sufficient: the
+  # relay step reads ALL unresolved threads via
   # GraphQL, so inline comments are still picked up.
 
 # Concurrency is set per-job: the `relay` and `phase4-fallback` jobs
@@ -175,28 +181,38 @@ jobs:
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # Check relay cycle budget
-      - name: Check relay budget
+      # Compute relay cycle number
+      #
+      # The relay does not impose its own per-PR cap — the fingerprint
+      # dedup gate (a few steps below) is the actual loop guard, and the
+      # per-round cap on Copilot's fix work is enforced by
+      # `pr-resolve-all.md` (which honors the `cap-override` label and
+      # the `PR_RESOLVE_MAX_ROUNDS` repo variable). Re-imposing a cap
+      # here would be redundant and split the source of truth.
+      #
+      # We still compute a cycle number for the relay comment header
+      # ("cycle N") so humans can see how many times the relay has
+      # fired on this PR. Anchor on lines that *start with*
+      # "📋 **Review Relay" (after stripping leading whitespace), not
+      # `contains()`. Copilot SWE agent quotes the relay comment in its
+      # reply, so a `contains()` filter would double-count: 1 real relay
+      # + 1 quoted reply = 2 cycles per actual relay. The `startswith`
+      # form skips quoted lines (which start with `>`).
+      - name: Compute cycle number
         if: steps.author.outputs.skip != 'true'
         id: budget
         env:
           GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
         run: |
-          MAX_CYCLES=3
-          relay_count=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json comments \
-            --jq '[.comments[] | select(.body | contains("📋 **Review Relay"))] | length' 2>/dev/null || echo "0")
+          relay_count=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
+            --jq '[.comments[] | select(.body | sub("^[[:space:]]+"; "") | startswith("📋 **Review Relay"))] | length' 2>/dev/null || echo "0")
 
-          echo "Relay cycles: $relay_count / $MAX_CYCLES"
-
-          if [[ "$relay_count" -ge "$MAX_CYCLES" ]]; then
-            echo "exceeded=true" >> "$GITHUB_OUTPUT"
-            gh pr comment "$PR_NUMBER" --repo "${{ github.repository }}" \
-              --body "⚠️ **Relay budget exhausted** ($relay_count/$MAX_CYCLES). Remaining bot comments need manual review or direct @copilot tagging."
-          else
-            echo "exceeded=false" >> "$GITHUB_OUTPUT"
-            echo "cycle=$(( relay_count + 1 ))" >> "$GITHUB_OUTPUT"
-          fi
+          echo "Prior relay cycles on this PR: $relay_count"
+          # Always proceed; loop guard is the fingerprint dedup gate below.
+          echo "exceeded=false" >> "$GITHUB_OUTPUT"
+          echo "cycle=$(( relay_count + 1 ))" >> "$GITHUB_OUTPUT"
 
       # Wait for all reviewers to finish posting.
       # Bumped from 90s → 180s: with cancel-in-progress: true, a longer
@@ -412,6 +428,18 @@ jobs:
             ]' 2>/dev/null || echo "[]")
 
           # ── Extract review-level summaries (no isResolved on reviews) ──
+          # Reviews don't carry isResolved (only their child threads do), so we
+          # can't filter by resolution directly. Without a filter, every
+          # COMMENTED summary a bot has ever posted on this PR gets re-bundled
+          # forever — including stale ones from prior rounds and "no feedback"
+          # follow-ups. Deduplicate by keeping only the LATEST review per
+          # reviewer (group_by + last). This naturally surfaces the most recent
+          # feedback without needing to gate on whether the reviewer also has
+          # unresolved inline threads — a reviewer whose inline threads were all
+          # resolved may still have an actionable review-level summary, and the
+          # former active_reviewers gate would silently drop it.
+          # The fingerprint dedup gate (below) prevents re-relaying the same
+          # content on subsequent runs.
           review_comments=$(echo "$threads_json" | jq --arg bots "$AI_REVIEWERS" '
             [ (.reviews.nodes // [])[]
               | select(
@@ -420,11 +448,16 @@ jobs:
                     or (.author.login | test("^(" + $bots + ")$"))
                   )
                   and (.author.login | test("^copilot(\\[bot\\])?$") | not)
-                  and (.state == "CHANGES_REQUESTED" or .state == "COMMENTED")
                   and (.body != null) and (.body != "")
                 )
               | { reviewer: .author.login, state: .state, body: .body }
-            ]' 2>/dev/null || echo "[]")
+            ]
+            # group_by+last sees ALL states per reviewer (not pre-filtered),
+            # so if a bot APPROVED after change-requesting, last picks APPROVED
+            # and the subsequent state filter drops it — no stale relay.
+            | group_by(.reviewer)
+            | map(last)
+            | map(select(.state == "CHANGES_REQUESTED" or .state == "COMMENTED"))' 2>/dev/null || echo "[]")
 
           inline_count=$(echo "$inline_comments" | jq 'length' 2>/dev/null || echo "0")
           review_count=$(echo "$review_comments" | jq 'length' 2>/dev/null || echo "0")
@@ -443,13 +476,21 @@ jobs:
           # set of things to fix hasn't changed since we last asked
           # Copilot — re-posting would burn another budget cycle without
           # giving Copilot any new information. Skip in that case.
+          #
+          # NOTE on jq operator precedence: in jq, | has lower precedence
+          # than ,, so `a, b | f` means `(a, b) | f` — applying f to both
+          # generators. Using a single flat [ url_exprs, reviewer_exprs ] array
+          # would apply the .reviewer/.body path expression to the URL strings
+          # from inline_comments, causing "Cannot index string with string 'body'".
+          # Fix: build each array separately, then concatenate with +.
           fingerprint=$(jq -n --argjson i "$inline_comments" --argjson r "$review_comments" '
-            ([ ($i // [])[].url, ($r // [])[] | (.reviewer + ":" + (.body // "" | tostring))[0:200] ]
+            (  [($i // [])[].url] +
+               [($r // [])[] | (.reviewer + ":" + (.body // "" | tostring))[0:200]]
               | sort | join("|"))' | sha256sum | awk '{print $1}')
           echo "Relay fingerprint: $fingerprint"
 
           prev_fingerprint=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
-            --jq '[.comments[] | select(.body | contains("📋 **Review Relay"))] | last | .body
+            --jq '[.comments[] | select(.body | sub("^[[:space:]]+"; "") | startswith("📋 **Review Relay"))] | last | .body
                   | capture("<!-- relay-fingerprint:(?<fp>[a-f0-9]+) -->") | .fp' 2>/dev/null || echo "")
           if [[ -n "$prev_fingerprint" && "$prev_fingerprint" == "$fingerprint" ]]; then
             echo "Unresolved bot-comment set unchanged since last relay (fingerprint $fingerprint). Skipping to preserve budget."
@@ -461,7 +502,7 @@ jobs:
           # backslash sequences (\c, \t, \0NNN, …) pass through verbatim.
           nl=$'\n'
 
-          comment="📋 **Review Relay (cycle ${CYCLE}/3)** — Forwarding ${total} comment(s) from bot reviewers.${nl}"
+          comment="📋 **Review Relay (cycle ${CYCLE})** — Forwarding ${total} comment(s) from bot reviewers.${nl}"
           comment+="<!-- relay-fingerprint:${fingerprint} -->${nl}${nl}"
           comment+="@copilot follow .github/prompts/pr-resolve-all.md${nl}${nl}"
           comment+="Apply that procedure to the review feedback collected below. In particular:${nl}${nl}"
@@ -472,21 +513,56 @@ jobs:
           comment+="The Phase-1 Index and Phase-3 Resolution Report MUST be two distinct PR comments, in that order — same shape Claude uses on the default fix path.${nl}${nl}"
           comment+="---${nl}${nl}"
 
+          # ── Neutralize stray @-mentions in forwarded bot bodies ──
+          # Bot summaries quote third-party trigger phrases verbatim
+          # (e.g. Codex's banner contains literal `@codex review`). When
+          # we forward those bodies inside the relay comment, those
+          # @-mentions become live notifications and re-trigger the
+          # quoted bot, which then either replies or opens its own
+          # session against the relay. We own one and only one mention
+          # in this comment — `@copilot` (added by us above). Wrap every
+          # *other* @mention in the forwarded text in backticks so it
+          # renders as inline code and does not notify.
+          # (Bug surfaced on PR #225: a relayed Codex banner re-triggered
+          # Codex into a full session against the relay comment.)
+          # Pattern: (?!copilot(?:[^A-Za-z0-9_-]|$))
+          #   - For "@copilot" (bare handle): "copilot" is followed by a
+          #     non-[A-Za-z0-9_-] char (space, newline) or end-of-string.
+          #     The lookahead condition MATCHES → negative lookahead FAILS
+          #     → name not captured → @copilot preserved as live mention. ✓
+          #   - For "@copilot-swe-agent": "copilot" is followed by "-"
+          #     which IS in [A-Za-z0-9_-] → lookahead condition doesn't
+          #     match → negative lookahead SUCCEEDS → name captured →
+          #     @copilot-swe-agent wrapped in backticks. ✓
+          #   - All other handles: lookahead condition irrelevant; name
+          #     captured and wrapped. ✓
+          # NOTE: the earlier (?!copilot\b) used \b which matches at
+          # word boundaries including before '-', so @copilot-swe-agent
+          # was also preserved as a live mention (ISS-02 / ISS-46, PR #225).
+          neutralize_mentions='
+            def neutralize:
+              gsub("(?<pre>(^|[^`A-Za-z0-9_]))@(?<name>(?!copilot(?:[^A-Za-z0-9_-]|$))[A-Za-z0-9][A-Za-z0-9-]*(?:/[A-Za-z0-9._-]+)?)";
+                   .pre + "`@" + .name + "`");
+          '
+
           if [[ "$review_count" -gt 0 ]]; then
-            review_section=$(echo "$review_comments" | jq -r '.[] |
-              "### Review from \(.reviewer) (\(.state))\n\(.body)\n\n---\n"')
+            review_section=$(echo "$review_comments" | jq -r "$neutralize_mentions"'
+              .[] |
+              "### Review from \(.reviewer) (\(.state))\n\(.body | neutralize)\n\n---\n"') \
+              || { echo "ERROR: jq failed neutralizing review_comments — aborting to avoid posting raw @-mentions"; exit 1; }
             comment+="${review_section}${nl}${nl}"
           fi
 
           if [[ "$inline_count" -gt 0 ]]; then
             comment+="### Inline Comments${nl}${nl}"
-            inline_section=$(echo "$inline_comments" | jq -r '
+            inline_section=$(echo "$inline_comments" | jq -r "$neutralize_mentions"'
               sort_by(.file) | group_by(.file) | .[] |
               "**\(.[0].file)**\n" +
               ([.[] |
-                "- **Line \(.line)** (\(.reviewer)): \(.body | split("\n") | join(" ") | .[0:500])"
+                "- **Line \(.line)** (\(.reviewer)): \(.body | neutralize | split("\n") | join(" ") | .[0:500])"
               ] | join("\n")) +
-              "\n"')
+              "\n"') \
+              || { echo "ERROR: jq failed neutralizing inline_comments — aborting to avoid posting raw @-mentions"; exit 1; }
             comment+="${inline_section}${nl}"
           fi
 
