@@ -36,7 +36,8 @@ Phase 0 does any work and is reported at the start of Step 1.0:
   - `README.md` or `AI_REPO_GUIDE.md` contains `TEMPLATE_PLACEHOLDER`.
   - `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`.
   - `grep -RIl TEMPLATE_PLACEHOLDER .` returns matches outside
-    `.github/prompts/` (which legitimately documents the marker).
+    `.github/prompts/`, `.context/state/`, and `.context/sessions/`
+    (which legitimately document or retain the marker per Step 0.2 item 6).
 
   Do the work in Step 0.2, then continue to Phase 1.
 - **Mode C — Derived repo, already customized.** No Mode B signals fire
@@ -60,7 +61,8 @@ same PR:
 2. **Regenerate `AI_REPO_GUIDE.md`** from the repo's real assets
    (`./.context/**`, `./docs/**`, source). This file is canonical for agents
    and must not retain template placeholder language.
-3. **Replace placeholders** wherever they occur:
+3. **Replace placeholders** wherever they occur (exception: `.context/state/` and
+   `.context/sessions/` files retain markers per item 6 below):
    - `TEMPLATE_PLACEHOLDER` markers → project-specific text or remove.
    - `PLEASE_UPDATE_THIS/URL` in `.github/ISSUE_TEMPLATE/config.yml` →
      actual `owner/repo` from `git remote -v`.
@@ -83,8 +85,9 @@ same PR:
      `No sessions yet` line; keep the `TEMPLATE_PLACEHOLDER` marker
      until the first close-out.
    - `.context/state/coordination.md` — clear all entries under
-     `## Active Locks` and `## Recent History`; keep the headers,
-     `## Lock` template block, and `TEMPLATE_PLACEHOLDER` marker.
+     `## Active Locks`, `## Recent History`, `## Blocked / Waiting`,
+     and `## PM Notes`; keep the section headers, `## Lock Template`
+     block, and `TEMPLATE_PLACEHOLDER` marker.
    - Do NOT delete `*_template.md` or `README.md` in those directories
      — they are the schemas downstream agents copy from.
 
