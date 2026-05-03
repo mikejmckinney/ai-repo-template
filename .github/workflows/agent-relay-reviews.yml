@@ -473,8 +473,16 @@ jobs:
           # set of things to fix hasn't changed since we last asked
           # Copilot — re-posting would burn another budget cycle without
           # giving Copilot any new information. Skip in that case.
+          #
+          # NOTE on jq operator precedence: in jq, | has lower precedence
+          # than ,, so `a, b | f` means `(a, b) | f` — applying f to both
+          # generators. Using a single flat [ url_exprs, reviewer_exprs ] array
+          # would apply the .reviewer/.body path expression to the URL strings
+          # from inline_comments, causing "Cannot index string with string 'body'".
+          # Fix: build each array separately, then concatenate with +.
           fingerprint=$(jq -n --argjson i "$inline_comments" --argjson r "$review_comments" '
-            ([ ($i // [])[].url, ($r // [])[] | (.reviewer + ":" + (.body // "" | tostring))[0:200] ]
+            (  [($i // [])[].url] +
+               [($r // [])[] | (.reviewer + ":" + (.body // "" | tostring))[0:200]]
               | sort | join("|"))' | sha256sum | awk '{print $1}')
           echo "Relay fingerprint: $fingerprint"
 
