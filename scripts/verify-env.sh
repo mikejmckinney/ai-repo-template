@@ -135,7 +135,7 @@ echo "Checking for template placeholders..."
 # for the script itself); state-file markers trigger a non-blocking warn so
 # lingering post-bootstrap markers stay visible.
 # End-anchored ERE so .context/state/_active.md.bak doesn't match state-file pattern.
-_PLACEHOLDER_EXCLUDE='\.context/state/_active\.md$|\.context/sessions/latest_summary\.md$|\.context/state/coordination\.md$'
+_PLACEHOLDER_EXCLUDE='^\./\.context/state/_active\.md$|^\./\.context/sessions/latest_summary\.md$|^\./\.context/state/coordination\.md$'
 if grep --help 2>&1 | grep -q -- "--exclude-dir"; then
     # grep supports --exclude-dir (GNU grep) — scan once, filter in memory
     _ALL_PLACEHOLDER_FILES=$(grep -rl --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ "TEMPLATE_PLACEHOLDER" . 2>/dev/null || true)
