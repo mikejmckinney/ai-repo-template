@@ -454,8 +454,7 @@ jobs:
               | { reviewer: .author.login, state: .state, body: .body }
             ]
             | group_by(.reviewer)
-            | map(last)
-            | .[]' 2>/dev/null || echo "[]")
+            | map(last)' 2>/dev/null || echo "[]")
 
           inline_count=$(echo "$inline_comments" | jq 'length' 2>/dev/null || echo "0")
           review_count=$(echo "$review_comments" | jq 'length' 2>/dev/null || echo "0")
