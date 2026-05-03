@@ -92,8 +92,6 @@ Scan ALL of these sources for issues, suggestions, requested changes, and TODOs:
 
 **If an item was already addressed** in a subsequent commit or resolved thread: mark it `✅ Already resolved` with a link to the resolving commit, and skip to the next item.
 
-**Mention discipline applies to the index too.** When the `Summary` column quotes a bot review body that contains an `@`-handle, backtick-wrap it (write `` `@codex` ``, `` `@gemini-code-assist` ``, etc.) — see the full rule in Phase 4 step 2 → `<agent>` substitution. The Phase 1 index has no top-level dispatch trigger, so **every** `@`-handle in this comment should be backticked.
-
 ### Index Output Format
 
 Post this as a PR comment before starting fixes:
@@ -156,11 +154,7 @@ Assign one of:
 
 ## Phase 3: Resolution Report
 
-After all items are processed, post a final summary comment.
-
-**Mention discipline applies here too.** The Resolution Report often quotes reviewer text in `Evidence:` lines and per-item details. Backtick-wrap every `@`-handle in those quotes — see the full rule in Phase 4 step 2 → `<agent>` substitution. The Resolution Report has no top-level dispatch trigger, so **every** `@`-handle in this comment should be backticked.
-
-Format:
+After all items are processed, post a final summary comment:
 
 ```markdown
 ## Resolution Report
@@ -275,7 +269,7 @@ For each eligible thread:
    ```
 
    Substitute:
-   - `<agent>` — the agent that ran this procedure. **Mention discipline** (applies here AND in every Phase 1 / Phase 3 comment you author): backtick-wrap **every** `@`-handle in the body — `` `@copilot` ``, `` `@claude` ``, `` `@codex` ``, `` `@gemini-code-assist` ``, `` `@copilot follow ...` ``, etc. The only un-backticked mentions in any comment you post are the ones you intend as live dispatches (the top-level `@copilot follow ...` / `@claude follow ...` trigger at the head of a relay or follow-up comment, when one is required). Every other `@`-handle — quoted from a bot review body, named in passing, referenced in an audit reply — must be backticked. An un-escaped handle is parsed by GitHub as a real mention and re-triggers the named bot (Copilot cloud agent on `@copilot`; `.github/workflows/claude.yml`'s `claude-mention` job on `@claude`; `chatgpt-codex-connector` on `@codex` when configured), which then re-fixes everything you just fixed, posts duplicate Resolution Reports, or opens an unrelated session. `agent-relay-reviews.yml` enforces the same rule at the workflow layer for relay comments — Phases 1, 3, and 4 are the agent-authored surfaces where this rule lives in the prompt. Use `claude (agent-fix-reviews)` when invoked by `.github/workflows/agent-fix-reviews.yml`, `copilot (via agent-relay-reviews)` when invoked by an `` `@copilot follow` `` comment from `.github/workflows/agent-relay-reviews.yml`, `` claude (`@claude` mention) `` / `` copilot (`@copilot` mention) `` when invoked by a direct human mention, or your own agent name if invoked by other tooling.
+   - `<agent>` — the agent that ran this procedure. **Always backtick-wrap any literal `@`-handle** in the reply body (write `` `@copilot` ``, `` `@claude` ``, `` `@copilot follow ...` `` — not the raw `@copilot` / `@claude` strings). An un-escaped handle in a thread reply is parsed by GitHub as a real mention and re-triggers the bot (Copilot cloud agent on `@copilot`; `.github/workflows/claude.yml`'s `claude-mention` job on `@claude`), which then re-fixes everything you just fixed and posts duplicate Resolution Reports. The top-level trigger comment (`@copilot follow ...` / `@claude follow ...`) stays un-backticked — that's the intended dispatch; the audit reply must not re-dispatch. Use `claude (agent-fix-reviews)` when invoked by `.github/workflows/agent-fix-reviews.yml`, `copilot (via agent-relay-reviews)` when invoked by an `` `@copilot follow` `` comment from `.github/workflows/agent-relay-reviews.yml`, `` claude (`@claude` mention) `` / `` copilot (`@copilot` mention) `` when invoked by a direct human mention, or your own agent name if invoked by other tooling.
    - `<SHORT_SHA>` — the resolving commit SHA (first 7 chars).
    - `ISS-NN` — the ID from your Phase 1 index.
 
