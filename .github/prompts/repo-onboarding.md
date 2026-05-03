@@ -120,8 +120,8 @@ Phase 1 has accurate state:
   WARNs. In particular, treat any `TEMPLATE_PLACEHOLDER`-still-present
   WARN as **Unstable** when running in a derived (non-template) repo —
   it means stub docs haven't been replaced yet (Phase 0 is incomplete).
-  (`verify-env.sh` already excludes the three state files that intentionally
-  retain the marker post-bootstrap, so any remaining warn is a real signal.)
+  (`verify-env.sh` reports state-file markers as a non-blocking pass, so
+  any blocking warn is a genuine unexpected-marker signal.)
 - Steps 1–4 above completed without missing-file errors. (`bash test.sh`
   is the deeper structural check; run it later in Phase 1 if you want
   full coverage.)

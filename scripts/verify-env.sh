@@ -129,25 +129,36 @@ echo ""
 # --- Template Verification ---
 echo "Checking for template placeholders..."
 # Prefer excluding directories during traversal; fall back to find-based scan
-# These three state files intentionally retain TEMPLATE_PLACEHOLDER post-bootstrap
-# (per repo-onboarding.md Step 0.2 item 6) — exclude them from the count so the
-# check only fires for unexpected markers.
-_PLACEHOLDER_EXCLUDE='/.context/state/_active.md\|.context/sessions/latest_summary.md\|.context/state/coordination.md'
+# Three state files retain TEMPLATE_PLACEHOLDER during bootstrap (per
+# repo-onboarding.md Step 0.2 item 6). Count them separately: unexpected
+# markers (all other files) trigger a blocking warn; state-file markers
+# emit a non-blocking pass so a freshly-bootstrapped repo reads Stable
+# while any lingering post-bootstrap markers remain visible.
+_PLACEHOLDER_EXCLUDE='\.context/state/_active\.md|\.context/sessions/latest_summary\.md|\.context/state/coordination\.md'
 if grep --help 2>&1 | grep -q -- "--exclude-dir"; then
     # grep supports --exclude-dir (GNU grep)
     PLACEHOLDER_COUNT=$(grep -rl --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ "TEMPLATE_PLACEHOLDER" . 2>/dev/null \
-        | grep -v "$_PLACEHOLDER_EXCLUDE" \
+        | grep -Ev "$_PLACEHOLDER_EXCLUDE" \
+        | wc -l | tr -d ' ')
+    PLACEHOLDER_STATE_COUNT=$(grep -rl --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ "TEMPLATE_PLACEHOLDER" . 2>/dev/null \
+        | grep -E "$_PLACEHOLDER_EXCLUDE" \
         | wc -l | tr -d ' ')
 else
     # Portable fallback using find -prune to avoid descending into heavy directories
     PLACEHOLDER_COUNT=$(find . \( -name .git -o -name node_modules -o -name venv -o -name .venv -o -name __pycache__ \) -prune -o -type f -exec grep -l "TEMPLATE_PLACEHOLDER" {} + 2>/dev/null \
-        | grep -v "$_PLACEHOLDER_EXCLUDE" \
+        | grep -Ev "$_PLACEHOLDER_EXCLUDE" \
+        | wc -l | tr -d ' ')
+    PLACEHOLDER_STATE_COUNT=$(find . \( -name .git -o -name node_modules -o -name venv -o -name .venv -o -name __pycache__ \) -prune -o -type f -exec grep -l "TEMPLATE_PLACEHOLDER" {} + 2>/dev/null \
+        | grep -E "$_PLACEHOLDER_EXCLUDE" \
         | wc -l | tr -d ' ')
 fi
 if [[ "$PLACEHOLDER_COUNT" -gt 0 ]]; then
     warn "$PLACEHOLDER_COUNT files still contain TEMPLATE_PLACEHOLDER"
 else
-    pass "No TEMPLATE_PLACEHOLDER markers found"
+    pass "No unexpected TEMPLATE_PLACEHOLDER markers found"
+fi
+if [[ "$PLACEHOLDER_STATE_COUNT" -gt 0 ]]; then
+    pass "Bootstrap state files retain TEMPLATE_PLACEHOLDER ($PLACEHOLDER_STATE_COUNT file(s)) — expected until first real task/session lands"
 fi
 
 echo ""
