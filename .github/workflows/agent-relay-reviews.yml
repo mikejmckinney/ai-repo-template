@@ -465,7 +465,7 @@ jobs:
           echo "Relay fingerprint: $fingerprint"
 
           prev_fingerprint=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
-            --jq '[.comments[] | select(.body | contains("📋 **Review Relay"))] | last | .body
+            --jq '[.comments[] | select(.body | sub("^[[:space:]]+"; "") | startswith("📋 **Review Relay"))] | last | .body
                   | capture("<!-- relay-fingerprint:(?<fp>[a-f0-9]+) -->") | .fp' 2>/dev/null || echo "")
           if [[ -n "$prev_fingerprint" && "$prev_fingerprint" == "$fingerprint" ]]; then
             echo "Unresolved bot-comment set unchanged since last relay (fingerprint $fingerprint). Skipping to preserve budget."

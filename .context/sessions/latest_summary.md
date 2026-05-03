@@ -16,7 +16,7 @@
 
 ## Close-out: pr-225 (chore/coordination-cleanup) — in progress 2026-05-02
 
-**What shipped**: Released stale locks for pr-216 and pr-179 in `coordination.md`; added missing `Result:` lines; refreshed `_active.md` to Issue #220 Phase 2 state; added missing close-out summaries for pr-179 and pr-216 to `latest_summary.md`; created `issue-220-phase2` lock with `Paths` including `.github/agents/*.agent.md` and `adr-003` (to prevent concurrent edits during Phase 2).
+**What shipped**: Released stale locks for pr-216 and pr-179 in `coordination.md`; added missing `Result:` lines; refreshed `_active.md` to Issue #220 Phase 2 state; added missing close-out summaries for pr-179 and pr-216 to `latest_summary.md`; pre-registered `issue-220-phase2` lock template in PM Notes with `Paths` including `.github/agents/*.agent.md` and `adr-003` (kept out of Active Locks to avoid false stale-lock alerts before the branch exists).
 **What was harder than expected**: Copilot relay (copilot-swe-agent) made an incorrect ISS-03 fix — removed `.github/agents/*.agent.md` from `_active.md` citing ADR-003, but live VS Code docs verify `.agent.md` supports `model:`. Required manual revert in `132452f`. The relay agent was operating on stale ADR knowledge.
 **What generalizes**: When a relay agent cites an ADR as justification for a correction, verify the cited ADR is not itself under active revision. If a Phase 2 plan is in flight that supersedes an ADR, `_active.md` should reference the plan, not the soon-to-be-obsolete ADR. Add a note to agent-best-practices once a second instance appears.
 
@@ -36,7 +36,7 @@
 
 <!-- List concrete outcomes, not just "worked on X" -->
 
-- **PR #225 / chore/coordination-cleanup** — released stale locks for pr-179 and pr-216 in `coordination.md`; added missing `Result:` lines and full lock blocks to Recent History; refreshed `_active.md` to Issue #220 Phase 2 state; backfilled missing `latest_summary.md` close-out entries for pr-179 and pr-216; created `issue-220-phase2` Active Lock with correct Paths and `State: backlog`.
+- **PR #225 / chore/coordination-cleanup** — released stale locks for pr-179 and pr-216 in `coordination.md`; added missing `Result:` lines and full lock blocks to Recent History; refreshed `_active.md` to Issue #220 Phase 2 state; backfilled missing `latest_summary.md` close-out entries for pr-179 and pr-216; pre-registered `issue-220-phase2` lock template in PM Notes with correct Paths and `State: backlog` (omitted from Active Locks to avoid false stale-lock alerts before branch exists).
 - **Issue #224 closed** — the stale-lock alert that triggered this PR; root cause was lock blocks never moved to Recent History when PRs #179 and #216 merged.
 - **5 bot-review rounds** — 15 total findings across gemini (11), chatgpt (3), and copilot (1); all resolved across commits `cbbf175` → `35eae6e` (copilot-swe-agent) → `132452f` → `5d52405` → `7a1e515` → `07b3de7`.
 
