@@ -359,3 +359,13 @@ facts, but a clearly-labelled Follow-up section at the bottom is permitted).
   - `../../ssp/SSP.md` → <https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/recovery/phases-1-7-uncommitted-work/ssp/SSP.md>
   - `../../.context/state/handoff_phases-1-7-recovery.md` → <https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/recovery/phases-1-7-uncommitted-work/.context/state/handoff_phases-1-7-recovery.md>
   - `../../controls/nist-800-171-mapping.csv` → <https://github.com/mikejmckinney/cmmc-level2-aws-enclave-reference2/blob/recovery/phases-1-7-uncommitted-work/controls/nist-800-171-mapping.csv>
+
+## Follow-up — cadence expansion (added 2026-05-03)
+
+- **Issue #226** — "State-file discipline + template hygiene" filed 2026-05-02
+  addresses the root cause that let three task-boundary rewrite failures go
+  unnoticed during PR #223: AGENTS.md rules existed but were not re-read at
+  each boundary. Issue #226 (PR 2) adds an explicit **re-read requirement** to
+  AGENTS.md §"Session-state cadence" so stale state becomes visible as agent
+  *input* rather than a remembered rule.
+  See <https://github.com/mikejmckinney/ai-repo-template/issues/226>.

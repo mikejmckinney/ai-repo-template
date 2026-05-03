@@ -2,7 +2,8 @@
 <!-- Schema (rewrite at every task boundary; max ~20 lines):
      Active Task | File | Role | Blockers | Next 1–3 actions.
      Anything else belongs in task_<slug>.md, not here.
-     See .context/state/README.md "Cadence" for rules and a worked example. -->
+     See .context/state/README.md "Cadence" for rules and a worked example.
+     Re-read requirement: before rewriting this file, re-read AGENTS.md §"Session-state cadence". -->
 
 # Active Task
 
