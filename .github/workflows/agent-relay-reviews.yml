@@ -548,7 +548,8 @@ jobs:
           if [[ "$review_count" -gt 0 ]]; then
             review_section=$(echo "$review_comments" | jq -r "$neutralize_mentions"'
               .[] |
-              "### Review from \(.reviewer) (\(.state))\n\(.body | neutralize)\n\n---\n"')
+              "### Review from \(.reviewer) (\(.state))\n\(.body | neutralize)\n\n---\n"') \
+              || { echo "ERROR: jq failed neutralizing review_comments — aborting to avoid posting raw @-mentions"; exit 1; }
             comment+="${review_section}${nl}${nl}"
           fi
 
@@ -560,7 +561,8 @@ jobs:
               ([.[] |
                 "- **Line \(.line)** (\(.reviewer)): \(.body | neutralize | split("\n") | join(" ") | .[0:500])"
               ] | join("\n")) +
-              "\n"')
+              "\n"') \
+              || { echo "ERROR: jq failed neutralizing inline_comments — aborting to avoid posting raw @-mentions"; exit 1; }
             comment+="${inline_section}${nl}"
           fi
 
