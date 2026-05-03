@@ -73,10 +73,13 @@ jobs:
         # SC1091: not following sourced files — suppressed repo-wide because
         #   test scripts source sibling scripts by computed path which
         #   shellcheck cannot follow statically.
+        # `-r` is required on GNU xargs so that an empty find result does
+        # not cause xargs to invoke shellcheck with no arguments (which would
+        # exit non-zero on some systems).
         run: |
           find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
             -name '*.sh' -print \
-            | xargs shellcheck --severity=warning --exclude=SC1091
+            | xargs -r shellcheck --severity=warning --exclude=SC1091
 
       # =====================================================
       # SHELL FORMATTING — shfmt (-d, blocks)
@@ -94,10 +97,12 @@ jobs:
         # -i 2: 2-space indent (matches repo convention).
         # -bn: binary ops at start of line.
         # -ci: indent case statements.
+        # `-r` is required on GNU xargs so that an empty find result does
+        # not cause xargs to invoke shfmt with no arguments.
         run: |
           find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
             -name '*.sh' -print \
-            | xargs shfmt -d -i 2 -bn -ci
+            | xargs -r shfmt -d -i 2 -bn -ci
 
       # =====================================================
       # WORKFLOW LINTING — actionlint (blocks)

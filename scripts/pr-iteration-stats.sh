@@ -96,6 +96,10 @@ REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null) || {
 
 # ---------------------------------------------------------------------------
 # Date range — ISO-8601 cutoff for closed-since filter
+# GNU date (Linux): `date -d "N days ago"`.
+# BSD date (macOS): `date -v -Nd` where N is a positive integer.
+# WINDOW_DAYS is validated as a positive integer above, so the expansion is
+# safe. The GNU form is tried first; BSD form is the fallback.
 # ---------------------------------------------------------------------------
 SINCE=$(date -u -d "${WINDOW_DAYS} days ago" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
   || date -u -v "-${WINDOW_DAYS}d" '+%Y-%m-%dT%H:%M:%SZ')

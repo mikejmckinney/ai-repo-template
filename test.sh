@@ -863,7 +863,9 @@ if [[ -f "$LF_FILE" ]]; then
     pass "$LF_FILE has no TEMPLATE_PLACEHOLDER marker"
   fi
 
-  # shellcheck step must be present (name or run line)
+  # Shell linter step must be present (name or run line).
+  # The grep pattern below looks for the string 'shellcheck' inside the
+  # workflow file — distinct from any SC directive in this script.
   if grep -qiE 'shellcheck' "$LF_FILE"; then
     pass "$LF_FILE has shellcheck step"
   else

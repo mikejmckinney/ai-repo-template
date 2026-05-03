@@ -12,6 +12,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Guard: python3 is required for fixture building and parsing.
+if ! command -v python3 &>/dev/null; then
+  printf 'Error: python3 is not installed or not in PATH.\n' >&2
+  exit 1
+fi
+
 PASS=0
 FAIL=0
 FAILED_NAMES=()
