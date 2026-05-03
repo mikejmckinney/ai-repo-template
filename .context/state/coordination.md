@@ -52,6 +52,25 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-229-phase1
+<!-- managed-for-pr:229 -->
+**Role**: devops
+**Session**: copilot/phase-1-issue-229
+**Claimed At**: 2026-05-03T22:25:50Z
+**Expected Duration**: 1 session
+**Paths**:
+- .github/workflows/lint-and-format.yml
+- scripts/pr-iteration-stats.sh
+- scripts/test-pr-iteration-stats.sh
+- test.sh
+- AI_REPO_GUIDE.md
+- .context/sessions/latest_summary.md
+- .context/state/_active.md
+- .context/state/coordination.md
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
+
 ## Lock: pr-228
 <!-- managed-for-pr:228 -->
 **Role**: architect

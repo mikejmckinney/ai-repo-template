@@ -49,20 +49,19 @@ Usage: parse-ownership-table.sh [--list-roles]
 EOF
 }
 
-if (( $# > 1 )); then
+if (($# > 1)); then
   echo "parse-ownership-table.sh: too many arguments" >&2
   usage
   exit 2
 fi
 
 case "${1:-}" in
-  '')
-    ;;  # default mode: stdin -> role/prefix
+  '') ;; # default mode: stdin -> role/prefix
   --list-roles)
     printf '%s\n' "$ROLES" | tr '|' '\n'
     exit 0
     ;;
-  -h|--help)
+  -h | --help)
     usage
     exit 0
     ;;

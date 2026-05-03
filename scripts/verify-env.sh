@@ -17,9 +17,18 @@ PASS=0
 FAIL=0
 WARN=0
 
-pass() { printf '%b✓%b %s\n' "$GREEN" "$NC" "$1"; PASS=$((PASS + 1)); }
-fail() { printf '%b✗%b %s\n' "$RED" "$NC" "$1"; FAIL=$((FAIL + 1)); }
-warn() { printf '%b⚠%b %s\n' "$YELLOW" "$NC" "$1"; WARN=$((WARN + 1)); }
+pass() {
+  printf '%b✓%b %s\n' "$GREEN" "$NC" "$1"
+  PASS=$((PASS + 1))
+}
+fail() {
+  printf '%b✗%b %s\n' "$RED" "$NC" "$1"
+  FAIL=$((FAIL + 1))
+}
+warn() {
+  printf '%b⚠%b %s\n' "$YELLOW" "$NC" "$1"
+  WARN=$((WARN + 1))
+}
 
 echo "========================================"
 echo "Environment Verification"
@@ -28,100 +37,100 @@ echo ""
 
 # --- Git ---
 echo "Checking Git..."
-if command -v git &> /dev/null; then
-    pass "git is installed ($(git --version | head -1))"
+if command -v git &>/dev/null; then
+  pass "git is installed ($(git --version | head -1))"
 else
-    fail "git is not installed"
+  fail "git is not installed"
 fi
 
-if git rev-parse --git-dir &> /dev/null; then
-    pass "Current directory is a git repository"
+if git rev-parse --git-dir &>/dev/null; then
+  pass "Current directory is a git repository"
 else
-    fail "Current directory is not a git repository"
+  fail "Current directory is not a git repository"
 fi
 
 echo ""
 
 # --- Node.js (if package.json exists) ---
 if [[ -f "package.json" ]]; then
-    echo "Checking Node.js..."
-    if command -v node &> /dev/null; then
-        pass "node is installed ($(node --version))"
-    else
-        fail "node is not installed"
-    fi
-    
-    if command -v npm &> /dev/null; then
-        pass "npm is installed ($(npm --version))"
-    else
-        fail "npm is not installed"
-    fi
-    
-    if [[ -d "node_modules" ]]; then
-        pass "node_modules exists"
-    else
-        warn "node_modules missing - run 'npm install'"
-    fi
-    echo ""
+  echo "Checking Node.js..."
+  if command -v node &>/dev/null; then
+    pass "node is installed ($(node --version))"
+  else
+    fail "node is not installed"
+  fi
+
+  if command -v npm &>/dev/null; then
+    pass "npm is installed ($(npm --version))"
+  else
+    fail "npm is not installed"
+  fi
+
+  if [[ -d "node_modules" ]]; then
+    pass "node_modules exists"
+  else
+    warn "node_modules missing - run 'npm install'"
+  fi
+  echo ""
 fi
 
 # --- Python (if requirements.txt or pyproject.toml exists) ---
 if [[ -f "requirements.txt" ]] || [[ -f "pyproject.toml" ]]; then
-    echo "Checking Python..."
-    if command -v python3 &> /dev/null; then
-        pass "python3 is installed ($(python3 --version))"
-    else
-        fail "python3 is not installed"
-    fi
-    
-    if command -v pip &> /dev/null || command -v pip3 &> /dev/null; then
-        pass "pip is installed"
-    else
-        fail "pip is not installed"
-    fi
-    echo ""
+  echo "Checking Python..."
+  if command -v python3 &>/dev/null; then
+    pass "python3 is installed ($(python3 --version))"
+  else
+    fail "python3 is not installed"
+  fi
+
+  if command -v pip &>/dev/null || command -v pip3 &>/dev/null; then
+    pass "pip is installed"
+  else
+    fail "pip is not installed"
+  fi
+  echo ""
 fi
 
 # --- Environment Variables ---
 echo "Checking environment files..."
 if [[ -f ".env" ]]; then
-    pass ".env file exists"
+  pass ".env file exists"
 elif [[ -f ".env.example" ]]; then
-    warn ".env missing but .env.example exists - copy and configure"
+  warn ".env missing but .env.example exists - copy and configure"
 else
-    warn "No .env file found"
+  warn "No .env file found"
 fi
 
 echo ""
 
 # --- Docker (if docker-compose exists) ---
 if [[ -f "docker-compose.yml" ]] || [[ -f "docker-compose.yaml" ]]; then
-    echo "Checking Docker..."
-    if command -v docker &> /dev/null; then
-        pass "docker is installed"
-        if docker info &> /dev/null; then
-            pass "docker daemon is running"
-        else
-            fail "docker daemon is not running"
-        fi
+  echo "Checking Docker..."
+  if command -v docker &>/dev/null; then
+    pass "docker is installed"
+    if docker info &>/dev/null; then
+      pass "docker daemon is running"
     else
-        fail "docker is not installed"
+      fail "docker daemon is not running"
     fi
-    echo ""
+  else
+    fail "docker is not installed"
+  fi
+  echo ""
 fi
 
 # --- Context Pack ---
 echo "Checking context pack..."
 if [[ -f ".context/00_INDEX.md" ]]; then
-    pass ".context/00_INDEX.md exists"
+  pass ".context/00_INDEX.md exists"
 else
-    warn ".context/00_INDEX.md missing - run repo-onboarding"
+  warn ".context/00_INDEX.md missing - run repo-onboarding"
 fi
 
 if [[ -f ".context/state/_active.md" ]]; then
-    pass ".context/state/_active.md exists"
+  pass ".context/state/_active.md exists"
 else
-    warn ".context/state/_active.md missing"
+  warn ".context/state/_active.md missing"
 fi
 
 echo ""
@@ -142,21 +151,21 @@ echo "Checking for template placeholders..."
 _PLACEHOLDER_EXCLUDE='^\./\.context/state/_active\.md$|^\./\.context/sessions/latest_summary\.md$|^\./\.context/state/coordination\.md$'
 _PLACEHOLDER_LEGIT='^\./scripts/verify-env\.sh$|^\./AGENTS\.md$|^\./\.github/prompts/.*|^\./\.github/agents/.*\.agent\.md$|^\./\.github/ISSUE_TEMPLATE/agent_init\.md$|^\./.*\.template$|^\./.*_template\.md$'
 if grep --help 2>&1 | grep -q -- "--exclude-dir"; then
-    # grep supports --exclude-dir (GNU grep) — scan once, filter in memory
-    _ALL_PLACEHOLDER_FILES=$(grep -rl --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ "TEMPLATE_PLACEHOLDER" . 2>/dev/null || true)
+  # grep supports --exclude-dir (GNU grep) — scan once, filter in memory
+  _ALL_PLACEHOLDER_FILES=$(grep -rl --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ "TEMPLATE_PLACEHOLDER" . 2>/dev/null || true)
 else
-    # Portable fallback using find -prune to avoid descending into heavy directories
-    _ALL_PLACEHOLDER_FILES=$(find . \( -name .git -o -name node_modules -o -name venv -o -name .venv -o -name __pycache__ \) -prune -o -type f -exec grep -l "TEMPLATE_PLACEHOLDER" {} + 2>/dev/null || true)
+  # Portable fallback using find -prune to avoid descending into heavy directories
+  _ALL_PLACEHOLDER_FILES=$(find . \( -name .git -o -name node_modules -o -name venv -o -name .venv -o -name __pycache__ \) -prune -o -type f -exec grep -l "TEMPLATE_PLACEHOLDER" {} + 2>/dev/null || true)
 fi
 PLACEHOLDER_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | { grep -v '^$' || true; } | { grep -Ev "$_PLACEHOLDER_EXCLUDE|$_PLACEHOLDER_LEGIT" || true; } | wc -l | tr -d ' ')
 PLACEHOLDER_STATE_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | { grep -v '^$' || true; } | { grep -E "$_PLACEHOLDER_EXCLUDE" || true; } | wc -l | tr -d ' ')
 if [[ "$PLACEHOLDER_COUNT" -gt 0 ]]; then
-    warn "$PLACEHOLDER_COUNT files still contain TEMPLATE_PLACEHOLDER"
+  warn "$PLACEHOLDER_COUNT files still contain TEMPLATE_PLACEHOLDER"
 else
-    pass "No unexpected TEMPLATE_PLACEHOLDER markers found"
+  pass "No unexpected TEMPLATE_PLACEHOLDER markers found"
 fi
 if [[ "$PLACEHOLDER_STATE_COUNT" -gt 0 ]]; then
-    warn "Bootstrap state files retain TEMPLATE_PLACEHOLDER ($PLACEHOLDER_STATE_COUNT file(s)) — replace when first real task/session lands"
+  warn "Bootstrap state files retain TEMPLATE_PLACEHOLDER ($PLACEHOLDER_STATE_COUNT file(s)) — replace when first real task/session lands"
 fi
 
 echo ""
@@ -171,13 +180,13 @@ printf '%bFailed:%b %d\n' "$RED" "$NC" "$FAIL"
 echo ""
 
 if [[ $FAIL -gt 0 ]]; then
-    printf '%bEnvironment verification FAILED%b\n' "$RED" "$NC"
-    echo "Fix the failed checks before proceeding."
-    exit 1
+  printf '%bEnvironment verification FAILED%b\n' "$RED" "$NC"
+  echo "Fix the failed checks before proceeding."
+  exit 1
 elif [[ $WARN -gt 0 ]]; then
-    printf '%bEnvironment verification PASSED with warnings%b\n' "$YELLOW" "$NC"
-    exit 0
+  printf '%bEnvironment verification PASSED with warnings%b\n' "$YELLOW" "$NC"
+  exit 0
 else
-    printf '%bEnvironment verification PASSED%b\n' "$GREEN" "$NC"
-    exit 0
+  printf '%bEnvironment verification PASSED%b\n' "$GREEN" "$NC"
+  exit 0
 fi

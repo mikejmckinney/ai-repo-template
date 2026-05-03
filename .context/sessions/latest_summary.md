@@ -8,13 +8,19 @@
 
 ## Session Info
 
-**Date**: 2026-05-02  
-**Duration**: ~3h  
-**Agent/Developer**: GitHub Copilot (chore/coordination-cleanup)
+**Date**: 2026-05-03
+**Duration**: ~1h
+**Agent/Developer**: GitHub Copilot (copilot/phase-1-issue-229)
 
 ---
 
-## Close-out: pr-225 (chore/coordination-cleanup) — in progress 2026-05-02
+## Close-out: pr-229-phase1 — in progress 2026-05-03
+
+**What shipped**: Phase 1 of issue #229. Replaced `lint-and-format.yml` TEMPLATE_PLACEHOLDER with shellcheck (warning+, blocks) + shfmt (-d, blocks) + actionlint (blocks). Added `scripts/pr-iteration-stats.sh` — rolling 14-day PR review-loop metric with three counters (total_rounds, fix_rounds, rejected_rounds) plus thread counts, `--window`, and `--json` flags. Added `scripts/test-pr-iteration-stats.sh` with 19 smoke-test assertions. Ran shfmt auto-format on 14 pre-existing scripts. Added 8 new test.sh invariants. Updated `AI_REPO_GUIDE.md` with new script in table + verification commands.
+**What was harder than expected**: `python3 - << 'PYEOF'` combined with stdin pipe fails under shellcheck (SC2259 — heredoc overrides pipe). Fixed by writing Python scripts to `mktemp -d` temp files and piping JSON to them separately.
+**What generalizes**: SC2259 pattern: never combine `cmd | python3 - << 'HEREDOC'`. Always write inline Python to a temp file and call it as `python3 "$TMP_FILE"` when stdin data must be piped.
+
+
 
 **What shipped**: Released stale locks for pr-216 and pr-179 in `coordination.md`; added missing `Result:` lines; refreshed `_active.md` to Issue #220 Phase 2 state; added missing close-out summaries for pr-179 and pr-216 to `latest_summary.md`; pre-registered `issue-220-phase2` lock template in PM Notes with `Paths` including `.github/agents/*.agent.md` and `adr-003` (kept out of Active Locks to avoid false stale-lock alerts before the branch exists).
 **What was harder than expected**: Copilot relay (copilot-swe-agent) made an incorrect ISS-03 fix — removed `.github/agents/*.agent.md` from `_active.md` citing ADR-003, but live VS Code docs verify `.agent.md` supports `model:`. Required manual revert in `132452f`. The relay agent was operating on stale ADR knowledge.

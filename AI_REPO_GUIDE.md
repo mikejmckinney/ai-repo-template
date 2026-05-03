@@ -88,6 +88,7 @@ bash install.sh
 │   ├── auto-rebase-overlapping.sh    # Auto-rebase library (ADR-010)
 │   ├── multi-dispatch-safety.sh      # Parallel-dispatch safety classifier
 │   ├── parse-ownership-table.sh      # Ownership-table parser used by workflows
+│   ├── pr-iteration-stats.sh         # Rolling PR review-loop metrics (issue #229)
 │   └── test-*.sh             # Unit tests for the helper scripts above
 │
 ├── config/                   # Deployment config templates (see table below)
@@ -185,6 +186,7 @@ bash install.sh
 | `scripts/setup.sh` | First-run project customization helper |
 | `scripts/verify-env.sh` | Environment & placeholder sanity check |
 | `scripts/db-reset.sh` | Optional database reset stub |
+| `scripts/pr-iteration-stats.sh` | Rolling 14-day PR review-loop metrics (total/fix/rejected rounds, threads); `--window <days>`, `--json` |
 
 ### Issue Templates
 | File | Purpose |
@@ -270,6 +272,9 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 
 # Validate shell scripts (if shellcheck installed)
 shellcheck install.sh test.sh
+
+# PR review-loop rolling metrics (last 14 days)
+bash scripts/pr-iteration-stats.sh --window 14
 
 # List all markdown files
 find . -name "*.md" -not -path "./.git/*" | head -20

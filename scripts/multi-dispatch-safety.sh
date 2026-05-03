@@ -74,7 +74,7 @@ _mds_load_role_prefixes() {
     _mds_role_prefixes=""
     return 0
   fi
-  _mds_role_prefixes=$("$_MDS_PARSE_OWNERSHIP" < "$_MDS_OWNERSHIP_FILE" || true)
+  _mds_role_prefixes=$("$_MDS_PARSE_OWNERSHIP" <"$_MDS_OWNERSHIP_FILE" || true)
 }
 
 # Print the canonical role names this dispatcher recognizes (lowercased).
@@ -178,7 +178,7 @@ extract_scope() {
           fi
           ;;
       esac
-    done <<< "$labels"
+    done <<<"$labels"
     if [[ -n "$picked_role" ]]; then
       # Emit prefixes for that role from the ownership map. Compare
       # case-insensitively against the role column. Filter out
@@ -257,7 +257,7 @@ classify_overlap() {
       echo "soft"
       return 0
     fi
-  done <<< "$_mds_role_prefixes"
+  done <<<"$_mds_role_prefixes"
   echo "none"
 }
 
@@ -287,7 +287,7 @@ select_dispatchable() {
   # Collect inputs.
   local issues=("$@")
   local n=${#issues[@]}
-  if (( n == 0 )); then
+  if ((n == 0)); then
     return 0
   fi
 
@@ -302,15 +302,15 @@ select_dispatchable() {
 
   # 1. Pre-compute scope for each input issue.
   local i
-  for ((i=0; i<n; i++)); do
-    extract_scope "${issues[i]}" > "$work/scope.${issues[i]}" 2> "$work/mode.${issues[i]}"
+  for ((i = 0; i < n; i++)); do
+    extract_scope "${issues[i]}" >"$work/scope.${issues[i]}" 2>"$work/mode.${issues[i]}"
   done
 
   # 2. Pre-compute depends-on for each input issue (only deps that point
   #    inside the input set OR that are already closed are tractable;
   #    others trigger refusal).
   declare -A deps_of=()
-  for ((i=0; i<n; i++)); do
+  for ((i = 0; i < n; i++)); do
     local iss="${issues[i]}"
     local d
     d=$(extract_depends_on "$iss" | tr '\n' ' ')
@@ -324,10 +324,10 @@ select_dispatchable() {
   cycle_members=$(_mds_find_cycles deps_of in_set "${issues[@]}")
 
   # 4. Sequential first-fit walk.
-  declare -A selected=()      # issue -> 1
-  local order=()              # selected, in input order
+  declare -A selected=() # issue -> 1
+  local order=()         # selected, in input order
 
-  for ((i=0; i<n; i++)); do
+  for ((i = 0; i < n; i++)); do
     local iss="${issues[i]}"
 
     # 4a. Cycle?
@@ -401,7 +401,7 @@ _mds_find_cycles() {
   shift 2
   local nodes=("$@")
 
-  declare -A color=()           # 0=white, 1=gray, 2=black
+  declare -A color=() # 0=white, 1=gray, 2=black
   declare -A on_cycle=()
   local node u v stack=() iter=()
 
@@ -415,7 +415,7 @@ _mds_find_cycles() {
     # We track an explicit list of children-iterators by storing the
     # remaining deps of each frame in a parallel array.
     iter=("${_deps[$node]}")
-    while (( ${#stack[@]} > 0 )); do
+    while ((${#stack[@]} > 0)); do
       u="${stack[-1]}"
       # Pop next dep from the iterator of the top frame.
       local rest="${iter[-1]}"
@@ -445,9 +445,9 @@ _mds_find_cycles() {
         1)
           # Back edge — cycle. Mark every gray frame from v..top.
           local mark=0
-          for ((k=0; k<${#stack[@]}; k++)); do
+          for ((k = 0; k < ${#stack[@]}; k++)); do
             if [[ "${stack[k]}" == "$v" ]]; then mark=1; fi
-            if (( mark )); then on_cycle["${stack[k]}"]=1; fi
+            if ((mark)); then on_cycle["${stack[k]}"]=1; fi
           done
           ;;
         2)

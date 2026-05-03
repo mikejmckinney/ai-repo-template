@@ -1,0 +1,282 @@
+#!/usr/bin/env bash
+# Unit tests for scripts/pr-iteration-stats.sh (issue #229 Phase 1).
+#
+# Tests the Python parsing logic in isolation by invoking parser.py
+# directly with fixture JSON, avoiding the need for a live `gh` session
+# or GitHub API access.
+#
+# Run: bash scripts/test-pr-iteration-stats.sh
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+PASS=0
+FAIL=0
+FAILED_NAMES=()
+
+assert_eq() {
+  local name="$1" expected="$2" actual="$3"
+  if [[ "$actual" == "$expected" ]]; then
+    PASS=$((PASS + 1))
+    printf '  ✅ %s\n' "$name"
+  else
+    FAIL=$((FAIL + 1))
+    FAILED_NAMES+=("$name")
+    printf '  ❌ %s\n' "$name"
+    printf '       expected: %q\n' "$expected"
+    printf '       actual:   %q\n' "$actual"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Set up temp dir with parser.py (extracted from pr-iteration-stats.sh)
+# ---------------------------------------------------------------------------
+TMP_DIR=$(mktemp -d)
+# shellcheck disable=SC2317  # invoked via trap
+cleanup() { rm -rf "$TMP_DIR"; }
+trap cleanup EXIT
+
+# Extract parser.py from pr-iteration-stats.sh (between 'parser.py' heredoc
+# markers) and write it to $TMP_DIR/parser.py for reuse across tests.
+cat >"$TMP_DIR/parser.py" <<'PYEOF'
+import sys, json, re
+
+data = json.load(sys.stdin)
+results = []
+
+AGENT_RE = re.compile(r'\[bot\]|copilot|claude|gemini|codex|chatgpt', re.I)
+REPORT_HEADER_RE = re.compile(
+    r'^##\s+Resolution\s+Report\s*[—\-]+\s*Round', re.MULTILINE | re.I
+)
+FIXED_RE = re.compile(r'fixed in this pass[:\s]+(\d+)', re.I)
+TOTAL_RE = re.compile(r'total items found[:\s]+(\d+)', re.I)
+
+for pr in data:
+    number = pr['number']
+    threads_opened = pr['reviewThreads']['totalCount']
+    threads_resolved = sum(
+        1 for t in pr['reviewThreads']['nodes'] if t['isResolved']
+    )
+
+    total_rounds = 0
+    fix_rounds = 0
+    rejected_rounds = 0
+
+    for comment in pr['comments']['nodes']:
+        body = comment.get('body') or ''
+        author = (comment.get('author') or {}).get('login', '')
+
+        is_agent_authored = AGENT_RE.search(author) and REPORT_HEADER_RE.search(body)
+        is_body_match = REPORT_HEADER_RE.search(body)
+        if not (is_agent_authored or is_body_match):
+            continue
+
+        total_rounds += 1
+
+        fixed_match = FIXED_RE.search(body)
+        total_match = TOTAL_RE.search(body)
+        fixed_count = int(fixed_match.group(1)) if fixed_match else 0
+        total_count = int(total_match.group(1)) if total_match else 0
+
+        if fixed_count > 0:
+            fix_rounds += 1
+        elif total_count > 0:
+            rejected_rounds += 1
+
+    results.append({
+        'pr': number,
+        'total_rounds': total_rounds,
+        'fix_rounds': fix_rounds,
+        'rejected_rounds': rejected_rounds,
+        'threads_opened': threads_opened,
+        'threads_resolved': threads_resolved,
+    })
+
+print(json.dumps(results))
+PYEOF
+
+# fixture_builder.py — builds fixture JSON by scenario name, avoids shell
+# escaping issues with multi-line bodies embedded in JSON strings.
+cat >"$TMP_DIR/fixture_builder.py" <<'PYEOF'
+import sys, json
+
+REPORT_FIX = (
+    "## Resolution Report \u2014 Round 3\n\n"
+    "Fixed in this pass: 2\nTotal items found: 3\n"
+)
+REPORT_REJECTED = (
+    "## Resolution Report \u2014 Round 5\n\n"
+    "Fixed in this pass: 0\nTotal items found: 2\n"
+)
+REPORT_NO_ITEMS = (
+    "## Resolution Report \u2014 Round 1\n\n"
+    "Fixed in this pass: 0\nTotal items found: 0\n"
+)
+REGULAR = "Just a normal review comment, no report header."
+
+def make_pr(number, threads_total, threads_resolved, comments):
+    nodes = [{"isResolved": i < threads_resolved}
+             for i in range(threads_total)]
+    return {
+        "number": number,
+        "reviewThreads": {"totalCount": threads_total, "nodes": nodes},
+        "comments": {"nodes": comments},
+    }
+
+def bot(login, body):
+    return {"body": body, "author": {"login": login}}
+
+def human(body):
+    return {"body": body, "author": {"login": "mikejmckinney"}}
+
+FIXTURES = {
+    "one_fix": [make_pr(101, 2, 1, [
+        bot("claude[bot]", REPORT_FIX),
+    ])],
+    "one_rejected": [make_pr(102, 3, 0, [
+        bot("copilot-pull-request-reviewer[bot]", REPORT_REJECTED),
+    ])],
+    "mixed": [make_pr(103, 4, 2, [
+        bot("claude[bot]", REPORT_FIX),
+        bot("copilot-pull-request-reviewer[bot]", REPORT_REJECTED),
+        bot("gemini-code-assist[bot]", REPORT_NO_ITEMS),
+    ])],
+    "human_only": [make_pr(104, 0, 0, [
+        human(REGULAR),
+    ])],
+    "empty_prs": [],
+    "no_comments": [make_pr(105, 0, 0, [])],
+    "body_only_detection": [make_pr(106, 1, 1, [
+        {"body": REPORT_FIX, "author": {"login": "unknown-user"}},
+    ])],
+}
+
+print(json.dumps(FIXTURES[sys.argv[1]]))
+PYEOF
+
+# Helpers
+make_fixture() { python3 "$TMP_DIR/fixture_builder.py" "$1"; }
+parse_pr_json() { python3 "$TMP_DIR/parser.py"; }
+field() {
+  local key="$1" idx="${2:-0}"
+  python3 -c "import sys,json; r=json.load(sys.stdin)[$idx]; print(r['$key'])"
+}
+
+# ---------------------------------------------------------------------------
+# Test suite
+# ---------------------------------------------------------------------------
+echo "pr-iteration-stats parser tests"
+echo ""
+
+# ── Test 1: One fix round ───────────────────────────────────────────────────
+echo "total_rounds / fix_rounds"
+
+result=$(make_fixture one_fix | parse_pr_json)
+assert_eq "one fix comment → total_rounds=1" "1" "$(printf '%s' "$result" | field total_rounds)"
+assert_eq "one fix comment → fix_rounds=1" "1" "$(printf '%s' "$result" | field fix_rounds)"
+assert_eq "one fix comment → rejected_rounds=0" "0" "$(printf '%s' "$result" | field rejected_rounds)"
+echo ""
+
+# ── Test 2: One all-rejected round ─────────────────────────────────────────
+echo "rejected_rounds counter"
+
+result=$(make_fixture one_rejected | parse_pr_json)
+assert_eq "one rejected comment → total_rounds=1" "1" "$(printf '%s' "$result" | field total_rounds)"
+assert_eq "one rejected comment → fix_rounds=0" "0" "$(printf '%s' "$result" | field fix_rounds)"
+assert_eq "one rejected comment → rejected_rounds=1" "1" "$(printf '%s' "$result" | field rejected_rounds)"
+echo ""
+
+# ── Test 3: Mixed rounds ────────────────────────────────────────────────────
+echo "mixed rounds (fix + rejected + no-items)"
+
+result=$(make_fixture mixed | parse_pr_json)
+assert_eq "mixed PR → total_rounds=3" "3" "$(printf '%s' "$result" | field total_rounds)"
+assert_eq "mixed PR → fix_rounds=1" "1" "$(printf '%s' "$result" | field fix_rounds)"
+assert_eq "mixed PR → rejected_rounds=1" "1" "$(printf '%s' "$result" | field rejected_rounds)"
+assert_eq "mixed PR → threads_opened=4" "4" "$(printf '%s' "$result" | field threads_opened)"
+assert_eq "mixed PR → threads_resolved=2" "2" "$(printf '%s' "$result" | field threads_resolved)"
+echo ""
+
+# ── Test 4: Non-agent comment not counted ──────────────────────────────────
+echo "non-agent comments excluded"
+
+result=$(make_fixture human_only | parse_pr_json)
+assert_eq "human comment → total_rounds=0" "0" "$(printf '%s' "$result" | field total_rounds)"
+echo ""
+
+# ── Test 5: Empty PR list ───────────────────────────────────────────────────
+echo "empty PR list"
+
+result=$(make_fixture empty_prs | parse_pr_json)
+count=$(printf '%s' "$result" | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))')
+assert_eq "empty input → empty results" "0" "$count"
+echo ""
+
+# ── Test 6: PR with zero comments ──────────────────────────────────────────
+echo "PR with zero comments"
+
+result=$(make_fixture no_comments | parse_pr_json)
+assert_eq "no comments → total_rounds=0" "0" "$(printf '%s' "$result" | field total_rounds)"
+echo ""
+
+# ── Test 7: Body-only detection (unrecognised login) ────────────────────────
+echo "body-only detection fallback"
+
+result=$(make_fixture body_only_detection | parse_pr_json)
+assert_eq "body-only detection → total_rounds=1" "1" "$(printf '%s' "$result" | field total_rounds)"
+echo ""
+
+# ── Test 8: --help exits 0 and mentions key flags ───────────────────────────
+echo "CLI --help flag"
+
+help_exit=0
+help_out=$(bash "$REPO_ROOT/scripts/pr-iteration-stats.sh" --help 2>&1) || help_exit=$?
+assert_eq "--help exits 0" "0" "$help_exit"
+if printf '%s' "$help_out" | grep -qF -- '--window'; then
+  PASS=$((PASS + 1))
+  printf '  ✅ --help mentions --window\n'
+else
+  FAIL=$((FAIL + 1))
+  FAILED_NAMES+=("--help mentions --window")
+  printf '  ❌ --help does not mention --window\n'
+fi
+if printf '%s' "$help_out" | grep -qF -- '--json'; then
+  PASS=$((PASS + 1))
+  printf '  ✅ --help mentions --json\n'
+else
+  FAIL=$((FAIL + 1))
+  FAILED_NAMES+=("--help mentions --json")
+  printf '  ❌ --help does not mention --json\n'
+fi
+echo ""
+
+# ── Test 9: Unknown flag exits non-zero ─────────────────────────────────────
+echo "CLI unknown flag"
+
+bad_exit=0
+bash "$REPO_ROOT/scripts/pr-iteration-stats.sh" --not-a-flag 2>/dev/null || bad_exit=$?
+if [[ "$bad_exit" -ne 0 ]]; then
+  PASS=$((PASS + 1))
+  printf '  ✅ unknown flag exits non-zero (%d)\n' "$bad_exit"
+else
+  FAIL=$((FAIL + 1))
+  FAILED_NAMES+=("unknown flag exits non-zero")
+  printf '  ❌ unknown flag should exit non-zero\n'
+fi
+echo ""
+
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
+echo "─────────────────────────────────────"
+echo "Passed: $PASS"
+echo "Failed: $FAIL"
+if ((FAIL > 0)); then
+  echo ""
+  echo "Failed tests:"
+  for n in "${FAILED_NAMES[@]}"; do echo "  - $n"; done
+  exit 1
+fi
+exit 0
