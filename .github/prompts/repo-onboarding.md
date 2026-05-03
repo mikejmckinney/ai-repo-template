@@ -62,8 +62,8 @@ same PR:
    - `TEMPLATE_PLACEHOLDER` markers → project-specific text or remove,
      **except** in `.context/state/_active.md`, `.context/sessions/latest_summary.md`,
      and `.context/state/coordination.md` — those files intentionally retain
-     the marker post-onboarding per item 6 below (so Mode B detection
-     correctly excludes them).
+     the marker post-onboarding per item 6 below (Step 0.1 detection
+     is now limited to README/AI_REPO_GUIDE to allow this).
    - `PLEASE_UPDATE_THIS/URL` in `.github/ISSUE_TEMPLATE/config.yml` →
      actual `owner/repo` from `git remote -v`.
 4. **Extend `.context/rules/agent_ownership.md`** with rows for the project's
@@ -78,9 +78,10 @@ same PR:
    task data. Reset them so re-read cadence (AGENTS.md →
    "Session-state cadence") doesn't ingest the template's stale state
    as if it were this project's reality:
-   - `.context/state/_active.md` — replace body with the empty schema;
-     keep the schema comment and `TEMPLATE_PLACEHOLDER` marker until
-     the first real task lands.
+   - `.context/state/_active.md` — clear the task details under the
+     `# Active Task` header (resetting the fields to empty); keep the
+     schema comment and `TEMPLATE_PLACEHOLDER` marker until the first
+     real task lands.
    - `.context/sessions/latest_summary.md` — replace body with a single
      `No sessions yet` line; keep the `TEMPLATE_PLACEHOLDER` marker
      until the first close-out.
@@ -119,10 +120,8 @@ Phase 1 has accurate state:
   WARNs. In particular, treat any `TEMPLATE_PLACEHOLDER`-still-present
   WARN as **Unstable** when running in a derived (non-template) repo —
   it means stub docs haven't been replaced yet (Phase 0 is incomplete).
-  _Exception_: `.context/state/_active.md`, `.context/sessions/latest_summary.md`,
-  and `.context/state/coordination.md` intentionally retain the marker
-  post-bootstrap (per Step 0.2 item 6) until first project data lands;
-  warns for those three files alone are not blocking.
+  (`verify-env.sh` already excludes the three state files that intentionally
+  retain the marker post-bootstrap, so any remaining warn is a real signal.)
 - Steps 1–4 above completed without missing-file errors. (`bash test.sh`
   is the deeper structural check; run it later in Phase 1 if you want
   full coverage.)

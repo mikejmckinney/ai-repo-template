@@ -36,7 +36,7 @@ for the rest of the session.
   - If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
     replace it with the actual repository path (e.g., `owner/repo`) detected from `git remote -v`.
   - **Clear the template's working state (Mode B only).** `.context/state/*.md` and `.context/sessions/*.md` ship populated with ai-repo-template's own task data and session history. Downstream projects must reset these to empty templates during onboarding so re-read cadence (§"Session-state cadence") doesn't reinforce the template's stale state as if it were the project's reality. Specifically:
-    - `.context/state/_active.md` — replace body with empty schema (keep the schema comment and the `TEMPLATE_PLACEHOLDER` marker until first real task).
+    - `.context/state/_active.md` — clear the task details under the `# Active Task` header (resetting the fields to empty); keep the schema comment and the `TEMPLATE_PLACEHOLDER` marker until first real task.
     - `.context/sessions/latest_summary.md` — replace body with a single "No sessions yet" line (keep the marker until first close-out).
     - `.context/state/coordination.md` — clear all entries under `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and `## PM Notes`; keep the section headers, `## Lock Template`, and `TEMPLATE_PLACEHOLDER` marker.
     - Do NOT delete `*_template.md` or `README.md` files in those directories — they are the schemas downstream agents copy from.
