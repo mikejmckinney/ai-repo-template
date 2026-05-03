@@ -428,7 +428,19 @@ jobs:
             ]' 2>/dev/null || echo "[]")
 
           # ── Extract review-level summaries (no isResolved on reviews) ──
-          review_comments=$(echo "$threads_json" | jq --arg bots "$AI_REVIEWERS" '
+          # Reviews don't carry isResolved (only their child threads do), so we
+          # can't filter by resolution directly. Without a filter, every
+          # COMMENTED summary a bot has ever posted on this PR gets re-bundled
+          # forever — including stale ones from prior rounds and "no feedback"
+          # follow-ups. Restrict to reviewers who currently have at least one
+          # *unresolved* inline thread on this PR; a review summary is only
+          # relayable if its author still has actionable inline feedback
+          # outstanding. (Bug surfaced on PR #225: a "no feedback" Gemini review
+          # re-triggered relay because 14 stale review summaries were bundled.)
+          active_reviewers=$(echo "$inline_comments" | jq -c '[.[].reviewer] | unique')
+          review_comments=$(echo "$threads_json" | jq \
+            --arg bots "$AI_REVIEWERS" \
+            --argjson active "$active_reviewers" '
             [ (.reviews.nodes // [])[]
               | select(
                   (
@@ -438,6 +450,7 @@ jobs:
                   and (.author.login | test("^copilot(\\[bot\\])?$") | not)
                   and (.state == "CHANGES_REQUESTED" or .state == "COMMENTED")
                   and (.body != null) and (.body != "")
+                  and (.author.login as $a | $active | index($a))
                 )
               | { reviewer: .author.login, state: .state, body: .body }
             ]' 2>/dev/null || echo "[]")
@@ -477,7 +490,7 @@ jobs:
           # backslash sequences (\c, \t, \0NNN, …) pass through verbatim.
           nl=$'\n'
 
-          comment="📋 **Review Relay (cycle ${CYCLE}/3)** — Forwarding ${total} comment(s) from bot reviewers.${nl}"
+          comment="📋 **Review Relay (cycle ${CYCLE})** — Forwarding ${total} comment(s) from bot reviewers.${nl}"
           comment+="<!-- relay-fingerprint:${fingerprint} -->${nl}${nl}"
           comment+="@copilot follow .github/prompts/pr-resolve-all.md${nl}${nl}"
           comment+="Apply that procedure to the review feedback collected below. In particular:${nl}${nl}"
