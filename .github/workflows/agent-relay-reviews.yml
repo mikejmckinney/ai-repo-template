@@ -503,19 +503,38 @@ jobs:
           comment+="The Phase-1 Index and Phase-3 Resolution Report MUST be two distinct PR comments, in that order — same shape Claude uses on the default fix path.${nl}${nl}"
           comment+="---${nl}${nl}"
 
+          # ── Neutralize stray @-mentions in forwarded bot bodies ──
+          # Bot summaries quote third-party trigger phrases verbatim
+          # (e.g. Codex's banner contains literal `@codex review`). When
+          # we forward those bodies inside the relay comment, those
+          # @-mentions become live notifications and re-trigger the
+          # quoted bot, which then either replies or opens its own
+          # session against the relay. We own one and only one mention
+          # in this comment — `@copilot` (added by us above). Wrap every
+          # *other* @mention in the forwarded text in backticks so it
+          # renders as inline code and does not notify.
+          # (Bug surfaced on PR #225: a relayed Codex banner re-triggered
+          # Codex into a full session against the relay comment.)
+          neutralize_mentions='
+            def neutralize:
+              gsub("(?<pre>(^|[^`A-Za-z0-9_]))@(?<name>(?!copilot\\b)[A-Za-z0-9][A-Za-z0-9-]*(?:/[A-Za-z0-9._-]+)?)";
+                   .pre + "`@" + .name + "`");
+          '
+
           if [[ "$review_count" -gt 0 ]]; then
-            review_section=$(echo "$review_comments" | jq -r '.[] |
-              "### Review from \(.reviewer) (\(.state))\n\(.body)\n\n---\n"')
+            review_section=$(echo "$review_comments" | jq -r "$neutralize_mentions"'
+              .[] |
+              "### Review from \(.reviewer) (\(.state))\n\(.body | neutralize)\n\n---\n"')
             comment+="${review_section}${nl}${nl}"
           fi
 
           if [[ "$inline_count" -gt 0 ]]; then
             comment+="### Inline Comments${nl}${nl}"
-            inline_section=$(echo "$inline_comments" | jq -r '
+            inline_section=$(echo "$inline_comments" | jq -r "$neutralize_mentions"'
               sort_by(.file) | group_by(.file) | .[] |
               "**\(.[0].file)**\n" +
               ([.[] |
-                "- **Line \(.line)** (\(.reviewer)): \(.body | split("\n") | join(" ") | .[0:500])"
+                "- **Line \(.line)** (\(.reviewer)): \(.body | neutralize | split("\n") | join(" ") | .[0:500])"
               ] | join("\n")) +
               "\n"')
             comment+="${inline_section}${nl}"
