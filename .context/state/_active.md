@@ -1,3 +1,4 @@
+<!-- TEMPLATE_PLACEHOLDER: In a real project, this file tracks the currently-active task. Downstream projects should clear the example body below during onboarding (see AGENTS.md → "Template detection" and `.github/prompts/repo-onboarding.md`); ongoing maintenance is per AGENTS.md → "Session-state cadence". -->
 <!-- Schema (rewrite at every task boundary; max ~20 lines):
      Active Task | File | Role | Blockers | Next 1–3 actions.
      Anything else belongs in task_<slug>.md, not here.

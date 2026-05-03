@@ -52,6 +52,23 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-228
+<!-- managed-for-pr:228 -->
+**Role**: architect
+**Session**: feature/architect-226-template-placeholders
+**Claimed At**: 2026-05-03T17:49:57Z
+**Expected Duration**: TBD
+**Paths**:
+- .context/sessions/latest_summary.md
+- .context/state/_active.md
+- .context/state/coordination.md
+- .github/prompts/repo-onboarding.md
+- AGENTS.md
+- scripts/verify-env.sh
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
+
 ## Lock: pr-225
 <!-- managed-for-pr:225 -->
 **Role**: docs

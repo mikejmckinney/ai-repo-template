@@ -1,4 +1,4 @@
-<!-- TEMPLATE_PLACEHOLDER: Update after each session -->
+<!-- TEMPLATE_PLACEHOLDER: In a real project, this file captures the most recent session's outcomes. Downstream projects should clear the example body below during onboarding (see AGENTS.md → "Template detection" and `.github/prompts/repo-onboarding.md`); ongoing maintenance is per AGENTS.md → "Session-state cadence". -->
 
 # Latest Session Summary
 

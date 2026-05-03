@@ -35,8 +35,14 @@ Phase 0 does any work and is reported at the start of Step 1.0:
 - **Mode B — Derived repo, bootstrap not yet run.** Any of:
   - `README.md` or `AI_REPO_GUIDE.md` contains `TEMPLATE_PLACEHOLDER`.
   - `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`.
-  - `grep -RIl TEMPLATE_PLACEHOLDER .` returns matches outside
-    `.github/prompts/` (which legitimately documents the marker).
+  - `./scripts/verify-env.sh` reports `PLACEHOLDER_COUNT > 0` (its output
+    contains a "N files still contain TEMPLATE_PLACEHOLDER" line with N > 0).
+    This catches partial-bootstrap states — e.g. `.context/**`, `docs/**`,
+    `scripts/**`, or workflow files still carrying template stubs — even when
+    the README/AI_REPO_GUIDE signals are already clear. (`verify-env.sh`
+    excludes infrastructure files and the three bootstrap state files via
+    `_PLACEHOLDER_LEGIT` and `_PLACEHOLDER_EXCLUDE`, so a fully-onboarded
+    repo reaches PLACEHOLDER_COUNT=0 and does not re-trigger Mode B.)
 
   Do the work in Step 0.2, then continue to Phase 1.
 - **Mode C — Derived repo, already customized.** No Mode B signals fire
@@ -61,7 +67,11 @@ same PR:
    (`./.context/**`, `./docs/**`, source). This file is canonical for agents
    and must not retain template placeholder language.
 3. **Replace placeholders** wherever they occur:
-   - `TEMPLATE_PLACEHOLDER` markers → project-specific text or remove.
+   - `TEMPLATE_PLACEHOLDER` markers → project-specific text or remove,
+     **except** in `.context/state/_active.md`, `.context/sessions/latest_summary.md`,
+     and `.context/state/coordination.md` — those files intentionally retain
+     the marker post-onboarding per item 6 below (`verify-env.sh` excludes
+     them via `_PLACEHOLDER_EXCLUDE` so they do not re-trigger Mode B).
    - `PLEASE_UPDATE_THIS/URL` in `.github/ISSUE_TEMPLATE/config.yml` →
      actual `owner/repo` from `git remote -v`.
 4. **Extend `.context/rules/agent_ownership.md`** with rows for the project's
@@ -71,6 +81,24 @@ same PR:
    they remain load-bearing.
 5. **Customize `docs/FAQ.md`** — strip entries prefixed with `Template:` and
    replace with project-specific Q&A.
+6. **Clear template working state.** `.context/state/*.md` and
+   `.context/sessions/*.md` ship populated with ai-repo-template's own
+   task data. Reset them so re-read cadence (AGENTS.md →
+   "Session-state cadence") doesn't ingest the template's stale state
+   as if it were this project's reality:
+   - `.context/state/_active.md` — clear the task details under the
+     `# Active Task` header (resetting the fields to empty); keep the
+     schema comment and `TEMPLATE_PLACEHOLDER` marker until the first
+     real task lands.
+   - `.context/sessions/latest_summary.md` — replace body with a single
+     `No sessions yet` line; keep the `TEMPLATE_PLACEHOLDER` marker
+     until the first close-out.
+   - `.context/state/coordination.md` — clear all entries under
+     `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and
+     `## PM Notes`; keep the section headers, `## Lock Template`,
+     and `TEMPLATE_PLACEHOLDER` marker.
+   - Do NOT delete `*_template.md` or `README.md` in those directories
+     — they are the schemas downstream agents copy from.
 
 When Phase 0 work is complete, continue to Phase 1.
 
@@ -100,6 +128,9 @@ Phase 1 has accurate state:
   WARNs. In particular, treat any `TEMPLATE_PLACEHOLDER`-still-present
   WARN as **Unstable** when running in a derived (non-template) repo —
   it means stub docs haven't been replaced yet (Phase 0 is incomplete).
+  (`verify-env.sh` emits a distinct WARN for the 3 bootstrap state files;
+  that warn is **non-blocking** — expected during bootstrap, actionable once
+  the first real task/session has landed and those markers should be cleared.)
 - Steps 1–4 above completed without missing-file errors. (`bash test.sh`
   is the deeper structural check; run it later in Phase 1 if you want
   full coverage.)
