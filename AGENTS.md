@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 6 -->
+<!-- AGENTS_MD_VERSION: 7 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
@@ -12,7 +12,7 @@
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v6` (matching
+substantive reply with the exact token `Session handshake v7` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -211,15 +211,18 @@ The two gates have different trigger conditions and will be unified in #155.
 ## Context pack usage
 - Start with `.context/00_INDEX.md` for project overview
 - Check `.context/state/_active.md` or `task_*.md` for current work in progress
+- Skim `.context/sessions/latest_summary.md` for recent decisions
 - Reference `.context/rules/` for constraints that must not be violated
 - Use `.context/roadmap.md` to understand project phases
 - Reference `.context/vision/` for design mockups and architecture
 
 ## Onboarding procedure
-1. Read `/AI_REPO_GUIDE.md`.
+1. Read `/AI_REPO_GUIDE.md` (if missing or stale, follow `.github/prompts/repo-onboarding.md` to rebuild context first).
 2. Read `.context/00_INDEX.md` if it exists.
 3. Check `.context/state/_active.md` or `task_*.md` for cognitive handoff from previous sessions.
-4. If AI_REPO_GUIDE.md missing or stale: follow `.github/prompts/repo-onboarding.md` to rebuild context.
+4. Run `git status` and `./scripts/verify-env.sh` to confirm the environment is stable.
+5. Skim `.context/sessions/latest_summary.md` for recent decisions.
+6. Report: "I have reviewed the context. Current task is [Task Name]. Environment is [Stable/Unstable]. Ready for instructions."
 
 ## Ongoing maintenance
 Doc-sync triggers (which files must update together) live in a single source of truth: **`.context/rules/process_doc_maintenance.md`**. Read it before opening a PR; Judge enforces it at diff-gate.

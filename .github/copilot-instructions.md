@@ -19,6 +19,16 @@ Before editing any file, identify your role (analyst, architect, judge, critic, 
 
 Full multi-agent workflow: `docs/guides/multi-agent-coordination.md`.
 
+## Session startup
+
+At the start of each session, run these steps in order before doing any other work:
+
+1. Read `.context/state/_active.md` or `task_*.md` to understand the immediate goal.
+2. Read `.context/00_INDEX.md` to locate relevant rules/constraints.
+3. Run `git status` and `./scripts/verify-env.sh` to ensure the environment is stable.
+4. Skim `.context/sessions/latest_summary.md` for recent decisions.
+5. Report: "I have reviewed the context. Current task is [Task Name]. Environment is [Stable/Unstable]. Ready for instructions."
+
 ## Following referenced prompt files (Copilot-specific)
 
 When a comment or issue body contains `@copilot follow <path>` (e.g.
