@@ -525,15 +525,23 @@ jobs:
           # renders as inline code and does not notify.
           # (Bug surfaced on PR #225: a relayed Codex banner re-triggered
           # Codex into a full session against the relay comment.)
-          # (?i) = case-insensitive; (?!copilot(?:[A-Za-z0-9-])) preserves the
-          # exact @copilot handle (and @COPILOT / @copilot[bot]) while
-          # neutralizing all copilot-prefixed variants: @copilot-swe-agent,
-          # @copilot-pull-request-reviewer, @copilotX, etc.
-          # The old (?!copilot\b) used \b which matches before '-', so
-          # @copilot-swe-agent passed through as a live mention (ISS-02, PR #225).
+          # Pattern: (?!copilot(?:[^A-Za-z0-9_-]|$))
+          #   - For "@copilot" (bare handle): "copilot" is followed by a
+          #     non-[A-Za-z0-9_-] char (space, newline) or end-of-string.
+          #     The lookahead condition MATCHES → negative lookahead FAILS
+          #     → name not captured → @copilot preserved as live mention. ✓
+          #   - For "@copilot-swe-agent": "copilot" is followed by "-"
+          #     which IS in [A-Za-z0-9_-] → lookahead condition doesn't
+          #     match → negative lookahead SUCCEEDS → name captured →
+          #     @copilot-swe-agent wrapped in backticks. ✓
+          #   - All other handles: lookahead condition irrelevant; name
+          #     captured and wrapped. ✓
+          # NOTE: the earlier (?!copilot\b) used \b which matches at
+          # word boundaries including before '-', so @copilot-swe-agent
+          # was also preserved as a live mention (ISS-02 / ISS-46, PR #225).
           neutralize_mentions='
             def neutralize:
-              gsub("(?<pre>(^|[^`A-Za-z0-9_]))@(?<name>(?i)(?!copilot(?:[A-Za-z0-9-]))[A-Za-z0-9][A-Za-z0-9-]*(?:/[A-Za-z0-9._-]+)?)";
+              gsub("(?<pre>(^|[^`A-Za-z0-9_]))@(?<name>(?!copilot(?:[^A-Za-z0-9_-]|$))[A-Za-z0-9][A-Za-z0-9-]*(?:/[A-Za-z0-9._-]+)?)";
                    .pre + "`@" + .name + "`");
           '
 
