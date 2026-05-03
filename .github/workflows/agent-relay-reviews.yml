@@ -432,15 +432,15 @@ jobs:
           # can't filter by resolution directly. Without a filter, every
           # COMMENTED summary a bot has ever posted on this PR gets re-bundled
           # forever — including stale ones from prior rounds and "no feedback"
-          # follow-ups. Restrict to reviewers who currently have at least one
-          # *unresolved* inline thread on this PR; a review summary is only
-          # relayable if its author still has actionable inline feedback
-          # outstanding. (Bug surfaced on PR #225: a "no feedback" Gemini review
-          # re-triggered relay because 14 stale review summaries were bundled.)
-          active_reviewers=$(echo "$inline_comments" | jq -c '[.[].reviewer] | unique')
-          review_comments=$(echo "$threads_json" | jq \
-            --arg bots "$AI_REVIEWERS" \
-            --argjson active "$active_reviewers" '
+          # follow-ups. Deduplicate by keeping only the LATEST review per
+          # reviewer (group_by + last). This naturally surfaces the most recent
+          # feedback without needing to gate on whether the reviewer also has
+          # unresolved inline threads — a reviewer whose inline threads were all
+          # resolved may still have an actionable review-level summary, and the
+          # former active_reviewers gate would silently drop it.
+          # The fingerprint dedup gate (below) prevents re-relaying the same
+          # content on subsequent runs.
+          review_comments=$(echo "$threads_json" | jq --arg bots "$AI_REVIEWERS" '
             [ (.reviews.nodes // [])[]
               | select(
                   (
@@ -450,10 +450,12 @@ jobs:
                   and (.author.login | test("^copilot(\\[bot\\])?$") | not)
                   and (.state == "CHANGES_REQUESTED" or .state == "COMMENTED")
                   and (.body != null) and (.body != "")
-                  and (.author.login as $a | $active | index($a))
                 )
               | { reviewer: .author.login, state: .state, body: .body }
-            ]' 2>/dev/null || echo "[]")
+            ]
+            | group_by(.reviewer)
+            | map(last)
+            | .[]' 2>/dev/null || echo "[]")
 
           inline_count=$(echo "$inline_comments" | jq 'length' 2>/dev/null || echo "0")
           review_count=$(echo "$review_comments" | jq 'length' 2>/dev/null || echo "0")
