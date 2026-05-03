@@ -64,6 +64,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - .context/state/coordination.md
 - .github/prompts/repo-onboarding.md
 - AGENTS.md
+- scripts/verify-env.sh
 **Depends On**: none
 **Blocks**: none
 **State**: in_progress

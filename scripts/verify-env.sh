@@ -143,8 +143,8 @@ else
     # Portable fallback using find -prune to avoid descending into heavy directories
     _ALL_PLACEHOLDER_FILES=$(find . \( -name .git -o -name node_modules -o -name venv -o -name .venv -o -name __pycache__ \) -prune -o -type f -exec grep -l "TEMPLATE_PLACEHOLDER" {} + 2>/dev/null || true)
 fi
-PLACEHOLDER_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | grep -v '^$' | grep -Ev "$_PLACEHOLDER_EXCLUDE" | wc -l | tr -d ' ')
-PLACEHOLDER_STATE_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | grep -v '^$' | grep -E "$_PLACEHOLDER_EXCLUDE" | wc -l | tr -d ' ')
+PLACEHOLDER_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | { grep -v '^$' || true; } | { grep -Ev "$_PLACEHOLDER_EXCLUDE" || true; } | wc -l | tr -d ' ')
+PLACEHOLDER_STATE_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | { grep -v '^$' || true; } | { grep -E "$_PLACEHOLDER_EXCLUDE" || true; } | wc -l | tr -d ' ')
 if [[ "$PLACEHOLDER_COUNT" -gt 0 ]]; then
     warn "$PLACEHOLDER_COUNT files still contain TEMPLATE_PLACEHOLDER"
 else
