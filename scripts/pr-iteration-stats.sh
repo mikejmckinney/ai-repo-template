@@ -114,6 +114,126 @@ TMP_DIR=$(mktemp -d)
 cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
+# fetcher.py — paginates PRs with early-exit and follows per-PR cursors for
+# reviewThreads and comments so counts are never capped at 100 nodes.
+cat >"$TMP_DIR/fetcher.py" <<'PYEOF'
+import subprocess, sys, json
+
+owner, repo, since = sys.argv[1], sys.argv[2], sys.argv[3]
+
+
+def gql(query, *extra_args):
+    result = subprocess.run(
+        ['gh', 'api', 'graphql', '-f', f'query={query}'] + list(extra_args),
+        capture_output=True, text=True, check=True,
+    )
+    return json.loads(result.stdout)
+
+
+PR_QUERY = '''
+query($owner:String!,$repo:String!,$endCursor:String) {
+  repository(owner:$owner,name:$repo) {
+    pullRequests(
+      states:MERGED
+      orderBy:{field:UPDATED_AT,direction:DESC}
+      first:50
+      after:$endCursor
+    ) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        number closedAt
+        reviewThreads(first:100) {
+          totalCount
+          pageInfo { hasNextPage endCursor }
+          nodes { isResolved }
+        }
+        comments(first:100) {
+          pageInfo { hasNextPage endCursor }
+          nodes { body author { login } }
+        }
+      }
+    }
+  }
+}
+'''
+
+THREAD_QUERY = '''
+query($owner:String!,$repo:String!,$number:Int!,$endCursor:String!) {
+  repository(owner:$owner,name:$repo) {
+    pullRequest(number:$number) {
+      reviewThreads(first:100,after:$endCursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes { isResolved }
+      }
+    }
+  }
+}
+'''
+
+COMMENT_QUERY = '''
+query($owner:String!,$repo:String!,$number:Int!,$endCursor:String!) {
+  repository(owner:$owner,name:$repo) {
+    pullRequest(number:$number) {
+      comments(first:100,after:$endCursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes { body author { login } }
+      }
+    }
+  }
+}
+'''
+
+prs = []
+cursor = None
+
+while True:
+    call_args = ['-f', f'owner={owner}', '-f', f'repo={repo}']
+    if cursor:
+        call_args += ['-f', f'endCursor={cursor}']
+    data = gql(PR_QUERY, *call_args)
+    page = data['data']['repository']['pullRequests']
+
+    page_had_in_window = False
+    for pr in page['nodes']:
+        if pr['closedAt'] < since:
+            # Filter out-of-window PRs (UPDATED_AT order, so an old PR may
+            # appear only because it was recently commented on).
+            continue
+        page_had_in_window = True
+
+        # Follow reviewThreads cursor if there are more than 100 nodes.
+        rt = pr['reviewThreads']
+        while rt['pageInfo']['hasNextPage']:
+            more = gql(THREAD_QUERY,
+                       '-f', f'owner={owner}', '-f', f'repo={repo}',
+                       '-F', f'number={pr["number"]}',
+                       '-f', f'endCursor={rt["pageInfo"]["endCursor"]}',
+                       )['data']['repository']['pullRequest']['reviewThreads']
+            rt['nodes'].extend(more['nodes'])
+            rt['pageInfo'] = more['pageInfo']
+
+        # Follow comments cursor if there are more than 100 nodes.
+        cm = pr['comments']
+        while cm['pageInfo']['hasNextPage']:
+            more = gql(COMMENT_QUERY,
+                       '-f', f'owner={owner}', '-f', f'repo={repo}',
+                       '-F', f'number={pr["number"]}',
+                       '-f', f'endCursor={cm["pageInfo"]["endCursor"]}',
+                       )['data']['repository']['pullRequest']['comments']
+            cm['nodes'].extend(more['nodes'])
+            cm['pageInfo'] = more['pageInfo']
+
+        prs.append(pr)
+
+    # Early-exit: if no PR on this page fell within the window, the remaining
+    # pages (ordered by UPDATED_AT DESC) will only be older — stop fetching.
+    if not page['pageInfo']['hasNextPage'] or not page_had_in_window:
+        break
+    cursor = page['pageInfo']['endCursor']
+
+print(json.dumps(prs))
+PYEOF
+
 # parser.py — converts raw PR JSON to per-PR metric rows
 cat >"$TMP_DIR/parser.py" <<'PYEOF'
 import sys, json, re
@@ -197,38 +317,12 @@ print(json.dumps(avgs))
 PYEOF
 
 # ---------------------------------------------------------------------------
-# Fetch merged PRs closed within the window
+# Fetch merged PRs closed within the window.
+# fetcher.py handles outer pagination with early-exit (stops when a full page
+# has no PRs within the window) and follows per-PR cursors for reviewThreads
+# and comments so no data is silently truncated at the first-100 cap.
 # ---------------------------------------------------------------------------
-PR_JSON=$(gh api graphql --paginate -f query='
-  query($owner: String!, $repo: String!, $endCursor: String) {
-    repository(owner: $owner, name: $repo) {
-      pullRequests(
-        states: MERGED
-        orderBy: {field: UPDATED_AT, direction: DESC}
-        first: 50
-        after: $endCursor
-      ) {
-        pageInfo { hasNextPage endCursor }
-        nodes {
-          number
-          closedAt
-          reviewThreads(first: 100) {
-            totalCount
-            nodes { isResolved }
-          }
-          comments(first: 100) {
-            nodes {
-              body
-              author { login }
-            }
-          }
-        }
-      }
-    }
-  }
-' -F owner="${REPO%%/*}" -F repo="${REPO##*/}" \
-  --jq ".data.repository.pullRequests.nodes[] | select(.closedAt >= \"${SINCE}\")" \
-  | jq -s '.')
+PR_JSON=$(python3 "$TMP_DIR/fetcher.py" "${REPO%%/*}" "${REPO##*/}" "${SINCE}")
 
 # ---------------------------------------------------------------------------
 # Parse and accumulate per-PR metrics

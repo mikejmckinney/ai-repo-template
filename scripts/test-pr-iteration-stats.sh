@@ -44,66 +44,14 @@ TMP_DIR=$(mktemp -d)
 cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
-# Note: parser.py below is manually duplicated from pr-iteration-stats.sh;
-# keep both in sync when changing the parsing logic.
-cat >"$TMP_DIR/parser.py" <<'PYEOF'
-import sys, json, re
-
-data = json.load(sys.stdin)
-results = []
-
-AGENT_RE = re.compile(r'\[bot\]|copilot|claude|gemini|codex|chatgpt', re.I)
-REPORT_HEADER_RE = re.compile(
-    r'^##\s+Resolution\s+Report(?:\s*[—\-]+\s*Round)?', re.MULTILINE | re.I
-)
-# [*:\s]+ handles both plain text ('Fixed in this pass: 2') and the
-# canonical markdown-bold form ('**Fixed in this pass**: 2').
-FIXED_RE = re.compile(r'fixed in this pass[*:\s]+(\d+)', re.I)
-TOTAL_RE = re.compile(r'total items found[*:\s]+(\d+)', re.I)
-
-for pr in data:
-    number = pr['number']
-    threads_opened = pr['reviewThreads']['totalCount']
-    threads_resolved = sum(
-        1 for t in pr['reviewThreads']['nodes'] if t['isResolved']
-    )
-
-    total_rounds = 0
-    fix_rounds = 0
-    rejected_rounds = 0
-
-    for comment in pr['comments']['nodes']:
-        body = comment.get('body') or ''
-        author = (comment.get('author') or {}).get('login', '')
-
-        is_agent_authored = AGENT_RE.search(author) and REPORT_HEADER_RE.search(body)
-        is_body_match = REPORT_HEADER_RE.search(body)
-        if not (is_agent_authored or is_body_match):
-            continue
-
-        total_rounds += 1
-
-        fixed_match = FIXED_RE.search(body)
-        total_match = TOTAL_RE.search(body)
-        fixed_count = int(fixed_match.group(1)) if fixed_match else 0
-        total_count = int(total_match.group(1)) if total_match else 0
-
-        if fixed_count > 0:
-            fix_rounds += 1
-        elif total_count > 0:
-            rejected_rounds += 1
-
-    results.append({
-        'pr': number,
-        'total_rounds': total_rounds,
-        'fix_rounds': fix_rounds,
-        'rejected_rounds': rejected_rounds,
-        'threads_opened': threads_opened,
-        'threads_resolved': threads_resolved,
-    })
-
-print(json.dumps(results))
-PYEOF
+# Extract parser.py from pr-iteration-stats.sh so tests always exercise the
+# actual implementation — no manual copy required (ISS-OTKN).
+awk 'p&&/^PYEOF$/{p=0;next} /parser\.py.*<<.PYEOF./{p=1;next} p' \
+  "$REPO_ROOT/scripts/pr-iteration-stats.sh" >"$TMP_DIR/parser.py"
+if [[ ! -s "$TMP_DIR/parser.py" ]]; then
+  printf 'Error: failed to extract parser.py from pr-iteration-stats.sh\n' >&2
+  exit 1
+fi
 
 # fixture_builder.py — builds fixture JSON by scenario name, avoids shell
 # escaping issues with multi-line bodies embedded in JSON strings.
@@ -175,6 +123,11 @@ FIXTURES = {
     "no_comments": [make_pr(105, 0, 0, [])],
     "body_only_detection": [make_pr(106, 1, 1, [
         {"body": REPORT_FIX, "author": {"login": "unknown-user"}},
+    ])],
+    # 150 threads (120 resolved) + 1 fix comment: verifies parser handles
+    # arrays larger than the old first-100 cap without undercounting.
+    "large_threads": [make_pr(109, 150, 120, [
+        bot("copilot-pull-request-reviewer[bot]", REPORT_FIX),
     ])],
 }
 
@@ -307,6 +260,15 @@ result=$(make_fixture bold_fix | parse_pr_json)
 assert_eq "bold labels → total_rounds=1" "1" "$(printf '%s' "$result" | field total_rounds)"
 assert_eq "bold labels → fix_rounds=1" "1" "$(printf '%s' "$result" | field fix_rounds)"
 assert_eq "bold labels → rejected_rounds=0" "0" "$(printf '%s' "$result" | field rejected_rounds)"
+echo ""
+
+# ── Test 12: Threads array larger than the old first-100 cap ─────────────────
+echo "large thread array (150 threads, 120 resolved)"
+
+result=$(make_fixture large_threads | parse_pr_json)
+assert_eq "large threads → threads_opened=150" "150" "$(printf '%s' "$result" | field threads_opened)"
+assert_eq "large threads → threads_resolved=120" "120" "$(printf '%s' "$result" | field threads_resolved)"
+assert_eq "large threads → total_rounds=1" "1" "$(printf '%s' "$result" | field total_rounds)"
 echo ""
 
 # ---------------------------------------------------------------------------
