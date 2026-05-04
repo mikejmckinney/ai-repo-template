@@ -183,7 +183,7 @@ The PR body must reference an issue, parent PR, or ADR (`Closes #NN`, `Refs #NN`
 (canonical: `.github/agents/judge.agent.md` § "Issue / parent-PR link")
 
 ### Plan-as-comment (ADR-011)
-The linked issue should have a `## 📋 Implementation Plan` comment before code was written. Flag **Medium** (advisory in v1) if the issue lacks this comment and carries no `chore:no-plan` label. Also flag **Medium** when the PR body's `## Plan` section is empty, has no link to a plan comment on the linked issue, or clearly contradicts the diff.
+The linked issue should have a `## 📋 Implementation Plan` comment before code was written. Flag **High** (REQUEST_CHANGES; do not BLOCK in v1) if the issue lacks this comment and carries no `chore:no-plan` label. Also flag **High** when the PR body's `## Plan` section is empty, has no link to a plan comment on the linked issue, or clearly contradicts the diff.
 (canonical: `.github/agents/judge.agent.md` § "Plan-as-comment")
 
 ### Doc-sync trigger check
@@ -207,7 +207,7 @@ Claims of fact about the repo in the PR description ("the repo does X", "this ma
 (canonical: `.github/agents/judge.agent.md` § "Provenance check")
 
 ### Plan-revision sync (ADR-011, advisory in v1)
-If the linked issue has a "Plan revision" comment posted *after* this PR was opened, the PR body's `## Plan` section must include that revision's link and a refreshed "Latest in 1–2 sentences" line, AND the `## Plan revision sync` checklist must have the matching box ticked. Flag **Medium** when missing. Do not BLOCK in v1.
+If the linked issue has a "Plan revision" comment posted *after* this PR was opened, the PR body's `## Plan` section must include that revision's link and a refreshed "Latest in 1–2 sentences" line, AND the `## Plan revision sync` checklist must have the matching box ticked. Flag **High** (REQUEST_CHANGES; do not BLOCK in v1) when missing.
 (canonical: `.github/agents/judge.agent.md` § "Plan-revision sync")
 
 ## Response Guidelines
