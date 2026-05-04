@@ -58,7 +58,7 @@ Always use this exact format:
 ### High Priority (should fix before merge)
 - [ ] **Issue** — `file:line` — suggested fix
 
-### Medium Priority (recommended)
+### Medium Priority (advisory; does not block)
 - [ ] **Issue** — `file:line` — suggestion
 
 ### Low Priority (nits)
