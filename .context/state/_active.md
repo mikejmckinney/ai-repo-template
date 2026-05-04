@@ -6,11 +6,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 1 — PR #232 review addressed, CI green
+**Active Task**: #229 Phase 1 — PR #232 Round 2 resolved, CI green (d5eb5f4)
 **File**: N/A
 **Role**: devops
 **Blockers**: None — awaiting merge
 **Next 1–3 actions**:
 1. Monitor PR #232 for new bot review rounds; re-run pr-resolve-all if needed
 2. After merge, verify lint-and-format.yml blocks future violations as intended
-3. File follow-up issues for ISS-05/12 (nested pagination) and ISS-13 (early-exit optimization)
+3. File follow-up issues for ISS-05/12/15 (nested pagination) and ISS-13 (early-exit optimization)

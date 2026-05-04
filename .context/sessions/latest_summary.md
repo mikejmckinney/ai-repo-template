@@ -14,6 +14,14 @@
 
 ---
 
+## Close-out: pr-232-review-round2 — 2026-05-04
+
+**What shipped**: Addressed 3 new chatgpt-codex-connector findings (Round 2) on PR #232. Fixes: (1) ISS-16 — removed `|| PR_JSON="[]"` fail-silent fallback; `set -euo pipefail` propagates errors and `jq -s '.'` naturally emits `[]` for empty streams; (2) ISS-17 — changed `[:\s]+` to `[*:\s]+` in `FIXED_RE`/`TOTAL_RE` for both `pr-iteration-stats.sh` and `test-pr-iteration-stats.sh`; bold metric labels `- **Fixed in this pass**: X` from pr-resolve-all.md Phase 3 template now parse correctly; added `REPORT_FIX_BOLD` fixture and Test 11. ISS-15 (first:100 cap) deferred — same as ISS-05/12 Round 1. CI: ✅ green on d5eb5f4. 2 threads resolved, 1 deferred with reply.
+**What was harder than expected**: None — straightforward regex fix once the bold format mismatch was identified.
+**What generalizes**: When capturing output with regex, use `[*:\s]+` instead of `[:\s]+` for label separators if the source can emit either plain `Label: N` or markdown-bold `**Label**: N` format. Always fixture-test both variants.
+
+---
+
 ## Close-out: pr-232-review-round1 — 2026-05-04
 
 **What shipped**: Addressed 14 bot review findings (chatgpt×2, Copilot×8, Gemini×3, CI×1) from PR #232 via pr-resolve-all.md. Fixes: (1) actionlint SC2038 — changed `find -print | xargs -r` to `-print0 | xargs -r -0` in lint-and-format.yml; (2) Added `.actionlint.yaml` + inline `-ignore` flags to suppress SC2016/SC2086/SC2129/SC2153/SC2018/SC2019 (pre-existing false positives); (3) Fixed GraphQL pagination cursor `$cursor` → `$endCursor`; (4) Fixed `--paginate + --jq "[...]"` multi-page JSON concatenation via NDJSON output + external `jq -s '.'`; (5) Fixed `REPORT_HEADER_RE` to match canonical `## Resolution Report` header (metric was counting zero rounds for all real PRs); (6) Fixed test fixtures + added Test 10 for canonical header; (7) Reduced lint-and-format.yml permissions to `contents: read`; (8) Fixed `_active.md` schema violations and bogus `parallel_validation` command. 9 bot threads resolved; 4 deferred with replies (first:100 cap, pagination perf, test dedup). CI: ✅ green.
