@@ -6,11 +6,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 1 — PR #232 Round 5 done, ISS-26 fixed in 5ec6f45; awaiting CI + Gemini review
+**Active Task**: #229 Phase 1 — PR #232 Round 6 done, ISS-28a fixed in db6a609; awaiting CI + Gemini review
 **File**: N/A
 **Role**: devops
-**Blockers**: CI pending on 5ec6f45; ISS-20/21/22/23/24/25 deferred with replies (awaiting human ack); Gemini review pending
+**Blockers**: CI pending on db6a609; ISS-20 through ISS-28 open, all have replies (awaiting human ack); Gemini review pending
 **Next 1–3 actions**:
-1. Confirm CI green on 5ec6f45 (deleted invalid .github/actionlint.yaml)
-2. Address any Gemini review findings when they arrive
+1. Confirm CI green on db6a609 (stale header comment fix)
+2. Address any new Gemini review findings when they arrive
 3. After CI green + all threads acked, PR ready to merge
