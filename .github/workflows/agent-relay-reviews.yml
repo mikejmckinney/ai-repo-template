@@ -198,6 +198,11 @@ jobs:
       # reply, so a `contains()` filter would double-count: 1 real relay
       # + 1 quoted reply = 2 cycles per actual relay. The `startswith`
       # form skips quoted lines (which start with `>`).
+      #
+      # IMPORTANT: the filter is kept inline here because this job has no
+      # actions/checkout step (adding one solely for a filter file would
+      # be wasteful). The canonical tested version lives in
+      # scripts/lib/jq/relay-cycle-count.jq — keep them in sync.
       - name: Compute cycle number
         if: steps.author.outputs.skip != 'true'
         id: budget
@@ -207,7 +212,8 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           relay_count=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments 2>/dev/null \
-            | jq -rf "scripts/lib/jq/relay-cycle-count.jq" 2>/dev/null || echo "0")
+            | jq -r '[.comments[] | select(.body | sub("^[[:space:]]+"; "") | startswith("📋 **Review Relay"))] | length' \
+            2>/dev/null || echo "0")
 
           echo "Prior relay cycles on this PR: $relay_count"
           # Always proceed; loop guard is the fingerprint dedup gate below.
