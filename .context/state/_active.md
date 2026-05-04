@@ -6,11 +6,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 1 — PR #232 Round 2 resolved, CI green (d5eb5f4)
+**Active Task**: #229 Phase 1 — PR #232 Round 3 resolved, CI green (cf15481), cap reached (3/3)
 **File**: N/A
 **Role**: devops
-**Blockers**: None — awaiting merge
+**Blockers**: None — awaiting merge; 5 deferred threads open for human review
 **Next 1–3 actions**:
-1. Monitor PR #232 for new bot review rounds; re-run pr-resolve-all if needed
-2. After merge, verify lint-and-format.yml blocks future violations as intended
-3. File follow-up issues for ISS-05/12/15 (nested pagination) and ISS-13 (early-exit optimization)
+1. After merge, verify lint-and-format.yml blocks future violations as intended
+2. File follow-up issues for ISS-05/12/13/14/15 (nested pagination, perf, test dedup)
+3. If new bot reviews arrive: apply cap-override label or post cap-override N comment

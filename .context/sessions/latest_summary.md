@@ -14,6 +14,14 @@
 
 ---
 
+## Close-out: pr-232-review-round3 — 2026-05-04
+
+**What shipped**: Addressed 2 new chatgpt-codex-connector findings (Round 3) on PR #232. Fixes: (1) ISS-18 — `test.sh` linter invariants changed from bare tool name greps (which match comments) to flag-specific patterns `shellcheck --severity`, `shfmt -d`, and `xargs -r -0 actionlint` — all unique to `run:` blocks; a removed step no longer passes the guard if comments remain; (2) ISS-19 — actionlint step in `lint-and-format.yml` switched from static `*.yml` glob to `find -maxdepth 1 \( -name '*.yml' -o -name '*.yaml' \) -print0 | xargs -r -0 actionlint` (consistent with shellcheck/shfmt pattern; covers both extensions; `-r` handles no-match gracefully). CI: ✅ green on `cf15481`. Both threads resolved. Default round cap (3/3) reached.
+**What was harder than expected**: None — both were straightforward substitutions.
+**What generalizes**: When writing test invariants that verify a tool is wired in a config file, match the tool's CLI flags (unique to the `run:` block) rather than the bare tool name (which also appears in comments). Pattern: `grep -qE 'tool --flag'` over `grep -q 'tool'`.
+
+---
+
 ## Close-out: pr-232-review-round2 — 2026-05-04
 
 **What shipped**: Addressed 3 new chatgpt-codex-connector findings (Round 2) on PR #232. Fixes: (1) ISS-16 — removed `|| PR_JSON="[]"` fail-silent fallback; `set -euo pipefail` propagates errors and `jq -s '.'` naturally emits `[]` for empty streams; (2) ISS-17 — changed `[:\s]+` to `[*:\s]+` in `FIXED_RE`/`TOTAL_RE` for both `pr-iteration-stats.sh` and `test-pr-iteration-stats.sh`; bold metric labels `- **Fixed in this pass**: X` from pr-resolve-all.md Phase 3 template now parse correctly; added `REPORT_FIX_BOLD` fixture and Test 11. ISS-15 (first:100 cap) deferred — same as ISS-05/12 Round 1. CI: ✅ green on d5eb5f4. 2 threads resolved, 1 deferred with reply.
