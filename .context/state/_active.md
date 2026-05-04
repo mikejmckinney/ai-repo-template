@@ -12,6 +12,6 @@
 **Role**: devops
 **Blockers**: none
 **Next 1–3 actions**:
-1. Run test.sh to verify no regressions
-2. Run parallel_validation
-3. Report progress and push
+1. Run `bash test.sh` to verify no regressions
+2. Push fixes for ISS-01 through ISS-07 from PR #235 round 1
+3. Monitor CI and bot re-reviews

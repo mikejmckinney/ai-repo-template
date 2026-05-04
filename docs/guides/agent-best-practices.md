@@ -27,7 +27,7 @@ PR #113's reviewer surfaced two medium findings about the ownership-table parser
 
 ### Fix-only commits when resolving PR feedback
 
-When resolving items from a PR review pass, **each commit must address only the indexed item** — no refactoring, renaming, or style improvements in the same commit. Note improvements in the Resolution Report under "Additional Observations" and commit them separately or file a follow-up issue.
+When resolving items from a PR review pass, **each commit must address only one review item** (one `ISS-NN` entry from the `pr-resolve-all.md` Issue/Suggestion Index) — no refactoring, renaming, or style improvements in the same commit. Note improvements in the Resolution Report under "Additional Observations" and commit them separately or file a follow-up issue.
 
 **Why**: PR #228 Round 5 refactored `grep | wc -l` → `grep -c` in the same commit as a real fix. The refactor changed exit-code semantics under `set -e` and caused the Round 7 regression — 2 of 8 rounds were self-inflicted by the in-fix scope creep.
 

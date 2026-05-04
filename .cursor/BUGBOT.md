@@ -136,14 +136,14 @@ Do not flag dates as typos based on relative date heuristics.
 
 ## Repo-specific Judge gates
 
-This repo uses the internal Judge role (`.github/agents/judge.agent.md`) as the canonical gate spec. The six gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
+This repo uses the internal Judge role (`.github/agents/judge.agent.md`) as the canonical gate spec. The seven gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
 
 ### Issue / parent-PR link (ADR-011)
 The PR body must reference an issue, parent PR, or ADR (`Closes #NN`, `Refs #NN`, `Implements ADR-NNN`). Flag as **High Priority** if the body has neither a `#NN` reference nor an `ADR-\d+` reference, the PR is not a revert, and no exemption label (`chore:no-plan`, `smoke-test`) is present. Automation bots (Renovate, Dependabot) are exempt.
 (canonical: `.github/agents/judge.agent.md` § "Issue / parent-PR link")
 
 ### Plan-as-comment (ADR-011)
-The linked issue should have a `## 📋 Implementation Plan` comment before code was written. Flag as **Medium Priority** (advisory in v1) if the issue lacks this comment and carries no `chore:no-plan` label. Also flag **Medium Priority** when the PR body's `## Plan` section is empty or clearly contradicts the diff.
+The linked issue should have a `## 📋 Implementation Plan` comment before code was written. Flag as **Medium Priority** (advisory in v1) if the issue lacks this comment and carries no `chore:no-plan` label. Also flag **Medium Priority** when the PR body's `## Plan` section is empty, has no link to a plan comment on the linked issue, or clearly contradicts the diff.
 (canonical: `.github/agents/judge.agent.md` § "Plan-as-comment")
 
 ### Doc-sync trigger check
@@ -161,6 +161,10 @@ For PRs implementing a feature (action verbs + user-facing noun in the issue bod
 ### Provenance check
 Claims of fact about the repo in the PR description ("the repo does X", "this matches the existing pattern") must cite `path/to/file:line` or be explicitly marked `uncertain`. Flag as **Medium Priority** for uncited assertions; **High Priority** if the uncited claim is load-bearing for the PR's rationale.
 (canonical: `.github/agents/judge.agent.md` § "Provenance check")
+
+### Plan-revision sync (ADR-011, advisory in v1)
+If the linked issue has a "Plan revision" comment posted *after* this PR was opened, the PR body's `## Plan` section must include that revision's link and a refreshed "Latest in 1–2 sentences" line, AND the `## Plan revision sync` checklist must have the matching box ticked. Flag as **Medium Priority** when missing. Do not BLOCK in v1.
+(canonical: `.github/agents/judge.agent.md` § "Plan-revision sync")
 
 ## Tone
 
