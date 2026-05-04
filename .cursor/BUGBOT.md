@@ -163,7 +163,7 @@ If the linked issue has an Analyst Pre-Flight Report with verdict `PASS`, confir
 (canonical: `.github/agents/judge.agent.md` § "Outcome match")
 
 ### Provenance check
-Claims of fact about the repo in the PR description ("the repo does X", "this matches the existing pattern") must cite `path/to/file:line` or be explicitly marked `uncertain`. Flag as **Medium Priority** for uncited assertions; **High Priority** if the uncited claim is load-bearing for the PR's rationale.
+Claims of fact about the repo in the PR description ("the repo does X", "this matches the existing pattern") must cite `path/to/file:line` or be explicitly marked `uncertain`. Flag as **High Priority** for any uncited assertion — the canonical gate does not tier by load-bearing status; all uncited claims must be cited or marked `uncertain`.
 (canonical: `.github/agents/judge.agent.md` § "Provenance check")
 
 ### Plan-revision sync (ADR-011, advisory in v1)

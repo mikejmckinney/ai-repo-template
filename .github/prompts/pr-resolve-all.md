@@ -65,11 +65,11 @@ Fetch `currentActivePullRequest` (or its REST/GraphQL equivalent) **exactly once
 
 At the front of each round, perform a cheap classification pass over all unresolved items **before** writing any code:
 
-- **nit** — style, naming, whitespace; fix silently, bundled at the end of the same commit as substantive fixes.
+- **nit** — style, naming, whitespace; defer to a dedicated nit-only commit after all substantive items are done.
 - **substantive** — logic, correctness, missing behavior; fix and verify individually.
 - **out-of-scope** — requires files/systems outside this PR, or is purely advisory; mark `❌ Out of scope` immediately, do not fix.
 
-Fix substantive items first. Bundle nits into the same commit as the last substantive fix in the round, or into a single final commit when only nits remain. This avoids expanding fix scope mid-round and running out of context before substantive items are addressed.
+Fix substantive items first, one per commit. When all substantive items are done, bundle any remaining nits into a single final commit. This avoids expanding fix scope mid-round and running out of context before substantive items are addressed.
 
 ---
 
@@ -133,7 +133,7 @@ If the issue is valid, implement the fix:
 - Make the smallest change that addresses the issue.
 - Stay inside the files already touched by this PR when possible. If a fix requires changes to files outside the PR's scope, flag it and ask before proceeding.
 - For refactor suggestions: apply only if the suggestion is clearly better. If it's a judgment call, implement it but note that the author may want to review.
-- **Fix-only commits**: each commit in this fix pass must address only the indexed item. Do not refactor surrounding code, rename variables, reorganize imports, or make style improvements in the same commit — note them in Phase 3 "Additional Observations" and commit separately or file a follow-up. This rule overrides the bundling instruction in Round discipline Rule 3 (classify-then-decide, issue #220); while Rule 3 governs the order fixes are applied, this rule caps each commit's scope to one concern. (Evidence: PR #228 Round 5 combined a real fix with a `grep | wc -l` → `grep -c` refactor in one commit; the refactor changed exit-code semantics under `set -e` and caused the Round 7 regression.)
+- **Fix-only commits**: each commit in this fix pass must address only the indexed item. Do not refactor surrounding code, rename variables, reorganize imports, or make style improvements in the same commit — note them in Phase 3 "Additional Observations" and commit separately or file a follow-up. This is consistent with Round discipline Rule 3 (classify-then-decide, issue #220), which keeps substantive fixes in separate commits and reserves bundling for the final nit-only commit. (Evidence: PR #228 Round 5 combined a real fix with a `grep | wc -l` → `grep -c` refactor in one commit; the refactor changed exit-code semantics under `set -e` and caused the Round 7 regression.)
 - Include the exact file path and line numbers in your report.
 
 ### Step 4 — Validate
@@ -173,6 +173,9 @@ After all items are processed, post a final summary comment:
 - Lint: ✅ Clean / ❌ X errors
 - Build: ✅ Success / ❌ Failed
 - Typecheck: ✅ Clean / ❌ X errors
+
+### Additional Observations
+(optional) Drive-by nits, refactors, or style improvements noticed during the fix pass but deferred per the fix-only commits rule. Commit separately or file as a follow-up issue.
 
 ### Detail
 
