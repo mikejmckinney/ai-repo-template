@@ -6,11 +6,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 1 — PR #232 Round 4 done, ISS-23 fixed in 2e9f691; awaiting CI + merge
+**Active Task**: #229 Phase 1 — PR #232 Round 5 done, ISS-26 fixed in 5ec6f45; awaiting CI + Gemini review
 **File**: N/A
 **Role**: devops
-**Blockers**: CI pending on 2e9f691; ISS-20/21/22 deferred with replies (awaiting human ack to resolve)
+**Blockers**: CI pending on 5ec6f45; ISS-20/21/22/23/24/25 deferred with replies (awaiting human ack); Gemini review pending
 **Next 1–3 actions**:
-1. Confirm CI green on 2e9f691 (ISS-23 fix: updatedAt-based early-exit in fetcher.py)
-2. After merge, verify lint-and-format.yml blocks future violations as intended
-3. Phase 2 of #229 can start (external-reviewer gate alignment, see plan comment on #229)
+1. Confirm CI green on 5ec6f45 (deleted invalid .github/actionlint.yaml)
+2. Address any Gemini review findings when they arrive
+3. After CI green + all threads acked, PR ready to merge
