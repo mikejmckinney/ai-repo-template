@@ -6,11 +6,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 1 — shellcheck + shfmt + actionlint in lint-and-format.yml + pr-iteration-stats.sh metric script
+**Active Task**: #229 Phase 1 — PR #232 review addressed, CI green
 **File**: N/A
 **Role**: devops
-**Blockers**: None
+**Blockers**: None — awaiting merge
 **Next 1–3 actions**:
-1. Run `bash test.sh` to verify all assertions pass
-2. Push PR #232 and verify CI passes
-3. Address any remaining bot review feedback on PR #232
+1. Monitor PR #232 for new bot review rounds; re-run pr-resolve-all if needed
+2. After merge, verify lint-and-format.yml blocks future violations as intended
+3. File follow-up issues for ISS-05/12 (nested pagination) and ISS-13 (early-exit optimization)
