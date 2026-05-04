@@ -25,6 +25,14 @@ Splitting many small follow-ups into separate issues and PRs is more expensive t
 
 PR #113's reviewer surfaced two medium findings about the ownership-table parser (extract shared script + sync-check role list). Both were ~50-line diffs in the same files from the same reviewer on the same theme. They were filed as #118 and #119 and shipped as PRs #123 and #124 — two issue overheads, two PR overheads, two CI rounds, two review passes. Per the bundling rule above they should have been **one** issue with two checkboxes and **one** PR. The split was correct for #114 / #115 / #116 (different subsystems, independently mergeable).
 
+### Fix-only commits when resolving PR feedback
+
+When resolving items from a PR review pass, **each commit must address only one review item** (one `ISS-NN` entry from the `pr-resolve-all.md` Issue/Suggestion Index) — no refactoring, renaming, or style improvements in the same commit. Note improvements in the Resolution Report under "Additional Observations" and commit them separately or file a follow-up issue.
+
+**Why**: PR #228 Round 5 refactored `grep | wc -l` → `grep -c` in the same commit as a real fix. The refactor changed exit-code semantics under `set -e` and caused the Round 7 regression — 2 of 8 rounds were self-inflicted by the in-fix scope creep.
+
+Note: this is consistent with `pr-resolve-all.md`'s "Classify before fixing" Round discipline Rule 3 (issue #220), which keeps substantive fixes in separate commits; this rule applies the same single-concern discipline per commit.
+
 ## Smoke-test PR convention
 
 Workflow-validation / smoke-test PRs (the kind we ran for #114, #116) exist to *observe* what the workflows do, not to ship behavior. They must NOT have their behavior modified mid-test by the auto-fix or auto-merge pipelines.

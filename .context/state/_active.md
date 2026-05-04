@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #226 PR3 — PR #234 COMPLETE; 15 issues resolved across 10 rounds; 2 clean passes; CI green on 6556664; Gemini approved; ready to merge
+**Active Task**: #229 Phase 2 — PR #235 bot-review-clean; awaiting maintainer merge
 **File**: N/A
-**Role**: docs
-**Blockers**: None — awaiting merge by human
+**Role**: devops
+**Blockers**: 7 Gemini threads left open with deferral replies (❌ Not reproducible / ❌ Out of scope) — awaiting human acknowledgement
 **Next 1–3 actions**:
-1. Merge PR #234
-2. Update latest_summary.md with session recap
-3. Close issue #226
+1. @mikejmckinney review/acknowledge open Gemini threads on PR #235 and merge when ready
+2. After merge, update `.context/sessions/latest_summary.md` with close-out entry
+3. Begin issue #237 (_active.md multi-task schema) when user gives go-ahead

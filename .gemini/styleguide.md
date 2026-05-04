@@ -174,6 +174,42 @@ The current calendar date is past 2026-04. Dates like "April 2026" or
 "2026" in this repo's docs and comments are real, not future typos.
 Do not flag dates as typos based on relative date heuristics.
 
+## Repo-specific Judge gates
+
+This repo uses the internal Judge role (`.github/agents/judge.agent.md`) as the canonical gate spec. The eight gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
+
+### Issue / parent-PR link (ADR-011)
+The PR body must reference an issue, parent PR, or ADR (`Closes #NN`, `Refs #NN`, `Implements ADR-NNN`). Flag **Critical** if the body has neither a `#NN` reference nor an `ADR-\d+` reference, the PR is not a revert, and no exemption label (`chore:no-plan`, `smoke-test`) is present. Automation bots (Renovate, Dependabot) are exempt.
+(canonical: `.github/agents/judge.agent.md` § "Issue / parent-PR link")
+
+### Plan-as-comment (ADR-011)
+The linked issue should have a `## 📋 Implementation Plan` comment before code was written. Flag **High** (REQUEST_CHANGES; do not BLOCK in v1) if the issue lacks this comment and carries no `chore:no-plan` label. Also flag **High** when the PR body's `## Plan` section is empty, has no link to a plan comment on the linked issue, or clearly contradicts the diff.
+(canonical: `.github/agents/judge.agent.md` § "Plan-as-comment")
+
+### Doc-sync trigger check
+Walk `.context/rules/process_doc_maintenance.md`'s trigger table against the diff. For every matching row, the listed companion file(s) must appear in the diff, or the PR description must contain `<file>: no changes required` with a one-line justification. Flag **Critical** if a required companion update is missing.
+(canonical: `.github/agents/judge.agent.md` § "Doc trigger check")
+
+### ADR supersession check
+If the diff changes a decision recorded in `docs/decisions/`, the existing ADR's `Status` line must read `Superseded by ADR-NNN` or `Accepted (superseded in part by ADR-NNN)`, and a new ADR must be present in the diff. Flag **Critical** if an existing ADR is contradicted without a supersession entry.
+(canonical: `.github/agents/judge.agent.md` § "ADR supersession check")
+
+### Pre-Flight Report (ADR-005 / ADR-014)
+For PRs implementing a feature (issue references `.github/prompts/NN-*.md` describing a deliverable; or action verbs + user-facing noun in the issue body; or `feature_request.md` + `enhancement` label; or a new agent-surface ADR), the issue must have an Analyst Pre-Flight Report comment with verdict `PASS`. Flag **Critical** if the gate applies, no opt-out is in effect (`outcome-validated` label + inline outcome paragraph), and the report is missing or shows `FAIL`/`HOLD`. Exempt: `bug`, `docs` (no new behavior), `dependencies`, `chore:*`, reverts, and issues referencing only shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`, `mirror-postmortem.md`) or prompt documentation (`README.md`) under `.github/prompts/`.
+(canonical: `.github/agents/judge.agent.md` § "Pre-Flight Report present with verdict PASS when the gate applies")
+
+### Outcome match (when a Pre-Flight Report exists)
+If the linked issue has an Analyst Pre-Flight Report with verdict `PASS`, confirm the merged artifact actually delivers the user outcome the Analyst specified. If the Pre-Flight said "user should be able to run a live query against Snowflake" and the implementation returns JSON fixtures, flag **Critical** — that is a BLOCK-level scope mismatch, not a code-quality issue.
+(canonical: `.github/agents/judge.agent.md` § "Outcome match")
+
+### Provenance check
+Claims of fact about the repo in the PR description ("the repo does X", "this matches the existing pattern") must cite `path/to/file:line` or be explicitly marked `uncertain`. Flag **Critical** for any uncited assertion — the canonical gate does not tier by load-bearing status; all uncited claims must be cited or marked `uncertain`.
+(canonical: `.github/agents/judge.agent.md` § "Provenance check")
+
+### Plan-revision sync (ADR-011, advisory in v1)
+If the linked issue has a "Plan revision" comment posted *after* this PR was opened, the PR body's `## Plan` section must include that revision's link and a refreshed "Latest in 1–2 sentences" line, AND the `## Plan revision sync` checklist must have the matching box ticked. Flag **High** (REQUEST_CHANGES; do not BLOCK in v1) when missing.
+(canonical: `.github/agents/judge.agent.md` § "Plan-revision sync")
+
 ## Response Guidelines
 
 1. **Be specific**: "Line 42 may throw if `user` is null" > "Watch out for nulls"
