@@ -75,6 +75,34 @@ List exact commands the author should run (or confirm already ran):
 ### Files Changed
 - `path/to/file.ext` — brief description of changes
 
+## Repo-specific Judge gates
+
+This repo uses the internal Judge role (`.github/agents/judge.agent.md`) as the canonical gate spec. The six gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
+
+### Issue / parent-PR link (ADR-011)
+The PR body must reference an issue, parent PR, or ADR (`Closes #NN`, `Refs #NN`, `Implements ADR-NNN`). Flag as **High Priority** if the body has neither a `#NN` reference nor an `ADR-\d+` reference, the PR is not a revert, and no exemption label (`chore:no-plan`, `smoke-test`) is present. Automation bots (Renovate, Dependabot) are exempt.
+(canonical: `.github/agents/judge.agent.md` § "Issue / parent-PR link")
+
+### Plan-as-comment (ADR-011)
+The linked issue should have a `## 📋 Implementation Plan` comment before code was written. Flag as **Medium Priority** (advisory in v1) if the issue lacks this comment and carries no `chore:no-plan` label. Also flag **Medium Priority** when the PR body's `## Plan` section is empty or clearly contradicts the diff.
+(canonical: `.github/agents/judge.agent.md` § "Plan-as-comment")
+
+### Doc-sync trigger check
+Walk `.context/rules/process_doc_maintenance.md`'s trigger table against the diff. For every matching row, the listed companion file(s) must appear in the diff, or the PR description must contain `<file>: no changes required` with a one-line justification. Flag as **High Priority** if a required companion update is missing.
+(canonical: `.github/agents/judge.agent.md` § "Doc trigger check")
+
+### ADR supersession check
+If the diff changes a decision recorded in `docs/decisions/`, the existing ADR's `Status` line must read `Superseded by ADR-NNN` or `Accepted (superseded in part by ADR-NNN)`, and a new ADR must be present in the diff. Flag as **High Priority** if an existing ADR is contradicted without a supersession entry.
+(canonical: `.github/agents/judge.agent.md` § "ADR supersession check")
+
+### Pre-Flight Report (ADR-005 / ADR-014)
+For PRs implementing a feature (action verbs + user-facing noun in the issue body, or `feature_request.md` + `enhancement` label, or a new agent-surface ADR), the issue must have an Analyst Pre-Flight Report comment with verdict `PASS`. Flag as **High Priority** if the gate applies, no opt-out is in effect (`outcome-validated` label + inline outcome paragraph), and the report is missing or shows `FAIL`/`HOLD`. Exempt: `bug`, `docs` (no new behavior), `dependencies`, `chore:*`, reverts.
+(canonical: `.github/agents/judge.agent.md` § "Pre-Flight Report present with verdict PASS when the gate applies")
+
+### Provenance check
+Claims of fact about the repo in the PR description ("the repo does X", "this matches the existing pattern") must cite `path/to/file:line` or be explicitly marked `uncertain`. Flag as **Medium Priority** for uncited assertions; **High Priority** if the uncited claim is load-bearing for the PR's rationale.
+(canonical: `.github/agents/judge.agent.md` § "Provenance check")
+
 ## Tone
 
 Be direct, technical, and concise. No fluff. Focus on actionable feedback.

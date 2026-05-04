@@ -133,6 +133,7 @@ If the issue is valid, implement the fix:
 - Make the smallest change that addresses the issue.
 - Stay inside the files already touched by this PR when possible. If a fix requires changes to files outside the PR's scope, flag it and ask before proceeding.
 - For refactor suggestions: apply only if the suggestion is clearly better. If it's a judgment call, implement it but note that the author may want to review.
+- **Fix-only commits**: each commit in this fix pass must address only the indexed item. Do not refactor surrounding code, rename variables, reorganize imports, or make style improvements in the same commit — note them in Phase 3 "Additional Observations" and commit separately or file a follow-up. This is distinct from Round discipline Rule 3 (classify-then-decide, issue #220), which governs the *order* fixes are applied; this rule caps each commit's *scope* to one concern. (Evidence: PR #228 Round 5 combined a real fix with a `grep | wc -l` → `grep -c` refactor in one commit; the refactor changed exit-code semantics under `set -e` and caused the Round 7 regression.)
 - Include the exact file path and line numbers in your report.
 
 ### Step 4 — Validate

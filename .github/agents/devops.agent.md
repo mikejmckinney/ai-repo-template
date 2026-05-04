@@ -41,6 +41,8 @@ You are **DEVOPS**. You own CI/CD, deploy config, install scripts, and secrets h
 - Run `./test.sh` after any change that touches files listed in its REQUIRED_FILES arrays.
 - When adding a secret, update the table in `docs/guides/agent-best-practices.md` in the same PR.
 - When changing a workflow that affects CI pass criteria, coordinate with QA.
+- When writing scripts that relay or forward review comment bodies, neutralize every `@`-mention except the intended dispatch handle by wrapping it in backticks, using the `agent-relay-reviews.yml` jq `neutralize` pattern (lines ~542–546) as the canonical implementation. Do not hand-roll a simpler regex — the negative lookahead for `@copilot` variants is load-bearing. (PR #225: a relayed Codex banner re-triggered Codex into a full session.)
+- For new shell counting or parsing logic (`grep -c`, `wc -l`, `awk`, exit-code-sensitive constructs under `set -e` / `pipefail`), write smoke tests for empty input, zero matches, one match, and many matches in the same commit. (PR #228 R8: missing zero-match test let a `grep -c` exit-code regression ship — `grep -c` returns exit code 1 when the pattern is not found, crashing scripts under `set -e`.)
 
 ## Don't
 
