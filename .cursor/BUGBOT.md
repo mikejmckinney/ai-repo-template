@@ -157,7 +157,7 @@ If the diff changes a decision recorded in `docs/decisions/`, the existing ADR's
 (canonical: `.github/agents/judge.agent.md` § "ADR supersession check")
 
 ### Pre-Flight Report (ADR-005 / ADR-014)
-For PRs implementing a feature (action verbs + user-facing noun in the issue body, or `feature_request.md` + `enhancement` label, or a new agent-surface ADR), the issue must have an Analyst Pre-Flight Report comment with verdict `PASS`. Flag as **Blocker** if the gate applies, no opt-out is in effect (`outcome-validated` label + inline outcome paragraph), and the report is missing or shows `FAIL`/`HOLD`. Exempt: `bug`, `docs` (no new behavior), `dependencies`, `chore:*`, reverts.
+For PRs implementing a feature (action verbs + user-facing noun in the issue body, or `feature_request.md` + `enhancement` label, or a new agent-surface ADR), the issue must have an Analyst Pre-Flight Report comment with verdict `PASS`. Flag as **Blocker** if the gate applies, no opt-out is in effect (`outcome-validated` label + inline outcome paragraph), and the report is missing or shows `FAIL`/`HOLD`. Exempt: `bug`, `docs` (no new behavior), `dependencies`, `chore:*`, reverts, and issues referencing only shared procedural prompts (e.g., `pr-resolve-all.md`, `repo-onboarding.md`) or prompt docs under `.github/prompts/`.
 (canonical: `.github/agents/judge.agent.md` § "Pre-Flight Report present with verdict PASS when the gate applies")
 
 ### Outcome match (when a Pre-Flight Report exists)
