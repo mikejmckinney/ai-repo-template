@@ -234,7 +234,7 @@ Keep agent working memory current so the next session (or next role) can resume 
 
 1. `AGENTS.md` — catches mid-session rule edits (e.g., this very section).
 2. `.context/00_INDEX.md` — catches roadmap or constraint changes.
-3. `.context/state/_active.md` and the active `.context/state/task_<slug>.md` (if any) — catches staleness in your own working state. `_active.md` is capped at ~20 lines of metadata; granular progress, files, and blockers live in the task file it references.
+3. `.context/state/_active.md` and the active `.context/state/task_<slug>.md` (if any) — catches staleness in your own working state. `_active.md` is capped at ~20 lines of metadata (summary blockers and next steps); granular progress, files, and detailed blockers live in the task file it references.
 4. `.context/state/coordination.md` — catches stale locks before you add new ones.
 5. Any `.context/rules/*.md` or `.context/vision/**/*.md` whose domain covers the files you are about to edit — e.g., read `.context/rules/process_doc_maintenance.md` before changes that may trigger doc-sync requirements; read `.context/rules/domain_code_quality.md` before non-trivial code refactors; read the relevant architecture or mockup in `.context/vision/` before implementing UI or structural changes.
 
