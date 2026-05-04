@@ -126,8 +126,10 @@ AGENT_RE = re.compile(r'\[bot\]|copilot|claude|gemini|codex|chatgpt', re.I)
 REPORT_HEADER_RE = re.compile(
     r'^##\s+Resolution\s+Report(?:\s*[\u2014\-]+\s*Round)?', re.MULTILINE | re.I
 )
-FIXED_RE = re.compile(r'fixed in this pass[:\s]+(\d+)', re.I)
-TOTAL_RE = re.compile(r'total items found[:\s]+(\d+)', re.I)
+# [*:\s]+ handles both plain text ('Fixed in this pass: 2') and the
+# canonical markdown-bold form ('**Fixed in this pass**: 2').
+FIXED_RE = re.compile(r'fixed in this pass[*:\s]+(\d+)', re.I)
+TOTAL_RE = re.compile(r'total items found[*:\s]+(\d+)', re.I)
 
 for pr in data:
     number = pr['number']
@@ -226,7 +228,7 @@ PR_JSON=$(gh api graphql --paginate -f query='
   }
 ' -F owner="${REPO%%/*}" -F repo="${REPO##*/}" \
   --jq ".data.repository.pullRequests.nodes[] | select(.closedAt >= \"${SINCE}\")" \
-  2>/dev/null | jq -s '.') || PR_JSON="[]"
+  | jq -s '.')
 
 # ---------------------------------------------------------------------------
 # Parse and accumulate per-PR metrics

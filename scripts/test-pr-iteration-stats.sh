@@ -56,8 +56,10 @@ AGENT_RE = re.compile(r'\[bot\]|copilot|claude|gemini|codex|chatgpt', re.I)
 REPORT_HEADER_RE = re.compile(
     r'^##\s+Resolution\s+Report(?:\s*[—\-]+\s*Round)?', re.MULTILINE | re.I
 )
-FIXED_RE = re.compile(r'fixed in this pass[:\s]+(\d+)', re.I)
-TOTAL_RE = re.compile(r'total items found[:\s]+(\d+)', re.I)
+# [*:\s]+ handles both plain text ('Fixed in this pass: 2') and the
+# canonical markdown-bold form ('**Fixed in this pass**: 2').
+FIXED_RE = re.compile(r'fixed in this pass[*:\s]+(\d+)', re.I)
+TOTAL_RE = re.compile(r'total items found[*:\s]+(\d+)', re.I)
 
 for pr in data:
     number = pr['number']
@@ -116,6 +118,13 @@ REPORT_FIX_CANONICAL = (
     "## Resolution Report\n\n"
     "Fixed in this pass: 1\nTotal items found: 2\n"
 )
+REPORT_FIX_BOLD = (
+    "## Resolution Report\n\n"
+    "- **Total items found**: 3\n"
+    "- **Already resolved**: 0\n"
+    "- **Fixed in this pass**: 2\n"
+    "- **Needs clarification**: 1\n"
+)
 REPORT_REJECTED = (
     "## Resolution Report \u2014 Round 5\n\n"
     "Fixed in this pass: 0\nTotal items found: 2\n"
@@ -147,6 +156,9 @@ FIXTURES = {
     ])],
     "canonical_fix": [make_pr(107, 1, 1, [
         bot("claude[bot]", REPORT_FIX_CANONICAL),
+    ])],
+    "bold_fix": [make_pr(108, 2, 2, [
+        bot("copilot-pull-request-reviewer[bot]", REPORT_FIX_BOLD),
     ])],
     "one_rejected": [make_pr(102, 3, 0, [
         bot("copilot-pull-request-reviewer[bot]", REPORT_REJECTED),
@@ -286,6 +298,15 @@ echo "canonical header (no '— Round N' suffix)"
 result=$(make_fixture canonical_fix | parse_pr_json)
 assert_eq "canonical header → total_rounds=1" "1" "$(printf '%s' "$result" | field total_rounds)"
 assert_eq "canonical header → fix_rounds=1" "1" "$(printf '%s' "$result" | field fix_rounds)"
+echo ""
+
+# ── Test 11: Markdown-bold counter labels (- **Fixed in this pass**: X) ──────
+echo "markdown-bold counter labels (canonical pr-resolve-all.md format)"
+
+result=$(make_fixture bold_fix | parse_pr_json)
+assert_eq "bold labels → total_rounds=1" "1" "$(printf '%s' "$result" | field total_rounds)"
+assert_eq "bold labels → fix_rounds=1" "1" "$(printf '%s' "$result" | field fix_rounds)"
+assert_eq "bold labels → rejected_rounds=0" "0" "$(printf '%s' "$result" | field rejected_rounds)"
 echo ""
 
 # ---------------------------------------------------------------------------
