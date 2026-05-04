@@ -4,7 +4,8 @@
 # For each <name>.jq file, finds matching fixture pairs:
 #   scripts/lib/jq/fixtures/<name>-<tag>.in.json
 #   scripts/lib/jq/fixtures/<name>-<tag>.out
-# Runs jq -rf <filter> against each .in.json and diffs with .out.
+# Runs jq -rf <filter> against each .in.json and compares output to .out
+# (string equality; trailing-newline differences are normalised by jq).
 #
 # Purpose: catch semantic jq bugs (operator-precedence, incorrect filters)
 # before they surface in PR review — the class of bug that drove PR #225's
