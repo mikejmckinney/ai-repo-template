@@ -8,7 +8,7 @@
 #
 # Review this list when bumping actionlint version; some rules may have
 # been reclassified or the codebase may have been remediated.
-ignore:
+ignore-patterns:
   - 'SC2016'  # jq/sed/awk expressions in single quotes are intentional
   - 'SC2086'  # pre-existing unquoted variables in workflow run: blocks
   - 'SC2129'  # style: { cmd1; cmd2; } >> file — advisory only
