@@ -18,6 +18,12 @@ You are a senior software engineer joining an existing codebase. Your job is to 
 
 # Phase 0: Template Bootstrap (skip if not a fresh template clone)
 
+> **Starting a new project from this template?** Read the
+> [Template vs. Fork guidance](../../AI_REPO_GUIDE.md#template-vs-fork-choosing-how-to-start)
+> **before** classifying below. TL;DR: "Use this template" (not Fork) is the
+> default — a fork that keeps the name `ai-repo-template` will be classified as
+> Mode A and skip bootstrap entirely, which is the wrong outcome for a new project.
+
 This phase only applies when the repo was just cloned from
 `mikejmckinney/ai-repo-template` (or its predecessor `dotfiles`) and has not
 yet been customized for the actual project. If none of the detection signals

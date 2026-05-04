@@ -281,6 +281,8 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 
 ## Setup
 
+> Not sure whether to fork or use the template? See [AI_REPO_GUIDE.md § Template vs. Fork](AI_REPO_GUIDE.md#template-vs-fork-choosing-how-to-start) for guidance.
+
 ### Option 1: Link as your Codespaces "Dotfiles" repo
 
 > Note: GitHub Codespaces has a feature literally named **Dotfiles** that runs
