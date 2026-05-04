@@ -241,8 +241,6 @@ import sys, json, re
 data = json.load(sys.stdin)
 results = []
 
-# Authors that indicate an agent/bot Resolution Report.
-AGENT_RE = re.compile(r'\[bot\]|copilot|claude|gemini|codex|chatgpt', re.I)
 REPORT_HEADER_RE = re.compile(
     r'^##\s+Resolution\s+Report(?:\s*[\u2014\-]+\s*Round)?', re.MULTILINE | re.I
 )
@@ -264,14 +262,8 @@ for pr in data:
 
     for comment in pr['comments']['nodes']:
         body = comment.get('body') or ''
-        author = (comment.get('author') or {}).get('login', '')
-
-        # Qualify as a Resolution Report if:
-        #   (a) the author looks like an agent, AND the body has the header; OR
-        #   (b) the body clearly carries the header (human-relayed bot summaries).
-        is_agent_authored = AGENT_RE.search(author) and REPORT_HEADER_RE.search(body)
-        is_body_match = REPORT_HEADER_RE.search(body)
-        if not (is_agent_authored or is_body_match):
+        is_report = REPORT_HEADER_RE.search(body)
+        if not is_report:
             continue
 
         total_rounds += 1

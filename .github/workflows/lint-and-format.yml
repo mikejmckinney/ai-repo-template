@@ -115,7 +115,7 @@ jobs:
         # for `run:` blocks, catching expression and shell issues together.
         # Patterns suppressed here are false positives or pre-existing
         # info/style-level shellcheck findings in existing workflow files;
-        # see .actionlint.yaml for rationale.  SC2016 = jq single-quote
+        # see .github/actionlint.yaml for rationale.  SC2016 = jq single-quote
         # expressions (intentional); SC2086/SC2129/SC2153/SC2018/SC2019 =
         # pre-existing info/style patterns tracked in follow-up issues.
         run: |
