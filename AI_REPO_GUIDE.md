@@ -311,7 +311,7 @@ git remote add upstream https://github.com/mikejmckinney/ai-repo-template.git
 git fetch upstream
 ```
 
-Browse available commits with `git log --oneline --cherry-pick --right-only main...upstream/main`, then cherry-pick specific ones (e.g., `git cherry-pick <commit-hash>`). Most template changes will be project-specific noise to a downstream project — selective cherry-picking is safer than a full merge (which can re-introduce template placeholders or overwrite project-specific customizations).
+Browse available commits with `git log --oneline --cherry-pick --right-only HEAD...upstream/main`, then cherry-pick specific ones (e.g., `git cherry-pick <commit-hash>`). Most template changes will be project-specific noise to a downstream project — selective cherry-picking is safer than a full merge (which can re-introduce template placeholders or overwrite project-specific customizations).
 
 ### For new repositories
 1. Create repo from this template (or copy files)
