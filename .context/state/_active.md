@@ -8,7 +8,7 @@
 # Active Task
 
 **Active Task**: #229 Phase 1.5 — runtime-semantics gate
-**File**: `feature/devops-229-phase1.5`
+**File**: N/A
 **Role**: DevOps
 **Blockers**: None — ready to push + open PR
 **Next 1–3 actions**:
