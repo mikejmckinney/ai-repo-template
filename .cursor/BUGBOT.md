@@ -95,8 +95,8 @@ List exact commands the author should run (or confirm already ran):
 
 The following patterns have been deliberated and are working as intended.
 Do **not** flag them, even at Low severity. If you genuinely believe a
-specific instance is a bug despite the convention, set severity to High
-or Critical and explain why this case differs.
+specific instance is a bug despite the convention, set severity to **High Priority**
+or **Blocker** and explain why this case differs.
 
 ### `test.sh` regex tightness
 
