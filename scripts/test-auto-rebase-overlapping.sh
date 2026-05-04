@@ -59,18 +59,19 @@ assert_contains() {
 
 # ── Set up fixture dir and point the lib at it ──
 
-FIXTURE_DIR=$(mktemp -d); TMP_DIRS+=("$FIXTURE_DIR")
+FIXTURE_DIR=$(mktemp -d)
+TMP_DIRS+=("$FIXTURE_DIR")
 export AUTO_REBASE_TEST_MODE=1
 export FIXTURE_DIR
 
 # Helper to write a fixture PR.
 make_pr() {
   local n="$1" labels="$2" is_fork="$3" is_draft="$4" files="$5" unresolved="${6:-0}"
-  printf '%s\n' "$labels" > "$FIXTURE_DIR/$n.labels"
-  printf '%s' "$is_fork" > "$FIXTURE_DIR/$n.is_fork"
-  printf '%s' "$is_draft" > "$FIXTURE_DIR/$n.is_draft"
-  printf '%s\n' "$files" > "$FIXTURE_DIR/$n.files"
-  printf '%s' "$unresolved" > "$FIXTURE_DIR/$n.unresolved"
+  printf '%s\n' "$labels" >"$FIXTURE_DIR/$n.labels"
+  printf '%s' "$is_fork" >"$FIXTURE_DIR/$n.is_fork"
+  printf '%s' "$is_draft" >"$FIXTURE_DIR/$n.is_draft"
+  printf '%s\n' "$files" >"$FIXTURE_DIR/$n.files"
+  printf '%s' "$unresolved" >"$FIXTURE_DIR/$n.unresolved"
 }
 
 # Source the lib AFTER FIXTURE_DIR is exported.
@@ -156,7 +157,8 @@ echo ""
 echo "attempt_rebase"
 
 # 14. Non-git work_dir.
-not_git=$(mktemp -d); TMP_DIRS+=("$not_git")
+not_git=$(mktemp -d)
+TMP_DIRS+=("$not_git")
 assert_eq "not-a-git-repo path returns conflict:not-a-git-repo" \
   "conflict:not-a-git-repo" \
   "$(attempt_rebase featurebr deadbeef "$not_git")"
@@ -169,16 +171,16 @@ build_repo() {
     git init -q -b main
     git config user.email "test@example.com"
     git config user.name "Test"
-    echo "line1" > shared.txt
+    echo "line1" >shared.txt
     git add shared.txt
     git commit -qm "main: initial"
     # Pretend `origin/main` is the same as local main, then advance origin/main.
     git checkout -q -b featurebr
-    echo "feature add" >> shared.txt
+    echo "feature add" >>shared.txt
     git commit -qam "feature: add line"
     # Move back to main and add a non-conflicting commit.
     git checkout -q main
-    echo "main extra" > main-only.txt
+    echo "main extra" >main-only.txt
     git add main-only.txt
     git commit -qm "main: add main-only file"
     # Set up an "origin/main" ref pointing at current main.
@@ -187,7 +189,8 @@ build_repo() {
 }
 
 # 15. Clean rebase.
-clean_repo=$(mktemp -d); TMP_DIRS+=("$clean_repo")
+clean_repo=$(mktemp -d)
+TMP_DIRS+=("$clean_repo")
 build_repo "$clean_repo"
 result=$(attempt_rebase featurebr deadbeef "$clean_repo")
 assert_eq "clean rebase reports 'clean'" "clean" "$result"
@@ -195,7 +198,8 @@ assert_eq "clean rebase reports 'clean'" "clean" "$result"
 # 15b. Clean rebase via `git worktree` (regression for Codex P1: in
 #       worktrees, `.git` is a *file* not a directory; the workflow
 #       always uses `git worktree add`).
-worktree_parent=$(mktemp -d); TMP_DIRS+=("$worktree_parent")
+worktree_parent=$(mktemp -d)
+TMP_DIRS+=("$worktree_parent")
 build_repo "$worktree_parent"
 worktree_path="$worktree_parent/wt-feature"
 git -C "$worktree_parent" worktree add -B featurebr "$worktree_path" featurebr >/dev/null 2>&1
@@ -207,20 +211,21 @@ result=$(attempt_rebase featurebr deadbeef "$worktree_path")
 assert_eq "clean rebase via git worktree reports 'clean' (Codex P1 fix)" "clean" "$result"
 
 # 16. Conflict rebase.
-conflict_repo=$(mktemp -d); TMP_DIRS+=("$conflict_repo")
+conflict_repo=$(mktemp -d)
+TMP_DIRS+=("$conflict_repo")
 (
   cd "$conflict_repo"
   git init -q -b main
   git config user.email "test@example.com"
   git config user.name "Test"
-  echo "line1" > shared.txt
+  echo "line1" >shared.txt
   git add shared.txt
   git commit -qm "main: initial"
   git checkout -q -b featurebr
-  echo "feature edit" > shared.txt
+  echo "feature edit" >shared.txt
   git commit -qam "feature: rewrite shared.txt"
   git checkout -q main
-  echo "main edit" > shared.txt
+  echo "main edit" >shared.txt
   git commit -qam "main: rewrite shared.txt differently"
   git update-ref refs/remotes/origin/main main
 )
@@ -230,7 +235,8 @@ assert_contains "conflict rebase names shared.txt" "shared.txt" "$result"
 
 # 16b. After a conflict, rebase is aborted: working tree should be clean
 #       and HEAD on the original feature branch.
-status_file=$(mktemp); TMP_DIRS+=("$status_file")
+status_file=$(mktemp)
+TMP_DIRS+=("$status_file")
 (
   cd "$conflict_repo"
   if git status --porcelain | grep -q .; then
@@ -238,7 +244,7 @@ status_file=$(mktemp); TMP_DIRS+=("$status_file")
   else
     echo "CLEAN"
   fi
-) > "$status_file"
+) >"$status_file"
 assert_eq "conflict rebase aborts cleanly (no dirty worktree)" "CLEAN" "$(cat "$status_file")"
 
 # ── Tests: comment formatters ──
@@ -279,7 +285,7 @@ assert_contains "overlap comment mentions rebase-conflict label" "rebase-conflic
 echo ""
 echo "──────────────────────────────────────────"
 printf "Results: %d passed, %d failed\n" "$PASS" "$FAIL"
-if (( FAIL > 0 )); then
+if ((FAIL > 0)); then
   printf "Failed:\n"
   for n in "${FAILED_NAMES[@]}"; do
     printf "  - %s\n" "$n"

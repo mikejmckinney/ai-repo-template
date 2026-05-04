@@ -1,27 +1,29 @@
-# TEMPLATE_PLACEHOLDER: Customize for your project's linting/formatting tools
-#
 # Lint and Format Workflow
 # ------------------------
-# Automatically cleans up code style issues before merging.
-# Particularly useful for agent-generated code which may have inconsistent formatting.
+# Runs on every PR and push to main/develop.
 #
-# Options:
-# 1. Auto-fix and commit (default) - Fixes issues and commits changes
-# 2. Check only - Fails if issues exist (for stricter workflows)
+# Jobs
+# ----
+#   lint-and-format — shellcheck (warning+, blocks), shfmt (-d, blocks),
+#                     actionlint (blocks), markdownlint (continue-on-error).
 #
 # Design notes
 # ------------
-# * Markdownlint runs with `continue-on-error: true`. This is INTENTIONAL for
-#   template use: downstream projects created from this template often have
-#   many markdown issues during initial setup, and we don't want the first CI
-#   run to fail on cosmetic linting. Flip to `continue-on-error: false` once
-#   the project has reached a stable state.
+# * shellcheck / shfmt / actionlint do NOT use continue-on-error.  Any
+#   warning-or-above severity blocks the PR — this is intentional (issue #229
+#   Phase 1).
+# * Markdownlint runs with `continue-on-error: true`. Downstream projects
+#   created from this template often have markdown issues during initial setup.
+#   Flip to `false` once the project has reached a stable state.
 # * The `[skip lint]` check below uses
 #     !contains(github.event.head_commit.message, '[skip lint]')
 #   which is safe on both push and pull_request triggers: on PR events
 #   `github.event.head_commit` is null, and GitHub Actions' `contains(null, ...)`
 #   returns false, so the overall condition evaluates to true (= run the job).
 #   Do NOT wrap with `message != null && ...` — that inverts PR behavior.
+# * For downstream projects needing a different tech stack, add your linter
+#   steps after the "Add project-specific linters here" comment. The shell /
+#   workflow linters below are universal and should remain even in derived repos.
 
 name: Lint and Format
 
@@ -39,92 +41,101 @@ concurrency:
 jobs:
   lint-and-format:
     runs-on: ubuntu-latest
-    
+
     # Skip if commit message contains [skip lint] or is from the formatter bot
     if: |
       !contains(github.event.head_commit.message, '[skip lint]') &&
       github.actor != 'github-actions[bot]'
-    
+
     permissions:
-      contents: write
-      pull-requests: write
-    
+      contents: read
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Need full history for accurate diffs
           fetch-depth: 0
-          # Use a token that can push (for auto-fix mode)
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       # =====================================================
-      # CUSTOMIZE THIS SECTION FOR YOUR TECH STACK
+      # SHELL LINTING — shellcheck (warning+, blocks)
       # =====================================================
-
-      # Node.js Example (Prettier + ESLint)
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: '20'
-      #     cache: 'npm'
-      #
-      # - name: Install dependencies
-      #   run: npm ci
-      #
-      # - name: Run Prettier (auto-fix)
-      #   run: npx prettier --write "**/*.{js,jsx,ts,tsx,json,md,css,scss}"
-      #
-      # - name: Run ESLint (auto-fix)
-      #   run: npx eslint --fix "**/*.{js,jsx,ts,tsx}" || true
-      #
-      # - name: Check for changes
-      #   id: check_changes
-      #   run: |
-      #     if [[ -n $(git status --porcelain) ]]; then
-      #       echo "has_changes=true" >> $GITHUB_OUTPUT
-      #     else
-      #       echo "has_changes=false" >> $GITHUB_OUTPUT
-      #     fi
-      #
-      # - name: Commit formatting fixes
-      #   if: steps.check_changes.outputs.has_changes == 'true'
-      #   run: |
-      #     git config --local user.email "github-actions[bot]@users.noreply.github.com"
-      #     git config --local user.name "github-actions[bot]"
-      #     git add -A
-      #     git commit -m "style: auto-format code [skip lint]"
-      #     git push
-
-      # Python Example (Ruff)
-      # - name: Setup Python
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: '3.11'
-      #
-      # - name: Install Ruff
-      #   run: pip install ruff
-      #
-      # - name: Run Ruff format (auto-fix)
-      #   run: ruff format .
-      #
-      # - name: Run Ruff check (auto-fix)
-      #   run: ruff check --fix . || true
-
-      # =====================================================
-      # PLACEHOLDER: Remove after customizing
-      # =====================================================
-      - name: Placeholder check
+      - name: Install shellcheck
         run: |
-          echo "Lint and format workflow placeholder"
-          echo "Customize this workflow for your project's linting tools:"
-          echo "  - Node.js: Prettier, ESLint"
-          echo "  - Python: Ruff, Black, isort"
-          echo "  - Go: gofmt, golangci-lint"
-          echo "  - Rust: rustfmt, clippy"
+          sudo apt-get update -qq
+          sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck
+        # Severity warning+ blocks the PR (no continue-on-error).
+        # SC1091: not following sourced files — suppressed repo-wide because
+        #   test scripts source sibling scripts by computed path which
+        #   shellcheck cannot follow statically.
+        # `-r -0` is required on GNU xargs: `-r` skips invocation when no
+        # input; `-0` (null-delimited, pairs with -print0) handles filenames
+        # with spaces or special characters (SC2038).
+        run: |
+          find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
+            -name '*.sh' -print0 \
+            | xargs -r -0 shellcheck --severity=warning --exclude=SC1091
 
       # =====================================================
-      # MARKDOWN LINTING (works for all projects)
+      # SHELL FORMATTING — shfmt (-d, blocks)
+      # =====================================================
+      - name: Install shfmt
+        run: |
+          SHFMT_VERSION="3.8.0"
+          curl -sSL \
+            "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" \
+            -o /usr/local/bin/shfmt
+          chmod +x /usr/local/bin/shfmt
+
+      - name: Run shfmt (diff check)
+        # -d: print diff and exit non-zero if any file would change.
+        # -i 2: 2-space indent (matches repo convention).
+        # -bn: binary ops at start of line.
+        # -ci: indent case statements.
+        # `-r -0` pairs with -print0 to handle filenames with spaces or
+        # special characters (SC2038).
+        run: |
+          find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
+            -name '*.sh' -print0 \
+            | xargs -r -0 shfmt -d -i 2 -bn -ci
+
+      # =====================================================
+      # WORKFLOW LINTING — actionlint (blocks)
+      # =====================================================
+      - name: Install actionlint
+        run: |
+          ACTIONLINT_VERSION="1.7.7"
+          curl -sSL \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin actionlint
+
+      - name: Run actionlint
+        # Lint all workflow YAML files. actionlint integrates with shellcheck
+        # for `run:` blocks, catching expression and shell issues together.
+        # Patterns suppressed here are false positives or pre-existing
+        # info/style-level shellcheck findings in existing workflow files.
+        # SC2016 = jq single-quote expressions (intentional);
+        # SC2086/SC2129/SC2153/SC2018/SC2019 = pre-existing info/style
+        # patterns tracked in follow-up issues.  Suppressions are passed
+        # via CLI flags rather than a config file — actionlint config
+        # auto-discovery is unreliable in CI runner environments.
+        run: |
+          find .github/workflows -maxdepth 1 \( -name '*.yml' -o -name '*.yaml' \) -print0 \
+            | xargs -r -0 actionlint \
+              -ignore 'SC2016' \
+              -ignore 'SC2086' \
+              -ignore 'SC2129' \
+              -ignore 'SC2153' \
+              -ignore 'SC2018' \
+              -ignore 'SC2019'
+
+      # =====================================================
+      # Add project-specific linters here (Node, Python, Go…)
+      # =====================================================
+
+      # =====================================================
+      # MARKDOWN LINTING (continue-on-error for template use)
       # =====================================================
       - name: Lint Markdown files
         uses: DavidAnson/markdownlint-cli2-action@v16
@@ -134,15 +145,3 @@ jobs:
             !node_modules/**
             !.git/**
         continue-on-error: true
-
-  # Optional: Separate job for type checking
-  # typecheck:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '20'
-  #         cache: 'npm'
-  #     - run: npm ci
-  #     - run: npm run typecheck

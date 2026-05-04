@@ -75,17 +75,18 @@ assert_not_contains() {
 
 # ── Set up fixture dir and point the lib at it ──
 
-FIXTURE_DIR=$(mktemp -d); TMP_DIRS+=("$FIXTURE_DIR")
+FIXTURE_DIR=$(mktemp -d)
+TMP_DIRS+=("$FIXTURE_DIR")
 export MULTI_DISPATCH_TEST_MODE=1
 export FIXTURE_DIR
 
 # Helper to write a fixture issue.
 make_issue() {
   local n="$1" body="$2" labels="$3" comments="${4:-}" state="${5:-open}"
-  printf '%s' "$body" > "$FIXTURE_DIR/$n.body"
-  printf '%s\n' "$labels" > "$FIXTURE_DIR/$n.labels"
-  printf '%s' "$comments" > "$FIXTURE_DIR/$n.comments"
-  printf '%s' "$state" > "$FIXTURE_DIR/$n.state"
+  printf '%s' "$body" >"$FIXTURE_DIR/$n.body"
+  printf '%s\n' "$labels" >"$FIXTURE_DIR/$n.labels"
+  printf '%s' "$comments" >"$FIXTURE_DIR/$n.comments"
+  printf '%s' "$state" >"$FIXTURE_DIR/$n.state"
 }
 
 # Source the lib AFTER FIXTURE_DIR is exported.
@@ -175,11 +176,12 @@ echo "classify_overlap"
 # All `mk_list` outputs land inside a single FIXTURE-adjacent dir so
 # the EXIT trap rm-rfs that one dir, never `dirname $(mktemp)` which
 # would be /tmp on most systems (caught in PR review).
-LIST_DIR=$(mktemp -d); TMP_DIRS+=("$LIST_DIR")
+LIST_DIR=$(mktemp -d)
+TMP_DIRS+=("$LIST_DIR")
 mk_list() {
   local f
   f=$(mktemp -p "$LIST_DIR" list.XXXXXX)
-  printf '%s\n' "$@" > "$f"
+  printf '%s\n' "$@" >"$f"
   printf '%s' "$f"
 }
 
@@ -285,7 +287,7 @@ echo ""
 echo "─────────────────────────────────────"
 echo "Passed: $PASS"
 echo "Failed: $FAIL"
-if (( FAIL > 0 )); then
+if ((FAIL > 0)); then
   echo ""
   echo "Failed tests:"
   for n in "${FAILED_NAMES[@]}"; do echo "  - $n"; done

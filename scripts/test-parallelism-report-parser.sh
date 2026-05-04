@@ -86,11 +86,11 @@ classify_overlap() {
     while IFS=$'\t' read -r _ prefix; do
       [[ -z "$prefix" ]] && continue
       if awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {found=1; exit} END{exit !found}' "$me" \
-         && awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {found=1; exit} END{exit !found}' "$other"; then
+        && awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {found=1; exit} END{exit !found}' "$other"; then
         echo "soft"
         return
       fi
-    done <<< "$prefixes"
+    done <<<"$prefixes"
   fi
   echo "none"
 }
@@ -133,23 +133,23 @@ echo "── Parser unit tests ──"
 
 prefixes=$(printf '%s\n' "$FIXTURE_NORMAL" | parse_ownership)
 
-assert_contains "parser: Analyst -> docs/research"       "Analyst	docs/research"      "$prefixes"
-assert_contains "parser: Frontend -> src/frontend"       "Frontend	src/frontend"      "$prefixes"
-assert_contains "parser: Frontend -> src/components"     "Frontend	src/components"    "$prefixes"
-assert_contains "parser: Backend -> src/api"             "Backend	src/api"           "$prefixes"
-assert_contains "parser: Docs -> docs (top-level)"       "Docs	docs"                  "$prefixes"
-assert_not_contains "parser: 'nothing' globs are dropped" "Judge	nothing"            "$prefixes"
+assert_contains "parser: Analyst -> docs/research" "Analyst	docs/research" "$prefixes"
+assert_contains "parser: Frontend -> src/frontend" "Frontend	src/frontend" "$prefixes"
+assert_contains "parser: Frontend -> src/components" "Frontend	src/components" "$prefixes"
+assert_contains "parser: Backend -> src/api" "Backend	src/api" "$prefixes"
+assert_contains "parser: Docs -> docs (top-level)" "Docs	docs" "$prefixes"
+assert_not_contains "parser: 'nothing' globs are dropped" "Judge	nothing" "$prefixes"
 
 malformed_prefixes=$(printf '%s\n' "$FIXTURE_MALFORMED" | parse_ownership)
 assert_eq "parser: malformed table yields zero prefixes (fail-soft)" "" "$malformed_prefixes"
 
 # Qualifier-stripping regression check (codex P1 on PR #113).
 q_prefixes=$(printf '%s\n' "$FIXTURE_QUALIFIERS" | parse_ownership)
-assert_contains "parser (qualifier): Docs -> docs (single clean prefix)"  "Docs	docs"            "$q_prefixes"
-assert_contains "parser (qualifier): Architect -> .context/rules"         "Architect	.context/rules" "$q_prefixes"
-assert_not_contains "parser (qualifier): no broken 'docs/research' fragment" "docs/research"      "$q_prefixes"
-assert_not_contains "parser (qualifier): no broken 'except' fragment"        "except"             "$q_prefixes"
-assert_not_contains "parser (qualifier): Judge 'nothing' globs still dropped" "Judge"             "$q_prefixes"
+assert_contains "parser (qualifier): Docs -> docs (single clean prefix)" "Docs	docs" "$q_prefixes"
+assert_contains "parser (qualifier): Architect -> .context/rules" "Architect	.context/rules" "$q_prefixes"
+assert_not_contains "parser (qualifier): no broken 'docs/research' fragment" "docs/research" "$q_prefixes"
+assert_not_contains "parser (qualifier): no broken 'except' fragment" "except" "$q_prefixes"
+assert_not_contains "parser (qualifier): Judge 'nothing' globs still dropped" "Judge" "$q_prefixes"
 
 # ── Test group 2: classification ──
 
@@ -158,29 +158,31 @@ echo "── Classification unit tests ──"
 
 # Build temp file lists for two PRs.
 ME=$(mktemp)
-OTHER_HARD=$(mktemp); OTHER_SOFT=$(mktemp); OTHER_NONE=$(mktemp)
+OTHER_HARD=$(mktemp)
+OTHER_SOFT=$(mktemp)
+OTHER_NONE=$(mktemp)
 
 # PR-A: touches docs/foo.md
-printf 'docs/foo.md\n'                          > "$ME"
+printf 'docs/foo.md\n' >"$ME"
 # PR-B: touches docs/foo.md (same file) → hard
-printf 'docs/foo.md\n'                          > "$OTHER_HARD"
+printf 'docs/foo.md\n' >"$OTHER_HARD"
 # PR-C: touches docs/bar.md (same prefix, different file) → soft
-printf 'docs/bar.md\n'                          > "$OTHER_SOFT"
+printf 'docs/bar.md\n' >"$OTHER_SOFT"
 # PR-D: touches src/api/login.ts → none
-printf 'src/api/login.ts\n'                     > "$OTHER_NONE"
+printf 'src/api/login.ts\n' >"$OTHER_NONE"
 
-assert_eq "classify: hard overlap (same file)"  "hard" "$(classify_overlap "$ME" "$OTHER_HARD" "$prefixes")"
+assert_eq "classify: hard overlap (same file)" "hard" "$(classify_overlap "$ME" "$OTHER_HARD" "$prefixes")"
 assert_eq "classify: soft overlap (same prefix, different file)" \
-                                                "soft" "$(classify_overlap "$ME" "$OTHER_SOFT" "$prefixes")"
-assert_eq "classify: no overlap"                "none" "$(classify_overlap "$ME" "$OTHER_NONE" "$prefixes")"
+  "soft" "$(classify_overlap "$ME" "$OTHER_SOFT" "$prefixes")"
+assert_eq "classify: no overlap" "none" "$(classify_overlap "$ME" "$OTHER_NONE" "$prefixes")"
 
 # Soft classification disappears when prefixes are empty (parser failed).
 assert_eq "classify: soft -> none when prefixes are empty (fail-soft mode)" \
-                                                "none" "$(classify_overlap "$ME" "$OTHER_SOFT" "")"
+  "none" "$(classify_overlap "$ME" "$OTHER_SOFT" "")"
 
 # Hard still detected even with empty prefixes.
 assert_eq "classify: hard still detected when prefixes are empty" \
-                                                "hard" "$(classify_overlap "$ME" "$OTHER_HARD" "")"
+  "hard" "$(classify_overlap "$ME" "$OTHER_HARD" "")"
 
 rm -f "$ME" "$OTHER_HARD" "$OTHER_SOFT" "$OTHER_NONE"
 
@@ -195,7 +197,7 @@ echo "── Live ownership-map format guard ──"
 
 LIVE_OWNERSHIP='.context/rules/agent_ownership.md'
 if [[ -f "$LIVE_OWNERSHIP" ]]; then
-  live_prefixes=$(parse_ownership < "$LIVE_OWNERSHIP")
+  live_prefixes=$(parse_ownership <"$LIVE_OWNERSHIP")
   live_count=$(printf '%s\n' "$live_prefixes" | grep -c . || true)
   if [[ "$live_count" -ge 4 ]]; then
     PASS=$((PASS + 1))
@@ -213,13 +215,13 @@ if [[ -f "$LIVE_OWNERSHIP" ]]; then
   # survive while specific roles silently lose their prefix. See
   # ADR-009 §Implementation and codex P2 on PR #113.
   for anchor in \
-      "Analyst	docs/research" \
-      "Architect	docs/decisions" \
-      "Backend	src/api" \
-      "DevOps	scripts" \
-      "Docs	docs" \
-      "PM	.context/state" \
-      "QA	tests"; do
+    "Analyst	docs/research" \
+    "Architect	docs/decisions" \
+    "Backend	src/api" \
+    "DevOps	scripts" \
+    "Docs	docs" \
+    "PM	.context/state" \
+    "QA	tests"; do
     if printf '%s\n' "$live_prefixes" | grep -qF "$anchor"; then
       PASS=$((PASS + 1))
       printf '  ✅ live anchor present: %s\n' "$anchor"
@@ -285,7 +287,7 @@ echo ""
 echo "──────────────────────────────"
 echo "Passed: $PASS"
 echo "Failed: $FAIL"
-if (( FAIL > 0 )); then
+if ((FAIL > 0)); then
   echo ""
   echo "Failed tests:"
   for n in "${FAILED_NAMES[@]}"; do echo "  - $n"; done

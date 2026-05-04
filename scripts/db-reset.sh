@@ -29,8 +29,8 @@ echo ""
 read -r -p "Are you sure? Type 'yes' to continue: " confirm
 
 if [[ "$confirm" != "yes" ]]; then
-    log_info "Aborted."
-    exit 0
+  log_info "Aborted."
+  exit 0
 fi
 
 echo ""

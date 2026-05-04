@@ -134,7 +134,9 @@ _aro_pr_unresolved_threads() {
     owner="${repo%/*}"
     name="${repo#*/}"
     # shellcheck disable=SC2016  # GraphQL variables (`$owner` etc.) are literal in the query string
-    raw=$(set -o pipefail; gh api graphql -f query='
+    raw=$(
+      set -o pipefail
+      gh api graphql -f query='
       query($owner: String!, $name: String!, $pr: Int!) {
         repository(owner: $owner, name: $name) {
           pullRequest(number: $pr) {
@@ -144,15 +146,18 @@ _aro_pr_unresolved_threads() {
             }
           }
         }
-      }' -F owner="$owner" -F name="$name" -F pr="$n" 2>/dev/null) \
+      }' -F owner="$owner" -F name="$name" -F pr="$n" 2>/dev/null
+    ) \
       || raw=""
     if [[ -z "$raw" ]]; then
-      echo "999"; return 0
+      echo "999"
+      return 0
     fi
     has_next=$(printf '%s' "$raw" | jq -r '.data.repository.pullRequest.reviewThreads.pageInfo.hasNextPage' 2>/dev/null)
     if [[ "$has_next" == "true" ]]; then
       # Pagination would be needed; fail-closed.
-      echo "999"; return 0
+      echo "999"
+      return 0
     fi
     count=$(printf '%s' "$raw" | jq '[.data.repository.pullRequest.reviewThreads.nodes[]
              | select(.isResolved == false)] | length' 2>/dev/null)
@@ -220,8 +225,8 @@ should_rebase_pr() {
   # safety.sh::select_dispatchable).
   local work
   work=$(mktemp -d)
-  _aro_pr_files "$pr"        | sort -u > "$work/a"
-  _aro_pr_files "$merged_pr" | sort -u > "$work/b"
+  _aro_pr_files "$pr" | sort -u >"$work/a"
+  _aro_pr_files "$merged_pr" | sort -u >"$work/b"
 
   local overlap
   overlap=$(classify_overlap "$work/a" "$work/b")
@@ -229,7 +234,7 @@ should_rebase_pr() {
   case "$overlap" in
     soft) echo "attempt-rebase" ;;
     hard) echo "comment-only" ;;
-    *)    echo "skip:none-overlap" ;;
+    *) echo "skip:none-overlap" ;;
   esac
 }
 
@@ -240,7 +245,7 @@ should_rebase_pr() {
 # expected_sha that was captured BEFORE the rebase.
 attempt_rebase() {
   local branch="$1"
-  local expected_sha="$2"  # informational: caller uses for --force-with-lease
+  local expected_sha="$2" # informational: caller uses for --force-with-lease
   local work_dir="$3"
 
   # Accept both regular checkouts (`.git` is a directory) and `git
@@ -310,7 +315,7 @@ EOF
 # ── Public: format_conflict_comment ──
 format_conflict_comment() {
   local merged_pr="$1"
-  local conflict_paths="$2"  # comma-separated
+  local conflict_paths="$2" # comma-separated
   local files_list
   files_list=$(printf '%s' "$conflict_paths" | tr ',' '\n' | awk 'NF { printf "- `%s`\n", $0 }')
   cat <<EOF
@@ -336,7 +341,7 @@ EOF
 # ── Public: format_overlap_warning_comment ──
 format_overlap_warning_comment() {
   local merged_pr="$1"
-  local overlapping_paths="$2"  # newline-separated
+  local overlapping_paths="$2" # newline-separated
   local files_list
   files_list=$(printf '%s' "$overlapping_paths" | awk 'NF { printf "- `%s`\n", $0 }')
   cat <<EOF

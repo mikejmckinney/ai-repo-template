@@ -130,7 +130,8 @@ parse_active_locks() {
 
 # ── Fixtures ──
 
-FIXTURE_BASIC=$(cat <<'EOF'
+FIXTURE_BASIC=$(
+  cat <<'EOF'
 # Coordination Board
 
 ## Active Locks
@@ -173,7 +174,8 @@ FIXTURE_BASIC=$(cat <<'EOF'
 EOF
 )
 
-FIXTURE_EMPTY=$(cat <<'EOF'
+FIXTURE_EMPTY=$(
+  cat <<'EOF'
 # Coordination Board
 
 ## Active Locks
@@ -184,7 +186,8 @@ FIXTURE_EMPTY=$(cat <<'EOF'
 EOF
 )
 
-FIXTURE_HUMAN_NOTE=$(cat <<'EOF'
+FIXTURE_HUMAN_NOTE=$(
+  cat <<'EOF'
 # Coordination Board
 
 ## Active Locks
@@ -208,7 +211,9 @@ EOF
 
 echo "extract_stale_blocks (on-close-stale logic)"
 
-tmp=$(mktemp); TMP_FILES+=("$tmp"); printf '%s\n' "$FIXTURE_BASIC" > "$tmp"
+tmp=$(mktemp)
+TMP_FILES+=("$tmp")
+printf '%s\n' "$FIXTURE_BASIC" >"$tmp"
 
 # 1. Match by managed-for-pr marker.
 out=$(extract_stale_blocks "$tmp" "some-other-branch" "126")
@@ -223,13 +228,17 @@ out=$(extract_stale_blocks "$tmp" "no-such-branch" "999")
 assert_empty "no match for unrelated branch+pr" "$out"
 
 # 4. Empty Active Locks → no match.
-tmp2=$(mktemp); TMP_FILES+=("$tmp2"); printf '%s\n' "$FIXTURE_EMPTY" > "$tmp2"
+tmp2=$(mktemp)
+TMP_FILES+=("$tmp2")
+printf '%s\n' "$FIXTURE_EMPTY" >"$tmp2"
 out=$(extract_stale_blocks "$tmp2" "any-branch" "126")
 assert_empty "empty Active Locks → no match" "$out"
 
 # 5. Human-note inside a lock block doesn't break parsing (block ends at
 #    next "## " non-Lock heading, which closes the section).
-tmp3=$(mktemp); TMP_FILES+=("$tmp3"); printf '%s\n' "$FIXTURE_HUMAN_NOTE" > "$tmp3"
+tmp3=$(mktemp)
+TMP_FILES+=("$tmp3")
+printf '%s\n' "$FIXTURE_HUMAN_NOTE" >"$tmp3"
 out=$(extract_stale_blocks "$tmp3" "chore/manual-edit" "999")
 assert_contains "matches block even with trailing human note" "hand-shaped" "$out"
 assert_contains "block includes the human note line" "PM note:" "$out"
@@ -256,7 +265,8 @@ assert_empty "Recent-History managed-for-pr marker does not match" "$out"
 # 9. Regression: branch names with regex metacharacters (`.`, `(`,
 #    `[`) must compare literally. A query for `feat.1` must NOT match
 #    a Session of `feat-1` (which a naive regex would).
-tmp_regex=$(mktemp); TMP_FILES+=("$tmp_regex")
+tmp_regex=$(mktemp)
+TMP_FILES+=("$tmp_regex")
 printf '%s\n' \
   '# Coordination Board' \
   '' \
@@ -268,7 +278,7 @@ printf '%s\n' \
   '**Claimed At**: 2026-04-22T10:00:00Z' \
   '**State**: in_progress' \
   '' \
-  '## Recent History' > "$tmp_regex"
+  '## Recent History' >"$tmp_regex"
 out=$(extract_stale_blocks "$tmp_regex" "feat.1" "999")
 assert_empty "regex-metachar branch (feat.1) does not match feat-1" "$out"
 out=$(extract_stale_blocks "$tmp_regex" "feat-1" "999")
@@ -309,7 +319,8 @@ assert_contains "human-note fixture parses the lock" "hand-shaped	chore/manual-e
 
 # 5. Trailing-whitespace fixture: parsed values must be trimmed so a
 #    downstream literal compare to an open-PR head branch succeeds.
-tmp_ws=$(mktemp); TMP_FILES+=("$tmp_ws")
+tmp_ws=$(mktemp)
+TMP_FILES+=("$tmp_ws")
 printf '%s\n' \
   '# Coordination Board' \
   '' \
@@ -321,7 +332,7 @@ printf '%s\n' \
   '**Claimed At**: 2026-04-22T10:00:00Z   ' \
   '**State**: in_progress' \
   '' \
-  '## Recent History' > "$tmp_ws"
+  '## Recent History' >"$tmp_ws"
 out=$(parse_active_locks "$tmp_ws")
 assert_eq "trimmed task field" "trailing-ws-lock" "$(printf '%s' "$out" | cut -f1)"
 assert_eq "trimmed session field" "feat/with-trailing-ws" "$(printf '%s' "$out" | cut -f2)"
@@ -342,7 +353,7 @@ if [[ ! -f "$REAL_COORD" ]]; then
   printf '  ❌ %s not found\n' "$REAL_COORD"
 else
   # Should not crash; output may be empty when there are no Active Locks.
-  if parse_active_locks "$REAL_COORD" > /dev/null 2>&1; then
+  if parse_active_locks "$REAL_COORD" >/dev/null 2>&1; then
     PASS=$((PASS + 1))
     printf '  ✅ parse_active_locks runs against live file without error\n'
   else
@@ -351,7 +362,7 @@ else
     printf '  ❌ parse_active_locks crashed on live file\n'
   fi
 
-  if extract_stale_blocks "$REAL_COORD" "no-such-branch" "0" > /dev/null 2>&1; then
+  if extract_stale_blocks "$REAL_COORD" "no-such-branch" "0" >/dev/null 2>&1; then
     PASS=$((PASS + 1))
     printf '  ✅ extract_stale_blocks runs against live file without error\n'
   else

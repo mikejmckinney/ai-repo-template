@@ -8,13 +8,51 @@
 
 ## Session Info
 
-**Date**: 2026-05-02  
-**Duration**: ~3h  
-**Agent/Developer**: GitHub Copilot (chore/coordination-cleanup)
+**Date**: 2026-05-04
+**Duration**: ~2h
+**Agent/Developer**: GitHub Copilot (interactive session)
 
 ---
 
-## Close-out: pr-225 (chore/coordination-cleanup) — in progress 2026-05-02
+## Close-out: pr-232-review-round4 — 2026-05-04
+
+**What shipped**: Addressed 4 open threads (ISS-20 through ISS-23) on PR #232 via pr-resolve-all.md. Fixes: ISS-23 (chatgpt P1) — `page_had_in_window` early-exit in `fetcher.py` was keyed on `closedAt` but the query orders by `UPDATED_AT DESC`; old PRs bumped by recent comments occupy early pages while recently-merged PRs (no post-merge activity) sit on later pages, causing silent undercounting. Fixed by adding `updatedAt` to `PR_QUERY` and replacing the `closedAt`-based break with `nodes[-1]['updatedAt'] < since` — a monotone safe bound on the ordering field (commit `2e9f691`). Deferred: ISS-20 (`✅ Already resolved` — old `--paginate --jq` approach replaced by `fetcher.py`); ISS-21 (date fallback already script-blocking via `set -euo pipefail`); ISS-22 (`AGENT_RE` too broad — `isBot` addition is out of scope). Phase 4 attempted: PRRT_ thread IDs not returned by MCP `get_review_comments`; ISS-23 thread audit reply posted at `discussion_r3181831110` but `resolveReviewThread` not attempted. CI: pending on `2e9f691`.
+**What was harder than expected**: Phase 4 thread resolution blocked by MCP API gap — `get_review_comments` does not return PRRT_ node IDs required by `resolveReviewThread`.
+**What generalizes**: The UPDATED_AT vs closedAt ordering trap: when paginating by `UPDATED_AT DESC` and filtering by `closedAt >= since`, the only safe early-exit criterion is `updatedAt < since` (not `closedAt < since`), because `updatedAt >= closedAt` always holds. A page full of old-commented PRs has no `closedAt`-in-window entries but can precede pages with recently-merged PRs. Pattern: early-exit on the ordering field, not the filter field.
+
+---
+
+## Close-out: pr-232-review-round3 — 2026-05-04
+
+**What shipped**: Addressed 2 new chatgpt-codex-connector findings (Round 3) on PR #232. Fixes: (1) ISS-18 — `test.sh` linter invariants changed from bare tool name greps (which match comments) to flag-specific patterns `shellcheck --severity`, `shfmt -d`, and `xargs -r -0 actionlint` — all unique to `run:` blocks; a removed step no longer passes the guard if comments remain; (2) ISS-19 — actionlint step in `lint-and-format.yml` switched from static `*.yml` glob to `find -maxdepth 1 \( -name '*.yml' -o -name '*.yaml' \) -print0 | xargs -r -0 actionlint` (consistent with shellcheck/shfmt pattern; covers both extensions; `-r` handles no-match gracefully). CI: ✅ green on `cf15481`. Both threads resolved. Default round cap (3/3) reached.
+**What was harder than expected**: None — both were straightforward substitutions.
+**What generalizes**: When writing test invariants that verify a tool is wired in a config file, match the tool's CLI flags (unique to the `run:` block) rather than the bare tool name (which also appears in comments). Pattern: `grep -qE 'tool --flag'` over `grep -q 'tool'`.
+
+---
+
+## Close-out: pr-232-review-round2 — 2026-05-04
+
+**What shipped**: Addressed 3 new chatgpt-codex-connector findings (Round 2) on PR #232. Fixes: (1) ISS-16 — removed `|| PR_JSON="[]"` fail-silent fallback; `set -euo pipefail` propagates errors and `jq -s '.'` naturally emits `[]` for empty streams; (2) ISS-17 — changed `[:\s]+` to `[*:\s]+` in `FIXED_RE`/`TOTAL_RE` for both `pr-iteration-stats.sh` and `test-pr-iteration-stats.sh`; bold metric labels `- **Fixed in this pass**: X` from pr-resolve-all.md Phase 3 template now parse correctly; added `REPORT_FIX_BOLD` fixture and Test 11. ISS-15 (first:100 cap) deferred — same as ISS-05/12 Round 1. CI: ✅ green on d5eb5f4. 2 threads resolved, 1 deferred with reply.
+**What was harder than expected**: None — straightforward regex fix once the bold format mismatch was identified.
+**What generalizes**: When capturing output with regex, use `[*:\s]+` instead of `[:\s]+` for label separators if the source can emit either plain `Label: N` or markdown-bold `**Label**: N` format. Always fixture-test both variants.
+
+---
+
+## Close-out: pr-232-review-round1 — 2026-05-04
+
+**What shipped**: Addressed 14 bot review findings (chatgpt×2, Copilot×8, Gemini×3, CI×1) from PR #232 via pr-resolve-all.md. Fixes: (1) actionlint SC2038 — changed `find -print | xargs -r` to `-print0 | xargs -r -0` in lint-and-format.yml; (2) Added `.actionlint.yaml` + inline `-ignore` flags to suppress SC2016/SC2086/SC2129/SC2153/SC2018/SC2019 (pre-existing false positives); (3) Fixed GraphQL pagination cursor `$cursor` → `$endCursor`; (4) Fixed `--paginate + --jq "[...]"` multi-page JSON concatenation via NDJSON output + external `jq -s '.'`; (5) Fixed `REPORT_HEADER_RE` to match canonical `## Resolution Report` header (metric was counting zero rounds for all real PRs); (6) Fixed test fixtures + added Test 10 for canonical header; (7) Reduced lint-and-format.yml permissions to `contents: read`; (8) Fixed `_active.md` schema violations and bogus `parallel_validation` command. 9 bot threads resolved; 4 deferred with replies (first:100 cap, pagination perf, test dedup). CI: ✅ green.
+**What was harder than expected**: actionlint's `.actionlint.yaml` `ignore-patterns:` config was silently not applied by the runner (config file not auto-discovered). Required passing `-ignore` flags inline as CLI args to the `actionlint` run step instead.
+**What generalizes**: When a new linter is introduced that finds pre-existing violations, the CI will fail immediately. Plan for either (a) bulk-fixing pre-existing violations before enabling, or (b) adding inline suppressions for false-positives and filing follow-ups for real issues — then progressively tighten. For actionlint specifically: pass `-ignore` patterns inline via CLI rather than relying on `.actionlint.yaml` auto-discovery from the runner CWD.
+
+---
+
+## Close-out: pr-229-phase1 — in progress 2026-05-03
+
+**What shipped**: Phase 1 of issue #229. Replaced `lint-and-format.yml` TEMPLATE_PLACEHOLDER with shellcheck (warning+, blocks) + shfmt (-d, blocks) + actionlint (blocks). Added `scripts/pr-iteration-stats.sh` — rolling 14-day PR review-loop metric with three counters (total_rounds, fix_rounds, rejected_rounds) plus thread counts, `--window`, and `--json` flags. Added `scripts/test-pr-iteration-stats.sh` with 19 smoke-test assertions. Ran shfmt auto-format on 14 pre-existing scripts. Added 8 new test.sh invariants. Updated `AI_REPO_GUIDE.md` with new script in table + verification commands.
+**What was harder than expected**: `python3 - << 'PYEOF'` combined with stdin pipe fails under shellcheck (SC2259 — heredoc overrides pipe). Fixed by writing Python scripts to `mktemp -d` temp files and piping JSON to them separately.
+**What generalizes**: SC2259 pattern: never combine `cmd | python3 - << 'HEREDOC'`. Always write inline Python to a temp file and call it as `python3 "$TMP_FILE"` when stdin data must be piped.
+
+
 
 **What shipped**: Released stale locks for pr-216 and pr-179 in `coordination.md`; added missing `Result:` lines; refreshed `_active.md` to Issue #220 Phase 2 state; added missing close-out summaries for pr-179 and pr-216 to `latest_summary.md`; pre-registered `issue-220-phase2` lock template in PM Notes with `Paths` including `.github/agents/*.agent.md` and `adr-003` (kept out of Active Locks to avoid false stale-lock alerts before the branch exists).
 **What was harder than expected**: Copilot relay (copilot-swe-agent) made an incorrect ISS-03 fix — removed `.github/agents/*.agent.md` from `_active.md` citing ADR-003, but live VS Code docs verify `.agent.md` supports `model:`. Required manual revert in `132452f`. The relay agent was operating on stale ADR knowledge.
