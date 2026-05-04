@@ -69,7 +69,7 @@ At the front of each round, perform a cheap classification pass over all unresol
 - **substantive** — logic, correctness, missing behavior; fix and verify individually.
 - **out-of-scope** — requires files/systems outside this PR, or is purely advisory; mark `❌ Out of scope` immediately, do not fix.
 
-Fix substantive items first, one per commit. When all substantive items are done, bundle any remaining nits into a single final commit. This avoids expanding fix scope mid-round and running out of context before substantive items are addressed.
+Fix substantive items first, one per commit. Fix nit items last; the fix-only commits rule governs each commit's scope. This avoids expanding fix scope mid-round and running out of context before substantive items are addressed.
 
 ---
 
