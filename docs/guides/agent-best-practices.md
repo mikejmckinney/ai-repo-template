@@ -31,7 +31,7 @@ When resolving items from a PR review pass, **each commit must address only one 
 
 **Why**: PR #228 Round 5 refactored `grep | wc -l` → `grep -c` in the same commit as a real fix. The refactor changed exit-code semantics under `set -e` and caused the Round 7 regression — 2 of 8 rounds were self-inflicted by the in-fix scope creep.
 
-Note: this is distinct from `pr-resolve-all.md`'s "classify-then-decide" Round discipline Rule 3 (issue #220), which governs the *order* items are fixed. The fix-only rule governs each commit's *scope*.
+Note: this rule overrides the bundling instruction in `pr-resolve-all.md`'s "classify-then-decide" Round discipline Rule 3 (issue #220). While Rule 3 governs the order items are fixed, the fix-only rule caps each commit's scope.
 
 ## Smoke-test PR convention
 
