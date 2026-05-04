@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #226 PR3 — PR #234 Round 1 done; CI green on 8ce28ee; 3 bot threads outdated+replied, awaiting manual resolve
+**Active Task**: #226 PR3 — PR #234 rounds 1+2 done; CI green on 087eeae; Gemini re-review clean; 5 bot threads outdated+replied, awaiting manual resolve
 **File**: N/A
 **Role**: docs
-**Blockers**: PRRT_ node IDs unavailable via MCP — 3 review threads (ISS-01/02/03) need manual resolution or relay-fallback
+**Blockers**: PRRT_ node IDs unavailable via MCP — 5 review threads (ISS-01 through ISS-05) need manual resolution or relay-fallback; then ready to merge
 **Next 1–3 actions**:
-1. Monitor PR #234 for new bot review findings; address via pr-resolve-all.md if any arrive
-2. After all threads resolved, PR is ready to merge (CI already green)
-3. On merge, update latest_summary.md and close #226
+1. Resolve 5 bot review threads manually (or trigger relay-fallback workflow)
+2. Merge PR #234 once threads cleared
+3. Update latest_summary.md and close #226
