@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 2 — PR #235 bot-review-clean; awaiting maintainer merge
+**Active Task**: #237 — multi-task schema for _active.md (awaiting go-ahead)
 **File**: N/A
-**Role**: devops
-**Blockers**: 7 Gemini threads left open with deferral replies (❌ Not reproducible / ❌ Out of scope) — awaiting human acknowledgement
+**Role**: N/A — awaiting user go-ahead
+**Blockers**: User has not yet said to begin #237 implementation
 **Next 1–3 actions**:
-1. @mikejmckinney review/acknowledge open Gemini threads on PR #235 and merge when ready
-2. After merge, update `.context/sessions/latest_summary.md` with close-out entry
-3. Begin issue #237 (_active.md multi-task schema) when user gives go-ahead
+1. Await user go-ahead to begin issue #237 implementation
+2. See issue #237 and plan comment for full 5-phase plan
+3. PR #235 MERGED (990942c) — issue #229 Phase 2 complete

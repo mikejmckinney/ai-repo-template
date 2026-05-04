@@ -14,6 +14,14 @@
 
 ---
 
+## Close-out: pr-235-merged — 2026-05-04
+
+**What shipped**: PR #235 (`feat(#229-phase2): behavioral rules + external-reviewer gate alignment`) merged (990942c). Bot-review loop ran 19+ rounds across two sessions. Fixes included: Rule 3 reference name alignment; BUGBOT.md non-existent CONTRIBUTING.md removal; procedural-prompt exemption expansion to full canonical list; NN-*.md Pre-Flight trigger added; `REQUEST_CHANGES` removed from Medium Priority mapping; plan gates upgraded from Medium→High Priority in both BUGBOT.md and styleguide.md. PR body doc-sync checklist corrected. Merge conflict in `_active.md` (PR #234 vs #235 parallel writes) resolved by merge commit (896f48e).
+**What was harder than expected**: Missing `/gemini review` triggers after each push — caused two "clean" rounds (R14/R15) to be invalid (silence ≠ no-review). Required re-running R16/R17 explicitly. GPG rebase rebasing failed (`Author is invalid`); worked around by using `git merge` + conflict resolution commit instead of `git rebase`.
+**What generalizes**: (1) Always post `/gemini review` after each push and `sleep 420` before scanning — silence without the trigger means bot hasn't re-reviewed. (2) The single-writer `_active.md` schema causes merge conflicts under ADR-009 parallel multi-agent execution. Issue #237 filed to adopt multi-section schema.
+
+---
+
 ## Close-out: pr-232-review-round4 — 2026-05-04
 
 **What shipped**: Addressed 4 open threads (ISS-20 through ISS-23) on PR #232 via pr-resolve-all.md. Fixes: ISS-23 (chatgpt P1) — `page_had_in_window` early-exit in `fetcher.py` was keyed on `closedAt` but the query orders by `UPDATED_AT DESC`; old PRs bumped by recent comments occupy early pages while recently-merged PRs (no post-merge activity) sit on later pages, causing silent undercounting. Fixed by adding `updatedAt` to `PR_QUERY` and replacing the `closedAt`-based break with `nodes[-1]['updatedAt'] < since` — a monotone safe bound on the ordering field (commit `2e9f691`). Deferred: ISS-20 (`✅ Already resolved` — old `--paginate --jq` approach replaced by `fetcher.py`); ISS-21 (date fallback already script-blocking via `set -euo pipefail`); ISS-22 (`AGENT_RE` too broad — `isBot` addition is out of scope). Phase 4 attempted: PRRT_ thread IDs not returned by MCP `get_review_comments`; ISS-23 thread audit reply posted at `discussion_r3181831110` but `resolveReviewThread` not attempted. CI: pending on `2e9f691`.
