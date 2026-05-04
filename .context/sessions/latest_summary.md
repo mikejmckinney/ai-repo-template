@@ -14,6 +14,14 @@
 
 ---
 
+## Close-out: phase1.5-issue-229 — 2026-05-09 (in progress — PR not yet merged)
+
+**What shipped**: Phase 1.5 of issue #229 (runtime-semantics gate). Three components: (1) `scripts/lint-shell-conventions.sh` — RULE-01 (`grep -c` without `|| true` in `set -e` scripts) + RULE-02 (unanchored `grep -E` alternation patterns); wired into `lint-and-format.yml`. (2) `scripts/lib/jq/relay-cycle-count.jq` extracted from `agent-relay-reviews.yml` with 3 fixture pairs and `scripts/test-jq-filters.sh` auto-discovery runner. (3) `scripts/test-verify-env.sh` — 4 fixture cases covering `_PLACEHOLDER_EXCLUDE` `$`-anchor logic. Also: RULE-01 true-positive found+fixed in `test-parallelism-report-parser.sh:271`. Diff-coupling gate added to `judge.agent.md` item 14 + mirrored into BUGBOT.md + styleguide.md. `test.sh` 266 passing (0 failed).
+**What was harder than expected**: RULE-02 cannot cover variable-expanded `grep -E "$VAR"` patterns statically — only literal-quoted strings. The actual PR #228 bug was in the variable definition, not the grep call. RULE-02 catches the forward-looking class of future literal-pattern mistakes.
+**What generalizes**: When adding rules that shellcheck cannot cover, pair them with fixture tests immediately (the diff-coupling gate now enforces this for future contributors). The `|| true` pattern inside `$(...)` is semantics-safe: `grep -c` always writes a number to stdout before its exit code; `|| true` only suppresses the non-zero exit propagation, so the captured value is always correct.
+
+---
+
 ## Close-out: pr-235-merged — 2026-05-04
 
 **What shipped**: PR #235 (`feat(#229-phase2): behavioral rules + external-reviewer gate alignment`) merged (990942c). Bot-review loop ran 19+ rounds across two sessions. Fixes included: Rule 3 reference name alignment; BUGBOT.md non-existent CONTRIBUTING.md removal; procedural-prompt exemption expansion to full canonical list; NN-*.md Pre-Flight trigger added; `REQUEST_CHANGES` removed from Medium Priority mapping; plan gates upgraded from Medium→High Priority in both BUGBOT.md and styleguide.md. PR body doc-sync checklist corrected. Merge conflict in `_active.md` (PR #234 vs #235 parallel writes) resolved by merge commit (896f48e).

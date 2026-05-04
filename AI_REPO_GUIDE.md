@@ -89,7 +89,10 @@ bash install.sh
 │   ├── multi-dispatch-safety.sh      # Parallel-dispatch safety classifier
 │   ├── parse-ownership-table.sh      # Ownership-table parser used by workflows
 │   ├── pr-iteration-stats.sh         # Rolling PR review-loop metrics (issue #229)
-│   └── test-*.sh             # Unit tests for the helper scripts above
+│   ├── lint-shell-conventions.sh     # Project-specific shell rules (RULE-01/02, issue #229)
+│   ├── test-*.sh             # Unit tests for the helper scripts above
+│   └── lib/
+│       └── jq/               # Extracted jq filters + fixture pairs (issue #229 Phase 1.5b)
 │
 ├── config/                   # Deployment config templates (see table below)
 │
@@ -187,6 +190,8 @@ bash install.sh
 | `scripts/verify-env.sh` | Environment & placeholder sanity check |
 | `scripts/db-reset.sh` | Optional database reset stub |
 | `scripts/pr-iteration-stats.sh` | Rolling 14-day PR review-loop metrics (total/fix/rejected rounds, threads); `--window <days>`, `--json` |
+| `scripts/lint-shell-conventions.sh` | Project-specific shell linting (RULE-01: `grep -c` without `\|\| true`; RULE-02: unanchored `grep -E` alternation patterns); run: `bash scripts/lint-shell-conventions.sh scripts/` |
+| `scripts/lib/jq/*.jq` | Extracted jq filters (e.g. `relay-cycle-count.jq`); each has matching fixture pairs in `scripts/lib/jq/fixtures/` and is tested by `scripts/test-jq-filters.sh` |
 
 ### Issue Templates
 | File | Purpose |

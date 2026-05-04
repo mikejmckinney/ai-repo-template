@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #237 — multi-task schema for _active.md (awaiting go-ahead)
-**File**: N/A
-**Role**: N/A — awaiting user go-ahead
-**Blockers**: User has not yet said to begin #237 implementation
+**Active Task**: #229 Phase 1.5 — runtime-semantics gate
+**File**: `feature/devops-229-phase1.5`
+**Role**: DevOps
+**Blockers**: None — ready to push + open PR
 **Next 1–3 actions**:
-1. Await user go-ahead to begin issue #237 implementation
-2. See issue #237 and plan comment for full 5-phase plan
-3. PR #235 MERGED (990942c) — issue #229 Phase 2 complete
+1. Push branch + open PR for Phase 1.5
+2. Await merge; then start Phase 3 (pre-push Critic) on user go-ahead
+3. Issue #237 (_active.md multi-task schema) — awaiting user go-ahead

@@ -210,6 +210,10 @@ Claims of fact about the repo in the PR description ("the repo does X", "this ma
 If the linked issue has a "Plan revision" comment posted *after* this PR was opened, the PR body's `## Plan` section must include that revision's link and a refreshed "Latest in 1–2 sentences" line, AND the `## Plan revision sync` checklist must have the matching box ticked. Flag **High** (REQUEST_CHANGES; do not BLOCK in v1) when missing.
 (canonical: `.github/agents/judge.agent.md` § "Plan-revision sync")
 
+### Diff-coupling gate for `scripts/*.sh` (issue #229 Phase 1.5)
+Any PR diff that adds or modifies `grep -c`, `wc -l`, `$?`, `pipefail`, or `set -e` logic inside `scripts/*.sh` must include a corresponding change in `scripts/test-*.sh`. Exit-code behaviour under `set -e` is invisible to shellcheck and must be covered by a fixture. Also flag when `scripts/*.sh` or workflow `run:` blocks introduce non-trivial jq filters (multi-pipe, `select`, `sub`, `reduce`, or `@base64`) without an extracted `scripts/lib/jq/<name>.jq` counterpart with matching fixtures. Flag **High** (REQUEST_CHANGES).
+(canonical: `.github/agents/judge.agent.md` § "Diff-coupling gate for `scripts/*.sh`")
+
 ## Response Guidelines
 
 1. **Be specific**: "Line 42 may throw if `user` is null" > "Watch out for nulls"

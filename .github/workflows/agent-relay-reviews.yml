@@ -206,8 +206,8 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
-          relay_count=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments \
-            --jq '[.comments[] | select(.body | sub("^[[:space:]]+"; "") | startswith("📋 **Review Relay"))] | length' 2>/dev/null || echo "0")
+          relay_count=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments 2>/dev/null \
+            | jq -rf "scripts/lib/jq/relay-cycle-count.jq" 2>/dev/null || echo "0")
 
           echo "Prior relay cycles on this PR: $relay_count"
           # Always proceed; loop guard is the fingerprint dedup gate below.

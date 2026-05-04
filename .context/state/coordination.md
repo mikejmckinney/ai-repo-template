@@ -52,6 +52,33 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-229-phase1.5
+<!-- managed-for-pr:229 -->
+**Role**: devops
+**Session**: copilot/phase-1.5-issue-229
+**Claimed At**: 2026-05-09T00:00:00Z
+**Expected Duration**: 1 session
+**Paths**:
+- scripts/lint-shell-conventions.sh
+- scripts/test-verify-env.sh
+- scripts/test-jq-filters.sh
+- scripts/lib/jq/relay-cycle-count.jq
+- scripts/lib/jq/fixtures/
+- scripts/test-parallelism-report-parser.sh
+- .github/workflows/lint-and-format.yml
+- .github/workflows/agent-relay-reviews.yml
+- .github/agents/judge.agent.md
+- .cursor/BUGBOT.md
+- .gemini/styleguide.md
+- test.sh
+- AI_REPO_GUIDE.md
+- .context/sessions/latest_summary.md
+- .context/state/_active.md
+- .context/state/coordination.md
+**Depends On**: pr-229-phase1 (merged)
+**Blocks**: pr-229-phase3
+**State**: in_progress
+
 ## Lock: pr-229-phase1
 <!-- managed-for-pr:229 -->
 **Role**: devops

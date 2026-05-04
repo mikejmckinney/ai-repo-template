@@ -893,6 +893,69 @@ fi
 
 echo ""
 
+# --- Phase 1.5 invariants (issue #229 Phase 1.5) ---
+echo "Checking Phase 1.5 components (issue #229 Phase 1.5)..."
+
+if [[ -f "scripts/lint-shell-conventions.sh" ]] && [[ -x "scripts/lint-shell-conventions.sh" ]]; then
+  pass "scripts/lint-shell-conventions.sh exists and is executable"
+else
+  fail "scripts/lint-shell-conventions.sh missing or not executable (issue #229 Phase 1.5c)"
+fi
+
+if grep -q 'lint-shell-conventions' "$LF_FILE" 2>/dev/null; then
+  pass "$LF_FILE has lint-shell-conventions step (issue #229 Phase 1.5c)"
+else
+  fail "$LF_FILE missing lint-shell-conventions step (issue #229 Phase 1.5c)"
+fi
+
+if [[ -d "scripts/lib/jq" ]] && compgen -G "scripts/lib/jq/*.jq" > /dev/null 2>&1; then
+  pass "scripts/lib/jq/ directory exists with at least one .jq filter"
+else
+  fail "scripts/lib/jq/ missing or empty (issue #229 Phase 1.5b)"
+fi
+
+for reviewer_file in ".github/agents/judge.agent.md" ".cursor/BUGBOT.md" ".gemini/styleguide.md"; do
+  if grep -qi 'diff-coupling' "$reviewer_file" 2>/dev/null; then
+    pass "$reviewer_file has diff-coupling gate (issue #229 Phase 1.5)"
+  else
+    fail "$reviewer_file missing diff-coupling gate (issue #229 Phase 1.5)"
+  fi
+done
+
+echo ""
+echo "Running jq filter unit tests..."
+if [[ -f scripts/test-jq-filters.sh ]]; then
+  JQ_LOG=$(mktemp)
+  if bash scripts/test-jq-filters.sh >"$JQ_LOG" 2>&1; then
+    jq_passed=$(grep -c '^  ✅ ' "$JQ_LOG" || true)
+    pass "scripts/test-jq-filters.sh ($jq_passed assertions passed)"
+  else
+    fail "scripts/test-jq-filters.sh failed (see log below)"
+    cat "$JQ_LOG"
+  fi
+  rm -f "$JQ_LOG"
+else
+  fail "scripts/test-jq-filters.sh missing"
+fi
+
+echo ""
+echo "Running verify-env.sh fixture tests..."
+if [[ -f scripts/test-verify-env.sh ]]; then
+  VE_LOG=$(mktemp)
+  if bash scripts/test-verify-env.sh >"$VE_LOG" 2>&1; then
+    ve_passed=$(grep -c '^  ✅ ' "$VE_LOG" || true)
+    pass "scripts/test-verify-env.sh ($ve_passed assertions passed)"
+  else
+    fail "scripts/test-verify-env.sh failed (see log below)"
+    cat "$VE_LOG"
+  fi
+  rm -f "$VE_LOG"
+else
+  fail "scripts/test-verify-env.sh missing"
+fi
+
+echo ""
+
 # --- pr-iteration-stats.sh smoke tests (issue #229 Phase 1) ---
 echo "Running pr-iteration-stats.sh smoke tests..."
 if [[ -f scripts/test-pr-iteration-stats.sh ]]; then
