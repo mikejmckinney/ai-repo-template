@@ -863,27 +863,29 @@ if [[ -f "$LF_FILE" ]]; then
     pass "$LF_FILE has no TEMPLATE_PLACEHOLDER marker"
   fi
 
-  # Shell linter step must be present (name or run line).
-  # The grep pattern below looks for the string 'shellcheck' inside the
-  # workflow file — distinct from any SC directive in this script.
-  if grep -qiE 'shellcheck' "$LF_FILE"; then
-    pass "$LF_FILE has shellcheck step"
+  # Shell linter run step must be present.
+  # 'shellcheck --severity' only appears in the run: block — not in comments —
+  # so removing the run step (while leaving comments) would fail this check.
+  if grep -qE 'shellcheck[[:space:]]+--severity' "$LF_FILE"; then
+    pass "$LF_FILE has shellcheck run step"
   else
-    fail "$LF_FILE missing shellcheck step (issue #229 Phase 1)"
+    fail "$LF_FILE missing shellcheck run step (issue #229 Phase 1)"
   fi
 
-  # shfmt step must be present
-  if grep -qiE 'shfmt' "$LF_FILE"; then
-    pass "$LF_FILE has shfmt step"
+  # shfmt run step must be present.
+  # 'shfmt -d' (diff mode) only appears in the run: block.
+  if grep -qE 'shfmt[[:space:]]+-d' "$LF_FILE"; then
+    pass "$LF_FILE has shfmt run step"
   else
-    fail "$LF_FILE missing shfmt step (issue #229 Phase 1)"
+    fail "$LF_FILE missing shfmt run step (issue #229 Phase 1)"
   fi
 
-  # actionlint step must be present
-  if grep -qiE 'actionlint' "$LF_FILE"; then
-    pass "$LF_FILE has actionlint step"
+  # actionlint run step must be present.
+  # 'xargs -r -0 actionlint' only appears in the run: block.
+  if grep -qE 'xargs[[:space:]]+-r[[:space:]]+-0[[:space:]]+actionlint' "$LF_FILE"; then
+    pass "$LF_FILE has actionlint run step"
   else
-    fail "$LF_FILE missing actionlint step (issue #229 Phase 1)"
+    fail "$LF_FILE missing actionlint run step (issue #229 Phase 1)"
   fi
 else
   fail "$LF_FILE is missing"

@@ -119,14 +119,14 @@ jobs:
         # expressions (intentional); SC2086/SC2129/SC2153/SC2018/SC2019 =
         # pre-existing info/style patterns tracked in follow-up issues.
         run: |
-          actionlint \
-            -ignore 'SC2016' \
-            -ignore 'SC2086' \
-            -ignore 'SC2129' \
-            -ignore 'SC2153' \
-            -ignore 'SC2018' \
-            -ignore 'SC2019' \
-            .github/workflows/*.yml
+          find .github/workflows -maxdepth 1 \( -name '*.yml' -o -name '*.yaml' \) -print0 \
+            | xargs -r -0 actionlint \
+              -ignore 'SC2016' \
+              -ignore 'SC2086' \
+              -ignore 'SC2129' \
+              -ignore 'SC2153' \
+              -ignore 'SC2018' \
+              -ignore 'SC2019'
 
       # =====================================================
       # Add project-specific linters here (Node, Python, Go…)
