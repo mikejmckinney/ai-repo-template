@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #226 PR3 — PR #234 round 8 done; ISS-01–ISS-12 resolved; ISS-13 fixed in 38e8556 + audit posted; awaiting Gemini round 9 + relay PRRT_ for ISS-13 thread
+**Active Task**: #226 PR3 — PR #234 rounds 1–9 done; ISS-01–ISS-14 resolved; Gemini round 10 arrived with ISS-15 (HEAD/main duplicate, not reproducible — relay applied HEAD in 6556664)
 **File**: AI_REPO_GUIDE.md
 **Role**: docs
-**Blockers**: ISS-13 PRRT_ node ID not yet available (relay needed); /gemini review triggered, awaiting result
+**Blockers**: ISS-15 PRRT_ node ID needed from relay for thread resolution
 **Next 1–3 actions**:
-1. Triage Gemini round 9 review (if new findings, fix+push; if clean, done)
-2. Get PRRT_ for ISS-13 thread from relay and resolve it
-3. Merge PR #234 once all threads resolved
+1. Post ISS-15 audit reply (not reproducible — 6556664 already has HEAD...upstream/main)
+2. Post Round 10 Resolution Report; relay resolves ISS-15 thread
+3. Merge PR #234 once all threads resolved + Gemini clean pass
