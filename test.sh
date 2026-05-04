@@ -902,10 +902,10 @@ else
   fail "scripts/lint-shell-conventions.sh missing or not executable (issue #229 Phase 1.5c)"
 fi
 
-if grep -q 'lint-shell-conventions' "$LF_FILE" 2>/dev/null; then
-  pass "$LF_FILE has lint-shell-conventions step (issue #229 Phase 1.5c)"
+if grep -q 'bash scripts/lint-shell-conventions.sh' "$LF_FILE" 2>/dev/null; then
+  pass "$LF_FILE has lint-shell-conventions run step (issue #229 Phase 1.5c)"
 else
-  fail "$LF_FILE missing lint-shell-conventions step (issue #229 Phase 1.5c)"
+  fail "$LF_FILE missing lint-shell-conventions run step (issue #229 Phase 1.5c)"
 fi
 
 if [[ -d "scripts/lib/jq" ]] && compgen -G "scripts/lib/jq/*.jq" > /dev/null 2>&1; then
