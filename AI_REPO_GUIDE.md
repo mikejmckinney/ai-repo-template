@@ -304,13 +304,14 @@ ls -la config/
 
 **Pulling future template improvements into a template-created repo:**
 
-Add the upstream remote once:
+Add the upstream remote and fetch once:
 
 ```bash
 git remote add upstream https://github.com/mikejmckinney/ai-repo-template.git
+git fetch upstream
 ```
 
-Then cherry-pick specific commits as needed (e.g., `git cherry-pick <commit-hash>`). Most template changes will be project-specific noise to a downstream project — selective cherry-picking is safer than a full merge.
+Browse available commits with `git log upstream/main`, then cherry-pick specific ones (e.g., `git cherry-pick <commit-hash>`). Most template changes will be project-specific noise to a downstream project — selective cherry-picking is safer than a full merge.
 
 ### For new repositories
 1. Create repo from this template (or copy files)
