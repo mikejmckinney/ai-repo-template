@@ -7,10 +7,10 @@
 # Active Task
 
 **Active Task**: #229 Phase 1 — shellcheck + shfmt + actionlint in lint-and-format.yml + pr-iteration-stats.sh metric script
-**File**: N/A (single-session task)
+**File**: N/A
 **Role**: devops
 **Blockers**: None
 **Next 1–3 actions**:
-1. Run `bash test.sh` to verify all new assertions pass
-2. Run `parallel_validation` for code review + CodeQL
-3. Open PR against main with Refs #229
+1. Run `bash test.sh` to verify all assertions pass
+2. Push PR #232 and verify CI passes
+3. Address any remaining bot review feedback on PR #232

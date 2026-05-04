@@ -124,7 +124,7 @@ results = []
 # Authors that indicate an agent/bot Resolution Report.
 AGENT_RE = re.compile(r'\[bot\]|copilot|claude|gemini|codex|chatgpt', re.I)
 REPORT_HEADER_RE = re.compile(
-    r'^##\s+Resolution\s+Report\s*[—\-]+\s*Round', re.MULTILINE | re.I
+    r'^##\s+Resolution\s+Report(?:\s*[\u2014\-]+\s*Round)?', re.MULTILINE | re.I
 )
 FIXED_RE = re.compile(r'fixed in this pass[:\s]+(\d+)', re.I)
 TOTAL_RE = re.compile(r'total items found[:\s]+(\d+)', re.I)
@@ -198,13 +198,13 @@ PYEOF
 # Fetch merged PRs closed within the window
 # ---------------------------------------------------------------------------
 PR_JSON=$(gh api graphql --paginate -f query='
-  query($owner: String!, $repo: String!, $cursor: String) {
+  query($owner: String!, $repo: String!, $endCursor: String) {
     repository(owner: $owner, name: $repo) {
       pullRequests(
         states: MERGED
         orderBy: {field: UPDATED_AT, direction: DESC}
         first: 50
-        after: $cursor
+        after: $endCursor
       ) {
         pageInfo { hasNextPage endCursor }
         nodes {
@@ -225,8 +225,8 @@ PR_JSON=$(gh api graphql --paginate -f query='
     }
   }
 ' -F owner="${REPO%%/*}" -F repo="${REPO##*/}" \
-  --jq "[.data.repository.pullRequests.nodes[] | select(.closedAt >= \"${SINCE}\")]" \
-  2>/dev/null) || PR_JSON="[]"
+  --jq ".data.repository.pullRequests.nodes[] | select(.closedAt >= \"${SINCE}\")" \
+  2>/dev/null | jq -s '.') || PR_JSON="[]"
 
 # ---------------------------------------------------------------------------
 # Parse and accumulate per-PR metrics

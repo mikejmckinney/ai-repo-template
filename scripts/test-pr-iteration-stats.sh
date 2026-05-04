@@ -44,8 +44,8 @@ TMP_DIR=$(mktemp -d)
 cleanup() { rm -rf "$TMP_DIR"; }
 trap cleanup EXIT
 
-# Extract parser.py from pr-iteration-stats.sh (between 'parser.py' heredoc
-# markers) and write it to $TMP_DIR/parser.py for reuse across tests.
+# Note: parser.py below is manually duplicated from pr-iteration-stats.sh;
+# keep both in sync when changing the parsing logic.
 cat >"$TMP_DIR/parser.py" <<'PYEOF'
 import sys, json, re
 
@@ -54,7 +54,7 @@ results = []
 
 AGENT_RE = re.compile(r'\[bot\]|copilot|claude|gemini|codex|chatgpt', re.I)
 REPORT_HEADER_RE = re.compile(
-    r'^##\s+Resolution\s+Report\s*[—\-]+\s*Round', re.MULTILINE | re.I
+    r'^##\s+Resolution\s+Report(?:\s*[—\-]+\s*Round)?', re.MULTILINE | re.I
 )
 FIXED_RE = re.compile(r'fixed in this pass[:\s]+(\d+)', re.I)
 TOTAL_RE = re.compile(r'total items found[:\s]+(\d+)', re.I)
@@ -112,6 +112,10 @@ REPORT_FIX = (
     "## Resolution Report \u2014 Round 3\n\n"
     "Fixed in this pass: 2\nTotal items found: 3\n"
 )
+REPORT_FIX_CANONICAL = (
+    "## Resolution Report\n\n"
+    "Fixed in this pass: 1\nTotal items found: 2\n"
+)
 REPORT_REJECTED = (
     "## Resolution Report \u2014 Round 5\n\n"
     "Fixed in this pass: 0\nTotal items found: 2\n"
@@ -140,6 +144,9 @@ def human(body):
 FIXTURES = {
     "one_fix": [make_pr(101, 2, 1, [
         bot("claude[bot]", REPORT_FIX),
+    ])],
+    "canonical_fix": [make_pr(107, 1, 1, [
+        bot("claude[bot]", REPORT_FIX_CANONICAL),
     ])],
     "one_rejected": [make_pr(102, 3, 0, [
         bot("copilot-pull-request-reviewer[bot]", REPORT_REJECTED),
@@ -271,6 +278,14 @@ else
   FAILED_NAMES+=("unknown flag exits non-zero")
   printf '  ❌ unknown flag should exit non-zero\n'
 fi
+echo ""
+
+# ── Test 10: Canonical header (## Resolution Report, no round suffix) ────────
+echo "canonical header (no '— Round N' suffix)"
+
+result=$(make_fixture canonical_fix | parse_pr_json)
+assert_eq "canonical header → total_rounds=1" "1" "$(printf '%s' "$result" | field total_rounds)"
+assert_eq "canonical header → fix_rounds=1" "1" "$(printf '%s' "$result" | field fix_rounds)"
 echo ""
 
 # ---------------------------------------------------------------------------

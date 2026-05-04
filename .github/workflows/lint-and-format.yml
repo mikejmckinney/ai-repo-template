@@ -48,17 +48,13 @@ jobs:
       github.actor != 'github-actions[bot]'
 
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # Need full history for accurate diffs
           fetch-depth: 0
-          # Use a token that can push (for auto-fix mode)
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       # =====================================================
       # SHELL LINTING — shellcheck (warning+, blocks)
@@ -73,13 +69,13 @@ jobs:
         # SC1091: not following sourced files — suppressed repo-wide because
         #   test scripts source sibling scripts by computed path which
         #   shellcheck cannot follow statically.
-        # `-r` is required on GNU xargs so that an empty find result does
-        # not cause xargs to invoke shellcheck with no arguments (which would
-        # exit non-zero on some systems).
+        # `-r -0` is required on GNU xargs: `-r` skips invocation when no
+        # input; `-0` (null-delimited, pairs with -print0) handles filenames
+        # with spaces or special characters (SC2038).
         run: |
           find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
-            -name '*.sh' -print \
-            | xargs -r shellcheck --severity=warning --exclude=SC1091
+            -name '*.sh' -print0 \
+            | xargs -r -0 shellcheck --severity=warning --exclude=SC1091
 
       # =====================================================
       # SHELL FORMATTING — shfmt (-d, blocks)
@@ -97,12 +93,12 @@ jobs:
         # -i 2: 2-space indent (matches repo convention).
         # -bn: binary ops at start of line.
         # -ci: indent case statements.
-        # `-r` is required on GNU xargs so that an empty find result does
-        # not cause xargs to invoke shfmt with no arguments.
+        # `-r -0` pairs with -print0 to handle filenames with spaces or
+        # special characters (SC2038).
         run: |
           find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
-            -name '*.sh' -print \
-            | xargs -r shfmt -d -i 2 -bn -ci
+            -name '*.sh' -print0 \
+            | xargs -r -0 shfmt -d -i 2 -bn -ci
 
       # =====================================================
       # WORKFLOW LINTING — actionlint (blocks)
