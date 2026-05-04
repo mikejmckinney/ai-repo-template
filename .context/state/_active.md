@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 1 — PR #232 Round 7 done, ISS-29 fixed in 003ba2f; awaiting CI + Gemini review
+**Active Task**: #226 PR3 — PR #234 Round 1 done; CI green on 8ce28ee; 3 bot threads outdated+replied, awaiting manual resolve
 **File**: N/A
-**Role**: devops
-**Blockers**: CI pending on 003ba2f; ISS-20 through ISS-29 open, all have replies (awaiting human ack); Gemini review pending
+**Role**: docs
+**Blockers**: PRRT_ node IDs unavailable via MCP — 3 review threads (ISS-01/02/03) need manual resolution or relay-fallback
 **Next 1–3 actions**:
-1. Confirm CI green on 003ba2f (gh api stderr passthrough fix)
-2. Address any new Gemini review findings when they arrive
-3. After CI green + all threads acked, PR ready to merge
+1. Monitor PR #234 for new bot review findings; address via pr-resolve-all.md if any arrive
+2. After all threads resolved, PR is ready to merge (CI already green)
+3. On merge, update latest_summary.md and close #226
