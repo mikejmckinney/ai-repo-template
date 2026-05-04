@@ -114,10 +114,12 @@ jobs:
         # Lint all workflow YAML files. actionlint integrates with shellcheck
         # for `run:` blocks, catching expression and shell issues together.
         # Patterns suppressed here are false positives or pre-existing
-        # info/style-level shellcheck findings in existing workflow files;
-        # see .github/actionlint.yaml for rationale.  SC2016 = jq single-quote
-        # expressions (intentional); SC2086/SC2129/SC2153/SC2018/SC2019 =
-        # pre-existing info/style patterns tracked in follow-up issues.
+        # info/style-level shellcheck findings in existing workflow files.
+        # SC2016 = jq single-quote expressions (intentional);
+        # SC2086/SC2129/SC2153/SC2018/SC2019 = pre-existing info/style
+        # patterns tracked in follow-up issues.  Suppressions are passed
+        # via CLI flags rather than a config file — actionlint config
+        # auto-discovery is unreliable in CI runner environments.
         run: |
           find .github/workflows -maxdepth 1 \( -name '*.yml' -o -name '*.yaml' \) -print0 \
             | xargs -r -0 actionlint \
