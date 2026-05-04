@@ -176,7 +176,7 @@ Do not flag dates as typos based on relative date heuristics.
 
 ## Repo-specific Judge gates
 
-This repo uses the internal Judge role (`.github/agents/judge.agent.md`) as the canonical gate spec. The seven gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
+This repo uses the internal Judge role (`.github/agents/judge.agent.md`) as the canonical gate spec. The eight gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
 
 ### Issue / parent-PR link (ADR-011)
 The PR body must reference an issue, parent PR, or ADR (`Closes #NN`, `Refs #NN`, `Implements ADR-NNN`). Flag **High** if the body has neither a `#NN` reference nor an `ADR-\d+` reference, the PR is not a revert, and no exemption label (`chore:no-plan`, `smoke-test`) is present. Automation bots (Renovate, Dependabot) are exempt.
@@ -197,6 +197,10 @@ If the diff changes a decision recorded in `docs/decisions/`, the existing ADR's
 ### Pre-Flight Report (ADR-005 / ADR-014)
 For PRs implementing a feature (action verbs + user-facing noun in the issue body, or `feature_request.md` + `enhancement` label, or a new agent-surface ADR), the issue must have an Analyst Pre-Flight Report comment with verdict `PASS`. Flag **High** if the gate applies, no opt-out is in effect (`outcome-validated` label + inline outcome paragraph), and the report is missing or shows `FAIL`/`HOLD`. Exempt: `bug`, `docs` (no new behavior), `dependencies`, `chore:*`, reverts.
 (canonical: `.github/agents/judge.agent.md` § "Pre-Flight Report present with verdict PASS when the gate applies")
+
+### Outcome match (when a Pre-Flight Report exists)
+If the linked issue has an Analyst Pre-Flight Report with verdict `PASS`, confirm the merged artifact actually delivers the user outcome the Analyst specified. If the Pre-Flight said "user should be able to run a live query against Snowflake" and the implementation returns JSON fixtures, flag **High** — that is a BLOCK-level scope mismatch, not a code-quality issue.
+(canonical: `.github/agents/judge.agent.md` § "Outcome match")
 
 ### Provenance check
 Claims of fact about the repo in the PR description ("the repo does X", "this matches the existing pattern") must cite `path/to/file:line` or be explicitly marked `uncertain`. Flag **Medium** for uncited assertions; **High** if the uncited claim is load-bearing for the PR's rationale.
