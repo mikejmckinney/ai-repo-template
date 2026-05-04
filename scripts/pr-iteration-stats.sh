@@ -125,7 +125,7 @@ owner, repo, since = sys.argv[1], sys.argv[2], sys.argv[3]
 def gql(query, *extra_args):
     result = subprocess.run(
         ['gh', 'api', 'graphql', '-f', f'query={query}'] + list(extra_args),
-        capture_output=True, text=True, check=True,
+        stdout=subprocess.PIPE, text=True, check=True,
     )
     return json.loads(result.stdout)
 
