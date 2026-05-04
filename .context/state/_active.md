@@ -10,8 +10,8 @@
 **Active Task**: #229 Phase 2 — PR #235 bot-review-clean; awaiting maintainer merge
 **File**: N/A
 **Role**: devops
-**Blockers**: one Gemini thread (`PRRT_kwDOQ1tpTM5_bDpa`) left open (❌ Not reproducible) — awaiting human acknowledgement before resolving
+**Blockers**: 7 Gemini threads left open with deferral replies (❌ Not reproducible / ❌ Out of scope) — awaiting human acknowledgement
 **Next 1–3 actions**:
-1. @mikejmckinney review/acknowledge the open Gemini thread on PR #235 and merge when ready
+1. @mikejmckinney review/acknowledge open Gemini threads on PR #235 and merge when ready
 2. After merge, update `.context/sessions/latest_summary.md` with close-out entry
-3. Continue with PR #232 (Phase 1 of #229) and PR #228 (awaiting maintainer merge)
+3. Begin issue #237 (_active.md multi-task schema) when user gives go-ahead

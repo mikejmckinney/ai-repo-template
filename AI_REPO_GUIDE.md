@@ -288,6 +288,31 @@ ls -la config/
 
 ## Using This Template
 
+### Template vs. Fork: choosing how to start
+
+**Default: "Use this template" → Create new repository.**
+
+- Gives the new repo a fresh git history; no perpetual "X commits behind" UI clutter.
+- Doesn't pollute `ai-repo-template`'s fork count.
+- [`AGENTS.md` §"Template detection (important)"](AGENTS.md#template-detection-important) keys off the repo name — "Use this template" creates a repo with a new name, so template-detection fires correctly. A fork keeps the name `ai-repo-template` unless explicitly renamed, which can cause the template-detection logic to treat a derived project as the template itself.
+- A POC or new project isn't conceptually a fork — a fork relationship implies intent to merge changes back upstream.
+
+**Use fork only when:**
+
+- Contributing a fix or feature back upstream to `ai-repo-template`, or
+- Maintaining a long-lived "downstream variant" that explicitly wants to track upstream commits semi-automatically.
+
+**Pulling future template improvements into a template-created repo:**
+
+Add the upstream remote and fetch once:
+
+```bash
+git remote add upstream https://github.com/mikejmckinney/ai-repo-template.git
+git fetch upstream
+```
+
+Browse available commits with `git log --oneline --cherry-pick --right-only HEAD...upstream/main`, then cherry-pick specific ones (e.g., `git cherry-pick <commit-hash>`). Most template changes will be project-specific noise to a downstream project — selective cherry-picking is safer than a full merge (which can re-introduce template placeholders or overwrite project-specific customizations).
+
 ### For new repositories
 1. Create repo from this template (or copy files)
 2. Replace all files containing `TEMPLATE_PLACEHOLDER`
