@@ -137,7 +137,7 @@ Do not flag dates as typos based on relative date heuristics.
 
 This repo uses the internal Judge role (`.github/agents/judge.agent.md`) as the canonical gate spec. The eight gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
 
-**Severity mapping**: in this section, **Blocker** = BLOCK-level (must fix before merge); **High Priority** = should fix before merge; **Medium Priority** = REQUEST_CHANGES advisory (does not block in v1).
+**Severity mapping**: in this section, **Blocker** = BLOCK-level (must fix before merge); **High Priority** = should fix before merge; **Medium Priority** = advisory (does not block in v1).
 
 ### Issue / parent-PR link (ADR-011)
 The PR body must reference an issue, parent PR, or ADR (`Closes #NN`, `Refs #NN`, `Implements ADR-NNN`). Flag as **Blocker** if the body has neither a `#NN` reference nor an `ADR-\d+` reference, the PR is not a revert, and no exemption label (`chore:no-plan`, `smoke-test`) is present. Automation bots (Renovate, Dependabot) are exempt.
