@@ -51,17 +51,37 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
           printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
           break
         fi
-      done < <(grep -E '(^|[^#[:alnum:]])grep[[:space:]]+-[a-zA-Z]*c([[:space:]]|$)' "$file" \
+      done < <(grep -E '(^|[^#[:alnum:]])grep[[:space:]]+-[a-zA-Z]*c[a-zA-Z]*([[:space:]]|$)' "$file" \
                  | grep -v '#[[:space:]]*shell-conventions:disable' || true)
     fi
   fi
 
   # ── RULE-02: unanchored alternatives in grep -E literal patterns ──────────
   if ! grep -qE '#[[:space:]]*shell-conventions:disable=RULE-02' "$file"; then
-    # Detect: grep -E 'X|Y' (single-quoted) where last char before closing '
-    # is not $, ), \b, or \.
-    if grep -qE "grep[[:space:]]+-[a-zA-Z]*E[[:space:]]+'[^']*\|[^']*[^\$')\\\\]'" "$file" \
-      || grep -qE 'grep[[:space:]]+-[a-zA-Z]*E[[:space:]]+"[^"]*\|[^"]*[^\$")\]"' "$file"; then
+    # Detect: grep -E 'X|Y' (single-quoted) or grep -E "X|Y" (double-quoted)
+    # where the last token before the closing quote is not a valid anchor.
+    # Valid anchors: $ (end-of-line), ) (closing group), \ (lone backslash),
+    #                \b (two-char word-boundary — last char is 'b', preceded by '\').
+    # Two-step approach: find candidate lines, then subtract valid endings.
+    # The original single-regex form checked only a single char before the
+    # quote; it false-positived on \b because the last char 'b' is not one
+    # of '$', ')', or '\'.
+    r02_found=0
+    # Single-quoted patterns
+    if grep -E "grep[[:space:]]+-[a-zA-Z]*E[[:space:]]+'[^']*\|[^']*'" "$file" \
+         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
+         | grep -qvE "([\$\)\\\\]|\\\\b)'"; then
+      r02_found=1
+    fi
+    # Double-quoted patterns
+    if [[ $r02_found -eq 0 ]]; then
+      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[[:space:]]+"[^"]*\|[^"]*"' "$file" \
+           | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
+           | grep -qvE '([$)\\]|\\b)"'; then
+        r02_found=1
+      fi
+    fi
+    if [[ $r02_found -eq 1 ]]; then
       printf 'RULE-02: %s — grep -E pattern with "|" alternatives lacks end-anchor ($, \\b, or ) before closing quote\n' "$file"
       printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
     fi
