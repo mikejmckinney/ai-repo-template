@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 2 — behavioral rules + external-reviewer gate alignment
+**Active Task**: #229 Phase 2 — PR #235 bot-review-clean; awaiting maintainer merge
 **File**: N/A
 **Role**: devops
-**Blockers**: none
+**Blockers**: one Gemini thread (`PRRT_kwDOQ1tpTM5_bDpa`) left open (❌ Not reproducible) — awaiting human acknowledgement before resolving
 **Next 1–3 actions**:
-1. Run `bash test.sh` to verify no regressions
-2. Push fixes for ISS-01 through ISS-07 from PR #235 round 1
-3. Monitor CI and bot re-reviews
+1. @mikejmckinney review/acknowledge the open Gemini thread on PR #235 and merge when ready
+2. After merge, update `.context/sessions/latest_summary.md` with close-out entry
+3. Continue with PR #232 (Phase 1 of #229) and PR #228 (awaiting maintainer merge)
