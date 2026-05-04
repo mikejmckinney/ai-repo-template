@@ -14,6 +14,14 @@
 
 ---
 
+## Close-out: pr-232-review-round4 — 2026-05-04
+
+**What shipped**: Addressed 4 open threads (ISS-20 through ISS-23) on PR #232 via pr-resolve-all.md. Fixes: ISS-23 (chatgpt P1) — `page_had_in_window` early-exit in `fetcher.py` was keyed on `closedAt` but the query orders by `UPDATED_AT DESC`; old PRs bumped by recent comments occupy early pages while recently-merged PRs (no post-merge activity) sit on later pages, causing silent undercounting. Fixed by adding `updatedAt` to `PR_QUERY` and replacing the `closedAt`-based break with `nodes[-1]['updatedAt'] < since` — a monotone safe bound on the ordering field (commit `2e9f691`). Deferred: ISS-20 (`✅ Already resolved` — old `--paginate --jq` approach replaced by `fetcher.py`); ISS-21 (date fallback already script-blocking via `set -euo pipefail`); ISS-22 (`AGENT_RE` too broad — `isBot` addition is out of scope). Phase 4 attempted: PRRT_ thread IDs not returned by MCP `get_review_comments`; ISS-23 thread audit reply posted at `discussion_r3181831110` but `resolveReviewThread` not attempted. CI: pending on `2e9f691`.
+**What was harder than expected**: Phase 4 thread resolution blocked by MCP API gap — `get_review_comments` does not return PRRT_ node IDs required by `resolveReviewThread`.
+**What generalizes**: The UPDATED_AT vs closedAt ordering trap: when paginating by `UPDATED_AT DESC` and filtering by `closedAt >= since`, the only safe early-exit criterion is `updatedAt < since` (not `closedAt < since`), because `updatedAt >= closedAt` always holds. A page full of old-commented PRs has no `closedAt`-in-window entries but can precede pages with recently-merged PRs. Pattern: early-exit on the ordering field, not the filter field.
+
+---
+
 ## Close-out: pr-232-review-round3 — 2026-05-04
 
 **What shipped**: Addressed 2 new chatgpt-codex-connector findings (Round 3) on PR #232. Fixes: (1) ISS-18 — `test.sh` linter invariants changed from bare tool name greps (which match comments) to flag-specific patterns `shellcheck --severity`, `shfmt -d`, and `xargs -r -0 actionlint` — all unique to `run:` blocks; a removed step no longer passes the guard if comments remain; (2) ISS-19 — actionlint step in `lint-and-format.yml` switched from static `*.yml` glob to `find -maxdepth 1 \( -name '*.yml' -o -name '*.yaml' \) -print0 | xargs -r -0 actionlint` (consistent with shellcheck/shfmt pattern; covers both extensions; `-r` handles no-match gracefully). CI: ✅ green on `cf15481`. Both threads resolved. Default round cap (3/3) reached.
