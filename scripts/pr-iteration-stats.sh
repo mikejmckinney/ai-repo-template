@@ -2,8 +2,8 @@
 # pr-iteration-stats.sh — Rolling PR review-loop metrics (issue #229 Phase 1).
 #
 # Queries merged PRs closed in the past <window> days and counts per PR:
-#   total_rounds    — number of "## Resolution Report — Round N" comments
-#                     authored by a bot/agent account.
+#   total_rounds    — number of PR comments whose body matches the
+#                     "## Resolution Report" header (any author).
 #   fix_rounds      — Resolution Reports where "Fixed in this pass" > 0.
 #   rejected_rounds — Resolution Reports where "Fixed in this pass" = 0
 #                     AND "Total items found" > 0 (agent rejected all findings).
