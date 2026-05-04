@@ -294,7 +294,7 @@ ls -la config/
 
 - Gives the new repo a fresh git history; no perpetual "X commits behind" UI clutter.
 - Doesn't pollute `ai-repo-template`'s fork count.
-- AGENTS.md §"Template detection (important)" keys off the repo name — "Use this template" creates a repo with a new name, so template-detection fires correctly. A fork keeps the name `ai-repo-template` unless explicitly renamed, which can cause the template-detection logic to treat a derived project as the template itself.
+- `AGENTS.md` §"Template detection (important)" keys off the repo name — "Use this template" creates a repo with a new name, so template-detection fires correctly. A fork keeps the name `ai-repo-template` unless explicitly renamed, which can cause the template-detection logic to treat a derived project as the template itself.
 - A POC or new project isn't conceptually a fork — a fork relationship implies intent to merge changes back upstream.
 
 **Use fork only when:**
@@ -304,7 +304,13 @@ ls -la config/
 
 **Pulling future template improvements into a template-created repo:**
 
-Add the upstream remote once: `git remote add upstream https://github.com/mikejmckinney/ai-repo-template.git`, then cherry-pick specific commits as needed. Most template changes will be project-specific noise to a downstream project — selective cherry-picking is safer than a full merge.
+Add the upstream remote once:
+
+```bash
+git remote add upstream https://github.com/mikejmckinney/ai-repo-template.git
+```
+
+Then cherry-pick specific commits as needed. Most template changes will be project-specific noise to a downstream project — selective cherry-picking is safer than a full merge.
 
 ### For new repositories
 1. Create repo from this template (or copy files)
