@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 6 -->
+<!-- AGENTS_MD_VERSION: 7 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
@@ -12,7 +12,7 @@
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v6` (matching
+substantive reply with the exact token `Session handshake v7` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -229,6 +229,16 @@ When a downstream project (a repo built *from* this template) hits an incident w
 
 ### Session-state cadence
 Keep agent working memory current so the next session (or next role) can resume cleanly. **Working state must live in `.context/state/`** — the LLM tool's in-conversation todo list and `/memories/session/` are agent-private scratch surfaces invisible to any other session, and are never substitutes for the checked-in files below. If your only record of in-progress work is in scratch surfaces, that work is lost the moment the session ends.
+
+**Re-read requirement.** At every task boundary you MUST re-read the following files before writing any state or code:
+
+1. `AGENTS.md` — catches mid-session rule edits (e.g., this very section).
+2. `.context/00_INDEX.md` — catches roadmap or constraint changes.
+3. `.context/state/_active.md` and the active `.context/state/task_<slug>.md` (if any) — catches staleness in your own working state. `_active.md` is capped at ~20 lines of task metadata (Active Task, File, Role, Blockers, and Next 1–3 actions); granular progress, files, and detailed blockers live in the task file it references.
+4. `.context/state/coordination.md` — catches stale locks before you add new ones.
+5. Any `.context/rules/*.md` or `.context/vision/**/*.md` whose domain covers the files you are about to edit — e.g., read `.context/rules/process_doc_maintenance.md` before changes that may trigger doc-sync requirements; read `.context/rules/domain_code_quality.md` before non-trivial code refactors; read the relevant architecture or mockup in `.context/vision/` before implementing UI or structural changes.
+
+Reading all of `.context/rules/` and `.context/vision/` at every boundary is overkill: unlike `AGENTS.md` (the primary instruction file, most likely to be edited mid-session), both rule files and vision artifacts change only through deliberate, reviewed PRs — ad-hoc mid-session edits to them are rare. Point 5 already covers the important case: you read a rule or vision file when its domain intersects what you are about to change. The five items above are the minimum set that closes the loop between knowing a rule and following it.
 
 - **`.context/state/_active.md`** — rewrite (don't append) at every task boundary. Max ~20 lines. Schema: Active Task, File, Role, Blockers, Next 1–3 actions. Schema and examples in `.context/state/README.md`.
   - **What counts as a "task boundary"** for prompt-driven work: each `.github/prompts/NN-*.md` file is its own boundary. If you process prompts 02 → 03 → 04 in one session, that is *three* boundaries — rewrite `_active.md` between each, even if the same agent continues. Treating multiple prompts as one continuous task is a known failure mode (see ADR-012 + `docs/postmortems/postmortem-001-workflow-bypass.md`).
