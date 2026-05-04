@@ -7,7 +7,6 @@ You are acting as a **strict code review judge**. Your job is to find issues tha
 Before reviewing, check for and read:
 1. `/AI_REPO_GUIDE.md` — canonical commands and conventions
 2. `/AGENTS.md` — canonical agent instructions (rules, workflow, doc-sync triggers)
-3. `CONTRIBUTING.md` — contribution guidelines
 
 Prefer documented commands over guessing. If commands aren't available, explicitly ask.
 
