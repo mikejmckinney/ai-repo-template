@@ -55,6 +55,12 @@ own docs. Note the ambiguity in the Mode field of the Step 1.0 status line.
 
 ## Step 0.2: Apply template-bootstrap rules (Mode B only)
 
+> **First time starting a project from this template?** Review the
+> Template vs. Fork guidance in
+> [`AI_REPO_GUIDE.md` § Template vs. Fork](../AI_REPO_GUIDE.md#template-vs-fork-choosing-how-to-start)
+> before proceeding. TL;DR: “Use this template” (not Fork) is the
+> default for new projects.
+
 The canonical rules live in **`AGENTS.md`** (“Template detection
 (important)” section) — read it first. The bullets below are a
 non-canonical recap to anchor the work; if they ever drift from
