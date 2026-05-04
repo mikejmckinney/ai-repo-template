@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #226 PR3 — PR #234 rounds 1–9 done; ISS-01–ISS-14 resolved; Gemini round 10 arrived with ISS-15 (HEAD/main duplicate, not reproducible — relay applied HEAD in 6556664)
-**File**: AI_REPO_GUIDE.md
+**Active Task**: #226 PR3 — PR #234 COMPLETE; 15 issues resolved across 10 rounds; 2 clean passes; CI green on 6556664; Gemini approved; ready to merge
+**File**: N/A
 **Role**: docs
-**Blockers**: ISS-15 PRRT_ node ID needed from relay for thread resolution
+**Blockers**: None — awaiting merge by human
 **Next 1–3 actions**:
-1. Post ISS-15 audit reply (not reproducible — 6556664 already has HEAD...upstream/main)
-2. Post Round 10 Resolution Report; relay resolves ISS-15 thread
-3. Merge PR #234 once all threads resolved + Gemini clean pass
+1. Merge PR #234
+2. Update latest_summary.md with session recap
+3. Close issue #226
