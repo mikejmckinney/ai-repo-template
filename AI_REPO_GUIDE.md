@@ -294,7 +294,7 @@ ls -la config/
 
 - Gives the new repo a fresh git history; no perpetual "X commits behind" UI clutter.
 - Doesn't pollute `ai-repo-template`'s fork count.
-- AGENTS.md §"Template detection" keys off the repo name — "Use this template" creates a repo with a new name, so template-detection fires correctly. A fork keeps the name `ai-repo-template` unless explicitly renamed, which can cause the template-detection logic to treat a derived project as the template itself.
+- AGENTS.md §"Template detection (important)" keys off the repo name — "Use this template" creates a repo with a new name, so template-detection fires correctly. A fork keeps the name `ai-repo-template` unless explicitly renamed, which can cause the template-detection logic to treat a derived project as the template itself.
 - A POC or new project isn't conceptually a fork — a fork relationship implies intent to merge changes back upstream.
 
 **Use fork only when:**

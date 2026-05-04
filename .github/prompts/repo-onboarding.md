@@ -57,7 +57,7 @@ own docs. Note the ambiguity in the Mode field of the Step 1.0 status line.
 
 > **First time starting a project from this template?** Review the
 > Template vs. Fork guidance in
-> [`AI_REPO_GUIDE.md` § Template vs. Fork](../AI_REPO_GUIDE.md#template-vs-fork-choosing-how-to-start)
+> [`AI_REPO_GUIDE.md` § Template vs. Fork](../../AI_REPO_GUIDE.md#template-vs-fork-choosing-how-to-start)
 > before proceeding. TL;DR: “Use this template” (not Fork) is the
 > default for new projects.
 
