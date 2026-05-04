@@ -141,7 +141,7 @@ query($owner:String!,$repo:String!,$endCursor:String) {
     ) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        number closedAt
+        number closedAt updatedAt
         reviewThreads(first:100) {
           totalCount
           pageInfo { hasNextPage endCursor }
@@ -193,13 +193,10 @@ while True:
     data = gql(PR_QUERY, *call_args)
     page = data['data']['repository']['pullRequests']
 
-    page_had_in_window = False
-    for pr in page['nodes']:
+    nodes = page['nodes']
+    for pr in nodes:
         if pr['closedAt'] < since:
-            # Filter out-of-window PRs (UPDATED_AT order, so an old PR may
-            # appear only because it was recently commented on).
             continue
-        page_had_in_window = True
 
         # Follow reviewThreads cursor if there are more than 100 nodes.
         rt = pr['reviewThreads']
@@ -225,9 +222,12 @@ while True:
 
         prs.append(pr)
 
-    # Early-exit: if no PR on this page fell within the window, the remaining
-    # pages (ordered by UPDATED_AT DESC) will only be older — stop fetching.
-    if not page['pageInfo']['hasNextPage'] or not page_had_in_window:
+    if not page['pageInfo']['hasNextPage']:
+        break
+    # Safe early-exit: ordered by updatedAt DESC; since updatedAt >= closedAt,
+    # once the oldest PR on this page has updatedAt < since, all remaining
+    # pages also have updatedAt < since (and therefore closedAt < since).
+    if nodes and nodes[-1]['updatedAt'] < since:
         break
     cursor = page['pageInfo']['endCursor']
 
