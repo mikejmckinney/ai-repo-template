@@ -45,8 +45,10 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     # ISS-10: exclude comment lines before checking for strict-mode signals
     # so a script with only a *comment* mentioning 'set -e' is not treated
     # as strict-mode.
+    # ISS-22/ISS-25: [a-z]*e[a-z]* matches flag clusters containing e (e.g.
+    #   set -euo); |pipefail bare alternation removed as redundant and too broad.
     if grep -vE '^[[:space:]]*#' "$file" \
-         | grep -qE '(^|[^#[:alnum:]])(set[[:space:]]+-[a-z]*e([^a-z]|$)|set[[:space:]]+-o[[:space:]]+pipefail|pipefail)'; then
+         | grep -qE '(^|[^#[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+pipefail)'; then
       # Look for grep -c / grep --count not on a line that also contains
       # '|| true' or '|| echo' (which guard the exit code).
       # ISS-12: also match --count long form.
