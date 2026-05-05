@@ -175,6 +175,17 @@ Assign one of:
 - `❌ Not reproducible` — the issue does not exist in the current code. Explain why.
 - `❌ Out of scope` — fix requires changes to files/systems outside this PR, OR the item is purely advisory/optional with no clear action, OR it's a live-verification step that cannot be addressed in the diff. Describe what's needed (or why it's non-actionable) so the author can file a follow-up or defer appropriately.
 
+**Promote repeat-deferred findings to the skip list.** If a finding's status
+is `❌ Out of scope`, `❌ Not reproducible`, or `❌ Known limitation` **and**
+the same finding (same `file:line` or same class of pattern) has been
+raised by any review bot in a prior round of this PR, add a one-line entry
+to `.cursor/BUGBOT.md` and `.gemini/styleguide.md` under "Project
+conventions (skip these classes of finding)" (or as a new `KL-NN` if it's
+a specific known limitation in a script's own code) **before** posting the
+deferral reply. The dedup meta-instruction in those files is best-effort;
+an enumerated entry is deterministic. This converts ad-hoc deferrals into
+durable suppressions across future rounds and future PRs.
+
 ## Phase 3: Resolution Report
 
 After all items are processed, post a final summary comment:

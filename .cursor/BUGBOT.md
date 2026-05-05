@@ -91,6 +91,24 @@ List exact commands the author should run (or confirm already ran):
 - Be specific: include file paths and line numbers where possible
 - Focus on the diff, not the entire codebase
 
+## Meta: deduplicate against existing review threads
+
+Before flagging an issue, scan the PR's existing review threads (open AND
+resolved). The goal is to suppress repeat findings that have already been
+triaged in a prior round of this PR.
+
+- If the same issue on the same `file:line` is already present in any thread
+  (open or resolved), do **not** re-report it. Reply on the existing thread
+  if you have new information; otherwise skip.
+- Skip any issue whose existing thread contains a reply matching the literal
+  prefix `Deferred —` (the deferral marker emitted by
+  `.github/prompts/pr-resolve-all.md` Phase 4). That issue has been triaged
+  as out-of-scope, not-reproducible, or a known limitation; re-raising it is
+  noise.
+- A finding that is genuinely *new information* on the same line (a
+  different bug, not the same bug from a different angle) is not a
+  duplicate. When in doubt, prefer skipping over re-raising.
+
 ## `lint-shell-conventions.sh` known limitations (skip these findings)
 
 These are deliberate design tradeoffs documented in `scripts/lint-shell-conventions.sh`'s
