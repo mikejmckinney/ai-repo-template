@@ -250,20 +250,16 @@ Threads opened by any other login — including humans, unknown bots, and GitHub
 
 ### Per-thread gate
 
-Resolve a thread when **all** of the following hold:
+Resolve a thread only when **all** of the following hold:
 
 1. The thread's root comment was authored by an allow-listed bot.
-2. The Phase 2 status for the matching `ISS-NN` item is **any terminal status with a posted reply**:
-   - `✅ Fixed` — fix committed, verification green. Post standard audit reply, then resolve.
-   - `✅ Already resolved` — addressed in a prior round. Post reply citing the prior commit, then resolve.
-   - `❌ Out of scope` / `❌ Not reproducible` / `❌ Known limitation` — not actionable. Post a one-sentence deferral reply explaining why, then resolve. The reply is the paper trail; the resolved state removes noise.
-   - `⚠️ Needs clarification` / `⚠️ Partial fix` — **do not resolve**; leave open until the ambiguity or remaining work is addressed.
-3. A reply has been posted on the thread (audit reply for fixes; deferral reply for `❌` statuses). **Never resolve without a reply.**
+2. The Phase 2 status for the matching `ISS-NN` item is `✅ Fixed` (never `⚠️`, `❌`, `Already resolved`, or `Needs clarification`).
+3. Phase 2 verification passed — tests, lint, build, and typecheck were all green for the batch that contained the fix.
 4. The thread is not already resolved (`isResolved == false`).
 
-Note: do **not** skip threads solely because they are `isOutdated`. Phase 4 runs **after** the fix commit is pushed, and a thread's commented line is frequently moved or replaced by that commit, which flips `isOutdated` to `true`. `agent-auto-merge.yml` blocks on `isResolved == false` without considering `isOutdated`, so leaving outdated bot threads unresolved creates noise and blocks auto-merge.
+Note: do **not** skip threads solely because they are `isOutdated`. Phase 4 runs **after** the fix commit is pushed, and a thread's commented line is frequently moved or replaced by that commit, which flips `isOutdated` to `true`. Condition 2 (Phase 2 marked the item `✅ Fixed`) is what guarantees the concern was actually addressed; `isOutdated` is just a side-effect of the fix and is not a blocker. `agent-auto-merge.yml` blocks on `isResolved == false` without considering `isOutdated`, so leaving outdated-but-fixed bot threads unresolved would defeat the entire purpose of Phase 4.
 
-If any condition fails, skip the thread and record why in the Phase 4 log.
+If any condition fails, skip the thread and record why in the Phase 4 log. Do not attempt to resolve threads you did not fix in this run.
 
 ### Resolve procedure
 
@@ -326,26 +322,21 @@ Because Phase 4 runs **before** Phase 3 posts the Resolution Report (see "How to
 | Thread | Thread ID | ISS | Author | Action | Notes |
 |--------|-----------|-----|--------|--------|-------|
 | [link](#) | PRRT_kwDOExampleA | ISS-01 | gemini-code-assist[bot] | ✅ Resolved | Fixed in abc1234 |
-| [link](#) | PRRT_kwDOExampleB | ISS-02 | copilot-pull-request-reviewer[bot] | ✅ Resolved | OOS — deferral reply posted; resolved to remove noise |
-| [link](#) | PRRT_kwDOExampleC | ISS-03 | copilot-pull-request-reviewer[bot] | ⚠️ Errored | addPullRequestReviewThreadReply returned FORBIDDEN |
-| [link](#) | PRRT_kwDOExampleD | ISS-04 | human-reviewer | ⏭️ Skipped | Human-authored — left open |
-| [link](#) | PRRT_kwDOExampleE | ISS-05 | gemini-code-assist[bot] | ⏭️ Skipped | Phase 2 status was "Needs clarification" — left open pending resolution |
+| [link](#) | PRRT_kwDOExampleB | ISS-02 | copilot-pull-request-reviewer[bot] | ⚠️ Errored | addPullRequestReviewThreadReply returned FORBIDDEN |
+| [link](#) | PRRT_kwDOExampleC | ISS-03 | human-reviewer | ⏭️ Skipped | Human-authored — left open |
+| [link](#) | PRRT_kwDOExampleD | ISS-04 | gemini-code-assist[bot] | ⏭️ Skipped | Phase 2 status was "Needs clarification" |
 ```
 
-Use `⚠️ Errored` when the per-thread gate passed but the GraphQL mutation failed (e.g. `FORBIDDEN`). On the Copilot path, the relay-fallback job will pick up `⚠️ Errored` rows by Thread ID, post the audit reply under `CLAUDE_PAT`, and fire `resolveReviewThread`. Use `⏭️ Skipped` **only** when the per-thread gate failed because: (a) the thread is human-authored, or (b) Phase 2 status is `⚠️ Needs clarification` or `⚠️ Partial fix` (genuinely unresolved). Do **not** use `⏭️ Skipped` for `❌` statuses — those get resolved with a deferral reply, not skipped.
+Use `⚠️ Errored` when the per-thread gate passed but the GraphQL mutation failed (e.g. `FORBIDDEN`). On the Copilot path, the relay-fallback job will pick up `⚠️ Errored` rows by Thread ID, post the audit reply under `CLAUDE_PAT`, and fire `resolveReviewThread`. Use `⏭️ Skipped` only when the per-thread gate failed (human author, status not `✅ Fixed`, etc.) — that signals the fallback to leave the thread alone.
 
 ### Safety rules
 
 - **Never resolve a human-authored thread**, even if you fixed what they asked for. Humans expect to click Resolve themselves.
-- **Bot-authored threads may be resolved for any terminal Phase 2 status — including `❌ Out of scope`, `❌ Not reproducible`, and `❌ Known limitation` — provided a deferral reply has been posted first.** The old rule ("only resolve `✅ Fixed`") forced resolved items to pile up as unresolved noise across rounds. A posted reply is the audit trail; once it exists, leaving the thread open serves no purpose — the signal is in the reply, not the open/closed state.
-  - For `✅ Fixed`: post the standard audit reply (`Resolved by <agent> in <SHA> (ISS-NN).`) and resolve.
-  - For `❌ Out of scope` / `❌ Not reproducible` / `❌ Known limitation`: post a deferral reply explaining the rationale (one sentence minimum; reference the KL-NN code if applicable), then resolve. Reply format: `Deferred — <reason>. Resolved to remove noise; re-open if this affects real code.`
-  - For `⚠️ Needs clarification` / `⚠️ Partial fix`: leave open until the ambiguity is resolved or the partial fix is completed.
-  - For `✅ Already resolved` (fixed in a prior round, not this one): post a reply citing the prior commit, then resolve.
-- **Never resolve a thread without first posting a reply.** The reply is the paper trail; resolution without it leaves reviewers with no way to understand why the thread was closed.
+- **Never resolve a thread whose Phase 2 item is not `✅ Fixed`.** "Not reproducible" and "Out of scope" still warrant human acknowledgement.
+- **Never resolve a thread without first posting the audit reply.** The reply is the paper trail; resolution without it leaves reviewers guessing.
 - **Never include a live `@`-handle in the audit reply body.** Backtick-wrap every `@copilot` / `@claude` / `@copilot follow ...` / `@claude follow ...` reference in the reply so GitHub treats it as code, not a mention. An un-wrapped handle re-dispatches the bot (Copilot cloud agent + `.github/workflows/claude.yml`'s `claude-mention` job both listen for raw `@`-strings anywhere in a PR comment or review reply body) and produces duplicate fix runs. The **top-level trigger comment** that invoked `pr-resolve-all.md` in the first place stays un-backticked — that one is supposed to dispatch.
   - **Nested-backtick gotcha.** GitHub Flavored Markdown does **not** honor `\`` to escape a backtick inside a code span. Writing `` `copilot (\`@copilot\` mention)` `` does not produce one nested code span — it produces an opening code span ending at the first inner `` \` ``, and the trailing `@copilot\`` falls back into plain text and dispatches a real mention. To embed a literal backtick in a code span, wrap the **outer** span in double backticks: `` ``copilot (`@copilot` mention)`` ``. When in doubt, don't nest — just write `` `@copilot` `` standalone in plain prose. (PR #216 hit this and spawned 4 spurious cloud-agent sessions.)
-- **Do not resolve threads from a previous fix cycle without a reply.** Scope Phase 4 resolution to items addressed in the current run. For backlogged threads from prior rounds (threads that already have a deferral reply from a prior round), it is safe to resolve them in a cleanup pass — they have their paper trail.
+- **Do not resolve threads from a previous fix cycle.** Scope Phase 4 to items fixed in the current run only — the `ISS-NN` IDs from this run's Phase 1 index are your scope.
 
 ## Rules
 
