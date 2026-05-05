@@ -39,8 +39,10 @@ trap cleanup_err_log EXIT
 assert_filter() {
   local name="$1" filter="$2" input_file="$3" expected_file="$4"
   local actual expected
-  actual=$(jq -rf "$filter" "$input_file" 2>"$ERR_LOG" || printf 'JQ_ERROR')
-  expected=$(cat "$expected_file")
+  if ! actual=$(jq -rf -- "$filter" "$input_file" 2>"$ERR_LOG"); then
+    actual='JQ_ERROR'
+  fi
+  expected=$(cat -- "$expected_file")
   if [[ "$actual" == "$expected" ]]; then
     PASS=$((PASS + 1))
     printf '  ✅ %s\n' "$name"

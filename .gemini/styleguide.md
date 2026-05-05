@@ -167,6 +167,10 @@ severity. The corresponding `KL-NN` tag is the canonical reference.
 - **KL-05** — The linter itself uses `set -uo pipefail` without `-e`. Adding `-e`
   requires RULE-01 suppressions throughout the linter body. Separate cleanup task.
   Do **not** flag `set -uo pipefail` in `scripts/lint-shell-conventions.sh` as missing `-e`.
+- **KL-06** — RULE-02 candidate regex requires a space between the `-E` flag and the
+  quoted pattern. Invocations with other flags between `-E` and the pattern
+  (`grep -E -i 'p|q'`) or no space (`grep -E'p|q'`) are not detected. Per-token
+  reordering detection is out of scope. Do **not** flag this coverage gap.
 
 Additionally, the following patterns in `scripts/lint-shell-conventions.sh` are
 intentional. Do **not** flag them:

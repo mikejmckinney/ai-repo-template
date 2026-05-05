@@ -52,6 +52,14 @@
 #          requires suppressing RULE-01 on the linter's own grep calls.
 #          Deferred as a separate cleanup task.
 #
+#   KL-06  RULE-02 candidate regex requires at least one space between the
+#          '-E' flag and the quoted pattern (e.g. 'grep -E 'pat'').  This
+#          misses: (a) flags between -E and the pattern ('grep -E -i 'p|q''),
+#          (b) no-space invocations ('grep -E'p|q''). Per-option reordering
+#          detection requires per-token parsing; out of scope. Use the
+#          canonical space-separated form 'grep -E 'pattern'' to ensure
+#          RULE-02 catches unanchored alternatives.
+#
 # Usage:  bash scripts/lint-shell-conventions.sh [<path> ...]
 #         Defaults to searching scripts/ directory.
 # Exit:   0 = all pass; 1 = one or more violations found.
@@ -97,11 +105,21 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
         # ISS-48: && guard reverted — ISS-51 showed that && inside a quoted pattern
         #   could fool the safe-guard regex; the fix would require quote-aware parsing
         #   which is out of scope. Use if/||true/! instead of && for grep -c.
-        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|(^|[[:space:]])(if|elif|while|until|!)[[:space:]])'; then
-          printf 'RULE-01: %s\n' "$file"
-          printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
-          break
+        # ISS-55/56: guard keyword must precede grep on the line — check the pre-grep
+        #   prefix only for if/elif/while/until/case/! so keywords inside quoted patterns
+        #   (e.g. grep -c 'foo if bar') do not produce false negatives.
+        #   '|| exit' added to the pipe-guard list (exit 0 is a safe guard).
+        _pre_grep=$(printf '%s' "$grep_line" | sed 's/[[:space:]]*\bgrep\b.*//')
+        if printf '%s' "$grep_line" | grep -qE '\|\|[[:space:]]*(true|echo|:|exit)'; then
+          _pre_grep=; continue
         fi
+        if printf '%s' "$_pre_grep" | grep -qE '(^|[[:space:]])(if|elif|while|until|case|!)([[:space:]]|$)'; then
+          _pre_grep=; continue
+        fi
+        _pre_grep=
+        printf 'RULE-01: %s\n' "$file"
+        printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
+        break
         # ISS-55: strip inline comments then re-filter so 'cmd # grep -c' is
         #   excluded — after stripping it becomes 'cmd' with no grep invocation.
         #   Disable-comment filter runs before sed so suppression annotations
@@ -109,6 +127,8 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
       done < <({
         grep -E '\bgrep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
         grep -E '\bgrep[[:space:]]+-[a-zA-Z]+[[:space:]]+.*(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
+        # ISS-59: also catch long-form first: grep --extended-regexp --count 'pat'
+        grep -E '\bgrep[[:space:]]+--[a-zA-Z-]+[[:space:]]+.*--count([[:space:]]|$)' "$file"
       } | sort -u \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' \
