@@ -48,7 +48,7 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     # ISS-22/ISS-25: [a-z]*e[a-z]* matches flag clusters containing e (e.g.
     #   set -euo); |pipefail bare alternation removed as redundant and too broad.
     if grep -vE '^[[:space:]]*#' "$file" \
-         | grep -qE '(^|[^#[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+pipefail)'; then
+      | grep -qE '(^|[^#[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+pipefail)'; then
       # Look for grep -c / grep --count not on a line that also contains
       # '|| true' or '|| echo' (which guard the exit code).
       # ISS-12: also match --count long form.
@@ -62,12 +62,12 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
           printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
           break
         fi
-      done < <({ \
-          grep -E '(^|[^#[:alnum:]])grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"; \
-          grep -E '(^|[^#[:alnum:]])grep[[:space:]]+-[a-zA-Z]+[[:space:]]+.*(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"; \
-        } | sort -u \
-          | grep -v '^[[:space:]]*#' \
-          | grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' || true)
+      done < <({
+        grep -E '(^|[^#[:alnum:]])grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
+        grep -E '(^|[^#[:alnum:]])grep[[:space:]]+-[a-zA-Z]+[[:space:]]+.*(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
+      } | sort -u \
+        | grep -v '^[[:space:]]*#' \
+        | grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' || true)
     fi
   fi
 
@@ -85,9 +85,9 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     # Single-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
     if grep -E "grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" "$file" \
-         | grep -v '^[[:space:]]*#' \
-         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-         | grep -qvE "([\$\)\\\\]|\\\\b)'"; then
+      | grep -v '^[[:space:]]*#' \
+      | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
+      | grep -qvE "([\$\)\\\\]|\\\\b)'"; then
       r02_found=1
     fi
     # Double-quoted patterns (ISS-11: filter comment lines before checking)
@@ -96,10 +96,10 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     #   cannot be statically checked; RULE-02 only applies to literal strings).
     if [[ $r02_found -eq 0 ]]; then
       if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"]*\|[^"]*"' "$file" \
-           | grep -v '^[[:space:]]*#' \
-           | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-           | grep -v '"[^"]*[$]' \
-           | grep -qvE '([$)\\]|\\b)"'; then
+        | grep -v '^[[:space:]]*#' \
+        | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
+        | grep -v '"[^"]*[$]' \
+        | grep -qvE '([$)\\]|\\b)"'; then
         r02_found=1
       fi
     fi

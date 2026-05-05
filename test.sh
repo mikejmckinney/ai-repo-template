@@ -908,7 +908,7 @@ else
   fail "$LF_FILE missing lint-shell-conventions run step (issue #229 Phase 1.5c)"
 fi
 
-if [[ -d "scripts/lib/jq" ]] && compgen -G "scripts/lib/jq/*.jq" > /dev/null 2>&1; then
+if [[ -d "scripts/lib/jq" ]] && compgen -G "scripts/lib/jq/*.jq" >/dev/null 2>&1; then
   pass "scripts/lib/jq/ directory exists with at least one .jq filter"
 else
   fail "scripts/lib/jq/ missing or empty (issue #229 Phase 1.5b)"

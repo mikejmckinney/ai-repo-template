@@ -98,7 +98,7 @@ echo ""
 echo "FIXTURE-01: empty tree"
 D=$(make_fixture "empty")
 out=$(run_in_fixture "$D")
-assert_contains     "empty: pass message present" \
+assert_contains "empty: pass message present" \
   "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
 assert_not_contains "empty: no unexpected-file warning" \
   "files still contain TEMPLATE_PLACEHOLDER" "$out"
@@ -110,14 +110,14 @@ echo ""
 echo "FIXTURE-02: only bootstrap-state files contain marker"
 D=$(make_fixture "bootstrap")
 mkdir -p "$D/.context/state" "$D/.context/sessions"
-printf '%s\n' "# $marker" > "$D/.context/state/_active.md"
-printf '%s\n' "# $marker" > "$D/.context/sessions/latest_summary.md"
+printf '%s\n' "# $marker" >"$D/.context/state/_active.md"
+printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
 out=$(run_in_fixture "$D")
-assert_contains     "bootstrap: pass message (excluded don't count)" \
+assert_contains "bootstrap: pass message (excluded don't count)" \
   "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
 assert_not_contains "bootstrap: no unexpected-file warning" \
   "files still contain TEMPLATE_PLACEHOLDER" "$out"
-assert_contains     "bootstrap: bootstrap warning fires" \
+assert_contains "bootstrap: bootstrap warning fires" \
   "Bootstrap state files retain TEMPLATE_PLACEHOLDER" "$out"
 echo ""
 
@@ -126,15 +126,15 @@ echo "FIXTURE-03: substring-overlap filename tests \$-anchor"
 D=$(make_fixture "overlap")
 mkdir -p "$D/.context/state"
 # coordination.md matches _PLACEHOLDER_EXCLUDE → excluded (state file)
-printf '%s\n' "# $marker" > "$D/.context/state/coordination.md"
+printf '%s\n' "# $marker" >"$D/.context/state/coordination.md"
 # coordination.md.bak does NOT match the anchored pattern → unexpected
-printf '%s\n' "# $marker" > "$D/.context/state/coordination.md.bak"
+printf '%s\n' "# $marker" >"$D/.context/state/coordination.md.bak"
 out=$(run_in_fixture "$D")
 assert_not_contains "overlap: clean pass (unexpected file exists)" \
   "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
-assert_contains     "overlap: unexpected-file warning (coordination.md.bak not excluded)" \
+assert_contains "overlap: unexpected-file warning (coordination.md.bak not excluded)" \
   "files still contain TEMPLATE_PLACEHOLDER" "$out"
-assert_contains     "overlap: bootstrap warning fires for coordination.md" \
+assert_contains "overlap: bootstrap warning fires for coordination.md" \
   "Bootstrap state files retain TEMPLATE_PLACEHOLDER" "$out"
 echo ""
 
@@ -143,15 +143,15 @@ echo "FIXTURE-04: mixed — unexpected file + bootstrap file"
 D=$(make_fixture "mixed")
 mkdir -p "$D/.context/state" "$D/.context/sessions"
 # Bootstrap (excluded → does NOT count as unexpected)
-printf '%s\n' "# $marker" > "$D/.context/state/_active.md"
+printf '%s\n' "# $marker" >"$D/.context/state/_active.md"
 # Unexpected (not matched by either exclusion list)
-printf '%s\n' "# $marker" > "$D/some-real-file.md"
+printf '%s\n' "# $marker" >"$D/some-real-file.md"
 out=$(run_in_fixture "$D")
 assert_not_contains "mixed: no clean pass (unexpected file exists)" \
   "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
-assert_contains     "mixed: unexpected-file warning" \
+assert_contains "mixed: unexpected-file warning" \
   "files still contain TEMPLATE_PLACEHOLDER" "$out"
-assert_contains     "mixed: bootstrap warning also fires" \
+assert_contains "mixed: bootstrap warning also fires" \
   "Bootstrap state files retain TEMPLATE_PLACEHOLDER" "$out"
 echo ""
 
