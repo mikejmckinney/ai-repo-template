@@ -57,6 +57,35 @@ Resolve the cap via this precedence chain (most specific wins):
 
 At the start of each round, check comments first, then labels, then the repo variable. When the resolved cap is reached: post a comment listing all remaining unresolved items and the escalation path (fix manually, split the PR, apply `cap-override`, or upshift to a higher-context model). Do not silently stop.
 
+#### Override justification (rounds > 3 with `cap-override` in effect)
+
+When the round cap is overridden (label `cap-override` on the PR, or
+`@<agent> cap-override <N>` comment with `N > 3`) **and** the current
+round number is greater than 3, every Resolution Report posted from
+round 4 onward MUST include a one-line justification on its own line:
+
+```
+Override justification: <sandbox-class | legitimate refactor | complex semantic dependency | other: <≤80-char reason>>
+```
+
+Place this line in the Resolution Report directly under the `### Summary` block (before the per-item table). One of the four bracketed categories must be chosen verbatim; `other:` requires an explicit free-text reason of 80 characters or fewer.
+
+The four categories are deliberately narrow:
+
+- **sandbox-class** — the bug class can only be reproduced by merging to `main` or a sibling sandbox repo (the workflow-verifiability gap covered by issue #227).
+- **legitimate refactor** — a bot finding genuinely required reorganising adjacent code (e.g., extracting a helper to fix a real correctness bug); the round count grew because the refactor surfaced a downstream finding.
+- **complex semantic dependency** — the fix interacts with multiple shell/jq/regex semantics that cannot be statically caught by shellcheck/actionlint (e.g., `set -e` exit-code propagation through `$(...)`).
+- **other:** — none of the above; you owe the maintainer a one-line explanation.
+
+This rule exists because PR #228 ran 8 rounds with `cap-override`
+silently in effect and PR #225 ran 11. The cap is a hard stop; the
+override is the escape hatch; the justification line is the friction
+that forces articulation rather than silent looping.
+
+Judge enforces this rule at diff-gate (`.github/agents/judge.agent.md`
+item 15) and BLOCKs when override is in effect, the round count is > 3,
+and the latest Resolution Report omits the justification line.
+
 ### 2 — Fetch PR data once per round
 
 Fetch `currentActivePullRequest` (or its REST/GraphQL equivalent) **exactly once per round**, before the fix pass begins. Do not re-fetch between individual fixes within the same round. Re-fetching mid-round produces stale context, wastes premium tokens, and is the leading cause of duplicate fix attempts.
@@ -200,6 +229,17 @@ After all items are processed, post a final summary comment:
 - **Needs clarification**: X
 - **Not reproducible**: X
 - **Out of scope**: X
+
+<!--
+Required from round 4 onward when `cap-override` is in effect on this PR
+(see "Override justification" under Round disciplines). Omit otherwise.
+Categories must match exactly:
+  Override justification: sandbox-class
+  Override justification: legitimate refactor
+  Override justification: complex semantic dependency
+  Override justification: other: <≤80-char reason>
+-->
+Override justification: <category>
 
 ### Verification
 - Tests: ✅ X passed, ❌ X failed

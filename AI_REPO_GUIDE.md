@@ -102,7 +102,8 @@ bash install.sh
 │   └── BUGBOT.md             # Cursor Bugbot PR review rules
 ├── .gemini/
 │   └── styleguide.md         # Gemini Code Assist review style
-├── .pre-commit-config.yaml.template  # Pre-commit hooks template
+├── .pre-commit-config.yaml           # Template repo's own hooks: shellcheck + actionlint (ADR-017)
+├── .pre-commit-config.yaml.template  # Heavyweight scaffold for derived repos (ADR-013, opt-in)
 ├── .cursorignore             # Files Cursor should not index
 └── .github/
     ├── copilot-instructions.md   # Pointer to AGENTS.md (auto-read by Copilot)
@@ -212,7 +213,8 @@ bash install.sh
 ### Development Tools
 | File | Purpose |
 |------|---------|
-| `.pre-commit-config.yaml.template` | Pre-commit hooks (linting, secrets) |
+| `.pre-commit-config.yaml` | Template repo's own pre-commit hooks (shellcheck + actionlint; install once via `pre-commit install`). See ADR-017. |
+| `.pre-commit-config.yaml.template` | Heavyweight scaffold for derived repos (linting, secrets); opt-in per ADR-013 |
 | `docs/decisions/README.md` | ADR index, supersession discipline, what a well-documented ADR looks like |
 | `docs/decisions/adr-template.md` | Architecture Decision Record template (with "When to write" header) |
 | `docs/postmortems/README.md` | Postmortem index, when to write, ADR-vs-postmortem split, "What generalizes" promotion gate |
@@ -277,6 +279,10 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 
 # Validate shell scripts (if shellcheck installed)
 shellcheck install.sh test.sh
+
+# Local pre-commit run (template repo only — ADR-017). One-time:
+#   pip install pre-commit && pre-commit install
+pre-commit run --all-files
 
 # PR review-loop rolling metrics (last 14 days)
 bash scripts/pr-iteration-stats.sh --window 14

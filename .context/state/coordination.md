@@ -52,6 +52,32 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-229-phase4
+<!-- managed-for-pr:229 -->
+**Role**: devops
+**Session**: feature/devops-229-phase4
+**Claimed At**: 2026-05-05T00:00:00Z
+**Expected Duration**: 1 session
+**Paths**:
+- docs/decisions/adr-017-template-repo-pre-commit-default.md
+- docs/decisions/README.md
+- .pre-commit-config.yaml
+- .pre-commit-config.yaml.template
+- .github/prompts/pr-resolve-all.md
+- .github/agents/judge.agent.md
+- .cursor/BUGBOT.md
+- .gemini/styleguide.md
+- docs/guides/agent-pipeline.md
+- test.sh
+- AI_REPO_GUIDE.md
+- README.md
+- .context/state/_active.md
+- .context/state/coordination.md
+- .context/sessions/latest_summary.md
+**Depends On**: pr-229-phase1 (merged)
+**Blocks**: none
+**State**: in_progress
+
 ## Lock: pr-229-phase1.5
 <!-- managed-for-pr:229 -->
 **Role**: devops

@@ -209,7 +209,7 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `REVIEW_ON_PUSH` | on (unset = on) | When set to literal `false`, disables `agent-review-on-push.yml` nudges to Gemini + Copilot after each push to an open non-draft PR. Any other value (including unset) keeps it on. |
 | `MAX_COPILOT_CONCURRENT` | `3` | Max concurrent Copilot sessions (open `copilot/` PRs + `copilot:in-progress` issues). |
 | `MAX_COPILOT_DAILY` | `10` | Max Copilot assignments in a rolling 24-hour window. Spend thresholds: informational log at 50%, warning comment on issue at 75%, hard pause on new assignments at 90% (`copilot:budget-paused` label applied; bypassed by `cap-override` label on the issue — same label on a PR bypasses the round cap, see `PR_RESOLVE_MAX_ROUNDS` below), `copilot:daily-cap-hit` label at 100%. |
-| `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. Per-PR override: `cap-override` label on the PR (unbounded) or `@<agent> cap-override N` comment on the PR (N rounds). Only raise from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
+| `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. Per-PR override: `cap-override` label on the PR (unbounded) or `@<agent> cap-override N` comment on the PR (N rounds). Only raise from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 
 ### 1. Copilot subscription
@@ -459,7 +459,7 @@ automatically post-merge.
 | Enable Claude review resolution on this PR | Add `claude-fix` label |
 | Use Copilot (not Claude) for review resolution | Add `copilot-relay` label |
 | Fix cycle exhausted (3/3) | Review remaining comments yourself, merge manually |
-| Fix cycle exhausted, want more rounds | Add `cap-override` label to the PR (unbounded) or comment `@<agent> cap-override N` (N rounds). See `PR_RESOLVE_MAX_ROUNDS` in Repository variables above |
+| Fix cycle exhausted, want more rounds | Add `cap-override` label to the PR (unbounded) or comment `@<agent> cap-override N` (N rounds). See `PR_RESOLVE_MAX_ROUNDS` in Repository variables above. **From round 4 onward, every Resolution Report must include an `Override justification:` line** (issue #229 Phase 4); Judge BLOCKs at diff-gate without it. |
 | Copilot's implementation is wrong | Comment on the PR with corrections, Copilot picks them up |
 | Claude can't resolve a comment | Marked as "Needs clarification" in the resolution report — address manually |
 | Merge conflict between parallel PRs | Merge one first, then comment on the other asking Copilot to rebase |

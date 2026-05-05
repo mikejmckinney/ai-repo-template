@@ -3,6 +3,18 @@
 # Pre-commit hooks configuration
 # Docs: https://pre-commit.com/
 #
+# NOTE FOR DERIVED REPOS: this file is the heavyweight scaffold (secret
+# detection, commit-message linting, large-file checks). Whether to
+# install it is an opt-in decision — see ADR-013
+# (docs/decisions/adr-013-pre-commit-on-main-default.md).
+#
+# NOTE FOR TEMPLATE-REPO CONTRIBUTORS: this template is NOT what the
+# template repo runs locally. The template repo installs a separate
+# minimal `.pre-commit-config.yaml` (shellcheck + actionlint only) for
+# its own development per ADR-017
+# (docs/decisions/adr-017-template-repo-pre-commit-default.md). Both
+# files coexist by design.
+#
 # Installation:
 #   pip install pre-commit
 #   pre-commit install

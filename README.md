@@ -122,7 +122,8 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 │   ├── parse-ownership-table.sh      # Ownership-table parser used by workflows
 │   └── test-*.sh                 # Unit tests for the helper scripts above
 │
-├── .pre-commit-config.yaml.template  # Pre-commit hooks template
+├── .pre-commit-config.yaml           # Template repo's own hooks (ADR-017)
+├── .pre-commit-config.yaml.template  # Heavyweight scaffold for derived repos
 ├── .cursorignore                 # Files Cursor should not index
 │
 └── .github/
@@ -230,7 +231,8 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 
 | File | Purpose |
 |------|---------|
-| `.pre-commit-config.yaml.template` | Pre-commit hooks for linting, secrets, formatting |
+| `.pre-commit-config.yaml` | Template repo's own pre-commit hooks (shellcheck + actionlint, ADR-017) |
+| `.pre-commit-config.yaml.template` | Heavyweight scaffold derived repos opt into per ADR-013 |
 | `docs/decisions/adr-template.md` | Template for Architecture Decision Records |
 | `docs/postmortems/README.md` | Postmortems / lessons-learned index and "What generalizes" promotion gate |
 | `docs/postmortems/postmortem-template.md` | Template for retrospective lessons (Trigger, Expected vs Actual, Root cause, Action items) |
