@@ -30,6 +30,7 @@
 | [ADR-014](./adr-014-extend-preflight-to-adhoc-deliverables.md) | Extend Analyst Pre-Flight gate to ad-hoc deliverable issues | Accepted |
 | [ADR-015](./adr-015-postmortem-feedback-loop.md) | Postmortem feedback loop from downstream projects (capture + mirror prompts; three-tier promotion policy; v1 = manual) | Accepted |
 
+| [ADR-017](./adr-017-template-pre-commit-linting.md) | Template repo uses pre-commit linting (actionlint + shellcheck) | Accepted |
 When you add a new ADR, add a row above and update its status if it later
 changes.
 

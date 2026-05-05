@@ -57,6 +57,8 @@ Resolve the cap via this precedence chain (most specific wins):
 
 At the start of each round, check comments first, then labels, then the repo variable. When the resolved cap is reached: post a comment listing all remaining unresolved items and the escalation path (fix manually, split the PR, apply `cap-override`, or upshift to a higher-context model). Do not silently stop.
 
+**Justification rule**: When `cap-override` is in effect AND the round count is > 3, you MUST require a one-line justification comment per extra round (e.g., sandbox class, legitimate refactor, complex semantic dependency). This forces articulation rather than silent looping.
+
 ### 2 — Fetch PR data once per round
 
 Fetch `currentActivePullRequest` (or its REST/GraphQL equivalent) **exactly once per round**, before the fix pass begins. Do not re-fetch between individual fixes within the same round. Re-fetching mid-round produces stale context, wastes premium tokens, and is the leading cause of duplicate fix attempts.

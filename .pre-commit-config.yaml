@@ -1,0 +1,22 @@
+# Pre-commit hooks configuration
+# Docs: https://pre-commit.com/
+#
+# Installation:
+#   pip install pre-commit
+#   pre-commit install
+
+default_stages: [commit]
+fail_fast: false
+
+repos:
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.10.0
+    hooks:
+      - id: shellcheck
+        args: ["--severity=warning"]
+
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
+        args: ["-ignore", "SC2016", "-ignore", "SC2086", "-ignore", "SC2129", "-ignore", "SC2153", "-ignore", "SC2018", "-ignore", "SC2019"]
