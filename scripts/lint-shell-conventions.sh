@@ -90,13 +90,13 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     fi
     # Double-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
-    # ISS-18: exclude patterns starting with $ (variable expansions like
-    #   grep -Ev "$VAR|$VAR2" cannot be statically checked; RULE-02 only
-    #   applies to literal-quoted strings per the header comment).
+    # ISS-18/ISS-20: exclude any pattern containing $ (variable expansions
+    #   cannot be statically checked; RULE-02 only applies to literal strings).
     if [[ $r02_found -eq 0 ]]; then
-      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$][^"]*\|[^"]*"' "$file" \
+      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"]*\|[^"]*"' "$file" \
            | grep -v '^[[:space:]]*#' \
            | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
+           | grep -v '"[^"]*[$]' \
            | grep -qvE '([$)\\]|\\b)"'; then
         r02_found=1
       fi
