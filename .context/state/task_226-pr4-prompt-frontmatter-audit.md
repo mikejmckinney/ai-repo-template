@@ -18,6 +18,6 @@ Inventory `.github/prompts/*.md` and recommend (a/b/c) on extending the YAML fro
 - [x] Audit doc written (recommendation: option c)
 - [x] Plan comment posted on #226
 - [x] `./test.sh` 267/0
-- [ ] Commit + push
-- [ ] Open PR
-- [ ] Update `_active.md`
+- [x] Commit + push
+- [x] Open PR
+- [x] Update `_active.md`
