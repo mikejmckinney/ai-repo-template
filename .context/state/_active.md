@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 1.5 — runtime-semantics gate
+**Active Task**: #229 Phase 1.5 — PR #238 bot-review loop complete
 **File**: N/A
 **Role**: DevOps
-**Blockers**: None — ready to push + open PR
+**Blockers**: None — 1 open thread (ISS-07 deferred, awaiting human ack)
 **Next 1–3 actions**:
-1. Push branch + open PR for Phase 1.5
-2. Await merge; then start Phase 3 (pre-push Critic) on user go-ahead
+1. Await merge of PR #238 (CI green, stopping condition met)
+2. Start Phase 3 (pre-push Critic) on user go-ahead
 3. Issue #237 (_active.md multi-task schema) — awaiting user go-ahead

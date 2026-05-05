@@ -20,6 +20,12 @@
 **What was harder than expected**: RULE-02 cannot cover variable-expanded `grep -E "$VAR"` patterns statically — only literal-quoted strings. The actual PR #228 bug was in the variable definition, not the grep call. RULE-02 catches the forward-looking class of future literal-pattern mistakes.
 **What generalizes**: When adding rules that shellcheck cannot cover, pair them with fixture tests immediately (the diff-coupling gate now enforces this for future contributors). The `|| true` pattern inside `$(...)` is semantics-safe: `grep -c` always writes a number to stdout before its exit code; `|| true` only suppresses the non-zero exit propagation, so the captured value is always correct.
 
+## Close-out: pr-238-bot-review-loop — 2026-05-05
+
+**What shipped**: Ran pr-resolve-all.md on PR #238 (Phase 1.5) through 4 rounds. Round 1: fixed 6 items (ISS-01 through ISS-06) across 5 commits; resolved 8 bot threads. Round 2: clean. Round 3: 1 new Codex finding (ISS-07 — per-branch alternation anchor check); deferred as out-of-scope (pre-existing design). Round 4: clean. Stopping condition met. PR #238 ready to merge.
+**What was harder than expected**: ISS-06 (relay job `jq -rf` file-not-found) was the most subtle — the relay job has no `actions/checkout`, so the extracted `.jq` file never exists on the runner; the `|| echo 0` fallback silently always fired.
+**What generalizes**: When extracting inline workflow filters to external files, verify every calling job runs `actions/checkout` first. The two-step grep approach for RULE-02 (find candidates, subtract valid endings) is more maintainable than a single complex negative-lookbehind that must handle multi-char sequences like `\b`.
+
 ---
 
 ## Close-out: pr-235-merged — 2026-05-04
