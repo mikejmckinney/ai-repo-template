@@ -113,7 +113,7 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' \
         | sed 's/[[:space:]]*#.*//' \
-        | grep -E '\bgrep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)' || true)
+        | grep -E '\bgrep\b.*(-[a-zA-Z]*c[a-zA-Z]*|--count)' || true)
     fi
   fi
 

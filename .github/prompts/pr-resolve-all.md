@@ -63,13 +63,33 @@ Fetch `currentActivePullRequest` (or its REST/GraphQL equivalent) **exactly once
 
 ### 3 — Classify before fixing
 
-At the front of each round, perform a cheap classification pass over all unresolved items **before** writing any code:
+At the front of each round, perform a cheap classification pass over all unresolved items **before** writing any code. Every item in the Phase 1 index **must** have an explicit classification — no silent omissions:
 
-- **nit** — style, naming, whitespace; fix last, one per commit, after all substantive items are done.
-- **substantive** — logic, correctness, missing behavior; fix and verify individually.
-- **out-of-scope** — requires files/systems outside this PR, or is purely advisory; mark `❌ Out of scope` immediately, do not fix.
+- **substantive** — logic error, false positive/negative in a linter/checker, correctness bug, missing required behavior; fix first, one per commit, verify each individually.
+- **nit** — style, naming, whitespace, doc wording, minor UX improvement with no correctness impact; fix last, one per commit, after all substantive items.
+- **out-of-scope** — requires files/systems outside this PR, purely advisory, or a known architectural limitation of the current design; mark `❌ Out of scope` immediately, post a deferral reply, do not fix.
 
-Fix substantive items first, one per commit. Fix nit items last, one per commit. This avoids expanding fix scope mid-round and running out of context before substantive items are addressed.
+Fix substantive items first, nit items last. This avoids expanding fix scope mid-round and running out of context before correctness issues are addressed.
+
+### 4 — Recurring nits and known limitations
+
+When the same finding recurs across multiple rounds without a practical fix path, treat it as a **known limitation** rather than re-deferring indefinitely. For each recurring finding that meets all three criteria:
+
+1. The finding is factually correct (the limitation exists in the code)
+2. Fixing it requires a non-trivial architectural change (e.g. per-token parsing, quote-aware grep) that is out of scope for the current PR
+3. The same bot has raised it in **two or more prior rounds**
+
+Do the following **once** (not every round):
+
+1. **Document the limitation in the source code** — add a `KL-NN` (Known Limitation) entry in the file's header comment block. Include: what the limitation is, why it exists, and what would be needed to fix it properly. This makes the tradeoff visible to any future contributor.
+2. **Add a skip-class entry to the bot config files** — update `.cursor/BUGBOT.md` and `.gemini/styleguide.md` under their "Project conventions (skip these classes of finding)" section. Reference the `KL-NN` code so the rationale is traceable. Both files are read by Gemini and Cursor Bugbot before every review; an explicit skip-class entry prevents the bot from re-raising the same finding.
+3. **Resolve the thread** — after documenting the limitation and adding the skip-class entry, the bot thread can be resolved (it has been addressed — just not by a code fix). Use the standard Phase 4 audit reply: "Deferred as known limitation KL-NN — documented in `<file>` header and `BUGBOT.md`/`styleguide.md`. If this impacts real code, re-open with a concrete failing example."
+
+**What counts as a nit vs a known limitation:**
+- A **nit** is something you could fix quickly in this PR but choose not to because the value is low (style, naming). File it as a follow-up if warranted.
+- A **known limitation** is something that cannot be fixed properly in this PR without a significant architectural change. Document it so future contributors understand why the simpler approach was chosen.
+
+Never silently re-defer the same finding round after round — that wastes tokens and produces an unreadable PR history. Document once, skip forever.
 
 ---
 
@@ -99,18 +119,20 @@ Post this as a PR comment before starting fixes:
 ```markdown
 ## Issue/Suggestion Index
 
-| ID | Source | Summary | Status |
-|----|--------|---------|--------|
-| ISS-01 | [Review comment](link) | Missing null check on `user` param | 🔍 Pending |
-| ISS-02 | [PR description](link) | TODO: add rate limiting | 🔍 Pending |
-| ISS-03 | [Code comment](link) | FIXME in src/auth.ts:42 | 🔍 Pending |
-| ISS-04 | [CI failure](link) | TypeScript build error | 🔍 Pending |
-| ISS-05 | [Review comment](link) | Suggestion: extract helper fn | ✅ Already resolved in abc1234 |
-| ISS-06 | [Review body](link) | Optional: rename `foo` → `bar` for clarity | ❌ Out of scope — purely advisory; defer to follow-up |
-| ISS-07 | [Review body](link) | Live-verify multiple-reviews edge case post-merge | ❌ Out of scope — verification step, not a diff change |
+| ID | Source | Summary | Classification | Status |
+|----|--------|---------|----------------|--------|
+| ISS-01 | [Review comment](link) | Missing null check on `user` param | substantive | 🔍 Pending |
+| ISS-02 | [PR description](link) | TODO: add rate limiting | nit | 🔍 Pending |
+| ISS-03 | [Code comment](link) | FIXME in src/auth.ts:42 | substantive | 🔍 Pending |
+| ISS-04 | [CI failure](link) | TypeScript build error | substantive | 🔍 Pending |
+| ISS-05 | [Review comment](link) | Suggestion: extract helper fn | nit | ✅ Already resolved in abc1234 |
+| ISS-06 | [Review body](link) | Optional: rename `foo` → `bar` for clarity | nit | ❌ Out of scope — purely advisory; defer to follow-up |
+| ISS-07 | [Review body](link) | Live-verify multiple-reviews edge case post-merge | out-of-scope | ❌ Out of scope — verification step, not a diff change |
+| ISS-08 | [Review body](link) | `find \| while` without `-print0` (3rd round) | known-limitation | ❌ Known limitation KL-NN — documented in file header and BUGBOT.md/styleguide.md |
 
 **Total**: X items found, Y already resolved, Z to address.
-Proceeding with fixes for remaining items.
+Classification: W substantive, V nits, U out-of-scope/KL.
+Proceeding with fixes (substantive first, nits last).
 ```
 
 ## Phase 2: Verify, Fix, Validate Each Item
