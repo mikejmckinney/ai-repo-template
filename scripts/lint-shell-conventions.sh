@@ -67,13 +67,11 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
       while IFS= read -r grep_line; do
         # ISS-24: if/elif/while/until consume grep's exit code — not a set -e hazard.
         # ISS-35: until added alongside while (both consume the loop-condition exit code).
-        # ISS-44: grep-c followed by && is safe (short-circuit; set -e ignores the
-        #   non-zero because && already consumed it). grep-c as the LAST command in a
-        #   && chain (cmd && grep-c) is NOT safe — set -e sees grep-c's exit code.
-        #   The regex 'grep.*&&' captures grep-c-before-&& only (not cmd&&grep-c).
-        # ISS-48: restricted && guard to grep-c-before-&& only (Gemini correctness).
-        #   ! negation is always safe: ! grep-c converts 1→0 before set -e sees it.
-        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|grep[[:alnum:] _$@*#?{}/"'"'"'.-]*&&|(^|[[:space:]])(if|elif|while|until|!)[[:space:]])'; then
+        # ISS-44: ! negation is safe: ! grep-c converts 1→0 before set -e sees it.
+        # ISS-48: && guard reverted — ISS-51 showed that && inside a quoted pattern
+        #   could fool the safe-guard regex; the fix would require quote-aware parsing
+        #   which is out of scope. Use if/||true/! instead of && for grep -c.
+        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|(^|[[:space:]])(if|elif|while|until|!)[[:space:]])'; then
           printf 'RULE-01: %s\n' "$file"
           printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
           break
@@ -110,31 +108,17 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     fi
     # Double-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
-    # ISS-30/ISS-45: two-pass double-quote check:
-    #   Pass A — [^"$]* candidate: catches "foo|bar" even when "$file" follows
-    #             on the same line ($ anywhere in any quoted token excludes).
-    #   Pass B — [^"]*\$ candidate: catches "foo|bar$|baz" where the pattern
-    #             has a $ anchor in the middle but an unanchored final branch.
-    #   Pass A finds the false-negative that ISS-30 fixed; pass B finds the
-    #   case ISS-45 reported ($ anchor in pattern but still unanchored branches).
-    # ISS-38: mandatory first \| in candidates (no alternation = not a candidate).
+    # ISS-30/ISS-38: candidate regex [^"$]*\|[^"$]*(\|[^"$]*)* excludes any
+    #   line where $ appears in any quoted token. This prevents the ISS-30 FN
+    #   (grep -E "foo|bar" "$file" skipped because "$file" has $). The mandatory
+    #   first \| prevents flagging grep -E "foo" (no alternation) per ISS-38.
+    #   Known limitation: "foo|bar$|baz" with $ anchor mid-pattern is NOT checked
+    #   (ISS-45/ISS-52); a per-token parser would be needed to distinguish
+    #   $ anchors from $ expansions without quote-aware parsing.
     if [[ $r02_found -eq 0 ]]; then
-      # Pass A: no $ in any quoted token on the line
       if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*(\|[^"$]*)*"' "$file" \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-        | grep -qvE '([$)]|\\b)"'; then
-        r02_found=1
-      fi
-    fi
-    # Pass B: pattern contains $ anchor (before | not before word char) but
-    #   last alt unanchored — e.g. "foo|bar$|baz" (baz is not anchored).
-    #   ISS-50: exclusion covers $VAR, $1/$2 (positional), $@/$*/$#/$? (special).
-    if [[ $r02_found -eq 0 ]]; then
-      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"]*\$[^"]*\|[^"]*"' "$file" \
-        | grep -v '^[[:space:]]*#' \
-        | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-        | grep -vE '"[^"]*\$[a-zA-Z0-9_{(@*#?-]' \
         | grep -qvE '([$)]|\\b)"'; then
         r02_found=1
       fi
