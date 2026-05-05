@@ -12,6 +12,6 @@
 **Role**: architect
 **Blockers**: None
 **Next 1–3 actions**:
-1. Commit + push `feature/architect-226-pr4-prompt-frontmatter-audit`
-2. Open PR linking #226, body references plan comment
+1. Address bot review findings on PR #239 (pr-resolve-all.md)
+2. Await CI green + bot threads resolved or deferred
 3. If audit accepted, file separate issue for Finding 5 (doc-sync rule for shared-prompt list)
