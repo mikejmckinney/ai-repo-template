@@ -33,10 +33,6 @@ FAILED_NAMES=()
 
 assert_filter() {
   local name="$1" filter="$2" input_file="$3" expected_file="$4"
-  if ! command -v jq &>/dev/null; then
-    printf '  ⚠️  %s — SKIP (jq not installed)\n' "$name"
-    return
-  fi
   local actual expected
   actual=$(jq -rf "$filter" "$input_file" 2>/dev/null || printf 'JQ_ERROR')
   expected=$(cat "$expected_file")
