@@ -130,10 +130,12 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
         #   '|| exit' added to the pipe-guard list (exit 0 is a safe guard).
         _pre_grep=$(printf '%s' "$grep_line" | sed 's/[[:space:]]*\bgrep\b.*//')
         if printf '%s' "$grep_line" | grep -qE '\|\|[[:space:]]*(true|echo|:|exit)'; then
-          _pre_grep=; continue
+          _pre_grep=
+          continue
         fi
         if printf '%s' "$_pre_grep" | grep -qE '(^|[[:space:]])(if|elif|while|until|case|!)([[:space:]]|$)'; then
-          _pre_grep=; continue
+          _pre_grep=
+          continue
         fi
         _pre_grep=
         printf 'RULE-01: %s\n' "$file"
