@@ -67,9 +67,13 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
       while IFS= read -r grep_line; do
         # ISS-24: if/elif/while/until consume grep's exit code — not a set -e hazard.
         # ISS-35: until added alongside while (both consume the loop-condition exit code).
-        # ISS-44: && and ! also safely consume grep's exit code (short-circuit /
-        #   negation both prevent set -e from seeing a non-zero exit).
-        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|&&|(^|[[:space:]])(if|elif|while|until|!)[[:space:]])'; then
+        # ISS-44: grep-c followed by && is safe (short-circuit; set -e ignores the
+        #   non-zero because && already consumed it). grep-c as the LAST command in a
+        #   && chain (cmd && grep-c) is NOT safe — set -e sees grep-c's exit code.
+        #   The regex 'grep.*&&' captures grep-c-before-&& only (not cmd&&grep-c).
+        # ISS-48: restricted && guard to grep-c-before-&& only (Gemini correctness).
+        #   ! negation is always safe: ! grep-c converts 1→0 before set -e sees it.
+        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|grep[[:alnum:] _$@*#?{}/"'"'"'.-]*&&|(^|[[:space:]])(if|elif|while|until|!)[[:space:]])'; then
           printf 'RULE-01: %s\n' "$file"
           printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
           break
@@ -125,12 +129,12 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     fi
     # Pass B: pattern contains $ anchor (before | not before word char) but
     #   last alt unanchored — e.g. "foo|bar$|baz" (baz is not anchored).
-    #   Exclude lines containing $VAR-style expansions ($ before word char).
+    #   ISS-50: exclusion covers $VAR, $1/$2 (positional), $@/$*/$#/$? (special).
     if [[ $r02_found -eq 0 ]]; then
       if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"]*\$[^"]*\|[^"]*"' "$file" \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-        | grep -vE '"[^"]*\$[a-zA-Z_{(]' \
+        | grep -vE '"[^"]*\$[a-zA-Z0-9_{(@*#?-]' \
         | grep -qvE '([$)]|\\b)"'; then
         r02_found=1
       fi
