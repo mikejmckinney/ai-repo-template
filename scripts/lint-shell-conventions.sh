@@ -129,9 +129,13 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     r02_found=0
     # Single-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
+    # s2z4: strip inline comments before anchor check so a comment containing
+    #   'grep -E 'pat|pat'' doesn't trigger a false positive.
     if grep -E "\\bgrep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" "$file" \
       | grep -v '^[[:space:]]*#' \
       | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
+      | sed 's/[[:space:]]*#.*//' \
+      | grep -E "\\bgrep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" \
       | grep -qvE "([$]|[\\\\]b)'"; then
       r02_found=1
     fi
@@ -148,6 +152,8 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
       if grep -E '\bgrep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*(\|[^"$]*)*"' "$file" \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
+        | sed 's/[[:space:]]*#.*//' \
+        | grep -E '\bgrep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*' \
         | grep -qvE '([$]|\\b)"'; then
         r02_found=1
       fi
