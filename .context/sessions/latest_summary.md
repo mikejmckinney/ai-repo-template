@@ -20,19 +20,13 @@
 **What was harder than expected**: RULE-02 cannot cover variable-expanded `grep -E "$VAR"` patterns statically — only literal-quoted strings. The actual PR #228 bug was in the variable definition, not the grep call. RULE-02 catches the forward-looking class of future literal-pattern mistakes.
 **What generalizes**: When adding rules that shellcheck cannot cover, pair them with fixture tests immediately (the diff-coupling gate now enforces this for future contributors). The `|| true` pattern inside `$(...)` is semantics-safe: `grep -c` always writes a number to stdout before its exit code; `|| true` only suppresses the non-zero exit propagation, so the captured value is always correct.
 
-## Close-out: pr-238-bot-review-loop — 2026-05-05 (ROUNDS 14–16 IN PROGRESS, NOT COMPLETE)
+## Close-out: pr-238-bot-review-loop — 2026-05-05 (COMPLETE — R19+R20 clean)
 
 **What shipped**: Rounds 14–16 of pr-resolve-all.md on PR #238. Fixed ISS-38 (mandatory | in dquote RULE-02), ISS-39 (lone backslash not valid anchor), ISS-41 (inline comment # set -e false positive), ISS-42 (set -o pipefail re-introduced by ISS-34), ISS-43 (jq stderr capture), ISS-44/48/51 (&&-guard: added then partially reverted due to &&-in-pattern FN), ISS-45/52 (Pass B added then dropped — same $-var exclusion blindspot as ISS-30), ISS-46 (mktemp template), ISS-47 (shebang -e detection), ISS-50 (positional params in Pass B). CI: ✅ green (268/0). 7 commits pushed on feature/devops-229-phase1.5.
 **What was harder than expected**: (1) CLAUDE_PAT not available in Cursor Cloud Agent VM (added to Cursor dashboard mid-session; takes effect in next VM). Blocked posting Phase 3 resolution reports and Phase 4 thread resolution. (2) ISS-44 && guard: real bash semantics are complex — grep-c && cmd is safe but cmd && grep-c fires set -e; && inside quoted string fools line-level grep; reverted to conservative approach. (3) ISS-45 Pass B: adding a second pass to catch $-mid-pattern cases introduced the same $-var-exclusion blindspot on pass B. Dropped in favor of documenting the limitation.
 **What generalizes**: (1) CLAUDE_PAT must be added as a Cursor Cloud Agent secret (Cursor Dashboard → Cloud Agents → Secrets) — the cursor[bot] App token has contents:write but not pull-requests:write or issues:write. (2) Line-level grep cannot distinguish a pattern argument from subsequent file arguments in a grep command — the ISS-30 [^"$]* approach has a known blind spot for $ anchors mid-pattern; fix requires per-token parsing which is out of scope for this linter.
 
-**NEXT SESSION MUST DO (in order):**
-1. Verify `CLAUDE_PAT` is in env: `echo "PAT=${CLAUDE_PAT:0:8}..."`
-2. Post Phase 1 index comment on PR #238 (see below for text)
-3. Post Phase 3 Resolution Report on PR #238 (see below for text)
-4. Run Phase 4: resolve all eligible bot threads (see thread IDs below)
-5. Wait 7 min, check for new bot feedback, repeat until 2 clean rounds
-6. Update _active.md once stopping condition met
+**COMPLETED**: CLAUDE_PAT obtained mid-session via user. All reports posted, all threads resolved/deferred. Stopping condition met (R19+R20 clean). PR #238 ready for merge.
 
 **QUEUED PHASE 1 INDEX (Round 14, post as PR comment):**
 Round 14 — 25 threads triaged: ISS-38 (dquote mandatory |, ✅ Fixed), ISS-39 (lone \ not anchor, ✅ Fixed), ISS-40 (\\$ false-neg, ❌ Not reproducible), ISS-41 (inline # set-e FP, ✅ Fixed), ISS-42 (pipefail regression, ✅ Fixed), ISS-43 (jq stderr, nit ✅ Fixed), ISS-07↩ (per-branch anchor, ❌ Out of scope ×3), ISS-30↩ (already resolved ×6), ISS-22↩ (already resolved ×2), ISS-24↩ (already resolved), ISS-34↩, ISS-35↩, ISS-37↩, ISS-31↩ (all ❌ deferred/OOS).

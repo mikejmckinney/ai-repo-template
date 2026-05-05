@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 1.5 — PR #238 bot-review loop (Rounds 14–16 in progress)
+**Active Task**: #229 Phase 1.5 — PR #238 bot-review loop COMPLETE
 **File**: N/A
 **Role**: DevOps
-**Blockers**: CLAUDE_PAT not injected in current VM (added to Cursor dashboard — available in next session). All Phase 3 reports + Phase 4 thread resolutions must be posted in next session.
+**Blockers**: None
 **Next 1–3 actions**:
-1. NEW SESSION: verify CLAUDE_PAT available, post all queued reports (see latest_summary.md), resolve fixed bot threads
-2. After 2 clean rounds (no new actionable bot feedback), declare stopping condition met
-3. If CI still green after reports posted: await merge
+1. Await merge of PR #238 (CI green, stopping condition met — R19+R20 clean)
+2. Start Phase 3 (pre-push Critic) on user go-ahead
+3. Issue #237 (_active.md multi-task schema) — awaiting user go-ahead
