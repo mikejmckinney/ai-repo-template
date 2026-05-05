@@ -8,7 +8,7 @@
 >
 > **Scope**: Item 4 of issue [#226](https://github.com/mikejmckinney/ai-repo-template/issues/226)
 > ("Audit `.github/prompts/NN-*.md` for YAML-frontmatter metadata"), broadened
-> per the [PR #226 implementation plan](https://github.com/mikejmckinney/ai-repo-template/issues/226#issuecomment-author)
+> per the [issue #226 implementation plan](https://github.com/mikejmckinney/ai-repo-template/issues/226#issuecomment-4382960698)
 > to cover all `.github/prompts/*.md`, since no `NN-*.md` project prompts
 > ship in this template — they are authored downstream per
 > [`docs/guides/agent-pipeline.md`](../guides/agent-pipeline.md) §"Authoring
