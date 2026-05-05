@@ -47,8 +47,9 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     # as strict-mode.
     # ISS-22/ISS-25: [a-z]*e[a-z]* matches flag clusters containing e (e.g.
     #   set -euo); |pipefail bare alternation removed as redundant and too broad.
+    # ISS-34: also match set -o errexit (long-form equivalent of set -e).
     if grep -vE '^[[:space:]]*#' "$file" \
-      | grep -qE '(^|[^#[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+pipefail)'; then
+      | grep -qE '(^|[^#[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+(pipefail|errexit))'; then
       # Look for grep -c / grep --count not on a line that also contains
       # '|| true' or '|| echo' (which guard the exit code).
       # ISS-12: also match --count long form.
@@ -56,8 +57,9 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
       #   grep -E -c 'pat' (where -c is not the first option token).
       # ISS-15: filter to RULE-01 disable only (not any disable comment).
       while IFS= read -r grep_line; do
-        # ISS-24: if/elif/while consume grep's exit code — not a set -e hazard.
-        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|(^|[[:space:]])(if|elif|while)[[:space:]])'; then
+        # ISS-24: if/elif/while/until consume grep's exit code — not a set -e hazard.
+        # ISS-35: until added alongside while (both consume the loop-condition exit code).
+        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|(^|[[:space:]])(if|elif|while|until)[[:space:]])'; then
           printf 'RULE-01: %s\n' "$file"
           printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
           break
@@ -92,13 +94,13 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     fi
     # Double-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
-    # ISS-18/ISS-20: exclude any pattern containing $ (variable expansions
-    #   cannot be statically checked; RULE-02 only applies to literal strings).
+    # ISS-18/ISS-20/ISS-30: embed $ exclusion into pattern-arg match so that
+    #   grep -E "foo|bar" "$file" is NOT skipped because "$file" contains $.
+    #   [^"$]*(\|[^"$]*)* matches only patterns with no $ in any alternative.
     if [[ $r02_found -eq 0 ]]; then
-      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"]*\|[^"]*"' "$file" \
+      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*(\|[^"$]*)*"' "$file" \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-        | grep -v '"[^"]*[$]' \
         | grep -qvE '([$)\\]|\\b)"'; then
         r02_found=1
       fi
