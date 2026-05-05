@@ -219,6 +219,7 @@ Normalized allow-list (match with `[bot]` stripped and compared case-insensitive
 - `copilot` (the Copilot SWE agent; REST returns `Copilot`, GraphQL returns `copilot`)
 - `chatgpt-codex-connector`
 - `codex` (the shorter form Codex sometimes emits)
+- `cursor` (Cursor Bugbot; REST returns `cursor[bot]`)
 - `claude` — **only when the thread's root comment was authored directly by the `claude[bot]` / `claude` identity** (e.g., Claude's auto-review workflow posted the review). If a human opened the thread and `claude[bot]` merely replied (for example because the human wrote `@claude fix this` mid-thread), the root author is the human and Phase 4 must leave the thread open. The per-thread gate below already enforces "root author is allow-listed" — this bullet is a reminder that the root-author test is what keeps human-initiated dialogues from being silenced.
 
 Worked example: a GraphQL-returned author `gemini-code-assist` → strip `[bot]` (no-op) → lowercase → matches `gemini-code-assist` ✅. A REST-returned author `gemini-code-assist[bot]` → strip `[bot]` → `gemini-code-assist` → lowercase → matches ✅.
