@@ -2,12 +2,13 @@
 # Project-specific shell convention linter (issue #229 Phase 1.5).
 # Encodes runtime-semantics rules that shellcheck cannot catch.
 #
-# RULE-01  Do not use 'grep -c' in scripts with 'set -e' or 'pipefail'.
+# RULE-01  Do not use 'grep -c' in scripts with 'set -e' (errexit).
 #          'grep -c' exits 1 on zero matches, triggering set -e and
-#          aborting the script. Use 'grep ... | wc -l | tr -d " "' instead.
+#          aborting the script. 'pipefail' alone does NOT cause abort.
+#          Use 'grep ... | wc -l | tr -d " "' instead.
 #          Root cause: PR #228 R5→R7 — shellcheck SC2126 *recommended*
 #          'grep -c' as a style improvement; that recommendation is wrong
-#          for scripts that use set -e / pipefail.
+#          for scripts that use set -e / set -o errexit.
 #          Safe pattern: $(grep pattern file | wc -l | tr -d ' ')
 #          If 'grep -c' is genuinely correct (e.g., protected by || true on
 #          the same line), add per-file suppression with a reason comment.
@@ -106,13 +107,13 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
         #   Disable-comment filter runs before sed so suppression annotations
         #   aren't stripped before they're matched.
       done < <({
-        grep -E '(^|[^#[:alnum:]])grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
-        grep -E '(^|[^#[:alnum:]])grep[[:space:]]+-[a-zA-Z]+[[:space:]]+.*(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
+        grep -E '\bgrep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
+        grep -E '\bgrep[[:space:]]+-[a-zA-Z]+[[:space:]]+.*(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
       } | sort -u \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' \
         | sed 's/[[:space:]]*#.*//' \
-        | grep -E 'grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)' || true)
+        | grep -E '\bgrep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)' || true)
     fi
   fi
 
@@ -128,7 +129,7 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     r02_found=0
     # Single-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
-    if grep -E "grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" "$file" \
+    if grep -E "\\bgrep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" "$file" \
       | grep -v '^[[:space:]]*#' \
       | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
       | grep -qvE "([$]|[\\\\]b)'"; then
@@ -144,7 +145,7 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     #   (ISS-45/ISS-52); a per-token parser would be needed to distinguish
     #   $ anchors from $ expansions without quote-aware parsing.
     if [[ $r02_found -eq 0 ]]; then
-      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*(\|[^"$]*)*"' "$file" \
+      if grep -E '\bgrep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*(\|[^"$]*)*"' "$file" \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
         | grep -qvE '([$]|\\b)"'; then
