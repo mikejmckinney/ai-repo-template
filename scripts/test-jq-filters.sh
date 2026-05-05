@@ -30,27 +30,29 @@ FIXTURE_DIR="$JQ_DIR/fixtures"
 PASS=0
 FAIL=0
 FAILED_NAMES=()
+# sHfu: single shared error log, cleaned by trap on exit/interrupt
+ERR_LOG=$(mktemp "${TMPDIR:-/tmp}/jq-test-err.XXXXXX")
+# shellcheck disable=SC2317  # invoked via trap
+cleanup_err_log() { rm -f "$ERR_LOG"; }
+trap cleanup_err_log EXIT
 
 assert_filter() {
   local name="$1" filter="$2" input_file="$3" expected_file="$4"
-  local actual expected err_file
-  err_file=$(mktemp)
-  actual=$(jq -rf "$filter" "$input_file" 2>"$err_file" || printf 'JQ_ERROR')
+  local actual expected
+  actual=$(jq -rf "$filter" "$input_file" 2>"$ERR_LOG" || printf 'JQ_ERROR')
   expected=$(cat "$expected_file")
   if [[ "$actual" == "$expected" ]]; then
     PASS=$((PASS + 1))
     printf '  ✅ %s\n' "$name"
-    rm -f "$err_file"
   else
     FAIL=$((FAIL + 1))
     FAILED_NAMES+=("$name")
     printf '  ❌ %s\n' "$name"
     printf '       expected: %s\n' "$expected"
     printf '       actual:   %s\n' "$actual"
-    if [[ -s "$err_file" ]]; then
-      printf '       error:    %s\n' "$(cat "$err_file")"
+    if [[ -s "$ERR_LOG" ]]; then
+      printf '       error:    %s\n' "$(cat "$ERR_LOG")"
     fi
-    rm -f "$err_file"
   fi
 }
 

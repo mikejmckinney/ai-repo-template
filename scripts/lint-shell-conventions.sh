@@ -13,9 +13,10 @@
 #          the same line), add per-file suppression with a reason comment.
 #
 # RULE-02  In grep -E literal-quoted patterns, '|'-delimited alternatives
-#          must end with an end-of-line anchor ('$'), word-boundary ('\b'),
-#          or a closing group ')' before the closing quote. A lone backslash
-#          is NOT a valid anchor (incomplete escape). Unanchored
+#          must end with an end-of-line anchor ('$') or word-boundary ('\b')
+#          before the closing quote. A lone '\' or closing ')' are NOT valid
+#          anchors: ')' ends a group but does not prevent substring matches
+#          (grep -E '(foo|bar)' still matches 'foo.bak'). Unanchored
 #          alternatives match as substrings of longer strings.
 #          Root cause: PR #228 R7→R8 — an unanchored _PLACEHOLDER_EXCLUDE
 #          regex allowed 'coordination.md.bak' to match the exclude list
@@ -25,6 +26,30 @@
 #
 # Inline suppression (use sparingly; reason is required):
 #   # shell-conventions:disable=RULE-NN reason: <why>
+#
+# Known limitations (deliberate; not bugs to fix):
+#
+#   KL-01  RULE-01 cannot detect 'grep -c' used safely via '&&' when '&&'
+#          appears inside a quoted pattern ('foo&&bar'). Line-level grep
+#          cannot distinguish shell operators from quoted text. Use || true
+#          or 'if grep -c ...' instead.
+#
+#   KL-02  RULE-02 only checks the final alternative's anchor, not every
+#          branch. 'foo|bar$|baz' (baz unanchored) is not caught when the
+#          double-quoted pattern also contains a dollar sign (e.g. "$file"
+#          on the same line). Per-token parsing is required; out of scope.
+#
+#   KL-03  RULE-02 anchor check is line-wide. A second quoted string on
+#          the same line (e.g. 'other$') that happens to end with a valid
+#          anchor will cause the whole line to pass even if the grep pattern
+#          is unanchored. Per-token isolation is required; out of scope.
+#
+#   KL-04  RULE-01/02 do not cover 'git grep' which has the same exit-code
+#          semantics as grep. Add suppression if needed.
+#
+#   KL-05  This script uses 'set -uo pipefail' without '-e'. Adding '-e'
+#          requires suppressing RULE-01 on the linter's own grep calls.
+#          Deferred as a separate cleanup task.
 #
 # Usage:  bash scripts/lint-shell-conventions.sh [<path> ...]
 #         Defaults to searching scripts/ directory.
@@ -76,12 +101,18 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
           printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
           break
         fi
+        # ISS-55: strip inline comments then re-filter so 'cmd # grep -c' is
+        #   excluded — after stripping it becomes 'cmd' with no grep invocation.
+        #   Disable-comment filter runs before sed so suppression annotations
+        #   aren't stripped before they're matched.
       done < <({
         grep -E '(^|[^#[:alnum:]])grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
         grep -E '(^|[^#[:alnum:]])grep[[:space:]]+-[a-zA-Z]+[[:space:]]+.*(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
       } | sort -u \
         | grep -v '^[[:space:]]*#' \
-        | grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' || true)
+        | grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' \
+        | sed 's/[[:space:]]*#.*//' \
+        | grep -E 'grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)' || true)
     fi
   fi
 
@@ -89,21 +120,18 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
   if ! grep -qE '#[[:space:]]*shell-conventions:disable=RULE-02' "$file"; then
     # Detect: grep -E 'X|Y' (single-quoted) or grep -E "X|Y" (double-quoted)
     # where the last token before the closing quote is not a valid anchor.
-    # Valid anchors: $ (end-of-line), ) (closing group),
-    #                \b (two-char word-boundary — last char is 'b', preceded by '\').
+    # Valid anchors: $ (end-of-line), \b (two-char word-boundary).
+    # ISS-39: lone '\' removed — incomplete escape, not a valid anchor.
+    # ISS-56: ')' removed — closing group does NOT prevent substring matches.
+    #   grep -E '(foo|bar)' still matches 'foo.bak'; only $ or \b anchor.
     # Two-step approach: find candidate lines, then subtract valid endings.
-    # The original single-regex form checked only a single char before the
-    # quote; it false-positived on \b because the last char 'b' is not one
-    # of '$', ')', or '\'.
-    # ISS-39: lone '\' removed from valid-anchor list — a trailing backslash
-    #   is not a valid grep -E anchor (incomplete escape); only '\b' is valid.
     r02_found=0
     # Single-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
     if grep -E "grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" "$file" \
       | grep -v '^[[:space:]]*#' \
       | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-      | grep -qvE "([$)]|[\\\\]b)'"; then
+      | grep -qvE "([$]|[\\\\]b)'"; then
       r02_found=1
     fi
     # Double-quoted patterns (ISS-11: filter comment lines before checking)
@@ -119,12 +147,12 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
       if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*(\|[^"$]*)*"' "$file" \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-        | grep -qvE '([$)]|\\b)"'; then
+        | grep -qvE '([$]|\\b)"'; then
         r02_found=1
       fi
     fi
     if [[ $r02_found -eq 1 ]]; then
-      printf 'RULE-02: %s — grep -E pattern with "|" alternatives lacks end-anchor ($, \\b, or ) before closing quote\n' "$file"
+      printf 'RULE-02: %s — grep -E pattern with "|" alternatives lacks end-anchor ($ or \\b) before closing quote\n' "$file"
       printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
     fi
   fi

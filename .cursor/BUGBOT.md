@@ -91,6 +91,29 @@ List exact commands the author should run (or confirm already ran):
 - Be specific: include file paths and line numbers where possible
 - Focus on the diff, not the entire codebase
 
+## `lint-shell-conventions.sh` known limitations (skip these findings)
+
+These are deliberate design tradeoffs documented in `scripts/lint-shell-conventions.sh`'s
+"Known limitations" header block (KL-01 through KL-05). Do **not** flag them. The
+corresponding `KL-NN` tag is the canonical reference.
+
+- **KL-01** — RULE-01 `&&` guard: `&&` inside a quoted pattern (`grep -c 'foo&&bar'`)
+  fools the line-level safe-guard check. Quote-aware parsing is out of scope.
+- **KL-02** — RULE-02 only checks the final alternative's anchor for double-quoted
+  patterns containing `$`. `"foo|bar$|baz"` with `"$file"` on the same line is not
+  caught. Per-token parsing is out of scope.
+- **KL-03** — RULE-02 anchor check is line-wide. A second quoted string on the line
+  ending with a valid anchor bypasses the check. Per-token isolation is out of scope.
+- **KL-04** — `git grep -c` is not covered by RULE-01. Extremely narrow edge case.
+- **KL-05** — The linter itself uses `set -uo pipefail` without `-e`. Adding `-e`
+  requires RULE-01 suppressions throughout the linter body. Separate cleanup task.
+  Do **not** flag `set -uo pipefail` in `scripts/lint-shell-conventions.sh` as missing `-e`.
+
+Additionally: the `find ... | while IFS= read -r` pattern in this linter does NOT need
+`-print0`/`read -d ''`. Shell script filenames in this repo never contain spaces or
+newlines; the pattern is safe and consistent with all other scripts in this codebase.
+Do **not** flag it.
+
 ## Project conventions (skip these classes of finding)
 
 The following patterns have been deliberated and are working as intended.
