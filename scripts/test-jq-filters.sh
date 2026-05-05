@@ -15,6 +15,13 @@
 
 set -euo pipefail
 
+# Guard: jq must be installed — tests cannot run without it and a silent
+# 0-assertion pass (PASS=0, FAIL=0) is not a useful result.
+if ! command -v jq &>/dev/null; then
+  printf '  ❌ jq not installed — cannot run filter tests\n'
+  exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 JQ_DIR="$REPO_ROOT/scripts/lib/jq"

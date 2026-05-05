@@ -914,6 +914,30 @@ else
   fail "scripts/lib/jq/ missing or empty (issue #229 Phase 1.5b)"
 fi
 
+# ISS-09: inline relay-cycle-count filter in agent-relay-reviews.yml must stay
+# in sync with the canonical scripts/lib/jq/relay-cycle-count.jq.
+# The relay job has no actions/checkout so jq -rf cannot read the file at
+# runtime; the inline copy is intentional. This check prevents silent drift.
+_RELAY_JQ="scripts/lib/jq/relay-cycle-count.jq"
+_RELAY_WF=".github/workflows/agent-relay-reviews.yml"
+if [[ -f "$_RELAY_JQ" ]] && [[ -f "$_RELAY_WF" ]]; then
+  _canonical=$(grep -v '^#' "$_RELAY_JQ" | grep -v '^[[:space:]]*$')
+  _inline=$(grep 'startswith("📋' "$_RELAY_WF" \
+    | grep '| length' \
+    | sed 's/.*jq -r //' \
+    | sed "s/^'//; s/' \\\\$//; s/'$//")
+  if [[ "$_canonical" == "$_inline" ]]; then
+    pass "relay-cycle-count.jq matches inline filter in agent-relay-reviews.yml (ISS-09)"
+  else
+    fail "relay-cycle-count.jq is out of sync with inline filter in agent-relay-reviews.yml (ISS-09)"
+    printf '  canonical: %s\n' "$_canonical"
+    printf '  inline:    %s\n' "$_inline"
+  fi
+else
+  fail "$_RELAY_JQ or $_RELAY_WF missing (ISS-09 sync check)"
+fi
+unset _RELAY_JQ _RELAY_WF _canonical _inline
+
 for reviewer_file in ".github/agents/judge.agent.md" ".cursor/BUGBOT.md" ".gemini/styleguide.md"; do
   if grep -qi 'diff-coupling' "$reviewer_file" 2>/dev/null; then
     pass "$reviewer_file has diff-coupling gate (issue #229 Phase 1.5)"
