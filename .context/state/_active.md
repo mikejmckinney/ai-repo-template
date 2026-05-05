@@ -12,6 +12,6 @@
 **Role**: DevOps
 **Blockers**: None
 **Next 1–3 actions**:
-1. Await merge of PR #238 (CI green, stopping condition met — R19+R20 clean)
+1. Await merge of PR #238 (CI green, R22+R23 clean, 0 open threads)
 2. Start Phase 3 (pre-push Critic) on user go-ahead
 3. Issue #237 (_active.md multi-task schema) — awaiting user go-ahead
