@@ -47,17 +47,24 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     # as strict-mode.
     if grep -vE '^[[:space:]]*#' "$file" \
          | grep -qE '(^|[^#[:alnum:]])(set[[:space:]]+-[a-z]*e([^a-z]|$)|set[[:space:]]+-o[[:space:]]+pipefail|pipefail)'; then
-      # Look for grep -c / grep --count (ISS-12) not on a line that also
-      # contains '|| true' or '|| echo' (which guard the exit code).
+      # Look for grep -c / grep --count not on a line that also contains
+      # '|| true' or '|| echo' (which guard the exit code).
+      # ISS-12: also match --count long form.
+      # ISS-13: two-step detection catches split option forms like
+      #   grep -E -c 'pat' (where -c is not the first option token).
+      # ISS-15: filter to RULE-01 disable only (not any disable comment).
       while IFS= read -r grep_line; do
         if ! printf '%s' "$grep_line" | grep -qE '\|\|[[:space:]]*(true|echo|:)'; then
           printf 'RULE-01: %s\n' "$file"
           printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
           break
         fi
-      done < <(grep -E '(^|[^#[:alnum:]])grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file" \
-                 | grep -v '^[[:space:]]*#' \
-                 | grep -v '#[[:space:]]*shell-conventions:disable' || true)
+      done < <({ \
+          grep -E '(^|[^#[:alnum:]])grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"; \
+          grep -E '(^|[^#[:alnum:]])grep[[:space:]]+-[a-zA-Z]+[[:space:]]+.*(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"; \
+        } | sort -u \
+          | grep -v '^[[:space:]]*#' \
+          | grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' || true)
     fi
   fi
 
@@ -73,15 +80,17 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     # of '$', ')', or '\'.
     r02_found=0
     # Single-quoted patterns (ISS-11: filter comment lines before checking)
-    if grep -E "grep[[:space:]]+-[a-zA-Z]*E[[:space:]]+'[^']*\|[^']*'" "$file" \
+    # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
+    if grep -E "grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" "$file" \
          | grep -v '^[[:space:]]*#' \
          | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
          | grep -qvE "([\$\)\\\\]|\\\\b)'"; then
       r02_found=1
     fi
     # Double-quoted patterns (ISS-11: filter comment lines before checking)
+    # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
     if [[ $r02_found -eq 0 ]]; then
-      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[[:space:]]+"[^"]*\|[^"]*"' "$file" \
+      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"]*\|[^"]*"' "$file" \
            | grep -v '^[[:space:]]*#' \
            | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
            | grep -qvE '([$)\\]|\\b)"'; then
