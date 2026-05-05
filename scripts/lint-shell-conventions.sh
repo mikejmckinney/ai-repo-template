@@ -38,95 +38,95 @@ VIOLATION_FILE=$(mktemp)
 cleanup() { rm -f "$VIOLATION_FILE"; }
 trap cleanup EXIT
 
-find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type f 2>/dev/null \
-  | sort | while IFS= read -r file; do
+find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type f 2>/dev/null |
+	sort | while IFS= read -r file; do
 
-  # ── RULE-01: grep -c with set -e / pipefail ──────────────────────────────
-  if ! grep -qE '#[[:space:]]*shell-conventions:disable=RULE-01' "$file"; then
-    # ISS-10: exclude comment lines before checking for strict-mode signals
-    # so a script with only a *comment* mentioning 'set -e' is not treated
-    # as strict-mode.
-    # ISS-22/ISS-25: [a-z]*e[a-z]* matches flag clusters containing e (e.g.
-    #   set -euo); |pipefail bare alternation removed as redundant and too broad.
-    # ISS-34: also match set -o errexit (long-form equivalent of set -e).
-    # ISS-42: pipefail|errexit → errexit only; pipefail alone does not cause
-    #   grep -c to abort; only set -e / set -o errexit triggers that.
-    # ISS-41: strip inline comments (e.g. 'cmd # set -e') before matching
-    #   so 'set -e' in a trailing comment does not falsely trigger RULE-01.
-    if grep -vE '^[[:space:]]*#' "$file" \
-      | sed 's/[[:space:]]*#.*//' \
-      | grep -qE '(^|[^[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+errexit)'; then
-      # Look for grep -c / grep --count not on a line that also contains
-      # '|| true' or '|| echo' (which guard the exit code).
-      # ISS-12: also match --count long form.
-      # ISS-13: two-step detection catches split option forms like
-      #   grep -E -c 'pat' (where -c is not the first option token).
-      # ISS-15: filter to RULE-01 disable only (not any disable comment).
-      while IFS= read -r grep_line; do
-        # ISS-24: if/elif/while/until consume grep's exit code — not a set -e hazard.
-        # ISS-35: until added alongside while (both consume the loop-condition exit code).
-        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|(^|[[:space:]])(if|elif|while|until)[[:space:]])'; then
-          printf 'RULE-01: %s\n' "$file"
-          printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
-          break
-        fi
-      done < <({
-        grep -E '(^|[^#[:alnum:]])grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
-        grep -E '(^|[^#[:alnum:]])grep[[:space:]]+-[a-zA-Z]+[[:space:]]+.*(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
-      } | sort -u \
-        | grep -v '^[[:space:]]*#' \
-        | grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' || true)
-    fi
-  fi
+	# ── RULE-01: grep -c with set -e / pipefail ──────────────────────────────
+	if ! grep -qE '#[[:space:]]*shell-conventions:disable=RULE-01' "$file"; then
+		# ISS-10: exclude comment lines before checking for strict-mode signals
+		# so a script with only a *comment* mentioning 'set -e' is not treated
+		# as strict-mode.
+		# ISS-22/ISS-25: [a-z]*e[a-z]* matches flag clusters containing e (e.g.
+		#   set -euo); |pipefail bare alternation removed as redundant and too broad.
+		# ISS-34: also match set -o errexit (long-form equivalent of set -e).
+		# ISS-42: pipefail|errexit → errexit only; pipefail alone does not cause
+		#   grep -c to abort; only set -e / set -o errexit triggers that.
+		# ISS-41: strip inline comments (e.g. 'cmd # set -e') before matching
+		#   so 'set -e' in a trailing comment does not falsely trigger RULE-01.
+		if grep -vE '^[[:space:]]*#' "$file" |
+			sed 's/[[:space:]]*#.*//' |
+			grep -qE '(^|[^[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+errexit)'; then
+			# Look for grep -c / grep --count not on a line that also contains
+			# '|| true' or '|| echo' (which guard the exit code).
+			# ISS-12: also match --count long form.
+			# ISS-13: two-step detection catches split option forms like
+			#   grep -E -c 'pat' (where -c is not the first option token).
+			# ISS-15: filter to RULE-01 disable only (not any disable comment).
+			while IFS= read -r grep_line; do
+				# ISS-24: if/elif/while/until consume grep's exit code — not a set -e hazard.
+				# ISS-35: until added alongside while (both consume the loop-condition exit code).
+				if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|(^|[[:space:]])(if|elif|while|until)[[:space:]])'; then
+					printf 'RULE-01: %s\n' "$file"
+					printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
+					break
+				fi
+			done < <({
+				grep -E '(^|[^#[:alnum:]])grep[[:space:]]+(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
+				grep -E '(^|[^#[:alnum:]])grep[[:space:]]+-[a-zA-Z]+[[:space:]]+.*(-[a-zA-Z]*c[a-zA-Z]*|--count)([[:space:]]|$)' "$file"
+			} | sort -u |
+				grep -v '^[[:space:]]*#' |
+				grep -v '#[[:space:]]*shell-conventions:disable=RULE-01' || true)
+		fi
+	fi
 
-  # ── RULE-02: unanchored alternatives in grep -E literal patterns ──────────
-  if ! grep -qE '#[[:space:]]*shell-conventions:disable=RULE-02' "$file"; then
-    # Detect: grep -E 'X|Y' (single-quoted) or grep -E "X|Y" (double-quoted)
-    # where the last token before the closing quote is not a valid anchor.
-    # Valid anchors: $ (end-of-line), ) (closing group),
-    #                \b (two-char word-boundary — last char is 'b', preceded by '\').
-    # Two-step approach: find candidate lines, then subtract valid endings.
-    # The original single-regex form checked only a single char before the
-    # quote; it false-positived on \b because the last char 'b' is not one
-    # of '$', ')', or '\'.
-    # ISS-39: lone '\' removed from valid-anchor list — a trailing backslash
-    #   is not a valid grep -E anchor (incomplete escape); only '\b' is valid.
-    r02_found=0
-    # Single-quoted patterns (ISS-11: filter comment lines before checking)
-    # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
-    if grep -E "grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" "$file" \
-      | grep -v '^[[:space:]]*#' \
-      | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-      | grep -qvE "([$)]|[\\\\]b)'"; then
-      r02_found=1
-    fi
-    # Double-quoted patterns (ISS-11: filter comment lines before checking)
-    # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
-    # ISS-18/ISS-20/ISS-30: embed $ exclusion into pattern-arg match so that
-    #   grep -E "foo|bar" "$file" is NOT skipped because "$file" contains $.
-    # ISS-38: mandatory first \| so grep -E "foo" (no alternation) is NOT flagged.
-    #   [^"$]*\|[^"$]*(\|[^"$]*)* requires at least one | before the closing quote.
-    if [[ $r02_found -eq 0 ]]; then
-      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*(\|[^"$]*)*"' "$file" \
-        | grep -v '^[[:space:]]*#' \
-        | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-        | grep -qvE '([$)]|\\b)"'; then
-        r02_found=1
-      fi
-    fi
-    if [[ $r02_found -eq 1 ]]; then
-      printf 'RULE-02: %s — grep -E pattern with "|" alternatives lacks end-anchor ($, \\b, or ) before closing quote\n' "$file"
-      printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
-    fi
-  fi
+	# ── RULE-02: unanchored alternatives in grep -E literal patterns ──────────
+	if ! grep -qE '#[[:space:]]*shell-conventions:disable=RULE-02' "$file"; then
+		# Detect: grep -E 'X|Y' (single-quoted) or grep -E "X|Y" (double-quoted)
+		# where the last token before the closing quote is not a valid anchor.
+		# Valid anchors: $ (end-of-line), ) (closing group),
+		#                \b (two-char word-boundary — last char is 'b', preceded by '\').
+		# Two-step approach: find candidate lines, then subtract valid endings.
+		# The original single-regex form checked only a single char before the
+		# quote; it false-positived on \b because the last char 'b' is not one
+		# of '$', ')', or '\'.
+		# ISS-39: lone '\' removed from valid-anchor list — a trailing backslash
+		#   is not a valid grep -E anchor (incomplete escape); only '\b' is valid.
+		r02_found=0
+		# Single-quoted patterns (ISS-11: filter comment lines before checking)
+		# ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
+		if grep -E "grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" "$file" |
+			grep -v '^[[:space:]]*#' |
+			grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' |
+			grep -qvE "([$)]|[\\\\]b)'"; then
+			r02_found=1
+		fi
+		# Double-quoted patterns (ISS-11: filter comment lines before checking)
+		# ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
+		# ISS-18/ISS-20/ISS-30: embed $ exclusion into pattern-arg match so that
+		#   grep -E "foo|bar" "$file" is NOT skipped because "$file" contains $.
+		# ISS-38: mandatory first \| so grep -E "foo" (no alternation) is NOT flagged.
+		#   [^"$]*\|[^"$]*(\|[^"$]*)* requires at least one | before the closing quote.
+		if [[ $r02_found -eq 0 ]]; then
+			if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*(\|[^"$]*)*"' "$file" |
+				grep -v '^[[:space:]]*#' |
+				grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' |
+				grep -qvE '([$)]|\\b)"'; then
+				r02_found=1
+			fi
+		fi
+		if [[ $r02_found -eq 1 ]]; then
+			printf 'RULE-02: %s — grep -E pattern with "|" alternatives lacks end-anchor ($, \\b, or ) before closing quote\n' "$file"
+			printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
+		fi
+	fi
 
 done
 
 VIOLATIONS=$(wc -l <"$VIOLATION_FILE" | tr -d ' ')
 if [[ "$VIOLATIONS" -eq 0 ]]; then
-  printf 'lint-shell-conventions: all checks passed.\n'
-  exit 0
+	printf 'lint-shell-conventions: all checks passed.\n'
+	exit 0
 else
-  printf 'lint-shell-conventions: %d violation(s) found.\n' "$VIOLATIONS"
-  exit 1
+	printf 'lint-shell-conventions: %d violation(s) found.\n' "$VIOLATIONS"
+	exit 1
 fi
