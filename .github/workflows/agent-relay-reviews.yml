@@ -211,7 +211,12 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
-          relay_count=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments 2>/dev/null \
+          # ISS-36: capture gh output separately before piping to jq.
+          # Under pipefail, if gh exits non-zero after writing JSON, the pipeline
+          # fails even though jq succeeded, firing || echo "0" a second time and
+          # producing "2\n0" rather than "2". Two-step avoids the double output.
+          _gh_out=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json comments 2>/dev/null) || true
+          relay_count=$(echo "$_gh_out" \
             | jq -r '[.comments[] | select(.body | sub("^[[:space:]]+"; "") | startswith("📋 **Review Relay"))] | length' \
             2>/dev/null || echo "0")
 
