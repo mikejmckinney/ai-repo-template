@@ -54,7 +54,8 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
       #   grep -E -c 'pat' (where -c is not the first option token).
       # ISS-15: filter to RULE-01 disable only (not any disable comment).
       while IFS= read -r grep_line; do
-        if ! printf '%s' "$grep_line" | grep -qE '\|\|[[:space:]]*(true|echo|:)'; then
+        # ISS-24: if/elif/while consume grep's exit code — not a set -e hazard.
+        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|(^|[[:space:]])(if|elif|while)[[:space:]])'; then
           printf 'RULE-01: %s\n' "$file"
           printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
           break
