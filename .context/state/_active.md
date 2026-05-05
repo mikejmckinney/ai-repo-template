@@ -12,6 +12,6 @@
 **Role**: architect
 **Blockers**: None
 **Next 1–3 actions**:
-1. Address bot review findings on PR #239 (pr-resolve-all.md)
-2. Await CI green + bot threads resolved or deferred
-3. If audit accepted, file separate issue for Finding 5 (doc-sync rule for shared-prompt list)
+1. Await merge of PR #239 (CI green, 0 unresolved bot threads — stop condition met)
+2. File separate issue for Finding 5 (doc-sync rule for shared-prompt list)
+3. Close out task_226-pr4 and update latest_summary.md
