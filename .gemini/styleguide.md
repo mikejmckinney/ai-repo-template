@@ -132,6 +132,61 @@ If tests are missing or insufficient:
 - Be specific: include file paths and line numbers where possible
 - Focus on the diff, not the entire codebase
 
+## Meta: deduplicate against existing review threads
+
+Before flagging an issue, scan the PR's existing review threads (open AND
+resolved). The goal is to suppress repeat findings that have already been
+triaged in a prior round of this PR.
+
+- If the same issue on the same `file:line` is already present in any thread
+  (open or resolved), do **not** re-report it. Reply on the existing thread
+  if you have new information; otherwise skip.
+- Skip any issue whose existing thread contains a reply matching the literal
+  prefix `Deferred —` (the deferral marker emitted by
+  `.github/prompts/pr-resolve-all.md` Phase 4). That issue has been triaged
+  as out-of-scope, not-reproducible, or a known limitation; re-raising it is
+  noise.
+- A finding that is genuinely *new information* on the same line (a
+  different bug, not the same bug from a different angle) is not a
+  duplicate. When in doubt, prefer skipping over re-raising.
+
+## `lint-shell-conventions.sh` known limitations (skip these findings)
+
+These are deliberate design tradeoffs documented in `scripts/lint-shell-conventions.sh`'s
+"Known limitations" header block (KL-01 through KL-05). Do **not** flag them at any
+severity. The corresponding `KL-NN` tag is the canonical reference.
+
+- **KL-01** — RULE-01 `&&` guard: `&&` inside a quoted pattern (`grep -c 'foo&&bar'`)
+  fools the line-level safe-guard check. Quote-aware parsing is out of scope.
+- **KL-02** — RULE-02 only checks the final alternative's anchor for double-quoted
+  patterns containing `$`. `"foo|bar$|baz"` with `"$file"` on the same line is not
+  caught. Per-token parsing is out of scope.
+- **KL-03** — RULE-02 anchor check is line-wide. A second quoted string on the line
+  ending with a valid anchor bypasses the check. Per-token isolation is out of scope.
+- **KL-04** — `git grep -c` is not covered by RULE-01. Narrow edge case; not flagged.
+- **KL-05** — The linter itself uses `set -uo pipefail` without `-e`. Adding `-e`
+  requires RULE-01 suppressions throughout the linter body. Separate cleanup task.
+  Do **not** flag `set -uo pipefail` in `scripts/lint-shell-conventions.sh` as missing `-e`.
+- **KL-06** — RULE-02 candidate regex requires a space between the `-E` flag and the
+  quoted pattern. Invocations with other flags between `-E` and the pattern
+  (`grep -E -i 'p|q'`) or no space (`grep -E'p|q'`) are not detected. Per-token
+  reordering detection is out of scope. Do **not** flag this coverage gap.
+- **KL-07** — RULE-01 `_pre_grep` extraction uses `sed 's/\bgrep\b.*//'` (GNU sed).
+  (a) Not POSIX/BSD portable — this linter targets Linux CI. Do **not** flag the
+  `\b` in sed as a portability issue. (b) Multi-command false negative:
+  `grep -c foo || true; grep -c bar` — the second unguarded `grep` is not detected.
+  Per-command splitting is out of scope.
+- **KL-08** — `scripts/test-lint-shell-conventions.sh` does not exist. Creating full
+  RULE-01/RULE-02 fixture tests is a follow-up task. Test.sh L899-908 validates wiring.
+  Do **not** flag the missing test script as a diff-coupling gate violation.
+
+Additionally, the following patterns in `scripts/lint-shell-conventions.sh` are
+intentional. Do **not** flag them:
+- `find ... | while IFS= read -r` without `-print0`/`read -d ''`: script filenames
+  in this repo never contain spaces or newlines; the pattern is safe and consistent.
+- `mktemp "${TMPDIR:-/tmp}/shell-linter.XXXXXX"`: the template form is already used.
+- `set -uo pipefail` without `-e`: covered by KL-05 above.
+
 ## Project conventions (skip these classes of finding)
 
 The following patterns have been deliberated and are working as intended.
@@ -209,6 +264,10 @@ Claims of fact about the repo in the PR description ("the repo does X", "this ma
 ### Plan-revision sync (ADR-011, advisory in v1)
 If the linked issue has a "Plan revision" comment posted *after* this PR was opened, the PR body's `## Plan` section must include that revision's link and a refreshed "Latest in 1–2 sentences" line, AND the `## Plan revision sync` checklist must have the matching box ticked. Flag **High** (REQUEST_CHANGES; do not BLOCK in v1) when missing.
 (canonical: `.github/agents/judge.agent.md` § "Plan-revision sync")
+
+### Diff-coupling gate for `scripts/*.sh` (issue #229 Phase 1.5)
+Any PR diff that adds or modifies `grep -c`, `wc -l`, `$?`, `pipefail`, or `set -e` logic inside `scripts/*.sh` must include a corresponding change in `scripts/test-*.sh`. Exit-code behaviour under `set -e` is invisible to shellcheck and must be covered by a fixture. Also flag when `scripts/*.sh` or workflow `run:` blocks introduce non-trivial jq filters (multi-pipe, `select`, `sub`, `reduce`, or `@base64`) without an extracted `scripts/lib/jq/<name>.jq` counterpart with matching fixtures. Flag **High** (REQUEST_CHANGES).
+(canonical: `.github/agents/judge.agent.md` § "Diff-coupling gate for `scripts/*.sh`")
 
 ## Response Guidelines
 

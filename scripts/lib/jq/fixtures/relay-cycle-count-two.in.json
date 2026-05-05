@@ -1,0 +1,8 @@
+{
+  "comments": [
+    {"body": "Regular comment before the relay."},
+    {"body": "📋 **Review Relay — cycle 1** (via agent-relay-reviews.yml)\n\nHere are the unresolved bot findings:\n\n**gemini-code-assist** › `scripts/verify-env.sh:42`\n> The variable `_PLACEHOLDER_EXCLUDE` may allow substring matches.\n"},
+    {"body": "📋 **Review Relay — cycle 2** (via agent-relay-reviews.yml)\n\nHere are the unresolved bot findings:\n\n**gemini-code-assist** › `scripts/verify-env.sh:42`\n> Still flagging the regex issue.\n"},
+    {"body": "Regular comment after the relay."}
+  ]
+}

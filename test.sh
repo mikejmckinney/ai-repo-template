@@ -893,6 +893,93 @@ fi
 
 echo ""
 
+# --- Phase 1.5 invariants (issue #229 Phase 1.5) ---
+echo "Checking Phase 1.5 components (issue #229 Phase 1.5)..."
+
+if [[ -f "scripts/lint-shell-conventions.sh" ]] && [[ -x "scripts/lint-shell-conventions.sh" ]]; then
+  pass "scripts/lint-shell-conventions.sh exists and is executable"
+else
+  fail "scripts/lint-shell-conventions.sh missing or not executable (issue #229 Phase 1.5c)"
+fi
+
+if grep -q 'bash scripts/lint-shell-conventions.sh' "$LF_FILE" 2>/dev/null; then
+  pass "$LF_FILE has lint-shell-conventions run step (issue #229 Phase 1.5c)"
+else
+  fail "$LF_FILE missing lint-shell-conventions run step (issue #229 Phase 1.5c)"
+fi
+
+if [[ -d "scripts/lib/jq" ]] && compgen -G "scripts/lib/jq/*.jq" >/dev/null 2>&1; then
+  pass "scripts/lib/jq/ directory exists with at least one .jq filter"
+else
+  fail "scripts/lib/jq/ missing or empty (issue #229 Phase 1.5b)"
+fi
+
+# ISS-09: inline relay-cycle-count filter in agent-relay-reviews.yml must stay
+# in sync with the canonical scripts/lib/jq/relay-cycle-count.jq.
+# The relay job has no actions/checkout so jq -rf cannot read the file at
+# runtime; the inline copy is intentional. This check prevents silent drift.
+_RELAY_JQ="scripts/lib/jq/relay-cycle-count.jq"
+_RELAY_WF=".github/workflows/agent-relay-reviews.yml"
+if [[ -f "$_RELAY_JQ" ]] && [[ -f "$_RELAY_WF" ]]; then
+  _canonical=$(grep -v '^#' "$_RELAY_JQ" | grep -v '^[[:space:]]*$')
+  _inline=$(grep 'startswith("📋' "$_RELAY_WF" \
+    | grep '| length' \
+    | sed 's/.*jq -r //' \
+    | sed "s/^'//; s/' \\\\$//; s/'$//")
+  if [[ "$_canonical" == "$_inline" ]]; then
+    pass "relay-cycle-count.jq matches inline filter in agent-relay-reviews.yml (ISS-09)"
+  else
+    fail "relay-cycle-count.jq is out of sync with inline filter in agent-relay-reviews.yml (ISS-09)"
+    printf '  canonical: %s\n' "$_canonical"
+    printf '  inline:    %s\n' "$_inline"
+  fi
+else
+  fail "$_RELAY_JQ or $_RELAY_WF missing (ISS-09 sync check)"
+fi
+unset _RELAY_JQ _RELAY_WF _canonical _inline
+
+for reviewer_file in ".github/agents/judge.agent.md" ".cursor/BUGBOT.md" ".gemini/styleguide.md"; do
+  if grep -qi 'diff-coupling' "$reviewer_file" 2>/dev/null; then
+    pass "$reviewer_file has diff-coupling gate (issue #229 Phase 1.5)"
+  else
+    fail "$reviewer_file missing diff-coupling gate (issue #229 Phase 1.5)"
+  fi
+done
+
+echo ""
+echo "Running jq filter unit tests..."
+if [[ -f scripts/test-jq-filters.sh ]]; then
+  JQ_LOG=$(mktemp)
+  if bash scripts/test-jq-filters.sh >"$JQ_LOG" 2>&1; then
+    jq_passed=$(grep -c '^  ✅ ' "$JQ_LOG" || true)
+    pass "scripts/test-jq-filters.sh ($jq_passed assertions passed)"
+  else
+    fail "scripts/test-jq-filters.sh failed (see log below)"
+    cat "$JQ_LOG"
+  fi
+  rm -f "$JQ_LOG"
+else
+  fail "scripts/test-jq-filters.sh missing"
+fi
+
+echo ""
+echo "Running verify-env.sh fixture tests..."
+if [[ -f scripts/test-verify-env.sh ]]; then
+  VE_LOG=$(mktemp)
+  if bash scripts/test-verify-env.sh >"$VE_LOG" 2>&1; then
+    ve_passed=$(grep -c '^  ✅ ' "$VE_LOG" || true)
+    pass "scripts/test-verify-env.sh ($ve_passed assertions passed)"
+  else
+    fail "scripts/test-verify-env.sh failed (see log below)"
+    cat "$VE_LOG"
+  fi
+  rm -f "$VE_LOG"
+else
+  fail "scripts/test-verify-env.sh missing"
+fi
+
+echo ""
+
 # --- pr-iteration-stats.sh smoke tests (issue #229 Phase 1) ---
 echo "Running pr-iteration-stats.sh smoke tests..."
 if [[ -f scripts/test-pr-iteration-stats.sh ]]; then

@@ -268,7 +268,7 @@ if [[ -f "$LIVE_OWNERSHIP" ]]; then
   if [[ "$parser_roles" == "$table_roles" ]]; then
     PASS=$((PASS + 1))
     printf '  ✅ parser ROLES list matches roles defined in %s (%d role(s))\n' \
-      "$LIVE_OWNERSHIP" "$(printf '%s\n' "$parser_roles" | grep -c .)"
+      "$LIVE_OWNERSHIP" "$(printf '%s\n' "$parser_roles" | grep -c . || true)"
   else
     FAIL=$((FAIL + 1))
     FAILED_NAMES+=("role-list sync: parser vs ownership table")

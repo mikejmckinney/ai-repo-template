@@ -1,0 +1,7 @@
+{
+  "comments": [
+    {"body": "  📋 **Review Relay — cycle 1** (leading whitespace — tests the sub() strip)\n\nFindings:\n\n**gemini-code-assist** › `docs/guides/agent-best-practices.md:15`\n> Minor style suggestion.\n"},
+    {"body": "> 📋 **Review Relay — cycle 1** (this is a quoted relay comment; should NOT be counted)"},
+    {"body": "Regular follow-up comment."}
+  ]
+}

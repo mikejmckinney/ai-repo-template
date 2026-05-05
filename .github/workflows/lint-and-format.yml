@@ -135,6 +135,17 @@ jobs:
       # =====================================================
 
       # =====================================================
+      # SHELL CONVENTION LINTING (issue #229 Phase 1.5c)
+      # =====================================================
+      - name: Run lint-shell-conventions
+        # Encodes project-specific rules that shellcheck cannot catch:
+        # RULE-01: grep -c in set -e/pipefail scripts without || true
+        #          (grep -c exits 1 on 0 matches, killing set -e scripts)
+        # RULE-02: grep -E literal patterns with | alternatives that do
+        #          not end with $ or \ (unanchored substring matching)
+        run: bash scripts/lint-shell-conventions.sh scripts/
+
+      # =====================================================
       # MARKDOWN LINTING (continue-on-error for template use)
       # =====================================================
       - name: Lint Markdown files

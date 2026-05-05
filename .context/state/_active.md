@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #237 — multi-task schema for _active.md (awaiting go-ahead)
+**Active Task**: #229 Phase 1.5 — PR #238 bot-review loop COMPLETE
 **File**: N/A
-**Role**: N/A — awaiting user go-ahead
-**Blockers**: User has not yet said to begin #237 implementation
+**Role**: DevOps
+**Blockers**: None
 **Next 1–3 actions**:
-1. Await user go-ahead to begin issue #237 implementation
-2. See issue #237 and plan comment for full 5-phase plan
-3. PR #235 MERGED (990942c) — issue #229 Phase 2 complete
+1. Await merge of PR #238 (CI green, R22+R23 clean, 0 open threads)
+2. Start Phase 3 (pre-push Critic) on user go-ahead
+3. Issue #237 (_active.md multi-task schema) — awaiting user go-ahead
