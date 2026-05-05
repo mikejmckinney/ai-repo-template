@@ -33,18 +33,24 @@ FAILED_NAMES=()
 
 assert_filter() {
   local name="$1" filter="$2" input_file="$3" expected_file="$4"
-  local actual expected
-  actual=$(jq -rf "$filter" "$input_file" 2>/dev/null || printf 'JQ_ERROR')
+  local actual expected err_file
+  err_file=$(mktemp)
+  actual=$(jq -rf "$filter" "$input_file" 2>"$err_file" || printf 'JQ_ERROR')
   expected=$(cat "$expected_file")
   if [[ "$actual" == "$expected" ]]; then
     PASS=$((PASS + 1))
     printf '  ✅ %s\n' "$name"
+    rm -f "$err_file"
   else
     FAIL=$((FAIL + 1))
     FAILED_NAMES+=("$name")
     printf '  ❌ %s\n' "$name"
     printf '       expected: %s\n' "$expected"
     printf '       actual:   %s\n' "$actual"
+    if [[ -s "$err_file" ]]; then
+      printf '       error:    %s\n' "$(cat "$err_file")"
+    fi
+    rm -f "$err_file"
   fi
 }
 

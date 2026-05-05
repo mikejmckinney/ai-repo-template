@@ -14,7 +14,8 @@
 #
 # RULE-02  In grep -E literal-quoted patterns, '|'-delimited alternatives
 #          must end with an end-of-line anchor ('$'), word-boundary ('\b'),
-#          or a closing group ')' before the closing quote. Unanchored
+#          or a closing group ')' before the closing quote. A lone backslash
+#          is NOT a valid anchor (incomplete escape). Unanchored
 #          alternatives match as substrings of longer strings.
 #          Root cause: PR #228 R7→R8 — an unanchored _PLACEHOLDER_EXCLUDE
 #          regex allowed 'coordination.md.bak' to match the exclude list
@@ -48,8 +49,13 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     # ISS-22/ISS-25: [a-z]*e[a-z]* matches flag clusters containing e (e.g.
     #   set -euo); |pipefail bare alternation removed as redundant and too broad.
     # ISS-34: also match set -o errexit (long-form equivalent of set -e).
+    # ISS-42: pipefail|errexit → errexit only; pipefail alone does not cause
+    #   grep -c to abort; only set -e / set -o errexit triggers that.
+    # ISS-41: strip inline comments (e.g. 'cmd # set -e') before matching
+    #   so 'set -e' in a trailing comment does not falsely trigger RULE-01.
     if grep -vE '^[[:space:]]*#' "$file" \
-      | grep -qE '(^|[^#[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+(pipefail|errexit))'; then
+      | sed 's/[[:space:]]*#.*//' \
+      | grep -qE '(^|[^[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+errexit)'; then
       # Look for grep -c / grep --count not on a line that also contains
       # '|| true' or '|| echo' (which guard the exit code).
       # ISS-12: also match --count long form.
@@ -77,31 +83,34 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
   if ! grep -qE '#[[:space:]]*shell-conventions:disable=RULE-02' "$file"; then
     # Detect: grep -E 'X|Y' (single-quoted) or grep -E "X|Y" (double-quoted)
     # where the last token before the closing quote is not a valid anchor.
-    # Valid anchors: $ (end-of-line), ) (closing group), \ (lone backslash),
+    # Valid anchors: $ (end-of-line), ) (closing group),
     #                \b (two-char word-boundary — last char is 'b', preceded by '\').
     # Two-step approach: find candidate lines, then subtract valid endings.
     # The original single-regex form checked only a single char before the
     # quote; it false-positived on \b because the last char 'b' is not one
     # of '$', ')', or '\'.
+    # ISS-39: lone '\' removed from valid-anchor list — a trailing backslash
+    #   is not a valid grep -E anchor (incomplete escape); only '\b' is valid.
     r02_found=0
     # Single-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
     if grep -E "grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+'[^']*\|[^']*'" "$file" \
       | grep -v '^[[:space:]]*#' \
       | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-      | grep -qvE "([\$\)\\\\]|\\\\b)'"; then
+      | grep -qvE "([$)]|[\\\\]b)'"; then
       r02_found=1
     fi
     # Double-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
     # ISS-18/ISS-20/ISS-30: embed $ exclusion into pattern-arg match so that
     #   grep -E "foo|bar" "$file" is NOT skipped because "$file" contains $.
-    #   [^"$]*(\|[^"$]*)* matches only patterns with no $ in any alternative.
+    # ISS-38: mandatory first \| so grep -E "foo" (no alternation) is NOT flagged.
+    #   [^"$]*\|[^"$]*(\|[^"$]*)* requires at least one | before the closing quote.
     if [[ $r02_found -eq 0 ]]; then
-      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*(\|[^"$]*)*"' "$file" \
+      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*(\|[^"$]*)*"' "$file" \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
-        | grep -qvE '([$)\\]|\\b)"'; then
+        | grep -qvE '([$)]|\\b)"'; then
         r02_found=1
       fi
     fi
