@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 1.5 — PR #238 bot-review loop COMPLETE
-**File**: N/A
-**Role**: DevOps
+**Active Task**: #226 PR4 — prompt frontmatter audit (decision artifact only)
+**File**: `.context/state/task_226-pr4-prompt-frontmatter-audit.md`
+**Role**: architect
 **Blockers**: None
 **Next 1–3 actions**:
-1. Await merge of PR #238 (CI green, R22+R23 clean, 0 open threads)
-2. Start Phase 3 (pre-push Critic) on user go-ahead
-3. Issue #237 (_active.md multi-task schema) — awaiting user go-ahead
+1. Await merge of PR #239 (CI green, 0 unresolved bot threads — stop condition met)
+2. File separate issue for Finding 5 (doc-sync rule for shared-prompt list)
+3. Close out task_226-pr4 and update latest_summary.md
