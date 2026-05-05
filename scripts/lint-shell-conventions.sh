@@ -59,7 +59,7 @@
 set -uo pipefail
 
 TARGET_PATHS=("${@:-scripts/}")
-VIOLATION_FILE=$(mktemp "${TMPDIR:-/tmp}/shell-linter.XXXXXX")
+VIOLATION_FILE=$(mktemp "${TMPDIR:-/tmp}/shell-linter.XXXXXX") || exit 1
 # shellcheck disable=SC2317  # invoked via trap
 cleanup() { rm -f "$VIOLATION_FILE"; }
 trap cleanup EXIT
