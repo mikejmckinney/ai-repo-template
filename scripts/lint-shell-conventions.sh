@@ -60,6 +60,25 @@
 #          canonical space-separated form 'grep -E 'pattern'' to ensure
 #          RULE-02 catches unanchored alternatives.
 #
+#   KL-07  RULE-01 _pre_grep extraction uses 'sed s/\bgrep\b...//' to strip
+#          the grep invocation and everything after from the line before
+#          checking guard keywords. Two limitations:
+#          (a) GNU sed required: '\b' word boundary in sed is GNU-only;
+#              POSIX/BSD sed does not support it. This linter targets Linux CI
+#              where GNU sed is standard; BSD portability is not a goal.
+#          (b) Multi-command false negative: 'grep -c foo || true; grep -c bar'
+#              — sed strips from the first grep to EOL, so the line becomes
+#              'grep -c foo || true; ' which passes the || guard; the second
+#              unguarded grep is not detected. Per-command isolation requires
+#              splitting on ';' and '&&', which is out of scope.
+#
+#   KL-08  'scripts/test-lint-shell-conventions.sh' with RULE-01/RULE-02 fixture
+#          cases does not exist. Creating it is significant scope (positive and
+#          negative fixture scripts, suppression tests, edge-case patterns).
+#          The linter's wiring is tested by test.sh L899-908; the linter itself
+#          does not use set -e (KL-05), so the diff-coupling gate's set-e fixture
+#          requirement does not strictly apply. Tracked as a follow-up task.
+#
 # Usage:  bash scripts/lint-shell-conventions.sh [<path> ...]
 #         Defaults to searching scripts/ directory.
 # Exit:   0 = all pass; 1 = one or more violations found.

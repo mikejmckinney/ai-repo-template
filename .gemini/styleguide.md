@@ -171,6 +171,14 @@ severity. The corresponding `KL-NN` tag is the canonical reference.
   quoted pattern. Invocations with other flags between `-E` and the pattern
   (`grep -E -i 'p|q'`) or no space (`grep -E'p|q'`) are not detected. Per-token
   reordering detection is out of scope. Do **not** flag this coverage gap.
+- **KL-07** — RULE-01 `_pre_grep` extraction uses `sed 's/\bgrep\b.*//'` (GNU sed).
+  (a) Not POSIX/BSD portable — this linter targets Linux CI. Do **not** flag the
+  `\b` in sed as a portability issue. (b) Multi-command false negative:
+  `grep -c foo || true; grep -c bar` — the second unguarded `grep` is not detected.
+  Per-command splitting is out of scope.
+- **KL-08** — `scripts/test-lint-shell-conventions.sh` does not exist. Creating full
+  RULE-01/RULE-02 fixture tests is a follow-up task. Test.sh L899-908 validates wiring.
+  Do **not** flag the missing test script as a diff-coupling gate violation.
 
 Additionally, the following patterns in `scripts/lint-shell-conventions.sh` are
 intentional. Do **not** flag them:

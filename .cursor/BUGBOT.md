@@ -130,6 +130,15 @@ corresponding `KL-NN` tag is the canonical reference.
   quoted pattern. Invocations with other flags between `-E` and the pattern
   (`grep -E -i 'p|q'`) or no space (`grep -E'p|q'`) are not detected. Per-token
   reordering detection is out of scope. Do **not** flag this coverage gap.
+- **KL-07** — RULE-01 `_pre_grep` extraction uses `sed 's/\bgrep\b.*//'` (GNU sed).
+  (a) Not POSIX/BSD portable — this linter targets Linux CI. Do **not** flag the
+  `\b` in sed as a portability issue. (b) Multi-command false negative:
+  `grep -c foo || true; grep -c bar` — sed strips from first grep to EOL; the
+  second unguarded `grep` is not detected. Per-command splitting is out of scope.
+- **KL-08** — `scripts/test-lint-shell-conventions.sh` does not exist. Creating full
+  RULE-01/RULE-02 fixture tests is a follow-up task. The linter does not use `set -e`
+  (KL-05), so the diff-coupling gate's exit-code fixture requirement does not strictly
+  apply. Test.sh L899-908 validates wiring. Do **not** flag the missing test script.
 
 Additionally: the `find ... | while IFS= read -r` pattern in this linter does NOT need
 `-print0`/`read -d ''`. Shell script filenames in this repo never contain spaces or
