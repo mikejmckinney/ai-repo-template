@@ -33,7 +33,7 @@
 set -uo pipefail
 
 TARGET_PATHS=("${@:-scripts/}")
-VIOLATION_FILE=$(mktemp)
+VIOLATION_FILE=$(mktemp "${TMPDIR:-/tmp}/shell-linter.XXXXXX")
 # shellcheck disable=SC2317  # invoked via trap
 cleanup() { rm -f "$VIOLATION_FILE"; }
 trap cleanup EXIT
@@ -53,9 +53,11 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     #   grep -c to abort; only set -e / set -o errexit triggers that.
     # ISS-41: strip inline comments (e.g. 'cmd # set -e') before matching
     #   so 'set -e' in a trailing comment does not falsely trigger RULE-01.
-    if grep -vE '^[[:space:]]*#' "$file" \
+    # ISS-47: also detect shebang-level errexit (e.g. #!/bin/bash -e or -euo).
+    if head -n 1 "$file" | grep -qE '^#!.*[[:space:]]-[a-z]*e' \
+      || grep -vE '^[[:space:]]*#' "$file" \
       | sed 's/[[:space:]]*#.*//' \
-      | grep -qE '(^|[^[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+errexit)'; then
+        | grep -qE '(^|[^[:alnum:]])(set[[:space:]]+-[a-z]*e[a-z]*([^a-z]|$)|set[[:space:]]+-o[[:space:]]+errexit)'; then
       # Look for grep -c / grep --count not on a line that also contains
       # '|| true' or '|| echo' (which guard the exit code).
       # ISS-12: also match --count long form.
@@ -65,7 +67,9 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
       while IFS= read -r grep_line; do
         # ISS-24: if/elif/while/until consume grep's exit code — not a set -e hazard.
         # ISS-35: until added alongside while (both consume the loop-condition exit code).
-        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|(^|[[:space:]])(if|elif|while|until)[[:space:]])'; then
+        # ISS-44: && and ! also safely consume grep's exit code (short-circuit /
+        #   negation both prevent set -e from seeing a non-zero exit).
+        if ! printf '%s' "$grep_line" | grep -qE '(\|\|[[:space:]]*(true|echo|:)|&&|(^|[[:space:]])(if|elif|while|until|!)[[:space:]])'; then
           printf 'RULE-01: %s\n' "$file"
           printf '%s\n' "VIOLATION" >>"$VIOLATION_FILE"
           break
@@ -102,14 +106,31 @@ find "${TARGET_PATHS[@]}" -name '*.sh' ! -name 'lint-shell-conventions.sh' -type
     fi
     # Double-quoted patterns (ISS-11: filter comment lines before checking)
     # ISS-16: [a-zA-Z]*E[a-zA-Z]* allows letters after E (e.g. -Eq form).
-    # ISS-18/ISS-20/ISS-30: embed $ exclusion into pattern-arg match so that
-    #   grep -E "foo|bar" "$file" is NOT skipped because "$file" contains $.
-    # ISS-38: mandatory first \| so grep -E "foo" (no alternation) is NOT flagged.
-    #   [^"$]*\|[^"$]*(\|[^"$]*)* requires at least one | before the closing quote.
+    # ISS-30/ISS-45: two-pass double-quote check:
+    #   Pass A — [^"$]* candidate: catches "foo|bar" even when "$file" follows
+    #             on the same line ($ anywhere in any quoted token excludes).
+    #   Pass B — [^"]*\$ candidate: catches "foo|bar$|baz" where the pattern
+    #             has a $ anchor in the middle but an unanchored final branch.
+    #   Pass A finds the false-negative that ISS-30 fixed; pass B finds the
+    #   case ISS-45 reported ($ anchor in pattern but still unanchored branches).
+    # ISS-38: mandatory first \| in candidates (no alternation = not a candidate).
     if [[ $r02_found -eq 0 ]]; then
+      # Pass A: no $ in any quoted token on the line
       if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"$]*\|[^"$]*(\|[^"$]*)*"' "$file" \
         | grep -v '^[[:space:]]*#' \
         | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
+        | grep -qvE '([$)]|\\b)"'; then
+        r02_found=1
+      fi
+    fi
+    # Pass B: pattern contains $ anchor (before | not before word char) but
+    #   last alt unanchored — e.g. "foo|bar$|baz" (baz is not anchored).
+    #   Exclude lines containing $VAR-style expansions ($ before word char).
+    if [[ $r02_found -eq 0 ]]; then
+      if grep -E 'grep[[:space:]]+-[a-zA-Z]*E[a-zA-Z]*[[:space:]]+"[^"]*\$[^"]*\|[^"]*"' "$file" \
+        | grep -v '^[[:space:]]*#' \
+        | grep -v '#[[:space:]]*shell-conventions:disable=RULE-02' \
+        | grep -vE '"[^"]*\$[a-zA-Z_{(]' \
         | grep -qvE '([$)]|\\b)"'; then
         r02_found=1
       fi
