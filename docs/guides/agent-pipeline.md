@@ -160,6 +160,38 @@ are no merge conflicts, the workflow squash-merges, deletes the head
 branch, and closes the linked issue. Fork PRs are refused regardless of
 label (defense in depth).
 
+## Workflow verifiability matrix
+
+> **Why this matrix exists** (issue #227): GitHub Actions runs a
+> workflow file from a specific git ref depending on its trigger. For
+> some triggers, that ref is **always the default branch**, never the
+> PR branch. A change to such a workflow on a PR branch is therefore
+> structurally un-verifiable pre-merge — you can't observe the new
+> behavior until after merge to `main`. PR #225 paid 11 rounds of bot
+> review for one such change. The matrix below is the lookup that
+> drives `scripts/verify-pr.sh` and the `Change class` field in
+> `.github/PLAN_TEMPLATE.md`. ADR-016 captures the decision.
+
+| Trigger event(s) in the workflow's `on:` block | Workflow file runs from | Verifiable on PR branch? | Plan-template `Change class` |
+|---|---|---|---|
+| `pull_request`, `pull_request_target`, `workflow_dispatch` (only) | The PR branch (or the dispatched ref) | Yes | `pull_request-triggered workflow` |
+| `pull_request_review`, `pull_request_review_comment` | Default branch | No | `default-branch-only workflow` |
+| `issue_comment` | Default branch | No | `default-branch-only workflow` |
+| `push`, `schedule` | Default branch | No | `default-branch-only workflow` |
+| `workflow_run` (chained from another workflow) | Default branch | No | `default-branch-only workflow` |
+| Any combination of PR-triggered + default-branch-only triggers in the same file | The most-restrictive trigger wins | No | `default-branch-only workflow` |
+| Diff that mixes a workflow file with non-workflow paths | n/a | Per-file basis | `mixed` (most-restrictive bucket sets the floor) |
+| Diff that touches no `.github/workflows/*.yml` files | n/a | Yes | `code-or-docs` |
+
+**How to apply the matrix**:
+
+1. **At plan time** — Walk every changed path. Pick the most-restrictive class present and put it under the Verification section of your Implementation Plan comment as `Change class: <class>` and `Verification target: <PR branch | sandbox repo | both>`. The PLAN_TEMPLATE has the placeholder.
+2. **Pre-push** — `bash scripts/verify-pr.sh --declared "<your declared class>"` (no args needed beyond `--declared`; it uses `git diff --name-only origin/main...HEAD`). Exit 0 means your declaration matches reality. Exit 1 prints the detected class and points you at the next step.
+3. **In CI** — `verify-pr.sh` runs against the PR's changed-file list (sourced from the PR API into `PR_FILES`) and BLOCKs the merge if the declaration is too permissive for the diff. The Plan-comment authoring step is the gate; CI is the safety net.
+4. **For default-branch-only / mixed PRs** — follow `docs/guides/sandbox-verification.md`. Push the same branch to the sandbox repo, merge it there, exercise the trigger event, and confirm green before merging here.
+
+The classifier deliberately defaults to *more* restrictive when in doubt: a deleted workflow file (the body can't be inspected) is treated as `default-branch-only` so reviewers consciously confirm the removal is safe. False positives are easy to override (re-declare and proceed); false negatives are exactly the failure mode the gate exists to prevent.
+
 ## Invoking a prompt file manually
 
 Both Claude and Copilot support a symmetric one-liner for running any prompt

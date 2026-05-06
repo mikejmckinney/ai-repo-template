@@ -39,3 +39,12 @@
 1. Open PR with ADR-018 + schema migration + test harness + postmortem-003
 2. Run pr-resolve-all.md loop until two clean iterations
 3. Close out task; remove this section in the close-out commit
+
+## Task: feature/architect-227-pre-merge-verification
+**Issue/PR**: #227
+**Role**: architect (planning) → devops + docs (this PR ships all three)
+**Blockers**: None (sandbox repo creation deferred to maintainer manual step per playbook)
+**Next 1–3 actions**:
+1. Open PR shipping ADR-016 + verify-pr.sh + matrix + sandbox playbook + Phase-3 codification
+2. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
+3. Close out; maintainer runs `gh repo create mikejmckinney/ai-repo-template-sandbox` per playbook
