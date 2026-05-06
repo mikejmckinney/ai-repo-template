@@ -137,7 +137,15 @@ has_other=0
 
 # Surface-only triggers that pin a workflow to default-branch execution.
 # Keep this list in lockstep with docs/guides/agent-pipeline.md.
-DEFAULT_ONLY_TRIGGERS_RE='^[[:space:]]*(pull_request_review|pull_request_review_comment|issue_comment|push|schedule|workflow_run)([[:space:]]*:|[[:space:]]*$)'
+#
+# Note on `pull_request_target`: per GitHub docs, this trigger runs in
+# the context of the PR's *base* branch (the target / default branch),
+# not the PR head. The workflow file is therefore loaded from the
+# default branch ref, exactly like push / schedule / workflow_run.
+# Treating it as PR-branch verifiable would be wrong, and it's also
+# the trigger most often abused for write-permission escalation, so
+# being conservative here is the right default.
+DEFAULT_ONLY_TRIGGERS_RE='^[[:space:]]*(pull_request_review|pull_request_review_comment|pull_request_target|issue_comment|push|schedule|workflow_run)([[:space:]]*:|[[:space:]]*$)'
 
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
@@ -202,14 +210,12 @@ if [[ "$declared" == "$detected_overall" ]]; then
   exit 0
 fi
 
-# A declared class of `mixed` is always acceptable as long as the diff
-# really did span buckets — the floor is set by the most-restrictive
-# bucket present.
-if [[ "$declared" == "mixed" && "$buckets_set" -ge 2 ]]; then
-  # shellcheck disable=SC2016  # backticks here are literal markdown, not command substitution
-  printf '✓ declared `mixed` matches a multi-bucket diff.\n'
-  exit 0
-fi
+# Note: we deliberately do NOT short-circuit on `declared == "mixed"`
+# alone. detected_overall is "mixed" iff buckets_set >= 2, so the
+# equality check above already covers every legitimate multi-bucket
+# diff. A `declared mixed` against a single-bucket diff is a real
+# mismatch (over-declaration hides which bucket actually applies),
+# and falls through to the mismatch branch below.
 
 # Mismatch. Tell the author what to do next.
 printf '✗ Change class mismatch.\n' >&2

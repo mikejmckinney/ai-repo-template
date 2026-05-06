@@ -92,6 +92,19 @@ jobs:
     steps: [{ run: "echo" }]
 YAML
 
+# A pull_request_target workflow — default-branch-only despite the
+# "pull_request" prefix, because GitHub loads it from the base branch.
+cat >"$fixture_dir/.github/workflows/agent-fork-handler.yml" <<'YAML'
+name: agent-fork-handler
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps: [{ run: "echo" }]
+YAML
+
 run_case() {
   # run_case <declared> <paths-newline-separated>
   # Echoes "<exit>:<stdout+stderr>"
@@ -203,6 +216,30 @@ ec=$?
 set -e
 assert_eq "CASE-09 exit code" "2" "$ec"
 assert_contains "CASE-09 mentions PR_FILES escape hatch" "PR_FILES" "$out"
+
+# ── CASE-10: pull_request_target is default-branch-only (Round-1 fix) ────────
+echo ""
+echo "CASE-10: pull_request_target workflow → default-branch-only (exit 0 when matched)"
+result=$(run_case "default-branch-only workflow" \
+  ".github/workflows/agent-fork-handler.yml")
+assert_eq "CASE-10 exit code" "0" "${result%%:*}"
+
+# ── CASE-11: pull_request_target misclassified as PR-triggered (mismatch) ────
+echo ""
+echo "CASE-11: pull_request_target declared as pull_request-triggered → exit 1"
+result=$(run_case "pull_request-triggered workflow" \
+  ".github/workflows/agent-fork-handler.yml")
+assert_eq "CASE-11 exit code" "1" "${result%%:*}"
+assert_contains "CASE-11 detects default-branch-only" \
+  "default-branch-only workflow" "${result#*:}"
+
+# ── CASE-12: over-declared `mixed` for single-bucket diff is a mismatch ──────
+echo ""
+echo "CASE-12: declared mixed for code-only diff (single bucket) → exit 1"
+result=$(run_case "mixed" "README.md
+src/foo.py")
+assert_eq "CASE-12 exit code" "1" "${result%%:*}"
+assert_contains "CASE-12 detects code-or-docs" "code-or-docs" "${result#*:}"
 
 # ── summary ──────────────────────────────────────────────────────────────────
 

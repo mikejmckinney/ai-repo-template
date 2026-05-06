@@ -174,8 +174,9 @@ label (defense in depth).
 
 | Trigger event(s) in the workflow's `on:` block | Workflow file runs from | Verifiable on PR branch? | Plan-template `Change class` |
 |---|---|---|---|
-| `pull_request`, `pull_request_target`, `workflow_dispatch` (only) | The PR branch (or the dispatched ref) | Yes | `pull_request-triggered workflow` |
+| `pull_request`, `workflow_dispatch` (only) | The PR branch (or the dispatched ref) | Yes | `pull_request-triggered workflow` |
 | `pull_request_review`, `pull_request_review_comment` | Default branch | No | `default-branch-only workflow` |
+| `pull_request_target` | Default (base) branch — GitHub loads the workflow from the PR's *base*, not the head, so PR-branch changes are unverifiable. This is also the trigger most commonly abused for write-permission escalation. | No | `default-branch-only workflow` |
 | `issue_comment` | Default branch | No | `default-branch-only workflow` |
 | `push`, `schedule` | Default branch | No | `default-branch-only workflow` |
 | `workflow_run` (chained from another workflow) | Default branch | No | `default-branch-only workflow` |

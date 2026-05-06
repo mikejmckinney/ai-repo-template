@@ -12,11 +12,14 @@ Accepted
 
 GitHub Actions runs a workflow file from a specific git ref depending on the
 trigger event in its `on:` block. For some triggers — `pull_request_review`,
-`pull_request_review_comment`, `issue_comment`, `push`, `schedule`,
-`workflow_run` — the workflow file is **always** loaded from the **default
-branch**, never from the PR branch under review. (See the trigger-event
+`pull_request_review_comment`, `pull_request_target`, `issue_comment`,
+`push`, `schedule`, `workflow_run` — the workflow file is **always** loaded
+from the **default branch**, never from the PR branch under review.
+(`pull_request_target` is included because GitHub loads the workflow from
+the PR's *base* branch, not its head; this is also the trigger most
+commonly abused for write-permission escalation.) See the trigger-event
 matrix in `docs/guides/agent-pipeline.md` § "Workflow verifiability matrix"
-for the canonical list.)
+for the canonical list.
 
 This produces a structural verifiability gap: a change to such a workflow on
 a PR branch cannot be exercised pre-merge. The new behavior only surfaces

@@ -3,7 +3,8 @@
 > **Audience**: Maintainers and agents shipping a change that touches a
 > **default-branch-only workflow** (any `.github/workflows/*.yml` whose
 > triggers include `pull_request_review`, `pull_request_review_comment`,
-> `issue_comment`, `push`, `schedule`, or `workflow_run`). See the
+> `pull_request_target`, `issue_comment`, `push`, `schedule`, or
+> `workflow_run`). See the
 > [Workflow verifiability matrix](agent-pipeline.md#workflow-verifiability-matrix)
 > for the canonical trigger list. ADR-016 is the durable rationale.
 
@@ -191,9 +192,11 @@ The matrix in `agent-pipeline.md` is authoritative; in practice:
 
 - Code-only PRs (no `.github/workflows/*.yml` touched) — sandbox is
   not required. Default verification on the PR branch is sufficient.
-- Workflows whose only triggers are `pull_request`,
-  `pull_request_target`, or `workflow_dispatch` — sandbox is not
-  required. CI on the PR branch already runs the new workflow file.
+- Workflows whose only triggers are `pull_request` or
+  `workflow_dispatch` — sandbox is not required. CI on the PR branch
+  already runs the new workflow file. (Note: `pull_request_target`
+  does **not** belong in this set — it loads the workflow from the
+  base branch, so PR-branch changes are unverifiable.)
 - Pure docs / ADRs / role-file edits (no scripts, no workflows) —
   sandbox is not required.
 
