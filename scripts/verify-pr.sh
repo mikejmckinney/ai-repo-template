@@ -216,7 +216,9 @@ detect_default_only() {
     # Inline flow-sequence form: `on: [push, ...]`
     /^on:[[:space:]]*\[/ {
       if ($0 ~ "^on:[[:space:]]*\\[[[:space:]]*" triggers "([[:space:]]*,|[[:space:]]*\\])") { found = 1; exit }
-      if ($0 ~ "^on:[[:space:]]*\\[[^]]*[[:space:],[]" triggers "([[:space:]]*,|[[:space:]]*\\])") { found = 1; exit }
+      # Subsequent tokens in the list. Preceding char is space or comma
+      # (the leading `[` case is already covered by the line above).
+      if ($0 ~ "^on:[[:space:]]*\\[[^]]*[[:space:],]" triggers "([[:space:]]*,|[[:space:]]*\\])") { found = 1; exit }
       next
     }
     # Bare `on:` opens block form.
