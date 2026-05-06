@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 8 -->
+<!-- AGENTS_MD_VERSION: 9 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
@@ -12,7 +12,7 @@
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v8` (matching
+substantive reply with the exact token `Session handshake v9` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -185,6 +185,13 @@ the act of writing it forces the implementation thinking before code.
    `## Plan` section in the same push as the divergent code, link the
    revision comment, and tick the matching box in `## Plan revision
    sync` so reviewers don't evaluate stale intent.
+6. **Before requesting review**, populate the PR template's
+   `## Verification results` section with a result entry (`✅ pass`,
+   `❌ fail`, `⏭️ sandbox-deferred — see Phase 2`, or `⏭️ N/A — <reason>`)
+   for every command listed in the plan's `### Verification`. CI is a
+   backstop, not a substitute for local verification — Judge BLOCKs at
+   diff-gate when this section is missing or claims pass for a command
+   that demonstrably never ran (`.github/agents/judge.agent.md` item 16).
 
 **Exemptions** (plan is NOT required):
 
@@ -269,8 +276,9 @@ Opening a PR is **not** "done" when the same agent that opened the PR is still r
 After pushing the PR, run this loop until it converges:
 
 1. **Wait for the CI rollup.** If anything red, read logs, fix the underlying issue, push, and re-enter the loop. Do not weaken tests or add `--no-verify` to dodge a real failure (see §Work style).
-2. **Check bot-authored reviews** (Copilot review, Gemini, etc.). If any are present, address them following `.github/prompts/pr-resolve-all.md` Phases 1–4. That prompt defines what counts as "addressed" (Phase 2 status set: `✅ Fixed`, `✅ Already resolved`, `⚠️ Needs clarification`, `⚠️ Partial fix`, `❌ Not reproducible`, `❌ Out of scope`); do not invent labels or redefine the set here.
-3. **After your fix-commit lands, re-check.** Bot re-review on push is opportunistic today (the re-review-on-push automation tracked in #205 — distinct from the existing thread-resolution relay in `agent-relay-reviews.yml` — is not yet shipped); if a re-review didn't fire, re-read the PR yourself before declaring done. Loop until clean.
+2. **Pre-merge verification (sandbox-class PRs).** If your Implementation Plan declared `Change class: default-branch-only workflow` (or `mixed` with a default-branch-only path), the PR is **not** done until the change has been verified end-to-end in the sandbox sibling repo per [`docs/guides/sandbox-verification.md`](docs/guides/sandbox-verification.md). Paste the green sandbox-run URL into a comment on the PR. The trigger constraint (workflows pinned to default-branch execution can't be exercised on the PR branch) is structural — see ADR-016 and `docs/guides/agent-pipeline.md` § "Workflow verifiability matrix". Skipping this for sandbox-class PRs is the failure mode that produced the 11-round PR #225 cycle.
+3. **Check bot-authored reviews** (Copilot review, Gemini, etc.). If any are present, address them following `.github/prompts/pr-resolve-all.md` Phases 1–4. That prompt defines what counts as "addressed" (Phase 2 status set: `✅ Fixed`, `✅ Already resolved`, `⚠️ Needs clarification`, `⚠️ Partial fix`, `❌ Not reproducible`, `❌ Out of scope`); do not invent labels or redefine the set here.
+4. **After your fix-commit lands, re-check.** Bot re-review on push is opportunistic today (the re-review-on-push automation tracked in #205 — distinct from the existing thread-resolution relay in `agent-relay-reviews.yml` — is not yet shipped); if a re-review didn't fire, re-read the PR yourself before declaring done. Loop until clean.
 
 **Stop condition.** PR is clean when:
 

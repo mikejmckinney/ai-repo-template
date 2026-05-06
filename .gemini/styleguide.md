@@ -134,9 +134,16 @@ If tests are missing or insufficient:
 
 ## Meta: deduplicate against existing review threads
 
-Before flagging an issue, scan the PR's existing review threads (open AND
-resolved). The goal is to suppress repeat findings that have already been
-triaged in a prior round of this PR.
+**Best-effort guidance.** If your runtime exposes the PR's review threads
+(open AND resolved), scan them before flagging. Some Gemini Code Assist
+deployments do not surface `pullRequest.reviewThreads` in the reviewer's
+tool API, in which case dedup is structurally impossible from inside the
+review prompt — do your best with what you have. The maintainers run
+`agent-relay-reviews.yml` to mark threads resolved and
+`agent-review-on-push.yml` (capped by `PR_RESOLVE_MAX_ROUNDS`) to limit
+how many times you'll be re-invoked on the same PR, so noise is bounded
+on the consuming side. The goal is still to suppress repeat findings that
+have already been triaged in a prior round of this PR.
 
 - If the same issue on the same `file:line` is already present in any thread
   (open or resolved), do **not** re-report it. Reply on the existing thread

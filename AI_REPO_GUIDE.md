@@ -84,6 +84,7 @@ bash install.sh
 │   ├── README.md
 │   ├── setup.sh              # First-run project customization
 │   ├── verify-env.sh         # Environment & placeholder sanity check
+│   ├── verify-pr.sh          # Plan-template Change-class classifier (issue #227, ADR-016)
 │   ├── db-reset.sh           # Optional DB reset stub
 │   ├── auto-rebase-overlapping.sh    # Auto-rebase library (ADR-010)
 │   ├── multi-dispatch-safety.sh      # Parallel-dispatch safety classifier
@@ -189,6 +190,7 @@ bash install.sh
 | `test.sh` | Verifies template integrity (see Verification Commands below for live check count) |
 | `scripts/setup.sh` | First-run project customization helper |
 | `scripts/verify-env.sh` | Environment & placeholder sanity check |
+| `scripts/verify-pr.sh` | Plan-template Change-class classifier (ADR-016 / issue #227); run: `bash scripts/verify-pr.sh --declared "<class>"` |
 | `scripts/db-reset.sh` | Optional database reset stub |
 | `scripts/pr-iteration-stats.sh` | Rolling 14-day PR review-loop metrics (total/fix/rejected rounds, threads); `--window <days>`, `--json` |
 | `scripts/lint-shell-conventions.sh` | Project-specific shell linting (RULE-01: `grep -c` without `\|\| true`; RULE-02: unanchored `grep -E` alternation patterns); run: `bash scripts/lint-shell-conventions.sh scripts/` |

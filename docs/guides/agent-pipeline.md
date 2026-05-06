@@ -160,6 +160,39 @@ are no merge conflicts, the workflow squash-merges, deletes the head
 branch, and closes the linked issue. Fork PRs are refused regardless of
 label (defense in depth).
 
+## Workflow verifiability matrix
+
+> **Why this matrix exists** (issue #227): GitHub Actions runs a
+> workflow file from a specific git ref depending on its trigger. For
+> some triggers, that ref is **always the default branch**, never the
+> PR branch. A change to such a workflow on a PR branch is therefore
+> structurally un-verifiable pre-merge — you can't observe the new
+> behavior until after merge to `main`. PR #225 paid 11 rounds of bot
+> review for one such change. The matrix below is the lookup that
+> drives `scripts/verify-pr.sh` and the `Change class` field in
+> `.github/PLAN_TEMPLATE.md`. ADR-016 captures the decision.
+
+| Trigger event(s) in the workflow's `on:` block | Workflow file runs from | Verifiable on PR branch? | Plan-template `Change class` |
+|---|---|---|---|
+| `pull_request`, `workflow_dispatch` (only) | The PR branch (or the dispatched ref) | Yes | `pull_request-triggered workflow` |
+| `pull_request_review`, `pull_request_review_comment` | Default branch | No | `default-branch-only workflow` |
+| `pull_request_target` | Default (base) branch — GitHub loads the workflow from the PR's *base*, not the head, so PR-branch changes are unverifiable. This is also the trigger most commonly abused for write-permission escalation. | No | `default-branch-only workflow` |
+| `issue_comment` | Default branch | No | `default-branch-only workflow` |
+| `push`, `schedule` | Default branch | No | `default-branch-only workflow` |
+| `workflow_run` (chained from another workflow), `repository_dispatch` | Default branch | No | `default-branch-only workflow` |
+| Any combination of PR-triggered + default-branch-only triggers in the same file | The most-restrictive trigger wins | No | `default-branch-only workflow` |
+| Diff that mixes a workflow file with non-workflow paths | n/a | Per-file basis | `mixed` (most-restrictive bucket sets the floor) |
+| Diff that touches no `.github/workflows/*.yml` files | n/a | Yes | `code-or-docs` |
+
+**How to apply the matrix**:
+
+1. **At plan time** — Walk every changed path. Pick the most-restrictive class present and put it under the Verification section of your Implementation Plan comment as `Change class: <class>` and `Verification target: <PR branch | sandbox repo | both>`. The PLAN_TEMPLATE has the placeholder.
+2. **Pre-push** — `bash scripts/verify-pr.sh --declared "<your declared class>"` (no args needed beyond `--declared`; it uses `git diff --name-only origin/main...HEAD`). Exit 0 means your declaration matches reality. Exit 1 prints the detected class and points you at the next step.
+3. **In CI** — `verify-pr.sh` runs against the PR's changed-file list (sourced from the PR API into `PR_FILES`) and BLOCKs the merge if the declaration is too permissive for the diff. The Plan-comment authoring step is the gate; CI is the safety net.
+4. **For default-branch-only / mixed PRs** — follow `docs/guides/sandbox-verification.md`. Push the same branch to the sandbox repo, merge it there, exercise the trigger event, and confirm green before merging here.
+
+The classifier deliberately defaults to *more* restrictive when in doubt: a deleted workflow file (the body can't be inspected) is treated as `default-branch-only` so reviewers consciously confirm the removal is safe. False positives are easy to override (re-declare and proceed); false negatives are exactly the failure mode the gate exists to prevent.
+
 ## Invoking a prompt file manually
 
 Both Claude and Copilot support a symmetric one-liner for running any prompt
@@ -209,7 +242,7 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `REVIEW_ON_PUSH` | on (unset = on) | When set to literal `false`, disables `agent-review-on-push.yml` nudges to Gemini + Copilot after each push to an open non-draft PR. Any other value (including unset) keeps it on. |
 | `MAX_COPILOT_CONCURRENT` | `3` | Max concurrent Copilot sessions (open `copilot/` PRs + `copilot:in-progress` issues). |
 | `MAX_COPILOT_DAILY` | `10` | Max Copilot assignments in a rolling 24-hour window. Spend thresholds: informational log at 50%, warning comment on issue at 75%, hard pause on new assignments at 90% (`copilot:budget-paused` label applied; bypassed by `cap-override` label on the issue — same label on a PR bypasses the round cap, see `PR_RESOLVE_MAX_ROUNDS` below), `copilot:daily-cap-hit` label at 100%. |
-| `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. Per-PR override: `cap-override` label on the PR (unbounded) or `@<agent> cap-override N` comment on the PR (N rounds). Only raise from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
+| `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. **Also caps `agent-review-on-push.yml`** so Gemini/Copilot push-nudges stop firing after the same N rounds — without this, every fix-commit re-triggers stateless reviewers that re-flag already-deferred findings (PR #246 saw this across 13 rounds). Per-PR override: `cap-override` label on the PR (unbounded; bypasses both the agent-side cap and the push-nudge cap) or `@<agent> cap-override N` comment on the PR (N rounds). Manual `/gemini review` comments by humans are never gated. Only raise the default from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 
 ### 1. Copilot subscription
@@ -460,6 +493,7 @@ automatically post-merge.
 | Use Copilot (not Claude) for review resolution | Add `copilot-relay` label |
 | Fix cycle exhausted (3/3) | Review remaining comments yourself, merge manually |
 | Fix cycle exhausted, want more rounds | Add `cap-override` label to the PR (unbounded) or comment `@<agent> cap-override N` (N rounds). See `PR_RESOLVE_MAX_ROUNDS` in Repository variables above. **From round 4 onward, every Resolution Report must include an `Override justification:` line** (issue #229 Phase 4); Judge BLOCKs at diff-gate without it. |
+| Push-nudge cap hit (no Gemini/Copilot re-review on push) | Look for the `agent-review-on-push:cap-hit` marker comment on the PR. Same fix as above: `cap-override` label resumes automated nudges. To trigger a one-off re-review without removing the cap, post `/gemini review` as a regular comment yourself. |
 | Copilot's implementation is wrong | Comment on the PR with corrections, Copilot picks them up |
 | Claude can't resolve a comment | Marked as "Needs clarification" in the resolution report — address manually |
 | Merge conflict between parallel PRs | Merge one first, then comment on the other asking Copilot to rebase |

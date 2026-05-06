@@ -869,6 +869,7 @@ SCRIPT_FILES=(
   "scripts/README.md"
   "scripts/setup.sh"
   "scripts/verify-env.sh"
+  "scripts/verify-pr.sh"
   "scripts/db-reset.sh"
   "scripts/auto-rebase-overlapping.sh"
   "scripts/multi-dispatch-safety.sh"
@@ -1043,6 +1044,22 @@ else
 fi
 
 echo ""
+echo "Running verify-pr.sh classifier fixture tests (issue #227)..."
+if [[ -f scripts/test-verify-pr.sh ]]; then
+  VPR_LOG=$(mktemp)
+  if bash scripts/test-verify-pr.sh >"$VPR_LOG" 2>&1; then
+    vpr_passed=$(grep -c '^  ✅ ' "$VPR_LOG" || true)
+    pass "scripts/test-verify-pr.sh ($vpr_passed assertions passed)"
+  else
+    fail "scripts/test-verify-pr.sh failed (see log below)"
+    cat "$VPR_LOG"
+  fi
+  rm -f "$VPR_LOG"
+else
+  fail "scripts/test-verify-pr.sh missing"
+fi
+
+echo ""
 
 # --- Phase 4 invariants (issue #229 Phase 4 / ADR-017) ---
 echo "Checking Phase 4 components (issue #229 Phase 4 / ADR-017)..."
@@ -1173,6 +1190,71 @@ if grep -q '## Task: <branch-name>' .context/state/README.md 2>/dev/null \
   pass ".context/state/README.md cadence documents multi-task schema (ADR-018)"
 else
   fail ".context/state/README.md missing multi-task cadence (issue #237 doc-sync)"
+fi
+
+echo ""
+
+# --- ADR-016 invariants (issue #227 / pre-merge verification gate) ---
+echo "Checking ADR-016 components (issue #227 / pre-merge verification)..."
+
+ADR016_PATH="docs/decisions/adr-016-pre-merge-verification-gate.md"
+if [[ -f "$ADR016_PATH" ]] \
+  && grep -qE '^Accepted$' "$ADR016_PATH" 2>/dev/null; then
+  pass "ADR-016 exists with Status: Accepted"
+else
+  fail "ADR-016 missing or Status line is not 'Accepted' ($ADR016_PATH)"
+fi
+
+if grep -q 'ADR-016' docs/decisions/README.md 2>/dev/null; then
+  pass "docs/decisions/README.md indexes ADR-016"
+else
+  fail "docs/decisions/README.md missing ADR-016 row"
+fi
+
+# Plan template carries the Change class + Verification target lines.
+if grep -q 'Change class' .github/PLAN_TEMPLATE.md 2>/dev/null \
+  && grep -q 'Verification target' .github/PLAN_TEMPLATE.md 2>/dev/null; then
+  pass ".github/PLAN_TEMPLATE.md exposes Change class + Verification target (issue #227)"
+else
+  fail ".github/PLAN_TEMPLATE.md missing Change class / Verification target (issue #227)"
+fi
+
+# Sandbox playbook lives at the documented path.
+if [[ -f docs/guides/sandbox-verification.md ]]; then
+  pass "docs/guides/sandbox-verification.md exists (issue #227 Phase 2)"
+else
+  fail "docs/guides/sandbox-verification.md missing (issue #227 Phase 2)"
+fi
+
+# Trigger-event matrix lives in agent-pipeline.md.
+if grep -q 'Workflow verifiability matrix' docs/guides/agent-pipeline.md 2>/dev/null; then
+  pass "agent-pipeline.md documents the Workflow verifiability matrix (issue #227)"
+else
+  fail "agent-pipeline.md missing Workflow verifiability matrix (issue #227)"
+fi
+
+# AGENTS.md PR completion criteria mentions pre-merge verification.
+if grep -q 'pre-merge verification' AGENTS.md 2>/dev/null \
+  || grep -q 'sandbox-verification.md' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md PR completion criteria references pre-merge verification (issue #227)"
+else
+  fail "AGENTS.md missing pre-merge verification reference (issue #227)"
+fi
+
+# pr-resolve-all.md Phase 2 calls out the sandbox path.
+if grep -q 'sandbox-verification.md' .github/prompts/pr-resolve-all.md 2>/dev/null \
+  || grep -q 'default-branch-only workflow' .github/prompts/pr-resolve-all.md 2>/dev/null; then
+  pass "pr-resolve-all.md Phase 2 references the sandbox verification path (issue #227)"
+else
+  fail "pr-resolve-all.md missing sandbox-verification callout (issue #227)"
+fi
+
+# process_doc_maintenance.md ties PLAN_TEMPLATE + verify-pr.sh + matrix together.
+if grep -q 'verify-pr.sh' .context/rules/process_doc_maintenance.md 2>/dev/null \
+  && grep -q 'sandbox-verification.md' .context/rules/process_doc_maintenance.md 2>/dev/null; then
+  pass "process_doc_maintenance.md links verify-pr.sh + sandbox-verification.md (issue #227)"
+else
+  fail "process_doc_maintenance.md missing issue-#227 doc-sync row (issue #227)"
 fi
 
 echo ""

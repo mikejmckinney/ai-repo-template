@@ -63,8 +63,27 @@ list by more than ~30%, post a revised plan before pushing. -->
 
 ### Verification
 
+**Change class**: <code-or-docs | pull_request-triggered workflow | default-branch-only workflow | mixed>
+**Verification target**: <PR branch | sandbox repo | both>
+
+<!-- Pick the most-restrictive class your diff touches. The classifier in
+     `scripts/verify-pr.sh` will compare your declaration against the
+     actual changed paths and flag mismatches. The full trigger-event
+     matrix lives in `docs/guides/agent-pipeline.md` § "Workflow
+     verifiability matrix" — use it when you're unsure which bucket
+     applies. Default-branch-only changes MUST be verified in the
+     sandbox sibling repo before merging here (see ADR-016 and
+     `docs/guides/sandbox-verification.md`). -->
+
 <How a reviewer can prove this works. Specific commands, specific assertions,
 specific test names. "Tests pass" is not sufficient — name them.>
+
+<!-- Each command listed here must have a matching result entry in the
+     PR's `## Verification results` section before the PR enters review.
+     Sandbox-deferred items (where Verification target is `sandbox repo`
+     or `both` and the change can't be exercised from the PR branch) are
+     marked `⏭️ sandbox-deferred — see Phase 2` per ADR-016. Judge
+     enforces this mapping at diff-gate. -->
 
 ### Risks / out-of-scope
 

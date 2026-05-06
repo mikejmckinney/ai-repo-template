@@ -29,6 +29,7 @@
 | [ADR-013](./adr-013-pre-commit-on-main-default.md) | Pre-commit hook for `main` protection — not installed by default | Accepted |
 | [ADR-014](./adr-014-extend-preflight-to-adhoc-deliverables.md) | Extend Analyst Pre-Flight gate to ad-hoc deliverable issues | Accepted |
 | [ADR-015](./adr-015-postmortem-feedback-loop.md) | Postmortem feedback loop from downstream projects (capture + mirror prompts; three-tier promotion policy; v1 = manual) | Accepted |
+| [ADR-016](./adr-016-pre-merge-verification-gate.md) | Pre-merge verification gate (Plan-template Change-class field + `verify-pr.sh` classifier + sandbox sibling repo) | Accepted |
 | [ADR-017](./adr-017-template-repo-pre-commit-default.md) | Template repo installs pre-commit shellcheck + actionlint by default (template-only; ADR-013 unchanged for derived repos) | Accepted |
 | [ADR-018](./adr-018-multi-task-active-md-schema.md) | Multi-task schema for `.context/state/_active.md` (refines ADR-009) | Accepted |
 

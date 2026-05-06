@@ -168,6 +168,19 @@ Proceeding with fixes (substantive first, nits last).
 
 For each unresolved item, work through this sequence. Do not skip steps.
 
+> **Sandbox-class PRs (issue #227 / ADR-016)**: when this PR's
+> Implementation Plan declares `Change class: default-branch-only
+> workflow` (or `mixed` with a default-branch-only path), the
+> trigger constraint means a fix to the workflow file cannot be
+> exercised on the PR branch — GitHub Actions will load the workflow
+> from `main`, not from the PR ref. Pre-merge verification *must*
+> happen in the sandbox sibling repo per
+> [`docs/guides/sandbox-verification.md`](../../docs/guides/sandbox-verification.md).
+> If a Phase-2 Step-4 validation depends on observing the trigger
+> firing, run that validation in sandbox and link the green sandbox
+> run from the Resolution Report. Skipping this step is the failure
+> mode that produced the 11-round PR #225 cycle.
+
 ### Step 1 — Link
 Provide a direct URL to where the issue was mentioned (review comment permalink, PR description section, file + line in the diff, or issue number).
 
