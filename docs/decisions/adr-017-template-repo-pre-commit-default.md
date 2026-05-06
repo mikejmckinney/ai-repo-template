@@ -51,9 +51,11 @@ Concretely:
 
 1. Promote a *minimal* `.pre-commit-config.yaml` (shellcheck + actionlint
    only — no detect-secrets, commitizen, large-file checks, etc.) to
-   the repo root. The hook versions match the CI versions in
-   `.github/workflows/lint-and-format.yml` so a clean local run
-   guarantees a clean CI run for these two tools.
+   the repo root. The hook flags are kept in sync with
+   `.github/workflows/lint-and-format.yml`. A clean `pre-commit run --all-files`
+   is a strong signal CI will pass for these tools (note: shellcheck is
+   installed via apt in CI without a version pin, so exact version parity
+   is not guaranteed — only flag and severity parity).
 2. Keep `.pre-commit-config.yaml.template` intact as the heavyweight
    scaffold for derived repos. Add a top-of-file comment cross-linking
    ADR-017 so derived-repo contributors understand the divergence.
@@ -66,8 +68,8 @@ Concretely:
 ### Option 1: Install minimal `.pre-commit-config.yaml` for template only (chosen)
 
 - **Pros**: Closes the local-enforcement gap without imposing anything
-  on derived repos. Hook versions pin to CI versions so local-green
-  guarantees CI-green for these tools. Reversible: delete the file.
+  on derived repos. Hook flags are kept in sync with CI; a clean local
+  run is a strong signal CI will pass for these tools. Reversible: delete the file.
 - **Cons**: Template contributors must `pre-commit install` once after
   cloning. Heavy users running `git commit --no-verify` defeat the
   guardrail (mitigation: this is the same escape hatch every pre-commit
@@ -104,8 +106,9 @@ Concretely:
 
 - Template contributors catch shellcheck and actionlint failures before
   pushing, eliminating the simplest class of bot-review round.
-- Hook versions pin to CI versions, so a passing local run is a strong
-  signal CI will pass for these tools.
+- Hook flags are kept in sync with CI (actionlint version is pinned;
+  shellcheck is installed via apt in CI without a version pin). A passing
+  `pre-commit run --all-files` is a strong signal CI will pass for these tools.
 - Derived repos see no change. ADR-013's contract is preserved.
 - The `.pre-commit-config.yaml` ↔ `.template` divergence is documented
   in both files and in this ADR; cross-links make the two-track design
