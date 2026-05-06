@@ -63,14 +63,14 @@ state/
 If only one agent works at a time, you can:
 1. Have one task file at a time (e.g., `task_current.md`)
 2. Archive completed tasks to `sessions/`
-3. Simple and straightforward
+3. `_active.md` still uses the multi-task schema (ADR-018) — your single in-flight branch owns one `## Task:` section under `# Active Tasks`. The schema is the same in both modes; sequential work just means the file usually has one section instead of several.
 
 ### Multiple Agents / Parallel Work
 
 If multiple agents work simultaneously:
 1. Create separate task files: `task_auth.md`, `task_api.md`
-2. Each agent claims a task by updating its status to "In Progress"
-3. Use `_active.md` to indicate the highest priority task
+2. Each agent claims a task by adding its `## Task: <branch-name>` section to `_active.md` and updating `coordination.md` per the claim board.
+3. `_active.md` shows **all** in-flight tasks (one section per branch) — there is no "highest priority" pointer. Priority sequencing lives in `coordination.md` and `roadmap.md`.
 
 ## Task File Template
 
@@ -130,7 +130,7 @@ npm test
 
 1. Create `task_<id>.md` using the template above
 2. Set status to "In Progress"
-3. If using `_active.md`, update it to point to this task
+3. Add a `## Task: <branch-name>` section to `_active.md` (per ADR-018 multi-task schema)
 
 ### During Work
 
