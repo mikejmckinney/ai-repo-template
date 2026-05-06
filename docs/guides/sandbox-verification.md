@@ -80,7 +80,7 @@ detected and skipped with a log line).
 > Codespace is scoped to the current repo only and cannot create new
 > repos. You will hit `Resource not accessible by integration
 > (createRepository)` unless you set `BOOTSTRAP_GH_TOKEN` to a
-> classic PAT with `repo` scope (see above).
+> classic PAT with `repo` AND `workflow` scopes (see above).
 
 ### What the script does (for reference)
 
@@ -106,11 +106,11 @@ rm -rf "$(dirname "$MIRROR_DIR")"
 
 # 4. Set the sandbox CLAUDE_PAT secret from $SANDBOX_PAT.
 printf '%s' "$SANDBOX_PAT" | gh secret set CLAUDE_PAT \
-  --repo "$SANDBOX_REPO" --body-file -
+  --repo "$SANDBOX_REPO"
 
 # 5. (Optional) Set ANTHROPIC_API_KEY from $SANDBOX_ANTHROPIC_KEY.
 printf '%s' "$SANDBOX_ANTHROPIC_KEY" | gh secret set ANTHROPIC_API_KEY \
-  --repo "$SANDBOX_REPO" --body-file -
+  --repo "$SANDBOX_REPO"
 
 # 6. Add the sandbox remote on this checkout.
 git remote add "${SANDBOX_REMOTE:-sandbox}" "https://github.com/${SANDBOX_REPO}.git"

@@ -74,6 +74,15 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
+# If BOOTSTRAP_GH_TOKEN is set, apply it as GH_TOKEN before the auth
+# check so gh recognises the token even when no stored `gh auth login`
+# exists. gh's auth-precedence treats GH_TOKEN as overriding the stored
+# credential without modifying ~/.config/gh.
+if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
+  export GH_TOKEN="$BOOTSTRAP_GH_TOKEN"
+  log_info "Using BOOTSTRAP_GH_TOKEN for repo-create + mirror-push steps."
+fi
+
 if ! gh auth status >/dev/null 2>&1; then
   log_error "gh is not authenticated. Run 'gh auth login' first."
   exit 1
@@ -90,14 +99,10 @@ if [[ -z "${SANDBOX_PAT:-}" ]]; then
   exit 1
 fi
 
-# If BOOTSTRAP_GH_TOKEN is set, scope it to this script run only via
-# GH_TOKEN. gh's auth-precedence treats GH_TOKEN as overriding the
-# stored credential without modifying ~/.config/gh, so the user's
-# global `gh auth login` state is left untouched.
-if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
-  export GH_TOKEN="$BOOTSTRAP_GH_TOKEN"
-  log_info "Using BOOTSTRAP_GH_TOKEN for gh API calls in this run."
-fi
+# Managed work directory for all temp files in this run; EXIT trap
+# guarantees cleanup even on signal or early exit.
+_WORK_DIR=$(mktemp -d)
+trap 'rm -rf "$_WORK_DIR"' EXIT
 
 # ── Step 1: Resolve upstream repo ───────────────────────────────────────────
 
@@ -122,11 +127,10 @@ if gh repo view "$SANDBOX_REPO" >/dev/null 2>&1; then
 else
   if ! gh repo create "$SANDBOX_REPO" \
     --private \
-    --description "Sandbox for verifying default-branch-only workflow changes from ${UPSTREAM_NAME} (see ADR-016)" 2>/tmp/sandbox-bootstrap-create.err; then
-    err=$(cat /tmp/sandbox-bootstrap-create.err)
-    rm -f /tmp/sandbox-bootstrap-create.err
+    --description "Sandbox for verifying default-branch-only workflow changes from ${UPSTREAM_NAME} (see ADR-016)" 2>"${_WORK_DIR}/create.err"; then
+    err=$(cat "${_WORK_DIR}/create.err")
     log_error "gh repo create failed:"
-    log_error "  ${err}"
+    while IFS= read -r _line; do log_error "  ${_line}"; done <<<"${err}"
     if [[ "$err" == *"Resource not accessible"* ]] \
       || [[ "$err" == *"createRepository"* ]] \
       || [[ "$err" == *"403"* ]]; then
@@ -139,7 +143,7 @@ else
       log_error ""
       log_error "Recommended fix: mint a CLASSIC personal token at:"
       log_error "  https://github.com/settings/tokens/new"
-      log_error "Check the 'repo' scope (one box). Then re-run:"
+      log_error "Check BOTH the 'repo' AND 'workflow' scopes. Then re-run:"
       log_error "  BOOTSTRAP_GH_TOKEN=ghp_<classic PAT> SANDBOX_PAT=<...> \\"
       log_error "    ./scripts/sandbox-bootstrap.sh"
       log_error ""
@@ -151,7 +155,6 @@ else
     fi
     exit 1
   fi
-  rm -f /tmp/sandbox-bootstrap-create.err
   log_info "Created ${SANDBOX_REPO}."
 fi
 
@@ -159,17 +162,13 @@ fi
 
 log_step "Mirroring upstream into sandbox"
 
-MIRROR_PARENT=$(mktemp -d)
-MIRROR_DIR="${MIRROR_PARENT}/upstream.git"
-trap 'rm -rf "$MIRROR_PARENT"' EXIT
+MIRROR_DIR="${_WORK_DIR}/upstream.git"
 
-if ! git clone --bare "$UPSTREAM_URL" "$MIRROR_DIR" 2>/tmp/sandbox-clone.err; then
+if ! git clone --bare "$UPSTREAM_URL" "$MIRROR_DIR" 2>"${_WORK_DIR}/clone.err"; then
   log_error "Bare clone of upstream failed:"
-  while IFS= read -r _line; do log_error "  ${_line}"; done </tmp/sandbox-clone.err
-  rm -f /tmp/sandbox-clone.err
+  while IFS= read -r _line; do log_error "  ${_line}"; done <"${_WORK_DIR}/clone.err"
   exit 1
 fi
-rm -f /tmp/sandbox-clone.err
 
 # Build a minimal GIT_ASKPASS helper that returns the bootstrap token as the
 # HTTPS password. Writing it to a temp file avoids passing the token through
@@ -179,8 +178,8 @@ rm -f /tmp/sandbox-clone.err
 # ASKPASS contract: git calls the script with the prompt text as $1 and reads
 # the credential from stdout. When the URL contains "x-access-token" as the
 # user, git only asks for the password, so a single-value helper is sufficient.
-_TOK_FILE="$(mktemp)"
-_ASKPASS="$(mktemp)"
+_TOK_FILE="${_WORK_DIR}/.tok"
+_ASKPASS="${_WORK_DIR}/.askpass"
 chmod 600 "$_TOK_FILE"
 chmod 700 "$_ASKPASS"
 printf '%s\n' "${GH_TOKEN:-$(gh auth token)}" >"$_TOK_FILE"
@@ -191,9 +190,9 @@ if ! GIT_ASKPASS="$_ASKPASS" \
   -c credential.helper= \
   push --mirror \
   "https://x-access-token@github.com/${SANDBOX_REPO}.git" \
-  2>/tmp/sandbox-mirror-push.err; then
-  _err=$(cat /tmp/sandbox-mirror-push.err)
-  rm -f "$_TOK_FILE" "$_ASKPASS" /tmp/sandbox-mirror-push.err
+  2>"${_WORK_DIR}/mirror-push.err"; then
+  _err=$(cat "${_WORK_DIR}/mirror-push.err")
+  rm -f "$_TOK_FILE" "$_ASKPASS"
   log_error "Mirror push to ${SANDBOX_REPO} failed:"
   while IFS= read -r _line; do log_error "  ${_line}"; done <<<"$_err"
   log_error ""
@@ -221,8 +220,14 @@ if ! GIT_ASKPASS="$_ASKPASS" \
   exit 1
 fi
 rm -f "$_TOK_FILE" "$_ASKPASS"
-rm -f /tmp/sandbox-mirror-push.err
 log_info "Mirror push complete."
+
+# Scope reset: release BOOTSTRAP_GH_TOKEN from GH_TOKEN so Steps 4-5
+# (gh secret set) use the caller's normal gh auth identity, not the
+# bootstrap token which may lack Secrets: R/W permission.
+if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
+  unset GH_TOKEN
+fi
 
 # ── Step 4: Set CLAUDE_PAT secret ───────────────────────────────────────────
 
