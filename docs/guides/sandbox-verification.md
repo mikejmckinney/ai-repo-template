@@ -88,11 +88,12 @@ Use this when your Implementation Plan declares
 `Verification target: sandbox repo` (or `both`). The verbs follow the
 plan template's Verification section verbatim.
 
-> **Portability note**: examples below show the upstream
-> `mikejmckinney/ai-repo-template-sandbox` slug. In any project derived
-> from ai-repo-template, substitute your own
-> `<owner>/<repo>-sandbox` (the slug you created in step 1 above) — or
-> set `SANDBOX_REPO` in your shell and reuse the same variable everywhere.
+> **Portability note**: examples below reference `$SANDBOX_REPO` (set
+> during the bootstrap above as `<owner>/<repo>-sandbox`). Either keep
+> that variable exported in your working shell, or substitute the
+> literal slug for your project. The upstream value is
+> `mikejmckinney/ai-repo-template-sandbox`; derived projects will
+> resolve their own owner/repo from the bootstrap step.
 
 ### 1. Force-sync sandbox `main` to this repo's `main`
 
@@ -119,7 +120,7 @@ git push sandbox HEAD
 
 ```bash
 gh pr create \
-  --repo mikejmckinney/ai-repo-template-sandbox \
+  --repo "$SANDBOX_REPO" \
   --title "[sandbox] $(git log -1 --pretty=%s)" \
   --body "Sandbox verification for ai-repo-template PR <link to real PR>. Will be merged immediately to exercise the trigger." \
   --base main \
@@ -127,7 +128,7 @@ gh pr create \
 
 # Merge as soon as the PR is open. Sandbox PRs do not need bot review;
 # the real PR is the one that goes through the canonical gate.
-gh pr merge --repo mikejmckinney/ai-repo-template-sandbox \
+gh pr merge --repo "$SANDBOX_REPO" \
   --squash --delete-branch <sandbox-pr-number>
 ```
 
@@ -166,9 +167,9 @@ disentangle. The sandbox carries no permanent state worth preserving.
 
 ```bash
 # Close any open sandbox PRs.
-gh pr list --repo mikejmckinney/ai-repo-template-sandbox \
+gh pr list --repo "$SANDBOX_REPO" \
   --state open --json number --jq '.[].number' \
-  | xargs -I {} gh pr close --repo mikejmckinney/ai-repo-template-sandbox {}
+  | xargs -I {} gh pr close --repo "$SANDBOX_REPO" {}
 
 # Force-sync main from production again.
 git fetch origin main
