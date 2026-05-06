@@ -149,16 +149,44 @@ MIRROR_PARENT=$(mktemp -d)
 MIRROR_DIR="${MIRROR_PARENT}/upstream.git"
 trap 'rm -rf "$MIRROR_PARENT"' EXIT
 
-git clone --bare "$UPSTREAM_URL" "$MIRROR_DIR" >/dev/null 2>&1
-# Use a credential helper that injects $GH_TOKEN as the password so the
-# mirror push uses the same token as the rest of the bootstrap (matters
-# when BOOTSTRAP_GH_TOKEN is set to override the default gh auth).
-if ! git -C "$MIRROR_DIR" \
-  -c "credential.helper=!f() { echo \"username=x-access-token\"; echo \"password=${GH_TOKEN:-$(gh auth token)}\"; }; f" \
-  push --mirror "https://github.com/${SANDBOX_REPO}.git" >/dev/null 2>&1; then
-  log_error "Mirror push to ${SANDBOX_REPO} failed. Check that the auth token has 'Contents: R/W' on the sandbox repo."
+if ! git clone --bare "$UPSTREAM_URL" "$MIRROR_DIR" 2>/tmp/sandbox-clone.err; then
+  log_error "Bare clone of upstream failed:"
+  while IFS= read -r _line; do log_error "  ${_line}"; done </tmp/sandbox-clone.err
+  rm -f /tmp/sandbox-clone.err
   exit 1
 fi
+rm -f /tmp/sandbox-clone.err
+
+# Build a minimal GIT_ASKPASS helper that returns the bootstrap token as the
+# HTTPS password. Writing it to a temp file avoids passing the token through
+# git -c (which embeds it in quoting that varies by shell) and avoids putting
+# it on the push URL (where it may surface in git error messages).
+#
+# ASKPASS contract: git calls the script with the prompt text as $1 and reads
+# the credential from stdout. When the URL contains "x-access-token" as the
+# user, git only asks for the password, so a single-value helper is sufficient.
+_TOK_FILE="$(mktemp)"
+_ASKPASS="$(mktemp)"
+chmod 600 "$_TOK_FILE"
+chmod 700 "$_ASKPASS"
+printf '%s\n' "${GH_TOKEN:-$(gh auth token)}" >"$_TOK_FILE"
+printf '#!/bin/sh\ncat "%s"\n' "$_TOK_FILE" >"$_ASKPASS"
+
+if ! GIT_ASKPASS="$_ASKPASS" \
+  git -C "$MIRROR_DIR" push --mirror \
+  "https://x-access-token@github.com/${SANDBOX_REPO}.git" \
+  2>/tmp/sandbox-mirror-push.err; then
+  _err=$(cat /tmp/sandbox-mirror-push.err)
+  rm -f "$_TOK_FILE" "$_ASKPASS" /tmp/sandbox-mirror-push.err
+  log_error "Mirror push to ${SANDBOX_REPO} failed:"
+  while IFS= read -r _line; do log_error "  ${_line}"; done <<<"$_err"
+  log_error ""
+  log_error "Check that your BOOTSTRAP_GH_TOKEN has 'Contents: R/W' on the"
+  log_error "sandbox repo or across all repos in your account."
+  exit 1
+fi
+rm -f "$_TOK_FILE" "$_ASKPASS"
+rm -f /tmp/sandbox-mirror-push.err
 log_info "Mirror push complete."
 
 # ── Step 4: Set CLAUDE_PAT secret ───────────────────────────────────────────
