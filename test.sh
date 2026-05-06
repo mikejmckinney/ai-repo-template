@@ -143,15 +143,28 @@ done
 # --- _active.md multi-task schema (ADR-018) ---
 # `_active.md` uses a multi-section schema: each in-flight branch owns one
 # `## Task: <branch-name>` section under the `# Active Tasks` header.
-# Enforce: (a) the file has the `# Active Tasks` header; (b) when the body
-# below the schema comment block is non-empty, at least one `## Task:`
-# section header is present. An empty body (template-onboarding state) is
-# allowed; a body with task content but no `## Task:` header is not.
+# Enforce: (a) the file has the `# Active Tasks` header; (b) the file does
+# NOT contain the legacy `# Active Task` (singular) header from the old
+# single-task schema — mixed-format files indicate an incomplete migration;
+# (c) when the body below the schema comment block is non-empty, at least
+# one `## Task:` section header is present. An empty body (template-
+# onboarding state) is allowed; a body with task content but no `## Task:`
+# header is not.
 if [[ -f ".context/state/_active.md" ]]; then
   if grep -qE '^# Active Tasks\b' .context/state/_active.md; then
     pass ".context/state/_active.md has '# Active Tasks' header (ADR-018 schema)"
   else
     fail ".context/state/_active.md missing '# Active Tasks' header (ADR-018 schema)"
+  fi
+
+  # Reject the legacy singular-form header — its presence means the ADR-018
+  # migration was incomplete (legacy single-task block left in place).
+  # Match `# Active Task` only when NOT followed by `s` (so the new
+  # `# Active Tasks` plural header does not trip the check).
+  if grep -qE '^# Active Task([^s]|$)' .context/state/_active.md; then
+    fail ".context/state/_active.md contains legacy '# Active Task' (singular) header — ADR-018 migration incomplete"
+  else
+    pass ".context/state/_active.md has no legacy '# Active Task' (singular) header"
   fi
 
   # Strip HTML comment blocks and the file header; if anything non-blank
