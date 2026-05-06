@@ -228,12 +228,11 @@ log_info "Mirror push complete."
 
 log_step "Setting CLAUDE_PAT secret on sandbox repo"
 
-# `gh secret set --body` reads the value from the flag; the secret never
-# touches the shell history beyond the current process env. Use --body-file
-# /dev/stdin if you'd rather pipe; both go through the same upload path.
+# Pipe the secret value via stdin — gh reads from stdin when no --body
+# flag is given. This keeps the value out of argv (process listings,
+# shell history, error messages).
 printf '%s' "$SANDBOX_PAT" | gh secret set CLAUDE_PAT \
-  --repo "$SANDBOX_REPO" \
-  --body-file -
+  --repo "$SANDBOX_REPO"
 log_info "CLAUDE_PAT set."
 
 # ── Step 5: (Optional) Set ANTHROPIC_API_KEY ────────────────────────────────
@@ -241,8 +240,7 @@ log_info "CLAUDE_PAT set."
 if [[ -n "${SANDBOX_ANTHROPIC_KEY:-}" ]]; then
   log_step "Setting ANTHROPIC_API_KEY secret on sandbox repo"
   printf '%s' "$SANDBOX_ANTHROPIC_KEY" | gh secret set ANTHROPIC_API_KEY \
-    --repo "$SANDBOX_REPO" \
-    --body-file -
+    --repo "$SANDBOX_REPO"
   log_info "ANTHROPIC_API_KEY set."
 else
   log_warn "SANDBOX_ANTHROPIC_KEY not set — skipping ANTHROPIC_API_KEY (sandbox claude.yml runs will be unavailable until set manually)."
