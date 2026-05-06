@@ -289,9 +289,12 @@ bash scripts/pr-iteration-stats.sh --window 14
 
 # Pre-push review (Critic + lint + ./test.sh on the working-tree diff)
 # SHOULD before `git push` on non-trivial diffs; MUST for DevOps on
-# shell/workflow changes. See AGENTS.md → "Work style" and
-# .github/agents/devops.agent.md.
-#   See .github/prompts/pre-push-review.md for the full procedure.
+# shell/workflow changes. Override the base branch with BASE_REF.
+# See AGENTS.md → "Work style" and .github/agents/devops.agent.md.
+BASE_REF=main bash .github/prompts/pre-push-review.md
+# (The prompt is read by Claude Code / Copilot / Cursor agents via
+#  `@<agent> follow .github/prompts/pre-push-review.md`; the bash line
+#  above is the manual-runner equivalent for local CI scripts.)
 
 # List all markdown files
 find . -name "*.md" -not -path "./.git/*" | head -20
