@@ -127,6 +127,15 @@ Use this when your Implementation Plan declares
 `Verification target: sandbox repo` (or `both`). The verbs follow the
 plan template's Verification section verbatim.
 
+> **Authentication**: the `git push` and `gh` commands below require a
+> token with `repo` + `workflow` scopes on the sandbox repo. In a
+> workflow step, this is available as `${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}`
+> (see `docs/guides/agent-pipeline.md` § "Required secrets"). When
+> running manually from a Codespace or local checkout, pass the same
+> classic PAT as `BOOTSTRAP_GH_TOKEN` and use the `GIT_ASKPASS` + `-c
+> credential.helper=` bypass shown in `scripts/sandbox-bootstrap.sh`
+> Steps 3–4, or run `gh auth login` with that token first.
+
 > **Portability note**: examples below reference `$SANDBOX_REPO` (set
 > during the bootstrap above as `<owner>/<repo>-sandbox`). Either keep
 > that variable exported in your working shell, or substitute the

@@ -224,8 +224,7 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 | Secret | Required by | Scopes / Source |
 |--------|-------------|-----------------|
 | `CLAUDE_PAT` | All 12 agent workflows that call `gh` (assignment, auto-merge, auto-ready, coordination-sync, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
-| `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
-
+| `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> || `SANDBOX_BOOTSTRAP_TOKEN` | Sandbox verification steps (force-push sandbox `main`, push branch, `gh pr create/merge` on the sandbox repo). Used by agents running in workflows; maintainers running locally pass the same token as `BOOTSTRAP_GH_TOKEN` env var instead. | Classic PAT, `repo` + `workflow` scopes. Must be classic — fine-grained tokens cannot push `.github/workflows/` files without special account-level scope that typically isn't available until after the sandbox repo is created. See `docs/guides/sandbox-verification.md`. |
 **Two ways to provide them**, in order of preference for users running multiple derived repos:
 
 1. **Org-level (recommended for org users).** Org settings → Secrets and variables → Actions → New organization secret → grant access to the relevant repos. New repos in the org pick up the secrets automatically. The `Verify required secrets` guard treats org-granted secrets identically to per-repo ones.
