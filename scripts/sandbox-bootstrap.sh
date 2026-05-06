@@ -74,13 +74,19 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
+# Preserve the caller's GH_TOKEN (if any) so we can restore it at the end.
+_PREV_GH_TOKEN="${GH_TOKEN:-}"
+
 # If BOOTSTRAP_GH_TOKEN is set, apply it as GH_TOKEN before the auth
 # check so gh recognises the token even when no stored `gh auth login`
 # exists. gh's auth-precedence treats GH_TOKEN as overriding the stored
 # credential without modifying ~/.config/gh.
+# GH_TOKEN stays active for the full script run (Steps 1–6): classic PATs
+# with 'repo' + 'workflow' scopes have Secrets: R/W access, so the same
+# token that creates/mirrors the repo can also set its secrets.
 if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
   export GH_TOKEN="$BOOTSTRAP_GH_TOKEN"
-  log_info "Using BOOTSTRAP_GH_TOKEN for repo-create + mirror-push steps."
+  log_info "Using BOOTSTRAP_GH_TOKEN for this script run."
 fi
 
 if ! gh auth status >/dev/null 2>&1; then
@@ -130,7 +136,7 @@ else
     --description "Sandbox for verifying default-branch-only workflow changes from ${UPSTREAM_NAME} (see ADR-016)" 2>"${_WORK_DIR}/create.err"; then
     err=$(cat "${_WORK_DIR}/create.err")
     log_error "gh repo create failed:"
-    while IFS= read -r _line; do log_error "  ${_line}"; done <<<"${err}"
+    [[ -n "${err}" ]] && while IFS= read -r _line; do log_error "  ${_line}"; done <<<"${err}"
     if [[ "$err" == *"Resource not accessible"* ]] \
       || [[ "$err" == *"createRepository"* ]] \
       || [[ "$err" == *"403"* ]]; then
@@ -222,13 +228,6 @@ fi
 rm -f "$_TOK_FILE" "$_ASKPASS"
 log_info "Mirror push complete."
 
-# Scope reset: release BOOTSTRAP_GH_TOKEN from GH_TOKEN so Steps 4-5
-# (gh secret set) use the caller's normal gh auth identity, not the
-# bootstrap token which may lack Secrets: R/W permission.
-if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
-  unset GH_TOKEN
-fi
-
 # ── Step 4: Set CLAUDE_PAT secret ───────────────────────────────────────────
 
 log_step "Setting CLAUDE_PAT secret on sandbox repo"
@@ -275,3 +274,13 @@ log_step "Sandbox bootstrap complete"
 git remote -v | grep -E "^(origin|${SANDBOX_REMOTE})" || true
 echo
 log_info "Next: see docs/guides/sandbox-verification.md § 'Per-PR verification flow'."
+
+# Restore the caller's original GH_TOKEN so this script leaves the
+# calling environment unchanged (matters when the script is sourced).
+if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
+  if [[ -n "${_PREV_GH_TOKEN}" ]]; then
+    export GH_TOKEN="$_PREV_GH_TOKEN"
+  else
+    unset GH_TOKEN
+  fi
+fi

@@ -134,7 +134,7 @@ plan template's Verification section verbatim.
 > running manually from a Codespace or local checkout, pass the same
 > classic PAT as `BOOTSTRAP_GH_TOKEN` and use the `GIT_ASKPASS` + `-c
 > credential.helper=` bypass shown in `scripts/sandbox-bootstrap.sh`
-> Steps 3–4, or run `gh auth login` with that token first.
+> Step 3 (mirror push), or run `gh auth login` with that token first.
 
 > **Portability note**: examples below reference `$SANDBOX_REPO` (set
 > during the bootstrap above as `<owner>/<repo>-sandbox`). Either keep
