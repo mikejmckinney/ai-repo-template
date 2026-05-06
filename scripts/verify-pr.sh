@@ -71,14 +71,31 @@ quiet=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --base)        base="$2"; shift 2 ;;
-    --declared)    declared="$2"; shift 2 ;;
-    --paths-from)  paths_from="$2"; shift 2 ;;
-    --quiet)       quiet=1; shift ;;
-    -h|--help)     usage; exit 0 ;;
-    *)             printf 'verify-pr.sh: unknown argument: %s\n' "$1" >&2
-                   usage >&2
-                   exit 2 ;;
+    --base)
+      base="$2"
+      shift 2
+      ;;
+    --declared)
+      declared="$2"
+      shift 2
+      ;;
+    --paths-from)
+      paths_from="$2"
+      shift 2
+      ;;
+    --quiet)
+      quiet=1
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      printf 'verify-pr.sh: unknown argument: %s\n' "$1" >&2
+      usage >&2
+      exit 2
+      ;;
   esac
 done
 
@@ -157,7 +174,10 @@ DEFAULT_ONLY_TRIGGERS=(
 )
 
 # Build alternation for grep -E, e.g. "(push|schedule|...)".
-DEFAULT_ONLY_ALT=$(IFS='|'; printf '(%s)' "${DEFAULT_ONLY_TRIGGERS[*]}")
+DEFAULT_ONLY_ALT=$(
+  IFS='|'
+  printf '(%s)' "${DEFAULT_ONLY_TRIGGERS[*]}"
+)
 
 # Detect whether a workflow file's `on:` block carries any default-only
 # trigger. Handles four common YAML shapes (and excludes comments and
@@ -187,24 +207,27 @@ detect_default_only() {
   cleaned=$(sed -E 's/[[:space:]]+#.*$//; s/^#.*$//' "$file")
   # Pattern 1 (block-form key) AND pattern 2 (block-form list item).
   if printf '%s\n' "$cleaned" \
-      | grep -qE "^[[:space:]]*(-[[:space:]]+)?${DEFAULT_ONLY_ALT}([[:space:]]*:|[[:space:]]*$)"; then
+    | grep -qE "^[[:space:]]*(-[[:space:]]+)?${DEFAULT_ONLY_ALT}([[:space:]]*:|[[:space:]]*$)"; then
     return 0
   fi
   # Pattern 3 (inline scalar): `on: push` on a single line.
   if printf '%s\n' "$cleaned" \
-      | grep -qE "^on:[[:space:]]+${DEFAULT_ONLY_ALT}[[:space:]]*$"; then
+    | grep -qE "^on:[[:space:]]+${DEFAULT_ONLY_ALT}[[:space:]]*$"; then
     return 0
   fi
   # Pattern 4 (inline flow sequence): `on: [push, schedule, ...]`.
-  # Match the `[...]` block on the `on:` line and look for any default
-  # trigger token surrounded by `[`, `,`, `]`, or whitespace.
+  # Match the `[...]` block on the `on:` line. Closing `]` cannot be
+  # placed inside a bracket expression in ERE (it would terminate it),
+  # so the trailing delimiter is expressed as an alternation
+  # `(,|[[:space:]]*])` instead. Token must be preceded by `[`,
+  # whitespace, or `,`.
   if printf '%s\n' "$cleaned" \
-      | grep -qE "^on:[[:space:]]*\[[^]]*[[:space:],[]${DEFAULT_ONLY_ALT}[[:space:],\\]]"; then
+    | grep -qE "^on:[[:space:]]*\[[^]]*[[:space:],[]${DEFAULT_ONLY_ALT}([[:space:]]*,|[[:space:]]*\])"; then
     return 0
   fi
-  # Edge case: leading flow-sequence token `on: [push,`.
+  # Edge case: leading flow-sequence token `on: [push,` or `on: [push]`.
   if printf '%s\n' "$cleaned" \
-      | grep -qE "^on:[[:space:]]*\[${DEFAULT_ONLY_ALT}([[:space:]]*,|[[:space:]]*\\])"; then
+    | grep -qE "^on:[[:space:]]*\[${DEFAULT_ONLY_ALT}([[:space:]]*,|[[:space:]]*\])"; then
     return 0
   fi
   return 1

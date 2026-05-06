@@ -126,6 +126,19 @@ jobs:
     steps: [{ run: "echo" }]
 YAML
 
+# Inline flow-sequence with the default-only trigger at the END of the
+# list (`on: [pull_request, push]`). Regression guard for the GEM-G
+# bug where the trailing-`]` delimiter wasn't matchable inside an ERE
+# bracket expression.
+cat >"$fixture_dir/.github/workflows/inline-flow-trailing.yml" <<'YAML'
+name: inline-flow-trailing
+on: [pull_request, push]
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps: [{ run: "echo" }]
+YAML
+
 # Block-form list-bullet: `- push`. Default-branch-only.
 cat >"$fixture_dir/.github/workflows/block-list-push.yml" <<'YAML'
 name: block-list-push
@@ -358,6 +371,13 @@ else
   PASS=$((PASS + 1))
   printf '  ✅ CASE-18 omits sandbox recommendation when no default-branch-only present\n'
 fi
+
+# ── CASE-19: regression guard for GEM-G — trigger at the END of an inline list ─
+echo ""
+echo "CASE-19: inline flow \`on: [pull_request, push]\` (push at end) → default-branch-only"
+result=$(run_case "default-branch-only workflow" \
+  ".github/workflows/inline-flow-trailing.yml")
+assert_eq "CASE-19 exit code" "0" "${result%%:*}"
 
 # ── summary ──────────────────────────────────────────────────────────────────
 

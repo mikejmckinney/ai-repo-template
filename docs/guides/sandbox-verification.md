@@ -66,7 +66,7 @@ gh secret set ANTHROPIC_API_KEY \
 
 # 6. Configure the sandbox remote on your working clone of the real repo.
 cd <your local checkout of the upstream repo>
-git remote add sandbox https://github.com/mikejmckinney/ai-repo-template-sandbox.git
+git remote add sandbox "https://github.com/${SANDBOX_REPO}.git"
 git remote -v   # verify both `origin` and `sandbox`
 ```
 
