@@ -154,6 +154,19 @@ jobs:
       # on: push  ← this is a comment and must not trigger detection
 YAML
 
+# A repository_dispatch workflow — like push/schedule, this is loaded
+# from the default branch, so PR-branch changes are unverifiable.
+cat >"$fixture_dir/.github/workflows/repository-dispatch.yml" <<'YAML'
+name: repository-dispatch
+on:
+  repository_dispatch:
+    types: [custom-event]
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps: [{ run: "echo" }]
+YAML
+
 run_case() {
   # run_case <declared> <paths-newline-separated>
   # Echoes "<exit>:<stdout+stderr>"
@@ -319,6 +332,32 @@ result=$(run_case "pull_request-triggered workflow" \
 assert_eq "CASE-16 exit code" "0" "${result%%:*}"
 assert_contains 'CASE-16 reports match (no false positive on push in body)' \
   "matches detection" "${result#*:}"
+
+# ── CASE-17: repository_dispatch is default-branch-only ──────────────────────
+echo ""
+echo "CASE-17: repository_dispatch workflow → default-branch-only (exit 0 when matched)"
+result=$(run_case "default-branch-only workflow" \
+  ".github/workflows/repository-dispatch.yml")
+assert_eq "CASE-17 exit code" "0" "${result%%:*}"
+
+# ── CASE-18: mixed advice when no default-branch-only present points to PR branch ─
+echo ""
+echo "CASE-18: mixed (code + pull_request-only) declared as code-or-docs → mismatch advises PR branch, NOT sandbox"
+result=$(run_case "code-or-docs" "README.md
+.github/workflows/lint-and-format.yml")
+assert_eq "CASE-18 exit code" "1" "${result%%:*}"
+assert_contains "CASE-18 advises PR branch (no default-branch-only present)" \
+  "Verification target: PR branch" "${result#*:}"
+# Should NOT recommend sandbox here.
+case18_body="${result#*:}"
+if printf '%s' "$case18_body" | grep -qF 'sandbox-verification.md'; then
+  FAIL=$((FAIL + 1))
+  FAILED_NAMES+=("CASE-18 should NOT recommend sandbox for mixed-without-default-only")
+  printf '  ❌ CASE-18 should NOT recommend sandbox for mixed-without-default-only\n'
+else
+  PASS=$((PASS + 1))
+  printf '  ✅ CASE-18 omits sandbox recommendation when no default-branch-only present\n'
+fi
 
 # ── summary ──────────────────────────────────────────────────────────────────
 

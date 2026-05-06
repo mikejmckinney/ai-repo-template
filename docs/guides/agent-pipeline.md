@@ -179,7 +179,7 @@ label (defense in depth).
 | `pull_request_target` | Default (base) branch — GitHub loads the workflow from the PR's *base*, not the head, so PR-branch changes are unverifiable. This is also the trigger most commonly abused for write-permission escalation. | No | `default-branch-only workflow` |
 | `issue_comment` | Default branch | No | `default-branch-only workflow` |
 | `push`, `schedule` | Default branch | No | `default-branch-only workflow` |
-| `workflow_run` (chained from another workflow) | Default branch | No | `default-branch-only workflow` |
+| `workflow_run` (chained from another workflow), `repository_dispatch` | Default branch | No | `default-branch-only workflow` |
 | Any combination of PR-triggered + default-branch-only triggers in the same file | The most-restrictive trigger wins | No | `default-branch-only workflow` |
 | Diff that mixes a workflow file with non-workflow paths | n/a | Per-file basis | `mixed` (most-restrictive bucket sets the floor) |
 | Diff that touches no `.github/workflows/*.yml` files | n/a | Yes | `code-or-docs` |

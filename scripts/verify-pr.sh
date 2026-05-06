@@ -153,6 +153,7 @@ DEFAULT_ONLY_TRIGGERS=(
   push
   schedule
   workflow_run
+  repository_dispatch
 )
 
 # Build alternation for grep -E, e.g. "(push|schedule|...)".
@@ -286,12 +287,29 @@ printf '    declared:  %s\n' "$declared" >&2
 printf '    detected:  %s\n' "$detected_overall" >&2
 printf '\nNext steps:\n' >&2
 case "$detected_overall" in
-  "default-branch-only workflow"|"mixed")
+  "default-branch-only workflow")
     printf '  - Update the issue Plan comment Verification section:\n' >&2
     printf '      Change class: %s\n' "$detected_overall" >&2
     printf '      Verification target: sandbox repo (or both)\n' >&2
     printf '  - Run the sandbox playbook before merging:\n' >&2
     printf '      docs/guides/sandbox-verification.md\n' >&2
+    ;;
+  "mixed")
+    # In a mixed diff the verification floor is set by the
+    # most-restrictive bucket present, NOT by the literal label
+    # "mixed". If any default-branch-only path is in the diff, the
+    # sandbox playbook applies; otherwise the floor is PR-branch
+    # verifiable. Mirrors the matrix in
+    # docs/guides/agent-pipeline.md § "Workflow verifiability matrix".
+    printf '  - Update the issue Plan comment Verification section:\n' >&2
+    printf '      Change class: mixed\n' >&2
+    if [[ "$has_default_only" -eq 1 ]]; then
+      printf '      Verification target: sandbox repo (or both)\n' >&2
+      printf '  - Run the sandbox playbook before merging:\n' >&2
+      printf '      docs/guides/sandbox-verification.md\n' >&2
+    else
+      printf '      Verification target: PR branch\n' >&2
+    fi
     ;;
   "pull_request-triggered workflow")
     printf '  - Update the issue Plan comment Verification section:\n' >&2
