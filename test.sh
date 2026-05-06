@@ -77,6 +77,7 @@ REQUIRED_FILES=(
   ".github/prompts/expand-backlog-entry.md"
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"
+  ".github/prompts/pre-push-review.md"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
 )
@@ -1051,6 +1052,61 @@ for reviewer_file in ".cursor/BUGBOT.md" ".gemini/styleguide.md"; do
     fail "$reviewer_file missing cap-override gate mirror (issue #229 Phase 4)"
   fi
 done
+
+echo ""
+
+# --- Phase 3 invariants (issue #229 Phase 3 / pre-push Critic) ---
+echo "Checking Phase 3 components (issue #229 Phase 3 / pre-push review)..."
+
+PRE_PUSH_PROMPT=".github/prompts/pre-push-review.md"
+if [[ -f "$PRE_PUSH_PROMPT" ]]; then
+  # Frontmatter present (the prompts/README schema).
+  if head -1 "$PRE_PUSH_PROMPT" | grep -q '^---$'; then
+    pass "$PRE_PUSH_PROMPT has YAML frontmatter"
+  else
+    fail "$PRE_PUSH_PROMPT missing YAML frontmatter (prompts/README schema)"
+  fi
+fi
+
+# AGENTS.md "Work style" references the prompt as a SHOULD.
+if grep -q 'pre-push-review.md' AGENTS.md 2>/dev/null \
+  && grep -q 'SHOULD' AGENTS.md 2>/dev/null \
+  && grep -q 'non-trivial' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md \"Work style\" references pre-push-review.md (issue #229 Phase 3)"
+else
+  fail "AGENTS.md missing pre-push-review.md SHOULD reference (issue #229 Phase 3)"
+fi
+
+# DevOps role MUSTs the prompt for shell/workflow changes.
+if grep -q 'pre-push-review.md' .github/agents/devops.agent.md 2>/dev/null \
+  && grep -q 'MUST' .github/agents/devops.agent.md 2>/dev/null; then
+  pass "devops.agent.md MUSTs pre-push-review.md for shell/workflow changes"
+else
+  fail "devops.agent.md missing pre-push-review.md MUST (issue #229 Phase 3)"
+fi
+
+# Critic role documents the three invocation surfaces.
+if grep -q 'PLAN-GATE' .github/agents/critic.agent.md 2>/dev/null \
+  && grep -q 'DIFF-GATE' .github/agents/critic.agent.md 2>/dev/null \
+  && grep -q 'PRE-PUSH' .github/agents/critic.agent.md 2>/dev/null; then
+  pass "critic.agent.md documents PLAN-GATE / DIFF-GATE / PRE-PUSH surfaces"
+else
+  fail "critic.agent.md missing PRE-PUSH invocation surface (issue #229 Phase 3)"
+fi
+
+# Prompts index lists the new prompt.
+if grep -q 'pre-push-review.md' .github/prompts/README.md 2>/dev/null; then
+  pass ".github/prompts/README.md indexes pre-push-review.md"
+else
+  fail ".github/prompts/README.md missing pre-push-review.md index entry"
+fi
+
+# agent-best-practices.md links to the prompt.
+if grep -q 'pre-push-review.md' docs/guides/agent-best-practices.md 2>/dev/null; then
+  pass "agent-best-practices.md links pre-push-review.md"
+else
+  fail "agent-best-practices.md missing pre-push-review.md link (issue #229 Phase 3)"
+fi
 
 echo ""
 

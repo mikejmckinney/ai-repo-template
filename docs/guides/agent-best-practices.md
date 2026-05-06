@@ -33,6 +33,15 @@ When resolving items from a PR review pass, **each commit must address only one 
 
 Note: this is consistent with `pr-resolve-all.md`'s "Classify before fixing" Round discipline Rule 3 (issue #220), which keeps substantive fixes in separate commits; this rule applies the same single-concern discipline per commit.
 
+### Pre-push review (local Critic + lint + tests)
+
+Run [`.github/prompts/pre-push-review.md`](../../.github/prompts/pre-push-review.md) before `git push` on any non-trivial diff. The prompt produces a single Markdown summary with three sections — Critic findings (MAJOR CONCERN or higher only), lint (`shellcheck` + `shfmt` + `actionlint` + `lint-shell-conventions.sh`) on changed files, and `./test.sh`. Push only when every section reports PASS.
+
+- **SHOULD** for any non-trivial diff (>50 LOC OR any `scripts/*.sh`, `.github/workflows/*.yml`, role file, or `AGENTS.md`/`CLAUDE.md`/`.github/copilot-instructions.md` change).
+- **MUST** for the DevOps role on shell/workflow changes — see `.github/agents/devops.agent.md` Do list.
+- **Why**: shifts subjective-quality findings from the post-push bot-review loop (which costs an agent round each time) to a single local pass. Phase 1 (`lint-and-format.yml`) handles the static class in CI; this prompt handles the subjective class locally before push.
+- **Out of scope (deliberate)**: a pre-push git hook is *not* installed in v1 (per ADR-013-style local-friction concerns) — the SHOULD/MUST in role files plus the runnable prompt is the lever.
+
 ## Smoke-test PR convention
 
 Workflow-validation / smoke-test PRs (the kind we ran for #114, #116) exist to *observe* what the workflows do, not to ship behavior. They must NOT have their behavior modified mid-test by the auto-fix or auto-merge pipelines.

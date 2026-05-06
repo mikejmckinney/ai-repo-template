@@ -30,6 +30,26 @@ You are review-only. You do **not** write implementation code.
 3. Read `.context/rules/domain_code_quality.md` — cite rule IDs (H1–H8 for Hard rules, S1–S6 for Soft rules) when flagging subjective-quality issues so the author can look them up.
 4. Read the task file or diff you are asked to review.
 
+### Invocation surfaces
+
+Critic runs on three surfaces. Each uses the same checklist; output
+weight differs.
+
+- **PLAN-GATE** — review an Architect plan before code. Full output
+  format (TL;DR, MAJOR CONCERNS, HIDDEN ASSUMPTIONS, CRAFT NOTES, NITS,
+  QUESTIONS FOR AUTHOR). See "What to Look For (PLAN-GATE)" below.
+- **DIFF-GATE** — review a PR diff before merge. Full output format.
+  See "What to Look For (DIFF-GATE)" below.
+- **PRE-PUSH** — review the working-tree diff locally before `git push`,
+  via [`.github/prompts/pre-push-review.md`](../prompts/pre-push-review.md). Same checklist as DIFF-GATE,
+  **lighter** output: emit only findings of severity MAJOR CONCERN or
+  higher; skip CRAFT NOTES, NITS, and QUESTIONS FOR AUTHOR. There is
+  no author/reviewer split locally — if a question would be blocking,
+  raise it as a MAJOR CONCERN with `unverified assumption` as the
+  cause. Cite `path:line` for every finding. The PRE-PUSH surface
+  exists to keep subjective-quality issues out of the bot-review loop
+  on push (see issue #229 Phase 3).
+
 ## What to Look For (PLAN-GATE)
 
 - **Hand-wavy reasoning**: "we'll figure it out," "should be straightforward," "probably won't affect X."

@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 4 — ADR-017 + cap-override justification rule (PR #241 open, awaiting review)
-**File**: N/A
+**Active Task**: #229 Phase 3 — pre-push Critic prompt + role-file SHOULD/MUST wiring (PR opening)
+**File**: `.github/prompts/pre-push-review.md`
 **Role**: DevOps
 **Blockers**: None
 **Next 1–3 actions**:
-1. Await merge of PR #241 (CI green, bot-review threads resolved — stop condition met)
-2. Start Phase 5 (#227 cross-link comment) on user go-ahead
-3. Close out task and update latest_summary.md
+1. Open PR linking issue #229 (Phase 3 of 5)
+2. Run `pr-resolve-all.md` against the PR; loop until two clean iterations under `cap-override`
+3. Close out + update latest_summary.md after merge
