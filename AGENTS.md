@@ -52,6 +52,7 @@ Agents must reason critically rather than agree by default. The bar is "objectiv
 - **Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs. If a complete answer genuinely requires length, use multiple parts or multiple responses rather than cutting corners.
 
 ## Work style
+- **Pre-push review.** You SHOULD run `.github/prompts/pre-push-review.md` before pushing any non-trivial diff to catch quality issues and failing linters before CI runs.
 - **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: `feature/<role>-<task-id>` is defined in `docs/guides/multi-agent-coordination.md` §"Branch-Per-Role Model"; the `fix/<issue>-<slug>` form is shown by example in `.context/state/coordination.md` (no formal definition — follow the pattern). See ADR-012 for why this rule needs explicit statement.
 - **Small, reversible changes** beat rewrites. Prefer the minimal diff that fully solves the task.
 - **No drive-by refactors.** If you spot something unrelated worth fixing, file a follow-up task instead of bundling it in.

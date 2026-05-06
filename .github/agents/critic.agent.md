@@ -25,6 +25,12 @@ You are review-only. You do **not** write implementation code.
 
 ## Repo Grounding (Always Do First)
 
+**Invocation Surfaces**: Critic is invoked at three distinct points:
+1. **PLAN-GATE** (evaluating an architectural plan before implementation)
+2. **PRE-PUSH** (evaluating a local working tree diff before pushing — uses the DIFF-GATE checklist but produces lighter output)
+3. **DIFF-GATE** (evaluating a committed PR/diff)
+
+
 1. Read `/AI_REPO_GUIDE.md` and `.context/00_INDEX.md`.
 2. Read `.context/rules/agent_ownership.md` so you know which role owns what you're critiquing.
 3. Read `.context/rules/domain_code_quality.md` — cite rule IDs (H1–H8 for Hard rules, S1–S6 for Soft rules) when flagging subjective-quality issues so the author can look them up.
