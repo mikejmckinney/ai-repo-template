@@ -15,10 +15,13 @@ agent: agent
 >   `.github/workflows/*.yml`, or shell embedded in workflow `run:`
 >   blocks (see `.github/agents/devops.agent.md` Do list).
 >
-> **When to skip**: trivial diffs (≤50 LOC and no shell/workflow/role
-> file changes), revert PRs, and bot-authored PRs (Renovate, Dependabot)
-> are exempt. Phase 1's CI lint and the post-push bot-review loop still
-> run.
+> **When to skip**: trivial diffs are exempt — i.e. ≤50 LOC changed
+> AND no change to `scripts/*.sh`, `.github/workflows/*.yml`, role
+> files (`.github/agents/*.agent.md`, `.claude/agents/*.md`), or
+> `AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`. (Same
+> non-trivial definition as AGENTS.md → "Work style".) Revert PRs and
+> bot-authored PRs (Renovate, Dependabot) are also exempt. Phase 1's
+> CI lint and the post-push bot-review loop still run.
 
 This prompt is the local complement to `pr-resolve-all.md`. That prompt
 covers *how* to fix bot findings after push; this prompt covers *what
@@ -59,9 +62,12 @@ if git rev-parse --verify --quiet "origin/${BASE_REF}" >/dev/null; then
 elif git rev-parse --verify --quiet "${BASE_REF}" >/dev/null; then
   DIFF_RANGE="${BASE_REF}...HEAD"
 else
+  # Per the prompt's Inputs section, SKIPPED is not a failure. Exit 0
+  # so a local-only / offline repo (or one that legitimately doesn't
+  # have the base ref yet) doesn't block the implementer's push.
   printf 'SKIPPED — base ref %s not resolvable (no origin/%s and no local %s)\n' \
-    "$BASE_REF" "$BASE_REF" "$BASE_REF" >&2
-  exit 2
+    "$BASE_REF" "$BASE_REF" "$BASE_REF"
+  exit 0
 fi
 ```
 
