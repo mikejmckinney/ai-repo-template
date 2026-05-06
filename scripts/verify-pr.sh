@@ -145,7 +145,69 @@ has_other=0
 # Treating it as PR-branch verifiable would be wrong, and it's also
 # the trigger most often abused for write-permission escalation, so
 # being conservative here is the right default.
-DEFAULT_ONLY_TRIGGERS_RE='^[[:space:]]*(pull_request_review|pull_request_review_comment|pull_request_target|issue_comment|push|schedule|workflow_run)([[:space:]]*:|[[:space:]]*$)'
+DEFAULT_ONLY_TRIGGERS=(
+  pull_request_review
+  pull_request_review_comment
+  pull_request_target
+  issue_comment
+  push
+  schedule
+  workflow_run
+)
+
+# Build alternation for grep -E, e.g. "(push|schedule|...)".
+DEFAULT_ONLY_ALT=$(IFS='|'; printf '(%s)' "${DEFAULT_ONLY_TRIGGERS[*]}")
+
+# Detect whether a workflow file's `on:` block carries any default-only
+# trigger. Handles four common YAML shapes (and excludes comments and
+# jobs/steps):
+#
+#   1. Block-form key:        `  push:` or `  push:\n    branches: [main]`
+#   2. Block-form list item:  `  - push` or `  - push:`
+#   3. Inline scalar:         `on: push`
+#   4. Inline flow sequence:  `on: [push, schedule]`
+#
+# Pre-step: strip `#` comments (anywhere on a line) so a commented-out
+# `# on: push` cannot trigger a false positive. Multi-line YAML comments
+# don't exist, so a one-pass strip is sufficient.
+#
+# This is regex-based rather than YAML-parsed because the script is
+# pure bash with no python/yq dependency. Edge cases (a job literally
+# named `push:`, an env var `PUSH:`) are bounded by anchoring patterns
+# 1 and 2 to leading whitespace + a real top-level key shape, plus
+# pattern 3/4 anchoring to `on:` at the start of a line. Adding more
+# shapes is the documented extension point — see
+# scripts/test-verify-pr.sh fixtures.
+detect_default_only() {
+  local file="$1"
+  local cleaned
+  # Strip line comments. `\b#` would be wrong because YAML allows `#`
+  # only as start-of-line or preceded by whitespace; sed handles both.
+  cleaned=$(sed -E 's/[[:space:]]+#.*$//; s/^#.*$//' "$file")
+  # Pattern 1 (block-form key) AND pattern 2 (block-form list item).
+  if printf '%s\n' "$cleaned" \
+      | grep -qE "^[[:space:]]*(-[[:space:]]+)?${DEFAULT_ONLY_ALT}([[:space:]]*:|[[:space:]]*$)"; then
+    return 0
+  fi
+  # Pattern 3 (inline scalar): `on: push` on a single line.
+  if printf '%s\n' "$cleaned" \
+      | grep -qE "^on:[[:space:]]+${DEFAULT_ONLY_ALT}[[:space:]]*$"; then
+    return 0
+  fi
+  # Pattern 4 (inline flow sequence): `on: [push, schedule, ...]`.
+  # Match the `[...]` block on the `on:` line and look for any default
+  # trigger token surrounded by `[`, `,`, `]`, or whitespace.
+  if printf '%s\n' "$cleaned" \
+      | grep -qE "^on:[[:space:]]*\[[^]]*[[:space:],[]${DEFAULT_ONLY_ALT}[[:space:],\\]]"; then
+    return 0
+  fi
+  # Edge case: leading flow-sequence token `on: [push,`.
+  if printf '%s\n' "$cleaned" \
+      | grep -qE "^on:[[:space:]]*\[${DEFAULT_ONLY_ALT}([[:space:]]*,|[[:space:]]*\\])"; then
+    return 0
+  fi
+  return 1
+}
 
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
@@ -153,9 +215,10 @@ while IFS= read -r path; do
   if [[ "$path" == .github/workflows/*.yml || "$path" == .github/workflows/*.yaml ]]; then
     if [[ -f "$path" ]]; then
       # Look at the `on:` block. We only care about top-level trigger
-      # *keys*; values like `branches: [main]` are intentionally NOT
-      # in DEFAULT_ONLY_TRIGGERS_RE.
-      if grep -E "$DEFAULT_ONLY_TRIGGERS_RE" "$path" >/dev/null 2>&1; then
+      # *keys*; values like `branches: [main]` are intentionally not
+      # treated as triggers. detect_default_only handles block-form,
+      # list-bullet, inline-scalar, and bracket-list YAML shapes.
+      if detect_default_only "$path"; then
         detected="default-branch-only workflow"
         has_default_only=1
       else

@@ -105,6 +105,55 @@ jobs:
     steps: [{ run: "echo" }]
 YAML
 
+# Inline-scalar form: `on: push`. Default-branch-only.
+cat >"$fixture_dir/.github/workflows/inline-scalar-push.yml" <<'YAML'
+name: inline-scalar-push
+on: push
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps: [{ run: "echo" }]
+YAML
+
+# Inline flow-sequence form: `on: [push, pull_request]`. Default-branch-only
+# because `push` is in the list (most-restrictive bucket wins).
+cat >"$fixture_dir/.github/workflows/inline-flow-list.yml" <<'YAML'
+name: inline-flow-list
+on: [push, pull_request]
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps: [{ run: "echo" }]
+YAML
+
+# Block-form list-bullet: `- push`. Default-branch-only.
+cat >"$fixture_dir/.github/workflows/block-list-push.yml" <<'YAML'
+name: block-list-push
+on:
+  - push
+  - workflow_dispatch
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps: [{ run: "echo" }]
+YAML
+
+# False-positive guard: a workflow that only triggers on `pull_request`
+# but mentions the word "push" in a job name and a step `run:` body.
+# Must NOT be classified as default-branch-only.
+cat >"$fixture_dir/.github/workflows/false-positive-push-name.yml" <<'YAML'
+name: false-positive-push-name
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  push-image:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "this job pushes a container — but the trigger is pull_request"
+      # on: push  ← this is a comment and must not trigger detection
+YAML
+
 run_case() {
   # run_case <declared> <paths-newline-separated>
   # Echoes "<exit>:<stdout+stderr>"
@@ -240,6 +289,36 @@ result=$(run_case "mixed" "README.md
 src/foo.py")
 assert_eq "CASE-12 exit code" "1" "${result%%:*}"
 assert_contains "CASE-12 detects code-or-docs" "code-or-docs" "${result#*:}"
+
+# ── CASE-13: inline scalar `on: push` is default-branch-only ─────────────────
+echo ""
+echo "CASE-13: inline scalar \`on: push\` → default-branch-only (exit 0 when matched)"
+result=$(run_case "default-branch-only workflow" \
+  ".github/workflows/inline-scalar-push.yml")
+assert_eq "CASE-13 exit code" "0" "${result%%:*}"
+
+# ── CASE-14: inline flow-sequence `on: [push, ...]` is default-branch-only ───
+echo ""
+echo "CASE-14: inline flow \`on: [push, pull_request]\` → default-branch-only"
+result=$(run_case "default-branch-only workflow" \
+  ".github/workflows/inline-flow-list.yml")
+assert_eq "CASE-14 exit code" "0" "${result%%:*}"
+
+# ── CASE-15: block-form list-bullet `- push` is default-branch-only ──────────
+echo ""
+echo "CASE-15: block-list \`- push\` → default-branch-only"
+result=$(run_case "default-branch-only workflow" \
+  ".github/workflows/block-list-push.yml")
+assert_eq "CASE-15 exit code" "0" "${result%%:*}"
+
+# ── CASE-16: false-positive guard — `push` only in job/step bodies and a comment ─
+echo ""
+echo "CASE-16: workflow with push only in job/step text → pull_request-triggered (no false positive)"
+result=$(run_case "pull_request-triggered workflow" \
+  ".github/workflows/false-positive-push-name.yml")
+assert_eq "CASE-16 exit code" "0" "${result%%:*}"
+assert_contains 'CASE-16 reports match (no false positive on push in body)' \
+  "matches detection" "${result#*:}"
 
 # ── summary ──────────────────────────────────────────────────────────────────
 

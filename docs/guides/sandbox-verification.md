@@ -29,35 +29,43 @@ before the first sandbox-class PR lands; the rest of the playbook
 assumes both exist.
 
 ```bash
-# 1. Create the sandbox sibling repo (private; same owner; no template).
-gh repo create mikejmckinney/ai-repo-template-sandbox \
+# 1. Resolve the upstream repo URL from your current checkout's
+#    `origin` remote. Doing it this way means this playbook works
+#    unchanged in any project derived from ai-repo-template.
+UPSTREAM_URL=$(git remote get-url origin)
+UPSTREAM_NAME=$(basename "$UPSTREAM_URL" .git)        # e.g. ai-repo-template
+UPSTREAM_OWNER=$(gh repo view --json owner -q .owner.login)
+SANDBOX_REPO="${UPSTREAM_OWNER}/${UPSTREAM_NAME}-sandbox"
+
+# 2. Create the sandbox sibling repo (private; same owner; no template).
+gh repo create "$SANDBOX_REPO" \
   --private \
-  --description "Sandbox for verifying default-branch-only workflow changes from ai-repo-template (see ADR-016)"
+  --description "Sandbox for verifying default-branch-only workflow changes from ${UPSTREAM_NAME} (see ADR-016)"
 
-# 2. Mirror this repo's main into the new sandbox.
-git clone --bare https://github.com/mikejmckinney/ai-repo-template.git /tmp/ai-repo-template.git
-cd /tmp/ai-repo-template.git
-git push --mirror https://github.com/mikejmckinney/ai-repo-template-sandbox.git
-cd - && rm -rf /tmp/ai-repo-template.git
+# 3. Mirror this repo's main into the new sandbox.
+MIRROR_DIR=$(mktemp -d)/upstream.git
+git clone --bare "$UPSTREAM_URL" "$MIRROR_DIR"
+git -C "$MIRROR_DIR" push --mirror "https://github.com/${SANDBOX_REPO}.git"
+rm -rf "$(dirname "$MIRROR_DIR")"
 
-# 3. Mint a sandbox-only PAT and set it as the sandbox's CLAUDE_PAT.
+# 4. Mint a sandbox-only PAT and set it as the sandbox's CLAUDE_PAT.
 #    Do NOT reuse the production CLAUDE_PAT — see "Secrets hygiene" below.
 #    The sandbox PAT needs the same fine-grained scopes as production
 #    CLAUDE_PAT (Contents R/W, Pull requests R/W, Issues R/W, Actions R,
 #    Variables R, Metadata R) but only on the sandbox repo.
 gh secret set CLAUDE_PAT \
-  --repo mikejmckinney/ai-repo-template-sandbox \
+  --repo "$SANDBOX_REPO" \
   --body "<sandbox-scoped PAT value>"
 
-# 4. (Optional) Mirror ANTHROPIC_API_KEY if you want claude.yml /
+# 5. (Optional) Mirror ANTHROPIC_API_KEY if you want claude.yml /
 #    agent-fix-reviews.yml to be exercisable in sandbox too. A
 #    separate sandbox-budget API key is recommended.
 gh secret set ANTHROPIC_API_KEY \
-  --repo mikejmckinney/ai-repo-template-sandbox \
+  --repo "$SANDBOX_REPO" \
   --body "<sandbox-scoped API key>"
 
-# 5. Configure the sandbox remote on your working clone of the real repo.
-cd <your local checkout of ai-repo-template>
+# 6. Configure the sandbox remote on your working clone of the real repo.
+cd <your local checkout of the upstream repo>
 git remote add sandbox https://github.com/mikejmckinney/ai-repo-template-sandbox.git
 git remote -v   # verify both `origin` and `sandbox`
 ```
@@ -72,6 +80,12 @@ Use this when your Implementation Plan declares
 `Change class: default-branch-only workflow` (or `mixed`) and
 `Verification target: sandbox repo` (or `both`). The verbs follow the
 plan template's Verification section verbatim.
+
+> **Portability note**: examples below show the upstream
+> `mikejmckinney/ai-repo-template-sandbox` slug. In any project derived
+> from ai-repo-template, substitute your own
+> `<owner>/<repo>-sandbox` (the slug you created in step 1 above) — or
+> set `SANDBOX_REPO` in your shell and reuse the same variable everywhere.
 
 ### 1. Force-sync sandbox `main` to this repo's `main`
 
