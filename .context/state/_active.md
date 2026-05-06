@@ -7,8 +7,8 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 3 — pre-push Critic prompt + role-file SHOULD/MUST wiring (PR opening)
-**File**: `.github/prompts/pre-push-review.md`
+**Active Task**: #229 Phase 3 — pre-push Critic prompt + role-file SHOULD/MUST wiring (PR #244 open)
+**File**: N/A
 **Role**: DevOps
 **Blockers**: None
 **Next 1–3 actions**:
