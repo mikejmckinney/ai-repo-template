@@ -202,11 +202,12 @@ DEFAULT_ONLY_ALT=$(
 # scripts/test-verify-pr.sh fixtures.
 detect_default_only() {
   local file="$1"
-  # Strip comments. The first pattern handles trailing `   # ...`,
-  # the second handles a whole-line comment with optional indent.
-  local cleaned
-  cleaned=$(sed -E 's/[[:space:]]+#.*$//; s/^[[:space:]]*#.*$//' "$file")
-  printf '%s\n' "$cleaned" | awk -v triggers="$DEFAULT_ONLY_ALT" '
+  # Strip comments (trailing `   # ...` and whole-line `# ...`) then
+  # pipe directly into the awk state machine. Piping (rather than
+  # capturing into a shell variable) avoids ARG_MAX risk on large
+  # workflow files. See GEM-V (PR #246 review round 10).
+  sed -E 's/[[:space:]]+#.*$//; s/^[[:space:]]*#.*$//' "$file" \
+    | awk -v triggers="$DEFAULT_ONLY_ALT" '
     BEGIN { in_on = 0; found = 0 }
     # Inline-scalar form: `on: push`
     /^on:[[:space:]]+[A-Za-z_]/ {
