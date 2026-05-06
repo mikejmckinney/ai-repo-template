@@ -7,9 +7,13 @@
 #   - docs/decisions/adr-017-template-repo-pre-commit-default.md
 #   - .github/workflows/lint-and-format.yml (CI flags; keep in sync)
 #
-# Derived repos: this file does NOT govern your project. Use the
-# scaffolded `.pre-commit-config.yaml.template` instead — and read
-# ADR-013 for why pre-commit is opt-in for derived repos.
+# Derived repos: if your project was created from this template, you
+# inherited this file. DELETE IT and use `.pre-commit-config.yaml.template`
+# instead (rename and customise to your stack). Running `pre-commit install`
+# with this file active installs only the two template-internal hooks
+# (shellcheck + actionlint), silently omitting detect-secrets, commitizen,
+# and any other hooks your project needs. See ADR-013 for the full rationale
+# and ADR-017 for why this template-internal file exists.
 #
 # One-time setup (template contributors):
 #   pip install pre-commit

@@ -125,6 +125,13 @@ Concretely:
   for template-internal use; `.pre-commit-config.yaml.template` for
   derived repos). Mitigation: each file's header comment names its
   audience.
+- Derived repos created from this template inherit `.pre-commit-config.yaml`.
+  A maintainer who runs `pre-commit install` without reading the header will
+  activate the minimal 2-hook config rather than the heavyweight
+  `.pre-commit-config.yaml.template` scaffold. Mitigation: the
+  `.pre-commit-config.yaml` header now contains an explicit `DELETE IT`
+  instruction for derived-repo maintainers. Onboarding guides should surface
+  this step alongside the `pre-commit install` instruction.
 
 ### Neutral
 
