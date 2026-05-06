@@ -5,11 +5,15 @@
 # justified local enforcement of the same shellcheck + actionlint checks
 # CI runs. See:
 #   - docs/decisions/adr-017-template-repo-pre-commit-default.md
-#   - .github/workflows/lint-and-format.yml (CI versions; keep in sync)
+#   - .github/workflows/lint-and-format.yml (CI flags; keep in sync)
 #
-# Derived repos: this file does NOT govern your project. Use the
-# scaffolded `.pre-commit-config.yaml.template` instead — and read
-# ADR-013 for why pre-commit is opt-in for derived repos.
+# Derived repos: if your project was created from this template, you
+# inherited this file. DELETE IT and use `.pre-commit-config.yaml.template`
+# instead (rename and customise to your stack). Running `pre-commit install`
+# with this file active installs only the two template-internal hooks
+# (shellcheck + actionlint), silently omitting detect-secrets, commitizen,
+# and any other hooks your project needs. See ADR-013 for the full rationale
+# and ADR-017 for why this template-internal file exists.
 #
 # One-time setup (template contributors):
 #   pip install pre-commit
@@ -21,10 +25,11 @@
 # Emergency bypass (discouraged; surfaces in `git log`):
 #   git commit --no-verify
 #
-# Hook versions are pinned to match the CI versions in
-# .github/workflows/lint-and-format.yml so a clean local run is a strong
-# signal CI will pass for these two tools. When bumping a tool version,
-# bump it in BOTH files in the same PR.
+# Hook flags are kept in sync with .github/workflows/lint-and-format.yml.
+# Actionlint is version-pinned in both; shellcheck is installed via apt in
+# CI (no version pin), so exact version parity is not guaranteed — flag
+# and severity parity is. A clean local run is a strong signal CI will
+# pass for these tools. When bumping actionlint, bump it in BOTH files.
 
 minimum_pre_commit_version: '3.0.0'
 

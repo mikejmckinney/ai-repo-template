@@ -993,7 +993,7 @@ fi
 
 # ADR-013 must NOT carry a supersession marker — ADR-017 is additive, not
 # superseding. This guard catches an accidental supersession edit.
-if grep -qE 'Superseded by|superseded in part by' docs/decisions/adr-013-pre-commit-on-main-default.md 2>/dev/null; then
+if grep -qiE 'superseded (in part )?by' docs/decisions/adr-013-pre-commit-on-main-default.md 2>/dev/null; then
   fail "ADR-013 carries a supersession marker; ADR-017 is additive (non-reversal)"
 else
   pass "ADR-013 unchanged (no supersession marker — ADR-017 is additive)"

@@ -232,14 +232,13 @@ After all items are processed, post a final summary comment:
 
 <!--
 Required from round 4 onward when `cap-override` is in effect on this PR
-(see "Override justification" under Round disciplines). Omit otherwise.
-Categories must match exactly:
+(see "Override justification" under Round disciplines). Omit this line otherwise.
+When required, copy EXACTLY ONE of these lines (outside this comment block):
   Override justification: sandbox-class
   Override justification: legitimate refactor
   Override justification: complex semantic dependency
   Override justification: other: <≤80-char reason>
 -->
-Override justification: <category>
 
 ### Verification
 - Tests: ✅ X passed, ❌ X failed
