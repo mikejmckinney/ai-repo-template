@@ -28,14 +28,21 @@
 #   BOOTSTRAP_GH_TOKEN    Personal token used ONLY for the repo-create +
 #                         mirror-push steps. Use this when your default
 #                         `gh auth` is a Codespace/Actions token that
-#                         cannot create repos under your owner namespace
-#                         (the symptom is GraphQL: "Resource not
-#                         accessible by integration (createRepository)").
-#                         Required scopes: classic `repo` (and `admin:org`
-#                         if creating under an org), OR fine-grained on
-#                         your user account with Administration: R/W,
-#                         Contents: R/W, Metadata: R at the **account**
-#                         level — not just the upstream repo level.
+#                         cannot create repos under your owner namespace.
+#
+#                         RECOMMENDED: a CLASSIC personal token (ghp_...)
+#                         with 'repo' scope. Generate at:
+#                           https://github.com/settings/tokens/new
+#
+#                         Fine-grained PATs (github_pat_...) will also
+#                         work IF scoped to 'All repositories' (resource-
+#                         owner level) with Administration: R/W + Contents:
+#                         R/W + Metadata: R. Fine-grained tokens scoped to
+#                         specific repos CANNOT create new repos and will
+#                         fail the mirror push with 403 'Write access not
+#                         granted' because the sandbox repo does not exist
+#                         at token-mint time.
+#
 #                         When unset, the script uses your existing
 #                         `gh auth` identity.
 #   SANDBOX_ANTHROPIC_KEY Anthropic API key for sandbox-only claude.yml /
@@ -118,22 +125,27 @@ else
     rm -f /tmp/sandbox-bootstrap-create.err
     log_error "gh repo create failed:"
     log_error "  ${err}"
-    if [[ "$err" == *"Resource not accessible by integration"* ]] \
+    if [[ "$err" == *"Resource not accessible"* ]] \
       || [[ "$err" == *"createRepository"* ]] \
       || [[ "$err" == *"403"* ]]; then
       log_error ""
-      log_error "This usually means your gh auth identity (Codespaces token, Actions"
-      log_error "token, or a fine-grained PAT scoped only to one repo) lacks the"
-      log_error "owner-level permission needed to create new repos."
+      log_error "Repo creation requires an auth token with owner-level scope."
+      log_error "The auto-provisioned Codespaces/Actions GITHUB_TOKEN can't create"
+      log_error "repos outside its current repo. Fine-grained PATs can only create"
+      log_error "repos when scoped to 'All repositories' with Administration:R/W —"
+      log_error "these restrictions make classic PATs the simplest choice here."
       log_error ""
-      log_error "Fix: re-run with a personal token that has owner-level repo-create"
-      log_error "scope, e.g.:"
-      log_error "  BOOTSTRAP_GH_TOKEN=<your personal PAT> SANDBOX_PAT=<...> \\"
+      log_error "Recommended fix: mint a CLASSIC personal token at:"
+      log_error "  https://github.com/settings/tokens/new"
+      log_error "Check the 'repo' scope (one box). Then re-run:"
+      log_error "  BOOTSTRAP_GH_TOKEN=ghp_<classic PAT> SANDBOX_PAT=<...> \\"
       log_error "    ./scripts/sandbox-bootstrap.sh"
       log_error ""
-      log_error "Required scopes: classic 'repo' (and 'admin:org' if creating under"
-      log_error "an org), OR fine-grained on your user account with Administration:"
-      log_error "R/W, Contents: R/W, Metadata: R at the **account** level."
+      log_error "If you want to use a fine-grained PAT instead, it must be"
+      log_error "resource-owner-level (All repositories) with:"
+      log_error "  Administration: R/W, Contents: R/W, Metadata: R"
+      log_error "Fine-grained tokens scoped to specific repos will always fail here"
+      log_error "because the sandbox repo does not yet exist when the token is minted."
     fi
     exit 1
   fi
@@ -181,8 +193,19 @@ if ! GIT_ASKPASS="$_ASKPASS" \
   log_error "Mirror push to ${SANDBOX_REPO} failed:"
   while IFS= read -r _line; do log_error "  ${_line}"; done <<<"$_err"
   log_error ""
-  log_error "Check that your BOOTSTRAP_GH_TOKEN has 'Contents: R/W' on the"
-  log_error "sandbox repo or across all repos in your account."
+  log_error "This is usually a token-scope problem. The most common cause:"
+  log_error "  Fine-grained PAT scoped to SPECIFIC repos — 'ai-repo-template-sandbox'"
+  log_error "  was just created and was not in scope when the token was minted."
+  log_error "  Fine-grained PATs do NOT auto-include repos created after minting."
+  log_error ""
+  log_error "Recommended fix: use a CLASSIC personal token (ghp_...) with 'repo'"
+  log_error "scope for BOOTSTRAP_GH_TOKEN. Generate one at:"
+  log_error "  https://github.com/settings/tokens/new"
+  log_error ""
+  log_error "If you must use fine-grained: edit the token at"
+  log_error "  https://github.com/settings/tokens"
+  log_error "and either (a) switch resource owner to 'All repositories' with"
+  log_error "Contents: R/W, or (b) explicitly add ${SANDBOX_REPO} to its repo list."
   exit 1
 fi
 rm -f "$_TOK_FILE" "$_ASKPASS"

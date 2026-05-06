@@ -61,13 +61,18 @@ export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
 
 # Optional: separate token used ONLY for the repo-create + mirror-push
 # steps. Set this when your default `gh auth` is a Codespaces or
-# Actions token that can't create repos under your owner namespace
-# (symptom: `GraphQL: Resource not accessible by integration
-# (createRepository)`). Required scopes: classic `repo` (and
-# `admin:org` if creating under an org), OR fine-grained on your
-# **user account** (not just one repo) with Administration: R/W,
-# Contents: R/W, Metadata: R.
-# export BOOTSTRAP_GH_TOKEN="<personal PAT>"
+# Actions token that can't create repos under your owner namespace.
+#
+# RECOMMENDED: a classic personal token (ghp_...) with 'repo' scope.
+# Generate at: https://github.com/settings/tokens/new
+#
+# Fine-grained PATs (github_pat_...) also work IF scoped to
+# "All repositories" (resource-owner level) with Administration: R/W,
+# Contents: R/W, Metadata: R. Fine-grained tokens scoped to specific
+# repos will FAIL with "403 Write access not granted" on the mirror
+# push — the sandbox doesn't exist when the token is minted so it
+# can't be included in the scope at creation time.
+# export BOOTSTRAP_GH_TOKEN="ghp_<classic PAT>"
 
 ./scripts/sandbox-bootstrap.sh
 ```
@@ -80,7 +85,7 @@ detected and skipped with a log line).
 > Codespace is scoped to the current repo only and cannot create new
 > repos. You will hit `Resource not accessible by integration
 > (createRepository)` unless you set `BOOTSTRAP_GH_TOKEN` to a
-> personal PAT with owner-level scope (see above).
+> classic PAT with `repo` scope (see above).
 
 ### What the script does (for reference)
 
