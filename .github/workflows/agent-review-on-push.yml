@@ -110,17 +110,28 @@ jobs:
             exit 1
           fi
 
-      # Round cap: stop nudging external reviewers after PR_RESOLVE_MAX_ROUNDS
-      # pushes so Gemini/Copilot don't perpetually re-flag the same
-      # already-deferred findings on a long-running PR. The cap mirrors
-      # the agent-side `pr-resolve-all.md` cap (same env var, same
-      # `cap-override` label bypass) so both halves of the loop —
-      # agent-driven resolve and bot-driven re-review — converge to the
-      # same upper bound. Manual `/gemini review` slash commands posted
-      # by humans are unaffected; only the automated push nudge is gated.
-      # See docs/guides/agent-pipeline.md § Repository variables and PR
-      # #246 (Round 14 close-out) for rationale.
-      - name: Check round cap
+      # Round cap (Gemini-only): stop nudging Gemini after PR_RESOLVE_MAX_ROUNDS
+      # pushes so it doesn't perpetually re-flag the same already-deferred
+      # findings on a long-running PR. The cap mirrors the agent-side
+      # `pr-resolve-all.md` cap (same env var, same `cap-override` label
+      # bypass) so the bot-driven re-review half of the loop converges to
+      # the same upper bound as the agent-driven resolve half.
+      #
+      # Why Gemini-only: empirically (PR #246 across 13 rounds) Copilot
+      # posted 1 finding total and did not duplicate; Gemini posted 9+
+      # repeats of already-deferred items. Gemini Code Assist's GitHub App
+      # is stateless per invocation and its tool surface does not expose
+      # `pullRequest.reviewThreads`, so the dedup instruction in
+      # `.gemini/styleguide.md` is structurally unenforceable from inside
+      # the reviewer prompt. Copilot does not have that limitation, so
+      # capping Copilot would suppress useful re-reviews without solving
+      # any real noise problem.
+      #
+      # Manual `/gemini review` slash commands posted by humans are
+      # unaffected; only the automated push nudge is gated. See
+      # docs/guides/agent-pipeline.md § Repository variables and PR #246
+      # close-out for rationale.
+      - name: Check Gemini round cap
         id: cap
         env:
           MAX_ROUNDS: ${{ vars.PR_RESOLVE_MAX_ROUNDS || '3' }}
@@ -141,7 +152,7 @@ jobs:
           echo "existing /gemini review comment count: ${count}; cap: ${MAX_ROUNDS}"
 
           if [[ "$count" -ge "$MAX_ROUNDS" ]]; then
-            echo "::notice::push-nudge cap reached (${count}/${MAX_ROUNDS}). Add 'cap-override' label to bypass."
+            echo "::notice::Gemini push-nudge cap reached (${count}/${MAX_ROUNDS}). Add 'cap-override' label to bypass."
             echo "skip=true" >> "$GITHUB_OUTPUT"
 
             # One-shot informational PR comment per cap-hit so it's
@@ -155,8 +166,8 @@ jobs:
               body_file=$(mktemp)
               {
                 printf '%s\n' "$marker"
-                printf 'Push-triggered re-review nudges have hit the round cap (`PR_RESOLVE_MAX_ROUNDS=%s`). Further pushes will not auto-trigger Gemini or Copilot re-review on this PR.\n\n' "$MAX_ROUNDS"
-                printf 'To resume automatic re-reviews, add the `cap-override` label to this PR. To trigger a one-off review manually, post `/gemini review` as a regular comment.\n'
+                printf 'Gemini push-triggered re-review nudges have hit the round cap (`PR_RESOLVE_MAX_ROUNDS=%s`). Further pushes will not auto-trigger Gemini re-review on this PR. Copilot re-requests are unaffected.\n\n' "$MAX_ROUNDS"
+                printf 'To resume automatic Gemini re-reviews, add the `cap-override` label to this PR. To trigger a one-off review manually, post `/gemini review` as a regular comment.\n'
               } >"$body_file"
               gh api -X POST "repos/${REPO}/issues/${PR}/comments" \
                 -F body=@"$body_file"
@@ -191,7 +202,10 @@ jobs:
 
       - name: Re-request Copilot review (GraphQL requestReviewsByLogin)
         id: copilot
-        if: steps.cap.outputs.skip != 'true'
+        # Intentionally NOT gated by the round cap. Copilot doesn't
+        # exhibit the duplicate-findings behaviour the cap was designed
+        # to suppress (see "Why Gemini-only" comment on Check Gemini
+        # round cap step above).
         continue-on-error: true
         run: |
           # Why this specific mutation: three other paths all fail.

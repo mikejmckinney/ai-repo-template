@@ -57,6 +57,30 @@ N/A — empty headings are noise.
 - [ ] `<command>` — pass / fail
 - [ ] Manual check: `<step>` — result
 
+## Verification results (REQUIRED — Judge enforces at diff-gate)
+
+<!-- Mirror your plan's `### Verification` section 1:1. Every command
+     listed in the plan must have a result entry here BEFORE the PR
+     enters review. CI is a backstop, not a substitute for local
+     verification (issue #208/#225 lessons learned).
+
+     For each verification step in the plan, post one of:
+       - `✅ pass` + a one-line evidence pointer (CI run URL, log
+         excerpt, or local-output snippet)
+       - `❌ fail` + what failed and why it's acceptable to merge
+         anyway (rare; usually means re-do the work)
+       - `⏭️ sandbox-deferred — see Phase 2` for items the plan
+         declared `Verification target: sandbox repo` (ADR-016)
+         that cannot be exercised from a same-repo PR branch
+       - `⏭️ N/A — <reason>` if the plan section was N/A
+
+     Exemptions match the Plan-as-comment rule (ADR-011): PRs labeled
+     `chore:no-plan` or `smoke-test`, automation-bot authors
+     (Renovate, Dependabot), and reverts are skipped. -->
+
+- [ ] `<command from plan>` — ✅ pass — <evidence pointer>
+- [ ] Manual: `<step from plan>` — ✅ pass — <one-line result>
+
 ## Doc sync (REQUIRED — Judge enforces at diff-gate)
 
 Walk `.context/rules/process_doc_maintenance.md`'s trigger table. Tick each

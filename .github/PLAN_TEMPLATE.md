@@ -78,6 +78,13 @@ list by more than ~30%, post a revised plan before pushing. -->
 <How a reviewer can prove this works. Specific commands, specific assertions,
 specific test names. "Tests pass" is not sufficient — name them.>
 
+<!-- Each command listed here must have a matching result entry in the
+     PR's `## Verification results` section before the PR enters review.
+     Sandbox-deferred items (where Verification target is `sandbox repo`
+     or `both` and the change can't be exercised from the PR branch) are
+     marked `⏭️ sandbox-deferred — see Phase 2` per ADR-016. Judge
+     enforces this mapping at diff-gate. -->
+
 ### Risks / out-of-scope
 
 <Anything load-bearing the change touches (workflows, rules, role files,

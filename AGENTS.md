@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 8 -->
+<!-- AGENTS_MD_VERSION: 9 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
@@ -12,7 +12,7 @@
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v8` (matching
+substantive reply with the exact token `Session handshake v9` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -185,6 +185,13 @@ the act of writing it forces the implementation thinking before code.
    `## Plan` section in the same push as the divergent code, link the
    revision comment, and tick the matching box in `## Plan revision
    sync` so reviewers don't evaluate stale intent.
+6. **Before requesting review**, populate the PR template's
+   `## Verification results` section with a result entry (`✅ pass`,
+   `❌ fail`, `⏭️ sandbox-deferred — see Phase 2`, or `⏭️ N/A — <reason>`)
+   for every command listed in the plan's `### Verification`. CI is a
+   backstop, not a substitute for local verification — Judge BLOCKs at
+   diff-gate when this section is missing or claims pass for a command
+   that demonstrably never ran (`.github/agents/judge.agent.md` item 16).
 
 **Exemptions** (plan is NOT required):
 
