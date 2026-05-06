@@ -63,15 +63,10 @@ export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
 # steps. Set this when your default `gh auth` is a Codespaces or
 # Actions token that can't create repos under your owner namespace.
 #
-# RECOMMENDED: a classic personal token (ghp_...) with 'repo' scope.
-# Generate at: https://github.com/settings/tokens/new
-#
-# Fine-grained PATs (github_pat_...) also work IF scoped to
-# "All repositories" (resource-owner level) with Administration: R/W,
-# Contents: R/W, Metadata: R. Fine-grained tokens scoped to specific
-# repos will FAIL with "403 Write access not granted" on the mirror
-# push — the sandbox doesn't exist when the token is minted so it
-# can't be included in the scope at creation time.
+# RECOMMENDED: a classic personal token (ghp_...) with 'repo' AND
+# 'workflow' scopes. Generate at: https://github.com/settings/tokens/new
+# ('workflow' is required to push .github/workflows/ files;
+# 'repo' alone is not sufficient.)
 # export BOOTSTRAP_GH_TOKEN="ghp_<classic PAT>"
 
 ./scripts/sandbox-bootstrap.sh

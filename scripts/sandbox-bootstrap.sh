@@ -31,8 +31,10 @@
 #                         cannot create repos under your owner namespace.
 #
 #                         RECOMMENDED: a CLASSIC personal token (ghp_...)
-#                         with 'repo' scope. Generate at:
+#                         with 'repo' AND 'workflow' scopes. Generate at:
 #                           https://github.com/settings/tokens/new
+#                         ('workflow' is required to push .github/workflows/
+#                         files; 'repo' alone is not sufficient.)
 #
 #                         Fine-grained PATs (github_pat_...) will also
 #                         work IF scoped to 'All repositories' (resource-
@@ -195,20 +197,27 @@ if ! GIT_ASKPASS="$_ASKPASS" \
   log_error "Mirror push to ${SANDBOX_REPO} failed:"
   while IFS= read -r _line; do log_error "  ${_line}"; done <<<"$_err"
   log_error ""
-  log_error "This is usually a token-scope problem. Possible causes:"
-  log_error "  1. Fine-grained PAT scoped to SPECIFIC repos — '${SANDBOX_REPO##*/}'"
-  log_error "     was just created and was not in scope when the token was minted."
-  log_error "     Fine-grained PATs do NOT auto-include repos created after minting."
-  log_error "  2. The token lacks 'Contents: R/W' permission entirely."
-  log_error ""
-  log_error "Recommended fix: use a CLASSIC personal token (ghp_...) with 'repo'"
-  log_error "scope for BOOTSTRAP_GH_TOKEN. Generate one at:"
-  log_error "  https://github.com/settings/tokens/new"
-  log_error ""
-  log_error "If you must use fine-grained: edit the token at"
-  log_error "  https://github.com/settings/tokens"
-  log_error "and either (a) switch resource owner to 'All repositories' with"
-  log_error "Contents: R/W, or (b) explicitly add ${SANDBOX_REPO} to its repo list."
+  if [[ "$_err" == *"workflow"*"scope"* ]]; then
+    log_error "The token is missing 'workflow' scope. Classic PATs require BOTH"
+    log_error "'repo' AND 'workflow' scopes to push .github/workflows/ files."
+    log_error "Edit your token at https://github.com/settings/tokens and add"
+    log_error "the 'workflow' checkbox, then re-run."
+  else
+    log_error "This is usually a token-scope problem. Possible causes:"
+    log_error "  1. Fine-grained PAT scoped to SPECIFIC repos — '${SANDBOX_REPO##*/}'"
+    log_error "     was just created and was not in scope when the token was minted."
+    log_error "     Fine-grained PATs do NOT auto-include repos created after minting."
+    log_error "  2. The token lacks 'Contents: R/W' permission entirely."
+    log_error ""
+    log_error "Recommended fix: use a CLASSIC personal token (ghp_...) with 'repo'"
+    log_error "AND 'workflow' scopes for BOOTSTRAP_GH_TOKEN. Generate one at:"
+    log_error "  https://github.com/settings/tokens/new"
+    log_error ""
+    log_error "If you must use fine-grained: edit the token at"
+    log_error "  https://github.com/settings/tokens"
+    log_error "and either (a) switch resource owner to 'All repositories' with"
+    log_error "Contents: R/W, or (b) explicitly add ${SANDBOX_REPO} to its repo list."
+  fi
   exit 1
 fi
 rm -f "$_TOK_FILE" "$_ASKPASS"
