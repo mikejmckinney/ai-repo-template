@@ -35,14 +35,47 @@ login` before continuing. The bootstrap below will fail fast with
 clear errors if `gh` isn't authenticated, but checking up front saves
 a round trip.
 
+### Bootstrap script
+
+The procedure is automated in [`scripts/sandbox-bootstrap.sh`](../../scripts/sandbox-bootstrap.sh).
+Set the required environment variables and run it from your upstream
+checkout:
+
+```bash
+# Required: a fine-grained PAT scoped to the sandbox repo only.
+# Do NOT reuse production CLAUDE_PAT — see "Secrets hygiene" below.
+# Required scopes: Contents R/W, Pull requests R/W, Issues R/W,
+# Actions R, Variables R, Metadata R.
+export SANDBOX_PAT="<sandbox-scoped PAT value>"
+
+# Optional: separate sandbox-budget Anthropic key. Skip to defer
+# claude.yml / agent-fix-reviews.yml exercise in sandbox.
+export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
+
+# Optional: override the default sandbox slug
+# (defaults to "<upstream-owner>/<upstream-name>-sandbox").
+# export SANDBOX_REPO_NAME="my-org/my-custom-sandbox"
+
+# Optional: override the local git remote name (default: "sandbox").
+# export SANDBOX_REMOTE="sandbox"
+
+./scripts/sandbox-bootstrap.sh
+```
+
+The script is idempotent: re-running on an already-bootstrapped sandbox
+is safe (existing repo, existing remote, and existing secrets are
+detected and skipped with a log line).
+
+### What the script does (for reference)
+
 ```bash
 # 1. Resolve the upstream repo URL from your current checkout's
-#    `origin` remote. Doing it this way means this playbook works
+#    `origin` remote. Doing it this way means the script works
 #    unchanged in any project derived from ai-repo-template.
 UPSTREAM_URL=$(git remote get-url origin)
 UPSTREAM_NAME=$(basename "$UPSTREAM_URL" .git)        # e.g. ai-repo-template
 UPSTREAM_OWNER=$(gh repo view --json owner -q .owner.login)
-SANDBOX_REPO="${UPSTREAM_OWNER}/${UPSTREAM_NAME}-sandbox"
+SANDBOX_REPO="${SANDBOX_REPO_NAME:-${UPSTREAM_OWNER}/${UPSTREAM_NAME}-sandbox}"
 
 # 2. Create the sandbox sibling repo (private; same owner; no template).
 gh repo create "$SANDBOX_REPO" \
@@ -55,26 +88,16 @@ git clone --bare "$UPSTREAM_URL" "$MIRROR_DIR"
 git -C "$MIRROR_DIR" push --mirror "https://github.com/${SANDBOX_REPO}.git"
 rm -rf "$(dirname "$MIRROR_DIR")"
 
-# 4. Mint a sandbox-only PAT and set it as the sandbox's CLAUDE_PAT.
-#    Do NOT reuse the production CLAUDE_PAT — see "Secrets hygiene" below.
-#    The sandbox PAT needs the same fine-grained scopes as production
-#    CLAUDE_PAT (Contents R/W, Pull requests R/W, Issues R/W, Actions R,
-#    Variables R, Metadata R) but only on the sandbox repo.
-gh secret set CLAUDE_PAT \
-  --repo "$SANDBOX_REPO" \
-  --body "<sandbox-scoped PAT value>"
+# 4. Set the sandbox CLAUDE_PAT secret from $SANDBOX_PAT.
+printf '%s' "$SANDBOX_PAT" | gh secret set CLAUDE_PAT \
+  --repo "$SANDBOX_REPO" --body-file -
 
-# 5. (Optional) Mirror ANTHROPIC_API_KEY if you want claude.yml /
-#    agent-fix-reviews.yml to be exercisable in sandbox too. A
-#    separate sandbox-budget API key is recommended.
-gh secret set ANTHROPIC_API_KEY \
-  --repo "$SANDBOX_REPO" \
-  --body "<sandbox-scoped API key>"
+# 5. (Optional) Set ANTHROPIC_API_KEY from $SANDBOX_ANTHROPIC_KEY.
+printf '%s' "$SANDBOX_ANTHROPIC_KEY" | gh secret set ANTHROPIC_API_KEY \
+  --repo "$SANDBOX_REPO" --body-file -
 
-# 6. Configure the sandbox remote on your working clone of the real repo.
-cd <your local checkout of the upstream repo>
-git remote add sandbox "https://github.com/${SANDBOX_REPO}.git"
-git remote -v   # verify both `origin` and `sandbox`
+# 6. Add the sandbox remote on this checkout.
+git remote add "${SANDBOX_REMOTE:-sandbox}" "https://github.com/${SANDBOX_REPO}.git"
 ```
 
 The sandbox is intentionally private: failed runs will produce noisy
