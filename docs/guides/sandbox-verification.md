@@ -28,6 +28,13 @@ The sandbox repo and its secrets only need to be created once. Do this
 before the first sandbox-class PR lands; the rest of the playbook
 assumes both exist.
 
+**Prerequisites**: `gh` (≥ 2.40) installed and authenticated against an
+account that can create repos under the upstream repo's owner. Run
+`gh auth status` first; if it reports "not logged in," run `gh auth
+login` before continuing. The bootstrap below will fail fast with
+clear errors if `gh` isn't authenticated, but checking up front saves
+a round trip.
+
 ```bash
 # 1. Resolve the upstream repo URL from your current checkout's
 #    `origin` remote. Doing it this way means this playbook works

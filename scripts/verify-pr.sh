@@ -138,8 +138,10 @@ fi
 #
 # pull_request-triggered workflow
 #   Any `.github/workflows/<name>.yml` whose triggers are limited to
-#   pull_request / pull_request_target / workflow_dispatch. These run
-#   the workflow file from the PR branch, so PR-branch testing works.
+#   pull_request / workflow_dispatch. These run the workflow file from
+#   the PR branch, so PR-branch testing works. Note `pull_request_target`
+#   is intentionally NOT in this bucket — see the `default-branch-only
+#   workflow` block above.
 #
 # code-or-docs
 #   Anything else: source, docs, scripts, config, ADRs, role files, etc.
