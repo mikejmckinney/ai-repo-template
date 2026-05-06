@@ -59,12 +59,28 @@ export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
 # Optional: override the local git remote name (default: "sandbox").
 # export SANDBOX_REMOTE="sandbox"
 
+# Optional: separate token used ONLY for the repo-create + mirror-push
+# steps. Set this when your default `gh auth` is a Codespaces or
+# Actions token that can't create repos under your owner namespace
+# (symptom: `GraphQL: Resource not accessible by integration
+# (createRepository)`). Required scopes: classic `repo` (and
+# `admin:org` if creating under an org), OR fine-grained on your
+# **user account** (not just one repo) with Administration: R/W,
+# Contents: R/W, Metadata: R.
+# export BOOTSTRAP_GH_TOKEN="<personal PAT>"
+
 ./scripts/sandbox-bootstrap.sh
 ```
 
 The script is idempotent: re-running on an already-bootstrapped sandbox
 is safe (existing repo, existing remote, and existing secrets are
 detected and skipped with a log line).
+
+> **Codespaces note**: the auto-provisioned `GITHUB_TOKEN` in a
+> Codespace is scoped to the current repo only and cannot create new
+> repos. You will hit `Resource not accessible by integration
+> (createRepository)` unless you set `BOOTSTRAP_GH_TOKEN` to a
+> personal PAT with owner-level scope (see above).
 
 ### What the script does (for reference)
 

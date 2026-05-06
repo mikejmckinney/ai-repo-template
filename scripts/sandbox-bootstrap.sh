@@ -25,6 +25,19 @@
 #                         Issues R/W, Actions R, Variables R, Metadata R.
 #
 # Optional environment:
+#   BOOTSTRAP_GH_TOKEN    Personal token used ONLY for the repo-create +
+#                         mirror-push steps. Use this when your default
+#                         `gh auth` is a Codespace/Actions token that
+#                         cannot create repos under your owner namespace
+#                         (the symptom is GraphQL: "Resource not
+#                         accessible by integration (createRepository)").
+#                         Required scopes: classic `repo` (and `admin:org`
+#                         if creating under an org), OR fine-grained on
+#                         your user account with Administration: R/W,
+#                         Contents: R/W, Metadata: R at the **account**
+#                         level — not just the upstream repo level.
+#                         When unset, the script uses your existing
+#                         `gh auth` identity.
 #   SANDBOX_ANTHROPIC_KEY Anthropic API key for sandbox-only claude.yml /
 #                         agent-fix-reviews.yml runs. A separate
 #                         sandbox-budget key is recommended.
@@ -68,6 +81,15 @@ if [[ -z "${SANDBOX_PAT:-}" ]]; then
   exit 1
 fi
 
+# If BOOTSTRAP_GH_TOKEN is set, scope it to this script run only via
+# GH_TOKEN. gh's auth-precedence treats GH_TOKEN as overriding the
+# stored credential without modifying ~/.config/gh, so the user's
+# global `gh auth login` state is left untouched.
+if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
+  export GH_TOKEN="$BOOTSTRAP_GH_TOKEN"
+  log_info "Using BOOTSTRAP_GH_TOKEN for gh API calls in this run."
+fi
+
 # ── Step 1: Resolve upstream repo ───────────────────────────────────────────
 
 log_step "Resolving upstream repo from 'origin' remote"
@@ -89,9 +111,33 @@ log_step "Creating sandbox repo (private)"
 if gh repo view "$SANDBOX_REPO" >/dev/null 2>&1; then
   log_info "Sandbox repo already exists — skipping create."
 else
-  gh repo create "$SANDBOX_REPO" \
+  if ! gh repo create "$SANDBOX_REPO" \
     --private \
-    --description "Sandbox for verifying default-branch-only workflow changes from ${UPSTREAM_NAME} (see ADR-016)"
+    --description "Sandbox for verifying default-branch-only workflow changes from ${UPSTREAM_NAME} (see ADR-016)" 2>/tmp/sandbox-bootstrap-create.err; then
+    err=$(cat /tmp/sandbox-bootstrap-create.err)
+    rm -f /tmp/sandbox-bootstrap-create.err
+    log_error "gh repo create failed:"
+    log_error "  ${err}"
+    if [[ "$err" == *"Resource not accessible by integration"* ]] \
+      || [[ "$err" == *"createRepository"* ]] \
+      || [[ "$err" == *"403"* ]]; then
+      log_error ""
+      log_error "This usually means your gh auth identity (Codespaces token, Actions"
+      log_error "token, or a fine-grained PAT scoped only to one repo) lacks the"
+      log_error "owner-level permission needed to create new repos."
+      log_error ""
+      log_error "Fix: re-run with a personal token that has owner-level repo-create"
+      log_error "scope, e.g.:"
+      log_error "  BOOTSTRAP_GH_TOKEN=<your personal PAT> SANDBOX_PAT=<...> \\"
+      log_error "    ./scripts/sandbox-bootstrap.sh"
+      log_error ""
+      log_error "Required scopes: classic 'repo' (and 'admin:org' if creating under"
+      log_error "an org), OR fine-grained on your user account with Administration:"
+      log_error "R/W, Contents: R/W, Metadata: R at the **account** level."
+    fi
+    exit 1
+  fi
+  rm -f /tmp/sandbox-bootstrap-create.err
   log_info "Created ${SANDBOX_REPO}."
 fi
 
@@ -104,7 +150,15 @@ MIRROR_DIR="${MIRROR_PARENT}/upstream.git"
 trap 'rm -rf "$MIRROR_PARENT"' EXIT
 
 git clone --bare "$UPSTREAM_URL" "$MIRROR_DIR" >/dev/null 2>&1
-git -C "$MIRROR_DIR" push --mirror "https://github.com/${SANDBOX_REPO}.git" >/dev/null 2>&1
+# Use a credential helper that injects $GH_TOKEN as the password so the
+# mirror push uses the same token as the rest of the bootstrap (matters
+# when BOOTSTRAP_GH_TOKEN is set to override the default gh auth).
+if ! git -C "$MIRROR_DIR" \
+  -c "credential.helper=!f() { echo \"username=x-access-token\"; echo \"password=${GH_TOKEN:-$(gh auth token)}\"; }; f" \
+  push --mirror "https://github.com/${SANDBOX_REPO}.git" >/dev/null 2>&1; then
+  log_error "Mirror push to ${SANDBOX_REPO} failed. Check that the auth token has 'Contents: R/W' on the sandbox repo."
+  exit 1
+fi
 log_info "Mirror push complete."
 
 # ── Step 4: Set CLAUDE_PAT secret ───────────────────────────────────────────
