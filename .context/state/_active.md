@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 4 — ADR-017 + cap-override justification rule (PR open)
+**Active Task**: #229 Phase 4 — ADR-017 + cap-override justification rule (PR #241 open, awaiting review)
 **File**: N/A
 **Role**: DevOps
 **Blockers**: None
 **Next 1–3 actions**:
-1. Push branch `feature/devops-229-phase4`, open PR linking #229
-2. Run pr-resolve-all loop until convergence
-3. Start Phase 5 (#227 cross-link comment) on user go-ahead
+1. Await merge of PR #241 (CI green, bot-review threads resolved — stop condition met)
+2. Start Phase 5 (#227 cross-link comment) on user go-ahead
+3. Close out task and update latest_summary.md
