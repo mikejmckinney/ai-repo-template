@@ -111,9 +111,13 @@ that produces this postmortem.
   token bumped in lockstep. Same PR.
 - [x] **`test.sh`** — assertion that `_active.md` non-empty body contains
   at least one `## Task:` section header. Same PR.
-- [x] **Smoke test** — `scripts/test-active-md-multitask.sh` simulates
-  two parallel branches each adding a section and asserts a clean
-  three-way merge. Same PR.
+- [x] **Smoke test** — `scripts/test-active-md-multitask.sh` covers two
+  scenarios: (1) two parallel branches each updating their own
+  pre-claimed `## Task:` section assert clean three-way merge (the
+  realistic ongoing case ADR-018 fixes); (2) two branches each adding a
+  brand-new section to an empty body produce an expected conflict, and
+  the documented manual resolution (lossless concatenation) yields a
+  valid two-section file. Same PR.
 
 ## Related
 
