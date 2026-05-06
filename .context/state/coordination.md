@@ -53,9 +53,9 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## Active Locks
 
 ## Lock: pr-229-phase3
-<!-- managed-for-pr:229 -->
+<!-- managed-for-pr:244 -->
 **Role**: devops
-**Session**: feature/devops-229-phase3
+**Session**: feature/devops-229-phase3-v2
 **Claimed At**: 2026-05-06T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:
