@@ -92,12 +92,29 @@ only — not the whole repo. The full repo runs in CI; this step is for
 the local fast feedback loop.
 
 ```bash
-# Shell files (only if change-class includes 'shell')
-mapfile -t SHELL_FILES < <(printf '%s\n' "${CHANGED_FILES[@]}" \
-  | grep -E '\.sh$|^scripts/' || true)
+# Shell files (only if change-class includes 'shell').
+# Filter to actual shell scripts (*.sh) plus shebang-detected files
+# under scripts/ — never the whole scripts/ tree (that would feed
+# scripts/README.md into shellcheck/shfmt).
+mapfile -t SHELL_FILES < <(
+  printf '%s\n' "${CHANGED_FILES[@]}" \
+    | while IFS= read -r f; do
+        [[ -f "$f" ]] || continue
+        case "$f" in
+          *.sh) printf '%s\n' "$f" ;;
+          *)
+            # Shebang-detected shell file (handles extension-less scripts).
+            head -1 "$f" 2>/dev/null \
+              | grep -qE '^#!.*\b(bash|sh)\b' && printf '%s\n' "$f"
+            ;;
+        esac
+      done
+)
 [[ ${#SHELL_FILES[@]} -gt 0 ]] && {
   shellcheck --severity=warning "${SHELL_FILES[@]}"
-  shfmt -d "${SHELL_FILES[@]}"
+  # Match CI flags from .github/workflows/lint-and-format.yml exactly
+  # so a local PASS guarantees the CI shfmt step also passes.
+  shfmt -d -i 2 -bn -ci "${SHELL_FILES[@]}"
   bash scripts/lint-shell-conventions.sh "${SHELL_FILES[@]}"
 }
 
