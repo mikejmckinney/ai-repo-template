@@ -43,12 +43,26 @@ into the Output template at the end.
 
 ### Step 1 — Diff scope
 
-Resolve the base ref and capture the diff scope:
+Resolve the base ref and capture the diff scope. The fetch is best-effort
+(local-only repos and offline workflows must not crash here), but the
+**resolved ref must exist** before the rest of the prompt continues —
+otherwise `git diff origin/<base>...HEAD` would fail with a confusing
+"unknown revision" message. Fall back to the local `<base>` ref and
+emit a `SKIPPED — base ref not resolvable` line if neither is present.
 
 ```bash
 BASE_REF="${BASE_REF:-main}"
 git fetch origin "$BASE_REF" --quiet 2>/dev/null || true
-DIFF_RANGE="origin/${BASE_REF}...HEAD"
+
+if git rev-parse --verify --quiet "origin/${BASE_REF}" >/dev/null; then
+  DIFF_RANGE="origin/${BASE_REF}...HEAD"
+elif git rev-parse --verify --quiet "${BASE_REF}" >/dev/null; then
+  DIFF_RANGE="${BASE_REF}...HEAD"
+else
+  printf 'SKIPPED — base ref %s not resolvable (no origin/%s and no local %s)\n' \
+    "$BASE_REF" "$BASE_REF" "$BASE_REF" >&2
+  exit 2
+fi
 ```
 
 Build three artifacts:
