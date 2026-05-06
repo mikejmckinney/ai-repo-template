@@ -39,9 +39,9 @@
 #                         Fine-grained PATs (github_pat_...) will also
 #                         work IF scoped to 'All repositories' (resource-
 #                         owner level) with Administration: R/W + Contents:
-#                         R/W + Metadata: R. Fine-grained tokens scoped to
-#                         specific repos CANNOT create new repos and will
-#                         fail the mirror push with 403 'Write access not
+#                         R/W + Secrets: R/W + Metadata: R. Fine-grained
+#                         tokens scoped to specific repos CANNOT create new
+#                         repos and will fail the mirror push with 403 'Write access not
 #                         granted' because the sandbox repo does not exist
 #                         at token-mint time.
 #
@@ -74,9 +74,6 @@ if ! command -v gh >/dev/null 2>&1; then
   exit 1
 fi
 
-# Preserve the caller's GH_TOKEN (if any) so we can restore it at the end.
-_PREV_GH_TOKEN="${GH_TOKEN:-}"
-
 # If BOOTSTRAP_GH_TOKEN is set, apply it as GH_TOKEN before the auth
 # check so gh recognises the token even when no stored `gh auth login`
 # exists. gh's auth-precedence treats GH_TOKEN as overriding the stored
@@ -84,6 +81,7 @@ _PREV_GH_TOKEN="${GH_TOKEN:-}"
 # GH_TOKEN stays active for the full script run (Steps 1–6): classic PATs
 # with 'repo' + 'workflow' scopes have Secrets: R/W access, so the same
 # token that creates/mirrors the repo can also set its secrets.
+# (Fine-grained PATs must additionally include Secrets: R/W scope.)
 if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
   export GH_TOKEN="$BOOTSTRAP_GH_TOKEN"
   log_info "Using BOOTSTRAP_GH_TOKEN for this script run."
@@ -274,13 +272,3 @@ log_step "Sandbox bootstrap complete"
 git remote -v | grep -E "^(origin|${SANDBOX_REMOTE})" || true
 echo
 log_info "Next: see docs/guides/sandbox-verification.md § 'Per-PR verification flow'."
-
-# Restore the caller's original GH_TOKEN so this script leaves the
-# calling environment unchanged (matters when the script is sourced).
-if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
-  if [[ -n "${_PREV_GH_TOKEN}" ]]; then
-    export GH_TOKEN="$_PREV_GH_TOKEN"
-  else
-    unset GH_TOKEN
-  fi
-fi
