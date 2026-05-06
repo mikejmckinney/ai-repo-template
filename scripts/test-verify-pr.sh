@@ -167,6 +167,25 @@ jobs:
       # on: push  ← this is a comment and must not trigger detection
 YAML
 
+# False-positive guard #2 (GEM-M): a workflow whose mapping key
+# `push-image:` would lexically match the regex if the on-block scan
+# were stateless. The awk state machine should still classify this
+# as `pull_request-triggered workflow`.
+cat >"$fixture_dir/.github/workflows/false-positive-job-key.yml" <<'YAML'
+name: false-positive-job-key
+on:
+  pull_request:
+    branches: [main]
+env:
+  push: "value that should not trigger detection"
+jobs:
+  push-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: push  # step name "push" — must not register
+        run: echo "noop"
+YAML
+
 # A repository_dispatch workflow — like push/schedule, this is loaded
 # from the default branch, so PR-branch changes are unverifiable.
 cat >"$fixture_dir/.github/workflows/repository-dispatch.yml" <<'YAML'
@@ -378,6 +397,15 @@ echo "CASE-19: inline flow \`on: [pull_request, push]\` (push at end) → defaul
 result=$(run_case "default-branch-only workflow" \
   ".github/workflows/inline-flow-trailing.yml")
 assert_eq "CASE-19 exit code" "0" "${result%%:*}"
+
+# ── CASE-20: regression guard for GEM-M — job/env named like a trigger ───────
+echo ""
+echo "CASE-20: env.push + jobs.push-image + steps[].name 'push' must NOT register (state-aware on-block scan)"
+result=$(run_case "pull_request-triggered workflow" \
+  ".github/workflows/false-positive-job-key.yml")
+assert_eq "CASE-20 exit code" "0" "${result%%:*}"
+assert_contains "CASE-20 reports match (no false positive on env/job/step named push)" \
+  "matches detection" "${result#*:}"
 
 # ── summary ──────────────────────────────────────────────────────────────────
 

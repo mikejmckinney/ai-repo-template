@@ -182,57 +182,55 @@ DEFAULT_ONLY_ALT=$(
 )
 
 # Detect whether a workflow file's `on:` block carries any default-only
-# trigger. Handles four common YAML shapes (and excludes comments and
-# jobs/steps):
+# trigger. Uses an awk state machine to scan only the `on:` mapping —
+# this prevents a job, env var, or step named like a trigger
+# (e.g. `push-image:`) from producing a false positive. Handles four
+# YAML shapes:
 #
 #   1. Block-form key:        `  push:` or `  push:\n    branches: [main]`
 #   2. Block-form list item:  `  - push` or `  - push:`
 #   3. Inline scalar:         `on: push`
 #   4. Inline flow sequence:  `on: [push, schedule]`
 #
-# Pre-step: strip `#` comments (anywhere on a line) so a commented-out
-# `# on: push` cannot trigger a false positive. Multi-line YAML comments
-# don't exist, so a one-pass strip is sufficient.
+# Pre-step: strip `#` comments (whole-line and trailing). Multi-line
+# YAML comments don't exist, so a one-pass strip is sufficient. Comments
+# inside quoted strings are not handled — out of scope for the
+# classifier (real YAML parsing would require yq, intentionally avoided
+# per ADR-016 §Implementation).
 #
-# This is regex-based rather than YAML-parsed because the script is
-# pure bash with no python/yq dependency. Edge cases (a job literally
-# named `push:`, an env var `PUSH:`) are bounded by anchoring patterns
-# 1 and 2 to leading whitespace + a real top-level key shape, plus
-# pattern 3/4 anchoring to `on:` at the start of a line. Adding more
-# shapes is the documented extension point — see
+# Adding more shapes is the documented extension point — see
 # scripts/test-verify-pr.sh fixtures.
 detect_default_only() {
   local file="$1"
+  # Strip comments. The first pattern handles trailing `   # ...`,
+  # the second handles a whole-line comment with optional indent.
   local cleaned
-  # Strip line comments. `\b#` would be wrong because YAML allows `#`
-  # only as start-of-line or preceded by whitespace; sed handles both.
-  cleaned=$(sed -E 's/[[:space:]]+#.*$//; s/^#.*$//' "$file")
-  # Pattern 1 (block-form key) AND pattern 2 (block-form list item).
-  if printf '%s\n' "$cleaned" \
-    | grep -qE "^[[:space:]]*(-[[:space:]]+)?${DEFAULT_ONLY_ALT}([[:space:]]*:|[[:space:]]*$)"; then
-    return 0
-  fi
-  # Pattern 3 (inline scalar): `on: push` on a single line.
-  if printf '%s\n' "$cleaned" \
-    | grep -qE "^on:[[:space:]]+${DEFAULT_ONLY_ALT}[[:space:]]*$"; then
-    return 0
-  fi
-  # Pattern 4 (inline flow sequence): `on: [push, schedule, ...]`.
-  # Match the `[...]` block on the `on:` line. Closing `]` cannot be
-  # placed inside a bracket expression in ERE (it would terminate it),
-  # so the trailing delimiter is expressed as an alternation
-  # `(,|[[:space:]]*])` instead. Token must be preceded by `[`,
-  # whitespace, or `,`.
-  if printf '%s\n' "$cleaned" \
-    | grep -qE "^on:[[:space:]]*\[[^]]*[[:space:],[]${DEFAULT_ONLY_ALT}([[:space:]]*,|[[:space:]]*\])"; then
-    return 0
-  fi
-  # Edge case: leading flow-sequence token `on: [push,` or `on: [push]`.
-  if printf '%s\n' "$cleaned" \
-    | grep -qE "^on:[[:space:]]*\[${DEFAULT_ONLY_ALT}([[:space:]]*,|[[:space:]]*\])"; then
-    return 0
-  fi
-  return 1
+  cleaned=$(sed -E 's/[[:space:]]+#.*$//; s/^[[:space:]]*#.*$//' "$file")
+  printf '%s\n' "$cleaned" | awk -v triggers="$DEFAULT_ONLY_ALT" '
+    BEGIN { in_on = 0; found = 0 }
+    # Inline-scalar form: `on: push`
+    /^on:[[:space:]]+[A-Za-z_]/ {
+      if ($0 ~ "^on:[[:space:]]+" triggers "[[:space:]]*$") { found = 1; exit }
+      next
+    }
+    # Inline flow-sequence form: `on: [push, ...]`
+    /^on:[[:space:]]*\[/ {
+      if ($0 ~ "^on:[[:space:]]*\\[[[:space:]]*" triggers "([[:space:]]*,|[[:space:]]*\\])") { found = 1; exit }
+      if ($0 ~ "^on:[[:space:]]*\\[[^]]*[[:space:],[]" triggers "([[:space:]]*,|[[:space:]]*\\])") { found = 1; exit }
+      next
+    }
+    # Bare `on:` opens block form.
+    /^on:[[:space:]]*$/ { in_on = 1; next }
+    # Any other top-level key ends the `on:` block.
+    /^[A-Za-z_]/ { in_on = 0; next }
+    # Inside `on:` block: indented mapping key or list bullet.
+    in_on && /^[[:space:]]+/ {
+      if ($0 ~ "^[[:space:]]+(-[[:space:]]+)?" triggers "([[:space:]]*:|[[:space:]]*$)") {
+        found = 1; exit
+      }
+    }
+    END { exit found ? 0 : 1 }
+  '
 }
 
 while IFS= read -r path; do
