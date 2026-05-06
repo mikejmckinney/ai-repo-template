@@ -136,7 +136,7 @@ else
     --description "Sandbox for verifying default-branch-only workflow changes from ${UPSTREAM_NAME} (see ADR-016)" 2>"${_WORK_DIR}/create.err"; then
     err=$(cat "${_WORK_DIR}/create.err")
     log_error "gh repo create failed:"
-    [[ -n "${err}" ]] && while IFS= read -r _line; do log_error "  ${_line}"; done <<<"${err}"
+    [[ -s "${_WORK_DIR}/create.err" ]] && while IFS= read -r _line; do log_error "  ${_line}"; done <"${_WORK_DIR}/create.err"
     if [[ "$err" == *"Resource not accessible"* ]] \
       || [[ "$err" == *"createRepository"* ]] \
       || [[ "$err" == *"403"* ]]; then
@@ -200,7 +200,7 @@ if ! GIT_ASKPASS="$_ASKPASS" \
   _err=$(cat "${_WORK_DIR}/mirror-push.err")
   rm -f "$_TOK_FILE" "$_ASKPASS"
   log_error "Mirror push to ${SANDBOX_REPO} failed:"
-  while IFS= read -r _line; do log_error "  ${_line}"; done <<<"$_err"
+  [[ -s "${_WORK_DIR}/mirror-push.err" ]] && while IFS= read -r _line; do log_error "  ${_line}"; done <"${_WORK_DIR}/mirror-push.err"
   log_error ""
   if [[ "$_err" == *"workflow"*"scope"* ]]; then
     log_error "The token is missing 'workflow' scope. Classic PATs require BOTH"
