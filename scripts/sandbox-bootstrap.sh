@@ -185,7 +185,9 @@ printf '%s\n' "${GH_TOKEN:-$(gh auth token)}" >"$_TOK_FILE"
 printf '#!/bin/sh\ncat "%s"\n' "$_TOK_FILE" >"$_ASKPASS"
 
 if ! GIT_ASKPASS="$_ASKPASS" \
-  git -C "$MIRROR_DIR" push --mirror \
+  git -C "$MIRROR_DIR" \
+  -c credential.helper= \
+  push --mirror \
   "https://x-access-token@github.com/${SANDBOX_REPO}.git" \
   2>/tmp/sandbox-mirror-push.err; then
   _err=$(cat /tmp/sandbox-mirror-push.err)
@@ -193,10 +195,11 @@ if ! GIT_ASKPASS="$_ASKPASS" \
   log_error "Mirror push to ${SANDBOX_REPO} failed:"
   while IFS= read -r _line; do log_error "  ${_line}"; done <<<"$_err"
   log_error ""
-  log_error "This is usually a token-scope problem. The most common cause:"
-  log_error "  Fine-grained PAT scoped to SPECIFIC repos — 'ai-repo-template-sandbox'"
-  log_error "  was just created and was not in scope when the token was minted."
-  log_error "  Fine-grained PATs do NOT auto-include repos created after minting."
+  log_error "This is usually a token-scope problem. Possible causes:"
+  log_error "  1. Fine-grained PAT scoped to SPECIFIC repos — '${SANDBOX_REPO##*/}'"
+  log_error "     was just created and was not in scope when the token was minted."
+  log_error "     Fine-grained PATs do NOT auto-include repos created after minting."
+  log_error "  2. The token lacks 'Contents: R/W' permission entirely."
   log_error ""
   log_error "Recommended fix: use a CLASSIC personal token (ghp_...) with 'repo'"
   log_error "scope for BOOTSTRAP_GH_TOKEN. Generate one at:"
