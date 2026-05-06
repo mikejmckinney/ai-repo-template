@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 7 -->
+<!-- AGENTS_MD_VERSION: 8 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
@@ -12,7 +12,7 @@
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v7` (matching
+substantive reply with the exact token `Session handshake v8` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -36,7 +36,7 @@ for the rest of the session.
   - If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
     replace it with the actual repository path (e.g., `owner/repo`) detected from `git remote -v`.
   - **Clear the template's working state (Mode B only).** `.context/state/*.md` and `.context/sessions/*.md` ship populated with ai-repo-template's own task data and session history. Downstream projects must reset these to empty templates during onboarding so re-read cadence (§"Session-state cadence") doesn't reinforce the template's stale state as if it were the project's reality. Specifically:
-    - `.context/state/_active.md` — clear the task details under the `# Active Task` header (resetting the fields to empty); keep the schema comment and the `TEMPLATE_PLACEHOLDER` marker until first real task.
+    - `.context/state/_active.md` — clear all `## Task: <branch>` sections under the `# Active Tasks` header (the body should contain only the file header until the first real task is claimed); keep the schema comment and the `TEMPLATE_PLACEHOLDER` marker until first real task. (Multi-task schema: see ADR-018.)
     - `.context/sessions/latest_summary.md` — replace body with a single "No sessions yet" line (keep the marker until first close-out).
     - `.context/state/coordination.md` — clear all entries under `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and `## PM Notes`; keep the section headers, `## Lock Template`, and `TEMPLATE_PLACEHOLDER` marker.
     - Do NOT delete `*_template.md` or `README.md` files in those directories — they are the schemas downstream agents copy from.
@@ -235,14 +235,14 @@ Keep agent working memory current so the next session (or next role) can resume 
 
 1. `AGENTS.md` — catches mid-session rule edits (e.g., this very section).
 2. `.context/00_INDEX.md` — catches roadmap or constraint changes.
-3. `.context/state/_active.md` and the active `.context/state/task_<slug>.md` (if any) — catches staleness in your own working state. `_active.md` is capped at ~20 lines of task metadata (Active Task, File, Role, Blockers, and Next 1–3 actions); granular progress, files, and detailed blockers live in the task file it references.
+3. `.context/state/_active.md` and the active `.context/state/task_<slug>.md` (if any) — catches staleness in your own working state. `_active.md` uses a multi-section schema (one `## Task: <branch>` section per in-flight branch; see ADR-018); each section is capped at ~20 lines of task metadata (Issue/PR, Role, Blockers, Next 1–3 actions). Read the whole file (you need to see every active task to spot conflicts before claiming new work), but only edit your own section. Granular progress, files, and detailed blockers live in the task file each section references.
 4. `.context/state/coordination.md` — catches stale locks before you add new ones.
 5. Any `.context/rules/*.md` or `.context/vision/**/*.md` whose domain covers the files you are about to edit — e.g., read `.context/rules/process_doc_maintenance.md` before changes that may trigger doc-sync requirements; read `.context/rules/domain_code_quality.md` before non-trivial code refactors; read the relevant architecture or mockup in `.context/vision/` before implementing UI or structural changes.
 
 Reading all of `.context/rules/` and `.context/vision/` at every boundary is overkill: unlike `AGENTS.md` (the primary instruction file, most likely to be edited mid-session), both rule files and vision artifacts change only through deliberate, reviewed PRs — ad-hoc mid-session edits to them are rare. Point 5 already covers the important case: you read a rule or vision file when its domain intersects what you are about to change. The five items above are the minimum set that closes the loop between knowing a rule and following it.
 
-- **`.context/state/_active.md`** — rewrite (don't append) at every task boundary. Max ~20 lines. Schema: Active Task, File, Role, Blockers, Next 1–3 actions. Schema and examples in `.context/state/README.md`.
-  - **What counts as a "task boundary"** for prompt-driven work: each `.github/prompts/NN-*.md` file is its own boundary. If you process prompts 02 → 03 → 04 in one session, that is *three* boundaries — rewrite `_active.md` between each, even if the same agent continues. Treating multiple prompts as one continuous task is a known failure mode (see ADR-012 + `docs/postmortems/postmortem-001-workflow-bypass.md`).
+- **`.context/state/_active.md`** — multi-task file (ADR-018). When you claim a task, add a `## Task: <branch-name>` section under the `# Active Tasks` header. Edit (don't append) **only your own section** at every task boundary; per-section cap is ~20 lines with schema Issue/PR, Role, Blockers, Next 1–3 actions. Remove your section as part of close-out (see `.context/state/README.md` §"Cadence"). Read the whole file at every task boundary so you see all in-flight work; the write surface is your section only.
+  - **What counts as a "task boundary"** for prompt-driven work: each `.github/prompts/NN-*.md` file is its own boundary. If you process prompts 02 → 03 → 04 in one session, that is *three* boundaries — rewrite your `## Task:` section between each, even if the same agent continues. Treating multiple prompts as one continuous task is a known failure mode (see ADR-012 + `docs/postmortems/postmortem-001-workflow-bypass.md`).
 - **`.context/state/task_<slug>.md`** — create from `.context/state/task_template.md` at task start. Delete (or move to `.context/sessions/`) at task end.
 - **Handoff trigger** — **required** — write a structured handoff to `.context/state/handoff_<slug>.md` (template: `.context/state/handoff_template.md`) and start a fresh session whenever ANY of the following fires:
   - A single agent conversation exceeds ~30 turns.

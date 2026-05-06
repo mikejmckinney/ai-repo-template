@@ -1,17 +1,41 @@
-<!-- TEMPLATE_PLACEHOLDER: In a real project, this file tracks the currently-active task. Downstream projects should clear the example body below during onboarding (see AGENTS.md → "Template detection" and `.github/prompts/repo-onboarding.md`); ongoing maintenance is per AGENTS.md → "Session-state cadence". -->
-<!-- Schema (rewrite at every task boundary; max ~20 lines):
-     Active Task | File | Role | Blockers | Next 1–3 actions.
-     Anything else belongs in task_<slug>.md, not here.
-     See .context/state/README.md "Cadence" for rules and a worked example.
-     Re-read requirement: before rewriting this file, re-read AGENTS.md §"Session-state cadence". -->
+<!-- TEMPLATE_PLACEHOLDER: In a real project, this file tracks all currently-active tasks (one section per branch). Downstream projects should clear the example body below during onboarding (see AGENTS.md → "Template detection" and `.github/prompts/repo-onboarding.md`); ongoing maintenance is per AGENTS.md → "Session-state cadence". -->
+<!-- Schema (multi-task; see ADR-018):
+     File header is fixed: `# Active Tasks`.
+     Below the header, each in-flight branch owns one `## Task: <branch-name>` section.
+     Per-section schema: Issue/PR | Role | Blockers | Next 1–3 actions. Cap ~20 lines per section.
+     Agents edit ONLY their own section. Re-read the WHOLE file at every task boundary.
+     Add a section when you claim a task; remove it as part of close-out (see .context/state/README.md "Cadence").
+     Worked example (two parallel branches):
 
-# Active Task
+       # Active Tasks
 
-**Active Task**: #229 Phase 3 — pre-push Critic prompt (PR #244 open, awaiting human merge)
-**File**: N/A
-**Role**: DevOps
-**Blockers**: None — bot loop converged (R4+R5 clean), all 9 threads resolved, CI green.
+       ## Task: feature/frontend-101-login-form
+       **Issue/PR**: #101
+       **Role**: frontend
+       **Blockers**: waiting on backend API contract (login-backend)
+       **Next 1–3 actions**:
+       1. Stub LoginForm component with form fields
+       2. Wire up form validation
+       3. Pause until login-backend lands
+
+       ## Task: feature/backend-102-login-api
+       **Issue/PR**: #102
+       **Role**: backend
+       **Blockers**: None
+       **Next 1–3 actions**:
+       1. Define POST /login request/response schema
+       2. Implement handler with bcrypt verify
+       3. Open PR linking #102
+
+     Re-read requirement: before rewriting your section, re-read AGENTS.md §"Session-state cadence". -->
+
+# Active Tasks
+
+## Task: feature/architect-237-multi-task-active-md
+**Issue/PR**: #237
+**Role**: architect
+**Blockers**: None
 **Next 1–3 actions**:
-1. Human merges PR #244 (or requests further changes)
-2. After merge: remove Phase 3 lock from `coordination.md`
-3. Phase 5 of #229 is comment-only; no further implementation queued
+1. Open PR with ADR-018 + schema migration + test harness + postmortem-003
+2. Run pr-resolve-all.md loop until two clean iterations
+3. Close out task; remove this section in the close-out commit
