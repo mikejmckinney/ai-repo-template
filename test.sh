@@ -140,6 +140,40 @@ for dir in "${CONTEXT_DIRS[@]}"; do
   fi
 done
 
+# --- _active.md multi-task schema (ADR-018) ---
+# `_active.md` uses a multi-section schema: each in-flight branch owns one
+# `## Task: <branch-name>` section under the `# Active Tasks` header.
+# Enforce: (a) the file has the `# Active Tasks` header; (b) when the body
+# below the schema comment block is non-empty, at least one `## Task:`
+# section header is present. An empty body (template-onboarding state) is
+# allowed; a body with task content but no `## Task:` header is not.
+if [[ -f ".context/state/_active.md" ]]; then
+  if grep -qE '^# Active Tasks\b' .context/state/_active.md; then
+    pass ".context/state/_active.md has '# Active Tasks' header (ADR-018 schema)"
+  else
+    fail ".context/state/_active.md missing '# Active Tasks' header (ADR-018 schema)"
+  fi
+
+  # Strip HTML comment blocks and the file header; if anything non-blank
+  # remains, require a `## Task:` section header.
+  active_body=$(awk '
+    /^<!--/ { in_comment = 1 }
+    in_comment {
+      if (/-->/) { in_comment = 0 }
+      next
+    }
+    /^# Active Tasks/ { next }
+    { print }
+  ' .context/state/_active.md | grep -v '^[[:space:]]*$' || true)
+  if [[ -z "$active_body" ]]; then
+    pass ".context/state/_active.md body is empty (template-onboarding state allowed)"
+  elif grep -qE '^## Task:[[:space:]]+\S' .context/state/_active.md; then
+    pass ".context/state/_active.md has at least one '## Task: <branch>' section (ADR-018)"
+  else
+    fail ".context/state/_active.md has body content but no '## Task: <branch>' section (ADR-018 schema)"
+  fi
+fi
+
 echo ""
 
 # --- Docs Structure Check ---
@@ -980,6 +1014,22 @@ else
 fi
 
 echo ""
+echo "Running ADR-018 multi-task _active.md smoke test..."
+if [[ -f scripts/test-active-md-multitask.sh ]]; then
+  AMT_LOG=$(mktemp)
+  if bash scripts/test-active-md-multitask.sh >"$AMT_LOG" 2>&1; then
+    amt_passed=$(grep -c '^PASS \[' "$AMT_LOG" || true)
+    pass "scripts/test-active-md-multitask.sh ($amt_passed scenarios passed)"
+  else
+    fail "scripts/test-active-md-multitask.sh failed (see log below)"
+    cat "$AMT_LOG"
+  fi
+  rm -f "$AMT_LOG"
+else
+  fail "scripts/test-active-md-multitask.sh missing"
+fi
+
+echo ""
 
 # --- Phase 4 invariants (issue #229 Phase 4 / ADR-017) ---
 echo "Checking Phase 4 components (issue #229 Phase 4 / ADR-017)..."
@@ -1052,6 +1102,65 @@ for reviewer_file in ".cursor/BUGBOT.md" ".gemini/styleguide.md"; do
     fail "$reviewer_file missing cap-override gate mirror (issue #229 Phase 4)"
   fi
 done
+
+echo ""
+
+# --- ADR-018 invariants (issue #237 / multi-task _active.md schema) ---
+echo "Checking ADR-018 components (issue #237 / multi-task _active.md)..."
+
+ADR018_PATH="docs/decisions/adr-018-multi-task-active-md-schema.md"
+if [[ -f "$ADR018_PATH" ]] \
+  && grep -qE '^Accepted$' "$ADR018_PATH" 2>/dev/null; then
+  pass "ADR-018 exists with Status: Accepted"
+else
+  fail "ADR-018 missing or Status line is not 'Accepted' ($ADR018_PATH)"
+fi
+
+# ADR-018 refines (does not supersede) ADR-009.
+if grep -qiE 'superseded (in part )?by' docs/decisions/adr-009-parallel-multi-agent-execution.md 2>/dev/null; then
+  fail "ADR-009 carries a supersession marker; ADR-018 refines, not supersedes"
+else
+  pass "ADR-009 unchanged (no supersession marker — ADR-018 refines)"
+fi
+
+if grep -q 'ADR-018' docs/decisions/README.md 2>/dev/null; then
+  pass "docs/decisions/README.md indexes ADR-018"
+else
+  fail "docs/decisions/README.md missing ADR-018 row"
+fi
+
+# Postmortem-003 ships in the same PR (ADR-015 feedback loop).
+PM003_PATH="docs/postmortems/postmortem-003-active-md-merge-conflict.md"
+if [[ -f "$PM003_PATH" ]] \
+  && grep -q '^generalizes: Yes' "$PM003_PATH" 2>/dev/null \
+  && grep -q '^follow_up_artifact: ADR-018' "$PM003_PATH" 2>/dev/null; then
+  pass "postmortem-003 exists with generalizes:Yes + follow_up_artifact:ADR-018"
+else
+  fail "postmortem-003 missing or frontmatter incomplete ($PM003_PATH)"
+fi
+
+# Smoke test for parallel-merge safety.
+SMOKE_PATH="scripts/test-active-md-multitask.sh"
+if [[ -x "$SMOKE_PATH" ]]; then
+  pass "$SMOKE_PATH exists and is executable (ADR-018 smoke test)"
+else
+  fail "$SMOKE_PATH missing or not executable (ADR-018 smoke test)"
+fi
+
+# AGENTS.md cadence section references ADR-018.
+if grep -q 'ADR-018' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md references ADR-018 (multi-task _active.md schema)"
+else
+  fail "AGENTS.md missing ADR-018 reference (issue #237 doc-sync)"
+fi
+
+# .context/state/README.md cadence updated for multi-task semantics.
+if grep -q '## Task: <branch-name>' .context/state/README.md 2>/dev/null \
+  && grep -q 'ADR-018' .context/state/README.md 2>/dev/null; then
+  pass ".context/state/README.md cadence documents multi-task schema (ADR-018)"
+else
+  fail ".context/state/README.md missing multi-task cadence (issue #237 doc-sync)"
+fi
 
 echo ""
 
