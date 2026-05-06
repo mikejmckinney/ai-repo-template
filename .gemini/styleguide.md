@@ -231,7 +231,7 @@ Do not flag dates as typos based on relative date heuristics.
 
 ## Repo-specific Judge gates
 
-This repo uses the internal Judge role (`.github/agents/judge.agent.md`) as the canonical gate spec. The eight gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
+This repo uses the internal Judge role (`.github/agents/judge.agent.md`) as the canonical gate spec. The nine gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
 
 ### Issue / parent-PR link (ADR-011)
 The PR body must reference an issue, parent PR, or ADR (`Closes #NN`, `Refs #NN`, `Implements ADR-NNN`). Flag **Critical** if the body has neither a `#NN` reference nor an `ADR-\d+` reference, the PR is not a revert, and no exemption label (`chore:no-plan`, `smoke-test`) is present. Automation bots (Renovate, Dependabot) are exempt.
@@ -268,6 +268,10 @@ If the linked issue has a "Plan revision" comment posted *after* this PR was ope
 ### Diff-coupling gate for `scripts/*.sh` (issue #229 Phase 1.5)
 Any PR diff that adds or modifies `grep -c`, `wc -l`, `$?`, `pipefail`, or `set -e` logic inside `scripts/*.sh` must include a corresponding change in `scripts/test-*.sh`. Exit-code behaviour under `set -e` is invisible to shellcheck and must be covered by a fixture. Also flag when `scripts/*.sh` or workflow `run:` blocks introduce non-trivial jq filters (multi-pipe, `select`, `sub`, `reduce`, or `@base64`) without an extracted `scripts/lib/jq/<name>.jq` counterpart with matching fixtures. Flag **High** (REQUEST_CHANGES).
 (canonical: `.github/agents/judge.agent.md` § "Diff-coupling gate for `scripts/*.sh`")
+
+### Cap-override justification gate (issue #229 Phase 4)
+When the PR carries the `cap-override` label (or an `@<agent> cap-override <N>` comment with `N > 3` is in effect), every Resolution Report posted by `pr-resolve-all.md` from round 4 onward must include a literal `Override justification: <category>` line directly under `### Summary`. Category must be one of `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <reason>` (exact text). Flag **Critical** if override is in effect, the latest Resolution Report's round number is > 3, and the justification line is missing or its category text doesn't match one of the four allowed forms.
+(canonical: `.github/agents/judge.agent.md` § "Cap-override justification gate")
 
 ## Response Guidelines
 

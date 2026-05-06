@@ -1,0 +1,67 @@
+# Pre-commit hooks for the ai-repo-template repo's own development.
+#
+# Scope: TEMPLATE REPO ONLY. This file is installed (not a `.template`
+# scaffold) because PR-iteration-cost evidence on this repo's own PRs
+# justified local enforcement of the same shellcheck + actionlint checks
+# CI runs. See:
+#   - docs/decisions/adr-017-template-repo-pre-commit-default.md
+#   - .github/workflows/lint-and-format.yml (CI flags; keep in sync)
+#
+# Derived repos: if your project was created from this template, you
+# inherited this file. DELETE IT and use `.pre-commit-config.yaml.template`
+# instead (rename and customise to your stack). Running `pre-commit install`
+# with this file active installs only the two template-internal hooks
+# (shellcheck + actionlint), silently omitting detect-secrets, commitizen,
+# and any other hooks your project needs. See ADR-013 for the full rationale
+# and ADR-017 for why this template-internal file exists.
+#
+# One-time setup (template contributors):
+#   pip install pre-commit
+#   pre-commit install
+#
+# Run manually against the whole tree:
+#   pre-commit run --all-files
+#
+# Emergency bypass (discouraged; surfaces in `git log`):
+#   git commit --no-verify
+#
+# Hook flags are kept in sync with .github/workflows/lint-and-format.yml.
+# Actionlint is version-pinned in both; shellcheck is installed via apt in
+# CI (no version pin), so exact version parity is not guaranteed — flag
+# and severity parity is. A clean local run is a strong signal CI will
+# pass for these tools. When bumping actionlint, bump it in BOTH files.
+
+minimum_pre_commit_version: '3.0.0'
+
+repos:
+  # Shellcheck — matches CI: shellcheck --severity=warning --exclude=SC1091
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: v0.10.0
+    hooks:
+      - id: shellcheck
+        args: ['--severity=warning', '--exclude=SC1091']
+        # CI globs **/*.sh excluding .git and node_modules; pre-commit's
+        # default file selection (changed files matching the hook's
+        # types) is narrower and faster, which is the point of the hook.
+        types: [shell]
+
+  # Actionlint — matches CI: actionlint with the SC2016/2086/2129/2153/2018/2019 ignores
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.7
+    hooks:
+      - id: actionlint
+        # Same -ignore flags as .github/workflows/lint-and-format.yml.
+        # Keep these two lists in sync.
+        args:
+          - '-ignore'
+          - 'SC2016'
+          - '-ignore'
+          - 'SC2086'
+          - '-ignore'
+          - 'SC2129'
+          - '-ignore'
+          - 'SC2153'
+          - '-ignore'
+          - 'SC2018'
+          - '-ignore'
+          - 'SC2019'
