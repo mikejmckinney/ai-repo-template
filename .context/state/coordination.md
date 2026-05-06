@@ -52,6 +52,28 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-229-phase3
+<!-- managed-for-pr:244 -->
+**Role**: devops
+**Session**: feature/devops-229-phase3-v2
+**Claimed At**: 2026-05-06T00:00:00Z
+**Expected Duration**: 1 session
+**Paths**:
+- .github/prompts/pre-push-review.md
+- .github/prompts/README.md
+- .github/agents/critic.agent.md
+- .github/agents/devops.agent.md
+- AGENTS.md
+- AI_REPO_GUIDE.md
+- docs/guides/agent-best-practices.md
+- test.sh
+- .context/state/_active.md
+- .context/state/coordination.md
+- .context/sessions/latest_summary.md
+**Depends On**: pr-229-phase1 (merged), pr-229-phase1.5 (merged)
+**Blocks**: none
+**State**: in_progress
+
 ## Lock: pr-229-phase4
 <!-- managed-for-pr:229 -->
 **Role**: devops

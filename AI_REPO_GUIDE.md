@@ -287,6 +287,19 @@ pre-commit run --all-files
 # PR review-loop rolling metrics (last 14 days)
 bash scripts/pr-iteration-stats.sh --window 14
 
+# Pre-push review (Critic + lint + ./test.sh on the working-tree diff)
+# SHOULD before `git push` on non-trivial diffs; MUST for DevOps on
+# shell/workflow changes. See AGENTS.md → "Work style" and
+# .github/agents/devops.agent.md.
+#
+# This is a Markdown prompt — not a shell script — so it must be
+# consumed by an agent runtime, not executed with bash. To dispatch:
+#   - In Claude Code:  @claude follow .github/prompts/pre-push-review.md
+#   - In Copilot:      @copilot follow .github/prompts/pre-push-review.md
+#   - In Cursor:       open the prompt and run it manually
+# To preview the procedure locally without dispatching an agent:
+cat .github/prompts/pre-push-review.md
+
 # List all markdown files
 find . -name "*.md" -not -path "./.git/*" | head -20
 

@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 4 — ADR-017 + cap-override justification rule (PR #241 open, awaiting review)
+**Active Task**: #229 Phase 3 — pre-push Critic prompt (PR #244 open, awaiting human merge)
 **File**: N/A
 **Role**: DevOps
-**Blockers**: None
+**Blockers**: None — bot loop converged (R4+R5 clean), all 9 threads resolved, CI green.
 **Next 1–3 actions**:
-1. Await merge of PR #241 (CI green, bot-review threads resolved — stop condition met)
-2. Start Phase 5 (#227 cross-link comment) on user go-ahead
-3. Close out task and update latest_summary.md
+1. Human merges PR #244 (or requests further changes)
+2. After merge: remove Phase 3 lock from `coordination.md`
+3. Phase 5 of #229 is comment-only; no further implementation queued
