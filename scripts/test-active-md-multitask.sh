@@ -191,7 +191,9 @@ if grep -F -e '<<<<<<<' -e '=======' -e '>>>>>>>' .context/state/_active.md >/de
   exit 1
 fi
 # shellcheck disable=SC2126  # grep -c forbidden in set -e scripts (RULE-01)
-section_count=$(grep '^## Task:' .context/state/_active.md | wc -l | tr -d ' ')
+# Wrap grep with || true: under set -euo pipefail, a 0-match grep would abort
+# the script before the FAIL message below could print (Cursor Bugbot ISS-09).
+section_count=$({ grep '^## Task:' .context/state/_active.md || true; } | wc -l | tr -d ' ')
 if [[ "$section_count" -ne 2 ]]; then
   echo "FAIL [scenario 2]: expected 2 '## Task:' sections after lossless concat, got $section_count" >&2
   cat .context/state/_active.md >&2
