@@ -183,3 +183,10 @@ Remaining already-resolved/OOS threads: leave open for human ack per pr-resolve-
 2. **Key insight**: The "What Didn't Work" section is the most valuable—it prevents wasted effort
 3. **Archiving**: Optionally copy to a dated file (e.g., `2025-01-25_auth.md`) before starting fresh
 4. **Start of session**: Read this file to understand recent context before beginning work
+
+## Close-out: phase3-issue-229 — 2026-05-06 (in progress — PR #243 open, awaiting review)
+
+**What shipped**: Phase 3 of issue #229 (Pre-push Critic). Three components: (1) New procedural prompt in `.github/prompts/pre-push-review.md` that runs linters (shellcheck, actionlint, test.sh) and dispatches Critic in a new `PRE-PUSH` mode. (2) `AGENTS.md` "Work style" section updated to reference it as a SHOULD for non-trivial diffs. (3) `devops.agent.md` "Do" list updated to mandate it as MUST for shell, regex, and workflow changes. (4) `critic.agent.md` "Repo Grounding" modified to outline the three distinct invocation surfaces, including PRE-PUSH. Ran `pr-resolve-all.md` on the open PR; experienced zero review comments for two consecutive iterations, meeting merge readiness criteria.
+**What was harder than expected**: No major difficulties. Actionlint required the explicit ignoring flag adjustment mirroring previous phases.
+**What generalizes**: Pre-push hooks can be orchestrated locally by prompts and agents providing human-readable sanity checks instead of waiting for full CI results or PR loops.
+
