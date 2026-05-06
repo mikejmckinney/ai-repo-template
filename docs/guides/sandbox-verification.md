@@ -59,12 +59,28 @@ export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
 # Optional: override the local git remote name (default: "sandbox").
 # export SANDBOX_REMOTE="sandbox"
 
+# Optional: separate token used ONLY for the repo-create + mirror-push
+# steps. Set this when your default `gh auth` is a Codespaces or
+# Actions token that can't create repos under your owner namespace.
+#
+# RECOMMENDED: a classic personal token (ghp_...) with 'repo' AND
+# 'workflow' scopes. Generate at: https://github.com/settings/tokens/new
+# ('workflow' is required to push .github/workflows/ files;
+# 'repo' alone is not sufficient.)
+# export BOOTSTRAP_GH_TOKEN="ghp_<classic PAT>"
+
 ./scripts/sandbox-bootstrap.sh
 ```
 
 The script is idempotent: re-running on an already-bootstrapped sandbox
 is safe (existing repo, existing remote, and existing secrets are
 detected and skipped with a log line).
+
+> **Codespaces note**: the auto-provisioned `GITHUB_TOKEN` in a
+> Codespace is scoped to the current repo only and cannot create new
+> repos. You will hit `Resource not accessible by integration
+> (createRepository)` unless you set `BOOTSTRAP_GH_TOKEN` to a
+> classic PAT with `repo` AND `workflow` scopes (see above).
 
 ### What the script does (for reference)
 
@@ -90,11 +106,11 @@ rm -rf "$(dirname "$MIRROR_DIR")"
 
 # 4. Set the sandbox CLAUDE_PAT secret from $SANDBOX_PAT.
 printf '%s' "$SANDBOX_PAT" | gh secret set CLAUDE_PAT \
-  --repo "$SANDBOX_REPO" --body-file -
+  --repo "$SANDBOX_REPO"
 
 # 5. (Optional) Set ANTHROPIC_API_KEY from $SANDBOX_ANTHROPIC_KEY.
 printf '%s' "$SANDBOX_ANTHROPIC_KEY" | gh secret set ANTHROPIC_API_KEY \
-  --repo "$SANDBOX_REPO" --body-file -
+  --repo "$SANDBOX_REPO"
 
 # 6. Add the sandbox remote on this checkout.
 git remote add "${SANDBOX_REMOTE:-sandbox}" "https://github.com/${SANDBOX_REPO}.git"
@@ -110,6 +126,15 @@ Use this when your Implementation Plan declares
 `Change class: default-branch-only workflow` (or `mixed`) and
 `Verification target: sandbox repo` (or `both`). The verbs follow the
 plan template's Verification section verbatim.
+
+> **Authentication**: the `git push` and `gh` commands below require a
+> token with `repo` + `workflow` scopes on the sandbox repo. In a
+> workflow step, this is available as `${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}`
+> (see `docs/guides/agent-pipeline.md` § "Required secrets"). When
+> running manually from a Codespace or local checkout, pass the same
+> classic PAT as `BOOTSTRAP_GH_TOKEN` and use the `GIT_ASKPASS` + `-c
+> credential.helper=` bypass shown in `scripts/sandbox-bootstrap.sh`
+> Step 3 (mirror push), or run `gh auth login` with that token first.
 
 > **Portability note**: examples below reference `$SANDBOX_REPO` (set
 > during the bootstrap above as `<owner>/<repo>-sandbox`). Either keep
