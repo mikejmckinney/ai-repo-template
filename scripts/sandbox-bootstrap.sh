@@ -180,10 +180,10 @@ fi
 # user, git only asks for the password, so a single-value helper is sufficient.
 _TOK_FILE="${_WORK_DIR}/.tok"
 _ASKPASS="${_WORK_DIR}/.askpass"
-chmod 600 "$_TOK_FILE"
-chmod 700 "$_ASKPASS"
 printf '%s\n' "${GH_TOKEN:-$(gh auth token)}" >"$_TOK_FILE"
 printf '#!/bin/sh\ncat "%s"\n' "$_TOK_FILE" >"$_ASKPASS"
+chmod 600 "$_TOK_FILE"
+chmod 700 "$_ASKPASS"
 
 if ! GIT_ASKPASS="$_ASKPASS" \
   git -C "$MIRROR_DIR" \
