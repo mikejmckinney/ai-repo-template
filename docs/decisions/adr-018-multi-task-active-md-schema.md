@@ -43,6 +43,28 @@ per concurrently-active task/branch. Each agent edits only its own section;
 the file as a whole is still re-read in full at every task boundary so
 agents see all in-flight work before claiming new tasks.
 
+**Scope of the merge-safety improvement** (important — the schema does not
+eliminate all conflicts):
+
+- **Updates to distinct existing sections commute cleanly** under three-way
+  merge. This is the realistic ongoing case: each branch claims its own
+  `## Task:` section before parallel work fans out, then only edits its
+  own section. The smoke test (`scripts/test-active-md-multitask.sh`
+  scenario 1) covers this case and asserts no conflict.
+- **Brand-new section additions from an empty body still produce a
+  conflict.** Two branches both appending net-new sections target the
+  same end-of-file line; no schema with freeform section lists can avoid
+  this without a fixed sentinel structure that itself becomes a conflict
+  point. The improvement vs. the old single-task schema is the
+  *resolution semantic*: the manual fix is lossless concatenation
+  ("keep both blocks"), not pick-one-winner with silent state loss. The
+  smoke test scenario 2 covers this case and asserts the lossless-concat
+  resolution produces a valid two-section file.
+
+In practice, agents that follow the workflow (claim a section as the
+first step of starting a branch, before parallel fan-out) will hit
+scenario 1, not scenario 2.
+
 New schema:
 
 ```markdown
@@ -96,11 +118,18 @@ write surface is the only thing that narrows.
 
 ### Positive
 
-- Two parallel branches can each commit `_active.md` updates without
-  producing a merge conflict; three-way merge auto-resolves at the section
-  level.
-- After both PRs merge, `_active.md` accurately reflects all remaining
-  in-flight work — no silent state loss.
+- Two parallel branches that have each pre-claimed their own `## Task:`
+  section can commit `_active.md` updates without producing a merge
+  conflict; three-way merge auto-resolves at the section level
+  (smoke test scenario 1).
+- For the brand-new-section-add case where the schema cannot eliminate
+  the conflict (smoke test scenario 2), the manual resolution is
+  *lossless*: concatenate both `## Task:` blocks. Under the old schema
+  the resolver had to pick a winner and silently lose the loser branch's
+  state.
+- After both PRs merge (whether via auto-resolve or manual lossless
+  concat), `_active.md` accurately reflects all remaining in-flight work
+  — no silent state loss in either case.
 - The cadence re-read still works: an agent picking up work sees every
   active task at once and can spot conflicts before claiming new files.
 - Section ownership matches `coordination.md` lock ownership, so the two
