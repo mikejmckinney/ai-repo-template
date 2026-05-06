@@ -7,11 +7,11 @@
 
 # Active Task
 
-**Active Task**: #229 Phase 3 — pre-push Critic prompt + role-file SHOULD/MUST wiring (PR #244 open)
+**Active Task**: #229 Phase 3 — pre-push Critic prompt (PR #244 open, awaiting human merge)
 **File**: N/A
 **Role**: DevOps
-**Blockers**: None
+**Blockers**: None — bot loop converged (R4+R5 clean), all 9 threads resolved, CI green.
 **Next 1–3 actions**:
-1. Open PR linking issue #229 (Phase 3 of 5)
-2. Run `pr-resolve-all.md` against the PR; loop until two clean iterations under `cap-override`
-3. Close out + update latest_summary.md after merge
+1. Human merges PR #244 (or requests further changes)
+2. After merge: remove Phase 3 lock from `coordination.md`
+3. Phase 5 of #229 is comment-only; no further implementation queued
