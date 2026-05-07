@@ -59,7 +59,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Claimed At**: 2026-05-07T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:
-- docs/decisions/adr-016-per-role-model-tiering.md
+- docs/decisions/adr-019-per-role-model-tiering.md
 - docs/decisions/adr-003-claude-code-subagent-registration.md
 - docs/decisions/README.md
 - .claude/agents/*.md

@@ -61,7 +61,7 @@ Workflow-layer "if Opus is rate-limited, retry with Sonnet" is rejected for both
 
 ### Amendment #3 — Tier table is v1 of an A/B framework, not a permanent assignment
 
-The tier table above is the starting point. Re-evaluate each role's tier quarterly, or when a new model release shifts the price/quality frontier materially. Record reassessments as amendments to this ADR, not new ADRs, so the history stays in one place. The reusable A/B protocol for evaluating model swaps lives in [`docs/guides/agent-pipeline.md` § "Model / workflow A/B protocol"](../guides/agent-pipeline.md) (added by Phase 4 / [#220 Phase 4 stub](https://github.com/mikejmckinney/ai-repo-template/issues/220#issuecomment-4393282716)).
+The tier table above is the starting point. Re-evaluate each role's tier quarterly, or when a new model release shifts the price/quality frontier materially. Record reassessments as amendments to this ADR, not new ADRs, so the history stays in one place. The reusable A/B protocol for evaluating model swaps is a deferred Phase 4 deliverable of [#220](https://github.com/mikejmckinney/ai-repo-template/issues/220) — see the [Phase 4 stub comment](https://github.com/mikejmckinney/ai-repo-template/issues/220#issuecomment-4393282716). When that work lands it will live as a new section (working title "Model / workflow A/B protocol") in [`docs/guides/agent-pipeline.md`](../guides/agent-pipeline.md); until then, that section does not exist and this paragraph is the only canonical reference.
 
 ### Amendment #4 — Model strings are placeholders subject to vendor cadence
 
