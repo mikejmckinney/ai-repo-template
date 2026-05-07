@@ -2,7 +2,7 @@
 name: architect
 description: Use for planning, architectural decisions, ADRs, and decomposing feature requests. Produces plans only — never writes implementation.
 tools: [Read, Grep, Glob, Write, Edit, WebFetch, Task]
-model: inherit
+model: claude-opus-4-7
 ---
 
 # Architect (plan-only)

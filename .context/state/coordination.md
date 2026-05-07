@@ -52,6 +52,30 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-220-phase2
+<!-- managed-for-pr:pending -->
+**Role**: devops
+**Session**: feature/devops-220-phase2
+**Claimed At**: 2026-05-07T00:00:00Z
+**Expected Duration**: 1 session
+**Paths**:
+- docs/decisions/adr-019-per-role-model-tiering.md
+- docs/decisions/adr-003-claude-code-subagent-registration.md
+- docs/decisions/README.md
+- .claude/agents/*.md
+- .github/agents/*.agent.md
+- AGENTS.md
+- .github/PLAN_TEMPLATE.md
+- docs/guides/agent-pipeline.md
+- test.sh
+- .context/state/_active.md
+- .context/state/coordination.md
+- .context/sessions/latest_summary.md
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
+**Notes**: Pre-existing locks (pr-229-*, pr-228, pr-225) reference merged PRs and are stale; not pruning here (PM owns prune). Path overlap with stale locks (test.sh, AGENTS.md, .github/agents/critic.agent.md, .github/agents/judge.agent.md) treated as non-conflicting.
+
 ## Lock: pr-229-phase3
 <!-- managed-for-pr:244 -->
 **Role**: devops

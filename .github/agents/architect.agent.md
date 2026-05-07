@@ -2,6 +2,7 @@
 name: Architect
 description: Use for planning, architectural decisions, ADRs, and decomposing feature requests. Produces plans only — never writes implementation.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
+model: 'Claude Opus 4.7 (copilot)'
 owned_paths:
   - 'AGENTS.md'                  # canonical process-rules file; see ADR-002
   - 'docs/decisions/**'
@@ -72,3 +73,13 @@ HANDOFF:
 - Next: judge (plan-gate)
 - Then: pm (dispatch)
 ```
+
+## Model tier note (ADR-019)
+
+Architect is pinned to High tier (`Claude Opus 4.7 (copilot)` on Copilot;
+`claude-opus-4-7` on Claude Code). On Copilot, the [subagent cost-tier
+ceiling](../../docs/decisions/adr-019-per-role-model-tiering.md#amendment-6--copilot-subagent-cost-tier-ceiling-limitation--workaround)
+means this pin is silently downgraded to whatever your chat-default model
+is if the chat-default is below Opus. To actually receive Opus dispatch,
+set your Copilot chat picker to Opus 4.7 before invoking Architect. Claude
+Code has no equivalent ceiling; the pin is honored as written.

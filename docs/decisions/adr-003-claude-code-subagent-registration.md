@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (per-role `model:` choice superseded by [ADR-019](./adr-019-per-role-model-tiering.md))
 
 ## Date
 

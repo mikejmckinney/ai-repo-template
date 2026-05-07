@@ -2,7 +2,7 @@
 name: backend
 description: Use to implement server code (APIs, models, migrations). Consumes a dispatched task; stays inside backend-owned paths.
 tools: [Read, Write, Edit, Grep, Glob, Bash, Task, WebFetch]
-model: inherit
+model: claude-sonnet-4-6
 ---
 
 # Backend (implementer)

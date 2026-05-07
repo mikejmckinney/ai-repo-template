@@ -2,7 +2,7 @@
 name: devops
 description: Use to edit workflows, install scripts, config, or CI files. Stays inside devops-owned paths.
 tools: [Read, Write, Edit, Grep, Glob, Bash, Task, WebFetch]
-model: inherit
+model: claude-sonnet-4-6
 ---
 
 # DevOps

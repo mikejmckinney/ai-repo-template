@@ -2,7 +2,7 @@
 name: frontend
 description: Use to implement UI code (components, pages, styles). Consumes a dispatched task; stays inside frontend-owned paths.
 tools: [Read, Write, Edit, Grep, Glob, Bash, Task, WebFetch]
-model: inherit
+model: claude-sonnet-4-6
 ---
 
 # Frontend (implementer)

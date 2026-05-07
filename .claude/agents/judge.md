@@ -2,7 +2,7 @@
 name: judge
 description: Use to gate a plan (before code) or review a diff/PR (after code). Outputs APPROVE / REQUEST_CHANGES / BLOCK.
 tools: [Read, Grep, Glob, WebFetch]
-model: inherit
+model: claude-opus-4-7
 ---
 
 # Judge (review-only)

@@ -31,6 +31,15 @@
 
 # Active Tasks
 
+## Task: feature/devops-220-phase2
+**Issue/PR**: #220 (Phase 2)
+**Role**: devops (lead) + architect (ADR-019) + docs + qa
+**Blockers**: None
+**Next 1–3 actions**:
+1. Implement Phase 2 file changes (ADR-019, 20 agent files, test.sh, AGENTS.md, PLAN_TEMPLATE.md, agent-pipeline.md)
+2. Run `bash test.sh`; commit; push; open PR
+3. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
+
 ## Task: feature/architect-237-multi-task-active-md
 **Issue/PR**: #237
 **Role**: architect
