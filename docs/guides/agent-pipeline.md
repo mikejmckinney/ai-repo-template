@@ -501,17 +501,38 @@ automatically post-merge.
 
 ## Cost Breakdown
 
+Two views: per-PR pipeline cost (workflow components below), and per-role dispatch cost (tier table below) introduced by [ADR-019](../decisions/adr-019-per-role-model-tiering.md).
+
+### Per-PR pipeline cost
+
+Reflects post-May-2026 model multipliers; figures are the working baseline against which Phase 1 / Phase 2 of [#220](https://github.com/mikejmckinney/ai-repo-template/issues/220) are measured.
+
 | Component | Cost | Notes |
 |-----------|------|-------|
-| Copilot cloud agent (implementation) | Included in subscription | 1 premium request per session |
+| Copilot cloud agent (implementation) | Included in subscription | 1 premium request per session; multiplier varies by chat-default model |
 | Copilot code review | Included | 1 premium request per review |
-| Claude auto-review (claude.yml) | $0.05–0.10 per PR | Uses ANTHROPIC_API_KEY |
-| Claude review resolution | $1–3 per PR | The main API cost |
+| Claude auto-review (claude.yml) | $0.05–0.10 per PR | Uses ANTHROPIC_API_KEY; defaults to Sonnet 4.6 post-Phase-1 |
+| Claude review resolution | $1–3 per PR | The main API cost; per-round cost dominated by re-fetched context (Phase 1 loop discipline targets this) |
 | Auto-merge workflow | Free | GitHub Actions minutes only |
 | **Total per PR** | **~$1–3 API + subscription** | Scales linearly with PR count |
 
-Compare to the all-Claude approach (Claude implements as well as resolves
-reviews): roughly 4–6× the per-PR API cost.
+Compare to the all-Claude approach (Claude implements as well as resolves reviews): roughly 4–6× the per-PR API cost.
+
+### Per-role dispatch tier (ADR-019)
+
+Each role is pinned to a cost tier. The canonical table lives in [ADR-019 § Decision](../decisions/adr-019-per-role-model-tiering.md#decision); summary here for navigation:
+
+| Role | Tier | Claude Code | Copilot |
+|---|---|---|---|
+| analyst, architect, judge | High | `claude-opus-4-7` | `'Claude Opus 4.7 (copilot)'` |
+| critic, pm, backend, frontend, devops | Mid | `claude-sonnet-4-6` | `'Claude Sonnet 4.6 (copilot)'` |
+| qa, docs | Low | `inherit` | _(omitted; inherits main session)_ |
+
+**Critic escalates to Judge (Opus) on `severity: high`** — role-to-role handoff, not in-place model upgrade.
+
+**Copilot cost-ceiling caveat:** High-tier subagents on Copilot silently downgrade to the chat-default if the chat-default is below Opus. Set the picker to Opus before invoking analyst / architect / judge if you want them to actually receive Opus dispatch. See [ADR-019 Amendment #6](../decisions/adr-019-per-role-model-tiering.md#amendment-6--copilot-subagent-cost-tier-ceiling-limitation--workaround).
+
+**Per-task upshift:** the [`Model tier:` field in `.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md) lets a specific task override the role default upward (`top`) or downward (`cheap`); default is `mid`.
 
 ## Troubleshooting
 

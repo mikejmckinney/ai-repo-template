@@ -2,7 +2,7 @@
 name: pm
 description: Use to dispatch approved plans into per-role task files, manage locks, and resolve cross-role ownership conflicts.
 tools: [Read, Grep, Glob, Write, Edit, Task]
-model: inherit
+model: claude-sonnet-4-6
 ---
 
 # Project Manager (dispatch-only)

@@ -2,7 +2,7 @@
 name: analyst
 description: Use for needs analysis, market research, competitive analysis, and validating whether a project should be built. Produces research artifacts — never writes implementation code.
 tools: [Read, Grep, Glob, WebFetch, Write, Edit, Task]
-model: inherit
+model: claude-opus-4-7
 ---
 
 # Analyst (research-only)

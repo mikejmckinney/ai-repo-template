@@ -2,6 +2,7 @@
 name: Frontend
 description: Use to implement UI code (components, pages, styles). Consumes a dispatched task; stays inside frontend-owned paths.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
+model: 'Claude Sonnet 4.6 (copilot)'
 owned_paths:
   # TEMPLATE_PLACEHOLDER: replace with your project's frontend globs
   - 'src/frontend/**'

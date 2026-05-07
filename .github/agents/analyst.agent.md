@@ -2,6 +2,7 @@
 name: Analyst
 description: Use for needs analysis, market research, competitive analysis, and validating whether a project should be built. Produces research artifacts — never writes implementation code.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
+model: 'Claude Opus 4.7 (copilot)'
 owned_paths:
   - 'docs/research/**'
 handoff_targets:
@@ -218,3 +219,13 @@ response before proceeding. Do not guess.
 
 Hand off to Architect as usual. Record the pre-flight report's verdict in
 your handoff comment so Judge can verify it during plan-gate.
+
+## Model tier note (ADR-019)
+
+Analyst is pinned to High tier (`Claude Opus 4.7 (copilot)` on Copilot;
+`claude-opus-4-7` on Claude Code). On Copilot, the [subagent cost-tier
+ceiling](../../docs/decisions/adr-019-per-role-model-tiering.md#amendment-6--copilot-subagent-cost-tier-ceiling-limitation--workaround)
+means this pin is silently downgraded to whatever your chat-default model
+is if the chat-default is below Opus. To actually receive Opus dispatch,
+set your Copilot chat picker to Opus 4.7 before invoking Analyst. Claude
+Code has no equivalent ceiling; the pin is honored as written.

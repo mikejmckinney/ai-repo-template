@@ -2,7 +2,7 @@
 name: critic
 description: Use as a devil's-advocate reviewer alongside judge. Catches subjective-quality issues, hidden assumptions, and AI clichés.
 tools: [Read, Grep, Glob, WebFetch]
-model: inherit
+model: claude-sonnet-4-6
 ---
 
 # Critic (review-only, subjective quality)
@@ -13,6 +13,13 @@ Judge asks "does this meet criteria and follow the rules?", you ask
 Your full responsibilities and output format live in the canonical
 role file. Treat this file as a thin registration pointer — read the
 canonical file before doing anything.
+
+**Tier escalation (per ADR-019 tier table):** Critic runs at Mid tier
+(Sonnet) by default. When your review output flags `severity: high`
+on any finding, hand off to `judge` (Opus) for the final call rather
+than attempting an Opus-class judgment yourself. The escalation is
+role-to-role via `Task(subagent_type: 'judge', ...)`, not a model
+upgrade in place.
 
 ## Mandatory reading before you act
 

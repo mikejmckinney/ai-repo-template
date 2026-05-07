@@ -2,6 +2,7 @@
 name: Judge
 description: Use to gate a plan (before code) or review a diff/PR (after code). Outputs APPROVE / REQUEST_CHANGES / BLOCK.
 tools: ['read', 'search', 'fetch', 'githubRepo', 'usages']
+model: 'Claude Opus 4.7 (copilot)'
 handoff_targets:
   - pm              # approved plans go to PM for dispatch to implementers
   - architect       # rejected plans bounce back to Architect for revision
@@ -165,3 +166,14 @@ For both modes, always include verification that the author should perform:
 - [ ] Migration path documented
 - [ ] Deprecation warnings added (if applicable)
 - [ ] Rollback plan identified
+
+## Model tier note (ADR-019)
+
+Judge is pinned to High tier (`Claude Opus 4.7 (copilot)` on Copilot;
+`claude-opus-4-7` on Claude Code). On Copilot, the [subagent cost-tier
+ceiling](../../docs/decisions/adr-019-per-role-model-tiering.md#amendment-6--copilot-subagent-cost-tier-ceiling-limitation--workaround)
+means this pin is silently downgraded to whatever your chat-default model
+is if the chat-default is below Opus. To actually receive Opus dispatch at
+plan-gate / diff-gate, set your Copilot chat picker to Opus 4.7 before
+invoking Judge. Claude Code has no equivalent ceiling; the pin is honored
+as written.
