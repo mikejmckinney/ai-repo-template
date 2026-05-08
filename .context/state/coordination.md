@@ -56,24 +56,6 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
-## Lock: pr-261
-<!-- managed-for-pr:261 -->
-**Role**: architect
-**Session**: claude/setup-context-verification-19clR
-**PR**: #261
-**Claimed At**: 2026-05-08T03:13:31Z
-**Expected Duration**: 1 session
-**Paths**:
-- .context/rules/process_doc_maintenance.md
-- .context/state/README.md
-- .context/state/_active.md
-- .context/state/coordination.md
-- docs/decisions/adr-018-multi-task-active-md-schema.md
-**Depends On**: none
-**Blocks**: none
-**State**: in_progress
-**Notes**: Lock claimed retroactively in response to coordination-sync bot finding (PR #261 comment 4403011328) — should have been claimed before initial commit 939d369. Path overlap with the still-Active pr-252-orchestration-patterns lock on `.context/state/_active.md` and `.context/state/coordination.md` is non-conflicting in practice: PR #259 (the landing PR for pr-252) merged at 2026-05-08T02:59:46Z, so no other session is currently editing those files on the pr-252 branch. The pr-252 lock and the matching `_active.md` `## Task: feature/architect-252-…` section are stale per the cleanup rules in `coordination.md` §"How to Use" item 3 and `.context/state/README.md` §"Cadence" Cleanup, but their cleanup is PM-scope and is being deferred alongside the other pre-existing stale locks (pr-229-*, pr-228, pr-225) per the existing PM Notes deferral at the bottom of this file (Gemini ISS-20/21 on PR #261 acknowledged but out-of-scope here — drive-by stale-lock cleanup would expand this PR's scope). This lock is itself a worked example of the new ADR-018 Amendment #1 `**PR**:` field that this PR introduces.
-
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:259 -->
 **Role**: architect
@@ -257,6 +239,31 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## Recent History
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
+
+## Lock: pr-261
+<!-- managed-for-pr:261 -->
+**Role**: architect
+**Session**: claude/setup-context-verification-19clR
+**PR**: #261
+**Claimed At**: 2026-05-08T03:13:31Z
+**Expected Duration**: 1 session
+**Paths**:
+- AGENTS.md
+- .context/state/README.md
+- .context/state/_active.md
+- .context/state/coordination.md
+- .context/sessions/README.md
+- .context/sessions/latest_summary.md
+- .context/sessions/2026-05-08_archived-stacked-closeouts.md
+- .context/rules/agent_ownership.md
+- .context/rules/process_doc_maintenance.md
+- .github/agents/pm.agent.md
+- docs/decisions/adr-018-multi-task-active-md-schema.md
+- test.sh
+**Depends On**: none
+**Blocks**: none
+**State**: merged
+**Result**: Close-out 2026-05-08. Shipped: cadence-trigger rewrite (every wait-for-input pause) splitting working-log refresh from lock release; sessions/ template reconciliation + explicit rotation rule; latest_summary.md rotated to date-stamped archive; 10 new test.sh hygiene checks (333 → 343 passing). AGENTS_MD_VERSION 11→12. PR #261 awaiting human merge.
 
 ## Lock: pr-216
 <!-- managed-for-pr:216 -->

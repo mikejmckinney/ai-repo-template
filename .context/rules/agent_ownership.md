@@ -36,12 +36,21 @@ this template for a new project:
 | Architect  | `AGENTS.md`, `docs/decisions/**`, `docs/postmortems/**`, `.context/roadmap.md`, `.context/vision/architecture/**`, `.context/rules/**` (except `agent_ownership.md`) | nothing (plan-only) |
 | Frontend   | `src/frontend/**`, `src/components/**`, `src/pages/**`, `src/styles/**`, `public/**`, colocated `*.test.*` / `*.spec.*` under those paths | UI-adjacent tests in `tests/ui/**` |
 | Backend    | `src/backend/**`, `src/api/**`, `src/server/**`, `src/models/**`, `migrations/**`, `db/**`, colocated `*.test.*` / `*.spec.*` under those paths | API-adjacent tests in `tests/api/**` |
-| PM         | `.context/state/**`, `.context/rules/agent_ownership.md`            | nothing (dispatch-only)       |
+| PM         | `.context/state/**`, `.context/rules/agent_ownership.md` (see §"PM ownership carve-out" below) | nothing (dispatch-only)       |
 | QA         | `tests/**`, `e2e/**`                                                 | nothing                       |
 | DevOps     | .github/workflows/**, config/**, install.sh, test.sh, scripts/**, .pre-commit-config.yaml.template, .cursorignore | nothing                       |
 | Docs       | README.md, AI_REPO_GUIDE.md, CLAUDE.md, AGENT.md, docs/** (except docs/decisions/**, docs/postmortems/**, docs/research/**)  | nothing                       |
 | Judge      | nothing (review-only, `.github/agents/judge.agent.md`)               | nothing                       |
 | Critic     | nothing (review-only, `.github/agents/critic.agent.md`)              | nothing                       |
+
+### PM ownership carve-out (`.context/state/**`)
+
+PM owns `.context/state/**` for cross-role coordination, but **every agent self-writes** the parts of state files that describe their own work:
+
+- Each agent adds and removes its own `## Task: <branch>` section in `.context/state/_active.md` per the cadence rules.
+- Each agent adds its own lock to `.context/state/coordination.md` Active Locks at task start, and moves it to Recent History at genuine task close-out.
+
+PM is the **backstop** (catches forgotten cleanup via the daily reconciliation pass at `.github/workflows/agent-coordination-sync.yml`) and the **only role that may edit another agent's section**, prune Recent History, or arbitrate cross-role conflicts. See `.context/state/README.md` §"Cadence" for the agent-self / PM-backstop split.
 
 ### Colocated test files
 

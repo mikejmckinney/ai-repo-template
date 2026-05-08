@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 11 -->
+<!-- AGENTS_MD_VERSION: 12 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
@@ -12,7 +12,7 @@
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v11` (matching
+substantive reply with the exact token `Session handshake v12` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -268,7 +268,11 @@ Reading all of `.context/rules/` and `.context/vision/` at every boundary is ove
   - **The session ends and the task is not yet merged/closed.** Any work that will outlive the current session requires a handoff — not optional. If the only record of in-progress work is in the LLM's in-conversation todo or `/memories/session/`, that work is lost the moment the session ends.
 
   The handoff is the baton; the next session reads it instead of replaying the full chat.
-- **Close-out (at session end OR task close-out, whichever comes first)** — the role that led the work updates `.context/sessions/latest_summary.md` with a 3–5 line entry: what shipped, what was harder than expected, what generalizes (→ open a follow-up to update rules/ADRs/guides if applicable). Do NOT defer this until merge — write it now even if the PR isn't merged yet, and amend later if the merge changes the outcome. The spirit of the rule is "leave the next session a baton," which applies at session-end regardless of merge status. PM verifies this entry exists before marking the task done in `coordination.md`.
+- **Close-out (every wait-for-input pause)** — close-out fires whenever the agent is about to wait for user input: clarification questions mid-task, plan-mode approval pauses, "task done, what's next?" pauses. There are no exceptions; mid-task clarification pauses are explicitly included. Close-out has **two kinds of action, fired on different conditions**:
+  - **Working-log refresh (always — every wait-for-input pause)** — the role that led the work updates `.context/sessions/latest_summary.md` per the canonical template in `.context/sessions/README.md`. One entry per agent-session: append to your in-progress entry on each pause; do NOT open a fresh entry per pause. Do NOT defer until merge — write it now even if the PR isn't merged, and amend later if outcomes change. The spirit is "leave the next session a baton" — that baton needs to exist whenever the current session might end.
+  - **Lock release / task removal (only on genuine "done")** — when the agent reports the task complete with no further actions queued, ALSO (i) remove your `## Task: <branch>` section from `.context/state/_active.md`, and (ii) move your lock from Active Locks to Recent History (with a `**Result**:` line, and `**State**:` updated to `merged` or terminal) in `.context/state/coordination.md`. Mid-task clarification pauses do NOT release the lock — that's what keeps re-acquisition friction-free across follow-up turns. PM verifies the close-out entry exists before marking the task done in `coordination.md`.
+  - **Plan-mode routing.** `.context/sessions/latest_summary.md` is not writable while plan mode is active; capture working-log content in the plan file the agent is already updating. On `ExitPlanMode` approval, the agent's first execution action copies plan-mode working-log content into `.context/sessions/latest_summary.md`. Same discipline, routed through whichever surface is writable.
+  - **Multi-role intra-session handoffs do NOT trigger close-out.** `latest_summary.md`'s purpose is cross-session handoff — to convey context to a *future* agent. If a single agent transitions roles internally (architect → backend → qa within one conversation), context lives in agent memory; close-out fires on the agent-session boundary (waiting for user input), not on intra-session role transitions.
 
 ## Testing requirements
 - Follow the test pyramid: many unit tests, fewer integration tests, minimal E2E tests.
