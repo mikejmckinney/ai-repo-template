@@ -52,7 +52,7 @@ The close-out actions in trigger 2 (`_active.md` task removal) and trigger 3 (`c
 
 **Rule.** Trigger-3 lock release (and any orphaned trigger-2 cleanup that survived past PR merge) goes through a `chore(closeout): PR #NNN` follow-up PR. Branch from current `main`, make the minimal edits, push, open PR, merge. Do not bundle close-out edits with unrelated work; the follow-up PR exists precisely so the close-out diff is reviewable on its own and the close-out itself can be closed-out cleanly.
 
-**Title and labels.** Title format: `chore(closeout): PR #NNN merged — trigger-3 lock release`. Labels: `chore:no-plan` (exempts from the plan-as-comment requirement in [`process_gates.md`](process_gates.md)) and `outcome-validated` (exempts from the Analyst pre-flight gate). PR body links to the just-merged PR.
+**Title and labels.** Title format: `chore(closeout): PR #NNN merged — trigger-3 lock release`. Labels: `chore:no-plan` (exempts from the plan-as-comment requirement in [`process_gates.md`](process_gates.md)). Note: `chore:*` PRs are already exempt from the Analyst pre-flight gate per `process_gates.md` Exemptions, so no separate `outcome-validated` label is needed for that gate. PR body links to the just-merged PR.
 
 **Eat your own dogfood.** When you merge the PR for #253, this rule applies to *its* close-out: open a follow-up `chore(closeout)` PR for the lock release. Do not direct-to-main, even though the alternative is one commit.
 
