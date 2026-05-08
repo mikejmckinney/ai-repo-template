@@ -209,8 +209,11 @@ if [[ -f ".context/sessions/README.md" ]]; then
 
   # Required template fields. The template fields appear inside a fenced code
   # block in sessions/README.md; grep -F finds them whether or not they are
-  # the file's actual headers.
-  for field in "## What Was Accomplished" "## What Shipped" "## Harder Than Expected" "## Generalizable Lessons" "## Files Modified" "## Open Items / Next"; do
+  # the file's actual headers. Includes both `**bold**` field markers (Status,
+  # Issue/PR, Started — required at session start) and `## headers` (filled
+  # progressively across the session) so the template enforcement is complete
+  # rather than only header-deep.
+  for field in "**Status**" "**Issue/PR**" "**Started**" "## What Was Accomplished" "## What Shipped" "## Harder Than Expected" "## Generalizable Lessons" "## Files Modified" "## Open Items / Next"; do
     if grep -qF "$field" .context/sessions/README.md; then
       pass ".context/sessions/README.md template defines field: $field"
     else
