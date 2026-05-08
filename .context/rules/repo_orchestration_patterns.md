@@ -26,8 +26,8 @@ These describe the orchestration layer as it exists today. Changes that touch th
 The 10 role files in `.github/agents/*.agent.md` and their mirrors in `.claude/agents/*.md` are interchangeable strategies for a single abstract operation: "do work on this task in this repo." Each role specializes the strategy by frontmatter `description:` (when this role applies), `tools:` (what it can use), and body content (how it proceeds). Dispatchers (Copilot, Claude Code, manual selection) pick a role by matching user intent against `description:`.
 
 **Where it appears**:
-- `.github/agents/{analyst,architect,backend,critic,devops,docs,frontend,judge,pm,qa}.agent.md`
-- `.claude/agents/<role>.md` (mirrors per ADR-003)
+- `.github/agents/{analyst,architect,backend,critic,devops,docs,frontend,judge,pm,qa}.agent.md` — full role definitions (canonical strategy bodies)
+- `.claude/agents/<role>.md` — Claude Code registration pointers per ADR-003; only the `description:` frontmatter is byte-mirrored, the body delegates back to the canonical `.github/agents/<role>.agent.md`
 - Role selection logic referenced from `AGENTS.md` → §"Role selection" (after sub-issue 2 decomposition: `.context/rules/process_role_selection.md`)
 
 **What good usage looks like**: each role file has one focused responsibility (`H1` parity); roles don't reach into each other's owned paths (per `agent_ownership.md`); cross-role coordination goes through PM (see `P3`).
