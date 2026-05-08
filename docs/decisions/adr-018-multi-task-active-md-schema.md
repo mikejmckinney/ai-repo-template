@@ -197,10 +197,14 @@ ADR-009's status remains `Accepted`; no `Superseded by` line is added.
 - `.context/state/_active.md` per-section schema (`## Task: <branch>` body — placed after `**Role**:`).
 
 **Cadence**: write `pending` at lock-claim time (branch exists, PR not yet
-opened); update to `#MMM` in the same commit/push that opens the PR; use
-`N/A` for branches that will not produce a PR (rare — local exploration,
-abandoned spikes). The `coordination.md` lock and the matching `_active.md`
-section should agree.
+opened). PR numbers are only assigned by GitHub *after* the PR is created
+(via `gh pr create`, the API, or the web UI), so the `pending` → `#MMM`
+update is necessarily a *separate* commit from the one that triggered PR
+creation. Make the update at your next push after PR-open — typically the
+first review-feedback fix commit, or an explicit "claim-update" commit if
+no review feedback is forthcoming. Use `N/A` for branches that will not
+produce a PR (rare — local exploration, abandoned spikes). The
+`coordination.md` lock and the matching `_active.md` section should agree.
 
 **Backward compatibility**: existing locks and sections without `PR:`
 remain valid. Recent History entries are not backfilled. New

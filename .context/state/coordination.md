@@ -51,7 +51,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **State**: analyzing | backlog | planned | assigned | in_progress | peer_review | judge_review | approved | merged | stakeholder_review
 ```
 
-> **`PR` field cadence (ADR-018 Amendment #1)**: write `pending` at lock-claim time (branch exists, PR not yet opened); update to `#MMM` in the same commit/push that opens the PR; use `N/A` for branches that will not produce a PR (rare — local exploration, abandoned spikes). The field is optional on legacy locks predating this amendment; new locks must include it. The existing `<!-- managed-for-pr:NNN -->` HTML comment is automation's audit trail and remains the source of truth for the auto-updater; the `PR:` field is the human-readable mirror.
+> **`PR` field cadence (ADR-018 Amendment #1)**: write `pending` at lock-claim time (branch exists, PR not yet opened). PR numbers are only assigned by GitHub *after* the PR is created (whether by `gh pr create`, the API, or the web UI), so the `pending` → `#MMM` update is necessarily a *separate* commit from the one that triggered PR creation. Make the update at your next push after PR-open — typically the first review-feedback fix commit, or an explicit "claim-update" commit if no review feedback is forthcoming. Use `N/A` for branches that will not produce a PR (rare — local exploration, abandoned spikes). The field is optional on legacy locks predating this amendment; new locks must include it. The existing `<!-- managed-for-pr:NNN -->` HTML comment is automation's audit trail and remains the source of truth for the auto-updater; the `PR:` field is the human-readable mirror — keep the two values in sync when both are populated.
 
 ## Active Locks
 
