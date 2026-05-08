@@ -75,12 +75,15 @@ A role **self-claims** by appending a lock block; only PM edits or removes other
 ## Lock: <task-id>
 **Role**: <frontend|backend|...>
 **Session**: <agent session id or branch name>
+**PR**: <#MMM | pending | N/A>
 **Claimed At**: <ISO-8601>
 **Expected Duration**: <e.g., 30m, 2h>
 **Paths**:
 - <glob or file>
 **Depends On**: <task-id or 'none'>
 ```
+
+> The snippet above is illustrative; the **canonical** lock template (with all fields including `**Blocks**` and `**State**`) lives in `.context/state/coordination.md` → "Lock Template". When the two diverge, follow the canonical version. The `**PR**:` field is required on new locks per ADR-018 Amendment #1 (cadence: write `pending` at lock-claim time; update to `#MMM` at the next push after PR-open; `N/A` for branches with no planned PR).
 
 Expired locks (past their duration) may be released by PM after confirming the previous session ended.
 
