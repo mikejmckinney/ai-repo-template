@@ -440,7 +440,10 @@ MISSING_LINKS=0
 for pfile in "${CORE_RULE_FILES[@]}"; do
   # Escape regex metachars (notably '.') in filename for grep -E.
   pfile_re=${pfile//./\\.}
-  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[.*\]\([^)]*${pfile_re}\)" 2>/dev/null; then
+  # Require terminator: filename must be immediately followed by ')' or
+  # '#anchor)' inside a markdown link target. Prevents suffix typos like
+  # `.mdx` or `.md.bak` from false-passing (reported by codex on PR #264 R7).
+  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[.*\]\([^)]*${pfile_re}(#[^)]*)?\)" 2>/dev/null; then
     fail "AGENTS.md missing link table entry for $pfile (ADR-021)"
     MISSING_LINKS=$((MISSING_LINKS + 1))
   fi
