@@ -57,10 +57,10 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## Active Locks
 
 ## Lock: pr-253-agents-md-decomposition
-<!-- managed-for-pr:pending -->
+<!-- managed-for-pr:264 -->
 **Role**: architect
 **Session**: feature/architect-253-agents-md-decomposition
-**PR**: pending
+**PR**: #264
 **Claimed At**: 2026-05-08T18:00:00Z
 **Expected Duration**: 1 session
 **Paths**:

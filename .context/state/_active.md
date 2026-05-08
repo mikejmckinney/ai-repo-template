@@ -39,7 +39,7 @@
 ## Task: feature/architect-253-agents-md-decomposition
 **Issue/PR**: #253 (parent #251; sibling #263)
 **Role**: architect
-**PR**: pending
+**PR**: #264
 **Blockers**: None
 **Next 1–3 actions**:
 1. Split AGENTS.md into thin contract + 8 new `.context/rules/process_*.md` files; absorb §Ongoing maintenance into existing `process_doc_maintenance.md`; author new "Close-out PR discipline" rule in `process_session_state.md` (the one non-content-preserving change, ref #263)
