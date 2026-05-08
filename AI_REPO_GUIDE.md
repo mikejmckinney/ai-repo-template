@@ -354,7 +354,53 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 3. AI prompts copied to workspace
 
 ### First-time repo initialization
-See the "Easiest way to initialize new repo" prompt in the main README or create an issue with instructions for the agent.
+After creating a repo from this template, paste the **First-time repo initialization** prompt below into a GitHub issue and assign it to your AI agent.
+
+## Onboarding Prompts
+
+Two agent-facing prompts. Both are copy/paste-ready.
+
+### First-time repo initialization
+
+After creating a repo from this template, create an issue with this prompt for the AI agent:
+
+```markdown
+This repository was created from a template. Any file containing TEMPLATE_PLACEHOLDER is scaffolding.
+
+Truth hierarchy:
+1) ./.context/** (canonical project direction)
+2) ./docs/** (supporting detail)
+3) codebase (implementation reality)
+
+Please:
+1. Verify .context/00_INDEX.md and .github/prompts/*.md exist
+2. Scan and list all files containing TEMPLATE_PLACEHOLDER
+3. Determine project purpose from .context/**, docs/**, and codebase
+4. Run .github/prompts/repo-onboarding.md
+5. Replace README.md with project-specific content, including
+   `## Limitations`, `## Future Improvements`, and a `## FAQ` section
+   (or link to docs/FAQ.md — replace the template's FAQ entries with
+   project-specific ones).
+6. Regenerate AI_REPO_GUIDE.md for THIS repo
+7. Replace or customize docs/FAQ.md for the project (template-specific
+   entries prefixed with "Template:" should be removed)
+8. Do not modify .context/** unless instructed
+```
+
+### New agent session (continue work on an existing repo)
+
+Use this prompt to onboard a fresh agent session onto an in-flight project:
+
+```markdown
+1. Read .context/state/_active.md or task_*.md to understand the immediate goal.
+2. Read .context/00_INDEX.md to locate relevant rules/constraints.
+3. Check: Run `git status` and `./scripts/verify-env.sh` to ensure stability.
+4. Skim: Review .context/sessions/latest_summary.md for recent decisions.
+5. Report: "I have reviewed the context. Current task is [Task Name].
+   Environment is [Stable/Unstable]. Ready for instructions."
+```
+
+This structured protocol ensures context is loaded correctly before proceeding.
 
 ## Gotchas / Known Issues
 
