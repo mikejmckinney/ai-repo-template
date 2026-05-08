@@ -177,6 +177,55 @@ resolution.
 
 ADR-009's status remains `Accepted`; no `Superseded by` line is added.
 
+## Amendments
+
+> **Non-breaking schema additions provision**: this ADR's schema is open to
+> additive fields without a new ADR. Breaking changes (renaming or removing
+> existing fields, changing the section-ownership key) require a successor
+> ADR with a `Status: Superseded by ADR-NNN` line on this one. Each
+> non-breaking addition is documented as an Amendment block below.
+
+### Amendment #1 — Additive `PR` field on lock template and per-section schema
+
+**Date**: 2026-05-08
+**Issue**: #260 (parent epic #251)
+**Type**: Additive (non-breaking) — uses the provision above; no new ADR.
+
+**Change**: Add an optional `**PR**: <#NNN | pending | N/A>` field to:
+
+- `.context/state/coordination.md` `## Lock Template` (placed after `**Session**:`).
+- `.context/state/_active.md` per-section schema (`## Task: <branch>` body — placed after `**Role**:`).
+
+**Cadence**: write `pending` at lock-claim time (branch exists, PR not yet
+opened); update to `#MMM` in the same commit/push that opens the PR; use
+`N/A` for branches that will not produce a PR (rare — local exploration,
+abandoned spikes). The `coordination.md` lock and the matching `_active.md`
+section should agree.
+
+**Backward compatibility**: existing locks and sections without `PR:`
+remain valid. Recent History entries are not backfilled. New
+locks/sections must include the field (cadence enforced by reviewer
+discipline, not by `test.sh` in v1; promotion to a hard test invariant is
+a follow-up if drift recurs).
+
+**Why not a new ADR**: the field is additive, doesn't change the
+section-ownership key, doesn't affect merge semantics (per-section commute
+behavior is unchanged), and doesn't supersede any prior decision. It
+clarifies a structural-ambiguity flagged on PR #259 (Codex misread the
+`pr-NNN` lock title as a PR number when it was the parent issue number) by
+making the PR linkage a first-class field instead of leaving it to the
+hidden `<!-- managed-for-pr:NNN -->` automation comment.
+
+**Why not encode in the existing HTML comment**: the `<!-- managed-for-pr:NNN -->`
+comment is the auto-updater's audit trail and remains the source of truth
+for automation. The `PR:` field is the human-readable mirror — same end
+state, but readable without parsing HTML comments.
+
+**Doc-sync**: future schema edits to either `coordination.md` lock template
+or `_active.md` per-section schema must update the other in lockstep, per
+the trigger rows added to `.context/rules/process_doc_maintenance.md` in
+the same PR.
+
 ## References
 
 - [ADR-009](./adr-009-parallel-multi-agent-execution.md) — parallel
@@ -188,3 +237,4 @@ ADR-009's status remains `Accepted`; no `Superseded by` line is added.
 - `.context/state/README.md` §"Cadence" — claim/edit/cleanup rules for
   the multi-section format (updated in the same PR)
 - Issue #237 — feature request and acceptance criteria
+- Issue #260 — Amendment #1 (PR field) feature request

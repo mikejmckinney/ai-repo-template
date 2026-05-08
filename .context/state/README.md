@@ -11,7 +11,8 @@ These files are the agent working-memory layer; stale or unbounded files defeat 
   - **Edit** — rewrite **only your own section** at every task boundary. Never edit another branch's section.
   - **Read** — re-read the **whole file** at every task boundary (per AGENTS.md §"Session-state cadence" item 3) so you see all in-flight tasks and can spot conflicts before claiming new work.
   - **Cleanup** — remove your `## Task:` section as part of close-out, in the same commit/PR that updates `sessions/latest_summary.md`. Forgotten sections are caught by PM's `coordination.md` reconciliation pass.
-  - **Per-section schema**: `Issue/PR` (`#NNN` or `N/A`), `Role` (current owner), `Blockers` (or "None"), `Next 1–3 actions`. Anything beyond that belongs in `task_<slug>.md`, not here.
+  - **Per-section schema**: `Issue/PR` (`#NNN` or `N/A`), `Role` (current owner), `PR` (`#MMM` once the landing PR exists, `pending` while only the branch exists, or `N/A` for branches with no planned PR — see ADR-018 Amendment #1), `Blockers` (or "None"), `Next 1–3 actions`. Anything beyond that belongs in `task_<slug>.md`, not here.
+  - **`PR` field cadence (ADR-018 Amendment #1)**: write `pending` when you first add the section (branch exists, PR not yet opened); update to `#MMM` in the same commit/push that opens the PR. This mirrors the `**PR**:` field on the matching `coordination.md` lock — the two should agree.
   - **Example** (two parallel branches):
     ```markdown
     # Active Tasks
@@ -19,6 +20,7 @@ These files are the agent working-memory layer; stale or unbounded files defeat 
     ## Task: feature/frontend-101-login-form
     **Issue/PR**: #101
     **Role**: frontend
+    **PR**: #145
     **Blockers**: waiting on backend API contract (login-backend)
     **Next 1–3 actions**:
     1. Stub LoginForm component with form fields
@@ -28,6 +30,7 @@ These files are the agent working-memory layer; stale or unbounded files defeat 
     ## Task: feature/backend-102-login-api
     **Issue/PR**: #102
     **Role**: backend
+    **PR**: pending
     **Blockers**: None
     **Next 1–3 actions**:
     1. Define POST /login request/response schema

@@ -41,6 +41,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## Lock: <task-id>
 **Role**: <analyst|architect|frontend|backend|pm|qa|devops|docs|critic|judge>
 **Session**: <branch name or agent session id>
+**PR**: <#NNN | pending | N/A>
 **Claimed At**: <ISO-8601>
 **Expected Duration**: <e.g., 30m, 2h>
 **Paths**:
@@ -50,12 +51,15 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **State**: analyzing | backlog | planned | assigned | in_progress | peer_review | judge_review | approved | merged | stakeholder_review
 ```
 
+> **`PR` field cadence (ADR-018 Amendment #1)**: write `pending` at lock-claim time (branch exists, PR not yet opened); update to `#MMM` in the same commit/push that opens the PR; use `N/A` for branches that will not produce a PR (rare — local exploration, abandoned spikes). The field is optional on legacy locks predating this amendment; new locks must include it. The existing `<!-- managed-for-pr:NNN -->` HTML comment is automation's audit trail and remains the source of truth for the auto-updater; the `PR:` field is the human-readable mirror.
+
 ## Active Locks
 
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:pending -->
 **Role**: architect
 **Session**: feature/architect-252-orchestration-patterns-reference
+**PR**: #259
 **Claimed At**: 2026-05-08T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:

@@ -1,8 +1,10 @@
 <!-- TEMPLATE_PLACEHOLDER: In a real project, this file tracks all currently-active tasks (one section per branch). Downstream projects should clear the example body below during onboarding (see AGENTS.md → "Template detection" and `.github/prompts/repo-onboarding.md`); ongoing maintenance is per AGENTS.md → "Session-state cadence". -->
-<!-- Schema (multi-task; see ADR-018):
+<!-- Schema (multi-task; see ADR-018, including Amendment #1 — additive PR field):
      File header is fixed: `# Active Tasks`.
      Below the header, each in-flight branch owns one `## Task: <branch-name>` section.
-     Per-section schema: Issue/PR | Role | Blockers | Next 1–3 actions. Cap ~20 lines per section.
+     Per-section schema: Issue/PR | Role | PR | Blockers | Next 1–3 actions. Cap ~20 lines per section.
+       - Issue/PR: source issue number (`#NNN`) — what motivated the work.
+       - PR: landing PR number (`#MMM`), `pending` (branch open, PR not yet created), or `N/A` (no PR planned). Populate at PR-open. Mirrors the `**PR**:` field on the matching `coordination.md` lock.
      Agents edit ONLY their own section. Re-read the WHOLE file at every task boundary.
      Add a section when you claim a task; remove it as part of close-out (see .context/state/README.md "Cadence").
      Worked example (two parallel branches):
@@ -12,6 +14,7 @@
        ## Task: feature/frontend-101-login-form
        **Issue/PR**: #101
        **Role**: frontend
+       **PR**: #145
        **Blockers**: waiting on backend API contract (login-backend)
        **Next 1–3 actions**:
        1. Stub LoginForm component with form fields
@@ -21,6 +24,7 @@
        ## Task: feature/backend-102-login-api
        **Issue/PR**: #102
        **Role**: backend
+       **PR**: pending
        **Blockers**: None
        **Next 1–3 actions**:
        1. Define POST /login request/response schema
@@ -52,6 +56,7 @@
 ## Task: feature/architect-252-orchestration-patterns-reference
 **Issue/PR**: #252 (parent #251)
 **Role**: architect
+**PR**: #259
 **Blockers**: None
 **Next 1–3 actions**:
 1. Open PR shipping `.context/rules/repo_orchestration_patterns.md` + ADR-020 + wiring (AGENTS link, ownership row, critic/judge refs, test.sh assertion, doc-sync trigger row)
