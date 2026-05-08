@@ -2,7 +2,7 @@
 
 # Session: 2026-05-08 — claude/setup-context-verification-19clR — architect
 
-**Status**: awaiting_user_input
+**Status**: done
 **Issue/PR**: #260 (parent #251) / #261
 **Started**: 2026-05-08T03:13:31Z
 
@@ -16,13 +16,15 @@
 - Added a new test.sh invariant check forbidding `**State**: merged` inside Active Locks — directly enforces trigger 3's contract so the same Codex finding cannot recur.
 
 ## What Shipped
-*(filled at genuine task close-out — agent has not yet fully left the work; bot reviews still landing)*
+PR #261 merged 2026-05-08 as squash commit `e9e900c`. Shipped: three-trigger close-out cadence rewrite (AGENTS.md v13), ADR-018 Amendment #1 (optional `**PR**:` field in lock/task schema), 10 new test.sh hygiene checks, sessions/README.md template fixes, agent_ownership.md PM carve-out, process_doc_maintenance.md schema-sync row, agent-coordination-sync.yml suggested-lock-block update, lock-protocol snippet in agent_ownership.md.
 
 ## Harder Than Expected
 The original two-trigger split was a partial design. Codex P1 caught the conflation between "agent done" and "PR merged" that was baked into the rule wording — the lock `**State**` value can only be `merged` when the branch actually merged, but the rule instructed agents to set it at agent-done. The fix splits close-out's three actions across three independent triggers, decoupling the agent's `Status` field (in `latest_summary.md`) from the lock's `State` field (in `coordination.md`). This is the design the existing `.github/workflows/agent-coordination-sync.yml` on-close webhook was already built around; the rule just wasn't using it.
 
 ## Generalizable Lessons
-*(filled at genuine task close-out)*
+Close-out is three independent triggers, not one event: (1) working-log refresh = every wait-for-input pause; (2) `_active.md` task removal = when agent leaves work; (3) lock release with `State: merged` = when PR actually merges. Setting `State: merged` at agent-done is a correctness bug — the Codex P1 finding on PR #261 caught it. The on-close webhook (`agent-coordination-sync.yml`) is the intended trigger for (3).
+
+Gemini's workflow-false-positive loop (9 rounds of "agent-coordination-sync.yml missing from diff" when it was IN the diff) is a known Gemini context-loading limitation. Add a skip-class entry to `.gemini/styleguide.md` when a false positive recurs ≥ 3 rounds.
 
 ## Files Modified
 - `AGENTS.md` — three-trigger rewrite + AGENTS_MD_VERSION 12→13 + handshake bump
