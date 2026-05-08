@@ -435,6 +435,14 @@ CORE_RULE_FILES=(
 # "Per-concern process rules" section. Restricting to table rows guards
 # against false-pass from prose mentions of the same filename within the
 # section (reported by codex on PR #264 R6).
+# Limitation: awk's range pattern terminates at the next '## ' header.
+# This is robust as long as AGENTS.md keeps the table inside its own
+# section. If a contributor inserts non-table content (e.g., another
+# table) between the section header and the link table, the filter could
+# include extra rows; the regex below still requires the canonical
+# `.context/rules/<file>.md` link target so unrelated rows wouldn't
+# false-match. Documented per repo "document simplification" rule
+# (Gemini, R10).
 LINK_TABLE_BLOCK=$(awk '/^## Per-concern process rules/{flag=1; next} /^## /{flag=0} flag && /^\|/' AGENTS.md)
 MISSING_LINKS=0
 for pfile in "${CORE_RULE_FILES[@]}"; do
