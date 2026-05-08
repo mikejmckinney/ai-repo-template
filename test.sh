@@ -105,6 +105,15 @@ CONTEXT_FILES=(
   ".context/rules/domain_code_quality.md"
   ".context/rules/repo_orchestration_patterns.md"
   ".context/rules/process_doc_maintenance.md"
+  ".context/rules/process_template_detection.md"
+  ".context/rules/process_critical_thinking.md"
+  ".context/rules/process_work_style.md"
+  ".context/rules/process_clarification.md"
+  ".context/rules/process_role_selection.md"
+  ".context/rules/process_gates.md"
+  ".context/rules/process_session_state.md"
+  ".context/rules/process_pr_completion.md"
+  ".context/rules/process_model_tier.md"
   ".context/sessions/README.md"
   ".context/sessions/latest_summary.md"
   ".context/state/README.md"
@@ -395,18 +404,27 @@ else
   warn "AGENTS.md missing truth hierarchy section"
 fi
 
-# Check AGENTS.md has testing requirements
-if grep -q "Testing requirements" AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md has testing requirements section"
+# Check AGENTS.md has testing requirements (now in process_work_style.md per ADR-021)
+if grep -q "Testing requirements" .context/rules/process_work_style.md 2>/dev/null; then
+  pass "process_work_style.md has testing requirements section"
 else
-  warn "AGENTS.md missing testing requirements section"
+  warn "process_work_style.md missing testing requirements section"
 fi
 
-# Check AGENTS.md has PR completion criteria section (issue #206)
-if grep -q "^## PR completion criteria" AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md has PR completion criteria section"
+# Check PR completion criteria section exists (now in process_pr_completion.md per ADR-021; issue #206)
+if grep -q "^## PR completion criteria" .context/rules/process_pr_completion.md 2>/dev/null; then
+  pass "process_pr_completion.md has PR completion criteria section"
 else
-  warn "AGENTS.md missing PR completion criteria section"
+  warn "process_pr_completion.md missing PR completion criteria section"
+fi
+
+# Check thin AGENTS.md links to per-concern process_*.md files (ADR-021)
+if grep -q "process_session_state.md" AGENTS.md 2>/dev/null \
+  && grep -q "process_pr_completion.md" AGENTS.md 2>/dev/null \
+  && grep -q "process_gates.md" AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md link table references core process_*.md files"
+else
+  fail "AGENTS.md missing link table entries for core process_*.md files (ADR-021)"
 fi
 
 # Check agent-review-on-push.yml has required invariants (issue #205)
@@ -654,15 +672,13 @@ else
   fail "ADR-005 Status line missing 'superseded in part by ADR-014' (supersession discipline)"
 fi
 
-# Extract the "Analyst pre-flight gate" subsection from AGENTS.md (between
-# its H3 heading and the next H3) and confirm it mentions the opt-out label
-# literally. awk range pattern: print from the first marker through the
-# second marker (inclusive of both matching heading lines).
-gate_section=$(awk '/^### Analyst pre-flight gate/,/^### Plan-as-comment requirement/' AGENTS.md 2>/dev/null)
+# Extract the "Analyst pre-flight gate" subsection (now in process_gates.md per ADR-021)
+# and confirm it mentions the opt-out label literally.
+gate_section=$(awk '/^## Analyst pre-flight gate/,/^## Plan-as-comment requirement/' .context/rules/process_gates.md 2>/dev/null)
 if printf '%s' "$gate_section" | grep -q 'outcome-validated'; then
-  pass "AGENTS.md \"Analyst pre-flight gate\" section names outcome-validated (ADR-014)"
+  pass "process_gates.md \"Analyst pre-flight gate\" section names outcome-validated (ADR-014)"
 else
-  fail "AGENTS.md \"Analyst pre-flight gate\" section does not mention outcome-validated (ADR-014)"
+  fail "process_gates.md \"Analyst pre-flight gate\" section does not mention outcome-validated (ADR-014)"
 fi
 
 # Check context 00_INDEX.md has truth hierarchy
@@ -1319,11 +1335,11 @@ else
   fail "$SMOKE_PATH missing or not executable (ADR-018 smoke test)"
 fi
 
-# AGENTS.md cadence section references ADR-018.
-if grep -q 'ADR-018' AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md references ADR-018 (multi-task _active.md schema)"
+# Cadence rule references ADR-018 (now in process_session_state.md per ADR-021).
+if grep -q 'ADR-018' .context/rules/process_session_state.md 2>/dev/null; then
+  pass "process_session_state.md references ADR-018 (multi-task _active.md schema)"
 else
-  fail "AGENTS.md missing ADR-018 reference (issue #237 doc-sync)"
+  fail "process_session_state.md missing ADR-018 reference (issue #237 doc-sync)"
 fi
 
 # .context/state/README.md cadence updated for multi-task semantics.
@@ -1375,12 +1391,12 @@ else
   fail "agent-pipeline.md missing Workflow verifiability matrix (issue #227)"
 fi
 
-# AGENTS.md PR completion criteria mentions pre-merge verification.
-if grep -q 'pre-merge verification' AGENTS.md 2>/dev/null \
-  || grep -q 'sandbox-verification.md' AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md PR completion criteria references pre-merge verification (issue #227)"
+# PR completion criteria mentions pre-merge verification (now in process_pr_completion.md per ADR-021).
+if grep -q 'pre-merge verification' .context/rules/process_pr_completion.md 2>/dev/null \
+  || grep -q 'sandbox-verification.md' .context/rules/process_pr_completion.md 2>/dev/null; then
+  pass "process_pr_completion.md references pre-merge verification (issue #227)"
 else
-  fail "AGENTS.md missing pre-merge verification reference (issue #227)"
+  fail "process_pr_completion.md missing pre-merge verification reference (issue #227)"
 fi
 
 # pr-resolve-all.md Phase 2 calls out the sandbox path.
@@ -1414,13 +1430,13 @@ if [[ -f "$PRE_PUSH_PROMPT" ]]; then
   fi
 fi
 
-# AGENTS.md "Work style" references the prompt as a SHOULD.
-if grep -q 'pre-push-review.md' AGENTS.md 2>/dev/null \
-  && grep -q 'SHOULD' AGENTS.md 2>/dev/null \
-  && grep -q 'non-trivial' AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md \"Work style\" references pre-push-review.md (issue #229 Phase 3)"
+# "Work style" rule references the prompt as a SHOULD (now in process_work_style.md per ADR-021).
+if grep -q 'pre-push-review.md' .context/rules/process_work_style.md 2>/dev/null \
+  && grep -q 'SHOULD' .context/rules/process_work_style.md 2>/dev/null \
+  && grep -q 'non-trivial' .context/rules/process_work_style.md 2>/dev/null; then
+  pass "process_work_style.md references pre-push-review.md (issue #229 Phase 3)"
 else
-  fail "AGENTS.md missing pre-push-review.md SHOULD reference (issue #229 Phase 3)"
+  fail "process_work_style.md missing pre-push-review.md SHOULD reference (issue #229 Phase 3)"
 fi
 
 # DevOps role MUSTs the prompt for shell/workflow changes.

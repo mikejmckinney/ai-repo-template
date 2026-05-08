@@ -1,18 +1,21 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 13 -->
+<!-- AGENTS_MD_VERSION: 14 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
-     handshake below proves agents loaded the *current* copy, not a stale one. -->
+     handshake below proves agents loaded the *current* copy, not a stale one.
+     The canary covers AGENTS.md only — per-concern files in .context/rules/
+     evolve through their own PRs and aren't gated by this token (ADR-021). -->
 
 > **Pointer files**: [`CLAUDE.md`](CLAUDE.md) and
 > [`.github/copilot-instructions.md`](.github/copilot-instructions.md) are
-> thin pointers into this file. When you change a section heading here,
-> verify their pointer tables still resolve — see
-> `.context/rules/process_doc_maintenance.md`.
+> thin pointers into this file. When you change a section heading here or
+> in any `.context/rules/process_*.md` file, verify their pointer tables
+> still resolve — see [`.context/rules/process_doc_maintenance.md`](.context/rules/process_doc_maintenance.md).
 
 ## Session handshake (read-receipt)
+
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v13` (matching
+substantive reply with the exact token `Session handshake v14` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -23,319 +26,68 @@ start of the session; suppress it on subsequent replies in the same
 conversation. If a user explicitly says "skip the handshake," honor that
 for the rest of the session.
 
-## Template detection (important)
-- Determine the current repository name (e.g., via `git remote -v` or folder name).
-- If the repo is named `ai-repo-template` (or `mikejmckinney/ai-repo-template`), or the
-  legacy name `dotfiles` / `mikejmckinney/dotfiles` (still honored for one release):
-  - Treat README.md, AI_REPO_GUIDE.md, and CLAUDE.md as the template's docs; do NOT regenerate/overwrite them.
-  - Treat `.context/rules/agent_ownership.md` as the template's real ownership map — do NOT wholesale replace it; extend with project-specific source paths when deriving.
-- Otherwise:
-  - If README.md or AI_REPO_GUIDE.md contains `TEMPLATE_PLACEHOLDER`, treat them as stubs:
-    replace README.md with project-specific README, and regenerate AI_REPO_GUIDE.md from the repo's real assets (./.context/**, ./docs/**, source).
-  - Extend `.context/rules/agent_ownership.md` with rows for your project's real source paths (e.g. `src/frontend/**`, `src/backend/**`, `tests/**`). Do NOT delete the template-governance roles (Analyst / Architect / PM / QA / DevOps / Docs / Judge / Critic) — they are load-bearing.
-  - If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
-    replace it with the actual repository path (e.g., `owner/repo`) detected from `git remote -v`.
-  - **Clear the template's working state (Mode B only).** `.context/state/*.md` and `.context/sessions/*.md` ship populated with ai-repo-template's own task data and session history. Downstream projects must reset these to empty templates during onboarding so re-read cadence (§"Session-state cadence") doesn't reinforce the template's stale state as if it were the project's reality. Specifically:
-    - `.context/state/_active.md` — clear all `## Task: <branch>` sections under the `# Active Tasks` header (the body should contain only the file header until the first real task is claimed); keep the schema comment and the `TEMPLATE_PLACEHOLDER` marker until first real task. (Multi-task schema: see ADR-018.)
-    - `.context/sessions/latest_summary.md` — replace body with a single "No sessions yet" line (keep the marker until first close-out).
-    - `.context/state/coordination.md` — clear all entries under `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and `## PM Notes`; keep the section headers, `## Lock Template`, and `TEMPLATE_PLACEHOLDER` marker.
-    - Do NOT delete `*_template.md` or `README.md` files in those directories — they are the schemas downstream agents copy from.
-
-## Critical thinking and communication
-Agents must reason critically rather than agree by default. The bar is "objective and evidence-based," not "agreeable."
-
-- **Push back when warranted.** If the user's plan, premise, or proposed code has a flaw, say so directly and explain why. Don't hedge to be polite. If a better approach exists, recommend it and justify the tradeoff.
-- **Calibrate confidence.** State what you verified vs. what you assumed. When something is uncertain, say "uncertain" — don't pad with false confidence and don't hide behind vague qualifiers.
-- **Don't guess APIs, file contents, or runtime behavior.** Verify by reading the file or searching the codebase. If you can't verify, say so explicitly rather than asserting.
-- **Compare approaches honestly.** When multiple options are viable, name the tradeoffs (cost, risk, reversibility, blast radius) before recommending one.
-- **Cite your sources.** When stating a fact about the codebase or docs, include a relative path (and a line number when precision matters: `path/to/file.md:42`). Statements without a citation are treated as assumptions and must be marked `uncertain`. Judge and Critic reject uncited claims of fact.
-- **Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs. If a complete answer genuinely requires length, use multiple parts or multiple responses rather than cutting corners.
-
-## Work style
-- **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: `feature/<role>-<task-id>` is defined in `docs/guides/multi-agent-coordination.md` §"Branch-Per-Role Model"; the `fix/<issue>-<slug>` form is shown by example in `.context/state/coordination.md` (no formal definition — follow the pattern). See ADR-012 for why this rule needs explicit statement.
-- **Small, reversible changes** beat rewrites. Prefer the minimal diff that fully solves the task.
-- **No drive-by refactors.** If you spot something unrelated worth fixing, file a follow-up task instead of bundling it in.
-- **Surface prerequisites and edge cases** when explaining a plan or how-to: required tools, dependencies, non-obvious failure modes, safety issues. Skip boilerplate warnings on trivial work.
-- **Don't weaken tests or make unrelated source changes to force them green.** If a test exposes a real bug, fix the bug in the source. Tests document behavior; weakening them to go green is a regression in disguise.
-- **Run the pre-push review on non-trivial diffs (SHOULD).** Before `git push` on any non-trivial change, run [`.github/prompts/pre-push-review.md`](.github/prompts/pre-push-review.md) — Critic + lint + `./test.sh` against the working-tree diff, with a single Markdown summary you read before pushing. "Non-trivial" = >50 LOC changed OR any change to `scripts/*.sh`, `.github/workflows/*.yml`, role files (`.github/agents/*.agent.md`, `.claude/agents/*.md`), or `AGENTS.md`/`CLAUDE.md`/`.github/copilot-instructions.md`. Trivial diffs and revert/bot PRs are exempt. The DevOps role MUST run it for shell/workflow changes (see `.github/agents/devops.agent.md` Do list).
-
-## Clarification and ambiguity
-When a request is genuinely ambiguous — where different reasonable interpretations lead to meaningfully different work — stop and ask before proceeding (unless it qualifies as a low-stakes decision — see the escape hatch below). Don't guess and build, and don't ask and build in parallel; ask, then wait.
-
-- **Resolve from the repo first.** Before asking, check the **Truth hierarchy** sources (see §Truth hierarchy below) for an existing answer. If you can resolve the ambiguity by reading, do that instead of asking.
-- **Budget your questions.** Limit yourself to at most three targeted questions per turn, and only ask questions that are genuinely blocking — not nice-to-haves you could resolve yourself or defer. If you only have one blocking question, ask one.
-- **Low-stakes escape hatch.** For low-stakes decisions where stopping would cost more than it saves, state the assumption you're making inline and proceed. Example: "Assuming you want this as a new function rather than modifying the existing one — say so if not." This is only appropriate when the work is easy to revert if the assumption was wrong.
-- **When to trigger a clarifying question.** Ask specifically when: (1) the request could reasonably mean two or more different things, (2) a decision requires information only the user has (business context, preferences, external constraints), (3) the request conflicts with something in the repo's rules or prior decisions (follow the **Push back** rule in §Critical thinking and communication rather than just asking), or (4) proceeding would require inventing facts (API shapes, data structures, domain terms) that can't be verified.
-- **Don't ask** about style preferences, formatting, or conventions the repo's linter or rules files already answer.
-
 ## Truth hierarchy
+
 When information conflicts, use this priority order:
 1. `./.context/**` — canonical project direction and constraints
 2. `./docs/**` — supporting detail and reference material
 3. Codebase — current implementation reality
 
-### Conflict-resolution procedure
-When you detect a conflict between two sources at adjacent priorities, do **not** silently pick one. Instead:
+When you detect a conflict between two sources at adjacent priorities, do
+**not** silently pick one. Note the conflict in your output, follow the
+higher-priority source for the current task, file a follow-up updating
+the lower-priority source, and never edit the higher-priority source to
+match the lower one without an ADR.
 
-1. **Note the conflict** in your output (a one-line callout naming both sources).
-2. **Follow the higher-priority source** for the current task.
-3. **File a follow-up** issue or open a PR updating the lower-priority source so it matches.
-4. **Never edit the higher-priority source to match the lower one** without an ADR. If the lower source is what's actually correct, that's an architectural change that needs `docs/decisions/`.
+## Per-concern process rules
 
-## Role selection (multi-agent workflow)
-This template supports parallel role-specialized agents. Before editing any file:
-1. Identify your role (or ask the user which role to adopt). Role definitions live in `.github/agents/*.agent.md` — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs.
-2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
-3. Read `.context/state/coordination.md` to see active locks and claim your task before editing.
-4. Stay inside your owned paths. Any cross-role edit requires a PM claim. **Never guess ownership silently** — escalate to PM.
-5. Full workflow (analysis → plan-gate → dispatch → parallel implementation → QA → diff-gate → merge) is documented in `docs/guides/multi-agent-coordination.md`.
+Read the concern files relevant to the work you are about to do. The
+re-read cadence (which files at which boundaries) lives in
+`process_session_state.md`.
 
-### Analyst pre-flight gate (REQUIRED before implementation)
+| Concern | File | Read when |
+|---|---|---|
+| Template detection (Mode A vs Mode B) | [`.context/rules/process_template_detection.md`](.context/rules/process_template_detection.md) | First session in a new clone |
+| Critical thinking and communication | [`.context/rules/process_critical_thinking.md`](.context/rules/process_critical_thinking.md) | Every reply |
+| Work style, testing, validation | [`.context/rules/process_work_style.md`](.context/rules/process_work_style.md) | Before any non-trivial implementation |
+| Clarification and ambiguity | [`.context/rules/process_clarification.md`](.context/rules/process_clarification.md) | When request is ambiguous |
+| Role selection, context pack, onboarding | [`.context/rules/process_role_selection.md`](.context/rules/process_role_selection.md) | Before claiming a task |
+| Pre-implementation gates (Analyst pre-flight + plan-as-comment) | [`.context/rules/process_gates.md`](.context/rules/process_gates.md) | Before writing code on any non-exempt issue |
+| Session-state cadence + close-out PR discipline | [`.context/rules/process_session_state.md`](.context/rules/process_session_state.md) | Every task boundary |
+| PR completion, templates, review | [`.context/rules/process_pr_completion.md`](.context/rules/process_pr_completion.md) | Before opening a PR or reviewing one |
+| Model tier dispatch convention | [`.context/rules/process_model_tier.md`](.context/rules/process_model_tier.md) | When dispatching subagents or upshifting tier |
+| Doc-sync triggers (which files must update together) | [`.context/rules/process_doc_maintenance.md`](.context/rules/process_doc_maintenance.md) | Before opening a PR |
+| Code quality (SOLID, TDD, clean code) | [`.context/rules/domain_code_quality.md`](.context/rules/domain_code_quality.md) | Before non-trivial code refactors |
+| Orchestration patterns (P/AP citations for review) | [`.context/rules/repo_orchestration_patterns.md`](.context/rules/repo_orchestration_patterns.md) | When reviewing orchestration-layer changes |
+| Path ownership map | [`.context/rules/agent_ownership.md`](.context/rules/agent_ownership.md) | Before claiming a task or making cross-role edits |
 
-The gate (ADR-005, broadened by ADR-014) fires on any issue proposing a
-novel user-facing deliverable. Dispatch the Analyst role first and wait
-for a passing Pre-Flight Report before writing any code.
+For project overview start at [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) and
+[`.context/00_INDEX.md`](.context/00_INDEX.md).
 
-**Trigger** (any one signal is sufficient):
+## Section-anchor redirects (for ADR back-compat)
 
-1. Issue references `.github/prompts/NN-*.md` (two-digit project prompt
-   like `01-init-project.md`, `05-portfolio-demo-app.md`) and the prompt
-   describes a deliverable. (ADR-005.)
-2. Issue uses `feature_request.md` template **and** carries the
-   `enhancement` label. (ADR-014.)
-3. Issue is an ADR proposing a new agent surface (role, webhook, external
-   interface, automation mode). (ADR-014.)
-4. Issue body contains action verbs (build, implement, ship, create) plus
-   a user-facing noun (UI, dashboard, page, service, pipeline, dataset,
-   demo, integration). (ADR-014.)
+ADRs and other docs may cite AGENTS.md sections by anchor (e.g., `AGENTS.md §"Session-state cadence"`). After ADR-021's decomposition, those sections live at new paths. Resolve old citations as follows:
 
-**Opt-out** (both required):
-
-- Issue carries the `outcome-validated` label, **and**
-- Issue body contains an inline outcome paragraph (one paragraph describing
-  what a user will be able to *do* when shipped, not just what files will
-  exist). The `feature_request.md` and `agent_init.md` templates include a
-  "User outcome (15-minute test)" section for this. The label alone is
-  not sufficient.
-
-**Why this exists**: Issues that describe deliverables without specifying
-user outcomes produce technically correct but scope-mismatched
-implementations. Automated review catches code quality; it does not catch
-"shipped the wrong artifact." The Analyst's Pre-Flight Report applies the
-15-minute test before implementation begins, which is the only cheap point
-to catch this failure mode.
-
-**Procedure**:
-
-1. Check the issue for an existing Pre-Flight Report comment matching the
-   template in `.github/agents/analyst.agent.md` → "Pre-Flight Validation".
-2. If one exists with verdict **PASS**, proceed to Architect handoff as normal.
-3. If one exists with verdict **FAIL** or **HOLD**, stop. Do not implement.
-   Address the mismatch or ambiguity first.
-4. If no report exists, dispatch Analyst yourself (or, if you are running as
-   Copilot's cloud agent, post a comment: "Dispatching Analyst for pre-flight
-   validation before implementation" and proceed to run the analysis per
-   the Analyst role file). Wait for the report. Then re-evaluate.
-
-**Exemptions** (gate does NOT apply, no opt-out needed):
-
-- `bug` label, `docs` label (no new behavior), `dependencies` label,
-  reverts, `chore:*` labels, internal refactors with no user-facing change.
-- Issues referencing only shared procedural prompts (`pr-resolve-all.md`,
-  `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`,
-  `mirror-postmortem.md`) or prompt documentation (`README.md`) under
-  `.github/prompts/` — those describe procedures, not deliverables.
-
-Skipping this gate when it applies is a known failure mode. If you find
-yourself reasoning "this issue looks clear enough, I'll skip pre-flight,"
-that's the signal to run pre-flight anyway.
-
-### Plan-as-comment requirement (REQUIRED before implementation)
-
-Before writing implementation code for any non-exempt issue, post an
-Implementation Plan as a comment on that issue using the template at
-`.github/PLAN_TEMPLATE.md`. The plan captures the implementation lens
-(approach, files, verification, risks) — complementary to the issue
-template which captures the *what* and *why*. See ADR-011.
-
-**Why this exists**: issue templates capture user-facing intent;
-implementer-side decisions about approach, scope, and verification are
-invisible until PR review. Posting the plan as an artifact catches three
-recurring failure modes pre-implementation: wrong approach to the right
-problem, hidden scope, and missing verification. v1 has no formal
-approval gate (deferred to #155) — the plan is reviewed at PR time, but
-the act of writing it forces the implementation thinking before code.
-
-**Procedure**:
-
-1. Pick up the issue. Read it end-to-end.
-2. Post a comment using `.github/PLAN_TEMPLATE.md`. Sections that don't
-   apply get `N/A — <one-phrase reason>`, never silent omission.
-3. Implement. No waiting on approval in v1 — but if your actual diff
-   diverges from the plan by more than ~30% in file count or scope,
-   post a "Plan revision" comment on the same issue before pushing.
-4. Open the PR. Body MUST link the issue or a parent PR (`Closes #NN`,
-   `Refs #NN`, `Implements ADR-NNN`). Judge BLOCKs at diff-gate when
-   no link is present and no exemption label applies. Populate the PR
-   template's `## Plan` section with permalinks to the original plan
-   and any revisions, plus a 1–2 sentence summary of the latest
-   version. Judge advises (REQUEST_CHANGES) at diff-gate when this is
-   missing or stale; it is not a v1 BLOCK.
-5. If the plan is revised after the PR is open, edit the PR body's
-   `## Plan` section in the same push as the divergent code, link the
-   revision comment, and tick the matching box in `## Plan revision
-   sync` so reviewers don't evaluate stale intent.
-6. **Before requesting review**, populate the PR template's
-   `## Verification results` section with a result entry (`✅ pass`,
-   `❌ fail`, `⏭️ sandbox-deferred — see Phase 2`, or `⏭️ N/A — <reason>`)
-   for every command listed in the plan's `### Verification`. CI is a
-   backstop, not a substitute for local verification — Judge BLOCKs at
-   diff-gate when this section is missing or claims pass for a command
-   that demonstrably never ran (`.github/agents/judge.agent.md` item 16).
-
-**Exemptions** (plan is NOT required):
-
-- Issue is labeled `chore:no-plan` (the explicit opt-out).
-- Author is Renovate, Dependabot, or another automation bot.
-- Work is a `revert` of a prior PR (the prior PR's plan still applies).
-
-The PR-must-link rule has the same exemptions plus PRs labeled
-`smoke-test` (existing convention; smoke tests intentionally don't link
-issues).
-
-**Single template, no tiering**: there is no "minimal" vs "full" plan
-mode. The template scales with the work — five lines for trivial fixes,
-25–40 lines for typical work. Tiered modes invite agents to default to
-the lower-effort option, which defeats the gate. When a section
-genuinely doesn't apply, write `N/A — <reason>`. Explicit
-acknowledgment beats silent omission.
-
-**Relationship to the Analyst pre-flight gate**: ADR-005's Pre-Flight
-Report (broadened by ADR-014 to ad-hoc deliverable issues) is a stricter
-gate that runs *in addition to* the plan requirement on any issue meeting
-the pre-flight trigger. It is not replaced or weakened by this requirement.
-The two gates have different trigger conditions and will be unified in #155.
-
-## Model tier dispatch convention
-
-Each role is pinned to a cost tier (High / Mid / Low) in `.claude/agents/<role>.md` and `.github/agents/<role>.agent.md` per [ADR-019](docs/decisions/adr-019-per-role-model-tiering.md). The canonical tier table is in ADR-019; do not duplicate it here. Three behavioral notes that affect day-to-day agent work:
-
-1. **Per-platform value-space divergence is intentional.** `.claude/agents/*.md` uses Anthropic-only model strings (`claude-opus-4-7`, `claude-sonnet-4-6`, `inherit`). `.github/agents/*.agent.md` uses Copilot's qualified format (`'Claude Opus 4.7 (copilot)'`, etc.) or omits the field for Low-tier roles. `test.sh` enforces per-platform allowlists; description-parity (byte-identical `description:` fields) is unchanged.
-2. **Copilot subagent cost-tier ceiling.** A High-tier subagent dispatched from a Copilot chat session whose main model is below Opus silently downgrades to the main's tier. To get an Opus dispatch on Copilot, set the chat picker to Opus before invoking the subagent. See [ADR-019 Amendment #6](docs/decisions/adr-019-per-role-model-tiering.md#amendment-6--copilot-subagent-cost-tier-ceiling-limitation--workaround). Claude Code has no equivalent ceiling.
-3. **Per-task tier upshift via the plan template.** Use the `Model tier:` field in [`.github/PLAN_TEMPLATE.md`](.github/PLAN_TEMPLATE.md) to upshift a specific task above its role's default tier. Default is `mid`; when set to `top`, include a one-line justification.
-
-Reassessment cadence and follow-up work (verified Copilot fallback arrays, etc.) live in ADR-019.
-
-## Context pack usage
-- Start with `.context/00_INDEX.md` for project overview
-- Check `.context/state/_active.md` or `task_*.md` for current work in progress
-- Reference `.context/rules/` for constraints that must not be violated
-- Use `.context/roadmap.md` to understand project phases
-- Reference `.context/vision/` for design mockups and architecture
-
-## Onboarding procedure
-1. Read `/AI_REPO_GUIDE.md`.
-2. Read `.context/00_INDEX.md` if it exists.
-3. Check `.context/state/_active.md` or `task_*.md` for cognitive handoff from previous sessions.
-4. If AI_REPO_GUIDE.md missing or stale: follow `.github/prompts/repo-onboarding.md` to rebuild context.
-
-## Ongoing maintenance
-Doc-sync triggers (which files must update together) live in a single source of truth: **`.context/rules/process_doc_maintenance.md`**. Read it before opening a PR; Judge enforces it at diff-gate.
-
-### Postmortem feedback loop
-When a downstream project (a repo built *from* this template) hits an incident worth a postmortem, run `.github/prompts/capture-postmortem.md` in that project repo. If the resulting postmortem's `generalizes:` is `Yes` or `Unclear`, run `.github/prompts/mirror-postmortem.md` against this template to mirror it back with a same-PR follow-up. The three-tier promotion policy (universal → AGENTS.md / `.context/rules/` / new ADR; stack-specific → mirrored postmortem only, never AGENTS.md; project-only → stays in source repo) is defined in `docs/postmortems/README.md` and ratified in [ADR-015](docs/decisions/adr-015-postmortem-feedback-loop.md). Do NOT add per-stack guidance (Terraform, Python, Rust, etc.) to this file — that is the failure mode the policy exists to prevent.
-
-### Session-state cadence
-Keep agent working memory current so the next session (or next role) can resume cleanly. **Working state must live in `.context/state/`** — the LLM tool's in-conversation todo list and `/memories/session/` are agent-private scratch surfaces invisible to any other session, and are never substitutes for the checked-in files below. If your only record of in-progress work is in scratch surfaces, that work is lost the moment the session ends.
-
-**Re-read requirement.** At every task boundary you MUST re-read the following files before writing any state or code:
-
-1. `AGENTS.md` — catches mid-session rule edits (e.g., this very section).
-2. `.context/00_INDEX.md` — catches roadmap or constraint changes.
-3. `.context/state/_active.md` and the active `.context/state/task_<slug>.md` (if any) — catches staleness in your own working state. `_active.md` uses a multi-section schema (one `## Task: <branch>` section per in-flight branch; see ADR-018, including Amendment #1); each section is capped at ~20 lines of task metadata (Issue/PR, Role, PR, Blockers, Next 1–3 actions — `PR` is required on new sections per ADR-018 Amendment #1; pre-amendment sections may omit it under the backward-compat carve-out). Read the whole file (you need to see every active task to spot conflicts before claiming new work), but only edit your own section. Granular progress, files, and detailed blockers live in the task file each section references.
-4. `.context/state/coordination.md` — catches stale locks before you add new ones.
-5. Any `.context/rules/*.md` or `.context/vision/**/*.md` whose domain covers the files you are about to edit — e.g., read `.context/rules/process_doc_maintenance.md` before changes that may trigger doc-sync requirements; read `.context/rules/domain_code_quality.md` before non-trivial code refactors; read the relevant architecture or mockup in `.context/vision/` before implementing UI or structural changes.
-
-Reading all of `.context/rules/` and `.context/vision/` at every boundary is overkill: unlike `AGENTS.md` (the primary instruction file, most likely to be edited mid-session), both rule files and vision artifacts change only through deliberate, reviewed PRs — ad-hoc mid-session edits to them are rare. Point 5 already covers the important case: you read a rule or vision file when its domain intersects what you are about to change. The five items above are the minimum set that closes the loop between knowing a rule and following it.
-
-- **`.context/state/_active.md`** — multi-task file (ADR-018, including Amendment #1). When you claim a task, add a `## Task: <branch-name>` section under the `# Active Tasks` header. Edit (don't append) **only your own section** at every task boundary; per-section cap is ~20 lines with schema Issue/PR, Role, PR, Blockers, Next 1–3 actions. The `PR` field is required on new sections (write `pending` at section creation, update to `#MMM` at your next push after PR-open, or `N/A` for branches with no planned PR — see ADR-018 Amendment #1); legacy pre-amendment sections may omit it under the backward-compat carve-out and need only adopt at the next task-boundary edit on their own section. Remove your section as part of close-out (see `.context/state/README.md` §"Cadence"). Read the whole file at every task boundary so you see all in-flight work; the write surface is your section only.
-  - **What counts as a "task boundary"** for prompt-driven work: each `.github/prompts/NN-*.md` file is its own boundary. If you process prompts 02 → 03 → 04 in one session, that is *three* boundaries — rewrite your `## Task:` section between each, even if the same agent continues. Treating multiple prompts as one continuous task is a known failure mode (see ADR-012 + `docs/postmortems/postmortem-001-workflow-bypass.md`).
-- **`.context/state/task_<slug>.md`** — create from `.context/state/task_template.md` at task start. Delete (or move to `.context/sessions/`) at task end.
-- **Handoff trigger** — **required** — write a structured handoff to `.context/state/handoff_<slug>.md` (template: `.context/state/handoff_template.md`) and start a fresh session whenever ANY of the following fires:
-  - A single agent conversation exceeds ~30 turns.
-  - You're about to hand off to a different role/agent.
-  - **The LLM runtime auto-summarizes your conversation mid-flight.** This is the loudest possible signal that you've blown past the ~30-turn threshold; treat it as an explicit trigger and write the handoff *before* responding to the next user message, not after.
-  - **The session ends and the task is not yet merged/closed.** Any work that will outlive the current session requires a handoff — not optional. If the only record of in-progress work is in the LLM's in-conversation todo or `/memories/session/`, that work is lost the moment the session ends.
-
-  The handoff is the baton; the next session reads it instead of replaying the full chat.
-- **Close-out (three actions, three triggers)** — earlier versions of this rule treated close-out as one event, conflating three different actions under one trigger. That conflation produced two recurring bugs: (a) lock `**State**:` set to `merged` before the PR was actually merged (postmortem-001 #4 + Codex P1 finding on PR #261), and (b) "I'll write the summary later" deferral that orphaned working state. Each action below has its own trigger and they fire independently:
-  - **(1) Working-log refresh — every wait-for-input pause.** The role that led the work updates `.context/sessions/latest_summary.md` per the canonical template in `.context/sessions/README.md` whenever the agent is about to wait for user input: clarification questions mid-task, plan-mode approval pauses, "task done, what's next?" pauses. There are no exceptions; mid-task clarification pauses are explicitly included. One entry per agent-session: append to your in-progress entry on each pause; do NOT open a fresh entry per pause. Do NOT defer until merge — write now even if the PR isn't merged, amend later if outcomes change. The entry's `Status` field reflects the **agent's** state (decoupled from PR state): `in_progress` while actively working, `awaiting_user_input` while paused for clarification, `done` only when the agent has fully left the work (see trigger 2).
-    - **Plan-mode routing.** `latest_summary.md` is not writable while plan mode is active; capture working-log content in the plan file the agent is already updating. On `ExitPlanMode` approval, the agent's first execution action copies plan-mode content into `latest_summary.md`. Same discipline, routed through whichever surface is writable.
-    - **Multi-role intra-session handoffs do NOT trigger refresh.** If a single agent transitions roles internally (architect → backend → qa within one conversation), context lives in agent memory; refresh fires on the agent-session boundary (waiting for user input), not on intra-session role transitions.
-  - **(2) `_active.md` `## Task:` removal — when the agent leaves the work.** Remove your `## Task: <branch>` section from `.context/state/_active.md` when the agent is genuinely *leaving the work*: session-end, handoff to a different role, or the PR has fully closed/merged. Mid-loop pauses (waiting for review feedback, awaiting user clarification on a follow-up question) do **NOT** trigger removal — the agent is still active and may need to resume. PM's `coordination.md` reconciliation pass catches forgotten removals.
-  - **(3) `coordination.md` lock release — on PR close/merge.** Move your lock from Active Locks to Recent History (with `**Result**:` line; `**State**:` set to `merged` if the branch was merged or `closed_unmerged` if closed without merge) **when the PR actually closes or merges**, not at agent-done. While the PR is open, the lock's `State` reflects branch progress (`in_progress`, `peer_review`, `judge_review`, `approved`) — never `merged`. The `.github/workflows/agent-coordination-sync.yml` on-close webhook posts a suggestion when the PR closes; the next agent session (or PM) acts on the suggestion. Setting `State: merged` on a lock whose PR is still open is a correctness bug — coordination checks (daily reconciliation, parallelism-report parser) read `State` semantically, and the lock's location (Active vs Recent) plus its `State` together describe the branch's actual status.
-  - **PM gate.** PM verifies the close-out entry exists in `latest_summary.md` with `Status: done` before marking the task done in `coordination.md`. The PM gate is on the *agent's* `Status` field, not on lock `State` — the two are independent triggers.
-
-## Testing requirements
-- Follow the test pyramid: many unit tests, fewer integration tests, minimal E2E tests.
-- Write tests before or alongside implementation (TDD preferred).
-- All behavioral changes must include appropriate tests.
-- CI must pass before marking tasks complete. If CI fails:
-  1. Read the error logs
-  2. Fix the underlying issue
-  3. Push and retry until green
-
-## PR completion criteria (interactive sessions)
-
-Opening a PR is **not** "done" when the same agent that opened the PR is still running in an interactive session. The PR is done when CI is green AND every bot-authored review thread is either resolved or explicitly deferred. Merging is the maintainer's call, not the agent's — do not wait on merge to declare the work complete, but do not declare it complete before the loop below converges.
-
-After pushing the PR, run this loop until it converges:
-
-1. **Wait for the CI rollup.** If anything red, read logs, fix the underlying issue, push, and re-enter the loop. Do not weaken tests or add `--no-verify` to dodge a real failure (see §Work style).
-2. **Pre-merge verification (sandbox-class PRs).** If your Implementation Plan declared `Change class: default-branch-only workflow` (or `mixed` with a default-branch-only path), the PR is **not** done until the change has been verified end-to-end in the sandbox sibling repo per [`docs/guides/sandbox-verification.md`](docs/guides/sandbox-verification.md). Paste the green sandbox-run URL into a comment on the PR. The trigger constraint (workflows pinned to default-branch execution can't be exercised on the PR branch) is structural — see ADR-016 and `docs/guides/agent-pipeline.md` § "Workflow verifiability matrix". Skipping this for sandbox-class PRs is the failure mode that produced the 11-round PR #225 cycle.
-3. **Check bot-authored reviews** (Copilot review, Gemini, etc.). If any are present, address them following `.github/prompts/pr-resolve-all.md` Phases 1–4. That prompt defines what counts as "addressed" (Phase 2 status set: `✅ Fixed`, `✅ Already resolved`, `⚠️ Needs clarification`, `⚠️ Partial fix`, `❌ Not reproducible`, `❌ Out of scope`); do not invent labels or redefine the set here.
-4. **After your fix-commit lands, re-check.** Bot re-review on push is opportunistic today (the re-review-on-push automation tracked in #205 — distinct from the existing thread-resolution relay in `agent-relay-reviews.yml` — is not yet shipped); if a re-review didn't fire, re-read the PR yourself before declaring done. Loop until clean.
-
-**Stop condition.** PR is clean when:
-
-- CI is green.
-- Every bot thread is either auto-resolved by `pr-resolve-all.md` Phase 4 (only when its Phase 2 status is `✅ Fixed`) or left open with a deferral reply (for `❌ Out of scope` / `❌ Not reproducible` / `⚠️` outcomes — humans expect to acknowledge those themselves).
-- Your Resolution Report is posted per `pr-resolve-all.md` Phase 3.
-
-**Escape valve.** If a bot finding is intentionally out-of-scope or wrong:
-
-1. Post a one-line deferral reply on the thread explaining why.
-2. **Leave the thread open** for human acknowledgement (per `pr-resolve-all.md` → "Safety rules": never resolve a thread whose Phase 2 item is not `✅ Fixed`).
-
-"Deferred with comment, awaiting human acknowledgement" counts as addressed. Silently ignoring a bot finding does not.
-
-**Does NOT apply to**:
-
-- **Copilot's cloud SWE agent.** Its session ends at PR creation; the loop is handled out-of-band by `agent-fix-reviews.yml` + `agent-relay-reviews.yml` via webhook events. See `docs/guides/multi-agent-coordination.md` → "Branch-Per-Role Model".
-- **Bot-authored PRs** (Renovate, Dependabot, etc.). Maintainer reviews those.
-- **PRs marked `draft`.** These are explicitly not "ready for review yet."
-
-## Validation
-- Run the repo's verification commands (prefer those documented in AI_REPO_GUIDE.md) before declaring done.
-- Ensure all tests pass locally before pushing.
-- Check that CI pipeline is green.
-
-## Templates and conventions
-GitHub auto-populates issue and PR templates only in the browser flow, not when an agent uses `gh` / MCP / API. Agents must apply them explicitly. The issue templates start with a YAML front-matter block delimited by `---`; that block is metadata for GitHub's template chooser, not body text. Strip the front-matter and copy only the Markdown content after the closing `---` into the issue/PR body.
-
-- **Creating issues programmatically** — use the body skeleton from the matching `.github/ISSUE_TEMPLATE/{feature_request,bug_report,agent_init}.md` file (Markdown body only; strip the leading YAML front-matter).
-- **Creating PRs programmatically** — use the body skeleton from `.github/pull_request_template.md` (no front-matter to strip in this file). The **Doc sync** checklist is REQUIRED; Judge enforces it at diff-gate.
-- **Addressing review feedback on a PR you authored** — follow `.github/prompts/pr-resolve-all.md` (Phases 1–4) so the Resolution Report and Phase 4 thread-resolution land consistently. This applies even when no `@<agent> follow` mention has been posted; ad-hoc fixes skip the audit trail.
-- **Bundling small follow-ups vs. splitting** — see `docs/guides/agent-best-practices.md` → "Issue and PR Granularity."
-- If a section the work needs is missing from a template, **update the template in the same PR** rather than skipping the section.
-
-## Code quality
-Universal SOLID / TDD / clean-code rules are defined as Hard rules H1–H8 and Soft rules S1–S6 in `.context/rules/domain_code_quality.md`. Secrets hygiene (no secrets in code or logs) and the ~200-line file guideline live in `docs/guides/agent-best-practices.md`. Do not duplicate these in AGENTS.md or role agent files — link to the relevant rule IDs or guide sections instead.
-
-## Review guidelines
-- Block on failing CI/tests or missing test coverage for changed behavior.
-- Require exact repro/verification commands for any functional change.
-- Prefer minimal diffs; avoid drive-by refactors.
-- No secrets/PII in logs.
-- Call out risk areas: authz, data migrations, concurrency, perf regressions.
-- For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), cite entries from `.context/rules/repo_orchestration_patterns.md` by ID (`P1`–`P8`, `AP1`–`AP8`) when flagging or blocking. The `H<n>`/`S<n>` rules in `domain_code_quality.md` cover code-layer review; `P<n>`/`AP<n>` cover orchestration-layer review.
+| Pre-decomposition section in AGENTS.md | Now lives in |
+|---|---|
+| §"Template detection" | `.context/rules/process_template_detection.md` |
+| §"Critical thinking and communication" | `.context/rules/process_critical_thinking.md` |
+| §"Work style" | `.context/rules/process_work_style.md` § "Work style" |
+| §"Clarification and ambiguity" | `.context/rules/process_clarification.md` |
+| §"Truth hierarchy" | this file (above) |
+| §"Role selection (multi-agent workflow)" | `.context/rules/process_role_selection.md` § "Role selection (multi-agent workflow)" |
+| §"Analyst pre-flight gate" | `.context/rules/process_gates.md` § "Analyst pre-flight gate (REQUIRED before implementation)" |
+| §"Plan-as-comment requirement" | `.context/rules/process_gates.md` § "Plan-as-comment requirement (REQUIRED before implementation)" |
+| §"Model tier dispatch convention" | `.context/rules/process_model_tier.md` |
+| §"Context pack usage" | `.context/rules/process_role_selection.md` § "Context pack usage" |
+| §"Onboarding procedure" | `.context/rules/process_role_selection.md` § "Onboarding procedure" |
+| §"Ongoing maintenance" | `.context/rules/process_doc_maintenance.md` (always was the source of truth) |
+| §"Postmortem feedback loop" | `.context/rules/process_session_state.md` § "Postmortem feedback loop" |
+| §"Session-state cadence" | `.context/rules/process_session_state.md` |
+| §"Close-out (three actions, three triggers)" | `.context/rules/process_session_state.md` § "Close-out (three actions, three triggers)" |
+| §"Testing requirements" | `.context/rules/process_work_style.md` § "Testing requirements" |
+| §"PR completion criteria (interactive sessions)" | `.context/rules/process_pr_completion.md` § "PR completion criteria (interactive sessions)" |
+| §"Validation" | `.context/rules/process_work_style.md` § "Validation" |
+| §"Templates and conventions" | `.context/rules/process_pr_completion.md` § "Templates and conventions" |
+| §"Code quality" | `.context/rules/process_pr_completion.md` § "Code quality" (pointer) → `.context/rules/domain_code_quality.md` (canonical) |
+| §"Review guidelines" | `.context/rules/process_pr_completion.md` § "Review guidelines" |

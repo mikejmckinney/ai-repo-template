@@ -56,6 +56,31 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-253-agents-md-decomposition
+<!-- managed-for-pr:pending -->
+**Role**: architect
+**Session**: feature/architect-253-agents-md-decomposition
+**PR**: pending
+**Claimed At**: 2026-05-08T18:00:00Z
+**Expected Duration**: 1 session
+**Paths**:
+- AGENTS.md
+- CLAUDE.md
+- AGENT.md
+- .github/copilot-instructions.md
+- .context/rules/process_*.md
+- .context/rules/agent_ownership.md
+- .context/rules/process_doc_maintenance.md
+- docs/decisions/adr-021-agents-md-decomposition.md
+- docs/decisions/adr-002-agents-md-ownership.md
+- docs/decisions/README.md
+- test.sh
+- .context/state/_active.md
+- .context/state/coordination.md
+**Depends On**: none
+**Blocks**: #263 (Option 2 workflow upgrade rebases onto post-decomposition tree)
+**State**: in_progress
+
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:259 -->
 **Role**: architect

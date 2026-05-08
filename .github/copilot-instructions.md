@@ -4,10 +4,10 @@
 
 ## Read first
 
-1. **[`AGENTS.md`](../AGENTS.md)** — truth hierarchy, role selection, onboarding, plan-as-comment requirement, Analyst pre-flight gate, testing, validation. All other AI tools (Claude, Cursor, Gemini) also read this file.
+1. **[`AGENTS.md`](../AGENTS.md)** — thin contract: handshake, truth hierarchy, link table to per-concern process rules. All other AI tools (Claude, Cursor, Gemini) also read this file. Per-concern rules live under `.context/rules/process_*.md`.
 2. **[`AI_REPO_GUIDE.md`](../AI_REPO_GUIDE.md)** — structured reference (files, conventions, verification commands) optimized for agent consumption.
 3. **[`.context/00_INDEX.md`](../.context/00_INDEX.md)** — project memory entry point. Lazy-loads rules, state, roadmap, and vision.
-4. **[`.github/PLAN_TEMPLATE.md`](PLAN_TEMPLATE.md)** — copy this template into a comment on any issue you're about to implement, before writing code. See AGENTS.md → "Plan-as-comment requirement" and ADR-011 for the full rules and exemptions.
+4. **[`.github/PLAN_TEMPLATE.md`](PLAN_TEMPLATE.md)** — copy this template into a comment on any issue you're about to implement, before writing code. See `.context/rules/process_gates.md` and ADR-011 for the full rules and exemptions.
 
 ## Role selection
 
@@ -15,6 +15,7 @@ Before editing any file, identify your role (analyst, architect, judge, critic, 
 
 - `.github/agents/<your-role>.agent.md` — your responsibilities and Do / Don't list (canonical).
 - `.context/rules/agent_ownership.md` — the canonical path-ownership map.
+- `.context/rules/process_role_selection.md` — multi-agent workflow protocol.
 - `.context/state/coordination.md` — live claim board and task state machine.
 
 Full multi-agent workflow: `docs/guides/multi-agent-coordination.md`.
