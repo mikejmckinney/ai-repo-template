@@ -121,7 +121,7 @@ A single canonical source (typically YAML) is the source of truth for some gover
 
 **Where it appears**:
 - *Currently in flight*: role files via #248 / #249, which propose `.agents/<role>.md` as canonical with `.github/agents/`, `.claude/agents/`, and `.cursor/agents/` generated from it.
-- *Candidate applications* (not yet implemented): pipeline labels currently hardcoded in `scripts/setup.sh` and referenced in workflows + docs; agent budget variables (`MAX_COPILOT_DAILY`, `MAX_COPILOT_CONCURRENT`); doc-sync triggers in `process_doc_maintenance.md`; the PR-label state machine implicit in workflow conditions.
+- *Candidate applications* (not yet implemented): pipeline labels currently hardcoded in `scripts/setup.sh` and referenced in workflows + docs; agent budget variables (`MAX_COPILOT_DAILY`, `MAX_COPILOT_CONCURRENT`, `PR_RESOLVE_MAX_ROUNDS`); doc-sync triggers in `process_doc_maintenance.md`; the PR-label state machine implicit in workflow conditions.
 - *Conceptually used*: the shape of `agent_ownership.md` — though human-edited rather than generated, it acts as a manifest that scripts (`scripts/multi-dispatch-safety.sh`, the parallelism-report parser) read.
 
 **What good usage looks like**:
