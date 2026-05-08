@@ -27,7 +27,11 @@ canonical file before doing anything.
    the orchestration layer (`AGENTS.md`, `.context/rules/**`,
    `.github/agents/**`, `.github/workflows/**`, `scripts/**`), cite
    anti-pattern IDs at diff-gate. Block-able: `AP1`, `AP2`, `AP3`,
-   `AP6`, `AP7`. Advisory: `AP4`, `AP5`, `AP8`. See ADR-020.
+   `AP6`, `AP7`. Advisory: `AP4`, `AP5`, `AP8` (block only on the
+   per-entry trigger conditions — e.g., `AP4` blocks when User outcome
+   is missing/inverted; `AP5` blocks on materially extended canonical
+   read list without an ADR; `AP8` blocks when the workflow has caused
+   a postmortem). See ADR-020.
 7. `AI_REPO_GUIDE.md` — canonical repo map for validation claims.
 
 ## Non-negotiables (summary of the canonical file)
