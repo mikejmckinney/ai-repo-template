@@ -8,45 +8,84 @@
 
 ## How to Use
 
-After each significant coding session, create a brief summary file:
+Each agent session owns **one** entry in `latest_summary.md`. The entry is created when the session starts and updated continuously as the session progresses. See AGENTS.md §"Session-state cadence" → "Close-out (every wait-for-input pause)" for the cadence rule that governs when the file is touched.
 
 ```
 sessions/
-├── README.md              # This file
-├── latest_summary.md      # Always points to/contains the most recent session
-├── 2025-01-25_auth.md     # Session: Implemented authentication
-├── 2025-01-24_setup.md    # Session: Initial project setup
+├── README.md                  # This file
+├── latest_summary.md          # The current agent's working log (one entry, continuously updated)
+├── 2026-05-08_pr-261.md       # Archived: previous session's working log
+├── 2026-05-07_pr-220.md       # Archived: older session
 └── ...
 ```
 
-## Session Summary Template
+### Rotation rule
 
-When ending a session, create or update a summary:
+When a **new agent** starts a fresh task, they MUST rotate the previous session's working log before creating their own entry. Two equivalent forms:
+
+1. **Rename (preferred — preserves history without copy-confusion):**
+
+   ```bash
+   git mv .context/sessions/latest_summary.md \
+          .context/sessions/<YYYY-MM-DD>_<branch-or-topic>.md
+   ```
+
+   Then create a fresh `latest_summary.md` with the new agent's entry.
+
+2. **Copy:**
+
+   ```bash
+   cp .context/sessions/latest_summary.md \
+      .context/sessions/<YYYY-MM-DD>_<branch-or-topic>.md
+   ```
+
+   Then overwrite `latest_summary.md` with the new agent's entry. Useful if downstream tooling needs the previous content to remain at the canonical path during the transition; otherwise prefer Rename.
+
+A **mid-session agent** may also rotate at their discretion if `latest_summary.md` approaches the size cap (see §"Token Efficiency"). Rotation mid-session is rare; the common case is rotation at new-agent start.
+
+## Working-Log Template
+
+Each entry uses the canonical structure below. The fields are filled in progressively across the session:
+
+- **Required at session start**: the header + `Status` + `Started`.
+- **Updated at every wait-for-input pause**: `Status`, `What Was Accomplished`, `Files Modified`, `Open Items / Next`.
+- **Filled at genuine task close-out** (when the agent has fully *left the work* — session-end, role-handoff, or PR fully closed/merged): `What Shipped`, `Harder Than Expected`, `Generalizable Lessons`, and `Status` flips to `done`.
+
+The `Status` field tracks the **agent's** state, not the PR state. `done` means the agent has nothing further queued and is leaving the work; the PR may still be open awaiting human merge. PR state lives on the matching `coordination.md` lock's `**State**:` field, which has its own trigger (PR close/merge) — see AGENTS.md §"Session-state cadence" → "Close-out (three actions, three triggers)".
 
 ```markdown
-# Session: [Date] - [Brief Title]
+# Session: <YYYY-MM-DD> — <branch-or-task-id> — <role>
+
+**Status**: in_progress | awaiting_user_input | done
+**Issue/PR**: #NNN / #MMM (or `pending` / `N/A`)
+**Started**: <ISO-8601 timestamp>
 
 ## What Was Accomplished
-- [Completed item 1]
-- [Completed item 2]
+<running list, appended at every wait-for-input pause; one bullet per chunk of work>
 
-## Key Decisions Made
-- [Decision 1]: [Rationale]
-- [Decision 2]: [Rationale]
+## What Shipped
+<one or two lines: what is now true that wasn't before — fill in at done>
 
-## Problems Encountered
-- [Problem]: [How it was solved]
+## Harder Than Expected
+<one or two lines, or "nothing notable" — fill in at done>
 
-## What Didn't Work
-- [Failed approach]: [Why it failed]
-
-## Next Session Should
-- [ ] [First priority]
-- [ ] [Second priority]
+## Generalizable Lessons
+<one or two lines, or "none" — fill in at done. Open a follow-up issue/PR for any rule/ADR/guide change this implies, and link it here.>
 
 ## Files Modified
-- `path/to/file` - [What changed]
+<running list of file paths and one-line changes>
+
+## Open Items / Next
+<current blockers, questions awaiting user input, or "none — task complete">
 ```
+
+Keep entries short and focused. The point is searchable lessons, not a changelog — the git history is already the changelog. Aim for under 30 lines per entry; rotate before the file-level size cap.
+
+### Filling the retrospective fields
+
+`What Shipped` is the most important close-out field. Write one declarative sentence: what is now true that wasn't true before. Bad: "Updated AGENTS.md cadence." Good: "AGENTS.md cadence trigger now fires on every wait-for-input pause; lock release stays gated to genuine done — split the working-log refresh from lock release so re-acquisition friction doesn't block follow-up turns."
+
+`Harder Than Expected` and `Generalizable Lessons` should be empty or "nothing notable" / "none" by default. Fill them only when something *was* notable — a constraint that surprised you, a rule that doesn't quite fit a class of work, a convention worth documenting. The prompt is "should some rule, ADR, or guide change because of what I learned?" — if yes, write it down and link the follow-up.
 
 ## Why This Matters
 
@@ -55,31 +94,9 @@ When ending a session, create or update a summary:
 3. **Enables Handoff**: Different agents/developers can pick up where you left off
 4. **Reduces Re-exploration**: No need to re-discover what was already learned
 
-## The "Latest Summary" Pattern
-
-Always maintain `latest_summary.md` with the most recent session info. Agents should:
-1. Read `latest_summary.md` when resuming work
-2. Update it when ending a session
-3. Optionally archive to dated file for history
-
-## Close-out entry (post-merge, required)
-
-When a task merges, the role that led the work appends a **close-out entry** to `latest_summary.md`. PM verifies the entry exists before marking the task done in `coordination.md` (see `.github/agents/pm.agent.md`). Format:
-
-```markdown
-## Close-out: <task-id> (YYYY-MM-DD, <role>)
-
-- **Shipped**: <one line: what is now true that wasn't before>
-- **Harder than expected**: <one line, or "nothing notable">
-- **Generalizable lesson**: <one line; "none" is a valid answer>
-- **Follow-up**: <link to issue/PR for any rule/ADR/guide update this implies, or "none">
-```
-
-Keep entries short. The point is searchable lessons, not a changelog — the git history is already the changelog.
-
 ## Token Efficiency
 
-- Keep summaries brief (< 100 lines)
-- Focus on decisions and blockers, not play-by-play
-- Archive old sessions to prevent context bloat
-- Agents should only read recent sessions unless investigating a specific issue
+- Keep `latest_summary.md` under **100 lines** total — rotate to a date-stamped archive when approaching the cap.
+- Keep individual entries under **30 lines** — focus on decisions and blockers, not play-by-play.
+- Agents should only read recent sessions (`latest_summary.md` + the most recent 2–3 archives) unless investigating a specific issue.
+- Old archives are kept indefinitely as searchable history; PM may prune anything > 90 days at discretion.

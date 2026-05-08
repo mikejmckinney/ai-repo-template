@@ -10,8 +10,9 @@ These files are the agent working-memory layer; stale or unbounded files defeat 
   - **Claim** — when you start work on a new branch, add a `## Task: <branch-name>` section. Use the branch name (matches `coordination.md` lock template).
   - **Edit** — rewrite **only your own section** at every task boundary. Never edit another branch's section.
   - **Read** — re-read the **whole file** at every task boundary (per AGENTS.md §"Session-state cadence" item 3) so you see all in-flight tasks and can spot conflicts before claiming new work.
-  - **Cleanup** — remove your `## Task:` section as part of close-out, in the same commit/PR that updates `sessions/latest_summary.md`. Forgotten sections are caught by PM's `coordination.md` reconciliation pass.
-  - **Per-section schema**: `Issue/PR` (`#NNN` or `N/A`), `Role` (current owner), `Blockers` (or "None"), `Next 1–3 actions`. Anything beyond that belongs in `task_<slug>.md`, not here.
+  - **Cleanup** — remove your `## Task:` section when the agent is genuinely *leaving the work*: session-end, handoff to a different role, or the PR has fully closed/merged. Mid-loop pauses (waiting for review feedback, awaiting user clarification on a follow-up) do **not** trigger removal — the agent is still active and may need to resume. The `coordination.md` lock release is a separate trigger gated on **PR close/merge** (not agent-done): see `AGENTS.md` §"Session-state cadence" → "Close-out (three actions, three triggers)" for the full split. Forgotten removals are caught by PM's reconciliation pass.
+  - **Per-section schema**: `Issue/PR` (`#NNN` or `N/A`), `Role` (current owner), `PR` (`#MMM` once the landing PR exists, `pending` while only the branch exists, or `N/A` for branches with no planned PR — see ADR-018 Amendment #1), `Blockers` (or "None"), `Next 1–3 actions`. Anything beyond that belongs in `task_<slug>.md`, not here.
+  - **`PR` field cadence (ADR-018 Amendment #1)**: write `pending` when you first add the section (branch exists, PR not yet opened); update to `#MMM` at your next push *after* PR-open (PR numbers are only assigned by GitHub after creation, so the `pending` → `#MMM` update is necessarily a separate commit from the one that triggered PR creation — typically the first review-feedback fix commit, or an explicit "claim-update" commit if no review is forthcoming); use `N/A` for branches that will not produce a PR (rare — local exploration, abandoned spikes). This mirrors the `**PR**:` field on the matching `coordination.md` lock — the two should agree.
   - **Example** (two parallel branches):
     ```markdown
     # Active Tasks
@@ -19,6 +20,7 @@ These files are the agent working-memory layer; stale or unbounded files defeat 
     ## Task: feature/frontend-101-login-form
     **Issue/PR**: #101
     **Role**: frontend
+    **PR**: #145
     **Blockers**: waiting on backend API contract (login-backend)
     **Next 1–3 actions**:
     1. Stub LoginForm component with form fields
@@ -28,6 +30,7 @@ These files are the agent working-memory layer; stale or unbounded files defeat 
     ## Task: feature/backend-102-login-api
     **Issue/PR**: #102
     **Role**: backend
+    **PR**: pending
     **Blockers**: None
     **Next 1–3 actions**:
     1. Define POST /login request/response schema
