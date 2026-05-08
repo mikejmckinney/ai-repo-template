@@ -78,7 +78,8 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - .context/state/_active.md
 - .context/state/coordination.md
 **Depends On**: none
-**Blocks**: #263 (Option 2 workflow upgrade rebases onto post-decomposition tree)
+**Blocks**: none
+**Notes**: Issue #263 (Option 2 workflow upgrade) will rebase onto post-decomposition tree once this lands.
 **State**: in_progress
 
 ## Lock: pr-252-orchestration-patterns

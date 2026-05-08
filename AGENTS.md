@@ -9,8 +9,9 @@
 > **Pointer files**: [`CLAUDE.md`](CLAUDE.md) and
 > [`.github/copilot-instructions.md`](.github/copilot-instructions.md) are
 > thin pointers into this file. When you change a section heading here or
-> in any `.context/rules/process_*.md` file, verify their pointer tables
-> still resolve — see [`.context/rules/process_doc_maintenance.md`](.context/rules/process_doc_maintenance.md).
+> rename/move any `.context/rules/process_*.md` file, verify their pointer
+> tables still resolve — see
+> [`.context/rules/process_doc_maintenance.md`](.context/rules/process_doc_maintenance.md).
 
 ## Session handshake (read-receipt)
 
@@ -43,7 +44,7 @@ match the lower one without an ADR.
 
 Read the concern files relevant to the work you are about to do. The
 re-read cadence (which files at which boundaries) lives in
-`process_session_state.md`.
+[`.context/rules/process_session_state.md`](.context/rules/process_session_state.md).
 
 | Concern | File | Read when |
 |---|---|---|

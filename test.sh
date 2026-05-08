@@ -418,13 +418,25 @@ else
   warn "process_pr_completion.md missing PR completion criteria section"
 fi
 
-# Check thin AGENTS.md links to per-concern process_*.md files (ADR-021)
-if grep -q "process_session_state.md" AGENTS.md 2>/dev/null \
-  && grep -q "process_pr_completion.md" AGENTS.md 2>/dev/null \
-  && grep -q "process_gates.md" AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md link table references core process_*.md files"
-else
-  fail "AGENTS.md missing link table entries for core process_*.md files (ADR-021)"
+# Check thin AGENTS.md links to per-concern process_*.md files (ADR-021).
+# Rationale: hard-coded contract assertion per repo convention. Limitation: regex
+# matches standard markdown link syntax `[label](file)`; assumes no nested parens.
+CORE_PROCESS_FILES=(
+  "process_template_detection.md" "process_critical_thinking.md" "process_work_style.md"
+  "process_clarification.md" "process_role_selection.md" "process_gates.md"
+  "process_session_state.md" "process_pr_completion.md" "process_model_tier.md"
+  "process_doc_maintenance.md" "domain_code_quality.md" "repo_orchestration_patterns.md"
+  "agent_ownership.md"
+)
+MISSING_LINKS=0
+for pfile in "${CORE_PROCESS_FILES[@]}"; do
+  if ! grep -qE "\[.*\]\([^)]*${pfile}\)" AGENTS.md 2>/dev/null; then
+    fail "AGENTS.md missing link table entry for $pfile (ADR-021)"
+    MISSING_LINKS=$((MISSING_LINKS + 1))
+  fi
+done
+if [[ $MISSING_LINKS -eq 0 ]]; then
+  pass "AGENTS.md link table references all core process files (ADR-021)"
 fi
 
 # Check agent-review-on-push.yml has required invariants (issue #205)
