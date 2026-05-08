@@ -23,7 +23,12 @@ canonical file before doing anything.
 4. `.context/rules/agent_ownership.md` — to flag ownership violations.
 5. `.context/rules/domain_code_quality.md` — unjustified H1–H8
    violations are a `BLOCK` condition during diff-gate.
-6. `AI_REPO_GUIDE.md` — canonical repo map for validation claims.
+6. `.context/rules/repo_orchestration_patterns.md` — for changes to
+   the orchestration layer (`AGENTS.md`, `.context/rules/**`,
+   `.github/agents/**`, `.github/workflows/**`, `scripts/**`), cite
+   anti-pattern IDs at diff-gate. Block-able: `AP1`, `AP2`, `AP3`,
+   `AP6`, `AP7`. Advisory: `AP4`, `AP5`, `AP8`. See ADR-020.
+7. `AI_REPO_GUIDE.md` — canonical repo map for validation claims.
 
 ## Non-negotiables (summary of the canonical file)
 
