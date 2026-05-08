@@ -293,7 +293,7 @@ These describe failure modes the orchestration layer is vulnerable to. Reviewers
 This file describes patterns specific to *this* template. Downstream projects derived from this template:
 
 1. **May add project-specific patterns** to a separate file under `.context/rules/` (e.g., `domain_security_patterns.md` for the CMMC enclave) — keep this file's scope focused on orchestration.
-2. **Should not delete entries** without an ADR. Postmortem-derived entries (`AP3`, `AP4`, `AP6`) in particular are load-bearing — removing them implicitly says "we no longer think this lesson applies."
+2. **Should not delete entries** without an ADR. Postmortem-derived entries (`AP3`, `AP4`, `AP6`, and `P7`) in particular are load-bearing — removing them implicitly says "we no longer think this lesson applies."
 3. **May tighten advisory entries to block-on-sight** if local conventions warrant — document the change in an ADR amending this file's "Block condition" lines.
 
 When adding a new entry to this file:
