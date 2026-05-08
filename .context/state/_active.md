@@ -3,6 +3,7 @@
      File header is fixed: `# Active Tasks`.
      Below the header, each in-flight branch owns one `## Task: <branch-name>` section.
      Per-section schema: Issue/PR | Role | PR | Blockers | Next 1–3 actions. Cap ~20 lines per section.
+       - Backward-compat carve-out (ADR-018 Amendment #1): pre-amendment sections that predate the introduction of the `**PR**:` field may omit it and remain valid. New sections must include the field. Owners of pre-amendment sections may backfill at the next task-boundary edit on their own section, but no other agent may write into another's section. Validators MUST treat the field as optional on existing sections and required only on new ones.
        - Issue/PR: source issue number (`#NNN`) — what motivated the work.
        - PR: landing PR number (`#MMM`), `pending` (branch open, PR not yet created), or `N/A` (no PR planned). Cadence: write `pending` when the section is created (branch exists, PR not yet opened); update to `#MMM` in the same commit/push that opens the PR; use `N/A` for branches that will not produce a PR. Mirrors the `**PR**:` field on the matching `coordination.md` lock.
      Agents edit ONLY their own section. Re-read the WHOLE file at every task boundary.

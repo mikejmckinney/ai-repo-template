@@ -315,6 +315,7 @@ jobs:
             echo "<!-- managed-for-pr:$PR_NUMBER -->"
             echo "**Role**: $primary"
             echo "**Session**: $BRANCH"
+            echo "**PR**: #$PR_NUMBER"
             echo "**Claimed At**: $claimed_at"
             echo "**Expected Duration**: TBD"
             echo "**Paths**:"
