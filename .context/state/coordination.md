@@ -39,6 +39,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ```markdown
 ## Lock: <task-id>
+<!-- managed-for-pr:<NNN | pending> -->
 **Role**: <analyst|architect|frontend|backend|pm|qa|devops|docs|critic|judge>
 **Session**: <branch name or agent session id>
 **PR**: <#MMM | pending | N/A>
