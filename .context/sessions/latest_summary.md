@@ -10,7 +10,7 @@
 - Reviewed issue #254 + the existing implementation plan; plan was solid, no rewrite needed. Posted audit-findings update as a follow-up plan comment ([issuecomment-4410310089](https://github.com/mikejmckinney/ai-repo-template/issues/254#issuecomment-4410310089)).
 - Branched `feature/docs-254-top-level-md-audit` off post-#264-merge `main` (commit 8f0439a → chore #265 close-out abf3cf0).
 - Trimmed `README.md` 475 → 222 lines: removed the full ASCII directory tree, the Agent Instructions / Context Pack / Prompts / Issue Templates / Deployment Configs / Development Tools / CI/CD Workflows tables, and the two onboarding prompt blocks. Each removed section replaced with a one-line link to `AI_REPO_GUIDE.md`. Kept Repo map (12-row human summary), Features, Setup (3 options), Verification, Testing, Customization, Best Practices, Limitations, Future Improvements, FAQ, License.
-- Extended `AI_REPO_GUIDE.md` 376 → 422 lines: added `## Onboarding Prompts` section absorbing the two prompt blocks (first-time repo init + per-session onboarding) moved out of README.
+- Extended `AI_REPO_GUIDE.md` 376 → 419 lines: added `## Onboarding Prompts` section absorbing the two prompt blocks (first-time repo init + per-session onboarding) moved out of README.
 - Authored `docs/decisions/adr-022-top-level-md-scope-split.md` (new). Decision rule embedded; audit table embedded showing every duplicated section's canonical home and the net before/after line counts.
 - Updated `docs/decisions/adr-002-agents-md-ownership.md` Status: `Accepted (extended by ADR-021 and ADR-022)`.
 - Updated `docs/decisions/README.md` ADR index with the ADR-022 row.
