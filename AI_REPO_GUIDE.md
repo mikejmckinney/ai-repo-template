@@ -353,16 +353,13 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 2. Extensions install automatically via `install.sh`
 3. AI prompts copied to workspace
 
-### First-time repo initialization
-After creating a repo from this template, paste the **First-time repo initialization** prompt below into a GitHub issue and assign it to your AI agent.
-
 ## Onboarding Prompts
 
 Two agent-facing prompts. Both are copy/paste-ready.
 
 ### First-time repo initialization
 
-After creating a repo from this template, create an issue with this prompt for the AI agent:
+After creating a repo from this template, paste this prompt into a GitHub issue and assign it to your AI agent:
 
 ```markdown
 This repository was created from a template. Any file containing TEMPLATE_PLACEHOLDER is scaffolding.

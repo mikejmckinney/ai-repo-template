@@ -51,7 +51,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 
 The full directory tree, the agent-file catalog, the context-pack catalog, the prompts catalog, the issue-template catalog, the deployment-config catalog, the development-tools catalog, and the CI/CD-workflow catalog all live in [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) — the structured reference optimized for AI agents.
 
-Why split? Per [`docs/decisions/adr-022-top-level-md-scope-split.md`](docs/decisions/adr-022-top-level-md-scope-split.md), `README.md` (this file) is for human onboarding; `AI_REPO_GUIDE.md` is for agent reference; `AGENTS.md` is the thin contract every AI tool reads first. The 12-row Repo map above is the human-oriented summary; `AI_REPO_GUIDE.md` has the full ASCII tree.
+Why split? Per [`docs/decisions/adr-022-top-level-md-scope-split.md`](docs/decisions/adr-022-top-level-md-scope-split.md), `README.md` (this file) is for human onboarding; `AI_REPO_GUIDE.md` is for agent reference; `AGENTS.md` is the thin contract every AI tool reads first. The Repo map above is the human-oriented summary; `AI_REPO_GUIDE.md` has the full ASCII tree.
 
 ## Included VS Code Extensions
 

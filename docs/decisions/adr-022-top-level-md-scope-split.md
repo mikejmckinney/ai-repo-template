@@ -30,7 +30,7 @@ The three top-level files have **non-overlapping audiences** and **non-overlappi
 
 | File | Audience | Content | Link to others |
 |---|---|---|---|
-| `README.md` | First-time human contributors and the GitHub landing page | What the template is, why use it, how to install, top-level repo map (~12 rows), 3 setup options, verification, customization, limitations, future improvements, FAQ. Stays renderable on github.com. | Links *out* to `AI_REPO_GUIDE.md` for the full directory tree, agent-file catalog, workflow catalog, and onboarding prompts. Links to `AGENTS.md` only as "agents read this first." |
+| `README.md` | First-time human contributors and the GitHub landing page | What the template is, why use it, how to install, top-level repo map (~11 rows), 3 setup options, verification, customization, limitations, future improvements, FAQ. Stays renderable on github.com. | Links *out* to `AI_REPO_GUIDE.md` for the full directory tree, agent-file catalog, workflow catalog, and onboarding prompts. Links to `AGENTS.md` only as "agents read this first." |
 | `AI_REPO_GUIDE.md` | AI agents doing onboarding or needing a structured reference | Full ASCII directory tree, key files by purpose (agent instructions, context pack, prompts, scripts, issue templates, deployment configs, dev tools, CI/CD workflows), conventions, verification commands, onboarding prompts (first-time init + per-session). | Links to `AGENTS.md` for truth hierarchy and per-concern rules; defers to `.context/rules/**` for canonical process. |
 | `AGENTS.md` | All AI tools (auto-loaded from repo root) | Thin contract: handshake, truth hierarchy, link table to `.context/rules/process_*.md`, anchor-redirect table for legacy citations. ≤100 lines. | Links to `AI_REPO_GUIDE.md` and `.context/00_INDEX.md` for project overview; links to `.context/rules/process_*.md` for everything procedural. |
 
@@ -55,19 +55,19 @@ Snapshot of the duplication that existed before this ADR landed. "Canonical home
 | First-Time Repo Initialization prompt block | `AI_REPO_GUIDE.md` § Onboarding Prompts → First-time repo initialization | `README.md` § First-Time Repo Initialization | Agent-consumed prompt; README links to it |
 | Onboarding New Agent Sessions prompt block | `AI_REPO_GUIDE.md` § Onboarding Prompts → New agent session | `README.md` § Onboarding New Agent Sessions | Same |
 | `Best Practices` (when using template) | `README.md` (kept, slimmed) | — | Human-facing template-customization tips |
-| Repo map summary (12 rows, audience-oriented) | `README.md` § Repo map | — | Already audience-oriented; complements the AI_REPO_GUIDE tree |
+| Repo map summary (audience-oriented) | `README.md` § Repo map | — | Already audience-oriented; complements the AI_REPO_GUIDE tree |
 | Setup (3 options) | `README.md` § Setup | — | Human-facing |
 | Limitations / Future Improvements / FAQ | `README.md` | — | Required by `test.sh`; human-facing |
 
 **Net effect:**
 
 ```
-README.md         475 → ~210 lines  (remove agent-facing reference tables)
-AI_REPO_GUIDE.md  376 → ~390 lines  (absorb the two onboarding prompt blocks)
+README.md         475 →  222 lines  (remove agent-facing reference tables)
+AI_REPO_GUIDE.md  376 →  419 lines  (absorb the two onboarding prompt blocks)
 AGENTS.md          96 →   96 lines  (untouched)
 ```
 
-Tested with `wc -l` before/after; recorded in the PR description.
+Measured with `wc -l` before/after; recorded in the PR description.
 
 ## Options Considered
 
