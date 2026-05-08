@@ -228,7 +228,7 @@ fi
 
 # (b) latest_summary.md size cap — warn at >100 lines per Token Efficiency rule.
 if [[ -f ".context/sessions/latest_summary.md" ]]; then
-  ls_lines=$(wc -l < .context/sessions/latest_summary.md)
+  ls_lines=$(wc -l <.context/sessions/latest_summary.md)
   if [[ "$ls_lines" -le 100 ]]; then
     pass "latest_summary.md is within size cap ($ls_lines lines, cap 100)"
   else
@@ -243,8 +243,8 @@ if [[ -f ".context/sessions/latest_summary.md" ]] && command -v date >/dev/null 
   latest_date=$(grep -oE '^# Session: [0-9]{4}-[0-9]{2}-[0-9]{2}' .context/sessions/latest_summary.md | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | sort -r | head -1)
   if [[ -n "$latest_date" ]]; then
     if today_epoch=$(date -u +%s 2>/dev/null) \
-       && entry_epoch=$(date -u -d "$latest_date" +%s 2>/dev/null); then
-      age_days=$(( (today_epoch - entry_epoch) / 86400 ))
+      && entry_epoch=$(date -u -d "$latest_date" +%s 2>/dev/null); then
+      age_days=$(((today_epoch - entry_epoch) / 86400))
       if [[ "$age_days" -le 7 ]]; then
         pass "latest_summary.md most recent entry is fresh ($age_days days old)"
       else
