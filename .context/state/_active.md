@@ -36,6 +36,16 @@
 
 # Active Tasks
 
+## Task: feature/architect-253-agents-md-decomposition
+**Issue/PR**: #253
+**Role**: architect
+**PR**: #264
+**Blockers**: None
+**Next 1–3 actions**:
+1. Split AGENTS.md into thin contract + 9 new `.context/rules/process_*.md` files (parent #251, sibling #263); absorb §Ongoing maintenance into existing `process_doc_maintenance.md`; author new "Close-out PR discipline" rule in `process_session_state.md` (the one non-content-preserving change, ref #263)
+2. Write ADR-021 (decomposition rationale, handshake decision, anchor-redirect approach); update ADR-002 status; update CLAUDE.md / .github/copilot-instructions.md / AGENT.md pointers; update test.sh
+3. Push, open PR, run pr-resolve-all.md loop with `cap-override` until two clean iterations
+
 ## Task: feature/devops-220-phase2
 **Issue/PR**: #220 (Phase 2)
 **Role**: devops (lead) + architect (ADR-019) + docs + qa
