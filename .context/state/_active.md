@@ -57,7 +57,6 @@
 ## Task: feature/architect-252-orchestration-patterns-reference
 **Issue/PR**: #252 (parent #251)
 **Role**: architect
-**PR**: #259
 **Blockers**: None
 **Next 1–3 actions**:
 1. Open PR shipping `.context/rules/repo_orchestration_patterns.md` + ADR-020 + wiring (AGENTS link, ownership row, critic/judge refs, test.sh assertion, doc-sync trigger row)

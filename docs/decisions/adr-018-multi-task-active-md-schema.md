@@ -215,7 +215,7 @@ a follow-up if drift recurs).
 **Why not a new ADR**: the field is additive, doesn't change the
 section-ownership key, doesn't affect merge semantics (per-section commute
 behavior is unchanged), and doesn't supersede any prior decision. It
-clarifies a structural-ambiguity flagged on PR #259 (Codex misread the
+clarifies a structural ambiguity flagged on PR #259 (Codex misread the
 `pr-NNN` lock title as a PR number when it was the parent issue number) by
 making the PR linkage a first-class field instead of leaving it to the
 hidden `<!-- managed-for-pr:NNN -->` automation comment.
@@ -225,10 +225,15 @@ comment is the auto-updater's audit trail and remains the source of truth
 for automation. The `PR:` field is the human-readable mirror — same end
 state, but readable without parsing HTML comments.
 
-**Doc-sync**: future schema edits to either `coordination.md` lock template
-or `_active.md` per-section schema must update the other in lockstep, per
-the trigger rows added to `.context/rules/process_doc_maintenance.md` in
-the same PR.
+**Doc-sync**: future schema edits to either `coordination.md` lock
+template or `_active.md` per-section schema must update **all** the
+following in lockstep — the other state file's schema, the cadence
+enumeration in `.context/state/README.md`, the `Suggested lock block`
+generator in `.github/workflows/agent-coordination-sync.yml`, and an
+amendment block on this ADR (additive only; breaking changes require a
+successor ADR per the non-breaking-additions provision above). The
+trigger rows added to `.context/rules/process_doc_maintenance.md` in the
+same PR enumerate the full list and are enforced by Judge at diff-gate.
 
 ## References
 
