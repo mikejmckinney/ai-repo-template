@@ -260,7 +260,7 @@ These describe failure modes the orchestration layer is vulnerable to. Reviewers
 - A test or workflow failure traces back to a string mismatch between two files that should agree.
 
 **Currently triggered by**:
-- Pipeline labels (`copilot:ready`, `copilot:queued`, `copilot:in-progress`, `copilot:budget-paused`, `copilot:daily-cap-hit`, `auto-merge`, `claude-fix`, `copilot-relay`, `agent-complete`, `needs-human`, etc.) hardcoded in `scripts/setup.sh` and referenced in `.github/workflows/*.yml`, `docs/guides/agent-pipeline.md`, `AGENTS.md`, and rule files.
+- Pipeline labels (`copilot:ready`, `copilot:queued`, `copilot:in-progress`, `copilot:budget-paused`, `copilot:daily-cap-hit`, `cap-override`, `auto-merge`, `claude-fix`, `copilot-relay`, `agent-complete`, `needs-human`, etc.) hardcoded in `scripts/setup.sh` and referenced in `.github/workflows/*.yml`, `docs/guides/agent-pipeline.md`, `AGENTS.md`, and rule files.
 - Agent budget variables (`MAX_COPILOT_DAILY`, `MAX_COPILOT_CONCURRENT`, `PR_RESOLVE_MAX_ROUNDS`) set in `setup.sh`, referenced in workflows and docs.
 
 **Remediation**: factor identifiers into a YAML manifest under `.config/`; update consumers to read from the manifest (in scripts) or be validated against it (in workflows/docs via a `validate-label-references.sh`-style check). See `P8` for the broader pattern.
