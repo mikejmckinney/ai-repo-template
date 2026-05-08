@@ -63,6 +63,16 @@
 2. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
 3. Close out; remove this section in close-out commit
 
+## Task: claude/setup-context-verification-19clR
+**Issue/PR**: #260 (parent #251)
+**Role**: architect (cross-touch into PM-owned `.context/state/**` and Docs-owned paths — flagged in PR #261 body)
+**PR**: #261
+**Blockers**: None
+**Next 1–3 actions**:
+1. Address bot review feedback as it arrives (Gemini, Cursor Bugbot, Copilot)
+2. Run pr-resolve-all.md loop until convergence
+3. Close out; remove this section in close-out commit
+
 ## Task: feature/architect-227-pre-merge-verification
 **Issue/PR**: #227
 **Role**: architect (planning) → devops + docs (this PR ships all three)

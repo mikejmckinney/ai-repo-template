@@ -55,6 +55,24 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-261
+<!-- managed-for-pr:261 -->
+**Role**: architect
+**Session**: claude/setup-context-verification-19clR
+**PR**: #261
+**Claimed At**: 2026-05-08T03:13:31Z
+**Expected Duration**: 1 session
+**Paths**:
+- .context/rules/process_doc_maintenance.md
+- .context/state/README.md
+- .context/state/_active.md
+- .context/state/coordination.md
+- docs/decisions/adr-018-multi-task-active-md-schema.md
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
+**Notes**: Lock claimed retroactively in response to coordination-sync bot finding (PR #261 comment 4403011328) — should have been claimed before initial commit 939d369. Path overlap with pr-252-orchestration-patterns lock on `.context/state/_active.md` and `.context/state/coordination.md` is non-conflicting: pr-252 is merged (PR #259) and only this branch is editing those files now. This lock is itself a worked example of the new ADR-018 Amendment #1 `**PR**:` field that this PR introduces.
+
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:pending -->
 **Role**: architect
