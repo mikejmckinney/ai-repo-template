@@ -65,8 +65,12 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - docs/decisions/adr-020-orchestration-patterns-reference.md
 - docs/decisions/README.md
 - AGENTS.md
+- AI_REPO_GUIDE.md
+- install.sh
 - .github/agents/critic.agent.md
 - .github/agents/judge.agent.md
+- .claude/agents/critic.md
+- .claude/agents/judge.md
 - test.sh
 - .context/state/_active.md
 - .context/state/coordination.md
