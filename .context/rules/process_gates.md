@@ -41,7 +41,7 @@ to catch this failure mode.
 **Procedure**:
 
 1. Check the issue for an existing Pre-Flight Report comment matching the
-   template in `.github/agents/analyst.agent.md` → "Pre-Flight Validation".
+   template in [`.github/agents/analyst.agent.md`](../../.github/agents/analyst.agent.md) → "Pre-Flight Validation".
 2. If one exists with verdict **PASS**, proceed to Architect handoff as normal.
 3. If one exists with verdict **FAIL** or **HOLD**, stop. Do not implement.
    Address the mismatch or ambiguity first.
@@ -67,7 +67,7 @@ that's the signal to run pre-flight anyway.
 
 Before writing implementation code for any non-exempt issue, post an
 Implementation Plan as a comment on that issue using the template at
-`.github/PLAN_TEMPLATE.md`. The plan captures the implementation lens
+[`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md). The plan captures the implementation lens
 (approach, files, verification, risks) — complementary to the issue
 template which captures the *what* and *why*. See ADR-011.
 
@@ -82,7 +82,7 @@ the act of writing it forces the implementation thinking before code.
 **Procedure**:
 
 1. Pick up the issue. Read it end-to-end.
-2. Post a comment using `.github/PLAN_TEMPLATE.md`. Sections that don't
+2. Post a comment using [`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md). Sections that don't
    apply get `N/A — <one-phrase reason>`, never silent omission.
 3. Implement. No waiting on approval in v1 — but if your actual diff
    diverges from the plan by more than ~30% in file count or scope,
@@ -123,7 +123,7 @@ the lower-effort option, which defeats the gate. When a section
 genuinely doesn't apply, write `N/A — <reason>`. Explicit
 acknowledgment beats silent omission.
 
-**Relationship to the Analyst pre-flight gate**: ADR-005's Pre-Flight
+**Relationship to the [Analyst pre-flight gate](#analyst-pre-flight-gate-required-before-implementation)**: ADR-005's Pre-Flight
 Report (broadened by ADR-014 to ad-hoc deliverable issues) is a stricter
 gate that runs *in addition to* the plan requirement on any issue meeting
 the pre-flight trigger. It is not replaced or weakened by this requirement.

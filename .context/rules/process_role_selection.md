@@ -6,7 +6,7 @@
 ## Role selection (multi-agent workflow)
 
 This template supports parallel role-specialized agents. Before editing any file:
-1. Identify your role (or ask the user which role to adopt). Role definitions live in `.github/agents/*.agent.md` — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs.
+1. Identify your role (or ask the user which role to adopt). Role definitions live in [`.github/agents/*.agent.md`](../../.github/agents/) — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
 3. Read `.context/state/coordination.md` to see active locks and claim your task before editing.
 4. Stay inside your owned paths. Any cross-role edit requires a PM claim. **Never guess ownership silently** — escalate to PM.
@@ -22,7 +22,7 @@ This template supports parallel role-specialized agents. Before editing any file
 
 ## Onboarding procedure
 
-1. Read `/AI_REPO_GUIDE.md`.
+1. Read [`AI_REPO_GUIDE.md`](../../AI_REPO_GUIDE.md).
 2. Read `.context/00_INDEX.md` if it exists.
 3. Check `.context/state/_active.md` or `task_*.md` for cognitive handoff from previous sessions.
-4. If AI_REPO_GUIDE.md missing or stale: follow `.github/prompts/repo-onboarding.md` to rebuild context.
+4. If AI_REPO_GUIDE.md missing or stale: follow [`.github/prompts/repo-onboarding.md`](../../.github/prompts/repo-onboarding.md) to rebuild context.

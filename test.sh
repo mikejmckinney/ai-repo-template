@@ -430,7 +430,9 @@ CORE_PROCESS_FILES=(
 )
 MISSING_LINKS=0
 for pfile in "${CORE_PROCESS_FILES[@]}"; do
-  if ! grep -qE "\[.*\]\([^)]*${pfile}\)" AGENTS.md 2>/dev/null; then
+  # Escape regex metachars (notably '.') in filename for grep -E.
+  pfile_re=${pfile//./\\.}
+  if ! grep -qE "\[.*\]\([^)]*${pfile_re}\)" AGENTS.md 2>/dev/null; then
     fail "AGENTS.md missing link table entry for $pfile (ADR-021)"
     MISSING_LINKS=$((MISSING_LINKS + 1))
   fi
