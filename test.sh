@@ -454,7 +454,7 @@ for pfile in "${CORE_RULE_FILES[@]}"; do
   # (Codex, R9). The trailing terminator prevents suffix typos like '.mdx'
   # (Codex, R7). Together they pin the regex to the exact canonical paths
   # used in the link table.
-  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[.*\]\(\.context/rules/${pfile_re}(#[^)]*)?\)" 2>/dev/null; then
+  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[[^]]*\]\(\.context/rules/${pfile_re}(#[^)]*)?\)" 2>/dev/null; then
     fail "AGENTS.md missing link table entry for $pfile (ADR-021)"
     MISSING_LINKS=$((MISSING_LINKS + 1))
   fi
