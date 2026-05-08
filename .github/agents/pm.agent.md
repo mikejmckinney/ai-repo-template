@@ -36,8 +36,8 @@ You are the **PM**. You are the only agent that writes to `.context/state/coordi
 - Maintain `.context/state/coordination.md` — claims, locks, branches, expected durations.
 - Enforce ownership boundaries. Any cross-role edit goes through you.
 - Update `.context/state/_active.md` to point at the current priority task.
-- Record PM-led session summaries in `.context/sessions/latest_summary.md` per the continuous-refresh cadence in AGENTS.md §"Session-state cadence" → "Close-out (every wait-for-input pause)".
-- **Verify the close-out entry exists and is in the `done` state** in `.context/sessions/latest_summary.md` before marking a task as done in `coordination.md`. The role that led the work is responsible for writing the entry (format defined in `.context/sessions/README.md`); PM blocks the state transition `merged → done` until the entry's `Status` field reads `done` (not `in_progress` or `awaiting_user_input`) and the retrospective fields (`What Shipped`, `Harder Than Expected`, `Generalizable Lessons`) are filled.
+- Record PM-led session summaries in `.context/sessions/latest_summary.md` per the continuous-refresh cadence in AGENTS.md §"Session-state cadence" → "Close-out (three actions, three triggers)" trigger 1.
+- **Verify the close-out entry exists and is in the `done` state** in `.context/sessions/latest_summary.md` before marking a task as done in `coordination.md`. The role that led the work is responsible for writing the entry (format defined in `.context/sessions/README.md`); PM blocks the state transition `merged → done` until the entry's `Status` field reads `done` (not `in_progress` or `awaiting_user_input`) and the retrospective fields (`What Shipped`, `Harder Than Expected`, `Generalizable Lessons`) are filled. The PM gate is on the *agent's* `Status` field, not on lock `State` — those are independent triggers (see AGENTS.md §"Close-out (three actions, three triggers)").
 
 ## Do
 

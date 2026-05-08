@@ -49,7 +49,9 @@ Each entry uses the canonical structure below. The fields are filled in progress
 
 - **Required at session start**: the header + `Status` + `Started`.
 - **Updated at every wait-for-input pause**: `Status`, `What Was Accomplished`, `Files Modified`, `Open Items / Next`.
-- **Filled at genuine task close-out** (when the agent reports completion with no further actions queued): `What Shipped`, `Harder Than Expected`, `Generalizable Lessons`, and `Status` flips to `done`.
+- **Filled at genuine task close-out** (when the agent has fully *left the work* — session-end, role-handoff, or PR fully closed/merged): `What Shipped`, `Harder Than Expected`, `Generalizable Lessons`, and `Status` flips to `done`.
+
+The `Status` field tracks the **agent's** state, not the PR state. `done` means the agent has nothing further queued and is leaving the work; the PR may still be open awaiting human merge. PR state lives on the matching `coordination.md` lock's `**State**:` field, which has its own trigger (PR close/merge) — see AGENTS.md §"Session-state cadence" → "Close-out (three actions, three triggers)".
 
 ```markdown
 # Session: <YYYY-MM-DD> — <branch-or-task-id> — <role>

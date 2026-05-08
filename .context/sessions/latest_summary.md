@@ -2,39 +2,41 @@
 
 # Session: 2026-05-08 — claude/setup-context-verification-19clR — architect
 
-**Status**: done
+**Status**: awaiting_user_input
 **Issue/PR**: #260 (parent #251) / #261
 **Started**: 2026-05-08T03:13:31Z
 
 ## What Was Accomplished
-- Rewrote AGENTS.md §"Session-state cadence" close-out trigger: "session end OR task close-out" → "every wait-for-input pause," splitting working-log refresh (always) from lock release (genuine done only). Added plan-mode routing (Option B: capture in plan file, copy to `latest_summary.md` on `ExitPlanMode` approval) + explicit multi-role intra-session exclusion. Bumped AGENTS_MD_VERSION 11→12.
-- Aligned `.context/state/README.md` §Cadence and `.github/agents/pm.agent.md` close-out gate with the split (PM gate is now `Status: done`, not just entry existence).
-- Reconciled `.context/sessions/README.md` two competing templates ("Session Summary Template" + "Close-out entry") into a single canonical Working-Log Template. Made the rotation rule explicit (rename or copy at new-agent start, mid-session at discretion).
-- Rotated the bloated `latest_summary.md` (60+ lines, 5 stacked close-outs from 2026-05-04 through 2026-05-09) → `2026-05-08_archived-stacked-closeouts.md` via `git mv`.
-- Added 10 sessions/ hygiene checks to `test.sh` (canonical-template field grep + rotation-rule subsection + size cap + freshness warning). Baseline 333 → 343 passing; 2 pre-existing environmental failures unchanged.
-- Added §"PM ownership carve-out" to `.context/rules/agent_ownership.md` clarifying agent-self / PM-backstop split for `.context/state/**`.
+- Initial close-out commit 669788b: shipped the cadence-trigger rewrite (every wait-for-input pause), reconciled sessions/ template, rotated `latest_summary.md` to a date-stamped archive, added 10 hygiene checks to `test.sh`, added §"PM ownership carve-out" to `agent_ownership.md`. AGENTS_MD_VERSION 11→12.
+- Lint-fix commit a9680cc: three shfmt formatting fixes in the test.sh additions.
+- Gemini test-fix commit a5479c2: extended the Working-Log Template hygiene check to include `**Status**` / `**Issue/PR**` / `**Started**` field markers (343 → 346 passing).
+- Three-trigger revision (this commit, in-progress): rewrote AGENTS.md §"Session-state cadence" again. Codex P1 finding on AGENTS.md:273 + earlier P2 finding on coordination.md:266 caught the original two-trigger split's correctness bug — setting lock `**State**: merged` at agent-done conflates "agent finished" with "PR merged." New design splits close-out into three independent triggers: (1) working-log refresh = every wait-for-input pause; (2) `_active.md` `## Task:` removal = when agent leaves the work; (3) lock release-with-State=merged = when PR actually closes/merges (gated on the on-close webhook, not agent-done). AGENTS_MD_VERSION 12→13.
+- Reverted the premature pr-261 close-out: lock returned to Active Locks with `State: peer_review`; `## Task:` section restored in `_active.md`. Lock will move to Recent History with `State: merged` only when this PR actually merges.
+- Two Gemini medium findings on test.sh also bundled in: (a) scoped the template-field check to the Working-Log Template section via awk-bounded extraction (test.sh:222) so field strings outside the template don't falsely satisfy the assertion; (b) simplified the latest_date pipeline to a single `grep -E … | cut -d' ' -f3` (test.sh:246).
+- Added a new test.sh invariant check forbidding `**State**: merged` inside Active Locks — directly enforces trigger 3's contract so the same Codex finding cannot recur.
 
 ## What Shipped
-The cadence trigger no longer permits "I'll write the summary later" deferral — working-log refresh is mandatory at every wait-for-input pause, and the discipline survives plan-mode (routed through the plan file) and intra-session role transitions (skipped at that boundary). The sessions/ directory has a single canonical template and an explicit rotation rule, fixing the format drift that produced 60+ lines of stacked close-outs in `latest_summary.md`.
+*(filled at genuine task close-out — agent has not yet fully left the work; bot reviews still landing)*
 
 ## Harder Than Expected
-Plan went through three rounds of user pushback before landing: under-specified trigger → unhandled sessions/ rotation drift → plan-mode exceptions read as loopholes. Each round tightened the design — final shape (over-fire on every pause + working-log/lock-release split + Option B plan-mode routing) is materially better than the first draft. Postmortem-001 root cause #4 (over-literal reading of "post-merge") is the failure mode the new wording is engineered against.
+The original two-trigger split was a partial design. Codex P1 caught the conflation between "agent done" and "PR merged" that was baked into the rule wording — the lock `**State**` value can only be `merged` when the branch actually merged, but the rule instructed agents to set it at agent-done. The fix splits close-out's three actions across three independent triggers, decoupling the agent's `Status` field (in `latest_summary.md`) from the lock's `State` field (in `coordination.md`). This is the design the existing `.github/workflows/agent-coordination-sync.yml` on-close webhook was already built around; the rule just wasn't using it.
 
 ## Generalizable Lessons
-When proposing a rule rewrite, surface second-order effects (re-acquisition friction, file-format drift, exception loopholes) before recommending wording — the user's pushback on each was load-bearing for the final shape. The rule remains voluntary; cheapest deterministic enforcement is `make closeout` — filed as R5 follow-up.
+*(filled at genuine task close-out)*
 
 ## Files Modified
-- `AGENTS.md` — trigger rewrite + AGENTS_MD_VERSION/handshake bump
-- `.context/state/README.md` — §Cadence Cleanup bullet
-- `.github/agents/pm.agent.md` — close-out gate updated
-- `.context/sessions/README.md` — single canonical template + rotation rule
-- `.context/sessions/latest_summary.md` — this fresh entry (post-rotation)
-- `.context/sessions/2026-05-08_archived-stacked-closeouts.md` — archive of pre-rotation contents
-- `.context/rules/agent_ownership.md` — §"PM ownership carve-out"
-- `test.sh` — 10 new sessions/ hygiene checks
-- `.context/state/_active.md` — removed `## Task: claude/setup-context-verification-19clR` section (close-out)
-- `.context/state/coordination.md` — moved pr-261 lock to Recent History (close-out)
+- `AGENTS.md` — three-trigger rewrite + AGENTS_MD_VERSION 12→13 + handshake bump
+- `.context/state/README.md` — Cleanup bullet aligned with three-trigger split
+- `.github/agents/pm.agent.md` — section reference updated; PM-gate clarification
+- `.context/sessions/README.md` — Status field clarified as agent-state (decoupled from PR state)
+- `.context/sessions/latest_summary.md` — this entry, ongoing
+- `.context/sessions/2026-05-08_archived-stacked-closeouts.md` — archive of pre-rotation contents (from 669788b)
+- `.context/rules/agent_ownership.md` — §"PM ownership carve-out" (from 669788b)
+- `.context/state/_active.md` — `## Task: claude/setup-context-verification-19clR` section restored
+- `.context/state/coordination.md` — pr-261 lock returned to Active Locks with State: peer_review
+- `test.sh` — Active-Locks-State-merged invariant + Gemini scoping + Gemini pipeline simplification
 
 ## Open Items / Next
-- R5 follow-up: file issue for `make closeout` enforcement target. Reference postmortem-001 root cause #3.
-- Stale locks (pr-252-orchestration-patterns, pr-220-phase2, pr-229-phase{1,1.5,3,4}, pr-228, pr-225) remain — out of scope per existing PM Notes deferral; PM reconciliation (daily 09:00 UTC) is the next escalation.
+- Wait for any further bot review feedback on the three-trigger commit; respond as findings land.
+- Reply on and resolve the 5 outstanding bot threads (Codex P1+P2, Gemini test.sh:222, test.sh:246, plus the original Gemini test.sh:219 fixed in a5479c2).
+- Lock release + `## Task:` removal fire when the user merges PR #261, per the new trigger 3.

@@ -56,6 +56,31 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-261
+<!-- managed-for-pr:261 -->
+**Role**: architect
+**Session**: claude/setup-context-verification-19clR
+**PR**: #261
+**Claimed At**: 2026-05-08T03:13:31Z
+**Expected Duration**: 1 session (extended for cadence-rewrite review loop)
+**Paths**:
+- AGENTS.md
+- .context/state/README.md
+- .context/state/_active.md
+- .context/state/coordination.md
+- .context/sessions/README.md
+- .context/sessions/latest_summary.md
+- .context/sessions/2026-05-08_archived-stacked-closeouts.md
+- .context/rules/agent_ownership.md
+- .context/rules/process_doc_maintenance.md
+- .github/agents/pm.agent.md
+- docs/decisions/adr-018-multi-task-active-md-schema.md
+- test.sh
+**Depends On**: none
+**Blocks**: none
+**State**: peer_review
+**Notes**: Lock returned to Active Locks 2026-05-08 in response to Codex P1 finding (PR #261 review on a5479c2; thread on AGENTS.md:273) and the prior P2 finding on coordination.md:266. The earlier close-out commit (669788b) prematurely moved this lock to Recent History with `State: merged` while the PR was still open and bot reviews were still landing — a correctness bug because the AGENTS.md cadence rule it was following conflated three different actions under one trigger. The cadence-rule rewrite in this same PR splits close-out into three independent triggers (working-log refresh / `_active.md` task removal / lock release-on-PR-close). State: peer_review reflects the active bot review loop. Lock will move to Recent History with `State: merged` only when the PR actually merges (per the new trigger 3).
+
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:259 -->
 **Role**: architect
@@ -239,31 +264,6 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## Recent History
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
-
-## Lock: pr-261
-<!-- managed-for-pr:261 -->
-**Role**: architect
-**Session**: claude/setup-context-verification-19clR
-**PR**: #261
-**Claimed At**: 2026-05-08T03:13:31Z
-**Expected Duration**: 1 session
-**Paths**:
-- AGENTS.md
-- .context/state/README.md
-- .context/state/_active.md
-- .context/state/coordination.md
-- .context/sessions/README.md
-- .context/sessions/latest_summary.md
-- .context/sessions/2026-05-08_archived-stacked-closeouts.md
-- .context/rules/agent_ownership.md
-- .context/rules/process_doc_maintenance.md
-- .github/agents/pm.agent.md
-- docs/decisions/adr-018-multi-task-active-md-schema.md
-- test.sh
-**Depends On**: none
-**Blocks**: none
-**State**: merged
-**Result**: Close-out 2026-05-08. Shipped: cadence-trigger rewrite (every wait-for-input pause) splitting working-log refresh from lock release; sessions/ template reconciliation + explicit rotation rule; latest_summary.md rotated to date-stamped archive; 10 new test.sh hygiene checks (333 → 343 passing). AGENTS_MD_VERSION 11→12. PR #261 awaiting human merge.
 
 ## Lock: pr-216
 <!-- managed-for-pr:216 -->
