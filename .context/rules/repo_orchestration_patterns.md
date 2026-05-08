@@ -28,7 +28,7 @@ The 10 role files in `.github/agents/*.agent.md` and their mirrors in `.claude/a
 **Where it appears**:
 - `.github/agents/{analyst,architect,backend,critic,devops,docs,frontend,judge,pm,qa}.agent.md` — full role definitions (canonical strategy bodies)
 - `.claude/agents/<role>.md` — Claude Code registration pointers per ADR-003; only the `description:` frontmatter is byte-mirrored, the body delegates back to the canonical `.github/agents/<role>.agent.md`
-- Role selection logic referenced from `AGENTS.md` → §"Role selection" (after sub-issue 2 decomposition: `.context/rules/process_role_selection.md`)
+- Role selection logic referenced from `AGENTS.md` → §"Role selection" (planned for sub-issue 2 decomposition: `.context/rules/process_role_selection.md` — file does not yet exist; current selection logic lives inline in AGENTS.md)
 
 **What good usage looks like**: each role file has one focused responsibility (`H1` parity); roles don't reach into each other's owned paths (per `agent_ownership.md`); cross-role coordination goes through PM (see `P3`).
 
