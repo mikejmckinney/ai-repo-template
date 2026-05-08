@@ -431,9 +431,11 @@ CORE_RULE_FILES=(
   "process_doc_maintenance.md" "domain_code_quality.md" "repo_orchestration_patterns.md"
   "agent_ownership.md"
 )
-# Extract the "Per-concern process rules" section (from its header to the next
-# ## header, exclusive). awk is used instead of sed for portable behavior.
-LINK_TABLE_BLOCK=$(awk '/^## Per-concern process rules/{flag=1; next} /^## /{flag=0} flag' AGENTS.md)
+# Extract markdown table rows (lines starting with '|') from the
+# "Per-concern process rules" section. Restricting to table rows guards
+# against false-pass from prose mentions of the same filename within the
+# section (reported by codex on PR #264 R6).
+LINK_TABLE_BLOCK=$(awk '/^## Per-concern process rules/{flag=1; next} /^## /{flag=0} flag && /^\|/' AGENTS.md)
 MISSING_LINKS=0
 for pfile in "${CORE_RULE_FILES[@]}"; do
   # Escape regex metachars (notably '.') in filename for grep -E.
