@@ -4,7 +4,7 @@
      Below the header, each in-flight branch owns one `## Task: <branch-name>` section.
      Per-section schema: Issue/PR | Role | PR | Blockers | Next 1–3 actions. Cap ~20 lines per section.
        - Issue/PR: source issue number (`#NNN`) — what motivated the work.
-       - PR: landing PR number (`#MMM`), `pending` (branch open, PR not yet created), or `N/A` (no PR planned). Populate at PR-open. Mirrors the `**PR**:` field on the matching `coordination.md` lock.
+       - PR: landing PR number (`#MMM`), `pending` (branch open, PR not yet created), or `N/A` (no PR planned). Cadence: write `pending` when the section is created (branch exists, PR not yet opened); update to `#MMM` in the same commit/push that opens the PR; use `N/A` for branches that will not produce a PR. Mirrors the `**PR**:` field on the matching `coordination.md` lock.
      Agents edit ONLY their own section. Re-read the WHOLE file at every task boundary.
      Add a section when you claim a task; remove it as part of close-out (see .context/state/README.md "Cadence").
      Worked example (two parallel branches):

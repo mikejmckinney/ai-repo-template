@@ -74,7 +74,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Notes**: Lock claimed retroactively in response to coordination-sync bot finding (PR #261 comment 4403011328) — should have been claimed before initial commit 939d369. Path overlap with pr-252-orchestration-patterns lock on `.context/state/_active.md` and `.context/state/coordination.md` is non-conflicting: pr-252 is merged (PR #259) and only this branch is editing those files now. This lock is itself a worked example of the new ADR-018 Amendment #1 `**PR**:` field that this PR introduces.
 
 ## Lock: pr-252-orchestration-patterns
-<!-- managed-for-pr:pending -->
+<!-- managed-for-pr:259 -->
 **Role**: architect
 **Session**: feature/architect-252-orchestration-patterns-reference
 **PR**: #259
