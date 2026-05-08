@@ -236,6 +236,7 @@ MULTIAGENT_FILES=(
   ".context/rules/agent_ownership.md"
   ".context/rules/domain_code_quality.md"
   ".context/rules/process_doc_maintenance.md"
+  ".context/rules/repo_orchestration_patterns.md"
   ".context/state/coordination.md"
   ".context/state/feedback_template.md"
   ".context/state/handoff_template.md"

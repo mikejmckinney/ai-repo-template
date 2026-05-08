@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 9 -->
+<!-- AGENTS_MD_VERSION: 10 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one. -->
 
@@ -12,7 +12,7 @@
 
 ## Session handshake (read-receipt)
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v9` (matching
+substantive reply with the exact token `Session handshake v10` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -332,3 +332,4 @@ Universal SOLID / TDD / clean-code rules are defined as Hard rules H1–H8 and S
 - Prefer minimal diffs; avoid drive-by refactors.
 - No secrets/PII in logs.
 - Call out risk areas: authz, data migrations, concurrency, perf regressions.
+- For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), cite entries from `.context/rules/repo_orchestration_patterns.md` by ID (`P1`–`P8`, `AP1`–`AP8`) when flagging or blocking. The `H<n>`/`S<n>` rules in `domain_code_quality.md` cover code-layer review; `P<n>`/`AP<n>` cover orchestration-layer review.

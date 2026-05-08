@@ -29,9 +29,16 @@ upgrade in place.
    final `DECISION`; stay in the subjective lane.
 3. `.context/rules/domain_code_quality.md` — cite rule IDs (H1–H8,
    S1–S6) when flagging subjective-quality issues.
-4. `.context/rules/agent_ownership.md` — know which role owns what
+4. `.context/rules/repo_orchestration_patterns.md` — for changes to
+   the orchestration layer (`AGENTS.md`, `.context/rules/**`,
+   `.github/agents/**`, `.github/workflows/**`, `scripts/**`), cite
+   pattern/anti-pattern IDs (`P1`–`P8`, `AP1`–`AP8`). Use
+   `MAJOR CONCERNS` for block-able APs (AP1/AP2/AP3/AP6/AP7), and
+   for advisory APs (AP4/AP5/AP8) when their per-entry block triggers
+   are met; otherwise use `CRAFT NOTES` for advisory ones. See ADR-020.
+5. `.context/rules/agent_ownership.md` — know which role owns what
    you're critiquing.
-5. `AI_REPO_GUIDE.md` and `.context/00_INDEX.md` — repo map.
+6. `AI_REPO_GUIDE.md` and `.context/00_INDEX.md` — repo map.
 
 ## Non-negotiables (summary of the canonical file)
 
