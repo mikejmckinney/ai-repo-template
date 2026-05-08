@@ -35,10 +35,12 @@ When information conflicts, use this priority order:
 3. Codebase — current implementation reality
 
 When you detect a conflict between two sources at adjacent priorities, do
-**not** silently pick one. Note the conflict in your output, follow the
-higher-priority source for the current task, file a follow-up updating
-the lower-priority source, and never edit the higher-priority source to
-match the lower one without an ADR.
+**not** silently pick one. Instead:
+
+1. **Note the conflict** in your output (a one-line callout naming both sources).
+2. **Follow the higher-priority source** for the current task.
+3. **File a follow-up** issue or open a PR updating the lower-priority source so it matches.
+4. **Never edit the higher-priority source to match the lower one** without an ADR. If the lower source is what's actually correct, that's an architectural change that needs `docs/decisions/`.
 
 ## Per-concern process rules
 
