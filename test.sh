@@ -421,7 +421,7 @@ fi
 # Check thin AGENTS.md links to per-concern process_*.md files (ADR-021).
 # Rationale: hard-coded contract assertion per repo convention. Limitation: regex
 # matches standard markdown link syntax `[label](file)`; assumes no nested parens.
-CORE_PROCESS_FILES=(
+CORE_RULE_FILES=(
   "process_template_detection.md" "process_critical_thinking.md" "process_work_style.md"
   "process_clarification.md" "process_role_selection.md" "process_gates.md"
   "process_session_state.md" "process_pr_completion.md" "process_model_tier.md"
@@ -429,7 +429,7 @@ CORE_PROCESS_FILES=(
   "agent_ownership.md"
 )
 MISSING_LINKS=0
-for pfile in "${CORE_PROCESS_FILES[@]}"; do
+for pfile in "${CORE_RULE_FILES[@]}"; do
   # Escape regex metachars (notably '.') in filename for grep -E.
   pfile_re=${pfile//./\\.}
   if ! grep -qE "\[.*\]\([^)]*${pfile_re}\)" AGENTS.md 2>/dev/null; then
