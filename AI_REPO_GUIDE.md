@@ -52,7 +52,8 @@ bash install.sh
 │   │   ├── README.md
 │   │   ├── agent_ownership.md
 │   │   ├── domain_code_quality.md
-│   │   └── process_doc_maintenance.md
+│   │   ├── process_doc_maintenance.md
+│   │   └── repo_orchestration_patterns.md
 │   ├── sessions/             # Session history for handoff
 │   │   ├── README.md
 │   │   └── latest_summary.md
