@@ -28,7 +28,7 @@
 
 ## Files Modified
 - `README.md` — trim agent-facing tables; keep human onboarding (475 → 222 lines)
-- `AI_REPO_GUIDE.md` — add `## Onboarding Prompts` section (376 → 422 lines)
+- `AI_REPO_GUIDE.md` — add `## Onboarding Prompts` section (376 → 419 lines)
 - `docs/decisions/adr-022-top-level-md-scope-split.md` — new ADR with decision rule + audit table
 - `docs/decisions/adr-002-agents-md-ownership.md` — Status updated to note ADR-022 extension
 - `docs/decisions/README.md` — ADR index gains ADR-022 row
