@@ -52,6 +52,30 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-252-orchestration-patterns
+<!-- managed-for-pr:pending -->
+**Role**: architect
+**Session**: feature/architect-252-orchestration-patterns-reference
+**Claimed At**: 2026-05-08T00:00:00Z
+**Expected Duration**: 1 session
+**Paths**:
+- .context/rules/repo_orchestration_patterns.md
+- .context/rules/agent_ownership.md
+- .context/rules/process_doc_maintenance.md
+- docs/decisions/adr-020-orchestration-patterns-reference.md
+- docs/decisions/README.md
+- AGENTS.md
+- .github/agents/critic.agent.md
+- .github/agents/judge.agent.md
+- test.sh
+- .context/state/_active.md
+- .context/state/coordination.md
+- .context/sessions/latest_summary.md
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
+**Notes**: Sub-issue #252 of parent epic #251. Path overlap with stale locks (test.sh, AGENTS.md, critic/judge agent files, _active.md, coordination.md) treated as non-conflicting — the older locks reference merged or open-PR work whose diffs do not touch the new content here.
+
 ## Lock: pr-220-phase2
 <!-- managed-for-pr:pending -->
 **Role**: devops

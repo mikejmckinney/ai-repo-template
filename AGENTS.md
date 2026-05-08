@@ -332,3 +332,4 @@ Universal SOLID / TDD / clean-code rules are defined as Hard rules H1–H8 and S
 - Prefer minimal diffs; avoid drive-by refactors.
 - No secrets/PII in logs.
 - Call out risk areas: authz, data migrations, concurrency, perf regressions.
+- For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), cite entries from `.context/rules/repo_orchestration_patterns.md` by ID (`P1`–`P8`, `AP1`–`AP8`) when flagging or blocking. The `H<n>`/`S<n>` rules in `domain_code_quality.md` cover code-layer review; `P<n>`/`AP<n>` cover orchestration-layer review.

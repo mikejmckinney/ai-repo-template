@@ -103,6 +103,7 @@ CONTEXT_FILES=(
   ".context/rules/README.md"
   ".context/rules/agent_ownership.md"
   ".context/rules/domain_code_quality.md"
+  ".context/rules/repo_orchestration_patterns.md"
   ".context/rules/process_doc_maintenance.md"
   ".context/sessions/README.md"
   ".context/sessions/latest_summary.md"
