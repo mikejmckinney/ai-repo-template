@@ -421,6 +421,9 @@ fi
 # Check thin AGENTS.md links to per-concern process_*.md files (ADR-021).
 # Rationale: hard-coded contract assertion per repo convention. Limitation: regex
 # matches standard markdown link syntax `[label](file)`; assumes no nested parens.
+# Scope is restricted to the "Per-concern process rules" section so an unrelated
+# pointer link elsewhere in the file (e.g. the Section-anchor redirects table)
+# can't mask a missing table row. Reported by codex on PR #264 R5.
 CORE_RULE_FILES=(
   "process_template_detection.md" "process_critical_thinking.md" "process_work_style.md"
   "process_clarification.md" "process_role_selection.md" "process_gates.md"
@@ -428,11 +431,14 @@ CORE_RULE_FILES=(
   "process_doc_maintenance.md" "domain_code_quality.md" "repo_orchestration_patterns.md"
   "agent_ownership.md"
 )
+# Extract the "Per-concern process rules" section (from its header to the next
+# ## header, exclusive). awk is used instead of sed for portable behavior.
+LINK_TABLE_BLOCK=$(awk '/^## Per-concern process rules/{flag=1; next} /^## /{flag=0} flag' AGENTS.md)
 MISSING_LINKS=0
 for pfile in "${CORE_RULE_FILES[@]}"; do
   # Escape regex metachars (notably '.') in filename for grep -E.
   pfile_re=${pfile//./\\.}
-  if ! grep -qE "\[.*\]\([^)]*${pfile_re}\)" AGENTS.md 2>/dev/null; then
+  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[.*\]\([^)]*${pfile_re}\)" 2>/dev/null; then
     fail "AGENTS.md missing link table entry for $pfile (ADR-021)"
     MISSING_LINKS=$((MISSING_LINKS + 1))
   fi
