@@ -191,7 +191,7 @@ ADR-009's status remains `Accepted`; no `Superseded by` line is added.
 **Issue**: #260 (parent epic #251)
 **Type**: Additive (non-breaking) — uses the provision above; no new ADR.
 
-**Change**: Add an optional `**PR**: <#NNN | pending | N/A>` field to:
+**Change**: Add an optional `**PR**: <#MMM | pending | N/A>` field to:
 
 - `.context/state/coordination.md` `## Lock Template` (placed after `**Session**:`).
 - `.context/state/_active.md` per-section schema (`## Task: <branch>` body — placed after `**Role**:`).

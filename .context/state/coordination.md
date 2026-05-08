@@ -41,7 +41,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## Lock: <task-id>
 **Role**: <analyst|architect|frontend|backend|pm|qa|devops|docs|critic|judge>
 **Session**: <branch name or agent session id>
-**PR**: <#NNN | pending | N/A>
+**PR**: <#MMM | pending | N/A>
 **Claimed At**: <ISO-8601>
 **Expected Duration**: <e.g., 30m, 2h>
 **Paths**:
