@@ -31,7 +31,8 @@ canonical file before doing anything.
    per-entry trigger conditions — e.g., `AP4` blocks when User outcome
    is missing/inverted; `AP5` blocks on materially extended canonical
    read list without an ADR; `AP8` blocks when the workflow has caused
-   a postmortem). See ADR-020.
+   a postmortem or is being materially extended without extracting
+   logic). See ADR-020.
 7. `AI_REPO_GUIDE.md` — canonical repo map for validation claims.
 
 ## Non-negotiables (summary of the canonical file)

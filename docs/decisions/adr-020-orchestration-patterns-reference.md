@@ -66,7 +66,7 @@ Each anti-pattern entry is designated either **block-able** (Judge stops the PR 
 | AP5 | Sequential Coupling | Advisory | Read-list length is judgment-dependent. Judge blocks only on material extensions of the canonical read list without an ADR. |
 | AP6 | Single-Writer Shared State | Block-able | Schema check is mechanical: "does this concurrent-write surface have an owner-key?" |
 | AP7 | Magic String Sprawl | Block-able | Mechanical: did the PR update all known consumers when introducing/renaming an identifier? |
-| AP8 | Workflow-as-Application | Advisory | "Trigger filter vs business logic" line is judgment-dependent; only blocks on postmortem-traceable cases. |
+| AP8 | Workflow-as-Application | Advisory | "Trigger filter vs business logic" line is judgment-dependent; blocks on postmortem-traceable cases or material extensions without extraction. |
 
 Designations may be tightened (advisory → block-able) by a follow-up ADR if local conventions warrant. Loosening (block-able → advisory) requires an ADR ratifying why the failure mode no longer warrants stopping at diff-gate.
 
