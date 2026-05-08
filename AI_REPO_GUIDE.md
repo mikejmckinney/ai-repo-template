@@ -173,6 +173,7 @@ bash install.sh
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
+| `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P8`) and anti-patterns (`AP1`–`AP8`) cited by Critic and Judge at diff-gate; ratified in ADR-020 |
 | `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
 | `.context/state/feedback_template.md` | Stakeholder feedback capture template |
 | `.context/state/handoff_template.md` | Cross-session/cross-role handoff template (used at ~30 turns or before role swap) |
