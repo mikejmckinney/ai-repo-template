@@ -153,7 +153,7 @@ These describe failure modes the orchestration layer is vulnerable to. Reviewers
 - File requires a version-canary or freshness mechanism to detect stale copies — the canary itself is evidence the file changes too often for its size.
 - Re-reading the file end-to-end takes longer than 5 minutes for the average reader.
 
-**Currently triggered by**: `AGENTS.md` (~330+ lines, version-canary in active use, 18+ concerns). Tracked in sub-issue 2 of parent epic #251.
+**Currently triggered by**: `AGENTS.md` (~330+ lines, version-canary at `AGENTS.md:3` in active use, 18+ concerns). Tracked in sub-issue 2 of parent epic #251.
 
 **Remediation**: decompose by concern into focused files. Top-level file becomes a thin contract + link table. Document the decomposition in an ADR. Re-evaluate any version-canary mechanism after decomposition; if the new top-level file is small and stable, the canary may not be needed.
 
