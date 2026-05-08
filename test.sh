@@ -440,13 +440,13 @@ MISSING_LINKS=0
 for pfile in "${CORE_RULE_FILES[@]}"; do
   # Escape regex metachars (notably '.') in filename for grep -E.
   pfile_re=${pfile//./\\.}
-  # Require '/' immediately before the filename and ')' or '#anchor)' immediately
-  # after. The leading '/' anchor prevents prefix-match false-positives like
-  # 'old_process_gates.md' matching 'process_gates.md' (Gemini, R8). The trailing
-  # terminator prevents suffix-match false-positives like '.mdx' or '.md.bak'
-  # (Codex, R7). Together they pin the regex to canonical paths of the form
-  # `.context/rules/<file>.md` exactly.
-  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[.*\]\([^)]*/${pfile_re}(#[^)]*)?\)" 2>/dev/null; then
+  # Require the canonical link target `.context/rules/<file>.md` exactly,
+  # optionally followed by '#anchor', then ')'. The leading '.context/rules/'
+  # prefix prevents wrong-directory false-positives like `docs/process_X.md`
+  # (Codex, R9). The trailing terminator prevents suffix typos like '.mdx'
+  # (Codex, R7). Together they pin the regex to the exact canonical paths
+  # used in the link table.
+  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[.*\]\(\.context/rules/${pfile_re}(#[^)]*)?\)" 2>/dev/null; then
     fail "AGENTS.md missing link table entry for $pfile (ADR-021)"
     MISSING_LINKS=$((MISSING_LINKS + 1))
   fi
