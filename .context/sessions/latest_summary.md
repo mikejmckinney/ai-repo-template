@@ -8,9 +8,9 @@
 
 ## What Was Accomplished
 - Merged PR #272 (`scripts/lib/{logging,assertions}.sh` extraction — issue #255 Phase 4a) at squash commit `76e48b7` after the pr-resolve-all loop converged with two consecutive clean rounds (R3 + R4). 4 review rounds total: R1 (5 distinct findings — `log_error` stderr regression, source-path example, set-u rationale, README convention, AI_REPO_GUIDE doc-sync), R2 (1 finding — counter env-poisoning regression), R3+R4 clean.
-- Dispatched the chore close-out per ADR-007: rotated previous session entry (`devops-268` working log) to `.context/sessions/2026-05-09_archived-269.md` using the new **preferred Copy form** (PR #271 / issue #270) instead of `git mv` rename — first session to dogfood the rotation-rule update.
+- Dispatched the chore close-out per ADR-007: rotated previous session entry (`devops-268` working log) to `.context/sessions/2026-05-09_archived-269.md` using the new Copy form (PR #271 / issue #270) instead of `git mv` rename. Per `git log --oneline --since=2026-05-08 -- .context/sessions/` (uncertain — first to dogfood the rotation-rule update; not independently verified across all post-#271 sessions).
 - Replaced `latest_summary.md` body in place with this completion entry.
-- No `_active.md` Task section to remove and no `coordination.md` lock to release: PR #272 was opened without a formal claim (a separate process gap; tracked outside this PR).
+- No `_active.md` Task section to remove and no Active Lock to release for `feature/devops-255-phase4a-extract-helpers`: that branch did not appear in `## Active Locks` of `.context/state/coordination.md` at PR-272 merge time (uncertain — process gap rather than verified intent). The Recent History entry for `pr-255-phase4a` was added retroactively in this PR so the coordination board reflects the merged work; check 1b is satisfied by that `coordination.md` edit.
 
 ## What Shipped
 - `scripts/lib/logging.sh` — color vars + `log_info`/`log_warn`/`log_error`/`log_step` (4 consumers source it).
@@ -30,7 +30,8 @@
 ## Files Modified
 - `.context/sessions/latest_summary.md` (this entry, in-place rewrite per the new Copy rotation)
 - `.context/sessions/2026-05-09_archived-269.md` (rotation archive of previous entry)
+- `.context/state/coordination.md` (Recent History entry added retroactively for `pr-255-phase4a`)
 
 ## Open Items / Next
 - **Issue #255 Phases 4b/4c/4d** still open (Bats migration, `setup.sh` modularization, slim entry points). Phase 4a is the foundation; the next phase to attempt is 4b (Bats) since it can run independently of 4c.
-- **Process gap**: PR #272 was opened without a `coordination.md` lock or `_active.md` Task section. Two precedents now (this PR and PR #271). If a third occurs, file an issue to either tighten the gate or relax the requirement for small single-PR feature work.
+- **Process gap**: PR #272 was opened without a `coordination.md` Active Lock or `_active.md` Task section claim (uncertain — not verified against the full set of in-flight branches). Two precedents now (this PR's parent and PR #271). If a third occurs, file an issue to either tighten the gate or relax the requirement for small single-PR feature work.
