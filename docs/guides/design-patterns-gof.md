@@ -184,10 +184,12 @@ class Directory(FSNode):
 ```python
 def with_cache(fn):
     cache = {}
-    def wrapper(*args, **kwargs):
-        # Cache key omits kwargs for brevity; real use needs a
-        # hashable key built from both args and sorted kwargs.
-        if args not in cache: cache[args] = fn(*args, **kwargs)
+    def wrapper(*args):
+        # Positional-only for example clarity. A real cache that
+        # accepts **kwargs needs a hashable key like
+        # (args, tuple(sorted(kwargs.items()))) — or just use
+        # functools.lru_cache / functools.cache.
+        if args not in cache: cache[args] = fn(*args)
         return cache[args]
     return wrapper
 
