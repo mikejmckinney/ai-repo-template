@@ -5,39 +5,14 @@ tools: [Read, Grep, Glob, Write, Edit, WebFetch, Task]
 model: claude-opus-4-7
 ---
 
-# Architect (plan-only)
+# architect (Claude Code overlay)
 
-You are the Architect in this repo's role-specialized pipeline. Your full
-responsibilities, Do/Don't list, and output format live in the canonical
-role file. Treat this file as a thin registration pointer — read the
-canonical file before doing anything.
+> **Canonical role definition**: [`.agents/architect.md`](../../.agents/architect.md). This file is the
+> Claude Code native subagent registration overlay — only platform-specific
+> frontmatter (`name` casing, `tools` vocabulary, `model` pin) lives here. Do
+> not paraphrase or duplicate the role's responsibilities, Do/Don't list,
+> output format, or handoff rules; read them in the canonical file.
 
-## Mandatory reading before you act
-
-1. `.github/agents/architect.agent.md` — your full role definition.
-2. `AGENTS.md` — universal rules and truth hierarchy.
-3. `docs/guides/multi-agent-coordination.md` — how roles hand off.
-4. `.context/rules/agent_ownership.md` — the paths you own.
-5. `.context/state/coordination.md` — active claims (do not collide).
-6. `AI_REPO_GUIDE.md` and `.context/00_INDEX.md` — repo map.
-
-## Non-negotiables (summary of the canonical file)
-
-- **Plan-as-comment (ADR-011)**: before writing implementation code
-  (including for any ADR or roadmap-update PR) on a non-exempt issue,
-  post an Implementation Plan as an issue comment using
-  `.github/PLAN_TEMPLATE.md`. Skip only for ADR-011 exemptions:
-  `chore:no-plan` label, known automation bots, or revert PRs. This
-  is a separate artifact from the architectural PLAN you produce as
-  your output.
-- No implementation code. Plans, ADRs, architecture diagrams only.
-  Tiny illustrative snippets (≤ 10 lines) are OK only to clarify intent.
-- Every plan maps to acceptance criteria and an explicit file touch list.
-- Every plan goes through Judge plan-gate before dispatch.
-- Hand off to Judge, then PM, via the `Task` tool
-  (`subagent_type: judge`, then `subagent_type: pm`).
-
-## Output
-
-Follow the "Output Format" section of
-`.github/agents/architect.agent.md` exactly.
+See [`.agents/README.md`](../../.agents/README.md) for the canonical/overlay split rationale and
+[`docs/decisions/adr-023-shared-subagent-canonical.md`](../../docs/decisions/adr-023-shared-subagent-canonical.md) for the
+ADR.

@@ -71,3 +71,13 @@
 1. Open PR shipping ADR-016 + verify-pr.sh + matrix + sandbox playbook + Phase-3 codification
 2. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
 3. Close out; maintainer runs `gh repo create mikejmckinney/ai-repo-template-sandbox` per playbook
+
+## Task: feature/devops-248-shared-subagent-body
+**Issue/PR**: #248
+**Role**: devops (lead) + docs companion
+**PR**: pending
+**Blockers**: None (trigger override per Pre-Flight Report on issue)
+**Next 1–3 actions**:
+1. Build canonical `.agents/<role>.md` × 10 + per-platform JSON mappings + Python generator + 2 CI checks (stale + N-way mirror rewrite)
+2. Regenerate 20 overlays; update AGENTS.md, CLAUDE.md, copilot-instructions.md, agent_ownership.md, multi-agent-coordination.md, AI_REPO_GUIDE.md; add ADR + supersede ADR-003 in part
+3. Open PR with `cap-override`, run pr-resolve-all loop until 2 quiet iterations

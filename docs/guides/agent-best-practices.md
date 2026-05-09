@@ -38,7 +38,7 @@ Note: this is consistent with `pr-resolve-all.md`'s "Classify before fixing" Rou
 Run [`.github/prompts/pre-push-review.md`](../../.github/prompts/pre-push-review.md) before `git push` on any non-trivial diff. The prompt produces a single Markdown summary with three sections — Critic findings (MAJOR CONCERN or higher only), lint (`shellcheck` + `shfmt` + `actionlint` + `lint-shell-conventions.sh`) on changed files, and `./test.sh`. Push only when every section reports PASS.
 
 - **SHOULD** for any non-trivial diff (>50 LOC OR any `scripts/*.sh`, `.github/workflows/*.yml`, role file, or `AGENTS.md`/`CLAUDE.md`/`.github/copilot-instructions.md` change).
-- **MUST** for the DevOps role on shell/workflow changes — see `.github/agents/devops.agent.md` Do list.
+- **MUST** for the DevOps role on shell/workflow changes — see `.agents/devops.md` Do list.
 - **Why**: shifts subjective-quality findings from the post-push bot-review loop (which costs an agent round each time) to a single local pass. Phase 1 (`lint-and-format.yml`) handles the static class in CI; this prompt handles the subjective class locally before push.
 - **Out of scope (deliberate)**: a pre-push git hook is *not* installed in v1 (per ADR-013-style local-friction concerns) — the SHOULD/MUST in role files plus the runnable prompt is the lever.
 
@@ -194,9 +194,9 @@ Modern LLM providers offer prompt caching: long, stable prefixes (e.g., a full s
 
 The single biggest cache-friendliness lever is **stability of long prefixes**. This repo already does the right things:
 
-- `AGENTS.md` and `.github/agents/*.agent.md` change rarely; behavioral overrides go in role-scoped sections rather than rewriting the canonical text.
+- `AGENTS.md` and `.agents/*.md` change rarely; behavioral overrides go in role-scoped sections rather than rewriting the canonical text. Platform overlays (`.github/agents/`, `.claude/agents/`) are thin shims and only carry platform-specific frontmatter (ADR-023).
 - Role files cite shared rules by reference (`.context/rules/domain_code_quality.md` H1–H8, etc.) instead of copy-pasting them. Copy-paste defeats caching because each call inlines a slightly different snapshot.
-- The `description:` frontmatter line is byte-identical between `.github/agents/` and `.claude/agents/` mirrors (gated by `test.sh`), so multi-runner setups dispatch on the same hashable string.
+- The `description:` frontmatter line is byte-identical between the canonical `.agents/<role>.md` and every platform overlay (`.github/agents/`, `.claude/agents/`) — enforced by `scripts/checks/050-agent-mirror.sh` — so multi-runner setups dispatch on the same hashable string.
 
 ### What would *hurt* caching (don't do this)
 
@@ -220,7 +220,7 @@ If multiple agents work simultaneously (or a human and agent), task files can ha
 
 #### 0. Role-Based Path Ownership (Primary)
 
-The strongest defense is role-based path ownership. Each role in `.github/agents/*.agent.md` is assigned path globs in `.context/rules/agent_ownership.md`, and conflicts are greatly reduced when those globs are kept non-overlapping. In practice a few cases still need coordination: some path patterns may overlap (colocated test files, generated artifacts, lockfiles), and some files are intentionally shared or contested (for example, `.context/state/coordination.md` and `.context/rules/**`). Any cross-role edit must be claimed through the PM agent in `.context/state/coordination.md`. This is the primary mechanism — the fallbacks below mainly apply when two sessions of the **same role** overlap, or when work touches one of those shared/overlapping exceptions.
+The strongest defense is role-based path ownership. Each role in `.agents/<role>.md` (with platform overlays in `.github/agents/` and `.claude/agents/`) is assigned path globs in `.context/rules/agent_ownership.md`, and conflicts are greatly reduced when those globs are kept non-overlapping. In practice a few cases still need coordination: some path patterns may overlap (colocated test files, generated artifacts, lockfiles), and some files are intentionally shared or contested (for example, `.context/state/coordination.md` and `.context/rules/**`). Any cross-role edit must be claimed through the PM agent in `.context/state/coordination.md`. This is the primary mechanism — the fallbacks below mainly apply when two sessions of the **same role** overlap, or when work touches one of those shared/overlapping exceptions.
 
 #### 1. One Active Task at a Time
 

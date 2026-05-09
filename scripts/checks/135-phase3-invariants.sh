@@ -25,21 +25,23 @@ else
   fail "process_work_style.md missing pre-push-review.md SHOULD reference (issue #229 Phase 3)"
 fi
 
-# DevOps role MUSTs the prompt for shell/workflow changes.
-if grep -q 'pre-push-review.md' .github/agents/devops.agent.md 2>/dev/null \
-  && grep -q 'MUST' .github/agents/devops.agent.md 2>/dev/null; then
-  pass "devops.agent.md MUSTs pre-push-review.md for shell/workflow changes"
+# DevOps role MUSTs the prompt for shell/workflow changes. Role definition
+# lives at .agents/devops.md (canonical, ADR-023).
+if grep -q 'pre-push-review.md' .agents/devops.md 2>/dev/null \
+  && grep -q 'MUST' .agents/devops.md 2>/dev/null; then
+  pass ".agents/devops.md MUSTs pre-push-review.md for shell/workflow changes"
 else
-  fail "devops.agent.md missing pre-push-review.md MUST (issue #229 Phase 3)"
+  fail ".agents/devops.md missing pre-push-review.md MUST (issue #229 Phase 3)"
 fi
 
-# Critic role documents the three invocation surfaces.
-if grep -q 'PLAN-GATE' .github/agents/critic.agent.md 2>/dev/null \
-  && grep -q 'DIFF-GATE' .github/agents/critic.agent.md 2>/dev/null \
-  && grep -q 'PRE-PUSH' .github/agents/critic.agent.md 2>/dev/null; then
-  pass "critic.agent.md documents PLAN-GATE / DIFF-GATE / PRE-PUSH surfaces"
+# Critic role documents the three invocation surfaces. Role definition
+# lives at .agents/critic.md (canonical, ADR-023).
+if grep -q 'PLAN-GATE' .agents/critic.md 2>/dev/null \
+  && grep -q 'DIFF-GATE' .agents/critic.md 2>/dev/null \
+  && grep -q 'PRE-PUSH' .agents/critic.md 2>/dev/null; then
+  pass ".agents/critic.md documents PLAN-GATE / DIFF-GATE / PRE-PUSH surfaces"
 else
-  fail "critic.agent.md missing PRE-PUSH invocation surface (issue #229 Phase 3)"
+  fail ".agents/critic.md missing PRE-PUSH invocation surface (issue #229 Phase 3)"
 fi
 
 # Prompts index lists the new prompt.

@@ -6,7 +6,7 @@
 
 1. Before editing any file, find its path in the table below.
 2. If your role owns that path, proceed.
-3. If another role owns it, **stop** and escalate to the Project Manager (`.github/agents/pm.agent.md`). PM will either sequence the work or split the task.
+3. If another role owns it, **stop** and escalate to the Project Manager (`.agents/pm.md`). PM will either sequence the work or split the task.
 4. Record your claim in `.context/state/coordination.md` before you start editing.
 
 ## Ownership Table
@@ -40,8 +40,8 @@ this template for a new project:
 | QA         | `tests/**`, `e2e/**`                                                 | nothing                       |
 | DevOps     | .github/workflows/**, config/**, install.sh, test.sh, scripts/**, .pre-commit-config.yaml.template, .cursorignore | nothing                       |
 | Docs       | README.md, AI_REPO_GUIDE.md, CLAUDE.md, AGENT.md, docs/** (except docs/decisions/**, docs/postmortems/**, docs/research/**)  | nothing                       |
-| Judge      | nothing (review-only, `.github/agents/judge.agent.md`)               | nothing                       |
-| Critic     | nothing (review-only, `.github/agents/critic.agent.md`)              | nothing                       |
+| Judge      | nothing (review-only, `.agents/judge.md`)                            | nothing                       |
+| Critic     | nothing (review-only, `.agents/critic.md`)                           | nothing                       |
 
 ### PM ownership carve-out (`.context/state/**`)
 

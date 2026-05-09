@@ -13,7 +13,8 @@
 
 Before editing any file, identify your role (analyst, architect, judge, critic, pm, frontend, backend, qa, devops, docs) and consult:
 
-- [`.github/agents/<your-role>.agent.md`](agents/) — your responsibilities and Do / Don't list (canonical).
+- [`.agents/<your-role>.md`](../.agents/) — your full role definition (canonical, platform-agnostic; per ADR-023).
+- [`.github/agents/<your-role>.agent.md`](agents/) — Copilot SDK custom-agent registration overlay (frontmatter only; points to canonical).
 - [`.context/rules/agent_ownership.md`](../.context/rules/agent_ownership.md) — the canonical path-ownership map.
 - [`.context/rules/process_role_selection.md`](../.context/rules/process_role_selection.md) — multi-agent workflow protocol.
 - [`.context/state/coordination.md`](../.context/state/coordination.md) — live claim board and task state machine.

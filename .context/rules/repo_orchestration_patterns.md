@@ -1,6 +1,6 @@
 # Repo Orchestration Patterns
 
-> **Purpose**: Shared vocabulary for naming the patterns this template uses and the anti-patterns to watch for during review. Critic and Judge cite entries from this file by ID (`P1`–`P8`, `AP1`–`AP8`) when reviewing changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`).
+> **Purpose**: Shared vocabulary for naming the patterns this template uses and the anti-patterns to watch for during review. Critic and Judge cite entries from this file by ID (`P1`–`P8`, `AP1`–`AP8`) when reviewing changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.agents/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`).
 >
 > **Scope**: This file describes the *orchestration* layer of this template — multi-agent workflow, role definitions, rule files, gates, and coordination state. Code-layer patterns for downstream projects (CMMC enclave, FedRAMP OSCAL, etc.) live in [`docs/guides/design-patterns.md`](../../docs/guides/design-patterns.md) (sub-issue 5 of parent epic #251). The postmortem-derived entries in this file (`AP3`, `AP4`, `P7`) have code-layer counterparts there: [`CAP2`](../../docs/guides/design-patterns.md#cap2--implicit-contract), [`CAP1`](../../docs/guides/design-patterns.md#cap1--goal-substitution), and [`CP1`](../../docs/guides/design-patterns.md#cp1--owner-keyed-concurrent-state) respectively.
 
@@ -27,11 +27,12 @@ These describe the orchestration layer as it exists today. Changes that touch th
 
 ### P1 — Strategy (role specialization)
 
-The 10 role files in `.github/agents/*.agent.md` and their mirrors in `.claude/agents/*.md` are interchangeable strategies for a single abstract operation: "do work on this task in this repo." Each role specializes the strategy by frontmatter `description:` (when this role applies), `tools:` (what it can use), and body content (how it proceeds). Dispatchers (Copilot, Claude Code, manual selection) pick a role by matching user intent against `description:`.
+The 10 role files in `.agents/*.md` (canonical, platform-agnostic) are interchangeable strategies for a single abstract operation: "do work on this task in this repo." Each role specializes the strategy by frontmatter `description:` (when this role applies), `tools:` (what it can use, declared per platform in the overlays), and body content (how it proceeds). Dispatchers (Copilot, Claude Code, manual selection) pick a role by matching user intent against `description:`, with platform overlays in `.github/agents/` and `.claude/agents/` providing tool-vocabulary and `model:` translation per ADR-023.
 
 **Where it appears**:
-- `.github/agents/{analyst,architect,backend,critic,devops,docs,frontend,judge,pm,qa}.agent.md` — full role definitions (canonical strategy bodies)
-- `.claude/agents/<role>.md` — Claude Code registration pointers per ADR-003; only the `description:` frontmatter is byte-mirrored, the body delegates back to the canonical `.github/agents/<role>.agent.md`
+- `.agents/{analyst,architect,backend,critic,devops,docs,frontend,judge,pm,qa}.md` — canonical strategy bodies (platform-agnostic; ADR-023)
+- `.github/agents/<role>.agent.md` — Copilot SDK registration overlay (frontmatter only; pointer body)
+- `.claude/agents/<role>.md` — Claude Code registration overlay (frontmatter only; pointer body)
 - Role selection logic referenced from `AGENTS.md` → §"Role selection" (planned for sub-issue 2 decomposition: `.context/rules/process_role_selection.md` — file does not yet exist; current selection logic lives inline in AGENTS.md)
 
 **What good usage looks like**: each role file has one focused responsibility (`H1` parity); roles don't reach into each other's owned paths (per `agent_ownership.md`); cross-role coordination goes through PM (see `P3`).
@@ -45,7 +46,7 @@ Tasks flow through a fixed sequence: Analyst → Architect → Judge (plan revie
 **Where it appears**:
 - `docs/guides/multi-agent-coordination.md` defines the canonical sequence
 - `AGENTS.md` → §"Analyst pre-flight gate" and §"Plan-as-comment requirement" describe the two block points (Analyst pre-flight, plan-as-comment) that act as early-chain interrupts
-- `.github/agents/judge.agent.md` and `.github/agents/critic.agent.md` describe the review-stage handlers
+- `.agents/judge.md` and `.agents/critic.md` describe the review-stage handlers (canonical)
 
 **What good usage looks like**: each handler has clear pass/block criteria; criteria are testable and traceable to a rule file or ADR; new handlers added via ADR, not by drive-by edits to the pipeline.
 
@@ -56,7 +57,7 @@ Tasks flow through a fixed sequence: Analyst → Architect → Judge (plan revie
 Implementer roles (Frontend, Backend, DevOps, Docs, QA) don't coordinate directly. When a task touches multiple roles' owned paths, PM mediates: it claims the lock, sequences the work, and resolves contention. Implementers only know "ask PM" — they don't track each other's state.
 
 **Where it appears**:
-- `.github/agents/pm.agent.md` defines PM's mediating role
+- `.agents/pm.md` defines PM's mediating role (canonical)
 - `.context/rules/agent_ownership.md` → "Lock Protocol" defines the mediation contract
 - `.context/state/coordination.md` is the shared lock board PM writes to
 
@@ -66,14 +67,15 @@ Implementer roles (Frontend, Backend, DevOps, Docs, QA) don't coordinate directl
 
 ### P4 — Adapter (dual registry)
 
-The same canonical role exposed through two incompatible tool interfaces: GitHub Copilot expects `.github/agents/<role>.agent.md` with one frontmatter schema; Claude Code expects `.claude/agents/<role>.md` with a different schema. Both files describe the same role; each adapts the canonical content to its target tool's conventions. ADR-003 documents this.
+The same canonical role exposed through multiple incompatible tool interfaces: GitHub Copilot expects `.github/agents/<role>.agent.md` with one frontmatter schema; Claude Code expects `.claude/agents/<role>.md` with a different schema. Both files are thin overlays (frontmatter only) pointing at the same canonical body in `.agents/<role>.md`. ADR-003 documents the original two-registry design; ADR-023 documents the canonical-out-of-vendor decomposition that made the duplicated body obsolete.
 
 **Where it appears**:
-- `.github/agents/<role>.agent.md` — Copilot-format adapter
-- `.claude/agents/<role>.md` — Claude Code-format adapter
-- `test.sh` enforces `description:` byte-identity between the two adapters
+- `.agents/<role>.md` — platform-agnostic canonical body
+- `.github/agents/<role>.agent.md` — Copilot-format adapter (frontmatter overlay)
+- `.claude/agents/<role>.md` — Claude Code-format adapter (frontmatter overlay)
+- `scripts/checks/050-agent-mirror.sh` enforces N-way `description:` byte-identity, body-references-canonical, and per-platform `model:` allowlists across canonical + overlays
 
-**What good usage looks like**: a third tool (Cursor, Gemini, Windsurf) is added by writing a *third* adapter file, not by mutating the existing ones. **Caveat**: this pattern is being actively reconsidered in #248 / #249 — see `AP2` for why the current implementation is also an anti-pattern. The pattern itself (multiple per-platform interfaces over one canonical role) is correct; the implementation (manually-synchronized duplicates) is the issue.
+**What good usage looks like**: a third tool (Cursor, Gemini, Windsurf) is added by writing one new overlay file per role pointing at the same canonical, plus appending one row to the parallel arrays in `scripts/checks/050-agent-mirror.sh`. Canonical bodies are never duplicated.
 
 ---
 
@@ -86,7 +88,7 @@ Several artifacts in the repo are templates: a fixed skeleton with slots filled 
 - `.github/ISSUE_TEMPLATE/{feature_request,bug_report,agent_init}.md` — issue skeletons
 - `.github/pull_request_template.md` — PR skeleton
 - `docs/decisions/adr-template.md` — ADR skeleton (referenced by every ADR)
-- `.github/agents/<role>.agent.md` frontmatter — role skeleton (canonical fields: `name`, `description`, `tools`, `model`)
+- `.github/agents/<role>.agent.md` frontmatter — Copilot-overlay role skeleton (`name`, `description`, `tools`, `model`); the canonical body lives in `.agents/<role>.md`
 
 **What good usage looks like**: filling all skeleton sections (use `N/A — <reason>` for sections that don't apply, per the PLAN_TEMPLATE convention); skeleton changes happen via ADR, not by drive-by edits.
 
@@ -124,7 +126,7 @@ Working-memory files written by parallel agents use a multi-section schema keyed
 A single canonical source (typically YAML) is the source of truth for some governance content; per-tool, per-platform, or per-format surfaces are *generated* from it rather than maintained in parallel. Pre-commit regenerates on edits to the canonical source; CI verifies generated outputs are not stale. This pattern is the structural fix for `AP2` (Mirror Duplication) and `AP7` (Magic String Sprawl).
 
 **Where it appears**:
-- *Currently in flight*: role files via #248 / #249, which propose `.agents/<role>.md` as canonical with `.github/agents/`, `.claude/agents/`, and `.cursor/agents/` generated from it.
+- *Recently shipped*: role files via #248, which made `.agents/<role>.md` the canonical platform-agnostic source with `.github/agents/` and `.claude/agents/` reduced to thin hand-maintained registration overlays (ADR-023). Future platforms (Cursor, Aider, etc.) drop in by adding one overlay per role plus one row to the parity-check parallel arrays in `scripts/checks/050-agent-mirror.sh`.
 - *Candidate applications* (not yet implemented): pipeline labels currently hardcoded in `scripts/setup.sh` and referenced in workflows + docs; agent budget variables (`MAX_COPILOT_DAILY`, `MAX_COPILOT_CONCURRENT`, `PR_RESOLVE_MAX_ROUNDS`); doc-sync triggers in `process_doc_maintenance.md`; the PR-label state machine implicit in workflow conditions.
 - *Conceptually used*: the shape of `agent_ownership.md` — though human-edited rather than generated, it acts as a manifest that scripts (`scripts/multi-dispatch-safety.sh`, the parallelism-report parser) read.
 
@@ -135,7 +137,7 @@ A single canonical source (typically YAML) is the source of truth for some gover
 - Pre-commit hook regenerates on canonical changes; CI fails if generated outputs are stale relative to the canonical source.
 - Adding a new platform / tool / consumer means writing one new generator output template, not touching the canonical source.
 
-**Caveats**: this pattern earns its keep when the canonical content has 3+ surfaces or changes frequently. For 2-surface, low-change duplication, manual sync with a parity test (the current `.github/agents/` ↔ `.claude/agents/` arrangement) may be cheaper than a generator. Don't introduce manifests prophylactically — wait for the third surface or the third sync miss.
+**Caveats**: this pattern earns its keep when the canonical content has 3+ surfaces or changes frequently, *and* when the per-surface differences are large enough that hand-maintained overlays would be lossy. For low-change content where each surface is mostly frontmatter, hand-maintained thin overlays + an N-way parity check (the current `.agents/` canonical → `.github/agents/` + `.claude/agents/` arrangement per ADR-023) may be cheaper than a generator. Don't introduce manifests prophylactically — #248 explicitly rejected the generator approach in favor of overlays.
 
 ---
 
@@ -170,7 +172,7 @@ These describe failure modes the orchestration layer is vulnerable to. Reviewers
 - Adding a new instance (third platform, fourth platform) requires manually copying content rather than running a generator.
 - A diff to one file requires a paired diff to others; reviewers regularly catch missed pairs.
 
-**Currently triggered by**: `.github/agents/<role>.agent.md` ↔ `.claude/agents/<role>.md` byte-identity on `description:` field. ADR-003 documents the current implementation; #248 and #249 track the canonicalization work to fix it.
+**Currently triggered by**: `.agents/<role>.md` (canonical) ↔ `.github/agents/<role>.agent.md` and `.claude/agents/<role>.md` (overlays) — the `description:` field is byte-identical via N-way parity in `scripts/checks/050-agent-mirror.sh`. ADR-003 documents the original two-registry design; ADR-023 documents the canonical-out-of-vendor decomposition that resolved the AP2 instance #248 was opened against (overlays now carry only frontmatter, so the duplicated *body* problem is gone — only the `description:` line is parity-enforced, and that's a single line per role).
 
 **Remediation**: factor out a single canonical source; generate per-platform files from it via a script in `scripts/`; replace byte-identity tests with generator-output-stale tests. See #248 for the current design discussion.
 
@@ -313,5 +315,5 @@ When adding a new entry to this file:
 - `.context/rules/domain_code_quality.md` — code-layer Hard/Soft rules (`H1`–`H8`, `S1`–`S6`); orchestration patterns here parallel those rules at the workflow layer.
 - `.context/rules/agent_ownership.md` — confirms Architect ownership of this file; PM coordinates cross-role edits.
 - [`docs/guides/design-patterns.md`](../../docs/guides/design-patterns.md) (sub-issue 5 of parent epic #251) — code-layer patterns for downstream projects; complementary scope to this file. Postmortem-derived entries here (`AP3`, `AP4`, `P7`) cross-link to their code-layer analogs ([`CAP2`](../../docs/guides/design-patterns.md#cap2--implicit-contract), [`CAP1`](../../docs/guides/design-patterns.md#cap1--goal-substitution), [`CP1`](../../docs/guides/design-patterns.md#cp1--owner-keyed-concurrent-state)).
-- `.github/agents/critic.agent.md`, `.github/agents/judge.agent.md` — the review roles that cite entries from this file at PR time.
+- `.agents/critic.md`, `.agents/judge.md` — the review roles that cite entries from this file at PR time (canonical).
 - `docs/decisions/adr-020-orchestration-patterns-reference.md` — ADR ratifying the addition of this file.
