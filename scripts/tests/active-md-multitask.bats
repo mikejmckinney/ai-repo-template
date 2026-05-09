@@ -5,9 +5,15 @@
 # Phase 4b wrapper around scripts/test-active-md-multitask.sh.
 # See scripts/tests/README.md for the migration approach.
 
-setup() {
+# Per-test timeout (seconds). Must be set at file-load time, before any
+# test runs — bats reads this in the parent process before forking the
+# subprocess for setup()/the test, so setting it inside setup() is a
+# no-op (codex/cursor P2 review feedback on PR #274).
+export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-300}"
+
+setup_file() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
-  export BATS_TEST_TIMEOUT=300
+  export REPO_ROOT
 }
 
 @test "active-md-multitask: legacy scripts/test-active-md-multitask.sh passes" {

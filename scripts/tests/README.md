@@ -37,14 +37,14 @@ bats --tap scripts/tests/
 ## Installation
 
 ```bash
-# Ubuntu/Debian
-sudo apt-get install -y bats
+# Ubuntu/Debian (parallel is required for `bats --jobs`)
+sudo apt-get install -y bats parallel
 
 # macOS
-brew install bats-core
+brew install bats-core parallel
 ```
 
-CI installs bats via `apt-get install -y bats` in `.github/workflows/ci-tests.yml`.
+CI installs both via `apt-get install -y bats parallel` in `.github/workflows/ci-tests.yml`.
 
 ## Migration approach (Phase 4b scope)
 
@@ -61,5 +61,5 @@ The legacy `scripts/test-<name>.sh` files **stay in place** for this phase — b
 
 - One `@test` per concern in this phase. Future PRs may split into multiple `@test` cases.
 - `@test` names use the legacy script's filename minus the `test-` prefix and `.sh` suffix.
-- Each `.bats` file sets `BATS_TEST_TIMEOUT=300` (5 min) to bound runaway scripts.
+- Per-test timeout is set at **file-load time** via top-level `export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-300}"` (5 min). Setting `BATS_TEST_TIMEOUT` inside `setup()` is a no-op — bats reads it in the parent process before forking the subprocess. Override per-run with `BATS_TEST_TIMEOUT=600 bats scripts/tests/`.
 - No bats helper libraries (bats-assert, bats-support) are required yet — wrapping mode doesn't need them. Add when finer-grained `@test` cases land.
