@@ -56,28 +56,6 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
-## Lock: pr-254-top-level-md-audit
-<!-- managed-for-pr:266 -->
-**Role**: docs
-**Session**: feature/docs-254-top-level-md-audit
-**PR**: #266
-**Claimed At**: 2026-05-08T22:20:00Z
-**Expected Duration**: 1 session
-**Paths**:
-- README.md
-- AI_REPO_GUIDE.md
-- docs/decisions/adr-022-top-level-md-scope-split.md
-- docs/decisions/adr-002-agents-md-ownership.md
-- docs/decisions/README.md
-- .context/sessions/latest_summary.md
-- .context/sessions/2026-05-08_archived-264-265-261.md
-- .context/state/_active.md
-- .context/state/coordination.md
-**Depends On**: none
-**Blocks**: none
-**State**: peer_review
-**Notes**: Sub-issue #254 of parent epic #251. Builds on ADR-021 (#264) decomposition. AGENTS.md untouched.
-
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:259 -->
 **Role**: architect
