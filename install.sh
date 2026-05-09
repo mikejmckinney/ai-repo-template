@@ -160,7 +160,9 @@ fi
 # ---------------------------------------------------------------------------
 # Multi-agent kit: role files, ownership map, coordination board, CLAUDE.md
 # ---------------------------------------------------------------------------
-# AGENTS.md tells agents to read .github/agents/*.agent.md, the ownership map,
+# AGENTS.md tells agents to read .agents/<role>.md (canonical) and the
+# vendor overlays under .github/agents/*.agent.md / .claude/agents/*.md,
+# the ownership map,
 # and the coordination board before editing. Without these files in the target
 # workspace the mandatory onboarding flow is non-actionable, so we copy the
 # full kit (skipping anything that already exists so we never clobber a repo
@@ -213,6 +215,17 @@ MULTIAGENT_FILES=(
   "CLAUDE.md"
   "AGENT.md"
   ".github/PLAN_TEMPLATE.md"
+  ".agents/README.md"
+  ".agents/architect.md"
+  ".agents/judge.md"
+  ".agents/critic.md"
+  ".agents/pm.md"
+  ".agents/frontend.md"
+  ".agents/backend.md"
+  ".agents/qa.md"
+  ".agents/devops.md"
+  ".agents/docs.md"
+  ".agents/analyst.md"
   ".github/agents/architect.agent.md"
   ".github/agents/judge.agent.md"
   ".github/agents/critic.agent.md"
