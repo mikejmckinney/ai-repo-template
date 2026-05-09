@@ -1,45 +1,37 @@
 <!-- TEMPLATE_PLACEHOLDER: In a real project, this file captures the current agent session's working log per the canonical template in `.context/sessions/README.md` § "Working-Log Template". One entry per agent-session, updated continuously at every wait-for-input pause (see AGENTS.md § "Session-state cadence"). Downstream projects should clear the example body during onboarding (see AGENTS.md → "Template detection" and `.github/prompts/repo-onboarding.md`). -->
 
-# Session: 2026-05-09 — feature/devops-262-make-closeout — devops
+# Session: 2026-05-09 — chore/closeout-268-state-cleanup — devops
 
-**Status**: in_progress
-**Issue/PR**: #262 / pending
-**Started**: 2026-05-09T00:08:00Z
+**Status**: done
+**Issue/PR**: #262 / #268 (closed) → #269 (this PR)
+**Started**: 2026-05-09T01:57:00Z
 
 ## What Was Accomplished
-- Posted plan-as-comment on issue #262 ([issuecomment-4410684653](https://github.com/mikejmckinney/ai-repo-template/issues/262#issuecomment-4410684653)).
-- Branched `feature/devops-262-make-closeout` off post-#266/#267-merge `main` (commit `8f44e33`).
-- Authored `Makefile` (new) with single `closeout` target delegating to `scripts/closeout.sh`.
-- Authored `scripts/closeout.sh`: six checks per the issue body (state files touched; lock moved out of Active Locks; `## Task:` removed; `Status: done` in matching session entry; rotation hygiene soft-warn; required template headers). Refuses on hard-fail; stages and prints templated commit message on success. Honors `CLOSEOUT_REPO_ROOT` + `CLOSEOUT_BRANCH` env vars for fixture testability.
-- Authored `scripts/test-closeout.sh`: 4 fixture cases — refusal on lock-not-moved (check 2), happy path (exit 0 + commit message templated with branch name), refusal on state-files-untouched (check 1). All pass.
-- Wired `test.sh`: 4 new assertions (Makefile target presence, `closeout.sh` executable bit, `test-closeout.sh` executable bit, fixture run). 365 pass total (was 359 + 6).
-- Updated `AI_REPO_GUIDE.md` § Verification Commands with `make closeout` entry.
-- Updated `scripts/README.md` index with `closeout.sh` + `test-closeout.sh` rows.
-- Lint clean: `bash scripts/lint-shell-conventions.sh` passes (resolved one RULE-02 violation by replacing `done([[:space:]]|$)` with `done\b`).
-- Rotated previous `latest_summary.md` (#266 entry) to `.context/sessions/2026-05-09_archived-266.md` and started a fresh #262 entry.
+- Merged PR #268 (`make closeout` enforcement target) at squash commit `66930f2b` after the pr-resolve-all loop converged with two consecutive clean rounds (R11 + R12). 12 review rounds total, 5 net commits beyond the initial impl plus 1 lint-fix style commit.
+- Dispatched the chore close-out per ADR-007: rotated previous session entry (devops-262 working log) to `.context/sessions/2026-05-09_devops-262-make-closeout.md`; replaced with this completion entry.
+- Released the `pr-262-make-closeout` lock from `## Active Locks` and moved it under `## Recent History` in `coordination.md`.
+- Removed the `feature/devops-262-make-closeout` Task section from `_active.md`.
+- Dogfooded the new gate: ran `make closeout` against this branch's working tree to verify all six checks pass before committing.
 
 ## What Shipped
-<filled at done>
+- `make closeout` enforcement target (`Makefile` + `scripts/closeout.sh` + `scripts/test-closeout.sh`).
+- 6 fixture cases covering refusal scenarios + happy path + prefix-overlap regression + malformed-coordination regression.
+- Documentation: `AI_REPO_GUIDE.md` Verification Commands entry + `scripts/README.md` index rows.
 
 ## Harder Than Expected
-<filled at done>
+- Bot-loop convergence took 12 rounds because most R1–R10 findings were genuine correctness bugs in the first implementation (substring-match false positives in lock + session matching, regex meta-char escaping, glob expansion in bash parameter substitution, missing file-structure validation, silent `git add` failure). The high finding count vindicated putting the gate under bot review before merge.
+- shfmt diff check on CI rejected the initial formatting; needed a separate style-only commit (`0b5d1ec`) after merging the substantive fixes.
 
 ## Generalizable Lessons
-<filled at done>
+- New enforcement scripts attract heavy bot review. Plan for ~3–5 substantive iterations even on a tightly scoped script.
+- When parsing structured Markdown state files (locks, session headers), always validate the section header exists before extracting — `awk` with no match yields empty output, which silently passes downstream existence checks.
+- Use `awk` exact-equality (`$0 == literal` or split-and-compare) over `grep -F` substring or regex meta-escaping when matching identifiers like branch names that may contain `/`, `.`, `-`.
 
 ## Files Modified
-- `Makefile` (new)
-- `scripts/closeout.sh` (new, +x)
-- `scripts/test-closeout.sh` (new, +x)
-- `test.sh` (+4 assertions for closeout)
-- `AI_REPO_GUIDE.md` (Verification Commands gains `make closeout`)
-- `scripts/README.md` (index entries)
-- `.context/sessions/2026-05-09_archived-266.md` (rotation archive)
-- `.context/sessions/latest_summary.md` (fresh #262 entry)
-- `.context/state/_active.md` (Task section claim)
-- `.context/state/coordination.md` (Lock claim)
+- `.context/sessions/latest_summary.md` (this entry)
+- `.context/sessions/2026-05-09_devops-262-make-closeout.md` (rotation archive of previous entry)
+- `.context/state/_active.md` (Task section removed)
+- `.context/state/coordination.md` (lock moved Active → Recent History)
 
 ## Open Items / Next
-- Open PR for #262 with full plan + verification.
-- Run pr-resolve-all.md loop on PR until two consecutive clean iterations.
-- Open close-out chore PR after merge (using `make closeout` itself for dogfooding).
+- None — task complete. Both #266 and #262 enforcement work landed; the workflow now refuses close-out commits that skip cadence updates.
