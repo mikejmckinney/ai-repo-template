@@ -59,7 +59,10 @@ CORE_RULE_FILES=(
 # `.context/rules/<file>.md` link target so unrelated rows wouldn't
 # false-match. Documented per repo "document simplification" rule
 # (Gemini, R10).
-LINK_TABLE_BLOCK=$(awk '/^## Per-concern process rules/{flag=1; next} /^## /{flag=0} flag && /^\|/' AGENTS.md)
+LINK_TABLE_BLOCK=""
+if [[ -f "AGENTS.md" ]]; then
+  LINK_TABLE_BLOCK=$(awk '/^## Per-concern process rules/{flag=1; next} /^## /{flag=0} flag && /^\|/' AGENTS.md)
+fi
 MISSING_LINKS=0
 for pfile in "${CORE_RULE_FILES[@]}"; do
   # Escape regex metachars (notably '.') in filename for grep -E.
