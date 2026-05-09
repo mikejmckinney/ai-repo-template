@@ -247,7 +247,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **PR**: #276
 **Claimed At**: 2026-05-09T05:00:00Z
 **State**: merged
-**Result**: Merged 2026-05-09 as PR #276 (squash `ebf1fed`). Issue #255 Phase 4c — modularized scripts/setup.sh (508 lines) into a 49-line orchestrator + 8 phase modules under scripts/setup/<NN>-*.sh + scripts/setup/README.md. Shape-preserving extraction; behavior verified end-to-end against this repo. 3 review rounds (R1: 5 findings — 2 fixed, 3 deferred as pre-existing monolith bugs; R2: shfmt array-init fix; R3: codex P2 missing-phase manifest assertion; R4+R5 clean). Phase 4d still open.
+**Result**: Merged 2026-05-09 as PR #276 (squash `ebf1fed`). Issue #255 Phase 4c — modularized scripts/setup.sh (508 lines) into a thin orchestrator + 8 phase modules under scripts/setup/<NN>-*.sh + scripts/setup/README.md. Shape-preserving extraction; behavior verified end-to-end against this repo. 5 review rounds (R1: 5 findings — 2 fixed, 3 deferred as pre-existing monolith bugs; R2: shfmt array-init fix; R3: codex P2 missing-phase manifest assertion; R4+R5 clean). Phase 4d still open.
 
 ## Lock: pr-255-phase4b
 <!-- managed-for-pr:274 -->

@@ -12,7 +12,7 @@
 - Added `coordination.md` Recent History entry for `pr-255-phase4c` (PR #276 merged, 5 review rounds, R4+R5 clean).
 
 ## What Shipped
-- `scripts/setup.sh` — was a 508-line monolith; now a 78-line orchestrator that asserts an explicit `_expected_phases` manifest (00, 10, 20, 30, 40, 50, 60, 70) before sourcing `scripts/setup/[0-9][0-9]-*.sh` in lexical order.
+- `scripts/setup.sh` — was a 508-line monolith; now an 88-line orchestrator that asserts an explicit `_expected_phases` manifest (00, 10, 20, 30, 40, 50, 60, 70) before sourcing `scripts/setup/[0-9][0-9]-*.sh` in lexical order.
 - `scripts/setup/` — 8 single-concern phase modules: `00-detect-repo.sh`, `10-env-file.sh`, `20-install-dependencies.sh`, `30-build.sh`, `40-ensure-labels.sh`, `50-ensure-variables.sh`, `60-check-secrets.sh`, `70-verify-env.sh`.
 - `scripts/setup/README.md` — module table, ordering, "how to run a single module" recipe, and "how to add a new module" section.
 - `test.sh` — four hardcoded greps that asserted label/variable wiring on `scripts/setup.sh` updated to point at the new module files (`scripts/setup/40-ensure-labels.sh` and `scripts/setup/50-ensure-variables.sh`); baseline 365/1/0 preserved.
@@ -33,5 +33,5 @@
 - `.context/state/coordination.md` (Recent History entry added for `pr-255-phase4c`)
 
 ## Open Items / Next
-- **Issue #255 Phase 4d** (slim `test.sh` and `setup.sh` to ≤200 lines + delete legacy `scripts/test-*.sh`) is the final phase. `setup.sh` is now 78 lines (well under the 200-line cap); the remaining work is on `test.sh` (1,713 lines today). Slimming `test.sh` to ≤200 lines requires migrating most of its assertions out — likely into per-concern `.bats` files under `scripts/tests/`. May exceed a single PR; will re-scope at plan time if needed.
+- **Issue #255 Phase 4d** (slim `test.sh` and `setup.sh` to ≤200 lines + delete legacy `scripts/test-*.sh`) is the final phase. `setup.sh` is now 88 lines (well under the 200-line cap); the remaining work is on `test.sh` (1,713 lines today). Slimming `test.sh` to ≤200 lines requires migrating most of its assertions out — likely into per-concern `.bats` files under `scripts/tests/`. May exceed a single PR; will re-scope at plan time if needed.
 - The three deferred R1 findings on PR #276 (`\s` portability, `grep -qF` substring match, `pip` vs `pip3`) are good candidates for a small follow-up issue. They affect `scripts/setup/{30-build,40-ensure-labels,20-install-dependencies}.sh` and are all single-line fixes.
