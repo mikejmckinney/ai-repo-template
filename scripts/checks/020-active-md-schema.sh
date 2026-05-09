@@ -43,7 +43,7 @@ if [[ -f ".context/state/_active.md" ]]; then
   ' .context/state/_active.md | grep -v '^[[:space:]]*$' || true)
   if [[ -z "$active_body" ]]; then
     pass ".context/state/_active.md body is empty (template-onboarding state allowed)"
-  elif grep -qE '^## Task:[[:space:]]+\S' .context/state/_active.md; then
+  elif printf '%s\n' "$active_body" | grep -qE '^## Task:[[:space:]]+\S'; then
     pass ".context/state/_active.md has at least one '## Task: <branch>' section (ADR-018)"
   else
     fail ".context/state/_active.md has body content but no '## Task: <branch>' section (ADR-018 schema)"
