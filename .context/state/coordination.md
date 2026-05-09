@@ -57,10 +57,10 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## Active Locks
 
 ## Lock: pr-262-make-closeout
-<!-- managed-for-pr:pending -->
+<!-- managed-for-pr:268 -->
 **Role**: devops
 **Session**: feature/devops-262-make-closeout
-**PR**: pending
+**PR**: #268
 **Claimed At**: 2026-05-09T00:08:00Z
 **Expected Duration**: 1 session
 **Paths**:

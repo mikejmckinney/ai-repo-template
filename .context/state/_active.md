@@ -39,7 +39,7 @@
 ## Task: feature/devops-262-make-closeout
 **Issue/PR**: #262
 **Role**: devops
-**PR**: pending
+**PR**: #268
 **Blockers**: None
 **Next 1–3 actions**:
 1. Open PR with plan + verification (Makefile, closeout.sh, test-closeout.sh, test.sh wiring, doc updates)
