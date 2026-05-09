@@ -71,8 +71,8 @@ fi
 # bug worth catching here.
 for m in "$CHECKS_DIR"/*.sh; do
   base=$(basename "$m")
-  if [[ ! "$base" =~ ^[0-9]+- ]]; then
-    echo -e "${RED}FATAL: check module '$base' lacks a numeric '<NN>-' prefix${NC}" >&2
+  if [[ ! "$base" =~ ^[0-9]{3}- ]]; then
+    echo -e "${RED}FATAL: check module '$base' lacks a 3-digit '<NNN>-' prefix${NC}" >&2
     exit 1
   fi
 done
