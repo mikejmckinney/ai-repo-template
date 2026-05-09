@@ -36,16 +36,6 @@
 
 # Active Tasks
 
-## Task: feature/devops-262-make-closeout
-**Issue/PR**: #262
-**Role**: devops
-**PR**: #268
-**Blockers**: None
-**Next 1–3 actions**:
-1. Open PR with plan + verification (Makefile, closeout.sh, test-closeout.sh, test.sh wiring, doc updates)
-2. Run pr-resolve-all.md loop with `cap-override` until two consecutive clean iterations
-3. Open `chore(closeout): PR #NNN merged` follow-up PR after merge — dogfood `make closeout` to draft it
-
 ## Task: feature/devops-220-phase2
 **Issue/PR**: #220 (Phase 2)
 **Role**: devops (lead) + architect (ADR-019) + docs + qa
