@@ -38,7 +38,7 @@ Three files share one ID namespace. The lead file (this one) holds the framing, 
 | `CP2`–`CP24` | [`design-patterns-gof.md`](design-patterns-gof.md) | The 23 Gang of Four patterns (Creational / Structural / Behavioral) |
 | `CP25`–`CP34` | [`design-patterns-post-gof.md`](design-patterns-post-gof.md) | Post-GoF patterns (Repository, DI, MVC family, CQRS, Event Sourcing, Saga, Circuit Breaker, Bulkhead, Sidecar) |
 
-Cite from any file by ID alone — the ID range tells the reader which file to open. Anchors are stable: `design-patterns.md#cap1--goal-substitution`, `design-patterns-gof.md#cp21--strategy`, etc. Renumbering would break citations across downstream PRs and is treated as a breaking change.
+Cite from any file by ID alone — the ID range tells the reader which file to open. Anchors are stable: `design-patterns.md#cap1--goal-substitution`, `design-patterns-gof.md#cp22--strategy`, etc. Renumbering would break citations across downstream PRs and is treated as a breaking change.
 
 ## Caveats
 
