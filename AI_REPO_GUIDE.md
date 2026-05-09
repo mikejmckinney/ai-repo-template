@@ -197,7 +197,8 @@ bash install.sh
 |------|---------|
 | `install.sh` | Runs on Codespace start; installs extensions, copies prompts |
 | `test.sh` | Verifies template integrity (see Verification Commands below for live check count) |
-| `scripts/setup.sh` | First-run project customization helper |
+| `scripts/setup.sh` | First-run project customization helper. Thin orchestrator that sources `scripts/setup/[0-9][0-9]-*.sh` modules in lexical order (issue #255 Phase 4c) |
+| `scripts/setup/*.sh` | Per-phase setup modules (issue #255 Phase 4c): `00-detect-repo`, `10-env-file`, `20-install-dependencies`, `30-build`, `40-ensure-labels`, `50-ensure-variables`, `60-check-secrets`, `70-verify-env`. See `scripts/setup/README.md` for the module table and how to run a single module. |
 | `scripts/verify-env.sh` | Environment & placeholder sanity check |
 | `scripts/verify-pr.sh` | Plan-template Change-class classifier (ADR-016 / issue #227); run: `bash scripts/verify-pr.sh --declared "<class>"` |
 | `scripts/db-reset.sh` | Optional database reset stub |

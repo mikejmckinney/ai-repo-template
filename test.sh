@@ -644,29 +644,36 @@ fi
 #      where agents read it.
 ADR014_PATH="docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md"
 
-if grep -q '_ensure_label "outcome-validated"' scripts/setup.sh 2>/dev/null; then
-  pass "scripts/setup.sh declares the outcome-validated label (ADR-014)"
+# Note: setup.sh was modularized in PR #255 Phase 4c — the label/variable
+# helper calls now live in scripts/setup/40-ensure-labels.sh and
+# scripts/setup/50-ensure-variables.sh respectively. Greps below check those
+# module files; scripts/setup.sh is now a thin orchestrator.
+SETUP_LABELS_FILE="scripts/setup/40-ensure-labels.sh"
+SETUP_VARS_FILE="scripts/setup/50-ensure-variables.sh"
+
+if grep -q '_ensure_label "outcome-validated"' "$SETUP_LABELS_FILE" 2>/dev/null; then
+  pass "$SETUP_LABELS_FILE declares the outcome-validated label (ADR-014)"
 else
-  fail "scripts/setup.sh missing _ensure_label \"outcome-validated\" (ADR-014)"
+  fail "$SETUP_LABELS_FILE missing _ensure_label \"outcome-validated\" (ADR-014)"
 fi
 
-# Issue #220 Phase 1: new labels and variables wired up in setup.sh and docs.
-if grep -q '_ensure_label "copilot:budget-paused"' scripts/setup.sh 2>/dev/null; then
-  pass "scripts/setup.sh declares the copilot:budget-paused label (issue #220)"
+# Issue #220 Phase 1: new labels and variables wired up in setup modules and docs.
+if grep -q '_ensure_label "copilot:budget-paused"' "$SETUP_LABELS_FILE" 2>/dev/null; then
+  pass "$SETUP_LABELS_FILE declares the copilot:budget-paused label (issue #220)"
 else
-  fail "scripts/setup.sh missing _ensure_label \"copilot:budget-paused\" (issue #220)"
+  fail "$SETUP_LABELS_FILE missing _ensure_label \"copilot:budget-paused\" (issue #220)"
 fi
 
-if grep -q '_ensure_label "cap-override"' scripts/setup.sh 2>/dev/null; then
-  pass "scripts/setup.sh declares the cap-override label (issue #220)"
+if grep -q '_ensure_label "cap-override"' "$SETUP_LABELS_FILE" 2>/dev/null; then
+  pass "$SETUP_LABELS_FILE declares the cap-override label (issue #220)"
 else
-  fail "scripts/setup.sh missing _ensure_label \"cap-override\" (issue #220)"
+  fail "$SETUP_LABELS_FILE missing _ensure_label \"cap-override\" (issue #220)"
 fi
 
-if grep -q '_ensure_variable PR_RESOLVE_MAX_ROUNDS' scripts/setup.sh 2>/dev/null; then
-  pass "scripts/setup.sh provisions PR_RESOLVE_MAX_ROUNDS variable (issue #220)"
+if grep -q '_ensure_variable PR_RESOLVE_MAX_ROUNDS' "$SETUP_VARS_FILE" 2>/dev/null; then
+  pass "$SETUP_VARS_FILE provisions PR_RESOLVE_MAX_ROUNDS variable (issue #220)"
 else
-  fail "scripts/setup.sh missing _ensure_variable PR_RESOLVE_MAX_ROUNDS (issue #220)"
+  fail "$SETUP_VARS_FILE missing _ensure_variable PR_RESOLVE_MAX_ROUNDS (issue #220)"
 fi
 
 if grep -q 'PR_RESOLVE_MAX_ROUNDS' docs/guides/agent-pipeline.md 2>/dev/null; then
