@@ -22,6 +22,15 @@ if [[ ! -x "$CLOSEOUT" ]]; then
   exit 1
 fi
 
+# Per-fixture vars are populated as each test creates its tmp dir.
+# Initialize them up front so the single EXIT trap below is safe even
+# if the script aborts between fixture creations.
+fixture1="" fixture2="" fixture3="" fixture4=""
+cleanup() {
+  rm -rf "${fixture1:-}" "${fixture2:-}" "${fixture3:-}" "${fixture4:-}"
+}
+trap cleanup EXIT
+
 # scaffold_fixture <dir> — write the minimum directory tree the script reads.
 scaffold_fixture() {
   local dir="$1"
@@ -72,7 +81,6 @@ EOF
 
 # Test 1 — refusal: lock still in Active Locks
 fixture1=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
-trap 'rm -rf "$fixture1" "${fixture2:-}" "${fixture3:-}"' EXIT
 scaffold_fixture "$fixture1"
 write_happy_path "$fixture1" "feature/test-262-refuse"
 # Inject the branch into Active Locks to trigger check 2 refusal.
@@ -166,7 +174,6 @@ fi
 # its session header must be matched on exact field equality, not
 # substring containment.
 fixture4=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
-trap 'rm -rf "$fixture1" "${fixture2:-}" "${fixture3:-}" "${fixture4:-}"' EXIT
 scaffold_fixture "$fixture4"
 write_happy_path "$fixture4" "feature/test-262-foo"
 # Inject a *different* lock whose Session field happens to start with our branch name.
