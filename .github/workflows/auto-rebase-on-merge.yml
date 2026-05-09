@@ -16,7 +16,7 @@ name: Auto-Rebase on Merge
 # review threads, the merged PR itself.
 #
 # All decision logic lives in scripts/auto-rebase-overlapping.sh and is
-# unit-tested via scripts/test-auto-rebase-overlapping.sh.
+# unit-tested via scripts/tests/auto-rebase-overlapping.bats.
 #
 # Requires: CLAUDE_PAT secret with cross-branch write access.
 

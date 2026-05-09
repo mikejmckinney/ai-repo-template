@@ -163,13 +163,12 @@ covers the invariants the next agent in the pipeline will verify.
 bash ./test.sh
 ```
 
-If the change class includes `shell`, also run any matching script
-self-tests:
+If the change class includes `shell`, also run the bats fixture suite
+(post-#280, the legacy `scripts/test-*.sh` delegates were removed and
+the logic now lives directly inside the `.bats` files):
 
 ```bash
-for f in scripts/test-*.sh; do
-  [[ -f "$f" ]] && bash "$f"
-done
+bats --jobs 4 scripts/tests/
 ```
 
 Result: `PASS` if every test exits 0, otherwise `REQUEST_CHANGES` with
@@ -204,7 +203,7 @@ fixes anything before push or proceeds.
 ### 3. Tests — <PASS | REQUEST_CHANGES>
 
 - ./test.sh: <pass/fail counts>
-- scripts/test-*.sh (if shell): <list with pass/fail>
+- scripts/tests/*.bats (if shell): <list with pass/fail>
 
 ### Verdict
 
