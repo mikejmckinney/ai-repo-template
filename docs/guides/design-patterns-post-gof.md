@@ -75,7 +75,7 @@ service = OrderService(SqlOrderRepository(), StripeGateway(), EmailNotifier())
 **When to use**: any non-trivial UI app. The three variants differ in who owns view-state and how view ↔ logic communication flows:
 - **MVC** (Model-View-Controller): controller mediates; classic web frameworks (Rails, Django).
 - **MVP** (Model-View-Presenter): presenter holds view-state; common in older desktop apps.
-- **MVVM** (Model-View-ViewModel): two-way binding between view and view-model; dominates modern web/mobile (React with hooks, Vue, SwiftUI, WPF, Compose).
+- **MVVM** (Model-View-ViewModel): two-way binding between view and view-model; dominates modern web/mobile (Vue, SwiftUI, WPF, Jetpack Compose). React with hooks is sometimes lumped here but is more accurately a one-way data-flow / unidirectional architecture (Flux/Redux family) — closer to MVC's controller-mediated flow than to MVVM's two-way binding.
 
 **When NOT to use**: scripts, CLIs, services with no UI. Choosing MVC for an API server is a category error — there's no "view" in the UI sense.
 

@@ -21,17 +21,29 @@ How objects are created.
 **When NOT to use**: almost any other case. Global state hurts testability (every test that touches the singleton needs to reset it). Prefer dependency injection ([`CP27`](design-patterns-post-gof.md#cp27--dependency-injection-di)) and pass the instance explicitly. If the language gives you module-level state (Python modules, Go packages), that's already a singleton — don't wrap it.
 
 ```python
-class Logger:
+# Robust form: metaclass. __init__ runs exactly once.
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+class Logger(metaclass=Singleton):
+    def __init__(self):
+        self.sink = []   # runs only on first instantiation
+
+# Textbook __new__ form (shown for recognition; has a footgun).
+class LoggerNew:
     _instance = None
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
-    # Note: __new__ alone doesn't prevent re-initialization. Python
-    # always calls __init__ after __new__ returns an instance of cls,
-    # so an __init__ here would run on every Logger() call. Either
-    # omit __init__ entirely (as above) or guard it with a flag set
-    # on first init. A metaclass-based singleton avoids this footgun.
+    # Footgun: Python always calls __init__ after __new__ returns an
+    # instance of cls. If __init__ is added later, it will run on every
+    # LoggerNew() call and silently re-initialize state. Prefer the
+    # metaclass form above, or guard __init__ with a flag set on first init.
 ```
 
 ### CP3 — Factory Method
