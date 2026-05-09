@@ -84,11 +84,8 @@ if [[ -x scripts/closeout.sh ]]; then
 else
   fail "scripts/closeout.sh missing or not executable"
 fi
-if [[ -f scripts/tests/closeout.bats ]]; then
-  pass "scripts/tests/closeout.bats present"
-else
-  fail "scripts/tests/closeout.bats missing"
-fi
+# Presence-check is delegated to run_bats_check (it fails clearly when
+# the .bats file is missing), so no separate `[[ -f ... ]]` block here.
 run_bats_check scripts/tests/closeout.bats
 
 echo ""

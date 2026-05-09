@@ -18,7 +18,11 @@ setup_file() {
 }
 
 _legacy_body() {
-  set -euo pipefail
+  # NOTE: original scripts/test-closeout.sh deliberately used `set -uo
+  # pipefail` (no -e). The fixtures call closeout.sh expecting non-zero
+  # refusal exit codes; -e would early-abort the body. Preserve that
+  # behaviour. (Cursor finding on PR #287.)
+  set -uo pipefail
   cd "$REPO_ROOT"
   SCRIPT_DIR="$REPO_ROOT/scripts"
   # ===== inlined body of scripts/test-closeout.sh (issue #280) =====
