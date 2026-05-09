@@ -73,11 +73,11 @@
 3. Close out; maintainer runs `gh repo create mikejmckinney/ai-repo-template-sandbox` per playbook
 
 ## Task: feature/devops-248-shared-subagent-body
-**Issue/PR**: #248
+**Issue/PR**: #248 / PR #292
 **Role**: devops (lead) + docs companion
-**PR**: pending
+**PR**: #292
 **Blockers**: None (trigger override per Pre-Flight Report on issue)
 **Next 1–3 actions**:
-1. Build canonical `.agents/<role>.md` × 10 + per-platform JSON mappings + Python generator + 2 CI checks (stale + N-way mirror rewrite)
-2. Regenerate 20 overlays; update AGENTS.md, CLAUDE.md, copilot-instructions.md, agent_ownership.md, multi-agent-coordination.md, AI_REPO_GUIDE.md; add ADR + supersede ADR-003 in part
-3. Open PR with `cap-override`, run pr-resolve-all loop until 2 quiet iterations
+1. Run pr-resolve-all loop on PR #292 (cap-override label active; 7-min waits; terminate after 2 consecutive quiet iterations)
+2. Merge PR #292 once green and review-quiet
+3. Closeout: state cleanup PR removing this task block + lock

@@ -237,27 +237,33 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **State**: in_progress
 
 ## Lock: pr-248-shared-subagent-body
-<!-- managed-for-pr:pending -->
+<!-- managed-for-pr:292 -->
 **Role**: devops
 **Session**: feature/devops-248-shared-subagent-body
-**PR**: pending
+**PR**: #292
 **Claimed At**: 2026-05-09T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:
 - .agents/**
-- scripts/agent-overlay-gen.py
 - scripts/checks/050-agent-mirror.sh
-- scripts/checks/055-agent-overlay-stale.sh
+- scripts/checks/{115,120,135}-*.sh
 - .github/agents/*.agent.md
 - .claude/agents/*.md
-- AGENTS.md
 - CLAUDE.md
 - .github/copilot-instructions.md
+- AI_REPO_GUIDE.md
 - .context/rules/agent_ownership.md
+- .context/rules/process_*.md
+- .context/rules/repo_orchestration_patterns.md
+- .context/rules/domain_code_quality.md
 - docs/guides/multi-agent-coordination.md
+- docs/guides/agent-best-practices.md
+- docs/guides/agent-pipeline.md
+- docs/FAQ.md
 - docs/decisions/adr-003-claude-code-subagent-registration.md
-- docs/decisions/adr-NNN-shared-subagent-canonical.md
+- docs/decisions/adr-023-shared-subagent-canonical.md
 - docs/decisions/README.md
+- .github/prompts/README.md
 - AI_REPO_GUIDE.md
 - .context/state/_active.md
 - .context/state/coordination.md
