@@ -197,16 +197,19 @@ if [[ -f "$SESSIONS_LATEST" ]]; then
   fi
 
   if command -v date >/dev/null 2>&1; then
-    oldest_date=$(grep -E '^# Session: [0-9]{4}-[0-9]{2}-[0-9]{2}' "$SESSIONS_LATEST" \
-      | awk '{print $3}' | sort | head -1 || true)
-    if [[ -n "$oldest_date" ]]; then
+    # Mirror test.sh's freshness rule: the *most recent* dated entry must
+    # be within 7 days. Using the oldest entry instead would warn forever
+    # whenever an old archived entry happened to remain in the file.
+    latest_date=$(grep -E '^# Session: [0-9]{4}-[0-9]{2}-[0-9]{2}' "$SESSIONS_LATEST" \
+      | awk '{print $3}' | sort -r | head -1 || true)
+    if [[ -n "$latest_date" ]]; then
       if today_epoch=$(date -u +%s 2>/dev/null) \
-        && entry_epoch=$(date -u -d "$oldest_date" +%s 2>/dev/null); then
+        && entry_epoch=$(date -u -d "$latest_date" +%s 2>/dev/null); then
         age_days=$(( (today_epoch - entry_epoch) / 86400 ))
         if [[ "$age_days" -gt 7 ]]; then
-          warn "check 5b: oldest entry in $SESSIONS_LATEST is $age_days days old (threshold 7) — consider rotating"
+          warn "check 5b: most recent entry in $SESSIONS_LATEST is $age_days days old (threshold 7) — consider rotating"
         else
-          pass "check 5b: oldest entry is $age_days days old (within threshold)"
+          pass "check 5b: most recent entry is $age_days days old (within threshold)"
         fi
       fi
     fi
