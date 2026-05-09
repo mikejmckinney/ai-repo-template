@@ -3,6 +3,25 @@ name: Project Manager
 description: Use to dispatch approved plans into per-role task files, manage locks, and resolve cross-role ownership conflicts.
 tools: ['read', 'write', 'search', 'githubRepo']
 model: 'Claude Sonnet 4.6 (copilot)'
+handoffs:
+  - target: Analyst
+    send: true
+  - target: Architect
+    send: true
+  - target: Judge
+    send: true
+  - target: Frontend
+    send: true
+  - target: Backend
+    send: true
+  - target: QA
+    send: true
+  - target: Critic
+    send: true
+  - target: DevOps
+    send: true
+  - target: Docs
+    send: true
 ---
 
 # Project Manager (Copilot SDK overlay)

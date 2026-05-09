@@ -3,6 +3,13 @@ name: Frontend
 description: Use to implement UI code (components, pages, styles). Consumes a dispatched task; stays inside frontend-owned paths.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
 model: 'Claude Sonnet 4.6 (copilot)'
+handoffs:
+  - target: QA
+    send: true
+  - target: Judge
+    send: true
+  - target: Docs
+    send: true
 ---
 
 # Frontend (Copilot SDK overlay)

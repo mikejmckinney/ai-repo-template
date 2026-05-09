@@ -2,6 +2,11 @@
 name: Docs
 description: Use to update README, AI_REPO_GUIDE, CLAUDE.md, or docs/. Runs in parallel with implementers when visible behavior changes.
 tools: ['read', 'write', 'search', 'githubRepo']
+handoffs:
+  - target: Judge
+    send: true
+  - target: Architect
+    send: true
 ---
 
 # Docs (Copilot SDK overlay)

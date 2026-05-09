@@ -35,6 +35,46 @@ it's 10 thin overlays, each pointing back to `.agents/<role>.md`.
   across canonical + every overlay. The parity check
   `scripts/checks/050-agent-mirror.sh` enforces this.
 
+## Documentation-only frontmatter (canonical)
+
+The canonical files carry two frontmatter keys that **no runtime currently
+recognizes** — they exist as machine-readable documentation of the role's
+intended scope and pipeline neighbors:
+
+- `owned_paths:` — the file/glob patterns this role is allowed to write.
+  Authoritative copy lives in
+  [`.context/rules/agent_ownership.md`](../.context/rules/agent_ownership.md);
+  the canonical frontmatter mirror is for at-a-glance reference only.
+- `handoff_targets:` — the downstream roles this role typically dispatches to.
+
+Both Claude Code and the Copilot SDK silently ignore unknown frontmatter
+keys, so these are inert at load time. They are deliberately **not** mirrored
+into the platform overlays.
+
+### Active handoff mapping (Copilot only)
+
+The Copilot SDK has a native `handoffs:` field that enables one agent to
+dispatch another. The Copilot overlay at `.github/agents/<role>.agent.md`
+maps `handoff_targets` (canonical) → `handoffs:` (overlay) with `send: true`
+on each entry so handoffs fire **automatically** instead of requiring a
+manual confirmation click.
+
+Two casing notes:
+
+- Overlay handoff targets reference the overlay's `name:` field (Title-Case),
+  not the canonical filename (lower-case). Example: the `pm` role has
+  `name: Project Manager` in its overlay, so other roles' handoffs reference
+  it as `target: Project Manager`.
+- Claude Code has no equivalent field, so its overlays under `.claude/agents/`
+  do not declare handoffs. Claude Code subagents hand off via the explicit
+  `Task(subagent_type: '<role>')` tool call documented in
+  [`CLAUDE.md`](../CLAUDE.md).
+
+Keep the canonical `handoff_targets:` and the Copilot `handoffs:` list in
+sync when changing pipeline neighbors. The parity check
+`scripts/checks/050-agent-mirror.sh` does **not** currently enforce this —
+it's a manual discipline.
+
 ## What's NOT in canonical
 
 - Platform-specific `tools:` vocabulary (Copilot uses `'read'`, `'write'`, …;

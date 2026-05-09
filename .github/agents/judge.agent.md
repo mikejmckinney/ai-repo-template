@@ -3,6 +3,13 @@ name: Judge
 description: Use to gate a plan (before code) or review a diff/PR (after code). Outputs APPROVE / REQUEST_CHANGES / BLOCK.
 tools: ['read', 'search', 'fetch', 'githubRepo', 'usages']
 model: 'Claude Opus 4.7 (copilot)'
+handoffs:
+  - target: Project Manager
+    send: true
+  - target: Architect
+    send: true
+  - target: Critic
+    send: true
 ---
 
 # Judge (Copilot SDK overlay)

@@ -3,6 +3,13 @@ name: DevOps
 description: Use to edit workflows, install scripts, config, or CI files. Stays inside devops-owned paths.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo']
 model: 'Claude Sonnet 4.6 (copilot)'
+handoffs:
+  - target: QA
+    send: true
+  - target: Judge
+    send: true
+  - target: Docs
+    send: true
 ---
 
 # DevOps (Copilot SDK overlay)

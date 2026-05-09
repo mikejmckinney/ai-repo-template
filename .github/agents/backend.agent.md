@@ -3,6 +3,15 @@ name: Backend
 description: Use to implement server code (APIs, models, migrations). Consumes a dispatched task; stays inside backend-owned paths.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
 model: 'Claude Sonnet 4.6 (copilot)'
+handoffs:
+  - target: QA
+    send: true
+  - target: Judge
+    send: true
+  - target: Frontend
+    send: true
+  - target: Docs
+    send: true
 ---
 
 # Backend (Copilot SDK overlay)

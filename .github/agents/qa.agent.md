@@ -2,6 +2,15 @@
 name: QA
 description: Use to write/update tests, gate merges on coverage, and triage CI failures. Runs after implementation, before judge diff-gate.
 tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
+handoffs:
+  - target: Critic
+    send: true
+  - target: Judge
+    send: true
+  - target: Frontend
+    send: true
+  - target: Backend
+    send: true
 ---
 
 # QA (Copilot SDK overlay)
