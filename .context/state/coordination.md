@@ -240,6 +240,15 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
 
+## Lock: pr-255-phase4a
+<!-- managed-for-pr:272 -->
+**Role**: devops
+**Session**: feature/devops-255-phase4a-extract-helpers
+**PR**: #272
+**Claimed At**: 2026-05-09T02:30:00Z
+**State**: merged
+**Result**: Merged 2026-05-09 as PR #272 (squash `76e48b7`). Issue #255 Phase 4a — extracted shared `logging.sh` + `assertions.sh` helpers into `scripts/lib/`. 4 review rounds (R1: 5 findings, R2: 1 finding, R3+R4 clean). Phases 4b/4c/4d still open.
+
 ## Lock: pr-262
 <!-- managed-for-pr:268 -->
 **Role**: devops
