@@ -240,6 +240,15 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
 
+## Lock: pr-255-phase4b
+<!-- managed-for-pr:274 -->
+**Role**: devops
+**Session**: feature/devops-255-phase4b-bats-migration
+**PR**: #274
+**Claimed At**: 2026-05-09T04:00:00Z
+**State**: merged
+**Result**: Merged 2026-05-09 as PR #274 (squash `409532b`). Issue #255 Phase 4b — bats infra in scripts/tests/, 11 .bats wrappers around legacy scripts/test-*.sh, ci-tests.yml install + run + combined-results gate. 3 review rounds (R1: 7 findings, R2+R3 clean).
+
 ## Lock: pr-255-phase4a
 <!-- managed-for-pr:272 -->
 **Role**: devops
