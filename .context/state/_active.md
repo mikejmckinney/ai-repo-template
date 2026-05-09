@@ -63,6 +63,16 @@
 2. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
 3. Close out; remove this section in close-out commit
 
+## Task: feature/docs-256-design-patterns
+**Issue/PR**: #256 (parent #251, sub-issue 5)
+**Role**: docs
+**PR**: #290
+**Blockers**: None
+**Next 1–3 actions**:
+1. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
+2. Close out task; remove this section in the close-out commit
+3. (no third action)
+
 ## Task: feature/architect-227-pre-merge-verification
 **Issue/PR**: #227
 **Role**: architect (planning) → devops + docs (this PR ships all three)

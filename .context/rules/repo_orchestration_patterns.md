@@ -2,7 +2,7 @@
 
 > **Purpose**: Shared vocabulary for naming the patterns this template uses and the anti-patterns to watch for during review. Critic and Judge cite entries from this file by ID (`P1`–`P8`, `AP1`–`AP8`) when reviewing changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`).
 >
-> **Scope**: This file describes the *orchestration* layer of this template — multi-agent workflow, role definitions, rule files, gates, and coordination state. Code-layer patterns for downstream projects (CMMC enclave, FedRAMP OSCAL, etc.) live in `docs/guides/design-patterns.md` (planned under sub-issue 5 of parent epic #251).
+> **Scope**: This file describes the *orchestration* layer of this template — multi-agent workflow, role definitions, rule files, gates, and coordination state. Code-layer patterns for downstream projects (CMMC enclave, FedRAMP OSCAL, etc.) live in [`docs/guides/design-patterns.md`](../../docs/guides/design-patterns.md) (sub-issue 5 of parent epic #251). The postmortem-derived entries in this file (`AP3`, `AP4`, `P7`) have code-layer counterparts there: [`CAP2`](../../docs/guides/design-patterns.md#cap2--implicit-contract), [`CAP1`](../../docs/guides/design-patterns.md#cap1--goal-substitution), and [`CP1`](../../docs/guides/design-patterns.md#cp1--owner-keyed-concurrent-state) respectively.
 
 This file is **descriptive, not prescriptive**. Its job is to give reviewers concrete language for what already exists and what to flag — not to mandate new abstractions. Adding new patterns is rarely the answer; recognizing existing ones to keep changes consistent is what this file is for.
 
@@ -312,6 +312,6 @@ When adding a new entry to this file:
 - `docs/postmortems/` — postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) link back to their originating postmortem.
 - `.context/rules/domain_code_quality.md` — code-layer Hard/Soft rules (`H1`–`H8`, `S1`–`S6`); orchestration patterns here parallel those rules at the workflow layer.
 - `.context/rules/agent_ownership.md` — confirms Architect ownership of this file; PM coordinates cross-role edits.
-- `docs/guides/design-patterns.md` (sub-issue 5 of parent epic #251, when filed) — code-layer patterns for downstream projects; complementary scope to this file.
+- [`docs/guides/design-patterns.md`](../../docs/guides/design-patterns.md) (sub-issue 5 of parent epic #251) — code-layer patterns for downstream projects; complementary scope to this file. Postmortem-derived entries here (`AP3`, `AP4`, `P7`) cross-link to their code-layer analogs ([`CAP2`](../../docs/guides/design-patterns.md#cap2--implicit-contract), [`CAP1`](../../docs/guides/design-patterns.md#cap1--goal-substitution), [`CP1`](../../docs/guides/design-patterns.md#cp1--owner-keyed-concurrent-state)).
 - `.github/agents/critic.agent.md`, `.github/agents/judge.agent.md` — the review roles that cite entries from this file at PR time.
 - `docs/decisions/adr-020-orchestration-patterns-reference.md` — ADR ratifying the addition of this file.
