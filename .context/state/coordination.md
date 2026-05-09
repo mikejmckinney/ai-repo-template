@@ -57,10 +57,10 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## Active Locks
 
 ## Lock: pr-256-design-patterns
-<!-- managed-for-pr:pending -->
+<!-- managed-for-pr:290 -->
 **Role**: docs
 **Session**: feature/docs-256-design-patterns
-**PR**: pending
+**PR**: #290
 **Claimed At**: 2026-05-09T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:
