@@ -58,6 +58,10 @@
 **Issue/PR**: #252 (parent #251)
 **Role**: architect
 **Blockers**: None
+**Next 1–3 actions**:
+1. Open PR shipping `.context/rules/repo_orchestration_patterns.md` + ADR-020 + wiring (AGENTS link, ownership row, critic/judge refs, test.sh assertion, doc-sync trigger row)
+2. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
+3. Close out; remove this section in close-out commit
 
 ## Task: feature/docs-256-design-patterns
 **Issue/PR**: #256 (parent #251, sub-issue 5)
@@ -68,10 +72,6 @@
 1. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
 2. Close out task; remove this section in the close-out commit
 3. (no third action)
-**Next 1–3 actions**:
-1. Open PR shipping `.context/rules/repo_orchestration_patterns.md` + ADR-020 + wiring (AGENTS link, ownership row, critic/judge refs, test.sh assertion, doc-sync trigger row)
-2. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
-3. Close out; remove this section in close-out commit
 
 ## Task: feature/architect-227-pre-merge-verification
 **Issue/PR**: #227
