@@ -14,8 +14,15 @@ PASS=0
 FAIL=0
 FAILED=()
 
-pass() { PASS=$((PASS + 1)); printf '  ✅ %s\n' "$1"; }
-fail() { FAIL=$((FAIL + 1)); FAILED+=("$1"); printf '  ❌ %s\n' "$1"; }
+pass() {
+  PASS=$((PASS + 1))
+  printf '  ✅ %s\n' "$1"
+}
+fail() {
+  FAIL=$((FAIL + 1))
+  FAILED+=("$1")
+  printf '  ❌ %s\n' "$1"
+}
 
 if [[ ! -x "$CLOSEOUT" ]]; then
   printf '✗ %s missing or not executable\n' "$CLOSEOUT" >&2
@@ -35,15 +42,15 @@ trap cleanup EXIT
 scaffold_fixture() {
   local dir="$1"
   mkdir -p "$dir/.context/sessions" "$dir/.context/state" "$dir/.git"
-  : > "$dir/.context/sessions/latest_summary.md"
-  : > "$dir/.context/state/_active.md"
-  : > "$dir/.context/state/coordination.md"
+  : >"$dir/.context/sessions/latest_summary.md"
+  : >"$dir/.context/state/_active.md"
+  : >"$dir/.context/state/coordination.md"
 }
 
 # write_happy_path <dir> <branch>
 write_happy_path() {
   local dir="$1" branch="$2"
-  cat > "$dir/.context/sessions/latest_summary.md" <<EOF
+  cat >"$dir/.context/sessions/latest_summary.md" <<EOF
 # Session: 2026-05-09 — $branch — devops
 
 **Status**: done
@@ -69,10 +76,10 @@ none
 ## Open Items / Next
 none — task complete
 EOF
-  cat > "$dir/.context/state/_active.md" <<'EOF'
+  cat >"$dir/.context/state/_active.md" <<'EOF'
 # Active Tasks
 EOF
-  cat > "$dir/.context/state/coordination.md" <<'EOF'
+  cat >"$dir/.context/state/coordination.md" <<'EOF'
 ## Active Locks
 
 ## Recent History
@@ -84,7 +91,7 @@ fixture1=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
 scaffold_fixture "$fixture1"
 write_happy_path "$fixture1" "feature/test-262-refuse"
 # Inject the branch into Active Locks to trigger check 2 refusal.
-cat > "$fixture1/.context/state/coordination.md" <<'EOF'
+cat >"$fixture1/.context/state/coordination.md" <<'EOF'
 ## Active Locks
 
 ## Lock: pr-test-262
@@ -94,20 +101,20 @@ cat > "$fixture1/.context/state/coordination.md" <<'EOF'
 ## Recent History
 EOF
 # Touch a state file so check 1 passes (so check 2 is the one that fires).
-echo "x" >> "$fixture1/.context/state/_active.md"
+echo "x" >>"$fixture1/.context/state/_active.md"
 # Make script see "changes" without a real git repo — git diff will exit 128
 # inside our fake .git/, but the script tolerates that and treats output as empty.
 # To pass check 1 we need the diff helper to find the files. We work around
 # this by initializing a real git repo in the fixture.
-( cd "$fixture1" && rm -rf .git && git init -q \
+(cd "$fixture1" && rm -rf .git && git init -q \
   && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
   && git add -A && git commit -qm init \
   && git checkout -q -b feature/test-262-refuse \
-  && echo "modified" >> .context/sessions/latest_summary.md \
-  && echo "modified" >> .context/state/_active.md )
+  && echo "modified" >>.context/sessions/latest_summary.md \
+  && echo "modified" >>.context/state/_active.md)
 
 if out=$(CLOSEOUT_REPO_ROOT="$fixture1" CLOSEOUT_BRANCH="feature/test-262-refuse" \
-        bash "$CLOSEOUT" 2>&1); then
+  bash "$CLOSEOUT" 2>&1); then
   fail "test 1 (refusal): expected non-zero exit, got 0. Output:\n$out"
 else
   rc=$?
@@ -124,15 +131,15 @@ fi
 fixture2=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
 scaffold_fixture "$fixture2"
 write_happy_path "$fixture2" "feature/test-262-happy"
-( cd "$fixture2" && rm -rf .git && git init -q \
+(cd "$fixture2" && rm -rf .git && git init -q \
   && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
   && git add -A && git commit -qm init \
   && git checkout -q -b feature/test-262-happy \
-  && echo "modified" >> .context/sessions/latest_summary.md \
-  && echo "modified" >> .context/state/_active.md )
+  && echo "modified" >>.context/sessions/latest_summary.md \
+  && echo "modified" >>.context/state/_active.md)
 
 if out=$(CLOSEOUT_REPO_ROOT="$fixture2" CLOSEOUT_BRANCH="feature/test-262-happy" \
-        bash "$CLOSEOUT" 2>&1); then
+  bash "$CLOSEOUT" 2>&1); then
   if printf '%s\n' "$out" | grep -q "All checks passed."; then
     pass "test 2: happy path exits 0 and prints 'All checks passed'"
   else
@@ -152,13 +159,13 @@ fi
 fixture3=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
 scaffold_fixture "$fixture3"
 write_happy_path "$fixture3" "feature/test-262-no-touch"
-( cd "$fixture3" && rm -rf .git && git init -q \
+(cd "$fixture3" && rm -rf .git && git init -q \
   && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
   && git add -A && git commit -qm init \
-  && git checkout -q -b feature/test-262-no-touch )
+  && git checkout -q -b feature/test-262-no-touch)
 # No further modifications -> check 1 must refuse.
 if out=$(CLOSEOUT_REPO_ROOT="$fixture3" CLOSEOUT_BRANCH="feature/test-262-no-touch" \
-        bash "$CLOSEOUT" 2>&1); then
+  bash "$CLOSEOUT" 2>&1); then
   fail "test 3 (no-touch): expected non-zero exit, got 0. Output:\n$out"
 else
   if printf '%s\n' "$out" | grep -q 'check 1a: close-out commit must touch'; then
@@ -177,7 +184,7 @@ fixture4=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
 scaffold_fixture "$fixture4"
 write_happy_path "$fixture4" "feature/test-262-foo"
 # Inject a *different* lock whose Session field happens to start with our branch name.
-cat > "$fixture4/.context/state/coordination.md" <<'EOF'
+cat >"$fixture4/.context/state/coordination.md" <<'EOF'
 ## Active Locks
 
 ## Lock: pr-test-262-foo-2
@@ -188,20 +195,20 @@ cat > "$fixture4/.context/state/coordination.md" <<'EOF'
 EOF
 # Also inject a session header for the prefix-overlap branch to verify
 # check 4's exact-field match.
-cat >> "$fixture4/.context/sessions/latest_summary.md" <<'EOF'
+cat >>"$fixture4/.context/sessions/latest_summary.md" <<'EOF'
 
 # Session: 2026-05-08 — feature/test-262-foo-2 — devops
 **Status**: in_progress
 EOF
-( cd "$fixture4" && rm -rf .git && git init -q \
+(cd "$fixture4" && rm -rf .git && git init -q \
   && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
   && git add -A && git commit -qm init \
   && git checkout -q -b feature/test-262-foo \
-  && echo "modified" >> .context/sessions/latest_summary.md \
-  && echo "modified" >> .context/state/_active.md )
+  && echo "modified" >>.context/sessions/latest_summary.md \
+  && echo "modified" >>.context/state/_active.md)
 
 if out=$(CLOSEOUT_REPO_ROOT="$fixture4" CLOSEOUT_BRANCH="feature/test-262-foo" \
-        bash "$CLOSEOUT" 2>&1); then
+  bash "$CLOSEOUT" 2>&1); then
   if printf '%s\n' "$out" | grep -q "check 2: no Active Locks reference branch 'feature/test-262-foo'"; then
     pass "test 4: prefix-overlap branch name does not false-positive check 2"
   else
@@ -219,20 +226,20 @@ fixture5=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
 scaffold_fixture "$fixture5"
 write_happy_path "$fixture5" "feature/test-262-no-heading"
 # Overwrite coordination.md so it lacks the '## Active Locks' heading.
-cat > "$fixture5/.context/state/coordination.md" <<'EOF'
+cat >"$fixture5/.context/state/coordination.md" <<'EOF'
 # Coordination Board
 
 (no Active Locks heading — malformed file)
 EOF
-( cd "$fixture5" && rm -rf .git && git init -q \
+(cd "$fixture5" && rm -rf .git && git init -q \
   && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
   && git add -A && git commit -qm init \
   && git checkout -q -b feature/test-262-no-heading \
-  && echo "modified" >> .context/sessions/latest_summary.md \
-  && echo "modified" >> .context/state/_active.md )
+  && echo "modified" >>.context/sessions/latest_summary.md \
+  && echo "modified" >>.context/state/_active.md)
 
 if out=$(CLOSEOUT_REPO_ROOT="$fixture5" CLOSEOUT_BRANCH="feature/test-262-no-heading" \
-        bash "$CLOSEOUT" 2>&1); then
+  bash "$CLOSEOUT" 2>&1); then
   fail "test 5 (no Active Locks heading): expected non-zero exit, got 0. Output:\n$out"
 else
   if printf '%s\n' "$out" | grep -q "missing the '## Active Locks' heading"; then

@@ -59,8 +59,14 @@ REFUSE=0
 WARN=0
 
 pass() { printf '%s✓%s %s\n' "$GREEN" "$NC" "$1"; }
-fail() { printf '%s✗%s %s\n' "$RED" "$NC" "$1" >&2; REFUSE=1; }
-warn() { printf '%s⚠%s %s\n' "$YELLOW" "$NC" "$1"; WARN=$((WARN + 1)); }
+fail() {
+  printf '%s✗%s %s\n' "$RED" "$NC" "$1" >&2
+  REFUSE=1
+}
+warn() {
+  printf '%s⚠%s %s\n' "$YELLOW" "$NC" "$1"
+  WARN=$((WARN + 1))
+}
 info() { printf '%s•%s %s\n' "$BLUE" "$NC" "$1"; }
 
 # Paths (constants)
@@ -92,7 +98,7 @@ else
 fi
 
 if printf '%s\n' "$changed" | grep -qxF "$STATE_ACTIVE" \
-   || printf '%s\n' "$changed" | grep -qxF "$STATE_COORD"; then
+  || printf '%s\n' "$changed" | grep -qxF "$STATE_COORD"; then
   pass "check 1b: $STATE_ACTIVE or $STATE_COORD touched"
 else
   fail "check 1b: close-out commit must touch $STATE_ACTIVE or $STATE_COORD"
@@ -118,12 +124,12 @@ if [[ -f "$STATE_COORD" ]]; then
     in_block && /^## / && !/^## Lock:/ { in_block = 0 }
     in_block { print }
   ' "$STATE_COORD")
-  # Match the branch on its own as the value of `**Session**:` (or
-  # `**Branch**:` for older lock formats). Substring `grep -qF` would
-  # false-positive on prefix-overlapping branches like
-  # `feature/foo` vs `feature/foo-2`.
-  if printf '%s\n' "$active_locks_body" \
-        | awk -v b="$BRANCH" '
+    # Match the branch on its own as the value of `**Session**:` (or
+    # `**Branch**:` for older lock formats). Substring `grep -qF` would
+    # false-positive on prefix-overlapping branches like
+    # `feature/foo` vs `feature/foo-2`.
+    if printf '%s\n' "$active_locks_body" \
+      | awk -v b="$BRANCH" '
             /^\*\*(Session|Branch)\*\*:/ {
               # Strip leading `**Session**:` / `**Branch**:` and surrounding whitespace.
               sub(/^\*\*(Session|Branch)\*\*:[[:space:]]*/, "")
@@ -132,10 +138,10 @@ if [[ -f "$STATE_COORD" ]]; then
             }
             END { exit !found }
           '; then
-    fail "check 2: lock for branch '$BRANCH' is still in '## Active Locks' — move it to '## Recent History' first"
-  else
-    pass "check 2: no Active Locks reference branch '$BRANCH'"
-  fi
+      fail "check 2: lock for branch '$BRANCH' is still in '## Active Locks' — move it to '## Recent History' first"
+    else
+      pass "check 2: no Active Locks reference branch '$BRANCH'"
+    fi
   fi
 else
   fail "check 2: $STATE_COORD missing"
@@ -229,8 +235,8 @@ if [[ -f "$SESSIONS_LATEST" ]]; then
     if [[ -n "$latest_date" ]]; then
       if today_epoch=$(date -u +%s 2>/dev/null) \
         && entry_epoch=$(date -u -d "$latest_date" +%s 2>/dev/null \
-            || date -u -j -f '%Y-%m-%d' "$latest_date" +%s 2>/dev/null); then
-        age_days=$(( (today_epoch - entry_epoch) / 86400 ))
+          || date -u -j -f '%Y-%m-%d' "$latest_date" +%s 2>/dev/null); then
+        age_days=$(((today_epoch - entry_epoch) / 86400))
         if [[ "$age_days" -gt 7 ]]; then
           warn "check 5b: most recent entry in $SESSIONS_LATEST is $age_days days old (threshold 7) — consider rotating"
         else
