@@ -2,7 +2,7 @@
 
 > **Purpose**: the 23 Gang of Four patterns from *Design Patterns* (Gamma, Helm, Johnson, Vlissides, 1994), tailored to modern languages. Each entry has stable ID `CP-N` for citation.
 >
-> **Read first**: [`design-patterns.md`](design-patterns.md) — lead file with framing, descriptive-not-prescriptive caveats, and citation conventions. **Don't cite from this file without reading the lead file's "Read this first" section.** Patterns are vocabulary, not rules. Iterator, Strategy, Command, Observer, and Template Method are mostly language features in modern languages — flagged per entry.
+> **Read first**: [`design-patterns.md`](design-patterns.md) — lead file with framing, descriptive-not-prescriptive caveats, and citation conventions. **Don't cite from this file without reading the lead file's "Read this first" section.** Patterns are vocabulary, not rules. Decorator, Iterator, Strategy, Command, Observer, and Template Method are mostly language features in modern languages — flagged per entry.
 
 Examples are in Python, intentionally minimal. They show the shape of each pattern, not production code.
 
@@ -27,6 +27,11 @@ class Logger:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
+    # Note: __new__ alone doesn't prevent re-initialization. Python
+    # always calls __init__ after __new__ returns an instance of cls,
+    # so an __init__ here would run on every Logger() call. Either
+    # omit __init__ entirely (as above) or guard it with a flag set
+    # on first init. A metaclass-based singleton avoids this footgun.
 ```
 
 ### CP3 — Factory Method
@@ -243,9 +248,9 @@ How objects communicate and assign responsibility.
 
 ```python
 class Handler:
-    def __init__(self, next=None): self.next = next
+    def __init__(self, successor=None): self.successor = successor
     def handle(self, req):
-        if self.next: return self.next.handle(req)
+        if self.successor: return self.successor.handle(req)
 
 chain = Auth(Logging(RateLimit(BusinessLogic())))
 chain.handle(request)
@@ -383,7 +388,7 @@ class Cart:
     def total(self, items):
         return self.discount(sum(i.price for i in items))
 
-black_friday = lambda total: total * 0.5
+def black_friday(total): return total * 0.5
 cart = Cart(black_friday)
 ```
 

@@ -36,8 +36,8 @@ class UserRepository:
 ```python
 class UnitOfWork:
     def __enter__(self): self.session = Session(); return self
-    def __exit__(self, *exc):
-        if exc[0] is None: self.session.commit()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None: self.session.commit()
         else: self.session.rollback()
 
 with UnitOfWork() as uow:
