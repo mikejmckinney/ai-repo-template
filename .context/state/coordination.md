@@ -240,6 +240,15 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
 
+## Lock: pr-255-phase4d
+<!-- managed-for-pr:278 -->
+**Role**: devops
+**Session**: feature/devops-255-phase4d-slim-test
+**PR**: #278
+**Claimed At**: 2026-05-09T13:00:00Z
+**State**: merged
+**Result**: Merged 2026-05-09 as PR #278 (squash `bc1393e`). Issue #255 Phase 4d — slimmed `test.sh` from 1,720-line monolith to 95-line orchestrator that sources `scripts/checks/[0-9][0-9][0-9]-*.sh` modules (3-digit zero-padded prefixes so lexical sort matches numeric order). 29 single-concern check modules + `scripts/checks/README.md`. Shape-preserving extraction; 365/1/0 baseline preserved. 7 review rounds: R1 (4 distinct findings — duplicate comment, doc inconsistency, $LF_FILE coupling, lexical glob misordering); R2 (continuity regex tighter than glob); R3 (awk on AGENTS.md unguarded under set -e); R4 (2 doc-sync followups from R1 renumber); R5 (schema-bypass-via-comments fixed, syntax-coverage scope expansion deferred to #281); R6 + R7 clean. Followups filed: #280 (un-wrap bats + delete legacy scripts/test-*.sh) and #281 (expand 055-script-syntax.sh coverage). Issue #255 stays open until #280 + #281 ship.
+
 ## Lock: pr-255-phase4c
 <!-- managed-for-pr:276 -->
 **Role**: devops
