@@ -2,7 +2,7 @@
 
 **Status**: done
 **Issue/PR**: #255 / #280 (PR #287 merged) + #281 (PR #288 merged) → this PR (chore close-out)
-**Started**: 2026-05-09T15:00:00Z
+**Started**: 2026-05-09T16:30:00Z
 
 ## What Was Accomplished
 - Re-templated issues #280 and #281 to the `feature_request.md` shape; posted Implementation Plan comments to both per ADR-011.
