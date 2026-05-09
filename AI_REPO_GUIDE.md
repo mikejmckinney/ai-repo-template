@@ -85,7 +85,7 @@ bash install.sh
 │   ├── README.md
 │   ├── checks/               # Numbered test.sh check modules (issue #255 Phase 4d)
 │   │   ├── README.md
-│   │   └── <NN>-*.sh         # Sourced by test.sh in lexical order
+│   │   └── <NNN>-*.sh        # Sourced by test.sh in lexical order (3-digit zero-padded prefix)
 │   ├── lib/                  # Shared shell helpers (issue #255 Phase 4a)
 │   │   ├── logging.sh        # Color vars + log_info/warn/error/step
 │   │   ├── assertions.sh     # PASS/FAIL/WARN counters + pass/fail/warn
