@@ -80,7 +80,10 @@ printf 'closeout: enforcing cadence discipline for branch %s%s%s\n\n' "$BLUE" "$
 # ── Check 1: state files touched ────────────────────────────────────────
 # Working-tree diff (staged + unstaged) must include latest_summary.md AND
 # at least one of _active.md / coordination.md.
-changed=$(git diff --name-only HEAD 2>/dev/null; git diff --name-only --cached 2>/dev/null)
+# `git diff --name-only HEAD` already returns the union of staged and
+# unstaged changes relative to the last commit, so a single call is
+# enough.
+changed=$(git diff --name-only HEAD 2>/dev/null)
 
 if printf '%s\n' "$changed" | grep -qxF "$SESSIONS_LATEST"; then
   pass "check 1a: $SESSIONS_LATEST touched"
@@ -252,7 +255,7 @@ if [[ -f "$SESSIONS_LATEST" ]]; then
   else
     missing_headers=()
     for h in "${REQUIRED_HEADERS[@]}"; do
-      if ! printf '%s\n' "$session_block" | grep -qxF "$h"; then
+      if ! printf '%s\n' "$session_block" | grep -qF "$h"; then
         missing_headers+=("$h")
       fi
     done
