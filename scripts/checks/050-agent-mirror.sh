@@ -32,13 +32,13 @@ echo "Checking canonical/overlay parity (.agents/ ↔ .github/agents/, .claude/a
 copilot_allowlist_re="^model: '[A-Za-z0-9. ()-]+ \\(copilot\\)'$"
 claude_allowlist_re='^model: (inherit|claude-opus-4-7|claude-sonnet-4-6|claude-haiku-4-5)$'
 
-platforms=(           "copilot"          "claude"        )
-overlay_dirs=(        ".github/agents"   ".claude/agents")
-overlay_suffixes=(    ".agent.md"        ".md"           )
-model_allowlist_res=( "$copilot_allowlist_re" "$claude_allowlist_re" )
+platforms=("copilot" "claude")
+overlay_dirs=(".github/agents" ".claude/agents")
+overlay_suffixes=(".agent.md" ".md")
+model_allowlist_res=("$copilot_allowlist_re" "$claude_allowlist_re")
 # model_required: 1 = must have a model: line; 0 = may omit (Copilot Low tier
 # inherits main session per ADR-019).
-model_required_flags=("0"                "1"             )
+model_required_flags=("0" "1")
 
 # Iterate every canonical role. Each canonical file is the source of truth for
 # the description: line and the role name; overlays must mirror.
