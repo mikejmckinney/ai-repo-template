@@ -4,7 +4,7 @@
 >
 > **Scope**: code-layer patterns for downstream projects derived from this template — application code, libraries, services, infrastructure-as-code constructs. NOT the orchestration / multi-agent / governance layer of this template (that lives in [`repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md)).
 >
-> **Status**: advisory. Critic cites entries as `CRAFT NOTES`; Judge does NOT block at diff-gate on a citation from this file. Tightening any entry to block-on-sight requires an ADR. See [ADR-020 §"Status: advisory by default"](../decisions/adr-020-orchestration-patterns-reference.md) for the parallel decision on the orchestration file — the same logic applies here.
+> **Status**: advisory. Critic cites entries as `CRAFT NOTES`; Judge does NOT block at diff-gate on a citation from this file. Tightening any entry to block-on-sight requires an ADR. See [ADR-020 §"Block-vs-advisory designation"](../decisions/adr-020-orchestration-patterns-reference.md#block-vs-advisory-designation) for the parallel decision on the orchestration file — the same logic applies here (this file ships everything advisory by default; the orchestration file ships a per-entry mix).
 
 ## Read this first — descriptive vocabulary, not prescription
 
