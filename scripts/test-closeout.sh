@@ -25,9 +25,9 @@ fi
 # Per-fixture vars are populated as each test creates its tmp dir.
 # Initialize them up front so the single EXIT trap below is safe even
 # if the script aborts between fixture creations.
-fixture1="" fixture2="" fixture3="" fixture4=""
+fixture1="" fixture2="" fixture3="" fixture4="" fixture5=""
 cleanup() {
-  rm -rf "${fixture1:-}" "${fixture2:-}" "${fixture3:-}" "${fixture4:-}"
+  rm -rf "${fixture1:-}" "${fixture2:-}" "${fixture3:-}" "${fixture4:-}" "${fixture5:-}"
 }
 trap cleanup EXIT
 
@@ -210,6 +210,36 @@ if out=$(CLOSEOUT_REPO_ROOT="$fixture4" CLOSEOUT_BRANCH="feature/test-262-foo" \
 else
   rc=$?
   fail "test 4 (prefix-overlap): expected exit 0, got $rc — anchored Session match regressed. Output:\n$out"
+fi
+
+# Test 5 — malformed coordination.md with no '## Active Locks' heading
+# (R5 review feedback): the check must refuse rather than silently pass
+# when the file structure contract is broken.
+fixture5=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
+scaffold_fixture "$fixture5"
+write_happy_path "$fixture5" "feature/test-262-no-heading"
+# Overwrite coordination.md so it lacks the '## Active Locks' heading.
+cat > "$fixture5/.context/state/coordination.md" <<'EOF'
+# Coordination Board
+
+(no Active Locks heading — malformed file)
+EOF
+( cd "$fixture5" && rm -rf .git && git init -q \
+  && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
+  && git add -A && git commit -qm init \
+  && git checkout -q -b feature/test-262-no-heading \
+  && echo "modified" >> .context/sessions/latest_summary.md \
+  && echo "modified" >> .context/state/_active.md )
+
+if out=$(CLOSEOUT_REPO_ROOT="$fixture5" CLOSEOUT_BRANCH="feature/test-262-no-heading" \
+        bash "$CLOSEOUT" 2>&1); then
+  fail "test 5 (no Active Locks heading): expected non-zero exit, got 0. Output:\n$out"
+else
+  if printf '%s\n' "$out" | grep -q "missing the '## Active Locks' heading"; then
+    pass "test 5: refusal on malformed coordination.md (no Active Locks heading)"
+  else
+    fail "test 5 (no Active Locks heading): refused but check 2 message missing. Output:\n$out"
+  fi
 fi
 
 printf '\n'

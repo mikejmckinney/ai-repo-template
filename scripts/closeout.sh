@@ -103,10 +103,17 @@ fi
 # If the branch name appears anywhere in that body (typically as
 # `**Session**: <branch>`), the lock has not been moved.
 if [[ -f "$STATE_COORD" ]]; then
-  # Capture everything between `## Active Locks` and the next non-`## Lock:`
-  # `## ` heading (typically `## Recent History`) or EOF. Sub-`## Lock: …`
-  # headings are part of the block, not terminators.
-  active_locks_body=$(awk '
+  # Validate the file structure before parsing — if the `## Active Locks`
+  # heading is missing, awk would yield an empty body and check 2 would
+  # silently pass even with a stale lock elsewhere in the file. AP3:
+  # don't rely on an implicit file-structure contract without validating it.
+  if ! grep -qE '^## Active Locks[[:space:]]*$' "$STATE_COORD"; then
+    fail "check 2: $STATE_COORD is missing the '## Active Locks' heading — cannot validate lock state"
+  else
+    # Capture everything between `## Active Locks` and the next non-`## Lock:`
+    # `## ` heading (typically `## Recent History`) or EOF. Sub-`## Lock: …`
+    # headings are part of the block, not terminators.
+    active_locks_body=$(awk '
     /^## Active Locks[[:space:]]*$/ { in_block = 1; next }
     in_block && /^## / && !/^## Lock:/ { in_block = 0 }
     in_block { print }
@@ -128,6 +135,7 @@ if [[ -f "$STATE_COORD" ]]; then
     fail "check 2: lock for branch '$BRANCH' is still in '## Active Locks' — move it to '## Recent History' first"
   else
     pass "check 2: no Active Locks reference branch '$BRANCH'"
+  fi
   fi
 else
   fail "check 2: $STATE_COORD missing"
