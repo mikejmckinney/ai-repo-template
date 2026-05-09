@@ -36,16 +36,6 @@
 
 # Active Tasks
 
-## Task: feature/docs-254-top-level-md-audit
-**Issue/PR**: #254
-**Role**: docs
-**PR**: #266
-**Blockers**: None
-**Next 1–3 actions**:
-1. Continue pr-resolve-all loop on PR #266 with `cap-override` until two consecutive clean iterations
-2. Open `chore(closeout): PR #266 merged` follow-up PR after merge (per `process_session_state.md` close-out PR discipline rule)
-3. Remove this section in the close-out PR
-
 ## Task: feature/devops-220-phase2
 **Issue/PR**: #220 (Phase 2)
 **Role**: devops (lead) + architect (ADR-019) + docs + qa
