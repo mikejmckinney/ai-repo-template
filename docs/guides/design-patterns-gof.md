@@ -184,8 +184,10 @@ class Directory(FSNode):
 ```python
 def with_cache(fn):
     cache = {}
-    def wrapper(*args):
-        if args not in cache: cache[args] = fn(*args)
+    def wrapper(*args, **kwargs):
+        # Cache key omits kwargs for brevity; real use needs a
+        # hashable key built from both args and sorted kwargs.
+        if args not in cache: cache[args] = fn(*args, **kwargs)
         return cache[args]
     return wrapper
 
@@ -318,7 +320,9 @@ class TreeIterator:
     def __next__(self):
         if not self.stack: raise StopIteration
         node = self.stack.pop()
-        self.stack.extend(node.children)
+        # reversed() so left children are popped first — standard
+        # left-to-right depth-first / document-order traversal.
+        self.stack.extend(reversed(node.children))
         return node
 ```
 
