@@ -8,18 +8,18 @@
 # format-changing PRs to the ownership table fail CI at the change PR
 # rather than at the next overlap report.
 echo "Running parallelism report parser unit tests..."
-if [[ -f scripts/test-parallelism-report-parser.sh ]]; then
+if [[ -f scripts/tests/parallelism-report-parser.bats ]]; then
   PR_PARSER_LOG=$(mktemp)
-  if bash scripts/test-parallelism-report-parser.sh >"$PR_PARSER_LOG" 2>&1; then
-    pr_parser_passed=$(grep -c '^  ✅ ' "$PR_PARSER_LOG" || true)
-    pass "scripts/test-parallelism-report-parser.sh ($pr_parser_passed assertions passed)"
+  if bats --tap scripts/tests/parallelism-report-parser.bats >"$PR_PARSER_LOG" 2>&1; then
+    pr_parser_passed=$(grep -c '^ok ' "$PR_PARSER_LOG" || true)
+    pass "scripts/tests/parallelism-report-parser.bats ($pr_parser_passed tests passed)"
   else
-    fail "scripts/test-parallelism-report-parser.sh failed (see log below)"
+    fail "scripts/tests/parallelism-report-parser.bats failed (see log below)"
     cat "$PR_PARSER_LOG"
   fi
   rm -f "$PR_PARSER_LOG"
 else
-  fail "scripts/test-parallelism-report-parser.sh missing"
+  fail "scripts/tests/parallelism-report-parser.bats missing"
 fi
 
 echo ""

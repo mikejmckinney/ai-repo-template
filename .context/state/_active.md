@@ -71,3 +71,13 @@
 1. Open PR shipping ADR-016 + verify-pr.sh + matrix + sandbox playbook + Phase-3 codification
 2. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
 3. Close out; maintainer runs `gh repo create mikejmckinney/ai-repo-template-sandbox` per playbook
+
+## Task: feature/devops-280-unwrap-bats-tests
+**Issue/PR**: #280
+**Role**: devops
+**PR**: pending
+**Blockers**: None
+**Next 1–3 actions**:
+1. Inline 11 legacy scripts/test-*.sh bodies into matching scripts/tests/*.bats files; delete the 11 .sh files; redirect 7 scripts/checks/* invocations from `bash scripts/test-*.sh` to `bats --tap scripts/tests/*.bats`
+2. Verify: `bash test.sh` 365/1/0 preserved, `bats --jobs 4 scripts/tests/` passes, `ls scripts/test-*.sh` returns 0 files
+3. Open PR; run pr-resolve-all.md loop with cap-override until two clean iterations; remove this section in close-out

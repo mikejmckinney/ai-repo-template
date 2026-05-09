@@ -64,18 +64,18 @@ done
 
 echo ""
 echo "Running jq filter unit tests..."
-if [[ -f scripts/test-jq-filters.sh ]]; then
+if [[ -f scripts/tests/jq-filters.bats ]]; then
   JQ_LOG=$(mktemp)
-  if bash scripts/test-jq-filters.sh >"$JQ_LOG" 2>&1; then
-    jq_passed=$(grep -c '^  ✅ ' "$JQ_LOG" || true)
-    pass "scripts/test-jq-filters.sh ($jq_passed assertions passed)"
+  if bats --tap scripts/tests/jq-filters.bats >"$JQ_LOG" 2>&1; then
+    jq_passed=$(grep -c '^ok ' "$JQ_LOG" || true)
+    pass "scripts/tests/jq-filters.bats ($jq_passed tests passed)"
   else
-    fail "scripts/test-jq-filters.sh failed (see log below)"
+    fail "scripts/tests/jq-filters.bats failed (see log below)"
     cat "$JQ_LOG"
   fi
   rm -f "$JQ_LOG"
 else
-  fail "scripts/test-jq-filters.sh missing"
+  fail "scripts/tests/jq-filters.bats missing"
 fi
 
 echo ""
@@ -95,71 +95,71 @@ if [[ -x scripts/closeout.sh ]]; then
 else
   fail "scripts/closeout.sh missing or not executable"
 fi
-if [[ -x scripts/test-closeout.sh ]]; then
-  pass "scripts/test-closeout.sh present and executable"
+if [[ -f scripts/tests/closeout.bats ]]; then
+  pass "scripts/tests/closeout.bats present"
 else
-  fail "scripts/test-closeout.sh missing or not executable"
+  fail "scripts/tests/closeout.bats missing"
 fi
-if [[ -f scripts/test-closeout.sh ]]; then
+if [[ -f scripts/tests/closeout.bats ]]; then
   CO_LOG=$(mktemp)
-  if bash scripts/test-closeout.sh >"$CO_LOG" 2>&1; then
-    co_passed=$(grep -c '^  ✅ ' "$CO_LOG" || true)
-    pass "scripts/test-closeout.sh ($co_passed assertions passed)"
+  if bats --tap scripts/tests/closeout.bats >"$CO_LOG" 2>&1; then
+    co_passed=$(grep -c '^ok ' "$CO_LOG" || true)
+    pass "scripts/tests/closeout.bats ($co_passed tests passed)"
   else
-    fail "scripts/test-closeout.sh failed (see log below)"
+    fail "scripts/tests/closeout.bats failed (see log below)"
     cat "$CO_LOG"
   fi
   rm -f "$CO_LOG"
 else
-  fail "scripts/test-closeout.sh missing"
+  fail "scripts/tests/closeout.bats missing"
 fi
 
 echo ""
 echo "Running verify-env.sh fixture tests..."
-if [[ -f scripts/test-verify-env.sh ]]; then
+if [[ -f scripts/tests/verify-env.bats ]]; then
   VE_LOG=$(mktemp)
-  if bash scripts/test-verify-env.sh >"$VE_LOG" 2>&1; then
-    ve_passed=$(grep -c '^  ✅ ' "$VE_LOG" || true)
-    pass "scripts/test-verify-env.sh ($ve_passed assertions passed)"
+  if bats --tap scripts/tests/verify-env.bats >"$VE_LOG" 2>&1; then
+    ve_passed=$(grep -c '^ok ' "$VE_LOG" || true)
+    pass "scripts/tests/verify-env.bats ($ve_passed tests passed)"
   else
-    fail "scripts/test-verify-env.sh failed (see log below)"
+    fail "scripts/tests/verify-env.bats failed (see log below)"
     cat "$VE_LOG"
   fi
   rm -f "$VE_LOG"
 else
-  fail "scripts/test-verify-env.sh missing"
+  fail "scripts/tests/verify-env.bats missing"
 fi
 
 echo ""
 echo "Running ADR-018 multi-task _active.md smoke test..."
-if [[ -f scripts/test-active-md-multitask.sh ]]; then
+if [[ -f scripts/tests/active-md-multitask.bats ]]; then
   AMT_LOG=$(mktemp)
-  if bash scripts/test-active-md-multitask.sh >"$AMT_LOG" 2>&1; then
+  if bats --tap scripts/tests/active-md-multitask.bats >"$AMT_LOG" 2>&1; then
     amt_passed=$(grep -c '^PASS \[' "$AMT_LOG" || true)
-    pass "scripts/test-active-md-multitask.sh ($amt_passed scenarios passed)"
+    pass "scripts/tests/active-md-multitask.bats ($amt_passed tests passed)"
   else
-    fail "scripts/test-active-md-multitask.sh failed (see log below)"
+    fail "scripts/tests/active-md-multitask.bats failed (see log below)"
     cat "$AMT_LOG"
   fi
   rm -f "$AMT_LOG"
 else
-  fail "scripts/test-active-md-multitask.sh missing"
+  fail "scripts/tests/active-md-multitask.bats missing"
 fi
 
 echo ""
 echo "Running verify-pr.sh classifier fixture tests (issue #227)..."
-if [[ -f scripts/test-verify-pr.sh ]]; then
+if [[ -f scripts/tests/verify-pr.bats ]]; then
   VPR_LOG=$(mktemp)
-  if bash scripts/test-verify-pr.sh >"$VPR_LOG" 2>&1; then
-    vpr_passed=$(grep -c '^  ✅ ' "$VPR_LOG" || true)
-    pass "scripts/test-verify-pr.sh ($vpr_passed assertions passed)"
+  if bats --tap scripts/tests/verify-pr.bats >"$VPR_LOG" 2>&1; then
+    vpr_passed=$(grep -c '^ok ' "$VPR_LOG" || true)
+    pass "scripts/tests/verify-pr.bats ($vpr_passed tests passed)"
   else
-    fail "scripts/test-verify-pr.sh failed (see log below)"
+    fail "scripts/tests/verify-pr.bats failed (see log below)"
     cat "$VPR_LOG"
   fi
   rm -f "$VPR_LOG"
 else
-  fail "scripts/test-verify-pr.sh missing"
+  fail "scripts/tests/verify-pr.bats missing"
 fi
 
 echo ""

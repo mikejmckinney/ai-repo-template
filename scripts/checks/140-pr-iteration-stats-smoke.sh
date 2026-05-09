@@ -5,18 +5,18 @@
 
 # --- pr-iteration-stats.sh smoke tests (issue #229 Phase 1) ---
 echo "Running pr-iteration-stats.sh smoke tests..."
-if [[ -f scripts/test-pr-iteration-stats.sh ]]; then
+if [[ -f scripts/tests/pr-iteration-stats.bats ]]; then
   PIS_LOG=$(mktemp)
-  if bash scripts/test-pr-iteration-stats.sh >"$PIS_LOG" 2>&1; then
-    pis_passed=$(grep -c '^  ✅ ' "$PIS_LOG" || true)
-    pass "scripts/test-pr-iteration-stats.sh ($pis_passed assertions passed)"
+  if bats --tap scripts/tests/pr-iteration-stats.bats >"$PIS_LOG" 2>&1; then
+    pis_passed=$(grep -c '^ok ' "$PIS_LOG" || true)
+    pass "scripts/tests/pr-iteration-stats.bats ($pis_passed tests passed)"
   else
-    fail "scripts/test-pr-iteration-stats.sh failed (see log below)"
+    fail "scripts/tests/pr-iteration-stats.bats failed (see log below)"
     cat "$PIS_LOG"
   fi
   rm -f "$PIS_LOG"
 else
-  fail "scripts/test-pr-iteration-stats.sh missing"
+  fail "scripts/tests/pr-iteration-stats.bats missing"
 fi
 
 echo ""

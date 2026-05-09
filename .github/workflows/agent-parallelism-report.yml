@@ -26,7 +26,7 @@ name: Parallelism Report
 # Related:
 #   - ADR-009 — design rationale and dispatch reality matrix
 #   - .context/rules/agent_ownership.md — parsed for owned-path globs
-#   - scripts/test-parallelism-report-parser.sh — unit test for the parser
+#   - scripts/tests/parallelism-report-parser.bats — unit test for the parser
 
 on:
   pull_request:
@@ -95,7 +95,7 @@ jobs:
           # ── 1. Parse owned-path globs from agent_ownership.md ──
           # Delegated to scripts/parse-ownership-table.sh (single source
           # of truth for the parser; the unit test
-          # scripts/test-parallelism-report-parser.sh calls the same
+          # scripts/tests/parallelism-report-parser.bats calls the same
           # script). The script emits one `role<TAB>top-level-prefix`
           # line per (role, glob) pair, sorted unique. Top-level prefix
           # is what we use for soft-overlap matching: two PRs are "soft"

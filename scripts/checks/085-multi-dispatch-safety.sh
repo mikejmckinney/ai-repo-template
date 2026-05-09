@@ -10,18 +10,18 @@
 # detection. If these regress, the dispatcher would silently assign
 # Copilot to overlapping issues. Hard-fail keeps regressions out of CI.
 echo "Running multi-dispatch safety unit tests..."
-if [[ -f scripts/test-multi-dispatch-safety.sh ]]; then
+if [[ -f scripts/tests/multi-dispatch-safety.bats ]]; then
   MDS_LOG=$(mktemp)
-  if bash scripts/test-multi-dispatch-safety.sh >"$MDS_LOG" 2>&1; then
-    mds_passed=$(grep -c '^  ✅ ' "$MDS_LOG" || true)
-    pass "scripts/test-multi-dispatch-safety.sh ($mds_passed assertions passed)"
+  if bats --tap scripts/tests/multi-dispatch-safety.bats >"$MDS_LOG" 2>&1; then
+    mds_passed=$(grep -c '^ok ' "$MDS_LOG" || true)
+    pass "scripts/tests/multi-dispatch-safety.bats ($mds_passed tests passed)"
   else
-    fail "scripts/test-multi-dispatch-safety.sh failed (see log below)"
+    fail "scripts/tests/multi-dispatch-safety.bats failed (see log below)"
     cat "$MDS_LOG"
   fi
   rm -f "$MDS_LOG"
 else
-  fail "scripts/test-multi-dispatch-safety.sh missing"
+  fail "scripts/tests/multi-dispatch-safety.bats missing"
 fi
 
 echo ""

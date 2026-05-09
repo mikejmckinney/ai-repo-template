@@ -38,11 +38,11 @@ else
 fi
 
 # Smoke test for parallel-merge safety.
-SMOKE_PATH="scripts/test-active-md-multitask.sh"
-if [[ -x "$SMOKE_PATH" ]]; then
-  pass "$SMOKE_PATH exists and is executable (ADR-018 smoke test)"
+SMOKE_PATH="scripts/tests/active-md-multitask.bats"
+if [[ -f "$SMOKE_PATH" ]]; then
+  pass "$SMOKE_PATH exists (ADR-018 smoke test)"
 else
-  fail "$SMOKE_PATH missing or not executable (ADR-018 smoke test)"
+  fail "$SMOKE_PATH missing (ADR-018 smoke test)"
 fi
 
 # Cadence rule references ADR-018 (now in process_session_state.md per ADR-021).

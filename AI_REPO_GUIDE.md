@@ -213,7 +213,7 @@ bash install.sh
 | `scripts/lint-shell-conventions.sh` | Project-specific shell linting (RULE-01: `grep -c` without `\|\| true`; RULE-02: unanchored `grep -E` alternation patterns); run: `bash scripts/lint-shell-conventions.sh scripts/` |
 | `scripts/lib/logging.sh` | Shared color vars + `log_info`/`log_warn`/`log_error`/`log_step` printf helpers (issue #255 Phase 4a). Sourced by `setup.sh`, `verify-env.sh`, `db-reset.sh`, `sandbox-bootstrap.sh` |
 | `scripts/lib/assertions.sh` | Shared `PASS`/`FAIL`/`WARN` counters + `pass`/`fail`/`warn` helpers (issue #255 Phase 4a). Depends on `logging.sh` color vars. Sourced by `test.sh`, `verify-env.sh` |
-| `scripts/lib/jq/*.jq` | Extracted jq filters (e.g. `relay-cycle-count.jq`); each has matching fixture pairs in `scripts/lib/jq/fixtures/` and is tested by `scripts/test-jq-filters.sh` |
+| `scripts/lib/jq/*.jq` | Extracted jq filters (e.g. `relay-cycle-count.jq`); each has matching fixture pairs in `scripts/lib/jq/fixtures/` and is tested by `scripts/tests/jq-filters.bats` |
 | `scripts/tests/*.bats` | Bats test suite (issue #255 Phase 4b); one `.bats` file per concern wrapping the matching legacy `scripts/test-<concern>.sh`. Run: `bats scripts/tests/`. CI installs bats via `apt-get` in `ci-tests.yml`. |
 
 ### Issue Templates

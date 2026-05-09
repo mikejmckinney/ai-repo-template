@@ -9,18 +9,18 @@
 # regress, the workflow could force-push to PRs it shouldn't or fail to
 # act on PRs it should. Hard-fail keeps regressions out of CI.
 echo "Running auto-rebase-on-merge unit tests..."
-if [[ -f scripts/test-auto-rebase-overlapping.sh ]]; then
+if [[ -f scripts/tests/auto-rebase-overlapping.bats ]]; then
   ARO_LOG=$(mktemp)
-  if bash scripts/test-auto-rebase-overlapping.sh >"$ARO_LOG" 2>&1; then
-    aro_passed=$(grep -c '^  ✅ ' "$ARO_LOG" || true)
-    pass "scripts/test-auto-rebase-overlapping.sh ($aro_passed assertions passed)"
+  if bats --tap scripts/tests/auto-rebase-overlapping.bats >"$ARO_LOG" 2>&1; then
+    aro_passed=$(grep -c '^ok ' "$ARO_LOG" || true)
+    pass "scripts/tests/auto-rebase-overlapping.bats ($aro_passed tests passed)"
   else
-    fail "scripts/test-auto-rebase-overlapping.sh failed (see log below)"
+    fail "scripts/tests/auto-rebase-overlapping.bats failed (see log below)"
     cat "$ARO_LOG"
   fi
   rm -f "$ARO_LOG"
 else
-  fail "scripts/test-auto-rebase-overlapping.sh missing"
+  fail "scripts/tests/auto-rebase-overlapping.bats missing"
 fi
 
 echo ""

@@ -8,18 +8,18 @@
 # so that PRs which restructure the lock template trip CI at the change
 # rather than turning the workflow into a silent no-op.
 echo "Running coordination sync parser unit tests..."
-if [[ -f scripts/test-coordination-sync.sh ]]; then
+if [[ -f scripts/tests/coordination-sync.bats ]]; then
   CS_LOG=$(mktemp)
-  if bash scripts/test-coordination-sync.sh >"$CS_LOG" 2>&1; then
-    cs_passed=$(grep -c '^  ✅ ' "$CS_LOG" || true)
-    pass "scripts/test-coordination-sync.sh ($cs_passed assertions passed)"
+  if bats --tap scripts/tests/coordination-sync.bats >"$CS_LOG" 2>&1; then
+    cs_passed=$(grep -c '^ok ' "$CS_LOG" || true)
+    pass "scripts/tests/coordination-sync.bats ($cs_passed tests passed)"
   else
-    fail "scripts/test-coordination-sync.sh failed (see log below)"
+    fail "scripts/tests/coordination-sync.bats failed (see log below)"
     cat "$CS_LOG"
   fi
   rm -f "$CS_LOG"
 else
-  fail "scripts/test-coordination-sync.sh missing"
+  fail "scripts/tests/coordination-sync.bats missing"
 fi
 
 echo ""
