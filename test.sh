@@ -1237,6 +1237,8 @@ if [[ -f scripts/test-closeout.sh ]]; then
     cat "$CO_LOG"
   fi
   rm -f "$CO_LOG"
+else
+  fail "scripts/test-closeout.sh missing"
 fi
 
 echo ""
