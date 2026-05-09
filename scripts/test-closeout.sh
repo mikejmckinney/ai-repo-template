@@ -91,7 +91,9 @@ echo "x" >> "$fixture1/.context/state/_active.md"
 # inside our fake .git/, but the script tolerates that and treats output as empty.
 # To pass check 1 we need the diff helper to find the files. We work around
 # this by initializing a real git repo in the fixture.
-( cd "$fixture1" && rm -rf .git && git init -q && git add -A && git commit -qm init \
+( cd "$fixture1" && rm -rf .git && git init -q \
+  && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
+  && git add -A && git commit -qm init \
   && git checkout -q -b feature/test-262-refuse \
   && echo "modified" >> .context/sessions/latest_summary.md \
   && echo "modified" >> .context/state/_active.md )
@@ -114,7 +116,9 @@ fi
 fixture2=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
 scaffold_fixture "$fixture2"
 write_happy_path "$fixture2" "feature/test-262-happy"
-( cd "$fixture2" && rm -rf .git && git init -q && git add -A && git commit -qm init \
+( cd "$fixture2" && rm -rf .git && git init -q \
+  && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
+  && git add -A && git commit -qm init \
   && git checkout -q -b feature/test-262-happy \
   && echo "modified" >> .context/sessions/latest_summary.md \
   && echo "modified" >> .context/state/_active.md )
@@ -140,7 +144,9 @@ fi
 fixture3=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
 scaffold_fixture "$fixture3"
 write_happy_path "$fixture3" "feature/test-262-no-touch"
-( cd "$fixture3" && rm -rf .git && git init -q && git add -A && git commit -qm init \
+( cd "$fixture3" && rm -rf .git && git init -q \
+  && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
+  && git add -A && git commit -qm init \
   && git checkout -q -b feature/test-262-no-touch )
 # No further modifications -> check 1 must refuse.
 if out=$(CLOSEOUT_REPO_ROOT="$fixture3" CLOSEOUT_BRANCH="feature/test-262-no-touch" \
@@ -152,6 +158,51 @@ else
   else
     fail "test 3 (no-touch): refused but check 1 message missing. Output:\n$out"
   fi
+fi
+
+# Test 4 — prefix-overlap regression (R1 review feedback):
+# Branch `feature/test-262-foo` must not be considered "still locked"
+# just because `feature/test-262-foo-2` appears in Active Locks, and
+# its session header must be matched on exact field equality, not
+# substring containment.
+fixture4=$(mktemp -d "${TMPDIR:-/tmp}/closeout-test-XXXXXX")
+trap 'rm -rf "$fixture1" "${fixture2:-}" "${fixture3:-}" "${fixture4:-}"' EXIT
+scaffold_fixture "$fixture4"
+write_happy_path "$fixture4" "feature/test-262-foo"
+# Inject a *different* lock whose Session field happens to start with our branch name.
+cat > "$fixture4/.context/state/coordination.md" <<'EOF'
+## Active Locks
+
+## Lock: pr-test-262-foo-2
+**Session**: feature/test-262-foo-2
+**State**: in_progress
+
+## Recent History
+EOF
+# Also inject a session header for the prefix-overlap branch to verify
+# check 4's exact-field match.
+cat >> "$fixture4/.context/sessions/latest_summary.md" <<'EOF'
+
+# Session: 2026-05-08 — feature/test-262-foo-2 — devops
+**Status**: in_progress
+EOF
+( cd "$fixture4" && rm -rf .git && git init -q \
+  && git config user.email 'test@example.com' && git config user.name 'closeout-test' \
+  && git add -A && git commit -qm init \
+  && git checkout -q -b feature/test-262-foo \
+  && echo "modified" >> .context/sessions/latest_summary.md \
+  && echo "modified" >> .context/state/_active.md )
+
+if out=$(CLOSEOUT_REPO_ROOT="$fixture4" CLOSEOUT_BRANCH="feature/test-262-foo" \
+        bash "$CLOSEOUT" 2>&1); then
+  if printf '%s\n' "$out" | grep -q "check 2: no Active Locks reference branch 'feature/test-262-foo'"; then
+    pass "test 4: prefix-overlap branch name does not false-positive check 2"
+  else
+    fail "test 4 (prefix-overlap): exited 0 but check 2 didn't pass cleanly. Output:\n$out"
+  fi
+else
+  rc=$?
+  fail "test 4 (prefix-overlap): expected exit 0, got $rc — anchored Session match regressed. Output:\n$out"
 fi
 
 printf '\n'

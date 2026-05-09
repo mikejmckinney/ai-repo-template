@@ -76,7 +76,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - .context/state/coordination.md
 **Depends On**: none
 **Blocks**: none
-**State**: implementation
+**State**: in_progress
 **Notes**: Implements `make closeout` enforcement target. Self-dogfoods on the chore close-out PR after merge.
 
 ## Lock: pr-252-orchestration-patterns

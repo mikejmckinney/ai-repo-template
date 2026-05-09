@@ -30,9 +30,17 @@
 set -uo pipefail
 
 REPO_ROOT="${CLOSEOUT_REPO_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || true)}"
-if [[ -z "$REPO_ROOT" ]] || [[ ! -d "$REPO_ROOT/.git" && -z "${CLOSEOUT_REPO_ROOT:-}" ]]; then
+if [[ -z "$REPO_ROOT" ]]; then
   printf '✗ closeout: not inside a git repository\n' >&2
   exit 2
+fi
+# Validate it really is a git work tree (handles worktrees where .git is a
+# file, and bare-checkout fixtures used by scripts/test-closeout.sh).
+if [[ -z "${CLOSEOUT_REPO_ROOT:-}" ]]; then
+  if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    printf '✗ closeout: not inside a git repository\n' >&2
+    exit 2
+  fi
 fi
 cd "$REPO_ROOT" || exit 2
 
@@ -100,7 +108,20 @@ if [[ -f "$STATE_COORD" ]]; then
     in_block && /^## / && !/^## Lock:/ { in_block = 0 }
     in_block { print }
   ' "$STATE_COORD")
-  if printf '%s\n' "$active_locks_body" | grep -qF "$BRANCH"; then
+  # Match the branch on its own as the value of `**Session**:` (or
+  # `**Branch**:` for older lock formats). Substring `grep -qF` would
+  # false-positive on prefix-overlapping branches like
+  # `feature/foo` vs `feature/foo-2`.
+  if printf '%s\n' "$active_locks_body" \
+        | awk -v b="$BRANCH" '
+            /^\*\*(Session|Branch)\*\*:/ {
+              # Strip leading `**Session**:` / `**Branch**:` and surrounding whitespace.
+              sub(/^\*\*(Session|Branch)\*\*:[[:space:]]*/, "")
+              gsub(/[[:space:]]+$/, "")
+              if ($0 == b) { found = 1 }
+            }
+            END { exit !found }
+          '; then
     fail "check 2: lock for branch '$BRANCH' is still in '## Active Locks' — move it to '## Recent History' first"
   else
     pass "check 2: no Active Locks reference branch '$BRANCH'"
@@ -111,7 +132,12 @@ fi
 
 # ── Check 3: Task section removed from _active.md ───────────────────────
 if [[ -f "$STATE_ACTIVE" ]]; then
-  if grep -qE "^## Task:[[:space:]]+${BRANCH//\//\\/}([[:space:]]|$)" "$STATE_ACTIVE"; then
+  # Use awk with literal string equality to avoid escaping every regex
+  # metacharacter that may appear in a branch name (`.`, `+`, `[`, `(`).
+  if awk -v b="$BRANCH" '
+        $0 == "## Task: " b { found = 1; exit }
+        END { exit !found }
+      ' "$STATE_ACTIVE"; then
     fail "check 3: '## Task: $BRANCH' section still present in $STATE_ACTIVE — remove it"
   else
     pass "check 3: no '## Task: $BRANCH' section in $STATE_ACTIVE"
@@ -127,10 +153,17 @@ fi
 if [[ -f "$SESSIONS_LATEST" ]]; then
   # Extract the block that starts at the matching session header up to the
   # next `# Session:` header (or EOF).
+  # Header format: `# Session: YYYY-MM-DD — <branch> — <role-or-status>`.
+  # Split on `—` (em-dash) or `-` (hyphen) surrounded by whitespace and
+  # require an exact field match — substring match would false-positive
+  # on prefix-overlapping branch names.
   session_block=$(awk -v branch="$BRANCH" '
     /^# Session: / {
       if (in_block) { exit }
-      if (index($0, branch) > 0) { in_block = 1 }
+      n = split($0, parts, /[[:space:]]+[—-][[:space:]]+/)
+      for (i = 1; i <= n; i++) {
+        if (parts[i] == branch) { in_block = 1; break }
+      }
     }
     in_block { print }
   ' "$SESSIONS_LATEST")
@@ -144,7 +177,10 @@ if [[ -f "$SESSIONS_LATEST" ]]; then
     elif printf '%s\n' "$status_line" | grep -qE '^\*\*Status\*\*:[[:space:]]*done\b'; then
       pass "check 4: session entry Status is 'done'"
     else
-      fail "check 4: session entry Status is not 'done' (found: ${status_line#**Status**: })"
+      # Use sed (not bash parameter expansion) to strip the prefix —
+      # `${var#**Status**: }` interprets `*` as a glob wildcard.
+      status_value=$(printf '%s' "$status_line" | sed 's/^\*\*Status\*\*:[[:space:]]*//')
+      fail "check 4: session entry Status is not 'done' (found: $status_value)"
     fi
   fi
 else
@@ -190,16 +226,24 @@ if [[ -f "$SESSIONS_LATEST" ]]; then
     "## Files Modified"
     "## Open Items / Next"
   )
-  missing_headers=()
-  for h in "${REQUIRED_HEADERS[@]}"; do
-    if ! grep -qF "$h" "$SESSIONS_LATEST"; then
-      missing_headers+=("$h")
-    fi
-  done
-  if [[ ${#missing_headers[@]} -eq 0 ]]; then
-    pass "check 6: all required template headers present"
+  # Scope the check to the *current* session block (extracted by check 4)
+  # so a previous entry's headers can't satisfy this gate for the
+  # current session.
+  if [[ -z "${session_block:-}" ]]; then
+    # Check 4 already failed loudly; skip the redundant noise here.
+    :
   else
-    fail "check 6: $SESSIONS_LATEST missing required headers: ${missing_headers[*]}"
+    missing_headers=()
+    for h in "${REQUIRED_HEADERS[@]}"; do
+      if ! printf '%s\n' "$session_block" | grep -qxF "$h"; then
+        missing_headers+=("$h")
+      fi
+    done
+    if [[ ${#missing_headers[@]} -eq 0 ]]; then
+      pass "check 6: all required template headers present in current session entry"
+    else
+      fail "check 6: current session entry missing required headers: ${missing_headers[*]}"
+    fi
   fi
 fi
 
