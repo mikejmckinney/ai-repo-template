@@ -14,7 +14,8 @@
 # Behavior-preserving.
 
 # Counters default to 0 unless the caller already set them. Use parameter
-# expansion so `set -u` callers (sandbox-bootstrap.sh) don't trip.
+# expansion (`: "${VAR:=0}"`) so callers running under `set -u` do not
+# trip on the unset-variable check.
 : "${PASS:=0}"
 : "${FAIL:=0}"
 : "${WARN:=0}"

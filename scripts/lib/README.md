@@ -13,13 +13,20 @@ top-level shell entry points. See issue #255 for the modularization plan.
 
 ## Conventions
 
-- Each lib file is sourceable on its own. None of them call `set -e`/`set -u`
-  — those are caller policy.
+- `logging.sh` is sourceable on its own. `assertions.sh` depends on the
+  color vars (`$GREEN`/`$RED`/`$YELLOW`/`$NC`) defined in `logging.sh`,
+  so consumers must source `logging.sh` first. (Documented in each lib's
+  header comment.)
+- None of the libs call `set -e`/`set -u` — those are caller policy.
 - `logging.sh` uses unconditional ANSI escape codes. Scripts that need
   tty-aware colors (e.g., `scripts/closeout.sh`) keep their own gated block
   and do not source `logging.sh`.
 - `assertions.sh` initializes counters with `: "${PASS:=0}"` so callers that
-  pre-set the counters keep their values.
+  pre-set the counters keep their values, and so `set -u` callers don't trip.
+- `log_error` always writes to stderr. (One deliberate semantic shift
+  from extraction — the pre-extraction `setup.sh` and `db-reset.sh`
+  inline `log_error` wrote to stdout, which was inconsistent with
+  `sandbox-bootstrap.sh` and with Unix convention.)
 
 ## Out of scope (future phases)
 

@@ -2,14 +2,23 @@
 # scripts/lib/logging.sh — shared color codes and log_* helpers.
 #
 # Source from any script that wants the canonical [INFO]/[WARN]/[ERROR]/==>
-# logging style:
+# logging style. Use the repo-root-relative path so the example works for
+# both root-level scripts (test.sh) and scripts under scripts/:
 #
+#   # From a script in scripts/:
 #   # shellcheck source=scripts/lib/logging.sh
 #   source "$(dirname "${BASH_SOURCE[0]}")/lib/logging.sh"
 #
+#   # From a root-level script (test.sh):
+#   # shellcheck source=scripts/lib/logging.sh
+#   source "$(dirname "${BASH_SOURCE[0]}")/scripts/lib/logging.sh"
+#
 # Issue #255 Phase 4a — extracted from setup.sh, db-reset.sh,
-# sandbox-bootstrap.sh. Behavior-preserving: every log_* invocation
-# emits the same bytes it did before extraction.
+# sandbox-bootstrap.sh. One deliberate semantic change: log_error now
+# always writes to stderr (matching sandbox-bootstrap.sh's pre-extraction
+# behavior and Unix convention). The pre-extraction setup.sh and
+# db-reset.sh wrote log_error to stdout; that was a pre-existing
+# inconsistency, not contract.
 
 # Colors. Unconditional — matches the existing top-level scripts. Scripts
 # that need tty-aware colors (e.g., closeout.sh) gate them locally instead
