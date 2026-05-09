@@ -28,7 +28,7 @@ _legacy_body() {
 # directly with fixture JSON, avoiding the need for a live `gh` session
 # or GitHub API access.
 #
-# Run: bash scripts/test-pr-iteration-stats.sh
+# Run: bats --tap scripts/tests/pr-iteration-stats.bats
 
 
 

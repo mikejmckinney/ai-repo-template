@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # scripts/checks/115-phase15-invariants.sh — extracted from test.sh by issue #255 Phase 4d.
 # Sourced by test.sh; relies on $PASS/$FAIL/$WARN, pass()/fail()/warn() from
-# scripts/lib/{logging,assertions}.sh and CWD == repo root.
+# scripts/lib/{logging,assertions}.sh and CWD == repo root. Bats invocations
+# are wrapped by run_bats_check() from scripts/lib/bats-helpers.sh (issue #280).
 
 # --- Phase 1.5 invariants (issue #229 Phase 1.5) ---
 echo "Checking Phase 1.5 components (issue #229 Phase 1.5)..."
@@ -64,19 +65,7 @@ done
 
 echo ""
 echo "Running jq filter unit tests..."
-if [[ -f scripts/tests/jq-filters.bats ]]; then
-  JQ_LOG=$(mktemp)
-  if bats --tap scripts/tests/jq-filters.bats >"$JQ_LOG" 2>&1; then
-    jq_passed=$(grep -c '^ok ' "$JQ_LOG" || true)
-    pass "scripts/tests/jq-filters.bats ($jq_passed tests passed)"
-  else
-    fail "scripts/tests/jq-filters.bats failed (see log below)"
-    cat "$JQ_LOG"
-  fi
-  rm -f "$JQ_LOG"
-else
-  fail "scripts/tests/jq-filters.bats missing"
-fi
+run_bats_check scripts/tests/jq-filters.bats
 
 echo ""
 echo "Running closeout fixture tests (issue #262)..."
@@ -100,66 +89,18 @@ if [[ -f scripts/tests/closeout.bats ]]; then
 else
   fail "scripts/tests/closeout.bats missing"
 fi
-if [[ -f scripts/tests/closeout.bats ]]; then
-  CO_LOG=$(mktemp)
-  if bats --tap scripts/tests/closeout.bats >"$CO_LOG" 2>&1; then
-    co_passed=$(grep -c '^ok ' "$CO_LOG" || true)
-    pass "scripts/tests/closeout.bats ($co_passed tests passed)"
-  else
-    fail "scripts/tests/closeout.bats failed (see log below)"
-    cat "$CO_LOG"
-  fi
-  rm -f "$CO_LOG"
-else
-  fail "scripts/tests/closeout.bats missing"
-fi
+run_bats_check scripts/tests/closeout.bats
 
 echo ""
 echo "Running verify-env.sh fixture tests..."
-if [[ -f scripts/tests/verify-env.bats ]]; then
-  VE_LOG=$(mktemp)
-  if bats --tap scripts/tests/verify-env.bats >"$VE_LOG" 2>&1; then
-    ve_passed=$(grep -c '^ok ' "$VE_LOG" || true)
-    pass "scripts/tests/verify-env.bats ($ve_passed tests passed)"
-  else
-    fail "scripts/tests/verify-env.bats failed (see log below)"
-    cat "$VE_LOG"
-  fi
-  rm -f "$VE_LOG"
-else
-  fail "scripts/tests/verify-env.bats missing"
-fi
+run_bats_check scripts/tests/verify-env.bats
 
 echo ""
 echo "Running ADR-018 multi-task _active.md smoke test..."
-if [[ -f scripts/tests/active-md-multitask.bats ]]; then
-  AMT_LOG=$(mktemp)
-  if bats --tap scripts/tests/active-md-multitask.bats >"$AMT_LOG" 2>&1; then
-    amt_passed=$(grep -c '^PASS \[' "$AMT_LOG" || true)
-    pass "scripts/tests/active-md-multitask.bats ($amt_passed tests passed)"
-  else
-    fail "scripts/tests/active-md-multitask.bats failed (see log below)"
-    cat "$AMT_LOG"
-  fi
-  rm -f "$AMT_LOG"
-else
-  fail "scripts/tests/active-md-multitask.bats missing"
-fi
+run_bats_check scripts/tests/active-md-multitask.bats
 
 echo ""
 echo "Running verify-pr.sh classifier fixture tests (issue #227)..."
-if [[ -f scripts/tests/verify-pr.bats ]]; then
-  VPR_LOG=$(mktemp)
-  if bats --tap scripts/tests/verify-pr.bats >"$VPR_LOG" 2>&1; then
-    vpr_passed=$(grep -c '^ok ' "$VPR_LOG" || true)
-    pass "scripts/tests/verify-pr.bats ($vpr_passed tests passed)"
-  else
-    fail "scripts/tests/verify-pr.bats failed (see log below)"
-    cat "$VPR_LOG"
-  fi
-  rm -f "$VPR_LOG"
-else
-  fail "scripts/tests/verify-pr.bats missing"
-fi
+run_bats_check scripts/tests/verify-pr.bats
 
 echo ""

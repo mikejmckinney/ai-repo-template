@@ -41,7 +41,7 @@ _legacy_body() {
 # source of truth, also called by the workflow). This test calls the
 # same script so the workflow and the test can never drift.
 #
-# Run: bash scripts/test-parallelism-report-parser.sh
+# Run: bats --tap scripts/tests/parallelism-report-parser.bats
 
 
 PASS=0

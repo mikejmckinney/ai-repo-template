@@ -30,7 +30,7 @@ _legacy_body() {
 # We exercise the four declared classes plus the detection-only path
 # and the conservative file-removed branch.
 #
-# Run: bash scripts/test-verify-pr.sh
+# Run: bats --tap scripts/tests/verify-pr.bats
 
 
 VERIFY_PR="$REPO_ROOT/scripts/verify-pr.sh"

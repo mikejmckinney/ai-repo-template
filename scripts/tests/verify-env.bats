@@ -44,7 +44,7 @@ _legacy_body() {
 # anchor (the PR #228 R7→R8 lesson) would cause FIXTURE-03 to wrong-classify
 # 'coordination.md.bak' as an excluded file, making the test fail.
 #
-# Run: bash scripts/test-verify-env.sh
+# Run: bats --tap scripts/tests/verify-env.bats
 
 
 VERIFY_SCRIPT="$REPO_ROOT/scripts/verify-env.sh"

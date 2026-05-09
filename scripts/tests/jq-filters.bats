@@ -34,7 +34,7 @@ _legacy_body() {
 # before they surface in PR review — the class of bug that drove PR #225's
 # 11 rounds (jq `a, b | f` vs `[a] + [b]` precedence).
 #
-# Run: bash scripts/test-jq-filters.sh
+# Run: bats --tap scripts/tests/jq-filters.bats
 
 
 # Guard: jq must be installed — tests cannot run without it and a silent

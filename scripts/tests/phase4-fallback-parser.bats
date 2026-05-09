@@ -39,7 +39,7 @@ _legacy_body() {
 # remains the workflow file. If you change the workflow's parser, also
 # change this test.
 #
-# Run: bash scripts/test-phase4-fallback-parser.sh
+# Run: bats --tap scripts/tests/phase4-fallback-parser.bats
 
 
 PASS=0

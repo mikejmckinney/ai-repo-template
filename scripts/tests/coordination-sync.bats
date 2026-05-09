@@ -39,7 +39,7 @@ _legacy_body() {
 # awk grows beyond ~30 lines, factor into scripts/coordination-sync-*.sh
 # and update both the workflow and this test in lockstep.
 #
-# Run: bash scripts/test-coordination-sync.sh
+# Run: bats --tap scripts/tests/coordination-sync.bats
 
 
 # Cleanup any tmp files we mktemp below.

@@ -35,7 +35,7 @@ _legacy_body() {
 # we'd assign Copilot to conflicting issues. This test hard-fails so
 # regressions trip CI rather than appearing in production dispatch.
 #
-# Run: bash scripts/test-multi-dispatch-safety.sh
+# Run: bats --tap scripts/tests/multi-dispatch-safety.bats
 
 
 

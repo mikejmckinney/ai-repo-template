@@ -34,7 +34,7 @@ _legacy_body() {
 # should. This test hard-fails so regressions trip CI rather than
 # appearing in production rebase decisions.
 #
-# Run: bash scripts/test-auto-rebase-overlapping.sh
+# Run: bats --tap scripts/tests/auto-rebase-overlapping.bats
 
 
 
