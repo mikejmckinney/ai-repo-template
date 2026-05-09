@@ -45,11 +45,12 @@ fi
 # repo root (set above) and the helper sourcings above. nullglob protects
 # against the empty-modules case (which is itself a hard error, not a
 # silent zero-checks pass).
-# repo root (set above) and the helper sourcings above. nullglob protects
-# against the empty-modules case (which is itself a hard error, not a
-# silent zero-checks pass).
+#
+# Modules use a 3-digit zero-padded numeric prefix (010-, 015-, ..., 100-,
+# 150-) so the bash glob's lexical sort matches the author's intended
+# numeric order. (Mixed-width prefixes would sort '100' before '15'.)
 shopt -s nullglob
-glob_pattern='[0-9]*.sh'
+glob_pattern='[0-9][0-9][0-9]-*.sh'
 # Glob via the unquoted variable — we want shell expansion. SC2206 here
 # is intentional: the directory is repo-controlled (scripts/checks/) so
 # there's no untrusted-input risk, and nullglob prevents the literal

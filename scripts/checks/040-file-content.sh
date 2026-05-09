@@ -239,7 +239,8 @@ fi
 # a regression — even with a leading emoji/whitespace, and regardless of
 # single vs double quotes. Case-sensitive grep means `"Template: $DOTFILES"`
 # is correctly ignored because the pattern is `Dotfiles`, not `DOTFILES`.
-if grep -E "(log_info|log_warn|log_error|echo)[[:space:]]+[\"'][^\"']*Dotfiles" install.sh >/dev/null; then
+# shell-conventions:disable=RULE-02 reason: alternation is on a complete function-name list followed by mandatory whitespace+quote, no substring-match risk
+if grep -E "(log_info|log_warn|log_error|echo)\b[[:space:]]+[\"'][^\"']*Dotfiles" install.sh >/dev/null; then
   fail "install.sh contains \"Dotfiles\" log strings (should be \"Template\")"
 else
   pass "install.sh has no \"Dotfiles\" log strings (rebrand intact)"

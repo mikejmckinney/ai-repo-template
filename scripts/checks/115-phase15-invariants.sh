@@ -6,13 +6,19 @@
 # --- Phase 1.5 invariants (issue #229 Phase 1.5) ---
 echo "Checking Phase 1.5 components (issue #229 Phase 1.5)..."
 
+# Define LF_FILE locally so this module is self-contained and does not
+# depend on 110-lint-format-invariants.sh having sourced first. (R1
+# finding: cross-module variable coupling.) Keep the path identical to
+# the one in 110- so behavior is unchanged.
+LF_FILE=".github/workflows/lint-and-format.yml"
+
 if [[ -f "scripts/lint-shell-conventions.sh" ]] && [[ -x "scripts/lint-shell-conventions.sh" ]]; then
   pass "scripts/lint-shell-conventions.sh exists and is executable"
 else
   fail "scripts/lint-shell-conventions.sh missing or not executable (issue #229 Phase 1.5c)"
 fi
 
-if grep -q 'bash scripts/lint-shell-conventions.sh' "$LF_FILE" 2>/dev/null; then
+if [[ -f "$LF_FILE" ]] && grep -q 'bash scripts/lint-shell-conventions.sh' "$LF_FILE"; then
   pass "$LF_FILE has lint-shell-conventions run step (issue #229 Phase 1.5c)"
 else
   fail "$LF_FILE missing lint-shell-conventions run step (issue #229 Phase 1.5c)"
