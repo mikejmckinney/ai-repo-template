@@ -40,7 +40,7 @@ for f in "${SYNTAX_CHECK_GLOBS[@]}"; do
   # exist (or a stray symlink to a directory), skip rather than letting
   # bash -n surface a confusing error.
   [[ -f "$f" ]] || continue
-  if bash -n "$f" 2>/dev/null; then
+  if bash -n "$f"; then
     pass "$f has valid bash syntax"
   else
     fail "$f has syntax errors"
