@@ -21,8 +21,10 @@ top-level shell entry points. See issue #255 for the modularization plan.
 - `logging.sh` uses unconditional ANSI escape codes. Scripts that need
   tty-aware colors (e.g., `scripts/closeout.sh`) keep their own gated block
   and do not source `logging.sh`.
-- `assertions.sh` initializes counters with `: "${PASS:=0}"` so callers that
-  pre-set the counters keep their values, and so `set -u` callers don't trip.
+- `assertions.sh` initializes counters unconditionally to `0` on each
+  source. Inherited `PASS`/`FAIL`/`WARN` values from the caller
+  environment are deliberately discarded so the verified-pass tally is
+  never poisoned by the parent shell.
 - `log_error` always writes to stderr. (One deliberate semantic shift
   from extraction — the pre-extraction `setup.sh` and `db-reset.sh`
   inline `log_error` wrote to stdout, which was inconsistent with

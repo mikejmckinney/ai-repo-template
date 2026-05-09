@@ -13,12 +13,14 @@
 # Issue #255 Phase 4a — extracted from test.sh and verify-env.sh.
 # Behavior-preserving.
 
-# Counters default to 0 unless the caller already set them. Use parameter
-# expansion (`: "${VAR:=0}"`) so callers running under `set -u` do not
-# trip on the unset-variable check.
-: "${PASS:=0}"
-: "${FAIL:=0}"
-: "${WARN:=0}"
+# Counters always start at 0 on each source. Matches the pre-extraction
+# behavior of test.sh and verify-env.sh, which both initialized the
+# counters unconditionally. (Using `: "${VAR:=0}"` would let inherited
+# environment variables silently change the verified-pass tally — a
+# regression from the previous hard zero-init.)
+PASS=0
+FAIL=0
+WARN=0
 
 pass() {
   printf '%b✓%b %s\n' "$GREEN" "$NC" "$1"
