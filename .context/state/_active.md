@@ -85,9 +85,9 @@
 ## Task: feature/devops-281-expand-syntax-check
 **Issue/PR**: #281
 **Role**: devops
-**PR**: pending
+**PR**: #288
 **Blockers**: None
 **Next 1–3 actions**:
-1. Expand scripts/checks/055-script-syntax.sh to syntax-check every .sh file under repo (top-level, scripts/, scripts/checks/, scripts/lib/, scripts/setup/, scripts/tests/) — replace 2 hardcoded calls with a loop with per-file pass/fail
+1. Expand scripts/checks/055-script-syntax.sh to syntax-check every .sh file under repo (top-level, scripts/, scripts/checks/, scripts/lib/, scripts/setup/) — replace 2 hardcoded calls with a loop with per-file pass/fail. scripts/tests/*.bats is intentionally excluded (bats syntax ≠ bash syntax).
 2. Verify: bash test.sh passes; assertion count grows from current 354 to ~395; negative test (inject syntax error, confirm FAIL line names file) round-trips
 3. Open PR; run pr-resolve-all.md loop with cap-override until two clean iterations; remove this section in close-out
