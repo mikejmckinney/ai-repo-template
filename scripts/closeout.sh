@@ -174,13 +174,26 @@ if [[ -f "$SESSIONS_LATEST" ]]; then
     status_line=$(printf '%s\n' "$session_block" | grep -m1 -E '^\*\*Status\*\*:' || true)
     if [[ -z "$status_line" ]]; then
       fail "check 4: matching session entry has no '**Status**:' field"
-    elif printf '%s\n' "$status_line" | grep -qE '^\*\*Status\*\*:[[:space:]]*done\b'; then
+    elif printf '%s\n' "$status_line" | grep -qE '^\*\*Status\*\*:[[:space:]]*done[[:space:]]*$'; then
       pass "check 4: session entry Status is 'done'"
     else
       # Use sed (not bash parameter expansion) to strip the prefix —
       # `${var#**Status**: }` interprets `*` as a glob wildcard.
       status_value=$(printf '%s' "$status_line" | sed 's/^\*\*Status\*\*:[[:space:]]*//')
       fail "check 4: session entry Status is not 'done' (found: $status_value)"
+    fi
+
+    # check 4b: Issue/PR field must reference a real PR, not the
+    # `pending` placeholder. The session entry is templated with
+    # `**Issue/PR**: #N / pending` before the PR is opened; close-out
+    # is exactly the wrong moment to leave that placeholder in place.
+    issue_pr_line=$(printf '%s\n' "$session_block" | grep -m1 -E '^\*\*Issue/PR\*\*:' || true)
+    if [[ -z "$issue_pr_line" ]]; then
+      warn "check 4b: session entry has no '**Issue/PR**:' field — skipping placeholder check"
+    elif printf '%s\n' "$issue_pr_line" | grep -qiw 'pending'; then
+      fail "check 4b: session entry '**Issue/PR**:' still contains 'pending' — update it to the real PR number before close-out"
+    else
+      pass "check 4b: session entry Issue/PR has no 'pending' placeholder"
     fi
   fi
 else
@@ -204,7 +217,8 @@ if [[ -f "$SESSIONS_LATEST" ]]; then
       | awk '{print $3}' | sort -r | head -1 || true)
     if [[ -n "$latest_date" ]]; then
       if today_epoch=$(date -u +%s 2>/dev/null) \
-        && entry_epoch=$(date -u -d "$latest_date" +%s 2>/dev/null); then
+        && entry_epoch=$(date -u -d "$latest_date" +%s 2>/dev/null \
+            || date -u -j -f '%Y-%m-%d' "$latest_date" +%s 2>/dev/null); then
         age_days=$(( (today_epoch - entry_epoch) / 86400 ))
         if [[ "$age_days" -gt 7 ]]; then
           warn "check 5b: most recent entry in $SESSIONS_LATEST is $age_days days old (threshold 7) — consider rotating"
