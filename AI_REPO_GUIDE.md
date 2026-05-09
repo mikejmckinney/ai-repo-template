@@ -230,25 +230,25 @@ bash install.sh
 | `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
 
 ### CI/CD Workflows
-| File | Purpose |
-|------|---------|
-| `ci-tests.yml` | Build, lint, test pipeline (customize for project) |
-| `lint-and-format.yml` | Markdown + script lint/format pass |
-| `keep-warm.yml` | Prevents free-tier backend suspension |
-| `validate-connections.yml` | Daily backend/DB connectivity check |
-| `claude.yml` | Claude Code triggers (`@claude` mention + auto-review on PR open) |
-| `agent-assign-copilot.yml` | Gated Copilot PR assignment for `copilot:ready` issues |
-| `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved), with default bounded bot-review settle window and `auto-merge-fast` bypass label |
-| `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes |
-| `agent-coordination-sync.yml` | Reconciles `.context/state/coordination.md` with live PR/issue state |
-| `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback |
-| `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier |
-| `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR |
-| `agent-relay-reviews.yml` | Relays bot review comments to Copilot via `@copilot follow` |
-| `agent-release-slot.yml` | Releases Copilot slot + drains queue on PR close |
-| `auto-rebase-on-merge.yml` | Opt-in auto-rebase of overlapping PRs via `auto-rebase` label |
-| `backlog-to-issues.yml` | Materializes `.context/backlog.yaml` entries as GitHub issues |
-| `agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks |
+| File | Purpose | Customization Required |
+|------|---------|------------------------|
+| `ci-tests.yml` | Build, lint, test pipeline (customize for project) | Yes — add your commands |
+| `lint-and-format.yml` | Markdown + script lint/format pass | None |
+| `keep-warm.yml` | Prevents free-tier backend suspension | Set `BACKEND_URL` secret |
+| `validate-connections.yml` | Daily backend/DB connectivity check | Set `BACKEND_URL` secret |
+| `claude.yml` | Claude Code triggers (`@claude` mention + auto-review on PR open) | Set `ANTHROPIC_API_KEY` secret |
+| `agent-assign-copilot.yml` | Gated Copilot PR assignment for `copilot:ready` issues | Set `CLAUDE_PAT` secret |
+| `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved), with default bounded bot-review settle window and `auto-merge-fast` bypass label | Set `CLAUDE_PAT` secret |
+| `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes | None |
+| `agent-coordination-sync.yml` | Reconciles `.context/state/coordination.md` with live PR/issue state | None |
+| `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` secret |
+| `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier | Set `CLAUDE_PAT` secret |
+| `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR | None |
+| `agent-relay-reviews.yml` | Relays bot review comments to Copilot via `@copilot follow` | Set `CLAUDE_PAT` secret |
+| `agent-release-slot.yml` | Releases Copilot slot + drains queue on PR close | Set `CLAUDE_PAT` secret |
+| `auto-rebase-on-merge.yml` | Opt-in auto-rebase of overlapping PRs via `auto-rebase` label | Set `CLAUDE_PAT` secret |
+| `backlog-to-issues.yml` | Materializes `.context/backlog.yaml` entries as GitHub issues | Set `CLAUDE_PAT` secret |
+| `agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks | Rename to `.yml` to enable |
 
 ## Truth Hierarchy
 
@@ -353,8 +353,51 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 2. Extensions install automatically via `install.sh`
 3. AI prompts copied to workspace
 
+## Onboarding Prompts
+
+Two agent-facing prompts. Both are copy/paste-ready.
+
 ### First-time repo initialization
-See the "Easiest way to initialize new repo" prompt in the main README or create an issue with instructions for the agent.
+
+After creating a repo from this template, paste this prompt into a GitHub issue and assign it to your AI agent:
+
+```markdown
+This repository was created from a template. Any file containing TEMPLATE_PLACEHOLDER is scaffolding.
+
+Truth hierarchy:
+1) ./.context/** (canonical project direction)
+2) ./docs/** (supporting detail)
+3) codebase (implementation reality)
+
+Please:
+1. Verify .context/00_INDEX.md and .github/prompts/*.md exist
+2. Scan and list all files containing TEMPLATE_PLACEHOLDER
+3. Determine project purpose from .context/**, docs/**, and codebase
+4. Run .github/prompts/repo-onboarding.md
+5. Replace README.md with project-specific content, including
+   `## Limitations`, `## Future Improvements`, and a `## FAQ` section
+   (or link to docs/FAQ.md — replace the template's FAQ entries with
+   project-specific ones).
+6. Regenerate AI_REPO_GUIDE.md for THIS repo
+7. Replace or customize docs/FAQ.md for the project (template-specific
+   entries prefixed with "Template:" should be removed)
+8. Do not modify .context/** unless instructed
+```
+
+### New agent session (continue work on an existing repo)
+
+Use this prompt to onboard a fresh agent session onto an in-flight project:
+
+```markdown
+1. Read .context/state/_active.md or task_*.md to understand the immediate goal.
+2. Read .context/00_INDEX.md to locate relevant rules/constraints.
+3. Check: Run `git status` and `./scripts/verify-env.sh` to ensure stability.
+4. Skim: Review .context/sessions/latest_summary.md for recent decisions.
+5. Report: "I have reviewed the context. Current task is [Task Name].
+   Environment is [Stable/Unstable]. Ready for instructions."
+```
+
+This structured protocol ensures context is loaded correctly before proceeding.
 
 ## Gotchas / Known Issues
 

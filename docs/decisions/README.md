@@ -35,6 +35,7 @@
 | [ADR-019](./adr-019-per-role-model-tiering.md) | Per-role model tiering across Claude Code and Copilot (Phase 2 of #220; supersedes ADR-003's `model: inherit` choice) | Accepted |
 | [ADR-020](./adr-020-orchestration-patterns-reference.md) | Orchestration patterns and anti-patterns reference file (`.context/rules/repo_orchestration_patterns.md`) | Accepted |
 | [ADR-021](./adr-021-agents-md-decomposition.md) | Decompose AGENTS.md into thin contract + per-concern `process_*.md` files (extends ADR-002) | Accepted |
+| [ADR-022](./adr-022-top-level-md-scope-split.md) | Top-level markdown scope split (README / AI_REPO_GUIDE / AGENTS) — also extends ADR-002 | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.
