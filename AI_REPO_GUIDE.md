@@ -281,6 +281,12 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 # Check all required files exist
 ./test.sh
 
+# Close-out enforcement (issue #262) — refuses commit unless state files
+# are touched, lock is moved out of Active Locks, ## Task: section is
+# removed, latest_summary entry has Status: done, and required template
+# headers are present. Soft-warns on rotation hygiene.
+make closeout
+
 # Validate shell scripts (if shellcheck installed)
 shellcheck install.sh test.sh
 
