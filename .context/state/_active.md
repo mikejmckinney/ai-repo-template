@@ -81,3 +81,13 @@
 1. Inline 11 legacy scripts/test-*.sh bodies into matching scripts/tests/*.bats files; delete the 11 .sh files; redirect 7 scripts/checks/* invocations from `bash scripts/test-*.sh` to `bats --tap scripts/tests/*.bats`
 2. Verify: `bash test.sh` 365/1/0 preserved, `bats --jobs 4 scripts/tests/` passes, `ls scripts/test-*.sh` returns 0 files
 3. Open PR; run pr-resolve-all.md loop with cap-override until two clean iterations; remove this section in close-out
+
+## Task: feature/devops-281-expand-syntax-check
+**Issue/PR**: #281
+**Role**: devops
+**PR**: pending
+**Blockers**: None
+**Next 1–3 actions**:
+1. Expand scripts/checks/055-script-syntax.sh to syntax-check every .sh file under repo (top-level, scripts/, scripts/checks/, scripts/lib/, scripts/setup/, scripts/tests/) — replace 2 hardcoded calls with a loop with per-file pass/fail
+2. Verify: bash test.sh passes; assertion count grows from current 354 to ~395; negative test (inject syntax error, confirm FAIL line names file) round-trips
+3. Open PR; run pr-resolve-all.md loop with cap-override until two clean iterations; remove this section in close-out
