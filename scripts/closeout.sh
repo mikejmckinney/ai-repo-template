@@ -300,7 +300,12 @@ done
 
 if [[ ${#to_stage[@]} -gt 0 ]]; then
   if [[ -z "${CLOSEOUT_REPO_ROOT:-}" ]]; then
-    git add -- "${to_stage[@]}"
+    if ! git add -- "${to_stage[@]}"; then
+      fail "could not stage state files (git add failed — is .git/index.lock held by another process?)"
+      printf '%sRefusing close-out commit.%s Resolve the staging error above and re-run %smake closeout%s.\n' \
+        "$RED" "$NC" "$BLUE" "$NC" >&2
+      exit 1
+    fi
     info "staged: ${to_stage[*]}"
   else
     info "would stage (CLOSEOUT_REPO_ROOT set, skipping git add): ${to_stage[*]}"
