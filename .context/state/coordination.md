@@ -240,6 +240,24 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
 
+## Lock: pr-281-expand-syntax-check
+<!-- managed-for-pr:288 -->
+**Role**: devops
+**Session**: feature/devops-281-expand-syntax-check
+**PR**: #288
+**Claimed At**: 2026-05-09T15:15:00Z
+**State**: merged
+**Result**: Merged 2026-05-09 as PR #288 (squash `e8f5f96`). Issue #281 — expanded `scripts/checks/055-script-syntax.sh` from 2 hardcoded `bash -n install.sh / test.sh` calls to a 5-glob set (`./*.sh scripts/*.sh scripts/checks/*.sh scripts/lib/*.sh scripts/setup/*.sh`) covering 53 .sh files. `scripts/tests/*.bats` intentionally excluded (bats syntax ≠ bash syntax; bats files exercised via the 070/075/080/085/090/115/140 modules). 5 review rounds: R1 (9 findings — duplicate-block own-goal flagged by 4 reviewers, plus nullglob-ordering, _active.md PR-pending, scripts/tests wording); R2 (1 finding — stale verify-step counts in _active.md); R3 (3 findings — provenance citations, missing `## Plan` section, suppressed bash -n stderr); R4 clean; R5 (1 finding — ADR-005 pre-flight, deferred as epic-followup of #255); R6+R7 clean. `bash test.sh` 353 → 404 (+51 new syntax assertions).
+
+## Lock: pr-280-unwrap-bats-tests
+<!-- managed-for-pr:287 -->
+**Role**: devops
+**Session**: feature/devops-280-unwrap-bats-tests
+**PR**: #287
+**Claimed At**: 2026-05-09T13:30:00Z
+**State**: merged
+**Result**: Merged 2026-05-09 as PR #287 (squash `6946d04`). Issue #280 — un-wrapped 11 legacy `scripts/test-*.sh` shims by inlining each body into its matching `scripts/tests/*.bats` via a `_legacy_body()` shell function invoked through `bats run`; deleted the 11 .sh files (~2,919 LOC); created `scripts/lib/bats-helpers.sh` with `run_bats_check()` (warn-skip when bats not installed, mktemp template, extended-grep+wc-l for per-assertion count); refactored 7 `scripts/checks/*.sh` modules to use it; updated `AI_REPO_GUIDE.md`, `scripts/README.md`, `.context/rules/process_doc_maintenance.md`, `.context/rules/agent_ownership.md`, `.github/prompts/pre-push-review.md` to drop stale `scripts/test-*.sh` references. 5 review rounds: R1 (5 findings — `amt_passed` grep still on legacy `^PASS` pattern, bats not guarded by command -v, stale doc descriptions, obsolete bats comments); R2 (5 findings — `set -e` regression in closeout, harsh fail vs warn for missing bats, argument validation, mktemp template, redundant existence check); R3 (3 findings — doc-sync gap in 2 process docs, dead `for f in scripts/test-*.sh` glob in pre-push-review.md, per-assertion count regression solved via `>&3` trick + extended grep pattern); R4+R5 clean. 228 internal assertions across 11 .bats files now surface correctly.
+
 ## Lock: pr-255-phase4d
 <!-- managed-for-pr:278 -->
 **Role**: devops
