@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+# scripts/checks/030-docs-structure.sh — extracted from test.sh by issue #255 Phase 4d.
+# Sourced by test.sh; relies on $PASS/$FAIL/$WARN, pass()/fail()/warn() from
+# scripts/lib/{logging,assertions}.sh and CWD == repo root.
+
+# --- Docs Structure Check ---
+echo "Checking docs structure..."
+
+DOCS_FILES=(
+  "docs/README.md"
+  "docs/FAQ.md"
+  "docs/smoke-a.md"
+  "docs/smoke-e.md"
+  "docs/guides/agent-best-practices.md"
+  "docs/guides/agent-pipeline.md"
+  "docs/guides/context-files-explained.md"
+  "docs/guides/multi-agent-coordination.md"
+  "docs/guides/optional-skills.md"
+  "docs/decisions/adr-template.md"
+  "docs/decisions/README.md"
+  "docs/decisions/adr-001-context-pack-structure.md"
+  "docs/decisions/adr-002-agents-md-ownership.md"
+  "docs/decisions/adr-003-claude-code-subagent-registration.md"
+  "docs/decisions/adr-004-analyst-role-and-feedback-loop.md"
+  "docs/decisions/adr-005-analyst-preflight-gate.md"
+  "docs/decisions/adr-006-auto-merge-opt-in-model.md"
+  "docs/decisions/adr-007-auto-resolve-review-threads.md"
+  "docs/decisions/adr-008-phase4-default-and-copilot-fallback.md"
+  "docs/decisions/adr-009-parallel-multi-agent-execution.md"
+  "docs/decisions/adr-010-auto-rebase-on-merge.md"
+  "docs/decisions/adr-011-plan-as-comment-requirement.md"
+  "docs/decisions/adr-015-postmortem-feedback-loop.md"
+  "docs/postmortems/README.md"
+  "docs/postmortems/postmortem-template.md"
+  "docs/postmortems/postmortem-001-workflow-bypass.md"
+  "docs/postmortems/postmortem-002-poc-outcome-mismatch.md"
+)
+
+for file in "${DOCS_FILES[@]}"; do
+  if [[ -f "$file" ]]; then
+    pass "$file exists"
+  else
+    fail "$file is missing"
+  fi
+done
+
+DOCS_DIRS=(
+  "docs/reference"
+  "docs/research"
+  "docs/guides"
+  "docs/decisions"
+  "docs/postmortems"
+)
+
+for dir in "${DOCS_DIRS[@]}"; do
+  if [[ -d "$dir" ]]; then
+    pass "$dir directory exists"
+  else
+    fail "$dir directory is missing"
+  fi
+done
+
+echo ""

@@ -83,14 +83,20 @@ bash install.sh
 │
 ├── scripts/                  # Bootstrap + verification scripts
 │   ├── README.md
+│   ├── checks/               # Numbered test.sh check modules (issue #255 Phase 4d)
+│   │   ├── README.md
+│   │   └── <NNN>-*.sh        # Sourced by test.sh in lexical order (3-digit zero-padded prefix)
 │   ├── lib/                  # Shared shell helpers (issue #255 Phase 4a)
 │   │   ├── logging.sh        # Color vars + log_info/warn/error/step
 │   │   ├── assertions.sh     # PASS/FAIL/WARN counters + pass/fail/warn
 │   │   └── jq/               # Extracted jq filters + fixtures (issue #229)
+│   ├── setup/                # Numbered setup.sh modules (issue #255 Phase 4c)
+│   │   ├── README.md
+│   │   └── <NN>-*.sh         # Sourced by scripts/setup.sh in lexical order
 │   ├── tests/                # Bats test suite (issue #255 Phase 4b)
 │   │   ├── README.md
 │   │   └── *.bats            # One file per concern; wraps legacy test-*.sh
-│   ├── setup.sh              # First-run project customization
+│   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── verify-pr.sh          # Plan-template Change-class classifier (issue #227, ADR-016)
 │   ├── db-reset.sh           # Optional DB reset stub
@@ -196,7 +202,8 @@ bash install.sh
 | File | Purpose |
 |------|---------|
 | `install.sh` | Runs on Codespace start; installs extensions, copies prompts |
-| `test.sh` | Verifies template integrity (see Verification Commands below for live check count) |
+| `test.sh` | Template-integrity entry point (see Verification Commands below for live check count). Thin orchestrator (~95 lines) that sources `scripts/checks/[0-9][0-9][0-9]-*.sh` modules (3-digit zero-padded prefix so lexical sort matches numeric order) (issue #255 Phase 4d) |
+| `scripts/checks/*.sh` | Per-concern check modules (issue #255 Phase 4d): structural file checks, content/invariant checks, ADR/phase invariants, and parser unit-test smokes. See `scripts/checks/README.md` for the convention and how to add a new module. |
 | `scripts/setup.sh` | First-run project customization helper. Thin orchestrator that sources `scripts/setup/[0-9][0-9]-*.sh` modules in lexical order (issue #255 Phase 4c) |
 | `scripts/setup/*.sh` | Per-phase setup modules (issue #255 Phase 4c): `00-detect-repo`, `10-env-file`, `20-install-dependencies`, `30-build`, `40-ensure-labels`, `50-ensure-variables`, `60-check-secrets`, `70-verify-env`. See `scripts/setup/README.md` for the module table and how to run a single module. |
 | `scripts/verify-env.sh` | Environment & placeholder sanity check |
