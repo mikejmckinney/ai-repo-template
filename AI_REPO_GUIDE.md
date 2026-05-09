@@ -83,6 +83,10 @@ bash install.sh
 │
 ├── scripts/                  # Bootstrap + verification scripts
 │   ├── README.md
+│   ├── lib/                  # Shared shell helpers (issue #255 Phase 4a)
+│   │   ├── logging.sh        # Color vars + log_info/warn/error/step
+│   │   ├── assertions.sh     # PASS/FAIL/WARN counters + pass/fail/warn
+│   │   └── jq/               # Extracted jq filters + fixtures (issue #229)
 │   ├── setup.sh              # First-run project customization
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── verify-pr.sh          # Plan-template Change-class classifier (issue #227, ADR-016)
@@ -196,6 +200,8 @@ bash install.sh
 | `scripts/db-reset.sh` | Optional database reset stub |
 | `scripts/pr-iteration-stats.sh` | Rolling 14-day PR review-loop metrics (total/fix/rejected rounds, threads); `--window <days>`, `--json` |
 | `scripts/lint-shell-conventions.sh` | Project-specific shell linting (RULE-01: `grep -c` without `\|\| true`; RULE-02: unanchored `grep -E` alternation patterns); run: `bash scripts/lint-shell-conventions.sh scripts/` |
+| `scripts/lib/logging.sh` | Shared color vars + `log_info`/`log_warn`/`log_error`/`log_step` printf helpers (issue #255 Phase 4a). Sourced by `setup.sh`, `verify-env.sh`, `db-reset.sh`, `sandbox-bootstrap.sh` |
+| `scripts/lib/assertions.sh` | Shared `PASS`/`FAIL`/`WARN` counters + `pass`/`fail`/`warn` helpers (issue #255 Phase 4a). Depends on `logging.sh` color vars. Sourced by `test.sh`, `verify-env.sh` |
 | `scripts/lib/jq/*.jq` | Extracted jq filters (e.g. `relay-cycle-count.jq`); each has matching fixture pairs in `scripts/lib/jq/fixtures/` and is tested by `scripts/test-jq-filters.sh` |
 
 ### Issue Templates

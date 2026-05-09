@@ -7,28 +7,11 @@
 
 set -e
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-PASS=0
-FAIL=0
-WARN=0
-
-pass() {
-  printf '%b✓%b %s\n' "$GREEN" "$NC" "$1"
-  PASS=$((PASS + 1))
-}
-fail() {
-  printf '%b✗%b %s\n' "$RED" "$NC" "$1"
-  FAIL=$((FAIL + 1))
-}
-warn() {
-  printf '%b⚠%b %s\n' "$YELLOW" "$NC" "$1"
-  WARN=$((WARN + 1))
-}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib/logging.sh
+source "$SCRIPT_DIR/lib/logging.sh"
+# shellcheck source=scripts/lib/assertions.sh
+source "$SCRIPT_DIR/lib/assertions.sh"
 
 echo "========================================"
 echo "Environment Verification"
