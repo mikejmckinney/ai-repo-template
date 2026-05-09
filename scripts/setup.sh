@@ -22,8 +22,11 @@ echo "========================================"
 # Source every setup module in lexical order. Modules share the parent
 # shell's environment (FULL_REPO, _gh_auth_ok, _pipeline_setup_skip_reason,
 # GH_REPO, etc.) so 50/60 can read state set up by 00 and 40.
+_setup_modules=()
 shopt -s nullglob
-_setup_modules=("$SCRIPT_DIR"/setup/[0-9][0-9]-*.sh)
+for _module in "$SCRIPT_DIR"/setup/[0-9][0-9]-*.sh; do
+  _setup_modules+=("$_module")
+done
 shopt -u nullglob
 if [[ ${#_setup_modules[@]} -eq 0 ]]; then
   printf '\033[0;31m[ERROR]\033[0m No setup modules found in %s/setup/. Expected files matching [0-9][0-9]-*.sh — likely a partial checkout or packaging error.\n' "$SCRIPT_DIR" >&2
