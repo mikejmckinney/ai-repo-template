@@ -450,8 +450,11 @@ exit 0
 
 @test "verify-pr: inlined test-verify-pr.sh body passes" {
   run _legacy_body
-  if [ "$status" -ne 0 ]; then
-    printf 'STATUS=%s\nOUTPUT:\n%s\n' "$status" "$output" >&2
-  fi
+  # Emit captured output as TAP `# ...` comments so the
+  # per-assertion ✅/PASS [...] markers from the inlined
+  # legacy body remain visible (and grep-able by
+  # run_bats_check) even on the success path. (#280 round 3)
+  printf '%s
+' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 0 ]
 }
