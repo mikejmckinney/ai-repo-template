@@ -123,8 +123,26 @@ jobs:
       # =====================================================
       # PLACEHOLDER: Remove after customizing
       # =====================================================
+      - name: Install bats (issue #255 Phase 4b)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel
+
+      - name: Run bats suite (issue #255 Phase 4b)
+        id: bats
+        continue-on-error: true
+        run: |
+          if [ -d scripts/tests ]; then
+            set -o pipefail
+            bats scripts/tests/ 2>&1 | tee bats-output.log
+          else
+            echo "scripts/tests/ not present — skipping bats step"
+          fi
+
       - name: Run tests (placeholder)
         id: tests
+        # Always run so the legacy ./test.sh parity gate executes even if
+        # the bats step above failed (PR #274 review feedback). The final
+        # gate step below fails the job if either suite failed.
+        if: always()
         run: |
           echo "CI pipeline placeholder - customize for your project"
           echo "See comments in this file for Node.js and Python examples"
@@ -135,6 +153,21 @@ jobs:
             ./test.sh 2>&1 | tee test-output.log
           else
             echo "No test.sh found - add project-specific tests"
+          fi
+
+      - name: Gate on combined test results
+        # Fails the job if either the bats or legacy suite failed. Without
+        # this, `continue-on-error: true` on the bats step would let a
+        # failing bats run merge silently.
+        if: always()
+        run: |
+          if [ "${{ steps.bats.outcome }}" = "failure" ]; then
+            echo "::error::bats scripts/tests/ failed"
+            exit 1
+          fi
+          if [ "${{ steps.tests.outcome }}" = "failure" ]; then
+            echo "::error::legacy ./test.sh failed"
+            exit 1
           fi
 
       # =====================================================
