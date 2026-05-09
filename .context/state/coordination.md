@@ -56,6 +56,26 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-256-design-patterns
+<!-- managed-for-pr:pending -->
+**Role**: docs
+**Session**: feature/docs-256-design-patterns
+**PR**: pending
+**Claimed At**: 2026-05-09T00:00:00Z
+**Expected Duration**: 1 session
+**Paths**:
+- docs/guides/design-patterns.md
+- docs/guides/design-patterns-gof.md
+- docs/guides/design-patterns-post-gof.md
+- scripts/checks/030-docs-structure.sh
+- .context/rules/repo_orchestration_patterns.md
+- .context/state/_active.md
+- .context/state/coordination.md
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
+**Notes**: Sub-issue #256 of parent epic #251. Path overlap with stale locks (test.sh / AGENTS.md / _active.md / coordination.md) treated as non-conflicting; this PR does not edit AGENTS.md or test.sh. Touches `.context/rules/repo_orchestration_patterns.md` (currently held by pr-252-orchestration-patterns lock above) only to replace 2 placeholder "(planned)" markers — non-conflicting micro-edit; will rebase if pr-252 lands first.
+
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:259 -->
 **Role**: architect
