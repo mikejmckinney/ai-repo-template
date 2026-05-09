@@ -23,23 +23,24 @@ sessions/
 
 When a **new agent** starts a fresh task, they MUST rotate the previous session's working log before creating their own entry. Two equivalent forms:
 
-1. **Rename (preferred — preserves history without copy-confusion):**
+1. **Copy (preferred — keeps `latest_summary.md` as a tracked modified file):**
+
+   ```bash
+   cp .context/sessions/latest_summary.md \
+      .context/sessions/<YYYY-MM-DD>_<branch-or-topic>.md
+   git add .context/sessions/<YYYY-MM-DD>_<branch-or-topic>.md
+   ```
+
+   Then overwrite `latest_summary.md` in place with the new agent's entry. Because `latest_summary.md` is never deleted or renamed, it stays a tracked modified file in the working tree — `git diff --name-only HEAD` sees it, so `make closeout` (`scripts/closeout.sh`) check 1 passes without a manual `git add`. This is why Copy is preferred over Rename.
+
+2. **Rename (alternative — preserves history without copy-confusion):**
 
    ```bash
    git mv .context/sessions/latest_summary.md \
           .context/sessions/<YYYY-MM-DD>_<branch-or-topic>.md
    ```
 
-   Then create a fresh `latest_summary.md` with the new agent's entry.
-
-2. **Copy:**
-
-   ```bash
-   cp .context/sessions/latest_summary.md \
-      .context/sessions/<YYYY-MM-DD>_<branch-or-topic>.md
-   ```
-
-   Then overwrite `latest_summary.md` with the new agent's entry. Useful if downstream tooling needs the previous content to remain at the canonical path during the transition; otherwise prefer Rename.
+   Then create a fresh `latest_summary.md` with the new agent's entry. Note: the new `latest_summary.md` is an **untracked** file until you `git add` it. `make closeout`'s diff-based check 1 won't see it without that explicit `git add`. If you use Rename, remember to stage the new file before running `make closeout`.
 
 A **mid-session agent** may also rotate at their discretion if `latest_summary.md` approaches the size cap (see §"Token Efficiency"). Rotation mid-session is rare; the common case is rotation at new-agent start.
 
