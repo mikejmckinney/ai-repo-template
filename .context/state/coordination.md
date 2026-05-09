@@ -56,26 +56,6 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
-## Lock: pr-256-design-patterns
-<!-- managed-for-pr:290 -->
-**Role**: docs
-**Session**: feature/docs-256-design-patterns
-**PR**: #290
-**Claimed At**: 2026-05-09T00:00:00Z
-**Expected Duration**: 1 session
-**Paths**:
-- docs/guides/design-patterns.md
-- docs/guides/design-patterns-gof.md
-- docs/guides/design-patterns-post-gof.md
-- scripts/checks/030-docs-structure.sh
-- .context/rules/repo_orchestration_patterns.md
-- .context/state/_active.md
-- .context/state/coordination.md
-**Depends On**: none
-**Blocks**: none
-**State**: in_progress
-**Notes**: Sub-issue #256 of parent epic #251. Path overlap with stale locks (test.sh / AGENTS.md / _active.md / coordination.md) treated as non-conflicting; this PR does not edit AGENTS.md or test.sh. Touches `.context/rules/repo_orchestration_patterns.md` (currently held by pr-252-orchestration-patterns lock above) only to replace 2 placeholder "(planned)" markers — non-conflicting micro-edit; will rebase if pr-252 lands first.
-
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:259 -->
 **Role**: architect
@@ -259,6 +239,15 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ## Recent History
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
+
+## Lock: pr-256-design-patterns
+<!-- managed-for-pr:290 -->
+**Role**: docs
+**Session**: feature/docs-256-design-patterns
+**PR**: #290
+**Claimed At**: 2026-05-09T00:00:00Z
+**State**: merged
+**Result**: Merged 2026-05-09 as PR #290 (squash `85f77fa`). Sub-issue #256 of parent epic #251 — added `docs/guides/design-patterns.md` (lead, ~265 lines, 3 PM-derived entries CAP1/CAP2/CP1) + `design-patterns-gof.md` (23 GoF entries CP2-CP24) + `design-patterns-post-gof.md` (10 post-GoF entries CP25-CP34); wired `scripts/checks/030-docs-structure.sh` DOCS_FILES; replaced 2 "(planned)" markers in `.context/rules/repo_orchestration_patterns.md` with live anchored cross-refs to the new entries. 7 review rounds (`pr-resolve-all.md` loop with `cap-override`): R1 (7 findings, 4 unique — _active.md schema break flagged by 3 reviewers, CAP-AP1 citation typo, ADR-020 section name, Strategy anchor cp21→cp22); R2 (2 stale Gemini dupes — quiet); R3 quiet (first termination); R4 (5 example-code corrections — header omits Decorator, Singleton `__init__` footgun, Chain-of-Resp shadows `next`, Strategy `lambda`-as-name PEP 8, UoW `*exc` non-standard); R5 (3 — React-MVVM mislabel, Singleton metaclass actionable form, lint-script enhancements deferred); R6 (3 — Decorator kwargs, TreeIterator DFS direction, Observer try/except deferred as policy-not-pattern); R7 (1 — self-introduced kwargs/cache-key inconsistency from R6); R8+R9 quiet (second termination). 16 review threads total resolved across 4 reviewers (Codex 1, Copilot reviewer 4, Cursor BugBot 1, Gemini 10). 2 explicit defers tracked for follow-up: (a) anchor-uniqueness lint + cross-file link checker in 030-docs-structure.sh, (b) CP20 Observer try/except as orthogonal resilience policy.
 
 ## Lock: pr-281-expand-syntax-check
 <!-- managed-for-pr:288 -->

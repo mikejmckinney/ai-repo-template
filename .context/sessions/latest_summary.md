@@ -1,3 +1,48 @@
+<!-- TEMPLATE_PLACEHOLDER: In a real project, this file captures the current agent session's working log per the canonical template in `.context/sessions/README.md` § "Working-Log Template". One entry per agent-session, updated continuously at every wait-for-input pause (see AGENTS.md § "Session-state cadence"). Downstream projects should clear the example body during onboarding (see AGENTS.md → "Template detection" and `.github/prompts/repo-onboarding.md`). -->
+
+# Session: 2026-05-09 — chore/closeout-256-state-cleanup — devops
+
+**Status**: done
+**Issue/PR**: #256 / #290 (merged) → this PR (chore close-out)
+**Started**: 2026-05-09T21:20:00Z
+
+## What Was Accomplished
+- Merged PR #290 (`docs/guides/design-patterns.md` + `-gof.md` + `-post-gof.md` — issue #256, sub-issue 5 of parent epic #251) at squash commit `85f77fa` after the `pr-resolve-all.md` loop converged with two consecutive clean rounds (R8 + R9). 7 push-rounds total: R1 (7 findings, 4 unique after dedup — `_active.md` schema break flagged by 3 reviewers, `CAP-AP1` citation typo, ADR-020 section-name reference, Strategy anchor `cp21`→`cp22`); R2 (2 stale Gemini dupes — quiet); R3 quiet (first termination); R4 (5 example-code corrections — header omits Decorator, Singleton `__new__`/`__init__` footgun, Chain-of-Resp shadows `next` builtin, Strategy `lambda`-bound-to-name PEP 8 E731, UoW `__exit__(*exc)` non-standard signature); R5 (3 — React-in-MVVM mislabel, Singleton actionable-form upgrade to metaclass example, lint-script enhancements deferred to follow-up); R6 (3 — Decorator missing `**kwargs`, TreeIterator wrong-direction DFS, Observer `notify()` try/except deferred as policy-not-pattern); R7 (1 — cleanup of self-introduced kwargs/cache-key inconsistency from R6); R8 + R9 clean.
+- Dispatched the chore close-out per ADR-007: rotated previous session entry (chore-280-281 close-out) to `.context/sessions/2026-05-09_archived-280-281.md` using the Copy form (preferred per PR #271 / issue #270). Replaced `latest_summary.md` body in place.
+- Removed `## Task: feature/docs-256-design-patterns` block from `.context/state/_active.md`.
+- Moved `## Lock: pr-256-design-patterns` from `## Active Locks` to `## Recent History` in `.context/state/coordination.md` with `State: merged` + a multi-round `Result:` line capturing the loop trajectory.
+
+## What Shipped
+- `docs/guides/design-patterns.md` — lead/index file (~265 lines), establishes citation conventions (`CP-N` positive patterns, `CAP-N` anti-patterns), descriptive-not-prescriptive caveats, file-split rationale, and 3 PM-derived entries: `CAP1` Goal Substitution (← PM-002 / orchestration `AP4`), `CAP2` Implicit Contract (← PM-001 / orchestration `AP3`), `CP1` Owner-Keyed Concurrent State (← PM-003 / orchestration `P7`).
+- `docs/guides/design-patterns-gof.md` — 23 GoF entries `CP2`–`CP24` organized Creational / Structural / Behavioral. Each entry: intent, when-to-use, when-NOT, minimal Python example. Decorator / Iterator / Strategy / Command / Observer / Template Method flag language-feature absorption per ADR-020 §"Block-vs-advisory designation" parallel.
+- `docs/guides/design-patterns-post-gof.md` — 10 post-GoF entries `CP25`–`CP34`: Repository, Unit of Work, Dependency Injection, MVC/MVP/MVVM, CQRS, Event Sourcing, Saga, Circuit Breaker, Bulkhead, Sidecar.
+- `scripts/checks/030-docs-structure.sh` — added 3 new file paths to the `DOCS_FILES` array (alphabetical position between `context-files-explained.md` and `multi-agent-coordination.md`).
+- `.context/rules/repo_orchestration_patterns.md` — replaced 2 "(planned)" / "(when filed)" placeholders at lines 5 and 315 with live anchored cross-refs to the new `CAP1` / `CAP2` / `CP1` entries (bidirectional traceability between the orchestration-layer patterns file and the new code-layer patterns guide).
+- `.context/sessions/latest_summary.md` (this entry, in-place rewrite per the Copy rotation).
+- `.context/state/_active.md` (docs-256 task block removed).
+- `.context/state/coordination.md` (lock moved to Recent History with merge result).
+
+## Harder Than Expected
+- **`_active.md` schema break flagged by 3 of 5 R1 reviewers** (Codex P2, Copilot reviewer, Cursor BugBot Medium): the new `## Task: feature/docs-256-design-patterns` block was inserted between architect-252's `**Blockers**: None` line and its `**Next 1–3 actions**:` list, leaving architect-252 without an actions block (ADR-018 schema violation) and creating the appearance of a duplicated actions block under docs-256. Three independent bot reviewers all caught the same structural error within minutes of the initial push, which made the priority unambiguous, but the underlying mistake (insertion-point error during a `replace_string_in_file` with a broad context window) is a class of regression worth recognizing — the symptom only became visible at the *cumulative* file shape, not at any single edit.
+- **Self-introduced regression in R6 → R7** (Decorator `with_cache`): R6 added `**kwargs` to the wrapper signature in response to one Gemini finding, but the cache key was kept as `args` only — silently wrong (calls with different kwargs but identical args return the same cached value). R7 reverted to positional-only with an expanded comment pointing readers to `functools.lru_cache`. Lesson: when a reviewer asks to "make X more robust," the surrounding code may not stay consistent under that change. For minimal didactic examples, "minimal AND general AND production-grade" is often not a reachable sweet spot — settling on minimal-correct is the right move.
+- **Loop reopened after first termination** (R4 onward): two clean iterations terminated the loop after R3, then 5 fresh substantive findings landed in R4. Net result was 9 polling rounds rather than 3. Half of the new findings were on example-code minutiae rather than guide structure or accuracy — a signal worth capturing for the prompt-revision discussion if recurring across PRs.
+
+## Generalizable Lessons
+- **Multi-block edit insertion bugs are detected best by structural reviewers, not by passing tests.** Three independent bot reviewers caught the `_active.md` schema break in minutes; `bash test.sh` did not (the schema check enforces presence of headers, not their nesting integrity within per-task sections). Worth considering whether `scripts/checks/020-active-md-schema.sh` should grow a "every `## Task:` section ends before the next `## Task:` and contains exactly one `**Next 1–3 actions**:` block" assertion. Tracked verbally; could be a small follow-up issue if the failure mode recurs.
+- **Bot reviewers will sometimes review a stale commit** (Round 2 of this PR — Gemini posted findings already addressed in R1). The right pattern is reply-with-fix-commit-pointer + resolve thread, NOT re-edit. Repeated re-edits on already-correct code chase a moving target. The reply form ("Already fixed in commit X — current HEAD line N reads ...") is concise and leaves an audit trail.
+- **Defer-with-reasoning works as a load-bearing tool when used sparingly.** Two explicit deferrals in this PR (CP20 Observer try/except as orthogonal resilience policy; lint-script enhancements as out-of-scope content-introduction) both held without further pushback. The pattern is: name the finding, explain why it isn't a defect of *this* PR, and either file a follow-up or document the wontfix reasoning. Bots accept this when the reasoning is concrete; they push back when the deferral is hand-wave.
+- **Per-pattern minimal examples need to flag language-feature absorption with the correct shape, not just describe it.** The most actionable moment in the entire 7-round loop was R5's "promote metaclass-based Singleton from comment to primary example" — readers who copy from the guide want the form they should use, not just a description of the trap to avoid. Worth pre-applying that lens when authoring future pattern entries.
+
+## Files Modified
+- `.context/sessions/latest_summary.md` (this entry, in-place rewrite per the Copy rotation)
+- `.context/sessions/2026-05-09_archived-280-281.md` (rotation archive of previous entry)
+- `.context/state/_active.md` (docs-256 task block removed)
+- `.context/state/coordination.md` (lock moved to Recent History; merge result line added)
+
+## Open Items / Next
+- **Defer 1 — anchor-uniqueness + cross-file link checks** (Round 5 wrapper-thread feedback, Gemini): file a follow-up issue to add a check in `scripts/checks/030-docs-structure.sh` that verifies (a) all `CP-N` and `CAP-N` anchors are unique across the three `design-patterns*.md` files and (b) all cross-file links resolve. Out-of-scope for this content-introduction PR per the established convention that content PRs shouldn't grow new lint infrastructure for the content they introduce. Issue title candidate: "Add anchor-uniqueness + link-resolution checks for docs/guides/design-patterns*.md (defer from #256/PR#290 R5)".
+- **Defer 2 — CP20 Observer `notify` try/except** (Round 6, Gemini): documented WontFix in the Round 6 Resolution Report. Exception handling in `notify()` is an orthogonal resilience-policy decision (swallow-and-continue vs fail-fast vs dead-letter), not part of the Observer pattern's shape. The textbook GoF Observer fires-and-forgets; adding swallow-all to the minimal example would teach a specific policy that production systems often don't want.
+- **Issue #248 (next planned task — docs/agents .github↔.claude byte-identity work)**: to be claimed in a fresh session immediately following this close-out per the multi-task continuity in `_active.md`.
 # Session: 2026-05-09 — chore/closeout-280-281-state-cleanup — devops
 
 **Status**: done
