@@ -87,6 +87,9 @@ bash install.sh
 │   │   ├── logging.sh        # Color vars + log_info/warn/error/step
 │   │   ├── assertions.sh     # PASS/FAIL/WARN counters + pass/fail/warn
 │   │   └── jq/               # Extracted jq filters + fixtures (issue #229)
+│   ├── tests/                # Bats test suite (issue #255 Phase 4b)
+│   │   ├── README.md
+│   │   └── *.bats            # One file per concern; wraps legacy test-*.sh
 │   ├── setup.sh              # First-run project customization
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── verify-pr.sh          # Plan-template Change-class classifier (issue #227, ADR-016)
@@ -203,6 +206,7 @@ bash install.sh
 | `scripts/lib/logging.sh` | Shared color vars + `log_info`/`log_warn`/`log_error`/`log_step` printf helpers (issue #255 Phase 4a). Sourced by `setup.sh`, `verify-env.sh`, `db-reset.sh`, `sandbox-bootstrap.sh` |
 | `scripts/lib/assertions.sh` | Shared `PASS`/`FAIL`/`WARN` counters + `pass`/`fail`/`warn` helpers (issue #255 Phase 4a). Depends on `logging.sh` color vars. Sourced by `test.sh`, `verify-env.sh` |
 | `scripts/lib/jq/*.jq` | Extracted jq filters (e.g. `relay-cycle-count.jq`); each has matching fixture pairs in `scripts/lib/jq/fixtures/` and is tested by `scripts/test-jq-filters.sh` |
+| `scripts/tests/*.bats` | Bats test suite (issue #255 Phase 4b); one `.bats` file per concern wrapping the matching legacy `scripts/test-<concern>.sh`. Run: `bats scripts/tests/`. CI installs bats via `apt-get` in `ci-tests.yml`. |
 
 ### Issue Templates
 | File | Purpose |

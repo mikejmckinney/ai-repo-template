@@ -123,6 +123,19 @@ jobs:
       # =====================================================
       # PLACEHOLDER: Remove after customizing
       # =====================================================
+      - name: Install bats (issue #255 Phase 4b)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel
+
+      - name: Run bats suite (issue #255 Phase 4b)
+        id: bats
+        run: |
+          if [ -d scripts/tests ]; then
+            set -o pipefail
+            bats scripts/tests/ 2>&1 | tee bats-output.log
+          else
+            echo "scripts/tests/ not present — skipping bats step"
+          fi
+
       - name: Run tests (placeholder)
         id: tests
         run: |
