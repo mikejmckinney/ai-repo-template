@@ -56,6 +56,29 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 ## Active Locks
 
+## Lock: pr-262-make-closeout
+<!-- managed-for-pr:268 -->
+**Role**: devops
+**Session**: feature/devops-262-make-closeout
+**PR**: #268
+**Claimed At**: 2026-05-09T00:08:00Z
+**Expected Duration**: 1 session
+**Paths**:
+- Makefile
+- scripts/closeout.sh
+- scripts/test-closeout.sh
+- test.sh
+- AI_REPO_GUIDE.md
+- scripts/README.md
+- .context/sessions/latest_summary.md
+- .context/sessions/2026-05-09_archived-266.md
+- .context/state/_active.md
+- .context/state/coordination.md
+**Depends On**: none
+**Blocks**: none
+**State**: in_progress
+**Notes**: Implements `make closeout` enforcement target. Self-dogfoods on the chore close-out PR after merge.
+
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:259 -->
 **Role**: architect

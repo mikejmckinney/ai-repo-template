@@ -1206,6 +1206,42 @@ else
 fi
 
 echo ""
+echo "Running closeout fixture tests (issue #262)..."
+# Presence + executable-bit checks first; then the fixture run.
+if [[ -f Makefile ]]; then
+  if grep -qE '^closeout:' Makefile; then
+    pass "Makefile defines 'closeout' target"
+  else
+    fail "Makefile missing 'closeout' target"
+  fi
+else
+  fail "Makefile missing"
+fi
+if [[ -x scripts/closeout.sh ]]; then
+  pass "scripts/closeout.sh present and executable"
+else
+  fail "scripts/closeout.sh missing or not executable"
+fi
+if [[ -x scripts/test-closeout.sh ]]; then
+  pass "scripts/test-closeout.sh present and executable"
+else
+  fail "scripts/test-closeout.sh missing or not executable"
+fi
+if [[ -f scripts/test-closeout.sh ]]; then
+  CO_LOG=$(mktemp)
+  if bash scripts/test-closeout.sh >"$CO_LOG" 2>&1; then
+    co_passed=$(grep -c '^  ✅ ' "$CO_LOG" || true)
+    pass "scripts/test-closeout.sh ($co_passed assertions passed)"
+  else
+    fail "scripts/test-closeout.sh failed (see log below)"
+    cat "$CO_LOG"
+  fi
+  rm -f "$CO_LOG"
+else
+  fail "scripts/test-closeout.sh missing"
+fi
+
+echo ""
 echo "Running verify-env.sh fixture tests..."
 if [[ -f scripts/test-verify-env.sh ]]; then
   VE_LOG=$(mktemp)

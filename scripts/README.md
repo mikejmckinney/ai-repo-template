@@ -9,6 +9,8 @@
 | `verify-env.sh` | Check environment setup | `./scripts/verify-env.sh` |
 | `db-reset.sh` | Reset database to clean state | `./scripts/db-reset.sh` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
+| `closeout.sh` | Close-out cadence enforcement (issue #262) — refuses commit unless state + sessions are reconciled | `make closeout` (canonical) or `bash scripts/closeout.sh` |
+| `test-closeout.sh` | Fixture tests for `closeout.sh` (refusal + happy paths) | `bash scripts/test-closeout.sh` |
 
 ## Usage Guidelines
 
