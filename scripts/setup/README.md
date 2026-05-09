@@ -10,7 +10,7 @@ module owns one phase of project bootstrap and is independently re-runnable.
 | `00-detect-repo.sh` | Resolve `FULL_REPO` from env/git remote; rewrite `.github/ISSUE_TEMPLATE/config.yml` placeholder. | Honors `GH_REPO` / `GITHUB_REPOSITORY` env overrides. |
 | `10-env-file.sh` | Copy `.env.example` → `.env` if missing. | Idempotent — never overwrites an existing `.env`. |
 | `20-install-dependencies.sh` | `npm ci` / `pip install` for declared manifests; database-migration stub. | DB block is template scaffolding for project customization. |
-| `30-build.sh` | Run `npm run build` if `package.json` declares a build script. | Skipped silently otherwise. |
+| `30-build.sh` | Run `npm run build` if `package.json` declares a build script. | Logs "No build step configured" otherwise. |
 | `40-ensure-labels.sh` | Probe `gh auth`, resolve `FULL_REPO` fallback, `export GH_REPO`, create pipeline labels. | Sets shared gating vars (`_pipeline_setup_skip_reason`, `_gh_auth_ok`) consumed by 50/60. |
 | `50-ensure-variables.sh` | `gh variable set` for `MAX_COPILOT_*`, `PR_RESOLVE_MAX_ROUNDS`. | No-ops when 40 requested skip. Includes one-time `MAX_COPILOT_DAILY` 20→10 migration. |
 | `60-check-secrets.sh` | Report presence of `CLAUDE_PAT`, `ANTHROPIC_API_KEY` (repo + org tiers). | Cannot read values; presence-only. |
