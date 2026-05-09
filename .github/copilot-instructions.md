@@ -21,6 +21,49 @@ Before editing any file, identify your role (analyst, architect, judge, critic, 
 
 Full multi-agent workflow: [`docs/guides/multi-agent-coordination.md`](../docs/guides/multi-agent-coordination.md).
 
+## Subagent dispatch (Copilot-specific)
+
+Unlike Claude Code, the VS Code Copilot Chat surface does **not**
+automatically route a user message to the right role subagent based on the
+agent's `description:` field. The default agent (you) handles everything
+unless one of the following happens:
+
+1. The user `@mention`s a role explicitly (e.g. `@Architect`, `@Judge`).
+2. The user invokes `#runSubagent` to force a specific role.
+3. **You proactively call the `runSubagent` tool yourself.**
+
+**Use `runSubagent` proactively** whenever a task fits a registered role's
+specialty rather than absorbing the work into the default agent. The 10
+roles (analyst, architect, backend, critic, devops, docs, frontend, judge,
+pm, qa) are registered as Copilot SDK custom agents under
+[`.github/agents/`](agents/) with bodies pointing to canonical
+[`.agents/<role>.md`](../.agents/). Each role's `description:` frontmatter
+field is the dispatch hint — match the user's request against those.
+
+Heuristics for when to dispatch:
+
+- Research / market validation / "should we build this" → `Analyst`
+- Plan / ADR / decompose feature into tasks → `Architect`
+- Server code, APIs, models, migrations → `Backend`
+- UI components, pages, styles → `Frontend`
+- Tests, CI triage, coverage gates → `QA`
+- Workflows, install scripts, CI config → `DevOps`
+- README / AI_REPO_GUIDE / docs/ updates → `Docs`
+- Plan-gate or diff-gate review (APPROVE / REQUEST_CHANGES / BLOCK) → `Judge`
+- Devil's-advocate review for hidden assumptions / AI clichés → `Critic`
+- Dispatching approved plans into per-role task files → `Project Manager`
+
+Don't dispatch for trivial single-step operations (one-line edit, single
+file read, quick lookup) — the dispatch overhead isn't worth it. Do
+dispatch when the task naturally lives inside one role's owned paths or
+benefits from that role's specialized prompt.
+
+Mid-chain agent-to-agent handoffs (declared via the `handoffs:` field in
+each `.github/agents/<role>.agent.md` overlay, with `send: true` for
+automatic firing) are a separate mechanism — they kick in once a subagent
+is already running and finishes its hop. The user-message → first-agent
+selection is still your responsibility as the default agent.
+
 ## Following referenced prompt files (Copilot-specific)
 
 When a comment or issue body contains `@copilot follow <path>` (e.g.
