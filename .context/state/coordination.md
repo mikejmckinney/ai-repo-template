@@ -236,45 +236,18 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Blocks**: none
 **State**: in_progress
 
+## Recent History
+
+<!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
+
 ## Lock: pr-248-shared-subagent-body
 <!-- managed-for-pr:292 -->
 **Role**: devops
 **Session**: feature/devops-248-shared-subagent-body
 **PR**: #292
 **Claimed At**: 2026-05-09T00:00:00Z
-**Expected Duration**: 1 session
-**Paths**:
-- .agents/**
-- scripts/checks/050-agent-mirror.sh
-- scripts/checks/{115,120,135}-*.sh
-- .github/agents/*.agent.md
-- .claude/agents/*.md
-- CLAUDE.md
-- .github/copilot-instructions.md
-- AI_REPO_GUIDE.md
-- .context/rules/agent_ownership.md
-- .context/rules/process_*.md
-- .context/rules/repo_orchestration_patterns.md
-- .context/rules/domain_code_quality.md
-- docs/guides/multi-agent-coordination.md
-- docs/guides/agent-best-practices.md
-- docs/guides/agent-pipeline.md
-- docs/FAQ.md
-- docs/decisions/adr-003-claude-code-subagent-registration.md
-- docs/decisions/adr-023-shared-subagent-canonical.md
-- docs/decisions/README.md
-- .github/prompts/README.md
-- AI_REPO_GUIDE.md
-- .context/state/_active.md
-- .context/state/coordination.md
-**Depends On**: none
-**Blocks**: #249 (Cursor subagent registration: drop one `.cursor/agents/<role>.md` overlay per role pointing at canonical `.agents/<role>.md`, plus a one-line array entry in `scripts/checks/050-agent-mirror.sh`'s `PLATFORMS` and `MODEL_RE_<platform>` allowlists)
-**State**: in_progress
-**Notes**: Trigger override per Pre-Flight Report on issue #248. Path overlap with pr-220-phase2 and pr-252-orchestration-patterns on `.github/agents/`, `.claude/agents/`, `AGENTS.md`, `_active.md`, `coordination.md` — those locks reference work that is either merged or on independent branches; this PR regenerates overlays and updates pointer tables only, no overlap on substantive role-content edits.
-
-## Recent History
-
-<!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
+**State**: merged
+**Result**: Merged 2026-05-10 as PR #292 (squash `a35f829`). Issue #248 — canonical role bodies extracted to `.agents/<role>.md` × 10 + README; `.github/agents/<role>.agent.md` and `.claude/agents/<role>.md` collapsed to thin overlays (frontmatter + pointer body) per ADR-023; `scripts/checks/050-agent-mirror.sh` rewritten from 2-way `.github↔.claude` mirror to N-way canonical/overlay parity (4 checks: per-role overlay presence, byte-identical `description:`, per-platform `model:` allowlist, overlay body references canonical) + reverse parity (overlay → canonical) so orphan overlays from role removal fail loudly. 6 fix rounds + 2 quiescence rounds (`pr-resolve-all.md` loop with `cap-override`): R1 (44 threads → 14 substantive fixes consolidated in 1 commit `73eaf99`: ISS-01 truncate legacy 2-way block + reverse parity, ISS-02/03/05 stale `.agent.md` refs in canonical, ISS-06 broken `.agents/critic.md` link, ISS-07/08/09 missing `.agents/**` in orchestration scope + Architect ownership, ISS-10 missing `capture-postmortem`/`mirror-postmortem` exemptions, ISS-11 missing `analyst` in PM dispatch ROLE field, ISS-13/14 stale state-file claims, ISS-15 external consumers migrated — `pre-push-review.md` + `pr-resolve-all.md` + `backlog-to-issues.yml`); R2 (2 — `process_doc_maintenance.md` doc-sync trigger rows for new platform + ADR-019 model tiering); R3 (3 — broken `.agents/devops.md` link, `grep -qF` literal-match hardening, `copilot_allowlist_re` quote-style); R4 (2 — heuristic comment for Check 4, `.cursor/BUGBOT.md` + `.gemini/styleguide.md` migrated 22 refs to canonical); R5 (3 — overlay-body wording in ADR-023 + multi-agent guide, `$overlay` in fail message); R6 (2 — `[[:space:]]*$` trailing-whitespace tolerance, **regression caught**: restored Critic ADR-019 escalation section to canonical that was lost in canonical-extraction); R7 (1 deferred — over-anchor regex; gemini conceded "currently safe"); R8+R9 quiet (two-iteration termination). 57 threads total: 51 resolved, 6 documented deferrals (5 from R1 + 1 from R7). `bash test.sh` 476 / 3 / 0 throughout. `cap-override` label active throughout (legitimate refactor). Blocks #249 (Cursor subagent registration: drop `.cursor/agents/<role>.md` overlay folder + 6th array entry in `050-agent-mirror.sh` parallel arrays).
 
 ## Lock: pr-256-design-patterns
 <!-- managed-for-pr:290 -->
