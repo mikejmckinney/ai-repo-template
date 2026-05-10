@@ -111,7 +111,7 @@ for canonical in .agents/*.md; do
     if grep -qF ".agents/${role}.md" "$overlay"; then
       pass "$role $platform overlay body references canonical .agents/$role.md"
     else
-      fail "$role $platform overlay body must reference .agents/$role.md (overlays are pointers; do not paraphrase canonical responsibilities)"
+      fail "$role $platform overlay $overlay body must reference .agents/$role.md (overlays are pointers; do not paraphrase canonical responsibilities)"
     fi
   done
 done
