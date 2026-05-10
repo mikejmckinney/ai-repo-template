@@ -362,6 +362,10 @@ so the embedded ` ```bash ` fence renders inside the example.
 
 <The merged approach, written as one coherent plan — not three plans stapled together.>
 
+## Confidence
+
+**Confidence:** High / Medium / Low
+
 ## Why This Approach Won
 
 <Decision rationale. Cite evidence quality, repo grounding, acceptance-criteria mapping, and risk handling. If a less fluent candidate won, say so and explain why.>
