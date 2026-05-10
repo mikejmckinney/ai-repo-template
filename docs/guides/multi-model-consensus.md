@@ -138,7 +138,7 @@ is **prompt-first**, not subagent-only.
 
 | Runtime | Recommended candidate dispatch |
 |---|---|
-| Claude Code CLI | In-session subagents (`Task(subagent_type='architect', ...)` ×3 with different model pins where available; isolated context per call). |
+| Claude Code CLI | In-session subagents (`Task(subagent_type: 'architect', ...)` ×3 with different model pins where available; isolated context per call). |
 | Copilot Chat (VS Code) | Separate chat sessions or separate model pins; each candidate posts its own issue comment. ADR-019 Amendment #6 ceiling still applies. |
 | Cursor / Gemini / Web UIs | Separate sessions; the maintainer pastes the Context Brief and the candidate posts its result back as an issue comment. |
 | Manual | Maintainer copies the Context Brief into N model UIs and posts the candidates by hand. |
