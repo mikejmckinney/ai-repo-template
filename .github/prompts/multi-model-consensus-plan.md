@@ -320,6 +320,7 @@ so the embedded ` ```bash ` fence renders inside the example.
 
 **Issue:** #<number>
 **Synthesized by:** <model and runtime>
+**Date:** YYYY-MM-DD
 **Candidates reviewed:**
 - <candidate A permalink — model/platform>
 - <candidate B permalink — model/platform>
