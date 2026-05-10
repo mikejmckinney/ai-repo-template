@@ -156,6 +156,28 @@ Each candidate plan goes in as a separate issue comment using the
 and the final consensus comment can permalink them. Each candidate
 identifies its model and platform.
 
+**Posting responsibility:**
+
+- **In-session subagent path** — the subagent returns its candidate
+  plan text to the initiating agent. The **initiating agent** is
+  responsible for posting that text to the issue as a separate
+  comment (one comment per candidate), preserving the
+  `<!-- consensus-plan-candidate -->` marker and the candidate's
+  declared model/platform line. Subagents in this repo do not have
+  comment-write tools by default; the initiating agent is the
+  posting authority.
+- **Separate-session path** — whoever ran the candidate session
+  (the maintainer, or the same agent in a different session) posts
+  the candidate plan as a comment directly. The initiating agent
+  collects the resulting permalinks for the synthesis pass.
+- **Manual path** — the maintainer pastes the candidate output into
+  an issue comment by hand.
+
+In every path, the result is the same: one issue comment per
+candidate, marked with `<!-- consensus-plan-candidate -->`, with a
+permalink the synthesizer can cite under `Candidates reviewed` in
+the final plan.
+
 ### Step 4 — Synthesize
 
 The initiating agent reads all candidate-plan comments and produces a
