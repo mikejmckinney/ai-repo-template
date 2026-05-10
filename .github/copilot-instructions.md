@@ -60,9 +60,26 @@ benefits from that role's specialized prompt.
 
 Mid-chain agent-to-agent handoffs (declared via the `handoffs:` field in
 each `.github/agents/<role>.agent.md` overlay, with `send: true` for
-automatic firing) are a separate mechanism — they kick in once a subagent
-is already running and finishes its hop. The user-message → first-agent
-selection is still your responsibility as the default agent.
+automatic firing) are a separate mechanism in the Copilot SDK schema, but
+**they are currently inert in VS Code Copilot Chat** (verified on PR #292,
+May 2026): neither the `@mention` path nor the `runSubagent` tool path
+fires the declared handoffs at subagent completion, and dispatched
+subagents are not given a dispatch tool of their own, so they cannot fire
+the handoff themselves as a fallback. The field is retained for forward
+compatibility with future Copilot SDK hosts.
+
+**Default-agent-mediated handoff chaining (the workaround):** until the
+`handoffs:` field is honored natively, *you* are responsible for chaining
+handoffs. After each `runSubagent` call returns, consult the dispatched
+subagent's canonical `handoff_targets:` frontmatter list at
+`.agents/<role>.md`. If the next step in the user's task naturally lives
+inside one of those downstream roles, dispatch it via another
+`runSubagent` call rather than absorbing the work into the default agent.
+Example: user asks for a plan; you dispatch `Architect`; Architect's
+canonical lists `handoff_targets: [judge, pm]`; if the user wants the plan
+gated, your next action is `runSubagent('Judge', ...)` with Architect's
+plan as the prompt. This makes the default agent the handoff executor,
+which is the only thing that has the `runSubagent` tool today.
 
 ## Following referenced prompt files (Copilot-specific)
 

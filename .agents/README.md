@@ -53,11 +53,26 @@ into the platform overlays.
 
 ### Active handoff mapping (Copilot only)
 
-The Copilot SDK has a native `handoffs:` field that enables one agent to
-dispatch another. The Copilot overlay at `.github/agents/<role>.agent.md`
-maps `handoff_targets` (canonical) → `handoffs:` (overlay) with `send: true`
-on each entry so handoffs fire **automatically** instead of requiring a
-manual confirmation click.
+The Copilot SDK custom-agent schema defines a native `handoffs:` field that
+can dispatch one agent from another. The Copilot overlay at
+`.github/agents/<role>.agent.md` maps `handoff_targets` (canonical) →
+`handoffs:` (overlay) with `send: true` on each entry so handoffs would fire
+**automatically** in any host that honors the field.
+
+**Status in VS Code Copilot Chat (May 2026): inert.** Smoke tests on PR #292
+verified the field loads cleanly into agent registrations (no schema
+errors), but neither the `@mention` dispatch path nor the `runSubagent` tool
+path actually fires the declared handoffs at subagent completion in this
+surface. Even with `chat.subagents.allowInvocationsFromSubagents` enabled,
+dispatched subagents are not given a dispatch tool, so they cannot fire the
+handoff manually as a fallback either. The field is kept for forward
+compatibility — a future Copilot SDK update or a different Copilot SDK host
+(e.g. the standalone agent-builder CLI) is expected to honor it. **Until
+then, handoff chaining in VS Code Copilot Chat is mediated by the default
+agent**, which reads each dispatched subagent's canonical `handoff_targets:`
+and calls `runSubagent` for the next role itself. See
+[`.github/copilot-instructions.md`](../.github/copilot-instructions.md)
+§ "Subagent dispatch (Copilot-specific)" for the default-agent protocol.
 
 Two casing notes:
 
