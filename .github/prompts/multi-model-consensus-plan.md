@@ -393,7 +393,13 @@ so the embedded ` ```bash ` fence renders inside the example.
 <commands>
 ```
 
-**Change class:** code-or-docs / docs-only / config-only / other (per ADR-016 / `scripts/verify-pr.sh`)
+**Change class:** <code-or-docs | pull_request-triggered workflow | default-branch-only workflow | mixed>
+**Verification target:** <PR branch | sandbox repo | both>
+
+<!-- Use the canonical ADR-016 values from `.github/PLAN_TEMPLATE.md`.
+     `scripts/verify-pr.sh` validates the declared class against the
+     actual changed paths. Default-branch-only changes must be verified
+     in the sandbox sibling repo before merging. -->
 
 ## Risks and Mitigations
 
