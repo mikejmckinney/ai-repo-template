@@ -55,6 +55,7 @@ REQUIRED_FILES=(
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"
   ".github/prompts/pre-push-review.md"
+  ".github/prompts/multi-model-consensus-plan.md"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
 )
