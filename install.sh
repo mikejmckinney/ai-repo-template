@@ -263,6 +263,7 @@ MULTIAGENT_FILES=(
   ".context/state/feedback_template.md"
   ".context/state/handoff_template.md"
   "docs/guides/multi-agent-coordination.md"
+  "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
   "docs/research/.gitkeep"
 )
