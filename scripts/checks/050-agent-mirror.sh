@@ -98,6 +98,16 @@ for canonical in .agents/*.md; do
     # path — any link, code-fenced reference, or prose mention satisfies it.
     # `-F` forces literal matching so `.` is not treated as a regex wildcard
     # (otherwise paths like `xagents/<role>Xmd` would falsely satisfy the check).
+    #
+    # Heuristic limitation: this is intentionally a presence check, not a
+    # structural parse. We do not validate that the reference is a real
+    # markdown link or that the path resolves on disk; that would require a
+    # markdown parser and a path resolver and would be overkill for catching
+    # the failure mode this check exists to prevent (a contributor pasting
+    # role text back into an overlay shim). False positives are bounded —
+    # any literal occurrence of `.agents/<role>.md` anywhere in the overlay
+    # passes, which is the correct intent for an "overlays must point at
+    # canonical" invariant. See ADR-023 for the canonical/overlay contract.
     if grep -qF ".agents/${role}.md" "$overlay"; then
       pass "$role $platform overlay body references canonical .agents/$role.md"
     else
