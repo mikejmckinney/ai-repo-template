@@ -24,7 +24,7 @@ We will ship multi-model consensus planning as **a prompt and a guide**, not as 
 
 1. **`.github/prompts/multi-model-consensus-plan.md`** — a shared procedural prompt that defines the candidate-plan and final-consensus-plan formats, candidate orchestration, bias guardrails, candidate failure handling, and the explicit handoff to Judge plan-gate.
 2. **`docs/guides/multi-model-consensus.md`** — operator-facing guide covering trigger conditions, when not to use, cost guardrails, runtime fallback, and a worked example.
-3. **`.context/rules/repo_orchestration_patterns.md` §P9** — vocabulary entry for **Multi-Model Plan Consensus**. AP promotion (block-on-sight misuse rules) is **deferred** until at least five high-stakes issues have used the workflow and produced enough evidence about misuse and failure modes.
+3. **`.context/rules/repo_orchestration_patterns.md` §P9** — vocabulary entry for **Multi-Model Plan Consensus**. AP promotion (block-on-sight misuse rules) is **deferred** until at least five high-stakes issues have used the workflow and produced enough evidence about misuse and failure modes (uncertain — the "five" threshold is the issue #295 body's recommendation, not a measured value).
 4. **No new permanent `synthesizer` role in v1.** The initiating agent (typically Architect) performs the synthesis pass. Promotion to a first-class role is tracked in issue #296 and gated on accumulated usage evidence.
 
 The workflow inherits model-tier expectations from [`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md) and ADR-019. It does not introduce a parallel model-routing policy. The final consensus plan is **not approval** — Judge plan-gate runs on it like any other plan-as-comment per `.context/rules/process_gates.md`.
