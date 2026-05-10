@@ -164,7 +164,11 @@ identifies its model and platform.
   comment (one comment per candidate), preserving the
   `<!-- consensus-plan-candidate -->` marker and the candidate's
   declared model/platform line. Subagents in this repo do not have
-  comment-write tools by default; the initiating agent is the
+  comment-write tools by default (uncertain — verified by inspection
+  of the `tools:` arrays in `.github/agents/*.agent.md` overlays at
+  PR #297 time, e.g. `architect.agent.md` lists
+  `['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']` with
+  no `gh`/comment tool); the initiating agent is the
   posting authority.
 - **Separate-session path** — whoever ran the candidate session
   (the maintainer, or the same agent in a different session) posts
@@ -353,6 +357,14 @@ so the embedded ` ```bash ` fence renders inside the example.
 - <point all usable candidates agreed on>
 
 ## Areas of Disagreement
+
+<!-- Column count must match the number of usable candidates. The
+     example below uses three because that is the typical case (per
+     Step 2 “typically 3, minimum 2”). For a two-candidate run, drop
+     the `Candidate C` column entirely. Do not invent placeholder data
+     for missing candidates — missing data weakens provenance. List
+     every excluded candidate in the `Rejected / Unusable Candidates`
+     section below with a one-sentence reason. -->
 
 | Topic | Candidate A | Candidate B | Candidate C | Final decision |
 |---|---|---|---|---|
