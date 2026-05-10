@@ -1,6 +1,6 @@
 # Repo Orchestration Patterns
 
-> **Purpose**: Shared vocabulary for naming the patterns this template uses and the anti-patterns to watch for during review. Critic and Judge cite entries from this file by ID (`P1`–`P8`, `AP1`–`AP8`) when reviewing changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.agents/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`).
+> **Purpose**: Shared vocabulary for naming the patterns this template uses and the anti-patterns to watch for during review. Critic and Judge cite entries from this file by ID (`P1`–`P9`, `AP1`–`AP8`) when reviewing changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.agents/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`).
 >
 > **Scope**: This file describes the *orchestration* layer of this template — multi-agent workflow, role definitions, rule files, gates, and coordination state. Code-layer patterns for downstream projects (CMMC enclave, FedRAMP OSCAL, etc.) live in [`docs/guides/design-patterns.md`](../../docs/guides/design-patterns.md) (sub-issue 5 of parent epic #251). The postmortem-derived entries in this file (`AP3`, `AP4`, `P7`) have code-layer counterparts there: [`CAP2`](../../docs/guides/design-patterns.md#cap2--implicit-contract), [`CAP1`](../../docs/guides/design-patterns.md#cap1--goal-substitution), and [`CP1`](../../docs/guides/design-patterns.md#cp1--owner-keyed-concurrent-state) respectively.
 
@@ -14,7 +14,7 @@ The `Where it appears` and `Currently triggered by` lists in each entry cite **f
 
 ## How to use this file
 
-- **Authors and contributors**: when changing the orchestration layer, scan the patterns (`P1`–`P8`) to keep new code consistent with existing structure. Scan the anti-patterns (`AP1`–`AP8`) before opening a PR — if your change matches a detection signal, address it or justify it in the PR description.
+- **Authors and contributors**: when changing the orchestration layer, scan the patterns (`P1`–`P9`) to keep new code consistent with existing structure. Scan the anti-patterns (`AP1`–`AP8`) before opening a PR — if your change matches a detection signal, address it or justify it in the PR description.
 - **Critic**: cite anti-pattern IDs in your review notes when flagging drift (e.g., "AP1 trigger: process_session_state.md now covers three concerns"). Use `MAJOR CONCERNS` for block-able anti-patterns (`AP1`, `AP2`, `AP3`, `AP6`, `AP7`) and for advisory ones (`AP4`, `AP5`, `AP8`) when their per-entry block triggers are met (see Judge's bullet below); otherwise use `CRAFT NOTES` for advisory ones — match the citation severity to the anti-pattern's effective diff-gate designation for this PR.
 - **Judge**: cite anti-pattern IDs at diff-gate when blocking. `AP1`, `AP2`, `AP3`, `AP6`, and `AP7` are block-able when triggered without justification. `AP4`, `AP5`, and `AP8` are advisory unless the PR's `User outcome` section is missing or clearly inverted (`AP4`), the canonical read list is materially extended without an ADR (`AP5`), or the workflow has caused a postmortem or is being materially extended without extracting logic (`AP8`).
 - **Architect**: when proposing structural changes via ADR, reference any pattern or anti-pattern this change interacts with so reviewers can locate the relevant context.
@@ -138,6 +138,29 @@ A single canonical source (typically YAML) is the source of truth for some gover
 - Adding a new platform / tool / consumer means writing one new generator output template, not touching the canonical source.
 
 **Caveats**: this pattern earns its keep when the canonical content has 3+ surfaces or changes frequently, *and* when the per-surface differences are large enough that hand-maintained overlays would be lossy. For low-change content where each surface is mostly frontmatter, hand-maintained thin overlays + an N-way parity check (the current `.agents/` canonical → `.github/agents/` + `.claude/agents/` arrangement per ADR-023) may be cheaper than a generator. Don't introduce manifests prophylactically — #248 explicitly rejected the generator approach in favor of overlays.
+
+---
+
+### P9 — Multi-Model Plan Consensus
+
+A single high-risk planning step is split into N (typically 3) independent candidate plans produced from identical issue context, then merged into one synthesized final plan. The candidates run in isolation (no cross-reads) so different models surface different tradeoffs and blind spots; the synthesis pass weights evidence quality over fluency and preserves provenance (which candidate contributed which idea, and why other candidates were rejected). The final consensus plan is **not approval** — Judge plan-gate runs on it like any other plan-as-comment. Ratified in ADR-024.
+
+**Where it appears**:
+- `.github/prompts/multi-model-consensus-plan.md` — the procedural prompt (candidate plan format, final consensus plan format, bias guardrails, candidate failure handling, runtime fallback).
+- `docs/guides/multi-model-consensus.md` — operator guide (when to use, when not to use, cost guardrails, worked example).
+- `docs/decisions/adr-024-multi-model-consensus-planning.md` — decision record.
+
+**What good usage looks like**:
+- Triggered only on architectural, ADR-worthy, ambiguous, or high-risk issues — not on trivial docs/typo/dependency PRs.
+- Capped at three candidate plans; one synthesis pass; no nested re-syntheses.
+- Candidate planners isolated from each other until candidate outputs are posted.
+- Synthesizer drops or escalates unusable candidates explicitly (no silent garbage-in-as-consensus).
+- Synthesizer preserves provenance: `Candidates reviewed`, `Areas of Disagreement`, `Why this approach won`, `Rejected ideas`, and (when applicable) `Rejected / unusable candidates`.
+- Final consensus plan names **Judge plan-gate** as the next handoff — never PM dispatch.
+- Subagents preferred where the runtime supports them (Claude Code CLI today); separate sessions or manual candidate runs are an acceptable fallback per ADR-009 Decision 3.
+- Inherits model-tier expectations from `.github/PLAN_TEMPLATE.md` and ADR-019 — does not introduce a parallel routing policy.
+
+**Caveats**: this is a v1 vocabulary entry only. There is **no `AP<n>` companion yet**. Promotion to a block-able anti-pattern (e.g., "consensus planning misused on a typo fix" or "synthesis silently swallowed a hallucinated candidate") is **deferred** until at least five high-stakes issues have used the workflow and produced concrete misuse / failure evidence. Until then, Critic flags overuse or sloppy synthesis as `CRAFT NOTES`; Judge does not block on consensus-planning misuse alone. The pattern intentionally does not introduce a new `synthesizer` role in v1 — issue #296 tracks possible promotion once usage justifies the ADR-023 add-a-role cost.
 
 ---
 
