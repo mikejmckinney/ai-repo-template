@@ -265,6 +265,7 @@ MULTIAGENT_FILES=(
   "docs/guides/multi-agent-coordination.md"
   "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
+  ".github/prompts/multi-model-consensus-plan.md"
   "docs/research/.gitkeep"
 )
 
