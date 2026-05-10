@@ -146,9 +146,9 @@ A single canonical source (typically YAML) is the source of truth for some gover
 A single high-risk planning step is split into N (typically 3) independent candidate plans produced from identical issue context, then merged into one synthesized final plan. The candidates run in isolation (no cross-reads) so different models surface different tradeoffs and blind spots; the synthesis pass weights evidence quality over fluency and preserves provenance (which candidate contributed which idea, and why other candidates were rejected). The final consensus plan is **not approval** — Judge plan-gate runs on it like any other plan-as-comment. Ratified in ADR-024.
 
 **Where it appears**:
-- `.github/prompts/multi-model-consensus-plan.md` — the procedural prompt (candidate plan format, final consensus plan format, bias guardrails, candidate failure handling, runtime fallback).
-- `docs/guides/multi-model-consensus.md` — operator guide (when to use, when not to use, cost guardrails, worked example).
-- `docs/decisions/adr-024-multi-model-consensus-planning.md` — decision record.
+- [`.github/prompts/multi-model-consensus-plan.md`](../../.github/prompts/multi-model-consensus-plan.md) — the procedural prompt (candidate plan format, final consensus plan format, bias guardrails, candidate failure handling, runtime fallback).
+- [`docs/guides/multi-model-consensus.md`](../../docs/guides/multi-model-consensus.md) — operator guide (when to use, when not to use, cost guardrails, worked example).
+- [`docs/decisions/adr-024-multi-model-consensus-planning.md`](../../docs/decisions/adr-024-multi-model-consensus-planning.md) — decision record.
 
 **What good usage looks like**:
 - Triggered only on architectural, ADR-worthy, ambiguous, or high-risk issues — not on trivial docs/typo/dependency PRs.
