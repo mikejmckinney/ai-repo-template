@@ -1,5 +1,5 @@
 ---
-description: Optional multi-model consensus planning — produce 3 independent candidate plans + 1 synthesized final plan for high-risk or architectural issues, before Judge plan-gate.
+description: Run optional multi-model consensus planning — 3 candidate plans + 1 synthesized final plan before Judge plan-gate.
 agent: agent
 ---
 
