@@ -33,7 +33,7 @@ The 10 role files in `.agents/*.md` (canonical, platform-agnostic) are interchan
 - `.agents/{analyst,architect,backend,critic,devops,docs,frontend,judge,pm,qa}.md` — canonical strategy bodies (platform-agnostic; ADR-023)
 - `.github/agents/<role>.agent.md` — Copilot SDK registration overlay (frontmatter only; pointer body)
 - `.claude/agents/<role>.md` — Claude Code registration overlay (frontmatter only; pointer body)
-- Role selection logic referenced from `AGENTS.md` → §"Role selection" (planned for sub-issue 2 decomposition: `.context/rules/process_role_selection.md` — file does not yet exist; current selection logic lives inline in AGENTS.md)
+- Role selection logic in `.context/rules/process_role_selection.md` (extracted per ADR-021 sub-issue 2)
 
 **What good usage looks like**: each role file has one focused responsibility (`H1` parity); roles don't reach into each other's owned paths (per `agent_ownership.md`); cross-role coordination goes through PM (see `P3`).
 

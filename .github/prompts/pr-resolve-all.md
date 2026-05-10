@@ -82,7 +82,7 @@ silently in effect and PR #225 ran 11. The cap is a hard stop; the
 override is the escape hatch; the justification line is the friction
 that forces articulation rather than silent looping.
 
-Judge enforces this rule at diff-gate (`.github/agents/judge.agent.md`
+Judge enforces this rule at diff-gate (`.agents/judge.md`
 item 15) and BLOCKs when override is in effect, the round count is > 3,
 and the latest Resolution Report omits the justification line.
 

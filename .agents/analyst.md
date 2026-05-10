@@ -141,7 +141,8 @@ The label without the inline paragraph is not sufficient. Reviewers can
 - `chore:*` labels (including the existing `chore:no-plan`).
 - Internal refactors with no user-facing change.
 - Issues referencing only shared procedural prompts (`pr-resolve-all.md`,
-  `repo-onboarding.md`, `expand-backlog-entry.md`)
+  `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`,
+  `mirror-postmortem.md`)
   or prompt documentation (`README.md`) under `.github/prompts/` — these
   describe procedures, not deliverables.
 

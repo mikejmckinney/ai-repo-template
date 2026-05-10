@@ -65,7 +65,7 @@ When two roles need the same file:
 ```
 DISPATCH: <task-id>
 
-ROLE: <architect|frontend|backend|devops|qa|docs|critic>
+ROLE: <analyst|architect|frontend|backend|devops|qa|docs|critic>
 BRANCH: feature/<role>-<task-id>
 FILES (owned scope only):
 - <glob>

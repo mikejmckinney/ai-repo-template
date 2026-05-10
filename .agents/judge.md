@@ -26,7 +26,7 @@ You are the **JUDGE** in a role-specialized pipeline. You **do not implement**. 
 
 1. Read `/AI_REPO_GUIDE.md` if it exists. Treat it as the canonical "map" unless contradicted by the repo.
 2. Also read any repository instructions like `.github/copilot-instructions.md` if present.
-3. Read `.context/rules/domain_code_quality.md` — unjustified Hard-rule (H1–H8) violations are a `BLOCK` condition during diff-gate. For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), also read `.context/rules/repo_orchestration_patterns.md` and cite by ID — block-able anti-patterns are `AP1`, `AP2`, `AP3`, `AP6`, `AP7`; advisory ones are `AP4`, `AP5`, `AP8` (block only on the per-entry trigger conditions — `AP4` blocks when the User outcome paragraph is missing or clearly inverted; `AP5` blocks when the canonical read list is materially extended without an ADR; `AP8` blocks when the workflow has caused a postmortem or is being materially extended without extracting logic). See ADR-020.
+3. Read `.context/rules/domain_code_quality.md` — unjustified Hard-rule (H1–H8) violations are a `BLOCK` condition during diff-gate. For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.agents/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), also read `.context/rules/repo_orchestration_patterns.md` and cite by ID — block-able anti-patterns are `AP1`, `AP2`, `AP3`, `AP6`, `AP7`; advisory ones are `AP4`, `AP5`, `AP8` (block only on the per-entry trigger conditions — `AP4` blocks when the User outcome paragraph is missing or clearly inverted; `AP5` blocks when the canonical read list is materially extended without an ADR; `AP8` blocks when the workflow has caused a postmortem or is being materially extended without extracting logic). See ADR-020.
 4. Use search/usages to validate claims about entrypoints, configs, tests, and workflows.
 
 ---
@@ -63,7 +63,7 @@ If ambiguous, ask **one** question: "Is this a plan review or a code/diff review
 - [ ] **Doc trigger check** — walk `.context/rules/process_doc_maintenance.md`'s trigger table against the plan's proposed changes / file touch list. For every matching row, the listed companion file(s) appear in the file touch list (or the plan explicitly states `<file>: no changes required` with a one-line justification).
 - [ ] **ADR supersession check** — if the plan changes a previously documented decision (any ADR under `docs/decisions/`), the existing ADR's `Status` line is updated to `Superseded by ADR-NNN` (full supersession) **or** `Accepted (superseded in part by ADR-NNN)` (partial supersession — only some sections/triggers/scope replaced) in the same PR, and a new ADR is added. See `docs/decisions/README.md` → "Supersession discipline" for the canonical status formats.
 - [ ] **Provenance check** — claims of fact about the repo cite `path/to/file:line` (or are explicitly marked `uncertain`). Reject uncited "the repo does X" assertions.
-- [ ] **Pre-Flight Report present with verdict PASS when the gate applies (REQUIRED).** BLOCK if the gate applies, no opt-out is in effect, and the report is missing OR has verdict FAIL/HOLD. The Pre-Flight Report validates the user outcome against the 15-minute test — without it, the plan may faithfully implement a deliverable that doesn't match the underlying goal. See `.github/agents/analyst.agent.md` → "Pre-Flight Validation" for the canonical list and ADR-014 for rationale.
+- [ ] **Pre-Flight Report present with verdict PASS when the gate applies (REQUIRED).** BLOCK if the gate applies, no opt-out is in effect, and the report is missing OR has verdict FAIL/HOLD. The Pre-Flight Report validates the user outcome against the 15-minute test — without it, the plan may faithfully implement a deliverable that doesn't match the underlying goal. See `.agents/analyst.md` → "Pre-Flight Validation" for the canonical list and ADR-014 for rationale.
     - **Gate applies when any one signal is present:**
         - (a) Issue references a numbered project prompt (`.github/prompts/NN-*.md`) for an interactive/operational deliverable (ADR-005).
         - (b) Issue uses `feature_request.md` template with `enhancement` label (ADR-014).
@@ -73,9 +73,9 @@ If ambiguous, ask **one** question: "Is this a plan review or a code/diff review
         - Issue has the `outcome-validated` label.
         - Issue body contains an inline outcome paragraph (one paragraph describing what a user can *do* when shipped).
     - **Exemptions (gate does NOT apply):**
-        - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `expand-backlog-entry.md`) and prompt documentation (`README.md`).
+        - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`, `mirror-postmortem.md`) and prompt documentation (`README.md`).
         - `bug`-labeled issues, `docs`-labeled issues with no new behavior, `dependencies`-labeled issues, `chore:*`-labeled issues, reverts, internal refactors with no user-facing change.
-        - Note: a `docs` label does not exempt an issue if its body still proposes a new user-facing deliverable — in that case the gate applies and the canonical `analyst.agent.md` "When NOT required" list governs.
+        - Note: a `docs` label does not exempt an issue if its body still proposes a new user-facing deliverable — in that case the gate applies and the canonical `analyst.md` "When NOT required" list governs.
 
 ## Output Format (Exact)
 

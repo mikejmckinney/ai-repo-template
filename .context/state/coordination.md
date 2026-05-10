@@ -268,7 +268,7 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 - .context/state/_active.md
 - .context/state/coordination.md
 **Depends On**: none
-**Blocks**: #249 (Cursor subagent registration drops in via `.agents/platforms/cursor.json` after this lands)
+**Blocks**: #249 (Cursor subagent registration: drop one `.cursor/agents/<role>.md` overlay per role pointing at canonical `.agents/<role>.md`, plus a one-line array entry in `scripts/checks/050-agent-mirror.sh`'s `PLATFORMS` and `MODEL_RE_<platform>` allowlists)
 **State**: in_progress
 **Notes**: Trigger override per Pre-Flight Report on issue #248. Path overlap with pr-220-phase2 and pr-252-orchestration-patterns on `.github/agents/`, `.claude/agents/`, `AGENTS.md`, `_active.md`, `coordination.md` — those locks reference work that is either merged or on independent branches; this PR regenerates overlays and updates pointer tables only, no overlap on substantive role-content edits.
 
