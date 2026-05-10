@@ -29,7 +29,7 @@ echo "Checking canonical/overlay parity (.agents/ ↔ .github/agents/, .claude/a
 # would split the model regexes on their alternation `|` chars when read with
 # `IFS='|' read`). To add a new platform, append one element to each array
 # AT THE SAME INDEX.
-copilot_allowlist_re="^model: '[A-Za-z0-9. ()-]+ \\(copilot\\)'$"
+copilot_allowlist_re='^model: '\''[A-Za-z0-9. ()-]+ \(copilot\)'\''$'
 claude_allowlist_re='^model: (inherit|claude-opus-4-7|claude-sonnet-4-6|claude-haiku-4-5)$'
 
 platforms=("copilot" "claude")
@@ -96,7 +96,9 @@ for canonical in .agents/*.md; do
     # someone paraphrases role responsibilities back into the overlay). The
     # check is intentionally a substring match against the canonical pointer
     # path — any link, code-fenced reference, or prose mention satisfies it.
-    if grep -q ".agents/${role}.md" "$overlay"; then
+    # `-F` forces literal matching so `.` is not treated as a regex wildcard
+    # (otherwise paths like `xagents/<role>Xmd` would falsely satisfy the check).
+    if grep -qF ".agents/${role}.md" "$overlay"; then
       pass "$role $platform overlay body references canonical .agents/$role.md"
     else
       fail "$role $platform overlay body must reference .agents/$role.md (overlays are pointers; do not paraphrase canonical responsibilities)"
