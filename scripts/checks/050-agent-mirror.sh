@@ -29,7 +29,7 @@ echo "Checking canonical/overlay parity (.agents/ ↔ .github/agents/, .claude/a
 # would split the model regexes on their alternation `|` chars when read with
 # `IFS='|' read`). To add a new platform, append one element to each array
 # AT THE SAME INDEX.
-copilot_allowlist_re='^model: '\''[A-Za-z0-9. ()-]+ \(copilot\)'\''$'
+copilot_allowlist_re='^model: '\''[A-Za-z0-9. ()-]+ \(copilot\)'\''[[:space:]]*$'
 claude_allowlist_re='^model: (inherit|claude-opus-4-7|claude-sonnet-4-6|claude-haiku-4-5)$'
 
 platforms=("copilot" "claude")

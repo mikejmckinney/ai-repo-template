@@ -37,7 +37,7 @@ We adopt the following per-role tier table as the canonical model-routing refere
 | qa | Low | `inherit` | _(omit; inherits from main session)_ |
 | docs | Low | `inherit` | _(omit; inherits from main session)_ |
 
-**Critic escalation:** Critic stays at Mid by default but escalates to judge-tier (Opus) when its review output flags `severity: high`. Escalation is a body-text instruction in `.claude/agents/critic.md` and `.github/agents/critic.agent.md`, not a frontmatter mechanism.
+**Critic escalation:** Critic stays at Mid by default but escalates to judge-tier (Opus) when its review output flags `severity: high`. Escalation is a body-text instruction in the canonical `.agents/critic.md`, not a frontmatter mechanism. (Both platform overlays — `.github/agents/critic.agent.md` and `.claude/agents/critic.md` — are thin pointers to the canonical per ADR-023, so the escalation rule lives in exactly one place.)
 
 **`test.sh` enforcement** (per-platform allowlists, added in this PR after the existing description-parity check):
 
