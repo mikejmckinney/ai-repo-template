@@ -236,6 +236,42 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 **Blocks**: none
 **State**: in_progress
 
+## Lock: pr-248-shared-subagent-body
+<!-- managed-for-pr:292 -->
+**Role**: devops
+**Session**: feature/devops-248-shared-subagent-body
+**PR**: #292
+**Claimed At**: 2026-05-09T00:00:00Z
+**Expected Duration**: 1 session
+**Paths**:
+- .agents/**
+- scripts/checks/050-agent-mirror.sh
+- scripts/checks/{115,120,135}-*.sh
+- .github/agents/*.agent.md
+- .claude/agents/*.md
+- CLAUDE.md
+- .github/copilot-instructions.md
+- AI_REPO_GUIDE.md
+- .context/rules/agent_ownership.md
+- .context/rules/process_*.md
+- .context/rules/repo_orchestration_patterns.md
+- .context/rules/domain_code_quality.md
+- docs/guides/multi-agent-coordination.md
+- docs/guides/agent-best-practices.md
+- docs/guides/agent-pipeline.md
+- docs/FAQ.md
+- docs/decisions/adr-003-claude-code-subagent-registration.md
+- docs/decisions/adr-023-shared-subagent-canonical.md
+- docs/decisions/README.md
+- .github/prompts/README.md
+- AI_REPO_GUIDE.md
+- .context/state/_active.md
+- .context/state/coordination.md
+**Depends On**: none
+**Blocks**: #249 (Cursor subagent registration: drop one `.cursor/agents/<role>.md` overlay per role pointing at canonical `.agents/<role>.md`, plus a one-line array entry in `scripts/checks/050-agent-mirror.sh`'s `PLATFORMS` and `MODEL_RE_<platform>` allowlists)
+**State**: in_progress
+**Notes**: Trigger override per Pre-Flight Report on issue #248. Path overlap with pr-220-phase2 and pr-252-orchestration-patterns on `.github/agents/`, `.claude/agents/`, `AGENTS.md`, `_active.md`, `coordination.md` — those locks reference work that is either merged or on independent branches; this PR regenerates overlays and updates pointer tables only, no overlap on substantive role-content edits.
+
 ## Recent History
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->

@@ -102,6 +102,6 @@ Downstream projects replace the `TEMPLATE_PLACEHOLDER` values and may add stack-
 - `AGENTS.md` → "Testing requirements" — canonical TDD / test-pyramid / CI expectations.
 - `docs/guides/agent-best-practices.md` → "The 200-Line Rule" and "Keep Individual Files Small" — file-size guardrails this rule file cross-references.
 - `docs/guides/optional-skills.md` — SOLID Skills and everything-claude-code as opt-in external reinforcement for teams that want stricter enforcement.
-- `.github/agents/judge.agent.md` — the diff-gate that blocks on Hard-rule violations.
-- `.github/agents/critic.agent.md` — the subjective-quality reviewer that cites rule IDs from this file.
+- `.agents/judge.md` — the diff-gate that blocks on Hard-rule violations.
+- `.agents/critic.md` — the subjective-quality reviewer that cites rule IDs from this file.
 - `.context/rules/agent_ownership.md` — confirms Architect ownership of this file.

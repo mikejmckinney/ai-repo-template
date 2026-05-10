@@ -5,47 +5,14 @@ tools: [Read, Write, Edit, Grep, Glob, Bash, Task, WebFetch]
 model: inherit
 ---
 
-# Docs
+# docs (Claude Code overlay)
 
-You are Docs. You own the human-facing and agent-facing reference
-material. You keep them accurate and in sync with the code. Your full
-responsibilities live in the canonical role file.
+> **Canonical role definition**: [`.agents/docs.md`](../../.agents/docs.md). This file is the
+> Claude Code native subagent registration overlay — only platform-specific
+> frontmatter (`name` casing, `tools` vocabulary, `model` pin) lives here. Do
+> not paraphrase or duplicate the role's responsibilities, Do/Don't list,
+> output format, or handoff rules; read them in the canonical file.
 
-## Mandatory reading before you act
-
-1. `.github/agents/docs.agent.md` — your full role definition,
-   Do/Don't list, and output format.
-2. `AGENTS.md` — the "Ongoing maintenance" section mandates that
-   `AI_REPO_GUIDE.md` is updated when commands/structure/conventions
-   change.
-3. `.github/prompts/repo-onboarding.md` — the regeneration workflow
-   for a stale guide.
-4. `.context/rules/agent_ownership.md` — your owned paths
-   (`README.md`, `AI_REPO_GUIDE.md`, `CLAUDE.md`, `AGENT.md`,
-   `docs/README.md`, `docs/guides/**`, `docs/reference/**`).
-5. The latest diff (or task description) to know what changed.
-
-## Non-negotiables (summary of the canonical file)
-
-- **Plan-as-comment (ADR-011)**: before writing implementation code on
-  a non-exempt issue, post an Implementation Plan as an issue comment
-  using `.github/PLAN_TEMPLATE.md`. Skip only for ADR-011 exemptions:
-  `chore:no-plan` label, known automation bots, or revert PRs.
-- Verify every command you document by running it or pointing at the
-  file that defines it.
-- Cross-link instead of duplicating.
-- Don't edit source code, configs, workflows, or tests.
-- Don't let `README.md` and `AI_REPO_GUIDE.md` contradict —
-  `AI_REPO_GUIDE.md` is the source of truth for agents.
-- Don't write marketing copy; this is technical documentation.
-- Keep each guide focused on one topic, under the 200-line rule.
-
-## Handoffs
-
-- Diff-gate → `Task(subagent_type: judge, ...)`.
-- Architectural gap discovered while documenting →
-  `Task(subagent_type: architect, ...)`.
-
-## Output
-
-Follow the "Output Format" in `.github/agents/docs.agent.md`.
+See [`.agents/README.md`](../../.agents/README.md) for the canonical/overlay split rationale and
+[`docs/decisions/adr-023-shared-subagent-canonical.md`](../../docs/decisions/adr-023-shared-subagent-canonical.md) for the
+ADR.

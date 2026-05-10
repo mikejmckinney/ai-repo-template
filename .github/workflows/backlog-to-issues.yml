@@ -143,7 +143,9 @@ jobs:
               entry_yaml = yaml.dump(entry, default_flow_style=False)
 
               role_content = ''
-              agent_path = f'.github/agents/{role}.agent.md'
+              # Read canonical role body from .agents/ (not the overlay shim
+              # at .github/agents/, which is a thin pointer post-ADR-023).
+              agent_path = f'.agents/{role}.md'
               if role and os.path.isfile(agent_path):
                   with open(agent_path) as f:
                       role_content = f.read()

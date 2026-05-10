@@ -13,8 +13,9 @@
 
 Before editing any file, identify your role (analyst, architect, judge, critic, pm, frontend, backend, qa, devops, docs) and consult:
 
-- [`.github/agents/<your-role>.agent.md`](.github/agents/) — your responsibilities and Do / Don't list (canonical).
-- [`.claude/agents/<your-role>.md`](.claude/agents/) — the Claude Code subagent registration mirror (points back to the canonical file).
+- [`.agents/<your-role>.md`](.agents/) — your full role definition (canonical, platform-agnostic; per ADR-023).
+- [`.github/agents/<your-role>.agent.md`](.github/agents/) — Copilot SDK custom-agent registration overlay (frontmatter only; points to canonical).
+- [`.claude/agents/<your-role>.md`](.claude/agents/) — Claude Code subagent registration overlay (frontmatter only; points to canonical).
 - [`.context/rules/agent_ownership.md`](.context/rules/agent_ownership.md) — the canonical path-ownership map.
 - [`.context/rules/process_role_selection.md`](.context/rules/process_role_selection.md) — multi-agent workflow protocol.
 - [`.context/state/coordination.md`](.context/state/coordination.md) — live claim board and task state machine.
@@ -38,7 +39,7 @@ Task(subagent_type: 'devops', ...)
 Task(subagent_type: 'docs', ...)
 ```
 
-Claude Code will also auto-invoke the right role when a user request matches a subagent's `description:` frontmatter. The same `description:` string is used by GitHub Copilot's SDK custom-agent runtime when it reads `.github/agents/*.agent.md` — `test.sh` enforces that both copies stay byte-identical so the two loaders dispatch on the same text. See `docs/decisions/adr-003-claude-code-subagent-registration.md`.
+Claude Code will also auto-invoke the right role when a user request matches a subagent's `description:` frontmatter. The same `description:` string is used by GitHub Copilot's SDK custom-agent runtime when it reads `.github/agents/*.agent.md` — `test.sh` enforces that every overlay's `description:` matches the canonical `.agents/<role>.md` byte-for-byte so all loaders dispatch on the same text. See `docs/decisions/adr-023-shared-subagent-canonical.md` (and the partially-superseded `docs/decisions/adr-003-claude-code-subagent-registration.md`).
 
 ## Why a pointer and not a full copy
 

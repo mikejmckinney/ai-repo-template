@@ -4,18 +4,20 @@
 
 ## The Roles
 
-| Role       | File                                     | Writes code? |
-|------------|------------------------------------------|--------------|
-| Analyst    | `.github/agents/analyst.agent.md`        | No — research + analysis only |
-| Architect  | `.github/agents/architect.agent.md`      | No — plans + ADRs only |
-| Judge      | `.github/agents/judge.agent.md`          | No — procedural plan-gate + diff-gate |
-| Critic     | `.github/agents/critic.agent.md`         | No — subjective-quality devil's advocate |
-| PM         | `.github/agents/pm.agent.md`             | No — dispatch only |
-| Frontend   | `.github/agents/frontend.agent.md`       | Yes — UI layer |
-| Backend    | `.github/agents/backend.agent.md`        | Yes — server layer |
-| QA         | `.github/agents/qa.agent.md`             | Yes — test code only |
-| DevOps     | `.github/agents/devops.agent.md`         | Yes — CI, infra, scripts |
-| Docs       | `.github/agents/docs.agent.md`           | Yes — docs + READMEs |
+Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-023). Each platform has a thin registration overlay (`.github/agents/<role>.agent.md` for Copilot SDK, `.claude/agents/<role>.md` for Claude Code) that carries only frontmatter and points back to the canonical body.
+
+| Role       | Canonical file          | Writes code? |
+|------------|-------------------------|--------------|
+| Analyst    | `.agents/analyst.md`    | No — research + analysis only |
+| Architect  | `.agents/architect.md`  | No — plans + ADRs only |
+| Judge      | `.agents/judge.md`      | No — procedural plan-gate + diff-gate |
+| Critic     | `.agents/critic.md`     | No — subjective-quality devil's advocate |
+| PM         | `.agents/pm.md`         | No — dispatch only |
+| Frontend   | `.agents/frontend.md`   | Yes — UI layer |
+| Backend    | `.agents/backend.md`    | Yes — server layer |
+| QA         | `.agents/qa.md`         | Yes — test code only |
+| DevOps     | `.agents/devops.md`     | Yes — CI, infra, scripts |
+| Docs       | `.agents/docs.md`       | Yes — docs + READMEs |
 
 **Judge vs Critic**: Judge is procedural (criteria met? tests present? ownership respected?). Critic is subjective (is this actually good? hand-wavy reasoning? hidden assumptions? AI clichés?). Both run during plan-gate and diff-gate; Judge integrates Critic's notes into the final `DECISION`.
 
@@ -29,18 +31,20 @@
 
 ## How AI tools dispatch these roles
 
-Both GitHub Copilot and Claude Code auto-delegate to a role when a user's request matches that role's frontmatter `description:` field, via two parallel registries:
+Both GitHub Copilot and Claude Code auto-delegate to a role when a user's request matches that role's frontmatter `description:` field, via two parallel registration overlays that point back to a single platform-agnostic canonical body:
 
-| Loader | File | Schema |
+| Loader | Overlay file | Schema |
 |---|---|---|
 | Copilot SDK custom-agent runtime | `.github/agents/<role>.agent.md` | Copilot schema (`read`, `write`, `search`, `fetch`, `githubRepo`, `usages`; `name`, `description`, `tools`, optional `target`/`user-invocable`/`disable-model-invocation`). Auto-dispatch matches the user's intent against each agent's `description:`. |
 | Claude Code native subagents     | `.claude/agents/<role>.md`       | Claude Code schema (`Read`, `Write`, `Edit`, `Grep`, `Glob`, `Bash`, `Task`, `WebFetch`; kebab-case `name`, `description`, `tools`, optional `model`). Auto-dispatch matches on `description:`; explicit dispatch via `Task(subagent_type: '<role>', ...)`. |
 
-Both registries describe the **same 10 roles**. The `.claude/` files are short pointers that delegate to the canonical `.github/agents/<role>.agent.md` for responsibilities, Do/Don't lists, and output formats — so the detailed role definition lives in **one** place.
+Both overlays describe the **same 10 roles** and both delegate to the canonical role body at `.agents/<role>.md` (ADR-023). The overlays carry only the platform-specific frontmatter (tool vocabulary, model strings) and a thin pointer body — so the detailed role definition lives in **one** place, free of any vendor-specific frontmatter.
 
-`test.sh` enforces that the `description:` frontmatter line is byte-identical between the two copies. Any drift between the Copilot-facing and Claude-Code-facing description is a hard failure — see the "Agent Mirror Sanity Checks" section of `test.sh`.
+`test.sh` enforces an N-way parity check (`scripts/checks/050-agent-mirror.sh`): every overlay's `description:` must match the canonical byte-for-byte, every overlay body must reference its canonical, and every overlay's `model:` value must satisfy that platform's allowlist. Any drift is a hard failure.
 
-**Adding a new role** means adding *both* files (and updating `install.sh`'s `MULTIAGENT_FILES`, the `.context/rules/agent_ownership.md` table, and this guide). `test.sh` will fail loudly if any mirror is missing.
+**Adding a new role** means adding the canonical `.agents/<role>.md` plus *both* overlays (and updating `install.sh`'s `MULTIAGENT_FILES`, the `.context/rules/agent_ownership.md` table, and this guide). `test.sh` will fail loudly if any file is missing.
+
+**Adding a new platform** means adding one overlay file per role pointing at the same canonical, plus one row to the parallel arrays in `scripts/checks/050-agent-mirror.sh`.
 
 **A subagent can hand off to the next role** by calling `Task` itself (e.g. an architect subagent invokes `Task(subagent_type='judge', ...)` once its plan is ready). So the pipeline chains without the user having to switch modes manually — though the main orchestrator reading this guide and dispatching the first role is still how most sessions begin.
 
@@ -217,7 +221,7 @@ Each branch goes through QA → Judge → merge independently.
 2. `.context/00_INDEX.md` — where everything lives.
 3. `.context/state/coordination.md` — what's in flight right now.
 4. `.context/rules/agent_ownership.md` — what you may touch.
-5. `.github/agents/<your-role>.agent.md` — your specific responsibilities.
+5. `.agents/<your-role>.md` — your specific responsibilities (canonical, platform-agnostic). Your platform's overlay (`.github/agents/<role>.agent.md` or `.claude/agents/<role>.md`) just points here.
 6. Your assigned `.context/state/task_*.md`.
 7. Report readiness (see the "Report readiness (The Report Step)" subsection in `docs/guides/agent-best-practices.md`).
 
@@ -328,12 +332,12 @@ Full rationale: ADR-009 §Decision 4.
 
 ## Dispatch reality matrix
 
-The role files in `.github/agents/**` and `.claude/agents/**` describe **the same 10 roles**, but only some runtimes actually fan out to them in-session. Treat this matrix as the contract:
+The canonical role files in `.agents/**` (with platform overlays in `.github/agents/**` and `.claude/agents/**`) describe **the same 10 roles**, but only some runtimes actually fan out to them in-session. Treat this matrix as the contract:
 
 | Runtime                                | Loads role files? | In-session role dispatch? | Notes |
 |----------------------------------------|-------------------|---------------------------|-------|
-| Claude Code CLI (local + `claude.yml`) | Yes (`.claude/agents/**`)  | **Yes** — native `Task(subagent_type: ...)`, including auto-dispatch on `description:` match | Only runtime where role fan-out is fully wired today. See ADR-003. |
-| VS Code Copilot Chat                   | Public preview ([docs](https://code.visualstudio.com/docs/copilot/agents/subagents)) | **Unverified** — preview exists; tool-name compatibility, auto-dispatch behavior, and parallelism model not validated against `.github/agents/**` | Tracked in [#111](https://github.com/mikejmckinney/ai-repo-template/issues/111). |
+| Claude Code CLI (local + `claude.yml`) | Yes (`.claude/agents/**` overlays → `.agents/**` canonical)  | **Yes** — native `Task(subagent_type: ...)`, including auto-dispatch on `description:` match | Only runtime where role fan-out is fully wired today. See ADR-003 and ADR-023. |
+| VS Code Copilot Chat                   | Public preview ([docs](https://code.visualstudio.com/docs/copilot/agents/subagents)) | **Unverified** — preview exists; tool-name compatibility, auto-dispatch behavior, and parallelism model not validated against `.github/agents/**` overlays | Tracked in [#111](https://github.com/mikejmckinney/ai-repo-template/issues/111). |
 | Cloud Copilot SWE agent (issue assignment / `@copilot follow`) | Reads `AGENTS.md` + `copilot-instructions.md` + the prompt file | **No** — runs as a single session per issue/PR; no dispatch primitive exposed | Multi-role behavior in this runtime is achieved by *separate* SWE-agent sessions on *separate* issues, gated by `MAX_COPILOT_CONCURRENT`. |
 | Other (Cursor, Gemini, Aider, etc.)    | Reads `AGENTS.md` only | **No** — single orchestrator | The role files are documentation the orchestrator reads. |
 
@@ -360,8 +364,8 @@ When to skip: trivial doc-only edits to comments inside the workflow file, or te
 ## See Also
 
 - `docs/guides/agent-best-practices.md` — token limits, session handoff, secrets.
-- `.github/agents/judge.agent.md` — plan-gate + diff-gate details.
-- `.github/agents/critic.agent.md` — subjective-quality devil's advocate review.
-- `.github/agents/analyst.agent.md` — needs analysis, market research, problem validation.
+- `.agents/judge.md` — plan-gate + diff-gate details (canonical).
+- `.agents/critic.md` — subjective-quality devil's advocate review (canonical).
+- `.agents/analyst.md` — needs analysis, market research, problem validation (canonical).
 - `.context/state/feedback_template.md` — stakeholder feedback capture template.
 - `.github/prompts/repo-onboarding.md` — full onboarding workflow.

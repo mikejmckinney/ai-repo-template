@@ -30,12 +30,13 @@ Both locations are valid — Claude Code auto-discovers either. Root is the `/in
 
 Decision record: [`docs/decisions/adr-001-context-pack-structure.md`](decisions/adr-001-context-pack-structure.md).
 
-### Template: What's the difference between `.github/agents/` and `.claude/agents/`?
+### Template: What's the difference between `.agents/`, `.github/agents/`, and `.claude/agents/`?
 
-- `.github/agents/<role>.agent.md` — canonical role definitions. Read by GitHub Copilot's custom-agent runtime.
-- `.claude/agents/<role>.md` — Claude Code native subagent registration. Points back to the canonical file.
+- `.agents/<role>.md` — **canonical** role definitions (platform-agnostic). Single source of truth for responsibilities, Do/Don't lists, output formats. (ADR-023)
+- `.github/agents/<role>.agent.md` — GitHub Copilot SDK custom-agent registration overlay. Thin shim: platform-specific frontmatter + pointer to canonical.
+- `.claude/agents/<role>.md` — Claude Code native subagent registration overlay. Thin shim: platform-specific frontmatter + pointer to canonical.
 
-`test.sh` enforces that the `description:` frontmatter stays byte-identical between the two so both loaders dispatch on the same intent. Decision record: [`docs/decisions/adr-003-claude-code-subagent-registration.md`](decisions/adr-003-claude-code-subagent-registration.md).
+`test.sh` enforces an N-way parity check: every overlay's `description:` matches the canonical byte-for-byte, every overlay body references the canonical, and every overlay's `model:` value satisfies its platform's allowlist. Decision records: [`docs/decisions/adr-003-claude-code-subagent-registration.md`](decisions/adr-003-claude-code-subagent-registration.md), [`docs/decisions/adr-023-shared-subagent-canonical.md`](decisions/adr-023-shared-subagent-canonical.md).
 
 ---
 

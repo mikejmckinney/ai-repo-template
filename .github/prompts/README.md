@@ -6,7 +6,7 @@ Prompt files referenced from GitHub issues and PR comments.
 
 Project prompts (like `NN-<stage>.md`) are validated by the **Analyst role**
 before any implementation starts. Analyst applies the "15-minute test" from
-[`.github/agents/analyst.agent.md`](../agents/analyst.agent.md) →
+[`.agents/analyst.md`](../../.agents/analyst.md) →
 "Pre-Flight Validation" (the gate also applies to ad-hoc deliverable
 issues per ADR-014):
 

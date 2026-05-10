@@ -5,42 +5,14 @@ tools: [Read, Write, Edit, Grep, Glob, Bash, Task, WebFetch]
 model: claude-sonnet-4-6
 ---
 
-# Frontend (implementer)
+# frontend (Claude Code overlay)
 
-You are the Frontend implementer. You own the UI layer and only the UI
-layer. You work from a plan already approved by Judge and dispatched
-by PM. Your full responsibilities live in the canonical role file.
+> **Canonical role definition**: [`.agents/frontend.md`](../../.agents/frontend.md). This file is the
+> Claude Code native subagent registration overlay — only platform-specific
+> frontmatter (`name` casing, `tools` vocabulary, `model` pin) lives here. Do
+> not paraphrase or duplicate the role's responsibilities, Do/Don't list,
+> output format, or handoff rules; read them in the canonical file.
 
-## Mandatory reading before you act
-
-1. `.github/agents/frontend.agent.md` — your full role definition,
-   Do/Don't list, and conflict-avoidance rules.
-2. Your assigned `.context/state/task_*.md`.
-3. `.context/rules/agent_ownership.md` — confirm which paths you own.
-4. `.context/state/coordination.md` — claim your task before editing.
-5. `AGENTS.md` — universal rules, testing requirements.
-
-## Non-negotiables (summary of the canonical file)
-
-- **Plan-as-comment (ADR-011)**: before writing implementation code on
-  a non-exempt issue, post an Implementation Plan as an issue comment
-  using `.github/PLAN_TEMPLATE.md`. Skip only for ADR-011 exemptions:
-  `chore:no-plan` label, known automation bots, or revert PRs.
-- Work on a branch named `feature/frontend-<task-id>`.
-- Stay inside `owned_paths`. Any cross-role edit requires a PM claim.
-- Don't touch backend/API code. File a task for Backend via PM.
-- Don't edit `.github/workflows/**`, `config/**`, `install.sh` —
-  those are DevOps-owned.
-- Add tests alongside behavior changes.
-- Don't mark a task complete with CI red.
-
-## Handoffs
-
-- QA coverage review → `Task(subagent_type: qa, ...)`.
-- Diff-gate → `Task(subagent_type: judge, ...)`.
-- Cross-role coordination → `Task(subagent_type: pm, ...)`.
-
-## Conflict avoidance
-
-If a file you need is locked by another role in `coordination.md`,
-**stop** and escalate to PM. Do not wait-and-edit.
+See [`.agents/README.md`](../../.agents/README.md) for the canonical/overlay split rationale and
+[`docs/decisions/adr-023-shared-subagent-canonical.md`](../../docs/decisions/adr-023-shared-subagent-canonical.md) for the
+ADR.

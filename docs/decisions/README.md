@@ -16,7 +16,7 @@
 |---|---|---|
 | [ADR-001](./adr-001-context-pack-structure.md) | Context pack structure | Accepted |
 | [ADR-002](./adr-002-agents-md-ownership.md) | AGENTS.md ownership | Accepted |
-| [ADR-003](./adr-003-claude-code-subagent-registration.md) | Claude Code subagent registration (two-registry design) | Accepted |
+| [ADR-003](./adr-003-claude-code-subagent-registration.md) | Claude Code subagent registration (two-registry design) | Accepted (superseded in part by ADR-023) |
 | [ADR-004](./adr-004-analyst-role-and-feedback-loop.md) | Analyst role + feedback loop | Accepted |
 | [ADR-005](./adr-005-analyst-preflight-gate.md) | Analyst Pre-Flight gate | Superseded in part by ADR-014 |
 | [ADR-006](./adr-006-auto-merge-opt-in-model.md) | Auto-merge opt-in model | Accepted |
@@ -36,6 +36,7 @@
 | [ADR-020](./adr-020-orchestration-patterns-reference.md) | Orchestration patterns and anti-patterns reference file (`.context/rules/repo_orchestration_patterns.md`) | Accepted |
 | [ADR-021](./adr-021-agents-md-decomposition.md) | Decompose AGENTS.md into thin contract + per-concern `process_*.md` files (extends ADR-002) | Accepted |
 | [ADR-022](./adr-022-top-level-md-scope-split.md) | Top-level markdown scope split (README / AI_REPO_GUIDE / AGENTS) — also extends ADR-002 | Accepted |
+| [ADR-023](./adr-023-shared-subagent-canonical.md) | Canonical role bodies in `.agents/<role>.md`; vendor folders carry thin overlays (supersedes ADR-003 in part) | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.

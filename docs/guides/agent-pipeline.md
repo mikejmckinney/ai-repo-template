@@ -415,7 +415,7 @@ with user-facing nouns (UI, dashboard, page, service, pipeline,
 dataset, demo, integration). Authors who have already validated the
 outcome inline can opt out with the `outcome-validated` label plus an
 inline outcome paragraph; see `AGENTS.md` → "Analyst pre-flight gate"
-and `.github/agents/analyst.agent.md` → "Pre-Flight Validation" for
+and `.agents/analyst.md` → "Pre-Flight Validation" for
 the full trigger / exemption list.
 
 **2. Mirror the prompts into `.context/backlog.yaml` (recommended primary path).**

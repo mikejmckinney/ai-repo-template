@@ -164,16 +164,18 @@ bash install.sh
 | `.github/copilot-instructions.md` | GitHub Copilot | Pointer to AGENTS.md + Copilot-specific rules (e.g., `@copilot follow`) |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |
-| `.github/agents/judge.agent.md` | Multi-tool | Procedural plan/diff gate reviewer (no code) |
-| `.github/agents/critic.agent.md` | Multi-tool | Devil's Advocate — subjective quality review (no code) |
-| `.github/agents/architect.agent.md` | Multi-tool | Plan + ADR author (no code) |
-| `.github/agents/analyst.agent.md` | Multi-tool | Needs analysis, market research, problem validation (no code) |
-| `.github/agents/pm.agent.md` | Multi-tool | Task dispatcher + ownership enforcer (no code) |
-| `.github/agents/frontend.agent.md` | Multi-tool | UI layer implementer |
-| `.github/agents/backend.agent.md` | Multi-tool | Server layer implementer |
-| `.github/agents/qa.agent.md` | Multi-tool | Test author + CI gate |
-| `.github/agents/devops.agent.md` | Multi-tool | Workflows, configs, install scripts |
-| `.github/agents/docs.agent.md` | Multi-tool | README, AI_REPO_GUIDE.md, guides |
+| `.github/agents/judge.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Judge (frontmatter only) |
+| `.github/agents/critic.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Critic (frontmatter only) |
+| `.github/agents/architect.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Architect (frontmatter only) |
+| `.github/agents/analyst.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Analyst (frontmatter only) |
+| `.github/agents/pm.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for PM (frontmatter only) |
+| `.github/agents/frontend.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Frontend (frontmatter only) |
+| `.github/agents/backend.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Backend (frontmatter only) |
+| `.github/agents/qa.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for QA (frontmatter only) |
+| `.github/agents/devops.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for DevOps (frontmatter only) |
+| `.github/agents/docs.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Docs (frontmatter only) |
+| `.claude/agents/*.md` | Claude Code | Claude Code subagent registration overlays (frontmatter only) |
+| `.agents/<role>.md` | Multi-tool (canonical) | Platform-agnostic role definition (responsibilities, Do/Don't, output format) per ADR-023 — read by every overlay above |
 
 ### Context Pack (project memory)
 | File | Purpose |
@@ -318,7 +320,7 @@ bash scripts/pr-iteration-stats.sh --window 14
 # Pre-push review (Critic + lint + ./test.sh on the working-tree diff)
 # SHOULD before `git push` on non-trivial diffs; MUST for DevOps on
 # shell/workflow changes. See AGENTS.md → "Work style" and
-# .github/agents/devops.agent.md.
+# .agents/devops.md.
 #
 # This is a Markdown prompt — not a shell script — so it must be
 # consumed by an agent runtime, not executed with bash. To dispatch:

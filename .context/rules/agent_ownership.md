@@ -6,7 +6,7 @@
 
 1. Before editing any file, find its path in the table below.
 2. If your role owns that path, proceed.
-3. If another role owns it, **stop** and escalate to the Project Manager (`.github/agents/pm.agent.md`). PM will either sequence the work or split the task.
+3. If another role owns it, **stop** and escalate to the Project Manager (`.agents/pm.md`). PM will either sequence the work or split the task.
 4. Record your claim in `.context/state/coordination.md` before you start editing.
 
 ## Ownership Table
@@ -33,15 +33,15 @@ this template for a new project:
 | Role       | Owned path globs                                                     | May also edit (with PM claim) |
 |------------|----------------------------------------------------------------------|-------------------------------|
 | Analyst    | `docs/research/**`                                                   | nothing (research-only)       |
-| Architect  | `AGENTS.md`, `docs/decisions/**`, `docs/postmortems/**`, `.context/roadmap.md`, `.context/vision/architecture/**`, `.context/rules/**` (except `agent_ownership.md`) | nothing (plan-only) |
+| Architect  | `AGENTS.md`, `.agents/**`, `docs/decisions/**`, `docs/postmortems/**`, `.context/roadmap.md`, `.context/vision/architecture/**`, `.context/rules/**` (except `agent_ownership.md`) | nothing (plan-only) |
 | Frontend   | `src/frontend/**`, `src/components/**`, `src/pages/**`, `src/styles/**`, `public/**`, colocated `*.test.*` / `*.spec.*` under those paths | UI-adjacent tests in `tests/ui/**` |
 | Backend    | `src/backend/**`, `src/api/**`, `src/server/**`, `src/models/**`, `migrations/**`, `db/**`, colocated `*.test.*` / `*.spec.*` under those paths | API-adjacent tests in `tests/api/**` |
 | PM         | `.context/state/**`, `.context/rules/agent_ownership.md` (see §"PM ownership carve-out" below) | nothing (dispatch-only)       |
 | QA         | `tests/**`, `e2e/**`                                                 | nothing                       |
 | DevOps     | .github/workflows/**, config/**, install.sh, test.sh, scripts/**, .pre-commit-config.yaml.template, .cursorignore | nothing                       |
 | Docs       | README.md, AI_REPO_GUIDE.md, CLAUDE.md, AGENT.md, docs/** (except docs/decisions/**, docs/postmortems/**, docs/research/**)  | nothing                       |
-| Judge      | nothing (review-only, `.github/agents/judge.agent.md`)               | nothing                       |
-| Critic     | nothing (review-only, `.github/agents/critic.agent.md`)              | nothing                       |
+| Judge      | nothing (review-only, `.agents/judge.md`)                            | nothing                       |
+| Critic     | nothing (review-only, `.agents/critic.md`)                           | nothing                       |
 
 ### PM ownership carve-out (`.context/state/**`)
 

@@ -71,3 +71,13 @@
 1. Open PR shipping ADR-016 + verify-pr.sh + matrix + sandbox playbook + Phase-3 codification
 2. Run pr-resolve-all.md loop with `cap-override` until two clean iterations
 3. Close out; maintainer runs `gh repo create mikejmckinney/ai-repo-template-sandbox` per playbook
+
+## Task: feature/devops-248-shared-subagent-body
+**Issue/PR**: #248 / PR #292
+**Role**: devops (lead) + docs companion
+**PR**: #292
+**Blockers**: None (trigger override per Pre-Flight Report on issue)
+**Next 1–3 actions**:
+1. Run pr-resolve-all loop on PR #292 (cap-override label active; 7-min waits; terminate after 2 consecutive quiet iterations)
+2. Merge PR #292 once green and review-quiet
+3. Closeout: state cleanup PR removing this task block + lock

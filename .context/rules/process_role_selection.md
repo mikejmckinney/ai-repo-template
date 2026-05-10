@@ -6,7 +6,7 @@
 ## Role selection (multi-agent workflow)
 
 This template supports parallel role-specialized agents. Before editing any file:
-1. Identify your role (or ask the user which role to adopt). Role definitions live in [`.github/agents/*.agent.md`](../../.github/agents/) — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs.
+1. Identify your role (or ask the user which role to adopt). Canonical role definitions live in [`.agents/`](../../.agents/) (platform-agnostic, ADR-023) — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs. Each role has thin platform overlays in [`.github/agents/<role>.agent.md`](../../.github/agents/) (Copilot SDK) and [`.claude/agents/<role>.md`](../../.claude/agents/) (Claude Code) that point back to the canonical.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
 3. Read `.context/state/coordination.md` to see active locks and claim your task before editing.
 4. Stay inside your owned paths. Any cross-role edit requires a PM claim. **Never guess ownership silently** — escalate to PM.

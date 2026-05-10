@@ -41,7 +41,7 @@ to catch this failure mode.
 **Procedure**:
 
 1. Check the issue for an existing Pre-Flight Report comment matching the
-   template in [`.github/agents/analyst.agent.md`](../../.github/agents/analyst.agent.md) → "Pre-Flight Validation".
+   template in [`.agents/analyst.md`](../../.agents/analyst.md) → "Pre-Flight Validation".
 2. If one exists with verdict **PASS**, proceed to Architect handoff as normal.
 3. If one exists with verdict **FAIL** or **HOLD**, stop. Do not implement.
    Address the mismatch or ambiguity first.
@@ -104,7 +104,7 @@ the act of writing it forces the implementation thinking before code.
    for every command listed in the plan's `### Verification`. CI is a
    backstop, not a substitute for local verification — Judge BLOCKs at
    diff-gate when this section is missing or claims pass for a command
-   that demonstrably never ran (`.github/agents/judge.agent.md` item 16).
+   that demonstrably never ran (`.agents/judge.md` item 16).
 
 **Exemptions** (plan is NOT required):
 

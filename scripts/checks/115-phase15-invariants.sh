@@ -55,7 +55,9 @@ else
 fi
 unset _RELAY_JQ _RELAY_WF _canonical _inline
 
-for reviewer_file in ".github/agents/judge.agent.md" ".cursor/BUGBOT.md" ".gemini/styleguide.md"; do
+# Judge role definition lives at .agents/judge.md (canonical, ADR-023); the
+# external reviewer mirrors retain their own paths.
+for reviewer_file in ".agents/judge.md" ".cursor/BUGBOT.md" ".gemini/styleguide.md"; do
   if grep -qi 'diff-coupling' "$reviewer_file" 2>/dev/null; then
     pass "$reviewer_file has diff-coupling gate (issue #229 Phase 1.5)"
   else

@@ -13,11 +13,11 @@ agent: agent
 > - **SHOULD** for any non-trivial diff (see AGENTS.md → "Work style").
 > - **MUST** for the DevOps role on any change to `scripts/*.sh`,
 >   `.github/workflows/*.yml`, or shell embedded in workflow `run:`
->   blocks (see `.github/agents/devops.agent.md` Do list).
+>   blocks (see `.agents/devops.md` Do list).
 >
 > **When to skip**: trivial diffs are exempt — i.e. ≤50 LOC changed
 > AND no change to `scripts/*.sh`, `.github/workflows/*.yml`, role
-> files (`.github/agents/*.agent.md`, `.claude/agents/*.md`), or
+> files (`.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`), or
 > `AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`. (Same
 > non-trivial definition as AGENTS.md → "Work style".) Revert PRs and
 > bot-authored PRs (Renovate, Dependabot) are also exempt. Phase 1's
@@ -81,7 +81,7 @@ Build three artifacts:
 3. **Change class** — classify the diff into one or more of:
    - `shell` (any `scripts/*.sh`, `*.sh`, or shell within `run:` blocks)
    - `workflow` (any `.github/workflows/*.yml`)
-   - `role-file` (any `.github/agents/*.agent.md` or `.claude/agents/*.md`)
+   - `role-file` (any `.agents/*.md`, `.github/agents/*.agent.md`, or `.claude/agents/*.md`)
    - `agents-md` (`AGENTS.md`, `CLAUDE.md`, or `.github/copilot-instructions.md`)
    - `other`
 
@@ -90,7 +90,7 @@ The change class drives Step 3's lint scope and Step 4's test scope.
 ### Step 2 — Critic dispatch
 
 Dispatch Critic against the unified diff with the **PRE-PUSH**
-invocation surface (see `.github/agents/critic.agent.md` →
+invocation surface (see `.agents/critic.md` →
 "Repo Grounding"). Use the existing Critic checklist from that file.
 
 Output format for this step is **lighter** than the diff-gate output:
