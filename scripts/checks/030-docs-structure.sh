@@ -18,6 +18,7 @@ DOCS_FILES=(
   "docs/guides/design-patterns-gof.md"
   "docs/guides/design-patterns-post-gof.md"
   "docs/guides/multi-agent-coordination.md"
+  "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
   "docs/decisions/adr-template.md"
   "docs/decisions/README.md"
