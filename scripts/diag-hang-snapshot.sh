@@ -44,13 +44,23 @@ INTERVAL="${INTERVAL:-3}"
 MAX_SAMPLES="${MAX_SAMPLES:-200}" # ~10 minutes at INTERVAL=3
 SESSION_LOG="${VSCODE_TARGET_SESSION_LOG:-}"
 
-mkdir -p "$OUTDIR"
+# Setup steps fail-fast: a mkdir failure for OUTDIR/RUN_DIR means we have
+# nowhere to write samples, so there's nothing useful to do. The per-sample
+# loop below intentionally tolerates per-command failure (see header), but
+# *setup* failure must abort. (R16 ISS-82.)
+mkdir -p "$OUTDIR" || {
+  echo "[diag-hang-snapshot] FATAL: cannot create OUTDIR=$OUTDIR" >&2
+  exit 1
+}
 START_TS="$(date -u +%Y%m%dT%H%M%SZ)"
 # Include $$ so two concurrent invocations starting in the same second don't
 # write into the same run-* directory and interleave samples.log/session-log
 # (PR #297 R11 ISS-63).
 RUN_DIR="$OUTDIR/run-$START_TS-$$"
-mkdir -p "$RUN_DIR"
+mkdir -p "$RUN_DIR" || {
+  echo "[diag-hang-snapshot] FATAL: cannot create RUN_DIR=$RUN_DIR" >&2
+  exit 1
+}
 
 echo "[diag-hang-snapshot] writing to $RUN_DIR (interval=${INTERVAL}s, max=${MAX_SAMPLES})"
 echo "[diag-hang-snapshot] session log: ${SESSION_LOG:-<unset>}"
@@ -75,7 +85,7 @@ while ((i < MAX_SAMPLES)); do
     # post-mortem readers see PID/PPID/%CPU/... labels next to the rows.
     # (R14 ISS-73.)
     ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd --sort=-pcpu \
-      | awk 'NR==1 || tolower($0) ~ /\<(node|code-server|gh|copilot)\>|extension/' | head -31
+      | awk 'NR==1 || tolower($0) ~ /(^|[^a-z])(node|code-server|gh|copilot)([^a-z]|$)|extension/' | head -31
     echo "--- ss ESTABLISHED to copilot/github ---"
     # shell-conventions:disable=RULE-02 reason: substring match on ss output is intentional — hostnames like *.githubcopilot.com:443 carry dots so word-boundary anchors would miss them
     # (Note on `-p`: showing process info typically requires root. In an
