@@ -1,7 +1,7 @@
 ---
 name: consensus-candidate-gemini
 description: Multi-model consensus dry-run candidate planner pinned to Gemini 3.1 Pro. Dispatched by the initiating agent of `.github/prompts/multi-model-consensus-plan.md` to produce one of the three independent candidate plans before synthesis. Not a general planning role — use Architect for production plans.
-tools: ['read', 'execute', 'search', 'fetch', 'githubRepo', 'usages', 'agent']
+tools: ['read', 'execute', 'search', 'fetch', 'githubRepo', 'usages']
 model: 'Gemini 3.1 Pro (copilot)'
 user-invocable: false
 ---
