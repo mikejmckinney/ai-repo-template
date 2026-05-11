@@ -11,8 +11,10 @@ user-invocable: false
 > **Canonical role definition**: [`.agents/architect.md`](../../.agents/architect.md). This overlay
 > reuses the Architect persona and output format with a different model pin so
 > the consensus workflow can fan three planning passes across distinct vendors
-> without natural-language model hints in subagent prompts (which are not on
-> the documented Copilot subagent model-resolution priority list).
+> without natural-language model hints in subagent prompts (Copilot's
+> subagent loader does not honor model hints in prompt bodies; only the
+> overlay's `model:` frontmatter pins the model — see ADR-019 and
+> [`.github/prompts/multi-model-consensus-plan.md`](../prompts/multi-model-consensus-plan.md)).
 
 This overlay is **Copilot-only** and intentionally not mirrored to
 `.claude/agents/` or `.agents/`; `scripts/checks/050-agent-mirror.sh` exempts

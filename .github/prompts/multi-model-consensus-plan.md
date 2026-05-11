@@ -145,11 +145,11 @@ through `.github/PLAN_TEMPLATE.md` instead.
    sessions per candidate model).
 
    **On Copilot Chat specifically**, the `runSubagent` tool does
-   **not** accept a `model` parameter; per the documented Copilot
-   subagent model-resolution priority order, the only reliable way
-   to pin a candidate's model is via the overlay's `model:`
-   frontmatter field. Three Copilot-only candidate overlays exist
-   for exactly this purpose:
+   **not** accept a `model` parameter, and Copilot's subagent loader
+   does not honor natural-language model hints in subagent prompt
+   bodies; the only reliable way to pin a candidate's model is via
+   the overlay's `model:` frontmatter field (see ADR-019). Three
+   Copilot-only candidate overlays exist for exactly this purpose:
 
    | Candidate | Overlay | Model pin |
    |---|---|---|
