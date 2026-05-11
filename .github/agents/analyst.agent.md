@@ -1,7 +1,7 @@
 ---
 name: Analyst
 description: Use for needs analysis, market research, competitive analysis, and validating whether a project should be built. Produces research artifacts — never writes implementation code.
-tools: ['read', 'write', 'execute', 'search', 'fetch', 'githubRepo', 'usages']
+tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
 model: 'Claude Opus 4.7 (copilot)'
 handoffs:
   - target: Architect
