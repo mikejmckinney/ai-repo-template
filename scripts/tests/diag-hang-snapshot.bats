@@ -72,24 +72,24 @@ teardown() {
 
 @test "diag-hang-snapshot: respects custom OUTDIR (does not write to /tmp/hang-diag)" {
   # Regression guard: a previous draft hard-coded /tmp/hang-diag. The OUTDIR
-  # env var must be honored so test runs don't pollute the default location.
-  # Drop a marker so we can detect any new files appearing under the default
-  # /tmp/hang-diag during the run (without disturbing whatever may already be
-  # there from the user's own diagnostic runs).
-  MARKER="$(mktemp "${TMPDIR:-/tmp}/diag-hang-marker-XXXXXX")"
-  # mtime granularity is 1s on some filesystems; nudge marker forward to be safe.
-  sleep 1
+  # env var must be honored. Scope the assertion to *this test invocation*
+  # by parsing the script's announced RUN_DIR from its stdout (the script
+  # prints "[diag-hang-snapshot] writing to <RUN_DIR> ...") and asserting
+  # that path lives under our $TMP_OUTDIR — not under /tmp/hang-diag. This
+  # is fully deterministic and immune to unrelated diag-hang processes
+  # running in parallel under /tmp/hang-diag (R11 ISS-64).
   run env OUTDIR="$TMP_OUTDIR" INTERVAL=0 MAX_SAMPLES=1 bash "$SCRIPT"
   [ "$status" -eq 0 ]
-  # Confirm something was actually written under the custom OUTDIR.
-  [ -n "$(find "$TMP_OUTDIR" -mindepth 1 -type f -print -quit)" ]
-  # And that NOTHING newer than the marker appeared under /tmp/hang-diag.
-  if [ -d /tmp/hang-diag ]; then
-    POLLUTION="$(find /tmp/hang-diag -newer "$MARKER" -mindepth 1 -print -quit 2>/dev/null || true)"
-    [ -z "$POLLUTION" ] || {
-      echo "diag-hang-snapshot wrote to default /tmp/hang-diag despite custom OUTDIR: $POLLUTION" >&2
+  # Pull the announced RUN_DIR out of the script's own log line.
+  ANNOUNCED="$(printf '%s\n' "$output" | sed -n 's|^\[diag-hang-snapshot\] writing to \([^ ]*\).*|\1|p' | head -1)"
+  [ -n "$ANNOUNCED" ]
+  case "$ANNOUNCED" in
+    "$TMP_OUTDIR"/*) : ;;  # ok — inside our isolated outdir
+    *)
+      echo "diag-hang-snapshot announced RUN_DIR=$ANNOUNCED outside TMP_OUTDIR=$TMP_OUTDIR" >&2
       false
-    }
-  fi
-  rm -f "$MARKER"
+      ;;
+  esac
+  # And confirm something was actually written there.
+  [ -n "$(find "$ANNOUNCED" -mindepth 1 -type f -print -quit)" ]
 }

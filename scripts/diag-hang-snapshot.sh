@@ -42,7 +42,10 @@ SESSION_LOG="${VSCODE_TARGET_SESSION_LOG:-}"
 
 mkdir -p "$OUTDIR"
 START_TS="$(date -u +%Y%m%dT%H%M%SZ)"
-RUN_DIR="$OUTDIR/run-$START_TS"
+# Include $$ so two concurrent invocations starting in the same second don't
+# write into the same run-* directory and interleave samples.log/session-log
+# (PR #297 R11 ISS-63).
+RUN_DIR="$OUTDIR/run-$START_TS-$$"
 mkdir -p "$RUN_DIR"
 
 echo "[diag-hang-snapshot] writing to $RUN_DIR (interval=${INTERVAL}s, max=${MAX_SAMPLES})"
@@ -68,6 +71,11 @@ while ((i < MAX_SAMPLES)); do
     # prints hostnames like `*.githubcopilot.com:443`, so word-boundary
     # anchors would *miss* the very rows we want. RULE-02 suppression at
     # the top of the file covers the unanchored alternation here too.
+    # Note on `-p`: showing process info typically requires root. In an
+    # unprivileged container `ss` will still print the socket rows but
+    # may omit the process column or emit a permission warning to stderr;
+    # both outcomes flow into the per-sample log via `2>&1` and are
+    # acceptable for a best-effort diagnostic. (R11 ISS-62.)
     ss -tnp \
       | grep -E 'ESTAB' \
       | grep -Ei 'copilot|github|node' | head -20
