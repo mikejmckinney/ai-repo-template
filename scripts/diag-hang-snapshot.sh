@@ -59,23 +59,22 @@ while ((i < MAX_SAMPLES)); do
   {
     echo "===== $TS ====="
     echo "--- free -h ---"
-    free -h 2>&1
+    free -h
     echo "--- top (top 20 by CPU) ---"
-    top -b -n1 -w200 2>&1 | head -27
+    top -b -n1 -w200 | head -27
     echo "--- ps node/code/gh/copilot ---"
     # shell-conventions:disable=RULE-02 reason: substring match on ps/ss output is intentional — diagnostic filter wants any line containing 'node', 'copilot', etc., not whole-line matches
-    ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd --sort=-pcpu 2>&1 \
-      | grep -Ei '\b(node|code-server|gh|copilot|extension)\b' | head -30
+    # `extension` deliberately stays unanchored so it matches `extensionHost`
+    # (the actual VS Code extension-host process name) — anchored-only would
+    # miss the primary diagnostic target. (PR #297 R12 ISS-66.)
+    ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd --sort=-pcpu \
+      | grep -Ei '\b(node|code-server|gh|copilot)\b|extension' | head -30
     echo "--- ss ESTABLISHED to copilot/github ---"
-    # Rationale: substring match on ss output is intentional — `ss -tnp`
-    # prints hostnames like `*.githubcopilot.com:443`, so word-boundary
-    # anchors would *miss* the very rows we want. RULE-02 suppression at
-    # the top of the file covers the unanchored alternation here too.
-    # Note on `-p`: showing process info typically requires root. In an
-    # unprivileged container `ss` will still print the socket rows but
-    # may omit the process column or emit a permission warning to stderr;
-    # both outcomes flow into the per-sample log via `2>&1` and are
-    # acceptable for a best-effort diagnostic. (R11 ISS-62.)
+    # shell-conventions:disable=RULE-02 reason: substring match on ss output is intentional — hostnames like *.githubcopilot.com:443 carry dots so word-boundary anchors would miss them
+    # (Note on `-p`: showing process info typically requires root. In an
+    # unprivileged container `ss` will still print the socket rows but may
+    # omit the process column or emit a permission warning — both flow
+    # into the per-sample log via the surrounding 2>&1 wrapper. R11 ISS-62.)
     ss -tnp \
       | grep -E 'ESTAB' \
       | grep -Ei 'copilot|github|node' | head -20
@@ -84,7 +83,7 @@ while ((i < MAX_SAMPLES)); do
   if [[ -n "$SESSION_LOG" && -f "$SESSION_LOG" ]]; then
     {
       echo "===== $TS session-log tail ====="
-      tail -n 40 "$SESSION_LOG" 2>&1
+      tail -n 40 "$SESSION_LOG"
     } >>"$RUN_DIR/session-log-tail.log" 2>&1
   fi
 

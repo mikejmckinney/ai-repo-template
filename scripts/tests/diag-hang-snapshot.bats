@@ -72,19 +72,27 @@ teardown() {
 
 @test "diag-hang-snapshot: respects custom OUTDIR (does not write to /tmp/hang-diag)" {
   # Regression guard: a previous draft hard-coded /tmp/hang-diag. The OUTDIR
-  # env var must be honored. Scope the assertion to *this test invocation*
-  # by parsing the script's announced RUN_DIR from its stdout (the script
-  # prints "[diag-hang-snapshot] writing to <RUN_DIR> ...") and asserting
-  # that path lives under our $TMP_OUTDIR — not under /tmp/hang-diag. This
-  # is fully deterministic and immune to unrelated diag-hang processes
-  # running in parallel under /tmp/hang-diag (R11 ISS-64).
+  # env var must be honored. Two independent assertions, both deterministic
+  # and immune to unrelated diag-hang processes running in parallel:
+  #
+  #   1. Parse the script's announced RUN_DIR from its stdout (the script
+  #      logs `[diag-hang-snapshot] writing to <RUN_DIR>`) and assert that
+  #      path lives under our isolated $TMP_OUTDIR — catches a regression
+  #      where the script ignored OUTDIR and used /tmp/hang-diag.
+  #
+  #   2. Drop a marker file before the run, then assert no run-* directory
+  #      newer than the marker appeared under /tmp/hang-diag — catches a
+  #      regression where the script writes to BOTH the custom OUTDIR
+  #      AND the default /tmp/hang-diag (R11 ISS-64, R12 ISS-69 follow-up).
+  MARKER="$(mktemp "${TMPDIR:-/tmp}/diag-hang-marker-XXXXXX")"
+  sleep 1  # ensure mtime ordering on coarse-granularity filesystems
   run env OUTDIR="$TMP_OUTDIR" INTERVAL=0 MAX_SAMPLES=1 bash "$SCRIPT"
   [ "$status" -eq 0 ]
-  # Pull the announced RUN_DIR out of the script's own log line.
+  # Assertion 1 — announced RUN_DIR is under TMP_OUTDIR.
   ANNOUNCED="$(printf '%s\n' "$output" | sed -n 's|^\[diag-hang-snapshot\] writing to \([^ ]*\).*|\1|p' | head -1)"
   [ -n "$ANNOUNCED" ]
   case "$ANNOUNCED" in
-    "$TMP_OUTDIR"/*) : ;;  # ok — inside our isolated outdir
+    "$TMP_OUTDIR"/*) : ;;
     *)
       echo "diag-hang-snapshot announced RUN_DIR=$ANNOUNCED outside TMP_OUTDIR=$TMP_OUTDIR" >&2
       false
@@ -92,4 +100,13 @@ teardown() {
   esac
   # And confirm something was actually written there.
   [ -n "$(find "$ANNOUNCED" -mindepth 1 -type f -print -quit)" ]
+  # Assertion 2 — no run-* dir under /tmp/hang-diag is newer than the marker.
+  if [ -d /tmp/hang-diag ]; then
+    POLLUTION="$(find /tmp/hang-diag -maxdepth 1 -type d -name 'run-*' -newer "$MARKER" -print 2>/dev/null | head -1 || true)"
+    [ -z "$POLLUTION" ] || {
+      echo "diag-hang-snapshot wrote a run-* dir under /tmp/hang-diag despite OUTDIR=$TMP_OUTDIR: $POLLUTION" >&2
+      false
+    }
+  fi
+  rm -f "$MARKER"
 }
