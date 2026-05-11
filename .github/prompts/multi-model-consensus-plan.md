@@ -135,7 +135,7 @@ through `.github/PLAN_TEMPLATE.md` instead.
    |---|---|---|
    | A | [`.github/agents/consensus-candidate-claude.agent.md`](../agents/consensus-candidate-claude.agent.md) | `Claude Opus 4.7 (copilot)` |
    | B | [`.github/agents/consensus-candidate-gpt.agent.md`](../agents/consensus-candidate-gpt.agent.md) | `GPT-5.5 (copilot)` |
-   | C | [`.github/agents/consensus-candidate-gemini.agent.md`](../agents/consensus-candidate-gemini.agent.md) | `Gemini 3.1 Pro (copilot)` |
+   | C | [`.github/agents/consensus-candidate-gemini.agent.md`](../agents/consensus-candidate-gemini.agent.md) | `Gemini 3.1 Pro (Preview) (copilot)` |
 
    Dispatch each via `runSubagent(agentName: 'consensus-candidate-<vendor>', ...)`.
    Natural-language model hints in the subagent prompt body do **not**
