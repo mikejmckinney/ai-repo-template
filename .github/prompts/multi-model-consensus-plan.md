@@ -124,6 +124,26 @@ through `.github/PLAN_TEMPLATE.md` instead.
    subagents. This isolates each candidate's reasoning context from
    the others.
 
+   **Caveat (uncertain):** ADR-009 still labels the Copilot Chat
+   `runSubagent` fan-out path as **unverified end-to-end**; the
+   matrix lists Claude Code CLI as the only fully wired in-session
+   path today. The Copilot path below describes how to dispatch
+   when it does work, but operators should treat path 2
+   (separate sessions) as the dependable fallback and not assume
+   Copilot in-session fan-out will succeed in their environment
+   without trying it first.
+
+   **On Claude Code specifically**, the standard role overlays in
+   `.claude/agents/<role>.md` carry fixed `model:` pins; calling
+   `Task(subagent_type: 'architect', ...)` three times yields three
+   sessions on the **same** model and does not satisfy the
+   multi-model intent of this workflow. There are intentionally **no**
+   `consensus-candidate-*` overlays under `.claude/agents/`
+   (per `scripts/checks/050-agent-mirror.sh` exemptions): Claude Code
+   today does not support per-subagent model overrides for arbitrary
+   model vendors. On Claude Code, prefer path 2 below (separate
+   sessions per candidate model).
+
    **On Copilot Chat specifically**, the `runSubagent` tool does
    **not** accept a `model` parameter; per the documented Copilot
    subagent model-resolution priority order, the only reliable way
@@ -199,8 +219,8 @@ identifies its model and platform.
   comment-write tools by default (uncertain — verified by inspection
   of the `tools:` arrays in `.github/agents/*.agent.md` overlays at
   PR #297 time, e.g. `architect.agent.md` lists
-  `['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']` with
-  no `gh`/comment tool); the initiating agent is the
+  `['read', 'write', 'search', 'fetch', 'githubRepo', 'usages', 'todo']`
+  with no `gh`/comment tool); the initiating agent is the
   posting authority.
 - **Separate-session path** — whoever ran the candidate session
   (the maintainer, or the same agent in a different session) posts

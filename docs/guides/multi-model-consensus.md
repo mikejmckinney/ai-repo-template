@@ -138,8 +138,8 @@ is **prompt-first**, not subagent-only.
 
 | Runtime | Recommended candidate dispatch |
 |---|---|
-| Claude Code CLI | In-session subagents (`Task(subagent_type: 'architect', ...)` ×3 with different model pins where available; isolated context per call). |
-| Copilot Chat (VS Code) | Separate chat sessions or separate model pins; each candidate posts its own issue comment. ADR-019 Amendment #6 ceiling still applies. |
+| Claude Code CLI | Separate sessions per candidate (`Task(subagent_type: 'architect', ...)` ×3 in one CLI session would all use the same `model:` pinned in `.claude/agents/architect.md` and is **not** multi-model). For true multi-model fan-out from Claude Code, run each candidate as its own session against the desired model. |
+| Copilot Chat (VS Code) | In-session subagents via `runSubagent(agentName: 'consensus-candidate-<vendor>', ...)` using the model-pinned overlays under `.github/agents/consensus-candidate-*.agent.md`. Note: ADR-009 lists the Copilot fan-out path as unverified end-to-end — fall back to separate chat sessions if the in-session path stalls. ADR-019 Amendment #6 ceiling still applies. |
 | Cursor / Gemini / Web UIs | Separate sessions; the maintainer pastes the Context Brief and the candidate posts its result back as an issue comment. |
 | Manual | Maintainer copies the Context Brief into N model UIs and posts the candidates by hand. |
 
