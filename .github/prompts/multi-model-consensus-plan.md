@@ -115,14 +115,33 @@ through `.github/PLAN_TEMPLATE.md` instead.
 
 **Runtime selection (in order of preference):**
 
-1. **In-session subagents.** If the runtime supports them (Claude Code
-   CLI today; see ADR-009 Decision 3 / the dispatch reality matrix in
+1. **In-session subagents with model-pinned candidate overlays.** If
+   the runtime supports them (Claude Code CLI today; VS Code Copilot
+   Chat with the `runSubagent` tool — see ADR-009 Decision 3 / the
+   dispatch reality matrix in
    [`docs/guides/multi-agent-coordination.md`](../../docs/guides/multi-agent-coordination.md)),
    the initiating agent dispatches the candidate planners as
-   subagents. This isolates each candidate's reasoning context from the
-   others.
+   subagents. This isolates each candidate's reasoning context from
+   the others.
+
+   **On Copilot Chat specifically**, the `runSubagent` tool does
+   **not** accept a `model` parameter; per the documented Copilot
+   subagent model-resolution priority order, the only reliable way
+   to pin a candidate's model is via the overlay's `model:`
+   frontmatter field. Three Copilot-only candidate overlays exist
+   for exactly this purpose:
+
+   | Candidate | Overlay | Model pin |
+   |---|---|---|
+   | A | [`.github/agents/consensus-candidate-claude.agent.md`](../agents/consensus-candidate-claude.agent.md) | `Claude Opus 4.7 (copilot)` |
+   | B | [`.github/agents/consensus-candidate-gpt.agent.md`](../agents/consensus-candidate-gpt.agent.md) | `GPT-5.5 (copilot)` |
+   | C | [`.github/agents/consensus-candidate-gemini.agent.md`](../agents/consensus-candidate-gemini.agent.md) | `Gemini 3.1 Pro (copilot)` |
+
+   Dispatch each via `runSubagent(agentName: 'consensus-candidate-<vendor>', ...)`.
+   Natural-language model hints in the subagent prompt body do **not**
+   override the parent session's model and must not be relied on.
 2. **Separate model/chat sessions.** When in-session subagents are not
-   available (Copilot Chat, Cursor, Gemini today), the initiating agent
+   available (Cursor, Gemini today), the initiating agent
    either:
    - Asks the maintainer to open the same issue in a different
      model/session and run the prompt there, or

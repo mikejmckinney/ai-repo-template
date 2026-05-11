@@ -1,7 +1,7 @@
 ---
 name: DevOps
 description: Use to edit workflows, install scripts, config, or CI files. Stays inside devops-owned paths.
-tools: ['read', 'write', 'search', 'fetch', 'githubRepo']
+tools: ['read', 'write', 'execute', 'search', 'fetch', 'githubRepo']
 model: 'Claude Sonnet 4.6 (copilot)'
 handoffs:
   - target: QA

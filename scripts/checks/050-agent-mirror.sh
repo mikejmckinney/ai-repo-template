@@ -47,6 +47,14 @@ for canonical in .agents/*.md; do
   base="$(basename "$canonical" .md)"
   # Skip the README; canonical role files are <role>.md but not README.md.
   [[ "$base" == "README" ]] && continue
+  # Skip consensus-candidate-* dry-run scaffolding (issue #295). These are
+  # Copilot-only model-pinned dispatch targets used by
+  # .github/prompts/multi-model-consensus-plan.md, not first-class roles.
+  # They live under .github/agents/ only and are intentionally not mirrored
+  # to .agents/ or .claude/agents/. Promote to N-way mirroring once the
+  # repo gains a third platform whose models differ meaningfully from
+  # Copilot's catalog (e.g., Cursor agent files).
+  [[ "$base" == consensus-candidate-* ]] && continue
   role="$base"
 
   canonical_desc="$(grep -m1 '^description:' "$canonical" || true)"
@@ -131,6 +139,9 @@ for i in "${!platforms[@]}"; do
     [[ -f "$overlay" ]] || continue
     base="$(basename "$overlay" "$overlay_suffix")"
     [[ "$base" == "README" ]] && continue
+    # Skip consensus-candidate-* dry-run scaffolding (issue #295). See the
+    # forward-direction comment above for the rationale.
+    [[ "$base" == consensus-candidate-* ]] && continue
     role="$base"
     canonical=".agents/${role}.md"
     if [[ -f "$canonical" ]]; then
