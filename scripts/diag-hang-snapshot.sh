@@ -21,7 +21,7 @@ set -uo pipefail
 
 OUTDIR="${OUTDIR:-/tmp/hang-diag}"
 INTERVAL="${INTERVAL:-3}"
-MAX_SAMPLES="${MAX_SAMPLES:-200}"   # ~10 minutes at INTERVAL=3
+MAX_SAMPLES="${MAX_SAMPLES:-200}" # ~10 minutes at INTERVAL=3
 SESSION_LOG="${VSCODE_TARGET_SESSION_LOG:-}"
 
 mkdir -p "$OUTDIR"
@@ -35,7 +35,7 @@ echo "[diag-hang-snapshot] session log: ${SESSION_LOG:-<unset>}"
 trap 'echo "[diag-hang-snapshot] stopping"; exit 0' INT TERM
 
 i=0
-while (( i < MAX_SAMPLES )); do
+while ((i < MAX_SAMPLES)); do
   TS="$(date -u +%Y%m%dT%H%M%SZ)"
   {
     echo "===== $TS ====="
@@ -49,17 +49,17 @@ while (( i < MAX_SAMPLES )); do
     echo "--- ss ESTABLISHED to copilot/github ---"
     ss -tnp 2>/dev/null | grep -E 'ESTAB' \
       | grep -Ei 'copilot|github|node' | head -20
-  } >> "$RUN_DIR/samples.log" 2>&1
+  } >>"$RUN_DIR/samples.log" 2>&1
 
   if [[ -n "$SESSION_LOG" && -f "$SESSION_LOG" ]]; then
     {
       echo "===== $TS session-log tail ====="
       tail -n 40 "$SESSION_LOG" 2>&1
-    } >> "$RUN_DIR/session-log-tail.log" 2>&1
+    } >>"$RUN_DIR/session-log-tail.log" 2>&1
   fi
 
   sleep "$INTERVAL"
-  i=$((i+1))
+  i=$((i + 1))
 done
 
 echo "[diag-hang-snapshot] reached MAX_SAMPLES=$MAX_SAMPLES, exiting"
