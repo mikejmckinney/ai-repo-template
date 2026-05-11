@@ -35,6 +35,10 @@
 # ISS-53, declined-with-rationale.)
 set -uo pipefail
 
+# Diagnostic samples may include command-line args and session-log tails.
+# Restrict /tmp/hang-diag artifacts to the current user (R14 ISS-72).
+umask 077
+
 OUTDIR="${OUTDIR:-/tmp/hang-diag}"
 INTERVAL="${INTERVAL:-3}"
 MAX_SAMPLES="${MAX_SAMPLES:-200}" # ~10 minutes at INTERVAL=3
@@ -67,17 +71,21 @@ while ((i < MAX_SAMPLES)); do
     # `extension` deliberately stays unanchored so it matches `extensionHost`
     # (the actual VS Code extension-host process name) — anchored-only would
     # miss the primary diagnostic target. (PR #297 R12 ISS-66.)
+    # Preserve the column header line via `awk 'NR==1 || /pattern/'` so
+    # post-mortem readers see PID/PPID/%CPU/... labels next to the rows.
+    # (R14 ISS-73.)
     ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd --sort=-pcpu \
-      | grep -Ei '\b(node|code-server|gh|copilot)\b|extension' | head -30
+      | awk 'NR==1 || tolower($0) ~ /\<(node|code-server|gh|copilot)\>|extension/' | head -31
     echo "--- ss ESTABLISHED to copilot/github ---"
     # shell-conventions:disable=RULE-02 reason: substring match on ss output is intentional — hostnames like *.githubcopilot.com:443 carry dots so word-boundary anchors would miss them
     # (Note on `-p`: showing process info typically requires root. In an
     # unprivileged container `ss` will still print the socket rows but may
     # omit the process column or emit a permission warning — both flow
     # into the per-sample log via the surrounding 2>&1 wrapper. R11 ISS-62.)
+    # Preserve the column header line so post-mortem readers see
+    # Netid/State/Recv-Q/... labels next to the rows. (R14 ISS-74.)
     ss -tnp \
-      | grep -E 'ESTAB' \
-      | grep -Ei 'copilot|github|node' | head -20
+      | awk 'NR==1 || ($0 ~ /ESTAB/ && tolower($0) ~ /copilot|github|node/)' | head -21
   } >>"$RUN_DIR/samples.log" 2>&1
 
   if [[ -n "$SESSION_LOG" && -f "$SESSION_LOG" ]]; then
