@@ -1,7 +1,7 @@
 ---
 name: consensus-candidate-gpt
 description: Multi-model consensus dry-run candidate planner pinned to GPT-5.5. Dispatched by the initiating agent of `.github/prompts/multi-model-consensus-plan.md` to produce one of the three independent candidate plans before synthesis. Not a general planning role — use Architect for production plans.
-tools: ['read', 'search', 'fetch', 'githubRepo', 'usages']
+tools: ['read', 'execute', 'search', 'fetch', 'githubRepo', 'usages', 'agent']
 model: 'GPT-5.5 (copilot)'
 user-invocable: false
 ---

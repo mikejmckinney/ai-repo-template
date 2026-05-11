@@ -1,7 +1,7 @@
 ---
 name: Project Manager
 description: Use to dispatch approved plans into per-role task files, manage locks, and resolve cross-role ownership conflicts.
-tools: ['read', 'write', 'search', 'githubRepo']
+tools: ['read', 'write', 'execute', 'search', 'githubRepo', 'agent', 'todo']
 model: 'Claude Sonnet 4.6 (copilot)'
 handoffs:
   - target: Analyst

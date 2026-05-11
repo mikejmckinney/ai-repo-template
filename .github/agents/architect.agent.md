@@ -1,7 +1,7 @@
 ---
 name: Architect
 description: Use for planning, architectural decisions, ADRs, and decomposing feature requests. Produces plans only — never writes implementation.
-tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
+tools: ['read', 'write', 'execute', 'search', 'fetch', 'githubRepo', 'usages', 'agent', 'todo']
 model: 'Claude Opus 4.7 (copilot)'
 handoffs:
   - target: Judge
