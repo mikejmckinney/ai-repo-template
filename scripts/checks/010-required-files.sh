@@ -61,6 +61,7 @@ REQUIRED_FILES=(
   ".github/prompts/multi-model-consensus-plan.md"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
+  "scripts/diag-hang-snapshot.sh"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do

@@ -64,6 +64,10 @@ while ((i < MAX_SAMPLES)); do
     ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd --sort=-pcpu 2>&1 \
       | grep -Ei '\b(node|code-server|gh|copilot|extension)\b' | head -30
     echo "--- ss ESTABLISHED to copilot/github ---"
+    # Rationale: substring match on ss output is intentional — `ss -tnp`
+    # prints hostnames like `*.githubcopilot.com:443`, so word-boundary
+    # anchors would *miss* the very rows we want. RULE-02 suppression at
+    # the top of the file covers the unanchored alternation here too.
     ss -tnp \
       | grep -E 'ESTAB' \
       | grep -Ei 'copilot|github|node' | head -20

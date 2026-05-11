@@ -7,7 +7,7 @@
 # --- diag-hang-snapshot.sh smoke tests (issue #229 Phase 1.5 diff-coupling) ---
 # scripts/diag-hang-snapshot.sh introduces `set -uo pipefail` and is therefore
 # subject to the diff-coupling gate; the bats file exercises script existence,
-# shellcheck cleanliness (warning+), the pipefail directive, a one-sample
+# warning-clean shellcheck status, the pipefail directive, a one-sample
 # smoke run, and OUTDIR honoring.
 echo "Running diag-hang-snapshot smoke tests..."
 run_bats_check scripts/tests/diag-hang-snapshot.bats

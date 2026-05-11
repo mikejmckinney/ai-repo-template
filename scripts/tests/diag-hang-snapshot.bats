@@ -73,9 +73,23 @@ teardown() {
 @test "diag-hang-snapshot: respects custom OUTDIR (does not write to /tmp/hang-diag)" {
   # Regression guard: a previous draft hard-coded /tmp/hang-diag. The OUTDIR
   # env var must be honored so test runs don't pollute the default location.
-  rm -rf /tmp/hang-diag-bats-canary
+  # Drop a marker so we can detect any new files appearing under the default
+  # /tmp/hang-diag during the run (without disturbing whatever may already be
+  # there from the user's own diagnostic runs).
+  MARKER="$(mktemp "${TMPDIR:-/tmp}/diag-hang-marker-XXXXXX")"
+  # mtime granularity is 1s on some filesystems; nudge marker forward to be safe.
+  sleep 1
   run env OUTDIR="$TMP_OUTDIR" INTERVAL=0 MAX_SAMPLES=1 bash "$SCRIPT"
   [ "$status" -eq 0 ]
   # Confirm something was actually written under the custom OUTDIR.
   [ -n "$(find "$TMP_OUTDIR" -mindepth 1 -type f -print -quit)" ]
+  # And that NOTHING newer than the marker appeared under /tmp/hang-diag.
+  if [ -d /tmp/hang-diag ]; then
+    POLLUTION="$(find /tmp/hang-diag -newer "$MARKER" -mindepth 1 -print -quit 2>/dev/null || true)"
+    [ -z "$POLLUTION" ] || {
+      echo "diag-hang-snapshot wrote to default /tmp/hang-diag despite custom OUTDIR: $POLLUTION" >&2
+      false
+    }
+  fi
+  rm -f "$MARKER"
 }
