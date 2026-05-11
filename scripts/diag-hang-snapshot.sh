@@ -3,6 +3,14 @@
 # Chat session state into /tmp/hang-diag/ so the next session hang can be
 # diagnosed after-the-fact instead of guessed at.
 #
+# Target environment: dev-container Linux (GitHub Codespaces / VS Code
+# Remote Containers). The hangs this script diagnoses occur in the
+# Copilot Chat extension running inside the container; the diagnostic
+# tools below (free, top -w, ps --sort, ss) are Linux-specific by
+# design. macOS portability is not in scope for v1 — diagnosing macOS
+# hangs would use vm_stat / Activity Monitor / equivalent and is a
+# separate workflow. (PR #297 Round 9 ISS-55, declined out-of-scope.)
+#
 # Usage:
 #   scripts/diag-hang-snapshot.sh &           # run in background
 #   echo "started, pid=$!"
@@ -17,6 +25,14 @@
 #   - ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd (focused on node/code/gh)
 #   - free -h
 #   - tail of $VSCODE_TARGET_SESSION_LOG if present
+#
+# Failure mode: `set -uo pipefail` deliberately omits `-e`. A diagnostic
+# sampler should keep capturing what it can even when one command fails
+# (e.g. `top -w` not supported on a stripped image, or `ss` blocked by
+# permissions). With `-e`, a single transient failure inside the per-
+# sample block would abort the whole sampling loop and lose the rest of
+# the snapshot — defeating the script's purpose. (PR #297 Round 9
+# ISS-53, declined-with-rationale.)
 set -uo pipefail
 
 OUTDIR="${OUTDIR:-/tmp/hang-diag}"
@@ -48,7 +64,8 @@ while ((i < MAX_SAMPLES)); do
     ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd --sort=-pcpu 2>&1 \
       | grep -Ei 'node|code-server|gh |copilot|extension' | head -30
     echo "--- ss ESTABLISHED to copilot/github ---"
-    ss -tnp 2>/dev/null | grep -E 'ESTAB' \
+    ss -tnp \
+      | grep -E 'ESTAB' \
       | grep -Ei 'copilot|github|node' | head -20
   } >>"$RUN_DIR/samples.log" 2>&1
 

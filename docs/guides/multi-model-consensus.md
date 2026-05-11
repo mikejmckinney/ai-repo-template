@@ -30,7 +30,7 @@ platforms; it does not combine text/image/audio modalities.
   issue is one plan-as-comment using
   [`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md).
 - **Not a new role.** v1 deliberately keeps the canonical role set at
-  10 (per [`docs/guides/multi-agent-coordination.md:41`](./multi-agent-coordination.md#L41) "the same 10 roles", and the dispatch reality matrix at [L343](./multi-agent-coordination.md#L343)). The initiating agent (typically Architect) does the synthesis.
+  10 (per ["the same 10 roles"](./multi-agent-coordination.md#the-roles), and the [dispatch reality matrix](./multi-agent-coordination.md#dispatch-reality-matrix)). The initiating agent (typically Architect) does the synthesis.
   Promotion of synthesis to a first-class `synthesizer` role is
   tracked in issue #296 and gated on five-plus high-stakes uses
   producing real evidence about misuse and failure modes.
