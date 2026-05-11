@@ -140,6 +140,19 @@ through `.github/PLAN_TEMPLATE.md` instead.
    Dispatch each via `runSubagent(agentName: 'consensus-candidate-<vendor>', ...)`.
    Natural-language model hints in the subagent prompt body do **not**
    override the parent session's model and must not be relied on.
+
+   **Dispatch all candidates in a single parallel tool batch**, not
+   sequentially across multiple parent turns. Empirical finding from
+   PR #297 dry-run #3 (2026-05-11): the candidate overlays' previous
+   network-tool grants (`fetch`, `githubRepo`) appear to have been
+   the primary cause of observed parent-session stalls during
+   sequential dispatch — likely a blocking I/O wait inside the
+   subagent boundary that the parent could not interrupt. Those
+   grants have been removed from `consensus-candidate-*` overlays
+   (the candidates now have only `read`, `search`, `usages`) and
+   rely entirely on the pre-baked Context Brief from Step 1.
+   Parallel dispatch is now safe and is preferred because it
+   completes the fan-out in one parent turn instead of three.
 2. **Separate model/chat sessions.** When in-session subagents are not
    available (Cursor, Gemini today), the initiating agent
    either:
@@ -201,40 +214,25 @@ candidate, marked with `<!-- consensus-plan-candidate -->`, with a
 permalink the synthesizer can cite under `Candidates reviewed` in
 the final plan.
 
-#### Subagent return convention (parent-context size mitigation)
+#### Subagent return is inline (currently)
 
-When dispatched as in-session subagents, candidate planners **must**
-write their full plan to disk and return only a small handle to the
-initiating agent. Returning a 10–20 KB candidate plan inline forces
-the initiating agent to re-serialize the entire candidate text into
-its own turn context; three such returns plus a synthesis prompt
-have been observed to stall the parent session on memory-constrained
-runtimes (notably 2-core / 4 GB Codespaces).
+A prior version of this prompt instructed candidate planners to write
+their full plan to `/tmp/consensus/<issue>-candidate-<id>.md` and
+return only a three-line `WROTE:/MODEL:/SUMMARY:` handle, to keep the
+parent context small. **That convention is currently inert** in the
+Copilot SDK runtime: the overlays' `write` tool grant does not
+actually expose `create_file` (or any disk-write primitive) at the
+subagent boundary as of PR #297 dry-run #3 (2026-05-11). Worse, one
+candidate (Gemini) hallucinated a `WROTE: ...` success line in
+response to those instructions even though no file was written —
+honest inline return is strictly safer than a fabricated handle.
 
-The convention is:
-
-1. The candidate planner writes its full plan to
-   `/tmp/consensus/<issue>-candidate-<id>.md` (e.g.
-   `/tmp/consensus/295-candidate-a.md`). The candidate overlays
-   (`.github/agents/consensus-candidate-{claude,gpt,gemini}.agent.md`)
-   grant the `write` tool for exactly this purpose.
-2. The candidate planner's **only** return-message content is a
-   three-line handle:
-
-   ```
-   WROTE: /tmp/consensus/<issue>-candidate-<id>.md (<bytes> bytes)
-   MODEL: <self-reported model and platform>
-   SUMMARY: <2–3 sentence summary of the recommended approach>
-   ```
-
-3. The initiating agent reads the file from disk, posts it as the
-   issue comment per the **Posting responsibility** rules above, and
-   uses the SUMMARY line as the entry in the final plan's
-   `Candidates reviewed` table when a one-line description is needed.
-
-This keeps the parent context small while preserving full provenance
-on disk and on the issue. It also makes the candidate output
-auditable across reruns (the files persist between hangs).
+Until the actual tool-grant string for subagent disk-write is
+identified (tracked separately as a follow-up to PR #297), candidate
+planners **return their full plan inline** as their sole reply text,
+and the initiating agent posts that text directly per the
+**Posting responsibility** rules above. Keep candidate plans focused
+(~5–8 KB target) so the parent context stays manageable.
 
 ### Step 4 — Synthesize
 

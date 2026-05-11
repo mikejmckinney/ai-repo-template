@@ -226,6 +226,24 @@ live verification in the sandbox repo:
 7. Confirm the final consensus plan names **Judge plan-gate** as the
    next handoff, not PM dispatch.
 
+## Diagnosing future hangs
+
+If a consensus run hangs the editor session (parent stops responding
+mid-dispatch or mid-synthesis), start
+[`scripts/diag-hang-snapshot.sh`](../../scripts/diag-hang-snapshot.sh)
+in a background shell **before** re-triggering the run. It captures a
+rolling snapshot of `top`, `ps`, `ss -tnp`, `free -h`, and the
+`$VSCODE_TARGET_SESSION_LOG` tail every few seconds into
+`/tmp/hang-diag/run-<timestamp>/`. After the next hang, grep
+`samples.log` for ESTABLISHED TCP connections to `*.githubcopilot.com`
+or `*.github.com` (a network stall inside a subagent boundary) and
+for `extensionHost` RSS growth approaching the host's memory ceiling
+(parent-context bloat from large inline tool returns). The PR #297
+dry-run #3 finding was that `fetch` and `githubRepo` tool grants on
+the candidate overlays were the most likely root cause of earlier
+stalls; if those grants are reintroduced on any subagent overlay,
+that is the suspect-first hypothesis.
+
 ## See also
 
 - [`.github/prompts/multi-model-consensus-plan.md`](../../.github/prompts/multi-model-consensus-plan.md) — the prompt itself.
