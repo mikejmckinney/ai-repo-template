@@ -201,6 +201,41 @@ candidate, marked with `<!-- consensus-plan-candidate -->`, with a
 permalink the synthesizer can cite under `Candidates reviewed` in
 the final plan.
 
+#### Subagent return convention (parent-context size mitigation)
+
+When dispatched as in-session subagents, candidate planners **must**
+write their full plan to disk and return only a small handle to the
+initiating agent. Returning a 10–20 KB candidate plan inline forces
+the initiating agent to re-serialize the entire candidate text into
+its own turn context; three such returns plus a synthesis prompt
+have been observed to stall the parent session on memory-constrained
+runtimes (notably 2-core / 4 GB Codespaces).
+
+The convention is:
+
+1. The candidate planner writes its full plan to
+   `/tmp/consensus/<issue>-candidate-<id>.md` (e.g.
+   `/tmp/consensus/295-candidate-a.md`). The candidate overlays
+   (`.github/agents/consensus-candidate-{claude,gpt,gemini}.agent.md`)
+   grant the `write` tool for exactly this purpose.
+2. The candidate planner's **only** return-message content is a
+   three-line handle:
+
+   ```
+   WROTE: /tmp/consensus/<issue>-candidate-<id>.md (<bytes> bytes)
+   MODEL: <self-reported model and platform>
+   SUMMARY: <2–3 sentence summary of the recommended approach>
+   ```
+
+3. The initiating agent reads the file from disk, posts it as the
+   issue comment per the **Posting responsibility** rules above, and
+   uses the SUMMARY line as the entry in the final plan's
+   `Candidates reviewed` table when a one-line description is needed.
+
+This keeps the parent context small while preserving full provenance
+on disk and on the issue. It also makes the candidate output
+auditable across reruns (the files persist between hangs).
+
 ### Step 4 — Synthesize
 
 The initiating agent reads all candidate-plan comments and produces a
