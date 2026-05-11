@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# scripts/checks/090-diag-hang-snapshot.sh — added by PR #297 Round 9 (ISS-50).
+# scripts/checks/088-diag-hang-snapshot.sh — added by PR #297 Round 9 (ISS-50),
+# renamed from 090- in Round 11 (ISS-65) to clear the prefix collision with
+# 090-auto-rebase.sh.
 # Sourced by test.sh; relies on $PASS/$FAIL/$WARN, pass()/fail()/warn() from
 # scripts/lib/{logging,assertions}.sh and CWD == repo root. Bats invocation
 # is wrapped by run_bats_check() from scripts/lib/bats-helpers.sh (issue #280).

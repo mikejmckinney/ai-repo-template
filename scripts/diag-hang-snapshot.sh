@@ -39,9 +39,13 @@ set -uo pipefail
 # Restrict /tmp/hang-diag artifacts to the current user (R14 ISS-72).
 umask 077
 
-OUTDIR="${OUTDIR:-/tmp/hang-diag}"
+OUTDIR="${OUTDIR:-/tmp/hang-diag-${USER:-$(id -un)}}"
 INTERVAL="${INTERVAL:-3}"
 MAX_SAMPLES="${MAX_SAMPLES:-200}" # ~10 minutes at INTERVAL=3
+# How many process / socket rows to keep per sample. The +1 in the head
+# count below preserves the column-header row added by `awk 'NR==1 || ...'`.
+PS_ROWS="${PS_ROWS:-30}"
+SS_ROWS="${SS_ROWS:-20}"
 SESSION_LOG="${VSCODE_TARGET_SESSION_LOG:-}"
 
 # Setup steps fail-fast: a mkdir failure for OUTDIR/RUN_DIR means we have
@@ -85,7 +89,7 @@ while ((i < MAX_SAMPLES)); do
     # post-mortem readers see PID/PPID/%CPU/... labels next to the rows.
     # (R14 ISS-73.)
     ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd --sort=-pcpu \
-      | awk 'NR==1 || tolower($0) ~ /(^|[^a-z])(node|code-server|gh|copilot)([^a-z]|$)|extension/' | head -31
+      | awk 'NR==1 || tolower($0) ~ /(^|[^a-z])(node|code-server|gh|copilot)([^a-z]|$)|extension/' | head -n "$((PS_ROWS + 1))"
     echo "--- ss ESTABLISHED to copilot/github ---"
     # shell-conventions:disable=RULE-02 reason: substring match on ss output is intentional — hostnames like *.githubcopilot.com:443 carry dots so word-boundary anchors would miss them
     # (Note on `-p`: showing process info typically requires root. In an
@@ -95,7 +99,7 @@ while ((i < MAX_SAMPLES)); do
     # Preserve the column header line so post-mortem readers see
     # Netid/State/Recv-Q/... labels next to the rows. (R14 ISS-74.)
     ss -tnp \
-      | awk 'NR==1 || ($0 ~ /ESTAB/ && tolower($0) ~ /copilot|github|node/)' | head -21
+      | awk 'NR==1 || ($0 ~ /ESTAB/ && tolower($0) ~ /copilot|github|node/)' | head -n "$((SS_ROWS + 1))"
   } >>"$RUN_DIR/samples.log" 2>&1
 
   if [[ -n "$SESSION_LOG" && -f "$SESSION_LOG" ]]; then
