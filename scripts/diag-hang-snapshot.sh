@@ -44,6 +44,7 @@ while ((i < MAX_SAMPLES)); do
     echo "--- top (top 20 by CPU) ---"
     top -b -n1 -w200 2>&1 | head -27
     echo "--- ps node/code/gh/copilot ---"
+    # shell-conventions:disable=RULE-02 reason: substring match on ps/ss output is intentional — diagnostic filter wants any line containing 'node', 'copilot', etc., not whole-line matches
     ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd --sort=-pcpu 2>&1 \
       | grep -Ei 'node|code-server|gh |copilot|extension' | head -30
     echo "--- ss ESTABLISHED to copilot/github ---"
