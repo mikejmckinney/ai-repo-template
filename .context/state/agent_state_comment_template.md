@@ -8,6 +8,10 @@ Header fields: use `issue:NNN` for the linked issue. Use `pr:MMM` once a
 PR exists, `pr:pending` before PR creation, or `pr:none` for issue-only
 work with no planned PR.
 
+For `Status`, use exactly one value from the template's enum. Do not
+invent synonyms or add new values without updating ADR-025 and the
+associated checks/docs.
+
 ```markdown
 <!-- agent-state:v1 issue:NNN pr:pending branch:feature/example role:devops -->
 
