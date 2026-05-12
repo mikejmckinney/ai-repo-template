@@ -49,9 +49,12 @@ for label in 'agent:claimed' 'agent:blocked' 'agent:awaiting-review'; do
   fi
 done
 
-if grep -qi 'every wait-for-input pause' .context/rules/process_session_state.md 2>/dev/null \
-  && grep -qi 'runtime auto-summarizes' .context/rules/process_session_state.md 2>/dev/null \
-  && grep -qi 'session ends while the task is not merged/closed' .context/rules/process_session_state.md 2>/dev/null; then
+# Use targeted prose regexes for the required cadence concepts instead of
+# pinning full sentences; process_session_state.md is human-facing guidance
+# and may be polished without changing the underlying ADR-025 contract.
+if grep -qiE 'wait-for-input[[:space:]-]*pause' .context/rules/process_session_state.md 2>/dev/null \
+  && grep -qiE 'auto-summar(y|izes|ized)' .context/rules/process_session_state.md 2>/dev/null \
+  && grep -qiE 'session ends.*not merged/closed' .context/rules/process_session_state.md 2>/dev/null; then
   pass "process_session_state.md preserves ADR-025 live-state cadence triggers"
 else
   fail "process_session_state.md missing one or more ADR-025 live-state cadence triggers"
