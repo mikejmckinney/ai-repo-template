@@ -35,7 +35,7 @@ Both GitHub Copilot and Claude Code auto-delegate to a role when a user's reques
 
 | Loader | Overlay file | Schema |
 |---|---|---|
-| Copilot SDK custom-agent runtime | `.github/agents/<role>.agent.md` | Copilot schema (`read`, `write`, `search`, `fetch`, `githubRepo`, `usages`; `name`, `description`, `tools`, optional `target`/`user-invocable`/`disable-model-invocation`). Auto-dispatch matches the user's intent against each agent's `description:`. |
+| Copilot SDK custom-agent runtime | `.github/agents/<role>.agent.md` | Copilot schema (`read`, `write`, `execute`, `search`, `fetch`, `githubRepo`, `usages`, `todo`; `name`, `description`, `tools`, optional `target`/`user-invocable`/`disable-model-invocation`). Auto-dispatch matches the user's intent against each agent's `description:`. |
 | Claude Code native subagents     | `.claude/agents/<role>.md`       | Claude Code schema (`Read`, `Write`, `Edit`, `Grep`, `Glob`, `Bash`, `Task`, `WebFetch`; kebab-case `name`, `description`, `tools`, optional `model`). Auto-dispatch matches on `description:`; explicit dispatch via `Task(subagent_type: '<role>', ...)`. |
 
 Both overlays describe the **same 10 roles** and both delegate to the canonical role body at `.agents/<role>.md` (ADR-023). The overlays carry only the platform-specific frontmatter (tool vocabulary, model strings) and a thin pointer body — so the detailed role definition lives in **one** place, free of any vendor-specific frontmatter.
@@ -106,6 +106,14 @@ See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the ration
 9. Merge.
 10. **Close-out** (required, at session end OR task close-out, whichever comes first — see `AGENTS.md` §"Session-state cadence"): the role that led the work appends a 3–5 line entry to `.context/sessions/latest_summary.md` per the close-out format in `.context/sessions/README.md` (Shipped / Harder than expected / Generalizable lesson / Follow-up). Do NOT defer this until merge — write it at session end even if the PR isn't merged yet, and amend later if the merge changes the outcome. Active task scratchpads (`.context/state/task_<slug>.md`, `.context/state/handoff_<slug>.md`) are deleted or archived to `.context/sessions/`. PM verifies the close-out entry exists before flipping `coordination.md` from `merged → done` (see `.github/agents/pm.agent.md` §Responsibilities). Doc-sync companions per `.context/rules/process_doc_maintenance.md` should already be in the merged PR — Judge gates that at diff-time — but if any were deferred, they file as immediate follow-ups here.
 11. **Stakeholder review** (optional): PM decides whether to capture feedback. If triggered, findings feed back to Analyst (if assumptions changed) or Architect (if design feedback only) for the next iteration.
+
+### Optional branch: multi-model consensus planning (before Judge plan-gate)
+
+For high-risk, architectural, or ADR-worthy issues, Architect (or whoever is initiating the plan) **may** insert a multi-model consensus pass between step 2 (Architect produces a plan) and step 3 (Judge plan-gate). The consensus pass produces three independent candidate plans from different models or platforms, then synthesizes them into one final plan that Judge gates exactly like a single-author plan.
+
+This is **opt-in** and **not the default**. Trigger criteria, cost guardrails, runtime fallback (subagents preferred where available, separate sessions otherwise), bias guardrails, and candidate failure handling all live in [`docs/guides/multi-model-consensus.md`](./multi-model-consensus.md). The procedural prompt is [`.github/prompts/multi-model-consensus-plan.md`](../../.github/prompts/multi-model-consensus-plan.md). The decision to ship this as a prompt + guide rather than a new `synthesizer` role is recorded in [ADR-024](../decisions/adr-024-multi-model-consensus-planning.md), with possible role promotion tracked in issue [#296](https://github.com/mikejmckinney/ai-repo-template/issues/296). The pattern entry is `P9` in [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md).
+
+Whether or not the consensus branch runs, the rest of the pipeline (PM dispatch, implementer parallelism, QA, Critic, Judge diff-gate, merge, close-out) is unchanged. The final consensus plan is **not approval** — Judge plan-gate is required either way.
 
 ## Task State Machine
 

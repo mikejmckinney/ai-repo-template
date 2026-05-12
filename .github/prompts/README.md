@@ -25,12 +25,22 @@ lists come after, not before.
 
 - **Shared procedural prompts** (template-provided; e.g.) — `pr-resolve-all.md`,
   `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`,
-  `mirror-postmortem.md`, `pre-push-review.md`.
+  `mirror-postmortem.md`, `pre-push-review.md`, `multi-model-consensus-plan.md`.
   These describe procedures, not deliverables, and don't require pre-flight.
   - **`pre-push-review.md`** — Critic + lint + `./test.sh` summary against
     the working-tree diff before push. SHOULD per AGENTS.md →
     "Work style"; MUST for the DevOps role on shell/workflow changes
     (issue #229 Phase 3).
+  - **`multi-model-consensus-plan.md`** — optional, opt-in workflow that
+    produces three independent candidate plans plus one synthesized
+    final plan for high-risk, architectural, or ambiguous issues before
+    Judge plan-gate. Does **not** replace the default plan-as-comment
+    flow; reach for it only when the extra cost is justified by the
+    risk being mitigated. See
+    [`docs/guides/multi-model-consensus.md`](../../docs/guides/multi-model-consensus.md)
+    for trigger criteria, and
+    [`docs/decisions/adr-024-multi-model-consensus-planning.md`](../../docs/decisions/adr-024-multi-model-consensus-planning.md)
+    for the prompt-first / no-new-role rationale.
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.
 

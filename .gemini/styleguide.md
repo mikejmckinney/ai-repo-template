@@ -236,6 +236,30 @@ The current calendar date is past 2026-04. Dates like "April 2026" or
 "2026" in this repo's docs and comments are real, not future typos.
 Do not flag dates as typos based on relative date heuristics.
 
+### PR-number / issue-number provenance citations
+
+Docs and code comments in this repo routinely cite both the issue
+number and the implementing PR number for a given piece of work
+(e.g. "PR #297 closes issue #295", or a provenance note like
+"verified by inspection at PR #297 time" inside a doc that lives on
+the PR #295 branch). Both numbers are legitimate and the distinction
+is intentional: the PR is the artifact of work, the issue is the
+statement of need.
+
+Do **not** flag a citation of `PR #<N>` as a typo when `#<N>` is the
+actual PR number, even when the diff is on a branch named after a
+different issue number. Conversely, do not flag `issue #<M>` when
+`#<M>` is the actual closed issue. Both citations on the same line
+(or in adjacent lines) is also intentional — the provenance trail
+requires both.
+
+If you genuinely believe a specific citation has the wrong number
+(e.g. cites `PR #297` when the file is in PR #298 and there is no
+link back to PR #297), flag it normally with the specific reason —
+those ARE real provenance errors. The rule above only suppresses
+the "PR# doesn't match issue#, must be a typo" pattern, which has
+shown up in multi-rounds across PR #297 and earlier.
+
 ## Repo-specific Judge gates
 
 This repo uses the internal Judge role (`.agents/judge.md`) as the canonical gate spec. The nine gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.

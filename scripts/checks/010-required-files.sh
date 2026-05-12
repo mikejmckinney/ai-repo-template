@@ -38,6 +38,9 @@ REQUIRED_FILES=(
   ".github/agents/devops.agent.md"
   ".github/agents/docs.agent.md"
   ".github/agents/analyst.agent.md"
+  ".github/agents/consensus-candidate-claude.agent.md"
+  ".github/agents/consensus-candidate-gpt.agent.md"
+  ".github/agents/consensus-candidate-gemini.agent.md"
   ".claude/agents/architect.md"
   ".claude/agents/judge.md"
   ".claude/agents/critic.md"
@@ -55,8 +58,10 @@ REQUIRED_FILES=(
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"
   ".github/prompts/pre-push-review.md"
+  ".github/prompts/multi-model-consensus-plan.md"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
+  "scripts/diag-hang-snapshot.sh"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do

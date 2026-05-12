@@ -263,7 +263,13 @@ MULTIAGENT_FILES=(
   ".context/state/feedback_template.md"
   ".context/state/handoff_template.md"
   "docs/guides/multi-agent-coordination.md"
+  "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
+  ".github/prompts/multi-model-consensus-plan.md"
+  ".github/agents/consensus-candidate-claude.agent.md"
+  ".github/agents/consensus-candidate-gpt.agent.md"
+  ".github/agents/consensus-candidate-gemini.agent.md"
+  "scripts/diag-hang-snapshot.sh"
   "docs/research/.gitkeep"
 )
 

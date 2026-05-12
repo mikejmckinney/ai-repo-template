@@ -1,7 +1,7 @@
 ---
 name: Frontend
 description: Use to implement UI code (components, pages, styles). Consumes a dispatched task; stays inside frontend-owned paths.
-tools: ['read', 'write', 'search', 'fetch', 'githubRepo', 'usages']
+tools: ['read', 'write', 'execute', 'search', 'fetch', 'githubRepo', 'usages', 'todo']
 model: 'Claude Sonnet 4.6 (copilot)'
 handoffs:
   - target: QA
