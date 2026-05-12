@@ -27,9 +27,12 @@ SETUP_VARS_FILE="scripts/setup/50-ensure-variables.sh"
 
 label_declared() {
   local label="$1"
-  awk -F '|' -v expected="$label" \
-    '$1 == expected { found = 1 } END { exit(found ? 0 : 1) }' \
-    "$SETUP_LABELS_FILE"
+  awk -F '|' -v expected="$label" '
+    /cat <<.*LABEL_SPECS/ { in_manifest = 1; next }
+    in_manifest && /^LABEL_SPECS$/ { in_manifest = 0; next }
+    in_manifest && $1 == expected { found = 1 }
+    END { exit(found ? 0 : 1) }
+  ' "$SETUP_LABELS_FILE"
 }
 
 if label_declared "outcome-validated"; then

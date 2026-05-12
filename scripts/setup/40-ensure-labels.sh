@@ -45,7 +45,18 @@ cap-override|FBCA04|Bypass max-round cap (pr-resolve-all.md) and 90% daily spend
 LABEL_SPECS
 )
 _PIPELINE_LABELS=$(printf '%s\n' "$_PIPELINE_LABEL_SPECS" | awk -F'|' 'NF { printf "%s%s", sep, $1; sep=", " } END { print "" }')
-_PIPELINE_VARIABLES="MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10, PR_RESOLVE_MAX_ROUNDS=3"
+_SETUP_VARIABLES_FILE="${SCRIPT_DIR:-scripts}/setup/50-ensure-variables.sh"
+_PIPELINE_VARIABLES=$(
+  awk '
+    /^_ensure_variable (MAX_COPILOT_CONCURRENT|MAX_COPILOT_DAILY|PR_RESOLVE_MAX_ROUNDS) / {
+      value = $3
+      gsub(/^"|"$/, "", value)
+      printf "%s%s=%s", sep, $2, value
+      sep = ", "
+    }
+    END { print "" }
+  ' "$_SETUP_VARIABLES_FILE"
+)
 _PIPELINE_LABEL_LIST_LIMIT="${PIPELINE_LABEL_LIST_LIMIT:-200}"
 
 # Pre-flight: detect the Codespaces auto-injected GITHUB_TOKEN case. That
@@ -182,11 +193,6 @@ elif [[ -n "$_gh_auth_ok" ]]; then
         return 0
       fi
       if err=$(gh label create "$name" --color "$color" --description "$desc" 2>&1 >/dev/null); then
-        _pipeline_label_cache_add "$name"
-        return 0
-      fi
-      # Failure path: confirm whether the label already exists (quiet) or report real error.
-      if gh label list --limit "$_PIPELINE_LABEL_LIST_LIMIT" --json name --jq '.[].name' | grep -qxF "$name"; then
         _pipeline_label_cache_add "$name"
         return 0
       fi
