@@ -1,3 +1,73 @@
+# Task State Directory (post-ADR-025)
+
+> **Status:** `_active.md`, `coordination.md`, and the (now-deleted) `task_template.md` / `handoff_template.md` are **legacy** under ADR-025 (issue #298). Live coordination state for new work lives in the latest `agent-state:v1` GitHub issue/PR comment, not in this directory. See [`agent_state_comment_template.md`](agent_state_comment_template.md) and [`../rules/process_session_state.md`](../rules/process_session_state.md).
+
+## What lives here now
+
+| File | Status | Purpose |
+|---|---|---|
+| `agent_state_comment_template.md` | Canonical | Copy/paste template for the live `agent-state:v1` issue/PR comment (ADR-025). |
+| `feedback_template.md` | Canonical | Stakeholder feedback capture. |
+| `_active.md` | **Legacy / deprecated** | Multi-task working board (ADR-018 schema). Existing in-flight `## Task:` sections may complete under the old rules; do not create new sections for new work after ADR-025 (#298). |
+| `coordination.md` | **Legacy / deprecated** | Live claim board (PM-owned). Existing locks may drain under the old rules; do not create new locks for new work after ADR-025 (#298). New work uses GitHub `agent:claimed` / `agent:blocked` / `agent:awaiting-review` labels plus the structured comment. |
+| `task_<slug>.md` | **Legacy** | Per-task progress files copied from the (now-deleted) `task_template.md`. The GitHub issue body — particularly the fields in `.github/ISSUE_TEMPLATE/feature_request.md` — supersedes this surface for new work. |
+
+The old `task_template.md` and `handoff_template.md` were deleted by ADR-025. Their replacements are:
+
+- **`task_template.md` → GitHub issue body.** Open an issue using `.github/ISSUE_TEMPLATE/feature_request.md`. The issue's Problem Statement, Proposed Solution, User Outcome, and Acceptance Criteria fields are the durable task contract Analyst / Judge / Critic gates already consume.
+- **`handoff_template.md` → `agent_state_comment_template.md`.** Handoffs are a `## Handoff` section in the latest `agent-state:v1` issue/PR comment, not a separate file.
+
+## Where live state actually lives now
+
+```text
+GitHub issue body         → durable task contract (gate input)
+GitHub PR body            → implementation review contract
+Latest `agent-state:v1`   → live coordination + handoff baton
+GitHub labels             → coarse workflow filtering only
+.context/sessions/**      → durable retrospective lessons (preserved in-tree)
+```
+
+The full source-of-truth hierarchy and cadence rules are in [ADR-025](../../docs/decisions/adr-025-github-first-agent-state.md) and [`../rules/process_session_state.md`](../rules/process_session_state.md).
+
+## Cadence (post-ADR-025)
+
+The mid-task durability discipline is preserved; only the write target changes. Update the latest `agent-state:v1` comment at:
+
+- **Task start** — post or refresh.
+- **Every wait-for-input pause, no exceptions** — clarification questions, plan-mode approval pauses, review-feedback pauses, "what next?" pauses.
+- **Handoff trigger** — ANY of: ~30-turn conversation, runtime auto-summary, session ends before merge, work moves to a different role/agent.
+- **Close-out** — `Status: done`. Retrospective lessons land in `../sessions/latest_summary.md` at PR merge / close-out.
+
+See [`../rules/process_session_state.md`](../rules/process_session_state.md) for the canonical rule.
+
+## Legacy: ADR-018 multi-task `_active.md` schema
+
+> Retained verbatim for in-flight branches that started before ADR-025. New work does not add `## Task:` sections.
+
+The historical schema (ADR-018, including Amendment #1) was:
+
+- **`_active.md`** — multi-task file. One `## Task: <branch-name>` section per in-flight branch under the `# Active Tasks` header. Cap: ~20 lines per section.
+- **Per-section schema**: `Issue/PR` (`#NNN` or `N/A`), `Role` (current owner), `PR` (`#MMM` once the landing PR exists, `pending` while only the branch exists, or `N/A` for branches with no planned PR — see ADR-018 Amendment #1), `Blockers` (or "None"), `Next 1–3 actions`.
+- **Cleanup** — remove your `## Task:` section when the agent is genuinely *leaving the work*. Forgotten removals are caught by PM's reconciliation pass.
+- **`coordination.md`** — PM-owned live claim board. Other roles only self-claim; PM does everything else.
+
+If you're closing out a branch that started under this schema, see "Close-out PR discipline (legacy carve-out only)" in [`../rules/process_session_state.md`](../rules/process_session_state.md).
+
+## Migration policy
+
+ADR-025 v1 is forward-looking:
+
+- Existing `_active.md` sections and `coordination.md` locks may be stale; do not block on reconciling them in this transition.
+- Stop creating new normal-work entries after ADR-025 lands.
+- Existing entries drain naturally under old rules or via a separate `chore(closeout): … legacy state cleanup` PR.
+
+## See also
+
+- [ADR-025](../../docs/decisions/adr-025-github-first-agent-state.md) — the GitHub-first model.
+- [`agent_state_comment_template.md`](agent_state_comment_template.md) — the canonical live-coordination comment template.
+- [`../rules/process_session_state.md`](../rules/process_session_state.md) — cadence rules.
+- [`../sessions/README.md`](../sessions/README.md) — durable retrospective lessons surface.
+- [`.github/ISSUE_TEMPLATE/feature_request.md`](../../.github/ISSUE_TEMPLATE/feature_request.md) — the durable issue-body contract.
 # Task State Directory
 
 > **Purpose**: Track active tasks and their progress. Supports both single-task and parallel-task workflows.

@@ -27,12 +27,12 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 │   └── domain_*.md           # Add your own stack-specific rules (e.g., domain_auth.md)
 ├── sessions/            # Session history to prevent repeating mistakes
 │   └── latest_summary.md # Most recent session summary
-├── state/               # Task tracking (supports parallel work)
-│   ├── README.md        # How to create and manage tasks
-│   ├── _active.md       # Points to current priority task
-│   ├── coordination.md  # Live claim board for parallel multi-agent work
-│   ├── task_template.md # Copy this to create new tasks
-│   └── task_<id>.md     # Individual task files
+├── state/               # Live coordination = GitHub (ADR-025); this dir holds the comment template + legacy mirrors
+│   ├── README.md        # How task state works post-ADR-025
+│   ├── _active.md       # Legacy: pre-ADR-025 multi-task working board
+│   ├── coordination.md  # Legacy: pre-ADR-025 live claim board
+│   ├── agent_state_comment_template.md # Canonical `agent-state:v1` comment template (ADR-025)
+│   └── task_<id>.md     # Legacy: pre-ADR-025 per-task progress files
 └── vision/              # Design artifacts (mockups, diagrams)
     ├── mockups/         # UI/UX mockups and wireframes
     └── architecture/    # System architecture diagrams (use Mermaid.js)
@@ -41,10 +41,10 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ## Quick Start for Agents (Lazy Load Pattern)
 
 1. Read this file first (The Map)
-2. Check `state/coordination.md` for live locks — confirm your intended paths aren't claimed by another role
+2. Read the assigned GitHub issue body, the linked PR body if any, and the latest `agent-state:v1` issue/PR comment — the live coordination baton per ADR-025
 3. Read `rules/agent_ownership.md` to know which files your role may touch
-4. Check `state/_active.md` or `state/task_*.md` for current work
-5. Read `sessions/latest_summary.md` for what happened last session
+4. (Legacy / transitional) Skim `state/coordination.md` and `state/_active.md` for in-flight pre-ADR-025 locks (advisory only)
+5. Read `sessions/latest_summary.md` for durable retrospective lessons from recent merged PRs
 6. Read `roadmap.md` to understand project phases (The Plan)
 7. Reference `rules/` ONLY when making changes to those domains. `rules/domain_code_quality.md` is the built-in SOLID/TDD/clean-code floor — read it before any non-trivial refactor.
 8. Reference `vision/` for design guidance

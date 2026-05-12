@@ -57,14 +57,13 @@ bash install.sh
 │   ├── sessions/             # Session history for handoff
 │   │   ├── README.md
 │   │   └── latest_summary.md
-│   ├── state/                # Task tracking (supports parallel work)
+│   ├── state/                # Live coordination = GitHub (ADR-025); this dir holds the comment template + legacy mirrors
 │   │   ├── README.md
-│   │   ├── _active.md            # Current priority task pointer
-│   │   ├── coordination.md       # Live claim board
+│   │   ├── _active.md            # Legacy: pre-ADR-025 multi-task working board (drains naturally)
+│   │   ├── coordination.md       # Legacy: pre-ADR-025 live claim board (drains naturally)
 │   │   ├── feedback_template.md  # Stakeholder feedback template
-│   │   ├── handoff_template.md   # Cross-session/role handoff template
-│   │   ├── task_template.md      # Template for new tasks
-│   │   └── task_*.md             # Individual task files
+│   │   ├── agent_state_comment_template.md  # Canonical `agent-state:v1` comment template (ADR-025)
+│   │   └── task_*.md             # Legacy: pre-ADR-025 per-task progress files
 │   └── vision/               # Design artifacts
 │       ├── README.md
 │       ├── mockups/          # UI/UX mockups
@@ -189,10 +188,10 @@ bash install.sh
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
 | `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP8`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
-| `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
+| `.context/state/coordination.md` | Legacy: pre-ADR-025 live claim board; new work uses GitHub `agent:claimed` / `agent:blocked` / `agent:awaiting-review` labels + `agent-state:v1` comment |
 | `.context/state/feedback_template.md` | Stakeholder feedback capture template |
-| `.context/state/handoff_template.md` | Cross-session/cross-role handoff template (used at ~30 turns or before role swap) |
-| `.context/state/task_*.md` | Current task(s) for session handoff |
+| `.context/state/agent_state_comment_template.md` | Canonical `agent-state:v1` live-coordination comment template (ADR-025) |
+| `.context/state/task_*.md` | Legacy: pre-ADR-025 per-task progress files; new work uses GitHub issue body |
 | `.context/vision/` | Mockups and architecture diagrams |
 
 ### Prompts (user-triggered, not auto-loaded)
@@ -413,15 +412,25 @@ Please:
 
 ### New agent session (continue work on an existing repo)
 
-Use this prompt to onboard a fresh agent session onto an in-flight project:
+Use this prompt to onboard a fresh agent session onto an in-flight project. Per ADR-025, live coordination state lives in GitHub (issue body, PR body, latest `agent-state:v1` comment, labels), not in repo-local `_active.md` / `task_*.md`. Durable retrospective lessons stay in-tree under `.context/sessions/`.
 
 ```markdown
-1. Read .context/state/_active.md or task_*.md to understand the immediate goal.
-2. Read .context/00_INDEX.md to locate relevant rules/constraints.
-3. Check: Run `git status` and `./scripts/verify-env.sh` to ensure stability.
-4. Skim: Review .context/sessions/latest_summary.md for recent decisions.
-5. Report: "I have reviewed the context. Current task is [Task Name].
-   Environment is [Stable/Unstable]. Ready for instructions."
+1. Read the assigned GitHub issue body (and the linked PR body if one exists)
+   — the durable feature/task contract for Analyst/Judge/Critic gates.
+2. Read the latest `agent-state:v1` issue/PR comment — the live coordination
+   baton (since-last-update, blockers, next 1–3 actions, handoff). Template:
+   .context/state/agent_state_comment_template.md.
+3. Check the issue/PR labels for coarse workflow state
+   (`agent:claimed`, `agent:blocked`, `agent:awaiting-review`).
+4. Read .context/00_INDEX.md to locate relevant rules/constraints.
+5. Skim .context/sessions/latest_summary.md for durable retrospective lessons
+   from recent merged PRs.
+6. Run `git status` and `./scripts/verify-env.sh` to ensure stability.
+7. (Legacy / transitional) For pre-ADR-025 in-flight branches, you may also
+   skim .context/state/_active.md and .context/state/coordination.md as
+   advisory-only context. The GitHub issue/PR is the source-of-truth.
+8. Report: "I have reviewed the context. Current task is <issue#/PR#/name>.
+   Environment is <Stable/Unstable>. Ready for instructions."
 ```
 
 This structured protocol ensures context is loaded correctly before proceeding.

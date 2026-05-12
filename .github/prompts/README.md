@@ -2,6 +2,8 @@
 
 Prompt files referenced from GitHub issues and PR comments.
 
+> **Reminder (ADR-025).** Prompts are **reusable procedures**, not active task state. Live coordination state lives in the latest `agent-state:v1` GitHub issue/PR comment per [`.context/state/agent_state_comment_template.md`](../../.context/state/agent_state_comment_template.md). Do not store per-task progress, blockers, or handoffs in this directory.
+
 ## Before writing a new project prompt
 
 Project prompts (like `NN-<stage>.md`) are validated by the **Analyst role**

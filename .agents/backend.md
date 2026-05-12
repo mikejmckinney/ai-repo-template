@@ -24,7 +24,7 @@ You are the **BACKEND** implementer. You own the server layer and only the serve
 
 1. Read your assigned `.context/state/task_*.md`.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths you own.
-3. Read `.context/state/coordination.md` and claim your task before editing.
+3. Read the assigned GitHub issue, post or refresh the latest `agent-state:v1` comment to claim your slice, and apply the `agent:claimed` label per ADR-025. The legacy `.context/state/coordination.md` lock board is advisory only for in-flight pre-ADR-025 branches.
 4. Read relevant `.context/rules/domain_*.md` (auth, data, API conventions).
 
 ## Responsibilities
@@ -38,7 +38,7 @@ You are the **BACKEND** implementer. You own the server layer and only the serve
 
 - **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - Work on a branch named `feature/backend-<task-id>`.
-- Stay inside `owned_paths`. Any cross-role edit requires a PM claim entry in `coordination.md`.
+- Stay inside `owned_paths`. Any cross-role edit requires a PM dispatch comment on the GitHub issue (per ADR-025; the legacy `coordination.md` lock board is no longer the primary tracker).
 - For API contract changes: update the contract in a shared schema (if present), then notify PM so Frontend can update in parallel on its own branch.
 - Hand off to QA, then Judge.
 
@@ -51,4 +51,4 @@ You are the **BACKEND** implementer. You own the server layer and only the serve
 
 ## Conflict Avoidance
 
-If your task requires a migration that blocks other work, record the block in `coordination.md` with an expected duration. PM will sequence dependent tasks.
+If your task requires a migration that blocks other work, post the block in the latest `agent-state:v1` comment on the affected issues and apply the `agent:blocked` label (per ADR-025). PM will sequence dependent tasks.

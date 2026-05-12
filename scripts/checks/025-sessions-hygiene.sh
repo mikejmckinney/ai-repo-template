@@ -12,33 +12,33 @@
 # checks (a) are hard fails because they protect the rule's contract.
 echo "Checking sessions/ hygiene..."
 
-# (a) sessions/README.md must define the canonical Working-Log Template with required fields.
+# (a) sessions/README.md must define the canonical retrospective entry template with required fields.
+# Post-ADR-025 (issue #298): the working-log template was renamed to
+# "Retrospective entry template" and trimmed — live coordination state moved
+# to the GitHub `agent-state:v1` comment, so per-session in-flight fields
+# (Status: in_progress / awaiting_user_input, Started, What Was Accomplished,
+# Open Items / Next) are no longer carried here. The remaining fields capture
+# durable lessons at PR merge / close-out.
 if [[ -f ".context/sessions/README.md" ]]; then
-  if grep -qE '^## Working-Log Template' .context/sessions/README.md; then
-    pass ".context/sessions/README.md has '## Working-Log Template' header"
+  if grep -qE '^## Retrospective entry template' .context/sessions/README.md; then
+    pass ".context/sessions/README.md has '## Retrospective entry template' header"
   else
-    fail ".context/sessions/README.md missing '## Working-Log Template' header"
+    fail ".context/sessions/README.md missing '## Retrospective entry template' header"
   fi
 
-  # Required template fields. The template fields appear inside a fenced code
-  # block in sessions/README.md; grep -F finds them whether or not they are
-  # the file's actual headers. Includes both `**bold**` field markers (Status,
-  # Issue/PR, Started — required at session start) and `## headers` (filled
-  # progressively across the session) so the template enforcement is complete
-  # rather than only header-deep. Scoped to the §"Working-Log Template"
-  # section via awk-bounded extraction (per Gemini review on PR #261, test.sh:222)
-  # so the same field names appearing elsewhere in the README cannot satisfy
-  # the assertion incidentally.
-  working_log_template_section=$(awk '/^## Working-Log Template/,/^## Why This Matters/' .context/sessions/README.md)
-  for field in "**Status**" "**Issue/PR**" "**Started**" "## What Was Accomplished" "## What Shipped" "## Harder Than Expected" "## Generalizable Lessons" "## Files Modified" "## Open Items / Next"; do
-    if echo "$working_log_template_section" | grep -qF "$field"; then
+  # Required template fields. Scoped to the §"Retrospective entry template"
+  # section via awk-bounded extraction so the same field names appearing
+  # elsewhere in the README cannot satisfy the assertion incidentally.
+  retro_template_section=$(awk '/^## Retrospective entry template/,/^## Why this directory matters/' .context/sessions/README.md)
+  for field in "**Status**" "**Issue/PR**" "**Closed**" "## What Shipped" "## Harder Than Expected" "## Generalizable Lessons" "## Files Modified"; do
+    if echo "$retro_template_section" | grep -qF "$field"; then
       pass ".context/sessions/README.md template defines field: $field"
     else
       fail ".context/sessions/README.md template missing required field: $field"
     fi
   done
 
-  # Rotation rule must be documented (per AGENTS.md cadence and the README §"Rotation rule" subsection).
+  # Rotation rule must be documented (per ADR-025: rotation keys to PR merge / close-out).
   if grep -qE '^### Rotation rule' .context/sessions/README.md; then
     pass ".context/sessions/README.md documents rotation rule (§'Rotation rule')"
   else

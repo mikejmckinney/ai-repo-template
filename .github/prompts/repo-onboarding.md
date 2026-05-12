@@ -115,17 +115,34 @@ When Phase 0 work is complete, continue to Phase 1.
 ## Step 1.0: Quick context check (always run first)
 
 Before the deep dive in Step 1.1, do a fast sanity pass so the rest of
-Phase 1 has accurate state:
+Phase 1 has accurate state. Per ADR-025 (issue #298), live coordination
+state lives in GitHub (issue body, PR body, latest `agent-state:v1`
+comment, labels), not in repo-local `_active.md` / `task_*.md` files.
+The order below reflects that:
 
-1. Read `.context/state/_active.md` (note the leading underscore) or any
-   `.context/state/task_*.md` to understand the immediate goal.
-2. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
-3. Run `git status` and `./scripts/verify-env.sh` to confirm the working
+1. **Read the assigned GitHub issue body** (and the linked PR body, if
+   one exists). This is the durable feature/task contract used by
+   Analyst / Judge / Critic gates — see
+   [`.github/ISSUE_TEMPLATE/feature_request.md`](../ISSUE_TEMPLATE/feature_request.md).
+2. **Read the latest `agent-state:v1` issue/PR comment**, if one exists.
+   That's the live coordination baton — since-last-update, blockers,
+   next 1–3 actions, handoff. Template:
+   [`.context/state/agent_state_comment_template.md`](../../.context/state/agent_state_comment_template.md).
+3. **Check GitHub labels** on the issue/PR for coarse workflow state
+   (`agent:claimed`, `agent:blocked`, `agent:awaiting-review`).
+4. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
+5. Skim `.context/sessions/latest_summary.md` for durable retrospective
+   lessons from recent merged PRs (post-ADR-025: lessons land at PR
+   merge / close-out, not as live working logs).
+6. Run `git status` and `./scripts/verify-env.sh` to confirm the working
    tree and environment are stable.
-4. Skim `.context/sessions/latest_summary.md` for recent decisions and
-   handoffs from prior sessions.
-5. Report a one-line status:
-   `"Context reviewed. Onboarding Mode: <A|B|C>. Current task is <name>. Environment is <Stable|Unstable: <reason>>. Ready for instructions."`
+7. (Legacy / transitional) If the issue/PR is from before ADR-025, you
+   may also skim `.context/state/_active.md` and `.context/state/coordination.md`
+   for in-flight work claimed under the pre-ADR-025 model. Treat anything
+   you find there as legacy/advisory, not authoritative — the GitHub
+   issue/PR is the source-of-truth.
+8. Report a one-line status:
+   `"Context reviewed. Onboarding Mode: <A|B|C>. Current task is <issue#/PR#/name>. Environment is <Stable|Unstable: <reason>>. Ready for instructions."`
 
 **"Stable" means all of:**
 
@@ -137,7 +154,7 @@ Phase 1 has accurate state:
   (`verify-env.sh` emits a distinct WARN for the 3 bootstrap state files;
   that warn is **non-blocking** — expected during bootstrap, actionable once
   the first real task/session has landed and those markers should be cleared.)
-- Steps 1–4 above completed without missing-file errors. (`bash test.sh`
+- Steps 1–6 above completed without missing-file errors. (`bash test.sh`
   is the deeper structural check; run it later in Phase 1 if you want
   full coverage.)
 

@@ -23,6 +23,17 @@ N/A — empty headings are noise.
      For follow-up PRs, link the parent PR by its number: "Refs #123"
      (PRs and issues share the same number space on GitHub). -->
 
+## Live coordination state (post-ADR-025)
+
+<!-- Per ADR-025 (issue #298), the live coordination baton lives in the
+     latest `agent-state:v1` comment on the linked issue (or this PR
+     once it exists). Link the latest comment so reviewers and the next
+     session can find continuation state without scrolling. Skip if no
+     `agent-state:v1` comment is needed (e.g., trivial single-commit PR
+     with no handoff). -->
+
+- **Latest `agent-state:v1` comment:** <permalink, or "N/A — no continuation state needed">
+
 ## Plan
 
 <!-- Pointer to the implementation plan comment(s) on the linked issue.

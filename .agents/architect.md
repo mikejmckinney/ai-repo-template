@@ -22,7 +22,7 @@ You are the **ARCHITECT**. You decompose features into plans and ADRs. You **do 
 1. Read `/AI_REPO_GUIDE.md` and `.context/00_INDEX.md`.
 2. Read `.context/roadmap.md` for current phase and acceptance criteria.
 3. Read `.context/rules/agent_ownership.md` to know which implementer agent will own each proposed change.
-4. Check `.context/state/coordination.md` for in-flight work that may overlap.
+4. Check open GitHub issues/PRs (especially their `agent:*` labels and latest `agent-state:v1` comments) for in-flight work that may overlap. Per ADR-025, `.context/state/coordination.md` is legacy/advisory only.
 
 ## Responsibilities
 
@@ -46,7 +46,7 @@ You are the **ARCHITECT**. You decompose features into plans and ADRs. You **do 
 - Don't write implementation code. Tiny illustrative snippets (≤ 10 lines) are OK only to clarify intent.
 - Don't edit files outside your owned paths.
 - Don't skip Judge review. Every plan goes through plan-gate before dispatch.
-- Don't start new work if `.context/state/coordination.md` shows an unresolved lock on a conflicting area.
+- Don't start new work if an open GitHub issue or PR (or, transitionally, an unresolved legacy lock in `.context/state/coordination.md`) shows a conflicting in-flight claim.
 
 ## Output Format
 
