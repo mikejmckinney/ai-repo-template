@@ -40,9 +40,9 @@ done
 # assertion, not a parser for setup.sh. setup.sh may either call
 # `_ensure_label` directly or list labels in its pipe-delimited manifest.
 for label in 'agent:claimed' 'agent:blocked' 'agent:awaiting-review'; do
-  if { grep -qF "_ensure_label \"$label\"" scripts/setup/40-ensure-labels.sh 2>/dev/null \
-    || grep -qF "$label|" scripts/setup/40-ensure-labels.sh 2>/dev/null; } \
-    && grep -qF "| \`$label\` |" docs/guides/agent-pipeline.md 2>/dev/null; then
+  if { grep -qF "_ensure_label \"$label\"" scripts/setup/40-ensure-labels.sh \
+    || grep -qE "^$label\|" scripts/setup/40-ensure-labels.sh; } \
+    && grep -qF "| \`$label\` |" docs/guides/agent-pipeline.md; then
     pass "$label is setup-managed and documented"
   else
     fail "$label missing from setup labels or agent-pipeline docs"

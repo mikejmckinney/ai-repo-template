@@ -27,8 +27,8 @@ SETUP_VARS_FILE="scripts/setup/50-ensure-variables.sh"
 
 label_declared() {
   local label="$1"
-  grep -qF "_ensure_label \"$label\"" "$SETUP_LABELS_FILE" 2>/dev/null \
-    || grep -qF "$label|" "$SETUP_LABELS_FILE" 2>/dev/null
+  grep -qF "_ensure_label \"$label\"" "$SETUP_LABELS_FILE" \
+    || grep -qE "^$label\|" "$SETUP_LABELS_FILE"
 }
 
 if label_declared "outcome-validated"; then
