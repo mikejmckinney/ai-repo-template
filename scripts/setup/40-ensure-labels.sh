@@ -167,7 +167,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
       local name="$1" color="$2" desc="$3" err first_err
       err=$(gh label create "$name" --color "$color" --description "$desc" 2>&1 >/dev/null) && return 0
       # Failure path: confirm whether the label already exists (quiet) or report real error.
-      if gh label list --json name --jq '.[].name' 2>/dev/null | grep -qF "$name"; then
+      if gh label list --limit 200 --json name --jq '.[].name' 2>/dev/null | grep -qF "$name"; then
         return 0
       fi
       first_err=$(printf '%s\n' "$err" | grep -v '^$' | head -n1)
