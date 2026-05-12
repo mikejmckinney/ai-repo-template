@@ -4,8 +4,12 @@ Copy this template into a GitHub issue or PR comment. Keep one latest
 comment current for the work item; update it instead of scattering live
 state across multiple repo-local files.
 
+Header fields: use `issue:NNN` for the linked issue. Use `pr:MMM` once a
+PR exists, `pr:pending` before PR creation, or `pr:none` for issue-only
+work with no planned PR.
+
 ```markdown
-<!-- agent-state:v1 issue:NNN pr:MMM branch:feature/example role:devops -->
+<!-- agent-state:v1 issue:NNN pr:pending branch:feature/example role:devops -->
 
 **Status:** in_progress | awaiting_user_input | blocked | awaiting_review | handoff_needed | done
 **Updated:** YYYY-MM-DDTHH:MM:SSZ
