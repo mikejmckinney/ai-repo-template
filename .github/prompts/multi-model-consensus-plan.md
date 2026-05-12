@@ -69,7 +69,7 @@ visibility.
   - [`AI_REPO_GUIDE.md`](../../AI_REPO_GUIDE.md)
   - [`.context/00_INDEX.md`](../../.context/00_INDEX.md)
   - [`.context/rules/agent_ownership.md`](../../.context/rules/agent_ownership.md)
-  - [`.context/state/coordination.md`](../../.context/state/coordination.md)
+  - The latest `agent-state:v1` issue/PR comment and labels for live coordination state
   - The relevant ADRs and rule files named in the issue.
 
 ## Roles in this workflow
@@ -356,7 +356,7 @@ example instead of ending the block early.
 - `AI_REPO_GUIDE.md`
 - `.context/00_INDEX.md`
 - `.context/rules/agent_ownership.md`
-- `.context/state/coordination.md`
+- Latest `agent-state:v1` issue/PR comment and labels
 - Relevant issue body and comments
 
 ## Problem Understanding

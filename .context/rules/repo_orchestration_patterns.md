@@ -54,14 +54,14 @@ Tasks flow through a fixed sequence: Analyst → Architect → Judge (plan revie
 
 ### P3 — Mediator (PM coordinates implementers)
 
-Implementer roles (Frontend, Backend, DevOps, Docs, QA) don't coordinate directly. When a task touches multiple roles' owned paths, PM mediates: it claims the lock, sequences the work, and resolves contention. Implementers only know "ask PM" — they don't track each other's state.
+Implementer roles (Frontend, Backend, DevOps, Docs, QA) don't coordinate directly. When a task touches multiple roles' owned paths, PM mediates: it records the GitHub live-state claim, sequences the work, and resolves contention. Implementers only know "ask PM" — they don't negotiate ownership directly.
 
 **Where it appears**:
 - `.agents/pm.md` defines PM's mediating role (canonical)
-- `.context/rules/agent_ownership.md` → "Lock Protocol" defines the mediation contract
-- `.context/state/coordination.md` is the shared lock board PM writes to
+- `.context/rules/agent_ownership.md` → "Live-state protocol" defines the mediation contract
+- Latest `agent-state:v1` issue/PR comments and labels are the shared live-state surface PM coordinates through (ADR-025)
 
-**What good usage looks like**: implementers escalate to PM rather than negotiating directly; locks are explicit (one task per lock block); PM holds the only legitimate edit privilege over other roles' lock blocks.
+**What good usage looks like**: implementers escalate to PM rather than negotiating directly; claims are explicit in GitHub live state; PM holds the only legitimate edit privilege over another role's live-state baton.
 
 ---
 
@@ -110,14 +110,14 @@ Several artifacts in the repo are templates: a fixed skeleton with slots filled 
 
 ### P7 — Owner-Keyed Concurrent State
 
-Working-memory files written by parallel agents use a multi-section schema keyed by owner identifier (branch, role, session ID) instead of single-writer rewrite. Each writer owns its own section; readers merge. This emerged from PM-003 and was ratified in ADR-018 for `.context/state/_active.md`.
+Shared live-state surfaces written by parallel agents are keyed by owner identifier (branch, role, session ID, issue/PR, or comment marker) instead of single-writer rewrite. Each writer owns its own live-state baton; readers merge by reading the latest GitHub state. This emerged from PM-003, was ratified for `_active.md` in ADR-018, and is superseded in part by ADR-025's `agent-state:v1` comment model.
 
 **Where it appears**:
-- `.context/state/coordination.md` — multi-claim lock board, keyed by lock block
-- `.context/state/_active.md` — multi-section per-agent active-task schema (post-ADR-018)
+- Latest `agent-state:v1` issue/PR comments — owner-keyed live-state batons
+- `.context/state/coordination.md` and `.context/state/_active.md` — legacy compatibility examples of the same owner-keyed idea
 - The corresponding anti-pattern (`AP6`) is what this pattern fixes
 
-**What good usage looks like**: any new shared-state file used by parallel agents starts with the multi-section schema; single-writer schemas require ADR justification; merge semantics are explicit (`coordination.md`'s "PM writes, all read-then-self-claim" is the canonical example).
+**What good usage looks like**: any new shared-state surface used by parallel agents has an explicit owner key and version marker; single-writer schemas require ADR justification; merge semantics are explicit (`agent-state:v1` comments are the canonical live-state example after ADR-025).
 
 ---
 
@@ -268,7 +268,7 @@ These describe failure modes the orchestration layer is vulnerable to. Reviewers
 
 **Historically triggered by**: pre-ADR-018 `_active.md` schema (PM-003).
 
-**Remediation**: redesign the schema as a multi-section structure keyed by owner identifier (branch, role, session ID); each writer owns its own section; readers merge. ADR-018's `_active.md` schema is the canonical example. See `P7`.
+**Remediation**: redesign the state surface as owner-keyed (branch, role, session ID, issue/PR, or comment marker); each writer owns its own baton and readers merge by reading the latest visible state. ADR-025's `agent-state:v1` comments are the current canonical example; ADR-018's `_active.md` schema is the legacy file-based example. See `P7`.
 
 **Block condition**: a PR adds or modifies a shared-state file (under `.context/state/**` or any other concurrent-write surface) with a single-writer schema. Block until the schema is owner-keyed or the ADR justifies why concurrent writes can't happen for this specific file.
 

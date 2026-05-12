@@ -1,6 +1,9 @@
 name: Coordination Sync
 
-# Comment-only reconciler for `.context/state/coordination.md`.
+# Transitional comment-only reconciler for legacy `.context/state/coordination.md`.
+# ADR-025 makes GitHub issues/PRs, labels, and `agent-state:v1` comments the
+# primary live coordination state for new work; this workflow remains only so
+# older branches and stale manual locks can drain safely.
 #
 # Solves the "stale claim board" problem from issue #115 without ever
 # editing coordination.md directly. The workflow surfaces drift to PR
@@ -51,12 +54,13 @@ name: Coordination Sync
 #     scheduled job's tracking-issue upsert).
 #
 # Related:
+#   - ADR-025 (GitHub-first live state; this workflow is legacy compatibility)
 #   - Issue #115 (this workflow)
 #   - .github/workflows/agent-parallelism-report.yml (pattern reference:
 #     CLAUDE_PAT + fork guard + comment upsert)
 #   - scripts/parse-ownership-table.sh (path → role mapping)
 #   - .context/state/coordination.md (target file; read-only)
-#   - .context/state/README.md §Cadence (lock template)
+#   - .context/state/README.md (legacy compatibility guidance)
 
 on:
   pull_request:

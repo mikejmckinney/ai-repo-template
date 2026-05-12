@@ -55,24 +55,25 @@ This template has multiple documentation files that serve different audiences an
 | `00_INDEX.md` | "What's in this context pack?" | Project overview | When context structure changes |
 | `roadmap.md` | "What are we building and in what order?" | Project phases | When phases complete/change |
 | `rules/*.md` | "What rules must I follow?" | Domain constraints | Rarely |
-| `state/task_*.md` | "What am I working on?" | Current tasks | During development |
-| `sessions/*.md` | "What happened before?" | Session history | End of each session |
+| GitHub issue/PR + latest `agent-state:v1` comment | "What am I working on?" | Live coordination | During development |
+| `state/*.md` | "What compatibility templates/views exist?" | Legacy state + comment template | Rarely |
+| `sessions/*.md` | "What happened before and what was learned?" | Durable retrospective lessons | PR merge/closeout |
 | `vision/**` | "What should this look like?" | Design artifacts | When designs change |
 
-### The Key Distinction: Tasks vs Sessions
+### The Key Distinction: Live State vs Sessions
 
-| `state/task_*.md` | `sessions/*.md` |
-|-------------------|-----------------|
-| **What** you're doing | **What happened** and **what you learned** |
-| Task-scoped (tracks one task) | Session-scoped (tracks one work session) |
-| Progress checklist | Decisions and failures |
+| GitHub issue/PR + `agent-state:v1` comment | `sessions/*.md` |
+|---------------------------------------------|-----------------|
+| **What** you're doing now | **What happened** and **what you learned** |
+| Task/PR-scoped live baton | Retrospective lesson surface |
+| Status, blockers, next actions, handoff | Shipped outcome, surprises, generalizable lessons |
 | "Continue from step 3" | "Don't try approach X, it failed" |
-| May span multiple sessions | Captured at end of each session |
+| Updated during development | Rotated at PR merge/closeout when worth preserving |
 
 **Example**:
-- A task "Implement auth" might take 3 sessions
-- `task_auth.md` tracks cumulative progress across all 3
-- `sessions/` captures what happened in each individual session
+- A task "Implement auth" might take 3 sessions.
+- The latest `agent-state:v1` comment tracks cumulative live progress.
+- `sessions/` captures durable lessons after merge/closeout.
 
 ## Subdirectory READMEs
 
@@ -80,8 +81,8 @@ These are NOT redundant with project docs—they explain their specific director
 
 | File | Purpose |
 |------|---------|
-| `.context/state/README.md` | How to create and manage task files |
-| `.context/sessions/README.md` | How to create session summaries |
+| `.context/state/README.md` | ADR-025 live-state split, legacy compatibility, and comment template |
+| `.context/sessions/README.md` | How to create durable retrospective summaries |
 | `scripts/README.md` | Available scripts and usage |
 | `config/README.md` | Platform recommendations |
 | `docs/README.md` | Documentation structure |
@@ -90,8 +91,8 @@ These are NOT redundant with project docs—they explain their specific director
 
 1. `AI_REPO_GUIDE.md` — Quick reference
 2. `.context/00_INDEX.md` — Project overview
-3. `.context/state/` — Find active task(s)
-4. `.context/sessions/latest_summary.md` — Recent history
+3. Assigned GitHub issue/PR + latest `agent-state:v1` comment — Find active task(s)
+4. `.context/sessions/latest_summary.md` — Durable recent lessons
 5. Load other files on-demand (rules, vision) as needed
 
 ## Why some things look duplicated but aren't
@@ -120,9 +121,9 @@ A recurring question is whether duplicated-looking docs should be merged, or whe
 | Event | Files to Update |
 |-------|-----------------|
 | Project structure changes | `AI_REPO_GUIDE.md`, `README.md` |
-| Starting a new task | Create `state/task_<id>.md` |
-| Making progress on task | Update `state/task_<id>.md` |
-| Ending a coding session | Update `sessions/latest_summary.md` |
+| Starting a new task | Post or update the latest `agent-state:v1` issue/PR comment |
+| Making progress on task | Update the latest `agent-state:v1` issue/PR comment |
+| PR merge/closeout with durable lessons | Update and rotate `sessions/latest_summary.md` |
 | Making a design decision | Add to `sessions/`, optionally create ADR |
 | Phase complete | Update `roadmap.md` |
 | Adding a domain constraint | Create `rules/domain_<area>.md` |

@@ -152,7 +152,7 @@ For large projects with many context files, consider creating a summary file tha
 
 ## What to Read
 1. Start with 00_INDEX.md (the default entry point)
-2. Check state/_active.md or task_*.md (current work)
+2. Check the assigned issue/PR and latest agent-state:v1 comment (current work)
 3. Only load rules/* files when making changes to those domains
 ```
 
@@ -208,53 +208,49 @@ The single biggest cache-friendliness lever is **stability of long prefixes**. T
 
 If a future runner becomes the primary one and exposes new caching knobs (e.g., named cache breakpoints, longer TTLs), document the call-site recipe here. Repo content should not change to chase caching behavior.
 
-## State File Conflict Prevention
+## Live-State Conflict Prevention
 
 > **Primary mechanism**: role-based path ownership (`.context/rules/agent_ownership.md`). The mitigations below are secondary defenses for conflicts within a single role. For the full parallel-agent workflow, see `docs/guides/multi-agent-coordination.md`.
 
 ### The Problem
 
-If multiple agents work simultaneously (or a human and agent), task files can have merge conflicts.
+If multiple agents work simultaneously (or a human and agent), they can overwrite or miss each other's live state unless the state surface is explicit and owner-keyed.
 
 ### Mitigations
 
 #### 0. Role-Based Path Ownership (Primary)
 
-The strongest defense is role-based path ownership. Each role in `.agents/<role>.md` (with platform overlays in `.github/agents/` and `.claude/agents/`) is assigned path globs in `.context/rules/agent_ownership.md`, and conflicts are greatly reduced when those globs are kept non-overlapping. In practice a few cases still need coordination: some path patterns may overlap (colocated test files, generated artifacts, lockfiles), and some files are intentionally shared or contested (for example, `.context/state/coordination.md` and `.context/rules/**`). Any cross-role edit must be claimed through the PM agent in `.context/state/coordination.md`. This is the primary mechanism — the fallbacks below mainly apply when two sessions of the **same role** overlap, or when work touches one of those shared/overlapping exceptions.
+The strongest defense is role-based path ownership. Each role in `.agents/<role>.md` (with platform overlays in `.github/agents/` and `.claude/agents/`) is assigned path globs in `.context/rules/agent_ownership.md`, and conflicts are greatly reduced when those globs are kept non-overlapping. In practice a few cases still need coordination: some path patterns may overlap (colocated test files, generated artifacts, lockfiles), and some files are intentionally shared or contested (for example, `.context/rules/**`). Any cross-role edit must be coordinated through PM and recorded in GitHub live state. This is the primary mechanism — the fallbacks below mainly apply when two sessions of the **same role** overlap, or when work touches one of those shared/overlapping exceptions.
 
 #### 1. One Active Task at a Time
 
 The simplest solution: only one task should be in progress at once. Complete the current task before starting a new one.
 
-#### 2. Multiple Task Files (for parallel work)
+#### 2. Owner-keyed live comments (for parallel work)
 
-If you need parallel task tracking, use separate files:
-
-```
-.context/state/
-├── _active.md               # Points to priority task
-├── task_feature_auth.md     # Task 1 details
-├── task_bugfix_api.md       # Task 2 details
-└── task_refactor_ui.md      # Task 3 details
-```
-
-#### 3. Lock Before Working
-
-Add a simple lock mechanism:
+If you need parallel task tracking, use separate issues/PRs or clearly owner-keyed `agent-state:v1` comments:
 
 ```markdown
-# _active.md
+<!-- agent-state:v1 issue:123 pr:pending branch:feature/backend-auth role:backend -->
 
-## Lock Status
-**Locked By**: agent-cursor-session-abc123
-**Locked At**: 2025-01-25T14:30:00Z
-**Expected Duration**: 30 minutes
-
-## Current Task
-...
+**Status:** in_progress
 ```
 
-Agents should check the lock before modifying.
+#### 3. Claim Before Working
+
+Update the latest live-state comment and labels before editing:
+
+```markdown
+**Status:** in_progress
+
+## Blockers / awaiting
+- None
+
+## Next 1–3 actions
+1. ...
+```
+
+Agents should check existing claims before modifying.
 
 #### 4. Use Git Branches
 
@@ -262,10 +258,10 @@ For significant parallel work, use feature branches. Each branch has its own sta
 
 ```bash
 # Branch: feature/user-auth
-.context/state/task_auth.md  # Auth work
+# Live state: latest agent-state:v1 comment on the auth issue/PR
 
 # Branch: feature/api-refactor  
-.context/state/task_api.md   # API work
+# Live state: latest agent-state:v1 comment on the API issue/PR
 ```
 
 Merge conflicts only occur when branches merge.
@@ -321,16 +317,16 @@ When an agent session ends (or a new agent takes over), follow this protocol:
 
 ### Ending a Session
 
-1. **Update your task file** (`task_*.md`) with:
+1. **Update the latest `agent-state:v1` comment** with:
    - What was accomplished
    - What's left to do
    - Any blockers or open questions
-   - Files that were modified
+   - Who should pick up next, if anyone
 
-2. **Update `sessions/latest_summary.md`** with:
-   - Key decisions made and their rationale
-   - What didn't work (to prevent repeating mistakes)
-   - Next session recommendations
+2. **Update `sessions/latest_summary.md` only for durable lessons** at PR merge/closeout:
+   - What shipped
+   - What was harder than expected
+   - What generalizes
 
 3. **Commit work in progress**:
    ```bash
@@ -352,7 +348,7 @@ Follow these steps in order:
 
 1. **Read the current task**:
    ```
-   .context/state/_active.md  # or task_*.md
+   Assigned GitHub issue/PR + latest agent-state:v1 comment
    ```
    This tells you the immediate goal.
 
@@ -383,7 +379,7 @@ Follow these steps in order:
    Before proceeding, output a status report:
    ```
    "I have reviewed the context.
-   - Current task: [Task Name from task file]
+   - Current task: [Task Name from issue/PR]
    - Environment: [Stable/Unstable based on verify-env output]
    - Last session: [Brief summary from sessions/latest_summary.md]
    - Ready for instructions."

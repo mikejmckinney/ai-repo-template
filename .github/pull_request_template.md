@@ -40,6 +40,14 @@ N/A — empty headings are noise.
 - **Revisions:** <links to any "Plan revision" comments, or "none">
 - **Latest in 1–2 sentences:** <current outcome + approach>
 
+## Live agent state
+
+<!-- Optional unless the work is paused, blocked, awaiting review, or being handed off.
+     Link the latest `agent-state:v1` issue/PR comment; do not duplicate its
+     blocker/handoff text here. -->
+
+- **Latest `agent-state:v1` comment:** <link or "N/A — work completes in this PR without handoff">
+
 ## Plan revision sync (REQUIRED when applicable)
 
 <!-- If a plan revision comment was posted on the linked issue AFTER this

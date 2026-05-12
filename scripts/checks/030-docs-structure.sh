@@ -23,6 +23,7 @@ DOCS_FILES=(
   "docs/decisions/adr-template.md"
   "docs/decisions/README.md"
   "docs/decisions/adr-024-multi-model-consensus-planning.md"
+  "docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md"
   "docs/decisions/adr-001-context-pack-structure.md"
   "docs/decisions/adr-002-agents-md-ownership.md"
   "docs/decisions/adr-003-claude-code-subagent-registration.md"

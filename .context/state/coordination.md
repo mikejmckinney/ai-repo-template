@@ -1,24 +1,32 @@
 # Coordination Board
 
-> **Purpose**: Live claim board for parallel multi-agent work. Every role reads this before editing and appends a lock before starting. The **Project Manager** agent is the authoritative editor beyond self-claims.
+> **ADR-025 compatibility note**: this file is a legacy manual claim-board
+> view. For GitHub-connected work, the primary live state is the assigned
+> issue, linked PR, latest `agent-state:v1` comment, and labels. Existing
+> locks below may be stale and should not block v1 migration. The **Project
+> Manager** agent owns any legacy cleanup or generated-view reconciliation.
 
 <!-- TEMPLATE_PLACEHOLDER: In a real project, this file tracks active work. Keep the structure below but clear the example locks. -->
 
 ## How to Use
 
-1. **Before editing**: read this file and `rules/agent_ownership.md`. If any active lock overlaps your intended paths, stop and escalate to PM.
-2. **Claim**: append a new lock block under "Active Locks" using the template below.
-3. **Release**: when your task is done or handed off, move your block to "Recent History" with a result line. PM prunes history periodically.
+For new GitHub-connected work, do **not** use this file as the live claim board. Read the issue, linked PR, latest `agent-state:v1` comment, labels, and `rules/agent_ownership.md` instead.
+
+For legacy branches that still carry manual locks:
+
+1. **Before editing**: read this file and `rules/agent_ownership.md`. If any active lock overlaps your intended paths, confirm whether it is stale, then escalate to PM.
+2. **Claim**: append a new lock block under "Active Locks" only for legacy/offline compatibility work.
+3. **Release**: when the legacy task is done or handed off, move your block to "Recent History" with a result line. PM prunes history periodically.
 
 ## Task States
 
-Every `task_*.md` file lives in exactly one of these states. Transitions are one-way (no skipping). The "Gate" column says what must be true to advance; the "Owner" column says which role performs the transition.
+Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly one of these states. Transitions were one-way (no skipping). The "Gate" column says what must be true to advance; the "Owner" column says which role performs the transition. For current GitHub-connected work, represent equivalent state in the latest `agent-state:v1` comment and labels.
 
 | State                | Gate to advance                                       | Owner of transition |
 |----------------------|-------------------------------------------------------|---------------------|
 | `analyzing`          | Analysis complete + Analyst handoff to Architect/PM   | Analyst             |
 | `backlog`            | Architect plan exists + Judge plan-gate APPROVE       | PM                  |
-| `planned`            | Role assigned + task file created + lock claimed      | PM                  |
+| `planned`            | Role assigned + legacy task file created + lock claimed | PM                  |
 | `assigned`           | Implementer starts work + sets `Status: in-progress`  | Implementer         |
 | `in_progress`        | Implementation complete + tests added                 | Implementer         |
 | `peer_review`        | QA coverage check + Critic subjective review          | QA / Critic         |
@@ -30,9 +38,9 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 ### Transition rules
 
 - **No skipping**: a task in `in_progress` cannot jump to `judge_review` without passing through `peer_review`.
-- **Reversible**: any reviewer (QA, Critic, Judge) may kick a task back to `in_progress` with `REQUEST_CHANGES`. Record the reason in the task file before the kickback.
+- **Reversible**: any reviewer (QA, Critic, Judge) may kick a task back to `in_progress` with `REQUEST_CHANGES`. Record the reason in the live comment or PR review before the kickback.
 - **Stakeholder review is optional**: after `merged`, PM decides whether to enter `stakeholder_review` or move the task directly to done (Recent History). Small fixes, dependency bumps, and maintenance tasks typically skip this state.
-- **Stakeholder review is terminal**: `stakeholder_review` closes out the original task — once feedback is captured, the task file moves to Recent History. Any follow-up work becomes *new* `task_*.md` entries: routed to Analyst (entering `analyzing`) if assumptions need re-validation, or placed directly into `backlog` if the feedback is design-only and goes straight to Architect. New entries are created using `.context/state/feedback_template.md`.
+- **Stakeholder review is terminal**: `stakeholder_review` closes out the original task — once feedback is captured, the legacy task moves to Recent History. Any follow-up work becomes a new GitHub issue or PR comment thread: routed to Analyst (entering `analyzing`) if assumptions need re-validation, or placed directly into `backlog` if the feedback is design-only and goes straight to Architect. Feedback capture still uses `.context/state/feedback_template.md` when that optional path is invoked.
 - **Stuck detection**: any state other than `merged` or `stakeholder_review` held for > 24 hours is a "stuck" signal. PM should investigate on the next session or via the optional heartbeat workflow (`.github/workflows/agent-heartbeat.yml.template`).
 
 ## Lock Template

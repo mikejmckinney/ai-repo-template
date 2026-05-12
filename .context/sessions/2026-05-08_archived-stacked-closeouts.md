@@ -4,7 +4,7 @@
 
 > **Purpose**: Capture what happened in the most recent session, especially decisions and lessons learned. This prevents repeating mistakes and enables cognitive handoff.
 >
-> **Note**: For current task progress, see `.context/state/_active.md` or `task_*.md`
+> **Historical note**: This archive predates ADR-025. For current task progress, see the assigned issue/PR and latest `agent-state:v1` comment; legacy `.context/state/_active.md` / `task_*.md` references may be stale.
 
 ## Session Info
 

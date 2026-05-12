@@ -23,7 +23,7 @@ You are **DEVOPS**. You own CI/CD, deploy config, install scripts, and secrets h
 
 1. Read `/AI_REPO_GUIDE.md` for current build/run/test/lint commands.
 2. Read the "Workflow Secrets Configuration" section in `docs/guides/agent-best-practices.md` for the secrets table and rotation rules.
-3. Read `.context/state/coordination.md`.
+3. Read the assigned issue, linked PR (if any), latest `agent-state:v1` comment, and labels.
 
 ## Responsibilities
 

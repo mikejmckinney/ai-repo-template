@@ -6,10 +6,10 @@ Bats test suite (issue #255 Phase 4b). Each `.bats` file in this directory is a 
 
 | `.bats` file | Legacy script wrapped | Concern |
 |---|---|---|
-| `active-md-multitask.bats` | `test-active-md-multitask.sh` | ADR-018 multi-task `_active.md` schema |
+| `active-md-multitask.bats` | `test-active-md-multitask.sh` | ADR-018 legacy multi-task `_active.md` compatibility schema |
 | `auto-rebase-overlapping.bats` | `test-auto-rebase-overlapping.sh` | ADR-010 auto-rebase logic |
-| `closeout.bats` | `test-closeout.sh` | `make closeout` six-check enforcement |
-| `coordination-sync.bats` | `test-coordination-sync.sh` | `agent-coordination-sync.yml` parser |
+| `closeout.bats` | `test-closeout.sh` | Legacy `make closeout` six-check fallback |
+| `coordination-sync.bats` | `test-coordination-sync.sh` | Legacy `agent-coordination-sync.yml` parser |
 | `jq-filters.bats` | `test-jq-filters.sh` | `scripts/lib/jq/*.jq` fixture-driven tests |
 | `multi-dispatch-safety.bats` | `test-multi-dispatch-safety.sh` | `agent-multi-dispatch.yml` ownership safety |
 | `parallelism-report-parser.bats` | `test-parallelism-report-parser.sh` | Parallelism report parser |

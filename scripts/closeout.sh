@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# scripts/closeout.sh — deterministic close-out enforcement (issue #262).
+# scripts/closeout.sh — deterministic legacy close-out enforcement (issue #262).
 #
-# Refuses to commit when the close-out artifacts required by the cadence
-# rule (`.context/rules/process_session_state.md`) are not in place.
+# Transitional/fallback helper for old branches that still used repo-local
+# live-state files before ADR-025. Normal GitHub-connected work now closes
+# out by updating the latest `agent-state:v1` issue/PR comment.
 #
 # Failure mode shifts from "I'll write the summary later" (silent) to
 # "the script refused my commit because I didn't move my lock" (loud).

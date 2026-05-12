@@ -18,7 +18,7 @@ Before editing any file, identify your role (analyst, architect, judge, critic, 
 - [`.claude/agents/<your-role>.md`](.claude/agents/) — Claude Code subagent registration overlay (frontmatter only; points to canonical).
 - [`.context/rules/agent_ownership.md`](.context/rules/agent_ownership.md) — the canonical path-ownership map.
 - [`.context/rules/process_role_selection.md`](.context/rules/process_role_selection.md) — multi-agent workflow protocol.
-- [`.context/state/coordination.md`](.context/state/coordination.md) — live claim board and task state machine.
+- Assigned GitHub issue, linked PR, latest `agent-state:v1` comment, and labels — primary live coordination state per ADR-025.
 
 Full multi-agent workflow: [`docs/guides/multi-agent-coordination.md`](docs/guides/multi-agent-coordination.md).
 

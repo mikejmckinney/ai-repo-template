@@ -67,7 +67,7 @@ Many unit tests, fewer integration tests, minimal E2E tests. Concrete CI command
 | **QA** | Enforces via tests. Flags untested branches of Hard-rule code during the hand-off to Judge. |
 | **Critic** | Flags subjective violations under `CRAFT NOTES` / `NITS`. Cites the rule ID (H1–H8, S1–S6) so the author can look it up. |
 | **Judge** | Blocks diff-gate on unjustified Hard-rule violations. Treats Soft-rule notes from Critic as advisory input, not a block condition. |
-| **PM** | Records rule-exception tasks in `.context/state/coordination.md` when resolving a violation requires a cross-role fix. |
+| **PM** | Records rule-exception follow-ups in GitHub live state when resolving a violation requires a cross-role fix. |
 
 ## Exceptions Process
 

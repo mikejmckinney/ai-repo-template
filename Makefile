@@ -6,7 +6,7 @@
 
 .PHONY: closeout
 
-# closeout — refuse to commit unless the close-out artifacts are in place.
+# closeout — legacy fallback for old repo-local state close-out artifacts.
 # Implements issue #262 (the cadence-trigger discipline enforcement).
 # See `scripts/closeout.sh` for the six checks performed.
 closeout:

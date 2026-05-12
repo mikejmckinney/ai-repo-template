@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (superseded in part by ADR-025)
 
 ## Date
 
@@ -38,13 +38,13 @@ Files created:
 
 ### B. Add optional `stakeholder_review` state to the task state machine
 
-A new state `stakeholder_review` sits between `merged` and the next iteration's `backlog`:
+A new state `stakeholder_review` sits between `merged` and the next iteration's `backlog` in the pre-ADR-025 file-based task state machine. ADR-025 later moves the live state representation to GitHub comments/labels; the Analyst feedback loop still applies.
 
 ```
-... → approved → merged → [stakeholder_review] → (task closed; new task_*.md entries in backlog)
+... → approved → merged → [stakeholder_review] → (task closed; follow-up issue/comment entries in backlog)
 ```
 
-PM decides whether a merged task enters stakeholder review or goes straight to done. `stakeholder_review` is terminal for the original task — once feedback is captured, the task file moves to Recent History. Any follow-up work becomes *new* `task_*.md` backlog entries, routed to Analyst (if assumptions changed) or Architect (if design feedback only). Small fixes and maintenance tasks typically skip this state.
+PM decides whether a merged task enters stakeholder review or goes straight to done. `stakeholder_review` is terminal for the original task — once feedback is captured, the live state is closed out. Any follow-up work becomes a new GitHub issue or comment thread routed to Analyst (if assumptions changed) or Architect (if design feedback only). Small fixes and maintenance tasks typically skip this state.
 
 A feedback template (`.context/state/feedback_template.md`) provides structure for capturing stakeholder reactions, requested changes, new requirements, and assumption changes.
 

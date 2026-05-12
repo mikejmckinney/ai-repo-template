@@ -36,6 +36,11 @@
 
 # Active Tasks
 
+> **ADR-025 compatibility note**: this file is a legacy manual live-state
+> view. For GitHub-connected work, the primary live state is the assigned
+> issue, linked PR, latest `agent-state:v1` comment, and labels. Existing
+> sections below may be stale and should not block v1 migration.
+
 ## Task: feature/devops-220-phase2
 **Issue/PR**: #220 (Phase 2)
 **Role**: devops (lead) + architect (ADR-019) + docs + qa

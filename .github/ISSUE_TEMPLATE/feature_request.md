@@ -68,3 +68,5 @@ user actions, not files created. Example:
 ## Additional Context
 
 <!-- Any other relevant information -->
+
+<!-- Live agent coordination status belongs in the latest `agent-state:v1` issue/PR comment, not in the issue body. Keep this body focused on the durable feature/task contract. -->

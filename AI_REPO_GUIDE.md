@@ -54,17 +54,16 @@ bash install.sh
 │   │   ├── domain_code_quality.md
 │   │   ├── process_doc_maintenance.md
 │   │   └── repo_orchestration_patterns.md
-│   ├── sessions/             # Session history for handoff
+│   ├── sessions/             # Durable retrospective lessons
 │   │   ├── README.md
 │   │   └── latest_summary.md
-│   ├── state/                # Task tracking (supports parallel work)
+│   ├── state/                # Legacy compatibility + comment templates
 │   │   ├── README.md
-│   │   ├── _active.md            # Current priority task pointer
-│   │   ├── coordination.md       # Live claim board
+│   │   ├── _active.md            # Legacy/manual live-state view (may be stale)
+│   │   ├── coordination.md       # Legacy/manual claim board (may be stale)
+│   │   ├── agent_state_comment_template.md # GitHub live-state comment template
 │   │   ├── feedback_template.md  # Stakeholder feedback template
-│   │   ├── handoff_template.md   # Cross-session/role handoff template
-│   │   ├── task_template.md      # Template for new tasks
-│   │   └── task_*.md             # Individual task files
+│   │   └── task_*.md             # Legacy task files only, if old branches still have them
 │   └── vision/               # Design artifacts
 │       ├── README.md
 │       ├── mockups/          # UI/UX mockups
@@ -189,10 +188,12 @@ bash install.sh
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
 | `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP8`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
-| `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
+| Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025) |
+| `.context/state/agent_state_comment_template.md` | Copy/paste template for live coordination comments |
+| `.context/state/coordination.md` | Legacy manual claim board / compatibility view; may be stale |
 | `.context/state/feedback_template.md` | Stakeholder feedback capture template |
-| `.context/state/handoff_template.md` | Cross-session/cross-role handoff template (used at ~30 turns or before role swap) |
-| `.context/state/task_*.md` | Current task(s) for session handoff |
+| `.context/state/_active.md` | Legacy manual active-task view; may be stale |
+| `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
 | `.context/vision/` | Mockups and architecture diagrams |
 
 ### Prompts (user-triggered, not auto-loaded)
@@ -261,7 +262,7 @@ bash install.sh
 | `agent-assign-copilot.yml` | Gated Copilot PR assignment for `copilot:ready` issues | Set `CLAUDE_PAT` secret |
 | `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved), with default bounded bot-review settle window and `auto-merge-fast` bypass label | Set `CLAUDE_PAT` secret |
 | `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes | None |
-| `agent-coordination-sync.yml` | Reconciles `.context/state/coordination.md` with live PR/issue state | None |
+| `agent-coordination-sync.yml` | Transitional compatibility comments for legacy `.context/state/coordination.md` drift | None |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` secret |
 | `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier | Set `CLAUDE_PAT` secret |
 | `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR | None |
@@ -269,12 +270,17 @@ bash install.sh
 | `agent-release-slot.yml` | Releases Copilot slot + drains queue on PR close | Set `CLAUDE_PAT` secret |
 | `auto-rebase-on-merge.yml` | Opt-in auto-rebase of overlapping PRs via `auto-rebase` label | Set `CLAUDE_PAT` secret |
 | `backlog-to-issues.yml` | Materializes `.context/backlog.yaml` entries as GitHub issues | Set `CLAUDE_PAT` secret |
-| `agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks | Rename to `.yml` to enable |
+| `agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale legacy locks | Rename to `.yml` to enable |
 
 ## Truth Hierarchy
 
 See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 `.context/**` > `docs/**` > codebase.
+
+For live agent coordination on GitHub-connected work, ADR-025 narrows the
+source-of-truth order to: issue body → PR body → latest `agent-state:v1`
+comment → labels. In-tree `.context/**` remains canonical for rules,
+decisions, durable lessons, and process constraints.
 
 ## Conventions
 
@@ -302,10 +308,9 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 # Check all required files exist
 ./test.sh
 
-# Close-out enforcement (issue #262) — refuses commit unless state files
-# are touched, lock is moved out of Active Locks, ## Task: section is
-# removed, latest_summary entry has Status: done, and required template
-# headers are present. Soft-warns on rotation hygiene.
+# Legacy close-out fallback (issue #262) — for old branches that still used
+# repo-local live-state files. Normal GitHub-connected work uses the latest
+# agent-state:v1 comment for live closeout per ADR-025.
 make closeout
 
 # Validate shell scripts (if shellcheck installed)
@@ -380,10 +385,6 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 2. Extensions install automatically via `install.sh`
 3. AI prompts copied to workspace
 
-## Onboarding Prompts
-
-Two agent-facing prompts. Both are copy/paste-ready.
-
 ### First-time repo initialization
 
 After creating a repo from this template, paste this prompt into a GitHub issue and assign it to your AI agent:
@@ -402,29 +403,30 @@ Please:
 3. Determine project purpose from .context/**, docs/**, and codebase
 4. Run .github/prompts/repo-onboarding.md
 5. Replace README.md with project-specific content, including
-   `## Limitations`, `## Future Improvements`, and a `## FAQ` section
-   (or link to docs/FAQ.md — replace the template's FAQ entries with
-   project-specific ones).
+  `## Limitations`, `## Future Improvements`, and a `## FAQ` section
+  (or link to docs/FAQ.md — replace the template's FAQ entries with
+  project-specific ones).
 6. Regenerate AI_REPO_GUIDE.md for THIS repo
 7. Replace or customize docs/FAQ.md for the project (template-specific
-   entries prefixed with "Template:" should be removed)
+  entries prefixed with "Template:" should be removed)
 8. Do not modify .context/** unless instructed
 ```
 
 ### New agent session (continue work on an existing repo)
 
-Use this prompt to onboard a fresh agent session onto an in-flight project:
+Use this prompt to onboard a fresh agent session onto in-flight work:
 
 ```markdown
-1. Read .context/state/_active.md or task_*.md to understand the immediate goal.
-2. Read .context/00_INDEX.md to locate relevant rules/constraints.
-3. Check: Run `git status` and `./scripts/verify-env.sh` to ensure stability.
-4. Skim: Review .context/sessions/latest_summary.md for recent decisions.
-5. Report: "I have reviewed the context. Current task is [Task Name].
-   Environment is [Stable/Unstable]. Ready for instructions."
+1. Read the assigned GitHub issue body to understand the durable task/feature contract.
+2. Read the linked PR, if one exists, for implementation scope and verification state.
+3. Read the latest `agent-state:v1` issue/PR comment and labels for live coordination, blockers, and handoff.
+4. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
+5. Check: Run `git status` and `./scripts/verify-env.sh` to ensure stability.
+6. Skim `.context/sessions/latest_summary.md` for durable lessons from recent work.
+7. Report: "I have reviewed the context. Current task is [Task Name]. Environment is [Stable/Unstable]. Ready for instructions."
 ```
 
-This structured protocol ensures context is loaded correctly before proceeding.
+This protocol keeps live task state in GitHub while preserving in-tree rules and durable retrospective lessons.
 
 ## Gotchas / Known Issues
 

@@ -75,9 +75,10 @@ same PR:
 3. **Replace placeholders** wherever they occur:
    - `TEMPLATE_PLACEHOLDER` markers → project-specific text or remove,
      **except** in `.context/state/_active.md`, `.context/sessions/latest_summary.md`,
-     and `.context/state/coordination.md` — those files intentionally retain
-     the marker post-onboarding per item 6 below (`verify-env.sh` excludes
-     them via `_PLACEHOLDER_EXCLUDE` so they do not re-trigger Mode B).
+     and `.context/state/coordination.md` — those compatibility / durable
+     lesson files intentionally retain the marker post-onboarding per item 6
+     below (`verify-env.sh` excludes them via `_PLACEHOLDER_EXCLUDE` so they
+     do not re-trigger Mode B).
    - `PLEASE_UPDATE_THIS/URL` in `.github/ISSUE_TEMPLATE/config.yml` →
      actual `owner/repo` from `git remote -v`.
 4. **Extend `.context/rules/agent_ownership.md`** with rows for the project's
@@ -87,24 +88,23 @@ same PR:
    they remain load-bearing.
 5. **Customize `docs/FAQ.md`** — strip entries prefixed with `Template:` and
    replace with project-specific Q&A.
-6. **Clear template working state.** `.context/state/*.md` and
-   `.context/sessions/*.md` ship populated with ai-repo-template's own
-   task data. Reset them so re-read cadence (AGENTS.md →
-   "Session-state cadence") doesn't ingest the template's stale state
+6. **Clear template working state / retrospective examples.** `.context/state/*.md`
+   and `.context/sessions/*.md` ship populated with ai-repo-template's own
+   task data. Reset them so agents don't ingest the template's stale state
    as if it were this project's reality:
    - `.context/state/_active.md` — clear the task details under the
-     `# Active Task` header (resetting the fields to empty); keep the
-     schema comment and `TEMPLATE_PLACEHOLDER` marker until the first
-     real task lands.
+     `# Active Tasks` header; keep the compatibility note, schema comment,
+     and `TEMPLATE_PLACEHOLDER` marker until the first real GitHub-connected task.
    - `.context/sessions/latest_summary.md` — replace body with a single
      `No sessions yet` line; keep the `TEMPLATE_PLACEHOLDER` marker
-     until the first close-out.
+     until the first durable retrospective entry.
    - `.context/state/coordination.md` — clear all entries under
      `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and
      `## PM Notes`; keep the section headers, `## Lock Template`,
-     and `TEMPLATE_PLACEHOLDER` marker.
-   - Do NOT delete `*_template.md` or `README.md` in those directories
-     — they are the schemas downstream agents copy from.
+     compatibility note, and `TEMPLATE_PLACEHOLDER` marker.
+   - Keep `agent_state_comment_template.md`, `feedback_template.md`, and
+     `README.md` in those directories. Do not recreate the removed
+     `task_template.md` or `handoff_template.md`; ADR-025 supersedes them.
 
 When Phase 0 work is complete, continue to Phase 1.
 
@@ -117,14 +117,18 @@ When Phase 0 work is complete, continue to Phase 1.
 Before the deep dive in Step 1.1, do a fast sanity pass so the rest of
 Phase 1 has accurate state:
 
-1. Read `.context/state/_active.md` (note the leading underscore) or any
-   `.context/state/task_*.md` to understand the immediate goal.
-2. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
-3. Run `git status` and `./scripts/verify-env.sh` to confirm the working
+1. Read the assigned GitHub issue body to understand the durable task or
+  feature contract.
+2. Read the linked PR, if one exists, for implementation scope and
+  verification state.
+3. Read the latest `agent-state:v1` issue/PR comment and labels for live
+  coordination, blockers, and handoff.
+4. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
+5. Run `git status` and `./scripts/verify-env.sh` to confirm the working
    tree and environment are stable.
-4. Skim `.context/sessions/latest_summary.md` for recent decisions and
-   handoffs from prior sessions.
-5. Report a one-line status:
+6. Skim `.context/sessions/latest_summary.md` for durable lessons from
+  recent work.
+7. Report a one-line status:
    `"Context reviewed. Onboarding Mode: <A|B|C>. Current task is <name>. Environment is <Stable|Unstable: <reason>>. Ready for instructions."`
 
 **"Stable" means all of:**
@@ -137,7 +141,7 @@ Phase 1 has accurate state:
   (`verify-env.sh` emits a distinct WARN for the 3 bootstrap state files;
   that warn is **non-blocking** — expected during bootstrap, actionable once
   the first real task/session has landed and those markers should be cleared.)
-- Steps 1–4 above completed without missing-file errors. (`bash test.sh`
+- Steps 1–6 above completed without missing-file errors. (`bash test.sh`
   is the deeper structural check; run it later in Phase 1 if you want
   full coverage.)
 

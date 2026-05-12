@@ -17,7 +17,7 @@ Before editing any file, identify your role (analyst, architect, judge, critic, 
 - [`.github/agents/<your-role>.agent.md`](agents/) — Copilot SDK custom-agent registration overlay (frontmatter only; points to canonical).
 - [`.context/rules/agent_ownership.md`](../.context/rules/agent_ownership.md) — the canonical path-ownership map.
 - [`.context/rules/process_role_selection.md`](../.context/rules/process_role_selection.md) — multi-agent workflow protocol.
-- [`.context/state/coordination.md`](../.context/state/coordination.md) — live claim board and task state machine.
+- Assigned GitHub issue, linked PR, latest `agent-state:v1` comment, and labels — primary live coordination state per ADR-025.
 
 Full multi-agent workflow: [`docs/guides/multi-agent-coordination.md`](../docs/guides/multi-agent-coordination.md).
 
@@ -51,7 +51,7 @@ Heuristics for when to dispatch:
 - README / AI_REPO_GUIDE / docs/ updates → `Docs`
 - Plan-gate or diff-gate review (APPROVE / REQUEST_CHANGES / BLOCK) → `Judge`
 - Devil's-advocate review for hidden assumptions / AI clichés → `Critic`
-- Dispatching approved plans into per-role task files → `Project Manager`
+- Dispatching approved plans into role-owned GitHub state/comments → `Project Manager`
 
 Don't dispatch for trivial single-step operations (one-line edit, single
 file read, quick lookup) — the dispatch overhead isn't worth it. Do
