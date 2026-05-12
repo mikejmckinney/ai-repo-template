@@ -28,8 +28,8 @@
 #
 # Failure mode: `set -uo pipefail` deliberately omits `-e`. A diagnostic
 # sampler should keep capturing what it can even when one command fails
-# (e.g. `top -w` not supported on a stripped image, or `ss` blocked by
-# permissions). With `-e`, a single transient failure inside the per-
+# (e.g. `ss` blocked by permissions, or `top` formatting flag absent on a
+# stripped image). With `-e`, a single transient failure inside the per-
 # sample block would abort the whole sampling loop and lose the rest of
 # the snapshot — defeating the script's purpose. (PR #297 Round 9
 # ISS-53, declined-with-rationale.)
@@ -79,7 +79,7 @@ while ((i < MAX_SAMPLES)); do
     echo "--- free -h ---"
     free -h
     echo "--- top (top 20 by CPU) ---"
-    top -b -n1 -w200 | head -27
+    top -b -n1 | head -27
     echo "--- ps node/code/gh/copilot ---"
     # shell-conventions:disable=RULE-02 reason: substring match on ps/ss output is intentional — diagnostic filter wants any line containing 'node', 'copilot', etc., not whole-line matches
     # `extension` deliberately stays unanchored so it matches `extensionHost`
