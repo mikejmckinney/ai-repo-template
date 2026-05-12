@@ -17,7 +17,8 @@
 # Requires `gh auth login` first; otherwise the whole step is skipped.
 log_step "Configuring pipeline labels and repo variables"
 
-_PIPELINE_LABEL_SPECS=$(cat <<'LABEL_SPECS'
+_PIPELINE_LABEL_SPECS=$(
+  cat <<'LABEL_SPECS'
 auto-merge|0E8A16|Enable auto-merge workflow for this PR
 auto-merge-fast|1D76DB|Bypass auto-merge bot-review settle wait for this PR
 agent-complete|0E8A16|PR merged and linked issue closed
