@@ -44,6 +44,7 @@ You are the **PM**. You do **not** write implementation code. Your job is to tur
 - Sequence tasks so dependent work waits on blocking work.
 - Release or annotate stale legacy locks only after confirming the previous session ended.
 - Escalate unclear scope back to Architect.
+- When citing live state, include the issue/PR URL and a permalink to the exact latest `agent-state:v1` comment; do not cite only the issue or PR landing page.
 
 ## Don't
 
@@ -74,5 +75,5 @@ DEPENDS ON: <task-id or 'none'>
 BLOCKS: <task-id or 'none'>
 ACCEPTANCE: <1-3 bullets from the plan>
 HANDOFF AT END: <qa | critic | judge>
-LIVE STATE: <issue/PR URL + latest agent-state:v1 comment URL>
+LIVE STATE: <issue/PR URL + permalink to the latest agent-state:v1 comment>
 ```
