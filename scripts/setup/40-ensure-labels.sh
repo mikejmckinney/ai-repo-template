@@ -159,6 +159,18 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     # thread `--repo "$FULL_REPO"` through each helper.
     export GH_REPO="$FULL_REPO"
     log_info "Targeting $FULL_REPO for label/variable creation"
+    _existing_pipeline_labels=$(gh label list --limit "$_PIPELINE_LABEL_LIST_LIMIT" --json name --jq '.[].name') \
+      || _existing_pipeline_labels=""
+
+    _pipeline_label_exists() {
+      local name="$1"
+      printf '%s\n' "$_existing_pipeline_labels" | grep -qxF "$name"
+    }
+
+    _pipeline_label_cache_add() {
+      local name="$1"
+      _existing_pipeline_labels=$(printf '%s\n%s\n' "$_existing_pipeline_labels" "$name")
+    }
 
     # Helper: create a label idempotently, surfacing real failures.
     # `gh label create` exits non-zero for both "already exists" and real errors;
@@ -166,9 +178,16 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     # Capture stderr so the WARN includes the actual gh/API error message.
     _ensure_label() {
       local name="$1" color="$2" desc="$3" err first_err
-      err=$(gh label create "$name" --color "$color" --description "$desc" 2>&1 >/dev/null) && return 0
+      if _pipeline_label_exists "$name"; then
+        return 0
+      fi
+      if err=$(gh label create "$name" --color "$color" --description "$desc" 2>&1 >/dev/null); then
+        _pipeline_label_cache_add "$name"
+        return 0
+      fi
       # Failure path: confirm whether the label already exists (quiet) or report real error.
       if gh label list --limit "$_PIPELINE_LABEL_LIST_LIMIT" --json name --jq '.[].name' | grep -qxF "$name"; then
+        _pipeline_label_cache_add "$name"
         return 0
       fi
       first_err=$(printf '%s\n' "$err" | grep -v '^$' | head -n1)
