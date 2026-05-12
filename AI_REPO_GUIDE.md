@@ -417,13 +417,16 @@ Please:
 Use this prompt to onboard a fresh agent session onto in-flight work:
 
 ```markdown
-1. Read the assigned GitHub issue body to understand the durable task/feature contract.
-2. Read the linked PR, if one exists, for implementation scope and verification state.
-3. Read the latest `agent-state:v1` issue/PR comment and labels for live coordination, blockers, and handoff.
-4. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
-5. Check: Run `git status` and `./scripts/verify-env.sh` to ensure stability.
-6. Skim `.context/sessions/latest_summary.md` for durable lessons from recent work.
-7. Report: "I have reviewed the context. Current task is [Task Name]. Environment is [Stable/Unstable]. Ready for instructions."
+1. Read `AGENTS.md` for universal rules and the current handshake canary.
+2. Read `.context/rules/agent_ownership.md` to know which files your role may touch.
+3. Read `.agents/<your-role>.md` for your role-specific responsibilities.
+4. Read the assigned GitHub issue body to understand the durable task/feature contract.
+5. Read the linked PR, if one exists, for implementation scope and verification state.
+6. Read the latest `agent-state:v1` issue/PR comment and labels for live coordination, blockers, and handoff.
+7. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
+8. Check: Run `git status` and `./scripts/verify-env.sh` to ensure stability.
+9. Skim `.context/sessions/latest_summary.md` for durable lessons from recent work.
+10. Report: "I have reviewed the context. Current task is [Task Name]. Environment is [Stable/Unstable]. Ready for instructions."
 ```
 
 This protocol keeps live task state in GitHub while preserving in-tree rules and durable retrospective lessons.
