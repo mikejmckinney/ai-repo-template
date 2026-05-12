@@ -53,7 +53,7 @@ done
 # pinning full sentences; process_session_state.md is human-facing guidance
 # and may be polished without changing the underlying ADR-025 contract.
 if grep -qiE 'wait-for-input[[:space:]-]*pause' .context/rules/process_session_state.md 2>/dev/null \
-  && grep -qiE 'auto-summar(y|izes|ized)' .context/rules/process_session_state.md 2>/dev/null \
+  && grep -qiE 'auto-summar(y|izes|ized)\b' .context/rules/process_session_state.md 2>/dev/null \
   && grep -qiE 'session ends.*not merged/closed' .context/rules/process_session_state.md 2>/dev/null; then
   pass "process_session_state.md preserves ADR-025 live-state cadence triggers"
 else
