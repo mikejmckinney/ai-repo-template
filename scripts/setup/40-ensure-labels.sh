@@ -17,7 +17,33 @@
 # Requires `gh auth login` first; otherwise the whole step is skipped.
 log_step "Configuring pipeline labels and repo variables"
 
-_PIPELINE_LABELS="auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, agent:claimed, agent:blocked, agent:awaiting-review, chore:no-plan, outcome-validated, cap-override"
+_PIPELINE_LABEL_SPECS=$(cat <<'LABEL_SPECS'
+auto-merge|0E8A16|Enable auto-merge workflow for this PR
+auto-merge-fast|1D76DB|Bypass auto-merge bot-review settle wait for this PR
+agent-complete|0E8A16|PR merged and linked issue closed
+no-auto-ready|BFDADC|Opt out of automatic ready-state handling
+claude-fix|FBCA04|Opt PR in to agent-fix-reviews.yml (Claude resolution)
+claude-review|1D76DB|Opt PR in to claude.yml auto-review (invokes judge subagent)
+copilot-relay|5319E7|Opt PR in to agent-relay-reviews.yml (Copilot resolution; included in subscription)
+smoke-test|E99695|Workflow-validation PR; auto-merge/relay/fix-reviews skip to avoid mid-test interference
+copilot:ready|0E8A16|Assign Copilot when budget allows
+copilot:in-progress|1D76DB|Assigned to Copilot, counts toward concurrent budget
+copilot:queued|FBCA04|Waiting for an open Copilot slot
+copilot:budget-paused|E4E669|90% daily spend threshold hit; not auto-drained; add cap-override + copilot:ready to resume
+copilot:daily-cap-hit|D93F0B|Hit daily assignment cap; manual re-queue required
+from-backlog|5319E7|Issue auto-created from .context/backlog.yaml
+needs-human|B60205|Requires human input (e.g., empty roadmap phase, CI failure)
+coordination-sync|BFDADC|Auto-filed by Coordination Sync workflow (stale lock tracking)
+no-coordination-check|EDEDED|Opt PR out of agent-coordination-sync.yml suggestions
+agent:claimed|0969DA|Agent has claimed the issue or PR; details live in the latest agent-state:v1 comment
+agent:blocked|D93F0B|Agent work is blocked; details live in the latest agent-state:v1 comment
+agent:awaiting-review|F29513|Agent work is awaiting review; details live in the latest agent-state:v1 comment
+chore:no-plan|EDEDED|Exempt this issue/PR from the plan-as-comment requirement (ADR-011)
+outcome-validated|0E8A16|Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)
+cap-override|FBCA04|Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)
+LABEL_SPECS
+)
+_PIPELINE_LABELS=$(printf '%s\n' "$_PIPELINE_LABEL_SPECS" | awk -F'|' 'NF { printf "%s%s", sep, $1; sep=", " } END { print "" }')
 _PIPELINE_VARIABLES="MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10, PR_RESOLVE_MAX_ROUNDS=3"
 
 # Pre-flight: detect the Codespaces auto-injected GITHUB_TOKEN case. That
@@ -149,32 +175,15 @@ elif [[ -n "$_gh_auth_ok" ]]; then
 
     # Create every pipeline label surfaced in docs/guides/agent-pipeline.md's
     # label table so the doc's "created automatically by setup.sh" claim
-    # is literally true. Split into two groups for readability:
-    #   - Opt-in / state labels driving the workflows.
-    #   - copilot:* state labels driving the backlog pipeline.
-    _ensure_label "auto-merge" "0E8A16" "Enable auto-merge workflow for this PR"
-    _ensure_label "auto-merge-fast" "1D76DB" "Bypass auto-merge bot-review settle wait for this PR"
-    _ensure_label "agent-complete" "0E8A16" "PR merged and linked issue closed"
-    _ensure_label "no-auto-ready" "BFDADC" "Opt out of automatic ready-state handling"
-    _ensure_label "claude-fix" "FBCA04" "Opt PR in to agent-fix-reviews.yml (Claude resolution)"
-    _ensure_label "claude-review" "1D76DB" "Opt PR in to claude.yml auto-review (invokes judge subagent)"
-    _ensure_label "copilot-relay" "5319E7" "Opt PR in to agent-relay-reviews.yml (Copilot resolution; included in subscription)"
-    _ensure_label "smoke-test" "E99695" "Workflow-validation PR; auto-merge/relay/fix-reviews skip to avoid mid-test interference"
-    _ensure_label "copilot:ready" "0E8A16" "Assign Copilot when budget allows"
-    _ensure_label "copilot:in-progress" "1D76DB" "Assigned to Copilot, counts toward concurrent budget"
-    _ensure_label "copilot:queued" "FBCA04" "Waiting for an open Copilot slot"
-    _ensure_label "copilot:budget-paused" "E4E669" "90% daily spend threshold hit; not auto-drained; add cap-override + copilot:ready to resume"
-    _ensure_label "copilot:daily-cap-hit" "D93F0B" "Hit daily assignment cap; manual re-queue required"
-    _ensure_label "from-backlog" "5319E7" "Issue auto-created from .context/backlog.yaml"
-    _ensure_label "needs-human" "B60205" "Requires human input (e.g., empty roadmap phase, CI failure)"
-    _ensure_label "coordination-sync" "BFDADC" "Auto-filed by Coordination Sync workflow (stale lock tracking)"
-    _ensure_label "no-coordination-check" "EDEDED" "Opt PR out of agent-coordination-sync.yml suggestions"
-    _ensure_label "agent:claimed" "0969DA" "Agent has claimed the issue or PR; details live in the latest agent-state:v1 comment"
-    _ensure_label "agent:blocked" "D93F0B" "Agent work is blocked; details live in the latest agent-state:v1 comment"
-    _ensure_label "agent:awaiting-review" "F29513" "Agent work is awaiting review; details live in the latest agent-state:v1 comment"
-    _ensure_label "chore:no-plan" "EDEDED" "Exempt this issue/PR from the plan-as-comment requirement (ADR-011)"
-    _ensure_label "outcome-validated" "0E8A16" "Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)"
-    _ensure_label "cap-override" "FBCA04" "Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)"
+    # is literally true. The pipe-delimited specs above are the local
+    # manifest for name/color/description; warnings and creation calls are
+    # generated from the same rows to avoid label-list drift.
+    while IFS='|' read -r name color desc; do
+      [[ -z "$name" ]] && continue
+      _ensure_label "$name" "$color" "$desc"
+    done <<LABEL_SPECS
+$_PIPELINE_LABEL_SPECS
+LABEL_SPECS
     log_info "Pipeline labels ensured ($_PIPELINE_LABELS)"
   fi
 else
