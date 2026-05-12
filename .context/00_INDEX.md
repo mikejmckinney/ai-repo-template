@@ -40,14 +40,14 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 
 ## Quick Start for Agents (Lazy Load Pattern)
 
-1. Read this file first (The Map)
-2. Check the assigned GitHub issue, linked PR, latest `agent-state:v1` comment, and labels for live state
-3. Read `rules/agent_ownership.md` to know which files your role may touch
-4. Treat `state/_active.md` and `state/coordination.md` as legacy compatibility views, not primary live state
-5. Read `sessions/latest_summary.md` for durable lessons from recent work
-6. Read `roadmap.md` to understand project phases (The Plan)
-7. Reference `rules/` ONLY when making changes to those domains. `rules/domain_code_quality.md` is the built-in SOLID/TDD/clean-code floor — read it before any non-trivial refactor.
-8. Reference `vision/` for design guidance
+1. Read `AGENTS.md` for universal rules, then this file (The Map)
+2. Read your role file (for example, `.agents/<your-role>.md`) for role-specific responsibilities
+3. Check the assigned GitHub issue, linked PR, latest `agent-state:v1` comment, and labels for live state
+4. Read `rules/agent_ownership.md` to know which files your role may touch
+5. Treat `state/_active.md` and `state/coordination.md` as legacy compatibility views, not primary live state
+6. Read `sessions/latest_summary.md` for durable lessons from recent work
+7. Read `roadmap.md` to understand project phases (The Plan)
+8. Reference other `rules/` and `vision/` files on-demand as your work requires. `rules/domain_code_quality.md` is the built-in SOLID/TDD/clean-code floor — read it before any non-trivial refactor.
 
 **Note:** Don't read everything at once. This index tells you what exists; load files on-demand to save tokens.
 
