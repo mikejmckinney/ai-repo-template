@@ -48,7 +48,7 @@ _PIPELINE_LABELS=$(printf '%s\n' "$_PIPELINE_LABEL_SPECS" | awk -F'|' 'NF { prin
 _SETUP_VARIABLES_FILE="${SCRIPT_DIR:-scripts}/setup/50-ensure-variables.sh"
 _PIPELINE_VARIABLES=$(
   awk '
-    /^_ensure_variable (MAX_COPILOT_CONCURRENT|MAX_COPILOT_DAILY|PR_RESOLVE_MAX_ROUNDS) / {
+    /^[[:space:]]*_ensure_variable (MAX_COPILOT_CONCURRENT|MAX_COPILOT_DAILY|PR_RESOLVE_MAX_ROUNDS) / {
       value = $3
       gsub(/^"|"$/, "", value)
       printf "%s%s=%s", sep, $2, value
