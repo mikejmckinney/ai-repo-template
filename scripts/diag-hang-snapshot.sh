@@ -99,7 +99,7 @@ while ((i < MAX_SAMPLES)); do
     # Preserve the column header line so post-mortem readers see
     # Netid/State/Recv-Q/... labels next to the rows. (R14 ISS-74.)
     ss -tnp \
-      | awk 'NR==1 || ($0 ~ /ESTAB/ && tolower($0) ~ /copilot|github|node/)' | head -n "$((SS_ROWS + 1))"
+      | awk 'NR==1 || ($0 ~ /ESTAB/ && tolower($0) ~ /copilot|github|node|extension/)' | head -n "$((SS_ROWS + 1))"
   } >>"$RUN_DIR/samples.log" 2>&1
 
   if [[ -n "$SESSION_LOG" && -f "$SESSION_LOG" ]]; then
