@@ -11,10 +11,9 @@ SETUP_LABELS_FILE="scripts/setup/40-ensure-labels.sh"
 
 setup_label_declared() {
   local label="$1"
-  grep -qF "_ensure_label \"$label\"" "$SETUP_LABELS_FILE" \
-    || awk -F '|' -v expected="$label" \
-      '$1 == expected { found = 1 } END { exit(found ? 0 : 1) }' \
-      "$SETUP_LABELS_FILE"
+  awk -F '|' -v expected="$label" \
+    '$1 == expected { found = 1 } END { exit(found ? 0 : 1) }' \
+    "$SETUP_LABELS_FILE"
 }
 
 if [[ -f "$ADR025_PATH" ]] \
@@ -47,8 +46,8 @@ for removed in .context/state/task_template.md .context/state/handoff_template.m
 done
 
 # Keep these label names hardcoded in the invariant: this is a contract
-# assertion, not a parser for setup.sh. setup.sh may either call
-# `_ensure_label` directly or list labels in its pipe-delimited manifest.
+# assertion, not a parser for setup.sh. setup-managed labels live in the
+# pipe-delimited manifest in scripts/setup/40-ensure-labels.sh.
 for label in 'agent:claimed' 'agent:blocked' 'agent:awaiting-review'; do
   if setup_label_declared "$label" \
     && grep -qF "| \`$label\` |" docs/guides/agent-pipeline.md; then
