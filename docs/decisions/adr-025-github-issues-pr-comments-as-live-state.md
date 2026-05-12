@@ -88,6 +88,14 @@ Agents update or post the latest `agent-state:v1` comment:
 The comment is intentionally slim. It must not become a second PR body,
 verification matrix, file list, or retrospective essay.
 
+The template intentionally has **no separate `Pause reason` field** —
+`Status` already carries that signal (`awaiting_user_input`, `blocked`,
+`handoff_needed`) and a second free-text field invites contradiction
+between the two surfaces. Long decision history, full file lists,
+verification matrices, and durable retrospective lessons stay out of the
+comment; they belong in plan comments, PR bodies, ADRs, CI, and session
+summaries respectively.
+
 ### Durable retrospectives stay in-tree
 
 `.context/sessions/latest_summary.md` and session archives remain canonical
@@ -153,6 +161,15 @@ the normal coordination path.
 - **Cons**: Loses template portability, grep-able repo history, fork-friendly
   durable lessons, ADR discipline, and downstream project reuse. Rejected.
 
+### Option 5: Workflow validator enforcing `agent-state:v1` comment presence in v1
+
+- **Pros**: Prevents the cadence from being silently skipped; surfaces
+  drift via CI rather than via human review.
+- **Cons**: Premature for v1. Edge cases around draft PRs, bot PRs, old
+  PRs, fork PRs, permission-constrained events, and pre-convention
+  branches all need careful handling that real usage hasn't yet
+  clarified. Deferred to v2 once the failure modes are understood.
+
 ## Consequences
 
 ### Positive
@@ -197,6 +214,28 @@ the normal coordination path.
   `agent:awaiting-review`.
 - [x] Update tests and install/setup file lists for the new template set.
 
+### Out of scope for this ADR
+
+- Replacing or bypassing the existing `feature_request.md` issue-body
+  contract (preserved unchanged as the durable Analyst/Judge/Critic gate
+  input).
+- Demoting `.context/sessions/latest_summary.md` and date-stamped
+  archives (preserved as canonical durable retrospective surface).
+- Removing `.github/prompts/**` reusable procedural prompts.
+- Workflow validation enforcing `agent-state:v1` comment presence on
+  every in-flight issue/PR (deferred to v2 — see Option 5).
+- Auto-upsert / synthesis automation for `agent-state:v1` comments
+  (deferred to v2).
+- Larger `agent:*` label taxonomy beyond the three v1 labels.
+- Continuing #263-style repo-local write-back automation as a primary
+  design direction.
+- Bulk reconciliation of pre-existing stale `_active.md` /
+  `coordination.md` entries (left to a separate legacy cleanup PR; old
+  branches in flight may continue using the legacy fallback through
+  their existing close-out PR).
+- Archive retention / pruning policy (owned by #299).
+- Dashboard UI for agent state.
+
 ## Verification
 
 - `./scripts/verify-env.sh`
@@ -209,9 +248,33 @@ the normal coordination path.
 ## References
 
 - Issue #298 — GitHub Issues and PRs as the primary agent state machine.
-- Issue #262 — `make closeout` enforcement for the old repo-local model.
+- Issue #262 — `make closeout` enforcement for the old repo-local model;
+  retained as transitional fallback.
 - Issue #263 — repo-local closeout automation superseded by this ADR.
-- Issue #299 — session archive retention and promotion policy.
-- ADR-009 — parallel multi-agent execution.
-- ADR-018 — multi-task `_active.md` schema.
-- ADR-021 — AGENTS.md decomposition and interim close-out discipline.
+- Issue #299 — session archive retention and promotion policy (deferred
+  from #298).
+- Issue #220 — parent epic on cost mitigation (ADR-019 is downstream of
+  the same epic).
+- ADR-005 / ADR-014 — Analyst pre-flight gate; preserves
+  `feature_request.md` as the durable gate input contract.
+- ADR-007 — auto-resolve bot-authored review threads; unaffected
+  (operates on review threads, not live-state files).
+- ADR-009 — parallel multi-agent execution + dispatch reality matrix; PM
+  mediates from a single live-state surface per work item.
+- ADR-011 — plan-as-comment requirement; preserved.
+- ADR-012 — explicit workflow preconditions (branch-first rule);
+  preserved.
+- ADR-015 — postmortem feedback loop; postmortems remain durable in-tree
+  knowledge.
+- ADR-018 — multi-task `_active.md` schema; preserved as legacy
+  compatibility view (status: "Accepted (superseded in part by ADR-025)").
+- ADR-019 — per-role model tiering; preserved.
+- ADR-020 — orchestration patterns reference; P3 (Mediator) and P7
+  (Owner-Keyed Concurrent State) examples updated to cite
+  `agent-state:v1` as the current canonical example where applicable.
+- ADR-021 — AGENTS.md decomposition; preserved (per-concern files remain
+  authoritative; only the cadence body inside `process_session_state.md`
+  changes; status: "Accepted (superseded in part by ADR-025)").
+- ADR-023 — canonical/overlay role decomposition; preserved (any PM
+  `description:` change must remain byte-mirrored across overlays via
+  `scripts/checks/050-agent-mirror.sh`).
