@@ -25,10 +25,17 @@ ADR014_PATH="docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md"
 SETUP_LABELS_FILE="scripts/setup/40-ensure-labels.sh"
 SETUP_VARS_FILE="scripts/setup/50-ensure-variables.sh"
 
+manifest_label_declared() {
+  local label="$1"
+  awk -F '|' -v expected="$label" \
+    '$1 == expected { found = 1 } END { exit(found ? 0 : 1) }' \
+    "$SETUP_LABELS_FILE"
+}
+
 label_declared() {
   local label="$1"
   grep -qF "_ensure_label \"$label\"" "$SETUP_LABELS_FILE" \
-    || grep -qE "^$label\|" "$SETUP_LABELS_FILE"
+    || manifest_label_declared "$label"
 }
 
 if label_declared "outcome-validated"; then

@@ -7,6 +7,16 @@
 echo "Checking ADR-025 components (issue #298 / GitHub-first live state)..."
 
 ADR025_PATH="docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md"
+SETUP_LABELS_FILE="scripts/setup/40-ensure-labels.sh"
+
+setup_label_declared() {
+  local label="$1"
+  grep -qF "_ensure_label \"$label\"" "$SETUP_LABELS_FILE" \
+    || awk -F '|' -v expected="$label" \
+      '$1 == expected { found = 1 } END { exit(found ? 0 : 1) }' \
+      "$SETUP_LABELS_FILE"
+}
+
 if [[ -f "$ADR025_PATH" ]] \
   && grep -qE '^Accepted$' "$ADR025_PATH" 2>/dev/null; then
   pass "ADR-025 exists with Status: Accepted"
@@ -40,8 +50,7 @@ done
 # assertion, not a parser for setup.sh. setup.sh may either call
 # `_ensure_label` directly or list labels in its pipe-delimited manifest.
 for label in 'agent:claimed' 'agent:blocked' 'agent:awaiting-review'; do
-  if { grep -qF "_ensure_label \"$label\"" scripts/setup/40-ensure-labels.sh \
-    || grep -qE "^$label\|" scripts/setup/40-ensure-labels.sh; } \
+  if setup_label_declared "$label" \
     && grep -qF "| \`$label\` |" docs/guides/agent-pipeline.md; then
     pass "$label is setup-managed and documented"
   else
