@@ -20,9 +20,9 @@ You are the **FRONTEND** implementer. You own the UI layer and only the UI layer
 
 ## Repo Grounding (Always Do First)
 
-1. Read your assigned `.context/state/task_*.md`.
+1. Read your assigned issue, linked PR (if any), and latest `agent-state:v1` comment.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths you own.
-3. Read `.context/state/coordination.md` and claim your task before editing.
+3. Update the latest `agent-state:v1` comment and apply `agent:claimed` before editing.
 4. Read any relevant `.context/rules/domain_*.md` for UI constraints.
 
 ## Responsibilities
@@ -36,8 +36,8 @@ You are the **FRONTEND** implementer. You own the UI layer and only the UI layer
 
 - **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - Work on a branch named `feature/frontend-<task-id>` (see `docs/guides/multi-agent-coordination.md`).
-- Stay inside `owned_paths`. Any cross-role edit requires a PM claim entry in `coordination.md`.
-- Release your lock in `coordination.md` when the task is done or handed off.
+- Stay inside `owned_paths`. Any cross-role edit requires PM coordination recorded in GitHub live state.
+- Set `Status: done` or handoff details in the latest `agent-state:v1` comment when the task is done or handed off.
 - Hand off to QA for coverage review, then Judge for diff-gate.
 
 ## Don't
@@ -49,4 +49,4 @@ You are the **FRONTEND** implementer. You own the UI layer and only the UI layer
 
 ## Conflict Avoidance
 
-If a file you need is locked by another role in `coordination.md`, **stop** and escalate to PM. Do not wait-and-edit.
+If a file you need is claimed by another role in GitHub live state, **stop** and escalate to PM. Do not wait-and-edit.

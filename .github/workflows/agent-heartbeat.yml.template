@@ -1,8 +1,10 @@
 # TEMPLATE_PLACEHOLDER: Optional scheduled agent heartbeat workflow.
 #
-# Purpose: wake up once or twice a day to surface stale locks in
+# Purpose: wake up once or twice a day to surface stale legacy locks in
 # .context/state/coordination.md, flag tasks stuck > 24h, and post a
-# status summary to a webhook or open an issue.
+# status summary to a webhook or open an issue. ADR-025 makes GitHub
+# issues/PRs, labels, and agent-state:v1 comments the primary live state
+# for new work; prefer a GitHub-native heartbeat for new deployments.
 #
 # This file is DISABLED by default. To enable:
 #   1. Rename to `agent-heartbeat.yml`

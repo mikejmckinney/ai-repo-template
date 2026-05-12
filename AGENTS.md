@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 14 -->
+<!-- AGENTS_MD_VERSION: 15 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one.
      The canary covers AGENTS.md only — per-concern files in .context/rules/
@@ -16,7 +16,7 @@
 ## Session handshake (read-receipt)
 
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v14` (matching
+substantive reply with the exact token `Session handshake v15` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -33,6 +33,13 @@ When information conflicts, use this priority order:
 1. `./.context/**` — canonical project direction and constraints
 2. `./docs/**` — supporting detail and reference material
 3. Codebase — current implementation reality
+
+For **live agent coordination state** on GitHub-connected work, ADR-025
+adds a narrower source-of-truth split: issue body → PR body → latest
+`agent-state:v1` issue/PR comment → labels. `.context/**` remains
+canonical for durable repo rules, decisions, and process constraints;
+repo-local live-state files are transitional compatibility surfaces, not
+the primary live state machine.
 
 When you detect a conflict between two sources at adjacent priorities, do
 **not** silently pick one. Instead:

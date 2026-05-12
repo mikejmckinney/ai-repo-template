@@ -99,7 +99,7 @@ Update `.github/workflows/ci-tests.yml`:
 Update `.context/` files:
 - `00_INDEX.md` — project summary and key decisions
 - `roadmap.md` — define project phases
-- `state/task_*.md` — current work (if any)
+- `state/agent_state_comment_template.md` — copy into issues/PRs for live agent state when work begins
 
 ### 9. Configure Secrets (if needed)
 

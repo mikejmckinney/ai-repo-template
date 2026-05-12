@@ -14,15 +14,15 @@
 
 | ADR | Title | Status |
 |---|---|---|
-| [ADR-001](./adr-001-context-pack-structure.md) | Context pack structure | Accepted |
+| [ADR-001](./adr-001-context-pack-structure.md) | Context pack structure | Accepted (superseded in part by ADR-025) |
 | [ADR-002](./adr-002-agents-md-ownership.md) | AGENTS.md ownership | Accepted |
 | [ADR-003](./adr-003-claude-code-subagent-registration.md) | Claude Code subagent registration (two-registry design) | Accepted (superseded in part by ADR-023) |
-| [ADR-004](./adr-004-analyst-role-and-feedback-loop.md) | Analyst role + feedback loop | Accepted |
+| [ADR-004](./adr-004-analyst-role-and-feedback-loop.md) | Analyst role + feedback loop | Accepted (superseded in part by ADR-025) |
 | [ADR-005](./adr-005-analyst-preflight-gate.md) | Analyst Pre-Flight gate | Superseded in part by ADR-014 |
 | [ADR-006](./adr-006-auto-merge-opt-in-model.md) | Auto-merge opt-in model | Accepted |
 | [ADR-007](./adr-007-auto-resolve-review-threads.md) | Auto-resolve bot-authored review threads (opt-in label; Copilot-path gap tracked in #100) | Superseded by ADR-008 |
 | [ADR-008](./adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 runs by default; Copilot-path relay-side fallback | Accepted |
-| [ADR-009](./adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution (patterns, dispatch reality, conflict enforcement) | Accepted |
+| [ADR-009](./adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution (patterns, dispatch reality, conflict enforcement) | Accepted (superseded in part by ADR-025) |
 | [ADR-010](./adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge for parallel agent PRs | Accepted |
 | [ADR-011](./adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement + PR-must-link-issue (v1) | Accepted |
 | [ADR-012](./adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions in AGENTS.md (branch-and-commit, cadence sharpenings) | Accepted |
@@ -31,13 +31,14 @@
 | [ADR-015](./adr-015-postmortem-feedback-loop.md) | Postmortem feedback loop from downstream projects (capture + mirror prompts; three-tier promotion policy; v1 = manual) | Accepted |
 | [ADR-016](./adr-016-pre-merge-verification-gate.md) | Pre-merge verification gate (Plan-template Change-class field + `verify-pr.sh` classifier + sandbox sibling repo) | Accepted |
 | [ADR-017](./adr-017-template-repo-pre-commit-default.md) | Template repo installs pre-commit shellcheck + actionlint by default (template-only; ADR-013 unchanged for derived repos) | Accepted |
-| [ADR-018](./adr-018-multi-task-active-md-schema.md) | Multi-task schema for `.context/state/_active.md` (refines ADR-009) | Accepted |
+| [ADR-018](./adr-018-multi-task-active-md-schema.md) | Multi-task schema for `.context/state/_active.md` (refines ADR-009) | Accepted (superseded in part by ADR-025) |
 | [ADR-019](./adr-019-per-role-model-tiering.md) | Per-role model tiering across Claude Code and Copilot (Phase 2 of #220; supersedes ADR-003's `model: inherit` choice) | Accepted |
 | [ADR-020](./adr-020-orchestration-patterns-reference.md) | Orchestration patterns and anti-patterns reference file (`.context/rules/repo_orchestration_patterns.md`) | Accepted |
-| [ADR-021](./adr-021-agents-md-decomposition.md) | Decompose AGENTS.md into thin contract + per-concern `process_*.md` files (extends ADR-002) | Accepted |
+| [ADR-021](./adr-021-agents-md-decomposition.md) | Decompose AGENTS.md into thin contract + per-concern `process_*.md` files (extends ADR-002) | Accepted (superseded in part by ADR-025) |
 | [ADR-022](./adr-022-top-level-md-scope-split.md) | Top-level markdown scope split (README / AI_REPO_GUIDE / AGENTS) — also extends ADR-002 | Accepted |
 | [ADR-023](./adr-023-shared-subagent-canonical.md) | Canonical role bodies in `.agents/<role>.md`; vendor folders carry thin overlays (supersedes ADR-003 in part) | Accepted |
 | [ADR-024](./adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning — optional opt-in workflow shipped as prompt + guide; no new `synthesizer` role in v1 | Accepted |
+| [ADR-025](./adr-025-github-issues-pr-comments-as-live-state.md) | GitHub Issues, PRs, comments, and labels as live agent state | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.

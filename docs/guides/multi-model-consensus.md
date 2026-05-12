@@ -180,12 +180,12 @@ must not pass through silently.
 ## Worked example (sketch)
 
 Suppose issue #NNN proposes a change to how PM dispatches into
-implementer task files when two roles share a path glob. This is
+GitHub live-state comments and labels when two roles share a path glob. This is
 ADR-worthy and has multiple plausible designs.
 
 1. Initiating Architect reads issue #NNN, the relevant ADRs (009, 018),
-   `agent_ownership.md`, and `coordination.md`. Posts a Context Brief
-   in a comment.
+  `agent_ownership.md`, and the latest `agent-state:v1` comment/labels.
+  Posts a Context Brief in a comment.
 2. Architect dispatches three candidate planners:
    - Subagent A: Architect role on Opus.
    - Subagent B: Architect role on Sonnet.

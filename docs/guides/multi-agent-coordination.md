@@ -23,11 +23,15 @@ Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-0
 
 **Analyst vs Architect**: Analyst validates the "what" and "why" (problem definition, competitive landscape, impact scoring). Architect designs the "how" (solution plan, ADRs, file touch list). Analyst runs first; its output feeds Architect.
 
-## The Three Coordination Files
+## Coordination surfaces
 
 1. **`.context/rules/agent_ownership.md`** — canonical "who owns what" table. Static; rarely changes.
-2. **`.context/state/coordination.md`** — live claim board. Dynamic; updated every session.
-3. **`.context/state/task_*.md`** — per-task detail files created by PM.
+2. **GitHub issue body** — durable task/feature contract and gate input.
+3. **GitHub PR body** — implementation, plan, verification, and review contract.
+4. **Latest `agent-state:v1` issue/PR comment** — live status, blockers, next actions, and handoff baton.
+5. **Labels** — coarse workflow filters: `agent:claimed`, `agent:blocked`, `agent:awaiting-review`.
+
+Legacy `.context/state/_active.md`, `.context/state/coordination.md`, `task_*.md`, and `handoff_*.md` files may exist while pre-ADR-025 branches drain. Treat them as compatibility/migration evidence, not the primary live-state source for GitHub-connected work.
 
 ## How AI tools dispatch these roles
 
@@ -98,13 +102,13 @@ See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the ration
 1. **Analyst** validates the problem: needs analysis, competitive landscape, impact scoring, and (on iterations) re-validates assumptions against stakeholder feedback.
 2. **Architect** turns validated findings into a plan + ADR.
 3. **Judge** plan-gates (procedural) and integrates **Critic**'s subjective notes. Outputs APPROVE / REQUEST_CHANGES / BLOCK.
-4. **PM** splits the approved plan into role-owned `task_*.md` files and records claims in `coordination.md` using the state machine below.
+4. **PM** splits the approved plan into role-owned assignments and records the dispatch in GitHub issue/PR state using the latest `agent-state:v1` comment and labels.
 5. **Implementers** (Frontend / Backend / DevOps / Docs) work in parallel on separate branches, each inside their owned paths.
 6. **QA** verifies coverage + CI green (`peer_review` state).
 7. **Critic** reviews the diff for subjective quality (`peer_review` state).
 8. **Judge** diff-gates with Critic's notes in hand (`judge_review` state).
 9. Merge.
-10. **Close-out** (required, at session end OR task close-out, whichever comes first — see `AGENTS.md` §"Session-state cadence"): the role that led the work appends a 3–5 line entry to `.context/sessions/latest_summary.md` per the close-out format in `.context/sessions/README.md` (Shipped / Harder than expected / Generalizable lesson / Follow-up). Do NOT defer this until merge — write it at session end even if the PR isn't merged yet, and amend later if the merge changes the outcome. Active task scratchpads (`.context/state/task_<slug>.md`, `.context/state/handoff_<slug>.md`) are deleted or archived to `.context/sessions/`. PM verifies the close-out entry exists before flipping `coordination.md` from `merged → done` (see `.github/agents/pm.agent.md` §Responsibilities). Doc-sync companions per `.context/rules/process_doc_maintenance.md` should already be in the merged PR — Judge gates that at diff-time — but if any were deferred, they file as immediate follow-ups here.
+10. **Close-out**: set the latest `agent-state:v1` comment to `Status: done`. At PR merge/closeout, update `.context/sessions/latest_summary.md` with durable retrospective lessons (`What Shipped`, `Harder Than Expected`, `Generalizable Lessons`) if there is something worth preserving. Doc-sync companions per `.context/rules/process_doc_maintenance.md` should already be in the merged PR — Judge gates that at diff-time — but if any were deferred, file immediate follow-ups.
 11. **Stakeholder review** (optional): PM decides whether to capture feedback. If triggered, findings feed back to Analyst (if assumptions changed) or Architect (if design feedback only) for the next iteration.
 
 ### Optional branch: multi-model consensus planning (before Judge plan-gate)
@@ -117,7 +121,7 @@ Whether or not the consensus branch runs, the rest of the pipeline (PM dispatch,
 
 ## Task State Machine
 
-The canonical list of states, their gates, and the role that owns each transition is in `.context/state/coordination.md` → "Task States". In short: `backlog → planned → assigned → in_progress → peer_review → judge_review → approved → merged → [stakeholder_review]`, no skipping, any reviewer can kick a task back to `in_progress`. The `stakeholder_review` state is optional — PM decides whether a merged task enters the feedback loop or goes straight to done.
+ADR-025 keeps the state machine in GitHub comments/labels instead of requiring manual updates to `.context/state/coordination.md`. Use the `Status:` field in the latest `agent-state:v1` comment for fine-grained live state (`in_progress`, `awaiting_user_input`, `blocked`, `awaiting_review`, `handoff_needed`, `done`) and labels only for coarse filtering (`agent:claimed`, `agent:blocked`, `agent:awaiting-review`). Legacy `coordination.md` still documents the older expanded state table for compatibility, but it is not the primary state source.
 
 ## Branch-Per-Role Model
 
@@ -129,20 +133,20 @@ feature/backend-auth-api
 feature/docs-auth-guide
 ```
 
-This refines the "Use Git Branches" pattern in `docs/guides/agent-best-practices.md`. It greatly reduces the chance of merge conflicts — two agents editing different roles' files normally end up in disjoint directories on disjoint branches — but conflicts can still occur in shared or generated files (lockfiles, coordination board, shared rules), which is why the PM arbitration and Judge diff-gate layers below still matter.
+This refines the "Use Git Branches" pattern in `docs/guides/agent-best-practices.md`. It greatly reduces the chance of merge conflicts — two agents editing different roles' files normally end up in disjoint directories on disjoint branches — but conflicts can still occur in shared or generated files (lockfiles, live-state comments, shared rules), which is why the PM arbitration and Judge diff-gate layers below still matter.
 
 ## Conflict-Avoidance Hierarchy
 
 Conflicts are prevented by layered defenses. Earlier layers are cheaper.
 
 1. **Path ownership** (agent_ownership.md) — two roles physically cannot share a file by default.
-2. **Live locks** (coordination.md) — within a role's owned paths, claims prevent two sessions of the same role from overlapping.
+2. **GitHub live state** (`agent-state:v1` comments + labels) — within a role's owned paths, visible claims prevent two sessions of the same role from overlapping.
 3. **Branch isolation** — each role works on its own branch, so unrelated changes never touch.
 4. **PM arbitration** — when a task genuinely needs a cross-role edit, PM decides: sequence, split, or shared claim.
 5. **Judge diff-gate** — Judge blocks merges that violate ownership.
 6. **Cross-PR overlap CI** (`agent-parallelism-report.yml`) — runs on every PR, posts a "Parallelism Report" comment listing every other open PR and classifying overlap as **hard** (same file), **soft** (same owned-path glob), or **none**. Comment-only, non-blocking; surfaces conflicts at PR-open time so reviewers/PM can sequence intentionally rather than discover them at merge. See ADR-009 and "Parallel Copilot Fan-Out" below.
 7. **Auto-rebase on merge** (`auto-rebase-on-merge.yml`) — runs after every merge to `main`. Walks every other open PR that opted in via the `auto-rebase` label. Soft overlap → attempts `git rebase origin/main` and force-pushes-with-lease on success, posts a structured `auto-rebase-conflict` comment + applies `rebase-conflict` label on conflict. Hard overlap → no rebase attempted; posts an `auto-rebase-overlap` advisory comment + applies `rebase-conflict` label so the owning agent can plan resolution. Skips forks, drafts, PRs with `do-not-rebase`, and PRs with unresolved review threads. See ADR-010 and "Auto-rebase on merge" below.
-8. **Coordination board reconciliation** (`agent-coordination-sync.yml`) — comment-first reconciler for `.context/state/coordination.md`. On PR close, suggests which Active Lock blocks should move to Recent History. On PR open (non-draft, non-fork), suggests a lock block when the PR touches owned paths but no Active Lock references its branch. A scheduled daily job appends stale-lock rows (older than 7 days with no matching open PR) to a single tracking issue labeled `coordination-sync`. Never edits `coordination.md` itself in v1; opt out per-PR with the `no-coordination-check` label. See issue #115.
+8. **Legacy coordination reconciliation** (`agent-coordination-sync.yml`) — transitional compatibility helper for old `.context/state/coordination.md` drift. It should not be treated as the forward live-state mechanism after ADR-025.
 
 ## Worked Example: Two Agents in Parallel
 
@@ -165,44 +169,30 @@ PHASES:
 
 ### Step 3 — PM dispatches
 
-PM creates three task files and three locks:
+PM records three role assignments in GitHub issue/PR state. Each assignment either gets its own issue/PR or a clearly separated section in the latest `agent-state:v1` comment:
 
 ```markdown
-## Lock: login-backend
-**Role**: backend
-**Session**: feature/backend-login
-**Claimed At**: 2026-04-13T09:00:00Z
-**Expected Duration**: 4h
-**Paths**:
-- src/api/auth/**
-- migrations/005_sessions.sql
-**Depends On**: none
-**Blocks**: login-frontend, login-docs
-**State**: in_progress
+<!-- agent-state:v1 issue:101 pr:pending branch:feature/backend-login role:backend -->
 
-## Lock: login-frontend
-**Role**: frontend
-**Session**: feature/frontend-login
-**Claimed At**: 2026-04-13T09:05:00Z
-**Expected Duration**: 3h
-**Paths**:
-- src/components/LoginForm.tsx
-- src/pages/login.tsx
-**Depends On**: login-backend   (API contract must exist)
-**Blocks**: none
-**State**: planned
+**Status:** in_progress
+**Updated:** 2026-04-13T09:00:00Z
 
-## Lock: login-docs
-**Role**: docs
-**Session**: feature/docs-login
-**Claimed At**: 2026-04-13T09:10:00Z
-**Expected Duration**: 1h
-**Paths**:
-- docs/guides/auth.md
-**Depends On**: login-backend
-**Blocks**: none
-**State**: planned
+## Since last update
+- Backend owns POST /auth/login.
+
+## Blockers / awaiting
+- None
+
+## Next 1–3 actions
+1. Implement API contract under src/api/auth/**.
+2. Add migrations/005_sessions.sql with rollback.
+3. Hand off to Frontend and Docs when the contract is stable.
+
+## Handoff
+**To:** self
 ```
+
+Frontend and Docs wait on the backend contract and use `agent:blocked` / `agent:claimed` labels as appropriate. Legacy `coordination.md` locks are not required for new normal work.
 
 ### Step 4 — Parallel execution
 
@@ -218,24 +208,24 @@ Each branch goes through QA → Judge → merge independently.
 ## Rules That Prevent Disasters
 
 - **Never edit outside your owned paths without a PM claim.** This is the single most important rule.
-- **Never silently resolve** a lock conflict — escalate to PM.
+- **Never silently resolve** a claim conflict — escalate to PM.
 - **Never mark a task complete with CI red** (see the "Testing requirements" section in `AGENTS.md`).
-- **Always** release or hand-off your lock at end of session.
+- **Always** update or hand off the latest `agent-state:v1` comment at end of session.
 - **Always** add/update tests alongside behavior changes.
 
 ## Onboarding Checklist (Every Session)
 
 1. `AGENTS.md` — universal rules.
 2. `.context/00_INDEX.md` — where everything lives.
-3. `.context/state/coordination.md` — what's in flight right now.
+3. Assigned GitHub issue, linked PR (if any), latest `agent-state:v1` comment, and labels — what's in flight right now.
 4. `.context/rules/agent_ownership.md` — what you may touch.
 5. `.agents/<your-role>.md` — your specific responsibilities (canonical, platform-agnostic). Your platform's overlay (`.github/agents/<role>.agent.md` or `.claude/agents/<role>.md`) just points here.
-6. Your assigned `.context/state/task_*.md`.
+6. `.context/sessions/latest_summary.md` — durable lessons from recent work.
 7. Report readiness (see the "Report readiness (The Report Step)" subsection in `docs/guides/agent-best-practices.md`).
 
 ## Optional: Scheduled Heartbeat
 
-For teams that want an autonomous daily check on stuck work, the template ships `.github/workflows/agent-heartbeat.yml.template` — a scheduled GitHub Action (disabled by default) that surfaces stale locks in `coordination.md` and posts a summary via webhook or a GitHub issue.
+For teams that want an autonomous daily check on stuck work, the template ships `.github/workflows/agent-heartbeat.yml.template` — a scheduled GitHub Action (disabled by default) originally designed to surface stale legacy locks in `coordination.md` and post a summary via webhook or a GitHub issue. After ADR-025, prefer GitHub-native comment/label state for new heartbeat designs.
 
 **When to enable**: you have multiple agent sessions running against the repo over multiple days and want a safety net for forgotten locks or stuck tasks.
 
@@ -257,7 +247,7 @@ Two issues may be worked in parallel — by Copilot, Claude, or a human in any c
 2. Neither lists the other in `depends_on` (transitively).
 3. They do not both touch any file in the "Shared / Contested Files" table of `agent_ownership.md`.
 
-When any of those fail, the work must be **sequenced** (one PR after the other) or **PM-arbitrated** (a temporary shared-edit claim recorded in `coordination.md` per `agent_ownership.md` §"Cross-Role Edit Protocol").
+When any of those fail, the work must be **sequenced** (one PR after the other) or **PM-arbitrated** (a temporary shared-edit claim recorded in GitHub live state per `agent_ownership.md` §"Cross-Role Edit Protocol").
 
 ### How `MAX_COPILOT_CONCURRENT` interacts
 
@@ -334,7 +324,7 @@ A "nested subagent" is a dispatched subagent that itself dispatches another suba
 - **Child stays within parent's owned paths.** A nested child cannot expand the parent's blast radius.
 - **Depth ≤ 2.** A subagent dispatching a subagent is the maximum.
 
-Why conservative: nesting hides ownership escalation behind a `Task()` call. A frontend subagent that nests a docs subagent silently breaks the ownership map without appearing in `coordination.md`. The blast-radius caps keep nesting useful (PM → Architect → Judge for plan-gate review) while preventing the silent-escalation failure mode.
+Why conservative: nesting hides ownership escalation behind a `Task()` call. A frontend subagent that nests a docs subagent silently breaks the ownership map without appearing in the visible GitHub live-state trail. The blast-radius caps keep nesting useful (PM → Architect → Judge for plan-gate review) while preventing the silent-escalation failure mode.
 
 Full rationale: ADR-009 §Decision 4.
 

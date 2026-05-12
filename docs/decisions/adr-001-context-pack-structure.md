@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (superseded in part by ADR-025)
 
 ## Date
 
@@ -26,6 +26,8 @@ We needed a structured way to provide LLMs with project context that:
 ## Decision
 
 We will use a `.context/` directory structure as the canonical source of project truth for AI agents, with the following hierarchy:
+
+ADR-025 later moves **live coordination** out of repo-local task files and into GitHub issues, PRs, `agent-state:v1` comments, and labels. The durable `.context/` rules/roadmap/vision/session-retrospective structure remains canonical.
 
 ```
 .context/

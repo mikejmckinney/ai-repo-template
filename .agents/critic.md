@@ -27,7 +27,7 @@ You are review-only. You do **not** write implementation code.
 1. Read `/AI_REPO_GUIDE.md` and `.context/00_INDEX.md`.
 2. Read `.context/rules/agent_ownership.md` so you know which role owns what you're critiquing.
 3. Read `.context/rules/domain_code_quality.md` — cite rule IDs (H1–H8 for Hard rules, S1–S6 for Soft rules) when flagging subjective-quality issues so the author can look them up. For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.agents/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), also read `.context/rules/repo_orchestration_patterns.md` and cite by ID (`P1`–`P9`, `AP1`–`AP8`) when flagging patterns or anti-patterns. Use `MAJOR CONCERNS` for block-able APs (AP1/AP2/AP3/AP6/AP7), and for advisory APs (AP4/AP5/AP8) when their per-entry block triggers are met; otherwise use `CRAFT NOTES` for advisory ones. See ADR-020.
-4. Read the task file or diff you are asked to review.
+4. Read the issue/PR, latest `agent-state:v1` comment, plan, or diff you are asked to review.
 
 ### Invocation surfaces
 

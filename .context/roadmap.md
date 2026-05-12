@@ -91,5 +91,5 @@
 
 1. Mark items complete as work progresses
 2. Add new phases if scope expands
-3. Update `state/task_*.md` to reflect current work
+3. Update the latest `agent-state:v1` issue/PR comment to reflect live work
 4. Log significant decisions in `00_INDEX.md`

@@ -17,6 +17,48 @@
 # Requires `gh auth login` first; otherwise the whole step is skipped.
 log_step "Configuring pipeline labels and repo variables"
 
+_PIPELINE_LABEL_SPECS=$(
+  cat <<'LABEL_SPECS'
+auto-merge|0E8A16|Enable auto-merge workflow for this PR
+auto-merge-fast|1D76DB|Bypass auto-merge bot-review settle wait for this PR
+agent-complete|0E8A16|PR merged and linked issue closed
+no-auto-ready|BFDADC|Opt out of automatic ready-state handling
+claude-fix|FBCA04|Opt PR in to agent-fix-reviews.yml (Claude resolution)
+claude-review|1D76DB|Opt PR in to claude.yml auto-review (invokes judge subagent)
+copilot-relay|5319E7|Opt PR in to agent-relay-reviews.yml (Copilot resolution; included in subscription)
+smoke-test|E99695|Workflow-validation PR; auto-merge/relay/fix-reviews skip to avoid mid-test interference
+copilot:ready|0E8A16|Assign Copilot when budget allows
+copilot:in-progress|1D76DB|Assigned to Copilot, counts toward concurrent budget
+copilot:queued|FBCA04|Waiting for an open Copilot slot
+copilot:budget-paused|E4E669|90% daily spend threshold hit; not auto-drained; add cap-override + copilot:ready to resume
+copilot:daily-cap-hit|D93F0B|Hit daily assignment cap; manual re-queue required
+from-backlog|5319E7|Issue auto-created from .context/backlog.yaml
+needs-human|B60205|Requires human input (e.g., empty roadmap phase, CI failure)
+coordination-sync|BFDADC|Auto-filed by Coordination Sync workflow (stale lock tracking)
+no-coordination-check|EDEDED|Opt PR out of agent-coordination-sync.yml suggestions
+agent:claimed|0969DA|Agent has claimed the issue or PR; details live in the latest agent-state:v1 comment
+agent:blocked|D93F0B|Agent work is blocked; details live in the latest agent-state:v1 comment
+agent:awaiting-review|F29513|Agent work is awaiting review; details live in the latest agent-state:v1 comment
+chore:no-plan|EDEDED|Exempt this issue/PR from the plan-as-comment requirement (ADR-011)
+outcome-validated|0E8A16|Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)
+cap-override|FBCA04|Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)
+LABEL_SPECS
+)
+_PIPELINE_LABELS=$(printf '%s\n' "$_PIPELINE_LABEL_SPECS" | awk -F'|' 'NF { printf "%s%s", sep, $1; sep=", " } END { print "" }')
+_SETUP_VARIABLES_FILE="${SCRIPT_DIR:-scripts}/setup/50-ensure-variables.sh"
+_PIPELINE_VARIABLES=$(
+  awk '
+    /^[[:space:]]*_ensure_variable (MAX_COPILOT_CONCURRENT|MAX_COPILOT_DAILY|PR_RESOLVE_MAX_ROUNDS) / {
+      value = $3
+      gsub(/^"|"$/, "", value)
+      printf "%s%s=%s", sep, $2, value
+      sep = ", "
+    }
+    END { print "" }
+  ' "$_SETUP_VARIABLES_FILE"
+)
+_PIPELINE_LABEL_LIST_LIMIT="${PIPELINE_LABEL_LIST_LIMIT:-200}"
+
 # Pre-flight: detect the Codespaces auto-injected GITHUB_TOKEN case. That
 # token is scoped to `contents:write, metadata:read` by default, which means
 # every `gh label create` (needs `issues:write`) and every `gh variable set`
@@ -86,8 +128,8 @@ if [[ -n "$_pipeline_setup_skip_reason" ]]; then
   log_warn "Ad-hoc alternative (current Codespace only):"
   log_warn "  unset GITHUB_TOKEN && gh auth login -s repo,workflow && ./scripts/setup.sh"
   log_warn "Or create the following manually:"
-  log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated, cap-override"
-  log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10, PR_RESOLVE_MAX_ROUNDS=3"
+  log_warn "  Labels: $_PIPELINE_LABELS"
+  log_warn "  Variables: $_PIPELINE_VARIABLES"
 elif [[ -n "$_gh_auth_ok" ]]; then
   # Last-resort FULL_REPO fallback: if Step 0 couldn't parse a remote and
   # no env override was provided, ask gh itself. This works when gh has
@@ -120,14 +162,26 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     log_warn "  b) One-shot override:"
     log_warn "       GH_REPO=<owner>/<repo> ./scripts/setup.sh"
     log_warn "Or create the following manually in the GitHub UI:"
-    log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated, cap-override"
-    log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10, PR_RESOLVE_MAX_ROUNDS=3"
+    log_warn "  Labels: $_PIPELINE_LABELS"
+    log_warn "  Variables: $_PIPELINE_VARIABLES"
   else
     # Scope every `gh` call in this block to FULL_REPO. gh respects
     # GH_REPO as the "default repo" override, which avoids having to
     # thread `--repo "$FULL_REPO"` through each helper.
     export GH_REPO="$FULL_REPO"
     log_info "Targeting $FULL_REPO for label/variable creation"
+    _existing_pipeline_labels=$(gh label list --limit "$_PIPELINE_LABEL_LIST_LIMIT" --json name --jq '.[].name') \
+      || _existing_pipeline_labels=""
+
+    _pipeline_label_exists() {
+      local name="$1"
+      printf '%s\n' "$_existing_pipeline_labels" | grep -qxF "$name"
+    }
+
+    _pipeline_label_cache_add() {
+      local name="$1"
+      _existing_pipeline_labels=$(printf '%s\n%s\n' "$_existing_pipeline_labels" "$name")
+    }
 
     # Helper: create a label idempotently, surfacing real failures.
     # `gh label create` exits non-zero for both "already exists" and real errors;
@@ -135,9 +189,11 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     # Capture stderr so the WARN includes the actual gh/API error message.
     _ensure_label() {
       local name="$1" color="$2" desc="$3" err first_err
-      err=$(gh label create "$name" --color "$color" --description "$desc" 2>&1 >/dev/null) && return 0
-      # Failure path: confirm whether the label already exists (quiet) or report real error.
-      if gh label list --json name --jq '.[].name' 2>/dev/null | grep -qF "$name"; then
+      if _pipeline_label_exists "$name"; then
+        return 0
+      fi
+      if err=$(gh label create "$name" --color "$color" --description "$desc" 2>&1 >/dev/null); then
+        _pipeline_label_cache_add "$name"
         return 0
       fi
       first_err=$(printf '%s\n' "$err" | grep -v '^$' | head -n1)
@@ -146,34 +202,18 @@ elif [[ -n "$_gh_auth_ok" ]]; then
 
     # Create every pipeline label surfaced in docs/guides/agent-pipeline.md's
     # label table so the doc's "created automatically by setup.sh" claim
-    # is literally true. Split into two groups for readability:
-    #   - Opt-in / state labels driving the workflows.
-    #   - copilot:* state labels driving the backlog pipeline.
-    _ensure_label "auto-merge" "0E8A16" "Enable auto-merge workflow for this PR"
-    _ensure_label "auto-merge-fast" "1D76DB" "Bypass auto-merge bot-review settle wait for this PR"
-    _ensure_label "agent-complete" "0E8A16" "PR merged and linked issue closed"
-    _ensure_label "no-auto-ready" "BFDADC" "Opt out of automatic ready-state handling"
-    _ensure_label "claude-fix" "FBCA04" "Opt PR in to agent-fix-reviews.yml (Claude resolution)"
-    _ensure_label "claude-review" "1D76DB" "Opt PR in to claude.yml auto-review (invokes judge subagent)"
-    _ensure_label "copilot-relay" "5319E7" "Opt PR in to agent-relay-reviews.yml (Copilot resolution; included in subscription)"
-    _ensure_label "smoke-test" "E99695" "Workflow-validation PR; auto-merge/relay/fix-reviews skip to avoid mid-test interference"
-    _ensure_label "copilot:ready" "0E8A16" "Assign Copilot when budget allows"
-    _ensure_label "copilot:in-progress" "1D76DB" "Assigned to Copilot, counts toward concurrent budget"
-    _ensure_label "copilot:queued" "FBCA04" "Waiting for an open Copilot slot"
-    _ensure_label "copilot:budget-paused" "E4E669" "90% daily spend threshold hit; not auto-drained; add cap-override + copilot:ready to resume"
-    _ensure_label "copilot:daily-cap-hit" "D93F0B" "Hit daily assignment cap; manual re-queue required"
-    _ensure_label "from-backlog" "5319E7" "Issue auto-created from .context/backlog.yaml"
-    _ensure_label "needs-human" "B60205" "Requires human input (e.g., empty roadmap phase, CI failure)"
-    _ensure_label "coordination-sync" "BFDADC" "Auto-filed by Coordination Sync workflow (stale lock tracking)"
-    _ensure_label "no-coordination-check" "EDEDED" "Opt PR out of agent-coordination-sync.yml suggestions"
-    _ensure_label "chore:no-plan" "EDEDED" "Exempt this issue/PR from the plan-as-comment requirement (ADR-011)"
-    _ensure_label "outcome-validated" "0E8A16" "Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)"
-    _ensure_label "cap-override" "FBCA04" "Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)"
-    log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated, cap-override)"
+    # is literally true. The pipe-delimited specs above are the local
+    # manifest for name/color/description; warnings and creation calls are
+    # generated from the same rows to avoid label-list drift.
+    while IFS='|' read -r name color desc; do
+      [[ -z "$name" ]] && continue
+      _ensure_label "$name" "$color" "$desc"
+    done <<<"$_PIPELINE_LABEL_SPECS"
+    log_info "Pipeline labels ensured ($_PIPELINE_LABELS)"
   fi
 else
   log_warn "gh CLI not authenticated; skipping label/variable creation."
   log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
-  log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, chore:no-plan, outcome-validated, cap-override"
-  log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10, PR_RESOLVE_MAX_ROUNDS=3"
+  log_warn "  Labels: $_PIPELINE_LABELS"
+  log_warn "  Variables: $_PIPELINE_VARIABLES"
 fi

@@ -1,6 +1,6 @@
 # Prompts Directory
 
-Prompt files referenced from GitHub issues and PR comments.
+Prompt files referenced from GitHub issues and PR comments. These are reusable procedures, not active task-state stores. Live coordination state belongs in the assigned issue/PR's latest `agent-state:v1` comment per ADR-025.
 
 ## Before writing a new project prompt
 
