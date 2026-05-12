@@ -234,7 +234,9 @@ mid-dispatch or mid-synthesis), start
 in a background shell **before** re-triggering the run. It captures a
 rolling snapshot of `top`, `ps`, `ss -tnp`, `free -h`, and the
 `$VSCODE_TARGET_SESSION_LOG` tail every few seconds into
-`/tmp/hang-diag/run-<timestamp>/`. After the next hang, grep
+`/tmp/hang-diag-${USER}/run-<timestamp>-<pid>/` (the script's default
+`OUTDIR` is `/tmp/hang-diag-${USER}`; override with `OUTDIR=...` if you
+prefer a different location). After the next hang, grep
 `samples.log` for ESTABLISHED TCP connections to `*.githubcopilot.com`
 or `*.github.com` (a network stall inside a subagent boundary) and
 for `extensionHost` RSS growth approaching the host's memory ceiling
