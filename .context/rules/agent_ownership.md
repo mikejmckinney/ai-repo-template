@@ -7,7 +7,7 @@
 1. Before editing any file, find its path in the table below.
 2. If your role owns that path, proceed.
 3. If another role owns it, **stop** and escalate to the Project Manager (`.agents/pm.md`). PM will either sequence the work or split the task.
-4. Record your claim in `.context/state/coordination.md` before you start editing.
+4. Record your claim in the latest `agent-state:v1` issue/PR comment per ADR-025 before you start editing. On legacy branches, record it in `.context/state/coordination.md` instead.
 
 ## Ownership Table
 
@@ -45,12 +45,9 @@ this template for a new project:
 
 ### PM ownership carve-out (`.context/state/**`)
 
-PM owns `.context/state/**` for cross-role coordination, but **every agent self-writes** the parts of state files that describe their own work:
+PM owns `.context/state/**` for cross-role coordination. Per ADR-025, normal live coordination state lives in the GitHub issue/PR + the latest `agent-state:v1` comment + coarse labels, not in `.context/state/_active.md` or `coordination.md`; the agent posts and updates its own `agent-state:v1` comment per the cadence in [`process_session_state.md`](process_session_state.md), and PM is the backstop for label hygiene and cross-role conflicts.
 
-- Each agent adds and removes its own `## Task: <branch>` section in `.context/state/_active.md` per the cadence rules.
-- Each agent adds its own lock to `.context/state/coordination.md` Active Locks at task start, and moves it to Recent History at genuine task close-out.
-
-PM is the **backstop** (catches forgotten cleanup via the daily reconciliation pass at `.github/workflows/agent-coordination-sync.yml`) and the **only role that may edit another agent's section**, prune Recent History, or arbitrate cross-role conflicts. See `.context/state/README.md` §"Cadence" for the agent-self / PM-backstop split.
+Legacy compatibility: for branches that pre-date ADR-025, **every agent self-writes** the parts of state files that describe their own work — each agent adds and removes its own `## Task: <branch>` section in `.context/state/_active.md`, and adds/moves its own lock in `.context/state/coordination.md`. PM remains the **only role that may edit another agent's section**, prune Recent History, or arbitrate cross-role conflicts. See `.context/state/README.md` §"Cadence" for the agent-self / PM-backstop split.
 
 ### Colocated test files
 
@@ -77,9 +74,13 @@ These files require **PM coordination** regardless of role, because any role may
 | `.github/workflows/auto-rebase-on-merge.yml` | DevOps | Post-merge auto-rebase for soft-overlap PRs and advisory-comment for hard-overlap PRs. Reuses `classify_overlap` from `scripts/multi-dispatch-safety.sh`. Decision logic lives in `scripts/auto-rebase-overlapping.sh` (unit-tested via `scripts/tests/auto-rebase-overlapping.bats`). See ADR-010. |
 | `scripts/auto-rebase-overlapping.sh` | DevOps | Pure-bash library backing the auto-rebase workflow. Format/behavior changes must keep the unit tests green. See ADR-010. |
 
-## Lock Protocol (for `coordination.md`)
+## Live-state protocol (GitHub-first per ADR-025)
 
-A role **self-claims** by appending a lock block; only PM edits or removes other roles' locks. The canonical lock format is defined in `.context/state/coordination.md` → "Lock Template" (with background in `docs/guides/agent-best-practices.md` → "Lock Before Working"):
+For new normal-work branches, live coordination state lives in the latest `agent-state:v1` GitHub issue/PR comment plus the coarse `agent:claimed` / `agent:blocked` / `agent:awaiting-review` labels. The agent self-posts (and updates) the comment per the cadence in [`process_session_state.md`](process_session_state.md); PM remains the backstop for cross-role conflicts and label hygiene. The template lives in [`.context/state/agent_state_comment_template.md`](../state/agent_state_comment_template.md).
+
+## Lock Protocol (legacy `coordination.md`, transitional fallback)
+
+For legacy branches that pre-date ADR-025 and for the documented GitHub-API-unavailable fallback, a role **self-claims** by appending a lock block to `.context/state/coordination.md`; only PM edits or removes other roles' locks. The canonical lock format is defined in `.context/state/coordination.md` → "Lock Template" (with background in `docs/guides/agent-best-practices.md` → "Lock Before Working"):
 
 ```markdown
 ## Lock: <task-id>

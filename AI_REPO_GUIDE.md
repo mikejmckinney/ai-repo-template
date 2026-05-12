@@ -57,14 +57,12 @@ bash install.sh
 │   ├── sessions/             # Session history for handoff
 │   │   ├── README.md
 │   │   └── latest_summary.md
-│   ├── state/                # Task tracking (supports parallel work)
+│   ├── state/                # Live coordination + legacy task tracking
 │   │   ├── README.md
-│   │   ├── _active.md            # Current priority task pointer
-│   │   ├── coordination.md       # Live claim board
+│   │   ├── _active.md            # Legacy multi-task file (ADR-018; compat view per ADR-025)
+│   │   ├── coordination.md       # Legacy lock board (compat view per ADR-025)
 │   │   ├── feedback_template.md  # Stakeholder feedback template
-│   │   ├── handoff_template.md   # Cross-session/role handoff template
-│   │   ├── task_template.md      # Template for new tasks
-│   │   └── task_*.md             # Individual task files
+│   │   └── agent_state_comment_template.md  # ADR-025 GitHub issue/PR comment template
 │   └── vision/               # Design artifacts
 │       ├── README.md
 │       ├── mockups/          # UI/UX mockups
@@ -189,10 +187,10 @@ bash install.sh
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
 | `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP8`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
-| `.context/state/coordination.md` | Live claim board for parallel multi-agent work |
+| `.context/state/coordination.md` | Legacy lock board for pre-ADR-025 branches; compatibility view (per ADR-025, normal-work claims live in the latest `agent-state:v1` issue/PR comment) |
 | `.context/state/feedback_template.md` | Stakeholder feedback capture template |
-| `.context/state/handoff_template.md` | Cross-session/cross-role handoff template (used at ~30 turns or before role swap) |
-| `.context/state/task_*.md` | Current task(s) for session handoff |
+| `.context/state/agent_state_comment_template.md` | Canonical `agent-state:v1` GitHub issue/PR comment template (ADR-025) — the primary live-state surface for new normal work |
+| `.context/state/_active.md` | Legacy multi-task file (ADR-018); compatibility view for branches that pre-date ADR-025 |
 | `.context/vision/` | Mockups and architecture diagrams |
 
 ### Prompts (user-triggered, not auto-loaded)
@@ -416,10 +414,10 @@ Please:
 Use this prompt to onboard a fresh agent session onto an in-flight project:
 
 ```markdown
-1. Read .context/state/_active.md or task_*.md to understand the immediate goal.
+1. Read the assigned GitHub issue + linked PR + latest `agent-state:v1` comment + current labels for the work item to understand the immediate goal (per ADR-025). On legacy branches, also read `.context/state/_active.md`.
 2. Read .context/00_INDEX.md to locate relevant rules/constraints.
 3. Check: Run `git status` and `./scripts/verify-env.sh` to ensure stability.
-4. Skim: Review .context/sessions/latest_summary.md for recent decisions.
+4. Skim: Review .context/sessions/latest_summary.md for recent durable lessons.
 5. Report: "I have reviewed the context. Current task is [Task Name].
    Environment is [Stable/Unstable]. Ready for instructions."
 ```

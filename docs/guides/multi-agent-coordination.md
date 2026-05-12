@@ -23,11 +23,11 @@ Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-0
 
 **Analyst vs Architect**: Analyst validates the "what" and "why" (problem definition, competitive landscape, impact scoring). Architect designs the "how" (solution plan, ADRs, file touch list). Analyst runs first; its output feeds Architect.
 
-## The Three Coordination Files
+## The Three Coordination Surfaces
 
 1. **`.context/rules/agent_ownership.md`** — canonical "who owns what" table. Static; rarely changes.
-2. **`.context/state/coordination.md`** — live claim board. Dynamic; updated every session.
-3. **`.context/state/task_*.md`** — per-task detail files created by PM.
+2. **The assigned GitHub issue + linked PR + latest `agent-state:v1` comment + coarse `agent:*` labels** — primary live coordination surface for new normal work, per [ADR-025](../decisions/adr-025-github-first-agent-state.md). Template body lives at `.context/state/agent_state_comment_template.md`.
+3. **`.context/state/coordination.md` and `.context/state/_active.md`** — legacy lock board and multi-task file. Preserved as a compatibility view for branches that pre-date ADR-025 and as the documented GitHub-API-unavailable fallback.
 
 ## How AI tools dispatch these roles
 

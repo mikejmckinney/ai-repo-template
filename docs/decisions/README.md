@@ -31,13 +31,14 @@
 | [ADR-015](./adr-015-postmortem-feedback-loop.md) | Postmortem feedback loop from downstream projects (capture + mirror prompts; three-tier promotion policy; v1 = manual) | Accepted |
 | [ADR-016](./adr-016-pre-merge-verification-gate.md) | Pre-merge verification gate (Plan-template Change-class field + `verify-pr.sh` classifier + sandbox sibling repo) | Accepted |
 | [ADR-017](./adr-017-template-repo-pre-commit-default.md) | Template repo installs pre-commit shellcheck + actionlint by default (template-only; ADR-013 unchanged for derived repos) | Accepted |
-| [ADR-018](./adr-018-multi-task-active-md-schema.md) | Multi-task schema for `.context/state/_active.md` (refines ADR-009) | Accepted |
+| [ADR-018](./adr-018-multi-task-active-md-schema.md) | Multi-task schema for `.context/state/_active.md` (refines ADR-009) | Accepted (superseded in part by ADR-025) |
 | [ADR-019](./adr-019-per-role-model-tiering.md) | Per-role model tiering across Claude Code and Copilot (Phase 2 of #220; supersedes ADR-003's `model: inherit` choice) | Accepted |
 | [ADR-020](./adr-020-orchestration-patterns-reference.md) | Orchestration patterns and anti-patterns reference file (`.context/rules/repo_orchestration_patterns.md`) | Accepted |
 | [ADR-021](./adr-021-agents-md-decomposition.md) | Decompose AGENTS.md into thin contract + per-concern `process_*.md` files (extends ADR-002) | Accepted |
 | [ADR-022](./adr-022-top-level-md-scope-split.md) | Top-level markdown scope split (README / AI_REPO_GUIDE / AGENTS) — also extends ADR-002 | Accepted |
 | [ADR-023](./adr-023-shared-subagent-canonical.md) | Canonical role bodies in `.agents/<role>.md`; vendor folders carry thin overlays (supersedes ADR-003 in part) | Accepted |
 | [ADR-024](./adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning — optional opt-in workflow shipped as prompt + guide; no new `synthesizer` role in v1 | Accepted |
+| [ADR-025](./adr-025-github-first-agent-state.md) | GitHub-first agent live coordination state (supersedes #263; partially supersedes ADR-018) | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.

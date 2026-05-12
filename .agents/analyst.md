@@ -17,7 +17,7 @@ You are the **ANALYST**. You sit before Architect in the pipeline. Your job is t
 1. Read `/AI_REPO_GUIDE.md` and `.context/00_INDEX.md`.
 2. Read `.context/roadmap.md` for current phase and priorities.
 3. Read `.context/rules/agent_ownership.md` to know path boundaries.
-4. Check `.context/state/coordination.md` for in-flight work.
+4. Check the assigned GitHub issue + linked PR + latest `agent-state:v1` comment + current labels for in-flight work (per [ADR-025](../docs/decisions/adr-025-github-first-agent-state.md)). On legacy branches, also check `.context/state/coordination.md`.
 5. Check for existing stakeholder feedback in any `.context/state/feedback_*.md` files — if iterating, re-validate assumptions against that feedback. Treat `.context/state/feedback_template.md` as a template for creating new feedback files, not as stakeholder feedback itself.
 
 ## Responsibilities

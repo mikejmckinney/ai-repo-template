@@ -2,6 +2,8 @@
 
 > **Purpose**: Live claim board for parallel multi-agent work. Every role reads this before editing and appends a lock before starting. The **Project Manager** agent is the authoritative editor beyond self-claims.
 
+> **ADR-025 compatibility note**: For new normal-work branches, live coordination state lives in the latest `agent-state:v1` GitHub issue/PR comment, not in this file. This board is preserved as a compatibility view for legacy branches still using the file-based lock model and as a documented fallback when GitHub API access is unavailable. Existing locks may be stale because GitHub owns the authoritative lifecycle events. Do NOT add new locks here for new work. See [`.context/state/agent_state_comment_template.md`](agent_state_comment_template.md) and [`.context/rules/process_session_state.md`](../rules/process_session_state.md).
+
 <!-- TEMPLATE_PLACEHOLDER: In a real project, this file tracks active work. Keep the structure below but clear the example locks. -->
 
 ## How to Use

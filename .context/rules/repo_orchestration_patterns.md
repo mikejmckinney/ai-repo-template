@@ -58,10 +58,10 @@ Implementer roles (Frontend, Backend, DevOps, Docs, QA) don't coordinate directl
 
 **Where it appears**:
 - `.agents/pm.md` defines PM's mediating role (canonical)
-- `.context/rules/agent_ownership.md` → "Lock Protocol" defines the mediation contract
-- `.context/state/coordination.md` is the shared lock board PM writes to
+- `.context/rules/agent_ownership.md` → "Live-state protocol" (GitHub-first per ADR-025) and "Lock Protocol" (legacy compatibility) define the mediation contract
+- The latest `agent-state:v1` issue/PR comment is the primary live coordination surface for normal work (ADR-025); `.context/state/coordination.md` remains the legacy lock board PM writes to on pre-ADR-025 branches
 
-**What good usage looks like**: implementers escalate to PM rather than negotiating directly; locks are explicit (one task per lock block); PM holds the only legitimate edit privilege over other roles' lock blocks.
+**What good usage looks like**: implementers escalate to PM rather than negotiating directly; claims are explicit (the latest `agent-state:v1` comment names the role and current `Status:`); PM holds the only legitimate edit privilege over other roles' state on shared surfaces.
 
 ---
 
@@ -110,11 +110,12 @@ Several artifacts in the repo are templates: a fixed skeleton with slots filled 
 
 ### P7 — Owner-Keyed Concurrent State
 
-Working-memory files written by parallel agents use a multi-section schema keyed by owner identifier (branch, role, session ID) instead of single-writer rewrite. Each writer owns its own section; readers merge. This emerged from PM-003 and was ratified in ADR-018 for `.context/state/_active.md`.
+Working-memory files written by parallel agents use a multi-section schema keyed by owner identifier (branch, role, session ID) instead of single-writer rewrite. Each writer owns its own section; readers merge. This emerged from PM-003 and was ratified in ADR-018 for `.context/state/_active.md`. Per ADR-025, GitHub itself is now the primary owner-keyed surface for normal-work live coordination: each issue/PR is naturally keyed by work item, and the latest `agent-state:v1` comment is keyed by author/role; the `.context/state/_active.md` multi-section schema is preserved as a legacy-compatibility view.
 
 **Where it appears**:
-- `.context/state/coordination.md` — multi-claim lock board, keyed by lock block
-- `.context/state/_active.md` — multi-section per-agent active-task schema (post-ADR-018)
+- The assigned GitHub issue + linked PR + latest `agent-state:v1` comment + coarse labels (ADR-025) — GitHub-native owner-keyed concurrent state for normal work
+- `.context/state/coordination.md` — multi-claim lock board, keyed by lock block (legacy compatibility)
+- `.context/state/_active.md` — multi-section per-agent active-task schema, post-ADR-018 (legacy compatibility)
 - The corresponding anti-pattern (`AP6`) is what this pattern fixes
 
 **What good usage looks like**: any new shared-state file used by parallel agents starts with the multi-section schema; single-writer schemas require ADR justification; merge semantics are explicit (`coordination.md`'s "PM writes, all read-then-self-claim" is the canonical example).

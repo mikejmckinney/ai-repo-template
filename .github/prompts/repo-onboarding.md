@@ -117,8 +117,7 @@ When Phase 0 work is complete, continue to Phase 1.
 Before the deep dive in Step 1.1, do a fast sanity pass so the rest of
 Phase 1 has accurate state:
 
-1. Read `.context/state/_active.md` (note the leading underscore) or any
-   `.context/state/task_*.md` to understand the immediate goal.
+1. Read the assigned GitHub issue + linked PR + latest `agent-state:v1` comment + current labels to understand the immediate goal (per ADR-025). On legacy branches that pre-date ADR-025, also read `.context/state/_active.md` (note the leading underscore).
 2. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
 3. Run `git status` and `./scripts/verify-env.sh` to confirm the working
    tree and environment are stable.

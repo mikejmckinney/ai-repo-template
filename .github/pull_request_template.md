@@ -39,6 +39,7 @@ N/A — empty headings are noise.
 - **Original plan:** <link to plan comment, e.g. https://github.com/.../issues/42#issuecomment-NNN>
 - **Revisions:** <links to any "Plan revision" comments, or "none">
 - **Latest in 1–2 sentences:** <current outcome + approach>
+- **Live state:** <link to the latest `agent-state:v1` issue/PR comment per ADR-025; this is where current `Status:`, blockers, and next-actions live — do not duplicate them in the PR body>
 
 ## Plan revision sync (REQUIRED when applicable)
 

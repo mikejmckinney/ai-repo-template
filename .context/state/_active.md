@@ -1,4 +1,5 @@
 <!-- TEMPLATE_PLACEHOLDER: In a real project, this file tracks all currently-active tasks (one section per branch). Downstream projects should clear the example body below during onboarding (see AGENTS.md → "Template detection" and `.github/prompts/repo-onboarding.md`); ongoing maintenance is per AGENTS.md → "Session-state cadence". -->
+<!-- ADR-025 (GitHub-first agent live state): for new normal-work branches, live coordination state lives in the latest `agent-state:v1` GitHub issue/PR comment, not here. This file is preserved as a compatibility view for legacy branches that pre-date ADR-025; existing entries may be stale. Do NOT add new `## Task: <branch>` sections for new work. See `.context/state/agent_state_comment_template.md` and `.context/rules/process_session_state.md`. -->
 <!-- Schema (multi-task; see ADR-018, including Amendment #1 — additive PR field):
      File header is fixed: `# Active Tasks`.
      Below the header, each in-flight branch owns one `## Task: <branch-name>` section.

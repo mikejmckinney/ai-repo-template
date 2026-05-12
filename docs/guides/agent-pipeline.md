@@ -298,6 +298,9 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `chore:no-plan` | `#EDEDED` (gray) | Exempt issue/PR from the plan-as-comment requirement (see ADR-011) |
 | `outcome-validated` | `#0E8A16` (green) | Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014) |
 | `cap-override` | `#FBCA04` (amber) | Bypass max-round cap (`pr-resolve-all.md`) and 90% daily spend pause (`agent-assign-copilot.yml`) |
+| `agent:claimed` | `#0E8A16` (green) | An agent role has the work item in active progress (ADR-025; mirrors `Status: in_progress` on the latest `agent-state:v1` issue/PR comment) |
+| `agent:blocked` | `#D93F0B` (red-orange) | Work paused on an external dependency or decision (ADR-025; mirrors `Status: blocked`) |
+| `agent:awaiting-review` | `#FBCA04` (amber) | Work paused waiting for human/judge/critic review (ADR-025; mirrors `Status: awaiting_review`) |
 
 **Resolution-path selection:**
 - Default: no automated resolution. Add a label to opt in.

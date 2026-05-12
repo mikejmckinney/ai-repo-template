@@ -99,7 +99,8 @@ Update `.github/workflows/ci-tests.yml`:
 Update `.context/` files:
 - `00_INDEX.md` — project summary and key decisions
 - `roadmap.md` — define project phases
-- `state/task_*.md` — current work (if any)
+- `state/agent_state_comment_template.md` — GitHub issue/PR comment template for live coordination state (per ADR-025)
+- `state/_active.md` and `state/coordination.md` — legacy multi-task / lock board (compatibility view for branches that pre-date ADR-025)
 
 ### 9. Configure Secrets (if needed)
 

@@ -15,7 +15,7 @@ This template supports parallel role-specialized agents. Before editing any file
 ## Context pack usage
 
 - Start with `.context/00_INDEX.md` for project overview
-- Check `.context/state/_active.md` or `task_*.md` for current work in progress
+- Check the assigned GitHub issue body, the linked PR body, the latest `agent-state:v1` issue/PR comment, and current labels for live work-in-progress state (per ADR-025); fall back to `.context/state/_active.md` only on legacy branches that pre-date ADR-025
 - Reference `.context/rules/` for constraints that must not be violated
 - Use `.context/roadmap.md` to understand project phases
 - Reference `.context/vision/` for design mockups and architecture
@@ -24,5 +24,5 @@ This template supports parallel role-specialized agents. Before editing any file
 
 1. Read [`AI_REPO_GUIDE.md`](../../AI_REPO_GUIDE.md).
 2. Read `.context/00_INDEX.md` if it exists.
-3. Check `.context/state/_active.md` or `task_*.md` for cognitive handoff from previous sessions.
+3. Read the assigned GitHub issue body, the linked PR body, the latest `agent-state:v1` issue/PR comment, and current labels for cognitive handoff from previous sessions (per ADR-025). On legacy branches that pre-date ADR-025, also check `.context/state/_active.md`.
 4. If AI_REPO_GUIDE.md missing or stale: follow [`.github/prompts/repo-onboarding.md`](../../.github/prompts/repo-onboarding.md) to rebuild context.

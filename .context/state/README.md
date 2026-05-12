@@ -1,5 +1,54 @@
 # Task State Directory
 
+> **Purpose**: Hold the templates and legacy-compatibility files that back agent live coordination.
+>
+> **As of [ADR-025](../../docs/decisions/adr-025-github-first-agent-state.md)**, normal live coordination state for new work lives on **GitHub** \u2014 the assigned issue, the linked PR, the latest `agent-state:v1` issue/PR comment, and a small set of coarse labels. The files in this directory are the canonical comment template plus legacy-compatibility views for branches that pre-date ADR-025 and the documented GitHub-API-unavailable fallback. They are **not** the primary live-state surface for new work.
+
+## Files in this directory
+
+- **`agent_state_comment_template.md`** \u2014 canonical template body for the `agent-state:v1` GitHub issue/PR comment. Copy into the assigned issue or PR; keep one latest comment current per work item. This is the primary live-state surface under ADR-025.
+- **`_active.md`** \u2014 legacy multi-task file (ADR-018). Preserved as a compatibility view for branches that pre-date ADR-025; existing entries may be stale because GitHub owns the authoritative lifecycle events. Do **not** add new `## Task: <branch>` sections for new normal work after ADR-025.
+- **`coordination.md`** \u2014 legacy lock board. Same status as `_active.md`: preserved for compatibility and as the documented GitHub-API-unavailable fallback. Do **not** add new locks for new work.
+- **`README.md`** \u2014 this file.
+
+The previously-shipped `task_template.md` and `handoff_template.md` were removed by ADR-025: GitHub issue bodies are the durable task contract, and the `Handoff` section of the `agent-state:v1` comment is the cognitive baton.
+
+## Cadence (read this first)
+
+The `agent-state:v1` comment cadence \u2014 task start, every wait-for-input pause, durability-risk boundaries (~30 turns / runtime auto-summary / session-end mid-task), role/agent handoff, and closeout \u2014 is defined in [`process_session_state.md`](../rules/process_session_state.md). Read that file at every task boundary.
+
+For legacy branches still using `_active.md` and `coordination.md`:
+
+- **`_active.md`** — the multi-task schema from [ADR-018](../../docs/decisions/adr-018-multi-task-active-md-schema.md) (including Amendment #1) remains valid. Each in-flight legacy branch owns one `## Task: <branch-name>` section. Per-section schema: `Issue/PR | Role | PR | Blockers | Next 1–3 actions`. Cap ~20 lines per section. Add a section when you claim work on a legacy branch; rewrite **only your own section** at every task boundary; re-read the **whole file** so you see all in-flight legacy work; remove your section at genuine close-out (session-end, role handoff, or PR fully closed/merged).
+- **`coordination.md`** \u2014 self-claim by appending a lock block; PM is the only role that may edit or remove others' locks. Move your block to Recent History when the legacy task is done or handed off.
+
+PM is the backstop for both files: it catches forgotten cleanup via the daily reconciliation pass at `.github/workflows/agent-coordination-sync.yml` and is the only role that may edit another agent's section, prune Recent History, or arbitrate cross-role conflicts.
+
+## File Naming Convention
+
+```
+state/
+\u251c\u2500\u2500 README.md                           # This file
+\u251c\u2500\u2500 agent_state_comment_template.md     # ADR-025 canonical comment template
+\u251c\u2500\u2500 _active.md                          # Legacy multi-task file (ADR-018)
+\u2514\u2500\u2500 coordination.md                     # Legacy lock board
+```
+
+Permanent design records belong in `docs/decisions/<adr>.md`. Durable retrospective lessons belong in `.context/sessions/`. Postmortems belong in `docs/postmortems/`.
+
+## Workflow (GitHub-first, normal work)
+
+1. **Start**: post the `agent_state_comment_template.md` body as a comment on the assigned issue (or the linked PR if one exists). Set `Status: in_progress`, fill `Next 1\u20133 actions`, apply the `agent:claimed` label.
+2. **During work**: update the same comment at every wait-for-input pause and durability-risk boundary (see `process_session_state.md`). Refresh `Since last update`, `Blockers / awaiting`, `Next 1\u20133 actions`, and \u2014 when handing off or pausing past durability boundaries \u2014 the `Handoff` section.
+3. **Closeout**: set `Status: done` when the agent fully leaves the work. Rotate durable retrospective lessons into `.context/sessions/latest_summary.md` per `.context/sessions/README.md`. The PR may still be open awaiting human merge \u2014 that's a GitHub-owned state, not the agent's.
+
+## Workflow (legacy branches)
+
+1. Add a `## Task: <branch>` section to `_active.md` and a lock block to `coordination.md` Active Locks at task start.
+2. Update only your own section / lock as work proceeds.
+3. Remove your `## Task:` section at genuine close-out; move your lock to Recent History at PR close/merge. Use the legacy `chore(closeout): PR #NNN` follow-up PR pattern (see [`process_session_state.md`](../rules/process_session_state.md) \u00a7 \"Legacy close-out PR discipline\") if these edits need to land on `main` after the feature PR has merged.
+# Task State Directory
+
 > **Purpose**: Track active tasks and their progress. Supports both single-task and parallel-task workflows.
 
 ## Cadence (read this first)

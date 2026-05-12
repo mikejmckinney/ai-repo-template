@@ -44,7 +44,7 @@ You are **QA**. You own test code and CI health. You gate diffs on coverage befo
 ## Don't
 
 - Don't edit non-test source code to make tests pass — file a task for the owning role instead.
-- Don't disable or `.skip` tests without recording a follow-up task in `coordination.md`.
+- Don't disable or `.skip` tests without recording a follow-up task in the assigned issue + latest `agent-state:v1` comment (or, on legacy branches, `coordination.md`).
 - Don't merge. Judge does diff-gate; PM/author merges.
 
 ## Hand-off Gate (to Judge)

@@ -2,7 +2,14 @@
 
 ## Status
 
-Accepted
+Accepted (superseded in part by [ADR-025](./adr-025-github-first-agent-state.md))
+
+> **ADR-025 note**: `.context/state/_active.md` is preserved as a legacy
+> compatibility view. The multi-section schema below remains valid for
+> any branch still using the file-based live-state model, but normal
+> GitHub-connected work after ADR-025 records live state in the latest
+> `agent-state:v1` issue/PR comment instead. New normal-work `## Task:`
+> sections should not be added to `_active.md` after ADR-025.
 
 ## Date
 

@@ -22,7 +22,7 @@ You are the **FRONTEND** implementer. You own the UI layer and only the UI layer
 
 1. Read your assigned `.context/state/task_*.md`.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths you own.
-3. Read `.context/state/coordination.md` and claim your task before editing.
+3. Read the assigned GitHub issue + linked PR + latest `agent-state:v1` comment + current labels and post/update your `agent-state:v1` claim before editing (per [ADR-025](../docs/decisions/adr-025-github-first-agent-state.md)). On legacy branches, also claim in `.context/state/coordination.md`.
 4. Read any relevant `.context/rules/domain_*.md` for UI constraints.
 
 ## Responsibilities
@@ -36,8 +36,8 @@ You are the **FRONTEND** implementer. You own the UI layer and only the UI layer
 
 - **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
 - Work on a branch named `feature/frontend-<task-id>` (see `docs/guides/multi-agent-coordination.md`).
-- Stay inside `owned_paths`. Any cross-role edit requires a PM claim entry in `coordination.md`.
-- Release your lock in `coordination.md` when the task is done or handed off.
+- Stay inside `owned_paths`. Any cross-role edit requires a PM claim (recorded in the latest `agent-state:v1` comment, or in legacy `coordination.md` for pre-ADR-025 branches).
+- Update your `agent-state:v1` issue/PR comment to `Status: done` when the task is done or handed off (and release any legacy `coordination.md` lock).
 - Hand off to QA for coverage review, then Judge for diff-gate.
 
 ## Don't
@@ -49,4 +49,4 @@ You are the **FRONTEND** implementer. You own the UI layer and only the UI layer
 
 ## Conflict Avoidance
 
-If a file you need is locked by another role in `coordination.md`, **stop** and escalate to PM. Do not wait-and-edit.
+If a file you need is claimed by another role (latest `agent-state:v1` comment, `agent:claimed` label, or a lock in legacy `coordination.md`), **stop** and escalate to PM. Do not wait-and-edit.

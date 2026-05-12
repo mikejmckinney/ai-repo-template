@@ -8,8 +8,8 @@ echo "Checking ADR-018 components (issue #237 / multi-task _active.md)..."
 
 ADR018_PATH="docs/decisions/adr-018-multi-task-active-md-schema.md"
 if [[ -f "$ADR018_PATH" ]] \
-  && grep -qE '^Accepted$' "$ADR018_PATH" 2>/dev/null; then
-  pass "ADR-018 exists with Status: Accepted"
+  && grep -qE '^Accepted( \(superseded in part by .+\))?$' "$ADR018_PATH" 2>/dev/null; then
+  pass "ADR-018 exists with Status: Accepted (partial supersession allowed)"
 else
   fail "ADR-018 missing or Status line is not 'Accepted' ($ADR018_PATH)"
 fi
