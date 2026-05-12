@@ -17,6 +17,9 @@
 # Requires `gh auth login` first; otherwise the whole step is skipped.
 log_step "Configuring pipeline labels and repo variables"
 
+_PIPELINE_LABELS="auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, agent:claimed, agent:blocked, agent:awaiting-review, chore:no-plan, outcome-validated, cap-override"
+_PIPELINE_VARIABLES="MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10, PR_RESOLVE_MAX_ROUNDS=3"
+
 # Pre-flight: detect the Codespaces auto-injected GITHUB_TOKEN case. That
 # token is scoped to `contents:write, metadata:read` by default, which means
 # every `gh label create` (needs `issues:write`) and every `gh variable set`
@@ -86,8 +89,8 @@ if [[ -n "$_pipeline_setup_skip_reason" ]]; then
   log_warn "Ad-hoc alternative (current Codespace only):"
   log_warn "  unset GITHUB_TOKEN && gh auth login -s repo,workflow && ./scripts/setup.sh"
   log_warn "Or create the following manually:"
-  log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, agent:claimed, agent:blocked, agent:awaiting-review, chore:no-plan, outcome-validated, cap-override"
-  log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10, PR_RESOLVE_MAX_ROUNDS=3"
+  log_warn "  Labels: $_PIPELINE_LABELS"
+  log_warn "  Variables: $_PIPELINE_VARIABLES"
 elif [[ -n "$_gh_auth_ok" ]]; then
   # Last-resort FULL_REPO fallback: if Step 0 couldn't parse a remote and
   # no env override was provided, ask gh itself. This works when gh has
@@ -120,8 +123,8 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     log_warn "  b) One-shot override:"
     log_warn "       GH_REPO=<owner>/<repo> ./scripts/setup.sh"
     log_warn "Or create the following manually in the GitHub UI:"
-    log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, agent:claimed, agent:blocked, agent:awaiting-review, chore:no-plan, outcome-validated, cap-override"
-    log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10, PR_RESOLVE_MAX_ROUNDS=3"
+    log_warn "  Labels: $_PIPELINE_LABELS"
+    log_warn "  Variables: $_PIPELINE_VARIABLES"
   else
     # Scope every `gh` call in this block to FULL_REPO. gh respects
     # GH_REPO as the "default repo" override, which avoids having to
@@ -172,11 +175,11 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "chore:no-plan" "EDEDED" "Exempt this issue/PR from the plan-as-comment requirement (ADR-011)"
     _ensure_label "outcome-validated" "0E8A16" "Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)"
     _ensure_label "cap-override" "FBCA04" "Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)"
-    log_info "Pipeline labels ensured (auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, agent:claimed, agent:blocked, agent:awaiting-review, chore:no-plan, outcome-validated, cap-override)"
+    log_info "Pipeline labels ensured ($_PIPELINE_LABELS)"
   fi
 else
   log_warn "gh CLI not authenticated; skipping label/variable creation."
   log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
-  log_warn "  Labels: auto-merge, auto-merge-fast, agent-complete, no-auto-ready, claude-fix, claude-review, copilot-relay, smoke-test, copilot:ready, copilot:in-progress, copilot:queued, copilot:budget-paused, copilot:daily-cap-hit, from-backlog, needs-human, coordination-sync, no-coordination-check, agent:claimed, agent:blocked, agent:awaiting-review, chore:no-plan, outcome-validated, cap-override"
-  log_warn "  Variables: MAX_COPILOT_CONCURRENT=3, MAX_COPILOT_DAILY=10, PR_RESOLVE_MAX_ROUNDS=3"
+  log_warn "  Labels: $_PIPELINE_LABELS"
+  log_warn "  Variables: $_PIPELINE_VARIABLES"
 fi
