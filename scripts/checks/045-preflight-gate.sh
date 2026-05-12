@@ -25,23 +25,29 @@ ADR014_PATH="docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md"
 SETUP_LABELS_FILE="scripts/setup/40-ensure-labels.sh"
 SETUP_VARS_FILE="scripts/setup/50-ensure-variables.sh"
 
-if grep -q '_ensure_label "outcome-validated"' "$SETUP_LABELS_FILE" 2>/dev/null; then
+label_declared() {
+  local label="$1"
+  grep -qF "_ensure_label \"$label\"" "$SETUP_LABELS_FILE" 2>/dev/null \
+    || grep -qF "$label|" "$SETUP_LABELS_FILE" 2>/dev/null
+}
+
+if label_declared "outcome-validated"; then
   pass "$SETUP_LABELS_FILE declares the outcome-validated label (ADR-014)"
 else
-  fail "$SETUP_LABELS_FILE missing _ensure_label \"outcome-validated\" (ADR-014)"
+  fail "$SETUP_LABELS_FILE missing outcome-validated label declaration (ADR-014)"
 fi
 
 # Issue #220 Phase 1: new labels and variables wired up in setup modules and docs.
-if grep -q '_ensure_label "copilot:budget-paused"' "$SETUP_LABELS_FILE" 2>/dev/null; then
+if label_declared "copilot:budget-paused"; then
   pass "$SETUP_LABELS_FILE declares the copilot:budget-paused label (issue #220)"
 else
-  fail "$SETUP_LABELS_FILE missing _ensure_label \"copilot:budget-paused\" (issue #220)"
+  fail "$SETUP_LABELS_FILE missing copilot:budget-paused label declaration (issue #220)"
 fi
 
-if grep -q '_ensure_label "cap-override"' "$SETUP_LABELS_FILE" 2>/dev/null; then
+if label_declared "cap-override"; then
   pass "$SETUP_LABELS_FILE declares the cap-override label (issue #220)"
 else
-  fail "$SETUP_LABELS_FILE missing _ensure_label \"cap-override\" (issue #220)"
+  fail "$SETUP_LABELS_FILE missing cap-override label declaration (issue #220)"
 fi
 
 if grep -q '_ensure_variable PR_RESOLVE_MAX_ROUNDS' "$SETUP_VARS_FILE" 2>/dev/null; then
