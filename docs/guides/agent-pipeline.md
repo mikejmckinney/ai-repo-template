@@ -297,7 +297,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `no-coordination-check` | `#EDEDED` (gray) | Opt PR out of `agent-coordination-sync.yml` suggestions |
 | `agent:claimed` | `#0969DA` (blue) | Agent has claimed the issue or PR; details live in the latest `agent-state:v1` comment |
 | `agent:blocked` | `#D93F0B` (red-orange) | Agent work is blocked; details live in the latest `agent-state:v1` comment |
-| `agent:awaiting-review` | `#FBCA04` (amber) | Agent work is awaiting review; details live in the latest `agent-state:v1` comment |
+| `agent:awaiting-review` | `#F29513` (orange) | Agent work is awaiting review; details live in the latest `agent-state:v1` comment |
 | `chore:no-plan` | `#EDEDED` (gray) | Exempt issue/PR from the plan-as-comment requirement (see ADR-011) |
 | `outcome-validated` | `#0E8A16` (green) | Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014) |
 | `cap-override` | `#FBCA04` (amber) | Bypass max-round cap (`pr-resolve-all.md`) and 90% daily spend pause (`agent-assign-copilot.yml`) |

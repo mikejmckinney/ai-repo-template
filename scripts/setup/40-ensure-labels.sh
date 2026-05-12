@@ -171,7 +171,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     _ensure_label "no-coordination-check" "EDEDED" "Opt PR out of agent-coordination-sync.yml suggestions"
     _ensure_label "agent:claimed" "0969DA" "Agent has claimed the issue or PR; details live in the latest agent-state:v1 comment"
     _ensure_label "agent:blocked" "D93F0B" "Agent work is blocked; details live in the latest agent-state:v1 comment"
-    _ensure_label "agent:awaiting-review" "FBCA04" "Agent work is awaiting review; details live in the latest agent-state:v1 comment"
+    _ensure_label "agent:awaiting-review" "F29513" "Agent work is awaiting review; details live in the latest agent-state:v1 comment"
     _ensure_label "chore:no-plan" "EDEDED" "Exempt this issue/PR from the plan-as-comment requirement (ADR-011)"
     _ensure_label "outcome-validated" "0E8A16" "Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)"
     _ensure_label "cap-override" "FBCA04" "Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)"
