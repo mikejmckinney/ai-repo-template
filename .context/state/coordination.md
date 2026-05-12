@@ -240,6 +240,15 @@ Every `task_*.md` file lives in exactly one of these states. Transitions are one
 
 <!-- Completed/released locks go here for 1-2 days, then PM prunes. -->
 
+## Lock: pr-297-multi-model-consensus-planning
+<!-- managed-for-pr:297 -->
+**Role**: devops
+**Session**: feat/295-multi-model-consensus-planning
+**PR**: #297
+**Claimed At**: 2026-05-10T00:00:00Z
+**State**: merged
+**Result**: Merged 2026-05-12 as PR #297 (squash `5dc6f4c`). Issue #295 — opt-in multi-model consensus planning workflow: added P9 orchestration pattern in `.context/rules/repo_orchestration_patterns.md` + `.github/prompts/multi-model-consensus-plan.md` + `docs/decisions/adr-024-multi-model-consensus-planning.md` + `docs/guides/multi-model-consensus-planning.md`; 3 candidate-only subagent overlays (`.github/agents/consensus-candidate-{claude,gemini,gpt}.agent.md` + matching `.claude/agents/` + canonical `.agents/` bodies); `scripts/diag-hang-snapshot.sh` + `scripts/tests/test-diag-hang-snapshot.bats` + `scripts/checks/088-diag-hang-snapshot.sh` (29 files / +1310 / −13). 24 rounds of `pr-resolve-all.md` (cap-override label active throughout) — atypically long due to gemini producing ~70% of late-round findings on subjective-quality threads; R8 Theme C established the load-bearing principle "candidate roles never write to repo state"; R22 reverted a docs-only own-goal; R23+R24 both empty (two-empty-round termination met). Judge subagent dispatched on R24 → APPROVE on all 9 gates. Admin-merged via `gh pr merge --squash --admin` (merge-if-ready can't auto-merge Judge-only-approved PRs without a human GitHub-review object). `bash test.sh` 487 / 3 / 0 on merge commit. Follow-ups tracked: #296 synthesizer promotion, #300 disk-write investigation, plus advisory items from Judge.
+
 ## Lock: pr-248-shared-subagent-body
 <!-- managed-for-pr:292 -->
 **Role**: devops
