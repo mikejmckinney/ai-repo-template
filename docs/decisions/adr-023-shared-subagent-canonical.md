@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-026)
+Accepted (supersedes part of [ADR-003](./adr-003-claude-code-subagent-registration.md); superseded in part by [ADR-026](./adr-026-compliance-contracts.md))
 
 ## Date
 
