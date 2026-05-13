@@ -211,6 +211,17 @@ those ARE real provenance errors. The rule above only suppresses
 the "PR# doesn't match issue#, must be a typo" pattern, which has
 shown up in multi-rounds across PR #297 and earlier.
 
+### `scripts/checks/` does not have a per-module catalog
+
+`scripts/checks/README.md` documents the orchestrator contract ("How it
+works", "Naming", "Adding a new check", "History") but does NOT contain a
+per-module bullet list cataloging every `NNN-name.sh`. New check modules
+do not require a README entry. Do **not** flag the absence of a README
+catalog entry for a newly added module under `scripts/checks/`. The
+orchestrator's glob auto-discovers modules by filename prefix, and the
+continuity check hard-fails on missing prefixes, which is the actual
+discoverability mechanism. Confirmed across PR #312 R5 and R7.
+
 ## Repo-specific Judge gates
 
 This repo uses the internal Judge role (`.agents/judge.md`) as the canonical gate spec. The nine gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
