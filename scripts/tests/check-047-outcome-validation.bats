@@ -1,0 +1,124 @@
+#!/usr/bin/env bats
+#
+# scripts/tests/check-047-outcome-validation.bats
+#
+# Fixture tests for scripts/checks/047-outcome-validation-and-op.sh.
+# Triggered by gemini-code-assist on PR #312 per .gemini/styleguide.md
+# (heuristic logic in scripts/checks/*.sh requires fixture coverage).
+#
+# Test assertions use hardcoded literal strings (e.g. "User outcome",
+# "Primary validation") rather than re-extracting them from the source
+# script — that's the point of a contract test: if someone weakens the
+# regex in the check, the fixture should still encode what the contract
+# *should* require.
+
+export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-300}"
+
+setup_file() {
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  export REPO_ROOT
+  CHECK_SCRIPT="$REPO_ROOT/scripts/checks/047-outcome-validation-and-op.sh"
+  export CHECK_SCRIPT
+}
+
+@test "check 047 script exists and is non-empty" {
+  [ -s "$CHECK_SCRIPT" ]
+}
+
+# --- Positive fixture: judge.md with >= 2 "User outcome" mentions ----------
+
+@test "judge.md fixture with two User outcome mentions: grep -ic >= 2" {
+  fixture="$(mktemp)"
+  cat > "$fixture" <<'EOF'
+# Judge
+
+Plan-gate: User outcome validation must appear in the plan.
+Diff-gate: User outcome must be re-verified in the PR.
+EOF
+  count=$(grep -ic "User outcome" "$fixture")
+  rm -f "$fixture"
+  [ "$count" -ge 2 ]
+}
+
+# --- Negative fixture: judge.md with only one mention -----------------------
+
+@test "judge.md fixture with one User outcome mention: grep -ic == 1" {
+  fixture="$(mktemp)"
+  cat > "$fixture" <<'EOF'
+# Judge
+
+Only the plan-gate mentions: User outcome validation.
+The diff-gate has been weakened.
+EOF
+  count=$(grep -ic "User outcome" "$fixture")
+  rm -f "$fixture"
+  [ "$count" -eq 1 ]
+  # Sanity: this is below the threshold the check enforces.
+  [ "$count" -lt 2 ]
+}
+
+# --- Negative fixture: judge.md with zero mentions --------------------------
+
+@test "judge.md fixture with zero User outcome mentions: grep -ic == 0" {
+  fixture="$(mktemp)"
+  echo "# Judge" > "$fixture"
+  count=$(grep -ic "User outcome" "$fixture" || true)
+  rm -f "$fixture"
+  [ "$count" -eq 0 ]
+}
+
+# --- Positive: literal "Primary validation" must appear in process_work_style
+
+@test "fixture with Primary validation literal: grep -q matches" {
+  fixture="$(mktemp)"
+  echo "## Primary validation: user outcome verification" > "$fixture"
+  run grep -q "Primary validation" "$fixture"
+  rm -f "$fixture"
+  [ "$status" -eq 0 ]
+}
+
+@test "fixture without Primary validation literal: grep -q fails" {
+  fixture="$(mktemp)"
+  echo "## Generic validation only" > "$fixture"
+  run grep -q "Primary validation" "$fixture"
+  rm -f "$fixture"
+  [ "$status" -ne 0 ]
+}
+
+# --- Positive: literal em-dash heading "User outcome validation — PRIMARY" --
+
+@test "fixture with em-dash PRIMARY heading: grep -qF matches" {
+  fixture="$(mktemp)"
+  printf '## User outcome validation \xe2\x80\x94 PRIMARY\n' > "$fixture"
+  run grep -qF "User outcome validation — PRIMARY" "$fixture"
+  rm -f "$fixture"
+  [ "$status" -eq 0 ]
+}
+
+@test "fixture with hyphen instead of em-dash: grep -qF fails" {
+  fixture="$(mktemp)"
+  echo "## User outcome validation - PRIMARY" > "$fixture"
+  run grep -qF "User outcome validation — PRIMARY" "$fixture"
+  rm -f "$fixture"
+  [ "$status" -ne 0 ]
+}
+
+# --- Smoke: check 047 against the live repo passes -------------------------
+
+@test "check 047 sourced against live repo emits no fail() calls" {
+  cd "$REPO_ROOT"
+  # Source the check in a subshell with stub PASS/FAIL/WARN counters and
+  # stub pass()/fail()/warn() functions, then assert FAIL stays 0.
+  run bash -c '
+    set -e
+    PASS=0; FAIL=0; WARN=0
+    pass() { PASS=$((PASS + 1)); }
+    fail() { FAIL=$((FAIL + 1)); echo "FAIL: $*" >&2; }
+    warn() { WARN=$((WARN + 1)); }
+    # shellcheck disable=SC1090
+    source "'"$CHECK_SCRIPT"'"
+    echo "PASS=$PASS FAIL=$FAIL WARN=$WARN"
+  '
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"FAIL=0"* ]]
+}

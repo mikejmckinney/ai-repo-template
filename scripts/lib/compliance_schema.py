@@ -394,11 +394,13 @@ def validate_subagent(
             _require_non_empty_string(item["path"], f"{item_source}.path")
             _require_non_empty_string(item["anchor"], f"{item_source}.anchor")
             _require_type(item["replacement"], str, f"{item_source}.replacement")
-    if run_status in {"PARTIAL", "BLOCKED_ON_RUNTIME"}:
-        if not apply_replays:
-            raise ComplianceError(
-                f"{source}: apply_replays must be a non-empty list when run_status is {run_status!r}"
-            )
+    # NOTE: a non-SUCCESS run_status with empty apply_replays is permitted at
+    # the schema layer. The verify-or-replay contract documented in
+    # `.context/rules/process_subagent_bootstrap.md` § "Parent handling of
+    # pass-back evidence" treats this case as a process compliance failure
+    # the parent must document in `monolithic_justification` (and the judge
+    # diff-gates per `.agents/judge.md` item 19). Enforcing it here would
+    # make that documented "without-replay" path unsatisfiable.
 
 
 def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:
