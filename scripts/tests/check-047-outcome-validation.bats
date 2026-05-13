@@ -109,7 +109,7 @@ EOF
 
 _run_section_aware_check() {
   awk '
-    /diff-gate/ { seen = 1 }
+    tolower($0) ~ /^[[:space:]]*#+[[:space:]].*diff-gate/ { seen = 1 }
     seen && tolower($0) ~ /user outcome/ { count++ }
     END { print count + 0 }
   ' "$1"
@@ -140,6 +140,25 @@ EOF
 EOF
   count=$(_run_section_aware_check "$fixture")
   rm -f "$fixture"
+  [ "$count" -eq 0 ]
+}
+
+@test "section-aware: bare 'diff-gate' word in plan-gate body does not flip seen (regression for PR #312 round 5)" {
+  fixture="$(mktemp)"
+  cat > "$fixture" <<'EOF'
+## Plan-gate
+- block-able anti-patterns are tracked during diff-gate (this is body text, not a heading)
+- User outcome plan must be present
+- User outcome 15-minute test must be defined
+
+## DIFF-GATE Mode
+- ship the diff (intentionally omitting the outcome trigger here)
+EOF
+  count=$(_run_section_aware_check "$fixture")
+  rm -f "$fixture"
+  # The two plan-gate User outcome lines must NOT be counted because the
+  # DIFF-GATE heading sits below them. A broken (un-anchored) regex would
+  # flip seen=1 on the body-text 'diff-gate' and report count >= 2.
   [ "$count" -eq 0 ]
 }
 

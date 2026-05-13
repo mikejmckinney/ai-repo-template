@@ -67,13 +67,17 @@ else
   fail "$_judge missing diff-gate section with user-outcome mention (issue #311)"
 fi
 
-# 5b. Section-aware diff-gate check (PR #312 codex P2 review): the global
-#     count above can pass even if both "User outcome" mentions sit in
-#     plan-gate context, leaving the diff-gate without User-outcome
-#     evidence. Require at least one "User outcome" mention to appear at
-#     or after the first "diff-gate" line in judge.md.
+# 5b. Section-aware diff-gate check (PR #312 codex P2 + gemini medium):
+#     the global count above can pass even if both "User outcome" mentions
+#     sit in plan-gate context, leaving the diff-gate without User-outcome
+#     evidence. Anchor `seen` to the actual DIFF-GATE markdown heading
+#     (e.g. "# DIFF-GATE Mode (After Coding)" on judge.md:130) — bare
+#     lowercase "diff-gate" tokens appear in plan-gate body text earlier
+#     in the file (judge.md:49, 58-59) and would otherwise flip `seen`
+#     prematurely. Use tolower() match against /^[[:space:]]*#.*diff-gate/
+#     so the trigger is a heading line in any case.
 _judge_diff_uo=$(awk '
-  /diff-gate/ { seen = 1 }
+  tolower($0) ~ /^[[:space:]]*#+[[:space:]].*diff-gate/ { seen = 1 }
   seen && tolower($0) ~ /user outcome/ { count++ }
   END { print count + 0 }
 ' "$_judge")
