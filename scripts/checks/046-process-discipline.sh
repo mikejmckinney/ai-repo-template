@@ -58,7 +58,7 @@ except ImportError as exc:
 errors = []
 for path in [Path('.github/PLAN_TEMPLATE.md'), Path('.github/pull_request_template.md')]:
     text = path.read_text(encoding='utf-8')
-    blocks = list(re.finditer(r'```yaml\n(.*?)\n```', text, re.S))
+    blocks = list(re.finditer(r'^[ \t]*```yaml[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?:\n|$)', text, re.S | re.M))
     if not blocks:
         errors.append(f"{path}: no yaml fenced blocks found")
         continue
