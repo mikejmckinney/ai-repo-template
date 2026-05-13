@@ -30,8 +30,9 @@ contract and return `CRITIC DECISION: REQUEST_CHANGES` with `NEEDS_CONTEXT` in
 the body. Do not guess.
 
 When dispatched as a subagent, append a `subagent_compliance` YAML block after
-the exact Critic output. Use `role_contract_version: 1` from this file and the
-loaded `AGENTS_MD_VERSION` as `agents_md_version`. Do not use `overlay_version`.
+the exact Critic output. Use the `role_contract_version` value from this file's
+YAML frontmatter and the loaded `AGENTS_MD_VERSION` as `agents_md_version`. Do
+not use `overlay_version`.
 Record `receipt.mode: trailing-block` so the response still begins with
 `CRITIC DECISION:`.
 
