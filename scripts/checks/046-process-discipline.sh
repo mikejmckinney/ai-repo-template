@@ -22,25 +22,25 @@ make_private_tmp() {
 # --- Process Discipline / Compliance Contract Checks ---
 echo "Checking process discipline contracts..."
 
-if grep -q "process_subagent_bootstrap.md" AGENTS.md 2>/dev/null; then
+if grep -q "process_subagent_bootstrap.md" AGENTS.md; then
   pass "AGENTS.md links process_subagent_bootstrap.md (ADR-026)"
 else
   fail "AGENTS.md missing process_subagent_bootstrap.md link (ADR-026)"
 fi
 
-if grep -q "plan_compliance:" .github/PLAN_TEMPLATE.md 2>/dev/null; then
+if grep -q "plan_compliance:" .github/PLAN_TEMPLATE.md; then
   pass "PLAN_TEMPLATE.md includes plan_compliance block (ADR-026)"
 else
   fail "PLAN_TEMPLATE.md missing plan_compliance block (ADR-026)"
 fi
 
-if grep -q "parent_compliance:" .github/pull_request_template.md 2>/dev/null; then
+if grep -q "parent_compliance:" .github/pull_request_template.md; then
   pass "pull_request_template.md includes parent_compliance block (ADR-026)"
 else
   fail "pull_request_template.md missing parent_compliance block (ADR-026)"
 fi
 
-if grep -q "subagent_compliance" .github/copilot-instructions.md 2>/dev/null; then
+if grep -q "subagent_compliance" .github/copilot-instructions.md; then
   pass "copilot-instructions.md requires subagent_compliance on dispatch (ADR-026)"
 else
   fail "copilot-instructions.md missing subagent_compliance dispatch guidance (ADR-026)"
