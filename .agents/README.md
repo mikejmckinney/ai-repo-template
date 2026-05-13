@@ -51,6 +51,37 @@ Both Claude Code and the Copilot SDK silently ignore unknown frontmatter
 keys, so these are inert at load time. They are deliberately **not** mirrored
 into the platform overlays.
 
+## Role contract versioning (ADR-026)
+
+Canonical role files may also carry a `role_contract_version:` integer. This
+is the version a dispatched subagent reports in its `subagent_compliance`
+block, and it belongs only to `.agents/<role>.md` because the canonical file is
+where role bootstrap rules, output formats, handoff behavior, and compliance
+return contracts live.
+
+Do **not** add `overlay_version` to v1 role or platform files. Platform
+overlays under `.github/agents/` and `.claude/agents/` are registration shims;
+they own platform fields (`name`, `tools`, `model`, Copilot `handoffs`) but do
+not own the role compliance contract.
+
+Bump `role_contract_version` only when a canonical role's bootstrap, output
+format, handoff behavior, or compliance return contract changes. Ordinary
+responsibility wording, examples, or typo fixes do not require a bump unless
+they alter what a dispatched role must emit or load.
+
+Use [`_TEMPLATE.md`](_TEMPLATE.md) when adding or migrating a role contract.
+It is a documentation template, not a canonical role, and parity checks must
+not require platform overlays for it.
+
+### Exact-output roles
+
+Some roles have exact first-line output formats. Judge responses begin with
+`DECISION:`; Critic responses begin with `CRITIC DECISION:`. ADR-026 preserves
+those contracts: exact-output roles put receipt evidence in the trailing
+`subagent_compliance` block instead of prepending a receipt line. Non-exact
+roles may emit a visible `Role receipt v<N> — <role>` line, but the canonical
+audit field remains `subagent_compliance.receipt`.
+
 ### Active handoff mapping (Copilot only)
 
 The Copilot SDK custom-agent schema defines a native `handoffs:` field that

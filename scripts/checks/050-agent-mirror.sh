@@ -45,8 +45,9 @@ model_required_flags=("0" "1")
 for canonical in .agents/*.md; do
   [[ -f "$canonical" ]] || continue
   base="$(basename "$canonical" .md)"
-  # Skip the README; canonical role files are <role>.md but not README.md.
-  [[ "$base" == "README" ]] && continue
+  # Skip documentation/template files; canonical role files are <role>.md but
+  # not README.md or the ADR-026 role-contract template.
+  [[ "$base" == "README" || "$base" == "_TEMPLATE" ]] && continue
   # Skip consensus-candidate-* dry-run scaffolding (issue #295). These are
   # Copilot-only model-pinned dispatch targets used by
   # .github/prompts/multi-model-consensus-plan.md, not first-class roles.

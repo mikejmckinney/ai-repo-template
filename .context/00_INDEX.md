@@ -53,6 +53,8 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 
 **Multi-agent workflow**: See `docs/guides/multi-agent-coordination.md` for how role-specialized agents (Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge) coordinate in parallel without conflicts.
 
+**Compliance contracts**: See `docs/compliance_schemas.md` and `docs/decisions/adr-026-compliance-contracts.md` for the ADR-026 evidence blocks (`plan_compliance`, `parent_compliance`, `subagent_compliance`) and role-contract versioning model.
+
 **For full documentation on file purposes**, see `docs/guides/context-files-explained.md`.
 
 ## Project Summary

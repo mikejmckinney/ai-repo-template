@@ -175,6 +175,7 @@ bash install.sh
 | `.github/agents/docs.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Docs (frontmatter only) |
 | `.claude/agents/*.md` | Claude Code | Claude Code subagent registration overlays (frontmatter only) |
 | `.agents/<role>.md` | Multi-tool (canonical) | Platform-agnostic role definition (responsibilities, Do/Don't, output format) per ADR-023 — read by every overlay above |
+| `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template for ADR-026 `role_contract_version` and `subagent_compliance` return guidance; not a dispatchable role |
 
 ### Context Pack (project memory)
 | File | Purpose |
@@ -201,6 +202,12 @@ bash install.sh
 |------|---------|
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 | `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
+
+### Compliance Contracts
+| File | Purpose |
+|------|---------|
+| `docs/compliance_schemas.md` | ADR-026 schema reference for `plan_compliance`, `parent_compliance`, and `subagent_compliance` evidence blocks |
+| `docs/decisions/adr-026-compliance-contracts.md` | Decision record for role contract versioning, exact-output receipt coexistence, and staged compliance enforcement |
 
 ### Setup Scripts
 | File | Purpose |

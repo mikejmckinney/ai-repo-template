@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (supersedes part of [ADR-003](./adr-003-claude-code-subagent-registration.md): the "Claude shim points back to `.github/agents/<role>.agent.md`" claim is no longer correct — both vendor folders now point at `.agents/<role>.md`)
+Accepted (superseded in part by ADR-026)
 
 ## Date
 
