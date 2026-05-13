@@ -173,6 +173,30 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "subagent compliance rejects unknown nested keys" {
+  cd "$REPO_ROOT"
+  run python3 - <<'PY'
+import copy
+import sys
+import yaml
+from pathlib import Path
+
+sys.path.insert(0, "scripts/lib")
+from compliance_schema import ComplianceError, validate_loaded_block
+
+data = yaml.safe_load(Path("scripts/tests/fixtures/compliance/valid/subagent-compliance.yml").read_text())
+data = copy.deepcopy(data)
+data["subagent_compliance"]["extra"] = "not allowed"
+try:
+    validate_loaded_block(data, source="fixture")
+except ComplianceError as exc:
+    assert "unknown keys: extra" in str(exc)
+else:
+    raise AssertionError("unknown subagent_compliance key passed")
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "overlay_version README/template exclusion preserves enforced templates" {
   cd "$REPO_ROOT"
   input=$'.agents/README.md:1:overlay_version: 1\n.agents/_TEMPLATE.md:2:overlay_version: 1\n.github/PLAN_TEMPLATE.md:3:overlay_version: 1\n.agents/docs.md:4:overlay_version: 1\n.agents/qa.md:5:not_overlay_version: 1\n.agents/pm.md:6:overlay_version_extra: 1'

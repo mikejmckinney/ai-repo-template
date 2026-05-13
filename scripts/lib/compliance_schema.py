@@ -305,22 +305,20 @@ def validate_subagent(
     role_versions: Optional[Dict[str, int]] = None,
     expected_agents_md_version: Optional[int] = None,
 ) -> None:
-    _require_keys(
-        block,
-        {
-            "schema_version",
-            "role",
-            "role_contract_version",
-            "agents_md_version",
-            "receipt",
-            "context_files_used",
-            "pointers_skipped",
-            "task_scope",
-            "files_modified",
-            "gates_invoked",
-        },
-        source,
-    )
+    allowed_keys = {
+        "schema_version",
+        "role",
+        "role_contract_version",
+        "agents_md_version",
+        "receipt",
+        "context_files_used",
+        "pointers_skipped",
+        "task_scope",
+        "files_modified",
+        "gates_invoked",
+    }
+    _require_keys(block, allowed_keys, source)
+    _reject_unknown_keys(block, allowed_keys, source)
     _require_schema_version(block, source)
     _require_type(block["role"], str, f"{source}.role")
     _require_type(block["role_contract_version"], int, f"{source}.role_contract_version")
