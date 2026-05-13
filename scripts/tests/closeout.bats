@@ -23,8 +23,7 @@ _legacy_body() {
   # refusal exit codes; -e would early-abort the body. Preserve that
   # behaviour. (Cursor finding on PR #287.)
   set -uo pipefail
-  cd "$REPO_ROOT"
-  SCRIPT_DIR="$REPO_ROOT/scripts"
+  cd "$REPO_ROOT" || return
   # ===== inlined body of scripts/test-closeout.sh (issue #280) =====
 # scripts/test-closeout.sh — fixture tests for scripts/closeout.sh.
 #

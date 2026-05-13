@@ -20,7 +20,6 @@ setup_file() {
 _legacy_body() {
   set -euo pipefail
   cd "$REPO_ROOT"
-  SCRIPT_DIR="$REPO_ROOT/scripts"
   # ===== inlined body of scripts/test-phase4-fallback-parser.sh (issue #280) =====
 # Unit tests for the awk pipelines used by the `phase4-fallback` job in
 # .github/workflows/agent-relay-reviews.yml.

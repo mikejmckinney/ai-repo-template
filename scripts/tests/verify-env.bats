@@ -20,7 +20,6 @@ setup_file() {
 _legacy_body() {
   set -euo pipefail
   cd "$REPO_ROOT"
-  SCRIPT_DIR="$REPO_ROOT/scripts"
   # ===== inlined body of scripts/test-verify-env.sh (issue #280) =====
 # Unit tests for scripts/verify-env.sh (issue #229 Phase 1.5a).
 #

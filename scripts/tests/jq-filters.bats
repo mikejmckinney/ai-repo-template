@@ -20,7 +20,6 @@ setup_file() {
 _legacy_body() {
   set -euo pipefail
   cd "$REPO_ROOT"
-  SCRIPT_DIR="$REPO_ROOT/scripts"
   # ===== inlined body of scripts/test-jq-filters.sh (issue #280) =====
 # Unit tests for jq filters in scripts/lib/jq/ (issue #229 Phase 1.5b).
 #

@@ -20,7 +20,6 @@ setup_file() {
 _legacy_body() {
   set -euo pipefail
   cd "$REPO_ROOT"
-  SCRIPT_DIR="$REPO_ROOT/scripts"
   # ===== inlined body of scripts/test-multi-dispatch-safety.sh (issue #280) =====
 # Unit tests for scripts/multi-dispatch-safety.sh (issue #114).
 #

@@ -20,7 +20,6 @@ setup_file() {
 _legacy_body() {
   set -euo pipefail
   cd "$REPO_ROOT"
-  SCRIPT_DIR="$REPO_ROOT/scripts"
   # ===== inlined body of scripts/test-verify-pr.sh (issue #280) =====
 # scripts/test-verify-pr.sh — fixture tests for scripts/verify-pr.sh
 # (issue #227 — pre-merge verification gate).

@@ -31,6 +31,14 @@ setup_file() {
   [[ "$output" == *"invalid"* ]]
 }
 
+@test "explicit relative compliance fixture directory validates" {
+  cd "$REPO_ROOT"
+  run python3 scripts/validate-compliance-fixtures.py scripts/tests/fixtures/compliance
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"validated"* ]]
+  [[ "$output" != *"unrecognized arguments"* ]]
+}
+
 @test "invalid single compliance fixture fails" {
   cd "$REPO_ROOT"
   run python3 scripts/validate-compliance-fixtures.py --single scripts/tests/fixtures/compliance/invalid/overlay-version.yml

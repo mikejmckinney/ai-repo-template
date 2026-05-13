@@ -45,19 +45,37 @@ def iter_yaml_files(path: Path) -> list[Path]:
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--fixtures-dir", type=Path, default=REPO_ROOT / "scripts" / "tests" / "fixtures" / "compliance")
+    default_fixtures_dir = REPO_ROOT / "scripts" / "tests" / "fixtures" / "compliance"
+    parser.add_argument(
+        "fixtures_dir",
+        nargs="?",
+        type=Path,
+        help="fixture directory to validate; alias for --fixtures-dir",
+    )
+    parser.add_argument(
+        "--fixtures-dir",
+        dest="fixtures_dir_option",
+        type=Path,
+        default=None,
+        help="fixture directory to validate",
+    )
     parser.add_argument("--single", type=Path, help="validate one YAML file; exit non-zero on validation failure")
     args = parser.parse_args(argv[1:])
+
+    if args.fixtures_dir and args.fixtures_dir_option:
+        parser.error("use either positional fixtures_dir or --fixtures-dir, not both")
+
+    fixtures_dir = resolve_input_path(args.fixtures_dir_option or args.fixtures_dir or default_fixtures_dir)
 
     if args.single:
         validate_file(args.single)
         print(f"valid compliance fixture: {args.single}")
         return 0
 
-    valid_dir = args.fixtures_dir / "valid"
-    invalid_dir = args.fixtures_dir / "invalid"
+    valid_dir = fixtures_dir / "valid"
+    invalid_dir = fixtures_dir / "invalid"
     if not valid_dir.is_dir() or not invalid_dir.is_dir():
-        print(f"missing fixture directories under {args.fixtures_dir}", file=sys.stderr)
+        print(f"missing fixture directories under {source_name(fixtures_dir)}", file=sys.stderr)
         return 1
 
     valid_files = iter_yaml_files(valid_dir)
