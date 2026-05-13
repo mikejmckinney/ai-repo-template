@@ -422,15 +422,14 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
     extra_roles = dispatched_roles - applicable_roles
     if extra_roles:
         extra = ", ".join(sorted(extra_roles))
-        raise ComplianceError(f"{source}: roles were dispatched that were not in applicable_roles: {extra}")
+        raise ComplianceError(f"{source}: dispatched roles not declared in applicable_roles: {extra}")
     if not block["subagents_dispatched"] and not justification:
         raise ComplianceError(f"{source}: monolithic_justification required when no subagents are dispatched")
     missing_roles = applicable_roles - dispatched_roles
     if missing_roles and not justification:
         missing = ", ".join(sorted(missing_roles))
         raise ComplianceError(
-            f"{source}: monolithic_justification required when dispatched roles are missing "
-            f"from dispatch (missing: {missing})"
+            f"{source}: monolithic_justification required when applicable roles were not dispatched: {missing}"
         )
     _validate_gate(block["plan_gate"], f"{source}.plan_gate")
     _validate_gate(block["diff_gate"], f"{source}.diff_gate")
