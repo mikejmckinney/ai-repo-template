@@ -342,7 +342,7 @@ def validate_subagent(
     _validate_pointers_skipped(block["pointers_skipped"], f"{source}.pointers_skipped")
     _validate_repo_path_list(block["files_modified"], f"{source}.files_modified", repo_root)
     _require_string_list(block["gates_invoked"], f"{source}.gates_invoked")
-    _require_type(block["task_scope"], str, f"{source}.task_scope")
+    _require_non_empty_string(block["task_scope"], f"{source}.task_scope")
 
     versions = role_versions if role_versions is not None else canonical_role_versions(repo_root)
     role = block["role"]
