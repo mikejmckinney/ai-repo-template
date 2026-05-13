@@ -363,8 +363,7 @@ def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:
     loaded = block["loaded"]
     decision_affected = block["decision_affected"]
     _require_type(loaded, bool, f"{source}.loaded")
-    if decision_affected is not None:
-        _require_type(decision_affected, str, f"{source}.decision_affected")
+    _require_nullable_string(decision_affected, f"{source}.decision_affected")
 
     if path is None:
         if loaded is not False:
