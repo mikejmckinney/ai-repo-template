@@ -33,9 +33,9 @@ After pushing the PR, run this loop until it converges:
 - **Bot-authored PRs** (Renovate, Dependabot, etc.). Maintainer reviews those.
 - **PRs marked `draft`.** These are explicitly not "ready for review yet."
 
-## User outcome validation
+## User outcome validation — PRIMARY
 
-Before requesting review, the PR body must include a `## User outcome validation`
+Before requesting review, the PR body must include a `## User outcome validation — PRIMARY`
 section for non-exempt work.
 
 The section must include:
