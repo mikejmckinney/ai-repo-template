@@ -424,7 +424,7 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
     _require_type(block["subagents_dispatched"], list, f"{source}.subagents_dispatched")
     applicable_roles = set()
     for idx, role in enumerate(block["applicable_roles"]):
-        _require_type(role, str, f"{source}.applicable_roles[{idx}]")
+        _require_non_empty_string(role, f"{source}.applicable_roles[{idx}]")
         applicable_roles.add(role)
     justification = block.get("monolithic_justification")
     if justification is not None:
