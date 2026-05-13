@@ -276,20 +276,18 @@ def _validate_verification_results(items: Any, source: str) -> None:
 
 
 def validate_plan(block: dict[str, Any], source: str) -> None:
-    _require_keys(
-        block,
-        {
-            "schema_version",
-            "applicable_roles",
-            "instruction_resources",
-            "role_dispatch",
-            "plan_gate",
-            "adr_required",
-            "doc_sync",
-            "verification",
-        },
-        source,
-    )
+    allowed_keys = {
+        "schema_version",
+        "applicable_roles",
+        "instruction_resources",
+        "role_dispatch",
+        "plan_gate",
+        "adr_required",
+        "doc_sync",
+        "verification",
+    }
+    _require_keys(block, allowed_keys, source)
+    _reject_unknown_keys(block, allowed_keys, source)
     _require_schema_version(block, source)
     _require_string_list(block["applicable_roles"], f"{source}.applicable_roles")
     _validate_instruction_resources(block["instruction_resources"], f"{source}.instruction_resources")
