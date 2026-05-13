@@ -46,14 +46,17 @@ def load_yaml(path: Path) -> Any:
 def load_markdown_yaml_blocks(path: Path) -> list[tuple[int, Any]]:
     text = path.read_text(encoding="utf-8")
     blocks: list[tuple[int, Any]] = []
+    current_line = 1
+    current_offset = 0
     for match in _YAML_FENCE_RE.finditer(text):
-        line = text[: match.start()].count("\n") + 1
+        current_line += text.count("\n", current_offset, match.start())
+        current_offset = match.start()
         try:
             parsed = yaml.safe_load(match.group(1))
         except yaml.YAMLError as exc:
-            raise ComplianceError(f"{path}:{line}: YAML parse failed: {exc}") from exc
+            raise ComplianceError(f"{path}:{current_line}: YAML parse failed: {exc}") from exc
         if parsed is not None:
-            blocks.append((line, parsed))
+            blocks.append((current_line, parsed))
     return blocks
 
 
