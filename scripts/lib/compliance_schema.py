@@ -62,6 +62,7 @@ def load_markdown_yaml_blocks(path: Path) -> list[tuple[int, Any]]:
 
 def canonical_role_versions(repo_root: Path = REPO_ROOT) -> dict[str, int]:
     versions: dict[str, int] = {}
+    sources: dict[str, Path] = {}
     for path in sorted((repo_root / ".agents").glob("*.md")):
         if path.name in {"README.md", "_TEMPLATE.md"}:
             continue
@@ -74,9 +75,14 @@ def canonical_role_versions(repo_root: Path = REPO_ROOT) -> dict[str, int]:
         version = frontmatter.get("role_contract_version")
         if not isinstance(role, str) or not role:
             raise ComplianceError(f"{path}: missing frontmatter name")
+        if role in versions:
+            raise ComplianceError(f"{path}: duplicate frontmatter name {role!r}; first declared in {sources[role]}")
+        if role != path.stem:
+            raise ComplianceError(f"{path}: frontmatter name must match filename stem {path.stem!r}")
         if type(version) is not int or version < 1:
             raise ComplianceError(f"{path}: missing positive integer role_contract_version")
         versions[role] = version
+        sources[role] = path
     return versions
 
 

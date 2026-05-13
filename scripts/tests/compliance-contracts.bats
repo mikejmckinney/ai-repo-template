@@ -98,6 +98,66 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "canonical role versions require names to match filenames" {
+  cd "$REPO_ROOT"
+  run python3 - <<'PY'
+import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+sys.path.insert(0, "scripts/lib")
+from compliance_schema import ComplianceError, canonical_role_versions
+
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    agents = root / ".agents"
+    agents.mkdir()
+    (agents / "backend.md").write_text(
+        "---\nname: docs\nrole_contract_version: 1\n---\n",
+        encoding="utf-8",
+    )
+    try:
+        canonical_role_versions(root)
+    except ComplianceError as exc:
+        assert "frontmatter name must match filename stem" in str(exc)
+    else:
+        raise AssertionError("mismatched canonical role name passed")
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "canonical role versions reject duplicate role names" {
+  cd "$REPO_ROOT"
+  run python3 - <<'PY'
+import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+sys.path.insert(0, "scripts/lib")
+from compliance_schema import ComplianceError, canonical_role_versions
+
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    agents = root / ".agents"
+    agents.mkdir()
+    (agents / "docs.md").write_text(
+        "---\nname: docs\nrole_contract_version: 1\n---\n",
+        encoding="utf-8",
+    )
+    (agents / "zz-duplicate.md").write_text(
+        "---\nname: docs\nrole_contract_version: 2\n---\n",
+        encoding="utf-8",
+    )
+    try:
+        canonical_role_versions(root)
+    except ComplianceError as exc:
+        assert "duplicate frontmatter name" in str(exc)
+    else:
+        raise AssertionError("duplicate canonical role name passed")
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "repository path validation rejects symlink escapes" {
   cd "$REPO_ROOT"
   run python3 - <<'PY'
