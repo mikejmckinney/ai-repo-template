@@ -45,5 +45,6 @@ Files should be named `domain_<area>.md`:
 <!-- Add links to domain rule files as they're created -->
 
 - [`domain_code_quality.md`](./domain_code_quality.md) — built-in, language-neutral SOLID / TDD / clean-code floor. Architect-owned. Read before any non-trivial refactor; Judge blocks diff-gate on unjustified Hard-rule violations.
+- [`process_subagent_bootstrap.md`](./process_subagent_bootstrap.md) — ADR-026 parent dispatch packet, subagent startup, and `subagent_compliance` return rule.
 
 Add further rules as `domain_<area>.md` (for example `domain_auth.md`, `domain_api.md`) following the naming convention above.

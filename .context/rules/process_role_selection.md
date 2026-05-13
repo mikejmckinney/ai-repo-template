@@ -12,6 +12,20 @@ This template supports parallel role-specialized agents. Before editing any file
 4. Stay inside your owned paths. Any cross-role edit requires PM coordination. **Never guess ownership silently** — escalate to PM.
 5. Full workflow (analysis → plan-gate → dispatch → parallel implementation → QA → diff-gate → merge) is documented in `docs/guides/multi-agent-coordination.md`.
 
+## Subagent dispatch compliance
+
+When dispatching or receiving role-specialized subagent work, also follow
+[`.context/rules/process_subagent_bootstrap.md`](process_subagent_bootstrap.md).
+
+Parent/default agents must include a dispatch packet with role, goal, expected
+output, issue/PR/plan/diff context, required process files, ownership
+constraints, required gates, current `AGENTS_MD_VERSION`, and known deviations.
+Dispatched roles must report `role_contract_version` from their canonical
+`.agents/<role>.md` file in `subagent_compliance`.
+
+Do not add `overlay_version`; platform overlays are registration shims and do
+not own the role contract.
+
 ## Context pack usage
 
 - Start with `.context/00_INDEX.md` for project overview

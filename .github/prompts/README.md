@@ -25,7 +25,8 @@ lists come after, not before.
 
 - **Shared procedural prompts** (template-provided; e.g.) — `pr-resolve-all.md`,
   `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`,
-  `mirror-postmortem.md`, `pre-push-review.md`, `multi-model-consensus-plan.md`.
+  `mirror-postmortem.md`, `pre-push-review.md`, `multi-model-consensus-plan.md`,
+  `instruction-compliance-smoke.md`.
   These describe procedures, not deliverables, and don't require pre-flight.
   - **`pre-push-review.md`** — Critic + lint + `./test.sh` summary against
     the working-tree diff before push. SHOULD per AGENTS.md →
@@ -41,6 +42,9 @@ lists come after, not before.
     for trigger criteria, and
     [`docs/decisions/adr-024-multi-model-consensus-planning.md`](../../docs/decisions/adr-024-multi-model-consensus-planning.md)
     for the prompt-first / no-new-role rationale.
+  - **`instruction-compliance-smoke.md`** — no-edit smoke prompt for checking
+    startup pointer loading, role-dispatch reasoning, and ADR-026 compliance
+    evidence shape before relying on an agent run.
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.
 

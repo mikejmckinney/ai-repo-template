@@ -86,6 +86,21 @@ fi
 log_info "Template path: $DOTFILES"
 log_info "Workspace path: $WORKSPACE"
 
+# ADR-026 compliance validators parse YAML fixtures and examples. Ensure the
+# template bootstrap provisions PyYAML when this install script is the user's
+# entrypoint (Codespaces dotfiles), matching scripts/setup.sh's requirements
+# handling for non-Codespaces setup.
+if command -v python3 &>/dev/null; then
+  if python3 -m pip --version &>/dev/null; then
+    log_info "Installing Python dependencies from requirements.txt"
+    python3 -m pip install --user -r "$DOTFILES/requirements.txt" || log_warn "Failed to install Python dependencies. Not script-blocking, but onboarding is blocked."
+  else
+    log_warn "python3 is present but pip is unavailable; install PyYAML before running compliance validators."
+  fi
+else
+  log_warn "python3 not found; compliance validators require Python 3 with PyYAML."
+fi
+
 # =============================================================================
 # 1. Install VS Code Extensions
 # =============================================================================
@@ -183,13 +198,13 @@ copy_template_file() {
   local src="$DOTFILES/$rel_path"
   local dst="$WORKSPACE/$rel_path"
 
-  if [[ ! -f "$src" ]]; then
+  if [[ ! -e "$src" ]]; then
     log_warn "  ⚠ Source missing: $rel_path"
     MULTIAGENT_MISSING=$((MULTIAGENT_MISSING + 1))
     return
   fi
 
-  if [[ -f "$dst" ]]; then
+  if [[ -e "$dst" ]]; then
     log_info "  = Exists: $rel_path (skipping)"
     MULTIAGENT_SKIPPED=$((MULTIAGENT_SKIPPED + 1))
     return
@@ -201,12 +216,20 @@ copy_template_file() {
     mkdir -p "$dst_dir"
   fi
 
-  if cp "$src" "$dst"; then
-    log_info "  ✓ Copied: $rel_path"
-    MULTIAGENT_COPIED=$((MULTIAGENT_COPIED + 1))
+  if [[ -d "$src" ]]; then
+    cp -R "$src" "$dst" || {
+      log_warn "  ⚠ Failed to copy directory: $rel_path"
+      return
+    }
   else
-    log_warn "  ⚠ Failed to copy: $rel_path"
+    cp "$src" "$dst" || {
+      log_warn "  ⚠ Failed to copy file: $rel_path"
+      return
+    }
   fi
+
+  log_info "  ✓ Copied: $rel_path"
+  MULTIAGENT_COPIED=$((MULTIAGENT_COPIED + 1))
 }
 
 log_info "Installing multi-agent kit (role files + coordination)..."
@@ -216,6 +239,7 @@ MULTIAGENT_FILES=(
   "AGENT.md"
   ".github/PLAN_TEMPLATE.md"
   ".agents/README.md"
+  ".agents/_TEMPLATE.md"
   ".agents/architect.md"
   ".agents/judge.md"
   ".agents/critic.md"
@@ -256,6 +280,7 @@ MULTIAGENT_FILES=(
   ".context/rules/process_gates.md"
   ".context/rules/process_session_state.md"
   ".context/rules/process_pr_completion.md"
+  ".context/rules/process_subagent_bootstrap.md"
   ".context/rules/process_model_tier.md"
   ".context/rules/process_doc_maintenance.md"
   ".context/rules/repo_orchestration_patterns.md"
@@ -265,11 +290,17 @@ MULTIAGENT_FILES=(
   "docs/guides/multi-agent-coordination.md"
   "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
+  "docs/compliance_schemas.md"
+  ".github/prompts/instruction-compliance-smoke.md"
   ".github/prompts/multi-model-consensus-plan.md"
   ".github/agents/consensus-candidate-claude.agent.md"
   ".github/agents/consensus-candidate-gpt.agent.md"
   ".github/agents/consensus-candidate-gemini.agent.md"
   "scripts/diag-hang-snapshot.sh"
+  "scripts/lib/compliance_schema.py"
+  "scripts/validate-compliance-examples.py"
+  "scripts/validate-compliance-fixtures.py"
+  "scripts/tests/fixtures/compliance"
   "docs/research/.gitkeep"
 )
 

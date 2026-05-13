@@ -67,6 +67,12 @@ issue template, which captures the *what* and *why*. v1 has no
 approval gate: the plan is reviewed at PR time, but writing it forces
 implementation thinking before code (ADR-011).
 
+ADR-026 extends the plan with a `plan_compliance` block. For non-exempt
+work, include the parent startup evidence, applicable roles, process resources
+that affected decisions, planned subagents, gate state, ADR/doc-sync state,
+and planned verification. The block is review evidence first; it must not
+claim that CI can prove a model runtime actually read or dispatched anything.
+
 Exemptions: issues labeled `chore:no-plan`, automation-bot authors
 (Renovate, Dependabot), and revert PRs of a prior PR. The companion
 rule — every PR body must link the issue or a parent PR (`Closes #NN`,
@@ -83,6 +89,11 @@ Copilot creates a `copilot/issue-{number}` branch, implements the feature,
 and opens a draft PR. After the Copilot run finishes, the
 `agent-auto-ready.yml` workflow transitions the PR from draft to ready
 for review automatically (Copilot itself leaves PRs as drafts).
+
+For non-exempt PRs, fill the PR template's `parent_compliance` block before
+requesting review. If role subagents were used, copy their parsed
+`subagent_compliance` objects into `subagents_dispatched`; raw pasted YAML may
+be retained for provenance but is not the canonical validator input.
 
 ### Step 3: Review bots fire (automatic)
 With workflow approval disabled (see Setup below), these fire immediately on PR open / `ready_for_review`:

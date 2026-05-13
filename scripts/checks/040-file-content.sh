@@ -44,6 +44,7 @@ CORE_RULE_FILES=(
   "process_template_detection.md" "process_critical_thinking.md" "process_work_style.md"
   "process_clarification.md" "process_role_selection.md" "process_gates.md"
   "process_session_state.md" "process_pr_completion.md" "process_model_tier.md"
+  "process_subagent_bootstrap.md"
   "process_doc_maintenance.md" "domain_code_quality.md" "repo_orchestration_patterns.md"
   "agent_ownership.md"
 )

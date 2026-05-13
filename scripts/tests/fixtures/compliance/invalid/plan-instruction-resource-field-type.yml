@@ -1,0 +1,29 @@
+plan_compliance:
+  schema_version: 1
+  applicable_roles:
+    - docs
+  instruction_resources:
+    - resource: 123
+      why_applicable: Canonical startup and truth-hierarchy contract.
+      evidence: AGENTS_MD_VERSION 16; Session handshake v16 emitted.
+      decision_affected: Invalid fixture uses a non-string instruction resource.
+  role_dispatch:
+    decision: staged-dispatch
+    planned_subagents:
+      - docs
+    monolithic_justification: null
+  plan_gate:
+    status: linked
+    link: https://github.com/mikejmckinney/ai-repo-template/issues/307#issuecomment-4436040309
+    exemption_reason: null
+  adr_required:
+    required: true
+    link: docs/decisions/adr-026-compliance-contracts.md
+    supersession_notes: []
+  doc_sync:
+    triggered: true
+    companions:
+      - AI_REPO_GUIDE.md
+    no_change_justifications: []
+  verification:
+    - python3 scripts/validate-compliance-fixtures.py

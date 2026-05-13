@@ -4,7 +4,7 @@
 
 ## The Roles
 
-Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-023). Each platform has a thin registration overlay (`.github/agents/<role>.agent.md` for Copilot SDK, `.claude/agents/<role>.md` for Claude Code) that carries only frontmatter and points back to the canonical body.
+Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-023). Each platform has a thin registration overlay (`.github/agents/<role>.agent.md` for Copilot SDK, `.claude/agents/<role>.md` for Claude Code) that carries only frontmatter and points back to the canonical body. ADR-026 adds `role_contract_version` to each canonical role; dispatched subagents report that version in a trailing `subagent_compliance` block.
 
 | Role       | Canonical file          | Writes code? |
 |------------|-------------------------|--------------|
@@ -35,11 +35,18 @@ Legacy `.context/state/_active.md`, `.context/state/coordination.md`, `task_*.md
 
 ## How AI tools dispatch these roles
 
-Both GitHub Copilot and Claude Code auto-delegate to a role when a user's request matches that role's frontmatter `description:` field, via two parallel registration overlays that point back to a single platform-agnostic canonical body:
+AI tool support differs by host. Claude Code can auto-delegate to native
+subagents based on frontmatter `description:` and can explicitly dispatch via
+`Task(subagent_type: '<role>', ...)`. GitHub Copilot SDK overlays expose the
+same role descriptions, but VS Code Copilot Chat currently does not
+automatically route default-agent messages or honor overlay `handoffs:` after a
+`runSubagent` return; the default agent must proactively call `runSubagent` and
+manually chain downstream handoffs. Both platforms still point back to a single
+platform-agnostic canonical body:
 
 | Loader | Overlay file | Schema |
 |---|---|---|
-| Copilot SDK custom-agent runtime | `.github/agents/<role>.agent.md` | Copilot schema (`read`, `write`, `execute`, `search`, `fetch`, `githubRepo`, `usages`, `todo`; `name`, `description`, `tools`, optional `target`/`user-invocable`/`disable-model-invocation`). Auto-dispatch matches the user's intent against each agent's `description:`. |
+| Copilot SDK custom-agent runtime | `.github/agents/<role>.agent.md` | Copilot schema (`read`, `write`, `execute`, `search`, `fetch`, `githubRepo`, `usages`, `todo`; `name`, `description`, `tools`, optional `target`/`user-invocable`/`disable-model-invocation`). In VS Code Copilot Chat, the default agent must call `runSubagent`; overlay `handoffs:` are retained for future hosts but are inert in this surface. |
 | Claude Code native subagents     | `.claude/agents/<role>.md`       | Claude Code schema (`Read`, `Write`, `Edit`, `Grep`, `Glob`, `Bash`, `Task`, `WebFetch`; kebab-case `name`, `description`, `tools`, optional `model`). Auto-dispatch matches on `description:`; explicit dispatch via `Task(subagent_type: '<role>', ...)`. |
 
 Both overlays describe the **same 10 roles** and both delegate to the canonical role body at `.agents/<role>.md` (ADR-023). The overlays carry only the platform-specific frontmatter (tool vocabulary, model strings) and a thin pointer body — so the detailed role definition lives in **one** place, free of any vendor-specific frontmatter.
@@ -50,7 +57,18 @@ Both overlays describe the **same 10 roles** and both delegate to the canonical 
 
 **Adding a new platform** means adding one overlay file per role pointing at the same canonical, plus one row to the parallel arrays in `scripts/checks/050-agent-mirror.sh`.
 
-**A subagent can hand off to the next role** by calling `Task` itself (e.g. an architect subagent invokes `Task(subagent_type='judge', ...)` once its plan is ready). So the pipeline chains without the user having to switch modes manually — though the main orchestrator reading this guide and dispatching the first role is still how most sessions begin.
+**Subagent handoff mechanics are host-specific.** Claude Code subagents can hand
+off by calling `Task` themselves (e.g. an architect subagent invokes
+`Task(subagent_type='judge', ...)` once its plan is ready). In VS Code Copilot
+Chat, dispatched subagents do not receive a dispatch tool, so the default agent
+must read the completed role's `handoff_targets:` and call `runSubagent` for
+the next role itself.
+
+ADR-026 dispatch packets must include the role, goal, expected output,
+issue/PR/plan/diff link, process files to load, ownership constraints, gate
+state, current `AGENTS_MD_VERSION`, and allowed deviations. Every dispatched
+role returns `subagent_compliance`; parent agents copy parsed subagent objects
+into PR-body `parent_compliance.subagents_dispatched`.
 
 See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the rationale behind the two-registry design.
 

@@ -1,6 +1,7 @@
 ---
 name: docs
 description: Use to update README, AI_REPO_GUIDE, CLAUDE.md, or docs/. Runs in parallel with implementers when visible behavior changes.
+role_contract_version: 1
 owned_paths:
   - 'README.md'
   - 'AI_REPO_GUIDE.md'
@@ -21,6 +22,25 @@ handoff_targets:
 # Docs Agent
 
 You are **DOCS**. You own the human-facing and agent-facing reference material. You keep them accurate and in sync with the code.
+
+## Bootstrap and compliance return (ADR-026)
+
+Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
+`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
+`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+packet, and the issue/PR/plan/diff context supplied by the parent.
+
+If the dispatch packet omits the role, goal, expected output, required context,
+or relevant issue/PR/plan/diff link, do not guess. Non-exact-output roles may
+return `NEEDS_CONTEXT`; exact-output roles preserve their required first line
+and use `REQUEST_CHANGES` with `NEEDS_CONTEXT` in the body.
+
+When dispatched as a subagent, append a `subagent_compliance` YAML block after
+the role-specific output. Use the `role_contract_version` value from this
+file's YAML frontmatter and the loaded `AGENTS_MD_VERSION` as
+`agents_md_version`. Do not use `overlay_version`. You may begin dispatched
+responses with `Role receipt v<role_contract_version> — docs` and record
+`receipt.mode: visible-line`.
 
 ## Repo Grounding (Always Do First)
 

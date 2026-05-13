@@ -18,6 +18,7 @@ REQUIRED_FILES=(
   ".gemini/config.yaml"
   ".github/copilot-instructions.md"
   ".agents/README.md"
+  ".agents/_TEMPLATE.md"
   ".agents/judge.md"
   ".agents/critic.md"
   ".agents/architect.md"
@@ -59,9 +60,13 @@ REQUIRED_FILES=(
   ".github/prompts/mirror-postmortem.md"
   ".github/prompts/pre-push-review.md"
   ".github/prompts/multi-model-consensus-plan.md"
+  ".github/prompts/instruction-compliance-smoke.md"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
   "scripts/diag-hang-snapshot.sh"
+  "scripts/lib/compliance_schema.py"
+  "scripts/validate-compliance-examples.py"
+  "scripts/validate-compliance-fixtures.py"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do

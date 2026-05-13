@@ -75,6 +75,53 @@ list by more than ~30%, post a revised plan before pushing. -->
      this field is the implementer's signal to a human or PM about whether
      to upshift before dispatching. -->
 
+### Compliance evidence (ADR-026)
+
+```yaml
+plan_compliance:
+     schema_version: 1
+     applicable_roles:
+          - <role>
+     instruction_resources:
+          -
+               resource: AGENTS.md
+               why_applicable: Canonical startup, truth hierarchy, and process-rule index.
+               evidence: AGENTS_MD_VERSION <N>; Session handshake v<N> emitted.
+               decision_affected: <specific plan choice affected by this resource>
+          -
+               resource: .context/rules/<rule>.md
+               why_applicable: <why this rule applies to the work>
+               evidence: <what was loaded or checked>
+               decision_affected: <specific plan choice affected by this resource>
+     role_dispatch:
+          decision: "<staged-dispatch | monolithic | exempt>"
+          planned_subagents:
+               - <role>
+          monolithic_justification: <null or one-sentence justification>
+     plan_gate:
+          status: "<pending | linked | exempt>"
+          link: <URL or null>
+          exemption_reason: <null or reason>
+     adr_required:
+          required: "<true | false>"
+          link: <path/URL or null>
+          supersession_notes:
+               - <ADR status update or N/A>
+     doc_sync:
+          triggered: "<true | false>"
+          companions:
+               - <path or N/A>
+          no_change_justifications:
+               - "<path>: <reason>"
+     verification:
+          - <exact command or manual check>
+```
+
+<!-- Keep this block specific. Generic evidence such as "read all docs" is
+           not useful; name the resource, why it applied, and what decision it
+           changed. Use `role_contract_version` only in subagent returns, never
+           `overlay_version`. See `docs/compliance_schemas.md`. -->
+
 ### Verification
 
 **Change class**: <code-or-docs | pull_request-triggered workflow | default-branch-only workflow | mixed>

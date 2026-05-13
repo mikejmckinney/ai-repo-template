@@ -15,6 +15,7 @@ see `AGENTS.md` §"Truth hierarchy" for the canonical order (summary:
 ```
 docs/
 ├── README.md           # This file
+├── compliance_schemas.md # ADR-026 compliance evidence schemas
 ├── reference/          # Historical specs, research, external references
 │   └── *.md            # Specification documents
 ├── research/           # Analyst output (analysis artifacts)
@@ -92,6 +93,7 @@ What are the positive and negative consequences?
 - [Agent Best Practices](guides/agent-best-practices.md) - Token limits, state conflicts, secrets, session handoff
 
 ### Decisions (ADRs)
+- [Compliance Schemas](compliance_schemas.md) - ADR-026 `plan_compliance`, `parent_compliance`, and `subagent_compliance` schemas
 - [ADR-001: Context Pack Structure](decisions/adr-001-context-pack-structure.md) - Why we use `.context/` for LLM memory
 - [ADR-004: Analyst Role and Feedback Loop](decisions/adr-004-analyst-role-and-feedback-loop.md) - Adding pre-Architect validation and iterative feedback
 - [ADR Template](decisions/adr-template.md) - Template for new architecture decisions

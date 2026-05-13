@@ -20,7 +20,6 @@ setup_file() {
 _legacy_body() {
   set -euo pipefail
   cd "$REPO_ROOT"
-  SCRIPT_DIR="$REPO_ROOT/scripts"
   # ===== inlined body of scripts/test-auto-rebase-overlapping.sh (issue #280) =====
 # Unit tests for scripts/auto-rebase-overlapping.sh (issue #116).
 #

@@ -53,6 +53,7 @@ bash install.sh
 │   │   ├── agent_ownership.md
 │   │   ├── domain_code_quality.md
 │   │   ├── process_doc_maintenance.md
+│   │   ├── process_subagent_bootstrap.md
 │   │   └── repo_orchestration_patterns.md
 │   ├── sessions/             # Durable retrospective lessons
 │   │   ├── README.md
@@ -98,6 +99,8 @@ bash install.sh
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── verify-pr.sh          # Plan-template Change-class classifier (issue #227, ADR-016)
+│   ├── validate-compliance-examples.py # ADR-026 docs YAML example validator
+│   ├── validate-compliance-fixtures.py # ADR-026 fixture validator
 │   ├── db-reset.sh           # Optional DB reset stub
 │   ├── auto-rebase-overlapping.sh    # Auto-rebase library (ADR-010)
 │   ├── multi-dispatch-safety.sh      # Parallel-dispatch safety classifier
@@ -131,6 +134,7 @@ bash install.sh
     │   ├── README.md             # Prompt catalog
     │   ├── repo-onboarding.md    # Repo onboarding workflow prompt
     │   ├── pr-resolve-all.md     # PR-review resolution procedure
+    │   ├── instruction-compliance-smoke.md # No-edit ADR-026 compliance smoke prompt
     │   └── expand-backlog-entry.md # Backlog → issue expansion prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
@@ -175,6 +179,7 @@ bash install.sh
 | `.github/agents/docs.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Docs (frontmatter only) |
 | `.claude/agents/*.md` | Claude Code | Claude Code subagent registration overlays (frontmatter only) |
 | `.agents/<role>.md` | Multi-tool (canonical) | Platform-agnostic role definition (responsibilities, Do/Don't, output format) per ADR-023 — read by every overlay above |
+| `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template for ADR-026 `role_contract_version` and `subagent_compliance` return guidance; not a dispatchable role |
 
 ### Context Pack (project memory)
 | File | Purpose |
@@ -187,6 +192,7 @@ bash install.sh
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
+| `.context/rules/process_subagent_bootstrap.md` | ADR-026 parent dispatch packet, subagent startup order, and `subagent_compliance` return contract |
 | `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP8`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
 | Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025) |
 | `.context/state/agent_state_comment_template.md` | Copy/paste template for live coordination comments |
@@ -201,6 +207,14 @@ bash install.sh
 |------|---------|
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 | `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
+| `.github/prompts/instruction-compliance-smoke.md` | No-edit smoke prompt for startup pointer loading, role-dispatch reasoning, and ADR-026 evidence shape |
+
+### Compliance Contracts
+| File | Purpose |
+|------|---------|
+| `docs/compliance_schemas.md` | ADR-026 schema reference for `plan_compliance`, `parent_compliance`, and `subagent_compliance` evidence blocks |
+| `docs/decisions/adr-026-compliance-contracts.md` | Decision record for role contract versioning, exact-output receipt coexistence, and staged compliance enforcement |
+| `.context/rules/process_subagent_bootstrap.md` | Parent dispatch packet and subagent return contract process rule |
 
 ### Setup Scripts
 | File | Purpose |
@@ -212,6 +226,8 @@ bash install.sh
 | `scripts/setup/*.sh` | Per-phase setup modules (issue #255 Phase 4c): `00-detect-repo`, `10-env-file`, `20-install-dependencies`, `30-build`, `40-ensure-labels`, `50-ensure-variables`, `60-check-secrets`, `70-verify-env`. See `scripts/setup/README.md` for the module table and how to run a single module. |
 | `scripts/verify-env.sh` | Environment & placeholder sanity check |
 | `scripts/verify-pr.sh` | Plan-template Change-class classifier (ADR-016 / issue #227); run: `bash scripts/verify-pr.sh --declared "<class>"` |
+| `scripts/validate-compliance-examples.py` | Validates fenced YAML examples in `docs/compliance_schemas.md` against ADR-026 v1 shape |
+| `scripts/validate-compliance-fixtures.py` | Validates ADR-026 valid/invalid fixtures under `scripts/tests/fixtures/compliance/` |
 | `scripts/db-reset.sh` | Optional database reset stub |
 | `scripts/pr-iteration-stats.sh` | Rolling 14-day PR review-loop metrics (total/fix/rejected rounds, threads); `--window <days>`, `--json` |
 | `scripts/lint-shell-conventions.sh` | Project-specific shell linting (RULE-01: `grep -c` without `\|\| true`; RULE-02: unanchored `grep -E` alternation patterns); run: `bash scripts/lint-shell-conventions.sh scripts/` |

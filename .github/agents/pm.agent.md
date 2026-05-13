@@ -1,7 +1,7 @@
 ---
 name: Project Manager
 description: Use to dispatch approved plans into GitHub live-state comments/labels, manage claims, and resolve cross-role ownership conflicts.
-tools: ['read', 'write', 'execute', 'search', 'githubRepo', 'todo']
+tools: ['read', 'write', 'execute', 'search', 'todo']
 model: 'Claude Sonnet 4.6 (copilot)'
 handoffs:
   - target: Analyst
