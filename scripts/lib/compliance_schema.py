@@ -372,6 +372,34 @@ def validate_subagent(
             f"does not match .agents/{role}.md version {versions[role]}"
         )
 
+    # v1.1 optional: run_status (enum) + apply_replays (list of byte-anchored
+    # patches). See docs/compliance_schemas.md § 'subagent_compliance v1'.
+    run_status = block.get("run_status")
+    if run_status is not None:
+        _require_non_empty_string(run_status, f"{source}.run_status")
+        allowed_statuses = {"SUCCESS", "PARTIAL", "BLOCKED_ON_RUNTIME", "NEEDS_CONTEXT"}
+        if run_status not in allowed_statuses:
+            raise ComplianceError(
+                f"{source}.run_status: must be one of {sorted(allowed_statuses)}; got {run_status!r}"
+            )
+    apply_replays = block.get("apply_replays")
+    if apply_replays is not None:
+        _require_type(apply_replays, list, f"{source}.apply_replays")
+        for idx, item in enumerate(apply_replays):
+            item_source = f"{source}.apply_replays[{idx}]"
+            _require_type(item, dict, item_source)
+            replay_keys = {"path", "anchor", "replacement"}
+            _require_keys(item, replay_keys, item_source)
+            _reject_unknown_keys(item, replay_keys, item_source)
+            _require_non_empty_string(item["path"], f"{item_source}.path")
+            _require_non_empty_string(item["anchor"], f"{item_source}.anchor")
+            _require_type(item["replacement"], str, f"{item_source}.replacement")
+    if run_status in {"PARTIAL", "BLOCKED_ON_RUNTIME"}:
+        if not apply_replays:
+            raise ComplianceError(
+                f"{source}: apply_replays must be a non-empty list when run_status is {run_status!r}"
+            )
+
 
 def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:
     _require_keys(block, {"path", "loaded", "decision_affected"}, source)
