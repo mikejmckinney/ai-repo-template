@@ -151,7 +151,7 @@ parent_compliance:
 
 ## Supporting verification results (REQUIRED — Judge enforces at diff-gate)
 
-<!-- Mirror your plan's `### Verification` section 1:1. Every command
+<!-- Mirror your plan's `### Supporting verification` section 1:1. Every command
      listed in the plan must have a result entry here BEFORE the PR
      enters review. CI is a backstop, not a substitute for local
      verification (issue #208/#225 lessons learned).

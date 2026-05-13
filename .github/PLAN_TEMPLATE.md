@@ -164,7 +164,7 @@ plan_compliance:
 specific test names. "Tests pass" is not sufficient — name them.>
 
 <!-- Each command listed here must have a matching result entry in the
-     PR's `## Verification results` section before the PR enters review.
+     PR's `## Supporting verification results` section before the PR enters review.
      Sandbox-deferred items (where Verification target is `sandbox repo`
      or `both` and the change can't be exercised from the PR branch) are
      marked `⏭️ sandbox-deferred — see Phase 2` per ADR-016. Judge
