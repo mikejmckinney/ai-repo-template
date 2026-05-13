@@ -61,62 +61,59 @@ N/A — empty headings are noise.
 ## Parent compliance (ADR-026)
 
 <!-- REQUIRED for non-exempt work. This records what the parent/default agent
-           loaded and how role dispatch/gates were handled. Copy parsed
-           `subagent_compliance` objects into `subagents_dispatched`; do not leave
-           only raw YAML-in-YAML. CI validates declared evidence shape only — it
-           does not prove Copilot runtime dispatch or handoff execution. -->
+     loaded and how role dispatch/gates were handled. Copy parsed
+     `subagent_compliance` objects into `subagents_dispatched`; do not leave
+     only raw YAML-in-YAML. CI validates declared evidence shape only — it
+     does not prove Copilot runtime dispatch or handoff execution. -->
 
 ```yaml
 parent_compliance:
-     schema_version: 1
-     handshake_token: Session handshake v<N>
-     agents_md_version: <N>
-     runtime_pointer:
-          path: .github/copilot-instructions.md
-          loaded: "<true | false>"
-          decision_affected: <specific decision affected, or null when exempt>
-     applicable_roles:
-          - <role>
-     subagents_dispatched:
-          -
-               schema_version: 1
-               role: <role>
-               role_contract_version: 1
-               agents_md_version: <N>
-               receipt:
-                    mode: "<visible-line | trailing-block>"
-                    value: <receipt evidence>
-               context_files_used:
-                    - AGENTS.md
-                    - .agents/<role>.md
-               pointers_skipped: []
-               task_scope: <parent-assigned task scope>
-               files_modified:
-                    - <path or omit entry if empty list>
-               gates_invoked:
-                    - <gate name>
-     monolithic_justification: <null or required one-sentence justification>
-     plan_gate:
-          status: "<linked | pending | exempt>"
-          link: <URL or null>
-          exemption_reason: <null or reason>
-     diff_gate:
-          status: "<pending | linked | exempt>"
-          link: <URL or null>
-          exemption_reason: <null or reason>
-     adr_required:
-          required: "<true | false>"
-          link: <path/URL or null>
-     deviations:
-          -
-               planned: <planned behavior>
-               actual: <actual behavior>
-               reason: <why acceptable>
-     verification_results:
-          -
-               command: <command>
-               result: "<pass | fail | sandbox-deferred | n/a>"
-               evidence: <one-line pointer>
+  schema_version: 1
+  handshake_token: "Session handshake v<N>"
+  agents_md_version: "<N>"
+  runtime_pointer:
+    path: .github/copilot-instructions.md
+    loaded: "<true | false>"
+    decision_affected: "<specific decision affected, or null when exempt>"
+  applicable_roles:
+    - "<role>"
+  subagents_dispatched:
+    - schema_version: 1
+      role: "<role>"
+      role_contract_version: 1
+      agents_md_version: "<N>"
+      receipt:
+        mode: "<visible-line | trailing-block>"
+        value: "<receipt evidence>"
+      context_files_used:
+        - AGENTS.md
+        - .agents/<role>.md
+      pointers_skipped: []
+      task_scope: "<parent-assigned task scope>"
+      files_modified:
+        - "<path or omit entry if empty list>"
+      gates_invoked:
+        - "<gate name>"
+  monolithic_justification: "<null or required one-sentence justification>"
+  plan_gate:
+    status: "<linked | pending | exempt>"
+    link: "<URL or null>"
+    exemption_reason: "<null or reason>"
+  diff_gate:
+    status: "<pending | linked | exempt>"
+    link: "<URL or null>"
+    exemption_reason: "<null or reason>"
+  adr_required:
+    required: "<true | false>"
+    link: "<path/URL or null>"
+  deviations:
+    - planned: "<planned behavior>"
+      actual: "<actual behavior>"
+      reason: "<why acceptable>"
+  verification_results:
+    - command: "<command>"
+      result: "<pass | fail | sandbox-deferred | n/a>"
+      evidence: "<one-line pointer>"
 ```
 
 ## Verification

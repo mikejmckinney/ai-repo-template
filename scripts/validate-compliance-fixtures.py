@@ -19,8 +19,24 @@ sys.path.insert(0, str(SCRIPT_DIR / "lib"))
 from compliance_schema import ComplianceError, load_yaml, validate_loaded_block  # noqa: E402
 
 
+def resolve_input_path(path: Path) -> Path:
+    if not path.is_absolute():
+        path = REPO_ROOT / path
+    return path.resolve()
+
+
+def source_name(path: Path) -> str:
+    try:
+        return str(path.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
+
+
 def validate_file(path: Path) -> None:
-    validate_loaded_block(load_yaml(path), str(path.relative_to(REPO_ROOT)), REPO_ROOT)
+    resolved = resolve_input_path(path)
+    if not resolved.is_file():
+        raise ComplianceError(f"{source_name(resolved)}: file does not exist")
+    validate_loaded_block(load_yaml(resolved), source_name(resolved), REPO_ROOT)
 
 
 def iter_yaml_files(path: Path) -> list[Path]:
@@ -56,14 +72,14 @@ def main(argv: list[str]) -> int:
         try:
             validate_file(path)
         except ComplianceError as exc:
-            failures.append(f"expected valid but failed: {path.relative_to(REPO_ROOT)} — {exc}")
+            failures.append(f"expected valid but failed: {source_name(path)} — {exc}")
 
     for path in invalid_files:
         try:
             validate_file(path)
         except ComplianceError:
             continue
-        failures.append(f"expected invalid but passed: {path.relative_to(REPO_ROOT)}")
+        failures.append(f"expected invalid but passed: {source_name(path)}")
 
     if failures:
         for failure in failures:

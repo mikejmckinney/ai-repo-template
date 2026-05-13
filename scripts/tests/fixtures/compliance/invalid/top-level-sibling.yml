@@ -5,9 +5,8 @@ parent_compliance:
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
-    decision_affected: Used Copilot-specific manual handoff chaining guidance.
+    decision_affected: Invalid fixture carries an extra top-level key.
   applicable_roles:
-    - architect
     - docs
   subagents_dispatched:
     - schema_version: 1
@@ -20,15 +19,11 @@ parent_compliance:
       context_files_used:
         - AGENTS.md
         - .agents/docs.md
-        - .context/rules/process_doc_maintenance.md
       pointers_skipped: []
-      task_scope: Update documentation references for compliance schemas.
-      files_modified:
-        - AI_REPO_GUIDE.md
-        - docs/guides/multi-agent-coordination.md
-      gates_invoked:
-        - doc-trigger-check
-  monolithic_justification: Architect-owned planning stayed with the parent while the docs subagent handled documentation updates.
+      task_scope: Invalid fixture has an unknown sibling key.
+      files_modified: []
+      gates_invoked: []
+  monolithic_justification: null
   plan_gate:
     status: linked
     link: https://github.com/mikejmckinney/ai-repo-template/issues/307#issuecomment-4436040309
@@ -41,7 +36,5 @@ parent_compliance:
     required: true
     link: docs/decisions/adr-026-compliance-contracts.md
   deviations: []
-  verification_results:
-    - command: python3 scripts/validate-compliance-fixtures.py
-      result: pass
-      evidence: Local fixture run passed.
+  verification_results: []
+extra: unexpected sibling

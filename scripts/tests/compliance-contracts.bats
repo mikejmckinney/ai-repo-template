@@ -27,4 +27,6 @@ setup_file() {
   cd "$REPO_ROOT"
   run python3 scripts/validate-compliance-fixtures.py --single scripts/tests/fixtures/compliance/invalid/overlay-version.yml
   [ "$status" -ne 0 ]
+  [[ "$output" == *"overlay_version is not allowed"* ]]
+  [[ "$output" != *"ValueError"* ]]
 }

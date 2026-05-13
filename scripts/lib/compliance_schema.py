@@ -212,11 +212,28 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
     _require_type(block["runtime_pointer"], dict, f"{source}.runtime_pointer")
     _require_type(block["applicable_roles"], list, f"{source}.applicable_roles")
     _require_type(block["subagents_dispatched"], list, f"{source}.subagents_dispatched")
-    if not block["subagents_dispatched"] and not block.get("monolithic_justification"):
-        raise ComplianceError(f"{source}: monolithic_justification required when no subagents are dispatched")
+    applicable_roles = set()
+    for idx, role in enumerate(block["applicable_roles"]):
+        _require_type(role, str, f"{source}.applicable_roles[{idx}]")
+        applicable_roles.add(role)
+    justification = block.get("monolithic_justification")
+    if justification is not None:
+        _require_type(justification, str, f"{source}.monolithic_justification")
+        if not justification.strip():
+            raise ComplianceError(f"{source}: monolithic_justification must be non-empty when provided")
+    dispatched_roles = set()
     for idx, subagent in enumerate(block["subagents_dispatched"]):
         _require_type(subagent, dict, f"{source}.subagents_dispatched[{idx}]")
         validate_subagent(subagent, f"{source}.subagents_dispatched[{idx}]", repo_root)
+        dispatched_roles.add(subagent["role"])
+    if not block["subagents_dispatched"] and not justification:
+        raise ComplianceError(f"{source}: monolithic_justification required when no subagents are dispatched")
+    if applicable_roles and dispatched_roles < applicable_roles and not justification:
+        missing_roles = ", ".join(sorted(applicable_roles - dispatched_roles))
+        raise ComplianceError(
+            f"{source}: monolithic_justification required when dispatched roles are a strict subset "
+            f"of applicable_roles (missing: {missing_roles})"
+        )
     for key in ("plan_gate", "diff_gate", "adr_required"):
         _require_type(block[key], dict, f"{source}.{key}")
     for key in ("deviations", "verification_results"):
@@ -226,6 +243,10 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
 def validate_loaded_block(data: Any, source: str, repo_root: Path = REPO_ROOT) -> None:
     _require_type(data, dict, source)
     assert_no_overlay_version(data, source)
+    unknown_keys = [key for key in data if key not in VALID_TOP_LEVEL_KEYS]
+    if unknown_keys:
+        formatted = ", ".join(str(key) for key in unknown_keys)
+        raise ComplianceError(f"{source}: unknown top-level keys: {formatted}")
     keys = [key for key in VALID_TOP_LEVEL_KEYS if key in data]
     if len(keys) != 1:
         raise ComplianceError(

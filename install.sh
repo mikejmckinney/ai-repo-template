@@ -216,6 +216,7 @@ MULTIAGENT_FILES=(
   "AGENT.md"
   ".github/PLAN_TEMPLATE.md"
   ".agents/README.md"
+  ".agents/_TEMPLATE.md"
   ".agents/architect.md"
   ".agents/judge.md"
   ".agents/critic.md"

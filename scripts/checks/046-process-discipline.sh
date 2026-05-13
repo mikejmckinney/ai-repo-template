@@ -1,7 +1,23 @@
 #!/usr/bin/env bash
-# scripts/checks/045-process-discipline.sh — ADR-026 compliance contract invariants.
+# scripts/checks/046-process-discipline.sh — ADR-026 compliance contract invariants.
 # Sourced by test.sh; relies on $PASS/$FAIL/$WARN, pass()/fail()/warn() from
 # scripts/lib/{logging,assertions}.sh and CWD == repo root.
+
+make_private_tmp() {
+  local prefix=$1
+  local old_umask
+  local tmp
+
+  old_umask=$(umask)
+  umask 077
+  if tmp=$(mktemp "${TMPDIR:-/tmp}/ai-repo-template-${USER:-user}-${prefix}.XXXXXX"); then
+    umask "$old_umask"
+    printf '%s\n' "$tmp"
+  else
+    umask "$old_umask"
+    return 1
+  fi
+}
 
 # --- Process Discipline / Compliance Contract Checks ---
 echo "Checking process discipline contracts..."
@@ -105,20 +121,40 @@ else
   printf '%s\n' "$overlay_hits"
 fi
 
-if python3 scripts/validate-compliance-examples.py >/tmp/compliance-examples.out 2>/tmp/compliance-examples.err; then
+compliance_examples_out=
+compliance_examples_err=
+if ! compliance_examples_out=$(make_private_tmp compliance-examples-out); then
+  fail "docs/compliance_schemas.md YAML examples failed validation"
+  echo "could not create private temporary output file"
+elif ! compliance_examples_err=$(make_private_tmp compliance-examples-err); then
+  fail "docs/compliance_schemas.md YAML examples failed validation"
+  echo "could not create private temporary error file"
+  rm -f "$compliance_examples_out"
+elif python3 scripts/validate-compliance-examples.py >"$compliance_examples_out" 2>"$compliance_examples_err"; then
   pass "docs/compliance_schemas.md YAML examples validate"
 else
   fail "docs/compliance_schemas.md YAML examples failed validation"
-  cat /tmp/compliance-examples.out /tmp/compliance-examples.err
+  cat "$compliance_examples_out" "$compliance_examples_err"
 fi
-rm -f /tmp/compliance-examples.out /tmp/compliance-examples.err
+rm -f "${compliance_examples_out:-}" "${compliance_examples_err:-}"
 
-if python3 scripts/validate-compliance-fixtures.py >/tmp/compliance-fixtures.out 2>/tmp/compliance-fixtures.err; then
+compliance_fixtures_out=
+compliance_fixtures_err=
+if ! compliance_fixtures_out=$(make_private_tmp compliance-fixtures-out); then
+  fail "ADR-026 compliance fixtures failed validation"
+  echo "could not create private temporary output file"
+elif ! compliance_fixtures_err=$(make_private_tmp compliance-fixtures-err); then
+  fail "ADR-026 compliance fixtures failed validation"
+  echo "could not create private temporary error file"
+  rm -f "$compliance_fixtures_out"
+elif python3 scripts/validate-compliance-fixtures.py >"$compliance_fixtures_out" 2>"$compliance_fixtures_err"; then
   pass "ADR-026 compliance fixtures validate expected pass/fail behavior"
 else
   fail "ADR-026 compliance fixtures failed validation"
-  cat /tmp/compliance-fixtures.out /tmp/compliance-fixtures.err
+  cat "$compliance_fixtures_out" "$compliance_fixtures_err"
 fi
-rm -f /tmp/compliance-fixtures.out /tmp/compliance-fixtures.err
+rm -f "${compliance_fixtures_out:-}" "${compliance_fixtures_err:-}"
 
 echo ""
+
+# End of process discipline checks.

@@ -128,6 +128,9 @@ Emitted in PR bodies by the parent/default agent before review.
 When `path` is a string, `loaded` must be `true` and `reason` is omitted.
 When `path: null`, `loaded` must be `false`, `decision_affected` must explain
 the exemption or be `null`, and `reason` must be a non-empty string.
+Represent the no-pointer case with these explicit subfields in the same object;
+do not encode the null-path reason in surrounding prose or in
+`decision_affected` alone.
 
 ### Example — no-subagent `parent_compliance`
 
@@ -214,7 +217,7 @@ parent_compliance:
         - scripts/tests/compliance-contracts.bats
       gates_invoked:
         - verification
-  monolithic_justification: null
+  monolithic_justification: Architect-owned planning stayed with the parent; docs and devops subagents covered the dispatched implementation slices.
   plan_gate:
     status: linked
     link: https://github.com/mikejmckinney/ai-repo-template/issues/307#issuecomment-4436040309
@@ -309,11 +312,12 @@ When deterministic validation is enabled, validators fail on:
 2. `schema_version` not equal to `1`.
 3. Parent `handshake_token` not matching `Session handshake v<agents_md_version>`.
 4. Use of `overlay_version` in any v1 block.
-5. Missing `monolithic_justification` when `subagents_dispatched` is empty or incomplete.
-6. `subagent_compliance.role` without a matching canonical `.agents/<role>.md` file.
-7. `role_contract_version` mismatch with the canonical role file.
-8. File paths in `files_modified` that are impossible for the PR diff.
-9. Raw YAML-in-YAML under `subagents_dispatched` without parsed object fields.
+5. Unknown top-level sibling keys beside the single compliance block.
+6. Missing `monolithic_justification` when `subagents_dispatched` is empty or when dispatched roles are a strict subset of `applicable_roles`.
+7. `subagent_compliance.role` without a matching canonical `.agents/<role>.md` file.
+8. `role_contract_version` mismatch with the canonical role file.
+9. File paths in `files_modified` that are impossible for the PR diff.
+10. Raw YAML-in-YAML under `subagents_dispatched` without parsed object fields.
 
 ## Judge-SHOULD review rules for v1
 

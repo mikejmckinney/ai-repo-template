@@ -73,6 +73,13 @@ Use [`_TEMPLATE.md`](_TEMPLATE.md) when adding or migrating a role contract.
 It is a documentation template, not a canonical role, and parity checks must
 not require platform overlays for it.
 
+`_TEMPLATE.md` also carries the template-only metadata key
+`agents_md_compat: <AGENTS_MD_VERSION>`. Replace the placeholder with the
+current `AGENTS_MD_VERSION` only while drafting a concrete role contract that
+needs that audit note; do not mirror it into platform overlays, and do not treat
+it as a runtime dispatch key. Existing canonical role files rely on
+`agents_md_version` in emitted compliance blocks for per-run startup evidence.
+
 ### Exact-output roles
 
 Some roles have exact first-line output formats. Judge responses begin with

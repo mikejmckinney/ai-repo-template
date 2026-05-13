@@ -2,7 +2,7 @@
 name: <role>
 description: <byte-identical description shared by all overlays>
 role_contract_version: 1
-agents_md_compat: 16
+agents_md_compat: <AGENTS_MD_VERSION>
 owned_paths:
   - '<owned/path/glob>'
 handoff_targets:
@@ -58,10 +58,10 @@ subagent_compliance:
   schema_version: 1
   role: <role>
   role_contract_version: 1
-  agents_md_version: 16
+  agents_md_version: <AGENTS_MD_VERSION>
   receipt:
     mode: visible-line  # or trailing-block for exact-output roles
-    value: Role receipt v1 — <role>
+    value: Role receipt v<role_contract_version> — <role>
   context_files_used:
     - AGENTS.md
     - .agents/<role>.md
