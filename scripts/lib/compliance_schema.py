@@ -32,6 +32,7 @@ VALID_TOP_LEVEL_KEYS = {
 
 _FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
 _YAML_FENCE_RE = re.compile(r"```yaml\n(.*?)\n```", re.DOTALL)
+_AGENTS_MD_VERSION_RE = re.compile(r"AGENTS_MD_VERSION:\s*(?P<version>\d+)")
 _HANDSHAKE_RE = re.compile(r"^Session handshake v(?P<version>\d+)$")
 
 
@@ -74,6 +75,14 @@ def canonical_role_versions(repo_root: Path = REPO_ROOT) -> dict[str, int]:
             raise ComplianceError(f"{path}: missing positive integer role_contract_version")
         versions[role] = version
     return versions
+
+
+def current_agents_md_version(repo_root: Path = REPO_ROOT) -> int:
+    path = repo_root / "AGENTS.md"
+    match = _AGENTS_MD_VERSION_RE.search(path.read_text(encoding="utf-8"))
+    if not match:
+        raise ComplianceError(f"{path}: missing AGENTS_MD_VERSION marker")
+    return int(match.group("version"))
 
 
 def assert_no_overlay_version(value: Any, source: str) -> None:
@@ -165,6 +174,12 @@ def validate_subagent(block: dict[str, Any], source: str, repo_root: Path = REPO
     _require_type(block["role"], str, f"{source}.role")
     _require_type(block["role_contract_version"], int, f"{source}.role_contract_version")
     _require_type(block["agents_md_version"], int, f"{source}.agents_md_version")
+    current_agents_version = current_agents_md_version(repo_root)
+    if block["agents_md_version"] != current_agents_version:
+        raise ComplianceError(
+            f"{source}: agents_md_version {block['agents_md_version']} "
+            f"does not match AGENTS.md version {current_agents_version}"
+        )
     _require_type(block["receipt"], dict, f"{source}.receipt")
     _require_keys(block["receipt"], {"mode", "value"}, f"{source}.receipt")
     for key in ("context_files_used", "pointers_skipped", "files_modified", "gates_invoked"):
@@ -242,6 +257,12 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
         raise ComplianceError(f"{source}: handshake_token must match 'Session handshake v<N>'")
     if int(match.group("version")) != block["agents_md_version"]:
         raise ComplianceError(f"{source}: handshake_token version does not match agents_md_version")
+    current_agents_version = current_agents_md_version(repo_root)
+    if block["agents_md_version"] != current_agents_version:
+        raise ComplianceError(
+            f"{source}: agents_md_version {block['agents_md_version']} "
+            f"does not match AGENTS.md version {current_agents_version}"
+        )
     _require_type(block["runtime_pointer"], dict, f"{source}.runtime_pointer")
     validate_runtime_pointer(block["runtime_pointer"], f"{source}.runtime_pointer")
     _require_type(block["applicable_roles"], list, f"{source}.applicable_roles")

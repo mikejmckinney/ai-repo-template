@@ -311,13 +311,14 @@ When deterministic validation is enabled, validators fail on:
 1. Missing required fields or wrong scalar/list/object types.
 2. `schema_version` not equal to `1`.
 3. Parent `handshake_token` not matching `Session handshake v<agents_md_version>`.
-4. Use of `overlay_version` in any v1 block.
-5. Unknown top-level sibling keys beside the single compliance block.
-6. Missing `monolithic_justification` when `subagents_dispatched` is empty or when dispatched roles are a strict subset of `applicable_roles`.
-7. `subagent_compliance.role` without a matching canonical `.agents/<role>.md` file.
-8. `role_contract_version` mismatch with the canonical role file.
-9. File paths in `files_modified` that are impossible for the PR diff.
-10. Raw YAML-in-YAML under `subagents_dispatched` without parsed object fields.
+4. `agents_md_version` not matching the current `AGENTS_MD_VERSION` canary in `AGENTS.md`.
+5. Use of `overlay_version` in any v1 block.
+6. Unknown top-level sibling keys beside the single compliance block.
+7. Missing `monolithic_justification` when `subagents_dispatched` is empty or when dispatched roles are a strict subset of `applicable_roles`.
+8. `subagent_compliance.role` without a matching canonical `.agents/<role>.md` file.
+9. `role_contract_version` mismatch with the canonical role file.
+10. File paths in `files_modified` that are impossible for the PR diff.
+11. Raw YAML-in-YAML under `subagents_dispatched` without parsed object fields.
 
 ## Judge-SHOULD review rules for v1
 
