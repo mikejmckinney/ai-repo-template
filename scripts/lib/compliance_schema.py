@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path, PurePosixPath
-from typing import Any
+from typing import Any, Dict, Optional, Tuple, Union
 
 try:
     import yaml
@@ -109,7 +109,7 @@ def _reject_unknown_keys(mapping: dict[str, Any], allowed: set[str], source: str
         raise ComplianceError(f"{source}: unknown keys: {formatted}")
 
 
-def _require_type(value: Any, expected_type: type | tuple[type, ...], source: str) -> None:
+def _require_type(value: Any, expected_type: Union[type, Tuple[type, ...]], source: str) -> None:
     if isinstance(expected_type, tuple):
         matches = any(_matches_expected_type(value, item) for item in expected_type)
     else:
@@ -300,8 +300,8 @@ def validate_subagent(
     block: dict[str, Any],
     source: str,
     repo_root: Path = REPO_ROOT,
-    role_versions: dict[str, int] | None = None,
-    expected_agents_md_version: int | None = None,
+    role_versions: Optional[Dict[str, int]] = None,
+    expected_agents_md_version: Optional[int] = None,
 ) -> None:
     _require_keys(
         block,
