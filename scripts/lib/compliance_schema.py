@@ -392,24 +392,22 @@ def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:
 
 
 def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_ROOT) -> None:
-    _require_keys(
-        block,
-        {
-            "schema_version",
-            "handshake_token",
-            "agents_md_version",
-            "runtime_pointer",
-            "applicable_roles",
-            "subagents_dispatched",
-            "monolithic_justification",
-            "plan_gate",
-            "diff_gate",
-            "adr_required",
-            "deviations",
-            "verification_results",
-        },
-        source,
-    )
+    allowed_keys = {
+        "schema_version",
+        "handshake_token",
+        "agents_md_version",
+        "runtime_pointer",
+        "applicable_roles",
+        "subagents_dispatched",
+        "monolithic_justification",
+        "plan_gate",
+        "diff_gate",
+        "adr_required",
+        "deviations",
+        "verification_results",
+    }
+    _require_keys(block, allowed_keys, source)
+    _reject_unknown_keys(block, allowed_keys, source)
     _require_schema_version(block, source)
     _require_type(block["handshake_token"], str, f"{source}.handshake_token")
     _require_type(block["agents_md_version"], int, f"{source}.agents_md_version")
