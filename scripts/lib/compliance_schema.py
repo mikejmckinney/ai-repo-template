@@ -392,6 +392,12 @@ def validate_subagent(
             _require_keys(item, replay_keys, item_source)
             _reject_unknown_keys(item, replay_keys, item_source)
             _require_non_empty_string(item["path"], f"{item_source}.path")
+            # Replays apply patches; the path must be repo-relative just like
+            # files_modified — otherwise an attacker-controlled subagent
+            # response could declare apply_replays[].path = '../../etc/passwd'
+            # or 'http://evil/.../passwd' and pass schema validation while
+            # describing a write outside the repo (PR #312 codex P2).
+            _validate_repo_path(item["path"], f"{item_source}.path", repo_root)
             _require_non_empty_string(item["anchor"], f"{item_source}.anchor")
             _require_type(item["replacement"], str, f"{item_source}.replacement")
     # NOTE: a non-SUCCESS run_status with empty apply_replays is permitted at

@@ -109,7 +109,14 @@ EOF
 
 _run_section_aware_check() {
   awk '
-    tolower($0) ~ /^[[:space:]]*#+[[:space:]].*diff-gate/ { seen = 1 }
+    /^[[:space:]]*#+[[:space:]]/ {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      match(line, /^#+/)
+      depth = RLENGTH
+      if (tolower(line) ~ /diff-gate/) { seen = 1; diff_depth = depth; next }
+      if (seen && depth <= diff_depth) { seen = 0 }
+    }
     seen && tolower($0) ~ /user outcome/ { count++ }
     END { print count + 0 }
   ' "$1"
@@ -162,6 +169,41 @@ EOF
   [ "$count" -eq 0 ]
 }
 
+@test "section-aware: User outcome in unrelated section after diff-gate does not satisfy (regression for PR #312 round 6 ISS-26)" {
+  fixture="$(mktemp)"
+  cat > "$fixture" <<'EOF'
+# DIFF-GATE Mode (After Coding)
+## Review Checklist
+- ship the diff
+# Verification Requirements
+- the report mentions User outcome here, in a totally unrelated section
+EOF
+  count=$(_run_section_aware_check "$fixture")
+  rm -f "$fixture"
+  # The diff-gate section ends at `# Verification Requirements` (same depth);
+  # the User outcome mention there must NOT count toward the diff-gate gate.
+  [ "$count" -eq 0 ]
+}
+
+@test "section-aware: subsection inside diff-gate keeps counting (regression for PR #312 round 6 ISS-26)" {
+  fixture="$(mktemp)"
+  cat > "$fixture" <<'EOF'
+# DIFF-GATE Mode (After Coding)
+## Review Checklist
+- User outcome validation must pass
+## Output Format
+- include User outcome line
+# Verification Requirements
+- unrelated trailing User outcome should not count
+EOF
+  count=$(_run_section_aware_check "$fixture")
+  rm -f "$fixture"
+  # The two `User outcome` mentions inside ## subsections of `# DIFF-GATE`
+  # should both count; the trailing one under `# Verification Requirements`
+  # (same depth as `# DIFF-GATE`) must not.
+  [ "$count" -eq 2 ]
+}
+
 # --- Smoke: check 047 against the live repo passes -------------------------
 
 @test "check 047 sourced against live repo emits no fail() calls" {
@@ -174,6 +216,10 @@ EOF
     pass() { PASS=$((PASS + 1)); }
     fail() { FAIL=$((FAIL + 1)); echo "FAIL: $*" >&2; }
     warn() { WARN=$((WARN + 1)); }
+    # Stub run_bats_check so the smoke source does not actually re-invoke
+    # bats from inside bats (would otherwise infinite-loop or fail with
+    # command-not-found in the isolated subshell).
+    run_bats_check() { :; }
     # shellcheck disable=SC1090
     source "'"$CHECK_SCRIPT"'"
     echo "PASS=$PASS FAIL=$FAIL WARN=$WARN"

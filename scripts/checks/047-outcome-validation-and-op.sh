@@ -67,17 +67,27 @@ else
   fail "$_judge missing diff-gate section with user-outcome mention (issue #311)"
 fi
 
-# 5b. Section-aware diff-gate check (PR #312 codex P2 + gemini medium):
+# 5b. Section-aware diff-gate check (PR #312 codex P2 ×2 + gemini medium):
 #     the global count above can pass even if both "User outcome" mentions
 #     sit in plan-gate context, leaving the diff-gate without User-outcome
 #     evidence. Anchor `seen` to the actual DIFF-GATE markdown heading
 #     (e.g. "# DIFF-GATE Mode (After Coding)" on judge.md:130) — bare
 #     lowercase "diff-gate" tokens appear in plan-gate body text earlier
 #     in the file (judge.md:49, 58-59) and would otherwise flip `seen`
-#     prematurely. Use tolower() match against /^[[:space:]]*#.*diff-gate/
-#     so the trigger is a heading line in any case.
+#     prematurely. ALSO close `seen` when a subsequent heading of equal-
+#     or-shallower depth appears (e.g. judge.md:185 `# Verification
+#     Requirements`), so a stray `User outcome` mention in a later
+#     unrelated section can't satisfy the diff-gate requirement (PR #312
+#     round 6 codex P2 ISS-26).
 _judge_diff_uo=$(awk '
-  tolower($0) ~ /^[[:space:]]*#+[[:space:]].*diff-gate/ { seen = 1 }
+  /^[[:space:]]*#+[[:space:]]/ {
+    line = $0
+    sub(/^[[:space:]]+/, "", line)
+    match(line, /^#+/)
+    depth = RLENGTH
+    if (tolower(line) ~ /diff-gate/) { seen = 1; diff_depth = depth; next }
+    if (seen && depth <= diff_depth) { seen = 0 }
+  }
   seen && tolower($0) ~ /user outcome/ { count++ }
   END { print count + 0 }
 ' "$_judge")
@@ -126,3 +136,11 @@ else
   fail "$_rsel missing guidance on explicit subagent-skip wording (issue #311)"
 fi
 unset _rsel
+
+# 9. Wire the check-047 bats fixture suite into CI (PR #312 round 6 cursor
+#    medium ISS-24). Without this call, the 12 fixture tests in
+#    scripts/tests/check-047-outcome-validation.bats are never invoked by
+#    test.sh and the heuristic logic above can drift silently. Mirrors the
+#    pattern in 070/075/080/085/088/090.
+echo "Running check-047 outcome-validation contract tests..."
+run_bats_check scripts/tests/check-047-outcome-validation.bats
