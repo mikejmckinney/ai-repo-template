@@ -121,6 +121,13 @@ with TemporaryDirectory() as tmp:
         assert "must stay within the repository" in str(exc)
     else:
         raise AssertionError("symlink escape passed path validation")
+    (repo / "dangling").symlink_to(base / "missing-outside", target_is_directory=True)
+    try:
+        _validate_repo_path("dangling/file.md", "fixture.files_modified[0]", repo)
+    except ComplianceError as exc:
+        assert "must stay within the repository" in str(exc)
+    else:
+        raise AssertionError("dangling symlink escape passed path validation")
 PY
   [ "$status" -eq 0 ]
 }

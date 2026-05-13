@@ -175,11 +175,17 @@ def _validate_repo_path(value: Any, source: str, repo_root: Path) -> None:
     if any(part.startswith("<") and part.endswith(">") for part in path.parts):
         raise ComplianceError(f"{source}: must not contain placeholder path segments")
     resolved_root = repo_root.resolve()
-    resolved = (resolved_root / Path(*path.parts)).resolve()
-    try:
-        resolved.relative_to(resolved_root)
-    except ValueError as exc:
-        raise ComplianceError(f"{source}: must stay within the repository") from exc
+    current = resolved_root
+    for part in path.parts:
+        candidate = current / part
+        if not candidate.exists() and not candidate.is_symlink():
+            break
+        resolved_candidate = candidate.resolve(strict=False)
+        try:
+            resolved_candidate.relative_to(resolved_root)
+        except ValueError as exc:
+            raise ComplianceError(f"{source}: must stay within the repository") from exc
+        current = resolved_candidate
 
 
 def _validate_pointers_skipped(items: Any, source: str) -> None:
