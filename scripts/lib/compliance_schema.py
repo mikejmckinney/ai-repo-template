@@ -338,7 +338,9 @@ def validate_subagent(
             f"does not match AGENTS.md version {current_agents_version}"
         )
     _require_type(block["receipt"], dict, f"{source}.receipt")
-    _require_keys(block["receipt"], {"mode", "value"}, f"{source}.receipt")
+    receipt_keys = {"mode", "value"}
+    _require_keys(block["receipt"], receipt_keys, f"{source}.receipt")
+    _reject_unknown_keys(block["receipt"], receipt_keys, f"{source}.receipt")
     mode = block["receipt"]["mode"]
     _require_non_empty_string(mode, f"{source}.receipt.mode")
     if mode not in {"visible-line", "trailing-block"}:
