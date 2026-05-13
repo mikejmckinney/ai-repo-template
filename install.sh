@@ -91,15 +91,9 @@ log_info "Workspace path: $WORKSPACE"
 # entrypoint (Codespaces dotfiles), matching scripts/setup.sh's requirements
 # handling for non-Codespaces setup.
 if command -v python3 &>/dev/null; then
-  if python3 -c 'import yaml' &>/dev/null; then
-    log_info "Python dependency available: PyYAML"
-  elif python3 -m pip --version &>/dev/null; then
-    log_info "Installing Python dependency: PyYAML"
-    if [[ -f "$DOTFILES/requirements.txt" ]]; then
-      python3 -m pip install --user -r "$DOTFILES/requirements.txt" || log_warn "Failed to install Python dependencies. Not script-blocking, but onboarding is blocked."
-    else
-      python3 -m pip install --user 'PyYAML>=6.0,<7' || log_warn "Failed to install PyYAML. Not script-blocking, but onboarding is blocked."
-    fi
+  if python3 -m pip --version &>/dev/null; then
+    log_info "Installing Python dependencies from requirements.txt"
+    python3 -m pip install --user -r "$DOTFILES/requirements.txt" || log_warn "Failed to install Python dependencies. Not script-blocking, but onboarding is blocked."
   else
     log_warn "python3 is present but pip is unavailable; install PyYAML before running compliance validators."
   fi
@@ -223,21 +217,19 @@ copy_template_file() {
   fi
 
   if [[ -d "$src" ]]; then
-    if ! cp -R "$src" "$dst"; then
-      log_warn "  ⚠ Failed to copy: $rel_path"
+    cp -R "$src" "$dst" || {
+      log_warn "  ⚠ Failed to copy directory: $rel_path"
       return
-    fi
-  elif ! cp "$src" "$dst"; then
-    log_warn "  ⚠ Failed to copy: $rel_path"
-    return
+    }
+  else
+    cp "$src" "$dst" || {
+      log_warn "  ⚠ Failed to copy file: $rel_path"
+      return
+    }
   fi
 
-  if [[ -e "$dst" ]]; then
-    log_info "  ✓ Copied: $rel_path"
-    MULTIAGENT_COPIED=$((MULTIAGENT_COPIED + 1))
-  else
-    log_warn "  ⚠ Failed to copy: $rel_path"
-  fi
+  log_info "  ✓ Copied: $rel_path"
+  MULTIAGENT_COPIED=$((MULTIAGENT_COPIED + 1))
 }
 
 log_info "Installing multi-agent kit (role files + coordination)..."
