@@ -94,6 +94,7 @@ parent_compliance:
         - "<path or omit entry if empty list>"
       gates_invoked:
         - "<gate name>"
+      run_status: "<SUCCESS | PARTIAL | BLOCKED_ON_RUNTIME | NEEDS_CONTEXT>"
   monolithic_justification: "<null or required one-sentence justification>"
   plan_gate:
     status: "<linked | pending | exempt>"

@@ -17,3 +17,5 @@ subagent_compliance:
     - docs/guides/multi-agent-coordination.md
   gates_invoked:
     - doc-trigger-check
+
+  run_status: SUCCESS

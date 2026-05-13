@@ -199,6 +199,7 @@ parent_compliance:
         - docs/guides/multi-agent-coordination.md
       gates_invoked:
         - doc-trigger-check
+      run_status: SUCCESS
     - schema_version: 1
       role: devops
       role_contract_version: 1
@@ -217,6 +218,7 @@ parent_compliance:
         - scripts/tests/compliance-contracts.bats
       gates_invoked:
         - verification
+      run_status: SUCCESS
   monolithic_justification: Architect-owned planning stayed with the parent; docs and devops subagents covered the dispatched implementation slices.
   plan_gate:
     status: linked
@@ -256,7 +258,7 @@ receipt evidence in this block.
 | `task_scope` | string | yes | Parent-assigned task in one paragraph. |
 | `files_modified` | list of strings | yes | Files the subagent actually modified and verified post-edit; empty for review-only agents or for runs where edits did not land. Aspirational edits do not belong here. |
 | `gates_invoked` | list of strings | yes | Gate names invoked or attested to; empty list allowed. |
-| `run_status` | string | no (v1.1; default `SUCCESS`) | One of `SUCCESS`, `PARTIAL`, `BLOCKED_ON_RUNTIME`, `NEEDS_CONTEXT`. Required when not `SUCCESS`. See `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract". |
+| `run_status` | string | yes (v1.1) | One of `SUCCESS`, `PARTIAL`, `BLOCKED_ON_RUNTIME`, `NEEDS_CONTEXT`. Required on every subagent block to close the silent-failure escape hatch where an absent field implicitly meant `SUCCESS` and bypassed Judge diff-gate item 19. See `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract". |
 | `apply_replays` | list of objects | no (v1.1) | Byte-anchored patches the parent can replay when `run_status != SUCCESS`. Each entry: `{path, anchor, replacement}` where `anchor` is a unique literal substring in the target file and `replacement` is the literal substitute. Required (non-empty) when `run_status` ∈ `{PARTIAL, BLOCKED_ON_RUNTIME}` and any role-owned edit did not land. |
 
 ### Example — Judge exact-output compliance
@@ -280,6 +282,7 @@ subagent_compliance:
   files_modified: []
   gates_invoked:
     - plan-gate
+  run_status: SUCCESS
 ```
 
 ### Example — Critic exact-output compliance
@@ -304,6 +307,7 @@ subagent_compliance:
   files_modified: []
   gates_invoked:
     - critic-review
+  run_status: SUCCESS
 ```
 
 ## CI-MUST validation rules for v1

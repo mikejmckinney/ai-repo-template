@@ -15,3 +15,4 @@ subagent_compliance:
     - docs/removed-directory/deleted.md
   gates_invoked:
     - fixture-regression
+  run_status: SUCCESS

@@ -16,3 +16,4 @@ subagent_compliance:
     - docs/guides/multi-agent-coordination.md
   gates_invoked:
     - fixture-regression
+  run_status: SUCCESS

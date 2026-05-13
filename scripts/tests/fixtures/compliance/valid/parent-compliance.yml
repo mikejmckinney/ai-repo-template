@@ -28,6 +28,7 @@ parent_compliance:
         - docs/guides/multi-agent-coordination.md
       gates_invoked:
         - doc-trigger-check
+      run_status: SUCCESS
   monolithic_justification: Architect-owned planning stayed with the parent while the docs subagent handled documentation updates.
   plan_gate:
     status: linked
