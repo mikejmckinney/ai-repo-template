@@ -182,6 +182,39 @@ def validate_subagent(block: dict[str, Any], source: str, repo_root: Path = REPO
         )
 
 
+def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:
+    _require_keys(block, {"path", "loaded", "decision_affected"}, source)
+    unknown_keys = [key for key in block if key not in {"path", "loaded", "decision_affected", "reason"}]
+    if unknown_keys:
+        formatted = ", ".join(str(key) for key in unknown_keys)
+        raise ComplianceError(f"{source}: unknown keys: {formatted}")
+
+    path = block["path"]
+    loaded = block["loaded"]
+    decision_affected = block["decision_affected"]
+    _require_type(loaded, bool, f"{source}.loaded")
+    if decision_affected is not None:
+        _require_type(decision_affected, str, f"{source}.decision_affected")
+
+    if path is None:
+        if loaded is not False:
+            raise ComplianceError(f"{source}: loaded must be false when path is null")
+        if "reason" not in block:
+            raise ComplianceError(f"{source}: reason is required when path is null")
+        _require_type(block["reason"], str, f"{source}.reason")
+        if not block["reason"].strip():
+            raise ComplianceError(f"{source}: reason must be non-empty when path is null")
+        return
+
+    _require_type(path, str, f"{source}.path")
+    if not path.strip():
+        raise ComplianceError(f"{source}: path must be non-empty when present")
+    if loaded is not True:
+        raise ComplianceError(f"{source}: loaded must be true when path is not null")
+    if "reason" in block:
+        raise ComplianceError(f"{source}: reason must be omitted when path is not null")
+
+
 def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_ROOT) -> None:
     _require_keys(
         block,
@@ -210,6 +243,7 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
     if int(match.group("version")) != block["agents_md_version"]:
         raise ComplianceError(f"{source}: handshake_token version does not match agents_md_version")
     _require_type(block["runtime_pointer"], dict, f"{source}.runtime_pointer")
+    validate_runtime_pointer(block["runtime_pointer"], f"{source}.runtime_pointer")
     _require_type(block["applicable_roles"], list, f"{source}.applicable_roles")
     _require_type(block["subagents_dispatched"], list, f"{source}.subagents_dispatched")
     applicable_roles = set()
