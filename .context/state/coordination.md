@@ -64,29 +64,6 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 
 ## Active Locks
 
-## Lock: pr-312
-<!-- managed-for-pr:312 -->
-**Role**: architect
-**Session**: feat/311-outcome-first-validation
-**PR**: #312
-**Claimed At**: 2026-05-13T21:05:40Z
-**Expected Duration**: TBD
-**Paths**:
-- .agents/critic.md
-- .agents/judge.md
-- .context/rules/process_pr_completion.md
-- .context/rules/process_role_selection.md
-- .context/rules/process_work_style.md
-- .github/PLAN_TEMPLATE.md
-- .github/copilot-instructions.md
-- .github/prompts/outcome-validation-smoke.md
-- .github/pull_request_template.md
-- AGENTS.md
-- scripts/checks/047-outcome-validation-and-op.sh
-**Depends On**: none
-**Blocks**: none
-**State**: in_progress
-
 ## Lock: pr-252-orchestration-patterns
 <!-- managed-for-pr:259 -->
 **Role**: architect
