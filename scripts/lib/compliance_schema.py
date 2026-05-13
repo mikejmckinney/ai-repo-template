@@ -102,6 +102,13 @@ def _require_keys(mapping: dict[str, Any], required: set[str], source: str) -> N
         raise ComplianceError(f"{source}: missing required keys: {', '.join(missing)}")
 
 
+def _reject_unknown_keys(mapping: dict[str, Any], allowed: set[str], source: str) -> None:
+    unknown_keys = [key for key in mapping if key not in allowed]
+    if unknown_keys:
+        formatted = ", ".join(str(key) for key in unknown_keys)
+        raise ComplianceError(f"{source}: unknown keys: {formatted}")
+
+
 def _require_type(value: Any, expected_type: type | tuple[type, ...], source: str) -> None:
     if isinstance(expected_type, tuple):
         matches = any(_matches_expected_type(value, item) for item in expected_type)
@@ -125,6 +132,16 @@ def _require_non_empty_string(value: Any, source: str) -> None:
     _require_type(value, str, source)
     if not value.strip():
         raise ComplianceError(f"{source}: must be a non-empty string")
+
+
+def _require_nullable_string(value: Any, source: str) -> None:
+    if value is None:
+        return
+    _require_non_empty_string(value, source)
+
+
+def _require_bool(value: Any, source: str) -> None:
+    _require_type(value, bool, source)
 
 
 def _require_schema_version(mapping: dict[str, Any], source: str) -> None:
@@ -153,6 +170,85 @@ def _validate_pointers_skipped(items: Any, source: str) -> None:
         _require_non_empty_string(item["reason"], f"{item_source}.reason")
 
 
+def _validate_instruction_resources(items: Any, source: str) -> None:
+    _require_type(items, list, source)
+    allowed = {"resource", "why_applicable", "evidence", "decision_affected"}
+    for idx, item in enumerate(items):
+        item_source = f"{source}[{idx}]"
+        _require_type(item, dict, item_source)
+        _require_keys(item, allowed, item_source)
+        _reject_unknown_keys(item, allowed, item_source)
+        for key in allowed:
+            _require_non_empty_string(item[key], f"{item_source}.{key}")
+
+
+def _validate_role_dispatch(block: Any, source: str) -> None:
+    _require_type(block, dict, source)
+    allowed = {"decision", "planned_subagents", "monolithic_justification"}
+    _require_keys(block, allowed, source)
+    _reject_unknown_keys(block, allowed, source)
+    _require_non_empty_string(block["decision"], f"{source}.decision")
+    _require_string_list(block["planned_subagents"], f"{source}.planned_subagents")
+    _require_nullable_string(block["monolithic_justification"], f"{source}.monolithic_justification")
+
+
+def _validate_gate(block: Any, source: str) -> None:
+    _require_type(block, dict, source)
+    allowed = {"status", "link", "exemption_reason"}
+    _require_keys(block, allowed, source)
+    _reject_unknown_keys(block, allowed, source)
+    _require_non_empty_string(block["status"], f"{source}.status")
+    _require_nullable_string(block["link"], f"{source}.link")
+    _require_nullable_string(block["exemption_reason"], f"{source}.exemption_reason")
+
+
+def _validate_adr_required(block: Any, source: str, require_supersession_notes: bool = False) -> None:
+    _require_type(block, dict, source)
+    allowed = {"required", "link"}
+    if require_supersession_notes:
+        allowed.add("supersession_notes")
+    _require_keys(block, allowed, source)
+    _reject_unknown_keys(block, allowed, source)
+    _require_bool(block["required"], f"{source}.required")
+    _require_nullable_string(block["link"], f"{source}.link")
+    if require_supersession_notes:
+        _require_string_list(block["supersession_notes"], f"{source}.supersession_notes")
+
+
+def _validate_doc_sync(block: Any, source: str) -> None:
+    _require_type(block, dict, source)
+    allowed = {"triggered", "companions", "no_change_justifications"}
+    _require_keys(block, allowed, source)
+    _reject_unknown_keys(block, allowed, source)
+    _require_bool(block["triggered"], f"{source}.triggered")
+    _require_string_list(block["companions"], f"{source}.companions")
+    _require_string_list(block["no_change_justifications"], f"{source}.no_change_justifications")
+
+
+def _validate_deviations(items: Any, source: str) -> None:
+    _require_type(items, list, source)
+    allowed = {"planned", "actual", "reason"}
+    for idx, item in enumerate(items):
+        item_source = f"{source}[{idx}]"
+        _require_type(item, dict, item_source)
+        _require_keys(item, allowed, item_source)
+        _reject_unknown_keys(item, allowed, item_source)
+        for key in allowed:
+            _require_non_empty_string(item[key], f"{item_source}.{key}")
+
+
+def _validate_verification_results(items: Any, source: str) -> None:
+    _require_type(items, list, source)
+    allowed = {"command", "result", "evidence"}
+    for idx, item in enumerate(items):
+        item_source = f"{source}[{idx}]"
+        _require_type(item, dict, item_source)
+        _require_keys(item, allowed, item_source)
+        _reject_unknown_keys(item, allowed, item_source)
+        for key in allowed:
+            _require_non_empty_string(item[key], f"{item_source}.{key}")
+
+
 def validate_plan(block: dict[str, Any], source: str) -> None:
     _require_keys(
         block,
@@ -170,24 +266,12 @@ def validate_plan(block: dict[str, Any], source: str) -> None:
     )
     _require_schema_version(block, source)
     _require_string_list(block["applicable_roles"], f"{source}.applicable_roles")
-    _require_type(block["instruction_resources"], list, f"{source}.instruction_resources")
-    for idx, item in enumerate(block["instruction_resources"]):
-        _require_type(item, dict, f"{source}.instruction_resources[{idx}]")
-        _require_keys(
-            item,
-            {"resource", "why_applicable", "evidence", "decision_affected"},
-            f"{source}.instruction_resources[{idx}]",
-        )
-    _require_type(block["role_dispatch"], dict, f"{source}.role_dispatch")
-    _require_keys(
-        block["role_dispatch"],
-        {"decision", "planned_subagents", "monolithic_justification"},
-        f"{source}.role_dispatch",
-    )
-    _require_string_list(block["role_dispatch"].get("planned_subagents"), f"{source}.role_dispatch.planned_subagents")
-    for key in ("plan_gate", "adr_required", "doc_sync"):
-        _require_type(block[key], dict, f"{source}.{key}")
-    _require_type(block["verification"], list, f"{source}.verification")
+    _validate_instruction_resources(block["instruction_resources"], f"{source}.instruction_resources")
+    _validate_role_dispatch(block["role_dispatch"], f"{source}.role_dispatch")
+    _validate_gate(block["plan_gate"], f"{source}.plan_gate")
+    _validate_adr_required(block["adr_required"], f"{source}.adr_required", require_supersession_notes=True)
+    _validate_doc_sync(block["doc_sync"], f"{source}.doc_sync")
+    _require_string_list(block["verification"], f"{source}.verification")
 
 
 def validate_subagent(
@@ -348,10 +432,11 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
             f"{source}: monolithic_justification required when dispatched roles are missing "
             f"from dispatch (missing: {missing})"
         )
-    for key in ("plan_gate", "diff_gate", "adr_required"):
-        _require_type(block[key], dict, f"{source}.{key}")
-    for key in ("deviations", "verification_results"):
-        _require_type(block[key], list, f"{source}.{key}")
+    _validate_gate(block["plan_gate"], f"{source}.plan_gate")
+    _validate_gate(block["diff_gate"], f"{source}.diff_gate")
+    _validate_adr_required(block["adr_required"], f"{source}.adr_required")
+    _validate_deviations(block["deviations"], f"{source}.deviations")
+    _validate_verification_results(block["verification_results"], f"{source}.verification_results")
 
 
 def validate_loaded_block(data: Any, source: str, repo_root: Path = REPO_ROOT) -> None:
