@@ -103,12 +103,22 @@ def _require_keys(mapping: dict[str, Any], required: set[str], source: str) -> N
 
 
 def _require_type(value: Any, expected_type: type | tuple[type, ...], source: str) -> None:
-    if not isinstance(value, expected_type):
+    if isinstance(expected_type, tuple):
+        matches = any(_matches_expected_type(value, item) for item in expected_type)
+    else:
+        matches = _matches_expected_type(value, expected_type)
+    if not matches:
         if isinstance(expected_type, tuple):
             expected = " or ".join(t.__name__ for t in expected_type)
         else:
             expected = expected_type.__name__
         raise ComplianceError(f"{source}: expected {expected}, got {type(value).__name__}")
+
+
+def _matches_expected_type(value: Any, expected_type: type) -> bool:
+    if expected_type is int:
+        return type(value) is int
+    return isinstance(value, expected_type)
 
 
 def _require_non_empty_string(value: Any, source: str) -> None:
@@ -118,7 +128,8 @@ def _require_non_empty_string(value: Any, source: str) -> None:
 
 
 def _require_schema_version(mapping: dict[str, Any], source: str) -> None:
-    if mapping.get("schema_version") != 1:
+    _require_type(mapping.get("schema_version"), int, f"{source}.schema_version")
+    if mapping["schema_version"] != 1:
         raise ComplianceError(f"{source}: schema_version must be 1")
 
 
@@ -158,7 +169,7 @@ def validate_plan(block: dict[str, Any], source: str) -> None:
         source,
     )
     _require_schema_version(block, source)
-    _require_type(block["applicable_roles"], list, f"{source}.applicable_roles")
+    _require_string_list(block["applicable_roles"], f"{source}.applicable_roles")
     _require_type(block["instruction_resources"], list, f"{source}.instruction_resources")
     for idx, item in enumerate(block["instruction_resources"]):
         _require_type(item, dict, f"{source}.instruction_resources[{idx}]")
@@ -173,7 +184,7 @@ def validate_plan(block: dict[str, Any], source: str) -> None:
         {"decision", "planned_subagents", "monolithic_justification"},
         f"{source}.role_dispatch",
     )
-    _require_type(block["role_dispatch"].get("planned_subagents"), list, f"{source}.role_dispatch.planned_subagents")
+    _require_string_list(block["role_dispatch"].get("planned_subagents"), f"{source}.role_dispatch.planned_subagents")
     for key in ("plan_gate", "adr_required", "doc_sync"):
         _require_type(block[key], dict, f"{source}.{key}")
     _require_type(block["verification"], list, f"{source}.verification")
@@ -324,6 +335,10 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
             expected_agents_md_version=current_agents_version,
         )
         dispatched_roles.add(subagent["role"])
+    extra_roles = dispatched_roles - applicable_roles
+    if extra_roles:
+        extra = ", ".join(sorted(extra_roles))
+        raise ComplianceError(f"{source}: roles were dispatched that were not in applicable_roles: {extra}")
     if not block["subagents_dispatched"] and not justification:
         raise ComplianceError(f"{source}: monolithic_justification required when no subagents are dispatched")
     missing_roles = applicable_roles - dispatched_roles
