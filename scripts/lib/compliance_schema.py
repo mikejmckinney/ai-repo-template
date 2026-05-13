@@ -323,7 +323,9 @@ def validate_subagent(
     _require_type(block["role"], str, f"{source}.role")
     _require_type(block["role_contract_version"], int, f"{source}.role_contract_version")
     _require_type(block["agents_md_version"], int, f"{source}.agents_md_version")
-    current_agents_version = expected_agents_md_version or current_agents_md_version(repo_root)
+    current_agents_version = (
+        expected_agents_md_version if expected_agents_md_version is not None else current_agents_md_version(repo_root)
+    )
     if block["agents_md_version"] != current_agents_version:
         raise ComplianceError(
             f"{source}: agents_md_version {block['agents_md_version']} "
