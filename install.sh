@@ -204,13 +204,13 @@ copy_template_file() {
   local src="$DOTFILES/$rel_path"
   local dst="$WORKSPACE/$rel_path"
 
-  if [[ ! -f "$src" ]]; then
+  if [[ ! -e "$src" ]]; then
     log_warn "  ⚠ Source missing: $rel_path"
     MULTIAGENT_MISSING=$((MULTIAGENT_MISSING + 1))
     return
   fi
 
-  if [[ -f "$dst" ]]; then
+  if [[ -e "$dst" ]]; then
     log_info "  = Exists: $rel_path (skipping)"
     MULTIAGENT_SKIPPED=$((MULTIAGENT_SKIPPED + 1))
     return
@@ -222,7 +222,17 @@ copy_template_file() {
     mkdir -p "$dst_dir"
   fi
 
-  if cp "$src" "$dst"; then
+  if [[ -d "$src" ]]; then
+    if ! cp -R "$src" "$dst"; then
+      log_warn "  ⚠ Failed to copy: $rel_path"
+      return
+    fi
+  elif ! cp "$src" "$dst"; then
+    log_warn "  ⚠ Failed to copy: $rel_path"
+    return
+  fi
+
+  if [[ -e "$dst" ]]; then
     log_info "  ✓ Copied: $rel_path"
     MULTIAGENT_COPIED=$((MULTIAGENT_COPIED + 1))
   else
@@ -288,6 +298,7 @@ MULTIAGENT_FILES=(
   "docs/guides/multi-agent-coordination.md"
   "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
+  "docs/compliance_schemas.md"
   ".github/prompts/instruction-compliance-smoke.md"
   ".github/prompts/multi-model-consensus-plan.md"
   ".github/agents/consensus-candidate-claude.agent.md"
@@ -297,6 +308,7 @@ MULTIAGENT_FILES=(
   "scripts/lib/compliance_schema.py"
   "scripts/validate-compliance-examples.py"
   "scripts/validate-compliance-fixtures.py"
+  "scripts/tests/fixtures/compliance"
   "docs/research/.gitkeep"
 )
 
