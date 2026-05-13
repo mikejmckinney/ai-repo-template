@@ -96,9 +96,9 @@ if command -v python3 &>/dev/null; then
   elif python3 -m pip --version &>/dev/null; then
     log_info "Installing Python dependency: PyYAML"
     if [[ -f "$DOTFILES/requirements.txt" ]]; then
-      python3 -m pip install --user -r "$DOTFILES/requirements.txt"
+      python3 -m pip install --user -r "$DOTFILES/requirements.txt" || log_warn "Failed to install Python dependencies. Not script-blocking, but onboarding is blocked."
     else
-      python3 -m pip install --user 'PyYAML>=6.0,<7'
+      python3 -m pip install --user 'PyYAML>=6.0,<7' || log_warn "Failed to install PyYAML. Not script-blocking, but onboarding is blocked."
     fi
   else
     log_warn "python3 is present but pip is unavailable; install PyYAML before running compliance validators."
