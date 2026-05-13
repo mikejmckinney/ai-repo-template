@@ -130,8 +130,8 @@ else
   if [[ -z "$overlay_hits" ]]; then
     pass "no v1 role/platform files use overlay_version:"
   else
-  fail "overlay_version: is forbidden in ADR-026 v1 evidence"
-  printf '%s\n' "$overlay_hits"
+    fail "overlay_version: is forbidden in ADR-026 v1 evidence"
+    printf '%s\n' "$overlay_hits"
   fi
 fi
 
