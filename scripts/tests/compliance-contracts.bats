@@ -162,7 +162,7 @@ PY
 
 @test "overlay_version grep pattern ignores adjacent names" {
   cd "$REPO_ROOT"
-  run bash -c "printf '%s\n' 'not_overlay_version: 1' 'overlay_version_extra: 1' 'overlay_version: 1' 'overlay_version : 1' | grep -E '\\<overlay_version\\>[[:space:]]*:'"
+  run bash -c "printf '%s\n' 'not_overlay_version: 1' 'overlay_version_extra: 1' 'overlay_version: 1' 'overlay_version : 1' | grep -E '\\boverlay_version\\b[[:space:]]*:'"
   [ "$status" -eq 0 ]
   [[ "$output" == *"overlay_version: 1"* ]]
   [[ "$output" == *"overlay_version : 1"* ]]
