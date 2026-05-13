@@ -333,7 +333,10 @@ def validate_subagent(
         )
     _require_type(block["receipt"], dict, f"{source}.receipt")
     _require_keys(block["receipt"], {"mode", "value"}, f"{source}.receipt")
-    _require_non_empty_string(block["receipt"]["mode"], f"{source}.receipt.mode")
+    mode = block["receipt"]["mode"]
+    _require_non_empty_string(mode, f"{source}.receipt.mode")
+    if mode not in {"visible-line", "trailing-block"}:
+        raise ComplianceError(f"{source}.receipt.mode: must be 'visible-line' or 'trailing-block'")
     _require_non_empty_string(block["receipt"]["value"], f"{source}.receipt.value")
     _require_string_list(block["context_files_used"], f"{source}.context_files_used")
     _validate_pointers_skipped(block["pointers_skipped"], f"{source}.pointers_skipped")
