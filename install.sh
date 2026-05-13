@@ -86,6 +86,27 @@ fi
 log_info "Template path: $DOTFILES"
 log_info "Workspace path: $WORKSPACE"
 
+# ADR-026 compliance validators parse YAML fixtures and examples. Ensure the
+# template bootstrap provisions PyYAML when this install script is the user's
+# entrypoint (Codespaces dotfiles), matching scripts/setup.sh's requirements
+# handling for non-Codespaces setup.
+if command -v python3 &>/dev/null; then
+  if python3 -c 'import yaml' &>/dev/null; then
+    log_info "Python dependency available: PyYAML"
+  elif python3 -m pip --version &>/dev/null; then
+    log_info "Installing Python dependency: PyYAML"
+    if [[ -f "$DOTFILES/requirements.txt" ]]; then
+      python3 -m pip install --user -r "$DOTFILES/requirements.txt"
+    else
+      python3 -m pip install --user 'PyYAML>=6.0,<7'
+    fi
+  else
+    log_warn "python3 is present but pip is unavailable; install PyYAML before running compliance validators."
+  fi
+else
+  log_warn "python3 not found; compliance validators require Python 3 with PyYAML."
+fi
+
 # =============================================================================
 # 1. Install VS Code Extensions
 # =============================================================================

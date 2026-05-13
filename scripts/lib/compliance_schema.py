@@ -111,9 +111,35 @@ def _require_type(value: Any, expected_type: type | tuple[type, ...], source: st
         raise ComplianceError(f"{source}: expected {expected}, got {type(value).__name__}")
 
 
+def _require_non_empty_string(value: Any, source: str) -> None:
+    _require_type(value, str, source)
+    if not value.strip():
+        raise ComplianceError(f"{source}: must be a non-empty string")
+
+
 def _require_schema_version(mapping: dict[str, Any], source: str) -> None:
     if mapping.get("schema_version") != 1:
         raise ComplianceError(f"{source}: schema_version must be 1")
+
+
+def _require_string_list(items: Any, source: str) -> None:
+    _require_type(items, list, source)
+    for idx, item in enumerate(items):
+        _require_non_empty_string(item, f"{source}[{idx}]")
+
+
+def _validate_pointers_skipped(items: Any, source: str) -> None:
+    _require_type(items, list, source)
+    for idx, item in enumerate(items):
+        item_source = f"{source}[{idx}]"
+        _require_type(item, dict, item_source)
+        _require_keys(item, {"path", "reason"}, item_source)
+        unknown_keys = [key for key in item if key not in {"path", "reason"}]
+        if unknown_keys:
+            formatted = ", ".join(str(key) for key in unknown_keys)
+            raise ComplianceError(f"{item_source}: unknown keys: {formatted}")
+        _require_non_empty_string(item["path"], f"{item_source}.path")
+        _require_non_empty_string(item["reason"], f"{item_source}.reason")
 
 
 def validate_plan(block: dict[str, Any], source: str) -> None:
@@ -153,7 +179,13 @@ def validate_plan(block: dict[str, Any], source: str) -> None:
     _require_type(block["verification"], list, f"{source}.verification")
 
 
-def validate_subagent(block: dict[str, Any], source: str, repo_root: Path = REPO_ROOT) -> None:
+def validate_subagent(
+    block: dict[str, Any],
+    source: str,
+    repo_root: Path = REPO_ROOT,
+    role_versions: dict[str, int] | None = None,
+    expected_agents_md_version: int | None = None,
+) -> None:
     _require_keys(
         block,
         {
@@ -174,7 +206,7 @@ def validate_subagent(block: dict[str, Any], source: str, repo_root: Path = REPO
     _require_type(block["role"], str, f"{source}.role")
     _require_type(block["role_contract_version"], int, f"{source}.role_contract_version")
     _require_type(block["agents_md_version"], int, f"{source}.agents_md_version")
-    current_agents_version = current_agents_md_version(repo_root)
+    current_agents_version = expected_agents_md_version or current_agents_md_version(repo_root)
     if block["agents_md_version"] != current_agents_version:
         raise ComplianceError(
             f"{source}: agents_md_version {block['agents_md_version']} "
@@ -182,11 +214,15 @@ def validate_subagent(block: dict[str, Any], source: str, repo_root: Path = REPO
         )
     _require_type(block["receipt"], dict, f"{source}.receipt")
     _require_keys(block["receipt"], {"mode", "value"}, f"{source}.receipt")
-    for key in ("context_files_used", "pointers_skipped", "files_modified", "gates_invoked"):
-        _require_type(block[key], list, f"{source}.{key}")
+    _require_non_empty_string(block["receipt"]["mode"], f"{source}.receipt.mode")
+    _require_non_empty_string(block["receipt"]["value"], f"{source}.receipt.value")
+    _require_string_list(block["context_files_used"], f"{source}.context_files_used")
+    _validate_pointers_skipped(block["pointers_skipped"], f"{source}.pointers_skipped")
+    _require_string_list(block["files_modified"], f"{source}.files_modified")
+    _require_string_list(block["gates_invoked"], f"{source}.gates_invoked")
     _require_type(block["task_scope"], str, f"{source}.task_scope")
 
-    versions = canonical_role_versions(repo_root)
+    versions = role_versions if role_versions is not None else canonical_role_versions(repo_root)
     role = block["role"]
     if role not in versions:
         raise ComplianceError(f"{source}: role {role!r} has no canonical .agents/<role>.md file")
@@ -277,17 +313,25 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
         if not justification.strip():
             raise ComplianceError(f"{source}: monolithic_justification must be non-empty when provided")
     dispatched_roles = set()
+    role_versions = canonical_role_versions(repo_root) if block["subagents_dispatched"] else {}
     for idx, subagent in enumerate(block["subagents_dispatched"]):
         _require_type(subagent, dict, f"{source}.subagents_dispatched[{idx}]")
-        validate_subagent(subagent, f"{source}.subagents_dispatched[{idx}]", repo_root)
+        validate_subagent(
+            subagent,
+            f"{source}.subagents_dispatched[{idx}]",
+            repo_root,
+            role_versions=role_versions,
+            expected_agents_md_version=current_agents_version,
+        )
         dispatched_roles.add(subagent["role"])
     if not block["subagents_dispatched"] and not justification:
         raise ComplianceError(f"{source}: monolithic_justification required when no subagents are dispatched")
-    if applicable_roles and dispatched_roles < applicable_roles and not justification:
-        missing_roles = ", ".join(sorted(applicable_roles - dispatched_roles))
+    missing_roles = applicable_roles - dispatched_roles
+    if missing_roles and not justification:
+        missing = ", ".join(sorted(missing_roles))
         raise ComplianceError(
-            f"{source}: monolithic_justification required when dispatched roles are a strict subset "
-            f"of applicable_roles (missing: {missing_roles})"
+            f"{source}: monolithic_justification required when dispatched roles are missing "
+            f"from dispatch (missing: {missing})"
         )
     for key in ("plan_gate", "diff_gate", "adr_required"):
         _require_type(block[key], dict, f"{source}.{key}")

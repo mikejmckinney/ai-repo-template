@@ -15,6 +15,14 @@ setup_file() {
   [[ "$output" == *"validated"* ]]
 }
 
+@test "explicit relative compliance schema example path validates" {
+  cd "$REPO_ROOT"
+  run python3 scripts/validate-compliance-examples.py docs/compliance_schemas.md
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"validated"* ]]
+  [[ "$output" != *"ValueError"* ]]
+}
+
 @test "compliance fixtures separate valid and invalid evidence" {
   cd "$REPO_ROOT"
   run python3 scripts/validate-compliance-fixtures.py
