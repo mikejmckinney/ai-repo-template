@@ -46,13 +46,14 @@ def iter_yaml_files(path: Path) -> list[Path]:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     default_fixtures_dir = REPO_ROOT / "scripts" / "tests" / "fixtures" / "compliance"
-    parser.add_argument(
+    fixture_dir_args = parser.add_mutually_exclusive_group()
+    fixture_dir_args.add_argument(
         "fixtures_dir",
         nargs="?",
         type=Path,
         help="fixture directory to validate; alias for --fixtures-dir",
     )
-    parser.add_argument(
+    fixture_dir_args.add_argument(
         "--fixtures-dir",
         dest="fixtures_dir_option",
         type=Path,
@@ -61,9 +62,6 @@ def main(argv: list[str]) -> int:
     )
     parser.add_argument("--single", type=Path, help="validate one YAML file; exit non-zero on validation failure")
     args = parser.parse_args(argv[1:])
-
-    if args.fixtures_dir and args.fixtures_dir_option:
-        parser.error("use either positional fixtures_dir or --fixtures-dir, not both")
 
     fixtures_dir = resolve_input_path(args.fixtures_dir_option or args.fixtures_dir or default_fixtures_dir)
 
