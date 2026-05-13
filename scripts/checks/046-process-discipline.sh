@@ -98,7 +98,7 @@ for path in sorted((root / '.agents').glob('*.md')):
         continue
     data = yaml.safe_load(match.group(1)) or {}
     version = data.get('role_contract_version')
-    if not isinstance(version, int) or version < 1:
+    if type(version) is not int or version < 1:
         errors.append(f"{path}: role_contract_version must be a positive integer")
     if 'subagent_compliance' not in text:
         errors.append(f"{path}: missing subagent_compliance return guidance")
