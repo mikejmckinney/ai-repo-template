@@ -111,16 +111,28 @@ else
   fail "canonical role files must declare role_contract_version and subagent_compliance guidance"
 fi
 
-overlay_hits=$(grep -RInE --include='*.md' --include='*.yml' --include='*.yaml' '\boverlay_version\b[[:space:]]*:' \
-  .agents .github/agents .claude/agents .github/PLAN_TEMPLATE.md .github/pull_request_template.md AGENTS.md \
-  | grep -v '/README\.md:' \
-  | grep -v '/_TEMPLATE\.md:' \
-  || true)
-if [[ -z "$overlay_hits" ]]; then
+overlay_scan_paths=(.agents .github/agents .claude/agents .github/PLAN_TEMPLATE.md .github/pull_request_template.md AGENTS.md)
+overlay_scan_out=
+overlay_scan_status=0
+overlay_hits=
+if overlay_scan_out=$(grep -RInE --include='*.md' --include='*.yml' --include='*.yaml' '\boverlay_version\b[[:space:]]*:' "${overlay_scan_paths[@]}" 2>&1); then
+  overlay_scan_status=0
+else
+  overlay_scan_status=$?
+fi
+if [[ $overlay_scan_status -gt 1 ]]; then
+  fail "overlay_version: scan failed"
+  printf '%s\n' "$overlay_scan_out"
+elif [[ $overlay_scan_status -eq 1 ]]; then
   pass "no v1 role/platform files use overlay_version:"
 else
+  overlay_hits=$(printf '%s\n' "$overlay_scan_out" | awk '!/\/README\.md:/ && !/\/_TEMPLATE\.md:/')
+  if [[ -z "$overlay_hits" ]]; then
+    pass "no v1 role/platform files use overlay_version:"
+  else
   fail "overlay_version: is forbidden in ADR-026 v1 evidence"
   printf '%s\n' "$overlay_hits"
+  fi
 fi
 
 compliance_examples_out=
