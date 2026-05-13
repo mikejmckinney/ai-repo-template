@@ -103,6 +103,46 @@ EOF
   [ "$status" -ne 0 ]
 }
 
+# --- Section-aware: User outcome must appear at/after diff-gate (ISS-18) --
+# Mirrors the awk logic added to scripts/checks/047 in PR #312 round 4 to
+# defeat the "both User outcome mentions live in plan-gate" regression.
+
+_run_section_aware_check() {
+  awk '
+    /diff-gate/ { seen = 1 }
+    seen && tolower($0) ~ /user outcome/ { count++ }
+    END { print count + 0 }
+  ' "$1"
+}
+
+@test "section-aware: User outcome appears after diff-gate (positive)" {
+  fixture="$(mktemp)"
+  cat > "$fixture" <<'EOF'
+## Plan-gate
+- Outcome plan must be present.
+
+## diff-gate
+- User outcome must be re-verified post-implementation.
+EOF
+  count=$(_run_section_aware_check "$fixture")
+  rm -f "$fixture"
+  [ "$count" -ge 1 ]
+}
+
+@test "section-aware: both User outcome mentions in plan-gate only (negative)" {
+  fixture="$(mktemp)"
+  cat > "$fixture" <<'EOF'
+## Plan-gate
+- User outcome plan
+- User outcome 15-minute test
+## diff-gate
+- ship the diff
+EOF
+  count=$(_run_section_aware_check "$fixture")
+  rm -f "$fixture"
+  [ "$count" -eq 0 ]
+}
+
 # --- Smoke: check 047 against the live repo passes -------------------------
 
 @test "check 047 sourced against live repo emits no fail() calls" {

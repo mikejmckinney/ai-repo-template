@@ -66,6 +66,23 @@ if grep -qF "diff-gate" "$_judge"; then
 else
   fail "$_judge missing diff-gate section with user-outcome mention (issue #311)"
 fi
+
+# 5b. Section-aware diff-gate check (PR #312 codex P2 review): the global
+#     count above can pass even if both "User outcome" mentions sit in
+#     plan-gate context, leaving the diff-gate without User-outcome
+#     evidence. Require at least one "User outcome" mention to appear at
+#     or after the first "diff-gate" line in judge.md.
+_judge_diff_uo=$(awk '
+  /diff-gate/ { seen = 1 }
+  seen && tolower($0) ~ /user outcome/ { count++ }
+  END { print count + 0 }
+' "$_judge")
+if [[ "${_judge_diff_uo:-0}" -ge 1 ]]; then
+  pass "$_judge has 'User outcome' mention in diff-gate section (issue #311, PR #312)"
+else
+  fail "$_judge: 'User outcome' must appear at or after the first 'diff-gate' line; found 0 (issue #311, PR #312)"
+fi
+unset _judge_diff_uo
 unset _judge _judge_uo_count
 
 # 6. .agents/critic.md must call out outcome theater or equivalent so Critic

@@ -99,12 +99,13 @@ the act of writing it forces the implementation thinking before code.
    revision comment, and tick the matching box in `## Plan revision
    sync` so reviewers don't evaluate stale intent.
 6. **Before requesting review**, populate the PR template's
-   `## Verification results` section with a result entry (`✅ pass`,
-   `❌ fail`, `⏭️ sandbox-deferred — see Phase 2`, or `⏭️ N/A — <reason>`)
-   for every command listed in the plan's `### Verification`. CI is a
-   backstop, not a substitute for local verification — Judge BLOCKs at
-   diff-gate when this section is missing or claims pass for a command
-   that demonstrably never ran (`.agents/judge.md` item 16).
+   `## Supporting verification results` section with a result entry
+   (`✅ pass`, `❌ fail`, `⏭️ sandbox-deferred — see Phase 2`, or
+   `⏭️ N/A — <reason>`) for every command listed in the plan's
+   `### Supporting verification`. CI is a backstop, not a substitute
+   for local verification — Judge BLOCKs at diff-gate when this
+   section is missing or claims pass for a command that demonstrably
+   never ran (`.agents/judge.md` item 16).
 
 **Exemptions** (plan is NOT required):
 
