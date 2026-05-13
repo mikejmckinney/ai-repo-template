@@ -294,6 +294,9 @@ MULTIAGENT_FILES=(
   ".github/agents/consensus-candidate-gpt.agent.md"
   ".github/agents/consensus-candidate-gemini.agent.md"
   "scripts/diag-hang-snapshot.sh"
+  "scripts/lib/compliance_schema.py"
+  "scripts/validate-compliance-examples.py"
+  "scripts/validate-compliance-fixtures.py"
   "docs/research/.gitkeep"
 )
 
