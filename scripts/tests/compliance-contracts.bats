@@ -61,3 +61,31 @@ with TemporaryDirectory() as tmp:
 PY
   [ "$status" -eq 0 ]
 }
+
+@test "canonical role versions reject boolean contract versions" {
+  cd "$REPO_ROOT"
+  run python3 - <<'PY'
+import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+sys.path.insert(0, "scripts/lib")
+from compliance_schema import ComplianceError, canonical_role_versions
+
+with TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    agents = root / ".agents"
+    agents.mkdir()
+    (agents / "docs.md").write_text(
+        "---\nname: docs\nrole_contract_version: true\n---\n",
+        encoding="utf-8",
+    )
+    try:
+        canonical_role_versions(root)
+    except ComplianceError as exc:
+        assert "role_contract_version" in str(exc)
+    else:
+        raise AssertionError("boolean role_contract_version passed")
+PY
+  [ "$status" -eq 0 ]
+}

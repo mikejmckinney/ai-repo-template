@@ -71,7 +71,7 @@ def canonical_role_versions(repo_root: Path = REPO_ROOT) -> dict[str, int]:
         version = frontmatter.get("role_contract_version")
         if not isinstance(role, str) or not role:
             raise ComplianceError(f"{path}: missing frontmatter name")
-        if not isinstance(version, int) or version < 1:
+        if type(version) is not int or version < 1:
             raise ComplianceError(f"{path}: missing positive integer role_contract_version")
         versions[role] = version
     return versions
