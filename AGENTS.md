@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 16 -->
+<!-- AGENTS_MD_VERSION: 17 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one.
      The canary covers AGENTS.md only — per-concern files in .context/rules/
@@ -16,7 +16,7 @@
 ## Session handshake (read-receipt)
 
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v16` (matching
+substantive reply with the exact token `Session handshake v17` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
