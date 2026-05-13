@@ -98,6 +98,33 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "repository path validation rejects symlink escapes" {
+  cd "$REPO_ROOT"
+  run python3 - <<'PY'
+import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+sys.path.insert(0, "scripts/lib")
+from compliance_schema import ComplianceError, _validate_repo_path
+
+with TemporaryDirectory() as tmp:
+    base = Path(tmp)
+    repo = base / "repo"
+    outside = base / "outside"
+    repo.mkdir()
+    outside.mkdir()
+    (repo / "link").symlink_to(outside, target_is_directory=True)
+    try:
+        _validate_repo_path("link/file.md", "fixture.files_modified[0]", repo)
+    except ComplianceError as exc:
+        assert "must stay within the repository" in str(exc)
+    else:
+        raise AssertionError("symlink escape passed path validation")
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "overlay_version README/template exclusion preserves enforced templates" {
   cd "$REPO_ROOT"
   input=$'.agents/README.md:1:overlay_version: 1\n.agents/_TEMPLATE.md:2:overlay_version: 1\n.github/PLAN_TEMPLATE.md:3:overlay_version: 1\n.agents/docs.md:4:overlay_version: 1'

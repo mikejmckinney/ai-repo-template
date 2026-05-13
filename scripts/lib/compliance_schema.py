@@ -174,9 +174,10 @@ def _validate_repo_path(value: Any, source: str, repo_root: Path) -> None:
         raise ComplianceError(f"{source}: must not contain empty, current-directory, or parent-directory segments")
     if any(part.startswith("<") and part.endswith(">") for part in path.parts):
         raise ComplianceError(f"{source}: must not contain placeholder path segments")
-    resolved = (repo_root / Path(*path.parts)).resolve()
+    resolved_root = repo_root.resolve()
+    resolved = (resolved_root / Path(*path.parts)).resolve()
     try:
-        resolved.relative_to(repo_root.resolve())
+        resolved.relative_to(resolved_root)
     except ValueError as exc:
         raise ComplianceError(f"{source}: must stay within the repository") from exc
 
