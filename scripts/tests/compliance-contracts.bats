@@ -89,3 +89,14 @@ with TemporaryDirectory() as tmp:
 PY
   [ "$status" -eq 0 ]
 }
+
+@test "overlay_version README/template exclusion preserves enforced templates" {
+  cd "$REPO_ROOT"
+  input=$'.agents/README.md:1:overlay_version: 1\n.agents/_TEMPLATE.md:2:overlay_version: 1\n.github/PLAN_TEMPLATE.md:3:overlay_version: 1\n.agents/docs.md:4:overlay_version: 1'
+  run bash -c "printf '%s\n' \"$input\" | grep -v '/README\\.md:' | grep -v '/_TEMPLATE\\.md:'"
+  [ "$status" -eq 0 ]
+  [[ "$output" != *".agents/README.md"* ]]
+  [[ "$output" != *".agents/_TEMPLATE.md"* ]]
+  [[ "$output" == *".github/PLAN_TEMPLATE.md:3:overlay_version: 1"* ]]
+  [[ "$output" == *".agents/docs.md:4:overlay_version: 1"* ]]
+}
