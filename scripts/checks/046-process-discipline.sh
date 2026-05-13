@@ -111,7 +111,7 @@ else
   fail "canonical role files must declare role_contract_version and subagent_compliance guidance"
 fi
 
-overlay_hits=$(grep -RInw --include='*.md' --include='*.yml' --include='*.yaml' 'overlay_version:' \
+overlay_hits=$(grep -RInE --include='*.md' --include='*.yml' --include='*.yaml' '\<overlay_version\>[[:space:]]*:' \
   .agents .github/agents .claude/agents .github/PLAN_TEMPLATE.md .github/pull_request_template.md AGENTS.md \
   | grep -v '/README\.md:' \
   | grep -v '/_TEMPLATE\.md:' \

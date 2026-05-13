@@ -151,11 +151,21 @@ PY
 
 @test "overlay_version README/template exclusion preserves enforced templates" {
   cd "$REPO_ROOT"
-  input=$'.agents/README.md:1:overlay_version: 1\n.agents/_TEMPLATE.md:2:overlay_version: 1\n.github/PLAN_TEMPLATE.md:3:overlay_version: 1\n.agents/docs.md:4:overlay_version: 1'
+  input=$'.agents/README.md:1:overlay_version: 1\n.agents/_TEMPLATE.md:2:overlay_version: 1\n.github/PLAN_TEMPLATE.md:3:overlay_version: 1\n.agents/docs.md:4:overlay_version: 1\n.agents/qa.md:5:not_overlay_version: 1\n.agents/pm.md:6:overlay_version_extra: 1'
   run bash -c "printf '%s\n' \"$input\" | grep -v '/README\\.md:' | grep -v '/_TEMPLATE\\.md:'"
   [ "$status" -eq 0 ]
   [[ "$output" != *".agents/README.md"* ]]
   [[ "$output" != *".agents/_TEMPLATE.md"* ]]
   [[ "$output" == *".github/PLAN_TEMPLATE.md:3:overlay_version: 1"* ]]
   [[ "$output" == *".agents/docs.md:4:overlay_version: 1"* ]]
+}
+
+@test "overlay_version grep pattern ignores adjacent names" {
+  cd "$REPO_ROOT"
+  run bash -c "printf '%s\n' 'not_overlay_version: 1' 'overlay_version_extra: 1' 'overlay_version: 1' 'overlay_version : 1' | grep -E '\\<overlay_version\\>[[:space:]]*:'"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"overlay_version: 1"* ]]
+  [[ "$output" == *"overlay_version : 1"* ]]
+  [[ "$output" != *"not_overlay_version"* ]]
+  [[ "$output" != *"overlay_version_extra"* ]]
 }
