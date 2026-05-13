@@ -9,7 +9,7 @@ dispatched, or executed.
 from __future__ import annotations
 
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 try:
@@ -154,6 +154,30 @@ def _require_string_list(items: Any, source: str) -> None:
     _require_type(items, list, source)
     for idx, item in enumerate(items):
         _require_non_empty_string(item, f"{source}[{idx}]")
+
+
+def _validate_repo_path_list(items: Any, source: str, repo_root: Path) -> None:
+    _require_type(items, list, source)
+    for idx, item in enumerate(items):
+        _validate_repo_path(item, f"{source}[{idx}]", repo_root)
+
+
+def _validate_repo_path(value: Any, source: str, repo_root: Path) -> None:
+    _require_non_empty_string(value, source)
+    if "://" in value or value.startswith(("/", "~")):
+        raise ComplianceError(f"{source}: must be a repository-relative path")
+    path = PurePosixPath(value)
+    if not path.parts or any(part in {"", ".", ".."} for part in path.parts):
+        raise ComplianceError(f"{source}: must not contain empty, current-directory, or parent-directory segments")
+    if any(part.startswith("<") and part.endswith(">") for part in path.parts):
+        raise ComplianceError(f"{source}: must not contain placeholder path segments")
+    resolved = (repo_root / Path(*path.parts)).resolve()
+    try:
+        resolved.relative_to(repo_root.resolve())
+    except ValueError as exc:
+        raise ComplianceError(f"{source}: must stay within the repository") from exc
+    if not resolved.exists() and not resolved.parent.exists():
+        raise ComplianceError(f"{source}: parent directory does not exist in this repository")
 
 
 def _validate_pointers_skipped(items: Any, source: str) -> None:
@@ -313,7 +337,7 @@ def validate_subagent(
     _require_non_empty_string(block["receipt"]["value"], f"{source}.receipt.value")
     _require_string_list(block["context_files_used"], f"{source}.context_files_used")
     _validate_pointers_skipped(block["pointers_skipped"], f"{source}.pointers_skipped")
-    _require_string_list(block["files_modified"], f"{source}.files_modified")
+    _validate_repo_path_list(block["files_modified"], f"{source}.files_modified", repo_root)
     _require_string_list(block["gates_invoked"], f"{source}.gates_invoked")
     _require_type(block["task_scope"], str, f"{source}.task_scope")
 
