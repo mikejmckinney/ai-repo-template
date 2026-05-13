@@ -91,3 +91,54 @@ reviewers rely on parsed fields.
 
 If a subagent omits compliance, the parent may still summarize the work, but
 must not cite that output as Judge/Critic/QA gate evidence.
+
+## Edit verification and pass-back contract
+
+A dispatched subagent that intends to modify files must, before reporting
+`run_status: SUCCESS`, re-read each file in `files_modified` and confirm the
+expected post-edit anchors are present. If verification fails, or if the
+runtime errored before the edit could be persisted, the subagent must:
+
+1. Set `subagent_compliance.run_status` to `BLOCKED_ON_RUNTIME` (or
+   `PARTIAL` when some edits landed and others did not).
+2. Populate `subagent_compliance.apply_replays[]` with byte-anchored patches
+   the parent can replay deterministically. Each entry has `path`,
+   `anchor` (the existing literal substring to locate the edit point;
+   must be unique within the file), and `replacement` (the literal
+   substring to substitute for `anchor`). For pure insertions, set
+   `replacement` to the anchor text plus the inserted block.
+3. Leave `files_modified` empty for any file whose edit did not land. Do
+   not list aspirational edits in `files_modified`.
+
+The "returned byte-anchored patches in the failure response" pattern from
+PR #312's Architect dispatch is the gold standard. The "returned nothing"
+pattern from the same PR's Docs dispatch is the failure mode this contract
+is designed to prevent.
+
+Granting subagents broader write/exec permissions is **not** the right
+remediation for runtime failures: that splits write authority across N
+runtimes, defeats OP's diff-gate role, and increases blast radius. Pass-back
+keeps OP as the single applier and keeps the diff gate authoritative.
+
+## Parent handling of pass-back evidence
+
+When a subagent returns `run_status != SUCCESS` with `apply_replays[]`:
+
+1. The parent applies each patch via its own edit tool, verifies the
+   target file contains the expected post-edit bytes, and records the
+   applied SHA / file paths in `parent_compliance.deviations[]` with
+   `id: subagent-runtime-failure-replayed`.
+2. The parent records both the subagent's reported `files_modified`
+   (empty) and the parent-applied paths in
+   `parent_compliance.monolithic_justification`, naming pass-back
+   explicitly so the diff is not mistaken for default-agent scope creep.
+3. If the parent cannot apply a patch (anchor missing, conflict),
+   surface this as a `NEEDS_CONTEXT` follow-up rather than silently
+   re-implementing the edit.
+
+A subagent that returns `run_status: BLOCKED_ON_RUNTIME` with empty
+`apply_replays[]` and no concrete artifact is a process compliance failure.
+The parent must document this in `parent_compliance.deviations[]` with
+`id: subagent-runtime-failure-without-replay` and explain in
+`monolithic_justification` how the role-owned work was reconstructed (e.g.,
+verbatim from the issue body, from the plan, or by re-dispatching).

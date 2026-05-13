@@ -254,8 +254,10 @@ receipt evidence in this block.
 | `context_files_used` | list of strings | yes | Files actually used for role output. |
 | `pointers_skipped` | list of objects | yes | `{path, reason}` entries; empty list means none skipped. |
 | `task_scope` | string | yes | Parent-assigned task in one paragraph. |
-| `files_modified` | list of strings | yes | Files the subagent modified; empty for review-only agents. |
+| `files_modified` | list of strings | yes | Files the subagent actually modified and verified post-edit; empty for review-only agents or for runs where edits did not land. Aspirational edits do not belong here. |
 | `gates_invoked` | list of strings | yes | Gate names invoked or attested to; empty list allowed. |
+| `run_status` | string | no (v1.1; default `SUCCESS`) | One of `SUCCESS`, `PARTIAL`, `BLOCKED_ON_RUNTIME`, `NEEDS_CONTEXT`. Required when not `SUCCESS`. See `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract". |
+| `apply_replays` | list of objects | no (v1.1) | Byte-anchored patches the parent can replay when `run_status != SUCCESS`. Each entry: `{path, anchor, replacement}` where `anchor` is a unique literal substring in the target file and `replacement` is the literal substitute. Required (non-empty) when `run_status` ∈ `{PARTIAL, BLOCKED_ON_RUNTIME}` and any role-owned edit did not land. |
 
 ### Example — Judge exact-output compliance
 

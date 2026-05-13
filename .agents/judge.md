@@ -157,6 +157,8 @@ QUESTIONS (max 3; only if truly blocking):
 
     BLOCK when the PR claims ready/done while missing outcome evidence and that omission masks false verification, required gate bypass, unsafe ownership bypass, or a clear scope mismatch.
 
+19. **Subagent verify-or-replay contract** (PR #312 dogfood): when `parent_compliance.subagents_dispatched[]` contains an entry with `run_status` ∈ `{PARTIAL, BLOCKED_ON_RUNTIME}`, that entry MUST also include a non-empty `apply_replays[]` with byte-anchored `{path, anchor, replacement}` patches, **or** the parent's `monolithic_justification` must explicitly explain how the role-owned work was reconstructed without pass-back (e.g., verbatim from the issue body, from the plan, by human re-dispatch). REQUEST_CHANGES when a non-SUCCESS subagent has empty `apply_replays[]` and the parent's justification does not name a concrete recovery source. BLOCK when the missing pass-back also masks default-agent scope creep into role-owned paths (i.e., the parent applied edits the dispatched role would have owned, with no audit trail of how those edits were derived). Canonical contract: `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract".
+
 ## Output Format (Exact)
 
 ```
