@@ -86,7 +86,7 @@ except ImportError as exc:
     print(f"PyYAML unavailable: {exc}", file=sys.stderr)
     sys.exit(1)
 root = Path('.')
-frontmatter_re = re.compile(r'^---\n(.*?)\n---', re.S)
+frontmatter_re = re.compile(r'\A[ \t]*---[ \t]*\n(.*?)\n[ \t]*---[ \t]*(?:\n|$)', re.S)
 errors = []
 for path in sorted((root / '.agents').glob('*.md')):
     if path.name in {'README.md', '_TEMPLATE.md'}:
