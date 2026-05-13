@@ -328,8 +328,12 @@ def validate_subagent(
         "task_scope",
         "files_modified",
         "gates_invoked",
+        # v1.1 (additive, optional): see docs/compliance_schemas.md
+        "run_status",
+        "apply_replays",
     }
-    _require_keys(block, allowed_keys, source)
+    required_keys = allowed_keys - {"run_status", "apply_replays"}
+    _require_keys(block, required_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
     _require_schema_version(block, source)
     _require_type(block["role"], str, f"{source}.role")
