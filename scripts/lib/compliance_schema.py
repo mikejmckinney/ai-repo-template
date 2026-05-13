@@ -176,8 +176,6 @@ def _validate_repo_path(value: Any, source: str, repo_root: Path) -> None:
         resolved.relative_to(repo_root.resolve())
     except ValueError as exc:
         raise ComplianceError(f"{source}: must stay within the repository") from exc
-    if not resolved.exists() and not resolved.parent.exists():
-        raise ComplianceError(f"{source}: parent directory does not exist in this repository")
 
 
 def _validate_pointers_skipped(items: Any, source: str) -> None:
