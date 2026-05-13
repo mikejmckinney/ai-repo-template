@@ -30,8 +30,8 @@ VALID_TOP_LEVEL_KEYS = {
 }
 
 
-_FRONTMATTER_RE = re.compile(r"^---\n(.*?)\n---", re.DOTALL)
-_YAML_FENCE_RE = re.compile(r"```yaml\n(.*?)\n```", re.DOTALL)
+_FRONTMATTER_RE = re.compile(r"\A[ \t]*---[ \t]*\n(.*?)\n[ \t]*---[ \t]*(?:\n|$)", re.DOTALL)
+_YAML_FENCE_RE = re.compile(r"^[ \t]*```yaml[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?:\n|$)", re.DOTALL | re.MULTILINE)
 _AGENTS_MD_VERSION_RE = re.compile(r"AGENTS_MD_VERSION:\s*(?P<version>\d+)")
 _HANDSHAKE_RE = re.compile(r"^Session handshake v(?P<version>\d+)$")
 

@@ -38,3 +38,26 @@ setup_file() {
   [[ "$output" == *"overlay_version is not allowed"* ]]
   [[ "$output" != *"ValueError"* ]]
 }
+
+@test "compliance markdown extraction tolerates indented fences" {
+  cd "$REPO_ROOT"
+  run python3 - <<'PY'
+import sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+sys.path.insert(0, "scripts/lib")
+from compliance_schema import _FRONTMATTER_RE, load_markdown_yaml_blocks
+
+frontmatter = "  ---  \nname: docs\nrole_contract_version: 1\n  ---  \n"
+assert _FRONTMATTER_RE.search(frontmatter)
+
+with TemporaryDirectory() as tmp:
+    path = Path(tmp) / "example.md"
+    path.write_text("  ```yaml  \nsubagent_compliance:\n  schema_version: 1\n  ```  \n", encoding="utf-8")
+    blocks = load_markdown_yaml_blocks(path)
+    assert len(blocks) == 1
+    assert "subagent_compliance" in blocks[0][1]
+PY
+  [ "$status" -eq 0 ]
+}
