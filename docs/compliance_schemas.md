@@ -106,7 +106,7 @@ Emitted in PR bodies by the parent/default agent before review.
 | `schema_version` | integer | yes | Must be `1`. |
 | `handshake_token` | string | yes | Exact parent token, format `Session handshake v<N>`. |
 | `agents_md_version` | integer | yes | Version declared in `AGENTS.md`. |
-| `runtime_pointer` | object | yes | Runtime instruction file loaded, or `path: null` with reason. |
+| `runtime_pointer` | object | yes | Runtime instruction file evidence; see subfields below. |
 | `applicable_roles` | list of strings | yes | Roles whose ownership applied to the final diff. |
 | `subagents_dispatched` | list of objects | yes | Parsed `subagent_compliance` objects. Empty list requires `monolithic_justification`. |
 | `monolithic_justification` | string or null | yes | Required if no subagents ran or if dispatched roles are a strict subset of applicable roles. |
@@ -115,6 +115,19 @@ Emitted in PR bodies by the parent/default agent before review.
 | `adr_required` | object | yes | `required`, `link`. |
 | `deviations` | list of objects | yes | Planned-vs-actual deviations; empty list allowed. |
 | `verification_results` | list of objects | yes | Command/result pairs matching the plan. |
+
+#### `runtime_pointer` subfields
+
+| Field | Type | Required | Description |
+|---|---|---:|---|
+| `path` | string or null | yes | Runtime-specific instruction pointer loaded by the parent agent, such as `.github/copilot-instructions.md`. Use `null` only when no runtime pointer applies. |
+| `loaded` | boolean | yes | Whether the parent agent reports loading that pointer. Use `false` when `path: null`. |
+| `decision_affected` | string or null | yes | Specific parent decision affected by the pointer. Use `null` only when the PR is exempt or the pointer did not affect a decision. |
+| `reason` | string | only when `path: null` | Why no runtime pointer path applies, for example `Non-Copilot runtime; root AGENTS.md loaded directly.` |
+
+When `path` is a string, `loaded` must be `true` and `reason` is omitted.
+When `path: null`, `loaded` must be `false`, `decision_affected` must explain
+the exemption or be `null`, and `reason` must be a non-empty string.
 
 ### Example — no-subagent `parent_compliance`
 
