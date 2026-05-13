@@ -122,7 +122,31 @@ plan_compliance:
            changed. Use `role_contract_version` only in subagent returns, never
            `overlay_version`. See `docs/compliance_schemas.md`. -->
 
-### Verification
+### User outcome validation plan — PRIMARY
+
+**Issue problem statement:** <one-sentence summary>
+
+**User outcome / 15-minute test to perform:**
+1. <step from issue>
+2. <step from issue>
+3. <step from issue>
+
+**Evidence to capture in PR:**
+- <artifact, citation, screenshot, command transcript, review checklist, etc.>
+
+**Pass condition:**
+- <what proves the problem statement is resolved>
+
+**Failure / framing-disconnect condition:**
+- <what would prove the implementation or issue framing is wrong>
+
+<!-- This is the PRIMARY validation gate. The supporting verification
+     section below covers regression/hygiene evidence (./test.sh, lint,
+     CI, schema checks, sandbox runs). A green CI run with no
+     user-outcome evidence is not ready for review. See
+     `.context/rules/process_work_style.md` § Validation. -->
+
+### Supporting verification
 
 **Change class**: <code-or-docs | pull_request-triggered workflow | default-branch-only workflow | mixed>
 **Verification target**: <PR branch | sandbox repo | both>

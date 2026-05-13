@@ -94,6 +94,7 @@ weight differs.
 - **Test smell**: mocked-until-meaningless, order-dependent, hidden global state.
 - **Uncited claims of fact**: "this matches the existing pattern" / "the repo already does X" without `path/to/file:line`. Per `AGENTS.md` §"Critical thinking", uncited claims are assumptions — flag them as MAJOR CONCERNS unless explicitly marked `uncertain`.
 - **Compliance theater (ADR-026)**: PR bodies that paste raw subagent text but omit parsed `subagents_dispatched`, make generic startup claims, skip deviations, or treat CI shape validation as proof that Copilot runtime dispatch occurred.
+- **Outcome theater**: PR verification lists `./test.sh`, lint, schema checks, CI, or pre-commit as proof of completion, but does not show that the issue's User outcome / 15-minute test was performed against the problem statement.
 
 ## What NOT to Do
 

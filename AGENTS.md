@@ -69,7 +69,7 @@ re-read cadence (which files at which boundaries) lives in
 | Critical thinking and communication | [`.context/rules/process_critical_thinking.md`](.context/rules/process_critical_thinking.md) | Every reply |
 | Work style, testing, validation | [`.context/rules/process_work_style.md`](.context/rules/process_work_style.md) | Before any non-trivial implementation |
 | Clarification and ambiguity | [`.context/rules/process_clarification.md`](.context/rules/process_clarification.md) | When request is ambiguous |
-| Role selection, context pack, onboarding | [`.context/rules/process_role_selection.md`](.context/rules/process_role_selection.md) | Before claiming a task |
+| Role selection, OP default, context pack, onboarding | [`.context/rules/process_role_selection.md`](.context/rules/process_role_selection.md) | Before claiming a task |
 | Pre-implementation gates (Analyst pre-flight + plan-as-comment) | [`.context/rules/process_gates.md`](.context/rules/process_gates.md) | Before writing code on any non-exempt issue |
 | Session-state cadence + close-out PR discipline | [`.context/rules/process_session_state.md`](.context/rules/process_session_state.md) | Every task boundary |
 | PR completion, templates, review | [`.context/rules/process_pr_completion.md`](.context/rules/process_pr_completion.md) | Before opening a PR or reviewing one |

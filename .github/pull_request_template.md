@@ -116,14 +116,40 @@ parent_compliance:
       evidence: "<one-line pointer>"
 ```
 
-## Verification
+## User outcome validation — PRIMARY
 
-<!-- REQUIRED. Exact commands you ran (or N/A for docs-only). -->
+<!-- REQUIRED for non-exempt work. This proves the issue problem statement was
+     tested against the issue's User outcome / 15-minute test. Generic script,
+     lint, schema, or CI output belongs in Supporting verification unless it
+     directly performs the user outcome. -->
+
+**Problem statement tested:** <yes/no>
+
+**User outcome / 15-minute test performed:** <yes/no>
+
+**Steps performed:**
+1. <step>
+2. <step>
+3. <step>
+
+**Evidence:**
+- <link/excerpt/transcript/screenshot/checklist result>
+
+**Result:** <problem statement resolved | not resolved | framing disconnect | blocked>
+
+**Explanation:**
+<brief explanation>
+
+## Supporting verification
+
+<!-- REQUIRED. Exact commands you ran (or N/A for docs-only). These are
+     supporting regression/hygiene evidence; they do not replace the
+     primary user-outcome validation above. -->
 
 - [ ] `<command>` — pass / fail
 - [ ] Manual check: `<step>` — result
 
-## Verification results (REQUIRED — Judge enforces at diff-gate)
+## Supporting verification results (REQUIRED — Judge enforces at diff-gate)
 
 <!-- Mirror your plan's `### Verification` section 1:1. Every command
      listed in the plan must have a result entry here BEFORE the PR

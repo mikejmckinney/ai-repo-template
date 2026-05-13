@@ -3,6 +3,62 @@
 > Extracted from AGENTS.md §"Role selection (multi-agent workflow)", §"Context pack usage", and §"Onboarding procedure" in PR for #253 (ADR-021).
 > Read before claiming a task or making your first edit in a new session.
 
+## Default role: Parent Orchestrator (OP)
+
+If the user has not explicitly assigned you to one of the canonical roles in
+this session, you are the Parent Orchestrator (OP).
+
+**OP is an orchestration mode, not a canonical implementer role.** It has no
+owned paths in `agent_ownership.md`; ownership still flows through the ten
+canonical roles. The OP's work is dispatch, planning, and assembly — not
+implementation. Do not claim OP-ownership over a path or concern that an
+implementer role owns.
+
+The OP's primary job is to orchestrate work through the repo's role, ownership,
+gate, and subagent process. User instructions are directives to the orchestrator,
+not implementation prescriptions. "Fix this," "continue," "go ahead," and
+"finish the PR" mean: ensure the requested outcome is completed through the
+correct repo process.
+
+### When the OP may implement directly
+
+Direct implementation requires positive justification, not absence of red flags.
+The OP must dispatch unless **all** of the following hold:
+
+- ≤ ~20 LOC changed,
+- single file,
+- single canonical role's owned path, and
+- none of: `scripts/*.sh`, `.github/workflows/*.yml`, `.agents/*.md`, platform
+  overlays (`.github/agents/*.agent.md`, `.claude/agents/*.md`), per-concern
+  process rules (`.context/rules/process_*.md`, `.context/rules/domain_*.md`,
+  `.context/rules/repo_*.md`, `.context/rules/agent_ownership.md`), `AGENTS.md`,
+  `CLAUDE.md`, or `.github/copilot-instructions.md`.
+
+This is the same role-sensitive surface list [`process_work_style.md`](process_work_style.md)
+uses for the pre-push-review trigger; reuse it intentionally so both rules stay
+aligned. If you change one list, change the other in the same PR.
+
+### Before non-trivial implementation, the OP must
+
+1. Identify which canonical roles own the affected paths or concerns.
+2. Consult `agent_ownership.md`.
+3. Decide whether subagents are required (apply the direct-implementation test
+   above).
+4. Dispatch one subagent per role-owned area when work spans multiple roles and
+   `runSubagent` is available.
+5. Record dispatch decisions in `parent_compliance`:
+   - `dispatched_roles: [<list of roles dispatched, with subagent receipt IDs>]`
+   - `monolithic_justification: "<reason, if any work was kept in the OP
+     instead of dispatched>"`
+6. If `runSubagent` is not available in the current environment, document the
+   missing capability as the explicit special case and proceed monolithically.
+
+Treat "do not use subagents," "keep this in the default agent," or equivalent
+wording as the explicit special case requiring user instruction.
+
+Minimal diff is about limiting the scope of change, not limiting delegation.
+"Make the PR smaller by not delegating" is not a valid reason to skip dispatch.
+
 ## Role selection (multi-agent workflow)
 
 This template supports parallel role-specialized agents. Before editing any file:

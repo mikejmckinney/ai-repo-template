@@ -6,7 +6,7 @@
 ## Work style
 
 - **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: `feature/<role>-<task-id>` is defined in `docs/guides/multi-agent-coordination.md` §"Branch-Per-Role Model"; a `fix/<issue>-<slug>` form is also acceptable for bug-fix branches when that naming is clearer. See ADR-012 for why this rule needs explicit statement.
-- **Small, reversible changes** beat rewrites. Prefer the minimal diff that fully solves the task.
+- **Small, reversible changes** beat rewrites. Prefer the minimal diff that fully solves the task. Minimal diff means keep the implementation scope small and reversible. It does not mean the parent/default agent should avoid delegation. Do not skip role dispatch merely to keep the work inside one agent.
 - **No drive-by refactors.** If you spot something unrelated worth fixing, file a follow-up task instead of bundling it in.
 - **Surface prerequisites and edge cases** when explaining a plan or how-to: required tools, dependencies, non-obvious failure modes, safety issues. Skip boilerplate warnings on trivial work.
 - **Don't weaken tests or make unrelated source changes to force them green.** If a test exposes a real bug, fix the bug in the source. Tests document behavior; weakening them to go green is a regression in disguise.
@@ -23,6 +23,28 @@
   3. Push and retry until green
 
 ## Validation
+
+### Primary validation: User outcome / 15-minute test
+
+Before marking any non-exempt issue implementation complete, perform the issue's
+`User outcome (15-minute test)` against the actual problem statement and record
+the result with concrete evidence in the PR body.
+
+Outcome validation answers: did the shipped artifact solve the user's stated
+problem?
+
+If the user outcome does not resolve the problem statement, do not patch around
+the test merely to make it pass. Stop, document the framing disconnect, and
+escalate to the user or revise the issue/plan.
+
+### Supporting validation
+
+Unit tests, integration tests, `./test.sh`, lint, pre-commit, schema validators,
+sandbox verification, and CI are supporting regression and hygiene evidence.
+They do not replace user-outcome validation unless the user outcome is itself a
+scripted command or automated check.
+
+A green CI run with no user-outcome evidence is not ready for review.
 
 - Run the repo's verification commands (prefer those documented in AI_REPO_GUIDE.md) before declaring done.
 - Ensure all tests pass locally before pushing.
