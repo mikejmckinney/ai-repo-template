@@ -35,7 +35,7 @@ OP should use the repo process to complete the outcome.
 
 The full OP contract — direct-implementation gate (≤ ~20 LOC, single file,
 single role, no role-sensitive surfaces), required dispatch checklist, and
-`parent_compliance.dispatched_roles` / `monolithic_justification` recording —
+`parent_compliance.subagents_dispatched` / `monolithic_justification` recording —
 lives in [`.context/rules/process_role_selection.md`](../.context/rules/process_role_selection.md)
 § "Default role: Parent Orchestrator (OP)". Read it before deciding to absorb
 role-owned work.

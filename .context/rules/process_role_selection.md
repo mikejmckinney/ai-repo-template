@@ -46,10 +46,14 @@ aligned. If you change one list, change the other in the same PR.
    above).
 4. Dispatch one subagent per role-owned area when work spans multiple roles and
    `runSubagent` is available.
-5. Record dispatch decisions in `parent_compliance`:
-   - `dispatched_roles: [<list of roles dispatched, with subagent receipt IDs>]`
-   - `monolithic_justification: "<reason, if any work was kept in the OP
-     instead of dispatched>"`
+5. Record dispatch decisions in `parent_compliance` using the schema fields
+   defined in [`docs/compliance_schemas.md`](../../docs/compliance_schemas.md)
+   § "`parent_compliance` v1":
+   - `applicable_roles: [<roles whose ownership applied to the final diff>]`
+   - `subagents_dispatched: [<parsed subagent_compliance objects — one per
+     dispatched role, including its receipt>]`
+   - `monolithic_justification: "<reason, if dispatched_roles are a strict
+     subset of applicable_roles or no subagents ran>"`
 6. If `runSubagent` is not available in the current environment, document the
    missing capability as the explicit special case and proceed monolithically.
 
