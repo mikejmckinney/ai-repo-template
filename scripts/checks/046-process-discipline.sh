@@ -58,6 +58,9 @@ except ImportError as exc:
 errors = []
 for path in [Path('.github/PLAN_TEMPLATE.md'), Path('.github/pull_request_template.md')]:
     text = path.read_text(encoding='utf-8')
+  # Targeted extraction for repo-owned templates: the regex only locates
+  # YAML fences, and PyYAML performs the actual syntax validation. This keeps
+  # test.sh free of a yq dependency without attempting general Markdown parsing.
     blocks = list(re.finditer(r'^[ \t]*```yaml[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?:\n|$)', text, re.S | re.M))
     if not blocks:
         errors.append(f"{path}: no yaml fenced blocks found")
@@ -86,6 +89,9 @@ except ImportError as exc:
     print(f"PyYAML unavailable: {exc}", file=sys.stderr)
     sys.exit(1)
 root = Path('.')
+# Targeted extraction for canonical role docs: role frontmatter is expected at
+# the top of repo-owned files, and PyYAML validates the extracted mapping. This
+# intentionally avoids a yq dependency in the bootstrap test harness.
 frontmatter_re = re.compile(r'\A[ \t]*---[ \t]*\n(.*?)\n[ \t]*---[ \t]*(?:\n|$)', re.S)
 errors = []
 for path in sorted((root / '.agents').glob('*.md')):
