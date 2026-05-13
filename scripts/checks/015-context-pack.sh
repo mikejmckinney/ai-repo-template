@@ -25,6 +25,7 @@ CONTEXT_FILES=(
   ".context/rules/process_session_state.md"
   ".context/rules/process_pr_completion.md"
   ".context/rules/process_model_tier.md"
+  ".context/rules/process_subagent_bootstrap.md"
   ".context/sessions/README.md"
   ".context/sessions/latest_summary.md"
   ".context/state/README.md"

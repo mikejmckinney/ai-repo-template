@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 15 -->
+<!-- AGENTS_MD_VERSION: 16 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one.
      The canary covers AGENTS.md only — per-concern files in .context/rules/
@@ -16,7 +16,7 @@
 ## Session handshake (read-receipt)
 
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v15` (matching
+substantive reply with the exact token `Session handshake v16` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -26,6 +26,14 @@ This is a per-session signal, not a per-reply one. Emit it once at the
 start of the session; suppress it on subsequent replies in the same
 conversation. If a user explicitly says "skip the handshake," honor that
 for the rest of the session.
+
+For parent/default-agent work, this visible token is the parent startup
+receipt used by ADR-026 compliance evidence. Dispatched subagents do not
+prepend the parent handshake unless they are themselves the top-level
+responder. Instead, subagents load their canonical role file, follow the
+subagent bootstrap rule, and report receipt evidence in their trailing
+`subagent_compliance` block. Exact-output roles must preserve their exact
+first line.
 
 ## Truth hierarchy
 
@@ -65,6 +73,7 @@ re-read cadence (which files at which boundaries) lives in
 | Pre-implementation gates (Analyst pre-flight + plan-as-comment) | [`.context/rules/process_gates.md`](.context/rules/process_gates.md) | Before writing code on any non-exempt issue |
 | Session-state cadence + close-out PR discipline | [`.context/rules/process_session_state.md`](.context/rules/process_session_state.md) | Every task boundary |
 | PR completion, templates, review | [`.context/rules/process_pr_completion.md`](.context/rules/process_pr_completion.md) | Before opening a PR or reviewing one |
+| Subagent bootstrap and compliance return | [`.context/rules/process_subagent_bootstrap.md`](.context/rules/process_subagent_bootstrap.md) | When dispatching subagents, receiving dispatched role work, or using subagent output as gate evidence |
 | Model tier dispatch convention | [`.context/rules/process_model_tier.md`](.context/rules/process_model_tier.md) | When dispatching subagents or upshifting tier |
 | Doc-sync triggers (which files must update together) | [`.context/rules/process_doc_maintenance.md`](.context/rules/process_doc_maintenance.md) | Before opening a PR |
 | Code quality (SOLID, TDD, clean code) | [`.context/rules/domain_code_quality.md`](.context/rules/domain_code_quality.md) | Before non-trivial code refactors |

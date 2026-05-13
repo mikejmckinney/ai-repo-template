@@ -2,7 +2,7 @@
 name: <role>
 description: <byte-identical description shared by all overlays>
 role_contract_version: 1
-agents_md_compat: 15
+agents_md_compat: 16
 owned_paths:
   - '<owned/path/glob>'
 handoff_targets:
@@ -27,7 +27,9 @@ Before doing role work, load:
 6. The issue, PR, plan, or diff context supplied in the dispatch packet.
 
 If the dispatch packet omits the role, goal, expected output, required context,
-or relevant issue/PR/plan link, return `NEEDS_CONTEXT` instead of guessing.
+or relevant issue/PR/plan/diff link, do not guess. Non-exact-output roles may
+return `NEEDS_CONTEXT`; exact-output roles preserve their required first line
+and use `REQUEST_CHANGES` with `NEEDS_CONTEXT` in the body.
 
 ## Receipt evidence
 
@@ -56,7 +58,7 @@ subagent_compliance:
   schema_version: 1
   role: <role>
   role_contract_version: 1
-  agents_md_version: 15
+  agents_md_version: 16
   receipt:
     mode: visible-line  # or trailing-block for exact-output roles
     value: Role receipt v1 — <role>

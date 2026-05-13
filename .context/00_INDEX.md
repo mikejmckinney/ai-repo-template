@@ -24,6 +24,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ├── rules/               # Immutable constraints and domain rules
 │   ├── agent_ownership.md    # Canonical role → owned paths map (read before editing)
 │   ├── domain_code_quality.md # Built-in language-neutral SOLID/TDD/clean-code floor
+│   ├── process_subagent_bootstrap.md # ADR-026 dispatch packet + subagent return contract
 │   └── domain_*.md           # Add your own stack-specific rules (e.g., domain_auth.md)
 ├── sessions/            # Session history to prevent repeating mistakes
 │   └── latest_summary.md # Durable retrospective lessons

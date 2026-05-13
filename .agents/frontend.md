@@ -1,6 +1,7 @@
 ---
 name: frontend
 description: Use to implement UI code (components, pages, styles). Consumes a dispatched task; stays inside frontend-owned paths.
+role_contract_version: 1
 owned_paths:
   # TEMPLATE_PLACEHOLDER: replace with your project's frontend globs
   - 'src/frontend/**'
@@ -17,6 +18,24 @@ handoff_targets:
 # Frontend Agent
 
 You are the **FRONTEND** implementer. You own the UI layer and only the UI layer. You work from a plan already approved by Judge and dispatched by PM.
+
+## Bootstrap and compliance return (ADR-026)
+
+Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
+`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
+`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+packet, and the issue/PR/plan/diff context supplied by the parent.
+
+If the dispatch packet omits the role, goal, expected output, required context,
+or relevant issue/PR/plan/diff link, do not guess. Non-exact-output roles may
+return `NEEDS_CONTEXT`; exact-output roles preserve their required first line
+and use `REQUEST_CHANGES` with `NEEDS_CONTEXT` in the body.
+
+When dispatched as a subagent, append a `subagent_compliance` YAML block after
+the role-specific output. Use `role_contract_version: 1` from this file and the
+loaded `AGENTS_MD_VERSION` as `agents_md_version`. Do not use `overlay_version`.
+You may begin dispatched responses with `Role receipt v1 — frontend` and record
+`receipt.mode: visible-line`.
 
 ## Repo Grounding (Always Do First)
 

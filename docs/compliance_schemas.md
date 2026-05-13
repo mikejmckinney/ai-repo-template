@@ -59,7 +59,7 @@ plan_compliance:
   instruction_resources:
     - resource: AGENTS.md
       why_applicable: Canonical startup and truth-hierarchy contract.
-      evidence: AGENTS_MD_VERSION 15; Session handshake v15 emitted.
+      evidence: AGENTS_MD_VERSION 16; Session handshake v16 emitted.
       decision_affected: Kept parent handshake versioning tied to AGENTS.md.
     - resource: .context/rules/process_doc_maintenance.md
       why_applicable: Plan changes ADRs, role files, docs, and checks.
@@ -121,8 +121,8 @@ Emitted in PR bodies by the parent/default agent before review.
 ```yaml
 parent_compliance:
   schema_version: 1
-  handshake_token: Session handshake v15
-  agents_md_version: 15
+  handshake_token: Session handshake v16
+  agents_md_version: 16
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
@@ -154,8 +154,8 @@ parent_compliance:
 ```yaml
 parent_compliance:
   schema_version: 1
-  handshake_token: Session handshake v15
-  agents_md_version: 15
+  handshake_token: Session handshake v16
+  agents_md_version: 16
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
@@ -168,7 +168,7 @@ parent_compliance:
     - schema_version: 1
       role: docs
       role_contract_version: 1
-      agents_md_version: 15
+      agents_md_version: 16
       receipt:
         mode: visible-line
         value: Role receipt v1 — docs
@@ -186,7 +186,7 @@ parent_compliance:
     - schema_version: 1
       role: devops
       role_contract_version: 1
-      agents_md_version: 15
+      agents_md_version: 16
       receipt:
         mode: visible-line
         value: Role receipt v1 — devops
@@ -248,7 +248,7 @@ subagent_compliance:
   schema_version: 1
   role: judge
   role_contract_version: 1
-  agents_md_version: 15
+  agents_md_version: 16
   receipt:
     mode: trailing-block
     value: Judge exact-output preserved; DECISION remained first line.
@@ -271,7 +271,7 @@ subagent_compliance:
   schema_version: 1
   role: critic
   role_contract_version: 1
-  agents_md_version: 15
+  agents_md_version: 16
   receipt:
     mode: trailing-block
     value: Critic exact-output preserved; CRITIC DECISION remained first line.

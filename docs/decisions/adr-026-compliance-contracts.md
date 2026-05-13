@@ -233,22 +233,33 @@ and file references only.
   coexistence.
 - [x] Update `scripts/checks/050-agent-mirror.sh` so `_TEMPLATE.md` is not
   treated as a canonical role file.
-- [ ] Later phase: move/strengthen `AGENTS.md` startup contract and add
+- [x] Move/strengthen `AGENTS.md` startup contract and add
   `process_subagent_bootstrap.md`.
-- [ ] Later phase: migrate all existing role files to include
-  `role_contract_version` and compliance return guidance.
-- [ ] Later phase: add plan/PR template blocks, Judge/Critic checks,
-  validators, fixtures, CI reporting, and smoke prompts.
+- [x] Migrate all existing role files to include `role_contract_version` and
+  compliance return guidance.
+- [x] Add Judge/Critic review checks for ADR-026 compliance evidence.
+- [x] Add plan/PR template blocks, validators, fixtures, warning-mode static
+  checks, and smoke prompts.
+- [ ] Later phase: promote deterministic schema/version mismatches to hard
+  failure after a real PR passes cleanly, malformed fixtures fail as expected,
+  and Judge re-approves the promotion criteria.
 
 ## Verification
 
 - `bash test.sh` — template integrity and parity checks pass.
 - `python3 - <<'PY' ...` one-off YAML extraction/parse check — all YAML
   examples in `docs/compliance_schemas.md` parse successfully.
+- `python3 scripts/validate-compliance-examples.py` — schema examples validate
+  against ADR-026 v1.
+- `python3 scripts/validate-compliance-fixtures.py` — valid fixtures pass and
+  malformed fixtures fail as expected.
+- `bats --tap scripts/tests/compliance-contracts.bats` — validator examples,
+  fixture split, and invalid-single checks pass.
 - `git diff --check` — no whitespace errors.
 
-Future validation phases add dedicated validator scripts and Bats fixtures
-before CI hard-fail promotion.
+Future validation phases can promote deterministic schema/version mismatches
+from warning-mode review evidence to hard-fail only after the promotion
+criteria above are met.
 
 ## References
 

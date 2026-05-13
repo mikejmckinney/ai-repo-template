@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Validate ADR-026 compliance fixtures.
+
+Default mode expects every file under fixtures/compliance/valid to pass and
+every file under fixtures/compliance/invalid to fail. Use --single for a direct
+one-file validation result.
+"""
+
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent
+sys.path.insert(0, str(SCRIPT_DIR / "lib"))
+
+from compliance_schema import ComplianceError, load_yaml, validate_loaded_block  # noqa: E402
+
+
+def validate_file(path: Path) -> None:
+    validate_loaded_block(load_yaml(path), str(path.relative_to(REPO_ROOT)), REPO_ROOT)
+
+
+def iter_yaml_files(path: Path) -> list[Path]:
+    return sorted([*path.glob("*.yml"), *path.glob("*.yaml")])
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--fixtures-dir", type=Path, default=REPO_ROOT / "scripts" / "tests" / "fixtures" / "compliance")
+    parser.add_argument("--single", type=Path, help="validate one YAML file; exit non-zero on validation failure")
+    args = parser.parse_args(argv[1:])
+
+    if args.single:
+        validate_file(args.single)
+        print(f"valid compliance fixture: {args.single}")
+        return 0
+
+    valid_dir = args.fixtures_dir / "valid"
+    invalid_dir = args.fixtures_dir / "invalid"
+    if not valid_dir.is_dir() or not invalid_dir.is_dir():
+        print(f"missing fixture directories under {args.fixtures_dir}", file=sys.stderr)
+        return 1
+
+    valid_files = iter_yaml_files(valid_dir)
+    invalid_files = iter_yaml_files(invalid_dir)
+    if not valid_files or not invalid_files:
+        print("expected at least one valid and one invalid compliance fixture", file=sys.stderr)
+        return 1
+
+    failures: list[str] = []
+
+    for path in valid_files:
+        try:
+            validate_file(path)
+        except ComplianceError as exc:
+            failures.append(f"expected valid but failed: {path.relative_to(REPO_ROOT)} — {exc}")
+
+    for path in invalid_files:
+        try:
+            validate_file(path)
+        except ComplianceError:
+            continue
+        failures.append(f"expected invalid but passed: {path.relative_to(REPO_ROOT)}")
+
+    if failures:
+        for failure in failures:
+            print(failure, file=sys.stderr)
+        return 1
+
+    print(f"validated {len(valid_files)} valid and {len(invalid_files)} invalid compliance fixture(s)")
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main(sys.argv))
+    except ComplianceError as exc:
+        print(f"compliance fixture validation failed: {exc}", file=sys.stderr)
+        raise SystemExit(1)

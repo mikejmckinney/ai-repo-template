@@ -53,7 +53,7 @@ into the platform overlays.
 
 ## Role contract versioning (ADR-026)
 
-Canonical role files may also carry a `role_contract_version:` integer. This
+Canonical role files carry a `role_contract_version:` integer. This
 is the version a dispatched subagent reports in its `subagent_compliance`
 block, and it belongs only to `.agents/<role>.md` because the canonical file is
 where role bootstrap rules, output formats, handoff behavior, and compliance

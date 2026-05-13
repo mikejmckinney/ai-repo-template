@@ -9,6 +9,22 @@
 3. **[`.context/00_INDEX.md`](../.context/00_INDEX.md)** — project memory entry point. Lazy-loads rules, state, roadmap, and vision.
 4. **[`.github/PLAN_TEMPLATE.md`](PLAN_TEMPLATE.md)** — copy this template into a comment on any issue you're about to implement, before writing code. See [`.context/rules/process_gates.md`](../.context/rules/process_gates.md) and ADR-011 for the full rules and exemptions.
 
+## Parent startup compliance
+
+For the first substantive response in a session, emit the exact
+`Session handshake v<N>` token from `AGENTS.md` before any other content unless
+the user explicitly says to skip the handshake. Treat that token as the parent
+receipt required by ADR-026. For implementation plans, fill the
+`plan_compliance` block in `.github/PLAN_TEMPLATE.md`; for PRs, fill the
+`parent_compliance` block in `.github/pull_request_template.md`.
+
+When dispatching subagents, provide a dispatch packet containing: role, goal,
+expected output, issue/PR/plan/diff link, process files to load, ownership
+constraints, gate state, current `AGENTS_MD_VERSION`, and any allowed
+deviations. Require the subagent to return `subagent_compliance` per
+`.context/rules/process_subagent_bootstrap.md`. Do not claim CI proves runtime
+dispatch; it can only validate declared evidence shape and references.
+
 ## Role selection
 
 Before editing any file, identify your role (analyst, architect, judge, critic, pm, frontend, backend, qa, devops, docs) and consult:

@@ -42,6 +42,12 @@ GitHub auto-populates issue and PR templates only in the browser flow, not when 
 - **Addressing review feedback on a PR you authored** — follow `.github/prompts/pr-resolve-all.md` (Phases 1–4) so the Resolution Report and Phase 4 thread-resolution land consistently. This applies even when no `@<agent> follow` mention has been posted; ad-hoc fixes skip the audit trail.
 - **Bundling small follow-ups vs. splitting** — see `docs/guides/agent-best-practices.md` → "Issue and PR Granularity."
 - If a section the work needs is missing from a template, **update the template in the same PR** rather than skipping the section.
+- **Compliance evidence (ADR-026)** — when a PR uses dispatched subagents or
+	claims compliance evidence, include a `parent_compliance` block in the PR
+	body. If the current PR template lacks a dedicated section, add it manually.
+	Copy parsed `subagent_compliance` objects into
+	`parent_compliance.subagents_dispatched`; do not paste raw YAML-in-YAML as
+	the only evidence.
 
 ## Code quality
 
@@ -55,3 +61,9 @@ Universal SOLID / TDD / clean-code rules are defined as Hard rules H1–H8 and S
 - No secrets/PII in logs.
 - Call out risk areas: authz, data migrations, concurrency, perf regressions.
 - For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), cite entries from [`repo_orchestration_patterns.md`](repo_orchestration_patterns.md) by ID (`P1`–`P8`, `AP1`–`AP8`) when flagging or blocking. The `H<n>`/`S<n>` rules in `domain_code_quality.md` cover code-layer review; `P<n>`/`AP<n>` cover orchestration-layer review.
+- For ADR-026 compliance evidence, Judge and Critic challenge missing or
+	malformed `parent_compliance`, missing `subagent_compliance`, generic
+	evidence such as "read all docs", use of `overlay_version`, skipped pointers
+	with vague reasons, and any claim that CI or the repo can prove runtime
+	dispatch behavior. Missing compliance evidence is `REQUEST_CHANGES` in v1
+	unless the same omission also violates an existing hard gate.
