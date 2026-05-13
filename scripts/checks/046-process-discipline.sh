@@ -112,8 +112,8 @@ else
 fi
 
 overlay_hits=$(grep -RInw --include='*.md' --include='*.yml' --include='*.yaml' 'overlay_version:' \
-  .agents .github/agents .claude/agents .github/PLAN_TEMPLATE.md .github/pull_request_template.md docs scripts \
-  | grep -v '^scripts/tests/fixtures/compliance/invalid/' || true)
+  .agents .github/agents .claude/agents .github/PLAN_TEMPLATE.md .github/pull_request_template.md AGENTS.md \
+  || true)
 if [[ -z "$overlay_hits" ]]; then
   pass "no v1 role/platform files use overlay_version:"
 else

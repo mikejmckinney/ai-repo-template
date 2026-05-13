@@ -89,11 +89,3 @@ with TemporaryDirectory() as tmp:
 PY
   [ "$status" -eq 0 ]
 }
-
-@test "overlay_version invalid-fixture exclusion is path anchored" {
-  cd "$REPO_ROOT"
-  input=$'scripts/tests/fixtures/compliance/invalid/overlay-version.yml:4:  overlay_version: 1\ndocs/scripts/tests/fixtures/compliance/invalid/not-a-fixture.yml:4:  overlay_version: 1'
-  run bash -c "printf '%s\n' \"$input\" | grep -v '^scripts/tests/fixtures/compliance/invalid/'"
-  [ "$status" -eq 0 ]
-  [[ "$output" == "docs/scripts/tests/fixtures/compliance/invalid/not-a-fixture.yml:4:  overlay_version: 1" ]]
-}
