@@ -34,7 +34,12 @@ if [[ -f "$PLAYBOOK" ]]; then
   pass "OP playbook present at $PLAYBOOK"
 else
   warn "OP playbook missing: expected $PLAYBOOK (issue #313)"
-  return 0 2>/dev/null || exit 0
+  # This file is sourced by test.sh (see test.sh `source "$module"`); a
+  # plain `return 0` short-circuits the rest of this module without
+  # leaking through to test.sh's own exit handling. The previous
+  # `return 0 2>/dev/null || exit 0` form was a defensive holdover from
+  # checks meant to also be runnable standalone, which this one isn't.
+  return 0
 fi
 
 # 2. Phase 0–7 enumeration.
@@ -54,15 +59,32 @@ fi
 
 # 3. "current" handshake / AGENTS_MD_VERSION wording present, and no
 # hardcoded token outside the Anti-patterns illustrative example.
-if grep -qE "current[[:space:]]+(handshake|AGENTS_MD_VERSION)\b" "$PLAYBOOK"; then
-  pass "OP playbook uses 'current handshake / AGENTS_MD_VERSION' wording"
+#
+# Acceptable forms are EITHER (or both) of these phrasings outside the
+# Anti-patterns block:
+#   - "current handshake ..."
+#   - "current AGENTS_MD_VERSION ..."
+#   - the literal token `AGENTS_MD_VERSION` followed (anywhere on the
+#     same line) by a reference to the file/marker rather than a hardcoded
+#     vN — see e.g. `AGENTS.md` `AGENTS_MD_VERSION` marker phrasing.
+# This is a soft-warn, not a hard parse: the goal is to nudge authors
+# away from copy/pasting a literal `vN` they'll forget to bump.
+if grep -qE "current[[:space:]]+(handshake|AGENTS_MD_VERSION)\b" "$PLAYBOOK" \
+   || grep -qE "AGENTS_MD_VERSION" "$PLAYBOOK"; then
+  pass "OP playbook references handshake / AGENTS_MD_VERSION marker (no hardcoded vN required)"
 else
-  warn "OP playbook should reference 'current' handshake/AGENTS_MD_VERSION rather than a hardcoded vN (canary drift risk; #313)"
+  warn "OP playbook should reference the current handshake or AGENTS_MD_VERSION marker rather than a hardcoded vN (canary drift risk; #313)"
 fi
 
 # Count vN literals OUTSIDE the Anti-patterns section. awk scans for the
-# Anti-pattern heading; toggles a skip flag on; resets at next same-level
-# heading. We tolerate vN inside that one section only.
+# Anti-pattern heading; toggles a skip flag on; resets at the next heading
+# whose `#`-depth is the same or shallower than the one that started the
+# skip. This means an Anti-patterns subsection (one or more deeper `#`
+# headings) stays inside the skip until a sibling/parent heading appears
+# — a deliberate choice so example sub-sections like "Anti-pattern
+# examples / token literals" can illustrate hardcoded `vN` without
+# tripping the check. If the playbook ever gains an Anti-patterns
+# *peer* section that should also be excluded, extend the regex below.
 vn_outside=$(awk '
   BEGIN { skip = 0; depth = 0 }
   /^#+[[:space:]]/ {
@@ -107,5 +129,13 @@ for f in "${linkage_files[@]}"; do
     warn "$f does not cross-link $PLAYBOOK (Read-First / forward-link expected; #313)"
   fi
 done
+
+# 6. Bats fixture coverage — wires the companion .bats file the same way
+# every other check module does (issue #280). Without this call, the 13
+# tests in scripts/tests/check-155-op-workflow-evidence.bats are never
+# executed by `./test.sh`, leaving the soft-warn contract above
+# unprotected against silent regression.
+echo "Running OP playbook evidence fixture tests..."
+run_bats_check scripts/tests/check-155-op-workflow-evidence.bats
 
 echo ""

@@ -163,10 +163,15 @@ observation: dispatched-subagent ghost-success".
    single most effective hedge against this failure mode.
 2. **If a subagent commits + pushes directly,** include the literal output
    of `git log origin/<branch> -1 --oneline` (or the equivalent `gh api`
-   call against `/repos/{owner}/{repo}/branches/<branch>`) in
-   `subagent_compliance.verification[].evidence`. The verification command
-   must run AFTER `git push` in the same response, so its output reflects
-   the post-push state of the remote — not the pre-dispatch tip.
+   call against `/repos/{owner}/{repo}/branches/<branch>`) in the
+   `subagent_compliance` block. The v1 schema has no `verification` field;
+   record the snippet inline in the relevant `apply_replays[].anchor`
+   prose, the surrounding response narrative immediately above the
+   `subagent_compliance` block, or as a parent-replayed post-hoc check
+   captured in `parent_compliance.subagents_dispatched[].subagent_compliance`
+   pass-through. The verification command must run AFTER `git push` in the
+   same response, so its output reflects the post-push state of the
+   remote — not the pre-dispatch tip.
 3. **Required parent-side defense.** After every dispatch that claims a
    push, the parent OP runs `git fetch origin && git log origin/<branch>
    -1 --oneline` and compares against the claimed commit SHA. A mismatch
@@ -195,15 +200,28 @@ than the spec asked for.
    informative.** A block with `schema_version`, `role`, `agents_md_version`,
    `task_scope`, `files_modified`, `gates_invoked`, `run_status`, and
    (when applicable) `apply_replays` satisfies the contract regardless of
-   what else the subagent added. Do not BLOCK on extra fields.
-2. **Do not silently drop the extra fields when threading evidence into
-   `parent_compliance.subagents_dispatched[].subagent_compliance`.** Pass
-   them through verbatim; they're often the most diagnostic part of the
-   record (e.g., `pointers_skipped` explains exactly why Judge couldn't
-   read a remote artifact).
+   what else the subagent added. Do not BLOCK on extra fields *in your
+   own narrative*.
+2. **The strict validator (`scripts/lib/compliance_schema.py`
+   `_reject_unknown_keys`) will still reject extra fields when the block
+   is fed to `scripts/validate-compliance-fixtures.py` or any
+   CI-MUST validation hook (per `compliance_schemas.md` §"CI-MUST
+   validation rules for v1" rule 6).** Do not pass extra fields through
+   verbatim into `parent_compliance.subagents_dispatched[].subagent_compliance`
+   if that block is going to be validated by a hook in the same PR.
+   Instead, copy the canonical-only subset into the structured
+   `subagent_compliance` slot and capture the diagnostically-useful
+   extras (e.g., `pointers_skipped`, per-role evidence sub-blocks) in
+   adjacent prose under `parent_compliance.subagents_dispatched[].notes`
+   or in the PR/issue comment body around the block.
 3. **If a subagent omits a canonically-required field**, the parent OP
-   still records the dispatch with a `missing_fields: [...]` annotation
-   and proceeds; do not re-dispatch solely to chase the schema.
+   re-dispatches with an explicit reminder to include the missing field
+   rather than annotating with `missing_fields: [...]` and proceeding —
+   the strict validator does not accept a `missing_fields` key, and a
+   downstream Judge diff-gate or QA hook will surface the same gap. Only
+   if re-dispatch is impossible (e.g., the runtime is unavailable) does
+   the parent record the gap in narrative prose adjacent to the block
+   and BLOCK rather than proceed.
 4. **Schema-vs-practice drift is a feedback signal**, not a defect. When
    the same extra field appears across multiple dispatches of the same
    role, file an issue against `compliance_schemas.md` proposing the
