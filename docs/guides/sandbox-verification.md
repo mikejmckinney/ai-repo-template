@@ -158,9 +158,9 @@ git fetch sandbox
 
 # (Recommended) Tag the current sandbox/main HEAD before any test work,
 # so a force-reset is recoverable if you need it later.
-git tag -a "pre-op-playbook-test-$(date +%Y-%m-%d)" sandbox/main \
-  -m "Pre-test sandbox/main snapshot"
-git push sandbox "pre-op-playbook-test-$(date +%Y-%m-%d)"
+tag="pre-op-playbook-test-$(date +%Y-%m-%d-%H%M%S)"
+git tag -a "$tag" sandbox/main -m "Pre-test sandbox/main snapshot"
+git push sandbox "$tag"
 
 # Create a per-PR mirror of upstream main as the sandbox base for the test PR.
 git push sandbox origin/main:test/playbook-mainline
