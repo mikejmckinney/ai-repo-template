@@ -61,6 +61,7 @@ REQUIRED_FILES=(
   ".github/prompts/pre-push-review.md"
   ".github/prompts/multi-model-consensus-plan.md"
   ".github/prompts/instruction-compliance-smoke.md"
+  ".github/prompts/outcome-validation-smoke.md"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
   "scripts/diag-hang-snapshot.sh"

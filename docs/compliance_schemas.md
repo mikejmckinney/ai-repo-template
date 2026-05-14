@@ -59,7 +59,7 @@ plan_compliance:
   instruction_resources:
     - resource: AGENTS.md
       why_applicable: Canonical startup and truth-hierarchy contract.
-      evidence: AGENTS_MD_VERSION 16; Session handshake v16 emitted.
+      evidence: AGENTS_MD_VERSION 17; Session handshake v17 emitted.
       decision_affected: Kept parent handshake versioning tied to AGENTS.md.
     - resource: .context/rules/process_doc_maintenance.md
       why_applicable: Plan changes ADRs, role files, docs, and checks.
@@ -137,8 +137,8 @@ do not encode the null-path reason in surrounding prose or in
 ```yaml
 parent_compliance:
   schema_version: 1
-  handshake_token: Session handshake v16
-  agents_md_version: 16
+  handshake_token: Session handshake v17
+  agents_md_version: 17
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
@@ -170,8 +170,8 @@ parent_compliance:
 ```yaml
 parent_compliance:
   schema_version: 1
-  handshake_token: Session handshake v16
-  agents_md_version: 16
+  handshake_token: Session handshake v17
+  agents_md_version: 17
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
@@ -184,7 +184,7 @@ parent_compliance:
     - schema_version: 1
       role: docs
       role_contract_version: 1
-      agents_md_version: 16
+      agents_md_version: 17
       receipt:
         mode: visible-line
         value: Role receipt v1 — docs
@@ -199,10 +199,11 @@ parent_compliance:
         - docs/guides/multi-agent-coordination.md
       gates_invoked:
         - doc-trigger-check
+      run_status: SUCCESS
     - schema_version: 1
       role: devops
       role_contract_version: 1
-      agents_md_version: 16
+      agents_md_version: 17
       receipt:
         mode: visible-line
         value: Role receipt v1 — devops
@@ -217,6 +218,7 @@ parent_compliance:
         - scripts/tests/compliance-contracts.bats
       gates_invoked:
         - verification
+      run_status: SUCCESS
   monolithic_justification: Architect-owned planning stayed with the parent; docs and devops subagents covered the dispatched implementation slices.
   plan_gate:
     status: linked
@@ -254,8 +256,10 @@ receipt evidence in this block.
 | `context_files_used` | list of strings | yes | Files actually used for role output. |
 | `pointers_skipped` | list of objects | yes | `{path, reason}` entries; empty list means none skipped. |
 | `task_scope` | string | yes | Parent-assigned task in one paragraph. |
-| `files_modified` | list of strings | yes | Files the subagent modified; empty for review-only agents. |
+| `files_modified` | list of strings | yes | Files the subagent actually modified and verified post-edit; empty for review-only agents or for runs where edits did not land. Aspirational edits do not belong here. |
 | `gates_invoked` | list of strings | yes | Gate names invoked or attested to; empty list allowed. |
+| `run_status` | string | no (v1.1; default `SUCCESS`) | One of `SUCCESS`, `PARTIAL`, `BLOCKED_ON_RUNTIME`, `NEEDS_CONTEXT`. Optional at v1 to preserve backward compat per the versioning policy; absence implies `SUCCESS`. The silent-failure escape hatch (parent omits field on a failed dispatch) is addressed at the Judge diff-gate (`.agents/judge.md` item 19), not at the schema layer. See `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract". |
+| `apply_replays` | list of objects | no (v1.1) | Byte-anchored patches the parent can replay when `run_status != SUCCESS`. Each entry: `{path, anchor, replacement}` where `anchor` is a unique literal substring in the target file and `replacement` is the literal substitute. Required (non-empty) when `run_status` ∈ `{PARTIAL, BLOCKED_ON_RUNTIME}` and any role-owned edit did not land. |
 
 ### Example — Judge exact-output compliance
 
@@ -264,7 +268,7 @@ subagent_compliance:
   schema_version: 1
   role: judge
   role_contract_version: 1
-  agents_md_version: 16
+  agents_md_version: 17
   receipt:
     mode: trailing-block
     value: Judge exact-output preserved; DECISION remained first line.
@@ -278,6 +282,7 @@ subagent_compliance:
   files_modified: []
   gates_invoked:
     - plan-gate
+  run_status: SUCCESS
 ```
 
 ### Example — Critic exact-output compliance
@@ -287,7 +292,7 @@ subagent_compliance:
   schema_version: 1
   role: critic
   role_contract_version: 1
-  agents_md_version: 16
+  agents_md_version: 17
   receipt:
     mode: trailing-block
     value: Critic exact-output preserved; CRITIC DECISION remained first line.
@@ -302,6 +307,7 @@ subagent_compliance:
   files_modified: []
   gates_invoked:
     - critic-review
+  run_status: SUCCESS
 ```
 
 ## CI-MUST validation rules for v1

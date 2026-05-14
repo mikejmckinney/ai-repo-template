@@ -292,6 +292,7 @@ MULTIAGENT_FILES=(
   "docs/guides/optional-skills.md"
   "docs/compliance_schemas.md"
   ".github/prompts/instruction-compliance-smoke.md"
+  ".github/prompts/outcome-validation-smoke.md"
   ".github/prompts/multi-model-consensus-plan.md"
   ".github/agents/consensus-candidate-claude.agent.md"
   ".github/agents/consensus-candidate-gpt.agent.md"

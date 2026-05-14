@@ -328,8 +328,16 @@ def validate_subagent(
         "task_scope",
         "files_modified",
         "gates_invoked",
+        # v1.1 (additive, optional): see docs/compliance_schemas.md.
+        # run_status MUST remain optional at v1 to preserve backward compat
+        # with v1.0 producers per the versioning policy. The silent-failure
+        # escape hatch raised by codex (PR #312 R7) is addressed at the Judge
+        # diff-gate (.agents/judge.md item 19), not at the schema layer.
+        "run_status",
+        "apply_replays",
     }
-    _require_keys(block, allowed_keys, source)
+    required_keys = allowed_keys - {"run_status", "apply_replays"}
+    _require_keys(block, required_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
     _require_schema_version(block, source)
     _require_type(block["role"], str, f"{source}.role")
@@ -367,6 +375,43 @@ def validate_subagent(
             f"{source}: role_contract_version {block['role_contract_version']} "
             f"does not match .agents/{role}.md version {versions[role]}"
         )
+
+    # v1.1 optional: run_status (enum) + apply_replays (list of byte-anchored
+    # patches). See docs/compliance_schemas.md § 'subagent_compliance v1'.
+    # Kept optional at v1 to preserve backward compat per versioning policy.
+    run_status = block.get("run_status")
+    if run_status is not None:
+        _require_non_empty_string(run_status, f"{source}.run_status")
+        allowed_statuses = {"SUCCESS", "PARTIAL", "BLOCKED_ON_RUNTIME", "NEEDS_CONTEXT"}
+        if run_status not in allowed_statuses:
+            raise ComplianceError(
+                f"{source}.run_status: must be one of {sorted(allowed_statuses)}; got {run_status!r}"
+            )
+    apply_replays = block.get("apply_replays")
+    if apply_replays is not None:
+        _require_type(apply_replays, list, f"{source}.apply_replays")
+        for idx, item in enumerate(apply_replays):
+            item_source = f"{source}.apply_replays[{idx}]"
+            _require_type(item, dict, item_source)
+            replay_keys = {"path", "anchor", "replacement"}
+            _require_keys(item, replay_keys, item_source)
+            _reject_unknown_keys(item, replay_keys, item_source)
+            _require_non_empty_string(item["path"], f"{item_source}.path")
+            # Replays apply patches; the path must be repo-relative just like
+            # files_modified — otherwise an attacker-controlled subagent
+            # response could declare apply_replays[].path = '../../etc/passwd'
+            # or 'http://evil/.../passwd' and pass schema validation while
+            # describing a write outside the repo (PR #312 codex P2).
+            _validate_repo_path(item["path"], f"{item_source}.path", repo_root)
+            _require_non_empty_string(item["anchor"], f"{item_source}.anchor")
+            _require_type(item["replacement"], str, f"{item_source}.replacement")
+    # NOTE: a non-SUCCESS run_status with empty apply_replays is permitted at
+    # the schema layer. The verify-or-replay contract documented in
+    # `.context/rules/process_subagent_bootstrap.md` § "Parent handling of
+    # pass-back evidence" treats this case as a process compliance failure
+    # the parent must document in `monolithic_justification` (and the judge
+    # diff-gates per `.agents/judge.md` item 19). Enforcing it here would
+    # make that documented "without-replay" path unsatisfiable.
 
 
 def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:

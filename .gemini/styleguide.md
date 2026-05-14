@@ -194,6 +194,23 @@ intentional. Do **not** flag them:
 - `mktemp "${TMPDIR:-/tmp}/shell-linter.XXXXXX"`: the template form is already used.
 - `set -uo pipefail` without `-e`: covered by KL-05 above.
 
+- **KL-09** — Static check scripts under `scripts/checks/` use case-sensitive
+  `grep` for repo-authored heading literals (e.g. `### Primary validation`,
+  `## User outcome validation`). The headings are exact and stable; matching
+  case-sensitively is intentional. Suggesting `grep -qi` is not a finding.
+  Confirmed recurring across PR #312 R5–R7.
+- **KL-10** — `if grep -q ...; then pass; else fail` in static check scripts
+  collapses grep exit codes 1 (no match) and 2 (error) into a single "fail"
+  branch. This is intentional: the failure messaging is the same either way,
+  and an actual `grep` error on a tracked repo file would surface elsewhere.
+  Suggesting explicit `status=$?; if [ $status -eq 0 ] ... elif [ $status
+  -eq 1 ] ... else exit $status` ceremony is not a finding.
+- **KL-11** — New check modules under `scripts/checks/` do not require a
+  README catalog entry. `scripts/checks/README.md` documents the orchestrator
+  contract, not a per-module list. The orchestrator's glob auto-discovers
+  modules; the continuity check hard-fails on missing prefixes. Suggesting
+  README doc-sync for a new `NNN-name.sh` is not a finding.
+
 ## Project conventions (skip these classes of finding)
 
 The following patterns have been deliberated and are working as intended.

@@ -33,6 +33,49 @@ After pushing the PR, run this loop until it converges:
 - **Bot-authored PRs** (Renovate, Dependabot, etc.). Maintainer reviews those.
 - **PRs marked `draft`.** These are explicitly not "ready for review yet."
 
+## User outcome validation — PRIMARY
+
+Before requesting review, the PR body must include a `## User outcome validation — PRIMARY`
+section for non-exempt work.
+
+The section must include:
+
+1. **Steps performed** — the concrete manual or automated steps used to perform
+   the issue's `User outcome (15-minute test)`.
+2. **Evidence** — links, excerpts, transcripts, screenshots, PR/issue citations,
+   command output, or other concrete evidence. Bash output alone is insufficient
+   unless the user outcome was itself a script.
+3. **Result** — one of:
+   - `problem statement resolved`
+   - `not resolved`
+   - `framing disconnect`
+   - `blocked`
+4. **Explanation** — a brief note tying the evidence to the result, especially
+   when the result is anything other than `problem statement resolved`.
+
+If the result is `not resolved`, `framing disconnect`, or `blocked`, the PR is
+not ready for normal review until the issue, plan, or implementation is revised.
+
+### Meta/process issue validation example
+
+For issues where the user outcome is reviewability — for example, "a reviewer
+can inspect the plan and PR body and answer these questions" — the validation is
+not a product demo or a shell command.
+
+The correct evidence is a checklist walk-through against the actual plan and PR
+body, with citations or links for each answer.
+
+Example:
+
+- Question: Did the parent/default agent emit the current AGENTS.md handshake?
+  Evidence: PR `parent_compliance.handshake_token`.
+  Result: yes/no.
+
+- Question: Which subagents were planned and which actually ran?
+  Evidence: plan `role_dispatch.planned_subagents` and PR
+  `parent_compliance.subagents_dispatched`.
+  Result: yes/no.
+
 ## Templates and conventions
 
 GitHub auto-populates issue and PR templates only in the browser flow, not when an agent uses `gh` / MCP / API. Agents must apply them explicitly. The issue templates start with a YAML front-matter block delimited by `---`; that block is metadata for GitHub's template chooser, not body text. Strip the front-matter and copy only the Markdown content after the closing `---` into the issue/PR body.

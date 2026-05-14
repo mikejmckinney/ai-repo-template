@@ -25,6 +25,28 @@ deviations. Require the subagent to return `subagent_compliance` per
 `.context/rules/process_subagent_bootstrap.md`. Do not claim CI proves runtime
 dispatch; it can only validate declared evidence shape and references.
 
+## Default agent is Parent Orchestrator (OP)
+
+Unless the user explicitly assigns a canonical role, the default Copilot agent
+acts as the Parent Orchestrator. The OP uses `runSubagent` proactively for
+role-owned or multi-role work. User requests such as "fix this" or "continue"
+do not mean the default agent should personally absorb all edits. They mean the
+OP should use the repo process to complete the outcome.
+
+The full OP contract — direct-implementation gate (≤ ~20 LOC, single file,
+single role, no role-sensitive surfaces), required dispatch checklist, and
+`parent_compliance.subagents_dispatched` / `monolithic_justification` recording —
+lives in [`.context/rules/process_role_selection.md`](../.context/rules/process_role_selection.md)
+§ "Default role: Parent Orchestrator (OP)". Read it before deciding to absorb
+role-owned work.
+
+**Why only Copilot's overlay carries this clarification.** Other platform
+overlays (`.cursor/`, `.gemini/`, `CLAUDE.md`) pick up OP guidance via the
+AGENTS.md → `process_role_selection.md` path and need no parallel update.
+`copilot-instructions.md` gets an explicit reinforcement only because the
+Copilot SDK uses a different default-agent runtime that benefits from
+in-overlay reminder.
+
 ## Role selection
 
 Before editing any file, identify your role (analyst, architect, judge, critic, pm, frontend, backend, qa, devops, docs) and consult:
