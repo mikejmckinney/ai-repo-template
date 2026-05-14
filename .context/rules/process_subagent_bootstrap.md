@@ -142,3 +142,38 @@ The parent must document this in `parent_compliance.deviations[]` with
 `id: subagent-runtime-failure-without-replay` and explain in
 `monolithic_justification` how the role-owned work was reconstructed (e.g.,
 verbatim from the issue body, from the plan, or by re-dispatching).
+
+## Known runtime limitation: dispatched-subagent ghost-success
+
+A subagent that performs file edits and then claims `git commit` + `git push`
+from inside its own terminal context can return a textually plausible
+success response — populated `files_modified`, a commit SHA, even a
+`git push` log line — when no commit actually landed on the remote. The
+parent OP detects this only by independently running `git fetch && git log
+origin/<branch> -1` after each dispatch. Empirical observation lives in
+[`process_model_tier.md`](process_model_tier.md) § "Known runtime
+observation: dispatched-subagent ghost-success".
+
+**Required discipline for dispatched subagents that intend to push:**
+
+1. **Prefer the pass-back pattern.** Make file edits, populate
+   `apply_replays[]` with byte-anchored patches per the contract above, set
+   `run_status: BLOCKED_ON_RUNTIME` if you cannot verify the push landed,
+   and let the parent OP commit + push. Single-applier discipline is the
+   single most effective hedge against this failure mode.
+2. **If a subagent commits + pushes directly,** include the literal output
+   of `git log origin/<branch> -1 --oneline` (or the equivalent `gh api`
+   call against `/repos/{owner}/{repo}/branches/<branch>`) in
+   `subagent_compliance.verification[].evidence`. The verification command
+   must run AFTER `git push` in the same response, so its output reflects
+   the post-push state of the remote — not the pre-dispatch tip.
+3. **Required parent-side defense.** After every dispatch that claims a
+   push, the parent OP runs `git fetch origin && git log origin/<branch>
+   -1 --oneline` and compares against the claimed commit SHA. A mismatch
+   triggers `apply_replays[]` reconstruction or re-dispatch. Do not trust
+   the subagent's success report alone.
+
+This is recorded as a runtime limitation rather than a contract change
+because the root cause is in the dispatch host, not in role behavior. The
+rule above hedges against it without granting subagents broader permissions
+or weakening OP's diff-gate authority.
