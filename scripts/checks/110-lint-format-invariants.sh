@@ -51,6 +51,15 @@ if [[ -f "$LF_FILE" ]]; then
     fail "$LF_FILE missing null-delimited changed-markdown collection"
   fi
 
+  # Null-delimited output must also be consumed safely in both collection and
+  # blocking lint steps.
+  if grep -qF "while IFS= read -r -d '' file; do" "$LF_FILE" \
+    && grep -qF "mapfile -d '' -t changed_files" "$LF_FILE"; then
+    pass "$LF_FILE consumes changed-markdown paths as null-delimited"
+  else
+    fail "$LF_FILE missing null-delimited consumers for changed-markdown paths"
+  fi
+
   # Advisory markdownlint summary must run even when blocking lint fails.
   # Match always() inside the same step block to avoid file-wide false passes.
   if awk '
