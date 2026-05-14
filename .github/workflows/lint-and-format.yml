@@ -5,16 +5,20 @@
 # Jobs
 # ----
 #   lint-and-format — shellcheck (warning+, blocks), shfmt (-d, blocks),
-#                     actionlint (blocks), markdownlint (continue-on-error).
+#                     actionlint (blocks), changed-file markdownlint (blocks),
+#                     repo-wide markdownlint debt summary (advisory).
 #
 # Design notes
 # ------------
 # * shellcheck / shfmt / actionlint do NOT use continue-on-error.  Any
 #   warning-or-above severity blocks the PR — this is intentional (issue #229
 #   Phase 1).
-# * Markdownlint runs with `continue-on-error: true`. Downstream projects
-#   created from this template often have markdown issues during initial setup.
-#   Flip to `false` once the project has reached a stable state.
+# * Markdownlint has two distinct signals (issue #309): changed Markdown files
+#   are linted as a blocking gate using config/markdownlint-cli2.jsonc, while
+#   repo-wide Markdown debt is summarized in the job summary as advisory-only
+#   output. The advisory path redirects CLI output to a log and prints only a
+#   short tail, avoiding thousands of GitHub ##[error] annotations in a green
+#   required workflow.
 # * The `[skip lint]` check below uses
 #     !contains(github.event.head_commit.message, '[skip lint]')
 #   which is safe on both push and pull_request triggers: on PR events
@@ -146,13 +150,78 @@ jobs:
         run: bash scripts/lint-shell-conventions.sh scripts/
 
       # =====================================================
-      # MARKDOWN LINTING (continue-on-error for template use)
+      # MARKDOWN LINTING — changed files block, repo-wide debt summarizes
       # =====================================================
-      - name: Lint Markdown files
-        uses: DavidAnson/markdownlint-cli2-action@v16
-        with:
-          globs: |
-            **/*.md
-            !node_modules/**
-            !.git/**
-        continue-on-error: true
+      - name: Install markdownlint-cli2
+        run: npm install --global markdownlint-cli2@0.17.2
+
+      - name: Collect changed Markdown files
+        id: markdown-files
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            base_ref="${{ github.event.pull_request.base.sha }}"
+            head_ref="${{ github.event.pull_request.head.sha }}"
+          else
+            base_ref="${{ github.event.before }}"
+            head_ref="${{ github.sha }}"
+          fi
+
+          if [[ -z "${base_ref}" || "${base_ref}" == "0000000000000000000000000000000000000000" ]]; then
+            base_ref="$(git rev-list --max-parents=0 "${head_ref}" | tail -n 1)"
+          fi
+
+          git diff --name-only --diff-filter=ACMRT "${base_ref}" "${head_ref}" \
+            | grep -E '\.md$' \
+            | grep -vE '(^|/)node_modules/|(^|/)\.git/' \
+            > /tmp/changed-markdown-files || true
+
+          if [[ -s /tmp/changed-markdown-files ]]; then
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+            {
+              echo "### Changed Markdown files"
+              echo
+              while IFS= read -r file; do
+                echo "- \`${file}\`"
+              done < /tmp/changed-markdown-files
+            } >> "${GITHUB_STEP_SUMMARY}"
+          else
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            echo "No changed Markdown files to lint." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Lint changed Markdown files (blocking)
+        if: steps.markdown-files.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t changed_files < /tmp/changed-markdown-files
+          markdownlint-cli2 --config config/markdownlint-cli2.jsonc "${changed_files[@]}"
+
+      - name: Markdownlint advisory repo-wide summary
+        shell: bash
+        run: |
+          set +e
+          markdownlint-cli2 --config config/markdownlint-cli2.jsonc \
+            "**/*.md" "!node_modules/**" "!.git/**" \
+            > /tmp/markdownlint-advisory.log 2>&1
+          status=$?
+          set -e
+
+          {
+            echo "### Markdownlint advisory repo-wide report"
+            echo
+            if [[ "${status}" -eq 0 ]]; then
+              echo "No repo-wide Markdownlint findings under the current config."
+            else
+              echo "Repo-wide Markdownlint debt remains advisory; changed Markdown files are checked by the blocking step above."
+              echo
+              echo '```text'
+              tail -n 80 /tmp/markdownlint-advisory.log
+              echo '```'
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          exit 0
