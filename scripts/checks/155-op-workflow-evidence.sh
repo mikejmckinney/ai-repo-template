@@ -70,7 +70,7 @@ fi
 # This is a soft-warn, not a hard parse: the goal is to nudge authors
 # away from copy/pasting a literal `vN` they'll forget to bump.
 if grep -qE "current[[:space:]]+(handshake|AGENTS_MD_VERSION)\b" "$PLAYBOOK" \
-   || grep -qE "AGENTS_MD_VERSION" "$PLAYBOOK"; then
+  || grep -qE "AGENTS_MD_VERSION" "$PLAYBOOK"; then
   pass "OP playbook references handshake / AGENTS_MD_VERSION marker (no hardcoded vN required)"
 else
   warn "OP playbook should reference the current handshake or AGENTS_MD_VERSION marker rather than a hardcoded vN (canary drift risk; #313)"
