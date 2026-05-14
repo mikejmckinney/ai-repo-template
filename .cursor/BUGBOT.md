@@ -222,6 +222,36 @@ orchestrator's glob auto-discovers modules by filename prefix, and the
 continuity check hard-fails on missing prefixes, which is the actual
 discoverability mechanism. Confirmed across PR #312 R5 and R7.
 
+### Static check-script regex/awk leading-whitespace tolerance
+
+Static checks under `scripts/checks/NNN-*.sh` and their bats mirrors
+under `scripts/tests/check-NNN-*.bats` deliberately match Markdown
+heading patterns (`/^#+[[:space:]]/`, `grep -qE "^#+[[:space:]]+..."`)
+without an optional `^[[:space:]]*` prefix. The repo's Markdown content
+is machine-formatted and never indents headings; an indented `#` is
+either a code fence body or a typo, both of which the static check is
+correct to ignore. Adding optional leading whitespace would silently
+shift the meaning of the contract (an indented heading would now
+"count") without solving any real content variance. Verified across
+PR #314 round 1.
+
+Do **not** flag missing `^[[:space:]]*` prefixes on heading-shape
+regex/awk patterns under `scripts/checks/**` or `scripts/tests/check-**`.
+
+### `mktemp` template choice in repo bats fixtures
+
+Bats fixtures under `scripts/tests/**` use `mktemp "${TMPDIR:-/tmp}/check-NNN.XXXXXX"`
+(without `${USER}`) by repo convention. The fixtures run inside CI
+runners (single-tenant, ephemeral filesystem) and inside dev containers
+(single-user). The user-specific-path hardening rule applies to
+production shell tools that run on shared multi-user systems; it does
+not apply to per-test temp files inside ephemeral CI sandboxes.
+
+Do **not** flag `mktemp` calls in `scripts/tests/**` for missing
+`${USER}`/user-specific paths. Production shell tools (e.g. install-time
+helpers in `scripts/lib/`) MAY warrant the hardening; flag those
+normally with the specific path.
+
 ## Repo-specific Judge gates
 
 This repo uses the internal Judge role (`.agents/judge.md`) as the canonical gate spec. The nine gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
