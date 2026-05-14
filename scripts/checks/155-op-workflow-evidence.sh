@@ -69,8 +69,14 @@ fi
 #     vN — see e.g. `AGENTS.md` `AGENTS_MD_VERSION` marker phrasing.
 # This is a soft-warn, not a hard parse: the goal is to nudge authors
 # away from copy/pasting a literal `vN` they'll forget to bump.
-if grep -qE "current[[:space:]]+(handshake|AGENTS_MD_VERSION)\b" "$PLAYBOOK" \
-  || grep -qE "AGENTS_MD_VERSION" "$PLAYBOOK"; then
+#
+# Note: an earlier revision (ISS-03) widened this with a second
+# `grep -qE "AGENTS_MD_VERSION" "$PLAYBOOK"` OR-branch. That made the
+# check vacuous (any bare reference would pass), so it was removed in
+# ISS-33. The first branch already matches the playbook's "current
+# AGENTS_MD_VERSION value" wording on line ~38 and the Anti-patterns
+# illustrative reference, so the widened branch was strictly noise.
+if grep -qE "current[[:space:]]+(handshake|AGENTS_MD_VERSION)\b" "$PLAYBOOK"; then
   pass "OP playbook references handshake / AGENTS_MD_VERSION marker (no hardcoded vN required)"
 else
   warn "OP playbook should reference the current handshake or AGENTS_MD_VERSION marker rather than a hardcoded vN (canary drift risk; #313)"
