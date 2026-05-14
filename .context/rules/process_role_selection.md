@@ -63,6 +63,8 @@ wording as the explicit special case requiring user instruction.
 Minimal diff is about limiting the scope of change, not limiting delegation.
 "Make the PR smaller by not delegating" is not a valid reason to skip dispatch.
 
+For the end-to-end issue→merge walkthrough, follow [`.github/prompts/op-issue-workflow.md`](../../.github/prompts/op-issue-workflow.md).
+
 ## Role selection (multi-agent workflow)
 
 This template supports parallel role-specialized agents. Before editing any file:

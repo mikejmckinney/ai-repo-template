@@ -142,3 +142,94 @@ The parent must document this in `parent_compliance.deviations[]` with
 `id: subagent-runtime-failure-without-replay` and explain in
 `monolithic_justification` how the role-owned work was reconstructed (e.g.,
 verbatim from the issue body, from the plan, or by re-dispatching).
+
+## Known runtime limitation: dispatched-subagent ghost-success
+
+A subagent that performs file edits and then claims `git commit` + `git push`
+from inside its own terminal context can return a textually plausible
+success response — populated `files_modified`, a commit SHA, even a
+`git push` log line — when no commit actually landed on the remote. The
+parent OP detects this only by independently running `git fetch && git log
+origin/<branch> -1` after each dispatch. Empirical observation lives in
+[`process_model_tier.md`](process_model_tier.md) § "Known runtime
+observation: dispatched-subagent ghost-success".
+
+**Required discipline for dispatched subagents that intend to push:**
+
+1. **Prefer the pass-back pattern.** Make file edits, populate
+   `apply_replays[]` with byte-anchored patches per the contract above, set
+   `run_status: BLOCKED_ON_RUNTIME` if you cannot verify the push landed,
+   and let the parent OP commit + push. Single-applier discipline is the
+   single most effective hedge against this failure mode.
+2. **If a subagent commits + pushes directly,** include the literal output
+   of `git log origin/<branch> -1 --oneline` (or the equivalent `gh api`
+   call against `/repos/{owner}/{repo}/branches/<branch>`) in the
+   `subagent_compliance` block. The v1 schema has no `verification` field;
+   record the snippet inline in the relevant `apply_replays[].anchor`
+   prose, the surrounding response narrative immediately above the
+   `subagent_compliance` block, or as a parent-replayed post-hoc check
+   captured in `parent_compliance.subagents_dispatched[].subagent_compliance`
+   pass-through. The verification command must run AFTER `git push` in the
+   same response, so its output reflects the post-push state of the
+   remote — not the pre-dispatch tip.
+3. **Required parent-side defense.** After every dispatch that claims a
+   push, the parent OP runs `git fetch origin && git log origin/<branch>
+   -1 --oneline` and compares against the claimed commit SHA. A mismatch
+   triggers `apply_replays[]` reconstruction or re-dispatch. Do not trust
+   the subagent's success report alone.
+
+This is recorded as a runtime limitation rather than a contract change
+because the root cause is in the dispatch host, not in role behavior. The
+rule above hedges against it without granting subagents broader permissions
+or weakening OP's diff-gate authority.
+
+## Subagent compliance schema variance
+
+In practice, subagents register `subagent_compliance` blocks that vary in
+shape from the strict `compliance_schemas.md` v1 spec — e.g., emitting
+`role_contract_version`, `receipt: { mode, value }`, `context_files_used`,
+`pointers_skipped`, or per-role evidence sub-blocks (`ownership_check`,
+`gates_invoked`, `inputs_evaluated`) that the canonical schema does not
+list. This was first observed during the Mode A dogfood test against
+sandbox issue #2 (May 2026), where Judge round-1 returned a richer block
+than the spec asked for.
+
+**Parent handling rules:**
+
+1. **Treat the canonical v1 required fields as required.** A
+   `subagent_compliance` block (whether standalone or as an entry inside
+   `parent_compliance.subagents_dispatched[]`) is valid only when **all**
+   ten required keys are present: `schema_version`, `role`,
+   `role_contract_version`, `agents_md_version`, `receipt`,
+   `context_files_used`, `pointers_skipped`, `task_scope`,
+   `files_modified`, `gates_invoked`. The optional v1.1 additive keys
+   `run_status` and `apply_replays` MAY be present. The schema authority
+   is `scripts/lib/compliance_schema.py` (the `allowed_keys` /
+   `required_keys` set in `validate_subagent`); when this rule and the
+   schema disagree, the schema wins and this rule is the bug.
+2. **The strict validator (`scripts/lib/compliance_schema.py`
+   `_reject_unknown_keys`) rejects any field outside the canonical set,
+   in standalone `subagent_compliance` blocks **and** in each
+   `parent_compliance.subagents_dispatched[]` entry** (each entry is
+   itself validated via `validate_subagent`; there is **no** nested
+   `subagent_compliance` key, and there is **no** `notes` field on
+   subagent entries — both shapes will hard-fail
+   `scripts/validate-compliance-examples.py` /
+   `scripts/validate-compliance-fixtures.py` per
+   `docs/compliance_schemas.md` §"CI-MUST validation rules for v1"
+   rule 6). Capture diagnostically-useful extras (extra-role evidence,
+   non-schema annotations, `missing_fields` notes) in **adjacent prose**
+   in the PR/issue comment body around the block, **not** as keys inside
+   the block. The structured slot is canonical-only.
+3. **If a subagent omits a canonically-required field**, the parent OP
+   re-dispatches with an explicit reminder to include the missing field
+   rather than recording the gap as a key inside the block — the strict
+   validator does not accept a `missing_fields` key, and a downstream
+   Judge diff-gate or QA hook will surface the same gap. Only if
+   re-dispatch is impossible (e.g., the runtime is unavailable) does the
+   parent describe the gap in narrative prose adjacent to the block and
+   BLOCK rather than proceed.
+4. **Schema-vs-practice drift is a feedback signal**, not a defect. When
+   the same extra field appears across multiple dispatches of the same
+   role, file an issue against `compliance_schemas.md` proposing the
+   addition rather than asking subagents to drop it.

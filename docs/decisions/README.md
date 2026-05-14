@@ -109,3 +109,18 @@ and tend to be exactly where the actual lessons live.
 Sequential, zero-padded: `adr-001`, `adr-002`, … `adr-099`, `adr-100`.
 Don't renumber when superseding — keep the original number; supersession
 is a status, not a renumber.
+
+**Sandbox-prefixed numbering.** ADRs that are scoped to the sandbox
+sibling repo (`mikejmckinney/ai-repo-template-sandbox`) and not yet
+intended for upstream use the parallel sequence `adr-sandbox-NNN`
+(`adr-sandbox-001`, `adr-sandbox-002`, …). They share this directory
+and this README's table for discoverability but are sorted at the
+bottom of the table under their own subsection so the sequential
+upstream `adr-NNN` numbering remains visually contiguous. On
+forward-port to upstream, a sandbox-prefixed ADR is **renumbered** to
+the next available upstream `adr-NNN` slot (the supersession-keeps-its-
+number rule above does not apply because the sandbox prefix is a scope
+marker, not a sequence marker). Any references to the old sandbox
+number (status footnotes on related ADRs, prose mentions in guides) are
+rewritten in the same forward-port PR — there should be no `adr-sandbox-NNN`
+strings left in the upstream repo after the port.

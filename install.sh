@@ -294,6 +294,7 @@ MULTIAGENT_FILES=(
   ".github/prompts/instruction-compliance-smoke.md"
   ".github/prompts/outcome-validation-smoke.md"
   ".github/prompts/multi-model-consensus-plan.md"
+  ".github/prompts/op-issue-workflow.md"
   ".github/agents/consensus-candidate-claude.agent.md"
   ".github/agents/consensus-candidate-gpt.agent.md"
   ".github/agents/consensus-candidate-gemini.agent.md"

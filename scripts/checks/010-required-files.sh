@@ -55,6 +55,7 @@ REQUIRED_FILES=(
   ".github/prompts/README.md"
   ".github/prompts/repo-onboarding.md"
   ".github/prompts/pr-resolve-all.md"
+  ".github/prompts/op-issue-workflow.md"
   ".github/prompts/expand-backlog-entry.md"
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"

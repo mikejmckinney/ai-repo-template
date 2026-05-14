@@ -277,6 +277,42 @@ those ARE real provenance errors. The rule above only suppresses
 the "PR# doesn't match issue#, must be a typo" pattern, which has
 shown up in multi-rounds across PR #297 and earlier.
 
+### Static check-script regex/awk leading-whitespace tolerance
+
+Static checks under `scripts/checks/NNN-*.sh` and their bats mirrors
+under `scripts/tests/check-NNN-*.bats` deliberately match Markdown
+heading patterns (`/^#+[[:space:]]/`, `grep -qE "^#+[[:space:]]+..."`)
+without an optional `^[[:space:]]*` prefix. The repo's Markdown content
+is machine-formatted (CommonMark / GitHub render) and never indents
+headings; an indented `#` is either a code fence body or a typo, both
+of which the static check is correct to ignore. Adding optional
+leading whitespace would silently shift the meaning of the contract
+(an indented heading would now "count") without solving any real
+content variance. Verified across PR #314 round 1.
+
+Do **not** flag missing `^[[:space:]]*` prefixes on heading-shape
+regex/awk patterns under `scripts/checks/**` or `scripts/tests/check-**`.
+If you spot one in a context that genuinely DOES see indented Markdown
+(e.g. a check that scans markdown inside fenced code blocks), flag it
+normally with the specific path and rationale.
+
+### `mktemp` template choice in repo bats fixtures
+
+Bats fixtures under `scripts/tests/**` use `mktemp "${TMPDIR:-/tmp}/check-NNN.XXXXXX"`
+(without `${USER}`) by repo convention. The fixtures run inside CI
+runners (single-tenant, ephemeral filesystem) and inside dev containers
+(single-user). The user-specific-path hardening rule applies to
+production shell tools that run on shared multi-user systems; it does
+not apply to per-test temp files inside ephemeral CI sandboxes. Adding
+`${USER}` would not improve security and would break the consistent
+hash prefix that other check fixtures use.
+
+Do **not** flag `mktemp` calls in `scripts/tests/**` for missing
+`${USER}`/user-specific paths. Production shell tools (e.g. things in
+`scripts/lib/` invoked at install time, runtime helpers in
+`scripts/checks/` that run outside CI) MAY warrant the hardening; flag
+those normally with the specific path.
+
 ## Repo-specific Judge gates
 
 This repo uses the internal Judge role (`.agents/judge.md`) as the canonical gate spec. The nine gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.
