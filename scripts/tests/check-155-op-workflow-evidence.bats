@@ -40,7 +40,7 @@ setup_file() {
 # --- Phase enumeration: positive (all 8 phases present) ---------------------
 
 @test "fixture with all 8 phase headings: count == 8" {
-  fixture="$(mktemp)"
+  fixture="$(mktemp "${TMPDIR:-/tmp}/check-155.XXXXXX")"
   cat > "$fixture" <<'EOF'
 ## Phase 0: Bootstrap
 ## Phase 1: Issue intake
@@ -62,7 +62,7 @@ EOF
 # --- Phase enumeration: negative (Phase 4 missing) --------------------------
 
 @test "fixture missing Phase 4: count == 7" {
-  fixture="$(mktemp)"
+  fixture="$(mktemp "${TMPDIR:-/tmp}/check-155.XXXXXX")"
   cat > "$fixture" <<'EOF'
 ## Phase 0
 ## Phase 1
@@ -83,7 +83,7 @@ EOF
 # --- "current handshake / AGENTS_MD_VERSION" wording: positive --------------
 
 @test "fixture using 'current handshake' wording: grep matches" {
-  fixture="$(mktemp)"
+  fixture="$(mktemp "${TMPDIR:-/tmp}/check-155.XXXXXX")"
   echo "Record the current handshake token and current AGENTS_MD_VERSION at plan time." > "$fixture"
   run grep -qE "current[[:space:]]+(handshake|AGENTS_MD_VERSION)" "$fixture"
   rm -f "$fixture"
@@ -93,7 +93,7 @@ EOF
 # --- Hardcoded vN literal OUTSIDE Anti-patterns: negative (canary drift) ----
 
 @test "fixture with 'Session handshake v18' in normative section: detected" {
-  fixture="$(mktemp)"
+  fixture="$(mktemp "${TMPDIR:-/tmp}/check-155.XXXXXX")"
   cat > "$fixture" <<'EOF'
 ## Phase 3: Plan-as-comment
 The plan must include `Session handshake v18` in plan_compliance.
@@ -121,7 +121,7 @@ EOF
 # --- Hardcoded vN literal ONLY inside Anti-patterns: positive (allowed) -----
 
 @test "fixture with vN literal only inside Anti-patterns: count == 0 outside" {
-  fixture="$(mktemp)"
+  fixture="$(mktemp "${TMPDIR:-/tmp}/check-155.XXXXXX")"
   cat > "$fixture" <<'EOF'
 ## Phase 3: Plan-as-comment
 Use the current handshake token from AGENTS.md.
@@ -150,7 +150,7 @@ EOF
 # --- Anti-patterns section presence -----------------------------------------
 
 @test "fixture with Anti-patterns heading: grep matches" {
-  fixture="$(mktemp)"
+  fixture="$(mktemp "${TMPDIR:-/tmp}/check-155.XXXXXX")"
   echo "## Anti-patterns" > "$fixture"
   run grep -qiE "^#+[[:space:]]*Anti.?patterns" "$fixture"
   rm -f "$fixture"
@@ -158,7 +158,7 @@ EOF
 }
 
 @test "fixture without Anti-patterns heading: grep fails" {
-  fixture="$(mktemp)"
+  fixture="$(mktemp "${TMPDIR:-/tmp}/check-155.XXXXXX")"
   echo "## Some Other Section" > "$fixture"
   run grep -qiE "^#+[[:space:]]*Anti.?patterns" "$fixture"
   rm -f "$fixture"
@@ -168,7 +168,7 @@ EOF
 # --- Cross-link presence: positive ------------------------------------------
 
 @test "fixture containing op-issue-workflow.md reference: grep matches" {
-  fixture="$(mktemp)"
+  fixture="$(mktemp "${TMPDIR:-/tmp}/check-155.XXXXXX")"
   echo "See [the playbook](.github/prompts/op-issue-workflow.md) for details." > "$fixture"
   run grep -qF "op-issue-workflow.md" "$fixture"
   rm -f "$fixture"
@@ -178,7 +178,7 @@ EOF
 # --- Cross-link presence: negative ------------------------------------------
 
 @test "fixture missing op-issue-workflow.md reference: grep fails" {
-  fixture="$(mktemp)"
+  fixture="$(mktemp "${TMPDIR:-/tmp}/check-155.XXXXXX")"
   echo "See some other doc." > "$fixture"
   run grep -qF "op-issue-workflow.md" "$fixture"
   rm -f "$fixture"
