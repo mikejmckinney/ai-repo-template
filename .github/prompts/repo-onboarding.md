@@ -235,6 +235,8 @@ Output a structured summary:
 - <item>
 ```
 
+> **Once onboarded, follow [`op-issue-workflow.md`](op-issue-workflow.md) for your first task** — the Phase 0–7 OP playbook for taking an issue from intake to merged PR.
+
 ## Step 1.5: Create/Update AI_REPO_GUIDE.md
 
 If `/AI_REPO_GUIDE.md` does NOT exist, create it with:

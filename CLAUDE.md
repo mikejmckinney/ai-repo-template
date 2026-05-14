@@ -8,6 +8,7 @@
 2. **[`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md)** — structured reference (files, conventions, verification commands) optimized for agent consumption.
 3. **[`.context/00_INDEX.md`](.context/00_INDEX.md)** — project memory entry point. Lazy-loads rules, state, roadmap, and vision.
 4. **[`.github/PLAN_TEMPLATE.md`](.github/PLAN_TEMPLATE.md)** — copy this template into a comment on any issue you're about to implement, before writing code. See [`.context/rules/process_gates.md`](.context/rules/process_gates.md) and ADR-011 for the full rules and exemptions.
+5. **[`.github/prompts/op-issue-workflow.md`](.github/prompts/op-issue-workflow.md)** — end-to-end OP issue→merge playbook for the default agent. Read the first time you pick up an issue.
 
 ## Role selection
 

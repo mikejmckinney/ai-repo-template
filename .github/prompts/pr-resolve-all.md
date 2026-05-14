@@ -5,6 +5,8 @@ agent: agent
 
 # PR Issue Resolution — Systematic Verify-and-Fix
 
+> **Context:** this prompt plugs into Phase 6 of the OP issue→merge playbook. See [`op-issue-workflow.md`](op-issue-workflow.md) for the end-to-end OP playbook.
+>
 > **Usage**: Post one of these as a PR comment:
 >   - `@claude follow .github/prompts/pr-resolve-all.md`
 >   - `@copilot follow .github/prompts/pr-resolve-all.md`
