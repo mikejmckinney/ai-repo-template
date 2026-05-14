@@ -52,8 +52,21 @@ if [[ -f "$LF_FILE" ]]; then
   fi
 
   # Advisory markdownlint summary must run even when blocking lint fails.
-  if grep -qE 'name:[[:space:]]+Markdownlint advisory repo-wide summary' "$LF_FILE" \
-    && grep -qE 'if:[[:space:]]+\$\{\{[[:space:]]*always\(\)[[:space:]]*\}\}' "$LF_FILE"; then
+  # Match always() inside the same step block to avoid file-wide false passes.
+  if awk '
+    /^[[:space:]]*-[[:space:]]+name:[[:space:]]+Markdownlint advisory repo-wide summary[[:space:]]*$/ {
+      in_step=1
+      next
+    }
+    in_step && /^[[:space:]]*-[[:space:]]+name:/ {
+      in_step=0
+    }
+    in_step && /if:[[:space:]]*\$\{\{[[:space:]]*always\(\)[[:space:]]*\}\}/ {
+      found=1
+      exit
+    }
+    END { exit(found ? 0 : 1) }
+  ' "$LF_FILE"; then
     pass "$LF_FILE runs markdownlint advisory summary with always()"
   else
     fail "$LF_FILE missing always() guard on markdownlint advisory summary"
