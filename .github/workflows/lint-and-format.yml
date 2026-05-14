@@ -179,20 +179,24 @@ jobs:
             base_ref="$(git rev-list --max-parents=0 "${head_ref}" | tail -n 1)"
           fi
 
-          git diff --name-only --diff-filter=ACMRT "${base_ref}" "${head_ref}" > /tmp/changed-files
+          git -c core.quotepath=off diff --name-only -z --diff-filter=ACMRT "${base_ref}" "${head_ref}" \
+            > /tmp/changed-files-z
 
-          grep -E '\.md$' /tmp/changed-files \
-            | grep -vE '(^|/)node_modules/|(^|/)\.git/' \
-            > /tmp/changed-markdown-files || true
+          : > /tmp/changed-markdown-files-z
+          while IFS= read -r -d '' file; do
+            if [[ "${file}" == *.md ]] && [[ ! "${file}" =~ (^|/)node_modules/|(^|/)\.git/ ]]; then
+              printf '%s\0' "${file}" >> /tmp/changed-markdown-files-z
+            fi
+          done < /tmp/changed-files-z
 
-          if [[ -s /tmp/changed-markdown-files ]]; then
+          if [[ -s /tmp/changed-markdown-files-z ]]; then
             echo "changed=true" >> "${GITHUB_OUTPUT}"
             {
               echo "### Changed Markdown files"
               echo
-              while IFS= read -r file; do
+              while IFS= read -r -d '' file; do
                 echo "- \`${file}\`"
-              done < /tmp/changed-markdown-files
+              done < /tmp/changed-markdown-files-z
             } >> "${GITHUB_STEP_SUMMARY}"
           else
             echo "changed=false" >> "${GITHUB_OUTPUT}"
@@ -205,10 +209,11 @@ jobs:
         run: |
           set -euo pipefail
           # Lints whole changed files, not changed lines.
-          mapfile -t changed_files < /tmp/changed-markdown-files
+          mapfile -d '' -t changed_files < /tmp/changed-markdown-files-z
           markdownlint-cli2 --config config/.markdownlint-cli2.jsonc "${changed_files[@]}"
 
       - name: Markdownlint advisory repo-wide summary
+        if: ${{ always() }}
         shell: bash
         run: |
           set +e

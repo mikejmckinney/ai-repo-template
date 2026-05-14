@@ -42,6 +42,22 @@ if [[ -f "$LF_FILE" ]]; then
   else
     fail "$LF_FILE missing actionlint run step (issue #229 Phase 1)"
   fi
+
+  # Changed markdown collection must use null-delimited diff output so paths
+  # with spaces or escapes are handled safely.
+  if grep -qE 'git[[:space:]]+-c[[:space:]]+core\.quotepath=off[[:space:]]+diff[[:space:]]+--name-only[[:space:]]+-z' "$LF_FILE"; then
+    pass "$LF_FILE uses null-delimited changed-markdown collection"
+  else
+    fail "$LF_FILE missing null-delimited changed-markdown collection"
+  fi
+
+  # Advisory markdownlint summary must run even when blocking lint fails.
+  if grep -qE 'name:[[:space:]]+Markdownlint advisory repo-wide summary' "$LF_FILE" \
+    && grep -qE 'if:[[:space:]]+\$\{\{[[:space:]]*always\(\)[[:space:]]*\}\}' "$LF_FILE"; then
+    pass "$LF_FILE runs markdownlint advisory summary with always()"
+  else
+    fail "$LF_FILE missing always() guard on markdownlint advisory summary"
+  fi
 else
   fail "$LF_FILE is missing"
 fi
