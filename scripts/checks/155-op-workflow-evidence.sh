@@ -54,7 +54,7 @@ fi
 
 # 3. "current" handshake / AGENTS_MD_VERSION wording present, and no
 # hardcoded token outside the Anti-patterns illustrative example.
-if grep -qE "current[[:space:]]+(handshake|AGENTS_MD_VERSION)" "$PLAYBOOK"; then
+if grep -qE "current[[:space:]]+(handshake|AGENTS_MD_VERSION)\b" "$PLAYBOOK"; then
   pass "OP playbook uses 'current handshake / AGENTS_MD_VERSION' wording"
 else
   warn "OP playbook should reference 'current' handshake/AGENTS_MD_VERSION rather than a hardcoded vN (canary drift risk; #313)"
