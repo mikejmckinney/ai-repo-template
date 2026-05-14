@@ -72,9 +72,11 @@ These files require **PM coordination** regardless of role, because any role may
 | `test.sh`                         | DevOps         | Must be updated in lockstep with template structure changes |
 | `.github/agents/**` / `.claude/agents/**` | Architect | Role definitions; changes require an ADR, must update both mirrors in lockstep, and `test.sh` enforces `description:` parity between them. See `docs/decisions/adr-003-claude-code-subagent-registration.md`. |
 | `.github/agents/consensus-candidate-*.agent.md` | Architect | Multi-model consensus dry-run candidate planners (Copilot-only). Pinned to one Copilot model each via `model:` frontmatter so `.github/prompts/multi-model-consensus-plan.md` can fan three planning passes across distinct vendors via `runSubagent` (which has no `model` parameter). Intentionally not mirrored to `.claude/agents/` or `.agents/`; `scripts/checks/050-agent-mirror.sh` exempts the `consensus-candidate-*` name prefix. Promote to N-way once a third platform with a meaningfully different model catalog (e.g., Cursor) is added. See issue #295 / PR #297. |
+| `.github/copilot-instructions.md` | Docs | Tool-specific instructions overlay; edit in lockstep with AGENTS.md per ADR-002 pointer pattern. |
 | `.github/workflows/agent-parallelism-report.yml` | DevOps | Cross-PR overlap detector; parses this ownership table to classify overlaps. Format-changing PRs must keep the table parser-friendly (covered by the live-format assertion in `scripts/tests/parallelism-report-parser.bats` and `test.sh`). See ADR-009. |
 | `.github/workflows/auto-rebase-on-merge.yml` | DevOps | Post-merge auto-rebase for soft-overlap PRs and advisory-comment for hard-overlap PRs. Reuses `classify_overlap` from `scripts/multi-dispatch-safety.sh`. Decision logic lives in `scripts/auto-rebase-overlapping.sh` (unit-tested via `scripts/tests/auto-rebase-overlapping.bats`). See ADR-010. |
 | `scripts/auto-rebase-overlapping.sh` | DevOps | Pure-bash library backing the auto-rebase workflow. Format/behavior changes must keep the unit tests green. See ADR-010. |
+| `scripts/tests/**` | DevOps | bats fixtures for scripts/**; covered by colocated-tests rule but listed explicitly to avoid repeated re-derivation. QA may co-author via PM shared-edit claim only. |
 
 ## Live-state protocol
 
