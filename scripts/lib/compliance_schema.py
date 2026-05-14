@@ -328,12 +328,15 @@ def validate_subagent(
         "task_scope",
         "files_modified",
         "gates_invoked",
-        # v1.1 (additive): run_status is REQUIRED on every subagent block
-        # (codex P1, PR #312). apply_replays remains optional.
+        # v1.1 (additive, optional): see docs/compliance_schemas.md.
+        # run_status MUST remain optional at v1 to preserve backward compat
+        # with v1.0 producers per the versioning policy. The silent-failure
+        # escape hatch raised by codex (PR #312 R7) is addressed at the Judge
+        # diff-gate (.agents/judge.md item 19), not at the schema layer.
         "run_status",
         "apply_replays",
     }
-    required_keys = allowed_keys - {"apply_replays"}
+    required_keys = allowed_keys - {"run_status", "apply_replays"}
     _require_keys(block, required_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
     _require_schema_version(block, source)
@@ -373,18 +376,17 @@ def validate_subagent(
             f"does not match .agents/{role}.md version {versions[role]}"
         )
 
-    # v1.1 required: run_status (enum) — REQUIRED on every subagent block to
-    # close the silent-failure escape hatch where an absent field meant
-    # implicit SUCCESS and bypassed Judge diff-gate item 19 (codex P1, PR #312).
-    # apply_replays remains optional (list of byte-anchored patches). See
-    # docs/compliance_schemas.md § 'subagent_compliance v1'.
-    run_status = block["run_status"]
-    _require_non_empty_string(run_status, f"{source}.run_status")
-    allowed_statuses = {"SUCCESS", "PARTIAL", "BLOCKED_ON_RUNTIME", "NEEDS_CONTEXT"}
-    if run_status not in allowed_statuses:
-        raise ComplianceError(
-            f"{source}.run_status: must be one of {sorted(allowed_statuses)}; got {run_status!r}"
-        )
+    # v1.1 optional: run_status (enum) + apply_replays (list of byte-anchored
+    # patches). See docs/compliance_schemas.md § 'subagent_compliance v1'.
+    # Kept optional at v1 to preserve backward compat per versioning policy.
+    run_status = block.get("run_status")
+    if run_status is not None:
+        _require_non_empty_string(run_status, f"{source}.run_status")
+        allowed_statuses = {"SUCCESS", "PARTIAL", "BLOCKED_ON_RUNTIME", "NEEDS_CONTEXT"}
+        if run_status not in allowed_statuses:
+            raise ComplianceError(
+                f"{source}.run_status: must be one of {sorted(allowed_statuses)}; got {run_status!r}"
+            )
     apply_replays = block.get("apply_replays")
     if apply_replays is not None:
         _require_type(apply_replays, list, f"{source}.apply_replays")

@@ -258,7 +258,7 @@ receipt evidence in this block.
 | `task_scope` | string | yes | Parent-assigned task in one paragraph. |
 | `files_modified` | list of strings | yes | Files the subagent actually modified and verified post-edit; empty for review-only agents or for runs where edits did not land. Aspirational edits do not belong here. |
 | `gates_invoked` | list of strings | yes | Gate names invoked or attested to; empty list allowed. |
-| `run_status` | string | yes (v1.1) | One of `SUCCESS`, `PARTIAL`, `BLOCKED_ON_RUNTIME`, `NEEDS_CONTEXT`. Required on every subagent block to close the silent-failure escape hatch where an absent field implicitly meant `SUCCESS` and bypassed Judge diff-gate item 19. See `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract". |
+| `run_status` | string | no (v1.1; default `SUCCESS`) | One of `SUCCESS`, `PARTIAL`, `BLOCKED_ON_RUNTIME`, `NEEDS_CONTEXT`. Optional at v1 to preserve backward compat per the versioning policy; absence implies `SUCCESS`. The silent-failure escape hatch (parent omits field on a failed dispatch) is addressed at the Judge diff-gate (`.agents/judge.md` item 19), not at the schema layer. See `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract". |
 | `apply_replays` | list of objects | no (v1.1) | Byte-anchored patches the parent can replay when `run_status != SUCCESS`. Each entry: `{path, anchor, replacement}` where `anchor` is a unique literal substring in the target file and `replacement` is the literal substitute. Required (non-empty) when `run_status` ∈ `{PARTIAL, BLOCKED_ON_RUNTIME}` and any role-owned edit did not land. |
 
 ### Example — Judge exact-output compliance
