@@ -185,7 +185,7 @@ The user described work without filing an issue ("can you fix X", "we should add
 **Actions:**
 
 1. Squash-merge the PR. Use the issue title (or a refinement) as the squash subject; preserve the PR description in the squash body.
-2. Verify the issue auto-closed via the PR body's `Closes #N` keyword. If not auto-closed, close manually.
+2. Verify the issue auto-closed via the PR body's `Closes #N` keyword. If not auto-closed, close manually. **Auto-close caveat:** GitHub's `Closes #N` / `Fixes #N` / `Resolves #N` keywords only fire on PRs whose **base is the repository's default branch** ([reference docs](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue#linking-a-pull-request-to-an-issue-using-a-keyword)). PRs that target a non-default branch (long-lived integration branch, sandbox mainline, stacked-PR base, etc.) silently no-op the keyword on merge. If your PR base is non-default, plan for a manual `gh issue close <N> -R <owner>/<repo> --reason completed --comment "<link to merge commit>"` immediately after merge \u2014 don't assume the keyword fired. Empirically caught on the Mode A sandbox dogfood test (May 2026): PR #17 against `feat/313-op-issue-workflow` base merged cleanly but left sandbox issue #2 open until manual close.
 3. Post a final `agent-state:v1` comment on the issue with `status: closed`, `merge_commit: <sha>`, `closeout_note:` (one-paragraph retrospective).
 4. If the work surfaced a new lesson (canary ripple files missed by a plan, runtime quirk, doc drift), file a follow-up: postmortem under [`docs/postmortems/`](../../docs/postmortems/) per ADR-015, or a fresh issue using the same playbook.
 
