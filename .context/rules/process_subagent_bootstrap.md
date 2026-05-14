@@ -177,3 +177,34 @@ This is recorded as a runtime limitation rather than a contract change
 because the root cause is in the dispatch host, not in role behavior. The
 rule above hedges against it without granting subagents broader permissions
 or weakening OP's diff-gate authority.
+
+## Subagent compliance schema variance
+
+In practice, subagents register `subagent_compliance` blocks that vary in
+shape from the strict `compliance_schemas.md` v1 spec — e.g., emitting
+`role_contract_version`, `receipt: { mode, value }`, `context_files_used`,
+`pointers_skipped`, or per-role evidence sub-blocks (`ownership_check`,
+`gates_invoked`, `inputs_evaluated`) that the canonical schema does not
+list. This was first observed during the Mode A dogfood test against
+sandbox issue #2 (May 2026), where Judge round-1 returned a richer block
+than the spec asked for.
+
+**Parent handling rules:**
+
+1. **Treat the canonical fields as required, additional fields as
+   informative.** A block with `schema_version`, `role`, `agents_md_version`,
+   `task_scope`, `files_modified`, `gates_invoked`, `run_status`, and
+   (when applicable) `apply_replays` satisfies the contract regardless of
+   what else the subagent added. Do not BLOCK on extra fields.
+2. **Do not silently drop the extra fields when threading evidence into
+   `parent_compliance.subagents_dispatched[].subagent_compliance`.** Pass
+   them through verbatim; they're often the most diagnostic part of the
+   record (e.g., `pointers_skipped` explains exactly why Judge couldn't
+   read a remote artifact).
+3. **If a subagent omits a canonically-required field**, the parent OP
+   still records the dispatch with a `missing_fields: [...]` annotation
+   and proceeds; do not re-dispatch solely to chase the schema.
+4. **Schema-vs-practice drift is a feedback signal**, not a defect. When
+   the same extra field appears across multiple dispatches of the same
+   role, file an issue against `compliance_schemas.md` proposing the
+   addition rather than asking subagents to drop it.

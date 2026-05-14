@@ -143,11 +143,43 @@ plan template's Verification section verbatim.
 > `mikejmckinney/ai-repo-template-sandbox`; derived projects will
 > resolve their own owner/repo from the bootstrap step.
 
-### 1. Force-sync sandbox `main` to this repo's `main`
+### 1. Prepare sandbox state — fresh test branches (default)
 
-The sandbox `main` is *not* a long-lived branch — it tracks production's
-`main` from the moment of each verification run. Predictable per-test
-state matters more than history continuity.
+The sandbox `main` ref is shared across PRs and may carry head-branch
+references from prior merged sandbox PRs (e.g. PR descriptions in this
+repo's history that link `mikejmckinney/ai-repo-template-sandbox#NNN`
+rely on those head branches still existing). The default per-PR
+workflow therefore creates fresh test branches off `sandbox/main`
+rather than force-resetting `sandbox/main` itself.
+
+```bash
+git fetch origin main
+git fetch sandbox
+
+# (Recommended) Tag the current sandbox/main HEAD before any test work,
+# so a force-reset is recoverable if you need it later.
+git tag -a "pre-op-playbook-test-$(date +%Y-%m-%d)" sandbox/main \
+  -m "Pre-test sandbox/main snapshot"
+git push sandbox "pre-op-playbook-test-$(date +%Y-%m-%d)"
+
+# Create a per-PR mirror of upstream main as the sandbox base for the test PR.
+git push sandbox origin/main:test/playbook-mainline
+
+# Push your PR branch under a test-prefixed name so it can't collide with
+# any production sandbox branch the upstream history still references.
+git push sandbox HEAD:test/sandbox-<short-slug>
+```
+
+Open the sandbox PR with `--base test/playbook-mainline --head test/sandbox-<short-slug>`
+in step 3 below. `sandbox/main` is left untouched, so PR descriptions
+elsewhere that cite sandbox PR head branches keep resolving.
+
+### 1-alt. Force-reset sandbox `main` (explicit override)
+
+Use this only when the sandbox is genuinely empty (no PR-history
+references worth preserving) or when the maintainer has explicitly
+decided to discard prior sandbox state. The fresh-branches default
+above is safer for any sandbox that has carried a real PR.
 
 ```bash
 git fetch origin main
@@ -155,27 +187,46 @@ git push --force sandbox origin/main:main
 ```
 
 This is the only force-push the playbook authorizes. It runs against
-the sandbox remote only, never against `origin`.
+the sandbox remote only, never against `origin`. Document the choice
+in the PR body's `parent_compliance.deviations[]` so a future Judge
+can see why the safer default was overridden.
 
 ### 2. Push your PR branch to sandbox
 
+Already done in step 1 (default flow) under the `test/sandbox-<short-slug>`
+name. If you used the force-reset override path in step 1-alt, push your
+branch now under any name; in that case PR creation in step 3 uses
+`--base main --head <branch>`.
+
 ```bash
-# From your branch (e.g. feature/devops-NNN-relay-fix).
+# Only needed if you used the force-reset override path.
 git push sandbox HEAD
 ```
 
-### 3. Open and merge a sandbox PR
+### 3. Open the sandbox PR (merge optional)
 
 ```bash
+# Default flow (test/playbook-mainline base):
 gh pr create \
   --repo "$SANDBOX_REPO" \
   --title "[sandbox] $(git log -1 --pretty=%s)" \
-  --body "Sandbox verification for ai-repo-template PR <link to real PR>. Will be merged immediately to exercise the trigger." \
-  --base main \
-  --head "$(git rev-parse --abbrev-ref HEAD)"
+  --body "Sandbox verification for ai-repo-template PR <link to real PR>." \
+  --base test/playbook-mainline \
+  --head "test/sandbox-<short-slug>"
 
-# Merge as soon as the PR is open. Sandbox PRs do not need bot review;
-# the real PR is the one that goes through the canonical gate.
+# Force-reset override flow:
+#   --base main --head "$(git rev-parse --abbrev-ref HEAD)"
+```
+
+Whether to merge the sandbox PR depends on what trigger you need to
+exercise (step 4). Triggers like `pull_request_review` /
+`workflow_dispatch` / `schedule` fire without merge; triggers like
+`pull_request.closed` require it. Only merge sandbox PRs that need it
+for trigger reproduction; leaving a sandbox PR open is also fine and
+is useful as a test artifact reviewers can inspect.
+
+```bash
+# Only when the trigger requires it:
 gh pr merge --repo "$SANDBOX_REPO" \
   --squash --delete-branch <sandbox-pr-number>
 ```
@@ -202,10 +253,12 @@ without leaving any artifact in this repo's `main`.
 - **Green** — paste a one-line link to the green sandbox run into a
   comment on the real PR (`Sandbox verification: <run URL> — green`).
   The maintainer / Judge can now merge here with confidence.
-- **Red** — fix the change on your PR branch, push to both `origin`
-  and `sandbox`, and re-run from step 3. (Sandbox `main` is already
-  fresh from step 1 unless something else has been merged in
-  between; if so, redo step 1.)
+- **Red** — fix the change on your PR branch, push the new tip to
+  `sandbox` under the same `test/sandbox-<short-slug>` name (or to your
+  PR branch under the override flow), and re-run from step 3 if the
+  sandbox PR was merged or step 4 if it's still open. The
+  `test/playbook-mainline` base does not need to be re-pushed unless
+  upstream `origin/main` has moved.
 
 ## Force-reset escape hatch
 
