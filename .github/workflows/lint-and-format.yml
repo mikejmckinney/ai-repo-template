@@ -18,7 +18,8 @@
 #   repo-wide Markdown debt is summarized in the job summary as advisory-only
 #   output. The advisory path redirects CLI output to a log and prints only a
 #   short tail, avoiding thousands of GitHub ##[error] annotations in a green
-#   required workflow.
+#   required workflow. On pull_request events, changed files are computed from
+#   the merge-base to avoid linting unrelated files from target-branch drift.
 # * The `[skip lint]` check below uses
 #     !contains(github.event.head_commit.message, '[skip lint]')
 #   which is safe on both push and pull_request triggers: on PR events
@@ -178,8 +179,9 @@ jobs:
             base_ref="$(git rev-list --max-parents=0 "${head_ref}" | tail -n 1)"
           fi
 
-          git diff --name-only --diff-filter=ACMRT "${base_ref}" "${head_ref}" \
-            | grep -E '\.md$' \
+          git diff --name-only --diff-filter=ACMRT "${base_ref}" "${head_ref}" > /tmp/changed-files
+
+          grep -E '\.md$' /tmp/changed-files \
             | grep -vE '(^|/)node_modules/|(^|/)\.git/' \
             > /tmp/changed-markdown-files || true
 

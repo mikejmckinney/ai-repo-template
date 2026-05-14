@@ -273,7 +273,7 @@ bash install.sh
 | File | Purpose | Customization Required |
 |------|---------|------------------------|
 | `ci-tests.yml` | Build, lint, test pipeline (customize for project) | Yes — add your commands |
-| `lint-and-format.yml` | Script lint/format pass plus two-stage Markdownlint: changed-file blocking lint and repo-wide advisory summary-only report | None |
+| `lint-and-format.yml` | Script lint/format pass plus two-stage Markdownlint: changed-file (merge-base derived) blocking lint and repo-wide advisory summary-only report | None |
 | `keep-warm.yml` | Prevents free-tier backend suspension | Set `BACKEND_URL` secret |
 | `validate-connections.yml` | Daily backend/DB connectivity check | Set `BACKEND_URL` secret |
 | `claude.yml` | Claude Code triggers (`@claude` mention + auto-review on PR open) | Set `ANTHROPIC_API_KEY` secret |
