@@ -2,7 +2,7 @@ subagent_compliance:
   schema_version: 1
   role: docs
   role_contract_version: true
-  agents_md_version: 17
+  agents_md_version: 18
   receipt:
     mode: visible-line
     value: Role receipt v1 — docs

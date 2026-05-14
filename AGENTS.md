@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 17 -->
+<!-- AGENTS_MD_VERSION: 18 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one.
      The canary covers AGENTS.md only — per-concern files in .context/rules/
@@ -16,7 +16,7 @@
 ## Session handshake (read-receipt)
 
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v17` (matching
+substantive reply with the exact token `Session handshake v18` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -75,6 +75,7 @@ re-read cadence (which files at which boundaries) lives in
 | PR completion, templates, review | [`.context/rules/process_pr_completion.md`](.context/rules/process_pr_completion.md) | Before opening a PR or reviewing one |
 | Subagent bootstrap and compliance return | [`.context/rules/process_subagent_bootstrap.md`](.context/rules/process_subagent_bootstrap.md) | When dispatching subagents, receiving dispatched role work, or using subagent output as gate evidence |
 | Model tier dispatch convention | [`.context/rules/process_model_tier.md`](.context/rules/process_model_tier.md) | When dispatching subagents or upshifting tier |
+| OP end-to-end issue→merge playbook | [`.github/prompts/op-issue-workflow.md`](.github/prompts/op-issue-workflow.md) | First time you pick up an issue as the default agent |
 | Doc-sync triggers (which files must update together) | [`.context/rules/process_doc_maintenance.md`](.context/rules/process_doc_maintenance.md) | Before opening a PR |
 | Code quality (SOLID, TDD, clean code) | [`.context/rules/domain_code_quality.md`](.context/rules/domain_code_quality.md) | Before non-trivial code refactors |
 | Orchestration patterns (P/AP citations for review) | [`.context/rules/repo_orchestration_patterns.md`](.context/rules/repo_orchestration_patterns.md) | When reviewing orchestration-layer changes |
