@@ -196,32 +196,39 @@ than the spec asked for.
 
 **Parent handling rules:**
 
-1. **Treat the canonical fields as required, additional fields as
-   informative.** A block with `schema_version`, `role`, `agents_md_version`,
-   `task_scope`, `files_modified`, `gates_invoked`, `run_status`, and
-   (when applicable) `apply_replays` satisfies the contract regardless of
-   what else the subagent added. Do not BLOCK on extra fields *in your
-   own narrative*.
+1. **Treat the canonical v1 required fields as required.** A
+   `subagent_compliance` block (whether standalone or as an entry inside
+   `parent_compliance.subagents_dispatched[]`) is valid only when **all**
+   ten required keys are present: `schema_version`, `role`,
+   `role_contract_version`, `agents_md_version`, `receipt`,
+   `context_files_used`, `pointers_skipped`, `task_scope`,
+   `files_modified`, `gates_invoked`. The optional v1.1 additive keys
+   `run_status` and `apply_replays` MAY be present. The schema authority
+   is `scripts/lib/compliance_schema.py` (the `allowed_keys` /
+   `required_keys` set in `validate_subagent`); when this rule and the
+   schema disagree, the schema wins and this rule is the bug.
 2. **The strict validator (`scripts/lib/compliance_schema.py`
-   `_reject_unknown_keys`) will still reject extra fields when the block
-   is fed to `scripts/validate-compliance-fixtures.py` or any
-   CI-MUST validation hook (per `compliance_schemas.md` §"CI-MUST
-   validation rules for v1" rule 6).** Do not pass extra fields through
-   verbatim into `parent_compliance.subagents_dispatched[].subagent_compliance`
-   if that block is going to be validated by a hook in the same PR.
-   Instead, copy the canonical-only subset into the structured
-   `subagent_compliance` slot and capture the diagnostically-useful
-   extras (e.g., `pointers_skipped`, per-role evidence sub-blocks) in
-   adjacent prose under `parent_compliance.subagents_dispatched[].notes`
-   or in the PR/issue comment body around the block.
+   `_reject_unknown_keys`) rejects any field outside the canonical set,
+   in standalone `subagent_compliance` blocks **and** in each
+   `parent_compliance.subagents_dispatched[]` entry** (each entry is
+   itself validated via `validate_subagent`; there is **no** nested
+   `subagent_compliance` key, and there is **no** `notes` field on
+   subagent entries — both shapes will hard-fail
+   `scripts/validate-compliance-examples.py` /
+   `scripts/validate-compliance-fixtures.py` per
+   `docs/compliance_schemas.md` §"CI-MUST validation rules for v1"
+   rule 6). Capture diagnostically-useful extras (extra-role evidence,
+   non-schema annotations, `missing_fields` notes) in **adjacent prose**
+   in the PR/issue comment body around the block, **not** as keys inside
+   the block. The structured slot is canonical-only.
 3. **If a subagent omits a canonically-required field**, the parent OP
    re-dispatches with an explicit reminder to include the missing field
-   rather than annotating with `missing_fields: [...]` and proceeding —
-   the strict validator does not accept a `missing_fields` key, and a
-   downstream Judge diff-gate or QA hook will surface the same gap. Only
-   if re-dispatch is impossible (e.g., the runtime is unavailable) does
-   the parent record the gap in narrative prose adjacent to the block
-   and BLOCK rather than proceed.
+   rather than recording the gap as a key inside the block — the strict
+   validator does not accept a `missing_fields` key, and a downstream
+   Judge diff-gate or QA hook will surface the same gap. Only if
+   re-dispatch is impossible (e.g., the runtime is unavailable) does the
+   parent describe the gap in narrative prose adjacent to the block and
+   BLOCK rather than proceed.
 4. **Schema-vs-practice drift is a feedback signal**, not a defect. When
    the same extra field appears across multiple dispatches of the same
    role, file an issue against `compliance_schemas.md` proposing the
