@@ -14,7 +14,7 @@
 #   warning-or-above severity blocks the PR — this is intentional (issue #229
 #   Phase 1).
 # * Markdownlint has two distinct signals (issue #309): changed Markdown files
-#   are linted as a blocking gate using config/.markdownlint-cli2.jsonc, while
+#   are linted as a blocking gate using .markdownlint-cli2.jsonc, while
 #   repo-wide Markdown debt is summarized in the job summary as advisory-only
 #   output. The advisory path redirects CLI output to a log and prints only a
 #   short tail, avoiding thousands of GitHub ##[error] annotations in a green
@@ -210,14 +210,14 @@ jobs:
           set -euo pipefail
           # Lints whole changed files, not changed lines.
           mapfile -d '' -t changed_files < /tmp/changed-markdown-files-z
-          markdownlint-cli2 --config config/.markdownlint-cli2.jsonc "${changed_files[@]}"
+          markdownlint-cli2 --config .markdownlint-cli2.jsonc "${changed_files[@]}"
 
       - name: Markdownlint advisory repo-wide summary
         if: ${{ always() }}
         shell: bash
         run: |
           set +e
-          markdownlint-cli2 --config config/.markdownlint-cli2.jsonc \
+          markdownlint-cli2 --config .markdownlint-cli2.jsonc \
             "**/*.md" "!node_modules/**" "!.git/**" \
             > /tmp/markdownlint-advisory.log 2>&1
           status=$?

@@ -51,6 +51,15 @@ if [[ -f "$LF_FILE" ]]; then
     fail "$LF_FILE missing null-delimited changed-markdown collection"
   fi
 
+  # pull_request path computation must include merge-base fallback to avoid
+  # linting unrelated target-branch drift.
+  if grep -qF 'merge_base="$(git merge-base "${base_ref}" "${head_ref}" || true)"' "$LF_FILE" \
+    && grep -qF 'base_ref="${merge_base}"' "$LF_FILE"; then
+    pass "$LF_FILE computes changed-markdown diff from merge-base"
+  else
+    fail "$LF_FILE missing merge-base changed-markdown diff guard"
+  fi
+
   # Null-delimited output must also be consumed safely in both collection and
   # blocking lint steps.
   if grep -qF "while IFS= read -r -d '' file; do" "$LF_FILE" \
