@@ -5,7 +5,7 @@
 > cache ownership, read-model shape, write consistency, auditability, or
 > persistence-side concurrency.
 >
-> **Read first**: [`design-patterns.md`](design-patterns.md) - lead file with
+> **Read first**: [`design-patterns.md`](design-patterns.md) — lead file with
 > framing, descriptive-not-prescriptive caveats, and citation conventions.
 > **Don't cite from this file without reading the lead file's "Read this first"
 > section.** Patterns are vocabulary, not rules.
@@ -334,7 +334,7 @@ COMMIT;
 
 ## Cross-references
 
-- [`design-patterns.md`](design-patterns.md) - lead file, framing and ID routing.
-- [`design-patterns-gof.md`](design-patterns-gof.md) - sibling file, `CP2`–`CP24` (Gang of Four).
-- [`design-patterns-post-gof.md`](design-patterns-post-gof.md) - sibling file, `CP25`–`CP34`; data-adjacent distributed patterns such as CQRS, Event Sourcing, Saga, Circuit Breaker, Bulkhead, and Sidecar remain there.
-- [`design-patterns-post-gof.md#cp30--event-sourcing`](design-patterns-post-gof.md#cp30--event-sourcing) - often uses [`CDP11`](#cdp11--snapshot) for replay performance and [`CDP14`](#cdp14--transactional-outbox) for publication.
+- [`design-patterns.md`](design-patterns.md) — lead file, framing and ID routing.
+- [`design-patterns-gof.md`](design-patterns-gof.md) — sibling file, `CP2`–`CP24` (Gang of Four).
+- [`design-patterns-post-gof.md`](design-patterns-post-gof.md) — sibling file, `CP25`–`CP34`; data-adjacent distributed patterns such as CQRS, Event Sourcing, Saga, Circuit Breaker, Bulkhead, and Sidecar remain there.
+- [`design-patterns-post-gof.md#cp30--event-sourcing`](design-patterns-post-gof.md#cp30--event-sourcing) — often uses [`CDP11`](#cdp11--snapshot) for replay performance and [`CDP14`](#cdp14--transactional-outbox) for publication.
