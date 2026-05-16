@@ -76,7 +76,7 @@ bash install.sh
 │   ├── smoke-a.md            # Smoke test scenario A
 │   ├── smoke-e.md            # Smoke test scenario E
 │   ├── decisions/            # Architecture Decision Records (adr-001 … adr-010, adr-template)
-│   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, multi-agent-coordination, optional-skills)
+│   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, design-patterns*, multi-agent-coordination, optional-skills)
 │   ├── postmortems/          # Postmortems (template + project-specific)
 │   ├── reference/            # Specs, external docs
 │   └── research/             # Analyst output (analysis artifacts)
@@ -265,6 +265,8 @@ bash install.sh
 | `docs/postmortems/postmortem-template.md` | Postmortem / lessons-learned template (Trigger, Expected vs Actual, Root cause, What generalizes, Action items) |
 | `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalinks to original plan and revisions + 1–2 sentence summary; advisory per ADR-011), `## Plan revision sync` checkbox (advisory), and required doc-sync checklist |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching, issue/PR granularity |
+| `docs/guides/design-patterns.md` | Lead index for advisory code-layer design-pattern catalogs (`CAP`, `CP`, `CDP`) |
+| `docs/guides/design-patterns-data.md` | Data / persistence pattern catalog with stable `CDP1`-`CDP14` citation handles |
 | `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Analyst/Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |
 | `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |

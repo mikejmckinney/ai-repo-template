@@ -3,6 +3,8 @@
 > **Purpose**: patterns that emerged or were named after the 1994 Gang of Four book and have entered the canon. Tailored to downstream-project domains: data access, distributed systems, microservices, regulated/audit-heavy workloads, infrastructure-as-code.
 >
 > **Read first**: [`design-patterns.md`](design-patterns.md) — lead file with framing, descriptive-not-prescriptive caveats, and citation conventions. **Don't cite from this file without reading the lead file's "Read this first" section.** Patterns are vocabulary, not rules. Several entries below (CQRS, Event Sourcing) carry significant operational weight and are easy to over-apply.
+>
+> **Boundary note**: data / persistence mechanics that previously looked like possible `CP35`+ additions live in [`design-patterns-data.md`](design-patterns-data.md) instead: Object Pool / Connection Pool is `CDP12`, Idempotency Key is `CDP13`, and Transactional Outbox is `CDP14`. Do not extend the `CP` range for those entries.
 
 Examples are kept to interface sketches and one-paragraph remarks rather than full Python; the post-GoF entries describe shapes that span multiple files and processes, where a single Python snippet would mislead more than it would clarify.
 
@@ -147,4 +149,5 @@ The sidecar model also breaks down when the main app and sidecar disagree about 
 
 - [`design-patterns.md`](design-patterns.md) — lead file, framing and `CAP1` / `CAP2` / `CP1`.
 - [`design-patterns-gof.md`](design-patterns-gof.md) — sibling file, `CP2`–`CP24` (Gang of Four).
+- [`design-patterns-data.md`](design-patterns-data.md) — sibling file, `CDP1`–`CDP14` (data / persistence).
 - [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) — orchestration-layer patterns for *this* template.

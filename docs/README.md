@@ -91,6 +91,7 @@ What are the positive and negative consequences?
 ### Guides
 - [Context Files Explained](guides/context-files-explained.md) - **Start here**: Understanding all the documentation files
 - [Agent Best Practices](guides/agent-best-practices.md) - Token limits, state conflicts, secrets, session handoff
+- [Design Patterns](guides/design-patterns.md) - Lead index for advisory code-layer pattern catalogs, including data / persistence citations
 
 ### Decisions (ADRs)
 - [Compliance Schemas](compliance_schemas.md) - ADR-026 `plan_compliance`, `parent_compliance`, and `subagent_compliance` schemas

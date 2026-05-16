@@ -16,6 +16,7 @@ DOCS_FILES=(
   "docs/guides/agent-pipeline.md"
   "docs/guides/context-files-explained.md"
   "docs/guides/design-patterns.md"
+  "docs/guides/design-patterns-data.md"
   "docs/guides/design-patterns-gof.md"
   "docs/guides/design-patterns-post-gof.md"
   "docs/guides/multi-agent-coordination.md"
