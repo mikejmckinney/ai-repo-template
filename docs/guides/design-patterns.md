@@ -10,7 +10,7 @@
 
 This guide is a vocabulary, not a rulebook. Recognizing a pattern in existing code is more valuable than forcing one into new code. Three commitments make this real:
 
-1. **Citing a pattern is the start of a conversation, not the end of one.** A reviewer writing "this is becoming a God Object — see [`AP1`](../../.context/rules/repo_orchestration_patterns.md#ap1--god-object)" must say *which detection signals fired* and *what the code-layer remediation looks like for this case*. The pattern name is a handle; the argument is the work. Reviewers who cite pattern names without justification are doing the thing the [§"Goal Substitution"](#cap1--goal-substitution) entry warns against — substituting a deliverable (a citation) for the outcome (a clearer review). (`AP1` lives in the orchestration patterns file because God Object's clearest manifestation in this template is at the orchestration layer; downstream code-layer reviewers may cite it for the analogous code-layer failure mode until a `CAP-N` entry is added here.)
+1. **Citing a pattern is the start of a conversation, not the end of one.** A reviewer writing "this is becoming a God Object — see [`AP1`](../../.context/rules/repo_orchestration_patterns.md#ap1--god-object)" must say *which detection signals fired* and *what the code-layer remediation looks like for this case*. The pattern name is a handle; the argument is the work. Reviewers who cite pattern names without justification are doing the thing the [§"Goal Substitution"](#cap1--goal-substitution) entry warns against — substituting a deliverable (a citation) for the outcome (a clearer review). (`AP1` lives in the orchestration patterns file because God Object's clearest manifestation in this template is at the orchestration layer; downstream code-layer reviewers may cite it for the analogous code-layer failure mode until a `CAP<N>` entry is added here.)
 2. **Novel designs beat named patterns when the named pattern doesn't fit.** If a code change is a better fit for an unnamed shape than for any pattern in this guide, the unnamed shape wins. This guide does not enumerate every good design. Calling out "this isn't in the guide, and it should be" is itself a useful review comment.
 3. **Most GoF patterns are 1994 C++/Smalltalk workarounds for missing language features.** In Python, JavaScript, Go, or any modern language with first-class functions and dynamic dispatch, several patterns collapse to a function or a decorator. Don't write Java-style ceremony when the language gives you the shape for free. Affected entries flag this explicitly.
 
@@ -25,7 +25,7 @@ Demand here is read inclusively: this template's own dogfooding *counts as deman
 ## How to use this file
 
 - **Authors**: scan the relevant section of the appropriate file (lead / GoF / post-GoF / data) before writing a non-trivial new component. The goal is recognition, not selection — if a named pattern matches what you're already doing, use the standard form rather than reinventing one. If nothing matches, that's fine; don't force a fit.
-- **Reviewers**: when flagging a structural concern, cite by ID (`CP-N`, `CAP-N`, or `CDP-N`) and quote the specific detection signal that fired. Citing without quoting is review noise — the patterns are vocabulary, not authority.
+- **Reviewers**: when flagging a structural concern, cite by ID (`CP<N>`, `CAP<N>`, or `CDP<N>`) and quote the specific detection signal that fired. Citing without quoting is review noise — the patterns are vocabulary, not authority.
 - **Contributors**: when responding to a citation, you can rebut. "This looks like `CAP1` Goal Substitution but actually the user outcome is in [link]" is a valid response and ends the thread.
 
 ## How the files split
@@ -39,14 +39,14 @@ These files share one citation surface without sharing one numeric namespace. Th
 | `CP25`–`CP34` | [`design-patterns-post-gof.md`](design-patterns-post-gof.md) | Post-GoF patterns (Repository, DI, MVC family, CQRS, Event Sourcing, Saga, Circuit Breaker, Bulkhead, Sidecar) |
 | `CDP1`–`CDP14` | [`design-patterns-data.md`](design-patterns-data.md) | Data / persistence patterns (caches, read models, locking, auditability, snapshots, pools, idempotency, outbox) |
 
-Cite from any file by ID alone — the prefix and range tell the reader which file to open. Anchors are stable: `design-patterns.md#cap1--goal-substitution`, `design-patterns-gof.md#cp22--strategy`, `design-patterns-data.md#cdp14---transactional-outbox`, etc. Renumbering would break citations across downstream PRs and is treated as a breaking change.
+Cite from any file by ID alone — the prefix and range tell the reader which file to open. Anchors are stable: `design-patterns.md#cap1--goal-substitution`, `design-patterns-gof.md#cp22--strategy`, `design-patterns-data.md#cdp14--transactional-outbox`, etc. Renumbering would break citations across downstream PRs and is treated as a breaking change.
 
 ## Caveats
 
 1. **The list isn't exhaustive.** Whole bodies of patterns sit outside it: concurrency (Active Object, Reactor, Producer-Consumer, Actor), functional (Functor, Monad, Lens, Reader), frontend-specific (Hooks, Container/Presenter, Compound Components), and integration (Hohpe & Woolf's *Enterprise Integration Patterns*). Future concurrency and integration catalogs may use `CCP` and `CIP` prefixes, but until those files exist, cite the concern plainly or cite an external authority rather than inventing an internal handle.
 2. **GoF reflects 1994 constraints.** Singleton, Visitor, and Interpreter are particularly likely to be anti-patterns today. Use the per-entry "When NOT" notes in [`design-patterns-gof.md`](design-patterns-gof.md) before reaching for them.
 3. **Language matters.** Iterator, Strategy, Command, Observer, and Template Method are mostly language features in modern languages. The per-entry notes flag this where it applies.
-4. **No backing ADR.** This guide is Docs-owned and advisory. Adding new patterns needs a Docs PR; tightening an entry to block-on-sight needs an ADR (because that changes the Critic/Judge contract). New entries go into the appropriate namespace without renumbering existing IDs; postmortem-derived entries use the next available `CAP-N` / `CP-N` number, while data / persistence entries use `CDP-N`.
+4. **No backing ADR.** This guide is Docs-owned and advisory. Adding new patterns needs a Docs PR; tightening an entry to block-on-sight needs an ADR (because that changes the Critic/Judge contract). New entries go into the appropriate namespace without renumbering existing IDs; postmortem-derived entries use the next available `CAP<N>` / `CP<N>` number, while data / persistence entries use `CDP<N>`.
 
 ---
 

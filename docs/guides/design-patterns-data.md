@@ -1,7 +1,7 @@
-# Design Patterns - Data / Persistence Catalog
+# Design Patterns — Data / Persistence Catalog
 
 > **Purpose**: data and persistence patterns for downstream-project reviews. Cite
-> these entries by stable ID (`CDP1`-`CDP14`) when a review concern is about
+> these entries by stable ID (`CDP1`–`CDP14`) when a review concern is about
 > cache ownership, read-model shape, write consistency, auditability, or
 > persistence-side concurrency.
 >
@@ -21,7 +21,7 @@ than a full implementation that hides the trade-offs.
 
 ## Catalog
 
-### CDP1 - Cache-Aside
+### CDP1 — Cache-Aside
 
 **Intent**: the application owns cache lookup and population. Read cache first;
 on miss, read the source of truth, then write the cache.
@@ -45,7 +45,7 @@ if user is None:
     cache.set(f"user:{user_id}", user, ttl=300)
 ```
 
-### CDP2 - Read-Through Cache
+### CDP2 — Read-Through Cache
 
 **Intent**: hide cache misses behind the cache abstraction. Callers ask the
 cache for data; the cache loads from the backing store on miss.
@@ -65,7 +65,7 @@ domain layer to load one entity, the abstraction boundary may be too wide.
 user = user_cache.get(user_id, loader=lambda key: users.get(key))
 ```
 
-### CDP3 - Write-Through Cache
+### CDP3 — Write-Through Cache
 
 **Intent**: writes update the cache and the source of truth synchronously before
 returning success.
@@ -87,7 +87,7 @@ users.save(user)
 cache.set(f"user:{user.id}", user, ttl=300)
 ```
 
-### CDP4 - Write-Behind Cache
+### CDP4 — Write-Behind Cache
 
 **Intent**: accept writes into a cache or buffer, then flush to the durable store
 asynchronously.
@@ -109,7 +109,7 @@ request -> write buffer -> 202 Accepted
 worker  -> batch flush buffer to database
 ```
 
-### CDP5 - Materialized View
+### CDP5 — Materialized View
 
 **Intent**: precompute and store a read model derived from base data.
 
@@ -132,7 +132,7 @@ FROM ledger_entries
 GROUP BY account_id, day;
 ```
 
-### CDP6 - Index Table
+### CDP6 — Index Table
 
 **Intent**: maintain a separate table keyed for a query the primary table cannot
 serve efficiently.
@@ -154,7 +154,7 @@ documents(id, tenant_id, status, ...)
 documents_by_tenant_status(tenant_id, status, document_id)
 ```
 
-### CDP7 - Optimistic Locking
+### CDP7 — Optimistic Locking
 
 **Intent**: let concurrent writers proceed, then reject a write if the record
 changed since it was read.
@@ -165,7 +165,7 @@ forms.
 
 **When NOT to use**: hot rows with frequent conflicting writes. If most writes
 fail and retry, use a different model, partition the state, or consider
-[`CDP8`](#cdp8---pessimistic-locking).
+[`CDP8`](#cdp8--pessimistic-locking).
 
 **Signals / example**: update statements include `WHERE version = ?` or HTTP
 requests use `If-Match`. Reviewers should ask what happens after the conflict:
@@ -177,7 +177,7 @@ SET display_name = ?, version = version + 1
 WHERE id = ? AND version = ?;
 ```
 
-### CDP8 - Pessimistic Locking
+### CDP8 — Pessimistic Locking
 
 **Intent**: acquire a lock before reading or writing so competing writers wait
 instead of racing.
@@ -201,7 +201,7 @@ UPDATE inventory SET available = available - 1 WHERE sku = ?;
 COMMIT;
 ```
 
-### CDP9 - Soft Delete
+### CDP9 — Soft Delete
 
 **Intent**: mark records as deleted instead of physically removing them.
 
@@ -222,7 +222,7 @@ SET deleted_at = CURRENT_TIMESTAMP, deleted_by = ?
 WHERE id = ?;
 ```
 
-### CDP10 - Audit Log
+### CDP10 — Audit Log
 
 **Intent**: append immutable records describing who did what, when, and to which
 resource.
@@ -243,7 +243,7 @@ flag audit records that can be edited through ordinary admin screens.
 audit_log(actor_id, action, target_type, target_id, occurred_at, request_id, metadata)
 ```
 
-### CDP11 - Snapshot
+### CDP11 — Snapshot
 
 **Intent**: persist a point-in-time copy of derived or mutable state so later
 reads do not need to replay the full history.
@@ -263,7 +263,7 @@ old snapshots are rebuilt when the snapshot format changes.
 account_snapshot(account_id, version, as_of_event_id, balance, serialized_state)
 ```
 
-### CDP12 - Object Pool / Connection Pool
+### CDP12 — Object Pool / Connection Pool
 
 **Intent**: reuse expensive objects, most commonly network or database
 connections, behind a bounded pool.
@@ -284,7 +284,7 @@ with db_pool.connection(timeout=1.0) as conn:
     conn.execute(query)
 ```
 
-### CDP13 - Idempotency Key
+### CDP13 — Idempotency Key
 
 **Intent**: make a retried operation safe by binding one client-supplied key to
 one durable result.
@@ -305,7 +305,7 @@ that check the key only in memory or after the side effect has already happened.
 idempotency_keys(tenant_id, key, request_hash, status, response_body, expires_at)
 ```
 
-### CDP14 - Transactional Outbox
+### CDP14 — Transactional Outbox
 
 **Intent**: write state changes and messages to an outbox table in the same
 database transaction, then publish messages asynchronously from that table.
@@ -335,6 +335,6 @@ COMMIT;
 ## Cross-references
 
 - [`design-patterns.md`](design-patterns.md) - lead file, framing and ID routing.
-- [`design-patterns-gof.md`](design-patterns-gof.md) - sibling file, `CP2`-`CP24` (Gang of Four).
-- [`design-patterns-post-gof.md`](design-patterns-post-gof.md) - sibling file, `CP25`-`CP34`; data-adjacent distributed patterns such as CQRS, Event Sourcing, Saga, Circuit Breaker, Bulkhead, and Sidecar remain there.
-- [`design-patterns-post-gof.md#cp30--event-sourcing`](design-patterns-post-gof.md#cp30--event-sourcing) - often uses [`CDP11`](#cdp11---snapshot) for replay performance and [`CDP14`](#cdp14---transactional-outbox) for publication.
+- [`design-patterns-gof.md`](design-patterns-gof.md) - sibling file, `CP2`–`CP24` (Gang of Four).
+- [`design-patterns-post-gof.md`](design-patterns-post-gof.md) - sibling file, `CP25`–`CP34`; data-adjacent distributed patterns such as CQRS, Event Sourcing, Saga, Circuit Breaker, Bulkhead, and Sidecar remain there.
+- [`design-patterns-post-gof.md#cp30--event-sourcing`](design-patterns-post-gof.md#cp30--event-sourcing) - often uses [`CDP11`](#cdp11--snapshot) for replay performance and [`CDP14`](#cdp14--transactional-outbox) for publication.
