@@ -5,7 +5,7 @@
 > cache ownership, read-model shape, write consistency, auditability, or
 > persistence-side concurrency.
 >
-> **Read first**: [`design-patterns.md`](design-patterns.md) — lead file with
+> **Read first**: [`design-patterns.md`](design-patterns.md#read-this-first--descriptive-vocabulary-not-prescription) — lead file with
 > framing, descriptive-not-prescriptive caveats, and citation conventions.
 > **Don't cite from this file without reading the lead file's "Read this first"
 > section.** Patterns are vocabulary, not rules.
