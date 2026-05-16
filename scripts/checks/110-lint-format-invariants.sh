@@ -61,9 +61,10 @@ if [[ -f "$LF_FILE" ]]; then
   fi
 
   # Null-delimited output must also be consumed safely in both collection and
-  # blocking lint steps.
-  if grep -qF "while IFS= read -r -d '' file; do" "$LF_FILE" \
-    && grep -qF "mapfile -d '' -t changed_files" "$LF_FILE"; then
+  # blocking lint steps. Both are strictly required: 'while' for filtering
+  # paths, and 'mapfile' for passing them to markdownlint-cli2 safely.
+  if grep -qE "^[[:space:]]*while[[:space:]]+IFS=.*read[[:space:]]+.*-d[[:space:]]+''" "$LF_FILE" \
+    && grep -qE "^[[:space:]]*mapfile[[:space:]]+.*-d[[:space:]]+''" "$LF_FILE"; then
     pass "$LF_FILE consumes changed-markdown paths as null-delimited"
   else
     fail "$LF_FILE missing null-delimited consumers for changed-markdown paths"
