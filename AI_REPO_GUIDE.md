@@ -77,7 +77,7 @@ bash install.sh
 │   ├── smoke-a.md            # Smoke test scenario A
 │   ├── smoke-e.md            # Smoke test scenario E
 │   ├── decisions/            # Architecture Decision Records (adr-001 … adr-010, adr-template)
-│   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, design-patterns*, multi-agent-coordination, optional-skills)
+│   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, design-patterns*, multi-agent-coordination, multi-model-consensus, optional-skills)
 │   ├── postmortems/          # Postmortems (template + project-specific)
 │   ├── reference/            # Specs, external docs
 │   └── research/             # Analyst output (analysis artifacts)
