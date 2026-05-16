@@ -72,14 +72,14 @@ if [[ -f "$LF_FILE" ]]; then
   # Advisory markdownlint summary must run even when blocking lint fails.
   # Match always() inside the same step block to avoid file-wide false passes.
   if awk '
-    /^[[:space:]]*-[[:space:]]+name:[[:space:]]+Markdownlint advisory repo-wide summary[[:space:]]*$/ {
+    /^      - name: Markdownlint advisory repo-wide summary$/ {
       in_step=1
       next
     }
-    in_step && /^[[:space:]]*-[[:space:]]+name:/ {
+    in_step && /^      - / {
       in_step=0
     }
-    in_step && /if:[[:space:]]*\$\{\{[[:space:]]*always\(\)[[:space:]]*\}\}/ {
+    in_step && /^        if: \$\{\{ always\(\) \}\}$/ {
       found=1
       exit
     }
