@@ -62,7 +62,11 @@ ad-hoc database calls after every cache miss. If a cache class imports the whole
 domain layer to load one entity, the abstraction boundary may be too wide.
 
 ```python
-user = user_cache.get(user_id, loader=lambda key: users.get(key))
+# Registration (e.g. at startup)
+user_cache = ReadThroughCache(loader=lambda key: users.get(key))
+
+# Usage in many read paths
+user = user_cache.get(user_id)
 ```
 
 ### CDP3 — Write-Through Cache
@@ -83,8 +87,11 @@ cache is repaired asynchronously.
 update in one unit. A missing failure policy is the usual review concern.
 
 ```python
-users.save(user)
-cache.set(f"user:{user.id}", user, ttl=300)
+# Registration
+user_cache = WriteThroughCache(writer=lambda user: users.save(user))
+
+# Usage
+user_cache.save(user)
 ```
 
 ### CDP4 — Write-Behind Cache
