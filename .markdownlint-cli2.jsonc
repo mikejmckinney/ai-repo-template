@@ -1,1 +1,19 @@
-config/.markdownlint-cli2.jsonc
+{
+  "config": {
+    "default": true,
+    // Line length currently exceeds default in legacy docs; keep advisory summary visible.
+    "MD013": false,
+    // Keep duplicate heading checks scoped to sibling sections only.
+    "MD024": {
+      "siblings_only": true
+    },
+    // Inline HTML is used in agent/docs templates for badges and callouts.
+    "MD033": false,
+    // Bare links are common in workflow and issue templates.
+    "MD034": false,
+    // Emphasis-as-heading appears in legacy docs; defer cleanup sweep.
+    "MD036": false,
+    // Some docs intentionally begin with non-heading frontmatter/comments.
+    "MD041": false
+  }
+}
