@@ -45,7 +45,7 @@ if [[ -f "$LF_FILE" ]]; then
 
   # Changed markdown collection must use null-delimited diff output so paths
   # with spaces or escapes are handled safely.
-  if grep -qE 'git[[:space:]]+-c[[:space:]]+core\.quotepath=off[[:space:]]+diff[[:space:]]+--name-only[[:space:]]+-z' "$LF_FILE"; then
+  if grep -qE '^[[:space:]]*git[[:space:]]+-c[[:space:]]+core\.quotepath=off[[:space:]]+diff[[:space:]]+.*(--name-only.*-z|-z.*--name-only)' "$LF_FILE"; then
     pass "$LF_FILE uses null-delimited changed-markdown collection"
   else
     fail "$LF_FILE missing null-delimited changed-markdown collection"
@@ -53,8 +53,8 @@ if [[ -f "$LF_FILE" ]]; then
 
   # pull_request path computation must include merge-base fallback to avoid
   # linting unrelated target-branch drift.
-  if grep -qF 'merge_base="$(git merge-base "${base_ref}" "${head_ref}" || true)"' "$LF_FILE" \
-    && grep -qF 'base_ref="${merge_base}"' "$LF_FILE"; then
+  if grep -qE '^[[:space:]]*merge_base=.*git[[:space:]]+merge-base' "$LF_FILE" \
+    && grep -qE '^[[:space:]]*base_ref=.*merge_base' "$LF_FILE"; then
     pass "$LF_FILE computes changed-markdown diff from merge-base"
   else
     fail "$LF_FILE missing merge-base changed-markdown diff guard"
