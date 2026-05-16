@@ -11,6 +11,7 @@ REQUIRED_FILES=(
   "AGENTS.md"
   "AGENT.md"
   "CLAUDE.md"
+  "GEMINI.md"
   "README.md"
   "install.sh"
   ".cursor/BUGBOT.md"
