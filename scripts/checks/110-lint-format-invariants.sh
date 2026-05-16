@@ -45,7 +45,7 @@ if [[ -f "$LF_FILE" ]]; then
 
   # Changed markdown collection must use null-delimited diff output so paths
   # with spaces or escapes are handled safely.
-  if grep -qE '^[[:space:]]*git[[:space:]]+-c[[:space:]]+core\.quotepath=off[[:space:]]+diff[[:space:]]+.*(--name-only.*-z|-z.*--name-only)' "$LF_FILE"; then
+  if grep -qE '^[[:space:]]*git[[:space:]]+-c[[:space:]]+core\.quotepath=off[[:space:]]+diff[[:space:]]+.*(--name-only.*-z|-z.*--name-only)\b' "$LF_FILE"; then
     pass "$LF_FILE uses null-delimited changed-markdown collection"
   else
     fail "$LF_FILE missing null-delimited changed-markdown collection"
