@@ -15,6 +15,7 @@ Codespaces and AI-assisted development. It plugs into the GitHub Codespaces
 "Dotfiles" feature (which runs an install script at Codespace startup) to
 bootstrap a multi-agent development kit. It is not a Unix dotfiles repo. It
 provides:
+
 - Pre-configured AI agent prompts for onboarding and code review
 - Context management structure for LLM memory across sessions
 - Automatic VS Code extension installation on Codespace startup
@@ -33,7 +34,7 @@ bash install.sh
 
 ## Repository Structure
 
-```
+```text
 /
 ├── AI_REPO_GUIDE.md          # This file - canonical AI reference
 ├── AGENTS.md                 # Root agent instructions (always read first)
@@ -161,6 +162,7 @@ bash install.sh
 ## Key Files by Purpose
 
 ### Agent Instructions (read by AI assistants automatically)
+
 | File | Tool/Platform | Purpose |
 |------|--------------|---------|
 | `AGENTS.md` | Most AI tools | Root instructions, points to this file |
@@ -183,6 +185,7 @@ bash install.sh
 | `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template for ADR-026 `role_contract_version` and `subagent_compliance` return guidance; not a dispatchable role |
 
 ### Context Pack (project memory)
+
 | File | Purpose |
 |------|---------|
 | `.context/00_INDEX.md` | Entry point, project summary |
@@ -204,6 +207,7 @@ bash install.sh
 | `.context/vision/` | Mockups and architecture diagrams |
 
 ### Prompts (user-triggered, not auto-loaded)
+
 | File | Purpose |
 |------|---------|
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
@@ -212,6 +216,7 @@ bash install.sh
 | `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
 
 ### Compliance Contracts
+
 | File | Purpose |
 |------|---------|
 | `docs/compliance_schemas.md` | ADR-026 schema reference for `plan_compliance`, `parent_compliance`, and `subagent_compliance` evidence blocks |
@@ -219,6 +224,7 @@ bash install.sh
 | `.context/rules/process_subagent_bootstrap.md` | Parent dispatch packet and subagent return contract process rule |
 
 ### Setup Scripts
+
 | File | Purpose |
 |------|---------|
 | `install.sh` | Runs on Codespace start; installs extensions, copies prompts |
@@ -239,6 +245,7 @@ bash install.sh
 | `scripts/tests/*.bats` | Bats test suite (issue #255 Phase 4b, expanded by issue #280); each `.bats` file inlines the legacy test logic as a `_legacy_body()` shell function and invokes it via bats `run` inside a single `@test` block. No `scripts/test-*.sh` delegate layer remains. Run: `bats scripts/tests/`. CI installs bats via `apt-get` in `ci-tests.yml`. |
 
 ### Issue Templates
+
 | File | Purpose |
 |------|---------|
 | `.github/ISSUE_TEMPLATE/bug_report.md` | Structured bug reports |
@@ -247,6 +254,7 @@ bash install.sh
 | `.github/ISSUE_TEMPLATE/config.yml` | Chooser config (rewritten by `scripts/setup.sh`) |
 
 ### Deployment Configs
+
 | File | Platform | Purpose |
 |------|----------|---------|
 | `config/vercel.json.template` | Vercel | Frontend, serverless |
@@ -255,6 +263,7 @@ bash install.sh
 | `config/docker-compose.yml.template` | Docker Compose | Local dev stack |
 
 ### Development Tools
+
 | File | Purpose |
 |------|---------|
 | `.pre-commit-config.yaml` | Template repo's own pre-commit hooks (shellcheck + actionlint; install once via `pre-commit install`). See ADR-017. |
@@ -272,6 +281,7 @@ bash install.sh
 | `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
 
 ### CI/CD Workflows
+
 | File | Purpose | Customization Required |
 |------|---------|------------------------|
 | `ci-tests.yml` | Build, lint, test pipeline (customize for project) | Yes — add your commands |
@@ -305,18 +315,21 @@ decisions, durable lessons, and process constraints.
 ## Conventions
 
 ### File Naming
+
 - Agent instruction files: `AGENTS.md`, `*.agent.md`, or tool-specific paths
 - Prompts: `*.prompt.md` or in `.github/prompts/`
 - Style guides: `styleguide.md` in tool-specific directories
 - Context files: Use clear names, prefer `.md` extension
 
 ### Content Guidelines
+
 - Keep instructions concise (aim for < 2 pages per file)
 - Include verification commands where applicable
 - Use structured output formats (checklists, tables)
 - Reference this file (`AI_REPO_GUIDE.md`) for canonical commands
 
 ### Testing Requirements
+
 - Follow test pyramid: many unit tests, fewer integration tests, minimal E2E
 - Write tests before or alongside implementation (TDD preferred)
 - All behavioral changes must include tests
@@ -394,6 +407,7 @@ git fetch upstream
 Browse available commits with `git log --oneline --cherry-pick --right-only HEAD...upstream/main`, then cherry-pick specific ones (e.g., `git cherry-pick <commit-hash>`). Most template changes will be project-specific noise to a downstream project — selective cherry-picking is safer than a full merge (which can re-introduce template placeholders or overwrite project-specific customizations).
 
 ### For new repositories
+
 1. Create repo from this template (or copy files)
 2. Replace all files containing `TEMPLATE_PLACEHOLDER`
 3. Fill in `.context/00_INDEX.md` with project details
@@ -401,6 +415,7 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 5. Customize `ci-tests.yml` for your tech stack
 
 ### For Codespaces
+
 1. Link this repo in GitHub Codespaces settings
 2. Extensions install automatically via `install.sh`
 3. AI prompts copied to workspace
@@ -465,6 +480,7 @@ This protocol keeps live task state in GitHub while preserving in-tree rules and
 ## Updating This Guide
 
 When making changes to this template:
+
 1. Update this file if structure/commands/conventions change
 2. Run `./test.sh` to verify integrity
 3. Update README.md if user-facing behavior changes

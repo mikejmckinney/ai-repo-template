@@ -19,6 +19,8 @@ than a full implementation that hides the trade-offs.
 
 ---
 
+## Catalog
+
 ### CDP1 - Cache-Aside
 
 **Intent**: the application owns cache lookup and population. Read cache first;

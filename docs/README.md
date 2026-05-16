@@ -12,7 +12,7 @@ see `AGENTS.md` §"Truth hierarchy" for the canonical order (summary:
 
 ## Directory Structure
 
-```
+```text
 docs/
 ├── README.md           # This file
 ├── compliance_schemas.md # ADR-026 compliance evidence schemas
@@ -31,6 +31,7 @@ docs/
 ## What Belongs Here
 
 ### `reference/`
+
 - Original project specifications
 - Research notes
 - External API documentation
@@ -38,23 +39,27 @@ docs/
 - Historical context
 
 ### `research/`
+
 - Analyst output (needs analysis, competitive landscape, impact scores)
 - Problem validation artifacts
 - Stakeholder feedback summaries
 - Market research findings
 
 ### `guides/`
+
 - Development setup instructions
 - Deployment procedures
 - Troubleshooting guides
 - Contribution guidelines
 
 ### `decisions/`
+
 - Architecture Decision Records (ADRs)
 - Design rationale
 - Trade-off analysis
 
 ### `postmortems/`
+
 - Retrospective lessons learned (incidents, surprises, friction)
 - Paired with ADRs: ADRs are prospective, postmortems are retrospective
 - See `postmortems/README.md` for the "What generalizes" promotion gate
@@ -89,19 +94,23 @@ What are the positive and negative consequences?
 ## Current Documentation
 
 ### Guides
+
 - [Context Files Explained](guides/context-files-explained.md) - **Start here**: Understanding all the documentation files
 - [Agent Best Practices](guides/agent-best-practices.md) - Token limits, state conflicts, secrets, session handoff
 - [Design Patterns](guides/design-patterns.md) - Lead index for advisory code-layer pattern catalogs, including data / persistence citations
 
 ### Decisions (ADRs)
+
 - [Compliance Schemas](compliance_schemas.md) - ADR-026 `plan_compliance`, `parent_compliance`, and `subagent_compliance` schemas
 - [ADR-001: Context Pack Structure](decisions/adr-001-context-pack-structure.md) - Why we use `.context/` for LLM memory
 - [ADR-004: Analyst Role and Feedback Loop](decisions/adr-004-analyst-role-and-feedback-loop.md) - Adding pre-Architect validation and iterative feedback
 - [ADR Template](decisions/adr-template.md) - Template for new architecture decisions
 
 ### Postmortems / Lessons Learned
+
 - [Postmortems Index](postmortems/README.md) - When to write a postmortem; ADR-vs-postmortem split; "What generalizes" promotion gate
 - [Postmortem Template](postmortems/postmortem-template.md) - Template for retrospective lessons
 
 ### Reference
+
 - Add specification documents as needed

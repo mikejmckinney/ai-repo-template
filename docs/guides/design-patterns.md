@@ -63,6 +63,7 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 **Code-layer description**: a feature is defined as a list of artifacts (endpoints, classes, files, tables) and the implementation produces exactly those, satisfying the spec but missing what the user actually needed to do. The architectural equivalent of building all the requested files but never enabling the workflow they were supposed to support. APIs that match the IDL but can't be composed into the user journey. Database schemas that store the requested fields but make the canonical query path expensive. Microservices split by the lines named in the design doc instead of the lines that match real call patterns.
 
 **Detection signals**:
+
 - The PR description's "what shipped" list reads as nouns (entities, endpoints, files) without a single verb describing what a user can now *do*.
 - The user-facing test plan asserts artifact existence ("`POST /users` returns 201") without asserting end-to-end behavior ("a new user can sign up, see their dashboard, and edit their profile").
 - A downstream consumer asks "OK but how do I…?" and the answer requires composing 3+ artifacts the implementer never composed themselves.
@@ -79,6 +80,7 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 **Code-layer description**: a load-bearing precondition exists only in the author's head, not in the type system, in a runtime check, in a test, or in documentation that a future maintainer will encounter. The function works when called correctly; "called correctly" is unwritten. Common code-layer manifestations: undocumented invariants on input ranges, runtime checks that should be type checks, "this works as long as you call `init()` first," ordering dependencies between mutator calls, mutex acquisition order that prevents deadlock only if you remember which one to grab first, configuration values that must agree across two files but aren't validated to.
 
 **Detection signals**:
+
 - A function's docstring or signature does not state a precondition that must hold for the function to behave correctly.
 - A bug report's root-cause line is "the caller did X but should have done Y first" — and there's no compile-time, runtime, or test-time check that catches X-without-Y.
 - Two configuration values must agree (a port number in two services, a magic string in code and YAML, a key length in client and server) and there's no test asserting the agreement.

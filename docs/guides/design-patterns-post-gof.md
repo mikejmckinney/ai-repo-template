@@ -10,6 +10,8 @@ Examples are kept to interface sketches and one-paragraph remarks rather than fu
 
 ---
 
+## Catalog
+
 ### CP25 — Repository
 
 **Intent**: collection-like interface mediating between domain logic and data storage.
@@ -75,6 +77,7 @@ service = OrderService(SqlOrderRepository(), StripeGateway(), EmailNotifier())
 **Intent**: separate UI rendering, application state, and business logic.
 
 **When to use**: any non-trivial UI app. The three variants differ in who owns view-state and how view ↔ logic communication flows:
+
 - **MVC** (Model-View-Controller): controller mediates; classic web frameworks (Rails, Django).
 - **MVP** (Model-View-Presenter): presenter holds view-state; common in older desktop apps.
 - **MVVM** (Model-View-ViewModel): two-way binding between view and view-model; dominates modern web/mobile (Vue, SwiftUI, WPF, Jetpack Compose). React with hooks is sometimes lumped here but is more accurately a one-way data-flow / unidirectional architecture (Flux/Redux family) — closer to MVC's controller-mediated flow than to MVVM's two-way binding.
