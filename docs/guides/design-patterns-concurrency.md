@@ -141,7 +141,7 @@ with rwlock.write_lock():
 
 ## External pointers (no internal IDs)
 
-- **Actor**: useful when ownership of mutable state matters more than shared-memory locking. Keep this as an external pointer because concrete actor semantics vary sharply by runtime (Erlang, Akka, Orleans, Tokio, etc.).
+- **Actor**: useful when ownership of mutable state matters more than shared-memory locking. Keep this as an external pointer because concrete actor semantics vary sharply by runtime (Erlang, Akka, Orleans, Actix, etc.).
 - **Reactor**: useful when one event loop demultiplexes readiness notifications across many I/O sources. Keep this as an external pointer because the pattern is tightly coupled to event-loop/framework design.
 - **Structured concurrency**: useful when task lifetimes must nest cleanly under a parent scope with shared cancellation and error propagation. Keep this as an external pointer because current language support and terminology are still runtime-specific.
 
