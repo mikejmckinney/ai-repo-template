@@ -130,7 +130,7 @@ total = left.result() + right.result()
 
 **Signals / example**: separate read and write acquisition APIs guard the same structure; reviewers should ask whether writer starvation or lock upgrade paths are handled.
 
-```text
+```python
 with rwlock.read_lock():
     value = cache.get(key)
 with rwlock.write_lock():
