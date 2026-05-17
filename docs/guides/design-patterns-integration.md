@@ -215,8 +215,9 @@ request keys remain `CDP13` in the data catalog.
 **Signals / example**: a consumer stores processed message IDs, sequence
 numbers, or deterministic dedupe keys before applying side effects. Reviewers
 should flag dedupe records kept only in memory, keys derived from process-local
-values such as Python's built-in `hash()`, or scopes too broad to survive
-restarts.
+values such as Python's built-in `hash()` (which is non-deterministic across
+restarts), or scopes too broad to survive restarts. For durable keys, prefer
+stable digest functions such as `hashlib.sha256`.
 
 ```python
 if processed_messages.exists(event.id):
