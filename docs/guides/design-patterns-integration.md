@@ -213,8 +213,10 @@ idempotency keys: receiver-side message dedupe belongs here, while durable API
 request keys remain `CDP13` in the data catalog.
 
 **Signals / example**: a consumer stores processed message IDs, sequence
-numbers, or dedupe keys before applying side effects. Reviewers should flag
-dedupe records kept only in memory or scoped too broadly to survive restarts.
+numbers, or deterministic dedupe keys before applying side effects. Reviewers
+should flag dedupe records kept only in memory, keys derived from process-local
+values such as Python's built-in `hash()`, or scopes too broad to survive
+restarts.
 
 ```python
 if processed_messages.exists(event.id):
