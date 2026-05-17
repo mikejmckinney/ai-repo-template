@@ -1,6 +1,6 @@
 # Design Patterns — Code-Layer Reference (Lead / Index)
 
-> **Purpose**: shared vocabulary for downstream code-layer reviews. Reviewers in projects derived from this template (CMMC enclave, Cloud Migration PoC, FedRAMP OSCAL, NIST 800-171, future forks) cite entries from this file and its sibling files by stable ID (`CP1`–`CP34`, `CAP1`–`CAP2`, `CDP1`–`CDP14`, `CIP1`–`CIP11`) when flagging a code-level pattern or anti-pattern. The orchestration layer of *this* template uses `.context/rules/repo_orchestration_patterns.md` (`P1`–`P8`, `AP1`–`AP8`) for the same purpose. The two surfaces are complementary, not overlapping.
+> **Purpose**: shared vocabulary for downstream code-layer reviews. Reviewers in projects derived from this template (CMMC enclave, Cloud Migration PoC, FedRAMP OSCAL, NIST 800-171, future forks) cite entries from this file and its sibling files by stable ID (`CP1`–`CP34`, `CAP1`–`CAP2`, `CDP1`–`CDP14`, `CIP1`–`CIP11`) when flagging a code-level pattern or anti-pattern. The orchestration layer of *this* template uses `.context/rules/repo_orchestration_patterns.md` (`P1`–`P9`, `AP1`–`AP8`) for the same purpose. The two surfaces are complementary, not overlapping.
 >
 > **Scope**: code-layer patterns for downstream projects derived from this template — application code, libraries, services, infrastructure-as-code constructs. NOT the orchestration / multi-agent / governance layer of this template (that lives in [`repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md)).
 >
@@ -111,7 +111,7 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 - [`design-patterns-post-gof.md`](design-patterns-post-gof.md) — sibling file, post-GoF entries `CP25`–`CP34`.
 - [`design-patterns-data.md`](design-patterns-data.md) — sibling file, data / persistence entries `CDP1`–`CDP14`.
 - [`design-patterns-integration.md`](design-patterns-integration.md) — sibling file, integration / messaging entries `CIP1`–`CIP11`.
-- [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) — orchestration-layer patterns (`P1`–`P8`, `AP1`–`AP8`) for *this* template, not for downstream code projects. The two files are complementary; reviewers cite from one or the other depending on what layer the change touches.
+- [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) — orchestration-layer patterns (`P1`–`P9`, `AP1`–`AP8`) for *this* template, not for downstream code projects. The two files are complementary; reviewers cite from one or the other depending on what layer the change touches.
 - [`.context/rules/domain_code_quality.md`](../../.context/rules/domain_code_quality.md) — code-layer Hard/Soft rules (`H1`–`H8`, `S1`–`S6`). Patterns here parallel those rules at a higher level of abstraction; rules say "do this," patterns say "this is what we call this shape."
 - [`docs/postmortems/README.md`](../postmortems/README.md) — index of postmortems, including the three (PM-001, PM-002, PM-003) that the entries above generalize from.
 - [`docs/decisions/adr-020-orchestration-patterns-reference.md`](../decisions/adr-020-orchestration-patterns-reference.md) — ADR ratifying the orchestration-layer patterns file; this file is the parallel code-layer addition under sub-issue 5 of parent epic #251.
