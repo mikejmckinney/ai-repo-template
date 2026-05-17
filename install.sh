@@ -293,6 +293,7 @@ MULTIAGENT_FILES=(
   "docs/guides/design-patterns.md"
   "docs/guides/design-patterns-data.md"
   "docs/guides/design-patterns-gof.md"
+  "docs/guides/design-patterns-integration.md"
   "docs/guides/design-patterns-post-gof.md"
   "docs/guides/multi-agent-coordination.md"
   "docs/guides/multi-model-consensus.md"

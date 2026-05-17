@@ -274,8 +274,11 @@ bash install.sh
 | `docs/postmortems/postmortem-template.md` | Postmortem / lessons-learned template (Trigger, Expected vs Actual, Root cause, What generalizes, Action items) |
 | `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalinks to original plan and revisions + 1–2 sentence summary; advisory per ADR-011), `## Plan revision sync` checkbox (advisory), and required doc-sync checklist |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching, issue/PR granularity |
-| `docs/guides/design-patterns.md` | Lead index for advisory code-layer design-pattern catalogs (`CAP`, `CP`, `CDP`) |
+| `docs/guides/design-patterns.md` | Lead index for advisory code-layer design-pattern catalogs (`CAP`, `CP`, `CDP`, `CIP`) |
 | `docs/guides/design-patterns-data.md` | Data / persistence pattern catalog with stable `CDP1`-`CDP14` citation handles |
+| `docs/guides/design-patterns-gof.md` | Gang of Four pattern catalog with stable `CP2`-`CP24` citation handles |
+| `docs/guides/design-patterns-integration.md` | Integration / messaging pattern catalog with stable `CIP1`-`CIP11` citation handles |
+| `docs/guides/design-patterns-post-gof.md` | Post-GoF pattern catalog with stable `CP25`-`CP34` citation handles |
 | `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Analyst/Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |
 | `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
