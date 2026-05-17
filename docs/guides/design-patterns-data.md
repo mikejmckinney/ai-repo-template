@@ -312,6 +312,16 @@ that check the key only in memory or after the side effect has already happened.
 idempotency_keys(tenant_id, key, request_hash, status, response_body, expires_at)
 ```
 
+```python
+# Check before side effect
+existing = idempotency_keys.get(tenant_id, key)
+if existing and existing.request_hash == hash(request):
+    return existing.response_body
+result = perform_operation(request)
+idempotency_keys.put(tenant_id, key, hash(request), result, expires_at)
+return result
+```
+
 ### CDP14 — Transactional Outbox
 
 **Intent**: write state changes and messages to an outbox table in the same
