@@ -316,12 +316,13 @@ idempotency_keys(tenant_id, key, request_hash, status, response_body, expires_at
 import hashlib
 
 # Check before side effect
-request_hash = hashlib.sha256(request.body).hexdigest()
+body_bytes = request.body if isinstance(request.body, bytes) else request.body.encode()
+request_hash = hashlib.sha256(body_bytes).hexdigest()
 existing = idempotency_keys.get(tenant_id, key)
 if existing and existing.request_hash == request_hash:
     return existing.response_body
 result = perform_operation(request)
-idempotency_keys.put(tenant_id, key, request_hash, result, expires_at)
+idempotency_keys.put(tenant_id, key, request_hash, "COMPLETED", result, expires_at)
 return result
 ```
 
