@@ -247,7 +247,7 @@ timestamp, request/correlation ID, and before/after metadata. Reviewers should
 flag audit records that can be edited through ordinary admin screens.
 
 ```text
-audit_log(actor_id, action, target_type, target_id, occurred_at, request_id, metadata)
+audit_log(actor_id, action, target_type, target_id, occurred_at, request_id, before_state, after_state, metadata)
 ```
 
 ### CDP11 — Snapshot
