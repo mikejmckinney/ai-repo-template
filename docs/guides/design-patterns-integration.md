@@ -220,10 +220,9 @@ restarts), or scopes too broad to survive restarts. For durable keys, prefer
 stable digest functions such as `hashlib.sha256`.
 
 ```python
-if processed_messages.exists(event.id):
+if not processed_messages.record_if_new(event.id):
     return
 apply_side_effect(event)
-processed_messages.record(event.id)
 ```
 
 ### CIP10 — Correlation ID
