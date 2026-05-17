@@ -1,6 +1,6 @@
 # Design Patterns — Code-Layer Reference (Lead / Index)
 
-> **Purpose**: shared vocabulary for downstream code-layer reviews. Reviewers in projects derived from this template (CMMC enclave, Cloud Migration PoC, FedRAMP OSCAL, NIST 800-171, future forks) cite entries from this file and its sibling files by stable ID (`CP1`–`CP34`, `CAP1`–`CAP2`, `CDP1`–`CDP14`) when flagging a code-level pattern or anti-pattern. The orchestration layer of *this* template uses `.context/rules/repo_orchestration_patterns.md` (`P1`–`P8`, `AP1`–`AP8`) for the same purpose. The two surfaces are complementary, not overlapping.
+> **Purpose**: shared vocabulary for downstream code-layer reviews. Reviewers in projects derived from this template (CMMC enclave, Cloud Migration PoC, FedRAMP OSCAL, NIST 800-171, future forks) cite entries from this file and its sibling files by stable ID (`CP1`–`CP34`, `CAP1`–`CAP2`, `CDP1`–`CDP14`, `CIP1`–`CIP11`) when flagging a code-level pattern or anti-pattern. The orchestration layer of *this* template uses `.context/rules/repo_orchestration_patterns.md` (`P1`–`P9`, `AP1`–`AP8`) for the same purpose. The two surfaces are complementary, not overlapping.
 >
 > **Scope**: code-layer patterns for downstream projects derived from this template — application code, libraries, services, infrastructure-as-code constructs. NOT the orchestration / multi-agent / governance layer of this template (that lives in [`repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md)).
 >
@@ -24,13 +24,13 @@ Demand here is read inclusively: this template's own dogfooding *counts as deman
 
 ## How to use this file
 
-- **Authors**: scan the relevant section of the appropriate file (lead / GoF / post-GoF / data) before writing a non-trivial new component. The goal is recognition, not selection — if a named pattern matches what you're already doing, use the standard form rather than reinventing one. If nothing matches, that's fine; don't force a fit.
-- **Reviewers**: when flagging a structural concern, cite by ID (`CP<N>`, `CAP<N>`, or `CDP<N>`) and quote the specific detection signal that fired. Citing without quoting is review noise — the patterns are vocabulary, not authority.
+- **Authors**: scan the relevant section of the appropriate file (lead / GoF / post-GoF / data / integration) before writing a non-trivial new component. The goal is recognition, not selection — if a named pattern matches what you're already doing, use the standard form rather than reinventing one. If nothing matches, that's fine; don't force a fit.
+- **Reviewers**: when flagging a structural concern, cite by ID (`CP<N>`, `CAP<N>`, `CDP<N>`, or `CIP<N>`) and quote the specific detection signal that fired. Citing without quoting is review noise — the patterns are vocabulary, not authority.
 - **Contributors**: when responding to a citation, you can rebut. "This looks like `CAP1` Goal Substitution but actually the user outcome is in [link]" is a valid response and ends the thread.
 
 ## How the files split
 
-These files share one citation surface without sharing one numeric namespace. The lead file (this one) holds the framing, the postmortem-derived entries, and the index table below. Sibling files hold the GoF, post-GoF, and data / persistence catalogs respectively. This split exists because a single 700+ line catalog would itself match `AP1` (God Object) in the orchestration patterns file — see [ADR-021](../decisions/adr-021-agents-md-decomposition.md) for the parallel decomposition decision on `AGENTS.md`.
+These files share one citation surface without sharing one numeric namespace. The lead file (this one) holds the framing, the postmortem-derived entries, and the index table below. Sibling files hold the GoF, post-GoF, data / persistence, and integration / messaging catalogs respectively. This split exists because a single 700+ line catalog would itself match `AP1` (God Object) in the orchestration patterns file — see [ADR-021](../decisions/adr-021-agents-md-decomposition.md) for the parallel decomposition decision on `AGENTS.md`.
 
 | ID range | File | Topic |
 |---|---|---|
@@ -38,15 +38,16 @@ These files share one citation surface without sharing one numeric namespace. Th
 | `CP2`–`CP24` | [`design-patterns-gof.md`](design-patterns-gof.md) | The 23 Gang of Four patterns (Creational / Structural / Behavioral) |
 | `CP25`–`CP34` | [`design-patterns-post-gof.md`](design-patterns-post-gof.md) | Post-GoF patterns (Repository, DI, MVC family, CQRS, Event Sourcing, Saga, Circuit Breaker, Bulkhead, Sidecar) |
 | `CDP1`–`CDP14` | [`design-patterns-data.md`](design-patterns-data.md) | Data / persistence patterns (caches, read models, locking, auditability, snapshots, pools, idempotency, outbox) |
+| `CIP1`–`CIP11` | [`design-patterns-integration.md`](design-patterns-integration.md) | Integration / messaging patterns (channels, routing, translators, splitters, aggregators, claim checks, DLQs, receiver dedupe, correlation, envelopes) |
 
-Cite from any file by ID alone — the prefix and range tell the reader which file to open. Anchors are stable: `design-patterns.md#cap1--goal-substitution`, `design-patterns-gof.md#cp22--strategy`, `design-patterns-data.md#cdp14--transactional-outbox`, etc. Renumbering would break citations across downstream PRs and is treated as a breaking change.
+Cite from any file by ID alone — the prefix and range tell the reader which file to open. Anchors are stable: `design-patterns.md#cap1--goal-substitution`, `design-patterns-gof.md#cp22--strategy`, `design-patterns-data.md#cdp14--transactional-outbox`, `design-patterns-integration.md#cip9--idempotent-receiver`, etc. Renumbering would break citations across downstream PRs and is treated as a breaking change.
 
 ## Caveats
 
-1. **The list isn't exhaustive.** Whole bodies of patterns sit outside it: concurrency (Active Object, Reactor, Producer-Consumer, Actor), functional (Functor, Monad, Lens, Reader), frontend-specific (Hooks, Container/Presenter, Compound Components), and integration (Hohpe & Woolf's *Enterprise Integration Patterns*). Future concurrency and integration catalogs may use `CCP` and `CIP` prefixes, but until those files exist, cite the concern plainly or cite an external authority rather than inventing an internal handle.
+1. **The list isn't exhaustive.** Whole bodies of patterns still sit outside it: concurrency (Active Object, Reactor, Producer-Consumer, Actor), functional (Functor, Monad, Lens, Reader), and frontend-specific (Hooks, Container/Presenter, Compound Components). Integration / messaging now has a live sibling catalog at [`design-patterns-integration.md`](design-patterns-integration.md); concurrency may use a future `CCP` prefix, but until that file exists, cite the concern plainly or cite an external authority rather than inventing an internal handle.
 2. **GoF reflects 1994 constraints.** Singleton, Visitor, and Interpreter are particularly likely to be anti-patterns today. Use the per-entry "When NOT" notes in [`design-patterns-gof.md`](design-patterns-gof.md) before reaching for them.
 3. **Language matters.** Iterator, Strategy, Command, Observer, and Template Method are mostly language features in modern languages. The per-entry notes flag this where it applies.
-4. **No backing ADR.** This guide is Docs-owned and advisory. Adding new patterns needs a Docs PR; tightening an entry to block-on-sight needs an ADR (because that changes the Critic/Judge contract). New entries go into the appropriate namespace without renumbering existing IDs; postmortem-derived entries use the next available `CAP<N>` / `CP<N>` number, while data / persistence entries use `CDP<N>`.
+4. **No backing ADR.** This guide is Docs-owned and advisory. Adding new patterns needs a Docs PR; tightening an entry to block-on-sight needs an ADR (because that changes the Critic/Judge contract). New entries go into the appropriate namespace without renumbering existing IDs; postmortem-derived entries use the next available `CAP<N>` / `CP<N>` number, data / persistence entries use `CDP<N>`, and integration / messaging entries use `CIP<N>`.
 
 ---
 
@@ -109,7 +110,8 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 - [`design-patterns-gof.md`](design-patterns-gof.md) — sibling file, GoF entries `CP2`–`CP24`.
 - [`design-patterns-post-gof.md`](design-patterns-post-gof.md) — sibling file, post-GoF entries `CP25`–`CP34`.
 - [`design-patterns-data.md`](design-patterns-data.md) — sibling file, data / persistence entries `CDP1`–`CDP14`.
-- [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) — orchestration-layer patterns (`P1`–`P8`, `AP1`–`AP8`) for *this* template, not for downstream code projects. The two files are complementary; reviewers cite from one or the other depending on what layer the change touches.
+- [`design-patterns-integration.md`](design-patterns-integration.md) — sibling file, integration / messaging entries `CIP1`–`CIP11`.
+- [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) — orchestration-layer patterns (`P1`–`P9`, `AP1`–`AP8`) for *this* template, not for downstream code projects. The two files are complementary; reviewers cite from one or the other depending on what layer the change touches.
 - [`.context/rules/domain_code_quality.md`](../../.context/rules/domain_code_quality.md) — code-layer Hard/Soft rules (`H1`–`H8`, `S1`–`S6`). Patterns here parallel those rules at a higher level of abstraction; rules say "do this," patterns say "this is what we call this shape."
 - [`docs/postmortems/README.md`](../postmortems/README.md) — index of postmortems, including the three (PM-001, PM-002, PM-003) that the entries above generalize from.
 - [`docs/decisions/adr-020-orchestration-patterns-reference.md`](../decisions/adr-020-orchestration-patterns-reference.md) — ADR ratifying the orchestration-layer patterns file; this file is the parallel code-layer addition under sub-issue 5 of parent epic #251.
