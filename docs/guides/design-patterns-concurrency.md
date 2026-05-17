@@ -1,6 +1,6 @@
 # Design Patterns — Concurrency Catalog
 
-> **Purpose**: concurrency control and scheduling patterns for downstream-project reviews. Cite these entries by stable ID (`CCP1`-`CCP8`) when a review concern is about work handoff, bounded parallelism, phase coordination, or shared-state access under concurrency.
+> **Purpose**: concurrency control and scheduling patterns for downstream-project reviews. Cite these entries by stable ID (`CCP1`–`CCP8`) when a review concern is about work handoff, bounded parallelism, phase coordination, or shared-state access under concurrency.
 >
 > **Read first**: [`design-patterns.md`](design-patterns.md#read-this-first--descriptive-vocabulary-not-prescription) — lead file with framing, descriptive-not-prescriptive caveats, and citation conventions. **Don't cite from this file without reading the lead file's "Read this first" section.** Patterns are vocabulary, not rules.
 >
