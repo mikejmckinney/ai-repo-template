@@ -320,13 +320,16 @@ _OPPORTUNITY_FOLD_INTO_RE = re.compile(r"^fold-into-\d+$")
 # Canonical role names — derived dynamically from .agents/<role>.md frontmatter
 # via canonical_role_versions() rather than hardcoded, so adding/removing a
 # canonical role file is automatically reflected here (PR #344 R15 gemini).
-def _opportunity_role_values() -> frozenset[str]:
-    return frozenset(canonical_role_versions(REPO_ROOT).keys())
+# Accepts repo_root so callers that pass a non-default repo (tests, fixtures)
+# get role values from that tree, not the module-level REPO_ROOT
+# (PR #344 R16 cursor).
+def _opportunity_role_values(repo_root: Path = REPO_ROOT) -> frozenset[str]:
+    return frozenset(canonical_role_versions(repo_root).keys())
 # Title length cap from process_opportunity_feedback.md § "Required fields".
 _OPPORTUNITY_TITLE_MAX = 80
 
 
-def _validate_opportunity_notes(items: Any, source: str) -> None:
+def _validate_opportunity_notes(items: Any, source: str, repo_root: Path = REPO_ROOT) -> None:
     """Validate the optional opportunity_notes list (v1.2, cap <=3 per session)."""
     _require_type(items, list, source)
     if len(items) > 3:
@@ -358,7 +361,7 @@ def _validate_opportunity_notes(items: Any, source: str) -> None:
             allowed = ", ".join(sorted(_OPPORTUNITY_CONFIDENCE_VALUES))
             raise ComplianceError(f"{item_source}.confidence: must be one of {{{allowed}}}; got {item['confidence']!r}")
         _require_string_list(item["role_relevance"], f"{item_source}.role_relevance")
-        valid_roles = _opportunity_role_values()
+        valid_roles = _opportunity_role_values(repo_root)
         for role in item["role_relevance"]:
             if role not in valid_roles:
                 allowed = ", ".join(sorted(valid_roles))
@@ -499,10 +502,10 @@ def validate_subagent(
     # v1.2 optional: opportunity_notes (cap <=3 entries per session per agent).
     opportunity_notes = block.get("opportunity_notes")
     if opportunity_notes is not None:
-        _validate_opportunity_notes(opportunity_notes, f"{source}.opportunity_notes")
+        _validate_opportunity_notes(opportunity_notes, f"{source}.opportunity_notes", repo_root)
 
 
-def validate_state(block: dict[str, Any], source: str) -> None:
+def validate_state(block: dict[str, Any], source: str, repo_root: Path = REPO_ROOT) -> None:
     """Validate the structured YAML block embedded in an agent-state:v1 comment.
 
     Accepts ``schema_version`` values 1, 1.1, and 1.2 when called directly
@@ -526,7 +529,7 @@ def validate_state(block: dict[str, Any], source: str) -> None:
     _require_schema_version_v12(block, source)
     opportunity_notes = block.get("opportunity_notes")
     if opportunity_notes is not None:
-        _validate_opportunity_notes(opportunity_notes, f"{source}.opportunity_notes")
+        _validate_opportunity_notes(opportunity_notes, f"{source}.opportunity_notes", repo_root)
 
 
 def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:
@@ -661,7 +664,7 @@ def validate_loaded_block(data: Any, source: str, repo_root: Path = REPO_ROOT) -
         and float(schema_version) == 1.2
     )
     if is_v12_numeric and set(data.keys()).issubset(_AGENT_STATE_KEYS):
-        validate_state(data, source)
+        validate_state(data, source, repo_root)
         return
     unknown_keys = [key for key in data if key not in VALID_TOP_LEVEL_KEYS]
     if unknown_keys:
