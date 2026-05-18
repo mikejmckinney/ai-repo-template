@@ -38,6 +38,7 @@ first line.
 ## Truth hierarchy
 
 When information conflicts, use this priority order:
+
 1. `./.context/**` — canonical project direction and constraints
 2. `./docs/**` — supporting detail and reference material
 3. Codebase — current implementation reality

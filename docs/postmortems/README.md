@@ -50,7 +50,6 @@ before starting non-trivial work in that stack.
 
 - [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: prompt-engineering)
 
-
 ## When to write a postmortem
 
 Write one whenever:

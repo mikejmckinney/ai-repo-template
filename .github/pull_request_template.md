@@ -129,11 +129,13 @@ parent_compliance:
 **User outcome / 15-minute test performed:** <yes/no>
 
 **Steps performed:**
+
 1. <step>
 2. <step>
 3. <step>
 
 **Evidence:**
+
 - <link/excerpt/transcript/screenshot/checklist result>
 
 **Result:** <problem statement resolved | not resolved | framing disconnect | blocked>

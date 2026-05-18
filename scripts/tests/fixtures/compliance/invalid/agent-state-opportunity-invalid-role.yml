@@ -1,0 +1,14 @@
+# Invalid: opportunity_notes[0].role_relevance contains a role not in the
+# canonical 10-role set (_OPPORTUNITY_ROLE_VALUES).
+schema_version: 1.2
+opportunity_notes:
+  - title: "Role-relevance enum is enforced against canonical 10 roles"
+    evidence: "scripts/lib/compliance_schema.py:_OPPORTUNITY_ROLE_VALUES"
+    impact: "Free-form role names would silently fan out to nonexistent owners."
+    recommendation: "Reject anything outside the canonical set."
+    scope: "rule"
+    suggested_next_action: "file-issue"
+    confidence: "high"
+    role_relevance:
+      - sysadmin
+    duplicate_check: "n/a — fixture file."

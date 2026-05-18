@@ -1,0 +1,5 @@
+# Invalid: bare {schema_version: 1} must NOT be routed through validate_state
+# under the tightened validate_loaded_block heuristic (cursor r12 / PR #344).
+# Older pre-v1.2 agent-state blocks fall through to the "unknown top-level
+# keys" path so a stray YAML fragment cannot silently pass.
+schema_version: 1

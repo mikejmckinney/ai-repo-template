@@ -635,17 +635,24 @@ def validate_loaded_block(data: Any, source: str, repo_root: Path = REPO_ROOT) -
     # compliance-key wrapper (plan_compliance / parent_compliance /
     # subagent_compliance). Detect by:
     #   1. The block contains schema_version (required for state).
-    #   2. The block's key set is a subset of _AGENT_STATE_KEYS, i.e. it
+    #   2. schema_version is numerically exactly 1.2 — the additive v1.2
+    #      revision is the only agent-state schema validate_state enforces
+    #      here. Older bare blocks (e.g. {schema_version: 1}) keep their
+    #      pre-PR-#344 behavior and fall through to "unknown top-level
+    #      keys", preventing a stray YAML fragment from silently passing.
+    #   3. The block's key set is a subset of _AGENT_STATE_KEYS, i.e. it
     #      contains ONLY schema_version and optionally opportunity_notes.
-    # If a future state field is added, extend _AGENT_STATE_KEYS in lockstep
-    # with the agent_state spec in docs/compliance_schemas.md
-    # § "agent-state:v1". Mis-routing (e.g. a stray YAML snippet in a
-    # discussion comment that happens to contain only schema_version) will
-    # surface as a validate_state failure, not silent acceptance, because
-    # validate_state strictly checks schema_version against v1.2 and
-    # rejects unknown keys.
+    # If a future state field is added, extend _AGENT_STATE_KEYS (and the
+    # version check) in lockstep with docs/compliance_schemas.md
+    # § "agent-state:v1".
     _AGENT_STATE_KEYS = {"schema_version", "opportunity_notes"}
-    if "schema_version" in data and set(data.keys()).issubset(_AGENT_STATE_KEYS):
+    schema_version = data.get("schema_version")
+    is_v12_numeric = (
+        isinstance(schema_version, (int, float))
+        and not isinstance(schema_version, bool)
+        and float(schema_version) == 1.2
+    )
+    if is_v12_numeric and set(data.keys()).issubset(_AGENT_STATE_KEYS):
         validate_state(data, source)
         return
     unknown_keys = [key for key in data if key not in VALID_TOP_LEVEL_KEYS]

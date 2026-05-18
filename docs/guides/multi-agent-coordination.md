@@ -74,7 +74,7 @@ See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the ration
 
 ## End-to-End Flow
 
-```
+```text
   user request
        │
        ▼
@@ -145,7 +145,7 @@ ADR-025 keeps the state machine in GitHub comments/labels instead of requiring m
 
 Each implementer works on a branch named `feature/<role>-<task-id>`. For example:
 
-```
+```text
 feature/frontend-login-form
 feature/backend-auth-api
 feature/docs-auth-guide
@@ -172,7 +172,7 @@ Conflicts are prevented by layered defenses. Earlier layers are cheaper.
 
 ### Step 1 — Architect plans
 
-```
+```text
 PLAN: Add login
 
 PHASES:

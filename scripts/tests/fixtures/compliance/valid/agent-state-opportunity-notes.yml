@@ -1,0 +1,16 @@
+# Valid agent-state:v1 YAML block exercising the additive v1.2
+# opportunity_notes path. Bare top-level block (no compliance-key wrapper)
+# matches how it appears inside `agent-state:v1` comments per ADR-027.
+schema_version: 1.2
+opportunity_notes:
+  - title: "Tighten validate_loaded_block heuristic for bare state blocks"
+    evidence: "scripts/lib/compliance_schema.py:614 — bare {schema_version: 1} previously routed through validate_state."
+    impact: "Schema drift risk: pre-PR-#344 state blocks could be silently re-validated under v1.2 rules."
+    recommendation: "Require schema_version to be numerically exactly 1.2 before routing to validate_state."
+    scope: "code"
+    suggested_next_action: "fold-into-344"
+    confidence: "high"
+    role_relevance:
+      - backend
+      - architect
+    duplicate_check: "Searched PR #344 review threads for 'validate_loaded_block'; this is the cursor r12 thread."

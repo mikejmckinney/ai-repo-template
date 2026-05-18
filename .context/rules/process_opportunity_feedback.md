@@ -153,7 +153,7 @@ becoming a write-only dumping ground.
 The following is an example of a discovery that routes to the
 **blocking observation** path, not the opportunity-note path:
 
-```
+```markdown
 ## Blocking observation
 
 While editing `config/docker-compose.yml.template` to wire the new

@@ -14,6 +14,7 @@
 ## Naming Convention
 
 Files should be named `domain_<area>.md`:
+
 - `domain_auth.md` - Authentication/authorization rules
 - `domain_data.md` - Data handling constraints
 - `domain_api.md` - API design rules
