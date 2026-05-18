@@ -278,6 +278,7 @@ MULTIAGENT_FILES=(
   ".context/rules/process_clarification.md"
   ".context/rules/process_role_selection.md"
   ".context/rules/process_gates.md"
+  ".context/rules/process_opportunity_feedback.md"
   ".context/rules/process_session_state.md"
   ".context/rules/process_pr_completion.md"
   ".context/rules/process_subagent_bootstrap.md"
