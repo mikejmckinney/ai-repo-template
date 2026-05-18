@@ -340,7 +340,7 @@ def _validate_opportunity_notes(items: Any, source: str) -> None:
         _require_non_empty_string(item["suggested_next_action"], f"{item_source}.suggested_next_action")
         nxt = item["suggested_next_action"]
         if nxt not in _OPPORTUNITY_NEXT_ACTION_LITERALS and not _OPPORTUNITY_FOLD_INTO_RE.match(nxt):
-            allowed = ", ".join(sorted(_OPPORTUNITY_NEXT_ACTION_LITERALS)) + ", fold-into-<issue-#>"
+            allowed = ", ".join(sorted(_OPPORTUNITY_NEXT_ACTION_LITERALS)) + ", fold-into-<n>"
             raise ComplianceError(f"{item_source}.suggested_next_action: must be one of {{{allowed}}}; got {nxt!r}")
         _require_non_empty_string(item["confidence"], f"{item_source}.confidence")
         if item["confidence"] not in _OPPORTUNITY_CONFIDENCE_VALUES:

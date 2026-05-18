@@ -52,7 +52,7 @@ fill all 9.
 | `impact` | string | Who/what is affected and how. Toil, risk, correctness, clarity. |
 | `recommendation` | string | What you propose changing. Concrete enough to file. |
 | `scope` | enum | One of: `rule`, `script`, `doc`, `workflow`, `code`, `test`, `process`. |
-| `suggested_next_action` | enum | One of: `file-issue`, `fold-into-<issue-#>`, `discuss`, `defer`. |
+| `suggested_next_action` | enum | One of: `file-issue`, `fold-into-<n>` (where `<n>` is an issue number, e.g. `fold-into-337`), `discuss`, `defer`. |
 | `confidence` | enum | One of: `high`, `medium`, `low`. How sure you are this is real and worth doing. |
 | `role_relevance` | list[string] | Role(s) that would own the work. Names from `agent_ownership.md`. |
 | `duplicate_check` | string | Search you ran or issue/PR you compared against. `none` if you did not check. |
