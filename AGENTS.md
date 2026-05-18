@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 18 -->
+<!-- AGENTS_MD_VERSION: 19 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one.
      The canary covers AGENTS.md only — per-concern files in .context/rules/
@@ -16,7 +16,7 @@
 ## Session handshake (read-receipt)
 
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v18` (matching
+substantive reply with the exact token `Session handshake v19` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -80,9 +80,23 @@ re-read cadence (which files at which boundaries) lives in
 | Code quality (SOLID, TDD, clean code) | [`.context/rules/domain_code_quality.md`](.context/rules/domain_code_quality.md) | Before non-trivial code refactors |
 | Orchestration patterns (P/AP citations for review) | [`.context/rules/repo_orchestration_patterns.md`](.context/rules/repo_orchestration_patterns.md) | When reviewing orchestration-layer changes |
 | Path ownership map | [`.context/rules/agent_ownership.md`](.context/rules/agent_ownership.md) | Before claiming a task or making cross-role edits |
+| Opportunity feedback (out-of-scope notes channel) | [`.context/rules/process_opportunity_feedback.md`](.context/rules/process_opportunity_feedback.md) | When you notice an out-of-scope improvement opportunity during in-scope work |
 
 For project overview start at [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) and
 [`.context/00_INDEX.md`](.context/00_INDEX.md).
+
+## Opportunity feedback
+
+Agents may surface improvement opportunities they notice while doing
+in-scope work via the structured `opportunity_notes` channel, capped
+at ≤3 per session per agent. Canonical rule:
+[`.context/rules/process_opportunity_feedback.md`](.context/rules/process_opportunity_feedback.md).
+
+This channel is for **defer-able** items only. For items that should
+halt current work pending resolution (security findings, data-loss
+risks, CI-breaking changes, plan-invalidating preconditions), use the
+`## Blocking observation` escalation path instead — see the rule
+file above for the contrast.
 
 ## Section-anchor redirects (for ADR back-compat)
 
