@@ -329,14 +329,30 @@ def _opportunity_role_values(repo_root: Path = REPO_ROOT) -> frozenset[str]:
 _OPPORTUNITY_TITLE_MAX = 80
 
 
-def _validate_opportunity_notes(items: Any, source: str, repo_root: Path = REPO_ROOT) -> None:
-    """Validate the optional opportunity_notes list (v1.2, cap <=3 per session)."""
+def _validate_opportunity_notes(
+    items: Any,
+    source: str,
+    repo_root: Path = REPO_ROOT,
+    valid_roles: Optional[frozenset[str]] = None,
+) -> None:
+    """Validate the optional opportunity_notes list (v1.2, cap <=3 per session).
+
+    ``valid_roles`` may be passed in by callers that have already computed
+    the canonical role set (e.g. ``validate_subagent`` reuses ``versions``)
+    to avoid re-walking ``.agents/*.md``. Uses an explicit ``is not None``
+    check so an empty frozenset injected by tests still suppresses the
+    fallback disk walk (PR #344 R18 gemini).
+    """
     _require_type(items, list, source)
+    if not items:
+        return
     if len(items) > 3:
         raise ComplianceError(f"{source}: opportunity_notes must have <=3 entries; got {len(items)}")
     # Compute valid_roles once outside the per-item loop so .agents/*.md is
-    # walked once per list, not once per item (PR #344 R17 gemini).
-    valid_roles = _opportunity_role_values(repo_root)
+    # walked once per list, not once per item (PR #344 R17 gemini), unless
+    # the caller already supplied the set (PR #344 R18 gemini).
+    if valid_roles is None:
+        valid_roles = _opportunity_role_values(repo_root)
     for idx, item in enumerate(items):
         item_source = f"{source}[{idx}]"
         _require_type(item, dict, item_source)
@@ -502,9 +518,16 @@ def validate_subagent(
     # make that documented "without-replay" path unsatisfiable.
 
     # v1.2 optional: opportunity_notes (cap <=3 entries per session per agent).
+    # Reuse the already-computed ``versions`` map so opportunity_notes
+    # validation doesn't re-walk .agents/*.md (PR #344 R18 gemini).
     opportunity_notes = block.get("opportunity_notes")
     if opportunity_notes is not None:
-        _validate_opportunity_notes(opportunity_notes, f"{source}.opportunity_notes", repo_root)
+        _validate_opportunity_notes(
+            opportunity_notes,
+            f"{source}.opportunity_notes",
+            repo_root,
+            valid_roles=frozenset(versions.keys()),
+        )
 
 
 def validate_state(block: dict[str, Any], source: str, repo_root: Path = REPO_ROOT) -> None:

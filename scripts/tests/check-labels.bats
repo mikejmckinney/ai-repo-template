@@ -34,7 +34,7 @@ _label_declared() {
 }
 
 @test "core pipeline labels are still declared" {
-  for label in auto-merge claude-fix copilot-relay agent:claimed agent:blocked cap-override; do
+  for label in auto-merge claude-fix copilot-relay agent:claimed agent:blocked agent:awaiting-review cap-override; do
     _label_declared "$label" || { echo "missing label: $label"; return 1; }
   done
 }
