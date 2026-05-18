@@ -4,7 +4,7 @@
 >
 > **Read first**: [`design-patterns.md`](design-patterns.md) — lead file with framing, descriptive-not-prescriptive caveats, and citation conventions. **Don't cite from this file without reading the lead file's "Read this first" section.** Patterns are vocabulary, not rules. Several entries below (CQRS, Event Sourcing) carry significant operational weight and are easy to over-apply.
 >
-> **Boundary note**: data / persistence mechanics that previously looked like possible `CP35`+ additions live in [`design-patterns-data.md`](design-patterns-data.md) instead: Object Pool / Connection Pool is `CDP12`, Idempotency Key is `CDP13`, and Transactional Outbox is `CDP14`. Integration / messaging topology and payload-shaping patterns now live in [`design-patterns-integration.md`](design-patterns-integration.md) instead: message channels, routers, translators, splitters, aggregators, claim checks, dead-letter queues, receiver dedupe, correlation IDs, and envelope wrappers belong to `CIP`, not `CP`. Do not extend the `CP` range for those entries.
+> **Boundary note**: data / persistence mechanics that previously looked like possible `CP35`+ additions live in [`design-patterns-data.md`](design-patterns-data.md) instead: Object Pool / Connection Pool is `CDP12`, Idempotency Key is `CDP13`, and Transactional Outbox is `CDP14`. Integration / messaging topology and payload-shaping patterns now live in [`design-patterns-integration.md`](design-patterns-integration.md) instead: message channels, routers, translators, splitters, aggregators, claim checks, dead-letter queues, receiver dedupe, correlation IDs, and envelope wrappers belong to `CIP`, not `CP`. Concurrency control and scheduling shapes now live in [`design-patterns-concurrency.md`](design-patterns-concurrency.md) instead: Producer-Consumer, Worker Pool / Thread Pool, Future / Promise, Async / Await, Semaphore, Barrier, Fork-Join, and Read-Write Lock belong to `CCP`, not `CP`. Do not extend the `CP` range for those entries.
 
 Examples are kept to interface sketches and one-paragraph remarks rather than full Python; the post-GoF entries describe shapes that span multiple files and processes, where a single Python snippet would mislead more than it would clarify.
 
@@ -152,6 +152,7 @@ The sidecar model also breaks down when the main app and sidecar disagree about 
 
 - [`design-patterns.md`](design-patterns.md) — lead file, framing and `CAP1` / `CAP2` / `CP1`.
 - [`design-patterns-gof.md`](design-patterns-gof.md) — sibling file, `CP2`–`CP24` (Gang of Four).
+- [`design-patterns-concurrency.md`](design-patterns-concurrency.md) — sibling file, `CCP1`–`CCP8` (concurrency control and scheduling).
 - [`design-patterns-data.md`](design-patterns-data.md) — sibling file, `CDP1`–`CDP14` (data / persistence).
 - [`design-patterns-integration.md`](design-patterns-integration.md) — sibling file, `CIP1`–`CIP11` (integration / messaging); `CIP9` receiver-side message dedupe remains separate from [`CDP13`](design-patterns-data.md#cdp13--idempotency-key) request-key durability.
 - [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) — orchestration-layer patterns for *this* template.
