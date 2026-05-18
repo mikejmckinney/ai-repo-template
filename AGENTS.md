@@ -93,7 +93,7 @@ in-scope work via the structured `opportunity_notes` channel, capped
 at ≤3 per session per agent. Canonical rule:
 [`.context/rules/process_opportunity_feedback.md`](.context/rules/process_opportunity_feedback.md).
 
-This channel is for **defer-able** items only. For items that should
+This channel is for **deferrable** items only. For items that should
 halt current work pending resolution (security findings, data-loss
 risks, CI-breaking changes, plan-invalidating preconditions), use the
 `## Blocking observation` escalation path instead — see the rule

@@ -84,7 +84,7 @@ Key choices:
    days — that self-correcting loop prevents the queue from becoming
    a write-only dumping ground.
 7. **Explicit contrast with `## Blocking observation`**: the
-   opportunity channel is for **defer-able** items only. Items that
+   opportunity channel is for **deferrable** items only. Items that
    should halt current work pending resolution (security findings,
    data-loss risks, CI-breaking changes, plan-invalidating
    preconditions) route through the `## Blocking observation`

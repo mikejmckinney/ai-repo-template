@@ -31,7 +31,7 @@ Items that are:
 
 - **Outside the current task scope** but inside the repo's reasonable
   improvement surface.
-- **Defer-able** — the current task can complete without them.
+- **Deferrable** — the current task can complete without them.
 - **Concrete** — name a file, a behavior, or an observable symptom.
 - Specifically NOT urgent in a way that would block correctness,
   security, or in-flight work. Those go through the escalation path
@@ -89,7 +89,7 @@ OP gets to decide.
 
 ## Escalation (blocking observations)
 
-The opportunity channel is for **defer-able** items. For items that
+The opportunity channel is for **deferrable** items. For items that
 should **halt current work pending resolution**, use the
 `## Blocking observation` section convention instead.
 

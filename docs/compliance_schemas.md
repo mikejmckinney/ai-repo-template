@@ -35,7 +35,16 @@ All examples below are schema v1. Schema updates follow this policy:
   v1.2 is fully backward-compatible with v1.1 and v1 readers: the field
   is optional, absence is the default, and unknown-field tolerance applies
   for any earlier-minor reader. Stage 3 (DevOps) extends validators to
-  accept `schema_version` values `1`, `1.1`, and `1.2`.
+  accept `schema_version` values `1`, `1.1`, and `1.2` for
+  `subagent_compliance` blocks. **Note:** for **bare `agent-state:v1`**
+  YAML blocks, the top-level dispatch heuristic in
+  `scripts/lib/compliance_schema.py` (`validate_loaded_block`) only
+  routes blocks whose `schema_version` is numerically exactly `1.2`
+  through the agent-state validator; bare blocks declaring `1` or `1.1`
+  keep their pre-PR-#344 behavior and fall through to the generic
+  `unknown top-level keys` path. Authors emitting a new bare
+  `agent-state:v1` block (including any with `opportunity_notes`) must
+  declare `schema_version: 1.2`.
 
 ## `plan_compliance` v1
 

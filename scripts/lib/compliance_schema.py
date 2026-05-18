@@ -327,10 +327,10 @@ _OPPORTUNITY_TITLE_MAX = 80
 
 
 def _validate_opportunity_notes(items: Any, source: str) -> None:
-    """Validate the optional opportunity_notes list (v1.2, cap ≤3 per session)."""
+    """Validate the optional opportunity_notes list (v1.2, cap <=3 per session)."""
     _require_type(items, list, source)
     if len(items) > 3:
-        raise ComplianceError(f"{source}: opportunity_notes must have \u22643 entries; got {len(items)}")
+        raise ComplianceError(f"{source}: opportunity_notes must have <=3 entries; got {len(items)}")
     for idx, item in enumerate(items):
         item_source = f"{source}[{idx}]"
         _require_type(item, dict, item_source)
@@ -339,7 +339,7 @@ def _validate_opportunity_notes(items: Any, source: str) -> None:
         _require_non_empty_string(item["title"], f"{item_source}.title")
         if len(item["title"]) > _OPPORTUNITY_TITLE_MAX:
             raise ComplianceError(
-                f"{item_source}.title: must be \u2264{_OPPORTUNITY_TITLE_MAX} characters; got {len(item['title'])}"
+                f"{item_source}.title: must be <={_OPPORTUNITY_TITLE_MAX} characters; got {len(item['title'])}"
             )
         _require_non_empty_string(item["evidence"], f"{item_source}.evidence")
         _require_non_empty_string(item["impact"], f"{item_source}.impact")
@@ -495,7 +495,7 @@ def validate_subagent(
     # diff-gates per `.agents/judge.md` item 19). Enforcing it here would
     # make that documented "without-replay" path unsatisfiable.
 
-    # v1.2 optional: opportunity_notes (cap ≤3 entries per session per agent).
+    # v1.2 optional: opportunity_notes (cap <=3 entries per session per agent).
     opportunity_notes = block.get("opportunity_notes")
     if opportunity_notes is not None:
         _validate_opportunity_notes(opportunity_notes, f"{source}.opportunity_notes")
@@ -504,9 +504,16 @@ def validate_subagent(
 def validate_state(block: dict[str, Any], source: str) -> None:
     """Validate the structured YAML block embedded in an agent-state:v1 comment.
 
-    Accepts schema_version values 1, 1.1, and 1.2.  opportunity_notes is
-    optional (v1.2).  All other agent-state fields are free-form prose
-    outside this structured block and are not validated here.
+    Accepts ``schema_version`` values 1, 1.1, and 1.2 when called directly
+    (e.g. via a ``subagent_compliance.state`` sub-block).  Note that the
+    top-level ``validate_loaded_block`` heuristic only routes bare
+    ``agent-state:v1`` YAML to this function when ``schema_version`` is
+    numerically exactly 1.2 (the version that introduced
+    ``opportunity_notes``); bare blocks tagged ``1`` or ``1.1`` keep their
+    pre-PR-#344 behavior and fall through to ``unknown top-level keys``.
+    ``opportunity_notes`` is optional (v1.2).  All other agent-state
+    fields are free-form prose outside this structured block and are not
+    validated here.
     """
     allowed_keys = {
         "schema_version",
