@@ -176,3 +176,13 @@ specific test names. "Tests pass" is not sufficient — name them.>
 migrations, public API). Anything explicitly NOT being addressed in this
 PR. Write "None" or "N/A — <reason>" for sections that don't apply —
 explicit acknowledgment, not silent omission.>
+
+### Opportunity notes
+
+<Optional. Surface up to 3 out-of-scope improvement opportunities
+you noticed during planning (toil patterns, stale docs, adjacent
+risks). Each note uses the 9-field shape defined in
+`.context/rules/process_opportunity_feedback.md` § "Required fields
+(9 total)". Cap is ≤3 per session per agent. Omit this section or
+write "None" if nothing to surface; do not fold opportunities into
+the plan scope.>

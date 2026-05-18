@@ -190,6 +190,18 @@ a one-line justification.
 - [ ] `test.sh` / `install.sh` updated for new template files (or: `not required — <why>`)
 - [ ] Cadence/format changes updated in READMEs and templates (or: `not required — <why>`)
 
+## Opportunity notes
+
+<!-- Optional. Up to 3 out-of-scope improvement opportunities surfaced
+     during the work that produced this PR. Each entry uses the
+     9-field shape defined in
+     `.context/rules/process_opportunity_feedback.md` § "Required
+     fields (9 total)". Cap is ≤3 per session per agent. Omit this
+     section or write "None" if nothing to surface; do not fold
+     opportunities into the PR scope. -->
+
+- None
+
 ## Risks / rollback
 
 <!-- One paragraph: what could break, how to revert. "Low risk, fully
