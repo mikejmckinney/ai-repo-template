@@ -29,6 +29,22 @@ All examples below are schema v1. Schema updates follow this policy:
   new major schema version and an ADR update.
 - Validators must keep accepting the previous major version for one release
   cycle after a breaking change unless Judge approves a narrower migration.
+- v1.2 (current for `subagent_compliance` and `agent-state:v1`) adds the
+  optional `opportunity_notes` field to support the opportunity-feedback
+  channel defined in `.context/rules/process_opportunity_feedback.md`.
+  v1.2 is fully backward-compatible with v1.1 and v1 readers: the field
+  is optional, absence is the default, and unknown-field tolerance applies
+  for any earlier-minor reader. Stage 3 (DevOps) extends validators to
+  accept `schema_version` values `1`, `1.1`, and `1.2` for
+  `subagent_compliance` blocks. **Note:** for **bare `agent-state:v1`**
+  YAML blocks, the top-level dispatch heuristic in
+  `scripts/lib/compliance_schema.py` (`validate_loaded_block`) only
+  routes blocks whose `schema_version` is numerically exactly `1.2`
+  through the agent-state validator; bare blocks declaring `1` or `1.1`
+  keep their pre-PR-#344 behavior and fall through to the generic
+  `unknown top-level keys` path. Authors emitting a new bare
+  `agent-state:v1` block (including any with `opportunity_notes`) must
+  declare `schema_version: 1.2`.
 
 ## `plan_compliance` v1
 
@@ -59,7 +75,7 @@ plan_compliance:
   instruction_resources:
     - resource: AGENTS.md
       why_applicable: Canonical startup and truth-hierarchy contract.
-      evidence: AGENTS_MD_VERSION 18; Session handshake v18 emitted.
+      evidence: AGENTS_MD_VERSION 19; Session handshake v19 emitted.
       decision_affected: Kept parent handshake versioning tied to AGENTS.md.
     - resource: .context/rules/process_doc_maintenance.md
       why_applicable: Plan changes ADRs, role files, docs, and checks.
@@ -137,8 +153,8 @@ do not encode the null-path reason in surrounding prose or in
 ```yaml
 parent_compliance:
   schema_version: 1
-  handshake_token: Session handshake v18
-  agents_md_version: 18
+  handshake_token: Session handshake v19
+  agents_md_version: 19
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
@@ -170,8 +186,8 @@ parent_compliance:
 ```yaml
 parent_compliance:
   schema_version: 1
-  handshake_token: Session handshake v18
-  agents_md_version: 18
+  handshake_token: Session handshake v19
+  agents_md_version: 19
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
@@ -181,10 +197,10 @@ parent_compliance:
     - docs
     - devops
   subagents_dispatched:
-    - schema_version: 1
+    - schema_version: 1.2
       role: docs
       role_contract_version: 1
-      agents_md_version: 18
+      agents_md_version: 19
       receipt:
         mode: visible-line
         value: Role receipt v1 — docs
@@ -200,10 +216,10 @@ parent_compliance:
       gates_invoked:
         - doc-trigger-check
       run_status: SUCCESS
-    - schema_version: 1
+    - schema_version: 1.2
       role: devops
       role_contract_version: 1
-      agents_md_version: 18
+      agents_md_version: 19
       receipt:
         mode: visible-line
         value: Role receipt v1 — devops
@@ -248,7 +264,7 @@ receipt evidence in this block.
 
 | Field | Type | Required | Description |
 |---|---|---:|---|
-| `schema_version` | integer | yes | Must be `1`. |
+| `schema_version` | number | yes | Numeric (int or float) literal. Current schema is `1.2`; readers must accept `1`, `1.1`, and `1.2` per the additive versioning policy above. Quoted-string forms (e.g. `"1.2"`) are rejected by `_require_schema_version_v12` — emit unquoted. |
 | `role` | string | yes | Canonical role name matching `.agents/<role>.md`. |
 | `role_contract_version` | integer | yes | Version declared by the canonical role contract. |
 | `agents_md_version` | integer | yes | Parent `AGENTS.md` version used by the subagent. |
@@ -260,15 +276,16 @@ receipt evidence in this block.
 | `gates_invoked` | list of strings | yes | Gate names invoked or attested to; empty list allowed. |
 | `run_status` | string | no (v1.1; default `SUCCESS`) | One of `SUCCESS`, `PARTIAL`, `BLOCKED_ON_RUNTIME`, `NEEDS_CONTEXT`. Optional at v1 to preserve backward compat per the versioning policy; absence implies `SUCCESS`. The silent-failure escape hatch (parent omits field on a failed dispatch) is addressed at the Judge diff-gate (`.agents/judge.md` item 19), not at the schema layer. See `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract". |
 | `apply_replays` | list of objects | no (v1.1) | Byte-anchored patches the parent can replay when `run_status != SUCCESS`. Each entry: `{path, anchor, replacement}` where `anchor` is a unique literal substring in the target file and `replacement` is the literal substitute. Required (non-empty) when `run_status` ∈ `{PARTIAL, BLOCKED_ON_RUNTIME}` and any role-owned edit did not land. |
+| `opportunity_notes` | list of objects | no (v1.2) | Per-dispatch opportunity-feedback notes. Each entry uses the 9-field shape defined in `.context/rules/process_opportunity_feedback.md` § "Required fields (9 total)": `title`, `evidence`, `impact`, `recommendation`, `scope`, `suggested_next_action`, `confidence`, `role_relevance`, `duplicate_check`. Capped at ≤3 entries per session per agent. Substantive-output subagents MUST include the field (empty list permitted); read-only subagents MAY omit. v1.2 is additive and fully backward-compatible with v1.1 readers (unknown field tolerated; absence is the default). |
 
 ### Example — Judge exact-output compliance
 
 ```yaml
 subagent_compliance:
-  schema_version: 1
+  schema_version: 1.2
   role: judge
   role_contract_version: 1
-  agents_md_version: 18
+  agents_md_version: 19
   receipt:
     mode: trailing-block
     value: Judge exact-output preserved; DECISION remained first line.
@@ -289,10 +306,10 @@ subagent_compliance:
 
 ```yaml
 subagent_compliance:
-  schema_version: 1
+  schema_version: 1.2
   role: critic
   role_contract_version: 1
-  agents_md_version: 18
+  agents_md_version: 19
   receipt:
     mode: trailing-block
     value: Critic exact-output preserved; CRITIC DECISION remained first line.
@@ -308,6 +325,46 @@ subagent_compliance:
   gates_invoked:
     - critic-review
   run_status: SUCCESS
+```
+
+## `agent-state:v1`
+
+The `agent-state:v1` GitHub-comment schema is defined by
+`.context/state/agent_state_comment_template.md` (ADR-025). The
+structured surfacing contract is mirrored here so validators and
+reviewers have a single reference alongside the other v1 schemas.
+
+### Versioning
+
+Current schema is `1.2`. v1.2 adds the optional `opportunity_notes`
+array to the comment body and is fully backward-compatible with v1.1
+and v1 readers (unknown field tolerated; absence is the default).
+
+### `opportunity_notes` field (v1.2, optional)
+
+`opportunity_notes` is an optional array of objects, capped at ≤3
+entries per session per agent. Each entry uses the 9-field shape
+defined in `.context/rules/process_opportunity_feedback.md` §
+"Required fields (9 total)": `title`, `evidence`, `impact`,
+`recommendation`, `scope`, `suggested_next_action`, `confidence`,
+`role_relevance`, `duplicate_check`. Empty list permitted;
+partially-filled entries are not — all 9 fields are required per
+entry per the rule.
+
+### Example — `agent-state:v1` with `opportunity_notes`
+
+```yaml
+schema_version: 1.2
+opportunity_notes:
+  - title: "scripts/closeout.sh re-reads agent_ownership.md on every call"
+    evidence: "scripts/closeout.sh:142-168 parses the ownership table per role iteration."
+    impact: "Closeout takes 8-12s instead of ~1s; toil at every PR merge."
+    recommendation: "Hoist the parse call out of the loop and cache the parsed table."
+    scope: script
+    suggested_next_action: file-issue
+    confidence: high
+    role_relevance: [devops]
+    duplicate_check: "Searched issues for 'closeout perf' — no open or recent items."
 ```
 
 ## CI-MUST validation rules for v1

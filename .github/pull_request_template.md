@@ -129,11 +129,13 @@ parent_compliance:
 **User outcome / 15-minute test performed:** <yes/no>
 
 **Steps performed:**
+
 1. <step>
 2. <step>
 3. <step>
 
 **Evidence:**
+
 - <link/excerpt/transcript/screenshot/checklist result>
 
 **Result:** <problem statement resolved | not resolved | framing disconnect | blocked>
@@ -189,6 +191,18 @@ a one-line justification.
 - [ ] `scripts/setup.sh` `_ensure_label` list updated alongside pipeline label additions (or: `not required — <why>`)
 - [ ] `test.sh` / `install.sh` updated for new template files (or: `not required — <why>`)
 - [ ] Cadence/format changes updated in READMEs and templates (or: `not required — <why>`)
+
+## Opportunity notes
+
+<!-- Optional. Up to 3 out-of-scope improvement opportunities surfaced
+     during the work that produced this PR. Each entry uses the
+     9-field shape defined in
+     `.context/rules/process_opportunity_feedback.md` § "Required
+     fields (9 total)". Cap is ≤3 per session per agent. Omit this
+     section or write "None" if nothing to surface; do not fold
+     opportunities into the PR scope. -->
+
+- None
 
 ## Risks / rollback
 

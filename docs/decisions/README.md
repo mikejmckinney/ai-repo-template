@@ -40,6 +40,7 @@
 | [ADR-024](./adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning — optional opt-in workflow shipped as prompt + guide; no new `synthesizer` role in v1 | Accepted |
 | [ADR-025](./adr-025-github-issues-pr-comments-as-live-state.md) | GitHub Issues, PRs, comments, and labels as live agent state | Accepted |
 | [ADR-026](./adr-026-compliance-contracts.md) | Agent compliance contracts and role receipt evidence | Accepted |
+| [ADR-027](./adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel for in-scope agent observations | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.

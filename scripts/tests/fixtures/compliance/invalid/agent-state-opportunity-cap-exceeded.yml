@@ -1,0 +1,40 @@
+# Invalid: opportunity_notes exceeds the ≤3 per-session cap from
+# process_opportunity_feedback.md § "Cap and discipline".
+schema_version: 1.2
+opportunity_notes:
+  - title: "First opportunity entry"
+    evidence: "fixture line"
+    impact: "fixture impact"
+    recommendation: "fixture rec"
+    scope: "rule"
+    suggested_next_action: "discuss"
+    confidence: "low"
+    role_relevance: [docs]
+    duplicate_check: "n/a"
+  - title: "Second opportunity entry"
+    evidence: "fixture line"
+    impact: "fixture impact"
+    recommendation: "fixture rec"
+    scope: "rule"
+    suggested_next_action: "discuss"
+    confidence: "low"
+    role_relevance: [docs]
+    duplicate_check: "n/a"
+  - title: "Third opportunity entry"
+    evidence: "fixture line"
+    impact: "fixture impact"
+    recommendation: "fixture rec"
+    scope: "rule"
+    suggested_next_action: "discuss"
+    confidence: "low"
+    role_relevance: [docs]
+    duplicate_check: "n/a"
+  - title: "Fourth entry — over the cap"
+    evidence: "fixture line"
+    impact: "fixture impact"
+    recommendation: "fixture rec"
+    scope: "rule"
+    suggested_next_action: "discuss"
+    confidence: "low"
+    role_relevance: [docs]
+    duplicate_check: "n/a"

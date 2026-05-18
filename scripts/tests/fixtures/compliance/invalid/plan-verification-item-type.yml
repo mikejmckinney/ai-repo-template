@@ -5,7 +5,7 @@ plan_compliance:
   instruction_resources:
     - resource: AGENTS.md
       why_applicable: Canonical startup and truth-hierarchy contract.
-      evidence: AGENTS_MD_VERSION 18; Session handshake v18 emitted.
+      evidence: AGENTS_MD_VERSION 19; Session handshake v19 emitted.
       decision_affected: Invalid fixture uses a non-string verification command.
   role_dispatch:
     decision: staged-dispatch

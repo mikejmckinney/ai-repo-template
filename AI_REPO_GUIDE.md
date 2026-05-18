@@ -54,6 +54,7 @@ bash install.sh
 │   │   ├── agent_ownership.md
 │   │   ├── domain_code_quality.md
 │   │   ├── process_doc_maintenance.md
+│   │   ├── process_opportunity_feedback.md
 │   │   ├── process_subagent_bootstrap.md
 │   │   └── repo_orchestration_patterns.md
 │   ├── sessions/             # Durable retrospective lessons
@@ -196,9 +197,10 @@ bash install.sh
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
+| `.context/rules/process_opportunity_feedback.md` | Opportunity feedback (out-of-scope notes channel) — When you notice an out-of-scope improvement opportunity during in-scope work |
 | `.context/rules/process_subagent_bootstrap.md` | ADR-026 parent dispatch packet, subagent startup order, and `subagent_compliance` return contract |
 | `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP8`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
-| Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025) |
+| Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025). May embed an optional `opportunity_notes` YAML block (v1.2; ADR-027) for out-of-scope improvement notes — see `docs/compliance_schemas.md` § "agent-state:v1". |
 | `.context/state/agent_state_comment_template.md` | Copy/paste template for live coordination comments |
 | `.context/state/coordination.md` | Legacy manual claim board / compatibility view; may be stale |
 | `.context/state/feedback_template.md` | Stakeholder feedback capture template |

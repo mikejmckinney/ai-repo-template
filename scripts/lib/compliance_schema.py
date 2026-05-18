@@ -35,6 +35,10 @@ _YAML_FENCE_RE = re.compile(r"^[ \t]*```yaml[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?:\n|
 _AGENTS_MD_VERSION_RE = re.compile(r"AGENTS_MD_VERSION:\s*(?P<version>\d+)")
 _HANDSHAKE_RE = re.compile(r"^Session handshake v(?P<version>\d+)$")
 
+# Accepted schema_version values for subagent_compliance and agent-state:v1.
+# v1.2 (additive) adds opportunity_notes; v1 and v1.1 remain accepted.
+_ALLOWED_SCHEMA_VERSIONS_V12 = frozenset({1.0, 1.1, 1.2})
+
 
 def load_yaml(path: Path) -> Any:
     try:
@@ -157,6 +161,19 @@ def _require_schema_version(mapping: dict[str, Any], source: str) -> None:
     _require_type(mapping.get("schema_version"), int, f"{source}.schema_version")
     if mapping["schema_version"] != 1:
         raise ComplianceError(f"{source}: schema_version must be 1")
+
+
+def _require_schema_version_v12(mapping: dict[str, Any], source: str) -> None:
+    """Accept schema_version values 1, 1.1, and 1.2 (int or float, not bool)."""
+    version = mapping.get("schema_version")
+    if version is None or type(version) is bool or not isinstance(version, (int, float)):
+        type_name = type(version).__name__ if version is not None else "NoneType"
+        raise ComplianceError(f"{source}.schema_version: expected int or float, got {type_name}")
+    if float(version) not in _ALLOWED_SCHEMA_VERSIONS_V12:
+        allowed = ", ".join(str(int(v) if v == int(v) else v) for v in sorted(_ALLOWED_SCHEMA_VERSIONS_V12))
+        raise ComplianceError(
+            f"{source}: schema_version must be one of {{{allowed}}}; got {version}"
+        )
 
 
 def _require_string_list(items: Any, source: str) -> None:
@@ -287,6 +304,91 @@ def _validate_verification_results(items: Any, source: str) -> None:
             _require_non_empty_string(item[key], f"{item_source}.{key}")
 
 
+
+_OPPORTUNITY_NOTE_REQUIRED_KEYS = frozenset({
+    "title", "evidence", "impact", "recommendation", "scope",
+    "suggested_next_action", "confidence", "role_relevance", "duplicate_check",
+})
+
+# Enum allowed-values from .context/rules/process_opportunity_feedback.md
+# § "Required fields (9 total)". suggested_next_action also accepts the
+# parameterised form `fold-into-<digits>` (e.g. `fold-into-337`).
+_OPPORTUNITY_SCOPE_VALUES = frozenset({"rule", "script", "doc", "workflow", "code", "test", "process"})
+_OPPORTUNITY_CONFIDENCE_VALUES = frozenset({"high", "medium", "low"})
+_OPPORTUNITY_NEXT_ACTION_LITERALS = frozenset({"file-issue", "discuss", "defer"})
+_OPPORTUNITY_FOLD_INTO_RE = re.compile(r"^fold-into-\d+$")
+# Canonical role names — derived dynamically from .agents/<role>.md frontmatter
+# via canonical_role_versions() rather than hardcoded, so adding/removing a
+# canonical role file is automatically reflected here (PR #344 R15 gemini).
+# Accepts repo_root so callers that pass a non-default repo (tests, fixtures)
+# get role values from that tree, not the module-level REPO_ROOT
+# (PR #344 R16 cursor).
+def _opportunity_role_values(repo_root: Path = REPO_ROOT) -> frozenset[str]:
+    return frozenset(canonical_role_versions(repo_root).keys())
+# Title length cap from process_opportunity_feedback.md § "Required fields".
+_OPPORTUNITY_TITLE_MAX = 80
+
+
+def _validate_opportunity_notes(
+    items: Any,
+    source: str,
+    repo_root: Path = REPO_ROOT,
+    valid_roles: Optional[frozenset[str]] = None,
+) -> None:
+    """Validate the optional opportunity_notes list (v1.2, cap <=3 per session).
+
+    ``valid_roles`` may be passed in by callers that have already computed
+    the canonical role set (e.g. ``validate_subagent`` reuses ``versions``)
+    to avoid re-walking ``.agents/*.md``. Uses an explicit ``is not None``
+    check so an empty frozenset injected by tests still suppresses the
+    fallback disk walk (PR #344 R18 gemini).
+    """
+    _require_type(items, list, source)
+    if not items:
+        return
+    if len(items) > 3:
+        raise ComplianceError(f"{source}: opportunity_notes must have <=3 entries; got {len(items)}")
+    # Compute valid_roles once outside the per-item loop so .agents/*.md is
+    # walked once per list, not once per item (PR #344 R17 gemini), unless
+    # the caller already supplied the set (PR #344 R18 gemini).
+    if valid_roles is None:
+        valid_roles = _opportunity_role_values(repo_root)
+    for idx, item in enumerate(items):
+        item_source = f"{source}[{idx}]"
+        _require_type(item, dict, item_source)
+        _require_keys(item, _OPPORTUNITY_NOTE_REQUIRED_KEYS, item_source)
+        _reject_unknown_keys(item, _OPPORTUNITY_NOTE_REQUIRED_KEYS, item_source)
+        _require_non_empty_string(item["title"], f"{item_source}.title")
+        if len(item["title"]) > _OPPORTUNITY_TITLE_MAX:
+            raise ComplianceError(
+                f"{item_source}.title: must be <={_OPPORTUNITY_TITLE_MAX} characters; got {len(item['title'])}"
+            )
+        _require_non_empty_string(item["evidence"], f"{item_source}.evidence")
+        _require_non_empty_string(item["impact"], f"{item_source}.impact")
+        _require_non_empty_string(item["recommendation"], f"{item_source}.recommendation")
+        _require_non_empty_string(item["scope"], f"{item_source}.scope")
+        if item["scope"] not in _OPPORTUNITY_SCOPE_VALUES:
+            allowed = ", ".join(sorted(_OPPORTUNITY_SCOPE_VALUES))
+            raise ComplianceError(f"{item_source}.scope: must be one of {{{allowed}}}; got {item['scope']!r}")
+        _require_non_empty_string(item["suggested_next_action"], f"{item_source}.suggested_next_action")
+        nxt = item["suggested_next_action"]
+        if nxt not in _OPPORTUNITY_NEXT_ACTION_LITERALS and not _OPPORTUNITY_FOLD_INTO_RE.match(nxt):
+            allowed = ", ".join(sorted(_OPPORTUNITY_NEXT_ACTION_LITERALS)) + ", fold-into-<n>"
+            raise ComplianceError(f"{item_source}.suggested_next_action: must be one of {{{allowed}}}; got {nxt!r}")
+        _require_non_empty_string(item["confidence"], f"{item_source}.confidence")
+        if item["confidence"] not in _OPPORTUNITY_CONFIDENCE_VALUES:
+            allowed = ", ".join(sorted(_OPPORTUNITY_CONFIDENCE_VALUES))
+            raise ComplianceError(f"{item_source}.confidence: must be one of {{{allowed}}}; got {item['confidence']!r}")
+        _require_string_list(item["role_relevance"], f"{item_source}.role_relevance")
+        for role in item["role_relevance"]:
+            if role not in valid_roles:
+                allowed = ", ".join(sorted(valid_roles))
+                raise ComplianceError(
+                    f"{item_source}.role_relevance: contains invalid role {role!r}; must be one of {{{allowed}}}"
+                )
+        _require_non_empty_string(item["duplicate_check"], f"{item_source}.duplicate_check")
+
+
 def validate_plan(block: dict[str, Any], source: str) -> None:
     allowed_keys = {
         "schema_version",
@@ -335,11 +437,13 @@ def validate_subagent(
         # diff-gate (.agents/judge.md item 19), not at the schema layer.
         "run_status",
         "apply_replays",
+        # v1.2 (additive, optional): opportunity feedback channel.
+        "opportunity_notes",
     }
-    required_keys = allowed_keys - {"run_status", "apply_replays"}
+    required_keys = allowed_keys - {"run_status", "apply_replays", "opportunity_notes"}
     _require_keys(block, required_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
-    _require_schema_version(block, source)
+    _require_schema_version_v12(block, source)
     _require_type(block["role"], str, f"{source}.role")
     _require_type(block["role_contract_version"], int, f"{source}.role_contract_version")
     _require_type(block["agents_md_version"], int, f"{source}.agents_md_version")
@@ -412,6 +516,45 @@ def validate_subagent(
     # the parent must document in `monolithic_justification` (and the judge
     # diff-gates per `.agents/judge.md` item 19). Enforcing it here would
     # make that documented "without-replay" path unsatisfiable.
+
+    # v1.2 optional: opportunity_notes (cap <=3 entries per session per agent).
+    # Reuse the already-computed ``versions`` map so opportunity_notes
+    # validation doesn't re-walk .agents/*.md (PR #344 R18 gemini).
+    opportunity_notes = block.get("opportunity_notes")
+    if opportunity_notes is not None:
+        _validate_opportunity_notes(
+            opportunity_notes,
+            f"{source}.opportunity_notes",
+            repo_root,
+            valid_roles=frozenset(versions.keys()),
+        )
+
+
+def validate_state(block: dict[str, Any], source: str, repo_root: Path = REPO_ROOT) -> None:
+    """Validate the structured YAML block embedded in an agent-state:v1 comment.
+
+    Accepts ``schema_version`` values 1, 1.1, and 1.2 when called directly
+    (e.g. via a ``subagent_compliance.state`` sub-block).  Note that the
+    top-level ``validate_loaded_block`` heuristic only routes bare
+    ``agent-state:v1`` YAML to this function when ``schema_version`` is
+    numerically exactly 1.2 (the version that introduced
+    ``opportunity_notes``); bare blocks tagged ``1`` or ``1.1`` keep their
+    pre-PR-#344 behavior and fall through to ``unknown top-level keys``.
+    ``opportunity_notes`` is optional (v1.2).  All other agent-state
+    fields are free-form prose outside this structured block and are not
+    validated here.
+    """
+    allowed_keys = {
+        "schema_version",
+        # v1.2 (additive, optional): opportunity feedback channel.
+        "opportunity_notes",
+    }
+    _require_keys(block, {"schema_version"}, source)
+    _reject_unknown_keys(block, allowed_keys, source)
+    _require_schema_version_v12(block, source)
+    opportunity_notes = block.get("opportunity_notes")
+    if opportunity_notes is not None:
+        _validate_opportunity_notes(opportunity_notes, f"{source}.opportunity_notes", repo_root)
 
 
 def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:
@@ -524,6 +667,30 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
 def validate_loaded_block(data: Any, source: str, repo_root: Path = REPO_ROOT) -> None:
     _require_type(data, dict, source)
     assert_no_overlay_version(data, source)
+    # Agent-state:v1 YAML blocks are embedded in GitHub comments without a
+    # compliance-key wrapper (plan_compliance / parent_compliance /
+    # subagent_compliance). Detect by:
+    #   1. The block contains schema_version (required for state).
+    #   2. schema_version is numerically exactly 1.2 — the additive v1.2
+    #      revision is the only agent-state schema validate_state enforces
+    #      here. Older bare blocks (e.g. {schema_version: 1}) keep their
+    #      pre-PR-#344 behavior and fall through to "unknown top-level
+    #      keys", preventing a stray YAML fragment from silently passing.
+    #   3. The block's key set is a subset of _AGENT_STATE_KEYS, i.e. it
+    #      contains ONLY schema_version and optionally opportunity_notes.
+    # If a future state field is added, extend _AGENT_STATE_KEYS (and the
+    # version check) in lockstep with docs/compliance_schemas.md
+    # § "agent-state:v1".
+    _AGENT_STATE_KEYS = {"schema_version", "opportunity_notes"}
+    schema_version = data.get("schema_version")
+    is_v12_numeric = (
+        isinstance(schema_version, (int, float))
+        and not isinstance(schema_version, bool)
+        and float(schema_version) == 1.2
+    )
+    if is_v12_numeric and set(data.keys()).issubset(_AGENT_STATE_KEYS):
+        validate_state(data, source, repo_root)
+        return
     unknown_keys = [key for key in data if key not in VALID_TOP_LEVEL_KEYS]
     if unknown_keys:
         formatted = ", ".join(str(key) for key in unknown_keys)

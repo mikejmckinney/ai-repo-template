@@ -15,6 +15,7 @@ happened was Z." Without the second half, the same mistakes recur.
 |---|---|---|---|
 | [postmortem-001](./postmortem-001-workflow-bypass.md) | Workflow bypass on Phases 2–7 (downstream `cmmc-level2-aws-enclave-reference2`) | 2026-04-24 | Yes — triggered [ADR-012](../decisions/adr-012-explicit-workflow-preconditions.md) |
 | [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) | Prompts 1–6 produced architecture instead of working demo (downstream `cloud_migration_POC`) | 2026-04-15 | Yes — design-for-outcomes enforcement (#69 / PR #70, #201 / PR #203); supersedes [#219](https://github.com/mikejmckinney/ai-repo-template/issues/219) |
+| [postmortem-004](./postmortem-004-opportunity-feedback-channel.md) | Delivering the opportunity feedback channel (issue #337) | 2026-05-18 | Yes — triggered [ADR-027](../decisions/adr-027-opportunity-feedback-channel.md) |
 
 When you add a new postmortem, add a row above. The "Generalizes?" column is
 the only one that affects the template — see "What generalizes" below.
@@ -48,7 +49,6 @@ before starting non-trivial work in that stack.
 ### multi-prompt-sequence
 
 - [postmortem-002](./postmortem-002-poc-outcome-mismatch.md) — Prompts 1–6 produced architecture instead of working demo (also: prompt-engineering)
-
 
 ## When to write a postmortem
 

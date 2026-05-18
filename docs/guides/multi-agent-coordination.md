@@ -29,7 +29,7 @@ Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-0
 2. **GitHub issue body** — durable task/feature contract and gate input.
 3. **GitHub PR body** — implementation, plan, verification, and review contract.
 4. **Latest `agent-state:v1` issue/PR comment** — live status, blockers, next actions, and handoff baton.
-5. **Labels** — coarse workflow filters: `agent:claimed`, `agent:blocked`, `agent:awaiting-review`.
+5. **Labels** — coarse workflow filters: `agent:claimed`, `agent:blocked`, `agent:awaiting-review`. The `agent-suggested` label (ADR-027) marks follow-up issues filed from the `opportunity_notes` channel inside `agent-state:v1` comments (see [`.context/rules/process_opportunity_feedback.md`](../../.context/rules/process_opportunity_feedback.md)).
 
 Legacy `.context/state/_active.md`, `.context/state/coordination.md`, `task_*.md`, and `handoff_*.md` files may exist while pre-ADR-025 branches drain. Treat them as compatibility/migration evidence, not the primary live-state source for GitHub-connected work.
 
@@ -74,7 +74,7 @@ See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the ration
 
 ## End-to-End Flow
 
-```
+```text
   user request
        │
        ▼
@@ -145,7 +145,7 @@ ADR-025 keeps the state machine in GitHub comments/labels instead of requiring m
 
 Each implementer works on a branch named `feature/<role>-<task-id>`. For example:
 
-```
+```text
 feature/frontend-login-form
 feature/backend-auth-api
 feature/docs-auth-guide
@@ -172,7 +172,7 @@ Conflicts are prevented by layered defenses. Earlier layers are cheaper.
 
 ### Step 1 — Architect plans
 
-```
+```text
 PLAN: Add login
 
 PHASES:

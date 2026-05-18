@@ -76,6 +76,14 @@ Required discipline:
   an empty list.
 - List skipped pointers only when a potentially relevant pointer was
   consciously skipped, with a specific reason.
+- Include an `opportunity_notes` field (same 9-field shape as the
+  `agent-state:v1` `opportunity_notes` array — see
+  `.context/rules/process_opportunity_feedback.md` § "Required fields
+  (9 total)") when the subagent produced or modified files.
+  `opportunity_notes: []` (empty list) is permitted and is the
+  common case. Read-only subagents (Analyst pre-flight, Judge
+  gate review, Critic review with no diff) MAY omit the field
+  entirely. The ≤3-per-session cap applies.
 - Do not claim runtime proof. The block is evidence reported by the role, not
   proof that the host enforced dispatch or handoff behavior.
 

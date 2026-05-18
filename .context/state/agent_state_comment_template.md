@@ -36,3 +36,18 @@ associated checks/docs.
 Do not add long decision history, full file lists, verification matrices,
 or durable retrospective lessons here. Use plan comments, PR bodies, ADRs,
 CI, `.context/sessions/latest_summary.md`, and session archives for those.
+
+## Optional `opportunity_notes` YAML block (v1.2)
+
+The `agent-state:v1` comment may optionally embed a structured YAML block
+carrying `opportunity_notes` per ADR-027 and the
+[`process_opportunity_feedback.md`](../rules/process_opportunity_feedback.md)
+rule. When present, it sits inside a fenced ```yaml block within the
+comment body and is parsed/validated by
+`scripts/lib/compliance_schema.py::validate_state`. Each entry must
+include all 9 required fields (title, evidence, impact, recommendation,
+scope, suggested_next_action, confidence, role_relevance, duplicate_check).
+Cap: ≤3 per session per agent. PMs may apply the `agent-suggested` label
+to items they file as follow-up issues from this channel. See
+`docs/compliance_schemas.md` § "agent-state:v1" for the canonical schema
+and a worked example.

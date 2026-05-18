@@ -9,7 +9,7 @@ review resolution. Everything else (implementation, draft→ready
 transition, CI, bot reviews, queue management) runs without
 intervention:
 
-```
+```text
 backlog.yaml          Issue auto-created       Gated assignment        Copilot implements
 (machine-readable) →  (copilot:ready label) →  (concurrent + daily →   and opens PR
                                                 budget; queue if full)         │
@@ -54,11 +54,13 @@ Schema: validate `backlog.yaml` locally with
 `pip install check-jsonschema && check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml`.
 
 ### Step 1: You create an issue and assign to Copilot
+
 Write an issue with the prompt instructions. Assign `@copilot` as the assignee.
 Copilot reads `AGENTS.md`, your custom instructions, and the issue body, then
 works autonomously in a GitHub Actions environment.
 
 ### Step 1.5: Implementation plan posted as issue comment (required)
+
 Before writing any implementation code, the assigned agent posts an
 Implementation Plan as a comment on the issue using
 `.github/PLAN_TEMPLATE.md`. The plan captures the implementer's lens
@@ -85,6 +87,7 @@ sync`. Judge advises (REQUEST_CHANGES, not BLOCK) on missing or stale
 entries in v1.
 
 ### Step 2: Copilot opens a PR (automatic)
+
 Copilot creates a `copilot/issue-{number}` branch, implements the feature,
 and opens a draft PR. After the Copilot run finishes, the
 `agent-auto-ready.yml` workflow transitions the PR from draft to ready
@@ -96,7 +99,9 @@ requesting review. If role subagents were used, copy their parsed
 be retained for provenance but is not the canonical validator input.
 
 ### Step 3: Review bots fire (automatic)
+
 With workflow approval disabled (see Setup below), these fire immediately on PR open / `ready_for_review`:
+
 - **Gemini Code Assist** — posts review via `gemini-code-assist[bot]`
 - **Claude auto-review** — posts review via your `claude.yml` workflow
 - **Copilot code review** — posts review if configured as a required reviewer
@@ -109,6 +114,7 @@ With workflow approval disabled (see Setup below), these fire immediately on PR 
 **Alternative: Copilot ruleset** — GitHub offers a server-side ruleset (Settings → Rules → Rulesets → "Automatically request Copilot code review") that should re-request Copilot on every push. We tried it on this repo (April 2026) and it did **not** fire on push. Keeping it enabled is harmless (worst case, Copilot reviews twice if GitHub later fixes it). If the ruleset works for your fork, you can drop the Copilot half of `agent-review-on-push.yml`.
 
 ### Step 4: Resolve review comments (opt-in via `claude-fix` or `copilot-relay` label)
+
 `agent-fix-reviews.yml` (Claude path) and `agent-relay-reviews.yml`
 (Copilot path) are alternative review-resolution workflows. Pick one
 per PR by adding the corresponding label — see
@@ -156,6 +162,7 @@ cost. See `agent-relay-reviews.yml`.
 **Bot-mention neutralization (relay path)**: when `agent-relay-reviews.yml` forwards review comment bodies in the relay comment, it wraps every `@`-mention except `@copilot` in backticks so forwarded text does not re-trigger other bots. The regex negative lookahead `(?!copilot(?:[^A-Za-z0-9_-]|$))` preserves the bare `@copilot` dispatch handle while wrapping all others (including `@copilot-swe-agent`). If a relayed review body re-triggers an unexpected bot, verify the neutralization step ran and check for an unguarded mention. See the `neutralize_mentions` / `def neutralize` jq function in the `build-relay-comment` step of `agent-relay-reviews.yml` for the canonical implementation. (Issue #225: a relayed Codex banner re-triggered Codex into a full session against the relay comment.)
 
 ### Step 5: Auto-merge (opt-in via `auto-merge` label)
+
 `agent-auto-merge.yml` triggers when checks complete, reviews change, or
 labels change. It is **opt-in**: a PR only auto-merges when a maintainer
 (or automation) applies the `auto-merge` label to it. The label applies
@@ -209,7 +216,7 @@ The classifier deliberately defaults to *more* restrictive when in doubt: a dele
 Both Claude and Copilot support a symmetric one-liner for running any prompt
 under `.github/prompts/` against the current PR:
 
-```
+```text
 @claude follow .github/prompts/pr-resolve-all.md
 @copilot follow .github/prompts/pr-resolve-all.md
 ```
@@ -237,6 +244,7 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 | `CLAUDE_PAT` | All 12 agent workflows that call `gh` (assignment, auto-merge, auto-ready, coordination-sync, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
 | `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
 | `SANDBOX_BOOTSTRAP_TOKEN` | Sandbox verification steps (force-push sandbox `main`, push branch, `gh pr create/merge` on the sandbox repo). Used by agents running in workflows; maintainers running locally pass the same token as `BOOTSTRAP_GH_TOKEN` env var instead. | Classic PAT, `repo` + `workflow` scopes. Must be classic — fine-grained tokens cannot push `.github/workflows/` files without special account-level scope that typically isn't available until after the sandbox repo is created. See `docs/guides/sandbox-verification.md`. |
+
 **Two ways to provide them**, in order of preference for users running multiple derived repos:
 
 1. **Org-level (recommended for org users).** Org settings → Secrets and variables → Actions → New organization secret → grant access to the relevant repos. New repos in the org pick up the secrets automatically. The `Verify required secrets` guard treats org-granted secrets identically to per-repo ones.
@@ -255,12 +263,13 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `MAX_COPILOT_DAILY` | `10` | Max Copilot assignments in a rolling 24-hour window. Spend thresholds: informational log at 50%, warning comment on issue at 75%, hard pause on new assignments at 90% (`copilot:budget-paused` label applied; bypassed by `cap-override` label on the issue — same label on a PR bypasses the round cap, see `PR_RESOLVE_MAX_ROUNDS` below), `copilot:daily-cap-hit` label at 100%. |
 | `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. **Also caps `agent-review-on-push.yml`** so Gemini/Copilot push-nudges stop firing after the same N rounds — without this, every fix-commit re-triggers stateless reviewers that re-flag already-deferred findings (PR #246 saw this across 13 rounds). Per-PR override: `cap-override` label on the PR (unbounded; bypasses both the agent-side cap and the push-nudge cap) or `@<agent> cap-override N` comment on the PR (N rounds). Manual `/gemini review` comments by humans are never gated. Only raise the default from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
-
 ### 1. Copilot subscription
+
 Any paid plan works: Pro ($10/mo), Pro+ ($39/mo), or Business ($21/seat/mo).
 The cloud agent is included.
 
 ### 2. Anthropic API key
+
 Get one from https://console.anthropic.com.
 Add as repo secret: **Settings → Secrets and variables → Actions → `ANTHROPIC_API_KEY`**
 
@@ -268,19 +277,24 @@ This is ONLY used for review resolution (Step 4), not implementation.
 Expected cost: $1-3 per PR.
 
 ### 3. Claude GitHub App
+
 Install from https://github.com/apps/claude on your repo.
 
 ### 4. Gemini Code Assist (already installed)
+
 Your `.gemini/config.yaml` and `.gemini/styleguide.md` configure its behavior.
 
 ### 5. Disable workflow approval for Copilot
+
 **Settings → Copilot → Cloud agent → disable "Require approval for workflow runs"**
 
 Without this, you'll have to manually click "Approve and run" every time
 Copilot pushes — which defeats the purpose.
 
 ### 6. Branch protection (if enabled)
+
 If `main` has branch protection requiring approvals:
+
 - Add `github-actions[bot]` to the "Allow specified actors to bypass" list
 - OR set required approvals to 0 (since bot reviews don't count as approvals)
 
@@ -312,8 +326,10 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `chore:no-plan` | `#EDEDED` (gray) | Exempt issue/PR from the plan-as-comment requirement (see ADR-011) |
 | `outcome-validated` | `#0E8A16` (green) | Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014) |
 | `cap-override` | `#FBCA04` (amber) | Bypass max-round cap (`pr-resolve-all.md`) and 90% daily spend pause (`agent-assign-copilot.yml`) |
+| `agent-suggested` | `#BFD4F2` (light blue) | Agent-surfaced opportunity; see process_opportunity_feedback rule. |
 
 **Resolution-path selection:**
+
 - Default: no automated resolution. Add a label to opt in.
 - Add `claude-fix` to enable Claude (Sonnet) resolution of all bot/human
   review comments via `agent-fix-reviews.yml`. Workflow-file changes
@@ -343,7 +359,9 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
   Anthropic API cost).
 
 ### 8. Install the workflow files
+
 Copy to `.github/workflows/`:
+
 - `agent-fix-reviews.yml` — Claude (Sonnet) resolves review comments (opt-in via `claude-fix`)
 - `agent-relay-reviews.yml` — Copilot relay (opt-in via `copilot-relay`)
 - `agent-auto-ready.yml` — flips Copilot draft PRs to ready for review
@@ -351,11 +369,13 @@ Copy to `.github/workflows/`:
 - `agent-review-on-push.yml` — nudges Gemini + Copilot to re-review after each push (opt-out via repo variable `REVIEW_ON_PUSH=false`)
 
 Also add this repository secret in **Settings → Secrets and variables → Actions**:
+
 - `CLAUDE_PAT` — fine-grained PAT required by `agent-fix-reviews.yml` so
   Claude can push review fixes when the trigger is a bot review. See the
   auth notes in `agent-fix-reviews.yml` for the exact token scope.
 
 These work alongside your existing workflows:
+
 - `claude.yml` — auto-review on PR open (already in your repo)
 - `ci-tests.yml` — CI checks (already in your repo)
 
@@ -404,7 +424,7 @@ responding to review feedback. Lessons learned from running this and
 future downstream projects are tracked under issue #150. A related
 discovery — whether prompt files themselves should be the dispatch
 source of truth (skipping `backlog.yaml`) — is tracked under issue
-#155.
+[#155](https://github.com/mikejmckinney/ai-repo-template/issues/155).
 
 ### Step-by-step
 
@@ -540,7 +560,7 @@ Each role is pinned to a cost tier. The canonical table lives in [ADR-019 § Dec
 |---|---|---|---|
 | analyst, architect, judge | High | `claude-opus-4-7` | `'Claude Opus 4.7 (copilot)'` |
 | critic, pm, backend, frontend, devops | Mid | `claude-sonnet-4-6` | `'Claude Sonnet 4.6 (copilot)'` |
-| qa, docs | Low | `inherit` | _(omitted; inherits main session)_ |
+| qa, docs | Low | `inherit` | *(omitted; inherits main session)* |
 
 **Critic escalates to Judge (Opus) on `severity: high`** — role-to-role handoff, not in-place model upgrade.
 
