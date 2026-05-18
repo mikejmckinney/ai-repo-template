@@ -6,7 +6,7 @@ plan_compliance:
   instruction_resources:
     - resource: AGENTS.md
       why_applicable: Canonical startup and truth-hierarchy contract.
-      evidence: AGENTS_MD_VERSION 18; Session handshake v18 emitted.
+      evidence: AGENTS_MD_VERSION 18; Session handshake v19 emitted.
       decision_affected: Required parent evidence in the plan.
     - resource: .context/rules/process_subagent_bootstrap.md
       why_applicable: Work dispatches role subagents.

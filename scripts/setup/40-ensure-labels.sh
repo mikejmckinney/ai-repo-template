@@ -42,6 +42,7 @@ agent:awaiting-review|F29513|Agent work is awaiting review; details live in the 
 chore:no-plan|EDEDED|Exempt this issue/PR from the plan-as-comment requirement (ADR-011)
 outcome-validated|0E8A16|Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)
 cap-override|FBCA04|Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)
+agent-suggested|BFD4F2|Improvement opportunity surfaced by an agent during work, per .context/rules/process_opportunity_feedback.md. Pending triage.
 LABEL_SPECS
 )
 _PIPELINE_LABELS=$(printf '%s\n' "$_PIPELINE_LABEL_SPECS" | awk -F'|' 'NF { printf "%s%s", sep, $1; sep=", " } END { print "" }')

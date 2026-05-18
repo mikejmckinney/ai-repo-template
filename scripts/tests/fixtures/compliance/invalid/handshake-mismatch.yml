@@ -1,7 +1,7 @@
 parent_compliance:
   schema_version: 1
   handshake_token: Session handshake v15
-  agents_md_version: 18
+  agents_md_version: 19
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true

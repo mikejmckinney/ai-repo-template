@@ -2,7 +2,7 @@ subagent_compliance:
   schema_version: 1
   role: docs
   role_contract_version: 1
-  agents_md_version: 18
+  agents_md_version: 19
   receipt:
     mode: handwritten-note
     value: Role receipt v1 — docs

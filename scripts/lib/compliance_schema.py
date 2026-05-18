@@ -35,6 +35,10 @@ _YAML_FENCE_RE = re.compile(r"^[ \t]*```yaml[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?:\n|
 _AGENTS_MD_VERSION_RE = re.compile(r"AGENTS_MD_VERSION:\s*(?P<version>\d+)")
 _HANDSHAKE_RE = re.compile(r"^Session handshake v(?P<version>\d+)$")
 
+# Accepted schema_version values for subagent_compliance and agent-state:v1.
+# v1.2 (additive) adds opportunity_notes; v1 and v1.1 remain accepted.
+_ALLOWED_SCHEMA_VERSIONS_V12 = frozenset({1.0, 1.1, 1.2})
+
 
 def load_yaml(path: Path) -> Any:
     try:
@@ -157,6 +161,19 @@ def _require_schema_version(mapping: dict[str, Any], source: str) -> None:
     _require_type(mapping.get("schema_version"), int, f"{source}.schema_version")
     if mapping["schema_version"] != 1:
         raise ComplianceError(f"{source}: schema_version must be 1")
+
+
+def _require_schema_version_v12(mapping: dict[str, Any], source: str) -> None:
+    """Accept schema_version values 1, 1.1, and 1.2 (int or float, not bool)."""
+    version = mapping.get("schema_version")
+    if version is None or type(version) is bool or not isinstance(version, (int, float)):
+        type_name = type(version).__name__ if version is not None else "NoneType"
+        raise ComplianceError(f"{source}.schema_version: expected int or float, got {type_name}")
+    if float(version) not in _ALLOWED_SCHEMA_VERSIONS_V12:
+        allowed = ", ".join(str(int(v) if v == int(v) else v) for v in sorted(_ALLOWED_SCHEMA_VERSIONS_V12))
+        raise ComplianceError(
+            f"{source}: schema_version must be one of {{{allowed}}}; got {version}"
+        )
 
 
 def _require_string_list(items: Any, source: str) -> None:
@@ -287,6 +304,34 @@ def _validate_verification_results(items: Any, source: str) -> None:
             _require_non_empty_string(item[key], f"{item_source}.{key}")
 
 
+
+_OPPORTUNITY_NOTE_REQUIRED_KEYS = frozenset({
+    "title", "evidence", "impact", "recommendation", "scope",
+    "suggested_next_action", "confidence", "role_relevance", "duplicate_check",
+})
+
+
+def _validate_opportunity_notes(items: Any, source: str) -> None:
+    """Validate the optional opportunity_notes list (v1.2, cap ≤3 per session)."""
+    _require_type(items, list, source)
+    if len(items) > 3:
+        raise ComplianceError(f"{source}: opportunity_notes must have \u22643 entries; got {len(items)}")
+    for idx, item in enumerate(items):
+        item_source = f"{source}[{idx}]"
+        _require_type(item, dict, item_source)
+        _require_keys(item, _OPPORTUNITY_NOTE_REQUIRED_KEYS, item_source)
+        _reject_unknown_keys(item, _OPPORTUNITY_NOTE_REQUIRED_KEYS, item_source)
+        _require_non_empty_string(item["title"], f"{item_source}.title")
+        _require_non_empty_string(item["evidence"], f"{item_source}.evidence")
+        _require_non_empty_string(item["impact"], f"{item_source}.impact")
+        _require_non_empty_string(item["recommendation"], f"{item_source}.recommendation")
+        _require_non_empty_string(item["scope"], f"{item_source}.scope")
+        _require_non_empty_string(item["suggested_next_action"], f"{item_source}.suggested_next_action")
+        _require_non_empty_string(item["confidence"], f"{item_source}.confidence")
+        _require_string_list(item["role_relevance"], f"{item_source}.role_relevance")
+        _require_non_empty_string(item["duplicate_check"], f"{item_source}.duplicate_check")
+
+
 def validate_plan(block: dict[str, Any], source: str) -> None:
     allowed_keys = {
         "schema_version",
@@ -335,11 +380,13 @@ def validate_subagent(
         # diff-gate (.agents/judge.md item 19), not at the schema layer.
         "run_status",
         "apply_replays",
+        # v1.2 (additive, optional): opportunity feedback channel.
+        "opportunity_notes",
     }
-    required_keys = allowed_keys - {"run_status", "apply_replays"}
+    required_keys = allowed_keys - {"run_status", "apply_replays", "opportunity_notes"}
     _require_keys(block, required_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
-    _require_schema_version(block, source)
+    _require_schema_version_v12(block, source)
     _require_type(block["role"], str, f"{source}.role")
     _require_type(block["role_contract_version"], int, f"{source}.role_contract_version")
     _require_type(block["agents_md_version"], int, f"{source}.agents_md_version")
@@ -412,6 +459,31 @@ def validate_subagent(
     # the parent must document in `monolithic_justification` (and the judge
     # diff-gates per `.agents/judge.md` item 19). Enforcing it here would
     # make that documented "without-replay" path unsatisfiable.
+
+    # v1.2 optional: opportunity_notes (cap ≤3 entries per session per agent).
+    opportunity_notes = block.get("opportunity_notes")
+    if opportunity_notes is not None:
+        _validate_opportunity_notes(opportunity_notes, f"{source}.opportunity_notes")
+
+
+def validate_state(block: dict[str, Any], source: str) -> None:
+    """Validate the structured YAML block embedded in an agent-state:v1 comment.
+
+    Accepts schema_version values 1, 1.1, and 1.2.  opportunity_notes is
+    optional (v1.2).  All other agent-state fields are free-form prose
+    outside this structured block and are not validated here.
+    """
+    allowed_keys = {
+        "schema_version",
+        # v1.2 (additive, optional): opportunity feedback channel.
+        "opportunity_notes",
+    }
+    _require_keys(block, {"schema_version"}, source)
+    _reject_unknown_keys(block, allowed_keys, source)
+    _require_schema_version_v12(block, source)
+    opportunity_notes = block.get("opportunity_notes")
+    if opportunity_notes is not None:
+        _validate_opportunity_notes(opportunity_notes, f"{source}.opportunity_notes")
 
 
 def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:
@@ -524,6 +596,13 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
 def validate_loaded_block(data: Any, source: str, repo_root: Path = REPO_ROOT) -> None:
     _require_type(data, dict, source)
     assert_no_overlay_version(data, source)
+    # Agent-state:v1 YAML blocks are embedded in GitHub comments without a
+    # compliance-key wrapper.  Detect by absence of all three compliance keys
+    # and presence of schema_version; dispatch to validate_state.
+    _AGENT_STATE_KEYS = {"schema_version", "opportunity_notes"}
+    if set(data.keys()).issubset(_AGENT_STATE_KEYS) and "schema_version" in data:
+        validate_state(data, source)
+        return
     unknown_keys = [key for key in data if key not in VALID_TOP_LEVEL_KEYS]
     if unknown_keys:
         formatted = ", ".join(str(key) for key in unknown_keys)
