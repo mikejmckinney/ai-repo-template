@@ -615,10 +615,20 @@ def validate_loaded_block(data: Any, source: str, repo_root: Path = REPO_ROOT) -
     _require_type(data, dict, source)
     assert_no_overlay_version(data, source)
     # Agent-state:v1 YAML blocks are embedded in GitHub comments without a
-    # compliance-key wrapper.  Detect by absence of all three compliance keys
-    # and presence of schema_version; dispatch to validate_state.
+    # compliance-key wrapper (plan_compliance / parent_compliance /
+    # subagent_compliance). Detect by:
+    #   1. The block contains schema_version (required for state).
+    #   2. The block's key set is a subset of _AGENT_STATE_KEYS, i.e. it
+    #      contains ONLY schema_version and optionally opportunity_notes.
+    # If a future state field is added, extend _AGENT_STATE_KEYS in lockstep
+    # with the agent_state spec in docs/compliance_schemas.md
+    # § "agent-state:v1". Mis-routing (e.g. a stray YAML snippet in a
+    # discussion comment that happens to contain only schema_version) will
+    # surface as a validate_state failure, not silent acceptance, because
+    # validate_state strictly checks schema_version against v1.2 and
+    # rejects unknown keys.
     _AGENT_STATE_KEYS = {"schema_version", "opportunity_notes"}
-    if set(data.keys()).issubset(_AGENT_STATE_KEYS) and "schema_version" in data:
+    if "schema_version" in data and set(data.keys()).issubset(_AGENT_STATE_KEYS):
         validate_state(data, source)
         return
     unknown_keys = [key for key in data if key not in VALID_TOP_LEVEL_KEYS]
