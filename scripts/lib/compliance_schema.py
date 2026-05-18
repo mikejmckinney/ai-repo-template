@@ -317,11 +317,11 @@ _OPPORTUNITY_SCOPE_VALUES = frozenset({"rule", "script", "doc", "workflow", "cod
 _OPPORTUNITY_CONFIDENCE_VALUES = frozenset({"high", "medium", "low"})
 _OPPORTUNITY_NEXT_ACTION_LITERALS = frozenset({"file-issue", "discuss", "defer"})
 _OPPORTUNITY_FOLD_INTO_RE = re.compile(r"^fold-into-\d+$")
-# Canonical role names from .agents/<role>.md (per agent_ownership.md).
-_OPPORTUNITY_ROLE_VALUES = frozenset({
-    "analyst", "architect", "backend", "critic", "devops",
-    "docs", "frontend", "judge", "pm", "qa",
-})
+# Canonical role names — derived dynamically from .agents/<role>.md frontmatter
+# via canonical_role_versions() rather than hardcoded, so adding/removing a
+# canonical role file is automatically reflected here (PR #344 R15 gemini).
+def _opportunity_role_values() -> frozenset[str]:
+    return frozenset(canonical_role_versions(REPO_ROOT).keys())
 # Title length cap from process_opportunity_feedback.md § "Required fields".
 _OPPORTUNITY_TITLE_MAX = 80
 
@@ -358,9 +358,10 @@ def _validate_opportunity_notes(items: Any, source: str) -> None:
             allowed = ", ".join(sorted(_OPPORTUNITY_CONFIDENCE_VALUES))
             raise ComplianceError(f"{item_source}.confidence: must be one of {{{allowed}}}; got {item['confidence']!r}")
         _require_string_list(item["role_relevance"], f"{item_source}.role_relevance")
+        valid_roles = _opportunity_role_values()
         for role in item["role_relevance"]:
-            if role not in _OPPORTUNITY_ROLE_VALUES:
-                allowed = ", ".join(sorted(_OPPORTUNITY_ROLE_VALUES))
+            if role not in valid_roles:
+                allowed = ", ".join(sorted(valid_roles))
                 raise ComplianceError(
                     f"{item_source}.role_relevance: contains invalid role {role!r}; must be one of {{{allowed}}}"
                 )
