@@ -9,7 +9,7 @@ Use these GitHub surfaces for current work:
 1. **Issue body** — durable feature/task contract and gate input.
 2. **PR body** — implementation, review, plan links, and verification contract.
 3. **Latest `agent-state:v1` issue/PR comment** — mutable live status, blockers, next actions, and handoff baton.
-4. **Labels** — coarse workflow filters only: `agent:claimed`, `agent:blocked`, `agent:awaiting-review`.
+4. **Labels** — coarse workflow filters only: `agent:claimed`, `agent:blocked`, `agent:awaiting-review`. The `agent-suggested` label marks follow-up issues filed from the `opportunity_notes` channel (ADR-027 / [`process_opportunity_feedback.md`](../rules/process_opportunity_feedback.md))—pending triage by PM.
 
 The copy/paste template for the live comment is [`agent_state_comment_template.md`](agent_state_comment_template.md). Keep comments slim; do not duplicate full PR bodies, verification matrices, file lists, or retrospective lessons.
 
