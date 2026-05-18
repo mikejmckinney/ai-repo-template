@@ -312,6 +312,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `chore:no-plan` | `#EDEDED` (gray) | Exempt issue/PR from the plan-as-comment requirement (see ADR-011) |
 | `outcome-validated` | `#0E8A16` (green) | Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014) |
 | `cap-override` | `#FBCA04` (amber) | Bypass max-round cap (`pr-resolve-all.md`) and 90% daily spend pause (`agent-assign-copilot.yml`) |
+| `agent-suggested` | `#BFD4F2` (light blue) | Improvement opportunity surfaced by an agent during in-scope work per `.context/rules/process_opportunity_feedback.md`; pending triage |
 
 **Resolution-path selection:**
 - Default: no automated resolution. Add a label to opt in.

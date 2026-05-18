@@ -3,7 +3,7 @@
 > Structured channel for agents to surface improvement opportunities they
 > notice while doing in-scope work, without expanding scope or going out
 > of band. Read when an out-of-scope idea, toil pattern, doc gap, or
-> deferable risk surfaces during in-scope execution.
+> deferrable risk surfaces during in-scope execution.
 
 ## Purpose
 

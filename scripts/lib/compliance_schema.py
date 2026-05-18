@@ -310,6 +310,14 @@ _OPPORTUNITY_NOTE_REQUIRED_KEYS = frozenset({
     "suggested_next_action", "confidence", "role_relevance", "duplicate_check",
 })
 
+# Enum allowed-values from .context/rules/process_opportunity_feedback.md
+# § "Required fields (9 total)". suggested_next_action also accepts the
+# parameterised form `fold-into-<digits>` (e.g. `fold-into-337`).
+_OPPORTUNITY_SCOPE_VALUES = frozenset({"rule", "script", "doc", "workflow", "code", "test", "process"})
+_OPPORTUNITY_CONFIDENCE_VALUES = frozenset({"high", "medium", "low"})
+_OPPORTUNITY_NEXT_ACTION_LITERALS = frozenset({"file-issue", "discuss", "defer"})
+_OPPORTUNITY_FOLD_INTO_RE = re.compile(r"^fold-into-\d+$")
+
 
 def _validate_opportunity_notes(items: Any, source: str) -> None:
     """Validate the optional opportunity_notes list (v1.2, cap ≤3 per session)."""
@@ -326,8 +334,18 @@ def _validate_opportunity_notes(items: Any, source: str) -> None:
         _require_non_empty_string(item["impact"], f"{item_source}.impact")
         _require_non_empty_string(item["recommendation"], f"{item_source}.recommendation")
         _require_non_empty_string(item["scope"], f"{item_source}.scope")
+        if item["scope"] not in _OPPORTUNITY_SCOPE_VALUES:
+            allowed = ", ".join(sorted(_OPPORTUNITY_SCOPE_VALUES))
+            raise ComplianceError(f"{item_source}.scope: must be one of {{{allowed}}}; got {item['scope']!r}")
         _require_non_empty_string(item["suggested_next_action"], f"{item_source}.suggested_next_action")
+        nxt = item["suggested_next_action"]
+        if nxt not in _OPPORTUNITY_NEXT_ACTION_LITERALS and not _OPPORTUNITY_FOLD_INTO_RE.match(nxt):
+            allowed = ", ".join(sorted(_OPPORTUNITY_NEXT_ACTION_LITERALS)) + ", fold-into-<issue-#>"
+            raise ComplianceError(f"{item_source}.suggested_next_action: must be one of {{{allowed}}}; got {nxt!r}")
         _require_non_empty_string(item["confidence"], f"{item_source}.confidence")
+        if item["confidence"] not in _OPPORTUNITY_CONFIDENCE_VALUES:
+            allowed = ", ".join(sorted(_OPPORTUNITY_CONFIDENCE_VALUES))
+            raise ComplianceError(f"{item_source}.confidence: must be one of {{{allowed}}}; got {item['confidence']!r}")
         _require_string_list(item["role_relevance"], f"{item_source}.role_relevance")
         _require_non_empty_string(item["duplicate_check"], f"{item_source}.duplicate_check")
 

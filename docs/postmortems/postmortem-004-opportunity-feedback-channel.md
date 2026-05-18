@@ -177,9 +177,10 @@ adopt the OP + subagent dispatch model):
   (this postmortem's follow-up artifact). Ships in the same PR.
 - [x] **`docs/decisions/README.md`** — index row for ADR-027.
   Same PR.
-- [ ] **Day 14 / Day 30 / Day 90 channel-flow checkpoints** — tracking
-  issue to be filed during Phase 6a; will replace `#TBD` reference
-  in ADR-027's Implementation checklist.
+- [x] **Day 14 / Day 30 / Day 90 channel-flow checkpoints** — tracking
+  issue [#343](https://github.com/mikejmckinney/ai-repo-template/issues/343)
+  filed during Phase 6a; ADR-027's Implementation checklist updated to
+  reference it (replacing the prior `#TBD` placeholder).
 - [ ] **Optional follow-up**: consider a lint helper that pre-validates
   `apply_replay` anchors against current file bytes before dispatch.
   Surfaced as opportunity-note candidate, not a hard requirement.

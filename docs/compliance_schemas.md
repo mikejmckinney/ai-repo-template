@@ -255,7 +255,7 @@ receipt evidence in this block.
 
 | Field | Type | Required | Description |
 |---|---|---:|---|
-| `schema_version` | string or number | yes | Current schema is `1.2`; readers must accept `1`, `1.1`, and `1.2` per the additive versioning policy above. |
+| `schema_version` | number | yes | Numeric (int or float) literal. Current schema is `1.2`; readers must accept `1`, `1.1`, and `1.2` per the additive versioning policy above. Quoted-string forms (e.g. `"1.2"`) are rejected by `_require_schema_version_v12` — emit unquoted. |
 | `role` | string | yes | Canonical role name matching `.agents/<role>.md`. |
 | `role_contract_version` | integer | yes | Version declared by the canonical role contract. |
 | `agents_md_version` | integer | yes | Parent `AGENTS.md` version used by the subagent. |

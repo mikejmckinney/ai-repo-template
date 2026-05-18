@@ -192,7 +192,8 @@ Key choices:
 - [x] Add postmortem-004 capturing the 4-stage delivery (Stage 4,
   this PR).
 - [ ] Day 14 / Day 30 / Day 90 channel-flow checkpoints (tracking
-  issue filed in Phase 6a — issue #TBD).
+  issue [#343](https://github.com/mikejmckinney/ai-repo-template/issues/343)
+  filed in Phase 6a).
 
 ## Verification
 
