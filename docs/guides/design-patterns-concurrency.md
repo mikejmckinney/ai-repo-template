@@ -110,7 +110,7 @@ barrier.wait()  # all workers finish setup before processing begins
 
 **When to use**: tree walks, batch transforms, independent subqueries, or recursive divide-and-conquer where the merge step is explicit.
 
-**When NOT to use**: tasks with heavy shared mutable state, tiny units where split/join overhead dominates, or streaming pipelines where results should flow incrementally instead of waiting for the whole batch.
+**When NOT to use**: tasks with heavy shared mutable state, tiny units where split/join overhead dominates, recursive divide-and-conquer on a fixed-size pool (risk of exhaustion deadlock), or streaming pipelines where results should flow incrementally instead of waiting for the whole batch.
 
 **Signals / example**: code has a visible split phase, a join phase, and a merge rule for partial results.
 
