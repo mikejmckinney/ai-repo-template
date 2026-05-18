@@ -334,6 +334,9 @@ def _validate_opportunity_notes(items: Any, source: str, repo_root: Path = REPO_
     _require_type(items, list, source)
     if len(items) > 3:
         raise ComplianceError(f"{source}: opportunity_notes must have <=3 entries; got {len(items)}")
+    # Compute valid_roles once outside the per-item loop so .agents/*.md is
+    # walked once per list, not once per item (PR #344 R17 gemini).
+    valid_roles = _opportunity_role_values(repo_root)
     for idx, item in enumerate(items):
         item_source = f"{source}[{idx}]"
         _require_type(item, dict, item_source)
@@ -361,7 +364,6 @@ def _validate_opportunity_notes(items: Any, source: str, repo_root: Path = REPO_
             allowed = ", ".join(sorted(_OPPORTUNITY_CONFIDENCE_VALUES))
             raise ComplianceError(f"{item_source}.confidence: must be one of {{{allowed}}}; got {item['confidence']!r}")
         _require_string_list(item["role_relevance"], f"{item_source}.role_relevance")
-        valid_roles = _opportunity_role_values(repo_root)
         for role in item["role_relevance"]:
             if role not in valid_roles:
                 allowed = ", ".join(sorted(valid_roles))
