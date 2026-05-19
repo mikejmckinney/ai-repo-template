@@ -50,9 +50,13 @@ additive changes, and one process change for Judge:
 1. **`gate_status` enum (replaces free-text `exemption_reason`).** Under
    `schema_version: 2`, every `plan_gate` and `diff_gate` object carries
    `gate_status:` with a value drawn from the closed enum
-   `{triggered, passed, not-triggered, user-bypassed}` and the per-state
-   required companion fields documented in `docs/compliance_schemas.md`
-   § "`gate_status` v2".
+   `{triggered, passed, failed, not-triggered, user-bypassed}` and the
+   per-state required companion fields documented in
+   `docs/compliance_schemas.md` § "`gate_status` v2". The `failed`
+   state captures "gate ran and rejected" (distinct from `triggered`
+   "gate is in-flight, no decision yet"); a `failed` gate requires the
+   parent block to also carry the planned remediation in
+   `deviations:`.
 
 2. **`user-bypassed` three-field structural guard.** When
    `gate_status: user-bypassed`, the gate object MUST include all three

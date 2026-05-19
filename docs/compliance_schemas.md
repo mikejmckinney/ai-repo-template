@@ -566,7 +566,7 @@ For blocks declaring `schema_version: 2` (or higher), validators MUST
 additionally enforce:
 
 12. Each `plan_gate` / `diff_gate` object carries `gate_status:` with a
-    value in the enum `{triggered, passed, not-triggered, user-bypassed}`.
+    value in the enum `{triggered, passed, failed, not-triggered, user-bypassed}`.
 13. The per-state companion fields listed in §"`gate_status` v2" are
     present and well-typed.
 14. When `gate_status: user-bypassed`, the three guard fields
