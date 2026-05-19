@@ -4,7 +4,11 @@
 from __future__ import annotations
 
 import sys
+import warnings
 from pathlib import Path
+
+# ADR-028: surface DeprecationWarnings from compliance_schema.
+warnings.filterwarnings("always", category=DeprecationWarning, module="compliance_schema")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent

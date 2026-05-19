@@ -428,7 +428,7 @@ semantic one (see "Known limitations" in ADR-028).
 |---|---|---|
 | `bypass_label:` | string | MUST appear in the allow-list documented in `.context/rules/process_gates.md` § "User-bypass labels (allow-list)". Examples: `cap-override`, `user-bypass`. Arbitrary strings are rejected. |
 | `user_directive:` | string | A verbatim quote (recommended ≥5 words) from a user comment on the same issue or PR that authorizes the bypass. Must not be empty; must not be paraphrased. Critic (not the validator) checks semantic accuracy — see `.agents/critic.md` § "Bypass guard theatre". |
-| `user_directive_source_url:` | URL | Must resolve to a comment URL on the same issue or PR (`github.com/<owner>/<repo>/(issues\|pull)/<n>#issuecomment-<id>` form). Validator checks URL shape and issue/PR identity; it does NOT click through to verify the quoted text actually appears in context. That semantic check belongs to Critic and Judge. |
+| `user_directive_source_url:` | URL | Must resolve to a comment URL on the same issue or PR (`github.com/<owner>/<repo>/(issues\|pull)/<n>#issuecomment-<id>` form). Validator checks URL **shape only** — it does NOT verify same-repository identity, click through, or confirm the quoted text actually appears at the URL. Those semantic checks belong to Critic and Judge. |
 
 ### Example — `gate_status: passed`
 

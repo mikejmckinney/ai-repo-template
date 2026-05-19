@@ -165,8 +165,8 @@ to this rule plus a same-PR edit to
 
 | Label | Use |
 |---|---|
-| `cap-override` | User has directed the polling/iteration cap be lifted for this PR (per `docs/guides/agent-pipeline.md` § Repository variables). |
-| `user-bypass` | Generic explicit user bypass that does not match a more specific label. Prefer a more specific label when one exists. |
+| `cap-override` | **Scope: polling/iteration cap lift only** (per `docs/guides/agent-pipeline.md` § Repository variables). Do NOT use `cap-override` as the `bypass_label:` for plan-gate, diff-gate, or Pre-Flight gate bypasses — use `user-bypass` for those. Critic flags `cap-override` used outside its iteration-cap purpose; Judge BLOCKs at diff-gate. |
+| `user-bypass` | Generic explicit user bypass for plan-gate, diff-gate, Pre-Flight gate, or any other gate not covered by a more specific label. This is the default choice for `bypass_label:` when the user has explicitly directed a gate bypass. |
 
 The three-field guard is a **structural** check, not a semantic one.
 It prevents the failure mode where free-text `exemption_reason:` is used

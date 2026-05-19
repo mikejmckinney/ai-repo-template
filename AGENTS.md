@@ -81,7 +81,7 @@ re-read cadence (which files at which boundaries) lives in
 | Code quality (SOLID, TDD, clean code) | [`.context/rules/domain_code_quality.md`](.context/rules/domain_code_quality.md) | Before non-trivial code refactors |
 | Orchestration patterns (P/AP citations for review) | [`.context/rules/repo_orchestration_patterns.md`](.context/rules/repo_orchestration_patterns.md) | When reviewing orchestration-layer changes |
 | Path ownership map | [`.context/rules/agent_ownership.md`](.context/rules/agent_ownership.md) | Before claiming a task or making cross-role edits |
-| Opportunity feedback (out-of-scope notes channel) | [`.context/rules/process_opportunity_feedback.md`](.context/rules/process_opportunity_feedback.md) | When you notice an out-of-scope improvement opportunity during in-scope work |
+| Opportunity feedback (out-of-scope notes channel) | [`.context/rules/process_opportunity_feedback.md`](.context/rules/process_opportunity_feedback.md) | When you notice an out-of-scope improvement opportunity during in-scope work. **Deferrable items only** — blocking findings (security, data-loss, CI breakage, plan invalidation) use `## Blocking observation` escalation instead, see the rule file. |
 
 For project overview start at [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) and
 [`.context/00_INDEX.md`](.context/00_INDEX.md).

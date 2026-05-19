@@ -1,0 +1,25 @@
+plan_compliance:
+  schema_version: 2
+  applicable_roles:
+    - architect
+  instruction_resources:
+    - resource: AGENTS.md
+      why_applicable: Canonical startup contract.
+      evidence: AGENTS_MD_VERSION 20.
+      decision_affected: Plan emits handshake.
+  role_dispatch:
+    decision: monolithic
+    planned_subagents: []
+    monolithic_justification: Plan-only edit; no role-owned files outside Architect.
+  plan_gate:
+    gate_status: not-a-real-status
+    link: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488954523
+  adr_required:
+    required: false
+  doc_sync:
+    triggered: false
+    companions: []
+    no_change_justifications:
+      - Plan-only validator-routing test fixture; no doc impact.
+  verification:
+    - python3 scripts/validate-compliance-fixtures.py

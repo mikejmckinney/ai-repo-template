@@ -872,6 +872,19 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
     gate_validator(block["diff_gate"], f"{source}.diff_gate")
     _validate_adr_required(block["adr_required"], f"{source}.adr_required")
     _validate_deviations(block["deviations"], f"{source}.deviations")
+    # ADR-028: gate_status: failed REQUIRES the parent block to also carry
+    # the planned remediation in deviations[]. Without this cross-check the
+    # ADR's promise is unenforceable (a 'failed' gate could ship with
+    # deviations: [] and pass silently).
+    if schema_version == 2:
+        for gate_name in ("plan_gate", "diff_gate"):
+            gate_block = block.get(gate_name) or {}
+            if isinstance(gate_block, dict) and gate_block.get("gate_status") == "failed":
+                if not block["deviations"]:
+                    raise ComplianceError(
+                        f"{source}: {gate_name}.gate_status: failed requires non-empty "
+                        f"deviations[] entry documenting remediation"
+                    )
     _validate_verification_results(block["verification_results"], f"{source}.verification_results")
     # v2 (ADR-028) additive: optional verification_evidence[] with class enum
     # + per-class artifact shape. May coexist with verification_results.

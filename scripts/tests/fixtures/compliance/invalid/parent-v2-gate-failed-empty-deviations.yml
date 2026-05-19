@@ -9,15 +9,13 @@ parent_compliance:
   applicable_roles:
     - architect
   subagents_dispatched: []
-  monolithic_justification: User bypassed dispatch via explicit directive on issue thread.
+  monolithic_justification: gate_status failed with empty deviations — must be rejected (ADR-028 enforcement).
   plan_gate:
-    gate_status: user-bypassed
-    bypass_label: user-bypass
-    user_directive: "skip the plan gate for this docs-only change"
-    user_directive_source_url: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488700000
+    gate_status: failed
+    link: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488954523
   diff_gate:
-    gate_status: not-triggered
-    not_triggered_reason: Docs-only change; no executable surfaces require diff-gate.
+    gate_status: passed
+    link: https://github.com/mikejmckinney/ai-repo-template/pull/345
   adr_required:
     required: true
     link: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
@@ -25,4 +23,4 @@ parent_compliance:
   verification_results:
     - command: bash test.sh
       result: pass
-      evidence: 557 passed, 4 warnings, 0 failed.
+      evidence: ok

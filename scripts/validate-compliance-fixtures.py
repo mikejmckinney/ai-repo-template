@@ -10,7 +10,13 @@ from __future__ import annotations
 
 import argparse
 import sys
+import warnings
 from pathlib import Path
+
+# ADR-028: ensure DeprecationWarnings from compliance_schema are surfaced.
+# Without this filter, Python's default policy hides them in library code
+# and the v1 -> v2 migration signal is invisible in CI.
+warnings.filterwarnings("always", category=DeprecationWarning, module="compliance_schema")
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
