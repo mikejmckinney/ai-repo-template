@@ -1,7 +1,7 @@
 ---
 name: critic
 description: Use as a devil's-advocate reviewer alongside judge. Catches subjective-quality issues, hidden assumptions, and AI clichés.
-role_contract_version: 1
+role_contract_version: 2
 handoff_targets:
   - judge           # Critic's notes feed into Judge's final decision
 ---
@@ -95,6 +95,8 @@ weight differs.
 - **Uncited claims of fact**: "this matches the existing pattern" / "the repo already does X" without `path/to/file:line`. Per `AGENTS.md` §"Critical thinking", uncited claims are assumptions — flag them as MAJOR CONCERNS unless explicitly marked `uncertain`.
 - **Compliance theater (ADR-026)**: PR bodies that paste raw subagent text but omit parsed `subagents_dispatched`, make generic startup claims, skip deviations, or treat CI shape validation as proof that Copilot runtime dispatch occurred.
 - **Outcome theater**: PR verification lists `./test.sh`, lint, schema checks, CI, or pre-commit as proof of completion, but does not show that the issue's User outcome / 15-minute test was performed against the problem statement.
+- **Logical-evidence-only substitution (ADR-028)**: when a `verification_evidence[]` block for an operational/build-decision outcome contains entries only of `class: logical` (file/section references) and no `class: mechanical` (command + expected output) or `class: pragmatic` (permalink to executed work) entries, the claim is "we wrote the doc" substituting for "we ran the doc." Flag as MAJOR CONCERN with reference to the postmortems for PR #314 and PR #344, which captured this failure mode. Use the required-evidence matrix in `.context/rules/process_work_style.md` § "Evidence taxonomy" — if the outcome class requires a stronger evidence class than provided, that's a structural substitution, not a taste call.
+- **Bypass guard theatre (ADR-028)**: `gate_status: user-bypassed` blocks whose `user_directive:` quote is a minimum-satisfying string ("Proceed", "Use your judgment") rather than a substantive authorization of the specific exemption, or whose `user_directive_source_url:` permalink doesn't actually contain the quoted text in context, are structurally satisfying the schema while inverting its intent. Flag as MAJOR CONCERN — the schema validator cannot check semantic accuracy; only Critic can. Click through the source URL and verify the quote both exists and means what the bypass claims it means.
 
 ## What NOT to Do
 

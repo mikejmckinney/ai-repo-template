@@ -46,6 +46,39 @@ All examples below are schema v1. Schema updates follow this policy:
   `agent-state:v1` block (including any with `opportunity_notes`) must
   declare `schema_version: 1.2`.
 
+### Schema v2 coexistence (ADR-028)
+
+Schema v2 introduces two structured replacements for free-text
+`exemption_reason:` strings on the `plan_gate` and `diff_gate` objects:
+
+- `gate_status:` — a closed enum (`triggered | passed | not-triggered |
+  user-bypassed`) with per-state required fields. See §"`gate_status` v2".
+- `verification_evidence:` — a typed evidence array with three classes
+  (`logical | mechanical | pragmatic`) and per-class required artifact
+  shape. See §"`verification_evidence` v2".
+
+v2 is an **additive** schema change with **indefinite coexistence**:
+
+- Existing `plan_compliance` / `parent_compliance` / `subagent_compliance`
+  blocks declaring `schema_version: 1`, `1.1`, or `1.2` continue to validate
+  exactly as before. The legacy `exemption_reason:` field on `plan_gate` /
+  `diff_gate` remains accepted indefinitely; validators emit a
+  `DeprecationWarning` (not a rejection) when it is populated as a non-null
+  string under any schema_version. There is no sunset date in this ADR.
+- A block opts into v2 by declaring `schema_version: 2` and using
+  `gate_status:` (with optional `verification_evidence:`) in place of
+  `exemption_reason:`. Mixing is permitted on a per-block basis but a
+  single gate object MUST NOT carry both `gate_status:` and a non-null
+  `exemption_reason:` — validators reject that combination as ambiguous.
+- v2 readers MUST accept v1/1.1/1.2 blocks unchanged. v1 readers ignoring
+  unknown fields will tolerate v2 blocks but will not enforce the new
+  guards; only the v2 validator enforces `user-bypassed` three-field
+  structural guard and evidence-class artifact shape.
+
+The coexistence model exists so PRs in flight at the v2 cutover do not
+need to be rewritten, and so legacy plan archives remain valid evidence
+for postmortems and ADR back-references.
+
 ## `plan_compliance` v1
 
 Emitted in implementation plans before substantive implementation begins.
@@ -284,7 +317,7 @@ receipt evidence in this block.
 subagent_compliance:
   schema_version: 1.2
   role: judge
-  role_contract_version: 1
+  role_contract_version: 2
   agents_md_version: 19
   receipt:
     mode: trailing-block
@@ -308,7 +341,7 @@ subagent_compliance:
 subagent_compliance:
   schema_version: 1.2
   role: critic
-  role_contract_version: 1
+  role_contract_version: 2
   agents_md_version: 19
   receipt:
     mode: trailing-block
@@ -367,6 +400,136 @@ opportunity_notes:
     duplicate_check: "Searched issues for 'closeout perf' — no open or recent items."
 ```
 
+## `gate_status` v2
+
+The `gate_status` enum replaces free-text `exemption_reason` strings on
+the `plan_gate` and `diff_gate` objects under `schema_version: 2`. Its
+purpose is to make gate outcomes machine-checkable and to close the
+self-exemption surface documented in postmortem-005 (PR #337).
+
+### Enum values
+
+| Value | Meaning | Required companion fields on the gate object |
+|---|---|---|
+| `triggered` | Gate was invoked but has not yet returned a decision (in-flight). | `link:` (URL to the in-flight gate artifact, e.g. dispatched subagent issue/PR comment). |
+| `passed` | Gate ran and approved. | `link:` (URL to the approval comment/decision). |
+| `failed` | Gate ran and rejected. | `link:` (URL to the rejection); the parent block MUST also include the planned remediation in `deviations:`. |
+| `not-triggered` | Gate was not invoked because the work matched a published exemption in `.context/rules/process_gates.md`. | `not_triggered_reason:` (short string referencing the exemption clause, e.g. `"trivial single-file copy edit per process_gates.md§Exemptions"`). |
+| `user-bypassed` | A user explicitly authorized skipping this gate. | Three-field bypass guard — see below. |
+
+### `user-bypassed` three-field structural guard
+
+When `gate_status: user-bypassed`, the gate object MUST include all
+three fields below. The validator BLOCKs the diff if any one is missing,
+empty, or syntactically malformed; this is a structural guard, not a
+semantic one (see "Known limitations" in ADR-028).
+
+| Field | Type | Validation |
+|---|---|---|
+| `bypass_label:` | string | MUST appear in the allow-list documented in `.context/rules/process_gates.md` § "User-bypass labels (allow-list)". Examples: `cap-override`, `user-bypass`. Arbitrary strings are rejected. |
+| `user_directive:` | string | A verbatim quote (recommended ≥5 words) from a user comment on the same issue or PR that authorizes the bypass. Must not be empty; must not be paraphrased. Critic (not the validator) checks semantic accuracy — see `.agents/critic.md` § "Bypass guard theatre". |
+| `user_directive_source_url:` | URL | Must resolve to a comment URL on the same issue or PR (`github.com/<owner>/<repo>/(issues\|pull)/<n>#issuecomment-<id>` form). Validator checks URL shape and issue/PR identity; it does NOT click through to verify the quoted text actually appears in context. That semantic check belongs to Critic and Judge. |
+
+### Example — `gate_status: passed`
+
+```yml
+plan_gate:
+  gate_status: passed
+  link: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488954523
+```
+
+### Example — `gate_status: not-triggered`
+
+```yml
+diff_gate:
+  gate_status: not-triggered
+  not_triggered_reason: "trivial typo fix per process_gates.md § Exemptions — single-line README change."
+```
+
+### Example — `gate_status: user-bypassed` (well-formed)
+
+```yml
+diff_gate:
+  gate_status: user-bypassed
+  bypass_label: cap-override
+  user_directive: "use the cap-override label to continue automatically"
+  user_directive_source_url: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488700000
+```
+
+### Anti-example — `gate_status: user-bypassed` (rejected: missing URL)
+
+```yml
+diff_gate:
+  gate_status: user-bypassed
+  bypass_label: cap-override
+  user_directive: "proceed"
+  # user_directive_source_url MISSING — validator BLOCKs.
+```
+
+## `verification_evidence` v2
+
+The `verification_evidence:` field is a typed array that replaces the v1
+`verification_results:` list under `schema_version: 2`. Each entry
+declares its evidence class and ships the artifact shape required for
+that class. The taxonomy exists to make weaker-evidence substitution
+(PR #314 / PR #344-class failure modes) structurally detectable.
+
+### Fields per entry
+
+| Field | Type | Required | Description |
+|---|---|---:|---|
+| `class` | string enum | yes | One of `logical`, `mechanical`, `pragmatic`. |
+| `claim` | string | yes | What this evidence is asserted to prove (one short sentence). |
+| `artifact` | object | yes | Class-specific artifact shape — see matrix below. |
+
+### Per-class artifact shape
+
+| Class | Purpose | Required `artifact` keys |
+|---|---|---|
+| `logical` | Documentation / contract / cross-reference — "the rule says X." | `path:` (repo-relative file path), `section:` (heading anchor or line range). |
+| `mechanical` | Repeatable command with deterministic output. | `command:` (exact shell), `expected_exit_code:` (int) or `expected_output_regex:` (string). |
+| `pragmatic` | Outcome observed by executing the work in the real environment. | `url:` (permalink to executed work — PR review URL, comment URL, workflow-run URL) AND `observed_outcome:` (one-line description of what was observed). |
+
+### Outcome → required evidence class
+
+Some outcome classes structurally require a stronger evidence class. The
+required-evidence matrix lives in `.context/rules/process_work_style.md`
+§ "Evidence taxonomy"; the high-level rule is:
+
+- **Documentation-only outcomes** (rule wording, ADR text, README copy)
+  can be evidenced with `class: logical` alone.
+- **Build-decision outcomes** ("the validator was wired", "the workflow
+  was updated", "the schema accepts X") require at minimum `class:
+  mechanical` (the relevant command + expected output).
+- **Operational outcomes** ("the agent dispatched the subagent", "the
+  bypass worked end-to-end", "the PR merged with the new label") require
+  at minimum `class: pragmatic` (permalink to executed work).
+
+Judge REQUEST_CHANGES (not BLOCK) when an outcome's declared evidence
+class is weaker than the matrix requires. Critic separately flags
+"logical-evidence-only substitution" — see `.agents/critic.md`.
+
+### Example — mixed-class `verification_evidence` block
+
+```yml
+verification_evidence:
+  - class: logical
+    claim: "ADR-028 documents the v2 coexistence model."
+    artifact:
+      path: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
+      section: "Decision"
+  - class: mechanical
+    claim: "Schema v2 validator accepts the new gate_status enum."
+    artifact:
+      command: "python scripts/validate-compliance-fixtures.py"
+      expected_exit_code: 0
+  - class: pragmatic
+    claim: "PR #N posted parent_compliance v2 with gate_status: passed."
+    artifact:
+      url: https://github.com/mikejmckinney/ai-repo-template/pull/N#issuecomment-XXXXXXXX
+      observed_outcome: "Comment posted; body length 14823; validator emitted no warnings."
+```
+
 ## CI-MUST validation rules for v1
 
 When deterministic validation is enabled, validators fail on:
@@ -396,3 +559,33 @@ Judge should challenge:
 
 Critic should separately flag checklist theater, unsupported compliance claims,
 and `bytes in context` reasoning used as a substitute for observable evidence.
+
+## CI-MUST validation rules for v2 (ADR-028)
+
+For blocks declaring `schema_version: 2` (or higher), validators MUST
+additionally enforce:
+
+12. Each `plan_gate` / `diff_gate` object carries `gate_status:` with a
+    value in the enum `{triggered, passed, not-triggered, user-bypassed}`.
+13. The per-state companion fields listed in §"`gate_status` v2" are
+    present and well-typed.
+14. When `gate_status: user-bypassed`, the three guard fields
+    (`bypass_label`, `user_directive`, `user_directive_source_url`) are
+    all present and non-empty; `bypass_label` is on the allow-list in
+    `.context/rules/process_gates.md`; `user_directive_source_url`
+    matches the GitHub issue/PR comment URL pattern for the same
+    repository. Missing or malformed → reject (corresponds to Judge BLOCK).
+15. A single gate object MUST NOT carry both `gate_status:` and a
+    non-null `exemption_reason:`. Reject as ambiguous.
+16. Each `verification_evidence[]` entry declares `class` in the enum
+    `{logical, mechanical, pragmatic}` and ships the per-class artifact
+    keys defined in §"`verification_evidence` v2". Missing required keys
+    → reject.
+17. Validators emit a `DeprecationWarning` (not a rejection) when a
+    block under any `schema_version` populates `exemption_reason:` with
+    a non-null string. Coexistence is indefinite per ADR-028.
+
+Semantic checks remain out of scope for the validator. Critic and Judge
+are the semantic backstop for `user_directive` accuracy and for
+logical-evidence-only substitution — see `.agents/critic.md` and
+`.agents/judge.md`.

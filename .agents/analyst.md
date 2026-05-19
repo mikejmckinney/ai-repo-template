@@ -1,7 +1,7 @@
 ---
 name: analyst
 description: Use for needs analysis, market research, competitive analysis, and validating whether a project should be built. Produces research artifacts — never writes implementation code.
-role_contract_version: 1
+role_contract_version: 2
 owned_paths:
   - 'docs/research/**'
 handoff_targets:
@@ -238,3 +238,31 @@ response before proceeding. Do not guess.
 
 Hand off to Architect as usual. Record the pre-flight report's verdict in
 your handoff comment so Judge can verify it during plan-gate.
+
+## Pre-Flight recommendations are binding planning constraints (ADR-028)
+
+When the Pre-Flight Report verdict is PASS, the "non-negotiables" and any
+`Recommendations for plan-gate` section you emit are **non-advisory planning
+constraints**, not suggestions. They bind the Architect's plan-of-record and
+Judge's plan-gate review:
+
+- **Deliverable-level constraints** (e.g. "plan must add ADR-NNN", "schema
+  bump must be major v2", "validator must cover X fixture") — Architect's
+  plan MUST map each constraint to one or more concrete deliverables in an
+  explicit absorption matrix. Judge BLOCKs at plan-gate (per `judge.md`
+  mediation rule) if any deliverable-level constraint is unmapped.
+- **Authority limit** — your binding authority covers what the deliverable
+  must contain (scope, fields, evidence shape) and what acceptance evidence
+  must look like. It does NOT extend to process-level dispatch mandates
+  (e.g. "OP must dispatch Critic at plan-gate", "reviewer X must sign off").
+  Process-dispatch recommendations are advisory; OP exercises independent
+  judgment on which roles to dispatch.
+- **Override path** — Judge may override an individual binding constraint
+  only by quoting a user-comment permalink that explicitly downgrades that
+  constraint. Absent such a quote, Judge has no discretion. See
+  `.agents/judge.md` § Plan-gate mediation rule.
+
+This upgrade reflects PR #337-style failure modes where free-text
+recommendations were treated as taste-level and silently dropped. ADR-028
+documents the upgrade rationale and the coexistence back-compat path for
+legacy `exemption_reason:` plan blocks.
