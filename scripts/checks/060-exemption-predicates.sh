@@ -80,7 +80,7 @@ if [[ -f "$PREDICATES_PY" && -d "$FIXTURE_DIR" ]]; then
       if [[ "$line" == *"[FAIL]"* ]]; then
         fail "exemption_predicates.py --self-check: $line"
       fi
-    done <<< "$selfcheck_output"
+    done <<<"$selfcheck_output"
     # If no individual FAIL lines were found, emit a generic failure
     if ! echo "$selfcheck_output" | grep -q '\[FAIL\]'; then
       fail "exemption_predicates.py --self-check exited $selfcheck_exit (no FAIL lines found)"
