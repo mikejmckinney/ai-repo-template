@@ -1,0 +1,8 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - ".github/workflows/ci.yml"
+    - "docs/decisions/adr-999.md"
+  pr_body: ""
+  # second path docs/** fails glob condition; no fallback phrase
+expected: false

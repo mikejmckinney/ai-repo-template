@@ -1,0 +1,8 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - ".github/workflows/ci.yml"
+    - "scripts/checks/060-exemption-predicates.sh"
+    - "Makefile"
+  pr_body: ""
+expected: true

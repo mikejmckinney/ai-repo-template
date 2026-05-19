@@ -1,0 +1,9 @@
+kind: judge_decision
+inputs:
+  comment_body: |
+    ## Judge — DECISION
+
+    DECISION: APPROVE WITH EXEMPTION — pure-docs PR; doc_sync triggers checked.
+  runtime_identity: "mikejmckinney"
+  # allowlist loaded from live judge_runtime_allowlist.yaml
+expected: true

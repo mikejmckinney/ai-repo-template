@@ -5,7 +5,7 @@ plan_compliance:
   instruction_resources:
     - resource: 123
       why_applicable: Canonical startup and truth-hierarchy contract.
-      evidence: AGENTS_MD_VERSION 19; Session handshake v19 emitted.
+      evidence: AGENTS_MD_VERSION 20; Session handshake v20 emitted.
       decision_affected: Invalid fixture uses a non-string instruction resource.
   role_dispatch:
     decision: staged-dispatch

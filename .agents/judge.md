@@ -178,6 +178,51 @@ SUGGESTED PATCHES (optional; tiny snippets only if needed):
 
 VALIDATION (commands to run + expected results):
 - `<command>` — expect: <outcome>
+
+---
+
+# Exemption Attestation (ADR-028)
+
+When emitting a plan-gate or diff-gate decision that grants an
+exemption from a hard gate (Analyst pre-flight, plan-as-comment,
+pre-merge verification, doc-sync trigger, provenance), the decision
+comment MUST open with this exact two-line header before any other
+content:
+
+```text
+## Judge — DECISION
+
+DECISION: APPROVE WITH EXEMPTION — <reason string>
+```
+
+Rules:
+
+- The H2 line is exact: `## Judge — DECISION` (em-dash `—`, single
+  space each side).
+- Zero or more blank lines may separate the H2 from the `DECISION:`
+  line.
+- The `DECISION:` line begins at column 1 and matches the regex in
+  ADR-028 §A1¶3 verbatim.
+- The reason string after the em-dash is free-form prose but MUST
+  be non-empty and specific enough that a human reading the PR
+  audit trail later can tell *why* the exemption was granted.
+- Any additional review body (REQUIRED CHANGES, NICE-TO-HAVES,
+  RISKS, etc.) MAY follow the header without affecting predicate
+  acceptance.
+
+**This header IS the contract.** The exemption predicate validator
+(`scripts/checks/060-exemption-predicates.sh`) asserts both lines
+exist in order. There is no regex-only fallback that scans the
+comment body for "exempt" anywhere — the absence of the H2 header
+is itself a rejection (RC2 closure per ADR-028).
+
+This is an **exact-output contract** per `docs/compliance_schemas.md`.
+The companion files `.cursor/BUGBOT.md`, `.gemini/styleguide.md`,
+`.github/copilot-instructions.md`, and `.github/workflows/claude.yml`
+carry skip-list notes that `## Judge — DECISION` must NOT be flagged
+as a non-conventional heading shape. Any edit to this section MUST
+propagate to those companion files per the doc-sync trigger in
+`.context/rules/process_doc_maintenance.md`.
 ```
 
 ---

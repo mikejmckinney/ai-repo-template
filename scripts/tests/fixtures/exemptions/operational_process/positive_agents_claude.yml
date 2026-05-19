@@ -1,0 +1,6 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - ".claude/agents/judge.md"
+  pr_body: ""
+expected: true

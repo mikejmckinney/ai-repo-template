@@ -1,0 +1,6 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - ".github/workflows/ci.yml"
+  pr_body: ""
+expected: true

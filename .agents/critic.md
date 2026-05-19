@@ -104,6 +104,21 @@ weight differs.
 - Don't nitpick style if a linter would catch it.
 - Don't block on taste differences — call them out as NITS.
 
+## Exemption-Claim Reciprocal Check (ADR-028)
+
+When reviewing a PR whose body claims one or more
+`parent_compliance.exemptions[]` entries, Critic MUST verify that
+each exemption claim has a matching predicate in
+`scripts/checks/060-exemption-predicates.sh` output. If the script
+rejects the claim (or no claim row appears in its output because
+the `kind` is outside ADR-028's closed taxonomy of
+`judge_decision` / `label` / `operational_process` / `adr_clause`),
+flag the entry as **MAJOR CONCERN** with `CRITIC DECISION:
+REQUEST_CHANGES` and cite ADR-028 by section. This is the
+reciprocal of Judge's procedural enforcement: Judge BLOCKs on the
+gate; Critic surfaces the seam where a free-form prose claim was
+slipped past a predicate that would have caught it.
+
 ## Output Format (Exact)
 
 ```

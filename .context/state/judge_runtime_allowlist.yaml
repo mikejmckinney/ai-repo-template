@@ -1,0 +1,62 @@
+# judge_runtime_allowlist.yaml
+# ---------------------------------------------------------------------------
+# Edit governance (ADR-028 §A1¶2, RC1)
+# ---------------------------------------------------------------------------
+# This file records trusted Judge runtime identities that may act as Judge
+# on their own plan-gate or diff-gate for in-flight work.
+#
+# To ADD or REMOVE an entry:
+#   1. Open a Docs-role PR with the proposed change.
+#   2. A Judge identity that is ALREADY on the pre-edit allowlist must
+#      issue an APPROVE on the plan-gate for that PR.
+#   3. The reviewing Judge MUST NOT be the same identity being added or
+#      removed (self-referential edits require a second allowlisted Judge).
+#   4. Merge only after the APPROVE is recorded in the plan-gate comment.
+#
+# To REVOKE an entry: do not delete it. Move it from allowlist[] to
+# revoked[] with revoked_at (ISO-8601 date) and a reason string. This
+# preserves the audit trail for past decisions.
+#
+# kind vocabulary (add new kinds via ADR amendment):
+#   human              — a human GitHub account
+#   copilot_runtime    — GitHub Copilot bot identity
+#   claude_runtime     — Anthropic Claude bot/action identity
+#   gemini_runtime     — Google Gemini bot identity
+#   workflow_runtime   — workflow-mediated identity (see github-actions[bot] entry)
+# ---------------------------------------------------------------------------
+
+schema: "judge_runtime_allowlist:v1"
+
+allowlist:
+  - login: "mikejmckinney"
+    kind: "human"
+    added_by: "adr-028"
+    added_at: "2026-05-19"
+    notes: "Repo owner. Seed identity per ADR-028 bootstrap."
+
+  - login: "copilot-pull-request-reviewer[bot]"
+    kind: "copilot_runtime"
+    added_by: "adr-028"
+    added_at: "2026-05-19"
+    notes: >
+      GitHub Copilot PR reviewer bot. Dispatched as Judge via the
+      copilot-pull-request-reviewer integration on open PRs.
+
+  - login: "github-actions[bot]"
+    kind: "workflow_runtime"
+    added_by: "adr-028"
+    added_at: "2026-05-19"
+    notes: >
+      Workflow-mediated identity. Judge dispatches invoked through GitHub
+      Actions (e.g. claude.yml, agent-review-on-push.yml) post output under
+      this login even though the actual model runtime is Claude Code Action or
+      Copilot. The allowlist entry covers the posting identity; the underlying
+      model runtime (claude_runtime, copilot_runtime) inherits this identity
+      in that workflow context.
+
+# Revoked entries
+# ---------------------------------------------------------------------------
+# Move entries here when an identity is decommissioned or its trust is
+# withdrawn. Do not delete entries — the audit trail must be preserved.
+# Required fields: all allowlist fields plus revoked_at (ISO date) and reason.
+revoked: []

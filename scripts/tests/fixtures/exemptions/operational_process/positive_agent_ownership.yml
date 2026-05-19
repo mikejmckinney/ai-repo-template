@@ -1,0 +1,6 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - ".context/rules/agent_ownership.md"
+  pr_body: ""
+expected: true

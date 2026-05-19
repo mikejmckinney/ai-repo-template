@@ -21,6 +21,19 @@ The copy/paste template for the live comment is [`agent_state_comment_template.m
 
 The old `task_template.md` and `handoff_template.md` files were removed by ADR-025. The GitHub issue body supersedes copied task files; the `Handoff` section of the latest `agent-state:v1` comment supersedes copied handoff files.
 
+## Exemption predicate registries (ADR-028)
+
+The following three YAMLs back the four exemption predicates in
+`docs/decisions/adr-028-exemption-predicate-contract.md`. Edits are
+governed by ADR-028 §"Registry governance" (Docs-role PR + Judge
+plan-gate APPROVE from a pre-edit allowlisted identity;
+self-referential edits to `judge_runtime_allowlist.yaml` require a
+second allowlisted Judge).
+
+- **`judge_runtime_allowlist.yaml`** — trusted Judge runtime identities for the `judge_decision` predicate (ADR-028 §A1¶2). Revoked entries move to `revoked[]` with `revoked_at` + `reason`; never delete.
+- **`exemption_label_appliers.yaml`** — optional alternative path for the `label` predicate (ADR-028 §A1¶4 / RC3). Informational by default; enable defense-in-depth by setting `policy.enforce: true` and populating `enforce_for_labels[]`.
+- **`adr_exemption_registry.yaml`** — active ADR clauses granting standing exemptions for the `adr_clause` predicate (ADR-028 §A4). Superseded entries move to `expired[]` with `expired_at` + `replacement_clause_id`; never delete.
+
 ## Offline or no-GitHub fallback
 
 If GitHub API access is unavailable, temporarily write the same `agent-state:v1` content into a local scratch note. Copy it into the issue or PR comment once access returns. Do not commit local live-state scratch files as the normal coordination path.

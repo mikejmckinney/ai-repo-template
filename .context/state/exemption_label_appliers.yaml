@@ -1,0 +1,34 @@
+# exemption_label_appliers.yaml
+# ---------------------------------------------------------------------------
+# OPTIONAL alternative path for the `label` exemption predicate (RC3).
+# ---------------------------------------------------------------------------
+# This file is the OPTIONAL alternative path for the `label` exemption
+# predicate. The DEFAULT predicate behavior excludes any login in
+# parent_compliance.subagents_dispatched[] from being a valid label-applier;
+# that closes RC3 without this file. Maintainers who want to additionally
+# restrict label-applier identity to a fixed allowlist (defense-in-depth)
+# can enable this file by setting policy.enforce: true below.
+#
+# Reference: ADR-028 §A1¶4 (Self-Judge seam summary)
+#
+# Enabling this file:
+#   1. Set policy.enforce: true.
+#   2. Add the labels to enforce_for_labels (empty list = inactive even when
+#      enforce: true).
+#   3. Populate allowlist[] with trusted applier identities.
+#   4. File a Docs-role PR + Judge plan-gate APPROVE before merging.
+# ---------------------------------------------------------------------------
+
+schema: "exemption_label_appliers:v1"
+
+policy:
+  # enforce: false — file is informational only; default RC3 predicate applies.
+  enforce: false
+  # enforce_for_labels: labels whose applier identity this policy checks.
+  # An empty list means the policy is inactive even when enforce: true.
+  enforce_for_labels: []
+
+# allowlist entries use the same shape as judge_runtime_allowlist.yaml:
+# {login, kind, added_by, added_at, notes}
+# Populate when enabling this policy.
+allowlist: []

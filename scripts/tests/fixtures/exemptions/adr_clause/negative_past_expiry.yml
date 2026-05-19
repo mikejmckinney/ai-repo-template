@@ -1,0 +1,16 @@
+kind: adr_clause
+inputs:
+  clause_id: "ADR-999#past-expiry-clause"
+  now: "2026-05-19"
+  registry_override:
+    schema: "adr_exemption_registry:v1"
+    entries:
+      - clause_id: "ADR-999#past-expiry-clause"
+        scope:
+          - "docs/**"
+        expires_at: "2025-01-01"
+        granted_by: "test"
+        notes: "synthetic entry for testing past expiry"
+    expired: []
+  # expires_at is in the past relative to now -- must reject
+expected: false

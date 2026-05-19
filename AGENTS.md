@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 19 -->
+<!-- AGENTS_MD_VERSION: 20 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one.
      The canary covers AGENTS.md only — per-concern files in .context/rules/
@@ -16,7 +16,7 @@
 ## Session handshake (read-receipt)
 
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v19` (matching
+substantive reply with the exact token `Session handshake v20` (matching
 the `AGENTS_MD_VERSION` value above) on its own line before any other
 content. Do not paraphrase, translate, or omit the token. The number is
 the canary — if it doesn't match the version above, your AGENTS.md copy
@@ -57,6 +57,20 @@ When you detect a conflict between two sources at adjacent priorities, do
 2. **Follow the higher-priority source** for the current task.
 3. **File a follow-up** issue or open a PR updating the lower-priority source so it matches.
 4. **Never edit the higher-priority source to match the lower one** without an ADR. If the lower source is what's actually correct, that's an architectural change that needs `docs/decisions/`.
+
+## Exemption predicates (ADR-028)
+
+Every claim of an exemption from a hard gate (Analyst pre-flight,
+plan-as-comment, pre-merge verification, doc-sync, provenance) MUST
+select exactly one `kind` from the closed taxonomy in
+[`docs/decisions/adr-028-exemption-predicate-contract.md`](docs/decisions/adr-028-exemption-predicate-contract.md):
+`judge_decision`, `label`, `operational_process`, or `adr_clause`.
+The three source-of-truth files
+[`.context/state/judge_runtime_allowlist.yaml`](.context/state/judge_runtime_allowlist.yaml),
+[`.context/state/exemption_label_appliers.yaml`](.context/state/exemption_label_appliers.yaml),
+and [`.context/state/adr_exemption_registry.yaml`](.context/state/adr_exemption_registry.yaml)
+back the four predicates and are edited under the governance rules
+in ADR-028 §"Registry governance".
 
 ## Per-concern process rules
 

@@ -1,0 +1,8 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - "docs/guides/some-guide.md"
+  pr_body: |
+    This PR updates the shared procedural prompt for onboarding agents.
+    operational_process exemption applies per ADR-014.
+expected: true

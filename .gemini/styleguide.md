@@ -313,6 +313,19 @@ Do **not** flag `mktemp` calls in `scripts/tests/**` for missing
 `scripts/checks/` that run outside CI) MAY warrant the hardening; flag
 those normally with the specific path.
 
+### Judge exemption attestation header (`## Judge — DECISION`) is load-bearing
+
+The H2 heading `## Judge — DECISION` followed by a
+`DECISION: APPROVE WITH EXEMPTION — …` line is a load-bearing
+exact-output contract per ADR-028 §A2. The exemption predicate
+validator (`scripts/checks/060-exemption-predicates.sh`) anchors
+on this exact two-line shape. Do **not** flag the heading text,
+the em-dash spacing, or the unusual H2 wording as
+non-conventional / inconsistent / out-of-style. If you spot a
+comment using this header on an issue or PR, treat it as
+intentional infrastructure, not prose drift.
+See `docs/decisions/adr-028-exemption-predicate-contract.md`.
+
 ## Repo-specific Judge gates
 
 This repo uses the internal Judge role (`.agents/judge.md`) as the canonical gate spec. The nine gates below are summarized here for inline use at review time; canonical detail, opt-outs, and exemptions live in that file.

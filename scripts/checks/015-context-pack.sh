@@ -33,6 +33,9 @@ CONTEXT_FILES=(
   ".context/state/coordination.md"
   ".context/state/agent_state_comment_template.md"
   ".context/state/feedback_template.md"
+  ".context/state/judge_runtime_allowlist.yaml"
+  ".context/state/exemption_label_appliers.yaml"
+  ".context/state/adr_exemption_registry.yaml"
   ".context/vision/README.md"
 )
 

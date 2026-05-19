@@ -1,0 +1,6 @@
+kind: adr_clause
+inputs:
+  clause_id: "not-an-adr-clause-id"
+  now: "2026-05-19"
+  # does not match ADR-NNN#slug format
+expected: false

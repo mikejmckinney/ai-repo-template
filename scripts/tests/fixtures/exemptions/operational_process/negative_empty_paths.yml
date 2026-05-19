@@ -1,0 +1,5 @@
+kind: operational_process
+inputs:
+  changed_paths: []
+  pr_body: "operational_process exemption"
+expected: false

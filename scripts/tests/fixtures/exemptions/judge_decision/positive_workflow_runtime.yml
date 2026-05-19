@@ -1,0 +1,12 @@
+kind: judge_decision
+inputs:
+  comment_body: |
+    ## Judge — DECISION
+
+    DECISION: APPROVE WITH EXEMPTION — operational-process PR; all paths match A3 globs.
+
+    ## Required Changes
+    None.
+  runtime_identity: "github-actions[bot]"
+  # uses live allowlist (github-actions[bot] is allowlisted as workflow_runtime)
+expected: true

@@ -1,0 +1,17 @@
+kind: adr_clause
+inputs:
+  clause_id: "ADR-999#moved-to-expired"
+  now: "2026-05-19"
+  registry_override:
+    schema: "adr_exemption_registry:v1"
+    entries: []
+    expired:
+      - clause_id: "ADR-999#moved-to-expired"
+        scope:
+          - "docs/**"
+        granted_by: "adr-999"
+        notes: "superseded"
+        expired_at: "2025-06-01"
+        replacement_clause_id: null
+  # entry is in expired[] -- must reject regardless of dates
+expected: false

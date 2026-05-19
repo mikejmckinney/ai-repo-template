@@ -1,0 +1,8 @@
+kind: label
+inputs:
+  pr_labels: ["chore:no-plan"]
+  subagents_dispatched: ["github-copilot[bot]", "some-other-agent"]
+  exemption_labels: ["chore:no-plan", "smoke-test", "outcome-validated", "cap-override"]
+  applier_login: "mikejmckinney"
+  # enforce_config loaded from live exemption_label_appliers.yaml (enforce: false)
+expected: true

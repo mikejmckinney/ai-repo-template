@@ -170,6 +170,13 @@ rounds:
   `.gemini/styleguide.md` (KL-01..KL-05 and the "Project conventions (skip
   these classes of finding)" sections). Those patterns are intentional and
   must not be flagged at any severity.
+- The H2 heading `## Judge — DECISION` followed by a
+  `DECISION: APPROVE WITH EXEMPTION — …` line is a load-bearing
+  exact-output contract per ADR-028 §A2 — the exemption predicate
+  validator anchors on it. Do **not** flag this heading shape, the
+  em-dash spacing, or the unusual wording as non-conventional /
+  inconsistent / out-of-style. See
+  [`docs/decisions/adr-028-exemption-predicate-contract.md`](../docs/decisions/adr-028-exemption-predicate-contract.md).
 - A finding that is genuinely *new information* on the same line (a
   different bug, not the same bug from a different angle) is not a
   duplicate. When in doubt, prefer skipping over re-raising.

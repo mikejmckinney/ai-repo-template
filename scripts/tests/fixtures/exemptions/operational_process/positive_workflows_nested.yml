@@ -1,0 +1,6 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - ".github/workflows/agent/review.yml"
+  pr_body: ""
+expected: true

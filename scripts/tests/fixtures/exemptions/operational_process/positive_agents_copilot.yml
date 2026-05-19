@@ -1,0 +1,6 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - ".github/agents/judge.agent.md"
+  pr_body: ""
+expected: true

@@ -1,0 +1,62 @@
+# adr_exemption_registry.yaml
+# ---------------------------------------------------------------------------
+# ADR clause exemption registry for the `adr_clause` predicate.
+# ---------------------------------------------------------------------------
+# Each entry attests that an ADR clause grants a standing exemption to
+# specific path globs or check classes. Validator
+# (060-exemption-predicates.sh) returns true when a PR claims
+# `kind: adr_clause` and the referenced clause_id matches an unexpired
+# in-scope entry here.
+#
+# Entry lifecycle:
+#   Active entries  → entries[]
+#   Expired entries → expired[]  (do not delete; move with expired_at and
+#                                  replacement_clause_id so the audit trail
+#                                  is preserved)
+#
+# To add a new entry:
+#   1. Open a Docs-role PR adding the entry to entries[].
+#   2. Obtain Judge plan-gate APPROVE before merging.
+# ---------------------------------------------------------------------------
+
+schema: "adr_exemption_registry:v1"
+
+entries:
+  - clause_id: "ADR-005#preflight-exemption-trivial-typo"
+    scope:
+      - "docs/postmortems/**"
+      - "docs/research/**"
+    expires_at: null
+    granted_by: "adr-005"
+    notes: >
+      Typo-only or research-note edits in non-rule docs do not require
+      Analyst pre-flight.
+
+  - clause_id: "ADR-011#plan-as-comment-exemption-≤20LOC-single-role"
+    scope:
+      - >-
+        any path, ≤20 LOC, single role, no role-sensitive surfaces per
+        process_role_selection.md OP direct-implementation gate
+    expires_at: null
+    granted_by: "adr-011"
+    notes: >
+      OP direct-implementation gate; see
+      .context/rules/process_role_selection.md § 'Default role: Parent
+      Orchestrator (OP)'.
+
+  - clause_id: "ADR-016#pre-merge-verification-exemption-docs-only"
+    scope:
+      - "docs/**"
+      - "*.md (top-level)"
+    expires_at: null
+    granted_by: "adr-016"
+    notes: >
+      Pure-docs PRs may skip pre-merge runtime verification gate;
+      doc_sync triggers still apply.
+
+# Expired entries
+# ---------------------------------------------------------------------------
+# Move entries here when a clause is superseded or revoked. Do not delete.
+# Required additional fields: expired_at (ISO date),
+#   replacement_clause_id (string referencing the new clause, or null).
+expired: []

@@ -1,0 +1,6 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - ".github/actions/label-sync/index.js"
+  pr_body: ""
+expected: true

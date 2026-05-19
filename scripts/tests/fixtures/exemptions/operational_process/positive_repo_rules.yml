@@ -1,0 +1,6 @@
+kind: operational_process
+inputs:
+  changed_paths:
+    - ".context/rules/repo_orchestration_patterns.md"
+  pr_body: ""
+expected: true

@@ -70,6 +70,21 @@ state, current `AGENTS_MD_VERSION`, and allowed deviations. Every dispatched
 role returns `subagent_compliance`; parent agents copy parsed subagent objects
 into PR-body `parent_compliance.subagents_dispatched`.
 
+**Exemption attestation flow (ADR-028).** When a subagent (or default
+agent) claims an exemption from a hard gate, it MUST surface the
+claim in `parent_compliance.exemptions[]` with the exact `kind`
+selected from ADR-028's closed taxonomy (`judge_decision`, `label`,
+`operational_process`, `adr_clause`) and a pointer to evidence: a
+Judge comment URL whose body opens with the exact
+`## Judge — DECISION` / `DECISION: APPROVE WITH EXEMPTION — …`
+two-line header for `judge_decision`; a label name + applier login
+for `label`; the matching path glob(s) or grep-fallback phrase for
+`operational_process`; the `ADR-NNN#<slug>` clause_id resolving to
+an active entry in `.context/state/adr_exemption_registry.yaml` for
+`adr_clause`. Free-form prose claims without a `kind` and without
+evidence are rejected by the predicate validator and BLOCKed by
+Judge at diff-gate.
+
 See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the rationale behind the two-registry design.
 
 ## End-to-End Flow
