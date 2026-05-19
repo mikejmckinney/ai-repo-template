@@ -1,5 +1,4 @@
 parent_compliance:
-  schema_version: 1
   handshake_token: Session handshake v19
   agents_md_version: 19
   runtime_pointer:
@@ -14,7 +13,6 @@ parent_compliance:
   diff_gate:
     status: pending
     link: null
-    exemption_reason: null
   adr_required:
     required: false
     link: null

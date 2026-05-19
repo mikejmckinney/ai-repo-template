@@ -54,11 +54,10 @@ Emitted in implementation plans before substantive implementation begins.
 
 | Field | Type | Required | Description |
 |---|---|---:|---|
-| `schema_version` | integer | yes | Must be `1` for this schema. |
 | `applicable_roles` | list of strings | yes | Roles whose ownership applies to the planned work. Empty only for trivial/exempt work. |
 | `instruction_resources` | list of objects | yes | Each object has `resource`, `why_applicable`, `evidence`, and `decision_affected`. |
 | `role_dispatch` | object | yes | `decision`, `planned_subagents`, and `monolithic_justification`. |
-| `plan_gate` | object | yes | `status`, `link`, and `exemption_reason`. |
+| `plan_gate` | object | yes | `status`, `link`, and `gate_status` (`{triggered, applied}`). |
 | `adr_required` | object | yes | `required`, `link`, and `supersession_notes`. |
 | `doc_sync` | object | yes | `triggered`, `companions`, and `no_change_justifications`. |
 | `verification` | list of strings | yes | Exact commands or manual checks planned. |
@@ -67,7 +66,6 @@ Emitted in implementation plans before substantive implementation begins.
 
 ```yaml
 plan_compliance:
-  schema_version: 1
   applicable_roles:
     - architect
     - docs
@@ -92,7 +90,9 @@ plan_compliance:
   plan_gate:
     status: linked
     link: https://github.com/mikejmckinney/ai-repo-template/issues/307#issuecomment-4436040309
-    exemption_reason: null
+    gate_status:
+      triggered: true
+      applied: true
   adr_required:
     required: true
     link: docs/decisions/adr-026-compliance-contracts.md
@@ -119,15 +119,14 @@ Emitted in PR bodies by the parent/default agent before review.
 
 | Field | Type | Required | Description |
 |---|---|---:|---|
-| `schema_version` | integer | yes | Must be `1`. |
 | `handshake_token` | string | yes | Exact parent token, format `Session handshake v<N>`. |
 | `agents_md_version` | integer | yes | Version declared in `AGENTS.md`. |
 | `runtime_pointer` | object | yes | Runtime instruction file evidence; see subfields below. |
 | `applicable_roles` | list of strings | yes | Roles whose ownership applied to the final diff. |
 | `subagents_dispatched` | list of objects | yes | Parsed `subagent_compliance` objects. Empty list requires `monolithic_justification`. |
 | `monolithic_justification` | string or null | yes | Required if no subagents ran or if dispatched roles are a strict subset of applicable roles. |
-| `plan_gate` | object | yes | `status`, `link`, `exemption_reason`. |
-| `diff_gate` | object | yes | `status`, `link`, `exemption_reason`. |
+| `plan_gate` | object | yes | `status`, `link`, `gate_status` (`{triggered, applied}`). |
+| `diff_gate` | object | yes | `status`, `link`, `gate_status` (`{triggered, applied}`). |
 | `adr_required` | object | yes | `required`, `link`. |
 | `deviations` | list of objects | yes | Planned-vs-actual deviations; empty list allowed. |
 | `verification_results` | list of objects | yes | Command/result pairs matching the plan. |
@@ -152,7 +151,6 @@ do not encode the null-path reason in surrounding prose or in
 
 ```yaml
 parent_compliance:
-  schema_version: 1
   handshake_token: Session handshake v19
   agents_md_version: 19
   runtime_pointer:
@@ -166,11 +164,15 @@ parent_compliance:
   plan_gate:
     status: linked
     link: https://github.com/mikejmckinney/ai-repo-template/issues/307#issuecomment-4436040309
-    exemption_reason: null
+    gate_status:
+      triggered: true
+      applied: true
   diff_gate:
     status: pending
     link: null
-    exemption_reason: null
+    gate_status:
+      triggered: true
+      applied: false
   adr_required:
     required: false
     link: null
@@ -185,7 +187,6 @@ parent_compliance:
 
 ```yaml
 parent_compliance:
-  schema_version: 1
   handshake_token: Session handshake v19
   agents_md_version: 19
   runtime_pointer:
@@ -197,8 +198,7 @@ parent_compliance:
     - docs
     - devops
   subagents_dispatched:
-    - schema_version: 1.2
-      role: docs
+    - role: docs
       role_contract_version: 1
       agents_md_version: 19
       receipt:
@@ -216,8 +216,7 @@ parent_compliance:
       gates_invoked:
         - doc-trigger-check
       run_status: SUCCESS
-    - schema_version: 1.2
-      role: devops
+    - role: devops
       role_contract_version: 1
       agents_md_version: 19
       receipt:
@@ -239,11 +238,15 @@ parent_compliance:
   plan_gate:
     status: linked
     link: https://github.com/mikejmckinney/ai-repo-template/issues/307#issuecomment-4436040309
-    exemption_reason: null
+    gate_status:
+      triggered: true
+      applied: true
   diff_gate:
     status: pending
     link: null
-    exemption_reason: null
+    gate_status:
+      triggered: true
+      applied: false
   adr_required:
     required: true
     link: docs/decisions/adr-026-compliance-contracts.md
@@ -264,7 +267,6 @@ receipt evidence in this block.
 
 | Field | Type | Required | Description |
 |---|---|---:|---|
-| `schema_version` | number | yes | Numeric (int or float) literal. Current schema is `1.2`; readers must accept `1`, `1.1`, and `1.2` per the additive versioning policy above. Quoted-string forms (e.g. `"1.2"`) are rejected by `_require_schema_version_v12` — emit unquoted. |
 | `role` | string | yes | Canonical role name matching `.agents/<role>.md`. |
 | `role_contract_version` | integer | yes | Version declared by the canonical role contract. |
 | `agents_md_version` | integer | yes | Parent `AGENTS.md` version used by the subagent. |
@@ -282,7 +284,6 @@ receipt evidence in this block.
 
 ```yaml
 subagent_compliance:
-  schema_version: 1.2
   role: judge
   role_contract_version: 1
   agents_md_version: 19
@@ -306,7 +307,6 @@ subagent_compliance:
 
 ```yaml
 subagent_compliance:
-  schema_version: 1.2
   role: critic
   role_contract_version: 1
   agents_md_version: 19

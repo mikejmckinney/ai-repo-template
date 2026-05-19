@@ -1,5 +1,4 @@
 subagent_compliance:
-  schema_version: 1
   role: docs
   role_contract_version: 99
   agents_md_version: 19

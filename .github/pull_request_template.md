@@ -68,7 +68,6 @@ N/A — empty headings are noise.
 
 ```yaml
 parent_compliance:
-  schema_version: 1
   handshake_token: "Session handshake v<N>"
   agents_md_version: "<N>"
   runtime_pointer:
@@ -78,8 +77,7 @@ parent_compliance:
   applicable_roles:
     - "<role>"
   subagents_dispatched:
-    - schema_version: 1
-      role: "<role>"
+    - role: "<role>"
       role_contract_version: 1
       agents_md_version: "<N>"
       receipt:
@@ -99,11 +97,15 @@ parent_compliance:
   plan_gate:
     status: "<linked | pending | exempt>"
     link: "<URL or null>"
-    exemption_reason: "<null or reason>"
+    gate_status:
+      triggered: <true | false>
+      applied: <true | false>
   diff_gate:
     status: "<pending | linked | exempt>"
     link: "<URL or null>"
-    exemption_reason: "<null or reason>"
+    gate_status:
+      triggered: <true | false>
+      applied: <true | false>
   adr_required:
     required: "<true | false>"
     link: "<path/URL or null>"

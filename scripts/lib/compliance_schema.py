@@ -35,7 +35,7 @@ _YAML_FENCE_RE = re.compile(r"^[ \t]*```yaml[ \t]*\n(.*?)\n[ \t]*```[ \t]*(?:\n|
 _AGENTS_MD_VERSION_RE = re.compile(r"AGENTS_MD_VERSION:\s*(?P<version>\d+)")
 _HANDSHAKE_RE = re.compile(r"^Session handshake v(?P<version>\d+)$")
 
-# Accepted schema_version values for subagent_compliance and agent-state:v1.
+# Accepted schema_version values for agent-state:v1 routing discriminant.
 # v1.2 (additive) adds opportunity_notes; v1 and v1.1 remain accepted.
 _ALLOWED_SCHEMA_VERSIONS_V12 = frozenset({1.0, 1.1, 1.2})
 
@@ -157,12 +157,6 @@ def _require_bool(value: Any, source: str) -> None:
     _require_type(value, bool, source)
 
 
-def _require_schema_version(mapping: dict[str, Any], source: str) -> None:
-    _require_type(mapping.get("schema_version"), int, f"{source}.schema_version")
-    if mapping["schema_version"] != 1:
-        raise ComplianceError(f"{source}: schema_version must be 1")
-
-
 def _require_schema_version_v12(mapping: dict[str, Any], source: str) -> None:
     """Accept schema_version values 1, 1.1, and 1.2 (int or float, not bool)."""
     version = mapping.get("schema_version")
@@ -249,12 +243,21 @@ def _validate_role_dispatch(block: Any, source: str) -> None:
 
 def _validate_gate(block: Any, source: str) -> None:
     _require_type(block, dict, source)
-    allowed = {"status", "link", "exemption_reason"}
+    allowed = {"status", "link", "gate_status"}
     _require_keys(block, allowed, source)
     _reject_unknown_keys(block, allowed, source)
     _require_non_empty_string(block["status"], f"{source}.status")
     _require_nullable_string(block["link"], f"{source}.link")
-    _require_nullable_string(block["exemption_reason"], f"{source}.exemption_reason")
+    _validate_gate_status(block["gate_status"], f"{source}.gate_status")
+
+
+def _validate_gate_status(block: Any, source: str) -> None:
+    _require_type(block, dict, source)
+    allowed = {"triggered", "applied"}
+    _require_keys(block, allowed, source)
+    _reject_unknown_keys(block, allowed, source)
+    _require_bool(block["triggered"], f"{source}.triggered")
+    _require_bool(block["applied"], f"{source}.applied")
 
 
 def _validate_adr_required(block: Any, source: str, require_supersession_notes: bool = False) -> None:
@@ -391,7 +394,6 @@ def _validate_opportunity_notes(
 
 def validate_plan(block: dict[str, Any], source: str) -> None:
     allowed_keys = {
-        "schema_version",
         "applicable_roles",
         "instruction_resources",
         "role_dispatch",
@@ -402,7 +404,6 @@ def validate_plan(block: dict[str, Any], source: str) -> None:
     }
     _require_keys(block, allowed_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
-    _require_schema_version(block, source)
     _require_string_list(block["applicable_roles"], f"{source}.applicable_roles")
     _validate_instruction_resources(block["instruction_resources"], f"{source}.instruction_resources")
     _validate_role_dispatch(block["role_dispatch"], f"{source}.role_dispatch")
@@ -420,7 +421,6 @@ def validate_subagent(
     expected_agents_md_version: Optional[int] = None,
 ) -> None:
     allowed_keys = {
-        "schema_version",
         "role",
         "role_contract_version",
         "agents_md_version",
@@ -443,7 +443,6 @@ def validate_subagent(
     required_keys = allowed_keys - {"run_status", "apply_replays", "opportunity_notes"}
     _require_keys(block, required_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
-    _require_schema_version_v12(block, source)
     _require_type(block["role"], str, f"{source}.role")
     _require_type(block["role_contract_version"], int, f"{source}.role_contract_version")
     _require_type(block["agents_md_version"], int, f"{source}.agents_md_version")
@@ -591,7 +590,6 @@ def validate_runtime_pointer(block: dict[str, Any], source: str) -> None:
 
 def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_ROOT) -> None:
     allowed_keys = {
-        "schema_version",
         "handshake_token",
         "agents_md_version",
         "runtime_pointer",
@@ -606,7 +604,6 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
     }
     _require_keys(block, allowed_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
-    _require_schema_version(block, source)
     _require_type(block["handshake_token"], str, f"{source}.handshake_token")
     _require_type(block["agents_md_version"], int, f"{source}.agents_md_version")
     match = _HANDSHAKE_RE.match(block["handshake_token"])
