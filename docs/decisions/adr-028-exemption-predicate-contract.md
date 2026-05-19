@@ -462,23 +462,25 @@ them so future ADRs can address them if a real exploit materializes:
 - [x] Seed `.context/state/judge_runtime_allowlist.yaml`,
       `.context/state/exemption_label_appliers.yaml`, and
       `.context/state/adr_exemption_registry.yaml` (PM, pre-Phase 4).
-- [ ] Add `## Exemption attestation` section to `.agents/judge.md`.
-- [ ] Add reciprocal review responsibility to `.agents/critic.md`.
-- [ ] Add doc-sync trigger row to
-      `.context/rules/process_doc_maintenance.md`.
-- [ ] Add skip-list notes to `.cursor/BUGBOT.md`,
-      `.gemini/styleguide.md`, `.github/copilot-instructions.md`.
-- [ ] Update `.context/state/README.md` to index the three registries.
-- [ ] Update `AI_REPO_GUIDE.md` to catalog the three registries.
-- [ ] Update `docs/guides/multi-agent-coordination.md` with the
-      exemption-attestation flow.
-- [ ] DevOps follow-up issue: implement
-      `scripts/checks/060-exemption-predicates.sh` and
-      `scripts/lib/exemption_predicates.py` from this ADR.
-- [ ] DevOps follow-up issue: add fixtures under
-      `scripts/lib/fixtures/exemption_predicates/` covering the four
+- [x] Add `## Exemption attestation` section to `.agents/judge.md`. (Delivered in issue #349 PR.)
+- [x] Add reciprocal review responsibility to `.agents/critic.md`. (Delivered in issue #349 PR.)
+- [x] Add doc-sync trigger row to
+      `.context/rules/process_doc_maintenance.md`. (Delivered in issue #349 PR.)
+- [x] Add skip-list notes to `.cursor/BUGBOT.md`,
+      `.gemini/styleguide.md`, `.github/copilot-instructions.md`. (Delivered in issue #349 PR.)
+- [x] Update `.context/state/README.md` to index the three registries. (Delivered in issue #349 PR.)
+- [x] Update `AI_REPO_GUIDE.md` to catalog the three registries. (Delivered in issue #349 PR.)
+- [x] Update `docs/guides/multi-agent-coordination.md` with the
+      exemption-attestation flow. (Delivered in issue #349 PR.)
+- [x] Implement `scripts/checks/060-exemption-predicates.sh` and
+      `scripts/lib/exemption_predicates.py`. (Delivered in issue #349 PR; live-PR CI integration deferred to follow-up #350.)
+- [x] Add fixtures under
+      `scripts/tests/fixtures/exemptions/` covering the four
       `kind` values, the grandfather window, the
-      `subagents_dispatched` exclusion, and §A3 glob/grep fallback.
+      `subagents_dispatched` exclusion, and §A3 glob/grep fallback. (Delivered in issue #349 PR — 41 fixtures.)
+- [ ] **Follow-up (issue #350):** Live-PR CI parsing of
+      `parent_compliance.exemptions[]` from open PR bodies + reconcile
+      `_OP_PROCESS_FALLBACK_REQUIRED_PHRASES` with §A3 text.
 
 ## Migration
 
