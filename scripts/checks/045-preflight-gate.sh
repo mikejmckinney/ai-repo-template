@@ -67,10 +67,10 @@ else
 fi
 
 if [[ -f "$ADR014_PATH" ]] \
-  && grep -qE '^Accepted$' "$ADR014_PATH" 2>/dev/null; then
-  pass "ADR-014 exists with Status: Accepted"
+  && grep -qE '^Accepted( \(superseded in part by ADR-028\))?$' "$ADR014_PATH" 2>/dev/null; then
+  pass "ADR-014 exists with Status: Accepted (optionally noting ADR-028 supersession)"
 else
-  fail "ADR-014 missing or Status line is not 'Accepted' ($ADR014_PATH)"
+  fail "ADR-014 missing or Status line is not 'Accepted' / 'Accepted (superseded in part by ADR-028)' ($ADR014_PATH)"
 fi
 
 if grep -q 'superseded in part by ADR-014' docs/decisions/adr-005-analyst-preflight-gate.md 2>/dev/null; then

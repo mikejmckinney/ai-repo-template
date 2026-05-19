@@ -51,8 +51,9 @@ All examples below are schema v1. Schema updates follow this policy:
 Schema v2 introduces two structured replacements for free-text
 `exemption_reason:` strings on the `plan_gate` and `diff_gate` objects:
 
-- `gate_status:` — a closed enum (`triggered | passed | not-triggered |
-  user-bypassed`) with per-state required fields. See §"`gate_status` v2".
+- `gate_status:` — a closed enum (`triggered | passed | failed |
+  not-triggered | user-bypassed`) with per-state required fields. See
+  §"`gate_status` v2".
 - `verification_evidence:` — a typed evidence array with three classes
   (`logical | mechanical | pragmatic`) and per-class required artifact
   shape. See §"`verification_evidence` v2".
@@ -563,27 +564,29 @@ and `bytes in context` reasoning used as a substitute for observable evidence.
 ## CI-MUST validation rules for v2 (ADR-028)
 
 For blocks declaring `schema_version: 2` (or higher), validators MUST
-additionally enforce:
+additionally enforce these v2-specific rules (continuing the v1 catalog
+in numeric spirit — rules 12–17 — but restarted at `1.` in the markdown
+so the document lints cleanly):
 
-12. Each `plan_gate` / `diff_gate` object carries `gate_status:` with a
-    value in the enum `{triggered, passed, failed, not-triggered, user-bypassed}`.
-13. The per-state companion fields listed in §"`gate_status` v2" are
-    present and well-typed.
-14. When `gate_status: user-bypassed`, the three guard fields
-    (`bypass_label`, `user_directive`, `user_directive_source_url`) are
-    all present and non-empty; `bypass_label` is on the allow-list in
-    `.context/rules/process_gates.md`; `user_directive_source_url`
-    matches the GitHub issue/PR comment URL pattern for the same
-    repository. Missing or malformed → reject (corresponds to Judge BLOCK).
-15. A single gate object MUST NOT carry both `gate_status:` and a
-    non-null `exemption_reason:`. Reject as ambiguous.
-16. Each `verification_evidence[]` entry declares `class` in the enum
-    `{logical, mechanical, pragmatic}` and ships the per-class artifact
-    keys defined in §"`verification_evidence` v2". Missing required keys
-    → reject.
-17. Validators emit a `DeprecationWarning` (not a rejection) when a
-    block under any `schema_version` populates `exemption_reason:` with
-    a non-null string. Coexistence is indefinite per ADR-028.
+1. Each `plan_gate` / `diff_gate` object carries `gate_status:` with a
+   value in the enum `{triggered, passed, failed, not-triggered, user-bypassed}`.
+2. The per-state companion fields listed in §"`gate_status` v2" are
+   present and well-typed.
+3. When `gate_status: user-bypassed`, the three guard fields
+   (`bypass_label`, `user_directive`, `user_directive_source_url`) are
+   all present and non-empty; `bypass_label` is on the allow-list in
+   `.context/rules/process_gates.md`; `user_directive_source_url`
+   matches the GitHub issue/PR comment URL pattern for the same
+   repository. Missing or malformed → reject (corresponds to Judge BLOCK).
+4. A single gate object MUST NOT carry both `gate_status:` and a
+   non-null `exemption_reason:`. Reject as ambiguous.
+5. Each `verification_evidence[]` entry declares `class` in the enum
+   `{logical, mechanical, pragmatic}` and ships the per-class artifact
+   keys defined in §"`verification_evidence` v2". Missing required keys
+   → reject.
+6. Validators emit a `DeprecationWarning` (not a rejection) when a
+   block under any `schema_version` populates `exemption_reason:` with
+   a non-null string. Coexistence is indefinite per ADR-028.
 
 Semantic checks remain out of scope for the validator. Critic and Judge
 are the semantic backstop for `user_directive` accuracy and for

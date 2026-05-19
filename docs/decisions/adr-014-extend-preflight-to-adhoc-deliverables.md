@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (superseded in part by ADR-028)
 
 ## Date
 
@@ -112,7 +112,7 @@ the same effort.
 - **Pros**: Closes the scope gap with the same mechanism that already
   works. No new infrastructure. Self-applied + Judge BLOCK matches the
   existing model. Authors can opt out cleanly with `outcome-validated`
-  + inline outcome paragraph.
+  plus an inline outcome paragraph.
 - **Cons**: Heuristic trigger criteria require the implementer (or
   Judge) to recognize when the gate applies. False positives possible
   on small features with self-evident outcomes — mitigated by opt-out.

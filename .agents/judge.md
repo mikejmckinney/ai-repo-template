@@ -87,22 +87,22 @@ If ambiguous, ask **one** question: "Is this a plan review or a code/diff review
 - [ ] **Outcome validation plan** — non-exempt plans must identify the issue problem statement, the User outcome / 15-minute test to perform, the evidence to capture, and the pass/fail/framing-disconnect criteria. REQUEST_CHANGES when the plan lists only generic commands or CI checks as validation.
 - [ ] **Plan-gate mediation rule for binding Analyst constraints (ADR-028)** — when an Analyst Pre-Flight Report with verdict PASS lists numbered "non-negotiables" or "Recommendations for plan-gate", those constraints are **binding planning constraints** at the deliverable level (not process-dispatch level). A plan that fails to map every Analyst pre-flight binding deliverable-level constraint to a concrete deliverable is an automatic REQUEST_CHANGES at plan-gate. Judge may override an individual binding constraint only by quoting a user-comment permalink that explicitly downgrades it; absent that quote, Judge has no discretion. Process-dispatch mandates (e.g. "OP must dispatch Critic") remain advisory and do not bind plan acceptance.
 - [ ] **Pre-Flight Report present with verdict PASS when the gate applies (REQUIRED).** BLOCK if the gate applies, no opt-out is in effect, and the report is missing OR has verdict FAIL/HOLD. The Pre-Flight Report validates the user outcome against the 15-minute test — without it, the plan may faithfully implement a deliverable that doesn't match the underlying goal. See `.agents/analyst.md` → "Pre-Flight Validation" for the canonical list and ADR-014 for rationale.
-    - **Gate applies when any one signal is present:**
-        - (a) Issue references a numbered project prompt (`.github/prompts/NN-*.md`) for an interactive/operational deliverable (ADR-005).
-        - (b) Issue uses `feature_request.md` template with `enhancement` label (ADR-014).
-        - (c) Issue is an ADR proposing a new agent surface — role, webhook, external interface, automation mode (ADR-014).
-        - (d) Issue body contains action verbs (build, implement, ship, create) plus a user-facing noun (UI, dashboard, page, service, pipeline, dataset, demo, integration) (ADR-014).
-    - **Opt-out when both are true** (label alone is insufficient — verify the inline paragraph exists):
-        - Issue has the `outcome-validated` label.
-        - Issue body contains an inline outcome paragraph (one paragraph describing what a user can *do* when shipped).
-    - **Exemptions (gate does NOT apply):**
-        - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`, `mirror-postmortem.md`) and prompt documentation (`README.md`).
-        - `bug`-labeled issues, `docs`-labeled issues with no new behavior, `dependencies`-labeled issues, `chore:*`-labeled issues, reverts, internal refactors with no user-facing change.
-        - Note: a `docs` label does not exempt an issue if its body still proposes a new user-facing deliverable — in that case the gate applies and the canonical `analyst.md` "When NOT required" list governs.
+  - **Gate applies when any one signal is present:**
+    - (a) Issue references a numbered project prompt (`.github/prompts/NN-*.md`) for an interactive/operational deliverable (ADR-005).
+    - (b) Issue uses `feature_request.md` template with `enhancement` label (ADR-014).
+    - (c) Issue is an ADR proposing a new agent surface — role, webhook, external interface, automation mode (ADR-014).
+    - (d) Issue body contains action verbs (build, implement, ship, create) plus a user-facing noun (UI, dashboard, page, service, pipeline, dataset, demo, integration) (ADR-014).
+  - **Opt-out when both are true** (label alone is insufficient — verify the inline paragraph exists):
+    - Issue has the `outcome-validated` label.
+    - Issue body contains an inline outcome paragraph (one paragraph describing what a user can *do* when shipped).
+  - **Exemptions (gate does NOT apply):**
+    - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`, `mirror-postmortem.md`) and prompt documentation (`README.md`).
+    - `bug`-labeled issues, `docs`-labeled issues with no new behavior, `dependencies`-labeled issues, `chore:*`-labeled issues, reverts, internal refactors with no user-facing change.
+    - Note: a `docs` label does not exempt an issue if its body still proposes a new user-facing deliverable — in that case the gate applies and the canonical `analyst.md` "When NOT required" list governs.
 
 ## Output Format (Exact)
 
-```
+```text
 DECISION: APPROVE | REQUEST_CHANGES | BLOCK
 
 WHY (1-3 sentences):
@@ -159,12 +159,12 @@ QUESTIONS (max 3; only if truly blocking):
     BLOCK when the PR claims ready/done while missing outcome evidence and that omission masks false verification, required gate bypass, unsafe ownership bypass, or a clear scope mismatch.
 
 19. **Subagent verify-or-replay contract** (PR #312 dogfood): when `parent_compliance.subagents_dispatched[]` contains an entry with `run_status` ∈ `{PARTIAL, BLOCKED_ON_RUNTIME}`, that entry MUST also include a non-empty `apply_replays[]` with byte-anchored `{path, anchor, replacement}` patches, **or** the parent's `monolithic_justification` must explicitly explain how the role-owned work was reconstructed without pass-back (e.g., verbatim from the issue body, from the plan, by human re-dispatch). REQUEST_CHANGES when a non-SUCCESS subagent has empty `apply_replays[]` and the parent's justification does not name a concrete recovery source. BLOCK when the missing pass-back also masks default-agent scope creep into role-owned paths (i.e., the parent applied edits the dispatched role would have owned, with no audit trail of how those edits were derived). Canonical contract: `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract".
-20. **Gate status v2 schema + bypass guard (ADR-028)**: when a `plan_compliance` / `parent_compliance` / `subagent_compliance` block declares `schema_version: 2` (or higher), evidence entries MUST use the `gate_status` enum (`triggered | passed | not-triggered | user-bypassed`) with the per-state required fields. For `gate_status: user-bypassed`, BLOCK if any of `bypass_label:` (must be on the allow-list documented in `.context/rules/process_gates.md`), `user_directive:` (verbatim user-comment quote), or `user_directive_source_url:` (permalink to a comment on the same issue/PR) is missing or unresolvable. The bypass guard exists to close the PR #337-class self-exemption surface; missing or theatre-only fields are an automatic BLOCK, not REQUEST_CHANGES. Legacy `exemption_reason:` under `schema_version: 1` remains valid indefinitely under the coexistence model and emits a `DeprecationWarning` from the validator, not a rejection.
+20. **Gate status v2 schema + bypass guard (ADR-028)**: when a `plan_compliance` / `parent_compliance` / `subagent_compliance` block declares `schema_version: 2` (or higher), evidence entries MUST use the `gate_status` enum (`triggered | passed | failed | not-triggered | user-bypassed`) with the per-state required fields. For `gate_status: user-bypassed`, BLOCK if any of `bypass_label:` (must be on the allow-list documented in `.context/rules/process_gates.md`), `user_directive:` (verbatim user-comment quote), or `user_directive_source_url:` (permalink to a comment on the same issue/PR) is missing or unresolvable. The bypass guard exists to close the PR #337-class self-exemption surface; missing or theatre-only fields are an automatic BLOCK, not REQUEST_CHANGES. Legacy `exemption_reason:` under `schema_version: 1` remains valid indefinitely under the coexistence model and emits a `DeprecationWarning` from the validator, not a rejection.
 21. **Evidence class distinction (ADR-028)**: `verification_evidence[]` entries with `schema_version: 2` (or higher) MUST declare `class` ∈ `{logical, mechanical, pragmatic}` with the required artifact shape per class — `logical` requires a file/section reference; `mechanical` requires a command + expected exit-code/output pair; `pragmatic` requires a permalink to executed work (PR/comment URL) plus an observable outcome. REQUEST_CHANGES when an outcome class requires a stronger evidence class than provided per the matrix in `.context/rules/process_work_style.md` § "Evidence taxonomy" (e.g. a build-decision PR whose verification claims rest entirely on `class: logical` is REQUEST_CHANGES — the PR's outcome is operational and requires ≥1 `class: mechanical` or `class: pragmatic` entry).
 
 ## Output Format (Exact)
 
-```
+```text
 DECISION: APPROVE | REQUEST_CHANGES | BLOCK
 
 SUMMARY (1-3 sentences):
@@ -190,12 +190,14 @@ VALIDATION (commands to run + expected results):
 For both modes, always include verification that the author should perform:
 
 ## Standard Checks
+
 - [ ] Tests pass: `<test command from AI_REPO_GUIDE.md or repo>`
 - [ ] Linting passes: `<lint command>`
 - [ ] Build succeeds: `<build command>`
 - [ ] Manual verification: `<specific steps if applicable>`
 
 ## For Breaking Changes
+
 - [ ] Migration path documented
 - [ ] Deprecation warnings added (if applicable)
 - [ ] Rollback plan identified

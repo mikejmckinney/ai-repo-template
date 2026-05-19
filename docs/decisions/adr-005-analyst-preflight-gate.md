@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-014)
+Accepted (superseded in part by ADR-014 and ADR-028)
 
 > Note: ADR-014 broadened the trigger criteria to ad-hoc deliverable
 > issues. The 15-minute test, report template, and Judge PLAN-GATE BLOCK
@@ -49,12 +49,14 @@ under `.github/prompts/`, where `NN` is a two-digit number prefix such as
 ### Scope of the gate
 
 **In scope** (gate applies):
+
 - Project prompt files whose basenames follow the `NN-*.md` convention
   (e.g., `01-init-project.md`, `05-portfolio-demo-app.md`).
 - Prompts that describe a deliverable: a UI, a service, a pipeline, a
   dataset, anything interactive or operational.
 
 **Out of scope** (gate does NOT apply):
+
 - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`,
   `expand-backlog-entry.md`) — these describe
   agent procedures, not project deliverables, and have their own

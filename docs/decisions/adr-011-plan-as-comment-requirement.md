@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-026)
+Accepted (superseded in part by ADR-026 and ADR-028)
 
 ## Date
 
@@ -68,6 +68,7 @@ We will require:
 ### Scope of v1
 
 **In scope:**
+
 - New file: `.github/PLAN_TEMPLATE.md`.
 - Updated governance docs (`AGENTS.md`, `.github/copilot-instructions.md`,
   `CLAUDE.md`) describing the requirement and the exemption rule.
@@ -84,6 +85,7 @@ We will require:
   the pipeline narrative.
 
 **Out of scope (deferred to #155):**
+
 - Approval mechanism (label, reaction, slash command, CI gate).
 - Approval expiry on issue body edit.
 - ADR-005 trigger re-keying so both gates share an exemption surface.
