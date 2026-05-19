@@ -72,6 +72,14 @@ and [`.context/state/adr_exemption_registry.yaml`](.context/state/adr_exemption_
 back the four predicates and are edited under the governance rules
 in ADR-028 §"Registry governance".
 
+ADR-028 delivers a **predicate library plus Judge attestation
+contract**, not end-to-end live-PR CI enforcement. The library
+validates `kind` values and registry lookups against in-repo fixtures;
+Judge mediates live-PR enforcement at review time by reading the
+exemption claim against ADR-028 by hand. Live-PR CI parsing of
+`parent_compliance.exemptions[]` is a deliberate follow-up (issue
+#350) — see ADR-028 §"Enforcement scope".
+
 ## Per-concern process rules
 
 Read the concern files relevant to the work you are about to do. The

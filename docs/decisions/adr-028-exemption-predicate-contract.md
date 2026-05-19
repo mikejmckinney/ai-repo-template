@@ -8,6 +8,24 @@ Accepted
 
 2026-05-19
 
+## Enforcement scope
+
+This ADR delivers (a) the predicate library
+(`scripts/checks/060-exemption-predicates.sh` and the Python helpers in
+`scripts/lib/`), (b) the three registry contracts under
+`.context/state/` (`judge_runtime_allowlist.yaml`,
+`exemption_label_appliers.yaml`, `adr_exemption_registry.yaml`), and
+(c) the Judge attestation header from §A2. Live-PR CI validation that
+fetches `parent_compliance.exemptions[]` from open PR bodies and invokes
+the predicates against them is a deliberate follow-up tracked in issue
+#350. Until that follow-up lands, enforcement is **judge-mediated at
+review time** (Judge reads the exemption claim against ADR-028 by hand
+and REQUEST_CHANGES on mismatch) and **library-mediated for in-repo
+fixtures only** (the predicate library validates the four `kind` values
+and registry lookups against fixtures committed under
+`scripts/tests/fixtures/`). Treat any "machine-checkable" framing for
+live PRs as aspirational until #350 lands.
+
 ## Context
 
 ADR-026 introduced parent/subagent compliance contracts (`parent_compliance`,

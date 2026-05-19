@@ -30,6 +30,15 @@ plan-gate APPROVE from a pre-edit allowlisted identity;
 self-referential edits to `judge_runtime_allowlist.yaml` require a
 second allowlisted Judge).
 
+**Enforcement scope.** These registries back the predicate library
+(`scripts/checks/060-exemption-predicates.sh`), which today validates
+in-repo fixtures under `scripts/tests/fixtures/` and the `kind`/registry
+lookups within them. Live-PR enforcement — parsing
+`parent_compliance.exemptions[]` from an open PR body and invoking the
+predicates against it — is a deliberate follow-up tracked in issue
+#350. Until #350 lands, exemption claims on live PRs are mediated by
+Judge at review time per ADR-028 §"Enforcement scope".
+
 - **`judge_runtime_allowlist.yaml`** — trusted Judge runtime identities for the `judge_decision` predicate (ADR-028 §A1¶2). Revoked entries move to `revoked[]` with `revoked_at` + `reason`; never delete.
 - **`exemption_label_appliers.yaml`** — optional alternative path for the `label` predicate (ADR-028 §A1¶4 / RC3). Informational by default; enable defense-in-depth by setting `policy.enforce: true` and populating `enforce_for_labels[]`.
 - **`adr_exemption_registry.yaml`** — active ADR clauses granting standing exemptions for the `adr_clause` predicate (ADR-028 §A4). Superseded entries move to `expired[]` with `expired_at` + `replacement_clause_id`; never delete.

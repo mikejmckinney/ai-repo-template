@@ -45,6 +45,24 @@ All examples below are schema v1. Schema updates follow this policy:
   `unknown top-level keys` path. Authors emitting a new bare
   `agent-state:v1` block (including any with `opportunity_notes`) must
   declare `schema_version: 1.2`.
+- v1.3 (current for `plan_compliance` and `parent_compliance`) adds the
+  optional top-level `exemptions[]` field defined in ADR-028. v1.3 is
+  fully backward-compatible with v1 readers: the field is optional,
+  absence is the default, and unknown-field tolerance applies. **Rollout
+  note:** the deterministic validator in
+  `scripts/lib/compliance_schema.py` does NOT yet accept `exemptions[]`
+  as a top-level sibling — adding it to a fixture today is rejected by
+  `_reject_unknown_keys`. Validator extension and fixture migration are
+  tracked as follow-up #350; until then, authors emitting `exemptions[]`
+  do so in PR bodies (where Judge reads them at review time) but not in
+  the `scripts/tests/fixtures/compliance/valid/**` fixtures.
+- The per-gate `exemption_reason` string under `plan_gate` and
+  `diff_gate` is **deprecated** in favor of the typed top-level
+  `exemptions[]` array (which carries a `gate` field per entry). Both
+  fields remain tolerated by the schema for at least one release cycle;
+  a future ADR will remove `exemption_reason`. Authors writing new
+  blocks should set `exemption_reason: null` and express the
+  exemption via `exemptions[]` instead.
 
 ## `plan_compliance` v1
 
@@ -62,6 +80,7 @@ Emitted in implementation plans before substantive implementation begins.
 | `adr_required` | object | yes | `required`, `link`, and `supersession_notes`. |
 | `doc_sync` | object | yes | `triggered`, `companions`, and `no_change_justifications`. |
 | `verification` | list of strings | yes | Exact commands or manual checks planned. |
+| `exemptions` | list of objects | no (v1.3) | Typed exemption claims per ADR-028. Each entry: `{kind, gate, evidence}`. `kind` is one of `judge_decision` \| `label` \| `operational_process` \| `adr_clause`. `gate` is the gate being skipped (e.g. `analyst-preflight`, `plan-as-comment`, `pre-merge-verification`, `doc-sync`, `provenance`). `evidence` is a `kind`-specific sub-block (see "exemptions[] entry shape" below). Empty list or absence means no exemption claimed. |
 
 ### Example — filled `plan_compliance`
 
@@ -131,6 +150,7 @@ Emitted in PR bodies by the parent/default agent before review.
 | `adr_required` | object | yes | `required`, `link`. |
 | `deviations` | list of objects | yes | Planned-vs-actual deviations; empty list allowed. |
 | `verification_results` | list of objects | yes | Command/result pairs matching the plan. |
+| `exemptions` | list of objects | no (v1.3) | Same shape as `plan_compliance.exemptions`. See "exemptions[] entry shape" below. |
 
 #### `runtime_pointer` subfields
 
@@ -147,6 +167,23 @@ the exemption or be `null`, and `reason` must be a non-empty string.
 Represent the no-pointer case with these explicit subfields in the same object;
 do not encode the null-path reason in surrounding prose or in
 `decision_affected` alone.
+
+#### `exemptions[]` entry shape (v1.3, ADR-028)
+
+Every entry MUST select exactly one `kind` from the closed taxonomy in
+[`adr-028-exemption-predicate-contract.md`](decisions/adr-028-exemption-predicate-contract.md).
+The `evidence` sub-block is `kind`-specific:
+
+| `kind` | Required `evidence` sub-fields |
+|---|---|
+| `judge_decision` | `judge_comment_url` (string, URL to the Judge comment matching ADR-028 §A2 header) + `judge_runtime_identity` (string, GitHub login present in `judge_runtime_allowlist.yaml`) |
+| `label` | `label_name` (string, e.g. `chore:no-plan`) + `applier_login` (string, GitHub login of the label applier; MUST NOT appear in `parent_compliance.subagents_dispatched[].agent`) |
+| `operational_process` | Either `matched_globs` (list of strings — paths in the PR diff matching the §A3 glob union) OR `grep_fallback_phrase` (string — one of the §A3 fallback phrases), plus `issue_url` (string, link to the issue body that references a shared procedural prompt) |
+| `adr_clause` | `clause_id` (string, format `ADR-NNN#<slug>`; MUST resolve to an active entry in `adr_exemption_registry.yaml`) |
+
+Fixture rollout for these entries is tracked in follow-up #350 (the
+validator's `_reject_unknown_keys` set must be extended before any
+in-repo fixture can declare `exemptions[]` and stay green).
 
 ### Example — no-subagent `parent_compliance`
 
