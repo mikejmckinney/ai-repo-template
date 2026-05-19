@@ -5,6 +5,10 @@
 # Sourced by test.sh; relies on pass()/fail()/warn() and $PASS/$FAIL/$WARN from
 # scripts/lib/{logging,assertions}.sh. CWD == repo root (set by test.sh).
 #
+# Scope: This check runs the validator against in-repo fixtures only.
+# Live PR parent_compliance.exemptions[] parsing is a deliberate follow-up;
+# the library is the contract surface this PR delivers.
+#
 # Checks:
 #   1. The three ADR-028 registry YAMLs exist and parse as valid YAML.
 #   2. scripts/lib/exemption_predicates.py --self-check passes all fixtures.
@@ -13,7 +17,7 @@
 # also exists; both run (lexical sort: 060-exemption-predicates.sh runs first).
 # A renumber to 056 or 058 would avoid the tie — tracked as opportunity note.
 
-echo "Checking ADR-028 exemption predicate validator..."
+echo "Checking ADR-028 exemption predicate library (smoke-check; live-PR validation tracked separately)..."
 
 REGISTRY_FILES=(
   ".context/state/judge_runtime_allowlist.yaml"

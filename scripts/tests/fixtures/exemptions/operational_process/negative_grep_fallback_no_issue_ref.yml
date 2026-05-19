@@ -5,7 +5,5 @@ inputs:
   pr_body: |
     This PR updates the shared procedural prompt for onboarding agents.
     operational_process exemption applies per ADR-014.
-  issue_body: |
-    This issue tracks updates to the op-issue-workflow.
-    See .github/prompts/op-issue-workflow.md for the canonical prompt.
-expected: true
+  issue_body: ""
+expected: false

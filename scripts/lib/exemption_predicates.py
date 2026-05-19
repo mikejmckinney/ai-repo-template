@@ -98,6 +98,13 @@ _OP_GREP_FALLBACK_PHRASES: List[str] = [
     "exempt per mirror-postmortem.md",
 ]
 
+# A3 grep fallback: canonical procedural-prompt references required in issue body (ADR-028 A3)
+_OP_PROCESS_FALLBACK_REQUIRED_PHRASES: List[str] = [
+    ".github/prompts/op-issue-workflow.md",
+    ".github/prompts/pr-resolve-all.md",
+    ".github/prompts/multi-model-consensus-plan.md",
+]
+
 # Default recognized exemption label names (RC3)
 EXEMPTION_LABELS: List[str] = [
     "chore:no-plan",
@@ -143,6 +150,7 @@ def judge_decision(
     comment_body: str,
     runtime_identity: str,
     allowlist: Dict[str, Any],
+    excluded_logins: Optional[List[str]] = None,
 ) -> bool:
     """A1 judge_decision predicate.
 
@@ -150,12 +158,18 @@ def judge_decision(
     - comment_body contains the A2 two-line header (em-dash, exact wording)
     - runtime_identity is in allowlist['allowlist'][].login
     - runtime_identity is NOT in allowlist['revoked'][].login
+    - runtime_identity is NOT in excluded_logins (A1p4 RC1, when supplied)
 
-    Author-disjoint and subagents_dispatched exclusion (A1p4) must be
-    enforced by the caller; this function validates the header surface (RC2)
-    and allowlist membership (RC1 partial).
+    A1p4 RC1 enforcement is built-in when `excluded_logins` is supplied.
+    Callers wiring this to live PR data must pass
+    `parent_compliance.subagents_dispatched[].identity` values.
     """
     if not _JUDGE_HEADER_RE.search(comment_body):
+        return False
+
+    # A1p4 RC1: if the commenter is a dispatched subagent, reject
+    if excluded_logins is not None and runtime_identity in excluded_logins:
+        # runtime_identity is in subagents_dispatched[] — A1p4 RC1 exclusion
         return False
 
     revoked = {e["login"] for e in allowlist.get("revoked", [])}
@@ -228,16 +242,17 @@ def operational_process(
     glob_table: List[str],
     grep_fallback_phrases: List[str],
     pr_body: str,
+    issue_body: str = "",
 ) -> bool:
     """A3 operational_process predicate.
 
     Returns True iff:
     - Every changed path matches at least one glob in glob_table (glob condition), OR
-    - At least one grep_fallback_phrase appears in pr_body (grep fallback).
+    - At least one grep_fallback_phrase appears in pr_body AND the issue body
+      contains a reference to a canonical procedural prompt from
+      _OP_PROCESS_FALLBACK_REQUIRED_PHRASES (grep fallback, ADR-028 A3).
 
     An empty changed_paths list is rejected (no evidence of scope).
-    The grep fallback issue cross-reference requirement (A3) is the caller's
-    responsibility when invoking this function outside the self-check mode.
     """
     if not changed_paths:
         return False
@@ -246,9 +261,10 @@ def operational_process(
     if all(_matches_any_glob(p, glob_table) for p in changed_paths):
         return True
 
-    # Grep fallback: any registered phrase in PR body
-    for phrase in grep_fallback_phrases:
-        if phrase in pr_body:
+    # Grep fallback: phrase in PR body AND canonical procedural prompt ref in issue body
+    pr_phrase_matched = any(phrase in pr_body for phrase in grep_fallback_phrases)
+    if pr_phrase_matched:
+        if any(ref in issue_body for ref in _OP_PROCESS_FALLBACK_REQUIRED_PHRASES):
             return True
 
     return False
@@ -341,6 +357,7 @@ def _run_fixture(
                 comment_body=inputs["comment_body"],
                 runtime_identity=inputs["runtime_identity"],
                 allowlist=allowlist,
+                excluded_logins=inputs.get("excluded_logins"),
             )
 
         elif kind == "label":
@@ -361,6 +378,7 @@ def _run_fixture(
                 glob_table=_OP_PROCESS_GLOBS,
                 grep_fallback_phrases=_OP_GREP_FALLBACK_PHRASES,
                 pr_body=inputs.get("pr_body", ""),
+                issue_body=inputs.get("issue_body", ""),
             )
 
         elif kind == "adr_clause":
@@ -446,6 +464,8 @@ def _build_parser() -> argparse.ArgumentParser:
     jd.add_argument("--allowlist-file",
                     default=".context/state/judge_runtime_allowlist.yaml",
                     help="Path to judge_runtime_allowlist.yaml")
+    jd.add_argument("--subagents-dispatched", default="",
+                    help="Comma-separated subagent logins excluded (A1p4 RC1 enforcement)")
 
     # label
     lb = sub.add_parser("label", help="Validate A1p4 RC3 label predicate")
@@ -469,6 +489,8 @@ def _build_parser() -> argparse.ArgumentParser:
                     help="Comma-separated changed file paths")
     op.add_argument("--pr-body", default="",
                     help="PR body text or @filepath")
+    op.add_argument("--issue-body", default="",
+                    help="Issue body text or @filepath (required for grep-fallback path, ADR-028 A3)")
 
     # adr-clause
     ac = sub.add_parser("adr-clause", help="Validate A4 adr_clause predicate")
@@ -506,7 +528,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.command == "judge-decision":
         body = _read_arg_or_file(args.comment_body)
         al = _load_yaml_file(Path(args.allowlist_file))
-        result = judge_decision(body, args.runtime_identity, al)
+        excluded = (
+            [x.strip() for x in args.subagents_dispatched.split(",") if x.strip()]
+            if args.subagents_dispatched
+            else None
+        )
+        result = judge_decision(body, args.runtime_identity, al, excluded_logins=excluded)
         print("true" if result else "false")
         return 0 if result else 1
 
@@ -522,8 +549,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.command == "operational-process":
         paths = [x.strip() for x in args.changed_paths.split(",") if x.strip()]
         body = _read_arg_or_file(args.pr_body)
+        ib = _read_arg_or_file(args.issue_body) if args.issue_body else ""
         result = operational_process(
-            paths, _OP_PROCESS_GLOBS, _OP_GREP_FALLBACK_PHRASES, body
+            paths, _OP_PROCESS_GLOBS, _OP_GREP_FALLBACK_PHRASES, body, issue_body=ib
         )
         print("true" if result else "false")
         return 0 if result else 1

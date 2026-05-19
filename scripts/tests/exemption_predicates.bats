@@ -243,7 +243,10 @@ DECISION: APPROVE WITH EXEMPTION —  "     --runtime-identity "mikejmckinney"
 
 @test "operational_process: grep fallback phrase in PR body returns true" {
   cd "$REPO_ROOT"
-  run python3 "$PREDICATES" operational-process     --changed-paths "docs/guides/some-guide.md"     --pr-body "This is a shared procedural prompt update."
+  run python3 "$PREDICATES" operational-process \
+    --changed-paths "docs/guides/some-guide.md" \
+    --pr-body "This is a shared procedural prompt update." \
+    --issue-body "See .github/prompts/op-issue-workflow.md for details."
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
 }
@@ -339,6 +342,46 @@ REGEOF
   run python3 "$PREDICATES" adr-clause     --clause-id "not-an-adr-clause-id"     --now "2026-05-19"
   [ "$status" -ne 0 ]
   [ "$output" = "false" ]
+}
+
+# ---------------------------------------------------------------------------
+# A1 judge_decision -- A1p4 RC1 subagent exclusion
+# ---------------------------------------------------------------------------
+
+@test "judge_decision: allowlisted identity in excluded_logins returns false (A1p4 RC1)" {
+  cd "$REPO_ROOT"
+  run python3 "$PREDICATES" judge-decision \
+    --comment-body "## Judge â DECISION
+
+DECISION: APPROVE WITH EXEMPTION â operational-process PR; A3 globs match." \
+    --runtime-identity "copilot-pull-request-reviewer[bot]" \
+    --subagents-dispatched "copilot-pull-request-reviewer[bot]"
+  [ "$status" -ne 0 ]
+  [ "$output" = "false" ]
+}
+
+# ---------------------------------------------------------------------------
+# A3 operational_process -- grep fallback issue cross-reference (ADR-028 A3)
+# ---------------------------------------------------------------------------
+
+@test "operational_process: grep fallback without issue body ref returns false" {
+  cd "$REPO_ROOT"
+  run python3 "$PREDICATES" operational-process \
+    --changed-paths "docs/guides/some-guide.md" \
+    --pr-body "This is a shared procedural prompt update." \
+    --issue-body "No procedural prompt reference here."
+  [ "$status" -ne 0 ]
+  [ "$output" = "false" ]
+}
+
+@test "operational_process: grep fallback with pr-resolve-all.md issue ref returns true" {
+  cd "$REPO_ROOT"
+  run python3 "$PREDICATES" operational-process \
+    --changed-paths "docs/guides/some-guide.md" \
+    --pr-body "exempt per ADR-014" \
+    --issue-body "Tracked under .github/prompts/pr-resolve-all.md workflow."
+  [ "$status" -eq 0 ]
+  [ "$output" = "true" ]
 }
 
 # ---------------------------------------------------------------------------
