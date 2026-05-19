@@ -1,6 +1,0 @@
-kind: adr_clause
-inputs:
-  clause_id: "ADR-011#plan-as-comment-exemption-≤20LOC-single-role"
-  now: "2026-05-19"
-  # uses live adr_exemption_registry.yaml; entry has expires_at: null
-expected: true

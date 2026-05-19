@@ -1,6 +1,0 @@
-kind: operational_process
-inputs:
-  changed_paths:
-    - "scripts/lib/exemption_predicates.py"
-  pr_body: ""
-expected: true

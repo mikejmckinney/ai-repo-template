@@ -1,6 +1,0 @@
-kind: operational_process
-inputs:
-  changed_paths:
-    - ".context/rules/domain_code_quality.md"
-  pr_body: ""
-expected: true

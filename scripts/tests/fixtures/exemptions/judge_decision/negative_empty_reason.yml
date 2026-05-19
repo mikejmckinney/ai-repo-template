@@ -1,6 +1,0 @@
-kind: judge_decision
-inputs:
-  comment_body: "## Judge — DECISION\n\nDECISION: APPROVE WITH EXEMPTION — "
-  runtime_identity: "mikejmckinney"
-  # reason string is empty / whitespace only
-expected: false

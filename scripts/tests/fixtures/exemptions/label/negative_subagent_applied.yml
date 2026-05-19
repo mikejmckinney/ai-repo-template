@@ -1,8 +1,0 @@
-kind: label
-inputs:
-  pr_labels: ["chore:no-plan"]
-  subagents_dispatched: ["github-copilot[bot]"]
-  exemption_labels: ["chore:no-plan", "smoke-test"]
-  applier_login: "github-copilot[bot]"
-  # RC3 always-on: applier is in subagents_dispatched -- must reject
-expected: false

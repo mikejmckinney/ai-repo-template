@@ -1,7 +1,7 @@
 parent_compliance:
   schema_version: 1
-  handshake_token: Session handshake v20
-  agents_md_version: 20
+  handshake_token: Session handshake v19
+  agents_md_version: 19
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
@@ -12,7 +12,7 @@ parent_compliance:
     - schema_version: 1
       role: docs
       role_contract_version: 1
-      agents_md_version: 20
+      agents_md_version: 19
       receipt:
         mode: visible-line
         value: Role receipt v1 — docs

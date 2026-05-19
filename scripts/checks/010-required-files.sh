@@ -70,8 +70,6 @@ REQUIRED_FILES=(
   "scripts/lib/compliance_schema.py"
   "scripts/validate-compliance-examples.py"
   "scripts/validate-compliance-fixtures.py"
-  "scripts/lib/exemption_predicates.py"
-  "scripts/checks/060-exemption-predicates.sh"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do

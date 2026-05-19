@@ -1,7 +1,0 @@
-kind: operational_process
-inputs:
-  changed_paths:
-    - "docs/README.md"
-  pr_body: ""
-  # docs/ is NOT in the A3 glob set and no grep fallback phrase in body
-expected: false

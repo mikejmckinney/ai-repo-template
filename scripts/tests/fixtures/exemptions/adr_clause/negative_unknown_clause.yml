@@ -1,6 +1,0 @@
-kind: adr_clause
-inputs:
-  clause_id: "ADR-999#does-not-exist-anywhere"
-  now: "2026-05-19"
-  # clause not in entries[] or expired[] of live registry
-expected: false

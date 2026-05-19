@@ -1,8 +1,0 @@
-kind: label
-inputs:
-  pr_labels: ["not-an-exemption-label"]
-  subagents_dispatched: []
-  exemption_labels: ["chore:no-plan", "smoke-test", "outcome-validated"]
-  applier_login: "mikejmckinney"
-  # no recognized exemption label on PR
-expected: false

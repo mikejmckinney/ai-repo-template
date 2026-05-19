@@ -1,9 +1,0 @@
-kind: label
-inputs:
-  pr_labels: ["smoke-test"]
-  subagents_dispatched: []
-  exemption_labels: ["smoke-test"]
-  applier_login: "any-human-user"
-  # enforce is false in live config, so applier identity is unconstrained
-  # (only the subagents_dispatched RC3 check applies, and list is empty)
-expected: true

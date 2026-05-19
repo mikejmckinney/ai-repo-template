@@ -1,5 +1,0 @@
-kind: judge_decision
-inputs:
-  comment_body: "This PR looks good to me! I approve without exemption."
-  runtime_identity: "mikejmckinney"
-expected: false

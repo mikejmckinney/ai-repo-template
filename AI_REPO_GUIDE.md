@@ -205,9 +205,6 @@ bash install.sh
 | `.context/state/coordination.md` | Legacy manual claim board / compatibility view; may be stale |
 | `.context/state/feedback_template.md` | Stakeholder feedback capture template |
 | `.context/state/_active.md` | Legacy manual active-task view; may be stale |
-| `.context/state/judge_runtime_allowlist.yaml` | ADR-028 §A1¶2 source of truth for `judge_decision` exemption predicate — trusted Judge runtime identities and their kinds (`human`, `copilot_runtime`, `claude_runtime`, `gemini_runtime`, `workflow_runtime`). Validated by `scripts/checks/060-exemption-predicates.sh` against in-repo fixtures; live-PR validation is follow-up #350. Edits governed by ADR-028 §"Registry governance" |
-| `.context/state/exemption_label_appliers.yaml` | ADR-028 §A1¶4 (optional alt-path for `label` predicate) — when `policy.enforce: true`, restricts label-applier identity to a fixed allowlist on top of the default `subagents_dispatched` exclusion. Validated by `scripts/checks/060-exemption-predicates.sh` against in-repo fixtures; live-PR validation is follow-up #350 |
-| `.context/state/adr_exemption_registry.yaml` | ADR-028 §A4 source of truth for `adr_clause` exemption predicate — active ADR clauses granting standing exemptions, with `scope[]` globs and `expires_at` lifecycle. Validated by `scripts/checks/060-exemption-predicates.sh` against in-repo fixtures; live-PR validation is follow-up #350 |
 | `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
 | `.context/vision/` | Mockups and architecture diagrams |
 

@@ -1,6 +1,0 @@
-kind: operational_process
-inputs:
-  changed_paths:
-    - ".context/state/judge_runtime_allowlist.yaml"
-  pr_body: ""
-expected: true

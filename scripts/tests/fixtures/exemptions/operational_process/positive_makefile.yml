@@ -1,6 +1,0 @@
-kind: operational_process
-inputs:
-  changed_paths:
-    - "Makefile"
-  pr_body: ""
-expected: true

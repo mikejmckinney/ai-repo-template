@@ -1,7 +1,0 @@
-kind: label
-inputs:
-  pr_labels: []
-  subagents_dispatched: []
-  exemption_labels: ["chore:no-plan"]
-  applier_login: "mikejmckinney"
-expected: false

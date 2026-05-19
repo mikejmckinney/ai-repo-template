@@ -1,6 +1,0 @@
-kind: adr_clause
-inputs:
-  clause_id: "ADR-028"
-  now: "2026-05-19"
-  # missing the #slug portion
-expected: false

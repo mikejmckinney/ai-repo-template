@@ -1,9 +1,0 @@
-kind: judge_decision
-inputs:
-  comment_body: |
-    ## Judge - DECISION
-
-    DECISION: APPROVE WITH EXEMPTION - uses hyphen-minus not em-dash.
-  runtime_identity: "mikejmckinney"
-  # header uses hyphen-minus (-) not em-dash (—) -- must fail RC2 check
-expected: false
