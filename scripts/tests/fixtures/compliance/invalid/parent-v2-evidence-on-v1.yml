@@ -1,0 +1,34 @@
+parent_compliance:
+  schema_version: 1
+  handshake_token: Session handshake v19
+  agents_md_version: 19
+  runtime_pointer:
+    path: .github/copilot-instructions.md
+    loaded: true
+    decision_affected: Used Copilot-specific guidance.
+  applicable_roles:
+    - architect
+  subagents_dispatched: []
+  monolithic_justification: verification_evidence under schema_version 1 — must be rejected (v2 field only).
+  plan_gate:
+    status: linked
+    link: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488954523
+    exemption_reason: null
+  diff_gate:
+    status: pending
+    link: null
+    exemption_reason: null
+  adr_required:
+    required: true
+    link: docs/decisions/adr-026-compliance-contracts.md
+  deviations: []
+  verification_results:
+    - command: bash test.sh
+      result: pass
+      evidence: ok
+  verification_evidence:
+    - class: logical
+      claim: misplaced field
+      artifact:
+        path: docs/compliance_schemas.md
+        section: Schema v2

@@ -1,0 +1,28 @@
+parent_compliance:
+  schema_version: 2
+  handshake_token: Session handshake v19
+  agents_md_version: 19
+  runtime_pointer:
+    path: .github/copilot-instructions.md
+    loaded: true
+    decision_affected: Used Copilot-specific guidance.
+  applicable_roles:
+    - architect
+  subagents_dispatched: []
+  monolithic_justification: User bypassed dispatch via cap-override label and explicit directive.
+  plan_gate:
+    gate_status: user-bypassed
+    bypass_label: cap-override
+    user_directive: "use the cap-override label to continue automatically"
+    user_directive_source_url: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488700000
+  diff_gate:
+    gate_status: not-triggered
+    not_triggered_reason: Docs-only change; no executable surfaces require diff-gate.
+  adr_required:
+    required: true
+    link: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
+  deviations: []
+  verification_results:
+    - command: bash test.sh
+      result: pass
+      evidence: 557 passed, 4 warnings, 0 failed.

@@ -1,0 +1,32 @@
+parent_compliance:
+  schema_version: 2
+  handshake_token: Session handshake v19
+  agents_md_version: 19
+  runtime_pointer:
+    path: .github/copilot-instructions.md
+    loaded: true
+    decision_affected: Used Copilot-specific guidance.
+  applicable_roles:
+    - architect
+  subagents_dispatched: []
+  monolithic_justification: verification_evidence with invalid class — must be rejected.
+  plan_gate:
+    gate_status: passed
+    link: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488954523
+  diff_gate:
+    gate_status: passed
+    link: https://github.com/mikejmckinney/ai-repo-template/pull/345
+  adr_required:
+    required: true
+    link: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
+  deviations: []
+  verification_results:
+    - command: bash test.sh
+      result: pass
+      evidence: ok
+  verification_evidence:
+    - class: vibes
+      claim: It feels right.
+      artifact:
+        path: docs/compliance_schemas.md
+        section: Schema v2

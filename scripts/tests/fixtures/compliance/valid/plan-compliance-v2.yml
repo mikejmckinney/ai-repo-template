@@ -1,0 +1,35 @@
+plan_compliance:
+  schema_version: 2
+  applicable_roles:
+    - architect
+  instruction_resources:
+    - resource: AGENTS.md
+      why_applicable: Canonical startup contract.
+      evidence: AGENTS_MD_VERSION 19.
+      decision_affected: Plan emits handshake.
+    - resource: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
+      why_applicable: Adopts v2 gate_status enum and three-class evidence taxonomy.
+      evidence: "gate_status: passed used with link companion field."
+      decision_affected: plan_gate uses v2 shape.
+  role_dispatch:
+    decision: monolithic
+    planned_subagents: []
+    monolithic_justification: Plan-only edit; no role-owned files outside Architect.
+  plan_gate:
+    gate_status: passed
+    link: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488954523
+  adr_required:
+    required: true
+    link: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
+    supersession_notes:
+      - ADR-005 superseded in part.
+      - ADR-011 superseded in part.
+      - ADR-014 superseded in part.
+  doc_sync:
+    triggered: true
+    companions:
+      - docs/compliance_schemas.md
+    no_change_justifications: []
+  verification:
+    - python3 scripts/validate-compliance-fixtures.py
+    - bash test.sh

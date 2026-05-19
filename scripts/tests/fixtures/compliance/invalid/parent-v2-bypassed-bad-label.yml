@@ -1,0 +1,28 @@
+parent_compliance:
+  schema_version: 2
+  handshake_token: Session handshake v19
+  agents_md_version: 19
+  runtime_pointer:
+    path: .github/copilot-instructions.md
+    loaded: true
+    decision_affected: Used Copilot-specific guidance.
+  applicable_roles:
+    - architect
+  subagents_dispatched: []
+  monolithic_justification: bypass_label not on allow-list — must be rejected.
+  plan_gate:
+    gate_status: user-bypassed
+    bypass_label: yolo-skip-gate
+    user_directive: "skip it"
+    user_directive_source_url: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488700000
+  diff_gate:
+    gate_status: passed
+    link: https://github.com/mikejmckinney/ai-repo-template/pull/345
+  adr_required:
+    required: true
+    link: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
+  deviations: []
+  verification_results:
+    - command: bash test.sh
+      result: pass
+      evidence: ok

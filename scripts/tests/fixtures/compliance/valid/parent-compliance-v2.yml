@@ -1,0 +1,42 @@
+parent_compliance:
+  schema_version: 2
+  handshake_token: Session handshake v19
+  agents_md_version: 19
+  runtime_pointer:
+    path: .github/copilot-instructions.md
+    loaded: true
+    decision_affected: Used Copilot-specific manual handoff chaining guidance.
+  applicable_roles:
+    - architect
+  subagents_dispatched: []
+  monolithic_justification: Architect-owned plan absorbed; no role-owned files touched outside Architect ownership.
+  plan_gate:
+    gate_status: passed
+    link: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4488954523
+  diff_gate:
+    gate_status: passed
+    link: https://github.com/mikejmckinney/ai-repo-template/pull/345#issuecomment-9999999999
+  adr_required:
+    required: true
+    link: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
+  deviations: []
+  verification_results:
+    - command: bash test.sh
+      result: pass
+      evidence: 557 passed, 4 warnings, 0 failed.
+  verification_evidence:
+    - class: logical
+      claim: ADR-028 supersedes ADR-005/-011/-014 in part.
+      artifact:
+        path: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
+        section: Supersedes
+    - class: mechanical
+      claim: Compliance validator accepts schema_version 2.
+      artifact:
+        command: python3 scripts/validate-compliance-fixtures.py
+        expected_exit_code: 0
+    - class: pragmatic
+      claim: Cadence comment posted to issue #338.
+      artifact:
+        url: https://github.com/mikejmckinney/ai-repo-template/issues/338#issuecomment-4489129397
+        observed_outcome: Comment body length 3264 bytes verified via gh api.

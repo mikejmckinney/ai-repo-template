@@ -9,6 +9,7 @@ dispatched, or executed.
 from __future__ import annotations
 
 import re
+import warnings
 from pathlib import Path, PurePosixPath
 from typing import Any, Dict, Optional, Tuple, Union
 
@@ -38,6 +39,30 @@ _HANDSHAKE_RE = re.compile(r"^Session handshake v(?P<version>\d+)$")
 # Accepted schema_version values for subagent_compliance and agent-state:v1.
 # v1.2 (additive) adds opportunity_notes; v1 and v1.1 remain accepted.
 _ALLOWED_SCHEMA_VERSIONS_V12 = frozenset({1.0, 1.1, 1.2})
+
+# Schema v2 (ADR-028) constants for gate_status enum + verification_evidence
+# three-class taxonomy + user-bypassed three-field structural guard. v2 is
+# additive and coexists indefinitely with v1; see docs/compliance_schemas.md
+# § "Schema v2 coexistence (ADR-028)" and docs/decisions/adr-028-*.md.
+_GATE_STATUS_VALUES = frozenset({
+    "triggered", "passed", "failed", "not-triggered", "user-bypassed",
+})
+_EVIDENCE_CLASS_VALUES = frozenset({"logical", "mechanical", "pragmatic"})
+# Allow-list for user-bypassed gate_status.bypass_label. Canonical source is
+# .context/rules/process_gates.md § "User-bypass labels (allow-list)" (added
+# in Stage 3). The validator hardcodes this set so it does not need to parse
+# a markdown table at runtime; the rule file and this constant must move
+# together. Adding a label here requires the same-PR rule-file edit.
+_BYPASS_LABEL_ALLOWLIST = frozenset({"cap-override", "user-bypass"})
+# Pattern for user_directive_source_url. Matches GitHub issue or PR comment
+# permalinks of the form:
+#   https://github.com/<owner>/<repo>/issues/<n>#issuecomment-<id>
+#   https://github.com/<owner>/<repo>/pull/<n>#issuecomment-<id>
+# Validator does NOT click through; semantic accuracy is Critic's job per
+# .agents/critic.md § "Bypass guard theatre".
+_BYPASS_URL_RE = re.compile(
+    r"^https://github\.com/[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+/(issues|pull)/\d+#issuecomment-\d+$"
+)
 
 
 def load_yaml(path: Path) -> Any:
@@ -163,6 +188,15 @@ def _require_schema_version(mapping: dict[str, Any], source: str) -> None:
         raise ComplianceError(f"{source}: schema_version must be 1")
 
 
+def _require_schema_version_v1_or_v2(mapping: dict[str, Any], source: str) -> int:
+    """Accept schema_version 1 or 2 (ADR-028 coexistence). Returns the version."""
+    _require_type(mapping.get("schema_version"), int, f"{source}.schema_version")
+    version = mapping["schema_version"]
+    if version not in (1, 2):
+        raise ComplianceError(f"{source}: schema_version must be 1 or 2; got {version}")
+    return version
+
+
 def _require_schema_version_v12(mapping: dict[str, Any], source: str) -> None:
     """Accept schema_version values 1, 1.1, and 1.2 (int or float, not bool)."""
     version = mapping.get("schema_version")
@@ -248,6 +282,13 @@ def _validate_role_dispatch(block: Any, source: str) -> None:
 
 
 def _validate_gate(block: Any, source: str) -> None:
+    """Validate a v1 plan_gate / diff_gate object.
+
+    Under ADR-028 coexistence, the legacy v1 ``exemption_reason`` field is
+    accepted indefinitely but emits a ``DeprecationWarning`` when populated
+    as a non-null string. v2 callers should use ``gate_status`` instead via
+    ``_validate_v2_gate``.
+    """
     _require_type(block, dict, source)
     allowed = {"status", "link", "exemption_reason"}
     _require_keys(block, allowed, source)
@@ -255,6 +296,168 @@ def _validate_gate(block: Any, source: str) -> None:
     _require_non_empty_string(block["status"], f"{source}.status")
     _require_nullable_string(block["link"], f"{source}.link")
     _require_nullable_string(block["exemption_reason"], f"{source}.exemption_reason")
+    if isinstance(block["exemption_reason"], str) and block["exemption_reason"].strip():
+        # ADR-028 coexistence: legacy v1 free-text exemption is accepted
+        # indefinitely but deprecated in favor of v2 gate_status enum +
+        # three-field user-bypassed guard. Emits, does not raise.
+        warnings.warn(
+            f"{source}.exemption_reason: free-text exemption is deprecated; "
+            f"prefer schema_version: 2 with gate_status: user-bypassed and the "
+            f"three-field structural guard (ADR-028).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+
+def _validate_v2_gate(block: Any, source: str) -> None:
+    """Validate a v2 plan_gate / diff_gate object (ADR-028).
+
+    Required key: ``gate_status`` ∈ _GATE_STATUS_VALUES.
+    Per-state required companion fields:
+      - triggered / passed / failed: ``link`` (non-empty string)
+      - not-triggered: ``not_triggered_reason`` (non-empty string)
+      - user-bypassed: bypass_label + user_directive + user_directive_source_url
+    A single gate object MUST NOT carry both ``gate_status`` and a non-null
+    ``exemption_reason``. The legacy ``exemption_reason: null`` key is
+    tolerated for migration ergonomics but emits no value.
+    """
+    _require_type(block, dict, source)
+    if "gate_status" not in block:
+        raise ComplianceError(f"{source}: missing required key: gate_status")
+    gate_status = block["gate_status"]
+    _require_non_empty_string(gate_status, f"{source}.gate_status")
+    if gate_status not in _GATE_STATUS_VALUES:
+        allowed = ", ".join(sorted(_GATE_STATUS_VALUES))
+        raise ComplianceError(
+            f"{source}.gate_status: must be one of {{{allowed}}}; got {gate_status!r}"
+        )
+    # Ambiguity guard: v2 + non-null exemption_reason is rejected.
+    exemption_reason = block.get("exemption_reason")
+    if isinstance(exemption_reason, str) and exemption_reason.strip():
+        raise ComplianceError(
+            f"{source}: gate_status and non-null exemption_reason are mutually "
+            f"exclusive; remove exemption_reason or downgrade to schema_version: 1"
+        )
+    # Per-state required fields + allowed-key set.
+    if gate_status in {"triggered", "passed", "failed"}:
+        required = {"gate_status", "link"}
+        _require_keys(block, required, source)
+        _require_non_empty_string(block["link"], f"{source}.link")
+        allowed = {"gate_status", "link", "exemption_reason"}
+    elif gate_status == "not-triggered":
+        required = {"gate_status", "not_triggered_reason"}
+        _require_keys(block, required, source)
+        _require_non_empty_string(
+            block["not_triggered_reason"], f"{source}.not_triggered_reason"
+        )
+        allowed = {"gate_status", "not_triggered_reason", "exemption_reason"}
+    else:  # user-bypassed
+        required = {
+            "gate_status", "bypass_label",
+            "user_directive", "user_directive_source_url",
+        }
+        _require_keys(block, required, source)
+        _validate_user_bypass_guard(block, source)
+        allowed = required | {"exemption_reason"}
+    _reject_unknown_keys(block, allowed, source)
+
+
+def _validate_user_bypass_guard(block: dict[str, Any], source: str) -> None:
+    """Validate the three-field user-bypassed structural guard (ADR-028).
+
+    BLOCKs (raises) when any of bypass_label / user_directive /
+    user_directive_source_url is missing, empty, or syntactically malformed.
+    The validator does NOT click through the URL or check that the quoted
+    directive text actually appears at that URL — semantic accuracy is
+    Critic's responsibility per .agents/critic.md § "Bypass guard theatre".
+    """
+    _require_non_empty_string(block["bypass_label"], f"{source}.bypass_label")
+    label = block["bypass_label"]
+    if label not in _BYPASS_LABEL_ALLOWLIST:
+        allowed = ", ".join(sorted(_BYPASS_LABEL_ALLOWLIST))
+        raise ComplianceError(
+            f"{source}.bypass_label: must be on allow-list {{{allowed}}}; got {label!r} "
+            f"(see .context/rules/process_gates.md § 'User-bypass labels (allow-list)')"
+        )
+    _require_non_empty_string(block["user_directive"], f"{source}.user_directive")
+    _require_non_empty_string(
+        block["user_directive_source_url"], f"{source}.user_directive_source_url"
+    )
+    url = block["user_directive_source_url"]
+    if not _BYPASS_URL_RE.match(url):
+        raise ComplianceError(
+            f"{source}.user_directive_source_url: must match GitHub issue/PR "
+            f"comment permalink pattern "
+            f"(https://github.com/<owner>/<repo>/(issues|pull)/<n>#issuecomment-<id>); "
+            f"got {url!r}"
+        )
+
+
+def _validate_verification_evidence(items: Any, source: str) -> None:
+    """Validate a v2 verification_evidence[] block (ADR-028).
+
+    Each entry: {class, claim, artifact} where artifact's required keys
+    depend on class: logical={path, section}; mechanical={command} plus
+    one of {expected_exit_code, expected_output_regex}; pragmatic={url,
+    observed_outcome}. Validator checks shape only — it does NOT execute
+    commands, run regexes against real output, or click through URLs.
+    Semantic adequacy of evidence-class vs outcome-class is Judge's
+    responsibility per .agents/judge.md item 21.
+    """
+    _require_type(items, list, source)
+    for idx, item in enumerate(items):
+        item_source = f"{source}[{idx}]"
+        _require_type(item, dict, item_source)
+        required = {"class", "claim", "artifact"}
+        _require_keys(item, required, item_source)
+        _reject_unknown_keys(item, required, item_source)
+        cls = item["class"]
+        _require_non_empty_string(cls, f"{item_source}.class")
+        if cls not in _EVIDENCE_CLASS_VALUES:
+            allowed = ", ".join(sorted(_EVIDENCE_CLASS_VALUES))
+            raise ComplianceError(
+                f"{item_source}.class: must be one of {{{allowed}}}; got {cls!r}"
+            )
+        _require_non_empty_string(item["claim"], f"{item_source}.claim")
+        artifact = item["artifact"]
+        _require_type(artifact, dict, f"{item_source}.artifact")
+        artifact_source = f"{item_source}.artifact"
+        if cls == "logical":
+            allowed_artifact = {"path", "section"}
+            _require_keys(artifact, allowed_artifact, artifact_source)
+            _reject_unknown_keys(artifact, allowed_artifact, artifact_source)
+            _require_non_empty_string(artifact["path"], f"{artifact_source}.path")
+            _require_non_empty_string(artifact["section"], f"{artifact_source}.section")
+        elif cls == "mechanical":
+            _require_keys(artifact, {"command"}, artifact_source)
+            _require_non_empty_string(artifact["command"], f"{artifact_source}.command")
+            has_exit = "expected_exit_code" in artifact
+            has_regex = "expected_output_regex" in artifact
+            if not (has_exit or has_regex):
+                raise ComplianceError(
+                    f"{artifact_source}: mechanical evidence requires one of "
+                    f"expected_exit_code or expected_output_regex"
+                )
+            allowed_artifact = {"command", "expected_exit_code", "expected_output_regex"}
+            _reject_unknown_keys(artifact, allowed_artifact, artifact_source)
+            if has_exit:
+                _require_type(
+                    artifact["expected_exit_code"], int,
+                    f"{artifact_source}.expected_exit_code",
+                )
+            if has_regex:
+                _require_non_empty_string(
+                    artifact["expected_output_regex"],
+                    f"{artifact_source}.expected_output_regex",
+                )
+        else:  # pragmatic
+            allowed_artifact = {"url", "observed_outcome"}
+            _require_keys(artifact, allowed_artifact, artifact_source)
+            _reject_unknown_keys(artifact, allowed_artifact, artifact_source)
+            _require_non_empty_string(artifact["url"], f"{artifact_source}.url")
+            _require_non_empty_string(
+                artifact["observed_outcome"], f"{artifact_source}.observed_outcome"
+            )
 
 
 def _validate_adr_required(block: Any, source: str, require_supersession_notes: bool = False) -> None:
@@ -402,11 +605,14 @@ def validate_plan(block: dict[str, Any], source: str) -> None:
     }
     _require_keys(block, allowed_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
-    _require_schema_version(block, source)
+    schema_version = _require_schema_version_v1_or_v2(block, source)
     _require_string_list(block["applicable_roles"], f"{source}.applicable_roles")
     _validate_instruction_resources(block["instruction_resources"], f"{source}.instruction_resources")
     _validate_role_dispatch(block["role_dispatch"], f"{source}.role_dispatch")
-    _validate_gate(block["plan_gate"], f"{source}.plan_gate")
+    if schema_version == 2:
+        _validate_v2_gate(block["plan_gate"], f"{source}.plan_gate")
+    else:
+        _validate_gate(block["plan_gate"], f"{source}.plan_gate")
     _validate_adr_required(block["adr_required"], f"{source}.adr_required", require_supersession_notes=True)
     _validate_doc_sync(block["doc_sync"], f"{source}.doc_sync")
     _require_string_list(block["verification"], f"{source}.verification")
@@ -603,10 +809,14 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
         "adr_required",
         "deviations",
         "verification_results",
+        # v2 (ADR-028, additive): typed evidence array with class-aware
+        # artifact shape. Coexists with v1 verification_results under v2.
+        "verification_evidence",
     }
-    _require_keys(block, allowed_keys, source)
+    required_keys = allowed_keys - {"verification_evidence"}
+    _require_keys(block, required_keys, source)
     _reject_unknown_keys(block, allowed_keys, source)
-    _require_schema_version(block, source)
+    schema_version = _require_schema_version_v1_or_v2(block, source)
     _require_type(block["handshake_token"], str, f"{source}.handshake_token")
     _require_type(block["agents_md_version"], int, f"{source}.agents_md_version")
     match = _HANDSHAKE_RE.match(block["handshake_token"])
@@ -657,11 +867,24 @@ def validate_parent(block: dict[str, Any], source: str, repo_root: Path = REPO_R
         raise ComplianceError(
             f"{source}: monolithic_justification required when applicable roles were not dispatched: {missing}"
         )
-    _validate_gate(block["plan_gate"], f"{source}.plan_gate")
-    _validate_gate(block["diff_gate"], f"{source}.diff_gate")
+    gate_validator = _validate_v2_gate if schema_version == 2 else _validate_gate
+    gate_validator(block["plan_gate"], f"{source}.plan_gate")
+    gate_validator(block["diff_gate"], f"{source}.diff_gate")
     _validate_adr_required(block["adr_required"], f"{source}.adr_required")
     _validate_deviations(block["deviations"], f"{source}.deviations")
     _validate_verification_results(block["verification_results"], f"{source}.verification_results")
+    # v2 (ADR-028) additive: optional verification_evidence[] with class enum
+    # + per-class artifact shape. May coexist with verification_results.
+    verification_evidence = block.get("verification_evidence")
+    if verification_evidence is not None:
+        if schema_version != 2:
+            raise ComplianceError(
+                f"{source}: verification_evidence is a schema_version 2 field; "
+                f"declare schema_version: 2 or remove it"
+            )
+        _validate_verification_evidence(
+            verification_evidence, f"{source}.verification_evidence"
+        )
 
 
 def validate_loaded_block(data: Any, source: str, repo_root: Path = REPO_ROOT) -> None:
