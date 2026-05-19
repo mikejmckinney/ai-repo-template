@@ -49,3 +49,37 @@ A green CI run with no user-outcome evidence is not ready for review.
 - Run the repo's verification commands (prefer those documented in AI_REPO_GUIDE.md) before declaring done.
 - Ensure all tests pass locally before pushing.
 - Check that CI pipeline is green.
+
+## Evidence taxonomy (schema_version: 2 — ADR-028)
+
+When recording verification under `parent_compliance.verification_evidence`
+(schema_version 2), each entry declares an evidence **class** plus a typed
+**artifact** shape. ADR-028 introduces three classes:
+
+| Class | What it proves | Required artifact keys | Typical artifact |
+|---|---|---|---|
+| `logical` | Static / by-inspection consistency (cross-references, supersession notes, schema additions match docs) | `path`, `section` | Repo-relative path + section heading where the claim is verifiable. |
+| `mechanical` | A repeatable command produces a determinate outcome | `command` plus one of `expected_exit_code` or `expected_output_regex` | `bash test.sh` exit 0; `grep -q '^X' file` exit 0; `python3 scripts/foo.py --check` exit 0. |
+| `pragmatic` | An external system/UI/observed behavior matches expectations | `url`, `observed_outcome` | A GitHub permalink to a comment/PR/file plus a one-sentence outcome ('comment posted, length 3264 bytes verified'). |
+
+### Outcome → required-class matrix
+
+Which class is *minimally adequate* depends on what the outcome claims:
+
+| Outcome class | Minimum acceptable evidence class | Why |
+|---|---|---|
+| Schema / contract / rule edit (no runtime change) | `logical` | The change *is* the artifact; mechanical or pragmatic checks add no signal. |
+| Validator / script / workflow / code change with executable surface | `mechanical` | The change has a runnable shape; a green command run is the cheapest determinate proof. |
+| User-facing behavior, agent runtime dispatch, external system interaction, observed UI state | `pragmatic` | Logical and mechanical checks cannot prove an agent runtime, GitHub comment, or human-facing outcome actually occurred; pragmatic evidence is required. |
+
+A stronger class always satisfies a weaker class's requirement, but a weaker
+class does **not** satisfy a stronger class's requirement. Substituting
+`logical` evidence ("the ADR says so") for a `pragmatic` outcome
+("observed in production") is the failure mode ADR-028 binds Judge to
+flag at diff-gate (see `.agents/judge.md` item 21).
+
+The validator checks artifact **shape**, not semantic adequacy. Judge is
+responsible for the outcome→class mapping at diff-gate; Critic is the
+backstop for selectively-quoted or minimum-satisfying evidence. See
+`docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md`
+§ "Known limitations".

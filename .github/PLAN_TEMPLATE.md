@@ -122,6 +122,33 @@ plan_compliance:
            changed. Use `role_contract_version` only in subagent returns, never
            `overlay_version`. See `docs/compliance_schemas.md`. -->
 
+<!--
+Schema v2 variant (ADR-028) — optional, additive
+
+When using `schema_version: 2`, replace the `plan_gate` block above with the
+typed `gate_status:` form. v1 (`status:` + `exemption_reason:`) remains
+accepted indefinitely; v2 is the preferred shape for new plans. Pick ONE
+shape per gate object — mixing `gate_status:` with non-null
+`exemption_reason:` is rejected.
+
+```yml
+plan_gate:
+  gate_status: "<triggered | passed | failed | not-triggered | user-bypassed>"
+  # Required for triggered / passed / failed:
+  link: "<URL to the gate artifact>"
+  # Required for not-triggered:
+  not_triggered_reason: "<why the gate did not apply>"
+  # Required for user-bypassed (three-field structural guard):
+  bypass_label: "<cap-override | user-bypass>"
+  user_directive: "<verbatim quote of user's directive>"
+  user_directive_source_url: "https://github.com/<owner>/<repo>/(issues|pull)/<n>#issuecomment-<id>"
+```
+
+See `.context/rules/process_gates.md` § "Gate status vocabulary" for the
+full enum and per-state required companion fields, and ADR-028 for the
+failure modes the v2 shape prevents.
+-->
+
 ### User outcome validation plan — PRIMARY
 
 **Issue problem statement:** <one-sentence summary>

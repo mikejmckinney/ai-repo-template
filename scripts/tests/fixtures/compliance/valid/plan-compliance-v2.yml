@@ -5,7 +5,7 @@ plan_compliance:
   instruction_resources:
     - resource: AGENTS.md
       why_applicable: Canonical startup contract.
-      evidence: AGENTS_MD_VERSION 19.
+      evidence: AGENTS_MD_VERSION 20.
       decision_affected: Plan emits handshake.
     - resource: docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md
       why_applicable: Adopts v2 gate_status enum and three-class evidence taxonomy.

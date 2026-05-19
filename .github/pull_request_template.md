@@ -117,6 +117,52 @@ parent_compliance:
       evidence: "<one-line pointer>"
 ```
 
+<!--
+Schema v2 variant (ADR-028) — optional, additive
+
+When using `schema_version: 2`, replace the `plan_gate` / `diff_gate`
+blocks above with the typed `gate_status:` shape and (optionally) add a
+`verification_evidence:` array beside `verification_results:`. v1 fields
+remain accepted indefinitely; v2 is the preferred shape for new PRs.
+
+```yml
+parent_compliance:
+  schema_version: 2
+  # ...all v1 fields unchanged...
+  plan_gate:
+    gate_status: "<triggered | passed | failed | not-triggered | user-bypassed>"
+    link: "<URL when triggered|passed|failed>"
+    # not_triggered_reason: "<...>"  # required when gate_status: not-triggered
+    # bypass_label / user_directive / user_directive_source_url required when
+    # gate_status: user-bypassed (three-field structural guard)
+  diff_gate:
+    gate_status: "<...>"
+    link: "<...>"
+  verification_evidence:
+    - class: logical
+      claim: "<what this evidence proves>"
+      artifact:
+        path: "<repo-relative path>"
+        section: "<section heading>"
+    - class: mechanical
+      claim: "<...>"
+      artifact:
+        command: "<exact command>"
+        expected_exit_code: 0
+        # OR expected_output_regex: "<regex>"
+    - class: pragmatic
+      claim: "<...>"
+      artifact:
+        url: "https://github.com/..."
+        observed_outcome: "<one-sentence outcome>"
+```
+
+See `.context/rules/process_gates.md` § "Gate status vocabulary" and
+`.context/rules/process_work_style.md` § "Evidence taxonomy" for the
+enum, the three-field user-bypassed guard, and the outcome→class
+matrix. ADR-028 covers the failure modes the v2 shape prevents.
+-->
+
 ## User outcome validation — PRIMARY
 
 <!-- REQUIRED for non-exempt work. This proves the issue problem statement was

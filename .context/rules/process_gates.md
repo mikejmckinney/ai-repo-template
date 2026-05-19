@@ -129,3 +129,55 @@ Report (broadened by ADR-014 to ad-hoc deliverable issues) is a stricter
 gate that runs *in addition to* the plan requirement on any issue meeting
 the pre-flight trigger. It is not replaced or weakened by this requirement.
 The two gates have different trigger conditions and will be unified in #155.
+
+## Gate status vocabulary (schema_version: 2 — ADR-028)
+
+Under `schema_version: 2`, plan-gate and diff-gate compliance objects
+replace the v1 free-text `exemption_reason:` field with a typed
+`gate_status:` enum plus per-state required companion fields. v1
+(`status:` + `exemption_reason:`) remains accepted indefinitely (with a
+`DeprecationWarning` on populated `exemption_reason:`); v2 is the
+preferred shape for new evidence.
+
+| `gate_status` | Meaning | Required companion fields |
+|---|---|---|
+| `triggered` | Gate fired and review is in progress | `link:` (URL to the gate artifact — issue comment, PR review thread) |
+| `passed` | Gate fired and produced an APPROVE / pass outcome | `link:` |
+| `failed` | Gate fired and produced a REQUEST_CHANGES / fail outcome | `link:` plus parent block `deviations:` entry documenting remediation |
+| `not-triggered` | Gate did not apply to this work (e.g. docs-only, no executable surface) | `not_triggered_reason:` (non-empty string explaining why the gate did not apply) |
+| `user-bypassed` | User explicitly directed bypass of the gate | three-field structural guard (see below) |
+
+### User-bypass labels (allow-list)
+
+When `gate_status: user-bypassed`, the gate object MUST carry all three
+fields below. Validator BLOCKs on any missing or empty field. The label
+MUST appear on the allow-list; new labels require an ADR or amendment
+to this rule plus a same-PR edit to
+`scripts/lib/compliance_schema.py::_BYPASS_LABEL_ALLOWLIST`.
+
+| Field | Shape | Notes |
+|---|---|---|
+| `bypass_label:` | One of the allow-list labels below | Label must also be applied to the issue/PR. |
+| `user_directive:` | Verbatim quote of the user's directive | No paraphrase; must be a literal substring of the source comment. Critic is the semantic backstop against selective quoting. |
+| `user_directive_source_url:` | GitHub permalink to the user comment | Must match `https://github.com/<owner>/<repo>/(issues\|pull)/<n>#issuecomment-<id>`. Validator checks shape only — it does not click through. |
+
+**Allow-list (canonical):**
+
+| Label | Use |
+|---|---|
+| `cap-override` | User has directed the polling/iteration cap be lifted for this PR (per `docs/guides/agent-pipeline.md` § Repository variables). |
+| `user-bypass` | Generic explicit user bypass that does not match a more specific label. Prefer a more specific label when one exists. |
+
+The three-field guard is a **structural** check, not a semantic one.
+It prevents the failure mode where free-text `exemption_reason:` is used
+to self-exempt a gate without recorded user direction (see
+`docs/decisions/adr-028-gate-status-schema-and-evidence-taxonomy.md`
+§ Context). Judge BLOCKs at diff-gate when any field is missing or the
+label is off allow-list. Critic flags selective quoting or
+minimum-satisfying directives that pass the shape check but fail
+intent (`.agents/critic.md` § "Bypass guard theatre").
+
+The legacy v1 `exemption_reason:` field is accepted indefinitely under
+`schema_version: 1` but emits a `DeprecationWarning` and MUST NOT be
+combined with `gate_status:` in the same gate object (the validator
+rejects the combo to remove ambiguity).

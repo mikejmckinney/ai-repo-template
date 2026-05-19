@@ -1,7 +1,7 @@
 parent_compliance:
   schema_version: 1
-  handshake_token: Session handshake v19
-  agents_md_version: 19
+  handshake_token: Session handshake v20
+  agents_md_version: 20
   runtime_pointer:
     path: null
     loaded: false
