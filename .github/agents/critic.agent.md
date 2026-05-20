@@ -1,7 +1,7 @@
 ---
 name: Critic
 description: Use as a devil's-advocate reviewer alongside judge. Catches subjective-quality issues, hidden assumptions, and AI clichés.
-tools: ['read', 'search', 'fetch', 'githubRepo', 'usages']
+tools: ['read', 'search', 'execute', 'fetch', 'githubRepo', 'usages']
 model: 'Claude Sonnet 4.6 (copilot)'
 handoffs:
   - target: Judge
