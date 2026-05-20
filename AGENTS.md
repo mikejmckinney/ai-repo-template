@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 19 -->
+<!-- AGENTS_MD_VERSION: 20 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one.
      The canary covers AGENTS.md only — per-concern files in .context/rules/
@@ -16,16 +16,34 @@
 ## Session handshake (read-receipt)
 
 When you have read this file at the start of a session, open your first
-substantive reply with the exact token `Session handshake v19` (matching
-the `AGENTS_MD_VERSION` value above) on its own line before any other
-content. Do not paraphrase, translate, or omit the token. The number is
-the canary — if it doesn't match the version above, your AGENTS.md copy
-is stale and you should re-read this file before proceeding.
+substantive reply with the following:
+
+```
+Session handshake AGENTS_MD_VERSION
+
+| Field | Value |
+|---|---|
+| Agent | <copilot | claude | codex | cursor | gemini | other: name | unknown> |
+| Role | <OP | architect | devops | docs | qa | judge | critic | analyst | pm | other> |
+| Model | <exact model if exposed by runtime; otherwise `unknown — not exposed by runtime`> |
+| AGENTS.md version | <version number> |
+| Session type | <parent/default agent | dispatched subagent | other> |
+
+### Files read and reviewed
+
+| File | Status | Why it was read | Decision affected |
+|---|---|---|---|
+| `AGENTS.md` | Read | Startup contract | Loaded handshake, truth hierarchy, and per-concern read list |
+| `<path>` | <Read / Reviewed / Skipped> | <reason> | <decision, gate, or output affected> |
+```
+
+replace AGENTS_MD_VERSION with the version number specified in the html 
+comment block at the top of this file.  the session handshake read-receipt
+should be on its own line before any other content. 
 
 This is a per-session signal, not a per-reply one. Emit it once at the
 start of the session; suppress it on subsequent replies in the same
-conversation. If a user explicitly says "skip the handshake," honor that
-for the rest of the session.
+conversation.
 
 For parent/default-agent work, this visible token is the parent startup
 receipt used by ADR-026 compliance evidence. Dispatched subagents do not
