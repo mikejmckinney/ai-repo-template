@@ -1,7 +1,7 @@
 ---
 name: Docs
 description: Use to update README, AI_REPO_GUIDE, CLAUDE.md, or docs/. Runs in parallel with implementers when visible behavior changes.
-tools: ['read', 'write', 'search', 'githubRepo', 'todo']
+tools: ['read', 'write', 'execute', 'search', 'githubRepo', 'todo']
 handoffs:
   - target: Judge
     send: true
