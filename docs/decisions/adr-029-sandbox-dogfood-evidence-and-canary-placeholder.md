@@ -45,10 +45,10 @@ policy that ship with them.
 
 ### 1. Sandbox dogfood evidence requirement
 
-Every PR opened against this repo's default branch MUST include a 
-`## Sandbox dogfood evidence` section with two fields populated: 
-`Sandbox issue:` and `Sandbox PR:`. Each value MUST be a permalink to an 
-issue or PR in a sandbox sibling repo where the change was actually 
+Every PR opened against this repo's default branch MUST include a
+`## Sandbox dogfood evidence` section with two fields populated:
+`Sandbox issue:` and `Sandbox PR:`. Each value MUST be a permalink to an
+issue or PR in a sandbox sibling repo where the change was actually
 exercised before being proposed here.
 
 This ADR is repo-agnostic. Derived repositories using this template will
