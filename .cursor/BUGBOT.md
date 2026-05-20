@@ -97,6 +97,24 @@ List exact commands the author should run (or confirm already ran):
 
 - `path/to/file.ext` — brief description of changes
 
+## Nit suppression policy (reduce review noise)
+
+Do **not** file review comments for pure editorial nits that do not change
+behavior, enforcement, or machine-readability. Suppress these by default:
+
+- Grammar/capitalization/punctuation-only edits
+- Wording preferences where existing text is understandable
+- Style-only rewrites that do not fix a broken command, path, schema, or check
+
+You may raise a low-priority doc issue **only if** one of these is true:
+
+1. The text is factually wrong and can mislead implementation or review gates.
+2. The wording changes machine-checked literals (labels, headings, keys, regex targets).
+3. The typo breaks execution/rendering (bad path, malformed markdown link, invalid command).
+
+When raising a doc/style issue, include concrete breakage evidence (file path +
+line and the impacted check/command). Otherwise, skip it.
+
 ## Constraints
 
 - Do **not** invent file paths or commands
