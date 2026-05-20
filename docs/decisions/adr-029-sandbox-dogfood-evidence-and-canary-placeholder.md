@@ -53,10 +53,12 @@ a permalink to an issue or PR in a sandbox sibling repo where the change
 was actually exercised before being proposed here.
 
 This ADR is repo-agnostic. Derived repositories using this template will
-have their own sandbox sibling (the convention is `<owner>/<repo>-sandbox`,
+have their own sandbox sibling (the convention is `<repo>-sandbox`,
 but nothing in this ADR pins the sandbox to a specific URL). The
-example sandbox used by *this* repo is `mikejmckinney/ai-repo-template-sandbox`;
-derived repos will substitute their own.
+example sandbox used by *this* repo is `ai-repo-template-sandbox`;
+derived repos will substitute their own as specified in the 
+[sandbox verification playbook](../../docs/guides/sandbox-verification.md) 
+which details the process for using sandbox and which sandbox instance to use.
 
 There is no override field, no bypass token, and no "n/a" textual escape.
 The enforcement boundary is the PR-level evidence section. If a change
@@ -87,12 +89,7 @@ or absence of the section header itself = malformed.
 Label/URL presence is a structural check the drift detector and judge
 checklist can enforce mechanically. Content checks — that the sandbox
 issue actually describes the change, that the sandbox PR actually
-exercises it — are not mechanical and are not in this ADR. Content
-checks are the human diff-gate reviewer's responsibility, backed by
-sandbox-repo write-access controls (see
-`docs/guides/sandbox-verification.md` for sandbox-repo access
-bootstrap). They belong in the verification artifacts of the PRs that
-consume this ADR, not in the ADR itself.
+exercises it should also be reviewed by judge and if needed critic.
 
 ### 4. Critic-before-Judge plan-gate ordering convention (Δ14)
 
