@@ -39,8 +39,8 @@ the test merely to make it pass. Stop, document the framing disconnect, and
 escalate to the user or revise the issue/plan.
 
 A pragmatic sandbox/dogfood test with concrete steps is required in the
-verification section of issues and plans. Read and follow the 
-[sandbox verification playbook](/docs/guides/sandbox-verification.md) 
+verification section of issues and plans. Read and follow the
+[sandbox verification playbook](/docs/guides/sandbox-verification.md)
 playbook which details the process for using sandbox and which sandbox instance to use.
 The `Sandbox issue:` and `Sandbox PR:`
 labels (canonical literals per ADR-029, the PR template, and Judge diff-gate
