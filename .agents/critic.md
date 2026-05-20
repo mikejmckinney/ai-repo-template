@@ -107,6 +107,8 @@ weight differs.
 ## Output Format (Exact)
 
 ```
+## 🧐 Critic Review
+
 CRITIC DECISION: APPROVE | REQUEST_CHANGES
 
 TL;DR (1-2 sentences):
