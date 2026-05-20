@@ -35,15 +35,18 @@ compliance evidence without editing files.
 Return exactly these sections:
 
 ## Smoke result
+
 - Verdict: PASS | NEEDS_CONTEXT | FAIL
 - Hypothetical task: <one sentence>
 - Owning role(s): <roles>
 - Would dispatch subagent(s): <yes/no + why>
 
 ## Pointer evidence
+
 - <resource> — <why applicable> — <decision affected>
 
 ## Dispatch packet preview
+
 - Role: <role or N/A>
 - Goal: <goal or N/A>
 - Expected output: <artifact or N/A>
@@ -55,6 +58,7 @@ Return exactly these sections:
 - Allowed deviations: <none or list>
 
 ## Compliance preview
+
 ```yaml
 parent_compliance:
   handshake_token: Session handshake v<N>

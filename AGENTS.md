@@ -86,7 +86,6 @@ re-read cadence (which files at which boundaries) lives in
 For project overview start at [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) and
 [`.context/00_INDEX.md`](.context/00_INDEX.md).
 
-
 ## Section-anchor redirects (for ADR back-compat)
 
 ADRs and other docs may cite AGENTS.md sections by anchor (e.g., `AGENTS.md §"Session-state cadence"`). After ADR-021's decomposition, those sections live at new paths. Resolve old citations as follows:

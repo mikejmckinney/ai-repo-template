@@ -72,7 +72,7 @@ The PR template (`.github/pull_request_template.md`) and `.agents/judge.md`
 diff-gate checklist (item 20) consume exactly two labels. The section
 header is the literal `## Sandbox dogfood evidence`.
 
-```
+```text
 Sandbox issue: <URL>
 Sandbox PR: <URL>
 ```

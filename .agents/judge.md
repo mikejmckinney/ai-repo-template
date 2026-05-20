@@ -86,22 +86,22 @@ If ambiguous, ask **one** question: "Is this a plan review or a code/diff review
 - [ ] **Plan compliance check (ADR-026)** — implementation plans for non-exempt work include a `plan_compliance` block with `schema_version: 1`, a parent handshake token matching `Session handshake v<AGENTS_MD_VERSION>`, applicable roles, process resources, required gates, and ADR/doc-sync state. REQUEST_CHANGES when the block is missing, malformed, uses `overlay_version`, or contains generic evidence that does not affect plan decisions.
 - [ ] **Outcome validation plan** — non-exempt plans must identify the issue problem statement, the User outcome / 15-minute test to perform, the evidence to capture, and the pass/fail/framing-disconnect criteria. REQUEST_CHANGES when the plan lists only generic commands or CI checks as validation.
 - [ ] **Pre-Flight Report present with verdict PASS when the gate applies (REQUIRED).** BLOCK if the gate applies, no opt-out is in effect, and the report is missing OR has verdict FAIL/HOLD. The Pre-Flight Report validates the user outcome against the 15-minute test — without it, the plan may faithfully implement a deliverable that doesn't match the underlying goal. See `.agents/analyst.md` → "Pre-Flight Validation" for the canonical list and ADR-014 for rationale.
-    - **Gate applies when any one signal is present:**
-        - (a) Issue references a numbered project prompt (`.github/prompts/NN-*.md`) for an interactive/operational deliverable (ADR-005).
-        - (b) Issue uses `feature_request.md` template with `enhancement` label (ADR-014).
-        - (c) Issue is an ADR proposing a new agent surface — role, webhook, external interface, automation mode (ADR-014).
-        - (d) Issue body contains action verbs (build, implement, ship, create) plus a user-facing noun (UI, dashboard, page, service, pipeline, dataset, demo, integration) (ADR-014).
-    - **Opt-out when both are true** (label alone is insufficient — verify the inline paragraph exists):
-        - Issue has the `outcome-validated` label.
-        - Issue body contains an inline outcome paragraph (one paragraph describing what a user can *do* when shipped).
-    - **Exemptions (gate does NOT apply):**
-        - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`, `mirror-postmortem.md`) and prompt documentation (`README.md`).
-        - `bug`-labeled issues, `docs`-labeled issues with no new behavior, `dependencies`-labeled issues, `chore:*`-labeled issues, reverts, internal refactors with no user-facing change.
-        - Note: a `docs` label does not exempt an issue if its body still proposes a new user-facing deliverable — in that case the gate applies and the canonical `analyst.md` "When NOT required" list governs.
+  - **Gate applies when any one signal is present:**
+    - (a) Issue references a numbered project prompt (`.github/prompts/NN-*.md`) for an interactive/operational deliverable (ADR-005).
+    - (b) Issue uses `feature_request.md` template with `enhancement` label (ADR-014).
+    - (c) Issue is an ADR proposing a new agent surface — role, webhook, external interface, automation mode (ADR-014).
+    - (d) Issue body contains action verbs (build, implement, ship, create) plus a user-facing noun (UI, dashboard, page, service, pipeline, dataset, demo, integration) (ADR-014).
+  - **Opt-out when both are true** (label alone is insufficient — verify the inline paragraph exists):
+    - Issue has the `outcome-validated` label.
+    - Issue body contains an inline outcome paragraph (one paragraph describing what a user can *do* when shipped).
+  - **Exemptions (gate does NOT apply):**
+    - Shared procedural prompts (`pr-resolve-all.md`, `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`, `mirror-postmortem.md`) and prompt documentation (`README.md`).
+    - `bug`-labeled issues, `docs`-labeled issues with no new behavior, `dependencies`-labeled issues, `chore:*`-labeled issues, reverts, internal refactors with no user-facing change.
+    - Note: a `docs` label does not exempt an issue if its body still proposes a new user-facing deliverable — in that case the gate applies and the canonical `analyst.md` "When NOT required" list governs.
 
 ## Output Format (Exact)
 
-```
+```text
 ## ⚖️ Judge Plan-Gate Judgement
 
 DECISION: APPROVE | REQUEST_CHANGES | BLOCK
@@ -164,7 +164,7 @@ QUESTIONS (max 3; only if truly blocking):
 
 ## Output Format (Exact)
 
-```
+```text
 ## ⚖️ Judge Diff-Gate Judgement
 
 DECISION: APPROVE | REQUEST_CHANGES | BLOCK
@@ -192,12 +192,14 @@ VALIDATION (commands to run + expected results):
 For both modes, always include verification that the author should perform:
 
 ## Standard Checks
+
 - [ ] Tests pass: `<test command from AI_REPO_GUIDE.md or repo>`
 - [ ] Linting passes: `<lint command>`
 - [ ] Build succeeds: `<build command>`
 - [ ] Manual verification: `<specific steps if applicable>`
 
 ## For Breaking Changes
+
 - [ ] Migration path documented
 - [ ] Deprecation warnings added (if applicable)
 - [ ] Rollback plan identified
