@@ -395,6 +395,22 @@ canary form is introduced elsewhere, the substitution surface gets a new line
 and a new `docs/compliance_schemas.md` example in the same PR; that is the
 change contract, not regex generality.
 
+### Relative repository links in Markdown docs (false-positive guard)
+
+Relative links (e.g., `../../docs/guides/sandbox-verification.md`) are the
+canonical style for in-repo documentation because they remain portable across
+forks, local clones, and branch names. Do **not** flag a relative doc link as
+"broken" unless you verify the resolved target path at the reviewed commit.
+
+Required verification before reporting a broken-link finding:
+
+1. Resolve the link from the source file's directory at the PR HEAD commit.
+2. Verify target existence in the repo tree (`test -f <resolved-path>`).
+3. Include the resolved path and the checked commit SHA in the comment.
+
+If path existence cannot be verified from available tooling/context, mark the
+claim as `uncertain` and do not file a blocking/critical finding.
+
 ## Response Guidelines
 
 1. **Be specific**: "Line 42 may throw if `user` is null" > "Watch out for nulls"
