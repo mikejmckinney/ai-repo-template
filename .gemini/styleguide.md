@@ -397,7 +397,7 @@ change contract, not regex generality.
 
 ### Relative repository links in Markdown docs (false-positive guard)
 
-Relative links (e.g., `../../docs/guides/sandbox-verification.md`) are the
+Relative links (e.g., `../docs/guides/sandbox-verification.md`) are the
 canonical style for in-repo documentation because they remain portable across
 forks, local clones, and branch names. Do **not** flag a relative doc link as
 "broken" unless you verify the resolved target path at the reviewed commit.
