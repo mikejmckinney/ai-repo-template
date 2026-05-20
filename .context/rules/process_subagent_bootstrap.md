@@ -207,7 +207,7 @@ than the spec asked for.
 1. **Treat the canonical v1 required fields as required.** A
    `subagent_compliance` block (whether standalone or as an entry inside
    `parent_compliance.subagents_dispatched[]`) is valid only when **all**
-   ten required keys are present: `schema_version`, `role`,
+   nine required keys are present: `role`,
    `role_contract_version`, `agents_md_version`, `receipt`,
    `context_files_used`, `pointers_skipped`, `task_scope`,
    `files_modified`, `gates_invoked`. The optional v1.1 additive keys

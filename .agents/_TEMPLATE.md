@@ -55,7 +55,6 @@ role contract version.
 
 ```yaml
 subagent_compliance:
-  schema_version: 1
   role: <role>
   role_contract_version: 1
   agents_md_version: <AGENTS_MD_VERSION>

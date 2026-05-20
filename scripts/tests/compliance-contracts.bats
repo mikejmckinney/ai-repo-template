@@ -41,10 +41,37 @@ setup_file() {
 
 @test "invalid single compliance fixture fails" {
   cd "$REPO_ROOT"
-  run python3 scripts/validate-compliance-fixtures.py --single scripts/tests/fixtures/compliance/invalid/overlay-version.yml
+  run python3 scripts/validate-compliance-fixtures.py --single scripts/tests/fixtures/compliance/invalid/agents-version-stale.yml
   [ "$status" -ne 0 ]
-  [[ "$output" == *"overlay_version is not allowed"* ]]
+  [[ "$output" == *"agents_md_version"* ]]
   [[ "$output" != *"ValueError"* ]]
+}
+
+@test "compliance fixture factory registry covers deleted YAML cases" {
+  cd "$REPO_ROOT"
+  run env PYTHONPATH="scripts/lib:scripts/tests" python3 - <<'PY'
+from helpers.compliance_fixture_factory import EXPECTED_INVALID_CASES
+from compliance_schema import ComplianceError, validate_loaded_block
+
+failures = []
+for name, builder, expected in EXPECTED_INVALID_CASES:
+    try:
+        validate_loaded_block(builder(), source=f"factory:{name}")
+    except ComplianceError as exc:
+        msg = str(exc)
+        if expected not in msg:
+            failures.append(f"{name}: expected substring {expected!r} not in {msg!r}")
+        continue
+    failures.append(f"{name}: expected ComplianceError but block validated")
+
+if failures:
+    for line in failures:
+        print(line)
+    raise SystemExit(1)
+print(f"factory registry: {len(EXPECTED_INVALID_CASES)} cases verified")
+PY
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"cases verified"* ]]
 }
 
 @test "compliance markdown extraction tolerates indented fences" {

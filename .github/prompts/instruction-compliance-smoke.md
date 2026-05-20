@@ -35,15 +35,18 @@ compliance evidence without editing files.
 Return exactly these sections:
 
 ## Smoke result
+
 - Verdict: PASS | NEEDS_CONTEXT | FAIL
 - Hypothetical task: <one sentence>
 - Owning role(s): <roles>
 - Would dispatch subagent(s): <yes/no + why>
 
 ## Pointer evidence
+
 - <resource> — <why applicable> — <decision affected>
 
 ## Dispatch packet preview
+
 - Role: <role or N/A>
 - Goal: <goal or N/A>
 - Expected output: <artifact or N/A>
@@ -55,9 +58,9 @@ Return exactly these sections:
 - Allowed deviations: <none or list>
 
 ## Compliance preview
+
 ```yaml
 parent_compliance:
-  schema_version: 1
   handshake_token: Session handshake v<N>
   agents_md_version: <N>
   runtime_pointer:
@@ -71,11 +74,15 @@ parent_compliance:
   plan_gate:
     status: exempt
     link: null
-    exemption_reason: Smoke check; no implementation plan.
+    gate_status:
+      triggered: false
+      applied: false
   diff_gate:
     status: exempt
     link: null
-    exemption_reason: Smoke check; no diff.
+    gate_status:
+      triggered: false
+      applied: false
   adr_required:
     required: false
     link: null

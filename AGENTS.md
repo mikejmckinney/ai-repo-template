@@ -86,19 +86,6 @@ re-read cadence (which files at which boundaries) lives in
 For project overview start at [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) and
 [`.context/00_INDEX.md`](.context/00_INDEX.md).
 
-## Opportunity feedback
-
-Agents may surface improvement opportunities they notice while doing
-in-scope work via the structured `opportunity_notes` channel, capped
-at ≤3 per session per agent. Canonical rule:
-[`.context/rules/process_opportunity_feedback.md`](.context/rules/process_opportunity_feedback.md).
-
-This channel is for **deferrable** items only. For items that should
-halt current work pending resolution (security findings, data-loss
-risks, CI-breaking changes, plan-invalidating preconditions), use the
-`## Blocking observation` escalation path instead — see the rule
-file above for the contrast.
-
 ## Section-anchor redirects (for ADR back-compat)
 
 ADRs and other docs may cite AGENTS.md sections by anchor (e.g., `AGENTS.md §"Session-state cadence"`). After ADR-021's decomposition, those sections live at new paths. Resolve old citations as follows:

@@ -17,6 +17,7 @@
 - Follow the test pyramid: many unit tests, fewer integration tests, minimal E2E tests.
 - Write tests before or alongside implementation (TDD preferred).
 - All behavioral changes must include appropriate tests.
+- A pragmatic sandbox/dogfood test must be performed and `Sandbox issue:` and `Sandbox PR:` labels (with real URLs) must appear in the test/verification section per ADR-029. Read and follow the [sandbox verification playbook](/docs/guides/sandbox-verification.md) which details the process for using sandbox and which sandbox instance to use.
 - CI must pass before marking tasks complete. If CI fails:
   1. Read the error logs
   2. Fix the underlying issue
@@ -37,12 +38,28 @@ If the user outcome does not resolve the problem statement, do not patch around
 the test merely to make it pass. Stop, document the framing disconnect, and
 escalate to the user or revise the issue/plan.
 
+A pragmatic sandbox/dogfood test with concrete steps is required in the
+verification section of issues and plans. Read and follow the
+[sandbox verification playbook](/docs/guides/sandbox-verification.md)
+playbook which details the process for using sandbox and which sandbox instance to use.
+The `Sandbox issue:` and `Sandbox PR:`
+labels (canonical literals per ADR-029, the PR template, and Judge diff-gate
+item 20) should be linked as proof that the user outcome solves the problem.
+For example,
+An issue opened to add a .md file that walks an agent through the development and
+implementation of a new feature should, as part of the test and validation, walk
+through and run the process defined in the .md file in a sandbox or test environment
+to verify that it meets the user outcome which in turn, should solve the problem.
+If this does not happen, then there is a disconnect between the user outcome
+and the problem statement and that should be raised to the user for review.
+
 ### Supporting validation
 
 Unit tests, integration tests, `./test.sh`, lint, pre-commit, schema validators,
-sandbox verification, and CI are supporting regression and hygiene evidence.
-They do not replace user-outcome validation unless the user outcome is itself a
-scripted command or automated check.
+and CI are supporting regression and hygiene evidence.
+They do not replace user-outcome validation.  Artifact creation, static prose
+review, schema validation, or logical similarity are not sufficient evidence for
+operational process/user-outcome claims.
 
 A green CI run with no user-outcome evidence is not ready for review.
 

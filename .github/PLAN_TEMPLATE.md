@@ -79,7 +79,6 @@ list by more than ~30%, post a revised plan before pushing. -->
 
 ```yaml
 plan_compliance:
-     schema_version: 1
      applicable_roles:
           - <role>
      instruction_resources:
@@ -101,7 +100,9 @@ plan_compliance:
      plan_gate:
           status: "<pending | linked | exempt>"
           link: <URL or null>
-          exemption_reason: <null or reason>
+          gate_status:
+               triggered: <true | false>
+               applied: <true | false>
      adr_required:
           required: "<true | false>"
           link: <path/URL or null>

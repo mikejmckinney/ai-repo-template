@@ -41,6 +41,7 @@
 | [ADR-025](./adr-025-github-issues-pr-comments-as-live-state.md) | GitHub Issues, PRs, comments, and labels as live agent state | Accepted |
 | [ADR-026](./adr-026-compliance-contracts.md) | Agent compliance contracts and role receipt evidence | Accepted |
 | [ADR-027](./adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel for in-scope agent observations | Accepted |
+| [ADR-029](./adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence requirement on every PR + canary placeholder convention; supersedes ADR-028 in full, narrows ADR-021 §"Per-file cadence bump" scope | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.
