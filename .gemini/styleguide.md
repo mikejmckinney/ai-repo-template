@@ -383,16 +383,17 @@ When the PR carries the `cap-override` label (or an `@<agent> cap-override <N>` 
 
 ### Canary placeholder substitution in `compliance_schema.py` (PR #351)
 
-`load_markdown_yaml_blocks()` in `scripts/lib/compliance_schema.py` uses two
+`load_markdown_yaml_blocks()` in `scripts/lib/compliance_schema.py` uses three
 literal `text.replace()` calls to substitute the `<N>` canary placeholder
-(`Session handshake v<N>` and `agents_md_version: <N>`) before YAML parsing.
-This is intentional minimalism: those are the only two forms emitted by
+(`Session handshake v<N>`, `agents_md_version: <N>`, and `AGENTS_MD_VERSION <N>`)
+before YAML parsing.
+This is intentional minimalism: those are the only three forms emitted by
 `docs/compliance_schemas.md` and the agent overlays. Do **not** flag this as
-"fragile" / "too specific" / "should be a regex" / "misses quoted forms" /
-"misses `AGENTS_MD_VERSION <N>`" — see ADR-029 §"Canary placeholder convention"
-and PR #351 R5 discussion. If a new canary form is introduced elsewhere, the
-substitution surface gets a new line and a new `docs/compliance_schemas.md`
-example in the same PR; that is the change contract, not regex generality.
+"fragile" / "too specific" / "should be a regex" / "misses quoted forms" — see
+ADR-029 §"Canary placeholder convention" and PR #351 R5 discussion. If a new
+canary form is introduced elsewhere, the substitution surface gets a new line
+and a new `docs/compliance_schemas.md` example in the same PR; that is the
+change contract, not regex generality.
 
 ## Response Guidelines
 
