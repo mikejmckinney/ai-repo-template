@@ -102,6 +102,8 @@ If ambiguous, ask **one** question: "Is this a plan review or a code/diff review
 ## Output Format (Exact)
 
 ```
+## ⚖️ Judge Plan-Gate Judgement
+
 DECISION: APPROVE | REQUEST_CHANGES | BLOCK
 
 WHY (1-3 sentences):
@@ -163,6 +165,8 @@ QUESTIONS (max 3; only if truly blocking):
 ## Output Format (Exact)
 
 ```
+## ⚖️ Judge Diff-Gate Judgement
+
 DECISION: APPROVE | REQUEST_CHANGES | BLOCK
 
 SUMMARY (1-3 sentences):
