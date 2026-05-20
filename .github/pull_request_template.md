@@ -147,14 +147,10 @@ parent_compliance:
 
 ## Sandbox dogfood evidence
 
-<!-- REQUIRED for PRs that modify agent contracts, gate predicates,
-     compliance schemas, or .agents/.context/.github/agents loaders.
-     Per ADR-029 §1: no override field, no bypass token, no "n/a"
-     textual escape. If a change cannot be exercised through a sandbox,
-     the change is out of scope for the default branch. Both labels MUST
-     point to real sandbox URLs (issue link and PR link). Label/URL
-     presence is checked mechanically; content ("does the sandbox PR
-     actually exercise this change?") is the human reviewer's call.
+<!-- REQUIRED Both labels MUST
+     point to real sandbox URLs (issue link and PR link). Refer to the [sandbox 
+     verification playbook](../docs/guides/sandbox-verification.md) which details the 
+     process for using sandbox and which sandbox instance to use.
      Advisory drift detector: `scripts/checks/157-sandbox-evidence-labels.sh`. -->
 
 Sandbox issue: <URL>
