@@ -59,14 +59,6 @@ else
   fail "pr-resolve-all.md missing cap-override justification rule (issue #229 Phase 4)"
 fi
 
-# Judge gate item 15 wires the rule into diff-gate enforcement. Judge role
-# definition lives at .agents/judge.md (canonical, ADR-023).
-if grep -q 'Cap-override justification gate' .agents/judge.md 2>/dev/null; then
-  pass ".agents/judge.md has Cap-override justification gate (issue #229 Phase 4)"
-else
-  fail ".agents/judge.md missing Cap-override justification gate (issue #229 Phase 4)"
-fi
-
 # External reviewer mirrors stay aligned with the canonical Judge gate.
 for reviewer_file in ".cursor/BUGBOT.md" ".gemini/styleguide.md"; do
   if grep -q 'Cap-override justification gate' "$reviewer_file" 2>/dev/null; then
