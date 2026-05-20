@@ -56,6 +56,7 @@ def load_markdown_yaml_blocks(path: Path) -> list[tuple[int, Any]]:
     live_version = current_agents_md_version()
     text = text.replace("Session handshake v<N>", f"Session handshake v{live_version}")
     text = text.replace("agents_md_version: <N>", f"agents_md_version: {live_version}")
+    text = text.replace("AGENTS_MD_VERSION <N>", f"AGENTS_MD_VERSION {live_version}")
     blocks: list[tuple[int, Any]] = []
     current_line = 1
     current_offset = 0
