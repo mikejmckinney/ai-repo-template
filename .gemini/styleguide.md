@@ -394,17 +394,6 @@ and PR #351 R5 discussion. If a new canary form is introduced elsewhere, the
 substitution surface gets a new line and a new `docs/compliance_schemas.md`
 example in the same PR; that is the change contract, not regex generality.
 
-### Em-dash mojibake in `scripts/tests/exemption_predicates.bats` (PR #351)
-
-The `--comment-body` string literals in `scripts/tests/exemption_predicates.bats`
-contain UTF-8 em-dashes (`—`, three bytes `E2 80 94`). Bots that view the file
-via certain APIs render those bytes as `â^@^T` or `â € "` mojibake. The file IS
-valid UTF-8; the rendering is a viewer/proxy artefact. Do **not** flag em-dashes
-in this file as "mangled" or "corrupted". Verify with
-`file scripts/tests/exemption_predicates.bats` (reports UTF-8 Unicode text) or
-`xxd scripts/tests/exemption_predicates.bats | grep -c 'e2 80 94'` (counts
-literal em-dashes) before reporting.
-
 ## Response Guidelines
 
 1. **Be specific**: "Line 42 may throw if `user` is null" > "Watch out for nulls"
