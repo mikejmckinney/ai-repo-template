@@ -45,12 +45,11 @@ policy that ship with them.
 
 ### 1. Sandbox dogfood evidence requirement
 
-Every PR opened against this repo's default branch that modifies agent
-contracts, gate predicates, compliance schemas, or `.agents/.context/.github/agents`
-loaders MUST include a `## Sandbox dogfood evidence` section with two
-fields populated: `Sandbox issue:` and `Sandbox PR:`. Each value MUST be
-a permalink to an issue or PR in a sandbox sibling repo where the change
-was actually exercised before being proposed here.
+Every PR opened against this repo's default branch MUST include a 
+`## Sandbox dogfood evidence` section with two fields populated: 
+`Sandbox issue:` and `Sandbox PR:`. Each value MUST be a permalink to an 
+issue or PR in a sandbox sibling repo where the change was actually 
+exercised before being proposed here.
 
 This ADR is repo-agnostic. Derived repositories using this template will
 have their own sandbox sibling (the convention is `<repo>-sandbox`,
@@ -60,7 +59,6 @@ derived repos will substitute their own as specified in the
 [sandbox verification playbook](/docs/guides/sandbox-verification.md)
 which details the process for using sandbox and which sandbox instance to use.
 
-There is no override field, no bypass token, and no "n/a" textual escape.
 The enforcement boundary is the PR-level evidence section. If a change
 cannot be exercised through a sandbox, the change is out of scope for
 the default branch. The `gate_status: {triggered, applied}` sub-block on
