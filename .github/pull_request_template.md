@@ -69,7 +69,7 @@ N/A — empty headings are noise.
 ```yaml
 parent_compliance:
   handshake_token: "Session handshake v<N>"
-  agents_md_version: "<N>"
+  agents_md_version: <N>
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: "<true | false>"
@@ -79,7 +79,7 @@ parent_compliance:
   subagents_dispatched:
     - role: "<role>"
       role_contract_version: 1
-      agents_md_version: "<N>"
+      agents_md_version: <N>
       receipt:
         mode: "<visible-line | trailing-block>"
         value: "<receipt evidence>"
