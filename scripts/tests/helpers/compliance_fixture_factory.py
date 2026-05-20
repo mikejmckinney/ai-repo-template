@@ -300,6 +300,25 @@ def _case_partial_dispatch_missing_monolithic() -> dict[str, Any]:
     return block
 
 
+def _case_gate_exemption_reason_rejected() -> dict[str, Any]:
+    """Regression: the old `exemption_reason` field (ADR-029 §8) must be rejected.
+
+    Phase C removed `exemption_reason` from `plan_gate` and `diff_gate` in
+    favor of `gate_status: {triggered, applied}`. Two prompt files
+    (`op-issue-workflow.md`, `instruction-compliance-smoke.md`) still
+    referenced the old key after Phase C; Critic caught both in the Phase
+    H diff-gate. This case pins the rejection so the validator can't
+    silently regrow the escape hatch.
+    """
+    block = make_parent_compliance()
+    block["parent_compliance"]["plan_gate"] = {
+        "status": "linked",
+        "link": "https://example.invalid/plan",
+        "exemption_reason": "smoke-test",
+    }
+    return block
+
+
 # (name, builder, expected_error_substring)
 EXPECTED_INVALID_CASES: list[tuple[str, Callable[[], dict[str, Any]], str]] = [
     ("handshake-mismatch", _case_handshake_mismatch, "handshake_token version does not match"),
@@ -323,4 +342,5 @@ EXPECTED_INVALID_CASES: list[tuple[str, Callable[[], dict[str, Any]], str]] = [
     ("extra-dispatch-role", _case_extra_dispatch_role, "not declared in applicable_roles"),
     ("disjoint-dispatch-missing-monolithic", _case_disjoint_dispatch_missing_monolithic, "not declared in applicable_roles"),
     ("partial-dispatch-missing-monolithic", _case_partial_dispatch_missing_monolithic, "monolithic_justification"),
+    ("gate-exemption-reason-rejected", _case_gate_exemption_reason_rejected, "exemption_reason"),
 ]

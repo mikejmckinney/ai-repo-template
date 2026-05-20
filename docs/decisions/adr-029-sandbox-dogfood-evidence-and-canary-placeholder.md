@@ -62,9 +62,13 @@ section.
 
 ### 2. Canonical 5 field labels + parser contract
 
-The PR template, `.agents/judge.md` diff-gate checklist, and
-`scripts/verify-pr.sh` consume exactly five labels. The section header is
-the literal `## Sandbox dogfood evidence`.
+The PR template (`.github/pull_request_template.md`) and `.agents/judge.md`
+diff-gate checklist (item 20) consume exactly five labels. The section
+header is the literal `## Sandbox dogfood evidence`. Programmatic URL
+extraction in `scripts/verify-pr.sh` is a planned follow-up; until it
+lands, validation is checklist-based at human diff-gate review per §5,
+with `scripts/checks/157-sandbox-evidence-labels.sh` providing advisory
+drift detection.
 
 ```
 Sandbox issue: <URL>

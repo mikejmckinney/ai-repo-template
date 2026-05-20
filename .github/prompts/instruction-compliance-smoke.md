@@ -71,11 +71,15 @@ parent_compliance:
   plan_gate:
     status: exempt
     link: null
-    exemption_reason: Smoke check; no implementation plan.
+    gate_status:
+      triggered: false
+      applied: false
   diff_gate:
     status: exempt
     link: null
-    exemption_reason: Smoke check; no diff.
+    gate_status:
+      triggered: false
+      applied: false
   adr_required:
     required: false
     link: null

@@ -145,6 +145,25 @@ parent_compliance:
 **Explanation:**
 <brief explanation>
 
+## Sandbox dogfood evidence
+
+<!-- REQUIRED for PRs that modify agent contracts, gate predicates,
+     compliance schemas, or .agents/.context/.github/agents loaders.
+     Omit (or write "N/A — <why>") for changes that demonstrably cannot
+     touch any agent runtime surface. Per ADR-029 §1, no override field
+     and no bypass token: if this section is required, all five labels
+     must point to distinct, real sandbox URLs that satisfy the §3
+     regexes + content checks. Body-prefix checks are structural, not
+     cryptographic; sandbox-repo write-access controls and the human
+     diff-gate reviewer are the security boundary (ADR-029 §5).
+     Advisory drift detector: `scripts/checks/157-sandbox-evidence-labels.sh`. -->
+
+Sandbox issue: <URL>
+Sandbox PR: <URL>
+Negative control: <URL>
+Positive control: <URL>
+Role-comment render: <URL>
+
 ## Supporting verification
 
 <!-- REQUIRED. Exact commands you ran (or N/A for docs-only). These are
