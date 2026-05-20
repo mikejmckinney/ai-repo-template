@@ -49,6 +49,13 @@ def load_yaml(path: Path) -> Any:
 
 def load_markdown_yaml_blocks(path: Path) -> list[tuple[int, Any]]:
     text = path.read_text(encoding="utf-8")
+    # Examples in docs/compliance_schemas.md use the literal placeholder
+    # ``<N>`` for the live ``AGENTS_MD_VERSION`` value (ADR-029 §"Canary
+    # placeholder convention"). Substitute the live integer before YAML
+    # parsing so examples don't go stale on every version bump.
+    live_version = current_agents_md_version()
+    text = text.replace("Session handshake v<N>", f"Session handshake v{live_version}")
+    text = text.replace("agents_md_version: <N>", f"agents_md_version: {live_version}")
     blocks: list[tuple[int, Any]] = []
     current_line = 1
     current_offset = 0

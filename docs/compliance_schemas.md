@@ -27,24 +27,36 @@ All examples below are schema v1. Schema updates follow this policy:
   v1 for at least one release cycle.
 - Required fields, renamed fields, removed fields, and type changes require a
   new major schema version and an ADR update.
-- Validators must keep accepting the previous major version for one release
-  cycle after a breaking change unless Judge approves a narrower migration.
-- v1.2 (current for `subagent_compliance` and `agent-state:v1`) adds the
-  optional `opportunity_notes` field to support the opportunity-feedback
-  channel defined in `.context/rules/process_opportunity_feedback.md`.
-  v1.2 is fully backward-compatible with v1.1 and v1 readers: the field
-  is optional, absence is the default, and unknown-field tolerance applies
-  for any earlier-minor reader. Stage 3 (DevOps) extends validators to
-  accept `schema_version` values `1`, `1.1`, and `1.2` for
-  `subagent_compliance` blocks. **Note:** for **bare `agent-state:v1`**
-  YAML blocks, the top-level dispatch heuristic in
-  `scripts/lib/compliance_schema.py` (`validate_loaded_block`) only
-  routes blocks whose `schema_version` is numerically exactly `1.2`
-  through the agent-state validator; bare blocks declaring `1` or `1.1`
-  keep their pre-PR-#344 behavior and fall through to the generic
-  `unknown top-level keys` path. Authors emitting a new bare
-  `agent-state:v1` block (including any with `opportunity_notes`) must
-  declare `schema_version: 1.2`.
+- Breaking schema changes may be **one-shot** (without the one-cycle
+  backward-compat window) when accompanied by an ADR that justifies the
+  override. The default remains one-cycle backward compat. The Phase C
+  swap of `exemption_reason` → `gate_status` and the removal of the
+  per-block `schema_version` field are recorded one-shot transitions —
+  see ADR-029.
+- v1.2 (current for `agent-state:v1`) adds the optional
+  `opportunity_notes` field to support the opportunity-feedback channel
+  defined in `.context/rules/process_opportunity_feedback.md`. v1.2 is
+  fully backward-compatible with v1.1 and v1 readers: the field is
+  optional, absence is the default, and unknown-field tolerance applies
+  for any earlier-minor reader. For **bare `agent-state:v1`** YAML blocks,
+  the top-level dispatch heuristic in
+  `scripts/lib/compliance_schema.py` (`validate_loaded_block`) only routes
+  blocks whose `schema_version` is numerically exactly `1.2` through the
+  agent-state validator; bare blocks declaring `1` or `1.1` keep their
+  pre-PR-#344 behavior and fall through to the generic `unknown top-level
+  keys` path. Authors emitting a new bare `agent-state:v1` block
+  (including any with `opportunity_notes`) must declare
+  `schema_version: 1.2`.
+
+> **Note on `<N>` placeholders.** Examples below use the literal token
+> `<N>` in place of a pinned `AGENTS_MD_VERSION`. Real compliance blocks
+> must carry the live integer that matches the `AGENTS_MD_VERSION`
+> marker at the top of `AGENTS.md`. The live value is resolved at runtime
+> by `compliance_schema.current_agents_md_version()` (validator) and by
+> `scripts/tests/helpers/compliance_fixture_factory.py` (test factory).
+> Hardcoding a numeric value in examples couples the docs to AGENTS.md's
+> version bump cadence and was a recurring source of stale-example drift
+> (issue #349).
 
 ## `plan_compliance` v1
 
@@ -73,7 +85,7 @@ plan_compliance:
   instruction_resources:
     - resource: AGENTS.md
       why_applicable: Canonical startup and truth-hierarchy contract.
-      evidence: AGENTS_MD_VERSION 19; Session handshake v19 emitted.
+      evidence: AGENTS_MD_VERSION <N>; Session handshake v<N> emitted.
       decision_affected: Kept parent handshake versioning tied to AGENTS.md.
     - resource: .context/rules/process_doc_maintenance.md
       why_applicable: Plan changes ADRs, role files, docs, and checks.
@@ -151,8 +163,8 @@ do not encode the null-path reason in surrounding prose or in
 
 ```yaml
 parent_compliance:
-  handshake_token: Session handshake v19
-  agents_md_version: 19
+  handshake_token: Session handshake v<N>
+  agents_md_version: <N>
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
@@ -187,8 +199,8 @@ parent_compliance:
 
 ```yaml
 parent_compliance:
-  handshake_token: Session handshake v19
-  agents_md_version: 19
+  handshake_token: Session handshake v<N>
+  agents_md_version: <N>
   runtime_pointer:
     path: .github/copilot-instructions.md
     loaded: true
@@ -200,7 +212,7 @@ parent_compliance:
   subagents_dispatched:
     - role: docs
       role_contract_version: 1
-      agents_md_version: 19
+      agents_md_version: <N>
       receipt:
         mode: visible-line
         value: Role receipt v1 — docs
@@ -218,7 +230,7 @@ parent_compliance:
       run_status: SUCCESS
     - role: devops
       role_contract_version: 1
-      agents_md_version: 19
+      agents_md_version: <N>
       receipt:
         mode: visible-line
         value: Role receipt v1 — devops
@@ -286,7 +298,7 @@ receipt evidence in this block.
 subagent_compliance:
   role: judge
   role_contract_version: 1
-  agents_md_version: 19
+  agents_md_version: <N>
   receipt:
     mode: trailing-block
     value: Judge exact-output preserved; DECISION remained first line.
@@ -309,7 +321,7 @@ subagent_compliance:
 subagent_compliance:
   role: critic
   role_contract_version: 1
-  agents_md_version: 19
+  agents_md_version: <N>
   receipt:
     mode: trailing-block
     value: Critic exact-output preserved; CRITIC DECISION remained first line.

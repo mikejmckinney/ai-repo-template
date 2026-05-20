@@ -2,7 +2,10 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-025)
+Accepted (superseded in part by ADR-025; §"Per-file cadence bump" scope
+narrowed by ADR-029 §9 — canary covers `AGENTS.md` content only,
+per-concern `.context/rules/process_*.md` files evolve through their own
+PRs without bumping the canary)
 
 ## Date
 
