@@ -39,8 +39,8 @@ the test merely to make it pass. Stop, document the framing disconnect, and
 escalate to the user or revise the issue/plan.
 
 A pragmatic sandbox/dogfood test with concrete steps is required in the
-verification section of issues and plans.  the [sandbox issue], [sandbox PR].
-should be linked as proof that the user outcome solves the problem.  For example,
+verification section of issues and plans. The [sandbox issue] and [sandbox PR]
+should be linked as proof that the user outcome solves the problem. For example,
 An issue opened to add a .md file that walks an agent through the development and
 implementation of a new feature should, as part of the test and validation, walk
 through and run the process defined in the .md file in a sandbox or test environment
