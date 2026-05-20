@@ -98,7 +98,6 @@ The user described work without filing an issue ("can you fix X", "we should add
 
 1. Dispatch the `Architect` subagent via `runSubagent` with the issue body, prior comments, and Phase 2 verdict (or exemption rationale) as context.
 2. Architect returns a plan body conforming to [`.github/PLAN_TEMPLATE.md`](../PLAN_TEMPLATE.md) and [`docs/compliance_schemas.md`](../../docs/compliance_schemas.md) §"`plan_compliance` v1". The plan_compliance block MUST include exactly the v1-defined keys (the validator strictly rejects unknown keys — see `scripts/lib/compliance_schema.py` `_reject_unknown_keys`):
-   - `schema_version: 1`
    - `applicable_roles: [...]`
    - `instruction_resources: [...]` (each object: `resource`, `why_applicable`, `evidence`, `decision_affected`)
    - `role_dispatch: { decision, planned_subagents, monolithic_justification }` — `decision` is one of `monolithic` / `staged-dispatch` / `parallel-dispatch`. Per-stage ordering and rationale belong in the plan's prose (e.g., a numbered "Dispatch order" section), NOT inside `role_dispatch` — the v1 schema does not accept a `dispatch_order` key.
