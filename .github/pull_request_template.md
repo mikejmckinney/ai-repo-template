@@ -149,14 +149,14 @@ parent_compliance:
 
 <!-- REQUIRED for PRs that modify agent contracts, gate predicates,
      compliance schemas, or .agents/.context/.github/agents loaders.
-     Omit (or write "N/A — <why>") for changes that demonstrably cannot
-     touch any agent runtime surface. Per ADR-029 §1, no override field
-     and no bypass token: if this section is required, all five labels
-     must point to distinct, real sandbox URLs that satisfy the §3
+     Per ADR-029 §1: no override field, no bypass token, no "n/a"
+     textual escape. If a change cannot be exercised through the sandbox,
+     the change is out of scope for this repo's default branch. All five
+     labels MUST point to distinct, real sandbox URLs satisfying the §3
      regexes + content checks. Body-prefix checks are structural, not
-     cryptographic; sandbox-repo write-access controls and the human
-     diff-gate reviewer are the security boundary (ADR-029 §5).
-     Advisory drift detector: `scripts/checks/157-sandbox-evidence-labels.sh`. -->
+     cryptographic; sandbox-repo write-access and the human diff-gate
+     reviewer are the security boundary (§5). Advisory drift detector:
+     `scripts/checks/157-sandbox-evidence-labels.sh`. -->
 
 Sandbox issue: <URL>
 Sandbox PR: <URL>

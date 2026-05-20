@@ -309,11 +309,16 @@ def _case_gate_exemption_reason_rejected() -> dict[str, Any]:
     referenced the old key after Phase C; Critic caught both in the Phase
     H diff-gate. This case pins the rejection so the validator can't
     silently regrow the escape hatch.
+
+    The fixture includes `gate_status` so `_require_keys` passes (the
+    required-keys guard runs before `_reject_unknown_keys`); the extra
+    `exemption_reason` key is what we expect the validator to reject.
     """
     block = make_parent_compliance()
     block["parent_compliance"]["plan_gate"] = {
         "status": "linked",
         "link": "https://example.invalid/plan",
+        "gate_status": {"triggered": False, "applied": False},
         "exemption_reason": "smoke-test",
     }
     return block

@@ -126,7 +126,7 @@ bash install.sh
 ├── .cursorignore             # Files Cursor should not index
 └── .github/
     ├── copilot-instructions.md   # Pointer to AGENTS.md (auto-read by Copilot)
-    ├── pull_request_template.md  # Default PR body skeleton (Plan pointer [advisory] + Doc-sync checklist required)
+    ├── pull_request_template.md  # Default PR body skeleton (Plan pointer [advisory] + Doc-sync checklist + ADR-029 Sandbox dogfood evidence section required)
     ├── agents/                   # 10 role-specialized agent files
     │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
     │   ├── judge.agent.md, pm.agent.md, frontend.agent.md,
@@ -274,7 +274,7 @@ bash install.sh
 | `docs/decisions/adr-template.md` | Architecture Decision Record template (with "When to write" header) |
 | `docs/postmortems/README.md` | Postmortem index, when to write, ADR-vs-postmortem split, "What generalizes" promotion gate |
 | `docs/postmortems/postmortem-template.md` | Postmortem / lessons-learned template (Trigger, Expected vs Actual, Root cause, What generalizes, Action items) |
-| `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalinks to original plan and revisions + 1–2 sentence summary; advisory per ADR-011), `## Plan revision sync` checkbox (advisory), and required doc-sync checklist |
+| `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalinks to original plan and revisions + 1–2 sentence summary; advisory per ADR-011), `## Plan revision sync` checkbox (advisory), required doc-sync checklist, and `## Sandbox dogfood evidence` section (5 labels) required by ADR-029 for PRs that modify agent contracts, gate predicates, compliance schemas, or `.agents/.context/.github/agents` loaders |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching, issue/PR granularity |
 | `docs/guides/design-patterns.md` | Lead index for advisory code-layer design-pattern catalogs (`CAP`, `CP`, `CCP`, `CDP`, `CIP`) |
 | `docs/guides/design-patterns-concurrency.md` | Concurrency pattern catalog with stable `CCP1`-`CCP8` citation handles |

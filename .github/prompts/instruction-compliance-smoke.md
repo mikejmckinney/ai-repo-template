@@ -57,7 +57,6 @@ Return exactly these sections:
 ## Compliance preview
 ```yaml
 parent_compliance:
-  schema_version: 1
   handshake_token: Session handshake v<N>
   agents_md_version: <N>
   runtime_pointer:
