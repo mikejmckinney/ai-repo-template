@@ -85,13 +85,14 @@ or absence of the section header itself = malformed.
 ### 3. Structural vs semantic
 
 Label/URL presence is a structural check the drift detector and judge
-checklist can enforce mechanically. *Content* checks — that the sandbox
+checklist can enforce mechanically. Content checks — that the sandbox
 issue actually describes the change, that the sandbox PR actually
-exercises it — are not mechanical and are not in this ADR. They are the
-human diff-gate reviewer's responsibility, backed by sandbox-repo
-write-access controls. Acceptance-criteria-level test vectors and content
-checks belong in the verification artifacts of the PRs that consume this
-ADR, not in the ADR itself.
+exercises it — are not mechanical and are not in this ADR. Content
+checks are the human diff-gate reviewer's responsibility, backed by
+sandbox-repo write-access controls (see
+`docs/guides/sandbox-verification.md` for sandbox-repo access
+bootstrap). They belong in the verification artifacts of the PRs that
+consume this ADR, not in the ADR itself.
 
 ### 4. Critic-before-Judge plan-gate ordering convention (Δ14)
 

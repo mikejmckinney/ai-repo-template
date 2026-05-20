@@ -77,7 +77,7 @@ The user described work without filing an issue ("can you fix X", "we should add
 
 **Decision tree:**
 
-- **Exempt** if the issue is pure repo-process / ADR / doc-sync / canary-bump work (no end-user surface, no product shape). Record the exemption explicitly in the plan_compliance block: set `adr_required.required: false` with a `supersession_notes` line explaining the exemption, AND set `plan_gate.gate_status: {triggered: false, applied: false}` (the schema-approved way to record that the gate didn't fire). The rationale itself goes in plan prose, not in the YAML block — ADR-029 §8 removed the free-form `exemption_reason` field because it was a self-exemption escape hatch. See [`docs/compliance_schemas.md`](../../docs/compliance_schemas.md) §`plan_compliance` v1.
+- **Exempt** if the issue is pure repo-process / ADR / doc-sync / canary-bump work (no end-user surface, no product shape). Record the exemption explicitly in the plan_compliance block: set `adr_required.required: false` with a `supersession_notes` line explaining the exemption, AND set `plan_gate.gate_status: {triggered: false, applied: false}` (the schema-approved way to record that the gate didn't fire). The rationale itself goes in plan prose, not in the YAML block — ADR-029 §6 removed the free-form `exemption_reason` field because it was a self-exemption escape hatch. See [`docs/compliance_schemas.md`](../../docs/compliance_schemas.md) §`plan_compliance` v1.
 - **Required** if the issue describes a product capability, an external contract change, or anything that could end up in the user-visible repo guide.
 
 **Actions when required:**
@@ -102,7 +102,7 @@ The user described work without filing an issue ("can you fix X", "we should add
    - `applicable_roles: [...]`
    - `instruction_resources: [...]` (each object: `resource`, `why_applicable`, `evidence`, `decision_affected`)
    - `role_dispatch: { decision, planned_subagents, monolithic_justification }` — `decision` is one of `monolithic` / `staged-dispatch` / `parallel-dispatch`. Per-stage ordering and rationale belong in the plan's prose (e.g., a numbered "Dispatch order" section), NOT inside `role_dispatch` — the v1 schema does not accept a `dispatch_order` key.
-   - `plan_gate: { status: pending, link: <plan-comment-url-when-known>, gate_status: { triggered: bool, applied: bool } }` — `gate_status` is descriptive only (per ADR-029 §8). If the issue is exempt from Analyst pre-flight, use `gate_status: {triggered: false, applied: false}` and put the rationale in plan prose.
+   - `plan_gate: { status: pending, link: <plan-comment-url-when-known>, gate_status: { triggered: bool, applied: bool } }` — `gate_status` is descriptive only (per ADR-029 §6). If the issue is exempt from Analyst pre-flight, use `gate_status: {triggered: false, applied: false}` and put the rationale in plan prose.
    - `adr_required: { required: bool, link: ..., supersession_notes: [...] }`
    - `doc_sync: { triggered: bool, companions: [<path>, ...], no_change_justifications: [...] }` — `companions` is a flat list of non-empty path strings (the v1 validator's `_validate_doc_sync` calls `_require_string_list`; `{path, reason}` objects or any other shape will fail). Canary-lifecycle file groupings belong in the plan's prose, not in a nested `companions.canary_lifecycle.grouped_files` shape — that key is not in v1.
    - `verification: [<command>, ...]`

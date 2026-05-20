@@ -301,7 +301,7 @@ def _case_partial_dispatch_missing_monolithic() -> dict[str, Any]:
 
 
 def _case_gate_exemption_reason_rejected() -> dict[str, Any]:
-    """Regression: the old `exemption_reason` field (ADR-029 §8) must be rejected.
+    """Regression: the old `exemption_reason` field (ADR-029 §6) must be rejected.
 
     Phase C removed `exemption_reason` from `plan_gate` and `diff_gate` in
     favor of `gate_status: {triggered, applied}`. Two prompt files
