@@ -55,7 +55,7 @@ was actually exercised before being proposed here.
 This ADR is repo-agnostic. Derived repositories using this template will
 have their own sandbox sibling (the convention is `<repo>-sandbox`,
 but nothing in this ADR pins the sandbox to a specific URL). The
-example sandbox used by *this* repo is `ai-repo-template-sandbox`;
+example sandbox used by ai-repo-template is `ai-repo-template-sandbox`;
 derived repos will substitute their own as specified in the
 [sandbox verification playbook](/docs/guides/sandbox-verification.md)
 which details the process for using sandbox and which sandbox instance to use.
