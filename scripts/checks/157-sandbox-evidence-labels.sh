@@ -21,45 +21,45 @@ echo "Running sandbox-evidence label drift check (ADR-029)..."
 
 ADR_FILE="docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md"
 if [[ ! -f "$ADR_FILE" ]]; then
-    fail "157-sandbox-evidence-labels: ADR-029 file missing at $ADR_FILE"
-    return 0 2>/dev/null || exit 0
+  fail "157-sandbox-evidence-labels: ADR-029 file missing at $ADR_FILE"
+  return 0 2>/dev/null || exit 0
 fi
 
 # Canonical label list — must stay in sync with ADR-029 §"Canonical field labels".
 CANONICAL_LABELS=(
-    "Sandbox issue:"
-    "Sandbox PR:"
+  "Sandbox issue:"
+  "Sandbox PR:"
 )
 
 # Confirm ADR-029 itself carries the canonical labels (self-consistency).
 for label in "${CANONICAL_LABELS[@]}"; do
-    if ! grep -qF "$label" "$ADR_FILE"; then
-        fail "157-sandbox-evidence-labels: ADR-029 missing canonical label '$label'"
-    fi
+  if ! grep -qF "$label" "$ADR_FILE"; then
+    fail "157-sandbox-evidence-labels: ADR-029 missing canonical label '$label'"
+  fi
 done
 
 # Consuming surfaces that MUST carry the labels once they adopt the section.
 SURFACES=(
-    ".github/pull_request_template.md"
-    ".agents/judge.md"
+  ".github/pull_request_template.md"
+  ".agents/judge.md"
 )
 
 SECTION_HEADER="## Sandbox dogfood evidence"
 
 for surface in "${SURFACES[@]}"; do
-    if [[ ! -f "$surface" ]]; then
-        warn "157-sandbox-evidence-labels: surface $surface not found — skipped"
-        continue
+  if [[ ! -f "$surface" ]]; then
+    warn "157-sandbox-evidence-labels: surface $surface not found — skipped"
+    continue
+  fi
+  if ! grep -qF "$SECTION_HEADER" "$surface"; then
+    # Surface has not yet adopted ADR-029 — advisory only.
+    continue
+  fi
+  for label in "${CANONICAL_LABELS[@]}"; do
+    if ! grep -qF "$label" "$surface"; then
+      fail "157-sandbox-evidence-labels: surface $surface carries '$SECTION_HEADER' but is missing canonical label '$label' (ADR-029 §\"Canonical field labels\")"
     fi
-    if ! grep -qF "$SECTION_HEADER" "$surface"; then
-        # Surface has not yet adopted ADR-029 — advisory only.
-        continue
-    fi
-    for label in "${CANONICAL_LABELS[@]}"; do
-        if ! grep -qF "$label" "$surface"; then
-            fail "157-sandbox-evidence-labels: surface $surface carries '$SECTION_HEADER' but is missing canonical label '$label' (ADR-029 §\"Canonical field labels\")"
-        fi
-    done
+  done
 done
 
 pass "157-sandbox-evidence-labels: ADR-029 label drift check complete"
