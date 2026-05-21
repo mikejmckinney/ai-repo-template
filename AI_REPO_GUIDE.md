@@ -91,6 +91,7 @@ bash install.sh
 │   ├── lib/                  # Shared shell helpers (issue #255 Phase 4a)
 │   │   ├── logging.sh        # Color vars + log_info/warn/error/step
 │   │   ├── assertions.sh     # PASS/FAIL/WARN counters + pass/fail/warn
+│   │   ├── bot-allowlist.txt # Canonical normalized bot identities for pr-resolve-all / Phase 4 (issue #326)
 │   │   └── jq/               # Extracted jq filters + fixtures (issue #229)
 │   ├── setup/                # Numbered setup.sh modules (issue #255 Phase 4c)
 │   │   ├── README.md
@@ -108,6 +109,7 @@ bash install.sh
 │   ├── multi-dispatch-safety.sh      # Parallel-dispatch safety classifier
 │   ├── parse-ownership-table.sh      # Ownership-table parser used by workflows
 │   ├── pr-iteration-stats.sh         # Rolling PR review-loop metrics (issue #229)
+│   ├── pr-resolve-all-poll.sh        # Pre-#321 settle-window poll helper for pr-resolve-all (issue #326)
 │   ├── lint-shell-conventions.sh     # Project-specific shell rules (RULE-01/02, issue #229)
 │   ├── test-*.sh             # Unit tests for the helper scripts above
 │   └── lib/
@@ -240,9 +242,11 @@ bash install.sh
 | `scripts/validate-compliance-fixtures.py` | Validates ADR-026 valid/invalid fixtures under `scripts/tests/fixtures/compliance/` |
 | `scripts/db-reset.sh` | Optional database reset stub |
 | `scripts/pr-iteration-stats.sh` | Rolling 14-day PR review-loop metrics (total/fix/rejected rounds, threads); `--window <days>`, `--json` |
+| `scripts/pr-resolve-all-poll.sh` | Pre-#321 settle-window poll helper for `pr-resolve-all.md`; emits `RESULT=... HEAD=...` and uses `INTERVAL`, `QUIET_WINDOW`, and `MAX_WAIT` overrides |
 | `scripts/lint-shell-conventions.sh` | Project-specific shell linting (RULE-01: `grep -c` without `\|\| true`; RULE-02: unanchored `grep -E` alternation patterns); run: `bash scripts/lint-shell-conventions.sh scripts/` |
 | `scripts/lib/logging.sh` | Shared color vars + `log_info`/`log_warn`/`log_error`/`log_step` printf helpers (issue #255 Phase 4a). Sourced by `setup.sh`, `verify-env.sh`, `db-reset.sh`, `sandbox-bootstrap.sh` |
 | `scripts/lib/assertions.sh` | Shared `PASS`/`FAIL`/`WARN` counters + `pass`/`fail`/`warn` helpers (issue #255 Phase 4a). Depends on `logging.sh` color vars. Sourced by `test.sh`, `verify-env.sh` |
+| `scripts/lib/bot-allowlist.txt` | Canonical normalized bot identities for `pr-resolve-all.md` settle polling and Phase 4 auto-resolution (issue #326) |
 | `scripts/lib/jq/*.jq` | Extracted jq filters (e.g. `relay-cycle-count.jq`); each has matching fixture pairs in `scripts/lib/jq/fixtures/` and is tested by `scripts/tests/jq-filters.bats` |
 | `scripts/tests/*.bats` | Bats test suite (issue #255 Phase 4b, expanded by issue #280); each `.bats` file inlines the legacy test logic as a `_legacy_body()` shell function and invokes it via bats `run` inside a single `@test` block. No `scripts/test-*.sh` delegate layer remains. Run: `bats scripts/tests/`. CI installs bats via `apt-get` in `ci-tests.yml`. |
 

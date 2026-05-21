@@ -1,0 +1,9 @@
+# Canonical allow-listed bot identities for pr-resolve-all / Phase 4.
+# Compare case-insensitively after stripping any trailing "[bot]" suffix.
+gemini-code-assist
+copilot-pull-request-reviewer
+copilot
+chatgpt-codex-connector
+codex
+cursor
+claude

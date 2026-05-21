@@ -122,6 +122,38 @@ Do the following **once** (not every round):
 
 Never silently re-defer the same finding round after round — that wastes tokens and produces an unreadable PR history. Document once, skip forever.
 
+### 5 — Settle window between rounds
+
+When a round ends and you need to wait for reviewer state to settle
+before the next fetch pass, **do not blind-sleep first**. Prefer the
+repo-local helper:
+
+```bash
+scripts/pr-resolve-all-poll.sh <PR_NUMBER>
+```
+
+The helper is the pre-#321 settle detector for this prompt. It reads
+`scripts/lib/bot-allowlist.txt` as the canonical machine-readable bot
+identity set, observes live PR state from GitHub, and emits one final
+machine-readable line containing at least `RESULT=<value>` and
+`HEAD=<sha>`.
+
+Dispatch on the helper result exactly as follows:
+
+| Helper result | Exit code | Next action |
+|---|---:|---|
+| `RESULT=CONVERGED` | `0` | Reviewer state converged on the current head; re-fetch PR data once (Round discipline 2) and continue the next round / fetch pass. |
+| `RESULT=QUIET_ELAPSED` | `0` | The fallback quiet window elapsed since the latest actionable event; re-fetch PR data once and continue the next round / fetch pass. |
+| `RESULT=SHA_CHANGED` | `3` | A new push / force-push landed; restart the procedure against the new `HEAD` rather than continuing on stale state. |
+| `RESULT=TIMEOUT` | `2` | Stop and escalate / pause for human direction. Do not silently loop forever. |
+| `RESULT=API_ERROR` | `4` | Retry the helper once. If the second attempt still fails because `gh` / GraphQL / auth is unavailable, fall back to one documented time-based wait (`QUIET_WINDOW`, default `360` seconds) and then do one fresh fetch pass. If the failure is repo-local contract drift (for example a missing allow-list file or malformed helper output), pause / escalate instead of blind looping. |
+
+This v0 helper is intentionally **pre-#321-compatible**: it detects
+settle-window state from GitHub PR APIs only. It does **not** yet prove
+the formal #321 round contract or parse Index / Resolution Report HTML
+markers. Once #321 lands, refine the helper to consume the formal
+marker/runtime-gate contract instead of this conservative inference.
+
 ---
 
 ## Phase 1: Build the Issue/Suggestion Index
@@ -297,7 +329,7 @@ Resolve review threads whose backing item cleared Phase 2 with status `✅ Fixed
 
 ### Allow-list (bot reviewers only)
 
-**Normalization rule:** GitHub's REST and GraphQL APIs disagree on bot login formatting — REST returns `gemini-code-assist[bot]`, while GraphQL often returns the same identity as `gemini-code-assist` (no `[bot]` suffix). Before comparing, **strip any trailing `[bot]` from the login** and then compare case-insensitively against the normalized allow-list below. This is the canonical matching rule for Phase 4; apply it whichever API (REST or GraphQL) you sourced the login from. (`.github/workflows/agent-relay-reviews.yml` has separate bot-detection logic that matches on either a `[bot]` suffix **or** a literal allow-regex rather than stripping and normalizing — do not rely on that workflow's matcher as a reference for Phase 4.)
+**Normalization rule:** GitHub's REST and GraphQL APIs disagree on bot login formatting — REST returns `gemini-code-assist[bot]`, while GraphQL often returns the same identity as `gemini-code-assist` (no `[bot]` suffix). Before comparing, **strip any trailing `[bot]` from the login** and then compare case-insensitively against the normalized allow-list below. This is the canonical matching rule for Phase 4; apply it whichever API (REST or GraphQL) you sourced the login from. `scripts/lib/bot-allowlist.txt` is the canonical machine-readable source for the same normalized set; keep the human-readable list below in lockstep with that file. (`.github/workflows/agent-relay-reviews.yml` has separate bot-detection logic that matches on either a `[bot]` suffix **or** a literal allow-regex rather than stripping and normalizing — do not rely on that workflow's matcher as a reference for Phase 4.)
 
 Normalized allow-list (match with `[bot]` stripped and compared case-insensitively):
 
