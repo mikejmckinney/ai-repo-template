@@ -524,7 +524,7 @@ timestamp_to_epoch() {
   jq -nr --arg ts "$1" '$ts | fromdateiso8601'
 }
 
-start_epoch=$(jq -n 'now | floor')
+start_epoch=$(date +%s)
 
 while :; do
   if build_state; then
@@ -554,7 +554,7 @@ while :; do
   participating_csv=$(jq -r '.participating_bots | join(",")' "$state_file")
   pending_csv=$(jq -r '[.bots[] | select(.current_head_pending == true) | .login] | join(",")' "$state_file")
 
-  now_epoch=$(jq -n 'now | floor')
+  now_epoch=$(date +%s)
   elapsed=$((now_epoch - start_epoch))
   quiet_for=0
   if [[ -n "$latest_actionable" && "$latest_actionable" != "null" ]]; then
