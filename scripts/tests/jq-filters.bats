@@ -18,7 +18,7 @@ setup_file() {
 }
 
 setup() {
-  TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/jq-filters.XXXXXX")"
+  TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/check-326.XXXXXX")"
   export TMP_DIR
 }
 
