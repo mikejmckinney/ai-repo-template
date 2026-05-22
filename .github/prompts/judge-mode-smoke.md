@@ -81,6 +81,8 @@ grep -qE "^SUMMARY "  output.txt            && echo "OK: SUMMARY" || echo "FAIL:
 grep -qE "^MAJOR ISSUES" output.txt         && echo "OK: MAJOR ISSUES" || echo "FAIL: MAJOR ISSUES missing"
 grep -qE "^MINOR ISSUES" output.txt         && echo "OK: MINOR ISSUES" || echo "FAIL: MINOR ISSUES missing"
 grep -qE "^SUGGESTED PATCHES" output.txt    && echo "OK: SUGGESTED PATCHES" || echo "FAIL: SUGGESTED PATCHES missing"
+# Note: SUGGESTED PATCHES is marked optional in .agents/judge.md but the template always emits the heading (even when content is "none").
+# If a Judge run omits the heading entirely, the check above will FAIL — investigate .agents/judge.md output format first.
 grep -qE "^VALIDATION"       output.txt     && echo "OK: VALIDATION" || echo "FAIL: VALIDATION missing"
 
 # PLAN-GATE exclusive headings (must ALL be absent — plain-text labels per .agents/judge.md)
