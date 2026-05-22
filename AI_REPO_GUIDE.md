@@ -140,6 +140,7 @@ bash install.sh
     │   ├── pr-resolve-all.md     # PR-review resolution procedure
     │   ├── instruction-compliance-smoke.md # No-edit ADR-026 compliance smoke prompt
     │   ├── outcome-validation-smoke.md # No-edit Judge/Critic outcome-theater smoke prompt
+    │   ├── judge-mode-smoke.md       # No-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection
     │   └── expand-backlog-entry.md # Backlog → issue expansion prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
@@ -218,6 +219,7 @@ bash install.sh
 | `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
 | `.github/prompts/instruction-compliance-smoke.md` | No-edit smoke prompt for startup pointer loading, role-dispatch reasoning, and ADR-026 evidence shape |
 | `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
+| `judge-mode-smoke.md` | No-edit smoke prompt: Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance |
 
 ### Compliance Contracts
 

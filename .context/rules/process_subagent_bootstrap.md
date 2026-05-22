@@ -18,6 +18,15 @@ context for the role to decide without guessing:
 - required gates,
 - current `AGENTS_MD_VERSION`,
 - known deviations, exemptions, or missing context.
+- **For Judge dispatch**: include `mode: plan-gate` or `mode: diff-gate` in the dispatch packet.
+  This is a **documentation requirement for the dispatching parent** — it declares which gate context
+  the packet was sent for and enables reliable output-format conformance.
+  When `mode:` is absent, Judge falls back to content inference (Priority 2 in `.agents/judge.md` § "Mode Selection")
+  then asks one clarifying question (Priority 3) before proceeding. Judge will explicitly confirm
+  the selected mode via self-check before emitting any output regardless of whether `mode:` was supplied.
+  Omitting `mode:` is a parent documentation obligation. Enforcement derives entirely from the
+  Mode Selection priority chain in `.agents/judge.md` (Priority 1-2-3); this entry is an annotation
+  to that chain, not a new independent gate condition.
 
 If any required field is unknown, state that explicitly. Do not let the
 subagent infer missing issue/PR state or ownership.

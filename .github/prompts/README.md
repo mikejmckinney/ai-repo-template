@@ -45,6 +45,7 @@ lists come after, not before.
   - **`instruction-compliance-smoke.md`** — no-edit smoke prompt for checking
     startup pointer loading, role-dispatch reasoning, and ADR-026 compliance
     evidence shape before relying on an agent run.
+  - **`judge-mode-smoke.md`** — no-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance (structural heading verification for both modes)
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.
 
