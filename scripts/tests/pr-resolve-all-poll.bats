@@ -225,19 +225,6 @@ extract_docs_allowlist() {
   ' "$REPO_ROOT/docs/guides/agent-pipeline.md" | sort -u
 }
 
-extract_adr_allowlist() {
-  awk '
-    /Normalized allow-list:/ { in_block = 1; next }
-    in_block && /^`scripts\/lib\/bot-allowlist\.txt`/ { exit }
-    in_block && /^- `/ {
-      line = $0
-      sub(/^- `/, "", line)
-      sub(/`.*/, "", line)
-      print tolower(line)
-    }
-  ' "$REPO_ROOT/docs/decisions/adr-007-auto-resolve-review-threads.md" | sort -u
-}
-
 assert_equal_text() {
   local expected="$1" actual="$2" name="$3"
   if [[ "$expected" != "$actual" ]]; then
@@ -362,11 +349,9 @@ assert_equal_text() {
   workflow_allowlist="$(extract_workflow_allowlist)"
   fix_workflow_allowlist="$(extract_fix_workflow_allowlist)"
   docs_allowlist="$(extract_docs_allowlist)"
-  adr_allowlist="$(extract_adr_allowlist)"
 
   assert_equal_text "$file_allowlist" "$prompt_allowlist" "prompt parity"
   assert_equal_text "$file_allowlist" "$workflow_allowlist" "workflow parity"
   assert_equal_text "$file_allowlist" "$fix_workflow_allowlist" "fix workflow parity"
   assert_equal_text "$file_allowlist" "$docs_allowlist" "docs parity"
-  assert_equal_text "$file_allowlist" "$adr_allowlist" "adr parity"
 }

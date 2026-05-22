@@ -118,15 +118,11 @@ Normalized allow-list:
 - `copilot` (the Copilot SWE agent)
 - `chatgpt-codex-connector`
 - `codex`
-- `cursor`
 - `claude` (only when the thread's root comment was authored directly by
   the `claude[bot]` / `claude` identity — e.g., Claude's auto-review
   workflow. If a human opened the thread and `claude[bot]` merely
   replied, the root author is the human and Phase 4 must leave the
   thread open.)
-
-`scripts/lib/bot-allowlist.txt` is the canonical machine-readable mirror
-of this normalized set; keep the prompt and docs copies aligned with it.
 
 Per-thread gate (all four must hold):
 
