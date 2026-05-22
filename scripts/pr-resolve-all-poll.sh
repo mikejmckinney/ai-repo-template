@@ -25,10 +25,11 @@
 #   - "Participating" bots are allow-listed bots that have reviewed or
 #     commented on this PR.
 #   - "Terminal on current head" is conservative in v0: for a participating
-#     bot, either (a) it submitted a review against the current head SHA or
-#     (b) it posted a PR or review-thread comment at/after the current head
-#     commit timestamp, and in both cases it has zero unresolved allow-listed
-#     bot-rooted threads of its own.
+#     bot, it submitted a non-pending review against the current head SHA and
+#     has zero unresolved allow-listed bot-rooted threads of its own.
+#     Comment-only bot activity still contributes to the quiet-window fallback,
+#     but it does not prove current-head convergence on its own because commit
+#     timestamps are not a safe proxy for push order after rebases/force-pushes.
 #   - The quiet-window fallback is measured from the latest PR activity
 #     timestamp (reviews, PR comments, review-thread comments), falling back
 #     to the head commit timestamp only when no newer PR activity exists.
@@ -466,27 +467,10 @@ build_state() {
                   ))
                 | length > 0
               ),
-              current_head_comment: (
-                ($src.pr_comments
-                 | map(select(
-                     (.author.login // "" | normalize_login) == $bot
-                     and (($head_commit_ts == null) or (.createdAt >= $head_commit_ts))
-                   ))
-                 | length > 0)
-                or
-                ($src.threads
-                 | map(.comments.nodes // [])
-                 | add // []
-                 | map(select(
-                     (.author.login // "" | normalize_login) == $bot
-                     and (($head_commit_ts == null) or (.createdAt >= $head_commit_ts))
-                   ))
-                 | length > 0)
-              )
             })
           | map(
               . + {
-                terminal: ((.current_head_review or .current_head_comment) and (.unresolved_root_threads == 0))
+                terminal: (.current_head_review and (.unresolved_root_threads == 0))
               }
             )
         )

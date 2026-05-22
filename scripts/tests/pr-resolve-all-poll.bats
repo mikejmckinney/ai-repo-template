@@ -164,6 +164,28 @@ EOF
 EOF
 }
 
+write_backdated_comment_only_fixtures() {
+  local old_head_ts recent_bot_comment_ts
+  old_head_ts="$(iso_timestamp_n_seconds_ago 600)"
+  recent_bot_comment_ts="$(iso_timestamp_n_seconds_ago 5)"
+
+  cat >"$TMP_DIR/1.json" <<EOF
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-backdated","commits":{"nodes":[{"commit":{"oid":"sha-backdated","committedDate":"$old_head_ts"}}]}}}}}
+EOF
+  cat >"$TMP_DIR/2.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/3.json" <<EOF
+{"data":{"repository":{"pullRequest":{"comments":{"nodes":[{"author":{"login":"gemini-code-assist"},"createdAt":"$recent_bot_comment_ts"}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/4.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/5.json" <<EOF
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-backdated","commits":{"nodes":[{"commit":{"oid":"sha-backdated","committedDate":"$old_head_ts"}}]}}}}}
+EOF
+}
+
 extract_prompt_allowlist() {
   awk '
     /Normalized allow-list/ { in_block = 1; next }
@@ -228,6 +250,7 @@ extract_docs_allowlist() {
 assert_equal_text() {
   local expected="$1" actual="$2" name="$3"
   if [[ "$expected" != "$actual" ]]; then
+    echo "mismatch: $name" >&2
     echo "expected:" >&2
     printf '%s\n' "$expected" >&2
     echo "actual:" >&2
@@ -298,6 +321,22 @@ assert_equal_text() {
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 2 ]
   [[ "$output" == *"RESULT=TIMEOUT HEAD=sha-recent"* ]]
+}
+
+@test "pr-resolve-all-poll does not return RESULT=CONVERGED for comment-only bot activity on a backdated head" {
+  write_backdated_comment_only_fixtures
+  write_mock_gh
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    GH_REPO="mikejmckinney/ai-repo-template" \
+    INTERVAL=0 \
+    QUIET_WINDOW=360 \
+    MAX_WAIT=0 \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"RESULT=TIMEOUT HEAD=sha-backdated"* ]]
 }
 
 @test "pr-resolve-all-poll returns RESULT=TIMEOUT when a blocking state persists past MAX_WAIT" {

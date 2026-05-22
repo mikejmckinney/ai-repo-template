@@ -142,6 +142,13 @@ In this v0 contract, `latest actionable event` means the newest PR review,
 PR comment, or review-thread comment timestamp visible from GitHub, falling
 back to the head commit timestamp only when no newer PR activity exists.
 
+In this pre-#321 v0 contract, `RESULT=CONVERGED` is intentionally stricter
+than the quiet-window fallback: it requires an explicit non-pending review
+submitted against the current `HEAD` for each participating allow-listed bot
+with zero unresolved bot-rooted threads of its own. Comment-only bot
+activity may still advance via `RESULT=QUIET_ELAPSED`, but it does not
+prove current-head convergence on its own.
+
 Dispatch on the helper result exactly as follows:
 
 | Helper result | Exit code | Next action |

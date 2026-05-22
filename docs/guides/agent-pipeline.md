@@ -141,6 +141,13 @@ live GitHub PR state, emits a machine-readable `RESULT=...` line plus
 documented time-based fallback in the prompt for sessions without
 working `gh` / GraphQL access.
 
+In this pre-#321 helper contract, `RESULT=CONVERGED` is intentionally
+stricter than the quiet fallback: it requires an explicit current-head
+review signal from each participating allow-listed bot with no unresolved
+bot-rooted threads of its own. Comment-only bot activity can still move
+forward via `RESULT=QUIET_ELAPSED`, but it does not prove current-head
+convergence by itself.
+
 Note: the workflow triggers only on `pull_request_review` (submitted),
 not on `pull_request_review_comment`. A review with N inline comments
 fires N comment events plus one review-submitted event; triggering on
