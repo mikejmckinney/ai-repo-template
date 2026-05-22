@@ -189,7 +189,8 @@ fi
 allowlist_json=$(jq -Rn '
   [inputs
    | sub("#.*$"; "")
-   | gsub("^[[:space:]]+|[[:space:]]+$"; "")
+   | sub("^[[:space:]]+"; "")
+   | sub("[[:space:]]+$"; "")
    | select(length > 0)
    | ascii_downcase
    | sub("\\[bot\\]$"; "")]
