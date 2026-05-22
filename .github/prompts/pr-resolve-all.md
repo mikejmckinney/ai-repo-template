@@ -135,8 +135,8 @@ scripts/pr-resolve-all-poll.sh <PR_NUMBER>
 The helper is the pre-#321 settle detector for this prompt. It reads
 `scripts/lib/bot-allowlist.txt` as the canonical machine-readable bot
 identity set, observes live PR state from GitHub, and emits one final
-machine-readable line containing at least `RESULT=<value>` and
-`HEAD=<sha>`.
+machine-readable line containing at least `RESULT=<value>` and, when the
+current PR head is available, `HEAD=<sha>`.
 
 Dispatch on the helper result exactly as follows:
 
@@ -146,7 +146,7 @@ Dispatch on the helper result exactly as follows:
 | `RESULT=QUIET_ELAPSED` | `0` | The fallback quiet window elapsed since the latest actionable event; re-fetch PR data once and continue the next round / fetch pass. |
 | `RESULT=SHA_CHANGED` | `3` | A new push / force-push landed; restart the procedure against the new `HEAD` rather than continuing on stale state. |
 | `RESULT=TIMEOUT` | `2` | Stop and escalate / pause for human direction. Do not silently loop forever. |
-| `RESULT=API_ERROR` | `4` | Retry the helper once. If the second attempt still fails because `gh` / GraphQL / auth is unavailable, fall back to one documented time-based wait (`QUIET_WINDOW`, default `360` seconds) and then do one fresh fetch pass. If the failure is repo-local contract drift (for example a missing allow-list file or malformed helper output), pause / escalate instead of blind looping. |
+| `RESULT=API_ERROR` | `4` | Retry the helper once. If the second attempt still fails with a transient GitHub/runtime error (`ERROR=GH_AUTH`, `ERROR=REPO_VIEW`, or any `ERROR=GRAPHQL_*` value), fall back to one documented time-based wait (`QUIET_WINDOW`, default `360` seconds) and then do one fresh fetch pass. If it fails with a repo-local contract/runtime error (`ERROR=MISSING_GH`, `ERROR=MISSING_JQ`, `ERROR=MISSING_ALLOWLIST`, `ERROR=EMPTY_ALLOWLIST`, `ERROR=HEAD_MISSING`, or `ERROR=STATE_BUILD`), pause / escalate instead of blind looping. |
 
 This v0 helper is intentionally **pre-#321-compatible**: it detects
 settle-window state from GitHub PR APIs only. It does **not** yet prove

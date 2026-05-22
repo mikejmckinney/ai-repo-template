@@ -211,6 +211,7 @@ reviews_file="$TMP_DIR/reviews.json"
 comments_file="$TMP_DIR/comments.json"
 threads_file="$TMP_DIR/threads.json"
 state_file="$TMP_DIR/state.json"
+SNAPSHOT_ERROR="SNAPSHOT"
 
 gh_graphql() {
   local out_file="$1"
@@ -226,7 +227,10 @@ fetch_head() {
     -F owner="$OWNER" \
     -F name="$NAME" \
     -F number="$PR_NUMBER" \
-    -f query="$QUERY_HEAD"
+    -f query="$QUERY_HEAD" || {
+      SNAPSHOT_ERROR="GRAPHQL_HEAD"
+      return 1
+    }
 }
 
 fetch_paginated_nodes() {
@@ -240,25 +244,43 @@ fetch_paginated_nodes() {
     case "$kind" in
       reviews)
         if [[ -n "$cursor" ]]; then
-          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -F after="$cursor" -f query="$QUERY_REVIEWS" || return 1
+          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -F after="$cursor" -f query="$QUERY_REVIEWS" || {
+            SNAPSHOT_ERROR="GRAPHQL_REVIEWS"
+            return 1
+          }
         else
-          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -f query="$QUERY_REVIEWS" || return 1
+          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -f query="$QUERY_REVIEWS" || {
+            SNAPSHOT_ERROR="GRAPHQL_REVIEWS"
+            return 1
+          }
         fi
         page_path='.data.repository.pullRequest.reviews'
         ;;
       comments)
         if [[ -n "$cursor" ]]; then
-          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -F after="$cursor" -f query="$QUERY_COMMENTS" || return 1
+          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -F after="$cursor" -f query="$QUERY_COMMENTS" || {
+            SNAPSHOT_ERROR="GRAPHQL_COMMENTS"
+            return 1
+          }
         else
-          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -f query="$QUERY_COMMENTS" || return 1
+          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -f query="$QUERY_COMMENTS" || {
+            SNAPSHOT_ERROR="GRAPHQL_COMMENTS"
+            return 1
+          }
         fi
         page_path='.data.repository.pullRequest.comments'
         ;;
       threads)
         if [[ -n "$cursor" ]]; then
-          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -F after="$cursor" -f query="$QUERY_THREADS" || return 1
+          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -F after="$cursor" -f query="$QUERY_THREADS" || {
+            SNAPSHOT_ERROR="GRAPHQL_THREADS"
+            return 1
+          }
         else
-          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -f query="$QUERY_THREADS" || return 1
+          gh_graphql "$page_file" -F owner="$OWNER" -F name="$NAME" -F number="$PR_NUMBER" -f query="$QUERY_THREADS" || {
+            SNAPSHOT_ERROR="GRAPHQL_THREADS"
+            return 1
+          }
         fi
         page_path='.data.repository.pullRequest.reviewThreads'
         ;;
@@ -290,7 +312,10 @@ expand_thread_comments() {
   while [[ -n "$cursor" ]]; do
     local page_file comments has_next
     page_file="$TMP_DIR/thread-comments.$RANDOM.json"
-    gh_graphql "$page_file" -F threadId="$thread_id" -F after="$cursor" -f query="$QUERY_THREAD_COMMENTS" || return 1
+    gh_graphql "$page_file" -F threadId="$thread_id" -F after="$cursor" -f query="$QUERY_THREAD_COMMENTS" || {
+      SNAPSHOT_ERROR="GRAPHQL_THREAD_COMMENTS"
+      return 1
+    }
     comments=$(jq '.data.node.comments.nodes // []' "$page_file")
     jq -c --arg id "$thread_id" --argjson comments "$comments" '
       map(
@@ -319,6 +344,7 @@ expand_thread_comments() {
 }
 
 build_state() {
+  SNAPSHOT_ERROR="SNAPSHOT"
   if ! fetch_head "$head_file"; then
     return 4
   fi
@@ -348,13 +374,14 @@ build_state() {
   pre_sha=$(jq -r '.data.repository.pullRequest.headRefOid // empty' "$head_file")
   post_sha=$(jq -r '.data.repository.pullRequest.headRefOid // empty' "$post_head_file")
   if [[ -z "$pre_sha" || -z "$post_sha" ]]; then
+    SNAPSHOT_ERROR="HEAD_MISSING"
     return 4
   fi
   if [[ "$pre_sha" != "$post_sha" ]]; then
     return 3
   fi
 
-  jq -n \
+  if ! jq -n \
     --argjson allowlist "$allowlist_json" \
     --slurpfile head "$head_file" \
     --slurpfile reviews "$reviews_file" \
@@ -464,7 +491,10 @@ build_state() {
             )
         )
       }
-    ' >"$state_file"
+    ' >"$state_file"; then
+    SNAPSHOT_ERROR="STATE_BUILD"
+    return 1
+  fi
 }
 
 timestamp_to_epoch() {
@@ -486,7 +516,7 @@ while :; do
       emit_result 3 SHA_CHANGED "$head_changed_to"
       ;;
     *)
-      emit_result 4 API_ERROR "" "ERROR=SNAPSHOT"
+      emit_result 4 API_ERROR "" "ERROR=${SNAPSHOT_ERROR:-SNAPSHOT}"
       ;;
   esac
 

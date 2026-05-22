@@ -165,6 +165,27 @@ extract_workflow_allowlist() {
     | sort -u
 }
 
+extract_fix_workflow_allowlist() {
+  awk '
+    /Scan ALL review threads/ { in_block = 1 }
+    in_block {
+      line = $0
+      gsub(/.*\(including[[:space:]]*/, "", line)
+      gsub(/and any human reviewers\).*/, "", line)
+      gsub(/,/, "\n", line)
+      print line
+      if ($0 ~ /human reviewers\)/) {
+        exit
+      }
+    }
+  ' "$REPO_ROOT/.github/workflows/agent-fix-reviews.yml" \
+    | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' \
+    | sed '/^$/d' \
+    | sed 's/\[bot\]$//' \
+    | awk '{ print tolower($0) }' \
+    | sort -u
+}
+
 extract_docs_allowlist() {
   awk '
     /Keep the doc list and the prompt list/ { in_block = 1; next }
@@ -176,6 +197,19 @@ extract_docs_allowlist() {
       print tolower(line)
     }
   ' "$REPO_ROOT/docs/guides/agent-pipeline.md" | sort -u
+}
+
+extract_adr_allowlist() {
+  awk '
+    /Normalized allow-list:/ { in_block = 1; next }
+    in_block && /^`scripts\/lib\/bot-allowlist\.txt`/ { exit }
+    in_block && /^- `/ {
+      line = $0
+      sub(/^- `/, "", line)
+      sub(/`.*/, "", line)
+      print tolower(line)
+    }
+  ' "$REPO_ROOT/docs/decisions/adr-007-auto-resolve-review-threads.md" | sort -u
 }
 
 assert_equal_text() {
@@ -266,13 +300,31 @@ assert_equal_text() {
   [[ "$output" == "RESULT=API_ERROR ERROR=MISSING_ALLOWLIST" ]]
 }
 
+@test "pr-resolve-all-poll returns a specific API_ERROR subtype when GraphQL snapshotting fails" {
+  write_converged_fixtures
+  write_mock_gh
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    MOCK_GH_FAIL_AT=1 \
+    GH_REPO="mikejmckinney/ai-repo-template" \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 4 ]
+  [[ "$output" == "RESULT=API_ERROR ERROR=GRAPHQL_HEAD" ]]
+}
+
 @test "canonical bot allow-list stays in sync across prompt workflow and docs mirrors" {
   file_allowlist="$(extract_file_allowlist)"
   prompt_allowlist="$(extract_prompt_allowlist)"
   workflow_allowlist="$(extract_workflow_allowlist)"
+  fix_workflow_allowlist="$(extract_fix_workflow_allowlist)"
   docs_allowlist="$(extract_docs_allowlist)"
+  adr_allowlist="$(extract_adr_allowlist)"
 
   assert_equal_text "$file_allowlist" "$prompt_allowlist" "prompt parity"
   assert_equal_text "$file_allowlist" "$workflow_allowlist" "workflow parity"
+  assert_equal_text "$file_allowlist" "$fix_workflow_allowlist" "fix workflow parity"
   assert_equal_text "$file_allowlist" "$docs_allowlist" "docs parity"
+  assert_equal_text "$file_allowlist" "$adr_allowlist" "adr parity"
 }

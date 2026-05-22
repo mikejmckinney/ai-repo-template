@@ -136,9 +136,10 @@ Between review-resolution rounds, `pr-resolve-all.md` now prefers the
 repo-local helper `scripts/pr-resolve-all-poll.sh <PR_NUMBER>` over a
 blind settle sleep. The helper is intentionally pre-#321: it reads the
 canonical bot identities from `scripts/lib/bot-allowlist.txt`, polls
-live GitHub PR state, emits a machine-readable `RESULT=... HEAD=...`
-line, and still leaves a documented time-based fallback in the prompt
-for sessions without working `gh` / GraphQL access.
+live GitHub PR state, emits a machine-readable `RESULT=...` line plus
+`HEAD=...` when the current PR head is available, and still leaves a
+documented time-based fallback in the prompt for sessions without
+working `gh` / GraphQL access.
 
 Note: the workflow triggers only on `pull_request_review` (submitted),
 not on `pull_request_review_comment`. A review with N inline comments
