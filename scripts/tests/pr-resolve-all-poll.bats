@@ -142,6 +142,24 @@ EOF
 EOF
 }
 
+write_dismissed_review_fixtures() {
+  cat >"$TMP_DIR/1.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-dismissed","commits":{"nodes":[{"commit":{"oid":"sha-dismissed","committedDate":"2026-05-21T00:00:00Z"}}]}}}}}
+EOF
+  cat >"$TMP_DIR/2.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[{"author":{"login":"gemini-code-assist"},"submittedAt":"2026-05-21T00:00:05Z","state":"DISMISSED","commit":{"oid":"sha-dismissed"}}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/3.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"comments":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/4.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/5.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-dismissed","commits":{"nodes":[{"commit":{"oid":"sha-dismissed","committedDate":"2026-05-21T00:00:00Z"}}]}}}}}
+EOF
+}
+
 write_recent_activity_fixtures() {
   local old_head_ts recent_comment_ts
   old_head_ts="$(iso_timestamp_n_seconds_ago 600)"
@@ -161,6 +179,24 @@ EOF
 EOF
   cat >"$TMP_DIR/5.json" <<EOF
 {"data":{"repository":{"pullRequest":{"headRefOid":"sha-recent","commits":{"nodes":[{"commit":{"oid":"sha-recent","committedDate":"$old_head_ts"}}]}}}}}
+EOF
+}
+
+write_invalid_timestamp_fixtures() {
+  cat >"$TMP_DIR/1.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-badts","commits":{"nodes":[{"commit":{"oid":"sha-badts","committedDate":"2026-05-21T00:00:00Z"}}]}}}}}
+EOF
+  cat >"$TMP_DIR/2.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/3.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"comments":{"nodes":[{"author":{"login":"gemini-code-assist"},"createdAt":"not-a-timestamp"}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/4.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/5.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-badts","commits":{"nodes":[{"commit":{"oid":"sha-badts","committedDate":"2026-05-21T00:00:00Z"}}]}}}}}
 EOF
 }
 
@@ -291,6 +327,22 @@ assert_equal_text() {
   [[ "$output" == *"RESULT=QUIET_ELAPSED HEAD=sha-quiet"* ]]
 }
 
+@test "pr-resolve-all-poll does not treat a DISMISSED review as current-head convergence" {
+  write_dismissed_review_fixtures
+  write_mock_gh
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    GH_REPO="mikejmckinney/ai-repo-template" \
+    INTERVAL=0 \
+    QUIET_WINDOW=999999999 \
+    MAX_WAIT=0 \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"RESULT=TIMEOUT HEAD=sha-dismissed"* ]]
+}
+
 @test "pr-resolve-all-poll returns RESULT=SHA_CHANGED when the PR head changes mid-snapshot" {
   write_sha_changed_fixtures
   write_mock_gh
@@ -353,6 +405,32 @@ assert_equal_text() {
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 2 ]
   [[ "$output" == *"RESULT=TIMEOUT HEAD=sha-timeout"* ]]
+}
+
+@test "pr-resolve-all-poll returns RESULT=API_ERROR when latest_actionable cannot be parsed as a timestamp" {
+  write_invalid_timestamp_fixtures
+  write_mock_gh
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    GH_REPO="mikejmckinney/ai-repo-template" \
+    INTERVAL=0 \
+    QUIET_WINDOW=360 \
+    MAX_WAIT=900 \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 4 ]
+  [[ "$output" == *"RESULT=API_ERROR HEAD=sha-badts ERROR=TIMESTAMP_PARSE"* ]]
+}
+
+@test "pr-resolve-all-poll returns RESULT=API_ERROR when gh is missing under Bash 3.2-safe require_cmd handling" {
+  run env \
+    PATH="/usr/bin:/bin" \
+    ALLOWLIST_FILE="$REPO_ROOT/scripts/lib/bot-allowlist.txt" \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 4 ]
+  [[ "$output" == "RESULT=API_ERROR ERROR=MISSING_GH" ]]
 }
 
 @test "pr-resolve-all-poll returns RESULT=API_ERROR when the allow-list file is missing" {

@@ -166,8 +166,10 @@ emit_result() {
 
 require_cmd() {
   local cmd="$1"
+  local upper_cmd
   if ! command -v "$cmd" >/dev/null 2>&1; then
-    emit_result 4 API_ERROR "" "ERROR=MISSING_${cmd^^}"
+    upper_cmd=$(printf '%s' "$cmd" | tr '[:lower:]' '[:upper:]')
+    emit_result 4 API_ERROR "" "ERROR=MISSING_${upper_cmd}"
   fi
 }
 
@@ -463,7 +465,9 @@ build_state() {
                 | map(select(
                     (.author.login // "" | normalize_login) == $bot
                     and (.commit.oid // "") == $head_sha
-                    and (.state // "") != "PENDING"
+                    and ((.state // "") == "APPROVED"
+                      or (.state // "") == "CHANGES_REQUESTED"
+                      or (.state // "") == "COMMENTED")
                   ))
                 | length > 0
               ),
@@ -516,7 +520,9 @@ while :; do
   elapsed=$((now_epoch - start_epoch))
   quiet_for=0
   if [[ -n "$latest_actionable" && "$latest_actionable" != "null" ]]; then
-    latest_epoch=$(timestamp_to_epoch "$latest_actionable")
+    if ! latest_epoch=$(timestamp_to_epoch "$latest_actionable"); then
+      emit_result 4 API_ERROR "$head_sha" "ERROR=TIMESTAMP_PARSE"
+    fi
     quiet_for=$((now_epoch - latest_epoch))
   fi
 
