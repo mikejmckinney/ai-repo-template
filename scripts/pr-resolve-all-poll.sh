@@ -37,6 +37,8 @@
 
 set -euo pipefail
 
+umask 077
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
@@ -205,7 +207,7 @@ fi
 OWNER="${REPO%/*}"
 NAME="${REPO#*/}"
 
-TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/pr-resolve-all-poll.XXXXXX")
+TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/pr-resolve-all-poll.${USER:-user}.XXXXXX")
 cleanup() {
   rm -rf "$TMP_DIR"
 }
