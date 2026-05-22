@@ -124,6 +124,15 @@ STATE_DIR="\${MOCK_GH_STATE_DIR:?}"
 REAL_JQ="$real_jq"
 
 last_arg="\${!#}"
+if [[ "\${MOCK_JQ_FAIL_ALLOWLIST_NORMALIZE:-}" == "1" ]]; then
+  for arg in "\$@"; do
+    if [[ "\$arg" == *"bot-allowlist-normalize.jq" ]]; then
+      echo "mocked jq allowlist normalize failure" >&2
+      exit 1
+    fi
+  done
+fi
+
 if [[ "\$last_arg" == *"/post-head.json" ]]; then
   count_file="\$STATE_DIR/jq-post-head-count"
   count=0
@@ -717,6 +726,20 @@ assert_equal_text() {
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 0 ]
   [[ "$output" == *"RESULT=CONVERGED"* ]]
+}
+
+@test "pr-resolve-all-poll returns RESULT=API_ERROR when allow-list jq normalization fails" {
+  write_mock_gh
+  write_mock_jq
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    MOCK_JQ_FAIL_ALLOWLIST_NORMALIZE="1" \
+    GH_REPO="mikejmckinney/ai-repo-template" \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 4 ]
+  [[ "$output" == *"RESULT=API_ERROR ERROR=ALLOWLIST_PARSE_FAIL" ]]
 }
 
 @test "canonical bot allow-list stays in sync across prompt workflow and docs mirrors" {

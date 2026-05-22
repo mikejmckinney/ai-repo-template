@@ -195,7 +195,9 @@ if [[ ! -f "$ALLOWLIST_FILE" ]]; then
   emit_result 4 API_ERROR "" "ERROR=MISSING_ALLOWLIST"
 fi
 
-allowlist_json=$(jq -Rn -f "$REPO_ROOT/scripts/lib/jq/bot-allowlist-normalize.jq" <"$ALLOWLIST_FILE")
+if ! allowlist_json=$(jq -Rn -f "$REPO_ROOT/scripts/lib/jq/bot-allowlist-normalize.jq" <"$ALLOWLIST_FILE"); then
+  emit_result 4 API_ERROR "" "ERROR=ALLOWLIST_PARSE_FAIL"
+fi
 if [[ "$(jq 'length' <<<"$allowlist_json")" -eq 0 ]]; then
   emit_result 4 API_ERROR "" "ERROR=EMPTY_ALLOWLIST"
 fi
