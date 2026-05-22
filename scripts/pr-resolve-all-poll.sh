@@ -187,7 +187,7 @@ fi
 
 export GH_HOST="$REPO_HOST"
 
-if ! gh auth status -h "$REPO_HOST" >/dev/null; then
+if ! gh auth token -h "$REPO_HOST" >/dev/null 2>&1; then
   emit_result 4 API_ERROR "" "ERROR=GH_AUTH"
 fi
 

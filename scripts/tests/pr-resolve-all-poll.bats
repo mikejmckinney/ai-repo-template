@@ -34,7 +34,7 @@ set -euo pipefail
 
 STATE_DIR="${MOCK_GH_STATE_DIR:?}"
 COUNTER_FILE="$STATE_DIR/counter"
-if [[ "${1:-}" == "auth" && "${2:-}" == "status" ]]; then
+if [[ "${1:-}" == "auth" && ( "${2:-}" == "status" || "${2:-}" == "token" ) ]]; then
   expected_host="${MOCK_GH_EXPECT_AUTH_HOST:-}"
   actual_host="github.com"
   if [[ "${3:-}" == "-h" && -n "${4:-}" ]]; then
