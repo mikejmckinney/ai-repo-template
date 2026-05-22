@@ -20,7 +20,7 @@ Pass criteria: structural heading verification — required headings present AND
 
 **Input payload**:
 
-```
+```text
 ## Implementation Plan — Issue #999
 
 ### Outcome
@@ -33,6 +33,7 @@ A Judge receives explicit mode: plan-gate in its dispatch packet and selects PLA
 **Pass criteria**:
 
 Run these grep checks on the Judge output. All must output `OK:`:
+
 ```bash
 # PLAN-GATE required headings (must ALL be present — plain-text labels per .agents/judge.md)
 grep -qE "^DECISION:" output.txt            && echo "OK: DECISION" || echo "FAIL: DECISION missing"
@@ -61,7 +62,7 @@ Expected: zero `FAIL:` lines.
 
 **Input payload**:
 
-```
+```text
 diff --git a/.agents/judge.md b/.agents/judge.md
 index abc1234..def5678 100644
 --- a/.agents/judge.md
@@ -74,6 +75,7 @@ index abc1234..def5678 100644
 **Pass criteria**:
 
 Run these grep checks on the Judge output. All must output `OK:`:
+
 ```bash
 # DIFF-GATE required headings (must ALL be present — plain-text labels per .agents/judge.md)
 grep -qE "^DECISION:" output.txt            && echo "OK: DECISION" || echo "FAIL: DECISION missing"
