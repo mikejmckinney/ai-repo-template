@@ -178,7 +178,7 @@ require_cmd() {
 require_cmd gh
 require_cmd jq
 
-if ! gh auth status >/dev/null 2>&1; then
+if ! gh auth status >/dev/null; then
   emit_result 4 API_ERROR "" "ERROR=GH_AUTH"
 fi
 
@@ -200,7 +200,7 @@ fi
 
 REPO="${GH_REPO:-}"
 if [[ -z "$REPO" ]]; then
-  if ! REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner' 2>/dev/null); then
+  if ! REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner'); then
     emit_result 4 API_ERROR "" "ERROR=REPO_VIEW"
   fi
 fi
@@ -434,7 +434,7 @@ build_state() {
        | map(select(.isResolved == false and (.root_author | allowlisted($allowlist))))
       ) as $unresolved_bot_threads
     | ($src.reviews
-       | map(.submittedAt)
+       | map(select((.commit.oid // "") == $head_sha) | .submittedAt)
        + ($src.pr_comments
           | map(.createdAt))
        + ($src.threads
@@ -454,7 +454,16 @@ build_state() {
         unresolved_threads: ($unresolved_bot_threads | length),
         bots: (
           $participating
-          | map(. as $bot | {
+          | map(. as $bot
+            | ($src.reviews
+               | map(select(
+                   (.author.login // "" | normalize_login) == $bot
+                   and (.commit.oid // "") == $head_sha
+                 ))
+               | sort_by(.submittedAt // "")
+               | last // {}
+              ) as $latest_current_head_review
+            | {
               login: $bot,
               participating: true,
               unresolved_root_threads: (
@@ -462,16 +471,11 @@ build_state() {
                 | map(select(.root_author_normalized == $bot))
                 | length
               ),
+              current_head_review_state: ($latest_current_head_review.state // ""),
               current_head_review: (
-                $src.reviews
-                | map(select(
-                    (.author.login // "" | normalize_login) == $bot
-                    and (.commit.oid // "") == $head_sha
-                    and ((.state // "") == "APPROVED"
-                      or (.state // "") == "CHANGES_REQUESTED"
-                      or (.state // "") == "COMMENTED")
-                  ))
-                | length > 0
+                ($latest_current_head_review.state // "") == "APPROVED"
+                or ($latest_current_head_review.state // "") == "CHANGES_REQUESTED"
+                or ($latest_current_head_review.state // "") == "COMMENTED"
               ),
             })
           | map(
