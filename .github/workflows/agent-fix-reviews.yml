@@ -384,10 +384,11 @@ jobs:
 
             Follow the procedure in `.github/prompts/pr-resolve-all.md` exactly:
 
-            1. Scan ALL review threads — from every reviewer (gemini-code-assist[bot],
-               copilot, claude[bot], chatgpt-codex-connector, and any human
-               reviewers). Use the GitHub API to fetch the complete list of
-               review comments and review threads.
+            1. Scan ALL review threads — from every reviewer (including
+               gemini-code-assist[bot], copilot-pull-request-reviewer[bot],
+               copilot, chatgpt-codex-connector, codex, cursor[bot],
+               claude[bot], and any human reviewers). Use the GitHub API to
+               fetch the complete list of review comments and review threads.
             2. Build an issue index with sequential IDs. **Post the Phase-1
                Issue/Suggestion Index as a separate PR comment immediately,
                before any fixes or commits, even if there are fewer than 10

@@ -17,6 +17,30 @@ setup_file() {
   export REPO_ROOT
 }
 
+setup() {
+  TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/check-326.XXXXXX")"
+  export TMP_DIR
+}
+
+teardown() {
+  rm -rf "$TMP_DIR"
+}
+
+write_pr_poll_state_fixtures() {
+  cat >"$TMP_DIR/pr-poll-state-head.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-1","commits":{"nodes":[{"commit":{"oid":"sha-1","committedDate":"2026-05-17T16:13:12Z"}}]}}}}}
+EOF
+  cat >"$TMP_DIR/pr-poll-state-reviews.json" <<'EOF'
+[{"author":{"login":"gemini-code-assist"},"submittedAt":"2026-05-17T16:13:40Z","state":"COMMENTED","commit":{"oid":"sha-1"}}]
+EOF
+  cat >"$TMP_DIR/pr-poll-state-comments.json" <<'EOF'
+[{"author":{"login":"mikejmckinney"},"createdAt":"2026-05-17T16:13:20Z"}]
+EOF
+  cat >"$TMP_DIR/pr-poll-state-threads.json" <<'EOF'
+[]
+EOF
+}
+
 _legacy_body() {
   set -euo pipefail
   cd "$REPO_ROOT"
@@ -90,12 +114,18 @@ fi
 
 # Discover filters and run matching fixtures
 found_any=0
-for filter_file in "$JQ_DIR"/*.jq; do
-  [[ -f "$filter_file" ]] || continue
-  filter_name="$(basename "$filter_file" .jq)"
-  found_any=1
+  for filter_file in "$JQ_DIR"/*.jq; do
+    [[ -f "$filter_file" ]] || continue
+    filter_name="$(basename "$filter_file" .jq)"
+    found_any=1
 
-  echo "Filter: $filter_name"
+    case "$filter_name" in
+      bot-allowlist-normalize|pr-poll-state)
+        continue
+        ;;
+    esac
+
+    echo "Filter: $filter_name"
 
   # Find fixture pairs for this filter
   fixture_found=0
@@ -156,4 +186,44 @@ exit 0
   printf '%s
 ' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 0 ]
+}
+
+@test "bot-allowlist-normalize.jq strips comments, whitespace, and [bot] suffixes" {
+  allowlist_fixture="$TMP_DIR/bot-allowlist-normalize.in"
+  cat >"$allowlist_fixture" <<'EOF'
+# keep comments out
+ Gemini-Code-Assist[bot]
+copilot-pull-request-reviewer
+cursor[bot]  
+EOF
+
+  run jq -cRn -f "$REPO_ROOT/scripts/lib/jq/bot-allowlist-normalize.jq" "$allowlist_fixture"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 0 ]
+  [ "$output" = '["gemini-code-assist","copilot-pull-request-reviewer","cursor"]' ]
+}
+
+@test "pr-poll-state.jq derives the expected terminal state for a simple converged snapshot" {
+  write_pr_poll_state_fixtures
+
+  allowlist_json='["gemini-code-assist"]'
+  run jq -n \
+    --argjson allowlist "$allowlist_json" \
+    --slurpfile head "$TMP_DIR/pr-poll-state-head.json" \
+    --slurpfile reviews "$TMP_DIR/pr-poll-state-reviews.json" \
+    --slurpfile pr_comments "$TMP_DIR/pr-poll-state-comments.json" \
+    --slurpfile threads "$TMP_DIR/pr-poll-state-threads.json" \
+    -f "$REPO_ROOT/scripts/lib/jq/pr-poll-state.jq"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 0 ]
+
+  expected_epoch="$(jq -nr --arg ts "2026-05-17T16:13:40Z" '$ts | fromdateiso8601')"
+  [ "$(jq -r '.head' <<<"$output")" = "sha-1" ]
+  [ "$(jq -r '.latest_actionable' <<<"$output")" = "2026-05-17T16:13:40Z" ]
+  [ "$(jq -r '.latest_actionable_epoch' <<<"$output")" = "$expected_epoch" ]
+  [ "$(jq -r '.participating_bots | join(",")' <<<"$output")" = "gemini-code-assist" ]
+  [ "$(jq -r '.unresolved_threads' <<<"$output")" = "0" ]
+  [ "$(jq -r '.bots[0].current_head_pending' <<<"$output")" = "false" ]
+  [ "$(jq -r '.bots[0].current_head_review_state' <<<"$output")" = "COMMENTED" ]
+  [ "$(jq -r '.bots[0].terminal' <<<"$output")" = "true" ]
 }

@@ -257,8 +257,12 @@ jobs:
           name="${REPO#*/}"
 
           # Known AI reviewer logins (GraphQL returns these without the [bot]
-          # suffix). Update this single list when new AI reviewers are added.
-          AI_REVIEWERS="copilot-pull-request-reviewer|gemini-code-assist|codex|chatgpt-codex-connector|claude"
+          # suffix). Keep this regex mirror in lockstep with
+          # scripts/lib/bot-allowlist.txt and the Phase 4 list in
+          # .github/prompts/pr-resolve-all.md. Copilot stays in the mirror
+          # even though the relay-specific filter below excludes its own
+          # reviews from being re-relayed.
+          AI_REVIEWERS="gemini-code-assist|copilot-pull-request-reviewer|copilot|chatgpt-codex-connector|codex|cursor|claude"
 
           # ── Fetch unresolved review threads via GraphQL (paginated) ──
           # Review threads carry the ground-truth isResolved flag that REST

@@ -132,6 +132,22 @@ review activity to settle, then runs Claude Code Action (Sonnet) with
 (including Gemini — something Copilot can't do), fixes the issues,
 runs verification, and pushes.
 
+Between review-resolution rounds, `pr-resolve-all.md` now prefers the
+repo-local helper `scripts/pr-resolve-all-poll.sh <PR_NUMBER>` over a
+blind settle sleep. The helper is intentionally pre-#321: it reads the
+canonical bot identities from `scripts/lib/bot-allowlist.txt`, polls
+live GitHub PR state, emits a machine-readable `RESULT=...` line plus
+`HEAD=...` when the current PR head is available, and still leaves a
+documented time-based fallback in the prompt for sessions without
+working `gh` / GraphQL access.
+
+In this pre-#321 helper contract, `RESULT=CONVERGED` is intentionally
+stricter than the quiet fallback: it requires an explicit current-head
+review signal from each participating allow-listed bot with no unresolved
+bot-rooted threads of its own. Comment-only bot activity can still move
+forward via `RESULT=QUIET_ELAPSED`, but it does not prove current-head
+convergence by itself.
+
 Note: the workflow triggers only on `pull_request_review` (submitted),
 not on `pull_request_review_comment`. A review with N inline comments
 fires N comment events plus one review-submitted event; triggering on
@@ -340,10 +356,18 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
   every invocation of `pr-resolve-all.md` — there is no opt-in label.
   Phase 4 matches reviewer identity by stripping any trailing `[bot]`
   from the login and comparing case-insensitively against the
-  normalized allow-list (`gemini-code-assist`,
-  `copilot-pull-request-reviewer`, `copilot`,
-  `chatgpt-codex-connector`, `codex`, `claude`), once Phase 2 marks the
-  matching `ISS-NN` item as `✅ Fixed` with passing verification.
+  normalized allow-list below, once Phase 2 marks the matching `ISS-NN`
+  item as `✅ Fixed` with passing verification. `scripts/lib/bot-allowlist.txt`
+  is the canonical machine-readable source for this same normalized set.
+  Keep the doc list and the prompt list in `.github/prompts/pr-resolve-all.md`
+  in lockstep with that file:
+  - `gemini-code-assist`
+  - `copilot-pull-request-reviewer`
+  - `copilot`
+  - `chatgpt-codex-connector`
+  - `codex`
+  - `cursor`
+  - `claude`
   Human-authored threads are never auto-resolved. Phase 4 is defined in
   `.github/prompts/pr-resolve-all.md`.
   > On the Copilot path (`copilot-relay` or `@copilot follow`), the
