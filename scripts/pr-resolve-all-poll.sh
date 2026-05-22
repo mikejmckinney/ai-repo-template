@@ -455,10 +455,13 @@ build_state() {
         bots: (
           $participating
           | map(. as $bot
-            | ($src.reviews
+             | ($src.reviews
                | map(select(
                    (.author.login // "" | normalize_login) == $bot
-                   and (.commit.oid // "") == $head_sha
+                   and (
+                     (.state // "") == "PENDING"
+                     or (.commit.oid // "") == $head_sha
+                   )
                  ))
               ) as $current_head_reviews
             | ($current_head_reviews
