@@ -455,15 +455,21 @@ build_state() {
         bots: (
           $participating
           | map(. as $bot
-             | ($src.reviews
-               | map(select(
-                   (.author.login // "" | normalize_login) == $bot
-                   and (
-                     (.state // "") == "PENDING"
-                     or (.commit.oid // "") == $head_sha
-                   )
-                 ))
-              ) as $current_head_reviews
+    | ($src.reviews
+       | map(select(
+           (.author.login // "" | normalize_login) == $bot
+           and (
+             (
+               (.state // "") == "PENDING"
+               and (
+                 (.commit.oid // "") == $head_sha
+                 or (.commit == null)
+               )
+             )
+             or ((.commit.oid // "") == $head_sha)
+           )
+         ))
+      ) as $current_head_reviews
             | ($current_head_reviews
                | map(select((.state // "") == "PENDING"))
                | length > 0
@@ -517,7 +523,7 @@ timestamp_to_epoch() {
   jq -nr --arg ts "$1" '$ts | fromdateiso8601'
 }
 
-start_epoch=$(date -u +%s)
+start_epoch=$(jq -n 'now | floor')
 
 while :; do
   if build_state; then
@@ -544,7 +550,7 @@ while :; do
   participating_csv=$(jq -r '.participating_bots | join(",")' "$state_file")
   pending_csv=$(jq -r '[.bots[] | select(.current_head_pending == true) | .login] | join(",")' "$state_file")
 
-  now_epoch=$(date -u +%s)
+  now_epoch=$(jq -n 'now | floor')
   elapsed=$((now_epoch - start_epoch))
   quiet_for=0
   if [[ -n "$latest_actionable" && "$latest_actionable" != "null" ]]; then

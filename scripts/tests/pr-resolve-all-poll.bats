@@ -202,6 +202,27 @@ EOF
 EOF
 }
 
+write_stale_old_head_pending_review_fixtures() {
+  local old_head_ts
+  old_head_ts="$(iso_timestamp_n_seconds_ago 600)"
+
+  cat >"$TMP_DIR/1.json" <<EOF
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-current","commits":{"nodes":[{"commit":{"oid":"sha-current","committedDate":"$old_head_ts"}}]}}}}}
+EOF
+  cat >"$TMP_DIR/2.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[{"author":{"login":"gemini-code-assist"},"submittedAt":"2026-05-21T00:00:05Z","state":"COMMENTED","commit":{"oid":"sha-current"}},{"author":{"login":"gemini-code-assist"},"submittedAt":null,"state":"PENDING","commit":{"oid":"sha-old"}}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/3.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"comments":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/4.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/5.json" <<EOF
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-current","commits":{"nodes":[{"commit":{"oid":"sha-current","committedDate":"$old_head_ts"}}]}}}}}
+EOF
+}
+
 write_invalid_timestamp_fixtures() {
   cat >"$TMP_DIR/1.json" <<'EOF'
 {"data":{"repository":{"pullRequest":{"headRefOid":"sha-badts","commits":{"nodes":[{"commit":{"oid":"sha-badts","committedDate":"2026-05-21T00:00:00Z"}}]}}}}}
@@ -415,6 +436,22 @@ assert_equal_text() {
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 2 ]
   [[ "$output" == *"RESULT=TIMEOUT HEAD=sha-pending"* ]]
+}
+
+@test "pr-resolve-all-poll does not let a stale old-head PENDING review block current-head convergence" {
+  write_stale_old_head_pending_review_fixtures
+  write_mock_gh
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    GH_REPO="mikejmckinney/ai-repo-template" \
+    INTERVAL=0 \
+    QUIET_WINDOW=0 \
+    MAX_WAIT=0 \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RESULT=CONVERGED HEAD=sha-current"* ]]
 }
 
 @test "pr-resolve-all-poll returns RESULT=SHA_CHANGED when the PR head changes mid-snapshot" {
