@@ -34,21 +34,21 @@ A Judge receives explicit mode: plan-gate in its dispatch packet and selects PLA
 
 Run these grep checks on the Judge output. All must output `OK:`:
 ```bash
-# PLAN-GATE required headings (must ALL be present)
+# PLAN-GATE required headings (must ALL be present — plain-text labels per .agents/judge.md)
 grep -qE "^DECISION:" output.txt            && echo "OK: DECISION" || echo "FAIL: DECISION missing"
-grep -qF "## Hard Requirements for Approval" output.txt && echo "OK: HardReq" || echo "FAIL: HardReq missing"
-grep -qF "## Blocking Issues" output.txt    && echo "OK: Blocking" || echo "FAIL: Blocking missing"
-grep -qF "## Required Changes" output.txt   && echo "OK: RequiredChanges" || echo "FAIL: RequiredChanges missing"
-grep -qF "## Nice-to-Haves" output.txt      && echo "OK: NiceToHaves" || echo "FAIL: NiceToHaves missing"
-grep -qF "## Risks / Gotchas" output.txt    && echo "OK: Risks" || echo "FAIL: Risks missing"
-grep -qF "## Test Plan" output.txt          && echo "OK: TestPlan" || echo "FAIL: TestPlan missing"
+grep -qE "^WHY "       output.txt           && echo "OK: WHY" || echo "FAIL: WHY missing"
+grep -qE "^REQUIRED CHANGES" output.txt     && echo "OK: REQUIRED CHANGES" || echo "FAIL: REQUIRED CHANGES missing"
+grep -qE "^NICE-TO-HAVES"    output.txt     && echo "OK: NICE-TO-HAVES" || echo "FAIL: NICE-TO-HAVES missing"
+grep -qE "^RISKS / GOTCHAS"  output.txt     && echo "OK: RISKS / GOTCHAS" || echo "FAIL: RISKS / GOTCHAS missing"
+grep -qE "^TEST PLAN"        output.txt     && echo "OK: TEST PLAN" || echo "FAIL: TEST PLAN missing"
+grep -qE "^QUESTIONS"        output.txt     && echo "OK: QUESTIONS" || echo "FAIL: QUESTIONS missing"
 
-# DIFF-GATE exclusive headings (must ALL be absent)
-grep -qF "## Code Quality" output.txt       && echo "FAIL: DiffGate heading leaked" || echo "OK: no CodeQuality"
-grep -qF "## Security Review" output.txt    && echo "FAIL: DiffGate heading leaked" || echo "OK: no SecurityReview"
-grep -qF "## Breaking Changes" output.txt   && echo "FAIL: DiffGate heading leaked" || echo "OK: no BreakingChanges"
-grep -qF "## Deployment Notes" output.txt   && echo "FAIL: DiffGate heading leaked" || echo "OK: no DeploymentNotes"
-grep -qF "## Reviewer Notes" output.txt     && echo "FAIL: DiffGate heading leaked" || echo "OK: no ReviewerNotes"
+# DIFF-GATE exclusive headings (must ALL be absent — plain-text labels per .agents/judge.md)
+grep -qE "^SUMMARY "         output.txt     && echo "FAIL: SUMMARY present (template blend)" || echo "OK: SUMMARY absent"
+grep -qE "^MAJOR ISSUES"     output.txt     && echo "FAIL: MAJOR ISSUES present (template blend)" || echo "OK: MAJOR ISSUES absent"
+grep -qE "^MINOR ISSUES"     output.txt     && echo "FAIL: MINOR ISSUES present (template blend)" || echo "OK: MINOR ISSUES absent"
+grep -qE "^SUGGESTED PATCHES" output.txt    && echo "FAIL: SUGGESTED PATCHES present (template blend)" || echo "OK: SUGGESTED PATCHES absent"
+grep -qE "^VALIDATION"       output.txt     && echo "FAIL: VALIDATION present (template blend)" || echo "OK: VALIDATION absent"
 ```
 
 Expected: zero `FAIL:` lines.
@@ -75,21 +75,21 @@ index abc1234..def5678 100644
 
 Run these grep checks on the Judge output. All must output `OK:`:
 ```bash
-# DIFF-GATE required headings (must ALL be present)
+# DIFF-GATE required headings (must ALL be present — plain-text labels per .agents/judge.md)
 grep -qE "^DECISION:" output.txt            && echo "OK: DECISION" || echo "FAIL: DECISION missing"
-grep -qF "## Summary" output.txt            && echo "OK: Summary" || echo "FAIL: Summary missing"
-grep -qF "## Code Review" output.txt        && echo "OK: CodeReview" || echo "FAIL: CodeReview missing"
-grep -qF "## Security" output.txt           && echo "OK: Security" || echo "FAIL: Security missing"
-grep -qF "## Test Coverage" output.txt      && echo "OK: TestCoverage" || echo "FAIL: TestCoverage missing"
-grep -qF "## Required Changes" output.txt   && echo "OK: RequiredChanges" || echo "FAIL: RequiredChanges missing"
+grep -qE "^SUMMARY "  output.txt            && echo "OK: SUMMARY" || echo "FAIL: SUMMARY missing"
+grep -qE "^MAJOR ISSUES" output.txt         && echo "OK: MAJOR ISSUES" || echo "FAIL: MAJOR ISSUES missing"
+grep -qE "^MINOR ISSUES" output.txt         && echo "OK: MINOR ISSUES" || echo "FAIL: MINOR ISSUES missing"
+grep -qE "^SUGGESTED PATCHES" output.txt    && echo "OK: SUGGESTED PATCHES" || echo "FAIL: SUGGESTED PATCHES missing"
+grep -qE "^VALIDATION"       output.txt     && echo "OK: VALIDATION" || echo "FAIL: VALIDATION missing"
 
-# PLAN-GATE exclusive headings (must ALL be absent)
-grep -qF "## Hard Requirements for Approval" output.txt && echo "FAIL: PlanGate heading leaked" || echo "OK: no HardReq"
-grep -qF "## Blocking Issues" output.txt    && echo "FAIL: PlanGate heading leaked" || echo "OK: no Blocking"
-grep -qF "## Risks / Gotchas" output.txt    && echo "FAIL: PlanGate heading leaked" || echo "OK: no Risks"
-grep -qF "## Test Plan" output.txt          && echo "FAIL: PlanGate heading leaked" || echo "OK: no TestPlan"
-grep -qF "## Nice-to-Haves" output.txt      && echo "FAIL: PlanGate heading leaked" || echo "OK: no NiceToHaves"
-grep -qF "## Nice to Haves" output.txt      && echo "FAIL: PlanGate heading leaked" || echo "OK: no NiceToHaves2"
+# PLAN-GATE exclusive headings (must ALL be absent — plain-text labels per .agents/judge.md)
+grep -qE "^WHY "             output.txt     && echo "FAIL: WHY present (template blend)" || echo "OK: WHY absent"
+grep -qE "^REQUIRED CHANGES" output.txt     && echo "FAIL: REQUIRED CHANGES present (template blend)" || echo "OK: REQUIRED CHANGES absent"
+grep -qE "^NICE-TO-HAVES"    output.txt     && echo "FAIL: NICE-TO-HAVES present (template blend)" || echo "OK: NICE-TO-HAVES absent"
+grep -qE "^RISKS / GOTCHAS"  output.txt     && echo "FAIL: RISKS / GOTCHAS present (template blend)" || echo "OK: RISKS / GOTCHAS absent"
+grep -qE "^TEST PLAN"        output.txt     && echo "FAIL: TEST PLAN present (template blend)" || echo "OK: TEST PLAN absent"
+grep -qE "^QUESTIONS"        output.txt     && echo "FAIL: QUESTIONS present (template blend)" || echo "OK: QUESTIONS absent"
 ```
 
 Expected: zero `FAIL:` lines.
