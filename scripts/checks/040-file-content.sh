@@ -203,19 +203,23 @@ else
 fi
 
 if grep -q "Session handshake" AGENTS.md 2>/dev/null \
-  && grep -qE 'Session handshake v[0-9]+' AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md has Session handshake instruction with token"
+  && (grep -q 'Session handshake AGENTS_MD_VERSION' AGENTS.md 2>/dev/null \
+      || grep -qE 'Session handshake v[0-9]+' AGENTS.md 2>/dev/null); then
+  pass "AGENTS.md has Session handshake instruction with token placeholder or legacy literal"
 else
   fail "AGENTS.md missing Session handshake instruction or token"
 fi
 
-# Verify the version inside the handshake token matches AGENTS_MD_VERSION
+# Verify the handshake token either defers to AGENTS_MD_VERSION via the
+# template placeholder or (legacy form) embeds a matching literal version.
 agents_md_version=$(grep -oE '^<!-- AGENTS_MD_VERSION: [0-9]+ -->' AGENTS.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
 handshake_version=$(grep -oE 'Session handshake v[0-9]+' AGENTS.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
-if [ -n "$agents_md_version" ] && [ "$agents_md_version" = "$handshake_version" ]; then
+if grep -q 'Session handshake AGENTS_MD_VERSION' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md handshake token defers to AGENTS_MD_VERSION placeholder ($agents_md_version)"
+elif [ -n "$agents_md_version" ] && [ "$agents_md_version" = "$handshake_version" ]; then
   pass "AGENTS.md handshake token version matches AGENTS_MD_VERSION ($agents_md_version)"
 else
-  fail "AGENTS.md handshake token (v$handshake_version) does not match AGENTS_MD_VERSION ($agents_md_version) — bump both together"
+  fail "AGENTS.md handshake token does not align with AGENTS_MD_VERSION ($agents_md_version)"
 fi
 
 # Check install.sh is executable or has shebang
