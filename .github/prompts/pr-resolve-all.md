@@ -8,8 +8,9 @@ agent: agent
 > **Context:** this prompt plugs into Phase 6 of the OP issue→merge playbook. See [`op-issue-workflow.md`](op-issue-workflow.md) for the end-to-end OP playbook.
 >
 > **Usage**: Post one of these as a PR comment:
->   - `@claude follow .github/prompts/pr-resolve-all.md`
->   - `@copilot follow .github/prompts/pr-resolve-all.md`
+>
+> - `@claude follow .github/prompts/pr-resolve-all.md`
+> - `@copilot follow .github/prompts/pr-resolve-all.md`
 >
 > Both agents will read this file and execute the Phase 1–4 procedure below.
 > Claude is wired via `.github/workflows/claude.yml`'s `claude-mention` job.
@@ -66,7 +67,7 @@ When the round cap is overridden (label `cap-override` on the PR, or
 round number is greater than 3, every Resolution Report posted from
 round 4 onward MUST include a one-line justification on its own line:
 
-```
+```text
 Override justification: <sandbox-class | legitimate refactor | complex semantic dependency | other: <≤80-char reason>>
 ```
 
@@ -117,6 +118,7 @@ Do the following **once** (not every round):
 3. **Resolve the thread** — after documenting the limitation and adding the skip-class entry, the bot thread can be resolved (it has been addressed — just not by a code fix). Use the standard Phase 4 audit reply: "Deferred as known limitation KL-NN — documented in `<file>` header and `BUGBOT.md`/`styleguide.md`. If this impacts real code, re-open with a concrete failing example."
 
 **What counts as a nit vs a known limitation:**
+
 - A **nit** is something you could fix quickly in this PR but choose not to because the value is low (style, naming). File it as a follow-up if warranted.
 - A **known limitation** is something that cannot be fixed properly in this PR without a significant architectural change. Document it so future contributors understand why the simpler approach was chosen.
 
@@ -227,10 +229,13 @@ For each unresolved item, work through this sequence. Do not skip steps.
 > mode that produced the 11-round PR #225 cycle.
 
 ### Step 1 — Link
+
 Provide a direct URL to where the issue was mentioned (review comment permalink, PR description section, file + line in the diff, or issue number).
 
 ### Step 2 — Verify
+
 Confirm the issue actually exists in the current state of the branch. This means:
+
 - For bugs/logic issues: read the relevant code and confirm the problem. If possible, describe a concrete scenario that would trigger it.
 - For missing tests: confirm the behavior is untested by searching the test files.
 - For style/refactor suggestions: confirm the code matches what the reviewer described.
@@ -238,7 +243,9 @@ Confirm the issue actually exists in the current state of the branch. This means
 - If the issue is **not reproducible** (already fixed, reviewer was mistaken, or the code has changed): document why and mark it accordingly. Do not fabricate a fix for a non-issue.
 
 ### Step 3 — Fix
+
 If the issue is valid, implement the fix:
+
 - Make the smallest change that addresses the issue.
 - Stay inside the files already touched by this PR when possible. If a fix requires changes to files outside the PR's scope, flag it and ask before proceeding.
 - For refactor suggestions: apply only if the suggestion is clearly better. If it's a judgment call, implement it but note that the author may want to review.
@@ -246,7 +253,9 @@ If the issue is valid, implement the fix:
 - Include the exact file path and line numbers in your report.
 
 ### Step 4 — Validate
+
 After each fix (or batch of fixes):
+
 - Run the test suite. Report pass/fail counts.
 - Run the linter. Report clean/error counts.
 - Run the build/typecheck. Report success/failure.
@@ -254,7 +263,9 @@ After each fix (or batch of fixes):
 - If a verification command is not available or not applicable, say so explicitly rather than skipping silently.
 
 ### Step 5 — Status
+
 Assign one of:
+
 - `✅ Fixed` — issue was valid, fix implemented, verification passed.
 - `✅ Already resolved` — issue was already addressed before this run.
 - `⚠️ Needs clarification` — issue is ambiguous, or the right fix depends on a design decision the author should make. Describe what's unclear and suggest options.
@@ -398,7 +409,7 @@ For each eligible thread:
 
 2. **Post an audit-trail reply** on the thread before resolving, so the resolution is traceable without digging through workflow logs. Use `addPullRequestReviewThreadReply` (GraphQL) or the REST `POST /repos/{owner}/{repo}/pulls/{num}/comments/{comment_id}/replies` endpoint. Reply body format:
 
-   ```
+   ```text
    Resolved by <agent> in <SHORT_SHA> (ISS-NN).
    If this wasn't addressed correctly, re-open the thread.
    ```
@@ -443,7 +454,7 @@ Use `⚠️ Errored` when the per-thread gate passed but the GraphQL mutation fa
 - **Never resolve a thread whose Phase 2 item is not `✅ Fixed`.** "Not reproducible" and "Out of scope" still warrant human acknowledgement.
 - **Never resolve a thread without first posting the audit reply.** The reply is the paper trail; resolution without it leaves reviewers guessing.
 - **Never include a live `@`-handle in the audit reply body.** Backtick-wrap every `@copilot` / `@claude` / `@copilot follow ...` / `@claude follow ...` reference in the reply so GitHub treats it as code, not a mention. An un-wrapped handle re-dispatches the bot (Copilot cloud agent + `.github/workflows/claude.yml`'s `claude-mention` job both listen for raw `@`-strings anywhere in a PR comment or review reply body) and produces duplicate fix runs. The **top-level trigger comment** that invoked `pr-resolve-all.md` in the first place stays un-backticked — that one is supposed to dispatch.
-  - **Nested-backtick gotcha.** GitHub Flavored Markdown does **not** honor `\`` to escape a backtick inside a code span. Writing `` `copilot (\`@copilot\` mention)` `` does not produce one nested code span — it produces an opening code span ending at the first inner `` \` ``, and the trailing `@copilot\`` falls back into plain text and dispatches a real mention. To embed a literal backtick in a code span, wrap the **outer** span in double backticks: `` ``copilot (`@copilot` mention)`` ``. When in doubt, don't nest — just write `` `@copilot` `` standalone in plain prose. (PR #216 hit this and spawned 4 spurious cloud-agent sessions.)
+  - **Nested-backtick gotcha.** GitHub Flavored Markdown does **not** honor `\`` to escape a backtick inside a code span. Writing a single-backtick-wrapped span that contains `` `@copilot` `` does not produce one nested code span; the outer span closes at the first inner backtick and the trailing text falls back into plain text, which dispatches a real mention. To embed a literal backtick in a code span, wrap the outer span in double backticks: ``copilot (`@copilot` mention)``. When in doubt, don't nest — just write `@copilot` standalone in plain prose. (PR #216 hit this and spawned 4 spurious cloud-agent sessions.)
 - **Do not resolve threads from a previous fix cycle.** Scope Phase 4 to items fixed in the current run only — the `ISS-NN` IDs from this run's Phase 1 index are your scope.
 
 ## Rules
