@@ -434,7 +434,7 @@ build_state() {
        | map(select(.isResolved == false and (.root_author | allowlisted($allowlist))))
       ) as $unresolved_bot_threads
     | ($src.reviews
-       | map(select((.commit.oid // "") == $head_sha) | .submittedAt)
+       | map(.submittedAt)
        + ($src.pr_comments
           | map(.createdAt))
        + ($src.threads
@@ -469,12 +469,15 @@ build_state() {
                | map(select(
                    ((.state // "") == "APPROVED"
                     or (.state // "") == "CHANGES_REQUESTED"
-                    or (.state // "") == "COMMENTED")
+                    or (.state // "") == "COMMENTED"
+                    or (.state // "") == "DISMISSED")
                  ))
                | sort_by(.submittedAt // "")
                | last // {}
               ) as $latest_current_head_review
-            | ($latest_current_head_review.state // "") as $latest_current_head_review_state
+            | ($has_pending_current_head_review
+               | if . then "PENDING" else ($latest_current_head_review.state // "") end
+              ) as $current_head_review_state
             | {
               login: $bot,
               participating: true,
@@ -483,13 +486,14 @@ build_state() {
                 | map(select(.root_author_normalized == $bot))
                 | length
               ),
-              current_head_review_state: $latest_current_head_review_state,
+              current_head_pending: $has_pending_current_head_review,
+              current_head_review_state: $current_head_review_state,
               current_head_review: (
                 ($has_pending_current_head_review | not)
                 and (
-                  $latest_current_head_review_state == "APPROVED"
-                  or $latest_current_head_review_state == "CHANGES_REQUESTED"
-                  or $latest_current_head_review_state == "COMMENTED"
+                  $current_head_review_state == "APPROVED"
+                  or $current_head_review_state == "CHANGES_REQUESTED"
+                  or $current_head_review_state == "COMMENTED"
                 )
               ),
             })
@@ -535,7 +539,7 @@ while :; do
   terminal_count=$(jq '[.bots[] | select(.terminal == true)] | length' "$state_file")
   unresolved_threads=$(jq '.unresolved_threads // 0' "$state_file")
   participating_csv=$(jq -r '.participating_bots | join(",")' "$state_file")
-  pending_csv=$(jq -r '[.bots[] | select(.terminal != true) | .login] | join(",")' "$state_file")
+  pending_csv=$(jq -r '[.bots[] | select(.current_head_pending == true) | .login] | join(",")' "$state_file")
 
   now_epoch=$(date -u +%s)
   elapsed=$((now_epoch - start_epoch))
@@ -564,7 +568,7 @@ while :; do
     emit_result 0 CONVERGED "$head_sha" "QUIET_FOR=${quiet_for}s"
   fi
 
-  if [[ "$quiet_for" -ge "$QUIET_WINDOW" ]]; then
+  if [[ -z "$pending_csv" && "$quiet_for" -ge "$QUIET_WINDOW" ]]; then
     emit_result 0 QUIET_ELAPSED "$head_sha" "QUIET_FOR=${quiet_for}s"
   fi
 

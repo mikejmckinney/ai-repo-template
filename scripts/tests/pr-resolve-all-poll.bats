@@ -149,7 +149,7 @@ write_dismissed_review_fixtures() {
 {"data":{"repository":{"pullRequest":{"headRefOid":"sha-dismissed","commits":{"nodes":[{"commit":{"oid":"sha-dismissed","committedDate":"2026-05-21T00:00:00Z"}}]}}}}}
 EOF
   cat >"$TMP_DIR/2.json" <<'EOF'
-{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[{"author":{"login":"gemini-code-assist"},"submittedAt":"2026-05-21T00:00:05Z","state":"DISMISSED","commit":{"oid":"sha-dismissed"}}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[{"author":{"login":"gemini-code-assist"},"submittedAt":"2026-05-21T00:00:05Z","state":"APPROVED","commit":{"oid":"sha-dismissed"}},{"author":{"login":"gemini-code-assist"},"submittedAt":"2026-05-21T00:00:10Z","state":"DISMISSED","commit":{"oid":"sha-dismissed"}}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
 EOF
   cat >"$TMP_DIR/3.json" <<'EOF'
 {"data":{"repository":{"pullRequest":{"comments":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
@@ -401,6 +401,22 @@ assert_equal_text() {
   [[ "$output" == *"RESULT=TIMEOUT HEAD=sha-pending"* ]]
 }
 
+@test "pr-resolve-all-poll does not return RESULT=QUIET_ELAPSED when a current-head PENDING review exists" {
+  write_pending_review_fixtures
+  write_mock_gh
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    GH_REPO="mikejmckinney/ai-repo-template" \
+    INTERVAL=0 \
+    QUIET_WINDOW=0 \
+    MAX_WAIT=0 \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"RESULT=TIMEOUT HEAD=sha-pending"* ]]
+}
+
 @test "pr-resolve-all-poll returns RESULT=SHA_CHANGED when the PR head changes mid-snapshot" {
   write_sha_changed_fixtures
   write_mock_gh
@@ -442,11 +458,11 @@ assert_equal_text() {
     GH_REPO="mikejmckinney/ai-repo-template" \
     INTERVAL=0 \
     QUIET_WINDOW=360 \
-    MAX_WAIT=900 \
+    MAX_WAIT=0 \
     "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"RESULT=QUIET_ELAPSED HEAD=sha-current"* ]]
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"RESULT=TIMEOUT HEAD=sha-current"* ]]
 }
 
 @test "pr-resolve-all-poll does not return RESULT=CONVERGED for comment-only bot activity on a backdated head" {
