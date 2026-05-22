@@ -424,8 +424,15 @@ assert_equal_text() {
 }
 
 @test "pr-resolve-all-poll returns RESULT=API_ERROR when gh is missing under Bash 3.2-safe require_cmd handling" {
+  local no_gh_bin
+  no_gh_bin="$TMP_DIR/no-gh-bin"
+  mkdir -p "$no_gh_bin"
+  ln -s "$(command -v bash)" "$no_gh_bin/bash"
+  ln -s "$(command -v dirname)" "$no_gh_bin/dirname"
+  ln -s "$(command -v tr)" "$no_gh_bin/tr"
+
   run env \
-    PATH="/usr/bin:/bin" \
+    PATH="$no_gh_bin" \
     ALLOWLIST_FILE="$REPO_ROOT/scripts/lib/bot-allowlist.txt" \
     "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true

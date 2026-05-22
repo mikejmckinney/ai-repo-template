@@ -236,9 +236,9 @@ fetch_head() {
     -F name="$NAME" \
     -F number="$PR_NUMBER" \
     -f query="$QUERY_HEAD" || {
-      SNAPSHOT_ERROR="GRAPHQL_HEAD"
-      return 1
-    }
+    SNAPSHOT_ERROR="GRAPHQL_HEAD"
+    return 1
+  }
 }
 
 fetch_paginated_nodes() {
