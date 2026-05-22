@@ -258,8 +258,11 @@ intentional. Do **not** flag them:
   **not** claim workflow files are absent from a PR diff without verifying the
   actual diff — the test asserts parity that IS present. Marked not-reproducible
   across PR #358 rounds 2–4.
-
-## Project conventions (skip these classes of finding)
+- **KL-16** — `scripts/pr-resolve-all-poll.sh` already uses `${USER:-user}` in
+  its sole `mktemp` call (`TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/pr-resolve-all-poll.${USER:-user}.XXXXXX")`
+  at line 217) and has `umask 077` at script start. Do **not** flag the
+  user-specific path requirement as missing — it is present. Marked
+  not-reproducible PR #358 round 7.
 
 The following patterns have been deliberated and are working as intended.
 Do **not** flag them, even at Low severity. If you genuinely believe a

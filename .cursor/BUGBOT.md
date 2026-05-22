@@ -189,6 +189,11 @@ corresponding `KL-NN` tag is the canonical reference.
   allow-list. Do **not** claim workflow files are absent from a PR diff without
   verifying the actual diff — the test asserts parity that IS present. Marked
   not-reproducible across PR #358 rounds 2–4.
+- **KL-13** — `scripts/pr-resolve-all-poll.sh` already uses `${USER:-user}` in
+  its sole `mktemp` call (`TMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/pr-resolve-all-poll.${USER:-user}.XXXXXX")`
+  at line 217) and has `umask 077` at script start. Do **not** flag the
+  user-specific path requirement as missing — it is present. Marked
+  not-reproducible PR #358 round 7.
 
 Additionally: the `find ... | while IFS= read -r` pattern in this linter does NOT need
 `-print0`/`read -d ''`. Shell script filenames in this repo never contain spaces or
