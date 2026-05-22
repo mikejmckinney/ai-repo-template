@@ -13,7 +13,7 @@ setup_file() {
 }
 
 setup() {
-  TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/pr-resolve-all-poll-test.XXXXXX")"
+  TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/check-326.XXXXXX")"
   MOCK_BIN="$TMP_DIR/bin"
   mkdir -p "$MOCK_BIN"
   export TMP_DIR MOCK_BIN
