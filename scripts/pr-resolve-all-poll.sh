@@ -178,7 +178,7 @@ require_cmd() {
 require_cmd gh
 require_cmd jq
 
-if ! gh auth status >/dev/null; then
+if ! gh auth status -h github.com >/dev/null; then
   emit_result 4 API_ERROR "" "ERROR=GH_AUTH"
 fi
 

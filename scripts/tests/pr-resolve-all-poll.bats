@@ -35,7 +35,9 @@ set -euo pipefail
 STATE_DIR="${MOCK_GH_STATE_DIR:?}"
 COUNTER_FILE="$STATE_DIR/counter"
 if [[ "${1:-}" == "auth" && "${2:-}" == "status" ]]; then
-  exit 0
+  if [[ -z "${3:-}" || "${3:-}" == "-h" ]]; then
+    exit 0
+  fi
 fi
 
 if [[ "${1:-}" == "repo" && "${2:-}" == "view" ]]; then
