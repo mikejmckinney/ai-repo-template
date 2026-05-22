@@ -171,6 +171,24 @@ corresponding `KL-NN` tag is the canonical reference.
   RULE-01/RULE-02 fixture tests is a follow-up task. The linter does not use `set -e`
   (KL-05), so the diff-coupling gate's exit-code fixture requirement does not strictly
   apply. Test.sh L899-908 validates wiring. Do **not** flag the missing test script.
+- **KL-09** — `expand_thread_comments` in `scripts/pr-resolve-all-poll.sh` uses an
+  N+1 GraphQL call pattern (one initial call + individual calls per paginated thread).
+  This is an accepted trade-off: paginated threads are rare; the initial fetch covers
+  100 comments per thread. Do **not** flag as a performance regression. Deferred
+  out-of-scope across PR #358 rounds 2–4.
+- **KL-10** — `scripts/pr-resolve-all-poll.sh` pagination loops read and rewrite the
+  full threads/reviews file on each page step. Acceptable at PR-review scale. Do
+  **not** flag the O(N²) I/O as a blocking regression. Deferred out-of-scope across
+  PR #358 rounds 2–4.
+- **KL-11** — `timestamp_to_epoch` in `scripts/pr-resolve-all-poll.sh` uses `jq`'s
+  `fromdateiso8601`, which requires jq 1.6+. The repo CI environment always provides
+  jq 1.6+. Do **not** flag this as a portability concern. Deferred out-of-scope
+  across PR #358 rounds 2–4.
+- **KL-12** — The `canonical bot allow-list stays in sync` bats test
+  (`scripts/tests/pr-resolve-all-poll.bats`) checks that workflow files match the
+  allow-list. Do **not** claim workflow files are absent from a PR diff without
+  verifying the actual diff — the test asserts parity that IS present. Marked
+  not-reproducible across PR #358 rounds 2–4.
 
 Additionally: the `find ... | while IFS= read -r` pattern in this linter does NOT need
 `-print0`/`read -d ''`. Shell script filenames in this repo never contain spaces or

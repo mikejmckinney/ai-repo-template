@@ -242,6 +242,22 @@ intentional. Do **not** flag them:
   contract, not a per-module list. The orchestrator's glob auto-discovers
   modules; the continuity check hard-fails on missing prefixes. Suggesting
   README doc-sync for a new `NNN-name.sh` is not a finding.
+- **KL-12** — `expand_thread_comments` in `scripts/pr-resolve-all-poll.sh` uses
+  an N+1 GraphQL call pattern (one initial call + individual calls per paginated
+  thread). Accepted trade-off at PR-review scale. Do **not** flag as a performance
+  regression. Deferred out-of-scope across PR #358 rounds 2–4.
+- **KL-13** — `scripts/pr-resolve-all-poll.sh` pagination loops read and rewrite
+  the full threads/reviews file on each page step. Acceptable at PR-review scale.
+  Do **not** flag the O(N²) I/O as a blocking regression. Deferred out-of-scope
+  across PR #358 rounds 2–4.
+- **KL-14** — `timestamp_to_epoch` in `scripts/pr-resolve-all-poll.sh` uses `jq`'s
+  `fromdateiso8601` (jq 1.6+). Repo CI always provides jq 1.6+. Do **not** flag
+  as a portability concern. Deferred out-of-scope across PR #358 rounds 2–4.
+- **KL-15** — The `canonical bot allow-list stays in sync` bats test in
+  `scripts/tests/pr-resolve-all-poll.bats` checks workflow file parity. Do
+  **not** claim workflow files are absent from a PR diff without verifying the
+  actual diff — the test asserts parity that IS present. Marked not-reproducible
+  across PR #358 rounds 2–4.
 
 ## Project conventions (skip these classes of finding)
 
