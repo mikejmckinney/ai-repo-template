@@ -35,12 +35,23 @@ set -euo pipefail
 STATE_DIR="${MOCK_GH_STATE_DIR:?}"
 COUNTER_FILE="$STATE_DIR/counter"
 if [[ "${1:-}" == "auth" && "${2:-}" == "status" ]]; then
-  if [[ -z "${3:-}" || "${3:-}" == "-h" ]]; then
-    exit 0
+  expected_host="${MOCK_GH_EXPECT_AUTH_HOST:-}"
+  actual_host="github.com"
+  if [[ "${3:-}" == "-h" && -n "${4:-}" ]]; then
+    actual_host="$4"
   fi
+  if [[ -n "$expected_host" && "$actual_host" != "$expected_host" ]]; then
+    echo "unexpected gh auth host: expected $expected_host, got $actual_host" >&2
+    exit 1
+  fi
+  exit 0
 fi
 
 if [[ "${1:-}" == "repo" && "${2:-}" == "view" ]]; then
+  if [[ -n "${MOCK_GH_EXPECT_REPO_HOST:-}" && "${GH_HOST:-}" != "${MOCK_GH_EXPECT_REPO_HOST}" ]]; then
+    echo "unexpected GH_HOST for repo view: expected ${MOCK_GH_EXPECT_REPO_HOST}, got ${GH_HOST:-<unset>}" >&2
+    exit 1
+  fi
   printf '%s\n' "${MOCK_GH_REPO_VIEW:-mikejmckinney/ai-repo-template}"
   exit 0
 fi
@@ -48,6 +59,36 @@ fi
 if [[ "${1:-}" != "api" || "${2:-}" != "graphql" ]]; then
   echo "unexpected gh invocation: $*" >&2
   exit 1
+fi
+
+if [[ -n "${MOCK_GH_EXPECT_OWNER:-}" || -n "${MOCK_GH_EXPECT_NAME:-}" ]]; then
+  actual_owner=""
+  actual_name=""
+  api_args=("$@")
+  for ((i = 2; i < ${#api_args[@]}; i++)); do
+    case "${api_args[$i]}" in
+      -F)
+        key="${api_args[$((i + 1))]%%=*}"
+        value="${api_args[$((i + 1))]#*=}"
+        case "$key" in
+          owner) actual_owner="$value" ;;
+          name) actual_name="$value" ;;
+        esac
+        i=$((i + 1))
+        ;;
+      -f)
+        i=$((i + 1))
+        ;;
+    esac
+  done
+  if [[ -n "${MOCK_GH_EXPECT_OWNER:-}" && "$actual_owner" != "${MOCK_GH_EXPECT_OWNER}" ]]; then
+    echo "unexpected GraphQL owner: expected ${MOCK_GH_EXPECT_OWNER}, got ${actual_owner:-<unset>}" >&2
+    exit 1
+  fi
+  if [[ -n "${MOCK_GH_EXPECT_NAME:-}" && "$actual_name" != "${MOCK_GH_EXPECT_NAME}" ]]; then
+    echo "unexpected GraphQL name: expected ${MOCK_GH_EXPECT_NAME}, got ${actual_name:-<unset>}" >&2
+    exit 1
+  fi
 fi
 
 count=0
@@ -657,6 +698,25 @@ assert_equal_text() {
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 4 ]
   [[ "$output" == *"RESULT=API_ERROR ERROR=GRAPHQL_HEAD" ]]
+}
+
+@test "pr-resolve-all-poll accepts host-qualified GH_REPO inputs and targets auth to that host" {
+  write_converged_fixtures
+  write_mock_gh
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    MOCK_GH_EXPECT_AUTH_HOST="ghe.example.com" \
+    MOCK_GH_EXPECT_OWNER="mikejmckinney" \
+    MOCK_GH_EXPECT_NAME="ai-repo-template" \
+    GH_REPO="ghe.example.com/mikejmckinney/ai-repo-template" \
+    INTERVAL=0 \
+    QUIET_WINDOW=360 \
+    MAX_WAIT=900 \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"RESULT=CONVERGED"* ]]
 }
 
 @test "canonical bot allow-list stays in sync across prompt workflow and docs mirrors" {

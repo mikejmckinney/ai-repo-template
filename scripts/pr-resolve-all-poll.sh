@@ -178,7 +178,16 @@ require_cmd() {
 require_cmd gh
 require_cmd jq
 
-if ! gh auth status -h github.com >/dev/null; then
+REPO="${GH_REPO:-}"
+REPO_HOST="${GH_HOST:-github.com}"
+if [[ "$REPO" == */*/* ]]; then
+  REPO_HOST="${REPO%%/*}"
+  REPO="${REPO#*/}"
+fi
+
+export GH_HOST="$REPO_HOST"
+
+if ! gh auth status -h "$REPO_HOST" >/dev/null; then
   emit_result 4 API_ERROR "" "ERROR=GH_AUTH"
 fi
 
@@ -186,24 +195,19 @@ if [[ ! -f "$ALLOWLIST_FILE" ]]; then
   emit_result 4 API_ERROR "" "ERROR=MISSING_ALLOWLIST"
 fi
 
-allowlist_json=$(jq -Rn '
-  [inputs
-   | sub("#.*$"; "")
-   | sub("^[[:space:]]+"; "")
-   | sub("[[:space:]]+$"; "")
-   | select(length > 0)
-   | ascii_downcase
-   | sub("\\[bot\\]$"; "")]
-' <"$ALLOWLIST_FILE")
+allowlist_json=$(jq -Rn -f scripts/lib/jq/bot-allowlist-normalize.jq <"$ALLOWLIST_FILE")
 if [[ "$(jq 'length' <<<"$allowlist_json")" -eq 0 ]]; then
   emit_result 4 API_ERROR "" "ERROR=EMPTY_ALLOWLIST"
 fi
 
-REPO="${GH_REPO:-}"
 if [[ -z "$REPO" ]]; then
   if ! REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner'); then
     emit_result 4 API_ERROR "" "ERROR=REPO_VIEW"
   fi
+fi
+
+if [[ "$REPO" == */*/* ]]; then
+  REPO="${REPO#*/}"
 fi
 OWNER="${REPO%/*}"
 NAME="${REPO#*/}"
@@ -395,133 +399,11 @@ build_state() {
     --slurpfile head "$head_file" \
     --slurpfile reviews "$reviews_file" \
     --slurpfile pr_comments "$comments_file" \
-    --slurpfile threads "$threads_file" '
-    def normalize_login:
-      (. // "")
-      | ascii_downcase
-      | sub("\\[bot\\]$"; "");
-    def allowlisted($set):
-      (normalize_login as $n | ($set | index($n)) != null);
-    def compact:
-      map(select(. != null and . != ""));
-    ($head[0].data.repository.pullRequest) as $pr
-    | ($pr.commits.nodes[0].commit.committedDate // null) as $head_commit_ts
-    | ($pr.headRefOid // "") as $head_sha
-    | (($threads[0] // [])
-       | map(
-           . + {
-             root_author: (.comments.nodes[0].author.login // ""),
-             root_author_normalized: ((.comments.nodes[0].author.login // "") | normalize_login)
-           }
-         )) as $thread_rows
-    | ({
-         head: $head_sha,
-         head_committed_at: $head_commit_ts,
-         reviews: ($reviews[0] // []),
-         pr_comments: ($pr_comments[0] // []),
-         threads: $thread_rows
-       }) as $src
-    | ($src.reviews
-       | map(select((.author.login // "") | allowlisted($allowlist)) | (.author.login | normalize_login))
-       + ($src.pr_comments
-          | map(select((.author.login // "") | allowlisted($allowlist)) | (.author.login | normalize_login)))
-       + ($src.threads
-          | map(.comments.nodes // [])
-          | add // []
-          | map(select((.author.login // "") | allowlisted($allowlist)) | (.author.login | normalize_login)))
-       | unique
-      ) as $participating
-    | ($src.threads
-       | map(select(.isResolved == false and (.root_author | allowlisted($allowlist))))
-      ) as $unresolved_bot_threads
-    | ($src.reviews
-       | map(.submittedAt)
-       + ($src.pr_comments
-          | map(.createdAt))
-       + ($src.threads
-          | map(.comments.nodes // [])
-          | add // []
-          | map(.createdAt))
-       + [$head_commit_ts]
-       | compact
-       | sort
-       | last
-      ) as $latest_actionable
-    | {
-        head: $head_sha,
-        head_committed_at: $head_commit_ts,
-        latest_actionable: $latest_actionable,
-        participating_bots: $participating,
-        unresolved_threads: ($unresolved_bot_threads | length),
-        bots: (
-          $participating
-          | map(. as $bot
-    | ($src.reviews
-       | map(select(
-           (.author.login // "" | normalize_login) == $bot
-           and (
-             (
-               (.state // "") == "PENDING"
-               and (
-                 (.commit.oid // "") == $head_sha
-                 or (.commit == null)
-               )
-             )
-             or ((.commit.oid // "") == $head_sha)
-           )
-         ))
-      ) as $current_head_reviews
-            | ($current_head_reviews
-               | map(select((.state // "") == "PENDING"))
-               | length > 0
-              ) as $has_pending_current_head_review
-            | ($current_head_reviews
-               | map(select(
-                   ((.state // "") == "APPROVED"
-                    or (.state // "") == "CHANGES_REQUESTED"
-                    or (.state // "") == "COMMENTED"
-                    or (.state // "") == "DISMISSED")
-                 ))
-               | sort_by(.submittedAt // "")
-               | last // {}
-              ) as $latest_current_head_review
-            | ($has_pending_current_head_review
-               | if . then "PENDING" else ($latest_current_head_review.state // "") end
-              ) as $current_head_review_state
-            | {
-              login: $bot,
-              participating: true,
-              unresolved_root_threads: (
-                $unresolved_bot_threads
-                | map(select(.root_author_normalized == $bot))
-                | length
-              ),
-              current_head_pending: $has_pending_current_head_review,
-              current_head_review_state: $current_head_review_state,
-              current_head_review: (
-                ($has_pending_current_head_review | not)
-                and (
-                  $current_head_review_state == "APPROVED"
-                  or $current_head_review_state == "CHANGES_REQUESTED"
-                  or $current_head_review_state == "COMMENTED"
-                )
-              ),
-            })
-          | map(
-              . + {
-                terminal: (.current_head_review and (.unresolved_root_threads == 0))
-              }
-            )
-        )
-      }
-    ' >"$state_file"; then
+    --slurpfile threads "$threads_file" \
+    -f scripts/lib/jq/pr-poll-state.jq >"$state_file"; then
     SNAPSHOT_ERROR="STATE_BUILD"
     return 1
   fi
-}
-
-timestamp_to_epoch() {
-  jq -nr --arg ts "$1" '$ts | fromdateiso8601'
 }
 
 start_epoch=$(date +%s)
@@ -548,6 +430,7 @@ while :; do
 
   head_sha=$(jq -r '.head // empty' "$state_file")
   latest_actionable=$(jq -r '.latest_actionable // empty' "$state_file")
+  latest_actionable_epoch=$(jq -r '.latest_actionable_epoch // empty' "$state_file")
   participating_count=$(jq '.participating_bots | length' "$state_file")
   terminal_count=$(jq '[.bots[] | select(.terminal == true)] | length' "$state_file")
   unresolved_threads=$(jq '.unresolved_threads // 0' "$state_file")
@@ -557,11 +440,11 @@ while :; do
   now_epoch=$(date +%s)
   elapsed=$((now_epoch - start_epoch))
   quiet_for=0
-  if [[ -n "$latest_actionable" && "$latest_actionable" != "null" ]]; then
-    if ! latest_epoch=$(timestamp_to_epoch "$latest_actionable"); then
-      emit_result 4 API_ERROR "$head_sha" "ERROR=TIMESTAMP_PARSE"
-    fi
-    quiet_for=$((now_epoch - latest_epoch))
+  if [[ -n "$latest_actionable" && "$latest_actionable_epoch" == "" ]]; then
+    emit_result 4 API_ERROR "$head_sha" "ERROR=TIMESTAMP_PARSE"
+  fi
+  if [[ -n "$latest_actionable_epoch" && "$latest_actionable_epoch" != "null" ]]; then
+    quiet_for=$((now_epoch - latest_actionable_epoch))
   fi
 
   printf 'HEAD=%s participating=%s terminal=%s unresolved_threads=%s latest_actionable=%s quiet_for=%ss elapsed=%ss' \
