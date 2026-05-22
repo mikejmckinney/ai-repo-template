@@ -32,17 +32,20 @@ A Judge receives explicit mode: plan-gate in its dispatch packet and selects PLA
 
 **Pass criteria**:
 
-Run these grep checks on the Judge output. All must output `OK:`:
+Run these grep checks on the Judge output. Non-optional checks must output `OK:`; optional-section checks emit `INFO:` when absent (absence is not a conformance defect):
 
 ```bash
-# PLAN-GATE required headings (must ALL be present — plain-text labels per .agents/judge.md)
+# PLAN-GATE required headings (non-optional — must ALL be present)
 grep -qE "^DECISION:" output.txt            && echo "OK: DECISION" || echo "FAIL: DECISION missing"
 grep -qE "^WHY "       output.txt           && echo "OK: WHY" || echo "FAIL: WHY missing"
 grep -qE "^REQUIRED CHANGES" output.txt     && echo "OK: REQUIRED CHANGES" || echo "FAIL: REQUIRED CHANGES missing"
-grep -qE "^NICE-TO-HAVES"    output.txt     && echo "OK: NICE-TO-HAVES" || echo "FAIL: NICE-TO-HAVES missing"
 grep -qE "^RISKS / GOTCHAS"  output.txt     && echo "OK: RISKS / GOTCHAS" || echo "FAIL: RISKS / GOTCHAS missing"
 grep -qE "^TEST PLAN"        output.txt     && echo "OK: TEST PLAN" || echo "FAIL: TEST PLAN missing"
-grep -qE "^QUESTIONS"        output.txt     && echo "OK: QUESTIONS" || echo "FAIL: QUESTIONS missing"
+
+# PLAN-GATE optional headings (informational — FAIL may be legitimate if Judge correctly omitted)
+grep -qE "^NICE-TO-HAVES"    output.txt     && echo "OK: NICE-TO-HAVES" || echo "INFO: NICE-TO-HAVES absent (optional per template — not a conformance defect)"
+# Note: QUESTIONS appears "only if truly blocking" — absence is expected on clean plans.
+grep -qE "^QUESTIONS"        output.txt     && echo "OK: QUESTIONS" || echo "INFO: QUESTIONS absent (optional — only if truly blocking)"
 
 # DIFF-GATE exclusive headings (must ALL be absent — plain-text labels per .agents/judge.md)
 grep -qE "^SUMMARY "         output.txt     && echo "FAIL: SUMMARY present (template blend)" || echo "OK: SUMMARY absent"
