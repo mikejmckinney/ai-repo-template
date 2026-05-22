@@ -61,7 +61,7 @@ Choose ONE mode. Apply priorities in order — stop at the first that resolves:
   - **DIFF-GATE mode**: input contains a diff/patch, PR summary, or diff markers (`diff --git`, `@@`, `+/-`).
 - **Priority 3 — ambiguous**: ask ONE question: "Is this a plan review or a code/diff review?" and wait for the answer before proceeding.
 
-**Self-check (required regardless of how mode was selected)**: Identify the selected mode explicitly to yourself before writing any output. Confirm that your output structure will include ONLY the section headings listed in that mode's `## Output Format` section. Do not include any heading from the opposite mode's template. **This self-check is internal chain-of-thought only; do not emit it. The first emitted character must remain `DECISION:`.**
+**Self-check (required when mode is selected via Priority 1 or Priority 2)**: Identify the selected mode explicitly to yourself before writing any output. Confirm that your output structure will include ONLY the section headings listed in that mode's output format section (`## Output Format — PLAN-GATE (exact, use ONLY in plan-gate mode)` or `## Output Format — DIFF-GATE (exact, use ONLY in diff-gate mode)`). Do not include any heading from the opposite mode's template. **This self-check is internal chain-of-thought only; do not emit it. The first emitted character must remain `DECISION:`.** In Priority 3 (ambiguous), you emit a clarifying question instead — `DECISION:` first does not apply until after the user answers and you select a mode.
 
 ---
 

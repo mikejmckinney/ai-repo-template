@@ -1,5 +1,5 @@
 ---
-mode: agent
+agent: agent
 description: No-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance.
 ---
 
