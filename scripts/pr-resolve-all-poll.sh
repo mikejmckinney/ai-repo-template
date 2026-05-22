@@ -460,9 +460,21 @@ build_state() {
                    (.author.login // "" | normalize_login) == $bot
                    and (.commit.oid // "") == $head_sha
                  ))
+              ) as $current_head_reviews
+            | ($current_head_reviews
+               | map(select((.state // "") == "PENDING"))
+               | length > 0
+              ) as $has_pending_current_head_review
+            | ($current_head_reviews
+               | map(select(
+                   ((.state // "") == "APPROVED"
+                    or (.state // "") == "CHANGES_REQUESTED"
+                    or (.state // "") == "COMMENTED")
+                 ))
                | sort_by(.submittedAt // "")
                | last // {}
               ) as $latest_current_head_review
+            | ($latest_current_head_review.state // "") as $latest_current_head_review_state
             | {
               login: $bot,
               participating: true,
@@ -471,11 +483,14 @@ build_state() {
                 | map(select(.root_author_normalized == $bot))
                 | length
               ),
-              current_head_review_state: ($latest_current_head_review.state // ""),
+              current_head_review_state: $latest_current_head_review_state,
               current_head_review: (
-                ($latest_current_head_review.state // "") == "APPROVED"
-                or ($latest_current_head_review.state // "") == "CHANGES_REQUESTED"
-                or ($latest_current_head_review.state // "") == "COMMENTED"
+                ($has_pending_current_head_review | not)
+                and (
+                  $latest_current_head_review_state == "APPROVED"
+                  or $latest_current_head_review_state == "CHANGES_REQUESTED"
+                  or $latest_current_head_review_state == "COMMENTED"
+                )
               ),
             })
           | map(

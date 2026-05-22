@@ -187,7 +187,7 @@ write_pending_review_fixtures() {
 {"data":{"repository":{"pullRequest":{"headRefOid":"sha-pending","commits":{"nodes":[{"commit":{"oid":"sha-pending","committedDate":"2026-05-21T00:00:00Z"}}]}}}}}
 EOF
   cat >"$TMP_DIR/2.json" <<'EOF'
-{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[{"author":{"login":"gemini-code-assist"},"submittedAt":"2026-05-21T00:00:05Z","state":"COMMENTED","commit":{"oid":"sha-pending"}},{"author":{"login":"gemini-code-assist"},"submittedAt":"2026-05-21T00:00:10Z","state":"PENDING","commit":{"oid":"sha-pending"}}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[{"author":{"login":"gemini-code-assist"},"submittedAt":"2026-05-21T00:00:05Z","state":"COMMENTED","commit":{"oid":"sha-pending"}},{"author":{"login":"gemini-code-assist"},"submittedAt":null,"state":"PENDING","commit":{"oid":"sha-pending"}}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
 EOF
   cat >"$TMP_DIR/3.json" <<'EOF'
 {"data":{"repository":{"pullRequest":{"comments":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
