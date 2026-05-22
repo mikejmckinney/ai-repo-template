@@ -534,6 +534,7 @@ while :; do
   case "$build_state_rc" in
     0) ;;
     3)
+      head_sha=$(jq -r '.data.repository.pullRequest.headRefOid // empty' "$head_file")
       if ! head_changed_to=$(jq -r '.data.repository.pullRequest.headRefOid // empty' "$post_head_file"); then
         emit_result 4 API_ERROR "$head_sha" "ERROR=GRAPHQL_HEAD_POST"
       fi

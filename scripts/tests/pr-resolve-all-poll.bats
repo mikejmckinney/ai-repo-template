@@ -72,6 +72,36 @@ EOF
   chmod +x "$MOCK_BIN/gh"
 }
 
+write_mock_jq() {
+  local real_jq
+  real_jq="$(command -v jq)"
+  cat >"$MOCK_BIN/jq" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE_DIR="\${MOCK_GH_STATE_DIR:?}"
+REAL_JQ="$real_jq"
+
+last_arg="\${!#}"
+if [[ "\$last_arg" == *"/post-head.json" ]]; then
+  count_file="\$STATE_DIR/jq-post-head-count"
+  count=0
+  if [[ -f "\$count_file" ]]; then
+    count=\$(cat "\$count_file")
+  fi
+  count=\$((count + 1))
+  printf '%s\n' "\$count" >"\$count_file"
+  if [[ "\$count" -eq 2 ]]; then
+    echo "mocked jq failure for post-head snapshot" >&2
+    exit 4
+  fi
+fi
+
+exec "\$REAL_JQ" "\$@"
+EOF
+  chmod +x "$MOCK_BIN/jq"
+}
+
 write_converged_fixtures() {
   cat >"$TMP_DIR/1.json" <<'EOF'
 {"data":{"repository":{"pullRequest":{"headRefOid":"sha-1","commits":{"nodes":[{"commit":{"oid":"sha-1","committedDate":"2026-05-17T16:13:12Z"}}]}}}}}
@@ -109,6 +139,24 @@ EOF
 }
 
 write_sha_changed_fixtures() {
+  cat >"$TMP_DIR/1.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-old","commits":{"nodes":[{"commit":{"oid":"sha-old","committedDate":"2026-05-17T16:00:00Z"}}]}}}}}
+EOF
+  cat >"$TMP_DIR/2.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/3.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"comments":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/4.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/5.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-new","commits":{"nodes":[{"commit":{"oid":"sha-new","committedDate":"2026-05-17T16:05:00Z"}}]}}}}}
+EOF
+}
+
+write_sha_changed_bad_post_head_fixtures() {
   cat >"$TMP_DIR/1.json" <<'EOF'
 {"data":{"repository":{"pullRequest":{"headRefOid":"sha-old","commits":{"nodes":[{"commit":{"oid":"sha-old","committedDate":"2026-05-17T16:00:00Z"}}]}}}}}
 EOF
@@ -468,6 +516,23 @@ assert_equal_text() {
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 3 ]
   [[ "$output" == *"RESULT=SHA_CHANGED HEAD=sha-new"* ]]
+}
+
+@test "pr-resolve-all-poll returns RESULT=API_ERROR when the post-head snapshot cannot be parsed after a head change" {
+  write_sha_changed_bad_post_head_fixtures
+  write_mock_jq
+  write_mock_gh
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    GH_REPO="mikejmckinney/ai-repo-template" \
+    INTERVAL=0 \
+    QUIET_WINDOW=360 \
+    MAX_WAIT=900 \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 4 ]
+  [[ "$output" == *"RESULT=API_ERROR HEAD=sha-old ERROR=GRAPHQL_HEAD_POST"* ]]
 }
 
 @test "pr-resolve-all-poll does not return RESULT=QUIET_ELAPSED when recent PR activity reset the quiet window" {
