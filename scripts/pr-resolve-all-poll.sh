@@ -195,7 +195,7 @@ if [[ ! -f "$ALLOWLIST_FILE" ]]; then
   emit_result 4 API_ERROR "" "ERROR=MISSING_ALLOWLIST"
 fi
 
-allowlist_json=$(jq -Rn -f scripts/lib/jq/bot-allowlist-normalize.jq <"$ALLOWLIST_FILE")
+allowlist_json=$(jq -Rn -f "$REPO_ROOT/scripts/lib/jq/bot-allowlist-normalize.jq" <"$ALLOWLIST_FILE")
 if [[ "$(jq 'length' <<<"$allowlist_json")" -eq 0 ]]; then
   emit_result 4 API_ERROR "" "ERROR=EMPTY_ALLOWLIST"
 fi
@@ -400,7 +400,7 @@ build_state() {
     --slurpfile reviews "$reviews_file" \
     --slurpfile pr_comments "$comments_file" \
     --slurpfile threads "$threads_file" \
-    -f scripts/lib/jq/pr-poll-state.jq >"$state_file"; then
+    -f "$REPO_ROOT/scripts/lib/jq/pr-poll-state.jq" >"$state_file"; then
     SNAPSHOT_ERROR="STATE_BUILD"
     return 1
   fi
