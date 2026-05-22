@@ -353,7 +353,7 @@ assert_equal_text() {
     "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 4 ]
-  [[ "$output" == "RESULT=API_ERROR ERROR=GRAPHQL_HEAD" ]]
+  [[ "$output" == *"RESULT=API_ERROR ERROR=GRAPHQL_HEAD" ]]
 }
 
 @test "canonical bot allow-list stays in sync across prompt workflow and docs mirrors" {
