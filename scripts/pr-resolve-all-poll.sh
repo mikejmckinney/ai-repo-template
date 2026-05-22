@@ -539,11 +539,11 @@ while :; do
     "$unresolved_threads" \
     "${latest_actionable:-<none>}" \
     "$quiet_for" \
-    "$elapsed"
+    "$elapsed" >&2
   if [[ -n "$pending_csv" ]]; then
-    printf ' pending=%s' "$pending_csv"
+    printf ' pending=%s' "$pending_csv" >&2
   fi
-  printf '\n'
+  printf '\n' >&2
 
   if [[ "$participating_count" -gt 0 && "$terminal_count" -eq "$participating_count" && "$unresolved_threads" -eq 0 ]]; then
     emit_result 0 CONVERGED "$head_sha" "QUIET_FOR=${quiet_for}s"
