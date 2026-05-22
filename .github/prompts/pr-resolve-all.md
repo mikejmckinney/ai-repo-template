@@ -138,6 +138,10 @@ identity set, observes live PR state from GitHub, and emits one final
 machine-readable line containing at least `RESULT=<value>` and, when the
 current PR head is available, `HEAD=<sha>`.
 
+In this v0 contract, `latest actionable event` means the newest PR review,
+PR comment, or review-thread comment timestamp visible from GitHub, falling
+back to the head commit timestamp only when no newer PR activity exists.
+
 Dispatch on the helper result exactly as follows:
 
 | Helper result | Exit code | Next action |

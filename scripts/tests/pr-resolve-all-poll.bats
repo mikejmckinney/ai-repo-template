@@ -23,6 +23,10 @@ teardown() {
   rm -rf "$TMP_DIR"
 }
 
+iso_timestamp_n_seconds_ago() {
+  jq -nr --argjson secs "$1" 'now - $secs | todateiso8601'
+}
+
 write_mock_gh() {
   cat >"$MOCK_BIN/gh" <<'EOF'
 #!/usr/bin/env bash
@@ -135,6 +139,28 @@ EOF
 EOF
   cat >"$TMP_DIR/5.json" <<'EOF'
 {"data":{"repository":{"pullRequest":{"headRefOid":"sha-timeout","commits":{"nodes":[{"commit":{"oid":"sha-timeout","committedDate":"2026-05-21T00:00:00Z"}}]}}}}}
+EOF
+}
+
+write_recent_activity_fixtures() {
+  local old_head_ts recent_comment_ts
+  old_head_ts="$(iso_timestamp_n_seconds_ago 600)"
+  recent_comment_ts="$(iso_timestamp_n_seconds_ago 5)"
+
+  cat >"$TMP_DIR/1.json" <<EOF
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-recent","commits":{"nodes":[{"commit":{"oid":"sha-recent","committedDate":"$old_head_ts"}}]}}}}}
+EOF
+  cat >"$TMP_DIR/2.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviews":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/3.json" <<EOF
+{"data":{"repository":{"pullRequest":{"comments":{"nodes":[{"author":{"login":"mikejmckinney"},"createdAt":"$recent_comment_ts"}],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/4.json" <<'EOF'
+{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[],"pageInfo":{"hasNextPage":false,"endCursor":null}}}}}}
+EOF
+  cat >"$TMP_DIR/5.json" <<EOF
+{"data":{"repository":{"pullRequest":{"headRefOid":"sha-recent","commits":{"nodes":[{"commit":{"oid":"sha-recent","committedDate":"$old_head_ts"}}]}}}}}
 EOF
 }
 
@@ -269,6 +295,22 @@ assert_equal_text() {
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 3 ]
   [[ "$output" == *"RESULT=SHA_CHANGED HEAD=sha-new"* ]]
+}
+
+@test "pr-resolve-all-poll does not return RESULT=QUIET_ELAPSED when recent PR activity reset the quiet window" {
+  write_recent_activity_fixtures
+  write_mock_gh
+  run env \
+    PATH="$MOCK_BIN:$PATH" \
+    MOCK_GH_STATE_DIR="$TMP_DIR" \
+    GH_REPO="mikejmckinney/ai-repo-template" \
+    INTERVAL=0 \
+    QUIET_WINDOW=360 \
+    MAX_WAIT=0 \
+    "$REPO_ROOT/scripts/pr-resolve-all-poll.sh" 326
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"RESULT=TIMEOUT HEAD=sha-recent"* ]]
 }
 
 @test "pr-resolve-all-poll returns RESULT=TIMEOUT when a blocking state persists past MAX_WAIT" {

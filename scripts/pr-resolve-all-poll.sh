@@ -15,7 +15,7 @@
 #                            on the current head SHA and no unresolved
 #                            allow-listed bot-rooted review threads remain
 #   0  RESULT=QUIET_ELAPSED  quiet window elapsed since the latest actionable
-#                            event; proceed to the next fetch / round step
+#                            PR event; proceed to the next fetch / round step
 #   2  RESULT=TIMEOUT        hard-cap timeout reached
 #   3  RESULT=SHA_CHANGED    PR head SHA changed during polling
 #   4  RESULT=API_ERROR      gh / GraphQL / auth / jq / allow-list failure
@@ -29,6 +29,9 @@
 #     (b) it posted a PR or review-thread comment at/after the current head
 #     commit timestamp, and in both cases it has zero unresolved allow-listed
 #     bot-rooted threads of its own.
+#   - The quiet-window fallback is measured from the latest PR activity
+#     timestamp (reviews, PR comments, review-thread comments), falling back
+#     to the head commit timestamp only when no newer PR activity exists.
 #   - This helper does not yet parse #321 Index / Resolution Report markers.
 
 set -euo pipefail
@@ -402,11 +405,7 @@ build_state() {
        | map(
            . + {
              root_author: (.comments.nodes[0].author.login // ""),
-             root_author_normalized: ((.comments.nodes[0].author.login // "") | normalize_login),
-             all_bot_comment_timestamps: (
-               (.comments.nodes // [])
-               | map(select((.author.login // "") | allowlisted($allowlist)) | .createdAt)
-             )
+             root_author_normalized: ((.comments.nodes[0].author.login // "") | normalize_login)
            }
          )) as $thread_rows
     | ({
@@ -430,12 +429,13 @@ build_state() {
        | map(select(.isResolved == false and (.root_author | allowlisted($allowlist))))
       ) as $unresolved_bot_threads
     | ($src.reviews
-       | map(select((.author.login // "") | allowlisted($allowlist)) | .submittedAt)
+       | map(.submittedAt)
        + ($src.pr_comments
-          | map(select((.author.login // "") | allowlisted($allowlist)) | .createdAt))
+          | map(.createdAt))
        + ($src.threads
-          | map(.all_bot_comment_timestamps)
-          | add // [])
+          | map(.comments.nodes // [])
+          | add // []
+          | map(.createdAt))
        + [$head_commit_ts]
        | compact
        | sort
