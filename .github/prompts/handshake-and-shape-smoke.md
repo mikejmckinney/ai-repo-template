@@ -12,8 +12,9 @@ No-edit smoke prompt. Do not modify this file.
 Exercises four response-shape scenarios: parent handshake positioning,
 non-exact-output subagent shape, Judge plan-gate exact-output contract, and
 Critic plan-gate exact-output contract. Pass criteria use **structural
-position checks** — not word-presence. A required token at the wrong
-position is a FAIL even if the word appears somewhere in the response.
+position checks** for section ordering; field content within sections is
+verified with grep. A required token at the wrong position is a FAIL even
+if the word appears somewhere in the response.
 
 ## How to run
 
@@ -39,7 +40,7 @@ Automated positional coverage is provided by
 in a new session.
 
 **Expected shape**:
-1. `Session handshake v<N>` token is the FIRST non-blank line of the response.
+1. `Session handshake v<N>` token is the LITERAL FIRST LINE of the response.
 2. A 7-field table follows immediately (includes `Dispatch mode` and `Read profile` rows).
 3. A `## Session context receipt` section appears in the response body.
 
@@ -110,9 +111,12 @@ awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR}
   else print "FAIL: receipt not after handshake (or one section missing)"
 }' output.txt
 
-grep -q "^subagent_compliance:" output.txt \
-  && echo "OK: subagent_compliance block present" \
-  || echo "FAIL: subagent_compliance block missing"
+# subagent_compliance must be the last top-level block
+awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} END{
+  if (sc > 0 && sc > last_h) print "OK: subagent_compliance is last top-level block";
+  else if (sc == 0) print "FAIL: subagent_compliance block missing";
+  else print "FAIL: subagent_compliance is not last (a section heading follows it)"
+}' output.txt
 ```
 
 Expected: zero `FAIL:` lines.
@@ -167,13 +171,15 @@ awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR}
   else print "FAIL: receipt not after handshake (or one section missing)"
 }' output.txt
 
-# subagent_compliance block must exist
-grep -q "^subagent_compliance:" output.txt \
-  && echo "OK: subagent_compliance block present" \
-  || echo "FAIL: subagent_compliance block missing"
+# subagent_compliance must be the last top-level block
+awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} END{
+  if (sc > 0 && sc > last_h) print "OK: subagent_compliance is last top-level block";
+  else if (sc == 0) print "FAIL: subagent_compliance block missing";
+  else print "FAIL: subagent_compliance is not last (a section heading follows it)"
+}' output.txt
 
 # Dispatch mode plan-gate must appear inside subagent handshake section
-awk '/^## Subagent session handshake/{in_s=1} in_s && /plan-gate/{found=1} END{
+awk '/^## Subagent session handshake/{in_s=1} /^## Subagent context receipt/{in_s=0} in_s && /plan-gate/{found=1} END{
   if (found) print "OK: Dispatch mode plan-gate in subagent handshake";
   else print "FAIL: Dispatch mode plan-gate not found in subagent handshake"
 }' output.txt
@@ -231,10 +237,12 @@ awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR}
   else print "FAIL: receipt not after handshake (or one section missing)"
 }' output.txt
 
-# subagent_compliance block must exist
-grep -q "^subagent_compliance:" output.txt \
-  && echo "OK: subagent_compliance block present" \
-  || echo "FAIL: subagent_compliance block missing"
+# subagent_compliance must be the last top-level block
+awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} END{
+  if (sc > 0 && sc > last_h) print "OK: subagent_compliance is last top-level block";
+  else if (sc == 0) print "FAIL: subagent_compliance block missing";
+  else print "FAIL: subagent_compliance is not last (a section heading follows it)"
+}' output.txt
 ```
 
 Expected: zero `FAIL:` lines.

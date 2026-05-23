@@ -19,7 +19,7 @@ When you have read this file at the start of a session, open your first
 substantive reply with the following:
 
 ```
-Session handshake AGENTS_MD_VERSION
+Session handshake vAGENTS_MD_VERSION
 
 | Field | Value |
 |---|---|
@@ -67,7 +67,7 @@ Docs, Analyst, PM) are **encouraged** but not required; see
 
 ## Session context receipt
 
-Parent agents follow the `## Session handshake` with this section. Dispatched
+Parent agents follow the `## Session handshake (read-receipt)` with this section. Dispatched
 subagents emit it as `## Subagent context receipt` at the end of their response,
 after `## Subagent session handshake`.
 
