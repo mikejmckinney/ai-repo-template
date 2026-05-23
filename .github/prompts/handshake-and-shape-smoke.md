@@ -40,6 +40,7 @@ Automated positional coverage is provided by
 in a new session.
 
 **Expected shape**:
+
 1. `Session handshake v<N>` token is the LITERAL FIRST LINE of the response.
 2. A 7-field table follows immediately (includes `Dispatch mode` and `Read profile` rows).
 3. A `## Session context receipt` section appears in the response body.
@@ -103,6 +104,7 @@ Expected: zero `FAIL:` lines.
 **Context**: Architect dispatched with a planning task.
 
 **Expected shape**:
+
 1. Role-specific body appears first.
 2. `## Subagent session handshake` appears AFTER the role body (encouraged for non-exact-output roles).
 3. `## Subagent context receipt` appears AFTER `## Subagent session handshake` (encouraged for non-exact-output roles).
@@ -179,6 +181,7 @@ Trivial smoke-only plan. Judge receives explicit mode: plan-gate.
 ```
 
 **Expected shape**:
+
 1. `DECISION:` is the LITERAL FIRST LINE of the response.
 2. `## Subagent session handshake` appears AFTER the role body.
 3. `## Subagent context receipt` appears AFTER `## Subagent session handshake`.
@@ -245,6 +248,7 @@ Trivial smoke-only plan. Critic receives explicit mode: plan-gate.
 ```
 
 **Expected shape**:
+
 1. `CRITIC DECISION:` is the LITERAL FIRST LINE of the response.
 2. `## Subagent session handshake` appears AFTER the role body.
 3. `## Subagent context receipt` appears AFTER `## Subagent session handshake`.

@@ -18,7 +18,7 @@
 When you have read this file at the start of a session, open your first
 substantive reply with the following:
 
-```
+```text
 Session handshake vAGENTS_MD_VERSION
 
 | Field | Value |
@@ -74,7 +74,7 @@ after `## Subagent session handshake`.
 
 Parent agent form (use `## Subagent context receipt` heading when emitting as a dispatched subagent):
 
-```
+```text
 ## Session context receipt
 
 | File | Status | Why it was read | Decision affected |
