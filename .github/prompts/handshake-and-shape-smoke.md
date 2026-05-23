@@ -53,13 +53,13 @@ head -1 output.txt | grep -qE "^Session handshake v[0-9]+" \
   || echo "FAIL: handshake is not first line or has no concrete version"
 
 # 7-field table must include the two new rows
-grep -q "Dispatch mode" output.txt \
-  && echo "OK: Dispatch mode row present" \
-  || echo "FAIL: Dispatch mode row missing"
-
-grep -q "Read profile" output.txt \
-  && echo "OK: Read profile row present" \
-  || echo "FAIL: Read profile row missing"
+# Dispatch mode and Read profile must appear inside the handshake table
+awk 'NR==1 && /^Session handshake/{hs=1} hs && /\| *Dispatch mode/{dm=1} hs && /\| *Read profile/{rp=1} /^## /{hs=0} END{
+  if (dm) print "OK: Dispatch mode row in handshake table";
+  else print "FAIL: Dispatch mode row not in handshake table";
+  if (rp) print "OK: Read profile row in handshake table";
+  else print "FAIL: Read profile row not in handshake table"
+}' output.txt
 
 # Session context receipt section must exist
 awk '/^## Session context receipt/{found=1} END{exit !found}' output.txt \
