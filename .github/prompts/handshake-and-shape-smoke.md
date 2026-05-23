@@ -47,10 +47,10 @@ in a new session.
 **Pass criteria**:
 
 ```bash
-# Line 1 must start with "Session handshake v"
-head -1 output.txt | grep -q "^Session handshake v" \
-  && echo "OK: handshake is first line" \
-  || echo "FAIL: handshake is not first line"
+# Line 1 must start with "Session handshake v<N>" with a concrete version number
+head -1 output.txt | grep -qE "^Session handshake v[0-9]+" \
+  && echo "OK: handshake is first line with concrete version" \
+  || echo "FAIL: handshake is not first line or has no concrete version"
 
 # 7-field table must include the two new rows
 grep -q "Dispatch mode" output.txt \
