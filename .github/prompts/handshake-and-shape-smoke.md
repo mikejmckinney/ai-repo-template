@@ -112,10 +112,11 @@ awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR}
 }' output.txt
 
 # subagent_compliance must be the last top-level block
-awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} END{
-  if (sc > 0 && sc > last_h) print "OK: subagent_compliance is last top-level block";
+awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} sc && NR>sc && /^[^[:space:]#]/{after_sc=1} END{
+  if (sc > 0 && sc > last_h && !after_sc) print "OK: subagent_compliance is last top-level block";
   else if (sc == 0) print "FAIL: subagent_compliance block missing";
-  else print "FAIL: subagent_compliance is not last (a section heading follows it)"
+  else if (!after_sc) print "FAIL: subagent_compliance is not last (a section heading follows it)";
+  else print "FAIL: non-indented content follows subagent_compliance block"
 }' output.txt
 ```
 
@@ -172,10 +173,11 @@ awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR}
 }' output.txt
 
 # subagent_compliance must be the last top-level block
-awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} END{
-  if (sc > 0 && sc > last_h) print "OK: subagent_compliance is last top-level block";
+awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} sc && NR>sc && /^[^[:space:]#]/{after_sc=1} END{
+  if (sc > 0 && sc > last_h && !after_sc) print "OK: subagent_compliance is last top-level block";
   else if (sc == 0) print "FAIL: subagent_compliance block missing";
-  else print "FAIL: subagent_compliance is not last (a section heading follows it)"
+  else if (!after_sc) print "FAIL: subagent_compliance is not last (a section heading follows it)";
+  else print "FAIL: non-indented content follows subagent_compliance block"
 }' output.txt
 
 # Dispatch mode plan-gate must appear inside subagent handshake section
@@ -238,10 +240,11 @@ awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR}
 }' output.txt
 
 # subagent_compliance must be the last top-level block
-awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} END{
-  if (sc > 0 && sc > last_h) print "OK: subagent_compliance is last top-level block";
+awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} sc && NR>sc && /^[^[:space:]#]/{after_sc=1} END{
+  if (sc > 0 && sc > last_h && !after_sc) print "OK: subagent_compliance is last top-level block";
   else if (sc == 0) print "FAIL: subagent_compliance block missing";
-  else print "FAIL: subagent_compliance is not last (a section heading follows it)"
+  else if (!after_sc) print "FAIL: subagent_compliance is not last (a section heading follows it)";
+  else print "FAIL: non-indented content follows subagent_compliance block"
 }' output.txt
 ```
 
