@@ -61,9 +61,9 @@ Judge; `CRITIC DECISION:` for Critic). After the role body, append in order:
 2. `## Subagent context receipt` — the file table from `## Session context receipt`.
 3. `subagent_compliance` YAML block.
 
-**Exact-output roles (Judge, Critic) are required to include these trailing
-blocks.** Non-exact-output roles (Architect, Backend, Frontend, QA, DevOps,
-Docs, Analyst, PM) are **encouraged** but not required; see
+**`subagent_compliance` (item 3) is required for all dispatched subagents.**
+The heading sections (items 1–2) are **required** for exact-output roles (Judge,
+Critic) and **encouraged but not required** for all other roles; see
 `.context/rules/process_subagent_bootstrap.md` § "Positional output contract".
 
 ## Session context receipt

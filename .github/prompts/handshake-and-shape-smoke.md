@@ -110,6 +110,7 @@ awk 'NF > 0 && !first_nonblank { first_nonblank = NR }
 
 awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR} END{
   if (h == 0 && r == 0) print "OK: both optional sections absent (valid for non-exact-output roles)";
+  else if (h > 0 && r == 0) print "OK: receipt absent (optional even when handshake is present)";
   else if (h > 0 && r > h) print "OK: receipt after handshake";
   else print "FAIL: receipt not after handshake (or one section missing)"
 }' output.txt

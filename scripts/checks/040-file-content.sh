@@ -203,7 +203,7 @@ else
 fi
 
 if grep -q "Session handshake" AGENTS.md 2>/dev/null \
-  && (grep -qE 'Session handshake v?AGENTS_MD_VERSION' AGENTS.md 2>/dev/null \
+  && (grep -qE 'Session handshake vAGENTS_MD_VERSION' AGENTS.md 2>/dev/null \
     || grep -qE 'Session handshake v?[0-9]+' AGENTS.md 2>/dev/null); then
   pass "AGENTS.md has Session handshake instruction with token placeholder or legacy literal"
 else
