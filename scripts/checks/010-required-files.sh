@@ -65,6 +65,7 @@ REQUIRED_FILES=(
   ".github/prompts/instruction-compliance-smoke.md"
   ".github/prompts/outcome-validation-smoke.md"
   ".github/prompts/judge-mode-smoke.md"
+  ".github/prompts/handshake-and-shape-smoke.md"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
   "scripts/diag-hang-snapshot.sh"

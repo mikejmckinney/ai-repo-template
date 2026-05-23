@@ -70,6 +70,26 @@ state, current `AGENTS_MD_VERSION`, and allowed deviations. Every dispatched
 role returns `subagent_compliance`; parent agents copy parsed subagent objects
 into PR-body `parent_compliance.subagents_dispatched`.
 
+### Subagent output format (positional contract)
+
+Dispatched subagents append the following trailing blocks after their
+role-specific body. The `subagent_compliance` YAML block (ADR-026) is
+**required for all dispatched subagents**. The heading sections are **required**
+for exact-output roles (Judge, Critic) and **encouraged but not required** for
+all other roles:
+
+1. `## Subagent session handshake` — the 7-field table from
+   AGENTS.md `## Session handshake (read-receipt)`.
+2. `## Subagent context receipt` — the file table from
+   AGENTS.md `## Session context receipt`.
+3. `subagent_compliance` YAML block (ADR-026).
+
+Exact-output roles (Judge, Critic) emit `DECISION:` / `CRITIC DECISION:` as
+their literal first line before any other content, so the trailing blocks
+coexist with rather than precede the role output. See
+`.context/rules/process_subagent_bootstrap.md` § "Positional output contract"
+for the authoritative rule.
+
 See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the rationale behind the two-registry design.
 
 ## End-to-End Flow

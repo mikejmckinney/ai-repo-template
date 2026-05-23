@@ -1,0 +1,17 @@
+subagent_compliance:
+  role: judge
+  role_contract_version: 1
+  agents_md_version: 21
+  receipt:
+    mode: trailing-block
+    value: "Judge exact-output preserved; DECISION remained first line before trailing blocks."
+  context_files_used:
+    - AGENTS.md
+    - .agents/judge.md
+    - .context/rules/process_subagent_bootstrap.md
+  pointers_skipped: []
+  task_scope: Plan-gate review — smoke fixture for trailing-block receipt mode.
+  files_modified: []
+  gates_invoked:
+    - plan-gate
+  run_status: SUCCESS

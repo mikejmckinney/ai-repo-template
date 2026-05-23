@@ -46,6 +46,10 @@ lists come after, not before.
     startup pointer loading, role-dispatch reasoning, and ADR-026 compliance
     evidence shape before relying on an agent run.
   - **`judge-mode-smoke.md`** — no-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance (structural heading verification for both modes)
+  - **`handshake-and-shape-smoke.md`** — no-edit smoke prompt for session handshake
+    positional contract and response-shape verification: tests parent vs subagent
+    handshake positioning, exact-output first-line contract (Judge `DECISION:`,
+    Critic `CRITIC DECISION:`), and `## Subagent context receipt` placement (4 scenarios)
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.
 

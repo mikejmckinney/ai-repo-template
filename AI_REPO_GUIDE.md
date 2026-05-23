@@ -141,6 +141,7 @@ bash install.sh
     │   ├── instruction-compliance-smoke.md # No-edit ADR-026 compliance smoke prompt
     │   ├── outcome-validation-smoke.md # No-edit Judge/Critic outcome-theater smoke prompt
     │   ├── judge-mode-smoke.md       # No-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection
+    │   ├── handshake-and-shape-smoke.md  # No-edit smoke: handshake positional contract + response shape (4 scenarios)
     │   └── expand-backlog-entry.md # Backlog → issue expansion prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
@@ -220,6 +221,7 @@ bash install.sh
 | `.github/prompts/instruction-compliance-smoke.md` | No-edit smoke prompt for startup pointer loading, role-dispatch reasoning, and ADR-026 evidence shape |
 | `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
 | `.github/prompts/judge-mode-smoke.md` | No-edit smoke prompt: Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance |
+| `.github/prompts/handshake-and-shape-smoke.md` | No-edit smoke prompt: handshake positional contract and response-shape verification (parent vs subagent, Judge/Critic exact-output first-line, receipt-section placement — 4 scenarios) |
 
 ### Compliance Contracts
 

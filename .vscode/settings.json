@@ -1,0 +1,7 @@
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    { "file": ".context/rules/process_critical_thinking.md" },
+    { "file": ".context/rules/process_clarification.md" },
+    { "file": ".context/rules/process_work_style.md" }
+  ]
+}
