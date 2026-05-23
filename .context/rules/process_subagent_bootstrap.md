@@ -4,6 +4,33 @@
 > `subagent_compliance` evidence. Read when dispatching a subagent, receiving
 > subagent output, or using subagent output as plan-gate/diff-gate evidence.
 
+## Positional output contract
+
+**Exact-output subagents emit their required first line before any handshake
+content.**
+
+- Judge: `DECISION:` must be the literal first character sequence of the
+  response. Do not prepend a session handshake, receipt section, or receipt
+  line before the role output.
+- Critic: `CRITIC DECISION:` must be the literal first character sequence.
+  Same constraint.
+
+After the role-specific body, append in order:
+
+1. `## Subagent session handshake` — the 7-field table from AGENTS.md
+   `## Session handshake (read-receipt)`.
+2. `## Subagent context receipt` — the file table from AGENTS.md
+   `## Session context receipt`.
+3. `subagent_compliance` YAML block.
+
+Non-exact-output subagents (Architect, Backend, Frontend, QA, DevOps, Docs,
+Analyst, PM) are not constrained by this rule. They may begin with
+`Role receipt v<N> — <role>` (see `## Receipt evidence`); non-exact-output roles
+that begin with `Role receipt v<N> — <role>` retain that preamble — the new
+trailing blocks coexist with it. They are encouraged to emit
+`## Subagent session handshake` and `## Subagent context receipt` at the end of
+their response in the same order described above.
+
 ## Parent dispatch packet
 
 Before dispatching a subagent, the parent/default agent must provide enough

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 20 -->
+<!-- AGENTS_MD_VERSION: 21 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one.
      The canary covers AGENTS.md only — per-concern files in .context/rules/
@@ -28,30 +28,55 @@ Session handshake AGENTS_MD_VERSION
 | Model | <exact model if exposed by runtime; otherwise `unknown — not exposed by runtime`> |
 | AGENTS.md version | <version number> |
 | Session type | <parent/default agent | dispatched subagent | other> |
+| Dispatch mode | <plan-gate | diff-gate | n/a> |
+| Read profile | <profile-name | full | none> |
+```
 
-### Files read and reviewed
+Replace AGENTS_MD_VERSION with the version number specified in the HTML comment
+at the top of this file. The session handshake should be on its own line before
+any other content for parent agents; see the subagent rule below.
+
+`Dispatch mode`: dispatched subagents record the mode from the dispatch packet
+(`plan-gate` or `diff-gate`). Parent/default agents use `n/a`. Required for
+Judge — see `.context/rules/process_subagent_bootstrap.md` § "Positional output
+contract".
+
+`Read profile`: record the named profile used, `full` if all standard startup
+files were loaded, or `none` if only AGENTS.md was loaded. Named profiles will
+be defined in R4; use `full` until then.
+
+This is a per-session signal, not a per-reply one. Emit it once at the start of
+the session; suppress it on subsequent replies in the same conversation.
+
+For parent/default-agent work, this token is the parent startup receipt required
+by ADR-026 compliance evidence. Follow the handshake with a
+`## Session context receipt` section (see below).
+
+For dispatched subagents: emit your role-specific output **first**, so
+exact-output contracts are satisfied (`DECISION:` is the literal first line for
+Judge; `CRITIC DECISION:` for Critic). Then append, in order:
+
+1. `## Subagent session handshake` — the 7-field table above.
+2. `## Subagent context receipt` — the file table from `## Session context receipt`.
+3. `subagent_compliance` YAML block.
+
+See `.context/rules/process_subagent_bootstrap.md` § "Positional output contract"
+for the authoritative rule.
+
+## Session context receipt
+
+Parent agents follow the `## Session handshake` with this section. Dispatched
+subagents emit it as `## Subagent context receipt` at the end of their response,
+after `## Subagent session handshake`.
+
+```
+## Session context receipt
 
 | File | Status | Why it was read | Decision affected |
 |---|---|---|---|
-| `AGENTS.md` | Read | Startup contract | Loaded handshake, truth hierarchy, and per-concern read list |
+| `AGENTS.md` | Read | Startup contract | Loaded handshake, truth hierarchy, per-concern read list |
 | `<path>` | <Read / Reviewed / Skipped> | <reason> | <decision, gate, or output affected> |
 ```
-
-replace AGENTS_MD_VERSION with the version number specified in the html 
-comment block at the top of this file.  the session handshake read-receipt
-should be on its own line before any other content. 
-
-This is a per-session signal, not a per-reply one. Emit it once at the
-start of the session; suppress it on subsequent replies in the same
-conversation.
-
-For parent/default-agent work, this visible token is the parent startup
-receipt used by ADR-026 compliance evidence. Dispatched subagents do not
-prepend the parent handshake unless they are themselves the top-level
-responder. Instead, subagents load their canonical role file, follow the
-subagent bootstrap rule, and report receipt evidence in their trailing
-`subagent_compliance` block. Exact-output roles must preserve their exact
-first line.
 
 ## Truth hierarchy
 
