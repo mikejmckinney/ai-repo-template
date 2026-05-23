@@ -15,6 +15,22 @@ Critic plan-gate exact-output contract. Pass criteria use **structural
 position checks** — not word-presence. A required token at the wrong
 position is a FAIL even if the word appears somewhere in the response.
 
+## How to run
+
+These are **manual verification prompts**, not automated test cases. To verify
+a scenario:
+
+1. Open a new agent session and give the agent the scenario's dispatch context.
+2. Capture the agent's full response text to a file named `output.txt`.
+3. Run the bash blocks in the corresponding "Pass criteria" section against that
+   file — e.g., `bash < <(cat <<'EOF' ... EOF)` or paste each command into a
+   terminal with `output.txt` in the working directory.
+4. Confirm zero `FAIL:` lines.
+
+Automated positional coverage is provided by
+`scripts/tests/fixtures/compliance/valid/subagent-compliance-trailing-block.yml`
+(validates the trailing-block receipt schema path).
+
 ---
 
 ## Scenario A — Parent agent handshake position
@@ -80,10 +96,14 @@ grep -q "^## Subagent context receipt" output.txt \
   && echo "OK: Subagent context receipt section present" \
   || echo "FAIL: Subagent context receipt section missing"
 
-awk '/^## Subagent session handshake/{h=NR} END{
-  if (h > 1) print "OK: Subagent session handshake is not first content";
-  else print "FAIL: Subagent session handshake is first content (positional violation)"
-}' output.txt
+awk 'NF > 0 && !first_nonblank { first_nonblank = NR }
+  /^## Subagent session handshake/ { h = NR }
+  END {
+    if (h > 0 && h != first_nonblank)
+      print "OK: Subagent session handshake is not first non-blank content";
+    else
+      print "FAIL: Subagent session handshake is first content (positional violation)"
+  }' output.txt
 
 awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR} END{
   if (h > 0 && r > h) print "OK: receipt after handshake";

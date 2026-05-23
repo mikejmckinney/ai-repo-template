@@ -54,14 +54,16 @@ by ADR-026 compliance evidence. Follow the handshake with a
 
 For dispatched subagents: emit your role-specific output **first**, so
 exact-output contracts are satisfied (`DECISION:` is the literal first line for
-Judge; `CRITIC DECISION:` for Critic). Then append, in order:
+Judge; `CRITIC DECISION:` for Critic). After the role body, append in order:
 
 1. `## Subagent session handshake` — the 7-field table above.
 2. `## Subagent context receipt` — the file table from `## Session context receipt`.
 3. `subagent_compliance` YAML block.
 
-See `.context/rules/process_subagent_bootstrap.md` § "Positional output contract"
-for the authoritative rule.
+**Exact-output roles (Judge, Critic) are required to include these trailing
+blocks.** Non-exact-output roles (Architect, Backend, Frontend, QA, DevOps,
+Docs, Analyst, PM) are **encouraged** but not required; see
+`.context/rules/process_subagent_bootstrap.md` § "Positional output contract".
 
 ## Session context receipt
 
