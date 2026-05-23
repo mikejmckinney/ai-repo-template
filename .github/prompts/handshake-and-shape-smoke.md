@@ -52,9 +52,18 @@ head -1 output.txt | grep -qE "^Session handshake v[0-9]+" \
   && echo "OK: handshake is first line with concrete version" \
   || echo "FAIL: handshake is not first line or has no concrete version"
 
-# 7-field table must include the two new rows
-# Dispatch mode and Read profile must appear inside the handshake table
-awk 'NR==1 && /^Session handshake/{hs=1} hs && /\| *Dispatch mode/{dm=1} hs && /\| *Read profile/{rp=1} /^## /{hs=0} END{
+# 7-field table must include all required rows (scoped to handshake table)
+awk 'NR==1 && /^Session handshake/{hs=1} hs && /\| *Agent *\|/{ag=1} hs && /\| *Role *\|/{ro=1} hs && /\| *Model *\|/{mo=1} hs && /\| *AGENTS\.md version *\|/{av=1} hs && /\| *Session type *\|/{st=1} hs && /\| *Dispatch mode *\|/{dm=1} hs && /\| *Read profile *\|/{rp=1} /^## /{hs=0} END{
+  if (ag) print "OK: Agent row in handshake table";
+  else print "FAIL: Agent row not in handshake table";
+  if (ro) print "OK: Role row in handshake table";
+  else print "FAIL: Role row not in handshake table";
+  if (mo) print "OK: Model row in handshake table";
+  else print "FAIL: Model row not in handshake table";
+  if (av) print "OK: AGENTS.md version row in handshake table";
+  else print "FAIL: AGENTS.md version row not in handshake table";
+  if (st) print "OK: Session type row in handshake table";
+  else print "FAIL: Session type row not in handshake table";
   if (dm) print "OK: Dispatch mode row in handshake table";
   else print "FAIL: Dispatch mode row not in handshake table";
   if (rp) print "OK: Read profile row in handshake table";
