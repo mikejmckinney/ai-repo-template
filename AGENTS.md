@@ -115,9 +115,9 @@ re-read cadence (which files at which boundaries) lives in
 | Concern | File | Read when |
 |---|---|---|
 | Template detection (Mode A vs Mode B) | [`.context/rules/process_template_detection.md`](.context/rules/process_template_detection.md) | First session in a new clone |
-| Critical thinking and communication | [`.context/rules/process_critical_thinking.md`](.context/rules/process_critical_thinking.md) | Eagerly loaded via `.vscode/settings.json` — already in context; no `read_file` needed |
-| Work style, testing, validation | [`.context/rules/process_work_style.md`](.context/rules/process_work_style.md) | Eagerly loaded via `.vscode/settings.json` — already in context; no `read_file` needed |
-| Clarification and ambiguity | [`.context/rules/process_clarification.md`](.context/rules/process_clarification.md) | Eagerly loaded via `.vscode/settings.json` — already in context; no `read_file` needed |
+| Critical thinking and communication | [`.context/rules/process_critical_thinking.md`](.context/rules/process_critical_thinking.md) | Every reply |
+| Work style, testing, validation | [`.context/rules/process_work_style.md`](.context/rules/process_work_style.md) | Before any non-trivial implementation |
+| Clarification and ambiguity | [`.context/rules/process_clarification.md`](.context/rules/process_clarification.md) | When request is ambiguous |
 | Role selection, OP default, context pack, onboarding | [`.context/rules/process_role_selection.md`](.context/rules/process_role_selection.md) | Before claiming a task |
 | Pre-implementation gates (Analyst pre-flight + plan-as-comment) | [`.context/rules/process_gates.md`](.context/rules/process_gates.md) | Before writing code on any non-exempt issue |
 | Session-state cadence + close-out PR discipline | [`.context/rules/process_session_state.md`](.context/rules/process_session_state.md) | Every task boundary |
