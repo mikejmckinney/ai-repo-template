@@ -89,6 +89,17 @@ Expected: zero `FAIL:` lines.
 **Pass criteria**:
 
 ```bash
+# Role body must appear before any trailing sections
+awk 'NF > 0 && !first_nonblank { first_nonblank = NR }
+  /^## Subagent session handshake/ { if (!first_opt) first_opt = NR }
+  /^subagent_compliance:/ { if (!first_opt) first_opt = NR }
+  END {
+    if (first_nonblank > 0 && (first_opt == 0 || first_nonblank < first_opt))
+      print "OK: role body content precedes trailing sections";
+    else
+      print "FAIL: no role body content before trailing sections"
+  }' output.txt
+
 grep -q "^## Subagent session handshake" output.txt \
   && echo "OK: Subagent session handshake section present" \
   || echo "NOTE: Subagent session handshake section absent (optional for non-exact-output roles)"
@@ -119,8 +130,7 @@ awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR}
 awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} sc && NR>sc && /^[^[:space:]]/{after_sc=1} END{
   if (sc > 0 && sc > last_h && !after_sc) print "OK: subagent_compliance is last top-level block";
   else if (sc == 0) print "FAIL: subagent_compliance block missing";
-  else if (!after_sc) print "FAIL: subagent_compliance is not last (a section heading follows it)";
-  else print "FAIL: non-indented content follows subagent_compliance block"
+  else print "FAIL: non-indented content or section heading follows subagent_compliance block"
 }' output.txt
 ```
 
@@ -180,8 +190,7 @@ awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR}
 awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} sc && NR>sc && /^[^[:space:]]/{after_sc=1} END{
   if (sc > 0 && sc > last_h && !after_sc) print "OK: subagent_compliance is last top-level block";
   else if (sc == 0) print "FAIL: subagent_compliance block missing";
-  else if (!after_sc) print "FAIL: subagent_compliance is not last (a section heading follows it)";
-  else print "FAIL: non-indented content follows subagent_compliance block"
+  else print "FAIL: non-indented content or section heading follows subagent_compliance block"
 }' output.txt
 
 # Dispatch mode plan-gate must appear inside subagent handshake section
@@ -247,8 +256,7 @@ awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR}
 awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} sc && NR>sc && /^[^[:space:]]/{after_sc=1} END{
   if (sc > 0 && sc > last_h && !after_sc) print "OK: subagent_compliance is last top-level block";
   else if (sc == 0) print "FAIL: subagent_compliance block missing";
-  else if (!after_sc) print "FAIL: subagent_compliance is not last (a section heading follows it)";
-  else print "FAIL: non-indented content follows subagent_compliance block"
+  else print "FAIL: non-indented content or section heading follows subagent_compliance block"
 }' output.txt
 
 # Dispatch mode plan-gate must appear inside subagent handshake section
