@@ -73,8 +73,10 @@ into PR-body `parent_compliance.subagents_dispatched`.
 ### Subagent output format (positional contract)
 
 Dispatched subagents append the following trailing blocks after their
-role-specific body. These blocks are **required** for exact-output roles
-(Judge, Critic) and **encouraged but not required** for all other roles:
+role-specific body. The `subagent_compliance` YAML block (ADR-026) is
+**required for all dispatched subagents**. The heading sections are **required**
+for exact-output roles (Judge, Critic) and **encouraged but not required** for
+all other roles:
 
 1. `## Subagent session handshake` — the 7-field table from
    AGENTS.md `## Session handshake (read-receipt)`.

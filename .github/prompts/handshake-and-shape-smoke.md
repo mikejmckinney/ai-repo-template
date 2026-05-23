@@ -91,23 +91,26 @@ Expected: zero `FAIL:` lines.
 ```bash
 grep -q "^## Subagent session handshake" output.txt \
   && echo "OK: Subagent session handshake section present" \
-  || echo "FAIL: Subagent session handshake section missing"
+  || echo "NOTE: Subagent session handshake section absent (optional for non-exact-output roles)"
 
 grep -q "^## Subagent context receipt" output.txt \
   && echo "OK: Subagent context receipt section present" \
-  || echo "FAIL: Subagent context receipt section missing"
+  || echo "NOTE: Subagent context receipt section absent (optional for non-exact-output roles)"
 
 awk 'NF > 0 && !first_nonblank { first_nonblank = NR }
   /^## Subagent session handshake/ { h = NR }
   END {
-    if (h > 0 && h != first_nonblank)
+    if (h == 0)
+      print "OK: Subagent session handshake absent (optional for non-exact-output roles)";
+    else if (h != first_nonblank)
       print "OK: Subagent session handshake is not first non-blank content";
     else
       print "FAIL: Subagent session handshake is first content (positional violation)"
   }' output.txt
 
 awk '/^## Subagent session handshake/{h=NR} /^## Subagent context receipt/{r=NR} END{
-  if (h > 0 && r > h) print "OK: receipt after handshake";
+  if (h == 0 && r == 0) print "OK: both optional sections absent (valid for non-exact-output roles)";
+  else if (h > 0 && r > h) print "OK: receipt after handshake";
   else print "FAIL: receipt not after handshake (or one section missing)"
 }' output.txt
 
