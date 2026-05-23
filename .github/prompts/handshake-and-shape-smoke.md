@@ -52,6 +52,19 @@ head -1 output.txt | grep -qE "^Session handshake v[0-9]+" \
   && echo "OK: handshake is first line with concrete version" \
   || echo "FAIL: handshake is not first line or has no concrete version"
 
+# Handshake table must follow token immediately (no intervening narrative)
+awk '
+  NR==1 && /^Session handshake/{hs=1; next}
+  hs && /^[[:space:]]*$/{next}
+  hs && /^\|/{tbl=1; hs=0}
+  hs && NF>0{intervening=NR; hs=0}
+  END{
+    if (tbl && !intervening) print "OK: handshake table follows token with no intervening content";
+    else if (intervening) print "FAIL: non-table content on line " intervening " between handshake token and table";
+    else print "FAIL: no table row found after handshake token"
+  }
+' output.txt
+
 # 7-field table must include all required rows (scoped to handshake table)
 awk 'NR==1 && /^Session handshake/{hs=1} hs && /\| *Agent *\|/{ag=1} hs && /\| *Role *\|/{ro=1} hs && /\| *Model *\|/{mo=1} hs && /\| *AGENTS\.md version *\|/{av=1} hs && /\| *Session type *\|/{st=1} hs && /\| *Dispatch mode *\|/{dm=1} hs && /\| *Read profile *\|/{rp=1} /^## /{hs=0} END{
   if (ag) print "OK: Agent row in handshake table";
