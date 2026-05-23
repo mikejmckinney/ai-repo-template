@@ -72,6 +72,8 @@ Parent agents follow the `## Session handshake (read-receipt)` with this section
 subagents emit it as `## Subagent context receipt` at the end of their response,
 after `## Subagent session handshake`.
 
+Parent agent form (use `## Subagent context receipt` heading when emitting as a dispatched subagent):
+
 ```
 ## Session context receipt
 
