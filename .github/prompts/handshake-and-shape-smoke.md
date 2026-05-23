@@ -194,7 +194,7 @@ awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} sc && NR>sc && /^[^[:space
 }' output.txt
 
 # Dispatch mode plan-gate must appear inside subagent handshake section
-awk '/^## Subagent session handshake/{in_s=1} /^## Subagent context receipt/{in_s=0} in_s && /plan-gate/{found=1} END{
+awk '/^## Subagent session handshake/{in_s=1} /^## Subagent context receipt/{in_s=0} in_s && /\| *Dispatch mode *\| *plan-gate *\|/{found=1} END{
   if (found) print "OK: Dispatch mode plan-gate in subagent handshake";
   else print "FAIL: Dispatch mode plan-gate not found in subagent handshake"
 }' output.txt
@@ -260,7 +260,7 @@ awk '/^## /{last_h=NR} /^subagent_compliance:/{sc=NR} sc && NR>sc && /^[^[:space
 }' output.txt
 
 # Dispatch mode plan-gate must appear inside subagent handshake section
-awk '/^## Subagent session handshake/{in_s=1} /^## Subagent context receipt/{in_s=0} in_s && /plan-gate/{found=1} END{
+awk '/^## Subagent session handshake/{in_s=1} /^## Subagent context receipt/{in_s=0} in_s && /\| *Dispatch mode *\| *plan-gate *\|/{found=1} END{
   if (found) print "OK: Dispatch mode plan-gate in subagent handshake";
   else print "FAIL: Dispatch mode plan-gate not found in subagent handshake"
 }' output.txt
