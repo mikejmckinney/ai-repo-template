@@ -37,8 +37,9 @@ at the top of this file. The session handshake should be on its own line before
 any other content for parent agents; see the subagent rule below.
 
 `Dispatch mode`: dispatched subagents record the mode from the dispatch packet
-(`plan-gate` or `diff-gate`). Parent/default agents use `n/a`. Required for
-Judge — see `.context/rules/process_subagent_bootstrap.md` § "Positional output
+(`plan-gate` or `diff-gate`). Parent/default agents and non-exact-output
+subagents use `n/a`. Required for Judge and Critic — see
+`.context/rules/process_subagent_bootstrap.md` § "Positional output
 contract".
 
 `Read profile`: record the named profile used, `full` if all standard startup
