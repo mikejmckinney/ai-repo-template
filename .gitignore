@@ -43,6 +43,7 @@
 #     ignores the contents while keeping the directory itself searchable
 #     for `!file` re-includes.
 .vscode/*
+!.vscode/settings.json
 .idea/*
 
 # --- Build / dist outputs ---
