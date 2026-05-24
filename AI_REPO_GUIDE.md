@@ -144,17 +144,17 @@ bash install.sh
     ├── prompts/
     │   ├── README.md             # Prompt catalog
     │   ├── capture-postmortem.md # Postmortem capture workflow prompt
+    │   ├── expand-backlog-entry.md # Backlog → issue expansion prompt
+    │   ├── handshake-and-shape-smoke.md # No-edit smoke: handshake positional contract + response shape (4 scenarios)
+    │   ├── instruction-compliance-smoke.md # No-edit ADR-026 compliance smoke prompt
+    │   ├── judge-mode-smoke.md   # No-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection
     │   ├── mirror-postmortem.md  # Postmortem mirror/sync workflow prompt
     │   ├── multi-model-consensus-plan.md # Optional three-planner consensus prompt
     │   ├── op-issue-workflow.md  # OP end-to-end issue to merge playbook
-    │   ├── pre-push-review.md    # Critic/lint/test pre-push checklist prompt
-    │   ├── repo-onboarding.md    # Repo onboarding workflow prompt
-    │   ├── pr-resolve-all.md     # PR-review resolution procedure
-    │   ├── instruction-compliance-smoke.md # No-edit ADR-026 compliance smoke prompt
     │   ├── outcome-validation-smoke.md # No-edit Judge/Critic outcome-theater smoke prompt
-    │   ├── judge-mode-smoke.md       # No-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection
-    │   ├── handshake-and-shape-smoke.md  # No-edit smoke: handshake positional contract + response shape (4 scenarios)
-    │   └── expand-backlog-entry.md # Backlog → issue expansion prompt
+    │   ├── pre-push-review.md    # Critic/lint/test pre-push checklist prompt
+    │   ├── pr-resolve-all.md     # PR-review resolution procedure
+    │   └── repo-onboarding.md    # Repo onboarding workflow prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
         ├── ci-tests.yml
