@@ -66,9 +66,17 @@ _fix_install() {
   local _os
   _os=$(uname -s)
   if [[ "$_os" == "Darwin" ]]; then
+    if ! command -v brew &>/dev/null; then
+      printf '[fix] Cannot install %s: brew is required on macOS — install Homebrew or install %s manually\n' "$tool" "$pkg"
+      exit 1
+    fi
     printf '[fix] Installing %s via brew install %s\n' "$tool" "$pkg"
     brew install "$pkg"
   else
+    if ! command -v apt-get &>/dev/null; then
+      printf '[fix] Cannot install %s: apt-get is required on this Linux system — install %s manually\n' "$tool" "$pkg"
+      exit 1
+    fi
     if [[ "$(id -u)" == "0" ]]; then
       printf '[fix] Installing %s via apt-get install -y %s (root)\n' "$tool" "$pkg"
       apt-get install -y "$pkg"

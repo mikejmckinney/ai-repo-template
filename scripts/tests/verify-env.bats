@@ -247,7 +247,7 @@ _build_fix_env() {
   #   wc, tr — placeholder counting
   #   python3, pip, pip3 — python checks
   #   shellcheck, jq — required-tool checks (present so only rg triggers fix mode)
-  local needed=(bash dirname chmod git head grep find wc tr python3 pip pip3 shellcheck jq)
+  local needed=(bash dirname chmod git head grep find wc tr python3 pip pip3 shellcheck jq apt-get)
   local excl=("$@")
   for t in "${needed[@]}"; do
     local skip=false
@@ -289,7 +289,7 @@ _build_fix_env() {
 @test "verify-env: --fix: Linux root path invokes apt-get directly for rg" {
   stub_bin=$(_make_stub_bin)
   # Build isolated env: all needed tools except rg (apt-get stub will create it).
-  _build_fix_env "$stub_bin" rg
+  _build_fix_env "$stub_bin" rg apt-get
   _add_stub "$stub_bin" "id" 'echo "0"'
   _add_stub "$stub_bin" "uname" 'if [[ "$1" == "-s" ]]; then echo "Linux"; else /usr/bin/uname "$@"; fi'
   # apt-get stub: log invocation and create the rg stub so post-install check passes.
@@ -305,7 +305,7 @@ _build_fix_env() {
 @test "verify-env: --fix: Linux sudo path invokes sudo apt-get for rg" {
   stub_bin=$(_make_stub_bin)
   # Build isolated env: all needed tools except rg.
-  _build_fix_env "$stub_bin" rg
+  _build_fix_env "$stub_bin" rg apt-get
   _add_stub "$stub_bin" "id" 'echo "1001"'
   _add_stub "$stub_bin" "uname" 'if [[ "$1" == "-s" ]]; then echo "Linux"; else /usr/bin/uname "$@"; fi'
   # sudo stub: delegate to the actual command (apt-get in stub_bin).
@@ -333,6 +333,29 @@ _build_fix_env() {
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   [[ "$output" == *"brew install ripgrep"* ]]
   [ "$status" -eq 0 ]
+}
+
+@test "verify-env: --fix: macOS without brew prints advisory" {
+  stub_bin=$(_make_stub_bin)
+  _build_fix_env "$stub_bin" rg brew
+  _add_stub "$stub_bin" "uname" 'if [[ "$1" == "-s" ]]; then echo "Darwin"; else /usr/bin/uname "$@"; fi'
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" --fix 2>&1
+  rm -rf "$stub_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [[ "$output" == *"brew is required on macOS"* ]]
+  [ "$status" -ne 0 ]
+}
+
+@test "verify-env: --fix: Linux without apt-get prints advisory" {
+  stub_bin=$(_make_stub_bin)
+  _build_fix_env "$stub_bin" rg apt-get
+  _add_stub "$stub_bin" "id" 'echo "0"'
+  _add_stub "$stub_bin" "uname" 'if [[ "$1" == "-s" ]]; then echo "Linux"; else /usr/bin/uname "$@"; fi'
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" --fix 2>&1
+  rm -rf "$stub_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [[ "$output" == *"apt-get is required on this Linux system"* ]]
+  [ "$status" -ne 0 ]
 }
 
 @test "verify-env: uname OS-branch: Darwin branch taken when uname returns Darwin" {
