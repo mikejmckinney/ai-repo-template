@@ -26,10 +26,10 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 │   ├── domain_code_quality.md # Built-in language-neutral SOLID/TDD/clean-code floor
 │   ├── process_subagent_bootstrap.md # ADR-026 dispatch packet + subagent return contract
 │   └── domain_*.md           # Add your own stack-specific rules (e.g., domain_auth.md)
-├── sessions/            # Session history and durable feedback records
+├── sessions/            # Durable retrospectives + feedback records
 │   ├── feedback_template.md # Stakeholder feedback capture template
 │   └── latest_summary.md # Durable retrospective lessons
-├── state/               # Legacy state compatibility + comment template
+├── state/               # Legacy compatibility + live comment template
 │   ├── README.md        # ADR-025 state-surface guide
 │   ├── _active.md       # Legacy/manual live-state view (may be stale)
 │   ├── coordination.md  # Legacy/manual claim board (may be stale)
