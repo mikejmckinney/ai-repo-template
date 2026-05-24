@@ -135,7 +135,6 @@ plan template's Verification section verbatim.
 > classic PAT as `BOOTSTRAP_GH_TOKEN` and use the `GIT_ASKPASS` + `-c
 > credential.helper=` bypass shown in `scripts/sandbox-bootstrap.sh`
 > Step 3 (mirror push), or run `gh auth login` with that token first.
-
 > **Portability note**: examples below reference `$SANDBOX_REPO` (set
 > during the bootstrap above as `<owner>/<repo>-sandbox`). Either keep
 > that variable exported in your working shell, or substitute the
@@ -326,7 +325,6 @@ The matrix in `agent-pipeline.md` is authoritative; in practice:
 If you're unsure, run `bash scripts/verify-pr.sh` locally — it will
 print the detected class and tell you whether the sandbox playbook
 applies.
-
 
 ## Sandbox Doctor (`diag-sandbox.sh`)
 
