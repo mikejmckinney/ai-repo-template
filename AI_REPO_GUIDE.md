@@ -77,7 +77,7 @@ bash install.sh
 │   ├── FAQ.md                # Common questions
 │   ├── smoke-a.md            # Smoke test scenario A
 │   ├── smoke-e.md            # Smoke test scenario E
-│   ├── decisions/            # Architecture Decision Records (adr-001 … adr-010, adr-template)
+│   ├── decisions/            # Architecture Decision Records, index, and template
 │   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, design-patterns* including concurrency/data/integration splits, multi-agent-coordination, multi-model-consensus, optional-skills)
 │   ├── postmortems/          # Postmortems (template + project-specific)
 │   ├── reference/            # Specs, external docs
@@ -96,9 +96,9 @@ bash install.sh
 │   ├── setup/                # Numbered setup.sh modules (issue #255 Phase 4c)
 │   │   ├── README.md
 │   │   └── <NN>-*.sh         # Sourced by scripts/setup.sh in lexical order
-│   ├── tests/                # Bats test suite (issue #255 Phase 4b)
+│   ├── tests/                # Bats test suite for script checks and fixtures
 │   │   ├── README.md
-│   │   └── *.bats            # One file per concern; wraps legacy test-*.sh
+│   │   └── *.bats            # One file per concern; current script tests run via bats
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── verify-pr.sh          # Plan-template Change-class classifier (issue #227, ADR-016)
@@ -110,10 +110,7 @@ bash install.sh
 │   ├── parse-ownership-table.sh      # Ownership-table parser used by workflows
 │   ├── pr-iteration-stats.sh         # Rolling PR review-loop metrics (issue #229)
 │   ├── pr-resolve-all-poll.sh        # Pre-#321 settle-window poll helper for pr-resolve-all (issue #326)
-│   ├── lint-shell-conventions.sh     # Project-specific shell rules (RULE-01/02, issue #229)
-│   ├── test-*.sh             # Unit tests for the helper scripts above
-│   └── lib/
-│       └── jq/               # Extracted jq filters + fixture pairs (issue #229 Phase 1.5b)
+│   └── lint-shell-conventions.sh     # Project-specific shell rules (RULE-01/02, issue #229)
 │
 ├── config/                   # Deployment config templates (see table below)
 │
