@@ -210,11 +210,11 @@ bash install.sh
 | `.context/rules/process_subagent_bootstrap.md` | ADR-026 parent dispatch packet, subagent startup order, and `subagent_compliance` return contract |
 | `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP8`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
 | Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025). May embed an optional `opportunity_notes` YAML block (v1.2; ADR-027) for out-of-scope improvement notes — see `docs/compliance_schemas.md` § "agent-state:v1". |
+| `.context/sessions/feedback_template.md` | Stakeholder feedback capture template |
+| `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
+| `.context/state/_active.md` | Legacy manual active-task view; may be stale |
 | `.context/state/agent_state_comment_template.md` | Copy/paste template for live coordination comments |
 | `.context/state/coordination.md` | Legacy manual claim board / compatibility view; may be stale |
-| `.context/sessions/feedback_template.md` | Stakeholder feedback capture template |
-| `.context/state/_active.md` | Legacy manual active-task view; may be stale |
-| `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
 | `.context/vision/` | Mockups and architecture diagrams |
 
 ### Prompts (user-triggered, not auto-loaded)
@@ -231,8 +231,8 @@ bash install.sh
 | `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
 | `.github/prompts/op-issue-workflow.md` | Parent Orchestrator issue-to-merge playbook for the default agent |
 | `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
-| `.github/prompts/pre-push-review.md` | Run Critic + lint + `./test.sh` against the working-tree diff before push on non-trivial changes |
 | `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
+| `.github/prompts/pre-push-review.md` | Run Critic + lint + `./test.sh` against the working-tree diff before push on non-trivial changes |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
 ### Compliance Contracts
@@ -247,7 +247,7 @@ bash install.sh
 
 | File | Purpose |
 |------|---------|
-| `install.sh` | Runs on Codespace start; installs extensions, copies prompts |
+| `install.sh` | Runs on Codespace start; installs extensions and copies the multi-agent kit / prompt files into the workspace without cloning the full template repo |
 | `test.sh` | Template-integrity entry point (see Verification Commands below for live check count). Thin orchestrator (~95 lines) that sources `scripts/checks/[0-9][0-9][0-9]-*.sh` modules (3-digit zero-padded prefix so lexical sort matches numeric order) (issue #255 Phase 4d) |
 | `scripts/checks/*.sh` | Per-concern check modules (issue #255 Phase 4d): structural file checks, content/invariant checks, ADR/phase invariants, and parser unit-test smokes. See `scripts/checks/README.md` for the convention and how to add a new module. |
 | `scripts/setup.sh` | First-run project customization helper. Thin orchestrator that sources `scripts/setup/[0-9][0-9]-*.sh` modules in lexical order (issue #255 Phase 4c) |
