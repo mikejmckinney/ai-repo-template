@@ -29,10 +29,22 @@ unset _arg
 
 # Static fix allowlist: only these three tools are eligible for --fix
 # remediation. Expansion requires a PR updating this list and the plan.
-declare -A _FIX_ALLOWLIST
-_FIX_ALLOWLIST[rg]="ripgrep"
-_FIX_ALLOWLIST[shellcheck]="shellcheck"
-_FIX_ALLOWLIST[jq]="jq"
+_fix_package_for_tool() {
+  case "$1" in
+    rg)
+      printf '%s\n' "ripgrep"
+      ;;
+    shellcheck)
+      printf '%s\n' "shellcheck"
+      ;;
+    jq)
+      printf '%s\n' "jq"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
 
 # Repo-required tools checked on every run.
 _REQUIRED_TOOLS=(rg shellcheck jq)
@@ -98,16 +110,16 @@ for _tool in "${_REQUIRED_TOOLS[@]}"; do
     pass "$_tool is installed"
   else
     if [[ "$_FIX_MODE" == "true" ]]; then
-      if [[ -v "_FIX_ALLOWLIST[$_tool]" ]]; then
-        _fix_install "$_tool" "${_FIX_ALLOWLIST[$_tool]}"
+      if _pkg=$(_fix_package_for_tool "$_tool"); then
+        _fix_install "$_tool" "$_pkg"
+        unset _pkg
         if command -v "$_tool" &>/dev/null; then
           pass "$_tool installed successfully via --fix"
         else
           fail "$_tool install attempted but tool still not found"
         fi
       else
-        printf '[fix] %s is not on the fix allowlist — install it manually
-' "$_tool"
+        printf '[fix] %s is not on the fix allowlist — install it manually\n' "$_tool"
         exit 1
       fi
     else
