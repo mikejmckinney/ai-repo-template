@@ -15,7 +15,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 
 ## Directory Structure
 
-```
+```text
 .context/
 ├── 00_INDEX.md          # This file - start here (The Map)
 ├── backlog.yaml         # Machine-readable task list dispatched into issues

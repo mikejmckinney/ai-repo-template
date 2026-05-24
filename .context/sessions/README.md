@@ -3,6 +3,7 @@
 > **Purpose**: Preserve durable retrospective lessons from previous coding sessions so future agents do not repeat mistakes.
 >
 > **Distinction from live state (ADR-025)**:
+>
 > - GitHub issue/PR + latest `agent-state:v1` comment = live coordination baton.
 > - `sessions/` = what shipped, what was harder than expected, and what generalizes.
 
@@ -12,7 +13,7 @@
 
 `feedback_template.md` is the durable starter for optional stakeholder-review notes. Copy it to `.context/sessions/feedback_<iteration-or-feature>.md` when that path is used.
 
-```
+```text
 sessions/
 ├── README.md                  # This file
 ├── feedback_template.md       # Optional stakeholder feedback starter

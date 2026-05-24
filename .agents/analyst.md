@@ -67,7 +67,7 @@ responses with `Role receipt v<role_contract_version> — analyst` and record
 
 ## Output Format
 
-```
+```text
 ANALYSIS: <short title>
 
 PROBLEM STATEMENT (2-3 sentences):
@@ -181,7 +181,7 @@ each.
 Post the report as a comment on the issue before Architect starts work. Use
 this exact template:
 
-```
+```text
 ## 🔬 Analyst Pre-Flight Report
 
 **Prompt file:** `<path>` (or `N/A — ad-hoc issue` for ADR-014 triggers)

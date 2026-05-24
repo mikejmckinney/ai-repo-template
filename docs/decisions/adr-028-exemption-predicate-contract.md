@@ -17,8 +17,8 @@ This ADR delivers (a) the predicate library
 `exemption_label_appliers.yaml`, `adr_exemption_registry.yaml`), and
 (c) the Judge attestation header from §A2. Live-PR CI validation that
 fetches `parent_compliance.exemptions[]` from open PR bodies and invokes
-the predicates against them is a deliberate follow-up tracked in issue
-#350. Until that follow-up lands, enforcement is **judge-mediated at
+the predicates against them is a deliberate follow-up tracked in issue #350.
+Until that follow-up lands, enforcement is **judge-mediated at
 review time** (Judge reads the exemption claim against ADR-028 by hand
 and REQUEST_CHANGES on mismatch) and **library-mediated for in-repo
 fixtures only** (the predicate library validates the four `kind` values
@@ -124,7 +124,7 @@ The regex anchors on two markdown headings/lines:
 1. An H2 heading whose text is exactly `Judge — DECISION` (em-dash, single
    space either side).
 2. After zero or more blank lines, a line beginning with
-   `DECISION: APPROVE WITH EXEMPTION — ` (em-dash) followed by a
+  `DECISION: APPROVE WITH EXEMPTION —` (em-dash) followed by a
    non-empty reason string.
 
 The H2 line is the contract. There is no regex-only fallback that scans
@@ -409,11 +409,13 @@ them so future ADRs can address them if a real exploit materializes:
 ## Options Considered
 
 ### Option 1: Free-form prose attestation (status quo)
+
 - **Pros**: Zero implementation cost; flexible.
 - **Cons**: Honor-system; every gate is bypassable by typing "exempt";
   no audit trail beyond the comment body.
 
 ### Option 2: Closed taxonomy with machine-checkable predicates (chosen)
+
 - **Pros**: Validator can mechanically prove or reject every exemption
   claim; closes the four RCs from issue #349; audit trail is the three
   registry files plus the Judge comment.
@@ -421,6 +423,7 @@ them so future ADRs can address them if a real exploit materializes:
   require an ADR amendment.
 
 ### Option 3: Forbid exemptions entirely
+
 - **Pros**: Maximally strict; nothing to validate.
 - **Cons**: Real PRs legitimately need to skip gates (pure-docs PRs,
   shared procedural prompts, ≤20 LOC OP direct-implementation per

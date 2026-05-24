@@ -51,7 +51,7 @@ than papering over it.
 
 Add a line to your PR description like:
 
-```
+```text
 AI_REPO_GUIDE.md: no changes required (only edited a single ADR; layout
 and commands unchanged)
 ```
