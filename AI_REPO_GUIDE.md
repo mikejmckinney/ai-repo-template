@@ -136,11 +136,19 @@ bash install.sh
     ├── copilot-instructions.md   # Pointer to AGENTS.md (auto-read by Copilot)
     ├── pull_request_template.md  # Default PR body skeleton (Plan pointer [advisory] + Doc-sync checklist + ADR-029 Sandbox dogfood evidence section required)
     ├── agents/                   # Copilot SDK overlays: 10 canonical roles + 3 consensus candidates
-    │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
-    │   ├── judge.agent.md, pm.agent.md, frontend.agent.md,
-    │   ├── backend.agent.md, qa.agent.md, devops.agent.md,
-    │   ├── docs.agent.md,
-    │   └── consensus-candidate-claude.agent.md, consensus-candidate-gemini.agent.md, consensus-candidate-gpt.agent.md
+    │   ├── analyst.agent.md
+    │   ├── architect.agent.md
+    │   ├── critic.agent.md
+    │   ├── judge.agent.md
+    │   ├── pm.agent.md
+    │   ├── frontend.agent.md
+    │   ├── backend.agent.md
+    │   ├── qa.agent.md
+    │   ├── devops.agent.md
+    │   ├── docs.agent.md
+    │   ├── consensus-candidate-claude.agent.md
+    │   ├── consensus-candidate-gemini.agent.md
+    │   └── consensus-candidate-gpt.agent.md
     ├── prompts/
     │   ├── README.md             # Prompt catalog
     │   ├── capture-postmortem.md # Postmortem capture workflow prompt

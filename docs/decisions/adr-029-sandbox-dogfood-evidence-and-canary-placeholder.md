@@ -20,10 +20,10 @@ Issue #349 surfaced two related failure modes:
    `exemption_reason` field on `plan_gate`/`diff_gate` allowed an agent to
    declare a gate satisfied by writing free-form prose into its own
    compliance block — a textual self-attestation with no external anchor.
-  An earlier `external_anchor` exemption-predicate design
-  (label-applied / approver-quorum / etc.) added complexity without
-  closing the underlying loophole: the schema still let the *author*
-  assert satisfaction of the predicate.
+    An earlier `external_anchor` exemption-predicate design
+    (label-applied / approver-quorum / etc.) added complexity without
+    closing the underlying loophole: the schema still let the *author*
+    assert satisfaction of the predicate.
 2. **AGENTS.md canary drift in example YAMLs.** Eight code blocks in
    `docs/compliance_schemas.md` and ~45 lines across
    `scripts/tests/fixtures/compliance/**/*.yml` hardcoded the numeric
