@@ -75,6 +75,7 @@ For the end-to-end issue→merge walkthrough, follow [`.github/prompts/op-issue-
 ## Role selection (multi-agent workflow)
 
 This template supports parallel role-specialized agents. Before editing any file:
+
 1. Identify your role (or ask the user which role to adopt). Canonical role definitions live in [`.agents/`](../../.agents/) (platform-agnostic, ADR-023) — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs. Each role has thin platform overlays in [`.github/agents/<role>.agent.md`](../../.github/agents/) (Copilot SDK) and [`.claude/agents/<role>.md`](../../.claude/agents/) (Claude Code) that point back to the canonical.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
 3. Read the assigned GitHub issue, linked PR (if any), latest `agent-state:v1` comment, and labels to see active claims before editing. Repo-local `_active.md` / `coordination.md` files are legacy compatibility views after ADR-025, not the primary live-state source.
