@@ -69,6 +69,36 @@ _assert_no_mutations() {
   [ "$status" -eq 0 ]
 }
 
+@test "diag-sandbox: missing gh exits 1 with explicit error" {
+  _isolated_bin=$(mktemp -d "${TMPDIR:-/tmp}/diag-iso-XXXXXX")
+  for _t in bash dirname; do
+    _rp=$(command -v "$_t" 2>/dev/null || true)
+    [[ -n "$_rp" ]] && ln -sf "$_rp" "$_isolated_bin/$_t" 2>/dev/null || true
+  done
+
+  run env PATH="$_isolated_bin" bash "$SCRIPT" 2>&1
+  rm -rf "$_isolated_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"gh is required but not installed"* ]]
+}
+
+@test "diag-sandbox: missing git exits 1 with explicit error" {
+  _isolated_bin=$(mktemp -d "${TMPDIR:-/tmp}/diag-iso-XXXXXX")
+  for _t in bash dirname; do
+    _rp=$(command -v "$_t" 2>/dev/null || true)
+    [[ -n "$_rp" ]] && ln -sf "$_rp" "$_isolated_bin/$_t" 2>/dev/null || true
+  done
+  printf '#!/usr/bin/env bash\nexit 0\n' > "$_isolated_bin/gh"
+  chmod +x "$_isolated_bin/gh"
+
+  run env PATH="$_isolated_bin" bash "$SCRIPT" 2>&1
+  rm -rf "$_isolated_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"git is required but not installed"* ]]
+}
+
 @test "diag-sandbox: Codespaces GITHUB_TOKEN auth-source detected and warns" {
   # Mock gh to report GITHUB_TOKEN auth source.
   _add_stub "gh" \

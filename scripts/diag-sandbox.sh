@@ -28,6 +28,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/logging.sh
 source "$SCRIPT_DIR/lib/logging.sh"
 
+require_tool() {
+  local tool="$1"
+  if ! command -v "$tool" &>/dev/null; then
+    log_error "$tool is required but not installed"
+    exit 1
+  fi
+}
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -39,6 +47,9 @@ echo "========================================"
 echo "Sandbox Doctor"
 echo "========================================"
 echo ""
+
+require_tool gh
+require_tool git
 
 # ---------------------------------------------------------------------------
 # 1. Auth-source detection
