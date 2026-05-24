@@ -30,6 +30,7 @@ DOCS_FILES=(
   "docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md"
   "docs/decisions/adr-026-compliance-contracts.md"
   "docs/decisions/adr-027-opportunity-feedback-channel.md"
+  "docs/decisions/adr-030-feedback-template-relocation.md"
   "docs/decisions/adr-001-context-pack-structure.md"
   "docs/decisions/adr-002-agents-md-ownership.md"
   "docs/decisions/adr-003-claude-code-subagent-registration.md"
