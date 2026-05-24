@@ -24,6 +24,7 @@ DOCS_FILES=(
   "docs/guides/multi-agent-coordination.md"
   "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
+  "docs/guides/sandbox-verification.md"
   "docs/decisions/adr-001-context-pack-structure.md"
   "docs/decisions/adr-002-agents-md-ownership.md"
   "docs/decisions/adr-003-claude-code-subagent-registration.md"
