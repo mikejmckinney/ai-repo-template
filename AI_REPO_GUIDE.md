@@ -194,6 +194,14 @@ bash install.sh
 | `.agents/<role>.md` | Multi-tool (canonical) | Platform-agnostic role definition (responsibilities, Do/Don't, output format) per ADR-023 — read by every overlay above |
 | `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template for ADR-026 `role_contract_version` and `subagent_compliance` return guidance; not a dispatchable role |
 
+### Root Docs and Workflow Files
+
+| File | Tool/Platform | Purpose |
+|------|--------------|---------|
+| `README.md` | Humans + AI agents | User-facing repository overview |
+| `Makefile` | `make` | Opt-in workflow targets (currently `make closeout`) |
+| `requirements.txt` | Python tooling | Dependency pin for local validation helpers |
+
 ### Context Pack (project memory)
 
 | File | Purpose |
@@ -231,8 +239,8 @@ bash install.sh
 | `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
 | `.github/prompts/op-issue-workflow.md` | Parent Orchestrator issue-to-merge playbook for the default agent |
 | `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
-| `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
 | `.github/prompts/pre-push-review.md` | Run Critic + lint + `./test.sh` against the working-tree diff before push on non-trivial changes |
+| `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
 ### Compliance Contracts
