@@ -40,8 +40,11 @@ bash install.sh
 ├── AGENTS.md                 # Root agent instructions (always read first)
 ├── AGENT.md                  # Deprecated redirect to AGENTS.md
 ├── CLAUDE.md                 # Claude Code native memory pointer to AGENTS.md
+├── GEMINI.md                 # Gemini Codespace onboarding pointer into AI_REPO_GUIDE.md
+├── Makefile                  # Opt-in workflow targets (currently `make closeout`)
 ├── README.md                 # User-facing documentation
 ├── install.sh                # Codespace bootstrap script
+├── requirements.txt          # Python dependency pin for local validation helpers
 ├── test.sh                   # Verification script
 │
 ├── .context/                 # Project context (canonical truth)
@@ -115,8 +118,13 @@ bash install.sh
 │
 ├── config/                   # Deployment config templates (see table below)
 │
+├── .agents/                  # Canonical role contracts and shared definitions
+│   ├── README.md             # Canonical/overlay split rationale
+│   ├── _TEMPLATE.md          # Canonical role-contract template
+│   └── <role>.md             # 10 canonical role definitions used by all overlays
+│
 ├── .claude/
-│   └── agents/               # Claude Code subagent registry (10 mirrors of .github/agents/, see ADR-003)
+│   └── agents/               # Claude Code subagent registry for the 10 canonical roles (see ADR-003)
 ├── .cursor/
 │   └── BUGBOT.md             # Cursor Bugbot PR review rules
 ├── .gemini/
@@ -127,13 +135,19 @@ bash install.sh
 └── .github/
     ├── copilot-instructions.md   # Pointer to AGENTS.md (auto-read by Copilot)
     ├── pull_request_template.md  # Default PR body skeleton (Plan pointer [advisory] + Doc-sync checklist + ADR-029 Sandbox dogfood evidence section required)
-    ├── agents/                   # 10 role-specialized agent files
+    ├── agents/                   # Copilot SDK overlays: 10 canonical roles + 3 consensus candidates
     │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
     │   ├── judge.agent.md, pm.agent.md, frontend.agent.md,
     │   ├── backend.agent.md, qa.agent.md, devops.agent.md,
-    │   └── docs.agent.md
+    │   ├── docs.agent.md,
+    │   └── consensus-candidate-claude.agent.md, consensus-candidate-gemini.agent.md, consensus-candidate-gpt.agent.md
     ├── prompts/
     │   ├── README.md             # Prompt catalog
+    │   ├── capture-postmortem.md # Postmortem capture workflow prompt
+    │   ├── mirror-postmortem.md  # Postmortem mirror/sync workflow prompt
+    │   ├── multi-model-consensus-plan.md # Optional three-planner consensus prompt
+    │   ├── op-issue-workflow.md  # OP end-to-end issue to merge playbook
+    │   ├── pre-push-review.md    # Critic/lint/test pre-push checklist prompt
     │   ├── repo-onboarding.md    # Repo onboarding workflow prompt
     │   ├── pr-resolve-all.md     # PR-review resolution procedure
     │   ├── instruction-compliance-smoke.md # No-edit ADR-026 compliance smoke prompt
@@ -170,6 +184,7 @@ bash install.sh
 |------|--------------|---------|
 | `AGENTS.md` | Most AI tools | Root instructions, points to this file |
 | `CLAUDE.md` | Claude Code | Native memory-file pointer to AGENTS.md |
+| `GEMINI.md` | Gemini Codespace | Native onboarding pointer into AI_REPO_GUIDE.md |
 | `.github/copilot-instructions.md` | GitHub Copilot | Pointer to AGENTS.md + Copilot-specific rules (e.g., `@copilot follow`) |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |
@@ -183,6 +198,9 @@ bash install.sh
 | `.github/agents/qa.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for QA (frontmatter only) |
 | `.github/agents/devops.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for DevOps (frontmatter only) |
 | `.github/agents/docs.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Docs (frontmatter only) |
+| `.github/agents/consensus-candidate-claude.agent.md` | GitHub Copilot SDK | Copilot-only consensus-planning candidate pinned to a Claude model for `multi-model-consensus-plan.md` |
+| `.github/agents/consensus-candidate-gemini.agent.md` | GitHub Copilot SDK | Copilot-only consensus-planning candidate pinned to a Gemini model for `multi-model-consensus-plan.md` |
+| `.github/agents/consensus-candidate-gpt.agent.md` | GitHub Copilot SDK | Copilot-only consensus-planning candidate pinned to a GPT model for `multi-model-consensus-plan.md` |
 | `.claude/agents/*.md` | Claude Code | Claude Code subagent registration overlays (frontmatter only) |
 | `.agents/<role>.md` | Multi-tool (canonical) | Platform-agnostic role definition (responsibilities, Do/Don't, output format) per ADR-023 — read by every overlay above |
 | `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template for ADR-026 `role_contract_version` and `subagent_compliance` return guidance; not a dispatchable role |
@@ -214,12 +232,19 @@ bash install.sh
 
 | File | Purpose |
 |------|---------|
-| `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
-| `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
-| `.github/prompts/instruction-compliance-smoke.md` | No-edit smoke prompt for startup pointer loading, role-dispatch reasoning, and ADR-026 evidence shape |
-| `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
-| `.github/prompts/judge-mode-smoke.md` | No-edit smoke prompt: Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance |
+| `.github/prompts/README.md` | Prompt catalog and usage notes |
+| `.github/prompts/capture-postmortem.md` | Capture a postmortem from a completed issue/PR into the docs postmortem workflow |
+| `.github/prompts/expand-backlog-entry.md` | Expand a backlog entry into an issue-ready task description |
 | `.github/prompts/handshake-and-shape-smoke.md` | No-edit smoke prompt: handshake positional contract and response-shape verification (parent vs subagent, Judge/Critic exact-output first-line, receipt-section placement — 4 scenarios) |
+| `.github/prompts/instruction-compliance-smoke.md` | No-edit smoke prompt for startup pointer loading, role-dispatch reasoning, and ADR-026 evidence shape |
+| `.github/prompts/judge-mode-smoke.md` | No-edit smoke prompt: Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance |
+| `.github/prompts/mirror-postmortem.md` | Mirror a postmortem into the repo's postmortem surfaces after capture/review |
+| `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
+| `.github/prompts/op-issue-workflow.md` | Parent Orchestrator issue-to-merge playbook for the default agent |
+| `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
+| `.github/prompts/pre-push-review.md` | Run Critic + lint + `./test.sh` against the working-tree diff before push on non-trivial changes |
+| `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
+| `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
 ### Compliance Contracts
 
