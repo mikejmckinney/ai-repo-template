@@ -188,19 +188,8 @@ bash install.sh
 | `.github/copilot-instructions.md` | GitHub Copilot | Pointer to AGENTS.md + Copilot-specific rules (e.g., `@copilot follow`) |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |
-| `.github/agents/judge.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Judge (frontmatter only) |
-| `.github/agents/critic.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Critic (frontmatter only) |
-| `.github/agents/architect.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Architect (frontmatter only) |
-| `.github/agents/analyst.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Analyst (frontmatter only) |
-| `.github/agents/pm.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for PM (frontmatter only) |
-| `.github/agents/frontend.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Frontend (frontmatter only) |
-| `.github/agents/backend.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Backend (frontmatter only) |
-| `.github/agents/qa.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for QA (frontmatter only) |
-| `.github/agents/devops.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for DevOps (frontmatter only) |
-| `.github/agents/docs.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Docs (frontmatter only) |
-| `.github/agents/consensus-candidate-claude.agent.md` | GitHub Copilot SDK | Copilot-only consensus-planning candidate pinned to a Claude model for `multi-model-consensus-plan.md` |
-| `.github/agents/consensus-candidate-gemini.agent.md` | GitHub Copilot SDK | Copilot-only consensus-planning candidate pinned to a Gemini model for `multi-model-consensus-plan.md` |
-| `.github/agents/consensus-candidate-gpt.agent.md` | GitHub Copilot SDK | Copilot-only consensus-planning candidate pinned to a GPT model for `multi-model-consensus-plan.md` |
+| `.github/agents/{judge,critic,architect,analyst,pm,frontend,backend,qa,devops,docs}.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlays for the 10 canonical repo roles (frontmatter only) |
+| `.github/agents/consensus-candidate-*.agent.md` | GitHub Copilot SDK | Copilot-only consensus-planning candidate overlays pinned to Claude, Gemini, and GPT models for `multi-model-consensus-plan.md` |
 | `.claude/agents/*.md` | Claude Code | Claude Code subagent registration overlays (frontmatter only) |
 | `.agents/<role>.md` | Multi-tool (canonical) | Platform-agnostic role definition (responsibilities, Do/Don't, output format) per ADR-023 — read by every overlay above |
 | `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template for ADR-026 `role_contract_version` and `subagent_compliance` return guidance; not a dispatchable role |
