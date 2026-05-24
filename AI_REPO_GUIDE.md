@@ -49,13 +49,14 @@ bash install.sh
 │   ├── backlog.yaml          # Machine-readable task list (dispatched into issues)
 │   ├── backlog.schema.json   # JSON Schema for backlog.yaml
 │   ├── roadmap.md            # Phase-by-phase plan
-│   ├── rules/                # Immutable domain constraints
+│   ├── rules/                # Canonical domain constraints + process rules
 │   │   ├── README.md
 │   │   ├── agent_ownership.md
 │   │   ├── domain_code_quality.md
 │   │   ├── process_doc_maintenance.md
 │   │   ├── process_opportunity_feedback.md
 │   │   ├── process_subagent_bootstrap.md
+│   │   ├── process_*.md          # Additional process rules live here (role selection, gates, model tier, session state, etc.)
 │   │   └── repo_orchestration_patterns.md
 │   ├── sessions/             # Durable retrospectives + feedback records
 │   │   ├── README.md
