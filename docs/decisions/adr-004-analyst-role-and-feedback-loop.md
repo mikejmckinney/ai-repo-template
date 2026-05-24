@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-025 and ADR-030)
+Accepted (superseded in part by ADR-025)
 
 ## Date
 
@@ -47,7 +47,7 @@ A new state `stakeholder_review` sits between `merged` and the next iteration's 
 
 PM decides whether a merged task enters stakeholder review or goes straight to done. `stakeholder_review` is terminal for the original task — once feedback is captured, the live state is closed out. Any follow-up work becomes a new GitHub issue or comment thread routed to Analyst (if assumptions changed) or Architect (if design feedback only). Small fixes and maintenance tasks typically skip this state.
 
-A feedback template (`.context/state/feedback_template.md`, relocated to `.context/sessions/feedback_template.md` by ADR-030) provides structure for capturing stakeholder reactions, requested changes, new requirements, and assumption changes.
+A feedback template (`.context/state/feedback_template.md`) provides structure for capturing stakeholder reactions, requested changes, new requirements, and assumption changes.
 
 ## Options Considered
 
@@ -96,7 +96,7 @@ A feedback template (`.context/state/feedback_template.md`, relocated to `.conte
 
 - [x] Create `.github/agents/analyst.agent.md` and `.claude/agents/analyst.md`
 - [x] Create `docs/research/.gitkeep`
-- [x] Create `.context/state/feedback_template.md` (relocated to `.context/sessions/feedback_template.md` by ADR-030)
+- [x] Create `.context/state/feedback_template.md`
 - [x] Update `.context/rules/agent_ownership.md` — add Analyst row
 - [x] Update `.context/state/coordination.md` — add `stakeholder_review` state
 - [x] Update `docs/guides/multi-agent-coordination.md` — roles, flow, dispatch
@@ -112,4 +112,3 @@ A feedback template (`.context/state/feedback_template.md`, relocated to `.conte
 - ADR-003 — Claude Code subagent registration (pattern for adding new roles)
 - `docs/guides/multi-agent-coordination.md` — pipeline documentation
 - `.context/rules/agent_ownership.md` — ownership map
-- ADR-030 — feedback template relocation (path-only partial supersession)

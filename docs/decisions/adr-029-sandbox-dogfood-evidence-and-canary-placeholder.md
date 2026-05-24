@@ -4,7 +4,7 @@
 
 Accepted
 
-Supersedes ADR-028 in full. Narrows ADR-021 §"Per-file cadence bump" scope.
+Narrows ADR-021 §"Per-file cadence bump" scope.
 Overrides `docs/compliance_schemas.md` §"Schema versioning" one-cycle
 backward-compat default for the Phase C migrations recorded in this ADR.
 
@@ -20,10 +20,10 @@ Issue #349 surfaced two related failure modes:
    `exemption_reason` field on `plan_gate`/`diff_gate` allowed an agent to
    declare a gate satisfied by writing free-form prose into its own
    compliance block — a textual self-attestation with no external anchor.
-   ADR-028 attempted to repair this with an `external_anchor` exemption
-   predicate (label-applied / approver-quorum / etc.). On reconsideration
-   that predicate added complexity without closing the underlying loophole:
-   the schema still let the *author* assert satisfaction of the predicate.
+  An earlier `external_anchor` exemption-predicate design
+  (label-applied / approver-quorum / etc.) added complexity without
+  closing the underlying loophole: the schema still let the *author*
+  assert satisfaction of the predicate.
 2. **AGENTS.md canary drift in example YAMLs.** Eight code blocks in
    `docs/compliance_schemas.md` and ~45 lines across
    `scripts/tests/fixtures/compliance/**/*.yml` hardcoded the numeric
@@ -31,10 +31,11 @@ Issue #349 surfaced two related failure modes:
    AGENTS.md bump required mechanical sed updates in unrelated files and
    was a recurring source of stale examples.
 
-Phases B–D of #349's plan removed ADR-028, replaced `exemption_reason` with
-a descriptive `gate_status: {triggered, applied}` sub-block, dropped the
-unused per-block `schema_version: 1` field, and replaced ~21 hand-rolled
-invalid YAML fixtures with a programmatic
+Phases B–D of #349's plan removed the exemption-predicate approach,
+replaced `exemption_reason` with a descriptive
+`gate_status: {triggered, applied}` sub-block, dropped the unused per-block
+`schema_version: 1` field, and replaced ~21 hand-rolled invalid YAML
+fixtures with a programmatic
 `compliance_fixture_factory.py`. This ADR records the remaining decisions
 that bind those mechanical changes together: the *behavioral* gate that
 replaces self-exemption (mandatory sandbox dogfood evidence on every PR),
@@ -207,7 +208,6 @@ list in §2 of this ADR. CI fails with a diff hint.
   dogfood evidence
 - PR #351 — this implementation
 - ADR-021 — per-file cadence bump (narrowed by §7 above)
-- ADR-028 — superseded in full by this ADR
 - ADR-016 — pre-merge verification gate (companion structural rule)
 - ADR-026 — compliance contracts (the schema this ADR's gate_status sits
   inside)

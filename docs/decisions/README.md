@@ -17,7 +17,7 @@
 | [ADR-001](./adr-001-context-pack-structure.md) | Context pack structure | Accepted (superseded in part by ADR-025) |
 | [ADR-002](./adr-002-agents-md-ownership.md) | AGENTS.md ownership | Accepted |
 | [ADR-003](./adr-003-claude-code-subagent-registration.md) | Claude Code subagent registration (two-registry design) | Accepted (superseded in part by ADR-023) |
-| [ADR-004](./adr-004-analyst-role-and-feedback-loop.md) | Analyst role + feedback loop | Accepted (superseded in part by ADR-025 and ADR-030) |
+| [ADR-004](./adr-004-analyst-role-and-feedback-loop.md) | Analyst role + feedback loop | Accepted (superseded in part by ADR-025) |
 | [ADR-005](./adr-005-analyst-preflight-gate.md) | Analyst Pre-Flight gate | Superseded in part by ADR-014 |
 | [ADR-006](./adr-006-auto-merge-opt-in-model.md) | Auto-merge opt-in model | Accepted |
 | [ADR-007](./adr-007-auto-resolve-review-threads.md) | Auto-resolve bot-authored review threads (opt-in label; Copilot-path gap tracked in #100) | Superseded by ADR-008 |
@@ -41,9 +41,7 @@
 | [ADR-025](./adr-025-github-issues-pr-comments-as-live-state.md) | GitHub Issues, PRs, comments, and labels as live agent state | Accepted |
 | [ADR-026](./adr-026-compliance-contracts.md) | Agent compliance contracts and role receipt evidence | Accepted |
 | [ADR-027](./adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel for in-scope agent observations | Accepted |
-| [ADR-028](./adr-028-exemption-predicate-contract.md) | Exemption predicate contract | Superseded by ADR-029 |
-| [ADR-029](./adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence requirement on every PR + canary placeholder convention; supersedes ADR-028 in full, narrows ADR-021 §"Per-file cadence bump" scope | Accepted |
-| [ADR-030](./adr-030-feedback-template-relocation.md) | Relocate feedback template to `.context/sessions/` | Accepted |
+| [ADR-029](./adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence requirement on every PR + canary placeholder convention; narrows ADR-021 §"Per-file cadence bump" scope | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.
