@@ -57,6 +57,13 @@ aligned. If you change one list, change the other in the same PR.
 6. If `runSubagent` is not available in the current environment, document the
    missing capability as the explicit special case and proceed monolithically.
 
+Each dispatch must resolve a concrete unresolved role-owned question or produce
+a role-owned artifact. Before calling `runSubagent`, the OP must be able to
+name the decision the dispatch will change and the expected output surface. If
+the next step is already straightforward parent execution, stop dispatching and
+do the work. Do not use subagents as scratchpads, wording micro-checks,
+confidence pings, or no-op placeholders.
+
 Treat "do not use subagents," "keep this in the default agent," or equivalent
 wording as the explicit special case requiring user instruction.
 
