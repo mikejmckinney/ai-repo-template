@@ -5,7 +5,7 @@ agent: agent
 
 # Repository Onboarding Prompt
 
-You are onboarding to an existing codebase. Your job is to build an accurate mental model of this repo BEFORE making changes, then implement the requested work with minimal, well-tested diffs.
+You are an AI agent onboarding to an existing codebase. Your job is to build an accurate mental model of this repo BEFORE making changes, identify the correct role or dispatch path for the requested work, and only implement changes when your current role owns that slice.
 
 ## Core Principles
 
@@ -16,7 +16,7 @@ You are onboarding to an existing codebase. Your job is to build an accurate men
 
 ---
 
-# Phase 0: Template Bootstrap (skip if not a fresh template clone)
+## Phase 0: Template Bootstrap (skip if not a fresh template clone)
 
 > **Starting a new project from this template?** Read the
 > [Template vs. Fork guidance](../../AI_REPO_GUIDE.md#template-vs-fork-choosing-how-to-start)
@@ -108,7 +108,7 @@ When Phase 0 work is complete, continue to Phase 1.
 
 ---
 
-# Phase 1: Build Context (Repo Brief)
+## Phase 1: Build Context (Repo Brief)
 
 ## Step 1.0: Quick context check (always run first)
 
@@ -150,7 +150,6 @@ WARN (e.g. `Unstable: verify-env.sh exited 1 — missing PYTHONPATH`, or
 If any of these files are missing, note it explicitly — do not invent
 content, and do not block on it. Continue with the rest of Phase 1.
 
-
 ## Step 1.1: Read Key Documentation
 
 - [ ] `README.md`
@@ -164,7 +163,8 @@ content, and do not block on it. Continue with the rest of Phase 1.
 Use search and file exploration (not linear reading) to identify:
 
 ### Directory Structure
-```
+
+```text
 Top-level directories and their purposes:
 ├── src/           # <purpose>
 ├── tests/         # <purpose>
@@ -173,11 +173,13 @@ Top-level directories and their purposes:
 ```
 
 ### Entry Points
+
 - **Web apps**: Main server file, routers, app bootstrap
 - **CLI**: Bin directory, command registry
 - **Libraries**: Public API surface, exports
 
 ### Test Infrastructure
+
 - Test framework used
 - Test file locations
 - How to run tests
@@ -238,6 +240,7 @@ Output a structured summary:
 ## Step 1.5: Create/Update AI_REPO_GUIDE.md
 
 If `/AI_REPO_GUIDE.md` does NOT exist, create it with:
+
 - Overview (what this is)
 - Quickstart (run/test commands)
 - Folder map + key entry points
@@ -280,20 +283,21 @@ implementations.
 
 ---
 
-# Phase 2: Clarify the Task
+## Phase 2: Clarify the Task
 
 Ask at most **3 targeted questions** that unblock implementation.
 
 If no questions are required, proceed to Phase 3.
 
 Examples of good questions:
+
 - "Should this change be backward compatible?"
 - "Which test file should I add tests to?"
 - "Is there an existing pattern for <X> I should follow?"
 
 ---
 
-# Phase 3: Implement
+## Phase 3: Implement
 
 ## Step 3.1: Re-read AI_REPO_GUIDE.md
 
@@ -329,6 +333,7 @@ Before making changes, provide:
 ## Step 3.4: Update AI_REPO_GUIDE.md
 
 If your changes affect:
+
 - Commands
 - File structure
 - Conventions
@@ -338,7 +343,7 @@ Update `AI_REPO_GUIDE.md` to reflect this.
 
 ---
 
-# Phase 4: Deliver
+## Phase 4: Deliver
 
 Provide:
 
@@ -368,7 +373,7 @@ Provide:
 
 ---
 
-# Verification Checklist
+## Verification Checklist
 
 Before considering the task complete:
 

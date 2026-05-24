@@ -25,14 +25,17 @@ Treat copied stakeholder-feedback records as durable session artifacts, not live
 ## Options Considered
 
 ### Option 1: Keep the template under `.context/state/`
+
 - **Pros**: No file move or follow-on path updates.
 - **Cons**: Keeps a durable feedback template in the live-state compatibility directory and preserves the current doc drift.
 
 ### Option 2: Move the template to `.context/sessions/` (chosen)
+
 - **Pros**: Aligns the template with durable feedback/session material and the ADR-025 split between live coordination and in-tree history.
 - **Cons**: Requires coordinated updates to path references and inventory checks.
 
 ### Option 3: Move the template to `docs/` or `docs/research/`
+
 - **Pros**: Keeps the template in a human-docs area.
 - **Cons**: Separates the template from the context-pack/session workflow it supports and blurs whether copied feedback records are operational notes or reference docs.
 

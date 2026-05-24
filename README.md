@@ -116,7 +116,8 @@ Run the verification script to ensure all template files are present and valid:
 ```
 
 Expected output:
-```
+
+```text
 ========================================
 Template Repository Verification
 ========================================
