@@ -12,6 +12,61 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/logging.sh"
 # shellcheck source=scripts/lib/assertions.sh
 source "$SCRIPT_DIR/lib/assertions.sh"
+# ---------------------------------------------------------------------------
+# Argument parsing and --fix mode infrastructure (issue #365)
+# ---------------------------------------------------------------------------
+_FIX_MODE=false
+for _arg in "$@"; do
+  case "$_arg" in
+    --fix) _FIX_MODE=true ;;
+    *) printf '[ERROR] Unknown option: %s\n' "$_arg" >&2; exit 1 ;;
+  esac
+done
+unset _arg
+
+# Static fix allowlist: only these three tools are eligible for --fix
+# remediation. Expansion requires a PR updating this list and the plan.
+declare -A _FIX_ALLOWLIST
+_FIX_ALLOWLIST[rg]="ripgrep"
+_FIX_ALLOWLIST[shellcheck]="shellcheck"
+_FIX_ALLOWLIST[jq]="jq"
+
+# Repo-required tools checked on every run.
+_REQUIRED_TOOLS=(rg shellcheck jq)
+
+# Test injection only: append extra tool names to _REQUIRED_TOOLS for bats
+# fixture coverage of the non-allowlisted rejection path. Leave unset in
+# production use.
+if [[ -n "${_VERIFY_ENV_EXTRA_REQUIRED_TOOLS:-}" ]]; then
+  read -ra _extra <<< "$_VERIFY_ENV_EXTRA_REQUIRED_TOOLS"
+  _REQUIRED_TOOLS+=( "${_extra[@]}" )
+  unset _extra
+fi
+
+# Helper: attempt to install a tool via the platform package manager.
+# Logs each action to stdout. Exits non-zero if privilege is absent on
+# Linux or if the install command fails.
+_fix_install() {
+  local tool="$1" pkg="$2"
+  local _os
+  _os=$(uname -s)
+  if [[ "$_os" == "Darwin" ]]; then
+    printf '[fix] Installing %s via brew install %s\n' "$tool" "$pkg"
+    brew install "$pkg"
+  else
+    if [[ "$(id -u)" == "0" ]]; then
+      printf '[fix] Installing %s via apt-get install -y %s (root)\n' "$tool" "$pkg"
+      apt-get install -y "$pkg"
+    elif command -v sudo &>/dev/null; then
+      printf '[fix] Installing %s via sudo apt-get install -y %s\n' "$tool" "$pkg"
+      sudo apt-get install -y "$pkg"
+    else
+      printf '[fix] Cannot install %s: root or sudo required — re-run as root or grant sudo access\n' "$tool"
+      exit 1
+    fi
+  fi
+}
+
 
 echo "========================================"
 echo "Environment Verification"
@@ -32,6 +87,33 @@ else
   fail "Current directory is not a git repository"
 fi
 
+echo ""
+
+# --- Repo-required tools ---
+echo "Checking repo-required tools..."
+for _tool in "${_REQUIRED_TOOLS[@]}"; do
+  if command -v "$_tool" &>/dev/null; then
+    pass "$_tool is installed"
+  else
+    if [[ "$_FIX_MODE" == "true" ]]; then
+      if [[ -v "_FIX_ALLOWLIST[$_tool]" ]]; then
+        _fix_install "$_tool" "${_FIX_ALLOWLIST[$_tool]}"
+        if command -v "$_tool" &>/dev/null; then
+          pass "$_tool installed successfully via --fix"
+        else
+          fail "$_tool install attempted but tool still not found"
+        fi
+      else
+        printf '[fix] %s is not on the fix allowlist — install it manually
+' "$_tool"
+        exit 1
+      fi
+    else
+      fail "$_tool is not installed"
+    fi
+  fi
+done
+unset _tool
 echo ""
 
 # --- Node.js (if package.json exists) ---

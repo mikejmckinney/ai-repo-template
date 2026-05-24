@@ -69,6 +69,7 @@ REQUIRED_FILES=(
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
   "scripts/diag-hang-snapshot.sh"
+  "scripts/diag-sandbox.sh"
   "scripts/lib/compliance_schema.py"
   "scripts/validate-compliance-examples.py"
   "scripts/validate-compliance-fixtures.py"

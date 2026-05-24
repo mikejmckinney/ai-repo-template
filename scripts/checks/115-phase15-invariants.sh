@@ -95,6 +95,10 @@ echo "Running verify-env.sh fixture tests..."
 run_bats_check scripts/tests/verify-env.bats
 
 echo ""
+echo "Running sandbox doctor fixture tests..."
+run_bats_check scripts/tests/diag-sandbox.bats
+
+echo ""
 echo "Running ADR-018 multi-task _active.md smoke test..."
 run_bats_check scripts/tests/active-md-multitask.bats
 

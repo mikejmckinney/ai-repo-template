@@ -327,6 +327,66 @@ If you're unsure, run `bash scripts/verify-pr.sh` locally — it will
 print the detected class and tell you whether the sandbox playbook
 applies.
 
+
+## Sandbox Doctor (`diag-sandbox.sh`)
+
+Run `./scripts/diag-sandbox.sh` before the verification flow above whenever
+the auth state is unclear, `gh` fails unexpectedly, or sandbox `git push`
+returns a 403. It is also useful after initial bootstrap to confirm the
+sandbox remote is reachable.
+
+### Non-mutation contract
+
+`diag-sandbox.sh` makes **no writes** of any kind: no force-pushes, no branch
+creates or deletes, no remote modifications. It is safe to run at any time
+without side effects.
+
+### Auth-source behavior
+
+**Inside Codespaces** (`CODESPACES=true`): the auto-injected `GITHUB_TOKEN` is
+scoped to the current repo and typically lacks write access to the sandbox
+repo. The doctor detects this condition by inspecting `gh auth status` for the
+`(GITHUB_TOKEN)` token-source string. If found, it probes the PAT upgrade
+variables in this order: `GH_PAT`, `GH_TOKEN_PAT`, `CODESPACES_GH_PAT`,
+`GITHUB_PAT`. When a variable is set the doctor prints the upgrade command;
+otherwise it tells you which variable to set as a Codespaces user secret.
+
+If `gh` is already authenticated via a non-`GITHUB_TOKEN` source (e.g., you
+ran `gh auth login` with a PAT), the doctor reports the active identity and
+skips the PAT upgrade path.
+
+**Outside Codespaces**: the doctor reports the active `gh` identity and token
+source, and notes any PAT variable that is set (optional upgrade path). If `gh`
+is not authenticated, it prints a `gh auth login` reminder.
+
+### Sandbox remote reachability and `DIAG_GIT_TIMEOUT`
+
+The doctor resolves the remote URL from the local git config (remote name
+defaults to `sandbox`; override with `SANDBOX_REMOTE`), then probes it with a
+read-only `git ls-remote`. A timeout wrapper enforces the budget.
+
+| Env var | Default | Effect |
+|---|---|---|
+| `SANDBOX_REMOTE` | `sandbox` | Local git remote name for the sandbox |
+| `DIAG_GIT_TIMEOUT` | `10` | Seconds before the `git ls-remote` probe times out. Set to `0` to skip the timeout wrapper entirely. |
+
+If the `sandbox` remote is not configured, the doctor emits a `git remote add`
+advisory and exits 2. See [One-time setup](#one-time-setup-maintainer) above.
+
+### Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | All checks passed; sandbox is reachable with usable auth |
+| `1` | Hard failure (script logic error or auth configuration is broken) |
+| `2` | Warning: sandbox unreachable or sandbox remote not configured |
+
+### PAT variable list — maintenance anchor
+
+The probe list (`GH_PAT`, `GH_TOKEN_PAT`, `CODESPACES_GH_PAT`, `GITHUB_PAT`)
+must stay in sync with `scripts/setup/40-ensure-labels.sh` (lines 90–93).
+Both files must be updated together whenever a new PAT alias is added.
+
 ## See also
 
 - ADR-016 — Pre-merge verification gate

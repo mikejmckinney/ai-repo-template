@@ -15,6 +15,9 @@ export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-300}"
 setup_file() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   export REPO_ROOT
+  # Exported here so the new fix-mode @test blocks can reference it.
+  VERIFY_SCRIPT="$REPO_ROOT/scripts/verify-env.sh"
+  export VERIFY_SCRIPT
 }
 
 _legacy_body() {
@@ -207,4 +210,142 @@ exit 0
   printf '%s
 ' "$output" | sed 's/^/# /' >&3 || true
   [ "$status" -eq 0 ]
+}
+
+# ---------------------------------------------------------------------------
+# Fix-mode test infrastructure (issue #365)
+# ---------------------------------------------------------------------------
+# The helpers below use stub bins (fully-isolated directories used as PATH)
+# to control which tools appear installed and to mock platform commands.
+
+# Create a temp stub bin directory; prints path.
+_make_stub_bin() {
+  mktemp -d "${TMPDIR:-/tmp}/stub-XXXXXX"
+}
+
+# Write an executable stub into a dir.
+# Usage: _add_stub DIR NAME SCRIPT_BODY
+_add_stub() {
+  local dir="$1" name="$2" body="$3"
+  printf '#!/usr/bin/env bash\n%s\n' "$body" > "$dir/$name"
+  chmod +x "$dir/$name"
+}
+
+# Build a fully-isolated stub bin for fix-mode tests.
+# Symlinks every tool verify-env.sh needs to run, EXCEPT those named in
+# the remaining arguments (which should appear absent during the test).
+# The resulting directory is intended to be used as PATH="$stub_bin" (alone)
+# so that /bin and /usr/bin are not in PATH and real rg/sudo cannot be found.
+# Usage: _build_fix_env STUB_BIN [tool_to_exclude ...]
+_build_fix_env() {
+  local stub_bin="$1"; shift
+  # Full list of tools verify-env.sh (and its lib/ helpers) need:
+  #   dirname — SCRIPT_DIR computation in verify-env.sh, lib/logging.sh, lib/assertions.sh
+  #   chmod   — used inside apt-get/brew stub bodies to make the created rg stub executable
+  #   git, head — git checks
+  #   grep, find — template-placeholder scan
+  #   wc, tr — placeholder counting
+  #   python3, pip, pip3 — python checks
+  #   shellcheck, jq — required-tool checks (present so only rg triggers fix mode)
+  local needed=(bash dirname chmod git head grep find wc tr python3 pip pip3 shellcheck jq)
+  local excl=("$@")
+  for t in "${needed[@]}"; do
+    local skip=false
+    for e in "${excl[@]}"; do [[ "$t" == "$e" ]] && skip=true && break; done
+    [[ "$skip" == "true" ]] && continue
+    local rp; rp=$(command -v "$t" 2>/dev/null || true)
+    [[ -n "$rp" ]] && ln -sf "$rp" "$stub_bin/$t" 2>/dev/null || true
+  done
+}
+
+@test "verify-env: --fix: non-allowlisted tool rejected with advisory and non-zero exit" {
+  stub_bin=$(_make_stub_bin)
+  # faketool-xyz-365 is guaranteed absent from any real PATH and absent from
+  # FIX_ALLOWLIST — triggers the rejection branch.
+  run env PATH="$stub_bin:$PATH" \
+    _VERIFY_ENV_EXTRA_REQUIRED_TOOLS="faketool-xyz-365" \
+    bash "$VERIFY_SCRIPT" --fix 2>&1
+  rm -rf "$stub_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [[ "$output" == *"faketool-xyz-365 is not on the fix allowlist"* ]]
+  [ "$status" -ne 0 ]
+}
+
+@test "verify-env: --fix: Linux privilege failure (no root, no sudo) prints advisory" {
+  stub_bin=$(_make_stub_bin)
+  # Build isolated env: all needed tools except rg and sudo.
+  _build_fix_env "$stub_bin" rg sudo
+  # id stub: non-root; uname stub: Linux.  No sudo, no rg in stub_bin.
+  _add_stub "$stub_bin" "id" 'echo "1001"'
+  _add_stub "$stub_bin" "uname" 'if [[ "$1" == "-s" ]]; then echo "Linux"; else /usr/bin/uname "$@"; fi'
+  # Fully isolated PATH: real sudo at /bin/sudo and /usr/bin/sudo are hidden.
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" --fix 2>&1
+  rm -rf "$stub_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [[ "$output" == *"root or sudo required"* ]]
+  [ "$status" -ne 0 ]
+}
+
+@test "verify-env: --fix: Linux root path invokes apt-get directly for rg" {
+  stub_bin=$(_make_stub_bin)
+  # Build isolated env: all needed tools except rg (apt-get stub will create it).
+  _build_fix_env "$stub_bin" rg
+  _add_stub "$stub_bin" "id" 'echo "0"'
+  _add_stub "$stub_bin" "uname" 'if [[ "$1" == "-s" ]]; then echo "Linux"; else /usr/bin/uname "$@"; fi'
+  # apt-get stub: log invocation and create the rg stub so post-install check passes.
+  _add_stub "$stub_bin" "apt-get" \
+    'printf "[fix-stub] apt-get called: %s\n" "$*"; self_dir=$(dirname "$0"); printf "#!/bin/bash\nexit 0\n" > "$self_dir/rg"; chmod +x "$self_dir/rg"'
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" --fix 2>&1
+  rm -rf "$stub_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [[ "$output" == *"apt-get install -y ripgrep (root)"* ]]
+  [ "$status" -eq 0 ]
+}
+
+@test "verify-env: --fix: Linux sudo path invokes sudo apt-get for rg" {
+  stub_bin=$(_make_stub_bin)
+  # Build isolated env: all needed tools except rg.
+  _build_fix_env "$stub_bin" rg
+  _add_stub "$stub_bin" "id" 'echo "1001"'
+  _add_stub "$stub_bin" "uname" 'if [[ "$1" == "-s" ]]; then echo "Linux"; else /usr/bin/uname "$@"; fi'
+  # sudo stub: delegate to the actual command (apt-get in stub_bin).
+  _add_stub "$stub_bin" "sudo" 'exec "$@"'
+  # apt-get stub: log and create rg stub.
+  _add_stub "$stub_bin" "apt-get" \
+    'printf "[fix-stub] apt-get called: %s\n" "$*"; self_dir=$(dirname "$0"); printf "#!/bin/bash\nexit 0\n" > "$self_dir/rg"; chmod +x "$self_dir/rg"'
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" --fix 2>&1
+  rm -rf "$stub_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [[ "$output" == *"sudo apt-get install -y ripgrep"* ]]
+  [ "$status" -eq 0 ]
+}
+
+@test "verify-env: --fix: macOS path invokes brew install for rg" {
+  stub_bin=$(_make_stub_bin)
+  # Build isolated env: all needed tools except rg (brew stub will create it).
+  _build_fix_env "$stub_bin" rg
+  _add_stub "$stub_bin" "uname" 'if [[ "$1" == "-s" ]]; then echo "Darwin"; else /usr/bin/uname "$@"; fi'
+  # brew stub: log and create rg stub so post-install check passes.
+  _add_stub "$stub_bin" "brew" \
+    'printf "[fix-stub] brew called: %s\n" "$*"; self_dir=$(dirname "$0"); printf "#!/bin/bash\nexit 0\n" > "$self_dir/rg"; chmod +x "$self_dir/rg"'
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" --fix 2>&1
+  rm -rf "$stub_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [[ "$output" == *"brew install ripgrep"* ]]
+  [ "$status" -eq 0 ]
+}
+
+@test "verify-env: uname OS-branch: Darwin branch taken when uname returns Darwin" {
+  stub_bin=$(_make_stub_bin)
+  # Build isolated env: all needed tools except rg.
+  _build_fix_env "$stub_bin" rg
+  _add_stub "$stub_bin" "uname" 'if [[ "$1" == "-s" ]]; then echo "Darwin"; else /usr/bin/uname "$@"; fi'
+  _add_stub "$stub_bin" "brew" \
+    'printf "[fix-stub] brew called: %s\n" "$*"; self_dir=$(dirname "$0"); printf "#!/bin/bash\nexit 0\n" > "$self_dir/rg"; chmod +x "$self_dir/rg"'
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" --fix 2>&1
+  rm -rf "$stub_bin"
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  # Verify Linux apt-get path was NOT taken.
+  [[ "$output" != *"apt-get"* ]]
+  [[ "$output" == *"brew install"* ]]
 }
