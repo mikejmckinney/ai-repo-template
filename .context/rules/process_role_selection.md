@@ -57,6 +57,13 @@ aligned. If you change one list, change the other in the same PR.
 6. If `runSubagent` is not available in the current environment, document the
    missing capability as the explicit special case and proceed monolithically.
 
+Each dispatch must resolve a concrete unresolved role-owned question or produce
+a role-owned artifact. Before calling `runSubagent`, the OP must be able to
+name the decision the dispatch will change and the expected output surface. If
+the next step is already straightforward parent execution, stop dispatching and
+do the work. Do not use subagents as scratchpads, wording micro-checks,
+confidence pings, or no-op placeholders.
+
 Treat "do not use subagents," "keep this in the default agent," or equivalent
 wording as the explicit special case requiring user instruction.
 
@@ -68,6 +75,7 @@ For the end-to-end issue→merge walkthrough, follow [`.github/prompts/op-issue-
 ## Role selection (multi-agent workflow)
 
 This template supports parallel role-specialized agents. Before editing any file:
+
 1. Identify your role (or ask the user which role to adopt). Canonical role definitions live in [`.agents/`](../../.agents/) (platform-agnostic, ADR-023) — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs. Each role has thin platform overlays in [`.github/agents/<role>.agent.md`](../../.github/agents/) (Copilot SDK) and [`.claude/agents/<role>.md`](../../.claude/agents/) (Claude Code) that point back to the canonical.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
 3. Read the assigned GitHub issue, linked PR (if any), latest `agent-state:v1` comment, and labels to see active claims before editing. Repo-local `_active.md` / `coordination.md` files are legacy compatibility views after ADR-025, not the primary live-state source.

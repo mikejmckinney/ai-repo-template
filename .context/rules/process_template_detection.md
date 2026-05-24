@@ -20,4 +20,4 @@
     - `.context/state/_active.md` — clear all `## Task: <branch>` sections under the `# Active Tasks` header; keep the compatibility note as an HTML comment, the schema comment, and `TEMPLATE_PLACEHOLDER` marker until first real GitHub-connected task.
     - `.context/sessions/latest_summary.md` — replace body with a single "No sessions yet" line (keep the marker until first durable retrospective entry).
     - `.context/state/coordination.md` — clear all entries under `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and `## PM Notes`; keep the section headers, `## Lock Template`, compatibility note, and `TEMPLATE_PLACEHOLDER` marker.
-    - Keep `agent_state_comment_template.md`, `feedback_template.md`, and `README.md` in those directories. Do not recreate the removed `task_template.md` or `handoff_template.md`; ADR-025 supersedes them.
+    - Keep `agent_state_comment_template.md` and `README.md` in `.context/state/`. Keep `feedback_template.md` and `README.md` in `.context/sessions/`. Do not recreate the removed `task_template.md` or `handoff_template.md`; ADR-025 supersedes them.

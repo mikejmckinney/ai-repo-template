@@ -4,7 +4,7 @@
 # AI_REPO_GUIDE.md
 
 > **Purpose**: Canonical reference for AI agents working with this template repository.  
-> **Last verified**: 2025-01-25
+> **Last verified**: 2026-05-24
 >
 > **Note**: This file is for agents. For human documentation, see `README.md`.
 
@@ -40,8 +40,11 @@ bash install.sh
 ├── AGENTS.md                 # Root agent instructions (always read first)
 ├── AGENT.md                  # Deprecated redirect to AGENTS.md
 ├── CLAUDE.md                 # Claude Code native memory pointer to AGENTS.md
+├── GEMINI.md                 # Gemini Codespace onboarding pointer into AI_REPO_GUIDE.md
+├── Makefile                  # Opt-in workflow targets (currently `make closeout`)
 ├── README.md                 # User-facing documentation
 ├── install.sh                # Codespace bootstrap script
+├── requirements.txt          # Python dependency pin for local validation helpers
 ├── test.sh                   # Verification script
 │
 ├── .context/                 # Project context (canonical truth)
@@ -49,23 +52,24 @@ bash install.sh
 │   ├── backlog.yaml          # Machine-readable task list (dispatched into issues)
 │   ├── backlog.schema.json   # JSON Schema for backlog.yaml
 │   ├── roadmap.md            # Phase-by-phase plan
-│   ├── rules/                # Immutable domain constraints
+│   ├── rules/                # Canonical domain constraints + process rules
 │   │   ├── README.md
 │   │   ├── agent_ownership.md
 │   │   ├── domain_code_quality.md
 │   │   ├── process_doc_maintenance.md
 │   │   ├── process_opportunity_feedback.md
 │   │   ├── process_subagent_bootstrap.md
+│   │   ├── process_*.md          # Additional process rules live here (role selection, gates, model tier, session state, etc.)
 │   │   └── repo_orchestration_patterns.md
-│   ├── sessions/             # Durable retrospective lessons
+│   ├── sessions/             # Durable retrospectives + feedback records
 │   │   ├── README.md
+│   │   ├── feedback_template.md  # Stakeholder feedback template
 │   │   └── latest_summary.md
-│   ├── state/                # Legacy compatibility + comment templates
+│   ├── state/                # Legacy compatibility + live comment template
 │   │   ├── README.md
 │   │   ├── _active.md            # Legacy/manual live-state view (may be stale)
 │   │   ├── coordination.md       # Legacy/manual claim board (may be stale)
 │   │   ├── agent_state_comment_template.md # GitHub live-state comment template
-│   │   ├── feedback_template.md  # Stakeholder feedback template
 │   │   └── task_*.md             # Legacy task files only, if old branches still have them
 │   └── vision/               # Design artifacts
 │       ├── README.md
@@ -77,7 +81,7 @@ bash install.sh
 │   ├── FAQ.md                # Common questions
 │   ├── smoke-a.md            # Smoke test scenario A
 │   ├── smoke-e.md            # Smoke test scenario E
-│   ├── decisions/            # Architecture Decision Records (adr-001 … adr-010, adr-template)
+│   ├── decisions/            # Architecture Decision Records, index, and template
 │   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, design-patterns* including concurrency/data/integration splits, multi-agent-coordination, multi-model-consensus, optional-skills)
 │   ├── postmortems/          # Postmortems (template + project-specific)
 │   ├── reference/            # Specs, external docs
@@ -96,9 +100,9 @@ bash install.sh
 │   ├── setup/                # Numbered setup.sh modules (issue #255 Phase 4c)
 │   │   ├── README.md
 │   │   └── <NN>-*.sh         # Sourced by scripts/setup.sh in lexical order
-│   ├── tests/                # Bats test suite (issue #255 Phase 4b)
+│   ├── tests/                # Bats test suite for script checks and fixtures
 │   │   ├── README.md
-│   │   └── *.bats            # One file per concern; wraps legacy test-*.sh
+│   │   └── *.bats            # One file per concern; current script tests run via bats
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── verify-pr.sh          # Plan-template Change-class classifier (issue #227, ADR-016)
@@ -110,15 +114,17 @@ bash install.sh
 │   ├── parse-ownership-table.sh      # Ownership-table parser used by workflows
 │   ├── pr-iteration-stats.sh         # Rolling PR review-loop metrics (issue #229)
 │   ├── pr-resolve-all-poll.sh        # Pre-#321 settle-window poll helper for pr-resolve-all (issue #326)
-│   ├── lint-shell-conventions.sh     # Project-specific shell rules (RULE-01/02, issue #229)
-│   ├── test-*.sh             # Unit tests for the helper scripts above
-│   └── lib/
-│       └── jq/               # Extracted jq filters + fixture pairs (issue #229 Phase 1.5b)
+│   └── lint-shell-conventions.sh     # Project-specific shell rules (RULE-01/02, issue #229)
 │
 ├── config/                   # Deployment config templates (see table below)
 │
+├── .agents/                  # Canonical role contracts and shared definitions
+│   ├── README.md             # Canonical/overlay split rationale
+│   ├── _TEMPLATE.md          # Canonical role-contract template
+│   └── <role>.md             # 10 canonical role definitions used by all overlays
+│
 ├── .claude/
-│   └── agents/               # Claude Code subagent registry (10 mirrors of .github/agents/, see ADR-003)
+│   └── agents/               # Claude Code subagent registry for the 10 canonical roles (see ADR-003)
 ├── .cursor/
 │   └── BUGBOT.md             # Cursor Bugbot PR review rules
 ├── .gemini/
@@ -129,20 +135,34 @@ bash install.sh
 └── .github/
     ├── copilot-instructions.md   # Pointer to AGENTS.md (auto-read by Copilot)
     ├── pull_request_template.md  # Default PR body skeleton (Plan pointer [advisory] + Doc-sync checklist + ADR-029 Sandbox dogfood evidence section required)
-    ├── agents/                   # 10 role-specialized agent files
-    │   ├── analyst.agent.md, architect.agent.md, critic.agent.md,
-    │   ├── judge.agent.md, pm.agent.md, frontend.agent.md,
-    │   ├── backend.agent.md, qa.agent.md, devops.agent.md,
-    │   └── docs.agent.md
+    ├── agents/                   # Copilot SDK overlays: 10 canonical roles + 3 consensus candidates
+    │   ├── analyst.agent.md
+    │   ├── architect.agent.md
+    │   ├── critic.agent.md
+    │   ├── judge.agent.md
+    │   ├── pm.agent.md
+    │   ├── frontend.agent.md
+    │   ├── backend.agent.md
+    │   ├── qa.agent.md
+    │   ├── devops.agent.md
+    │   ├── docs.agent.md
+    │   ├── consensus-candidate-claude.agent.md
+    │   ├── consensus-candidate-gemini.agent.md
+    │   └── consensus-candidate-gpt.agent.md
     ├── prompts/
     │   ├── README.md             # Prompt catalog
-    │   ├── repo-onboarding.md    # Repo onboarding workflow prompt
-    │   ├── pr-resolve-all.md     # PR-review resolution procedure
+    │   ├── capture-postmortem.md # Postmortem capture workflow prompt
+    │   ├── expand-backlog-entry.md # Backlog → issue expansion prompt
+    │   ├── handshake-and-shape-smoke.md # No-edit smoke: handshake positional contract + response shape (4 scenarios)
     │   ├── instruction-compliance-smoke.md # No-edit ADR-026 compliance smoke prompt
+    │   ├── judge-mode-smoke.md   # No-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection
+    │   ├── mirror-postmortem.md  # Postmortem mirror/sync workflow prompt
+    │   ├── multi-model-consensus-plan.md # Optional three-planner consensus prompt
+    │   ├── op-issue-workflow.md  # OP end-to-end issue to merge playbook
     │   ├── outcome-validation-smoke.md # No-edit Judge/Critic outcome-theater smoke prompt
-    │   ├── judge-mode-smoke.md       # No-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection
-    │   ├── handshake-and-shape-smoke.md  # No-edit smoke: handshake positional contract + response shape (4 scenarios)
-    │   └── expand-backlog-entry.md # Backlog → issue expansion prompt
+    │   ├── pre-push-review.md    # Critic/lint/test pre-push checklist prompt
+    │   ├── pr-resolve-all.md     # PR-review resolution procedure
+    │   └── repo-onboarding.md    # Repo onboarding workflow prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     └── workflows/
         ├── ci-tests.yml
@@ -172,22 +192,23 @@ bash install.sh
 |------|--------------|---------|
 | `AGENTS.md` | Most AI tools | Root instructions, points to this file |
 | `CLAUDE.md` | Claude Code | Native memory-file pointer to AGENTS.md |
+| `GEMINI.md` | Gemini Codespace | Native onboarding pointer into AI_REPO_GUIDE.md |
 | `.github/copilot-instructions.md` | GitHub Copilot | Pointer to AGENTS.md + Copilot-specific rules (e.g., `@copilot follow`) |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |
-| `.github/agents/judge.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Judge (frontmatter only) |
-| `.github/agents/critic.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Critic (frontmatter only) |
-| `.github/agents/architect.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Architect (frontmatter only) |
-| `.github/agents/analyst.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Analyst (frontmatter only) |
-| `.github/agents/pm.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for PM (frontmatter only) |
-| `.github/agents/frontend.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Frontend (frontmatter only) |
-| `.github/agents/backend.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Backend (frontmatter only) |
-| `.github/agents/qa.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for QA (frontmatter only) |
-| `.github/agents/devops.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for DevOps (frontmatter only) |
-| `.github/agents/docs.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlay for Docs (frontmatter only) |
+| `.github/agents/{judge,critic,architect,analyst,pm,frontend,backend,qa,devops,docs}.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlays for the 10 canonical repo roles (frontmatter only) |
+| `.github/agents/consensus-candidate-*.agent.md` | GitHub Copilot SDK | Copilot-only consensus-planning candidate overlays pinned to Claude, Gemini, and GPT models for `multi-model-consensus-plan.md` |
 | `.claude/agents/*.md` | Claude Code | Claude Code subagent registration overlays (frontmatter only) |
 | `.agents/<role>.md` | Multi-tool (canonical) | Platform-agnostic role definition (responsibilities, Do/Don't, output format) per ADR-023 — read by every overlay above |
 | `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template for ADR-026 `role_contract_version` and `subagent_compliance` return guidance; not a dispatchable role |
+
+### Root Docs and Workflow Files
+
+| File | Tool/Platform | Purpose |
+|------|--------------|---------|
+| `README.md` | Humans + AI agents | User-facing repository overview |
+| `Makefile` | `make` | Opt-in workflow targets (currently `make closeout`) |
+| `requirements.txt` | Python tooling | Dependency pin for local validation helpers |
 
 ### Context Pack (project memory)
 
@@ -205,23 +226,30 @@ bash install.sh
 | `.context/rules/process_subagent_bootstrap.md` | ADR-026 parent dispatch packet, subagent startup order, and `subagent_compliance` return contract |
 | `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP8`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
 | Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025). May embed an optional `opportunity_notes` YAML block (v1.2; ADR-027) for out-of-scope improvement notes — see `docs/compliance_schemas.md` § "agent-state:v1". |
+| `.context/sessions/feedback_template.md` | Stakeholder feedback capture template |
+| `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
+| `.context/state/_active.md` | Legacy manual active-task view; may be stale |
 | `.context/state/agent_state_comment_template.md` | Copy/paste template for live coordination comments |
 | `.context/state/coordination.md` | Legacy manual claim board / compatibility view; may be stale |
-| `.context/state/feedback_template.md` | Stakeholder feedback capture template |
-| `.context/state/_active.md` | Legacy manual active-task view; may be stale |
-| `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
 | `.context/vision/` | Mockups and architecture diagrams |
 
 ### Prompts (user-triggered, not auto-loaded)
 
 | File | Purpose |
 |------|---------|
-| `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
-| `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
-| `.github/prompts/instruction-compliance-smoke.md` | No-edit smoke prompt for startup pointer loading, role-dispatch reasoning, and ADR-026 evidence shape |
-| `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
-| `.github/prompts/judge-mode-smoke.md` | No-edit smoke prompt: Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance |
+| `.github/prompts/README.md` | Prompt catalog and usage notes |
+| `.github/prompts/capture-postmortem.md` | Capture a postmortem from a completed issue/PR into the docs postmortem workflow |
+| `.github/prompts/expand-backlog-entry.md` | Expand a backlog entry into an issue-ready task description |
 | `.github/prompts/handshake-and-shape-smoke.md` | No-edit smoke prompt: handshake positional contract and response-shape verification (parent vs subagent, Judge/Critic exact-output first-line, receipt-section placement — 4 scenarios) |
+| `.github/prompts/instruction-compliance-smoke.md` | No-edit smoke prompt for startup pointer loading, role-dispatch reasoning, and ADR-026 evidence shape |
+| `.github/prompts/judge-mode-smoke.md` | No-edit smoke prompt: Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance |
+| `.github/prompts/mirror-postmortem.md` | Mirror a postmortem into the repo's postmortem surfaces after capture/review |
+| `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
+| `.github/prompts/op-issue-workflow.md` | Parent Orchestrator issue-to-merge playbook for the default agent |
+| `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
+| `.github/prompts/pre-push-review.md` | Run Critic + lint + `./test.sh` against the working-tree diff before push on non-trivial changes |
+| `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
+| `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
 ### Compliance Contracts
 
@@ -235,7 +263,7 @@ bash install.sh
 
 | File | Purpose |
 |------|---------|
-| `install.sh` | Runs on Codespace start; installs extensions, copies prompts |
+| `install.sh` | Runs on Codespace start; installs extensions and copies the multi-agent kit / prompt files into the workspace without cloning the full template repo |
 | `test.sh` | Template-integrity entry point (see Verification Commands below for live check count). Thin orchestrator (~95 lines) that sources `scripts/checks/[0-9][0-9][0-9]-*.sh` modules (3-digit zero-padded prefix so lexical sort matches numeric order) (issue #255 Phase 4d) |
 | `scripts/checks/*.sh` | Per-concern check modules (issue #255 Phase 4d): structural file checks, content/invariant checks, ADR/phase invariants, and parser unit-test smokes. See `scripts/checks/README.md` for the convention and how to add a new module. |
 | `scripts/setup.sh` | First-run project customization helper. Thin orchestrator that sources `scripts/setup/[0-9][0-9]-*.sh` modules in lexical order (issue #255 Phase 4c) |

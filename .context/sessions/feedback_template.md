@@ -1,5 +1,5 @@
 <!-- TEMPLATE_PLACEHOLDER: Copy this file to create a new feedback record -->
-<!-- Usage: cp .context/state/feedback_template.md .context/state/feedback_<iteration-or-feature>.md -->
+<!-- Usage: cp .context/sessions/feedback_template.md .context/sessions/feedback_<iteration-or-feature>.md -->
 
 # Feedback: [Iteration/Feature Title]
 

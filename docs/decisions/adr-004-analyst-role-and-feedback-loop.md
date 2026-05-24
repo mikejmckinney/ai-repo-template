@@ -12,7 +12,7 @@ Accepted (superseded in part by ADR-025)
 
 The template's multi-agent pipeline was effectively waterfall:
 
-```
+```text
 user request → Architect → Judge → PM → Implementers → QA → Critic → Judge → merge → done
 ```
 
@@ -33,6 +33,7 @@ A new research-only, no-code role called **Analyst** sits before Architect in th
 The Analyst owns `docs/research/**` for persisting analysis artifacts. To keep analyses comparable, Analyst outputs should record the four component scores and the composite average in a consistent format before handing off to Architect (for solution design) and PM (for task-level items discovered during analysis).
 
 Files created:
+
 - `.github/agents/analyst.agent.md` — canonical role definition (Copilot schema)
 - `.claude/agents/analyst.md` — Claude Code mirror (pointer body)
 
@@ -40,7 +41,7 @@ Files created:
 
 A new state `stakeholder_review` sits between `merged` and the next iteration's `backlog` in the pre-ADR-025 file-based task state machine. ADR-025 later moves the live state representation to GitHub comments/labels; the Analyst feedback loop still applies.
 
-```
+```text
 ... → approved → merged → [stakeholder_review] → (task closed; follow-up issue/comment entries in backlog)
 ```
 
@@ -51,18 +52,22 @@ A feedback template (`.context/state/feedback_template.md`) provides structure f
 ## Options Considered
 
 ### Option 1: Single Analyst role + optional feedback state (chosen)
+
 - **Pros**: Minimal additions (one role, one state). Analyst covers the full pre-design research spectrum without fragmenting responsibilities. Optional feedback state avoids ceremony overhead on small tasks.
 - **Cons**: Analyst scope is broad (needs analysis + competitive research + impact scoring). May need to be split later if templates are used for very large teams.
 
 ### Option 2: Multiple research roles (Market Researcher, User Researcher, Business Analyst)
+
 - **Pros**: Fine-grained specialization.
 - **Cons**: Over-segmented for a template. Most teams using this template have 1–3 agent sessions, not dedicated research teams. Adds 3 role pairs (6 files) instead of 1 pair (2 files). Creates coordination overhead between the research roles themselves.
 
 ### Option 3: Mandatory feedback on every task
+
 - **Pros**: Guarantees no task escapes review.
 - **Cons**: Too heavy for small fixes, typo corrections, dependency bumps. Would add friction to the most common task types. PM should have discretion.
 
 ### Option 4: No structured feedback (status quo)
+
 - **Pros**: No changes needed.
 - **Cons**: The waterfall anti-pattern persists. Teams lose learnings between iterations. Assumptions are never re-validated.
 

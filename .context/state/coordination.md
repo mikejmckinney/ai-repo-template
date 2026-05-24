@@ -40,7 +40,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 - **No skipping**: a task in `in_progress` cannot jump to `judge_review` without passing through `peer_review`.
 - **Reversible**: any reviewer (QA, Critic, Judge) may kick a task back to `in_progress` with `REQUEST_CHANGES`. Record the reason in the live comment or PR review before the kickback.
 - **Stakeholder review is optional**: after `merged`, PM decides whether to enter `stakeholder_review` or move the task directly to done (Recent History). Small fixes, dependency bumps, and maintenance tasks typically skip this state.
-- **Stakeholder review is terminal**: `stakeholder_review` closes out the original task — once feedback is captured, the legacy task moves to Recent History. Any follow-up work becomes a new GitHub issue or PR comment thread: routed to Analyst (entering `analyzing`) if assumptions need re-validation, or placed directly into `backlog` if the feedback is design-only and goes straight to Architect. Feedback capture still uses `.context/state/feedback_template.md` when that optional path is invoked.
+- **Stakeholder review is terminal**: `stakeholder_review` closes out the original task — once feedback is captured, the legacy task moves to Recent History. Any follow-up work becomes a new GitHub issue or PR comment thread: routed to Analyst (entering `analyzing`) if assumptions need re-validation, or placed directly into `backlog` if the feedback is design-only and goes straight to Architect. Feedback capture still uses `.context/sessions/feedback_template.md` when that optional path is invoked.
 - **Stuck detection**: any state other than `merged` or `stakeholder_review` held for > 24 hours is a "stuck" signal. PM should investigate on the next session or via the optional heartbeat workflow (`.github/workflows/agent-heartbeat.yml.template`).
 
 ## Lock Template
@@ -72,6 +72,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-05-08T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:
+
 - .context/rules/repo_orchestration_patterns.md
 - .context/rules/agent_ownership.md
 - .context/rules/process_doc_maintenance.md
@@ -91,7 +92,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Depends On**: none
 **Blocks**: none
 **State**: in_progress
-**Notes**: Sub-issue #252 of parent epic #251. Path overlap with stale locks (test.sh, AGENTS.md, critic/judge agent files, _active.md, coordination.md) treated as non-conflicting — the older locks reference merged or open-PR work whose diffs do not touch the new content here.
+**Notes**: Sub-issue #252 of parent epic #251. Path overlap with stale locks (test.sh, AGENTS.md, critic/judge agent files, `.context/state/_active.md`, `coordination.md`) treated as non-conflicting — the older locks reference merged or open-PR work whose diffs do not touch the new content here.
 
 ## Lock: pr-220-phase2
 <!-- managed-for-pr:pending -->
@@ -100,6 +101,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-05-07T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:
+
 - docs/decisions/adr-019-per-role-model-tiering.md
 - docs/decisions/adr-003-claude-code-subagent-registration.md
 - docs/decisions/README.md
@@ -124,6 +126,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-05-06T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:
+
 - .github/prompts/pre-push-review.md
 - .github/prompts/README.md
 - .github/agents/critic.agent.md
@@ -146,6 +149,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-05-05T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:
+
 - docs/decisions/adr-017-template-repo-pre-commit-default.md
 - docs/decisions/README.md
 - .pre-commit-config.yaml
@@ -172,6 +176,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-05-09T00:00:00Z
 **Expected Duration**: 1 session
 **Paths**:
+
 - scripts/lint-shell-conventions.sh
 - scripts/test-verify-env.sh
 - scripts/test-jq-filters.sh
@@ -199,6 +204,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-05-03T22:25:50Z
 **Expected Duration**: 1 session
 **Paths**:
+
 - .github/workflows/lint-and-format.yml
 - scripts/pr-iteration-stats.sh
 - scripts/test-pr-iteration-stats.sh
@@ -218,6 +224,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-05-03T17:49:57Z
 **Expected Duration**: TBD
 **Paths**:
+
 - .context/sessions/latest_summary.md
 - .context/state/_active.md
 - .context/state/coordination.md
@@ -235,6 +242,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-05-02T12:00:00Z
 **Expected Duration**: TBD
 **Paths**:
+
 - .context/sessions/latest_summary.md
 - .context/state/_active.md
 - .context/state/coordination.md
@@ -273,7 +281,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **PR**: #290
 **Claimed At**: 2026-05-09T00:00:00Z
 **State**: merged
-**Result**: Merged 2026-05-09 as PR #290 (squash `85f77fa`). Sub-issue #256 of parent epic #251 — added `docs/guides/design-patterns.md` (lead, ~265 lines, 3 PM-derived entries CAP1/CAP2/CP1) + `design-patterns-gof.md` (23 GoF entries CP2-CP24) + `design-patterns-post-gof.md` (10 post-GoF entries CP25-CP34); wired `scripts/checks/030-docs-structure.sh` DOCS_FILES; replaced 2 "(planned)" markers in `.context/rules/repo_orchestration_patterns.md` with live anchored cross-refs to the new entries. 7 review rounds (`pr-resolve-all.md` loop with `cap-override`): R1 (7 findings, 4 unique — _active.md schema break flagged by 3 reviewers, CAP-AP1 citation typo, ADR-020 section name, Strategy anchor cp21→cp22); R2 (2 stale Gemini dupes — quiet); R3 quiet (first termination); R4 (5 example-code corrections — header omits Decorator, Singleton `__init__` footgun, Chain-of-Resp shadows `next`, Strategy `lambda`-as-name PEP 8, UoW `*exc` non-standard); R5 (3 — React-MVVM mislabel, Singleton metaclass actionable form, lint-script enhancements deferred); R6 (3 — Decorator kwargs, TreeIterator DFS direction, Observer try/except deferred as policy-not-pattern); R7 (1 — self-introduced kwargs/cache-key inconsistency from R6); R8+R9 quiet (second termination). 16 review threads total resolved across 4 reviewers (Codex 1, Copilot reviewer 4, Cursor BugBot 1, Gemini 10). 2 explicit defers tracked for follow-up: (a) anchor-uniqueness lint + cross-file link checker in 030-docs-structure.sh, (b) CP20 Observer try/except as orthogonal resilience policy.
+**Result**: Merged 2026-05-09 as PR #290 (squash `85f77fa`). Sub-issue #256 of parent epic #251 — added `docs/guides/design-patterns.md` (lead, ~265 lines, 3 PM-derived entries CAP1/CAP2/CP1) + `design-patterns-gof.md` (23 GoF entries CP2-CP24) + `design-patterns-post-gof.md` (10 post-GoF entries CP25-CP34); wired `scripts/checks/030-docs-structure.sh` DOCS_FILES; replaced 2 "(planned)" markers in `.context/rules/repo_orchestration_patterns.md` with live anchored cross-refs to the new entries. 7 review rounds (`pr-resolve-all.md` loop with `cap-override`): R1 (7 findings, 4 unique — `.context/state/_active.md` schema break flagged by 3 reviewers, CAP-AP1 citation typo, ADR-020 section name, Strategy anchor cp21→cp22); R2 (2 stale Gemini dupes — quiet); R3 quiet (first termination); R4 (5 example-code corrections — header omits Decorator, Singleton `__init__` footgun, Chain-of-Resp shadows `next`, Strategy `lambda`-as-name PEP 8, UoW `*exc` non-standard); R5 (3 — React-MVVM mislabel, Singleton metaclass actionable form, lint-script enhancements deferred); R6 (3 — Decorator kwargs, TreeIterator DFS direction, Observer try/except deferred as policy-not-pattern); R7 (1 — self-introduced kwargs/cache-key inconsistency from R6); R8+R9 quiet (second termination). 16 review threads total resolved across 4 reviewers (Codex 1, Copilot reviewer 4, Cursor BugBot 1, Gemini 10). 2 explicit defers tracked for follow-up: (a) anchor-uniqueness lint + cross-file link checker in `030-docs-structure.sh`, (b) CP20 Observer try/except as orthogonal resilience policy.
 
 ## Lock: pr-281-expand-syntax-check
 <!-- managed-for-pr:288 -->
@@ -282,7 +290,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **PR**: #288
 **Claimed At**: 2026-05-09T15:15:00Z
 **State**: merged
-**Result**: Merged 2026-05-09 as PR #288 (squash `e8f5f96`). Issue #281 — expanded `scripts/checks/055-script-syntax.sh` from 2 hardcoded `bash -n install.sh / test.sh` calls to a 5-glob set (`./*.sh scripts/*.sh scripts/checks/*.sh scripts/lib/*.sh scripts/setup/*.sh`) covering 53 .sh files. `scripts/tests/*.bats` intentionally excluded (bats syntax ≠ bash syntax; bats files exercised via the 070/075/080/085/090/115/140 modules). 5 review rounds: R1 (9 findings — duplicate-block own-goal flagged by 4 reviewers, plus nullglob-ordering, _active.md PR-pending, scripts/tests wording); R2 (1 finding — stale verify-step counts in _active.md); R3 (3 findings — provenance citations, missing `## Plan` section, suppressed bash -n stderr); R4 clean; R5 (1 finding — ADR-005 pre-flight, deferred as epic-followup of #255); R6+R7 clean. `bash test.sh` 353 → 404 (+51 new syntax assertions).
+**Result**: Merged 2026-05-09 as PR #288 (squash `e8f5f96`). Issue #281 — expanded `scripts/checks/055-script-syntax.sh` from 2 hardcoded `bash -n install.sh / test.sh` calls to a 5-glob set (`./*.sh scripts/*.sh scripts/checks/*.sh scripts/lib/*.sh scripts/setup/*.sh`) covering 53 .sh files. `scripts/tests/*.bats` intentionally excluded (bats syntax != bash syntax; bats files exercised via the 070/075/080/085/090/115/140 modules). 5 review rounds: R1 (9 findings — duplicate-block own-goal flagged by 4 reviewers, plus nullglob-ordering, `.context/state/_active.md` PR-pending, scripts/tests wording); R2 (1 finding — stale verify-step counts in `.context/state/_active.md`); R3 (3 findings — provenance citations, missing `## Plan` section, suppressed bash -n stderr); R4 clean; R5 (1 finding — ADR-005 pre-flight, deferred as epic-followup of #255); R6+R7 clean. `bash test.sh` 353 → 404 (+51 new syntax assertions).
 
 ## Lock: pr-280-unwrap-bats-tests
 <!-- managed-for-pr:287 -->
@@ -354,6 +362,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-04-28T22:54:03Z
 **Expected Duration**: TBD
 **Paths**:
+
 - .context/state/_active.md
 - .github/prompts/pr-resolve-all.md
 - AGENTS.md
@@ -370,6 +379,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 **Claimed At**: 2026-04-25T02:53:28Z
 **Expected Duration**: TBD
 **Paths**:
+
 - .github/workflows/agent-relay-reviews.yml
 - docs/decisions/adr-008-phase4-default-and-copilot-fallback.md
 **Depends On**: none
@@ -387,7 +397,7 @@ Under the pre-ADR-025 file-based model, every `task_*.md` file lived in exactly 
 
 **Issue #220 Phase 2 (pre-registration)** — Not yet claimed; lock block omitted from Active Locks to avoid false stale-lock alerts before the branch exists. When work starts on `feature/architect-220-phase2`, add the lock block below to Active Locks and create `task_issue-220-phase2.md`.
 
-```
+```text
 ## Lock: issue-220-phase2
 **Role**: architect
 **Session**: feature/architect-220-phase2

@@ -3,6 +3,7 @@
 > **Purpose**: Preserve durable retrospective lessons from previous coding sessions so future agents do not repeat mistakes.
 >
 > **Distinction from live state (ADR-025)**:
+>
 > - GitHub issue/PR + latest `agent-state:v1` comment = live coordination baton.
 > - `sessions/` = what shipped, what was harder than expected, and what generalizes.
 
@@ -10,9 +11,12 @@
 
 `latest_summary.md` carries the most recent durable retrospective entry. It is not the live coordination state for an in-flight task; update the latest `agent-state:v1` issue/PR comment for status, blockers, next actions, and handoff.
 
-```
+`feedback_template.md` is the durable starter for optional stakeholder-review notes. Copy it to `.context/sessions/feedback_<iteration-or-feature>.md` when that path is used.
+
+```text
 sessions/
 ├── README.md                  # This file
+├── feedback_template.md       # Optional stakeholder feedback starter
 ├── latest_summary.md          # Latest durable retrospective entry
 ├── 2026-05-08_pr-261.md       # Archived: previous retrospective entry
 ├── 2026-05-07_pr-220.md       # Archived: older session

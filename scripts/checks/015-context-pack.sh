@@ -28,11 +28,11 @@ CONTEXT_FILES=(
   ".context/rules/process_subagent_bootstrap.md"
   ".context/sessions/README.md"
   ".context/sessions/latest_summary.md"
+  ".context/sessions/feedback_template.md"
   ".context/state/README.md"
   ".context/state/_active.md"
   ".context/state/coordination.md"
   ".context/state/agent_state_comment_template.md"
-  ".context/state/feedback_template.md"
   ".context/vision/README.md"
 )
 

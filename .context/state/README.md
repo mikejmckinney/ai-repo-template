@@ -17,7 +17,7 @@ The copy/paste template for the live comment is [`agent_state_comment_template.m
 
 - **`_active.md`** — legacy manual multi-task snapshot from ADR-018. Existing sections may be stale because GitHub owns PR lifecycle events. Do not create new normal-work sections after ADR-025; old entries may drain naturally or be cleaned by a separate legacy cleanup PR.
 - **`coordination.md`** — legacy manual claim board and task-state machine. It may remain useful as a compatibility view or generated target, but it is no longer the primary live-state source for GitHub-connected work.
-- **`feedback_template.md`** — stakeholder feedback capture template for the optional stakeholder-review path. This remains a durable template, not a live coordination baton.
+- **`../sessions/feedback_template.md`** — stakeholder feedback capture template for the optional stakeholder-review path. Feedback records live under `.context/sessions/` because they are durable notes, not a live coordination baton.
 
 The old `task_template.md` and `handoff_template.md` files were removed by ADR-025. The GitHub issue body supersedes copied task files; the `Handoff` section of the latest `agent-state:v1` comment supersedes copied handoff files.
 
