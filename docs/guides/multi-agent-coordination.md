@@ -403,5 +403,5 @@ When to skip: trivial doc-only edits to comments inside the workflow file, or te
 - `.agents/judge.md` — plan-gate + diff-gate details (canonical).
 - `.agents/critic.md` — subjective-quality devil's advocate review (canonical).
 - `.agents/analyst.md` — needs analysis, market research, problem validation (canonical).
-- `.context/state/feedback_template.md` — stakeholder feedback capture template.
+- `.context/sessions/feedback_template.md` — stakeholder feedback capture template.
 - `.github/prompts/repo-onboarding.md` — full onboarding workflow.

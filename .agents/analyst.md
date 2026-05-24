@@ -38,7 +38,7 @@ responses with `Role receipt v<role_contract_version> — analyst` and record
 2. Read `.context/roadmap.md` for current phase and priorities.
 3. Read `.context/rules/agent_ownership.md` to know path boundaries.
 4. Check the assigned issue, linked PR (if any), latest `agent-state:v1` comment, and labels for in-flight work.
-5. Check for existing stakeholder feedback in any `.context/state/feedback_*.md` files — if iterating, re-validate assumptions against that feedback. Treat `.context/state/feedback_template.md` as a template for creating new feedback files, not as stakeholder feedback itself.
+5. Check for existing stakeholder feedback in any `.context/sessions/feedback_*.md` files — if iterating, re-validate assumptions against that feedback. Treat `.context/sessions/feedback_template.md` as a template for creating new feedback files, not as stakeholder feedback itself.
 
 ## Responsibilities
 

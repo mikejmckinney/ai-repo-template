@@ -5,7 +5,7 @@ agent: agent
 
 # Repository Onboarding Prompt
 
-You are a senior software engineer joining an existing codebase. Your job is to build an accurate mental model of this repo BEFORE making changes, then implement the requested work with minimal, well-tested diffs.
+You are onboarding to an existing codebase. Your job is to build an accurate mental model of this repo BEFORE making changes, then implement the requested work with minimal, well-tested diffs.
 
 ## Core Principles
 
@@ -102,9 +102,7 @@ same PR:
      `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and
      `## PM Notes`; keep the section headers, `## Lock Template`,
      compatibility note, and `TEMPLATE_PLACEHOLDER` marker.
-   - Keep `agent_state_comment_template.md`, `feedback_template.md`, and
-     `README.md` in those directories. Do not recreate the removed
-     `task_template.md` or `handoff_template.md`; ADR-025 supersedes them.
+   - Keep `.context/state/agent_state_comment_template.md`, `.context/sessions/feedback_template.md`, and the directory `README.md` files in place. Future feedback records should be copied under `.context/sessions/feedback_<iteration-or-feature>.md`. Do not recreate the removed `task_template.md` or `handoff_template.md`; ADR-025 supersedes them.
 
 When Phase 0 work is complete, continue to Phase 1.
 

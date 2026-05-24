@@ -12,6 +12,12 @@ A template repository for GitHub Codespaces that provides pre-configured AI agen
 
 > **For AI Agents**: See `AI_REPO_GUIDE.md` for a concise reference optimized for agent consumption.
 
+## Motivation
+
+This template exists to give a new repository a working AI-collaboration baseline on day one: startup instructions, durable context, and human-readable docs that do not fight each other.
+
+The split between `README.md`, `AI_REPO_GUIDE.md`, `AGENTS.md`, `.context/`, and `docs/` is intentional. Humans need setup and rationale; agents need a compact reference and canonical state surfaces. The template keeps those concerns separate so onboarding stays clear instead of collapsing into one noisy file.
+
 ## Repo map
 
 The repo looks like it has duplicated documentation. It doesn't — each location targets a different audience or loader. See `docs/guides/context-files-explained.md` for the full rationale and ADR references.

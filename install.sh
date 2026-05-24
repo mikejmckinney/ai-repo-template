@@ -287,7 +287,7 @@ MULTIAGENT_FILES=(
   ".context/rules/repo_orchestration_patterns.md"
   ".context/state/coordination.md"
   ".context/state/agent_state_comment_template.md"
-  ".context/state/feedback_template.md"
+  ".context/sessions/feedback_template.md"
   "docs/guides/agent-best-practices.md"
   "docs/guides/agent-pipeline.md"
   "docs/guides/context-files-explained.md"
