@@ -141,7 +141,14 @@ _ls_remote_output=""
 _ls_remote_exit=0
 _timeout_val="${DIAG_GIT_TIMEOUT:-10}"
 
-if command -v timeout &>/dev/null; then
+if [[ "$_timeout_val" == "0" ]]; then
+  _ls_remote_output=$(git ls-remote "$_sandbox_url" 'refs/heads/*' 2>&1) || _ls_remote_exit=$?
+  if [[ "$_ls_remote_exit" -ne 0 ]]; then
+    log_warn "git ls-remote failed (exit $_ls_remote_exit) — sandbox may not be accessible with current auth"
+    log_warn "Output: $_ls_remote_output"
+    exit 2
+  fi
+elif command -v timeout &>/dev/null; then
   _ls_remote_output=$(timeout "$_timeout_val" git ls-remote "$_sandbox_url" 'refs/heads/*' 2>&1) || _ls_remote_exit=$?
   if [[ "$_ls_remote_exit" -ne 0 ]]; then
     if [[ "$_ls_remote_exit" -eq 124 ]]; then
