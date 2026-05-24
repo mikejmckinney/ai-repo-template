@@ -19,7 +19,10 @@ _FIX_MODE=false
 for _arg in "$@"; do
   case "$_arg" in
     --fix) _FIX_MODE=true ;;
-    *) printf '[ERROR] Unknown option: %s\n' "$_arg" >&2; exit 1 ;;
+    *)
+      printf '[ERROR] Unknown option: %s\n' "$_arg" >&2
+      exit 1
+      ;;
   esac
 done
 unset _arg
@@ -38,8 +41,8 @@ _REQUIRED_TOOLS=(rg shellcheck jq)
 # fixture coverage of the non-allowlisted rejection path. Leave unset in
 # production use.
 if [[ -n "${_VERIFY_ENV_EXTRA_REQUIRED_TOOLS:-}" ]]; then
-  read -ra _extra <<< "$_VERIFY_ENV_EXTRA_REQUIRED_TOOLS"
-  _REQUIRED_TOOLS+=( "${_extra[@]}" )
+  read -ra _extra <<<"$_VERIFY_ENV_EXTRA_REQUIRED_TOOLS"
+  _REQUIRED_TOOLS+=("${_extra[@]}")
   unset _extra
 fi
 
@@ -66,7 +69,6 @@ _fix_install() {
     fi
   fi
 }
-
 
 echo "========================================"
 echo "Environment Verification"

@@ -131,7 +131,7 @@ _ls_remote_exit=0
 _timeout_val="${DIAG_GIT_TIMEOUT:-10}"
 
 if command -v timeout &>/dev/null; then
-  _ls_remote_output=$(timeout "$_timeout_val" git ls-remote "$_sandbox_url" 'refs/heads/*' 2>&1)     || _ls_remote_exit=$?
+  _ls_remote_output=$(timeout "$_timeout_val" git ls-remote "$_sandbox_url" 'refs/heads/*' 2>&1) || _ls_remote_exit=$?
   if [[ "$_ls_remote_exit" -ne 0 ]]; then
     if [[ "$_ls_remote_exit" -eq 124 ]]; then
       log_warn "sandbox remote unreachable (timed out after ${_timeout_val}s)"
@@ -145,7 +145,7 @@ if command -v timeout &>/dev/null; then
   fi
 else
   log_warn "timeout command unavailable — git ls-remote timeout unenforced"
-  _ls_remote_output=$(git ls-remote "$_sandbox_url" 'refs/heads/*' 2>&1)     || _ls_remote_exit=$?
+  _ls_remote_output=$(git ls-remote "$_sandbox_url" 'refs/heads/*' 2>&1) || _ls_remote_exit=$?
   if [[ "$_ls_remote_exit" -ne 0 ]]; then
     log_warn "git ls-remote failed (exit $_ls_remote_exit) — sandbox may not be accessible"
     log_warn "Output: $_ls_remote_output"
@@ -172,14 +172,14 @@ if [[ -n "$_ls_remote_output" ]]; then
     while IFS= read -r _branch_line; do
       [[ -z "$_branch_line" ]] && continue
       log_warn "  $_branch_line"
-    done <<< "$_non_main"
+    done <<<"$_non_main"
   else
     log_info "No stale branches detected (only main branch exists)"
   fi
 fi
 
 unset _sandbox_url _ls_remote_output _ls_remote_exit _timeout_val \
-      _branch_count _non_main _branch_line 2>/dev/null || true
+  _branch_count _non_main _branch_line 2>/dev/null || true
 
 echo ""
 
