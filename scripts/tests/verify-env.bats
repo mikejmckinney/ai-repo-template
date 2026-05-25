@@ -17,7 +17,9 @@ setup_file() {
   export REPO_ROOT
   # Exported here so the new fix-mode @test blocks can reference it.
   VERIFY_SCRIPT="$REPO_ROOT/scripts/verify-env.sh"
+  SETUP_VERIFY_SCRIPT="$REPO_ROOT/scripts/setup/70-verify-env.sh"
   export VERIFY_SCRIPT
+  export SETUP_VERIFY_SCRIPT
 }
 
 _legacy_body() {
@@ -371,4 +373,32 @@ _build_fix_env() {
   # Verify Linux apt-get path was NOT taken.
   [[ "$output" != *"apt-get"* ]]
   [[ "$output" == *"brew install"* ]]
+}
+
+@test "setup 70-verify-env invokes verify-env with --fix" {
+  temp_repo=$(mktemp -d "${TMPDIR:-/tmp}/check-115.XXXXXX")
+  mkdir -p "$temp_repo/scripts/setup"
+  cp "$SETUP_VERIFY_SCRIPT" "$temp_repo/scripts/setup/70-verify-env.sh"
+
+  args_file="$temp_repo/verify-env-args.log"
+  cat > "$temp_repo/scripts/verify-env.sh" <<'EOF'
+#!/bin/bash
+printf '%s\n' "$*" > "$VERIFY_ENV_ARGS_FILE"
+exit 0
+EOF
+  chmod +x "$temp_repo/scripts/verify-env.sh"
+
+  run env VERIFY_ENV_ARGS_FILE="$args_file" bash -lc '
+    log_step() { :; }
+    log_warn() { :; }
+    cd "$1"
+    source scripts/setup/70-verify-env.sh
+  ' bash "$temp_repo"
+
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  [ "$status" -eq 0 ]
+  [ -f "$args_file" ]
+  [[ "$(cat "$args_file")" == "--fix" ]]
+
+  rm -rf "$temp_repo"
 }
