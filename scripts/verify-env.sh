@@ -12,6 +12,83 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/logging.sh"
 # shellcheck source=scripts/lib/assertions.sh
 source "$SCRIPT_DIR/lib/assertions.sh"
+# ---------------------------------------------------------------------------
+# Argument parsing and --fix mode infrastructure (issue #365)
+# ---------------------------------------------------------------------------
+_FIX_MODE=false
+for _arg in "$@"; do
+  case "$_arg" in
+    --fix) _FIX_MODE=true ;;
+    *)
+      log_error "Unknown option: $_arg"
+      exit 1
+      ;;
+  esac
+done
+unset _arg
+
+# Static fix allowlist: only these three tools are eligible for --fix
+# remediation. Expansion requires a PR updating this list and the plan.
+_fix_package_for_tool() {
+  case "$1" in
+    rg)
+      printf '%s\n' "ripgrep"
+      ;;
+    shellcheck)
+      printf '%s\n' "shellcheck"
+      ;;
+    jq)
+      printf '%s\n' "jq"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+# Repo-required tools checked on every run.
+_REQUIRED_TOOLS=(rg shellcheck jq)
+
+# Test injection only: append extra tool names to _REQUIRED_TOOLS for bats
+# fixture coverage of the non-allowlisted rejection path. Leave unset in
+# production use.
+if [[ -n "${_VERIFY_ENV_EXTRA_REQUIRED_TOOLS:-}" ]]; then
+  read -ra _extra <<<"$_VERIFY_ENV_EXTRA_REQUIRED_TOOLS"
+  _REQUIRED_TOOLS+=("${_extra[@]}")
+  unset _extra
+fi
+
+# Helper: attempt to install a tool via the platform package manager.
+# Logs each action to stdout. Exits non-zero if privilege is absent on
+# Linux or if the install command fails.
+_fix_install() {
+  local tool="$1" pkg="$2"
+  local _os
+  _os=$(uname -s)
+  if [[ "$_os" == "Darwin" ]]; then
+    if ! command -v brew &>/dev/null; then
+      log_error "[fix] Cannot install $tool: brew is required on macOS — install Homebrew or install $pkg manually"
+      exit 1
+    fi
+    log_info "[fix] Installing $tool via brew install $pkg"
+    brew install "$pkg"
+  else
+    if ! command -v apt-get &>/dev/null; then
+      log_error "[fix] Cannot install $tool: apt-get is required on this Linux system — install $pkg manually"
+      exit 1
+    fi
+    if [[ "$(id -u)" == "0" ]]; then
+      log_info "[fix] Installing $tool via apt-get install -y $pkg (root)"
+      apt-get install -y "$pkg"
+    elif command -v sudo &>/dev/null; then
+      log_info "[fix] Installing $tool via sudo apt-get install -y $pkg"
+      sudo apt-get install -y "$pkg"
+    else
+      log_error "[fix] Cannot install $tool: root or sudo required — re-run as root or grant sudo access"
+      exit 1
+    fi
+  fi
+}
 
 echo "========================================"
 echo "Environment Verification"
@@ -32,6 +109,33 @@ else
   fail "Current directory is not a git repository"
 fi
 
+echo ""
+
+# --- Repo-required tools ---
+echo "Checking repo-required tools..."
+for _tool in "${_REQUIRED_TOOLS[@]}"; do
+  if command -v "$_tool" &>/dev/null; then
+    pass "$_tool is installed"
+  else
+    if [[ "$_FIX_MODE" == "true" && "$FAIL" -eq 0 ]]; then
+      if _pkg=$(_fix_package_for_tool "$_tool"); then
+        _fix_install "$_tool" "$_pkg"
+        unset _pkg
+        if command -v "$_tool" &>/dev/null; then
+          pass "$_tool installed successfully via --fix"
+        else
+          fail "$_tool install attempted but tool still not found"
+        fi
+      else
+        log_error "[fix] $_tool is not on the fix allowlist — install it manually"
+        exit 1
+      fi
+    else
+      fail "$_tool is not installed"
+    fi
+  fi
+done
+unset _tool
 echo ""
 
 # --- Node.js (if package.json exists) ---

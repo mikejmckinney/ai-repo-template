@@ -105,6 +105,7 @@ bash install.sh
 │   │   └── *.bats            # One file per concern; current script tests run via bats
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
+│   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
 │   ├── verify-pr.sh          # Plan-template Change-class classifier (issue #227, ADR-016)
 │   ├── validate-compliance-examples.py # ADR-026 docs YAML example validator
 │   ├── validate-compliance-fixtures.py # ADR-026 fixture validator
@@ -268,7 +269,8 @@ bash install.sh
 | `scripts/checks/*.sh` | Per-concern check modules (issue #255 Phase 4d): structural file checks, content/invariant checks, ADR/phase invariants, and parser unit-test smokes. See `scripts/checks/README.md` for the convention and how to add a new module. |
 | `scripts/setup.sh` | First-run project customization helper. Thin orchestrator that sources `scripts/setup/[0-9][0-9]-*.sh` modules in lexical order (issue #255 Phase 4c) |
 | `scripts/setup/*.sh` | Per-phase setup modules (issue #255 Phase 4c): `00-detect-repo`, `10-env-file`, `20-install-dependencies`, `30-build`, `40-ensure-labels`, `50-ensure-variables`, `60-check-secrets`, `70-verify-env`. See `scripts/setup/README.md` for the module table and how to run a single module. |
-| `scripts/verify-env.sh` | Environment & placeholder sanity check |
+| `scripts/verify-env.sh` | Environment & placeholder sanity check; run with `--fix` to auto-install missing tools (bounded allowlist: `rg`, `shellcheck`, `jq`) |
+| `scripts/diag-sandbox.sh` | Read-only sandbox auth/access doctor (issue #365): checks auth source, remote reachability, and stale branch inventory; makes no writes. `DIAG_GIT_TIMEOUT` (default 10 s; `0` disables timeout). Run before sandbox operations or when `gh` auth is unclear. See `docs/guides/sandbox-verification.md` § "Sandbox Doctor" |
 | `scripts/verify-pr.sh` | Plan-template Change-class classifier (ADR-016 / issue #227); run: `bash scripts/verify-pr.sh --declared "<class>"` |
 | `scripts/validate-compliance-examples.py` | Validates fenced YAML examples in `docs/compliance_schemas.md` against ADR-026 v1 shape |
 | `scripts/validate-compliance-fixtures.py` | Validates ADR-026 valid/invalid fixtures under `scripts/tests/fixtures/compliance/` |

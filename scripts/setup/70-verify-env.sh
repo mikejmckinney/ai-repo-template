@@ -4,7 +4,7 @@
 log_step "Verifying environment"
 
 if [[ -f "scripts/verify-env.sh" ]]; then
-  ./scripts/verify-env.sh
+  ./scripts/verify-env.sh --fix
 else
   log_warn "verify-env.sh not found, skipping verification"
 fi

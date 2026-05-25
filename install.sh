@@ -335,6 +335,7 @@ MULTIAGENT_FILES=(
   ".github/agents/consensus-candidate-claude.agent.md"
   ".github/agents/consensus-candidate-gpt.agent.md"
   ".github/agents/consensus-candidate-gemini.agent.md"
+  "scripts/diag-sandbox.sh"
   "scripts/diag-hang-snapshot.sh"
   "scripts/lib/assertions.sh"
   "scripts/lib/bot-allowlist.txt"
