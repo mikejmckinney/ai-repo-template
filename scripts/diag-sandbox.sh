@@ -185,18 +185,20 @@ echo ""
 # ---------------------------------------------------------------------------
 echo "Checking sandbox branches..."
 
-if [[ -n "$_ls_remote_output" ]]; then
-  _branch_count=$(printf '%s\n' "$_ls_remote_output" | grep -v '^$' | wc -l | tr -d ' ')
-  log_info "Found $_branch_count branch(es) on sandbox remote"
+_branch_count=$(printf '%s\n' "$_ls_remote_output" | grep -v '^$' | wc -l | tr -d ' ')
+log_info "Found $_branch_count branch(es) on sandbox remote"
 
-  # Report non-main branches as potentially stale test branches.
-  _non_main=$(printf '%s\n' "$_ls_remote_output" | grep -v 'refs/heads/main$' | grep -v '^$' || true)
-  if [[ -n "$_non_main" ]]; then
-    log_warn "Non-main branches found (may be stale test branches):"
-    while IFS= read -r _branch_line; do
-      [[ -z "$_branch_line" ]] && continue
-      log_warn "  $_branch_line"
-    done <<<"$_non_main"
+# Report non-main branches as potentially stale test branches.
+_non_main=$(printf '%s\n' "$_ls_remote_output" | grep -v 'refs/heads/main$' | grep -v '^$' || true)
+if [[ -n "$_non_main" ]]; then
+  log_warn "Non-main branches found (may be stale test branches):"
+  while IFS= read -r _branch_line; do
+    [[ -z "$_branch_line" ]] && continue
+    log_warn "  $_branch_line"
+  done <<<"$_non_main"
+else
+  if [[ "$_branch_count" -eq 0 ]]; then
+    log_info "No branches found on sandbox remote"
   else
     log_info "No stale branches detected (only main branch exists)"
   fi

@@ -61,6 +61,33 @@ _assert_no_mutations() {
   [ "$status" -eq 0 ]
 }
 
+@test "diag-sandbox: empty sandbox remote reports no branches found" {
+  _add_stub "gh" \
+    'if [[ "$*" == *"auth status"* ]]; then
+       echo "Logged in to github.com account testuser (oauth_token)"; exit 0
+     fi
+     exit 0'
+  _add_stub "git" \
+    'if [[ "$1" == "remote" && "$2" == "get-url" ]]; then
+       echo "https://github.com/test/test-sandbox.git"; exit 0
+     fi
+     if [[ "$1" == "ls-remote" ]]; then
+       exit 0
+     fi
+     /usr/bin/git "$@"'
+  _add_stub "timeout" 'shift; exec "$@"'
+
+  run env PATH="$STUB_BIN:$PATH" \
+    CODESPACES="" \
+    SANDBOX_REMOTE=sandbox \
+    bash "$SCRIPT" 2>&1
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  _assert_no_mutations
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Found 0 branch(es) on sandbox remote"* ]]
+  [[ "$output" == *"No branches found on sandbox remote"* ]]
+}
+
 @test "diag-sandbox: passes shellcheck (no errors)" {
   if ! command -v shellcheck >/dev/null 2>&1; then
     skip "shellcheck not installed"
