@@ -85,6 +85,16 @@ This constraint is one more reason the tier table is a v1 A/B framework (Amendme
 
 Copilot's multi-vendor selector requires the `Model Name (vendor)` format for disambiguation: `Claude Opus 4.7 (copilot)`, `GPT-5.2 (copilot)`, `Gemini 3 Flash (Preview) (copilot)`. The `test.sh` allowlist regex for `.github/agents/**` accepts this format and (in a future revision) array forms of it. Claude Code allowlist for `.claude/agents/**` uses bare Anthropic model strings (no vendor suffix).
 
+### Amendment #8 — June 2026 Copilot pricing reassessment and interim GPT-5.4 xhigh guidance
+
+GitHub's June 2026 Copilot pricing update changes the relative premium-request multipliers on Copilot's pricing surface. The cross-vendor cost-alignment assumption behind Amendment #2's "single-string pins until verified" rule is therefore stale and must be re-validated against the new billing baseline. In this ADR, "cost" on the Copilot side means billed Copilot cost first (premium-request multiplier / pricing tier), not raw token count; token use and latency remain secondary evaluation metrics.
+
+This amendment does **not** change the canonical tier table above and does **not** change any `.github/agents/*.agent.md` overlay `model:` lines. Until issue #220 Phase 3 / Phase 4 is refreshed and benchmarked against the updated pricing surface, the existing Copilot-side Anthropic pins remain the documented repo default. The current table stays accepted as the v1 baseline, not because it is proven optimal under the June 2026 pricing surface, but because the comparison data needed to justify a remap does not yet exist.
+
+Interim guidance for Copilot users: when the work is reasoning-heavy and parent-model choice matters because of Amendment #6's cost-tier ceiling — for example OP orchestration, `pr-resolve-all.md` review loops, plan-gate, diff-gate, or architecture-heavy design work — `GPT-5.4 xhigh` is the preferred comparison baseline and MAY be used as the parent session model pending benchmark results. This is guidance for human session setup, not an overlay remap and not a claim that `GPT-5.4 xhigh` is the final per-role winner.
+
+The decision about whether to remap any Copilot role from the current Anthropic strings to `GPT-5.4 xhigh` (or another Copilot model), and whether to add verified Copilot fallback arrays, is deferred to the refreshed benchmark work in issue #220. That refresh must evaluate ROI per role and per workflow class, at minimum across: billed Copilot cost, review-loop convergence, plan/review quality, latency to task completion, and context-fit / truncation risk. If the refreshed benchmark shows that `GPT-5.4 xhigh` has better ROI for specific Copilot roles, capture that as a later ADR-019 amendment and update the affected overlays in the same PR.
+
 ## Options Considered
 
 ### Option 1: Per-role pinning with per-platform divergence (chosen)
@@ -144,6 +154,12 @@ This ADR ships in one PR (`feature/devops-220-phase2`):
 
 ## Future Work
 
+- Refresh issue #220 Phase 3 / Phase 4 benchmarking against GitHub's June 2026 Copilot pricing surface before changing any Copilot overlay `model:` pins.
+- Treat Copilot "cost" primarily as billed Copilot cost on the current pricing surface, with token usage and latency measured as secondary metrics rather than primary routing inputs.
+- Use `GPT-5.4 xhigh` as the interim comparison baseline for reasoning-heavy Copilot parent sessions while benchmark data is being refreshed.
+- Evaluate ROI by role and workflow class, not only by raw model quality: include billed cost, convergence in review loops, plan/review quality, time-to-completion, and context-fit/truncation risk.
+- If refreshed evidence shows a better Copilot mapping than the current Anthropic-pinned v1 baseline, land that change as a later ADR-019 amendment together with any required overlay and enforcement updates.
+- Keep Copilot fallback-array support deferred until cross-vendor syntax and cost-tier semantics are verified against real benchmark results rather than assumed parity.
 - **Verified Copilot fallback arrays** (Amendment #2 follow-up): once Anthropic / OpenAI / Vertex tier alignment is verified on Copilot's pricing surface, add `model: [...]` arrays to High and Mid Copilot roles per the verified mapping. File as a follow-up issue after at least one billing cycle of Phase 2 data.
 - **Reassessment cadence** (Amendment #3): first quarterly review ~3 months after this ADR lands; capture in a new amendment.
 - **Phase 4 handoff orchestration** ([#220 Phase 4 stub](https://github.com/mikejmckinney/ai-repo-template/issues/220#issuecomment-4393282716)): per-handoff `model:` overrides will reference this ADR's tier table.
