@@ -22,6 +22,8 @@
 # (GH_PAT, GH_TOKEN_PAT, CODESPACES_GH_PAT, GITHUB_PAT) as
 # scripts/setup/40-ensure-labels.sh.
 # Both files must be updated together if new PAT aliases are added.
+# Intentionally omits `set -e`: this is a diagnostic script, so it keeps
+# collecting explicit checks and uses targeted exits for hard-failure paths.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -34,6 +36,10 @@ require_tool() {
     log_error "$tool is required but not installed"
     exit 1
   fi
+}
+
+_redact_remote_text() {
+  printf '%s' "$1" | sed -E 's#(https?://)[^/@[:space:]]+@#\1***@#g'
 }
 
 # ---------------------------------------------------------------------------
@@ -127,7 +133,7 @@ else
   fi
 fi
 
-unset _var _pat_found _pat_var_found _identity _token_source _auth_output _auth_exit 2>/dev/null || true
+unset _var _pat_found _pat_var_found _identity _token_source _auth_output _auth_exit || true
 
 echo ""
 
@@ -151,7 +157,7 @@ if ! _sandbox_url=$(git remote get-url "$SANDBOX_REMOTE" 2>/dev/null); then
   exit 2
 fi
 
-log_info "Sandbox remote '$SANDBOX_REMOTE': $_sandbox_url"
+log_info "Sandbox remote '$SANDBOX_REMOTE': $(_redact_remote_text "$_sandbox_url")"
 
 # Probe reachability with a timeout-wrapped git ls-remote (read-only).
 _ls_remote_output=""
@@ -174,7 +180,7 @@ elif command -v timeout &>/dev/null; then
       exit 2
     else
       log_warn "git ls-remote failed (exit $_ls_remote_exit) — sandbox may not be accessible with current auth"
-      log_warn "Output: $_ls_remote_output"
+      log_warn "Output: $(_redact_remote_text "$_ls_remote_output")"
       exit 2
     fi
   fi
@@ -183,7 +189,7 @@ else
   _ls_remote_output=$(git ls-remote "$_sandbox_url" 'refs/heads/*' 2>&1) || _ls_remote_exit=$?
   if [[ "$_ls_remote_exit" -ne 0 ]]; then
     log_warn "git ls-remote failed (exit $_ls_remote_exit) — sandbox may not be accessible"
-    log_warn "Output: $_ls_remote_output"
+    log_warn "Output: $(_redact_remote_text "$_ls_remote_output")"
     exit 2
   fi
 fi
@@ -216,7 +222,7 @@ else
 fi
 
 unset _sandbox_url _ls_remote_output _ls_remote_exit _timeout_val \
-  _branch_count _non_main _branch_line 2>/dev/null || true
+  _branch_count _non_main _branch_line || true
 
 echo ""
 

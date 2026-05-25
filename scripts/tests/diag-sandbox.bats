@@ -393,7 +393,7 @@ _assert_no_mutations() {
   # insufficient.  Build an isolated stub_bin that has all tools the script needs
   # (dirname, grep, wc, tr, head, bash) but NOT timeout, then use PATH=stub_bin only.
   _isolated_bin=$(mktemp -d "${TMPDIR:-/tmp}/check-115.XXXXXX")
-  for _t in bash dirname grep wc tr head; do
+  for _t in bash dirname grep sed wc tr head; do
     _rp=$(command -v "$_t" 2>/dev/null || true)
     [[ -n "$_rp" ]] && ln -sf "$_rp" "$_isolated_bin/$_t" 2>/dev/null || true
   done
@@ -435,6 +435,34 @@ _assert_no_mutations() {
   [ "$status" -eq 2 ]
   [[ "$output" == *"not configured"* ]]
   [[ "$output" == *"Advisory"* ]]
+}
+
+@test "diag-sandbox: redacts credentials in logged remote URLs and transport errors" {
+  _add_stub "gh" \
+    'if [[ "$*" == *"auth status"* ]]; then
+       echo "Logged in to github.com account testuser (oauth_token)"; exit 0
+     fi
+     exit 0'
+  _add_stub "git" \
+    'if [[ "$1" == "remote" && "$2" == "get-url" ]]; then
+       echo "https://x-access-token:supersecret@github.com/test/test-sandbox.git"; exit 0
+     fi
+     if [[ "$1" == "ls-remote" ]]; then
+       echo "fatal: could not read from https://x-access-token:supersecret@github.com/test/test-sandbox.git" >&2; exit 128
+     fi
+     /usr/bin/git "$@"'
+  _add_stub "timeout" 'shift; exec "$@"'
+
+  run env PATH="$STUB_BIN:$PATH" \
+    CODESPACES="" \
+    SANDBOX_REMOTE=sandbox \
+    DIAG_GIT_TIMEOUT=10 \
+    bash "$SCRIPT" 2>&1
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  _assert_no_mutations
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"https://***@github.com/test/test-sandbox.git"* ]]
+  [[ "$output" != *"supersecret"* ]]
 }
 
 @test "diag-sandbox: outside git repo exits 1 instead of misreporting missing remote" {

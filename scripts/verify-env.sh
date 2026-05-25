@@ -117,7 +117,7 @@ for _tool in "${_REQUIRED_TOOLS[@]}"; do
   if command -v "$_tool" &>/dev/null; then
     pass "$_tool is installed"
   else
-    if [[ "$_FIX_MODE" == "true" ]]; then
+    if [[ "$_FIX_MODE" == "true" && "$FAIL" -eq 0 ]]; then
       if _pkg=$(_fix_package_for_tool "$_tool"); then
         _fix_install "$_tool" "$_pkg"
         unset _pkg
@@ -127,7 +127,7 @@ for _tool in "${_REQUIRED_TOOLS[@]}"; do
           fail "$_tool install attempted but tool still not found"
         fi
       else
-        log_warn "[fix] $_tool is not on the fix allowlist — install it manually"
+        log_error "[fix] $_tool is not on the fix allowlist — install it manually"
         exit 1
       fi
     else
