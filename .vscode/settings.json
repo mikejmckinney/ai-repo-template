@@ -2,6 +2,9 @@
   "github.copilot.chat.codeGeneration.instructions": [
     { "file": ".context/rules/process_critical_thinking.md" },
     { "file": ".context/rules/process_clarification.md" },
-    { "file": ".context/rules/process_work_style.md" }
+    { "file": ".context/rules/process_work_style.md" },
+    { "file": ".context/rules/repo_orchestration_patterns.md" },
+    { "file": ".context/rules/domain_code_quality.md" },
+    { "file": ".context/rules/process_doc_maintenance.md" }
   ]
 }
