@@ -20,7 +20,7 @@ for _arg in "$@"; do
   case "$_arg" in
     --fix) _FIX_MODE=true ;;
     *)
-      printf '[ERROR] Unknown option: %s\n' "$_arg" >&2
+      log_error "Unknown option: $_arg"
       exit 1
       ;;
   esac
@@ -67,24 +67,24 @@ _fix_install() {
   _os=$(uname -s)
   if [[ "$_os" == "Darwin" ]]; then
     if ! command -v brew &>/dev/null; then
-      printf '[fix] Cannot install %s: brew is required on macOS — install Homebrew or install %s manually\n' "$tool" "$pkg"
+      log_error "[fix] Cannot install $tool: brew is required on macOS — install Homebrew or install $pkg manually"
       exit 1
     fi
-    printf '[fix] Installing %s via brew install %s\n' "$tool" "$pkg"
+    log_info "[fix] Installing $tool via brew install $pkg"
     brew install "$pkg"
   else
     if ! command -v apt-get &>/dev/null; then
-      printf '[fix] Cannot install %s: apt-get is required on this Linux system — install %s manually\n' "$tool" "$pkg"
+      log_error "[fix] Cannot install $tool: apt-get is required on this Linux system — install $pkg manually"
       exit 1
     fi
     if [[ "$(id -u)" == "0" ]]; then
-      printf '[fix] Installing %s via apt-get install -y %s (root)\n' "$tool" "$pkg"
+      log_info "[fix] Installing $tool via apt-get install -y $pkg (root)"
       apt-get install -y "$pkg"
     elif command -v sudo &>/dev/null; then
-      printf '[fix] Installing %s via sudo apt-get install -y %s\n' "$tool" "$pkg"
+      log_info "[fix] Installing $tool via sudo apt-get install -y $pkg"
       sudo apt-get install -y "$pkg"
     else
-      printf '[fix] Cannot install %s: root or sudo required — re-run as root or grant sudo access\n' "$tool"
+      log_error "[fix] Cannot install $tool: root or sudo required — re-run as root or grant sudo access"
       exit 1
     fi
   fi
@@ -127,7 +127,7 @@ for _tool in "${_REQUIRED_TOOLS[@]}"; do
           fail "$_tool install attempted but tool still not found"
         fi
       else
-        printf '[fix] %s is not on the fix allowlist — install it manually\n' "$_tool"
+        log_warn "[fix] $_tool is not on the fix allowlist — install it manually"
         exit 1
       fi
     else

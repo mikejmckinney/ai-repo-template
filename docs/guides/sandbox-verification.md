@@ -354,8 +354,9 @@ ran `gh auth login` with a PAT), the doctor reports the active identity and
 skips the PAT upgrade path.
 
 **Outside Codespaces**: the doctor reports the active `gh` identity and token
-source, and notes any PAT variable that is set (optional upgrade path). If `gh`
-is not authenticated, it prints a `gh auth login` reminder.
+source, and notes any PAT variable that is set (optional upgrade path). If
+`gh auth status` fails and no active identity is reported, the doctor exits 1
+and prints a `gh auth login` reminder.
 
 ### Sandbox remote reachability and `DIAG_GIT_TIMEOUT`
 
@@ -382,7 +383,7 @@ advisory and exits 2. See [One-time setup](#one-time-setup-maintainer) above.
 ### PAT variable list — maintenance anchor
 
 The probe list (`GH_PAT`, `GH_TOKEN_PAT`, `CODESPACES_GH_PAT`, `GITHUB_PAT`)
-must stay in sync with `scripts/setup/40-ensure-labels.sh` (lines 90–93).
+must stay in sync with `scripts/setup/40-ensure-labels.sh`.
 Both files must be updated together whenever a new PAT alias is added.
 
 ## See also

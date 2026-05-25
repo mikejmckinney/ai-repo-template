@@ -20,7 +20,7 @@
 #
 # Auth-source detection uses the same PAT variable probe list
 # (GH_PAT, GH_TOKEN_PAT, CODESPACES_GH_PAT, GITHUB_PAT) as
-# scripts/setup/40-ensure-labels.sh lines 90-93.
+# scripts/setup/40-ensure-labels.sh.
 # Both files must be updated together if new PAT aliases are added.
 set -uo pipefail
 
@@ -40,7 +40,7 @@ require_tool() {
 # Constants
 # ---------------------------------------------------------------------------
 SANDBOX_REMOTE="${SANDBOX_REMOTE:-sandbox}"
-# PAT probe list — must match scripts/setup/40-ensure-labels.sh lines 90-93.
+# PAT probe list — must match scripts/setup/40-ensure-labels.sh.
 _PAT_VARS=(GH_PAT GH_TOKEN_PAT CODESPACES_GH_PAT GITHUB_PAT)
 
 echo "========================================"
@@ -58,10 +58,18 @@ echo "Checking auth source..."
 
 _pat_found=""
 _pat_var_found=""
+_auth_exit=0
+_auth_output=$(gh auth status 2>&1) || _auth_exit=$?
+_identity=$(printf '%s' "$_auth_output" | grep -E 'Logged in to' | head -1 || true)
+
+if [[ "$_auth_exit" -ne 0 && -z "$_identity" ]]; then
+  log_error "gh auth status failed — gh may not be authenticated"
+  log_error "Run: gh auth login"
+  exit 1
+fi
 
 if [[ "${CODESPACES:-}" == "true" ]]; then
   log_info "Running inside Codespaces"
-  _auth_output=$(gh auth status 2>&1 || true)
 
   # Detect the injected GITHUB_TOKEN auth-source pattern.
   if printf '%s' "$_auth_output" | grep -qE 'Logged in to github\.com.*\(GITHUB_TOKEN\)'; then
@@ -85,7 +93,6 @@ if [[ "${CODESPACES:-}" == "true" ]]; then
       log_warn "Set one of: ${_PAT_VARS[*]} as a Codespaces user secret"
     fi
   else
-    _identity=$(printf '%s' "$_auth_output" | grep -E 'Logged in to' | head -1 || true)
     if [[ -n "$_identity" ]]; then
       # Codespaces with an explicit non-GITHUB_TOKEN auth-source — PAT already active.
       log_info "gh auth active (non-GITHUB_TOKEN): ${_identity}"
@@ -97,8 +104,6 @@ if [[ "${CODESPACES:-}" == "true" ]]; then
 else
   # Outside Codespaces: report active identity and token source.
   log_info "Not running in Codespaces"
-  _auth_output=$(gh auth status 2>&1 || true)
-  _identity=$(printf '%s' "$_auth_output" | grep -E 'Logged in to' | head -1 || true)
   _token_source=$(printf '%s' "$_auth_output" | grep -E 'Token:' | head -1 || true)
 
   if [[ -n "$_identity" ]]; then
@@ -122,7 +127,7 @@ else
   fi
 fi
 
-unset _var _pat_found _pat_var_found _identity _token_source _auth_output 2>/dev/null || true
+unset _var _pat_found _pat_var_found _identity _token_source _auth_output _auth_exit 2>/dev/null || true
 
 echo ""
 
@@ -130,6 +135,12 @@ echo ""
 # 2. Sandbox remote reachability
 # ---------------------------------------------------------------------------
 echo "Checking sandbox remote reachability..."
+
+if ! git rev-parse --git-dir &>/dev/null; then
+  log_error "Current directory is not a git repository"
+  log_error "Run this doctor from inside a git checkout with the sandbox remote configured"
+  exit 1
+fi
 
 # Resolve the sandbox remote URL.
 _sandbox_url=""

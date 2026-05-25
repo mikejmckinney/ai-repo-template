@@ -259,7 +259,8 @@ _assert_no_mutations() {
     bash "$SCRIPT" 2>&1
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   _assert_no_mutations
-  [[ "$output" == *"gh auth status returned no identity"* ]]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"gh auth status failed"* ]]
   [[ "$output" == *"Run: gh auth login"* ]]
 }
 
@@ -290,8 +291,8 @@ _assert_no_mutations() {
   [[ "$output" == *"Logged in to github.com"* ]]
 }
 
-@test "diag-sandbox: auth-error reachability path (gh not authenticated)" {
-  # gh auth status returns no identity (not logged in).
+@test "diag-sandbox: auth-error exits 1 before reachability checks" {
+  # gh auth status fails (not logged in); the doctor should stop before remote probes.
   _add_stub "gh" \
     'if [[ "$*" == *"auth status"* ]]; then
        echo "You are not logged into any GitHub hosts."; exit 1
@@ -313,9 +314,12 @@ _assert_no_mutations() {
     bash "$SCRIPT" 2>&1
   printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
   _assert_no_mutations
-  # Should warn about git ls-remote failure and exit 2 or 1.
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"git ls-remote failed"* ]] || [[ "$output" == *"may not be accessible"* ]]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"gh auth status failed"* ]]
+  [[ "$output" == *"Run: gh auth login"* ]]
+  log_content=$(cat "$INVOCATIONS_LOG" 2>/dev/null || true)
+  [[ "$log_content" != *"git remote get-url"* ]]
+  [[ "$log_content" != *"git ls-remote"* ]]
 }
 
 @test "diag-sandbox: timeout path (exit 124) warns and exits 2" {
@@ -431,6 +435,35 @@ _assert_no_mutations() {
   [ "$status" -eq 2 ]
   [[ "$output" == *"not configured"* ]]
   [[ "$output" == *"Advisory"* ]]
+}
+
+@test "diag-sandbox: outside git repo exits 1 instead of misreporting missing remote" {
+  _add_stub "gh" \
+    'if [[ "$*" == *"auth status"* ]]; then
+       echo "Logged in to github.com account testuser (oauth_token)"; exit 0
+     fi
+     exit 0'
+  _add_stub "git" \
+    'if [[ "$1" == "rev-parse" && "$2" == "--git-dir" ]]; then
+       echo "fatal: not a git repository" >&2; exit 128
+     fi
+     if [[ "$1" == "remote" && "$2" == "get-url" ]]; then
+       echo "https://github.com/test/test-sandbox.git"; exit 0
+     fi
+     /usr/bin/git "$@"'
+
+  run env PATH="$STUB_BIN:$PATH" \
+    CODESPACES="" \
+    SANDBOX_REMOTE=sandbox \
+    bash "$SCRIPT" 2>&1
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  _assert_no_mutations
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Current directory is not a git repository"* ]]
+  [[ "$output" != *"not configured"* ]]
+  log_content=$(cat "$INVOCATIONS_LOG" 2>/dev/null || true)
+  [[ "$log_content" == *"git rev-parse --git-dir"* ]]
+  [[ "$log_content" != *"git remote get-url"* ]]
 }
 
 @test "diag-sandbox: non-mutation contract — no git push or branch -d in any stub log" {
