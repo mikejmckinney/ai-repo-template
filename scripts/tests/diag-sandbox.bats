@@ -374,6 +374,35 @@ _assert_no_mutations() {
   ! grep -q '^timeout ' "$INVOCATIONS_LOG"
 }
 
+@test "diag-sandbox: DIAG_GIT_TIMEOUT=0 redacts transport errors" {
+  _add_stub "gh" \
+    'if [[ "$*" == *"auth status"* ]]; then
+       echo "Logged in to github.com account testuser (oauth_token)"; exit 0
+     fi
+     exit 0'
+  _add_stub "git" \
+    'if [[ "$1" == "remote" && "$2" == "get-url" ]]; then
+       echo "https://x-access-token:supersecret@github.com/test/test-sandbox.git"; exit 0
+     fi
+     if [[ "$1" == "ls-remote" ]]; then
+       echo "fatal: could not read from https://x-access-token:supersecret@github.com/test/test-sandbox.git" >&2; exit 128
+     fi
+     /usr/bin/git "$@"'
+  _add_stub "timeout" 'echo "timeout wrapper should not run" >&2; exit 99'
+
+  run env PATH="$STUB_BIN:$PATH" \
+    CODESPACES="" \
+    SANDBOX_REMOTE=sandbox \
+    DIAG_GIT_TIMEOUT=0 \
+    bash "$SCRIPT" 2>&1
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  _assert_no_mutations
+  [ "$status" -eq 2 ]
+  ! grep -q '^timeout ' "$INVOCATIONS_LOG"
+  [[ "$output" == *"https://***@github.com/test/test-sandbox.git"* ]]
+  [[ "$output" != *"supersecret"* ]]
+}
+
 @test "diag-sandbox: timeout-absent fallback — warns and proceeds with bare git ls-remote" {
   _add_stub "gh" \
     'if [[ "$*" == *"auth status"* ]]; then

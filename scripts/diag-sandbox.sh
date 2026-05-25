@@ -168,7 +168,7 @@ if [[ "$_timeout_val" == "0" ]]; then
   _ls_remote_output=$(git ls-remote "$_sandbox_url" 'refs/heads/*' 2>&1) || _ls_remote_exit=$?
   if [[ "$_ls_remote_exit" -ne 0 ]]; then
     log_warn "git ls-remote failed (exit $_ls_remote_exit) — sandbox may not be accessible with current auth"
-    log_warn "Output: $_ls_remote_output"
+    log_warn "Output: $(_redact_remote_text "$_ls_remote_output")"
     exit 2
   fi
 elif command -v timeout &>/dev/null; then
