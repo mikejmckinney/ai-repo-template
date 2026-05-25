@@ -35,7 +35,7 @@ teardown() {
 _add_stub() {
   local name="$1" body="$2"
   printf '#!/usr/bin/env bash\nprintf "%%s %%s\n" "%s" "$*" >> "%s"\n%s\n' \
-    "$name" "$INVOCATIONS_LOG" "$body" > "$STUB_BIN/$name"
+    "$name" "$INVOCATIONS_LOG" "$body" >"$STUB_BIN/$name"
   chmod +x "$STUB_BIN/$name"
 }
 
@@ -116,7 +116,7 @@ _assert_no_mutations() {
     _rp=$(command -v "$_t" 2>/dev/null || true)
     [[ -n "$_rp" ]] && ln -sf "$_rp" "$_isolated_bin/$_t" 2>/dev/null || true
   done
-  printf '#!/usr/bin/env bash\nexit 0\n' > "$_isolated_bin/gh"
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$_isolated_bin/gh"
   chmod +x "$_isolated_bin/gh"
 
   run env PATH="$_isolated_bin" bash "$SCRIPT" 2>&1
@@ -398,7 +398,7 @@ _assert_no_mutations() {
     [[ -n "$_rp" ]] && ln -sf "$_rp" "$_isolated_bin/$_t" 2>/dev/null || true
   done
   # Copy the gh and git stubs from STUB_BIN into the isolated bin.
-  cp "$STUB_BIN/gh"  "$_isolated_bin/gh"
+  cp "$STUB_BIN/gh" "$_isolated_bin/gh"
   cp "$STUB_BIN/git" "$_isolated_bin/git"
 
   run env PATH="$_isolated_bin" \
