@@ -83,6 +83,10 @@ Parent agent form (use `## Subagent context receipt` heading when emitting as a 
 | `<path>` | <Read / Reviewed / Skipped> | <reason> | <decision, gate, or output affected> |
 ```
 
+### Prompt-context read credit
+
+If the full contents of a referenced rule file are already present verbatim in the current prompt context, you may treat that file as `Reviewed` for orientation and avoid re-reading it from disk. A pointer or filename reference alone does not count as read credit. You must still read the on-disk file when freshness matters, when the rule's cadence requires a read or re-read, when a dispatch packet explicitly names it, or when you need line-accurate citations or compliance evidence.
+
 ## Truth hierarchy
 
 When information conflicts, use this priority order:
