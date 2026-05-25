@@ -61,9 +61,10 @@ _pat_var_found=""
 
 if [[ "${CODESPACES:-}" == "true" ]]; then
   log_info "Running inside Codespaces"
+  _auth_output=$(gh auth status 2>&1 || true)
 
   # Detect the injected GITHUB_TOKEN auth-source pattern.
-  if gh auth status 2>&1 | grep -qE 'Logged in to github\.com.*\(GITHUB_TOKEN\)'; then
+  if printf '%s' "$_auth_output" | grep -qE 'Logged in to github\.com.*\(GITHUB_TOKEN\)'; then
     log_warn "gh is authenticated via GITHUB_TOKEN (injected by Codespaces)"
     log_warn "This token may lack sandbox repo write access — probing for PAT upgrade..."
 
@@ -84,9 +85,14 @@ if [[ "${CODESPACES:-}" == "true" ]]; then
       log_warn "Set one of: ${_PAT_VARS[*]} as a Codespaces user secret"
     fi
   else
-    # Codespaces but not using GITHUB_TOKEN auth-source — PAT already active.
-    _identity=$(gh auth status 2>&1 | grep -E 'Logged in to' | head -1 || true)
-    log_info "gh auth active (non-GITHUB_TOKEN): ${_identity:-<could not determine identity>}"
+    _identity=$(printf '%s' "$_auth_output" | grep -E 'Logged in to' | head -1 || true)
+    if [[ -n "$_identity" ]]; then
+      # Codespaces with an explicit non-GITHUB_TOKEN auth-source — PAT already active.
+      log_info "gh auth active (non-GITHUB_TOKEN): ${_identity}"
+    else
+      log_warn "gh auth status returned no identity — gh may not be authenticated"
+      log_warn "Run: gh auth login"
+    fi
   fi
 else
   # Outside Codespaces: report active identity and token source.

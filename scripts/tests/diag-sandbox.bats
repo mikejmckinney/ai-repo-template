@@ -185,6 +185,57 @@ _assert_no_mutations() {
   [[ "$output" == *"PAT upgrade available"* ]]
 }
 
+@test "diag-sandbox: Codespaces with non-GITHUB_TOKEN auth reports active identity" {
+  _add_stub "gh" \
+    'if [[ "$*" == *"auth status"* ]]; then
+       echo "Logged in to github.com account testuser (oauth_token)"; exit 0
+     fi
+     exit 0'
+  _add_stub "git" \
+    'if [[ "$1" == "remote" && "$2" == "get-url" ]]; then
+       echo "https://github.com/test/test-sandbox.git"; exit 0
+     fi
+     if [[ "$1" == "ls-remote" ]]; then
+       printf "abc123\trefs/heads/main\n"; exit 0
+     fi
+     /usr/bin/git "$@"'
+  _add_stub "timeout" 'shift; exec "$@"'
+
+  run env PATH="$STUB_BIN:$PATH" \
+    CODESPACES=true \
+    SANDBOX_REMOTE=sandbox \
+    bash "$SCRIPT" 2>&1
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  _assert_no_mutations
+  [[ "$output" == *"gh auth active (non-GITHUB_TOKEN): Logged in to github.com"* ]]
+}
+
+@test "diag-sandbox: Codespaces without gh auth warns explicitly" {
+  _add_stub "gh" \
+    'if [[ "$*" == *"auth status"* ]]; then
+       echo "You are not logged into any GitHub hosts. Run gh auth login to authenticate." >&2; exit 1
+     fi
+     exit 1'
+  _add_stub "git" \
+    'if [[ "$1" == "remote" && "$2" == "get-url" ]]; then
+       echo "https://github.com/test/test-sandbox.git"; exit 0
+     fi
+     if [[ "$1" == "ls-remote" ]]; then
+       printf "abc123\trefs/heads/main\n"; exit 0
+     fi
+     /usr/bin/git "$@"'
+  _add_stub "timeout" 'shift; exec "$@"'
+
+  run env PATH="$STUB_BIN:$PATH" \
+    CODESPACES=true \
+    SANDBOX_REMOTE=sandbox \
+    bash "$SCRIPT" 2>&1
+  printf '%s\n' "$output" | sed 's/^/# /' >&3 || true
+  _assert_no_mutations
+  [[ "$output" == *"gh auth status returned no identity"* ]]
+  [[ "$output" == *"Run: gh auth login"* ]]
+}
+
 @test "diag-sandbox: non-Codespaces reports active identity" {
   # Outside Codespaces: gh auth status returns a normal identity.
   _add_stub "gh" \
