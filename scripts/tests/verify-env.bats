@@ -222,7 +222,7 @@ exit 0
 
 # Create a temp stub bin directory; prints path.
 _make_stub_bin() {
-  mktemp -d "${TMPDIR:-/tmp}/stub-XXXXXX"
+  mktemp -d "${TMPDIR:-/tmp}/check-115.XXXXXX"
 }
 
 # Write an executable stub into a dir.

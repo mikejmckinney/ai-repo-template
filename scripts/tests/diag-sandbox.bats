@@ -19,8 +19,8 @@ setup_file() {
 }
 
 setup() {
-  STUB_BIN="$(mktemp -d "${TMPDIR:-/tmp}/diag-sb-stub-XXXXXX")"
-  INVOCATIONS_LOG="$(mktemp "${TMPDIR:-/tmp}/diag-sb-invocations-XXXXXX")"
+  STUB_BIN="$(mktemp -d "${TMPDIR:-/tmp}/check-115.XXXXXX")"
+  INVOCATIONS_LOG="$(mktemp "${TMPDIR:-/tmp}/check-115.XXXXXX")"
   export STUB_BIN INVOCATIONS_LOG
 }
 
@@ -97,7 +97,7 @@ _assert_no_mutations() {
 }
 
 @test "diag-sandbox: missing gh exits 1 with explicit error" {
-  _isolated_bin=$(mktemp -d "${TMPDIR:-/tmp}/diag-iso-XXXXXX")
+  _isolated_bin=$(mktemp -d "${TMPDIR:-/tmp}/check-115.XXXXXX")
   for _t in bash dirname; do
     _rp=$(command -v "$_t" 2>/dev/null || true)
     [[ -n "$_rp" ]] && ln -sf "$_rp" "$_isolated_bin/$_t" 2>/dev/null || true
@@ -111,7 +111,7 @@ _assert_no_mutations() {
 }
 
 @test "diag-sandbox: missing git exits 1 with explicit error" {
-  _isolated_bin=$(mktemp -d "${TMPDIR:-/tmp}/diag-iso-XXXXXX")
+  _isolated_bin=$(mktemp -d "${TMPDIR:-/tmp}/check-115.XXXXXX")
   for _t in bash dirname; do
     _rp=$(command -v "$_t" 2>/dev/null || true)
     [[ -n "$_rp" ]] && ln -sf "$_rp" "$_isolated_bin/$_t" 2>/dev/null || true
@@ -388,7 +388,7 @@ _assert_no_mutations() {
   # timeout is at /bin/timeout AND /usr/bin/timeout, so PATH stripping alone is
   # insufficient.  Build an isolated stub_bin that has all tools the script needs
   # (dirname, grep, wc, tr, head, bash) but NOT timeout, then use PATH=stub_bin only.
-  _isolated_bin=$(mktemp -d "${TMPDIR:-/tmp}/diag-iso-XXXXXX")
+  _isolated_bin=$(mktemp -d "${TMPDIR:-/tmp}/check-115.XXXXXX")
   for _t in bash dirname grep wc tr head; do
     _rp=$(command -v "$_t" 2>/dev/null || true)
     [[ -n "$_rp" ]] && ln -sf "$_rp" "$_isolated_bin/$_t" 2>/dev/null || true
