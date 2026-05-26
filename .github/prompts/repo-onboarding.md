@@ -93,8 +93,9 @@ same PR:
 6. **Reset the template's durable retrospective example.** `.context/sessions/latest_summary.md`
    ships populated with ai-repo-template's own session history. Reset it so
    agents do not ingest the template's stale durable lesson as if it were this
-   project's reality. The legacy compatibility state files under
-   `.context/state/` remain in place and are not part of this Step 0.2 reset:
+  project's reality. Reset the following file; the legacy compatibility
+  state files under `.context/state/` remain in place and are not part of
+  this Step 0.2 reset:
    - `.context/sessions/latest_summary.md` — replace body with a single
      `No sessions yet` line; keep the `TEMPLATE_PLACEHOLDER` marker
      until the first durable retrospective entry.
