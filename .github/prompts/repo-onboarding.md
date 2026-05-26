@@ -76,9 +76,11 @@ same PR:
    - `TEMPLATE_PLACEHOLDER` markers → project-specific text or remove,
      **except** in `.context/state/_active.md`, `.context/sessions/latest_summary.md`,
      and `.context/state/coordination.md` — those compatibility / durable
-     lesson files intentionally retain the marker post-onboarding per item 6
-     below (`verify-env.sh` excludes them via `_PLACEHOLDER_EXCLUDE` so they
-     do not re-trigger Mode B).
+     lesson files intentionally retain the marker post-onboarding.
+     `_active.md` and `coordination.md` remain excluded legacy compatibility
+     surfaces, and `latest_summary.md` keeps the marker until the first
+     durable retrospective entry (`verify-env.sh` excludes all three via
+     `_PLACEHOLDER_EXCLUDE` so they do not re-trigger Mode B).
    - `PLEASE_UPDATE_THIS/URL` in `.github/ISSUE_TEMPLATE/config.yml` →
      actual `owner/repo` from `git remote -v`.
 4. **Extend `.context/rules/agent_ownership.md`** with rows for the project's
