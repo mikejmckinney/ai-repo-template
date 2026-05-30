@@ -163,6 +163,23 @@ _legacy_body() {
     "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
   echo ""
 
+  # ── FIXTURE-03b: literal-dot near-match ─────────────────────────────────────
+  echo "FIXTURE-03b: literal-dot near-match stays unexpected"
+  D=$(make_fixture "overlap-dot")
+  mkdir -p "$D/.context/sessions"
+  # latest_summary.md matches _PLACEHOLDER_EXCLUDE → excluded bootstrap file
+  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
+  # latest_summaryXmd would be wrongly excluded if '.' stayed unescaped.
+  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summaryXmd"
+  out=$(run_in_fixture "$D")
+  assert_not_contains "overlap-dot: no clean pass (unexpected file exists)" \
+    "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
+  assert_contains "overlap-dot: unexpected-file warning (latest_summaryXmd not excluded)" \
+    "files still contain TEMPLATE_PLACEHOLDER" "$out"
+  assert_contains "overlap-dot: bootstrap warning fires for latest_summary.md" \
+    "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
+  echo ""
+
   # ── FIXTURE-04: mixed ─────────────────────────────────────────────────────────
   echo "FIXTURE-04: mixed — unexpected file + bootstrap file"
   D=$(make_fixture "mixed")
