@@ -65,7 +65,7 @@ Before reaching for any of the external options below, note that the template al
 - **Repo**: https://github.com/ramziddin/openclaw
 - **What it is**: A Python-based agent runtime with a persistent task DB (PocketBase), cron-driven heartbeats, and webhook notifications (e.g. Telegram, Slack). Wraps Claude to run multi-agent teams autonomously between sessions.
 - **Fits**: You need **continuously-running autonomous agents** — e.g. a marketing-ops or research team that wakes itself up every N minutes without a human triggering it. You're comfortable running a Python + PocketBase service alongside your app.
-- **Skip if**: The opt-in `agent-heartbeat.yml.template` GitHub Action already covers your "nudge on stuck tasks" needs (it usually does); you want to keep the template language-agnostic and dependency-free; you don't want a message-bus dependency.
+- **Skip if**: a simple scheduled GitHub-native check you own is enough for stuck-task nudges; you want to keep the template language-agnostic and dependency-free; you don't want a message-bus dependency. The shipped `agent-heartbeat.yml.template` is only a legacy coordination-board example.
 - **Interaction with this template's roles**:
   - OpenClaw's *coordinator / boss* maps to `pm.agent.md`. Pick one to own dispatch — don't run both.
   - Its *review gates* map to `judge.agent.md` (procedural) and `critic.agent.md` (subjective). Reuse the existing role files inside OpenClaw rather than recreating them.

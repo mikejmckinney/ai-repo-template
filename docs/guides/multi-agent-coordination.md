@@ -262,11 +262,11 @@ Each branch goes through QA → Judge → merge independently.
 
 ## Optional: Scheduled Heartbeat
 
-For teams that want an autonomous daily check on stuck work, the template ships `.github/workflows/agent-heartbeat.yml.template` — a scheduled GitHub Action (disabled by default) designed to surface stale or blocked work and post a summary via webhook or a GitHub issue. Prefer GitHub-native comment and label state when deciding what counts as stale.
+For teams that still maintain a repo-local `.context/state/coordination.md` compatibility surface, the template ships `.github/workflows/agent-heartbeat.yml.template` as a legacy scheduled GitHub Action example. It is disabled by default, and current GitHub-first repos should rewrite the state query before enabling it.
 
-**When to enable**: you have multiple agent sessions running against the repo over multiple days and want a safety net for forgotten locks or stuck tasks.
+**When to enable**: only after you intentionally keep a coordination-board compatibility surface or rewrite the template to query GitHub issue/PR live state directly.
 
-**When NOT to enable**: single-developer projects or short-lived repos — the workflow will just add noise. Most projects don't need it.
+**When NOT to enable**: normal GitHub-first repos, single-developer projects, or short-lived repos. In its shipped form, the template is a legacy example and most projects do not need it.
 
 Enable steps are in the template file header.
 

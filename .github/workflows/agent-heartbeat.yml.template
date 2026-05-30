@@ -1,10 +1,10 @@
-# TEMPLATE_PLACEHOLDER: Optional scheduled agent heartbeat workflow.
+# TEMPLATE_PLACEHOLDER: Legacy coordination-board heartbeat example.
 #
-# Purpose: wake up once or twice a day to surface stale legacy locks in
-# .context/state/coordination.md, flag tasks stuck > 24h, and post a
-# status summary to a webhook or open an issue. ADR-025 makes GitHub
-# issues/PRs, labels, and agent-state:v1 comments the primary live state
-# for new work; prefer a GitHub-native heartbeat for new deployments.
+# Purpose: reference example for repos that still maintain a
+# .context/state/coordination.md compatibility surface. ADR-025 made
+# GitHub issues/PRs, labels, and agent-state:v1 comments the primary
+# live state for new work, so most repos should not enable this template
+# as-is.
 #
 # This file is DISABLED by default. To enable:
 #   1. Rename to `agent-heartbeat.yml`
@@ -14,8 +14,8 @@
 #      OR leave blank to just open/update a GitHub issue (default).
 #   4. Adjust the stale-lock threshold (default 24h) in the `HEARTBEAT_STALE_HOURS` env.
 #
-# See docs/guides/multi-agent-coordination.md for why this exists and
-# when NOT to enable it (most projects don't need it).
+# See docs/guides/multi-agent-coordination.md for when this legacy
+# template still makes sense and why most repos should leave it disabled.
 
 name: Agent Heartbeat
 
@@ -40,12 +40,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check coordination file exists
+      - name: Check legacy coordination file exists
         id: check
         run: |
           if [[ ! -f "$COORDINATION_FILE" ]]; then
-            echo "No coordination file at $COORDINATION_FILE; nothing to check."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::error::Legacy heartbeat template still expects $COORDINATION_FILE. Rewrite it to query GitHub issue/PR live state before enabling."
+            exit 1
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
           fi

@@ -317,7 +317,7 @@ bash install.sh
 | `docs/guides/design-patterns-post-gof.md` | Post-GoF pattern catalog with stable `CP25`-`CP34` citation handles |
 | `docs/guides/` | Operational how-to guides, including the multi-agent workflow guide |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |
-| `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
+| `.github/workflows/agent-heartbeat.yml.template` | Disabled legacy coordination-board heartbeat example; rewrite for GitHub-first live state before enabling |
 
 ### CI/CD Workflows
 
@@ -338,7 +338,7 @@ bash install.sh
 | `agent-release-slot.yml` | Releases Copilot slot + drains queue on PR close | Set `CLAUDE_PAT` secret |
 | `auto-rebase-on-merge.yml` | Opt-in auto-rebase of overlapping PRs via `auto-rebase` label | Set `CLAUDE_PAT` secret |
 | `backlog-to-issues.yml` | Materializes `.context/backlog.yaml` entries as GitHub issues | Set `CLAUDE_PAT` secret |
-| `agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale or blocked work | Rename to `.yml` to enable |
+| `agent-heartbeat.yml.template` | Disabled legacy coordination-board heartbeat example | Rename to `.yml` and rewrite the state query before enabling |
 
 ## Truth Hierarchy
 
