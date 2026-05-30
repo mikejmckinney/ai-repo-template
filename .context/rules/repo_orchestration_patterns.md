@@ -1,6 +1,6 @@
 # Repo Orchestration Patterns
 
-> **Purpose**: Shared vocabulary for naming the patterns this template uses and the anti-patterns to watch for during review. Critic and Judge cite entries from this file by ID (`P1`–`P9`, `AP1`–`AP8`) when reviewing changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.agents/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`).
+> **Purpose**: Shared vocabulary for naming the patterns this template uses and the anti-patterns to watch for during review. Critic and Judge cite entries from this file by ID (`P1`–`P9`, `AP1`–`AP9`) when reviewing changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.agents/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`).
 >
 > **Scope**: This file describes the *orchestration* layer of this template — multi-agent workflow, role definitions, rule files, gates, and coordination state. Code-layer patterns for downstream projects (CMMC enclave, FedRAMP OSCAL, etc.) live in [`docs/guides/design-patterns.md`](../../docs/guides/design-patterns.md) (sub-issue 5 of parent epic #251). The postmortem-derived entries in this file (`AP3`, `AP4`, `P7`) have code-layer counterparts there: [`CAP2`](../../docs/guides/design-patterns.md#cap2--implicit-contract), [`CAP1`](../../docs/guides/design-patterns.md#cap1--goal-substitution), and [`CP1`](../../docs/guides/design-patterns.md#cp1--owner-keyed-concurrent-state) respectively.
 
@@ -14,9 +14,9 @@ The `Where it appears` and `Currently triggered by` lists in each entry cite **f
 
 ## How to use this file
 
-- **Authors and contributors**: when changing the orchestration layer, scan the patterns (`P1`–`P9`) to keep new code consistent with existing structure. Scan the anti-patterns (`AP1`–`AP8`) before opening a PR — if your change matches a detection signal, address it or justify it in the PR description.
-- **Critic**: cite anti-pattern IDs in your review notes when flagging drift (e.g., "AP1 trigger: process_session_state.md now covers three concerns"). Use `MAJOR CONCERNS` for block-able anti-patterns (`AP1`, `AP2`, `AP3`, `AP6`, `AP7`) and for advisory ones (`AP4`, `AP5`, `AP8`) when their per-entry block triggers are met (see Judge's bullet below); otherwise use `CRAFT NOTES` for advisory ones — match the citation severity to the anti-pattern's effective diff-gate designation for this PR.
-- **Judge**: cite anti-pattern IDs at diff-gate when blocking. `AP1`, `AP2`, `AP3`, `AP6`, and `AP7` are block-able when triggered without justification. `AP4`, `AP5`, and `AP8` are advisory unless the PR's `User outcome` section is missing or clearly inverted (`AP4`), the canonical read list is materially extended without an ADR (`AP5`), or the workflow has caused a postmortem or is being materially extended without extracting logic (`AP8`).
+- **Authors and contributors**: when changing the orchestration layer, scan the patterns (`P1`–`P9`) to keep new code consistent with existing structure. Scan the anti-patterns (`AP1`–`AP9`) before opening a PR — if your change matches a detection signal, address it or justify it in the PR description.
+- **Critic**: cite anti-pattern IDs in your review notes when flagging drift (e.g., "AP1 trigger: process_session_state.md now covers three concerns"). Use `MAJOR CONCERNS` for block-able anti-patterns (`AP1`, `AP2`, `AP3`, `AP6`, `AP7`) and for advisory ones (`AP4`, `AP5`, `AP8`, `AP9`) when their per-entry block triggers are met (see Judge's bullet below); otherwise use `CRAFT NOTES` for advisory ones — match the citation severity to the anti-pattern's effective diff-gate designation for this PR.
+- **Judge**: cite anti-pattern IDs at diff-gate when blocking. `AP1`, `AP2`, `AP3`, `AP6`, and `AP7` are block-able when triggered without justification. `AP4`, `AP5`, `AP8`, and `AP9` are advisory unless the PR's `User outcome` section is missing or clearly inverted (`AP4`), the canonical read list is materially extended without an ADR (`AP5`), the workflow has caused a postmortem or is being materially extended without extracting logic (`AP8`), or a PR adds a new normal-work dependency, validator, or onboarding step to a deprecated compatibility surface after a replacement model has already been accepted (`AP9`).
 - **Architect**: when proposing structural changes via ADR, reference any pattern or anti-pattern this change interacts with so reviewers can locate the relevant context.
 
 ---
@@ -44,7 +44,7 @@ The 10 role files in `.agents/*.md` (canonical, platform-agnostic) are interchan
 Tasks flow through a fixed sequence: Analyst → Architect → Judge (plan review) → Critic (plan review) → PM (dispatch) → Implementer roles (Frontend / Backend / DevOps / Docs / QA) → QA (verification) → Critic (PR review) → Judge (diff-gate). Each handler decides to handle, pass, or block. Block decisions short-circuit the chain.
 
 **Where it appears**:
-- `docs/guides/multi-agent-coordination.md` defines the canonical sequence
+- `docs/guides/` — the multi-agent workflow guide defines the canonical sequence
 - `AGENTS.md` → §"Analyst pre-flight gate" and §"Plan-as-comment requirement" describe the two block points (Analyst pre-flight, plan-as-comment) that act as early-chain interrupts
 - `.agents/judge.md` and `.agents/critic.md` describe the review-stage handlers (canonical)
 
@@ -110,11 +110,11 @@ Several artifacts in the repo are templates: a fixed skeleton with slots filled 
 
 ### P7 — Owner-Keyed Concurrent State
 
-Shared live-state surfaces written by parallel agents are keyed by owner identifier (branch, role, session ID, issue/PR, or comment marker) instead of single-writer rewrite. Each writer owns its own live-state baton; readers merge by reading the latest GitHub state. This emerged from PM-003, was ratified for `_active.md` in ADR-018, and is superseded in part by ADR-025's `agent-state:v1` comment model.
+Shared live-state surfaces written by parallel agents are keyed by owner identifier (branch, role, session ID, issue/PR, or comment marker) instead of single-writer rewrite. Each writer owns its own live-state baton; readers merge by reading the latest GitHub state. This emerged from PM-003, was ratified in ADR-018's repo-local active-state schema, and is superseded in part by ADR-025's `agent-state:v1` comment model.
 
 **Where it appears**:
 - Latest `agent-state:v1` issue/PR comments — owner-keyed live-state batons
-- `.context/state/coordination.md` and `.context/state/_active.md` — legacy compatibility examples of the same owner-keyed idea
+- the now-retired repo-local claim board and active-task board under `.context/state/` — legacy compatibility examples of the same owner-keyed idea
 - The corresponding anti-pattern (`AP6`) is what this pattern fixes
 
 **What good usage looks like**: any new shared-state surface used by parallel agents has an explicit owner key and version marker; single-writer schemas require ADR justification; merge semantics are explicit (`agent-state:v1` comments are the canonical live-state example after ADR-025).
@@ -213,7 +213,7 @@ These describe failure modes the orchestration layer is vulnerable to. Reviewers
 - A new agent session repeatedly fails the same precondition that experienced agents do automatically.
 - An ADR's "Negative consequences" section names a tribal-knowledge dependency without specifying where the knowledge lives.
 
-**Historically triggered by**: pre-ADR-012 phase progression (PM-001), pre-ADR-018 `_active.md` schema (PM-003).
+**Historically triggered by**: pre-ADR-012 phase progression (PM-001), pre-ADR-018 repo-local active-state schema (PM-003).
 
 **Remediation**: codify the precondition in the closest-fit rule file (a `.context/rules/process_*.md` file, a role file, or a workflow `if:` condition). If the precondition is currently informal, the rule file is the new home; if it's enforceable in CI, add the check.
 
@@ -266,9 +266,9 @@ These describe failure modes the orchestration layer is vulnerable to. Reviewers
 - An existing single-writer file is referenced by a workflow that runs in parallel branches.
 - Conflict resolution guidance for the file says "take ours" or "take theirs" without specifying owner — i.e., the file's content has no owner.
 
-**Historically triggered by**: pre-ADR-018 `_active.md` schema (PM-003).
+**Historically triggered by**: pre-ADR-018 repo-local active-state schema (PM-003).
 
-**Remediation**: redesign the state surface as owner-keyed (branch, role, session ID, issue/PR, or comment marker); each writer owns its own baton and readers merge by reading the latest visible state. ADR-025's `agent-state:v1` comments are the current canonical example; ADR-018's `_active.md` schema is the legacy file-based example. See `P7`.
+**Remediation**: redesign the state surface as owner-keyed (branch, role, session ID, issue/PR, or comment marker); each writer owns its own baton and readers merge by reading the latest visible state. ADR-025's `agent-state:v1` comments are the current canonical example; ADR-018's repo-local active-state schema is the legacy file-based example. See `P7`.
 
 **Block condition**: a PR adds or modifies a shared-state file (under `.context/state/**` or any other concurrent-write surface) with a single-writer schema. Block until the schema is owner-keyed or the ADR justifies why concurrent writes can't happen for this specific file.
 
@@ -314,6 +314,26 @@ These describe failure modes the orchestration layer is vulnerable to. Reviewers
 **Remediation**: keep workflows as event-wiring + step orchestration. Push logic into testable scripts (`scripts/workflows/<workflow-name>/<step>.sh`) or composite actions (`.github/actions/<action-name>/`). Each extracted unit gets its own test (Bats fixture or unit test under `scripts/tests/`).
 
 **Advisory only**: AP8 is advisory because the line between "trigger filter" and "business logic" is judgment-dependent. Critic flags; Judge blocks only on workflows that have caused a postmortem traceable to YAML logic, or on PRs that materially extend an already-flagged workflow without extracting any logic.
+
+---
+
+### AP9 — Compatibility Surface Entrenchment
+
+**Description**: a replacement operating model has been accepted as canonical, but deprecated compatibility surfaces remain active enough that agents still have to read, teach, reconcile, or update both models. The repo therefore carries two operational truths: the declared primary model and the still-live compatibility model. This is not just dead legacy code; the old surface still shapes present behavior by consuming onboarding budget, automation attention, or reviewer discipline.
+
+**Detection signals**:
+- An ADR, rule file, or guide explicitly names a new primary/canonical surface, but normal-work docs, workflows, or validators still route agents through the old surface.
+- A deprecated surface is labeled `legacy`, `transitional`, or `compatibility-only` yet still has active automation, cadence rules, doc-maintenance triggers, or reconciliation steps keeping it operational.
+- The repo retains live-looking examples or artifacts on the deprecated surface (`task_*.md`, copied handoff files, old state boards, generated compatibility views) that read like current practice rather than archived history.
+- Reviewers or operators must routinely answer "which model owns this fact?" because the same operational fact can plausibly live in the replacement model, the compatibility model, or both.
+- New PRs keep extending the deprecated surface with fresh fields, cleanup logic, or onboarding mentions instead of draining it.
+
+**Historically triggered by**:
+- The ADR-025 live-state migration tail before issue #368, where GitHub issue/PR state was accepted as canonical but repo-local compatibility surfaces under `.context/state/`, checked-in task artifacts, and the compatibility sync workflow still consumed operational attention across onboarding, process rules, and validators.
+
+**Remediation**: choose one endpoint per deprecated surface: retire it, archive it, or keep it only as a clearly secondary generated/history view. If a compatibility surface must remain during drain, remove it from the normal write path, stop teaching it as a peer to the canonical model, and avoid adding new fields or automation that deepen its operational role.
+
+**Advisory only**: AP9 is advisory because migration tails can be legitimate and temporary; the judgment call is whether a surface is still bounded compatibility or has become a de facto second normal-work path. Critic flags; Judge blocks only when a PR adds a new normal-work dependency, validator, or onboarding step to a deprecated compatibility surface after a replacement model has already been accepted.
 
 ---
 

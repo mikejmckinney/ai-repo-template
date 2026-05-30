@@ -74,26 +74,5 @@ if [[ -f ".context/sessions/latest_summary.md" ]] && command -v date >/dev/null 
   fi
 fi
 
-# (d) coordination.md Active Locks must not contain `**State**: merged`. This
-# enforces trigger 3 of the close-out cadence (AGENTS.md §"Close-out (three
-# actions, three triggers)"): the lock's `State` value is `merged` only after
-# the PR has actually merged, at which point the lock belongs in Recent
-# History. Active Locks with `State: merged` is the bug Codex caught on
-# PR #261 (review on commit a9680cc, AGENTS.md:273 + coordination.md:266).
-# Hard fail because the invariant is structural — `coordination.md`
-# consumers (daily reconciliation, parallelism-report parser) read State
-# semantically.
-if [[ -f ".context/state/coordination.md" ]]; then
-  active_section=$(awk '
-    /^## Active Locks[[:space:]]*$/ { in_active = 1; next }
-    /^## Recent History/ || /^## Blocked/ || /^## PM Notes/ { in_active = 0 }
-    in_active { print }
-  ' .context/state/coordination.md)
-  if echo "$active_section" | grep -qE '^\*\*State\*\*:[[:space:]]*merged[[:space:]]*$'; then
-    fail ".context/state/coordination.md Active Locks contains a lock with '**State**: merged' — move to Recent History (see AGENTS.md §'Close-out (three actions, three triggers)' trigger 3)"
-  else
-    pass ".context/state/coordination.md Active Locks contains no '**State**: merged' locks"
-  fi
-fi
 
 echo ""

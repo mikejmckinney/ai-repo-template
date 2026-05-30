@@ -7,7 +7,7 @@
 1. Before editing any file, find its path in the table below.
 2. If your role owns that path, proceed.
 3. If another role owns it, **stop** and escalate to the Project Manager (`.agents/pm.md`). PM will either sequence the work or split the task.
-4. Record live state in the latest `agent-state:v1` issue/PR comment before you start editing; use legacy `.context/state/coordination.md` only for old branches or compatibility cleanup.
+4. Record live state in the latest `agent-state:v1` issue/PR comment before you start editing.
 
 ## Ownership Table
 
@@ -45,11 +45,11 @@ this template for a new project:
 
 ### PM ownership carve-out (`.context/state/**`)
 
-PM owns `.context/state/**` for compatibility state templates and legacy cleanup. ADR-025 moves normal live coordination to GitHub issue/PR comments and labels:
+PM owns `.context/state/**` for GitHub-first state-surface guidance and comment-template maintenance. ADR-025 moves normal live coordination to GitHub issue/PR comments and labels, and issue #368 removes the repo-local manual claim boards:
 
 - Every role self-updates the latest `agent-state:v1` comment for its own work.
-- PM arbitrates cross-role conflicts, stale legacy entries, and any generated/compatibility view under `.context/state/**`.
-- `_active.md` and `coordination.md` are no longer the primary live-state source for GitHub-connected work; existing entries may be stale and should drain naturally or be cleaned in a separate legacy cleanup PR.
+- PM arbitrates cross-role conflicts and any surviving coordination reference surface under `.context/state/**`.
+- `.context/state/README.md` and `.context/state/agent_state_comment_template.md` remain the in-repo reference artifacts; live task state does not.
 
 ### Colocated test files
 
@@ -67,8 +67,7 @@ These files require **PM coordination** regardless of role, because any role may
 | docs/decisions/**              | Architect      | Architect defines decisions; Docs polishes prose |
 | docs/postmortems/**            | Architect      | Architect ratifies the "What generalizes" verdict; anyone may draft, but a postmortem that proposes a rule/ADR change requires Architect sign-off |
 | .context/rules/** (except agent_ownership.md) | Architect  | Architect owns domain rules; PM records claims in GitHub live state before edits |
-| `.context/rules/repo_orchestration_patterns.md` | Architect | Orchestration patterns + anti-patterns reference (`P1`–`P8`, `AP1`–`AP8`) cited by Critic and Judge at diff-gate. Block conditions are a Critic/Judge contract; changes require an ADR. See ADR-020. (Covered by `.context/rules/**` row above; listed explicitly for citation clarity.) |
-| `.context/state/coordination.md`  | PM (legacy compatibility), all (read as historical context when needed) | Primary live state is the latest `agent-state:v1` comment per ADR-025 |
+| `.context/rules/repo_orchestration_patterns.md` | Architect | Orchestration patterns + anti-patterns reference (active `P<n>` / `AP<n>` review vocabulary) cited by Critic and Judge at diff-gate. Block conditions are a Critic/Judge contract; changes require an ADR. See ADR-020. (Covered by `.context/rules/**` row above; listed explicitly for citation clarity.) |
 | `test.sh`                         | DevOps         | Must be updated in lockstep with template structure changes |
 | `.github/agents/**` / `.claude/agents/**` | Architect | Role definitions; changes require an ADR, must update both mirrors in lockstep, and `test.sh` enforces `description:` parity between them. See `docs/decisions/adr-003-claude-code-subagent-registration.md`. |
 | `.github/agents/consensus-candidate-*.agent.md` | Architect | Multi-model consensus dry-run candidate planners (Copilot-only). Pinned to one Copilot model each via `model:` frontmatter so `.github/prompts/multi-model-consensus-plan.md` can fan three planning passes across distinct vendors via `runSubagent` (which has no `model` parameter). Intentionally not mirrored to `.claude/agents/` or `.agents/`; `scripts/checks/050-agent-mirror.sh` exempts the `consensus-candidate-*` name prefix. Promote to N-way once a third platform with a meaningfully different model catalog (e.g., Cursor) is added. See issue #295 / PR #297. |
@@ -82,23 +81,7 @@ These files require **PM coordination** regardless of role, because any role may
 
 A role **self-claims** by updating or posting the latest `agent-state:v1` issue/PR comment and applying the appropriate coarse label (`agent:claimed`, `agent:blocked`, or `agent:awaiting-review`). Only PM edits another role's live-state comment or resolves cross-role ownership conflicts.
 
-For legacy branches that still use `.context/state/coordination.md`, the old lock format remains documented in `.context/state/coordination.md` → "Lock Template":
-
-```markdown
-## Lock: <task-id>
-**Role**: <frontend|backend|...>
-**Session**: <agent session id or branch name>
-**PR**: <#MMM | pending | N/A>
-**Claimed At**: <ISO-8601>
-**Expected Duration**: <e.g., 30m, 2h>
-**Paths**:
-- <glob or file>
-**Depends On**: <task-id or 'none'>
-```
-
-> The snippet above is illustrative; the **canonical** lock template (with all fields including `**Blocks**` and `**State**`) lives in `.context/state/coordination.md` → "Lock Template". When the two diverge, follow the canonical version. The `**PR**:` field is required on new locks per ADR-018 Amendment #1 (cadence: write `pending` at lock-claim time; update to `#MMM` at the next push after PR-open; `N/A` for branches with no planned PR).
-
-Expired legacy locks (past their duration) may be released by PM after confirming the previous session ended. Prefer updating GitHub comments/labels over adding new manual locks.
+The surviving `.context/state/**` files are reference artifacts, not a parallel claim board: use `.context/state/README.md` for the state-surface contract and `.context/state/agent_state_comment_template.md` for the copy/paste baton format.
 
 ## Cross-Role Edit Protocol
 
@@ -109,7 +92,7 @@ When a task genuinely requires edits across two roles' owned paths:
    - **Sequence**: one role completes, then the other.
    - **Split**: extract a new task owned by the other role.
    - **Share**: PM records a temporary shared-edit claim with both roles named and a tight duration.
-3. PM records the decision in the latest `agent-state:v1` comment and, if necessary, a plan/PR comment. Legacy `coordination.md` updates are compatibility-only.
+3. PM records the decision in the latest `agent-state:v1` comment and, if necessary, a plan/PR comment.
 4. Judge verifies the cross-role edit during diff-gate.
 
 ## Default When Unsure

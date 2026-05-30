@@ -78,6 +78,22 @@ Entries `AP3`, `AP4`, `AP6`, and `P7` were generalized from `docs/postmortems/po
 
 Block conditions in the file are part of the contract between this rules file and the review roles (`.github/agents/critic.agent.md`, `.github/agents/judge.agent.md`). Changing a block condition is a process change, not a content change, and requires an ADR amending this one. Architect can amend descriptions, detection signals, and remediation guidance without an ADR (those are content within the established contract).
 
+## Amendments
+
+### Amendment #1 — Add AP9 for compatibility-surface entrenchment
+
+**Date**: 2026-05-30
+**Issue**: #368
+**Type**: Additive (new advisory anti-pattern entry) — existing IDs and block-able designations remain unchanged.
+
+**Change**: add `AP9 — Compatibility Surface Entrenchment` to `.context/rules/repo_orchestration_patterns.md`. `AP9` names the failure mode where a replacement operating model has already been accepted as canonical, but deprecated compatibility surfaces remain active enough that agents still have to read, teach, reconcile, or update both models. The entry is intentionally broader than any one live-state file: it covers future cases where transitional workflows, generated compatibility views, leftover task artifacts, or compatibility-only docs keep the deprecated model operational after its replacement exists.
+
+**Designation**: advisory. Transitional compatibility windows can be legitimate during drain, and the review question is partly about degree: whether the old surface is still bounded cleanup or has become a de facto second normal-work path. `AP9` therefore follows the `AP4` / `AP5` / `AP8` pattern rather than the mechanical block-able pattern used for `AP1` / `AP2` / `AP3` / `AP6` / `AP7`.
+
+**Why this amendment is needed**: issue #368 identifies a distinct failure mode in the ADR-025 migration tail. The problem is not just `AP6` (single-writer schema) or `AP8` (workflow logic in YAML); it is that the accepted GitHub-first live-state model and the deprecated repo-local compatibility model were both still operational enough to teach, reconcile, and preserve a half-migrated dual-model state. Giving that failure mode its own ID improves review precision without expanding this ADR's scope beyond orchestration-layer vocabulary.
+
+**Backward compatibility**: additive only. Existing `P<n>` / `AP<n>` IDs keep their meaning, existing block conditions are unchanged, and downstream citations remain stable. The amendment only adds a new advisory handle for a failure mode that the original eight anti-patterns did not name cleanly.
+
 ## Options Considered
 
 ### Option 1: Place in `docs/guides/` (advisory only)
@@ -146,5 +162,5 @@ The PR landing this ADR also lands the rules file content. Per Architect's plan-
 - ADR-002 — AGENTS.md ownership; this ADR does not amend it but is named in `AP1`'s remediation context.
 - ADR-003 — dual-registry rationale; this ADR's `AP2` (Mirror Duplication) cites it as the current implementation.
 - ADR-012 — explicit workflow preconditions; codified the lesson `AP3` generalizes.
-- ADR-018 — multi-task `_active.md` schema; codified the pattern `P7` generalizes.
+- ADR-018 — multi-task repo-local active-state schema; codified the pattern `P7` generalizes.
 - Issues #248 and #249 — role-mirror canonicalization work; tracked separately, cited by `AP2`.

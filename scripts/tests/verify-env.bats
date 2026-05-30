@@ -33,12 +33,12 @@ _legacy_body() {
   # failure-mode classes identified from PR #228 R5/R7/R8:
   #
   #   FIXTURE-01  empty        — no TEMPLATE_PLACEHOLDER files → clean pass
-  #   FIXTURE-02  bootstrap    — only bootstrap-state files contain the marker
-  #                              (excluded by _PLACEHOLDER_EXCLUDE) → state-
-  #                              files warning, no unexpected-files warning
+  #   FIXTURE-02  bootstrap    — only bootstrap files contain the marker
+  #                              (excluded by _PLACEHOLDER_EXCLUDE) → bootstrap
+  #                              warning, no unexpected-files warning
   #   FIXTURE-03  overlap      — filename that shares a common prefix with an
   #                              excluded path but does NOT match the anchored
-  #                              ($) pattern (e.g. coordination.md.bak). Tests
+  #                              ($) pattern (e.g. latest_summary.md.bak). Tests
   #                              that the regex anchor prevents false exclusion.
   #   FIXTURE-04  mixed        — unexpected file + bootstrap file → both
   #                              warning classes fire independently
@@ -46,7 +46,7 @@ _legacy_body() {
   # Why these matter: The regex logic in verify-env.sh uses `$`-anchored
   # alternatives in _PLACEHOLDER_EXCLUDE and _PLACEHOLDER_LEGIT. A missing
   # anchor (the PR #228 R7→R8 lesson) would cause FIXTURE-03 to wrong-classify
-  # 'coordination.md.bak' as an excluded file, making the test fail.
+  # 'latest_summary.md.bak' as an excluded file, making the test fail.
   #
   # Run: bats --tap scripts/tests/verify-env.bats
 
@@ -126,14 +126,13 @@ _legacy_body() {
   assert_not_contains "empty: no unexpected-file warning" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
   assert_not_contains "empty: no bootstrap warning" \
-    "Bootstrap state files retain" "$out"
+    "Bootstrap files retain" "$out"
   echo ""
 
   # ── FIXTURE-02: bootstrap-only ────────────────────────────────────────────────
-  echo "FIXTURE-02: only bootstrap-state files contain marker"
+  echo "FIXTURE-02: only bootstrap files contain marker"
   D=$(make_fixture "bootstrap")
-  mkdir -p "$D/.context/state" "$D/.context/sessions"
-  printf '%s\n' "# $marker" >"$D/.context/state/_active.md"
+  mkdir -p "$D/.context/sessions"
   printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
   out=$(run_in_fixture "$D")
   assert_contains "bootstrap: pass message (excluded don't count)" \
@@ -141,32 +140,32 @@ _legacy_body() {
   assert_not_contains "bootstrap: no unexpected-file warning" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
   assert_contains "bootstrap: bootstrap warning fires" \
-    "Bootstrap state files retain TEMPLATE_PLACEHOLDER" "$out"
+    "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
   echo ""
 
   # ── FIXTURE-03: substring-overlap filename ────────────────────────────────────
   echo "FIXTURE-03: substring-overlap filename tests \$-anchor"
   D=$(make_fixture "overlap")
-  mkdir -p "$D/.context/state"
-  # coordination.md matches _PLACEHOLDER_EXCLUDE → excluded (state file)
-  printf '%s\n' "# $marker" >"$D/.context/state/coordination.md"
-  # coordination.md.bak does NOT match the anchored pattern → unexpected
-  printf '%s\n' "# $marker" >"$D/.context/state/coordination.md.bak"
+  mkdir -p "$D/.context/sessions"
+  # latest_summary.md matches _PLACEHOLDER_EXCLUDE → excluded bootstrap file
+  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
+  # latest_summary.md.bak does NOT match the anchored pattern → unexpected
+  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md.bak"
   out=$(run_in_fixture "$D")
   assert_not_contains "overlap: clean pass (unexpected file exists)" \
     "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
-  assert_contains "overlap: unexpected-file warning (coordination.md.bak not excluded)" \
+  assert_contains "overlap: unexpected-file warning (latest_summary.md.bak not excluded)" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
-  assert_contains "overlap: bootstrap warning fires for coordination.md" \
-    "Bootstrap state files retain TEMPLATE_PLACEHOLDER" "$out"
+  assert_contains "overlap: bootstrap warning fires for latest_summary.md" \
+    "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
   echo ""
 
   # ── FIXTURE-04: mixed ─────────────────────────────────────────────────────────
   echo "FIXTURE-04: mixed — unexpected file + bootstrap file"
   D=$(make_fixture "mixed")
-  mkdir -p "$D/.context/state" "$D/.context/sessions"
+  mkdir -p "$D/.context/sessions"
   # Bootstrap (excluded → does NOT count as unexpected)
-  printf '%s\n' "# $marker" >"$D/.context/state/_active.md"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
   # Unexpected (not matched by either exclusion list)
   printf '%s\n' "# $marker" >"$D/some-real-file.md"
   out=$(run_in_fixture "$D")
@@ -175,7 +174,7 @@ _legacy_body() {
   assert_contains "mixed: unexpected-file warning" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
   assert_contains "mixed: bootstrap warning also fires" \
-    "Bootstrap state files retain TEMPLATE_PLACEHOLDER" "$out"
+    "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
   echo ""
 
   # ── summary ──────────────────────────────────────────────────────────────────

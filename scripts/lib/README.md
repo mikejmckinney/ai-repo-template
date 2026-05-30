@@ -19,7 +19,7 @@ top-level shell entry points. See issue #255 for the modularization plan.
   header comment.)
 - None of the libs call `set -e`/`set -u` — those are caller policy.
 - `logging.sh` uses unconditional ANSI escape codes. Scripts that need
-  tty-aware colors (e.g., `scripts/closeout.sh`) keep their own gated block
+  tty-aware colors keep their own gated block
   and do not source `logging.sh`.
 - `assertions.sh` initializes counters unconditionally to `0` on each
   source. Inherited `PASS`/`FAIL`/`WARN` values from the caller

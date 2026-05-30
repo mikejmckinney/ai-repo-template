@@ -6,10 +6,7 @@ Bats test suite (issue #255 Phase 4b). Each `.bats` file in this directory is a 
 
 | `.bats` file | Legacy script wrapped | Concern |
 |---|---|---|
-| `active-md-multitask.bats` | `test-active-md-multitask.sh` | ADR-018 legacy multi-task `_active.md` compatibility schema |
 | `auto-rebase-overlapping.bats` | `test-auto-rebase-overlapping.sh` | ADR-010 auto-rebase logic |
-| `closeout.bats` | `test-closeout.sh` | Legacy `make closeout` six-check fallback |
-| `coordination-sync.bats` | `test-coordination-sync.sh` | Legacy `agent-coordination-sync.yml` parser |
 | `compliance-contracts.bats` | n/a (Python validators) | ADR-026 compliance schema examples and fixtures |
 | `jq-filters.bats` | `test-jq-filters.sh` | `scripts/lib/jq/*.jq` fixture-driven tests |
 | `multi-dispatch-safety.bats` | `test-multi-dispatch-safety.sh` | `agent-multi-dispatch.yml` ownership safety |
@@ -26,7 +23,7 @@ Bats test suite (issue #255 Phase 4b). Each `.bats` file in this directory is a 
 bats scripts/tests/
 
 # Run one file
-bats scripts/tests/closeout.bats
+bats scripts/tests/verify-env.bats
 
 # Parallel execution (requires GNU parallel — apt: parallel)
 bats --jobs 4 scripts/tests/
@@ -51,7 +48,7 @@ CI installs both via `apt-get install -y bats parallel` in `.github/workflows/ci
 
 This phase establishes the **infrastructure**: bats is installed in CI, the directory exists, and every legacy `test-<name>.sh` is reachable via a named `@test` case. Each `.bats` file currently contains **one** `@test` per concern that delegates to the legacy script.
 
-Finer-grained per-test splitting (e.g., `test-closeout.sh` has six fixture cases that should each become their own `@test`) is **out of scope for Phase 4b**. It's tracked as follow-up because:
+Finer-grained per-test splitting (e.g., `test-verify-env.sh` contains multiple fixture cases that should each become their own `@test`) is **out of scope for Phase 4b**. It's tracked as follow-up because:
 
 1. The legacy scripts are already passing in CI; converting them in-place gives us bats parallelism + TAP output now without re-implementing already-working logic.
 2. The split-per-fixture work is best done concern-by-concern in dedicated PRs where reviewers can verify parity with the legacy assertions side-by-side.

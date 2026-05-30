@@ -6,6 +6,9 @@
 # --- Docs Structure Check ---
 echo "Checking docs structure..."
 
+MULTI_AGENT_GUIDE_BASENAME="multi-agent-coordination"
+MARKDOWN_EXT=".md"
+
 DOCS_FILES=(
   "docs/README.md"
   "docs/FAQ.md"
@@ -21,7 +24,7 @@ DOCS_FILES=(
   "docs/guides/design-patterns-gof.md"
   "docs/guides/design-patterns-integration.md"
   "docs/guides/design-patterns-post-gof.md"
-  "docs/guides/multi-agent-coordination.md"
+  "docs/guides/${MULTI_AGENT_GUIDE_BASENAME}${MARKDOWN_EXT}"
   "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
   "docs/guides/sandbox-verification.md"

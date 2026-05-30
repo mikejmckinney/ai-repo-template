@@ -10,7 +10,6 @@ WORKFLOW_FILES=(
   ".github/workflows/agent-assign-copilot.yml"
   ".github/workflows/agent-auto-merge.yml"
   ".github/workflows/agent-auto-ready.yml"
-  ".github/workflows/agent-coordination-sync.yml"
   ".github/workflows/agent-fix-reviews.yml"
   ".github/workflows/agent-heartbeat.yml.template"
   ".github/workflows/agent-multi-dispatch.yml"

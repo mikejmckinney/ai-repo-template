@@ -21,7 +21,7 @@
 # inconsistency, not contract.
 
 # Colors. Unconditional — matches the existing top-level scripts. Scripts
-# that need tty-aware colors (e.g., closeout.sh) gate them locally instead
+# that need tty-aware colors gate them locally instead
 # of using these defaults.
 # shellcheck disable=SC2034 # exported for sourcing scripts
 RED='\033[0;31m'

@@ -34,8 +34,6 @@ copilot:budget-paused|E4E669|90% daily spend threshold hit; not auto-drained; ad
 copilot:daily-cap-hit|D93F0B|Hit daily assignment cap; manual re-queue required
 from-backlog|5319E7|Issue auto-created from .context/backlog.yaml
 needs-human|B60205|Requires human input (e.g., empty roadmap phase, CI failure)
-coordination-sync|BFDADC|Auto-filed by Coordination Sync workflow (stale lock tracking)
-no-coordination-check|EDEDED|Opt PR out of agent-coordination-sync.yml suggestions
 agent:claimed|0969DA|Agent has claimed the issue or PR; details live in the latest agent-state:v1 comment
 agent:blocked|D93F0B|Agent work is blocked; details live in the latest agent-state:v1 comment
 agent:awaiting-review|F29513|Agent work is awaiting review; details live in the latest agent-state:v1 comment

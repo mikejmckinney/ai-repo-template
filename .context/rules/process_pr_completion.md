@@ -29,7 +29,7 @@ After pushing the PR, run this loop until it converges:
 
 **Does NOT apply to**:
 
-- **Copilot's cloud SWE agent.** Its session ends at PR creation; the loop is handled out-of-band by `agent-fix-reviews.yml` + `agent-relay-reviews.yml` via webhook events. See `docs/guides/multi-agent-coordination.md` → "Branch-Per-Role Model".
+- **Copilot's cloud SWE agent.** Its session ends at PR creation; the loop is handled out-of-band by `agent-fix-reviews.yml` + `agent-relay-reviews.yml` via webhook events. See the multi-agent workflow guide's branch-per-role section.
 - **Bot-authored PRs** (Renovate, Dependabot, etc.). Maintainer reviews those.
 - **PRs marked `draft`.** These are explicitly not "ready for review yet."
 
@@ -103,7 +103,7 @@ Universal SOLID / TDD / clean-code rules are defined as Hard rules H1–H8 and S
 - Prefer minimal diffs; avoid drive-by refactors.
 - No secrets/PII in logs.
 - Call out risk areas: authz, data migrations, concurrency, perf regressions.
-- For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), cite entries from [`repo_orchestration_patterns.md`](repo_orchestration_patterns.md) by ID (`P1`–`P8`, `AP1`–`AP8`) when flagging or blocking. The `H<n>`/`S<n>` rules in `domain_code_quality.md` cover code-layer review; `P<n>`/`AP<n>` cover orchestration-layer review.
+- For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), cite entries from [`repo_orchestration_patterns.md`](repo_orchestration_patterns.md) by ID (`P1`–`P9`, `AP1`–`AP9`) when flagging or blocking. The `H<n>`/`S<n>` rules in `domain_code_quality.md` cover code-layer review; `P<n>`/`AP<n>` cover orchestration-layer review.
 - For ADR-026 compliance evidence, Judge and Critic challenge missing or
 	malformed `parent_compliance`, missing `subagent_compliance`, generic
 	evidence such as "read all docs", use of `overlay_version`, skipped pointers

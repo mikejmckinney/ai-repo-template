@@ -35,7 +35,7 @@ For normal PR-backed work, rotate/archive `latest_summary.md` at PR merge or clo
    git add .context/sessions/<YYYY-MM-DD>_<branch-or-topic>.md
    ```
 
-   Then overwrite `latest_summary.md` in place with the new retrospective entry. Because `latest_summary.md` is never deleted or renamed, it stays a tracked modified file in the working tree — useful for legacy `make closeout` fallback checks on old branches.
+   Then overwrite `latest_summary.md` in place with the new retrospective entry. Because `latest_summary.md` is never deleted or renamed, it stays a tracked modified file in the working tree, which makes the next durable-summary update easy to spot in normal git status and PR diffs.
 
 2. **Rename (alternative — preserves history without copy-confusion):**
 
@@ -44,7 +44,7 @@ For normal PR-backed work, rotate/archive `latest_summary.md` at PR merge or clo
           .context/sessions/<YYYY-MM-DD>_<branch-or-topic>.md
    ```
 
-   Then create a fresh `latest_summary.md` with the new agent's entry. Note: the new `latest_summary.md` is an **untracked** file until you `git add` it. `make closeout`'s diff-based check 1 won't see it without that explicit `git add`. If you use Rename, remember to stage the new file before running `make closeout`.
+   Then create a fresh `latest_summary.md` with the new agent's entry. Note: the new `latest_summary.md` is an **untracked** file until you `git add` it. If you use Rename, remember to stage the new file before you continue so the fresh retrospective entry lands in the branch diff.
 
 A **mid-session agent** may also rotate at their discretion if `latest_summary.md` approaches the size cap (see §"Token Efficiency"). Rotation mid-session is rare; the common case is rotation at PR merge/closeout.
 

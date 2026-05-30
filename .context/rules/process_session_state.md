@@ -24,9 +24,9 @@ Reading all of `.context/rules/` and `.context/vision/` at every boundary is ove
 - **PR body** — implementation/review contract. Link the issue, plan comment(s), verification results, and latest live-state comment when relevant.
 - **Latest `agent-state:v1` comment** — mutable baton for current status, blockers, next actions, and handoff. Use [`.context/state/agent_state_comment_template.md`](../state/agent_state_comment_template.md) as the copy/paste template.
 - **Labels** — coarse workflow filters only: `agent:claimed`, `agent:blocked`, `agent:awaiting-review`.
-- **Repo-local legacy files** — `.context/state/_active.md`, `.context/state/coordination.md`, old `task_*.md`, and old `handoff_*.md` may exist while pre-ADR-025 branches drain. Treat them as compatibility/migration evidence, not the primary live-state source. Do not create new normal-work `task_*.md` or `handoff_*.md` files after ADR-025.
+- **Local scratch copies** — if GitHub access is temporarily unavailable, keep any local baton copy uncommitted and ephemeral. Do not create repo-local claim boards, task files, or handoff files as a parallel normal-work path.
 
-If GitHub API access is unavailable, temporarily record the same `agent-state:v1` content locally. Copy it into the issue/PR comment once access returns. Do not commit local live-state scratch files as the normal path.
+If GitHub API access is unavailable, temporarily record the same `agent-state:v1` content locally. Copy it into the issue/PR comment once access returns, then discard the local scratch copy. Do not commit local live-state scratch files as the normal path or reconcile a second persistent state surface.
 
 ## `agent-state:v1` update cadence
 
@@ -47,12 +47,6 @@ The comment is intentionally slim. Keep long decision history in plan comments, 
 For normal PR-backed work, rotate/archive `latest_summary.md` at PR merge or closeout, using the landed PR as the provenance boundary. For abandoned or no-PR work, archive only when there are durable lessons worth preserving. Retention and pruning are out of scope here and tracked in #299.
 
 `docs/postmortems/**` remain the durable surface for formal incident/failure analysis. ADRs remain durable design decisions. `.context/rules/**` remain enforceable operating policy.
-
-## Legacy close-out fallback
-
-#262 `make closeout` and `scripts/closeout.sh` remain transitional/fallback tools for old branches or offline work that still used repo-local live-state files. They are not the normal future path for GitHub-connected work after ADR-025.
-
-#263's repo-local write-back automation is superseded by ADR-025 as the preferred design. Any remaining #263 work should be narrowed to temporary compatibility or generated views from GitHub state.
 
 ## Postmortem feedback loop
 

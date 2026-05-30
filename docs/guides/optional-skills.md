@@ -16,7 +16,7 @@ Instead, we document the good options and let each project install what it needs
 
 Only install an optional skill when:
 
-1. It solves a problem your **role-specialized agents** (see `multi-agent-coordination.md`) can't handle alone.
+1. It solves a problem your **role-specialized agents** (see the multi-agent workflow guide) can't handle alone.
 2. It fits your actual stack (not "might be cool someday").
 3. The install's footprint is justified by active, repeated use.
 
@@ -96,5 +96,5 @@ Keep entries short. This file is a menu, not a manual.
 ## See Also
 
 - `.github/agents/` — the role agents this template ships with by default.
-- `docs/guides/multi-agent-coordination.md` — how the built-in roles coordinate.
+- The multi-agent workflow guide — how the built-in roles coordinate.
 - `docs/guides/agent-best-practices.md` — constraints that apply to any skill you add.
