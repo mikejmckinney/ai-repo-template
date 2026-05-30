@@ -229,7 +229,7 @@ echo "Checking for template placeholders..."
 #   TEMPLATE_PLACEHOLDER as grep patterns, onboarding guides, or role
 #   definitions — not as markers for downstream customization. Excluded so
 #   a properly-onboarded derived repo can reach PLACEHOLDER_COUNT=0.
-_PLACEHOLDER_EXCLUDE='^./.context/sessions/latest_summary.md$'
+_PLACEHOLDER_EXCLUDE='^\./\.context/sessions/latest_summary\.md$'
 _PLACEHOLDER_LEGIT='^\./scripts/verify-env\.sh$|^\./AGENTS\.md$|^\./\.github/prompts/.*|^\./\.github/agents/.*\.agent\.md$|^\./\.github/ISSUE_TEMPLATE/agent_init\.md$|^\./.*\.template$|^\./.*_template\.md$'
 if grep --help 2>&1 | grep -q -- "--exclude-dir"; then
   # grep supports --exclude-dir (GNU grep) — scan once, filter in memory
