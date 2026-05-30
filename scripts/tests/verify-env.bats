@@ -151,10 +151,13 @@ _legacy_body() {
   printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
   # latest_summary.md.bak does NOT match the anchored pattern → unexpected
   printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md.bak"
+  # latest_summaryXmd would match if the '.' characters in the exclude regex
+  # were left unescaped, so it must remain unexpected.
+  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summaryXmd"
   out=$(run_in_fixture "$D")
   assert_not_contains "overlap: clean pass (unexpected file exists)" \
     "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
-  assert_contains "overlap: unexpected-file warning (latest_summary.md.bak not excluded)" \
+  assert_contains "overlap: unexpected-file warning (latest_summary.md.bak / latest_summaryXmd not excluded)" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
   assert_contains "overlap: bootstrap warning fires for latest_summary.md" \
     "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
