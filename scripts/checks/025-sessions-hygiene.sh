@@ -74,5 +74,4 @@ if [[ -f ".context/sessions/latest_summary.md" ]] && command -v date >/dev/null 
   fi
 fi
 
-
 echo ""
