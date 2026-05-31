@@ -438,11 +438,11 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 
 ### For new repositories
 
-1. Create repo from this template (or copy files)
-2. Replace all files containing `TEMPLATE_PLACEHOLDER`
-3. Fill in `.context/00_INDEX.md` with project details
-4. Define roadmap in `.context/roadmap.md`
-5. Customize `ci-tests.yml` for your tech stack
+1. Create the repo with "Use this template" (or copy files if you need a one-off starting point).
+2. Run `.github/prompts/repo-onboarding.md`; during Mode B reset, that prompt is the canonical stub source for `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md`.
+3. In Step 0.2, restore those three files from the prompt's named canonical stub blocks, delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`, then repopulate the stubs with project-specific content.
+4. Replace remaining `TEMPLATE_PLACEHOLDER` and `PLEASE_UPDATE_THIS/URL` values and customize `ci-tests.yml` for your tech stack.
+5. Re-run `./scripts/verify-env.sh` after repopulation, then re-run the onboarding prompt's Mode B detection signals to confirm the repo exits the onboarding-blocked state and no resettable `.context/**` or template-only diagram surfaces still describe `ai-repo-template`.
 
 ### For Codespaces
 
@@ -455,7 +455,7 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 After creating a repo from this template, paste this prompt into a GitHub issue and assign it to your AI agent:
 
 ```markdown
-This repository was created from a template. Any file containing TEMPLATE_PLACEHOLDER is scaffolding.
+This repository was created from a template. Treat `.github/prompts/repo-onboarding.md` as the canonical onboarding workflow and canonical stub source for `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` during Mode B reset.
 
 Truth hierarchy:
 1) ./.context/** (canonical project direction)
@@ -464,17 +464,22 @@ Truth hierarchy:
 
 Please:
 1. Verify .context/00_INDEX.md and .github/prompts/*.md exist
-2. Scan and list all files containing TEMPLATE_PLACEHOLDER
-3. Determine project purpose from .context/**, docs/**, and codebase
-4. Run .github/prompts/repo-onboarding.md
-5. Replace README.md with project-specific content, including
+2. Run Step 0.1 of `.github/prompts/repo-onboarding.md` and record whether the repo is Mode A, B, or C.
+3. If Step 0.1 classifies the repo as Mode B, capture fresh-clone pre-reset proof before any Step 0.2 reset work.
+4. Determine project purpose from docs/**, the codebase, and any non-resettable `.context/**` surfaces. Do not rely on `.context/00_INDEX.md`, `.context/roadmap.md`, or `.context/vision/README.md` until after item 6 repopulates them.
+5. Use the onboarding prompt's canonical stubs before writing project-specific content into the three resettable `.context` files; do not rely on placeholder scanning alone.
+6. Repopulate those three resettable `.context` files with project-specific content before collecting post-repopulation proof or regenerating `AI_REPO_GUIDE.md`.
+7. Replace README.md with project-specific content, including
   `## Limitations`, `## Future Improvements`, and a `## FAQ` section
   (or link to docs/FAQ.md — replace the template's FAQ entries with
   project-specific ones).
-6. Regenerate AI_REPO_GUIDE.md for THIS repo
-7. Replace or customize docs/FAQ.md for the project (template-specific
+8. Continue `.github/prompts/repo-onboarding.md` and capture onboarding evidence in this order:
+  a. the pre-reset Mode B proof from item 3 above
+   b. post-reset proof that `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` were restored from the prompt's canonical stubs and that `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md` were deleted
+   c. post-repopulation proof that `./scripts/verify-env.sh` exits 0 and the repo no longer remains in the onboarding-blocked state
+9. Replace or customize docs/FAQ.md for the project (template-specific
   entries prefixed with "Template:" should be removed)
-8. Do not modify .context/** unless instructed
+10. Regenerate AI_REPO_GUIDE.md for THIS repo after the resettable `.context` files are repopulated and the onboarding checks pass.
 ```
 
 ### New agent session (continue work on an existing repo)
