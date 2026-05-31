@@ -55,7 +55,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 7. Read `roadmap.md` for the current template phase and open hardening track.
 8. Pull additional `rules/` and `vision/` files only when their domain intersects your change.
 
-**Multi-agent workflow**: See [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md) for the end-to-end Analyst -> Architect -> PM -> implementers -> QA -> Critic -> Judge flow.
+**Multi-agent workflow**: See [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md) for the end-to-end Analyst -> Architect -> plan-gate (Critic notes + Judge approval) -> PM -> implementers -> QA -> Critic -> Judge flow.
 
 **Compliance contracts**: See `docs/compliance_schemas.md` and `docs/decisions/adr-026-compliance-contracts.md` for the ADR-026 evidence blocks (`plan_compliance`, `parent_compliance`, `subagent_compliance`) and role-contract versioning model.
 
