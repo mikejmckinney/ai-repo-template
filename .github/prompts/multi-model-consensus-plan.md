@@ -117,8 +117,9 @@ through `.github/PLAN_TEMPLATE.md` instead.
 
 1. **In-session subagents with model-pinned candidate overlays.** If
    the runtime supports them (Claude Code CLI today; VS Code Copilot
-   Chat with the `runSubagent` tool — see ADR-009 Decision 3 and the
-   multi-agent workflow guide's dispatch reality matrix),
+  Chat with the `runSubagent` tool — see ADR-009 Decision 3 and the
+  dispatch reality matrix in
+  [docs/guides/multi-agent-coordination.md](../../docs/guides/multi-agent-coordination.md)),
    the initiating agent dispatches the candidate planners as
    subagents. This isolates each candidate's reasoning context from
    the others.

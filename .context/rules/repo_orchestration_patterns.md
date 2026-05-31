@@ -44,7 +44,7 @@ The 10 role files in `.agents/*.md` (canonical, platform-agnostic) are interchan
 Tasks flow through a fixed sequence: Analyst → Architect → Judge (plan review) → Critic (plan review) → PM (dispatch) → Implementer roles (Frontend / Backend / DevOps / Docs / QA) → QA (verification) → Critic (PR review) → Judge (diff-gate). Each handler decides to handle, pass, or block. Block decisions short-circuit the chain.
 
 **Where it appears**:
-- `docs/guides/` — the multi-agent workflow guide defines the canonical sequence
+- `docs/guides/multi-agent-coordination.md` — the multi-agent workflow guide defines the canonical sequence
 - `AGENTS.md` → §"Analyst pre-flight gate" and §"Plan-as-comment requirement" describe the two block points (Analyst pre-flight, plan-as-comment) that act as early-chain interrupts
 - `.agents/judge.md` and `.agents/critic.md` describe the review-stage handlers (canonical)
 
