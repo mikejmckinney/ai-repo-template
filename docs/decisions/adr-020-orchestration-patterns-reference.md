@@ -67,6 +67,7 @@ Each anti-pattern entry is designated either **block-able** (Judge stops the PR 
 | AP6 | Single-Writer Shared State | Block-able | Schema check is mechanical: "does this concurrent-write surface have an owner-key?" |
 | AP7 | Magic String Sprawl | Block-able | Mechanical: did the PR update all known consumers when introducing/renaming an identifier? |
 | AP8 | Workflow-as-Application | Advisory | "Trigger filter vs business logic" line is judgment-dependent; blocks on postmortem-traceable cases or material extensions without extraction. |
+| AP9 | Compatibility Surface Entrenchment | Block-able | Once a replacement operating model has been accepted as canonical, retaining deprecated compatibility surfaces as active normal-work docs, workflows, onboarding steps, or validators is no longer a bounded migration tail; it recreates the dual-model state the anti-pattern was added to catch. |
 
 Designations may be tightened (advisory → block-able) by a follow-up ADR if local conventions warrant. Loosening (block-able → advisory) requires an ADR ratifying why the failure mode no longer warrants stopping at diff-gate.
 
@@ -77,38 +78,6 @@ Entries `AP3`, `AP4`, `AP6`, and `P7` were generalized from `docs/postmortems/po
 ### Block conditions are a Critic/Judge contract
 
 Block conditions in the file are part of the contract between this rules file and the review roles (`.github/agents/critic.agent.md`, `.github/agents/judge.agent.md`). Changing a block condition is a process change, not a content change, and requires an ADR amending this one. Architect can amend descriptions, detection signals, and remediation guidance without an ADR (those are content within the established contract).
-
-## Amendments
-
-### Amendment #1 — Add AP9 for compatibility-surface entrenchment
-
-**Date**: 2026-05-30
-**Issue**: #368
-**Type**: Additive (new advisory anti-pattern entry) — existing IDs and block-able designations remain unchanged.
-
-**Change**: add `AP9 — Compatibility Surface Entrenchment` to `.context/rules/repo_orchestration_patterns.md`. `AP9` names the failure mode where a replacement operating model has already been accepted as canonical, but deprecated compatibility surfaces remain active enough that agents still have to read, teach, reconcile, or update both models. The entry is intentionally broader than any one live-state file: it covers future cases where transitional workflows, generated compatibility views, leftover task artifacts, or compatibility-only docs keep the deprecated model operational after its replacement exists.
-
-**Designation**: advisory. Transitional compatibility windows can be legitimate during drain, and the review question is partly about degree: whether the old surface is still bounded cleanup or has become a de facto second normal-work path. `AP9` therefore follows the `AP4` / `AP5` / `AP8` pattern rather than the mechanical block-able pattern used for `AP1` / `AP2` / `AP3` / `AP6` / `AP7`.
-
-**Why this amendment is needed**: issue #368 identifies a distinct failure mode in the ADR-025 migration tail. The problem is not just `AP6` (single-writer schema) or `AP8` (workflow logic in YAML); it is that the accepted GitHub-first live-state model and the deprecated repo-local compatibility model were both still operational enough to teach, reconcile, and preserve a half-migrated dual-model state. Giving that failure mode its own ID improves review precision without expanding this ADR's scope beyond orchestration-layer vocabulary.
-
-**Backward compatibility**: additive only. Existing `P<n>` / `AP<n>` IDs keep their meaning, existing block conditions are unchanged, and downstream citations remain stable. The amendment only adds a new advisory handle for a failure mode that the original eight anti-patterns did not name cleanly.
-
-### Amendment #2 — Tighten AP9 from advisory to block-able
-
-**Date**: 2026-05-31
-**Issue**: #368
-**Type**: Contract change (designation + block condition)
-
-**Change**: re-designate `AP9 — Compatibility Surface Entrenchment` from advisory to block-able in `.context/rules/repo_orchestration_patterns.md`, and update the Critic/Judge role contracts to treat `AP9` as a blocking orchestration anti-pattern when triggered.
-
-**Designation**: block-able. Once a replacement operating model has been accepted as canonical, retaining deprecated compatibility surfaces as active normal-work docs, workflows, onboarding steps, or validators is no longer a bounded migration tail; it recreates the dual-model state the anti-pattern was added to catch.
-
-**Block condition**: Judge blocks when a PR retains, adds, or extends a deprecated compatibility surface as a live normal-work dependency, validator, onboarding step, workflow, or operational guide after the replacement model has already been accepted. Historical ADR, postmortem, and session-archive references remain out of scope for this block condition.
-
-**Why this amendment is needed**: follow-up review on issue #368 showed that an advisory AP9 still allowed a deleted compatibility surface to linger as a "legacy example" in active docs and workflow inventory, forcing reviewers to re-argue whether the deprecated model was really gone. Tightening AP9 makes the migration boundary explicit: deprecated compatibility surfaces should be removed, not preserved for backwards compatibility, once GitHub-first state is canonical.
-
-**Backward compatibility**: stable citation handle only. Existing `AP9` references remain valid; only the enforcement designation changes.
 
 ## Options Considered
 
