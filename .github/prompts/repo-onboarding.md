@@ -568,9 +568,7 @@ else
     && echo "FAIL: resettable context files still contain generic Mode B stub markers"
 
   # Signal 5 - resettable context files and template-only diagrams no longer reflect ai-repo-template.
-  if grep -qF '**Project Name**: `ai-repo-template`' .context/00_INDEX.md 2>/dev/null \
-    || grep -qF '# ai-repo-template Roadmap' .context/roadmap.md 2>/dev/null \
-    || grep -qF "template repo's design and workflow diagrams" .context/vision/README.md 2>/dev/null \
+  if grep -qF 'ai-repo-template' .context/00_INDEX.md .context/roadmap.md .context/vision/README.md 2>/dev/null \
     || test -e .context/vision/architecture/multi-agent-flow.md \
     || test -e .context/vision/architecture/state-surfaces.md; then
     echo "FAIL: resettable context files or template-only diagrams still reflect ai-repo-template"

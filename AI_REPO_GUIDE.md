@@ -474,7 +474,7 @@ Please:
 6. Use the onboarding prompt's canonical stubs before writing project-specific content into the three resettable `.context` files; do not rely on placeholder scanning alone.
 7. Repopulate those three resettable `.context` files with project-specific content before collecting post-repopulation proof or regenerating `AI_REPO_GUIDE.md`.
 8. Continue `.github/prompts/repo-onboarding.md` and capture onboarding evidence in this order:
-   a. the Step 3 pre-reset Mode B proof
+  a. the pre-reset Mode B proof from item 3 above
    b. post-reset proof that `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` were restored from the prompt's canonical stubs and that `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md` were deleted
    c. post-repopulation proof that `./scripts/verify-env.sh` exits 0 and the repo no longer remains in the onboarding-blocked state
 9. Replace or customize docs/FAQ.md for the project (template-specific
