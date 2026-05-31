@@ -368,15 +368,15 @@ entry per the rule.
 ```yaml
 schema_version: 1.2
 opportunity_notes:
-  - title: "scripts/closeout.sh re-reads agent_ownership.md on every call"
-    evidence: "scripts/closeout.sh:142-168 parses the ownership table per role iteration."
-    impact: "Closeout takes 8-12s instead of ~1s; toil at every PR merge."
-    recommendation: "Hoist the parse call out of the loop and cache the parsed table."
+  - title: "Pipeline label metadata lives in both setup and docs"
+    evidence: "scripts/setup/40-ensure-labels.sh defines `_PIPELINE_LABEL_SPECS` inline, and docs/guides/agent-pipeline.md documents the same label set in its setup table."
+    impact: "Setup guidance can drift from the labels the repo actually creates, which leaves operators with stale pipeline instructions."
+    recommendation: "Consider a single manifest or a drift check that compares the setup label list against the documentation table."
     scope: script
     suggested_next_action: file-issue
     confidence: high
-    role_relevance: [devops]
-    duplicate_check: "Searched issues for 'closeout perf' — no open or recent items."
+    role_relevance: [devops, docs]
+    duplicate_check: "Search open issues for an existing label-manifest or doc-drift follow-up before filing a new one."
 ```
 
 ## CI-MUST validation rules for v1

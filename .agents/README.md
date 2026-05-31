@@ -160,4 +160,4 @@ edit + a per-platform allowlist constant.
 - [`AGENTS.md`](../AGENTS.md) — universal rules and truth hierarchy.
 - [`docs/decisions/adr-023-shared-subagent-canonical.md`](../docs/decisions/adr-023-shared-subagent-canonical.md) — rationale for the canonical/overlay split.
 - [`docs/decisions/adr-003-claude-code-subagent-registration.md`](../docs/decisions/adr-003-claude-code-subagent-registration.md) — the original two-folder convention this ADR partially supersedes.
-- [`docs/guides/multi-agent-coordination.md`](../docs/guides/multi-agent-coordination.md) — how the 10 roles hand off.
+- [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md) — how the 10 roles hand off.

@@ -238,7 +238,6 @@ Now reproduce the trigger that the workflow depends on. Examples:
 |---|---|
 | `agent-relay-reviews.yml` | Open a sandbox PR, post a `pull_request_review` (`gh api`) carrying inline comments. |
 | `agent-fix-reviews.yml` | Same; submit a `changes_requested` review. |
-| `agent-coordination-sync.yml` | Open a PR that edits `.context/state/coordination.md`. |
 | `auto-rebase-on-merge.yml` | Merge any PR; the workflow fires on `pull_request.closed`. |
 | `keep-warm.yml` / scheduled jobs | Trigger via `gh workflow run <name>` (`workflow_dispatch` is also wired). |
 | `backlog-to-issues.yml` | Edit `.context/backlog.yaml` on sandbox `main`. |

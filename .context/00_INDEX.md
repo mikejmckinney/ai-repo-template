@@ -29,10 +29,8 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ├── sessions/            # Durable retrospectives + feedback records
 │   ├── feedback_template.md # Stakeholder feedback capture template
 │   └── latest_summary.md # Durable retrospective lessons
-├── state/               # Legacy compatibility + live comment template
+├── state/               # GitHub live-state guidance + comment template
 │   ├── README.md        # ADR-025 state-surface guide
-│   ├── _active.md       # Legacy/manual live-state view (may be stale)
-│   ├── coordination.md  # Legacy/manual claim board (may be stale)
 │   └── agent_state_comment_template.md # GitHub live-state comment template
 └── vision/              # Design artifacts (mockups, diagrams)
     ├── mockups/         # UI/UX mockups and wireframes
@@ -45,14 +43,14 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 2. Read your role file (for example, `.agents/<your-role>.md`) for role-specific responsibilities
 3. Check the assigned GitHub issue, linked PR, latest `agent-state:v1` comment, and labels for live state
 4. Read `rules/agent_ownership.md` to know which files your role may touch
-5. Treat `state/_active.md` and `state/coordination.md` as legacy compatibility views, not primary live state
+5. Treat `state/` as the GitHub-first live-state reference surface; use `state/agent_state_comment_template.md` when updating the latest `agent-state:v1` baton
 6. Read `sessions/latest_summary.md` for durable lessons from recent work
 7. Read `roadmap.md` to understand project phases (The Plan)
 8. Reference other `rules/` and `vision/` files on-demand as your work requires. `rules/domain_code_quality.md` is the built-in SOLID/TDD/clean-code floor — read it before any non-trivial refactor.
 
 **Note:** Don't read everything at once. This index tells you what exists; load files on-demand to save tokens.
 
-**Multi-agent workflow**: See `docs/guides/multi-agent-coordination.md` for how role-specialized agents (Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge) coordinate in parallel without conflicts.
+**Multi-agent workflow**: See [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md) for how role-specialized agents (Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge) coordinate in parallel without conflicts.
 
 **Compliance contracts**: See `docs/compliance_schemas.md` and `docs/decisions/adr-026-compliance-contracts.md` for the ADR-026 evidence blocks (`plan_compliance`, `parent_compliance`, `subagent_compliance`) and role-contract versioning model.
 

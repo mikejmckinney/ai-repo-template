@@ -30,8 +30,6 @@ CONTEXT_FILES=(
   ".context/sessions/latest_summary.md"
   ".context/sessions/feedback_template.md"
   ".context/state/README.md"
-  ".context/state/_active.md"
-  ".context/state/coordination.md"
   ".context/state/agent_state_comment_template.md"
   ".context/vision/README.md"
 )

@@ -4,7 +4,7 @@
 # AI_REPO_GUIDE.md
 
 > **Purpose**: Canonical reference for AI agents working with this template repository.  
-> **Last verified**: 2026-05-24
+> **Last verified**: 2026-05-30
 >
 > **Note**: This file is for agents. For human documentation, see `README.md`.
 
@@ -41,7 +41,6 @@ bash install.sh
 ├── AGENT.md                  # Deprecated redirect to AGENTS.md
 ├── CLAUDE.md                 # Claude Code native memory pointer to AGENTS.md
 ├── GEMINI.md                 # Gemini Codespace onboarding pointer into AI_REPO_GUIDE.md
-├── Makefile                  # Opt-in workflow targets (currently `make closeout`)
 ├── README.md                 # User-facing documentation
 ├── install.sh                # Codespace bootstrap script
 ├── requirements.txt          # Python dependency pin for local validation helpers
@@ -65,12 +64,9 @@ bash install.sh
 │   │   ├── README.md
 │   │   ├── feedback_template.md  # Stakeholder feedback template
 │   │   └── latest_summary.md
-│   ├── state/                # Legacy compatibility + live comment template
+│   ├── state/                # Reference artifacts for the GitHub-first live-state baton
 │   │   ├── README.md
-│   │   ├── _active.md            # Legacy/manual live-state view (may be stale)
-│   │   ├── coordination.md       # Legacy/manual claim board (may be stale)
-│   │   ├── agent_state_comment_template.md # GitHub live-state comment template
-│   │   └── task_*.md             # Legacy task files only, if old branches still have them
+│   │   └── agent_state_comment_template.md # GitHub live-state comment template
 │   └── vision/               # Design artifacts
 │       ├── README.md
 │       ├── mockups/          # UI/UX mockups
@@ -174,7 +170,6 @@ bash install.sh
         ├── agent-assign-copilot.yml
         ├── agent-auto-merge.yml
         ├── agent-auto-ready.yml
-        ├── agent-coordination-sync.yml
         ├── agent-fix-reviews.yml
         ├── agent-multi-dispatch.yml
         ├── agent-parallelism-report.yml
@@ -182,7 +177,6 @@ bash install.sh
         ├── agent-release-slot.yml
         ├── auto-rebase-on-merge.yml
         ├── backlog-to-issues.yml
-        └── agent-heartbeat.yml.template
 ```
 
 ## Key Files by Purpose
@@ -208,7 +202,6 @@ bash install.sh
 | File | Tool/Platform | Purpose |
 |------|--------------|---------|
 | `README.md` | Humans + AI agents | User-facing repository overview |
-| `Makefile` | `make` | Opt-in workflow targets (currently `make closeout`) |
 | `requirements.txt` | Python tooling | Dependency pin for local validation helpers |
 
 ### Context Pack (project memory)
@@ -225,13 +218,12 @@ bash install.sh
 | `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
 | `.context/rules/process_opportunity_feedback.md` | Opportunity feedback (out-of-scope notes channel) — When you notice an out-of-scope improvement opportunity during in-scope work |
 | `.context/rules/process_subagent_bootstrap.md` | ADR-026 parent dispatch packet, subagent startup order, and `subagent_compliance` return contract |
-| `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP8`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
+| `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP9`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
 | Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025). May embed an optional `opportunity_notes` YAML block (v1.2; ADR-027) for out-of-scope improvement notes — see `docs/compliance_schemas.md` § "agent-state:v1". |
 | `.context/sessions/feedback_template.md` | Stakeholder feedback capture template |
 | `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
-| `.context/state/_active.md` | Legacy manual active-task view; may be stale |
+| `.context/state/README.md` | Reference contract for the in-repo live-state artifacts |
 | `.context/state/agent_state_comment_template.md` | Copy/paste template for live coordination comments |
-| `.context/state/coordination.md` | Legacy manual claim board / compatibility view; may be stale |
 | `.context/vision/` | Mockups and architecture diagrams |
 
 ### Prompts (user-triggered, not auto-loaded)
@@ -320,9 +312,8 @@ bash install.sh
 | `docs/guides/design-patterns-gof.md` | Gang of Four pattern catalog with stable `CP2`-`CP24` citation handles |
 | `docs/guides/design-patterns-integration.md` | Integration / messaging pattern catalog with stable `CIP1`-`CIP11` citation handles |
 | `docs/guides/design-patterns-post-gof.md` | Post-GoF pattern catalog with stable `CP25`-`CP34` citation handles |
-| `docs/guides/multi-agent-coordination.md` | Parallel role-based workflow (Analyst/Architect/FE/BE/PM/QA/DevOps/Docs/Judge/Critic) |
+| `docs/guides/multi-agent-coordination.md` | Multi-agent workflow guide |
 | `docs/guides/optional-skills.md` | Optional external Claude Code skills (SOLID, everything-claude-code) |
-| `.github/workflows/agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale locks / stuck tasks |
 
 ### CI/CD Workflows
 
@@ -336,7 +327,6 @@ bash install.sh
 | `agent-assign-copilot.yml` | Gated Copilot PR assignment for `copilot:ready` issues | Set `CLAUDE_PAT` secret |
 | `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved), with default bounded bot-review settle window and `auto-merge-fast` bypass label | Set `CLAUDE_PAT` secret |
 | `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes | None |
-| `agent-coordination-sync.yml` | Transitional compatibility comments for legacy `.context/state/coordination.md` drift | None |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` secret |
 | `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier | Set `CLAUDE_PAT` secret |
 | `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR | None |
@@ -344,8 +334,6 @@ bash install.sh
 | `agent-release-slot.yml` | Releases Copilot slot + drains queue on PR close | Set `CLAUDE_PAT` secret |
 | `auto-rebase-on-merge.yml` | Opt-in auto-rebase of overlapping PRs via `auto-rebase` label | Set `CLAUDE_PAT` secret |
 | `backlog-to-issues.yml` | Materializes `.context/backlog.yaml` entries as GitHub issues | Set `CLAUDE_PAT` secret |
-| `agent-heartbeat.yml.template` | Optional scheduled workflow to surface stale legacy locks | Rename to `.yml` to enable |
-
 ## Truth Hierarchy
 
 See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
@@ -385,10 +373,8 @@ decisions, durable lessons, and process constraints.
 # Check all required files exist
 ./test.sh
 
-# Legacy close-out fallback (issue #262) — for old branches that still used
-# repo-local live-state files. Normal GitHub-connected work uses the latest
-# agent-state:v1 comment for live closeout per ADR-025.
-make closeout
+# Check environment and placeholder sanity
+./scripts/verify-env.sh
 
 # Validate shell scripts (if shellcheck installed)
 shellcheck install.sh test.sh

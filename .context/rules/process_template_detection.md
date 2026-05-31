@@ -16,8 +16,8 @@
   - Extend `.context/rules/agent_ownership.md` with rows for your project's real source paths (e.g. `src/frontend/**`, `src/backend/**`, `tests/**`). Do NOT delete the template-governance roles (Analyst / Architect / PM / QA / DevOps / Docs / Judge / Critic) — they are load-bearing.
   - If `.github/ISSUE_TEMPLATE/config.yml` contains `PLEASE_UPDATE_THIS/URL`:
     replace it with the actual repository path (e.g., `owner/repo`) detected from `git remote -v`.
-  - **Clear the template's working state / retrospective examples (Mode B only).** `.context/state/*.md` and `.context/sessions/*.md` ship populated with ai-repo-template's own task data and session history. Downstream projects must reset these during onboarding so stale template state is not mistaken for the project's reality. Specifically:
-    - `.context/state/_active.md` — clear all `## Task: <branch>` sections under the `# Active Tasks` header; keep the compatibility note as an HTML comment, the schema comment, and `TEMPLATE_PLACEHOLDER` marker until first real GitHub-connected task.
+  - **Clear the template's retrospective example state (Mode B only).** `.context/sessions/*.md` may ship with ai-repo-template's own session history, while `.context/state/` ships reusable GitHub-first guidance artifacts. Downstream projects must reset the retrospective example during onboarding so stale template history is not mistaken for project reality. Specifically:
     - `.context/sessions/latest_summary.md` — replace body with a single "No sessions yet" line (keep the marker until first durable retrospective entry).
-    - `.context/state/coordination.md` — clear all entries under `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and `## PM Notes`; keep the section headers, `## Lock Template`, compatibility note, and `TEMPLATE_PLACEHOLDER` marker.
-    - Keep `agent_state_comment_template.md` and `README.md` in `.context/state/`. Keep `feedback_template.md` and `README.md` in `.context/sessions/`. Do not recreate the removed `task_template.md` or `handoff_template.md`; ADR-025 supersedes them.
+    - Keep `agent_state_comment_template.md` and `README.md` in `.context/state/`.
+    - Keep `feedback_template.md` and `README.md` in `.context/sessions/`.
+    - Do not add repo-local claim boards or checked-in task/handoff scaffolding during onboarding; ADR-025 uses GitHub issue/PR state for live coordination.

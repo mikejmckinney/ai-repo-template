@@ -67,6 +67,7 @@ Each anti-pattern entry is designated either **block-able** (Judge stops the PR 
 | AP6 | Single-Writer Shared State | Block-able | Schema check is mechanical: "does this concurrent-write surface have an owner-key?" |
 | AP7 | Magic String Sprawl | Block-able | Mechanical: did the PR update all known consumers when introducing/renaming an identifier? |
 | AP8 | Workflow-as-Application | Advisory | "Trigger filter vs business logic" line is judgment-dependent; blocks on postmortem-traceable cases or material extensions without extraction. |
+| AP9 | Compatibility Surface Entrenchment | Block-able | Once a replacement operating model has been accepted as canonical, retaining deprecated compatibility surfaces as active normal-work docs, workflows, onboarding steps, or validators is no longer a bounded migration tail; it recreates the dual-model state the anti-pattern was added to catch. |
 
 Designations may be tightened (advisory → block-able) by a follow-up ADR if local conventions warrant. Loosening (block-able → advisory) requires an ADR ratifying why the failure mode no longer warrants stopping at diff-gate.
 
@@ -146,5 +147,5 @@ The PR landing this ADR also lands the rules file content. Per Architect's plan-
 - ADR-002 — AGENTS.md ownership; this ADR does not amend it but is named in `AP1`'s remediation context.
 - ADR-003 — dual-registry rationale; this ADR's `AP2` (Mirror Duplication) cites it as the current implementation.
 - ADR-012 — explicit workflow preconditions; codified the lesson `AP3` generalizes.
-- ADR-018 — multi-task `_active.md` schema; codified the pattern `P7` generalizes.
+- ADR-018 — multi-task repo-local active-state schema; codified the pattern `P7` generalizes.
 - Issues #248 and #249 — role-mirror canonicalization work; tracked separately, cited by `AP2`.

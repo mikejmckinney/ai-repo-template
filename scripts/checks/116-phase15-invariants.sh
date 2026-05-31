@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/checks/115-phase15-invariants.sh — extracted from test.sh by issue #255 Phase 4d.
+# scripts/checks/116-phase15-invariants.sh — extracted from test.sh by issue #255 Phase 4d.
 # Sourced by test.sh; relies on $PASS/$FAIL/$WARN, pass()/fail()/warn() from
 # scripts/lib/{logging,assertions}.sh and CWD == repo root. Bats invocations
 # are wrapped by run_bats_check() from scripts/lib/bats-helpers.sh (issue #280).
@@ -70,37 +70,12 @@ echo "Running jq filter unit tests..."
 run_bats_check scripts/tests/jq-filters.bats
 
 echo ""
-echo "Running closeout fixture tests (issue #262)..."
-# Presence + executable-bit checks first; then the fixture run.
-if [[ -f Makefile ]]; then
-  if grep -qE '^closeout:' Makefile; then
-    pass "Makefile defines 'closeout' target"
-  else
-    fail "Makefile missing 'closeout' target"
-  fi
-else
-  fail "Makefile missing"
-fi
-if [[ -x scripts/closeout.sh ]]; then
-  pass "scripts/closeout.sh present and executable"
-else
-  fail "scripts/closeout.sh missing or not executable"
-fi
-# Presence-check is delegated to run_bats_check (it fails clearly when
-# the .bats file is missing), so no separate `[[ -f ... ]]` block here.
-run_bats_check scripts/tests/closeout.bats
-
-echo ""
 echo "Running verify-env.sh fixture tests..."
 run_bats_check scripts/tests/verify-env.bats
 
 echo ""
 echo "Running sandbox doctor fixture tests..."
 run_bats_check scripts/tests/diag-sandbox.bats
-
-echo ""
-echo "Running ADR-018 multi-task _active.md smoke test..."
-run_bats_check scripts/tests/active-md-multitask.bats
 
 echo ""
 echo "Running verify-pr.sh classifier fixture tests (issue #227)..."

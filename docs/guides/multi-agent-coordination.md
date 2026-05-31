@@ -1,6 +1,6 @@
 # Multi-Agent Coordination
 
-> **Purpose**: How role-specialized AI agents work in parallel on this repo without stepping on each other. Read this once; reference the ownership map and coordination board during every session.
+> **Purpose**: How role-specialized AI agents work in parallel on this repo without stepping on each other. Read this once; reference the ownership map and GitHub live-state surfaces during every session.
 
 ## The Roles
 
@@ -31,7 +31,7 @@ Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-0
 4. **Latest `agent-state:v1` issue/PR comment** — live status, blockers, next actions, and handoff baton.
 5. **Labels** — coarse workflow filters: `agent:claimed`, `agent:blocked`, `agent:awaiting-review`. The `agent-suggested` label (ADR-027) marks follow-up issues filed from the `opportunity_notes` channel inside `agent-state:v1` comments (see [`.context/rules/process_opportunity_feedback.md`](../../.context/rules/process_opportunity_feedback.md)).
 
-Legacy `.context/state/_active.md`, `.context/state/coordination.md`, `task_*.md`, and `handoff_*.md` files may exist while pre-ADR-025 branches drain. Treat them as compatibility/migration evidence, not the primary live-state source for GitHub-connected work.
+6. **`.context/state/README.md` and `.context/state/agent_state_comment_template.md`** — in-repo reference artifacts for the GitHub-first live-state contract and comment shape. Use them as reference material, not as a parallel claim board.
 
 ## How AI tools dispatch these roles
 
@@ -159,7 +159,7 @@ Whether or not the consensus branch runs, the rest of the pipeline (PM dispatch,
 
 ## Task State Machine
 
-ADR-025 keeps the state machine in GitHub comments/labels instead of requiring manual updates to `.context/state/coordination.md`. Use the `Status:` field in the latest `agent-state:v1` comment for fine-grained live state (`in_progress`, `awaiting_user_input`, `blocked`, `awaiting_review`, `handoff_needed`, `done`) and labels only for coarse filtering (`agent:claimed`, `agent:blocked`, `agent:awaiting-review`). Legacy `coordination.md` still documents the older expanded state table for compatibility, but it is not the primary state source.
+ADR-025 keeps the state machine in GitHub comments and labels. Use the `Status:` field in the latest `agent-state:v1` comment for fine-grained live state (`in_progress`, `awaiting_user_input`, `blocked`, `awaiting_review`, `handoff_needed`, `done`) and labels only for coarse filtering (`agent:claimed`, `agent:blocked`, `agent:awaiting-review`). The in-repo state directory remains reference-only: `.context/state/agent_state_comment_template.md` defines the baton shape, and `.context/state/README.md` explains how it fits the GitHub-first model.
 
 ## Branch-Per-Role Model
 
@@ -184,7 +184,6 @@ Conflicts are prevented by layered defenses. Earlier layers are cheaper.
 5. **Judge diff-gate** — Judge blocks merges that violate ownership.
 6. **Cross-PR overlap CI** (`agent-parallelism-report.yml`) — runs on every PR, posts a "Parallelism Report" comment listing every other open PR and classifying overlap as **hard** (same file), **soft** (same owned-path glob), or **none**. Comment-only, non-blocking; surfaces conflicts at PR-open time so reviewers/PM can sequence intentionally rather than discover them at merge. See ADR-009 and "Parallel Copilot Fan-Out" below.
 7. **Auto-rebase on merge** (`auto-rebase-on-merge.yml`) — runs after every merge to `main`. Walks every other open PR that opted in via the `auto-rebase` label. Soft overlap → attempts `git rebase origin/main` and force-pushes-with-lease on success, posts a structured `auto-rebase-conflict` comment + applies `rebase-conflict` label on conflict. Hard overlap → no rebase attempted; posts an `auto-rebase-overlap` advisory comment + applies `rebase-conflict` label so the owning agent can plan resolution. Skips forks, drafts, PRs with `do-not-rebase`, and PRs with unresolved review threads. See ADR-010 and "Auto-rebase on merge" below.
-8. **Legacy coordination reconciliation** (`agent-coordination-sync.yml`) — transitional compatibility helper for old `.context/state/coordination.md` drift. It should not be treated as the forward live-state mechanism after ADR-025.
 
 ## Worked Example: Two Agents in Parallel
 
@@ -230,7 +229,7 @@ PM records three role assignments in GitHub issue/PR state. Each assignment eith
 **To:** self
 ```
 
-Frontend and Docs wait on the backend contract and use `agent:blocked` / `agent:claimed` labels as appropriate. Legacy `coordination.md` locks are not required for new normal work.
+Frontend and Docs wait on the backend contract and use `agent:blocked` / `agent:claimed` labels as appropriate. Repo-local claim boards are not part of new normal work.
 
 ### Step 4 — Parallel execution
 
@@ -260,18 +259,6 @@ Each branch goes through QA → Judge → merge independently.
 5. `.agents/<your-role>.md` — your specific responsibilities (canonical, platform-agnostic). Your platform's overlay (`.github/agents/<role>.agent.md` or `.claude/agents/<role>.md`) just points here.
 6. `.context/sessions/latest_summary.md` — durable lessons from recent work.
 7. Report readiness (see the "Report readiness (The Report Step)" subsection in `docs/guides/agent-best-practices.md`).
-
-## Optional: Scheduled Heartbeat
-
-For teams that want an autonomous daily check on stuck work, the template ships `.github/workflows/agent-heartbeat.yml.template` — a scheduled GitHub Action (disabled by default) originally designed to surface stale legacy locks in `coordination.md` and post a summary via webhook or a GitHub issue. After ADR-025, prefer GitHub-native comment/label state for new heartbeat designs.
-
-**When to enable**: you have multiple agent sessions running against the repo over multiple days and want a safety net for forgotten locks or stuck tasks.
-
-**When NOT to enable**: single-developer projects or short-lived repos — the workflow will just add noise. Most projects don't need it.
-
-Enable steps are in the template file header.
-
-**Need more than scheduled nudges?** For continuously-running autonomous agents (cron-driven, with a persistent task DB and webhook notifications), see the **OpenClaw** entry in `docs/guides/optional-skills.md`. It's an opt-in runtime, not vendored.
 
 ## Parallel Copilot Fan-Out
 

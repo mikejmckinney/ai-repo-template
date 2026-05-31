@@ -44,7 +44,7 @@ Decision record: [`docs/decisions/adr-001-context-pack-structure.md`](decisions/
 
 ### Do I have to use multi-agent roles, or can I work solo?
 
-Solo work is fine. The 10 roles (analyst, architect, judge, critic, pm, frontend, backend, qa, devops, docs) are helpful when multiple agents work in parallel without stepping on each other, but a single agent can wear any hat as needed. Full workflow: [`docs/guides/multi-agent-coordination.md`](guides/multi-agent-coordination.md).
+Solo work is fine. The 10 roles (analyst, architect, judge, critic, pm, frontend, backend, qa, devops, docs) are helpful when multiple agents work in parallel without stepping on each other, but a single agent can wear any hat as needed. Full workflow: see [docs/guides/multi-agent-coordination.md](guides/multi-agent-coordination.md).
 
 ### How do I know whether I'm editing the template itself or a derived project?
 

@@ -74,11 +74,10 @@ same PR:
    and must not retain template placeholder language.
 3. **Replace placeholders** wherever they occur:
    - `TEMPLATE_PLACEHOLDER` markers → project-specific text or remove,
-     **except** in `.context/state/_active.md`, `.context/sessions/latest_summary.md`,
-     and `.context/state/coordination.md` — those compatibility / durable
-     lesson files intentionally retain the marker post-onboarding per item 6
-     below (`verify-env.sh` excludes them via `_PLACEHOLDER_EXCLUDE` so they
-     do not re-trigger Mode B).
+     **except** in `.context/sessions/latest_summary.md` — that durable
+     retrospective stub intentionally retains the marker post-onboarding per
+     item 6 below (`verify-env.sh` excludes it via `_PLACEHOLDER_EXCLUDE` so
+     it does not re-trigger Mode B).
    - `PLEASE_UPDATE_THIS/URL` in `.github/ISSUE_TEMPLATE/config.yml` →
      actual `owner/repo` from `git remote -v`.
 4. **Extend `.context/rules/agent_ownership.md`** with rows for the project's
@@ -88,21 +87,18 @@ same PR:
    they remain load-bearing.
 5. **Customize `docs/FAQ.md`** — strip entries prefixed with `Template:` and
    replace with project-specific Q&A.
-6. **Clear template working state / retrospective examples.** `.context/state/*.md`
-   and `.context/sessions/*.md` ship populated with ai-repo-template's own
-   task data. Reset them so agents don't ingest the template's stale state
-   as if it were this project's reality:
-   - `.context/state/_active.md` — clear the task details under the
-     `# Active Tasks` header; keep the compatibility note, schema comment,
-     and `TEMPLATE_PLACEHOLDER` marker until the first real GitHub-connected task.
+6. **Clear template retrospective examples.** `.context/sessions/*.md` ships
+   populated with ai-repo-template's own task data. Reset the durable
+   examples so agents do not ingest the template's history as if it were
+   this project's reality:
    - `.context/sessions/latest_summary.md` — replace body with a single
      `No sessions yet` line; keep the `TEMPLATE_PLACEHOLDER` marker
      until the first durable retrospective entry.
-   - `.context/state/coordination.md` — clear all entries under
-     `## Active Locks`, `## Recent History`, `## Blocked / Waiting`, and
-     `## PM Notes`; keep the section headers, `## Lock Template`,
-     compatibility note, and `TEMPLATE_PLACEHOLDER` marker.
-   - Keep `.context/state/agent_state_comment_template.md`, `.context/sessions/feedback_template.md`, and the directory `README.md` files in place. Future feedback records should be copied under `.context/sessions/feedback_<iteration-or-feature>.md`. Do not recreate the removed `task_template.md` or `handoff_template.md`; ADR-025 supersedes them.
+   - Keep `.context/state/agent_state_comment_template.md`,
+     `.context/sessions/feedback_template.md`, and the directory `README.md`
+     files in place. Live task state belongs in GitHub issue/PR bodies,
+     labels, and the latest `agent-state:v1` comment. Do not recreate
+     removed repo-local claim boards or task/handoff templates.
 
 When Phase 0 work is complete, continue to Phase 1.
 

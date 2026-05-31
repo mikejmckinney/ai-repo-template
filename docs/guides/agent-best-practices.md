@@ -210,7 +210,7 @@ If a future runner becomes the primary one and exposes new caching knobs (e.g., 
 
 ## Live-State Conflict Prevention
 
-> **Primary mechanism**: role-based path ownership (`.context/rules/agent_ownership.md`). The mitigations below are secondary defenses for conflicts within a single role. For the full parallel-agent workflow, see `docs/guides/multi-agent-coordination.md`.
+> **Primary mechanism**: role-based path ownership (`.context/rules/agent_ownership.md`). The mitigations below are secondary defenses for conflicts within a single role. For the full parallel-agent workflow, see [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md).
 
 ### The Problem
 

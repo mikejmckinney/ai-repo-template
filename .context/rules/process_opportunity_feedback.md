@@ -234,18 +234,18 @@ text.
 ### Passing example
 
 ```yaml
-- title: "scripts/closeout.sh re-reads agent_ownership.md on every call"
-  evidence: "scripts/closeout.sh:142-168 calls parse-ownership-table.sh inside the per-role loop, ~10x for a typical closeout."
-  impact: "Closeout takes 8-12s instead of ~1s on this repo; scales with role count. Toil for OP at every PR merge."
-  recommendation: "Hoist the parse call out of the loop and cache the parsed table in a local associative array."
-  scope: script
+- title: "Task-boundary rereads still use one flat profile"
+  evidence: "AGENTS.md and .context/rules/process_session_state.md still require the same top-level reread pattern even when only one concern changed."
+  impact: "Each task boundary pays repeated context cost and the handoff story stays harder to explain than necessary."
+  recommendation: "File a follow-up to define named read profiles or a narrower task-boundary receipt keyed to the concern being edited."
+  scope: process
   suggested_next_action: file-issue
-  confidence: high
-  role_relevance: [devops]
-  duplicate_check: "Searched issues for 'closeout perf' and 'parse-ownership cache' — no open or recent items."
+  confidence: medium
+  role_relevance: [architect, pm]
+  duplicate_check: "Searched issue titles for 'read profile' and 'task-boundary reread' before surfacing this note."
 ```
 
-This passes because: concrete file/line evidence, measurable
+This passes because: concrete file evidence, clear
 impact, specific recommendation, plausible scope/owner, duplicate
 check performed.
 

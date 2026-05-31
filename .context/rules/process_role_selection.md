@@ -78,9 +78,9 @@ This template supports parallel role-specialized agents. Before editing any file
 
 1. Identify your role (or ask the user which role to adopt). Canonical role definitions live in [`.agents/`](../../.agents/) (platform-agnostic, ADR-023) — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs. Each role has thin platform overlays in [`.github/agents/<role>.agent.md`](../../.github/agents/) (Copilot SDK) and [`.claude/agents/<role>.md`](../../.claude/agents/) (Claude Code) that point back to the canonical.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
-3. Read the assigned GitHub issue, linked PR (if any), latest `agent-state:v1` comment, and labels to see active claims before editing. Repo-local `_active.md` / `coordination.md` files are legacy compatibility views after ADR-025, not the primary live-state source.
+3. Read the assigned GitHub issue, linked PR (if any), latest `agent-state:v1` comment, and labels to see active claims before editing. Do not recreate repo-local claim boards or treat local markdown as the live coordination source; ADR-025's GitHub-first surfaces are canonical.
 4. Stay inside your owned paths. Any cross-role edit requires PM coordination. **Never guess ownership silently** — escalate to PM.
-5. Full workflow (analysis → plan-gate → dispatch → parallel implementation → QA → diff-gate → merge) is documented in `docs/guides/multi-agent-coordination.md`.
+5. Full workflow (analysis → plan-gate → dispatch → parallel implementation → QA → diff-gate → merge) is documented in [docs/guides/multi-agent-coordination.md](../../docs/guides/multi-agent-coordination.md).
 
 ## Subagent dispatch compliance
 

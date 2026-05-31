@@ -9,10 +9,8 @@
 | `verify-env.sh` | Check environment setup | `./scripts/verify-env.sh` |
 | `db-reset.sh` | Reset database to clean state | `./scripts/db-reset.sh` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
-| `closeout.sh` | Legacy close-out fallback (issue #262) — refuses commit unless old repo-local state + sessions are reconciled | `make closeout` or `bash scripts/closeout.sh` |
 | `validate-compliance-examples.py` | Validate ADR-026 YAML examples in `docs/compliance_schemas.md` | `python3 scripts/validate-compliance-examples.py` |
 | `validate-compliance-fixtures.py` | Validate ADR-026 valid/invalid fixtures | `python3 scripts/validate-compliance-fixtures.py` |
-| `tests/closeout.bats` | Fixture tests for `closeout.sh` (refusal + happy paths) | `bats --tap scripts/tests/closeout.bats` |
 
 ## Usage Guidelines
 

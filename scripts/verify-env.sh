@@ -214,12 +214,6 @@ else
   warn ".context/00_INDEX.md missing - run repo-onboarding"
 fi
 
-if [[ -f ".context/state/_active.md" ]]; then
-  pass ".context/state/_active.md exists"
-else
-  warn ".context/state/_active.md missing"
-fi
-
 echo ""
 
 # --- Template Verification ---
@@ -227,7 +221,7 @@ echo "Checking for template placeholders..."
 # Prefer excluding directories during traversal; fall back to find-based scan
 # Two exclusion sets (both use start-anchored ERE matching the ./path prefix
 # produced by grep -rl and find when called with '.' as the search root):
-# _PLACEHOLDER_EXCLUDE — 3 bootstrap state files that intentionally retain
+# _PLACEHOLDER_EXCLUDE — bootstrap files that intentionally retain
 #   the marker until the first real task/session (Step 0.2 item 6). Counted
 #   separately so lingering post-bootstrap markers stay visible as a non-
 #   blocking warn.
@@ -235,7 +229,7 @@ echo "Checking for template placeholders..."
 #   TEMPLATE_PLACEHOLDER as grep patterns, onboarding guides, or role
 #   definitions — not as markers for downstream customization. Excluded so
 #   a properly-onboarded derived repo can reach PLACEHOLDER_COUNT=0.
-_PLACEHOLDER_EXCLUDE='^\./\.context/state/_active\.md$|^\./\.context/sessions/latest_summary\.md$|^\./\.context/state/coordination\.md$'
+_PLACEHOLDER_EXCLUDE='^\./\.context/sessions/latest_summary\.md$'
 _PLACEHOLDER_LEGIT='^\./scripts/verify-env\.sh$|^\./AGENTS\.md$|^\./\.github/prompts/.*|^\./\.github/agents/.*\.agent\.md$|^\./\.github/ISSUE_TEMPLATE/agent_init\.md$|^\./.*\.template$|^\./.*_template\.md$'
 if grep --help 2>&1 | grep -q -- "--exclude-dir"; then
   # grep supports --exclude-dir (GNU grep) — scan once, filter in memory
@@ -245,14 +239,14 @@ else
   _ALL_PLACEHOLDER_FILES=$(find . \( -name .git -o -name node_modules -o -name venv -o -name .venv -o -name __pycache__ \) -prune -o -type f -exec grep -l "TEMPLATE_PLACEHOLDER" {} + 2>/dev/null || true)
 fi
 PLACEHOLDER_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | { grep -v '^$' || true; } | { grep -Ev "$_PLACEHOLDER_EXCLUDE|$_PLACEHOLDER_LEGIT" || true; } | wc -l | tr -d ' ')
-PLACEHOLDER_STATE_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | { grep -v '^$' || true; } | { grep -E "$_PLACEHOLDER_EXCLUDE" || true; } | wc -l | tr -d ' ')
+PLACEHOLDER_BOOTSTRAP_COUNT=$(printf '%s\n' "$_ALL_PLACEHOLDER_FILES" | { grep -v '^$' || true; } | { grep -E "$_PLACEHOLDER_EXCLUDE" || true; } | wc -l | tr -d ' ')
 if [[ "$PLACEHOLDER_COUNT" -gt 0 ]]; then
   warn "$PLACEHOLDER_COUNT files still contain TEMPLATE_PLACEHOLDER"
 else
   pass "No unexpected TEMPLATE_PLACEHOLDER markers found"
 fi
-if [[ "$PLACEHOLDER_STATE_COUNT" -gt 0 ]]; then
-  warn "Bootstrap state files retain TEMPLATE_PLACEHOLDER ($PLACEHOLDER_STATE_COUNT file(s)) — replace when first real task/session lands"
+if [[ "$PLACEHOLDER_BOOTSTRAP_COUNT" -gt 0 ]]; then
+  warn "Bootstrap files retain TEMPLATE_PLACEHOLDER ($PLACEHOLDER_BOOTSTRAP_COUNT file(s)) — replace when first real task/session lands"
 fi
 
 echo ""

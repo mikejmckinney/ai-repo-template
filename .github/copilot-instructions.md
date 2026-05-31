@@ -58,7 +58,7 @@ Before editing any file, identify your role (analyst, architect, judge, critic, 
 - [`.context/rules/process_role_selection.md`](../.context/rules/process_role_selection.md) — multi-agent workflow protocol.
 - Assigned GitHub issue, linked PR, latest `agent-state:v1` comment, and labels — primary live coordination state per ADR-025.
 
-Full multi-agent workflow: [`docs/guides/multi-agent-coordination.md`](../docs/guides/multi-agent-coordination.md).
+Full multi-agent workflow: see [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md).
 
 ## Subagent dispatch (Copilot-specific)
 

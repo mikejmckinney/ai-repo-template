@@ -257,7 +257,7 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 
 | Secret | Required by | Scopes / Source |
 |--------|-------------|-----------------|
-| `CLAUDE_PAT` | All 12 agent workflows that call `gh` (assignment, auto-merge, auto-ready, coordination-sync, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
+| `CLAUDE_PAT` | Agent workflows that call `gh` (assignment, auto-merge, auto-ready, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
 | `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
 | `SANDBOX_BOOTSTRAP_TOKEN` | Sandbox verification steps (force-push sandbox `main`, push branch, `gh pr create/merge` on the sandbox repo). Used by agents running in workflows; maintainers running locally pass the same token as `BOOTSTRAP_GH_TOKEN` env var instead. | Classic PAT, `repo` + `workflow` scopes. Must be classic — fine-grained tokens cannot push `.github/workflows/` files without special account-level scope that typically isn't available until after the sandbox repo is created. See `docs/guides/sandbox-verification.md`. |
 
@@ -334,8 +334,6 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `copilot:daily-cap-hit` | `#D93F0B` (red-orange) | Hit `MAX_COPILOT_DAILY`; requires manual re-queue |
 | `from-backlog` | `#5319E7` (purple) | Issue auto-created from `.context/backlog.yaml` |
 | `needs-human` | `#B60205` (red) | Requires human input (e.g., empty roadmap phase, CI failure, sparse entry that couldn't be expanded) |
-| `coordination-sync` | `#BFDADC` (light blue) | Auto-filed by `agent-coordination-sync.yml` on the daily stale-lock tracking issue |
-| `no-coordination-check` | `#EDEDED` (gray) | Opt PR out of `agent-coordination-sync.yml` suggestions |
 | `agent:claimed` | `#0969DA` (blue) | Agent has claimed the issue or PR; details live in the latest `agent-state:v1` comment |
 | `agent:blocked` | `#D93F0B` (red-orange) | Agent work is blocked; details live in the latest `agent-state:v1` comment |
 | `agent:awaiting-review` | `#F29513` (orange) | Agent work is awaiting review; details live in the latest `agent-state:v1` comment |

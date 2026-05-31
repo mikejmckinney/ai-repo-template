@@ -20,8 +20,8 @@
 #          (grep -E '(foo|bar)' still matches 'foo.bak'). Unanchored
 #          alternatives match as substrings of longer strings.
 #          Root cause: PR #228 R7→R8 — an unanchored _PLACEHOLDER_EXCLUDE
-#          regex allowed 'coordination.md.bak' to match the exclude list
-#          because it was a substring of 'coordination.md'.
+#          regex allowed 'latest_summary.md.bak' to match the exclude list
+#          because it was a substring of 'latest_summary.md'.
 #          NOTE: Variable-expanded patterns (grep -E "$VAR") cannot be
 #          checked statically; RULE-02 only applies to literal quoted strings.
 #

@@ -94,7 +94,7 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 
 ### CP1 — Owner-Keyed Concurrent State
 
-**Generalized from**: [PM-003](../postmortems/postmortem-003-active-md-merge-conflict.md) ("`_active.md` merge conflict between parallel agent PRs"). Orchestration-layer counterpart: [`P7` in `repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md#p7--owner-keyed-concurrent-state). This is a *positive* pattern — a recommended shape — not an anti-pattern. The corresponding anti-pattern is `AP6` Single-Writer Shared State in the orchestration file; the code-layer reverse of `CP1` is the absence of `CP1` where it was needed.
+**Generalized from**: [PM-003](../postmortems/postmortem-003-active-md-merge-conflict.md) ("repo-local working-memory merge conflict between parallel agent PRs"). Orchestration-layer counterpart: [`P7` in `repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md#p7--owner-keyed-concurrent-state). This is a *positive* pattern — a recommended shape — not an anti-pattern. The corresponding anti-pattern is `AP6` Single-Writer Shared State in the orchestration file; the code-layer reverse of `CP1` is the absence of `CP1` where it was needed.
 
 **Code-layer description**: when multiple writers share state, partition by an owner identifier (process ID, thread ID, request ID, tenant ID, region) with a multi-section schema rather than single-writer rewrite. Each writer owns its own section; readers merge. Direct application to multi-process, multi-thread, distributed, and multi-tenant code. Examples: per-tenant rows in a shared table keyed by `tenant_id`; per-shard counters in a key-value store rather than a single contended counter; per-region state files in S3 keyed by region prefix; per-worker queues that a coordinator drains rather than a single queue with N workers contending; per-connection state in a server rather than shared mutable state guarded by a global lock.
 
@@ -102,7 +102,7 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 
 **When NOT to use**: genuinely-single-writer state (a configuration owned by one process); state where the most recent write should always win and history doesn't matter (cache entries, monitoring last-seen timestamps); systems with a hard latency budget where the indirection's overhead is measurable. Don't add owner-keying prophylactically — the cost is small but real, and removing it later is harder than adding it.
 
-**Worked example**: see [`.context/state/_active.md`](../../.context/state/_active.md) (this template's working-memory file): the schema places each task in a `## Task: <branch-name>` section keyed by the branch name; agents write only their own section; three-way merge across parallel branches commutes because no two writers touch the same lines. Pre-[ADR-018](../decisions/adr-018-multi-task-active-md-schema.md), this file used a single-writer rewrite schema and produced the conflict that triggered PM-003.
+**Worked example**: this template's former repo-local working-memory file used a schema that placed each task in a `## Task: <branch-name>` section keyed by the branch name; agents wrote only their own section; three-way merge across parallel branches commuted because no two writers touched the same lines. Pre-[ADR-018](../decisions/adr-018-multi-task-active-md-schema.md), that file used a single-writer rewrite schema and produced the conflict that triggered PM-003.
 
 ---
 
