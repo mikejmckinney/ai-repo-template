@@ -11,7 +11,7 @@ This repo is a process/template project, not a product UI, so its most useful vi
 
 ## Current Artifacts
 
-- [architecture/multi-agent-flow.md](architecture/multi-agent-flow.md) - the current Parent Orchestrator -> Analyst -> Architect -> PM -> implementers -> QA -> Critic -> Judge workflow.
+- [architecture/multi-agent-flow.md](architecture/multi-agent-flow.md) - the current Parent Orchestrator -> Analyst -> Architect -> plan-gate (Critic notes + Judge approval) -> PM -> implementers -> QA -> Critic -> Judge workflow.
 - [architecture/state-surfaces.md](architecture/state-surfaces.md) - the ADR-025 live-state hierarchy plus the repo-local reference surfaces that remain.
 
 ## How to Use These Files
