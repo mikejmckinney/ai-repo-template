@@ -542,23 +542,29 @@ If it exists, verify accuracy and update if needed.
 
 Template-placeholder cleanup is handled in **Phase 0**. As a final
 check, re-run the **Mode B detection signals** from Step 0.1 and
-confirm none still fire. In a derived repo, all three should now be
-clean:
+confirm none still fire. If Step 1.0 recorded **Mode A**, skip this
+step entirely: the template repo itself intentionally keeps those
+surfaces. In a derived repo, all three should now be clean:
 
 ```bash
-# Signal 1 - README and AI_REPO_GUIDE no longer carry the template stub.
-grep -qE 'TEMPLATE_PLACEHOLDER' README.md AI_REPO_GUIDE.md 2>/dev/null   && echo "FAIL: stub README or AI_REPO_GUIDE still has TEMPLATE_PLACEHOLDER"
+REPO_ID="$(git remote get-url origin 2>/dev/null || basename "$PWD")"
+if printf '%s\n' "$REPO_ID" | grep -qE '(^|[:/])(mikejmckinney/)?(ai-repo-template|dotfiles)(\.git)?$'; then
+  echo "SKIP: Mode A template repo; Mode B cleanup signals do not apply"
+else
+  # Signal 1 - README and AI_REPO_GUIDE no longer carry the template stub.
+  grep -qE 'TEMPLATE_PLACEHOLDER' README.md AI_REPO_GUIDE.md 2>/dev/null && echo "FAIL: stub README or AI_REPO_GUIDE still has TEMPLATE_PLACEHOLDER"
 
-# Signal 2 - issue-template config points at the real repo.
-grep -qE 'PLEASE_UPDATE_THIS/URL' .github/ISSUE_TEMPLATE/config.yml 2>/dev/null   && echo "FAIL: ISSUE_TEMPLATE/config.yml still has PLEASE_UPDATE_THIS/URL"
+  # Signal 2 - issue-template config points at the real repo.
+  grep -qE 'PLEASE_UPDATE_THIS/URL' .github/ISSUE_TEMPLATE/config.yml 2>/dev/null && echo "FAIL: ISSUE_TEMPLATE/config.yml still has PLEASE_UPDATE_THIS/URL"
 
-# Signal 3 - resettable context files and template-only diagrams no longer reflect ai-repo-template.
-if grep -qF '**Project Name**: `ai-repo-template`' .context/00_INDEX.md 2>/dev/null \
-  || grep -qFx '# ai-repo-template Roadmap' .context/roadmap.md 2>/dev/null \
-  || grep -qF "template repo's design and workflow diagrams" .context/vision/README.md 2>/dev/null \
-  || test -e .context/vision/architecture/multi-agent-flow.md \
-  || test -e .context/vision/architecture/state-surfaces.md; then
-  echo "FAIL: resettable context files or template-only diagrams still reflect ai-repo-template"
+  # Signal 3 - resettable context files and template-only diagrams no longer reflect ai-repo-template.
+  if grep -qF '**Project Name**: `ai-repo-template`' .context/00_INDEX.md 2>/dev/null \
+    || grep -qFx '# ai-repo-template Roadmap' .context/roadmap.md 2>/dev/null \
+    || grep -qF "template repo's design and workflow diagrams" .context/vision/README.md 2>/dev/null \
+    || test -e .context/vision/architecture/multi-agent-flow.md \
+    || test -e .context/vision/architecture/state-surfaces.md; then
+    echo "FAIL: resettable context files or template-only diagrams still reflect ai-repo-template"
+  fi
 fi
 ```
 
