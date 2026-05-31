@@ -238,7 +238,6 @@ MULTIAGENT_FILES=(
   "CLAUDE.md"
   "AGENT.md"
   "GEMINI.md"
-  "Makefile"
   "requirements.txt"
   ".github/PLAN_TEMPLATE.md"
   ".github/copilot-instructions.md"

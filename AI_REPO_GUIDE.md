@@ -41,7 +41,6 @@ bash install.sh
 ├── AGENT.md                  # Deprecated redirect to AGENTS.md
 ├── CLAUDE.md                 # Claude Code native memory pointer to AGENTS.md
 ├── GEMINI.md                 # Gemini Codespace onboarding pointer into AI_REPO_GUIDE.md
-├── Makefile                  # Optional local workflow shortcuts
 ├── README.md                 # User-facing documentation
 ├── install.sh                # Codespace bootstrap script
 ├── requirements.txt          # Python dependency pin for local validation helpers
@@ -203,7 +202,6 @@ bash install.sh
 | File | Tool/Platform | Purpose |
 |------|--------------|---------|
 | `README.md` | Humans + AI agents | User-facing repository overview |
-| `Makefile` | `make` | Optional local workflow shortcuts |
 | `requirements.txt` | Python tooling | Dependency pin for local validation helpers |
 
 ### Context Pack (project memory)
