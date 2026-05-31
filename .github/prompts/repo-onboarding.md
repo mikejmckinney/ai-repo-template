@@ -544,7 +544,7 @@ Template-placeholder cleanup is handled in **Phase 0**. As a final
 check, re-run the **Mode B detection signals** from Step 0.1 and
 confirm none still fire. If Step 1.0 recorded **Mode A**, skip this
 step entirely: the template repo itself intentionally keeps those
-surfaces. In a derived repo, all three should now be clean:
+surfaces. In a derived repo, all four should now be clean:
 
 ```bash
 REPO_ID="$(git remote get-url origin 2>/dev/null || basename "$PWD")"
@@ -557,9 +557,13 @@ else
   # Signal 2 - issue-template config points at the real repo.
   grep -qE 'PLEASE_UPDATE_THIS/URL' .github/ISSUE_TEMPLATE/config.yml 2>/dev/null && echo "FAIL: ISSUE_TEMPLATE/config.yml still has PLEASE_UPDATE_THIS/URL"
 
-  # Signal 3 - resettable context files and template-only diagrams no longer reflect ai-repo-template.
+  # Signal 3 - resettable context files are no longer generic Mode B stubs.
+  grep -qE 'TEMPLATE_PLACEHOLDER|\[TBD\]' .context/00_INDEX.md .context/roadmap.md .context/vision/README.md 2>/dev/null \
+    && echo "FAIL: resettable context files still contain generic Mode B stub markers"
+
+  # Signal 4 - resettable context files and template-only diagrams no longer reflect ai-repo-template.
   if grep -qF '**Project Name**: `ai-repo-template`' .context/00_INDEX.md 2>/dev/null \
-    || grep -qFx '# ai-repo-template Roadmap' .context/roadmap.md 2>/dev/null \
+    || grep -qF '# ai-repo-template Roadmap' .context/roadmap.md 2>/dev/null \
     || grep -qF "template repo's design and workflow diagrams" .context/vision/README.md 2>/dev/null \
     || test -e .context/vision/architecture/multi-agent-flow.md \
     || test -e .context/vision/architecture/state-surfaces.md; then

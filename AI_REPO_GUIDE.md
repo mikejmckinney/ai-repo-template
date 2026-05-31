@@ -474,10 +474,10 @@ Please:
   `## Limitations`, `## Future Improvements`, and a `## FAQ` section
   (or link to docs/FAQ.md — replace the template's FAQ entries with
   project-specific ones).
-6. Regenerate AI_REPO_GUIDE.md for THIS repo
+6. Use the onboarding prompt's canonical stubs before writing project-specific content into the three resettable `.context` files; do not rely on placeholder scanning alone.
 7. Replace or customize docs/FAQ.md for the project (template-specific
   entries prefixed with "Template:" should be removed)
-8. Use the onboarding prompt's canonical stubs before writing project-specific content into the three resettable `.context` files; do not rely on placeholder scanning alone.
+8. Regenerate AI_REPO_GUIDE.md for THIS repo after the resettable `.context` files are repopulated and the onboarding checks pass.
 ```
 
 ### New agent session (continue work on an existing repo)
