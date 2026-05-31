@@ -464,20 +464,21 @@ Truth hierarchy:
 
 Please:
 1. Verify .context/00_INDEX.md and .github/prompts/*.md exist
-2. Run .github/prompts/repo-onboarding.md
-3. Capture onboarding evidence in this order:
-   a. fresh-clone pre-reset Mode B proof
+2. Run Step 0.1 of `.github/prompts/repo-onboarding.md` and record whether the repo is Mode A, B, or C.
+3. If Step 0.1 classifies the repo as Mode B, capture fresh-clone pre-reset proof before any Step 0.2 reset work.
+4. Continue `.github/prompts/repo-onboarding.md` and capture onboarding evidence in this order:
+   a. the Step 3 pre-reset Mode B proof
    b. post-reset proof that `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` were restored from the prompt's canonical stubs and that `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md` were deleted
    c. post-repopulation proof that `./scripts/verify-env.sh` exits 0 and the repo no longer remains in the onboarding-blocked state
-4. Determine project purpose from .context/**, docs/**, and codebase
-5. Replace README.md with project-specific content, including
+5. Determine project purpose from .context/**, docs/**, and codebase
+6. Replace README.md with project-specific content, including
   `## Limitations`, `## Future Improvements`, and a `## FAQ` section
   (or link to docs/FAQ.md — replace the template's FAQ entries with
   project-specific ones).
-6. Use the onboarding prompt's canonical stubs before writing project-specific content into the three resettable `.context` files; do not rely on placeholder scanning alone.
-7. Replace or customize docs/FAQ.md for the project (template-specific
+7. Use the onboarding prompt's canonical stubs before writing project-specific content into the three resettable `.context` files; do not rely on placeholder scanning alone.
+8. Replace or customize docs/FAQ.md for the project (template-specific
   entries prefixed with "Template:" should be removed)
-8. Regenerate AI_REPO_GUIDE.md for THIS repo after the resettable `.context` files are repopulated and the onboarding checks pass.
+9. Regenerate AI_REPO_GUIDE.md for THIS repo after the resettable `.context` files are repopulated and the onboarding checks pass.
 ```
 
 ### New agent session (continue work on an existing repo)
