@@ -5,30 +5,22 @@ This diagram shows the ADR-025 split between canonical GitHub live-state surface
 ```mermaid
 flowchart TD
     subgraph GitHubLiveState[Canonical live coordination]
-        Issue[GitHub issue body
-Durable task contract] --> PR[GitHub PR body
-Implementation and verification contract]
-        PR --> Baton[Latest agent-state:v1 comment
-Mutable live baton]
-        Baton --> Labels[Labels
-agent:claimed / agent:blocked / agent:awaiting-review]
+        Issue["GitHub issue body<br>Durable task contract"] --> PR["GitHub PR body<br>Implementation and verification contract"]
+        PR --> Baton["Latest agent-state:v1 comment<br>Mutable live baton"]
+        Baton --> Labels["Labels<br>agent:claimed / agent:blocked / agent:awaiting-review"]
     end
 
     subgraph RepoLocalReference[Repo-local reference and durable lessons]
-        StateReadme[.context/state/README.md
-Explains the GitHub-first model]
-        StateTemplate[.context/state/agent_state_comment_template.md
-Copy/paste shape for the baton]
-        Sessions[.context/sessions/latest_summary.md
-Durable lessons, not live state]
+        StateReadme[".context/state/README.md<br>Explains the GitHub-first model"]
+        StateTemplate[".context/state/agent_state_comment_template.md<br>Copy/paste shape for the baton"]
+        Sessions[".context/sessions/latest_summary.md<br>Durable lessons, not live state"]
     end
 
     StateReadme -. documents .-> Baton
     StateTemplate -. shapes .-> Baton
     Sessions -. retrospective input only .-> PR
 
-    Removed[Removed repo-local boards and task files
-Do not recreate `_active.md` claim boards] -. historical warning .-> StateReadme
+        Removed["Removed repo-local boards and task files<br>Do not recreate `_active.md` claim boards"] -. historical warning .-> StateReadme
 ```
 
 ## Notes
