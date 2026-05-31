@@ -8,8 +8,7 @@ flowchart TD
     Request[User request or GitHub issue] --> OP[OP / default agent]
     OP --> Analyst[Analyst]
     Analyst --> Architect[Architect]
-    Architect --> JudgePlan{Judge plan-gate}
-    CriticPlan[Critic plan review] --> JudgePlan
+    Architect --> CriticPlan[Critic plan review] --> JudgePlan{Judge plan-gate}
     JudgePlan -->|Approve| PM[PM dispatch + GitHub live state]
     JudgePlan -->|Request changes| Architect
 
