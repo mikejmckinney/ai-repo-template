@@ -50,7 +50,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 
 **Note:** Don't read everything at once. This index tells you what exists; load files on-demand to save tokens.
 
-**Multi-agent workflow**: See the multi-agent coordination guide under `docs/guides/` for how role-specialized agents (Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge) coordinate in parallel without conflicts.
+**Multi-agent workflow**: See [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md) for how role-specialized agents (Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge) coordinate in parallel without conflicts.
 
 **Compliance contracts**: See `docs/compliance_schemas.md` and `docs/decisions/adr-026-compliance-contracts.md` for the ADR-026 evidence blocks (`plan_compliance`, `parent_compliance`, `subagent_compliance`) and role-contract versioning model.
 

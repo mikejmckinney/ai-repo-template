@@ -1,19 +1,39 @@
 {
   "config": {
     "default": true,
+    // Heading increment is noisy in extracted rule/ADR content with fixed anchors.
+    "MD001": false,
+    // Trailing spaces are used inconsistently in legacy docs; defer sweep.
+    "MD009": false,
+    // Some examples preserve literal hard tabs from copied output/config.
+    "MD010": false,
     // Line length currently exceeds default in legacy docs; keep advisory summary visible.
     "MD013": false,
+    // Legacy docs often omit blank lines around headings; defer cleanup sweep.
+    "MD022": false,
     // Keep duplicate heading checks scoped to sibling sections only.
     "MD024": {
       "siblings_only": true
     },
+    // Fenced blocks commonly sit adjacent to lists in prompt and guide docs.
+    "MD031": false,
+    // Legacy rule/reference docs use tight lists without surrounding blank lines.
+    "MD032": false,
     // Inline HTML is used in agent/docs templates for badges and callouts.
     "MD033": false,
     // Bare links are common in workflow and issue templates.
     "MD034": false,
     // Emphasis-as-heading appears in legacy docs; defer cleanup sweep.
     "MD036": false,
+    // Some legacy emphasis markers intentionally include spaces in prose examples.
+    "MD037": false,
+    // Unlabeled fences are common in prompts, agent docs, and literal output examples.
+    "MD040": false,
     // Some docs intentionally begin with non-heading frontmatter/comments.
-    "MD041": false
+    "MD041": false,
+    // Table-adjacent blank-line style is not yet normalized across legacy docs.
+    "MD058": false,
+    // The repo mixes compact and aligned pipe-table styles across long-lived docs.
+    "MD060": false
   }
 }

@@ -260,18 +260,6 @@ Each branch goes through QA → Judge → merge independently.
 6. `.context/sessions/latest_summary.md` — durable lessons from recent work.
 7. Report readiness (see the "Report readiness (The Report Step)" subsection in `docs/guides/agent-best-practices.md`).
 
-## Optional: Scheduled Heartbeat
-
-For teams that still maintain a repo-local coordination-board compatibility surface, the template ships `.github/workflows/agent-heartbeat.yml.template` as a legacy scheduled GitHub Action example. It is disabled by default, and current GitHub-first repos should rewrite the state query before enabling it.
-
-**When to enable**: only after you intentionally keep a coordination-board compatibility surface or rewrite the template to query GitHub issue/PR live state directly.
-
-**When NOT to enable**: normal GitHub-first repos, single-developer projects, or short-lived repos. In its shipped form, the template is a legacy example and most projects do not need it.
-
-Enable steps are in the template file header.
-
-**Need more than scheduled nudges?** For continuously-running autonomous agents (cron-driven, with a persistent task DB and webhook notifications), see the **OpenClaw** entry in `docs/guides/optional-skills.md`. It's an opt-in runtime, not vendored.
-
 ## Parallel Copilot Fan-Out
 
 When working multiple issues in parallel against this repo, the practical model is **cross-session parallelism**: separate agent sessions on separate issues, each producing a separate PR. The cross-session model is what `MAX_COPILOT_CONCURRENT` (default 3) and the path-ownership map are designed to gate. (For *in-session* role dispatch — i.e. one agent fanning out to roles within a single chat — see "Dispatch reality matrix" below; only Claude Code CLI does this today.)

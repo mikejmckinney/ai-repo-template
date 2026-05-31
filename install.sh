@@ -234,9 +234,6 @@ copy_template_file() {
 
 log_info "Installing multi-agent kit (role files + coordination)..."
 
-MULTI_AGENT_GUIDE_BASENAME="multi-agent-coordination"
-MARKDOWN_EXT=".md"
-
 MULTIAGENT_FILES=(
   "CLAUDE.md"
   "AGENT.md"
@@ -315,7 +312,7 @@ MULTIAGENT_FILES=(
   "docs/guides/design-patterns-gof.md"
   "docs/guides/design-patterns-integration.md"
   "docs/guides/design-patterns-post-gof.md"
-  "docs/guides/${MULTI_AGENT_GUIDE_BASENAME}${MARKDOWN_EXT}"
+  "docs/guides/multi-agent-coordination.md"
   "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
   "docs/guides/sandbox-verification.md"

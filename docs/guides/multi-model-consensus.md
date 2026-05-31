@@ -31,7 +31,8 @@ platforms; it does not combine text/image/audio modalities.
   [`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md).
 - **Not a new role.** v1 deliberately keeps the canonical role set at
   10, matching the shared role roster and dispatch reality matrix
-  described in the multi-agent workflow guide. The initiating agent
+  described in [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md).
+  The initiating agent
   (typically Architect) does the synthesis.
   Promotion of synthesis to a first-class `synthesizer` role is
   tracked in issue #296 and gated on five-plus high-stakes uses
@@ -253,7 +254,7 @@ that is the suspect-first hypothesis.
 - [`.github/prompts/multi-model-consensus-plan.md`](../../.github/prompts/multi-model-consensus-plan.md) — the prompt itself.
 - [`docs/decisions/adr-024-multi-model-consensus-planning.md`](../decisions/adr-024-multi-model-consensus-planning.md) — prompt-first / no-new-role decision.
 - [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) §`P9` — pattern entry.
-- The multi-agent workflow guide — where consensus planning fits in the pipeline.
+- [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md) — where consensus planning fits in the pipeline.
 - [`docs/decisions/adr-019-per-role-model-tiering.md`](../decisions/adr-019-per-role-model-tiering.md) — model-tier rules this workflow inherits.
 - [`docs/decisions/adr-009-parallel-multi-agent-execution.md`](../decisions/adr-009-parallel-multi-agent-execution.md) Decision 3 — dispatch reality matrix that motivates the runtime fallback.
 - Parent epic [#220](https://github.com/mikejmckinney/ai-repo-template/issues/220) — AI cost-mitigation strategy lineage.

@@ -224,7 +224,7 @@ parent_compliance:
       task_scope: Update human-facing guide links for compliance schema docs.
       files_modified:
         - AI_REPO_GUIDE.md
-        - docs/guides/agent-pipeline.md
+        - docs/guides/multi-agent-coordination.md
       gates_invoked:
         - doc-trigger-check
       run_status: SUCCESS

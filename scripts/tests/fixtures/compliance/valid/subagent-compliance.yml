@@ -13,7 +13,7 @@ subagent_compliance:
   task_scope: Update documentation references for compliance schemas.
   files_modified:
     - AI_REPO_GUIDE.md
-    - docs/guides/agent-pipeline.md
+    - docs/guides/multi-agent-coordination.md
   gates_invoked:
     - doc-trigger-check
 

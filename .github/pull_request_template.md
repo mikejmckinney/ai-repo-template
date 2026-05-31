@@ -197,7 +197,7 @@ a one-line justification.
 
 - [ ] `AI_REPO_GUIDE.md` updated (or: `AI_REPO_GUIDE.md: no changes required — <why>`)
 - [ ] ADR added/superseded (or: `ADR: no changes required — <why>`)
-- [ ] Multi-agent workflow guide updated (or: `not required — <why>`)
+- [ ] `docs/guides/multi-agent-coordination.md` updated (or: `not required — <why>`)
 - [ ] Role changes mirrored across registries and `agent_ownership.md` (or: `not required — <why>`)
 - [ ] `.context/rules/<file>.md` added/updated (or: `not required — <why>`)
 - [ ] Workflow inline-prompt mirrors updated alongside `.github/prompts/*.md` edits (or: `not required — <why>`)

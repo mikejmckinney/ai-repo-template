@@ -80,7 +80,7 @@ This template supports parallel role-specialized agents. Before editing any file
 2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
 3. Read the assigned GitHub issue, linked PR (if any), latest `agent-state:v1` comment, and labels to see active claims before editing. Do not recreate repo-local claim boards or treat local markdown as the live coordination source; ADR-025's GitHub-first surfaces are canonical.
 4. Stay inside your owned paths. Any cross-role edit requires PM coordination. **Never guess ownership silently** — escalate to PM.
-5. Full workflow (analysis → plan-gate → dispatch → parallel implementation → QA → diff-gate → merge) is documented in the multi-agent workflow guide under `docs/guides/`.
+5. Full workflow (analysis → plan-gate → dispatch → parallel implementation → QA → diff-gate → merge) is documented in [docs/guides/multi-agent-coordination.md](../../docs/guides/multi-agent-coordination.md).
 
 ## Subagent dispatch compliance
 

@@ -29,7 +29,7 @@ After pushing the PR, run this loop until it converges:
 
 **Does NOT apply to**:
 
-- **Copilot's cloud SWE agent.** Its session ends at PR creation; the loop is handled out-of-band by `agent-fix-reviews.yml` + `agent-relay-reviews.yml` via webhook events. See the multi-agent workflow guide's branch-per-role section.
+- **Copilot's cloud SWE agent.** Its session ends at PR creation; the loop is handled out-of-band by `agent-fix-reviews.yml` + `agent-relay-reviews.yml` via webhook events. See [docs/guides/multi-agent-coordination.md](../../docs/guides/multi-agent-coordination.md#branch-per-role-model).
 - **Bot-authored PRs** (Renovate, Dependabot, etc.). Maintainer reviews those.
 - **PRs marked `draft`.** These are explicitly not "ready for review yet."
 

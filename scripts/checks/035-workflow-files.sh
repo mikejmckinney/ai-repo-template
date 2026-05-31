@@ -11,7 +11,6 @@ WORKFLOW_FILES=(
   ".github/workflows/agent-auto-merge.yml"
   ".github/workflows/agent-auto-ready.yml"
   ".github/workflows/agent-fix-reviews.yml"
-  ".github/workflows/agent-heartbeat.yml.template"
   ".github/workflows/agent-multi-dispatch.yml"
   ".github/workflows/agent-parallelism-report.yml"
   ".github/workflows/agent-relay-reviews.yml"

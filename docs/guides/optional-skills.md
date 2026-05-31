@@ -16,7 +16,7 @@ Instead, we document the good options and let each project install what it needs
 
 Only install an optional skill when:
 
-1. It solves a problem your **role-specialized agents** (see the multi-agent workflow guide) can't handle alone.
+1. It solves a problem your **role-specialized agents** (see [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md)) can't handle alone.
 2. It fits your actual stack (not "might be cool someday").
 3. The install's footprint is justified by active, repeated use.
 
@@ -65,7 +65,7 @@ Before reaching for any of the external options below, note that the template al
 - **Repo**: https://github.com/ramziddin/openclaw
 - **What it is**: A Python-based agent runtime with a persistent task DB (PocketBase), cron-driven heartbeats, and webhook notifications (e.g. Telegram, Slack). Wraps Claude to run multi-agent teams autonomously between sessions.
 - **Fits**: You need **continuously-running autonomous agents** — e.g. a marketing-ops or research team that wakes itself up every N minutes without a human triggering it. You're comfortable running a Python + PocketBase service alongside your app.
-- **Skip if**: a simple scheduled GitHub-native check you own is enough for stuck-task nudges; you want to keep the template language-agnostic and dependency-free; you don't want a message-bus dependency. The shipped `agent-heartbeat.yml.template` is only a legacy coordination-board example.
+- **Skip if**: a simple scheduled GitHub-native check you own is enough for stuck-task nudges; you want to keep the template language-agnostic and dependency-free; you don't want a message-bus dependency.
 - **Interaction with this template's roles**:
   - OpenClaw's *coordinator / boss* maps to `pm.agent.md`. Pick one to own dispatch — don't run both.
   - Its *review gates* map to `judge.agent.md` (procedural) and `critic.agent.md` (subjective). Reuse the existing role files inside OpenClaw rather than recreating them.
@@ -96,5 +96,5 @@ Keep entries short. This file is a menu, not a manual.
 ## See Also
 
 - `.github/agents/` — the role agents this template ships with by default.
-- The multi-agent workflow guide — how the built-in roles coordinate.
+- [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md) — how the built-in roles coordinate.
 - `docs/guides/agent-best-practices.md` — constraints that apply to any skill you add.

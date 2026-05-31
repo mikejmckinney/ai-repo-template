@@ -94,6 +94,22 @@ Block conditions in the file are part of the contract between this rules file an
 
 **Backward compatibility**: additive only. Existing `P<n>` / `AP<n>` IDs keep their meaning, existing block conditions are unchanged, and downstream citations remain stable. The amendment only adds a new advisory handle for a failure mode that the original eight anti-patterns did not name cleanly.
 
+### Amendment #2 — Tighten AP9 from advisory to block-able
+
+**Date**: 2026-05-31
+**Issue**: #368
+**Type**: Contract change (designation + block condition)
+
+**Change**: re-designate `AP9 — Compatibility Surface Entrenchment` from advisory to block-able in `.context/rules/repo_orchestration_patterns.md`, and update the Critic/Judge role contracts to treat `AP9` as a blocking orchestration anti-pattern when triggered.
+
+**Designation**: block-able. Once a replacement operating model has been accepted as canonical, retaining deprecated compatibility surfaces as active normal-work docs, workflows, onboarding steps, or validators is no longer a bounded migration tail; it recreates the dual-model state the anti-pattern was added to catch.
+
+**Block condition**: Judge blocks when a PR retains, adds, or extends a deprecated compatibility surface as a live normal-work dependency, validator, onboarding step, workflow, or operational guide after the replacement model has already been accepted. Historical ADR, postmortem, and session-archive references remain out of scope for this block condition.
+
+**Why this amendment is needed**: follow-up review on issue #368 showed that an advisory AP9 still allowed a deleted compatibility surface to linger as a "legacy example" in active docs and workflow inventory, forcing reviewers to re-argue whether the deprecated model was really gone. Tightening AP9 makes the migration boundary explicit: deprecated compatibility surfaces should be removed, not preserved for backwards compatibility, once GitHub-first state is canonical.
+
+**Backward compatibility**: stable citation handle only. Existing `AP9` references remain valid; only the enforcement designation changes.
+
 ## Options Considered
 
 ### Option 1: Place in `docs/guides/` (advisory only)
