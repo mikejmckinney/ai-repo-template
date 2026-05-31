@@ -102,11 +102,12 @@ update them in the same PR.
    replace with project-specific Q&A.
 6. **Restore the resettable context files from the canonical stubs in this prompt.**
    Use the fenced blocks under **Canonical stub source for Mode B reset** below:
-  - Replace `.context/00_INDEX.md` with the `Canonical stub: .context/00_INDEX.md` block.
-  - Replace `.context/roadmap.md` with the `Canonical stub: .context/roadmap.md` block.
-  - Replace `.context/vision/README.md` with the `Canonical stub: .context/vision/README.md` block.
-  - Delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`. Those are template-only diagrams and should not survive reset into a derived repo.
-    After the reset above, repopulate those three files immediately with project-specific content before continuing to item 7 or completing item 2's final `AI_REPO_GUIDE.md` regeneration.
+    - Replace `.context/00_INDEX.md` with the `Canonical stub: .context/00_INDEX.md` block.
+    - Replace `.context/roadmap.md` with the `Canonical stub: .context/roadmap.md` block.
+    - Replace `.context/vision/README.md` with the `Canonical stub: .context/vision/README.md` block.
+    - Delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`. Those are template-only diagrams and should not survive reset into a derived repo.
+
+      After the reset above, repopulate those three files immediately with project-specific content before continuing to item 7 or completing item 2's final `AI_REPO_GUIDE.md` regeneration.
 7. **Clear template retrospective examples.** `.context/sessions/*.md` ships
    populated with ai-repo-template's own task data. Reset the durable
    examples so agents do not ingest the template's history as if it were
