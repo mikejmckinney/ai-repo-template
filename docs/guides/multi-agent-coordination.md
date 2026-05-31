@@ -262,7 +262,7 @@ Each branch goes through QA → Judge → merge independently.
 
 ## Optional: Scheduled Heartbeat
 
-For teams that still maintain a repo-local `.context/state/coordination.md` compatibility surface, the template ships `.github/workflows/agent-heartbeat.yml.template` as a legacy scheduled GitHub Action example. It is disabled by default, and current GitHub-first repos should rewrite the state query before enabling it.
+For teams that still maintain a repo-local coordination-board compatibility surface, the template ships `.github/workflows/agent-heartbeat.yml.template` as a legacy scheduled GitHub Action example. It is disabled by default, and current GitHub-first repos should rewrite the state query before enabling it.
 
 **When to enable**: only after you intentionally keep a coordination-board compatibility surface or rewrite the template to query GitHub issue/PR live state directly.
 
