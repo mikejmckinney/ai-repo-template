@@ -119,7 +119,7 @@ repopulating them with project-specific content.
 
 ### Canonical stub: `.context/00_INDEX.md`
 
-```md
+````md
 <!-- TEMPLATE_PLACEHOLDER: Replace with actual project context index -->
 
 # Context Pack Index
@@ -199,11 +199,11 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 - [ ] Define roadmap phases
 - [ ] Add domain rules
 - [ ] Add initial design mockups if available
-```
+````
 
 ### Canonical stub: `.context/roadmap.md`
 
-```md
+````md
 <!-- TEMPLATE_PLACEHOLDER: Replace with actual project roadmap -->
 
 # Project Roadmap
@@ -299,11 +299,11 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 2. Add new phases if scope expands
 3. Update the latest `agent-state:v1` issue/PR comment to reflect live work
 4. Log significant decisions in `00_INDEX.md`
-```
+````
 
 ### Canonical stub: `.context/vision/README.md`
 
-```md
+````md
 <!-- TEMPLATE_PLACEHOLDER: Add design artifacts here -->
 
 # Vision & Design Artifacts
@@ -381,7 +381,7 @@ graph TD
 <!-- Add links/descriptions as artifacts are created -->
 
 No design artifacts yet. Add mockups to `mockups/` and diagrams to `architecture/`.
-```
+````
 
 ---
 
