@@ -72,9 +72,11 @@ update them in the same PR.
 
 1. **Replace `README.md`** with project-specific content (delete the template
    stub language; preserve repo-specific structure if any already exists).
-2. **Regenerate `AI_REPO_GUIDE.md`** from the repo's real assets
-   (`./.context/**`, `./docs/**`, source). This file is canonical for agents
-   and must not retain template placeholder language.
+2. **Defer the final `AI_REPO_GUIDE.md` regeneration until after item 6.**
+  Reset the three `.context` files from the canonical stubs first, repopulate
+  them with project-specific content, then regenerate `AI_REPO_GUIDE.md` from
+  the repo's real assets (`./.context/**`, `./docs/**`, source). This file is
+  canonical for agents and must not retain template placeholder language.
 3. **Replace placeholders** wherever they occur:
    - `TEMPLATE_PLACEHOLDER` markers -> project-specific text or remove,
      **except** in `.context/sessions/latest_summary.md` - that durable
@@ -96,6 +98,7 @@ update them in the same PR.
    - Replace `.context/roadmap.md` with the `Canonical stub: .context/roadmap.md` block.
    - Replace `.context/vision/README.md` with the `Canonical stub: .context/vision/README.md` block.
    - Delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`. Those are template-only diagrams and should not survive reset into a derived repo.
+  - After the reset above, repopulate those three files with project-specific content before completing item 2's final `AI_REPO_GUIDE.md` regeneration.
 7. **Clear template retrospective examples.** `.context/sessions/*.md` ships
    populated with ai-repo-template's own task data. Reset the durable
    examples so agents do not ingest the template's history as if it were
