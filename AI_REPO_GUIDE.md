@@ -442,7 +442,7 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 2. Run `.github/prompts/repo-onboarding.md`; during Mode B reset, that prompt is the canonical stub source for `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md`.
 3. In Step 0.2, restore those three files from the prompt's named canonical stub blocks, delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`, then repopulate the stubs with project-specific content.
 4. Replace remaining `TEMPLATE_PLACEHOLDER` and `PLEASE_UPDATE_THIS/URL` values and customize `ci-tests.yml` for your tech stack.
-5. Re-run `./scripts/verify-env.sh` after repopulation to confirm the repo exits the onboarding-blocked state.
+5. Re-run `./scripts/verify-env.sh` after repopulation, then re-run the onboarding prompt's Mode B detection signals to confirm the repo exits the onboarding-blocked state and no resettable `.context/**` or template-only diagram surfaces still describe `ai-repo-template`.
 
 ### For Codespaces
 
