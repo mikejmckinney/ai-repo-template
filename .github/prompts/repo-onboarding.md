@@ -92,7 +92,7 @@ update them in the same PR.
    they remain load-bearing.
 5. **Customize `docs/FAQ.md`** - strip entries prefixed with `Template:` and
    replace with project-specific Q&A.
-6. **Restore the populated template context files from the canonical stubs in this prompt.**
+6. **Restore the resettable context files from the canonical stubs in this prompt.**
    Use the fenced blocks under **Canonical stub source for Mode B reset** below:
    - Replace `.context/00_INDEX.md` with the `Canonical stub: .context/00_INDEX.md` block.
    - Replace `.context/roadmap.md` with the `Canonical stub: .context/roadmap.md` block.
