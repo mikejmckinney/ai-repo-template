@@ -65,7 +65,7 @@ extract_description_value() {
 
   case "$platform" in
     codex)
-      sed -n 's/^description = "\(.*\)"$/\1/p' "$overlay" | head -n1
+      sed -n 's/^[[:space:]]*description[[:space:]]*=[[:space:]]*"\(.*\)"[[:space:]]*$/\1/p' "$overlay" | head -n1
       ;;
     *)
       sed -n 's/^description:[[:space:]]*//p' "$overlay" | head -n1
