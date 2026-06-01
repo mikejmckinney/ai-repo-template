@@ -199,7 +199,10 @@ for canonical in .agents/*.md; do
     fi
 
     # Check 3: model: line matches platform allowlist.
-    overlay_model="$(extract_model_line "$platform" "$overlay")"
+    if ! overlay_model="$(extract_model_line "$platform" "$overlay")"; then
+      fail "$role $platform overlay model extraction errored while reading $overlay"
+      overlay_model=""
+    fi
     if [[ -z "$overlay_model" ]]; then
       if [[ "$model_required" == "1" ]]; then
         fail "$role $platform overlay missing model: line (ADR-019 requires explicit pin or 'model: inherit' for this platform)"
