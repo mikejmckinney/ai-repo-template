@@ -80,7 +80,7 @@ Build three artifacts:
   plus `git ls-files --others --exclude-standard`. Deduplicate.
 2. **Unified diff** — `git diff "$DIFF_RANGE"` followed by `git diff` and
   `git diff --cached` (in that order), then one `git diff --no-index --
-  /dev/null "$file"` block for each untracked file. This is the input to
+  /dev/null "$file" || true` block for each untracked file. This is the input to
   Critic.
 3. **Change class** — classify the diff into one or more of: `shell` (any `scripts/*.sh`, `*.sh`, or shell within `run:` blocks), `workflow` (any `.github/workflows/*.yml`), `role-file` (any `.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`, `.cursor/agents/*.md`, or `.codex/agents/*.toml`), `agents-md` (`AGENTS.md`, `CLAUDE.md`, or `.github/copilot-instructions.md`), or `other`.
 
