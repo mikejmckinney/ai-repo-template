@@ -108,7 +108,7 @@ Issue #330 extends ADR-019's platform-specific routing guidance beyond the origi
 **Codex (`.codex/agents/*.toml`)**
 
 - Codex custom agents are standalone TOML files. Required keys are `name`, `description`, and `developer_instructions`; this repo also pins `model`, `model_reasoning_effort`, and `sandbox_mode` per role.
-- Current repo pins are: High = `gpt-5.4`, Mid = `gpt-5.3-codex-spark`, Low = `gpt-5.4-mini`; reasoning effort is `high`, `medium`, or `low`; sandbox is `read-only` for planning/review roles and `workspace-write` for implementation roles.
+- Current repo pins are: High = `gpt-5.4`, Mid = `gpt-5.3-codex`, Low = `gpt-5.4-mini`; reasoning effort is `high`, `medium`, or `low`; sandbox is `read-only` for planning/review roles and `workspace-write` for implementation roles.
 - Omitting `model` inherits the parent session. No Copilot-style published cost-tier ceiling is documented for Codex today, but the repo keeps `agents.max_depth` conservative and uses explicit pins for first-class role overlays.
 
 **Antigravity**
@@ -118,7 +118,7 @@ Issue #330 extends ADR-019's platform-specific routing guidance beyond the origi
 **`scripts/checks/050-agent-mirror.sh` enforcement**
 
 - Cursor allowlist: `inherit | fast | Claude Opus 4.8 | Claude 4.6 Sonnet`
-- Codex allowlist: `gpt-5.4 | gpt-5.3-codex-spark | gpt-5.4-mini`
+- Codex allowlist: `gpt-5.4 | gpt-5.3-codex | gpt-5.4-mini`
 - N-way description parity now spans canonical + Copilot + Claude + Cursor + Codex.
 
 ## Options Considered

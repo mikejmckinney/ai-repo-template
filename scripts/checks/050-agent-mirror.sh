@@ -49,7 +49,7 @@ echo "Checking canonical/overlay parity (.agents/ ↔ .github/agents/, .claude/a
 copilot_allowlist_re='^model: '\''[A-Za-z0-9. ()-]+ \(copilot\)'\''[[:space:]]*$'
 claude_allowlist_re='^model: (inherit|claude-opus-4-7|claude-sonnet-4-6|claude-haiku-4-5)$'
 cursor_allowlist_re='^model: (inherit|fast|Claude Opus 4\.8|Claude 4\.6 Sonnet)$'
-codex_allowlist_re='^model = "(gpt-5\.4|gpt-5\.3-codex-spark|gpt-5\.4-mini)"$'
+codex_allowlist_re='^model = "(gpt-5\.4|gpt-5\.3-codex|gpt-5\.4-mini)"$'
 
 platforms=("copilot" "claude" "cursor" "codex")
 overlay_dirs=(".github/agents" ".claude/agents" ".cursor/agents" ".codex/agents")
@@ -114,7 +114,7 @@ expected_codex_model_line() {
       printf '%s' 'model = "gpt-5.4"'
       ;;
     backend | critic | devops | frontend | pm)
-      printf '%s' 'model = "gpt-5.3-codex-spark"'
+      printf '%s' 'model = "gpt-5.3-codex"'
       ;;
     docs | qa)
       printf '%s' 'model = "gpt-5.4-mini"'
