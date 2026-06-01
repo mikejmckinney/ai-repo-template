@@ -79,7 +79,7 @@ extract_model_line() {
 
   case "$platform" in
     codex)
-      grep -m1 '^model = ' "$overlay" || true
+      sed -n 's/^[[:space:]]*model[[:space:]]*=[[:space:]]*"\(.*\)"[[:space:]]*$/model = "\1"/p' "$overlay" | head -n1
       ;;
     *)
       grep -m1 '^model:' "$overlay" || true
