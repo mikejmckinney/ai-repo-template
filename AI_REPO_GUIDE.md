@@ -120,9 +120,12 @@ bash install.sh
 │   ├── _TEMPLATE.md          # Canonical role-contract template
 │   └── <role>.md             # 10 canonical role definitions used by all overlays
 │
+├── .codex/
+│   └── agents/               # Codex custom-agent TOML overlays for the 10 canonical roles
 ├── .claude/
-│   └── agents/               # Claude Code subagent registry for the 10 canonical roles (see ADR-003)
+│   └── agents/               # Claude Code subagent overlays for the 10 canonical roles (see ADR-003)
 ├── .cursor/
+│   ├── agents/               # Cursor agent overlays for the 10 canonical roles
 │   └── BUGBOT.md             # Cursor Bugbot PR review rules
 ├── .gemini/
 │   └── styleguide.md         # Gemini Code Assist review style
@@ -194,8 +197,12 @@ bash install.sh
 | `.github/agents/{judge,critic,architect,analyst,pm,frontend,backend,qa,devops,docs}.agent.md` | GitHub Copilot SDK | Copilot subagent registration overlays for the 10 canonical repo roles (frontmatter only) |
 | `.github/agents/consensus-candidate-*.agent.md` | GitHub Copilot SDK | Copilot-only consensus-planning candidate overlays pinned to Claude, Gemini, and GPT models for `multi-model-consensus-plan.md` |
 | `.claude/agents/*.md` | Claude Code | Claude Code subagent registration overlays (frontmatter only) |
+| `.cursor/agents/*.md` | Cursor | Cursor agent registration overlays (`model`, `readonly`, `is_background`) plus a pointer to the canonical role body |
+| `.codex/agents/*.toml` | Codex | Codex custom-agent overlays (`name`, `description`, `model`, `model_reasoning_effort`, `sandbox_mode`, `developer_instructions`) pointing to the canonical role body |
 | `.agents/<role>.md` | Multi-tool (canonical) | Platform-agnostic role definition (responsibilities, Do/Don't, output format) per ADR-023 — read by every overlay above |
 | `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template for ADR-026 `role_contract_version` and `subagent_compliance` return guidance; not a dispatchable role |
+
+Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields stay in the platform folders: Copilot and Claude carry platform-specific `model` strings, Cursor adds `readonly` and `is_background`, and Codex uses TOML plus `model_reasoning_effort` and `sandbox_mode`. ADR-019 keeps those model tiers platform-specific, and `scripts/checks/050-agent-mirror.sh` enforces per-platform allowlists.
 
 ### Root Docs and Workflow Files
 

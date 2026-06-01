@@ -30,13 +30,15 @@ Both locations are valid — Claude Code auto-discovers either. Root is the `/in
 
 Decision record: [`docs/decisions/adr-001-context-pack-structure.md`](decisions/adr-001-context-pack-structure.md).
 
-### Template: What's the difference between `.agents/`, `.github/agents/`, and `.claude/agents/`?
+### Template: What's the difference between `.agents/`, `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/`?
 
 - `.agents/<role>.md` — **canonical** role definitions (platform-agnostic). Single source of truth for responsibilities, Do/Don't lists, output formats. (ADR-023)
 - `.github/agents/<role>.agent.md` — GitHub Copilot SDK custom-agent registration overlay. Thin shim: platform-specific frontmatter + pointer to canonical.
 - `.claude/agents/<role>.md` — Claude Code native subagent registration overlay. Thin shim: platform-specific frontmatter + pointer to canonical.
+- `.cursor/agents/<role>.md` — Cursor agent registration overlay. Markdown shim with YAML frontmatter (`model`, `readonly`, `is_background`) + pointer to canonical.
+- `.codex/agents/<role>.toml` — Codex custom-agent overlay. TOML shim with `name`, `description`, `model`, `model_reasoning_effort`, `sandbox_mode`, and `developer_instructions` pointing to canonical.
 
-`test.sh` enforces an N-way parity check: every overlay's `description:` matches the canonical byte-for-byte, every overlay body references the canonical, and every overlay's `model:` value satisfies its platform's allowlist. Decision records: [`docs/decisions/adr-003-claude-code-subagent-registration.md`](decisions/adr-003-claude-code-subagent-registration.md), [`docs/decisions/adr-023-shared-subagent-canonical.md`](decisions/adr-023-shared-subagent-canonical.md).
+Model tiers are intentionally platform-specific per ADR-019: Copilot, Claude, Cursor, and Codex each have their own allowed value space, and `test.sh` enforces the per-platform allowlists. Decision records: [`docs/decisions/adr-003-claude-code-subagent-registration.md`](decisions/adr-003-claude-code-subagent-registration.md), [`docs/decisions/adr-019-per-role-model-tiering.md`](decisions/adr-019-per-role-model-tiering.md), [`docs/decisions/adr-023-shared-subagent-canonical.md`](decisions/adr-023-shared-subagent-canonical.md).
 
 ---
 
