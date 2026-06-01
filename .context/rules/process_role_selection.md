@@ -29,10 +29,11 @@ The OP must dispatch unless **all** of the following hold:
 - single file,
 - single canonical role's owned path, and
 - none of: `scripts/*.sh`, `.github/workflows/*.yml`, `.agents/*.md`, platform
-  overlays (`.github/agents/*.agent.md`, `.claude/agents/*.md`), per-concern
-  process rules (`.context/rules/process_*.md`, `.context/rules/domain_*.md`,
-  `.context/rules/repo_*.md`, `.context/rules/agent_ownership.md`), `AGENTS.md`,
-  `CLAUDE.md`, or `.github/copilot-instructions.md`.
+   overlays (`.github/agents/*.agent.md`, `.claude/agents/*.md`,
+   `.cursor/agents/*.md`, `.codex/agents/*.toml`), per-concern process rules
+   (`.context/rules/process_*.md`, `.context/rules/domain_*.md`,
+   `.context/rules/repo_*.md`, `.context/rules/agent_ownership.md`), `AGENTS.md`,
+   `CLAUDE.md`, or `.github/copilot-instructions.md`.
 
 This is the same role-sensitive surface list [`process_work_style.md`](process_work_style.md)
 uses for the pre-push-review trigger; reuse it intentionally so both rules stay
@@ -76,7 +77,7 @@ For the end-to-end issue→merge walkthrough, follow [`.github/prompts/op-issue-
 
 This template supports parallel role-specialized agents. Before editing any file:
 
-1. Identify your role (or ask the user which role to adopt). Canonical role definitions live in [`.agents/`](../../.agents/) (platform-agnostic, ADR-023) — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs. Each role has thin platform overlays in [`.github/agents/<role>.agent.md`](../../.github/agents/) (Copilot SDK) and [`.claude/agents/<role>.md`](../../.claude/agents/) (Claude Code) that point back to the canonical.
+1. Identify your role (or ask the user which role to adopt). Canonical role definitions live in [`.agents/`](../../.agents/) (platform-agnostic, ADR-023) — Analyst, Architect, Judge, Critic, PM, Frontend, Backend, QA, DevOps, Docs. Each role has thin platform overlays in [`.github/agents/<role>.agent.md`](../../.github/agents/) (Copilot SDK), [`.claude/agents/<role>.md`](../../.claude/agents/) (Claude Code), [`.cursor/agents/<role>.md`](../../.cursor/agents/) (Cursor), and [`.codex/agents/<role>.toml`](../../.codex/agents/) (Codex) that point back to the canonical.
 2. Read `.context/rules/agent_ownership.md` to confirm which paths your role owns.
 3. Read the assigned GitHub issue, linked PR (if any), latest `agent-state:v1` comment, and labels to see active claims before editing. Do not recreate repo-local claim boards or treat local markdown as the live coordination source; ADR-025's GitHub-first surfaces are canonical.
 4. Stay inside your owned paths. Any cross-role edit requires PM coordination. **Never guess ownership silently** — escalate to PM.

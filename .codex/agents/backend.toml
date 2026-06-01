@@ -1,0 +1,8 @@
+name = "backend"
+description = "Use to implement server code (APIs, models, migrations). Consumes a dispatched task; stays inside backend-owned paths."
+model = "gpt-5.3-codex-spark"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+developer_instructions = """
+See canonical role definition: ../../.agents/backend.md
+"""

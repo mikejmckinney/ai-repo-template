@@ -27,12 +27,14 @@ These describe the orchestration layer as it exists today. Changes that touch th
 
 ### P1 — Strategy (role specialization)
 
-The 10 role files in `.agents/*.md` (canonical, platform-agnostic) are interchangeable strategies for a single abstract operation: "do work on this task in this repo." Each role specializes the strategy by frontmatter `description:` (when this role applies), `tools:` (what it can use, declared per platform in the overlays), and body content (how it proceeds). Dispatchers (Copilot, Claude Code, manual selection) pick a role by matching user intent against `description:`, with platform overlays in `.github/agents/` and `.claude/agents/` providing tool-vocabulary and `model:` translation per ADR-023.
+The 10 role files in `.agents/*.md` (canonical, platform-agnostic) are interchangeable strategies for a single abstract operation: "do work on this task in this repo." Each role specializes the strategy by frontmatter `description:` (when this role applies), `tools:` (what it can use, declared per platform when the runtime supports it), and body content (how it proceeds). Dispatchers (Copilot, Claude Code, Cursor, Codex, manual selection) pick a role by matching user intent against `description:`, with platform overlays in `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/` providing the runtime-specific registration fields and `model:` translation per ADR-023 and issue #330.
 
 **Where it appears**:
 - `.agents/{analyst,architect,backend,critic,devops,docs,frontend,judge,pm,qa}.md` — canonical strategy bodies (platform-agnostic; ADR-023)
 - `.github/agents/<role>.agent.md` — Copilot SDK registration overlay (frontmatter only; pointer body)
 - `.claude/agents/<role>.md` — Claude Code registration overlay (frontmatter only; pointer body)
+- `.cursor/agents/<role>.md` — Cursor registration overlay (frontmatter only; pointer body)
+- `.codex/agents/<role>.toml` — Codex custom-agent overlay (TOML config + canonical pointer text)
 - Role selection logic in `.context/rules/process_role_selection.md` (extracted per ADR-021 sub-issue 2)
 
 **What good usage looks like**: each role file has one focused responsibility (`H1` parity); roles don't reach into each other's owned paths (per `agent_ownership.md`); cross-role coordination goes through PM (see `P3`).
@@ -65,17 +67,19 @@ Implementer roles (Frontend, Backend, DevOps, Docs, QA) don't coordinate directl
 
 ---
 
-### P4 — Adapter (dual registry)
+### P4 — Adapter (multi-registry)
 
-The same canonical role exposed through multiple incompatible tool interfaces: GitHub Copilot expects `.github/agents/<role>.agent.md` with one frontmatter schema; Claude Code expects `.claude/agents/<role>.md` with a different schema. Both files are thin overlays (frontmatter only) pointing at the same canonical body in `.agents/<role>.md`. ADR-003 documents the original two-registry design; ADR-023 documents the canonical-out-of-vendor decomposition that made the duplicated body obsolete.
+The same canonical role exposed through multiple incompatible tool interfaces: GitHub Copilot expects `.github/agents/<role>.agent.md` with one frontmatter schema; Claude Code expects `.claude/agents/<role>.md` with a different schema; Cursor expects `.cursor/agents/<role>.md`; Codex expects `.codex/agents/<role>.toml`. Each file is a thin overlay pointing at the same canonical body in `.agents/<role>.md`. ADR-003 documents the original two-registry design; ADR-023 documents the canonical-out-of-vendor decomposition that made the duplicated body obsolete; issue #330 extends the same pattern to Cursor and Codex.
 
 **Where it appears**:
 - `.agents/<role>.md` — platform-agnostic canonical body
 - `.github/agents/<role>.agent.md` — Copilot-format adapter (frontmatter overlay)
 - `.claude/agents/<role>.md` — Claude Code-format adapter (frontmatter overlay)
+- `.cursor/agents/<role>.md` — Cursor-format adapter (frontmatter overlay)
+- `.codex/agents/<role>.toml` — Codex-format adapter (TOML overlay)
 - `scripts/checks/050-agent-mirror.sh` enforces N-way `description:` byte-identity, body-references-canonical, and per-platform `model:` allowlists across canonical + overlays
 
-**What good usage looks like**: a third tool (Cursor, Gemini, Windsurf) is added by writing one new overlay file per role pointing at the same canonical, plus appending one row to the parallel arrays in `scripts/checks/050-agent-mirror.sh`. Canonical bodies are never duplicated.
+**What good usage looks like**: a fifth tool (Gemini CLI, Windsurf, etc.) is added by writing one new overlay file per role pointing at the same canonical, plus appending one row to the parallel arrays in `scripts/checks/050-agent-mirror.sh`. Canonical bodies are never duplicated.
 
 ---
 
@@ -126,7 +130,7 @@ Shared live-state surfaces written by parallel agents are keyed by owner identif
 A single canonical source (typically YAML) is the source of truth for some governance content; per-tool, per-platform, or per-format surfaces are *generated* from it rather than maintained in parallel. Pre-commit regenerates on edits to the canonical source; CI verifies generated outputs are not stale. This pattern is the structural fix for `AP2` (Mirror Duplication) and `AP7` (Magic String Sprawl).
 
 **Where it appears**:
-- *Recently shipped*: role files via #248, which made `.agents/<role>.md` the canonical platform-agnostic source with `.github/agents/` and `.claude/agents/` reduced to thin hand-maintained registration overlays (ADR-023). Future platforms (Cursor, Aider, etc.) drop in by adding one overlay per role plus one row to the parity-check parallel arrays in `scripts/checks/050-agent-mirror.sh`.
+- *Recently shipped*: role files via #248, which made `.agents/<role>.md` the canonical platform-agnostic source with `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/` reduced to thin hand-maintained registration overlays (ADR-023 plus issue #330). Future platforms (Aider, Windsurf, etc.) drop in by adding one overlay per role plus one row to the parity-check parallel arrays in `scripts/checks/050-agent-mirror.sh`.
 - *Candidate applications* (not yet implemented): pipeline labels currently hardcoded in `scripts/setup.sh` and referenced in workflows + docs; agent budget variables (`MAX_COPILOT_DAILY`, `MAX_COPILOT_CONCURRENT`, `PR_RESOLVE_MAX_ROUNDS`); doc-sync triggers in `process_doc_maintenance.md`; the PR-label state machine implicit in workflow conditions.
 - *Conceptually used*: the shape of `agent_ownership.md` — though human-edited rather than generated, it acts as a manifest that scripts (`scripts/multi-dispatch-safety.sh`, the parallelism-report parser) read.
 
@@ -195,7 +199,7 @@ These describe failure modes the orchestration layer is vulnerable to. Reviewers
 - Adding a new instance (third platform, fourth platform) requires manually copying content rather than running a generator.
 - A diff to one file requires a paired diff to others; reviewers regularly catch missed pairs.
 
-**Currently triggered by**: `.agents/<role>.md` (canonical) ↔ `.github/agents/<role>.agent.md` and `.claude/agents/<role>.md` (overlays) — the `description:` field is byte-identical via N-way parity in `scripts/checks/050-agent-mirror.sh`. ADR-003 documents the original two-registry design; ADR-023 documents the canonical-out-of-vendor decomposition that resolved the AP2 instance #248 was opened against (overlays now carry only frontmatter, so the duplicated *body* problem is gone — only the `description:` line is parity-enforced, and that's a single line per role).
+**Currently triggered by**: `.agents/<role>.md` (canonical) ↔ `.github/agents/<role>.agent.md`, `.claude/agents/<role>.md`, `.cursor/agents/<role>.md`, and `.codex/agents/<role>.toml` (overlays) — the `description:` field is byte-identical via N-way parity in `scripts/checks/050-agent-mirror.sh`. ADR-003 documents the original two-registry design; ADR-023 documents the canonical-out-of-vendor decomposition that resolved the AP2 instance #248 was opened against (overlays now carry only platform-specific registration fields, so the duplicated *body* problem is gone — only the `description:` line is parity-enforced, and that's a single line per role).
 
 **Remediation**: factor out a single canonical source; generate per-platform files from it via a script in `scripts/`; replace byte-identity tests with generator-output-stale tests. See #248 for the current design discussion.
 

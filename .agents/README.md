@@ -20,7 +20,8 @@ directory.
 |---|---|---|---|
 | GitHub Copilot SDK custom-agent runtime | `.github/agents/` | `.agent.md` | reads frontmatter for dispatch routing; treats body as system prompt |
 | Anthropic Claude Code native subagents | `.claude/agents/` | `.md` | reads frontmatter for dispatch routing; treats body as system prompt |
-| (future) Cursor subagent registration | `.cursor/agents/` | `.md` | per #249 |
+| Cursor current agent registration surface | `.cursor/agents/` | `.md` | project-scoped Cursor agent file |
+| OpenAI Codex custom agents | `.codex/agents/` | `.toml` | loaded as a custom-agent config layer for spawned Codex agents |
 
 Adding a new platform is **not** a 10-file copy of role responsibilities —
 it's 10 thin overlays, each pointing back to `.agents/<role>.md`.
@@ -60,9 +61,10 @@ where role bootstrap rules, output formats, handoff behavior, and compliance
 return contracts live.
 
 Do **not** add `overlay_version` to v1 role or platform files. Platform
-overlays under `.github/agents/` and `.claude/agents/` are registration shims;
-they own platform fields (`name`, `tools`, `model`, Copilot `handoffs`) but do
-not own the role compliance contract.
+overlays under `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and
+`.codex/agents/` are registration shims; they own platform fields (`name`,
+`tools`, `model`, Copilot `handoffs`, Cursor `readonly`, Codex
+`developer_instructions`, etc.) but do not own the role compliance contract.
 
 Bump `role_contract_version` only when a canonical role's bootstrap, output
 format, handoff behavior, or compliance return contract changes. Ordinary
@@ -152,8 +154,8 @@ role derived from `.agents/<role>.md`:
    (catches accidental shim regression — overlays must not redefine
    responsibilities).
 
-Adding `.cursor/` (or any future platform) to this check is a one-line array
-edit + a per-platform allowlist constant.
+Adding another platform (Aider, Windsurf, etc.) to this check is a one-line
+array edit + a per-platform allowlist constant.
 
 ## See also
 

@@ -64,6 +64,9 @@ temp/
 # Archived docs are for historical reference, not active development
 docs/archive/
 
+# Other platform overlays that do not need Cursor indexing
+.codex/
+
 # ===========================================
 # Large Assets
 # ===========================================

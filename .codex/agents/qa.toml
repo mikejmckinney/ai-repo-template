@@ -1,0 +1,8 @@
+name = "qa"
+description = "Use to write/update tests, gate merges on coverage, and triage CI failures. Runs after implementation, before judge diff-gate."
+model = "gpt-5.4-mini"
+model_reasoning_effort = "low"
+sandbox_mode = "workspace-write"
+developer_instructions = """
+See canonical role definition: ../../.agents/qa.md
+"""

@@ -1,0 +1,8 @@
+name = "docs"
+description = "Use to update README, AI_REPO_GUIDE, CLAUDE.md, or docs/. Runs in parallel with implementers when visible behavior changes."
+model = "gpt-5.4-mini"
+model_reasoning_effort = "low"
+sandbox_mode = "workspace-write"
+developer_instructions = """
+See canonical role definition: ../../.agents/docs.md
+"""
