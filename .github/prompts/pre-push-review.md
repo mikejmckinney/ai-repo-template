@@ -82,12 +82,7 @@ Build three artifacts:
   `git diff --cached` (in that order), then one `git diff --no-index --
   /dev/null "$file"` block for each untracked file. This is the input to
   Critic.
-3. **Change class** — classify the diff into one or more of:
-   - `shell` (any `scripts/*.sh`, `*.sh`, or shell within `run:` blocks)
-   - `workflow` (any `.github/workflows/*.yml`)
-  - `role-file` (any `.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`, `.cursor/agents/*.md`, or `.codex/agents/*.toml`)
-   - `agents-md` (`AGENTS.md`, `CLAUDE.md`, or `.github/copilot-instructions.md`)
-   - `other`
+3. **Change class** — classify the diff into one or more of: `shell` (any `scripts/*.sh`, `*.sh`, or shell within `run:` blocks), `workflow` (any `.github/workflows/*.yml`), `role-file` (any `.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`, `.cursor/agents/*.md`, or `.codex/agents/*.toml`), `agents-md` (`AGENTS.md`, `CLAUDE.md`, or `.github/copilot-instructions.md`), or `other`.
 
 The change class drives Step 3's lint scope and Step 4's test scope.
 

@@ -73,7 +73,7 @@ Files under `experiment/**` or `spike/**` MAY use unpinned aliases (`model: opus
 
 ### Amendment #6 — Copilot subagent cost-tier ceiling (limitation + workaround)
 
-Per the VS Code Copilot subagents docs (verified 2026-05-07): *"The requested model cannot exceed the cost tier of the main model. If you request a more expensive model, the subagent falls back to the main model."* Concretely: a High-tier subagent (e.g., `analyst` / `architect` / `judge` pinned to Opus 4.7) dispatched from a Copilot chat session running Sonnet (Mid tier) silently downgrades to Sonnet — the `model:` pin in `.github/agents/<role>.agent.md` is ignored.
+Per the VS Code Copilot subagents docs (verified 2026-05-07): _"The requested model cannot exceed the cost tier of the main model. If you request a more expensive model, the subagent falls back to the main model."_ Concretely: a High-tier subagent (e.g., `analyst` / `architect` / `judge` pinned to Opus 4.7) dispatched from a Copilot chat session running Sonnet (Mid tier) silently downgrades to Sonnet — the `model:` pin in `.github/agents/<role>.agent.md` is ignored.
 
 This is **Copilot-only**. Claude Code's subagent dispatcher has no equivalent ceiling.
 
@@ -167,7 +167,7 @@ Issue #330 extends ADR-019's platform-specific routing guidance beyond the origi
 This ADR ships in one PR (`feature/devops-220-phase2`):
 
 1. ADR-019 file (this file) created.
-2. `docs/decisions/adr-003-...md` Status updated to `Accepted (per-role `model:` choice superseded by ADR-019)`.
+2. `docs/decisions/adr-003-...md` Status updated to Accepted (per-role `model:` choice superseded by ADR-019).
 3. `docs/decisions/README.md` index updated with ADR-019 row.
 4. All 10 `.claude/agents/*.md` files updated per the tier table.
 5. All 10 `.github/agents/*.agent.md` files updated per the tier table; `model:` omitted on Low-tier roles.
