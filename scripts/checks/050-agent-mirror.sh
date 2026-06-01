@@ -99,6 +99,58 @@ extract_model_line() {
   esac
 }
 
+extract_codex_toml_line() {
+  local key="$1"
+  local overlay="$2"
+
+  sed -n "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*\"\([^\"]*\)\"[[:space:]]*\(#.*\)\?$/$(printf '%s' "$key") = \"\\1\"/p" "$overlay" | head -n1 | tr -d '\r'
+}
+
+expected_codex_model_line() {
+  local role="$1"
+
+  case "$role" in
+    analyst|architect|judge)
+      printf '%s' 'model = "gpt-5.4"'
+      ;;
+    backend|critic|devops|frontend|pm)
+      printf '%s' 'model = "gpt-5.3-codex-spark"'
+      ;;
+    docs|qa)
+      printf '%s' 'model = "gpt-5.4-mini"'
+      ;;
+  esac
+}
+
+expected_codex_reasoning_effort_line() {
+  local role="$1"
+
+  case "$role" in
+    analyst|architect|judge)
+      printf '%s' 'model_reasoning_effort = "high"'
+      ;;
+    backend|critic|devops|frontend|pm)
+      printf '%s' 'model_reasoning_effort = "medium"'
+      ;;
+    docs|qa)
+      printf '%s' 'model_reasoning_effort = "low"'
+      ;;
+  esac
+}
+
+expected_codex_sandbox_mode_line() {
+  local role="$1"
+
+  case "$role" in
+    analyst|architect|critic|judge|pm)
+      printf '%s' 'sandbox_mode = "read-only"'
+      ;;
+    backend|devops|docs|frontend|qa)
+      printf '%s' 'sandbox_mode = "workspace-write"'
+      ;;
+  esac
+}
+
 # Iterate every canonical role. Each canonical file is the source of truth for
 # the description: line and the role name; overlays must mirror.
 for canonical in .agents/*.md; do
@@ -158,6 +210,32 @@ for canonical in .agents/*.md; do
       pass "$role $platform model: line matches allowlist ($overlay_model)"
     else
       fail "$role $platform model: line not in ADR-019 allowlist: $overlay_model"
+    fi
+
+    if [[ "$platform" == "codex" ]]; then
+      expected_codex_model="$(expected_codex_model_line "$role")"
+      expected_codex_reasoning_effort="$(expected_codex_reasoning_effort_line "$role")"
+      expected_codex_sandbox_mode="$(expected_codex_sandbox_mode_line "$role")"
+      overlay_reasoning_effort="$(extract_codex_toml_line "model_reasoning_effort" "$overlay")"
+      overlay_sandbox_mode="$(extract_codex_toml_line "sandbox_mode" "$overlay")"
+
+      if [[ "$overlay_model" == "$expected_codex_model" ]]; then
+        pass "$role $platform model pin matches ADR-019 role mapping ($overlay_model)"
+      else
+        fail "$role $platform model pin does not match ADR-019 role mapping: expected $expected_codex_model, got ${overlay_model:-<missing>}"
+      fi
+
+      if [[ "$overlay_reasoning_effort" == "$expected_codex_reasoning_effort" ]]; then
+        pass "$role $platform model_reasoning_effort pin matches ADR-019 role mapping ($overlay_reasoning_effort)"
+      else
+        fail "$role $platform model_reasoning_effort pin does not match ADR-019 role mapping: expected $expected_codex_reasoning_effort, got ${overlay_reasoning_effort:-<missing>}"
+      fi
+
+      if [[ "$overlay_sandbox_mode" == "$expected_codex_sandbox_mode" ]]; then
+        pass "$role $platform sandbox_mode pin matches ADR-019 role mapping ($overlay_sandbox_mode)"
+      else
+        fail "$role $platform sandbox_mode pin does not match ADR-019 role mapping: expected $expected_codex_sandbox_mode, got ${overlay_sandbox_mode:-<missing>}"
+      fi
     fi
 
     # Check 4: overlay body references canonical (catches shim regression where
