@@ -65,10 +65,10 @@ extract_description_value() {
 
   case "$platform" in
     codex)
-      sed -n 's/^[[:space:]]*description[[:space:]]*=[[:space:]]*"\(.*\)"[[:space:]]*$/\1/p' "$overlay" | head -n1
+      sed -n 's/^[[:space:]]*description[[:space:]]*=[[:space:]]*"\([^"]*\)"[[:space:]]*\(#.*\)\?$/\1/p' "$overlay" | head -n1 | tr -d '\r'
       ;;
     *)
-      sed -n 's/^description:[[:space:]]*//p' "$overlay" | head -n1
+      sed -n 's/^[[:space:]]*description:[[:space:]]*//p' "$overlay" | head -n1 | tr -d '\r'
       ;;
   esac
 }
@@ -79,10 +79,22 @@ extract_model_line() {
 
   case "$platform" in
     codex)
-      sed -n 's/^[[:space:]]*model[[:space:]]*=[[:space:]]*"\(.*\)"[[:space:]]*$/model = "\1"/p' "$overlay" | head -n1
+      sed -n 's/^[[:space:]]*model[[:space:]]*=[[:space:]]*"\([^"]*\)"[[:space:]]*\(#.*\)\?$/model = "\1"/p' "$overlay" | head -n1 | tr -d '\r'
       ;;
     *)
-      grep -m1 '^model:' "$overlay" || true
+      local grep_out
+
+      if grep_out=$(grep -m1 '^model:' "$overlay"); then
+        printf '%s' "$grep_out" | tr -d '\r'
+      else
+        local grep_status=$?
+
+        if [[ "$grep_status" -eq 1 ]]; then
+          return 0
+        fi
+
+        return "$grep_status"
+      fi
       ;;
   esac
 }
@@ -105,7 +117,7 @@ for canonical in .agents/*.md; do
   [[ "$base" == consensus-candidate-* ]] && continue
   role="$base"
 
-  canonical_desc_value="$(sed -n 's/^description:[[:space:]]*//p' "$canonical" | head -n1)"
+  canonical_desc_value="$(sed -n 's/^[[:space:]]*description:[[:space:]]*//p' "$canonical" | head -n1 | tr -d '\r')"
   if [[ -z "$canonical_desc_value" ]]; then
     fail "$role canonical .agents/$role.md missing description: frontmatter line"
     continue
