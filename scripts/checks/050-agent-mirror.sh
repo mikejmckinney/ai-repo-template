@@ -110,13 +110,13 @@ expected_codex_model_line() {
   local role="$1"
 
   case "$role" in
-    analyst|architect|judge)
+    analyst | architect | judge)
       printf '%s' 'model = "gpt-5.4"'
       ;;
-    backend|critic|devops|frontend|pm)
+    backend | critic | devops | frontend | pm)
       printf '%s' 'model = "gpt-5.3-codex-spark"'
       ;;
-    docs|qa)
+    docs | qa)
       printf '%s' 'model = "gpt-5.4-mini"'
       ;;
   esac
@@ -126,13 +126,13 @@ expected_codex_reasoning_effort_line() {
   local role="$1"
 
   case "$role" in
-    analyst|architect|judge)
+    analyst | architect | judge)
       printf '%s' 'model_reasoning_effort = "high"'
       ;;
-    backend|critic|devops|frontend|pm)
+    backend | critic | devops | frontend | pm)
       printf '%s' 'model_reasoning_effort = "medium"'
       ;;
-    docs|qa)
+    docs | qa)
       printf '%s' 'model_reasoning_effort = "low"'
       ;;
   esac
@@ -142,10 +142,10 @@ expected_codex_sandbox_mode_line() {
   local role="$1"
 
   case "$role" in
-    analyst|architect|critic|judge|pm)
+    analyst | architect | critic | judge | pm)
       printf '%s' 'sandbox_mode = "read-only"'
       ;;
-    backend|devops|docs|frontend|qa)
+    backend | devops | docs | frontend | qa)
       printf '%s' 'sandbox_mode = "workspace-write"'
       ;;
   esac
