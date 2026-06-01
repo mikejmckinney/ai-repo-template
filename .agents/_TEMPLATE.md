@@ -12,8 +12,8 @@ handoff_targets:
 # <Role> Agent
 
 This template is the canonical starting point for role files under `.agents/`.
-Platform overlays under `.github/agents/` and `.claude/agents/` stay thin and
-must not duplicate this role body.
+Platform overlays under `.github/agents/`, `.claude/agents/`, `.cursor/agents/`,
+and `.codex/agents/` stay thin and must not duplicate this role body.
 
 ## Bootstrap contract
 

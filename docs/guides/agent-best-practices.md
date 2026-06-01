@@ -194,9 +194,9 @@ Modern LLM providers offer prompt caching: long, stable prefixes (e.g., a full s
 
 The single biggest cache-friendliness lever is **stability of long prefixes**. This repo already does the right things:
 
-- `AGENTS.md` and `.agents/*.md` change rarely; behavioral overrides go in role-scoped sections rather than rewriting the canonical text. Platform overlays (`.github/agents/`, `.claude/agents/`) are thin shims and only carry platform-specific frontmatter (ADR-023).
+- `AGENTS.md` and `.agents/*.md` change rarely; behavioral overrides go in role-scoped sections rather than rewriting the canonical text. Platform overlays (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) are thin shims and only carry platform-specific registration fields (ADR-023).
 - Role files cite shared rules by reference (`.context/rules/domain_code_quality.md` H1–H8, etc.) instead of copy-pasting them. Copy-paste defeats caching because each call inlines a slightly different snapshot.
-- The `description:` frontmatter line is byte-identical between the canonical `.agents/<role>.md` and every platform overlay (`.github/agents/`, `.claude/agents/`) — enforced by `scripts/checks/050-agent-mirror.sh` — so multi-runner setups dispatch on the same hashable string.
+- The role description is byte-identical between the canonical `.agents/<role>.md` and every platform overlay (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) — enforced by `scripts/checks/050-agent-mirror.sh` — so multi-runner setups dispatch on the same hashable string.
 
 ### What would *hurt* caching (don't do this)
 
@@ -220,7 +220,7 @@ If multiple agents work simultaneously (or a human and agent), they can overwrit
 
 #### 0. Role-Based Path Ownership (Primary)
 
-The strongest defense is role-based path ownership. Each role in `.agents/<role>.md` (with platform overlays in `.github/agents/` and `.claude/agents/`) is assigned path globs in `.context/rules/agent_ownership.md`, and conflicts are greatly reduced when those globs are kept non-overlapping. In practice a few cases still need coordination: some path patterns may overlap (colocated test files, generated artifacts, lockfiles), and some files are intentionally shared or contested (for example, `.context/rules/**`). Any cross-role edit must be coordinated through PM and recorded in GitHub live state. This is the primary mechanism — the fallbacks below mainly apply when two sessions of the **same role** overlap, or when work touches one of those shared/overlapping exceptions.
+The strongest defense is role-based path ownership. Each role in `.agents/<role>.md` (with platform overlays in `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/`) is assigned path globs in `.context/rules/agent_ownership.md`, and conflicts are greatly reduced when those globs are kept non-overlapping. In practice a few cases still need coordination: some path patterns may overlap (colocated test files, generated artifacts, lockfiles), and some files are intentionally shared or contested (for example, `.context/rules/**`). Any cross-role edit must be coordinated through PM and recorded in GitHub live state. This is the primary mechanism — the fallbacks below mainly apply when two sessions of the **same role** overlap, or when work touches one of those shared/overlapping exceptions.
 
 #### 1. One Active Task at a Time
 
