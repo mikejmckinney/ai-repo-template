@@ -5,7 +5,7 @@
 # and CWD == repo root.
 
 standalone=0
-if ! declare -F pass >/dev/null 2>&1 || ! declare -F fail >/dev/null 2>&1; then
+if ! declare -F pass >/dev/null 2>&1 || ! declare -F fail >/dev/null 2>&1 || ! declare -F warn >/dev/null 2>&1; then
   standalone=1
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
