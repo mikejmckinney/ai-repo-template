@@ -144,8 +144,10 @@ check_alias() {
       fi
       if [[ -n "${CURSOR_API_KEY:-}" ]]; then
         pass_note "${alias}: cursor auth heuristic satisfied by CURSOR_API_KEY"
+      elif cursor-agent status >/dev/null 2>&1; then
+        pass_note "${alias}: cursor auth heuristic satisfied by cursor-agent login"
       else
-        fail_note "${alias}: cursor auth heuristic missing (CURSOR_API_KEY)"
+        fail_note "${alias}: cursor auth heuristic missing (CURSOR_API_KEY or cursor-agent login)"
       fi
       ;;
     claude-code)

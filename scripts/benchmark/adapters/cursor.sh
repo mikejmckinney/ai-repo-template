@@ -21,7 +21,10 @@ set -euo pipefail
 adapter_run() {
   local workdir="$1" model="$2" prompt_file="$3" outdir="$4" effort="${5:-default}"
   mkdir -p "${outdir}/logs"
-  [[ -n "${CURSOR_API_KEY:-}" ]] || { echo "cursor adapter: CURSOR_API_KEY not set" >&2; return 78; }
+  if [[ -z "${CURSOR_API_KEY:-}" ]] && ! cursor-agent status >/dev/null 2>&1; then
+    echo "cursor adapter: not authenticated (set CURSOR_API_KEY or run cursor-agent login)" >&2
+    return 78
+  fi
   local prompt; prompt="$(cat "${prompt_file}")"
 
   # Inline-directive workaround: prepend a thinking-effort instruction naming the
