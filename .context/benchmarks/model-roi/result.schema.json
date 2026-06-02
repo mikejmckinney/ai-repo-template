@@ -105,9 +105,6 @@
       },
       "then": {
         "properties": {
-          "manual_fallback_allowed": {
-            "const": true
-          },
           "artifacts": {
             "properties": {
               "blind_metadata": {

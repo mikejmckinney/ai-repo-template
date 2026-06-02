@@ -39,9 +39,12 @@ require_stage "${STAGE}"
 mapfile -t ALIASES < <(manifest_aliases "${STAGE}")
 [[ "${#ALIASES[@]}" -gt 0 ]] || die "no candidates in manifest for stage='${STAGE}'"
 alias_set_file="$(suite_alias_set_path "${TASK}" "${STAGE}")"
+manifest_snapshot="$(suite_manifest_snapshot_path "${TASK}" "${STAGE}")"
 mkdir -p "$(dirname "${alias_set_file}")"
 printf '%s\n' "${ALIASES[@]}" > "${alias_set_file}"
+cp "${MANIFEST}" "${manifest_snapshot}"
 log "recorded alias set -> ${alias_set_file}"
+log "recorded manifest snapshot -> ${manifest_snapshot}"
 
 log "suite: task=${TASK} stage='${STAGE}' candidates=${#ALIASES[@]} run-index=${RUN_INDEX}"
 declare -a CAPTURED=() FAIL=() BLOCKED=()

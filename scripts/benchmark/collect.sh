@@ -74,16 +74,27 @@ if [[ "${UNSEAL}" == "0" ]]; then
   log "grade each row from its diff_path; do NOT open meta-sealed.json until scores are locked."
 else
   out="${base}/unsealed-map.tsv"
+  manifest_snapshot="$(suite_manifest_snapshot_path "${TASK}" "${STAGE}")"
+  [[ -f "${manifest_snapshot}" ]] \
+    || die "no recorded manifest snapshot for task ${TASK} stage ${STAGE}: ${manifest_snapshot}"
   printf 'alias\tplatform\tmodel\tagent\trun\tterminal_state\twall_s\trc\tfiles\n' > "${out}"
   for result in "${RESULT_FILES[@]}"; do
     alias="$(jq -r '.alias' "${result}")"
-    row="$(manifest_lookup "${alias}")" || die "alias not in manifest during unseal: ${alias}"
-    IFS=$'\t' read -r -a fields <<<"${row}"
-    platform="${fields[0]}"
-    model="${fields[1]}"
-    agent="${fields[2]}"
     d="$(dirname "${result}")"
     mb="${d}/meta-blind.json"
+    ms="${d}/meta-sealed.json"
+    if [[ -f "${ms}" ]]; then
+      platform="$(jq -r '.platform' "${ms}")"
+      model="$(jq -r '.model' "${ms}")"
+      agent="$(jq -r '.agent' "${ms}")"
+    else
+      row="$(manifest_lookup_in "${manifest_snapshot}" "${alias}")" \
+        || die "alias not in recorded manifest snapshot during unseal: ${alias}"
+      IFS=$'\t' read -r -a fields <<<"${row}"
+      platform="${fields[0]}"
+      model="${fields[1]}"
+      agent="${fields[2]}"
+    fi
     if [[ -f "${mb}" ]]; then
       printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "${alias}" "${platform}" "${model}" "${agent}" \

@@ -44,7 +44,7 @@ The local `scripts/benchmark/` runner is now the committed Phase A execution bas
 | Core Stage 1 operator flow (`base`, `run`, `suite`, `worktree`, `record`, `collect`, `unseal`) | Present | Driven by `scripts/benchmark/Makefile` and companion scripts. |
 | Real pre-spend `doctor` gate | Present | `make doctor` checks prompt/manifest/base, per-harness binaries, auth heuristics, writable dirs, and remote readiness before spend. |
 | Hard refusal to widen Phase A when `STAGE=1` is omitted | Present | `make suite` / `run-suite.sh` fail fast unless Stage 1 is selected explicitly. |
-| Completeness enforcement for every Core Stage 1 alias terminal state | Present | `run-suite.sh` records the executed alias set; `collect` / `unseal` require exactly one terminal result per recorded alias. |
+| Completeness enforcement for every Core Stage 1 alias terminal state | Present | `run-suite.sh` records the executed alias set and a sealed manifest snapshot; `collect` / `unseal` require exactly one terminal result per recorded alias. |
 | Blind vs. sealed artifact split | Present | Model identity and detailed effort metadata stay sealed; blind surfaces expose only alias-safe operational facts. |
 | Documented manual fallback after headless failure | Present | Use `make worktree` and `make record`; never count this as silent automated success. |
 
@@ -97,6 +97,7 @@ The benchmark keeps **grader-facing** and **sealed** artifacts separate.
 ### Sealed inputs
 
 - `scripts/benchmark/candidates.tsv` — alias→platform/model/agent manifest
+- `scripts/benchmark/runs/<task-id>/stage-<stage>-manifest.tsv` — frozen sealed manifest snapshot captured by `run-suite.sh`
 
 ### Per-run artifacts
 
@@ -116,6 +117,7 @@ Expected artifacts:
 
 ### Task-level artifacts
 
+- `scripts/benchmark/runs/<task-id>/stage-<stage>-aliases.txt` — recorded alias set for the executed suite
 - `scripts/benchmark/runs/<task-id>/grading-sheet-blind.tsv` — blind grading sheet
 - `scripts/benchmark/runs/<task-id>/unsealed-map.tsv` — post-lock alias reveal
 

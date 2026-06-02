@@ -84,14 +84,21 @@ require_base() {
 # Lines starting with # and blank lines are ignored.
 # manifest_lookup ALIAS -> echoes "platform\tmodel\tagent\tstage\teffort\teffort_mechanism" or fails.
 manifest_lookup() {
-  local want="$1" a p m g s e em
+  manifest_lookup_in "${MANIFEST}" "$1"
+}
+
+# manifest_lookup_in FILE ALIAS -> echoes
+# "platform\tmodel\tagent\tstage\teffort\teffort_mechanism" or fails.
+manifest_lookup_in() {
+  local manifest_file="$1" want="$2" a p m g s e em
+  [[ -f "${manifest_file}" ]] || return 1
   while IFS=$'\t' read -r a p m g s e em; do
     [[ "${a}" =~ ^#.*$ || -z "${a}" ]] && continue
     if [[ "${a}" == "${want}" ]]; then
       printf '%s\t%s\t%s\t%s\t%s\t%s\n' "${p}" "${m}" "${g}" "${s}" "${e:-default}" "${em:-none}"
       return 0
     fi
-  done < "${MANIFEST}"
+  done < "${manifest_file}"
   return 1
 }
 
@@ -115,6 +122,9 @@ result_file_path() { printf '%s/result.json' "$(run_outdir "$1" "$2" "$3")"; }
 
 # suite_alias_set_path TASK STAGE -> durable record of the alias set a suite executed.
 suite_alias_set_path() { printf '%s/%s/stage-%s-aliases.txt' "${RUNS_DIR}" "$1" "$2"; }
+
+# suite_manifest_snapshot_path TASK STAGE -> frozen sealed manifest used by a suite.
+suite_manifest_snapshot_path() { printf '%s/%s/stage-%s-manifest.tsv' "${RUNS_DIR}" "$1" "$2"; }
 
 # derive_effort_status REQUESTED MECHANISM APPLIED_DESC -> neutral blind token.
 derive_effort_status() {
