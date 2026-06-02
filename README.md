@@ -29,11 +29,16 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `.context/` | AI agents | Canonical project truth: rules, state, roadmap, vision (lazy-loaded) |
 | `CLAUDE.md` (root) | Claude Code native loader | Project memory pointer to `AGENTS.md`. Kept at root by convention; `./.claude/CLAUDE.md` would also work ([memory docs](https://code.claude.com/docs/en/memory#choose-where-to-put-claude-md-files)) |
 | `AGENTS.md` (root) | Most other AI tools | Root agent instructions (Copilot, Cursor, Gemini, etc.) |
-| `.claude/agents/` | Claude Code subagent loader | Role mirrors registered as native subagents (see ADR-003) |
-| `.github/agents/` | Copilot SDK custom-agent runtime | Canonical role files for multi-agent work |
+| `.agents/` | AI agent platforms | Canonical role bodies for the 10 repo roles |
+| `.claude/agents/` | Claude Code subagent loader | Claude Code overlays that point back to `.agents/<role>.md` |
+| `.cursor/agents/` | Cursor agent loader | Cursor overlays (`model`, `readonly`, `is_background`) that point back to `.agents/<role>.md` |
+| `.codex/agents/` | Codex custom-agent loader | TOML overlays (`model`, `model_reasoning_effort`, `sandbox_mode`) that point back to `.agents/<role>.md` |
+| `.github/agents/` | Copilot SDK custom-agent runtime | Copilot overlays that point back to `.agents/<role>.md` |
 | `install.sh` (root) | GitHub Codespaces "Dotfiles" | Bootstrap script — Codespaces expects it at repo root |
 | `test.sh` (root) | `.github/workflows/ci-tests.yml` | Template verification, invoked by CI as `./test.sh` |
 | `scripts/` | Project consumers (post-clone) | One-time project customization (`setup.sh`, `verify-env.sh`) |
+
+Canonical role behavior lives in `.agents/<role>.md`; the platform folders are thin registration shims. Their file shapes and model tiers are intentionally platform-specific: Copilot and Claude carry different `model` formats, Cursor adds `readonly` and `is_background`, and Codex uses TOML plus `model_reasoning_effort` and `sandbox_mode`.
 
 **Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow. `CLAUDE.md` is a soft convention — it *could* live at `./.claude/CLAUDE.md` and Claude Code would still auto-discover it, but we keep it at the root alongside `AGENTS.md` and `AI_REPO_GUIDE.md` for visibility.
 
@@ -183,9 +188,11 @@ EXTENSIONS=(
 
 ### Platform-Specific Files
 
-- **Cursor**: Add files to `.cursor/`
-- **Gemini**: Add files to `.gemini/`
-- **GitHub Copilot**: Add files to `.github/agents/` or `.github/prompts/`
+- **Claude Code**: Use `CLAUDE.md` for the root loader pointer and `.claude/agents/` for native subagent overlays.
+- **Cursor**: Use `.cursor/agents/` for role overlays and `.cursor/BUGBOT.md` for review rules.
+- **Codex**: Use `.codex/agents/` for TOML custom-agent overlays.
+- **Gemini**: Add files to `.gemini/`.
+- **GitHub Copilot**: Use `.github/agents/` for custom-agent overlays and `.github/prompts/` for prompt files.
 
 ## Best Practices
 
@@ -204,7 +211,7 @@ When using this template in a new repository:
 
 Known constraints of this template. Agent-facing detail (environment variables, tool-specific path rules, workflow placeholders) lives in [`AI_REPO_GUIDE.md` § Gotchas / Known Issues](AI_REPO_GUIDE.md#gotchas--known-issues).
 
-- **Opinionated scaffolding.** The 10-role multi-agent model, `.context/` lazy-loading pattern, and dual agent registries (`.github/agents/` + `.claude/agents/`) reflect specific design choices recorded in `docs/decisions/`. Forks that disagree should strip rather than bend.
+- **Opinionated scaffolding.** The 10-role multi-agent model, `.context/` lazy-loading pattern, and first-class platform overlays (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) reflect specific design choices recorded in `docs/decisions/`. Forks that disagree should strip rather than bend.
 - **No runtime code.** This is a docs/config template, not a language-specific starter. Your project brings its own build, test, and deploy toolchain; `ci-tests.yml` ships with placeholder commands you must replace.
 - **Codespaces-centric bootstrap.** `install.sh` is wired to the GitHub Codespaces "Dotfiles" feature (via the `$DOTFILES` env var). It falls back to its own directory elsewhere, but some convenience features (extension install, prompt copy) assume a Codespace.
 - **Template placeholders are text, not schema.** The `TEMPLATE_PLACEHOLDER` marker is grep-discoverable but not validated for correctness. Running `scripts/verify-env.sh` lists them; the agent still has to make the judgement call on replacement content.
@@ -213,7 +220,7 @@ Known constraints of this template. Agent-facing detail (environment variables, 
 
 Template-level items under consideration. Per-decision follow-ups live in the "Future Work" subsection of each ADR under `docs/decisions/`.
 
-- **Automate `.claude/agents/` generation from `.github/agents/`.** Current sync is manual; `test.sh` only verifies the `description:` line matches. See [`docs/decisions/adr-003-claude-code-subagent-registration.md`](docs/decisions/adr-003-claude-code-subagent-registration.md) § Future Work.
+- **Automate platform overlay generation from `.agents/`.** Current sync is manual; `test.sh` verifies overlay presence, `description:` parity, and per-platform `model:` allowlists across `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/`.
 - **Stricter placeholder scanning in CI.** Move `TEMPLATE_PLACEHOLDER` detection from an ad-hoc script into a required CI check so derived projects cannot merge partial customizations.
 - **Nested auto-handoff validation for subagent chaining.** Exercise `architect → pm → implementer → judge` end-to-end in CI to prevent role-boundary regressions.
 - **More deployment templates.** Cloudflare Workers, Fly.io, and Kubernetes manifests are candidates. Each addition is a maintenance commitment — contribute only if you'll maintain it.

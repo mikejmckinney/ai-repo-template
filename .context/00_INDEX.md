@@ -71,7 +71,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 
 **What ships from this repo**:
 
-- Canonical role definitions under `.agents/` plus Copilot and Claude overlays.
+- Canonical role definitions under `.agents/` plus first-class Copilot, Claude, Cursor, and Codex overlays.
 - Process rules under `.context/rules/` and reference diagrams under `.context/vision/architecture/`.
 - GitHub prompts, issue/PR templates, and workflow scaffolding under `.github/`.
 - Bootstrap and verification helpers under `install.sh`, `test.sh`, and `scripts/**`.
@@ -104,7 +104,7 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-020](../docs/decisions/adr-020-orchestration-patterns-reference.md) | Orchestration patterns reference | Gave Critic and Judge shared pattern/anti-pattern vocabulary. |
 | [ADR-021](../docs/decisions/adr-021-agents-md-decomposition.md) | AGENTS decomposition | Split the monolithic contract into focused `process_*.md` rules. |
 | [ADR-022](../docs/decisions/adr-022-top-level-md-scope-split.md) | Top-level markdown scope split | Separated README, AI_REPO_GUIDE, and AGENTS responsibilities. |
-| [ADR-023](../docs/decisions/adr-023-shared-subagent-canonical.md) | Canonical role bodies plus thin overlays | Made `.agents/<role>.md` the shared source for Copilot and Claude. |
+| [ADR-023](../docs/decisions/adr-023-shared-subagent-canonical.md) | Canonical role bodies plus thin overlays | Made `.agents/<role>.md` the shared source for Copilot, Claude, Cursor, and Codex overlays. |
 | [ADR-024](../docs/decisions/adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning | Added the optional three-candidate planning workflow. |
 | [ADR-025](../docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md) | GitHub as live state | Moved normal coordination to issue/PR bodies, comments, and labels. |
 | [ADR-026](../docs/decisions/adr-026-compliance-contracts.md) | Compliance contracts | Added receipt/evidence schemas for parent and subagent work. |

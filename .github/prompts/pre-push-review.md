@@ -17,7 +17,7 @@ agent: agent
 >
 > **When to skip**: trivial diffs are exempt — i.e. ≤50 LOC changed
 > AND no change to `scripts/*.sh`, `.github/workflows/*.yml`, role
-> files (`.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`), or
+> files (`.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`, `.cursor/agents/*.md`, `.codex/agents/*.toml`), or
 > `AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`. (Same
 > non-trivial definition as AGENTS.md → "Work style".) Revert PRs and
 > bot-authored PRs (Renovate, Dependabot) are also exempt. Phase 1's
@@ -33,7 +33,9 @@ to catch before* push so the bot loop has less to do.
 - The base branch the PR will target (default `main`; override with
   `BASE_REF` env var when working off a feature branch).
 - The working-tree diff: `git diff origin/<base>...HEAD` plus uncommitted
-  changes (`git diff` and `git diff --cached`).
+  changes (`git diff` and `git diff --cached`) plus untracked files from
+  `git ls-files --others --exclude-standard` rendered as `git diff --no-index`
+  against `/dev/null`.
 
 If the working tree has no changes vs. the base, report
 `SKIPPED — no changes to review` and exit cleanly. This is not a
@@ -74,16 +76,13 @@ fi
 Build three artifacts:
 
 1. **Changed files** — `git diff --name-only "$DIFF_RANGE"` plus
-   `git diff --name-only` (uncommitted) plus `git diff --name-only --cached`.
-   Deduplicate.
+  `git diff --name-only` (uncommitted) plus `git diff --name-only --cached`
+  plus `git ls-files --others --exclude-standard`. Deduplicate.
 2. **Unified diff** — `git diff "$DIFF_RANGE"` followed by `git diff` and
-   `git diff --cached` (in that order). This is the input to Critic.
-3. **Change class** — classify the diff into one or more of:
-   - `shell` (any `scripts/*.sh`, `*.sh`, or shell within `run:` blocks)
-   - `workflow` (any `.github/workflows/*.yml`)
-   - `role-file` (any `.agents/*.md`, `.github/agents/*.agent.md`, or `.claude/agents/*.md`)
-   - `agents-md` (`AGENTS.md`, `CLAUDE.md`, or `.github/copilot-instructions.md`)
-   - `other`
+  `git diff --cached` (in that order), then one `git diff --no-index --
+  /dev/null "$file" || true` block for each untracked file. This is the input to
+  Critic.
+3. **Change class** — classify the diff into one or more of: `shell` (any `scripts/*.sh`, `*.sh`, or shell within `run:` blocks), `workflow` (any `.github/workflows/*.yml`), `role-file` (any `.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`, `.cursor/agents/*.md`, or `.codex/agents/*.toml`), `agents-md` (`AGENTS.md`, `CLAUDE.md`, or `.github/copilot-instructions.md`), or `other`.
 
 The change class drives Step 3's lint scope and Step 4's test scope.
 

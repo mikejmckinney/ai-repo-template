@@ -4,7 +4,7 @@
 
 ## The Roles
 
-Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-023). Each platform has a thin registration overlay (`.github/agents/<role>.agent.md` for Copilot SDK, `.claude/agents/<role>.md` for Claude Code) that carries only frontmatter and points back to the canonical body. ADR-026 adds `role_contract_version` to each canonical role; dispatched subagents report that version in a trailing `subagent_compliance` block.
+Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-023). Each first-class platform has a thin registration overlay: `.github/agents/<role>.agent.md` for Copilot SDK, `.claude/agents/<role>.md` for Claude Code, `.cursor/agents/<role>.md` for Cursor, and `.codex/agents/<role>.toml` for Codex. Overlay fields are platform-specific by design: Cursor adds `readonly` and `is_background`, Codex uses TOML plus `model_reasoning_effort` and `sandbox_mode`, and ADR-019 keeps model tiers platform-specific across all four overlay trees. ADR-026 adds `role_contract_version` to each canonical role; dispatched subagents report that version in a trailing `subagent_compliance` block.
 
 | Role       | Canonical file          | Writes code? |
 |------------|-------------------------|--------------|
@@ -41,19 +41,25 @@ subagents based on frontmatter `description:` and can explicitly dispatch via
 same role descriptions, but VS Code Copilot Chat currently does not
 automatically route default-agent messages or honor overlay `handoffs:` after a
 `runSubagent` return; the default agent must proactively call `runSubagent` and
-manually chain downstream handoffs. Both platforms still point back to a single
+manually chain downstream handoffs. Cursor and Codex now have first-class
+overlay files in this repo, but this guide treats them as loader/config
+surfaces first: their file shapes and model pins are canonical, while
+in-session dispatch behavior remains host-specific and is not the repo's
+primary coordination path. All four overlay trees still point back to a single
 platform-agnostic canonical body:
 
 | Loader | Overlay file | Schema |
 |---|---|---|
 | Copilot SDK custom-agent runtime | `.github/agents/<role>.agent.md` | Copilot schema (`read`, `write`, `execute`, `search`, `fetch`, `githubRepo`, `usages`, `todo`; `name`, `description`, `tools`, optional `target`/`user-invocable`/`disable-model-invocation`). In VS Code Copilot Chat, the default agent must call `runSubagent`; overlay `handoffs:` are retained for future hosts but are inert in this surface. |
 | Claude Code native subagents     | `.claude/agents/<role>.md`       | Claude Code schema (`Read`, `Write`, `Edit`, `Grep`, `Glob`, `Bash`, `Task`, `WebFetch`; kebab-case `name`, `description`, `tools`, optional `model`). Auto-dispatch matches on `description:`; explicit dispatch via `Task(subagent_type: '<role>', ...)`. |
+| Cursor agent overlays            | `.cursor/agents/<role>.md`       | Markdown file with YAML frontmatter (`name`, `description`, `model`, `readonly`, `is_background`) plus a pointer body. This repo treats Cursor as a first-class overlay surface; runtime dispatch details remain host-specific. |
+| Codex custom agents              | `.codex/agents/<role>.toml`      | TOML config with `name`, `description`, `model`, `model_reasoning_effort`, `sandbox_mode`, and `developer_instructions`. This repo treats Codex as a first-class overlay surface; runtime dispatch details remain host-specific. |
 
-Both overlays describe the **same 10 roles** and both delegate to the canonical role body at `.agents/<role>.md` (ADR-023). The overlays carry only the platform-specific frontmatter (tool vocabulary, model strings) and a thin pointer body — so the detailed role definition lives in **one** place, free of any vendor-specific frontmatter.
+All four overlay trees describe the **same 10 roles** and delegate to the canonical role body at `.agents/<role>.md` (ADR-023). The overlays carry only platform-specific loader fields and a thin pointer body, so the detailed role definition lives in **one** place, free of any vendor-specific frontmatter. ADR-019 intentionally keeps `model` values platform-specific rather than identical across vendors.
 
 `test.sh` enforces an N-way parity check (`scripts/checks/050-agent-mirror.sh`): every overlay's `description:` must match the canonical byte-for-byte, every overlay body must reference its canonical, and every overlay's `model:` value must satisfy that platform's allowlist. Any drift is a hard failure.
 
-**Adding a new role** means adding the canonical `.agents/<role>.md` plus *both* overlays (and updating `install.sh`'s `MULTIAGENT_FILES`, the `.context/rules/agent_ownership.md` table, and this guide). `test.sh` will fail loudly if any file is missing.
+**Adding a new role** means adding the canonical `.agents/<role>.md` plus one overlay in each first-class platform folder (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) and updating `install.sh`'s `MULTIAGENT_FILES`, the `.context/rules/agent_ownership.md` table, and this guide. `test.sh` will fail loudly if any file is missing.
 
 **Adding a new platform** means adding one overlay file per role pointing at the same canonical, plus one row to the parallel arrays in `scripts/checks/050-agent-mirror.sh`.
 
@@ -90,7 +96,7 @@ coexist with rather than precede the role output. See
 `.context/rules/process_subagent_bootstrap.md` § "Positional output contract"
 for the authoritative rule.
 
-See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the rationale behind the two-registry design.
+See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the original Claude/Copilot registry rationale and `docs/decisions/adr-023-shared-subagent-canonical.md` for the canonical-plus-overlays refactor.
 
 ## End-to-End Flow
 
@@ -256,13 +262,13 @@ Each branch goes through QA → Judge → merge independently.
 2. `.context/00_INDEX.md` — where everything lives.
 3. Assigned GitHub issue, linked PR (if any), latest `agent-state:v1` comment, and labels — what's in flight right now.
 4. `.context/rules/agent_ownership.md` — what you may touch.
-5. `.agents/<your-role>.md` — your specific responsibilities (canonical, platform-agnostic). Your platform's overlay (`.github/agents/<role>.agent.md` or `.claude/agents/<role>.md`) just points here.
+5. `.agents/<your-role>.md` — your specific responsibilities (canonical, platform-agnostic). Your platform's overlay (`.github/agents/<role>.agent.md`, `.claude/agents/<role>.md`, `.cursor/agents/<role>.md`, or `.codex/agents/<role>.toml`) just points here.
 6. `.context/sessions/latest_summary.md` — durable lessons from recent work.
 7. Report readiness (see the "Report readiness (The Report Step)" subsection in `docs/guides/agent-best-practices.md`).
 
 ## Parallel Copilot Fan-Out
 
-When working multiple issues in parallel against this repo, the practical model is **cross-session parallelism**: separate agent sessions on separate issues, each producing a separate PR. The cross-session model is what `MAX_COPILOT_CONCURRENT` (default 3) and the path-ownership map are designed to gate. (For *in-session* role dispatch — i.e. one agent fanning out to roles within a single chat — see "Dispatch reality matrix" below; only Claude Code CLI does this today.)
+When working multiple issues in parallel against this repo, the practical model is **cross-session parallelism**: separate agent sessions on separate issues, each producing a separate PR. The cross-session model is what `MAX_COPILOT_CONCURRENT` (default 3) and the path-ownership map are designed to gate. (For *in-session* role dispatch — i.e. one agent fanning out to roles within a single chat — see "Dispatch reality matrix" below; only Claude Code CLI is treated as fully wired in this guide today.)
 
 ### When two issues are parallel-safe
 
@@ -355,16 +361,18 @@ Full rationale: ADR-009 §Decision 4.
 
 ## Dispatch reality matrix
 
-The canonical role files in `.agents/**` (with platform overlays in `.github/agents/**` and `.claude/agents/**`) describe **the same 10 roles**, but only some runtimes actually fan out to them in-session. Treat this matrix as the contract:
+The canonical role files in `.agents/**` (with first-class platform overlays in `.github/agents/**`, `.claude/agents/**`, `.cursor/agents/**`, and `.codex/agents/**`) describe **the same 10 roles**, but the runtime dispatch story is still host-specific. Treat this matrix as the current contract:
 
 | Runtime                                | Loads role files? | In-session role dispatch? | Notes |
 |----------------------------------------|-------------------|---------------------------|-------|
 | Claude Code CLI (local + `claude.yml`) | Yes (`.claude/agents/**` overlays → `.agents/**` canonical)  | **Yes** — native `Task(subagent_type: ...)`, including auto-dispatch on `description:` match | Only runtime where role fan-out is fully wired today. See ADR-003 and ADR-023. |
-| VS Code Copilot Chat                   | Public preview ([docs](https://code.visualstudio.com/docs/copilot/agents/subagents)) | **Unverified** — preview exists; tool-name compatibility, auto-dispatch behavior, and parallelism model not validated against `.github/agents/**` overlays | Tracked in [#111](https://github.com/mikejmckinney/ai-repo-template/issues/111). |
+| VS Code Copilot Chat                   | Yes (`.github/agents/**` overlays → `.agents/**` canonical) | **Partial** — the default agent can call `runSubagent`, but auto-routing and overlay `handoffs:` are not honored in this surface | Matches the Copilot-specific loader notes above and `.github/copilot-instructions.md`. |
+| Cursor                                 | Yes (`.cursor/agents/**` overlays → `.agents/**` canonical) | Not part of this repo's current coordination contract — overlay files and model pins are maintained, but in-session dispatch behavior remains host-specific | Treat Cursor as a first-class overlay surface, not as a promise of native fan-out semantics in this guide. |
+| Codex custom agents                    | Yes (`.codex/agents/**` overlays → `.agents/**` canonical) | Not part of this repo's current coordination contract — overlay files and model pins are maintained, but in-session dispatch behavior remains host-specific | TOML overlays pin `model`, `model_reasoning_effort`, and `sandbox_mode`; runtime dispatch details are outside the current repo contract. |
 | Cloud Copilot SWE agent (issue assignment / `@copilot follow`) | Reads `AGENTS.md` + `copilot-instructions.md` + the prompt file | **No** — runs as a single session per issue/PR; no dispatch primitive exposed | Multi-role behavior in this runtime is achieved by *separate* SWE-agent sessions on *separate* issues, gated by `MAX_COPILOT_CONCURRENT`. |
-| Other (Cursor, Gemini, Aider, etc.)    | Reads `AGENTS.md` only | **No** — single orchestrator | The role files are documentation the orchestrator reads. |
+| Other (Gemini, Aider, etc.)            | Reads `AGENTS.md` only | **No** — single orchestrator | The role files are documentation the orchestrator reads. |
 
-Practical implication: when "parallel multi-agent execution" is discussed in this repo, it almost always means **cross-session parallelism** (separate PRs from separate sessions), not in-session `Task()`-style fan-out. Claude Code CLI is the exception. The cross-PR overlap CI (layer 6 of the conflict-avoidance hierarchy) is what makes the cross-session model safe at scale.
+Practical implication: when "parallel multi-agent execution" is discussed in this repo, it almost always means **cross-session parallelism** (separate PRs from separate sessions), not in-session `Task()`-style fan-out. Claude Code CLI is the fully wired exception today; Cursor and Codex now have first-class overlay trees, but this repo still treats cross-session parallelism as the operational default. The cross-PR overlap CI (layer 6 of the conflict-avoidance hierarchy) is what makes the cross-session model safe at scale.
 
 ## Verifying overlap workflow changes
 

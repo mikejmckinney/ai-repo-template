@@ -73,7 +73,7 @@ Files under `experiment/**` or `spike/**` MAY use unpinned aliases (`model: opus
 
 ### Amendment #6 — Copilot subagent cost-tier ceiling (limitation + workaround)
 
-Per the VS Code Copilot subagents docs (verified 2026-05-07): *"The requested model cannot exceed the cost tier of the main model. If you request a more expensive model, the subagent falls back to the main model."* Concretely: a High-tier subagent (e.g., `analyst` / `architect` / `judge` pinned to Opus 4.7) dispatched from a Copilot chat session running Sonnet (Mid tier) silently downgrades to Sonnet — the `model:` pin in `.github/agents/<role>.agent.md` is ignored.
+Per the VS Code Copilot subagents docs (verified 2026-05-07): _"The requested model cannot exceed the cost tier of the main model. If you request a more expensive model, the subagent falls back to the main model."_ Concretely: a High-tier subagent (e.g., `analyst` / `architect` / `judge` pinned to Opus 4.7) dispatched from a Copilot chat session running Sonnet (Mid tier) silently downgrades to Sonnet — the `model:` pin in `.github/agents/<role>.agent.md` is ignored.
 
 This is **Copilot-only**. Claude Code's subagent dispatcher has no equivalent ceiling.
 
@@ -94,6 +94,32 @@ This amendment does **not** change the canonical tier table above and does **not
 Interim guidance for Copilot users: when the work is reasoning-heavy and parent-model choice matters because of Amendment #6's cost-tier ceiling — for example OP orchestration, `pr-resolve-all.md` review loops, plan-gate, diff-gate, or architecture-heavy design work — `GPT-5.4 xhigh` is the preferred comparison baseline and MAY be used as the parent session model pending benchmark results. This is guidance for human session setup, not an overlay remap and not a claim that `GPT-5.4 xhigh` is the final per-role winner.
 
 The decision about whether to remap any Copilot role from the current Anthropic strings to `GPT-5.4 xhigh` (or another Copilot model), and whether to add verified Copilot fallback arrays, is deferred to the refreshed benchmark work in issue #220. That refresh must evaluate ROI per role and per workflow class, at minimum across: billed Copilot cost, review-loop convergence, plan/review quality, latency to task completion, and context-fit / truncation risk. If the refreshed benchmark shows that `GPT-5.4 xhigh` has better ROI for specific Copilot roles, capture that as a later ADR-019 amendment and update the affected overlays in the same PR.
+
+### Amendment #9 — Cursor and Codex overlay value-spaces; Antigravity remains documentation-only
+
+Issue #330 extends ADR-019's platform-specific routing guidance beyond the original Claude Code / Copilot pair to the repo's first-class Cursor and Codex overlay surfaces. The canonical role body remains `.agents/<role>.md`; platform-local fields stay in the overlay files.
+
+**Cursor (`.cursor/agents/*.md`)**
+
+- The current repo value-space is `model: <inherit | fast | Claude Opus 4.8 | Claude 4.6 Sonnet>` plus `readonly: <true|false>` and `is_background: false`.
+- Repo mapping follows the existing tier table: High-tier roles pin `Claude Opus 4.8`, Mid-tier roles pin `Claude 4.6 Sonnet`, and Low-tier roles use `inherit`.
+- `model: inherit` creates the same effective parent-tier ceiling concern as Copilot: High-tier descendants still depend on the parent session being set high enough. Cursor also has a reported nested-subagent MAX-mode inheritance drift, so OP sessions that need high-tier descendants should stay at top tier rather than assuming a deeper child will preserve its own pin.
+
+**Codex (`.codex/agents/*.toml`)**
+
+- Codex custom agents are standalone TOML files. Required keys are `name`, `description`, and `developer_instructions`; this repo also pins `model`, `model_reasoning_effort`, and `sandbox_mode` per role.
+- Current repo pins are: High = `gpt-5.4`, Mid = `gpt-5.3-codex`, Low = `gpt-5.4-mini`; reasoning effort is `high`, `medium`, or `low`; sandbox is `read-only` for planning/review roles and `workspace-write` for implementation roles.
+- Omitting `model` inherits the parent session. No Copilot-style published cost-tier ceiling is documented for Codex today, but the repo keeps `agents.max_depth` conservative and uses explicit pins for first-class role overlays.
+
+**Antigravity**
+
+- Antigravity remains documentation-only. No public custom-agent file format exists yet, so this repo ships no Antigravity overlay files and documents only the platform guidance.
+
+**`scripts/checks/050-agent-mirror.sh` enforcement**
+
+- Cursor allowlist: `inherit | fast | Claude Opus 4.8 | Claude 4.6 Sonnet`
+- Codex allowlist: `gpt-5.4 | gpt-5.3-codex | gpt-5.4-mini`
+- N-way description parity now spans canonical + Copilot + Claude + Cursor + Codex.
 
 ## Options Considered
 
@@ -141,7 +167,7 @@ The decision about whether to remap any Copilot role from the current Anthropic 
 This ADR ships in one PR (`feature/devops-220-phase2`):
 
 1. ADR-019 file (this file) created.
-2. `docs/decisions/adr-003-...md` Status updated to `Accepted (per-role `model:` choice superseded by ADR-019)`.
+2. `docs/decisions/adr-003-...md` Status updated to Accepted (per-role `model:` choice superseded by ADR-019).
 3. `docs/decisions/README.md` index updated with ADR-019 row.
 4. All 10 `.claude/agents/*.md` files updated per the tier table.
 5. All 10 `.github/agents/*.agent.md` files updated per the tier table; `model:` omitted on Low-tier roles.

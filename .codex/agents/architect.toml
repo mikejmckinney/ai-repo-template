@@ -1,0 +1,8 @@
+name = "architect"
+description = "Use for planning, architectural decisions, ADRs, and decomposing feature requests. Produces plans only — never writes implementation."
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+developer_instructions = """
+See canonical role definition: ../../.agents/architect.md
+"""

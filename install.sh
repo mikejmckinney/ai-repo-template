@@ -176,7 +176,8 @@ fi
 # Multi-agent kit: role files, ownership map, coordination board, CLAUDE.md
 # ---------------------------------------------------------------------------
 # AGENTS.md tells agents to read .agents/<role>.md (canonical) and the
-# vendor overlays under .github/agents/*.agent.md / .claude/agents/*.md,
+# vendor overlays under .github/agents/*.agent.md / .claude/agents/*.md /
+# .cursor/agents/*.md / .codex/agents/*.toml,
 # the ownership map,
 # and the coordination board before editing. Without these files in the target
 # workspace the mandatory onboarding flow is non-actionable, so we copy the
@@ -274,6 +275,26 @@ MULTIAGENT_FILES=(
   ".claude/agents/devops.md"
   ".claude/agents/docs.md"
   ".claude/agents/analyst.md"
+  ".cursor/agents/architect.md"
+  ".cursor/agents/judge.md"
+  ".cursor/agents/critic.md"
+  ".cursor/agents/pm.md"
+  ".cursor/agents/frontend.md"
+  ".cursor/agents/backend.md"
+  ".cursor/agents/qa.md"
+  ".cursor/agents/devops.md"
+  ".cursor/agents/docs.md"
+  ".cursor/agents/analyst.md"
+  ".codex/agents/architect.toml"
+  ".codex/agents/judge.toml"
+  ".codex/agents/critic.toml"
+  ".codex/agents/pm.toml"
+  ".codex/agents/frontend.toml"
+  ".codex/agents/backend.toml"
+  ".codex/agents/qa.toml"
+  ".codex/agents/devops.toml"
+  ".codex/agents/docs.toml"
+  ".codex/agents/analyst.toml"
   ".context/00_INDEX.md"
   ".context/backlog.schema.json"
   ".context/backlog.yaml"

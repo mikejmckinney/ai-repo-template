@@ -4,6 +4,23 @@
 # $PASS/$FAIL/$WARN, pass()/fail()/warn() from scripts/lib/{logging,assertions}.sh
 # and CWD == repo root.
 
+standalone=0
+if ! declare -F pass >/dev/null 2>&1 || ! declare -F fail >/dev/null 2>&1 || ! declare -F warn >/dev/null 2>&1; then
+  standalone=1
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+  cd "$REPO_ROOT" || exit 1
+
+  # shellcheck source=scripts/lib/logging.sh
+  source "$REPO_ROOT/scripts/lib/logging.sh"
+  # shellcheck source=scripts/lib/assertions.sh
+  source "$REPO_ROOT/scripts/lib/assertions.sh"
+
+  PASS=0
+  FAIL=0
+  WARN=0
+fi
+
 # --- Canonical/Overlay Parity Checks (ADR-023) ---
 # Role responsibilities live exactly once at .agents/<role>.md (canonical,
 # platform-agnostic). Each registered platform has a thin overlay folder
@@ -23,7 +40,7 @@
 #
 # Adding a new platform = add one entry to the `platforms` array below and
 # one allowlist regex constant. No per-role logic to add.
-echo "Checking canonical/overlay parity (.agents/ ↔ .github/agents/, .claude/agents/)..."
+echo "Checking canonical/overlay parity (.agents/ ↔ .github/agents/, .claude/agents/, .cursor/agents/, .codex/agents/)..."
 
 # Per-platform configuration via parallel arrays (a packed-string row layout
 # would split the model regexes on their alternation `|` chars when read with
@@ -31,14 +48,108 @@ echo "Checking canonical/overlay parity (.agents/ ↔ .github/agents/, .claude/a
 # AT THE SAME INDEX.
 copilot_allowlist_re='^model: '\''[A-Za-z0-9. ()-]+ \(copilot\)'\''[[:space:]]*$'
 claude_allowlist_re='^model: (inherit|claude-opus-4-7|claude-sonnet-4-6|claude-haiku-4-5)$'
+cursor_allowlist_re='^model: (inherit|fast|Claude Opus 4\.8|Claude 4\.6 Sonnet)$'
+codex_allowlist_re='^model = "(gpt-5\.4|gpt-5\.3-codex|gpt-5\.4-mini)"$'
 
-platforms=("copilot" "claude")
-overlay_dirs=(".github/agents" ".claude/agents")
-overlay_suffixes=(".agent.md" ".md")
-model_allowlist_res=("$copilot_allowlist_re" "$claude_allowlist_re")
+platforms=("copilot" "claude" "cursor" "codex")
+overlay_dirs=(".github/agents" ".claude/agents" ".cursor/agents" ".codex/agents")
+overlay_suffixes=(".agent.md" ".md" ".md" ".toml")
+model_allowlist_res=("$copilot_allowlist_re" "$claude_allowlist_re" "$cursor_allowlist_re" "$codex_allowlist_re")
 # model_required: 1 = must have a model: line; 0 = may omit (Copilot Low tier
 # inherits main session per ADR-019).
-model_required_flags=("0" "1")
+model_required_flags=("0" "1" "1" "1")
+
+extract_description_value() {
+  local platform="$1"
+  local overlay="$2"
+
+  case "$platform" in
+    codex)
+      sed -n 's/^[[:space:]]*description[[:space:]]*=[[:space:]]*"\([^"]*\)"[[:space:]]*\(#.*\)\?$/\1/p' "$overlay" | head -n1 | tr -d '\r'
+      ;;
+    *)
+      sed -n 's/^[[:space:]]*description:[[:space:]]*//p' "$overlay" | head -n1 | tr -d '\r'
+      ;;
+  esac
+}
+
+extract_model_line() {
+  local platform="$1"
+  local overlay="$2"
+
+  case "$platform" in
+    codex)
+      sed -n 's/^[[:space:]]*model[[:space:]]*=[[:space:]]*"\([^"]*\)"[[:space:]]*\(#.*\)\?$/model = "\1"/p' "$overlay" | head -n1 | tr -d '\r'
+      ;;
+    *)
+      local grep_out
+
+      if grep_out=$(grep -m1 '^model:' "$overlay"); then
+        printf '%s' "$grep_out" | tr -d '\r'
+      else
+        local grep_status=$?
+
+        if [[ "$grep_status" -eq 1 ]]; then
+          return 0
+        fi
+
+        return "$grep_status"
+      fi
+      ;;
+  esac
+}
+
+extract_codex_toml_line() {
+  local key="$1"
+  local overlay="$2"
+
+  sed -n "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*\"\([^\"]*\)\"[[:space:]]*\(#.*\)\?$/$(printf '%s' "$key") = \"\\1\"/p" "$overlay" | head -n1 | tr -d '\r'
+}
+
+expected_codex_model_line() {
+  local role="$1"
+
+  case "$role" in
+    analyst | architect | judge)
+      printf '%s' 'model = "gpt-5.4"'
+      ;;
+    backend | critic | devops | frontend | pm)
+      printf '%s' 'model = "gpt-5.3-codex"'
+      ;;
+    docs | qa)
+      printf '%s' 'model = "gpt-5.4-mini"'
+      ;;
+  esac
+}
+
+expected_codex_reasoning_effort_line() {
+  local role="$1"
+
+  case "$role" in
+    analyst | architect | judge)
+      printf '%s' 'model_reasoning_effort = "high"'
+      ;;
+    backend | critic | devops | frontend | pm)
+      printf '%s' 'model_reasoning_effort = "medium"'
+      ;;
+    docs | qa)
+      printf '%s' 'model_reasoning_effort = "low"'
+      ;;
+  esac
+}
+
+expected_codex_sandbox_mode_line() {
+  local role="$1"
+
+  case "$role" in
+    analyst | architect | critic | judge | pm)
+      printf '%s' 'sandbox_mode = "read-only"'
+      ;;
+    backend | devops | docs | frontend | qa)
+      printf '%s' 'sandbox_mode = "workspace-write"'
+      ;;
+  esac
+}
 
 # Iterate every canonical role. Each canonical file is the source of truth for
 # the description: line and the role name; overlays must mirror.
@@ -58,8 +169,8 @@ for canonical in .agents/*.md; do
   [[ "$base" == consensus-candidate-* ]] && continue
   role="$base"
 
-  canonical_desc="$(grep -m1 '^description:' "$canonical" || true)"
-  if [[ -z "$canonical_desc" ]]; then
+  canonical_desc_value="$(sed -n 's/^[[:space:]]*description:[[:space:]]*//p' "$canonical" | head -n1 | tr -d '\r')"
+  if [[ -z "$canonical_desc_value" ]]; then
     fail "$role canonical .agents/$role.md missing description: frontmatter line"
     continue
   fi
@@ -80,15 +191,18 @@ for canonical in .agents/*.md; do
     pass "$role $platform overlay present at $overlay"
 
     # Check 2: description: line matches canonical byte-for-byte.
-    overlay_desc="$(grep -m1 '^description:' "$overlay" || true)"
-    if [[ -n "$overlay_desc" && "$overlay_desc" == "$canonical_desc" ]]; then
+    overlay_desc_value="$(extract_description_value "$platform" "$overlay")"
+    if [[ -n "$overlay_desc_value" && "$overlay_desc_value" == "$canonical_desc_value" ]]; then
       pass "$role $platform description: matches canonical"
     else
       fail "$role $platform description: differs from canonical (.agents/$role.md)"
     fi
 
     # Check 3: model: line matches platform allowlist.
-    overlay_model="$(grep -m1 '^model:' "$overlay" || true)"
+    if ! overlay_model="$(extract_model_line "$platform" "$overlay")"; then
+      fail "$role $platform overlay model extraction errored while reading $overlay"
+      overlay_model=""
+    fi
     if [[ -z "$overlay_model" ]]; then
       if [[ "$model_required" == "1" ]]; then
         fail "$role $platform overlay missing model: line (ADR-019 requires explicit pin or 'model: inherit' for this platform)"
@@ -101,6 +215,32 @@ for canonical in .agents/*.md; do
       fail "$role $platform model: line not in ADR-019 allowlist: $overlay_model"
     fi
 
+    if [[ "$platform" == "codex" ]]; then
+      expected_codex_model="$(expected_codex_model_line "$role")"
+      expected_codex_reasoning_effort="$(expected_codex_reasoning_effort_line "$role")"
+      expected_codex_sandbox_mode="$(expected_codex_sandbox_mode_line "$role")"
+      overlay_reasoning_effort="$(extract_codex_toml_line "model_reasoning_effort" "$overlay")"
+      overlay_sandbox_mode="$(extract_codex_toml_line "sandbox_mode" "$overlay")"
+
+      if [[ "$overlay_model" == "$expected_codex_model" ]]; then
+        pass "$role $platform model pin matches ADR-019 role mapping ($overlay_model)"
+      else
+        fail "$role $platform model pin does not match ADR-019 role mapping: expected $expected_codex_model, got ${overlay_model:-<missing>}"
+      fi
+
+      if [[ "$overlay_reasoning_effort" == "$expected_codex_reasoning_effort" ]]; then
+        pass "$role $platform model_reasoning_effort pin matches ADR-019 role mapping ($overlay_reasoning_effort)"
+      else
+        fail "$role $platform model_reasoning_effort pin does not match ADR-019 role mapping: expected $expected_codex_reasoning_effort, got ${overlay_reasoning_effort:-<missing>}"
+      fi
+
+      if [[ "$overlay_sandbox_mode" == "$expected_codex_sandbox_mode" ]]; then
+        pass "$role $platform sandbox_mode pin matches ADR-019 role mapping ($overlay_sandbox_mode)"
+      else
+        fail "$role $platform sandbox_mode pin does not match ADR-019 role mapping: expected $expected_codex_sandbox_mode, got ${overlay_sandbox_mode:-<missing>}"
+      fi
+    fi
+
     # Check 4: overlay body references canonical (catches shim regression where
     # someone paraphrases role responsibilities back into the overlay). The
     # check is intentionally a substring match against the canonical pointer
@@ -108,19 +248,14 @@ for canonical in .agents/*.md; do
     # `-F` forces literal matching so `.` is not treated as a regex wildcard
     # (otherwise paths like `xagents/<role>Xmd` would falsely satisfy the check).
     #
-    # Heuristic limitation: this is intentionally a presence check, not a
-    # structural parse. We do not validate that the reference is a real
-    # markdown link or that the path resolves on disk; that would require a
-    # markdown parser and a path resolver and would be overkill for catching
-    # the failure mode this check exists to prevent (a contributor pasting
-    # role text back into an overlay shim). False positives are bounded —
-    # any literal occurrence of `.agents/<role>.md` anywhere in the overlay
-    # passes, which is the correct intent for an "overlays must point at
-    # canonical" invariant. See ADR-023 for the canonical/overlay contract.
-    if grep -qF ".agents/${role}.md" "$overlay"; then
-      pass "$role $platform overlay body references canonical .agents/$role.md"
+    # Tighten the pointer check to the exact relative pattern used by the
+    # existing overlays. A generic `.agents/<role>.md` substring is not enough
+    # because it would allow broken `../.agents/<role>.md` or prose-only
+    # mentions to pass.
+    if grep -qF "../../.agents/${role}.md" "$overlay"; then
+      pass "$role $platform overlay body references canonical ../../.agents/$role.md"
     else
-      fail "$role $platform overlay $overlay body must reference .agents/$role.md (overlays are pointers; do not paraphrase canonical responsibilities)"
+      fail "$role $platform overlay $overlay body must reference ../../.agents/$role.md (overlays are pointers; do not paraphrase canonical responsibilities)"
     fi
   done
 done
@@ -154,3 +289,17 @@ for i in "${!platforms[@]}"; do
 done
 
 echo ""
+
+if [[ "$standalone" == "1" ]]; then
+  echo "========================================"
+  echo "Summary"
+  echo "========================================"
+  echo -e "${GREEN}Passed:${NC} $PASS"
+  echo -e "${YELLOW}Warnings:${NC} $WARN"
+  echo -e "${RED}Failed:${NC} $FAIL"
+  echo ""
+
+  if [[ $FAIL -gt 0 ]]; then
+    exit 1
+  fi
+fi
