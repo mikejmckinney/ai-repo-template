@@ -34,23 +34,23 @@ Required behavior:
 5. Record manual fallback explicitly when a bundled adapter fails headlessly.
 6. Defer Stage 2 and any model-routing remap decision to Phase B / Plan v2.
 
-## Execution reality vs. approved hardening
+## Execution reality
 
-The local `scripts/benchmark/` runner already provides a useful execution base, but not every approved Phase A guarantee is implemented there yet.
+The local `scripts/benchmark/` runner is now the committed Phase A execution base. It includes the approved Stage 1 guardrails, while full paid benchmark execution and later-phase sweeps remain intentionally out of scope for this rollout.
 
 | Protocol requirement | Prototype status in this worktree | Notes |
 |---|---|---|
-| Canonical candidate prompt at `.github/prompts/model-roi-benchmark-candidate.md` | Present after this docs slice | `scripts/benchmark/lib.sh` points at this path. |
+| Canonical candidate prompt at `.github/prompts/model-roi-benchmark-candidate.md` | Present | `scripts/benchmark/lib.sh` points at this path. |
 | Core Stage 1 operator flow (`base`, `run`, `suite`, `worktree`, `record`, `collect`, `unseal`) | Present | Driven by `scripts/benchmark/Makefile` and companion scripts. |
-| Real pre-spend `doctor` gate | **Pending DevOps slice** | Do not document `scripts/benchmark/doctor.sh` as available until it exists. |
-| Hard refusal to widen Phase A when `STAGE=1` is omitted | **Pending DevOps slice** | Today the operator must pass `STAGE=1` explicitly. |
-| Completeness enforcement for every Core Stage 1 alias terminal state | **Pending DevOps slice** | Use the templates in this directory to track alias coverage until the runner enforces it. |
-| Blind vs. sealed artifact split | Present, but still being tightened | Model identity is already sealed; detailed effort metadata should stay sealed or minimal. If the prototype still emits blind effort columns, treat that as a temporary mismatch to be fixed in DevOps, not the target protocol. |
+| Real pre-spend `doctor` gate | Present | `make doctor` checks prompt/manifest/base, per-harness binaries, auth heuristics, writable dirs, and remote readiness before spend. |
+| Hard refusal to widen Phase A when `STAGE=1` is omitted | Present | `make suite` / `run-suite.sh` fail fast unless Stage 1 is selected explicitly. |
+| Completeness enforcement for every Core Stage 1 alias terminal state | Present | `run-suite.sh` records the executed alias set; `collect` / `unseal` require exactly one terminal result per recorded alias. |
+| Blind vs. sealed artifact split | Present | Model identity and detailed effort metadata stay sealed; blind surfaces expose only alias-safe operational facts. |
 | Documented manual fallback after headless failure | Present | Use `make worktree` and `make record`; never count this as silent automated success. |
 
 ## Current operator flow
 
-Until the DevOps hardening lands, treat the commands below as the **current prototype flow** rather than a claim that every approved guardrail already exists.
+The commands below reflect the current Phase A operator flow.
 
 1. Create the sealed manifest by copying `scripts/benchmark/candidates.tsv.example` to `scripts/benchmark/candidates.tsv`, then edit only the sealed mapping.
 2. Freeze the benchmark base:
@@ -119,17 +119,17 @@ Expected artifacts:
 - `scripts/benchmark/runs/<task-id>/grading-sheet-blind.tsv` — blind grading sheet
 - `scripts/benchmark/runs/<task-id>/unsealed-map.tsv` — post-lock alias reveal
 
-Detailed effort controls belong in sealed records or not at all. Blind artifacts should not expose model identity, and they should avoid detailed effort metadata beyond any minimal non-identifying completeness field the runner truly needs.
+Detailed effort controls belong in sealed records only. Blind artifacts should not expose model identity or detailed effort metadata.
 
 ## Core Stage 1 terminal states
 
-Every Core Stage 1 alias must end in **exactly one** audited terminal state before blind collection or unseal:
+Every Core Stage 1 alias in the recorded suite alias set must end in **exactly one** audited terminal state before blind collection or unseal:
 
 - `graded`
 - `blocked`
 - `manual-capture-approved`
 
-Until the runner enforces this automatically, track it in the per-alias result record and the task-level summary.
+The runner now enforces this automatically at collect/unseal time; the templates remain the human-readable audit surface.
 
 ## Templates
 

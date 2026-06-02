@@ -31,8 +31,11 @@ require_stage "${STAGE}"
 
 base="${RUNS_DIR}/${TASK}"
 [[ -d "${base}" ]] || die "no runs for task ${TASK} at ${base}"
-mapfile -t ALIASES < <(manifest_aliases "${STAGE}")
-[[ "${#ALIASES[@]}" -gt 0 ]] || die "no manifest aliases for stage='${STAGE}'"
+alias_set_file="$(suite_alias_set_path "${TASK}" "${STAGE}")"
+[[ -f "${alias_set_file}" ]] \
+  || die "no recorded alias set for task ${TASK} stage ${STAGE}: ${alias_set_file}"
+mapfile -t ALIASES < "${alias_set_file}"
+[[ "${#ALIASES[@]}" -gt 0 ]] || die "recorded alias set is empty for stage='${STAGE}'"
 
 declare -a RESULT_FILES=()
 for alias in "${ALIASES[@]}"; do
@@ -46,7 +49,7 @@ done
 
 if [[ "${UNSEAL}" == "0" ]]; then
   out="${base}/grading-sheet-blind.tsv"
-  printf 'alias\trun\tstage\tterminal_state\teffort_req\teffort_status\twall_s\trc\tfiles\twork_produced\tdiff_path\n' > "${out}"
+  printf 'alias\trun\tstage\tterminal_state\twall_s\trc\tfiles\twork_produced\tdiff_path\n' > "${out}"
   for result in "${RESULT_FILES[@]}"; do
     d="$(dirname "${result}")"
     mb="${d}/meta-blind.json"
@@ -57,21 +60,17 @@ if [[ "${UNSEAL}" == "0" ]]; then
       blind_diff="${d}/diff.patch"
       jq -r --arg st "${state}" --arg dp "${blind_diff}" '
         [ .alias, (.run_index|tostring), .stage, $st,
-          (.effort_requested // "?"), (.effort_status // "?"),
           (.wall_clock_seconds|tostring),
           (.adapter_exit_code|tostring), (.diff_files_changed|tostring),
           (.work_produced|tostring), $dp ] | @tsv' "${mb}" >> "${out}"
     else
-      effort_req="$(manifest_lookup "${alias}" | awk -F '\t' '{print $6}')"
-      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "${alias}" "$(jq -r '.run_index' "${result}")" "${STAGE}" "${state}" \
-        "${effort_req:-?}" "?" "?" "$(jq -r '.adapter_exit_code // "?"' "${result}")" \
+        "?" "$(jq -r '.adapter_exit_code // "?"' "${result}")" \
         "0" "false" "" >> "${out}"
     fi
   done
   log "blind grading sheet -> ${out}"
-  log "effort_status is neutral (applied|approximated|requested|not-applied|default) so it"
-  log "does NOT leak the harness; the verbose mechanism string stays in meta-sealed.json."
   log "grade each row from its diff_path; do NOT open meta-sealed.json until scores are locked."
 else
   out="${base}/unsealed-map.tsv"

@@ -279,7 +279,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `scripts/verify-env.sh` | Environment & placeholder sanity check; run with `--fix` to auto-install missing tools (bounded allowlist: `rg`, `shellcheck`, `jq`) |
 | `scripts/diag-sandbox.sh` | Read-only sandbox auth/access doctor (issue #365): checks auth source, remote reachability, and stale branch inventory; makes no writes. `DIAG_GIT_TIMEOUT` (default 10 s; `0` disables timeout). Run before sandbox operations or when `gh` auth is unclear. See `docs/guides/sandbox-verification.md` § "Sandbox Doctor" |
 | `scripts/verify-pr.sh` | Plan-template Change-class classifier (ADR-016 / issue #227); run: `bash scripts/verify-pr.sh --declared "<class>"` |
-| `scripts/benchmark/Makefile` | Current front-end for the model ROI benchmark runner/prototype: `base`, `run`, `suite`, `worktree`, `record`, `collect`, and `unseal`. Scope is Phase A / Core Stage 1 for issue `#374`; approved `doctor` and completeness guards are still pending the DevOps slice. |
+| `scripts/benchmark/Makefile` | Current front-end for the model ROI benchmark runner: `doctor`, `base`, `run`, `suite`, `worktree`, `record`, `collect`, and `unseal`. Scope is Phase A / Core Stage 1 for issue `#374`; later-stage sweeps and paid candidate runs remain separate follow-on work. |
 | `scripts/validate-compliance-examples.py` | Validates fenced YAML examples in `docs/compliance_schemas.md` against ADR-026 v1 shape |
 | `scripts/validate-compliance-fixtures.py` | Validates ADR-026 valid/invalid fixtures under `scripts/tests/fixtures/compliance/` |
 | `scripts/db-reset.sh` | Optional database reset stub |

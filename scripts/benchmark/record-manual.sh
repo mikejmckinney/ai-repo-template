@@ -81,8 +81,6 @@ EFFORT_STATUS="$(derive_effort_status "${EFFORT}" "${EFFORT_MECH}" "${EFFORT_APP
   printf '  "adapter_exit_code": %s,\n'  "${RC}"
   printf '  "diff_files_changed": %s,\n' "${DIFF_FILES}"
   printf '  "work_produced": %s,\n'      "${WORK_PRODUCED}"
-  printf '  "effort_requested": %s,\n'   "$(json_escape "${EFFORT}")"
-  printf '  "effort_status": %s,\n'      "$(json_escape "${EFFORT_STATUS}")"
   printf '  "manual_run": true,\n'
   printf '  "shortstat": %s\n'           "$(json_escape "${DIFF_LINES}")"
   printf '}\n'

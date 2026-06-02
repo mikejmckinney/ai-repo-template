@@ -113,6 +113,9 @@ run_outdir() { printf '%s/%s/%s/r%s' "${RUNS_DIR}" "$1" "$2" "$3"; }
 # result_file_path TASK ALIAS RUN_INDEX -> the terminal-state contract file.
 result_file_path() { printf '%s/result.json' "$(run_outdir "$1" "$2" "$3")"; }
 
+# suite_alias_set_path TASK STAGE -> durable record of the alias set a suite executed.
+suite_alias_set_path() { printf '%s/%s/stage-%s-aliases.txt' "${RUNS_DIR}" "$1" "$2"; }
+
 # derive_effort_status REQUESTED MECHANISM APPLIED_DESC -> neutral blind token.
 derive_effort_status() {
   local effort="${1:-default}" mech="${2:-none}" applied="${3:-}"

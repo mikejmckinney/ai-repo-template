@@ -88,6 +88,15 @@ if [[ ${RC} -eq 64 ]]; then
   exit 64
 fi
 
+if [[ ${RC} -ne 0 ]]; then
+  HEAD_SHA="$(git -C "${WT}" rev-parse HEAD 2>/dev/null || echo "")"
+  write_result_file "${OUTDIR}" "${ALIAS}" "${TASK}" "${RUN_INDEX}" "${STAGE}" \
+    "blocked" "${HEAD_SHA}" "${RC}" "false" "" "" ""
+  log "blocked (${PLATFORM}): adapter exited rc=${RC}; terminal state recorded as blocked"
+  [[ "${KEEP_WT}" == "1" ]] || drop_worktree "${TASK}" "${ALIAS}" "${RUN_INDEX}"
+  exit "${RC}"
+fi
+
 # ---- capture git result (no judgement, just facts) -------------------------
 HEAD_SHA="$(git -C "${WT}" rev-parse HEAD 2>/dev/null || echo "")"
 COMMITTED_AHEAD="$(git -C "${WT}" rev-list --count "${BASE_SHA}..HEAD" 2>/dev/null || echo 0)"
@@ -115,8 +124,6 @@ WORK_PRODUCED=$([[ "${COMMITTED_AHEAD}" -gt 0 || "${DIFF_FILES}" -gt 0 ]] && ech
   printf '  "commits_ahead_of_base": %s,\n' "${COMMITTED_AHEAD}"
   printf '  "diff_files_changed": %s,\n' "${DIFF_FILES}"
   printf '  "work_produced": %s,\n'  "${WORK_PRODUCED}"
-  printf '  "effort_requested": %s,\n'   "$(json_escape "${EFFORT}")"
-  printf '  "effort_status": %s,\n'      "$(json_escape "${EFFORT_STATUS}")"
   printf '  "shortstat": %s\n'      "$(json_escape "${DIFF_LINES}")"
   printf '}\n'
 } > "${OUTDIR}/meta-blind.json"
