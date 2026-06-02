@@ -225,12 +225,62 @@ drop_worktree() {
   git -C "${REPO_DIR}" worktree remove --force "${wt}" 2>/dev/null || rm -rf "${wt}"
 }
 
-# ---- git credential containment -------------------------------------------
+# ---- git push containment --------------------------------------------------
 # Run the agent with push disabled so an over-eager agent (we pass --yolo-style
 # flags) cannot push to a shared branch. The runner pushes deliberately later.
-# This sets a per-invocation env that points git at a credential helper that
-# always fails, without touching the user's global git config.
-deny_push_env() {
-  # GIT_TERMINAL_PROMPT=0 stops interactive credential prompts from hanging.
-  printf 'GIT_TERMINAL_PROMPT=0'
+# This installs a per-run git wrapper at the front of PATH. Ordinary git
+# commands still work; `git push` fails fast without touching global git config.
+prepare_git_push_guard() {
+  local outdir="$1"
+  local real_git
+  real_git="$(command -v git)" || die "git not found"
+
+  local guard_dir="${outdir}/git-guard-bin"
+  mkdir -p "${guard_dir}"
+  cat > "${guard_dir}/git" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+
+cmd=""
+args=("$@")
+i=0
+while [[ ${i} -lt ${#args[@]} ]]; do
+  arg="${args[${i}]}"
+  case "${arg}" in
+    -C|-c|--git-dir|--work-tree|--namespace)
+      i=$((i + 2))
+      continue
+      ;;
+    --git-dir=*|--work-tree=*|--namespace=*)
+      i=$((i + 1))
+      continue
+      ;;
+    --*)
+      i=$((i + 1))
+      continue
+      ;;
+    -*)
+      i=$((i + 1))
+      continue
+      ;;
+    *)
+      cmd="${arg}"
+      break
+      ;;
+  esac
+done
+
+if [[ "${cmd}" == "push" ]]; then
+  printf 'benchmark git guard: git push is disabled inside candidate runs; use make push from the runner\n' >&2
+  exit 126
+fi
+
+exec "${BENCHMARK_REAL_GIT:?}" "$@"
+SH
+  chmod +x "${guard_dir}/git"
+
+  export BENCHMARK_REAL_GIT="${real_git}"
+  export GIT_TERMINAL_PROMPT=0
+  export PATH="${guard_dir}:${PATH}"
+  printf '%s\n' "${guard_dir}" > "${outdir}/git-guard-path.txt"
 }

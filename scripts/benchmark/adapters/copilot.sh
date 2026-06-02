@@ -18,7 +18,7 @@
 set -euo pipefail
 
 adapter_run() {
-  local model="$2" prompt_file="$3" outdir="$4" effort="${5:-default}"
+  local workdir="$1" model="$2" prompt_file="$3" outdir="$4" effort="${5:-default}"
   mkdir -p "${outdir}/logs"
   [[ -n "${COPILOT_GITHUB_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}" ]] \
     || { echo "copilot adapter: no token in COPILOT_GITHUB_TOKEN/GH_TOKEN/GITHUB_TOKEN" >&2; return 78; }
@@ -37,10 +37,10 @@ adapter_run() {
   esac
 
   set +e
-  GIT_TERMINAL_PROMPT=0 \
-  copilot -p "${prompt}" --model "${model}" "${effort_args[@]}" --allow-all-tools \
-    --output-format json --no-color --log-dir "${outdir}/logs" \
-    > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log"
+  ( cd "${workdir}" && \
+    copilot -p "${prompt}" --model "${model}" "${effort_args[@]}" --allow-all-tools \
+      --output-format json --no-color --log-dir "${outdir}/logs" \
+      > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
   local rc=$?
   set -e
   return ${rc}

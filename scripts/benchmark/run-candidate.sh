@@ -56,6 +56,7 @@ source "${ADAPTER}"
 
 OUTDIR="$(run_outdir "${TASK}" "${ALIAS}" "${RUN_INDEX}")"
 mkdir -p "${OUTDIR}/logs"
+prepare_git_push_guard "${OUTDIR}"
 
 WT="$(make_worktree "${TASK}" "${ALIAS}" "${RUN_INDEX}" "${BASE_SHA}")"
 log "worktree: ${WT}"

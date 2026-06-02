@@ -102,9 +102,13 @@ role_dispatch:
 
 Set `Model tier:` according to the model selected for this candidate, but do not change repo model defaults.
 
-## Required PR
+## Required PR Artifact
 
-Open a **draft** PR when your runtime supports autonomous PR creation:
+Do **not** push, force-push, or open a PR from inside the benchmark harness. The
+runner owns push/PR creation so candidate identity remains blind and branch
+publication is deliberate.
+
+Prepare the exact draft PR metadata the maintainer can use after the run:
 
 - PR base: the frozen base branch from the metadata block, never `main`.
 - PR head: the aliased candidate branch.
@@ -113,7 +117,9 @@ Open a **draft** PR when your runtime supports autonomous PR creation:
 - Fill the PR template accurately; include verification results, doc-sync decisions, and verifiable-artifact evidence.
 - Do not request auto-merge.
 
-If PR creation is unavailable in your runtime, that is **not** a failure. Provide the exact candidate branch, final commit SHA, `git push` command, and `gh pr create` command the maintainer can run. The result is gated on the work being verifiable to exist, not on autonomous push.
+Provide the exact candidate branch, final commit SHA, `git push` command, and
+`gh pr create` command the maintainer can run. The result is gated on the work
+being verifiable to exist, not on autonomous push.
 
 ## Verification expectations
 
