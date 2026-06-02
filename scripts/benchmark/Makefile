@@ -54,7 +54,9 @@ worktrees:
 
 worktree:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(ALIAS)" || { echo "set TASK BASE ALIAS"; exit 2; }
-	@bash -c 'source "$(HERE)lib.sh"; make_worktree "$(TASK)" "$(ALIAS)" "$(RUN_INDEX)" "$(BASE)"'
+	@bash -c 'source "$(HERE)lib.sh"; row=$$(manifest_lookup "$(ALIAS)") || exit $$?; \
+	  require_alias_stage_one "$(ALIAS)" "$$row" || exit $$?; \
+	  make_worktree "$(TASK)" "$(ALIAS)" "$(RUN_INDEX)" "$(BASE)"'
 
 run:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(ALIAS)" || { echo "set TASK BASE ALIAS"; exit 2; }

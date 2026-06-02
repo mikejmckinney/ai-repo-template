@@ -92,6 +92,11 @@ check_alias() {
     fail_note "manifest entry missing for ${alias}"
     return
   }
+  if ! require_alias_stage_one "${alias}" "${row}" >/dev/null 2>&1; then
+    stage="$(alias_stage_from_row "${row}")"
+    fail_note "${alias} resolves to stage ${stage}; Phase A requires stage 1"
+    return
+  fi
   IFS=$'\t' read -r -a fields <<<"${row}"
   platform="${fields[0]}"
   stage="${fields[3]}"

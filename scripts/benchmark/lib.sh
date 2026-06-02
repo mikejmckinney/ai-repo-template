@@ -76,11 +76,10 @@ require_base() {
 #   effort           : requested level (minimal|low|medium|high|xhigh) or "default"
 #                      (legacy "fixed" is still accepted as "default" for backward compat)
 #   effort_mechanism : how the adapter must apply it, since the 5 harnesses differ:
-#                        flag       -> a real CLI flag/override sets it (Codex)
+#                        flag       -> a real CLI flag/override sets it (Codex, Copilot)
 #                        config     -> set via a config-file alias the adapter writes (Gemini CLI)
-#                        prompt     -> injected as thinking-keyword text into the prompt (Claude Code)
-#                        suffix     -> encoded as a model-name suffix (Cursor; UNRELIABLE)
-#                        none       -> harness exposes no per-run control (Copilot)
+#                        prompt     -> injected or approximated in prompt text (Claude Code, Cursor)
+#                        none       -> harness exposes no per-run control
 # Trailing columns are optional for backward compat: if absent, effort=default, mechanism=none.
 # Lines starting with # and blank lines are ignored.
 # manifest_lookup ALIAS -> echoes "platform\tmodel\tagent\tstage\teffort\teffort_mechanism" or fails.
@@ -110,6 +109,22 @@ manifest_aliases() {
     [[ "${a}" =~ ^#.*$ || -z "${a}" ]] && continue
     if [[ -z "${filter_stage}" || "${s}" == "${filter_stage}" ]]; then printf '%s\n' "${a}"; fi
   done < "${MANIFEST}"
+}
+
+alias_stage_from_row() {
+  local row="$1" _p _m _g stage _e _em
+  IFS=$'\t' read -r _p _m _g stage _e _em <<<"${row}"
+  printf '%s' "${stage}"
+}
+
+require_alias_stage_one() {
+  local alias="$1" row="$2" stage
+  stage="$(alias_stage_from_row "${row}")"
+  [[ "${stage}" == "1" ]] || {
+    printf '[%s] ERROR: Phase A for issue #374 is Stage-1-only; %s resolves to stage %s\n' \
+      "$(_ts)" "${alias}" "${stage}" >&2
+    return 1
+  }
 }
 
 # adapter_path PLATFORM -> the adapter script for that platform.

@@ -41,6 +41,7 @@ require_base "${BASE_SHA}"
 
 # Resolve the sealed mapping.
 row="$(manifest_lookup "${ALIAS}")" || die "alias not in manifest: ${ALIAS}"
+require_alias_stage_one "${ALIAS}" "${row}" || exit 2
 IFS=$'\t' read -r PLATFORM MODEL AGENT STAGE EFFORT EFFORT_MECH <<<"${row}"
 log "candidate=${ALIAS} task=${TASK} run=${RUN_INDEX} platform=${PLATFORM} effort=${EFFORT}(${EFFORT_MECH}) (model sealed)"
 

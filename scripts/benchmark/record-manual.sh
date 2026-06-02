@@ -40,6 +40,7 @@ done
 preflight
 require_base "${BASE_SHA}"
 row="$(manifest_lookup "${ALIAS}")" || die "alias not in manifest: ${ALIAS}"
+require_alias_stage_one "${ALIAS}" "${row}" || exit 2
 IFS=$'\t' read -r PLATFORM MODEL AGENT STAGE EFFORT EFFORT_MECH <<<"${row}"
 
 WT="$(worktree_path "${TASK}" "${ALIAS}" "${RUN_INDEX}")"
