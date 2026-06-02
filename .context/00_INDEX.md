@@ -23,6 +23,8 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 |-- 00_INDEX.md          # This file - start here (The Map)
 |-- backlog.yaml         # Machine-readable task list dispatched into issues
 |-- backlog.schema.json  # JSON Schema for backlog.yaml
+|-- benchmarks/          # Durable benchmark protocols, schemas, and grading templates
+|   `-- model-roi/       # Issue #374 model ROI benchmark apparatus
 |-- roadmap.md           # Template-development phases and current hardening track
 |-- rules/               # Immutable constraints and process rules
 |   |-- agent_ownership.md            # Canonical role -> owned paths map (read before editing)
@@ -54,6 +56,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 6. Read `sessions/latest_summary.md` for durable lessons from recent work.
 7. Read `roadmap.md` for the current template phase and open hardening track.
 8. Pull additional `rules/` and `vision/` files only when their domain intersects your change.
+9. Read `benchmarks/` when the assigned issue or PR works on benchmark protocol, scoring, or grading surfaces.
 
 **Multi-agent workflow**: See [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md) for the end-to-end Analyst -> Architect -> plan-gate (Critic notes + Judge approval) -> PM -> implementers -> QA -> Critic -> Judge flow.
 
@@ -73,6 +76,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 
 - Canonical role definitions under `.agents/` plus first-class Copilot, Claude, Cursor, and Codex overlays.
 - Process rules under `.context/rules/` and reference diagrams under `.context/vision/architecture/`.
+- Durable benchmark protocols and grading templates under `.context/benchmarks/`.
 - GitHub prompts, issue/PR templates, and workflow scaffolding under `.github/`.
 - Bootstrap and verification helpers under `install.sh`, `test.sh`, and `scripts/**`.
 

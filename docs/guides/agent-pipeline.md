@@ -249,6 +249,19 @@ Both agents are instructed to execute every phase of the referenced prompt
 in order and, when supported by the invocation path/tooling, should continue
 in sequential `Part 1/N`, `Part 2/N` comments rather than truncating.
 
+### Benchmark prompt exception
+
+`.github/prompts/model-roi-benchmark-candidate.md` is a repo-internal evaluation
+surface, not a downstream build-stage prompt. It pairs with
+`.context/benchmarks/model-roi/README.md` and the current `scripts/benchmark/`
+runner direction for the model ROI benchmark tracked in issue `#374`.
+
+Current scope is **Phase A / Core Stage 1 only**. Do not treat it as permission
+to start extended Stage 1 rows or Stage 2 sweeps; those stay deferred to
+Phase B / Plan v2. If a bundled adapter cannot complete headlessly, the
+documented fallback is `make worktree` followed by `make record`, and the run
+must stay auditable as a manual-capture path rather than silent automation.
+
 ## Setup (One-Time)
 
 ### Required secrets

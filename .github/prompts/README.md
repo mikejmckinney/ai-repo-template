@@ -50,6 +50,16 @@ lists come after, not before.
     positional contract and response-shape verification: tests parent vs subagent
     handshake positioning, exact-output first-line contract (Judge `DECISION:`,
     Critic `CRITIC DECISION:`), and `## Subagent context receipt` placement (4 scenarios)
+- **Benchmark prompts** (repo-internal evaluation surfaces) — `model-roi-benchmark-candidate.md`.
+  These are controlled benchmark prompts, not downstream project stage prompts.
+  - **`model-roi-benchmark-candidate.md`** — canonical candidate prompt for the
+    model ROI benchmark tracked in issue `#374`. Reuse the same prompt body across
+    aliases; inject only run metadata and the task body. Pair it with
+    [`.context/benchmarks/model-roi/README.md`](../../.context/benchmarks/model-roi/README.md).
+    Current scope is Phase A / Core Stage 1 only. Extended Stage 1 rows and all
+    Stage 2 work are deferred to Phase B / Plan v2. The documented manual fallback
+    after a headless failure is `make worktree` + `make record` from
+    `scripts/benchmark/`.
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.
 

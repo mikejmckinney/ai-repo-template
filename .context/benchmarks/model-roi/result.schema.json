@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mikejmckinney.github.io/ai-repo-template/.context/benchmarks/model-roi/result.schema.json",
+  "title": "Model ROI Benchmark Result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "alias",
+    "task_id",
+    "run_index",
+    "stage",
+    "terminal_state",
+    "recorded_at",
+    "head_sha",
+    "adapter_exit_code",
+    "manual_fallback_allowed",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "benchmark-result.v1"
+    },
+    "alias": {
+      "type": "string",
+      "minLength": 1
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_index": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "stage": {
+      "type": "string",
+      "minLength": 1
+    },
+    "terminal_state": {
+      "type": "string",
+      "enum": [
+        "graded",
+        "blocked",
+        "manual-capture-approved"
+      ]
+    },
+    "recorded_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "head_sha": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "adapter_exit_code": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "manual_fallback_allowed": {
+      "type": "boolean"
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "blind_metadata",
+        "sealed_metadata",
+        "diff_patch"
+      ],
+      "properties": {
+        "blind_metadata": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sealed_metadata": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "diff_patch": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "terminal_state": {
+            "const": "blocked"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "manual_fallback_allowed": {
+            "const": true
+          },
+          "artifacts": {
+            "properties": {
+              "blind_metadata": {
+                "type": "null"
+              },
+              "sealed_metadata": {
+                "type": "null"
+              },
+              "diff_patch": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "manual_fallback_allowed": {
+            "const": false
+          },
+          "artifacts": {
+            "properties": {
+              "blind_metadata": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sealed_metadata": {
+                "type": "string",
+                "minLength": 1
+              },
+              "diff_patch": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
