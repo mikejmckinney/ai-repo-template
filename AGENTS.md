@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 21 -->
+<!-- AGENTS_MD_VERSION: 22 -->
 <!-- Bump AGENTS_MD_VERSION whenever this file is materially edited so the
      handshake below proves agents loaded the *current* copy, not a stale one.
      The canary covers AGENTS.md only — per-concern files in .context/rules/
@@ -165,3 +165,68 @@ ADRs and other docs may cite AGENTS.md sections by anchor (e.g., `AGENTS.md §"S
 | §"Templates and conventions" | `.context/rules/process_pr_completion.md` § "Templates and conventions" |
 | §"Code quality" | `.context/rules/process_pr_completion.md` § "Code quality" (pointer) → `.context/rules/domain_code_quality.md` (canonical) |
 | §"Review guidelines" | `.context/rules/process_pr_completion.md` § "Review guidelines" |
+
+## Cursor Cloud specific instructions
+
+This repository is the **AI repo template** itself — a scaffolding/meta-product, not a
+runnable web app or API. Local development means validating template integrity via shell
+automation and CI-parity linters. See `AI_REPO_GUIDE.md` for the full command catalog.
+
+### What runs here
+
+No long-running services (no `npm run dev`, no Docker Compose stack) are required for this
+template repo. The VM update script refreshes Python deps and repo-required CLI tools only.
+
+### One-time VM tools (not in the update script)
+
+Install these once per fresh VM if missing (matches `.github/workflows/ci-tests.yml` and
+`lint-and-format.yml`):
+
+```bash
+sudo apt-get update -qq
+sudo apt-get install -y bats parallel shellcheck ripgrep jq
+SHFMT_VERSION="3.8.0"
+curl -sSL "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" \
+  -o /tmp/shfmt && chmod +x /tmp/shfmt && sudo mv /tmp/shfmt /usr/local/bin/shfmt
+ACTIONLINT_VERSION="1.7.7"
+curl -sSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
+  | sudo tar -xz -C /usr/local/bin actionlint
+npm install --prefix "$HOME/.local" markdownlint-cli2@0.17.2
+export PATH="$HOME/.local/node_modules/.bin:$PATH"
+```
+
+Add the `PATH` export to your shell profile if you use `markdownlint-cli2` in later sessions.
+
+### Verify / lint / test (CI parity)
+
+```bash
+./scripts/verify-env.sh          # or --fix to auto-install rg, shellcheck, jq
+bash scripts/setup.sh            # first-run env stub + verify-env (gh label steps skip without auth)
+./test.sh                        # primary template verification (~550+ checks)
+bats scripts/tests/              # shell script unit tests
+bash scripts/lint-shell-conventions.sh scripts/
+find . \( -name '.git' -o -name 'node_modules' \) -prune -o -name '*.sh' -print0 \
+  | xargs -r -0 shellcheck --severity=warning --exclude=SC1091
+find .github/workflows -maxdepth 1 \( -name '*.yml' -o -name '*.yaml' \) -print0 \
+  | xargs -r -0 actionlint -ignore 'SC2016' -ignore 'SC2086' -ignore 'SC2129' \
+    -ignore 'SC2153' -ignore 'SC2018' -ignore 'SC2019'
+```
+
+### Bootstrap smoke (Codespaces Dotfiles equivalent)
+
+Simulate copying the multi-agent kit into a fresh project workspace:
+
+```bash
+TMP_WS=$(mktemp -d) DOTFILES="$PWD" WORKSPACE="$TMP_WS" bash install.sh
+```
+
+Expect `AGENTS.md`, `.context/00_INDEX.md`, and role files under `.agents/` in `$TMP_WS`.
+
+### Gotchas
+
+- `./test.sh` warnings about `TEMPLATE_PLACEHOLDER` and missing `.env` are **expected** in
+  the template repo itself.
+- `scripts/setup.sh` steps that call `gh` (labels, variables, secrets) require authenticated
+  GitHub CLI; they warn and skip when `gh` is unavailable.
+- `install.sh` skips VS Code extension installation when the `code` CLI is absent (normal in
+  Cursor Cloud VMs).
