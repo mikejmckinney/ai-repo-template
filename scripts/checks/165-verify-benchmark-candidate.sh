@@ -63,7 +63,6 @@ have_jq || die "165-verify-benchmark-candidate.sh needs jq"
 
 SCHEMA_FILE="${REPO_DIR}/.context/benchmarks/model-roi/result.schema.json"
 [[ -f "${SCHEMA_FILE}" ]] || die "result schema missing: ${SCHEMA_FILE}"
-[[ -f "${MANIFEST}" ]] || die "manifest not found: ${MANIFEST}"
 
 RESULT_FILE="$(result_file_path "${TASK}" "${ALIAS}" "${RUN_INDEX}")"
 [[ -f "${RESULT_FILE}" ]] || die "result bundle missing: ${RESULT_FILE}"

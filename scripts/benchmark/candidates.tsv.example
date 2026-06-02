@@ -21,7 +21,7 @@
 #          = Cursor (inline natural-language directive in the prompt; UNVERIFIABLE) -> status "requested"
 #   none   = a harness with no effort control at all (none currently) -> status "not-applied"
 #
-# effort_status (derived, shown in blind sheet; how trustworthy the effort setting is):
+# effort_status (derived, kept in sealed metadata; how trustworthy the effort setting is):
 #   applied (flag/config) > approximated (claude keywords) > requested (cursor inline) >
 #   not-applied > default. Do NOT compare cost across cells of different status as if equal.
 #

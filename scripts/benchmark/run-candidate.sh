@@ -65,7 +65,8 @@ log "worktree: ${WT}"
 # The adapter is responsible for applying effort by its mechanism and writing
 # OUTDIR/effort-applied.txt with what it ACTUALLY did (so we can detect silent
 # drops — e.g. Cursor ignoring a suffix). If it can't set effort, it records
-# "uncontrolled".
+# "uncontrolled". Any non-zero adapter exit becomes an audited blocked state
+# with the worktree preserved for optional manual capture.
 START_EPOCH="$(date +%s)"; START_TS="$(_ts)"
 set +e
 adapter_run "${WT}" "${MODEL}" "${PROMPT_FILE}" "${OUTDIR}" "${EFFORT}" "${EFFORT_MECH}"
@@ -76,25 +77,17 @@ WALL=$(( END_EPOCH - START_EPOCH ))
 EFFORT_APPLIED="$(cat "${OUTDIR}/effort-applied.txt" 2>/dev/null || echo "unknown")"
 EFFORT_STATUS="$(derive_effort_status "${EFFORT}" "${EFFORT_MECH}" "${EFFORT_APPLIED}")"
 
-if [[ ${RC} -eq 64 ]]; then
-  # Exit 64 is the audited manual-fallback path: the failure is documented here,
-  # the worktree stays open, and 'make record' is the only way to advance this
-  # alias from blocked -> manual-capture-approved.
+if [[ ${RC} -ne 0 ]]; then
+  # Any non-zero adapter exit is treated as an audited automated-run failure.
+  # The failure is documented here, the worktree stays open, and 'make record'
+  # is the only way to advance this alias from blocked ->
+  # manual-capture-approved.
   HEAD_SHA="$(git -C "${WT}" rev-parse HEAD 2>/dev/null || echo "")"
   write_result_file "${OUTDIR}" "${ALIAS}" "${TASK}" "${RUN_INDEX}" "${STAGE}" \
     "blocked" "${HEAD_SHA}" "${RC}" "true" "" "" ""
-  log "blocked (${PLATFORM}): documented headless failure. Use 'make record' only after a real manual rerun."
+  log "blocked (${PLATFORM}): automated run exited rc=${RC}. Use 'make record' only after a real manual rerun."
   log "(worktree kept at ${WT} so you can run the agent in it)"
   exit 64
-fi
-
-if [[ ${RC} -ne 0 ]]; then
-  HEAD_SHA="$(git -C "${WT}" rev-parse HEAD 2>/dev/null || echo "")"
-  write_result_file "${OUTDIR}" "${ALIAS}" "${TASK}" "${RUN_INDEX}" "${STAGE}" \
-    "blocked" "${HEAD_SHA}" "${RC}" "false" "" "" ""
-  log "blocked (${PLATFORM}): adapter exited rc=${RC}; terminal state recorded as blocked"
-  [[ "${KEEP_WT}" == "1" ]] || drop_worktree "${TASK}" "${ALIAS}" "${RUN_INDEX}"
-  exit "${RC}"
 fi
 
 # ---- capture git result (no judgement, just facts) -------------------------

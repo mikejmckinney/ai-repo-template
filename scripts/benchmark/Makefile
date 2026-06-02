@@ -43,11 +43,12 @@ base:
 	  echo "Record BASE in the sub-issue, then: make suite TASK=$(TASK) BASE=$$BASE_SHA STAGE=1"
 
 doctor:
-	@test -n "$(STAGE)" || { echo "set STAGE=1"; exit 2; }
+	@test -n "$(STAGE)" && test "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
 	@"$(HERE)doctor.sh" --stage "$(STAGE)" $(if $(BASE),--base "$(BASE)",)
 
 worktrees:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1"; exit 2; }
+	@test "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
 	@bash -c 'source "$(HERE)lib.sh"; for a in $$(manifest_aliases "$(STAGE)"); do \
 	   make_worktree "$(TASK)" "$$a" "$(RUN_INDEX)" "$(BASE)" >/dev/null && echo "worktree: $$a"; done'
 
@@ -61,6 +62,7 @@ run:
 
 suite:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1"; exit 2; }
+	@test "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
 	@"$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --continue-on-error
 
 # Manual-candidate capture. Pass timing/telemetry you read off the platform dashboard.
@@ -73,6 +75,7 @@ record:
 
 collect:
 	@test -n "$(TASK)" || { echo "set TASK"; exit 2; }
+	@test -z "$(STAGE)" -o "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
 	@"$(HERE)collect.sh" --task "$(TASK)" $(if $(STAGE),--stage "$(STAGE)",)
 
 # Runner-owned push of an aliased candidate branch (keeps push out of the agent's hands).
@@ -84,6 +87,7 @@ push:
 
 unseal:
 	@test -n "$(TASK)" || { echo "set TASK"; exit 2; }
+	@test -z "$(STAGE)" -o "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
 	@"$(HERE)collect.sh" --task "$(TASK)" $(if $(STAGE),--stage "$(STAGE)",) --unseal
 
 clean-worktrees:

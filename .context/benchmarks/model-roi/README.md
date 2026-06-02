@@ -46,7 +46,7 @@ The local `scripts/benchmark/` runner is now the committed Phase A execution bas
 | Hard refusal to widen Phase A when `STAGE=1` is omitted | Present | `make suite` / `run-suite.sh` fail fast unless Stage 1 is selected explicitly. |
 | Completeness enforcement for every Core Stage 1 alias terminal state | Present | `run-suite.sh` records the executed alias set and a sealed manifest snapshot; `collect` / `unseal` require exactly one terminal result per recorded alias. |
 | Blind vs. sealed artifact split | Present | Model identity and detailed effort metadata stay sealed; blind surfaces expose only alias-safe operational facts. |
-| Documented manual fallback after headless failure | Present | Use `make worktree` and `make record`; never count this as silent automated success. |
+| Documented manual fallback after automated runtime failure | Present | Automated candidate failures keep the worktree and may be finished via `make record`; never count this as silent automated success. |
 
 ## Current operator flow
 
@@ -71,7 +71,7 @@ The commands below reflect the current Phase A operator flow.
    make -C scripts/benchmark run TASK=<task-id> BASE=<base-sha> ALIAS=<cand-NN>
    ```
 
-5. If a bundled adapter fails headlessly and the benchmark owner approves manual capture, keep the aliased worktree and record the run explicitly:
+5. If a bundled adapter fails during the automated run and the benchmark owner approves manual capture, keep the aliased worktree and record the run explicitly:
 
    ```bash
    make -C scripts/benchmark worktree TASK=<task-id> BASE=<base-sha> ALIAS=<cand-NN>

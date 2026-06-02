@@ -61,6 +61,7 @@ preflight() {
 require_stage() {
   local stage="${1:-}"
   [[ -n "${stage}" ]] || die "set STAGE=1 (Phase A refuses an empty stage)"
+  [[ "${stage}" == "1" ]] || die "Phase A for issue #374 is Stage-1-only; set STAGE=1"
 }
 
 # require_clean_base BASE_SHA — verify the SHA exists and is reachable.

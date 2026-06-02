@@ -222,7 +222,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.context/00_INDEX.md` | Entry point, project summary |
 | `.context/backlog.yaml` | Machine-readable task list. Planned for dispatch into issues by `.github/workflows/backlog-to-issues.yml` once that workflow lands (added in PR 3 of the backlog-pipeline series). Validate with `pip install check-jsonschema && check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml` |
 | `.context/backlog.schema.json` | JSON Schema for `backlog.yaml` (Draft-07) |
-| `.context/benchmarks/model-roi/README.md` | Durable protocol for the model ROI benchmark tracked in issue `#374`; current scope is Phase A / Core Stage 1 only, with explicit notes where DevOps hardening is still pending |
+| `.context/benchmarks/model-roi/README.md` | Durable protocol for the model ROI benchmark tracked in issue `#374`; current scope is Phase A / Core Stage 1 only, with the shipped runner guardrails and artifact contract documented there |
 | `.context/benchmarks/model-roi/result-template.md` | Per-alias blind-safe plus sealed benchmark result template |
 | `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template for the same benchmark |
 | `.context/roadmap.md` | Phase-by-phase plan |

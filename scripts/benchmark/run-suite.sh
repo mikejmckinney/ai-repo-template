@@ -40,6 +40,8 @@ mapfile -t ALIASES < <(manifest_aliases "${STAGE}")
 [[ "${#ALIASES[@]}" -gt 0 ]] || die "no candidates in manifest for stage='${STAGE}'"
 alias_set_file="$(suite_alias_set_path "${TASK}" "${STAGE}")"
 manifest_snapshot="$(suite_manifest_snapshot_path "${TASK}" "${STAGE}")"
+[[ ! -e "${alias_set_file}" && ! -e "${manifest_snapshot}" ]] \
+  || die "suite identity already exists for task=${TASK} stage=${STAGE}; choose a fresh TASK or remove prior run artifacts"
 mkdir -p "$(dirname "${alias_set_file}")"
 printf '%s\n' "${ALIASES[@]}" > "${alias_set_file}"
 cp "${MANIFEST}" "${manifest_snapshot}"
