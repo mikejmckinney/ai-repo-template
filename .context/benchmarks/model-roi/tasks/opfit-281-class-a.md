@@ -64,4 +64,3 @@ Also run any narrow syntax/lint command you use to verify the changed script, an
 - Reference changed files:
   - `scripts/checks/055-script-syntax.sh`
   - `.context/state/_active.md` (legacy state artifact; exclude from grading expectations)
-

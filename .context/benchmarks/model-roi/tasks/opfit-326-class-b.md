@@ -96,4 +96,3 @@ If Bats is available and you add Bats coverage, run the relevant Bats test file 
   - `scripts/checks/160-pr-resolve-all-poll.sh`
   - `scripts/tests/pr-resolve-all-poll.bats`
   - companion compliance/check fixtures as needed by the then-current baseline
-
