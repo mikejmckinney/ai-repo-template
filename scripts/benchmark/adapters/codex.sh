@@ -9,7 +9,8 @@
 #
 # Other flags (verified): `codex exec` non-interactive; `--model`/-m pins model;
 # `--sandbox workspace-write` REQUIRED for edits (default is read-only);
-# `--json` streams JSONL events incl. token counts; `-o` writes final message.
+# `--json` streams JSONL events incl. token counts; `-o`/`--output-last-message`
+# writes final message; `-C`/`--cd` pins the working root.
 # Auth: `codex login` or CODEX_API_KEY (exec-only).
 
 set -euo pipefail
@@ -39,8 +40,8 @@ adapter_run() {
       "${effort_args[@]}" \
       --sandbox workspace-write \
       --json \
-      --cd "${workdir}" \
-      -o "${outdir}/final-message.txt" \
+      -C "${workdir}" \
+      --output-last-message "${outdir}/final-message.txt" \
       "${prompt}" \
       > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
   local rc=$?

@@ -11,10 +11,11 @@
 # confirming it took effect. So effort_status for Cursor is recorded as
 # "requested-in-prompt" (a weaker tier than a real flag), NOT "applied".
 #
-# Other flags (verified): cursor-agent -p non-interactive; -m pins model;
+# Other flags (verified): cursor-agent -p non-interactive; --model pins model;
 # --force REQUIRED in print mode or edits are only proposed (no diff);
 # --output-format json = single result object. KNOWN: -p can hang on some
-# 2026.01.x builds — wrap in `timeout` if needed. Auth: CURSOR_API_KEY.
+# 2026.01.x builds — wrap in `timeout` if needed. Auth: CURSOR_API_KEY or
+# stored `cursor-agent login`.
 
 set -euo pipefail
 
@@ -46,7 +47,7 @@ ${prompt}"
 
   set +e
   ( cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
-    cursor-agent -p -m "${model}" --force --output-format json "${prompt}" \
+    cursor-agent -p --model "${model}" --force --output-format json "${prompt}" \
       > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
   local rc=$?
   set -e
