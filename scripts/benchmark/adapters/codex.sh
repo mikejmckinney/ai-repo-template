@@ -35,14 +35,14 @@ adapter_run() {
 
   set +e
   ( cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
-    codex exec \
+    printf '%s' "${prompt}" | codex exec \
       --model "${model}" \
       "${effort_args[@]}" \
       --sandbox workspace-write \
       --json \
       -C "${workdir}" \
       --output-last-message "${outdir}/final-message.txt" \
-      "${prompt}" \
+      - \
       > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
   local rc=$?
   set -e
