@@ -29,12 +29,12 @@ RUN_INDEX ?= 1
 help:
 	@sed -n '1,32p' "$(HERE)Makefile"
 
-# Freeze a base branch from current main and print the SHA to record in the issue.
+# Freeze a base branch from origin/main without changing the operator's working branch.
 base:
 	@test -n "$(TASK)" || { echo "set TASK=<id>"; exit 2; }
 	@cd "$$(bash -c 'source "$(HERE)lib.sh"; echo $$REPO_DIR')" && \
-	  git checkout main && git pull --ff-only && \
-	  BASE_SHA="$$(git rev-parse HEAD)" && \
+	  git fetch origin main && \
+	  BASE_SHA="$$(git rev-parse origin/main)" && \
 	  BR="benchmark/model-roi/base-$(TASK)-$$(date -u +%Y%m%d)" && \
 	  git branch -f "$$BR" "$$BASE_SHA" && \
 	  git push -u origin "$$BR" && \
