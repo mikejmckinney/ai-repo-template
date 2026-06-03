@@ -1,18 +1,19 @@
 # Makefile — front-end for the model-ROI benchmark runner.
 #
 # Typical flow:
-#   make base TASK=opfit-279                      # freeze a base branch, prints BASE_SHA
+#   make base TASK=opfit-281-class-a              # freeze a base branch, prints BASE_SHA
 #   make doctor STAGE=1 BASE=<sha>                 # readiness gate before any spend
-#   make worktrees TASK=opfit-279 BASE=<sha> STAGE=1  # (optional) pre-make all Stage-1 worktrees
-#   make suite TASK=opfit-279 BASE=<sha> STAGE=1   # run all Stage-1 automated candidates
-#   make run TASK=opfit-279 BASE=<sha> ALIAS=cand-01   # one candidate
-#   make worktree TASK=opfit-279 BASE=<sha> ALIAS=cand-06   # isolate for a MANUAL candidate
-#   make record TASK=opfit-279 BASE=<sha> ALIAS=cand-06 RC=0 TOKENS_IN=... TOKENS_OUT=...
-#   make collect TASK=opfit-279                    # blind grading sheet
-#   make push TASK=opfit-279 ALIAS=cand-01         # runner-owned push (optional)
-#   make unseal TASK=opfit-279                     # AFTER grading: reveal alias->model
+#   make worktrees TASK=opfit-281-class-a BASE=<sha> STAGE=1  # (optional) pre-make all Stage-1 worktrees
+#   make suite TASK=opfit-281-class-a BASE=<sha> STAGE=1   # run all Stage-1 automated candidates
+#   make run TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-01   # one candidate
+#   make worktree TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-06   # isolate for a MANUAL candidate
+#   make record TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-06 RC=0 TOKENS_IN=... TOKENS_OUT=...
+#   make collect TASK=opfit-281-class-a           # blind grading sheet
+#   make push TASK=opfit-281-class-a ALIAS=cand-01 # runner-owned push (optional)
+#   make unseal TASK=opfit-281-class-a            # AFTER grading: reveal alias->model
 #
 # REPO_DIR defaults to the repo root inferred by lib.sh; override on the CLI if needed.
+# TASK must match .context/benchmarks/model-roi/tasks/<TASK>.md.
 
 SHELL := /usr/bin/env bash
 HERE  := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
@@ -26,7 +27,7 @@ RUN_INDEX ?= 1
 .PHONY: help base doctor worktrees worktree run suite record collect push unseal clean-worktrees
 
 help:
-	@sed -n '1,31p' "$(HERE)Makefile"
+	@sed -n '1,32p' "$(HERE)Makefile"
 
 # Freeze a base branch from current main and print the SHA to record in the issue.
 base:

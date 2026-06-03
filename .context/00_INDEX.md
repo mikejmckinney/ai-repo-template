@@ -25,6 +25,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 |-- backlog.schema.json  # JSON Schema for backlog.yaml
 |-- benchmarks/          # Durable benchmark protocols, schemas, and grading templates
 |   `-- model-roi/       # Issue #374 model ROI benchmark apparatus
+|       `-- tasks/       # Candidate-safe task injections + sealed reference metadata
 |-- roadmap.md           # Template-development phases and current hardening track
 |-- rules/               # Immutable constraints and process rules
 |   |-- agent_ownership.md            # Canonical role -> owned paths map (read before editing)

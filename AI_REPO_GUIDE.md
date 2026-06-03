@@ -50,6 +50,7 @@ bash install.sh
 │   ├── 00_INDEX.md           # Context entry point
 │   ├── benchmarks/           # Benchmark protocol docs and templates
 │   │   └── model-roi/        # Phase A model ROI benchmark surfaces (issue #374)
+│   │       └── tasks/        # Benchmark task injections and sealed reference metadata
 │   ├── backlog.yaml          # Machine-readable task list (dispatched into issues)
 │   ├── backlog.schema.json   # JSON Schema for backlog.yaml
 │   ├── roadmap.md            # Phase-by-phase plan
@@ -223,6 +224,8 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.context/backlog.yaml` | Machine-readable task list. Planned for dispatch into issues by `.github/workflows/backlog-to-issues.yml` once that workflow lands (added in PR 3 of the backlog-pipeline series). Validate with `pip install check-jsonschema && check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml` |
 | `.context/backlog.schema.json` | JSON Schema for `backlog.yaml` (Draft-07) |
 | `.context/benchmarks/model-roi/README.md` | Durable protocol for the model ROI benchmark tracked in issue `#374`; current scope is Phase A / Core Stage 1 only, with the shipped runner guardrails and artifact contract documented there |
+| `.context/benchmarks/model-roi/tasks/opfit-281-class-a.md` | Class A operational-fit benchmark task from issue `#281` / reference PR `#288`; runner injects only its candidate-safe task body |
+| `.context/benchmarks/model-roi/tasks/opfit-326-class-b.md` | Class B reasoning/code benchmark task from issue `#326` / reference PR `#358`; runner injects only its candidate-safe task body |
 | `.context/benchmarks/model-roi/result-template.md` | Per-alias blind-safe plus sealed benchmark result template |
 | `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template for the same benchmark |
 | `.context/roadmap.md` | Phase-by-phase plan |

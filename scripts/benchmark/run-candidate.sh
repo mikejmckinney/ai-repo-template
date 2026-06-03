@@ -38,6 +38,7 @@ done
 
 preflight
 require_base "${BASE_SHA}"
+require_task_file "${TASK}"
 
 # Resolve the sealed mapping.
 row="$(manifest_lookup "${ALIAS}")" || die "alias not in manifest: ${ALIAS}"
@@ -70,8 +71,9 @@ log "worktree: ${WT}"
 # "uncontrolled". Any non-zero adapter exit becomes an audited blocked state
 # with the worktree preserved for optional manual capture.
 START_EPOCH="$(date +%s)"; START_TS="$(_ts)"
+RENDERED_PROMPT="$(render_prompt_for_run "${TASK}" "${ALIAS}" "${PLATFORM}" "${MODEL}" "${AGENT}" "${BASE_SHA}" "${RUN_INDEX}" "${OUTDIR}")"
 set +e
-adapter_run "${WT}" "${MODEL}" "${PROMPT_FILE}" "${OUTDIR}" "${EFFORT}" "${EFFORT_MECH}"
+adapter_run "${WT}" "${MODEL}" "${RENDERED_PROMPT}" "${OUTDIR}" "${EFFORT}" "${EFFORT_MECH}"
 RC=$?
 set -e
 END_EPOCH="$(date +%s)"; END_TS="$(_ts)"

@@ -25,6 +25,10 @@ WORKTREES_DIR="${WORKTREES_DIR:-${RUNNER_DIR}/worktrees}"
 MANIFEST="${MANIFEST:-${RUNNER_DIR}/candidates.tsv}"
 # The task-agnostic candidate prompt, committed in the repo.
 PROMPT_FILE="${PROMPT_FILE:-${REPO_DIR}/.github/prompts/model-roi-benchmark-candidate.md}"
+# Candidate-safe injected task specs. Each benchmark TASK must have one file
+# named <task-id>.md unless TASK_FILE is explicitly supplied.
+TASKS_DIR="${TASKS_DIR:-${REPO_DIR}/.context/benchmarks/model-roi/tasks}"
+TASK_FILE="${TASK_FILE:-}"
 
 # ---- logging ---------------------------------------------------------------
 _ts()   { date -u +%Y-%m-%dT%H:%M:%SZ; }
@@ -62,6 +66,110 @@ require_stage() {
   local stage="${1:-}"
   [[ -n "${stage}" ]] || die "set STAGE=1 (Phase A refuses an empty stage)"
   [[ "${stage}" == "1" ]] || die "Phase A for issue #374 is Stage-1-only; set STAGE=1"
+}
+
+task_file_path() {
+  local task="$1"
+  if [[ -n "${TASK_FILE}" ]]; then
+    printf '%s' "${TASK_FILE}"
+  else
+    printf '%s/%s.md' "${TASKS_DIR}" "${task}"
+  fi
+}
+
+task_meta_value() {
+  local file="$1" key="$2"
+  awk -F ': *' -v key="${key}" '
+    NR == 1 && $0 == "---" { in_fm = 1; next }
+    in_fm && $0 == "---" { exit }
+    in_fm && $1 == key { print $2; exit }
+  ' "${file}"
+}
+
+task_candidate_body() {
+  local file="$1"
+  awk '
+    /^## Candidate task$/ { emit = 1; next }
+    /^## Reference solution/ { emit = 0 }
+    emit { print }
+  ' "${file}"
+}
+
+require_task_file() {
+  local task="$1" file class body
+  file="$(task_file_path "${task}")"
+  [[ -f "${file}" ]] || die "task file not found for TASK=${task}: ${file}"
+  class="$(task_meta_value "${file}" task_class)"
+  [[ "${class}" == "A-operational" || "${class}" == "B-reasoning" ]] \
+    || die "task file ${file} must set task_class: A-operational or B-reasoning"
+  body="$(task_candidate_body "${file}")"
+  [[ -n "${body//[[:space:]]/}" ]] || die "task file ${file} has no ## Candidate task body"
+  if grep -F -q 'INJECTED PER ROUND' <<<"${body}"; then
+    die "task file ${file} still contains benchmark placeholder text"
+  fi
+}
+
+render_prompt_for_run() {
+  local task="$1" alias="$2" platform="$3" model="$4" agent="$5" base_sha="$6" run_index="$7" outdir="$8"
+  local task_file task_class base_branch candidate_branch prompt_out task_body
+  task_file="$(task_file_path "${task}")"
+  require_task_file "${task}"
+  task_class="$(task_meta_value "${task_file}" task_class)"
+  base_branch="$(task_meta_value "${task_file}" base_branch)"
+  [[ -n "${base_branch}" ]] || base_branch="benchmark/model-roi/base-${task}-YYYYMMDD"
+  candidate_branch="$(branch_name "${task}" "${alias}")-r${run_index}"
+  prompt_out="${outdir}/prompt-rendered.md"
+  task_body="$(task_candidate_body "${task_file}")"
+
+  awk -v alias="${alias}" \
+      -v platform="${platform}" \
+      -v model="${model}" \
+      -v agent="${agent}" \
+      -v task="${task}" \
+      -v task_class="${task_class}" \
+      -v base_branch="${base_branch}" \
+      -v base_sha="${base_sha}" \
+      -v run_index="${run_index}" \
+      -v candidate_branch="${candidate_branch}" \
+      -v task_body="${task_body}" '
+    BEGIN { in_meta = 0; in_task = 0 }
+    /^candidate_alias:/ {
+      print "candidate_alias: " alias
+      print "candidate_platform: " platform
+      print "candidate_model: " model
+      print "candidate_agent: " agent
+      print "task_id: " task
+      print "task_class: " task_class
+      print "base_branch: " base_branch
+      print "base_sha: " base_sha
+      print "run_index: " run_index
+      print "candidate_branch: " candidate_branch
+      print "subissue: #374"
+      in_meta = 1
+      next
+    }
+    in_meta && /^```$/ { print; in_meta = 0; next }
+    in_meta { next }
+    /^## Task$/ {
+      print
+      print ""
+      print task_body
+      in_task = 1
+      next
+    }
+    in_task && /^## Required implementation plan$/ {
+      print
+      in_task = 0
+      next
+    }
+    in_task { next }
+    { print }
+  ' "${PROMPT_FILE}" > "${prompt_out}"
+
+  if grep -F -q 'INJECTED PER ROUND' "${prompt_out}" || grep -F -q 'cand-<NN>' "${prompt_out}"; then
+    die "rendered prompt still contains benchmark placeholder text: ${prompt_out}"
+  fi
+  printf '%s' "${prompt_out}"
 }
 
 # require_clean_base BASE_SHA — verify the SHA exists and is reachable.

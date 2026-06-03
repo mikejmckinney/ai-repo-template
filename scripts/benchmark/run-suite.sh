@@ -34,6 +34,7 @@ done
 preflight
 require_base "${BASE_SHA}"
 require_stage "${STAGE}"
+require_task_file "${TASK}"
 "${RUNNER_DIR}/doctor.sh" --stage "${STAGE}" --base "${BASE_SHA}"
 
 mapfile -t ALIASES < <(manifest_aliases "${STAGE}")
