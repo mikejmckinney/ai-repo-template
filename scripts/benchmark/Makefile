@@ -5,6 +5,7 @@
 #   make doctor STAGE=1 BASE=<sha>                 # readiness gate before any spend
 #   make worktrees TASK=opfit-281-class-a BASE=<sha> STAGE=1  # (optional) pre-make all Stage-1 worktrees
 #   make suite TASK=opfit-281-class-a BASE=<sha> STAGE=1   # run all Stage-1 automated candidates
+#   make suite-resume TASK=opfit-281-class-a BASE=<sha> STAGE=1 RUN_INDEX=2 # resume missing candidates
 #   make run TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-01   # one candidate
 #   make worktree TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-06   # isolate for a MANUAL candidate
 #   make record TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-06 RC=0 TOKENS_IN=... TOKENS_OUT=...
@@ -24,7 +25,7 @@ ALIAS ?=
 STAGE ?=
 RUN_INDEX ?= 1
 
-.PHONY: help base doctor worktrees worktree run suite record collect push unseal clean-worktrees
+.PHONY: help base doctor worktrees worktree run suite suite-resume record collect push unseal clean-worktrees
 
 help:
 	@sed -n '1,32p' "$(HERE)Makefile"
@@ -67,6 +68,11 @@ suite:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1"; exit 2; }
 	@test "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
 	@"$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --continue-on-error
+
+suite-resume:
+	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1"; exit 2; }
+	@test "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
+	@"$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --continue-on-error --resume
 
 # Manual-candidate capture. Pass timing/telemetry you read off the platform dashboard.
 record:

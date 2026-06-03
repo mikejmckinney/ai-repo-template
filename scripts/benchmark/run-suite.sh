@@ -2,7 +2,7 @@
 # run-suite.sh — loop run-candidate.sh over every candidate in the manifest.
 #
 # Usage:
-#   ./run-suite.sh --task <TASKID> --base <BASE_SHA> --stage 1 [--run-index N] [--continue-on-error]
+#   ./run-suite.sh --task <TASKID> --base <BASE_SHA> --stage 1 [--run-index N] [--continue-on-error] [--resume]
 #
 # Runs candidates SEQUENTIALLY by default. Sequential is the safe choice: it
 # keeps cost observable in real time, avoids hammering rate limits, and prevents
@@ -18,7 +18,7 @@ set -euo pipefail
 # shellcheck source=/dev/null
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
-TASK="" BASE_SHA="" STAGE="" RUN_INDEX="1" CONT="0"
+TASK="" BASE_SHA="" STAGE="" RUN_INDEX="1" CONT="0" RESUME="0"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --task)             TASK="$2"; shift 2;;
@@ -26,6 +26,7 @@ while [[ $# -gt 0 ]]; do
     --stage)            STAGE="$2"; shift 2;;
     --run-index)        RUN_INDEX="$2"; shift 2;;
     --continue-on-error) CONT="1"; shift;;
+    --resume)           RESUME="1"; shift;;
     *) die "unknown arg: $1";;
   esac
 done
@@ -37,22 +38,40 @@ require_stage "${STAGE}"
 require_task_file "${TASK}"
 "${RUNNER_DIR}/doctor.sh" --stage "${STAGE}" --base "${BASE_SHA}"
 
-mapfile -t ALIASES < <(manifest_aliases "${STAGE}")
-[[ "${#ALIASES[@]}" -gt 0 ]] || die "no candidates in manifest for stage='${STAGE}'"
 alias_set_file="$(suite_alias_set_path "${TASK}" "${STAGE}")"
 manifest_snapshot="$(suite_manifest_snapshot_path "${TASK}" "${STAGE}")"
-[[ ! -e "${alias_set_file}" && ! -e "${manifest_snapshot}" ]] \
-  || die "suite identity already exists for task=${TASK} stage=${STAGE}; choose a fresh TASK or remove prior run artifacts"
-mkdir -p "$(dirname "${alias_set_file}")"
-printf '%s\n' "${ALIASES[@]}" > "${alias_set_file}"
-cp "${MANIFEST}" "${manifest_snapshot}"
-log "recorded alias set -> ${alias_set_file}"
-log "recorded manifest snapshot -> ${manifest_snapshot}"
+if [[ "${RESUME}" == "1" ]]; then
+  [[ -f "${alias_set_file}" ]] \
+    || die "cannot resume: no recorded alias set for task=${TASK} stage=${STAGE}: ${alias_set_file}"
+  [[ -f "${manifest_snapshot}" ]] \
+    || die "cannot resume: no recorded manifest snapshot for task=${TASK} stage=${STAGE}: ${manifest_snapshot}"
+  mapfile -t ALIASES < "${alias_set_file}"
+  log "resume: using recorded alias set -> ${alias_set_file}"
+  log "resume: using recorded manifest snapshot -> ${manifest_snapshot}"
+else
+  mapfile -t ALIASES < <(manifest_aliases "${STAGE}")
+  [[ ! -e "${alias_set_file}" && ! -e "${manifest_snapshot}" ]] \
+    || die "suite identity already exists for task=${TASK} stage=${STAGE}; choose a fresh TASK or remove prior run artifacts"
+  mkdir -p "$(dirname "${alias_set_file}")"
+  printf '%s\n' "${ALIASES[@]}" > "${alias_set_file}"
+  cp "${MANIFEST}" "${manifest_snapshot}"
+  log "recorded alias set -> ${alias_set_file}"
+  log "recorded manifest snapshot -> ${manifest_snapshot}"
+fi
+[[ "${#ALIASES[@]}" -gt 0 ]] || die "no candidates in recorded alias set for stage='${STAGE}'"
 
 log "suite: task=${TASK} stage='${STAGE}' candidates=${#ALIASES[@]} run-index=${RUN_INDEX}"
-declare -a CAPTURED=() FAIL=() BLOCKED=()
+declare -a CAPTURED=() FAIL=() BLOCKED=() SKIPPED=()
 
 for alias in "${ALIASES[@]}"; do
+  if [[ "${RESUME}" == "1" ]]; then
+    mapfile -t existing_results < <(find "${RUNS_DIR}/${TASK}/${alias}" -name result.json 2>/dev/null | sort)
+    if [[ "${#existing_results[@]}" -gt 0 ]]; then
+      SKIPPED+=("${alias}")
+      log "skip: ${alias} already has terminal result (${existing_results[0]})"
+      continue
+    fi
+  fi
   log "---- ${alias} ----"
   set +e
   BENCHMARK_DOCTOR_DONE=1 "${RUNNER_DIR}/run-candidate.sh" --task "${TASK}" --base "${BASE_SHA}" \
@@ -69,5 +88,6 @@ done
 
 log "==== suite summary ===="
 log "  captured  : ${CAPTURED[*]:-none}"
+log "  skipped   : ${SKIPPED[*]:-none}"
 log "  blocked   : ${BLOCKED[*]:-none}  (optional audited fallback: make worktree + make record)"
 log "  errored   : ${FAIL[*]:-none}"
