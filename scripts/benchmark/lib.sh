@@ -59,6 +59,12 @@ json_or_null() {
     printf 'null'
   fi
 }
+validate_json_artifact() {
+  local file="$1"
+  if have_jq; then
+    jq -e . "${file}" >/dev/null || die "invalid JSON artifact: ${file}"
+  fi
+}
 
 # ---- preflight guards ------------------------------------------------------
 # Refuse to run unless the environment is sane. Cheap insurance against
@@ -454,6 +460,7 @@ apply_orchestration_variant() {
       printf '  "strategy": %s\n' "$(json_escape "$([[ "${variant}" == "pipeline-existing-overlays" ]] && printf 'use committed platform overlays unchanged' || printf 'monolithic/no pipeline overlay')")"
       printf '}\n'
     } > "$(orchestration_metadata_path "${outdir}")"
+    validate_json_artifact "$(orchestration_metadata_path "${outdir}")"
     return 0
   fi
 
@@ -519,6 +526,7 @@ apply_orchestration_variant() {
     printf '  "artifact_sha256": %s\n' "$(json_escape "$(sha256sum "${sha_src}" | awk '{print $1}')")"
     printf '}\n'
   } > "$(orchestration_metadata_path "${outdir}")"
+  validate_json_artifact "$(orchestration_metadata_path "${outdir}")"
 }
 
 restore_orchestration_variant() {
@@ -565,6 +573,7 @@ apply_context_variant() {
       printf '  "injected": false\n'
       printf '}\n'
     } > "$(context_injection_metadata_path "${outdir}")"
+    validate_json_artifact "$(context_injection_metadata_path "${outdir}")"
     return 0
   fi
 
@@ -597,6 +606,7 @@ apply_context_variant() {
       printf '  }\n'
       printf '}\n'
     } > "$(context_injection_metadata_path "${outdir}")"
+    validate_json_artifact "$(context_injection_metadata_path "${outdir}")"
     return 0
   fi
 
@@ -665,6 +675,7 @@ apply_context_variant() {
     printf '\n  }\n'
     printf '}\n'
   } > "$(context_injection_metadata_path "${outdir}")"
+  validate_json_artifact "$(context_injection_metadata_path "${outdir}")"
 }
 
 restore_context_variant() {

@@ -104,7 +104,10 @@ adapter_run() {
   fi
   echo "${applied}" > "${outdir}/effort-applied.txt"
 
-  local extra_args=(--yolo --skip-trust)
+  local extra_args=(--yolo)
+  if _gemini_supports_flag --skip-trust; then
+    extra_args+=(--skip-trust)
+  fi
   if ! _gemini_supports_flag --output-format; then
     echo "NOT-APPLIED(required gemini telemetry flag missing: --output-format)" > "${outdir}/effort-applied.txt"
     echo "gemini adapter: required telemetry flag missing (--output-format)" >&2

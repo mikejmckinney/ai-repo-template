@@ -190,7 +190,12 @@ check_alias() {
       if have_flag gemini --output-format; then
         pass_note "${alias}: gemini supports --output-format"
       else
-        warn_note "${alias}: gemini lacks --output-format; output capture will be less structured"
+        fail_note "${alias}: gemini lacks required telemetry flag --output-format"
+      fi
+      if have_flag gemini --skip-trust; then
+        pass_note "${alias}: gemini supports --skip-trust"
+      else
+        warn_note "${alias}: gemini lacks optional --skip-trust; adapter will omit it"
       fi
       if have_flag gemini --session-summary; then
         pass_note "${alias}: gemini supports --session-summary"

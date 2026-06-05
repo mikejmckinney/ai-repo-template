@@ -259,6 +259,7 @@ IMPL_EFFORT_STATUS="$(derive_effort_status "${IMPL_EFFORT}" "${IMPL_MECH}" "${IM
   printf '  "planner_plan_artifact": "planner/plan.md"\n'
   printf '}\n'
 } > "${OUTDIR}/meta-blind.json"
+validate_json_artifact "${OUTDIR}/meta-blind.json"
 
 {
   printf '{\n'
@@ -286,6 +287,7 @@ IMPL_EFFORT_STATUS="$(derive_effort_status "${IMPL_EFFORT}" "${IMPL_MECH}" "${IM
   printf '  "implementer_exit_code": %s\n' "${IMPL_RC}"
   printf '}\n'
 } > "${OUTDIR}/meta-sealed.json"
+validate_json_artifact "${OUTDIR}/meta-sealed.json"
 
 write_result_file "${OUTDIR}" "${ALIAS}" "${TASK}" "${RUN_INDEX}" "${STAGE}" \
   "graded" "${HEAD_SHA}" "${IMPL_RC}" "false" "meta-blind.json" "meta-sealed.json" "diff.patch"

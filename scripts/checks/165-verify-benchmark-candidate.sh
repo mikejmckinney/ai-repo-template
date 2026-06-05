@@ -32,6 +32,104 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail ".context/benchmarks/model-roi/result.schema.json is missing"
   fi
 
+  if ! command -v jq >/dev/null 2>&1; then
+    fail "jq is required for benchmark artifact fixture validation"
+  elif (
+    set -euo pipefail
+    # shellcheck source=/dev/null
+    source scripts/benchmark/lib.sh
+
+    fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/benchmark-fixture.XXXXXX")"
+    trap 'rm -rf "${fixture_root}"' EXIT
+
+    fixture_wt="${fixture_root}/wt"
+    mkdir -p "${fixture_wt}/.context/rules" "${fixture_root}/baseline" "${fixture_root}/injected" "${fixture_root}/pipeline" "${fixture_root}/duo"
+    git -C "${fixture_wt}" init -q
+    printf '# AGENTS\n' > "${fixture_wt}/AGENTS.md"
+    printf '# CLAUDE\n' > "${fixture_wt}/CLAUDE.md"
+    printf '# Rule\n\nFixture rule.\n' > "${fixture_wt}/.context/rules/process_fixture.md"
+    git -C "${fixture_wt}" add -A
+
+    cat > "${fixture_root}/baseline/meta-blind.json" <<'JSON'
+{
+  "alias": "cand-fixture",
+  "task_id": "fixture-task",
+  "run_index": 1,
+  "stage": "1",
+  "context_variant": "baseline",
+  "orchestration_variant": "none",
+  "base_sha": "0000000",
+  "head_sha": "1111111",
+  "start_utc": "2026-06-05T00:00:00Z",
+  "end_utc": "2026-06-05T00:00:01Z",
+  "wall_clock_seconds": 1,
+  "adapter_exit_code": 0,
+  "commits_ahead_of_base": 0,
+  "diff_files_changed": 1,
+  "work_produced": true,
+  "shortstat": "1 file changed"
+}
+JSON
+    cat > "${fixture_root}/baseline/meta-sealed.json" <<'JSON'
+{
+  "alias": "cand-fixture",
+  "platform": "mock",
+  "model": "mock-model",
+  "agent": "mock-agent",
+  "effort_requested": "medium",
+  "effort_mechanism": "fixed",
+  "effort_applied": "fixed",
+  "effort_status": "clean",
+  "context_variant": "baseline",
+  "orchestration_variant": "none",
+  "task_id": "fixture-task",
+  "run_index": 1,
+  "head_sha": "1111111",
+  "wall_clock_seconds": 1,
+  "adapter_exit_code": 0
+}
+JSON
+    cat > "${fixture_root}/duo/meta-blind.json" <<'JSON'
+{
+  "alias": "cand-fixture-duo",
+  "task_id": "fixture-task",
+  "run_index": 1,
+  "stage": "1d",
+  "workflow": "duo-planner-implementer",
+  "context_variant": "baseline",
+  "base_sha": "0000000",
+  "head_sha": "1111111",
+  "planner_start_utc": "2026-06-05T00:00:00Z",
+  "planner_end_utc": "2026-06-05T00:00:01Z",
+  "planner_wall_clock_seconds": 1,
+  "implementer_start_utc": "2026-06-05T00:00:01Z",
+  "implementer_end_utc": "2026-06-05T00:00:02Z",
+  "implementer_wall_clock_seconds": 1,
+  "wall_clock_seconds": 2,
+  "planner_exit_code": 0,
+  "implementer_exit_code": 0,
+  "commits_ahead_of_base": 0,
+  "diff_files_changed": 1,
+  "work_produced": true,
+  "shortstat": "1 file changed",
+  "planner_plan_artifact": "planner/plan.md"
+}
+JSON
+
+    validate_json_artifact "${fixture_root}/baseline/meta-blind.json"
+    validate_json_artifact "${fixture_root}/baseline/meta-sealed.json"
+    validate_json_artifact "${fixture_root}/duo/meta-blind.json"
+    apply_context_variant "${fixture_wt}" "${fixture_root}/injected" "full-rules-injected"
+    apply_orchestration_variant "${fixture_wt}" "${fixture_root}/pipeline" "pipeline-existing-overlays" "cursor" "auto" "medium"
+
+    jq -e . "${fixture_root}/injected/context-injection.json" >/dev/null
+    jq -e . "${fixture_root}/pipeline/orchestration-overlay.json" >/dev/null
+  ); then
+    pass "benchmark generated-artifact fixtures are valid JSON"
+  else
+    fail "benchmark generated-artifact fixture validation failed"
+  fi
+
   echo ""
   return 0
 fi

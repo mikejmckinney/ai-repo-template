@@ -136,6 +136,7 @@ WORK_PRODUCED=$([[ "${COMMITTED_AHEAD}" -gt 0 || "${DIFF_FILES}" -gt 0 ]] && ech
   printf '  "shortstat": %s\n'      "$(json_escape "${DIFF_LINES}")"
   printf '}\n'
 } > "${OUTDIR}/meta-blind.json"
+validate_json_artifact "${OUTDIR}/meta-blind.json"
 
 # meta-sealed.json: blind fields + sealed identity. Keep out of grading.
 {
@@ -157,6 +158,7 @@ WORK_PRODUCED=$([[ "${COMMITTED_AHEAD}" -gt 0 || "${DIFF_FILES}" -gt 0 ]] && ech
   printf '  "adapter_exit_code": %s\n' "${RC}"
   printf '}\n'
 } > "${OUTDIR}/meta-sealed.json"
+validate_json_artifact "${OUTDIR}/meta-sealed.json"
 
 write_result_file "${OUTDIR}" "${ALIAS}" "${TASK}" "${RUN_INDEX}" "${STAGE}" \
   "graded" "${HEAD_SHA}" "${RC}" "false" "meta-blind.json" "meta-sealed.json" "diff.patch"

@@ -121,6 +121,10 @@ Issue #330 extends ADR-019's platform-specific routing guidance beyond the origi
 - Codex allowlist: `gpt-5.4 | gpt-5.3-codex | gpt-5.4-mini`
 - N-way description parity now spans canonical + Copilot + Claude + Cursor + Codex.
 
+### Amendment #10 — Benchmark-backed default routing after issues #374/#376
+
+For normal repo implementation work, default to a single implementing agent using the best available low-cost or auto-routed model/harness. Current repo-local benchmark evidence favors Gemini Flash / observed Flash backend, Cursor Composer 2.5, and platform Auto where telemetry is available. High-tier models remain allowed for high-risk planning, architecture, difficult review-resolution, and explicit escalation, but they are no longer the default for routine implementation or routine review gates.
+
 ## Options Considered
 
 ### Option 1: Per-role pinning with per-platform divergence (chosen)

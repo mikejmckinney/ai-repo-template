@@ -10,7 +10,12 @@ else
   fail "scripts/benchmark/.gitignore is missing"
 fi
 
-for path in "scripts/benchmark/candidates.tsv" "scripts/benchmark/runs/" "scripts/benchmark/worktrees/"; do
+for path in \
+  "scripts/benchmark/candidates.tsv" \
+  "scripts/benchmark/duo-candidates.tsv" \
+  "scripts/benchmark/orchestration-candidates.tsv" \
+  "scripts/benchmark/runs/" \
+  "scripts/benchmark/worktrees/"; do
   if git check-ignore -q -- "${path}"; then
     pass "${path} is ignored by git"
   else
