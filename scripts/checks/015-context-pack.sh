@@ -10,6 +10,7 @@ CONTEXT_FILES=(
   ".context/00_INDEX.md"
   ".context/backlog.yaml"
   ".context/backlog.schema.json"
+  ".context/benchmarks/model-roi/result.schema.json"
   ".context/roadmap.md"
   ".context/rules/README.md"
   ".context/rules/agent_ownership.md"
@@ -44,6 +45,8 @@ done
 
 # Check context directories exist
 CONTEXT_DIRS=(
+  ".context/benchmarks"
+  ".context/benchmarks/model-roi"
   ".context/rules"
   ".context/sessions"
   ".context/state"

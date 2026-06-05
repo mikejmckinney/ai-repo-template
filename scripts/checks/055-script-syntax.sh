@@ -7,7 +7,7 @@
 # --- Script Syntax Check ---
 # Rationale: a bash syntax error is the cheapest possible regression to
 # catch (`bash -n`, no execution, sub-second). Pre-#281 the check
-# covered only install.sh and test.sh, leaving 51 other .sh files
+# covered only install.sh and test.sh, leaving 50+ other .sh files
 # (scripts/, scripts/checks/, scripts/lib/, scripts/setup/) un-gated.
 # Any of those could ship with a syntax error and only blow up at
 # runtime in CI or for a downstream contributor.
@@ -28,6 +28,8 @@ shopt -s nullglob
 SYNTAX_CHECK_GLOBS=(
   ./*.sh
   scripts/*.sh
+  scripts/benchmark/*.sh
+  scripts/benchmark/adapters/*.sh
   scripts/checks/*.sh
   scripts/lib/*.sh
   scripts/setup/*.sh

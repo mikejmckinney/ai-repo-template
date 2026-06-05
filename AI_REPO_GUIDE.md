@@ -48,6 +48,9 @@ bash install.sh
 │
 ├── .context/                 # Project context (canonical truth)
 │   ├── 00_INDEX.md           # Context entry point
+│   ├── benchmarks/           # Benchmark protocol docs and templates
+│   │   └── model-roi/        # Phase A model ROI benchmark surfaces (issue #374)
+│   │       └── tasks/        # Benchmark task injections and sealed reference metadata
 │   ├── backlog.yaml          # Machine-readable task list (dispatched into issues)
 │   ├── backlog.schema.json   # JSON Schema for backlog.yaml
 │   ├── roadmap.md            # Phase-by-phase plan
@@ -99,6 +102,7 @@ bash install.sh
 │   ├── tests/                # Bats test suite for script checks and fixtures
 │   │   ├── README.md
 │   │   └── *.bats            # One file per concern; current script tests run via bats
+│   ├── benchmark/            # Phase A model ROI benchmark runner/prototype (issue #374)
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
@@ -157,6 +161,7 @@ bash install.sh
     │   ├── instruction-compliance-smoke.md # No-edit ADR-026 compliance smoke prompt
     │   ├── judge-mode-smoke.md   # No-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection
     │   ├── mirror-postmortem.md  # Postmortem mirror/sync workflow prompt
+    │   ├── model-roi-benchmark-candidate.md # Canonical prompt for the model ROI benchmark (issue #374)
     │   ├── multi-model-consensus-plan.md # Optional three-planner consensus prompt
     │   ├── op-issue-workflow.md  # OP end-to-end issue to merge playbook
     │   ├── outcome-validation-smoke.md # No-edit Judge/Critic outcome-theater smoke prompt
@@ -218,6 +223,13 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.context/00_INDEX.md` | Entry point, project summary |
 | `.context/backlog.yaml` | Machine-readable task list. Planned for dispatch into issues by `.github/workflows/backlog-to-issues.yml` once that workflow lands (added in PR 3 of the backlog-pipeline series). Validate with `pip install check-jsonschema && check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml` |
 | `.context/backlog.schema.json` | JSON Schema for `backlog.yaml` (Draft-07) |
+| `.context/benchmarks/model-roi/README.md` | Durable protocol and artifact contract for the agent/model ROI benchmark tracked in issue `#374` |
+| `.context/benchmarks/model-roi/benchmark-runbook.md` | Repeatable benchmark setup/run/grading/telemetry procedure, including known issues and future candidate backlog |
+| `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md` | Scored benchmark record, cost source register, and ROI tables used to support repo-local ROI/performance revisions |
+| `.context/benchmarks/model-roi/tasks/opfit-281-class-a.md` | Class A operational-fit benchmark task from issue `#281` / reference PR `#288`; runner injects only its candidate-safe task body |
+| `.context/benchmarks/model-roi/tasks/opfit-326-class-b.md` | Class B reasoning/code benchmark task from issue `#326` / reference PR `#358`; runner injects only its candidate-safe task body |
+| `.context/benchmarks/model-roi/result-template.md` | Per-alias blind-safe plus sealed benchmark result template |
+| `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template for the same benchmark |
 | `.context/roadmap.md` | Phase-by-phase plan |
 | `.context/rules/` | Domain constraints (never violate) |
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
@@ -244,6 +256,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/prompts/instruction-compliance-smoke.md` | No-edit smoke prompt for startup pointer loading, role-dispatch reasoning, and ADR-026 evidence shape |
 | `.github/prompts/judge-mode-smoke.md` | No-edit smoke prompt: Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance |
 | `.github/prompts/mirror-postmortem.md` | Mirror a postmortem into the repo's postmortem surfaces after capture/review |
+| `.github/prompts/model-roi-benchmark-candidate.md` | Canonical prompt for monolithic agent/model ROI benchmark candidates tracked in issue `#374`; pairs with `.context/benchmarks/model-roi/README.md` and `.context/benchmarks/model-roi/benchmark-runbook.md` |
 | `.github/prompts/multi-model-consensus-plan.md` | Optional opt-in multi-model consensus planning prompt for high-risk / architectural / ADR-worthy issues; produces 3 candidate plans + 1 synthesized final plan before Judge plan-gate (ADR-024). See `docs/guides/multi-model-consensus.md`. |
 | `.github/prompts/op-issue-workflow.md` | Parent Orchestrator issue-to-merge playbook for the default agent |
 | `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
@@ -271,6 +284,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `scripts/verify-env.sh` | Environment & placeholder sanity check; run with `--fix` to auto-install missing tools (bounded allowlist: `rg`, `shellcheck`, `jq`) |
 | `scripts/diag-sandbox.sh` | Read-only sandbox auth/access doctor (issue #365): checks auth source, remote reachability, and stale branch inventory; makes no writes. `DIAG_GIT_TIMEOUT` (default 10 s; `0` disables timeout). Run before sandbox operations or when `gh` auth is unclear. See `docs/guides/sandbox-verification.md` § "Sandbox Doctor" |
 | `scripts/verify-pr.sh` | Plan-template Change-class classifier (ADR-016 / issue #227); run: `bash scripts/verify-pr.sh --declared "<class>"` |
+| `scripts/benchmark/Makefile` | Current front-end for the model ROI benchmark runner: `doctor`, `base`, `run`, `suite`, `worktree`, `record`, `collect`, and `unseal`. Scope is Phase A / Core Stage 1 for issue `#374`; later-stage sweeps and paid candidate runs remain separate follow-on work. |
 | `scripts/validate-compliance-examples.py` | Validates fenced YAML examples in `docs/compliance_schemas.md` against ADR-026 v1 shape |
 | `scripts/validate-compliance-fixtures.py` | Validates ADR-026 valid/invalid fixtures under `scripts/tests/fixtures/compliance/` |
 | `scripts/db-reset.sh` | Optional database reset stub |

@@ -72,6 +72,10 @@ matrix is part of the decision so future contributors aren't misled.
 
 ADR-009 makes four coupled decisions:
 
+### Amendment — Benchmark-backed default orchestration boundary after issues #374/#376
+
+Multi-agent orchestration is no longer the default implementation path. Use it only when the issue is explicitly cross-role, high-risk, or ADR-grade, or when a human/operator opts into a coordinated review/remediation pass. For ordinary implementation, use one implementing agent plus deterministic checks and post-diff review.
+
 ### 1. Inter-agent parallelism: keep the cross-session model. Document the prerequisites.
 
 Parallel multi-agent work in this repo means **separate agent sessions
