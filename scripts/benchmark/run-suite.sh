@@ -2,7 +2,7 @@
 # run-suite.sh — loop run-candidate.sh over every candidate in the manifest.
 #
 # Usage:
-#   ./run-suite.sh --task <TASKID> --base <BASE_SHA> --stage 1 [--run-index N] [--continue-on-error] [--resume]
+#   ./run-suite.sh --task <TASKID> --base <BASE_SHA> --stage 1 [--run-index N] [--continue-on-error] [--resume] [--context-variant baseline|full-rules-injected] [--orchestration-variant none|pipeline-existing-overlays|pipeline-same-model]
 #
 # Runs candidates SEQUENTIALLY by default. Sequential is the safe choice: it
 # keeps cost observable in real time, avoids hammering rate limits, and prevents
@@ -18,7 +18,7 @@ set -euo pipefail
 # shellcheck source=/dev/null
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
-TASK="" BASE_SHA="" STAGE="" RUN_INDEX="1" CONT="0" RESUME="0"
+TASK="" BASE_SHA="" STAGE="" RUN_INDEX="1" CONT="0" RESUME="0" RUN_CONTEXT_VARIANT="${CONTEXT_VARIANT}" RUN_ORCHESTRATION_VARIANT="${ORCHESTRATION_VARIANT}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --task)             TASK="$2"; shift 2;;
@@ -27,6 +27,8 @@ while [[ $# -gt 0 ]]; do
     --run-index)        RUN_INDEX="$2"; shift 2;;
     --continue-on-error) CONT="1"; shift;;
     --resume)           RESUME="1"; shift;;
+    --context-variant)  RUN_CONTEXT_VARIANT="$2"; shift 2;;
+    --orchestration-variant) RUN_ORCHESTRATION_VARIANT="$2"; shift 2;;
     *) die "unknown arg: $1";;
   esac
 done
@@ -36,6 +38,8 @@ preflight
 require_base "${BASE_SHA}"
 require_stage "${STAGE}"
 require_task_file "${TASK}"
+RUN_CONTEXT_VARIANT="$(context_variant_slug "${RUN_CONTEXT_VARIANT}")"
+RUN_ORCHESTRATION_VARIANT="$(orchestration_variant_slug "${RUN_ORCHESTRATION_VARIANT}")"
 "${RUNNER_DIR}/doctor.sh" --stage "${STAGE}" --base "${BASE_SHA}"
 
 alias_set_file="$(suite_alias_set_path "${TASK}" "${STAGE}")"
@@ -60,7 +64,7 @@ else
 fi
 [[ "${#ALIASES[@]}" -gt 0 ]] || die "no candidates in recorded alias set for stage='${STAGE}'"
 
-log "suite: task=${TASK} stage='${STAGE}' candidates=${#ALIASES[@]} run-index=${RUN_INDEX}"
+log "suite: task=${TASK} stage='${STAGE}' candidates=${#ALIASES[@]} run-index=${RUN_INDEX} context_variant=${RUN_CONTEXT_VARIANT} orchestration_variant=${RUN_ORCHESTRATION_VARIANT}"
 declare -a CAPTURED=() FAIL=() BLOCKED=() SKIPPED=()
 
 for alias in "${ALIASES[@]}"; do
@@ -75,7 +79,8 @@ for alias in "${ALIASES[@]}"; do
   log "---- ${alias} ----"
   set +e
   BENCHMARK_DOCTOR_DONE=1 "${RUNNER_DIR}/run-candidate.sh" --task "${TASK}" --base "${BASE_SHA}" \
-      --alias "${alias}" --run-index "${RUN_INDEX}"
+      --alias "${alias}" --run-index "${RUN_INDEX}" --context-variant "${RUN_CONTEXT_VARIANT}" \
+      --orchestration-variant "${RUN_ORCHESTRATION_VARIANT}"
   rc=$?
   set -e
   case ${rc} in

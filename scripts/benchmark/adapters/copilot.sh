@@ -23,6 +23,14 @@ adapter_run() {
   [[ -n "${COPILOT_GITHUB_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}" ]] \
     || { echo "copilot adapter: no token in COPILOT_GITHUB_TOKEN/GH_TOKEN/GITHUB_TOKEN" >&2; return 78; }
   local prompt; prompt="$(cat "${prompt_file}")"
+  local prompt_args=()
+  if [[ ${#prompt} -gt 100000 ]]; then
+    prompt_args=(-p "Read the attached benchmark prompt file and complete it exactly as instructed." --attachment "${prompt_file}")
+    echo "prompt-delivery=attachment(${#prompt} chars)" > "${outdir}/prompt-delivery.txt"
+  else
+    prompt_args=(-p "${prompt}")
+    echo "prompt-delivery=argv(${#prompt} chars)" > "${outdir}/prompt-delivery.txt"
+  fi
 
   local effort_args=()
   case "${effort}" in
@@ -38,7 +46,7 @@ adapter_run() {
 
   set +e
   ( cd "${workdir}" && \
-    copilot -p "${prompt}" --model "${model}" "${effort_args[@]}" --allow-all-tools \
+    copilot "${prompt_args[@]}" --model "${model}" "${effort_args[@]}" --allow-all-tools \
       --output-format json --no-color --log-dir "${outdir}/logs" \
       > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
   local rc=$?

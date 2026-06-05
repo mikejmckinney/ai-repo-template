@@ -1,0 +1,15 @@
+# Stage 1C context-injection manifest.
+#
+# These aliases pair with the completed Stage 1 baseline aliases while keeping
+# the injected run artifacts separate from the original Stage 1 runs.
+#
+# alias  platform  model  agent  stage  effort  effort_mechanism
+cand-04-injected	claude-code	sonnet	claude-code-cli	1	medium	prompt
+cand-05-injected	claude-code	haiku	claude-code-cli	1	medium	prompt
+cand-05-agents	claude-code	haiku	claude-code-cli	1	medium	prompt
+cand-06-injected	cursor	composer-2.5	cursor-cli	1	medium	prompt
+cand-12-injected	claude-code	opus	claude-code-cli	1	medium	prompt
+cand-13-injected	codex	gpt-5.4-mini	codex-cli	1	medium	flag
+cand-19-injected	copilot	auto	copilot-cli	1	default	none
+cand-20-injected	cursor	auto	cursor-cli	1	default	none
+cand-21-injected	gemini-cli	auto	gemini-cli	1	default	none

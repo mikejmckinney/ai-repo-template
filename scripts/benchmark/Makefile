@@ -5,8 +5,12 @@
 #   make doctor STAGE=1 BASE=<sha>                 # readiness gate before any spend
 #   make worktrees TASK=opfit-281-class-a BASE=<sha> STAGE=1  # (optional) pre-make all Stage-1 worktrees
 #   make suite TASK=opfit-281-class-a BASE=<sha> STAGE=1   # run all Stage-1 automated candidates
+#   make suite TASK=opfit-281-class-a BASE=<sha> STAGE=1 CONTEXT_VARIANT=full-rules-injected
+#   make suite TASK=opfit-281-class-a-premerge-pipeline BASE=<sha> STAGE=1 PROMPT_FILE=../../.github/prompts/model-roi-orchestration-pipeline-candidate.md MANIFEST=orchestration-candidates.tsv BENCHMARK_SUBISSUE=#376 ORCHESTRATION_VARIANT=pipeline-same-model
+#   make duo-suite TASK=opfit-281-class-a-premerge BASE=<sha> STAGE=1d # run Stage-1D planner/implementer candidates
 #   make suite-resume TASK=opfit-281-class-a BASE=<sha> STAGE=1 RUN_INDEX=2 # resume missing candidates
 #   make run TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-01   # one candidate
+#   make duo-run TASK=opfit-281-class-a-premerge BASE=<sha> ALIAS=cand-12-duo # one duo candidate
 #   make worktree TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-06   # isolate for a MANUAL candidate
 #   make record TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-06 RC=0 TOKENS_IN=... TOKENS_OUT=...
 #   make collect TASK=opfit-281-class-a           # blind grading sheet
@@ -24,8 +28,10 @@ BASE ?=
 ALIAS ?=
 STAGE ?=
 RUN_INDEX ?= 1
+CONTEXT_VARIANT ?= baseline
+ORCHESTRATION_VARIANT ?= none
 
-.PHONY: help base doctor worktrees worktree run suite suite-resume record collect push unseal clean-worktrees
+.PHONY: help base doctor worktrees worktree run suite suite-resume duo-run duo-suite duo-suite-resume record collect push unseal clean-worktrees
 
 help:
 	@sed -n '1,32p' "$(HERE)Makefile"
@@ -62,17 +68,34 @@ worktree:
 
 run:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(ALIAS)" || { echo "set TASK BASE ALIAS"; exit 2; }
-	@"$(HERE)run-candidate.sh" --task "$(TASK)" --base "$(BASE)" --alias "$(ALIAS)" --run-index "$(RUN_INDEX)"
+	@"$(HERE)run-candidate.sh" --task "$(TASK)" --base "$(BASE)" --alias "$(ALIAS)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" \
+	  --orchestration-variant "$(ORCHESTRATION_VARIANT)"
 
 suite:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1"; exit 2; }
 	@test "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
-	@"$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --continue-on-error
+	@"$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error \
+	  --orchestration-variant "$(ORCHESTRATION_VARIANT)"
 
 suite-resume:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1"; exit 2; }
 	@test "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
-	@"$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --continue-on-error --resume
+	@"$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error --resume \
+	  --orchestration-variant "$(ORCHESTRATION_VARIANT)"
+
+duo-run:
+	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(ALIAS)" || { echo "set TASK BASE ALIAS"; exit 2; }
+	@"$(HERE)run-duo-candidate.sh" --task "$(TASK)" --base "$(BASE)" --alias "$(ALIAS)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)"
+
+duo-suite:
+	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1d"; exit 2; }
+	@test "$(STAGE)" = "1d" || { echo "Stage 1D duo benchmark requires STAGE=1d"; exit 2; }
+	@"$(HERE)run-duo-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error
+
+duo-suite-resume:
+	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1d"; exit 2; }
+	@test "$(STAGE)" = "1d" || { echo "Stage 1D duo benchmark requires STAGE=1d"; exit 2; }
+	@"$(HERE)run-duo-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error --resume
 
 # Manual-candidate capture. Pass timing/telemetry you read off the platform dashboard.
 record:

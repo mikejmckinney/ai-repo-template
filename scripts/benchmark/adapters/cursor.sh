@@ -28,16 +28,37 @@ adapter_run() {
   fi
   local prompt; prompt="$(cat "${prompt_file}")"
 
+  local model_args=()
+  if [[ "${model}" == "auto" ]]; then
+    prompt="Use Cursor Auto model routing for this task. Do not pin a specific model unless the CLI/runtime requires it.
+
+${prompt}"
+    model_args=(--model auto)
+  else
+    model_args=(--model "${model}")
+  fi
+
   # Inline-directive workaround: prepend a thinking-effort instruction naming the
   # model + level. Honored at the model's discretion; unverifiable.
   case "${effort}" in
     minimal|low|medium|high|xhigh)
-      prompt="Using ${model} with ${effort} thinking effort for this task:
+      if [[ "${model}" == "auto" ]]; then
+        prompt="Using Cursor Auto routing with ${effort} thinking effort requested for this task:
 
 ${prompt}"
-      echo "prompt:inline-directive(${model}+${effort}-thinking;unverified)" > "${outdir}/effort-applied.txt" ;;
+        echo "model:auto(applied);effort=prompt:inline-directive(${effort}-thinking;unverified)" > "${outdir}/effort-applied.txt"
+      else
+        prompt="Using ${model} with ${effort} thinking effort for this task:
+
+${prompt}"
+        echo "prompt:inline-directive(${model}+${effort}-thinking;unverified)" > "${outdir}/effort-applied.txt"
+      fi ;;
     fixed|default|none|"")
-      echo "default(no inline directive; model default)" > "${outdir}/effort-applied.txt" ;;
+      if [[ "${model}" == "auto" ]]; then
+        echo "model:auto(applied);effort=default(no inline directive)" > "${outdir}/effort-applied.txt"
+      else
+        echo "default(no inline directive; model default)" > "${outdir}/effort-applied.txt"
+      fi ;;
     *)
       prompt="Using ${model} with ${effort} thinking effort for this task:
 
@@ -47,7 +68,7 @@ ${prompt}"
 
   set +e
   ( cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
-    cursor-agent -p --model "${model}" --force --output-format json "${prompt}" \
+    cursor-agent -p "${model_args[@]}" --force --output-format json "${prompt}" \
       > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
   local rc=$?
   set -e

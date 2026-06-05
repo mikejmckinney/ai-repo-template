@@ -2,13 +2,9 @@
 # adapters/claude-code.sh — Claude Code CLI headless (print) mode.
 # Contract: adapter_run WORKDIR MODEL PROMPT_FILE OUTDIR EFFORT EFFORT_MECH
 #
-# EFFORT: Claude has NO named low/med/high enum. Reasoning is an extended-thinking
-# TOKEN BUDGET. The documented lever in the CLI is thinking-keyword phrasing in the
-# prompt ("think" < "think hard" < "think harder" < "ultrathink", increasing budget),
-# optionally `--max-thinking-tokens N` on versions that expose it. So we map levels
-# to keywords AND pass a max-thinking-tokens hint. This is an APPROXIMATION, not a
-# clean enum — record it honestly. VERIFY `claude --help` for --max-thinking-tokens
-# on your version; if absent, the keyword still applies and the flag is ignored.
+# EFFORT: Current Claude Code exposes --effort (low, medium, high, xhigh, max).
+# Older builds did not, so we still keep prompt-keyword phrasing as a fallback.
+# Record which mechanism actually applied for benchmark cost/performance caveats.
 #
 # Mapping (approximate, tune to taste):
 #   minimal -> no thinking keyword, budget ~0
@@ -16,7 +12,9 @@
 #   medium  -> "think hard"       ~10k
 #   high    -> "ultrathink"       ~32k
 #
-# Other flags (verified): -p non-interactive; --model pins; --output-format json
+# Other flags (verified): -p/--print non-interactive; prompt can be passed on
+# stdin, which avoids option parsing bugs when the prompt begins with markdown
+# frontmatter (`---`) or injected thinking text. --model pins; --output-format json
 # gives token counts + cost; --dangerously-skip-permissions REQUIRED headless
 # (safe in the isolated worktree). KNOWN BUG: writes under .claude/skills|agents|
 # commands may be silently denied (anthropics/claude-code#54850) — a stall there
@@ -30,15 +28,15 @@ adapter_run() {
   mkdir -p "${outdir}/logs"
   local prompt; prompt="$(cat "${prompt_file}")"
 
-  local kw="" budget="" applied=""
+  local kw="" effort_arg="" applied=""
   case "${effort}" in
-    minimal) kw="";              budget="";      applied="prompt:none(minimal)";;
-    low)     kw="think";         budget="4096";  applied="prompt:think(low)";;
-    medium)  kw="think hard";    budget="10000"; applied="prompt:think-hard(medium)";;
-    high)    kw="ultrathink";    budget="32000"; applied="prompt:ultrathink(high)";;
-    xhigh)   kw="ultrathink";    budget="48000"; applied="prompt:ultrathink(xhigh~capped)";;
-    default|fixed|"") kw="";     budget="";      applied="default(no-keyword)";;
-    *)       kw="think hard";    budget="10000"; applied="prompt:think-hard(fallback)";;
+    minimal) kw="";           effort_arg="low";    applied="flag:--effort=low(minimal fallback)";;
+    low)     kw="think";      effort_arg="low";    applied="flag:--effort=low";;
+    medium)  kw="think hard"; effort_arg="medium"; applied="flag:--effort=medium";;
+    high)    kw="ultrathink"; effort_arg="high";   applied="flag:--effort=high";;
+    xhigh)   kw="ultrathink"; effort_arg="xhigh";  applied="flag:--effort=xhigh";;
+    default|fixed|"") kw="";  effort_arg="";       applied="default(no-keyword)";;
+    *)       kw="think hard"; effort_arg="medium"; applied="flag:--effort=medium(fallback)";;
   esac
   # Prepend the thinking directive so it governs the whole run.
   [[ -n "${kw}" ]] && prompt="(${kw} about this task before acting)
@@ -47,15 +45,24 @@ ${prompt}"
   echo "${applied}" > "${outdir}/effort-applied.txt"
 
   local extra=()
-  if [[ -n "${budget}" ]] && claude --help 2>/dev/null | grep -q -- '--max-thinking-tokens'; then
-    extra=(--max-thinking-tokens "${budget}")
-    echo "${applied}+max-thinking-tokens=${budget}" > "${outdir}/effort-applied.txt"
+  if [[ -n "${effort_arg}" ]] && claude --help 2>/dev/null | grep -q -- '--effort'; then
+    extra=(--effort "${effort_arg}")
+  elif [[ -n "${effort_arg}" ]]; then
+    echo "prompt:${kw// /-}(${effort};flag-unavailable)" > "${outdir}/effort-applied.txt"
+  fi
+
+  local model_args=()
+  if [[ "${model}" == "auto" ]]; then
+    model_args=()
+    echo "$(cat "${outdir}/effort-applied.txt");model=default-omitted(auto-requested)" > "${outdir}/effort-applied.txt"
+  else
+    model_args=(--model "${model}")
   fi
 
   set +e
   ( cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
-    claude -p "${prompt}" \
-      --model "${model}" \
+    printf '%s\n' "${prompt}" | claude --print \
+      "${model_args[@]}" \
       --output-format json \
       --dangerously-skip-permissions \
       "${extra[@]}" \

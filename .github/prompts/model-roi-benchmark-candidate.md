@@ -9,7 +9,7 @@ agent: agent
 > Use this exact prompt for every candidate run. Do not customize the prompt body per candidate.
 > Provide only the run-metadata block and the injected task as candidate-specific input.
 > The durable benchmark protocol and reporting templates live under `.context/benchmarks/model-roi/`.
-> Current repo scope: issue `#374` Phase A / Core Stage 1 only. Extended Stage 1 rows, all Stage 2 sweeps, and any ADR-019 routing changes are deferred to Phase B / Plan v2.
+> Use this prompt for monolithic candidate runs. Other benchmark variants use their own prompts and runbook entries under `.context/benchmarks/model-roi/`.
 
 ## Candidate run metadata
 

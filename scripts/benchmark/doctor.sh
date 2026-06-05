@@ -172,12 +172,14 @@ check_alias() {
         fail_note "${alias}: gemini binary missing"
         return
       fi
-      if check_auth_hint "${alias}: gemini" GEMINI_API_KEY GOOGLE_API_KEY GOOGLE_GENAI_USE_VERTEXAI GOOGLE_APPLICATION_CREDENTIALS; then
+      if check_auth_hint "${alias}: gemini" GEMINI_API_KEY GOOGLE_API_KEY GOOGLE_GENAI_USE_VERTEXAI GOOGLE_GENAI_USE_GCA GOOGLE_APPLICATION_CREDENTIALS; then
         :
-      elif [[ -d "${HOME}/.gemini" ]]; then
-        pass_note "${alias}: gemini auth heuristic satisfied by \$HOME/.gemini"
+      elif [[ -f "${HOME}/.gemini/settings.json" ]] && grep -q '"selectedType"' "${HOME}/.gemini/settings.json"; then
+        pass_note "${alias}: gemini auth heuristic satisfied by \$HOME/.gemini/settings.json selectedType"
+      elif command -v agy >/dev/null 2>&1 && agy -p "auth smoke: reply ok" --print-timeout 30s >/dev/null 2>&1; then
+        pass_note "${alias}: gemini/antigravity auth heuristic satisfied by agy smoke"
       else
-        fail_note "${alias}: gemini auth heuristic missing (env var or \$HOME/.gemini)"
+        fail_note "${alias}: gemini auth heuristic missing (env var, settings selectedType, or agy smoke)"
       fi
 
       if have_flag gemini --prompt && have_flag gemini --model && have_flag gemini --yolo; then

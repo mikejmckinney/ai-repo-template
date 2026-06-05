@@ -56,10 +56,12 @@ lists come after, not before.
     model ROI benchmark tracked in issue `#374`. Reuse the same prompt body across
     aliases; inject only run metadata and the task body. Pair it with
     [`.context/benchmarks/model-roi/README.md`](../../.context/benchmarks/model-roi/README.md)
+    the repeatable runbook under
+    [`.context/benchmarks/model-roi/benchmark-runbook.md`](../../.context/benchmarks/model-roi/benchmark-runbook.md),
     and task specs under
     [`.context/benchmarks/model-roi/tasks/`](../../.context/benchmarks/model-roi/tasks/).
-    Current scope is Phase A / Core Stage 1 only. Extended Stage 1 rows and all
-    Stage 2 work are deferred to Phase B / Plan v2. The documented manual fallback
+    Use the runbook to choose the intended benchmark variant before running
+    monolithic, context-injected, duo, or orchestration candidates. The documented manual fallback
     after a headless failure is `make worktree` + `make record` from
     `scripts/benchmark/`.
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.

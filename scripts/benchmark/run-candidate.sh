@@ -2,7 +2,7 @@
 # run-candidate.sh — run ONE benchmark candidate, deterministically.
 #
 # Usage:
-#   ./run-candidate.sh --task <TASKID> --base <BASE_SHA> --alias <cand-NN> [--run-index N] [--keep-worktree]
+#   ./run-candidate.sh --task <TASKID> --base <BASE_SHA> --alias <cand-NN> [--run-index N] [--keep-worktree] [--context-variant baseline|full-rules-injected] [--orchestration-variant none|pipeline-existing-overlays|pipeline-same-model]
 #
 # What it does:
 #   1. Looks up alias -> platform/model/agent in the sealed manifest.
@@ -22,7 +22,7 @@ set -euo pipefail
 # shellcheck source=/dev/null
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
-TASK="" BASE_SHA="" ALIAS="" RUN_INDEX="1" KEEP_WT="0"
+TASK="" BASE_SHA="" ALIAS="" RUN_INDEX="1" KEEP_WT="0" RUN_CONTEXT_VARIANT="${CONTEXT_VARIANT}" RUN_ORCHESTRATION_VARIANT="${ORCHESTRATION_VARIANT}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --task)        TASK="$2"; shift 2;;
@@ -30,6 +30,8 @@ while [[ $# -gt 0 ]]; do
     --alias)       ALIAS="$2"; shift 2;;
     --run-index)   RUN_INDEX="$2"; shift 2;;
     --keep-worktree) KEEP_WT="1"; shift;;
+    --context-variant) RUN_CONTEXT_VARIANT="$2"; shift 2;;
+    --orchestration-variant) RUN_ORCHESTRATION_VARIANT="$2"; shift 2;;
     *) die "unknown arg: $1";;
   esac
 done
@@ -61,6 +63,12 @@ prepare_git_push_guard "${OUTDIR}"
 
 WT="$(make_worktree "${TASK}" "${ALIAS}" "${RUN_INDEX}" "${BASE_SHA}")"
 log "worktree: ${WT}"
+RUN_CONTEXT_VARIANT="$(context_variant_slug "${RUN_CONTEXT_VARIANT}")"
+apply_context_variant "${WT}" "${OUTDIR}" "${RUN_CONTEXT_VARIANT}"
+log "context_variant=${RUN_CONTEXT_VARIANT}"
+RUN_ORCHESTRATION_VARIANT="$(orchestration_variant_slug "${RUN_ORCHESTRATION_VARIANT}")"
+apply_orchestration_variant "${WT}" "${OUTDIR}" "${RUN_ORCHESTRATION_VARIANT}" "${PLATFORM}" "${MODEL}" "${EFFORT}"
+log "orchestration_variant=${RUN_ORCHESTRATION_VARIANT}"
 
 # ---- dispatch with timing --------------------------------------------------
 # Adapter contract is now:
@@ -95,6 +103,8 @@ if [[ ${RC} -ne 0 ]]; then
 fi
 
 # ---- capture git result (no judgement, just facts) -------------------------
+restore_orchestration_variant "${WT}" "${OUTDIR}" "${RUN_ORCHESTRATION_VARIANT}"
+restore_context_variant "${WT}" "${OUTDIR}" "${RUN_CONTEXT_VARIANT}"
 HEAD_SHA="$(git -C "${WT}" rev-parse HEAD 2>/dev/null || echo "")"
 COMMITTED_AHEAD="$(git -C "${WT}" rev-list --count "${BASE_SHA}..HEAD" 2>/dev/null || echo 0)"
 # Diff includes both committed work and any uncommitted working-tree changes vs base.
@@ -112,6 +122,8 @@ WORK_PRODUCED=$([[ "${COMMITTED_AHEAD}" -gt 0 || "${DIFF_FILES}" -gt 0 ]] && ech
   printf '  "task_id": %s,\n'      "$(json_escape "${TASK}")"
   printf '  "run_index": %s,\n'    "${RUN_INDEX}"
   printf '  "stage": %s,\n'        "$(json_escape "${STAGE}")"
+  printf '  "context_variant": %s,\n' "$(json_escape "${RUN_CONTEXT_VARIANT}")"
+  printf '  "orchestration_variant": %s,\n' "$(json_escape "${RUN_ORCHESTRATION_VARIANT}")"
   printf '  "base_sha": %s,\n'     "$(json_escape "${BASE_SHA}")"
   printf '  "head_sha": %s,\n'     "$(json_escape "${HEAD_SHA}")"
   printf '  "start_utc": %s,\n'    "$(json_escape "${START_TS}")"
@@ -136,6 +148,8 @@ WORK_PRODUCED=$([[ "${COMMITTED_AHEAD}" -gt 0 || "${DIFF_FILES}" -gt 0 ]] && ech
   printf '  "effort_mechanism": %s,\n' "$(json_escape "${EFFORT_MECH}")"
   printf '  "effort_applied": %s,\n'   "$(json_escape "${EFFORT_APPLIED}")"
   printf '  "effort_status": %s,\n'    "$(json_escape "${EFFORT_STATUS}")"
+  printf '  "context_variant": %s,\n'  "$(json_escape "${RUN_CONTEXT_VARIANT}")"
+  printf '  "orchestration_variant": %s,\n' "$(json_escape "${RUN_ORCHESTRATION_VARIANT}")"
   printf '  "task_id": %s,\n'  "$(json_escape "${TASK}")"
   printf '  "run_index": %s,\n' "${RUN_INDEX}"
   printf '  "head_sha": %s,\n' "$(json_escape "${HEAD_SHA}")"

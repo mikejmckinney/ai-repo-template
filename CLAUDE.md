@@ -2,6 +2,8 @@
 
 > **For Claude Code**: this file exists so Claude Code's native memory loader picks up the canonical agent documentation. The actual instructions live in **`AGENTS.md`** — read that first.
 
+@AGENTS.md
+
 ## Read first
 
 1. **[`AGENTS.md`](AGENTS.md)** — thin contract: handshake, truth hierarchy, link table to per-concern process rules. All other AI tools (Copilot, Cursor, Gemini) also read this file. Per-concern rules live under `.context/rules/process_*.md`.

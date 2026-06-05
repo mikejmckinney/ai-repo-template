@@ -1,5 +1,7 @@
 # The sealed alias->model map MUST NOT be committed (it would break blind grading).
 candidates.tsv
+orchestration-candidates.tsv
+duo-candidates.tsv
 
 # Transient worktrees and all run artifacts (diffs, logs, metadata) stay local.
 worktrees/
@@ -7,3 +9,4 @@ runs/
 
 # Keep the example manifest and scripts tracked.
 !candidates.tsv.example
+!duo-candidates.tsv.example

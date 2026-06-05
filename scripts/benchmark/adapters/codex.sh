@@ -33,10 +33,17 @@ adapter_run() {
       echo "flag:model_reasoning_effort=${effort}(nonstandard,coerced-by-codex)" > "${outdir}/effort-applied.txt" ;;
   esac
 
+  local model_args=()
+  if [[ "${model}" == "auto" ]]; then
+    echo "$(cat "${outdir}/effort-applied.txt");model=default-omitted(auto-requested)" > "${outdir}/effort-applied.txt"
+  else
+    model_args=(--model "${model}")
+  fi
+
   set +e
   ( cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
     printf '%s' "${prompt}" | codex exec \
-      --model "${model}" \
+      "${model_args[@]}" \
       "${effort_args[@]}" \
       --sandbox workspace-write \
       --json \

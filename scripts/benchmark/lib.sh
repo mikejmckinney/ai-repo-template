@@ -25,10 +25,18 @@ WORKTREES_DIR="${WORKTREES_DIR:-${RUNNER_DIR}/worktrees}"
 MANIFEST="${MANIFEST:-${RUNNER_DIR}/candidates.tsv}"
 # The task-agnostic candidate prompt, committed in the repo.
 PROMPT_FILE="${PROMPT_FILE:-${REPO_DIR}/.github/prompts/model-roi-benchmark-candidate.md}"
+BENCHMARK_SUBISSUE="${BENCHMARK_SUBISSUE:-#374}"
 # Candidate-safe injected task specs. Each benchmark TASK must have one file
 # named <task-id>.md unless TASK_FILE is explicitly supplied.
 TASKS_DIR="${TASKS_DIR:-${REPO_DIR}/.context/benchmarks/model-roi/tasks}"
 TASK_FILE="${TASK_FILE:-}"
+# Context variant for experiments. The default preserves current behavior.
+# "agents-import-only" leaves AGENTS.md unchanged but adds @AGENTS.md to
+# CLAUDE.md, isolating whether Claude Code reads the default AGENTS.md.
+# "full-rules-injected" appends .context/rules/*.md into AGENTS.md in the
+# candidate worktree for the duration of the agent run only.
+CONTEXT_VARIANT="${CONTEXT_VARIANT:-baseline}"
+ORCHESTRATION_VARIANT="${ORCHESTRATION_VARIANT:-none}"
 
 # ---- logging ---------------------------------------------------------------
 _ts()   { date -u +%Y-%m-%dT%H:%M:%SZ; }
@@ -144,7 +152,7 @@ render_prompt_for_run() {
       print "base_sha: " base_sha
       print "run_index: " run_index
       print "candidate_branch: " candidate_branch
-      print "subissue: #374"
+      print "subissue: " subissue
       in_meta = 1
       next
     }
@@ -164,7 +172,7 @@ render_prompt_for_run() {
     }
     in_task { next }
     { print }
-  ' "${PROMPT_FILE}" > "${prompt_out}"
+  ' subissue="${BENCHMARK_SUBISSUE}" "${PROMPT_FILE}" > "${prompt_out}"
 
   if grep -F -q 'INJECTED PER ROUND' "${prompt_out}" || grep -F -q 'cand-<NN>' "${prompt_out}"; then
     die "rendered prompt still contains benchmark placeholder text: ${prompt_out}"
@@ -310,6 +318,369 @@ branch_name() { printf 'benchmark/model-roi/%s-%s' "$1" "$2"; }
 
 # worktree_path TASK ALIAS RUN_INDEX
 worktree_path() { printf '%s/%s-%s-r%s' "${WORKTREES_DIR}" "$1" "$2" "$3"; }
+
+context_variant_slug() {
+  local variant="${1:-baseline}"
+  case "${variant}" in
+    baseline|"") printf 'baseline';;
+    agents-import-only) printf 'agents-import-only';;
+    full-rules-injected) printf 'full-rules-injected';;
+    *) die "unknown context variant: ${variant}";;
+  esac
+}
+
+orchestration_variant_slug() {
+  local variant="${1:-none}"
+  case "${variant}" in
+    none|"") printf 'none';;
+    pipeline-existing-overlays) printf 'pipeline-existing-overlays';;
+    pipeline-same-model) printf 'pipeline-same-model';;
+    *) die "unknown orchestration variant: ${variant}";;
+  esac
+}
+
+orchestration_metadata_path() {
+  printf '%s/orchestration-overlay.json' "$1"
+}
+
+_frontmatter_set_model() {
+  local file="$1" model_line="$2"
+  awk -v replacement="${model_line}" '
+    BEGIN { in_fm = 0; replaced = 0 }
+    NR == 1 && $0 == "---" { in_fm = 1; print; next }
+    in_fm && $0 == "---" {
+      if (!replaced) print replacement
+      in_fm = 0
+      print
+      next
+    }
+    in_fm && $0 ~ /^model:/ {
+      if (!replaced) {
+        print replacement
+        replaced = 1
+      }
+      next
+    }
+    { print }
+  ' "${file}" > "${file}.bench.tmp"
+  mv "${file}.bench.tmp" "${file}"
+}
+
+_toml_set_key() {
+  local file="$1" key="$2" value="$3"
+  awk -v key="${key}" -v replacement="${key} = \"" value "\"" '
+    BEGIN { replaced = 0 }
+    $0 ~ "^" key " = " {
+      if (!replaced) {
+        print replacement
+        replaced = 1
+      }
+      next
+    }
+    { print }
+    END {
+      if (!replaced) print replacement
+    }
+  ' "${file}" > "${file}.bench.tmp"
+  mv "${file}.bench.tmp" "${file}"
+}
+
+_overlay_model_for_platform() {
+  local platform="$1" model="$2"
+  case "${platform}" in
+    cursor)
+      if [[ "${model}" == "auto" ]]; then
+        printf 'inherit'
+      else
+        printf '%s' "${model}"
+      fi
+      ;;
+    gemini-cli)
+      # Gemini subagent overlays inherit the parent model when model is omitted.
+      printf '%s' "${model}"
+      ;;
+    *)
+      printf '%s' "${model}"
+      ;;
+  esac
+}
+
+_write_gemini_agent_overlays() {
+  local wt="$1" outdir="$2"
+  local src_dir="${wt}/.agents" dest_dir="${wt}/.gemini/agents"
+  if [[ ! -d "${src_dir}" && -d "${REPO_DIR}/.agents" ]]; then
+    src_dir="${REPO_DIR}/.agents"
+  fi
+  [[ -d "${src_dir}" ]] || die "cannot create Gemini overlays: missing ${src_dir}"
+  mkdir -p "${dest_dir}"
+  local role name desc
+  while IFS= read -r role; do
+    name="$(basename "${role}" .md)"
+    desc="$(awk -F ': *' 'NR == 1 && $0 == "---" { in_fm = 1; next } in_fm && $1 == "description" { print substr($0, index($0,$2)); exit }' "${role}")"
+    {
+      printf -- '---\n'
+      printf 'name: %s\n' "${name}"
+      printf 'description: %s\n' "${desc}"
+      printf 'kind: local\n'
+      printf -- '---\n\n'
+      printf '# %s (Gemini CLI benchmark overlay)\n\n' "${name}"
+      printf 'See canonical role definition: ../../.agents/%s.md\n' "${name}"
+    } > "${dest_dir}/${name}.md"
+  done < <(find "${src_dir}" -maxdepth 1 -type f -name '*.md' ! -name 'README.md' ! -name '_TEMPLATE.md' | sort)
+  cp -R "${dest_dir}" "${outdir}/gemini-agents.after-orchestration-overlay"
+}
+
+_seed_missing_overlay_dir() {
+  local wt="$1" outdir="$2" rel_dir="$3"
+  local target="${wt}/${rel_dir}" source="${REPO_DIR}/${rel_dir}"
+  [[ -d "${target}" ]] && return 1
+  [[ -d "${source}" ]] || die "missing overlay seed source: ${source}"
+  mkdir -p "$(dirname "${target}")"
+  cp -R "${source}" "${target}"
+  printf '%s\n' "${rel_dir}" >> "${outdir}/orchestration-generated-dirs.txt"
+  return 0
+}
+
+apply_orchestration_variant() {
+  local wt="$1" outdir="$2" variant="$3" platform="$4" model="$5" effort="$6"
+  variant="$(orchestration_variant_slug "${variant}")"
+  printf '%s\n' "${variant}" > "${outdir}/orchestration-variant.txt"
+
+  if [[ "${variant}" == "none" || "${variant}" == "pipeline-existing-overlays" ]]; then
+    {
+      printf '{\n'
+      printf '  "orchestration_variant": %s,\n' "$(json_escape "${variant}")"
+      printf '  "overlays_modified": false,\n'
+      printf '  "strategy": %s\n' "$(json_escape "$([[ "${variant}" == "pipeline-existing-overlays" ]] && printf 'use committed platform overlays unchanged' || printf 'monolithic/no pipeline overlay')")"
+      printf '}\n'
+    } > "$(orchestration_metadata_path "${outdir}")"
+    return 0
+  fi
+
+  local overlay_model
+  overlay_model="$(_overlay_model_for_platform "${platform}" "${model}")"
+  local changed_count=0 created_count=0 overlay_dir="" suffix="" rel file
+
+  case "${platform}" in
+    copilot)
+      overlay_dir="${wt}/.github/agents"; suffix=".agent.md" ;;
+    claude-code)
+      overlay_dir="${wt}/.claude/agents"; suffix=".md" ;;
+    cursor)
+      overlay_dir="${wt}/.cursor/agents"; suffix=".md" ;;
+    codex)
+      overlay_dir="${wt}/.codex/agents"; suffix=".toml" ;;
+    gemini-cli)
+      _write_gemini_agent_overlays "${wt}" "${outdir}"
+      created_count="$(find "${wt}/.gemini/agents" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')"
+      ;;
+    *)
+      die "orchestration overlay variant does not know platform: ${platform}" ;;
+  esac
+
+  if [[ -n "${overlay_dir}" ]]; then
+    local rel_overlay_dir="${overlay_dir#${wt}/}"
+    _seed_missing_overlay_dir "${wt}" "${outdir}" "${rel_overlay_dir}" && created_count="$(find "${overlay_dir}" -maxdepth 1 -type f -name "*${suffix}" | wc -l | tr -d ' ')"
+    [[ -d "${overlay_dir}" ]] || die "missing platform overlay directory: ${overlay_dir}"
+    mkdir -p "${outdir}/orchestration-overlays-before"
+    while IFS= read -r file; do
+      rel="${file#${wt}/}"
+      mkdir -p "${outdir}/orchestration-overlays-before/$(dirname "${rel}")"
+      cp "${file}" "${outdir}/orchestration-overlays-before/${rel}"
+      case "${platform}" in
+        codex)
+          _toml_set_key "${file}" "model" "${overlay_model}"
+          if [[ "${effort}" =~ ^(minimal|low|medium|high|xhigh)$ ]]; then
+            _toml_set_key "${file}" "model_reasoning_effort" "${effort}"
+          fi
+          ;;
+        copilot)
+          _frontmatter_set_model "${file}" "model: '${overlay_model}'" ;;
+        *)
+          _frontmatter_set_model "${file}" "model: ${overlay_model}" ;;
+      esac
+      git -C "${wt}" update-index --skip-worktree "${rel}" 2>/dev/null || true
+      changed_count=$((changed_count + 1))
+    done < <(find "${overlay_dir}" -maxdepth 1 -type f -name "*${suffix}" | sort)
+  fi
+
+  local sha_src="${outdir}/orchestration-overlays.after.tar"
+  tar -C "${wt}" -cf "${sha_src}" .github/agents .claude/agents .cursor/agents .codex/agents .gemini/agents 2>/dev/null || true
+  {
+    printf '{\n'
+    printf '  "orchestration_variant": %s,\n' "$(json_escape "${variant}")"
+    printf '  "overlays_modified": true,\n'
+    printf '  "strategy": "patch candidate worktree overlays so every role uses the candidate model where the platform supports overlays",\n'
+    printf '  "platform": %s,\n' "$(json_escape "${platform}")"
+    printf '  "model_policy": %s,\n' "$(json_escape "same-model:${overlay_model}")"
+    printf '  "effort_policy": %s,\n' "$(json_escape "same-effort:${effort}")"
+    printf '  "tracked_overlay_files_modified": %s,\n' "${changed_count}"
+    printf '  "generated_overlay_files": %s,\n' "${created_count}"
+    printf '  "artifact_sha256": %s\n' "$(json_escape "$(sha256sum "${sha_src}" | awk '{print $1}')")"
+    printf '}\n'
+  } > "$(orchestration_metadata_path "${outdir}")"
+}
+
+restore_orchestration_variant() {
+  local wt="$1" outdir="$2" variant="$3"
+  variant="$(orchestration_variant_slug "${variant}")"
+  [[ "${variant}" == "none" || "${variant}" == "pipeline-existing-overlays" ]] && return 0
+
+  if [[ -d "${outdir}/orchestration-overlays-before" ]]; then
+    local before rel
+    while IFS= read -r before; do
+      rel="${before#${outdir}/orchestration-overlays-before/}"
+      mkdir -p "${wt}/$(dirname "${rel}")"
+      cp "${before}" "${wt}/${rel}"
+      git -C "${wt}" update-index --no-skip-worktree "${rel}" 2>/dev/null || true
+    done < <(find "${outdir}/orchestration-overlays-before" -type f | sort)
+  fi
+  if [[ -d "${wt}/.gemini/agents" ]]; then
+    rm -rf "${wt}/.gemini/agents"
+    rmdir "${wt}/.gemini" 2>/dev/null || true
+  fi
+  if [[ -f "${outdir}/orchestration-generated-dirs.txt" ]]; then
+    local generated
+    while IFS= read -r generated; do
+      [[ -n "${generated}" ]] || continue
+      rm -rf "${wt}/${generated}"
+      rmdir "${wt}/$(dirname "${generated}")" 2>/dev/null || true
+    done < "${outdir}/orchestration-generated-dirs.txt"
+  fi
+}
+
+context_injection_metadata_path() {
+  printf '%s/context-injection.json' "$1"
+}
+
+apply_context_variant() {
+  local wt="$1" outdir="$2" variant="$3"
+  variant="$(context_variant_slug "${variant}")"
+  printf '%s\n' "${variant}" > "${outdir}/context-variant.txt"
+
+  if [[ "${variant}" == "baseline" ]]; then
+    {
+      printf '{\n'
+      printf '  "context_variant": "baseline",\n'
+      printf '  "injected": false\n'
+      printf '}\n'
+    } > "$(context_injection_metadata_path "${outdir}")"
+    return 0
+  fi
+
+  if [[ "${variant}" == "agents-import-only" ]]; then
+    local agents="${wt}/AGENTS.md"
+    local claude="${wt}/CLAUDE.md"
+    [[ -f "${agents}" ]] || die "cannot import AGENTS.md: missing ${agents}"
+    [[ -f "${claude}" ]] || die "cannot add Claude AGENTS import: missing ${claude}"
+
+    cp "${claude}" "${outdir}/CLAUDE.md.before-context-injection"
+    local changed=false
+    if ! grep -Fxq '@AGENTS.md' "${claude}"; then
+      {
+        printf '\n\n## Benchmark context import\n\n'
+        printf '@AGENTS.md\n'
+      } >> "${claude}"
+      changed=true
+    fi
+    git -C "${wt}" update-index --skip-worktree CLAUDE.md
+
+    {
+      printf '{\n'
+      printf '  "context_variant": %s,\n' "$(json_escape "${variant}")"
+      printf '  "injected": false,\n'
+      printf '  "agents_unchanged": true,\n'
+      printf '  "claude_agents_import": true,\n'
+      printf '  "claude_changed": %s,\n' "${changed}"
+      printf '  "artifacts": {\n'
+      printf '    "claude_before": "CLAUDE.md.before-context-injection"\n'
+      printf '  }\n'
+      printf '}\n'
+    } > "$(context_injection_metadata_path "${outdir}")"
+    return 0
+  fi
+
+  local agents="${wt}/AGENTS.md"
+  local claude="${wt}/CLAUDE.md"
+  local rules_dir="${wt}/.context/rules"
+  [[ -f "${agents}" ]] || die "cannot inject context: missing ${agents}"
+  [[ -d "${rules_dir}" ]] || die "cannot inject context: missing ${rules_dir}"
+
+  cp "${agents}" "${outdir}/AGENTS.md.before-context-injection"
+  if [[ -f "${claude}" ]]; then
+    cp "${claude}" "${outdir}/CLAUDE.md.before-context-injection"
+  fi
+
+  local injected="${outdir}/AGENTS.md.full-rules-injected"
+  cp "${agents}" "${injected}"
+  {
+    printf '\n\n<!-- BENCHMARK_CONTEXT_INJECTION_START -->\n'
+    printf '\n## Benchmark Context Injection: Full `.context/rules/*.md`\n\n'
+    printf 'This section is injected by the model-ROI benchmark harness for the Stage 1C context-injection variant. Treat these rule-file contents as canonical project instructions for this run.\n'
+  } >> "${injected}"
+
+  local rule count=0
+  while IFS= read -r rule; do
+    count=$((count + 1))
+    {
+      printf '\n\n### Begin `%s`\n\n' "${rule#${wt}/}"
+      sed -n '1,$p' "${rule}"
+      printf '\n\n### End `%s`\n' "${rule#${wt}/}"
+    } >> "${injected}"
+  done < <(find "${rules_dir}" -maxdepth 1 -type f -name '*.md' | sort)
+
+  {
+    printf '\n<!-- BENCHMARK_CONTEXT_INJECTION_END -->\n'
+  } >> "${injected}"
+
+  cp "${injected}" "${agents}"
+  if [[ -f "${claude}" ]] && ! grep -Fxq '@AGENTS.md' "${claude}"; then
+    {
+      printf '\n\n## Benchmark context import\n\n'
+      printf '@AGENTS.md\n'
+    } >> "${claude}"
+  fi
+  git -C "${wt}" update-index --skip-worktree AGENTS.md
+  if [[ -f "${claude}" ]]; then
+    git -C "${wt}" update-index --skip-worktree CLAUDE.md
+  fi
+
+  local bytes sha
+  bytes="$(wc -c < "${injected}" | tr -d ' ')"
+  sha="$(sha256sum "${injected}" | awk '{print $1}')"
+  {
+    printf '{\n'
+    printf '  "context_variant": %s,\n' "$(json_escape "${variant}")"
+    printf '  "injected": true,\n'
+    printf '  "source_glob": ".context/rules/*.md",\n'
+    printf '  "rule_file_count": %s,\n' "${count}"
+    printf '  "injected_agents_bytes": %s,\n' "${bytes}"
+    printf '  "injected_agents_sha256": %s,\n' "$(json_escape "${sha}")"
+    printf '  "artifacts": {\n'
+    printf '    "agents_before": "AGENTS.md.before-context-injection",\n'
+    printf '    "agents_injected": "AGENTS.md.full-rules-injected"'
+    if [[ -f "${outdir}/CLAUDE.md.before-context-injection" ]]; then
+      printf ',\n    "claude_before": "CLAUDE.md.before-context-injection"'
+    fi
+    printf '\n  }\n'
+    printf '}\n'
+  } > "$(context_injection_metadata_path "${outdir}")"
+}
+
+restore_context_variant() {
+  local wt="$1" outdir="$2" variant="$3"
+  variant="$(context_variant_slug "${variant}")"
+  [[ "${variant}" == "baseline" ]] && return 0
+
+  if [[ -f "${outdir}/AGENTS.md.before-context-injection" ]]; then
+    cp "${outdir}/AGENTS.md.before-context-injection" "${wt}/AGENTS.md"
+    git -C "${wt}" update-index --no-skip-worktree AGENTS.md 2>/dev/null || true
+  fi
+  if [[ -f "${outdir}/CLAUDE.md.before-context-injection" ]]; then
+    cp "${outdir}/CLAUDE.md.before-context-injection" "${wt}/CLAUDE.md"
+    git -C "${wt}" update-index --no-skip-worktree CLAUDE.md 2>/dev/null || true
+  fi
+}
 
 # make_worktree TASK ALIAS RUN_INDEX BASE_SHA -> echoes the worktree path.
 # Creates a fresh worktree checked out at BASE_SHA on a per-run branch.

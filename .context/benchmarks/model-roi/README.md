@@ -3,38 +3,57 @@
 > Durable protocol surface for the model ROI benchmark tracked in issue `#374`.
 > The benchmark-specific prompt lives at `.github/prompts/model-roi-benchmark-candidate.md`.
 > The current execution direction lives under `scripts/benchmark/`.
+> Repeatable operator steps live in [`benchmark-runbook.md`](./benchmark-runbook.md).
+> Current scored results live in [`results/agent-roi-benchmark-results.md`](./results/agent-roi-benchmark-results.md).
 
 ## Status
 
-- **Scope now:** Phase A / Core Stage 1 only
-- **Stage 1 effort policy:** target `medium`; Cursor is `medium (requested)`
-- **Deferred:** extended Stage 1 harness-effect rows, all Stage 2 sweeps, and any ADR-019 routing changes
-- **Manual fallback:** allowed after a documented headless failure via `make worktree` followed by `make record`
+- **Completed benchmark record:** monolithic Stage 1, extended Stage 1, Stage 1C context injection, Stage 1D duo planner/implementer, and issue #376 orchestration pipeline runs.
+- **Primary decision metric:** marginal ROI, computed as `score / marginal cost USD`.
+- **Stage 1 effort policy:** target `medium` where selectable; use platform default only where no effort control exists and record the caveat.
+- **Manual fallback:** allowed after a documented headless failure via `make worktree` followed by `make record`; direct GUI agents such as Antigravity need explicit manual-capture evidence.
 
 ## Companion surfaces
+
+Benchmark prompts and benchmark tasks intentionally live in different places.
+Prompts are reusable **execution wrappers**: they define how an agent should run
+the benchmark. Task files are benchmark **payloads**: they define what work the
+agent must perform, plus sealed reference metadata for evaluators.
 
 | Path | Purpose |
 |---|---|
 | `.github/prompts/model-roi-benchmark-candidate.md` | Canonical prompt body reused unchanged across candidates. Candidate-specific input is limited to the run-metadata block and injected task. |
+| `.github/prompts/model-roi-duo-planner.md` | Stage 1D planner-phase prompt; creates the plan artifact only. |
+| `.github/prompts/model-roi-duo-implementer.md` | Stage 1D implementer-phase prompt; consumes the plan artifact and produces the scored diff. |
+| `.github/prompts/model-roi-orchestration-pipeline-candidate.md` | Issue #376 pipeline prompt; enables subagents/handoffs while keeping runner-owned push/PR creation. |
+| `.context/benchmarks/model-roi/benchmark-runbook.md` | Repeatable setup, run, grading, telemetry, and known-issues procedure for future benchmark sessions. |
+| `.context/benchmarks/model-roi/stage-1d-duo-workflow.md` | Stage 1D planner/implementer experiment protocol, candidates, cost view, and commands. |
+| `.context/benchmarks/model-roi/issue-376-orchestration-pipeline.md` | Pipeline experiment protocol, candidate set, overlay policy, and grading notes for issue #376. |
+| `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md` | Current scored benchmark record, cost source register, and ROI tables used to justify repo-local ROI/performance revisions. |
 | `.context/benchmarks/model-roi/tasks/` | Maintainer-authored task specs. Each file has candidate-safe task text plus sealed reference metadata. |
-| `scripts/benchmark/Makefile` | Current operator entrypoint for `base`, `run`, `suite`, `worktree`, `record`, `collect`, and `unseal`. |
+| `scripts/benchmark/Makefile` | Current operator entrypoint for `base`, `run`, `suite`, `duo-run`, `duo-suite`, `worktree`, `record`, `collect`, and `unseal`. |
 | `scripts/benchmark/candidates.tsv.example` | Example sealed alias manifest for Core Stage 1 plus later-phase placeholders. |
+| `scripts/benchmark/duo-candidates.tsv.example` | Example sealed alias manifest for Stage 1D planner/implementer candidates. |
+| `scripts/benchmark/orchestration-candidates.tsv.example` | Example sealed alias manifest for issue #376 pipeline candidates. |
 | `.context/benchmarks/model-roi/result-template.md` | Per-alias run record with blind-safe and sealed sections. |
 | `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template. |
 
-## Phase A contract
+## Core Stage 1 Contract
 
-Phase A exists to produce a **blind, auditable Core Stage 1 screen** from a frozen base branch and a single prompt body shared across aliased candidates.
+Core Stage 1 exists to produce a **blind, auditable screen** from a frozen base
+branch and a single prompt body shared across aliased candidates. Later
+experiments reuse the same artifact model but vary context injection,
+orchestration, or planner/implementer workflow shape.
 
 Required behavior:
 
 1. Reuse the same prompt body for every candidate run.
 2. Inject exactly one concrete task from `.context/benchmarks/model-roi/tasks/<task-id>.md`.
 3. Keep candidate branches and grader-facing artifacts aliased.
-4. Run only **Core Stage 1** in this phase.
+4. Keep each stage/variant explicit in its task id, manifest, and results section.
 5. Keep Stage 1 effort fixed at `medium` where the harness can set it; Cursor remains `medium (requested)`.
 6. Record manual fallback explicitly when a bundled adapter fails headlessly.
-7. Defer Stage 2 and any model-routing remap decision to Phase B / Plan v2.
+7. Defer new task classes, new effort sweeps, or model-routing remap decisions to an explicit new benchmark plan.
 
 ## Task selection
 
@@ -46,12 +65,18 @@ Committed Phase A task specs:
 |---|---|---:|---:|---|
 | `opfit-281-class-a` | A — operational fit | #281 | #288 | `e8f5f96c44568a32e40ce1995b9ffb80c0009d28` |
 | `opfit-326-class-b` | B — reasoning / code | #326 | #358 | `f3145229b2ad8044519ed1c1f88b5f4612d90718` |
+| `opfit-281-class-a-premerge-pipeline` | A — operational fit / pipeline | #281 | #288 | `e8f5f96c44568a32e40ce1995b9ffb80c0009d28` |
+| `opfit-326-class-b-premerge-pipeline` | B — reasoning / code / pipeline | #326 | #358 | `f3145229b2ad8044519ed1c1f88b5f4612d90718` |
 
 The runner refuses to run when `TASK=<id>` does not resolve to a task file, when the task file lacks `task_class`, or when the rendered prompt still contains benchmark placeholder text such as `INJECTED PER ROUND`.
 
 ## Execution reality
 
-The local `scripts/benchmark/` runner is now the committed Phase A execution base. It includes the approved Stage 1 guardrails, while full paid benchmark execution and later-phase sweeps remain intentionally out of scope for this rollout.
+The local `scripts/benchmark/` runner is the execution base for monolithic,
+context-injected, pipeline, and duo benchmark runs. The historical results now
+cover the paid Stage 1 screen and follow-on experiments; use
+[`benchmark-runbook.md`](./benchmark-runbook.md) when repeating or extending the
+benchmark.
 
 | Protocol requirement | Prototype status in this worktree | Notes |
 |---|---|---|
@@ -64,9 +89,11 @@ The local `scripts/benchmark/` runner is now the committed Phase A execution bas
 | Blind vs. sealed artifact split | Present | Model identity and detailed effort metadata stay sealed; blind surfaces expose only alias-safe operational facts. |
 | Documented manual fallback after automated runtime failure | Present | Automated candidate failures keep the worktree and may be finished via `make record`; never count this as silent automated success. |
 
-## Current operator flow
+## Current Operator Flow
 
-The commands below reflect the current Phase A operator flow.
+The commands below reflect the current monolithic Stage 1 operator flow. For a
+full reproduction guide, including context injection, pipeline, duo, telemetry,
+and known issues, use [`benchmark-runbook.md`](./benchmark-runbook.md).
 
 1. Choose one committed task id, for example `opfit-281-class-a` or `opfit-326-class-b`.
 2. Create the sealed manifest by copying `scripts/benchmark/candidates.tsv.example` to `scripts/benchmark/candidates.tsv`, then edit only the sealed mapping.
@@ -107,6 +134,61 @@ The commands below reflect the current Phase A operator flow.
    make -C scripts/benchmark unseal TASK=<task-id>
    ```
 
+## Issue #376 pipeline flow
+
+Issue #376 reuses the same frozen-base and blind-artifact apparatus, but uses a
+pipeline-specific prompt and candidate manifest:
+
+```bash
+cp scripts/benchmark/orchestration-candidates.tsv.example scripts/benchmark/orchestration-candidates.tsv
+make -C scripts/benchmark run \
+  TASK=opfit-281-class-a-premerge-pipeline \
+  BASE=<base-sha> \
+  ALIAS=cand-12-pipe \
+  MANIFEST=orchestration-candidates.tsv \
+  PROMPT_FILE=../../.github/prompts/model-roi-orchestration-pipeline-candidate.md \
+  BENCHMARK_SUBISSUE=#376 \
+  ORCHESTRATION_VARIANT=pipeline-same-model
+```
+
+Use `ORCHESTRATION_VARIANT=pipeline-existing-overlays` for `cand-03-pipe` to
+measure the committed Copilot tiered-overlay baseline. Use
+`ORCHESTRATION_VARIANT=pipeline-same-model` for same-model and auto-router
+pipeline candidates.
+
+## Stage 1D duo workflow
+
+Stage 1D reuses the same Class A/Class B frozen bases, but runs a planner model
+first and an implementer model second. The planner worktree is separate and
+plan-only; the implementer worktree starts clean from the frozen base and
+receives the planner artifact in its prompt.
+
+```bash
+cp scripts/benchmark/duo-candidates.tsv.example scripts/benchmark/duo-candidates.tsv
+
+make -C scripts/benchmark duo-suite \
+  TASK=opfit-281-class-a-premerge \
+  BASE=6946d04b3fd17014e32d9da5ea947acf6df14360 \
+  STAGE=1d
+
+make -C scripts/benchmark duo-suite \
+  TASK=opfit-326-class-b-premerge \
+  BASE=cff89bffe7e15e155bd740b6c7a0f158a6f2bad6 \
+  STAGE=1d
+```
+
+Single-candidate runs use `duo-run`:
+
+```bash
+make -C scripts/benchmark duo-run \
+  TASK=opfit-281-class-a-premerge \
+  BASE=6946d04b3fd17014e32d9da5ea947acf6df14360 \
+  ALIAS=cand-12-duo
+```
+
+Total Stage 1D ROI must include planner cost plus implementer cost. Do not
+compare an implementer-only cost against monolithic candidates.
+
 ## Artifact model
 
 The benchmark keeps **grader-facing** and **sealed** artifacts separate.
@@ -131,6 +213,13 @@ Expected artifacts:
 - `meta-sealed.json` — platform/model/agent identity and sealed metadata
 - `agent-output.jsonl` — raw machine-readable agent output
 - `logs/` — adapter stderr and runtime logs
+
+Stage 1D duo runs additionally write:
+
+- `planner/agent-output.jsonl` — planner raw output
+- `planner/plan.md` — extracted planner artifact passed to the implementer
+- `implementer/agent-output.jsonl` — implementer raw output
+- `implementer/logs/` — implementer stderr/runtime logs
 
 ### Task-level artifacts
 

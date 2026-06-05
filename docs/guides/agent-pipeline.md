@@ -256,9 +256,9 @@ surface, not a downstream build-stage prompt. It pairs with
 `.context/benchmarks/model-roi/README.md` and the current `scripts/benchmark/`
 runner direction for the model ROI benchmark tracked in issue `#374`.
 
-Current scope is **Phase A / Core Stage 1 only**. Do not treat it as permission
-to start extended Stage 1 rows or Stage 2 sweeps; those stay deferred to
-Phase B / Plan v2. If a bundled adapter cannot complete headlessly, the
+Use `.context/benchmarks/model-roi/benchmark-runbook.md` to select the intended
+benchmark variant before running monolithic, context-injected, duo, or
+orchestration candidates. If a bundled adapter cannot complete headlessly, the
 documented fallback is `make worktree` followed by `make record`, and the run
 must stay auditable as a manual-capture path rather than silent automation.
 
