@@ -1,0 +1,8 @@
+# path	reason
+.context/00_INDEX.md	Map of available context surfaces and lazy-load expectations.
+.context/rules/agent_ownership.md	Required before touching files.
+.context/sessions/latest_summary.md	Durable lessons from recent work.
+docs/decisions/README.md	ADR index and supersession discipline.
+docs/decisions/adr-template.md	Architecture Decision Record template.
+.context/rules/process_model_tier.md	Per-role model tier dispatch convention.
+.context/rules/repo_orchestration_patterns.md	Orchestration patterns cited at review gates.

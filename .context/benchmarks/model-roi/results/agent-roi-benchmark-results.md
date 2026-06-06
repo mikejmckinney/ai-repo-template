@@ -5,7 +5,8 @@ Issues: #374, #376
 Status: blind scores locked for the completed benchmark sessions; sealed alias
 mapping and cost addenda appended. This record now covers monolithic Stage 1,
 extended Stage 1, Stage 1C context injection, Stage 1D duo planner/implementer,
-and issue #376 orchestration pipeline runs.
+issue #376 orchestration pipeline runs, and Stage 1E targeted context-pack screen
+(issue #378).
 
 This file supersedes the earlier local `grading-scores-blind.tsv` `score_10` shorthand files. Those
 10-point scores were evaluator notes from blind diff review, not the official #374 weighted scoring
@@ -521,6 +522,123 @@ Pipeline session recovery notes:
 | `cand-03-pipe` Class B | `/home/codespace/.copilot/session-state/1666dadf-fc10-4e8c-84e3-155c63eb709e/events.jsonl` | Recovered `session.shutdown.totalNanoAiu=817212650000`; cost `$8.172126`, ROI `10.28`. |
 | `cand-21-pipe` Class A | `/home/codespace/.gemini/antigravity-cli/brain/37d3147f-39e1-45ce-ab27-78a9f4ee3b50/` and `/home/codespace/.gemini/antigravity-cli/conversations/37d3147f-39e1-45ce-ab27-78a9f4ee3b50.db` | Scored agy run `r3`; reopen/search this Antigravity conversation and run `/stats model` if the CLI supports resuming that brain. |
 | `cand-21-pipe` Class B | `/home/codespace/.gemini/antigravity-cli/brain/4f9c02d9-26da-4e0c-8b58-daf9b06f5907/` and `/home/codespace/.gemini/antigravity-cli/conversations/4f9c02d9-26da-4e0c-8b58-daf9b06f5907.db` | Scored agy run `r2`; reopen/search this Antigravity conversation and run `/stats model` if the CLI supports resuming that brain. |
+
+## Stage 1E Targeted Context-Pack Results
+
+Stage 1E tests targeted context packs as a middle path between lazy loading and
+full `.context/rules/*.md` injection. It reuses the historical Class A and Class B
+frozen bases from issues #374/#376 and measures whether smaller named context
+bundles improve quality enough to offset added token/cache cost.
+
+Tracking issue: #378. CP-1 screen manifest:
+`.context/benchmarks/model-roi/stage-1e-pack-screen-candidates.tsv.example`
+(`ctx-cur` = cursor / composer-2.5; `ctx-gem` = gemini-cli / gemini-3.5-flash
+requested). Scores locked 2026-06-06 from diff-only grading before unseal;
+locked rows in `scripts/benchmark/runs/stage-1e-blind-scores-locked.tsv`.
+Marginal cost/ROI backfilled 2026-06-06 from per-run `agent-output.jsonl`
+(JSON stats for Gemini; top-level `.usage` for Cursor) using the same Stage 1
+rate cards below.
+
+**Base context note:** candidates ran against frozen-base `AGENTS.md`, not the
+current workspace copy. Class A base `6946d04…` carried **AGENTS.md v14**; Class B
+base `cff89bf…` carried **AGENTS.md v20**. Pack manifests were resolved from the
+harness at run time (issue #378 implementation tree).
+
+### Stage 1E Class A: targeted context packs
+
+Task: `opfit-281-class-a-premerge`. Base SHA: `6946d04b3fd17014e32d9da5ea947acf6df14360`.
+
+| Alias | Platform/model | Observed model | Context variant | Pack files | Pack bytes | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Total /100 | Score delta | Wall s | Cost USD | ROI | ROI delta | Summary |
+|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `full-rules-injected` | 14 | 102729 | 29 | 24 | 17 | 14 | 8 | 92 | +1 | 220 | `$0.103696` | `887.21` | +63.14 | Best Class A raw score; clean 055 expansion |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `baseline` | 0 | 0 | 29 | 24 | 17 | 14 | 7 | 91 | 0 | 281 | `$0.110427` | `824.07` | 0 | Near-best without injection; nullglob reference-quality |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:class-a-process` | 6 | 45673 | 28 | 23 | 17 | 14 | 8 | 90 | +6 | 200 | `$0.119763` | `751.48` | +305.95 | Only pack within -2 of best for this alias; fast single-file fix; **ROI winner for `ctx-cur`** |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `baseline` | 0 | 0 | 27 | 22 | 16 | 14 | 5 | 84 | 0 | 335 | `$0.188539` | `445.53` | 0 | Unquoted glob loop; correct but weaker than reference |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `full-rules-injected` | 14 | 102729 | 27 | 22 | 16 | 14 | 4 | 83 | -1 | 382 | `$0.294135` | `282.18` | -163.35 | Full injection did not help cursor; slowest Class A cursor run |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:class-a-process` | 6 | 45673 | 25 | 21 | 14 | 13 | 6 | 79 | -12 | 303 | `$0.238923` | `330.65` | -493.42 | Extra `assertions.sh` tweak; >3pt degradation vs baseline |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:core-min` | 3 | 27587 | 26 | 20 | 14 | 13 | 7 | 80 | -4 | 271 | `$0.127994` | `625.03` | +179.50 | Extra `AI_REPO_GUIDE` scope noise |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:core-min` | 3 | 27587 | 26 | 19 | 13 | 13 | 8 | 79 | -12 | 239 | `$0.126870` | `622.68` | -201.39 | `IMPLEMENTATION_PLAN.md` junk in diff |
+
+Score delta is vs the same alias's `baseline` `CONTEXT_VARIANT` row for this task class
+(e.g. `ctx-cur` pack rows compare to `ctx-cur` + `baseline`, not to `ctx-gem`).
+ROI delta is vs the same alias's `baseline` marginal ROI. Baseline rows always show `0`.
+Gemini costs use JSON `.stats.models[*].tokens` and Gemini 3 Flash Preview rates; Cursor
+costs use top-level `.usage` and Composer 2.5 Standard rates (see Stage 1 rate card).
+
+### Stage 1E Class B: targeted context packs
+
+Task: `opfit-326-class-b-premerge`. Base SHA: `cff89bffe7e15e155bd740b6c7a0f158a6f2bad6`.
+
+| Alias | Platform/model | Observed model | Context variant | Pack files | Pack bytes | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Total /100 | Score delta | Wall s | Cost USD | ROI | ROI delta | Summary |
+|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `full-rules-injected` | 14 | 143054 | 27 | 23 | 16 | 14 | 8 | 88 | +14 | 268 | `$0.411508` | `213.85` | +19.58 | Best Class B raw score; focused 6-file helper delivery |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:core-min` | 3 | 28105 | 27 | 23 | 17 | 13 | 6 | 86 | +12 | 248 | `$0.182007` | `472.51` | +278.24 | Sweet-spot pack: within -2 of best raw score; **ROI winner for `ctx-gem`** |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:core-min` | 3 | 28105 | 26 | 22 | 16 | 13 | 7 | 84 | +16 | 281 | `$0.384231` | `218.62` | +51.01 | Focused helper; large gain vs weak baseline |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:class-b-implementation` | 6 | 50230 | 24 | 20 | 15 | 12 | 7 | 78 | +4 | 280 | `$0.417283` | `186.92` | -7.34 | Root junk files (`called_once`, `counter`) |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `baseline` | 0 | 0 | 24 | 20 | 12 | 13 | 5 | 74 | 0 | 373 | `$0.380922` | `194.27` | 0 | Under-delivered; AGENTS/compliance fixture churn |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `full-rules-injected` | 14 | 143054 | 25 | 21 | 13 | 13 | 2 | 74 | +6 | 719 | `$0.687274` | `107.67` | -59.94 | Broad but very slow |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:class-b-implementation` | 6 | 50230 | 23 | 19 | 11 | 12 | 5 | 70 | +2 | 371 | `$0.456512` | `153.34` | -14.27 | 15-file blast radius |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `baseline` | 0 | 0 | 22 | 18 | 10 | 12 | 6 | 68 | 0 | 320 | `$0.405702` | `167.61` | 0 | 17-file blast radius |
+
+Category scores are from blind diff grading (`scripts/benchmark/runs/stage-1e-blind-scores-locked.tsv`); rubric weights match Stage 1 (correctness 30, quality 25, process 20, reliability 15, latency 10).
+
+### Context-pack comparison
+
+| Task class | Pack / variant | Mean score | Mean cost | Mean ROI | Scope-noise count | Process-miss count | Recommendation |
+|---|---|---:|---:|---:|---:|---:|---|
+| A | `baseline` | 87.5 | `$0.149483` | `634.80` | 0 | 1 | **Default for Class A** — best mean ROI; `ctx-gem` raw score 91 |
+| A | `pack:class-a-process` | 84.5 | `$0.179343` | `541.07` | 1 | 1 | Optional **cursor-only** pack (`ctx-cur` ROI +306 vs baseline) |
+| A | `full-rules-injected` | 87.5 | `$0.198916` | `584.70` | 0 | 1 | Raw-score tie on mean but lower ROI than baseline; avoid default |
+| A | `pack:core-min` | 79.5 | `$0.127432` | `623.86` | 2 | 2 | Not recommended — >3pt degradation on `ctx-gem` |
+| B | `pack:core-min` | 85.0 | `$0.283119` | `345.56` | 1 | 0 | **Default targeted pack for Class B** — best mean ROI; within -2 raw score of full-rules on `ctx-gem` |
+| B | `full-rules-injected` | 81.0 | `$0.549391` | `160.76` | 2 | 1 | Raw-score winner on `ctx-gem` but ~2× mean cost and lower ROI than `core-min` |
+| B | `pack:class-b-implementation` | 74.0 | `$0.436898` | `170.13` | 4 | 3 | Not recommended |
+| B | `baseline` | 71.0 | `$0.393312` | `180.94` | 5 | 4 | Under-delivered on this task without targeted context |
+
+Mean score, mean cost, and mean ROI average the two CP-1 aliases (`ctx-cur`, `ctx-gem`) per pack/variant.
+
+### Stage 1E model verification
+
+| Alias | Requested | Observed (all 8 runs) | Verification source | agy fallback |
+|---|---|---|---|---|
+| `ctx-gem` | `gemini-3.5-flash` | `gemini-3-flash-preview` | `agent-output.jsonl` → `.stats.models` keys; adapter remap in `effort-applied.txt` | none |
+| `ctx-cur` | `composer-2.5` | `composer-2.5` (unverified by JSON) | `--model` pin + agent self-report in `result` text; JSON has `.usage` only | n/a |
+
+Gemini did **not** run a literal `gemini-3.5-flash` API model — same adapter behavior as Stage 1 `cand-24`
+(`gemini-3.5-flash` picker alias → `gemini-3-flash-preview` backend). No `agy` fallback occurred.
+
+**Why Cursor “model” was not in the first CP-1 results pass:** Stage 1 never recorded Cursor's
+chosen model from JSON either — `cursor-agent --output-format json` returns token usage but
+**no model field** (verified on Stage 1 `cand-06` and Stage 1E `ctx-cur` artifacts). Stage 1
+listed `cursor / composer-2.5` from the sealed manifest and `effort-applied.txt`, not from
+runtime telemetry. The benchmark prompt also injects `candidate_model:` into the rendered prompt,
+and agents echo it in the final text summary (`Alias / Platform / Model` block) — that
+self-report was present in Stage 1E `agent-output.jsonl` `result` text but was not extracted into
+the first results tables. Copilot **auto** rows are different: those can show a routed model from
+session shutdown events (`cand-19`), which is why the original suite may feel more explicit for
+some platforms than for pinned Cursor runs.
+
+### Stage 1E notes
+
+- **Raw-score winner (Class A):** `full-rules-injected` / `ctx-gem` (92), tied on mean with baseline (87.5) but with 103KB injected bytes.
+- **Raw-score winner (Class B):** `full-rules-injected` / `ctx-gem` (88).
+- **ROI winner (Class A):** `baseline` on mean ROI (`634.80`); per-alias peaks are `pack:class-a-process` / `ctx-cur` (`751.48`, +306 vs baseline) and `full-rules-injected` / `ctx-gem` (`887.21`, +63 vs baseline).
+- **ROI winner (Class B):** `pack:core-min` / `ctx-gem` (`472.51`, +278 vs baseline) — raw-score winner (`full-rules` 88) loses on ROI by a wide margin.
+- **Raw-score vs ROI winner differ:** yes for Class B (`full-rules` raw score, `core-min` ROI).
+- **>3pt model degradation under a pack:** Class A `pack:core-min` and `pack:class-a-process` on `ctx-gem` (-12 vs baseline 91); Class B packs did not degrade `ctx-gem` by >3 vs baseline.
+- **Full-rule injection dominated?** Class A: yes for cursor (worse score, more bytes, lower ROI). Class B: full-rules wins raw score on `ctx-gem` but `core-min` wins ROI at ~44% lower cost.
+- **Baseline lazy best?** Class A yes for `ctx-gem` raw score and mean ROI. Class B no — baseline under-delivered; targeted pack helps.
+- **Telemetry:** token counts captured in `agent-output.jsonl` for all 16 runs (`--output-format json`); `session-summary` sidecar not available in this `gemini` CLI build and was not required for cost. CP-2 robustness not yet run.
+
+### Proposed follow-up: context loading policy
+
+- **Default:** baseline lazy loading.
+- **Class A:** no automatic injection by default; optional `pack:class-a-process` when cursor/composer runs need stronger process/doc-sync reminders (accept ~1–2pt tradeoffs on some models).
+- **Class B:** `pack:core-min` when code/test reasoning risk is high and baseline lazy under-delivers.
+- **Avoid:** `full-rules-injected` by default — use only for measured rescue cases or explicit human opt-in.
+- **Exception:** re-benchmark on current `AGENTS.md` (v22 decomposition) before changing production routing; CP-1 bases used v14/v20.
+
+These results support `pack:core-min` as the default targeted pack for Class B benchmark-like work and **baseline lazy loading** (not automatic pack injection) for Class A, subject to future reruns when model pricing, `AGENTS.md` version, or context-loading behavior changes.
 
 ## Amortized / Subscription ROI
 

@@ -35,6 +35,9 @@ agent must perform, plus sealed reference metadata for evaluators.
 | `scripts/benchmark/candidates.tsv.example` | Example sealed alias manifest for Core Stage 1 plus later-phase placeholders. |
 | `scripts/benchmark/duo-candidates.tsv.example` | Example sealed alias manifest for Stage 1D planner/implementer candidates. |
 | `scripts/benchmark/orchestration-candidates.tsv.example` | Example sealed alias manifest for issue #376 pipeline candidates. |
+| `.context/benchmarks/model-roi/context-packs/` | Stage 1E targeted context-pack manifests (`<pack-id>.tsv`). |
+| `.context/benchmarks/model-roi/stage-1e-pack-screen-candidates.tsv.example` | Example manifest for CP-1 pack screen (`ctx-cur`, `ctx-gem`). |
+| `.context/benchmarks/model-roi/stage-1e-pack-robustness-candidates.tsv.example` | Example manifest for CP-2 robustness check. |
 | `.context/benchmarks/model-roi/result-template.md` | Per-alias run record with blind-safe and sealed sections. |
 | `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template. |
 
@@ -188,6 +191,82 @@ make -C scripts/benchmark duo-run \
 
 Total Stage 1D ROI must include planner cost plus implementer cost. Do not
 compare an implementer-only cost against monolithic candidates.
+
+## Targeted Context-Pack Stage (1E)
+
+Stage 1E tests **named small context packs** as a middle path between baseline
+lazy loading and full `.context/rules/*.md` injection. Issue #374/#376 showed
+full-rule injection can help weaker runs but often hurts ROI for the best
+candidates; Stage 1E measures the sweet spot.
+
+Supported `CONTEXT_VARIANT` values:
+
+```text
+baseline
+agents-import-only
+full-rules-injected
+pack:<pack-id>    # e.g. pack:core-min, pack:class-a-process
+```
+
+Use `RUN_GROUP=<id>` when running multiple variants against the same task so
+artifacts land under `scripts/benchmark/runs/<task>/groups/<run-group>/` and do
+not overwrite each other.
+
+### Pack list
+
+| Pack ID | Use |
+|---|---|
+| `core-min` | Index, ownership map, latest session summary |
+| `class-a-process` | Class A process/doc/PR completion rules |
+| `class-b-implementation` | Class B code quality + doc-sync rules |
+| `workflow-risk` | ADR-016 + sandbox verification for risky workflow edits |
+| `adr-docs` | ADR index/template + model tier + orchestration patterns |
+
+### CP-1 pack screen commands
+
+```bash
+CLASS_A_BASE=6946d04b3fd17014e32d9da5ea947acf6df14360
+CLASS_B_BASE=cff89bffe7e15e155bd740b6c7a0f158a6f2bad6
+PACK_SCREEN_MANIFEST="$PWD/.context/benchmarks/model-roi/stage-1e-pack-screen-candidates.tsv.example"
+
+RUN_GROUP=ctx-a-core-min \
+MANIFEST="$PACK_SCREEN_MANIFEST" \
+make -C scripts/benchmark suite \
+  TASK=opfit-281-class-a-premerge \
+  BASE="$CLASS_A_BASE" \
+  STAGE=1 \
+  CONTEXT_VARIANT=pack:core-min
+```
+
+Repeat with `RUN_GROUP` and `CONTEXT_VARIANT` for the Class A matrix
+(`baseline`, `pack:core-min`, `pack:class-a-process`, `full-rules-injected`)
+and Class B matrix (`baseline`, `pack:core-min`, `pack:class-b-implementation`,
+`full-rules-injected`). See [`benchmark-runbook.md`](./benchmark-runbook.md).
+
+Collect per group (do **not** unseal before blind scores are locked):
+
+```bash
+RUN_GROUP=ctx-a-core-min \
+make -C scripts/benchmark collect \
+  TASK=opfit-281-class-a-premerge \
+  STAGE=1
+```
+
+### Sweet-spot decision rule
+
+```text
+sweet_spot_pack =
+  highest marginal ROI pack
+  with score >= best_score_for_task_class - 2
+  and no model-specific degradation > 3 points
+  and lower injected bytes/tokens than full-rules injection
+```
+
+If no pack meets this threshold, recommend baseline lazy loading plus targeted
+manual reads — not automatic full-rule injection.
+
+**Caveat:** Stage 1E is benchmark evidence only. It does not change production
+model routing or default context loading without a separate ADR/policy PR.
 
 ## Artifact model
 

@@ -37,6 +37,8 @@ TASK_FILE="${TASK_FILE:-}"
 # candidate worktree for the duration of the agent run only.
 CONTEXT_VARIANT="${CONTEXT_VARIANT:-baseline}"
 ORCHESTRATION_VARIANT="${ORCHESTRATION_VARIANT:-none}"
+# Optional artifact grouping for repeated variant suites on the same task/alias.
+RUN_GROUP="${RUN_GROUP:-}"
 
 # ---- logging ---------------------------------------------------------------
 _ts()   { date -u +%Y-%m-%dT%H:%M:%SZ; }
@@ -252,17 +254,50 @@ require_alias_stage_one() {
 # adapter_path PLATFORM -> the adapter script for that platform.
 adapter_path() { printf '%s/adapters/%s.sh' "${RUNNER_DIR}" "$1"; }
 
+validate_run_group_id() {
+  local id="${1:-}"
+  [[ -n "${id}" ]] || die "RUN_GROUP id is empty"
+  [[ "${id}" =~ ^[A-Za-z0-9._-]+$ ]] || die "invalid RUN_GROUP id: ${id}"
+}
+
+validate_pack_id() {
+  local id="${1:-}"
+  [[ -n "${id}" ]] || die "context pack id is empty"
+  [[ "${id}" =~ ^[A-Za-z0-9._-]+$ ]] || die "invalid context pack id: ${id}"
+}
+
+context_packs_dir() {
+  printf '%s/.context/benchmarks/model-roi/context-packs' "${REPO_DIR}"
+}
+
+context_pack_manifest_path() {
+  local pack_id="$1"
+  validate_pack_id "${pack_id}"
+  printf '%s/%s.tsv' "$(context_packs_dir)" "${pack_id}"
+}
+
+# runs_task_base TASK -> artifact root for a task (optionally grouped).
+runs_task_base() {
+  local task="$1"
+  if [[ -n "${RUN_GROUP:-}" ]]; then
+    validate_run_group_id "${RUN_GROUP}"
+    printf '%s/%s/groups/%s' "${RUNS_DIR}" "${task}" "${RUN_GROUP}"
+  else
+    printf '%s/%s' "${RUNS_DIR}" "${task}"
+  fi
+}
+
 # run_outdir TASK ALIAS RUN_INDEX -> the artifact directory for one run.
-run_outdir() { printf '%s/%s/%s/r%s' "${RUNS_DIR}" "$1" "$2" "$3"; }
+run_outdir() { printf '%s/%s/r%s' "$(runs_task_base "$1")" "$2" "$3"; }
 
 # result_file_path TASK ALIAS RUN_INDEX -> the terminal-state contract file.
 result_file_path() { printf '%s/result.json' "$(run_outdir "$1" "$2" "$3")"; }
 
 # suite_alias_set_path TASK STAGE -> durable record of the alias set a suite executed.
-suite_alias_set_path() { printf '%s/%s/stage-%s-aliases.txt' "${RUNS_DIR}" "$1" "$2"; }
+suite_alias_set_path() { printf '%s/stage-%s-aliases.txt' "$(runs_task_base "$1")" "$2"; }
 
 # suite_manifest_snapshot_path TASK STAGE -> frozen sealed manifest used by a suite.
-suite_manifest_snapshot_path() { printf '%s/%s/stage-%s-manifest.tsv' "${RUNS_DIR}" "$1" "$2"; }
+suite_manifest_snapshot_path() { printf '%s/stage-%s-manifest.tsv' "$(runs_task_base "$1")" "$2"; }
 
 # derive_effort_status REQUESTED MECHANISM APPLIED_DESC -> neutral blind token.
 derive_effort_status() {
@@ -331,8 +366,54 @@ context_variant_slug() {
     baseline|"") printf 'baseline';;
     agents-import-only) printf 'agents-import-only';;
     full-rules-injected) printf 'full-rules-injected';;
+    pack:*)
+      local pack_id="${variant#pack:}"
+      validate_pack_id "${pack_id}"
+      [[ -f "$(context_pack_manifest_path "${pack_id}")" ]] \
+        || die "unknown context pack id (manifest missing): ${pack_id}"
+      printf 'pack:%s' "${pack_id}"
+      ;;
     *) die "unknown context variant: ${variant}";;
   esac
+}
+
+validate_context_pack_entry_path() {
+  local path="$1"
+  [[ -n "${path}" ]] || die "empty path in context pack manifest"
+  [[ "${path}" != /* ]] || die "absolute path rejected in context pack: ${path}"
+  [[ "${path}" != *".."* ]] || die "path traversal rejected in context pack: ${path}"
+  case "${path}" in
+    AGENTS.md|CLAUDE.md)
+      die "context pack must not reference ${path} (avoid self-injection / facade duplication)"
+      ;;
+    .git|.git/*)
+      die "context pack must not reference .git: ${path}"
+      ;;
+    scripts/benchmark/runs/*|scripts/benchmark/worktrees/*)
+      die "context pack must not reference benchmark artifact paths: ${path}"
+      ;;
+  esac
+}
+
+# parse_context_pack_manifest PACK_ID WT_ROOT -> one repo-relative path per line.
+parse_context_pack_manifest() {
+  local pack_id="$1" wt_root="$2"
+  local manifest path full
+  manifest="$(context_pack_manifest_path "${pack_id}")"
+  [[ -f "${manifest}" ]] || die "context pack manifest not found: ${manifest}"
+  while IFS=$'\t' read -r path _reason; do
+    [[ "${path}" =~ ^#.*$ || -z "${path}" ]] && continue
+    validate_context_pack_entry_path "${path}"
+    full="${wt_root}/${path}"
+    [[ -f "${full}" ]] || die "context pack file missing at run base: ${path} (pack ${pack_id})"
+    printf '%s\n' "${path}"
+  done < "${manifest}"
+}
+
+context_pack_id_from_variant() {
+  local variant="$1"
+  [[ "${variant}" == pack:* ]] || die "not a pack context variant: ${variant}"
+  printf '%s' "${variant#pack:}"
 }
 
 orchestration_variant_slug() {
@@ -612,14 +693,96 @@ apply_context_variant() {
 
   local agents="${wt}/AGENTS.md"
   local claude="${wt}/CLAUDE.md"
-  local rules_dir="${wt}/.context/rules"
   [[ -f "${agents}" ]] || die "cannot inject context: missing ${agents}"
-  [[ -d "${rules_dir}" ]] || die "cannot inject context: missing ${rules_dir}"
 
   cp "${agents}" "${outdir}/AGENTS.md.before-context-injection"
   if [[ -f "${claude}" ]]; then
     cp "${claude}" "${outdir}/CLAUDE.md.before-context-injection"
   fi
+
+  if [[ "${variant}" == pack:* ]]; then
+    local pack_id injected artifact_name rel_path file_bytes file_sha count=0
+    pack_id="$(context_pack_id_from_variant "${variant}")"
+    artifact_name="AGENTS.md.pack-${pack_id}-injected"
+    injected="${outdir}/${artifact_name}"
+    cp "${agents}" "${injected}"
+    {
+      printf '\n\n<!-- BENCHMARK_CONTEXT_PACK_START: %s -->\n' "${pack_id}"
+      printf '\n## Benchmark Context Pack: `%s`\n\n' "${pack_id}"
+      printf 'This section is injected by the model-ROI benchmark harness for a targeted context-pack variant. Treat these files as task-relevant project instructions for this run.\n'
+    } >> "${injected}"
+    while IFS= read -r rel_path; do
+      count=$((count + 1))
+      {
+        printf '\n\n### Begin `%s`\n\n' "${rel_path}"
+        sed -n '1,$p' "${wt}/${rel_path}"
+        printf '\n\n### End `%s`\n' "${rel_path}"
+      } >> "${injected}"
+    done < <(parse_context_pack_manifest "${pack_id}" "${wt}")
+
+    {
+      printf '\n<!-- BENCHMARK_CONTEXT_PACK_END: %s -->\n' "${pack_id}"
+    } >> "${injected}"
+
+    cp "${injected}" "${agents}"
+    if [[ -f "${claude}" ]] && ! grep -Fxq '@AGENTS.md' "${claude}"; then
+      {
+        printf '\n\n## Benchmark context import\n\n'
+        printf '@AGENTS.md\n'
+      } >> "${claude}"
+    fi
+    git -C "${wt}" update-index --skip-worktree AGENTS.md
+    if [[ -f "${claude}" ]]; then
+      git -C "${wt}" update-index --skip-worktree CLAUDE.md
+    fi
+
+    local bytes sha manifest_rel files_json="" first_file=true
+    bytes="$(wc -c < "${injected}" | tr -d ' ')"
+    sha="$(sha256sum "${injected}" | awk '{print $1}')"
+    manifest_rel=".context/benchmarks/model-roi/context-packs/${pack_id}.tsv"
+    while IFS= read -r rel_path; do
+      file_bytes="$(wc -c < "${wt}/${rel_path}" | tr -d ' ')"
+      file_sha="$(sha256sum "${wt}/${rel_path}" | awk '{print $1}')"
+      if [[ "${first_file}" == true ]]; then
+        first_file=false
+      else
+        files_json+=","
+      fi
+      files_json+=$(
+        printf '\n    {"path": %s, "bytes": %s, "sha256": %s}' \
+          "$(json_escape "${rel_path}")" "${file_bytes}" "$(json_escape "${file_sha}")"
+      )
+    done < <(parse_context_pack_manifest "${pack_id}" "${wt}")
+
+    {
+      printf '{\n'
+      printf '  "context_variant": %s,\n' "$(json_escape "${variant}")"
+      printf '  "context_pack_id": %s,\n' "$(json_escape "${pack_id}")"
+      printf '  "injected": true,\n'
+      printf '  "source_manifest": %s,\n' "$(json_escape "${manifest_rel}")"
+      printf '  "file_count": %s,\n' "${count}"
+      printf '  "injected_agents_bytes": %s,\n' "${bytes}"
+      printf '  "injected_agents_sha256": %s,\n' "$(json_escape "${sha}")"
+      printf '  "files": [%s\n  ],\n' "${files_json}"
+      printf '  "artifacts": {\n'
+      printf '    "agents_before": "AGENTS.md.before-context-injection",\n'
+      printf '    "agents_injected": %s' "$(json_escape "${artifact_name}")"
+      if [[ -f "${outdir}/CLAUDE.md.before-context-injection" ]]; then
+        printf ',\n    "claude_before": "CLAUDE.md.before-context-injection"'
+      fi
+      printf '\n  }\n'
+      printf '}\n'
+    } > "$(context_injection_metadata_path "${outdir}")"
+    validate_json_artifact "$(context_injection_metadata_path "${outdir}")"
+    return 0
+  fi
+
+  if [[ "${variant}" != "full-rules-injected" ]]; then
+    die "unsupported context variant after slug normalization: ${variant}"
+  fi
+
+  local rules_dir="${wt}/.context/rules"
+  [[ -d "${rules_dir}" ]] || die "cannot inject context: missing ${rules_dir}"
 
   local injected="${outdir}/AGENTS.md.full-rules-injected"
   cp "${agents}" "${injected}"

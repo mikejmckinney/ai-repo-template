@@ -29,8 +29,8 @@ done
 have_jq || die "collect.sh needs jq"
 require_stage "${STAGE}"
 
-base="${RUNS_DIR}/${TASK}"
-[[ -d "${base}" ]] || die "no runs for task ${TASK} at ${base}"
+base="$(runs_task_base "${TASK}")"
+[[ -d "${base}" ]] || die "no runs for task ${TASK} at ${base} (RUN_GROUP=${RUN_GROUP:-<unset>})"
 alias_set_file="$(suite_alias_set_path "${TASK}" "${STAGE}")"
 [[ -f "${alias_set_file}" ]] \
   || die "no recorded alias set for task ${TASK} stage ${STAGE}: ${alias_set_file}"

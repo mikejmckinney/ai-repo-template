@@ -150,6 +150,67 @@ Claude Code requires `@AGENTS.md` in `CLAUDE.md` to guarantee the injected
 context is visible. The completed benchmark suggests this can matter for Haiku
 and Sonnet.
 
+## Targeted Context-Pack Stage 1E Runs
+
+Stage 1E (issue #378) compares baseline lazy loading, named context packs, and
+full-rule injection on the historical Class A/Class B premerge bases. Use
+`RUN_GROUP` for every variant so runs do not collide.
+
+```bash
+CLASS_A_BASE=6946d04b3fd17014e32d9da5ea947acf6df14360
+CLASS_B_BASE=cff89bffe7e15e155bd740b6c7a0f158a6f2bad6
+PACK_SCREEN_MANIFEST="$PWD/.context/benchmarks/model-roi/stage-1e-pack-screen-candidates.tsv.example"
+```
+
+Class A matrix (one command per variant):
+
+```bash
+RUN_GROUP=ctx-a-baseline MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-281-class-a-premerge BASE="$CLASS_A_BASE" STAGE=1 CONTEXT_VARIANT=baseline
+
+RUN_GROUP=ctx-a-core-min MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-281-class-a-premerge BASE="$CLASS_A_BASE" STAGE=1 CONTEXT_VARIANT=pack:core-min
+
+RUN_GROUP=ctx-a-class-a-process MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-281-class-a-premerge BASE="$CLASS_A_BASE" STAGE=1 CONTEXT_VARIANT=pack:class-a-process
+
+RUN_GROUP=ctx-a-full-rules MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-281-class-a-premerge BASE="$CLASS_A_BASE" STAGE=1 CONTEXT_VARIANT=full-rules-injected
+```
+
+Class B matrix:
+
+```bash
+RUN_GROUP=ctx-b-baseline MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-326-class-b-premerge BASE="$CLASS_B_BASE" STAGE=1 CONTEXT_VARIANT=baseline
+
+RUN_GROUP=ctx-b-core-min MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-326-class-b-premerge BASE="$CLASS_B_BASE" STAGE=1 CONTEXT_VARIANT=pack:core-min
+
+RUN_GROUP=ctx-b-class-b-implementation MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-326-class-b-premerge BASE="$CLASS_B_BASE" STAGE=1 CONTEXT_VARIANT=pack:class-b-implementation
+
+RUN_GROUP=ctx-b-full-rules MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-326-class-b-premerge BASE="$CLASS_B_BASE" STAGE=1 CONTEXT_VARIANT=full-rules-injected
+```
+
+Collect each group after all aliases reach a terminal state:
+
+```bash
+RUN_GROUP=ctx-a-core-min make -C scripts/benchmark collect \
+  TASK=opfit-281-class-a-premerge STAGE=1
+```
+
+Unseal only after blind scores are locked:
+
+```bash
+RUN_GROUP=ctx-a-core-min make -C scripts/benchmark unseal \
+  TASK=opfit-281-class-a-premerge STAGE=1
+```
+
+Pack manifests live in `.context/benchmarks/model-roi/context-packs/`. Unknown
+pack ids and unsafe manifest paths fail before spend.
+
 ## Duo Planner/Implementer Stage 1D Runs
 
 Stage 1D tests a planning model followed by a cheaper implementer. ROI must use

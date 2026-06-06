@@ -14,8 +14,11 @@
 #   make worktree TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-06   # isolate for a MANUAL candidate
 #   make record TASK=opfit-281-class-a BASE=<sha> ALIAS=cand-06 RC=0 TOKENS_IN=... TOKENS_OUT=...
 #   make collect TASK=opfit-281-class-a           # blind grading sheet
+#   RUN_GROUP=ctx-a-core-min make collect TASK=opfit-281-class-a-premerge STAGE=1
 #   make push TASK=opfit-281-class-a ALIAS=cand-01 # runner-owned push (optional)
 #   make unseal TASK=opfit-281-class-a            # AFTER grading: reveal alias->model
+#   RUN_GROUP=ctx-a-core-min MANIFEST=.../stage-1e-pack-screen-candidates.tsv.example \
+#     make suite TASK=opfit-281-class-a-premerge BASE=<sha> STAGE=1 CONTEXT_VARIANT=pack:core-min
 #
 # REPO_DIR defaults to the repo root inferred by lib.sh; override on the CLI if needed.
 # TASK must match .context/benchmarks/model-roi/tasks/<TASK>.md.
@@ -28,8 +31,10 @@ BASE ?=
 ALIAS ?=
 STAGE ?=
 RUN_INDEX ?= 1
+RUN_GROUP ?=
 CONTEXT_VARIANT ?= baseline
 ORCHESTRATION_VARIANT ?= none
+MANIFEST ?=
 
 .PHONY: help base doctor worktrees worktree run suite suite-resume duo-run duo-suite duo-suite-resume record collect push unseal clean-worktrees
 
@@ -68,34 +73,46 @@ worktree:
 
 run:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(ALIAS)" || { echo "set TASK BASE ALIAS"; exit 2; }
-	@"$(HERE)run-candidate.sh" --task "$(TASK)" --base "$(BASE)" --alias "$(ALIAS)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" \
+	@RUN_GROUP="$(RUN_GROUP)" CONTEXT_VARIANT="$(CONTEXT_VARIANT)" \
+	  $(if $(MANIFEST),MANIFEST="$(MANIFEST)",) \
+	  "$(HERE)run-candidate.sh" --task "$(TASK)" --base "$(BASE)" --alias "$(ALIAS)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" \
 	  --orchestration-variant "$(ORCHESTRATION_VARIANT)"
 
 suite:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1"; exit 2; }
 	@test "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
-	@"$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error \
+	@RUN_GROUP="$(RUN_GROUP)" CONTEXT_VARIANT="$(CONTEXT_VARIANT)" \
+	  $(if $(MANIFEST),MANIFEST="$(MANIFEST)",) \
+	  "$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error \
 	  --orchestration-variant "$(ORCHESTRATION_VARIANT)"
 
 suite-resume:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1"; exit 2; }
 	@test "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
-	@"$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error --resume \
+	@RUN_GROUP="$(RUN_GROUP)" CONTEXT_VARIANT="$(CONTEXT_VARIANT)" \
+	  $(if $(MANIFEST),MANIFEST="$(MANIFEST)",) \
+	  "$(HERE)run-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error --resume \
 	  --orchestration-variant "$(ORCHESTRATION_VARIANT)"
 
 duo-run:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(ALIAS)" || { echo "set TASK BASE ALIAS"; exit 2; }
-	@"$(HERE)run-duo-candidate.sh" --task "$(TASK)" --base "$(BASE)" --alias "$(ALIAS)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)"
+	@RUN_GROUP="$(RUN_GROUP)" CONTEXT_VARIANT="$(CONTEXT_VARIANT)" \
+	  $(if $(MANIFEST),MANIFEST="$(MANIFEST)",) \
+	  "$(HERE)run-duo-candidate.sh" --task "$(TASK)" --base "$(BASE)" --alias "$(ALIAS)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)"
 
 duo-suite:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1d"; exit 2; }
 	@test "$(STAGE)" = "1d" || { echo "Stage 1D duo benchmark requires STAGE=1d"; exit 2; }
-	@"$(HERE)run-duo-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error
+	@RUN_GROUP="$(RUN_GROUP)" CONTEXT_VARIANT="$(CONTEXT_VARIANT)" \
+	  $(if $(MANIFEST),MANIFEST="$(MANIFEST)",) \
+	  "$(HERE)run-duo-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error
 
 duo-suite-resume:
 	@test -n "$(TASK)" -a -n "$(BASE)" -a -n "$(STAGE)" || { echo "set TASK BASE STAGE=1d"; exit 2; }
 	@test "$(STAGE)" = "1d" || { echo "Stage 1D duo benchmark requires STAGE=1d"; exit 2; }
-	@"$(HERE)run-duo-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error --resume
+	@RUN_GROUP="$(RUN_GROUP)" CONTEXT_VARIANT="$(CONTEXT_VARIANT)" \
+	  $(if $(MANIFEST),MANIFEST="$(MANIFEST)",) \
+	  "$(HERE)run-duo-suite.sh" --task "$(TASK)" --base "$(BASE)" --stage "$(STAGE)" --run-index "$(RUN_INDEX)" --context-variant "$(CONTEXT_VARIANT)" --continue-on-error --resume
 
 # Manual-candidate capture. Pass timing/telemetry you read off the platform dashboard.
 record:
@@ -108,7 +125,7 @@ record:
 collect:
 	@test -n "$(TASK)" || { echo "set TASK"; exit 2; }
 	@test -z "$(STAGE)" -o "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
-	@"$(HERE)collect.sh" --task "$(TASK)" $(if $(STAGE),--stage "$(STAGE)",)
+	@RUN_GROUP="$(RUN_GROUP)" "$(HERE)collect.sh" --task "$(TASK)" $(if $(STAGE),--stage "$(STAGE)",)
 
 # Runner-owned push of an aliased candidate branch (keeps push out of the agent's hands).
 push:
@@ -120,7 +137,7 @@ push:
 unseal:
 	@test -n "$(TASK)" || { echo "set TASK"; exit 2; }
 	@test -z "$(STAGE)" -o "$(STAGE)" = "1" || { echo "Phase A requires STAGE=1"; exit 2; }
-	@"$(HERE)collect.sh" --task "$(TASK)" $(if $(STAGE),--stage "$(STAGE)",) --unseal
+	@RUN_GROUP="$(RUN_GROUP)" "$(HERE)collect.sh" --task "$(TASK)" $(if $(STAGE),--stage "$(STAGE)",) --unseal
 
 clean-worktrees:
 	@bash -c 'source "$(HERE)lib.sh"; git -C "$$REPO_DIR" worktree prune; \

@@ -228,6 +228,8 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md` | Scored benchmark record, cost source register, and ROI tables used to support repo-local ROI/performance revisions |
 | `.context/benchmarks/model-roi/tasks/opfit-281-class-a.md` | Class A operational-fit benchmark task from issue `#281` / reference PR `#288`; runner injects only its candidate-safe task body |
 | `.context/benchmarks/model-roi/tasks/opfit-326-class-b.md` | Class B reasoning/code benchmark task from issue `#326` / reference PR `#358`; runner injects only its candidate-safe task body |
+| `.context/benchmarks/model-roi/context-packs/` | Stage 1E targeted context-pack manifests; use `CONTEXT_VARIANT=pack:<pack-id>` with `RUN_GROUP` for variant matrix runs (issue `#378`) |
+| `.context/benchmarks/model-roi/stage-1e-pack-screen-candidates.tsv.example` | CP-1 pack screen candidate manifest (`ctx-cur`, `ctx-gem`) |
 | `.context/benchmarks/model-roi/result-template.md` | Per-alias blind-safe plus sealed benchmark result template |
 | `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template for the same benchmark |
 | `.context/roadmap.md` | Phase-by-phase plan |
