@@ -52,6 +52,10 @@ lists come after, not before.
     Critic `CRITIC DECISION:`), and `## Subagent context receipt` placement (4 scenarios)
 - **Benchmark prompts** (repo-internal evaluation surfaces) — `model-roi-benchmark-candidate.md`.
   These are controlled benchmark prompts, not downstream project stage prompts.
+  - **`model-roi-grader-v1.md`** — locked subjective grader for benchmark score sets;
+    outputs JSON matching `.context/benchmarks/model-roi/grading/subjective-grade.schema.json`.
+  - **`model-roi-pairwise-grader-v1.md`** — blind pairwise subjective comparison (future rank-stability).
+  - **`model-roi-adjudicator-v1.md`** — resolve conflicts between subjective grades using objective evidence.
   - **`model-roi-benchmark-candidate.md`** — canonical candidate prompt for the
     model ROI benchmark tracked in issue `#374`. Reuse the same prompt body across
     aliases; inject only run metadata and the task body. Pair it with

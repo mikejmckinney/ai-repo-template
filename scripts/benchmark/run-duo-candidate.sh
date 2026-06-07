@@ -240,7 +240,7 @@ IMPL_EFFORT_STATUS="$(derive_effort_status "${IMPL_EFFORT}" "${IMPL_MECH}" "${IM
   printf '  "run_index": %s,\n' "${RUN_INDEX}"
   printf '  "stage": %s,\n' "$(json_escape "${STAGE}")"
   printf '  "workflow": "duo-planner-implementer",\n'
-  printf '  "context_variant": %s,\n' "$(json_escape "${RUN_CONTEXT_VARIANT}")"
+  printf '  "context_condition": %s,\n' "$(json_escape "pending-blind")"
   printf '  "base_sha": %s,\n' "$(json_escape "${BASE_SHA}")"
   printf '  "head_sha": %s,\n' "$(json_escape "${HEAD_SHA}")"
   printf '  "planner_start_utc": %s,\n' "$(json_escape "${PLANNER_START_TS}")"

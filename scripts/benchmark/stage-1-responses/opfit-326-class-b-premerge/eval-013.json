@@ -1,0 +1,42 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-013",
+  "grader_id": "results-md-legacy-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 6,
+      "max_subjective_points": 10,
+      "rationale": "Produced meaningful Codex work, but slowest extended run and weaker head-SHA/error-state evidence."
+    },
+    "quality": {
+      "subjective_points": 10,
+      "max_subjective_points": 15,
+      "rationale": "Produced meaningful Codex work, but slowest extended run and weaker head-SHA/error-state evidence."
+    },
+    "process": {
+      "subjective_points": 1,
+      "max_subjective_points": 5,
+      "rationale": "Produced meaningful Codex work, but slowest extended run and weaker head-SHA/error-state evidence."
+    },
+    "reliability": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Produced meaningful Codex work, but slowest extended run and weaker head-SHA/error-state evidence."
+    }
+  },
+  "subjective_total": 22,
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Produced meaningful Codex work, but slowest extended run and weaker head-SHA/error-state evidence."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "Objective automation applied before legacy subjective residual mapping."
+    }
+  ],
+  "graded_at": "2026-06-06T23:53:23Z"
+}

@@ -36,7 +36,12 @@ CONTEXT_VARIANT ?= baseline
 ORCHESTRATION_VARIANT ?= none
 MANIFEST ?=
 
-.PHONY: help base doctor worktrees worktree run suite suite-resume duo-run duo-suite duo-suite-resume record collect push unseal clean-worktrees
+SCORE_SET ?=
+EVAL_ID ?=
+GRADER_ID ?=
+RESPONSE ?=
+
+.PHONY: help base doctor worktrees worktree run suite suite-resume duo-run duo-suite duo-suite-resume record collect push unseal clean-worktrees grade-bundles grade-objective grade-subjective-prompts grade-subjective-record grade-compile grade-compare grade-adjudicate regrade-stage-1e
 
 help:
 	@sed -n '1,32p' "$(HERE)Makefile"
@@ -142,3 +147,60 @@ unseal:
 clean-worktrees:
 	@bash -c 'source "$(HERE)lib.sh"; git -C "$$REPO_DIR" worktree prune; \
 	  rm -rf "$$WORKTREES_DIR"/*; echo "pruned worktrees"'
+
+grade-bundles:
+	@test -n "$(TASK)" -a -n "$(SCORE_SET)" || { echo "set TASK SCORE_SET"; exit 2; }
+	@RUN_GROUP="$(RUN_GROUP)" "$(HERE)prepare-grade-bundle.sh" \
+	  --task "$(TASK)" --stage "$(if $(STAGE),$(STAGE),1)" --score-set "$(SCORE_SET)" \
+	  $(if $(filter command line,$(origin RUN_INDEX)),--run-index "$(RUN_INDEX)",) \
+	  $(if $(MANIFEST),--manifest "$(MANIFEST)",)
+
+grade-objective:
+	@test -n "$(TASK)" -a -n "$(SCORE_SET)" || { echo "set TASK SCORE_SET"; exit 2; }
+	@python3 "$(HERE)grade-objective.py" \
+	  --bundle-root "$(HERE)grade-bundles/$(TASK)/$(SCORE_SET)" \
+	  --rubric "$(HERE)../../.context/benchmarks/model-roi/grading/rubric.v1.json" \
+	  --task-spec "$(HERE)../../.context/benchmarks/model-roi/grading/tasks/$(TASK).json"
+
+grade-subjective-prompts:
+	@test -n "$(TASK)" -a -n "$(SCORE_SET)" || { echo "set TASK SCORE_SET"; exit 2; }
+	@for d in "$(HERE)grade-bundles/$(TASK)/$(SCORE_SET)"/eval-*; do \
+	  [ -d "$$d" ] || continue; \
+	  python3 "$(HERE)render-subjective-grade-prompt.py" \
+	    --bundle "$$d" \
+	    --out "$$d/subjective-prompt.md"; \
+	done
+
+grade-subjective-record:
+	@test -n "$(TASK)" -a -n "$(SCORE_SET)" -a -n "$(EVAL_ID)" -a -n "$(GRADER_ID)" -a -n "$(RESPONSE)" \
+	  || { echo "set TASK SCORE_SET EVAL_ID GRADER_ID RESPONSE"; exit 2; }
+	@python3 "$(HERE)record-subjective-grade.py" \
+	  --bundle "$(HERE)grade-bundles/$(TASK)/$(SCORE_SET)/$(EVAL_ID)" \
+	  --response "$(RESPONSE)" \
+	  --grader-id "$(GRADER_ID)"
+
+grade-compile:
+	@test -n "$(TASK)" -a -n "$(SCORE_SET)" || { echo "set TASK SCORE_SET"; exit 2; }
+	@python3 "$(HERE)compile-final-grades.py" \
+	  --bundle-root "$(HERE)grade-bundles/$(TASK)/$(SCORE_SET)" \
+	  $(if $(GRADER_ID),--grader-id "$(GRADER_ID)",) \
+	  $(if $(MEDIAN_SUBJECTIVE),--median-subjective,)
+
+grade-compare:
+	@test -n "$(LEFT)" -a -n "$(RIGHT)" -a -n "$(OUT)" || { echo "set LEFT RIGHT OUT"; exit 2; }
+	@python3 "$(HERE)compare-grade-sets.py" --left "$(LEFT)" --right "$(RIGHT)" --out "$(OUT)"
+
+grade-adjudicate:
+	@test -n "$(TASK)" -a -n "$(SCORE_SET)" || { echo "set TASK SCORE_SET"; exit 2; }
+	@python3 "$(HERE)adjudicate-grades.py" \
+	  --bundle-root "$(HERE)grade-bundles/$(TASK)/$(SCORE_SET)" \
+	  $(if $(COMPARE_REPORT),--compare-report "$(COMPARE_REPORT)",)
+
+# Stage 1E CP-1 canonical regrade (see regrade-stage-1e.sh and benchmark-runbook.md)
+# Examples:
+#   make -C scripts/benchmark regrade-stage-1e ARGS="prepare"
+#   make -C scripts/benchmark regrade-stage-1e ARGS="status"
+#   make -C scripts/benchmark regrade-stage-1e ARGS="record codex-fixed ./stage-1e-responses"
+#   make -C scripts/benchmark regrade-stage-1e ARGS="compile codex-fixed"
+regrade-stage-1e:
+	@"$(HERE)regrade-stage-1e.sh" $(ARGS)

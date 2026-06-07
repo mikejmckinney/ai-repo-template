@@ -31,7 +31,10 @@ agent must perform, plus sealed reference metadata for evaluators.
 | `.context/benchmarks/model-roi/issue-376-orchestration-pipeline.md` | Pipeline experiment protocol, candidate set, overlay policy, and grading notes for issue #376. |
 | `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md` | Current scored benchmark record, cost source register, and ROI tables used to justify repo-local ROI/performance revisions. |
 | `.context/benchmarks/model-roi/tasks/` | Maintainer-authored task specs. Each file has candidate-safe task text plus sealed reference metadata. |
-| `scripts/benchmark/Makefile` | Current operator entrypoint for `base`, `run`, `suite`, `duo-run`, `duo-suite`, `worktree`, `record`, `collect`, and `unseal`. |
+| `scripts/benchmark/Makefile` | Current operator entrypoint for `base`, `run`, `suite`, `duo-run`, `duo-suite`, `worktree`, `record`, `collect`, `unseal`, and `grade-*` targets. |
+| `.context/benchmarks/model-roi/grading/` | Canonical rubric, JSON schemas, task grading specs, and score-set comparability rules. |
+| `scripts/benchmark/regrade-stage-1e.sh` | Operator script: prepare/record/compile canonical regrades for all Stage 1E CP-1 `RUN_GROUP`s. |
+| `.github/prompts/model-roi-grader-v1.md` | Locked subjective grader prompt (JSON-only output). |
 | `scripts/benchmark/candidates.tsv.example` | Example sealed alias manifest for Core Stage 1 plus later-phase placeholders. |
 | `scripts/benchmark/duo-candidates.tsv.example` | Example sealed alias manifest for Stage 1D planner/implementer candidates. |
 | `scripts/benchmark/orchestration-candidates.tsv.example` | Example sealed alias manifest for issue #376 pipeline candidates. |

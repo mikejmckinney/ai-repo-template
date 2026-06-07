@@ -370,37 +370,11 @@ Use the script-first grading pipeline under
 [`.context/benchmarks/model-roi/grading/README.md`](./grading/README.md).
 Scores are comparable **only within the same `score_set_id`**.
 
-**Results column layout** (in [`results/agent-roi-benchmark-results.md`](./results/agent-roi-benchmark-results.md)):
-
-| Column | Max | Meaning |
-|---|---:|---|
-| Legacy /100 | 100 | Pre-pipeline holistic blind grade (category columns sum to this) |
-| Canonical /100 | 100 | `rubric.v1` final total (objective + subjective) |
-| Objective /65 | 65 | Automated checks (syntax, paths, scope, latency bands, …) |
-| Subjective /35 | 35 | Locked grader JSON (`model-roi-grader-v1`) |
-| score_set_id | — | Cohort id; required for comparable conclusions |
-
-Regrade operator scripts (from repo root):
-
 ```bash
-# Stage 1 monolithic Class A/B rows from results.md
-./scripts/benchmark/regrade-stage-1.sh all results-md-legacy-v1
-
-# Stage 1E CP-1 context-pack screen (eight RUN_GROUPs)
-./scripts/benchmark/regrade-stage-1e.sh all stage-1e-locked-v1 scripts/benchmark/stage-1e-responses
-
-# Refresh results tables after regrade
-python3 scripts/benchmark/update-results-canonical-scores.py
-```
-
-Manual per-task example:
-
-```bash
-SCORE_SET=stage-1-canonical-v1
+SCORE_SET=stage-1-class-b-canonical-v1
 
 make -C scripts/benchmark grade-bundles \
-  TASK=opfit-326-class-b-premerge STAGE=1 SCORE_SET="${SCORE_SET}" \
-  MANIFEST=scripts/benchmark/grade-bundles/stage-1-canonical-v1-manifests/opfit-326-class-b-premerge-manifest.tsv
+  TASK=opfit-326-class-b-premerge STAGE=1 SCORE_SET="${SCORE_SET}"
 
 make -C scripts/benchmark grade-objective \
   TASK=opfit-326-class-b-premerge SCORE_SET="${SCORE_SET}"
@@ -417,11 +391,10 @@ make -C scripts/benchmark grade-compile \
   TASK=opfit-326-class-b-premerge SCORE_SET="${SCORE_SET}" GRADER_ID=<stable-id>
 ```
 
-Stage 1 monolithic and Stage 1E CP-1 rows in the results doc include canonical
-columns (`stage-1-canonical-v1` and `stage-1e-canonical-v1-*`). Stage 1C, 1D,
-and issue #376 pipeline rows remain legacy-only until regraded under their own
-score sets. Exploratory Cursor/Codex regrades are separate cohorts for
-inter-rater analysis only — do not average them into canonical rows.
+Stage 1E context-pack conclusions are **not canonical** until regraded under a
+single `score_set_id`. Use `./scripts/benchmark/regrade-stage-1e.sh` (documented
+above under **Regrade Stage 1E (CP-1)**). Exploratory Cursor/Codex regrades are
+separate cohorts for inter-rater analysis only — do not average them into canonical rows.
 
 Grading bundles use neutral `eval-###` IDs and `context_condition` codes
 (`cond-001`, …). Real `context_variant` / pack ids live in sealed maps only.
