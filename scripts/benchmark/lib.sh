@@ -455,7 +455,7 @@ _frontmatter_set_model() {
 
 _toml_set_key() {
   local file="$1" key="$2" value="$3"
-  awk -v key="${key}" -v replacement="${key} = \"" value "\"" '
+  awk -v key="${key}" -v replacement="${key} = \"${value}\"" '
     BEGIN { replaced = 0 }
     $0 ~ "^" key " = " {
       if (!replaced) {
@@ -632,7 +632,7 @@ restore_orchestration_variant() {
     local generated
     while IFS= read -r generated; do
       [[ -n "${generated}" ]] || continue
-      rm -rf "${wt}/${generated}"
+      rm -rf "${wt:?}/${generated}"
       rmdir "${wt}/$(dirname "${generated}")" 2>/dev/null || true
     done < "${outdir}/orchestration-generated-dirs.txt"
   fi

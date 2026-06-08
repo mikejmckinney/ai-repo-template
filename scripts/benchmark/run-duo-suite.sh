@@ -17,6 +17,7 @@ duo_suite_preflight() {
 duo_manifest_aliases() {
   local filter_stage="${1:-}" a platform planner_model planner_agent planner_effort planner_mech impl_model impl_agent impl_effort impl_mech stage
   [[ -f "${DUO_MANIFEST}" ]] || die "duo manifest not found: ${DUO_MANIFEST} (copy duo-candidates.tsv.example)"
+  # shellcheck disable=SC2034  # manifest columns parsed for forward compatibility; only alias + stage used here
   while IFS=$'\t' read -r a platform planner_model planner_agent planner_effort planner_mech impl_model impl_agent impl_effort impl_mech stage; do
     [[ "${a}" =~ ^#.*$ || -z "${a}" ]] && continue
     if [[ -z "${filter_stage}" || "${stage}" == "${filter_stage}" ]]; then

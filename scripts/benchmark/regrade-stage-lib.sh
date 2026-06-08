@@ -50,6 +50,7 @@ regrade_parse_config() {
   RESULTS_MD="${REPO_ROOT}/.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md"
   RESPONSES_DIR="${REPO_ROOT}/scripts/benchmark/${RESPONSES_SUBDIR}"
   MANIFEST_DIR="${REPO_ROOT}/scripts/benchmark/grade-bundles/${SCORE_SET}-manifests"
+  # shellcheck disable=SC2034  # STAGE_TASKS consumed by regrade-stage.sh after init
   IFS=',' read -ra STAGE_TASKS <<<"${TASKS_CSV}"
 }
 
