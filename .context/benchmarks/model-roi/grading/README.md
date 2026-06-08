@@ -113,9 +113,9 @@ Shared libraries: `canonical_scores_lib.py`, `regrade_results_lib.py`,
 etc.) exec `regrade-stage.sh`. Per-stage ROI modules remain importable; prefer
 `update-benchmark-results.py scores|roi|sort|all`.
 
-Marginal ROI lookup uses `lookup_marginal_score(task_class, alias)` so Class A and
-Class B rows for the same pipeline alias (e.g. `cand-20-pipe` at different run
-indices) do not collide.
+Marginal ROI lookup uses `lookup_marginal_score(task_class, alias)`; pipeline
+table sync uses `lookup_pipeline_score(task_class, alias, run)` so Class A and
+Class B rows for the same alias (e.g. `cand-05-pipe` at `r2`) do not collide.
 
 ## Regrading Stage 1E under a canonical score set
 
@@ -136,7 +136,7 @@ Manual per-`RUN_GROUP` alternative:
 4. Cite `score_set_id`, rubric version, and grader prompt version in results docs.
 5. Do **not** average exploratory Cursor/Codex regrades into the canonical row.
 
-## True LLM blind grading (Stage 1C / 1D / pipeline)
+## True LLM blind grading (Stage 1 / 1C / 1D / pipeline)
 
 Heuristic `blind_grade_heuristic.py` is **not** the canonical procedure. Use the
 Cursor agent in ask mode to grade each bundle's `subjective-prompt.md` with the
@@ -149,7 +149,8 @@ python3 scripts/benchmark/llm_grade_subjective.py \
   --grader-id cursor-llm-blind-v1 \
   --out scripts/benchmark/stage-llm-responses-v1/<task>/eval-NNN.json
 
-# Batch (stage 1c | 1d | pipeline)
+# Batch (stage 1 | 1c | 1d | pipeline)
+./scripts/benchmark/regrade-stage.sh 1 grade cursor-llm-blind-v1   # → stage-1-llm-responses-v1/
 ./scripts/benchmark/regrade-stage.sh 1c grade cursor-llm-blind-v1
 ./scripts/benchmark/regrade-stage.sh 1c record cursor-llm-blind-v1 scripts/benchmark/stage-llm-responses-v1
 bash ./scripts/benchmark/regrade-stage.sh 1c compile cursor-llm-blind-v1

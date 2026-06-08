@@ -106,7 +106,7 @@ case "${ACTION}" in
     regrade_llm_grade_all "${GRADER_ID}"
     echo ""
     echo "========== GRADE complete (stage=${STAGE}) =========="
-    echo "Next: ./regrade-stage.sh ${STAGE} record ${GRADER_ID} scripts/benchmark/stage-llm-responses-v1"
+    echo "Next: ./regrade-stage.sh ${STAGE} record ${GRADER_ID} scripts/benchmark/$(regrade_llm_responses_subdir)"
     ;;
   record)
     [[ $# -ge 2 ]] || usage 2

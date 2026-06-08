@@ -384,10 +384,18 @@ Regrade operator scripts (from repo root):
 
 ```bash
 GRADER=cursor-llm-blind-v1
-RESP=scripts/benchmark/stage-llm-responses-v1
 
 # Unified driver (stages: 1 | 1c | 1d | pipeline | 1e)
 # Actions: prepare | grade | record | compile | status | all
+
+# Stage 1 monolithic (46 bundles; responses in stage-1-llm-responses-v1/)
+./scripts/benchmark/regrade-stage.sh 1 prepare
+./scripts/benchmark/regrade-stage.sh 1 grade "${GRADER}"
+./scripts/benchmark/regrade-stage.sh 1 record "${GRADER}" scripts/benchmark/stage-1-llm-responses-v1
+./scripts/benchmark/regrade-stage.sh 1 compile "${GRADER}"
+
+# Stage 1C / 1D / pipeline (responses in stage-llm-responses-v1/)
+RESP=scripts/benchmark/stage-llm-responses-v1
 ./scripts/benchmark/regrade-stage.sh 1c prepare
 SKIP_LEGACY_RESPONSES=1 ./scripts/benchmark/regrade-stage.sh 1c prepare   # skip legacy bootstrap
 
@@ -412,8 +420,15 @@ bash ./scripts/benchmark/regrade-stage.sh 1c compile "${GRADER}"
 python3 scripts/benchmark/update-benchmark-results.py all   # scores | roi | sort | all
 ```
 
-**Canonical grader for Stage 1C / 1D / pipeline (2026-06):** `cursor-llm-blind-v1` via
+**Canonical grader for Stage 1 / 1C / 1D / pipeline (2026-06):** `cursor-llm-blind-v1` via
 `llm_grade_subjective.py` (not the superseded heuristic `blind_grade_heuristic.py`).
+Stage 1 responses land in `scripts/benchmark/stage-1-llm-responses-v1/` (separate from
+`stage-llm-responses-v1/` used by 1C/1D/pipeline to avoid eval-id collisions on shared task ids).
+
+**Orphan `agent` processes:** `llm_grade_subjective.py` starts each grade in a new session
+and `SIGKILL`s the process group on timeout. Before long batches, check
+`pgrep -af '/home/codespace/.local/bin/agent'` and kill stale PIDs not owned by the IDE
+(compare `ps -o pid,tty,etime,cmd -p <pid>`). Do not kill the interactive IDE agent on `pts/0`.
 
 **Results table conventions** (see `results/agent-roi-benchmark-results.md`):
 
@@ -450,7 +465,7 @@ Each stage has a dedicated regrade wrapper and `score_set_id`:
 
 | Stage | Script | Default score set | Canonical grader (extended stages) |
 |---|---|---|---|
-| 1 monolithic | `regrade-stage.sh 1` | `stage-1-canonical-v1` | legacy bootstrap or LLM |
+| 1 monolithic | `regrade-stage.sh 1` | `stage-1-canonical-v1` | `cursor-llm-blind-v1` |
 | 1C injection | `regrade-stage.sh 1c` | `stage-1c-canonical-v1` | `cursor-llm-blind-v1` |
 | 1D duo | `regrade-stage.sh 1d` | `stage-1d-canonical-v1` | `cursor-llm-blind-v1` |
 | #376 pipeline | `regrade-stage.sh pipeline` | `stage-1-pipeline-canonical-v1` | `cursor-llm-blind-v1` (`rubric.pipeline.v1`) |

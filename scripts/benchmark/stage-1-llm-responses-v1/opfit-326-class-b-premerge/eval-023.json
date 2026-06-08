@@ -1,0 +1,94 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-023",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 4,
+      "max_subjective_points": 10,
+      "rationale": "The polling loop, env defaults, allow-list loading with [bot] stripping, jq-based convergence checks (unresolved bot threads, non-terminal PENDING reviews, CI not PENDING), quiet-window timing from actionable timestamps, and five documented RESULT= branches are structurally present and exercised under Bats mocks. Meaningful contract gaps remain: fetch_pr_state is invoked in main but never defined in the shipped script, so the helper cannot fetch GitHub PR state when run standalone; required before-and-after head SHA checks around each state snapshot are absent (only initial-vs-current comparison each iteration); TIMEOUT emits RESULT=TIMEOUT without HEAD= even when a head SHA was read; and missing PR-number usage exits 4 without a RESULT=API_ERROR line.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 11,
+      "max_subjective_points": 15,
+      "rationale": "Shell style is repo-consistent (set -uo pipefail, logging.sh with fallback, executable helper, commented header contract, focused jq filters). Prompt and AI_REPO_GUIDE updates are clear and preserve the documented 360s/900s manual fallback. Deductions for maintainability: production script is incomplete without fetch_pr_state/gh GraphQL despite PLAN claiming GraphQL usage; PLAN.md is committed scope noise; Bats reimplements assert helpers instead of idiomatic bats assertions; smoke check is structural-only.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Required companions (.github/prompts/pr-resolve-all.md, AI_REPO_GUIDE.md) are synced and the prompt prefers the helper while keeping the time-based fallback. Partial adherence: PLAN.md appears in the diff (objective scope:plan_md warn); PLAN lists test.sh wiring but test.sh is not in files-changed.txt despite objective test_wiring passing on pattern match elsewhere.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "scripts/tests/pr-resolve-all-poll.bats adds four mock-based scenario tests covering CONVERGED, QUIET_ELAPSED, SHA_CHANGED, and TIMEOUT with matching exit codes and RESULT= assertions; scripts/checks/140-pr-resolve-all-poll-smoke.sh verifies file presence, executability, bash -n, and non-empty allow-list. Gaps: no API_ERROR, missing-allowlist, or invalid-argument contract tests; smoke does not invoke run_bats_check; objective bats_poll_helper and full_test_sh were skipped in this bundle with no runtime transcript.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 21,
+  "uncertainty_notes": [
+    "bats_poll_helper and full_test_sh were skipped in objective-grade.json; mock-based contract tests are credible from the diff but not runtime-verified in this bundle.",
+    "Live gh GraphQL behavior cannot be assessed because fetch_pr_state is not defined in the shipped helper."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, so subjective categories are scored normally rather than fail-closed to zero."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper and full_test_sh skipped; test_wiring status pass with detail 2/2 patterns matched; scope:plan_md warn for PLAN.md in diff."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "main calls STATE=$(fetch_pr_state \"$PR_NUMBER\") but no fetch_pr_state function or gh GraphQL invocation is defined anywhere in scripts/pr-resolve-all-poll.sh."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "SHA handling sets INITIAL_SHA on first snapshot and compares CURRENT_SHA to INITIAL_SHA each loop; there is no separate head read immediately before and after each fetch_pr_state snapshot."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "TIMEOUT branch echoes RESULT=TIMEOUT and exits 2 without emitting HEAD= even though CURRENT_SHA may have been parsed earlier in the same iteration."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Empty PR_NUMBER usage prints Usage to stderr and exits 4 without RESULT=API_ERROR."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "CONVERGED requires UNRESOLVED_BOT_THREADS==0, NON_TERMINAL_BOT_REVIEWS==0, and CI_STATE!=PENDING, then prints RESULT=CONVERGED and HEAD=."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "QUIET_ELAPSED derives LATEST_EVENT_ISO from reviews, thread comments, commits, and updatedAt, compares elapsed quiet time to QUIET_WINDOW, and exits 0 with RESULT=QUIET_ELAPSED and HEAD=."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md adds settle-window helper invocation with documented 360s quiet and 900s hard-timeout manual fallback."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats sources the script, mocks fetch_pr_state per test, and asserts CONVERGED, QUIET_ELAPSED, SHA_CHANGED, and TIMEOUT outcomes but includes no API_ERROR scenario."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/140-pr-resolve-all-poll-smoke.sh only checks file existence, executability, bash -n syntax, and non-empty allow-list."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Seven changed files include PLAN.md but not test.sh despite PLAN.md listing test.sh wiring."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Task requires gh-backed PR state reads, before/after SHA checks per snapshot, machine-readable RESULT= and HEAD= when head is available, and tests/check wiring per repo shell-test pattern."
+    }
+  ],
+  "graded_at": "2026-06-08T01:56:28Z"
+}

@@ -121,6 +121,14 @@ regrade_compile_task() {
   ${MAKE} grade-compile TASK="${task}" SCORE_SET="${score_set}" GRADER_ID="${grader_id}"
 }
 
+regrade_llm_responses_subdir() {
+  if [[ "${STAGE}" == "1" ]]; then
+    printf '%s' "stage-1-llm-responses-v1"
+  else
+    printf '%s' "stage-llm-responses-v1"
+  fi
+}
+
 regrade_llm_grade_all() {
   local grader_id="${1:-cursor-llm-blind-v1}"
   local extra=()

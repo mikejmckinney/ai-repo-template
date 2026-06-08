@@ -1,0 +1,90 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-016",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 6,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the inspectable scaffolding: PR arg validation, INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, allow-list loading with [bot] stripping, GraphQL snapshot parsing, head SHA comparison across iterations, pre-sleep head re-check, and RESULT=/HEAD= emission on CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, and API_ERROR with documented exit codes. Participating allow-listed bots must have latest review commit matching head before CONVERGED when bots are present. Material gaps remain: with zero participating allow-listed bots and zero unresolved bot threads the terminal flag stays true and the script exits CONVERGED immediately, which is unsafe for a settle-window helper; the quiet-window timestamp uses jq max over all reviews and thread comments without filtering to allow-listed bot authors, so human or non-allowlisted activity can skew QUIET_ELAPSED; and reviewThreads/reviews are capped at last:100 with no pagination.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 11,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is readable and repo-shaped: focused five-file diff, canonical allow-list file, shell helper with set -e, prompt update preferring the helper while preserving the documented sleep 360 fallback, and AI_REPO_GUIDE inventory/table entries. Deductions for inline requirement-tracing comments in the poll loop, nested O(n*m) allow-list matching loops, and ~180 lines of inline GraphQL/jq logic without extracted lib helpers or README coverage beyond the guide table.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Objective process scored 15/15 with a tight diff limited to helper, allow-list, prompt, guide, and scripts inventory check\u2014no stray plan artifacts or scope-noise penalties in objective evidence. Required doc companions are synced and the prompt keeps the time-based fallback. Partial deduction because the task explicitly requested tests or check wiring per the repo shell-test pattern (bats file and/or dedicated scripts/checks entry); only scripts/checks/105-scripts.sh inventory was added and objective test_wiring matched 0/2 patterns, with no verification transcript in the bundle.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 1,
+      "max_subjective_points": 5,
+      "rationale": "Objective bash -n and lint-shell-conventions passed and 105-scripts.sh now inventories the helper and allow-list for existence/syntax lint coverage. However objective test_wiring failed 0/2 (no scripts/tests/pr-resolve-all-poll.bats and no scripts/checks/*pr-resolve*poll check), bats_poll_helper and full_test_sh were skipped, and there is no mock-gh or scenario coverage for any of the five RESULT branches\u2014verification discipline is thin and contract paths are evidenced only by code inspection.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 21,
+  "uncertainty_notes": [
+    "bats_poll_helper and full_test_sh were skipped in objective-grade.json; runtime behavior of the poll loop is not bundle-verified.",
+    "Zero-participating-bot immediate CONVERGED and unfiltered quiet-window timing are inferred from diff logic rather than exercised by tests."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, so subjective categories are scored normally rather than fail-closed to zero."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring status fail with detail 0/2 patterns matched; bats_poll_helper and full_test_sh skipped."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_poll_helper and lint_poll_helper passed; result_line_contract passed; process objective_points 15/15."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Five changed files only: prompt, AI_REPO_GUIDE, 105-scripts check, bot-allowlist, and pr-resolve-all-poll helper."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "When terminal equals true the script emits RESULT=CONVERGED HEAD=$head_sha and exits 0."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Terminal is true when unresolved_count is 0 and the participating_allowlisted loop finds every bot latest_review_commit equal to head_sha; an empty participating_allowlisted array skips the loop leaving terminal true."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "latest_event jq max aggregates all review submittedAt and all thread comment createdAt without allow-list filtering before QUIET_ELAPSED comparison."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "SHA_CHANGED exits 3 with RESULT=SHA_CHANGED HEAD= when current_head differs from stored head_sha or pre_sleep_head differs after snapshot."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "TIMEOUT exits 2 with RESULT=TIMEOUT HEAD=${head_sha:-unknown}; API_ERROR exits 4 for missing PR, missing allow-list, or gh/graphql failures."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md prefers bash scripts/pr-resolve-all-poll.sh and documents sleep 360 time-based fallback."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/105-scripts.sh adds pr-resolve-all-poll.sh and bot-allowlist.txt to SCRIPT_FILES inventory only; no dedicated pr-resolve-all-poll check or bats file in diff."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Task requires tests or check wiring appropriate for the repo existing shell-test pattern and acceptance verification including bash -n, lint-shell-conventions, and test.sh when applicable."
+    }
+  ],
+  "graded_at": "2026-06-08T01:50:44Z"
+}

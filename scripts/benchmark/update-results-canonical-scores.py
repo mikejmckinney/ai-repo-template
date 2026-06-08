@@ -13,8 +13,29 @@ from canonical_scores_lib import (  # noqa: E402
     load_all_alias_runs,
     load_stage,
     load_stage1e,
+    lookup_pipeline_score,
     na_cells,
 )
+
+STAGE_GRADER_NOTES = {
+    "stage-1-canonical-v1": (
+        "Canonical columns: `score_set_id=stage-1-canonical-v1`, grader `cursor-llm-blind-v1`\n"
+        "(true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`).\n"
+        "Legacy /100 columns retain the original holistic blind grades for comparison."
+    ),
+    "stage-1c-canonical-v1": (
+        "Canonical columns: `score_set_id=stage-1c-canonical-v1`, grader `cursor-llm-blind-v1`\n"
+        "(true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`)."
+    ),
+    "stage-1d-canonical-v1": (
+        "Canonical columns: `score_set_id=stage-1d-canonical-v1`, grader `cursor-llm-blind-v1`\n"
+        "(true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`)."
+    ),
+    "stage-1-pipeline-canonical-v1": (
+        "Canonical columns: `score_set_id=stage-1-pipeline-canonical-v1`, grader `cursor-llm-blind-v1`\n"
+        "(true LLM blind review; pipeline bundles use `rubric.pipeline.v1` including coordination)."
+    ),
+}
 from roi_format_lib import parse_pipeline_tail, parse_row  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
@@ -168,7 +189,7 @@ def inject_stage1d_table(lines: list[str], start: int, lookup: dict) -> int:
     return i
 
 
-def inject_pipeline_table(lines: list[str], start: int, lookup: dict) -> int:
+def inject_pipeline_table(lines: list[str], start: int, task_class: str) -> int:
     header_idx = None
     for i in range(start, len(lines)):
         if lines[i].startswith("| Alias | Platform / model | Run |"):
@@ -195,7 +216,7 @@ def inject_pipeline_table(lines: list[str], start: int, lookup: dict) -> int:
         run_s = parts[2].strip("`")
         run = int(run_s[1:]) if run_s.startswith("r") and run_s[1:].isdigit() else 1
         legacy = parts[10]
-        scores = lookup.get((alias, run), na_cells())
+        scores = lookup_pipeline_score(task_class, alias, run) or na_cells()
         wall, diff, cost_s, roi_s, summary = parse_pipeline_tail(parts)
         lines[i] = (
             "| "
@@ -265,6 +286,73 @@ def inject_stage1e_table(
     return i
 
 
+def strip_legacy_grader_paragraphs(lines: list[str]) -> None:
+    """Remove superseded results-md-legacy-v1 attribution blocks."""
+    i = 0
+    while i < len(lines):
+        if lines[i].startswith("Legacy category columns are the original holistic blind grades"):
+            end = i + 1
+            while end < len(lines) and (
+                lines[end].startswith("objective, and subjective columns")
+                or lines[end].startswith("(`rubric.v1`")
+                or (lines[end].strip() == "" and end + 1 < len(lines) and lines[end + 1].startswith("(`rubric.v1`"))
+            ):
+                end += 1
+            if end < len(lines) and "results-md-legacy" in lines[end - 1]:
+                del lines[i:end]
+                continue
+        i += 1
+
+
+def inject_grader_notes(lines: list[str]) -> None:
+    """Insert or refresh canonical grader attribution before scored tables."""
+    markers = [
+        ("## Class A: `opfit-281-class-a-premerge`", "stage-1-canonical-v1"),
+        ("## Class B: `opfit-326-class-b-premerge`", "stage-1-canonical-v1"),
+        ("### Stage 1C Class A: `opfit-281-class-a-premerge-context-injected`", "stage-1c-canonical-v1"),
+        ("### Stage 1D Class A: `opfit-281-class-a-premerge`", "stage-1d-canonical-v1"),
+        ("### Stage 1D Class B: `opfit-326-class-b-premerge`", "stage-1d-canonical-v1"),
+        ("### Issue #376 Class A: `opfit-281-class-a-premerge-pipeline`", "stage-1-pipeline-canonical-v1"),
+        ("### Issue #376 Class B: `opfit-326-class-b-premerge-pipeline`", "stage-1-pipeline-canonical-v1"),
+    ]
+    for marker, score_set in markers:
+        note = STAGE_GRADER_NOTES.get(score_set)
+        if not note:
+            continue
+        try:
+            idx = next(i for i, ln in enumerate(lines) if ln == marker)
+        except StopIteration:
+            continue
+        j = idx + 1
+        while j < len(lines) and lines[j].strip() == "":
+            j += 1
+        if j < len(lines) and lines[j].startswith("Canonical columns:"):
+            k = j + 1
+            while k < len(lines) and lines[k].startswith("("):
+                k += 1
+            lines[j:k] = note.splitlines()
+        else:
+            lines.insert(j, note)
+            k = j + len(note.splitlines())
+        while k < len(lines) and lines[k].startswith("Legacy category columns"):
+            end = k + 1
+            while end < len(lines) and not lines[end].startswith("*Table sort:") and not lines[
+                end
+            ].startswith("| `") and not lines[end].startswith("##"):
+                if lines[end].strip() == "":
+                    end += 1
+                    continue
+                if (
+                    "results-md-legacy" in lines[end]
+                    or lines[end].startswith("objective, and subjective columns")
+                    or lines[end].startswith("(`rubric.v1`")
+                ):
+                    end += 1
+                    continue
+                break
+            del lines[k:end]
+
+
 def update_score_set_section(text: str) -> str:
     old_fragments = [
         "Stage 1C/1D/pipeline rows remain legacy-only until regraded.",
@@ -308,7 +396,6 @@ def main() -> None:
     stage1 = load_stage(STAGE_CONFIG["1"]["score_set"], STAGE_CONFIG["1"]["tasks"])
     stage1c = load_stage(STAGE_CONFIG["1c"]["score_set"], STAGE_CONFIG["1c"]["tasks"])
     stage1d = load_stage(STAGE_CONFIG["1d"]["score_set"], STAGE_CONFIG["1d"]["tasks"])
-    stage1pipe = load_stage(STAGE_CONFIG["pipeline"]["score_set"], STAGE_CONFIG["pipeline"]["tasks"])
     stage1e = load_stage1e()
 
     idx = 0
@@ -322,8 +409,10 @@ def main() -> None:
             idx = inject_stage1c_table(lines, idx, stage1c)
         elif line.startswith("### Stage 1D Class A:") or line.startswith("### Stage 1D Class B:"):
             idx = inject_stage1d_table(lines, idx, stage1d)
-        elif line.startswith("### Issue #376 Class A:") or line.startswith("### Issue #376 Class B:"):
-            idx = inject_pipeline_table(lines, idx, stage1pipe)
+        elif line.startswith("### Issue #376 Class A:"):
+            idx = inject_pipeline_table(lines, idx, "A")
+        elif line.startswith("### Issue #376 Class B:"):
+            idx = inject_pipeline_table(lines, idx, "B")
         elif line.startswith("### Stage 1E Class A:"):
             idx = inject_stage1e_table(lines, idx, VARIANT_TO_GROUP_A, stage1e)
         elif line.startswith("### Stage 1E Class B:"):
@@ -331,6 +420,8 @@ def main() -> None:
         else:
             idx += 1
 
+    inject_grader_notes(lines)
+    strip_legacy_grader_paragraphs(lines)
     out = update_score_set_section("\n".join(lines) + "\n")
     path.write_text(out, encoding="utf-8")
     print(f"updated {path}")

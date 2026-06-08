@@ -1,0 +1,106 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-023",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 10,
+      "max_subjective_points": 10,
+      "rationale": "The patch replaces the two hard-coded install.sh/test.sh checks with an explicit target_globs array covering all five requested patterns (*.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, scripts/lib/*.sh), enables nullglob for safe empty-glob handling, and runs bash -n per matched file with independent pass()/fail() reporting. Behavior matches the parser-only, per-file reporting contract inspectable from the diff.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 12,
+      "max_subjective_points": 15,
+      "rationale": "Shell change is minimal and readable with inline comments documenting the explicit glob set, nullglob rationale, and intentional unquoted glob expansion (shellcheck SC2206 disable). Deductions for redirecting bash -n stderr to /dev/null (hides syntax-error detail on failure), no [[ -f \"$file\" ]] guard before bash -n, and the nested glob-then-files loop being slightly more indirect than a single collected array.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 1,
+      "max_subjective_points": 5,
+      "rationale": "Adding PLAN.md violates the benchmark forbidden-path constraint (objective evidence: forbidden:^PLAN\\.md$ fail, scope:plan_md warn) and expands scope beyond the task's doc-sync-only guidance. PLAN.md references issue #374 rather than the closed #281 task and lists verification steps, but the bundle contains no bash test.sh output, narrow syntax-check output, or negative-smoke demonstration/explanation\u2014so plan discipline is weak despite surface planning structure.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 2,
+      "max_subjective_points": 5,
+      "rationale": "Objective evidence confirms test wiring (6/6) and bash_n_check_script pass, and the diff integrates with existing pass/fail helpers sourced by test.sh. Bundle lacks full_test_sh execution evidence (skipped in bundle-only grading), no reported command output, and no negative-smoke test or explanation that a deliberate syntax error is caught and cleared; PLAN.md verification claims are unverified from bundle artifacts.",
+      "uncertain": true
+    }
+  },
+  "subjective_total": 25,
+  "uncertainty_notes": [
+    "Bundle contains no bash test.sh run output, narrow syntax-check output, or negative-smoke demonstration/explanation required by acceptance criteria; reliability scored conservatively.",
+    "Cannot confirm from bundle alone whether expanding coverage would have revealed latent syntax errors elsewhere requiring fixes in the same diff."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "target_globs array lists *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh covering all five requested glob locations"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "shopt -s nullglob before the glob loop and shopt -u nullglob afterward handle empty globs safely"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "nested loop runs bash -n on each expanded file and calls pass or fail independently for per-file reporting"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "bash -n \"$file\" 2>/dev/null keeps the check parser-only but suppresses stderr on syntax failures"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "inline comments document explicit glob set, nullglob usage, and intentional unquoted glob expansion with shellcheck disable SC2206"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "no [[ -f \"$file\" ]] guard before bash -n"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "new PLAN.md added to diff referencing issue #374 with planned verification steps but no captured outputs"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "PLAN.md and scripts/checks/055-script-syntax.sh changed; PLAN.md is out-of-scope per forbidden-path check"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "task requires bash test.sh verification, negative-smoke test or documented explanation, and reporting real command output\u2014none present in bundle artifacts beyond the code diff"
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective scoring proceeds normally"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "required_path:scripts/checks/055-script-syntax.sh passed (4/4)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "forbidden:^PLAN\\.md$ failed with forbidden path in diff"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "scope:plan_md warned for PLAN.md in diff"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_check_script passed (5/5)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring passed (6/6) confirming check integration with test.sh"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh skipped in bundle-only grading; no full-suite execution evidence available"
+    }
+  ],
+  "graded_at": "2026-06-08T01:35:36Z"
+}

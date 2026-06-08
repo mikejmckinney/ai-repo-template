@@ -1,0 +1,98 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-011",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 7,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the inspectable exit/result contract end-to-end: PR-number validation, allow-list load with [bot] stripping, INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, pre- and post-snapshot head SHA checks, and RESULT=/HEAD= emissions for CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, and API_ERROR with documented exit codes 0/0/3/2/4. Bats stubs exercise all five branches. Three-point deduction: CONVERGED fires when SNAP_UNRESOLVED_BOT_THREADS equals zero without verifying that participating allow-listed bots are terminal for the current head (the GraphQL query fetches only reviewThreads, not submitted PR reviews), so a PR with no bot threads yet can return CONVERGED immediately\u2014contrary to the task's dual-condition CONVERGED definition. Additional minor gaps: reviewThreads(first:100) and comments(first:1) are unpaginated, and isOutdated is fetched but never applied in analyze_snapshot.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 14,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is clear, maintainable, and repo-consistent: structured shell helpers (emit_result, gh_head_sha/gh_graphql test seams, normalize_login, analyze_snapshot), stderr diagnostics, in-memory-only state, and a well-documented header with deliberate pre-#321 scope limits. Docs are thoroughly synced\u2014pr-resolve-all.md adds a settle-window section preferring the helper while preserving the 6-minute fallback; AI_REPO_GUIDE.md, scripts/README.md, scripts/lib/README.md, and scripts/tests/README.md all index the new surfaces; op-issue-workflow.md references the helper. Check wiring via scripts/checks/160-pr-resolve-all-poll.sh follows existing pass/fail plus run_bats_check patterns. One-point deduction for unpaginated GraphQL (first:100 threads, first comment only) and unused isOutdated field in snapshot analysis.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Diff stays focused on the task surfaces (11 files): helper, canonical allow-list, dedicated check, bats suite, and required prompt/doc companions. pr-resolve-all.md prefers scripts/pr-resolve-all-poll.sh, documents the exit/result dispatch table and env overrides, and explicitly retains the documented time-based fallback. No AGENTS.md, PLAN.md, or unrelated state-surface churn appears in files-changed.txt; objective process scored 15/15.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Verification wiring is credible: scripts/checks/160-pr-resolve-all-poll.sh existence-checks the helper and allow-list then invokes run_bats_check; scripts/checks/105-scripts.sh adds syntax lint coverage; objective test_wiring matched 2/2, bash -n passed, and lint-shell-conventions passed. The bats suite (11 cases) mock-tests all five result branches plus human-thread non-actionability and the RESULT=/HEAD= stdout contract via PR_POLL_HEAD_SHA_CMD/PR_POLL_GH_GRAPHQL_CMD stubs. One-point deduction: bats_poll_helper and full_test_sh were skipped in objective-grade.json, so runtime pass is unverified in this bundle; no stub coverage for live gh_graphql command failure (only malformed JSON).",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 30,
+  "uncertainty_notes": [
+    "bats_poll_helper and full_test_sh were skipped in objective-grade.json; subjective reliability assumes the stub-based bats cases are structurally sound but not runtime-verified in this bundle.",
+    "Allow-list parity with pr-resolve-all.md Phase 4 inline list cannot be confirmed from the diff hunk alone; only the new scripts/lib/bot-allowlist.txt contents are visible."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, enabling normal subjective scoring rather than fail-closed zeroing."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper and full_test_sh skipped; test_wiring matched 2/2 patterns."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "required_path checks passed for scripts/pr-resolve-all-poll.sh, scripts/lib/bot-allowlist.txt, pr-resolve-all.md, and AI_REPO_GUIDE.md; doc_companions 2/2 passed; process objective 15/15."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "emit_result prints RESULT= and optional HEAD= on stdout and maps CONVERGED/QUIET_ELAPSED/TIMEOUT/SHA_CHANGED/API_ERROR to exit codes 0/0/2/3/4."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Main poll loop checks head SHA before and after each GraphQL snapshot and exits 3 with RESULT=SHA_CHANGED when baseline_sha differs."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "CONVERGED branch triggers solely when SNAP_UNRESOLVED_BOT_THREADS equals zero, without querying PullRequestReview or bot terminal state."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "gh_graphql default query fetches reviewThreads(first:100) with comments(first:1) only; no review-submission or pagination logic."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "analyze_snapshot counts unresolved allow-listed bot-authored threads but does not filter on isOutdated despite fetching it in the GraphQL query."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "QUIET_ELAPSED exits 0 when SNAP_LATEST_EVENT_EPOCH > 0 and elapsed time since latest bot event meets QUIET_WINDOW."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md section 5 prefers bash scripts/pr-resolve-all-poll.sh and retains the documented 6-minute time-based fallback on API_ERROR."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats contains 11 stub-based tests covering CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, API_ERROR, and human-thread non-actionability."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/160-pr-resolve-all-poll.sh wires existence checks and run_bats_check for the poller suite."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Eleven focused files changed with no unrelated AGENTS.md, PLAN.md, or compliance-fixture churn."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Task requires CONVERGED when participating expected bots are terminal for the current head AND no unresolved actionable bot-authored review threads remain."
+    }
+  ],
+  "graded_at": "2026-06-08T01:45:24Z"
+}

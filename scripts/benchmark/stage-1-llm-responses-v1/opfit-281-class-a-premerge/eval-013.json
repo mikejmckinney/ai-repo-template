@@ -1,0 +1,94 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-013",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The patch replaces the two hard-coded install.sh/test.sh checks with an explicit scripts array covering all five requested glob patterns (*.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, scripts/lib/*.sh), enables nullglob during expansion, and loops with bash -n plus independent pass()/fail() per file\u2014matching the parser-only, explicit-glob, per-file reporting contract. One-point deduction for redirecting bash -n stderr to /dev/null (hides failure diagnostics) and because bundle evidence cannot confirm whether expanded coverage revealed latent syntax errors elsewhere requiring fixes in the same diff.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 11,
+      "max_subjective_points": 15,
+      "rationale": "Core check change is minimal, readable, and repo-consistent: nullglob with an explicit glob list and a straightforward for-loop over pass()/fail() helpers. Deductions for stderr suppression on bash -n failures, absence of inline comments documenting glob rationale or empty-set handling, and diff noise from five additional .context state/session files beyond the required check script.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Handshake discipline is partially evident: latest_summary, handoff, _active task claim, and coordination lock document decisions and next steps. However the diff violates the task scope constraint (PR should remain scoped to the check and required doc-sync) by touching forbidden .context/state and .context/sessions paths, and no documented no-change doc-sync decision appears in bundle artifacts.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Objective evidence confirms test wiring (6/6) and bash_n_check_script pass. Handoff and latest_summary consistently claim bash -n on the changed script, full bash test.sh pass, and a deliberate negative smoke via temporary breakage of scripts/verify-env.sh with restoration\u2014stronger than bundles with no verification notes. One-point deduction because full_test_sh was skipped in bundle-only grading and no raw command transcripts are present to independently corroborate the negative-smoke cycle.",
+      "uncertain": true
+    }
+  },
+  "subjective_total": 27,
+  "uncertainty_notes": [
+    "full_test_sh was skipped in bundle-only grading; bash test.sh pass/fail/restore and negative-smoke outcomes are self-reported in session/handoff artifacts without raw command output.",
+    "Cannot confirm from bundle alone whether expanded coverage would have revealed latent syntax errors elsewhere requiring fixes in the same diff."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts array lists *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh covering all five requested glob locations"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "shopt -s nullglob before array assignment and shopt -u nullglob after handles empty globs safely during expansion"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "for loop runs bash -n on each script and calls pass or fail independently, providing per-file reporting through existing test helpers"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "bash -n \"$script\" 2>/dev/null keeps the check parser-only but suppresses stderr on syntax failures"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "six files changed including scripts/checks/055-script-syntax.sh plus five .context state/session paths"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "task requires PR/diff scoped to the check and any required doc-sync; acceptance expects bash test.sh verification and negative-smoke test or documented explanation"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "latest_summary and handoff document bash test.sh pass, bash -n on 055-script-syntax.sh, and negative smoke via temporary scripts/verify-env.sh breakage with restoration"
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective scoring proceeds normally"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "required_path:scripts/checks/055-script-syntax.sh passed (4/4)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "forbidden:^\\.context/state/ and forbidden:^\\.context/sessions/ failed, indicating scope/process violations already penalized objectively"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_check_script passed (5/5)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring passed (6/6) confirming check integration with test.sh"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh skipped in bundle-only grading; no full-suite execution evidence available"
+    }
+  ],
+  "graded_at": "2026-06-08T01:28:41Z"
+}

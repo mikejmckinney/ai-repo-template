@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from canonical_scores_lib import STAGE_CONFIG, load_stage  # noqa: E402
+from canonical_scores_lib import lookup_pipeline_score  # noqa: E402
 from roi_format_lib import fmt_roi, parse_cost, parse_pipeline_tail, parse_row  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
@@ -24,9 +24,9 @@ PIPELINE_SEP = (
 )
 
 
-def process_table(lines: list[str], start: int, lookup: dict) -> int:
+def process_table(lines: list[str], start: int, task_class: str) -> int:
     header_idx = None
-    for j in range(start, min(start + 12, len(lines))):
+    for j in range(start, min(start + 30, len(lines))):
         if lines[j].startswith("| Alias | Platform / model | Run |"):
             header_idx = j
             break
@@ -43,7 +43,7 @@ def process_table(lines: list[str], start: int, lookup: dict) -> int:
         alias = parts[0].strip("`")
         run_s = parts[2].strip("`")
         run = int(run_s[1:]) if run_s.startswith("r") and run_s[1:].isdigit() else 1
-        row = lookup.get((alias, run))
+        row = lookup_pipeline_score(task_class, alias, run)
         wall, diff, cost_s, roi_s, summary = parse_pipeline_tail(parts)
         cost = parse_cost(cost_s)
         if row and cost:
@@ -60,12 +60,12 @@ def process_table(lines: list[str], start: int, lookup: dict) -> int:
 def main() -> None:
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else RESULTS
     lines = path.read_text(encoding="utf-8").splitlines()
-    lookup = load_stage(STAGE_CONFIG["pipeline"]["score_set"], STAGE_CONFIG["pipeline"]["tasks"])
-
     idx = 0
     while idx < len(lines):
-        if lines[idx].startswith("### Issue #376 Class"):
-            idx = process_table(lines, idx, lookup)
+        if lines[idx].startswith("### Issue #376 Class A:"):
+            idx = process_table(lines, idx, "A")
+        elif lines[idx].startswith("### Issue #376 Class B:"):
+            idx = process_table(lines, idx, "B")
         else:
             idx += 1
 

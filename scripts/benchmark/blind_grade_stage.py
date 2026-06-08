@@ -13,6 +13,11 @@ BUNDLES = REPO / "scripts/benchmark/grade-bundles"
 RUNNER = REPO / "scripts/benchmark"
 
 STAGE_TASKS = {
+    "1": (
+        "stage-1-canonical-v1",
+        "stage-1-llm-responses-v1",
+        ("opfit-281-class-a-premerge", "opfit-326-class-b-premerge"),
+    ),
     "1c": (
         "stage-1c-canonical-v1",
         "stage-llm-responses-v1",
@@ -39,7 +44,7 @@ STAGE_TASKS = {
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stage", choices=sorted(STAGE_TASKS), required=True)
+    parser.add_argument("--stage", choices=sorted(STAGE_TASKS, key=lambda s: (s != "1", s)), required=True)
     parser.add_argument("--grader-id", default="cursor-llm-blind-v1")
     parser.add_argument("--model", help="Cursor agent model slug")
     parser.add_argument("--timeout", type=int, default=300)

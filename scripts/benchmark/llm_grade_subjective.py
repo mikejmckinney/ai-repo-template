@@ -7,6 +7,7 @@ import argparse
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 from pathlib import Path
@@ -119,26 +120,27 @@ def invoke_cursor_agent(prompt: str, model: str | None, timeout: int) -> str:
         cmd.extend(["--model", model])
     env = os.environ.copy()
     try:
-        proc = subprocess.run(
+        proc = subprocess.Popen(
             cmd,
-            input=prompt,
-            capture_output=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=timeout,
             cwd=str(REPO),
             env=env,
             start_new_session=True,
         )
-    except subprocess.TimeoutExpired as exc:
-        die(
-            f"agent timed out after {timeout}s "
-            f"(prompt_bytes={len(prompt)}); partial_out={str(exc.stdout or '')[:200]!r}"
-        )
+        stdout, stderr = proc.communicate(input=prompt, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            proc.kill()
+        proc.wait(timeout=5)
+        die(f"agent timed out after {timeout}s (prompt_bytes={len(prompt)}); killed process group")
     if proc.returncode != 0:
-        die(f"agent failed (rc={proc.returncode}): {proc.stderr.strip() or proc.stdout[:500]}")
-    return proc.stdout
-
-
+        die(f"agent failed (rc={proc.returncode}): {stderr.strip() or stdout[:500]}")
+    return stdout
 def grade_bundle(
     bundle: Path,
     grader_id: str,

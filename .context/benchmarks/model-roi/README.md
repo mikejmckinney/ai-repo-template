@@ -37,6 +37,7 @@ agent must perform, plus sealed reference metadata for evaluators.
 | `scripts/benchmark/llm_grade_subjective.py` | True LLM blind grader: feeds each bundle's `subjective-prompt.md` to Cursor agent (`model-roi-grader-v1`). |
 | `scripts/benchmark/update-benchmark-results.py` | Sync `results/agent-roi-benchmark-results.md` (`scores`, `roi`, `sort`, `all`). |
 | `scripts/benchmark/stage-llm-responses-v1/` | Recorded subjective JSON for `cursor-llm-blind-v1` regrades (Stage 1C / 1D / pipeline). |
+| `scripts/benchmark/stage-1-llm-responses-v1/` | Stage 1 monolithic LLM responses (separate dir — shares task ids with 1D). |
 | `scripts/benchmark/regrade-stage-1e.sh` | Operator script: prepare/record/compile canonical regrades for all Stage 1E CP-1 `RUN_GROUP`s. |
 | `.github/prompts/model-roi-grader-v1.md` | Locked subjective grader prompt (JSON-only output). |
 | `scripts/benchmark/candidates.tsv.example` | Example sealed alias manifest for Core Stage 1 plus later-phase placeholders. |
