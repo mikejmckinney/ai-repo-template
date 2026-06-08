@@ -10,7 +10,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   external_hash_refs=$(
     git grep -n 'AGENTS\.md#' -- \
       ':!.github/prompts/agent-pr-prompts-combined-v2.md' \
-      ':!docs/guides/agents-md-section-redirects.md' 2>/dev/null || true
+      ':!docs/guides/agents-md-section-redirects.md' \
+      ':!scripts/checks/047-legacy-agents-redirects.sh' 2>/dev/null || true
   )
 
   if [[ -f "$LEGACY_RULE" ]]; then
@@ -32,10 +33,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if [[ -n "$external_hash_refs" ]]; then
-    fail "AGENTS.md# hash-anchor references remain outside the redirect guide"
+    fail "AGENTS.md hash-anchor references remain outside the redirect guide"
     printf '%s\n' "$external_hash_refs"
   else
-    pass "no live AGENTS.md# hash-anchor references outside redirect guide"
+    pass "no live AGENTS.md hash-anchor references outside redirect guide"
   fi
 
   echo ""
