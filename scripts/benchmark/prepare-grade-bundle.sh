@@ -54,6 +54,7 @@ TASK_MD="${REPO_DIR}/.context/benchmarks/model-roi/tasks/${TASK}.md"
 runs_base="$(runs_task_base "${TASK}")"
 [[ -d "${runs_base}" ]] || die "no runs at ${runs_base}"
 
+# Requires Bash 4+ (associative arrays). macOS default Bash 3.2: use Homebrew bash or Linux CI.
 declare -A MANIFEST_KEYS=()
 if [[ -n "${MANIFEST}" ]]; then
   [[ -f "${MANIFEST}" ]] || die "manifest not found: ${MANIFEST}"
@@ -68,13 +69,16 @@ declare -a CANDIDATE_DIRS=()
 while IFS= read -r result; do
   [[ -n "${result}" ]] || continue
   d="$(dirname "${result}")"
-  alias="$(jq -r '.alias // "unknown"' "${d}/meta-blind.json" 2>/dev/null || echo unknown)"
-  ri="$(jq -r '.run_index' "${d}/meta-blind.json" 2>/dev/null || echo "")"
+  [[ -f "${d}/meta-blind.json" ]] || continue
+  state="$(jq -r '.terminal_state // "graded"' "${result}" 2>/dev/null || echo graded)"
+  [[ "${state}" == "blocked" ]] && continue
+  alias="$(jq -r '.alias // "unknown"' "${d}/meta-blind.json")"
+  ri="$(jq -r '.run_index' "${d}/meta-blind.json")"
   if [[ -n "${RUN_INDEX_FILTER}" ]]; then
     [[ "${ri}" == "${RUN_INDEX_FILTER}" ]] || continue
   fi
   if [[ "${#MANIFEST_KEYS[@]}" -gt 0 ]]; then
-    [[ -n "${MANIFEST_KEYS[${alias} - r${ri}]+x}" ]] || continue
+    [[ -n "${MANIFEST_KEYS[${alias}-r${ri}]+x}" ]] || continue
   fi
   CANDIDATE_DIRS+=("${d}")
 done < <(find "${runs_base}" -name result.json 2>/dev/null | sort)
@@ -115,7 +119,10 @@ for d in "${ORDERED_DIRS[@]}"; do
 done
 
 mkdir -p "${BUNDLE_ROOT}"
+find "${BUNDLE_ROOT}" -maxdepth 1 -type d -name 'eval-*' -exec rm -rf {} +
 BUNDLE_SEED="$(printf '%s|%s|%s' "${TASK}" "${SCORE_SET}" "${RUN_GROUP:-}")"
+RUBRIC_ID="rubric.v1"
+[[ "${TASK}" == *-pipeline ]] && RUBRIC_ID="rubric.pipeline.v1"
 printf '# SEALED — do not show to graders\neval_candidate_id\ttask_id\talias\trun_index\trun_group\tcontext_condition\tcontext_variant\tcontext_pack_id\tartifact_dir\tsealed_candidate_key\n' >"${SEALED_MAP}"
 
 eval_n=0
@@ -222,6 +229,7 @@ jq -n \
   --argjson eval_count "${eval_n}" \
   --arg created "$(_ts)" \
   --argjson conds "${conds_joined}" \
+  --arg rubric "${RUBRIC_ID}" \
   '{
     schema_version: $schema,
     score_set_id: $score_set,
@@ -229,7 +237,7 @@ jq -n \
     stage: $stage,
     run_group: (if $rg == "" then null else $rg end),
     run_index_filter: $run_idx,
-    rubric_id: "rubric.v1",
+    rubric_id: $rubric,
     grader_prompt_id: "model-roi-grader-v1",
     bundle_seed: $seed,
     eval_count: $eval_count,

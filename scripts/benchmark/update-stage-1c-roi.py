@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from canonical_scores_lib import STAGE_CONFIG, load_stage  # noqa: E402
+from canonical_scores_lib import lookup_stage_score  # noqa: E402
 from roi_format_lib import fmt_delta, fmt_roi, parse_cost, parse_row  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
@@ -19,11 +19,6 @@ def col_index(header: list[str], name: str) -> int | None:
         if name in h:
             return i
     return None
-
-
-def canonical_for(merged: dict, alias: str) -> int | None:
-    row = merged.get((alias, 1))
-    return int(row["canonical"]) if row else None
 
 
 def load_marginal_costs(lines: list[str], section: str) -> dict[str, float]:
@@ -56,8 +51,7 @@ def load_marginal_costs(lines: list[str], section: str) -> dict[str, float]:
 def process_table(
     lines: list[str],
     start: int,
-    inj_lookup: dict,
-    base_lookup: dict,
+    task_class: str,
     marginal_costs: dict[str, float],
 ) -> int:
     header_idx = None
@@ -81,8 +75,10 @@ def process_table(
             break
         inj = parts[0].strip("`")
         base = parts[1].strip("`")
-        canonical = canonical_for(inj_lookup, inj)
-        base_c = canonical_for(base_lookup, base)
+        inj_row = lookup_stage_score("1c", task_class, inj, 1)
+        base_row = lookup_stage_score("1", task_class, base, 1)
+        canonical = int(inj_row["canonical"]) if inj_row else None
+        base_c = int(base_row["canonical"]) if base_row else None
         inj_cost = parse_cost(parts[idx_cost]) if idx_cost is not None else None
         base_cost = marginal_costs.get(base)
 
@@ -108,17 +104,15 @@ def process_table(
 def main() -> None:
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else RESULTS
     lines = path.read_text(encoding="utf-8").splitlines()
-    inj = load_stage(STAGE_CONFIG["1c"]["score_set"], STAGE_CONFIG["1c"]["tasks"])
-    base = load_stage(STAGE_CONFIG["1"]["score_set"], STAGE_CONFIG["1"]["tasks"])
     costs_a = load_marginal_costs(lines, "### Class A Marginal ROI")
     costs_b = load_marginal_costs(lines, "### Class B Marginal ROI")
 
     idx = 0
     while idx < len(lines):
         if lines[idx].startswith("### Stage 1C Class A:"):
-            idx = process_table(lines, idx, inj, base, costs_a)
+            idx = process_table(lines, idx, "A", costs_a)
         elif lines[idx].startswith("### Stage 1C Class B:"):
-            idx = process_table(lines, idx, inj, base, costs_b)
+            idx = process_table(lines, idx, "B", costs_b)
         else:
             idx += 1
 

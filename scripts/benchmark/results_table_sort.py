@@ -108,6 +108,10 @@ def sort_markdown_tables(lines: list[str]) -> list[str]:
         block: list[str] = []
         while i < len(lines):
             nxt = lines[i]
+            if nxt.startswith("Issue #376 run notes:"):
+                break
+            if nxt.startswith("Pipeline session recovery notes:"):
+                break
             if nxt.startswith("## ") or nxt.startswith("### "):
                 if rule_for_line(nxt) and nxt != line:
                     break

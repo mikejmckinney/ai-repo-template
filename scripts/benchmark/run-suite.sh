@@ -93,7 +93,7 @@ declare -a CAPTURED=() FAIL=() BLOCKED=() SKIPPED=()
 
 for alias in "${ALIASES[@]}"; do
   if [[ "${RESUME}" == "1" ]]; then
-    mapfile -t existing_results < <(find "${RUNS_DIR}/${TASK}/${alias}" -name result.json 2>/dev/null | sort)
+    mapfile -t existing_results < <(find "$(runs_task_base "${TASK}")/${alias}" -name result.json 2>/dev/null | sort)
     if [[ "${#existing_results[@]}" -gt 0 ]]; then
       SKIPPED+=("${alias}")
       log "skip: ${alias} already has terminal result (${existing_results[0]})"

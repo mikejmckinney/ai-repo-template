@@ -554,6 +554,16 @@ Each stage has a dedicated regrade wrapper and `score_set_id`:
 replace with **fresh blind JSON** from `model-roi-grader-v1.md` and a stable
 `grader_id` (`cursor-llm-blind-v1` for all extended stages including 1E).
 
+After `record` + `compile`, refresh published columns with:
+
+```bash
+python3 scripts/benchmark/update-benchmark-results.py all
+```
+
+`regrade-stage.sh record` and `all` accept an optional trailing `score-set-id`
+override (same as `prepare` / `compile`). `make suite-resume` respects `RUN_GROUP`
+via `runs_task_base` when skipping aliases that already have terminal results.
+
 Exploratory Cursor/Codex regrades are separate cohorts for inter-rater analysis
 only — do not average them into canonical rows.
 

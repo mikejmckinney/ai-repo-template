@@ -19,24 +19,58 @@
     "score_set_id": { "type": "string", "minLength": 1 },
     "eval_candidate_id": { "type": "string", "pattern": "^eval-[0-9]{3}$" },
     "task_id": { "type": "string", "minLength": 1 },
-    "rubric_id": { "const": "rubric.v1" },
+    "rubric_id": { "enum": ["rubric.v1", "rubric.pipeline.v1"] },
     "hard_gate_pass": { "type": "boolean" },
     "hard_gate_reason": { "type": ["string", "null"] },
-    "categories": {
-      "type": "object",
-      "required": ["correctness", "quality", "process", "reliability", "latency"],
-      "properties": {
-        "correctness": { "$ref": "#/$defs/categoryScore" },
-        "quality": { "$ref": "#/$defs/categoryScore" },
-        "process": { "$ref": "#/$defs/categoryScore" },
-        "reliability": { "$ref": "#/$defs/categoryScore" },
-        "latency": { "$ref": "#/$defs/categoryScore" }
-      }
-    },
-    "objective_total": { "type": "integer", "minimum": 0, "maximum": 65 },
+    "categories": { "type": "object" },
+    "objective_total": { "type": "integer", "minimum": 0, "maximum": 100 },
     "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidenceItem" } },
     "graded_at": { "type": "string" }
   },
+  "oneOf": [
+    {
+      "properties": {
+        "rubric_id": { "const": "rubric.v1" },
+        "categories": {
+          "type": "object",
+          "required": ["correctness", "quality", "process", "reliability", "latency"],
+          "properties": {
+            "correctness": { "$ref": "#/$defs/categoryScore" },
+            "quality": { "$ref": "#/$defs/categoryScore" },
+            "process": { "$ref": "#/$defs/categoryScore" },
+            "reliability": { "$ref": "#/$defs/categoryScore" },
+            "latency": { "$ref": "#/$defs/categoryScore" }
+          }
+        },
+        "objective_total": { "type": "integer", "minimum": 0, "maximum": 65 }
+      }
+    },
+    {
+      "properties": {
+        "rubric_id": { "const": "rubric.pipeline.v1" },
+        "categories": {
+          "type": "object",
+          "required": [
+            "correctness",
+            "quality",
+            "process",
+            "reliability",
+            "coordination",
+            "latency"
+          ],
+          "properties": {
+            "correctness": { "$ref": "#/$defs/categoryScore" },
+            "quality": { "$ref": "#/$defs/categoryScore" },
+            "process": { "$ref": "#/$defs/categoryScore" },
+            "reliability": { "$ref": "#/$defs/categoryScore" },
+            "coordination": { "$ref": "#/$defs/categoryScore" },
+            "latency": { "$ref": "#/$defs/categoryScore" }
+          }
+        },
+        "objective_total": { "type": "integer", "minimum": 0, "maximum": 58 }
+      }
+    }
+  ],
   "$defs": {
     "categoryScore": {
       "type": "object",

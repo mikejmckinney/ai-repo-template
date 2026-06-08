@@ -5,11 +5,40 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from grading_lib import compile_final_row, utc_now, write_json  # noqa: E402
+
+STANDARD_CATEGORIES = [
+    "correctness",
+    "quality",
+    "process",
+    "reliability",
+    "latency",
+]
+PIPELINE_CATEGORIES = STANDARD_CATEGORIES + ["coordination"]
+
+
+def _rubric_id_from_bundles(bundles: list[Path]) -> str:
+    for bundle in bundles:
+        obj_path = bundle / "objective-grade.json"
+        if obj_path.is_file():
+            obj = json.loads(obj_path.read_text(encoding="utf-8"))
+            return str(obj.get("rubric_id", "rubric.v1"))
+    return "rubric.v1"
+
+
+def _category_columns(rows: list[dict], rubric_id: str) -> list[str]:
+    if rubric_id == "rubric.pipeline.v1":
+        return PIPELINE_CATEGORIES
+    for row in rows:
+        cats = row.get("categories", {})
+        if "coordination" in cats:
+            return PIPELINE_CATEGORIES
+    return STANDARD_CATEGORIES
 
 
 def main() -> None:
@@ -33,15 +62,18 @@ def main() -> None:
 
     obj_in = None
     if bundles and (bundles[0] / "objective-input.json").is_file():
-        import json
+        obj_in = json.loads(
+            (bundles[0] / "objective-input.json").read_text(encoding="utf-8")
+        )
 
-        obj_in = json.loads((bundles[0] / "objective-input.json").read_text())
+    rubric_id = _rubric_id_from_bundles(bundles)
+    category_cols = _category_columns(rows, rubric_id)
 
     final_json = {
         "schema_version": "benchmark-final-grades.v1",
         "score_set_id": obj_in.get("score_set_id", "unknown") if obj_in else "unknown",
         "task_id": obj_in.get("task_id", "unknown") if obj_in else "unknown",
-        "rubric_id": "rubric.v1",
+        "rubric_id": rubric_id,
         "grader_id": grader_id,
         "subjective_aggregation": "median" if args.median_subjective else "single",
         "rows": rows,
@@ -62,11 +94,7 @@ def main() -> None:
                 "objective_total",
                 "subjective_total",
                 "final_total",
-                "correctness",
-                "quality",
-                "process",
-                "reliability",
-                "latency",
+                *category_cols,
             ]
         )
         for row in rows:
@@ -79,11 +107,10 @@ def main() -> None:
                     row.get("objective_total", ""),
                     row.get("subjective_total", ""),
                     row.get("final_total", ""),
-                    cats.get("correctness", {}).get("total", ""),
-                    cats.get("quality", {}).get("total", ""),
-                    cats.get("process", {}).get("total", ""),
-                    cats.get("reliability", {}).get("total", ""),
-                    cats.get("latency", {}).get("total", ""),
+                    *[
+                        cats.get(cat, {}).get("total", "")
+                        for cat in category_cols
+                    ],
                 ]
             )
 

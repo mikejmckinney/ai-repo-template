@@ -133,8 +133,14 @@ def inject_stage1c_table(lines: list[str], start: int, task_class: str) -> int:
         alias = parts[0].strip("`")
         legacy = parts[7]
         scores = lookup_stage_score("1c", task_class, alias, 1) or na_cells()
-        if len(parts) >= 19:
-            tail = parts[12:]
+        score_delta_idx = 12
+        if "Score delta" in lines[header_idx]:
+            for hi, h in enumerate(parse_row(lines[header_idx])):
+                if "Score delta" in h:
+                    score_delta_idx = hi
+                    break
+        if len(parts) > score_delta_idx:
+            tail = parts[score_delta_idx:]
         else:
             tail = parts[8:]
         new_parts = parts[:7] + [

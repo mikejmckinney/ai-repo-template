@@ -160,7 +160,7 @@ grade-objective:
 	@test -n "$(TASK)" -a -n "$(SCORE_SET)" || { echo "set TASK SCORE_SET"; exit 2; }
 	@python3 "$(HERE)grade-objective.py" \
 	  --bundle-root "$(HERE)grade-bundles/$(TASK)/$(SCORE_SET)" \
-	  --rubric "$(if $(RUBRIC),$(RUBRIC),$(HERE)../../.context/benchmarks/model-roi/grading/rubric.v1.json)" \
+	  --rubric "$(if $(RUBRIC),$(RUBRIC),$(if $(filter %-pipeline,$(TASK)),$(HERE)../../.context/benchmarks/model-roi/grading/rubric.pipeline.v1.json,$(HERE)../../.context/benchmarks/model-roi/grading/rubric.v1.json))" \
 	  --task-spec "$(HERE)../../.context/benchmarks/model-roi/grading/tasks/$(TASK).json"
 
 grade-subjective-prompts:

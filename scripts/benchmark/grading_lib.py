@@ -24,6 +24,20 @@ SUBJECTIVE_MAX = {
     "reliability": 5,
 }
 
+PIPELINE_SUBJECTIVE_AUGMENT = """
+## Pipeline rubric override
+
+This bundle uses `rubric.pipeline.v1` (not `rubric.v1`). Score these subjective maxima:
+- Correctness: 10
+- Quality: 12
+- Process: 5
+- Reliability: 5
+- Coordination: 10 (subjective only; observable multi-role orchestration evidence)
+- Latency: 0 (objective only)
+
+Set `rubric_id` to `rubric.pipeline.v1` in your JSON output and include all categories above.
+"""
+
 OBJECTIVE_MAX = {
     "correctness": 20,
     "quality": 10,
@@ -577,8 +591,16 @@ def _median_subjective(grades: list[dict]) -> dict:
     base = grades[0].copy()
     cats = {}
     total = 0
-    for cat, mx in SUBJECTIVE_MAX.items():
-        vals = [int(g["categories"][cat]["subjective_points"]) for g in grades]
+    sample_cats = grades[0].get("categories", {})
+    for cat, meta in sample_cats.items():
+        mx = int(meta.get("max_subjective_points", SUBJECTIVE_MAX.get(cat, 0)))
+        vals = [
+            int(g["categories"][cat]["subjective_points"])
+            for g in grades
+            if cat in g.get("categories", {})
+        ]
+        if not vals:
+            continue
         med = int(round(statistics.median(vals)))
         cats[cat] = {
             "subjective_points": med,

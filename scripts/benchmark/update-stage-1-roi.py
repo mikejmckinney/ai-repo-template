@@ -58,6 +58,8 @@ def process_marginal_table(lines: list[str], start: int, task_class: str) -> int
         platform = parts[1]
         if len(parts) >= 9:
             legacy, cost_s, caveat = parts[2], parts[6], parts[8]
+        elif len(parts) >= 6:
+            legacy, cost_s, caveat = parts[2], parts[3], parts[5]
         else:
             legacy, cost_s, caveat = parts[2], parts[4], parts[6]
 

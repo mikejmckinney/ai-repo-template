@@ -104,6 +104,22 @@ Issue #376 pipeline score sets use a six-category rubric (includes **coordinatio
 `grading/tasks/opfit-*-premerge-pipeline.json`. Subjective graders must set
 `rubric_id: rubric.pipeline.v1` and score the coordination category.
 
+Pipeline tasks (`*-pipeline`) default to `rubric.pipeline.v1` in `prepare-grade-bundle.sh`
+(`grade-set.json`), `make grade-objective`, `compile-final-grades.py`, and
+`objective-grade.schema.json` (six categories; objective max 58). Subjective
+prompts append the pipeline augment via `grading_lib.PIPELINE_SUBJECTIVE_AUGMENT`.
+
+## Grading harness requirements
+
+| Concern | Behavior |
+|---|---|
+| Shell | `prepare-grade-bundle.sh` uses Bash 4+ (`declare -A`, `mapfile`). macOS system Bash 3.2 is unsupported — use Homebrew `bash` or Linux CI. |
+| Manifest TSV | Row keys are `alias-rN` (e.g. `cand-05-r2`). Must match `sealed-eval-map.tsv` lookup. |
+| Blocked runs | Runs with `terminal_state: blocked` and no `meta-blind.json` are skipped when building bundles. |
+| Bundle refresh | Re-running `prepare-grade-bundle.sh` removes stale `eval-*` dirs under the score set before regenerating. |
+| ROI / results sync | `update-benchmark-results.py all` runs scores → per-stage ROI → table sort. Pipeline rows with missing Gemini cost use `N/A` (malformed `` `N \| N/A `` cells are normalized on sync). |
+| Class-scoped lookup | `lookup_stage_score` / `lookup_pipeline_score` include task class so Class A/B aliases do not collide in ROI deltas. |
+
 ## Regrading extended stages (1C / 1D / pipeline / 1E)
 
 | Stage | Operator script | Results sync |

@@ -14,6 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from grading_lib import (  # noqa: E402
+    PIPELINE_SUBJECTIVE_AUGMENT as PIPELINE_AUGMENT,
     die,
     load_json,
     load_rubric_by_id,
@@ -24,20 +25,6 @@ from grading_lib import (  # noqa: E402
 )
 
 REPO = Path(__file__).resolve().parents[2]
-
-PIPELINE_AUGMENT = """
-## Pipeline rubric override
-
-This bundle uses `rubric.pipeline.v1` (not `rubric.v1`). Score these subjective maxima:
-- Correctness: 10
-- Quality: 12
-- Process: 5
-- Reliability: 5
-- Coordination: 10 (subjective only; observable multi-role orchestration evidence)
-- Latency: 0 (objective only)
-
-Set `rubric_id` to `rubric.pipeline.v1` in your JSON output and include all categories above.
-"""
 
 
 def read_text(path: Path) -> str:

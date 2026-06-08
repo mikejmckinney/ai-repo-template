@@ -96,7 +96,8 @@ def process_table(lines: list[str], start: int, task_class: str) -> int:
     while i < len(lines) and lines[i].startswith("| `ctx-"):
         parts = parse_row(lines[i])
         if not is_stage1e_row(parts):
-            break
+            i += 1
+            continue
         rows.append(
             {
                 "i": i,

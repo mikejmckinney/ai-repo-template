@@ -4,11 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_PROMPT = REPO_ROOT / ".github/prompts/model-roi-grader-v1.md"
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from grading_lib import PIPELINE_SUBJECTIVE_AUGMENT  # noqa: E402
 
 
 def main() -> None:
@@ -19,6 +23,9 @@ def main() -> None:
     args = parser.parse_args()
 
     bundle = args.bundle.resolve()
+    objective = json.loads(
+        (bundle / "objective-grade.json").read_text(encoding="utf-8")
+    )
     parts = [
         args.prompt.read_text(encoding="utf-8"),
         "\n\n---\n\n## Bundle: candidate.md\n\n",
@@ -27,6 +34,8 @@ def main() -> None:
         (bundle / "objective-grade.json").read_text(encoding="utf-8"),
         "\n```\n",
     ]
+    if objective.get("rubric_id") == "rubric.pipeline.v1":
+        parts.append(PIPELINE_SUBJECTIVE_AUGMENT)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text("".join(parts), encoding="utf-8")
     print(f"wrote {args.out}")

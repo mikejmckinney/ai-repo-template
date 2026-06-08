@@ -110,7 +110,11 @@ case "${ACTION}" in
     ;;
   record)
     [[ $# -ge 2 ]] || usage 2
-    cmd_record_all "$1" "$2"
+    GRADER_ID="$1"
+    RESPONSES_IN="$2"
+    shift 2
+    [[ $# -ge 1 ]] && SCORE_SET="$1"
+    cmd_record_all "${GRADER_ID}" "${RESPONSES_IN}"
     ;;
   compile)
     [[ $# -ge 1 ]] || usage 2
@@ -125,6 +129,7 @@ case "${ACTION}" in
     shift
     RESPONSES_IN="${1:-${RESPONSES_DIR}}"
     [[ $# -ge 1 ]] && shift || true
+    [[ $# -ge 1 ]] && SCORE_SET="$1"
     cmd_prepare_all
     cmd_record_all "${GRADER_ID}" "${RESPONSES_IN}"
     cmd_compile_all "${GRADER_ID}"
