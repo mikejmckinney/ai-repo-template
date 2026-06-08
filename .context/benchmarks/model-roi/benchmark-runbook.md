@@ -450,10 +450,11 @@ Large subjective JSON fixtures and legacy bootstrap dirs stay off `main`:
 
 Post-merge maintainer steps:
 
-1. Merge this PR to `main` (head-branch auto-delete disabled for the feature branch).
-2. Create `benchmark/roi` from tag `benchmark/phase-a-artifacts-20260608`.
-3. Merge `main` into `benchmark/roi` so harness fixes flow forward without losing fixtures.
-4. Run follow-on prompts (`agent-pr-prompts-combined-v2`, `07-implement-gemini-free-paid-routing`) on `main`; run `06-implement-class-c-framework-benchmark` on `benchmark/roi`.
+1. Push tag `benchmark/phase-a-artifacts-20260608` to `origin` (if not already pushed with the PR).
+2. Merge the Phase A PR to `main` (head-branch auto-delete disabled for the feature branch).
+3. Create `benchmark/roi` from tag `benchmark/phase-a-artifacts-20260608`.
+4. Merge `main` into `benchmark/roi` so harness fixes flow forward without losing fixtures.
+5. Run follow-on prompts (`agent-pr-prompts-combined-v2`, `07-implement-gemini-free-paid-routing`) on `main`; run `06-implement-class-c-framework-benchmark` on `benchmark/roi`.
 
 **Class A vs Class B row scoping:** Monolithic, 1C, 1D, and pipeline tables can share the
 same alias string across task classes (e.g. `cand-06`, `cand-05-pipe` at `r2`). Results sync

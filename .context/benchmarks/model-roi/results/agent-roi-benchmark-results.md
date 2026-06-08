@@ -3,10 +3,14 @@
 Issues: #374, #376
 
 Status: blind scores locked for the completed benchmark sessions; sealed alias
-mapping and cost addenda appended. This record now covers monolithic Stage 1,
+mapping and cost addenda appended. This record covers monolithic Stage 1,
 extended Stage 1, Stage 1C context injection, Stage 1D duo planner/implementer,
 issue #376 orchestration pipeline runs, and Stage 1E targeted context-pack screen
-(issue #378).
+(issue #378). Canonical `cursor-llm-blind-v1` regrades are complete for all of
+those stages. Published **Canonical | Objective | Subjective** columns in this file
+are the operator source of truth on `main`. Subjective JSON fixtures used to
+compile those columns are preserved on git tag `benchmark/phase-a-artifacts-20260608`
+(not merged to `main`; see runbook § "Branch and fixture retention").
 
 This file supersedes the earlier local `grading-scores-blind.tsv` `score_10` shorthand files. Those
 10-point scores were evaluator notes from blind diff review, not the official #374 weighted scoring
@@ -22,11 +26,8 @@ unless a row explicitly cites a `score_set_id`.
 - Future canonical conclusions must cite `score_set_id`, rubric version (`rubric.v1`),
   and subjective grader prompt version (`model-roi-grader-v1`).
 - Stage 1 monolithic, Stage 1C, Stage 1D, pipeline (#376), and Stage 1E CP-1 rows
-  support canonical `score_set_id`, objective, and subjective columns alongside legacy
-  category scores once regraded via `regrade-stage.sh` (or thin `regrade-stage-*.sh` wrappers).
-- Stage 1 monolithic, Stage 1C, Stage 1D, pipeline (#376), and Stage 1E CP-1 rows
-  support canonical `score_set_id`, objective, and subjective columns alongside legacy
-  category scores once regraded via the `regrade-stage-*.sh` scripts.
+  include canonical `score_set_id`, objective, and subjective columns alongside legacy
+  category scores (regraded via `regrade-stage.sh` / `regrade-stage-1e.sh`).
 - Exploratory Cursor/Codex regrades are separate cohorts for inter-rater analysis;
   do not average them into canonical truth.
 - Separate benchmark **execution cost** from **grading LLM cost** in ROI tables when
