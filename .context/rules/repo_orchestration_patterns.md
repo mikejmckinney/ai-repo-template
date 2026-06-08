@@ -14,7 +14,7 @@ This file is **descriptive, not prescriptive** — reviewers get concrete langua
 
 - **Authors**: scan `P1`–`P9` for consistency; scan `AP1`–`AP9` before opening a PR.
 - **Critic**: cite anti-pattern IDs. `MAJOR CONCERNS` for block-able APs (`AP1`, `AP2`, `AP3`, `AP6`, `AP7`, `AP9`) and advisory APs when per-entry block triggers fire; else `CRAFT NOTES`.
-- **Judge**: cite at diff-gate. Block-able when triggered without justification: `AP1`, `AP2`, `AP3`, `AP6`, `AP7`, `AP9`. Advisory unless per-entry trigger fires: `AP4` (missing/inverted user outcome), `AP5` (canonical read list extended without ADR), `AP8` (postmortem-caused YAML logic or material extension without extraction), `AP9` (deprecated compatibility surface extended after replacement accepted).
+- **Judge**: cite at diff-gate. Block-able when triggered without justification: `AP1`, `AP2`, `AP3`, `AP6`, `AP7`, `AP9`. Advisory unless per-entry trigger fires: `AP4` (missing/inverted user outcome), `AP5` (canonical read list extended without ADR), `AP8` (postmortem-caused YAML logic or material extension without extraction). `AP9` is block-able only on its per-entry trigger (deprecated compatibility surface extended after replacement accepted).
 - **Architect**: reference interacting patterns/anti-patterns in ADRs.
 
 ---

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 22 -->
+<!-- AGENTS_MD_VERSION: 23 -->
 
 Before substantive repo work, read:
 
