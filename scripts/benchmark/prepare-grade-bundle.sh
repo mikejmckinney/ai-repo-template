@@ -78,7 +78,8 @@ while IFS= read -r result; do
     [[ "${ri}" == "${RUN_INDEX_FILTER}" ]] || continue
   fi
   if [[ "${#MANIFEST_KEYS[@]}" -gt 0 ]]; then
-    [[ -n "${MANIFEST_KEYS[${alias}-r${ri}]+x}" ]] || continue
+    manifest_key="${alias}-r${ri}"
+    [[ -n "${MANIFEST_KEYS[${manifest_key}]+x}" ]] || continue
   fi
   CANDIDATE_DIRS+=("${d}")
 done < <(find "${runs_base}" -name result.json 2>/dev/null | sort)
