@@ -80,9 +80,11 @@ lists come after, not before.
     rules decomposition and non-blocking review workflow (`01`–`04` + optional
     `00-coordinator`); run on `main` after Phase A merge.
     - PR 1 (context decomposition): **merged** via Phase A / AGENTS.md v22.
-    - PR 1B (rules consolidation + legacy redirect retirement): open as PR #380 on
-      `feature/rules-consolidation-legacy-retirement` (redirect retirement + rule-file slimming).
-    - PR 2–4 (advisory review, final feedback, post-merge retro): pending.
+    - PR 1B (rules consolidation + legacy redirect retirement): **merged** (#380 @
+      `864aac1`; AGENTS v23, redirect guide, rule-file slimming, check `048`).
+    - PR 2 (advisory review): next — `feature/advisory-review-mode` per
+      `02-advisory-review-mode.md` (Cursor Composer 2.5 + Gemini Flash preferred).
+    - PR 3–4 (final feedback, post-merge retro): pending.
 
 ### Postmortem feedback loop
 

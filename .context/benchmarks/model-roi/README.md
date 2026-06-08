@@ -13,7 +13,7 @@
 - **Stage 1 effort policy:** target `medium` where selectable; use platform default only where no effort control exists and record the caveat.
 - **Manual fallback:** allowed after a documented headless failure via `make worktree` followed by `make record`; direct GUI agents such as Antigravity need explicit manual-capture evidence.
 - **Phase A merge (issue #374):** **merged** (`eb8fff6`, PR #379). Harness, rubrics, runbook, and `results/agent-roi-benchmark-results.md` are on `main`. Subjective JSON fixtures live on tag `benchmark/phase-a-artifacts-20260608` and branch `benchmark/roi` (see runbook § "Branch and fixture retention"). Deferred bot-review items: [`FOLLOW_UPS.md`](./FOLLOW_UPS.md).
-- **Follow-on prompts (same PR, run after merge):** `.github/prompts/agent-pr-prompts-combined-v2.md` (five `main` PRs), `07-implement-gemini-free-paid-routing.md` (`main`), `06-implement-class-c-framework-benchmark.md` (`benchmark/roi`).
+- **Follow-on prompts (run after Phase A merge):** `.github/prompts/agent-pr-prompts-combined-v2.md` — PR 1 + 1B **merged** on `main` (AGENTS v23, rule consolidation); PR 2–4 pending. Also `07-implement-gemini-free-paid-routing.md` (`main`), `06-implement-class-c-framework-benchmark.md` (`benchmark/roi`).
 
 ## Companion surfaces
 
