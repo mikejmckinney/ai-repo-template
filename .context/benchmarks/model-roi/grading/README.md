@@ -1,7 +1,10 @@
 # Model ROI benchmark grading
 
 Standardized, auditable grading for model-ROI benchmark runs. Scores are comparable
-**only within the same `score_set_id`**.
+**only within the same `score_set_id`**. Class A and Class B Stage 1 rows share
+`stage-1-canonical-v1` but use different task grading specs — **absolute canonical
+totals are not directly comparable across task classes** (see runbook § cross-class
+objective ceilings).
 
 ## Score set contract
 
