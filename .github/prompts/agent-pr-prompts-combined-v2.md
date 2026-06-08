@@ -3,6 +3,8 @@ description: Bundled five-PR pack for context rules decomposition and advisory r
 agent: agent
 ---
 
+<!-- markdownlint-disable MD025 MD012 -->
+
 # Combined agent prompt pack v2
 
 

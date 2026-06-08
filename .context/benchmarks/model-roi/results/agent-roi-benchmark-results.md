@@ -74,20 +74,6 @@ Base SHA: `6946d04b3fd17014e32d9da5ea947acf6df14360`
 
 Reference merge SHA: `e8f5f96c44568a32e40ce1995b9ffb80c0009d28`
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 *Table sort: Sorted by **Canonical /100** (desc).*
 
 | Alias | Run | Gates | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Wall s | Cost status | Summary |
@@ -118,19 +104,6 @@ Reference merge SHA: `e8f5f96c44568a32e40ce1995b9ffb80c0009d28`
 
 ### Class A Raw Telemetry
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 *Table sort: Sorted by **Alias** (asc).*
 
 | Alias | Input tok | Output tok | Cached tok | Cache-write tok | Legacy premiumRequests | Session ms | Formula status |
@@ -155,19 +128,6 @@ Reference merge SHA: `e8f5f96c44568a32e40ce1995b9ffb80c0009d28`
 
 Extended candidates are scored in the main Class A table above. These notes preserve run-selection
 caveats that affected the weighted Process/Reliability categories.
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *Table sort: Sorted by **Alias** (asc).*
 
@@ -223,19 +183,6 @@ Reference merge SHA: `f3145229b2ad8044519ed1c1f88b5f4612d90718`
 Canonical columns: `score_set_id=stage-1-canonical-v1`, grader `cursor-llm-blind-v1`
 (true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`).
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 *Table sort: Sorted by **Canonical /100** (desc).*
 
 | Alias | Run | Gates | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Wall s | Cost status | Summary |
@@ -269,19 +216,6 @@ Canonical columns: `score_set_id=stage-1-canonical-v1`, grader `cursor-llm-blind
 Extended candidates are scored in the main Class B table above. These notes preserve run-selection
 caveats that affected the weighted Process/Reliability categories.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 *Table sort: Sorted by **Alias** (asc).*
 
 | Alias | Run used | Platform/model mode | Headless outcome | Wall s | Diff | Notes |
@@ -303,19 +237,6 @@ caveats that affected the weighted Process/Reliability categories.
 | `cand-24` | 1 | gemini-cli / gemini-3.5-flash requested | success | 281 | 7 files, 468 insertions | Direct Gemini JSON run mapped the requested alias to the observed `gemini-3-flash-preview` backend; useful but included `PLAN.md` and broader prompt/docs edits. |
 
 ### Class B Raw Telemetry
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *Table sort: Sorted by **Alias** (asc).*
 
@@ -350,19 +271,6 @@ Each row above maps to the issue result-record requirements:
 ## Sealed Alias Mapping
 
 Scores above were locked before this mapping was added.
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *Table sort: Sorted by **Alias** (asc).*
 
@@ -399,18 +307,6 @@ Rate sources checked on 2026-06-04:
 
 Cost source register:
 
-
-
-
-
-
-
-
-
-
-
-
-
 *Table sort: Sorted by **Platform / rows** (asc).*
 
 | Platform / rows | Source URL(s) | Rates applied | Audit caveat |
@@ -429,19 +325,6 @@ the source-register estimate and add a billing-export reconciliation note rather
 historical calculation silently.
 
 ### Class A Marginal ROI
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *Table sort: Sorted by **Marginal ROI** (desc); non-numeric ROI last.*
 
@@ -490,19 +373,6 @@ historical calculation silently.
 | `cand-23` | codex / recommended default | 85 | 63 | 36 | 27 | `N/A` | N/A | Codex token telemetry present, but selected default model/rate is not sealed. |
 
 ### Class B Marginal ROI
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *Table sort: Sorted by **Marginal ROI** (desc); non-numeric ROI last.*
 
@@ -571,19 +441,6 @@ Class B use different frozen base SHAs, the injected payload differs by task bas
 Canonical columns: `score_set_id=stage-1c-canonical-v1`, grader `cursor-llm-blind-v1`
 (true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`).
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 *Table sort: Sorted by **Marginal ROI** (desc).*
 
 | Injected alias | Baseline alias | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Score delta | Wall s | Wall delta | Marginal cost USD | Marginal ROI | ROI delta | Summary |
@@ -598,19 +455,6 @@ Canonical columns: `score_set_id=stage-1c-canonical-v1`, grader `cursor-llm-blin
 | `cand-21-injected` | `cand-21` | 29 | 20 | 14 | 13 | 8 | 84 | 56 | 32 | 24 | `stage-1c-canonical-v1` | -5 | -5 | 269 | `N/A` | N/A | N/A | Gemini/agy solved the task but added `.context/state` artifacts, making process adherence materially worse than the JSON-stats baseline rerun. |
 
 ### Stage 1C Class B: `opfit-326-class-b-premerge-context-injected`
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *Table sort: Sorted by **Marginal ROI** (desc).*
 
@@ -650,20 +494,8 @@ reliability/verification 15, and latency 10.
 
 ### Stage 1D Class A: `opfit-281-class-a-premerge`
 
-
-
-
-
-
-
-
-
 Canonical columns: `score_set_id=stage-1d-canonical-v1`, grader `cursor-llm-blind-v1`
 (true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`).
-
-
-
-
 
 *Table sort: Sorted by **Marginal ROI** (desc).*
 
@@ -677,20 +509,8 @@ Canonical columns: `score_set_id=stage-1d-canonical-v1`, grader `cursor-llm-blin
 
 ### Stage 1D Class B: `opfit-326-class-b-premerge`
 
-
-
-
-
-
-
-
-
 Canonical columns: `score_set_id=stage-1d-canonical-v1`, grader `cursor-llm-blind-v1`
 (true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`).
-
-
-
-
 
 *Table sort: Sorted by **Marginal ROI** (desc).*
 
@@ -734,19 +554,6 @@ Canonical columns: `score_set_id=stage-1-pipeline-canonical-v1`, grader `cursor-
 (true LLM blind review; pipeline bundles use `rubric.pipeline.v1` including coordination).
 Rows with numeric cost are sorted by marginal ROI; rows requiring external telemetry are left as `N/A`.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 *Table sort: Sorted by **ROI** (desc); `N/A` cost rows last.*
 
 | Alias | Platform / model | Run | Gates | Correctness /30 | Quality /20 | Process /15 | Reliability /15 | Coordination /10 | Latency /10 | Legacy /100 | Canonical /100 | Objective /58 | Subjective /42 | score_set_id | Wall s | Diff | Cost USD | ROI | Summary |
@@ -762,19 +569,6 @@ Rows with numeric cost are sorted by marginal ROI; rows requiring external telem
 Canonical columns: `score_set_id=stage-1-pipeline-canonical-v1`, grader `cursor-llm-blind-v1`
 (true LLM blind review; pipeline bundles use `rubric.pipeline.v1` including coordination).
 Rows with numeric cost are sorted by marginal ROI; rows requiring external telemetry are left as `N/A`.
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *Table sort: Sorted by **ROI** (desc); `N/A` cost rows last.*
 
@@ -854,19 +648,6 @@ time from the resolved manifest + injection metadata, not from this summary.
 
 Task: `opfit-281-class-a-premerge`. Base SHA: `6946d04b3fd17014e32d9da5ea947acf6df14360`.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 *Table sort: Sorted by **ROI** (desc).*
 
 | Alias | Platform/model | Observed model | Context variant | Pack files | Pack bytes | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Score delta | Wall s | Cost USD | ROI | ROI delta | Summary |
@@ -892,19 +673,6 @@ costs use top-level `.usage` and Composer 2.5 Standard rates (see Stage 1 rate c
 
 Task: `opfit-326-class-b-premerge`. Base SHA: `cff89bffe7e15e155bd740b6c7a0f158a6f2bad6`.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 *Table sort: Sorted by **ROI** (desc).*
 
 | Alias | Platform/model | Observed model | Context variant | Pack files | Pack bytes | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Score delta | Wall s | Cost USD | ROI | ROI delta | Summary |
@@ -921,25 +689,11 @@ Task: `opfit-326-class-b-premerge`. Base SHA: `cff89bffe7e15e155bd740b6c7a0f158a
 Category scores in the legacy columns are from blind diff grading
 (`scripts/benchmark/runs/stage-1e-blind-scores-locked.tsv` for the exploratory
 pass). Canonical columns use `stage-1e-canonical-v1-*` score sets compiled from
-`scripts/benchmark/grade-bundles/` (grader `cursor-llm-blind-v1`, blind review of each bundle's `subjective-prompt.md` + diff).
-review of each bundle's `subjective-prompt.md` + diff). Legacy and canonical
+`scripts/benchmark/grade-bundles/` (grader `cursor-llm-blind-v1`, blind review of each bundle's `subjective-prompt.md` + diff). Legacy and canonical
 totals differ because `rubric.v1` splits objective automation from subjective
 review.
 
 ### Context-pack comparison
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 *Table sort: Sorted by **mean ROI** (desc).*
 
