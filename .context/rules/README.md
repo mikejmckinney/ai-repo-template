@@ -73,6 +73,9 @@ Profiles define the minimum startup set. A trigger below can add files to any pr
 | [`docs/decisions/adr-template.md`](../../docs/decisions/adr-template.md) | Creating or amending an ADR. |
 | [`docs/guides/agent-pipeline.md`](../../docs/guides/agent-pipeline.md) | Workflow-level behavior, review/fix/merge automation, labels, or setup. |
 | [`docs/guides/agents-md-section-redirects.md`](../../docs/guides/agents-md-section-redirects.md) | Resolving historical `AGENTS.md §"…"` citations after ADR-021 decomposition. |
+| [`docs/guides/repo-orchestration-patterns-reference.md`](../../docs/guides/repo-orchestration-patterns-reference.md) | Long-form `P*` / `AP*` "where it appears," remediation, and history (normative contract in `repo_orchestration_patterns.md`). |
+| [`docs/guides/opportunity-feedback-examples.md`](../../docs/guides/opportunity-feedback-examples.md) | Worked opportunity-note examples and 9-field schema rationale. |
+| [`docs/guides/subagent-bootstrap-reference.md`](../../docs/guides/subagent-bootstrap-reference.md) | Pass-back narrative, ghost-success detail, and schema-variance handling (ADR-026). |
 | [`docs/guides/multi-agent-coordination.md`](../../docs/guides/multi-agent-coordination.md) | Cross-agent workflow, coordination model, and role handoff details. |
 | [`docs/guides/sandbox-verification.md`](../../docs/guides/sandbox-verification.md) | Default-branch-only workflow verification or sandbox proof. |
 | [`.context/benchmarks/model-roi/README.md`](../benchmarks/model-roi/README.md) | Benchmark protocol, candidate isolation, scoring, and artifact model. |

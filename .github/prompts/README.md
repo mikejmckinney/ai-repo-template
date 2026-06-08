@@ -80,8 +80,8 @@ lists come after, not before.
     rules decomposition and non-blocking review workflow (`01`–`04` + optional
     `00-coordinator`); run on `main` after Phase A merge.
     - PR 1 (context decomposition): **merged** via Phase A / AGENTS.md v22.
-    - PR 1B (rules consolidation + legacy redirect retirement): in progress on
-      `feature/rules-consolidation-legacy-retirement`.
+    - PR 1B (rules consolidation + legacy redirect retirement): open as PR #380 on
+      `feature/rules-consolidation-legacy-retirement` (redirect retirement + rule-file slimming).
     - PR 2–4 (advisory review, final feedback, post-merge retro): pending.
 
 ### Postmortem feedback loop
