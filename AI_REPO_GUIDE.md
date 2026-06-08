@@ -81,7 +81,7 @@ bash install.sh
 │   ├── smoke-a.md            # Smoke test scenario A
 │   ├── smoke-e.md            # Smoke test scenario E
 │   ├── decisions/            # Architecture Decision Records, index, and template
-│   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, context-files-explained, design-patterns* including concurrency/data/integration splits, multi-agent-coordination, multi-model-consensus, optional-skills)
+│   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, agents-md-section-redirects, context-files-explained, design-patterns* splits, multi-agent-coordination, opportunity-feedback-examples, repo-orchestration-patterns-reference, subagent-bootstrap-reference, multi-model-consensus, optional-skills)
 │   ├── postmortems/          # Postmortems (template + project-specific)
 │   ├── reference/            # Specs, external docs
 │   └── research/             # Analyst output (analysis artifacts)
@@ -237,9 +237,9 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
-| `.context/rules/process_opportunity_feedback.md` | Opportunity feedback (out-of-scope notes channel) — When you notice an out-of-scope improvement opportunity during in-scope work |
-| `.context/rules/process_subagent_bootstrap.md` | ADR-026 parent dispatch packet, subagent startup order, and `subagent_compliance` return contract |
-| `.context/rules/repo_orchestration_patterns.md` | Orchestration-layer patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP9`) cited by Critic and Judge at diff-gate; ratified in ADR-020 (P9 added in ADR-024) |
+| `.context/rules/process_opportunity_feedback.md` | Opportunity feedback channel (9-field `opportunity_notes` contract); examples in `docs/guides/opportunity-feedback-examples.md` |
+| `.context/rules/process_subagent_bootstrap.md` | ADR-026 dispatch packet, startup order, and `subagent_compliance` return contract; extended narrative in `docs/guides/subagent-bootstrap-reference.md` |
+| `.context/rules/repo_orchestration_patterns.md` | Normative orchestration patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP9`) for Critic/Judge; long-form reference in `docs/guides/repo-orchestration-patterns-reference.md` (ADR-020, P9 in ADR-024) |
 | Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025). May embed an optional `opportunity_notes` YAML block (v1.2; ADR-027) for out-of-scope improvement notes — see `docs/compliance_schemas.md` § "agent-state:v1". |
 | `.context/sessions/feedback_template.md` | Stakeholder feedback capture template |
 | `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
@@ -334,6 +334,10 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `docs/postmortems/postmortem-template.md` | Postmortem / lessons-learned template (Trigger, Expected vs Actual, Root cause, What generalizes, Action items) |
 | `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalinks to original plan and revisions + 1–2 sentence summary; advisory per ADR-011), `## Plan revision sync` checkbox (advisory), required doc-sync checklist, and `## Sandbox dogfood evidence` section (two labels: `Sandbox issue:`, `Sandbox PR:`) required by ADR-029 for PRs that modify agent contracts, gate predicates, compliance schemas, or `.agents/.context/.github/agents` loaders |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching, issue/PR granularity |
+| `docs/guides/agents-md-section-redirects.md` | ADR-021 section-anchor redirect table (post-decomposition `AGENTS.md` citations) |
+| `docs/guides/opportunity-feedback-examples.md` | Worked opportunity-note examples and 9-field schema rationale (pairs with `process_opportunity_feedback.md`) |
+| `docs/guides/repo-orchestration-patterns-reference.md` | Long-form `P*` / `AP*` reference detail (pairs with slim `repo_orchestration_patterns.md` rule) |
+| `docs/guides/subagent-bootstrap-reference.md` | Pass-back narrative, ghost-success, schema-variance detail (pairs with `process_subagent_bootstrap.md`) |
 | `docs/guides/design-patterns.md` | Lead index for advisory code-layer design-pattern catalogs (`CAP`, `CP`, `CCP`, `CDP`, `CIP`) |
 | `docs/guides/design-patterns-concurrency.md` | Concurrency pattern catalog with stable `CCP1`-`CCP8` citation handles |
 | `docs/guides/design-patterns-data.md` | Data / persistence pattern catalog with stable `CDP1`-`CDP14` citation handles |
@@ -416,7 +420,7 @@ bash scripts/pr-iteration-stats.sh --window 14
 
 # Pre-push review (Critic + lint + ./test.sh on the working-tree diff)
 # SHOULD before `git push` on non-trivial diffs; MUST for DevOps on
-# shell/workflow changes. See AGENTS.md → "Work style" and
+# shell/workflow changes. See `.context/rules/process_work_style.md` and
 # .agents/devops.md.
 #
 # This is a Markdown prompt — not a shell script — so it must be

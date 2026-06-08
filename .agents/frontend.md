@@ -48,13 +48,13 @@ responses with `Role receipt v<role_contract_version> — frontend` and record
 ## Responsibilities
 
 - Implement UI features per the approved plan.
-- Write unit and component tests alongside code (TDD preferred — see the "Testing requirements" section in `AGENTS.md`).
+- Write unit and component tests alongside code (TDD preferred — see `.context/rules/process_work_style.md` § "Testing requirements").
 - Keep diffs minimal; no drive-by refactors.
 - Update UI-facing docs if visible behavior changed.
 
 ## Do
 
-- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011.
 - Work on a branch named `feature/frontend-<task-id>` (the standard branch-per-role form in [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md)).
 - Stay inside `owned_paths`. Any cross-role edit requires PM coordination recorded in GitHub live state.
 - Set `Status: done` or handoff details in the latest `agent-state:v1` comment when the task is done or handed off.

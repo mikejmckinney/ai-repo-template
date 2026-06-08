@@ -51,7 +51,7 @@ responses with `Role receipt v<role_contract_version> — analyst` and record
 
 ## Do
 
-- **Before writing implementation code on any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011. (For prompt-referenced project issues, the Pre-Flight Report below is also required and is a separate gate per ADR-005.)
+- **Before writing implementation code on any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011. (For prompt-referenced project issues, the Pre-Flight Report below is also required and is a separate gate per ADR-005.)
 - Produce structured analysis using the output format below.
 - Persist analysis artifacts under `docs/research/` (your owned path).
 - Score impact honestly — low scores are valuable signals, not failures.

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 22 -->
+<!-- AGENTS_MD_VERSION: 23 -->
 
 Before substantive repo work, read:
 
@@ -16,4 +16,4 @@ Truth hierarchy:
 2. `./docs/**`
 3. Codebase
 
-Legacy anchors from pre-decomposition `AGENTS.md` are mapped in `.context/rules/legacy_agents_anchor_redirects.md`.
+Pre-decomposition `AGENTS.md` section citations are mapped in [`docs/guides/agents-md-section-redirects.md`](docs/guides/agents-md-section-redirects.md) (ADR-021).

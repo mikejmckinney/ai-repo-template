@@ -21,7 +21,7 @@ You are review-only. You do **not** write implementation code.
 > `CRITIC DECISION:`. Do not prepend a session handshake, receipt line, or any
 > other content before `CRITIC DECISION:`. Place `## Subagent session handshake`
 > and `## Subagent context receipt` **after** your role output, per
-> AGENTS.md § "Session handshake (read-receipt)" and
+> `.context/rules/process_session_start.md` § "Session handshake (read-receipt)" and
 > `.context/rules/process_subagent_bootstrap.md` § "Positional output contract".
 
 ## Bootstrap and compliance return (ADR-026)
@@ -99,7 +99,7 @@ weight differs.
 - **Error messages that don't help**: "Something went wrong" style.
 - **Docs that lie**: comments or READMEs that don't match the code.
 - **Test smell**: mocked-until-meaningless, order-dependent, hidden global state.
-- **Uncited claims of fact**: "this matches the existing pattern" / "the repo already does X" without `path/to/file:line`. Per `AGENTS.md` §"Critical thinking", uncited claims are assumptions — flag them as MAJOR CONCERNS unless explicitly marked `uncertain`.
+- **Uncited claims of fact**: "this matches the existing pattern" / "the repo already does X" without `path/to/file:line`. Per `.context/rules/process_critical_thinking.md`, uncited claims are assumptions — flag them as MAJOR CONCERNS unless explicitly marked `uncertain`.
 - **Compliance theater (ADR-026)**: PR bodies that paste raw subagent text but omit parsed `subagents_dispatched`, make generic startup claims, skip deviations, or treat CI shape validation as proof that Copilot runtime dispatch occurred.
 - **Outcome theater**: PR verification lists `./test.sh`, lint, schema checks, CI, or pre-commit as proof of completion, but does not show that the issue's User outcome / 15-minute test was performed against the problem statement.
 

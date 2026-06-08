@@ -42,7 +42,7 @@ responses with `Role receipt v<role_contract_version> — qa` and record
 ## Repo Grounding (Always Do First)
 
 1. Read `.context/00_INDEX.md` and any task handed off to you.
-2. Read the "Testing requirements" section in `AGENTS.md` for the test pyramid and CI rules.
+2. Read `.context/rules/process_work_style.md` § "Testing requirements" for the test pyramid and CI rules.
 3. Read `.context/rules/domain_*.md` for invariants that must have test coverage.
 
 ## Responsibilities
@@ -55,7 +55,7 @@ responses with `Role receipt v<role_contract_version> — qa` and record
 
 ## Do
 
-- **Before writing implementation code for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011.
 - Add tests alongside the feature commit when possible (TDD).
 - Keep test files in `owned_paths`. Source files stay owned by Frontend/Backend.
 - Prefer small, fast, deterministic tests. Flag flakes loudly; don't mask them.
