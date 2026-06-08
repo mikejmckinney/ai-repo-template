@@ -467,6 +467,29 @@ and `SIGKILL`s the process group on timeout. Before long batches, check
 To reproduce canonical numbers: check out committed response JSON → `record` → `compile` →
 `update-benchmark-results.py all` (requires local `grade-bundles/` from `prepare`).
 
+### Why Class A canonical scores look lower than Class B
+
+The same `rubric.v1` (100 points) applies to both tasks, but **task grading specs**
+(`grading/tasks/opfit-281-*.json` vs `opfit-326-*.json`) set different objective
+checklists. In bundle-only regrades, that creates different **objective ceilings**:
+
+| Factor | Class A (`opfit-281`) | Class B (`opfit-326`) |
+|---|---|---|
+| Required deliverable paths | 1 file (`055-script-syntax.sh`) | 4 paths + 2 doc companions |
+| Correctness objective (typical) | ~4 / 20 | ~18 / 20 |
+| `full_test_sh` in bundle grading | disabled | disabled |
+| Mean canonical total (Stage 1 LLM) | ~63 | ~78 |
+| Mean subjective total | ~26 | ~28 |
+
+Class A candidates often score well on **subjective** quality (~26–28/35) but cannot
+earn much **objective correctness** without running acceptance commands against a live
+worktree. Class B multi-file deliverables automatically pass more path/doc checks, so
+objective totals are higher even when the underlying task is harder.
+
+**Do not rank Class A vs Class B by raw canonical /100** — use marginal ROI within each
+task class. Legacy /100 columns used holistic blind grades and are closer to cross-class
+comparison (with caveats).
+
 Manual per-task example:
 
 ```bash
