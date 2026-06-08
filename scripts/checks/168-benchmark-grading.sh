@@ -52,13 +52,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     warn "jq not available; skipping JSON validation"
   fi
 
-  for sh in "${RUNNER}/prepare-grade-bundle.sh"; do
-    if bash -n "${sh}" 2>/dev/null; then
-      pass "bash -n ${sh}"
-    else
-      fail "bash -n ${sh}"
-    fi
-  done
+  if bash -n "${RUNNER}/prepare-grade-bundle.sh" 2>/dev/null; then
+    pass "bash -n ${RUNNER}/prepare-grade-bundle.sh"
+  else
+    fail "bash -n ${RUNNER}/prepare-grade-bundle.sh"
+  fi
 
   for py in "${RUNNER}"/grade-objective.py "${RUNNER}"/grading_lib.py; do
     if python3 -m py_compile "${py}" 2>/dev/null; then
@@ -71,9 +69,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   # Synthetic bundle fixture (no paid model / no live benchmark runs)
   BUNDLE="${FIXTURE_ROOT}/eval-001"
   mkdir -p "${BUNDLE}/verification"
-  SCORE_SET="fixture-smoke-v1"
-  TASK="opfit-281-class-a-premerge"
-
   cat > "${BUNDLE}/meta-blind-sanitized.json" <<'EOF'
 {
   "eval_candidate_id": "eval-001",
