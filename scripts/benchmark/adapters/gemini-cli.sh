@@ -33,10 +33,10 @@ _gemini_supports_flag() {
   gemini --help 2>&1 | grep -F -q -- "$1"
 }
 
-_gemini_write_alias() {  # workdir model LEVEL alias_name
+_gemini_write_alias() { # workdir model LEVEL alias_name
   local workdir="$1" model="$2" lvl="$3" name="$4"
   mkdir -p "${workdir}/.gemini"
-  cat > "${workdir}/.gemini/settings.json" <<JSON
+  cat >"${workdir}/.gemini/settings.json" <<JSON
 {
   "modelConfigs": {
     "customAliases": {
@@ -61,10 +61,11 @@ _gemini_cleanup_runner_state() {
 adapter_run() {
   local workdir="$1" model="$2" prompt_file="$3" outdir="$4" effort="${5:-default}"
   mkdir -p "${outdir}/logs"
-  local prompt; prompt="$(cat "${prompt_file}")"
+  local prompt
+  prompt="$(cat "${prompt_file}")"
 
   if ! _gemini_supports_flag --prompt || ! _gemini_supports_flag --model || ! _gemini_supports_flag --yolo; then
-    echo "NOT-APPLIED(required gemini headless flag missing)" > "${outdir}/effort-applied.txt"
+    echo "NOT-APPLIED(required gemini headless flag missing)" >"${outdir}/effort-applied.txt"
     echo "gemini adapter: required flag missing (--prompt, --model, or --yolo)" >&2
     return 64
   fi
@@ -86,30 +87,38 @@ adapter_run() {
     case "${effort}" in
       minimal)
         _gemini_write_alias "${workdir}" "${backend_model}" "minimal" "bench-minimal"
-        use_model="bench-minimal"; applied="${applied}config:thinkingLevel=minimal(flash-only;may-clamp-on-pro)" ;;
+        use_model="bench-minimal"
+        applied="${applied}config:thinkingLevel=minimal(flash-only;may-clamp-on-pro)"
+        ;;
       medium)
         _gemini_write_alias "${workdir}" "${backend_model}" "medium" "bench-medium"
-        use_model="bench-medium"; applied="${applied}config:thinkingLevel=medium" ;;
+        use_model="bench-medium"
+        applied="${applied}config:thinkingLevel=medium"
+        ;;
       high)
         _gemini_write_alias "${workdir}" "${backend_model}" "high" "bench-high"
-        use_model="bench-high"; applied="${applied}config:thinkingLevel=high" ;;
+        use_model="bench-high"
+        applied="${applied}config:thinkingLevel=high"
+        ;;
       low)
         # Gemini 3 has no "low". Remap to the nearest valid lower level (minimal),
         # and flag it so the analysis doesn't treat it as a true "low".
         _gemini_write_alias "${workdir}" "${backend_model}" "minimal" "bench-lowremap"
-        use_model="bench-lowremap"; applied="${applied}config:thinkingLevel=minimal(REMAPPED-from-low;gemini-has-no-low)" ;;
-      default|fixed|"") applied="${applied}default(gemini3=high)" ;;
+        use_model="bench-lowremap"
+        applied="${applied}config:thinkingLevel=minimal(REMAPPED-from-low;gemini-has-no-low)"
+        ;;
+      default | fixed | "") applied="${applied}default(gemini3=high)" ;;
       *) applied="${applied}default(unrecognized:${effort})" ;;
     esac
   fi
-  echo "${applied}" > "${outdir}/effort-applied.txt"
+  echo "${applied}" >"${outdir}/effort-applied.txt"
 
   local extra_args=(--yolo)
   if _gemini_supports_flag --skip-trust; then
     extra_args+=(--skip-trust)
   fi
   if ! _gemini_supports_flag --output-format; then
-    echo "NOT-APPLIED(required gemini telemetry flag missing: --output-format)" > "${outdir}/effort-applied.txt"
+    echo "NOT-APPLIED(required gemini telemetry flag missing: --output-format)" >"${outdir}/effort-applied.txt"
     echo "gemini adapter: required telemetry flag missing (--output-format)" >&2
     return 64
   fi
@@ -121,23 +130,23 @@ adapter_run() {
   set +e
   local model_args=()
   [[ -n "${use_model}" ]] && model_args=(--model "${use_model}")
-  ( cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
+  (cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
     gemini --prompt="${prompt}" \
-      "${model_args[@]}" \
-      "${extra_args[@]}" \
-      > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
+    "${model_args[@]}" \
+    "${extra_args[@]}" \
+    >"${outdir}/agent-output.jsonl" 2>"${outdir}/logs/stderr.log")
   local rc=$?
   set -e
   _gemini_cleanup_runner_state "${workdir}"
 
   if [[ ${rc} -ne 0 && "${auto_model}" == "1" ]] && command -v agy >/dev/null 2>&1; then
     mv "${outdir}/agent-output.jsonl" "${outdir}/agent-output.gemini-failed.jsonl" 2>/dev/null || true
-    echo "gemini auto JSON run failed rc=${rc}; falling back to agy without JSON stats" >> "${outdir}/logs/stderr.log"
-    echo "${applied};fallback=agy(no-json-stats)" > "${outdir}/effort-applied.txt"
+    echo "gemini auto JSON run failed rc=${rc}; falling back to agy without JSON stats" >>"${outdir}/logs/stderr.log"
+    echo "${applied};fallback=agy(no-json-stats)" >"${outdir}/effort-applied.txt"
     set +e
-    ( cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
+    (cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
       agy -p "${prompt}" --dangerously-skip-permissions --print-timeout 30m \
-        > "${outdir}/agent-output.jsonl" 2>> "${outdir}/logs/stderr.log" )
+      >"${outdir}/agent-output.jsonl" 2>>"${outdir}/logs/stderr.log")
     rc=$?
     set -e
     _gemini_cleanup_runner_state "${workdir}"

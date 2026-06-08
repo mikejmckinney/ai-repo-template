@@ -17,10 +17,19 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 STAGE="" ALIAS="" BASE_SHA=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --stage) STAGE="$2"; shift 2;;
-    --alias) ALIAS="$2"; shift 2;;
-    --base)  BASE_SHA="$2"; shift 2;;
-    *) die "unknown arg: $1";;
+    --stage)
+      STAGE="$2"
+      shift 2
+      ;;
+    --alias)
+      ALIAS="$2"
+      shift 2
+      ;;
+    --base)
+      BASE_SHA="$2"
+      shift 2
+      ;;
+    *) die "unknown arg: $1" ;;
   esac
 done
 
@@ -31,9 +40,18 @@ pass_count=0
 warn_count=0
 fail_count=0
 
-pass_note() { log "PASS: $*"; pass_count=$((pass_count + 1)); }
-warn_note() { log "WARN: $*"; warn_count=$((warn_count + 1)); }
-fail_note() { log "FAIL: $*"; fail_count=$((fail_count + 1)); }
+pass_note() {
+  log "PASS: $*"
+  pass_count=$((pass_count + 1))
+}
+warn_note() {
+  log "WARN: $*"
+  warn_count=$((warn_count + 1))
+}
+fail_note() {
+  log "FAIL: $*"
+  fail_count=$((fail_count + 1))
+}
 
 have_flag() {
   local bin="$1" flag="$2"
@@ -43,7 +61,7 @@ have_flag() {
 write_probe() {
   local target="$1"
   mkdir -p "$(dirname "${target}")"
-  : > "${target}"
+  : >"${target}"
   rm -f "${target}"
 }
 

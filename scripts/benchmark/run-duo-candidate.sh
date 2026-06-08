@@ -22,21 +22,27 @@ duo_platform_preflight() {
   local alias="$1" platform="$2"
   case "${platform}" in
     claude-code)
-      command -v claude >/dev/null 2>&1 || die "${alias}: claude binary missing" ;;
+      command -v claude >/dev/null 2>&1 || die "${alias}: claude binary missing"
+      ;;
     codex)
-      command -v codex >/dev/null 2>&1 || die "${alias}: codex binary missing" ;;
+      command -v codex >/dev/null 2>&1 || die "${alias}: codex binary missing"
+      ;;
     copilot)
       command -v copilot >/dev/null 2>&1 || die "${alias}: copilot binary missing"
       [[ -n "${COPILOT_GITHUB_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}" ]] \
-        || die "${alias}: copilot auth heuristic missing (COPILOT_GITHUB_TOKEN/GH_TOKEN/GITHUB_TOKEN)" ;;
+        || die "${alias}: copilot auth heuristic missing (COPILOT_GITHUB_TOKEN/GH_TOKEN/GITHUB_TOKEN)"
+      ;;
     cursor)
       command -v cursor-agent >/dev/null 2>&1 || die "${alias}: cursor-agent binary missing"
       [[ -n "${CURSOR_API_KEY:-}" ]] || cursor-agent status >/dev/null 2>&1 \
-        || die "${alias}: cursor auth heuristic missing (CURSOR_API_KEY or cursor-agent login)" ;;
+        || die "${alias}: cursor auth heuristic missing (CURSOR_API_KEY or cursor-agent login)"
+      ;;
     gemini-cli)
-      command -v gemini >/dev/null 2>&1 || die "${alias}: gemini binary missing" ;;
+      command -v gemini >/dev/null 2>&1 || die "${alias}: gemini binary missing"
+      ;;
     *)
-      die "${alias}: unsupported duo platform '${platform}'" ;;
+      die "${alias}: unsupported duo platform '${platform}'"
+      ;;
   esac
 }
 
@@ -52,7 +58,7 @@ duo_manifest_lookup() {
         "${impl_model}" "${impl_agent}" "${impl_effort:-default}" "${impl_mech:-none}" "${stage}"
       return 0
     fi
-  done < "${DUO_MANIFEST}"
+  done <"${DUO_MANIFEST}"
   return 1
 }
 
@@ -91,7 +97,7 @@ render_duo_prompt() {
       sed -n '1,$p' "${plan_file}"
       printf '\n'
     fi
-  } > "${prompt_out}"
+  } >"${prompt_out}"
 
   if grep -F -q 'INJECTED PER ROUND' "${prompt_out}"; then
     die "rendered duo prompt still contains benchmark placeholder text: ${prompt_out}"
@@ -102,18 +108,18 @@ render_duo_prompt() {
 extract_duo_plan() {
   local planner_outdir="$1" plan_file="$2" text_file
   text_file="${planner_outdir}/planner-output-text.txt"
-  : > "${text_file}"
+  : >"${text_file}"
 
   if have_jq; then
     while IFS= read -r line; do
       if jq -e . >/dev/null 2>&1 <<<"${line}"; then
-        jq -r '.. | strings' <<<"${line}" >> "${text_file}" 2>/dev/null || printf '%s\n' "${line}" >> "${text_file}"
+        jq -r '.. | strings' <<<"${line}" >>"${text_file}" 2>/dev/null || printf '%s\n' "${line}" >>"${text_file}"
       else
-        printf '%s\n' "${line}" >> "${text_file}"
+        printf '%s\n' "${line}" >>"${text_file}"
       fi
-    done < "${planner_outdir}/agent-output.jsonl"
+    done <"${planner_outdir}/agent-output.jsonl"
   else
-    sed -n '1,$p' "${planner_outdir}/agent-output.jsonl" > "${text_file}"
+    sed -n '1,$p' "${planner_outdir}/agent-output.jsonl" >"${text_file}"
   fi
 
   awk '
@@ -121,27 +127,45 @@ extract_duo_plan() {
     /DUO_PLAN_END/ { if (emit) print; found = 1; emit = 0; next }
     emit { print }
     END { if (!found) exit 1 }
-  ' "${text_file}" > "${plan_file}" || {
+  ' "${text_file}" >"${plan_file}" || {
     {
       printf 'DUO_PLAN_START\n'
       printf 'planner_extraction_status: marker_not_found\n'
       printf 'planner_output_artifact: planner/planner-output-text.txt\n'
       printf 'note: The implementer should use the full planner output artifact because the planner did not emit the requested markers.\n'
       printf 'DUO_PLAN_END\n'
-    } > "${plan_file}"
+    } >"${plan_file}"
   }
 }
 
 TASK="" BASE_SHA="" ALIAS="" RUN_INDEX="1" KEEP_WT="0" RUN_CONTEXT_VARIANT="${CONTEXT_VARIANT}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --task) TASK="$2"; shift 2;;
-    --base) BASE_SHA="$2"; shift 2;;
-    --alias) ALIAS="$2"; shift 2;;
-    --run-index) RUN_INDEX="$2"; shift 2;;
-    --keep-worktree) KEEP_WT="1"; shift;;
-    --context-variant) RUN_CONTEXT_VARIANT="$2"; shift 2;;
-    *) die "unknown arg: $1";;
+    --task)
+      TASK="$2"
+      shift 2
+      ;;
+    --base)
+      BASE_SHA="$2"
+      shift 2
+      ;;
+    --alias)
+      ALIAS="$2"
+      shift 2
+      ;;
+    --run-index)
+      RUN_INDEX="$2"
+      shift 2
+      ;;
+    --keep-worktree)
+      KEEP_WT="1"
+      shift
+      ;;
+    --context-variant)
+      RUN_CONTEXT_VARIANT="$2"
+      shift 2
+      ;;
+    *) die "unknown arg: $1" ;;
   esac
 done
 [[ -n "${TASK}" && -n "${BASE_SHA}" && -n "${ALIAS}" ]] \
@@ -176,13 +200,15 @@ apply_context_variant "${PLANNER_WT}" "${PLANNER_OUTDIR}" "${RUN_CONTEXT_VARIANT
 PLANNER_PROMPT="$(render_duo_prompt "${DUO_PLANNER_PROMPT_FILE}" "planner" "${TASK}" "${ALIAS}" "${PLATFORM}" "${PLANNER_MODEL}" "${IMPL_MODEL}" "${BASE_SHA}" "${RUN_INDEX}" "${PLANNER_OUTDIR}")"
 
 DUO_START_EPOCH="$(date +%s)"
-PLANNER_START_EPOCH="$(date +%s)"; PLANNER_START_TS="$(_ts)"
+PLANNER_START_EPOCH="$(date +%s)"
+PLANNER_START_TS="$(_ts)"
 set +e
 adapter_run "${PLANNER_WT}" "${PLANNER_MODEL}" "${PLANNER_PROMPT}" "${PLANNER_OUTDIR}" "${PLANNER_EFFORT}" "${PLANNER_MECH}"
 PLANNER_RC=$?
 set -e
-PLANNER_END_EPOCH="$(date +%s)"; PLANNER_END_TS="$(_ts)"
-PLANNER_WALL=$(( PLANNER_END_EPOCH - PLANNER_START_EPOCH ))
+PLANNER_END_EPOCH="$(date +%s)"
+PLANNER_END_TS="$(_ts)"
+PLANNER_WALL=$((PLANNER_END_EPOCH - PLANNER_START_EPOCH))
 PLANNER_EFFORT_APPLIED="$(cat "${PLANNER_OUTDIR}/effort-applied.txt" 2>/dev/null || echo "unknown")"
 
 if [[ ${PLANNER_RC} -ne 0 ]]; then
@@ -202,15 +228,17 @@ log "implementer worktree: ${WT}"
 apply_context_variant "${WT}" "${IMPL_OUTDIR}" "${RUN_CONTEXT_VARIANT}"
 IMPL_PROMPT="$(render_duo_prompt "${DUO_IMPLEMENTER_PROMPT_FILE}" "implementer" "${TASK}" "${ALIAS}" "${PLATFORM}" "${PLANNER_MODEL}" "${IMPL_MODEL}" "${BASE_SHA}" "${RUN_INDEX}" "${IMPL_OUTDIR}" "${PLAN_FILE}")"
 
-IMPL_START_EPOCH="$(date +%s)"; IMPL_START_TS="$(_ts)"
+IMPL_START_EPOCH="$(date +%s)"
+IMPL_START_TS="$(_ts)"
 set +e
 adapter_run "${WT}" "${IMPL_MODEL}" "${IMPL_PROMPT}" "${IMPL_OUTDIR}" "${IMPL_EFFORT}" "${IMPL_MECH}"
 IMPL_RC=$?
 set -e
-IMPL_END_EPOCH="$(date +%s)"; IMPL_END_TS="$(_ts)"
-IMPL_WALL=$(( IMPL_END_EPOCH - IMPL_START_EPOCH ))
+IMPL_END_EPOCH="$(date +%s)"
+IMPL_END_TS="$(_ts)"
+IMPL_WALL=$((IMPL_END_EPOCH - IMPL_START_EPOCH))
 DUO_END_EPOCH="$(date +%s)"
-DUO_WALL=$(( DUO_END_EPOCH - DUO_START_EPOCH ))
+DUO_WALL=$((DUO_END_EPOCH - DUO_START_EPOCH))
 IMPL_EFFORT_APPLIED="$(cat "${IMPL_OUTDIR}/effort-applied.txt" 2>/dev/null || echo "unknown")"
 
 if [[ ${IMPL_RC} -ne 0 ]]; then
@@ -225,7 +253,7 @@ restore_context_variant "${WT}" "${IMPL_OUTDIR}" "${RUN_CONTEXT_VARIANT}"
 HEAD_SHA="$(git -C "${WT}" rev-parse HEAD 2>/dev/null || echo "")"
 COMMITTED_AHEAD="$(git -C "${WT}" rev-list --count "${BASE_SHA}..HEAD" 2>/dev/null || echo 0)"
 git -C "${WT}" add -A 2>/dev/null || true
-git -C "${WT}" diff --binary "${BASE_SHA}" > "${OUTDIR}/diff.patch" 2>/dev/null || true
+git -C "${WT}" diff --binary "${BASE_SHA}" >"${OUTDIR}/diff.patch" 2>/dev/null || true
 DIFF_FILES="$(git -C "${WT}" diff --name-only "${BASE_SHA}" | wc -l | tr -d ' ')"
 DIFF_LINES="$(git -C "${WT}" diff --shortstat "${BASE_SHA}" 2>/dev/null || echo '')"
 WORK_PRODUCED=$([[ "${COMMITTED_AHEAD}" -gt 0 || "${DIFF_FILES}" -gt 0 ]] && echo true || echo false)
@@ -258,7 +286,7 @@ IMPL_EFFORT_STATUS="$(derive_effort_status "${IMPL_EFFORT}" "${IMPL_MECH}" "${IM
   printf '  "shortstat": %s,\n' "$(json_escape "${DIFF_LINES}")"
   printf '  "planner_plan_artifact": "planner/plan.md"\n'
   printf '}\n'
-} > "${OUTDIR}/meta-blind.json"
+} >"${OUTDIR}/meta-blind.json"
 validate_json_artifact "${OUTDIR}/meta-blind.json"
 
 {
@@ -286,7 +314,7 @@ validate_json_artifact "${OUTDIR}/meta-blind.json"
   printf '  "planner_exit_code": %s,\n' "${PLANNER_RC}"
   printf '  "implementer_exit_code": %s\n' "${IMPL_RC}"
   printf '}\n'
-} > "${OUTDIR}/meta-sealed.json"
+} >"${OUTDIR}/meta-sealed.json"
 validate_json_artifact "${OUTDIR}/meta-sealed.json"
 
 write_result_file "${OUTDIR}" "${ALIAS}" "${TASK}" "${RUN_INDEX}" "${STAGE}" \

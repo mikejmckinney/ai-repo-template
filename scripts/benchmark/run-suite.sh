@@ -21,15 +21,39 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 TASK="" BASE_SHA="" STAGE="" RUN_INDEX="1" CONT="0" RESUME="0" RUN_CONTEXT_VARIANT="${CONTEXT_VARIANT}" RUN_ORCHESTRATION_VARIANT="${ORCHESTRATION_VARIANT}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --task)             TASK="$2"; shift 2;;
-    --base)             BASE_SHA="$2"; shift 2;;
-    --stage)            STAGE="$2"; shift 2;;
-    --run-index)        RUN_INDEX="$2"; shift 2;;
-    --continue-on-error) CONT="1"; shift;;
-    --resume)           RESUME="1"; shift;;
-    --context-variant)  RUN_CONTEXT_VARIANT="$2"; shift 2;;
-    --orchestration-variant) RUN_ORCHESTRATION_VARIANT="$2"; shift 2;;
-    *) die "unknown arg: $1";;
+    --task)
+      TASK="$2"
+      shift 2
+      ;;
+    --base)
+      BASE_SHA="$2"
+      shift 2
+      ;;
+    --stage)
+      STAGE="$2"
+      shift 2
+      ;;
+    --run-index)
+      RUN_INDEX="$2"
+      shift 2
+      ;;
+    --continue-on-error)
+      CONT="1"
+      shift
+      ;;
+    --resume)
+      RESUME="1"
+      shift
+      ;;
+    --context-variant)
+      RUN_CONTEXT_VARIANT="$2"
+      shift 2
+      ;;
+    --orchestration-variant)
+      RUN_ORCHESTRATION_VARIANT="$2"
+      shift 2
+      ;;
+    *) die "unknown arg: $1" ;;
   esac
 done
 [[ -n "${TASK}" && -n "${BASE_SHA}" ]] || die "usage: --task <id> --base <sha> --stage <N> [--run-index N]"
@@ -49,7 +73,7 @@ if [[ "${RESUME}" == "1" ]]; then
     || die "cannot resume: no recorded alias set for task=${TASK} stage=${STAGE}: ${alias_set_file}"
   [[ -f "${manifest_snapshot}" ]] \
     || die "cannot resume: no recorded manifest snapshot for task=${TASK} stage=${STAGE}: ${manifest_snapshot}"
-  mapfile -t ALIASES < "${alias_set_file}"
+  mapfile -t ALIASES <"${alias_set_file}"
   log "resume: using recorded alias set -> ${alias_set_file}"
   log "resume: using recorded manifest snapshot -> ${manifest_snapshot}"
 else
@@ -57,7 +81,7 @@ else
   [[ ! -e "${alias_set_file}" && ! -e "${manifest_snapshot}" ]] \
     || die "suite identity already exists for task=${TASK} stage=${STAGE}; choose a fresh TASK or remove prior run artifacts"
   mkdir -p "$(dirname "${alias_set_file}")"
-  printf '%s\n' "${ALIASES[@]}" > "${alias_set_file}"
+  printf '%s\n' "${ALIASES[@]}" >"${alias_set_file}"
   cp "${MANIFEST}" "${manifest_snapshot}"
   log "recorded alias set -> ${alias_set_file}"
   log "recorded manifest snapshot -> ${manifest_snapshot}"
@@ -79,15 +103,21 @@ for alias in "${ALIASES[@]}"; do
   log "---- ${alias} ----"
   set +e
   BENCHMARK_DOCTOR_DONE=1 "${RUNNER_DIR}/run-candidate.sh" --task "${TASK}" --base "${BASE_SHA}" \
-      --alias "${alias}" --run-index "${RUN_INDEX}" --context-variant "${RUN_CONTEXT_VARIANT}" \
-      --orchestration-variant "${RUN_ORCHESTRATION_VARIANT}"
+    --alias "${alias}" --run-index "${RUN_INDEX}" --context-variant "${RUN_CONTEXT_VARIANT}" \
+    --orchestration-variant "${RUN_ORCHESTRATION_VARIANT}"
   rc=$?
   set -e
   case ${rc} in
-    0)  CAPTURED+=("${alias}");;
-    64) BLOCKED+=("${alias}"); log "BLOCKED (documented headless failure): ${alias}";;
-    *)  FAIL+=("${alias}"); log "adapter error rc=${rc}: ${alias}"
-        [[ "${CONT}" == "1" ]] || die "stopping (use --continue-on-error to keep going)";;
+    0) CAPTURED+=("${alias}") ;;
+    64)
+      BLOCKED+=("${alias}")
+      log "BLOCKED (documented headless failure): ${alias}"
+      ;;
+    *)
+      FAIL+=("${alias}")
+      log "adapter error rc=${rc}: ${alias}"
+      [[ "${CONT}" == "1" ]] || die "stopping (use --continue-on-error to keep going)"
+      ;;
   esac
 done
 

@@ -43,7 +43,7 @@ fi
 regrade_load_config "${STAGE}"
 regrade_parse_config
 
-if [[ $# -ge 1 && ( "${ACTION}" == "prepare" || "${ACTION}" == "status" ) ]]; then
+if [[ $# -ge 1 && ("${ACTION}" == "prepare" || "${ACTION}" == "status") ]]; then
   SCORE_SET="$1"
   MANIFEST_DIR="${REPO_ROOT}/scripts/benchmark/grade-bundles/${SCORE_SET}-manifests"
   shift || true
@@ -129,7 +129,7 @@ case "${ACTION}" in
     cmd_record_all "${GRADER_ID}" "${RESPONSES_IN}"
     cmd_compile_all "${GRADER_ID}"
     ;;
-  help|-h|--help)
+  help | -h | --help)
     usage 0
     ;;
   *)

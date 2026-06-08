@@ -69,7 +69,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   # Synthetic bundle fixture (no paid model / no live benchmark runs)
   BUNDLE="${FIXTURE_ROOT}/eval-001"
   mkdir -p "${BUNDLE}/verification"
-  cat > "${BUNDLE}/meta-blind-sanitized.json" <<'EOF'
+  cat >"${BUNDLE}/meta-blind-sanitized.json" <<'EOF'
 {
   "eval_candidate_id": "eval-001",
   "task_id": "opfit-281-class-a-premerge",
@@ -83,7 +83,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 }
 EOF
 
-  cat > "${BUNDLE}/objective-input.json" <<'EOF'
+  cat >"${BUNDLE}/objective-input.json" <<'EOF'
 {
   "score_set_id": "fixture-smoke-v1",
   "eval_candidate_id": "eval-001",
@@ -92,11 +92,11 @@ EOF
 }
 EOF
 
-  cat > "${BUNDLE}/files-changed.txt" <<'EOF'
+  cat >"${BUNDLE}/files-changed.txt" <<'EOF'
 scripts/checks/055-script-syntax.sh
 EOF
 
-  cat > "${BUNDLE}/diff.patch" <<'EOF'
+  cat >"${BUNDLE}/diff.patch" <<'EOF'
 diff --git a/scripts/checks/055-script-syntax.sh b/scripts/checks/055-script-syntax.sh
 index 1111111..2222222 100644
 --- a/scripts/checks/055-script-syntax.sh
@@ -110,7 +110,7 @@ index 1111111..2222222 100644
  )
 EOF
 
-  printf '# Fixture candidate\n\nSee diff.\n' > "${BUNDLE}/candidate.md"
+  printf '# Fixture candidate\n\nSee diff.\n' >"${BUNDLE}/candidate.md"
 
   if python3 "${RUNNER}/grade-objective.py" --bundle "${BUNDLE}"; then
     pass "grade-objective.py on fixture bundle"
@@ -120,13 +120,13 @@ EOF
 
   PROMPT_OUT="${FIXTURE_ROOT}/subjective-prompt.md"
   if python3 "${RUNNER}/render-subjective-grade-prompt.py" \
-      --bundle "${BUNDLE}" --out "${PROMPT_OUT}"; then
+    --bundle "${BUNDLE}" --out "${PROMPT_OUT}"; then
     pass "render-subjective-grade-prompt.py"
   else
     fail "render-subjective-grade-prompt.py"
   fi
 
-  cat > "${FIXTURE_ROOT}/subjective-response.json" <<'EOF'
+  cat >"${FIXTURE_ROOT}/subjective-response.json" <<'EOF'
 {
   "schema_version": "benchmark-subjective-grade.v1",
   "score_set_id": "fixture-smoke-v1",
@@ -148,9 +148,9 @@ EOF
 EOF
 
   if python3 "${RUNNER}/record-subjective-grade.py" \
-      --bundle "${BUNDLE}" \
-      --response "${FIXTURE_ROOT}/subjective-response.json" \
-      --grader-id fixture-grader; then
+    --bundle "${BUNDLE}" \
+    --response "${FIXTURE_ROOT}/subjective-response.json" \
+    --grader-id fixture-grader; then
     pass "record-subjective-grade.py"
   else
     fail "record-subjective-grade.py"
@@ -160,7 +160,7 @@ EOF
   mkdir -p "${ROOT}"
   cp -a "${BUNDLE}" "${ROOT}/eval-001"
   if python3 "${RUNNER}/compile-final-grades.py" \
-      --bundle-root "${ROOT}" --grader-id fixture-grader; then
+    --bundle-root "${ROOT}" --grader-id fixture-grader; then
     pass "compile-final-grades.py"
   else
     fail "compile-final-grades.py"
@@ -173,7 +173,7 @@ EOF
   fi
 
   if ! grep -q 'context_variant' "${BUNDLE}/candidate.md" 2>/dev/null \
-     && ! grep -q 'pack:' "${BUNDLE}/meta-blind-sanitized.json" 2>/dev/null; then
+    && ! grep -q 'pack:' "${BUNDLE}/meta-blind-sanitized.json" 2>/dev/null; then
     pass "fixture bundle has no context_variant / pack leakage"
   else
     fail "fixture bundle leaks context variant"

@@ -15,10 +15,10 @@ run_suite() {
   RUN_GROUP="${run_group}" \
     MANIFEST="${PACK_SCREEN_MANIFEST}" \
     make -C scripts/benchmark suite \
-      TASK="${task}" \
-      BASE="${base}" \
-      STAGE=1 \
-      CONTEXT_VARIANT="${variant}"
+    TASK="${task}" \
+    BASE="${base}" \
+    STAGE=1 \
+    CONTEXT_VARIANT="${variant}"
 }
 
 # Skip ctx-a-baseline if already completed

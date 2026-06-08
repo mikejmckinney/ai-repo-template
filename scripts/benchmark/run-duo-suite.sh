@@ -23,20 +23,41 @@ duo_manifest_aliases() {
     if [[ -z "${filter_stage}" || "${stage}" == "${filter_stage}" ]]; then
       printf '%s\n' "${a}"
     fi
-  done < "${DUO_MANIFEST}"
+  done <"${DUO_MANIFEST}"
 }
 
 TASK="" BASE_SHA="" STAGE="" RUN_INDEX="1" CONT="0" RESUME="0" RUN_CONTEXT_VARIANT="${CONTEXT_VARIANT}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --task) TASK="$2"; shift 2;;
-    --base) BASE_SHA="$2"; shift 2;;
-    --stage) STAGE="$2"; shift 2;;
-    --run-index) RUN_INDEX="$2"; shift 2;;
-    --continue-on-error) CONT="1"; shift;;
-    --resume) RESUME="1"; shift;;
-    --context-variant) RUN_CONTEXT_VARIANT="$2"; shift 2;;
-    *) die "unknown arg: $1";;
+    --task)
+      TASK="$2"
+      shift 2
+      ;;
+    --base)
+      BASE_SHA="$2"
+      shift 2
+      ;;
+    --stage)
+      STAGE="$2"
+      shift 2
+      ;;
+    --run-index)
+      RUN_INDEX="$2"
+      shift 2
+      ;;
+    --continue-on-error)
+      CONT="1"
+      shift
+      ;;
+    --resume)
+      RESUME="1"
+      shift
+      ;;
+    --context-variant)
+      RUN_CONTEXT_VARIANT="$2"
+      shift 2
+      ;;
+    *) die "unknown arg: $1" ;;
   esac
 done
 [[ -n "${TASK}" && -n "${BASE_SHA}" && -n "${STAGE}" ]] \
@@ -53,14 +74,14 @@ manifest_snapshot="${RUNS_DIR}/${TASK}/stage-${STAGE}-duo-manifest.tsv"
 if [[ "${RESUME}" == "1" ]]; then
   [[ -f "${alias_set_file}" ]] || die "cannot resume: no recorded duo alias set: ${alias_set_file}"
   [[ -f "${manifest_snapshot}" ]] || die "cannot resume: no recorded duo manifest snapshot: ${manifest_snapshot}"
-  mapfile -t ALIASES < "${alias_set_file}"
+  mapfile -t ALIASES <"${alias_set_file}"
   log "duo resume: using recorded alias set -> ${alias_set_file}"
 else
   mapfile -t ALIASES < <(duo_manifest_aliases "${STAGE}")
   [[ ! -e "${alias_set_file}" && ! -e "${manifest_snapshot}" ]] \
     || die "duo suite identity already exists for task=${TASK} stage=${STAGE}; choose a fresh TASK or remove prior run artifacts"
   mkdir -p "$(dirname "${alias_set_file}")"
-  printf '%s\n' "${ALIASES[@]}" > "${alias_set_file}"
+  printf '%s\n' "${ALIASES[@]}" >"${alias_set_file}"
   cp "${DUO_MANIFEST}" "${manifest_snapshot}"
   log "recorded duo alias set -> ${alias_set_file}"
   log "recorded duo manifest snapshot -> ${manifest_snapshot}"
@@ -86,10 +107,16 @@ for alias in "${ALIASES[@]}"; do
   rc=$?
   set -e
   case ${rc} in
-    0) CAPTURED+=("${alias}");;
-    64) BLOCKED+=("${alias}"); log "BLOCKED (documented duo failure): ${alias}";;
-    *) FAIL+=("${alias}"); log "duo adapter error rc=${rc}: ${alias}"
-       [[ "${CONT}" == "1" ]] || die "stopping (use --continue-on-error to keep going)";;
+    0) CAPTURED+=("${alias}") ;;
+    64)
+      BLOCKED+=("${alias}")
+      log "BLOCKED (documented duo failure): ${alias}"
+      ;;
+    *)
+      FAIL+=("${alias}")
+      log "duo adapter error rc=${rc}: ${alias}"
+      [[ "${CONT}" == "1" ]] || die "stopping (use --continue-on-error to keep going)"
+      ;;
   esac
 done
 

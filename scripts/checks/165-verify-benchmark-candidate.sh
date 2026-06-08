@@ -45,12 +45,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fixture_wt="${fixture_root}/wt"
     mkdir -p "${fixture_wt}/.context/rules" "${fixture_root}/baseline" "${fixture_root}/injected" "${fixture_root}/pipeline" "${fixture_root}/duo"
     git -C "${fixture_wt}" init -q
-    printf '# AGENTS\n' > "${fixture_wt}/AGENTS.md"
-    printf '# CLAUDE\n' > "${fixture_wt}/CLAUDE.md"
-    printf '# Rule\n\nFixture rule.\n' > "${fixture_wt}/.context/rules/process_fixture.md"
+    printf '# AGENTS\n' >"${fixture_wt}/AGENTS.md"
+    printf '# CLAUDE\n' >"${fixture_wt}/CLAUDE.md"
+    printf '# Rule\n\nFixture rule.\n' >"${fixture_wt}/.context/rules/process_fixture.md"
     git -C "${fixture_wt}" add -A
 
-    cat > "${fixture_root}/baseline/meta-blind.json" <<'JSON'
+    cat >"${fixture_root}/baseline/meta-blind.json" <<'JSON'
 {
   "alias": "cand-fixture",
   "task_id": "fixture-task",
@@ -70,7 +70,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   "shortstat": "1 file changed"
 }
 JSON
-    cat > "${fixture_root}/baseline/meta-sealed.json" <<'JSON'
+    cat >"${fixture_root}/baseline/meta-sealed.json" <<'JSON'
 {
   "alias": "cand-fixture",
   "platform": "mock",
@@ -89,7 +89,7 @@ JSON
   "adapter_exit_code": 0
 }
 JSON
-    cat > "${fixture_root}/duo/meta-blind.json" <<'JSON'
+    cat >"${fixture_root}/duo/meta-blind.json" <<'JSON'
 {
   "alias": "cand-fixture-duo",
   "task_id": "fixture-task",
@@ -145,13 +145,31 @@ declare -a CHECK_COMMANDS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --task) TASK="$2"; shift 2;;
-    --alias) ALIAS="$2"; shift 2;;
-    --run-index) RUN_INDEX="$2"; shift 2;;
-    --require-file) REQUIRED_FILES+=("$2"); shift 2;;
-    --require-heading) REQUIRED_HEADINGS+=("$2"); shift 2;;
-    --check-command) CHECK_COMMANDS+=("$2"); shift 2;;
-    *) die "unknown arg: $1";;
+    --task)
+      TASK="$2"
+      shift 2
+      ;;
+    --alias)
+      ALIAS="$2"
+      shift 2
+      ;;
+    --run-index)
+      RUN_INDEX="$2"
+      shift 2
+      ;;
+    --require-file)
+      REQUIRED_FILES+=("$2")
+      shift 2
+      ;;
+    --require-heading)
+      REQUIRED_HEADINGS+=("$2")
+      shift 2
+      ;;
+    --check-command)
+      CHECK_COMMANDS+=("$2")
+      shift 2
+      ;;
+    *) die "unknown arg: $1" ;;
   esac
 done
 
@@ -189,7 +207,7 @@ DIFF_REL="$(jq -r '.artifacts.diff_patch // empty' "${RESULT_FILE}")"
 OUTDIR="$(dirname "${RESULT_FILE}")"
 
 case "${STATE}" in
-  graded|manual-capture-approved)
+  graded | manual-capture-approved)
     [[ -n "${HEAD_SHA}" ]] || die "captured result is missing head_sha"
     [[ -n "${BLIND_REL}" && -f "${OUTDIR}/${BLIND_REL}" ]] || die "blind metadata missing for ${ALIAS}"
     [[ -n "${SEALED_REL}" && -f "${OUTDIR}/${SEALED_REL}" ]] || die "sealed metadata missing for ${ALIAS}"
@@ -244,7 +262,7 @@ if [[ ${#CHECK_COMMANDS[@]} -gt 0 ]]; then
   rm -rf "${VERIFY_WT}"
   git -C "${REPO_DIR}" worktree add --detach "${VERIFY_WT}" "${HEAD_SHA}" >/dev/null
   for cmd in "${CHECK_COMMANDS[@]}"; do
-    ( cd "${VERIFY_WT}" && bash -c "${cmd}" )
+    (cd "${VERIFY_WT}" && bash -c "${cmd}")
   done
 fi
 

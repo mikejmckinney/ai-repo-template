@@ -106,7 +106,10 @@ regrade_record_task() {
     responses_dir="${REPO_ROOT}/${responses_dir}"
   fi
   local group_dir="${responses_dir}/${task}"
-  [[ -d "${group_dir}" ]] || { echo "warn: skip ${task} — no ${group_dir}" >&2; return 0; }
+  [[ -d "${group_dir}" ]] || {
+    echo "warn: skip ${task} — no ${group_dir}" >&2
+    return 0
+  }
   for response in "${group_dir}"/eval-*.json; do
     [[ -f "${response}" ]] || continue
     eval_id="$(basename "${response}" .json)"

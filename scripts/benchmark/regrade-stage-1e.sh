@@ -97,7 +97,7 @@ cmd_prepare_all() {
     echo "#       ./regrade-stage-1e.sh compile <grader-id>"
     echo ""
     printf '%s\t%s\t%s\t%s\n' "run_group" "task" "score_set_id" "subjective_prompt"
-  } > "${manifest}"
+  } >"${manifest}"
 
   for entry in "${STAGE_1E_GROUPS[@]}"; do
     cmd_prepare_group "${entry}"
@@ -108,7 +108,7 @@ cmd_prepare_all() {
       [[ -f "${prompt}" ]] || continue
       eval_id="$(basename "$(dirname "${prompt}")")"
       printf '%s\t%s\t%s\t%s\n' \
-        "${RUN_GROUP}" "${TASK}" "${SCORE_SET}" "${prompt}" >> "${manifest}"
+        "${RUN_GROUP}" "${TASK}" "${SCORE_SET}" "${prompt}" >>"${manifest}"
     done
   done
 
@@ -159,7 +159,10 @@ cmd_record_group() {
 
 cmd_record_all() {
   local grader_id="$1" responses_dir="$2"
-  [[ -d "${responses_dir}" ]] || { echo "error: responses dir not found: ${responses_dir}" >&2; exit 2; }
+  [[ -d "${responses_dir}" ]] || {
+    echo "error: responses dir not found: ${responses_dir}" >&2
+    exit 2
+  }
   echo "========== RECORD grader=${grader_id} dir=${responses_dir} =========="
   for entry in "${STAGE_1E_GROUPS[@]}"; do
     parse_group_entry "${entry}"
@@ -244,7 +247,7 @@ case "${ACTION}" in
     cmd_record_all "${GRADER_ID}" "${RESPONSES_DIR}"
     cmd_compile_all "${GRADER_ID}"
     ;;
-  help|-h|--help|"")
+  help | -h | --help | "")
     usage 0
     ;;
   *)

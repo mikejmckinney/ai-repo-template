@@ -14,13 +14,31 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 TASK="" STAGE="1" SCORE_SET="" RUN_INDEX_FILTER="" MANIFEST=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --task) TASK="$2"; shift 2;;
-    --stage) STAGE="$2"; shift 2;;
-    --score-set) SCORE_SET="$2"; shift 2;;
-    --run-group) RUN_GROUP="$2"; shift 2;;
-    --run-index) RUN_INDEX_FILTER="$2"; shift 2;;
-    --manifest) MANIFEST="$2"; shift 2;;
-    *) die "unknown arg: $1";;
+    --task)
+      TASK="$2"
+      shift 2
+      ;;
+    --stage)
+      STAGE="$2"
+      shift 2
+      ;;
+    --score-set)
+      SCORE_SET="$2"
+      shift 2
+      ;;
+    --run-group)
+      RUN_GROUP="$2"
+      shift 2
+      ;;
+    --run-index)
+      RUN_INDEX_FILTER="$2"
+      shift 2
+      ;;
+    --manifest)
+      MANIFEST="$2"
+      shift 2
+      ;;
+    *) die "unknown arg: $1" ;;
   esac
 done
 [[ -n "${TASK}" && -n "${SCORE_SET}" ]] \
@@ -42,7 +60,7 @@ if [[ -n "${MANIFEST}" ]]; then
   while IFS=$'\t' read -r m_alias m_run _rest; do
     [[ -z "${m_alias}" || "${m_alias}" == \#* || "${m_alias}" == alias ]] && continue
     MANIFEST_KEYS["${m_alias}-r${m_run}"]=1
-  done < "${MANIFEST}"
+  done <"${MANIFEST}"
   [[ "${#MANIFEST_KEYS[@]}" -gt 0 ]] || die "manifest has no rows: ${MANIFEST}"
 fi
 
@@ -56,7 +74,7 @@ while IFS= read -r result; do
     [[ "${ri}" == "${RUN_INDEX_FILTER}" ]] || continue
   fi
   if [[ "${#MANIFEST_KEYS[@]}" -gt 0 ]]; then
-    [[ -n "${MANIFEST_KEYS[${alias}-r${ri}]+x}" ]] || continue
+    [[ -n "${MANIFEST_KEYS[${alias} - r${ri}]+x}" ]] || continue
   fi
   CANDIDATE_DIRS+=("${d}")
 done < <(find "${runs_base}" -name result.json 2>/dev/null | sort)
@@ -98,7 +116,7 @@ done
 
 mkdir -p "${BUNDLE_ROOT}"
 BUNDLE_SEED="$(printf '%s|%s|%s' "${TASK}" "${SCORE_SET}" "${RUN_GROUP:-}")"
-printf '# SEALED — do not show to graders\neval_candidate_id\ttask_id\talias\trun_index\trun_group\tcontext_condition\tcontext_variant\tcontext_pack_id\tartifact_dir\tsealed_candidate_key\n' > "${SEALED_MAP}"
+printf '# SEALED — do not show to graders\neval_candidate_id\ttask_id\talias\trun_index\trun_group\tcontext_condition\tcontext_variant\tcontext_pack_id\tartifact_dir\tsealed_candidate_key\n' >"${SEALED_MAP}"
 
 eval_n=0
 for d in "${ORDERED_DIRS[@]}"; do
@@ -137,25 +155,25 @@ for d in "${ORDERED_DIRS[@]}"; do
       adapter_exit_code: $rc,
       diff_files_changed: $files,
       work_produced: $work
-    }' > "${bundle_dir}/meta-blind-sanitized.json"
+    }' >"${bundle_dir}/meta-blind-sanitized.json"
 
   jq -n \
     --arg score_set "${SCORE_SET}" \
     --arg eval_id "${eval_id}" \
     --arg task "${TASK}" \
     --arg cond "${cond}" \
-  '{
+    '{
     score_set_id: $score_set,
     eval_candidate_id: $eval_id,
     task_id: $task,
     context_condition: $cond
-  }' > "${bundle_dir}/objective-input.json"
+  }' >"${bundle_dir}/objective-input.json"
 
-  cp -f "${d}/diff.patch" "${bundle_dir}/diff.patch" 2>/dev/null || printf '' > "${bundle_dir}/diff.patch"
+  cp -f "${d}/diff.patch" "${bundle_dir}/diff.patch" 2>/dev/null || printf '' >"${bundle_dir}/diff.patch"
   if [[ -f "${d}/diff.patch" ]]; then
-    grep -E '^\+\+\+ b/' "${d}/diff.patch" 2>/dev/null | sed 's|^+++ b/||' | sort -u > "${bundle_dir}/files-changed.txt" || true
+    grep -E '^\+\+\+ b/' "${d}/diff.patch" 2>/dev/null | sed 's|^+++ b/||' | sort -u >"${bundle_dir}/files-changed.txt" || true
   else
-    : > "${bundle_dir}/files-changed.txt"
+    : >"${bundle_dir}/files-changed.txt"
   fi
 
   task_class="$(awk -F': ' '/^task_class:/{print $2; exit}' "${TASK_MD}" | tr -d '\r')"
@@ -174,11 +192,11 @@ for d in "${ORDERED_DIRS[@]}"; do
     printf '\n## Diff\n\n```diff\n'
     head -c 200000 "${bundle_dir}/diff.patch" 2>/dev/null || true
     printf '\n```\n'
-  } > "${bundle_dir}/candidate.md"
+  } >"${bundle_dir}/candidate.md"
 
   printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
     "${eval_id}" "${TASK}" "${alias}" "${ri}" "${rg}" "${cond}" "${variant}" "${pack_id}" "${d}" "${sealed_key}" \
-    >> "${SEALED_MAP}"
+    >>"${SEALED_MAP}"
 
   log "bundle ${eval_id} <- ${alias} r${ri}"
 done
@@ -217,7 +235,7 @@ jq -n \
     eval_count: $eval_count,
     context_conditions: $conds,
     created_at: $created
-  }' > "${GRADE_SET_JSON}"
+  }' >"${GRADE_SET_JSON}"
 
 log "grade bundles -> ${BUNDLE_ROOT} (${eval_n} evals)"
 log "SEALED map -> ${SEALED_MAP}"

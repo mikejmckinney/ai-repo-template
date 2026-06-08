@@ -30,17 +30,23 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     while IFS=$'\t' read -r path _reason; do
       [[ "${path}" =~ ^#.*$ || -z "${path}" ]] && continue
       case "${path}" in
-        /*) fail "absolute path in ${manifest}: ${path}"; continue ;;
-        *..*) fail "path traversal in ${manifest}: ${path}"; continue ;;
-        AGENTS.md|CLAUDE.md)
+        /*)
+          fail "absolute path in ${manifest}: ${path}"
+          continue
+          ;;
+        *..*)
+          fail "path traversal in ${manifest}: ${path}"
+          continue
+          ;;
+        AGENTS.md | CLAUDE.md)
           fail "${manifest} must not reference ${path}"
           continue
           ;;
-        .git|.git/*)
+        .git | .git/*)
           fail "${manifest} must not reference .git: ${path}"
           continue
           ;;
-        scripts/benchmark/runs/*|scripts/benchmark/worktrees/*)
+        scripts/benchmark/runs/* | scripts/benchmark/worktrees/*)
           fail "${manifest} must not reference benchmark artifacts: ${path}"
           continue
           ;;
@@ -50,7 +56,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       else
         fail "pack ${pack} missing file: ${path}"
       fi
-    done < "${manifest}"
+    done <"${manifest}"
   done
 
   for example in \
@@ -65,27 +71,27 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if command -v jq >/dev/null 2>&1; then
     if (
-    set -euo pipefail
-    # shellcheck source=/dev/null
-    source scripts/benchmark/lib.sh
+      set -euo pipefail
+      # shellcheck source=/dev/null
+      source scripts/benchmark/lib.sh
 
-    fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/pack-smoke.XXXXXX")"
-    trap 'rm -rf "${fixture_root}"' EXIT
+      fixture_root="$(mktemp -d "${TMPDIR:-/tmp}/pack-smoke.XXXXXX")"
+      trap 'rm -rf "${fixture_root}"' EXIT
 
-    fixture_wt="${fixture_root}/wt"
-    mkdir -p "${fixture_wt}/.context/rules" "${fixture_wt}/.context/sessions" \
-      "${fixture_root}/out"
-    git -C "${fixture_wt}" init -q
-    printf '# AGENTS\n' > "${fixture_wt}/AGENTS.md"
-    printf '# CLAUDE\n' > "${fixture_wt}/CLAUDE.md"
-    cp .context/00_INDEX.md "${fixture_wt}/.context/00_INDEX.md"
-    cp .context/rules/agent_ownership.md "${fixture_wt}/.context/rules/agent_ownership.md"
-    cp .context/sessions/latest_summary.md "${fixture_wt}/.context/sessions/latest_summary.md"
-    git -C "${fixture_wt}" add -A
+      fixture_wt="${fixture_root}/wt"
+      mkdir -p "${fixture_wt}/.context/rules" "${fixture_wt}/.context/sessions" \
+        "${fixture_root}/out"
+      git -C "${fixture_wt}" init -q
+      printf '# AGENTS\n' >"${fixture_wt}/AGENTS.md"
+      printf '# CLAUDE\n' >"${fixture_wt}/CLAUDE.md"
+      cp .context/00_INDEX.md "${fixture_wt}/.context/00_INDEX.md"
+      cp .context/rules/agent_ownership.md "${fixture_wt}/.context/rules/agent_ownership.md"
+      cp .context/sessions/latest_summary.md "${fixture_wt}/.context/sessions/latest_summary.md"
+      git -C "${fixture_wt}" add -A
 
-    apply_context_variant "${fixture_wt}" "${fixture_root}/out" "pack:core-min"
-    jq -e . "${fixture_root}/out/context-injection.json" >/dev/null
-  ); then
+      apply_context_variant "${fixture_wt}" "${fixture_root}/out" "pack:core-min"
+      jq -e . "${fixture_root}/out/context-injection.json" >/dev/null
+    ); then
       pass "pack:core-min apply produces valid context-injection.json"
     else
       fail "pack:core-min apply smoke failed"
@@ -103,8 +109,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       mkdir -p "${fixture_wt}/.context/rules" "${fixture_wt}/.context/sessions" \
         "${fixture_root}/out"
       git -C "${fixture_wt}" init -q
-      printf '# AGENTS\n' > "${fixture_wt}/AGENTS.md"
-      printf '# CLAUDE\n' > "${fixture_wt}/CLAUDE.md"
+      printf '# AGENTS\n' >"${fixture_wt}/AGENTS.md"
+      printf '# CLAUDE\n' >"${fixture_wt}/CLAUDE.md"
       cp .context/00_INDEX.md "${fixture_wt}/.context/00_INDEX.md"
       cp .context/rules/agent_ownership.md "${fixture_wt}/.context/rules/agent_ownership.md"
       cp .context/sessions/latest_summary.md "${fixture_wt}/.context/sessions/latest_summary.md"
