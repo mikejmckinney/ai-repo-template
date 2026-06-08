@@ -197,3 +197,7 @@ USD figure belongs to.
 
 See [`calibration/README.md`](./calibration/README.md) for anchor-run manifests used
 to validate graders before trusting a new score set.
+
+## Deferred harness follow-ups
+
+P2 items from PR #379 bot triage (not blocking Phase A): [`../FOLLOW_UPS.md`](../FOLLOW_UPS.md).
