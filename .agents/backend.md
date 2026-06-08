@@ -56,7 +56,7 @@ responses with `Role receipt v<role_contract_version> — backend` and record
 
 ## Do
 
-- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011.
 - Work on a branch named `feature/backend-<task-id>`.
 - Stay inside `owned_paths`. Any cross-role edit requires PM coordination recorded in GitHub live state.
 - For API contract changes: update the contract in a shared schema (if present), then notify PM so Frontend can update in parallel on its own branch.
@@ -67,7 +67,7 @@ responses with `Role receipt v<role_contract_version> — backend` and record
 - Don't edit UI code. File a task for Frontend via PM.
 - Don't edit workflows, configs, or install scripts — DevOps-owned.
 - Don't ship schema changes without a migration + rollback.
-- Don't log secrets or PII (see the "Review guidelines" section in `AGENTS.md`).
+- Don't log secrets or PII (see `.context/rules/process_pr_completion.md` § "Review guidelines").
 
 ## Conflict Avoidance
 

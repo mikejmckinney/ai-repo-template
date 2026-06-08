@@ -10,7 +10,7 @@ agent: agent
 > section. The implementer reads it and addresses anything before
 > pushing.
 >
-> - **SHOULD** for any non-trivial diff (see AGENTS.md → "Work style").
+> - **SHOULD** for any non-trivial diff (see `.context/rules/process_work_style.md`).
 > - **MUST** for the DevOps role on any change to `scripts/*.sh`,
 >   `.github/workflows/*.yml`, or shell embedded in workflow `run:`
 >   blocks (see `.agents/devops.md` Do list).
@@ -19,7 +19,7 @@ agent: agent
 > AND no change to `scripts/*.sh`, `.github/workflows/*.yml`, role
 > files (`.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`, `.cursor/agents/*.md`, `.codex/agents/*.toml`), or
 > `AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`. (Same
-> non-trivial definition as AGENTS.md → "Work style".) Revert PRs and
+> non-trivial definition as `.context/rules/process_work_style.md`.) Revert PRs and
 > bot-authored PRs (Renovate, Dependabot) are also exempt. Phase 1's
 > CI lint and the post-push bot-review loop still run.
 
@@ -99,8 +99,7 @@ Output format for this step is **lighter** than the diff-gate output:
 - Skip `QUESTIONS FOR AUTHOR` — there is no author/reviewer split here;
   if a question would be blocking, mark it as a `MAJOR CONCERN` with
   `unverified assumption` as the cause.
-- Cite `path:line` for every finding (per AGENTS.md →
-  "Critical thinking").
+- Cite `path:line` for every finding (per `.context/rules/process_critical_thinking.md`).
 
 Result: `PASS` if zero MAJOR CONCERNS, otherwise `REQUEST_CHANGES`.
 

@@ -416,7 +416,7 @@ bash scripts/pr-iteration-stats.sh --window 14
 
 # Pre-push review (Critic + lint + ./test.sh on the working-tree diff)
 # SHOULD before `git push` on non-trivial diffs; MUST for DevOps on
-# shell/workflow changes. See AGENTS.md → "Work style" and
+# shell/workflow changes. See `.context/rules/process_work_style.md` and
 # .agents/devops.md.
 #
 # This is a Markdown prompt — not a shell script — so it must be

@@ -59,7 +59,7 @@ responses with `Role receipt v<role_contract_version> — pm` and record
 
 ## Do
 
-- **Before writing implementation code (including coordination updates under PM-owned paths), post an Implementation Plan as a comment on the linked issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See AGENTS.md → "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code (including coordination updates under PM-owned paths), post an Implementation Plan as a comment on the linked issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011.
 - One primary role per task. Split tasks if multiple roles must touch code.
 - Sequence tasks so dependent work waits on blocking work.
 - Release or annotate stale ownership claims only after confirming the previous session ended.

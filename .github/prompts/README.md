@@ -79,6 +79,10 @@ lists come after, not before.
   - **`agent-pr-prompts-combined-v2.md`** — bundled five-PR sequence for context
     rules decomposition and non-blocking review workflow (`01`–`04` + optional
     `00-coordinator`); run on `main` after Phase A merge.
+    - PR 1 (context decomposition): **merged** via Phase A / AGENTS.md v22.
+    - PR 1B (rules consolidation + legacy redirect retirement): in progress on
+      `feature/rules-consolidation-legacy-retirement`.
+    - PR 2–4 (advisory review, final feedback, post-merge retro): pending.
 
 ### Postmortem feedback loop
 

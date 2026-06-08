@@ -85,9 +85,9 @@ for exact-output roles (Judge, Critic) and **encouraged but not required** for
 all other roles:
 
 1. `## Subagent session handshake` — the 7-field table from
-   AGENTS.md `## Session handshake (read-receipt)`.
+   `.context/rules/process_session_start.md` § "Session handshake (read-receipt)".
 2. `## Subagent context receipt` — the file table from
-   AGENTS.md `## Session context receipt`.
+   `.context/rules/process_session_start.md` § "Session context receipt".
 3. `subagent_compliance` YAML block (ADR-026).
 
 Exact-output roles (Judge, Critic) emit `DECISION:` / `CRITIC DECISION:` as
@@ -252,7 +252,7 @@ Each branch goes through QA → Judge → merge independently.
 
 - **Never edit outside your owned paths without a PM claim.** This is the single most important rule.
 - **Never silently resolve** a claim conflict — escalate to PM.
-- **Never mark a task complete with CI red** (see the "Testing requirements" section in `AGENTS.md`).
+- **Never mark a task complete with CI red** (see `.context/rules/process_work_style.md` § "Testing requirements").
 - **Always** update or hand off the latest `agent-state:v1` comment at end of session.
 - **Always** add/update tests alongside behavior changes.
 

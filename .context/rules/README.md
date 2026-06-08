@@ -62,7 +62,6 @@ Profiles define the minimum startup set. A trigger below can add files to any pr
 | [`domain_code_quality.md`](./domain_code_quality.md) | `domain-triggered` | Non-trivial code changes, refactors, tests, architecture-shaping implementation, or code review. | Before implementation/review; re-read when code scope changes materially. | TDD/quality rationale, hard-rule compliance, exception justification. |
 | [`repo_orchestration_patterns.md`](./repo_orchestration_patterns.md) | `domain-triggered` | Changes or reviews touching agents, orchestration, rule files, workflows, prompts, handoffs, context loading, or governance. | Before orchestration-layer review and before ADR/policy edits. | Pattern/anti-pattern citations, block/advisory severity rationale. |
 | [`process_opportunity_feedback.md`](./process_opportunity_feedback.md) | `task-triggered` | Out-of-scope improvement opportunity noticed during in-scope work. | When adding opportunity notes or filing follow-up suggestions. | Capped opportunity note with evidence, impact, recommendation, scope, next action. |
-| [`legacy_agents_anchor_redirects.md`](./legacy_agents_anchor_redirects.md) | `reference` | Updating old references to pre-decomposition `AGENTS.md` section anchors. | Only during migration, doc-sync, or stale-anchor review. | Redirect update, stale-anchor grep result, or follow-up issue. |
 
 ## Guides and durable references commonly reached from rules
 
@@ -73,6 +72,7 @@ Profiles define the minimum startup set. A trigger below can add files to any pr
 | [`docs/decisions/README.md`](../../docs/decisions/README.md) | ADR lookup, policy history, or decision provenance. |
 | [`docs/decisions/adr-template.md`](../../docs/decisions/adr-template.md) | Creating or amending an ADR. |
 | [`docs/guides/agent-pipeline.md`](../../docs/guides/agent-pipeline.md) | Workflow-level behavior, review/fix/merge automation, labels, or setup. |
+| [`docs/guides/agents-md-section-redirects.md`](../../docs/guides/agents-md-section-redirects.md) | Resolving historical `AGENTS.md §"…"` citations after ADR-021 decomposition. |
 | [`docs/guides/multi-agent-coordination.md`](../../docs/guides/multi-agent-coordination.md) | Cross-agent workflow, coordination model, and role handoff details. |
 | [`docs/guides/sandbox-verification.md`](../../docs/guides/sandbox-verification.md) | Default-branch-only workflow verification or sandbox proof. |
 | [`.context/benchmarks/model-roi/README.md`](../benchmarks/model-roi/README.md) | Benchmark protocol, candidate isolation, scoring, and artifact model. |
