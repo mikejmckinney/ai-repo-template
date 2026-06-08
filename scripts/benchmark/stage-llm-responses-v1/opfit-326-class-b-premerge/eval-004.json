@@ -1,0 +1,83 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1d-canonical-v1",
+  "eval_candidate_id": "eval-004",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "Helper implements the documented exit/result contract: env defaults (INTERVAL/QUIET_WINDOW/MAX_WAIT), allow-list load with API_ERROR on failure, head SHA before/after snapshot with SHA_CHANGED exit 3, CONVERGED when unresolved allow-listed bot threads are zero and every participating bot has a review on the current head, QUIET_ELAPSED from latest actionable timestamps, TIMEOUT at MAX_WAIT, and RESULT=/HEAD= stdout lines. Bats fixtures affirm normalization, converged gating, stale-head review rejection, and quiet-window math. Minor residual gaps: convergence treats any on-head review as terminal without checking review state (e.g. PENDING), and GraphQL uses reviews(last:100) which could miss older head reviews on very active PRs.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 12,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is readable and repo-aligned: shell entrypoint with clear header contract, paginated GraphQL fetcher, extracted snapshot_logic testable via awk (matching existing shell-test patterns), canonical bot-allowlist.txt, and companion updates to pr-resolve-all.md (preferred helper plus preserved time-based fallback), AI_REPO_GUIDE.md, and scripts/README.md. Deductions for runtime-generated embedded Python helpers (509-line script, duplicated normalize_bot_login in bash and python) and breadth of the change set versus a minimal helper-only patch.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Diff stays on-task across eight files (helper, allow-list, bats, smoke check, scripts inventory, required prompt/docs) with no forbidden live-state surfaces, no PLAN.md/AGENTS.md churn, explicit pre-#321 scope boundary, and documented fallback retained. Doc-sync discipline is evident. One point withheld because the bundle contains no verification transcript or run log beyond objective automation skips.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Verification wiring is substantive: pr-resolve-all-poll.bats exercises snapshot_logic fixtures (converged, unresolved bot threads, human-thread exclusion, stale reviews, quiet elapsed/not elapsed, --help, missing allow-list API_ERROR), 141-pr-resolve-all-poll-smoke.sh runs bats plus grep assertions on prompt fallback/SHA_CHANGED docs, and 105-scripts.sh inventories new artifacts. Objective evidence shows bats_poll_helper skipped in bundle-only grading, so pass/fail of the full bats suite is not confirmed here; no integration tests cover live poll-loop SHA_CHANGED/TIMEOUT paths.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 29,
+  "uncertainty_notes": [],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "poll_once compares head_before and head_after around fetch_snapshot; mismatch emits RESULT=SHA_CHANGED and exits 3"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "is_converged requires unresolved_bot_threads==0 and every participating bot present in bot_head_reviews keyed to current headRefOid"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "is_quiet_elapsed uses latest_actionable_ts from review submittedAt, thread comment createdAt, PR comment createdAt, with updatedAt fallback"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "emit_result prints RESULT=<value> and HEAD=<sha>; die_api_error exits 4 with RESULT=API_ERROR"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "unresolved_bot_threads increments only for unresolved threads whose root author is allow-listed"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "GraphQL BASE_QUERY fetches reviews(last:100) rather than full review history pagination"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md section 5 documents preferred bash scripts/pr-resolve-all-poll.sh helper, exit/result table, and sleep QUIET_WINDOW time-based fallback"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats asserts converged, unresolved bot thread, stale head review, quiet window, and missing allow-list exit 4 with RESULT=API_ERROR"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/141-pr-resolve-all-poll-smoke.sh wires run_bats_check and grep validations for prompt helper reference and fallback docs"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Eight changed files limited to helper, allow-list, tests, checks, and required doc surfaces"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "hard_gate_pass=true; bats_poll_helper status skip; test_wiring pass 6/6; bash_n and lint_poll_helper pass"
+    }
+  ],
+  "graded_at": "2026-06-07T23:29:35Z"
+}

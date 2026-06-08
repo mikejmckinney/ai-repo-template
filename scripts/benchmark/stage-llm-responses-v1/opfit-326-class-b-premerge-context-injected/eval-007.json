@@ -1,0 +1,79 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1c-canonical-v1",
+  "eval_candidate_id": "eval-007",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 4,
+      "max_subjective_points": 10,
+      "rationale": "Skeleton delivers polling loop, allowlist loading, env defaults, documented exit codes, SHA-change detection against initial head, TIMEOUT handling, and RESULT= stdout lines. Meaningful contract gaps remain: count_unresolved_bot_threads counts REST pull comment replies (in_reply_to_id != null) instead of unresolved actionable review threads and never checks isResolved; API failures are swallowed to zero causing premature CONVERGED; participating allow-listed bot terminal review states for the current head are never evaluated despite a GraphQL query block that is never executed; get_latest_event_timestamp is dead code and the loop resets last_event_time to current_time on each poll so QUIET_ELAPSED cannot accumulate during active polling; required before-and-after head SHA checks around each state snapshot are absent.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 7,
+      "max_subjective_points": 15,
+      "rationale": "Prompt and AI_REPO_GUIDE updates are clear, repo-consistent, and preserve the documented sleep 360 fallback with integration examples. The shell script uses set -euo pipefail, passes bash -n and lint-shell-conventions per objective evidence, and documents behavior in header comments. Deductions for maintainability: unused GraphQL query and get_latest_event_timestamp function, explicit MVP simplification comments, fragile jq allowlist interpolation, and stderr suppression (2>/dev/null) that masks API errors into false convergence.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Diff is tightly scoped to the four required deliverables with companion docs synced and no forbidden state-surface or scope-noise files. Partial adherence because the task explicitly requires tests or check wiring per repo shell-test patterns, yet no scripts/tests/pr-resolve-all-poll.bats or scripts/checks/*pr-resolve*poll* file appears in files-changed.txt.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 1,
+      "max_subjective_points": 5,
+      "rationale": "Objective test_wiring failed (0/2 patterns); no bats file or check script was added. Only non-fabricated smoke signals are bash -n and lint-shell-conventions passing per objective evidence; candidate.md contains no verification command output or contract-path test coverage for exit semantics or polling behavior.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 15,
+  "uncertainty_notes": [],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "count_unresolved_bot_threads uses gh api pulls/comments counting bot replies with in_reply_to_id != null instead of unresolved reviewThreads with isResolved=false."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "On count_unresolved_bot_threads failure main sets unresolved_count=0, enabling false CONVERGED when API or jq errors occur."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "GraphQL query for reviews and reviewThreads is defined but never executed; comment states simplified REST count for MVP."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "get_latest_event_timestamp is defined but never called; main sets last_event_time=current_time on each poll when unresolved>0, preventing QUIET_ELAPSED from accumulating."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Main loop compares current_sha to initial_sha once per poll interval but does not perform separate before-and-after SHA checks around each state snapshot."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Script documents INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, exit codes 0/2/3/4, and RESULT=CONVERGED|QUIET_ELAPSED|SHA_CHANGED|TIMEOUT|API_ERROR with HEAD=<sha> via emit_result."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": ".github/prompts/pr-resolve-all.md adds settle-window section preferring the helper, documents env overrides and exit codes, and retains sleep 360 fallback."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Only four files changed: pr-resolve-all.md, AI_REPO_GUIDE.md, bot-allowlist.txt, pr-resolve-all-poll.sh; no test or check wiring files present."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring check failed with 0/2 patterns matched; bats_poll_helper and full_test_sh skipped; bash_n_poll_helper and lint_poll_helper passed."
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, so subjective categories are scored on merit rather than zeroed."
+    }
+  ],
+  "graded_at": "2026-06-07T23:20:44Z"
+}

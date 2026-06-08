@@ -1,0 +1,111 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-pipeline-canonical-v1",
+  "eval_candidate_id": "eval-005",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.pipeline.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The patch replaces the two hard-coded install.sh/test.sh checks with a loop over all five requested glob patterns (*.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, scripts/lib/*.sh). Each matched path gets an independent bash -n with pass()/fail(), satisfying per-file reporting and the parser-only constraint. One point withheld because nullglob is toggled without saving/restoring prior shell-option state when the module is sourced by test.sh.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 7,
+      "max_subjective_points": 12,
+      "rationale": "The core check change is small and readable, but lacks inline documentation of why globs are explicit, deduplication, or an empty-set guard. bash -n stderr is redirected to /dev/null, hiding failure detail. Material deductions for scope noise: three .context files changed including a spurious new session archive and coordination lock churn unrelated to the syntax-check task.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 2,
+      "max_subjective_points": 5,
+      "rationale": "The functional fix is present, but the diff violates focused-scope expectations by modifying forbidden .context/sessions and .context/state paths. Objective evidence already flags forbidden-path and context-state scope penalties. Session-state rotation artifacts should not ship alongside a single-file check change.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Objective test_wiring (6/6) and bash_n_check_script passed. latest_summary and the coordination lock both narrate a full test.sh run (checks 352 to 403) and a deliberate negative syntax-error smoke test, stronger than bundles with no verification record. One point withheld because full_test_sh was skipped objectively and no raw command transcript appears in the bundle.",
+      "uncertain": false
+    },
+    "coordination": {
+      "subjective_points": 3,
+      "max_subjective_points": 10,
+      "rationale": "Pipeline tasks expect observable multi-role orchestration evidence (roles invoked, completion status, per-role decisions). The bundle shows only a single devops role in the session header and coordination lock with no subagent handoffs, role-dispatch summary, or multi-role change log.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 25,
+  "uncertainty_notes": [
+    "full_test_sh objective check was skipped; verification relies on session narrative rather than captured command output."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "files array lists *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh covering all five requested locations"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "for loop calls pass or fail after bash -n on each expanded file for independent per-file reporting"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "shopt -s nullglob before glob expansion and shopt -u nullglob after without saving or restoring prior nullglob state"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "bash -n \"$f\" 2>/dev/null suppresses stderr on syntax failure"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "latest_summary documents bash test.sh run with check count increasing from 352 to 403 and a negative syntax-error smoke test"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "coordination lock records devops role verification via test.sh and smoke-testing for syntax errors"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "new file .context/sessions/2026-05-09_chore-closeout-278-state-cleanup.md adds unrelated prior session content as scope noise"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "four files changed including three .context paths beyond the target check script"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "pipeline expectations require role-dispatch evidence in the final response; only single devops role is documented"
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective fail-closed gate does not apply"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "forbidden:^\\.context/sessions/ failed \u2014 forbidden path in diff"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "forbidden:^\\.context/state/ failed \u2014 forbidden path in diff"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "scope:context_state warn \u2014 .context/state present in diff"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_check_script passed (5/5)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring passed (6/6)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh skipped in bundle-only grading"
+    }
+  ],
+  "graded_at": "2026-06-08T00:08:19Z"
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1c-canonical-v1",
+  "eval_candidate_id": "eval-008",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The 055-script-syntax.sh change implements the full requested contract from diff evidence: explicit globs for *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh; nullglob for safe empty expansion; per-file pass/fail via existing helpers; and parser-only bash -n. One point withheld because bundle provides no executed acceptance output (full_test_sh skipped) to confirm runtime behavior end-to-end.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 12,
+      "max_subjective_points": 15,
+      "rationale": "Core script change is clear and maintainable: array-driven glob set, nullglob toggle, and a defensive -f guard before bash -n. Deductions for stderr suppression (2>/dev/null hides syntax-error detail) and minimal inline documentation relative to the explicit-glob rationale the task emphasizes. Out-of-scope state-file churn does not improve implementation quality.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 1,
+      "max_subjective_points": 5,
+      "rationale": "Diff includes two forbidden .context/state files (_active.md, coordination.md) with benchmark session locks/tasks, violating the task scope constraint to keep the PR limited to the check and required doc-sync. No plan artifact or doc-sync decision is present in the bundle.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 2,
+      "max_subjective_points": 5,
+      "rationale": "Objective test_wiring passes, but full_test_sh is skipped and candidate.md contains no bash test.sh output, narrow lint output, or negative-smoke evidence required by the task acceptance criteria. Scored conservatively given absent verification narrative.",
+      "uncertain": true
+    }
+  },
+  "subjective_total": 24,
+  "uncertainty_notes": [
+    "full_test_sh was skipped in objective grading; bundle contains no candidate verification output or negative-smoke evidence for bash test.sh"
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts array lists *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, scripts/lib/*.sh with shopt nullglob and a for-loop invoking bash -n per file with pass/fail helpers."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Adds benchmark task and lock entries under .context/state/_active.md and .context/state/coordination.md outside the requested check scope."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Three changed files: two .context/state paths plus scripts/checks/055-script-syntax.sh."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "forbidden:^\\.context/state/ failed and scope:context_state warned for out-of-scope state edits."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh status is skip with note that acceptance-command execution is disabled for bundle-only fixture runs."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Acceptance criteria require bash test.sh verification, per-file pass/fail reporting, and negative-smoke evidence or an explicit explanation if not performed; none appear in the bundle."
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, so subjective categories are scored on evidence rather than fail-closed to zero."
+    }
+  ],
+  "graded_at": "2026-06-07T23:14:28Z"
+}

@@ -1,0 +1,75 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1d-canonical-v1",
+  "eval_candidate_id": "eval-005",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 6,
+      "max_subjective_points": 10,
+      "rationale": "The helper delivers a usable polling loop with correct env defaults (INTERVAL/QUIET_WINDOW/MAX_WAIT), allow-list loading, documented exit codes, and RESULT=/HEAD= lines on CONVERGED, QUIET_ELAPSED, and SHA_CHANGED paths. However, CONVERGED only checks for zero unresolved allow-listed bot review threads and never determines whether participating allow-listed bots are terminal for the current head, so it can return CONVERGED before expected bots finish. Head SHA is fetched in a separate gh call before the snapshot call rather than atomically bracketing one snapshot. TIMEOUT emits RESULT=TIMEOUT without HEAD= even when a SHA was available earlier in the loop.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 10,
+      "max_subjective_points": 15,
+      "rationale": "Shell style is repo-consistent (set -euo pipefail, clear header contract, lowercase allow-list matching with [bot] stripping) and objective syntax/lint checks pass. Deductions for unused LAST_ACTIONABLE_TIME, in-loop comments acknowledging incomplete timestamp handling, pr-resolve-all.md overclaiming dedicated GraphQL usage while the script uses gh pr view --json reviewThreads, and embedding all snapshot logic directly in the poll loop without extractable fixtures or modular helpers.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Diff is focused on seven on-task files (helper, allow-list, required prompt/docs, check inventories) with no forbidden live-state surfaces, PLAN.md, or AGENTS.md churn; pr-resolve-all.md and op-issue-workflow.md preserve the documented time-based fallback. One point withheld because the task explicitly requested shell-test wiring but no scripts/tests/pr-resolve-all-poll.bats or dedicated pr-resolve-all-poll check script appears in files-changed.txt.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 2,
+      "max_subjective_points": 5,
+      "rationale": "Verification is thin: objective test_wiring failed (0/2 patterns), bats_poll_helper was skipped, and the diff adds only generic required-file and script-inventory entries in 010-required-files.sh and 105-scripts.sh. bash -n and lint-shell-conventions pass, but no behavioral tests exercise exit-contract paths (CONVERGED gating, SHA_CHANGED, QUIET_ELAPSED math, API_ERROR) and the bundle contains no run transcript beyond objective automation.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 22,
+  "uncertainty_notes": [],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "CONVERGED exits when UNRESOLVED_BOT_THREADS==0 after counting unresolved threads whose root author is allow-listed; no participating-bot terminal-state check"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "INITIAL_SHA from a separate gh pr view --json headRefOid call precedes SNAPSHOT fetch; CURRENT_SHA compared to INITIAL_SHA after snapshot parse"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "TIMEOUT path echoes RESULT=TIMEOUT and exit 2 without HEAD= line"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "INTERVAL, QUIET_WINDOW, MAX_WAIT defaults 20/360/900; missing PR arg and missing allow-list emit RESULT=API_ERROR and exit 4"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "LAST_ACTIONABLE_TIME assigned at START_TIME but never referenced in polling logic"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md section 5 documents preferred bash scripts/pr-resolve-all-poll.sh helper and preserved six-minute time-based fallback"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "105-scripts.sh and 010-required-files.sh register pr-resolve-all-poll.sh and bot-allowlist.txt but no scripts/tests/pr-resolve-all-poll.bats or scripts/checks/*pr-resolve*poll* file"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Seven changed files limited to helper, allow-list, prompts, AI_REPO_GUIDE, and check inventories"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "hard_gate_pass=true; bash_n_poll_helper and lint_poll_helper pass; test_wiring fail 0/2 patterns; bats_poll_helper skip; reliability objective_points=0"
+    }
+  ],
+  "graded_at": "2026-06-07T23:30:29Z"
+}

@@ -1,0 +1,100 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-pipeline-canonical-v1",
+  "eval_candidate_id": "eval-001",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.pipeline.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the full exit contract (0 CONVERGED/QUIET_ELAPSED, 2 TIMEOUT, 3 SHA_CHANGED, 4 API_ERROR), env defaults (INTERVAL=20, QUIET_WINDOW=360, MAX_WAIT=900), allow-list loading, head SHA bracketing before/after snapshots, and machine-readable RESULT= lines. classify_settle precedence matches the spec and is covered by 13 unit tests; derive logic is covered by 10 fixture tests. One point withheld because bundle-only grading skips full_test_sh and provides no live gh/API run output to confirm end-to-end polling behavior.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 10,
+      "max_subjective_points": 12,
+      "rationale": "Implementation is well-structured (pure classify_settle, fetch/derive snapshot modes, api_error helper), follows repo shell-test patterns (_legacy_body bats, check module 160, 105-scripts wiring), and passes objective bash -n and lint checks. Docs are synced across pr-resolve-all.md, AI_REPO_GUIDE.md, and scripts/README.md with lockstep allow-list guidance. Deductions for a 640-line monolithic script with embedded Python heredoc (maintainability vs extracted-module convention used elsewhere) and overall diff size relative to a focused helper task.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "All eight changed files are directly task-related (helper, allow-list, prompt/docs, check wiring, bats). No forbidden paths (.context/sessions, .context/state), no AGENTS.md churn, and no PLAN.md artifact. Doc companions and test wiring satisfy repo doc-maintenance expectations with focused scope.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Strong offline verification design: comprehensive bats coverage of classify_settle and derive paths, integration via scripts/checks/160-pr-resolve-poll-smoke.sh and scripts/checks/105-scripts.sh, and objective test_wiring (6/6) plus bash_n/lint passes. One point withheld because bats_poll_helper and full_test_sh were skipped in bundle-only objective grading, so no executed test output appears in the bundle.",
+      "uncertain": true
+    },
+    "coordination": {
+      "subjective_points": 3,
+      "max_subjective_points": 10,
+      "rationale": "Pipeline expectations require role-dispatch evidence in the final response (roles invoked, completion status, per-role changes/decisions). candidate.md contains only the task specification, sanitized metadata, and the diff artifact with no observable multi-role orchestration record. The patch reads as a monolithic deliverable with no handoff or role-dispatch markers, so coordination credit is limited to implicit task-appropriate file scope rather than demonstrated pipeline orchestration.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 31,
+  "uncertainty_notes": [
+    "bats_poll_helper and full_test_sh were skipped in objective bundle grading; reliability scored conservatively with uncertain=true because no executed test-suite output is present.",
+    "No role-dispatch or subagent handoff evidence appears in candidate.md; coordination scored from absence of observable orchestration artifacts only."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "classify_settle implements SHA_CHANGED > CONVERGED > TIMEOUT > QUIET_ELAPSED > CONTINUE precedence with participating>0, nonterminal==0, unresolved==0 for CONVERGED"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "main loop emits RESULT=CONVERGED|QUIET_ELAPSED|TIMEOUT|SHA_CHANGED|API_ERROR with HEAD= and exits 0/2/3/4 per contract"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "INTERVAL, QUIET_WINDOW, MAX_WAIT env vars default to 20/360/900 and are validated as positive integers"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "head_before and head_after gh pr view checks bracket each snapshot; early SHA_CHANGED exit before expensive fetch"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/lib/bot-allowlist.txt provides normalized bot identities consumed by snapshot.py derive"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": ".github/prompts/pr-resolve-all.md adds settle-window section preferring helper with documented sleep fallback"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats contains 13 classify_settle and 10 derive fixture assertions without live API"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/160-pr-resolve-poll-smoke.sh wires run_bats_check for pr-resolve-all-poll.bats"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "eight files changed, all helper/allow-list/docs/check/test surfaces with no out-of-scope paths"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "pipeline expectations require role-dispatch evidence in final response; bundle artifacts contain no roles-invoked or handoff record"
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective scoring proceeds normally"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper and full_test_sh skipped"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring passed 6/6 patterns for bats file and pr-resolve poll check module"
+    }
+  ],
+  "graded_at": "2026-06-08T00:09:12Z"
+}

@@ -32,7 +32,11 @@ agent must perform, plus sealed reference metadata for evaluators.
 | `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md` | Current scored benchmark record, cost source register, and ROI tables used to justify repo-local ROI/performance revisions. |
 | `.context/benchmarks/model-roi/tasks/` | Maintainer-authored task specs. Each file has candidate-safe task text plus sealed reference metadata. |
 | `scripts/benchmark/Makefile` | Current operator entrypoint for `base`, `run`, `suite`, `duo-run`, `duo-suite`, `worktree`, `record`, `collect`, `unseal`, and `grade-*` targets. |
-| `.context/benchmarks/model-roi/grading/` | Canonical rubric, JSON schemas, task grading specs, and score-set comparability rules. |
+| `.context/benchmarks/model-roi/grading/` | Canonical rubric (`rubric.v1`, `rubric.pipeline.v1`), JSON schemas, task grading specs, and score-set comparability rules. |
+| `scripts/benchmark/regrade-stage.sh` | Unified canonical regrade driver for stages `1`, `1c`, `1d`, `pipeline`, `1e` (`prepare`, `grade`, `record`, `compile`, `status`). |
+| `scripts/benchmark/llm_grade_subjective.py` | True LLM blind grader: feeds each bundle's `subjective-prompt.md` to Cursor agent (`model-roi-grader-v1`). |
+| `scripts/benchmark/update-benchmark-results.py` | Sync `results/agent-roi-benchmark-results.md` (`scores`, `roi`, `sort`, `all`). |
+| `scripts/benchmark/stage-llm-responses-v1/` | Recorded subjective JSON for `cursor-llm-blind-v1` regrades (Stage 1C / 1D / pipeline). |
 | `scripts/benchmark/regrade-stage-1e.sh` | Operator script: prepare/record/compile canonical regrades for all Stage 1E CP-1 `RUN_GROUP`s. |
 | `.github/prompts/model-roi-grader-v1.md` | Locked subjective grader prompt (JSON-only output). |
 | `scripts/benchmark/candidates.tsv.example` | Example sealed alias manifest for Core Stage 1 plus later-phase placeholders. |

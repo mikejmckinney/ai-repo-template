@@ -1,0 +1,71 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1c-canonical-v1",
+  "eval_candidate_id": "eval-004",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 10,
+      "max_subjective_points": 10,
+      "rationale": "Helper implements the full exit/result contract (CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, API_ERROR) with INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, allowlist loading, GraphQL pagination, pre/post head SHA checks inside each snapshot, participating-bot terminal gating on current-head non-pending reviews, unresolved bot-thread counting, and machine-readable RESULT=/HEAD= stdout. pr-poll-state.jq excludes DISMISSED from terminal convergence and distinguishes current-head PENDING from stale old-head pending; bats fixtures exercise converged, quiet-elapsed, sha-changed, timeout, pending-block, dismissed, comment-only, and API_ERROR paths.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 14,
+      "max_subjective_points": 15,
+      "rationale": "Clear, maintainable, repo-consistent delivery: set -euo pipefail shell with documented header, extracted jq filters (bot-allowlist-normalize.jq, pr-poll-state.jq), stderr progress logging, comprehensive prompt table and pre-#321 semantics, AI_REPO_GUIDE/install.sh/check wiring, and allowlist parity across prompt/workflows/docs. Minor deduction for AI_REPO_GUIDE tree edits that drop prior test-*.sh/lib/jq navigation lines and for workflow allowlist churn beyond the four explicitly named paths (though justified as mirror sync).",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Focused task delivery with required artifacts, preserved documented time-based fallback, install.sh manifest updates, scripts/checks/160-pr-resolve-all-poll.sh test wiring, and explicit doc-sync discipline including a bats parity test locking bot-allowlist.txt to prompt/workflow/docs mirrors. No forbidden PLAN.md, AGENTS.md, or live-state surface churn.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Substantive verification: 18+ mock-gh bats cases covering every RESULT path and edge semantics, jq-filters.bats unit tests for extracted filters, test_wiring 6/6 pass, bash -n and lint-shell-conventions pass per objective evidence. bats_poll_helper was skipped in bundle-only objective grading, but the added tests are detailed and credible rather than fabricated smoke.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 34,
+  "uncertainty_notes": [],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/pr-resolve-all-poll.sh emit_result prints RESULT= and HEAD= with exit codes 0/2/3/4 matching CONVERGED, QUIET_ELAPSED, TIMEOUT, SHA_CHANGED, and API_ERROR."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "build_state fetches head before and after reviews/comments/threads snapshot and returns 3 when pre_sha != post_sha, emitting RESULT=SHA_CHANGED."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-poll-state.jq marks terminal only when current_head_review is APPROVED/CHANGES_REQUESTED/COMMENTED (not DISMISSED) with zero unresolved bot-rooted threads."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Main loop gates QUIET_ELAPSED on empty pending_csv and quiet_for >= QUIET_WINDOW; CONVERGED requires all participating bots terminal and unresolved_threads == 0."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats includes dedicated cases for CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, DISMISSED non-convergence, pending-review blocking, stale old-head pending ignored, comment-only non-convergence, TIMESTAMP_PARSE, and allowlist parity across five surfaces."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": ".github/prompts/pr-resolve-all.md adds settle-window section preferring the helper, documents result dispatch table, env overrides, and retains documented time-based fallback."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "13 changed files span helper, allowlist, jq filters, bats/check wiring, required docs, and justified workflow allowlist mirrors."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "hard_gate_pass is true; bash_n_poll_helper and lint_poll_helper passed; test_wiring passed 6/6; bats_poll_helper and full_test_sh were skipped in bundle-only grading."
+    }
+  ],
+  "graded_at": "2026-06-07T23:18:10Z"
+}

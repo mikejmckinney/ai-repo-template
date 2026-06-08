@@ -40,6 +40,7 @@ SCORE_SET ?=
 EVAL_ID ?=
 GRADER_ID ?=
 RESPONSE ?=
+RUBRIC ?=
 
 .PHONY: help base doctor worktrees worktree run suite suite-resume duo-run duo-suite duo-suite-resume record collect push unseal clean-worktrees grade-bundles grade-objective grade-subjective-prompts grade-subjective-record grade-compile grade-compare grade-adjudicate regrade-stage-1e
 
@@ -159,7 +160,7 @@ grade-objective:
 	@test -n "$(TASK)" -a -n "$(SCORE_SET)" || { echo "set TASK SCORE_SET"; exit 2; }
 	@python3 "$(HERE)grade-objective.py" \
 	  --bundle-root "$(HERE)grade-bundles/$(TASK)/$(SCORE_SET)" \
-	  --rubric "$(HERE)../../.context/benchmarks/model-roi/grading/rubric.v1.json" \
+	  --rubric "$(if $(RUBRIC),$(RUBRIC),$(HERE)../../.context/benchmarks/model-roi/grading/rubric.v1.json)" \
 	  --task-spec "$(HERE)../../.context/benchmarks/model-roi/grading/tasks/$(TASK).json"
 
 grade-subjective-prompts:

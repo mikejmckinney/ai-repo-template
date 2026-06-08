@@ -3,18 +3,22 @@
 
 from __future__ import annotations
 
-import json
-import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from canonical_scores_lib import (  # noqa: E402
+    STAGE_CONFIG,
+    fmt_score,
+    load_all_alias_runs,
+    load_stage,
+    load_stage1e,
+    na_cells,
+)
+from roi_format_lib import parse_pipeline_tail, parse_row  # noqa: E402
+
 REPO = Path(__file__).resolve().parents[2]
 RESULTS = REPO / ".context/benchmarks/model-roi/results/agent-roi-benchmark-results.md"
-BUNDLES = REPO / "scripts/benchmark/grade-bundles"
-
-STAGE1_SCORE_SET = "stage-1-canonical-v1"
-STAGE1E_PREFIX = "stage-1e-canonical-v1"
-STAGE1E_GRADER = "stage-1e-locked-v1"
 
 VARIANT_TO_GROUP_A = {
     "baseline": "ctx-a-baseline",
@@ -30,79 +34,7 @@ VARIANT_TO_GROUP_B = {
 }
 
 
-def load_sealed_map(path: Path) -> dict[str, tuple[str, int]]:
-    out: dict[str, tuple[str, int]] = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if line.startswith("#") or not line.strip() or line.startswith("eval_candidate_id"):
-            continue
-        cols = line.split("\t")
-        out[cols[0]] = (cols[2], int(cols[3]))
-    return out
-
-
-def load_final_grades(bundle_root: Path) -> dict[str, dict]:
-    fg = json.loads((bundle_root / "final-grades.json").read_text(encoding="utf-8"))
-    sealed = load_sealed_map(bundle_root / "sealed-eval-map.tsv")
-    by_alias_run: dict[tuple[str, int], dict] = {}
-    by_eval: dict[str, dict] = {}
-    for row in fg["rows"]:
-        eid = row["eval_candidate_id"]
-        payload = {
-            "canonical": row["final_total"],
-            "objective": row["objective_total"],
-            "subjective": row["subjective_total"],
-            "score_set_id": fg["score_set_id"],
-        }
-        by_eval[eid] = payload
-        if eid in sealed:
-            by_alias_run[sealed[eid]] = payload
-    return {"by_alias_run": by_alias_run, "by_eval": by_eval, "sealed": sealed}
-
-
-def load_stage1() -> dict[str, dict[tuple[str, int], dict]]:
-    out = {}
-    for task in ("opfit-281-class-a-premerge", "opfit-326-class-b-premerge"):
-        root = BUNDLES / task / STAGE1_SCORE_SET
-        out[task] = load_final_grades(root)["by_alias_run"]
-    return out
-
-
-def load_stage1e() -> dict[tuple[str, str], dict]:
-    """Key: (run_group, alias) e.g. ('ctx-a-baseline', 'ctx-cur')."""
-    out: dict[tuple[str, str], dict] = {}
-    groups = list(VARIANT_TO_GROUP_A.values()) + list(VARIANT_TO_GROUP_B.values())
-    for group in groups:
-        task = (
-            "opfit-281-class-a-premerge"
-            if group.startswith("ctx-a-")
-            else "opfit-326-class-b-premerge"
-        )
-        score_set = f"{STAGE1E_PREFIX}-{group}"
-        root = BUNDLES / task / score_set
-        if not (root / "final-grades.json").is_file():
-            continue
-        data = load_final_grades(root)
-        for eid, (alias, _run) in data["sealed"].items():
-            if eid in data["by_eval"]:
-                out[(group, alias)] = data["by_eval"][eid]
-    return out
-
-
-def na_cells() -> dict:
-    return {
-        "canonical": "N/A",
-        "objective": "N/A",
-        "subjective": "N/A",
-        "score_set_id": "N/A",
-    }
-
-
-def fmt_score(v) -> str:
-    return str(v) if v != "N/A" else "N/A"
-
-
-def inject_monolithic_table(lines: list[str], start: int, task: str, lookup: dict) -> int:
-    """Return index after table."""
+def inject_monolithic_table(lines: list[str], start: int, lookup: dict) -> int:
     header_idx = None
     for i in range(start, len(lines)):
         if lines[i].startswith("| Alias | Run | Gates |"):
@@ -111,20 +43,16 @@ def inject_monolithic_table(lines: list[str], start: int, task: str, lookup: dic
     if header_idx is None:
         return start
 
-    old_header = lines[header_idx]
-    if "Canonical /100" in old_header:
-        return header_idx + 1
-
-    lines[header_idx] = (
-        "| Alias | Run | Gates | Correctness /30 | Quality /25 | Process /20 "
-        "| Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 "
-        "| Objective /65 | Subjective /35 | score_set_id | Wall s | Cost status | Summary |"
-    )
-    sep = lines[header_idx + 1]
-    if sep.startswith("|---"):
-        lines[header_idx + 1] = (
-            "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---|---|"
+    if "Canonical /100" not in lines[header_idx]:
+        lines[header_idx] = (
+            "| Alias | Run | Gates | Correctness /30 | Quality /25 | Process /20 "
+            "| Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 "
+            "| Objective /65 | Subjective /35 | score_set_id | Wall s | Cost status | Summary |"
         )
+        if header_idx + 1 < len(lines) and lines[header_idx + 1].startswith("|---"):
+            lines[header_idx + 1] = (
+                "|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---|---|"
+            )
 
     i = header_idx + 2
     while i < len(lines) and lines[i].startswith("| `"):
@@ -133,14 +61,161 @@ def inject_monolithic_table(lines: list[str], start: int, task: str, lookup: dic
         run = int(parts[1])
         legacy = parts[8]
         scores = lookup.get((alias, run), na_cells())
-        new_parts = parts[:8] + [
+        if "Canonical /100" in lines[header_idx] and len(parts) >= 13:
+            new_parts = parts[:8] + [
+                legacy,
+                fmt_score(scores["canonical"]),
+                fmt_score(scores["objective"]),
+                fmt_score(scores["subjective"]),
+                f"`{scores['score_set_id']}`" if scores["score_set_id"] != "N/A" else "N/A",
+            ] + parts[13:]
+        else:
+            new_parts = parts[:8] + [
+                legacy,
+                fmt_score(scores["canonical"]),
+                fmt_score(scores["objective"]),
+                fmt_score(scores["subjective"]),
+                f"`{scores['score_set_id']}`" if scores["score_set_id"] != "N/A" else "N/A",
+            ] + parts[9:]
+        lines[i] = "| " + " | ".join(new_parts) + " |"
+        i += 1
+    return i
+
+
+def inject_stage1c_table(lines: list[str], start: int, lookup: dict) -> int:
+    header_idx = None
+    for i in range(start, len(lines)):
+        if lines[i].startswith("| Injected alias | Baseline alias |"):
+            header_idx = i
+            break
+    if header_idx is None:
+        return start
+
+    if "Canonical /100" not in lines[header_idx]:
+        lines[header_idx] = (
+            "| Injected alias | Baseline alias | Correctness /30 | Quality /25 | Process /20 "
+            "| Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 "
+            "| Subjective /35 | score_set_id | Score delta | Wall s | Wall delta | Marginal cost USD "
+            "| Marginal ROI | ROI delta | Summary |"
+        )
+        if header_idx + 1 < len(lines) and lines[header_idx + 1].startswith("|---"):
+            lines[header_idx + 1] = (
+                "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---|"
+            )
+
+    i = header_idx + 2
+    while i < len(lines) and lines[i].startswith("| `"):
+        parts = [p.strip() for p in lines[i].strip("|").split("|")]
+        alias = parts[0].strip("`")
+        legacy = parts[7]
+        scores = lookup.get((alias, 1), na_cells())
+        if len(parts) >= 19:
+            tail = parts[12:]
+        else:
+            tail = parts[8:]
+        new_parts = parts[:7] + [
             legacy,
             fmt_score(scores["canonical"]),
             fmt_score(scores["objective"]),
             fmt_score(scores["subjective"]),
             f"`{scores['score_set_id']}`" if scores["score_set_id"] != "N/A" else "N/A",
-        ] + parts[9:]
+        ] + tail
         lines[i] = "| " + " | ".join(new_parts) + " |"
+        i += 1
+    return i
+
+
+def inject_stage1d_table(lines: list[str], start: int, lookup: dict) -> int:
+    header_idx = None
+    for i in range(start, len(lines)):
+        if lines[i].startswith("| Alias | Platform / planner"):
+            header_idx = i
+            break
+    if header_idx is None:
+        return start
+
+    if "Canonical /100" not in lines[header_idx]:
+        lines[header_idx] = (
+            "| Alias | Platform / planner -> implementer | Correctness /30 | Quality /25 "
+            "| Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 "
+            "| Objective /65 | Subjective /35 | score_set_id | Wall s | Marginal cost USD "
+            "| Marginal ROI | Summary |"
+        )
+        if header_idx + 1 < len(lines) and lines[header_idx + 1].startswith("|---"):
+            lines[header_idx + 1] = (
+                "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|---|"
+            )
+
+    i = header_idx + 2
+    while i < len(lines) and lines[i].startswith("| `"):
+        parts = [p.strip() for p in lines[i].strip("|").split("|")]
+        alias = parts[0].strip("`")
+        if not alias.endswith("-duo"):
+            i += 1
+            continue
+        legacy = parts[7]
+        scores = lookup.get((alias, 1), na_cells())
+        tail = parts[12:] if len(parts) > 12 else parts[8:]
+        new_parts = parts[:7] + [
+            legacy,
+            fmt_score(scores["canonical"]),
+            fmt_score(scores["objective"]),
+            fmt_score(scores["subjective"]),
+            f"`{scores['score_set_id']}`" if scores["score_set_id"] != "N/A" else "N/A",
+        ] + tail
+        lines[i] = "| " + " | ".join(new_parts) + " |"
+        i += 1
+    return i
+
+
+def inject_pipeline_table(lines: list[str], start: int, lookup: dict) -> int:
+    header_idx = None
+    for i in range(start, len(lines)):
+        if lines[i].startswith("| Alias | Platform / model | Run |"):
+            header_idx = i
+            break
+    if header_idx is None:
+        return start
+
+    lines[header_idx] = (
+        "| Alias | Platform / model | Run | Gates | Correctness /30 | Quality /20 "
+        "| Process /15 | Reliability /15 | Coordination /10 | Latency /10 | Legacy /100 "
+        "| Canonical /100 | Objective /58 | Subjective /42 | score_set_id | Wall s | Diff "
+        "| Cost USD | ROI | Summary |"
+    )
+    if header_idx + 1 < len(lines) and lines[header_idx + 1].startswith("|---"):
+        lines[header_idx + 1] = (
+            "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---|---:|---|"
+        )
+
+    i = header_idx + 2
+    while i < len(lines) and lines[i].startswith("| `"):
+        parts = parse_row(lines[i])
+        alias = parts[0].strip("`")
+        run_s = parts[2].strip("`")
+        run = int(run_s[1:]) if run_s.startswith("r") and run_s[1:].isdigit() else 1
+        legacy = parts[10]
+        scores = lookup.get((alias, run), na_cells())
+        wall, diff, cost_s, roi_s, summary = parse_pipeline_tail(parts)
+        lines[i] = (
+            "| "
+            + " | ".join(
+                parts[:10]
+                + [
+                    legacy,
+                    fmt_score(scores["canonical"]),
+                    fmt_score(scores["objective"]),
+                    fmt_score(scores["subjective"]),
+                    f"`{scores['score_set_id']}`" if scores["score_set_id"] != "N/A" else "N/A",
+                    wall,
+                    diff,
+                    cost_s,
+                    roi_s,
+                    summary,
+                ]
+            )
+            + " |"
+        )
         i += 1
     return i
 
@@ -156,12 +231,7 @@ def inject_stage1e_table(
     if header_idx is None:
         return start
 
-    old_header = lines[header_idx]
-    needs_refresh = "Canonical /100" in old_header and header_idx + 2 < len(lines) and "N/A" in lines[header_idx + 2]
-    if "Canonical /100" in old_header and not needs_refresh:
-        return header_idx + 1
-
-    if "Legacy /100" not in old_header:
+    if "Legacy /100" not in lines[header_idx]:
         lines[header_idx] = (
             "| Alias | Platform/model | Observed model | Context variant | Pack files | Pack bytes "
             "| Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 "
@@ -196,39 +266,64 @@ def inject_stage1e_table(
 
 
 def update_score_set_section(text: str) -> str:
-    old = (
-        "- Stage 1E context-pack conclusions require regrading under one canonical score set\n"
-        "  before routing decisions."
-    )
+    old_fragments = [
+        "Stage 1C/1D/pipeline rows remain legacy-only until regraded.",
+        "Stage 1 monolithic Class A/B rows and Stage 1E CP-1 rows now include canonical",
+    ]
     new = (
-        "- Stage 1 monolithic Class A/B rows and Stage 1E CP-1 rows now include canonical\n"
-        "  `score_set_id`, objective (/65), and subjective (/35) columns alongside legacy\n"
-        "  category scores. Stage 1C/1D/pipeline rows remain legacy-only until regraded."
+        "- Stage 1 monolithic, Stage 1C, Stage 1D, pipeline (#376), and Stage 1E CP-1 rows\n"
+        "  support canonical `score_set_id`, objective, and subjective columns alongside legacy\n"
+        "  category scores once regraded via the `regrade-stage-*.sh` scripts."
     )
-    if old in text:
-        text = text.replace(old, new)
+    if any(f in text for f in old_fragments):
+        lines = text.splitlines()
+        out = []
+        skip_next = False
+        for line in lines:
+            if line.strip().startswith("- Stage 1 monolithic") and "canonical" in line:
+                if not out or out[-1] != new:
+                    out.append(new)
+                skip_next = True
+                continue
+            if skip_next and line.strip().startswith("category scores"):
+                skip_next = False
+                continue
+            if "Stage 1C/1D/pipeline rows remain legacy-only" in line:
+                continue
+            out.append(line)
+        text = "\n".join(out) + "\n"
+    elif new not in text:
+        text = text.replace(
+            "- Exploratory Cursor/Codex regrades are separate cohorts",
+            f"{new}\n- Exploratory Cursor/Codex regrades are separate cohorts",
+            1,
+        )
     return text
 
 
 def main() -> None:
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else RESULTS
-    text = path.read_text(encoding="utf-8")
-    lines = text.splitlines()
+    lines = path.read_text(encoding="utf-8").splitlines()
 
-    stage1 = load_stage1()
+    stage1 = load_stage(STAGE_CONFIG["1"]["score_set"], STAGE_CONFIG["1"]["tasks"])
+    stage1c = load_stage(STAGE_CONFIG["1c"]["score_set"], STAGE_CONFIG["1c"]["tasks"])
+    stage1d = load_stage(STAGE_CONFIG["1d"]["score_set"], STAGE_CONFIG["1d"]["tasks"])
+    stage1pipe = load_stage(STAGE_CONFIG["pipeline"]["score_set"], STAGE_CONFIG["pipeline"]["tasks"])
     stage1e = load_stage1e()
 
     idx = 0
     while idx < len(lines):
         line = lines[idx]
         if line.startswith("## Class A: `opfit-281-class-a-premerge`"):
-            idx = inject_monolithic_table(
-                lines, idx, "opfit-281-class-a-premerge", stage1["opfit-281-class-a-premerge"]
-            )
+            idx = inject_monolithic_table(lines, idx, stage1)
         elif line.startswith("## Class B: `opfit-326-class-b-premerge`"):
-            idx = inject_monolithic_table(
-                lines, idx, "opfit-326-class-b-premerge", stage1["opfit-326-class-b-premerge"]
-            )
+            idx = inject_monolithic_table(lines, idx, stage1)
+        elif line.startswith("### Stage 1C Class A:") or line.startswith("### Stage 1C Class B:"):
+            idx = inject_stage1c_table(lines, idx, stage1c)
+        elif line.startswith("### Stage 1D Class A:") or line.startswith("### Stage 1D Class B:"):
+            idx = inject_stage1d_table(lines, idx, stage1d)
+        elif line.startswith("### Issue #376 Class A:") or line.startswith("### Issue #376 Class B:"):
+            idx = inject_pipeline_table(lines, idx, stage1pipe)
         elif line.startswith("### Stage 1E Class A:"):
             idx = inject_stage1e_table(lines, idx, VARIANT_TO_GROUP_A, stage1e)
         elif line.startswith("### Stage 1E Class B:"):

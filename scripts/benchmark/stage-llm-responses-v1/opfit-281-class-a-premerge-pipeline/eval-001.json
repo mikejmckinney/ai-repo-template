@@ -1,0 +1,100 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-pipeline-canonical-v1",
+  "eval_candidate_id": "eval-001",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.pipeline.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The patch replaces the two hard-coded install.sh/test.sh checks with a loop over all five explicitly requested glob patterns (*.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, scripts/lib/*.sh). Each matched path is exercised independently via bash -n with pass()/fail(), satisfying per-file reporting. nullglob with save/restore safely handles empty patterns without leaking shell options into the sourced test.sh context. One point withheld because the bundle contains no full-suite run output or negative-smoke demonstration that a deliberate syntax error is caught and cleared, as required by acceptance criteria.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 11,
+      "max_subjective_points": 12,
+      "rationale": "Implementation is minimal, well-commented, and scoped to a single check file. Comments document why globs are explicit (exclude vendored/generated trees and Bats), why nullglob is used, and why nullglob restoration uses if [[ ]] instead of (( )) to avoid tripping set -e. Locals are unset after use. Minor deduction for redirecting bash -n stderr to /dev/null, which suppresses syntax-error detail on failure while still detecting errors.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Diff is tightly focused on the required check script with no unrelated file churn, matching the constraint to keep a parser-only bash -n check without shellcheck or heavyweight dependencies. One point withheld because the bundle lacks reported bash test.sh output, narrow syntax-check output, or a documented negative-smoke explanation required by verification expectations.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Objective evidence confirms test wiring (6/6) and bash_n_check_script pass; the diff integrates with existing pass/fail helpers and carefully restores nullglob so sourced execution does not leak shell state. However, full_test_sh was skipped in bundle-only grading, and no command output or negative-smoke evidence is present, leaving end-to-end verification discipline unconfirmed from bundle artifacts alone.",
+      "uncertain": true
+    },
+    "coordination": {
+      "subjective_points": 3,
+      "max_subjective_points": 10,
+      "rationale": "Pipeline expectations require role-dispatch evidence in the final response (roles invoked, completion status, and per-role changes/decisions). candidate.md contains only the task specification, sanitized metadata, and the diff artifact with no observable multi-role orchestration record. The patch itself is a monolithic single-file change with no handoff or role-dispatch markers, so coordination credit is limited to implicit task-appropriate scope rather than demonstrated pipeline orchestration.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 30,
+  "uncertainty_notes": [
+    "Bundle contains no bash test.sh run output, narrow syntax-check output, or negative-smoke demonstration/explanation; reliability scored conservatively with uncertain=true.",
+    "No role-dispatch or subagent handoff evidence appears in candidate.md; coordination scored from absence of observable orchestration artifacts only."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "_syntax_globs array lists *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh covering all five requested locations"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "nested for loops call pass or fail after bash -n on each expanded file, providing independent per-file reporting"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "nullglob is enabled with save/restore so empty patterns expand to nothing and caller shell options are not leaked when sourced by test.sh"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "nullglob restoration uses if [[ $_syntax_nullglob_was_set -eq 0 ]] rather than (( )) to avoid set -e exit on zero value"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "comments state explicit globs exclude vendored/generated trees and scripts/tests/*.bats; check remains parser-only bash -n"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "only scripts/checks/055-script-syntax.sh changed, indicating focused scope with no doc or process-surface churn"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "pipeline expectations require role-dispatch evidence in the final response; bundle artifacts contain no roles-invoked or handoff record"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "acceptance criteria require bash test.sh verification and negative-smoke test or documented explanation; neither appears in bundle artifacts"
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective scoring proceeds normally"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "required_path:scripts/checks/055-script-syntax.sh passed (4/4)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_check_script passed (5/5)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring passed (6/6) confirming check integration with test.sh"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh skipped in bundle-only grading; no full-suite execution evidence available"
+    }
+  ],
+  "graded_at": "2026-06-07T23:31:19Z"
+}

@@ -20,7 +20,7 @@
     "eval_candidate_id": { "type": "string", "pattern": "^eval-[0-9]{3}$" },
     "grader_id": { "type": "string", "minLength": 1 },
     "grader_prompt_id": { "const": "model-roi-grader-v1" },
-    "rubric_id": { "const": "rubric.v1" },
+    "rubric_id": { "enum": ["rubric.v1", "rubric.pipeline.v1"] },
     "categories": {
       "type": "object",
       "required": ["correctness", "quality", "process", "reliability"],
@@ -28,10 +28,11 @@
         "correctness": { "$ref": "#/$defs/subjectiveCategory" },
         "quality": { "$ref": "#/$defs/subjectiveCategory" },
         "process": { "$ref": "#/$defs/subjectiveCategory" },
-        "reliability": { "$ref": "#/$defs/subjectiveCategory" }
+        "reliability": { "$ref": "#/$defs/subjectiveCategory" },
+        "coordination": { "$ref": "#/$defs/subjectiveCategory" }
       }
     },
-    "subjective_total": { "type": "integer", "minimum": 0, "maximum": 35 },
+    "subjective_total": { "type": "integer", "minimum": 0, "maximum": 42 },
     "uncertainty_notes": { "type": "array", "items": { "type": "string" } },
     "citations": {
       "type": "array",

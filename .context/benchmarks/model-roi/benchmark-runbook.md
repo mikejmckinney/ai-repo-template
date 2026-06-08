@@ -383,15 +383,44 @@ Scores are comparable **only within the same `score_set_id`**.
 Regrade operator scripts (from repo root):
 
 ```bash
-# Stage 1 monolithic Class A/B rows from results.md
-./scripts/benchmark/regrade-stage-1.sh all results-md-legacy-v1
+GRADER=cursor-llm-blind-v1
+RESP=scripts/benchmark/stage-llm-responses-v1
 
-# Stage 1E CP-1 context-pack screen (eight RUN_GROUPs)
-./scripts/benchmark/regrade-stage-1e.sh all stage-1e-locked-v1 scripts/benchmark/stage-1e-responses
+# Unified driver (stages: 1 | 1c | 1d | pipeline | 1e)
+# Actions: prepare | grade | record | compile | status | all
+./scripts/benchmark/regrade-stage.sh 1c prepare
+SKIP_LEGACY_RESPONSES=1 ./scripts/benchmark/regrade-stage.sh 1c prepare   # skip legacy bootstrap
 
-# Refresh results tables after regrade
-python3 scripts/benchmark/update-results-canonical-scores.py
+# True LLM blind grade (Cursor agent + model-roi-grader-v1 on each subjective-prompt.md)
+./scripts/benchmark/regrade-stage.sh 1c grade "${GRADER}"
+# or: python3 scripts/benchmark/blind_grade_stage.py --stage 1c --grader-id "${GRADER}" --skip-existing
+
+./scripts/benchmark/regrade-stage.sh 1c record "${GRADER}" "${RESP}"
+bash ./scripts/benchmark/regrade-stage.sh 1c compile "${GRADER}"
+
+# Repeat for 1d and pipeline; thin wrappers (regrade-stage-1c.sh, …) exec regrade-stage.sh
+
+# Offline heuristic only (fixtures / CI): blind_grade_bundle.py --heuristic
+
+# Stage 1E CP-1 (eight RUN_GROUP score sets)
+./scripts/benchmark/regrade-stage-1e.sh prepare
+# … grade each subjective-prompt.md → stage-1e-responses-v2/<run_group>/eval-NNN.json
+./scripts/benchmark/regrade-stage-1e.sh record cursor-session-stage-1e-v2 scripts/benchmark/stage-1e-responses-v2
+./scripts/benchmark/regrade-stage-1e.sh compile cursor-session-stage-1e-v2
+
+# Refresh results.md: canonical columns, ROI numerators, per-table sort notes
+python3 scripts/benchmark/update-benchmark-results.py all   # scores | roi | sort | all
 ```
+
+**Canonical grader for Stage 1C / 1D / pipeline (2026-06):** `cursor-llm-blind-v1` via
+`llm_grade_subjective.py` (not the superseded heuristic `blind_grade_heuristic.py`).
+
+**Results table conventions** (see `results/agent-roi-benchmark-results.md`):
+
+- Marginal ROI tables include **Objective | Subjective** and resolve extended-stage
+  aliases (`-pipe`, `-injected`, `-duo`) within each task class (Class A vs B).
+- Stage 1C tables include **ROI delta** = injected ROI − baseline ROI (same alias).
+- Issue #376 pipeline tables use separate **Cost USD** and **ROI** columns for sort.
 
 Manual per-task example:
 
@@ -417,11 +446,23 @@ make -C scripts/benchmark grade-compile \
   TASK=opfit-326-class-b-premerge SCORE_SET="${SCORE_SET}" GRADER_ID=<stable-id>
 ```
 
-Stage 1 monolithic and Stage 1E CP-1 rows in the results doc include canonical
-columns (`stage-1-canonical-v1` and `stage-1e-canonical-v1-*`). Stage 1C, 1D,
-and issue #376 pipeline rows remain legacy-only until regraded under their own
-score sets. Exploratory Cursor/Codex regrades are separate cohorts for
-inter-rater analysis only — do not average them into canonical rows.
+Each stage has a dedicated regrade wrapper and `score_set_id`:
+
+| Stage | Script | Default score set | Canonical grader (extended stages) |
+|---|---|---|---|
+| 1 monolithic | `regrade-stage.sh 1` | `stage-1-canonical-v1` | legacy bootstrap or LLM |
+| 1C injection | `regrade-stage.sh 1c` | `stage-1c-canonical-v1` | `cursor-llm-blind-v1` |
+| 1D duo | `regrade-stage.sh 1d` | `stage-1d-canonical-v1` | `cursor-llm-blind-v1` |
+| #376 pipeline | `regrade-stage.sh pipeline` | `stage-1-pipeline-canonical-v1` | `cursor-llm-blind-v1` (`rubric.pipeline.v1`) |
+| 1E CP-1 | `regrade-stage-1e.sh` | `stage-1e-canonical-v1-<run_group>` | `cursor-session-stage-1e-v2` |
+
+`prepare` bootstraps subjective JSON from legacy category scores via
+`regrade-from-results-md.py responses` (residual mapping). For routing decisions,
+replace with **fresh blind JSON** from `model-roi-grader-v1.md` and a stable
+`grader_id` (as done for Stage 1E `cursor-session-stage-1e-v2`).
+
+Exploratory Cursor/Codex regrades are separate cohorts for inter-rater analysis
+only — do not average them into canonical rows.
 
 Grading bundles use neutral `eval-###` IDs and `context_condition` codes
 (`cond-001`, …). Real `context_variant` / pack ids live in sealed maps only.

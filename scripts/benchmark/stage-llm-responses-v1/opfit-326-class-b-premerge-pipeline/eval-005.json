@@ -1,0 +1,79 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-pipeline-canonical-v1",
+  "eval_candidate_id": "eval-005",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.pipeline.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 7,
+      "max_subjective_points": 10,
+      "rationale": "Exit contract is largely implemented: all five RESULT values, matching exit codes, HEAD= on terminal paths, INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, allowlist loading with [bot] normalization, and before/during/after SHA guards. Deductions: vacuous CONVERGED when no allowlisted bots have reviewed yet (empty participating set short-circuits to exit 0 without polling), which can prematurely end the settle window on a fresh PR; core polling logic lives in an embedded Python heredoc rather than shell as the task constraint requests; GraphQL queries cap at first:100 for reviews/threads/comments/commits.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 8,
+      "max_subjective_points": 12,
+      "rationale": "Strong positives: thorough Bats suite with mocked gh covering every exit path, synced prompt/docs (pr-resolve-all.md settle-window rule with 180s fallback preserved, AI_REPO_GUIDE discoverability, check wiring in 105-scripts.sh and 160-pr-resolve-all-poll.sh), and clear header documentation. Deductions: hybrid bash-wrapped Python is inconsistent with repo shell-script conventions; out-of-scope churn in AGENTS.md and compliance fixtures (objective scope warnings); unresolved-thread detection only inspects the first comment author per thread.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 2,
+      "max_subjective_points": 5,
+      "rationale": "Required deliverables and doc companions are present, but objective scope warnings are warranted: AGENTS.md handshake wording edit is unrelated to issue #326, and three compliance valid fixtures were bumped v19\u2192v20 without task necessity. No PLAN.md or .context/state noise, but scope discipline is weak for a focused helper task.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Verification wiring is solid: bash -n and lint-shell-conventions passed per objective evidence; comprehensive Bats tests mock gh repo view and GraphQL for API_ERROR, CONVERGED, SHA_CHANGED, QUIET_ELAPSED, and TIMEOUT; test.sh discovery wired via scripts/checks/160-pr-resolve-all-poll.sh. Bats/full test.sh were skipped in bundle-only objective grading, but the diff shows runnable, path-complete coverage.",
+      "uncertain": false
+    },
+    "coordination": {
+      "subjective_points": 2,
+      "max_subjective_points": 10,
+      "rationale": "Pipeline task requires role-dispatch evidence (roles invoked, completion, changes) in the final response. The blind bundle contains only diff/metadata\u2014no candidate transcript or dispatch log. Compliance fixture YAML references a docs subagent, but that is test-fixture narrative updated for agents_md_version churn, not observable orchestration evidence for this run. Cannot credit multi-role coordination beyond minimal incidental fixture edits.",
+      "uncertain": true
+    }
+  },
+  "subjective_total": 24,
+  "uncertainty_notes": [
+    "Pipeline coordination scoring requires role-dispatch evidence in the candidate final response; the grading bundle does not include that artifact, so coordination is scored conservatively with uncertain=true."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/pr-resolve-all-poll.sh implements RESULT=CONVERGED|QUIET_ELAPSED|TIMEOUT|SHA_CHANGED|API_ERROR with exit codes 0/2/3/4 and HEAD= on terminal paths."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Vacuous convergence: when participating_expected_bots is empty, all_bots_reviewed_head is true and the script exits CONVERGED immediately without waiting INTERVAL/QUIET_WINDOW."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Polling logic is ~350 lines of embedded Python inside a bash wrapper, diverging from the task shell-based implementation constraint."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats provides mocked gh tests for invalid args, API/GraphQL errors, CONVERGED, SHA_CHANGED (before and after state), QUIET_ELAPSED, and TIMEOUT."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": ".github/prompts/pr-resolve-all.md adds rule 5 preferring scripts/pr-resolve-all-poll.sh with documented 180s manual fallback."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "11 files changed including out-of-scope AGENTS.md and three compliance valid fixtures."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "hard_gate_pass=true; scope:agents_md warn and scope:compliance_fixtures warn; bash_n_poll_helper and lint_poll_helper pass; bats_poll_helper and full_test_sh skipped."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Pipeline expectations require role dispatch evidence in final response; bundle contains no such transcript."
+    }
+  ],
+  "graded_at": "2026-06-08T00:11:45Z"
+}

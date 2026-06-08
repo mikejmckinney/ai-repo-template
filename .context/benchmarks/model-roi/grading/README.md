@@ -94,6 +94,29 @@ changing routing policy.
 - subjective claim conflicts with objective evidence
 - subjective spread ≥ 10 across graders on the same bundle
 
+## Pipeline rubric (`rubric.pipeline.v1.json`)
+
+Issue #376 pipeline score sets use a six-category rubric (includes **coordination**
+/10 subjective). Task specs:
+`grading/tasks/opfit-*-premerge-pipeline.json`. Subjective graders must set
+`rubric_id: rubric.pipeline.v1` and score the coordination category.
+
+## Regrading extended stages (1C / 1D / pipeline / 1E)
+
+| Stage | Operator script | Results sync |
+|---|---|---|
+| 1 / 1c / 1d / pipeline | `regrade-stage.sh <stage> {prepare\|grade\|record\|compile}` | `update-benchmark-results.py all` |
+| 1E CP-1 | `regrade-stage-1e.sh` | (included in `all`) |
+
+Shared libraries: `canonical_scores_lib.py`, `regrade_results_lib.py`,
+`roi_format_lib.py`, `results_table_sort.py`. Thin wrappers (`regrade-stage-1c.sh`,
+etc.) exec `regrade-stage.sh`. Per-stage ROI modules remain importable; prefer
+`update-benchmark-results.py scores|roi|sort|all`.
+
+Marginal ROI lookup uses `lookup_marginal_score(task_class, alias)` so Class A and
+Class B rows for the same pipeline alias (e.g. `cand-20-pipe` at different run
+indices) do not collide.
+
 ## Regrading Stage 1E under a canonical score set
 
 **Recommended:** `scripts/benchmark/regrade-stage-1e.sh` (documented in
@@ -112,6 +135,29 @@ Manual per-`RUN_GROUP` alternative:
 3. Record subjective JSON grades and `grade-compile` with the same `GRADER_ID`.
 4. Cite `score_set_id`, rubric version, and grader prompt version in results docs.
 5. Do **not** average exploratory Cursor/Codex regrades into the canonical row.
+
+## True LLM blind grading (Stage 1C / 1D / pipeline)
+
+Heuristic `blind_grade_heuristic.py` is **not** the canonical procedure. Use the
+Cursor agent in ask mode to grade each bundle's `subjective-prompt.md` with the
+locked `model-roi-grader-v1` prompt:
+
+```bash
+# Per bundle
+python3 scripts/benchmark/llm_grade_subjective.py \
+  --bundle scripts/benchmark/grade-bundles/<task>/<score-set>/eval-NNN \
+  --grader-id cursor-llm-blind-v1 \
+  --out scripts/benchmark/stage-llm-responses-v1/<task>/eval-NNN.json
+
+# Batch (stage 1c | 1d | pipeline)
+./scripts/benchmark/regrade-stage.sh 1c grade cursor-llm-blind-v1
+./scripts/benchmark/regrade-stage.sh 1c record cursor-llm-blind-v1 scripts/benchmark/stage-llm-responses-v1
+bash ./scripts/benchmark/regrade-stage.sh 1c compile cursor-llm-blind-v1
+python3 scripts/benchmark/update-benchmark-results.py all
+```
+
+`--heuristic` on `blind_grade_bundle.py` retains the offline evidence scorer for
+fixtures only.
 
 ## Cost accounting
 

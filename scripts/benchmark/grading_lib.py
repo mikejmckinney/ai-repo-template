@@ -32,6 +32,31 @@ OBJECTIVE_MAX = {
     "latency": 10,
 }
 
+RUBRIC_FILES = {
+    "rubric.v1": GRADING_DIR / "rubric.v1.json",
+    "rubric.pipeline.v1": GRADING_DIR / "rubric.pipeline.v1.json",
+}
+
+
+def load_rubric_by_id(rubric_id: str) -> dict:
+    path = RUBRIC_FILES.get(rubric_id)
+    if path and path.is_file():
+        return load_json(path)
+    die(f"unknown or missing rubric: {rubric_id}")
+
+
+def rubric_limits(rubric: dict) -> tuple[dict[str, int], dict[str, int], list[str]]:
+    """Return (objective_max, subjective_max, category_ids) for a rubric document."""
+    obj: dict[str, int] = {}
+    sub: dict[str, int] = {}
+    cats: list[str] = []
+    for block in rubric.get("categories", []):
+        cid = block["id"]
+        cats.append(cid)
+        obj[cid] = int(block["objective_points"])
+        sub[cid] = int(block["subjective_points"])
+    return obj, sub, cats
+
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -105,10 +130,12 @@ def latency_points(wall_seconds: int | float | None, bands: list[dict]) -> int:
     return 0
 
 
-def empty_category_scores() -> dict[str, dict]:
+def empty_category_scores(rubric: dict | None = None) -> dict[str, dict]:
+    rubric = rubric or load_rubric()
+    obj_max, _, cats = rubric_limits(rubric)
     return {
-        cat: {"objective_points": 0, "max_objective_points": OBJECTIVE_MAX[cat], "notes": []}
-        for cat in OBJECTIVE_MAX
+        cat: {"objective_points": 0, "max_objective_points": obj_max.get(cat, 0), "notes": []}
+        for cat in cats
     }
 
 
@@ -128,12 +155,13 @@ def grade_objective_bundle(
     eval_id = obj_in["eval_candidate_id"]
     task_spec = task_spec or load_task_spec(task_id)
     rubric = rubric or load_rubric()
+    obj_max, _, _ = rubric_limits(rubric)
 
     blind = load_json(bundle / "meta-blind-sanitized.json")
     changed = parse_changed_files(bundle)
     diff_text = (bundle / "diff.patch").read_text(encoding="utf-8", errors="replace")
     evidence: list[dict] = []
-    categories = empty_category_scores()
+    categories = empty_category_scores(rubric)
 
     work_produced = bool(blind.get("work_produced", False))
     hard_gate_pass = work_produced or not task_spec.get("hard_gate", {}).get("require_work_produced", True)
@@ -150,7 +178,14 @@ def grade_objective_bundle(
             }
         )
         return _finalize_objective(
-            score_set_id, eval_id, task_id, categories, evidence, False, hard_gate_reason
+            score_set_id,
+            eval_id,
+            task_id,
+            categories,
+            evidence,
+            False,
+            hard_gate_reason,
+            rubric=rubric,
         )
 
     evidence.append(
@@ -165,7 +200,7 @@ def grade_objective_bundle(
 
     # Required paths (correctness objective)
     req_points_each = 4
-    req_max = min(OBJECTIVE_MAX["correctness"], len(task_spec.get("required_paths", [])) * req_points_each)
+    req_max = min(obj_max["correctness"], len(task_spec.get("required_paths", [])) * req_points_each)
     req_awarded = 0
     for req in task_spec.get("required_paths", []):
         present = req in changed or f"+++ b/{req}" in diff_text or f"diff --git a/{req}" in diff_text
@@ -190,13 +225,13 @@ def grade_objective_bundle(
                     "points_possible": req_points_each,
                 }
             )
-    req_awarded = min(req_awarded, OBJECTIVE_MAX["correctness"])
+    req_awarded = min(req_awarded, obj_max["correctness"])
     categories["correctness"]["objective_points"] += req_awarded
     categories["correctness"]["notes"].append(f"required_paths={req_awarded}/{req_max}")
 
     # Forbidden paths (process objective penalties)
     penalties = task_spec.get("scope_penalties", {})
-    process_points = OBJECTIVE_MAX["process"]
+    process_points = obj_max.get("process", 0)
     for pat in task_spec.get("forbidden_path_patterns", []):
         if path_in_diff(changed, pat):
             pts = 2
@@ -262,7 +297,7 @@ def grade_objective_bundle(
     doc_paths = task_spec.get("doc_companion_paths", [])
     if doc_paths:
         doc_hits = sum(1 for p in doc_paths if p in changed)
-        doc_pts = min(OBJECTIVE_MAX["quality"], int(4 * doc_hits / max(1, len(doc_paths))))
+        doc_pts = min(obj_max["quality"], int(4 * doc_hits / max(1, len(doc_paths))))
         categories["quality"]["objective_points"] += doc_pts
         evidence.append(
             {
@@ -306,7 +341,7 @@ def grade_objective_bundle(
         max_pts = int(cmd_spec.get("max_points", 0))
         if rc == 0:
             categories[cat]["objective_points"] = min(
-                OBJECTIVE_MAX[cat], categories[cat]["objective_points"] + max_pts
+                obj_max.get(cat, 0), categories[cat]["objective_points"] + max_pts
             )
             evidence.append(
                 {
@@ -332,7 +367,7 @@ def grade_objective_bundle(
     patterns = task_spec.get("test_wiring_patterns", [])
     wiring_hits = sum(1 for p in patterns if path_in_diff(changed, p) or p in diff_text)
     if patterns:
-        rel_pts = min(OBJECTIVE_MAX["reliability"], int(6 * wiring_hits / max(1, len(patterns))))
+        rel_pts = min(obj_max["reliability"], int(6 * wiring_hits / max(1, len(patterns))))
         categories["reliability"]["objective_points"] += rel_pts
         evidence.append(
             {
@@ -349,7 +384,7 @@ def grade_objective_bundle(
     if result_pat and "scripts/pr-resolve-all-poll.sh" in diff_text:
         if result_pat in diff_text:
             categories["correctness"]["objective_points"] = min(
-                OBJECTIVE_MAX["correctness"],
+                obj_max["correctness"],
                 categories["correctness"]["objective_points"] + 2,
             )
             evidence.append(
@@ -363,9 +398,9 @@ def grade_objective_bundle(
             )
 
     # Cap category objective points
-    for cat in OBJECTIVE_MAX:
+    for cat in obj_max:
         categories[cat]["objective_points"] = min(
-            OBJECTIVE_MAX[cat], max(0, round(categories[cat]["objective_points"]))
+            obj_max[cat], max(0, round(categories[cat]["objective_points"]))
         )
 
     # Latency
@@ -378,12 +413,19 @@ def grade_objective_bundle(
             "status": "pass" if wall is not None else "fail",
             "detail": f"wall_clock_seconds={wall}",
             "points_awarded": lat_pts,
-            "points_possible": OBJECTIVE_MAX["latency"],
+            "points_possible": obj_max.get("latency", 0),
         }
     )
 
     return _finalize_objective(
-        score_set_id, eval_id, task_id, categories, evidence, hard_gate_pass, hard_gate_reason
+        score_set_id,
+        eval_id,
+        task_id,
+        categories,
+        evidence,
+        hard_gate_pass,
+        hard_gate_reason,
+        rubric=rubric,
     )
 
 
@@ -395,18 +437,22 @@ def _finalize_objective(
     evidence: list,
     hard_gate_pass: bool,
     hard_gate_reason: str | None,
+    *,
+    rubric: dict | None = None,
 ) -> dict:
+    rubric = rubric or load_rubric()
+    obj_max, _, cats = rubric_limits(rubric)
     if not hard_gate_pass:
-        categories = empty_category_scores()
+        categories = empty_category_scores(rubric)
         objective_total = 0
     else:
-        objective_total = sum(int(categories[c]["objective_points"]) for c in OBJECTIVE_MAX)
+        objective_total = sum(int(categories[c]["objective_points"]) for c in cats)
     return {
         "schema_version": "benchmark-objective-grade.v1",
         "score_set_id": score_set_id,
         "eval_candidate_id": eval_id,
         "task_id": task_id,
-        "rubric_id": "rubric.v1",
+        "rubric_id": rubric.get("rubric_id", "rubric.v1"),
         "hard_gate_pass": hard_gate_pass,
         "hard_gate_reason": hard_gate_reason,
         "categories": categories,
@@ -439,8 +485,12 @@ def validate_subjective_grade(data: dict, bundle: Path) -> list[str]:
     obj_in = load_json(bundle / "objective-input.json")
     if data.get("eval_candidate_id") != obj_in.get("eval_candidate_id"):
         errors.append("eval_candidate_id mismatch")
+    rubric = load_rubric_by_id(data.get("rubric_id", "rubric.v1"))
+    _, sub_max, _ = rubric_limits(rubric)
     total = 0
-    for cat, mx in SUBJECTIVE_MAX.items():
+    for cat, mx in sub_max.items():
+        if mx <= 0:
+            continue
         block = data.get("categories", {}).get(cat, {})
         pts = int(block.get("subjective_points", -1))
         max_pts = int(block.get("max_subjective_points", mx))
@@ -473,7 +523,7 @@ def compile_final_row(
             "objective_total": objective.get("objective_total", 0),
             "subjective_total": None,
             "final_total": None,
-            "categories": _empty_final_categories(),
+            "categories": _empty_final_categories(objective.get("rubric_id", "rubric.v1")),
         }
     if median and len(sub_files) > 1:
         subjective = _median_subjective([load_json(p) for p in sub_files])
@@ -487,11 +537,17 @@ def compile_final_row(
             subjective = None
     if subjective is None:
         return None
+    rubric = load_rubric_by_id(objective.get("rubric_id", "rubric.v1"))
+    _, sub_max, cats = rubric_limits(rubric)
     categories = {}
     final_total = 0
-    for cat in OBJECTIVE_MAX:
-        obj_pts = int(objective["categories"][cat]["objective_points"])
-        sub_pts = int(subjective["categories"].get(cat, {}).get("subjective_points", 0)) if cat != "latency" else 0
+    for cat in cats:
+        obj_pts = int(objective["categories"].get(cat, {}).get("objective_points", 0))
+        sub_pts = (
+            int(subjective["categories"].get(cat, {}).get("subjective_points", 0))
+            if sub_max.get(cat, 0) > 0
+            else 0
+        )
         total = obj_pts + sub_pts
         categories[cat] = {"total": total, "objective": obj_pts, "subjective": sub_pts}
         final_total += total
@@ -510,8 +566,9 @@ def compile_final_row(
     }
 
 
-def _empty_final_categories() -> dict:
-    return {c: {"total": 0, "objective": 0, "subjective": 0} for c in OBJECTIVE_MAX}
+def _empty_final_categories(rubric_id: str = "rubric.v1") -> dict:
+    _, _, cats = rubric_limits(load_rubric_by_id(rubric_id))
+    return {c: {"total": 0, "objective": 0, "subjective": 0} for c in cats}
 
 
 def _median_subjective(grades: list[dict]) -> dict:
