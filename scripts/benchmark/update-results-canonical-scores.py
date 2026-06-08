@@ -10,10 +10,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from canonical_scores_lib import (  # noqa: E402
     STAGE_CONFIG,
     fmt_score,
-    load_all_alias_runs,
-    load_stage,
     load_stage1e,
     lookup_pipeline_score,
+    lookup_stage_score,
     na_cells,
 )
 
@@ -35,6 +34,10 @@ STAGE_GRADER_NOTES = {
         "Canonical columns: `score_set_id=stage-1-pipeline-canonical-v1`, grader `cursor-llm-blind-v1`\n"
         "(true LLM blind review; pipeline bundles use `rubric.pipeline.v1` including coordination)."
     ),
+    "stage-1e-canonical-v1": (
+        "Canonical columns: `score_set_id=stage-1e-canonical-v1-*`, grader `cursor-llm-blind-v1`\n"
+        "(true LLM blind review of each CP-1 bundle's `subjective-prompt.md` via `model-roi-grader-v1`)."
+    ),
 }
 from roi_format_lib import parse_pipeline_tail, parse_row  # noqa: E402
 
@@ -55,7 +58,7 @@ VARIANT_TO_GROUP_B = {
 }
 
 
-def inject_monolithic_table(lines: list[str], start: int, lookup: dict) -> int:
+def inject_monolithic_table(lines: list[str], start: int, task_class: str) -> int:
     header_idx = None
     for i in range(start, len(lines)):
         if lines[i].startswith("| Alias | Run | Gates |"):
@@ -81,7 +84,7 @@ def inject_monolithic_table(lines: list[str], start: int, lookup: dict) -> int:
         alias = parts[0].strip("`")
         run = int(parts[1])
         legacy = parts[8]
-        scores = lookup.get((alias, run), na_cells())
+        scores = lookup_stage_score("1", task_class, alias, run) or na_cells()
         if "Canonical /100" in lines[header_idx] and len(parts) >= 13:
             new_parts = parts[:8] + [
                 legacy,
@@ -103,7 +106,7 @@ def inject_monolithic_table(lines: list[str], start: int, lookup: dict) -> int:
     return i
 
 
-def inject_stage1c_table(lines: list[str], start: int, lookup: dict) -> int:
+def inject_stage1c_table(lines: list[str], start: int, task_class: str) -> int:
     header_idx = None
     for i in range(start, len(lines)):
         if lines[i].startswith("| Injected alias | Baseline alias |"):
@@ -129,7 +132,7 @@ def inject_stage1c_table(lines: list[str], start: int, lookup: dict) -> int:
         parts = [p.strip() for p in lines[i].strip("|").split("|")]
         alias = parts[0].strip("`")
         legacy = parts[7]
-        scores = lookup.get((alias, 1), na_cells())
+        scores = lookup_stage_score("1c", task_class, alias, 1) or na_cells()
         if len(parts) >= 19:
             tail = parts[12:]
         else:
@@ -146,7 +149,7 @@ def inject_stage1c_table(lines: list[str], start: int, lookup: dict) -> int:
     return i
 
 
-def inject_stage1d_table(lines: list[str], start: int, lookup: dict) -> int:
+def inject_stage1d_table(lines: list[str], start: int, task_class: str) -> int:
     header_idx = None
     for i in range(start, len(lines)):
         if lines[i].startswith("| Alias | Platform / planner"):
@@ -175,7 +178,7 @@ def inject_stage1d_table(lines: list[str], start: int, lookup: dict) -> int:
             i += 1
             continue
         legacy = parts[7]
-        scores = lookup.get((alias, 1), na_cells())
+        scores = lookup_stage_score("1d", task_class, alias, 1) or na_cells()
         tail = parts[12:] if len(parts) > 12 else parts[8:]
         new_parts = parts[:7] + [
             legacy,
@@ -286,6 +289,15 @@ def inject_stage1e_table(
     return i
 
 
+def dedupe_consecutive_lines(lines: list[str]) -> None:
+    i = 1
+    while i < len(lines):
+        if lines[i] == lines[i - 1] and lines[i].strip():
+            del lines[i]
+        else:
+            i += 1
+
+
 def strip_legacy_grader_paragraphs(lines: list[str]) -> None:
     """Remove superseded results-md-legacy-v1 attribution blocks."""
     i = 0
@@ -314,6 +326,7 @@ def inject_grader_notes(lines: list[str]) -> None:
         ("### Stage 1D Class B: `opfit-326-class-b-premerge`", "stage-1d-canonical-v1"),
         ("### Issue #376 Class A: `opfit-281-class-a-premerge-pipeline`", "stage-1-pipeline-canonical-v1"),
         ("### Issue #376 Class B: `opfit-326-class-b-premerge-pipeline`", "stage-1-pipeline-canonical-v1"),
+        ("## Stage 1E Targeted Context-Pack Results", "stage-1e-canonical-v1"),
     ]
     for marker, score_set in markers:
         note = STAGE_GRADER_NOTES.get(score_set)
@@ -393,22 +406,23 @@ def main() -> None:
     path = Path(sys.argv[1]) if len(sys.argv) > 1 else RESULTS
     lines = path.read_text(encoding="utf-8").splitlines()
 
-    stage1 = load_stage(STAGE_CONFIG["1"]["score_set"], STAGE_CONFIG["1"]["tasks"])
-    stage1c = load_stage(STAGE_CONFIG["1c"]["score_set"], STAGE_CONFIG["1c"]["tasks"])
-    stage1d = load_stage(STAGE_CONFIG["1d"]["score_set"], STAGE_CONFIG["1d"]["tasks"])
     stage1e = load_stage1e()
 
     idx = 0
     while idx < len(lines):
         line = lines[idx]
         if line.startswith("## Class A: `opfit-281-class-a-premerge`"):
-            idx = inject_monolithic_table(lines, idx, stage1)
+            idx = inject_monolithic_table(lines, idx, "A")
         elif line.startswith("## Class B: `opfit-326-class-b-premerge`"):
-            idx = inject_monolithic_table(lines, idx, stage1)
-        elif line.startswith("### Stage 1C Class A:") or line.startswith("### Stage 1C Class B:"):
-            idx = inject_stage1c_table(lines, idx, stage1c)
-        elif line.startswith("### Stage 1D Class A:") or line.startswith("### Stage 1D Class B:"):
-            idx = inject_stage1d_table(lines, idx, stage1d)
+            idx = inject_monolithic_table(lines, idx, "B")
+        elif line.startswith("### Stage 1C Class A:"):
+            idx = inject_stage1c_table(lines, idx, "A")
+        elif line.startswith("### Stage 1C Class B:"):
+            idx = inject_stage1c_table(lines, idx, "B")
+        elif line.startswith("### Stage 1D Class A:"):
+            idx = inject_stage1d_table(lines, idx, "A")
+        elif line.startswith("### Stage 1D Class B:"):
+            idx = inject_stage1d_table(lines, idx, "B")
         elif line.startswith("### Issue #376 Class A:"):
             idx = inject_pipeline_table(lines, idx, "A")
         elif line.startswith("### Issue #376 Class B:"):
@@ -422,6 +436,7 @@ def main() -> None:
 
     inject_grader_notes(lines)
     strip_legacy_grader_paragraphs(lines)
+    dedupe_consecutive_lines(lines)
     out = update_score_set_section("\n".join(lines) + "\n")
     path.write_text(out, encoding="utf-8")
     print(f"updated {path}")

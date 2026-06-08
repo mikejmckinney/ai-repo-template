@@ -152,9 +152,13 @@ def load_task_scores(stage_key: str, task: str) -> dict | None:
     return load_final_grades(root)
 
 
-def lookup_pipeline_score(task_class: str, alias: str, run: int) -> dict | None:
-    """Pipeline Class A/B share alias+run keys; scope lookup to the task for task_class."""
-    data = load_task_scores("pipeline", task_for_class("pipeline", task_class))
+def lookup_stage_score(
+    stage_key: str, task_class: str, alias: str, run: int = 1
+) -> dict | None:
+    """Resolve canonical score within one task class (avoids Class A/B alias collisions)."""
+    if stage_key not in STAGE_CONFIG or stage_key == "1e":
+        return None
+    data = load_task_scores(stage_key, task_for_class(stage_key, task_class))
     if not data:
         return None
     row = data["by_alias_run"].get((alias, run))
@@ -164,6 +168,11 @@ def lookup_pipeline_score(task_class: str, alias: str, run: int) -> dict | None:
         if a == alias and r == run and eid in data["by_eval"]:
             return data["by_eval"][eid]
     return None
+
+
+def lookup_pipeline_score(task_class: str, alias: str, run: int) -> dict | None:
+    """Pipeline Class A/B share alias+run keys; scope lookup to the task for task_class."""
+    return lookup_stage_score("pipeline", task_class, alias, run)
 
 
 def lookup_marginal_score(task_class: str, alias: str) -> dict | None:

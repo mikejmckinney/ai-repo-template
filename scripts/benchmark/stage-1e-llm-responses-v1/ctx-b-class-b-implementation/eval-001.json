@@ -1,0 +1,79 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1e-canonical-v1-ctx-b-class-b-implementation",
+  "eval_candidate_id": "eval-001",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The poll helper implements the full five-result exit contract (CONVERGED, QUIET_ELAPSED, TIMEOUT, SHA_CHANGED, API_ERROR) with INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, pre/post head SHA checks, allow-list loading, and RESULT=/HEAD= emission. Bats fixtures exercise convergence semantics (pending reviews, dismissed reviews, stale old-head state, comment-only activity). Minor gap: invalid CLI usage exits 1 without a RESULT= line, which is outside the documented result contract.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 14,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is maintainable and repo-consistent: jq logic is factored into scripts/lib/jq/, the shell script is well-commented, docs/prompt surfaces are synced with dispatch tables, and allow-list mirrors are updated across workflows. Deducted one point for unrelated quality churn (scripts/checks/040-file-content.sh handshake loosening and compliance fixture version bumps) that do not serve issue #326.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Required doc-sync discipline is evident for pr-resolve-all.md, AI_REPO_GUIDE.md, agent-pipeline.md, workflow allow-list mirrors, check wiring, and preserved time-based fallback. However, objective evidence flags compliance-fixture churn and the diff includes out-of-scope edits (040-file-content.sh, compliance YAML v19\u2192v20) beyond the helper, allow-list, tests, and companion docs.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Verification discipline is strong and credible from the diff: a 756-line Bats suite with mocked gh/jq covers every RESULT path plus edge cases, jq-filters.bats adds unit coverage for state derivation, allow-list parity is asserted across five surfaces, and test.sh wiring is present. Objective bash -n and shell lint passed; Bats execution was skipped in bundle grading but test design meaningfully exercises the contract.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 31,
+  "uncertainty_notes": [],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/pr-resolve-all-poll.sh documents and implements exit 0/2/3/4 with RESULT=CONVERGED, QUIET_ELAPSED, TIMEOUT, SHA_CHANGED, and API_ERROR plus HEAD= output."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "build_state fetches head before and after review/comment/thread snapshots and returns exit 3 when pre_sha != post_sha."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "INTERVAL, QUIET_WINDOW, and MAX_WAIT default to 20, 360, and 900 respectively."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/lib/bot-allowlist.txt provides the canonical normalized bot identity list including cursor."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md section 5 documents helper usage, stricter CONVERGED semantics, dispatch table, and preserved QUIET_WINDOW fallback."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats includes mocked tests for CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, API_ERROR, pending-review blocking, dismissed-review non-convergence, and allow-list parity across prompt/workflow/docs mirrors."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Invalid argument handling exits 1 with usage text only and no RESULT= line."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/040-file-content.sh and compliance fixture v19\u2192v20 changes are unrelated to the #326 poll helper scope."
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true; bash_n_poll_helper and lint_poll_helper passed; scope:compliance_fixtures warned; bats_poll_helper skipped."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Task requires memory-only state, pre-#321 helper without round markers, shell implementation, and focused diff on helper/allow-list/tests/docs."
+    }
+  ],
+  "graded_at": "2026-06-08T02:29:40Z"
+}

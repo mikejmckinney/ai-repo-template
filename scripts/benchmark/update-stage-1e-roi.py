@@ -240,7 +240,12 @@ def update_notes(lines: list[str], rows_a: list[dict], rows_b: list[dict]) -> No
             lines[i] = (
                 "Marginal cost/ROI from per-run `agent-output.jsonl` (JSON stats for Gemini; "
                 "top-level `.usage` for Cursor) using Stage 1 rate cards. **ROI numerators use "
-                "canonical /100 scores** (`cursor-session-stage-1e-v2`, recomputed 2026-06-07)."
+                "canonical /100 scores** (`cursor-llm-blind-v1`)."
+            )
+        if "`scripts/benchmark/grade-bundles/` (grader `cursor-session-stage-1e-v2`" in line:
+            lines[i] = (
+                "`scripts/benchmark/grade-bundles/` (grader `cursor-llm-blind-v1`, blind "
+                "review of each bundle's `subjective-prompt.md` + diff)."
             )
 
 

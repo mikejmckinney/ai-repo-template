@@ -124,8 +124,9 @@ Class B rows for the same alias (e.g. `cand-05-pipe` at `r2`) do not collide.
 
 ```bash
 ./scripts/benchmark/regrade-stage-1e.sh prepare
-./scripts/benchmark/regrade-stage-1e.sh record <grader-id> ./stage-1e-responses
-./scripts/benchmark/regrade-stage-1e.sh compile <grader-id>
+./scripts/benchmark/regrade-stage-1e.sh grade cursor-llm-blind-v1
+./scripts/benchmark/regrade-stage-1e.sh record cursor-llm-blind-v1 scripts/benchmark/stage-1e-llm-responses-v1
+./scripts/benchmark/regrade-stage-1e.sh compile cursor-llm-blind-v1
 ```
 
 Manual per-`RUN_GROUP` alternative:
@@ -149,8 +150,9 @@ python3 scripts/benchmark/llm_grade_subjective.py \
   --grader-id cursor-llm-blind-v1 \
   --out scripts/benchmark/stage-llm-responses-v1/<task>/eval-NNN.json
 
-# Batch (stage 1 | 1c | 1d | pipeline)
+# Batch (stage 1 | 1c | 1d | pipeline | 1e)
 ./scripts/benchmark/regrade-stage.sh 1 grade cursor-llm-blind-v1   # → stage-1-llm-responses-v1/
+./scripts/benchmark/regrade-stage-1e.sh grade cursor-llm-blind-v1 # → stage-1e-llm-responses-v1/
 ./scripts/benchmark/regrade-stage.sh 1c grade cursor-llm-blind-v1
 ./scripts/benchmark/regrade-stage.sh 1c record cursor-llm-blind-v1 scripts/benchmark/stage-llm-responses-v1
 bash ./scripts/benchmark/regrade-stage.sh 1c compile cursor-llm-blind-v1

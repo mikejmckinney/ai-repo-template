@@ -413,17 +413,32 @@ bash ./scripts/benchmark/regrade-stage.sh 1c compile "${GRADER}"
 # Stage 1E CP-1 (eight RUN_GROUP score sets)
 ./scripts/benchmark/regrade-stage-1e.sh prepare
 # … grade each subjective-prompt.md → stage-1e-responses-v2/<run_group>/eval-NNN.json
-./scripts/benchmark/regrade-stage-1e.sh record cursor-session-stage-1e-v2 scripts/benchmark/stage-1e-responses-v2
-./scripts/benchmark/regrade-stage-1e.sh compile cursor-session-stage-1e-v2
+./scripts/benchmark/regrade-stage-1e.sh grade cursor-llm-blind-v1
+./scripts/benchmark/regrade-stage-1e.sh record cursor-llm-blind-v1 scripts/benchmark/stage-1e-llm-responses-v1
+./scripts/benchmark/regrade-stage-1e.sh compile cursor-llm-blind-v1
 
 # Refresh results.md: canonical columns, ROI numerators, per-table sort notes
 python3 scripts/benchmark/update-benchmark-results.py all   # scores | roi | sort | all
 ```
 
-**Canonical grader for Stage 1 / 1C / 1D / pipeline (2026-06):** `cursor-llm-blind-v1` via
+**Canonical grader (all stages, 2026-06):** `cursor-llm-blind-v1` via
 `llm_grade_subjective.py` (not the superseded heuristic `blind_grade_heuristic.py`).
-Stage 1 responses land in `scripts/benchmark/stage-1-llm-responses-v1/` (separate from
-`stage-llm-responses-v1/` used by 1C/1D/pipeline to avoid eval-id collisions on shared task ids).
+
+**Response directories** (committed audit trail):
+
+| Stage | Directory |
+|---|---|
+| 1 monolithic | `scripts/benchmark/stage-1-llm-responses-v1/` |
+| 1C / 1D / pipeline | `scripts/benchmark/stage-llm-responses-v1/` |
+| 1E CP-1 | `scripts/benchmark/stage-1e-llm-responses-v1/` (`<run_group>/eval-NNN.json`) |
+
+Stage 1 and 1D share task ids (`opfit-281-class-a-premerge`, …) — keep separate response
+dirs so eval ids do not collide.
+
+**Class A vs Class B row scoping:** Monolithic, 1C, 1D, and pipeline tables can share the
+same alias string across task classes (e.g. `cand-06`, `cand-05-pipe` at `r2`). Results sync
+uses `lookup_stage_score()` / `lookup_pipeline_score()` scoped by task class — never merge
+Class A and Class B `final-grades.json` rows into one `(alias, run)` map.
 
 **Orphan `agent` processes:** `llm_grade_subjective.py` starts each grade in a new session
 and `SIGKILL`s the process group on timeout. Before long batches, check
@@ -436,6 +451,21 @@ and `SIGKILL`s the process group on timeout. Before long batches, check
   aliases (`-pipe`, `-injected`, `-duo`) within each task class (Class A vs B).
 - Stage 1C tables include **ROI delta** = injected ROI − baseline ROI (same alias).
 - Issue #376 pipeline tables use separate **Cost USD** and **ROI** columns for sort.
+
+### Reproducing canonical scores (what to commit vs regenerate)
+
+| Artifact | Commit? | Role |
+|---|---|---|
+| `stage-*-llm-responses-v1/` JSON | **Yes** | Locked subjective grader output (`cursor-llm-blind-v1`) |
+| `results/agent-roi-benchmark-results.md` | **Yes** | Published tables + ROI |
+| Rubrics, task specs, scripts | **Yes** | Tooling |
+| `grade-bundles/`, `runs/`, `worktrees/` | **No** (gitignored) | Regenerate via `prepare` + sealed manifests from `results.md` |
+| `stage-*-responses/` legacy bootstrap dirs | **No** | Superseded by `stage-*-llm-responses-v1/`; optional local audit only |
+| Spot-check JSON (`stage-1-cand06-*`, `stage-1-ctx-cur-*`) | **No** | Ad-hoc experiments; not part of canonical score sets |
+| `stage-1e-responses-v2/` | **No** | Prior `cursor-session-stage-1e-v2` session; superseded by `stage-1e-llm-responses-v1/` |
+
+To reproduce canonical numbers: check out committed response JSON → `record` → `compile` →
+`update-benchmark-results.py all` (requires local `grade-bundles/` from `prepare`).
 
 Manual per-task example:
 
@@ -469,12 +499,12 @@ Each stage has a dedicated regrade wrapper and `score_set_id`:
 | 1C injection | `regrade-stage.sh 1c` | `stage-1c-canonical-v1` | `cursor-llm-blind-v1` |
 | 1D duo | `regrade-stage.sh 1d` | `stage-1d-canonical-v1` | `cursor-llm-blind-v1` |
 | #376 pipeline | `regrade-stage.sh pipeline` | `stage-1-pipeline-canonical-v1` | `cursor-llm-blind-v1` (`rubric.pipeline.v1`) |
-| 1E CP-1 | `regrade-stage-1e.sh` | `stage-1e-canonical-v1-<run_group>` | `cursor-session-stage-1e-v2` |
+| 1E CP-1 | `regrade-stage-1e.sh` | `stage-1e-canonical-v1-<run_group>` | `cursor-llm-blind-v1` |
 
 `prepare` bootstraps subjective JSON from legacy category scores via
 `regrade-from-results-md.py responses` (residual mapping). For routing decisions,
 replace with **fresh blind JSON** from `model-roi-grader-v1.md` and a stable
-`grader_id` (as done for Stage 1E `cursor-session-stage-1e-v2`).
+`grader_id` (`cursor-llm-blind-v1` for all extended stages including 1E).
 
 Exploratory Cursor/Codex regrades are separate cohorts for inter-rater analysis
 only — do not average them into canonical rows.

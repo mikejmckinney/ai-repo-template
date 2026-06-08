@@ -8,6 +8,7 @@
 # Usage:
 #   ./regrade-stage-1e.sh prepare [score-set-prefix]
 #   ./regrade-stage-1e.sh status [score-set-prefix]
+#   ./regrade-stage-1e.sh grade [grader-id]
 #   ./regrade-stage-1e.sh record <grader-id> <responses-dir> [score-set-prefix]
 #   ./regrade-stage-1e.sh compile <grader-id> [score-set-prefix]
 #   ./regrade-stage-1e.sh all <grader-id> <responses-dir> [score-set-prefix]
@@ -167,6 +168,21 @@ cmd_record_all() {
   done
 }
 
+cmd_grade_all() {
+  local grader_id="${1:-cursor-llm-blind-v1}"
+  local extra=()
+  [[ "${BLIND_GRADE_HEURISTIC:-}" == "1" ]] && extra+=(--heuristic)
+  [[ -n "${BLIND_GRADE_MODEL:-}" ]] && extra+=(--model "${BLIND_GRADE_MODEL}")
+  [[ "${BLIND_GRADE_SKIP_EXISTING:-}" == "1" ]] && extra+=(--skip-existing)
+  python3 scripts/benchmark/blind_grade_stage.py \
+    --stage 1e \
+    --grader-id "${grader_id}" \
+    "${extra[@]}"
+  echo ""
+  echo "========== GRADE complete (stage=1e) =========="
+  echo "Next: ./regrade-stage-1e.sh record ${grader_id} scripts/benchmark/stage-1e-llm-responses-v1"
+}
+
 cmd_compile_all() {
   local grader_id="$1"
   echo "========== COMPILE grader=${grader_id} =========="
@@ -198,6 +214,10 @@ case "${ACTION}" in
   status)
     [[ $# -ge 1 ]] && SCORE_SET_PREFIX="$1"
     cmd_status
+    ;;
+  grade)
+    GRADER_ID="${1:-cursor-llm-blind-v1}"
+    cmd_grade_all "${GRADER_ID}"
     ;;
   record)
     [[ $# -ge 2 ]] || usage 2

@@ -1,0 +1,90 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1e-canonical-v1-ctx-a-full-rules",
+  "eval_candidate_id": "eval-002",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The diff replaces two hard-coded bash -n checks with a loop over all five requested glob patterns (*.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, scripts/lib/*.sh), runs bash -n on each matched file, and reports pass/fail per file via the existing helpers. nullglob is enabled before pattern expansion and disabled afterward, satisfying empty-glob safety. One point withheld because full_test_sh was skipped in objective grading and the bundle contains no executed acceptance output to confirm end-to-end suite behavior.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 12,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is readable, narrowly scoped to the syntax check, and uses an explicit TARGETS array as required. Minor deductions for bash -n stderr suppression (2>/dev/null hides failure detail), unquoted $pattern in the inner for-loop (word-splitting fragility), directory-only guard without [[ -f ]] before bash -n, and a nested pattern-then-file loop that is slightly more indirect than expanding globs into a single array.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Diff is tightly scoped to scripts/checks/055-script-syntax.sh only (objective process 15/15). One point withheld because the bundle contains no verification transcript, plan artifact, or recorded no-change doc-sync decision despite task verification expectations and doc-sync guidance.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 2,
+      "max_subjective_points": 5,
+      "rationale": "Objective evidence confirms test wiring (6/6) and bash_n_check_script pass, and the diff preserves per-file pass/fail integration. Bundle lacks full_test_sh execution (skipped for bundle-only grading), contains no reported bash test.sh or narrow-syntax-check output in candidate.md, and provides no negative-smoke evidence that a deliberate syntax error is caught and cleared.",
+      "uncertain": true
+    }
+  },
+  "subjective_total": 27,
+  "uncertainty_notes": [
+    "full_test_sh was skipped in objective grading; bundle contains no candidate verification output or negative-smoke evidence for bash test.sh.",
+    "Cannot confirm from bundle alone whether expanded coverage would have revealed latent syntax errors elsewhere requiring fixes in the same diff."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "TARGETS array lists *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh covering all five requested glob locations."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Nested for-loop runs bash -n on each matched script and reports independently via pass() or fail()."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "shopt -s nullglob is set before the loop and shopt -u nullglob after, handling empty glob patterns safely."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "bash -n \"$script\" 2>/dev/null suppresses stderr on syntax failures while using exit status for pass/fail."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Inner loop uses unquoted $pattern for glob expansion, which is functional for typical filenames but fragile for paths containing whitespace."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Only scripts/checks/055-script-syntax.sh changed; no out-of-scope file churn."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Acceptance criteria require bash test.sh verification, per-file pass/fail reporting, and negative-smoke test or documented explanation; no verification output appears in bundle artifacts."
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective scoring proceeds normally."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "required_path:scripts/checks/055-script-syntax.sh passed (4/4)."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_check_script passed (5/5)."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring passed (6/6) confirming check integration with test.sh."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh status is skip with note that acceptance-command execution is disabled for bundle-only fixture runs."
+    }
+  ],
+  "graded_at": "2026-06-08T02:26:04Z"
+}

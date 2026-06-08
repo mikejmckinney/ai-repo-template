@@ -67,9 +67,6 @@ Numeric marginal ROI uses **canonical /100** numerators when `final-grades.json`
 Canonical columns: `score_set_id=stage-1-canonical-v1`, grader `cursor-llm-blind-v1`
 (true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`).
 Legacy /100 columns retain the original holistic blind grades for comparison.
-Legacy /100 columns retain the original holistic blind grades for comparison.
-Legacy /100 columns retain the original holistic blind grades for comparison.
-Legacy /100 columns retain the original holistic blind grades for comparison.
 Task class: deterministic small/medium repo-process implementation.
 
 Base SHA: `6946d04b3fd17014e32d9da5ea947acf6df14360`
@@ -88,35 +85,39 @@ Reference merge SHA: `e8f5f96c44568a32e40ce1995b9ffb80c0009d28`
 
 
 
+
+
 *Table sort: Sorted by **Canonical /100** (desc).*
 
 | Alias | Run | Gates | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Wall s | Cost status | Summary |
 |---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---|---|
-| `cand-06` | 1 | pass | 28 | 20 | 17 | 15 | 10 | 90 | 89 | 56 | 33 | `stage-1-canonical-v1` | 138 | token telemetry present | Fastest usable result; quality/process detail trailed the top group. |
-| `cand-14` | 1 | pass | 29 | 21 | 18 | 15 | 6 | 89 | 84 | 52 | 32 | `stage-1-canonical-v1` | 410 | token telemetry present | Clean Codex fixed-model result with correct behavior and minor quality caveats. |
-| `cand-23` | 1 | pass | 29 | 22 | 16 | 12 | 6 | 85 | 84 | 52 | 32 | `stage-1-canonical-v1` | 392 | token telemetry present; default model/rate unknown | Correct Codex default result, penalized for partial/read-only-gitdir run caveat. |
-| `cand-09` | 1 | pass | 28 | 18 | 14 | 15 | 8 | 83 | 83 | 52 | 31 | `stage-1-canonical-v1` | 296 | token telemetry present | Correct core fix, but extra `.context`/guide scope noise reduced quality and process scores. |
-| `cand-02` | 1 | pass | 27 | 18 | 16 | 15 | 5 | 81 | 82 | 50 | 32 | `stage-1-canonical-v1` | 509 | token telemetry present | Usable but weaker quality/process fit and slower than most peers. |
-| `cand-03` | 1 | pass | 28 | 20 | 17 | 15 | 7 | 87 | 82 | 52 | 30 | `stage-1-canonical-v1` | 368 | token telemetry present | Good implementation, with more caveats than the top cluster. |
-| `cand-10` | 1 | pass | 29 | 22 | 18 | 15 | 7 | 91 | 82 | 50 | 32 | `stage-1-canonical-v1` | 362 | token telemetry present | Correct explicit-glob implementation with medium thinking requested through Cursor prompt directive. |
-| `cand-04` | 1 | pass | 29 | 22 | 18 | 15 | 8 | 92 | 78 | 48 | 30 | `stage-1-canonical-v1` | 338 | token telemetry present | Strong result with direct task coverage and usable telemetry. |
-| `cand-19` | 1 | pass | 29 | 22 | 18 | 15 | 6 | 90 | 78 | 52 | 26 | `stage-1-canonical-v1` | 427 | token telemetry present | Correct Copilot Auto result; routed model observed and nano-AIU telemetry recovered. |
-| `cand-01` | 1 | pass | 29 | 22 | 18 | 15 | 9 | 93 | 76 | 45 | 31 | `stage-1-canonical-v1` | 214 | token telemetry present | Strong, concise result; slightly less polished than the top alias but faster. |
-| `cand-13` | 1 | pass | 28 | 18 | 12 | 12 | 7 | 77 | 74 | 48 | 26 | `stage-1-canonical-v1` | 500 | token telemetry present | Correct core behavior, but state/session artifact noise and partial-run head SHA caveat materially reduced score. |
-| `cand-07` | 1 | pass | 28 | 20 | 18 | 15 | 8 | 89 | 72 | 47 | 25 | `stage-1-canonical-v1` | 333 | token telemetry present | Correct minimal Copilot implementation; less polished than nullglob/dedupe variants. |
+| `cand-08` | 1 | pass | 29 | 22 | 19 | 15 | 9 | 94 | 68 | 40 | 28 | `stage-1-canonical-v1` | 118 | token telemetry present | Strong, fast nullglob implementation with recovered Copilot nano-AIU cost. |
+| `cand-06` | 1 | pass | 28 | 20 | 17 | 15 | 10 | 90 | 66 | 40 | 26 | `stage-1-canonical-v1` | 138 | token telemetry present | Fastest usable result; quality/process detail trailed the top group. |
 | `cand-11` | 2 | pass | 29 | 24 | 18 | 15 | 8 | 94 | 66 | 38 | 28 | `stage-1-canonical-v1` | 269 | token telemetry present | Best extended code quality with duplicate-safe glob handling; small process caveat from superseded invalid-picker run. |
 | `cand-12` | 1 | pass | 29 | 24 | 18 | 15 | 5 | 91 | 66 | 36 | 30 | `stage-1-canonical-v1` | 461 | token telemetry present | Strong commented implementation; slower than the top Class A cluster. |
+| `cand-05` | 1 | pass | 29 | 24 | 18 | 15 | 4 | 90 | 65 | 34 | 31 | `stage-1-canonical-v1` | 612 | token telemetry present | High-quality diff, but materially slower than the rest of the class. |
 | `cand-20` | 2 | pass | 29 | 21 | 19 | 15 | 10 | 94 | 65 | 40 | 25 | `stage-1-canonical-v1` | 96 | token telemetry present; Auto ROI computed | Fastest clean extended result; minimal but correct implementation using explicit Cursor Auto. |
+| `cand-01` | 1 | pass | 29 | 22 | 18 | 15 | 9 | 93 | 64 | 38 | 26 | `stage-1-canonical-v1` | 214 | token telemetry present | Strong, concise result; slightly less polished than the top alias but faster. |
+| `cand-02` | 1 | pass | 27 | 18 | 16 | 15 | 5 | 81 | 64 | 36 | 28 | `stage-1-canonical-v1` | 509 | token telemetry present | Usable but weaker quality/process fit and slower than most peers. |
+| `cand-04` | 1 | pass | 29 | 22 | 18 | 15 | 8 | 92 | 64 | 38 | 26 | `stage-1-canonical-v1` | 338 | token telemetry present | Strong result with direct task coverage and usable telemetry. |
 | `cand-18` | 1 | pass | 29 | 23 | 19 | 15 | 8 | 94 | 64 | 38 | 26 | `stage-1-canonical-v1` | 327 | token telemetry present | Strong implementation with good fit to the reference behavior and low process risk. |
 | `cand-21` | 5 | pass | 29 | 21 | 17 | 14 | 8 | 89 | 64 | 38 | 26 | `stage-1-canonical-v1` | 274 | token telemetry present; Gemini Auto JSON rerun | Correct direct Gemini JSON auto rerun; routed through Flash Lite utility plus Flash backend, with process/reliability penalties for no candidate commit and one API retry. |
+| `cand-07` | 1 | pass | 28 | 20 | 18 | 15 | 8 | 89 | 63 | 38 | 25 | `stage-1-canonical-v1` | 333 | token telemetry present | Correct minimal Copilot implementation; less polished than nullglob/dedupe variants. |
+| `cand-10` | 1 | pass | 29 | 22 | 18 | 15 | 7 | 91 | 63 | 36 | 27 | `stage-1-canonical-v1` | 362 | token telemetry present | Correct explicit-glob implementation with medium thinking requested through Cursor prompt directive. |
 | `cand-15` | 4 | pass | 29 | 22 | 18 | 15 | 8 | 92 | 63 | 38 | 25 | `stage-1-canonical-v1` | 194 | token telemetry present | Clean Gemini run after earlier harness artifacts; concise correct implementation. |
 | `cand-17` | 1 | pass | 28 | 21 | 18 | 15 | 8 | 90 | 63 | 38 | 25 | `stage-1-canonical-v1` | 312 | token telemetry present | Solid implementation with small correctness/quality caveats. |
-| `cand-08` | 1 | pass | 29 | 22 | 19 | 15 | 9 | 94 | 59 | 43 | 16 | `stage-1-canonical-v1` | 118 | token telemetry present | Strong, fast nullglob implementation with recovered Copilot nano-AIU cost. |
+| `cand-23` | 1 | pass | 29 | 22 | 16 | 12 | 6 | 85 | 63 | 36 | 27 | `stage-1-canonical-v1` | 392 | token telemetry present; default model/rate unknown | Correct Codex default result, penalized for partial/read-only-gitdir run caveat. |
+| `cand-03` | 1 | pass | 28 | 20 | 17 | 15 | 7 | 87 | 61 | 36 | 25 | `stage-1-canonical-v1` | 368 | token telemetry present | Good implementation, with more caveats than the top cluster. |
+| `cand-14` | 1 | pass | 29 | 21 | 18 | 15 | 6 | 89 | 61 | 36 | 25 | `stage-1-canonical-v1` | 410 | token telemetry present | Clean Codex fixed-model result with correct behavior and minor quality caveats. |
+| `cand-19` | 1 | pass | 29 | 22 | 18 | 15 | 6 | 90 | 61 | 36 | 25 | `stage-1-canonical-v1` | 427 | token telemetry present | Correct Copilot Auto result; routed model observed and nano-AIU telemetry recovered. |
 | `cand-16` | 4 | pass | 29 | 21 | 18 | 14 | 4 | 86 | 59 | 34 | 25 | `stage-1-canonical-v1` | 653 | token telemetry present | Correct clean Gemini run, but slowest valid Class A extended result and stderr included capacity retry warnings. |
 | `cand-24` | 2 | pass | 28 | 20 | 15 | 14 | 9 | 86 | 58 | 33 | 25 | `stage-1-canonical-v1` | 195 | token telemetry present; `gemini-3.5-flash` mapped to backend | Useful fixed Flash run with captured JSON stats; penalized for adding `PLAN.md` to the candidate diff and for the model-picker/backend alias caveat. |
-| `cand-05` | 1 | pass | 29 | 24 | 18 | 15 | 4 | 90 | 0 | 0 | 0 | `stage-1-canonical-v1` | 612 | token telemetry present | High-quality diff, but materially slower than the rest of the class. |
+| `cand-09` | 1 | pass | 28 | 18 | 14 | 15 | 8 | 83 | 57 | 32 | 25 | `stage-1-canonical-v1` | 296 | token telemetry present | Correct core fix, but extra `.context`/guide scope noise reduced quality and process scores. |
+| `cand-13` | 1 | pass | 28 | 18 | 12 | 12 | 7 | 77 | 55 | 28 | 27 | `stage-1-canonical-v1` | 500 | token telemetry present | Correct core behavior, but state/session artifact noise and partial-run head SHA caveat materially reduced score. |
 
 ### Class A Raw Telemetry
+
+
 
 
 
@@ -153,6 +154,8 @@ Reference merge SHA: `e8f5f96c44568a32e40ce1995b9ffb80c0009d28`
 
 Extended candidates are scored in the main Class A table above. These notes preserve run-selection
 caveats that affected the weighted Process/Reliability categories.
+
+
 
 
 
@@ -210,9 +213,6 @@ Extended artifact pointers:
 Canonical columns: `score_set_id=stage-1-canonical-v1`, grader `cursor-llm-blind-v1`
 (true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`).
 Legacy /100 columns retain the original holistic blind grades for comparison.
-Legacy /100 columns retain the original holistic blind grades for comparison.
-Legacy /100 columns retain the original holistic blind grades for comparison.
-Legacy /100 columns retain the original holistic blind grades for comparison.
 Task class: harder implementation/reasoning task.
 
 Base SHA: `cff89bffe7e15e155bd740b6c7a0f158a6f2bad6`
@@ -221,6 +221,8 @@ Reference merge SHA: `f3145229b2ad8044519ed1c1f88b5f4612d90718`
 
 Canonical columns: `score_set_id=stage-1-canonical-v1`, grader `cursor-llm-blind-v1`
 (true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`).
+
+
 
 
 
@@ -277,6 +279,8 @@ caveats that affected the weighted Process/Reliability categories.
 
 
 
+
+
 *Table sort: Sorted by **Alias** (asc).*
 
 | Alias | Run used | Platform/model mode | Headless outcome | Wall s | Diff | Notes |
@@ -298,6 +302,8 @@ caveats that affected the weighted Process/Reliability categories.
 | `cand-24` | 1 | gemini-cli / gemini-3.5-flash requested | success | 281 | 7 files, 468 insertions | Direct Gemini JSON run mapped the requested alias to the observed `gemini-3-flash-preview` backend; useful but included `PLAN.md` and broader prompt/docs edits. |
 
 ### Class B Raw Telemetry
+
+
 
 
 
@@ -355,6 +361,8 @@ Scores above were locked before this mapping was added.
 
 
 
+
+
 *Table sort: Sorted by **Alias** (asc).*
 
 | Alias | Platform | Model | Agent/runtime | Effort requested | Effort status | Effort applied |
@@ -400,6 +408,8 @@ Cost source register:
 
 
 
+
+
 *Table sort: Sorted by **Platform / rows** (asc).*
 
 | Platform / rows | Source URL(s) | Rates applied | Audit caveat |
@@ -418,6 +428,8 @@ the source-register estimate and add a billing-export reconciliation note rather
 historical calculation silently.
 
 ### Class A Marginal ROI
+
+
 
 
 
@@ -477,6 +489,8 @@ historical calculation silently.
 | `cand-23` | codex / recommended default | 85 | 63 | 36 | 27 | `N/A` | N/A | Codex token telemetry present, but selected default model/rate is not sealed. |
 
 ### Class B Marginal ROI
+
+
 
 
 
@@ -567,20 +581,24 @@ Canonical columns: `score_set_id=stage-1c-canonical-v1`, grader `cursor-llm-blin
 
 
 
+
+
 *Table sort: Sorted by **Marginal ROI** (desc).*
 
 | Injected alias | Baseline alias | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Score delta | Wall s | Wall delta | Marginal cost USD | Marginal ROI | ROI delta | Summary |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---|
-| `cand-06-injected` | `cand-06` | 29 | 22 | 18 | 15 | 8 | 92 | 92 | 58 | 34 | `stage-1c-canonical-v1` | +3.00 | +2 | 213 | `$0.169864` | `541.61` | -52.72 | Composer stayed strong, but injected context increased cache/cost enough to reduce ROI despite a small score gain. |
-| `cand-05-injected` | `cand-05` | 29 | 22 | 19 | 15 | 9 | 93 | 66 | 50 | 16 | `stage-1c-canonical-v1` | +66.00 | +3 | 188 | `$0.207365` | `318.28` | +318.28 | Haiku improved sharply: clean focused diff, faster runtime, lower reported Claude cost, and successful negative smoke. |
-| `cand-20-injected` | `cand-20` | 29 | 22 | 18 | 15 | 8 | 92 | 90 | 58 | 32 | `stage-1c-canonical-v1` | +1.00 | -2 | 209 | `$0.426560` | `210.99` | -66.45 | Cursor Auto remained good, but the injected payload erased much of the baseline Auto ROI advantage. |
-| `cand-13-injected` | `cand-13` | 28 | 18 | 13 | 12 | 7 | 78 | 77 | 48 | 29 | `stage-1c-canonical-v1` | +7.00 | +1 | 447 | `$0.391716` | `196.57` | +7.83 | Codex mini solved the core task but still carried state-artifact/head-SHA caveats, so cost increased more than score. |
-| `cand-19-injected` | `cand-19` | 29 | 20 | 18 | 15 | 9 | 91 | 67 | 52 | 15 | `stage-1c-canonical-v1` | -10.00 | +1 | 262 | `$0.373056` | `179.60` | -11.86 | Copilot Auto was faster and correct; recovered nano-AIU telemetry shows ROI improved despite only a small score gain. |
-| `cand-12-injected` | `cand-12` | 29 | 23 | 19 | 15 | 7 | 93 | 84 | 52 | 32 | `stage-1c-canonical-v1` | +15.00 | +2 | 322 | `$1.150626` | `73.00` | +20.03 | Opus improved score and ROI slightly, with clean scoped implementation and strong verification. |
-| `cand-04-injected` | `cand-04` | 29 | 23 | 19 | 15 | 5 | 91 | 78 | 48 | 30 | `stage-1c-canonical-v1` | +16.00 | -1 | 453 | `$1.230982` | `63.36` | -17.83 | Sonnet produced a clean verified fix, but full-rule injection raised runtime/cost enough to hurt ROI. |
+| `cand-06-injected` | `cand-06` | 29 | 22 | 18 | 15 | 8 | 92 | 68 | 38 | 30 | `stage-1c-canonical-v1` | +3.00 | +2 | 213 | `$0.169864` | `541.61` | -52.72 | Composer stayed strong, but injected context increased cache/cost enough to reduce ROI despite a small score gain. |
+| `cand-05-injected` | `cand-05` | 29 | 22 | 19 | 15 | 9 | 93 | 66 | 38 | 28 | `stage-1c-canonical-v1` | +66.00 | +3 | 188 | `$0.207365` | `318.28` | +318.28 | Haiku improved sharply: clean focused diff, faster runtime, lower reported Claude cost, and successful negative smoke. |
+| `cand-20-injected` | `cand-20` | 29 | 22 | 18 | 15 | 8 | 92 | 68 | 38 | 30 | `stage-1c-canonical-v1` | +1.00 | -2 | 209 | `$0.426560` | `210.99` | -66.45 | Cursor Auto remained good, but the injected payload erased much of the baseline Auto ROI advantage. |
+| `cand-13-injected` | `cand-13` | 28 | 18 | 13 | 12 | 7 | 78 | 58 | 30 | 28 | `stage-1c-canonical-v1` | +7.00 | +1 | 447 | `$0.391716` | `196.57` | +7.83 | Codex mini solved the core task but still carried state-artifact/head-SHA caveats, so cost increased more than score. |
+| `cand-19-injected` | `cand-19` | 29 | 20 | 18 | 15 | 9 | 91 | 64 | 38 | 26 | `stage-1c-canonical-v1` | -10.00 | +1 | 262 | `$0.373056` | `179.60` | -11.86 | Copilot Auto was faster and correct; recovered nano-AIU telemetry shows ROI improved despite only a small score gain. |
+| `cand-12-injected` | `cand-12` | 29 | 23 | 19 | 15 | 7 | 93 | 68 | 38 | 30 | `stage-1c-canonical-v1` | +15.00 | +2 | 322 | `$1.150626` | `73.00` | +20.03 | Opus improved score and ROI slightly, with clean scoped implementation and strong verification. |
+| `cand-04-injected` | `cand-04` | 29 | 23 | 19 | 15 | 5 | 91 | 66 | 36 | 30 | `stage-1c-canonical-v1` | +16.00 | -1 | 453 | `$1.230982` | `63.36` | -17.83 | Sonnet produced a clean verified fix, but full-rule injection raised runtime/cost enough to hurt ROI. |
 | `cand-21-injected` | `cand-21` | 29 | 20 | 14 | 13 | 8 | 84 | 56 | 32 | 24 | `stage-1c-canonical-v1` | -5 | -5 | 269 | `N/A` | N/A | N/A | Gemini/agy solved the task but added `.context/state` artifacts, making process adherence materially worse than the JSON-stats baseline rerun. |
 
 ### Stage 1C Class B: `opfit-326-class-b-premerge-context-injected`
+
+
 
 
 
@@ -605,7 +623,7 @@ Canonical columns: `score_set_id=stage-1c-canonical-v1`, grader `cursor-llm-blin
 | `cand-13-injected` | `cand-13` | 27 | 20 | 15 | 13 | 3 | 78 | 77 | 48 | 29 | `stage-1c-canonical-v1` | +7.00 | +2 | 1461 | `$1.128873` | `68.21` | +28.34 | Codex mini improved score and cost efficiency versus baseline despite a very long run and some process noise. |
 | `cand-04-injected` | `cand-04` | 26 | 21 | 17 | 14 | 4 | 82 | 78 | 48 | 30 | `stage-1c-canonical-v1` | +16.00 | +16 | 1245 | `$3.312117` | `23.55` | +7.45 | Sonnet benefited substantially from injected context on correctness/process, though runtime remained high. |
 | `cand-12-injected` | `cand-12` | 27 | 22 | 18 | 14 | 8 | 89 | 84 | 52 | 32 | `stage-1c-canonical-v1` | +15.00 | 0 | 830 | `$4.242677` | `19.80` | +3.16 | Opus was stable and well-tested, but the injected context did not improve score and slightly reduced ROI. |
-| `cand-21-injected` | `cand-21` | 26 | 20 | 16 | 14 | 8 | 84 | 56 | 32 | 24 | `stage-1c-canonical-v1` | -4 | -4 | 431 | `N/A` | N/A | N/A | Gemini/agy produced useful helper/tests, but score fell from the JSON-stats baseline rerun and telemetry remains unavailable for the injected run. |
+| `cand-21-injected` | `cand-21` | 26 | 20 | 16 | 14 | 8 | 84 | N/A | N/A | N/A | N/A | -4 | -4 | 431 | `N/A` | N/A | N/A | Gemini/agy produced useful helper/tests, but score fell from the JSON-stats baseline rerun and telemetry remains unavailable for the injected run. |
 
 Stage 1C notes:
 
@@ -644,15 +662,17 @@ Canonical columns: `score_set_id=stage-1d-canonical-v1`, grader `cursor-llm-blin
 
 
 
+
+
 *Table sort: Sorted by **Marginal ROI** (desc).*
 
 | Alias | Platform / planner -> implementer | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Wall s | Marginal cost USD | Marginal ROI | Summary |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---:|---:|---|
-| `cand-21-duo` | gemini/agy auto -> gemini/agy auto | 28 | 18 | 14 | 14 | 8 | 82 | 72 | 50 | 22 | `stage-1d-canonical-v1` | 346 | `$0.342674` | `239.29` | Compact working change, but touched `AI_REPO_GUIDE.md` and had planner-marker compliance caveats; cost uses nested Gemini JSON stats. |
-| `cand-20-duo` | cursor auto -> cursor auto | 28 | 19 | 15 | 14 | 8 | 84 | 87 | 58 | 29 | `stage-1d-canonical-v1` | 373 | `$0.361981` | `232.06` | Correct implementation with narrow verification, but an extra `scripts/checks/README.md` edit and no local commit capped process score. |
-| `cand-12-duo` | claude-code opus -> haiku | 29 | 22 | 18 | 15 | 7 | 91 | 52 | 40 | 12 | `stage-1d-canonical-v1` | 307 | `$0.464986` | `195.70` | Clean one-file fix, successful negative smoke evidence, and local commit; slower/costlier than the best monolithic ROI leaders. |
-| `cand-19-duo` | copilot auto -> copilot auto | 28 | 20 | 17 | 15 | 8 | 88 | 71 | 51 | 20 | `stage-1d-canonical-v1` | 359 | `$0.475459` | `185.08` | Correct one-file solution with verification, but the implementation was broader than necessary for the tiny Class A task. |
-| `cand-14-duo` | codex GPT-5.4 -> GPT-5.4 mini | 28 | 18 | 12 | 13 | 7 | 78 | 80 | 48 | 32 | `stage-1d-canonical-v1` | 422 | `$0.441885` | `176.52` | Solved the syntax-check task but included `.context/state` process noise and did not produce a local commit. |
+| `cand-21-duo` | gemini/agy auto -> gemini/agy auto | 28 | 18 | 14 | 14 | 8 | 82 | 65 | 38 | 27 | `stage-1d-canonical-v1` | 346 | `$0.342674` | `239.29` | Compact working change, but touched `AI_REPO_GUIDE.md` and had planner-marker compliance caveats; cost uses nested Gemini JSON stats. |
+| `cand-20-duo` | cursor auto -> cursor auto | 28 | 19 | 15 | 14 | 8 | 84 | 66 | 36 | 30 | `stage-1d-canonical-v1` | 373 | `$0.361981` | `232.06` | Correct implementation with narrow verification, but an extra `scripts/checks/README.md` edit and no local commit capped process score. |
+| `cand-12-duo` | claude-code opus -> haiku | 29 | 22 | 18 | 15 | 7 | 91 | 64 | 38 | 26 | `stage-1d-canonical-v1` | 307 | `$0.464986` | `195.70` | Clean one-file fix, successful negative smoke evidence, and local commit; slower/costlier than the best monolithic ROI leaders. |
+| `cand-19-duo` | copilot auto -> copilot auto | 28 | 20 | 17 | 15 | 8 | 88 | 64 | 38 | 26 | `stage-1d-canonical-v1` | 359 | `$0.475459` | `185.08` | Correct one-file solution with verification, but the implementation was broader than necessary for the tiny Class A task. |
+| `cand-14-duo` | codex GPT-5.4 -> GPT-5.4 mini | 28 | 18 | 12 | 13 | 7 | 78 | 53 | 30 | 23 | `stage-1d-canonical-v1` | 422 | `$0.441885` | `176.52` | Solved the syntax-check task but included `.context/state` process noise and did not produce a local commit. |
 
 ### Stage 1D Class B: `opfit-326-class-b-premerge`
 
@@ -666,6 +686,8 @@ Canonical columns: `score_set_id=stage-1d-canonical-v1`, grader `cursor-llm-blin
 
 Canonical columns: `score_set_id=stage-1d-canonical-v1`, grader `cursor-llm-blind-v1`
 (true LLM blind review of each bundle's `subjective-prompt.md` via `model-roi-grader-v1`).
+
+
 
 
 
@@ -722,10 +744,12 @@ Rows with numeric cost are sorted by marginal ROI; rows requiring external telem
 
 
 
+
+
 *Table sort: Sorted by **ROI** (desc); `N/A` cost rows last.*
 
 | Alias | Platform / model | Run | Gates | Correctness /30 | Quality /20 | Process /15 | Reliability /15 | Coordination /10 | Latency /10 | Legacy /100 | Canonical /100 | Objective /58 | Subjective /42 | score_set_id | Wall s | Diff | Cost USD | ROI | Summary |
-|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---|---:|---|
+|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---|---|---:|---|
 | `cand-20-pipe` | cursor / auto | `r3` | pass | 29 | 16 | 12 | 15 | 5 | 10 | 87 | 62 | 33 | 29 | `stage-1-pipeline-canonical-v1` | 279 | `2 files changed, 35 insertions(+), 9 deletions(-)` | `$0.312429` | `198.45` | Fastest useful Class A pipeline; correct fix, but added a small extra README and leaked shell-option state instead of restoring prior `nullglob`. |
 | `cand-05-pipe` | claude-code / haiku | `r2` | pass | 28 | 16 | 12 | 14 | 4 | 3 | 77 | 55 | 27 | 28 | `stage-1-pipeline-canonical-v1` | 1128 | `1 file changed, 44 insertions(+), 12 deletions(-)` | `$0.366020` | `150.27` | Solved the task, but the helper is more brittle around shell-option restoration and word splitting, with limited orchestration evidence and high latency. |
 | `cand-03-pipe` | copilot / claude-opus-4.8 | `r2` | pass | 30 | 19 | 14 | 15 | 9 | 7 | 94 | 61 | 31 | 30 | `stage-1-pipeline-canonical-v1` | 518 | `1 file changed, 37 insertions(+), 9 deletions(-)` | `$1.558170` | `39.15` | Strongest Class A pipeline by quality and coordination; recovered Copilot nano-AIU cost shows ROI trails cheaper monolithic/Composer/Auto rows. |
@@ -749,10 +773,12 @@ Rows with numeric cost are sorted by marginal ROI; rows requiring external telem
 
 
 
+
+
 *Table sort: Sorted by **ROI** (desc); `N/A` cost rows last.*
 
 | Alias | Platform / model | Run | Gates | Correctness /30 | Quality /20 | Process /15 | Reliability /15 | Coordination /10 | Latency /10 | Legacy /100 | Canonical /100 | Objective /58 | Subjective /42 | score_set_id | Wall s | Diff | Cost USD | ROI | Summary |
-|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---|---:|---|
+|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|---|---|---:|---|
 | `cand-20-pipe` | cursor / auto | `r2` | pass | 29 | 18 | 13 | 15 | 5 | 10 | 90 | 82 | 50 | 32 | `stage-1-pipeline-canonical-v1` | 376 | `13 files changed, 1565 insertions(+), 18 deletions(-)` | `$0.632973` | `129.55` | Best practical Class B pipeline: broad helper/test coverage, very fast runtime, and strong acceptance fit; minor process/quality dings for oversized scope and trailing whitespace. |
 | `cand-12-pipe` | claude-code / opus | `r2` | pass | 27 | 17 | 13 | 14 | 4 | 6 | 81 | 76 | 44 | 32 | `stage-1-pipeline-canonical-v1` | 1179 | `7 files changed, 851 insertions(+), 1 deletion(-)` | `$8.202184` | `9.27` | Focused and well-tested helper, but less orchestration evidence and some robustness caveats around pagination/env handling cap the score. |
 | `cand-03-pipe` | copilot / claude-opus-4.8 | `r2` | pass | 28 | 17 | 14 | 15 | 9 | 1 | 84 | 73 | 42 | 31 | `stage-1-pipeline-canonical-v1` | 2227 | `8 files changed, 1033 insertions(+)` | `$8.172126` | `8.93` | Strongest observable orchestration, but recovered Copilot nano-AIU cost plus very long wall time sharply reduce the pipeline ROI case. |
@@ -780,6 +806,8 @@ Pipeline session recovery notes:
 
 ## Stage 1E Targeted Context-Pack Results
 
+Canonical columns: `score_set_id=stage-1e-canonical-v1-*`, grader `cursor-llm-blind-v1`
+(true LLM blind review of each CP-1 bundle's `subjective-prompt.md` via `model-roi-grader-v1`).
 Stage 1E tests targeted context packs as a middle path between lazy loading and
 full `.context/rules/*.md` injection. It reuses the historical Class A and Class B
 frozen bases from issues #374/#376 and measures whether smaller named context
@@ -790,7 +818,7 @@ Tracking issue: #378. CP-1 screen manifest:
 (`ctx-cur` = cursor / composer-2.5; `ctx-gem` = gemini-cli / gemini-3.5-flash
 requested). Scores locked 2026-06-06 from diff-only grading before unseal;
 locked rows in `scripts/benchmark/runs/stage-1e-blind-scores-locked.tsv`.
-Marginal cost/ROI from per-run `agent-output.jsonl` (JSON stats for Gemini; top-level `.usage` for Cursor) using Stage 1 rate cards. **ROI numerators use canonical /100 scores** (`cursor-session-stage-1e-v2`, recomputed 2026-06-07).
+Marginal cost/ROI from per-run `agent-output.jsonl` (JSON stats for Gemini; top-level `.usage` for Cursor) using Stage 1 rate cards. **ROI numerators use canonical /100 scores** (`cursor-llm-blind-v1`).
 (JSON stats for Gemini; top-level `.usage` for Cursor) using the same Stage 1
 rate cards below.
 
@@ -836,18 +864,20 @@ Task: `opfit-281-class-a-premerge`. Base SHA: `6946d04b3fd17014e32d9da5ea947acf6
 
 
 
+
+
 *Table sort: Sorted by **ROI** (desc).*
 
 | Alias | Platform/model | Observed model | Context variant | Pack files | Pack bytes | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Score delta | Wall s | Cost USD | ROI | ROI delta | Summary |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `full-rules-injected` | 14 | 102729 | 29 | 24 | 17 | 14 | 8 | 92 | 73 | 38 | 35 | `stage-1e-canonical-v1-ctx-a-full-rules` | +1.00 | 220 | `$0.103696` | `703.98` | +51.97 | Best Class A raw score; clean 055 expansion |
-| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `baseline` | 0 | 0 | 29 | 24 | 17 | 14 | 7 | 91 | 72 | 38 | 34 | `stage-1e-canonical-v1-ctx-a-baseline` | 0 | 281 | `$0.110427` | `652.01` | 0 | Near-best without injection; nullglob reference-quality |
-| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:class-a-process` | 6 | 45673 | 28 | 23 | 17 | 14 | 8 | 90 | 72 | 38 | 34 | `stage-1e-canonical-v1-ctx-a-class-a-process` | +6.00 | 200 | `$0.119763` | `601.19` | +251.13 | Only pack within -2 of best for this alias; fast single-file fix; **ROI winner for `ctx-cur`** |
-| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:core-min` | 3 | 27587 | 26 | 20 | 14 | 13 | 7 | 80 | 64 | 38 | 26 | `stage-1e-canonical-v1-ctx-a-core-min` | -2.00 | 271 | `$0.127994` | `500.02` | +149.96 | Extra `AI_REPO_GUIDE` scope noise |
-| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:core-min` | 3 | 27587 | 26 | 19 | 13 | 13 | 8 | 79 | 62 | 38 | 24 | `stage-1e-canonical-v1-ctx-a-core-min` | -10.00 | 239 | `$0.126870` | `488.69` | -163.33 | `IMPLEMENTATION_PLAN.md` junk in diff |
-| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `baseline` | 0 | 0 | 27 | 22 | 16 | 14 | 5 | 84 | 66 | 38 | 28 | `stage-1e-canonical-v1-ctx-a-baseline` | 0 | 335 | `$0.188539` | `350.06` | 0 | Unquoted glob loop; correct but weaker than reference |
-| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:class-a-process` | 6 | 45673 | 25 | 21 | 14 | 13 | 6 | 79 | 65 | 38 | 27 | `stage-1e-canonical-v1-ctx-a-class-a-process` | -7.00 | 303 | `$0.238923` | `272.05` | -379.96 | Extra `assertions.sh` tweak; >3pt degradation vs baseline |
-| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `full-rules-injected` | 14 | 102729 | 27 | 22 | 16 | 14 | 4 | 83 | 61 | 36 | 25 | `stage-1e-canonical-v1-ctx-a-full-rules` | -5.00 | 382 | `$0.294135` | `207.39` | -142.67 | Full injection did not help cursor; slowest Class A cursor run |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `full-rules-injected` | 14 | 102729 | 29 | 24 | 17 | 14 | 8 | 92 | 65 | 38 | 27 | `stage-1e-canonical-v1-ctx-a-full-rules` | +1.00 | 220 | `$0.103696` | `703.98` | +51.97 | Best Class A raw score; clean 055 expansion |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `baseline` | 0 | 0 | 29 | 24 | 17 | 14 | 7 | 91 | 64 | 38 | 26 | `stage-1e-canonical-v1-ctx-a-baseline` | 0 | 281 | `$0.110427` | `652.01` | 0 | Near-best without injection; nullglob reference-quality |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:class-a-process` | 6 | 45673 | 28 | 23 | 17 | 14 | 8 | 90 | 63 | 38 | 25 | `stage-1e-canonical-v1-ctx-a-class-a-process` | +6.00 | 200 | `$0.119763` | `601.19` | +251.13 | Only pack within -2 of best for this alias; fast single-file fix; **ROI winner for `ctx-cur`** |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:core-min` | 3 | 27587 | 26 | 20 | 14 | 13 | 7 | 80 | 66 | 38 | 28 | `stage-1e-canonical-v1-ctx-a-core-min` | -2.00 | 271 | `$0.127994` | `500.02` | +149.96 | Extra `AI_REPO_GUIDE` scope noise |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:core-min` | 3 | 27587 | 26 | 19 | 13 | 13 | 8 | 79 | 64 | 38 | 26 | `stage-1e-canonical-v1-ctx-a-core-min` | -10.00 | 239 | `$0.126870` | `488.69` | -163.33 | `IMPLEMENTATION_PLAN.md` junk in diff |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `baseline` | 0 | 0 | 27 | 22 | 16 | 14 | 5 | 84 | 62 | 38 | 24 | `stage-1e-canonical-v1-ctx-a-baseline` | 0 | 335 | `$0.188539` | `350.06` | 0 | Unquoted glob loop; correct but weaker than reference |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:class-a-process` | 6 | 45673 | 25 | 21 | 14 | 13 | 6 | 79 | 62 | 38 | 24 | `stage-1e-canonical-v1-ctx-a-class-a-process` | -7.00 | 303 | `$0.238923` | `272.05` | -379.96 | Extra `assertions.sh` tweak; >3pt degradation vs baseline |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `full-rules-injected` | 14 | 102729 | 27 | 22 | 16 | 14 | 4 | 83 | 62 | 36 | 26 | `stage-1e-canonical-v1-ctx-a-full-rules` | -5.00 | 382 | `$0.294135` | `207.39` | -142.67 | Full injection did not help cursor; slowest Class A cursor run |
 
 Score delta is vs the same alias's `baseline` **canonical** score for this task class
 (e.g. `ctx-cur` pack rows compare to `ctx-cur` + `baseline`, not to `ctx-gem`).
@@ -872,28 +902,32 @@ Task: `opfit-326-class-b-premerge`. Base SHA: `cff89bffe7e15e155bd740b6c7a0f158a
 
 
 
+
+
 *Table sort: Sorted by **ROI** (desc).*
 
 | Alias | Platform/model | Observed model | Context variant | Pack files | Pack bytes | Correctness /30 | Quality /25 | Process /20 | Reliability /15 | Latency /10 | Legacy /100 | Canonical /100 | Objective /65 | Subjective /35 | score_set_id | Score delta | Wall s | Cost USD | ROI | ROI delta | Summary |
 |---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:core-min` | 3 | 28105 | 27 | 23 | 17 | 13 | 6 | 86 | 86 | 55 | 31 | `stage-1e-canonical-v1-ctx-b-core-min` | +27.00 | 248 | `$0.182007` | `472.51` | +317.62 | Sweet-spot pack: within -2 of best raw score; **ROI winner for `ctx-gem`** |
-| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:core-min` | 3 | 28105 | 26 | 22 | 16 | 13 | 7 | 84 | 88 | 58 | 30 | `stage-1e-canonical-v1-ctx-b-core-min` | +5.00 | 281 | `$0.384231` | `229.03` | +24.45 | Focused helper; large gain vs weak baseline |
-| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `full-rules-injected` | 14 | 143054 | 27 | 23 | 16 | 14 | 8 | 88 | 91 | 58 | 33 | `stage-1e-canonical-v1-ctx-b-full-rules` | +32.00 | 268 | `$0.411508` | `221.14` | +66.25 | Best Class B raw score; focused 6-file helper delivery |
-| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `baseline` | 0 | 0 | 22 | 18 | 10 | 12 | 6 | 68 | 83 | 53 | 30 | `stage-1e-canonical-v1-ctx-b-baseline` | 0 | 320 | `$0.405702` | `204.58` | 0 | 17-file blast radius |
-| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:class-b-implementation` | 6 | 50230 | 24 | 20 | 15 | 12 | 7 | 78 | 75 | 55 | 20 | `stage-1e-canonical-v1-ctx-b-class-b-implementation` | +16.00 | 280 | `$0.417283` | `179.73` | +24.85 | Root junk files (`called_once`, `counter`) |
-| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:class-b-implementation` | 6 | 50230 | 23 | 19 | 11 | 12 | 5 | 70 | 79 | 53 | 26 | `stage-1e-canonical-v1-ctx-b-class-b-implementation` | -4.00 | 371 | `$0.456512` | `173.05` | -31.53 | 15-file blast radius |
-| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `baseline` | 0 | 0 | 24 | 20 | 12 | 13 | 5 | 74 | 59 | 40 | 19 | `stage-1e-canonical-v1-ctx-b-baseline` | 0 | 373 | `$0.380922` | `154.89` | 0 | Under-delivered; AGENTS/compliance fixture churn |
-| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `full-rules-injected` | 14 | 143054 | 25 | 21 | 13 | 13 | 2 | 74 | 79 | 52 | 27 | `stage-1e-canonical-v1-ctx-b-full-rules` | -4.00 | 719 | `$0.687274` | `114.95` | -89.64 | Broad but very slow |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:core-min` | 3 | 28105 | 27 | 23 | 17 | 13 | 6 | 86 | 73 | 55 | 18 | `stage-1e-canonical-v1-ctx-b-core-min` | +27.00 | 248 | `$0.182007` | `472.51` | +317.62 | Sweet-spot pack: within -2 of best raw score; **ROI winner for `ctx-gem`** |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:core-min` | 3 | 28105 | 26 | 22 | 16 | 13 | 7 | 84 | 90 | 58 | 32 | `stage-1e-canonical-v1-ctx-b-core-min` | +5.00 | 281 | `$0.384231` | `229.03` | +24.45 | Focused helper; large gain vs weak baseline |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `full-rules-injected` | 14 | 143054 | 27 | 23 | 16 | 14 | 8 | 88 | 80 | 58 | 22 | `stage-1e-canonical-v1-ctx-b-full-rules` | +32.00 | 268 | `$0.411508` | `221.14` | +66.25 | Best Class B raw score; focused 6-file helper delivery |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `baseline` | 0 | 0 | 22 | 18 | 10 | 12 | 6 | 68 | 85 | 53 | 32 | `stage-1e-canonical-v1-ctx-b-baseline` | 0 | 320 | `$0.405702` | `204.58` | 0 | 17-file blast radius |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `pack:class-b-implementation` | 6 | 50230 | 24 | 20 | 15 | 12 | 7 | 78 | 68 | 55 | 13 | `stage-1e-canonical-v1-ctx-b-class-b-implementation` | +16.00 | 280 | `$0.417283` | `179.73` | +24.85 | Root junk files (`called_once`, `counter`) |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `pack:class-b-implementation` | 6 | 50230 | 23 | 19 | 11 | 12 | 5 | 70 | 84 | 53 | 31 | `stage-1e-canonical-v1-ctx-b-class-b-implementation` | -4.00 | 371 | `$0.456512` | `173.05` | -31.53 | 15-file blast radius |
+| `ctx-gem` | gemini-cli / gemini-3.5-flash requested | `gemini-3-flash-preview` (JSON `.stats.models`) | `baseline` | 0 | 0 | 24 | 20 | 12 | 13 | 5 | 74 | 60 | 40 | 20 | `stage-1e-canonical-v1-ctx-b-baseline` | 0 | 373 | `$0.380922` | `154.89` | 0 | Under-delivered; AGENTS/compliance fixture churn |
+| `ctx-cur` | cursor / composer-2.5 | `composer-2.5` (manifest-pinned; agent self-report) | `full-rules-injected` | 14 | 143054 | 25 | 21 | 13 | 13 | 2 | 74 | 84 | 52 | 32 | `stage-1e-canonical-v1-ctx-b-full-rules` | -4.00 | 719 | `$0.687274` | `114.95` | -89.64 | Broad but very slow |
 
 Category scores in the legacy columns are from blind diff grading
 (`scripts/benchmark/runs/stage-1e-blind-scores-locked.tsv` for the exploratory
 pass). Canonical columns use `stage-1e-canonical-v1-*` score sets compiled from
-`scripts/benchmark/grade-bundles/` (grader `cursor-session-stage-1e-v2`, blind
+`scripts/benchmark/grade-bundles/` (grader `cursor-llm-blind-v1`, blind review of each bundle's `subjective-prompt.md` + diff).
 review of each bundle's `subjective-prompt.md` + diff). Legacy and canonical
 totals differ because `rubric.v1` splits objective automation from subjective
 review.
 
 ### Context-pack comparison
+
+
 
 
 
