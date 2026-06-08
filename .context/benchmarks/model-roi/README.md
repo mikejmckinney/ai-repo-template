@@ -8,10 +8,12 @@
 
 ## Status
 
-- **Completed benchmark record:** monolithic Stage 1, extended Stage 1, Stage 1C context injection, Stage 1D duo planner/implementer, and issue #376 orchestration pipeline runs.
+- **Completed benchmark record:** monolithic Stage 1, extended Stage 1, Stage 1C context injection, Stage 1D duo planner/implementer, issue #376 orchestration pipeline, and Stage 1E CP-1 pack screen (canonical `cursor-llm-blind-v1` regrades).
 - **Primary decision metric:** marginal ROI, computed as `score / marginal cost USD`.
 - **Stage 1 effort policy:** target `medium` where selectable; use platform default only where no effort control exists and record the caveat.
 - **Manual fallback:** allowed after a documented headless failure via `make worktree` followed by `make record`; direct GUI agents such as Antigravity need explicit manual-capture evidence.
+- **Phase A merge (issue #374):** harness, rubrics, runbook, and `results/agent-roi-benchmark-results.md` land on `main`; subjective JSON fixtures are preserved on git tag `benchmark/phase-a-artifacts-20260608` and the long-lived `benchmark/roi` branch (see runbook § "Branch and fixture retention").
+- **Follow-on prompts (same PR, run after merge):** `.github/prompts/agent-pr-prompts-combined-v2.md` (five `main` PRs), `07-implement-gemini-free-paid-routing.md` (`main`), `06-implement-class-c-framework-benchmark.md` (`benchmark/roi`).
 
 ## Companion surfaces
 
@@ -36,9 +38,9 @@ agent must perform, plus sealed reference metadata for evaluators.
 | `scripts/benchmark/regrade-stage.sh` | Unified canonical regrade driver for stages `1`, `1c`, `1d`, `pipeline`, `1e` (`prepare`, `grade`, `record`, `compile`, `status`). |
 | `scripts/benchmark/llm_grade_subjective.py` | True LLM blind grader: feeds each bundle's `subjective-prompt.md` to Cursor agent (`model-roi-grader-v1`). |
 | `scripts/benchmark/update-benchmark-results.py` | Sync `results/agent-roi-benchmark-results.md` (`scores`, `roi`, `sort`, `all`). |
-| `scripts/benchmark/stage-llm-responses-v1/` | Recorded subjective JSON for `cursor-llm-blind-v1` regrades (Stage 1C / 1D / pipeline). |
-| `scripts/benchmark/stage-1-llm-responses-v1/` | Stage 1 monolithic LLM responses (separate dir — shares task ids with 1D). |
-| `scripts/benchmark/stage-1e-llm-responses-v1/` | Stage 1E CP-1 LLM responses (`cursor-llm-blind-v1`, one JSON per run_group/eval). |
+| `scripts/benchmark/stage-llm-responses-v1/` | Recorded subjective JSON for `cursor-llm-blind-v1` regrades (Stage 1C / 1D / pipeline). **Gitignored on `main`** — restore from tag `benchmark/phase-a-artifacts-20260608` or `benchmark/roi`. |
+| `scripts/benchmark/stage-1-llm-responses-v1/` | Stage 1 monolithic LLM responses (separate dir — shares task ids with 1D). Same retention as above. |
+| `scripts/benchmark/stage-1e-llm-responses-v1/` | Stage 1E CP-1 LLM responses (`cursor-llm-blind-v1`, one JSON per run_group/eval). Same retention as above. |
 | `scripts/benchmark/regrade-stage-1e.sh` | Operator script: prepare/record/compile canonical regrades for all Stage 1E CP-1 `RUN_GROUP`s. |
 | `.github/prompts/model-roi-grader-v1.md` | Locked subjective grader prompt (JSON-only output). |
 | `scripts/benchmark/candidates.tsv.example` | Example sealed alias manifest for Core Stage 1 plus later-phase placeholders. |

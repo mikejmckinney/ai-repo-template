@@ -70,6 +70,15 @@ lists come after, not before.
     `scripts/benchmark/`.
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.
+  - **`05-implement-benchmark-grading-standardization.md`** — Stage 1E grading
+    standardization and canonical regrade wiring on the Phase A feature branch.
+  - **`06-implement-class-c-framework-benchmark.md`** — Class C greenfield
+    framework benchmark (run on `benchmark/roi` after Phase A merge; defers CP-2).
+  - **`07-implement-gemini-free-paid-routing.md`** — Gemini free/paid tier
+    routing and benchmark cost-basis metadata (run on `main` after Phase A merge).
+  - **`agent-pr-prompts-combined-v2.md`** — bundled five-PR sequence for context
+    rules decomposition and non-blocking review workflow (`01`–`04` + optional
+    `00-coordinator`); run on `main` after Phase A merge.
 
 ### Postmortem feedback loop
 

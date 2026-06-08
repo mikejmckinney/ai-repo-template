@@ -424,7 +424,7 @@ python3 scripts/benchmark/update-benchmark-results.py all   # scores | roi | sor
 **Canonical grader (all stages, 2026-06):** `cursor-llm-blind-v1` via
 `llm_grade_subjective.py` (not the superseded heuristic `blind_grade_heuristic.py`).
 
-**Response directories** (committed audit trail):
+**Response directories** (local audit trail; not on `main` after Phase A merge):
 
 | Stage | Directory |
 |---|---|
@@ -433,7 +433,27 @@ python3 scripts/benchmark/update-benchmark-results.py all   # scores | roi | sor
 | 1E CP-1 | `scripts/benchmark/stage-1e-llm-responses-v1/` (`<run_group>/eval-NNN.json`) |
 
 Stage 1 and 1D share task ids (`opfit-281-class-a-premerge`, …) — keep separate response
-dirs so eval ids do not collide.
+dirs so eval ids do not collide. Restore these dirs from git tag
+`benchmark/phase-a-artifacts-20260608` or branch `benchmark/roi` before running
+`record` / `compile` to reproduce canonical numbers.
+
+### Branch and fixture retention (Phase A → `main`)
+
+Phase A merges **harness, rubrics, runbook, and published `results.md`** to `main`.
+Large subjective JSON fixtures and legacy bootstrap dirs stay off `main`:
+
+| Surface | What merges to `main` | What stays on `benchmark/roi` / tag |
+|---|---|---|
+| `main` | Scripts, rubrics, tasks, runbook, `agent-roi-benchmark-results.md` | — |
+| Tag `benchmark/phase-a-artifacts-20260608` | — | Full pre-cleanup branch tip (all `stage-*-llm-responses-v1/`, legacy `stage-*-responses/`) |
+| Branch `benchmark/roi` (post-merge) | Harness updates merged from `main` | Fixture trees + ongoing benchmark runs |
+
+Post-merge maintainer steps:
+
+1. Merge this PR to `main` (head-branch auto-delete disabled for the feature branch).
+2. Create `benchmark/roi` from tag `benchmark/phase-a-artifacts-20260608`.
+3. Merge `main` into `benchmark/roi` so harness fixes flow forward without losing fixtures.
+4. Run follow-on prompts (`agent-pr-prompts-combined-v2`, `07-implement-gemini-free-paid-routing`) on `main`; run `06-implement-class-c-framework-benchmark` on `benchmark/roi`.
 
 **Class A vs Class B row scoping:** Monolithic, 1C, 1D, and pipeline tables can share the
 same alias string across task classes (e.g. `cand-06`, `cand-05-pipe` at `r2`). Results sync
@@ -454,18 +474,22 @@ and `SIGKILL`s the process group on timeout. Before long batches, check
 
 ### Reproducing canonical scores (what to commit vs regenerate)
 
-| Artifact | Commit? | Role |
+| Artifact | On `main`? | Role |
 |---|---|---|
-| `stage-*-llm-responses-v1/` JSON | **Yes** | Locked subjective grader output (`cursor-llm-blind-v1`) |
-| `results/agent-roi-benchmark-results.md` | **Yes** | Published tables + ROI |
+| `results/agent-roi-benchmark-results.md` | **Yes** | Published tables + ROI (canonical columns already compiled in) |
 | Rubrics, task specs, scripts | **Yes** | Tooling |
+| `stage-*-llm-responses-v1/` JSON | **No** (tag / `benchmark/roi`) | Locked subjective grader output (`cursor-llm-blind-v1`) |
 | `grade-bundles/`, `runs/`, `worktrees/` | **No** (gitignored) | Regenerate via `prepare` + sealed manifests from `results.md` |
 | `stage-*-responses/` legacy bootstrap dirs | **No** | Superseded by `stage-*-llm-responses-v1/`; optional local audit only |
 | Spot-check JSON (`stage-1-cand06-*`, `stage-1-ctx-cur-*`) | **No** | Ad-hoc experiments; not part of canonical score sets |
 | `stage-1e-responses-v2/` | **No** | Prior `cursor-session-stage-1e-v2` session; superseded by `stage-1e-llm-responses-v1/` |
+| `*.bak-*` editor backups | **No** | Never commit |
 
-To reproduce canonical numbers: check out committed response JSON → `record` → `compile` →
+To reproduce canonical numbers from scratch: check out tag `benchmark/phase-a-artifacts-20260608`
+(or `benchmark/roi`) for response JSON → `record` → `compile` →
 `update-benchmark-results.py all` (requires local `grade-bundles/` from `prepare`).
+On `main` alone, trust the published canonical columns in `results.md` unless you
+restore fixtures from the tag.
 
 ### Why Class A canonical scores look lower than Class B
 

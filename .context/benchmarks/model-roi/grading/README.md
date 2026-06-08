@@ -165,6 +165,12 @@ python3 scripts/benchmark/update-benchmark-results.py all
 `--heuristic` on `blind_grade_bundle.py` retains the offline evidence scorer for
 fixtures only.
 
+**Fixture location after Phase A merge:** `stage-*-llm-responses-v1/` trees are not
+on `main` (gitignored). Check out tag `benchmark/phase-a-artifacts-20260608` or
+branch `benchmark/roi` before `record` / `compile` re-runs. Published canonical
+columns in `results/agent-roi-benchmark-results.md` on `main` are the operator
+source of truth without restoring fixtures.
+
 ## Cost accounting
 
 Separate **benchmark execution cost** (candidate run telemetry) from **grading cost**
