@@ -448,13 +448,15 @@ Large subjective JSON fixtures and legacy bootstrap dirs stay off `main`:
 | Tag `benchmark/phase-a-artifacts-20260608` | — | Full pre-cleanup branch tip (all `stage-*-llm-responses-v1/`, legacy `stage-*-responses/`) |
 | Branch `benchmark/roi` (post-merge) | Harness updates merged from `main` | Fixture trees + ongoing benchmark runs |
 
-Post-merge maintainer steps:
+Post-merge maintainer steps (**completed 2026-06-08**):
 
-1. Push tag `benchmark/phase-a-artifacts-20260608` to `origin` (if not already pushed with the PR).
-2. Merge the Phase A PR to `main` (head-branch auto-delete disabled for the feature branch).
-3. Create `benchmark/roi` from tag `benchmark/phase-a-artifacts-20260608`.
-4. Merge `main` into `benchmark/roi` so harness fixes flow forward without losing fixtures.
-5. Run follow-on prompts (`agent-pr-prompts-combined-v2`, `07-implement-gemini-free-paid-routing`) on `main`; run `06-implement-class-c-framework-benchmark` on `benchmark/roi`.
+1. ~~Push tag `benchmark/phase-a-artifacts-20260608` to `origin`.~~ Done.
+2. ~~Merge Phase A PR #379 to `main` (`eb8fff6`).~~ Done.
+3. ~~Create `benchmark/roi` from tag `benchmark/phase-a-artifacts-20260608`.~~ Done.
+4. ~~Merge `main` into `benchmark/roi` and re-commit `stage-*-llm-responses-v1/` fixtures~~ (fast-forward dropped tracked fixtures; restored from tag on `benchmark/roi`).
+5. **Next:** follow-on prompts — `agent-pr-prompts-combined-v2` + `07-implement-gemini-free-paid-routing` on `main`; `06-implement-class-c-framework-benchmark` on `benchmark/roi`.
+
+Deferred harness items from PR #379 bot triage: [FOLLOW_UPS.md](./FOLLOW_UPS.md).
 
 **Class A vs Class B row scoping:** Monolithic, 1C, 1D, and pipeline tables can share the
 same alias string across task classes (e.g. `cand-06`, `cand-05-pipe` at `r2`). Results sync
