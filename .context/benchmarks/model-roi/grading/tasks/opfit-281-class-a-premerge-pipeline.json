@@ -1,0 +1,73 @@
+{
+  "schema_version": "benchmark-task-grading-spec.v1",
+  "task_id": "opfit-281-class-a-premerge-pipeline",
+  "task_class": "A-operational",
+  "rubric_id": "rubric.pipeline.v1",
+  "hard_gate": {
+    "require_work_produced": true,
+    "zero_score_on_fail": true
+  },
+  "required_paths": [
+    "scripts/checks/055-script-syntax.sh"
+  ],
+  "forbidden_path_patterns": [
+    "^\\.context/state/",
+    "^\\.context/sessions/",
+    "^PLAN\\.md$"
+  ],
+  "scope_penalties": {
+    "plan_md_points": 3,
+    "context_state_points": 4,
+    "agents_md_points": 0,
+    "compliance_fixture_points": 0
+  },
+  "doc_companion_paths": [],
+  "acceptance_commands": [
+    {
+      "id": "bash_n_check_script",
+      "cmd": "bash -n scripts/checks/055-script-syntax.sh",
+      "enabled": true,
+      "category": "quality",
+      "max_points": 5,
+      "apply_from_diff": true,
+      "requires_path": "scripts/checks/055-script-syntax.sh"
+    },
+    {
+      "id": "full_test_sh",
+      "cmd": "./test.sh",
+      "enabled": false,
+      "category": "correctness",
+      "max_points": 10,
+      "note": "Enable when grading against a detached worktree at candidate base; disabled for bundle-only fixture runs."
+    }
+  ],
+  "test_wiring_patterns": [
+    "scripts/checks/055-script-syntax.sh"
+  ],
+  "latency_bands_seconds": [
+    {
+      "max": 180,
+      "points": 10
+    },
+    {
+      "max": 360,
+      "points": 8
+    },
+    {
+      "max": 600,
+      "points": 6
+    },
+    {
+      "max": 900,
+      "points": 4
+    },
+    {
+      "max": 1200,
+      "points": 2
+    },
+    {
+      "max": null,
+      "points": 0
+    }
+  ]
+}

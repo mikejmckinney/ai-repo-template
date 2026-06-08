@@ -26,7 +26,8 @@ adapter_run() {
     echo "cursor adapter: not authenticated (set CURSOR_API_KEY or run cursor-agent login)" >&2
     return 78
   fi
-  local prompt; prompt="$(cat "${prompt_file}")"
+  local prompt
+  prompt="$(cat "${prompt_file}")"
 
   local model_args=()
   if [[ "${model}" == "auto" ]]; then
@@ -41,35 +42,38 @@ ${prompt}"
   # Inline-directive workaround: prepend a thinking-effort instruction naming the
   # model + level. Honored at the model's discretion; unverifiable.
   case "${effort}" in
-    minimal|low|medium|high|xhigh)
+    minimal | low | medium | high | xhigh)
       if [[ "${model}" == "auto" ]]; then
         prompt="Using Cursor Auto routing with ${effort} thinking effort requested for this task:
 
 ${prompt}"
-        echo "model:auto(applied);effort=prompt:inline-directive(${effort}-thinking;unverified)" > "${outdir}/effort-applied.txt"
+        echo "model:auto(applied);effort=prompt:inline-directive(${effort}-thinking;unverified)" >"${outdir}/effort-applied.txt"
       else
         prompt="Using ${model} with ${effort} thinking effort for this task:
 
 ${prompt}"
-        echo "prompt:inline-directive(${model}+${effort}-thinking;unverified)" > "${outdir}/effort-applied.txt"
-      fi ;;
-    fixed|default|none|"")
+        echo "prompt:inline-directive(${model}+${effort}-thinking;unverified)" >"${outdir}/effort-applied.txt"
+      fi
+      ;;
+    fixed | default | none | "")
       if [[ "${model}" == "auto" ]]; then
-        echo "model:auto(applied);effort=default(no inline directive)" > "${outdir}/effort-applied.txt"
+        echo "model:auto(applied);effort=default(no inline directive)" >"${outdir}/effort-applied.txt"
       else
-        echo "default(no inline directive; model default)" > "${outdir}/effort-applied.txt"
-      fi ;;
+        echo "default(no inline directive; model default)" >"${outdir}/effort-applied.txt"
+      fi
+      ;;
     *)
       prompt="Using ${model} with ${effort} thinking effort for this task:
 
 ${prompt}"
-      echo "prompt:inline-directive(${model}+${effort};nonstandard;unverified)" > "${outdir}/effort-applied.txt" ;;
+      echo "prompt:inline-directive(${model}+${effort};nonstandard;unverified)" >"${outdir}/effort-applied.txt"
+      ;;
   esac
 
   set +e
-  ( cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
+  (cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
     cursor-agent -p "${model_args[@]}" --force --output-format json "${prompt}" \
-      > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
+    >"${outdir}/agent-output.jsonl" 2>"${outdir}/logs/stderr.log")
   local rc=$?
   set -e
   return ${rc}

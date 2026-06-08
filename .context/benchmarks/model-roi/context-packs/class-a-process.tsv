@@ -1,0 +1,8 @@
+# path	reason
+.context/00_INDEX.md	Map of available context surfaces and lazy-load expectations.
+.context/rules/agent_ownership.md	Required before touching files.
+.context/sessions/latest_summary.md	Durable lessons from recent work.
+.context/rules/process_work_style.md	Work style, testing, and validation expectations.
+.context/rules/process_doc_maintenance.md	Doc-sync triggers for companion file updates.
+.context/rules/process_pr_completion.md	PR completion criteria and review guidelines.
+.context/rules/process_opportunity_feedback.md	Out-of-scope opportunity notes channel.

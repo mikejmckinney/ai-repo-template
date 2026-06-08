@@ -6,6 +6,23 @@ duo-candidates.tsv
 # Transient worktrees and all run artifacts (diffs, logs, metadata) stay local.
 worktrees/
 runs/
+grade-bundles/
+logs/
+
+# Superseded or ad-hoc grading artifacts. Canonical LLM JSON lives on tag
+# benchmark/phase-a-artifacts-20260608 and branch benchmark/roi (not on main).
+stage-extended-responses-v1/
+stage-1-responses/
+stage-1c-responses/
+stage-1d-responses/
+stage-1-pipeline-responses/
+stage-1e-responses/
+stage-1e-responses-v2/
+stage-*-llm-responses-v1/
+stage-1-cand06-*
+stage-1-ctx-cur-*
+stage-1-cand06-r3-manifests/
+stage-1-ctx-cur-regrade-manifests/
 
 # Keep the example manifest and scripts tracked.
 !candidates.tsv.example

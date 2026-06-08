@@ -22,10 +22,10 @@ make_private_tmp() {
 # --- Process Discipline / Compliance Contract Checks ---
 echo "Checking process discipline contracts..."
 
-if grep -q "process_subagent_bootstrap.md" AGENTS.md; then
-  pass "AGENTS.md links process_subagent_bootstrap.md (ADR-026)"
+if grep -q "process_subagent_bootstrap.md" AGENTS.md .context/rules/README.md .context/rules/process_session_start.md 2>/dev/null; then
+  pass "startup contract links process_subagent_bootstrap.md (ADR-026)"
 else
-  fail "AGENTS.md missing process_subagent_bootstrap.md link (ADR-026)"
+  fail "AGENTS.md or rule catalog missing process_subagent_bootstrap.md link (ADR-026)"
 fi
 
 if grep -q "plan_compliance:" .github/PLAN_TEMPLATE.md; then

@@ -52,6 +52,10 @@ lists come after, not before.
     Critic `CRITIC DECISION:`), and `## Subagent context receipt` placement (4 scenarios)
 - **Benchmark prompts** (repo-internal evaluation surfaces) — `model-roi-benchmark-candidate.md`.
   These are controlled benchmark prompts, not downstream project stage prompts.
+  - **`model-roi-grader-v1.md`** — locked subjective grader for benchmark score sets;
+    outputs JSON matching `.context/benchmarks/model-roi/grading/subjective-grade.schema.json`.
+  - **`model-roi-pairwise-grader-v1.md`** — blind pairwise subjective comparison (future rank-stability).
+  - **`model-roi-adjudicator-v1.md`** — resolve conflicts between subjective grades using objective evidence.
   - **`model-roi-benchmark-candidate.md`** — canonical candidate prompt for the
     model ROI benchmark tracked in issue `#374`. Reuse the same prompt body across
     aliases; inject only run metadata and the task body. Pair it with
@@ -66,6 +70,15 @@ lists come after, not before.
     `scripts/benchmark/`.
 - **Project prompts** (you add these) — `NN-<stage>.md`, one per issue.
   These require Analyst pre-flight before implementation.
+  - **`05-implement-benchmark-grading-standardization.md`** — Stage 1E grading
+    standardization and canonical regrade wiring on the Phase A feature branch.
+  - **`06-implement-class-c-framework-benchmark.md`** — Class C greenfield
+    framework benchmark (run on `benchmark/roi` after Phase A merge; defers CP-2).
+  - **`07-implement-gemini-free-paid-routing.md`** — Gemini free/paid tier
+    routing and benchmark cost-basis metadata (run on `main` after Phase A merge).
+  - **`agent-pr-prompts-combined-v2.md`** — bundled five-PR sequence for context
+    rules decomposition and non-blocking review workflow (`01`–`04` + optional
+    `00-coordinator`); run on `main` after Phase A merge.
 
 ### Postmortem feedback loop
 

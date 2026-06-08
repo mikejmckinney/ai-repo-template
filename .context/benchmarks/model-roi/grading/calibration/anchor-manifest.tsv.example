@@ -1,0 +1,5 @@
+# SEALED calibration manifest — example only
+# task_id	eval_or_alias	run_index	expected_total	score_set_reference	notes
+opfit-326-class-b-premerge	cand-06	1	97	stage-1-class-b-v1	reference winner
+opfit-326-class-b-premerge	cand-24	1	84	stage-1-class-b-v1	mid-tier gemini flash
+opfit-281-class-a-premerge	cand-06	1	90	stage-1-class-a-v1	fast cursor baseline

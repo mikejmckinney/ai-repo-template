@@ -21,34 +21,41 @@ adapter_run() {
   local workdir="$1" model="$2" prompt_file="$3" outdir="$4" effort="${5:-default}"
   mkdir -p "${outdir}/logs"
   [[ -n "${COPILOT_GITHUB_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}" ]] \
-    || { echo "copilot adapter: no token in COPILOT_GITHUB_TOKEN/GH_TOKEN/GITHUB_TOKEN" >&2; return 78; }
-  local prompt; prompt="$(cat "${prompt_file}")"
+    || {
+      echo "copilot adapter: no token in COPILOT_GITHUB_TOKEN/GH_TOKEN/GITHUB_TOKEN" >&2
+      return 78
+    }
+  local prompt
+  prompt="$(cat "${prompt_file}")"
   local prompt_args=()
   if [[ ${#prompt} -gt 100000 ]]; then
     prompt_args=(-p "Read the attached benchmark prompt file and complete it exactly as instructed." --attachment "${prompt_file}")
-    echo "prompt-delivery=attachment(${#prompt} chars)" > "${outdir}/prompt-delivery.txt"
+    echo "prompt-delivery=attachment(${#prompt} chars)" >"${outdir}/prompt-delivery.txt"
   else
     prompt_args=(-p "${prompt}")
-    echo "prompt-delivery=argv(${#prompt} chars)" > "${outdir}/prompt-delivery.txt"
+    echo "prompt-delivery=argv(${#prompt} chars)" >"${outdir}/prompt-delivery.txt"
   fi
 
   local effort_args=()
   case "${effort}" in
-    minimal|low|medium|high|xhigh)
+    minimal | low | medium | high | xhigh)
       effort_args=(--effort "${effort}")
-      echo "flag:--effort=${effort}" > "${outdir}/effort-applied.txt" ;;
-    default|fixed|none|"")
-      echo "default(copilot=model-default)" > "${outdir}/effort-applied.txt" ;;
+      echo "flag:--effort=${effort}" >"${outdir}/effort-applied.txt"
+      ;;
+    default | fixed | none | "")
+      echo "default(copilot=model-default)" >"${outdir}/effort-applied.txt"
+      ;;
     *)
       effort_args=(--effort "${effort}")
-      echo "flag:--effort=${effort}(nonstandard)" > "${outdir}/effort-applied.txt" ;;
+      echo "flag:--effort=${effort}(nonstandard)" >"${outdir}/effort-applied.txt"
+      ;;
   esac
 
   set +e
-  ( cd "${workdir}" && \
-    copilot "${prompt_args[@]}" --model "${model}" "${effort_args[@]}" --allow-all-tools \
+  (cd "${workdir}" \
+    && copilot "${prompt_args[@]}" --model "${model}" "${effort_args[@]}" --allow-all-tools \
       --output-format json --no-color --log-dir "${outdir}/logs" \
-      > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
+      >"${outdir}/agent-output.jsonl" 2>"${outdir}/logs/stderr.log")
   local rc=$?
   set -e
   return ${rc}

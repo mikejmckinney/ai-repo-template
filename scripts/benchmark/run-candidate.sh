@@ -25,14 +25,35 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 TASK="" BASE_SHA="" ALIAS="" RUN_INDEX="1" KEEP_WT="0" RUN_CONTEXT_VARIANT="${CONTEXT_VARIANT}" RUN_ORCHESTRATION_VARIANT="${ORCHESTRATION_VARIANT}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --task)        TASK="$2"; shift 2;;
-    --base)        BASE_SHA="$2"; shift 2;;
-    --alias)       ALIAS="$2"; shift 2;;
-    --run-index)   RUN_INDEX="$2"; shift 2;;
-    --keep-worktree) KEEP_WT="1"; shift;;
-    --context-variant) RUN_CONTEXT_VARIANT="$2"; shift 2;;
-    --orchestration-variant) RUN_ORCHESTRATION_VARIANT="$2"; shift 2;;
-    *) die "unknown arg: $1";;
+    --task)
+      TASK="$2"
+      shift 2
+      ;;
+    --base)
+      BASE_SHA="$2"
+      shift 2
+      ;;
+    --alias)
+      ALIAS="$2"
+      shift 2
+      ;;
+    --run-index)
+      RUN_INDEX="$2"
+      shift 2
+      ;;
+    --keep-worktree)
+      KEEP_WT="1"
+      shift
+      ;;
+    --context-variant)
+      RUN_CONTEXT_VARIANT="$2"
+      shift 2
+      ;;
+    --orchestration-variant)
+      RUN_ORCHESTRATION_VARIANT="$2"
+      shift 2
+      ;;
+    *) die "unknown arg: $1" ;;
   esac
 done
 [[ -n "${TASK}" && -n "${BASE_SHA}" && -n "${ALIAS}" ]] \
@@ -78,14 +99,16 @@ log "orchestration_variant=${RUN_ORCHESTRATION_VARIANT}"
 # drops — e.g. Cursor ignoring a suffix). If it can't set effort, it records
 # "uncontrolled". Any non-zero adapter exit becomes an audited blocked state
 # with the worktree preserved for optional manual capture.
-START_EPOCH="$(date +%s)"; START_TS="$(_ts)"
+START_EPOCH="$(date +%s)"
+START_TS="$(_ts)"
 RENDERED_PROMPT="$(render_prompt_for_run "${TASK}" "${ALIAS}" "${PLATFORM}" "${MODEL}" "${AGENT}" "${BASE_SHA}" "${RUN_INDEX}" "${OUTDIR}")"
 set +e
 adapter_run "${WT}" "${MODEL}" "${RENDERED_PROMPT}" "${OUTDIR}" "${EFFORT}" "${EFFORT_MECH}"
 RC=$?
 set -e
-END_EPOCH="$(date +%s)"; END_TS="$(_ts)"
-WALL=$(( END_EPOCH - START_EPOCH ))
+END_EPOCH="$(date +%s)"
+END_TS="$(_ts)"
+WALL=$((END_EPOCH - START_EPOCH))
 EFFORT_APPLIED="$(cat "${OUTDIR}/effort-applied.txt" 2>/dev/null || echo "unknown")"
 EFFORT_STATUS="$(derive_effort_status "${EFFORT}" "${EFFORT_MECH}" "${EFFORT_APPLIED}")"
 
@@ -109,7 +132,7 @@ HEAD_SHA="$(git -C "${WT}" rev-parse HEAD 2>/dev/null || echo "")"
 COMMITTED_AHEAD="$(git -C "${WT}" rev-list --count "${BASE_SHA}..HEAD" 2>/dev/null || echo 0)"
 # Diff includes both committed work and any uncommitted working-tree changes vs base.
 git -C "${WT}" add -A 2>/dev/null || true
-git -C "${WT}" diff --binary "${BASE_SHA}" > "${OUTDIR}/diff.patch" 2>/dev/null || true
+git -C "${WT}" diff --binary "${BASE_SHA}" >"${OUTDIR}/diff.patch" 2>/dev/null || true
 DIFF_FILES="$(git -C "${WT}" diff --name-only "${BASE_SHA}" | wc -l | tr -d ' ')"
 DIFF_LINES="$(git -C "${WT}" diff --shortstat "${BASE_SHA}" 2>/dev/null || echo '')"
 WORK_PRODUCED=$([[ "${COMMITTED_AHEAD}" -gt 0 || "${DIFF_FILES}" -gt 0 ]] && echo true || echo false)
@@ -118,46 +141,45 @@ WORK_PRODUCED=$([[ "${COMMITTED_AHEAD}" -gt 0 || "${DIFF_FILES}" -gt 0 ]] && ech
 # meta-blind.json: everything the GRADER may see. Deliberately omits model/platform.
 {
   printf '{\n'
-  printf '  "alias": %s,\n'        "$(json_escape "${ALIAS}")"
-  printf '  "task_id": %s,\n'      "$(json_escape "${TASK}")"
-  printf '  "run_index": %s,\n'    "${RUN_INDEX}"
-  printf '  "stage": %s,\n'        "$(json_escape "${STAGE}")"
-  printf '  "context_variant": %s,\n' "$(json_escape "${RUN_CONTEXT_VARIANT}")"
-  printf '  "orchestration_variant": %s,\n' "$(json_escape "${RUN_ORCHESTRATION_VARIANT}")"
-  printf '  "base_sha": %s,\n'     "$(json_escape "${BASE_SHA}")"
-  printf '  "head_sha": %s,\n'     "$(json_escape "${HEAD_SHA}")"
-  printf '  "start_utc": %s,\n'    "$(json_escape "${START_TS}")"
-  printf '  "end_utc": %s,\n'      "$(json_escape "${END_TS}")"
+  printf '  "alias": %s,\n' "$(json_escape "${ALIAS}")"
+  printf '  "task_id": %s,\n' "$(json_escape "${TASK}")"
+  printf '  "run_index": %s,\n' "${RUN_INDEX}"
+  printf '  "stage": %s,\n' "$(json_escape "${STAGE}")"
+  printf '  "context_condition": %s,\n' "$(json_escape "pending-blind")"
+  printf '  "base_sha": %s,\n' "$(json_escape "${BASE_SHA}")"
+  printf '  "head_sha": %s,\n' "$(json_escape "${HEAD_SHA}")"
+  printf '  "start_utc": %s,\n' "$(json_escape "${START_TS}")"
+  printf '  "end_utc": %s,\n' "$(json_escape "${END_TS}")"
   printf '  "wall_clock_seconds": %s,\n' "${WALL}"
-  printf '  "adapter_exit_code": %s,\n'  "${RC}"
+  printf '  "adapter_exit_code": %s,\n' "${RC}"
   printf '  "commits_ahead_of_base": %s,\n' "${COMMITTED_AHEAD}"
   printf '  "diff_files_changed": %s,\n' "${DIFF_FILES}"
-  printf '  "work_produced": %s,\n'  "${WORK_PRODUCED}"
-  printf '  "shortstat": %s\n'      "$(json_escape "${DIFF_LINES}")"
+  printf '  "work_produced": %s,\n' "${WORK_PRODUCED}"
+  printf '  "shortstat": %s\n' "$(json_escape "${DIFF_LINES}")"
   printf '}\n'
-} > "${OUTDIR}/meta-blind.json"
+} >"${OUTDIR}/meta-blind.json"
 validate_json_artifact "${OUTDIR}/meta-blind.json"
 
 # meta-sealed.json: blind fields + sealed identity. Keep out of grading.
 {
   printf '{\n'
-  printf '  "alias": %s,\n'    "$(json_escape "${ALIAS}")"
+  printf '  "alias": %s,\n' "$(json_escape "${ALIAS}")"
   printf '  "platform": %s,\n' "$(json_escape "${PLATFORM}")"
-  printf '  "model": %s,\n'    "$(json_escape "${MODEL}")"
-  printf '  "agent": %s,\n'    "$(json_escape "${AGENT}")"
+  printf '  "model": %s,\n' "$(json_escape "${MODEL}")"
+  printf '  "agent": %s,\n' "$(json_escape "${AGENT}")"
   printf '  "effort_requested": %s,\n' "$(json_escape "${EFFORT}")"
   printf '  "effort_mechanism": %s,\n' "$(json_escape "${EFFORT_MECH}")"
-  printf '  "effort_applied": %s,\n'   "$(json_escape "${EFFORT_APPLIED}")"
-  printf '  "effort_status": %s,\n'    "$(json_escape "${EFFORT_STATUS}")"
-  printf '  "context_variant": %s,\n'  "$(json_escape "${RUN_CONTEXT_VARIANT}")"
+  printf '  "effort_applied": %s,\n' "$(json_escape "${EFFORT_APPLIED}")"
+  printf '  "effort_status": %s,\n' "$(json_escape "${EFFORT_STATUS}")"
+  printf '  "context_variant": %s,\n' "$(json_escape "${RUN_CONTEXT_VARIANT}")"
   printf '  "orchestration_variant": %s,\n' "$(json_escape "${RUN_ORCHESTRATION_VARIANT}")"
-  printf '  "task_id": %s,\n'  "$(json_escape "${TASK}")"
+  printf '  "task_id": %s,\n' "$(json_escape "${TASK}")"
   printf '  "run_index": %s,\n' "${RUN_INDEX}"
   printf '  "head_sha": %s,\n' "$(json_escape "${HEAD_SHA}")"
   printf '  "wall_clock_seconds": %s,\n' "${WALL}"
   printf '  "adapter_exit_code": %s\n' "${RC}"
   printf '}\n'
-} > "${OUTDIR}/meta-sealed.json"
+} >"${OUTDIR}/meta-sealed.json"
 validate_json_artifact "${OUTDIR}/meta-sealed.json"
 
 write_result_file "${OUTDIR}" "${ALIAS}" "${TASK}" "${RUN_INDEX}" "${STAGE}" \

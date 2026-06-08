@@ -228,6 +228,8 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md` | Scored benchmark record, cost source register, and ROI tables used to support repo-local ROI/performance revisions |
 | `.context/benchmarks/model-roi/tasks/opfit-281-class-a.md` | Class A operational-fit benchmark task from issue `#281` / reference PR `#288`; runner injects only its candidate-safe task body |
 | `.context/benchmarks/model-roi/tasks/opfit-326-class-b.md` | Class B reasoning/code benchmark task from issue `#326` / reference PR `#358`; runner injects only its candidate-safe task body |
+| `.context/benchmarks/model-roi/context-packs/` | Stage 1E targeted context-pack manifests; use `CONTEXT_VARIANT=pack:<pack-id>` with `RUN_GROUP` for variant matrix runs (issue `#378`) |
+| `.context/benchmarks/model-roi/stage-1e-pack-screen-candidates.tsv.example` | CP-1 pack screen candidate manifest (`ctx-cur`, `ctx-gem`) |
 | `.context/benchmarks/model-roi/result-template.md` | Per-alias blind-safe plus sealed benchmark result template |
 | `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template for the same benchmark |
 | `.context/roadmap.md` | Phase-by-phase plan |
@@ -284,7 +286,12 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `scripts/verify-env.sh` | Environment & placeholder sanity check; run with `--fix` to auto-install missing tools (bounded allowlist: `rg`, `shellcheck`, `jq`) |
 | `scripts/diag-sandbox.sh` | Read-only sandbox auth/access doctor (issue #365): checks auth source, remote reachability, and stale branch inventory; makes no writes. `DIAG_GIT_TIMEOUT` (default 10 s; `0` disables timeout). Run before sandbox operations or when `gh` auth is unclear. See `docs/guides/sandbox-verification.md` § "Sandbox Doctor" |
 | `scripts/verify-pr.sh` | Plan-template Change-class classifier (ADR-016 / issue #227); run: `bash scripts/verify-pr.sh --declared "<class>"` |
-| `scripts/benchmark/Makefile` | Current front-end for the model ROI benchmark runner: `doctor`, `base`, `run`, `suite`, `worktree`, `record`, `collect`, and `unseal`. Scope is Phase A / Core Stage 1 for issue `#374`; later-stage sweeps and paid candidate runs remain separate follow-on work. |
+| `scripts/benchmark/Makefile` | Model ROI benchmark runner: `doctor`, `base`, `run`, `suite`, `worktree`, `record`, `collect`, `unseal`, and `grade-*` (standardized grading). See `.context/benchmarks/model-roi/grading/README.md`. |
+| `scripts/benchmark/regrade-stage.sh` | Unified canonical regrade driver (`1` \| `1c` \| `1d` \| `pipeline` \| `1e`): `prepare`, `grade`, `record`, `compile`. Shared config in `regrade-stage-lib.sh`. |
+| `scripts/benchmark/llm_grade_subjective.py` | LLM blind subjective grader (Cursor agent + `model-roi-grader-v1`); batch via `blind_grade_stage.py` (stages `1` \| `1c` \| `1d` \| `pipeline`). |
+| `scripts/benchmark/stage-*-llm-responses-v1/` | Recorded subjective JSON for `cursor-llm-blind-v1` regrades (Stage 1 / 1C / 1D / pipeline / 1E). **Not on `main`** after Phase A merge — gitignored; restore from tag `benchmark/phase-a-artifacts-20260608` or branch `benchmark/roi`. |
+| `scripts/benchmark/update-benchmark-results.py` | Refresh `agent-roi-benchmark-results.md` canonical columns, ROI, and table sort order (`scores` \| `roi` \| `sort` \| `all`). |
+| `.context/benchmarks/model-roi/grading/` | Rubric v1 + pipeline v1, JSON schemas, task grading specs, and score-set comparability rules for script-first benchmark grading. |
 | `scripts/validate-compliance-examples.py` | Validates fenced YAML examples in `docs/compliance_schemas.md` against ADR-026 v1 shape |
 | `scripts/validate-compliance-fixtures.py` | Validates ADR-026 valid/invalid fixtures under `scripts/tests/fixtures/compliance/` |
 | `scripts/db-reset.sh` | Optional database reset stub |

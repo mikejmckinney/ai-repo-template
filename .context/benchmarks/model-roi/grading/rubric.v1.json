@@ -1,0 +1,130 @@
+{
+  "schema_version": "benchmark-rubric.v1",
+  "rubric_id": "rubric.v1",
+  "total_points": 100,
+  "categories": [
+    {
+      "id": "correctness",
+      "label": "Correctness / acceptance",
+      "total_points": 30,
+      "objective_points": 20,
+      "subjective_points": 10,
+      "objective_checks": [
+        "hard_gate_work_produced",
+        "required_paths_present",
+        "forbidden_paths_absent",
+        "acceptance_commands"
+      ],
+      "anchors": {
+        "objective": {
+          "20": "All required artifacts present; hard gate pass; enabled acceptance commands pass or are skipped with documented reason.",
+          "15": "Core deliverables present with minor gaps in optional checks.",
+          "10": "Partial deliverables; one required path missing or a critical check failed.",
+          "0": "Hard gate fail (no work) or missing core deliverables."
+        },
+        "subjective": {
+          "10": "Behavior matches task contract; exit/result semantics correct where inspectable from diff/tests.",
+          "7": "Mostly correct with one non-fatal contract gap.",
+          "4": "Usable partial implementation with meaningful correctness gaps.",
+          "0": "Incorrect or non-functional core behavior."
+        }
+      }
+    },
+    {
+      "id": "quality",
+      "label": "Code / doc quality",
+      "total_points": 25,
+      "objective_points": 10,
+      "subjective_points": 15,
+      "objective_checks": [
+        "syntax_lint_commands",
+        "doc_companion_presence"
+      ],
+      "anchors": {
+        "objective": {
+          "10": "Enabled syntax/lint commands pass; required doc surfaces touched per task spec.",
+          "7": "Syntax clean; docs partially synced.",
+          "4": "Syntax issues or thin docs.",
+          "0": "No meaningful quality signal or syntax failures on core files."
+        },
+        "subjective": {
+          "15": "Clear, maintainable, repo-consistent implementation and docs.",
+          "11": "Good with minor style or clarity issues.",
+          "7": "Acceptable but verbose, fragile, or inconsistent with repo patterns.",
+          "3": "Poor structure; hard to maintain."
+        }
+      }
+    },
+    {
+      "id": "process",
+      "label": "Repo-process adherence",
+      "total_points": 20,
+      "objective_points": 15,
+      "subjective_points": 5,
+      "objective_checks": [
+        "scope_noise_penalties",
+        "plan_artifact_penalty",
+        "context_state_penalty"
+      ],
+      "anchors": {
+        "objective": {
+          "15": "Focused diff; no forbidden paths; minimal scope noise per task spec.",
+          "11": "Minor out-of-scope edits (single companion or small fixture churn).",
+          "7": "Noticeable scope drift (e.g. stray PLAN.md, AGENTS.md churn).",
+          "0": "Major process violations or large unrelated diff."
+        },
+        "subjective": {
+          "5": "Plan/handshake/doc-sync discipline evident in diff and verification notes.",
+          "3": "Partial process evidence.",
+          "1": "Weak process adherence.",
+          "0": "Process requirements ignored."
+        }
+      }
+    },
+    {
+      "id": "reliability",
+      "label": "Reliability / verification",
+      "total_points": 15,
+      "objective_points": 10,
+      "subjective_points": 5,
+      "objective_checks": [
+        "test_wiring_present",
+        "verification_evidence"
+      ],
+      "anchors": {
+        "objective": {
+          "10": "Tests/checks wired; verification artifacts present when task requires them.",
+          "7": "Basic tests present; thin coverage.",
+          "4": "Minimal smoke only.",
+          "0": "No verification wiring."
+        },
+        "subjective": {
+          "5": "Tests meaningfully exercise contract paths; verification claims credible.",
+          "3": "Some coverage gaps.",
+          "1": "Thin or misleading verification.",
+          "0": "Fabricated or absent verification discipline."
+        }
+      }
+    },
+    {
+      "id": "latency",
+      "label": "Latency",
+      "total_points": 10,
+      "objective_points": 10,
+      "subjective_points": 0,
+      "objective_checks": [
+        "wall_clock_bands"
+      ],
+      "anchors": {
+        "objective": {
+          "10": "Wall clock at or below task p50 band.",
+          "8": "Between p50 and p75.",
+          "6": "Between p75 and p90.",
+          "4": "Between p90 and p95.",
+          "2": "Above p95 but completed.",
+          "0": "Blocked / no usable wall clock."
+        }
+      }
+    }
+  ]
+}

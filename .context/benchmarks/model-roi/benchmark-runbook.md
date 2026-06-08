@@ -150,6 +150,138 @@ Claude Code requires `@AGENTS.md` in `CLAUDE.md` to guarantee the injected
 context is visible. The completed benchmark suggests this can matter for Haiku
 and Sonnet.
 
+## Targeted Context-Pack Stage 1E Runs
+
+Stage 1E (issue #378) compares baseline lazy loading, named context packs, and
+full-rule injection on the historical Class A/Class B premerge bases. Use
+`RUN_GROUP` for every variant so runs do not collide.
+
+```bash
+CLASS_A_BASE=6946d04b3fd17014e32d9da5ea947acf6df14360
+CLASS_B_BASE=cff89bffe7e15e155bd740b6c7a0f158a6f2bad6
+PACK_SCREEN_MANIFEST="$PWD/.context/benchmarks/model-roi/stage-1e-pack-screen-candidates.tsv.example"
+```
+
+Class A matrix (one command per variant):
+
+```bash
+RUN_GROUP=ctx-a-baseline MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-281-class-a-premerge BASE="$CLASS_A_BASE" STAGE=1 CONTEXT_VARIANT=baseline
+
+RUN_GROUP=ctx-a-core-min MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-281-class-a-premerge BASE="$CLASS_A_BASE" STAGE=1 CONTEXT_VARIANT=pack:core-min
+
+RUN_GROUP=ctx-a-class-a-process MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-281-class-a-premerge BASE="$CLASS_A_BASE" STAGE=1 CONTEXT_VARIANT=pack:class-a-process
+
+RUN_GROUP=ctx-a-full-rules MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-281-class-a-premerge BASE="$CLASS_A_BASE" STAGE=1 CONTEXT_VARIANT=full-rules-injected
+```
+
+Class B matrix:
+
+```bash
+RUN_GROUP=ctx-b-baseline MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-326-class-b-premerge BASE="$CLASS_B_BASE" STAGE=1 CONTEXT_VARIANT=baseline
+
+RUN_GROUP=ctx-b-core-min MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-326-class-b-premerge BASE="$CLASS_B_BASE" STAGE=1 CONTEXT_VARIANT=pack:core-min
+
+RUN_GROUP=ctx-b-class-b-implementation MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-326-class-b-premerge BASE="$CLASS_B_BASE" STAGE=1 CONTEXT_VARIANT=pack:class-b-implementation
+
+RUN_GROUP=ctx-b-full-rules MANIFEST="$PACK_SCREEN_MANIFEST" \
+  make -C scripts/benchmark suite TASK=opfit-326-class-b-premerge BASE="$CLASS_B_BASE" STAGE=1 CONTEXT_VARIANT=full-rules-injected
+```
+
+Collect each group after all aliases reach a terminal state:
+
+```bash
+RUN_GROUP=ctx-a-core-min make -C scripts/benchmark collect \
+  TASK=opfit-281-class-a-premerge STAGE=1
+```
+
+Unseal only after blind scores are locked:
+
+```bash
+RUN_GROUP=ctx-a-core-min make -C scripts/benchmark unseal \
+  TASK=opfit-281-class-a-premerge STAGE=1
+```
+
+Pack manifests live in `.context/benchmarks/model-roi/context-packs/`. Unknown
+pack ids and unsafe manifest paths fail before spend.
+
+### Regrade Stage 1E (CP-1) under a canonical score set
+
+Stage 1E exploratory scores (e.g. `stage-1e-blind-scores-locked.tsv`) are **not**
+canonical until regraded with the standardized pipeline. Use the operator script:
+
+```bash
+# From repo root — default score-set prefix: stage-1e-canonical-v1
+./scripts/benchmark/regrade-stage-1e.sh prepare
+
+# Or via Makefile:
+make -C scripts/benchmark regrade-stage-1e ARGS="prepare"
+```
+
+This runs **all eight** `RUN_GROUP`s through:
+
+1. `grade-bundles` — blind `eval-###` bundles + sealed map (no pack/model leakage)
+2. `grade-objective` — deterministic objective points
+3. `grade-subjective-prompts` — one `subjective-prompt.md` per eval
+
+It writes a manifest listing every subjective prompt:
+
+```text
+scripts/benchmark/grade-bundles/stage-1e-regrade-manifest.txt
+```
+
+Per-group score set ids: `<prefix>-<run_group>` (e.g.
+`stage-1e-canonical-v1-ctx-b-core-min`). Override prefix:
+
+```bash
+SCORE_SET_PREFIX=stage-1e-canonical-v2 ./scripts/benchmark/regrade-stage-1e.sh prepare
+```
+
+**Subjective step (manual or locked LLM):** grade each `subjective-prompt.md` with
+[`.github/prompts/model-roi-grader-v1.md`](../../../.github/prompts/model-roi-grader-v1.md).
+Output must be JSON matching `subjective-grade.schema.json`. Save files as:
+
+```text
+stage-1e-responses/
+  ctx-a-baseline/eval-001.json
+  ctx-a-baseline/eval-002.json
+  ctx-b-core-min/eval-001.json
+  ...
+```
+
+**Record + compile:**
+
+```bash
+./scripts/benchmark/regrade-stage-1e.sh record codex-fixed ./stage-1e-responses
+./scripts/benchmark/regrade-stage-1e.sh compile codex-fixed
+
+# Or one shot (if responses already exist):
+./scripts/benchmark/regrade-stage-1e.sh all codex-fixed ./stage-1e-responses
+```
+
+**Status check:**
+
+```bash
+./scripts/benchmark/regrade-stage-1e.sh status
+```
+
+Final scores per group:
+
+```text
+scripts/benchmark/grade-bundles/<task>/<score-set-id>/final-grades.tsv
+```
+
+Unseal alias → model only **after** scores are locked, using each group's
+`sealed-eval-map.tsv` (not the blind bundles).
+
+See also [`.context/benchmarks/model-roi/grading/README.md`](./grading/README.md).
+
 ## Duo Planner/Implementer Stage 1D Runs
 
 Stage 1D tests a planning model followed by a cheaper implementer. ROI must use
@@ -232,6 +364,217 @@ After every alias reaches a terminal state:
 make -C scripts/benchmark collect TASK=<task-id>
 ```
 
+### Standardized grading (canonical score sets)
+
+Use the script-first grading pipeline under
+[`.context/benchmarks/model-roi/grading/README.md`](./grading/README.md).
+Scores are comparable **only within the same `score_set_id`**.
+
+**Results column layout** (in [`results/agent-roi-benchmark-results.md`](./results/agent-roi-benchmark-results.md)):
+
+| Column | Max | Meaning |
+|---|---:|---|
+| Legacy /100 | 100 | Pre-pipeline holistic blind grade (category columns sum to this) |
+| Canonical /100 | 100 | `rubric.v1` final total (objective + subjective) |
+| Objective /65 | 65 | Automated checks (syntax, paths, scope, latency bands, …) |
+| Subjective /35 | 35 | Locked grader JSON (`model-roi-grader-v1`) |
+| score_set_id | — | Cohort id; required for comparable conclusions |
+
+Regrade operator scripts (from repo root):
+
+```bash
+GRADER=cursor-llm-blind-v1
+
+# Unified driver (stages: 1 | 1c | 1d | pipeline | 1e)
+# Actions: prepare | grade | record | compile | status | all
+
+# Stage 1 monolithic (46 bundles; responses in stage-1-llm-responses-v1/)
+./scripts/benchmark/regrade-stage.sh 1 prepare
+./scripts/benchmark/regrade-stage.sh 1 grade "${GRADER}"
+./scripts/benchmark/regrade-stage.sh 1 record "${GRADER}" scripts/benchmark/stage-1-llm-responses-v1
+./scripts/benchmark/regrade-stage.sh 1 compile "${GRADER}"
+
+# Stage 1C / 1D / pipeline (responses in stage-llm-responses-v1/)
+RESP=scripts/benchmark/stage-llm-responses-v1
+./scripts/benchmark/regrade-stage.sh 1c prepare
+SKIP_LEGACY_RESPONSES=1 ./scripts/benchmark/regrade-stage.sh 1c prepare   # skip legacy bootstrap
+
+# True LLM blind grade (Cursor agent + model-roi-grader-v1 on each subjective-prompt.md)
+./scripts/benchmark/regrade-stage.sh 1c grade "${GRADER}"
+# or: python3 scripts/benchmark/blind_grade_stage.py --stage 1c --grader-id "${GRADER}" --skip-existing
+
+./scripts/benchmark/regrade-stage.sh 1c record "${GRADER}" "${RESP}"
+bash ./scripts/benchmark/regrade-stage.sh 1c compile "${GRADER}"
+
+# Repeat for 1d and pipeline; thin wrappers (regrade-stage-1c.sh, …) exec regrade-stage.sh
+
+# Offline heuristic only (fixtures / CI): blind_grade_bundle.py --heuristic
+
+# Stage 1E CP-1 (eight RUN_GROUP score sets)
+./scripts/benchmark/regrade-stage-1e.sh prepare
+# … grade each subjective-prompt.md → stage-1e-responses-v2/<run_group>/eval-NNN.json
+./scripts/benchmark/regrade-stage-1e.sh grade cursor-llm-blind-v1
+./scripts/benchmark/regrade-stage-1e.sh record cursor-llm-blind-v1 scripts/benchmark/stage-1e-llm-responses-v1
+./scripts/benchmark/regrade-stage-1e.sh compile cursor-llm-blind-v1
+
+# Refresh results.md: canonical columns, ROI numerators, per-table sort notes
+python3 scripts/benchmark/update-benchmark-results.py all   # scores | roi | sort | all
+```
+
+**Canonical grader (all stages, 2026-06):** `cursor-llm-blind-v1` via
+`llm_grade_subjective.py` (not the superseded heuristic `blind_grade_heuristic.py`).
+
+**Response directories** (local audit trail; not on `main` after Phase A merge):
+
+| Stage | Directory |
+|---|---|
+| 1 monolithic | `scripts/benchmark/stage-1-llm-responses-v1/` |
+| 1C / 1D / pipeline | `scripts/benchmark/stage-llm-responses-v1/` |
+| 1E CP-1 | `scripts/benchmark/stage-1e-llm-responses-v1/` (`<run_group>/eval-NNN.json`) |
+
+Stage 1 and 1D share task ids (`opfit-281-class-a-premerge`, …) — keep separate response
+dirs so eval ids do not collide. Restore these dirs from git tag
+`benchmark/phase-a-artifacts-20260608` or branch `benchmark/roi` before running
+`record` / `compile` to reproduce canonical numbers.
+
+### Branch and fixture retention (Phase A → `main`)
+
+Phase A merges **harness, rubrics, runbook, and published `results.md`** to `main`.
+Large subjective JSON fixtures and legacy bootstrap dirs stay off `main`:
+
+| Surface | What merges to `main` | What stays on `benchmark/roi` / tag |
+|---|---|---|
+| `main` | Scripts, rubrics, tasks, runbook, `agent-roi-benchmark-results.md` | — |
+| Tag `benchmark/phase-a-artifacts-20260608` | — | Full pre-cleanup branch tip (all `stage-*-llm-responses-v1/`, legacy `stage-*-responses/`) |
+| Branch `benchmark/roi` (post-merge) | Harness updates merged from `main` | Fixture trees + ongoing benchmark runs |
+
+Post-merge maintainer steps:
+
+1. Push tag `benchmark/phase-a-artifacts-20260608` to `origin` (if not already pushed with the PR).
+2. Merge the Phase A PR to `main` (head-branch auto-delete disabled for the feature branch).
+3. Create `benchmark/roi` from tag `benchmark/phase-a-artifacts-20260608`.
+4. Merge `main` into `benchmark/roi` so harness fixes flow forward without losing fixtures.
+5. Run follow-on prompts (`agent-pr-prompts-combined-v2`, `07-implement-gemini-free-paid-routing`) on `main`; run `06-implement-class-c-framework-benchmark` on `benchmark/roi`.
+
+**Class A vs Class B row scoping:** Monolithic, 1C, 1D, and pipeline tables can share the
+same alias string across task classes (e.g. `cand-06`, `cand-05-pipe` at `r2`). Results sync
+uses `lookup_stage_score()` / `lookup_pipeline_score()` scoped by task class — never merge
+Class A and Class B `final-grades.json` rows into one `(alias, run)` map.
+
+**Orphan `agent` processes:** `llm_grade_subjective.py` starts each grade in a new session
+and `SIGKILL`s the process group on timeout. Before long batches, check
+`pgrep -af '/home/codespace/.local/bin/agent'` and kill stale PIDs not owned by the IDE
+(compare `ps -o pid,tty,etime,cmd -p <pid>`). Do not kill the interactive IDE agent on `pts/0`.
+
+**Results table conventions** (see `results/agent-roi-benchmark-results.md`):
+
+- Marginal ROI tables include **Objective | Subjective** and resolve extended-stage
+  aliases (`-pipe`, `-injected`, `-duo`) within each task class (Class A vs B).
+- Stage 1C tables include **ROI delta** = injected ROI − baseline ROI (same alias).
+- Issue #376 pipeline tables use separate **Cost USD** and **ROI** columns for sort.
+
+### Reproducing canonical scores (what to commit vs regenerate)
+
+| Artifact | On `main`? | Role |
+|---|---|---|
+| `results/agent-roi-benchmark-results.md` | **Yes** | Published tables + ROI (canonical columns already compiled in) |
+| Rubrics, task specs, scripts | **Yes** | Tooling |
+| `stage-*-llm-responses-v1/` JSON | **No** (tag / `benchmark/roi`) | Locked subjective grader output (`cursor-llm-blind-v1`) |
+| `grade-bundles/`, `runs/`, `worktrees/` | **No** (gitignored) | Regenerate via `prepare` + sealed manifests from `results.md` |
+| `stage-*-responses/` legacy bootstrap dirs | **No** | Superseded by `stage-*-llm-responses-v1/`; optional local audit only |
+| Spot-check JSON (`stage-1-cand06-*`, `stage-1-ctx-cur-*`) | **No** | Ad-hoc experiments; not part of canonical score sets |
+| `stage-1e-responses-v2/` | **No** | Prior `cursor-session-stage-1e-v2` session; superseded by `stage-1e-llm-responses-v1/` |
+| `*.bak-*` editor backups | **No** | Never commit |
+
+To reproduce canonical numbers from scratch: check out tag `benchmark/phase-a-artifacts-20260608`
+(or `benchmark/roi`) for response JSON → `record` → `compile` →
+`update-benchmark-results.py all` (requires local `grade-bundles/` from `prepare`).
+On `main` alone, trust the published canonical columns in `results.md` unless you
+restore fixtures from the tag.
+
+### Why Class A canonical scores look lower than Class B
+
+The same `rubric.v1` (100 points) applies to both tasks, but **task grading specs**
+(`grading/tasks/opfit-281-*.json` vs `opfit-326-*.json`) set different objective
+checklists. In bundle-only regrades, that creates different **objective ceilings**:
+
+| Factor | Class A (`opfit-281`) | Class B (`opfit-326`) |
+|---|---|---|
+| Required deliverable paths | 1 file (`055-script-syntax.sh`) | 4 paths + 2 doc companions |
+| Correctness objective (typical) | ~4 / 20 | ~18 / 20 |
+| `full_test_sh` in bundle grading | disabled | disabled |
+| Mean canonical total (Stage 1 LLM) | ~63 | ~78 |
+| Mean subjective total | ~26 | ~28 |
+
+Class A candidates often score well on **subjective** quality (~26–28/35) but cannot
+earn much **objective correctness** without running acceptance commands against a live
+worktree. Class B multi-file deliverables automatically pass more path/doc checks, so
+objective totals are higher even when the underlying task is harder.
+
+**Do not rank Class A vs Class B by raw canonical /100** — use marginal ROI within each
+task class. Legacy /100 columns used holistic blind grades and are closer to cross-class
+comparison (with caveats).
+
+Manual per-task example:
+
+```bash
+SCORE_SET=stage-1-canonical-v1
+
+make -C scripts/benchmark grade-bundles \
+  TASK=opfit-326-class-b-premerge STAGE=1 SCORE_SET="${SCORE_SET}" \
+  MANIFEST=scripts/benchmark/grade-bundles/stage-1-canonical-v1-manifests/opfit-326-class-b-premerge-manifest.tsv
+
+make -C scripts/benchmark grade-objective \
+  TASK=opfit-326-class-b-premerge SCORE_SET="${SCORE_SET}"
+
+make -C scripts/benchmark grade-subjective-prompts \
+  TASK=opfit-326-class-b-premerge SCORE_SET="${SCORE_SET}"
+
+# After a locked grader returns JSON matching subjective-grade.schema.json:
+make -C scripts/benchmark grade-subjective-record \
+  TASK=opfit-326-class-b-premerge SCORE_SET="${SCORE_SET}" \
+  EVAL_ID=eval-001 GRADER_ID=<stable-id> RESPONSE=/path/to/response.json
+
+make -C scripts/benchmark grade-compile \
+  TASK=opfit-326-class-b-premerge SCORE_SET="${SCORE_SET}" GRADER_ID=<stable-id>
+```
+
+Each stage has a dedicated regrade wrapper and `score_set_id`:
+
+| Stage | Script | Default score set | Canonical grader (extended stages) |
+|---|---|---|---|
+| 1 monolithic | `regrade-stage.sh 1` | `stage-1-canonical-v1` | `cursor-llm-blind-v1` |
+| 1C injection | `regrade-stage.sh 1c` | `stage-1c-canonical-v1` | `cursor-llm-blind-v1` |
+| 1D duo | `regrade-stage.sh 1d` | `stage-1d-canonical-v1` | `cursor-llm-blind-v1` |
+| #376 pipeline | `regrade-stage.sh pipeline` | `stage-1-pipeline-canonical-v1` | `cursor-llm-blind-v1` (`rubric.pipeline.v1`) |
+| 1E CP-1 | `regrade-stage-1e.sh` | `stage-1e-canonical-v1-<run_group>` | `cursor-llm-blind-v1` |
+
+`prepare` bootstraps subjective JSON from legacy category scores via
+`regrade-from-results-md.py responses` (residual mapping). For routing decisions,
+replace with **fresh blind JSON** from `model-roi-grader-v1.md` and a stable
+`grader_id` (`cursor-llm-blind-v1` for all extended stages including 1E).
+
+After `record` + `compile`, refresh published columns with:
+
+```bash
+python3 scripts/benchmark/update-benchmark-results.py all
+```
+
+`regrade-stage.sh record` and `all` accept an optional trailing `score-set-id`
+override (same as `prepare` / `compile`). `make suite-resume` respects `RUN_GROUP`
+via `runs_task_base` when skipping aliases that already have terminal results.
+
+Exploratory Cursor/Codex regrades are separate cohorts for inter-rater analysis
+only — do not average them into canonical rows.
+
+Grading bundles use neutral `eval-###` IDs and `context_condition` codes
+(`cond-001`, …). Real `context_variant` / pack ids live in sealed maps only.
+
+Separate **benchmark execution cost** from **grading LLM cost** in ROI tables when
+subjective graders use paid models.
+
+### Legacy manual grading
+
 Grade blind diffs using the documented 100-point rubric:
 
 ```text
@@ -249,7 +592,8 @@ make -C scripts/benchmark unseal TASK=<task-id>
 ```
 
 Then add the rows to
-[`results/agent-roi-benchmark-results.md`](./results/agent-roi-benchmark-results.md).
+[`results/agent-roi-benchmark-results.md`](./results/agent-roi-benchmark-results.md),
+citing `score_set_id` and grader prompt version for canonical rows.
 
 ## Cost And Telemetry Recovery
 

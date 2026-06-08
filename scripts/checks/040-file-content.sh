@@ -6,11 +6,11 @@
 # --- File Content Checks ---
 echo "Checking file contents..."
 
-# Check AGENTS.md references AI_REPO_GUIDE.md
-if grep -q "AI_REPO_GUIDE.md" AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md references AI_REPO_GUIDE.md"
+# Check startup contract surfaces reference AI_REPO_GUIDE.md (AGENTS.md or rule catalog).
+if grep -q "AI_REPO_GUIDE.md" AGENTS.md .context/rules/README.md 2>/dev/null; then
+  pass "startup contract references AI_REPO_GUIDE.md"
 else
-  fail "AGENTS.md should reference AI_REPO_GUIDE.md"
+  fail "AGENTS.md or .context/rules/README.md should reference AI_REPO_GUIDE.md"
 fi
 
 # Check AGENTS.md has truth hierarchy
@@ -61,8 +61,16 @@ CORE_RULE_FILES=(
 # false-match. Documented per repo "document simplification" rule
 # (Gemini, R10).
 LINK_TABLE_BLOCK=""
-if [[ -f "AGENTS.md" ]]; then
+LINK_TABLE_SOURCE=""
+LINK_TABLE_LINK_RE=""
+if [[ -f "AGENTS.md" ]] && grep -q '^## Per-concern process rules' AGENTS.md 2>/dev/null; then
   LINK_TABLE_BLOCK=$(awk '/^## Per-concern process rules/{flag=1; next} /^## /{flag=0} flag && /^\|/' AGENTS.md)
+  LINK_TABLE_SOURCE="AGENTS.md"
+  LINK_TABLE_LINK_RE='\.context/rules/'
+elif [[ -f ".context/rules/README.md" ]]; then
+  LINK_TABLE_BLOCK=$(awk '/^## Rule catalog/{flag=1; next} /^## /{flag=0} flag && /^\|/' .context/rules/README.md)
+  LINK_TABLE_SOURCE=".context/rules/README.md"
+  LINK_TABLE_LINK_RE='\./'
 fi
 MISSING_LINKS=0
 for pfile in "${CORE_RULE_FILES[@]}"; do
@@ -74,13 +82,13 @@ for pfile in "${CORE_RULE_FILES[@]}"; do
   # (Codex, R9). The trailing terminator prevents suffix typos like '.mdx'
   # (Codex, R7). Together they pin the regex to the exact canonical paths
   # used in the link table.
-  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[[^]]*\]\(\.context/rules/${pfile_re}(#[^)]*)?\)" 2>/dev/null; then
-    fail "AGENTS.md missing link table entry for $pfile (ADR-021)"
+  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[[^]]*\]\(${LINK_TABLE_LINK_RE}${pfile_re}(#[^)]*)?\)" 2>/dev/null; then
+    fail "${LINK_TABLE_SOURCE:-AGENTS.md} missing link table entry for $pfile (ADR-021)"
     MISSING_LINKS=$((MISSING_LINKS + 1))
   fi
 done
 if [[ $MISSING_LINKS -eq 0 ]]; then
-  pass "AGENTS.md link table references all core process files (ADR-021)"
+  pass "${LINK_TABLE_SOURCE:-AGENTS.md} link table references all core process files (ADR-021)"
 fi
 
 # Check agent-review-on-push.yml has required invariants (issue #205)
@@ -202,24 +210,32 @@ else
   fail "AGENTS.md missing AGENTS_MD_VERSION marker (handshake canary)"
 fi
 
-if grep -q "Session handshake" AGENTS.md 2>/dev/null \
-  && (grep -qE 'Session handshake vAGENTS_MD_VERSION' AGENTS.md 2>/dev/null \
-    || grep -qE 'Session handshake v?[0-9]+' AGENTS.md 2>/dev/null); then
-  pass "AGENTS.md has Session handshake instruction with token placeholder or legacy literal"
+HANDSHAKE_SOURCE=""
+for handshake_file in AGENTS.md .context/rules/process_session_start.md; do
+  if [[ -f "$handshake_file" ]] \
+    && grep -q "Session handshake" "$handshake_file" 2>/dev/null \
+    && (grep -qE 'Session handshake vAGENTS_MD_VERSION' "$handshake_file" 2>/dev/null \
+      || grep -qE 'Session handshake v?[0-9]+' "$handshake_file" 2>/dev/null); then
+    HANDSHAKE_SOURCE="$handshake_file"
+    break
+  fi
+done
+if [[ -n "$HANDSHAKE_SOURCE" ]]; then
+  pass "${HANDSHAKE_SOURCE} has Session handshake instruction with token placeholder or legacy literal"
 else
-  fail "AGENTS.md missing Session handshake instruction or token"
+  fail "AGENTS.md or process_session_start.md missing Session handshake instruction or token"
 fi
 
 # Verify the handshake token either defers to AGENTS_MD_VERSION via the
 # template placeholder or (legacy form) embeds a matching literal version.
 agents_md_version=$(grep -oE '^<!-- AGENTS_MD_VERSION: [0-9]+ -->' AGENTS.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
-handshake_version=$(grep -oE 'Session handshake v?[0-9]+' AGENTS.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
-if grep -qE 'Session handshake vAGENTS_MD_VERSION' AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md handshake token defers to AGENTS_MD_VERSION placeholder ($agents_md_version)"
+handshake_version=$(grep -oE 'Session handshake v?[0-9]+' "${HANDSHAKE_SOURCE:-AGENTS.md}" 2>/dev/null | grep -oE '[0-9]+' | head -1)
+if grep -qE 'Session handshake vAGENTS_MD_VERSION' "${HANDSHAKE_SOURCE:-AGENTS.md}" 2>/dev/null; then
+  pass "${HANDSHAKE_SOURCE:-AGENTS.md} handshake token defers to AGENTS_MD_VERSION placeholder ($agents_md_version)"
 elif [ -n "$agents_md_version" ] && [ "$agents_md_version" = "$handshake_version" ]; then
-  pass "AGENTS.md handshake token version matches AGENTS_MD_VERSION ($agents_md_version)"
+  pass "${HANDSHAKE_SOURCE:-AGENTS.md} handshake token version matches AGENTS_MD_VERSION ($agents_md_version)"
 else
-  fail "AGENTS.md handshake token does not align with AGENTS_MD_VERSION ($agents_md_version)"
+  fail "session handshake token does not align with AGENTS_MD_VERSION ($agents_md_version)"
 fi
 
 # Check install.sh is executable or has shebang

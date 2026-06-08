@@ -18,39 +18,43 @@ set -euo pipefail
 adapter_run() {
   local workdir="$1" model="$2" prompt_file="$3" outdir="$4" effort="${5:-default}"
   mkdir -p "${outdir}/logs"
-  local prompt; prompt="$(cat "${prompt_file}")"
+  local prompt
+  prompt="$(cat "${prompt_file}")"
 
   # Build effort override only when a concrete level is requested.
   local effort_args=()
   case "${effort}" in
-    minimal|low|medium|high|xhigh)
+    minimal | low | medium | high | xhigh)
       effort_args=(-c "model_reasoning_effort=${effort}")
-      echo "flag:model_reasoning_effort=${effort}" > "${outdir}/effort-applied.txt" ;;
-    default|""|fixed)
-      echo "default(codex=medium)" > "${outdir}/effort-applied.txt" ;;
+      echo "flag:model_reasoning_effort=${effort}" >"${outdir}/effort-applied.txt"
+      ;;
+    default | "" | fixed)
+      echo "default(codex=medium)" >"${outdir}/effort-applied.txt"
+      ;;
     *)
       effort_args=(-c "model_reasoning_effort=${effort}")
-      echo "flag:model_reasoning_effort=${effort}(nonstandard,coerced-by-codex)" > "${outdir}/effort-applied.txt" ;;
+      echo "flag:model_reasoning_effort=${effort}(nonstandard,coerced-by-codex)" >"${outdir}/effort-applied.txt"
+      ;;
   esac
 
   local model_args=()
   if [[ "${model}" == "auto" ]]; then
-    echo "$(cat "${outdir}/effort-applied.txt");model=default-omitted(auto-requested)" > "${outdir}/effort-applied.txt"
+    echo "$(cat "${outdir}/effort-applied.txt");model=default-omitted(auto-requested)" >"${outdir}/effort-applied.txt"
   else
     model_args=(--model "${model}")
   fi
 
   set +e
-  ( cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
+  (cd "${workdir}" && GIT_TERMINAL_PROMPT=0 \
     printf '%s' "${prompt}" | codex exec \
-      "${model_args[@]}" \
-      "${effort_args[@]}" \
-      --sandbox workspace-write \
-      --json \
-      -C "${workdir}" \
-      --output-last-message "${outdir}/final-message.txt" \
-      - \
-      > "${outdir}/agent-output.jsonl" 2> "${outdir}/logs/stderr.log" )
+    "${model_args[@]}" \
+    "${effort_args[@]}" \
+    --sandbox workspace-write \
+    --json \
+    -C "${workdir}" \
+    --output-last-message "${outdir}/final-message.txt" \
+    - \
+    >"${outdir}/agent-output.jsonl" 2>"${outdir}/logs/stderr.log")
   local rc=$?
   set -e
   return ${rc}
