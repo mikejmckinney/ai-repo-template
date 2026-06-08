@@ -399,12 +399,14 @@ def update_score_set_section(text: str) -> str:
                 continue
             out.append(line)
         text = "\n".join(out) + "\n"
-    elif new not in text:
-        text = text.replace(
-            "- Exploratory Cursor/Codex regrades are separate cohorts",
-            f"{new}\n- Exploratory Cursor/Codex regrades are separate cohorts",
-            1,
-        )
+    elif new.strip() not in text:
+        bullet = new.strip().splitlines()[0]
+        if bullet not in text:
+            text = text.replace(
+                "- Exploratory Cursor/Codex regrades are separate cohorts",
+                f"{new}\n- Exploratory Cursor/Codex regrades are separate cohorts",
+                1,
+            )
     return text
 
 

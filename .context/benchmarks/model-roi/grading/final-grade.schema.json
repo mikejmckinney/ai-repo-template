@@ -15,7 +15,7 @@
     "schema_version": { "const": "benchmark-final-grades.v1" },
     "score_set_id": { "type": "string" },
     "task_id": { "type": "string" },
-    "rubric_id": { "const": "rubric.v1" },
+    "rubric_id": { "enum": ["rubric.v1", "rubric.pipeline.v1"] },
     "grader_id": { "type": "string" },
     "subjective_aggregation": { "enum": ["single", "median"] },
     "rows": {
@@ -42,18 +42,48 @@
         "objective_total": { "type": "integer" },
         "subjective_total": { "type": ["integer", "null"] },
         "final_total": { "type": ["integer", "null"] },
-        "categories": {
-          "type": "object",
-          "required": ["correctness", "quality", "process", "reliability", "latency"],
+        "categories": { "type": "object" }
+      },
+      "oneOf": [
+        {
           "properties": {
-            "correctness": { "$ref": "#/$defs/categoryTotal" },
-            "quality": { "$ref": "#/$defs/categoryTotal" },
-            "process": { "$ref": "#/$defs/categoryTotal" },
-            "reliability": { "$ref": "#/$defs/categoryTotal" },
-            "latency": { "$ref": "#/$defs/categoryTotal" }
+            "categories": {
+              "type": "object",
+              "required": ["correctness", "quality", "process", "reliability", "latency"],
+              "properties": {
+                "correctness": { "$ref": "#/$defs/categoryTotal" },
+                "quality": { "$ref": "#/$defs/categoryTotal" },
+                "process": { "$ref": "#/$defs/categoryTotal" },
+                "reliability": { "$ref": "#/$defs/categoryTotal" },
+                "latency": { "$ref": "#/$defs/categoryTotal" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "categories": {
+              "type": "object",
+              "required": [
+                "correctness",
+                "quality",
+                "process",
+                "reliability",
+                "coordination",
+                "latency"
+              ],
+              "properties": {
+                "correctness": { "$ref": "#/$defs/categoryTotal" },
+                "quality": { "$ref": "#/$defs/categoryTotal" },
+                "process": { "$ref": "#/$defs/categoryTotal" },
+                "reliability": { "$ref": "#/$defs/categoryTotal" },
+                "coordination": { "$ref": "#/$defs/categoryTotal" },
+                "latency": { "$ref": "#/$defs/categoryTotal" }
+              }
+            }
           }
         }
-      }
+      ]
     },
     "categoryTotal": {
       "type": "object",

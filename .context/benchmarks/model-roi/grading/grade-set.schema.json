@@ -20,7 +20,7 @@
     "stage": { "type": "string" },
     "run_group": { "type": ["string", "null"] },
     "run_index_filter": { "type": ["integer", "null"] },
-    "rubric_id": { "const": "rubric.v1" },
+    "rubric_id": { "enum": ["rubric.v1", "rubric.pipeline.v1"] },
     "grader_prompt_id": { "const": "model-roi-grader-v1" },
     "bundle_seed": { "type": "string" },
     "eval_count": { "type": "integer", "minimum": 0 },
