@@ -1,0 +1,89 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-015",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 4,
+      "max_subjective_points": 10,
+      "rationale": "The helper documents and implements the inspectable poll-loop structure\u2014PR arg validation, INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, allow-list load with [bot] stripping, pre/post head SHA comparison, unresolved-thread and non-terminal-review jq filters, and RESULT=/HEAD= emission for CONVERGED, QUIET_ELAPSED, TIMEOUT, SHA_CHANGED, and API_ERROR paths. Six-point deduction for material contract gaps: the GraphQL call passes literal -F owner=:owner -F repo=:repo placeholders instead of resolved repository coordinates, so live gh calls would fail or target the wrong repository; inline comments admit bot reviews are not filtered to the current head SHA despite the task requiring participating bots be terminal for the current head; and CONVERGED can fire when reviewThreads and reviews are both empty without establishing that expected bots have finished on HEAD.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 8,
+      "max_subjective_points": 15,
+      "rationale": "Core shell deliverables are readable and mostly repo-shaped: logging.sh sourcing, documented exit contract header, canonical bot-allowlist.txt, and a well-written pr-resolve-all.md settle-window section that prefers the helper while preserving the 360-second fallback. Deductions for AI_REPO_GUIDE.md footer corruption (duplicate '-facing behavior changes' fragment), corrupt unrelated edits to docs/compliance_schemas.md (duplicate agents_md_version lines and role substitutions), a compliance_schema.py receipt-key change that no longer matches the updated fixtures, a committed IMPLEMENTATION_PLAN.md artifact, and a thin scripts/checks/055-pr-poll-helper.sh that only existence-checks files instead of following the repo's run_bats_check wiring pattern used by peer poll checks.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Required prompt and guide companions are touched and pr-resolve-all.md correctly prefers the helper with a documented time-based fallback, and the implementation plan block cites doc-sync triggers. Two-point deduction for noticeable scope drift: IMPLEMENTATION_PLAN.md committed as a stray plan artifact, unrelated compliance_schema.py and v19-to-v20 fixture churn flagged by objective scope:compliance_fixtures warn, and corrupted companion-doc edits beyond the settle-window task; objective process scored 12/15 and test_wiring only 1/2 patterns matched.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Verification wiring is partial but credible: scripts/tests/pr-resolve-all-poll.bats stubs gh and asserts CONVERGED, QUIET_ELAPSED, TIMEOUT, and SHA_CHANGED exit codes with matching RESULT tokens; objective bash_n_poll_helper and lint_poll_helper passed. Two-point deduction: no bats case for API_ERROR (missing PR arg is implemented but untested; gh/auth/graphql failures untested), all GraphQL fixtures use empty reviewThreads so unresolved bot-thread and allow-list matching logic is unexercised, scripts/checks/055-pr-poll-helper.sh never invokes run_bats_check, and objective bats_poll_helper and full_test_sh were skipped so runtime pass is unconfirmed in this bundle.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 18,
+  "uncertainty_notes": [
+    "bats_poll_helper and full_test_sh were skipped in objective-grade.json; subjective reliability assumes the four stub-based bats cases are structurally sound but not runtime-verified in this bundle."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, enabling normal subjective scoring rather than fail-closed zeroing."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "scope:compliance_fixtures status warn with detail 'compliance fixture churn'; test_wiring status pass with detail '1/2 patterns matched'; bats_poll_helper and full_test_sh skipped."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "gh api graphql invocation uses -F owner=:owner -F repo=:repo literal placeholders instead of resolved owner/name variables."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Poll script comment states participating bots terminal for current head is not implemented and 'we just check latest reviews' without per-SHA filtering."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "CONVERGED branch fires when UNRESOLVED_BOT_THREADS and NON_TERMINAL_BOT_REVIEWS are both zero, including empty reviews and reviewThreads fixtures."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md adds settle-window section preferring bash scripts/pr-resolve-all-poll.sh and retains documented 360-second time-based fallback on API_ERROR."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "AI_REPO_GUIDE.md ends with corrupted duplicate lines '-facing behavior changes' and repeated numbered list item 4."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "compliance_schema.py now requires receipt keys mode, value, and agents_md_version but valid fixture receipts still contain only mode and value."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "docs/compliance_schemas.md adds duplicate agents_md_version: 20 lines and changes example roles from judge/critic to docs unrelated to the poll helper."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/055-pr-poll-helper.sh only file-existence-greps the helper, allow-list, and bats file without calling run_bats_check."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats defines four mock-gh tests for CONVERGED, QUIET_ELAPSED, TIMEOUT, and SHA_CHANGED but no API_ERROR or unresolved-thread cases."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Eleven files include IMPLEMENTATION_PLAN.md plus compliance_schema.py and compliance fixture churn beyond the helper, allow-list, prompt, guide, check, and bats surfaces."
+    }
+  ],
+  "graded_at": "2026-06-08T01:49:50Z"
+}

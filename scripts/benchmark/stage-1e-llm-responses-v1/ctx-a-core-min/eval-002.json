@@ -1,0 +1,94 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1e-canonical-v1-ctx-a-core-min",
+  "eval_candidate_id": "eval-002",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The patch replaces the two hard-coded install.sh/test.sh checks with an explicit scripts array covering all five requested glob locations (*.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, scripts/lib/*.sh), enables nullglob before array expansion, runs bash -n per file in a loop, and reports independent pass()/fail() lines\u2014matching the parser-only per-file contract. One point withheld because bundle-only grading provides no executed full_test_sh acceptance output to confirm end-to-end runtime behavior or whether expanded coverage would have surfaced latent syntax errors requiring fixes in the same diff.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 11,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is readable and repo-consistent: explicit glob set, nullglob enable/disable around array assignment, and a defensive empty-array fail guard. Deductions for bash -n stderr suppression (2>/dev/null hides syntax-error detail on failure), no companion doc-sync update (e.g., AI_REPO_GUIDE) where task doc rules may apply, and IMPLEMENTATION_PLAN.md is a plan artifact rather than durable repo documentation\u2014adding scope without improving long-term maintainability of the check itself.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Objective process scored 15/15 with only two changed files and no forbidden-path churn. IMPLEMENTATION_PLAN.md documents approach, risks, and a three-step verification plan including negative smoke, showing partial plan discipline. However, the plan is left in the final diff (scope noise per benchmark expectations), contains no recorded no-change doc-sync decision, and bundle artifacts include no bash test.sh output, narrow syntax-check output, or negative-smoke demonstration or explanation required by acceptance criteria.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Objective evidence confirms test_wiring (6/6) and bash_n_check_script pass, and the diff integrates with existing pass/fail helpers sourced by test.sh. IMPLEMENTATION_PLAN.md lists verification steps but bundle lacks full_test_sh execution (skipped in bundle-only grading), no reported command output, and no demonstrated negative-smoke cycle\u2014verification discipline is partially evidenced by wiring and plan intent but not demonstrated.",
+      "uncertain": true
+    }
+  },
+  "subjective_total": 26,
+  "uncertainty_notes": [
+    "Bundle contains no bash test.sh run output, narrow syntax-check output, or negative-smoke demonstration/explanation required by acceptance criteria; reliability scored conservatively.",
+    "Cannot confirm from bundle alone whether expanded coverage would have revealed latent syntax errors elsewhere requiring fixes in the same diff."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts array lists *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh covering all five requested glob locations"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "shopt -s nullglob before array assignment and shopt -u nullglob after expansion handle empty globs safely"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "for script loop runs bash -n on each collected file with independent pass or fail per file"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "fail when scripts array is empty provides defensive guard when no shell scripts are found"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "bash -n \"$script\" 2>/dev/null keeps the check parser-only but suppresses stderr on syntax failures"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "IMPLEMENTATION_PLAN.md added with verification steps including negative-smoke test but no execution output"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "two files changed: IMPLEMENTATION_PLAN.md and scripts/checks/055-script-syntax.sh"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "task requires bash test.sh verification, negative-smoke test or documented explanation, and reporting real command output\u2014none present in bundle artifacts beyond plan text"
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective scoring proceeds normally"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "required_path:scripts/checks/055-script-syntax.sh passed (4/4)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_check_script passed (5/5)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring passed (6/6) confirming check integration with test.sh"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh skipped in bundle-only grading; no full-suite execution evidence available"
+    }
+  ],
+  "graded_at": "2026-06-08T02:23:29Z"
+}

@@ -1,0 +1,106 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-008",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 4,
+      "max_subjective_points": 10,
+      "rationale": "The helper delivers the inspectable scaffolding\u2014PR arg validation, INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, allow-list loading with [bot] stripping, pre/post head SHA comparison, GraphQL snapshot parsing, and RESULT=/HEAD= on CONVERGED, QUIET_ELAPSED, and SHA_CHANGED paths with documented exit codes. However convergence semantics are materially incomplete: CONVERGED fires solely when unresolved bot-thread count is zero without using the computed LATEST_BOT_REVIEWS to require participating allow-listed bots be terminal on the current head, so a PR with zero unresolved threads but no bot reviews on HEAD can exit CONVERGED immediately. QUIET_ELAPSED uses the max createdAt across all reviews rather than the latest actionable event (threads/comments acknowledged only in a comment). TIMEOUT emits RESULT=TIMEOUT without HEAD= even though HEAD was fetched in the same loop iteration. These are multiple non-trivial contract gaps, not a single minor miss.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 8,
+      "max_subjective_points": 15,
+      "rationale": "Core deliverables are readable and repo-shaped: set -euo pipefail shell script, canonical allow-list file, pr-resolve-all.md settle-window section preferring the helper while preserving the documented sleep fallback, AI_REPO_GUIDE.md table entry, and check wiring via scripts/checks/142-pr-resolve-all-poll.sh. Deductions for dead code (jq_bots_args loop built but never passed to jq; LATEST_BOT_REVIEWS computed but unused), a self-admitted simplification in quiet-window timing, unrelated diff churn (AGENTS.md handshake v20 bump; compliance fixture v19\u2192v20 updates), and plan-compliance.yml leaving AGENTS_MD_VERSION 19 while citing Session handshake v20\u2014an internal inconsistency in process fixtures.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 2,
+      "max_subjective_points": 5,
+      "rationale": "Required helper, allow-list, prompt, guide, check, and bats files are present and the prompt keeps the time-based fallback as required. Objective evidence flags scope:agents_md and scope:compliance_fixtures as warn, matching out-of-scope AGENTS.md and compliance-fixture edits not requested by opfit-326. No verification transcript or plan artifact appears in the bundle; process discipline is partial\u2014focused core wiring but noticeable scope drift and handshake fixture churn unrelated to the settle-window helper.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 2,
+      "max_subjective_points": 5,
+      "rationale": "Test wiring exists (scripts/checks/142-pr-resolve-all-poll.sh calls run_bats_check; objective test_wiring matched 2/2; bash -n and lint-shell-conventions passed). Coverage is thin: scripts/tests/pr-resolve-all-poll.bats contains only one case asserting exit 4 and RESULT=API_ERROR for a missing PR number\u2014no mock-gh exercises of CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, or allow-list/API_ERROR paths. Objective bats_poll_helper and full_test_sh were skipped, so runtime pass of the bats suite is unverified in this bundle.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 16,
+  "uncertainty_notes": [
+    "bats_poll_helper was skipped in objective-grade.json; subjective reliability assumes the single bats case is structurally sound but not runtime-verified in this bundle.",
+    "Production convergence behavior when no allow-listed bots have reviewed the current head is inferred from diff logic (LATEST_BOT_REVIEWS unused) rather than exercised by tests."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, so subjective categories are scored normally rather than fail-closed to zero."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "scope:agents_md status warn with detail 'AGENTS.md in diff' indicating out-of-scope handshake edit."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "scope:compliance_fixtures status warn with detail 'compliance fixture churn' indicating unrelated fixture edits."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper skipped; test_wiring matched 2/2 patterns."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "CONVERGED branch exits 0 when UNRESOLVED equals 0 without referencing LATEST_BOT_REVIEWS or verifying bot reviews are on HEAD_AFTER."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "LATEST_BOT_REVIEWS jq filter is computed but never consumed by subsequent shell logic."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "LATEST_EVENT_TIME uses max review createdAt with comment 'We'll simplify to reviews' rather than latest actionable thread/review events."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "TIMEOUT path emits only RESULT=TIMEOUT and exit 2 without HEAD= despite HEAD_BEFORE being fetched earlier in the loop."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "SHA_CHANGED path emits HEAD= and RESULT=SHA_CHANGED with exit 3 after comparing HEAD_BEFORE to HEAD_AFTER."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Missing PR number path emits RESULT=API_ERROR and exits 4; allow-list and gh repo resolution failures also exit 4."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md adds section 5 preferring scripts/pr-resolve-all-poll.sh and documents sleep 360 time-based fallback."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "AGENTS.md changes Session handshake example from AGENTS_MD_VERSION token to 'Session handshake v20'."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "plan-compliance.yml evidence cites 'AGENTS_MD_VERSION 19; Session handshake v20 emitted'\u2014internally inconsistent version references."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats defines only one test for missing PR number exiting 4 with RESULT=API_ERROR."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/142-pr-resolve-all-poll.sh wires run_bats_check scripts/tests/pr-resolve-all-poll.bats."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Ten changed files include helper, allow-list, prompt, guide, check, bats test, AGENTS.md, and three compliance fixtures."
+    }
+  ],
+  "graded_at": "2026-06-08T01:42:20Z"
+}

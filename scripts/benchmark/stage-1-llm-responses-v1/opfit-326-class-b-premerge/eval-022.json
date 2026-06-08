@@ -1,0 +1,86 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-022",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the full inspectable settle-window contract: PR-number and env validation, allow-list load with [bot] stripping, head SHA reads before and after each GraphQL snapshot (including payload-head mismatch detection), polling loop with five RESULT= branches and documented exit codes, and machine-readable stdout with RESULT= and HEAD=. reduce_snapshot.py tracks PENDING reviews on the current head, filters reviews by commit.oid==head, and gates CONVERGED on zero pending and zero unresolved allow-listed bot threads. Bats mocks exercise CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, and API_ERROR with matching status/output assertions. Minor non-fatal gaps: GraphQL pagination capped at reviews/reviewThreads first:100 with no continuation; unresolved-thread counting ignores isOutdated; CONVERGED requires participant_count>0 so zero-participating-bot PRs rely on QUIET_ELAPSED/TIMEOUT instead.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 14,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is clear and repo-consistent: set -euo pipefail, structured fail_result helper, mktemp+trap cleanup, stderr snapshot diagnostics, and focused ten-file diff. Documentation is broadly synced across pr-resolve-all.md (helper preference, per-RESULT dispatch, preserved 90s fallback), AI_REPO_GUIDE.md, scripts/README.md, scripts/lib/README.md, and commented bot-allowlist.txt. Minor deductions: snapshot logic is embedded as a runtime heredoc Python file rather than a reusable scripts/lib module; pr-resolve-all.md prose allow-list bullets may drift from the seven-entry canonical file; scripts/README.md indexes closeout.bats but not the new bats file.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Diff stays focused on the helper, allow-list, bats tests, check wiring, and required doc/prompt companions with no AGENTS.md, PLAN.md, or live-state churn; objective process scored 15/15 and doc_companions passed 2/2. pr-resolve-all.md prefers the deterministic helper, documents per-RESULT handling and SHA restart behavior, points to scripts/lib/bot-allowlist.txt as canonical, preserves the documented time-based fallback, and renumbers round disciplines consistently.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "scripts/tests/pr-resolve-all-poll.bats adds five mock-gh scenario tests covering CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, and auth API_ERROR; scripts/checks/142-pr-resolve-all-poll-smoke.sh wires run_bats_check and objective test_wiring matched 2/2 with bash_n and lint passing. Objective bats_poll_helper and full_test_sh were skipped in this bundle with no runtime transcript, and bats omit graphql API_ERROR, missing/empty allow-list, and invalid-argument precondition cases.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 32,
+  "uncertainty_notes": [
+    "bats_poll_helper and full_test_sh were skipped in objective-grade.json; mock-based contract tests are structurally credible from the diff but not runtime-verified in this bundle.",
+    "Live behavior with >100 reviews/threads and outdated-thread handling is inferred from diff logic only."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, so subjective categories are scored normally rather than fail-closed to zero."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper and full_test_sh skipped; test_wiring status pass with detail 2/2 patterns matched; process objective_points 15/15."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Ten focused changed files spanning helper, allow-list, bats tests, check wiring, and doc/prompt surfaces only."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "fail_result maps CONVERGED and QUIET_ELAPSED to exit 0, TIMEOUT to 2, SHA_CHANGED to 3, and API_ERROR to 4 while printing RESULT= and HEAD=."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Poll loop reads head before snapshot, fetches GraphQL state, reads head after snapshot, and exits SHA_CHANGED when head_before!=CURRENT_HEAD or head_after!=head_before or reduce_snapshot reports payload_head_mismatch."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "reduce_snapshot.py tracks PENDING reviews on current head, counts unresolved allow-listed bot threads, and CONVERGED requires participant_count>0 with pending_count==0 and unresolved_count==0."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "GraphQL query limits reviews and reviewThreads to first:100 with no hasNextPage continuation."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md adds settle-window helper invocation, per-RESULT handling, canonical allow-list pointer, and preserves time-based sleep fallback."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats includes five tests asserting CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, and API_ERROR outcomes with matching exit codes and RESULT= output."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/142-pr-resolve-all-poll-smoke.sh invokes run_bats_check scripts/tests/pr-resolve-all-poll.bats."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Task requires shell helper with documented exit contract, in-memory state only, time-based fallback retained, and tests wired per repo shell-test pattern."
+    }
+  ],
+  "graded_at": "2026-06-08T01:55:42Z"
+}

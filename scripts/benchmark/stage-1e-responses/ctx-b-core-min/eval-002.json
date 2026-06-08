@@ -1,0 +1,42 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1e-canonical-v1-ctx-b-core-min",
+  "eval_candidate_id": "eval-002",
+  "grader_id": "stage-1e-locked-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 5,
+      "max_subjective_points": 10,
+      "rationale": "best Class B ROI candidate; tight 6-file delivery"
+    },
+    "quality": {
+      "subjective_points": 8,
+      "max_subjective_points": 15,
+      "rationale": "best Class B ROI candidate; tight 6-file delivery"
+    },
+    "process": {
+      "subjective_points": 0,
+      "max_subjective_points": 5,
+      "rationale": "best Class B ROI candidate; tight 6-file delivery"
+    },
+    "reliability": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "best Class B ROI candidate; tight 6-file delivery"
+    }
+  },
+  "subjective_total": 16,
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "best Class B ROI candidate; tight 6-file delivery"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "Objective checks applied before subjective residual mapping."
+    }
+  ],
+  "graded_at": "2026-06-06T22:21:21Z"
+}

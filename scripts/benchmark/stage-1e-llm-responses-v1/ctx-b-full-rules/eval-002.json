@@ -1,0 +1,75 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1e-canonical-v1-ctx-b-full-rules",
+  "eval_candidate_id": "eval-002",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 4,
+      "max_subjective_points": 10,
+      "rationale": "Deliverables and exit/RESULT scaffolding are present and several paths (SHA_CHANGED, TIMEOUT, QUIET_ELAPSED with open threads) are implemented, but CONVERGED is emitted solely when unresolved allow-listed bot thread count is zero without determining participating bots or verifying their review states are terminal on the current head SHA. Reviews are fetched but never used for terminality; comments in the helper explicitly treat terminality as implicit when no threads remain. That is a meaningful contract gap against the task\u2019s core convergence semantics.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 11,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is focused, shell-based, uses repo logging conventions, documents the exit contract in headers, wires a check script and Bats mocks, and syncs the prompt plus AI_REPO_GUIDE with a preserved time-based fallback. Deductions for simplifying comments that admit incomplete logic, a misleading log line before immediate CONVERGED exit, and per-iteration grep allowlist matching instead of a clearer normalization approach.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Diff stays within the six requested surfaces (helper, allowlist, prompt, guide, check, bats) with no scope drift evident in files-changed.txt. Prompt Step 6 documents primary helper usage and retains the documented 6-minute fallback. Minor deduction because candidate evidence contains no explicit verification narrative beyond what objective checks infer.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Bats tests mock gh and exercise converged, sha_changed, timeout, and quiet_elapsed paths; check wiring calls run_bats_check. Gaps include no API_ERROR or missing-argument coverage, no test for terminal-review vs premature CONVERGED, and objective evidence shows bats_poll_helper skipped so runtime test pass is unconfirmed from the bundle.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 22,
+  "uncertainty_notes": [],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "CONVERGED exits when actionable_threads_count equals zero without checking participating bot review terminality on current head."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Helper comment states terminality is implicit when no threads are open, contradicting required CONVERGED semantics."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Reviews are included in gh pr view JSON but only used for latest_event_iso timestamps, not terminal status."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "SHA_CHANGED detection compares new_sha to prior iteration current_sha rather than before/after within a single snapshot."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Prompt Step 6 adds primary helper path and preserves 6-minute sleep fallback on API_ERROR."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Bats file covers four exit paths via mocked gh: converged, sha_changed, timeout, quiet_elapsed."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "hard_gate_pass is true; bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper skipped."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Only six task-scoped files changed with no unrelated paths."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Task requires CONVERGED when participating expected bots are terminal for current head and no unresolved actionable bot-authored threads remain."
+    }
+  ],
+  "graded_at": "2026-06-08T02:31:45Z"
+}

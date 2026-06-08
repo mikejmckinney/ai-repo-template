@@ -1,0 +1,42 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-013",
+  "grader_id": "results-md-legacy-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 10,
+      "max_subjective_points": 10,
+      "rationale": "Correct core behavior, but state/session artifact noise and partial-run head SHA caveat materially reduced score."
+    },
+    "quality": {
+      "subjective_points": 13,
+      "max_subjective_points": 15,
+      "rationale": "Correct core behavior, but state/session artifact noise and partial-run head SHA caveat materially reduced score."
+    },
+    "process": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Correct core behavior, but state/session artifact noise and partial-run head SHA caveat materially reduced score."
+    },
+    "reliability": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Correct core behavior, but state/session artifact noise and partial-run head SHA caveat materially reduced score."
+    }
+  },
+  "subjective_total": 33,
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Correct core behavior, but state/session artifact noise and partial-run head SHA caveat materially reduced score."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "Objective automation applied before legacy subjective residual mapping."
+    }
+  ],
+  "graded_at": "2026-06-06T23:53:23Z"
+}

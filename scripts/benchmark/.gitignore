@@ -9,16 +9,14 @@ runs/
 grade-bundles/
 logs/
 
-# Superseded or ad-hoc grading artifacts. Canonical LLM JSON lives on tag
-# benchmark/phase-a-artifacts-20260608 and branch benchmark/roi (not on main).
+# Superseded or ad-hoc grading artifacts.
+# On branch benchmark/roi: stage-*-llm-responses-v1/ is TRACKED (canonical fixtures).
+# On main: those dirs are absent; use tag benchmark/phase-a-artifacts-20260608 or benchmark/roi.
 stage-extended-responses-v1/
-stage-1-responses/
 stage-1c-responses/
 stage-1d-responses/
 stage-1-pipeline-responses/
-stage-1e-responses/
 stage-1e-responses-v2/
-stage-*-llm-responses-v1/
 stage-1-cand06-*
 stage-1-ctx-cur-*
 stage-1-cand06-r3-manifests/

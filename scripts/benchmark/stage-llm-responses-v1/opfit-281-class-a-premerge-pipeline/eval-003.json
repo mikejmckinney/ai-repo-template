@@ -1,0 +1,100 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-pipeline-canonical-v1",
+  "eval_candidate_id": "eval-003",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.pipeline.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The patch replaces the two hard-coded install.sh/test.sh checks with a for loop over all five explicitly requested glob patterns (*.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, scripts/lib/*.sh). Each existing file is exercised independently via bash -n with pass()/fail(), satisfying per-file reporting and parser-only constraints. Empty unmatched globs are skipped via [ -f \"$f\" ] || continue without mutating shell options in the sourced test.sh context. One point withheld because the bundle contains no executed acceptance output or negative-smoke demonstration that a deliberate syntax error is caught and cleared, as required by acceptance criteria.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 11,
+      "max_subjective_points": 12,
+      "rationale": "Implementation is minimal, well-commented, and confined to a single check file. Comments document why globs are explicit (exclude vendored/generated trees and Bats), why empty patterns are skipped with a file guard instead of nullglob/shopt changes under set -e, and that the check remains parser-only bash -n. Minor deduction for redirecting bash -n stderr to /dev/null, which suppresses syntax-error detail on failure while still detecting errors.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Diff is tightly focused on the required check script with no unrelated file churn, matching constraints to keep a parser-only bash -n check without shellcheck or heavyweight dependencies. One point withheld because the bundle lacks reported bash test.sh output, narrow syntax-check output, role-dispatch evidence required by pipeline expectations, or a documented negative-smoke explanation.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Objective evidence confirms test_wiring (6/6) and bash_n_check_script pass; the diff integrates with existing pass/fail helpers and avoids nullglob side effects when sourced. However, full_test_sh was skipped in bundle-only grading, and no command output or negative-smoke evidence is present, leaving end-to-end verification discipline unconfirmed from bundle artifacts alone.",
+      "uncertain": true
+    },
+    "coordination": {
+      "subjective_points": 3,
+      "max_subjective_points": 10,
+      "rationale": "Pipeline expectations require role-dispatch evidence in the final response (roles invoked, completion status, and per-role changes/decisions). candidate.md contains only the task specification, sanitized metadata, and the diff artifact with no observable multi-role orchestration record. The patch is a monolithic single-file change with no handoff or role-dispatch markers.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 30,
+  "uncertainty_notes": [
+    "full_test_sh was skipped in objective grading; bundle contains no candidate verification output or negative-smoke evidence for bash test.sh.",
+    "No role-dispatch or subagent handoff evidence appears in candidate.md; coordination scored from absence of observable orchestration artifacts only."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "for loop iterates *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh covering all five requested glob locations."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "each matched file invokes pass or fail after bash -n, providing independent per-file reporting."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "[ -f \"$f\" ] || continue skips empty or literal unmatched globs without nullglob or shopt mutation in the sourced test.sh context."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "comments state explicit non-recursive globs exclude vendored/generated trees and *.bats; check remains parser-only bash -n."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "bash -n \"$f\" 2>/dev/null suppresses stderr on syntax failure while still detecting errors."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "only scripts/checks/055-script-syntax.sh changed, indicating focused scope with no doc or process-surface churn."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "pipeline expectations require role-dispatch evidence in the final response; bundle artifacts contain no roles-invoked or handoff record."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "acceptance criteria require bash test.sh verification and negative-smoke test or documented explanation; neither appears in bundle artifacts."
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective scoring proceeds normally."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "required_path:scripts/checks/055-script-syntax.sh passed (4/4)."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_check_script passed (5/5)."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring passed (6/6) confirming check integration with test.sh."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh skipped in bundle-only grading; no full-suite execution evidence available."
+    }
+  ],
+  "graded_at": "2026-06-08T00:07:08Z"
+}

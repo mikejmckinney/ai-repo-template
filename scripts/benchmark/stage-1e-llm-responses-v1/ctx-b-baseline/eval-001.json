@@ -1,0 +1,79 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1e-canonical-v1-ctx-b-baseline",
+  "eval_candidate_id": "eval-001",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 10,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the full exit/result contract inspectable in the diff: CONVERGED and QUIET_ELAPSED exit 0, TIMEOUT exits 2, SHA_CHANGED exits 3, API_ERROR exits 4, with RESULT= and HEAD= emitted via emit_result. Defaults INTERVAL=20, QUIET_WINDOW=360, MAX_WAIT=900 are set; head SHA is checked before and after each snapshot in build_state; allow-list is read from scripts/lib/bot-allowlist.txt; state is memory-only with mktemp cleanup. Bats fixtures exercise converged, quiet-elapsed, sha-changed, timeout, pending-review blocking, dismissed-review non-convergence, comment-only non-convergence, and multiple API_ERROR subtypes\u2014matching the documented pre-#321 semantics in pr-resolve-all.md.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 13,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is repo-consistent (set -euo pipefail, extracted jq filters, umask 077, user-scoped mktemp) with clear header docs and a thorough settle-window section plus dispatch table in pr-resolve-all.md. Allow-list parity is enforced across prompt, workflows, AI_REPO_GUIDE, and agent-pipeline.md. Minor deductions: diff includes unrelated churn (scripts/checks/040-file-content.sh handshake-check rewrite, compliance fixture agents_md_version 19\u219220) and preemptive KL entries in BUGBOT/styleguide beyond the core helper surface, widening maintainability burden slightly despite otherwise clean structure.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Required doc surfaces and companions are synced (pr-resolve-all.md, AI_REPO_GUIDE.md, docs/guides/agent-pipeline.md), test check wiring is added (scripts/checks/160-pr-resolve-all-poll.sh), and a parity bats test locks allow-list mirrors across prompt/workflow/docs. One-point deduction for scope noise: compliance fixture version bumps and AGENTS.md handshake-check changes in 040-file-content.sh are not required by the #326 helper task, though the core deliverable set remains focused.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Verification discipline is strong in the artifact: bash -n and lint-shell-conventions passed per objective-grade.json; test.sh wiring patterns matched; pr-resolve-all-poll.bats provides extensive mock-gh contract coverage (20+ scenarios) plus jq-filters.bats unit tests for bot-allowlist-normalize and pr-poll-state. Although bats execution was skipped in bundle-only objective grading, the authored tests credibly exercise all contract paths rather than smoke-only assertions.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 32,
+  "uncertainty_notes": [],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/pr-resolve-all-poll.sh defines INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, emit_result() stdout contract, and documented exit codes 0/2/3/4 for CONVERGED, QUIET_ELAPSED, TIMEOUT, SHA_CHANGED, API_ERROR."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "build_state fetches head before and after snapshot and returns 3 when pre_sha != post_sha, implementing SHA_CHANGED detection."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats mocks gh GraphQL and asserts RESULT=CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, and API_ERROR paths including MISSING_GH, MISSING_ALLOWLIST, TIMESTAMP_PARSE, and GRAPHQL_HEAD."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": ".github/prompts/pr-resolve-all.md adds Section 5 settle-window helper usage, documents stricter CONVERGED semantics, and preserves documented time-based API_ERROR fallback."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/lib/jq/pr-poll-state.jq excludes DISMISSED from terminal current_head_review and requires APPROVED/CHANGES_REQUESTED/COMMENTED for convergence."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/lib/jq/bot-allowlist-normalize.jq and pr-poll-state.jq extract logic from the shell helper for maintainability."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/040-file-content.sh and compliance valid fixtures change AGENTS.md handshake validation and agents_md_version without being part of the #326 helper request."
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true; bash_n_poll_helper and lint_poll_helper passed; test_wiring_present matched 2/2 patterns."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "scope:compliance_fixtures warned for compliance fixture churn, supporting a minor process-scope deduction."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Task requires helper at scripts/pr-resolve-all-poll.sh, allow-list at scripts/lib/bot-allowlist.txt, prompt/docs updates, exit contract, and shell-based tests\u2014all addressed in the diff."
+    }
+  ],
+  "graded_at": "2026-06-08T02:26:46Z"
+}

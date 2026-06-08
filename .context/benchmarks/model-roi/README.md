@@ -12,7 +12,7 @@
 - **Primary decision metric:** marginal ROI, computed as `score / marginal cost USD`.
 - **Stage 1 effort policy:** target `medium` where selectable; use platform default only where no effort control exists and record the caveat.
 - **Manual fallback:** allowed after a documented headless failure via `make worktree` followed by `make record`; direct GUI agents such as Antigravity need explicit manual-capture evidence.
-- **Phase A merge (issue #374):** harness, rubrics, runbook, and `results/agent-roi-benchmark-results.md` land on `main`; subjective JSON fixtures are preserved on git tag `benchmark/phase-a-artifacts-20260608` and the long-lived `benchmark/roi` branch (see runbook § "Branch and fixture retention"). Branch tip is cleaned for merge (fixtures removed from the PR diff); push the tag to `origin` when opening the PR.
+- **Phase A merge (issue #374):** **merged** (`eb8fff6`, PR #379). Harness, rubrics, runbook, and `results/agent-roi-benchmark-results.md` are on `main`. Subjective JSON fixtures live on tag `benchmark/phase-a-artifacts-20260608` and branch `benchmark/roi` (see runbook § "Branch and fixture retention"). Deferred bot-review items: [`FOLLOW_UPS.md`](./FOLLOW_UPS.md).
 - **Follow-on prompts (same PR, run after merge):** `.github/prompts/agent-pr-prompts-combined-v2.md` (five `main` PRs), `07-implement-gemini-free-paid-routing.md` (`main`), `06-implement-class-c-framework-benchmark.md` (`benchmark/roi`).
 
 ## Companion surfaces

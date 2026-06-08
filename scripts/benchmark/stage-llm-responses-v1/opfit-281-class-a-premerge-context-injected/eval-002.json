@@ -1,0 +1,90 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1c-canonical-v1",
+  "eval_candidate_id": "eval-002",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The patch replaces the two hardcoded install.sh/test.sh checks with loops over all five explicitly requested glob patterns and runs bash -n per matched file with independent pass/fail reporting. Empty unmatched globs are handled safely via [[ -f \"$file\" ]] so literal patterns are skipped. Behavior matches the task contract where inspectable from the diff. One-point deduction: the collection comment claims duplicate avoidance but no deduplication is implemented, so overlapping matches could be checked more than once.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 12,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is focused, readable, and uses existing pass/fail helpers with a clear GLOBS array and two-phase collect-then-check structure. Scope is minimal (single changed file). Deductions for a misleading duplicate-avoidance comment without corresponding logic, stderr suppression on bash -n (inherited but still reduces debuggability), and absence of a brief header rationale documenting the expansion beyond the prior two-file check.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Diff is tightly scoped to scripts/checks/055-script-syntax.sh with no unrelated churn, matching the requested change surface. One-point deduction because the task calls for verification output reporting and a plan/PR no-change doc-sync decision; neither appears in bundle artifacts.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Objective evidence confirms test wiring (6/6) and bash_n_check_script pass, and the diff integrates with existing pass/fail helpers. However, full_test_sh was skipped in bundle-only grading, and the bundle contains no bash test.sh output, no narrow syntax-check output, and no negative-smoke demonstration (introduce syntax error, confirm failure, restore) or documented explanation of why it could not be performed, leaving verification discipline thin despite plausible wiring.",
+      "uncertain": true
+    }
+  },
+  "subjective_total": 28,
+  "uncertainty_notes": [
+    "Bundle lacks verification artifacts required by task acceptance criteria (bash test.sh output, narrow syntax-check output, negative-smoke test or documented explanation); reliability scored conservatively.",
+    "Cannot confirm from bundle alone whether the expanded check would pass against the full repo script tree at runtime because full_test_sh was skipped."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "GLOBS array lists *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh covering all five requested locations"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Inner loop uses [[ -f \"$file\" ]] before appending, skipping literal glob strings when patterns have no matches"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Per-file loop calls bash -n then pass or fail for each collected file, giving independent per-file reporting"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Check remains parser-only bash -n with no shellcheck substitution"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Comment states avoiding duplicates but collection logic has no deduplication step"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "bash -n stderr redirected to /dev/null, suppressing syntax-error detail on failure"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Only scripts/checks/055-script-syntax.sh changed, indicating focused scope"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Acceptance criteria require bash test.sh verification, negative-smoke test or documented explanation, and reporting real command output; none present in bundle artifacts"
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective scoring proceeds normally"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring check passed (6/6 points) confirming check integration"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_check_script passed (5/5)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh skipped in bundle-only grading with no full-suite execution evidence"
+    }
+  ],
+  "graded_at": "2026-06-07T23:09:21Z"
+}

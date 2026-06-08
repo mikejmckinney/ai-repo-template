@@ -1,0 +1,93 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-006",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the full inspectable exit contract: PR-number validation, env defaults (INTERVAL=20, QUIET_WINDOW=360, MAX_WAIT=900), allow-list normalization with [bot] stripping, paginated GraphQL collection for reviews/comments/threads with thread-comment expansion, pre/post head SHA comparison, and poll-loop branches emitting RESULT=/HEAD= for CONVERGED, QUIET_ELAPSED, TIMEOUT, SHA_CHANGED, and API_ERROR with documented ERROR= subtypes. Conservative semantics are evidenced in code and bats mocks (DISMISSED not terminal, current-head PENDING blocks QUIET_ELAPSED, stale old-head pending ignored, comment-only bot activity cannot CONVERGED). One minor contract gap: unresolved-thread detection keys on isResolved==false and bot-root author only, without filtering outdated threads that Phase 4 may treat differently.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 14,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is clear and repo-consistent: set -euo pipefail, umask 077, REPO_ROOT resolution, extracted jq filters under scripts/lib/jq/, dedicated scripts/checks/160-pr-resolve-all-poll.sh, and stderr progress diagnostics. Docs are comprehensively synced across pr-resolve-all.md (helper preference, dispatch table, preserved time-based fallback), AI_REPO_GUIDE.md, agent-pipeline.md, and workflow allow-list lockstep comments; a bats parity test enforces allow-list consistency across five surfaces. Small deduction for maintainability: the poll helper remains a ~478-line monolithic shell script and the ~756-line bats suite is large relative to peers, though justified by coverage.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Diff stays focused on the helper, canonical allow-list, tests/check wiring, and required doc/prompt/companion updates (12 files, no AGENTS.md/PLAN.md/live-state churn). pr-resolve-all.md prefers the deterministic helper while preserving the documented QUIET_WINDOW fallback and explicitly defers the #321 round-marker contract. Workflow edits align bot-detection regexes with the new canonical file rather than introducing unrelated scope.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Verification wiring is strong: scripts/checks/160-pr-resolve-all-poll.sh invokes run_bats_check on scripts/tests/pr-resolve-all-poll.bats; objective test_wiring matched 2/2 patterns and bash -n plus lint passed. The bats suite provides mock-gh fixture coverage for CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, multiple API_ERROR paths, pending/dismissed/stale-head edge cases, host-qualified GH_REPO auth, allow-list parity across prompt/workflow/docs mirrors, and jq unit tests for bot-allowlist-normalize and pr-poll-state. Bats execution was skipped in objective grading, but the mock-based contract coverage is meaningfully broader than thinner peers and is structurally credible from the diff.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 33,
+  "uncertainty_notes": [
+    "bats_poll_helper and full_test_sh were skipped in objective-grade.json; subjective reliability assumes the mock-gh and jq tests are structurally sound but not runtime-verified in this bundle."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, enabling normal subjective scoring rather than fail-closed zeroing."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "emit_result prints RESULT=<value> with optional HEAD=<sha> and extra fields, exiting with codes 0/2/3/4 per the documented contract."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "build_state fetches head before snapshot, paginates reviews/comments/threads, expands paginated thread comments, re-fetches head after snapshot, and returns 3 when pre_sha != post_sha."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Poll loop emits CONVERGED when participating_count>0, all bots terminal, and unresolved_threads==0; QUIET_ELAPSED when pending_csv is empty and quiet_for>=QUIET_WINDOW; TIMEOUT when elapsed>=MAX_WAIT."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-poll-state.jq sets terminal only when current_head_review is true (APPROVED/CHANGES_REQUESTED/COMMENTED, not DISMISSED) and unresolved_root_threads==0."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-poll-state.jq counts unresolved threads with isResolved==false and allow-listed root_author, without an isOutdated filter."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats mock-gh tests assert CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, TIMESTAMP_PARSE, MISSING_GH, MISSING_ALLOWLIST, GRAPHQL_HEAD, ALLOWLIST_PARSE_FAIL, and pending/dismissed/stale-head edge cases."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats includes a parity test asserting bot-allowlist.txt matches prompt, relay workflow, fix workflow, and agent-pipeline.md lists."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md adds settle-window section preferring scripts/pr-resolve-all-poll.sh with result dispatch table and retains documented time-based QUIET_WINDOW fallback on transient API_ERROR."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/lib/jq/bot-allowlist-normalize.jq and pr-poll-state.jq extract inline jq logic; jq-filters.bats adds unit tests for both filters."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/160-pr-resolve-all-poll.sh wires run_bats_check scripts/tests/pr-resolve-all-poll.bats into test.sh."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper skipped; test_wiring matched 2/2 patterns."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Twelve focused files spanning helper, allow-list, jq filters, bats tests, checks, docs, prompt, and workflow allow-list companions."
+    }
+  ],
+  "graded_at": "2026-06-08T01:40:31Z"
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1e-canonical-v1-ctx-b-core-min",
+  "eval_candidate_id": "eval-001",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the required exit/result contract visible in the diff and Bats fixtures: INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, allow-list load with API_ERROR on missing file, head SHA checks before and after each GraphQL snapshot with SHA_CHANGED exit 3, CONVERGED when unresolved allow-listed bot threads are zero and every participating bot has a review whose commit oid equals the current head, QUIET_ELAPSED when the quiet window elapsed since the latest actionable event timestamp, TIMEOUT at MAX_WAIT, API_ERROR on gh/jq/repo failures, and RESULT=/HEAD= stdout emission. One non-fatal gap: the script header KL-01 states thread-only bots should be terminal once all actionable threads are resolved, but terminal membership is derived only from on-head formal reviews, so a participating thread-only bot with all threads resolved would not satisfy all_terminal and would fall through to QUIET_ELAPSED or TIMEOUT instead.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 14,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is clear, maintainable, and repo-consistent: focused 253-line bash entrypoint with documented contract, emit() helper, inline GraphQL plus jq snapshot parsing, canonical bot-allowlist.txt with sync instructions, and companion updates to pr-resolve-all.md (preferred helper, exit-code branching table, preserved time-based fallback, pre-#321 scope note) and AI_REPO_GUIDE.md (tree and table entries). Bats use the repo stub-gh-on-PATH pattern. Minor deduction: jq logic is embedded in the script rather than extracted under scripts/lib/jq/ as used by peer helpers, and KL-01 documents behavior the jq terminal predicate does not implement.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Diff is tightly scoped to seven on-task files (helper, allow-list, bats, smoke check, scripts inventory, required prompt and guide updates) with no forbidden live-state surfaces, no PLAN.md or AGENTS.md churn, explicit pre-#321 boundary, in-memory-only state, and the documented time-based fallback retained per constraints.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Verification wiring is substantive and credible: pr-resolve-all-poll.bats exercises syntax, usage exits, API_ERROR paths, CONVERGED, SHA_CHANGED, QUIET_ELAPSED, TIMEOUT, and non-allowlisted thread exclusion via a stub gh; 141-pr-resolve-all-poll-smoke.sh invokes run_bats_check; 105-scripts.sh inventories new artifacts; objective evidence confirms bash -n, lint, and test_wiring pass. Objective bats_poll_helper and full_test_sh were skipped in bundle-only grading, so full-suite pass is not confirmed here; smoke check does not add doc grep assertions; KL-01 thread-only convergence and GraphQL first:100 pagination edges are untested.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 32,
+  "uncertainty_notes": [],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "hard_gate_pass=true; bash_n_poll_helper and lint_poll_helper pass; test_wiring 6/6 pass; bats_poll_helper and full_test_sh skipped"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "emit() prints RESULT=<value> and HEAD=<sha> when head is known, then exits with the contract code"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Poll loop compares head_before, snap_head, and head_after against INITIAL_HEAD and emits SHA_CHANGED exit 3 on mismatch"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Convergence requires unresolved==0 and every participating allow-listed bot appears in terminal derived from reviews with oid equal to current head"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "KL-01 scope note claims thread-only bots are terminal once all actionable threads are resolved, but terminal list is built only from on-head formal reviews"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "QUIET_ELAPSED fires when latest_event is set and elapsed seconds since that timestamp meet QUIET_WINDOW"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "GraphQL query uses reviews(first:100) and reviewThreads(first:100) without pagination"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md section 5 documents preferred helper invocation, exit/result branching, and preserved sleep-based fallback"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats asserts CONVERGED, SHA_CHANGED, QUIET_ELAPSED, TIMEOUT, API_ERROR, and non-allowlisted human threads ignored"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/141-pr-resolve-all-poll-smoke.sh wires run_bats_check for pr-resolve-all-poll.bats"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Seven changed files limited to helper, allow-list, tests, checks, and required doc surfaces"
+    }
+  ],
+  "graded_at": "2026-06-08T02:28:20Z"
+}

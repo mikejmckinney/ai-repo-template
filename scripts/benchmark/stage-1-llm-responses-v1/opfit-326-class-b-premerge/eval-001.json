@@ -1,0 +1,89 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-001",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the full inspectable exit contract: RESULT=/HEAD= emission, env defaults (INTERVAL=20, QUIET_WINDOW=360, MAX_WAIT=900), head SHA before/after snapshot checks, allow-list loading with [bot] stripping, GraphQL thread/review collection with comment pagination, and CONVERGED/QUIET_ELAPSED/TIMEOUT/SHA_CHANGED/API_ERROR branches. Bats mocks exercise all five result paths. One minor contract gap: unresolved-thread counting keys on root thread author only and does not filter isOutdated threads, so stale outdated threads could block convergence differently than pr-resolve-all Phase 4 intent.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 13,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is clear and repo-consistent (set -euo pipefail, REPO_ROOT resolution, stderr diagnostics, shared check wiring). Docs are comprehensively synced across AI_REPO_GUIDE, prompt surfaces, lib/tests READMEs, and check scripts. Deductions for maintainability: ~377 lines of inline GraphQL/jq logic in one shell file rather than extracted scripts/lib/jq filters used elsewhere, and pr-resolve-all.md asserts the inline list mirrors bot-allowlist.txt without showing inline list edits in the diff hunk.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Diff is focused on the helper, allow-list, tests, checks, and required doc/prompt updates (11 files, no AGENTS.md/PLAN.md/state-surface churn). pr-resolve-all.md and op-issue-workflow.md both prefer the helper while preserving the documented time-based fallback. Companion maintenance is thorough: required-files check, scripts inventory, phase15 invariants, and README tables updated.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "scripts/tests/pr-resolve-all-poll.bats adds five scenario tests with a mock gh covering CONVERGED, paginated QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, and API_ERROR; wired into scripts/checks/115-phase15-invariants.sh. Objective grading skipped bats execution and test_wiring matched only 1/2 patterns (bats present but no dedicated scripts/checks/*pr-resolve*poll script), so pass status is design-credible but not execution-confirmed in the bundle.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 31,
+  "uncertainty_notes": [
+    "bats_poll_helper was skipped in objective-grade.json; subjective reliability score assumes the mock-based tests are structurally sound but not runtime-verified in this bundle."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, enabling normal subjective scoring rather than fail-closed zeroing."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "finish() emits machine-readable stdout with RESULT= and HEAD= plus optional ELAPSED, PARTICIPANTS, UNRESOLVED, LATEST_ACTIONABLE_AT fields."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Main polling loop fetches head_before, collects threads and reviews, re-fetches head_after, exits 3 with RESULT=SHA_CHANGED when they differ."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "CONVERGED (exit 0) when all_terminal is true and unresolved_count is 0; QUIET_ELAPSED (exit 0) when elapsed_quiet >= QUIET_WINDOW; TIMEOUT (exit 2) when elapsed_total >= MAX_WAIT."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "api_error() and prerequisite checks emit RESULT=API_ERROR with exit 4 for missing gh/jq, auth failure, missing allow-list, and GraphQL fetch failures."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Unresolved thread jq filter counts threads where isResolved==false and root comment author matches the bot, without checking isOutdated."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/lib/bot-allowlist.txt defines four normalized bot identities consumed by the helper."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md adds settle-window helper preference and canonical allow-list source pointer while keeping fallback language."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats defines five @test blocks asserting exit codes and RESULT= values for converged, quiet-elapsed, sha-changed, timeout, and api-error scenarios."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/115-phase15-invariants.sh invokes run_bats_check scripts/tests/pr-resolve-all-poll.bats."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper skipped; test_wiring matched 1/2 patterns (3/6 objective reliability points)."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Eleven focused files spanning helper, allow-list, bats tests, checks, and doc/prompt surfaces with no unrelated scope."
+    }
+  ],
+  "graded_at": "2026-06-08T01:36:48Z"
+}

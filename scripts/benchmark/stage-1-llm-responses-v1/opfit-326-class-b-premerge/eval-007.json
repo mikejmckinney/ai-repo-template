@@ -1,0 +1,102 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-007",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 7,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the inspectable exit contract end-to-end: PR-number validation, INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, allow-list loading with [bot] stripping, pre/post head SHA checks, GraphQL snapshot parsing, and RESULT=/HEAD= emissions for CONVERGED, QUIET_ELAPSED, TIMEOUT, SHA_CHANGED, and API_ERROR with documented exit codes. Bats mocks exercise the main branches. One meaningful contract gap: convergence gates on all_terminal && unresolved_count==0 but never requires has_participating>0, so a PR with zero participating allow-listed bots can exit CONVERGED on the first poll. Secondary gaps: reviews/threads/comments are capped at first/last 100 without pagination, and any non-PENDING review on the current head (including DISMISSED) counts as terminal.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 11,
+      "max_subjective_points": 15,
+      "rationale": "Core deliverables are clear and repo-consistent: shell script with logging.sh fallback, documented env defaults, canonical allow-list with normalization comments, pr-resolve-all.md settle-window section preferring the helper while preserving the 360s time-based fallback, and AI_REPO_GUIDE.md entries. Check wiring (010, 105, 142) follows existing patterns. Deductions for a ~300-line monolithic script with inline jq instead of extracted filters, a bats suite wrapped in a legacy _legacy_body harness rather than idiomatic per-case tests, and unrelated diff churn (040-file-content.sh AGENTS handshake workaround; compliance fixture v19\u2192v20 bumps) that dilutes focus.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 3,
+      "max_subjective_points": 5,
+      "rationale": "Required artifacts and doc-sync surfaces are present and the prompt explicitly preserves the time-based fallback while deferring #321. However the diff includes noticeable out-of-scope edits: compliance fixture version bumps and a 040-file-content.sh workaround for AGENTS.md handshake detection, neither required by opfit-326. Objective evidence also flags scope:compliance_fixtures as warn. Core helper/allow-list/test wiring remains focused but process discipline is only partial.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Verification wiring is credible: scripts/checks/142-pr-resolve-all-poll-smoke.sh invokes run_bats_check on scripts/tests/pr-resolve-all-poll.bats; objective bash_n_poll_helper and lint_poll_helper passed and test_wiring matched 2/2. The bats suite mock-tests missing/invalid args, SHA_CHANGED, CONVERGED, QUIET_ELAPSED, and TIMEOUT. Gaps: no mock coverage for API_ERROR paths (missing allowlist, gh/auth/graphql failures), no test for zero-participating-bot premature CONVERGED, and bats_poll_helper was skipped in objective grading so runtime pass is unverified in this bundle.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 25,
+  "uncertainty_notes": [
+    "bats_poll_helper and full_test_sh were skipped in objective-grade.json; subjective reliability assumes mock-gh tests are structurally sound but not runtime-verified in this bundle.",
+    "Production behavior of premature CONVERGED when no bots have participated is inferred from diff logic (has_participating parsed but unused) rather than exercised by tests."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true, enabling normal subjective scoring rather than fail-closed zeroing."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "scope:compliance_fixtures status warn with detail 'compliance fixture churn' indicating out-of-scope edits."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Convergence branch exits 0 with RESULT=CONVERGED when ALL_TERMINAL is true and UNRESOLVED_COUNT equals 0."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "JQ parse emits has_participating but the shell convergence check does not require participating bots before CONVERGED."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "When part_bots is empty, all_terminal evaluates true (empty map length 0), allowing CONVERGED with zero participating bots."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "GraphQL query uses reviews(last:100), reviewThreads(first:100), and comments(last:100) without pagination."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Terminal bots are non-PENDING reviews on the current head commit oid, which includes DISMISSED states."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Exit paths emit RESULT=QUIET_ELAPSED, RESULT=TIMEOUT, RESULT=SHA_CHANGED, and RESULT=API_ERROR with exit codes 0/2/3/4 respectively."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-resolve-all.md adds settle-window section preferring bash scripts/pr-resolve-all-poll.sh and documents 360s time-based fallback."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/040-file-content.sh adds AGENTS_MD_VERSION handshake fallback unrelated to the poll helper task."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Compliance fixtures parent-compliance.yml and subagent-compliance.yml bump agents_md_version 19 to 20."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/tests/pr-resolve-all-poll.bats mock-gh tests assert CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, and invalid-arg API_ERROR paths."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/142-pr-resolve-all-poll-smoke.sh wires run_bats_check scripts/tests/pr-resolve-all-poll.bats into test.sh."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper skipped; test_wiring matched 2/2 patterns."
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "Eleven changed files spanning helper, allow-list, checks, bats tests, prompt, guide, and unrelated compliance fixtures."
+    }
+  ],
+  "graded_at": "2026-06-08T01:41:22Z"
+}

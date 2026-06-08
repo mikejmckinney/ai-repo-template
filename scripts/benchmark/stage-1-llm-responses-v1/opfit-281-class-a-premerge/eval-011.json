@@ -1,0 +1,102 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-011",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The patch replaces the two hard-coded install.sh/test.sh checks with script_syntax_globs listing all five requested patterns (*.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, scripts/lib/*.sh), iterates with bash -n, and reports each matched file independently via pass()/fail(), satisfying the parser-only, explicit-glob, per-file reporting contract. An associative-array seen-guard correctly deduplicates files matched by more than one pattern. Minor deduction because bundle evidence cannot confirm whether expanded coverage would have revealed latent syntax errors requiring fixes elsewhere in the same diff, and stderr is suppressed on bash -n failures.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 13,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is focused, readable, and confined to the single required check file, with clear comments explaining why globs are explicit (avoiding vendored/generated trees and Bats) and how the seen-guard prevents duplicate checks. Deductions for bash -n stderr suppression (2>/dev/null), unquoted inner-loop glob expansion (for file in $_glob), and use of a -f literal-glob guard instead of the nullglob pattern used elsewhere in the repo test harness.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Diff is tightly scoped to scripts/checks/055-script-syntax.sh only; objective process scored 15/15 with no scope noise or forbidden paths. Partial deduction because the bundle contains no verification notes, bash test.sh output, narrow syntax-check output, or documented no-change doc-sync decision called for in the task acceptance criteria.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 2,
+      "max_subjective_points": 5,
+      "rationale": "Objective evidence confirms test wiring (6/6) and bash_n_check_script pass on the changed script, and the diff integrates with existing pass/fail helpers. Bundle lacks full_test_sh execution (skipped in bundle-only grading), no reported command output, and no negative-smoke demonstration or explanation that a deliberate syntax error is caught and cleared.",
+      "uncertain": true
+    }
+  },
+  "subjective_total": 28,
+  "uncertainty_notes": [
+    "Bundle contains no bash test.sh run output, narrow syntax-check output, or negative-smoke demonstration/explanation required by acceptance criteria; reliability scored conservatively.",
+    "Cannot confirm from bundle alone whether expanding coverage would have revealed latent syntax errors elsewhere requiring fixes in the same diff."
+  ],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "script_syntax_globs array lists *.sh, scripts/*.sh, scripts/checks/*.sh, scripts/setup/*.sh, and scripts/lib/*.sh covering all five requested glob locations"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "declare -A _script_syntax_seen deduplicates files matched by more than one glob pattern before bash -n runs"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "nested for loops iterate matched paths; [[ -f \"$file\" ]] || continue skips unmatched literal glob strings for empty-glob safety without nullglob"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "each matched script runs bash -n and calls pass or fail independently, providing per-file reporting through existing test helpers"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "bash -n \"$file\" 2>/dev/null keeps the check parser-only but suppresses stderr on syntax failures"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "comments document explicit glob rationale to exclude vendored/generated trees and Bats files"
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "inner loop uses unquoted $_glob for pathname expansion"
+    },
+    {
+      "bundle_ref": "files-changed.txt",
+      "claim": "only scripts/checks/055-script-syntax.sh changed, indicating focused scope with no unrelated churn"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "task requires bash test.sh verification, negative-smoke test or documented explanation, and reporting real command output\u2014none present in bundle artifacts"
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "sanitized metadata shows work_produced=true and adapter_exit_code=0 but no verification command output"
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true so subjective scoring proceeds normally"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "required_path:scripts/checks/055-script-syntax.sh passed (4/4)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "bash_n_check_script passed (5/5)"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "test_wiring passed (6/6) confirming check integration with test.sh"
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "full_test_sh skipped in bundle-only grading; no full-suite execution evidence available"
+    }
+  ],
+  "graded_at": "2026-06-08T01:27:09Z"
+}

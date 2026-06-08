@@ -1,0 +1,87 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1e-canonical-v1-ctx-b-full-rules",
+  "eval_candidate_id": "eval-001",
+  "grader_id": "cursor-llm-blind-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 9,
+      "max_subjective_points": 10,
+      "rationale": "The helper implements the full exit contract (CONVERGED, QUIET_ELAPSED, SHA_CHANGED, TIMEOUT, API_ERROR) with RESULT=/HEAD= stdout, INTERVAL/QUIET_WINDOW/MAX_WAIT defaults, allow-list loading, pre/post head SHA checks, memory-only state, and conservative CONVERGED semantics (non-pending current-head review per participating bot, zero unresolved bot threads). Bats fixtures exercise pending-review blocking, dismissed-review non-convergence, stale old-head pending ignored, comment-only non-convergence, and SHA-changed mid-snapshot paths. One minor doc gap: the script emits ERROR=ALLOWLIST_PARSE_FAIL but the prompt dispatch table omits that subtype among repo-local escalation errors.",
+      "uncertain": false
+    },
+    "quality": {
+      "subjective_points": 14,
+      "max_subjective_points": 15,
+      "rationale": "Implementation is repo-consistent: set -euo pipefail shell, extracted jq filters (bot-allowlist-normalize.jq, pr-poll-state.jq), clear header contract comments, paginated GraphQL fetching, and stderr progress logging. Docs and discoverability are synced across AI_REPO_GUIDE.md, pr-resolve-all.md (settle-window section plus time-based fallback preserved), and agent-pipeline.md. Canonical bot-allowlist.txt is mirrored into workflow regex lists with an explicit parity Bats test. Minor deduction for scope/heft: two workflow files updated and the poll script plus Bats harness are large relative to the minimal deliverable.",
+      "uncertain": false
+    },
+    "process": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Diff stays focused on the helper, allow-list, test/check wiring (scripts/checks/160-pr-resolve-all-poll.sh), and required prompt/doc companions. Constraints honored: no #321 marker contract, no new live-state surface, shell-based style matching existing scripts, and documented time-based fallback retained. Allow-list synchronization across prompt, docs, and workflows reflects doc-maintenance discipline rather than unrelated churn.",
+      "uncertain": false
+    },
+    "reliability": {
+      "subjective_points": 4,
+      "max_subjective_points": 5,
+      "rationale": "Verification wiring is substantive: dedicated Bats file with mock gh/jq covering all RESULT paths plus jq-filters.bats unit tests for the extracted filters; test.sh integration via run_bats_check is present. Objective grading skipped bats execution and full test.sh, so pass status is inferred from test design rather than executed evidence in the bundle. Test content is detailed and non-trivial, warranting high but not maximum subjective credit.",
+      "uncertain": false
+    }
+  },
+  "subjective_total": 32,
+  "uncertainty_notes": [],
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/pr-resolve-all-poll.sh defines exit codes 0/2/3/4 for CONVERGED, QUIET_ELAPSED, TIMEOUT, SHA_CHANGED, and API_ERROR with emit_result printing RESULT= and HEAD=."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "build_state fetches head before and after review/comment/thread snapshots and returns exit 3 when pre_sha != post_sha."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "pr-poll-state.jq marks terminal only when current_head_review is true (APPROVED/CHANGES_REQUESTED/COMMENTED, not DISMISSED) and unresolved_root_threads == 0."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "QUIET_ELAPSED is gated on empty pending_csv and quiet_for >= QUIET_WINDOW; CONVERGED requires participating_count > 0 and all bots terminal."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Bats test 'does not treat a DISMISSED review as current-head convergence' expects exit 2 and RESULT=TIMEOUT."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Bats test 'does not return RESULT=CONVERGED for comment-only bot activity on a backdated head' expects TIMEOUT, enforcing stricter CONVERGED than quiet-window fallback."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/lib/bot-allowlist.txt is the canonical normalized bot identity list read via bot-allowlist-normalize.jq."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": ".github/prompts/pr-resolve-all.md adds settle-window section preferring scripts/pr-resolve-all-poll.sh and preserves documented time-based QUIET_WINDOW fallback."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "scripts/checks/160-pr-resolve-all-poll.sh wires run_bats_check scripts/tests/pr-resolve-all-poll.bats into test.sh."
+    },
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "emit_result uses ERROR=ALLOWLIST_PARSE_FAIL on jq normalization failure, which is absent from the prompt's API_ERROR dispatch error-subtype table."
+    },
+    {
+      "bundle_ref": "objective-grade.json",
+      "claim": "hard_gate_pass is true; bash_n_poll_helper and lint_poll_helper passed; bats_poll_helper and full_test_sh were skipped."
+    },
+    {
+      "bundle_ref": "candidate.md",
+      "claim": "Task requires memory-only state, pre-#321 helper only, shell implementation, and focused diff on helper/allow-list/tests/docs."
+    }
+  ],
+  "graded_at": "2026-06-08T02:31:04Z"
+}

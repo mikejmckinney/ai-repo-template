@@ -1,0 +1,42 @@
+{
+  "schema_version": "benchmark-subjective-grade.v1",
+  "score_set_id": "stage-1-canonical-v1",
+  "eval_candidate_id": "eval-004",
+  "grader_id": "results-md-legacy-v1",
+  "grader_prompt_id": "model-roi-grader-v1",
+  "rubric_id": "rubric.v1",
+  "categories": {
+    "correctness": {
+      "subjective_points": 2,
+      "max_subjective_points": 10,
+      "rationale": "Substantive shell helper, but capped/no pagination and weaker API-error handling."
+    },
+    "quality": {
+      "subjective_points": 7,
+      "max_subjective_points": 15,
+      "rationale": "Substantive shell helper, but capped/no pagination and weaker API-error handling."
+    },
+    "process": {
+      "subjective_points": 0,
+      "max_subjective_points": 5,
+      "rationale": "Substantive shell helper, but capped/no pagination and weaker API-error handling."
+    },
+    "reliability": {
+      "subjective_points": 5,
+      "max_subjective_points": 5,
+      "rationale": "Substantive shell helper, but capped/no pagination and weaker API-error handling."
+    }
+  },
+  "subjective_total": 14,
+  "citations": [
+    {
+      "bundle_ref": "diff.patch",
+      "claim": "Substantive shell helper, but capped/no pagination and weaker API-error handling."
+    },
+    {
+      "bundle_ref": "objective-grade.json#evidence",
+      "claim": "Objective automation applied before legacy subjective residual mapping."
+    }
+  ],
+  "graded_at": "2026-06-06T23:53:23Z"
+}
