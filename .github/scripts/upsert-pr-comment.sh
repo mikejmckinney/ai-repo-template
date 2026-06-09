@@ -40,11 +40,12 @@ comment_id=$(
 )
 
 if [[ -n "$comment_id" ]]; then
+  # -F (typed field) reads @file; -f (raw field) posts the literal "@/path" string.
   gh api --method PATCH "repos/${REPO}/issues/comments/${comment_id}" \
-    -f body=@"$BODY_FILE" >/dev/null
+    -F body=@"$BODY_FILE" >/dev/null
   echo "Updated issue comment ${comment_id} on PR #${PR}"
 else
   gh api --method POST "repos/${REPO}/issues/${PR}/comments" \
-    -f body=@"$BODY_FILE" >/dev/null
+    -F body=@"$BODY_FILE" >/dev/null
   echo "Created issue comment on PR #${PR}"
 fi

@@ -49,6 +49,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "implementation-complete missing from $LABELS_SCRIPT"
   fi
 
+  if grep -qE '\-F body=@' "$UPSERT_SCRIPT" 2>/dev/null \
+    && ! grep -qE '\-f body=@' "$UPSERT_SCRIPT" 2>/dev/null; then
+    pass "upsert-pr-comment uses gh api -F body=@ (not -f, which posts literal @path)"
+  else
+    fail "upsert-pr-comment.sh must use -F body=@ for file-loaded comment bodies"
+  fi
+
   if bash -n "$UPSERT_SCRIPT" 2>/dev/null && bash -n "$RUN_SCRIPT" 2>/dev/null; then
     pass "advisory shell scripts have valid bash syntax"
   else
