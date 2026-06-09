@@ -7,6 +7,7 @@
 echo "Checking workflow files..."
 
 WORKFLOW_FILES=(
+  ".github/workflows/agent-advisory-review.yml"
   ".github/workflows/agent-assign-copilot.yml"
   ".github/workflows/agent-auto-merge.yml"
   ".github/workflows/agent-auto-ready.yml"

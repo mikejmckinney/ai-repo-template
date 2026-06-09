@@ -1,0 +1,103 @@
+# Agent — advisory review snapshot (opt-in via ai-review:live)
+# -----------------------------------------------------------
+# Non-blocking rolling advisory review for draft/WIP PRs. Posts or updates
+# one sticky issue comment (marker: <!-- ai-advisory-review:v1 -->).
+# Does NOT submit formal PR reviews, apply claude-fix, or push commits.
+#
+# Providers (ADVISORY_REVIEW_PROVIDER repo variable, default auto):
+#   - cursor — Cursor SDK + composer-2.5 (CURSOR_API_KEY)
+#   - gemini — Gemini API (GEMINI_API_KEY or GOOGLE_API_KEY)
+#   - auto   — prefer Cursor, else Gemini
+#
+# Separate from agent-review-on-push.yml (Gemini/Copilot formal re-review nudges).
+
+name: Agent — advisory review snapshot
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: advisory-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  advisory-review:
+    if: >-
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'ai-review:live') &&
+      !contains(github.event.pull_request.labels.*.name, 'smoke-test') &&
+      (
+        github.event.action != 'labeled' ||
+        github.event.label.name == 'ai-review:live'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+      CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
+      GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-2.5-flash' }}
+      FULL_MODE: ${{ contains(github.event.pull_request.labels.*.name, 'ai-review:full') }}
+    steps:
+      - name: Verify provider secrets
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+        run: |
+          has_cursor=0 has_gemini=0
+          [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
+          [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
+          case "$PROVIDER" in
+            cursor)
+              [[ "$has_cursor" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=cursor but CURSOR_API_KEY is missing"; exit 1; }
+              ;;
+            gemini)
+              [[ "$has_gemini" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
+              ;;
+            auto)
+              [[ "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
+                echo "::error::Advisory review needs CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
+                echo "::error::Add at least one: Settings → Secrets and variables → Actions."
+                exit 1
+              }
+              ;;
+            *)
+              echo "::error::Unknown ADVISORY_REVIEW_PROVIDER=$PROVIDER"
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Setup Node.js (Cursor SDK path)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run advisory review
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          chmod +x .github/scripts/*.sh .github/scripts/*.py 2>/dev/null || true
+          bash .github/scripts/run-advisory-review.sh \
+            "${{ github.event.pull_request.number }}" \
+            "${{ github.event.pull_request.head.sha }}" \
+            "${FULL_MODE}"

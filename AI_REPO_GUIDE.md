@@ -166,6 +166,7 @@ bash install.sh
     │   ├── op-issue-workflow.md  # OP end-to-end issue to merge playbook
     │   ├── outcome-validation-smoke.md # No-edit Judge/Critic outcome-theater smoke prompt
     │   ├── pre-push-review.md    # Critic/lint/test pre-push checklist prompt
+    │   ├── pr-advisory-review.md # Non-blocking advisory snapshot (ai-review:live)
     │   ├── pr-resolve-all.md     # PR-review resolution procedure
     │   └── repo-onboarding.md    # Repo onboarding workflow prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
@@ -263,6 +264,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/prompts/op-issue-workflow.md` | Parent Orchestrator issue-to-merge playbook for the default agent |
 | `.github/prompts/outcome-validation-smoke.md` | No-edit smoke prompt that verifies Judge/Critic catch outcome-theater PRs (generic-verification-only and empty-outcome-checklist failure modes) — see issue #311 |
 | `.github/prompts/pre-push-review.md` | Run Critic + lint + `./test.sh` against the working-tree diff before push on non-trivial changes |
+| `.github/prompts/pr-advisory-review.md` | Non-blocking four-lens advisory snapshot (`agent-advisory-review.yml`, `ai-review:live`) |
 | `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 

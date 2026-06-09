@@ -109,6 +109,15 @@ With workflow approval disabled (see Setup below), these fire immediately on PR 
 
 **Re-review on push** — `agent-review-on-push.yml` nudges Gemini and Copilot to re-review after every push to an open non-draft PR. Enabled by default; set repo variable `REVIEW_ON_PUSH=false` to disable. See "Alternative: Copilot ruleset" below for a server-side option that did not work for this repo.
 
+**Advisory review snapshots (opt-in)** — `agent-advisory-review.yml` posts a single sticky, non-blocking advisory comment while implementation continues. Apply `ai-review:live` to enable (works on **draft** PRs). The workflow updates one comment per PR (`<!-- ai-advisory-review:v1 -->`) on each qualifying push — it does **not** submit a formal PR review, apply `claude-fix`, or push commits. Add `ai-review:full` for a deeper pass (larger diff context). Final feedback consolidation (`implementation-complete`, PR 3) and post-merge retros (`retro-review`, PR 4) are separate workflows.
+
+| Provider | Secret | Default model | Selection |
+|---|---|---|---|
+| Cursor SDK | `CURSOR_API_KEY` | `composer-2.5` (`CURSOR_ADVISORY_MODEL` var) | Preferred when `ADVISORY_REVIEW_PROVIDER=auto` and key is set |
+| Gemini API | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-2.5-flash` (`GEMINI_ADVISORY_MODEL` var; override e.g. `gemini-3-flash-preview`) | Used when Cursor key absent or `ADVISORY_REVIEW_PROVIDER=gemini` |
+
+Repo variable `ADVISORY_REVIEW_PROVIDER`: `auto` (default), `cursor`, or `gemini`.
+
 **Manual override** — anyone (agent or human) can comment `/gemini review` directly on a PR to force a fresh Gemini review. This is documented as a belt-and-suspenders escape hatch; the workflow is the primary mechanism.
 
 **Alternative: Copilot ruleset** — GitHub offers a server-side ruleset (Settings → Rules → Rulesets → "Automatically request Copilot code review") that should re-request Copilot on every push. We tried it on this repo (April 2026) and it did **not** fire on push. Keeping it enabled is harmless (worst case, Copilot reviews twice if GitHub later fixes it). If the ruleset works for your fork, you can drop the Copilot half of `agent-review-on-push.yml`.
@@ -272,6 +281,8 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 |--------|-------------|-----------------|
 | `CLAUDE_PAT` | Agent workflows that call `gh` (assignment, auto-merge, auto-ready, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
 | `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
+| `CURSOR_API_KEY` | `agent-advisory-review.yml` (Cursor SDK path; preferred when `ADVISORY_REVIEW_PROVIDER=auto`) | API key from Cursor dashboard / SDK docs |
+| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `agent-advisory-review.yml` (Gemini API path) | Google AI Studio / Gemini API key |
 | `SANDBOX_BOOTSTRAP_TOKEN` | Sandbox verification steps (force-push sandbox `main`, push branch, `gh pr create/merge` on the sandbox repo). Used by agents running in workflows; maintainers running locally pass the same token as `BOOTSTRAP_GH_TOKEN` env var instead. | Classic PAT, `repo` + `workflow` scopes. Must be classic — fine-grained tokens cannot push `.github/workflows/` files without special account-level scope that typically isn't available until after the sandbox repo is created. See `docs/guides/sandbox-verification.md`. |
 
 **Two ways to provide them**, in order of preference for users running multiple derived repos:
@@ -290,6 +301,9 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `REVIEW_ON_PUSH` | on (unset = on) | When set to literal `false`, disables `agent-review-on-push.yml` nudges to Gemini + Copilot after each push to an open non-draft PR. Any other value (including unset) keeps it on. |
 | `MAX_COPILOT_CONCURRENT` | `3` | Max concurrent Copilot sessions (open `copilot/` PRs + `copilot:in-progress` issues). |
 | `MAX_COPILOT_DAILY` | `10` | Max Copilot assignments in a rolling 24-hour window. Spend thresholds: informational log at 50%, warning comment on issue at 75%, hard pause on new assignments at 90% (`copilot:budget-paused` label applied; bypassed by `cap-override` label on the issue — same label on a PR bypasses the round cap, see `PR_RESOLVE_MAX_ROUNDS` below), `copilot:daily-cap-hit` label at 100%. |
+| `ADVISORY_REVIEW_PROVIDER` | `auto` | Advisory review runtime: `auto` (prefer Cursor, else Gemini), `cursor`, or `gemini`. |
+| `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Model id for Cursor SDK advisory snapshots. |
+| `GEMINI_ADVISORY_MODEL` | `gemini-2.5-flash` | Gemini model id for advisory snapshots (override e.g. `gemini-3-flash-preview`). |
 | `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. **Also caps `agent-review-on-push.yml`** so Gemini/Copilot push-nudges stop firing after the same N rounds — without this, every fix-commit re-triggers stateless reviewers that re-flag already-deferred findings (PR #246 saw this across 13 rounds). Per-PR override: `cap-override` label on the PR (unbounded; bypasses both the agent-side cap and the push-nudge cap) or `@<agent> cap-override N` comment on the PR (N rounds). Manual `/gemini review` comments by humans are never gated. Only raise the default from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 ### 1. Copilot subscription
@@ -354,6 +368,13 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `outcome-validated` | `#0E8A16` (green) | Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014) |
 | `cap-override` | `#FBCA04` (amber) | Bypass max-round cap (`pr-resolve-all.md`) and 90% daily spend pause (`agent-assign-copilot.yml`) |
 | `agent-suggested` | `#BFD4F2` (light blue) | Agent-surfaced opportunity; see process_opportunity_feedback rule. |
+| `ai-review:live` | `#1D76DB` (blue) | Enable rolling non-blocking advisory review snapshots (`agent-advisory-review.yml`; draft PRs OK) |
+| `ai-review:full` | `#5319E7` (purple) | Deeper advisory review pass on this PR |
+| `implementation-complete` | `#0E8A16` (green) | Implementation finished; triggers final feedback consolidation (PR 3) |
+| `retro-review` | `#FBCA04` (amber) | Opt merged PR into post-merge retrospective (PR 4) |
+| `retro:adr` | `#C5DEF5` (light blue) | Post-merge retro may propose ADR follow-ups |
+| `retro:context-pack` | `#BFD4F2` (light blue) | Post-merge retro may propose context-pack follow-ups |
+| `review:blocking-ai` | `#D93F0B` (red-orange) | Human escalation: named AI finding should block until resolved |
 
 **Resolution-path selection:**
 
@@ -647,7 +668,9 @@ for Gemini to finish posting.
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
 | `.github/workflows/agent-relay-reviews.yml` | Copilot relay (opt-in via `copilot-relay` label); also hosts the `phase4-fallback` job that retries Copilot's `⚠️ Errored` Phase 4 mutations under `CLAUDE_PAT` (see ADR-008) | No (uses CLAUDE_PAT for posting + fallback mutations) |
 | `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready; drains Copilot queue after merge | No (uses CLAUDE_PAT) |
+| `.github/workflows/agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (opt-in via `ai-review:live`); sticky issue comment only; Cursor SDK or Gemini API | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
 | `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-out via repo variable `REVIEW_ON_PUSH=false` | Yes (CLAUDE_PAT for Gemini comment author identity) |
+| `.github/prompts/pr-advisory-review.md` | Four-lens advisory snapshot prompt (Analyst/Judge/Critic/Code) | Used by `agent-advisory-review.yml` |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |
 | `.github/workflows/ci-tests.yml` | CI checks | No |
 | `.gemini/config.yaml` | Gemini review config | No (free GitHub App) |
