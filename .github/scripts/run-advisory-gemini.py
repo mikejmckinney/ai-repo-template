@@ -20,8 +20,9 @@ def main() -> int:
         print("GEMINI_API_KEY or GOOGLE_API_KEY required", file=sys.stderr)
         return 1
 
-    model = os.environ.get("GEMINI_ADVISORY_MODEL", "gemini-2.5-flash")
+    model = os.environ.get("GEMINI_ADVISORY_MODEL", "gemini-3.5-flash")
     prompt = open(prompt_path, encoding="utf-8").read()
+    print(f"Gemini advisory review: model={model}", file=sys.stderr)
 
     url = (
         f"https://generativelanguage.googleapis.com/v1beta/models/"
@@ -45,11 +46,16 @@ def main() -> int:
         print(f"Gemini API error {exc.code}: {err}", file=sys.stderr)
         return 1
 
-    try:
-        text = body["candidates"][0]["content"]["parts"][0]["text"]
-    except (KeyError, IndexError, TypeError) as exc:
-        print(f"Unexpected Gemini response shape: {exc}\n{body}", file=sys.stderr)
+    candidates = body.get("candidates") or []
+    if not candidates:
+        print(f"Gemini returned no candidates: {body}", file=sys.stderr)
         return 1
+    parts = (candidates[0].get("content") or {}).get("parts") or []
+    if not parts or "text" not in parts[0]:
+        block = candidates[0].get("finishReason", "unknown")
+        print(f"Gemini returned no text (finishReason={block}): {body}", file=sys.stderr)
+        return 1
+    text = parts[0]["text"]
 
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(text)

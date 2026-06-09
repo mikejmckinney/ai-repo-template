@@ -19,7 +19,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
+  pull-requests: write
   issues: write
 
 concurrency:
@@ -40,17 +40,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      GH_TOKEN: ${{ github.token }}
       GITHUB_REPOSITORY: ${{ github.repository }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
-      GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-2.5-flash' }}
+      GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       FULL_MODE: ${{ contains(github.event.pull_request.labels.*.name, 'ai-review:full') }}
     steps:
-      - name: Verify provider secrets
+      - name: Verify required secrets
         env:
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
@@ -59,6 +59,9 @@ jobs:
           has_cursor=0 has_gemini=0
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
+          if [[ -z "${CLAUDE_PAT:-}" ]]; then
+            echo "::notice::CLAUDE_PAT unset; PR comment API will use GITHUB_TOKEN (set CLAUDE_PAT if comment POST returns 403)."
+          fi
           case "$PROVIDER" in
             cursor)
               [[ "$has_cursor" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=cursor but CURSOR_API_KEY is missing"; exit 1; }
@@ -92,10 +95,21 @@ jobs:
 
       - name: Run advisory review
         env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
+          # Prefer CLAUDE_PAT for issue-comment POST/PATCH — matches agent-review-on-push
+          # and avoids org policies that restrict GITHUB_TOKEN write on pull_request.
+          if [[ -n "${CLAUDE_PAT:-}" ]]; then
+            export GH_TOKEN="$CLAUDE_PAT"
+            echo "Using CLAUDE_PAT for gh PR comment API."
+          else
+            export GH_TOKEN="$GITHUB_TOKEN"
+            echo "Using GITHUB_TOKEN for gh PR comment API (CLAUDE_PAT unset)."
+          fi
           chmod +x .github/scripts/*.sh .github/scripts/*.py 2>/dev/null || true
           bash .github/scripts/run-advisory-review.sh \
             "${{ github.event.pull_request.number }}" \

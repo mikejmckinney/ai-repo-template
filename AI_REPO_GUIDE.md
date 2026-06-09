@@ -179,6 +179,7 @@ bash install.sh
         ├── agent-assign-copilot.yml
         ├── agent-auto-merge.yml
         ├── agent-auto-ready.yml
+        ├── agent-advisory-review.yml
         ├── agent-fix-reviews.yml
         ├── agent-multi-dispatch.yml
         ├── agent-parallelism-report.yml
@@ -361,6 +362,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `agent-assign-copilot.yml` | Gated Copilot PR assignment for `copilot:ready` issues | Set `CLAUDE_PAT` secret |
 | `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved), with default bounded bot-review settle window and `auto-merge-fast` bypass label | Set `CLAUDE_PAT` secret |
 | `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes | None |
+| `agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (`ai-review:live`); Cursor SDK or Gemini API | `CURSOR_API_KEY` and/or `GEMINI_API_KEY` |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` secret |
 | `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier | Set `CLAUDE_PAT` secret |
 | `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR | None |

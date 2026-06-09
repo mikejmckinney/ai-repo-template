@@ -36,7 +36,7 @@ fi
 
 comment_id=$(
   gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-    --jq ".[] | select(.body | contains(\"${MARKER}\")) | .id" 2>/dev/null | head -1
+    --jq ".[] | select(.body | contains(\"${MARKER}\")) | .id" | head -1
 )
 
 if [[ -n "$comment_id" ]]; then

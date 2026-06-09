@@ -8,6 +8,8 @@ agent: agent
 You are producing a **single advisory PR comment** for an in-progress pull request.
 Combine four review lenses in one pass. This is **not** a formal PR review and **must not** block merge.
 
+The automation appends **repo startup context** (`AGENTS.md`, `process_session_start.md`, rule catalog) and **PR diff context** below this prompt. Apply those rules when judging gates and orchestration-layer changes.
+
 ## Analyst lens
 
 - Is the PR still aligned to the linked issue outcome?

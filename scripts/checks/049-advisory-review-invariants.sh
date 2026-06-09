@@ -25,6 +25,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "advisory workflow missing ai-review:live gate"
   fi
 
+  if grep -q 'pull-requests: write' "$ADVISORY_WORKFLOW" 2>/dev/null; then
+    pass "advisory workflow grants pull-requests: write for PR comment API"
+  else
+    fail "advisory workflow missing pull-requests: write (PR comment POST 403 risk)"
+  fi
+
   if grep -q "$MARKER" "$ADVISORY_PROMPT" 2>/dev/null; then
     pass "advisory prompt defines sticky marker"
   else
