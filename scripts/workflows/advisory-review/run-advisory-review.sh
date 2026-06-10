@@ -32,6 +32,7 @@ parse_positive_int() {
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MARKER='<!-- ai-advisory-review:v1 -->'
+MARKER_TOKEN='ai-advisory-review:v1'
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
@@ -96,8 +97,7 @@ EOF
 existing_snapshot=""
 existing_snapshot=$(
   gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-    --jq '[.[] | select(.body | contains($marker))] | last | .body // empty' \
-    --arg marker "$MARKER" -r 2>/dev/null || true
+    --jq "[.[] | select(.body | contains(\"${MARKER_TOKEN}\"))] | last | .body // empty" 2>/dev/null || true
 )
 
 changed_file_count="$(wc -l <"$WORKDIR/changed-files.txt" | tr -d ' ')"
