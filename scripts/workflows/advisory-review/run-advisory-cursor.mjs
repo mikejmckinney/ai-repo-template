@@ -27,6 +27,11 @@ const result = await Agent.prompt(prompt, {
   local: { cwd: process.cwd() },
 });
 
+const observedModel = result?.model?.id ?? "unknown";
+console.error(
+  `Cursor advisory review: requested=${modelId} observed=${observedModel} status=${result?.status ?? "unknown"}`,
+);
+
 const text = result?.result ?? "";
 if (!text.trim()) {
   console.error(`Cursor agent returned empty result (status=${result?.status ?? "unknown"})`);
