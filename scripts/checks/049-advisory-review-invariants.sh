@@ -71,20 +71,20 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "advisory prompt must pointer-link handshake/receipt to process_session_start.md without duplicating the template"
   fi
 
-  if grep -qE '^ai-review:live\|' "$LABELS_SCRIPT" 2>/dev/null; then
+  if grep -q '^ai-review:live|' "$LABELS_SCRIPT" 2>/dev/null; then
     pass "ai-review:live declared in label setup"
   else
     fail "ai-review:live missing from $LABELS_SCRIPT"
   fi
 
-  if grep -qE '^implementation-complete\|' "$LABELS_SCRIPT" 2>/dev/null; then
+  if grep -q '^implementation-complete|' "$LABELS_SCRIPT" 2>/dev/null; then
     pass "implementation-complete declared in label setup (PR 3 hook)"
   else
     fail "implementation-complete missing from $LABELS_SCRIPT"
   fi
 
-  if grep -qE '\-F body=@' "$UPSERT_SCRIPT" 2>/dev/null \
-    && ! grep -qE '\-f body=@' "$UPSERT_SCRIPT" 2>/dev/null; then
+  if grep -qF -- '-F body=@' "$UPSERT_SCRIPT" 2>/dev/null \
+    && ! grep -qF -- '-f body=@' "$UPSERT_SCRIPT" 2>/dev/null; then
     pass "upsert-pr-comment uses gh api -F body=@ (not -f, which posts literal @path)"
   else
     fail "upsert-pr-comment.sh must use -F body=@ for file-loaded comment bodies"
@@ -106,5 +106,16 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     warn "shellcheck not installed; skipped advisory script lint"
   fi
 
+  if grep -q 'ai-review:full' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q "github.event.label.name == 'ai-review:full'" "$ADVISORY_WORKFLOW" 2>/dev/null; then
+    pass "advisory workflow re-runs when ai-review:full is labeled (with ai-review:live)"
+  else
+    fail "advisory workflow must re-run on ai-review:full label when ai-review:live is present"
+  fi
+
   echo ""
+  return 0
 fi
+
+echo "049-advisory-review-invariants.sh is sourced by test.sh only" >&2
+exit 1

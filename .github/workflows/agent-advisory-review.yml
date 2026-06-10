@@ -36,7 +36,11 @@ jobs:
       !contains(github.event.pull_request.labels.*.name, 'smoke-test') &&
       (
         github.event.action != 'labeled' ||
-        github.event.label.name == 'ai-review:live'
+        github.event.label.name == 'ai-review:live' ||
+        (
+          github.event.label.name == 'ai-review:full' &&
+          contains(github.event.pull_request.labels.*.name, 'ai-review:live')
+        )
       )
     runs-on: ubuntu-latest
     timeout-minutes: 20

@@ -96,8 +96,14 @@ EOF
 existing_snapshot=""
 existing_snapshot=$(
   gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-    --jq ".[] | select(.body | contains(\"${MARKER}\")) | .body" 2>/dev/null | head -1
+    --jq '[.[] | select(.body | contains($marker))] | last | .body // empty' \
+    --arg marker "$MARKER" -r 2>/dev/null || true
 )
+
+changed_file_count="$(wc -l <"$WORKDIR/changed-files.txt" | tr -d ' ')"
+if [[ "$full_diff_bytes" -eq 0 && "$changed_file_count" -gt 0 ]]; then
+  echo "::warning::Advisory diff is empty (${changed_file_count} changed files listed) — review quality may be degraded (fetch/sha mismatch?)" >&2
+fi
 
 prompt_file="$WORKDIR/prompt.md"
 {
@@ -247,6 +253,10 @@ case "$PROVIDER" in
     ;;
 esac
 
+if [[ "$PROVIDER" == "antigravity" ]]; then
+  diff_coverage_line="Diff coverage: \`${full_diff_bytes}/${full_diff_bytes}\` bytes via antigravity sources; prompt excerpt truncated: \`${truncated_word}\`"
+fi
+
 # Ensure marker present (model may omit).
 if ! grep -q "$MARKER" "$out_file"; then
   {
@@ -289,8 +299,8 @@ ${diff_coverage_line}
 EOF
   header_bytes="$(wc -c <"$header_file" | tr -d ' ')"
   body_budget=$((comment_limit - header_bytes))
-  if [[ "$body_budget" -lt 1000 ]]; then
-    body_budget=1000
+  if [[ "$body_budget" -lt 0 ]]; then
+    body_budget=0
   fi
   grep -v 'ai-advisory-review:v1' "$out_file" >"$WORKDIR/body-stripped.md" || cp "$out_file" "$WORKDIR/body-stripped.md"
   {
