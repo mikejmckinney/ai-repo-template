@@ -41,6 +41,13 @@ chore:no-plan|EDEDED|Exempt this issue/PR from the plan-as-comment requirement (
 outcome-validated|0E8A16|Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)
 cap-override|FBCA04|Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)
 agent-suggested|BFD4F2|Agent-surfaced opportunity; see process_opportunity_feedback rule.
+ai-review:live|1D76DB|Enable rolling non-blocking advisory review snapshots (draft/WIP OK; agent-advisory-review.yml)
+ai-review:full|5319E7|Request deeper advisory review depth on this PR
+implementation-complete|0E8A16|Implementation finished; triggers final feedback consolidation (agent-review-finalize.yml, PR 3)
+retro-review|FBCA04|Opt merged PR into post-merge retrospective review (PR 4)
+retro:adr|C5DEF5|Post-merge retro may propose ADR follow-up issues
+retro:context-pack|BFD4F2|Post-merge retro may propose context-pack follow-up issues
+review:blocking-ai|D93F0B|Human escalation: an AI advisory finding should block until resolved
 LABEL_SPECS
 )
 _PIPELINE_LABELS=$(printf '%s\n' "$_PIPELINE_LABEL_SPECS" | awk -F'|' 'NF { printf "%s%s", sep, $1; sep=", " } END { print "" }')

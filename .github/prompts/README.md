@@ -28,6 +28,8 @@ lists come after, not before.
   `mirror-postmortem.md`, `pre-push-review.md`, `multi-model-consensus-plan.md`,
   `instruction-compliance-smoke.md`.
   These describe procedures, not deliverables, and don't require pre-flight.
+  - **`pr-advisory-review.md`** — non-blocking four-lens advisory snapshot for
+    draft/WIP PRs when `ai-review:live` is applied (`agent-advisory-review.yml`).
   - **`pre-push-review.md`** — Critic + lint + `./test.sh` summary against
     the working-tree diff before push. SHOULD per AGENTS.md →
     "Work style"; MUST for the DevOps role on shell/workflow changes
@@ -82,8 +84,8 @@ lists come after, not before.
     - PR 1 (context decomposition): **merged** via Phase A / AGENTS.md v22.
     - PR 1B (rules consolidation + legacy redirect retirement): **merged** (#380 @
       `864aac1`; AGENTS v23, redirect guide, rule-file slimming, check `048`).
-    - PR 2 (advisory review): next — `feature/advisory-review-mode` per
-      `02-advisory-review-mode.md` (Cursor Composer 2.5 + Gemini Flash preferred).
+    - PR 2 (advisory review): `feature/advisory-review-mode`
+      (`agent-advisory-review.yml`, `scripts/workflows/advisory-review/`, Cursor + Antigravity + Gemini).
     - PR 3–4 (final feedback, post-merge retro): pending.
 
 ### Postmortem feedback loop

@@ -19,7 +19,7 @@ If startup cannot be completed, do not perform repo-changing work. Explain what 
 
 ## Session handshake (read-receipt)
 
-When you have read this file at the start of a session, open your first substantive repo-work reply with the following:
+When you have read this file at the start of a session, open your first reply with the following:
 
 ```text
 Session handshake vAGENTS_MD_VERSION
@@ -161,3 +161,14 @@ Do not claim:
 - `none` read profile for repo-changing work.
 
 If a required read is impossible, mark the task blocked, explain the missing source, and stop before repo-changing work.
+
+## Context compaction / resumed-session behavior
+
+If context was compacted, summarized, resumed, or transferred, treat the next repo-scoped reply as a task boundary unless the active context still contains:
+
+1. the current `AGENTS_MD_VERSION`;
+2. the prior session handshake;
+3. the selected read profile;
+4. the session context receipt.
+
+If any are missing, re-read startup-required files and re-emit the session handshake.

@@ -1,8 +1,8 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 23 -->
+<!-- AGENTS_MD_VERSION: 24 -->
 
-Before substantive repo work, read:
+Before repo work, read:
 
 1. `.context/rules/process_session_start.md`
 2. `.context/rules/README.md`
