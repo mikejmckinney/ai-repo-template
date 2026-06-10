@@ -8,7 +8,7 @@ agent: agent
 You are producing a **single advisory PR comment** for an in-progress pull request.
 Combine four review lenses in one pass. This is **not** a formal PR review and **must not** block merge.
 
-The automation appends **repo startup context** (`AGENTS.md`, `process_session_start.md`, rule catalog) and **PR diff context** below this prompt. Apply those rules when judging gates and orchestration-layer changes.
+The automation appends **repo startup context** (`AGENTS.md`, `process_session_start.md`, rule catalog, `process_critical_thinking.md`, `process_clarification.md`) and **PR diff context** below this prompt (cursor/gemini paths), or mounts equivalent files (antigravity path). Apply those rules when judging gates and orchestration-layer changes.
 
 ## Analyst lens
 
@@ -37,6 +37,8 @@ The automation appends **repo startup context** (`AGENTS.md`, `process_session_s
 - **Do not** mark anything blocking unless a human later applies `review:blocking-ai`.
 - Prefer concise, deduplicated findings.
 - If an existing advisory snapshot is provided, **do not** repeat findings unless still present at head and material.
+- Emit the **session handshake** yourself (self-reported; automation will not override it).
+- Include the factual **Diff coverage** line in the snapshot header using automation-supplied numbers when provided.
 
 ## Output format (exact structure)
 
@@ -48,8 +50,17 @@ Return **only** the markdown below (no preamble). Replace placeholders.
 ## Advisory Review Snapshot
 
 Head: `<sha>`
-Provider: `<cursor|gemini>`
+Provider: `<cursor|gemini|antigravity>`
 Mode: advisory, non-blocking
+Diff coverage: `<included>/<total>` bytes, truncated: `<yes|no>`
+
+### Session handshake
+
+Emit the session handshake from [`.context/rules/process_session_start.md`](../../.context/rules/process_session_start.md) § "Session handshake (read-receipt)" (self-reported; automation will not override).
+
+### Context receipt
+
+Emit `## Session context receipt` from the same file § "Session context receipt". Include one row per startup source you used (`AGENTS.md`, `process_session_start.md`, `README.md`, `process_critical_thinking.md`, `process_clarification.md`, PR body, PR diff) with accurate `Read` / `Reviewed` / `Skipped` status and Source (`prompt-injected`, `antigravity sources`, `GitHub API`, `git diff`, …).
 
 ### Findings to consider before finalization
 
@@ -62,4 +73,4 @@ Mode: advisory, non-blocking
 These findings are advisory until final feedback consolidation or human escalation via `review:blocking-ai`.
 ```
 
-Severity: `info`, `low`, `medium`, `high`. Lens: `analyst`, `judge`, `critic`, `code`. Use `ADV-NN` IDs. Empty table is allowed when no findings.
+Severity: `info`, `low`, `medium`, `high`. Lens: `analyst`, `judge`, `critic`, `code`. Use `ADV-NN` IDs. Empty findings table is allowed when no findings.

@@ -6,18 +6,30 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   ADVISORY_WORKFLOW=".github/workflows/agent-advisory-review.yml"
   ADVISORY_PROMPT=".github/prompts/pr-advisory-review.md"
-  UPSERT_SCRIPT=".github/scripts/upsert-pr-comment.sh"
-  RUN_SCRIPT=".github/scripts/run-advisory-review.sh"
+  ADVISORY_DIR="scripts/workflows/advisory-review"
+  UPSERT_SCRIPT="${ADVISORY_DIR}/upsert-pr-comment.sh"
+  RUN_SCRIPT="${ADVISORY_DIR}/run-advisory-review.sh"
+  GEMINI_SCRIPT="${ADVISORY_DIR}/run-advisory-gemini.py"
+  CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
+  ANTIGRAVITY_SCRIPT="${ADVISORY_DIR}/run-advisory-antigravity.py"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
   MARKER='ai-advisory-review:v1'
 
-  for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT"; do
+  for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
+    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$ANTIGRAVITY_SCRIPT"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
-      fail "$f missing (advisory review PR 2)"
+      fail "$f missing (advisory review)"
     fi
   done
+
+  if [[ -f .github/scripts/run-advisory-review.sh ]] \
+    || compgen -G ".github/scripts/run-advisory-*" >/dev/null 2>&1; then
+    fail "legacy advisory scripts still present under .github/scripts; use ${ADVISORY_DIR}/"
+  else
+    pass "advisory scripts not duplicated under .github/scripts (AP8)"
+  fi
 
   if grep -q 'ai-review:live' "$ADVISORY_WORKFLOW" 2>/dev/null; then
     pass "advisory workflow is label-gated by ai-review:live"
@@ -31,10 +43,32 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "advisory workflow missing pull-requests: write (PR comment POST 403 risk)"
   fi
 
+  if grep -q 'scripts/workflows/advisory-review/run-advisory-review.sh' "$ADVISORY_WORKFLOW" 2>/dev/null; then
+    pass "workflow invokes scripts/workflows/advisory-review (AP8)"
+  else
+    fail "workflow must invoke scripts/workflows/advisory-review/run-advisory-review.sh"
+  fi
+
+  if grep -q 'antigravity' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'ADVISORY_ANTIGRAVITY_ENABLED' "$ADVISORY_WORKFLOW" 2>/dev/null; then
+    pass "workflow documents antigravity provider gate"
+  else
+    fail "workflow missing antigravity provider wiring"
+  fi
+
   if grep -q "$MARKER" "$ADVISORY_PROMPT" 2>/dev/null; then
     pass "advisory prompt defines sticky marker"
   else
     fail "advisory prompt missing $MARKER marker"
+  fi
+
+  if grep -q 'Session handshake' "$ADVISORY_PROMPT" 2>/dev/null \
+    && grep -q 'Context receipt' "$ADVISORY_PROMPT" 2>/dev/null \
+    && grep -q 'process_session_start.md' "$ADVISORY_PROMPT" 2>/dev/null \
+    && ! grep -q 'Session handshake vAGENTS_MD_VERSION' "$ADVISORY_PROMPT" 2>/dev/null; then
+    pass "advisory prompt requires handshake/receipt via process_session_start pointer (no mirrored template)"
+  else
+    fail "advisory prompt must pointer-link handshake/receipt to process_session_start.md without duplicating the template"
   fi
 
   if grep -qE '^ai-review:live\|' "$LABELS_SCRIPT" 2>/dev/null; then

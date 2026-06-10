@@ -4,7 +4,7 @@
 
 ## How to use this catalog
 
-1. Start every substantive repo task with `AGENTS.md`, `.context/rules/process_session_start.md`, and this catalog.
+1. Start every repo task with `AGENTS.md`, `.context/rules/process_session_start.md`, and this catalog.
 2. Choose the smallest named read profile that fits the task.
 3. Read every rule whose trigger fires before making the affected decision.
 4. Record the loaded files in the session context receipt defined by `process_session_start.md`.
@@ -16,7 +16,7 @@ A filename, pointer, heading, search result, or summarized mention does **not** 
 
 | Load profile | Meaning |
 |---|---|
-| `startup-required` | Must be loaded before substantive repo work or repo-changing actions. |
+| `startup-required` | Must be loaded before repo work or repo-changing actions. |
 | `high-frequency invariant` | Applies broadly; read once per session/task boundary, then follow continuously. |
 | `task-triggered` | Read before the action named in the trigger. |
 | `domain-triggered` | Read when the changed paths, issue topic, or requested decision intersects the rule’s domain. |
@@ -29,7 +29,7 @@ Use these names in the session handshake’s `Read profile` field.
 
 | Profile | Use when | Minimum files |
 |---|---|---|
-| `startup-min` | Simple orientation or non-editing repo question. | `AGENTS.md`, `process_session_start.md`, this catalog. |
+| `startup-min` | Simple orientation or non-editing repo question. | `AGENTS.md`, `process_session_start.md`, `process_critical_thinking.md`, `process_clarification.md`, this catalog. |
 | `standard` | Default for most issue/PR work before choosing a narrower task profile. | `startup-min`, `.context/00_INDEX.md`, role file if acting as a role, `agent_ownership.md`, `process_critical_thinking.md`, `process_role_selection.md`. |
 | `implementation` | Implementing or modifying code, docs, config, checks, prompts, or workflows. | `standard`, `process_work_style.md`, `process_gates.md`, `process_doc_maintenance.md`, plus domain rules for changed paths. |
 | `pr-review` | Reviewing a PR, preparing a PR, responding to review feedback, or checking merge readiness. | `standard`, `process_pr_completion.md`, `process_doc_maintenance.md`, `process_gates.md`, changed-path domain rules. |
@@ -37,7 +37,6 @@ Use these names in the session handshake’s `Read profile` field.
 | `policy-adr` | Writing or changing ADRs, process policy, governance docs, or rule files. | `standard`, `process_doc_maintenance.md`, `repo_orchestration_patterns.md`, relevant ADR(s), `docs/decisions/adr-template.md`. |
 | `benchmark` | Changing benchmark protocol, candidates, scoring, adapters, cost math, or benchmark results. | `standard`, `.context/benchmarks/model-roi/README.md`, benchmark runbook/results as relevant, `process_model_tier.md`, `process_work_style.md`. |
 | `full` | Explicit full-context audit or emergency high-risk review. | All files in `.context/rules/**` plus task-relevant docs/ADRs. Use sparingly and record why. |
-| `none` | No rule profile was loaded. | Only valid for non-substantive replies or when startup is blocked and no repo-changing work is performed. |
 
 Profiles define the minimum startup set. A trigger below can add files to any profile.
 
@@ -48,8 +47,8 @@ Profiles define the minimum startup set. A trigger below can add files to any pr
 | [`process_session_start.md`](./process_session_start.md) | `startup-required` | New session, task boundary, or before repo-changing work. | Every session; re-read at a task boundary if the session changes role, issue, or PR. | Session handshake and context receipt. |
 | [`README.md`](./README.md) | `startup-required` | New session, task boundary, or context-profile selection. | Every session/task boundary that requires rule routing. | Chosen read profile and triggered-rule list in context receipt. |
 | [`process_template_detection.md`](./process_template_detection.md) | `task-triggered` | First session in a new clone, downstream template onboarding, or Mode A/Mode B uncertainty. | Once per repo clone/onboarding event, or when template mode is ambiguous. | Mode claim and downstream/template scope decision. |
-| [`process_critical_thinking.md`](./process_critical_thinking.md) | `high-frequency invariant` | Any substantive answer, factual claim, review, recommendation, or uncertainty. | Every session; re-read when giving high-impact factual or review conclusions. | Cited claims, explicit assumptions, conflict callouts, uncertainty where warranted. |
-| [`process_clarification.md`](./process_clarification.md) | `task-triggered` | User request is ambiguous, conflicting, under-specified, or risks invented facts. | Before choosing a path when ambiguity affects outcome. | Clarifying question or stated assumption with bounded scope. |
+| [`process_critical_thinking.md`](./process_critical_thinking.md) | `startup-required` | Any substantive answer, factual claim, review, recommendation, or uncertainty. | Every session; re-read when giving high-impact factual or review conclusions. | Cited claims, explicit assumptions, conflict callouts, uncertainty where warranted. |
+| [`process_clarification.md`](./process_clarification.md) | `startup-required` | User request is ambiguous, conflicting, under-specified, or risks invented facts. | Before choosing a path when ambiguity affects outcome. | Clarifying question or stated assumption with bounded scope. |
 | [`process_role_selection.md`](./process_role_selection.md) | `task-triggered` | Before claiming a task, selecting a role, dispatching subagents, or choosing OP/default-agent behavior. | Task boundary; re-read when ownership or role changes. | Role claim, OP/default rationale, selected profile. |
 | [`agent_ownership.md`](./agent_ownership.md) | `task-triggered` | Before touching files, claiming an issue, coordinating cross-role edits, or reviewing path ownership. | Task boundary; re-read when changed paths expand. | Owned-path rationale, cross-role escalation/PM claim if needed. |
 | [`process_work_style.md`](./process_work_style.md) | `task-triggered` | Before editing code, docs, prompts, config, scripts, workflows, or tests. | Task boundary; re-read before switching from planning/review to implementation. | Branch/commit discipline, verification plan, validation evidence. |

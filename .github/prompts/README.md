@@ -84,8 +84,8 @@ lists come after, not before.
     - PR 1 (context decomposition): **merged** via Phase A / AGENTS.md v22.
     - PR 1B (rules consolidation + legacy redirect retirement): **merged** (#380 @
       `864aac1`; AGENTS v23, redirect guide, rule-file slimming, check `048`).
-    - PR 2 (advisory review): in progress on `feature/advisory-review-mode`
-      (`agent-advisory-review.yml`, `pr-advisory-review.md`, Cursor + Gemini providers).
+    - PR 2 (advisory review): `feature/advisory-review-mode`
+      (`agent-advisory-review.yml`, `scripts/workflows/advisory-review/`, Cursor + Antigravity + Gemini).
     - PR 3–4 (final feedback, post-merge retro): pending.
 
 ### Postmortem feedback loop

@@ -645,25 +645,7 @@ It must instruct a single reviewer to combine four lenses:
 - Are there concrete defects in the current diff?
 ```
 
-Output must be normalized:
-
-```markdown
-<!-- ai-advisory-review:v1 -->
-
-## Advisory Review Snapshot
-
-Head: `<sha>`
-Mode: advisory, non-blocking
-
-### Findings to consider before finalization
-
-| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
-|---|---|---|---|---|---|---|
-
-### Not blocking
-
-These findings are advisory until final feedback consolidation or human escalation.
-```
+Output structure is defined in `.github/prompts/pr-advisory-review.md` (canonical). Include snapshot header (with diff coverage), **session handshake** and **context receipt** sections that **pointer-link** to `.context/rules/process_session_start.md` — do not mirror the full handshake/receipt templates in the advisory prompt (avoids drift).
 
 The prompt must say:
 
@@ -675,15 +657,29 @@ The prompt must say:
 - Prefer concise, deduped findings.
 - Avoid repeating findings already present in the existing advisory snapshot unless still present and material.
 
-## Upsert helper
+## Workflow scripts (AP8)
 
-Add a helper script, for example:
+Place advisory workflow logic under **`scripts/workflows/advisory-review/`** (not `.github/scripts/`). Workflows should remain event wiring; extract dispatch, providers, and comment upsert into tested scripts per `repo_orchestration_patterns.md` **AP8**.
+
+Minimum files:
 
 ```text
-.github/scripts/upsert-pr-comment.sh
+scripts/workflows/advisory-review/run-advisory-review.sh
+scripts/workflows/advisory-review/upsert-pr-comment.sh
+scripts/workflows/advisory-review/run-advisory-gemini.py
+scripts/workflows/advisory-review/run-advisory-cursor.mjs
+scripts/workflows/advisory-review/run-advisory-antigravity.py
 ```
 
-or place it under the repo’s preferred scripts directory.
+Providers: `auto` (cursor → antigravity when `ADVISORY_ANTIGRAVITY_ENABLED=true` → gemini), `cursor`, `antigravity`, `gemini`. Future pack PRs (3–4) should use `scripts/workflows/<feature>/` the same way.
+
+## Upsert helper
+
+Add a helper script at:
+
+```text
+scripts/workflows/advisory-review/upsert-pr-comment.sh
+```
 
 Requirements:
 
@@ -732,7 +728,7 @@ Run:
 
 ```bash
 ./test.sh
-bash -n .github/scripts/upsert-pr-comment.sh 2>/dev/null || true
+bash -n scripts/workflows/advisory-review/upsert-pr-comment.sh 2>/dev/null || true
 git grep -n "ai-review:live\|ai-advisory-review:v1\|pr-advisory-review" .
 ```
 
@@ -745,7 +741,7 @@ actionlint .github/workflows/agent-advisory-review.yml
 If shellcheck is available:
 
 ```bash
-shellcheck .github/scripts/upsert-pr-comment.sh
+shellcheck scripts/workflows/advisory-review/*.sh
 ```
 
 ## PR body notes
@@ -851,7 +847,7 @@ Suggested sticky marker:
 Create a script such as:
 
 ```text
-.github/scripts/collect-pr-feedback.sh
+scripts/workflows/pr-feedback/collect-pr-feedback.sh
 ```
 
 Usage:
@@ -986,7 +982,7 @@ Run:
 
 ```bash
 ./test.sh
-bash -n .github/scripts/collect-pr-feedback.sh 2>/dev/null || true
+bash -n scripts/workflows/pr-feedback/collect-pr-feedback.sh 2>/dev/null || true
 git grep -n "ai-feedback-inbox:v1\|implementation-complete\|pr-final-feedback-consolidation" .
 ```
 
@@ -999,7 +995,7 @@ actionlint .github/workflows/agent-review-finalize.yml
 If shellcheck is available:
 
 ```bash
-shellcheck .github/scripts/collect-pr-feedback.sh
+shellcheck scripts/workflows/pr-feedback/collect-pr-feedback.sh
 ```
 
 ## PR body notes
@@ -1053,7 +1049,7 @@ Implement exactly this PR-sized change:
 1. Add `.github/workflows/agent-postmerge-retro.yml`.
 2. Add `.github/prompts/post-merge-retro.md`.
 3. Add a deterministic evidence collector if not already reusable from PR 3.
-4. Add `.github/scripts/postmerge-retro-create-issues.sh`.
+4. Add `scripts/workflows/postmerge-retro/postmerge-retro-create-issues.sh`.
 5. Add a JSON schema or lightweight validation for the retrospective output.
 6. Update docs.
 7. Add label setup entries if not already present.
@@ -1196,7 +1192,7 @@ Required JSON shape:
 Create:
 
 ```text
-.github/scripts/postmerge-retro-create-issues.sh
+scripts/workflows/postmerge-retro/postmerge-retro-create-issues.sh
 ```
 
 Usage:
@@ -1282,7 +1278,7 @@ Run:
 
 ```bash
 ./test.sh
-bash -n .github/scripts/postmerge-retro-create-issues.sh 2>/dev/null || true
+bash -n scripts/workflows/postmerge-retro/postmerge-retro-create-issues.sh 2>/dev/null || true
 git grep -n "postmerge-retro\|retro-review\|retro:adr\|retro:context-pack" .
 ```
 
@@ -1295,7 +1291,7 @@ actionlint .github/workflows/agent-postmerge-retro.yml
 If shellcheck is available:
 
 ```bash
-shellcheck .github/scripts/postmerge-retro-create-issues.sh
+shellcheck scripts/workflows/postmerge-retro/postmerge-retro-create-issues.sh
 ```
 
 If a JSON schema is added and `check-jsonschema` is available:

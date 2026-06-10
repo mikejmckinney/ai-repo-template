@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# .github/scripts/upsert-pr-comment.sh — idempotent sticky PR issue comment.
+# scripts/workflows/advisory-review/upsert-pr-comment.sh — sticky PR issue comment.
 # Usage: upsert-pr-comment.sh <pr-number> <marker> <body-file>
 set -euo pipefail
 

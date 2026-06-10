@@ -103,6 +103,8 @@ bash install.sh
 │   │   ├── README.md
 │   │   └── *.bats            # One file per concern; current script tests run via bats
 │   ├── benchmark/            # Phase A model ROI benchmark runner/prototype (issue #374)
+│   ├── workflows/            # AP8 workflow logic extracted from .github/workflows (issue advisory review PR 2)
+│   │   └── advisory-review/  # agent-advisory-review.yml dispatch, providers, comment upsert
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
@@ -362,7 +364,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `agent-assign-copilot.yml` | Gated Copilot PR assignment for `copilot:ready` issues | Set `CLAUDE_PAT` secret |
 | `agent-auto-merge.yml` | Opt-in auto-merge via `auto-merge` label (CI green + threads resolved), with default bounded bot-review settle window and `auto-merge-fast` bypass label | Set `CLAUDE_PAT` secret |
 | `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes | None |
-| `agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (`ai-review:live`); Cursor SDK or Gemini API | `CURSOR_API_KEY` and/or `GEMINI_API_KEY` |
+| `agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (`ai-review:live`); Cursor / Antigravity / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; optional `ADVISORY_ANTIGRAVITY_ENABLED=true` |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` secret |
 | `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier | Set `CLAUDE_PAT` secret |
 | `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR | None |

@@ -5,11 +5,12 @@
 # Does NOT submit formal PR reviews, apply claude-fix, or push commits.
 #
 # Providers (ADVISORY_REVIEW_PROVIDER repo variable, default auto):
-#   - cursor — Cursor SDK + composer-2.5 (CURSOR_API_KEY)
-#   - gemini — Gemini API (GEMINI_API_KEY or GOOGLE_API_KEY)
-#   - auto   — prefer Cursor, else Gemini
+#   - cursor      — Cursor SDK (CURSOR_API_KEY)
+#   - antigravity — Gemini Interactions / Antigravity (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
+#   - gemini      — Gemini generateContent API (GEMINI_API_KEY or GOOGLE_API_KEY)
+#   - auto        — cursor, else antigravity (when enabled), else gemini
 #
-# Separate from agent-review-on-push.yml (Gemini/Copilot formal re-review nudges).
+# Scripts: scripts/workflows/advisory-review/ (AP8 — not .github/scripts/).
 
 name: Agent — advisory review snapshot
 
@@ -44,6 +45,11 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+      ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
+      ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
+      ADVISORY_REVIEW_DIFF_LIMIT_LIVE: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_LIVE || '' }}
+      ADVISORY_REVIEW_DIFF_LIMIT_FULL: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_FULL || '' }}
+      ADVISORY_REVIEW_COMMENT_LIMIT: ${{ vars.ADVISORY_REVIEW_COMMENT_LIMIT || '' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       FULL_MODE: ${{ contains(github.event.pull_request.labels.*.name, 'ai-review:full') }}
@@ -55,6 +61,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+          ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
         run: |
           has_cursor=0 has_gemini=0
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
@@ -65,6 +72,10 @@ jobs:
           case "$PROVIDER" in
             cursor)
               [[ "$has_cursor" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=cursor but CURSOR_API_KEY is missing"; exit 1; }
+              ;;
+            antigravity)
+              [[ "$has_gemini" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=antigravity but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
+              [[ "$ANTIGRAVITY_ENABLED" == "true" ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=antigravity but ADVISORY_ANTIGRAVITY_ENABLED is not true"; exit 1; }
               ;;
             gemini)
               [[ "$has_gemini" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
@@ -110,8 +121,8 @@ jobs:
             export GH_TOKEN="$GITHUB_TOKEN"
             echo "Using GITHUB_TOKEN for gh PR comment API (CLAUDE_PAT unset)."
           fi
-          chmod +x .github/scripts/*.sh .github/scripts/*.py 2>/dev/null || true
-          bash .github/scripts/run-advisory-review.sh \
+          chmod +x scripts/workflows/advisory-review/*.sh scripts/workflows/advisory-review/*.py 2>/dev/null || true
+          bash scripts/workflows/advisory-review/run-advisory-review.sh \
             "${{ github.event.pull_request.number }}" \
             "${{ github.event.pull_request.head.sha }}" \
             "${FULL_MODE}"

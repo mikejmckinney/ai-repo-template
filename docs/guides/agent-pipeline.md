@@ -116,24 +116,76 @@ With workflow approval disabled (see Setup below), these fire immediately on PR 
 | Label | Required? | Effect |
 |---|---|---|
 | `ai-review:live` | **Yes** — workflow gate | Enables the workflow on this PR (including drafts). Without it, no advisory snapshots run. |
-| `ai-review:full` | No | Same provider/model; larger diff excerpt in the prompt (300k vs 120k chars). Use on high-risk or near-final PRs when you want more diff in context. Does **not** change model tier or switch providers. |
+| `ai-review:full` | No | Same provider/model; larger diff excerpt in cursor/gemini prompts (repo var override; default 300k vs 120k bytes). Does **not** change model tier or switch providers. Antigravity mounts the **full** diff in sources regardless of label. |
 
 Both labels can be applied together. `ai-review:live` alone is the normal WIP/draft setup.
 
+#### Diff context limits
+
+Advisory review logic lives in `scripts/workflows/advisory-review/run-advisory-review.sh` (AP8). For **cursor** and **gemini** paths, a **truncated unified diff** is embedded in the prompt. For **antigravity**, the **full** diff is mounted at `.workspace/pr-context/diff.patch` (Interactions API payload limits may still force fallback to gemini on huge PRs).
+
+| Mode | Label | Default diff byte limit | Repo variable |
+|---|---|---|---|
+| Live | `ai-review:live` only | **120,000** | `ADVISORY_REVIEW_DIFF_LIMIT_LIVE` |
+| Full | `ai-review:live` + `ai-review:full` | **300,000** | `ADVISORY_REVIEW_DIFF_LIMIT_FULL` |
+
+Invalid variable values log `::warning::` and fall back to defaults. The posted comment includes `Diff coverage: included/total bytes, truncated: yes|no` in the snapshot header (workflow injects this line if the model omits it).
+
+**Posted comment size:** `ADVISORY_REVIEW_COMMENT_LIMIT` (default **65,000** bytes) caps the GitHub issue comment body; automation adds a visible truncation warning if the model output exceeds the cap (~65 KB aligns with GitHub’s practical single-comment limit).
+
+**Rationale (heuristic, not token-calibrated):** keep rolling WIP snapshots cheap and predictable on every push. Related precedent: model-ROI harness caps bundle diffs at 200k chars (`prepare-grade-bundle.sh`).
+
+**What is capped vs not:**
+
+| Prompt section | Capped? |
+|---|---|
+| Unified diff (`git diff base...head`) | **Yes** — `head -c $diff_limit` |
+| Changed-files list (GitHub API) | No — full list |
+| PR title and body | No |
+| Embedded startup files (`AGENTS.md`, `process_session_start.md`, rule catalog, `process_critical_thinking.md`, `process_clarification.md`) | No |
+| Prior advisory snapshot (dedupe) | No |
+| Cursor SDK repo exploration | N/A — Gemini API path is prompt-only; Cursor may read files outside the diff excerpt |
+
+**When the diff exceeds the limit — what happens:**
+
+1. Git emits the full unified diff to stdout.
+2. The script keeps only the **first N characters** (`head -c`) and discards the rest.
+3. The prompt labels that block `### Diff (truncated)` so the model knows content may be incomplete.
+4. There is **no error** and **no retry** — the workflow runs normally with a partial diff.
+
+**How “what to review” is chosen (important):**
+
+The model **does not** pick which files or hunks survive truncation. Selection is **mechanical**, not intelligent:
+
+- Order follows **`git diff` output order** (typically path order as Git walks the tree — not “most important” or “largest change first”).
+- Everything after the byte cutoff is **invisible** to the Gemini API path (no file reads).
+- The model still sees the **complete changed-files list**, so it may know a file changed but **lack that file’s patch** if it fell past the cutoff.
+
+On the **Cursor SDK** path, the same truncated diff is in the prompt, but the agent **may** open files in the checkout via SDK tools — truncation is less of a hard ceiling there, though cost/latency still favor relying on the excerpt for WIP passes.
+
+**Practical guidance when a PR is larger than the cap:**
+
+- Add **`ai-review:full`** for the 300k excerpt (same model/provider).
+- Rely on **`claude-review`** / formal bot reviews for gate-heavy or very large PRs near merge.
+- Split oversized PRs when possible so advisory snapshots stay representative.
+- Treat missing diff hunks as a known blind spot — findings on files only listed in “Changed files” without patch context should be flagged as low confidence.
+
 #### Provider selection and models
 
-Repo variable **`ADVISORY_REVIEW_PROVIDER`**: `auto` (default), `cursor`, or `gemini`.
+Repo variable **`ADVISORY_REVIEW_PROVIDER`**: `auto` (default), `cursor`, `antigravity`, or `gemini`.
 
 | `ADVISORY_REVIEW_PROVIDER` | Behavior |
 |---|---|
-| `auto` | **Cursor** if `CURSOR_API_KEY` is set; else **Gemini** if `GEMINI_API_KEY` or `GOOGLE_API_KEY` is set |
+| `auto` | **Cursor** if `CURSOR_API_KEY` is set; else **Antigravity** if `GEMINI_API_KEY`/`GOOGLE_API_KEY` and `ADVISORY_ANTIGRAVITY_ENABLED=true`; else **Gemini** `generateContent` |
 | `cursor` | Force Cursor SDK |
-| `gemini` | Force Gemini API (either key name works) |
+| `antigravity` | Force Gemini Interactions API (Antigravity agent); requires key + `ADVISORY_ANTIGRAVITY_ENABLED=true`; falls back to gemini on failure |
+| `gemini` | Force Gemini `generateContent` API (either key name works) |
 
-| Provider | Secret | Default model (`*_ADVISORY_MODEL` var) | Valid overrides (examples) |
+| Provider | Secret / gate | Default model / agent | Notes |
 |---|---|---|---|
-| Cursor SDK | `CURSOR_API_KEY` | `composer-2.5` | `composer-2.5` (avoid retired `composer-2` slugs) |
-| Gemini API | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-3.5-flash` | `gemini-3.5-flash`, `gemini-flash-latest`, `gemini-2.5-flash`, `gemini-3-flash-preview` (use names your API key / project exposes) |
+| Cursor SDK | `CURSOR_API_KEY` | `composer-2.5` (`CURSOR_ADVISORY_MODEL`) | May read repo via SDK `local.cwd` |
+| Antigravity | `GEMINI_API_KEY` or `GOOGLE_API_KEY` + `ADVISORY_ANTIGRAVITY_ENABLED=true` | `antigravity-preview-05-2026` (`ADVISORY_ANTIGRAVITY_AGENT`) | Mounts rules + full diff as `environment.sources`; default tools enabled |
+| Gemini API | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-3.5-flash` (`GEMINI_ADVISORY_MODEL`) | Prompt-only; truncated diff excerpt |
 
 **Why `gemini-3.5-flash` default?** Advisory CI should use a **stable, reproducible** model id for predictable behavior and cost accounting. Aliases like `gemini-flash-latest` track whatever Google currently ships and can change without a workflow edit — use those when you want auto-upgrade; override with `GEMINI_ADVISORY_MODEL` if your API key maps `gemini-3.5-flash` to a different backend (see benchmark notes on picker alias vs observed backend).
 
@@ -146,20 +198,26 @@ Repo variable **`ADVISORY_REVIEW_PROVIDER`**: `auto` (default), `cursor`, or `ge
 | Path | How you pay | Free vs paid |
 |---|---|---|
 | **Gemini API** (`run-advisory-gemini.py`) | API key → Google AI / Cloud project behind that key | Tier is whatever that project has (AI Studio free quotas vs billing-enabled paid). This workflow does **not** implement OAuth or `free-then-paid` routing — see `07-implement-gemini-free-paid-routing.md` for planned router work. |
+| **Antigravity** (`run-advisory-antigravity.py`) | Same API key + remote sandbox | Preview Interactions API; typically higher cost/latency than flat `generateContent`; may use code execution / search tools by default. |
 | **Cursor SDK** (`run-advisory-cursor.mjs`) | `CURSOR_API_KEY` → Cursor account usage pool | Per Cursor SDK / subscription terms; no repo-side tier switch. |
 | **Gemini Code Assist** (`/gemini review`, `agent-review-on-push.yml`) | Separate GitHub App path | Not used by advisory snapshots; formal bot reviews only. |
 
 **What context the models see (advisory path):**
 
-| Source | Gemini API path | Cursor SDK path |
-|---|---|---|
-| `.github/prompts/pr-advisory-review.md` | In prompt | In prompt |
-| `AGENTS.md`, `process_session_start.md`, rule catalog | Embedded in prompt by `run-advisory-review.sh` | Embedded in prompt + agent may explore repo via SDK local tools |
-| PR body, changed files, diff excerpt | In prompt | In prompt |
-| Other `.context/rules/*.md` | Only if touched in diff or cited in embedded startup files | May be read via SDK if agent chooses |
-| Formal `claude-review` / Gemini App reviews | Separate workflows; not merged into advisory unless pasted in PR |
+| Source | Gemini path | Cursor path | Antigravity path |
+|---|---|---|---|
+| `.github/prompts/pr-advisory-review.md` | In prompt | In prompt | `system_instruction` |
+| `AGENTS.md`, `process_session_start.md`, `README.md`, `process_critical_thinking.md`, `process_clarification.md` | Prompt-injected | Prompt-injected + SDK may read more | `environment.sources` under `.agents/…` |
+| PR body, changed files | In prompt | In prompt | `.workspace/pr-context/*` sources |
+| Diff | Truncated excerpt in prompt | Truncated excerpt + SDK may read files | **Full** `diff.patch` in sources |
+| Session handshake + context receipt | Model self-reports per `process_session_start.md` (pointer in `pr-advisory-review.md`; not duplicated in prompt) | Same | Same |
+| Formal `claude-review` / Gemini App reviews | Separate workflows | Separate | Separate |
 
-Advisory review is intentionally **cheaper than full repo load**: startup kernel + diff, not every rule file. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
+Advisory review is intentionally **lighter than full rule load**: startup kernel + critical thinking/clarification + diff, not every `.context/rules/*.md` file. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
+
+**Handshake / receipt in advisory comments:** The model **self-reports** the session handshake and context receipt in each snapshot. `pr-advisory-review.md` **pointer-links** to `.context/rules/process_session_start.md` for the canonical templates (no mirrored copy in the prompt — avoids AP1-style drift). Automation injects diff-coverage facts only; it does not override handshake fields.
+
+**Startup rules loaded for advisory:** `process_critical_thinking.md` and `process_clarification.md` are `startup-required` in the rule catalog and included in `startup-min`. After context compaction, agents should re-emit handshake per `process_session_start.md` § "Context compaction / resumed-session behavior".
 
 **Manual override** — anyone (agent or human) can comment `/gemini review` directly on a PR to force a fresh Gemini review. This is documented as a belt-and-suspenders escape hatch; the workflow is the primary mechanism.
 
@@ -344,9 +402,14 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `REVIEW_ON_PUSH` | on (unset = on) | When set to literal `false`, disables `agent-review-on-push.yml` nudges to Gemini + Copilot after each push to an open non-draft PR. Any other value (including unset) keeps it on. |
 | `MAX_COPILOT_CONCURRENT` | `3` | Max concurrent Copilot sessions (open `copilot/` PRs + `copilot:in-progress` issues). |
 | `MAX_COPILOT_DAILY` | `10` | Max Copilot assignments in a rolling 24-hour window. Spend thresholds: informational log at 50%, warning comment on issue at 75%, hard pause on new assignments at 90% (`copilot:budget-paused` label applied; bypassed by `cap-override` label on the issue — same label on a PR bypasses the round cap, see `PR_RESOLVE_MAX_ROUNDS` below), `copilot:daily-cap-hit` label at 100%. |
-| `ADVISORY_REVIEW_PROVIDER` | `auto` | Advisory review runtime: `auto` (prefer Cursor, else Gemini), `cursor`, or `gemini`. |
+| `ADVISORY_REVIEW_PROVIDER` | `auto` | Advisory review runtime: `auto` (cursor → antigravity when enabled → gemini), `cursor`, `antigravity`, or `gemini`. |
+| `ADVISORY_ANTIGRAVITY_ENABLED` | `false` | Set to `true` to allow `auto` or `antigravity` provider (requires `GEMINI_API_KEY` or `GOOGLE_API_KEY`). |
+| `ADVISORY_ANTIGRAVITY_AGENT` | `antigravity-preview-05-2026` | Antigravity base agent id for Interactions API. |
+| `ADVISORY_REVIEW_DIFF_LIMIT_LIVE` | `120000` | Max diff bytes in cursor/gemini prompt when only `ai-review:live` is set. |
+| `ADVISORY_REVIEW_DIFF_LIMIT_FULL` | `300000` | Max diff bytes in cursor/gemini prompt when `ai-review:full` is also set. |
+| `ADVISORY_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted advisory issue comment (automation truncates with warning). |
 | `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Model id for Cursor SDK advisory snapshots. |
-| `GEMINI_ADVISORY_MODEL` | `gemini-3.5-flash` | Gemini model id (`gemini-3.5-flash`, `gemini-flash-latest`, `gemini-2.5-flash`, `gemini-3-flash-preview`, …). |
+| `GEMINI_ADVISORY_MODEL` | `gemini-3.5-flash` | Gemini `generateContent` model id (`gemini-3.5-flash`, `gemini-flash-latest`, …). |
 | `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. **Also caps `agent-review-on-push.yml`** so Gemini/Copilot push-nudges stop firing after the same N rounds — without this, every fix-commit re-triggers stateless reviewers that re-flag already-deferred findings (PR #246 saw this across 13 rounds). Per-PR override: `cap-override` label on the PR (unbounded; bypasses both the agent-side cap and the push-nudge cap) or `@<agent> cap-override N` comment on the PR (N rounds). Manual `/gemini review` comments by humans are never gated. Only raise the default from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 ### 1. Copilot subscription
@@ -711,7 +774,8 @@ for Gemini to finish posting.
 | `.github/workflows/agent-fix-reviews.yml` | Auto-trigger Claude (Sonnet) on reviews (opt-in via `claude-fix` label) | Yes (ANTHROPIC_API_KEY + CLAUDE_PAT) |
 | `.github/workflows/agent-relay-reviews.yml` | Copilot relay (opt-in via `copilot-relay` label); also hosts the `phase4-fallback` job that retries Copilot's `⚠️ Errored` Phase 4 mutations under `CLAUDE_PAT` (see ADR-008) | No (uses CLAUDE_PAT for posting + fallback mutations) |
 | `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready; drains Copilot queue after merge | No (uses CLAUDE_PAT) |
-| `.github/workflows/agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (opt-in via `ai-review:live`); sticky issue comment only; Cursor SDK or Gemini API | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
+| `.github/workflows/agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (opt-in via `ai-review:live`); sticky issue comment; Cursor / Antigravity / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; antigravity also needs `ADVISORY_ANTIGRAVITY_ENABLED=true`) |
+| `scripts/workflows/advisory-review/` | AP8 workflow logic: dispatch, providers, upsert comment | Invoked by `agent-advisory-review.yml` |
 | `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-out via repo variable `REVIEW_ON_PUSH=false` | Yes (CLAUDE_PAT for Gemini comment author identity) |
 | `.github/prompts/pr-advisory-review.md` | Four-lens advisory snapshot prompt (Analyst/Judge/Critic/Code) | Used by `agent-advisory-review.yml` |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |

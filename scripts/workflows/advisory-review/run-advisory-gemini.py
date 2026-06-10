@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate advisory review body via Gemini API (stdlib only)."""
+"""Generate advisory review body via Gemini generateContent API (stdlib only)."""
 from __future__ import annotations
 
 import json
