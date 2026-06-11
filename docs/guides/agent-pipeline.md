@@ -255,6 +255,8 @@ idempotent follow-up issue creation (dedupe markers)
 
 **Artifacts:** workflow uploads `.artifacts/postmerge-retro/pr-<N>/` (ephemeral; not committed to the repo).
 
+**Script checkout:** the workflow checks out **`main`**, not the merged PR's merge commit, so `workflow_dispatch` re-runs (e.g. on PR #382) always use the latest `scripts/workflows/postmerge-retro/` on default branch.
+
 #### Provider, billing, and context loading
 
 **Billing / tier (not configured in this workflow):**
