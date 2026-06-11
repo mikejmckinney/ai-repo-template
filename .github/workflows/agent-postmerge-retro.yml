@@ -101,8 +101,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number || inputs.pr }}
+          REPO: ${{ github.repository }}
         run: |
-          pr_json="$(gh pr view "$PR" --json state,mergedAt,headRefOid,mergeCommit,baseRefName,headRepository)"
+          pr_json="$(gh pr view "$PR" -R "$REPO" --json state,mergedAt,headRefOid,mergeCommit,baseRefName,headRepository)"
           merged_at="$(printf '%s' "$pr_json" | jq -r .mergedAt)"
           state="$(printf '%s' "$pr_json" | jq -r .state)"
           base_ref="$(printf '%s' "$pr_json" | jq -r .baseRefName)"
