@@ -32,6 +32,9 @@ lists come after, not before.
     draft/WIP PRs when `ai-review:live` is applied (`agent-advisory-review.yml`).
   - **`pr-final-feedback-consolidation.md`** — final Feedback Inbox consolidation
     when `implementation-complete` is applied (`agent-review-finalize.yml`).
+  - **`post-merge-retro.md`** — post-merge retrospective JSON + idempotent follow-up
+    issue creation when `retro-review` / related labels are present on a merged PR
+    (`agent-postmerge-retro.yml`).
   - **`pre-push-review.md`** — Critic + lint + `./test.sh` summary against
     the working-tree diff before push. SHOULD per AGENTS.md →
     "Work style"; MUST for the DevOps role on shell/workflow changes
@@ -90,7 +93,7 @@ lists come after, not before.
       `scripts/workflows/advisory-review/`, Cursor + Antigravity + Gemini).
     - PR 3 (final feedback consolidation): **merged** (#382 @ `e0d845e`; `agent-review-finalize.yml`,
       `scripts/workflows/pr-feedback/`, label `implementation-complete`).
-    - PR 4 (post-merge retrospective): **next** — branch `feature/postmerge-retro-review`, prompt
+    - PR 4 (post-merge retrospective): **in progress** — branch `feature/postmerge-retro-review`, prompt
       `04-postmerge-retrospective.md` (label `retro-review`).
 
 ### Postmortem feedback loop
