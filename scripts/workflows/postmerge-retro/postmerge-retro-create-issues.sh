@@ -25,6 +25,11 @@ marker_exists() {
   [[ "${count:-0}" -gt 0 ]]
 }
 
+label_exists_in_repo() {
+  local lb="$1"
+  gh api "repos/${REPO}/labels/${lb}" >/dev/null 2>&1
+}
+
 create_issue() {
   local title="$1" body_file="$2" labels_csv="$3"
   local -a label_args=() lb
@@ -32,7 +37,7 @@ create_issue() {
   for lb in "${labels[@]}"; do
     lb="$(echo "$lb" | xargs)"
     [[ -z "$lb" ]] && continue
-    if gh label list --json name --jq '.[].name' 2>/dev/null | grep -Fxq "$lb"; then
+    if label_exists_in_repo "$lb"; then
       label_args+=(--label "$lb")
     else
       echo "::warning::Label '${lb}' not found in ${REPO}; creating issue without it"
