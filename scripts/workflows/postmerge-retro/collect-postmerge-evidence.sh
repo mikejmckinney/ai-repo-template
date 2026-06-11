@@ -27,7 +27,6 @@ bash "$FEEDBACK_COLLECTOR" "$PR" "$OUT_DIR"
 
 # Normalize names expected by post-merge retro prompt/spec.
 cp -f "$OUT_DIR/comments.json" "$OUT_DIR/issue-comments.json"
-cp -f "$OUT_DIR/review-comments.json" "$OUT_DIR/review-comments.json"
 
 merged="$(jq -r '.merged // false' "$OUT_DIR/pr.json")"
 state="$(jq -r '.state // ""' "$OUT_DIR/pr.json")"
