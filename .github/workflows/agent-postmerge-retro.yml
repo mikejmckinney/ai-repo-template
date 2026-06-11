@@ -3,6 +3,8 @@
 # After a PR merges to main, collects evidence and creates follow-up issues
 # idempotently. Does NOT edit code, ADRs, or context-pack files.
 #
+# Checks out main (not the merged PR's merge commit) so workflow_dispatch
+# and late close triggers always run the latest scripts/workflows/postmerge-retro/.
 # Scripts: scripts/workflows/postmerge-retro/ (AP8). Reuses
 # scripts/workflows/pr-feedback/collect-pr-feedback.sh via wrapper and
 # advisory-review LLM runners for JSON retrospective output.
@@ -123,10 +125,10 @@ jobs:
           fi
           echo "merge_sha=${merge_sha}" >> "$GITHUB_OUTPUT"
 
-      - name: Checkout merge commit
+      - name: Checkout main (current workflow scripts)
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.pr.outputs.merge_sha }}
+          ref: main
           fetch-depth: 0
 
       - name: Setup Node.js (Cursor SDK path)
