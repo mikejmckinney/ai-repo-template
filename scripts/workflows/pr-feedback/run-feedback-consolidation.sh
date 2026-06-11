@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # scripts/workflows/pr-feedback/run-feedback-consolidation.sh — final feedback inbox dispatch.
 set -euo pipefail
+umask 077
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$REPO_ROOT"
@@ -9,11 +10,11 @@ PR="${1:-${PR_NUMBER:-}}"
 HEAD_SHA="${2:-${HEAD_SHA:-}}"
 
 usage() {
-  echo "Usage: run-feedback-consolidation.sh <pr-number> <head-sha>" >&2
+  echo "Usage: run-feedback-consolidation.sh <pr-number> [head-sha]" >&2
   exit 2
 }
 
-[[ -n "$PR" && -n "$HEAD_SHA" ]] || usage
+[[ -n "$PR" ]] || usage
 
 parse_positive_int() {
   local name="$1" default="$2" raw="${3:-}"
@@ -21,8 +22,8 @@ parse_positive_int() {
     echo "$default"
     return
   fi
-  if [[ "$raw" =~ ^[0-9]+$ ]] && [[ "$raw" -gt 0 ]]; then
-    echo "$raw"
+  if [[ "$raw" =~ ^[0-9]+$ ]] && [[ $((10#$raw)) -gt 0 ]]; then
+    echo "$((10#$raw))"
     return
   fi
   echo "::warning::Invalid ${name}=${raw}; using default ${default}" >&2
@@ -45,10 +46,13 @@ comment_limit="$(parse_positive_int FINALIZE_REVIEW_COMMENT_LIMIT "$DEFAULT_COMM
 
 bash "$SCRIPT_DIR/collect-pr-feedback.sh" "$PR" "$WORKDIR"
 
+# Canonical head from live PR metadata (matches diff collection in collect-pr-feedback.sh).
+HEAD_SHA="$(jq -r .head.sha "$WORKDIR/pr.json")"
+
 pr_json="$(cat "$WORKDIR/pr.json")"
-pr_title="$(printf '%s' "$pr_json" | jq -r .title)"
-pr_body="$(printf '%s' "$pr_json" | jq -r .body)"
-pr_url="$(printf '%s' "$pr_json" | jq -r .html_url)"
+pr_title="$(printf '%s' "$pr_json" | jq -r '.title // ""')"
+pr_body="$(printf '%s' "$pr_json" | jq -r '.body // ""')"
+pr_url="$(printf '%s' "$pr_json" | jq -r '.html_url // ""')"
 labels="$(jq -r '.[].name' "$WORKDIR/labels.json" | paste -sd ', ' -)"
 
 full_diff_bytes="$(wc -c <"$WORKDIR/diff.patch" | tr -d ' ')"
@@ -110,14 +114,14 @@ prompt_file="$WORKDIR/prompt.md"
   echo "### Formal PR reviews (JSON)"
   echo ""
   echo '```json'
-  head -c 120000 "$WORKDIR/reviews.json"
+  jq -c 'map({id, user: .user.login, body, state, commit_id})' "$WORKDIR/reviews.json" | head -c 120000
   echo ""
   echo '```'
   echo ""
   echo "### Inline review comments (JSON)"
   echo ""
   echo '```json'
-  head -c 120000 "$WORKDIR/review-comments.json"
+  jq -c 'map({id, path, line, user: .user.login, body, diff_hunk})' "$WORKDIR/review-comments.json" | head -c 120000
   echo ""
   echo '```'
   echo ""
@@ -147,6 +151,10 @@ has_gemini=0
 
 pick_provider() {
   local want="${FINALIZE_REVIEW_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
+  if [[ "$want" == "antigravity" ]]; then
+    echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; finalize uses auto (cursor, else gemini)." >&2
+    want=auto
+  fi
   case "$want" in
     cursor)
       echo cursor
@@ -216,19 +224,20 @@ if ! grep -q "$MARKER_TOKEN" "$out_file"; then
   mv "$out_file.tmp" "$out_file"
 fi
 
-if ! grep -q '^Head reviewed:' "$out_file"; then
-  awk -v sha="$HEAD_SHA" '
-    /^## Final Feedback Inbox/ {
-      print
-      print ""
-      print "Head reviewed: `" sha "`"
-      print "Mode: final consolidation, non-blocking unless a human applies `review:blocking-ai`"
-      next
-    }
-    { print }
-  ' "$out_file" >"$out_file.tmp"
-  mv "$out_file.tmp" "$out_file"
-fi
+# Normalize workflow-known header fields (do not trust model-filled SHA/Mode).
+awk -v sha="$HEAD_SHA" '
+  /^Head reviewed:/ { next }
+  /^Mode:/ { next }
+  /^#{1,3}[[:space:]]*Final Feedback Inbox/ {
+    print "## Final Feedback Inbox"
+    print ""
+    print "Head reviewed: `" sha "`"
+    print "Mode: final consolidation, non-blocking unless a human applies `review:blocking-ai`"
+    next
+  }
+  { print }
+' "$out_file" >"$out_file.tmp"
+mv "$out_file.tmp" "$out_file"
 
 comment_bytes="$(wc -c <"$out_file" | tr -d ' ')"
 if [[ "$comment_bytes" -gt "$comment_limit" ]]; then
@@ -252,7 +261,7 @@ EOF
   grep -v 'ai-feedback-inbox:v1' "$out_file" >"$WORKDIR/body-stripped.md" || cp "$out_file" "$WORKDIR/body-stripped.md"
   {
     cat "$header_file"
-    head -c "$body_budget" "$WORKDIR/body-stripped.md"
+    head -c "$body_budget" "$WORKDIR/body-stripped.md" | iconv -f utf-8 -t utf-8 -c
   } >"$out_file.tmp"
   mv "$out_file.tmp" "$out_file"
   echo "::warning::Feedback inbox truncated to ${comment_limit} bytes (was ${comment_bytes})" >&2

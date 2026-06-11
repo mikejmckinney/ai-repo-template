@@ -11,6 +11,7 @@
 #   - cursor — Cursor SDK (CURSOR_API_KEY)
 #   - gemini — Gemini generateContent (GEMINI_API_KEY or GOOGLE_API_KEY)
 #   - auto   — cursor if key present, else gemini
+#   antigravity (advisory-only) falls back to auto when unset on FINALIZE_REVIEW_PROVIDER
 
 name: Agent — final feedback consolidation
 
@@ -52,7 +53,6 @@ jobs:
     env:
       GITHUB_REPOSITORY: ${{ github.repository }}
       PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
-      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       FINALIZE_REVIEW_PROVIDER: ${{ vars.FINALIZE_REVIEW_PROVIDER || '' }}
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
       FINALIZE_REVIEW_DIFF_LIMIT: ${{ vars.FINALIZE_REVIEW_DIFF_LIMIT || '' }}
@@ -72,6 +72,10 @@ jobs:
           has_cursor=0 has_gemini=0
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
+          if [[ "$PROVIDER" == "antigravity" ]]; then
+            echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; finalize uses auto (cursor, else gemini)."
+            PROVIDER=auto
+          fi
           case "$PROVIDER" in
             cursor)
               [[ "$has_cursor" -eq 1 ]] || { echo "::error::FINALIZE_REVIEW_PROVIDER=cursor but CURSOR_API_KEY is missing"; exit 1; }
@@ -96,12 +100,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number || inputs.pr }}
+          REPO: ${{ github.repository }}
         run: |
-          if [[ -n "${HEAD_SHA:-}" ]]; then
-            echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
-            exit 0
+          pr_json="$(gh pr view "$PR" --json state,headRefOid,headRepository,baseRepository)"
+          state="$(printf '%s' "$pr_json" | jq -r .state)"
+          head_sha="$(printf '%s' "$pr_json" | jq -r .headRefOid)"
+          head_repo="$(printf '%s' "$pr_json" | jq -r .headRepository.nameWithOwner)"
+          if [[ "$state" != "OPEN" ]]; then
+            echo "::error::PR #${PR} is not open (state=${state})"
+            exit 1
           fi
-          head_sha="$(gh pr view "$PR" --json headRefOid -q .headRefOid)"
+          if [[ "$head_repo" != "$REPO" ]]; then
+            echo "::error::PR #${PR} head repo ${head_repo} is not same-repo (${REPO}); fork PRs are not supported"
+            exit 1
+          fi
           echo "head_sha=${head_sha}" >> "$GITHUB_OUTPUT"
 
       - name: Checkout PR head

@@ -3,6 +3,7 @@
 # Usage: collect-pr-feedback.sh <pr-number> <out-dir>
 # Read-only: uses gh api / gh pr view (no write permissions required).
 set -euo pipefail
+umask 077
 
 usage() {
   echo "Usage: collect-pr-feedback.sh <pr-number> <out-dir>" >&2
@@ -26,7 +27,7 @@ jq '.labels' "$OUT_DIR/pr.json" >"$OUT_DIR/labels.json"
 paginate_to_array() {
   local endpoint="$1" outfile="$2"
   local raw
-  raw="$(gh api "$endpoint" --paginate 2>/dev/null || true)"
+  raw="$(gh api "$endpoint" --paginate)"
   if [[ -z "$raw" ]]; then
     echo '[]' >"$outfile"
   else
@@ -46,23 +47,23 @@ ADVISORY_TOKEN='ai-advisory-review:v1'
 INBOX_TOKEN='ai-feedback-inbox:v1'
 
 jq -r --arg tok "$ADVISORY_TOKEN" '
-  if length == 0 then ""
-  else
-    (["## Advisory snapshot comment(s)", ""]
-      + ([.[] | select(.body | contains($tok))
-          | "### Comment \(.id) — \(.user.login) @ \(.created_at)\n\n\(.body)"]))
-    | join("\n\n")
-  end
+  [.[] | select((.body | type) == "string" and (.body | contains($tok)))] as $matches
+  | if ($matches | length) == 0 then ""
+    else
+      (["## Advisory snapshot comment(s)", ""]
+        + ($matches | map("### Comment \(.id) — \(.user.login) @ \(.created_at)\n\n\(.body)")))
+      | join("\n\n")
+    end
 ' "$OUT_DIR/comments.json" >"$OUT_DIR/advisory-comments.md"
 
 jq -r --arg tok "$INBOX_TOKEN" '
-  if length == 0 then ""
-  else
-    (["## Prior feedback inbox comment(s)", ""]
-      + ([.[] | select(.body | contains($tok))
-          | "### Comment \(.id) — \(.user.login) @ \(.created_at)\n\n\(.body)"]))
-    | join("\n\n")
-  end
+  [.[] | select((.body | type) == "string" and (.body | contains($tok)))] as $matches
+  | if ($matches | length) == 0 then ""
+    else
+      (["## Prior feedback inbox comment(s)", ""]
+        + ($matches | map("### Comment \(.id) — \(.user.login) @ \(.created_at)\n\n\(.body)")))
+      | join("\n\n")
+    end
 ' "$OUT_DIR/comments.json" >"$OUT_DIR/prior-inbox.md"
 
 jq -r '.[].filename' "$OUT_DIR/changed-files.json" >"$OUT_DIR/changed-files.txt" 2>/dev/null || : >"$OUT_DIR/changed-files.txt"
