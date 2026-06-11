@@ -10,6 +10,7 @@
 - Reused advisory LLM runners (`run-advisory-cursor.mjs`, `run-advisory-gemini.py`) and `upsert-pr-comment.sh` (AP8).
 - Tightened `.context/rules/README.md` read-profile catalog (startup-min adds `00_INDEX`; standard adds work-style/doc-maintenance/session-state/opportunity-feedback; implementation uses `domain_code_quality`).
 - Addressed feedback-inbox bot review (fresh head SHA + open/same-repo guards, collector fail-fast pagination, canonical inbox headers, antigravity → auto fallback).
+- **E2E dogfood on PR #382:** `implementation-complete` triggered [workflow run 27377171619](https://github.com/mikejmckinney/ai-repo-template/actions/runs/27377171619) (success, ~1m); sticky [Feedback Inbox comment](https://github.com/mikejmckinney/ai-repo-template/pull/382#issuecomment-4685046682) posted at `6e5fbf5` with Cursor `composer-2.5-fast`, 21 inline comments ingested, no push/formal review.
 
 ## What Shipped
 
@@ -36,6 +37,5 @@
 
 ## Open Items / Next
 
-1. **PR 4 (combined pack)** — post-merge retrospective on `feature/postmerge-retro-review` using `04-postmerge-retrospective.md` and label `retro-review`. Start from current `main` after #382 merge.
-2. **E2E dogfood** — apply `implementation-complete` on a test PR with repo secrets; confirm Feedback Inbox sticky comment and that workflow does not push or submit formal reviews.
-3. **Read-profile experiment** — new session to validate task-boundary profile loading and thin `AGENTS.md` v24 injection vs on-disk rules.
+1. **PR 4 (combined pack)** — post-merge retrospective on `feature/postmerge-retro-review` using `04-postmerge-retrospective.md` and label `retro-review`. Start from current `main`.
+2. **Read-profile experiment** — new session to validate task-boundary profile loading and thin `AGENTS.md` v24 injection vs on-disk rules.
