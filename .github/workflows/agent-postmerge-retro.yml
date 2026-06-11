@@ -102,14 +102,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number || inputs.pr }}
         run: |
-          pr_json="$(gh pr view "$PR" --json state,merged,mergedAt,headRefOid,mergeCommit,baseRefName,headRepository,baseRepository)"
-          merged="$(printf '%s' "$pr_json" | jq -r .merged)"
+          pr_json="$(gh pr view "$PR" --json state,mergedAt,headRefOid,mergeCommit,baseRefName,headRepository)"
+          merged_at="$(printf '%s' "$pr_json" | jq -r .mergedAt)"
           state="$(printf '%s' "$pr_json" | jq -r .state)"
           base_ref="$(printf '%s' "$pr_json" | jq -r .baseRefName)"
           head_repo="$(printf '%s' "$pr_json" | jq -r .headRepository.nameWithOwner)"
           merge_sha="$(printf '%s' "$pr_json" | jq -r '.mergeCommit.oid // .headRefOid')"
-          if [[ "$merged" != "true" ]]; then
-            echo "::error::PR #${PR} is not merged (state=${state})"
+          if [[ -z "$merged_at" || "$merged_at" == "null" ]]; then
+            echo "::error::PR #${PR} is not merged (state=${state}, mergedAt=${merged_at})"
             exit 1
           fi
           if [[ "$base_ref" != "main" ]]; then

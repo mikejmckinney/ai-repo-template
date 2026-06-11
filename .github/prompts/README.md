@@ -93,8 +93,8 @@ lists come after, not before.
       `scripts/workflows/advisory-review/`, Cursor + Antigravity + Gemini).
     - PR 3 (final feedback consolidation): **merged** (#382 @ `e0d845e`; `agent-review-finalize.yml`,
       `scripts/workflows/pr-feedback/`, label `implementation-complete`).
-    - PR 4 (post-merge retrospective): **in progress** — branch `feature/postmerge-retro-review`, prompt
-      `04-postmerge-retrospective.md` (label `retro-review`).
+    - PR 4 (post-merge retrospective): **merged** (#383 @ `7e0bf68`; `agent-postmerge-retro.yml`,
+      `scripts/workflows/postmerge-retro/`, label `retro-review`).
 
 ### Postmortem feedback loop
 
