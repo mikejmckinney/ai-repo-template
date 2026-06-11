@@ -49,7 +49,7 @@ while IFS= read -r row; do
     echo "Skip (exists): ${marker}"
     continue
   fi
-  labels="$(printf '%s' "$row" | jq -r '(.labels // []) + ["agent-suggested"] | unique | join(",")')"
+  labels_csv="$(printf '%s' "$row" | jq -r '(.labels // []) + ["agent-suggested"] | unique | join(",")')"
   body_file="$WORKDIR/follow-${dedupe}.md"
   {
     printf '%s\n\n' "$marker"
@@ -58,7 +58,7 @@ while IFS= read -r row; do
     ev="$(printf '%s' "$row" | jq -r '.evidence // [] | if length == 0 then empty else "### Evidence\n" + (map("- " + .) | join("\n")) end')"
     [[ -n "$ev" ]] && printf '%s\n' "$ev"
   } >"$body_file"
-  create_issue "$title" "$body_file" "$labels"
+  create_issue "$title" "$body_file" "$labels_csv"
 done < <(jq -c '.follow_up_issues[]?' "$RETRO_JSON")
 
 while IFS= read -r row; do
