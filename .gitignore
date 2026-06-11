@@ -24,8 +24,8 @@
 #     example file remains tracked even when its `.env*` siblings are not.
 # =============================================================================
 
-# --- Environment / secrets ---
-.env
+# --- CI / local artifacts ---
+.artifacts/
 .env.*
 !.env.example
 

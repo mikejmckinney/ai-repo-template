@@ -1,0 +1,164 @@
+# Agent — post-merge retrospective (opt-in via retro-review labels)
+# -------------------------------------------------------------------
+# After a PR merges to main, collects evidence and creates follow-up issues
+# idempotently. Does NOT edit code, ADRs, or context-pack files.
+#
+# Scripts: scripts/workflows/postmerge-retro/ (AP8). Reuses
+# scripts/workflows/pr-feedback/collect-pr-feedback.sh via wrapper and
+# advisory-review LLM runners for JSON retrospective output.
+#
+# Providers (POSTMERGE_RETRO_PROVIDER or ADVISORY_REVIEW_PROVIDER, default auto):
+#   - cursor — Cursor SDK (CURSOR_API_KEY)
+#   - gemini — Gemini generateContent (GEMINI_API_KEY or GOOGLE_API_KEY)
+#   - auto   — cursor if key present, else gemini
+
+name: Agent — post-merge retrospective
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "Merged PR number"
+        required: true
+      create_issues:
+        description: "Create issues from retro output"
+        required: true
+        default: "true"
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: postmerge-retro-${{ github.event.pull_request.number || inputs.pr }}
+  cancel-in-progress: true
+
+jobs:
+  postmerge-retro:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.pull_request.merged == true &&
+        github.event.pull_request.base.ref == 'main' &&
+        (
+          contains(github.event.pull_request.labels.*.name, 'retro-review') ||
+          contains(github.event.pull_request.labels.*.name, 'retro:adr') ||
+          contains(github.event.pull_request.labels.*.name, 'retro:context-pack') ||
+          contains(github.event.pull_request.labels.*.name, 'ai-review:full')
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
+      CREATE_ISSUES: ${{ github.event_name == 'workflow_dispatch' && inputs.create_issues || 'true' }}
+      POSTMERGE_RETRO_PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || '' }}
+      ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+      POSTMERGE_RETRO_DIFF_LIMIT: ${{ vars.POSTMERGE_RETRO_DIFF_LIMIT || '' }}
+      CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
+      GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
+      POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
+    steps:
+      - name: Verify required secrets
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+        run: |
+          has_cursor=0 has_gemini=0
+          [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
+          [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
+          if [[ "$PROVIDER" == "antigravity" ]]; then
+            echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (cursor, else gemini)."
+            PROVIDER=auto
+          fi
+          case "$PROVIDER" in
+            cursor)
+              [[ "$has_cursor" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=cursor but CURSOR_API_KEY is missing"; exit 1; }
+              ;;
+            gemini)
+              [[ "$has_gemini" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
+              ;;
+            auto)
+              [[ "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
+                echo "::error::Post-merge retro needs CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
+                exit 1
+              }
+              ;;
+            *)
+              echo "::error::Unknown POSTMERGE_RETRO_PROVIDER=$PROVIDER"
+              exit 1
+              ;;
+          esac
+
+      - name: Verify merged PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number || inputs.pr }}
+        run: |
+          pr_json="$(gh pr view "$PR" --json state,merged,mergedAt,headRefOid,mergeCommit,baseRefName,headRepository,baseRepository)"
+          merged="$(printf '%s' "$pr_json" | jq -r .merged)"
+          state="$(printf '%s' "$pr_json" | jq -r .state)"
+          base_ref="$(printf '%s' "$pr_json" | jq -r .baseRefName)"
+          head_repo="$(printf '%s' "$pr_json" | jq -r .headRepository.nameWithOwner)"
+          merge_sha="$(printf '%s' "$pr_json" | jq -r '.mergeCommit.oid // .headRefOid')"
+          if [[ "$merged" != "true" ]]; then
+            echo "::error::PR #${PR} is not merged (state=${state})"
+            exit 1
+          fi
+          if [[ "$base_ref" != "main" ]]; then
+            echo "::error::PR #${PR} base ref ${base_ref} is not main"
+            exit 1
+          fi
+          if [[ "$head_repo" != "${{ github.repository }}" ]]; then
+            echo "::error::PR #${PR} head repo ${head_repo} is not same-repo"
+            exit 1
+          fi
+          echo "merge_sha=${merge_sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.merge_sha }}
+          fetch-depth: 0
+
+      - name: Setup Node.js (Cursor SDK path)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run post-merge retrospective
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          if [[ -n "${CLAUDE_PAT:-}" ]]; then
+            export GH_TOKEN="$CLAUDE_PAT"
+            echo "Using CLAUDE_PAT for gh issue API."
+          else
+            export GH_TOKEN="$GITHUB_TOKEN"
+            echo "Using GITHUB_TOKEN for gh issue API (CLAUDE_PAT unset)."
+          fi
+          chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
+          chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
+          bash scripts/workflows/postmerge-retro/run-postmerge-retro.sh \
+            "${{ github.event.pull_request.number || inputs.pr }}" \
+            "${{ env.CREATE_ISSUES }}"
+
+      - name: Upload retro artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postmerge-retro-pr-${{ github.event.pull_request.number || inputs.pr }}
+          path: .artifacts/postmerge-retro/
+          if-no-files-found: ignore
+          retention-days: 14

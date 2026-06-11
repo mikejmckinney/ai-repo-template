@@ -1,0 +1,16 @@
+{
+  "pr": 382,
+  "summary": "Fixture retro for PR 382 final feedback consolidation.",
+  "follow_up_issues": [
+    {
+      "title": "Add invariant test for retro JSON schema",
+      "labels": ["agent-suggested"],
+      "severity": "low",
+      "body": "Ensure postmerge retro output stays schema-valid.",
+      "evidence": ["scripts/checks/052-postmerge-retro-invariants.sh"],
+      "dedupe_key": "fixture-retro-schema-test"
+    }
+  ],
+  "adr_updates": [],
+  "context_pack_updates": []
+}

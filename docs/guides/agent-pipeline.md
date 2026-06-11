@@ -223,6 +223,38 @@ normal deterministic merge gates
 
 **Interaction with `claude-fix`:** consolidation only posts the inbox. A human may then add `claude-fix` for automated remediation via the existing `agent-fix-reviews.yml` rules. `review:blocking-ai` is a separate human escalation label — consolidation does not apply it.
 
+### Post-merge retrospective review (opt-in)
+
+After a PR **merges to `main`**, apply one of **`retro-review`**, **`retro:adr`**, **`retro:context-pack`**, or **`ai-review:full`** before merge (labels are read from the merged PR) to run `agent-postmerge-retro.yml`. The workflow collects merged-PR evidence, runs one LLM retrospective pass, and **creates follow-up issues idempotently** — it does **not** edit code, ADRs, or context-pack files.
+
+**Happy path:**
+
+```text
+Merged PR with retro-review / retro:adr / retro:context-pack / ai-review:full
+  ↓
+evidence collection (wraps collect-pr-feedback.sh)
+  ↓
+retrospective analysis → retro.json
+  ↓
+idempotent follow-up issue creation (dedupe markers)
+```
+
+| Trigger | Behavior |
+|---|---|
+| `pull_request` `closed` + merged + label gate | Runs retro for that PR when it merged to `main` |
+| `workflow_dispatch` with PR number | Manual re-run (required for already-merged PRs whose close event passed before the workflow existed) |
+| `create_issues=false` on dispatch | Produces `retro.json` artifact only; skips `gh issue create` |
+
+**Collection (deterministic, read-only):** `scripts/workflows/postmerge-retro/collect-postmerge-evidence.sh` wraps `scripts/workflows/pr-feedback/collect-pr-feedback.sh` and normalizes artifact names (`issue-comments.json`, `reviews.json`, `review-comments.json`, `diff.patch`, advisory/inbox extracts).
+
+**Dispatch:** `scripts/workflows/postmerge-retro/run-postmerge-retro.sh` builds the prompt from `.github/prompts/post-merge-retro.md`, reuses advisory-review Cursor/Gemini runners (`auto` default), extracts JSON via `extract-retro-json.py`, validates with `validate-postmerge-retro.py`, then optionally runs `postmerge-retro-create-issues.sh`.
+
+**Issue dedupe:** each created issue includes `<!-- postmerge-retro:pr=<PR>:key=<dedupe_key> -->` in the body. Re-runs search open/closed issues and skip duplicates.
+
+**Labels on created issues:** `agent-suggested` always; plus `adr:update` for ADR candidates or `context-pack` for context-pack tuning candidates.
+
+**Artifacts:** workflow uploads `.artifacts/postmerge-retro/pr-<N>/` (ephemeral; not committed to the repo).
+
 #### Provider, billing, and context loading
 
 **Billing / tier (not configured in this workflow):**
@@ -414,8 +446,8 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 |--------|-------------|-----------------|
 | `CLAUDE_PAT` | Agent workflows that call `gh` (assignment, auto-merge, auto-ready, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
 | `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
-| `CURSOR_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml` (Cursor SDK path; preferred when provider `auto`) | API key from Cursor dashboard / SDK docs |
-| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml` (Gemini API path) | Google AI Studio / Gemini API key |
+| `CURSOR_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (Cursor SDK path; preferred when provider `auto`) | API key from Cursor dashboard / SDK docs |
+| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (Gemini API path) | Google AI Studio / Gemini API key |
 | `SANDBOX_BOOTSTRAP_TOKEN` | Sandbox verification steps (force-push sandbox `main`, push branch, `gh pr create/merge` on the sandbox repo). Used by agents running in workflows; maintainers running locally pass the same token as `BOOTSTRAP_GH_TOKEN` env var instead. | Classic PAT, `repo` + `workflow` scopes. Must be classic — fine-grained tokens cannot push `.github/workflows/` files without special account-level scope that typically isn't available until after the sandbox repo is created. See `docs/guides/sandbox-verification.md`. |
 
 **Two ways to provide them**, in order of preference for users running multiple derived repos:
@@ -813,6 +845,11 @@ for Gemini to finish posting.
 | `.github/workflows/agent-auto-merge.yml` | Auto-merge when ready; drains Copilot queue after merge | No (uses CLAUDE_PAT) |
 | `.github/workflows/agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (opt-in via `ai-review:live`); sticky issue comment; Cursor / Antigravity / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; antigravity also needs `ADVISORY_ANTIGRAVITY_ENABLED=true`) |
 | `scripts/workflows/advisory-review/` | AP8 workflow logic: dispatch, providers, upsert comment | Invoked by `agent-advisory-review.yml` |
+| `.github/workflows/agent-review-finalize.yml` | Final Feedback Inbox (`implementation-complete`); Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
+| `scripts/workflows/pr-feedback/` | AP8 finalize: collect feedback + consolidate dispatch | Invoked by `agent-review-finalize.yml` |
+| `.github/workflows/agent-postmerge-retro.yml` | Post-merge retrospective + idempotent follow-up issues (`retro-review` and related labels on merged PRs); Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; `issues: write`) |
+| `scripts/workflows/postmerge-retro/` | AP8 post-merge retro: evidence wrapper, JSON extract/validate, issue creation | Invoked by `agent-postmerge-retro.yml` |
+| `.github/prompts/post-merge-retro.md` | Post-merge retrospective JSON prompt | Used by `agent-postmerge-retro.yml` |
 | `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-out via repo variable `REVIEW_ON_PUSH=false` | Yes (CLAUDE_PAT for Gemini comment author identity) |
 | `.github/prompts/pr-advisory-review.md` | Four-lens advisory snapshot prompt (Analyst/Judge/Critic/Code) | Used by `agent-advisory-review.yml` |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |
