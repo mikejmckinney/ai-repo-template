@@ -30,6 +30,8 @@ lists come after, not before.
   These describe procedures, not deliverables, and don't require pre-flight.
   - **`pr-advisory-review.md`** — non-blocking four-lens advisory snapshot for
     draft/WIP PRs when `ai-review:live` is applied (`agent-advisory-review.yml`).
+  - **`pr-final-feedback-consolidation.md`** — final Feedback Inbox consolidation
+    when `implementation-complete` is applied (`agent-review-finalize.yml`).
   - **`pre-push-review.md`** — Critic + lint + `./test.sh` summary against
     the working-tree diff before push. SHOULD per AGENTS.md →
     "Work style"; MUST for the DevOps role on shell/workflow changes

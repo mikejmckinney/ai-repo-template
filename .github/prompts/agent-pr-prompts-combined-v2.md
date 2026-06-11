@@ -35,6 +35,18 @@ Use these prompts to implement the PR sequence:
 - Do not claim a Cursor/Gemini GitHub Actions integration is wired unless the repo already has a working action/CLI path for it. If no such path exists, add a provider abstraction or TODO documentation and keep the workflow disabled/label-gated.
 - Treat `01b-rules-consolidation-and-legacy-retirement.md` as optional only if PR 1 already performed the broader `.context/rules` consolidation and retired the legacy redirect surface.
 
+## Pack implementation status (repo: `ai-repo-template`)
+
+| PR | Branch | Status on `main` |
+|---|---|---|
+| 1 | `feature/context-rule-decomposition` | Merged (context decomposition) |
+| 1B | `feature/rules-consolidation-legacy-retirement` | Merged (`864aac1`) |
+| 2 | `feature/advisory-review-mode` | Merged (`72bd1d9`) — `agent-advisory-review.yml`, `scripts/workflows/advisory-review/` |
+| 3 | `feature/final-feedback-consolidation` | **In progress** — `agent-review-finalize.yml`, `scripts/workflows/pr-feedback/` |
+| 4 | `feature/postmerge-retro-review` | Not started |
+
+PR 3 reuses advisory-review LLM runners (`run-advisory-cursor.mjs`, `run-advisory-gemini.py`) and `upsert-pr-comment.sh` (AP8 shared sticky-comment helper).
+
 
 ---
 

@@ -191,6 +191,38 @@ Repo variable **`ADVISORY_REVIEW_PROVIDER`**: `auto` (default), `cursor`, `antig
 
 **PR comment auth:** `gh` uses `CLAUDE_PAT` when set (recommended — avoids `GITHUB_TOKEN` integration 403s on comment POST); otherwise `GITHUB_TOKEN` with `issues: write` + `pull-requests: write`.
 
+### Final feedback consolidation (opt-in)
+
+After implementation is finished, apply **`implementation-complete`** to run `agent-review-finalize.yml`. The workflow collects advisory snapshots, formal PR reviews, inline review comments, and the current diff, then posts or updates one sticky **Feedback Inbox** comment (`<!-- ai-feedback-inbox:v1 -->`).
+
+This step is **non-blocking** by default. It does **not** submit a formal PR review, apply `claude-fix`, resolve threads, or push commits.
+
+**Happy path (replaces repeated serial review/fix loops as default flow):**
+
+```text
+Implementer pushes until done
+  ↓
+apply `implementation-complete`
+  ↓
+final feedback consolidation posts Feedback Inbox
+  ↓
+human/agent resolves selected items (optionally add `claude-fix`)
+  ↓
+normal deterministic merge gates
+```
+
+| Trigger | Behavior |
+|---|---|
+| `implementation-complete` label applied | Runs consolidation for that open same-repo PR |
+| PR marked `ready_for_review` while label present | Re-runs consolidation at current head |
+| `workflow_dispatch` with PR number | Manual re-run for operators |
+
+**Collection (deterministic, read-only):** `scripts/workflows/pr-feedback/collect-pr-feedback.sh` writes `pr.json`, `comments.json`, `reviews.json`, `review-comments.json`, `changed-files.json`, `diff.patch`, and `advisory-comments.md` under a temp dir before the LLM pass.
+
+**Dispatch:** `scripts/workflows/pr-feedback/run-feedback-consolidation.sh` builds the prompt from `.github/prompts/pr-final-feedback-consolidation.md`, reuses advisory-review Cursor/Gemini runners and `upsert-pr-comment.sh`.
+
+**Interaction with `claude-fix`:** consolidation only posts the inbox. A human may then add `claude-fix` for automated remediation via the existing `agent-fix-reviews.yml` rules. `review:blocking-ai` is a separate human escalation label — consolidation does not apply it.
+
 #### Provider, billing, and context loading
 
 **Billing / tier (not configured in this workflow):**
@@ -382,8 +414,8 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 |--------|-------------|-----------------|
 | `CLAUDE_PAT` | Agent workflows that call `gh` (assignment, auto-merge, auto-ready, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
 | `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
-| `CURSOR_API_KEY` | `agent-advisory-review.yml` (Cursor SDK path; preferred when `ADVISORY_REVIEW_PROVIDER=auto`) | API key from Cursor dashboard / SDK docs |
-| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `agent-advisory-review.yml` (Gemini API path) | Google AI Studio / Gemini API key |
+| `CURSOR_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml` (Cursor SDK path; preferred when provider `auto`) | API key from Cursor dashboard / SDK docs |
+| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml` (Gemini API path) | Google AI Studio / Gemini API key |
 | `SANDBOX_BOOTSTRAP_TOKEN` | Sandbox verification steps (force-push sandbox `main`, push branch, `gh pr create/merge` on the sandbox repo). Used by agents running in workflows; maintainers running locally pass the same token as `BOOTSTRAP_GH_TOKEN` env var instead. | Classic PAT, `repo` + `workflow` scopes. Must be classic — fine-grained tokens cannot push `.github/workflows/` files without special account-level scope that typically isn't available until after the sandbox repo is created. See `docs/guides/sandbox-verification.md`. |
 
 **Two ways to provide them**, in order of preference for users running multiple derived repos:
@@ -410,6 +442,11 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `ADVISORY_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted advisory issue comment (automation truncates with warning). |
 | `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Model id for Cursor SDK advisory snapshots. |
 | `GEMINI_ADVISORY_MODEL` | `gemini-3.5-flash` | Gemini `generateContent` model id (`gemini-3.5-flash`, `gemini-flash-latest`, …). |
+| `FINALIZE_REVIEW_PROVIDER` | *(falls back to `ADVISORY_REVIEW_PROVIDER`)* | Final inbox runtime: `auto`, `cursor`, or `gemini` (no antigravity path in PR 3). |
+| `FINALIZE_REVIEW_DIFF_LIMIT` | `300000` | Max diff bytes embedded in finalize consolidation prompt. |
+| `FINALIZE_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted Feedback Inbox comment. |
+| `CURSOR_FINALIZE_MODEL` | *(falls back to `CURSOR_ADVISORY_MODEL`)* | Cursor model id for finalize consolidation. |
+| `GEMINI_FINALIZE_MODEL` | *(falls back to `GEMINI_ADVISORY_MODEL`)* | Gemini model id for finalize consolidation. |
 | `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. **Also caps `agent-review-on-push.yml`** so Gemini/Copilot push-nudges stop firing after the same N rounds — without this, every fix-commit re-triggers stateless reviewers that re-flag already-deferred findings (PR #246 saw this across 13 rounds). Per-PR override: `cap-override` label on the PR (unbounded; bypasses both the agent-side cap and the push-nudge cap) or `@<agent> cap-override N` comment on the PR (N rounds). Manual `/gemini review` comments by humans are never gated. Only raise the default from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 ### 1. Copilot subscription
@@ -476,7 +513,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `agent-suggested` | `#BFD4F2` (light blue) | Agent-surfaced opportunity; see process_opportunity_feedback rule. |
 | `ai-review:live` | `#1D76DB` (blue) | Enable rolling non-blocking advisory review snapshots (`agent-advisory-review.yml`; draft PRs OK) |
 | `ai-review:full` | `#5319E7` (purple) | Deeper advisory review pass on this PR |
-| `implementation-complete` | `#0E8A16` (green) | Implementation finished; triggers final feedback consolidation (PR 3) |
+| `implementation-complete` | `#0E8A16` (green) | Implementation finished; triggers `agent-review-finalize.yml` (Feedback Inbox) |
 | `retro-review` | `#FBCA04` (amber) | Opt merged PR into post-merge retrospective (PR 4) |
 | `retro:adr` | `#C5DEF5` (light blue) | Post-merge retro may propose ADR follow-ups |
 | `retro:context-pack` | `#BFD4F2` (light blue) | Post-merge retro may propose context-pack follow-ups |
