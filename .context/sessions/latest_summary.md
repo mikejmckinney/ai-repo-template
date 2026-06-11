@@ -1,31 +1,41 @@
-# Session: 2026-05-13 — feature/307-compliance-phase1 — pm/devops
+# Session: 2026-06-11 — feature/final-feedback-consolidation — OP
 
 **Status**: done
-**Issue/PR**: [#307](https://github.com/mikejmckinney/ai-repo-template/issues/307) / [#308](https://github.com/mikejmckinney/ai-repo-template/pull/308) (merged at [`fa4a81b`](https://github.com/mikejmckinney/ai-repo-template/commit/fa4a81bde5c9753a3ffce4c12e8edadbe0e67615))
-**Started**: 2026-05-13T13:39:45Z
+**Issue/PR**: [#382](https://github.com/mikejmckinney/ai-repo-template/pull/382) (combined pack PR 3)
+**Started**: 2026-06-11T20:46:00Z
 
 ## What Was Accomplished
-- Merged [PR #308](https://github.com/mikejmckinney/ai-repo-template/pull/308) after resolving repeated bot feedback on ADR-026 compliance contracts; final head `1ca1836` squash-merged as [`fa4a81b`](https://github.com/mikejmckinney/ai-repo-template/commit/fa4a81bde5c9753a3ffce4c12e8edadbe0e67615).
-- Recorded corrected live evidence: PR body and [issue #307 plan comment](https://github.com/mikejmckinney/ai-repo-template/issues/307#issuecomment-4441585572) validate, [sandbox PR #11](https://github.com/mikejmckinney/ai-repo-template-sandbox/pull/11) verified workflow behavior, and templated [sandbox issue #14](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/14) / [PR #15](https://github.com/mikejmckinney/ai-repo-template-sandbox/pull/15) verified the 15-minute reviewer artifact path; supplemental evidence is recorded at [PR #308 comment 4443685774](https://github.com/mikejmckinney/ai-repo-template/pull/308#issuecomment-4443685774).
-- Posted a late ADR-025 [`agent-state:v1` closeout repair](https://github.com/mikejmckinney/ai-repo-template/pull/308#issuecomment-4443802692) on PR #308 after discovering the cadence had been missed earlier.
+
+- Shipped opt-in **final feedback consolidation**: label `implementation-complete` (or `workflow_dispatch`) runs `agent-review-finalize.yml`, collects advisory snapshots + formal reviews + inline comments + diff, and upserts one sticky **Feedback Inbox** comment (`<!-- ai-feedback-inbox:v1 -->`).
+- Reused advisory LLM runners (`run-advisory-cursor.mjs`, `run-advisory-gemini.py`) and `upsert-pr-comment.sh` (AP8).
+- Tightened `.context/rules/README.md` read-profile catalog (startup-min adds `00_INDEX`; standard adds work-style/doc-maintenance/session-state/opportunity-feedback; implementation uses `domain_code_quality`).
+- Addressed feedback-inbox bot review (fresh head SHA + open/same-repo guards, collector fail-fast pagination, canonical inbox headers, antigravity → auto fallback).
 
 ## What Shipped
-- ADR-026 compliance contracts are now in the template: `plan_compliance`, `parent_compliance`, parsed `subagent_compliance`, canonical `role_contract_version`, validators, fixtures, template fields, role bootstrap guidance, and process-discipline checks.
-- CI and bootstrap packaging now install/copy the compliance assets needed by fresh clones, and canonical role metadata is validated for duplicate names and filename/frontmatter drift.
+
+- `.github/workflows/agent-review-finalize.yml`
+- `scripts/workflows/pr-feedback/{collect-pr-feedback,run-feedback-consolidation}.sh`
+- `.github/prompts/pr-final-feedback-consolidation.md`
+- `scripts/checks/051-final-feedback-invariants.sh`
+- Docs: `docs/guides/agent-pipeline.md`, `AI_REPO_GUIDE.md`, prompt README + combined pack status
 
 ## Harder Than Expected
-- Local schema tests were not enough to prove the user outcome. The useful smoke was a templated sandbox issue, plan comment, and PR body fetched back from GitHub and validated live.
-- ADR-025 live-state cadence was available but not operationalized during the long review loop; the closeout comment repaired final state only, not the missed historical cadence.
+
+- Feedback inbox self-review surfaced edge cases (stale webhook SHA, fork `workflow_dispatch`, empty advisory section headers, model-filled `Head reviewed:` lines) that needed workflow-owned normalization rather than prompt-only fixes.
+- Read-profile / AGENTS.md injection mismatch is a separate dogfood thread — deferred to a fresh session after PR 3 lands.
 
 ## Generalizable Lessons
-- Treat "go ahead and fix it" as permission to orchestrate the repo process and dispatch role subagents; do not absorb role-owned work into the default agent for convenience.
-- For compliance/process changes, include a live templated artifact smoke in addition to local validators and sandbox workflow checks.
-- `agent-state:v1` is an active cadence obligation at start, pauses, compaction, handoffs, review waits, and closeout; PR reports and resolution comments are not substitutes.
+
+- Finalize workflows should always resolve canonical PR head from `gh pr view` after checkout setup, not trust event payload SHA alone.
+- Sticky comment upserts should overwrite workflow-known metadata (`Head reviewed:`, `Mode:`) deterministically.
+- Collector scripts should fail fast on `gh api` errors; swallowing pagination failures produces empty evidence silently.
 
 ## Files Modified
-- `.context/sessions/latest_summary.md` - new durable retrospective for PR #308.
-- `.context/sessions/2026-05-13_archived-297.md` - archived previous PR #297 retrospective via copy rotation.
+
+- See PR #382 diff (workflow, pr-feedback scripts, invariants check, rule catalog, pipeline docs).
 
 ## Open Items / Next
-- [Issue #309](https://github.com/mikejmckinney/ai-repo-template/issues/309) tracks the markdownlint baseline cleanup deferred from PR #308.
-- [Issue #307](https://github.com/mikejmckinney/ai-repo-template/issues/307) remained open at merge time; maintainer can close it if PR #308 satisfies the remaining umbrella scope.
+
+1. **PR 4 (combined pack)** — post-merge retrospective on `feature/postmerge-retro-review` using `04-postmerge-retrospective.md` and label `retro-review`. Start from current `main` after #382 merge.
+2. **E2E dogfood** — apply `implementation-complete` on a test PR with repo secrets; confirm Feedback Inbox sticky comment and that workflow does not push or submit formal reviews.
+3. **Read-profile experiment** — new session to validate task-boundary profile loading and thin `AGENTS.md` v24 injection vs on-disk rules.
