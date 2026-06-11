@@ -27,11 +27,16 @@ marker_exists() {
 
 create_issue() {
   local title="$1" body_file="$2" labels_csv="$3"
-  local -a label_args=()
+  local -a label_args=() lb
   IFS=',' read -ra labels <<<"$labels_csv"
   for lb in "${labels[@]}"; do
     lb="$(echo "$lb" | xargs)"
-    [[ -n "$lb" ]] && label_args+=(--label "$lb")
+    [[ -z "$lb" ]] && continue
+    if gh label list --json name --jq '.[].name' 2>/dev/null | grep -Fxq "$lb"; then
+      label_args+=(--label "$lb")
+    else
+      echo "::warning::Label '${lb}' not found in ${REPO}; creating issue without it"
+    fi
   done
   gh issue create --title "$title" --body-file "$body_file" "${label_args[@]}"
   echo "Created issue: ${title}"

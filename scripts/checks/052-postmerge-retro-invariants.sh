@@ -70,7 +70,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "postmerge-retro-create-issues.sh missing dedupe marker logic"
   fi
 
-  for label in retro-review retro:adr retro:context-pack adr:update; do
+  for label in retro-review retro:adr retro:context-pack adr:update context-pack; do
     if grep -q "^${label}|" "$LABELS_SCRIPT" 2>/dev/null; then
       pass "label ${label} declared in setup"
     else

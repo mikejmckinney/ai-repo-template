@@ -48,6 +48,7 @@ retro-review|FBCA04|Opt merged PR into post-merge retrospective review (PR 4)
 retro:adr|C5DEF5|Post-merge retro may propose ADR follow-up issues
 retro:context-pack|BFD4F2|Post-merge retro may propose context-pack follow-up issues
 adr:update|C2E0C6|ADR amendment candidate from post-merge retro or maintainer triage
+context-pack|BFD4F2|Context-pack improvement follow-up from retro or agent-suggested
 review:blocking-ai|D93F0B|Human escalation: an AI advisory finding should block until resolved
 LABEL_SPECS
 )

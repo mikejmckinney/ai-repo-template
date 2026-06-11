@@ -40,7 +40,7 @@ _label_declared() {
 }
 
 @test "advisory review labels are declared in 40-ensure-labels.sh" {
-  for label in ai-review:live ai-review:full implementation-complete retro-review review:blocking-ai retro:adr retro:context-pack adr:update; do
+  for label in ai-review:live ai-review:full implementation-complete retro-review review:blocking-ai retro:adr retro:context-pack adr:update context-pack; do
     _label_declared "$label" || { echo "missing label: $label"; return 1; }
   done
 }
