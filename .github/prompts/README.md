@@ -88,7 +88,7 @@ lists come after, not before.
       `864aac1`; AGENTS v23, redirect guide, rule-file slimming, check `048`).
     - PR 2 (advisory review): **merged** (#381 @ `72bd1d9`; `agent-advisory-review.yml`,
       `scripts/workflows/advisory-review/`, Cursor + Antigravity + Gemini).
-    - PR 3 (final feedback consolidation): **merged** (#382 @ `4b7408c`; `agent-review-finalize.yml`,
+    - PR 3 (final feedback consolidation): **merged** (#382 @ `e0d845e`; `agent-review-finalize.yml`,
       `scripts/workflows/pr-feedback/`, label `implementation-complete`).
     - PR 4 (post-merge retrospective): **next** — branch `feature/postmerge-retro-review`, prompt
       `04-postmerge-retrospective.md` (label `retro-review`).

@@ -1,7 +1,7 @@
 # Session: 2026-06-11 — feature/final-feedback-consolidation — OP
 
 **Status**: done
-**Issue/PR**: [#382](https://github.com/mikejmckinney/ai-repo-template/pull/382) (combined pack PR 3)
+**Issue/PR**: [#382](https://github.com/mikejmckinney/ai-repo-template/pull/382) (merged at [`e0d845e`](https://github.com/mikejmckinney/ai-repo-template/commit/e0d845ebd93f1d13eaede2693674f016d0561a91); combined pack PR 3)
 **Started**: 2026-06-11T20:46:00Z
 
 ## What Was Accomplished
