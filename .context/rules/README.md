@@ -29,14 +29,14 @@ Use these names in the session handshake’s `Read profile` field.
 
 | Profile | Use when | Minimum files |
 |---|---|---|
-| `startup-min` | Simple orientation or non-editing repo question. | `AGENTS.md`, `process_session_start.md`, `process_critical_thinking.md`, `process_clarification.md`, this catalog. |
-| `standard` | Default for most issue/PR work before choosing a narrower task profile. | `startup-min`, `.context/00_INDEX.md`, role file if acting as a role, `agent_ownership.md`, `process_critical_thinking.md`, `process_role_selection.md`. |
-| `implementation` | Implementing or modifying code, docs, config, checks, prompts, or workflows. | `standard`, `process_work_style.md`, `process_gates.md`, `process_doc_maintenance.md`, plus domain rules for changed paths. |
-| `pr-review` | Reviewing a PR, preparing a PR, responding to review feedback, or checking merge readiness. | `standard`, `process_pr_completion.md`, `process_doc_maintenance.md`, `process_gates.md`, changed-path domain rules. |
-| `orchestration` | Changing agents, role overlays, dispatch, handoffs, review timing, subagent behavior, or model routing. | `standard`, `process_subagent_bootstrap.md`, `process_model_tier.md`, `repo_orchestration_patterns.md`, `process_doc_maintenance.md`. |
-| `policy-adr` | Writing or changing ADRs, process policy, governance docs, or rule files. | `standard`, `process_doc_maintenance.md`, `repo_orchestration_patterns.md`, relevant ADR(s), `docs/decisions/adr-template.md`. |
+| `startup-min` | non-editing repo question. | `AGENTS.md`, `process_session_start.md`, `process_critical_thinking.md`, `process_clarification.md`, `.context/00_INDEX.md`, this catalog. |
+| `standard` | Default for most issue/PR work before choosing a narrower task profile. | `startup-min`, role file if acting as a role, `agent_ownership.md`, `process_work_style.md`, `process_doc_maintenance.md`, `process_role_selection.md`, `process_session_state.md`, `process_opportunity_feedback.md`. |
+| `implementation` | Implementing or modifying code, docs, config, checks, prompts, or workflows. | `standard`, `domain_code_quality.md`, `process_gates.md`,  plus domain rules for changed paths. |
+| `pr-review` | Reviewing a PR, preparing a PR, responding to review feedback, or checking merge readiness. | `standard`, `process_pr_completion.md`, `process_gates.md`, changed-path domain rules. |
+| `orchestration` | Changing agents, role overlays, dispatch, handoffs, review timing, subagent behavior, or model routing. | `standard`, `process_subagent_bootstrap.md`, `process_model_tier.md`, `repo_orchestration_patterns.md`. |
+| `policy-adr` | Writing or changing ADRs, process policy, governance docs, or rule files. | `standard`, `repo_orchestration_patterns.md`, relevant ADR(s), `docs/decisions/adr-template.md`. |
 | `benchmark` | Changing benchmark protocol, candidates, scoring, adapters, cost math, or benchmark results. | `standard`, `.context/benchmarks/model-roi/README.md`, benchmark runbook/results as relevant, `process_model_tier.md`, `process_work_style.md`. |
-| `full` | Explicit full-context audit or emergency high-risk review. | All files in `.context/rules/**` plus task-relevant docs/ADRs. Use sparingly and record why. |
+| `full` | Explicit full-context request or high-risk review. | All files in `.context/rules/**` plus task-relevant docs/ADRs. Use sparingly and record why. |
 
 Profiles define the minimum startup set. A trigger below can add files to any profile.
 
@@ -51,7 +51,7 @@ Profiles define the minimum startup set. A trigger below can add files to any pr
 | [`process_clarification.md`](./process_clarification.md) | `startup-required` | User request is ambiguous, conflicting, under-specified, or risks invented facts. | Before choosing a path when ambiguity affects outcome. | Clarifying question or stated assumption with bounded scope. |
 | [`process_role_selection.md`](./process_role_selection.md) | `task-triggered` | Before claiming a task, selecting a role, dispatching subagents, or choosing OP/default-agent behavior. | Task boundary; re-read when ownership or role changes. | Role claim, OP/default rationale, selected profile. |
 | [`agent_ownership.md`](./agent_ownership.md) | `task-triggered` | Before touching files, claiming an issue, coordinating cross-role edits, or reviewing path ownership. | Task boundary; re-read when changed paths expand. | Owned-path rationale, cross-role escalation/PM claim if needed. |
-| [`process_work_style.md`](./process_work_style.md) | `task-triggered` | Before editing code, docs, prompts, config, scripts, workflows, or tests. | Task boundary; re-read before switching from planning/review to implementation. | Branch/commit discipline, verification plan, validation evidence. |
+| [`process_work_style.md`](./process_work_style.md) | `startup-required` | Before editing code, docs, prompts, config, scripts, workflows, or tests. | Task boundary; re-read before switching from planning/review to implementation. | Branch/commit discipline, verification plan, validation evidence. |
 | [`process_gates.md`](./process_gates.md) | `gate-triggered` | Before non-exempt issue implementation, plan-as-comment work, Analyst pre-flight, or gate decision. | Before plan/code and whenever gate state changes. | Plan comment, gate state, exemption reason, acceptance criteria. |
 | [`process_session_state.md`](./process_session_state.md) | `task-triggered` | Task boundary, handoff, close-out, or live-state update. | Every task boundary and close-out. | `agent-state:v1` or equivalent state/close-out evidence. |
 | [`process_pr_completion.md`](./process_pr_completion.md) | `gate-triggered` | Before opening a PR, marking ready, reviewing, resolving feedback, or preparing merge. | Before PR open/review/merge; re-read after large feedback cycles. | PR checklist, issue link, test evidence, review/merge readiness. |
