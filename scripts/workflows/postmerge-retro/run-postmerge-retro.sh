@@ -168,9 +168,12 @@ pick_provider() {
     cursor) echo cursor ;;
     gemini) echo gemini ;;
     auto)
-      if [[ "$has_cursor" -eq 1 ]]; then echo cursor
-      elif [[ "$has_gemini" -eq 1 ]]; then echo gemini
-      else echo ""
+      if [[ "$has_cursor" -eq 1 ]]; then
+        echo cursor
+      elif [[ "$has_gemini" -eq 1 ]]; then
+        echo gemini
+      else
+        echo ""
       fi
       ;;
     *)
