@@ -1,6 +1,6 @@
 # Session: 2026-06-12 — feature/postmerge-retro-daily-v2 — OP
 
-**Status**: PR #427 open — implementation complete; ADR-030 drafted; sandbox smoke in progress
+**Status**: PR #427 open — implementation complete; sandbox smoke pending (runbook)
 **Issue/PR**: [#426](https://github.com/mikejmckinney/ai-repo-template/issues/426) / [#427](https://github.com/mikejmckinney/ai-repo-template/pull/427)
 **Started**: 2026-06-12
 
@@ -19,19 +19,19 @@
 - New scripts under `scripts/workflows/postmerge-retro/` (daily, umbrella, fix, list merges, merge JSON, apply fix).
 - Prompts: `post-merge-retro-fix.md`; template: `.github/templates/postmerge-retro-umbrella.md`.
 - Check `052` updated for v2 + AGENTS v25.
-- `./test.sh` green (908 passed).
+- `./test.sh` green (911 passed).
 
 ### Follow-up (same branch)
 
 - **ADR-030** — documents full non-blocking pipeline (advisory → finalize → daily post-merge v2).
 - Removed one-time impl spec `.github/prompts/05-postmerge-retro-daily-v2.md`; docs point to ADR-030.
-- Added `sandbox-smoke-postmerge-retro.yml` workflow (uses `SANDBOX_BOOTSTRAP_TOKEN` / `SANDBOX_PAT` repo secrets).
+- Removed mistaken `sandbox-smoke-postmerge-retro.yml` workflow (one-time smoke uses `docs/guides/sandbox-verification.md` runbook).
 
 ## Next
 
-1. **Sandbox smoke** — `gh workflow run sandbox-smoke-postmerge-retro.yml --ref feature/postmerge-retro-daily-v2`; post run URL on #427 (ADR-029).
+1. **Sandbox smoke (ADR-029)** — per runbook: push branch to sandbox → merge sandbox PR → `gh workflow run agent-postmerge-retro.yml` on sandbox; post run URL on #427.
 2. **Merge #427** after green sandbox + review.
-3. **Gemini router** (`07-implement-gemini-free-paid-routing.md`) after merge + upstream smoke.
+3. **Gemini router** (`07`) after merge + upstream smoke.
 4. **Light triage** umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425).
 
 ## Design notes (locked)
