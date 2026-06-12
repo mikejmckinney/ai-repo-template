@@ -41,9 +41,9 @@ diff_limit="$(parse_positive_int POSTMERGE_RETRO_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT
 
 bash "$SCRIPT_DIR/collect-postmerge-evidence.sh" "$PR" "$WORKDIR"
 
-merged="$(jq -r '.merged // false' "$WORKDIR/pr.json")"
-if [[ "$merged" != "true" ]]; then
-  echo "::error::PR #${PR} is not merged; post-merge retro requires a merged PR"
+merged_at="$(jq -r '.merged_at // ""' "$WORKDIR/pr.json")"
+if [[ -z "$merged_at" || "$merged_at" == "null" ]]; then
+  echo "::error::PR #${PR} is not merged (merged_at=${merged_at})"
   exit 1
 fi
 

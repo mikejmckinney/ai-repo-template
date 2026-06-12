@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
-# scripts/checks/052-postmerge-retro-invariants.sh — PR 4 post-merge retro wiring.
+# scripts/checks/052-postmerge-retro-invariants.sh — post-merge retro v2 wiring.
 
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   echo "Checking post-merge retro invariants..."
 
   RETRO_WORKFLOW=".github/workflows/agent-postmerge-retro.yml"
   RETRO_PROMPT=".github/prompts/post-merge-retro.md"
+  RETRO_FIX_PROMPT=".github/prompts/post-merge-retro-fix.md"
   RETRO_DIR="scripts/workflows/postmerge-retro"
   COLLECT_SCRIPT="${RETRO_DIR}/collect-postmerge-evidence.sh"
   RUN_SCRIPT="${RETRO_DIR}/run-postmerge-retro.sh"
-  CREATE_SCRIPT="${RETRO_DIR}/postmerge-retro-create-issues.sh"
+  DAILY_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily.sh"
+  FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
+  UMBRELLA_SCRIPT="${RETRO_DIR}/create-umbrella-issue.sh"
+  LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
+  UMBRELLA_TEMPLATE=".github/templates/postmerge-retro-umbrella.md"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
   FEEDBACK_COLLECTOR="scripts/workflows/pr-feedback/collect-pr-feedback.sh"
 
-  for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" "$CREATE_SCRIPT" "$SCHEMA" "$FEEDBACK_COLLECTOR"; do
+  for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
+    "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
+    "$UMBRELLA_TEMPLATE" "$FEEDBACK_COLLECTOR"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -22,31 +29,50 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fi
   done
 
-  if grep -q 'retro-review' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'pull_request' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'closed' "$RETRO_WORKFLOW" 2>/dev/null; then
-    pass "retro workflow is label-gated on merged PR closed events"
+  if grep -q 'schedule:' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q '0 6 \* \* \*' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow scheduled at 06:00 UTC"
   else
-    fail "retro workflow missing merged+label gate"
+    fail "retro workflow missing 06:00 UTC schedule"
   fi
 
-  if grep -q 'workflow_dispatch' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'create_issues' "$RETRO_WORKFLOW" 2>/dev/null; then
-    pass "retro workflow supports manual workflow_dispatch"
+  if grep -q 'workflow_dispatch' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow supports manual workflow_dispatch (daily pipeline)"
   else
-    fail "retro workflow must support workflow_dispatch with create_issues input"
+    fail "retro workflow must support workflow_dispatch"
+  fi
+
+  if ! grep -q 'pull_request:' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow has no pull_request close trigger (Option C)"
+  else
+    fail "retro workflow must not use pull_request close trigger in v2"
+  fi
+
+  if grep -q 'run-postmerge-retro-daily.sh' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-fix.sh' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "workflow invokes daily retro + fix scripts"
+  else
+    fail "workflow must invoke daily retro and fix scripts"
   fi
 
   if grep -q 'issues: write' "$RETRO_WORKFLOW" 2>/dev/null; then
-    pass "retro workflow grants issues: write for follow-up issue creation"
+    pass "retro workflow grants issues: write"
   else
     fail "retro workflow missing issues: write"
   fi
 
-  if grep -q 'scripts/workflows/postmerge-retro/run-postmerge-retro.sh' "$RETRO_WORKFLOW" 2>/dev/null; then
-    pass "workflow invokes scripts/workflows/postmerge-retro (AP8)"
+  if grep -q 'contents: write' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'pull-requests: write' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "fix job grants contents and pull-requests write"
   else
-    fail "workflow must invoke run-postmerge-retro.sh"
+    fail "fix job missing write permissions"
+  fi
+
+  if grep -q 'postmerge-retro:daily:' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'postmerge-retro-umbrella.md' "$UMBRELLA_SCRIPT" 2>/dev/null; then
+    pass "umbrella creator uses daily marker + template"
+  else
+    fail "create-umbrella-issue.sh missing daily marker/template wiring"
   fi
 
   if grep -q 'collect-pr-feedback.sh' "$COLLECT_SCRIPT" 2>/dev/null; then
@@ -56,21 +82,19 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'follow_up_issues' "$RETRO_PROMPT" 2>/dev/null \
-    && grep -q 'dedupe_key' "$RETRO_PROMPT" 2>/dev/null \
-    && grep -q 'JSON only' "$RETRO_PROMPT" 2>/dev/null; then
+    && grep -q 'dedupe_key' "$RETRO_PROMPT" 2>/dev/null; then
     pass "retro prompt defines JSON output shape"
   else
     fail "retro prompt missing required JSON contract"
   fi
 
-  if grep -q 'postmerge-retro:pr=' "$CREATE_SCRIPT" 2>/dev/null \
-    && grep -q 'agent-suggested' "$CREATE_SCRIPT" 2>/dev/null; then
-    pass "issue creator uses dedupe markers and agent-suggested label"
+  if grep -q 'merged_at' "$RUN_SCRIPT" 2>/dev/null; then
+    pass "run-postmerge-retro uses merged_at gate"
   else
-    fail "postmerge-retro-create-issues.sh missing dedupe marker logic"
+    fail "run-postmerge-retro.sh must gate on merged_at"
   fi
 
-  for label in retro-review retro:adr retro:context-pack adr:update context-pack; do
+  for label in retro-review adr:update context-pack agent-suggested; do
     if grep -q "^${label}|" "$LABELS_SCRIPT" 2>/dev/null; then
       pass "label ${label} declared in setup"
     else
@@ -80,7 +104,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if bash -n "$COLLECT_SCRIPT" 2>/dev/null \
     && bash -n "$RUN_SCRIPT" 2>/dev/null \
-    && bash -n "$CREATE_SCRIPT" 2>/dev/null; then
+    && bash -n "$DAILY_SCRIPT" 2>/dev/null \
+    && bash -n "$FIX_SCRIPT" 2>/dev/null \
+    && bash -n "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && bash -n "$LIST_SCRIPT" 2>/dev/null; then
     pass "postmerge-retro shell scripts have valid bash syntax"
   else
     fail "postmerge-retro shell script bash -n failed"
@@ -92,14 +119,25 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   if [[ -f "$llm_fixture" && -f "$retro_fixture" ]]; then
     tmp="$(mktemp -d)"
     if python3 "$RETRO_DIR/extract-retro-json.py" "$llm_fixture" 382 "$tmp/retro.json" \
-      && python3 "$RETRO_DIR/validate-postmerge-retro.py" "$tmp/retro.json"; then
-      pass "extract-retro-json + validate-postmerge-retro on fixture"
+      && python3 "$RETRO_DIR/validate-postmerge-retro.py" "$tmp/retro.json" \
+      && python3 "$RETRO_DIR/merge-daily-retro-json.py" 2026-06-11 "$tmp/retro.json" \
+        >"$tmp/daily.json" \
+      && python3 "$RETRO_DIR/validate-postmerge-retro-daily.py" "$tmp/daily.json"; then
+      pass "extract + validate + daily merge on fixture"
     else
-      fail "retro JSON fixture extraction/validation failed"
+      fail "retro JSON fixture extraction/validation/daily merge failed"
     fi
     rm -rf "$tmp"
   else
     warn "postmerge-retro fixtures missing under $fixture_dir"
+  fi
+
+  if grep -q 'AGENTS_MD_VERSION: 25' AGENTS.md 2>/dev/null \
+    && grep -q 'After context compaction' AGENTS.md 2>/dev/null \
+    && grep -q 'out of compliance' AGENTS.md 2>/dev/null; then
+    pass "AGENTS.md v25 includes compaction + profile compliance"
+  else
+    fail "AGENTS.md missing v25 compaction/profile rules"
   fi
 
   echo ""

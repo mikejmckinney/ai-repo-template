@@ -106,7 +106,7 @@ bash install.sh
 │   ├── workflows/            # AP8 workflow logic extracted from .github/workflows
 │   │   ├── advisory-review/  # agent-advisory-review.yml dispatch, providers, comment upsert
 │   │   ├── pr-feedback/      # agent-review-finalize.yml collect + consolidate dispatch
-│   │   └── postmerge-retro/  # agent-postmerge-retro.yml evidence + issue creation
+│   │   └── postmerge-retro/  # agent-postmerge-retro.yml daily batch + fix PR
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
@@ -273,7 +273,10 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/prompts/pre-push-review.md` | Run Critic + lint + `./test.sh` against the working-tree diff before push on non-trivial changes |
 | `.github/prompts/pr-advisory-review.md` | Non-blocking four-lens advisory snapshot (`agent-advisory-review.yml`, `ai-review:live`) |
 | `.github/prompts/pr-final-feedback-consolidation.md` | Final Feedback Inbox consolidation (`agent-review-finalize.yml`, `implementation-complete`) |
-| `.github/prompts/post-merge-retro.md` | Post-merge retrospective JSON + follow-up issues (`agent-postmerge-retro.yml`, `retro-review`) |
+| `.github/prompts/post-merge-retro.md` | Per-PR post-merge retrospective JSON (`run-postmerge-retro.sh`) |
+| `.github/prompts/post-merge-retro-fix.md` | Daily retro fix implementation prompt |
+| `.github/prompts/05-postmerge-retro-daily-v2.md` | Post-merge retro v2 spec (implemented in #426) |
+| `.github/templates/postmerge-retro-umbrella.md` | Daily umbrella issue body template |
 | `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
@@ -372,7 +375,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes | None |
 | `agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (`ai-review:live`); Cursor / Antigravity / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; optional `ADVISORY_ANTIGRAVITY_ENABLED=true` |
 | `agent-review-finalize.yml` | Final Feedback Inbox after implementation (`implementation-complete`); Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY` (reuses advisory LLM runners) |
-| `agent-postmerge-retro.yml` | Post-merge retrospective + idempotent follow-up issues (`retro-review` and related labels); Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; `issues: write` |
+| `agent-postmerge-retro.yml` | Daily post-merge retro (06:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; fix job adds `contents` + PR write |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` secret |
 | `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier | Set `CLAUDE_PAT` secret |
 | `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR | None |

@@ -1,33 +1,16 @@
-# Agent — post-merge retrospective (opt-in via retro-review labels)
+# Agent — post-merge retrospective (daily batch v2)
 # -------------------------------------------------------------------
-# After a PR merges to main, collects evidence and creates follow-up issues
-# idempotently. Does NOT edit code, ADRs, or context-pack files.
+# Nightly (06:00 UTC) + workflow_dispatch: scan merges to main in last 24h,
+# run per-PR retro, create/append one umbrella issue, then open a draft fix PR.
 #
-# Checks out main (not the merged PR's merge commit) so workflow_dispatch
-# and late close triggers always run the latest scripts/workflows/postmerge-retro/.
-# Scripts: scripts/workflows/postmerge-retro/ (AP8). Reuses
-# scripts/workflows/pr-feedback/collect-pr-feedback.sh via wrapper and
-# advisory-review LLM runners for JSON retrospective output.
-#
-# Providers (POSTMERGE_RETRO_PROVIDER or ADVISORY_REVIEW_PROVIDER, default auto):
-#   - cursor — Cursor SDK (CURSOR_API_KEY)
-#   - gemini — Gemini generateContent (GEMINI_API_KEY or GOOGLE_API_KEY)
-#   - auto   — cursor if key present, else gemini
+# Checks out main for scripts. Option C: no pull_request closed trigger.
 
 name: Agent — post-merge retrospective
 
 on:
-  pull_request:
-    types: [closed]
+  schedule:
+    - cron: "0 6 * * *"
   workflow_dispatch:
-    inputs:
-      pr:
-        description: "Merged PR number"
-        required: true
-      create_issues:
-        description: "Create issues from retro output"
-        required: true
-        default: "true"
 
 permissions:
   contents: read
@@ -35,29 +18,18 @@ permissions:
   issues: write
 
 concurrency:
-  group: postmerge-retro-${{ github.event.pull_request.number || inputs.pr }}
-  cancel-in-progress: true
+  group: postmerge-retro-daily
+  cancel-in-progress: false
 
 jobs:
-  postmerge-retro:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (
-        github.event.pull_request.merged == true &&
-        github.event.pull_request.base.ref == 'main' &&
-        (
-          contains(github.event.pull_request.labels.*.name, 'retro-review') ||
-          contains(github.event.pull_request.labels.*.name, 'retro:adr') ||
-          contains(github.event.pull_request.labels.*.name, 'retro:context-pack') ||
-          contains(github.event.pull_request.labels.*.name, 'ai-review:full')
-        )
-      )
+  daily-retro:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
+    outputs:
+      run_date: ${{ steps.meta.outputs.run_date }}
+      findings_count: ${{ steps.meta.outputs.findings_count }}
+      has_daily_json: ${{ steps.meta.outputs.has_daily_json }}
     env:
-      GITHUB_REPOSITORY: ${{ github.repository }}
-      PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr }}
-      CREATE_ISSUES: ${{ github.event_name == 'workflow_dispatch' && inputs.create_issues || 'true' }}
       POSTMERGE_RETRO_PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || '' }}
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
       POSTMERGE_RETRO_DIFF_LIMIT: ${{ vars.POSTMERGE_RETRO_DIFF_LIMIT || '' }}
@@ -98,33 +70,6 @@ jobs:
               ;;
           esac
 
-      - name: Verify merged PR
-        id: pr
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number || inputs.pr }}
-          REPO: ${{ github.repository }}
-        run: |
-          pr_json="$(gh pr view "$PR" -R "$REPO" --json state,mergedAt,headRefOid,mergeCommit,baseRefName,headRepository)"
-          merged_at="$(printf '%s' "$pr_json" | jq -r .mergedAt)"
-          state="$(printf '%s' "$pr_json" | jq -r .state)"
-          base_ref="$(printf '%s' "$pr_json" | jq -r .baseRefName)"
-          head_repo="$(printf '%s' "$pr_json" | jq -r .headRepository.nameWithOwner)"
-          merge_sha="$(printf '%s' "$pr_json" | jq -r '.mergeCommit.oid // .headRefOid')"
-          if [[ -z "$merged_at" || "$merged_at" == "null" ]]; then
-            echo "::error::PR #${PR} is not merged (state=${state}, mergedAt=${merged_at})"
-            exit 1
-          fi
-          if [[ "$base_ref" != "main" ]]; then
-            echo "::error::PR #${PR} base ref ${base_ref} is not main"
-            exit 1
-          fi
-          if [[ "$head_repo" != "${{ github.repository }}" ]]; then
-            echo "::error::PR #${PR} head repo ${head_repo} is not same-repo"
-            exit 1
-          fi
-          echo "merge_sha=${merge_sha}" >> "$GITHUB_OUTPUT"
-
       - name: Checkout main (current workflow scripts)
         uses: actions/checkout@v4
         with:
@@ -136,7 +81,8 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Run post-merge retrospective
+      - name: Run daily retrospective
+        id: retro
         env:
           GITHUB_TOKEN: ${{ github.token }}
           CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
@@ -146,22 +92,99 @@ jobs:
         run: |
           if [[ -n "${CLAUDE_PAT:-}" ]]; then
             export GH_TOKEN="$CLAUDE_PAT"
-            echo "Using CLAUDE_PAT for gh issue API."
           else
             export GH_TOKEN="$GITHUB_TOKEN"
-            echo "Using GITHUB_TOKEN for gh issue API (CLAUDE_PAT unset)."
           fi
+          export RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"
           chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
           chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
-          bash scripts/workflows/postmerge-retro/run-postmerge-retro.sh \
-            "${{ github.event.pull_request.number || inputs.pr }}" \
-            "${{ env.CREATE_ISSUES }}"
+          bash scripts/workflows/postmerge-retro/run-postmerge-retro-daily.sh
 
-      - name: Upload retro artifacts
+      - name: Capture daily retro outputs
+        id: meta
+        run: |
+          RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"
+          ARTIFACT_DIR=".artifacts/postmerge-retro/daily-${RUN_DATE}"
+          echo "run_date=${RUN_DATE}" >> "$GITHUB_OUTPUT"
+          if [[ -f "${ARTIFACT_DIR}/findings-count.txt" ]]; then
+            count="$(cat "${ARTIFACT_DIR}/findings-count.txt")"
+          else
+            count=0
+          fi
+          echo "findings_count=${count}" >> "$GITHUB_OUTPUT"
+          if [[ -f "${ARTIFACT_DIR}/daily-retro.json" ]]; then
+            echo "has_daily_json=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_daily_json=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload daily retro artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: postmerge-retro-pr-${{ github.event.pull_request.number || inputs.pr }}
+          name: postmerge-retro-daily-${{ steps.meta.outputs.run_date }}
           path: .artifacts/postmerge-retro/
           if-no-files-found: ignore
           retention-days: 14
+
+  daily-fix:
+    needs: daily-retro
+    if: needs.daily-retro.outputs.findings_count != '0' && needs.daily-retro.outputs.has_daily_json == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      POSTMERGE_RETRO_PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || '' }}
+      ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+      POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
+      CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
+      GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download daily retro artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: postmerge-retro-daily-${{ needs.daily-retro.outputs.run_date }}
+          path: .artifacts/postmerge-retro/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run daily fix pass
+        id: fix
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          if [[ -n "${CLAUDE_PAT:-}" ]]; then
+            export GH_TOKEN="$CLAUDE_PAT"
+          else
+            export GH_TOKEN="$GITHUB_TOKEN"
+          fi
+          chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
+          chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
+          DAILY_JSON=".artifacts/postmerge-retro/daily-${{ needs.daily-retro.outputs.run_date }}/daily-retro.json"
+          [[ -f "$DAILY_JSON" ]] || { echo "::error::Missing $DAILY_JSON"; exit 1; }
+          bash scripts/workflows/postmerge-retro/run-postmerge-retro-fix.sh "$DAILY_JSON" | tee fix.log
+          if grep -q 'Created draft PR:' fix.log; then
+            url="$(grep 'Created draft PR:' fix.log | sed 's/.*Created draft PR: //')"
+            echo "fix_pr_url=${url}" >> "$GITHUB_OUTPUT"
+          elif grep -q 'Open draft PR already exists:' fix.log; then
+            num="$(grep 'Open draft PR already exists:' fix.log | sed 's/.*#//')"
+            url="$(gh pr view "$num" --json url --jq .url)"
+            echo "fix_pr_url=${url}" >> "$GITHUB_OUTPUT"
+          fi

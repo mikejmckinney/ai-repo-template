@@ -44,6 +44,7 @@ Use these prompts to implement the PR sequence:
 | 2 | `feature/advisory-review-mode` | Merged (`72bd1d9`) — `agent-advisory-review.yml`, `scripts/workflows/advisory-review/` |
 | 3 | `feature/final-feedback-consolidation` | Merged (#382 @ `e0d845e`) — `agent-review-finalize.yml`, `scripts/workflows/pr-feedback/`, `.context/rules/README.md` read-profile catalog |
 | 4 | `feature/postmerge-retro-review` | Merged (#383 @ `7e0bf68`) — `agent-postmerge-retro.yml`, `scripts/workflows/postmerge-retro/`, label `retro-review` |
+| 4v2 | `feature/postmerge-retro-daily-v2` | **In PR** — nightly 06:00 UTC, umbrella issue/day, draft fix PR; cron + dispatch only (#426) |
 
 PR 3 reuses advisory-review LLM runners (`run-advisory-cursor.mjs`, `run-advisory-gemini.py`) and `upsert-pr-comment.sh` (AP8 shared sticky-comment helper).
 

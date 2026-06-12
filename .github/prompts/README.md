@@ -32,9 +32,10 @@ lists come after, not before.
     draft/WIP PRs when `ai-review:live` is applied (`agent-advisory-review.yml`).
   - **`pr-final-feedback-consolidation.md`** — final Feedback Inbox consolidation
     when `implementation-complete` is applied (`agent-review-finalize.yml`).
-  - **`post-merge-retro.md`** — post-merge retrospective JSON + idempotent follow-up
-    issue creation when `retro-review` / related labels are present on a merged PR
-    (`agent-postmerge-retro.yml`).
+  - **`post-merge-retro.md`** — per-PR post-merge retrospective JSON (used inside daily batch).
+  - **`post-merge-retro-fix.md`** — daily fix pass for `retro/fix-YYYY-MM-DD` draft PRs.
+  - **`05-postmerge-retro-daily-v2.md`** — v2 spec + checklist (issue #426): 06:00 UTC cron,
+    umbrella issue, draft fix PR; no per-PR close trigger.
   - **`pre-push-review.md`** — Critic + lint + `./test.sh` summary against
     the working-tree diff before push. SHOULD per AGENTS.md →
     "Work style"; MUST for the DevOps role on shell/workflow changes
@@ -95,6 +96,8 @@ lists come after, not before.
       `scripts/workflows/pr-feedback/`, label `implementation-complete`).
     - PR 4 (post-merge retrospective): **merged** (#383 @ `7e0bf68`; `agent-postmerge-retro.yml`,
       `scripts/workflows/postmerge-retro/`, label `retro-review`).
+    - PR 4v2 (daily retro + draft fix PR): **in PR** — see `05-postmerge-retro-daily-v2.md` / #426;
+      smoke-test before Gemini router prompt `07`.
 
 ### Postmortem feedback loop
 
