@@ -34,8 +34,7 @@ lists come after, not before.
     when `implementation-complete` is applied (`agent-review-finalize.yml`).
   - **`post-merge-retro.md`** — per-PR post-merge retrospective JSON (used inside daily batch).
   - **`post-merge-retro-fix.md`** — daily fix pass for `retro/fix-YYYY-MM-DD` draft PRs.
-  - **`05-postmerge-retro-daily-v2.md`** — v2 spec + checklist (issue #426): 06:00 UTC cron,
-    umbrella issue, draft fix PR; no per-PR close trigger.
+    Pipeline design: [ADR-030](../../docs/decisions/adr-030-non-blocking-review-pipeline.md) (issue #426).
   - **`pre-push-review.md`** — Critic + lint + `./test.sh` summary against
     the working-tree diff before push. SHOULD per AGENTS.md →
     "Work style"; MUST for the DevOps role on shell/workflow changes
@@ -96,8 +95,8 @@ lists come after, not before.
       `scripts/workflows/pr-feedback/`, label `implementation-complete`).
     - PR 4 (post-merge retrospective): **merged** (#383 @ `7e0bf68`; `agent-postmerge-retro.yml`,
       `scripts/workflows/postmerge-retro/`, label `retro-review`).
-    - PR 4v2 (daily retro + draft fix PR): **in PR** — see `05-postmerge-retro-daily-v2.md` / #426;
-      smoke-test before Gemini router prompt `07`.
+    - PR 4v2 (daily retro + draft fix PR): **in PR #427** — ADR-030; sandbox smoke pending;
+      merge blocked until ADR-029 evidence; then Gemini router prompt `07`.
 
 ### Postmortem feedback loop
 

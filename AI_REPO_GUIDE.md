@@ -275,7 +275,8 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/prompts/pr-final-feedback-consolidation.md` | Final Feedback Inbox consolidation (`agent-review-finalize.yml`, `implementation-complete`) |
 | `.github/prompts/post-merge-retro.md` | Per-PR post-merge retrospective JSON (`run-postmerge-retro.sh`) |
 | `.github/prompts/post-merge-retro-fix.md` | Daily retro fix implementation prompt |
-| `.github/prompts/05-postmerge-retro-daily-v2.md` | Post-merge retro v2 spec (implemented in #426) |
+| `docs/decisions/adr-030-non-blocking-review-pipeline.md` | Non-blocking LLM review pipeline (advisory → finalize → daily post-merge retro v2) |
+| `.github/workflows/sandbox-smoke-postmerge-retro.yml` | ADR-016/029 sandbox smoke for post-merge retro v2 |
 | `.github/templates/postmerge-retro-umbrella.md` | Daily umbrella issue body template |
 | `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |

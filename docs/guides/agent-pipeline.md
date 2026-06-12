@@ -232,7 +232,7 @@ Nightly **06:00 UTC** cron plus **`workflow_dispatch`** run the **full daily pip
 3. **One umbrella GitHub issue per calendar day** (create or append rows; marker `<!-- postmerge-retro:daily:YYYY-MM-DD -->`).
 4. **Draft fix PR** on `retro/fix-YYYY-MM-DD` implementing **all** findings (second job; skip when zero findings).
 
-Human or agent reviews the draft fix PR before merge. Spec/history: `.github/prompts/05-postmerge-retro-daily-v2.md`, dogfood umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425). Tracking: [#426](https://github.com/mikejmckinney/ai-repo-template/issues/426).
+Human or agent reviews the draft fix PR before merge. Design: [ADR-030](../decisions/adr-030-non-blocking-review-pipeline.md); dogfood umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425). Tracking: [#426](https://github.com/mikejmckinney/ai-repo-template/issues/426), PR [#427](https://github.com/mikejmckinney/ai-repo-template/pull/427).
 
 **Happy path:**
 

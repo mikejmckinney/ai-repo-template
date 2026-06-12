@@ -7,7 +7,7 @@ agent: agent
 
 You are implementing a repo-local Gemini / Antigravity routing and cost-accounting improvement in `mikejmckinney/ai-repo-template` on branch **`main`** (after Phase A benchmark merge).
 
-**Prerequisite:** Post-merge retro v2 ([#426](https://github.com/mikejmckinney/ai-repo-template/issues/426), `05-postmerge-retro-daily-v2.md`) must be merged and smoke-tested before starting this prompt.
+**Prerequisite:** Post-merge retro v2 ([#426](https://github.com/mikejmckinney/ai-repo-template/issues/426), [ADR-030](../../docs/decisions/adr-030-non-blocking-review-pipeline.md), PR [#427](https://github.com/mikejmckinney/ai-repo-template/pull/427)) must be merged and sandbox-smoke-tested before starting this prompt.
 
 ## Start-state and required repo workflow
 
