@@ -90,8 +90,8 @@ Shared properties:
 - [x] PR #427 — retro v2 daily batch + AGENTS.md v25 compaction/profile rules.
 - [x] Sandbox smoke of `agent-postmerge-retro.yml` on `ai-repo-template-sandbox` — end-to-end with canary PR #42 (ADR-029 evidence on #427).
 - [x] Automation templates: `.github/templates/postmerge-retro-umbrella.md`, `postmerge-retro-fix-pr.md`; resilient `agent-suggested` label; sandbox label bootstrap via `ensure-pipeline-labels.sh`.
-- [ ] Merge #427 after review.
-- [ ] Triage legacy umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425).
+- [x] Merge #427 after review.
+- [x] Triage legacy umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425) (2026-06-13 post-merge).
 
 ## References
 
