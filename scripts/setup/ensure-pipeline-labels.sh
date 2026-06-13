@@ -28,6 +28,8 @@ FULL_REPO="$TARGET"
 export GH_REPO="$TARGET"
 _gh_auth_ok="true"
 _pipeline_setup_skip_reason=""
+# 40-ensure-labels.sh expects SCRIPT_DIR=scripts/ (parent of setup/), not scripts/setup/.
+SCRIPT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # shellcheck source=scripts/setup/40-ensure-labels.sh
-source "$SCRIPT_DIR/40-ensure-labels.sh"
+source "$SCRIPT_DIR/setup/40-ensure-labels.sh"
