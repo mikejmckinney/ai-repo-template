@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD055 MD056 -->
 ## Summary
 
 Daily post-merge retrospective for merges to `main` in the rolling last **{{WINDOW_HOURS}}** hours.
