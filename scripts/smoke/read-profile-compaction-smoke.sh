@@ -40,14 +40,22 @@ if [[ -z "$OUTDIR" ]]; then
 fi
 mkdir -p "$OUTDIR"
 
-if ! command -v cursor-agent >/dev/null 2>&1; then
-  echo "::error::cursor-agent not found on PATH" >&2
+if ! command -v cursor-agent >/dev/null 2>&1 && ! command -v agent >/dev/null 2>&1; then
+  echo "::error::cursor-agent/agent not found on PATH" >&2
   exit 127
 fi
-if [[ -z "${CURSOR_API_KEY:-}" ]] && ! cursor-agent status >/dev/null 2>&1; then
+if [[ -z "${CURSOR_API_KEY:-}" ]] && ! cursor-agent status >/dev/null 2>&1 && ! agent status >/dev/null 2>&1; then
   echo "::error::Not authenticated — set CURSOR_API_KEY or run cursor-agent login" >&2
   exit 78
 fi
+
+cursor_agent_cmd() {
+  if command -v cursor-agent >/dev/null 2>&1; then
+    cursor-agent "$@"
+  else
+    agent "$@"
+  fi
+}
 
 agents_md_version="$(grep -oE 'AGENTS_MD_VERSION: [0-9]+' "$REPO_ROOT/AGENTS.md" | head -1 | grep -oE '[0-9]+' || echo 25)"
 

@@ -30,9 +30,16 @@ jobs:
       - name: Install Cursor CLI
         run: |
           curl https://cursor.com/install -fsS | bash
-          echo "$HOME/.cursor/bin" >> "$GITHUB_PATH"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          (command -v cursor-agent || command -v agent) --version
+          echo "$HOME/.cursor/bin" >> "$GITHUB_PATH"
+          if command -v agent >/dev/null 2>&1; then
+            agent --version
+          elif command -v cursor-agent >/dev/null 2>&1; then
+            cursor-agent --version
+          else
+            echo "::error::agent/cursor-agent not found after install"
+            exit 127
+          fi
 
       - name: Run read-profile compaction smoke (Phases A–C)
         env:
