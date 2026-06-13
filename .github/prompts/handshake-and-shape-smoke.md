@@ -310,10 +310,6 @@ Expected: zero `FAIL:` lines.
 3. **Read profile** must match the new task (e.g. `implementation`, not `startup-min`).
 4. **Session context receipt** lists files **Read** from disk for this boundary.
 
-**Automated run**: `scripts/smoke/read-profile-compaction-smoke.sh` (Phases A–C) using
-`.github/prompts/read-profile-compaction-smoke.md`. GitHub Actions:
-`smoke-read-profile-compaction.yml` on PRs touching AGENTS/read-profile smoke files.
-
 **Manual pass criteria** (Phase B output in `output.txt`):
 
 ```bash
