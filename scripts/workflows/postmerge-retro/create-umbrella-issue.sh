@@ -95,7 +95,7 @@ PY
 }
 
 create_new_issue() {
-  local title body_file rows
+  local title body_file rows issue_url issue_num
   title="Post-merge retro daily: ${RUN_DATE} (${PR_LIST})"
   body_file="$WORKDIR/umbrella.md"
   rows="$(cat "$WORKDIR/rows.txt")"
@@ -119,7 +119,13 @@ text = p.read_text().replace(
 )
 p.write_text(text)
 PY
-  gh issue create -R "$REPO" --title "$title" --body-file "$body_file" --label agent-suggested
+  issue_url="$(gh issue create -R "$REPO" --title "$title" --body-file "$body_file")"
+  issue_num="${issue_url##*/}"
+  if gh issue edit "$issue_num" -R "$REPO" --add-label agent-suggested 2>/dev/null; then
+    echo "Created umbrella issue #${issue_num} (agent-suggested)"
+  else
+    echo "::notice::Umbrella issue #${issue_num} created without agent-suggested label (missing label or permissions)"
+  fi
 }
 
 EXISTING_ISSUE="$(find_issue)"

@@ -175,6 +175,9 @@ bash install.sh
     │   ├── pr-resolve-all.md     # PR-review resolution procedure
     │   └── repo-onboarding.md    # Repo onboarding workflow prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
+    ├── templates/                # Automation-rendered bodies (scripts/workflows); not GitHub chooser UI
+    │   ├── postmerge-retro-umbrella.md  # Daily retro umbrella issue body
+    │   └── postmerge-retro-fix-pr.md    # Daily retro draft fix PR body (slim; not full pull_request_template)
     └── workflows/
         ├── ci-tests.yml
         ├── claude.yml
@@ -276,7 +279,9 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/prompts/post-merge-retro.md` | Per-PR post-merge retrospective JSON (`run-postmerge-retro.sh`) |
 | `.github/prompts/post-merge-retro-fix.md` | Daily retro fix implementation prompt |
 | `docs/decisions/adr-030-non-blocking-review-pipeline.md` | Non-blocking LLM review pipeline (advisory → finalize → daily post-merge retro v2) |
-| `.github/templates/postmerge-retro-umbrella.md` | Daily umbrella issue body template |
+| `.github/templates/postmerge-retro-umbrella.md` | Daily umbrella issue body (automation; canonical) |
+| `.github/templates/postmerge-retro-fix-pr.md` | Daily retro draft fix PR body (automation; slim PR-template shape) |
+| `scripts/setup/ensure-pipeline-labels.sh` | Idempotent pipeline label bootstrap for any repo (sandbox bootstrap uses this) |
 | `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
@@ -394,6 +399,19 @@ comment → labels. In-tree `.context/**` remains canonical for rules,
 decisions, durable lessons, and process constraints.
 
 ## Conventions
+
+### GitHub template surfaces
+
+Three locations — different consumers; do not duplicate across them:
+
+| Location | Consumer | Purpose |
+|---|---|---|
+| `.github/ISSUE_TEMPLATE/*.md` | Human issue chooser (GitHub UI) | Structured issue intake (`bug_report`, `feature_request`, `agent_init`) |
+| `.github/pull_request_template.md` | Human PR opener (GitHub UI) | Full Judge-gated PR body (plan pointer, compliance, doc sync, sandbox evidence) |
+| `.github/templates/*.md` | Workflow scripts (`gh issue create` / `gh pr create`) | Slim automation bodies with `{{placeholders}}` (post-merge retro umbrella + fix PR) |
+| `.github/PLAN_TEMPLATE.md` | Issue/PR comments | Implementation plan pasted before coding (ADR-011) |
+
+Agents creating issues/PRs via API use the matching surface per [`.context/rules/process_pr_completion.md`](.context/rules/process_pr_completion.md). Retro automation uses `.github/templates/` only — not mirrored into `ISSUE_TEMPLATE/`.
 
 ### File Naming
 

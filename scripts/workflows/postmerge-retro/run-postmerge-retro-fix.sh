@@ -119,31 +119,41 @@ fi
 
 git push -u origin "$BRANCH"
 
+render_fix_pr_body() {
+  local body_file="$WORKDIR/fix-pr-body.md"
+  local umbrella_num umbrella_url umbrella_ref
+  cp "$REPO_ROOT/.github/templates/postmerge-retro-fix-pr.md" "$body_file"
+  umbrella_num="$(gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "$REPO" --json number,url --limit 1 --jq '.[0].number // empty' 2>/dev/null || true)"
+  if [[ -n "$umbrella_num" ]]; then
+    umbrella_url="$(gh issue view "$umbrella_num" -R "$REPO" --json url --jq .url)"
+    umbrella_ref="#${umbrella_num}"
+  else
+    umbrella_url="(pending — umbrella job may still be running)"
+    umbrella_ref="(umbrella pending)"
+  fi
+  sed -i \
+    -e "s/{{RUN_DATE}}/${RUN_DATE}/g" \
+    -e "s/{{FINDINGS_COUNT}}/${FINDINGS_COUNT}/g" \
+    -e "s|{{UMBRELLA_ISSUE_LINK}}|${umbrella_url}|g" \
+    -e "s|{{UMBRELLA_ISSUE_REF}}|${umbrella_ref}|g" \
+    -e "s|{{FIX_BRANCH}}|${BRANCH}|g" \
+    -e "s|{{REPO}}|${REPO}|g" \
+    "$body_file"
+  cat "$body_file"
+}
+
 existing_pr="$(gh pr list -R "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
 if [[ -n "$existing_pr" ]]; then
   echo "Open draft PR already exists: #${existing_pr}"
   PR_URL="$(gh pr view "$existing_pr" -R "$REPO" --json url --jq .url)"
 else
+  render_fix_pr_body >"$WORKDIR/fix-pr-body.md"
   PR_URL="$(gh pr create -R "$REPO" \
     --base main \
     --head "$BRANCH" \
     --draft \
     --title "Post-merge retro fix: ${RUN_DATE}" \
-    --body "$(cat <<EOF
-## Summary
-
-Draft fix PR for daily post-merge retrospective **${RUN_DATE}**.
-
-- Findings: **${FINDINGS_COUNT}**
-- Umbrella marker: \`<!-- postmerge-retro:daily:${RUN_DATE} -->\`
-
-## Review
-
-Human or agent must verify each fix before marking ready and merging.
-
-Automated by \`agent-postmerge-retro.yml\` (fix job).
-EOF
-)")"
+    --body-file "$WORKDIR/fix-pr-body.md")"
   echo "Created draft PR: ${PR_URL}"
 fi
 

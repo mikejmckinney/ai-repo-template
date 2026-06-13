@@ -16,12 +16,14 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
   UMBRELLA_TEMPLATE=".github/templates/postmerge-retro-umbrella.md"
+  FIX_PR_TEMPLATE=".github/templates/postmerge-retro-fix-pr.md"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
+  ENSURE_LABELS_SCRIPT="scripts/setup/ensure-pipeline-labels.sh"
   FEEDBACK_COLLECTOR="scripts/workflows/pr-feedback/collect-pr-feedback.sh"
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
     "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
-    "$UMBRELLA_TEMPLATE" "$FEEDBACK_COLLECTOR"; do
+    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -68,11 +70,24 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "fix job missing write permissions"
   fi
 
-  if grep -q 'postmerge-retro:daily:' "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && grep -q 'postmerge-retro-umbrella.md' "$UMBRELLA_SCRIPT" 2>/dev/null; then
-    pass "umbrella creator uses daily marker + template"
+  if grep -q 'postmerge-retro-umbrella.md' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'agent-suggested' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'gh issue create' "$UMBRELLA_SCRIPT" 2>/dev/null; then
+    pass "umbrella creator uses template + resilient agent-suggested label"
   else
-    fail "create-umbrella-issue.sh missing daily marker/template wiring"
+    fail "create-umbrella-issue.sh missing template/resilient label wiring"
+  fi
+
+  if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "fix script uses postmerge-retro-fix-pr template"
+  else
+    fail "run-postmerge-retro-fix.sh must render postmerge-retro-fix-pr.md"
+  fi
+
+  if grep -q 'ensure-pipeline-labels.sh' "scripts/sandbox-bootstrap.sh" 2>/dev/null; then
+    pass "sandbox bootstrap ensures pipeline labels"
+  else
+    fail "sandbox-bootstrap.sh must call ensure-pipeline-labels.sh"
   fi
 
   if grep -q 'collect-pr-feedback.sh' "$COLLECT_SCRIPT" 2>/dev/null; then

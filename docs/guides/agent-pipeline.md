@@ -257,7 +257,7 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 **Collection (deterministic, read-only):** `scripts/workflows/postmerge-retro/collect-postmerge-evidence.sh` wraps `scripts/workflows/pr-feedback/collect-pr-feedback.sh`.
 
-**Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`.
+**Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`. **Automation templates** (not GitHub UI chooser): `.github/templates/postmerge-retro-umbrella.md` (umbrella issue), `.github/templates/postmerge-retro-fix-pr.md` (draft fix PR — slim PR-template shape). Umbrella creation adds `agent-suggested` when the label exists; issue is still created if the label is missing. Sandbox bootstrap runs `scripts/setup/ensure-pipeline-labels.sh` on the sibling repo.
 
 **Fix dispatch:** `run-postmerge-retro-fix.sh` — Cursor local edits or Gemini JSON `file_edits`; requires `contents: write` + `pull-requests: write` on fix job.
 
