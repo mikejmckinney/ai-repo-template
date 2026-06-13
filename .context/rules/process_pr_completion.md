@@ -82,6 +82,7 @@ GitHub auto-populates issue and PR templates only in the browser flow, not when 
 
 - **Creating issues programmatically** — use the body skeleton from the matching `.github/ISSUE_TEMPLATE/{feature_request,bug_report,agent_init}.md` file (Markdown body only; strip the leading YAML front-matter).
 - **Creating PRs programmatically** — use the body skeleton from [`.github/pull_request_template.md`](../../.github/pull_request_template.md) (no front-matter to strip in this file). The **Doc sync** checklist is REQUIRED; Judge enforces it at diff-gate.
+- **Automation-rendered bodies** — workflows that create issues/PRs via `gh` may use slim templates under [`.github/templates/`](../../.github/templates/) instead of the full human templates above (e.g. post-merge retro umbrella + fix PR). Scripts substitute `{{placeholders}}`. These are **canonical for that automation**; do not mirror copies into `ISSUE_TEMPLATE/` or duplicate inline heredocs in scripts.
 - **Addressing review feedback on a PR you authored** — follow `.github/prompts/pr-resolve-all.md` (Phases 1–4) so the Resolution Report and Phase 4 thread-resolution land consistently. This applies even when no `@<agent> follow` mention has been posted; ad-hoc fixes skip the audit trail.
 - **Bundling small follow-ups vs. splitting** — see `docs/guides/agent-best-practices.md` → "Issue and PR Granularity."
 - If a section the work needs is missing from a template, **update the template in the same PR** rather than skipping the section.

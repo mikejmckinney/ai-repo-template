@@ -260,6 +260,16 @@ else
   log_info "Remote added."
 fi
 
+# ── Step 7: Ensure pipeline labels on sandbox ───────────────────────────────
+
+log_step "Ensuring pipeline labels on sandbox repo"
+
+if bash "$SCRIPT_DIR/setup/ensure-pipeline-labels.sh" "$SANDBOX_REPO"; then
+  log_info "Pipeline labels ensured on ${SANDBOX_REPO}."
+else
+  log_warn "Could not ensure all pipeline labels on ${SANDBOX_REPO}; retro umbrella may land unlabeled."
+fi
+
 # ── Done ────────────────────────────────────────────────────────────────────
 
 log_step "Sandbox bootstrap complete"

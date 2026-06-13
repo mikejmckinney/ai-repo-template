@@ -74,7 +74,9 @@ export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
 
 The script is idempotent: re-running on an already-bootstrapped sandbox
 is safe (existing repo, existing remote, and existing secrets are
-detected and skipped with a log line).
+detected and skipped with a log line). Step 7 ensures pipeline labels
+(including `agent-suggested`) exist on the sandbox — required for
+post-merge retro umbrella issues. Re-run `./scripts/setup/ensure-pipeline-labels.sh "$SANDBOX_REPO"` anytime labels drift.
 
 > **Codespaces note**: the auto-provisioned `GITHUB_TOKEN` in a
 > Codespace is scoped to the current repo only and cannot create new
@@ -114,6 +116,9 @@ printf '%s' "$SANDBOX_ANTHROPIC_KEY" | gh secret set ANTHROPIC_API_KEY \
 
 # 6. Add the sandbox remote on this checkout.
 git remote add "${SANDBOX_REMOTE:-sandbox}" "https://github.com/${SANDBOX_REPO}.git"
+
+# 7. Ensure pipeline labels (agent-suggested, retro-review, etc.) on sandbox.
+./scripts/setup/ensure-pipeline-labels.sh "$SANDBOX_REPO"
 ```
 
 The sandbox is intentionally private: failed runs will produce noisy

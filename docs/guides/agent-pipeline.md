@@ -109,7 +109,7 @@ With workflow approval disabled (see Setup below), these fire immediately on PR 
 
 **Re-review on push** — `agent-review-on-push.yml` nudges Gemini and Copilot to re-review after every push to an open non-draft PR. Enabled by default; set repo variable `REVIEW_ON_PUSH=false` to disable. See "Alternative: Copilot ruleset" below for a server-side option that did not work for this repo.
 
-**Advisory review snapshots (opt-in)** — `agent-advisory-review.yml` posts a single sticky, non-blocking advisory comment while implementation continues. Apply **`ai-review:live`** to enable (works on **draft** PRs). The workflow updates one comment per PR (`<!-- ai-advisory-review:v1 -->`) on each qualifying push — it does **not** submit a formal PR review, apply `claude-fix`, or push commits. Optional **`ai-review:full`** increases diff context size (see labels below). Final feedback consolidation (`implementation-complete`, PR 3) and post-merge retros (`retro-review`, PR 4) are separate workflows.
+**Advisory review snapshots (opt-in)** — `agent-advisory-review.yml` posts a single sticky, non-blocking advisory comment while implementation continues. Apply **`ai-review:live`** to enable (works on **draft** PRs). The workflow updates one comment per PR (`<!-- ai-advisory-review:v1 -->`) on each qualifying push — it does **not** submit a formal PR review, apply `claude-fix`, or push commits. Optional **`ai-review:full`** increases diff context size (see labels below). Final feedback consolidation (`implementation-complete`, PR 3) and post-merge daily retros (PR 4v2) are separate workflows.
 
 #### Advisory labels: `ai-review:live` vs `ai-review:full`
 
@@ -223,39 +223,49 @@ normal deterministic merge gates
 
 **Interaction with `claude-fix`:** consolidation only posts the inbox. A human may then add `claude-fix` for automated remediation via the existing `agent-fix-reviews.yml` rules. `review:blocking-ai` is a separate human escalation label — consolidation does not apply it.
 
-### Post-merge retrospective review (opt-in)
+### Post-merge retrospective review (daily batch v2)
 
-After a PR **merges to `main`**, apply one of **`retro-review`**, **`retro:adr`**, **`retro:context-pack`**, or **`ai-review:full`** before merge (labels are read from the merged PR) to run `agent-postmerge-retro.yml`. The workflow collects merged-PR evidence, runs one LLM retrospective pass, and **creates follow-up issues idempotently** — it does **not** edit code, ADRs, or context-pack files.
+Nightly **06:00 UTC** cron plus **`workflow_dispatch`** run the **full daily pipeline** on `agent-postmerge-retro.yml`:
+
+1. Scan **all merges to `main` in the rolling last 24 hours** (no label gate; Option C — no `pull_request: closed` trigger).
+2. Per-PR evidence + LLM retro → merge into `daily-retro.json`.
+3. **One umbrella GitHub issue per calendar day** (create or append rows; marker `<!-- postmerge-retro:daily:YYYY-MM-DD -->`).
+4. **Draft fix PR** on `retro/fix-YYYY-MM-DD` implementing **all** findings (second job; skip when zero findings).
+
+Human or agent reviews the draft fix PR before merge. Design: [ADR-030](../decisions/adr-030-non-blocking-review-pipeline.md); dogfood umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425). Tracking: [#426](https://github.com/mikejmckinney/ai-repo-template/issues/426), PR [#427](https://github.com/mikejmckinney/ai-repo-template/pull/427).
 
 **Happy path:**
 
 ```text
-Merged PR with retro-review / retro:adr / retro:context-pack / ai-review:full
+06:00 UTC cron OR workflow_dispatch
   ↓
-evidence collection (wraps collect-pr-feedback.sh)
+list merges to main (rolling 24h)
   ↓
-retrospective analysis → retro.json
+per-PR retro → daily-retro.json
   ↓
-idempotent follow-up issue creation (dedupe markers)
+umbrella issue (create or append)
+  ↓
+fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 ```
 
 | Trigger | Behavior |
 |---|---|
-| `pull_request` `closed` + merged + label gate | Runs retro for that PR when it merged to `main` |
-| `workflow_dispatch` with PR number | Manual re-run (required for already-merged PRs whose close event passed before the workflow existed) |
-| `create_issues=false` on dispatch | Produces `retro.json` artifact only; skips `gh issue create` |
+| `schedule` `0 6 * * *` | Daily retro job + fix job when findings exist |
+| `workflow_dispatch` | Same full daily pipeline |
 
-**Collection (deterministic, read-only):** `scripts/workflows/postmerge-retro/collect-postmerge-evidence.sh` wraps `scripts/workflows/pr-feedback/collect-pr-feedback.sh` and normalizes artifact names (`issue-comments.json`, `reviews.json`, `review-comments.json`, `diff.patch`, advisory/inbox extracts).
+**Legacy v1 scripts** (`postmerge-retro-create-issues.sh`, per-PR issue markers) remain for reference; v2 does not create per-finding issues.
 
-**Dispatch:** `scripts/workflows/postmerge-retro/run-postmerge-retro.sh` builds the prompt from `.github/prompts/post-merge-retro.md`, reuses advisory-review Cursor/Gemini runners (`auto` default), extracts JSON via `extract-retro-json.py`, validates with `validate-postmerge-retro.py`, then optionally runs `postmerge-retro-create-issues.sh`.
+**Collection (deterministic, read-only):** `scripts/workflows/postmerge-retro/collect-postmerge-evidence.sh` wraps `scripts/workflows/pr-feedback/collect-pr-feedback.sh`.
 
-**Issue dedupe:** each created issue includes `<!-- postmerge-retro:pr=<PR>:key=<dedupe_key> -->` in the body. Re-runs search open/closed issues and skip duplicates.
+**Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`. **Automation templates** (not GitHub UI chooser): `.github/templates/postmerge-retro-umbrella.md` (umbrella issue), `.github/templates/postmerge-retro-fix-pr.md` (draft fix PR — slim PR-template shape). Umbrella creation adds `agent-suggested` when the label exists; issue is still created if the label is missing. Sandbox bootstrap runs `scripts/setup/ensure-pipeline-labels.sh` on the sibling repo.
 
-**Labels on created issues:** `agent-suggested` always; plus `adr:update` for ADR candidates or `context-pack` for context-pack tuning candidates.
+**Fix dispatch:** `run-postmerge-retro-fix.sh` — Cursor local edits or Gemini JSON `file_edits`; requires `contents: write` + `pull-requests: write` on fix job.
 
-**Artifacts:** workflow uploads `.artifacts/postmerge-retro/pr-<N>/` (ephemeral; not committed to the repo).
+**Idempotency:** umbrella append by dedupe key; PR rows skipped if already in today's table. Manual dispatch before cron same day **appends**, does not skip the job.
 
-**Script checkout:** the workflow checks out **`main`**, not the merged PR's merge commit, so `workflow_dispatch` re-runs (e.g. on PR #382) always use the latest `scripts/workflows/postmerge-retro/` on default branch.
+**Script checkout:** workflow checks out **`main`** for scripts, not merge commits.
+
+**Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge.
 
 #### Provider, billing, and context loading
 
@@ -284,6 +294,8 @@ Advisory review is intentionally **lighter than full rule load**: startup kernel
 **Handshake / receipt in advisory comments:** The model **self-reports** the session handshake and context receipt in each snapshot. `pr-advisory-review.md` **pointer-links** to `.context/rules/process_session_start.md` for the canonical templates (no mirrored copy in the prompt — avoids AP1-style drift). Automation injects diff-coverage facts only; it does not override handshake fields.
 
 **Startup rules loaded for advisory:** `process_critical_thinking.md` and `process_clarification.md` are `startup-required` in the rule catalog and included in `startup-min`. After context compaction, agents should re-emit handshake per `process_session_start.md` § "Context compaction / resumed-session behavior".
+
+**Read-profile / compaction verification:** AGENTS.md v25 and `.context/rules/README.md` define named read profiles and minimum files. There is **no automated CI smoke** for profile loading — agents do not reliably read every minimum file from disk when only instructed via contract prose. Manual check: `handshake-and-shape-smoke.md` **Scenario E** (post-compaction read profile + receipt shape).
 
 **Manual override** — anyone (agent or human) can comment `/gemini review` directly on a PR to force a fresh Gemini review. This is documented as a belt-and-suspenders escape hatch; the workflow is the primary mechanism.
 
@@ -548,7 +560,7 @@ The labels in the table below are created automatically by `scripts/setup.sh`. M
 | `ai-review:live` | `#1D76DB` (blue) | Enable rolling non-blocking advisory review snapshots (`agent-advisory-review.yml`; draft PRs OK) |
 | `ai-review:full` | `#5319E7` (purple) | Deeper advisory review pass on this PR |
 | `implementation-complete` | `#0E8A16` (green) | Implementation finished; triggers `agent-review-finalize.yml` (Feedback Inbox) |
-| `retro-review` | `#FBCA04` (amber) | Opt merged PR into post-merge retrospective (PR 4) |
+| `retro-review` | `#FBCA04` (amber) | Optional human tag (not a workflow gate in v2); legacy label from PR 4 |
 | `retro:adr` | `#C5DEF5` (light blue) | Post-merge retro may propose ADR follow-ups |
 | `retro:context-pack` | `#BFD4F2` (light blue) | Post-merge retro may propose context-pack follow-ups |
 | `review:blocking-ai` | `#D93F0B` (red-orange) | Human escalation: named AI finding should block until resolved |
@@ -849,9 +861,10 @@ for Gemini to finish posting.
 | `scripts/workflows/advisory-review/` | AP8 workflow logic: dispatch, providers, upsert comment | Invoked by `agent-advisory-review.yml` |
 | `.github/workflows/agent-review-finalize.yml` | Final Feedback Inbox (`implementation-complete`); Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
 | `scripts/workflows/pr-feedback/` | AP8 finalize: collect feedback + consolidate dispatch | Invoked by `agent-review-finalize.yml` |
-| `.github/workflows/agent-postmerge-retro.yml` | Post-merge retrospective + idempotent follow-up issues (`retro-review` and related labels on merged PRs); Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; `issues: write`) |
-| `scripts/workflows/postmerge-retro/` | AP8 post-merge retro: evidence wrapper, JSON extract/validate, issue creation | Invoked by `agent-postmerge-retro.yml` |
-| `.github/prompts/post-merge-retro.md` | Post-merge retrospective JSON prompt | Used by `agent-postmerge-retro.yml` |
+| `.github/workflows/agent-postmerge-retro.yml` | Daily post-merge retro (06:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; fix job needs `contents` + PR write) |
+| `scripts/workflows/postmerge-retro/` | AP8 post-merge retro: daily batch, umbrella, fix PR scripts | Invoked by `agent-postmerge-retro.yml` |
+| `.github/prompts/post-merge-retro.md` | Per-PR retrospective JSON prompt | Used by daily batch per-PR pass |
+| `.github/prompts/post-merge-retro-fix.md` | Daily fix implementation prompt | Used by fix job |
 | `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-out via repo variable `REVIEW_ON_PUSH=false` | Yes (CLAUDE_PAT for Gemini comment author identity) |
 | `.github/prompts/pr-advisory-review.md` | Four-lens advisory snapshot prompt (Analyst/Judge/Critic/Code) | Used by `agent-advisory-review.yml` |
 | `.github/workflows/claude.yml` | Auto-review on PR open | Yes (ANTHROPIC_API_KEY) |

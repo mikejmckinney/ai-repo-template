@@ -106,7 +106,7 @@ bash install.sh
 │   ├── workflows/            # AP8 workflow logic extracted from .github/workflows
 │   │   ├── advisory-review/  # agent-advisory-review.yml dispatch, providers, comment upsert
 │   │   ├── pr-feedback/      # agent-review-finalize.yml collect + consolidate dispatch
-│   │   └── postmerge-retro/  # agent-postmerge-retro.yml evidence + issue creation
+│   │   └── postmerge-retro/  # agent-postmerge-retro.yml daily batch + fix PR
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
@@ -175,6 +175,9 @@ bash install.sh
     │   ├── pr-resolve-all.md     # PR-review resolution procedure
     │   └── repo-onboarding.md    # Repo onboarding workflow prompt
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
+    ├── templates/                # Automation-rendered bodies (scripts/workflows); not GitHub chooser UI
+    │   ├── postmerge-retro-umbrella.md  # Daily retro umbrella issue body
+    │   └── postmerge-retro-fix-pr.md    # Daily retro draft fix PR body (slim; not full pull_request_template)
     └── workflows/
         ├── ci-tests.yml
         ├── claude.yml
@@ -273,7 +276,11 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/prompts/pre-push-review.md` | Run Critic + lint + `./test.sh` against the working-tree diff before push on non-trivial changes |
 | `.github/prompts/pr-advisory-review.md` | Non-blocking four-lens advisory snapshot (`agent-advisory-review.yml`, `ai-review:live`) |
 | `.github/prompts/pr-final-feedback-consolidation.md` | Final Feedback Inbox consolidation (`agent-review-finalize.yml`, `implementation-complete`) |
-| `.github/prompts/post-merge-retro.md` | Post-merge retrospective JSON + follow-up issues (`agent-postmerge-retro.yml`, `retro-review`) |
+| `.github/prompts/post-merge-retro.md` | Per-PR post-merge retrospective JSON (`run-postmerge-retro.sh`) |
+| `.github/prompts/post-merge-retro-fix.md` | Daily retro fix implementation prompt |
+| `docs/decisions/adr-030-non-blocking-review-pipeline.md` | Non-blocking LLM review pipeline (advisory → finalize → daily post-merge retro v2) |
+| `.github/templates/postmerge-retro-umbrella.md` | Daily umbrella issue body (automation; canonical) |
+| `.github/templates/postmerge-retro-fix-pr.md` | Daily retro draft fix PR body (automation; slim PR-template shape) |
 | `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 
@@ -372,7 +379,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `agent-auto-ready.yml` | Marks Copilot PRs ready for review when implementation completes | None |
 | `agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (`ai-review:live`); Cursor / Antigravity / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; optional `ADVISORY_ANTIGRAVITY_ENABLED=true` |
 | `agent-review-finalize.yml` | Final Feedback Inbox after implementation (`implementation-complete`); Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY` (reuses advisory LLM runners) |
-| `agent-postmerge-retro.yml` | Post-merge retrospective + idempotent follow-up issues (`retro-review` and related labels); Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; `issues: write` |
+| `agent-postmerge-retro.yml` | Daily post-merge retro (06:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; fix job adds `contents` + PR write |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` secret |
 | `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier | Set `CLAUDE_PAT` secret |
 | `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR | None |
@@ -391,6 +398,19 @@ comment → labels. In-tree `.context/**` remains canonical for rules,
 decisions, durable lessons, and process constraints.
 
 ## Conventions
+
+### GitHub template surfaces
+
+Three locations — different consumers; do not duplicate across them:
+
+| Location | Consumer | Purpose |
+|---|---|---|
+| `.github/ISSUE_TEMPLATE/*.md` | Human issue chooser (GitHub UI) | Structured issue intake (`bug_report`, `feature_request`, `agent_init`) |
+| `.github/pull_request_template.md` | Human PR opener (GitHub UI) | Full Judge-gated PR body (plan pointer, compliance, doc sync, sandbox evidence) |
+| `.github/templates/*.md` | Workflow scripts (`gh issue create` / `gh pr create`) | Slim automation bodies with `{{placeholders}}` (post-merge retro umbrella + fix PR) |
+| `.github/PLAN_TEMPLATE.md` | Issue/PR comments | Implementation plan pasted before coding (ADR-011) |
+
+Agents creating issues/PRs via API use the matching surface per [`.context/rules/process_pr_completion.md`](.context/rules/process_pr_completion.md). Retro automation uses `.github/templates/` only — not mirrored into `ISSUE_TEMPLATE/`.
 
 ### File Naming
 

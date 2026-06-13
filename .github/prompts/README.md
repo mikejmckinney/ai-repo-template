@@ -32,9 +32,9 @@ lists come after, not before.
     draft/WIP PRs when `ai-review:live` is applied (`agent-advisory-review.yml`).
   - **`pr-final-feedback-consolidation.md`** — final Feedback Inbox consolidation
     when `implementation-complete` is applied (`agent-review-finalize.yml`).
-  - **`post-merge-retro.md`** — post-merge retrospective JSON + idempotent follow-up
-    issue creation when `retro-review` / related labels are present on a merged PR
-    (`agent-postmerge-retro.yml`).
+  - **`post-merge-retro.md`** — per-PR post-merge retrospective JSON (used inside daily batch).
+  - **`post-merge-retro-fix.md`** — daily fix pass for `retro/fix-YYYY-MM-DD` draft PRs.
+    Pipeline design: [ADR-030](../../docs/decisions/adr-030-non-blocking-review-pipeline.md) (issue #426).
   - **`pre-push-review.md`** — Critic + lint + `./test.sh` summary against
     the working-tree diff before push. SHOULD per AGENTS.md →
     "Work style"; MUST for the DevOps role on shell/workflow changes
@@ -54,9 +54,7 @@ lists come after, not before.
     evidence shape before relying on an agent run.
   - **`judge-mode-smoke.md`** — no-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance (structural heading verification for both modes)
   - **`handshake-and-shape-smoke.md`** — no-edit smoke prompt for session handshake
-    positional contract and response-shape verification: tests parent vs subagent
-    handshake positioning, exact-output first-line contract (Judge `DECISION:`,
-    Critic `CRITIC DECISION:`), and `## Subagent context receipt` placement (4 scenarios)
+    positional contract and response-shape verification (Scenarios A–E manual).
 - **Benchmark prompts** (repo-internal evaluation surfaces) — `model-roi-benchmark-candidate.md`.
   These are controlled benchmark prompts, not downstream project stage prompts.
   - **`model-roi-grader-v1.md`** — locked subjective grader for benchmark score sets;
@@ -95,6 +93,8 @@ lists come after, not before.
       `scripts/workflows/pr-feedback/`, label `implementation-complete`).
     - PR 4 (post-merge retrospective): **merged** (#383 @ `7e0bf68`; `agent-postmerge-retro.yml`,
       `scripts/workflows/postmerge-retro/`, label `retro-review`).
+    - PR 4v2 (daily retro + draft fix PR): **in PR #427** — ADR-030; sandbox smoke pending;
+      merge blocked until ADR-029 evidence; then Gemini router prompt `07`.
 
 ### Postmortem feedback loop
 
