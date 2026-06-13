@@ -44,18 +44,10 @@ if ! command -v cursor-agent >/dev/null 2>&1 && ! command -v agent >/dev/null 2>
   echo "::error::cursor-agent/agent not found on PATH" >&2
   exit 127
 fi
-if [[ -z "${CURSOR_API_KEY:-}" ]] && ! cursor-agent status >/dev/null 2>&1 && ! agent status >/dev/null 2>&1; then
+if [[ -z "${CURSOR_API_KEY:-}" ]] && ! { cursor-agent status >/dev/null 2>&1 || agent status >/dev/null 2>&1; }; then
   echo "::error::Not authenticated — set CURSOR_API_KEY or run cursor-agent login" >&2
   exit 78
 fi
-
-cursor_agent_cmd() {
-  if command -v cursor-agent >/dev/null 2>&1; then
-    cursor-agent "$@"
-  else
-    agent "$@"
-  fi
-}
 
 agents_md_version="$(grep -oE 'AGENTS_MD_VERSION: [0-9]+' "$REPO_ROOT/AGENTS.md" | head -1 | grep -oE '[0-9]+' || echo 25)"
 
@@ -148,13 +140,23 @@ run_phase() {
     echo "== Phase ${phase} (${RUNNER_LABEL}) attempt ${attempt} → $text_file"
 
     set +e
-    timeout "$TIMEOUT_SEC" cursor_agent_cmd -p \
-      --model "$MODEL" \
-      --force \
-      --trust \
-      --output-format json \
-      "$(cat "$prompt_file")" \
-      >"$json_file" 2>"$log_file"
+    if command -v cursor-agent >/dev/null 2>&1; then
+      timeout "$TIMEOUT_SEC" cursor-agent -p \
+        --model "$MODEL" \
+        --force \
+        --trust \
+        --output-format json \
+        "$(cat "$prompt_file")" \
+        >"$json_file" 2>"$log_file"
+    else
+      timeout "$TIMEOUT_SEC" agent -p \
+        --model "$MODEL" \
+        --force \
+        --trust \
+        --output-format json \
+        "$(cat "$prompt_file")" \
+        >"$json_file" 2>"$log_file"
+    fi
     local rc=$?
     set -e
 
