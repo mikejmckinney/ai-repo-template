@@ -61,9 +61,18 @@ agents_md_version="$(grep -oE 'AGENTS_MD_VERSION: [0-9]+' "$REPO_ROOT/AGENTS.md"
 
 build_prompt() {
   local phase="$1"
+  local strict="${2:-}"
+  local fmt=""
+  if [[ -n "$strict" ]]; then
+    fmt="CRITICAL: Line 1 MUST be exactly \"Session handshake v${agents_md_version}\" with NO characters before it. Violations fail the smoke test."
+  else
+    fmt="OUTPUT RULE: Line 1 MUST be \"Session handshake v${agents_md_version}\" with NO preamble."
+  fi
   case "$phase" in
     A)
       cat <<EOF
+${fmt}
+
 Read-profile compaction smoke — Phase A only. DO NOT edit any files.
 
 Follow AGENTS.md startup (read process_session_start.md and .context/rules/README.md from disk).
@@ -78,6 +87,8 @@ EOF
       ;;
     B)
       cat <<EOF
+${fmt}
+
 Read-profile compaction smoke — Phase B. DO NOT edit any files.
 
 [Conversation summary — prior session compacted]
@@ -98,6 +109,8 @@ EOF
       ;;
     C)
       cat <<EOF
+${fmt}
+
 Read-profile compaction smoke — Phase C. DO NOT edit any files.
 
 [Conversation summary — prior session compacted]
@@ -119,37 +132,50 @@ EOF
 
 run_phase() {
   local phase="$1"
-  local prompt_file="$OUTDIR/phase-${phase}-prompt.txt"
-  local json_file="$OUTDIR/phase-${phase}-agent.json"
-  local text_file="$OUTDIR/phase-${phase}-output.txt"
-  local log_file="$OUTDIR/phase-${phase}-stderr.log"
+  local attempt strict=""
+  for attempt in 1 2; do
+    if [[ "$attempt" -eq 2 ]]; then
+      strict=1
+      echo "== Phase ${phase} retry (${RUNNER_LABEL}) with strict first-line rule"
+    fi
+    local prompt_file="$OUTDIR/phase-${phase}-prompt.txt"
+    local json_file="$OUTDIR/phase-${phase}-agent.json"
+    local text_file="$OUTDIR/phase-${phase}-output.txt"
+    local log_file="$OUTDIR/phase-${phase}-stderr.log"
+    [[ "$attempt" -eq 2 ]] && text_file="$OUTDIR/phase-${phase}-output-retry.txt"
 
-  build_prompt "$phase" >"$prompt_file"
-  echo "== Phase ${phase} (${RUNNER_LABEL}) → $text_file"
+    build_prompt "$phase" "$strict" >"$prompt_file"
+    echo "== Phase ${phase} (${RUNNER_LABEL}) attempt ${attempt} → $text_file"
 
-  set +e
-  timeout "$TIMEOUT_SEC" cursor-agent -p \
-    --model "$MODEL" \
-    --force \
-    --trust \
-    --output-format json \
-    "$(cat "$prompt_file")" \
-    >"$json_file" 2>"$log_file"
-  local rc=$?
-  set -e
+    set +e
+    timeout "$TIMEOUT_SEC" cursor_agent_cmd -p \
+      --model "$MODEL" \
+      --force \
+      --trust \
+      --output-format json \
+      "$(cat "$prompt_file")" \
+      >"$json_file" 2>"$log_file"
+    local rc=$?
+    set -e
 
-  if [[ "$rc" -eq 124 ]]; then
-    echo "::error::Phase ${phase} timed out after ${TIMEOUT_SEC}s" >&2
-    return 124
-  fi
-  if [[ "$rc" -ne 0 ]]; then
-    echo "::error::Phase ${phase} cursor-agent exit ${rc}" >&2
-    tail -20 "$log_file" >&2 || true
-    return "$rc"
-  fi
+    if [[ "$rc" -eq 124 ]]; then
+      echo "::error::Phase ${phase} timed out after ${TIMEOUT_SEC}s" >&2
+      return 124
+    fi
+    if [[ "$rc" -ne 0 ]]; then
+      echo "::error::Phase ${phase} cursor-agent exit ${rc}" >&2
+      tail -20 "$log_file" >&2 || true
+      return "$rc"
+    fi
 
-  python3 "$SCRIPT_DIR/extract-cursor-agent-text.py" "$json_file" >"$text_file"
-  bash "$SCRIPT_DIR/validate-read-profile-compaction-smoke.sh" "$phase" "$text_file" | tee "$OUTDIR/phase-${phase}-validation.log"
+    python3 "$SCRIPT_DIR/extract-cursor-agent-text.py" "$json_file" >"$text_file"
+    if bash "$SCRIPT_DIR/validate-read-profile-compaction-smoke.sh" "$phase" "$text_file" | tee "$OUTDIR/phase-${phase}-validation-attempt${attempt}.log"; then
+      return 0
+    fi
+    if [[ "$attempt" -eq 2 ]]; then
+      return 1
+    fi
+  done
 }
 
 cp "$PROMPT_SPEC" "$OUTDIR/prompt-spec.md"
