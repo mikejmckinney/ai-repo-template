@@ -1,0 +1,17 @@
+Session handshake v25
+
+| Agent | Composer |
+| Role | OP |
+| Model | composer-2.5 |
+| AGENTS.md version | 25 |
+| Session type | smoke |
+| Dispatch mode | monolithic |
+| Read profile | startup-min |
+
+## Session context receipt
+
+- AGENTS.md — Read — startup pointer
+- .context/rules/process_session_start.md — Read — startup rules
+- .context/rules/README.md — Read — profile catalog
+
+Answer: use read profile **startup-min** for non-editing repo questions.

@@ -1,0 +1,72 @@
+# Smoke — AGENTS.md v25 read profile + post-compaction reload (Phases A–C)
+# Runs cursor-agent headless locally in CI; compares with maintainer Codespace runs.
+#
+# Triggers: PRs touching AGENTS/read-profile smoke files; workflow_dispatch.
+
+name: Smoke — read profile compaction
+
+on:
+  pull_request:
+    paths:
+      - AGENTS.md
+      - .github/prompts/read-profile-compaction-smoke.md
+      - .github/prompts/handshake-and-shape-smoke.md
+      - scripts/smoke/**
+      - scripts/checks/053-read-profile-compaction-smoke-invariants.sh
+      - .github/workflows/smoke-read-profile-compaction.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-profile-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> "$GITHUB_PATH"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          (command -v cursor-agent || command -v agent) --version
+
+      - name: Run read-profile compaction smoke (Phases A–C)
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          READ_PROFILE_SMOKE_RUNNER: github-actions
+          READ_PROFILE_SMOKE_MODEL: composer-2.5
+          READ_PROFILE_SMOKE_TIMEOUT: "900"
+        run: |
+          set -euo pipefail
+          if [[ -z "${CURSOR_API_KEY:-}" ]]; then
+            echo "::error::CURSOR_API_KEY secret is required for read-profile smoke"
+            exit 1
+          fi
+          export PATH="$HOME/.cursor/bin:$HOME/.local/bin:$PATH"
+          AGENT_BIN=""
+          if command -v cursor-agent >/dev/null 2>&1; then
+            AGENT_BIN=cursor-agent
+          elif command -v agent >/dev/null 2>&1; then
+            AGENT_BIN=agent
+          else
+            echo "::error::cursor-agent/agent binary not found after install"
+            exit 127
+          fi
+          echo "Using agent binary: $AGENT_BIN"
+          chmod +x scripts/smoke/*.sh
+          OUTDIR="$RUNNER_TEMP/read-profile-smoke"
+          mkdir -p "$OUTDIR"
+          ./scripts/smoke/read-profile-compaction-smoke.sh --runner github-actions --outdir "$OUTDIR"
+
+      - name: Upload smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: read-profile-smoke-${{ github.run_id }}
+          path: ${{ runner.temp }}/read-profile-smoke/
+          if-no-files-found: warn
+          retention-days: 14

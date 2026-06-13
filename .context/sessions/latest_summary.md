@@ -1,19 +1,17 @@
 # Session: 2026-06-13 — feature/postmerge-retro-daily-v2 — OP
 
-**Status**: PR #427 — sandbox retest pending after template/label hardening
+**Status**: PR #427 — read-profile compaction smoke added; local Phases A–C green; GHA pending
 **Issue/PR**: [#426](https://github.com/mikejmckinney/ai-repo-template/issues/426) / [#427](https://github.com/mikejmckinney/ai-repo-template/pull/427)
-**Started**: 2026-06-12
 
-## Latest (template + label hardening)
+## Latest
 
-- **Template surfaces documented** — `AI_REPO_GUIDE.md` § GitHub template surfaces; `process_pr_completion.md`; no mirroring antipattern.
-- **`.github/templates/postmerge-retro-fix-pr.md`** — slim fix PR body; wired in `run-postmerge-retro-fix.sh`.
-- **Resilient umbrella labels** — create issue first; add `agent-suggested` best-effort (Option B).
-- **`ensure-pipeline-labels.sh`** + sandbox bootstrap step 7 (Option A).
-- `./test.sh` — 915 passed.
+- Read-profile compaction smoke (AGENTS v25): Phases A–C via `cursor-agent` headless
+- Fixed duplicate Scenario E in `handshake-and-shape-smoke.md`
+- Local run (codespace): `/tmp/read-profile-smoke-codespace-v2` — all phases passed
+- CI: `smoke-read-profile-compaction.yml` on PR + workflow_dispatch
 
 ## Next
 
-1. Push to sandbox + merge canary PR + rerun retro workflow (retest).
-2. Merge #427.
-3. Gemini router (`07`) after upstream smoke.
+1. Confirm GitHub Actions smoke green on #427
+2. Merge #427
+3. Upstream retro smoke + Gemini router (`07`)

@@ -1,0 +1,18 @@
+Session handshake v25
+
+| Agent | Composer |
+| Role | OP |
+| Model | composer-2.5 |
+| AGENTS.md version | 25 |
+| Session type | smoke |
+| Dispatch mode | monolithic |
+| Read profile | implementation |
+
+## Session context receipt
+
+- process_session_start.md — Read — re-loaded after compaction
+- process_gates.md — Read — implementation profile
+- domain_code_quality.md — Read — implementation profile
+
+Would add to scripts/checks/052-postmerge-retro-invariants.sh:
+`# read-profile compaction smoke: scripts/smoke/read-profile-compaction-smoke.sh`
