@@ -298,10 +298,14 @@ Expected: zero `FAIL:` lines.
 
 ---
 
-## Scenario E — Post-compaction read profile (parent agent)
+## Scenario E — Post-compaction read profile (parent agent, manual only)
 
 **Context**: Parent agent reply **immediately after** simulated context compaction
 (conversation summary). Next action is repo-changing or implementation-class work.
+
+No automated runner — capture agent output to `output.txt` and run the pass
+criteria below. Profile minimum loading is **not** CI-gated; this scenario
+checks handshake shape and read-profile bump only.
 
 **Expected shape**:
 

@@ -295,6 +295,8 @@ Advisory review is intentionally **lighter than full rule load**: startup kernel
 
 **Startup rules loaded for advisory:** `process_critical_thinking.md` and `process_clarification.md` are `startup-required` in the rule catalog and included in `startup-min`. After context compaction, agents should re-emit handshake per `process_session_start.md` § "Context compaction / resumed-session behavior".
 
+**Read-profile / compaction verification:** AGENTS.md v25 and `.context/rules/README.md` define named read profiles and minimum files. There is **no automated CI smoke** for profile loading — agents do not reliably read every minimum file from disk when only instructed via contract prose. Manual check: `handshake-and-shape-smoke.md` **Scenario E** (post-compaction read profile + receipt shape).
+
 **Manual override** — anyone (agent or human) can comment `/gemini review` directly on a PR to force a fresh Gemini review. This is documented as a belt-and-suspenders escape hatch; the workflow is the primary mechanism.
 
 **Alternative: Copilot ruleset** — GitHub offers a server-side ruleset (Settings → Rules → Rulesets → "Automatically request Copilot code review") that should re-request Copilot on every push. We tried it on this repo (April 2026) and it did **not** fire on push. Keeping it enabled is harmless (worst case, Copilot reviews twice if GitHub later fixes it). If the ruleset works for your fork, you can drop the Copilot half of `agent-review-on-push.yml`.
