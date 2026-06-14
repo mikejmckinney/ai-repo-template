@@ -60,7 +60,7 @@ Emit the session handshake from [`.context/rules/process_session_start.md`](../.
 
 ### Context receipt
 
-Emit `## Session context receipt` from the same file § "Session context receipt". Include one row per startup source you used (`AGENTS.md`, `process_session_start.md`, `README.md`, `process_critical_thinking.md`, `process_clarification.md`, PR body, PR diff) with accurate `Read` / `Reviewed` / `Skipped` status and Source (`prompt-injected`, `antigravity sources`, `GitHub API`, `git diff`, …).
+Emit `## Session context receipt` from the same file § "Session context receipt". Include one row per startup source you used (`AGENTS.md`, `process_session_start.md`, `README.md`, `process_critical_thinking.md`, `process_clarification.md`, PR body, PR diff) with accurate `Load` / `In context` values and Source (`prompt-injected`, `antigravity sources`, `GitHub API`, `git diff`, …).
 
 ### Findings to consider before finalization
 

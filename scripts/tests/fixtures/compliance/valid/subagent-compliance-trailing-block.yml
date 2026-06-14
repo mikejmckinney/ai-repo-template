@@ -1,7 +1,7 @@
 subagent_compliance:
   role: judge
   role_contract_version: 1
-  agents_md_version: 25
+  agents_md_version: 26
   receipt:
     mode: trailing-block
     value: "Judge exact-output preserved; DECISION remained first line before trailing blocks."

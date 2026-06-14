@@ -46,7 +46,7 @@ Emit the session handshake from [`.context/rules/process_session_start.md`](../.
 
 ### Context receipt
 
-Emit `## Session context receipt` from the same file § "Session context receipt". Include collected artifacts you used (`pr.json`, reviews, review-comments, advisory snapshots, diff) with accurate `Read` / `Reviewed` / `Skipped` status.
+Emit `## Session context receipt` from the same file § "Session context receipt". Include collected artifacts you used (`pr.json`, reviews, review-comments, advisory snapshots, diff) with accurate `Load` and `In context` values.
 
 ### Must fix before merge
 

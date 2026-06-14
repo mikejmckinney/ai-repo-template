@@ -3,7 +3,7 @@
 > Extracted from AGENTS.md §"Clarification and ambiguity" in PR for #253 (ADR-021).
 > Apply when the request is ambiguous or you'd otherwise have to invent facts to proceed.
 
-When a request is genuinely ambiguous — where different reasonable interpretations lead to meaningfully different work — stop and ask and recommend before proceeding. Don't guess and build, and don't ask and build in parallel; ask, then wait.
+When a request is ambiguous — where different reasonable interpretations lead to meaningfully different work — stop, ask, recommend and explain reasoning before proceeding. Don't guess and build, and don't ask and build in parallel; ask, then wait.
 
 - **Resolve from the repo first.** Before asking, check the **Truth hierarchy** sources (see `AGENTS.md` §"Truth hierarchy") for an existing answer. If you can resolve the ambiguity by reading, do that instead of asking.
 - **Verify details with live sources when available and cite sources**
