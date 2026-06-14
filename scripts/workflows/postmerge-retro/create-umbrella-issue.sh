@@ -78,12 +78,13 @@ append_to_issue() {
   fi
 
   printf '%s' "$new_rows" >"$WORKDIR/new-rows.txt"
+  printf '%s' "$body" >"$WORKDIR/existing-body.md"
   merged="$(
-    python3 - "$body" "$WORKDIR/new-rows.txt" <<'PY'
+    python3 - "$WORKDIR/existing-body.md" "$WORKDIR/new-rows.txt" <<'PY'
 import sys
 
-body = open(sys.argv[1]).read()
-new_rows = [ln for ln in open(sys.argv[2]).read().splitlines() if ln.strip()]
+body = open(sys.argv[1], encoding="utf-8").read()
+new_rows = [ln for ln in open(sys.argv[2], encoding="utf-8").read().splitlines() if ln.strip()]
 if "## Meta" in body:
     head, tail = body.split("## Meta", 1)
     print(head.rstrip() + "\n" + "\n".join(new_rows) + "\n\n## Meta" + tail)
