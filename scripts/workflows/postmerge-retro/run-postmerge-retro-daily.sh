@@ -30,7 +30,8 @@ EXISTING_ISSUE="$(gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "$
 if [[ -n "$EXISTING_ISSUE" ]]; then
   while IFS= read -r pr; do
     [[ -z "$pr" ]] && continue
-    if grep -Eq "\| #${pr} \|" <<<"$EXISTING_ISSUE"; then
+    if grep -Eq "\| #${pr} \|" <<<"$EXISTING_ISSUE" \
+      || grep -Eq "PRs in this update:.*#${pr}([, ]|$)" <<<"$EXISTING_ISSUE"; then
       SKIP_PRS+=("$pr")
     fi
   done < <(printf '%s\n' "${ALL_PRS[@]}")

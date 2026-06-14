@@ -72,10 +72,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'postmerge-retro-umbrella.md' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'agent-suggested' "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && grep -q 'gh issue create' "$UMBRELLA_SCRIPT" 2>/dev/null; then
-    pass "umbrella creator uses template + resilient agent-suggested label"
+    && grep -q 'gh issue create' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'existing-body.md' "$UMBRELLA_SCRIPT" 2>/dev/null; then
+    pass "umbrella creator uses template + resilient agent-suggested label + body file append"
   else
-    fail "create-umbrella-issue.sh missing template/resilient label wiring"
+    fail "create-umbrella-issue.sh missing template/resilient label/body-file append wiring"
   fi
 
   if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null; then
