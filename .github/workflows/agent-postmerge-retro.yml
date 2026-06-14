@@ -55,7 +55,7 @@ concurrency:
 
 jobs:
   daily-retro:
-    if: github.event.inputs.fix_only != true
+    if: github.event.inputs.fix_only != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     outputs:
@@ -170,7 +170,7 @@ jobs:
     needs: daily-retro
     if: >-
       always() && (
-        (github.event.inputs.fix_only == true && github.event.inputs.run_date != '') ||
+        (github.event.inputs.fix_only == 'true' && github.event.inputs.run_date != '') ||
         (
           needs.daily-retro.result == 'success' &&
           needs.daily-retro.outputs.findings_count != '0' &&
@@ -199,14 +199,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download daily retro artifacts
-        if: github.event.inputs.fix_only != true
+        if: github.event.inputs.fix_only != 'true'
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.daily-retro.outputs.artifact_name }}
           path: .artifacts/postmerge-retro/
 
       - name: Restore daily retro JSON (fix-only)
-        if: github.event.inputs.fix_only == true
+        if: github.event.inputs.fix_only == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
