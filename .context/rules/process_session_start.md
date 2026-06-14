@@ -88,7 +88,7 @@ Use one row per file that was required, triggered, explicitly dispatched, or int
 
 | Column | Values | Meaning |
 |---|---|---|
-| **Load** | `Read`, `Skipped` | `Read` = full file loaded from disk **this receipt boundary**. `Skipped` = intentionally not loaded. |
+| **Load** | `Read`, `Skipped`, `—` | `Read` = full file loaded from disk **this receipt boundary**. `Skipped` = intentionally not loaded. `—` = not loaded this boundary (stale/prior-boundary row until re-read). |
 | **In context** | `yes`, `no`, `partial` | Whether the **full** file text is **currently** in working prompt context. |
 
 Rules:
@@ -96,7 +96,7 @@ Rules:
 - `Load: Read` requires a disk/current-source read **this boundary** only.
 - `In context: yes` requires verbatim full file in current prompt — not memory, summary, transcript, or grep.
 - `In context: partial` for search hits, excerpts, or conversation summaries that mention the file.
-- After compaction or when re-displaying a prior receipt without re-read: set `In context: no` for affected rows even if `Load: Read` at an earlier boundary.
+- After compaction or when re-displaying a prior receipt without re-read: emit `## Session context receipt (stale)`, set `In context: no`, and use `Load: —` (not loaded this boundary) until each file is re-read this boundary. Do **not** carry prior-boundary `Load: Read` into a new receipt boundary.
 - Do not claim `In context: yes` for a file you cannot cite by line without re-reading.
 
 ### Showing the receipt mid-session
@@ -169,15 +169,15 @@ Examples:
 
 ### Legacy `Reviewed` (deprecated — do not use in new receipts)
 
-Older receipts used a single `Reviewed` status. Replace with `Load: Skipped` + `In context: yes` when verbatim content was prompt-injected without a disk read, or `Load: Read` + `In context: no` when a prior boundary read was compacted away.
+Older receipts used a single `Reviewed` status. Replace with `Load: Skipped` + `In context: yes` when verbatim content was prompt-injected without a disk read, or `Load: —` + `In context: no` in a stale receipt when a prior boundary read was compacted away without re-read this boundary.
 
-Do **not** use `Reviewed` to mean "read earlier in the same session" — that state is `Load: Read` + `In context: no` after compaction.
+Do **not** use `Reviewed` to mean "read earlier in the same session" — after compaction without re-read, that state is `Load: —` + `In context: no` in `## Session context receipt (stale)`, not `Load: Read`.
 
 ### `Load: Skipped`
 
 Use `Load: Skipped` when the file was considered but intentionally not loaded because its trigger did not apply, the chosen profile did not require it, or the task was blocked before the file could be read.
 
-Every `Load: Skipped` row must explain why. Do not use `Skipped` for startup-required files unless work is blocked and no repo-changing action is being taken.
+Every `Load: Skipped` row must explain why. Do not use `Load: Skipped` for startup-required files unless work is blocked and no repo-changing action is being taken.
 
 Examples:
 
@@ -209,6 +209,6 @@ If context was compacted, summarized, resumed, or transferred, treat the next re
 3. the selected read profile;
 4. the session context receipt with accurate `In context` values for every row you may cite.
 
-If any are missing, load the mandatory files for the current read profile and re-emit the session handshake with `Receipt boundary: post-compaction`. Set `In context: no` on every row until each file is re-read this boundary.
+If any are missing, load the mandatory files for the current read profile and re-emit the session handshake with `Receipt boundary: post-compaction`. Emit `## Session context receipt (stale)` with `Load: —` and `In context: no` on every row until each file is re-read this boundary; after re-read, set `Load: Read` and `In context: yes` for those rows.
 
 See also `.context/rules/process_session_state.md` § "`agent-state:v1` update cadence" — auto-summary is a durability-risk boundary that invalidates `In context: yes` for prior reads.

@@ -84,7 +84,7 @@ role-specific body. The `subagent_compliance` YAML block (ADR-026) is
 for exact-output roles (Judge, Critic) and **encouraged but not required** for
 all other roles:
 
-1. `## Subagent session handshake` — the 7-field table from
+1. `## Subagent session handshake` — the 8-field table from
    `.context/rules/process_session_start.md` § "Session handshake (read-receipt)".
 2. `## Subagent context receipt` — the file table from
    `.context/rules/process_session_start.md` § "Session context receipt".

@@ -35,7 +35,7 @@ If the runtime summarized/compacted context, or you see a conversation summary i
 
 1. Re-read `process_session_start.md` and `.context/rules/README.md`.
 2. Re-select the read profile and load remaining mandatory files and triggered rules that were not loaded in the previous step.
-3. Re-emit **Session handshake** with the current `AGENTS_MD_VERSION` from this file's HTML comment, plus **Session context receipt** using `Receipt boundary: post-compaction` and accurate `In context` values (prior-boundary `Load: Read` rows are `In context: no` until re-read this boundary).
+3. Re-emit **Session handshake** with the current `AGENTS_MD_VERSION` from this file's HTML comment, plus **`## Session context receipt (stale)`** using `Receipt boundary: post-compaction`, `Load: —`, and `In context: no` on every row until each mandatory file is re-read this boundary (then set `Load: Read` and `In context: yes` for re-read rows).
 
 Do not rely on memory of rule files read before compaction. Do not replay a prior receipt table from transcript or summary without re-read.
 

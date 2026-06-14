@@ -19,6 +19,7 @@ After pushing the PR, run this loop until it converges:
 - CI is green.
 - Every bot thread is either auto-resolved by `pr-resolve-all.md` Phase 4 (only when its Phase 2 status is `✅ Fixed`) or left open with a deferral reply (for `❌ Out of scope` / `❌ Not reproducible` / `⚠️` outcomes — humans expect to acknowledge those themselves).
 - Your Resolution Report is posted per `pr-resolve-all.md` Phase 3.
+- For PR merge/closeout that updates session status: copy the current `.context/sessions/latest_summary.md` to a date-stamped archive (e.g. `.context/sessions/YYYY-MM-DD_<branch-or-topic>.md`) per `.context/sessions/README.md` § "Rotation rule" before overwriting `latest_summary.md`.
 
 **Escape valve.** If a bot finding is intentionally out-of-scope or wrong:
 

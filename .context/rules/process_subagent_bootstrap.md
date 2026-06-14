@@ -11,7 +11,7 @@
 
 After role body, append in order:
 
-1. `## Subagent session handshake` — 7-field table from `process_session_start.md`.
+1. `## Subagent session handshake` — 8-field table from `process_session_start.md`.
 2. `## Subagent context receipt` — file table from `process_session_start.md`.
 3. `subagent_compliance` YAML block.
 

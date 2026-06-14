@@ -33,10 +33,24 @@ if [[ -f "$session_start" ]] \
   && grep -q 'Receipt boundary' "$session_start" 2>/dev/null \
   && grep -q 'In context' "$session_start" 2>/dev/null \
   && grep -q 'Session context receipt (stale)' "$session_start" 2>/dev/null \
-  && grep -q 'Never.*copy a prior receipt' "$session_start" 2>/dev/null; then
+  && grep -q 'Never.*copy a prior receipt' "$session_start" 2>/dev/null \
+  && grep -q 'Load: —' "$session_start" 2>/dev/null \
+  && ! grep -q 'prior-boundary `Load: Read`' AGENTS.md 2>/dev/null; then
   pass "process_session_start.md defines receipt boundary + in-context + stale replay rules"
 else
-  fail "process_session_start.md missing receipt boundary, In context, or stale-replay rules"
+  fail "process_session_start.md missing receipt boundary, In context, stale-replay rules, or AGENTS.md retains prior-boundary Load: Read contradiction"
+fi
+
+subagent_bootstrap=".context/rules/process_subagent_bootstrap.md"
+multi_agent="docs/guides/multi-agent-coordination.md"
+if [[ -f "$session_start" && -f "$subagent_bootstrap" && -f "$multi_agent" ]] \
+  && grep -q 'Receipt boundary' "$session_start" 2>/dev/null \
+  && ! grep -q '7-field table' "$subagent_bootstrap" "$multi_agent" 2>/dev/null \
+  && grep -q '8-field table' "$subagent_bootstrap" 2>/dev/null \
+  && grep -q '8-field table' "$multi_agent" 2>/dev/null; then
+  pass "subagent handshake surfaces align to 8-field table with Receipt boundary"
+else
+  fail "subagent bootstrap/coordination docs drift from 8-field handshake (Receipt boundary)"
 fi
 
 if grep -q "plan_compliance:" .github/PLAN_TEMPLATE.md; then

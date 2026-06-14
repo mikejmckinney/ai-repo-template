@@ -42,7 +42,7 @@ in a new session.
 **Expected shape**:
 
 1. `Session handshake v<N>` token is the LITERAL FIRST LINE of the response.
-2. A 7-field table follows immediately (includes `Dispatch mode` and `Read profile` rows).
+2. An 8-field table follows immediately (includes `Dispatch mode`, `Read profile`, and `Receipt boundary` rows).
 3. A `## Session context receipt` section appears in the response body.
 
 **Pass criteria**:
@@ -66,8 +66,8 @@ awk '
   }
 ' output.txt
 
-# 7-field table must include all required rows (scoped to handshake table)
-awk 'NR==1 && /^Session handshake/{hs=1} hs && /\| *Agent *\|/{ag=1} hs && /\| *Role *\|/{ro=1} hs && /\| *Model *\|/{mo=1} hs && /\| *AGENTS\.md version *\|/{av=1} hs && /\| *Session type *\|/{st=1} hs && /\| *Dispatch mode *\|/{dm=1} hs && /\| *Read profile *\|/{rp=1} /^## /{hs=0} END{
+# 8-field table must include all required rows (scoped to handshake table)
+awk 'NR==1 && /^Session handshake/{hs=1} hs && /\| *Agent *\|/{ag=1} hs && /\| *Role *\|/{ro=1} hs && /\| *Model *\|/{mo=1} hs && /\| *AGENTS\.md version *\|/{av=1} hs && /\| *Session type *\|/{st=1} hs && /\| *Dispatch mode *\|/{dm=1} hs && /\| *Read profile *\|/{rp=1} hs && /\| *Receipt boundary *\|/{rb=1} /^## /{hs=0} END{
   if (ag) print "OK: Agent row in handshake table";
   else print "FAIL: Agent row not in handshake table";
   if (ro) print "OK: Role row in handshake table";
@@ -81,8 +81,18 @@ awk 'NR==1 && /^Session handshake/{hs=1} hs && /\| *Agent *\|/{ag=1} hs && /\| *
   if (dm) print "OK: Dispatch mode row in handshake table";
   else print "FAIL: Dispatch mode row not in handshake table";
   if (rp) print "OK: Read profile row in handshake table";
-  else print "FAIL: Read profile row not in handshake table"
+  else print "FAIL: Read profile row not in handshake table";
+  if (rb) print "OK: Receipt boundary row in handshake table";
+  else print "FAIL: Receipt boundary row not in handshake table"
 }' output.txt
+
+# Session context receipt must use Load + In context columns
+grep -qE '\| *Load *\|' output.txt \
+  && echo "OK: Load column present in receipt" \
+  || echo "FAIL: Load column missing in receipt"
+grep -qE '\| *In context *\|' output.txt \
+  && echo "OK: In context column present in receipt" \
+  || echo "FAIL: In context column missing in receipt"
 
 # Session context receipt section must exist
 awk '/^## Session context receipt/{found=1} END{exit !found}' output.txt \

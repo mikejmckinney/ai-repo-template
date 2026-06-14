@@ -155,7 +155,7 @@ Also search current references:
 
 ```bash
 git grep -n "AGENTS.md#" || true
-git grep -n "AGENTS_MD_VERSION\|session handshake\|context receipt\|Read, Reviewed, or Skipped\|prompt-context read credit" || true
+git grep -n "AGENTS_MD_VERSION\|session handshake\|context receipt\|Load.*In context\|prompt-context read credit" || true
 git grep -n "\.vscode/settings.json\|vscode.*settings" || true
 ```
 
@@ -187,7 +187,7 @@ Before substantive repo work, read:
 1. `.context/rules/process_session_start.md`
 2. `.context/rules/README.md`
 
-A pointer or filename reference alone does not count as read credit. Full content already present verbatim in prompt context may count as Reviewed unless freshness, cadence, explicit dispatch, citations, or compliance evidence require reading from disk.
+A pointer or filename reference alone does not count as read credit. Full content already present verbatim in prompt context may count as `In context: yes` with `Load: Skipped` unless freshness, cadence, explicit dispatch, citations, or compliance evidence require reading from disk.
 
 Truth hierarchy:
 
@@ -207,8 +207,8 @@ Move or recreate the current canonical rules for:
 - session context receipt
 - prompt-context read credit
 - canary/version handling
-- what counts as `Read`, `Reviewed`, or `Skipped`
-- when full content already present in prompt context may count as Reviewed
+- what counts as `Load: Read`, `Load: Skipped`, and `In context: yes/no/partial`
+- when full content already present in prompt context may count as `Load: Skipped` + `In context: yes`
 - when disk reads are still required despite prompt-context content
 - relationship between parent session and subagent dispatch packets
 - how the agent reports loaded rule/context surfaces
@@ -225,7 +225,7 @@ Recommended outline:
 ## Parent vs subagent handshake positioning
 ## Session context receipt
 ## Prompt-context read credit
-## Read / Reviewed / Skipped definitions
+## Load / In context definitions
 ## Canary and version handling
 ## Evidence requirements
 ## Failure handling
