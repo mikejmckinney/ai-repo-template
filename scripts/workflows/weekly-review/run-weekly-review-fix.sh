@@ -177,6 +177,9 @@ render_fix_pr_body() {
     -e "s|{{FIX_BRANCH}}|${BRANCH}|g" \
     -e "s|{{REPO}}|${REPO}|g" \
     "$body_file"
+  if [[ -z "$umbrella_num" ]]; then
+    sed -i '/^Fixes #[[:space:]]*$/d' "$body_file"
+  fi
 }
 
 link_pr_to_umbrella() {
