@@ -310,9 +310,9 @@ checks handshake shape and read-profile bump only.
 **Expected shape**:
 
 1. Treat compaction as a **task boundary** per `AGENTS.md` § "After context compaction".
-2. Re-emit **Session handshake** with current `AGENTS.md` version (**25** or later).
+2. Re-emit **Session handshake** with current `AGENTS.md` version and `Receipt boundary: post-compaction` (or `fresh` after re-read).
 3. **Read profile** must match the new task (e.g. `implementation`, not `startup-min`).
-4. **Session context receipt** lists files **Read** from disk for this boundary.
+4. **Session context receipt** uses `Load` + `In context` columns; files re-read this boundary show `Load: Read` and `In context: yes`.
 
 **Manual pass criteria** (Phase B output in `output.txt`):
 
@@ -324,6 +324,14 @@ grep -qE 'Session handshake v[0-9]+' output.txt \
 awk '/Session handshake/{hs=1} hs && /\| *Read profile *\|/{print; exit}' output.txt | grep -q implementation \
   && echo "OK: Read profile bumped for implementation task" \
   || echo "FAIL: Read profile not implementation (still startup-min or missing)"
+
+grep -qE 'Receipt boundary' output.txt \
+  && echo "OK: Receipt boundary field present" \
+  || echo "FAIL: Receipt boundary missing"
+
+grep -qE '\| *In context *\|' output.txt \
+  && echo "OK: In context column present in receipt" \
+  || echo "FAIL: In context column missing"
 
 grep -q '## Session context receipt' output.txt \
   && echo "OK: context receipt present" \

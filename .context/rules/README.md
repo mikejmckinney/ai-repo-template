@@ -1,16 +1,16 @@
 # Rule Catalog
 
-> **Purpose**: Route agents to the smallest rule set needed for the current task. This file is the catalog and load-policy surface for `.context/rules/**`; detailed rationale, examples, and long-form guidance belong in `docs/**`.
+> **Purpose**: Route agents to the most relevant rule set needed for the current task. This file is the catalog and load-policy surface for `.context/rules/**`; detailed rationale, examples, and long-form guidance belong in `docs/**`.
 
 ## How to use this catalog
 
 1. Start every repo task with `AGENTS.md`, `.context/rules/process_session_start.md`, and this catalog.
-2. Choose the smallest named read profile that fits the task.
+2. Choose the most relevant named read profile that fits the task.
 3. Read every rule whose trigger fires before making the affected decision.
 4. Record the loaded files in the session context receipt defined by `process_session_start.md`.
 5. When in doubt, read the narrower rule file that owns the decision instead of loading all rules.
 
-A filename, pointer, heading, search result, or summarized mention does **not** count as read credit. Full file contents already present verbatim in the current prompt context may count as `Reviewed`, subject to the limits in `process_session_start.md`.
+A filename, pointer, heading, search result, or summarized mention does **not** count as read credit. Full file contents already present verbatim in the current prompt context may be recorded as `Load: Skipped` with `In context: yes`, subject to the limits in `process_session_start.md`.
 
 ## Load profile meanings
 
@@ -26,8 +26,9 @@ A filename, pointer, heading, search result, or summarized mention does **not** 
 ## Named read profiles
 
 Use these names in the session handshake’s `Read profile` field.
+Profiles are a floor, triggers may add files; they do not reduce the floor.
 
-| Profile | Use when | Minimum files |
+| Profile | Use when | Mandatory at profile selection |
 |---|---|---|
 | `startup-min` | non-editing repo question. | `AGENTS.md`, `process_session_start.md`, `process_critical_thinking.md`, `process_clarification.md`, `.context/00_INDEX.md`, this catalog. |
 | `standard` | Default for most issue/PR work before choosing a narrower task profile. | `startup-min`, role file if acting as a role, `agent_ownership.md`, `process_work_style.md`, `process_doc_maintenance.md`, `process_role_selection.md`, `process_session_state.md`, `process_opportunity_feedback.md`. |
@@ -35,7 +36,7 @@ Use these names in the session handshake’s `Read profile` field.
 | `pr-review` | Reviewing a PR, preparing a PR, responding to review feedback, or checking merge readiness. | `standard`, `process_pr_completion.md`, `process_gates.md`, changed-path domain rules. |
 | `orchestration` | Changing agents, role overlays, dispatch, handoffs, review timing, subagent behavior, or model routing. | `standard`, `process_subagent_bootstrap.md`, `process_model_tier.md`, `repo_orchestration_patterns.md`. |
 | `policy-adr` | Writing or changing ADRs, process policy, governance docs, or rule files. | `standard`, `repo_orchestration_patterns.md`, relevant ADR(s), `docs/decisions/adr-template.md`. |
-| `benchmark` | Changing benchmark protocol, candidates, scoring, adapters, cost math, or benchmark results. | `standard`, `.context/benchmarks/model-roi/README.md`, benchmark runbook/results as relevant, `process_model_tier.md`, `process_work_style.md`. |
+| `benchmark` | Changing benchmark protocol, candidates, scoring, adapters, cost math, or benchmark results. | `standard`, `.context/benchmarks/model-roi/README.md`, benchmark runbook/results as relevant, `process_model_tier.md`. |
 | `full` | Explicit full-context request or high-risk review. | All files in `.context/rules/**` plus task-relevant docs/ADRs. Use sparingly and record why. |
 
 Profiles define the minimum startup set. A trigger below can add files to any profile.

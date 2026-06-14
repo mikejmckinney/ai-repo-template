@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 25 -->
+<!-- AGENTS_MD_VERSION: 26 -->
 
 Before repo work, read:
 
@@ -8,7 +8,7 @@ Before repo work, read:
 2. `.context/rules/README.md`
 
 A pointer or filename reference alone does not count as read credit.
-Full content already present verbatim in prompt context may count as Reviewed unless freshness, cadence, explicit dispatch, citations, or compliance evidence require reading from disk.
+Full content already present verbatim in prompt context may count as `In context: yes` with `Load: Skipped` unless freshness, cadence, explicit dispatch, citations, or compliance evidence require reading from disk.
 
 Truth hierarchy:
 
@@ -20,7 +20,7 @@ Pre-decomposition `AGENTS.md` section citations are mapped in [`docs/guides/agen
 
 ## Task boundary (re-run startup)
 
-Treat each of these as a **task boundary** — re-read `process_session_start.md` and `.context/rules/README.md`, choose the **smallest named read profile** for the new task, load its minimum files, and **re-emit the session handshake** when the profile changed or the prior handshake/receipt is missing:
+Treat each of these as a **task boundary** — re-read `process_session_start.md` and `.context/rules/README.md`, choose the **most relevant named read profile** for the new task, load its mandatory files for the profile, plus any triggered rules from the catalog, and **re-emit the session handshake** when the profile changed or the prior handshake/receipt is missing:
 
 - new issue, PR, or feature branch work;
 - switching from Q&A/planning to repo-changing implementation (or the reverse);
@@ -31,19 +31,17 @@ Treat each of these as a **task boundary** — re-read `process_session_start.md
 
 ## After context compaction
 
-If the runtime summarized/compacted context, or you see a conversation summary instead of full prior turns, assume the handshake, read profile, and context receipt are **stale**.
-
-Before the next repo-changing action:
+If the runtime summarized/compacted context, or you see a conversation summary instead of full prior turns, assume the handshake, read profile, and context receipt are **stale**. Must do the following:
 
 1. Re-read `process_session_start.md` and `.context/rules/README.md`.
-2. Re-select the read profile and load its minimum files (or triggered rules).
-3. Re-emit **Session handshake** with the current `AGENTS_MD_VERSION` from this file's HTML comment, plus **Session context receipt**.
+2. Re-select the read profile and load remaining mandatory files and triggered rules that were not loaded in the previous step.
+3. Re-emit **Session handshake** with the current `AGENTS_MD_VERSION` from this file's HTML comment, plus **Session context receipt** using `Receipt boundary: post-compaction` and accurate `In context` values (prior-boundary `Load: Read` rows are `In context: no` until re-read this boundary).
 
-Do not rely on memory of rule files read before compaction.
+Do not rely on memory of rule files read before compaction. Do not replay a prior receipt table from transcript or summary without re-read.
 
-## Read profile routing (minimum)
+## Read profile routing
 
-Choose the smallest profile from `.context/rules/README.md` § "Named read profiles":
+Choose the most relevant profile from `.context/rules/README.md` § "Named read profiles":
 
 | When | Profile |
 |---|---|

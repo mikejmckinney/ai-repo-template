@@ -1,7 +1,7 @@
 subagent_compliance:
   role: docs
   role_contract_version: 1
-  agents_md_version: 25
+  agents_md_version: 26
   receipt:
     mode: visible-line
     value: Role receipt v1 — docs

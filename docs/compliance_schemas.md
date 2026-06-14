@@ -407,4 +407,6 @@ Judge should challenge:
    actually verify.
 
 Critic should separately flag checklist theater, unsupported compliance claims,
-and `bytes in context` reasoning used as a substitute for observable evidence.
+stale session context receipts (`Load: Read` with `In context: no` not labeled stale;
+receipt replayed from transcript without re-read), and `bytes in context` reasoning
+used as a substitute for observable evidence.
