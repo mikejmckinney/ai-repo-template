@@ -13,7 +13,7 @@ You are implementing **all findings** from the daily post-merge retrospective ba
 - **Do not** auto-merge. Leave changes on the branch for review.
 - Prefer **minimal, focused diffs** — fix the evidence-backed issue, no drive-by refactors.
 - Run `./test.sh` when you change scripts/workflows/checks (or document why skipped).
-- **Do not** edit `.github/workflows/` secrets or add credentials.
+- **Do not** edit `.github/workflows/**` — the fix job token cannot push workflow files; note workflow-only findings in `retro/fix-notes-<RUN_DATE>.md` instead.
 - For **Gemini JSON mode**: output **valid JSON only** with shape below (no markdown fences).
 
 ## Cursor / local agent mode

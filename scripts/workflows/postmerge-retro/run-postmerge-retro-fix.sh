@@ -74,6 +74,25 @@ has_gemini=0
 [[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
 [[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
 
+strip_workflow_changes() {
+  # CLAUDE_PAT / default GITHUB_TOKEN cannot push .github/workflows/** edits.
+  local paths=()
+  while IFS= read -r -d '' f; do
+    paths+=("$f")
+  done < <(git status --porcelain .github/workflows/ 2>/dev/null | awk '{print $2}' | tr '\n' '\0')
+  if ((${#paths[@]} == 0)); then
+    return 0
+  fi
+  echo "::notice::Stripping ${#paths[@]} .github/workflows/ change(s) from fix commit (token lacks workflows:write). Document skipped workflow edits in retro/fix-notes-${RUN_DATE}.md if needed." >&2
+  for f in "${paths[@]}"; do
+    if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+      git checkout HEAD -- "$f"
+    else
+      rm -f "$f"
+    fi
+  done
+}
+
 pick_provider() {
   local want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
   if [[ "$want" == "antigravity" ]]; then
@@ -119,12 +138,16 @@ case "$PROVIDER" in
     ;;
 esac
 
+strip_workflow_changes
+
 if ! git diff --quiet || ! git diff --cached --quiet; then
   commit_msg="fix: post-merge retro daily fixes for ${RUN_DATE}"
   if [[ -f "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt" ]]; then
     commit_msg="$(head -1 "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt")"
   fi
   git add -A
+  git reset HEAD -- .github/workflows/ 2>/dev/null || true
+  git checkout HEAD -- .github/workflows/ 2>/dev/null || true
   git commit -m "$commit_msg"
 else
   echo "::warning::Fix pass produced no git diff"
