@@ -183,7 +183,7 @@ Repo variable **`ADVISORY_REVIEW_PROVIDER`**: `auto` (default), `cursor`, `antig
 
 | Provider | Secret / gate | Default model / agent | Notes |
 |---|---|---|---|
-| Cursor SDK | `CURSOR_API_KEY` | `composer-2.5` (`CURSOR_ADVISORY_MODEL`) | May read repo via SDK `local.cwd` |
+| Cursor SDK | `CURSOR_API_KEY` | `composer-2.5` standard (`CURSOR_ADVISORY_MODEL`; SDK `fast=false`) | May read repo via SDK `local.cwd`; shared runner `run-advisory-cursor.mjs` |
 | Antigravity | `GEMINI_API_KEY` or `GOOGLE_API_KEY` + `ADVISORY_ANTIGRAVITY_ENABLED=true` | `antigravity-preview-05-2026` (`ADVISORY_ANTIGRAVITY_AGENT`) | Mounts rules + full diff as `environment.sources`; default tools enabled |
 | Gemini API | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-3.5-flash` (`GEMINI_ADVISORY_MODEL`) | Prompt-only; truncated diff excerpt |
 
@@ -279,7 +279,7 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 |---|---|---|
 | **Gemini API** (`run-advisory-gemini.py`) | API key → Google AI / Cloud project behind that key | Tier is whatever that project has (AI Studio free quotas vs billing-enabled paid). This workflow does **not** implement OAuth or `free-then-paid` routing — see `07-implement-gemini-free-paid-routing.md` for planned router work. |
 | **Antigravity** (`run-advisory-antigravity.py`) | Same API key + remote sandbox | Preview Interactions API; typically higher cost/latency than flat `generateContent`; may use code execution / search tools by default. |
-| **Cursor SDK** (`run-advisory-cursor.mjs`) | `CURSOR_API_KEY` → Cursor account usage pool | Per Cursor SDK / subscription terms; no repo-side tier switch. |
+| **Cursor SDK** (`run-advisory-cursor.mjs`) | `CURSOR_API_KEY` → Cursor account usage pool | Per Cursor SDK / subscription terms. **`composer-2.5` in repo config means standard tier** — the shared runner sets SDK `fast=false` (see [Composer 2.5 standard vs fast](#composer-25-standard-vs-fast-cursor-sdk)). |
 | **Gemini Code Assist** (`/gemini review`, `agent-review-on-push.yml`) | Separate GitHub App path | Not used by advisory snapshots; formal bot reviews only. |
 
 **What context the models see (advisory path):**
@@ -294,6 +294,24 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 | Formal `claude-review` / Gemini App reviews | Separate workflows | Separate | Separate |
 
 Advisory review uses **catalog-driven context selection** (default `pr-review` floor + path triggers), not a fixed four-file kernel. Use `ADVISORY_CONTEXT_PROFILE=standard` for a lighter floor or `full` for all rules plus triggers. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
+
+### Composer 2.5 standard vs fast (Cursor SDK)
+
+Repo workflows (advisory, finalize, post-merge retro) all call the shared runner `scripts/workflows/advisory-review/run-advisory-cursor.mjs` with default model id **`composer-2.5`**. In this repo that id means the **standard** Composer 2.5 tier, not the higher-priced fast variant.
+
+**Why this section exists:** The Cursor Agents SDK defaults `model: { id: "composer-2.5" }` to the **fast** billing tier unless you pass an explicit parameter. Workflow logs may still show `observed=composer-2.5` while the usage dashboard bills `composer-2.5-fast`. See Cursor forum: [SDK reports composer-2.5 but usage dashboard bills composer-2.5-fast](https://forum.cursor.com/t/sdk-reports-composer-2-5-but-usage-dashboard-bills-composer-2-5-fast/163046).
+
+**What we do:**
+
+| Config | SDK model passed | Billing intent |
+|---|---|---|
+| `CURSOR_ADVISORY_MODEL=composer-2.5` (default) | `{ id: "composer-2.5", params: [{ id: "fast", value: "false" }] }` | Standard tier |
+| `CURSOR_ADVISORY_MODEL=composer-2.5-fast` | `{ id: "composer-2.5", params: [{ id: "fast", value: "true" }] }` | Fast tier (opt-in only) |
+| Other model ids | `{ id: "<model>" }` unchanged | As documented by Cursor |
+
+**Correlating usage to GitHub Actions:** Each Cursor call logs `repo`, `workflow`, `job`, `run_id`, and `attempt` from `GITHUB_*` env vars. Match dashboard timestamps to `gh run view RUN_ID --log | rg 'Cursor advisory review'`.
+
+**Workflows covered:** `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (daily retro + fix jobs). Do not call `@cursor/sdk` directly elsewhere without the same `fast=false` guard when using `composer-2.5`.
 
 **Handshake / receipt in advisory comments:** The model **self-reports** the session handshake and context receipt in each snapshot. `pr-advisory-review.md` **pointer-links** to `.context/rules/process_session_start.md` for the canonical templates (no mirrored copy in the prompt — avoids AP1-style drift). Automation injects diff-coverage facts only; it does not override handshake fields.
 
@@ -491,7 +509,7 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `ADVISORY_REVIEW_DIFF_LIMIT_FULL` | `300000` | Max diff bytes in cursor/gemini prompt when `ai-review:full` is also set. |
 | `ADVISORY_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted advisory issue comment (automation truncates with warning). |
 | `ADVISORY_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for injected rules: `standard`, `pr-review`, or `full` (plus path-triggered rules). |
-| `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Model id for Cursor SDK advisory snapshots. |
+| `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Cursor SDK model id for advisory, finalize, and retro runners. **`composer-2.5` = standard tier** (`fast=false` in `run-advisory-cursor.mjs`). Set `composer-2.5-fast` only when you intentionally want the fast tier. See [Composer 2.5 standard vs fast](agent-pipeline.md#composer-25-standard-vs-fast-cursor-sdk). |
 | `GEMINI_ADVISORY_MODEL` | `gemini-3.5-flash` | Gemini `generateContent` model id (`gemini-3.5-flash`, `gemini-flash-latest`, …). |
 | `FINALIZE_REVIEW_PROVIDER` | *(falls back to `ADVISORY_REVIEW_PROVIDER`)* | Final inbox runtime: `auto`, `cursor`, or `gemini` (no antigravity path in PR 3). |
 | `FINALIZE_REVIEW_DIFF_LIMIT` | `300000` | Max diff bytes embedded in finalize consolidation prompt. |
