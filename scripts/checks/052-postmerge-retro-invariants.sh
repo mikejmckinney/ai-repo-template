@@ -12,6 +12,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   RUN_SCRIPT="${RETRO_DIR}/run-postmerge-retro.sh"
   DAILY_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily.sh"
   FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
+  UMBRELLA_LINK_SCRIPT="${RETRO_DIR}/update-umbrella-fix-link.sh"
   UMBRELLA_SCRIPT="${RETRO_DIR}/create-umbrella-issue.sh"
   LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
@@ -22,7 +23,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   FEEDBACK_COLLECTOR="scripts/workflows/pr-feedback/collect-pr-feedback.sh"
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
-    "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
+    "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
     "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
@@ -79,10 +80,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "create-umbrella-issue.sh missing template/resilient label/body-file append wiring"
   fi
 
-  if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null; then
-    pass "fix script uses postmerge-retro-fix-pr template"
+  if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'update-umbrella-fix-link.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_FIX_REEXEC' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "fix script uses postmerge-retro-fix-pr template + umbrella link update + re-exec guard"
   else
-    fail "run-postmerge-retro-fix.sh must render postmerge-retro-fix-pr.md"
+    fail "run-postmerge-retro-fix.sh must render fix PR, update umbrella link, and re-exec from temp copy"
   fi
 
   if grep -q 'ensure-pipeline-labels.sh' "scripts/sandbox-bootstrap.sh" 2>/dev/null; then
