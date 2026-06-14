@@ -269,7 +269,7 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 **Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge. For sandbox A/B, pass `workflow_dispatch` inputs `context_profile`, `only_prs`, and a distinct `run_date` per arm (retro checks out **`main`** for scripts — unlike advisory/finalize PR-head checkout).
 
-**Sandbox A/B inputs (retro):** `only_prs=<merged-pr>` pins a single PR; `context_profile=standard|pr-review|full` selects the catalog floor; `run_date=YYYY-MM-DD-ab-<profile>` isolates umbrella dedupe between runs.
+**Sandbox A/B inputs (retro):** `only_prs=<merged-pr>` pins a single PR; `context_profile=standard|pr-review|full` selects the catalog floor; use distinct valid `run_date` values (`YYYY-MM-DD` only — e.g. `2026-06-14`, `2026-06-15`, `2026-06-16`) to isolate umbrella dedupe between runs. Dispatch sequentially — the workflow concurrency group queues overlapping runs.
 
 #### Provider, billing, and context loading
 
