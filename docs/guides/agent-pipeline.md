@@ -314,19 +314,21 @@ Repo workflows (advisory, finalize, post-merge retro) all call the shared runner
 | Context | `--model composer-2.5` behavior | Reliable standard tier? |
 |---|---|---|
 | **Cursor IDE (interactive)** | Fast toggle in model picker | Yes — when Fast is off |
-| **SDK / REST / Python** (our GHA runners) | Defaults to fast without `fast=false` param | **Yes, after `run-advisory-cursor.mjs` fix** |
-| **CLI headless / API key** (`cursor-agent -p --model composer-2.5`) | Often bills as `composer-2.5-fast` even when the flag accepts `composer-2.5` | **No confirmed CLI flag** — see [CLI composer2-fast despite composer2](https://forum.cursor.com/t/cursor-cli-calling-composer2-fast-despite-always-calling-with-composer2/160297) and [CLI subagents defaulting to fast](https://forum.cursor.com/t/cli-subagents-changing-model-to-composer-2-5-fast-mode-by-itself/162752) |
+| **SDK / REST / Python** (our GHA runners) | Defaults to fast without `fast=false` param | **Yes, after `run-advisory-cursor.mjs` fix** (required — do not remove) |
+| **CLI headless / API key** (`cursor-agent -p --model composer-2.5`) | Historically reported as billing `composer-2.5-fast` despite the flag ([forum](https://forum.cursor.com/t/cursor-cli-calling-composer2-fast-despite-always-calling-with-composer2/160297)). **2026-06-14 smoke test in this repo:** both `--model composer-2.5` and `--model 'composer-2.5[fast=false]'` billed as **standard** `composer-2.5` (~13K tokens each, ~2:04 PM ET). Monitor if Cursor CLI version changes. |
 
-**Repo CLI usage:** Only the **benchmark harness** (`scripts/benchmark/adapters/cursor.sh`) calls `cursor-agent -p --model …` headlessly. Advisory/finalize/retro **do not** use the CLI. If you run benchmarks with `composer-2.5`, monitor the Cursor dashboard for `-fast` billing.
+**Repo CLI usage:** Only the **benchmark harness** (`scripts/benchmark/adapters/cursor.sh`) calls `cursor-agent -p --model …` headlessly. Advisory/finalize/retro **do not** use the CLI.
 
-**Bracket syntax experiment (2026-06-14):** Headless smoke tests from this repo:
+**Headless CLI smoke (2026-06-14, `cursor-agent` logged in, ~18:04 UTC):**
 
 ```bash
 cursor-agent -p --model composer-2.5 --output-format json --force 'Reply CLI_TEST_A only'
 cursor-agent -p --model 'composer-2.5[fast=false]' --output-format json --force 'Reply CLI_TEST_B only'
 ```
 
-Both succeeded (~18:04 UTC) but JSON output does **not** expose the billed variant — check the dashboard for two entries labeled `CLI_TEST_A` / `CLI_TEST_B` prompts. If both bill as `composer-2.5-fast`, treat **SDK with `fast=false`** (or non-Cursor providers) as the only reliable standard-tier automation path until Cursor fixes CLI routing.
+Both succeeded; dashboard showed **standard** `composer-2.5` (not `-fast`) for each. JSON output still does not expose the billed variant — use dashboard timestamps to confirm after CLI or SDK changes.
+
+**If CLI regresses to fast billing:** prefer SDK with `fast=false` for automation, or pin/document the working `cursor-agent` version. Forum reports may reflect older CLI builds or subagent routing edge cases ([subagents defaulting to fast](https://forum.cursor.com/t/cli-subagents-changing-model-to-composer-2-5-fast-mode-by-itself/162752)).
 
 **Correlating usage to GitHub Actions:** Each SDK call logs `repo`, `workflow`, `job`, `run_id`, and `attempt` from `GITHUB_*` env vars. Match dashboard timestamps to `gh run view RUN_ID --log | rg 'Cursor advisory review'`.
 
