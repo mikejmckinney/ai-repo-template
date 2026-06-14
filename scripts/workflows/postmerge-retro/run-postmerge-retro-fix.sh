@@ -11,9 +11,9 @@ usage() {
 }
 [[ -n "$DAILY_JSON" && -f "$DAILY_JSON" ]] || usage
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$REPO_ROOT/scripts/workflows/postmerge-retro"
 ADVISORY_DIR="$REPO_ROOT/scripts/workflows/advisory-review"
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 
