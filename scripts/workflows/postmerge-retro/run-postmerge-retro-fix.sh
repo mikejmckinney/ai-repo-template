@@ -29,6 +29,13 @@ BRANCH="retro/fix-${RUN_DATE}"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
+# Cursor local mode can rewrite the running script on disk; re-exec from a temp copy.
+if [[ -z "${POSTMERGE_RETRO_FIX_REEXEC:-}" ]]; then
+  export POSTMERGE_RETRO_FIX_REEXEC=1
+  cp "$SCRIPT_DIR/run-postmerge-retro-fix.sh" "$WORKDIR/fix-runner.sh"
+  exec bash "$WORKDIR/fix-runner.sh" "$@"
+fi
+
 git config user.email "${GIT_AUTHOR_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
 git config user.name "${GIT_AUTHOR_NAME:-github-actions[bot]}"
 
@@ -73,10 +80,11 @@ pick_provider() {
     cursor) echo cursor ;;
     gemini) echo gemini ;;
     auto)
-      if [[ "$has_cursor" -eq 1 ]]; then
-        echo cursor
-      elif [[ "$has_gemini" -eq 1 ]]; then
+      # Fix pass needs applied file edits; prefer Gemini JSON path when available.
+      if [[ "$has_gemini" -eq 1 ]]; then
         echo gemini
+      elif [[ "$has_cursor" -eq 1 ]]; then
+        echo cursor
       else
         echo ""
       fi
@@ -142,7 +150,6 @@ render_fix_pr_body() {
     -e "s|{{FIX_BRANCH}}|${BRANCH}|g" \
     -e "s|{{REPO}}|${REPO}|g" \
     "$body_file"
-  cat "$body_file"
 }
 
 existing_pr="$(gh pr list -R "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
@@ -150,7 +157,7 @@ if [[ -n "$existing_pr" ]]; then
   echo "Open draft PR already exists: #${existing_pr}"
   PR_URL="$(gh pr view "$existing_pr" -R "$REPO" --json url --jq .url)"
 else
-  render_fix_pr_body >"$WORKDIR/fix-pr-body.md"
+  render_fix_pr_body
   PR_URL="$(gh pr create -R "$REPO" \
     --base main \
     --head "$BRANCH" \
@@ -159,5 +166,7 @@ else
     --body-file "$WORKDIR/fix-pr-body.md")"
   echo "Created draft PR: ${PR_URL}"
 fi
+
+bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_DATE" "$PR_URL"
 
 echo "Fix pass complete for ${RUN_DATE}"
