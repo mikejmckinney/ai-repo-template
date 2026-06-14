@@ -60,9 +60,6 @@ def select_review_context(changed_files: list[str], profile: str = "pr-review") 
     if profile == "full-rules":
         return full_rules_context()
 
-    if profile != "pr-review":
-        raise ValueError(f"unsupported profile: {profile}")
-
     selected: list[str] = []
     seen: set[str] = set()
 
@@ -70,6 +67,22 @@ def select_review_context(changed_files: list[str], profile: str = "pr-review") 
         if path not in seen:
             seen.add(path)
             selected.append(path)
+
+    if profile == "full":
+        # Catalog `full` profile: all .context/rules/** plus path-triggered docs/ADRs.
+        for path in full_rules_context():
+            add(path)
+        for changed in changed_files:
+            changed = changed.strip()
+            if not changed:
+                continue
+            for pattern, rule_path in PATH_TRIGGERED:
+                if pattern.search(changed):
+                    add(rule_path)
+        return selected
+
+    if profile != "pr-review":
+        raise ValueError(f"unsupported profile: {profile}")
 
     for path in PR_REVIEW_MINIMUM:
         add(path)
