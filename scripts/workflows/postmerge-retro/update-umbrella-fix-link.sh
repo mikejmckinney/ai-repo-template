@@ -16,9 +16,15 @@ REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner
 MARKER="<!-- postmerge-retro:daily:${RUN_DATE} -->"
 PENDING='(pending — fix job)'
 
-issue_num="$(
-  gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "$REPO" --json number --limit 1 --jq '.[0].number // empty' 2>/dev/null || true
-)"
+issue_num=""
+while read -r candidate; do
+  [[ -z "$candidate" ]] && continue
+  body="$(gh issue view "$candidate" -R "$REPO" --json body --jq .body 2>/dev/null || true)"
+  if grep -Fq "$MARKER" <<<"$body"; then
+    issue_num="$candidate"
+    break
+  fi
+done < <(gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "$REPO" --json number --limit 10 --jq '.[].number' 2>/dev/null || true)
 [[ -n "$issue_num" ]] || {
   echo "::warning::No umbrella issue found for ${RUN_DATE}; skipping fix-link update"
   exit 0
