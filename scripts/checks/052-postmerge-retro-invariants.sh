@@ -13,6 +13,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   DAILY_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily.sh"
   FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
   UMBRELLA_LINK_SCRIPT="${RETRO_DIR}/update-umbrella-fix-link.sh"
+  RESOLVE_UMBRELLA_SCRIPT="${RETRO_DIR}/resolve-umbrella-issue.sh"
+  WRITE_UMBRELLA_REF_SCRIPT="${RETRO_DIR}/write-umbrella-issue-ref.sh"
   UMBRELLA_SCRIPT="${RETRO_DIR}/create-umbrella-issue.sh"
   LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
@@ -23,7 +25,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   FEEDBACK_COLLECTOR="scripts/workflows/pr-feedback/collect-pr-feedback.sh"
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
-    "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
+    "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
+    "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
     "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
@@ -80,16 +83,27 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "create-umbrella-issue.sh missing template/resilient label/body-file append wiring"
   fi
 
-  if grep -q 'post-daily-retro-json-comment.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
+  if grep -q 'write-umbrella-issue-ref.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_issue' "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
+    && grep -q 'post-daily-retro-json-comment.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && [[ -f "${RETRO_DIR}/post-daily-retro-json-comment.sh" ]] \
     && [[ -f "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" ]]; then
-    pass "umbrella step archives daily JSON snapshot comment + fix-only restore script"
+    pass "umbrella step records umbrella_issue ref + JSON snapshot comment + fix-only restore"
   else
-    fail "postmerge retro missing daily JSON snapshot comment archive wiring"
+    fail "postmerge retro missing umbrella_issue ref / daily JSON snapshot wiring"
   fi
 
-  if grep -q 'attempt-\${{ github.run_attempt }}' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'has_daily_json == .true' "$RETRO_WORKFLOW" 2>/dev/null \
+  if grep -q 'resolve-umbrella-issue.sh' "$UMBRELLA_LINK_SCRIPT" 2>/dev/null \
+    && grep -q 'resolve-umbrella-issue.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_issue_num' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'UMBRELLA_ISSUE_NUM' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "fix job resolves umbrella issue from JSON/env (search fallback only)"
+  else
+    fail "postmerge retro missing resolve-umbrella-issue wiring in fix path"
+  fi
+
+  if grep -q 'attempt-\${GITHUB_RUN_ATTEMPT}' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q "has_daily_json == 'true'" "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q 'fix_only' "$RETRO_WORKFLOW" 2>/dev/null; then
     pass "retro workflow uses attempt-scoped artifacts + fix-only dispatch"
   else
@@ -155,6 +169,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && bash -n "$DAILY_SCRIPT" 2>/dev/null \
     && bash -n "$FIX_SCRIPT" 2>/dev/null \
     && bash -n "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && bash -n "$RESOLVE_UMBRELLA_SCRIPT" 2>/dev/null \
+    && bash -n "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
+    && bash -n "$UMBRELLA_LINK_SCRIPT" 2>/dev/null \
+    && bash -n "${RETRO_DIR}/post-daily-retro-json-comment.sh" 2>/dev/null \
+    && bash -n "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" 2>/dev/null \
     && bash -n "$LIST_SCRIPT" 2>/dev/null; then
     pass "postmerge-retro shell scripts have valid bash syntax"
   else

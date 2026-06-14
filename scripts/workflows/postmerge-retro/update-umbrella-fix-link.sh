@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 # Replace umbrella Meta placeholder with the draft fix PR URL.
-# Usage: update-umbrella-fix-link.sh <run-date> <fix-pr-url>
+# Usage: update-umbrella-fix-link.sh <run-date> <fix-pr-url> [daily-retro.json]
 set -euo pipefail
 
 usage() {
-  echo "Usage: update-umbrella-fix-link.sh <run-date> <fix-pr-url>" >&2
+  echo "Usage: update-umbrella-fix-link.sh <run-date> <fix-pr-url> [daily-retro.json]" >&2
   exit 2
 }
 
 RUN_DATE="${1:-}"
 FIX_PR_URL="${2:-}"
+DAILY_JSON="${3:-${DAILY_JSON:-}}"
 [[ -n "$RUN_DATE" && -n "$FIX_PR_URL" ]] || usage
 
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FIND_UMBRELLA="$SCRIPT_DIR/find-umbrella-issue.sh"
 MARKER="<!-- postmerge-retro:daily:${RUN_DATE} -->"
 PENDING='(pending — fix job)'
 
 issue_num=""
-if issue_num="$(bash "$FIND_UMBRELLA" "$RUN_DATE" 2>/dev/null)"; then
+if issue_num="$(bash "$SCRIPT_DIR/resolve-umbrella-issue.sh" "$RUN_DATE" "$DAILY_JSON" 2>/dev/null)"; then
   :
 else
   issue_num=""

@@ -129,16 +129,17 @@ PY
   else
     echo "::notice::Umbrella issue #${issue_num} created without agent-suggested label (missing label or permissions)"
   fi
+  echo "$issue_num"
 }
 
 UMBRELLA_ISSUE="$(find_issue)"
 if [[ -n "$UMBRELLA_ISSUE" ]]; then
   append_to_issue "$UMBRELLA_ISSUE"
 else
-  create_new_issue
-  UMBRELLA_ISSUE="$(find_issue)"
+  UMBRELLA_ISSUE="$(create_new_issue)"
 fi
 
+bash "$SCRIPT_DIR/write-umbrella-issue-ref.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
 bash "$SCRIPT_DIR/post-daily-retro-json-comment.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
 
-echo "Umbrella issue step complete for ${RUN_DATE}"
+echo "Umbrella issue step complete for ${RUN_DATE} (#${UMBRELLA_ISSUE})"

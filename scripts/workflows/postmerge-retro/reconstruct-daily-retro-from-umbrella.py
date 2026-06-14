@@ -111,6 +111,8 @@ def main() -> int:
         body = fetch_issue_body(repo, args.issue)
 
     data = parse_umbrella_body(body, args.run_date)
+    if args.issue:
+        data["umbrella_issue"] = args.issue
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")

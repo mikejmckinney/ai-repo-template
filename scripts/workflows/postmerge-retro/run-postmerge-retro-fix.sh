@@ -160,7 +160,7 @@ render_fix_pr_body() {
   local body_file="$WORKDIR/fix-pr-body.md"
   local umbrella_num umbrella_url umbrella_ref
   cp "$REPO_ROOT/.github/templates/postmerge-retro-fix-pr.md" "$body_file"
-  umbrella_num="$(bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE" 2>/dev/null || true)"
+  umbrella_num="$(bash "$SCRIPT_DIR/resolve-umbrella-issue.sh" "$RUN_DATE" "$DAILY_JSON" 2>/dev/null || true)"
   if [[ -n "$umbrella_num" ]]; then
     umbrella_url="$(gh issue view "$umbrella_num" -R "$REPO" --json url --jq .url)"
     umbrella_ref="#${umbrella_num}"
@@ -193,6 +193,6 @@ else
   echo "Created draft PR: ${PR_URL}"
 fi
 
-bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_DATE" "$PR_URL"
+bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_DATE" "$PR_URL" "$DAILY_JSON"
 
 echo "Fix pass complete for ${RUN_DATE}"

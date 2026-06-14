@@ -11,9 +11,10 @@ usage() {
 }
 [[ -n "$RUN_DATE" ]] || usage
 
+OUT="${OUT:-${2:-$(mktemp)}}"
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ISSUE_NUM="$(bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE")" || {
+ISSUE_NUM="$(bash "$SCRIPT_DIR/resolve-umbrella-issue.sh" "$RUN_DATE" "$OUT" 2>/dev/null)" || {
   echo "::error::No umbrella issue found for ${RUN_DATE}" >&2
   exit 1
 }
@@ -59,7 +60,6 @@ if not match:
 Path(out_path).write_text(match.group(1).strip() + "\n", encoding="utf-8")
 PY
 
-OUT="${OUT:-$(mktemp)}"
 mkdir -p "$(dirname "$OUT")"
 cp "$WORKDIR/daily-retro.json" "$OUT"
 python3 "$SCRIPT_DIR/validate-postmerge-retro-daily.py" "$OUT"

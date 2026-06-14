@@ -63,6 +63,7 @@ jobs:
       findings_count: ${{ steps.meta.outputs.findings_count }}
       has_daily_json: ${{ steps.meta.outputs.has_daily_json }}
       artifact_name: ${{ steps.meta.outputs.artifact_name }}
+      umbrella_issue_num: ${{ steps.meta.outputs.umbrella_issue_num }}
     env:
       POSTMERGE_RETRO_PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || '' }}
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
@@ -153,8 +154,14 @@ jobs:
           echo "findings_count=${count}" >> "$GITHUB_OUTPUT"
           if [[ -f "${ARTIFACT_DIR}/daily-retro.json" ]]; then
             echo "has_daily_json=true" >> "$GITHUB_OUTPUT"
+            issue_num="$(jq -r '.umbrella_issue // empty' "${ARTIFACT_DIR}/daily-retro.json" 2>/dev/null || true)"
+            if [[ -z "$issue_num" && -f "${ARTIFACT_DIR}/umbrella-issue.txt" ]]; then
+              issue_num="$(tr -d '[:space:]' <"${ARTIFACT_DIR}/umbrella-issue.txt")"
+            fi
+            echo "umbrella_issue_num=${issue_num}" >> "$GITHUB_OUTPUT"
           else
             echo "has_daily_json=false" >> "$GITHUB_OUTPUT"
+            echo "umbrella_issue_num=" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload daily retro artifacts
@@ -190,6 +197,7 @@ jobs:
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       RUN_DATE: ${{ github.event.inputs.run_date || needs.daily-retro.outputs.run_date }}
+      UMBRELLA_ISSUE_NUM: ${{ needs.daily-retro.outputs.umbrella_issue_num }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -257,6 +265,13 @@ jobs:
           RUN_DATE="${RUN_DATE:-${{ github.event.inputs.run_date || needs.daily-retro.outputs.run_date }}}"
           DAILY_JSON=".artifacts/postmerge-retro/daily-${RUN_DATE}/daily-retro.json"
           [[ -f "$DAILY_JSON" ]] || { echo "::error::Missing $DAILY_JSON"; exit 1; }
+          if [[ -z "${UMBRELLA_ISSUE_NUM:-}" ]]; then
+            UMBRELLA_ISSUE_NUM="$(jq -r '.umbrella_issue // empty' "$DAILY_JSON" 2>/dev/null || true)"
+            if [[ -z "$UMBRELLA_ISSUE_NUM" && -f "$(dirname "$DAILY_JSON")/umbrella-issue.txt" ]]; then
+              UMBRELLA_ISSUE_NUM="$(tr -d '[:space:]' <"$(dirname "$DAILY_JSON")/umbrella-issue.txt")"
+            fi
+          fi
+          export UMBRELLA_ISSUE_NUM
           set -o pipefail
           bash scripts/workflows/postmerge-retro/run-postmerge-retro-fix.sh "$DAILY_JSON" | tee fix.log
           fix_exit=${PIPESTATUS[0]}

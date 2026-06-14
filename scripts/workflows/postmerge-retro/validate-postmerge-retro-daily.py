@@ -51,6 +51,12 @@ def main() -> int:
                     print(f"findings[{i}].{arr_key}[{j}] must be a string", file=sys.stderr)
                     return 1
 
+    umbrella_issue = data.get("umbrella_issue")
+    if umbrella_issue is not None:
+        if not isinstance(umbrella_issue, int) or umbrella_issue < 1:
+            print("umbrella_issue must be a positive integer when present", file=sys.stderr)
+            return 1
+
     print(f"OK: daily retro valid for {run_date} ({len(findings)} findings, PRs={prs})")
     return 0
 
