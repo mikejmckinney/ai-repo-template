@@ -38,7 +38,7 @@ trap 'rm -rf "$WORKDIR"' EXIT
 
 DEFAULT_DIFF_LIMIT=300000
 diff_limit="$(parse_positive_int POSTMERGE_RETRO_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${POSTMERGE_RETRO_DIFF_LIMIT:-}")"
-context_profile="${POSTMERGE_RETRO_CONTEXT_PROFILE:-pr-review}"
+context_profile="${POSTMERGE_RETRO_CONTEXT_PROFILE:-full}"
 
 bash "$SCRIPT_DIR/collect-postmerge-evidence.sh" "$PR" "$WORKDIR"
 
