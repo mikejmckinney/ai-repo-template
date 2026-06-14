@@ -107,7 +107,7 @@ jobs:
           PR: ${{ github.event.pull_request.number || inputs.pr }}
           REPO: ${{ github.repository }}
         run: |
-          pr_json="$(gh pr view "$PR" --repo "$REPO" --json state,headRefOid,headRepository,baseRepository)"
+          pr_json="$(gh pr view "$PR" --repo "$REPO" --json state,headRefOid,headRepository)"
           state="$(printf '%s' "$pr_json" | jq -r .state)"
           head_sha="$(printf '%s' "$pr_json" | jq -r .headRefOid)"
           head_repo="$(printf '%s' "$pr_json" | jq -r .headRepository.nameWithOwner)"
