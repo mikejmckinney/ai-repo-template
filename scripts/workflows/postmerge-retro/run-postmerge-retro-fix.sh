@@ -160,7 +160,7 @@ render_fix_pr_body() {
   local body_file="$WORKDIR/fix-pr-body.md"
   local umbrella_num umbrella_url umbrella_ref
   cp "$REPO_ROOT/.github/templates/postmerge-retro-fix-pr.md" "$body_file"
-  umbrella_num="$(gh search issues "postmerge-retro:daily:${RUN_DATE} is:issue" --repo "$REPO" --json number,url --limit 1 --jq '.[0].number // empty' 2>/dev/null || true)"
+  umbrella_num="$(bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE" 2>/dev/null || true)"
   if [[ -n "$umbrella_num" ]]; then
     umbrella_url="$(gh issue view "$umbrella_num" -R "$REPO" --json url --jq .url)"
     umbrella_ref="#${umbrella_num}"

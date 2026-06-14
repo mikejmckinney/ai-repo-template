@@ -48,15 +48,7 @@ PY
 PR_LIST="$(jq -r '[.prs[] | "#" + (.|tostring)] | join(", ")' "$DAILY_JSON")"
 
 find_issue() {
-  local candidate body
-  while read -r candidate; do
-    [[ -z "$candidate" ]] && continue
-    body="$(gh issue view "$candidate" -R "$REPO" --json body --jq .body 2>/dev/null || true)"
-    if grep -Fq "$MARKER" <<<"$body"; then
-      echo "$candidate"
-      return 0
-    fi
-  done < <(gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "$REPO" --json number --limit 10 --jq '.[].number' 2>/dev/null || true)
+  bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE" 2>/dev/null || true
 }
 
 append_to_issue() {

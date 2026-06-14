@@ -13,18 +13,17 @@ FIX_PR_URL="${2:-}"
 [[ -n "$RUN_DATE" && -n "$FIX_PR_URL" ]] || usage
 
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+FIND_UMBRELLA="$SCRIPT_DIR/find-umbrella-issue.sh"
 MARKER="<!-- postmerge-retro:daily:${RUN_DATE} -->"
 PENDING='(pending — fix job)'
 
 issue_num=""
-while read -r candidate; do
-  [[ -z "$candidate" ]] && continue
-  body="$(gh issue view "$candidate" -R "$REPO" --json body --jq .body 2>/dev/null || true)"
-  if grep -Fq "$MARKER" <<<"$body" && grep -Eq "^[[:space:]]*<!-- postmerge-retro:daily:" <<<"$body"; then
-    issue_num="$candidate"
-    break
-  fi
-done < <(gh search issues "postmerge-retro:daily:${RUN_DATE} is:issue" --repo "$REPO" --json number --limit 10 --jq '.[].number' 2>/dev/null || true)
+if issue_num="$(bash "$FIND_UMBRELLA" "$RUN_DATE" 2>/dev/null)"; then
+  :
+else
+  issue_num=""
+fi
 [[ -n "$issue_num" ]] || {
   echo "::warning::No umbrella issue found for ${RUN_DATE}; skipping fix-link update"
   exit 0

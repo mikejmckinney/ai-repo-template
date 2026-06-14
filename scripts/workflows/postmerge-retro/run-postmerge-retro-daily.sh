@@ -26,7 +26,10 @@ echo "Merged PRs in window: ${ALL_PRS[*]}"
 
 # Skip PRs already listed in today's umbrella (append semantics).
 SKIP_PRS=()
-EXISTING_ISSUE="$(gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}" --json body --limit 1 --jq '.[0].body // empty' 2>/dev/null || true)"
+EXISTING_ISSUE=""
+if existing_num="$(bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE" 2>/dev/null)"; then
+  EXISTING_ISSUE="$(gh issue view "$existing_num" -R "${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}" --json body --jq .body 2>/dev/null || true)"
+fi
 if [[ -n "$EXISTING_ISSUE" ]]; then
   while IFS= read -r pr; do
     [[ -z "$pr" ]] && continue
