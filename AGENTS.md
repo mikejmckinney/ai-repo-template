@@ -2,7 +2,7 @@
 
 <!-- AGENTS_MD_VERSION: 26 -->
 
-Before repo work, read:
+read:
 
 1. `.context/rules/process_session_start.md`
 2. `.context/rules/README.md`
