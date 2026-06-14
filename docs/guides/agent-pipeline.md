@@ -295,13 +295,13 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 Advisory review uses **catalog-driven context selection** (default `pr-review` floor + path triggers), not a fixed four-file kernel. Use `ADVISORY_CONTEXT_PROFILE=standard` for a lighter floor or `full` for all rules plus triggers. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
 
-### Composer 2.5 standard vs fast (Cursor SDK)
+### Composer 2.5 standard vs fast (Cursor SDK and CLI)
 
 Repo workflows (advisory, finalize, post-merge retro) all call the shared runner `scripts/workflows/advisory-review/run-advisory-cursor.mjs` with default model id **`composer-2.5`**. In this repo that id means the **standard** Composer 2.5 tier, not the higher-priced fast variant.
 
 **Why this section exists:** The Cursor Agents SDK defaults `model: { id: "composer-2.5" }` to the **fast** billing tier unless you pass an explicit parameter. Workflow logs may still show `observed=composer-2.5` while the usage dashboard bills `composer-2.5-fast`. See Cursor forum: [SDK reports composer-2.5 but usage dashboard bills composer-2.5-fast](https://forum.cursor.com/t/sdk-reports-composer-2-5-but-usage-dashboard-bills-composer-2-5-fast/163046).
 
-**What we do:**
+**What we do (GitHub Actions — SDK path):**
 
 | Config | SDK model passed | Billing intent |
 |---|---|---|
@@ -309,9 +309,28 @@ Repo workflows (advisory, finalize, post-merge retro) all call the shared runner
 | `CURSOR_ADVISORY_MODEL=composer-2.5-fast` | `{ id: "composer-2.5", params: [{ id: "fast", value: "true" }] }` | Fast tier (opt-in only) |
 | Other model ids | `{ id: "<model>" }` unchanged | As documented by Cursor |
 
-**Correlating usage to GitHub Actions:** Each Cursor call logs `repo`, `workflow`, `job`, `run_id`, and `attempt` from `GITHUB_*` env vars. Match dashboard timestamps to `gh run view RUN_ID --log | rg 'Cursor advisory review'`.
+**Cursor CLI headless (`cursor-agent -p`) — separate from GHA:**
 
-**Workflows covered:** `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (daily retro + fix jobs). Do not call `@cursor/sdk` directly elsewhere without the same `fast=false` guard when using `composer-2.5`.
+| Context | `--model composer-2.5` behavior | Reliable standard tier? |
+|---|---|---|
+| **Cursor IDE (interactive)** | Fast toggle in model picker | Yes — when Fast is off |
+| **SDK / REST / Python** (our GHA runners) | Defaults to fast without `fast=false` param | **Yes, after `run-advisory-cursor.mjs` fix** |
+| **CLI headless / API key** (`cursor-agent -p --model composer-2.5`) | Often bills as `composer-2.5-fast` even when the flag accepts `composer-2.5` | **No confirmed CLI flag** — see [CLI composer2-fast despite composer2](https://forum.cursor.com/t/cursor-cli-calling-composer2-fast-despite-always-calling-with-composer2/160297) and [CLI subagents defaulting to fast](https://forum.cursor.com/t/cli-subagents-changing-model-to-composer-2-5-fast-mode-by-itself/162752) |
+
+**Repo CLI usage:** Only the **benchmark harness** (`scripts/benchmark/adapters/cursor.sh`) calls `cursor-agent -p --model …` headlessly. Advisory/finalize/retro **do not** use the CLI. If you run benchmarks with `composer-2.5`, monitor the Cursor dashboard for `-fast` billing.
+
+**Bracket syntax experiment (2026-06-14):** Headless smoke tests from this repo:
+
+```bash
+cursor-agent -p --model composer-2.5 --output-format json --force 'Reply CLI_TEST_A only'
+cursor-agent -p --model 'composer-2.5[fast=false]' --output-format json --force 'Reply CLI_TEST_B only'
+```
+
+Both succeeded (~18:04 UTC) but JSON output does **not** expose the billed variant — check the dashboard for two entries labeled `CLI_TEST_A` / `CLI_TEST_B` prompts. If both bill as `composer-2.5-fast`, treat **SDK with `fast=false`** (or non-Cursor providers) as the only reliable standard-tier automation path until Cursor fixes CLI routing.
+
+**Correlating usage to GitHub Actions:** Each SDK call logs `repo`, `workflow`, `job`, `run_id`, and `attempt` from `GITHUB_*` env vars. Match dashboard timestamps to `gh run view RUN_ID --log | rg 'Cursor advisory review'`.
+
+**Workflows covered (SDK):** `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (daily retro + fix jobs). Do not call `@cursor/sdk` directly elsewhere without the same `fast=false` guard when using `composer-2.5`.
 
 **Handshake / receipt in advisory comments:** The model **self-reports** the session handshake and context receipt in each snapshot. `pr-advisory-review.md` **pointer-links** to `.context/rules/process_session_start.md` for the canonical templates (no mirrored copy in the prompt — avoids AP1-style drift). Automation injects diff-coverage facts only; it does not override handshake fields.
 

@@ -67,14 +67,14 @@ append_to_issue() {
     key="$(sed -n 's/.*`\([^`]*\)`.*/\1/p' <<<"$row")"
     [[ -z "$key" ]] && continue
     if grep -Fq "\`${key}\`" <<<"$body"; then
-      echo "Skip append (exists): ${key}"
+      echo "Skip append (exists): ${key}" >&2
       continue
     fi
     new_rows+="${row}"$'\n'
   done <"$WORKDIR/rows.txt"
 
   if [[ -z "${new_rows//[$'\t\r\n ']/}" ]]; then
-    echo "No new rows to append to issue #${issue_num}"
+    echo "No new rows to append to issue #${issue_num}" >&2
     return 0
   fi
 
@@ -94,7 +94,7 @@ else:
 PY
   )"
   gh issue edit "$issue_num" -R "$REPO" --body "$merged"
-  echo "Appended findings to umbrella issue #${issue_num}"
+  echo "Appended findings to umbrella issue #${issue_num}" >&2
 }
 
 create_new_issue() {
@@ -125,19 +125,28 @@ PY
   issue_url="$(gh issue create -R "$REPO" --title "$title" --body-file "$body_file")"
   issue_num="${issue_url##*/}"
   if gh issue edit "$issue_num" -R "$REPO" --add-label agent-suggested 2>/dev/null; then
-    echo "Created umbrella issue #${issue_num} (agent-suggested)"
+    echo "Created umbrella issue #${issue_num} (agent-suggested)" >&2
   else
-    echo "::notice::Umbrella issue #${issue_num} created without agent-suggested label (missing label or permissions)"
+    echo "::notice::Umbrella issue #${issue_num} created without agent-suggested label (missing label or permissions)" >&2
   fi
   echo "$issue_num"
 }
 
-UMBRELLA_ISSUE="$(find_issue)"
+normalize_issue_num() {
+  tr -d '[:space:]' <<<"${1:-}"
+}
+
+UMBRELLA_ISSUE="$(normalize_issue_num "$(find_issue)")"
 if [[ -n "$UMBRELLA_ISSUE" ]]; then
   append_to_issue "$UMBRELLA_ISSUE"
 else
-  UMBRELLA_ISSUE="$(create_new_issue)"
+  UMBRELLA_ISSUE="$(normalize_issue_num "$(create_new_issue)")"
 fi
+
+[[ "$UMBRELLA_ISSUE" =~ ^[0-9]+$ ]] || {
+  echo "::error::Umbrella issue number invalid after create/find: '${UMBRELLA_ISSUE}'" >&2
+  exit 1
+}
 
 bash "$SCRIPT_DIR/write-umbrella-issue-ref.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
 bash "$SCRIPT_DIR/post-daily-retro-json-comment.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"

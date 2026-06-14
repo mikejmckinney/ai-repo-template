@@ -85,7 +85,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'write-umbrella-issue-ref.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'umbrella_issue' "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
-    && grep -q 'post-daily-retro-json-comment.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'Created umbrella issue #' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q '>&2' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'normalize_issue_num' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && [[ -f "${RETRO_DIR}/post-daily-retro-json-comment.sh" ]] \
     && [[ -f "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" ]]; then
     pass "umbrella step records umbrella_issue ref + JSON snapshot comment + fix-only restore"
