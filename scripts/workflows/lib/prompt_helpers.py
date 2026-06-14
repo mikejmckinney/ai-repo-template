@@ -43,7 +43,23 @@ PATH_TRIGGERED: list[tuple[re.Pattern[str], str]] = [
 ]
 
 
+def full_rules_context() -> list[str]:
+    """All rule files under .context/rules/ plus AGENTS.md (stable sort)."""
+    rules_dir = REPO_ROOT / ".context" / "rules"
+    selected: list[str] = ["AGENTS.md"]
+    seen = {"AGENTS.md"}
+    for path in sorted(rules_dir.glob("*.md")):
+        rel = path.relative_to(REPO_ROOT).as_posix()
+        if rel not in seen:
+            seen.add(rel)
+            selected.append(rel)
+    return selected
+
+
 def select_review_context(changed_files: list[str], profile: str = "pr-review") -> list[str]:
+    if profile == "full-rules":
+        return full_rules_context()
+
     if profile != "pr-review":
         raise ValueError(f"unsupported profile: {profile}")
 

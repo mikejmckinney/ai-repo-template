@@ -46,6 +46,7 @@ DEFAULT_JSON_CAP=120000
 diff_limit="$(parse_positive_int FINALIZE_REVIEW_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${FINALIZE_REVIEW_DIFF_LIMIT:-}")"
 comment_limit="$(parse_positive_int FINALIZE_REVIEW_COMMENT_LIMIT "$DEFAULT_COMMENT_LIMIT" "${FINALIZE_REVIEW_COMMENT_LIMIT:-}")"
 json_cap="$(parse_positive_int FINALIZE_REVIEW_JSON_CAP "$DEFAULT_JSON_CAP" "${FINALIZE_REVIEW_JSON_CAP:-}")"
+context_profile="${FINALIZE_CONTEXT_PROFILE:-pr-review}"
 
 bash "$SCRIPT_DIR/collect-pr-feedback.sh" "$PR" "$WORKDIR"
 
@@ -88,9 +89,22 @@ comments_json_compact="$(
 
 mapfile -t context_files < <(
   python3 "$LIB_DIR/prompt_helpers.py" select-context \
-    --profile pr-review \
+    --profile "$context_profile" \
     --changed-files "$WORKDIR/changed-files.txt"
 )
+
+context_file_count="${#context_files[@]}"
+context_bytes=0
+for rel in "${context_files[@]}"; do
+  if [[ -f "$REPO_ROOT/$rel" ]]; then
+    context_bytes=$((context_bytes + $(wc -c <"$REPO_ROOT/$rel" | tr -d ' ')))
+  fi
+done
+
+context_heading="catalog-driven ${context_profile} floor + path triggers"
+if [[ "$context_profile" == "full-rules" ]]; then
+  context_heading="all .context/rules/*.md (+ AGENTS.md)"
+fi
 
 prompt_file="$WORKDIR/prompt.md"
 {
@@ -98,7 +112,11 @@ prompt_file="$WORKDIR/prompt.md"
   echo ""
   echo "---"
   echo ""
-  echo "## Repo startup context (automation-supplied, catalog-driven pr-review floor + path triggers)"
+  echo "## Repo startup context (automation-supplied, ${context_heading})"
+  echo ""
+  echo "- Context profile: \`${context_profile}\`"
+  echo "- Context files injected: \`${context_file_count}\`"
+  echo "- Context bytes injected: \`${context_bytes}\`"
   echo ""
   for rel in "${context_files[@]}"; do
     echo "### ${rel}"
@@ -163,6 +181,9 @@ prompt_file="$WORKDIR/prompt.md"
   printf '%s\n' "$diff_text"
   echo '```'
 } >"$prompt_file"
+
+prompt_bytes="$(wc -c <"$prompt_file" | tr -d ' ')"
+consolidation_start="$SECONDS"
 
 has_cursor=0
 has_gemini=0
@@ -241,6 +262,17 @@ case "$PROVIDER" in
     ;;
 esac
 
+consolidation_seconds=$((SECONDS - consolidation_start))
+provider_model=""
+case "$PROVIDER" in
+  cursor)
+    provider_model="${CURSOR_FINALIZE_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}"
+    ;;
+  gemini)
+    provider_model="${GEMINI_FINALIZE_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}"
+    ;;
+esac
+
 if ! grep -q "$MARKER_TOKEN" "$out_file"; then
   {
     printf '%s\n\n' "$MARKER"
@@ -249,7 +281,6 @@ if ! grep -q "$MARKER_TOKEN" "$out_file"; then
   mv "$out_file.tmp" "$out_file"
 fi
 
-inbox_header_injected=false
 if grep -qE '^#{1,3}[[:space:]]*Final Feedback Inbox' "$out_file"; then
   awk -v sha="$HEAD_SHA" '
     /^Head reviewed:/ { next }
@@ -277,6 +308,20 @@ if ! grep -q '^Head reviewed:' "$out_file"; then
   } >"$out_file.tmp"
   mv "$out_file.tmp" "$out_file"
 fi
+
+cat >>"$out_file" <<EOF
+
+### Finalize experiment telemetry (automation)
+
+- Experiment: \`finalize-context-ab-v1\`
+- Context profile: \`${context_profile}\`
+- Context files injected: \`${context_file_count}\`
+- Context bytes injected: \`${context_bytes}\`
+- Prompt bytes (total): \`${prompt_bytes}\`
+- LLM consolidation wall time (s): \`${consolidation_seconds}\`
+- Provider: \`${PROVIDER}\`
+- Model: \`${provider_model}\`
+EOF
 
 comment_bytes="$(wc -c <"$out_file" | tr -d ' ')"
 if [[ "$comment_bytes" -gt "$comment_limit" ]]; then
