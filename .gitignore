@@ -26,6 +26,7 @@
 
 # --- CI / local artifacts ---
 .artifacts/
+.env
 .env.*
 !.env.example
 

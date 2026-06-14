@@ -214,12 +214,14 @@ normal deterministic merge gates
 | Trigger | Behavior |
 |---|---|
 | `implementation-complete` label applied | Runs consolidation for that open same-repo PR |
+| PR **opened** already carrying `implementation-complete` | Runs consolidation (no re-label required) |
+| Push to PR head (`synchronize`) while label present | Re-runs consolidation at current head |
 | PR marked `ready_for_review` while label present | Re-runs consolidation at current head |
 | `workflow_dispatch` with PR number | Manual re-run for operators |
 
-**Collection (deterministic, read-only):** `scripts/workflows/pr-feedback/collect-pr-feedback.sh` writes `pr.json`, `comments.json`, `reviews.json`, `review-comments.json`, `changed-files.json`, `diff.patch`, and `advisory-comments.md` under a temp dir before the LLM pass.
+**Collection (deterministic, read-only):** `scripts/workflows/pr-feedback/collect-pr-feedback.sh` writes `pr.json`, `comments.json`, `reviews.json`, `review-comments.json`, `changed-files.json`, `diff.patch`, and `advisory-comments.md` under a temp dir before the LLM pass. When local `git diff` is empty but GitHub lists changed files, collection falls back to the GitHub PR diff API.
 
-**Dispatch:** `scripts/workflows/pr-feedback/run-feedback-consolidation.sh` builds the prompt from `.github/prompts/pr-final-feedback-consolidation.md`, reuses advisory-review Cursor/Gemini runners and `upsert-pr-comment.sh`.
+**Dispatch:** `scripts/workflows/pr-feedback/run-feedback-consolidation.sh` builds the prompt from `.github/prompts/pr-final-feedback-consolidation.md`, injects **catalog-driven** rule context (`scripts/workflows/lib/prompt_helpers.py select-context` — `pr-review` floor plus path-triggered rules), reuses advisory-review Cursor/Gemini runners and `upsert-pr-comment.sh`.
 
 **Interaction with `claude-fix`:** consolidation only posts the inbox. A human may then add `claude-fix` for automated remediation via the existing `agent-fix-reviews.yml` rules. `review:blocking-ai` is a separate human escalation label — consolidation does not apply it.
 

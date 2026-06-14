@@ -55,7 +55,7 @@ pr_title="$(printf '%s' "$pr_json" | jq -r '.title // ""')"
 pr_body="$(printf '%s' "$pr_json" | jq -r '.body // ""')"
 pr_url="$(printf '%s' "$pr_json" | jq -r '.html_url // ""')"
 merged_at="$(printf '%s' "$pr_json" | jq -r '.merged_at // ""')"
-labels="$(jq -r '.[].name' "$WORKDIR/labels.json" | paste -sd ', ' -)"
+labels="$(jq -r '.[]?.name // empty' "$WORKDIR/labels.json" 2>/dev/null | paste -sd ', ' - || true)"
 
 full_diff_bytes="$(wc -c <"$WORKDIR/diff.patch" | tr -d ' ')"
 truncated=false
@@ -67,6 +67,20 @@ fi
 diff_text="$(head -c "$diff_limit" "$WORKDIR/diff.patch")"
 truncated_word="no"
 [[ "$truncated" == "true" ]] && truncated_word="yes"
+
+LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
+reviews_json_compact="$(
+  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
+    --input "$WORKDIR/reviews.json" \
+    --jq-filter 'map({id, user: (.user.login // null), body, state, commit_id})' \
+    --max-bytes 120000
+)"
+comments_json_compact="$(
+  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
+    --input "$WORKDIR/review-comments.json" \
+    --jq-filter 'map({id, path, line, user: (.user.login // null), body})' \
+    --max-bytes 120000
+)"
 
 prompt_file="$WORKDIR/prompt.md"
 {
@@ -117,14 +131,14 @@ prompt_file="$WORKDIR/prompt.md"
   echo "### Formal PR reviews (JSON excerpt)"
   echo ""
   echo '```json'
-  jq -c 'map({id, user: .user.login, body, state, commit_id})' "$WORKDIR/reviews.json" | head -c 120000
+  printf '%s\n' "$reviews_json_compact"
   echo ""
   echo '```'
   echo ""
   echo "### Inline review comments (JSON excerpt)"
   echo ""
   echo '```json'
-  jq -c 'map({id, path, line, user: .user.login, body})' "$WORKDIR/review-comments.json" | head -c 120000
+  printf '%s\n' "$comments_json_compact"
   echo ""
   echo '```'
   echo ""
