@@ -97,7 +97,7 @@ PY
 }
 
 create_new_issue() {
-  local title body_file rows issue_url issue_num
+  local title body_file rows issue_num
   title="Weekly repo review: ${RUN_WEEK} (main @ ${HEAD_SHA:0:7})"
   body_file="$WORKDIR/umbrella.md"
   rows="$(cat "$WORKDIR/rows.txt")"
@@ -120,8 +120,7 @@ text = p.read_text().replace(
 )
 p.write_text(text)
 PY
-  issue_url="$(gh issue create -R "$REPO" --title "$title" --body-file "$body_file")"
-  issue_num="${issue_url##*/}"
+  issue_num="$(gh issue create -R "$REPO" --title "$title" --body-file "$body_file" --json number --jq .number)"
   if gh issue edit "$issue_num" -R "$REPO" --add-label agent-suggested 2>/dev/null; then
     echo "Created umbrella issue #${issue_num} (agent-suggested)" >&2
   else
