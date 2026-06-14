@@ -31,6 +31,7 @@ parse_positive_int() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
 MARKER='<!-- ai-advisory-review:v1 -->'
 MARKER_TOKEN='ai-advisory-review:v1'
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
@@ -44,6 +45,7 @@ DEFAULT_COMMENT_LIMIT=65000
 diff_limit_live="$(parse_positive_int ADVISORY_REVIEW_DIFF_LIMIT_LIVE "$DEFAULT_DIFF_LIVE" "${ADVISORY_REVIEW_DIFF_LIMIT_LIVE:-}")"
 diff_limit_full="$(parse_positive_int ADVISORY_REVIEW_DIFF_LIMIT_FULL "$DEFAULT_DIFF_FULL" "${ADVISORY_REVIEW_DIFF_LIMIT_FULL:-}")"
 comment_limit="$(parse_positive_int ADVISORY_REVIEW_COMMENT_LIMIT "$DEFAULT_COMMENT_LIMIT" "${ADVISORY_REVIEW_COMMENT_LIMIT:-}")"
+context_profile="${ADVISORY_CONTEXT_PROFILE:-pr-review}"
 
 if [[ "$FULL_MODE" == "true" ]]; then
   diff_limit="$diff_limit_full"
@@ -105,22 +107,39 @@ if [[ "$full_diff_bytes" -eq 0 && "$changed_file_count" -gt 0 ]]; then
   echo "::warning::Advisory diff is empty (${changed_file_count} changed files listed) — review quality may be degraded (fetch/sha mismatch?)" >&2
 fi
 
+if ! python3 "$LIB_DIR/prompt_helpers.py" select-context \
+  --profile "$context_profile" \
+  --changed-files "$WORKDIR/changed-files.txt" >"$WORKDIR/context-files.txt"; then
+  echo "::error::select-context failed for profile ${context_profile}" >&2
+  exit 1
+fi
+if [[ ! -s "$WORKDIR/context-files.txt" ]]; then
+  echo "::error::select-context returned no files for profile ${context_profile}" >&2
+  exit 1
+fi
+mapfile -t context_files <"$WORKDIR/context-files.txt"
+
+context_file_count="${#context_files[@]}"
+context_bytes=0
+for rel in "${context_files[@]}"; do
+  if [[ -f "$REPO_ROOT/$rel" ]]; then
+    context_bytes=$((context_bytes + $(wc -c <"$REPO_ROOT/$rel" | tr -d ' ')))
+  fi
+done
+
 prompt_file="$WORKDIR/prompt.md"
 {
   cat "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
   echo ""
   echo "---"
   echo ""
-  echo "## Repo startup context (automation-supplied)"
+  echo "## Repo startup context (automation-supplied, catalog-driven ${context_profile} + path triggers)"
   echo ""
-  echo "Apply these repo rules when reviewing. Full rule files live under \`.context/rules/\`."
+  echo "- Context profile: \`${context_profile}\`"
+  echo "- Context files injected: \`${context_file_count}\`"
+  echo "- Context bytes injected: \`${context_bytes}\`"
   echo ""
-  for rel in \
-    AGENTS.md \
-    .context/rules/process_session_start.md \
-    .context/rules/README.md \
-    .context/rules/process_critical_thinking.md \
-    .context/rules/process_clarification.md; do
+  for rel in "${context_files[@]}"; do
     echo "### ${rel}"
     echo ""
     cat "$REPO_ROOT/$rel"
@@ -258,7 +277,7 @@ if [[ "$PROVIDER" == "antigravity" ]]; then
 fi
 
 # Ensure marker present (model may omit).
-if ! grep -q "$MARKER" "$out_file"; then
+if ! grep -qF "$MARKER" "$out_file"; then
   {
     printf '%s\n\n' "$MARKER"
     cat "$out_file"

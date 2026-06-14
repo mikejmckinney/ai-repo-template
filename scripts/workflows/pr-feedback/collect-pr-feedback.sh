@@ -60,7 +60,7 @@ jq -r --arg marker "$ADVISORY_MARKER" '
   | if ($matches | length) == 0 then ""
     else
       (["## Advisory snapshot comment(s)", ""]
-        + ($matches | map("### Comment \(.id) — \(.user.login // "unknown") @ \(.created_at)\n\n\(.body)")))
+        + ($matches | map("### Comment \(.id) — \((.user?.login // "unknown")) @ \(.created_at)\n\n\(.body)")))
       | join("\n\n")
     end
 ' "$OUT_DIR/comments.json" >"$OUT_DIR/advisory-comments.md"
@@ -70,7 +70,7 @@ jq -r --arg marker "$INBOX_MARKER" '
   | if ($matches | length) == 0 then ""
     else
       (["## Prior feedback inbox comment(s)", ""]
-        + ($matches | map("### Comment \(.id) — \(.user.login // "unknown") @ \(.created_at)\n\n\(.body)")))
+        + ($matches | map("### Comment \(.id) — \((.user?.login // "unknown")) @ \(.created_at)\n\n\(.body)")))
       | join("\n\n")
     end
 ' "$OUT_DIR/comments.json" >"$OUT_DIR/prior-inbox.md"

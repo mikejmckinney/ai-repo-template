@@ -19,10 +19,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   done
 
   if grep -q 'select-context' "$PROMPT_HELPERS" 2>/dev/null \
-    && grep -qE 'prompt_helpers\.py.*select-context' scripts/workflows/pr-feedback/run-feedback-consolidation.sh 2>/dev/null; then
-    pass "finalize uses catalog-driven context selection"
+    && grep -qE 'prompt_helpers\.py.*select-context' scripts/workflows/pr-feedback/run-feedback-consolidation.sh 2>/dev/null \
+    && grep -qE 'prompt_helpers\.py.*select-context' scripts/workflows/advisory-review/run-advisory-review.sh 2>/dev/null; then
+    pass "finalize and advisory use catalog-driven context selection"
   else
-    fail "finalize must use prompt_helpers select-context"
+    fail "finalize/advisory must use prompt_helpers select-context"
   fi
 
   if grep -q 'opened' "$FINALIZE_WORKFLOW" 2>/dev/null \

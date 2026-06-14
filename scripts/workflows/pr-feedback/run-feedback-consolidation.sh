@@ -56,7 +56,7 @@ pr_json="$(cat "$WORKDIR/pr.json")"
 pr_title="$(printf '%s' "$pr_json" | jq -r '.title // ""')"
 pr_body="$(printf '%s' "$pr_json" | jq -r '.body // ""')"
 pr_url="$(printf '%s' "$pr_json" | jq -r '.html_url // ""')"
-labels="$(jq -r '.[].name' "$WORKDIR/labels.json" 2>/dev/null | paste -sd ', ' - || true)"
+labels="$(jq -r '.[]?.name // empty' "$WORKDIR/labels.json" 2>/dev/null | paste -sd ', ' - || true)"
 
 full_diff_bytes="$(wc -c <"$WORKDIR/diff.patch" | tr -d ' ')"
 changed_file_count="$(wc -l <"$WORKDIR/changed-files.txt" | tr -d ' ')"
@@ -77,21 +77,27 @@ truncated_word="no"
 reviews_json_compact="$(
   python3 "$LIB_DIR/prompt_helpers.py" cap-json \
     --input "$WORKDIR/reviews.json" \
-    --jq-filter 'map({id, user: (.user.login // null), body, state, commit_id})' \
+    --jq-filter 'map({id, user: (.user?.login // null), body, state, commit_id})' \
     --max-bytes "$json_cap"
 )"
 comments_json_compact="$(
   python3 "$LIB_DIR/prompt_helpers.py" cap-json \
     --input "$WORKDIR/review-comments.json" \
-    --jq-filter 'map({id, path, line, user: (.user.login // null), body, diff_hunk})' \
+    --jq-filter 'map({id, path, line, user: (.user?.login // null), body, diff_hunk})' \
     --max-bytes "$json_cap"
 )"
 
-mapfile -t context_files < <(
-  python3 "$LIB_DIR/prompt_helpers.py" select-context \
-    --profile "$context_profile" \
-    --changed-files "$WORKDIR/changed-files.txt"
-)
+if ! python3 "$LIB_DIR/prompt_helpers.py" select-context \
+  --profile "$context_profile" \
+  --changed-files "$WORKDIR/changed-files.txt" >"$WORKDIR/context-files.txt"; then
+  echo "::error::select-context failed for profile ${context_profile}" >&2
+  exit 1
+fi
+if [[ ! -s "$WORKDIR/context-files.txt" ]]; then
+  echo "::error::select-context returned no files for profile ${context_profile}" >&2
+  exit 1
+fi
+mapfile -t context_files <"$WORKDIR/context-files.txt"
 
 context_file_count="${#context_files[@]}"
 context_bytes=0
@@ -101,18 +107,13 @@ for rel in "${context_files[@]}"; do
   fi
 done
 
-context_heading="catalog-driven ${context_profile} floor + path triggers"
-if [[ "$context_profile" == "full-rules" ]]; then
-  context_heading="all .context/rules/*.md (+ AGENTS.md)"
-fi
-
 prompt_file="$WORKDIR/prompt.md"
 {
   cat "$REPO_ROOT/.github/prompts/pr-final-feedback-consolidation.md"
   echo ""
   echo "---"
   echo ""
-  echo "## Repo startup context (automation-supplied, ${context_heading})"
+  echo "## Repo startup context (automation-supplied, catalog-driven ${context_profile} + path triggers)"
   echo ""
   echo "- Context profile: \`${context_profile}\`"
   echo "- Context files injected: \`${context_file_count}\`"
@@ -181,9 +182,6 @@ prompt_file="$WORKDIR/prompt.md"
   printf '%s\n' "$diff_text"
   echo '```'
 } >"$prompt_file"
-
-prompt_bytes="$(wc -c <"$prompt_file" | tr -d ' ')"
-consolidation_start="$SECONDS"
 
 has_cursor=0
 has_gemini=0
@@ -262,24 +260,20 @@ case "$PROVIDER" in
     ;;
 esac
 
-consolidation_seconds=$((SECONDS - consolidation_start))
-provider_model=""
-case "$PROVIDER" in
-  cursor)
-    provider_model="${CURSOR_FINALIZE_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}"
-    ;;
-  gemini)
-    provider_model="${GEMINI_FINALIZE_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}"
-    ;;
-esac
-
-if ! grep -q "$MARKER_TOKEN" "$out_file"; then
+if ! grep -qF "$MARKER" "$out_file"; then
   {
     printf '%s\n\n' "$MARKER"
     cat "$out_file"
   } >"$out_file.tmp"
   mv "$out_file.tmp" "$out_file"
 fi
+
+awk -v sha="$HEAD_SHA" '
+  /^Head reviewed:/ { next }
+  /^Mode:/ { next }
+  { print }
+' "$out_file" >"$out_file.tmp"
+mv "$out_file.tmp" "$out_file"
 
 if grep -qE '^#{1,3}[[:space:]]*Final Feedback Inbox' "$out_file"; then
   awk -v sha="$HEAD_SHA" '
@@ -308,20 +302,6 @@ if ! grep -q '^Head reviewed:' "$out_file"; then
   } >"$out_file.tmp"
   mv "$out_file.tmp" "$out_file"
 fi
-
-cat >>"$out_file" <<EOF
-
-### Finalize experiment telemetry (automation)
-
-- Experiment: \`finalize-context-ab-v1\`
-- Context profile: \`${context_profile}\`
-- Context files injected: \`${context_file_count}\`
-- Context bytes injected: \`${context_bytes}\`
-- Prompt bytes (total): \`${prompt_bytes}\`
-- LLM consolidation wall time (s): \`${consolidation_seconds}\`
-- Provider: \`${PROVIDER}\`
-- Model: \`${provider_model}\`
-EOF
 
 comment_bytes="$(wc -c <"$out_file" | tr -d ' ')"
 if [[ "$comment_bytes" -gt "$comment_limit" ]]; then

@@ -122,7 +122,7 @@ Both labels can be applied together. `ai-review:live` alone is the normal WIP/dr
 
 #### Diff context limits
 
-Advisory review logic lives in `scripts/workflows/advisory-review/run-advisory-review.sh` (AP8). For **cursor** and **gemini** paths, a **truncated unified diff** is embedded in the prompt. For **antigravity**, the **full** diff is mounted at `.workspace/pr-context/diff.patch` (Interactions API payload limits may still force fallback to gemini on huge PRs).
+Advisory review logic lives in `scripts/workflows/advisory-review/run-advisory-review.sh` (AP8). Rule context is injected via `prompt_helpers.py select-context` (default profile **`pr-review`**, overridable via `ADVISORY_CONTEXT_PROFILE`: `standard`, `pr-review`, or `full`; plus path-triggered rules). For **cursor** and **gemini** paths, a **truncated unified diff** is embedded in the prompt. For **antigravity**, the **full** diff is mounted at `.workspace/pr-context/diff.patch` (Interactions API payload limits may still force fallback to gemini on huge PRs).
 
 | Mode | Label | Default diff byte limit | Repo variable |
 |---|---|---|---|
@@ -221,7 +221,7 @@ normal deterministic merge gates
 
 **Collection (deterministic, read-only):** `scripts/workflows/pr-feedback/collect-pr-feedback.sh` writes `pr.json`, `comments.json`, `reviews.json`, `review-comments.json`, `changed-files.json`, `diff.patch`, and `advisory-comments.md` under a temp dir before the LLM pass. When local `git diff` is empty but GitHub lists changed files, collection falls back to the GitHub PR diff API.
 
-**Dispatch:** `scripts/workflows/pr-feedback/run-feedback-consolidation.sh` builds the prompt from `.github/prompts/pr-final-feedback-consolidation.md`, injects **catalog-driven** rule context (`scripts/workflows/lib/prompt_helpers.py select-context` — `pr-review` floor plus path-triggered rules), reuses advisory-review Cursor/Gemini runners and `upsert-pr-comment.sh`.
+**Dispatch:** `scripts/workflows/pr-feedback/run-feedback-consolidation.sh` builds the prompt from `.github/prompts/pr-final-feedback-consolidation.md`, injects **catalog-driven** rule context (`scripts/workflows/lib/prompt_helpers.py select-context` — default profile `pr-review`, overridable via repo variable `FINALIZE_CONTEXT_PROFILE`: `standard`, `pr-review`, or `full`; plus path-triggered rules), reuses advisory-review Cursor/Gemini runners and `upsert-pr-comment.sh`.
 
 **Interaction with `claude-fix`:** consolidation only posts the inbox. A human may then add `claude-fix` for automated remediation via the existing `agent-fix-reviews.yml` rules. `review:blocking-ai` is a separate human escalation label — consolidation does not apply it.
 
@@ -291,7 +291,7 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 | Session handshake + context receipt | Model self-reports per `process_session_start.md` (pointer in `pr-advisory-review.md`; not duplicated in prompt) | Same | Same |
 | Formal `claude-review` / Gemini App reviews | Separate workflows | Separate | Separate |
 
-Advisory review is intentionally **lighter than full rule load**: startup kernel + critical thinking/clarification + diff, not every `.context/rules/*.md` file. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
+Advisory review uses **catalog-driven context selection** (default `pr-review` floor + path triggers), not a fixed four-file kernel. Use `ADVISORY_CONTEXT_PROFILE=standard` for a lighter floor or `full` for all rules plus triggers. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
 
 **Handshake / receipt in advisory comments:** The model **self-reports** the session handshake and context receipt in each snapshot. `pr-advisory-review.md` **pointer-links** to `.context/rules/process_session_start.md` for the canonical templates (no mirrored copy in the prompt — avoids AP1-style drift). Automation injects diff-coverage facts only; it does not override handshake fields.
 
@@ -488,6 +488,7 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `ADVISORY_REVIEW_DIFF_LIMIT_LIVE` | `120000` | Max diff bytes in cursor/gemini prompt when only `ai-review:live` is set. |
 | `ADVISORY_REVIEW_DIFF_LIMIT_FULL` | `300000` | Max diff bytes in cursor/gemini prompt when `ai-review:full` is also set. |
 | `ADVISORY_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted advisory issue comment (automation truncates with warning). |
+| `ADVISORY_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for injected rules: `standard`, `pr-review`, or `full` (plus path-triggered rules). |
 | `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Model id for Cursor SDK advisory snapshots. |
 | `GEMINI_ADVISORY_MODEL` | `gemini-3.5-flash` | Gemini `generateContent` model id (`gemini-3.5-flash`, `gemini-flash-latest`, …). |
 | `FINALIZE_REVIEW_PROVIDER` | *(falls back to `ADVISORY_REVIEW_PROVIDER`)* | Final inbox runtime: `auto`, `cursor`, or `gemini` (no antigravity path in PR 3). |

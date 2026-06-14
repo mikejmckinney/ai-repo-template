@@ -11,8 +11,8 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
-# pr-review profile floor (monolithic OP — no role file). Paths relative to repo root.
-PR_REVIEW_MINIMUM = [
+# Catalog-aligned profile floors (README § Named read profiles). Paths relative to repo root.
+STANDARD_MINIMUM = [
     "AGENTS.md",
     ".context/rules/process_session_start.md",
     ".context/rules/process_critical_thinking.md",
@@ -25,6 +25,9 @@ PR_REVIEW_MINIMUM = [
     ".context/rules/process_role_selection.md",
     ".context/rules/process_session_state.md",
     ".context/rules/process_opportunity_feedback.md",
+]
+
+PR_REVIEW_MINIMUM = STANDARD_MINIMUM + [
     ".context/rules/process_pr_completion.md",
     ".context/rules/process_gates.md",
 ]
@@ -38,6 +41,9 @@ PATH_TRIGGERED: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"^\.cursor/agents/"), ".context/rules/repo_orchestration_patterns.md"),
     (re.compile(r"^\.claude/agents/"), ".context/rules/repo_orchestration_patterns.md"),
     (re.compile(r"^\.context/rules/"), ".context/rules/repo_orchestration_patterns.md"),
+    (re.compile(r"^scripts/checks/"), ".context/rules/domain_code_quality.md"),
+    (re.compile(r"^src/"), ".context/rules/domain_code_quality.md"),
+    (re.compile(r"^tests/"), ".context/rules/domain_code_quality.md"),
     (re.compile(r"^docs/decisions/"), "docs/decisions/adr-template.md"),
     (re.compile(r"^\.context/benchmarks/"), ".context/benchmarks/model-roi/README.md"),
 ]
@@ -56,23 +62,11 @@ def full_rules_context() -> list[str]:
     return selected
 
 
-def select_review_context(changed_files: list[str], profile: str = "pr-review") -> list[str]:
-    if profile == "full-rules":
-        return full_rules_context()
-
-    if profile != "pr-review":
-        raise ValueError(f"unsupported profile: {profile}")
-
-    selected: list[str] = []
-    seen: set[str] = set()
-
+def _apply_path_triggers(changed_files: list[str], selected: list[str], seen: set[str]) -> None:
     def add(path: str) -> None:
         if path not in seen:
             seen.add(path)
             selected.append(path)
-
-    for path in PR_REVIEW_MINIMUM:
-        add(path)
 
     for changed in changed_files:
         changed = changed.strip()
@@ -82,6 +76,35 @@ def select_review_context(changed_files: list[str], profile: str = "pr-review") 
             if pattern.search(changed):
                 add(rule_path)
 
+
+def select_review_context(changed_files: list[str], profile: str = "pr-review") -> list[str]:
+    if profile == "full-rules":
+        return full_rules_context()
+
+    selected: list[str] = []
+    seen: set[str] = set()
+
+    def add(path: str) -> None:
+        if path not in seen:
+            seen.add(path)
+            selected.append(path)
+
+    if profile == "standard":
+        floor = STANDARD_MINIMUM
+    elif profile == "pr-review":
+        floor = PR_REVIEW_MINIMUM
+    elif profile == "full":
+        for path in full_rules_context():
+            add(path)
+        _apply_path_triggers(changed_files, selected, seen)
+        return selected
+    else:
+        raise ValueError(f"unsupported profile: {profile}")
+
+    for path in floor:
+        add(path)
+
+    _apply_path_triggers(changed_files, selected, seen)
     return selected
 
 
@@ -89,11 +112,11 @@ def cap_jq_json(input_path: Path, jq_filter: str, max_bytes: int) -> str:
     raw = subprocess.check_output(
         ["jq", "-c", jq_filter, str(input_path)],
         text=True,
-    )
+    ).rstrip()
     if len(raw.encode("utf-8")) <= max_bytes:
         return raw
 
-    arr = json.loads(subprocess.check_output(["jq", jq_filter, str(input_path)], text=True))
+    arr = json.loads(raw)
     if not isinstance(arr, list):
         raise ValueError("jq filter must produce a JSON array")
 
@@ -103,12 +126,15 @@ def cap_jq_json(input_path: Path, jq_filter: str, max_bytes: int) -> str:
         if len(compact.encode("utf-8")) <= max_bytes:
             return compact
         if len(trimmed) == 1:
-            # Last resort: emit truncated single-element array metadata note via smaller payload
             one = trimmed[0]
             if isinstance(one, dict) and "body" in one and isinstance(one["body"], str):
                 body = one["body"]
                 budget = max(0, max_bytes - 512)
-                while body and len(json.dumps([{**one, "body": body}], separators=(",", ":")).encode("utf-8")) > max_bytes:
+                if budget < len(body):
+                    body = body[:budget]
+                while body and len(
+                    json.dumps([{**one, "body": body}], separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+                ) > max_bytes:
                     body = body[: max(0, len(body) - 1024)]
                 one = {**one, "body": body, "_truncated": True}
                 compact = json.dumps([one], separators=(",", ":"), ensure_ascii=False)
