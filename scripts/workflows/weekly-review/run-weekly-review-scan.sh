@@ -14,10 +14,12 @@ RUN_WEEK="${RUN_WEEK:-$(bash "$SCRIPT_DIR/resolve-run-week.sh")}"
 OUT_JSON="${1:-}"
 context_profile="${WEEKLY_REVIEW_CONTEXT_PROFILE:-full}"
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
+HEAD_SHA="$(git rev-parse HEAD)"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-bash "$SCRIPT_DIR/collect-weekly-evidence.sh" "$WORKDIR"
+# Full profile uses context-pack floor only (no path-trigger expansion).
+: >"$WORKDIR/changed-files.txt"
 
 if ! python3 "$LIB_DIR/prompt_helpers.py" select-context \
   --profile "$context_profile" \
@@ -39,15 +41,22 @@ for rel in "${context_files[@]}"; do
   fi
 done
 
+{
+  echo "- Repository: \`${REPO}\`"
+  echo "- Run week: \`${RUN_WEEK}\`"
+  echo "- Run date: \`${RUN_DATE}\`"
+  echo "- HEAD SHA: \`${HEAD_SHA}\`"
+  echo "- Context profile: \`${context_profile}\` (context pack only; inspect repo for code evidence)"
+} >"$WORKDIR/run-meta.md"
+
 prompt_file="$WORKDIR/prompt.md"
 {
   cat "$REPO_ROOT/.github/prompts/weekly-repo-review.md"
   echo ""
   echo "---"
   echo ""
-  echo "## Repo startup context (automation-supplied, catalog-driven ${context_profile} + path triggers)"
+  echo "## Repo startup context (automation-supplied, catalog-driven ${context_profile})"
   echo ""
-  echo "- Context profile: \`${context_profile}\`"
   echo "- Context files injected: \`${context_file_count}\`"
   echo "- Context bytes injected: \`${context_bytes}\`"
   echo ""
@@ -63,15 +72,22 @@ prompt_file="$WORKDIR/prompt.md"
   done
   echo "---"
   echo ""
-  cat "$WORKDIR/repo-inventory.md"
+  echo "## Run metadata (automation-supplied)"
+  echo ""
+  cat "$WORKDIR/run-meta.md"
   echo ""
   echo "---"
   echo ""
   echo "## Output instruction (automation-supplied)"
   echo ""
   echo "Respond with **JSON only** matching the required weekly review shape."
-  echo "Run week: \`${RUN_WEEK}\`; scan date: \`${RUN_DATE}\`."
+  echo "Inspect the repository working tree on \`main\` for code/scripts/workflows/checks evidence."
 } >"$prompt_file"
+
+antigravity_enabled=false
+if [[ "${ADVISORY_ANTIGRAVITY_ENABLED:-}" == "true" ]]; then
+  antigravity_enabled=true
+fi
 
 has_cursor=0
 has_gemini=0
@@ -80,16 +96,15 @@ has_gemini=0
 
 pick_provider() {
   local want="${WEEKLY_REVIEW_PROVIDER:-${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}}"
-  if [[ "$want" == "antigravity" ]]; then
-    echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; weekly review uses auto (cursor, else gemini)." >&2
-    want=auto
-  fi
   case "$want" in
     cursor) echo cursor ;;
+    antigravity) echo antigravity ;;
     gemini) echo gemini ;;
     auto)
       if [[ "$has_cursor" -eq 1 ]]; then
         echo cursor
+      elif [[ "$antigravity_enabled" == "true" && "$has_gemini" -eq 1 ]]; then
+        echo antigravity
       elif [[ "$has_gemini" -eq 1 ]]; then
         echo gemini
       else
@@ -97,7 +112,7 @@ pick_provider() {
       fi
       ;;
     *)
-      echo "::error::Unknown WEEKLY_REVIEW_PROVIDER=${want} (use auto, cursor, or gemini)"
+      echo "::error::Unknown WEEKLY_REVIEW_PROVIDER=${want} (use auto, cursor, antigravity, or gemini)"
       exit 1
       ;;
   esac
@@ -105,7 +120,7 @@ pick_provider() {
 
 PROVIDER="$(pick_provider)"
 [[ -n "$PROVIDER" ]] || {
-  echo "::error::No weekly review provider configured. Set CURSOR_API_KEY and/or GEMINI_API_KEY."
+  echo "::error::No weekly review provider configured. Set CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
   exit 1
 }
 
@@ -115,6 +130,20 @@ case "$PROVIDER" in
     npm install --no-save @cursor/sdk >/dev/null 2>&1
     CURSOR_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}}" \
       node "$ADVISORY_DIR/run-advisory-cursor.mjs" "$prompt_file" "$llm_raw"
+    ;;
+  antigravity)
+    [[ "$has_gemini" -eq 1 ]] || {
+      echo "::error::WEEKLY_REVIEW_PROVIDER=antigravity but GEMINI_API_KEY/GOOGLE_API_KEY is unset"
+      exit 1
+    }
+    [[ "$antigravity_enabled" == "true" ]] || {
+      echo "::error::WEEKLY_REVIEW_PROVIDER=antigravity but ADVISORY_ANTIGRAVITY_ENABLED is not true"
+      exit 1
+    }
+    if ! python3 "$SCRIPT_DIR/run-weekly-antigravity.py" "$REPO_ROOT" "$WORKDIR" "$llm_raw"; then
+      echo "::error::Antigravity weekly review failed"
+      exit 1
+    fi
     ;;
   gemini)
     GEMINI_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}}" \

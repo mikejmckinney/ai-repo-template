@@ -5,14 +5,17 @@ agent: agent
 
 # Weekly repository review
 
-You are performing a **weekly full-repo health review** on the current `main` branch. Your job is to review supplied evidence and output **structured JSON only** — no Markdown prose outside the JSON object.
+You are performing a **weekly full-repo health review** on the current `main` branch. Your job is to inspect the repository and output **structured JSON only** — no Markdown prose outside the JSON object.
+
+The automation appends the **context pack** (`full` profile: `AGENTS.md`, `.context/rules/**`, and related governance files). That pack is **rules and process**, not the full codebase. **You must read the repository working tree** (Cursor local mode) or mounted workspace sources (Antigravity path) to review code, scripts, workflows, checks, docs, and tests.
 
 ## Hard rules
 
-- Review the **repository state on main** — not individual open PRs.
+- Review the **repository state on `main`** — not individual open PRs.
+- **Inspect files as needed.** Every finding must cite concrete paths (and lines when possible) from the repo.
 - **Do not** edit code, ADRs, or context-pack files in this job.
 - **Do not** open pull requests.
-- **Prefer no issue over a speculative issue.** Every suggestion must cite concrete evidence from the supplied artifacts.
+- **Prefer no issue over a speculative issue.** Speculation from injected rules alone is insufficient — cite repo evidence.
 - **Do not** suggest broad rewrites unless evidence shows a recurring failure pattern.
 - Output **valid JSON only** — no preamble, no markdown fences, no commentary after the JSON.
 
@@ -65,7 +68,6 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
 ## Dedupe keys
 
 - Use stable, short, kebab-case keys scoped to the repo (e.g. `weekly-invariant-052-missing-link`).
-- Automation creates umbrella rows with marker `<!-- weekly-review:key=<dedupe_key> -->` in follow-up text when issues are opened manually later.
 - Re-runs the same ISO week must not duplicate rows — reuse the same key only for the same finding.
 
 ## Session handshake / context receipt

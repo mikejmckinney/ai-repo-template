@@ -275,12 +275,12 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 Weekly **Sunday 07:00 UTC** cron plus **`workflow_dispatch`** on `agent-weekly-review.yml` (offset from daily retro at 06:00 UTC):
 
-1. Static **full-repo** scan on `main` (not PR-scoped): repo inventory + LLM review with **`full`** context profile.
+1. Static **full-repo** scan on `main` (not PR-scoped): **context pack only** in prompt + agent reads working tree (`local.cwd` / Antigravity fallback).
 2. Batch → `weekly-review.json` (retro-compatible `findings[]`).
 3. **One umbrella issue per ISO week** (`<!-- weekly-review:YYYY-Www -->`; skip when zero findings).
 4. **Draft fix PR** `weekly/fix-YYYY-Www` when findings exist; native issue link via **`Fixes #N`** (`link-fix-pr-to-issue.sh`).
 
-**Dispatch:** `scripts/workflows/weekly-review/` — prompts `weekly-repo-review.md`, `weekly-repo-review-fix.md`; templates `weekly-review-umbrella.md`, `weekly-review-fix-pr.md`. Env: `WEEKLY_REVIEW_CONTEXT_PROFILE` (default **`full`**), `WEEKLY_REVIEW_PROVIDER` (fallback to retro/advisory `auto`).
+**Dispatch:** `scripts/workflows/weekly-review/` — prompts `weekly-repo-review.md`, `weekly-repo-review-fix.md`; templates `weekly-review-umbrella.md`, `weekly-review-fix-pr.md`. Context via `WEEKLY_REVIEW_CONTEXT_PROFILE` (default **`full`**, pack only). Provider: `WEEKLY_REVIEW_PROVIDER` or advisory `auto` (Cursor → Antigravity when enabled → Gemini explicit only).
 
 **Smoke test:** `gh workflow run agent-weekly-review.yml`; sandbox A/B with distinct `run_week` values. Fix-only: `fix_only=true`, `run_week`, `restore_json_from_issue=true`.
 
@@ -922,7 +922,7 @@ for Gemini to finish posting.
 | `.github/workflows/agent-review-finalize.yml` | Final Feedback Inbox (`implementation-complete`); Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
 | `scripts/workflows/pr-feedback/` | AP8 finalize: collect feedback + consolidate dispatch | Invoked by `agent-review-finalize.yml` |
 | `.github/workflows/agent-postmerge-retro.yml` | Daily post-merge retro (06:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; fix job needs `contents` + PR write) |
-| `.github/workflows/agent-weekly-review.yml` | Weekly full-repo review (Sunday 07:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; fix job needs `contents` + PR write) |
+| `.github/workflows/agent-weekly-review.yml` | Weekly full-repo review (Sunday 07:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Antigravity / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; Antigravity needs `ADVISORY_ANTIGRAVITY_ENABLED=true`; fix job needs `contents` + PR write) |
 | `scripts/workflows/postmerge-retro/` | AP8 post-merge retro: daily batch, umbrella, fix PR scripts | Invoked by `agent-postmerge-retro.yml` |
 | `scripts/workflows/weekly-review/` | AP8 weekly repo review: full-repo scan, umbrella, fix PR scripts | Invoked by `agent-weekly-review.yml` |
 | `scripts/workflows/lib/link-fix-pr-to-issue.sh` | Native GitHub `Fixes #N` link for retro/weekly draft fix PRs | Used by retro + weekly fix scripts |

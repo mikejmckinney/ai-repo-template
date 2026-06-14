@@ -56,8 +56,8 @@ Shared properties:
 
 **Batch behavior:**
 
-1. Collect repo inventory (HEAD SHA, workflow files, check modules, recent commits) + inject **`full`** context profile via `prompt_helpers.py select-context`.
-2. Single LLM pass → `weekly-review.json` (retro-compatible `findings[]` shape).
+1. Collect run metadata (HEAD SHA, run week) + inject **`full`** context profile via `prompt_helpers.py select-context` (context pack only — no path-trigger expansion).
+2. Single LLM pass with **repository read access** (Cursor `local.cwd`; Antigravity when `auto` lacks Cursor) → `weekly-review.json` (retro-compatible `findings[]` shape).
 3. Create or **append** one umbrella issue per ISO week (`<!-- weekly-review:YYYY-Www -->`).
 4. If findings &gt; 0: second LLM pass opens/updates a **draft** fix PR `weekly/fix-YYYY-Www`; native GitHub issue link via `Fixes #N` in PR body (`scripts/workflows/lib/link-fix-pr-to-issue.sh`).
 
