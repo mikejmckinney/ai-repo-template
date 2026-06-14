@@ -261,7 +261,7 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 **Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Rule context is injected via `prompt_helpers.py select-context` (default profile **`full`**, overridable via `POSTMERGE_RETRO_CONTEXT_PROFILE` or `workflow_dispatch` input `context_profile`: `standard`, `pr-review`, or `full`; plus path-triggered rules). Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`. **Automation templates** (not GitHub UI chooser): `.github/templates/postmerge-retro-umbrella.md` (umbrella issue), `.github/templates/postmerge-retro-fix-pr.md` (draft fix PR — slim PR-template shape). Umbrella creation adds `agent-suggested` when the label exists; issue is still created if the label is missing. Sandbox bootstrap runs `scripts/setup/ensure-pipeline-labels.sh` on the sibling repo.
 
-**Fix dispatch:** `run-postmerge-retro-fix.sh` — Cursor local edits or Gemini JSON `file_edits`; requires `contents: write` + `pull-requests: write` on fix job. Provider `auto` matches other retro stages (Cursor first, else Gemini; antigravity is advisory-only). After the draft fix PR is created (or found open), `update-umbrella-fix-link.sh` replaces the umbrella Meta placeholder `(pending — fix job)` with the PR URL. Umbrella issue number is written into `daily-retro.json` (`umbrella_issue`) and sidecar `umbrella-issue.txt` during the daily job; the fix job resolves it via `UMBRELLA_ISSUE_NUM` / JSON (no `gh search` when present). Legacy runs fall back to `GITHUB_TOKEN` + `find-umbrella-issue.sh`.
+**Fix dispatch:** `run-postmerge-retro-fix.sh` — Cursor local edits or Gemini JSON `file_edits`; requires `contents: write` + `pull-requests: write` on fix job. Provider `auto` matches other retro stages (Cursor first, else Gemini; antigravity is advisory-only). After the draft fix PR is created (or found open), `update-umbrella-fix-link.sh` replaces the umbrella Meta placeholder `(pending — fix job)` with the PR URL, and `link-fix-pr-to-issue.sh` ensures a native **`Fixes #N`** line in the PR body. Umbrella issue number is written into `daily-retro.json` (`umbrella_issue`) and sidecar `umbrella-issue.txt` during the daily job; the fix job resolves it via `UMBRELLA_ISSUE_NUM` / JSON (no `gh search` when present). Legacy runs fall back to `GITHUB_TOKEN` + `find-umbrella-issue.sh`.
 
 **Idempotency:** umbrella append by dedupe key; PR rows skipped if already in today's table. Manual dispatch before cron same day **appends**, does not skip the job.
 
@@ -270,6 +270,19 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 **Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge. For sandbox A/B, pass `workflow_dispatch` inputs `context_profile`, `only_prs`, and a distinct `run_date` per arm (retro checks out **`main`** for scripts — unlike advisory/finalize PR-head checkout).
 
 **Sandbox A/B inputs (retro):** `only_prs=<merged-pr>` pins a single PR; `context_profile=standard|pr-review|full` selects the catalog floor; use distinct valid `run_date` values (`YYYY-MM-DD` only — e.g. `2026-06-14`, `2026-06-15`, `2026-06-16`) to isolate umbrella dedupe between runs. Dispatch sequentially — the workflow concurrency group queues overlapping runs. Artifacts are named `postmerge-retro-daily-<run_date>-attempt-<n>` (rerun-safe). Each umbrella issue also gets a **daily JSON snapshot comment** (`<!-- postmerge-retro:daily-json:... -->`) for fix-only recovery. To re-run the fix job without re-running retro: `workflow_dispatch` with `fix_only=true`, `run_date`, and `restore_json_from_issue=true`. **Never full-rerun** a workflow when only the fix job failed — use `gh run rerun RUN_ID --failed` or fix-only dispatch.
+
+### Weekly repository review (full-repo static scan)
+
+Weekly **Sunday 07:00 UTC** cron plus **`workflow_dispatch`** on `agent-weekly-review.yml` (offset from daily retro at 06:00 UTC):
+
+1. Static **full-repo** scan on `main` (not PR-scoped): repo inventory + LLM review with **`full`** context profile.
+2. Batch → `weekly-review.json` (retro-compatible `findings[]`).
+3. **One umbrella issue per ISO week** (`<!-- weekly-review:YYYY-Www -->`; skip when zero findings).
+4. **Draft fix PR** `weekly/fix-YYYY-Www` when findings exist; native issue link via **`Fixes #N`** (`link-fix-pr-to-issue.sh`).
+
+**Dispatch:** `scripts/workflows/weekly-review/` — prompts `weekly-repo-review.md`, `weekly-repo-review-fix.md`; templates `weekly-review-umbrella.md`, `weekly-review-fix-pr.md`. Env: `WEEKLY_REVIEW_CONTEXT_PROFILE` (default **`full`**), `WEEKLY_REVIEW_PROVIDER` (fallback to retro/advisory `auto`).
+
+**Smoke test:** `gh workflow run agent-weekly-review.yml`; sandbox A/B with distinct `run_week` values. Fix-only: `fix_only=true`, `run_week`, `restore_json_from_issue=true`.
 
 #### Provider, billing, and context loading
 
@@ -332,7 +345,7 @@ Both succeeded; dashboard showed **standard** `composer-2.5` (not `-fast`) for e
 
 **Correlating usage to GitHub Actions:** Each SDK call logs `repo`, `workflow`, `job`, `run_id`, and `attempt` from `GITHUB_*` env vars. Match dashboard timestamps to `gh run view RUN_ID --log | rg 'Cursor advisory review'`.
 
-**Workflows covered (SDK):** `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (daily retro + fix jobs). Do not call `@cursor/sdk` directly elsewhere without the same `fast=false` guard when using `composer-2.5`.
+**Workflows covered (SDK):** `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (daily retro + fix jobs), `agent-weekly-review.yml` (weekly scan + fix jobs). Do not call `@cursor/sdk` directly elsewhere without the same `fast=false` guard when using `composer-2.5`.
 
 **Handshake / receipt in advisory comments:** The model **self-reports** the session handshake and context receipt in each snapshot. `pr-advisory-review.md` **pointer-links** to `.context/rules/process_session_start.md` for the canonical templates (no mirrored copy in the prompt — avoids AP1-style drift). Automation injects diff-coverage facts only; it does not override handshake fields.
 
@@ -503,8 +516,8 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 |--------|-------------|-----------------|
 | `CLAUDE_PAT` | Agent workflows that call `gh` (assignment, auto-merge, auto-ready, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
 | `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
-| `CURSOR_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (Cursor SDK path; preferred when provider `auto`) | API key from Cursor dashboard / SDK docs |
-| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (Gemini API path) | Google AI Studio / Gemini API key |
+| `CURSOR_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml`, `agent-weekly-review.yml` (Cursor SDK path; preferred when provider `auto`) | API key from Cursor dashboard / SDK docs |
+| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml`, `agent-weekly-review.yml` (Gemini API path) | Google AI Studio / Gemini API key |
 | `SANDBOX_BOOTSTRAP_TOKEN` | Sandbox verification steps (force-push sandbox `main`, push branch, `gh pr create/merge` on the sandbox repo). Used by agents running in workflows; maintainers running locally pass the same token as `BOOTSTRAP_GH_TOKEN` env var instead. | Classic PAT, `repo` + `workflow` scopes. Must be classic — fine-grained tokens cannot push `.github/workflows/` files without special account-level scope that typically isn't available until after the sandbox repo is created. See `docs/guides/sandbox-verification.md`. |
 
 **Two ways to provide them**, in order of preference for users running multiple derived repos:
@@ -909,7 +922,10 @@ for Gemini to finish posting.
 | `.github/workflows/agent-review-finalize.yml` | Final Feedback Inbox (`implementation-complete`); Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
 | `scripts/workflows/pr-feedback/` | AP8 finalize: collect feedback + consolidate dispatch | Invoked by `agent-review-finalize.yml` |
 | `.github/workflows/agent-postmerge-retro.yml` | Daily post-merge retro (06:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; fix job needs `contents` + PR write) |
+| `.github/workflows/agent-weekly-review.yml` | Weekly full-repo review (Sunday 07:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; fix job needs `contents` + PR write) |
 | `scripts/workflows/postmerge-retro/` | AP8 post-merge retro: daily batch, umbrella, fix PR scripts | Invoked by `agent-postmerge-retro.yml` |
+| `scripts/workflows/weekly-review/` | AP8 weekly repo review: full-repo scan, umbrella, fix PR scripts | Invoked by `agent-weekly-review.yml` |
+| `scripts/workflows/lib/link-fix-pr-to-issue.sh` | Native GitHub `Fixes #N` link for retro/weekly draft fix PRs | Used by retro + weekly fix scripts |
 | `.github/prompts/post-merge-retro.md` | Per-PR retrospective JSON prompt | Used by daily batch per-PR pass |
 | `.github/prompts/post-merge-retro-fix.md` | Daily fix implementation prompt | Used by fix job |
 | `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-out via repo variable `REVIEW_ON_PUSH=false` | Yes (CLAUDE_PAT for Gemini comment author identity) |

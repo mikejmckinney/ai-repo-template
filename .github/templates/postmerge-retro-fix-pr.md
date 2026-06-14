@@ -7,9 +7,11 @@ Draft fix PR for daily post-merge retrospective **{{RUN_DATE}}**.
 - Umbrella issue: {{UMBRELLA_ISSUE_LINK}}
 - Branch: `{{FIX_BRANCH}}`
 
-## Linked issues / ADRs
+## Linked issues
 
-**Closes / Refs:** {{UMBRELLA_ISSUE_REF}}
+Fixes #{{UMBRELLA_ISSUE_NUM}}
+
+**Umbrella:** {{UMBRELLA_ISSUE_LINK}} ({{UMBRELLA_ISSUE_REF}})
 
 Automated follow-up from post-merge retro v2 (ADR-030). Human or agent must verify each fix before marking ready.
 

@@ -106,7 +106,9 @@ bash install.sh
 │   ├── workflows/            # AP8 workflow logic extracted from .github/workflows
 │   │   ├── advisory-review/  # agent-advisory-review.yml dispatch, providers, comment upsert
 │   │   ├── pr-feedback/      # agent-review-finalize.yml collect + consolidate dispatch
-│   │   └── postmerge-retro/  # agent-postmerge-retro.yml daily batch + fix PR
+│   │   ├── postmerge-retro/  # agent-postmerge-retro.yml daily batch + fix PR
+│   │   ├── weekly-review/    # agent-weekly-review.yml full-repo scan + fix PR
+│   │   └── lib/              # shared prompt helpers + fix PR issue linker
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
@@ -380,6 +382,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (`ai-review:live`); Cursor / Antigravity / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; optional `ADVISORY_ANTIGRAVITY_ENABLED=true` |
 | `agent-review-finalize.yml` | Final Feedback Inbox after implementation (`implementation-complete`); Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY` (reuses advisory LLM runners) |
 | `agent-postmerge-retro.yml` | Daily post-merge retro (06:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; fix job adds `contents` + PR write |
+| `agent-weekly-review.yml` | Weekly full-repo review (Sunday 07:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; fix job adds `contents` + PR write |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` secret |
 | `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier | Set `CLAUDE_PAT` secret |
 | `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR | None |
