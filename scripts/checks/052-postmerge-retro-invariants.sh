@@ -80,6 +80,22 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "create-umbrella-issue.sh missing template/resilient label/body-file append wiring"
   fi
 
+  if grep -q 'post-daily-retro-json-comment.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && [[ -f "${RETRO_DIR}/post-daily-retro-json-comment.sh" ]] \
+    && [[ -f "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" ]]; then
+    pass "umbrella step archives daily JSON snapshot comment + fix-only restore script"
+  else
+    fail "postmerge retro missing daily JSON snapshot comment archive wiring"
+  fi
+
+  if grep -q 'attempt-\${{ github.run_attempt }}' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'has_daily_json == .true' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'fix_only' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow uses attempt-scoped artifacts + fix-only dispatch"
+  else
+    fail "agent-postmerge-retro.yml missing attempt artifact / fix-only wiring"
+  fi
+
   if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'update-umbrella-fix-link.sh' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'POSTMERGE_RETRO_FIX_REEXEC' "$FIX_SCRIPT" 2>/dev/null; then

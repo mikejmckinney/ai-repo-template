@@ -12,6 +12,7 @@ DAILY_JSON="${1:-}"
 [[ -n "$DAILY_JSON" && -f "$DAILY_JSON" ]] || usage
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py" "$DAILY_JSON"
 
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
@@ -130,11 +131,14 @@ PY
   fi
 }
 
-EXISTING_ISSUE="$(find_issue)"
-if [[ -n "$EXISTING_ISSUE" ]]; then
-  append_to_issue "$EXISTING_ISSUE"
+UMBRELLA_ISSUE="$(find_issue)"
+if [[ -n "$UMBRELLA_ISSUE" ]]; then
+  append_to_issue "$UMBRELLA_ISSUE"
 else
   create_new_issue
+  UMBRELLA_ISSUE="$(find_issue)"
 fi
+
+bash "$SCRIPT_DIR/post-daily-retro-json-comment.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
 
 echo "Umbrella issue step complete for ${RUN_DATE}"
