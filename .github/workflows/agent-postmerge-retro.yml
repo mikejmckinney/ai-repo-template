@@ -195,7 +195,13 @@ jobs:
           chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
           DAILY_JSON=".artifacts/postmerge-retro/daily-${{ needs.daily-retro.outputs.run_date }}/daily-retro.json"
           [[ -f "$DAILY_JSON" ]] || { echo "::error::Missing $DAILY_JSON"; exit 1; }
+          set -o pipefail
           bash scripts/workflows/postmerge-retro/run-postmerge-retro-fix.sh "$DAILY_JSON" | tee fix.log
+          fix_exit=${PIPESTATUS[0]}
+          if [[ "$fix_exit" -ne 0 ]]; then
+            echo "::error::run-postmerge-retro-fix.sh failed with exit ${fix_exit}" >&2
+            exit "$fix_exit"
+          fi
           if grep -q 'Created draft PR:' fix.log; then
             url="$(grep 'Created draft PR:' fix.log | sed 's/.*Created draft PR: //')"
             echo "fix_pr_url=${url}" >> "$GITHUB_OUTPUT"
