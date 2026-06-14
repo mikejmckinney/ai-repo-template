@@ -20,11 +20,11 @@ issue_num=""
 while read -r candidate; do
   [[ -z "$candidate" ]] && continue
   body="$(gh issue view "$candidate" -R "$REPO" --json body --jq .body 2>/dev/null || true)"
-  if grep -Fq "$MARKER" <<<"$body"; then
+  if grep -Fq "$MARKER" <<<"$body" && grep -Eq "^[[:space:]]*<!-- postmerge-retro:daily:" <<<"$body"; then
     issue_num="$candidate"
     break
   fi
-done < <(gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "$REPO" --json number --limit 10 --jq '.[].number' 2>/dev/null || true)
+done < <(gh search issues "postmerge-retro:daily:${RUN_DATE} is:issue" --repo "$REPO" --json number --limit 10 --jq '.[].number' 2>/dev/null || true)
 [[ -n "$issue_num" ]] || {
   echo "::warning::No umbrella issue found for ${RUN_DATE}; skipping fix-link update"
   exit 0
