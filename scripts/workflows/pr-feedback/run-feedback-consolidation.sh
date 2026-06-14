@@ -46,7 +46,7 @@ DEFAULT_JSON_CAP=120000
 diff_limit="$(parse_positive_int FINALIZE_REVIEW_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${FINALIZE_REVIEW_DIFF_LIMIT:-}")"
 comment_limit="$(parse_positive_int FINALIZE_REVIEW_COMMENT_LIMIT "$DEFAULT_COMMENT_LIMIT" "${FINALIZE_REVIEW_COMMENT_LIMIT:-}")"
 json_cap="$(parse_positive_int FINALIZE_REVIEW_JSON_CAP "$DEFAULT_JSON_CAP" "${FINALIZE_REVIEW_JSON_CAP:-}")"
-context_profile="${FINALIZE_CONTEXT_PROFILE:-pr-review}"
+context_profile="${FINALIZE_CONTEXT_PROFILE:-full-rules}"
 
 bash "$SCRIPT_DIR/collect-pr-feedback.sh" "$PR" "$WORKDIR"
 
