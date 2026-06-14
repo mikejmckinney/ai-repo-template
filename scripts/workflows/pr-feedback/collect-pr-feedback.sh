@@ -43,25 +43,34 @@ paginate_to_array "repos/${REPO}/pulls/${PR}/files" "$OUT_DIR/changed-files.json
 git fetch origin "$head_sha" "$base_sha" 2>/dev/null || true
 git diff "${base_sha}...${head_sha}" >"$OUT_DIR/diff.patch" 2>/dev/null || : >"$OUT_DIR/diff.patch"
 
-ADVISORY_TOKEN='ai-advisory-review:v1'
-INBOX_TOKEN='ai-feedback-inbox:v1'
+changed_file_count="$(jq 'length' "$OUT_DIR/changed-files.json" 2>/dev/null || echo 0)"
+if [[ ! -s "$OUT_DIR/diff.patch" && "$changed_file_count" -gt 0 ]]; then
+  echo "::notice::Local git diff empty with ${changed_file_count} changed files; fetching PR diff via GitHub API" >&2
+  if ! gh api "repos/${REPO}/pulls/${PR}" -H "Accept: application/vnd.github.v3.diff" >"$OUT_DIR/diff.patch" 2>/dev/null; then
+    echo "::warning::GitHub PR diff fallback failed; diff may remain empty" >&2
+    : >"$OUT_DIR/diff.patch"
+  fi
+fi
 
-jq -r --arg tok "$ADVISORY_TOKEN" '
-  [.[] | select((.body | type) == "string" and (.body | contains($tok)))] as $matches
+ADVISORY_MARKER='<!-- ai-advisory-review:v1 -->'
+INBOX_MARKER='<!-- ai-feedback-inbox:v1 -->'
+
+jq -r --arg marker "$ADVISORY_MARKER" '
+  [.[] | select((.body | type) == "string" and (.body | contains($marker)))] as $matches
   | if ($matches | length) == 0 then ""
     else
       (["## Advisory snapshot comment(s)", ""]
-        + ($matches | map("### Comment \(.id) — \(.user.login) @ \(.created_at)\n\n\(.body)")))
+        + ($matches | map("### Comment \(.id) — \((.user?.login // "unknown")) @ \(.created_at)\n\n\(.body)")))
       | join("\n\n")
     end
 ' "$OUT_DIR/comments.json" >"$OUT_DIR/advisory-comments.md"
 
-jq -r --arg tok "$INBOX_TOKEN" '
-  [.[] | select((.body | type) == "string" and (.body | contains($tok)))] as $matches
+jq -r --arg marker "$INBOX_MARKER" '
+  [.[] | select((.body | type) == "string" and (.body | contains($marker)))] as $matches
   | if ($matches | length) == 0 then ""
     else
       (["## Prior feedback inbox comment(s)", ""]
-        + ($matches | map("### Comment \(.id) — \(.user.login) @ \(.created_at)\n\n\(.body)")))
+        + ($matches | map("### Comment \(.id) — \((.user?.login // "unknown")) @ \(.created_at)\n\n\(.body)")))
       | join("\n\n")
     end
 ' "$OUT_DIR/comments.json" >"$OUT_DIR/prior-inbox.md"

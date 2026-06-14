@@ -281,7 +281,6 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `docs/decisions/adr-030-non-blocking-review-pipeline.md` | Non-blocking LLM review pipeline (advisory → finalize → daily post-merge retro v2) |
 | `.github/templates/postmerge-retro-umbrella.md` | Daily umbrella issue body (automation; canonical) |
 | `.github/templates/postmerge-retro-fix-pr.md` | Daily retro draft fix PR body (automation; slim PR-template shape) |
-| `scripts/setup/ensure-pipeline-labels.sh` | Idempotent pipeline label bootstrap for any repo (sandbox bootstrap uses this) |
 | `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding workflow prompt |
 

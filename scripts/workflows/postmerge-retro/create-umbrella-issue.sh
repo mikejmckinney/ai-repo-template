@@ -30,7 +30,7 @@ fi
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-python3 - <<'PY' "$DAILY_JSON" "$WORKDIR/rows.txt"
+python3 - "$DAILY_JSON" "$WORKDIR/rows.txt" <<'PY'
 import json
 from pathlib import Path
 import sys
@@ -72,13 +72,14 @@ append_to_issue() {
     new_rows+="${row}"$'\n'
   done <"$WORKDIR/rows.txt"
 
-  if [[ -z "${new_rows//[$'\t\r\n ']}" ]]; then
+  if [[ -z "${new_rows//[$'\t\r\n ']/}" ]]; then
     echo "No new rows to append to issue #${issue_num}"
     return 0
   fi
 
   printf '%s' "$new_rows" >"$WORKDIR/new-rows.txt"
-  merged="$(python3 - "$body" "$WORKDIR/new-rows.txt" <<'PY'
+  merged="$(
+    python3 - "$body" "$WORKDIR/new-rows.txt" <<'PY'
 import sys
 
 body = open(sys.argv[1]).read()
@@ -89,7 +90,7 @@ if "## Meta" in body:
 else:
     print(body.rstrip() + "\n" + "\n".join(new_rows) + "\n")
 PY
-)"
+  )"
   gh issue edit "$issue_num" -R "$REPO" --body "$merged"
   echo "Appended findings to umbrella issue #${issue_num}"
 }
@@ -108,7 +109,7 @@ create_new_issue() {
     -e "s|{{REPO}}|${REPO}|g" \
     -e "s|{{FIX_PR_LINK}}|${FIX_PR_LINK}|g" \
     "$body_file"
-  python3 - <<PY "$body_file" "$rows"
+  python3 - "$body_file" "$rows" <<PY
 from pathlib import Path
 import sys
 

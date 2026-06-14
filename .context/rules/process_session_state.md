@@ -34,7 +34,7 @@ Update or post the latest `agent-state:v1` issue/PR comment at each of these bou
 
 1. **Task start.** Record branch/role, current status, blockers, and next actions.
 2. **Every wait-for-input pause, no exceptions.** This includes clarification questions mid-task, plan approval pauses, review-feedback pauses, and "task done, what's next?" pauses. Write now; do not defer until closeout or merge.
-3. **Durability-risk boundaries.** If a single conversation exceeds ~30 turns, the runtime auto-summarizes mid-flight, or the session ends while the task is not merged/closed, refresh the `Handoff` section before responding to the next message. Use runtime-provided turn counters or auto-summary notices when available; otherwise self-count approximately and treat any injected conversation summary as an auto-summary boundary.
+3. **Durability-risk boundaries.** If a single conversation exceeds ~30 turns, the runtime auto-summarizes mid-flight, or the session ends while the task is not merged/closed, refresh the `Handoff` section before responding to the next message. Use runtime-provided turn counters or auto-summary notices when available; otherwise self-count approximately and treat any injected conversation summary as an auto-summary boundary. Auto-summary also invalidates `In context: yes` on the session context receipt — re-run startup per `process_session_start.md` and `AGENTS.md` § "After context compaction".
 4. **Role/agent handoff.** Set `Handoff` → `To:` to the receiving role/session and summarize the next action in one or two sentences.
 5. **Closeout.** Set `Status: done` when the agent has fully left the work.
 

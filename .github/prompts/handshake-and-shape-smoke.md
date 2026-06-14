@@ -298,20 +298,23 @@ Expected: zero `FAIL:` lines.
 
 ---
 
-## Scenario E — Post-compaction task boundary (parent agent)
+## Scenario E — Post-compaction read profile (parent agent, manual only)
 
-**Context**: Parent agent reply **immediately after** the runtime injected a
-conversation summary (compaction). The next action is repo-changing work on a
-new task (e.g. implementation for issue #426).
+**Context**: Parent agent reply **immediately after** simulated context compaction
+(conversation summary). Next action is repo-changing or implementation-class work.
+
+No automated runner — capture agent output to `output.txt` and run the pass
+criteria below. Profile minimum loading is **not** CI-gated; this scenario
+checks handshake shape and read-profile bump only.
 
 **Expected shape**:
 
 1. Treat compaction as a **task boundary** per `AGENTS.md` § "After context compaction".
-2. Re-emit **Session handshake** with current `AGENTS.md` version (**25** or later).
+2. Re-emit **Session handshake** with current `AGENTS.md` version and `Receipt boundary: post-compaction` (or `fresh` after re-read).
 3. **Read profile** must match the new task (e.g. `implementation`, not `startup-min`).
-4. **Session context receipt** lists files **Read** from disk for this boundary.
+4. **Session context receipt** uses `Load` + `In context` columns; files re-read this boundary show `Load: Read` and `In context: yes`.
 
-**Pass criteria**:
+**Manual pass criteria** (Phase B output in `output.txt`):
 
 ```bash
 grep -qE 'Session handshake v[0-9]+' output.txt \
@@ -321,6 +324,14 @@ grep -qE 'Session handshake v[0-9]+' output.txt \
 awk '/Session handshake/{hs=1} hs && /\| *Read profile *\|/{print; exit}' output.txt | grep -q implementation \
   && echo "OK: Read profile bumped for implementation task" \
   || echo "FAIL: Read profile not implementation (still startup-min or missing)"
+
+grep -qE 'Receipt boundary' output.txt \
+  && echo "OK: Receipt boundary field present" \
+  || echo "FAIL: Receipt boundary missing"
+
+grep -qE '\| *In context *\|' output.txt \
+  && echo "OK: In context column present in receipt" \
+  || echo "FAIL: In context column missing"
 
 grep -q '## Session context receipt' output.txt \
   && echo "OK: context receipt present" \
@@ -332,44 +343,3 @@ grep -q 'process_session_start.md' output.txt \
 ```
 
 Expected: zero `FAIL:` lines.
-
-**Note**: Manual scenario until an automated compaction fixture exists; encodes the `AGENTS.md` v25 read-profile survival contract.
-
----
-
-## Scenario E — Post-compaction task boundary (parent agent)
-
-**Context**: Parent agent reply **immediately after** the runtime injected a
-conversation summary (compaction). The next action is repo-changing work on a
-new task (e.g. implementation for issue #426).
-
-**Expected shape**:
-
-1. Treat compaction as a **task boundary** per `AGENTS.md` § "After context compaction".
-2. Re-emit **Session handshake** with current `AGENTS.md` version (**25** or later).
-3. **Read profile** must match the new task (e.g. `implementation`, not `startup-min`).
-4. **Session context receipt** lists files **Read** from disk for this boundary.
-
-**Pass criteria**:
-
-```bash
-grep -qE 'Session handshake v[0-9]+' output.txt \
-  && echo "OK: handshake present after compaction" \
-  || echo "FAIL: no handshake after compaction"
-
-awk '/Session handshake/{hs=1} hs && /\| *Read profile *\|/{print; exit}' output.txt | grep -q implementation \
-  && echo "OK: Read profile bumped for implementation task" \
-  || echo "FAIL: Read profile not implementation (still startup-min or missing)"
-
-grep -q '## Session context receipt' output.txt \
-  && echo "OK: context receipt present" \
-  || echo "FAIL: context receipt missing after compaction"
-
-grep -q 'process_session_start.md' output.txt \
-  && echo "OK: startup rules referenced in receipt or narrative" \
-  || echo "FAIL: no evidence process_session_start.md was re-loaded"
-```
-
-Expected: zero `FAIL:` lines.
-
-**Note**: Manual scenario until an automated compaction fixture exists; encodes the `AGENTS.md` v25 read-profile survival contract.

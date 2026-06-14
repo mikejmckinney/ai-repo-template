@@ -28,6 +28,17 @@ else
   fail "AGENTS.md or rule catalog missing process_subagent_bootstrap.md link (ADR-026)"
 fi
 
+session_start=".context/rules/process_session_start.md"
+if [[ -f "$session_start" ]] \
+  && grep -q 'Receipt boundary' "$session_start" 2>/dev/null \
+  && grep -q 'In context' "$session_start" 2>/dev/null \
+  && grep -q 'Session context receipt (stale)' "$session_start" 2>/dev/null \
+  && grep -q 'Never.*copy a prior receipt' "$session_start" 2>/dev/null; then
+  pass "process_session_start.md defines receipt boundary + in-context + stale replay rules"
+else
+  fail "process_session_start.md missing receipt boundary, In context, or stale-replay rules"
+fi
+
 if grep -q "plan_compliance:" .github/PLAN_TEMPLATE.md; then
   pass "PLAN_TEMPLATE.md includes plan_compliance block (ADR-026)"
 else

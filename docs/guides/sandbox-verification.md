@@ -140,6 +140,14 @@ plan template's Verification section verbatim.
 > classic PAT as `BOOTSTRAP_GH_TOKEN` and use the `GIT_ASKPASS` + `-c
 > credential.helper=` bypass shown in `scripts/sandbox-bootstrap.sh`
 > Step 3 (mirror push), or run `gh auth login` with that token first.
+>
+> **Codespaces fallback**: `SANDBOX_BOOTSTRAP_TOKEN` is a **repo Actions
+> secret** — it is **not** exported into Codespace shells and
+> `scripts/setup.sh` does not set it. If `SANDBOX_BOOTSTRAP_TOKEN` is
+> unset in your session, use a Codespaces **user secret** such as
+> `GH_PAT` (see `scripts/diag-sandbox.sh`) as the bootstrap token:
+> `export BOOTSTRAP_GH_TOKEN="${SANDBOX_BOOTSTRAP_TOKEN:-$GH_PAT}"`.
+> Run `./scripts/diag-sandbox.sh` first when auth is unclear.
 > **Portability note**: examples below reference `$SANDBOX_REPO` (set
 > during the bootstrap above as `<owner>/<repo>-sandbox`). Either keep
 > that variable exported in your working shell, or substitute the

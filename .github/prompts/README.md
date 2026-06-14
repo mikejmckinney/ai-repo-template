@@ -54,9 +54,7 @@ lists come after, not before.
     evidence shape before relying on an agent run.
   - **`judge-mode-smoke.md`** — no-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance (structural heading verification for both modes)
   - **`handshake-and-shape-smoke.md`** — no-edit smoke prompt for session handshake
-    positional contract and response-shape verification: tests parent vs subagent
-    handshake positioning, exact-output first-line contract (Judge `DECISION:`,
-    Critic `CRITIC DECISION:`), and `## Subagent context receipt` placement (4 scenarios)
+    positional contract and response-shape verification (Scenarios A–E manual).
 - **Benchmark prompts** (repo-internal evaluation surfaces) — `model-roi-benchmark-candidate.md`.
   These are controlled benchmark prompts, not downstream project stage prompts.
   - **`model-roi-grader-v1.md`** — locked subjective grader for benchmark score sets;

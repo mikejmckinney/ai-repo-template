@@ -122,7 +122,7 @@ Both labels can be applied together. `ai-review:live` alone is the normal WIP/dr
 
 #### Diff context limits
 
-Advisory review logic lives in `scripts/workflows/advisory-review/run-advisory-review.sh` (AP8). For **cursor** and **gemini** paths, a **truncated unified diff** is embedded in the prompt. For **antigravity**, the **full** diff is mounted at `.workspace/pr-context/diff.patch` (Interactions API payload limits may still force fallback to gemini on huge PRs).
+Advisory review logic lives in `scripts/workflows/advisory-review/run-advisory-review.sh` (AP8). Rule context is injected via `prompt_helpers.py select-context` (default profile **`pr-review`**, overridable via `ADVISORY_CONTEXT_PROFILE`: `standard`, `pr-review`, or `full`; plus path-triggered rules). For **cursor** and **gemini** paths, a **truncated unified diff** is embedded in the prompt. For **antigravity**, the **full** diff is mounted at `.workspace/pr-context/diff.patch` (Interactions API payload limits may still force fallback to gemini on huge PRs).
 
 | Mode | Label | Default diff byte limit | Repo variable |
 |---|---|---|---|
@@ -214,12 +214,14 @@ normal deterministic merge gates
 | Trigger | Behavior |
 |---|---|
 | `implementation-complete` label applied | Runs consolidation for that open same-repo PR |
+| PR **opened** already carrying `implementation-complete` | Runs consolidation (no re-label required) |
+| Push to PR head (`synchronize`) while label present | Re-runs consolidation at current head |
 | PR marked `ready_for_review` while label present | Re-runs consolidation at current head |
 | `workflow_dispatch` with PR number | Manual re-run for operators |
 
-**Collection (deterministic, read-only):** `scripts/workflows/pr-feedback/collect-pr-feedback.sh` writes `pr.json`, `comments.json`, `reviews.json`, `review-comments.json`, `changed-files.json`, `diff.patch`, and `advisory-comments.md` under a temp dir before the LLM pass.
+**Collection (deterministic, read-only):** `scripts/workflows/pr-feedback/collect-pr-feedback.sh` writes `pr.json`, `comments.json`, `reviews.json`, `review-comments.json`, `changed-files.json`, `diff.patch`, and `advisory-comments.md` under a temp dir before the LLM pass. When local `git diff` is empty but GitHub lists changed files, collection falls back to the GitHub PR diff API.
 
-**Dispatch:** `scripts/workflows/pr-feedback/run-feedback-consolidation.sh` builds the prompt from `.github/prompts/pr-final-feedback-consolidation.md`, reuses advisory-review Cursor/Gemini runners and `upsert-pr-comment.sh`.
+**Dispatch:** `scripts/workflows/pr-feedback/run-feedback-consolidation.sh` builds the prompt from `.github/prompts/pr-final-feedback-consolidation.md`, injects **catalog-driven** rule context (`scripts/workflows/lib/prompt_helpers.py select-context` — default profile `pr-review`, overridable via repo variable `FINALIZE_CONTEXT_PROFILE`: `standard`, `pr-review`, or `full`; plus path-triggered rules), reuses advisory-review Cursor/Gemini runners and `upsert-pr-comment.sh`.
 
 **Interaction with `claude-fix`:** consolidation only posts the inbox. A human may then add `claude-fix` for automated remediation via the existing `agent-fix-reviews.yml` rules. `review:blocking-ai` is a separate human escalation label — consolidation does not apply it.
 
@@ -257,7 +259,7 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 **Collection (deterministic, read-only):** `scripts/workflows/postmerge-retro/collect-postmerge-evidence.sh` wraps `scripts/workflows/pr-feedback/collect-pr-feedback.sh`.
 
-**Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`. **Automation templates** (not GitHub UI chooser): `.github/templates/postmerge-retro-umbrella.md` (umbrella issue), `.github/templates/postmerge-retro-fix-pr.md` (draft fix PR — slim PR-template shape). Umbrella creation adds `agent-suggested` when the label exists; issue is still created if the label is missing. Sandbox bootstrap runs `scripts/setup/ensure-pipeline-labels.sh` on the sibling repo.
+**Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Rule context is injected via `prompt_helpers.py select-context` (default profile **`pr-review`**, overridable via `POSTMERGE_RETRO_CONTEXT_PROFILE` or `workflow_dispatch` input `context_profile`: `standard`, `pr-review`, or `full`; plus path-triggered rules). Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`. **Automation templates** (not GitHub UI chooser): `.github/templates/postmerge-retro-umbrella.md` (umbrella issue), `.github/templates/postmerge-retro-fix-pr.md` (draft fix PR — slim PR-template shape). Umbrella creation adds `agent-suggested` when the label exists; issue is still created if the label is missing. Sandbox bootstrap runs `scripts/setup/ensure-pipeline-labels.sh` on the sibling repo.
 
 **Fix dispatch:** `run-postmerge-retro-fix.sh` — Cursor local edits or Gemini JSON `file_edits`; requires `contents: write` + `pull-requests: write` on fix job.
 
@@ -265,7 +267,9 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 **Script checkout:** workflow checks out **`main`** for scripts, not merge commits.
 
-**Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge.
+**Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge. For sandbox A/B, pass `workflow_dispatch` inputs `context_profile`, `only_prs`, and a distinct `run_date` per arm (retro checks out **`main`** for scripts — unlike advisory/finalize PR-head checkout).
+
+**Sandbox A/B inputs (retro):** `only_prs=<merged-pr>` pins a single PR; `context_profile=standard|pr-review|full` selects the catalog floor; `run_date=YYYY-MM-DD-ab-<profile>` isolates umbrella dedupe between runs.
 
 #### Provider, billing, and context loading
 
@@ -289,11 +293,13 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 | Session handshake + context receipt | Model self-reports per `process_session_start.md` (pointer in `pr-advisory-review.md`; not duplicated in prompt) | Same | Same |
 | Formal `claude-review` / Gemini App reviews | Separate workflows | Separate | Separate |
 
-Advisory review is intentionally **lighter than full rule load**: startup kernel + critical thinking/clarification + diff, not every `.context/rules/*.md` file. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
+Advisory review uses **catalog-driven context selection** (default `pr-review` floor + path triggers), not a fixed four-file kernel. Use `ADVISORY_CONTEXT_PROFILE=standard` for a lighter floor or `full` for all rules plus triggers. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
 
 **Handshake / receipt in advisory comments:** The model **self-reports** the session handshake and context receipt in each snapshot. `pr-advisory-review.md` **pointer-links** to `.context/rules/process_session_start.md` for the canonical templates (no mirrored copy in the prompt — avoids AP1-style drift). Automation injects diff-coverage facts only; it does not override handshake fields.
 
 **Startup rules loaded for advisory:** `process_critical_thinking.md` and `process_clarification.md` are `startup-required` in the rule catalog and included in `startup-min`. After context compaction, agents should re-emit handshake per `process_session_start.md` § "Context compaction / resumed-session behavior".
+
+**Read-profile / compaction verification:** AGENTS.md v25 and `.context/rules/README.md` define named read profiles and minimum files. There is **no automated CI smoke** for profile loading — agents do not reliably read every minimum file from disk when only instructed via contract prose. Manual check: `handshake-and-shape-smoke.md` **Scenario E** (post-compaction read profile + receipt shape).
 
 **Manual override** — anyone (agent or human) can comment `/gemini review` directly on a PR to force a fresh Gemini review. This is documented as a belt-and-suspenders escape hatch; the workflow is the primary mechanism.
 
@@ -484,6 +490,7 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `ADVISORY_REVIEW_DIFF_LIMIT_LIVE` | `120000` | Max diff bytes in cursor/gemini prompt when only `ai-review:live` is set. |
 | `ADVISORY_REVIEW_DIFF_LIMIT_FULL` | `300000` | Max diff bytes in cursor/gemini prompt when `ai-review:full` is also set. |
 | `ADVISORY_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted advisory issue comment (automation truncates with warning). |
+| `ADVISORY_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for injected rules: `standard`, `pr-review`, or `full` (plus path-triggered rules). |
 | `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Model id for Cursor SDK advisory snapshots. |
 | `GEMINI_ADVISORY_MODEL` | `gemini-3.5-flash` | Gemini `generateContent` model id (`gemini-3.5-flash`, `gemini-flash-latest`, …). |
 | `FINALIZE_REVIEW_PROVIDER` | *(falls back to `ADVISORY_REVIEW_PROVIDER`)* | Final inbox runtime: `auto`, `cursor`, or `gemini` (no antigravity path in PR 3). |
@@ -491,6 +498,9 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `FINALIZE_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted Feedback Inbox comment. |
 | `CURSOR_FINALIZE_MODEL` | *(falls back to `CURSOR_ADVISORY_MODEL`)* | Cursor model id for finalize consolidation. |
 | `GEMINI_FINALIZE_MODEL` | *(falls back to `GEMINI_ADVISORY_MODEL`)* | Gemini model id for finalize consolidation. |
+| `FINALIZE_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for finalize inbox rule injection: `standard`, `pr-review`, or `full`. |
+| `POSTMERGE_RETRO_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for post-merge retro rule injection: `standard`, `pr-review`, or `full`. |
+| `POSTMERGE_RETRO_ONLY_PRS` | *(unset)* | Comma-separated PR numbers; when set, daily retro runs only those PRs (sandbox smoke/A-B). |
 | `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. **Also caps `agent-review-on-push.yml`** so Gemini/Copilot push-nudges stop firing after the same N rounds — without this, every fix-commit re-triggers stateless reviewers that re-flag already-deferred findings (PR #246 saw this across 13 rounds). Per-PR override: `cap-override` label on the PR (unbounded; bypasses both the agent-side cap and the push-nudge cap) or `@<agent> cap-override N` comment on the PR (N rounds). Manual `/gemini review` comments by humans are never gated. Only raise the default from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 ### 1. Copilot subscription

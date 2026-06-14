@@ -54,6 +54,7 @@ jobs:
       ADVISORY_REVIEW_DIFF_LIMIT_LIVE: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_LIVE || '' }}
       ADVISORY_REVIEW_DIFF_LIMIT_FULL: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_FULL || '' }}
       ADVISORY_REVIEW_COMMENT_LIMIT: ${{ vars.ADVISORY_REVIEW_COMMENT_LIMIT || '' }}
+      ADVISORY_CONTEXT_PROFILE: ${{ vars.ADVISORY_CONTEXT_PROFILE || '' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       FULL_MODE: ${{ contains(github.event.pull_request.labels.*.name, 'ai-review:full') }}

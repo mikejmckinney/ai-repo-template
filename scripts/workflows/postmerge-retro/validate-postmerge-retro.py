@@ -12,6 +12,17 @@ def _require_str(obj: dict, key: str, path: str) -> None:
         raise ValueError(f"{path}.{key} must be a non-empty string")
 
 
+def _require_str_array(obj: dict, key: str, path: str) -> None:
+    val = obj.get(key)
+    if val is None:
+        return
+    if not isinstance(val, list):
+        raise ValueError(f"{path}.{key} must be an array when present")
+    for i, item in enumerate(val):
+        if not isinstance(item, str):
+            raise ValueError(f"{path}.{key}[{i}] must be a string")
+
+
 def _validate_follow_up(item: dict, path: str) -> None:
     if not isinstance(item, dict):
         raise ValueError(f"{path} must be an object")
@@ -21,6 +32,8 @@ def _validate_follow_up(item: dict, path: str) -> None:
     sev = item.get("severity")
     if sev is not None and sev not in ("low", "medium", "high"):
         raise ValueError(f"{path}.severity invalid: {sev}")
+    _require_str_array(item, "labels", path)
+    _require_str_array(item, "evidence", path)
 
 
 def _validate_adr(item: dict, path: str) -> None:
@@ -29,6 +42,8 @@ def _validate_adr(item: dict, path: str) -> None:
     _require_str(item, "title", path)
     _require_str(item, "body", path)
     _require_str(item, "dedupe_key", path)
+    _require_str_array(item, "labels", path)
+    _require_str_array(item, "evidence", path)
 
 
 def _validate_context(item: dict, path: str) -> None:
@@ -37,6 +52,8 @@ def _validate_context(item: dict, path: str) -> None:
     _require_str(item, "pack", path)
     _require_str(item, "reason", path)
     _require_str(item, "dedupe_key", path)
+    _require_str_array(item, "labels", path)
+    _require_str_array(item, "evidence", path)
 
 
 def main() -> int:

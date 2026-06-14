@@ -39,6 +39,17 @@ def main() -> int:
             if key not in item or not str(item[key]).strip():
                 print(f"findings[{i}].{key} required", file=sys.stderr)
                 return 1
+        for arr_key in ("labels", "evidence"):
+            val = item.get(arr_key)
+            if val is None:
+                continue
+            if not isinstance(val, list):
+                print(f"findings[{i}].{arr_key} must be an array when present", file=sys.stderr)
+                return 1
+            for j, entry in enumerate(val):
+                if not isinstance(entry, str):
+                    print(f"findings[{i}].{arr_key}[{j}] must be a string", file=sys.stderr)
+                    return 1
 
     print(f"OK: daily retro valid for {run_date} ({len(findings)} findings, PRs={prs})")
     return 0

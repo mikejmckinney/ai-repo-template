@@ -109,6 +109,19 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "run-postmerge-retro.sh must gate on merged_at"
   fi
 
+  if grep -q 'select-context' scripts/workflows/lib/prompt_helpers.py 2>/dev/null \
+    && grep -qE 'prompt_helpers\.py.*select-context' "$RUN_SCRIPT" 2>/dev/null; then
+    pass "post-merge retro uses catalog-driven context selection"
+  else
+    fail "run-postmerge-retro.sh must use prompt_helpers select-context"
+  fi
+
+  if grep -q 'POSTMERGE_RETRO_CONTEXT_PROFILE' .github/workflows/agent-postmerge-retro.yml 2>/dev/null; then
+    pass "retro workflow exposes POSTMERGE_RETRO_CONTEXT_PROFILE"
+  else
+    fail "agent-postmerge-retro.yml missing POSTMERGE_RETRO_CONTEXT_PROFILE env"
+  fi
+
   for label in retro-review adr:update context-pack agent-suggested; do
     if grep -q "^${label}|" "$LABELS_SCRIPT" 2>/dev/null; then
       pass "label ${label} declared in setup"
@@ -147,12 +160,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     warn "postmerge-retro fixtures missing under $fixture_dir"
   fi
 
-  if grep -q 'AGENTS_MD_VERSION: 25' AGENTS.md 2>/dev/null \
+  if grep -q 'AGENTS_MD_VERSION: 26' AGENTS.md 2>/dev/null \
     && grep -q 'After context compaction' AGENTS.md 2>/dev/null \
+    && grep -q 'In context' AGENTS.md 2>/dev/null \
     && grep -q 'out of compliance' AGENTS.md 2>/dev/null; then
-    pass "AGENTS.md v25 includes compaction + profile compliance"
+    pass "AGENTS.md v26 includes compaction + in-context receipt rules"
   else
-    fail "AGENTS.md missing v25 compaction/profile rules"
+    fail "AGENTS.md missing v26 compaction/in-context receipt rules"
   fi
 
   echo ""
