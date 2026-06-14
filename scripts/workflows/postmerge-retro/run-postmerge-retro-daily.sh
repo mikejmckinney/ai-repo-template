@@ -12,6 +12,10 @@ ARTIFACT_ROOT="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/daily-
 mkdir -p "$ARTIFACT_ROOT"
 
 mapfile -t ALL_PRS < <(bash "$SCRIPT_DIR/list-merges-last-24h.sh" || true)
+if [[ -n "${POSTMERGE_RETRO_ONLY_PRS:-}" ]]; then
+  mapfile -t ALL_PRS < <(tr ',' '\n' <<<"${POSTMERGE_RETRO_ONLY_PRS}" | sed '/^[[:space:]]*$/d')
+  echo "POSTMERGE_RETRO_ONLY_PRS override: ${ALL_PRS[*]}"
+fi
 if [[ ${#ALL_PRS[@]} -eq 0 ]]; then
   echo "No merges to main in the last 24h; skipping daily retro"
   echo "0" >"$ARTIFACT_ROOT/findings-count.txt"

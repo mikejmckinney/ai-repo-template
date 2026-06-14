@@ -109,6 +109,19 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "run-postmerge-retro.sh must gate on merged_at"
   fi
 
+  if grep -q 'select-context' scripts/workflows/lib/prompt_helpers.py 2>/dev/null \
+    && grep -qE 'prompt_helpers\.py.*select-context' "$RUN_SCRIPT" 2>/dev/null; then
+    pass "post-merge retro uses catalog-driven context selection"
+  else
+    fail "run-postmerge-retro.sh must use prompt_helpers select-context"
+  fi
+
+  if grep -q 'POSTMERGE_RETRO_CONTEXT_PROFILE' .github/workflows/agent-postmerge-retro.yml 2>/dev/null; then
+    pass "retro workflow exposes POSTMERGE_RETRO_CONTEXT_PROFILE"
+  else
+    fail "agent-postmerge-retro.yml missing POSTMERGE_RETRO_CONTEXT_PROFILE env"
+  fi
+
   for label in retro-review adr:update context-pack agent-suggested; do
     if grep -q "^${label}|" "$LABELS_SCRIPT" 2>/dev/null; then
       pass "label ${label} declared in setup"

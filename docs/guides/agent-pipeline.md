@@ -259,7 +259,7 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 **Collection (deterministic, read-only):** `scripts/workflows/postmerge-retro/collect-postmerge-evidence.sh` wraps `scripts/workflows/pr-feedback/collect-pr-feedback.sh`.
 
-**Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`. **Automation templates** (not GitHub UI chooser): `.github/templates/postmerge-retro-umbrella.md` (umbrella issue), `.github/templates/postmerge-retro-fix-pr.md` (draft fix PR — slim PR-template shape). Umbrella creation adds `agent-suggested` when the label exists; issue is still created if the label is missing. Sandbox bootstrap runs `scripts/setup/ensure-pipeline-labels.sh` on the sibling repo.
+**Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Rule context is injected via `prompt_helpers.py select-context` (default profile **`pr-review`**, overridable via `POSTMERGE_RETRO_CONTEXT_PROFILE` or `workflow_dispatch` input `context_profile`: `standard`, `pr-review`, or `full`; plus path-triggered rules). Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`. **Automation templates** (not GitHub UI chooser): `.github/templates/postmerge-retro-umbrella.md` (umbrella issue), `.github/templates/postmerge-retro-fix-pr.md` (draft fix PR — slim PR-template shape). Umbrella creation adds `agent-suggested` when the label exists; issue is still created if the label is missing. Sandbox bootstrap runs `scripts/setup/ensure-pipeline-labels.sh` on the sibling repo.
 
 **Fix dispatch:** `run-postmerge-retro-fix.sh` — Cursor local edits or Gemini JSON `file_edits`; requires `contents: write` + `pull-requests: write` on fix job.
 
@@ -267,7 +267,9 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 **Script checkout:** workflow checks out **`main`** for scripts, not merge commits.
 
-**Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge.
+**Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge. For sandbox A/B, pass `workflow_dispatch` inputs `context_profile`, `only_prs`, and a distinct `run_date` per arm (retro checks out **`main`** for scripts — unlike advisory/finalize PR-head checkout).
+
+**Sandbox A/B inputs (retro):** `only_prs=<merged-pr>` pins a single PR; `context_profile=standard|pr-review|full` selects the catalog floor; `run_date=YYYY-MM-DD-ab-<profile>` isolates umbrella dedupe between runs.
 
 #### Provider, billing, and context loading
 
@@ -497,6 +499,8 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `CURSOR_FINALIZE_MODEL` | *(falls back to `CURSOR_ADVISORY_MODEL`)* | Cursor model id for finalize consolidation. |
 | `GEMINI_FINALIZE_MODEL` | *(falls back to `GEMINI_ADVISORY_MODEL`)* | Gemini model id for finalize consolidation. |
 | `FINALIZE_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for finalize inbox rule injection: `standard`, `pr-review`, or `full`. |
+| `POSTMERGE_RETRO_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for post-merge retro rule injection: `standard`, `pr-review`, or `full`. |
+| `POSTMERGE_RETRO_ONLY_PRS` | *(unset)* | Comma-separated PR numbers; when set, daily retro runs only those PRs (sandbox smoke/A-B). |
 | `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. **Also caps `agent-review-on-push.yml`** so Gemini/Copilot push-nudges stop firing after the same N rounds — without this, every fix-commit re-triggers stateless reviewers that re-flag already-deferred findings (PR #246 saw this across 13 rounds). Per-PR override: `cap-override` label on the PR (unbounded; bypasses both the agent-side cap and the push-nudge cap) or `@<agent> cap-override N` comment on the PR (N rounds). Manual `/gemini review` comments by humans are never gated. Only raise the default from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 ### 1. Copilot subscription
