@@ -76,15 +76,18 @@ has_gemini=0
 
 pick_provider() {
   local want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
+  if [[ "$want" == "antigravity" ]]; then
+    echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro fix uses auto (cursor, else gemini)." >&2
+    want=auto
+  fi
   case "$want" in
     cursor) echo cursor ;;
     gemini) echo gemini ;;
     auto)
-      # Fix pass needs applied file edits; prefer Gemini JSON path when available.
-      if [[ "$has_gemini" -eq 1 ]]; then
-        echo gemini
-      elif [[ "$has_cursor" -eq 1 ]]; then
+      if [[ "$has_cursor" -eq 1 ]]; then
         echo cursor
+      elif [[ "$has_gemini" -eq 1 ]]; then
+        echo gemini
       else
         echo ""
       fi
