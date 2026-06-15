@@ -1,6 +1,7 @@
 # Model ROI Benchmark Protocol
 
 > Durable protocol surface for the model ROI benchmark tracked in issue `#374`.
+> Policy recommendations and revisit cadence: [`docs/decisions/adr-031-agent-model-roi-benchmark-policy.md`](../../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md).
 > The benchmark-specific prompt lives at `.github/prompts/model-roi-benchmark-candidate.md`.
 > The current execution direction lives under `scripts/benchmark/`.
 > Repeatable operator steps live in [`benchmark-runbook.md`](./benchmark-runbook.md).

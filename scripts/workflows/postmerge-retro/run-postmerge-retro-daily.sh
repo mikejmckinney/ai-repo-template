@@ -12,6 +12,10 @@ ARTIFACT_ROOT="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/daily-
 mkdir -p "$ARTIFACT_ROOT"
 
 mapfile -t ALL_PRS < <(bash "$SCRIPT_DIR/list-merges-last-24h.sh" || true)
+if [[ -n "${POSTMERGE_RETRO_ONLY_PRS:-}" ]]; then
+  mapfile -t ALL_PRS < <(tr ',' '\n' <<<"${POSTMERGE_RETRO_ONLY_PRS}" | sed '/^[[:space:]]*$/d')
+  echo "POSTMERGE_RETRO_ONLY_PRS override: ${ALL_PRS[*]}"
+fi
 if [[ ${#ALL_PRS[@]} -eq 0 ]]; then
   echo "No merges to main in the last 24h; skipping daily retro"
   echo "0" >"$ARTIFACT_ROOT/findings-count.txt"
@@ -22,11 +26,15 @@ echo "Merged PRs in window: ${ALL_PRS[*]}"
 
 # Skip PRs already listed in today's umbrella (append semantics).
 SKIP_PRS=()
-EXISTING_ISSUE="$(gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}" --json body --limit 1 --jq '.[0].body // empty' 2>/dev/null || true)"
+EXISTING_ISSUE=""
+if existing_num="$(bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE" 2>/dev/null)"; then
+  EXISTING_ISSUE="$(gh issue view "$existing_num" -R "${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}" --json body --jq .body 2>/dev/null || true)"
+fi
 if [[ -n "$EXISTING_ISSUE" ]]; then
   while IFS= read -r pr; do
     [[ -z "$pr" ]] && continue
-    if grep -Eq "\| #${pr} \|" <<<"$EXISTING_ISSUE"; then
+    if grep -Eq "\| #${pr} \|" <<<"$EXISTING_ISSUE" \
+      || grep -Eq "PRs in this update:.*#${pr}([, ]|$)" <<<"$EXISTING_ISSUE"; then
       SKIP_PRS+=("$pr")
     fi
   done < <(printf '%s\n' "${ALL_PRS[@]}")

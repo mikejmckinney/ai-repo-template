@@ -12,9 +12,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   RUN_SCRIPT="${RETRO_DIR}/run-postmerge-retro.sh"
   DAILY_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily.sh"
   FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
+  UMBRELLA_LINK_SCRIPT="${RETRO_DIR}/update-umbrella-fix-link.sh"
+  RESOLVE_UMBRELLA_SCRIPT="${RETRO_DIR}/resolve-umbrella-issue.sh"
+  WRITE_UMBRELLA_REF_SCRIPT="${RETRO_DIR}/write-umbrella-issue-ref.sh"
   UMBRELLA_SCRIPT="${RETRO_DIR}/create-umbrella-issue.sh"
   LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
+  LINK_SCRIPT="scripts/workflows/lib/link-fix-pr-to-issue.sh"
   UMBRELLA_TEMPLATE=".github/templates/postmerge-retro-umbrella.md"
   FIX_PR_TEMPLATE=".github/templates/postmerge-retro-fix-pr.md"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
@@ -22,8 +26,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   FEEDBACK_COLLECTOR="scripts/workflows/pr-feedback/collect-pr-feedback.sh"
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
-    "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
-    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR"; do
+    "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
+    "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
+    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -72,16 +77,50 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'postmerge-retro-umbrella.md' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'agent-suggested' "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && grep -q 'gh issue create' "$UMBRELLA_SCRIPT" 2>/dev/null; then
-    pass "umbrella creator uses template + resilient agent-suggested label"
+    && grep -q 'gh issue create' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'existing-body.md' "$UMBRELLA_SCRIPT" 2>/dev/null; then
+    pass "umbrella creator uses template + resilient agent-suggested label + body file append"
   else
-    fail "create-umbrella-issue.sh missing template/resilient label wiring"
+    fail "create-umbrella-issue.sh missing template/resilient label/body-file append wiring"
   fi
 
-  if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null; then
-    pass "fix script uses postmerge-retro-fix-pr template"
+  if grep -q 'write-umbrella-issue-ref.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_issue' "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
+    && grep -q 'Created umbrella issue #' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q '>&2' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'normalize_issue_num' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && [[ -f "${RETRO_DIR}/post-daily-retro-json-comment.sh" ]] \
+    && [[ -f "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" ]]; then
+    pass "umbrella step records umbrella_issue ref + JSON snapshot comment + fix-only restore"
   else
-    fail "run-postmerge-retro-fix.sh must render postmerge-retro-fix-pr.md"
+    fail "postmerge retro missing umbrella_issue ref / daily JSON snapshot wiring"
+  fi
+
+  if grep -q 'resolve-umbrella-issue.sh' "$UMBRELLA_LINK_SCRIPT" 2>/dev/null \
+    && grep -q 'resolve-umbrella-issue.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_issue_num' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'UMBRELLA_ISSUE_NUM' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "fix job resolves umbrella issue from JSON/env (search fallback only)"
+  else
+    fail "postmerge retro missing resolve-umbrella-issue wiring in fix path"
+  fi
+
+  if grep -q 'attempt-\${GITHUB_RUN_ATTEMPT}' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q "has_daily_json == 'true'" "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'fix_only' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow uses attempt-scoped artifacts + fix-only dispatch"
+  else
+    fail "agent-postmerge-retro.yml missing attempt artifact / fix-only wiring"
+  fi
+
+  if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'update-umbrella-fix-link.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'link-fix-pr-to-issue.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'Fixes #' ".github/templates/postmerge-retro-fix-pr.md" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_FIX_REEXEC' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "fix script uses postmerge-retro-fix-pr template + umbrella link update + native issue link + re-exec guard"
+  else
+    fail "run-postmerge-retro-fix.sh must render fix PR, update umbrella link, link issue, and re-exec from temp copy"
   fi
 
   if grep -q 'ensure-pipeline-labels.sh' "scripts/sandbox-bootstrap.sh" 2>/dev/null; then
@@ -109,6 +148,19 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "run-postmerge-retro.sh must gate on merged_at"
   fi
 
+  if grep -q 'select-context' scripts/workflows/lib/prompt_helpers.py 2>/dev/null \
+    && grep -qE 'prompt_helpers\.py.*select-context' "$RUN_SCRIPT" 2>/dev/null; then
+    pass "post-merge retro uses catalog-driven context selection"
+  else
+    fail "run-postmerge-retro.sh must use prompt_helpers select-context"
+  fi
+
+  if grep -q 'POSTMERGE_RETRO_CONTEXT_PROFILE' .github/workflows/agent-postmerge-retro.yml 2>/dev/null; then
+    pass "retro workflow exposes POSTMERGE_RETRO_CONTEXT_PROFILE"
+  else
+    fail "agent-postmerge-retro.yml missing POSTMERGE_RETRO_CONTEXT_PROFILE env"
+  fi
+
   for label in retro-review adr:update context-pack agent-suggested; do
     if grep -q "^${label}|" "$LABELS_SCRIPT" 2>/dev/null; then
       pass "label ${label} declared in setup"
@@ -122,6 +174,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && bash -n "$DAILY_SCRIPT" 2>/dev/null \
     && bash -n "$FIX_SCRIPT" 2>/dev/null \
     && bash -n "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && bash -n "$RESOLVE_UMBRELLA_SCRIPT" 2>/dev/null \
+    && bash -n "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
+    && bash -n "$UMBRELLA_LINK_SCRIPT" 2>/dev/null \
+    && bash -n "$LINK_SCRIPT" 2>/dev/null \
+    && bash -n "${RETRO_DIR}/post-daily-retro-json-comment.sh" 2>/dev/null \
+    && bash -n "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" 2>/dev/null \
     && bash -n "$LIST_SCRIPT" 2>/dev/null; then
     pass "postmerge-retro shell scripts have valid bash syntax"
   else

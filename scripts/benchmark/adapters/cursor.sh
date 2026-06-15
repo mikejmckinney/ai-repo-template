@@ -16,6 +16,11 @@
 # --output-format json = single result object. KNOWN: -p can hang on some
 # 2026.01.x builds — wrap in `timeout` if needed. Auth: CURSOR_API_KEY or
 # stored `cursor-agent login`.
+#
+# Composer 2.5 billing (headless): forum reports exist for fast mis-billing via
+# CLI/API; 2026-06-14 smoke test here billed standard for --model composer-2.5.
+# GHA pipelines use @cursor/sdk via run-advisory-cursor.mjs (fast=false required).
+# See docs/guides/agent-pipeline.md § "Composer 2.5 standard vs fast".
 
 set -euo pipefail
 

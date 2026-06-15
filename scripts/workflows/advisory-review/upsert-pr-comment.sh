@@ -34,11 +34,11 @@ fi
   exit 1
 }
 
-marker_token="${MARKER#<!-- }"
-marker_token="${marker_token% -->}"
 comment_id=$(
   gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-    --jq "[.[] | select(.body | contains(\"${marker_token}\"))] | last | .id // empty" | head -1
+    | jq -r --arg marker "$MARKER" '
+        [.[] | select((.body | type) == "string" and (.body | contains($marker)))]
+        | last | .id // empty'
 )
 
 if [[ -n "$comment_id" ]]; then

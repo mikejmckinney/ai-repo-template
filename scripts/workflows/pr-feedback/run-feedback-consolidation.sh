@@ -31,31 +31,38 @@ parse_positive_int() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
 ADVISORY_DIR="$REPO_ROOT/scripts/workflows/advisory-review"
 MARKER='<!-- ai-feedback-inbox:v1 -->'
-MARKER_TOKEN='ai-feedback-inbox:v1'
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 DEFAULT_DIFF_LIMIT=300000
 DEFAULT_COMMENT_LIMIT=65000
+DEFAULT_JSON_CAP=120000
 
 diff_limit="$(parse_positive_int FINALIZE_REVIEW_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${FINALIZE_REVIEW_DIFF_LIMIT:-}")"
 comment_limit="$(parse_positive_int FINALIZE_REVIEW_COMMENT_LIMIT "$DEFAULT_COMMENT_LIMIT" "${FINALIZE_REVIEW_COMMENT_LIMIT:-}")"
+json_cap="$(parse_positive_int FINALIZE_REVIEW_JSON_CAP "$DEFAULT_JSON_CAP" "${FINALIZE_REVIEW_JSON_CAP:-}")"
+context_profile="${FINALIZE_CONTEXT_PROFILE:-pr-review}"
 
 bash "$SCRIPT_DIR/collect-pr-feedback.sh" "$PR" "$WORKDIR"
 
-# Canonical head from live PR metadata (matches diff collection in collect-pr-feedback.sh).
 HEAD_SHA="$(jq -r .head.sha "$WORKDIR/pr.json")"
 
 pr_json="$(cat "$WORKDIR/pr.json")"
 pr_title="$(printf '%s' "$pr_json" | jq -r '.title // ""')"
 pr_body="$(printf '%s' "$pr_json" | jq -r '.body // ""')"
 pr_url="$(printf '%s' "$pr_json" | jq -r '.html_url // ""')"
-labels="$(jq -r '.[].name' "$WORKDIR/labels.json" | paste -sd ', ' -)"
+labels="$(jq -r '.[]?.name // empty' "$WORKDIR/labels.json" 2>/dev/null | paste -sd ', ' - || true)"
 
 full_diff_bytes="$(wc -c <"$WORKDIR/diff.patch" | tr -d ' ')"
+changed_file_count="$(wc -l <"$WORKDIR/changed-files.txt" | tr -d ' ')"
+if [[ "$full_diff_bytes" -eq 0 && "$changed_file_count" -gt 0 ]]; then
+  echo "::warning::Finalize diff is empty (${changed_file_count} changed files listed) — review quality may be degraded (fetch/sha mismatch?)" >&2
+fi
+
 truncated=false
 diff_included="$full_diff_bytes"
 if [[ "$full_diff_bytes" -gt "$diff_limit" ]]; then
@@ -66,21 +73,52 @@ diff_text="$(head -c "$diff_limit" "$WORKDIR/diff.patch")"
 truncated_word="no"
 [[ "$truncated" == "true" ]] && truncated_word="yes"
 
+reviews_json_compact="$(
+  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
+    --input "$WORKDIR/reviews.json" \
+    --jq-filter 'map({id, user: (.user?.login // null), body, state, commit_id})' \
+    --max-bytes "$json_cap"
+)"
+comments_json_compact="$(
+  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
+    --input "$WORKDIR/review-comments.json" \
+    --jq-filter 'map({id, path, line, user: (.user?.login // null), body, diff_hunk})' \
+    --max-bytes "$json_cap"
+)"
+
+if ! python3 "$LIB_DIR/prompt_helpers.py" select-context \
+  --profile "$context_profile" \
+  --changed-files "$WORKDIR/changed-files.txt" >"$WORKDIR/context-files.txt"; then
+  echo "::error::select-context failed for profile ${context_profile}" >&2
+  exit 1
+fi
+if [[ ! -s "$WORKDIR/context-files.txt" ]]; then
+  echo "::error::select-context returned no files for profile ${context_profile}" >&2
+  exit 1
+fi
+mapfile -t context_files <"$WORKDIR/context-files.txt"
+
+context_file_count="${#context_files[@]}"
+context_bytes=0
+for rel in "${context_files[@]}"; do
+  if [[ -f "$REPO_ROOT/$rel" ]]; then
+    context_bytes=$((context_bytes + $(wc -c <"$REPO_ROOT/$rel" | tr -d ' ')))
+  fi
+done
+
 prompt_file="$WORKDIR/prompt.md"
 {
   cat "$REPO_ROOT/.github/prompts/pr-final-feedback-consolidation.md"
   echo ""
   echo "---"
   echo ""
-  echo "## Repo startup context (automation-supplied)"
+  echo "## Repo startup context (automation-supplied, catalog-driven ${context_profile} + path triggers)"
   echo ""
-  for rel in \
-    AGENTS.md \
-    .context/rules/process_session_start.md \
-    .context/rules/README.md \
-    .context/rules/process_critical_thinking.md \
-    .context/rules/process_clarification.md \
-    .context/rules/process_pr_completion.md; do
+  echo "- Context profile: \`${context_profile}\`"
+  echo "- Context files injected: \`${context_file_count}\`"
+  echo "- Context bytes injected: \`${context_bytes}\`"
+  echo ""
+  for rel in "${context_files[@]}"; do
     echo "### ${rel}"
     echo ""
     cat "$REPO_ROOT/$rel"
@@ -114,14 +152,14 @@ prompt_file="$WORKDIR/prompt.md"
   echo "### Formal PR reviews (JSON)"
   echo ""
   echo '```json'
-  jq -c 'map({id, user: .user.login, body, state, commit_id})' "$WORKDIR/reviews.json" | head -c 120000
+  printf '%s\n' "$reviews_json_compact"
   echo ""
   echo '```'
   echo ""
   echo "### Inline review comments (JSON)"
   echo ""
   echo '```json'
-  jq -c 'map({id, path, line, user: .user.login, body, diff_hunk})' "$WORKDIR/review-comments.json" | head -c 120000
+  printf '%s\n' "$comments_json_compact"
   echo ""
   echo '```'
   echo ""
@@ -207,7 +245,12 @@ run_gemini() {
 
 case "$PROVIDER" in
   cursor)
-    npm install --no-save @cursor/sdk >/dev/null 2>&1
+    if ! npm install --no-save @cursor/sdk >"$WORKDIR/npm-install.log" 2>&1; then
+      echo "::error::npm install @cursor/sdk failed for finalize Cursor path" >&2
+      tail -20 "$WORKDIR/npm-install.log" >&2 || true
+      exit 1
+    fi
+    echo "::notice::Installed @cursor/sdk for finalize Cursor path"
     CURSOR_ADVISORY_MODEL="${CURSOR_FINALIZE_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
       node "$ADVISORY_DIR/run-advisory-cursor.mjs" "$prompt_file" "$out_file"
     ;;
@@ -216,7 +259,7 @@ case "$PROVIDER" in
     ;;
 esac
 
-if ! grep -q "$MARKER_TOKEN" "$out_file"; then
+if ! grep -qF "$MARKER" "$out_file"; then
   {
     printf '%s\n\n' "$MARKER"
     cat "$out_file"
@@ -224,20 +267,40 @@ if ! grep -q "$MARKER_TOKEN" "$out_file"; then
   mv "$out_file.tmp" "$out_file"
 fi
 
-# Normalize workflow-known header fields (do not trust model-filled SHA/Mode).
 awk -v sha="$HEAD_SHA" '
   /^Head reviewed:/ { next }
   /^Mode:/ { next }
-  /^#{1,3}[[:space:]]*Final Feedback Inbox/ {
-    print "## Final Feedback Inbox"
-    print ""
-    print "Head reviewed: `" sha "`"
-    print "Mode: final consolidation, non-blocking unless a human applies `review:blocking-ai`"
-    next
-  }
   { print }
 ' "$out_file" >"$out_file.tmp"
 mv "$out_file.tmp" "$out_file"
+
+if grep -qE '^#{1,3}[[:space:]]*Final Feedback Inbox' "$out_file"; then
+  awk -v sha="$HEAD_SHA" '
+    /^Head reviewed:/ { next }
+    /^Mode:/ { next }
+    /^#{1,3}[[:space:]]*Final Feedback Inbox/ {
+      print "## Final Feedback Inbox"
+      print ""
+      print "Head reviewed: `" sha "`"
+      print "Mode: final consolidation, non-blocking unless a human applies `review:blocking-ai`"
+      next
+    }
+    { print }
+  ' "$out_file" >"$out_file.tmp"
+  mv "$out_file.tmp" "$out_file"
+fi
+
+if ! grep -q '^Head reviewed:' "$out_file"; then
+  {
+    cat "$out_file"
+    echo ""
+    echo "## Final Feedback Inbox (workflow metadata)"
+    echo ""
+    echo "Head reviewed: \`${HEAD_SHA}\`"
+    echo "Mode: final consolidation, non-blocking unless a human applies \`review:blocking-ai\`"
+  } >"$out_file.tmp"
+  mv "$out_file.tmp" "$out_file"
+fi
 
 comment_bytes="$(wc -c <"$out_file" | tr -d ' ')"
 if [[ "$comment_bytes" -gt "$comment_limit" ]]; then

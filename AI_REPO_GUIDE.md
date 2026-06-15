@@ -42,6 +42,7 @@ bash install.sh
 ├── CLAUDE.md                 # Claude Code native memory pointer to AGENTS.md
 ├── GEMINI.md                 # Gemini Codespace onboarding pointer into AI_REPO_GUIDE.md
 ├── README.md                 # User-facing documentation
+├── DESIGN.md                 # Root design contract for UI tools + frontend handoff
 ├── install.sh                # Codespace bootstrap script
 ├── requirements.txt          # Python dependency pin for local validation helpers
 ├── test.sh                   # Verification script
@@ -106,7 +107,9 @@ bash install.sh
 │   ├── workflows/            # AP8 workflow logic extracted from .github/workflows
 │   │   ├── advisory-review/  # agent-advisory-review.yml dispatch, providers, comment upsert
 │   │   ├── pr-feedback/      # agent-review-finalize.yml collect + consolidate dispatch
-│   │   └── postmerge-retro/  # agent-postmerge-retro.yml daily batch + fix PR
+│   │   ├── postmerge-retro/  # agent-postmerge-retro.yml daily batch + fix PR
+│   │   ├── weekly-review/    # agent-weekly-review.yml full-repo scan + fix PR
+│   │   └── lib/              # shared prompt helpers + fix PR issue linker
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
@@ -225,6 +228,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | File | Tool/Platform | Purpose |
 |------|--------------|---------|
 | `README.md` | Humans + AI agents | User-facing repository overview |
+| `DESIGN.md` | AI agents + design tools (OpenDesign, Claude Design, etc.) | Root design contract — tokens, UX, a11y floor, mockup workflow; customize during Mode B onboarding |
 | `requirements.txt` | Python tooling | Dependency pin for local validation helpers |
 
 ### Context Pack (project memory)
@@ -380,6 +384,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `agent-advisory-review.yml` | Rolling advisory snapshots on draft/WIP PRs (`ai-review:live`); Cursor / Antigravity / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; optional `ADVISORY_ANTIGRAVITY_ENABLED=true` |
 | `agent-review-finalize.yml` | Final Feedback Inbox after implementation (`implementation-complete`); Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY` (reuses advisory LLM runners) |
 | `agent-postmerge-retro.yml` | Daily post-merge retro (06:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; fix job adds `contents` + PR write |
+| `agent-weekly-review.yml` | Weekly full-repo review (Sunday 07:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | `CURSOR_API_KEY` and/or `GEMINI_API_KEY`; fix job adds `contents` + PR write |
 | `agent-fix-reviews.yml` | Triggers Claude to run `pr-resolve-all.md` on review feedback | Set `ANTHROPIC_API_KEY` secret |
 | `agent-multi-dispatch.yml` | Parallel Copilot fan-out with overlap-safety classifier | Set `CLAUDE_PAT` secret |
 | `agent-parallelism-report.yml` | Cross-PR overlap classifier; posts a comment on every open PR | None |
@@ -505,8 +510,8 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 ### For new repositories
 
 1. Create the repo with "Use this template" (or copy files if you need a one-off starting point).
-2. Run `.github/prompts/repo-onboarding.md`; during Mode B reset, that prompt is the canonical stub source for `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md`.
-3. In Step 0.2, restore those three files from the prompt's named canonical stub blocks, delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`, then repopulate the stubs with project-specific content.
+2. Run `.github/prompts/repo-onboarding.md`; during Mode B reset, that prompt is the canonical stub source for `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md`.
+3. In Step 0.2, restore those four files from the prompt's named canonical stub blocks, delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`, then repopulate the stubs with project-specific content (including product-specific design direction in `DESIGN.md` before frontend work).
 4. Replace remaining `TEMPLATE_PLACEHOLDER` and `PLEASE_UPDATE_THIS/URL` values and customize `ci-tests.yml` for your tech stack.
 5. Re-run `./scripts/verify-env.sh` after repopulation, then re-run the onboarding prompt's Mode B detection signals to confirm the repo exits the onboarding-blocked state and no resettable `.context/**` or template-only diagram surfaces still describe `ai-repo-template`.
 
@@ -521,7 +526,7 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 After creating a repo from this template, paste this prompt into a GitHub issue and assign it to your AI agent:
 
 ```markdown
-This repository was created from a template. Treat `.github/prompts/repo-onboarding.md` as the canonical onboarding workflow and canonical stub source for `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` during Mode B reset.
+This repository was created from a template. Treat `.github/prompts/repo-onboarding.md` as the canonical onboarding workflow and canonical stub source for `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md` during Mode B reset.
 
 Truth hierarchy:
 1) ./.context/** (canonical project direction)
@@ -532,7 +537,7 @@ Please:
 1. Verify .context/00_INDEX.md and .github/prompts/*.md exist
 2. Run Step 0.1 of `.github/prompts/repo-onboarding.md` and record whether the repo is Mode A, B, or C.
 3. If Step 0.1 classifies the repo as Mode B, capture fresh-clone pre-reset proof before any Step 0.2 reset work.
-4. Determine project purpose from docs/**, the codebase, and any non-resettable `.context/**` surfaces. Do not rely on `.context/00_INDEX.md`, `.context/roadmap.md`, or `.context/vision/README.md` until after item 6 repopulates them.
+4. Determine project purpose from docs/**, the codebase, and any non-resettable `.context/**` surfaces. Do not rely on `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, or root `DESIGN.md` until after item 6 repopulates them.
 5. Use the onboarding prompt's canonical stubs before writing project-specific content into the three resettable `.context` files; do not rely on placeholder scanning alone.
 6. Repopulate those three resettable `.context` files with project-specific content before collecting post-repopulation proof or regenerating `AI_REPO_GUIDE.md`.
 7. Replace README.md with project-specific content, including
@@ -541,7 +546,7 @@ Please:
   project-specific ones).
 8. Continue `.github/prompts/repo-onboarding.md` and capture onboarding evidence in this order:
   a. the pre-reset Mode B proof from item 3 above
-   b. post-reset proof that `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` were restored from the prompt's canonical stubs and that `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md` were deleted
+   b. post-reset proof that `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and root `DESIGN.md` were restored from the prompt's canonical stubs and that `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md` were deleted
    c. post-repopulation proof that `./scripts/verify-env.sh` exits 0 and the repo no longer remains in the onboarding-blocked state
 9. Replace or customize docs/FAQ.md for the project (template-specific
   entries prefixed with "Template:" should be removed)

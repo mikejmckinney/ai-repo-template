@@ -11,10 +11,11 @@ usage() {
 }
 [[ -n "$DAILY_JSON" && -f "$DAILY_JSON" ]] || usage
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$REPO_ROOT/scripts/workflows/postmerge-retro"
 ADVISORY_DIR="$REPO_ROOT/scripts/workflows/advisory-review"
+LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 
 python3 "$SCRIPT_DIR/validate-postmerge-retro-daily.py" "$DAILY_JSON"
@@ -28,6 +29,13 @@ fi
 BRANCH="retro/fix-${RUN_DATE}"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
+
+# Cursor local mode can rewrite the running script on disk; re-exec from a temp copy.
+if [[ -z "${POSTMERGE_RETRO_FIX_REEXEC:-}" ]]; then
+  export POSTMERGE_RETRO_FIX_REEXEC=1
+  cp "$SCRIPT_DIR/run-postmerge-retro-fix.sh" "$WORKDIR/fix-runner.sh"
+  exec bash "$WORKDIR/fix-runner.sh" "$@"
+fi
 
 git config user.email "${GIT_AUTHOR_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
 git config user.name "${GIT_AUTHOR_NAME:-github-actions[bot]}"
@@ -67,8 +75,31 @@ has_gemini=0
 [[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
 [[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
 
+strip_workflow_changes() {
+  # CLAUDE_PAT / default GITHUB_TOKEN cannot push .github/workflows/** edits.
+  local paths=()
+  while IFS= read -r -d '' f; do
+    paths+=("$f")
+  done < <(git status --porcelain .github/workflows/ 2>/dev/null | awk '{print $2}' | tr '\n' '\0')
+  if ((${#paths[@]} == 0)); then
+    return 0
+  fi
+  echo "::notice::Stripping ${#paths[@]} .github/workflows/ change(s) from fix commit (token lacks workflows:write). Document skipped workflow edits in retro/fix-notes-${RUN_DATE}.md if needed." >&2
+  for f in "${paths[@]}"; do
+    if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
+      git checkout HEAD -- "$f"
+    else
+      rm -f "$f"
+    fi
+  done
+}
+
 pick_provider() {
   local want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
+  if [[ "$want" == "antigravity" ]]; then
+    echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro fix uses auto (cursor, else gemini)." >&2
+    want=auto
+  fi
   case "$want" in
     cursor) echo cursor ;;
     gemini) echo gemini ;;
@@ -108,12 +139,16 @@ case "$PROVIDER" in
     ;;
 esac
 
+strip_workflow_changes
+
 if ! git diff --quiet || ! git diff --cached --quiet; then
   commit_msg="fix: post-merge retro daily fixes for ${RUN_DATE}"
   if [[ -f "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt" ]]; then
     commit_msg="$(head -1 "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt")"
   fi
   git add -A
+  git reset HEAD -- .github/workflows/ 2>/dev/null || true
+  git checkout HEAD -- .github/workflows/ 2>/dev/null || true
   git commit -m "$commit_msg"
 else
   echo "::warning::Fix pass produced no git diff"
@@ -126,7 +161,7 @@ render_fix_pr_body() {
   local body_file="$WORKDIR/fix-pr-body.md"
   local umbrella_num umbrella_url umbrella_ref
   cp "$REPO_ROOT/.github/templates/postmerge-retro-fix-pr.md" "$body_file"
-  umbrella_num="$(gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "$REPO" --json number,url --limit 1 --jq '.[0].number // empty' 2>/dev/null || true)"
+  umbrella_num="$(bash "$SCRIPT_DIR/resolve-umbrella-issue.sh" "$RUN_DATE" "$DAILY_JSON" 2>/dev/null || true)"
   if [[ -n "$umbrella_num" ]]; then
     umbrella_url="$(gh issue view "$umbrella_num" -R "$REPO" --json url --jq .url)"
     umbrella_ref="#${umbrella_num}"
@@ -139,18 +174,33 @@ render_fix_pr_body() {
     -e "s/{{FINDINGS_COUNT}}/${FINDINGS_COUNT}/g" \
     -e "s|{{UMBRELLA_ISSUE_LINK}}|${umbrella_url}|g" \
     -e "s|{{UMBRELLA_ISSUE_REF}}|${umbrella_ref}|g" \
+    -e "s|{{UMBRELLA_ISSUE_NUM}}|${umbrella_num}|g" \
     -e "s|{{FIX_BRANCH}}|${BRANCH}|g" \
     -e "s|{{REPO}}|${REPO}|g" \
     "$body_file"
-  cat "$body_file"
+  if [[ -z "$umbrella_num" ]]; then
+    sed -i '/^Fixes #[[:space:]]*$/d' "$body_file"
+  fi
+}
+
+link_pr_to_umbrella() {
+  local pr_ref="$1"
+  local pr_num umbrella_num
+  pr_num="${pr_ref##*/}"
+  [[ "$pr_num" =~ ^[0-9]+$ ]] || return 0
+  umbrella_num="$(bash "$SCRIPT_DIR/resolve-umbrella-issue.sh" "$RUN_DATE" "$DAILY_JSON" 2>/dev/null || true)"
+  [[ -n "$umbrella_num" ]] || return 0
+  bash "$LIB_DIR/link-fix-pr-to-issue.sh" "$REPO" "$pr_num" "$umbrella_num"
 }
 
 existing_pr="$(gh pr list -R "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
 if [[ -n "$existing_pr" ]]; then
   echo "Open draft PR already exists: #${existing_pr}"
   PR_URL="$(gh pr view "$existing_pr" -R "$REPO" --json url --jq .url)"
+  render_fix_pr_body
+  gh pr edit "$existing_pr" -R "$REPO" --body-file "$WORKDIR/fix-pr-body.md"
 else
-  render_fix_pr_body >"$WORKDIR/fix-pr-body.md"
+  render_fix_pr_body
   PR_URL="$(gh pr create -R "$REPO" \
     --base main \
     --head "$BRANCH" \
@@ -159,5 +209,8 @@ else
     --body-file "$WORKDIR/fix-pr-body.md")"
   echo "Created draft PR: ${PR_URL}"
 fi
+
+link_pr_to_umbrella "$PR_URL"
+bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_DATE" "$PR_URL" "$DAILY_JSON"
 
 echo "Fix pass complete for ${RUN_DATE}"

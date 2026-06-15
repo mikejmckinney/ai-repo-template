@@ -13,6 +13,7 @@ REQUIRED_FILES=(
   "CLAUDE.md"
   "GEMINI.md"
   "README.md"
+  "DESIGN.md"
   "install.sh"
   ".cursor/BUGBOT.md"
   ".gemini/styleguide.md"

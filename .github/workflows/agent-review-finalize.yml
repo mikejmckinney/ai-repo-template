@@ -17,7 +17,7 @@ name: Agent — final feedback consolidation
 
 on:
   pull_request:
-    types: [labeled, ready_for_review]
+    types: [opened, synchronize, labeled, ready_for_review]
   workflow_dispatch:
     inputs:
       pr:
@@ -45,7 +45,11 @@ jobs:
         (
           (github.event.action == 'labeled' &&
            github.event.label.name == 'implementation-complete') ||
-          github.event.action == 'ready_for_review'
+          github.event.action == 'ready_for_review' ||
+          (github.event.action == 'opened' &&
+           contains(github.event.pull_request.labels.*.name, 'implementation-complete')) ||
+          (github.event.action == 'synchronize' &&
+           contains(github.event.pull_request.labels.*.name, 'implementation-complete'))
         )
       )
     runs-on: ubuntu-latest
@@ -57,6 +61,7 @@ jobs:
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
       FINALIZE_REVIEW_DIFF_LIMIT: ${{ vars.FINALIZE_REVIEW_DIFF_LIMIT || '' }}
       FINALIZE_REVIEW_COMMENT_LIMIT: ${{ vars.FINALIZE_REVIEW_COMMENT_LIMIT || '' }}
+      FINALIZE_CONTEXT_PROFILE: ${{ vars.FINALIZE_CONTEXT_PROFILE || '' }}
       CURSOR_FINALIZE_MODEL: ${{ vars.CURSOR_FINALIZE_MODEL || '' }}
       GEMINI_FINALIZE_MODEL: ${{ vars.GEMINI_FINALIZE_MODEL || '' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
@@ -102,7 +107,7 @@ jobs:
           PR: ${{ github.event.pull_request.number || inputs.pr }}
           REPO: ${{ github.repository }}
         run: |
-          pr_json="$(gh pr view "$PR" --json state,headRefOid,headRepository,baseRepository)"
+          pr_json="$(gh pr view "$PR" --repo "$REPO" --json state,headRefOid,headRepository)"
           state="$(printf '%s' "$pr_json" | jq -r .state)"
           head_sha="$(printf '%s' "$pr_json" | jq -r .headRefOid)"
           head_repo="$(printf '%s' "$pr_json" | jq -r .headRepository.nameWithOwner)"
@@ -126,6 +131,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+
+      - name: Validate pr-feedback shell syntax
+        run: |
+          set -euo pipefail
+          bash -n scripts/workflows/pr-feedback/collect-pr-feedback.sh
+          bash -n scripts/workflows/pr-feedback/run-feedback-consolidation.sh
+          bash -n scripts/workflows/advisory-review/upsert-pr-comment.sh
 
       - name: Run feedback consolidation
         env:

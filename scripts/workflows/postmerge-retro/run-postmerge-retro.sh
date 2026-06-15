@@ -38,6 +38,7 @@ trap 'rm -rf "$WORKDIR"' EXIT
 
 DEFAULT_DIFF_LIMIT=300000
 diff_limit="$(parse_positive_int POSTMERGE_RETRO_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${POSTMERGE_RETRO_DIFF_LIMIT:-}")"
+context_profile="${POSTMERGE_RETRO_CONTEXT_PROFILE:-full}"
 
 bash "$SCRIPT_DIR/collect-postmerge-evidence.sh" "$PR" "$WORKDIR"
 
@@ -55,7 +56,7 @@ pr_title="$(printf '%s' "$pr_json" | jq -r '.title // ""')"
 pr_body="$(printf '%s' "$pr_json" | jq -r '.body // ""')"
 pr_url="$(printf '%s' "$pr_json" | jq -r '.html_url // ""')"
 merged_at="$(printf '%s' "$pr_json" | jq -r '.merged_at // ""')"
-labels="$(jq -r '.[].name' "$WORKDIR/labels.json" | paste -sd ', ' -)"
+labels="$(jq -r '.[]?.name // empty' "$WORKDIR/labels.json" 2>/dev/null | paste -sd ', ' - || true)"
 
 full_diff_bytes="$(wc -c <"$WORKDIR/diff.patch" | tr -d ' ')"
 truncated=false
@@ -68,20 +69,53 @@ diff_text="$(head -c "$diff_limit" "$WORKDIR/diff.patch")"
 truncated_word="no"
 [[ "$truncated" == "true" ]] && truncated_word="yes"
 
+LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
+reviews_json_compact="$(
+  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
+    --input "$WORKDIR/reviews.json" \
+    --jq-filter 'map({id, user: (.user?.login // null), body, state, commit_id})' \
+    --max-bytes 120000
+)"
+comments_json_compact="$(
+  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
+    --input "$WORKDIR/review-comments.json" \
+    --jq-filter 'map({id, path, line, user: (.user?.login // null), body})' \
+    --max-bytes 120000
+)"
+
+if ! python3 "$LIB_DIR/prompt_helpers.py" select-context \
+  --profile "$context_profile" \
+  --changed-files "$WORKDIR/changed-files.txt" >"$WORKDIR/context-files.txt"; then
+  echo "::error::select-context failed for profile ${context_profile}" >&2
+  exit 1
+fi
+if [[ ! -s "$WORKDIR/context-files.txt" ]]; then
+  echo "::error::select-context returned no files for profile ${context_profile}" >&2
+  exit 1
+fi
+mapfile -t context_files <"$WORKDIR/context-files.txt"
+
+context_file_count="${#context_files[@]}"
+context_bytes=0
+for rel in "${context_files[@]}"; do
+  if [[ -f "$REPO_ROOT/$rel" ]]; then
+    context_bytes=$((context_bytes + $(wc -c <"$REPO_ROOT/$rel" | tr -d ' ')))
+  fi
+done
+
 prompt_file="$WORKDIR/prompt.md"
 {
   cat "$REPO_ROOT/.github/prompts/post-merge-retro.md"
   echo ""
   echo "---"
   echo ""
-  echo "## Repo startup context (automation-supplied)"
+  echo "## Repo startup context (automation-supplied, catalog-driven ${context_profile} + path triggers)"
   echo ""
-  for rel in \
-    AGENTS.md \
-    .context/rules/process_session_start.md \
-    .context/rules/README.md \
-    .context/rules/process_opportunity_feedback.md \
-    docs/decisions/adr-027-opportunity-feedback-channel.md; do
+  echo "- Context profile: \`${context_profile}\`"
+  echo "- Context files injected: \`${context_file_count}\`"
+  echo "- Context bytes injected: \`${context_bytes}\`"
+  echo ""
+  for rel in "${context_files[@]}"; do
     echo "### ${rel}"
     echo ""
     cat "$REPO_ROOT/$rel"
@@ -117,14 +151,14 @@ prompt_file="$WORKDIR/prompt.md"
   echo "### Formal PR reviews (JSON excerpt)"
   echo ""
   echo '```json'
-  jq -c 'map({id, user: .user.login, body, state, commit_id})' "$WORKDIR/reviews.json" | head -c 120000
+  printf '%s\n' "$reviews_json_compact"
   echo ""
   echo '```'
   echo ""
   echo "### Inline review comments (JSON excerpt)"
   echo ""
   echo '```json'
-  jq -c 'map({id, path, line, user: .user.login, body})' "$WORKDIR/review-comments.json" | head -c 120000
+  printf '%s\n' "$comments_json_compact"
   echo ""
   echo '```'
   echo ""

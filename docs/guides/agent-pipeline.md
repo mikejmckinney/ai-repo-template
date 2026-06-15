@@ -122,7 +122,7 @@ Both labels can be applied together. `ai-review:live` alone is the normal WIP/dr
 
 #### Diff context limits
 
-Advisory review logic lives in `scripts/workflows/advisory-review/run-advisory-review.sh` (AP8). For **cursor** and **gemini** paths, a **truncated unified diff** is embedded in the prompt. For **antigravity**, the **full** diff is mounted at `.workspace/pr-context/diff.patch` (Interactions API payload limits may still force fallback to gemini on huge PRs).
+Advisory review logic lives in `scripts/workflows/advisory-review/run-advisory-review.sh` (AP8). Rule context is injected via `prompt_helpers.py select-context` (default profile **`pr-review`**, overridable via `ADVISORY_CONTEXT_PROFILE`: `standard`, `pr-review`, or `full`; plus path-triggered rules). For **cursor** and **gemini** paths, a **truncated unified diff** is embedded in the prompt. For **antigravity**, the **full** diff is mounted at `.workspace/pr-context/diff.patch` (Interactions API payload limits may still force fallback to gemini on huge PRs).
 
 | Mode | Label | Default diff byte limit | Repo variable |
 |---|---|---|---|
@@ -183,7 +183,7 @@ Repo variable **`ADVISORY_REVIEW_PROVIDER`**: `auto` (default), `cursor`, `antig
 
 | Provider | Secret / gate | Default model / agent | Notes |
 |---|---|---|---|
-| Cursor SDK | `CURSOR_API_KEY` | `composer-2.5` (`CURSOR_ADVISORY_MODEL`) | May read repo via SDK `local.cwd` |
+| Cursor SDK | `CURSOR_API_KEY` | `composer-2.5` standard (`CURSOR_ADVISORY_MODEL`; SDK `fast=false`) | May read repo via SDK `local.cwd`; shared runner `run-advisory-cursor.mjs` |
 | Antigravity | `GEMINI_API_KEY` or `GOOGLE_API_KEY` + `ADVISORY_ANTIGRAVITY_ENABLED=true` | `antigravity-preview-05-2026` (`ADVISORY_ANTIGRAVITY_AGENT`) | Mounts rules + full diff as `environment.sources`; default tools enabled |
 | Gemini API | `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `gemini-3.5-flash` (`GEMINI_ADVISORY_MODEL`) | Prompt-only; truncated diff excerpt |
 
@@ -214,12 +214,14 @@ normal deterministic merge gates
 | Trigger | Behavior |
 |---|---|
 | `implementation-complete` label applied | Runs consolidation for that open same-repo PR |
+| PR **opened** already carrying `implementation-complete` | Runs consolidation (no re-label required) |
+| Push to PR head (`synchronize`) while label present | Re-runs consolidation at current head |
 | PR marked `ready_for_review` while label present | Re-runs consolidation at current head |
 | `workflow_dispatch` with PR number | Manual re-run for operators |
 
-**Collection (deterministic, read-only):** `scripts/workflows/pr-feedback/collect-pr-feedback.sh` writes `pr.json`, `comments.json`, `reviews.json`, `review-comments.json`, `changed-files.json`, `diff.patch`, and `advisory-comments.md` under a temp dir before the LLM pass.
+**Collection (deterministic, read-only):** `scripts/workflows/pr-feedback/collect-pr-feedback.sh` writes `pr.json`, `comments.json`, `reviews.json`, `review-comments.json`, `changed-files.json`, `diff.patch`, and `advisory-comments.md` under a temp dir before the LLM pass. When local `git diff` is empty but GitHub lists changed files, collection falls back to the GitHub PR diff API.
 
-**Dispatch:** `scripts/workflows/pr-feedback/run-feedback-consolidation.sh` builds the prompt from `.github/prompts/pr-final-feedback-consolidation.md`, reuses advisory-review Cursor/Gemini runners and `upsert-pr-comment.sh`.
+**Dispatch:** `scripts/workflows/pr-feedback/run-feedback-consolidation.sh` builds the prompt from `.github/prompts/pr-final-feedback-consolidation.md`, injects **catalog-driven** rule context (`scripts/workflows/lib/prompt_helpers.py select-context` — default profile `pr-review`, overridable via repo variable `FINALIZE_CONTEXT_PROFILE`: `standard`, `pr-review`, or `full`; plus path-triggered rules), reuses advisory-review Cursor/Gemini runners and `upsert-pr-comment.sh`.
 
 **Interaction with `claude-fix`:** consolidation only posts the inbox. A human may then add `claude-fix` for automated remediation via the existing `agent-fix-reviews.yml` rules. `review:blocking-ai` is a separate human escalation label — consolidation does not apply it.
 
@@ -257,15 +259,30 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 **Collection (deterministic, read-only):** `scripts/workflows/postmerge-retro/collect-postmerge-evidence.sh` wraps `scripts/workflows/pr-feedback/collect-pr-feedback.sh`.
 
-**Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`. **Automation templates** (not GitHub UI chooser): `.github/templates/postmerge-retro-umbrella.md` (umbrella issue), `.github/templates/postmerge-retro-fix-pr.md` (draft fix PR — slim PR-template shape). Umbrella creation adds `agent-suggested` when the label exists; issue is still created if the label is missing. Sandbox bootstrap runs `scripts/setup/ensure-pipeline-labels.sh` on the sibling repo.
+**Retro dispatch:** `run-postmerge-retro.sh` (per PR) + `run-postmerge-retro-daily.sh` (orchestrator) + `create-umbrella-issue.sh`. Rule context is injected via `prompt_helpers.py select-context` (default profile **`full`**, overridable via `POSTMERGE_RETRO_CONTEXT_PROFILE` or `workflow_dispatch` input `context_profile`: `standard`, `pr-review`, or `full`; plus path-triggered rules). Prompts: `post-merge-retro.md`, `post-merge-retro-fix.md`. **Automation templates** (not GitHub UI chooser): `.github/templates/postmerge-retro-umbrella.md` (umbrella issue), `.github/templates/postmerge-retro-fix-pr.md` (draft fix PR — slim PR-template shape). Umbrella creation adds `agent-suggested` when the label exists; issue is still created if the label is missing. Sandbox bootstrap runs `scripts/setup/ensure-pipeline-labels.sh` on the sibling repo.
 
-**Fix dispatch:** `run-postmerge-retro-fix.sh` — Cursor local edits or Gemini JSON `file_edits`; requires `contents: write` + `pull-requests: write` on fix job.
+**Fix dispatch:** `run-postmerge-retro-fix.sh` — Cursor local edits or Gemini JSON `file_edits`; requires `contents: write` + `pull-requests: write` on fix job. Provider `auto` matches other retro stages (Cursor first, else Gemini; antigravity is advisory-only). After the draft fix PR is created (or found open), `update-umbrella-fix-link.sh` replaces the umbrella Meta placeholder `(pending — fix job)` with the PR URL, and `link-fix-pr-to-issue.sh` ensures a native **`Fixes #N`** line in the PR body. Umbrella issue number is written into `daily-retro.json` (`umbrella_issue`) and sidecar `umbrella-issue.txt` during the daily job; the fix job resolves it via `UMBRELLA_ISSUE_NUM` / JSON (no `gh search` when present). Legacy runs fall back to `GITHUB_TOKEN` + `find-umbrella-issue.sh`.
 
 **Idempotency:** umbrella append by dedupe key; PR rows skipped if already in today's table. Manual dispatch before cron same day **appends**, does not skip the job.
 
 **Script checkout:** workflow checks out **`main`** for scripts, not merge commits.
 
-**Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge.
+**Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge. For sandbox A/B, pass `workflow_dispatch` inputs `context_profile`, `only_prs`, and a distinct `run_date` per arm (retro checks out **`main`** for scripts — unlike advisory/finalize PR-head checkout).
+
+**Sandbox A/B inputs (retro):** `only_prs=<merged-pr>` pins a single PR; `context_profile=standard|pr-review|full` selects the catalog floor; use distinct valid `run_date` values (`YYYY-MM-DD` only — e.g. `2026-06-14`, `2026-06-15`, `2026-06-16`) to isolate umbrella dedupe between runs. Dispatch sequentially — the workflow concurrency group queues overlapping runs. Artifacts are named `postmerge-retro-daily-<run_date>-attempt-<n>` (rerun-safe). Each umbrella issue also gets a **daily JSON snapshot comment** (`<!-- postmerge-retro:daily-json:... -->`) for fix-only recovery. To re-run the fix job without re-running retro: `workflow_dispatch` with `fix_only=true`, `run_date`, and `restore_json_from_issue=true`. **Never full-rerun** a workflow when only the fix job failed — use `gh run rerun RUN_ID --failed` or fix-only dispatch.
+
+### Weekly repository review (full-repo static scan)
+
+Weekly **Sunday 07:00 UTC** cron plus **`workflow_dispatch`** on `agent-weekly-review.yml` (offset from daily retro at 06:00 UTC):
+
+1. Static **full-repo** scan on `main` (not PR-scoped): **context pack only** in prompt + agent reads working tree (`local.cwd` / Antigravity fallback).
+2. Batch → `weekly-review.json` (retro-compatible `findings[]`).
+3. **One umbrella issue per ISO week** (`<!-- weekly-review:YYYY-Www -->`; skip when zero findings). Umbrella body renders each finding as a detailed block (full body, `repo-*` dedupe key, evidence blob links) via `render-umbrella-findings.py`.
+4. **Draft fix PR** `weekly/fix-YYYY-Www` when findings exist; native issue link via **`Fixes #N`** (`link-fix-pr-to-issue.sh`).
+
+**Dispatch:** `scripts/workflows/weekly-review/` — prompts `weekly-repo-review.md`, `weekly-repo-review-fix.md`; templates `weekly-review-umbrella.md`, `weekly-review-fix-pr.md`. Context via `WEEKLY_REVIEW_CONTEXT_PROFILE` (default **`full`**, pack only). Provider: `WEEKLY_REVIEW_PROVIDER` or advisory `auto` (Cursor → Antigravity when enabled → Gemini explicit only).
+
+**Smoke test:** `gh workflow run agent-weekly-review.yml`; sandbox A/B with distinct `run_week` values. Fix-only: `fix_only=true`, `run_week`, `restore_json_from_issue=true`.
 
 #### Provider, billing, and context loading
 
@@ -275,7 +292,7 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 |---|---|---|
 | **Gemini API** (`run-advisory-gemini.py`) | API key → Google AI / Cloud project behind that key | Tier is whatever that project has (AI Studio free quotas vs billing-enabled paid). This workflow does **not** implement OAuth or `free-then-paid` routing — see `07-implement-gemini-free-paid-routing.md` for planned router work. |
 | **Antigravity** (`run-advisory-antigravity.py`) | Same API key + remote sandbox | Preview Interactions API; typically higher cost/latency than flat `generateContent`; may use code execution / search tools by default. |
-| **Cursor SDK** (`run-advisory-cursor.mjs`) | `CURSOR_API_KEY` → Cursor account usage pool | Per Cursor SDK / subscription terms; no repo-side tier switch. |
+| **Cursor SDK** (`run-advisory-cursor.mjs`) | `CURSOR_API_KEY` → Cursor account usage pool | Per Cursor SDK / subscription terms. **`composer-2.5` in repo config means standard tier** — the shared runner sets SDK `fast=false` (see [Composer 2.5 standard vs fast](#composer-25-standard-vs-fast-cursor-sdk-and-cli)). |
 | **Gemini Code Assist** (`/gemini review`, `agent-review-on-push.yml`) | Separate GitHub App path | Not used by advisory snapshots; formal bot reviews only. |
 
 **What context the models see (advisory path):**
@@ -289,7 +306,46 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 | Session handshake + context receipt | Model self-reports per `process_session_start.md` (pointer in `pr-advisory-review.md`; not duplicated in prompt) | Same | Same |
 | Formal `claude-review` / Gemini App reviews | Separate workflows | Separate | Separate |
 
-Advisory review is intentionally **lighter than full rule load**: startup kernel + critical thinking/clarification + diff, not every `.context/rules/*.md` file. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
+Advisory review uses **catalog-driven context selection** (default `pr-review` floor + path triggers), not a fixed four-file kernel. Use `ADVISORY_CONTEXT_PROFILE=standard` for a lighter floor or `full` for all rules plus triggers. For gate-heavy PRs, combine with `claude-review` (formal Judge review) near the end.
+
+### Composer 2.5 standard vs fast (Cursor SDK and CLI)
+
+Repo workflows (advisory, finalize, post-merge retro) all call the shared runner `scripts/workflows/advisory-review/run-advisory-cursor.mjs` with default model id **`composer-2.5`**. In this repo that id means the **standard** Composer 2.5 tier, not the higher-priced fast variant.
+
+**Why this section exists:** The Cursor Agents SDK defaults `model: { id: "composer-2.5" }` to the **fast** billing tier unless you pass an explicit parameter. Workflow logs may still show `observed=composer-2.5` while the usage dashboard bills `composer-2.5-fast`. See Cursor forum: [SDK reports composer-2.5 but usage dashboard bills composer-2.5-fast](https://forum.cursor.com/t/sdk-reports-composer-2-5-but-usage-dashboard-bills-composer-2-5-fast/163046).
+
+**What we do (GitHub Actions — SDK path):**
+
+| Config | SDK model passed | Billing intent |
+|---|---|---|
+| `CURSOR_ADVISORY_MODEL=composer-2.5` (default) | `{ id: "composer-2.5", params: [{ id: "fast", value: "false" }] }` | Standard tier |
+| `CURSOR_ADVISORY_MODEL=composer-2.5-fast` | `{ id: "composer-2.5", params: [{ id: "fast", value: "true" }] }` | Fast tier (opt-in only) |
+| Other model ids | `{ id: "<model>" }` unchanged | As documented by Cursor |
+
+**Cursor CLI headless (`cursor-agent -p`) — separate from GHA:**
+
+| Context | `--model composer-2.5` behavior | Reliable standard tier? |
+|---|---|---|
+| **Cursor IDE (interactive)** | Fast toggle in model picker | Yes — when Fast is off |
+| **SDK / REST / Python** (our GHA runners) | Defaults to fast without `fast=false` param | **Yes, after `run-advisory-cursor.mjs` fix** (required — do not remove) |
+| **CLI headless / API key** (`cursor-agent -p --model composer-2.5`) | Historically reported as billing `composer-2.5-fast` despite the flag ([forum](https://forum.cursor.com/t/cursor-cli-calling-composer2-fast-despite-always-calling-with-composer2/160297)). **2026-06-14 smoke test in this repo:** both `--model composer-2.5` and `--model 'composer-2.5[fast=false]'` billed as **standard** `composer-2.5` (~13K tokens each, ~2:04 PM ET). | **Yes** (2026-06-14 smoke; re-check on CLI upgrades) |
+
+**Repo CLI usage:** Only the **benchmark harness** (`scripts/benchmark/adapters/cursor.sh`) calls `cursor-agent -p --model …` headlessly. Advisory/finalize/retro **do not** use the CLI.
+
+**Headless CLI smoke (2026-06-14, `cursor-agent` logged in, ~18:04 UTC):**
+
+```bash
+cursor-agent -p --model composer-2.5 --output-format json --force 'Reply CLI_TEST_A only'
+cursor-agent -p --model 'composer-2.5[fast=false]' --output-format json --force 'Reply CLI_TEST_B only'
+```
+
+Both succeeded; dashboard showed **standard** `composer-2.5` (not `-fast`) for each. JSON output still does not expose the billed variant — use dashboard timestamps to confirm after CLI or SDK changes.
+
+**If CLI regresses to fast billing:** prefer SDK with `fast=false` for automation, or pin/document the working `cursor-agent` version. Forum reports may reflect older CLI builds or subagent routing edge cases ([subagents defaulting to fast](https://forum.cursor.com/t/cli-subagents-changing-model-to-composer-2-5-fast-mode-by-itself/162752)).
+
+**Correlating usage to GitHub Actions:** Each SDK call logs `repo`, `workflow`, `job`, `run_id`, and `attempt` from `GITHUB_*` env vars. Match dashboard timestamps to `gh run view RUN_ID --log | rg 'Cursor advisory review'`.
+
+**Workflows covered (SDK):** `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (daily retro + fix jobs), `agent-weekly-review.yml` (weekly scan + fix jobs). Do not call `@cursor/sdk` directly elsewhere without the same `fast=false` guard when using `composer-2.5`.
 
 **Handshake / receipt in advisory comments:** The model **self-reports** the session handshake and context receipt in each snapshot. `pr-advisory-review.md` **pointer-links** to `.context/rules/process_session_start.md` for the canonical templates (no mirrored copy in the prompt — avoids AP1-style drift). Automation injects diff-coverage facts only; it does not override handshake fields.
 
@@ -460,8 +516,8 @@ The agent workflows depend on two repository secrets. Every workflow that consum
 |--------|-------------|-----------------|
 | `CLAUDE_PAT` | Agent workflows that call `gh` (assignment, auto-merge, auto-ready, fix-reviews, multi-dispatch, parallelism-report, relay-reviews, release-slot, auto-rebase-on-merge, backlog-to-issues, claude.yml) | Fine-grained PAT, this repo only: Contents R/W, Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R |
 | `ANTHROPIC_API_KEY` | `agent-fix-reviews.yml`, `claude.yml`, optionally `backlog-to-issues.yml` (sparse-entry expansion) | API key from <https://console.anthropic.com> |
-| `CURSOR_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (Cursor SDK path; preferred when provider `auto`) | API key from Cursor dashboard / SDK docs |
-| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (Gemini API path) | Google AI Studio / Gemini API key |
+| `CURSOR_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml`, `agent-weekly-review.yml` (Cursor SDK path; preferred when provider `auto`) | API key from Cursor dashboard / SDK docs |
+| `GEMINI_API_KEY` or `GOOGLE_API_KEY` | `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml`, `agent-weekly-review.yml` (Gemini API path) | Google AI Studio / Gemini API key |
 | `SANDBOX_BOOTSTRAP_TOKEN` | Sandbox verification steps (force-push sandbox `main`, push branch, `gh pr create/merge` on the sandbox repo). Used by agents running in workflows; maintainers running locally pass the same token as `BOOTSTRAP_GH_TOKEN` env var instead. | Classic PAT, `repo` + `workflow` scopes. Must be classic — fine-grained tokens cannot push `.github/workflows/` files without special account-level scope that typically isn't available until after the sandbox repo is created. See `docs/guides/sandbox-verification.md`. |
 
 **Two ways to provide them**, in order of preference for users running multiple derived repos:
@@ -486,13 +542,17 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `ADVISORY_REVIEW_DIFF_LIMIT_LIVE` | `120000` | Max diff bytes in cursor/gemini prompt when only `ai-review:live` is set. |
 | `ADVISORY_REVIEW_DIFF_LIMIT_FULL` | `300000` | Max diff bytes in cursor/gemini prompt when `ai-review:full` is also set. |
 | `ADVISORY_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted advisory issue comment (automation truncates with warning). |
-| `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Model id for Cursor SDK advisory snapshots. |
+| `ADVISORY_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for injected rules: `standard`, `pr-review`, or `full` (plus path-triggered rules). |
+| `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Cursor SDK model id for advisory, finalize, and retro runners. **`composer-2.5` = standard tier** (`fast=false` in `run-advisory-cursor.mjs`). Set `composer-2.5-fast` only when you intentionally want the fast tier. See [Composer 2.5 standard vs fast](agent-pipeline.md#composer-25-standard-vs-fast-cursor-sdk). |
 | `GEMINI_ADVISORY_MODEL` | `gemini-3.5-flash` | Gemini `generateContent` model id (`gemini-3.5-flash`, `gemini-flash-latest`, …). |
 | `FINALIZE_REVIEW_PROVIDER` | *(falls back to `ADVISORY_REVIEW_PROVIDER`)* | Final inbox runtime: `auto`, `cursor`, or `gemini` (no antigravity path in PR 3). |
 | `FINALIZE_REVIEW_DIFF_LIMIT` | `300000` | Max diff bytes embedded in finalize consolidation prompt. |
 | `FINALIZE_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted Feedback Inbox comment. |
 | `CURSOR_FINALIZE_MODEL` | *(falls back to `CURSOR_ADVISORY_MODEL`)* | Cursor model id for finalize consolidation. |
 | `GEMINI_FINALIZE_MODEL` | *(falls back to `GEMINI_ADVISORY_MODEL`)* | Gemini model id for finalize consolidation. |
+| `FINALIZE_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for finalize inbox rule injection: `standard`, `pr-review`, or `full`. |
+| `POSTMERGE_RETRO_CONTEXT_PROFILE` | `full` | Catalog read profile for post-merge retro rule injection: `standard`, `pr-review`, or `full`. |
+| `POSTMERGE_RETRO_ONLY_PRS` | *(unset)* | Comma-separated PR numbers; when set, daily retro runs only those PRs (sandbox smoke/A-B). |
 | `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. **Also caps `agent-review-on-push.yml`** so Gemini/Copilot push-nudges stop firing after the same N rounds — without this, every fix-commit re-triggers stateless reviewers that re-flag already-deferred findings (PR #246 saw this across 13 rounds). Per-PR override: `cap-override` label on the PR (unbounded; bypasses both the agent-side cap and the push-nudge cap) or `@<agent> cap-override N` comment on the PR (N rounds). Manual `/gemini review` comments by humans are never gated. Only raise the default from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 ### 1. Copilot subscription
@@ -862,7 +922,10 @@ for Gemini to finish posting.
 | `.github/workflows/agent-review-finalize.yml` | Final Feedback Inbox (`implementation-complete`); Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`) |
 | `scripts/workflows/pr-feedback/` | AP8 finalize: collect feedback + consolidate dispatch | Invoked by `agent-review-finalize.yml` |
 | `.github/workflows/agent-postmerge-retro.yml` | Daily post-merge retro (06:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; fix job needs `contents` + PR write) |
+| `.github/workflows/agent-weekly-review.yml` | Weekly full-repo review (Sunday 07:00 UTC + dispatch): umbrella issue + draft fix PR; Cursor / Antigravity / Gemini | Yes (`CURSOR_API_KEY` and/or `GEMINI_API_KEY` / `GOOGLE_API_KEY`; Antigravity needs `ADVISORY_ANTIGRAVITY_ENABLED=true`; fix job needs `contents` + PR write) |
 | `scripts/workflows/postmerge-retro/` | AP8 post-merge retro: daily batch, umbrella, fix PR scripts | Invoked by `agent-postmerge-retro.yml` |
+| `scripts/workflows/weekly-review/` | AP8 weekly repo review: full-repo scan, umbrella, fix PR scripts | Invoked by `agent-weekly-review.yml` |
+| `scripts/workflows/lib/link-fix-pr-to-issue.sh` | Native GitHub `Fixes #N` link for retro/weekly draft fix PRs | Used by retro + weekly fix scripts |
 | `.github/prompts/post-merge-retro.md` | Per-PR retrospective JSON prompt | Used by daily batch per-PR pass |
 | `.github/prompts/post-merge-retro-fix.md` | Daily fix implementation prompt | Used by fix job |
 | `.github/workflows/agent-review-on-push.yml` | Nudges Gemini (`/gemini review` comment under CLAUDE_PAT) + Copilot (GraphQL `requestReviewsByLogin` with `botLogins: ["copilot-pull-request-reviewer[bot]"]`) on each push to an open non-draft PR; opt-out via repo variable `REVIEW_ON_PUSH=false` | Yes (CLAUDE_PAT for Gemini comment author identity) |

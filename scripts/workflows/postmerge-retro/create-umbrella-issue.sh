@@ -12,6 +12,7 @@ DAILY_JSON="${1:-}"
 [[ -n "$DAILY_JSON" && -f "$DAILY_JSON" ]] || usage
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py" "$DAILY_JSON"
 
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
@@ -48,7 +49,7 @@ PY
 PR_LIST="$(jq -r '[.prs[] | "#" + (.|tostring)] | join(", ")' "$DAILY_JSON")"
 
 find_issue() {
-  gh search issues "postmerge-retro:daily:${RUN_DATE}" --repo "$REPO" --json number --limit 1 --jq '.[0].number // empty' 2>/dev/null || true
+  bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE" 2>/dev/null || true
 }
 
 append_to_issue() {
@@ -66,24 +67,25 @@ append_to_issue() {
     key="$(sed -n 's/.*`\([^`]*\)`.*/\1/p' <<<"$row")"
     [[ -z "$key" ]] && continue
     if grep -Fq "\`${key}\`" <<<"$body"; then
-      echo "Skip append (exists): ${key}"
+      echo "Skip append (exists): ${key}" >&2
       continue
     fi
     new_rows+="${row}"$'\n'
   done <"$WORKDIR/rows.txt"
 
   if [[ -z "${new_rows//[$'\t\r\n ']/}" ]]; then
-    echo "No new rows to append to issue #${issue_num}"
+    echo "No new rows to append to issue #${issue_num}" >&2
     return 0
   fi
 
   printf '%s' "$new_rows" >"$WORKDIR/new-rows.txt"
+  printf '%s' "$body" >"$WORKDIR/existing-body.md"
   merged="$(
-    python3 - "$body" "$WORKDIR/new-rows.txt" <<'PY'
+    python3 - "$WORKDIR/existing-body.md" "$WORKDIR/new-rows.txt" <<'PY'
 import sys
 
-body = open(sys.argv[1]).read()
-new_rows = [ln for ln in open(sys.argv[2]).read().splitlines() if ln.strip()]
+body = open(sys.argv[1], encoding="utf-8").read()
+new_rows = [ln for ln in open(sys.argv[2], encoding="utf-8").read().splitlines() if ln.strip()]
 if "## Meta" in body:
     head, tail = body.split("## Meta", 1)
     print(head.rstrip() + "\n" + "\n".join(new_rows) + "\n\n## Meta" + tail)
@@ -92,7 +94,7 @@ else:
 PY
   )"
   gh issue edit "$issue_num" -R "$REPO" --body "$merged"
-  echo "Appended findings to umbrella issue #${issue_num}"
+  echo "Appended findings to umbrella issue #${issue_num}" >&2
 }
 
 create_new_issue() {
@@ -122,18 +124,32 @@ p.write_text(text)
 PY
   issue_url="$(gh issue create -R "$REPO" --title "$title" --body-file "$body_file")"
   issue_num="${issue_url##*/}"
+  printf '%s' "$issue_num" >"$WORKDIR/issue-num.txt"
   if gh issue edit "$issue_num" -R "$REPO" --add-label agent-suggested 2>/dev/null; then
-    echo "Created umbrella issue #${issue_num} (agent-suggested)"
+    echo "Created umbrella issue #${issue_num} (agent-suggested)" >&2
   else
-    echo "::notice::Umbrella issue #${issue_num} created without agent-suggested label (missing label or permissions)"
+    echo "::notice::Umbrella issue #${issue_num} created without agent-suggested label (missing label or permissions)" >&2
   fi
 }
 
-EXISTING_ISSUE="$(find_issue)"
-if [[ -n "$EXISTING_ISSUE" ]]; then
-  append_to_issue "$EXISTING_ISSUE"
+normalize_issue_num() {
+  tr -d '[:space:]' <<<"${1:-}"
+}
+
+UMBRELLA_ISSUE="$(normalize_issue_num "$(find_issue)")"
+if [[ -n "$UMBRELLA_ISSUE" ]]; then
+  append_to_issue "$UMBRELLA_ISSUE"
 else
   create_new_issue
+  UMBRELLA_ISSUE="$(normalize_issue_num "$(cat "$WORKDIR/issue-num.txt")")"
 fi
 
-echo "Umbrella issue step complete for ${RUN_DATE}"
+[[ "$UMBRELLA_ISSUE" =~ ^[0-9]+$ ]] || {
+  echo "::error::Umbrella issue number invalid after create/find: '${UMBRELLA_ISSUE}'" >&2
+  exit 1
+}
+
+bash "$SCRIPT_DIR/write-umbrella-issue-ref.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
+bash "$SCRIPT_DIR/post-daily-retro-json-comment.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
+
+echo "Umbrella issue step complete for ${RUN_DATE} (#${UMBRELLA_ISSUE})"

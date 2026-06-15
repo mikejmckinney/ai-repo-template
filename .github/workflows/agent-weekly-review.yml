@@ -1,0 +1,306 @@
+# Agent — weekly repository review (full-repo static scan)
+# -------------------------------------------------------------------
+# Weekly (Sunday 07:00 UTC) + workflow_dispatch: scan main, umbrella issue,
+# then open a draft fix PR. Offset from daily retro (06:00 UTC) to avoid collisions.
+#
+# Provider (WEEKLY_REVIEW_PROVIDER or ADVISORY_REVIEW_PROVIDER):
+#   - cursor      — Cursor SDK (CURSOR_API_KEY); agent reads repo via local.cwd
+#   - antigravity — Gemini Interactions (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
+#   - gemini      — Gemini generateContent (flat prompt; no repo browse)
+#   - auto        — cursor, else antigravity (when enabled), else gemini
+
+name: Agent — weekly repository review
+
+on:
+  schedule:
+    - cron: "0 7 * * 0"
+  workflow_dispatch:
+    inputs:
+      context_profile:
+        description: "Optional WEEKLY_REVIEW_CONTEXT_PROFILE override (standard, pr-review, full)"
+        required: false
+        type: string
+      run_week:
+        description: "Optional RUN_WEEK override (ISO YYYY-Www; default from UTC today)"
+        required: false
+        type: string
+      run_date:
+        description: "Optional RUN_DATE override (umbrella dedupe companion; default UTC today)"
+        required: false
+        type: string
+      fix_only:
+        description: "Skip weekly scan; run fix job only (requires run_week)"
+        required: false
+        type: boolean
+        default: false
+      restore_json_from_issue:
+        description: "Fix-only: restore weekly-review.json from umbrella issue snapshot comment"
+        required: false
+        type: boolean
+        default: true
+      artifact_run_id:
+        description: "Fix-only: optional workflow run ID to download artifact from"
+        required: false
+        type: string
+      artifact_run_attempt:
+        description: "Fix-only: attempt number when using artifact_run_id"
+        required: false
+        type: string
+        default: "1"
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: write
+
+concurrency:
+  group: weekly-review
+  cancel-in-progress: false
+
+jobs:
+  weekly-review:
+    if: github.event.inputs.fix_only != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      run_week: ${{ steps.meta.outputs.run_week }}
+      run_date: ${{ steps.meta.outputs.run_date }}
+      findings_count: ${{ steps.meta.outputs.findings_count }}
+      has_weekly_json: ${{ steps.meta.outputs.has_weekly_json }}
+      artifact_name: ${{ steps.meta.outputs.artifact_name }}
+      umbrella_issue_num: ${{ steps.meta.outputs.umbrella_issue_num }}
+    env:
+      WEEKLY_REVIEW_PROVIDER: ${{ vars.WEEKLY_REVIEW_PROVIDER || '' }}
+      POSTMERGE_RETRO_PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || '' }}
+      ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+      WEEKLY_REVIEW_CONTEXT_PROFILE: ${{ github.event.inputs.context_profile || vars.WEEKLY_REVIEW_CONTEXT_PROFILE || 'full' }}
+      RUN_WEEK: ${{ github.event.inputs.run_week || '' }}
+      RUN_DATE: ${{ github.event.inputs.run_date || '' }}
+      CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
+      GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
+      WEEKLY_REVIEW_MODEL: ${{ vars.WEEKLY_REVIEW_MODEL || '' }}
+      POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
+      ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
+      ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
+    steps:
+      - name: Verify required secrets
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          PROVIDER: ${{ vars.WEEKLY_REVIEW_PROVIDER || vars.POSTMERGE_RETRO_PROVIDER || vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+          ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
+        run: |
+          has_cursor=0 has_gemini=0
+          [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
+          [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
+          case "$PROVIDER" in
+            cursor)
+              [[ "$has_cursor" -eq 1 ]] || { echo "::error::WEEKLY_REVIEW_PROVIDER=cursor but CURSOR_API_KEY is missing"; exit 1; }
+              ;;
+            antigravity)
+              [[ "$has_gemini" -eq 1 ]] || { echo "::error::WEEKLY_REVIEW_PROVIDER=antigravity but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
+              [[ "$ANTIGRAVITY_ENABLED" == "true" ]] || { echo "::error::WEEKLY_REVIEW_PROVIDER=antigravity but ADVISORY_ANTIGRAVITY_ENABLED is not true"; exit 1; }
+              ;;
+            gemini)
+              [[ "$has_gemini" -eq 1 ]] || { echo "::error::WEEKLY_REVIEW_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
+              ;;
+            auto)
+              [[ "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
+                echo "::error::Weekly review needs CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
+                exit 1
+              }
+              ;;
+            *)
+              echo "::error::Unknown WEEKLY_REVIEW_PROVIDER=$PROVIDER"
+              exit 1
+              ;;
+          esac
+
+      - name: Checkout main (current workflow scripts)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js (Cursor SDK path)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run weekly repository review
+        id: review
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
+          ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
+        run: |
+          if [[ -n "${CLAUDE_PAT:-}" ]]; then
+            export GH_TOKEN="$CLAUDE_PAT"
+          else
+            export GH_TOKEN="$GITHUB_TOKEN"
+          fi
+          export RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"
+          export RUN_WEEK="${RUN_WEEK:-$(bash scripts/workflows/weekly-review/resolve-run-week.sh)}"
+          chmod +x scripts/workflows/weekly-review/*.sh 2>/dev/null || true
+          chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
+          bash scripts/workflows/weekly-review/run-weekly-review-weekly.sh
+
+      - name: Capture weekly review outputs
+        id: meta
+        run: |
+          RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"
+          RUN_WEEK="${RUN_WEEK:-$(bash scripts/workflows/weekly-review/resolve-run-week.sh)}"
+          ARTIFACT_DIR=".artifacts/weekly-review/week-${RUN_WEEK}"
+          ARTIFACT_NAME="weekly-review-${RUN_WEEK}-attempt-${GITHUB_RUN_ATTEMPT}"
+          echo "run_week=${RUN_WEEK}" >> "$GITHUB_OUTPUT"
+          echo "run_date=${RUN_DATE}" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
+          if [[ -f "${ARTIFACT_DIR}/findings-count.txt" ]]; then
+            count="$(cat "${ARTIFACT_DIR}/findings-count.txt")"
+          else
+            count=0
+          fi
+          echo "findings_count=${count}" >> "$GITHUB_OUTPUT"
+          if [[ -f "${ARTIFACT_DIR}/weekly-review.json" ]]; then
+            echo "has_weekly_json=true" >> "$GITHUB_OUTPUT"
+            issue_num="$(jq -r '.umbrella_issue // empty' "${ARTIFACT_DIR}/weekly-review.json" 2>/dev/null || true)"
+            if [[ -z "$issue_num" && -f "${ARTIFACT_DIR}/umbrella-issue.txt" ]]; then
+              issue_num="$(tr -d '[:space:]' <"${ARTIFACT_DIR}/umbrella-issue.txt")"
+            fi
+            echo "umbrella_issue_num=${issue_num}" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_weekly_json=false" >> "$GITHUB_OUTPUT"
+            echo "umbrella_issue_num=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload weekly review artifacts
+        if: steps.meta.outputs.has_weekly_json == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.artifact_name }}
+          path: .artifacts/weekly-review/
+          if-no-files-found: ignore
+          retention-days: 21
+
+  weekly-fix:
+    needs: weekly-review
+    if: >-
+      always() && (
+        (github.event.inputs.fix_only == 'true' && github.event.inputs.run_week != '') ||
+        (
+          needs.weekly-review.result == 'success' &&
+          needs.weekly-review.outputs.findings_count != '0' &&
+          needs.weekly-review.outputs.has_weekly_json == 'true'
+        )
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      WEEKLY_REVIEW_PROVIDER: ${{ vars.WEEKLY_REVIEW_PROVIDER || '' }}
+      POSTMERGE_RETRO_PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || '' }}
+      ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+      WEEKLY_REVIEW_MODEL: ${{ vars.WEEKLY_REVIEW_MODEL || '' }}
+      POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
+      CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
+      GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
+      RUN_WEEK: ${{ github.event.inputs.run_week || needs.weekly-review.outputs.run_week }}
+      RUN_DATE: ${{ github.event.inputs.run_date || needs.weekly-review.outputs.run_date }}
+      UMBRELLA_ISSUE_NUM: ${{ needs.weekly-review.outputs.umbrella_issue_num }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download weekly review artifacts
+        if: github.event.inputs.fix_only != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.weekly-review.outputs.artifact_name }}
+          path: .artifacts/weekly-review/
+
+      - name: Restore weekly review JSON (fix-only)
+        if: github.event.inputs.fix_only == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+        run: |
+          if [[ -n "${CLAUDE_PAT:-}" ]]; then
+            export GH_TOKEN="$CLAUDE_PAT"
+          else
+            export GH_TOKEN="$GITHUB_TOKEN"
+          fi
+          RUN_WEEK="${RUN_WEEK:-${{ github.event.inputs.run_week }}}"
+          ARTIFACT_DIR=".artifacts/weekly-review/week-${RUN_WEEK}"
+          mkdir -p "$ARTIFACT_DIR"
+          WEEKLY_JSON="${ARTIFACT_DIR}/weekly-review.json"
+          if [[ "${{ github.event.inputs.restore_json_from_issue }}" == "true" ]]; then
+            chmod +x scripts/workflows/weekly-review/*.sh 2>/dev/null || true
+            bash scripts/workflows/weekly-review/fetch-weekly-review-json-from-issue.sh "$RUN_WEEK" "$WEEKLY_JSON"
+          elif [[ -n "${{ github.event.inputs.artifact_run_id }}" ]]; then
+            ATTEMPT="${{ github.event.inputs.artifact_run_attempt || '1' }}"
+            ARTIFACT_NAME="weekly-review-${RUN_WEEK}-attempt-${ATTEMPT}"
+            gh run download "${{ github.event.inputs.artifact_run_id }}" -R "$GITHUB_REPOSITORY" -n "$ARTIFACT_NAME" -D .artifacts/weekly-review/
+            [[ -f "$WEEKLY_JSON" ]] || { echo "::error::Missing $WEEKLY_JSON after artifact download"; exit 1; }
+          else
+            echo "::error::fix_only requires restore_json_from_issue=true or artifact_run_id" >&2
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run weekly fix pass
+        id: fix
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          if [[ -n "${CLAUDE_PAT:-}" ]]; then
+            export GH_TOKEN="$CLAUDE_PAT"
+          else
+            export GH_TOKEN="$GITHUB_TOKEN"
+          fi
+          chmod +x scripts/workflows/weekly-review/*.sh 2>/dev/null || true
+          chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
+          RUN_WEEK="${RUN_WEEK:-${{ github.event.inputs.run_week || needs.weekly-review.outputs.run_week }}}"
+          WEEKLY_JSON=".artifacts/weekly-review/week-${RUN_WEEK}/weekly-review.json"
+          [[ -f "$WEEKLY_JSON" ]] || { echo "::error::Missing $WEEKLY_JSON"; exit 1; }
+          if [[ -z "${UMBRELLA_ISSUE_NUM:-}" ]]; then
+            UMBRELLA_ISSUE_NUM="$(jq -r '.umbrella_issue // empty' "$WEEKLY_JSON" 2>/dev/null || true)"
+            if [[ -z "$UMBRELLA_ISSUE_NUM" && -f "$(dirname "$WEEKLY_JSON")/umbrella-issue.txt" ]]; then
+              UMBRELLA_ISSUE_NUM="$(tr -d '[:space:]' <"$(dirname "$WEEKLY_JSON")/umbrella-issue.txt")"
+            fi
+          fi
+          export UMBRELLA_ISSUE_NUM
+          set -o pipefail
+          bash scripts/workflows/weekly-review/run-weekly-review-fix.sh "$WEEKLY_JSON" | tee fix.log
+          fix_exit=${PIPESTATUS[0]}
+          if [[ "$fix_exit" -ne 0 ]]; then
+            echo "::error::run-weekly-review-fix.sh failed with exit ${fix_exit}" >&2
+            exit "$fix_exit"
+          fi
+          if grep -q 'Created draft PR:' fix.log; then
+            url="$(grep 'Created draft PR:' fix.log | sed 's/.*Created draft PR: //')"
+            echo "fix_pr_url=${url}" >> "$GITHUB_OUTPUT"
+          elif grep -q 'Open draft PR already exists:' fix.log; then
+            num="$(grep 'Open draft PR already exists:' fix.log | sed 's/.*#//')"
+            url="$(gh pr view "$num" --json url --jq .url)"
+            echo "fix_pr_url=${url}" >> "$GITHUB_OUTPUT"
+          fi
