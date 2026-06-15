@@ -7,7 +7,7 @@
       "severity": "low",
       "body": "Fixture finding body.",
       "evidence": ["scripts/checks/053-weekly-review-invariants.sh"],
-      "dedupe_key": "weekly-fixture-example"
+      "dedupe_key": "repo-invariant-052-missing-link"
     }
   ],
   "adr_updates": [],

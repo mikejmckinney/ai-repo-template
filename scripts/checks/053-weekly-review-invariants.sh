@@ -26,7 +26,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE"     "${WEEKLY_DIR}/resolve-run-week.sh" "${WEEKLY_DIR}/run-weekly-antigravity.py" \
     "${WEEKLY_DIR}/build-weekly-review-batch.py" \
     "${WEEKLY_DIR}/validate-weekly-review-batch.py" "${WEEKLY_DIR}/post-weekly-review-json-comment.sh" \
-    "${WEEKLY_DIR}/fetch-weekly-review-json-from-issue.sh"; do
+    "${WEEKLY_DIR}/fetch-weekly-review-json-from-issue.sh" \
+    "${WEEKLY_DIR}/render-umbrella-findings.py"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -104,6 +105,15 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "run-weekly-review-fix.sh must render fix PR, link issue, and re-exec from temp copy"
   fi
 
+  if grep -q 'render-umbrella-findings.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q '{{FINDING_BLOCKS}}' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'repo-' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'weekly-review:finding:' "${WEEKLY_DIR}/render-umbrella-findings.py" 2>/dev/null; then
+    pass "umbrella issue renders detailed finding blocks with evidence links"
+  else
+    fail "weekly umbrella must use render-umbrella-findings.py + FINDING_BLOCKS template"
+  fi
+
   if grep -q 'write-umbrella-issue-ref.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'umbrella_issue' "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
     && grep -q 'post-weekly-review-json-comment.sh' "$UMBRELLA_SCRIPT" 2>/dev/null; then
@@ -129,6 +139,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && bash -n "$LINK_SCRIPT" 2>/dev/null \
     && bash -n "${WEEKLY_DIR}/resolve-run-week.sh" 2>/dev/null \
     && python3 -m py_compile "${WEEKLY_DIR}/run-weekly-antigravity.py" 2>/dev/null \
+    && python3 -m py_compile "${WEEKLY_DIR}/render-umbrella-findings.py" 2>/dev/null \
     && bash -n "${WEEKLY_DIR}/post-weekly-review-json-comment.sh" 2>/dev/null \
     && bash -n "${WEEKLY_DIR}/fetch-weekly-review-json-from-issue.sh" 2>/dev/null; then
     pass "weekly-review shell scripts have valid bash syntax"

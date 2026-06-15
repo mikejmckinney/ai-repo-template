@@ -1,19 +1,19 @@
 <!-- markdownlint-disable MD055 MD056 -->
 ## Summary
 
-Weekly **full-repo** health review on `main` (static scan; not PR-scoped).
+Full-repository health review on `main` (static scan; not PR-scoped).
 
 <!-- weekly-review:{{RUN_WEEK}} -->
 
-**Run week (ISO):** {{RUN_WEEK}}  
-**Scan date (UTC):** {{RUN_DATE}}  
-**HEAD SHA:** {{HEAD_SHA}}
+| Field | Value |
+|---|---|
+| **Run week (ISO)** | `{{RUN_WEEK}}` — idempotency key for this batch (calendar week; not a commit range) |
+| **Scan date (UTC)** | `{{RUN_DATE}}` |
+| **HEAD SHA** | [`{{HEAD_SHA}}`](https://github.com/{{REPO}}/commit/{{HEAD_SHA}}) — tip of `main` at scan time, not the diff boundary |
 
 ## Findings
 
-| Scope | Category | Dedupe key | Severity | Finding | Suggested action |
-|---|---|---|---|---|---|
-{{FINDING_ROWS}}
+{{FINDING_BLOCKS}}
 
 ## Meta
 

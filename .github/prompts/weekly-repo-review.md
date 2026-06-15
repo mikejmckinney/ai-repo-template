@@ -41,7 +41,7 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
       "severity": "low|medium|high",
       "body": "markdown body",
       "evidence": ["string"],
-      "dedupe_key": "stable-short-key"
+      "dedupe_key": "repo-invariant-example"
     }
   ],
   "adr_updates": [
@@ -49,7 +49,7 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
       "adr": "docs/decisions/adr-019-per-role-model-tiering.md",
       "title": "string",
       "body": "markdown body",
-      "dedupe_key": "stable-short-key"
+      "dedupe_key": "repo-invariant-example"
     }
   ],
   "context_pack_updates": [
@@ -59,7 +59,7 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
       "add": ["path"],
       "remove": ["path"],
       "evidence": ["string"],
-      "dedupe_key": "stable-short-key"
+      "dedupe_key": "repo-invariant-example"
     }
   ]
 }
@@ -67,8 +67,10 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
 
 ## Dedupe keys
 
-- Use stable, short, kebab-case keys scoped to the repo (e.g. `weekly-invariant-052-missing-link`).
-- Re-runs the same ISO week must not duplicate rows — reuse the same key only for the same finding.
+- Use stable, short, kebab-case keys scoped to the **repository** (not the weekly workflow): `repo-<area>-<short-desc>` (e.g. `repo-invariant-052-missing-link`, `repo-040-judge-overlay-stale`).
+- Do **not** prefix keys with `weekly-` — the batch cadence is already captured by `run_week`.
+- Each finding **must** include `evidence[]` with at least one **repo-relative file path** (e.g. `scripts/checks/040-file-content.sh`) so automation can link evidence in the umbrella issue.
+- The `body` field must explain the finding in full (what is wrong, why it matters, suggested fix). The umbrella issue renders `body` + linked evidence — do not rely on the title alone.
 
 ## Session handshake / context receipt
 
