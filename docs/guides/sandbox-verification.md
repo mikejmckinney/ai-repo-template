@@ -237,6 +237,13 @@ exercise (step 4). Triggers like `pull_request_review` /
 for trigger reproduction; leaving a sandbox PR open is also fine and
 is useful as a test artifact reviewers can inspect.
 
+**Do not commit one-time smoke artifacts to upstream `main`.** Ephemeral
+canary files (for example a throwaway markdown file merged only to
+exercise a workflow) belong in the **sandbox repo** for that smoke run,
+not as permanent files under upstream `.sandbox/` or `.github/prompts/`.
+Record evidence via sandbox issue/PR URLs in the upstream PR's
+`## Sandbox dogfood evidence` section per ADR-029.
+
 ```bash
 # Only when the trigger requires it:
 gh pr merge --repo "$SANDBOX_REPO" \

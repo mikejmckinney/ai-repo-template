@@ -34,7 +34,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
 ADVISORY_DIR="$REPO_ROOT/scripts/workflows/advisory-review"
 MARKER='<!-- ai-feedback-inbox:v1 -->'
-MARKER_TOKEN='ai-feedback-inbox:v1'
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
