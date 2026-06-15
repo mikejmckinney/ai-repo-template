@@ -23,7 +23,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   for f in "$WEEKLY_WORKFLOW" "$WEEKLY_PROMPT" "$WEEKLY_FIX_PROMPT" "$SCAN_SCRIPT" \
     "$WEEKLY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
     "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LINK_SCRIPT" \
-    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE"     "${WEEKLY_DIR}/resolve-run-week.sh" "${WEEKLY_DIR}/run-weekly-antigravity.py" \
+    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "${WEEKLY_DIR}/resolve-run-week.sh" "${WEEKLY_DIR}/run-weekly-antigravity.py" \
     "${WEEKLY_DIR}/build-weekly-review-batch.py" \
     "${WEEKLY_DIR}/validate-weekly-review-batch.py" "${WEEKLY_DIR}/post-weekly-review-json-comment.sh" \
     "${WEEKLY_DIR}/fetch-weekly-review-json-from-issue.sh" \
