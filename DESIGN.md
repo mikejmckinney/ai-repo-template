@@ -4,7 +4,7 @@
 >
 > **For design tools** (OpenDesign, Claude Design, Figma AI exports, etc.): load this file as the primary context before generating mockups or interactive prototypes. It defines product feel, tokens, accessibility floor, layout patterns, and where artifacts land in the repo.
 >
-> **Template repo note (`ai-repo-template`):** This repo has no product UI. The sections below are a **generic contract template** shipped so derived projects and agents know the expected shape. During Mode B onboarding, reset from the canonical stub in [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md) and replace `[TBD]` / example values with product-specific direction **before frontend implementation starts**.
+> **Template repo note (`ai-repo-template`):** This repo has no product UI. The sections below are a **generic contract template** shipped so derived projects and agents know the expected shape. During Mode B onboarding, reset from the canonical stub in [`.github/prompts/repo-onboarding-stubs.md`](.github/prompts/repo-onboarding-stubs.md) (procedure: [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md) Track B) and replace `[TBD]` / example values with product-specific direction **before frontend implementation starts**.
 
 ## Status
 
@@ -199,6 +199,6 @@ Before frontend implementation starts:
 
 ## Related references
 
-- [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md) — Mode B canonical stub source for reset/repopulation
+- [`.github/prompts/repo-onboarding-stubs.md`](.github/prompts/repo-onboarding-stubs.md) — Mode B canonical stub source (procedure: [`repo-onboarding.md`](.github/prompts/repo-onboarding.md))
 - [`.context/roadmap.md`](.context/roadmap.md) — Phase 0 deliverables (mockups, stack, domain rules)
 - [`.context/vision/README.md`](.context/vision/README.md) — mockup and diagram index

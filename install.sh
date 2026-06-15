@@ -140,9 +140,11 @@ if [[ ! -d "$PROMPTS_DIR" ]]; then
   log_info "  Created: $PROMPTS_DIR"
 fi
 
-# Copy repo-onboarding prompt
+# Copy repo-onboarding prompts
 ONBOARD_SRC="$DOTFILES/.github/prompts/repo-onboarding.md"
 ONBOARD_DST="$PROMPTS_DIR/repo-onboarding.md"
+ONBOARD_STUBS_SRC="$DOTFILES/.github/prompts/repo-onboarding-stubs.md"
+ONBOARD_STUBS_DST="$PROMPTS_DIR/repo-onboarding-stubs.md"
 ONBOARD_SRC_EXISTS=false
 
 if [[ -f "$ONBOARD_SRC" ]]; then
@@ -155,6 +157,17 @@ if [[ -f "$ONBOARD_SRC" ]]; then
   fi
 else
   log_warn "  ⚠ Source not found: $ONBOARD_SRC"
+fi
+
+if [[ -f "$ONBOARD_STUBS_SRC" ]]; then
+  if [[ -f "$ONBOARD_STUBS_DST" ]]; then
+    log_warn "  ⚠ $ONBOARD_STUBS_DST already exists, skipping"
+  else
+    cp "$ONBOARD_STUBS_SRC" "$ONBOARD_STUBS_DST"
+    log_info "  ✓ Copied: repo-onboarding-stubs.md"
+  fi
+else
+  log_warn "  ⚠ Source not found: $ONBOARD_STUBS_SRC"
 fi
 
 # Copy AGENTS.md to workspace root if not present
@@ -354,6 +367,7 @@ MULTIAGENT_FILES=(
   ".github/prompts/pre-push-review.md"
   ".github/prompts/pr-resolve-all.md"
   ".github/prompts/repo-onboarding.md"
+  ".github/prompts/repo-onboarding-stubs.md"
   ".github/agents/consensus-candidate-claude.agent.md"
   ".github/agents/consensus-candidate-gpt.agent.md"
   ".github/agents/consensus-candidate-gemini.agent.md"

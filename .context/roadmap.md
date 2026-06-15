@@ -175,7 +175,7 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 ### Current Deliverables
 - Populate `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` with real template content.
 - Add architecture diagrams for multi-agent flow and live-state surfaces.
-- Keep Mode B onboarding explicit by restoring those files from a canonical stub source in `.github/prompts/repo-onboarding.md`.
+- Keep Mode B onboarding explicit by restoring those files from `.github/prompts/repo-onboarding-stubs.md` (procedure: `.github/prompts/repo-onboarding.md` Track B).
 - Keep the reset rule explicit in `.context/rules/process_template_detection.md` after the live template files lose their bootstrap placeholder markers.
 
 ### Exit Criteria

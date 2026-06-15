@@ -98,7 +98,7 @@ The full workflow catalog (~17 entries with required secrets and customization n
 1. Click "Use this template" on GitHub
 2. Create your new repository
 3. Run `.github/prompts/repo-onboarding.md`
-4. In Mode B, restore `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` from the prompt's canonical stubs, delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`, then repopulate the resettable `.context` files with project-specific content
+4. In Mode B, restore `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md` from `.github/prompts/repo-onboarding-stubs.md`, delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`, then repopulate the resettable files with project-specific content
 5. Replace remaining `TEMPLATE_PLACEHOLDER` and `PLEASE_UPDATE_THIS/URL` values and customize `ci-tests.yml` for your tech stack
 
 ### Option 3: Copy to Existing Repository
@@ -198,7 +198,7 @@ EXTENSIONS=(
 
 When using this template in a new repository:
 
-1. **Start with `.github/prompts/repo-onboarding.md`** - It is the canonical Mode B reset workflow and stub source for the resettable `.context` files
+1. **Start with `.github/prompts/repo-onboarding.md`** — canonical onboarding procedure (Mode B stubs: `.github/prompts/repo-onboarding-stubs.md`)
 2. **Repopulate `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md`** - Replace the canonical stubs with project-specific purpose, plan, and design context before regenerating `AI_REPO_GUIDE.md`
 3. **Create domain rules** - Add constraints to `.context/rules/`
 4. **Start with mockups** - Add design artifacts to `.context/vision/` before coding

@@ -24,7 +24,7 @@ lists come after, not before.
 ## Files here
 
 - **Shared procedural prompts** (template-provided; e.g.) — `pr-resolve-all.md`,
-  `repo-onboarding.md`, `expand-backlog-entry.md`, `capture-postmortem.md`,
+  `repo-onboarding.md` (procedure; stubs in `repo-onboarding-stubs.md`), `expand-backlog-entry.md`, `capture-postmortem.md`,
   `mirror-postmortem.md`, `pre-push-review.md`, `multi-model-consensus-plan.md`,
   `instruction-compliance-smoke.md`.
   These describe procedures, not deliverables, and don't require pre-flight.
