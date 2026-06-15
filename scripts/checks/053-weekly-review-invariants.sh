@@ -89,7 +89,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "run-weekly-review-scan.sh must use select-context (full, empty triggers) + antigravity path"
   fi
 
-  if grep -qE 'read the repository working tree|Inspect the repository' "$WEEKLY_PROMPT" 2>/dev/null \
+  if grep -qE 'read the repository working tree\b|Inspect the repository\b' "$WEEKLY_PROMPT" 2>/dev/null \
     && grep -q 'context pack' "$WEEKLY_PROMPT" 2>/dev/null; then
     pass "weekly prompt instructs repo inspection (not supplied-artifacts-only)"
   else
