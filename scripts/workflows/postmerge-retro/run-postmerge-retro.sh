@@ -103,6 +103,22 @@ for rel in "${context_files[@]}"; do
   fi
 done
 
+# Retro prompt cites ADR-027; inject after catalog selection (not in full-rules floor).
+RETRO_EXTRA_CONTEXT=(
+  "docs/decisions/adr-027-opportunity-feedback-channel.md"
+)
+for extra in "${RETRO_EXTRA_CONTEXT[@]}"; do
+  found=0
+  for rel in "${context_files[@]}"; do
+    [[ "$rel" == "$extra" ]] && found=1 && break
+  done
+  if [[ "$found" -eq 0 && -f "$REPO_ROOT/$extra" ]]; then
+    context_files+=("$extra")
+    context_bytes=$((context_bytes + $(wc -c <"$REPO_ROOT/$extra" | tr -d ' ')))
+    context_file_count="${#context_files[@]}"
+  fi
+done
+
 prompt_file="$WORKDIR/prompt.md"
 {
   cat "$REPO_ROOT/.github/prompts/post-merge-retro.md"

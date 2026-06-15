@@ -13,7 +13,7 @@ mkdir -p "$ARTIFACT_ROOT"
 
 mapfile -t ALL_PRS < <(bash "$SCRIPT_DIR/list-merges-last-24h.sh" || true)
 if [[ -n "${POSTMERGE_RETRO_ONLY_PRS:-}" ]]; then
-  mapfile -t ALL_PRS < <(tr ',' '\n' <<<"${POSTMERGE_RETRO_ONLY_PRS}" | sed '/^[[:space:]]*$/d')
+  mapfile -t ALL_PRS < <(tr ',' '\n' <<<"${POSTMERGE_RETRO_ONLY_PRS}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed '/^$/d')
   echo "POSTMERGE_RETRO_ONLY_PRS override: ${ALL_PRS[*]}"
 fi
 if [[ ${#ALL_PRS[@]} -eq 0 ]]; then

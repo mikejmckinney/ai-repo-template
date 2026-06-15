@@ -142,18 +142,28 @@ esac
 
 strip_workflow_changes
 
+has_diff=0
 if ! git diff --quiet || ! git diff --cached --quiet; then
   commit_msg="fix: weekly repo review fixes for ${RUN_WEEK}"
   git add -A
   git reset HEAD -- .github/workflows/ 2>/dev/null || true
   git checkout HEAD -- .github/workflows/ 2>/dev/null || true
   git commit -m "$commit_msg"
+  has_diff=1
 else
   echo "::warning::Fix pass produced no git diff"
-  exit 0
 fi
 
-git push -u origin "$BRANCH"
+existing_pr="$(gh pr list -R "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+
+if [[ "$has_diff" -eq 1 ]]; then
+  git push -u origin "$BRANCH"
+elif [[ -z "$existing_pr" ]]; then
+  skip_notice="(skipped — no code changes; see retro/fix-notes-${RUN_WEEK}.md if present)"
+  bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_WEEK" "$skip_notice" "$WEEKLY_JSON"
+  echo "Fix pass complete for ${RUN_WEEK} (no changes)"
+  exit 0
+fi
 
 render_fix_pr_body() {
   local body_file="$WORKDIR/fix-pr-body.md"
@@ -192,7 +202,6 @@ link_pr_to_umbrella() {
   bash "$LIB_DIR/link-fix-pr-to-issue.sh" "$REPO" "$pr_num" "$umbrella_num"
 }
 
-existing_pr="$(gh pr list -R "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
 if [[ -n "$existing_pr" ]]; then
   echo "Open draft PR already exists: #${existing_pr}"
   PR_URL="$(gh pr view "$existing_pr" -R "$REPO" --json url --jq .url)"

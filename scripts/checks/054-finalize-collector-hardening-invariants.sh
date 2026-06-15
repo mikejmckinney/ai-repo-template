@@ -48,6 +48,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "prompt_helpers cap-json failed"
   fi
 
+  run_bats_check scripts/tests/paginate-comments.bats "paginate-comments.bats"
+  run_bats_check scripts/tests/prompt-helpers.bats "prompt-helpers.bats"
+
   echo ""
   return 0
 fi
