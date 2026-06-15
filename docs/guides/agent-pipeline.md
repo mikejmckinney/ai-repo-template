@@ -292,7 +292,7 @@ Weekly **Sunday 07:00 UTC** cron plus **`workflow_dispatch`** on `agent-weekly-r
 |---|---|---|
 | **Gemini API** (`run-advisory-gemini.py`) | API key → Google AI / Cloud project behind that key | Tier is whatever that project has (AI Studio free quotas vs billing-enabled paid). This workflow does **not** implement OAuth or `free-then-paid` routing — see `07-implement-gemini-free-paid-routing.md` for planned router work. |
 | **Antigravity** (`run-advisory-antigravity.py`) | Same API key + remote sandbox | Preview Interactions API; typically higher cost/latency than flat `generateContent`; may use code execution / search tools by default. |
-| **Cursor SDK** (`run-advisory-cursor.mjs`) | `CURSOR_API_KEY` → Cursor account usage pool | Per Cursor SDK / subscription terms. **`composer-2.5` in repo config means standard tier** — the shared runner sets SDK `fast=false` (see [Composer 2.5 standard vs fast](#composer-25-standard-vs-fast-cursor-sdk)). |
+| **Cursor SDK** (`run-advisory-cursor.mjs`) | `CURSOR_API_KEY` → Cursor account usage pool | Per Cursor SDK / subscription terms. **`composer-2.5` in repo config means standard tier** — the shared runner sets SDK `fast=false` (see [Composer 2.5 standard vs fast](#composer-25-standard-vs-fast-cursor-sdk-and-cli)). |
 | **Gemini Code Assist** (`/gemini review`, `agent-review-on-push.yml`) | Separate GitHub App path | Not used by advisory snapshots; formal bot reviews only. |
 
 **What context the models see (advisory path):**
@@ -328,7 +328,7 @@ Repo workflows (advisory, finalize, post-merge retro) all call the shared runner
 |---|---|---|
 | **Cursor IDE (interactive)** | Fast toggle in model picker | Yes — when Fast is off |
 | **SDK / REST / Python** (our GHA runners) | Defaults to fast without `fast=false` param | **Yes, after `run-advisory-cursor.mjs` fix** (required — do not remove) |
-| **CLI headless / API key** (`cursor-agent -p --model composer-2.5`) | Historically reported as billing `composer-2.5-fast` despite the flag ([forum](https://forum.cursor.com/t/cursor-cli-calling-composer2-fast-despite-always-calling-with-composer2/160297)). **2026-06-14 smoke test in this repo:** both `--model composer-2.5` and `--model 'composer-2.5[fast=false]'` billed as **standard** `composer-2.5` (~13K tokens each, ~2:04 PM ET). Monitor if Cursor CLI version changes. |
+| **CLI headless / API key** (`cursor-agent -p --model composer-2.5`) | Historically reported as billing `composer-2.5-fast` despite the flag ([forum](https://forum.cursor.com/t/cursor-cli-calling-composer2-fast-despite-always-calling-with-composer2/160297)). **2026-06-14 smoke test in this repo:** both `--model composer-2.5` and `--model 'composer-2.5[fast=false]'` billed as **standard** `composer-2.5` (~13K tokens each, ~2:04 PM ET). | **Yes** (2026-06-14 smoke; re-check on CLI upgrades) |
 
 **Repo CLI usage:** Only the **benchmark harness** (`scripts/benchmark/adapters/cursor.sh`) calls `cursor-agent -p --model …` headlessly. Advisory/finalize/retro **do not** use the CLI.
 
