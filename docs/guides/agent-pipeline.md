@@ -277,7 +277,7 @@ Weekly **Sunday 07:00 UTC** cron plus **`workflow_dispatch`** on `agent-weekly-r
 
 1. Static **full-repo** scan on `main` (not PR-scoped): **context pack only** in prompt + agent reads working tree (`local.cwd` / Antigravity fallback).
 2. Batch → `weekly-review.json` (retro-compatible `findings[]`).
-3. **One umbrella issue per ISO week** (`<!-- weekly-review:YYYY-Www -->`; skip when zero findings).
+3. **One umbrella issue per ISO week** (`<!-- weekly-review:YYYY-Www -->`; skip when zero findings). Umbrella body renders each finding as a detailed block (full body, `repo-*` dedupe key, evidence blob links) via `render-umbrella-findings.py`.
 4. **Draft fix PR** `weekly/fix-YYYY-Www` when findings exist; native issue link via **`Fixes #N`** (`link-fix-pr-to-issue.sh`).
 
 **Dispatch:** `scripts/workflows/weekly-review/` — prompts `weekly-repo-review.md`, `weekly-repo-review-fix.md`; templates `weekly-review-umbrella.md`, `weekly-review-fix-pr.md`. Context via `WEEKLY_REVIEW_CONTEXT_PROFILE` (default **`full`**, pack only). Provider: `WEEKLY_REVIEW_PROVIDER` or advisory `auto` (Cursor → Antigravity when enabled → Gemini explicit only).

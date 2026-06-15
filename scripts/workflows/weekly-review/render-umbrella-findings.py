@@ -28,7 +28,7 @@ def _blob_url(repo: str, sha: str, relpath: str) -> str:
 
 
 def _is_repo_path(text: str) -> bool:
-    text = text.strip()
+    text = text.strip().split(":", 1)[0]
     if not text or text.startswith("http"):
         return False
     return bool(re.match(r"^[\w./-]+\.(md|sh|py|yml|yaml|json|toml|txt)$", text)) or "/" in text
