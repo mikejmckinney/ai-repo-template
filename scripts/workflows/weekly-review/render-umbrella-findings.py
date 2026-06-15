@@ -9,8 +9,19 @@ from pathlib import Path
 from urllib.parse import quote
 
 
+def _normalize_relpath(relpath: str) -> str:
+    path = relpath.strip()
+    if path.startswith("./"):
+        return path[2:]
+    if path.startswith("/"):
+        return path[1:]
+    return path
+
+
 def _blob_url(repo: str, sha: str, relpath: str) -> str:
-    path = relpath.strip().lstrip("./")
+    # Evidence may include :line suffixes; keep those in the link label only.
+    path_part = relpath.strip().split(":", 1)[0]
+    path = _normalize_relpath(path_part)
     if not path or path.startswith("http"):
         return relpath.strip()
     return f"https://github.com/{repo}/blob/{sha}/{quote(path, safe='/')}"
