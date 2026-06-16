@@ -12,6 +12,7 @@ Granting subagents broader write/exec permissions is **not** the right remediati
 
 A subagent that performs file edits and then claims `git commit` + `git push` from inside its own terminal can return a plausible success response when no commit landed on the remote. Parent OP detects this only by independently running `git fetch && git log origin/<branch> -1` after each dispatch.
 
+Recorded in [ADR-031](../decisions/adr-031-agent-model-roi-benchmark-policy.md) and [`.agents/analyst.md`](../../.agents/analyst.md) (pass-back / verification discipline). The rule-file discipline hedges without granting broader permissions or weakening OP's diff-gate authority.
 
 **Verification snippet placement**: v1 schema has no `verification` field; record `git log origin/<branch> -1 --oneline` output inline in narrative above `subagent_compliance`, in `apply_replays[].anchor` prose, or in parent pass-through after replay.
 
