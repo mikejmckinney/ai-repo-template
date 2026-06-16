@@ -27,7 +27,7 @@ You are an AI agent onboarding to an existing codebase. Build an accurate mental
 
 ---
 
-## Step 1 — Classify mode and pick track
+## Step 1 — Classify mode and pick mode
 
 Run these checks once and record the result. The mode determines whether
 template info should be retained (template repo itself) or replaced (derived repo).
@@ -42,7 +42,7 @@ template info should be retained (template repo itself) or replaced (derived rep
   This catches repos that already cleared the obvious placeholders but have not actually completed the Mode B reset/repopulation sequence. Do the work in Step 2.
 - **Mode C — Derived repo, already customized.** No Mode B signals and repo is not `ai-repo-template`. Skip Step 2, continue to step 3.
 
-If ambiguous (e.g. `ai-repo-template` remote *and* a stray `TEMPLATE_PLACEHOLDER`), prefer **Mode A** — never regenerate the template's own docs. Note ambiguity in the [Step 3.1]() status line.
+If ambiguous (e.g. `ai-repo-template` remote *and* a stray `TEMPLATE_PLACEHOLDER`), prefer **Mode A** — never regenerate the template's own docs. Note ambiguity in the Step 3.1 status line.
 
 ---
 
@@ -51,14 +51,13 @@ If ambiguous (e.g. `ai-repo-template` remote *and* a stray `TEMPLATE_PLACEHOLDER
 | Step | Action |
 |---|---|
 | **2.1** | Reset and repopulate [README.md](/README.md), [00_INDEX.md](/.context/00_INDEX.md), [roadmap.md](/.context/roadmap.md), [.context/vision/README.md](/.context/vision/README.md), and [DESIGN.md](/DESIGN.md) with project-specific content (delete template stub language, preserve useful structure), then regenerate [AI_REPO_GUIDE.md](/AI_REPO_GUIDE.md) from the repo's real assets (`.context/*`, `./docs/*`, source, etc.). This file is canonical for agents and must not retain template placeholder language. |
-| **2.2** | Extend [`.context/rules/agent_ownership.md`](../../.context/rules/agent_ownership.md) with real source paths. **Keep** template-governance roles (Analyst / Architect / PM / QA / DevOps / Docs / Judge / Critic). |
-| **2.3** | Customize [docs/FAQ.md](/docs/FAQ.md) — remove `Template:`-prefixed entries; add project Q&A. |
-| **2.4** | Delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md` (template-only diagrams). |
-| **2.5** | Reset `.context/sessions/latest_summary.md` body to a single `No sessions yet` line (keep `TEMPLATE_PLACEHOLDER` marker until first durable entry). Keep `.context/state/agent_state_comment_template.md`, `.context/sessions/feedback_template.md`, and directory `README.md` files. |
-| **2.6** | Re-run `./scripts/verify-env.sh`; fix blocking issues. |
-| **2.7** | Run **Bootstrap verification** (script below). On any `FAIL`, resume at the **numbered step** that owns the failure. |
+| **2.2** | Customize [docs/FAQ.md](/docs/FAQ.md) — remove `Template:`-prefixed entries; add project Q&A. |
+| **2.3** | Delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md` (template-only diagrams). |
+| **2.4** | Reset `.context/sessions/latest_summary.md` body to a single `No sessions yet` line (keep `TEMPLATE_PLACEHOLDER` marker until first durable entry). Keep `.context/state/agent_state_comment_template.md`, `.context/sessions/feedback_template.md`, and directory `README.md` files. |
+| **2.5** | Re-run `./scripts/verify-env.sh`; fix blocking issues. |
+| **2.6** | Run **Bootstrap verification** (script below). On any `FAIL`, resume at the **numbered step** that owns the failure. |
 
-### Bootstrap verification (2.7)
+### Bootstrap verification (2.6)
 
 Skip entirely for Mode A and C. For Mode B derived repos:
 
@@ -101,7 +100,7 @@ Use `grep -E` (extended regex) rather than `grep` with `\|` - the
 basic-regex alternation is not portable across all `grep`
 implementations.
 
-When 2.7 passes (no `FAIL` lines), continue to **Step 3**.
+When 2.6 passes (no `FAIL` lines), continue to **Step 3**.
 
 ---
 
@@ -131,12 +130,12 @@ Do a fast sanity pass so the rest of this step has accurate state:
 - `./scripts/verify-env.sh` exits 0 **and** reports no onboarding-blocking
   WARNs. In particular, treat any `TEMPLATE_PLACEHOLDER`-still-present
   WARN as **Unstable** when running in a derived (non-template) repo -
-  it means stub docs haven't been replaced yet (Phase 0 is incomplete).
+  it means docs haven't been regenerated and replaced yet (step 2 is incomplete).
   (`verify-env.sh` emits a distinct WARN for the 3 bootstrap state files;
   that warn is **non-blocking** - expected during bootstrap, actionable once
   the first real task/session has landed and those markers should be cleared.)
 - Steps 1-6 above completed without missing-file errors. (`bash test.sh`
-  is the deeper structural check; run it later in Phase 1 if you want
+  is the deeper structural check; run it later in Step 3 if you want
   full coverage.)
 
 Otherwise report **Unstable** and name the specific failure or blocking
@@ -254,7 +253,7 @@ Do not retain template placeholder language in derived repos. Further `AI_REPO_G
 
 Use only when this onboarding session **also** assigns implementation. Otherwise skip.
 
-Start [`op-issue-workflow.md`](op-issue-workflow.md) at **Workflow Phase 0 — Session bootstrap** 
+Start [`op-issue-workflow.md`](op-issue-workflow.md)
 
 ---
 
