@@ -275,6 +275,17 @@ Watch the run in the sandbox repo's Actions tab. The whole point of
 sandbox is that a real failure surfaces *here*, in logs you can read,
 without leaving any artifact in this repo's `main`.
 
+## Automated fix-job sandbox sync (ADR-029 §1.1)
+
+When `FIX_JOB_SANDBOX_VERIFY=true` on the **upstream** repo (default
+`false`), daily/weekly **fix** jobs may push the fix branch to sandbox
+once at end-of-job via
+[`scripts/workflows/lib/sandbox-sync-fix-branch.sh`](../../scripts/workflows/lib/sandbox-sync-fix-branch.sh)
+using `SANDBOX_BOOTSTRAP_TOKEN`. Branch names:
+`test/fix-retro-<RUN_DATE>` or `test/fix-weekly-<RUN_WEEK>`. Jobs on
+`*-sandbox` repos skip automatically. Run `./scripts/diag-sandbox.sh`
+before manual or agent-driven sandbox operations.
+
 ### 5. Decide
 
 - **Green** — paste a one-line link to the green sandbox run into a

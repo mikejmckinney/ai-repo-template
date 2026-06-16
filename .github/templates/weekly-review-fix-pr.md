@@ -21,9 +21,12 @@ See umbrella issue for the full findings table. This draft implements the bundle
 
 ## Verification
 
-- [ ] Each finding in the umbrella row has a corresponding fix or explicit skip reason
-- [ ] `./test.sh` — pass / fail
+- [ ] Each finding in the umbrella row has a corresponding fix or explicit skip reason (`cant_reproduce` in fix-verify.json)
+- [ ] `./test.sh` — pass / fail (recorded in fix-verify.json)
+- [ ] Remove `weekly/fix-verify-{{RUN_WEEK}}.json` before undraft/merge
 - [ ] Manual review of LLM-applied edits before undrafting
+
+{{FIX_VERIFY_SECTIONS}}
 
 ## Doc sync
 

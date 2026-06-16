@@ -29,7 +29,7 @@
   "$defs": {
     "followUpIssue": {
       "type": "object",
-      "required": ["title", "body", "dedupe_key"],
+      "required": ["title", "body", "dedupe_key", "repro_steps"],
       "additionalProperties": true,
       "properties": {
         "title": { "type": "string", "minLength": 1 },
@@ -45,6 +45,11 @@
         "evidence": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "repro_steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
         },
         "dedupe_key": { "type": "string", "minLength": 1 }
       }

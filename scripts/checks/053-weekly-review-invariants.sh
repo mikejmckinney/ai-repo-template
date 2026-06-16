@@ -124,10 +124,24 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'follow_up_issues' "$WEEKLY_PROMPT" 2>/dev/null \
-    && grep -q 'dedupe_key' "$WEEKLY_PROMPT" 2>/dev/null; then
-    pass "weekly prompt defines JSON output shape"
+    && grep -q 'dedupe_key' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'repro_steps' "$WEEKLY_PROMPT" 2>/dev/null; then
+    pass "weekly prompt defines JSON output shape with repro_steps"
   else
-    fail "weekly prompt missing required JSON contract"
+    fail "weekly prompt missing required JSON contract (repro_steps)"
+  fi
+
+  if grep -q 'fix-verify' "$WEEKLY_FIX_PROMPT" 2>/dev/null; then
+    pass "weekly fix prompt references fix-verify.json"
+  else
+    fail "weekly-repo-review-fix prompt missing fix-verify rules"
+  fi
+
+  if grep -q 'FIX_JOB_SANDBOX_VERIFY' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'SANDBOX_BOOTSTRAP_TOKEN' "$WEEKLY_WORKFLOW" 2>/dev/null; then
+    pass "weekly fix job wires sandbox verify env + token"
+  else
+    fail "agent-weekly-review.yml fix job missing FIX_JOB_SANDBOX_VERIFY / SANDBOX_BOOTSTRAP_TOKEN"
   fi
 
   if bash -n "$SCAN_SCRIPT" 2>/dev/null \

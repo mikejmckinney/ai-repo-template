@@ -139,11 +139,35 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'follow_up_issues' "$RETRO_PROMPT" 2>/dev/null \
-    && grep -q 'dedupe_key' "$RETRO_PROMPT" 2>/dev/null; then
-    pass "retro prompt defines JSON output shape"
+    && grep -q 'dedupe_key' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'repro_steps' "$RETRO_PROMPT" 2>/dev/null; then
+    pass "retro prompt defines JSON output shape with repro_steps"
   else
-    fail "retro prompt missing required JSON contract"
+    fail "retro prompt missing required JSON contract (repro_steps)"
   fi
+
+  if grep -q 'fix-verify' "$RETRO_FIX_PROMPT" 2>/dev/null \
+    && grep -q 'cant_reproduce' "$RETRO_FIX_PROMPT" 2>/dev/null; then
+    pass "retro fix prompt defines per-finding verification (ADR-029 §1.1)"
+  else
+    fail "post-merge-retro-fix prompt missing fix-verify / cant_reproduce rules"
+  fi
+
+  if grep -q 'FIX_JOB_SANDBOX_VERIFY' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'SANDBOX_BOOTSTRAP_TOKEN' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro fix job wires sandbox verify env + token"
+  else
+    fail "agent-postmerge-retro.yml fix job missing FIX_JOB_SANDBOX_VERIFY / SANDBOX_BOOTSTRAP_TOKEN"
+  fi
+
+  for lib in pick-advisory-provider.sh invoke-advisory-llm.sh fix-phase-log.sh \
+    sandbox-sync-fix-branch.sh finalize-fix-pr.sh render-fix-pr-sections.py; do
+    if [[ -f "scripts/workflows/lib/$lib" ]]; then
+      pass "workflow lib $lib exists"
+    else
+      fail "missing scripts/workflows/lib/$lib"
+    fi
+  done
 
   if grep -q 'merged_at' "$RUN_SCRIPT" 2>/dev/null; then
     pass "run-postmerge-retro uses merged_at gate"
@@ -183,6 +207,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && bash -n "$LINK_SCRIPT" 2>/dev/null \
     && bash -n "${RETRO_DIR}/post-daily-retro-json-comment.sh" 2>/dev/null \
     && bash -n "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" 2>/dev/null \
+    && bash -n "scripts/workflows/lib/pick-advisory-provider.sh" 2>/dev/null \
+    && bash -n "scripts/workflows/lib/invoke-advisory-llm.sh" 2>/dev/null \
+    && bash -n "scripts/workflows/lib/fix-phase-log.sh" 2>/dev/null \
+    && bash -n "scripts/workflows/lib/sandbox-sync-fix-branch.sh" 2>/dev/null \
+    && bash -n "scripts/workflows/lib/finalize-fix-pr.sh" 2>/dev/null \
     && bash -n "$LIST_SCRIPT" 2>/dev/null; then
     pass "postmerge-retro shell scripts have valid bash syntax"
   else

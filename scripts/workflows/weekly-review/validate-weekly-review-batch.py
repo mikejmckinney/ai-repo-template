@@ -44,6 +44,15 @@ def main() -> int:
             if key not in item or not str(item[key]).strip():
                 print(f"findings[{i}].{key} required", file=sys.stderr)
                 return 1
+        if item.get("category") == "follow_up_issues":
+            steps = item.get("repro_steps")
+            if not isinstance(steps, list) or not steps:
+                print(f"findings[{i}].repro_steps required for follow_up_issues", file=sys.stderr)
+                return 1
+            for j, step in enumerate(steps):
+                if not isinstance(step, str) or not str(step).strip():
+                    print(f"findings[{i}].repro_steps[{j}] must be non-empty string", file=sys.stderr)
+                    return 1
         pr_val = item.get("pr", 0)
         if pr_val is None:
             continue

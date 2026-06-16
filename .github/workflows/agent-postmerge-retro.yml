@@ -198,6 +198,7 @@ jobs:
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       RUN_DATE: ${{ github.event.inputs.run_date || needs.daily-retro.outputs.run_date }}
       UMBRELLA_ISSUE_NUM: ${{ needs.daily-retro.outputs.umbrella_issue_num }}
+      FIX_JOB_SANDBOX_VERIFY: ${{ vars.FIX_JOB_SANDBOX_VERIFY || 'false' }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -254,6 +255,8 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          SANDBOX_BOOTSTRAP_TOKEN: ${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}
+          FIX_JOB_SANDBOX_VERIFY: ${{ vars.FIX_JOB_SANDBOX_VERIFY || 'false' }}
         run: |
           if [[ -n "${CLAUDE_PAT:-}" ]]; then
             export GH_TOKEN="$CLAUDE_PAT"
