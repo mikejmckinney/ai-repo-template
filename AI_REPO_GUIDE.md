@@ -109,7 +109,7 @@ bash install.sh
 │   │   ├── pr-feedback/      # agent-review-finalize.yml collect + consolidate dispatch
 │   │   ├── postmerge-retro/  # agent-postmerge-retro.yml daily batch + fix PR
 │   │   ├── weekly-review/    # agent-weekly-review.yml full-repo scan + fix PR
-│   │   └── lib/              # shared prompt helpers + fix PR issue linker
+│   │   └── lib/              # shared prompt helpers, fix-branch checkout, SDK version pin, fix PR linker
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
