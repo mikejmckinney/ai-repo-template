@@ -78,6 +78,10 @@ echo "Running sandbox doctor fixture tests..."
 run_bats_check scripts/tests/diag-sandbox.bats
 
 echo ""
+echo "Running Codespace post-start fixture tests..."
+run_bats_check scripts/tests/codespace-post-start.bats
+
+echo ""
 echo "Running verify-pr.sh classifier fixture tests (issue #227)..."
 run_bats_check scripts/tests/verify-pr.bats
 

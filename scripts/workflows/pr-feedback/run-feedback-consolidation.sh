@@ -245,12 +245,14 @@ run_gemini() {
 
 case "$PROVIDER" in
   cursor)
-    if ! npm install --no-save @cursor/sdk >"$WORKDIR/npm-install.log" 2>&1; then
-      echo "::error::npm install @cursor/sdk failed for finalize Cursor path" >&2
+    # shellcheck source=../lib/cursor-sdk-version.sh
+    source "$LIB_DIR/cursor-sdk-version.sh"
+    if ! npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >"$WORKDIR/npm-install.log" 2>&1; then
+      echo "::error::npm install @cursor/sdk@${CURSOR_SDK_VERSION} failed for finalize Cursor path" >&2
       tail -20 "$WORKDIR/npm-install.log" >&2 || true
       exit 1
     fi
-    echo "::notice::Installed @cursor/sdk for finalize Cursor path"
+    echo "::notice::Installed @cursor/sdk@${CURSOR_SDK_VERSION} for finalize Cursor path"
     CURSOR_ADVISORY_MODEL="${CURSOR_FINALIZE_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
       node "$ADVISORY_DIR/run-advisory-cursor.mjs" "$prompt_file" "$out_file"
     ;;

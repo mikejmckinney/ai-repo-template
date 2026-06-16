@@ -259,7 +259,9 @@ run_gemini() {
 
 case "$PROVIDER" in
   cursor)
-    npm install --no-save @cursor/sdk >/dev/null 2>&1
+    # shellcheck source=../lib/cursor-sdk-version.sh
+    source "$LIB_DIR/cursor-sdk-version.sh"
+    npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
     node "$SCRIPT_DIR/run-advisory-cursor.mjs" "$prompt_file" "$out_file"
     ;;
   gemini)

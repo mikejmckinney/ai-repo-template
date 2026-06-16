@@ -17,6 +17,8 @@ module owns one phase of project bootstrap and is independently re-runnable.
 | `60-check-secrets.sh` | Report presence of `CLAUDE_PAT`, `ANTHROPIC_API_KEY` (repo + org tiers). | Cannot read values; presence-only. |
 | `70-verify-env.sh` | Delegate to `scripts/verify-env.sh`. | Final gate. |
 
+**Codespace post-start (not part of `setup.sh`):** [`scripts/codespace-post-start.sh`](../codespace-post-start.sh) runs from [`install.sh`](../../install.sh) on every Codespace start. It upgrades `gh` from the injected `GITHUB_TOKEN` to a user PAT when `GH_PAT` (etc.) is set, exports session tokens, installs a shell hook, and advises when the sandbox git remote is missing. It does **not** invoke `sandbox-bootstrap.sh` (maintainer one-time; requires `SANDBOX_PAT`).
+
 ## How the modules are loaded
 
 `setup.sh` sources each `[0-9][0-9]-*.sh` module in lexical order with

@@ -242,7 +242,9 @@ fi
 llm_raw="$WORKDIR/llm-output.txt"
 case "$PROVIDER" in
   cursor)
-    npm install --no-save @cursor/sdk >/dev/null 2>&1
+    # shellcheck source=../lib/cursor-sdk-version.sh
+    source "$LIB_DIR/cursor-sdk-version.sh"
+    npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
     CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
       node "$ADVISORY_DIR/run-advisory-cursor.mjs" "$prompt_file" "$llm_raw"
     ;;
