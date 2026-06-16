@@ -142,8 +142,8 @@ Examples:
 
 | File | Load | In context | Why it was read | Decision affected |
 |---|---|---|---|---|
-| `.context/rules/process_pr_completion.md` | Read | yes | PR readiness rule triggered | PR checklist and review response |
-| `.context/rules/process_model_tier.md` | Read | yes | Model routing policy edit | ADR-019 amendment recommendation |
+| `.context/rules/process_work_style.md` | Read | yes | PR readiness surfaces | PR checklist and review response |
+| `docs/decisions/adr-019-per-role-model-tiering.md` | Read | yes | Model routing policy edit | ADR-019 amendment recommendation |
 | `docs/decisions/adr-016-pre-merge-verification-gate.md` | Read | yes | Workflow-risk change | Sandbox verification requirement |
 
 ### `In context: yes` / `no` / `partial`
@@ -169,8 +169,8 @@ Examples:
 | File | Load | In context | Why it was read | Decision affected |
 |---|---|---|---|---|
 | `.context/rules/domain_code_quality.md` | Skipped | no | Docs-only change; no code/refactor trigger | No code-quality gate applied |
-| `.context/rules/process_subagent_bootstrap.md` | Skipped | no | No subagents dispatched or evaluated | No subagent compliance needed |
-| `.context/rules/process_template_detection.md` | Skipped | no | Existing repo mode already known; not onboarding a new clone | No Mode A/B decision |
+| `docs/guides/subagent-bootstrap-reference.md` | Skipped | no | No subagents dispatched or evaluated | No subagent compliance needed |
+| `.github/prompts/repo-onboarding.md` | Skipped | no | Existing repo mode already known; not onboarding a new clone | No Mode A/B decision |
 
 ### Invalid status claims
 

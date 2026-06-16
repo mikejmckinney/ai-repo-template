@@ -43,7 +43,7 @@ Fixed skeletons: plan/issue/PR/ADR templates, role overlay frontmatter.
 
 ### P6 — Facade (tool-specific entry points)
 
-`CLAUDE.md`, `AGENT.md`, `AI_REPO_GUIDE.md`, `.github/copilot-instructions.md` — thin pointers to canonical contract.
+`AGENT.md`, `AI_REPO_GUIDE.md`, `.github/copilot-instructions.md` — thin pointers to canonical contract (`AGENTS.md`).
 
 ### P7 — Owner-Keyed Concurrent State
 

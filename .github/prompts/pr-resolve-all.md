@@ -29,7 +29,7 @@ agent: agent
 > the Phase 4 report table. See ADR-008 for the design.
 >
 > **When to stop**: this prompt covers *how* to fix bot findings;
-> `.context/rules/process_pr_completion.md` § "PR completion criteria (interactive sessions)" covers
+> [`.github/pull_request_template.md`](../pull_request_template.md) § "User outcome validation — PRIMARY" covers
 > *when the PR is done* (CI green + threads resolved or explicitly
 > deferred). Read both before declaring work complete.
 

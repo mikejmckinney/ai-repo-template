@@ -173,12 +173,11 @@ if [[ -f "$AGENTS_SRC" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Multi-agent kit: role files, ownership map, coordination board, CLAUDE.md
+# Multi-agent kit: role files, coordination board
 # ---------------------------------------------------------------------------
 # AGENTS.md tells agents to read .agents/<role>.md (canonical) and the
 # vendor overlays under .github/agents/*.agent.md / .claude/agents/*.md /
 # .cursor/agents/*.md / .codex/agents/*.toml,
-# the ownership map,
 # and the coordination board before editing. Without these files in the target
 # workspace the mandatory onboarding flow is non-actionable, so we copy the
 # full kit (skipping anything that already exists so we never clobber a repo
@@ -236,9 +235,7 @@ copy_template_file() {
 log_info "Installing multi-agent kit (role files + coordination)..."
 
 MULTIAGENT_FILES=(
-  "CLAUDE.md"
   "AGENT.md"
-  "GEMINI.md"
   "requirements.txt"
   ".github/PLAN_TEMPLATE.md"
   ".github/copilot-instructions.md"

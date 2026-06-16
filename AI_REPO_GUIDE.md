@@ -4,7 +4,7 @@
 # AI_REPO_GUIDE.md
 
 > **Purpose**: Canonical reference for AI agents working with this template repository.  
-> **Last verified**: 2026-05-30
+> **Last verified**: 2026-06-15
 >
 > **Note**: This file is for agents. For human documentation, see `README.md`.
 
@@ -39,8 +39,6 @@ bash install.sh
 ├── AI_REPO_GUIDE.md          # This file - canonical AI reference
 ├── AGENTS.md                 # Root agent instructions (always read first)
 ├── AGENT.md                  # Deprecated redirect to AGENTS.md
-├── CLAUDE.md                 # Claude Code native memory pointer to AGENTS.md
-├── GEMINI.md                 # Gemini Codespace onboarding pointer into AI_REPO_GUIDE.md
 ├── README.md                 # User-facing documentation
 ├── DESIGN.md                 # Root design contract for UI tools + frontend handoff
 ├── install.sh                # Codespace bootstrap script
@@ -56,13 +54,10 @@ bash install.sh
 │   ├── backlog.schema.json   # JSON Schema for backlog.yaml
 │   ├── roadmap.md            # Phase-by-phase plan
 │   ├── rules/                # Canonical domain constraints + process rules
-│   │   ├── README.md
-│   │   ├── agent_ownership.md
+│   │   ├── README.md         # Rule catalog and read profiles
+│   │   ├── process_session_start.md
+│   │   ├── process_*.md      # Work style, gates, doc maintenance, etc.
 │   │   ├── domain_code_quality.md
-│   │   ├── process_doc_maintenance.md
-│   │   ├── process_opportunity_feedback.md
-│   │   ├── process_subagent_bootstrap.md
-│   │   ├── process_*.md          # Additional process rules live here (role selection, gates, model tier, session state, etc.)
 │   │   └── repo_orchestration_patterns.md
 │   ├── sessions/             # Durable retrospectives + feedback records
 │   │   ├── README.md
@@ -177,7 +172,6 @@ bash install.sh
     │   ├── pr-final-feedback-consolidation.md # Final Feedback Inbox (implementation-complete)
     │   ├── pr-resolve-all.md     # PR-review resolution procedure
     │   ├── repo-onboarding.md         # Repo onboarding procedure prompt
-    │   └── repo-onboarding-stubs.md   # Mode B canonical stub blocks (companion)
     ├── ISSUE_TEMPLATE/           # bug_report, feature_request, agent_init, config.yml
     ├── templates/                # Automation-rendered bodies (scripts/workflows); not GitHub chooser UI
     │   ├── postmerge-retro-umbrella.md  # Daily retro umbrella issue body
@@ -208,9 +202,7 @@ bash install.sh
 
 | File | Tool/Platform | Purpose |
 |------|--------------|---------|
-| `AGENTS.md` | Most AI tools | Root instructions, points to this file |
-| `CLAUDE.md` | Claude Code | Native memory-file pointer to AGENTS.md |
-| `GEMINI.md` | Gemini Codespace | Native onboarding pointer into AI_REPO_GUIDE.md |
+| `AGENTS.md` | Most AI tools (Copilot, Cursor, Gemini, Claude Code, etc.) | Root startup contract and read-profile routing |
 | `.github/copilot-instructions.md` | GitHub Copilot | Pointer to AGENTS.md + Copilot-specific rules (e.g., `@copilot follow`) |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |
@@ -249,13 +241,15 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.context/benchmarks/model-roi/result-template.md` | Per-alias blind-safe plus sealed benchmark result template |
 | `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template for the same benchmark |
 | `.context/roadmap.md` | Phase-by-phase plan |
-| `.context/rules/` | Domain constraints (never violate) |
-| `.context/rules/agent_ownership.md` | Canonical role → owned paths map for multi-agent work |
+| `.context/rules/` | Domain constraints and process rules (catalog in `README.md`) |
+| `.context/rules/process_session_start.md` | Startup handshake, read credit, and context receipt |
 | `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
 | `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
 | `.context/rules/process_opportunity_feedback.md` | Opportunity feedback channel (9-field `opportunity_notes` contract); examples in `docs/guides/opportunity-feedback-examples.md` |
-| `.context/rules/process_subagent_bootstrap.md` | ADR-026 dispatch packet, startup order, and `subagent_compliance` return contract; extended narrative in `docs/guides/subagent-bootstrap-reference.md` |
 | `.context/rules/repo_orchestration_patterns.md` | Normative orchestration patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP9`) for Critic/Judge; long-form reference in `docs/guides/repo-orchestration-patterns-reference.md` (ADR-020, P9 in ADR-024) |
+| `.agents/<role>.md` | Role-specific gates, ownership hints, and dispatch behavior when subagents are used |
+| `docs/guides/subagent-bootstrap-reference.md` | ADR-026 dispatch packet and pass-back narrative (historical; monolithic default per ADR-031) |
+| `docs/guides/agent-pipeline.md` | Workflow gates, labels, and review/fix automation |
 | Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025). May embed an optional `opportunity_notes` YAML block (v1.2; ADR-027) for out-of-scope improvement notes — see `docs/compliance_schemas.md` § "agent-state:v1". |
 | `.context/sessions/feedback_template.md` | Stakeholder feedback capture template |
 | `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
@@ -287,8 +281,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/templates/postmerge-retro-umbrella.md` | Daily umbrella issue body (automation; canonical) |
 | `.github/templates/postmerge-retro-fix-pr.md` | Daily retro draft fix PR body (automation; slim PR-template shape) |
 | `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
-| `.github/prompts/repo-onboarding.md` | Repo onboarding procedure prompt |
-| `.github/prompts/repo-onboarding-stubs.md` | Mode B canonical stub blocks (companion to onboarding procedure) |
+| `.github/prompts/repo-onboarding.md` | Repo onboarding procedure prompt (Mode B bootstrap inlined in Step 2) |
 
 ### Compliance Contracts
 
@@ -296,7 +289,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 |------|---------|
 | `docs/compliance_schemas.md` | ADR-026 schema reference for `plan_compliance`, `parent_compliance`, and `subagent_compliance` evidence blocks |
 | `docs/decisions/adr-026-compliance-contracts.md` | Decision record for role contract versioning, exact-output receipt coexistence, and staged compliance enforcement |
-| `.context/rules/process_subagent_bootstrap.md` | Parent dispatch packet and subagent return contract process rule |
+| `docs/guides/subagent-bootstrap-reference.md` | Parent dispatch packet and subagent return contract reference (ADR-026) |
 
 ### Setup Scripts
 
@@ -361,7 +354,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `docs/guides/agents-md-section-redirects.md` | ADR-021 section-anchor redirect table (post-decomposition `AGENTS.md` citations) |
 | `docs/guides/opportunity-feedback-examples.md` | Worked opportunity-note examples and 9-field schema rationale (pairs with `process_opportunity_feedback.md`) |
 | `docs/guides/repo-orchestration-patterns-reference.md` | Long-form `P*` / `AP*` reference detail (pairs with slim `repo_orchestration_patterns.md` rule) |
-| `docs/guides/subagent-bootstrap-reference.md` | Pass-back narrative, ghost-success, schema-variance detail (pairs with `process_subagent_bootstrap.md`) |
+| `docs/guides/subagent-bootstrap-reference.md` | Pass-back narrative, ghost-success, schema-variance detail (ADR-026; monolithic default per ADR-031) |
 | `docs/guides/design-patterns.md` | Lead index for advisory code-layer design-pattern catalogs (`CAP`, `CP`, `CCP`, `CDP`, `CIP`) |
 | `docs/guides/design-patterns-concurrency.md` | Concurrency pattern catalog with stable `CCP1`-`CCP8` citation handles |
 | `docs/guides/design-patterns-data.md` | Data / persistence pattern catalog with stable `CDP1`-`CDP14` citation handles |
@@ -417,7 +410,7 @@ Three locations — different consumers; do not duplicate across them:
 | `.github/templates/*.md` | Workflow scripts (`gh issue create` / `gh pr create`) | Slim automation bodies with `{{placeholders}}` (post-merge retro umbrella + fix PR) |
 | `.github/PLAN_TEMPLATE.md` | Issue/PR comments | Implementation plan pasted before coding (ADR-011) |
 
-Agents creating issues/PRs via API use the matching surface per [`.context/rules/process_pr_completion.md`](.context/rules/process_pr_completion.md). Retro automation uses `.github/templates/` only — not mirrored into `ISSUE_TEMPLATE/`.
+Agents creating issues/PRs via API use the matching surface per [`.github/pull_request_template.md`](.github/pull_request_template.md) and [`.github/prompts/pr-resolve-all.md`](.github/prompts/pr-resolve-all.md). Retro automation uses `.github/templates/` only — not mirrored into `ISSUE_TEMPLATE/`.
 
 ### File Naming
 
@@ -490,7 +483,7 @@ ls -la config/
 
 - Gives the new repo a fresh git history; no perpetual "X commits behind" UI clutter.
 - Doesn't pollute `ai-repo-template`'s fork count.
-- [`.context/rules/process_template_detection.md`](.context/rules/process_template_detection.md) keys off the repo name — "Use this template" creates a repo with a new name, so template-detection fires correctly. A fork keeps the name `ai-repo-template` unless explicitly renamed, which can cause the template-detection logic to treat a derived project as the template itself.
+- Mode classification uses [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md) Step 1 — "Use this template" create a repo with a new name, so Mode B bootstrap fires correctly. A fork keeps the name `ai-repo-template` unless explicitly renamed, which can cause Mode A misclassification.
 - A POC or new project isn't conceptually a fork — a fork relationship implies intent to merge changes back upstream.
 
 **Use fork only when:**
@@ -512,10 +505,7 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 ### For new repositories
 
 1. Create the repo with "Use this template" (or copy files if you need a one-off starting point).
-2. Run `.github/prompts/repo-onboarding.md` (Track B uses stub source `.github/prompts/repo-onboarding-stubs.md` for `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md`).
-3. In Track B step **B5**, restore those four files from `repo-onboarding-stubs.md`, delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`, then repopulate the stubs with project-specific content (including product-specific design direction in `DESIGN.md` before frontend work).
-4. Replace remaining `TEMPLATE_PLACEHOLDER` and `PLEASE_UPDATE_THIS/URL` values and customize `ci-tests.yml` for your tech stack.
-5. Re-run `./scripts/verify-env.sh` after repopulation, then re-run the onboarding prompt's Mode B detection signals to confirm the repo exits the onboarding-blocked state and no resettable `.context/**` or template-only diagram surfaces still describe `ai-repo-template`.
+2. Run [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md).
 
 ### For Codespaces
 
@@ -528,31 +518,12 @@ Browse available commits with `git log --oneline --cherry-pick --right-only HEAD
 After creating a repo from this template, paste this prompt into a GitHub issue and assign it to your AI agent:
 
 ```markdown
-This repository was created from a template. Treat `.github/prompts/repo-onboarding.md` as the canonical onboarding **procedure**. Mode B stub blocks live in `.github/prompts/repo-onboarding-stubs.md` for `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md`.
-
 Truth hierarchy:
 1) ./.context/** (canonical project direction)
 2) ./docs/** (supporting detail)
 3) codebase (implementation reality)
 
-Please:
-1. Verify `.context/00_INDEX.md` and `.github/prompts/*.md` exist
-2. Run **Step 1** of `.github/prompts/repo-onboarding.md` and record whether the repo is Mode A, B, or C.
-3. If Mode B, capture fresh-clone pre-reset proof before Track B reset work.
-4. Determine project purpose from docs/**, the codebase, and any non-resettable `.context/**` surfaces. Do not rely on `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, or root `DESIGN.md` until after **B6** repopulates them.
-5. Use `repo-onboarding-stubs.md` before writing project-specific content into the four resettable files; do not rely on placeholder scanning alone.
-6. Repopulate those four files with project-specific content before collecting post-repopulation proof or finalizing `AI_REPO_GUIDE.md` at **A6**.
-7. Replace README.md with project-specific content, including
-  `## Limitations`, `## Future Improvements`, and a `## FAQ` section
-  (or link to docs/FAQ.md — replace the template's FAQ entries with
-  project-specific ones).
-8. Continue `.github/prompts/repo-onboarding.md` and capture onboarding evidence in this order:
-  a. the pre-reset Mode B proof from item 3 above
-   b. post-reset proof that the four resettable files were restored from `repo-onboarding-stubs.md` and that `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md` were deleted
-   c. post-repopulation proof that `./scripts/verify-env.sh` exits 0 and the repo no longer remains in the onboarding-blocked state
-9. Replace or customize docs/FAQ.md for the project (template-specific
-  entries prefixed with "Template:" should be removed)
-10. Finalize `AI_REPO_GUIDE.md` once at onboarding step **A6** after the resettable `.context` files are repopulated and bootstrap verification (**B9**) passes.
+read and follow .github/prompts/repo-onboarding.md
 ```
 
 ### New agent session (continue work on an existing repo)
@@ -560,16 +531,7 @@ Please:
 Use this prompt to onboard a fresh agent session onto in-flight work:
 
 ```markdown
-1. Read `AGENTS.md` for universal rules and the current handshake canary.
-2. Read `.context/rules/agent_ownership.md` to know which files your role may touch.
-3. Read `.agents/<your-role>.md` for your role-specific responsibilities.
-4. Read the assigned GitHub issue body to understand the durable task/feature contract.
-5. Read the linked PR, if one exists, for implementation scope and verification state.
-6. Read the latest `agent-state:v1` issue/PR comment and labels for live coordination, blockers, and handoff.
-7. Read `.context/00_INDEX.md` to locate relevant rules and constraints.
-8. Check: Run `git status` and `./scripts/verify-env.sh` to ensure stability.
-9. Skim `.context/sessions/latest_summary.md` for durable lessons from recent work.
-10. Report: "I have reviewed the context. Current task is [Task Name]. Environment is [Stable/Unstable]. Ready for instructions."
+read and follow .github/prompts/repo-onboarding.md
 ```
 
 This protocol keeps live task state in GitHub while preserving in-tree rules and durable retrospective lessons.

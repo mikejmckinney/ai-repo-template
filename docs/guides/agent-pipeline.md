@@ -806,8 +806,7 @@ squash-merges when CI is green.
 For the first project on the pipeline, run **sequentially** (one
 issue at a time) until you've verified the loop works end-to-end in
 your repo. After that, run **in parallel** — assign multiple issues
-at once. Stages whose ownership globs (per
-`.context/rules/agent_ownership.md`) don't overlap are safe to run
+at once. Stages whose role scopes (per `.agents/<role>.md` owned-path hints) don't overlap are safe to run
 concurrently. The Parallelism Report workflow (ADR-009) classifies
 overlap per PR; auto-rebase-on-merge (ADR-010) handles soft overlaps
 automatically post-merge.
