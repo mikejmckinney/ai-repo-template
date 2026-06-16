@@ -12,6 +12,13 @@
 #   weekly-scan   — weekly scan (WEEKLY_REVIEW_PROVIDER cascade)
 #   weekly-fix    — weekly fix (no antigravity)
 
+init_advisory_provider_credentials() {
+  has_cursor=0
+  has_gemini=0
+  [[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
+  [[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
+}
+
 pick_advisory_provider() {
   local mode="${1:-advisory}"
   local want=""

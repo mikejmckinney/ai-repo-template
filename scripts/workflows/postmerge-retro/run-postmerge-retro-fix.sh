@@ -81,10 +81,17 @@ prompt_file="$WORKDIR/prompt.md"
   echo "For Gemini JSON mode, respond with JSON only (file_edits + commit_message + fix_verify)."
 } >"$prompt_file"
 
-has_cursor=0
-has_gemini=0
-[[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
-[[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
+# shellcheck source=../lib/pick-advisory-provider.sh
+source "$LIB_DIR/pick-advisory-provider.sh"
+# shellcheck source=../lib/invoke-advisory-llm.sh
+source "$LIB_DIR/invoke-advisory-llm.sh"
+
+init_advisory_provider_credentials
+PROVIDER="$(pick_advisory_provider retro-fix)"
+[[ -n "$PROVIDER" ]] || {
+  echo "::error::No fix provider configured"
+  exit 1
+}
 
 strip_workflow_changes() {
   local paths=()
@@ -102,17 +109,6 @@ strip_workflow_changes() {
       rm -f "$f"
     fi
   done
-}
-
-# shellcheck source=../lib/pick-advisory-provider.sh
-source "$LIB_DIR/pick-advisory-provider.sh"
-# shellcheck source=../lib/invoke-advisory-llm.sh
-source "$LIB_DIR/invoke-advisory-llm.sh"
-
-PROVIDER="$(pick_advisory_provider retro-fix)"
-[[ -n "$PROVIDER" ]] || {
-  echo "::error::No fix provider configured"
-  exit 1
 }
 
 llm_raw="$WORKDIR/llm-fix-output.txt"
