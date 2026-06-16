@@ -21,6 +21,7 @@ def _flatten_pr_retro(data: dict) -> list[dict]:
                 "severity": item.get("severity") or "medium",
                 "body": item.get("body", ""),
                 "dedupe_key": item.get("dedupe_key", ""),
+                "repro_steps": item.get("repro_steps") or [],
                 "evidence": item.get("evidence") or [],
                 "labels": item.get("labels") or [],
             }

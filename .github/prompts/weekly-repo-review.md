@@ -16,6 +16,7 @@ The automation appends the **context pack** (`full` profile: `AGENTS.md`, `.cont
 - **Do not** edit code, ADRs, or context-pack files in this job.
 - **Do not** open pull requests.
 - **Prefer no issue over a speculative issue.** Speculation from injected rules alone is insufficient — cite repo evidence.
+- **`repro_steps` required** on every `follow_up_issues` row — concrete steps to reproduce the bug. If you cannot define reproduction steps, do not emit the finding.
 - **Do not** suggest broad rewrites unless evidence shows a recurring failure pattern.
 - Output **valid JSON only** — no preamble, no markdown fences, no commentary after the JSON.
 
@@ -41,6 +42,7 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
       "severity": "low|medium|high",
       "body": "markdown body",
       "evidence": ["string"],
+      "repro_steps": ["step 1 to reproduce", "step 2 observe failure"],
       "dedupe_key": "repo-invariant-example"
     }
   ],

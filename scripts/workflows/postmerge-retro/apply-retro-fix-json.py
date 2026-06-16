@@ -41,11 +41,33 @@ def main() -> int:
         print(f"Wrote {rel}")
 
     notes = data.get("notes")
-    if isinstance(notes, str) and notes.strip():
-        notes_path = root / f"retro/fix-notes-{data.get('run_date', 'batch')}.md"
-        notes_path.parent.mkdir(parents=True, exist_ok=True)
-        notes_path.write_text(notes.strip() + "\n", encoding="utf-8")
-        print(f"Wrote {notes_path.relative_to(root)}")
+    fix_verify = data.get("fix_verify")
+    run_date = data.get("run_date", "batch")
+    run_week = data.get("run_week")
+
+    verify_path = None
+    if isinstance(fix_verify, dict):
+        verify_path = root / f"retro/fix-verify-{run_date}.json"
+        if run_week:
+            verify_path = root / f"weekly/fix-verify-{run_week}.json"
+        verify_path.parent.mkdir(parents=True, exist_ok=True)
+        verify_path.write_text(json.dumps(fix_verify, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"Wrote {verify_path.relative_to(root)}")
+    elif isinstance(notes, str) and notes.strip():
+        # Legacy Gemini notes — fold into fix_verify when no structured block supplied.
+        kind = "weekly" if run_week else "retro"
+        key = run_week or run_date
+        verify_path = root / f"{kind}/fix-verify-{key}.json"
+        verify_path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "run_date": run_date,
+            "run_week": run_week or None,
+            "findings": [],
+            "sandbox": {"issue_url": "n/a", "pr_url": "n/a", "skip_reason": notes.strip()},
+            "test_sh": "unknown",
+        }
+        verify_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"Wrote {verify_path.relative_to(root)} (from notes)")
 
     msg_path = root / ".artifacts/postmerge-retro/fix-commit-message.txt"
     msg_path.parent.mkdir(parents=True, exist_ok=True)

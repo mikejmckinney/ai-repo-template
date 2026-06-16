@@ -35,6 +35,14 @@ def main() -> int:
                     if not str(item.get(req, "")).strip():
                         print(f"{key}[{i}].{req} required", file=sys.stderr)
                         return 1
+                steps = item.get("repro_steps")
+                if not isinstance(steps, list) or not steps:
+                    print(f"{key}[{i}].repro_steps required", file=sys.stderr)
+                    return 1
+                for j, step in enumerate(steps):
+                    if not isinstance(step, str) or not str(step).strip():
+                        print(f"{key}[{i}].repro_steps[{j}] must be non-empty string", file=sys.stderr)
+                        return 1
             elif key == "adr_updates":
                 for req in ("title", "body", "dedupe_key"):
                     if not str(item.get(req, "")).strip():

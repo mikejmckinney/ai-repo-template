@@ -6,6 +6,10 @@
       "labels": ["agent-suggested"],
       "severity": "low",
       "body": "Fixture finding body.",
+      "repro_steps": [
+        "Open scripts/checks/053-weekly-review-invariants.sh",
+        "Confirm weekly wiring checks are present"
+      ],
       "evidence": ["scripts/checks/053-weekly-review-invariants.sh"],
       "dedupe_key": "repo-invariant-052-missing-link"
     }

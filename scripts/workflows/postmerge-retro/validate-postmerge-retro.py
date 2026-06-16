@@ -23,12 +23,22 @@ def _require_str_array(obj: dict, key: str, path: str) -> None:
             raise ValueError(f"{path}.{key}[{i}] must be a string")
 
 
+def _require_repro_steps(item: dict, path: str) -> None:
+    steps = item.get("repro_steps")
+    if not isinstance(steps, list) or not steps:
+        raise ValueError(f"{path}.repro_steps must be a non-empty array of strings")
+    for i, step in enumerate(steps):
+        if not isinstance(step, str) or not step.strip():
+            raise ValueError(f"{path}.repro_steps[{i}] must be a non-empty string")
+
+
 def _validate_follow_up(item: dict, path: str) -> None:
     if not isinstance(item, dict):
         raise ValueError(f"{path} must be an object")
     _require_str(item, "title", path)
     _require_str(item, "body", path)
     _require_str(item, "dedupe_key", path)
+    _require_repro_steps(item, path)
     sev = item.get("severity")
     if sev is not None and sev not in ("low", "medium", "high"):
         raise ValueError(f"{path}.severity invalid: {sev}")
