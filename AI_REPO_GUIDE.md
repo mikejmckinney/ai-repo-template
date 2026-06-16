@@ -13,7 +13,7 @@
 This is the **AI repo template** (`mikejmckinney/ai-repo-template`) for GitHub
 Codespaces and AI-assisted development. It plugs into the GitHub Codespaces
 "Dotfiles" feature (which runs an install script at Codespace startup) to
-bootstrap a multi-agent development kit. It is not a Unix dotfiles repo. It
+bootstrap a multi-agent development kit. It
 provides:
 
 - Pre-configured AI agent prompts for onboarding and code review

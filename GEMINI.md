@@ -1,5 +1,3 @@
-<!-- TEMPLATE_PLACEHOLDER: This file must be regenerated for the actual project repo. -->
-
 # Gemini Codespace Instructions
 
 Before taking any action in a new session, you MUST execute the onboarding sequence defined in the "New agent session" section of `AI_REPO_GUIDE.md`.

@@ -53,7 +53,7 @@ The user gave you an issue number, link, or "work on #N". Take this path.
 2. `gh issue view <N> --comments` — read every comment, especially any `agent-state:v1` blocks (latest one is authoritative live state per ADR-025).
 3. Read all labels — `chore:no-plan`, `outcome-validated`, and similar gating labels change downstream behavior.
 4. Identify any prior plan, plan-gate verdict, partial work, or branch claim already in the comment thread.
-5. If a plan already exists and is APPROVED, jump to Phase 4 (you are resuming, not starting). If a plan exists but is REQUEST_CHANGES, jump to Phase 3 and produce a v2.
+5. If a plan already exists and is APPROVED, jump to [Phase 4](#phase-4--branch--staged-dispatch) (you are resuming, not starting). If a plan exists but is REQUEST_CHANGES, jump to Phase 3 and produce a v2.
 6. If no plan exists, continue to Phase 2.
 
 ### Mode B — no issue exists yet
