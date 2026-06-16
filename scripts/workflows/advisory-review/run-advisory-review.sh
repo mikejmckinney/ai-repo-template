@@ -99,7 +99,10 @@ EOF
 existing_snapshot=""
 existing_snapshot=$(
   gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-    --jq "[.[] | select(.body | contains(\"${MARKER_TOKEN}\"))] | last | .body // empty" 2>/dev/null || true
+    | jq -s 'if length == 0 then [] else add end' \
+    | jq -r --arg token "$MARKER_TOKEN" \
+      '[.[] | select((.body | type) == "string" and (.body | contains($token)))] | last | .body // empty' \
+    2>/dev/null || true
 )
 
 changed_file_count="$(wc -l <"$WORKDIR/changed-files.txt" | tr -d ' ')"

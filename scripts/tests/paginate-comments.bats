@@ -53,6 +53,23 @@ EOF
   [ "$output" = "1" ]
 }
 
+@test "advisory existing_snapshot slurp finds marker on later pages" {
+  cat >"$TMP_DIR/page1.json" <<'EOF'
+[{"body":"noise"}]
+EOF
+  cat >"$TMP_DIR/page2.json" <<'EOF'
+[{"body":"<!-- ai-advisory-review:v1 -->\nlatest snapshot"}]
+EOF
+
+  run bash -c 'cat "$1" "$2" | jq -s '"'"'if length == 0 then [] else add end'"'"' \
+    | jq -r --arg token "ai-advisory-review:v1" \
+      '"'"'[.[] | select((.body | type) == "string" and (.body | contains($token)))] | last | .body // empty'"'"'' \
+    bash "$TMP_DIR/page1.json" "$TMP_DIR/page2.json"
+  [ "$status" -eq 0 ]
+  grep -q 'ai-advisory-review:v1' <<<"$output"
+  grep -q 'latest snapshot' <<<"$output"
+}
+
 @test "fetch-daily-retro-json-from-issue slurp sees comments on all pages" {
   cat >"$TMP_DIR/page1.json" <<'EOF'
 [{"body":"noise"}]

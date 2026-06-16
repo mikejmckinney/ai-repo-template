@@ -111,7 +111,7 @@ Shared properties:
 - [x] Merge #427 after review.
 - [x] Triage legacy umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425) (2026-06-13 post-merge).
 - [x] Sandbox smoke of `agent-weekly-review.yml` — [run 27516674507](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27516674507) (`2099-W05`, umbrella [#79](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/79), fix PR [#80](https://github.com/mikejmckinney/ai-repo-template-sandbox/pull/80); detailed finding blocks + native link verified on PR #433 branch).
-- [ ] Merge PR [#433](https://github.com/mikejmckinney/ai-repo-template/pull/433) (weekly review + collector hardening) to upstream `main`.
+- [x] Merge PR [#433](https://github.com/mikejmckinney/ai-repo-template/pull/433) (weekly review + collector hardening) to upstream `main` (merged 2026-06-15).
 
 ## References
 

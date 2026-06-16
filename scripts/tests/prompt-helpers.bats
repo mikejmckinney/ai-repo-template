@@ -2,6 +2,7 @@
 #
 # prompt_helpers.py cap-json and select-context behavior.
 
+bats_require_minimum_version 1.5.0
 export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-120}"
 
 setup_file() {
@@ -67,4 +68,40 @@ EOF
     --changed-files "$TMP_DIR/changed.txt"
   [ "$status" -eq 0 ]
   grep -qxF '.context/rules/repo_orchestration_patterns.md' <<<"$output"
+}
+
+@test "cap-json warns on stderr when returning empty array" {
+  python3 - "$TMP_DIR/huge.json" <<'PY' >/dev/null
+import json, sys
+from pathlib import Path
+items = [{"id": i, "body": "x" * 20000} for i in range(5)]
+Path(sys.argv[1]).write_text(json.dumps(items), encoding="utf-8")
+PY
+
+  run --separate-stderr python3 "$PROMPT_HELPERS" cap-json \
+    --input "$TMP_DIR/huge.json" \
+    --jq-filter 'map({id, body})' \
+    --max-bytes 30
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+  grep -q '::warning::cap-json' <<<"$stderr"
+}
+
+@test "build-json-snapshot-comment truncates oversized JSON with warning" {
+  BUILD_JSON="$REPO_ROOT/scripts/workflows/lib/build-json-snapshot-comment.py"
+  python3 - "$TMP_DIR/large.json" <<'PY' >/dev/null
+import json, sys
+from pathlib import Path
+Path(sys.argv[1]).write_text(json.dumps({"items": ["x" * 80000]}), encoding="utf-8")
+PY
+
+  run --separate-stderr python3 "$BUILD_JSON" \
+    --marker "<!-- test:marker -->" \
+    --heading "Test snapshot" \
+    --intro "Test intro." \
+    --json-file "$TMP_DIR/large.json" \
+    --max-bytes 2000
+  [ "$status" -eq 0 ]
+  grep -q 'TRUNCATED' <<<"$output"
+  grep -q '::warning::JSON snapshot truncated' <<<"$stderr"
 }
