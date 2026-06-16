@@ -7,7 +7,7 @@ Keep agent working memory current so the next session (or next role) can resume 
 
 ## Re-read requirement
 
-At every task boundary you MUST re-read or re-check the following before writing state or code:
+At every task boundary you MUST re-read or re-check the following before writing state or code.  Skip disk read for files already verbatim in context (Load: Skipped, In context: yes):
 
 1. `AGENTS.md` — catches mid-session rule edits to the thin contract.
 2. `.context/00_INDEX.md` — catches roadmap or constraint changes.
@@ -15,8 +15,6 @@ At every task boundary you MUST re-read or re-check the following before writing
 4. The linked PR body, if one exists — implementation, plan, and verification contract.
 5. The latest `agent-state:v1` issue/PR comment and current labels — live coordination state (`agent:claimed`, `agent:blocked`, `agent:awaiting-review`).
 6. Any `.context/rules/*.md` or `.context/vision/**/*.md` whose domain covers the files you are about to edit — e.g., read `.context/rules/process_doc_maintenance.md` before changes that may trigger doc-sync requirements; read `.context/rules/domain_code_quality.md` before non-trivial code refactors; read the relevant architecture or mockup in `.context/vision/` before implementing UI or structural changes.
-
-Reading all of `.context/rules/` and `.context/vision/` at every boundary is overkill: unlike `AGENTS.md`, both rule files and vision artifacts change only through deliberate, reviewed PRs. Point 6 covers the important case: read a rule or vision file when its domain intersects what you are about to change.
 
 ## Live coordination surface
 

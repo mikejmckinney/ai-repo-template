@@ -336,24 +336,6 @@ git push --force sandbox origin/main:main
   the production `CLAUDE_PAT` (or sooner if there's any reason to
   suspect leakage).
 
-## When sandbox is *not* required
-
-The matrix in `agent-pipeline.md` is authoritative; in practice:
-
-- Code-only PRs (no `.github/workflows/*.yml` touched) — sandbox is
-  not required. Default verification on the PR branch is sufficient.
-- Workflows whose only triggers are `pull_request` or
-  `workflow_dispatch` — sandbox is not required. CI on the PR branch
-  already runs the new workflow file. (Note: `pull_request_target`
-  does **not** belong in this set — it loads the workflow from the
-  base branch, so PR-branch changes are unverifiable.)
-- Pure docs / ADRs / role-file edits (no scripts, no workflows) —
-  sandbox is not required.
-
-If you're unsure, run `bash scripts/verify-pr.sh` locally — it will
-print the detected class and tell you whether the sandbox playbook
-applies.
-
 ## Sandbox Doctor (`diag-sandbox.sh`)
 
 Run `./scripts/diag-sandbox.sh` before the verification flow above whenever

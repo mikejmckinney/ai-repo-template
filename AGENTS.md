@@ -2,13 +2,7 @@
 
 <!-- AGENTS_MD_VERSION: 26 -->
 
-read:
-
-1. `.context/rules/process_session_start.md`
-2. `.context/rules/README.md`
-
-A pointer or filename reference alone does not count as read credit.
-Full content already present verbatim in prompt context may count as `In context: yes` with `Load: Skipped` unless freshness, cadence, explicit dispatch, citations, or compliance evidence require reading from disk.
+Read, adhere to, and enforce domain_code_quality.md, process_clarification.md, process_critical_thinking.md, process_doc_maintenance.md, process_opportunity_feedback.md, process_session_start.md, process_session_state.md, process_work_style.md, repo_orchestration_patterns.md from disk.  skip disk read for files already verbatim in context (Load: Skipped, In context: yes).
 
 Truth hierarchy:
 
