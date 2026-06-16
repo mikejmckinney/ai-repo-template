@@ -41,8 +41,10 @@ fi
 git config user.email "${GIT_AUTHOR_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
 git config user.name "${GIT_AUTHOR_NAME:-github-actions[bot]}"
 
-git fetch origin main
-git checkout -B "$BRANCH" origin/main
+# shellcheck source=../lib/checkout-fix-branch.sh
+source "$LIB_DIR/checkout-fix-branch.sh"
+checkout_fix_branch "$REPO" "$BRANCH"
+existing_pr="${CHECKOUT_FIX_OPEN_PR_NUM:-}"
 
 prompt_file="$WORKDIR/prompt.md"
 {
@@ -68,7 +70,8 @@ prompt_file="$WORKDIR/prompt.md"
   echo ""
   echo "## Instruction"
   echo ""
-  echo "Implement all findings on branch \`${BRANCH}\`. For Cursor/local mode, edit the repo directly."
+  echo "Review the current branch state against each finding (by \`dedupe_key\`); implement only findings not yet addressed on \`${BRANCH}\`."
+  echo "For Cursor/local mode, edit the repo directly."
   echo "For Gemini JSON mode, respond with JSON only (file_edits + commit_message)."
 } >"$prompt_file"
 
@@ -155,8 +158,6 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 else
   echo "::warning::Fix pass produced no git diff"
 fi
-
-existing_pr="$(gh pr list -R "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
 
 if [[ "$has_diff" -eq 1 ]]; then
   git push -u origin "$BRANCH"

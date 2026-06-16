@@ -19,6 +19,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
   LINK_SCRIPT="scripts/workflows/lib/link-fix-pr-to-issue.sh"
+  CHECKOUT_FIX_BRANCH_SCRIPT="scripts/workflows/lib/checkout-fix-branch.sh"
   UMBRELLA_TEMPLATE=".github/templates/postmerge-retro-umbrella.md"
   FIX_PR_TEMPLATE=".github/templates/postmerge-retro-fix-pr.md"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
@@ -28,7 +29,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
     "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
     "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
-    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR"; do
+    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$CHECKOUT_FIX_BRANCH_SCRIPT" \
+    "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -114,6 +116,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'checkout-fix-branch.sh' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'update-umbrella-fix-link.sh' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'link-fix-pr-to-issue.sh' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'Fixes #' ".github/templates/postmerge-retro-fix-pr.md" 2>/dev/null \
