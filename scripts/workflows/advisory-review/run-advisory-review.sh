@@ -102,7 +102,7 @@ existing_snapshot=$(
     | jq -s 'if length == 0 then [] else add end' \
     | jq -r --arg token "$MARKER_TOKEN" \
       '[.[] | select((.body | type) == "string" and (.body | contains($token)))] | last | .body // empty' \
-    2>/dev/null || true
+      2>/dev/null || true
 )
 
 changed_file_count="$(wc -l <"$WORKDIR/changed-files.txt" | tr -d ' ')"
