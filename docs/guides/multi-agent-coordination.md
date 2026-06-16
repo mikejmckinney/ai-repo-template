@@ -23,9 +23,11 @@ Canonical role definitions live in `.agents/<role>.md` (platform-agnostic; ADR-0
 
 **Analyst vs Architect**: Analyst validates the "what" and "why" (problem definition, competitive landscape, impact scoring). Architect designs the "how" (solution plan, ADRs, file touch list). Analyst runs first; its output feeds Architect.
 
+> **Note (ADR-031):** Routine implementation defaults to a **monolithic** parent agent. The multi-role pipeline below is historical reference for when explicit dispatch is required.
+
 ## Coordination surfaces
 
-1. **`.context/rules/agent_ownership.md`** — canonical "who owns what" table. Static; rarely changes.
+1. **`.agents/<role>.md`** — role responsibilities and owned-path hints when dispatching.
 2. **GitHub issue body** — durable task/feature contract and gate input.
 3. **GitHub PR body** — implementation, plan, verification, and review contract.
 4. **Latest `agent-state:v1` issue/PR comment** — live status, blockers, next actions, and handoff baton.

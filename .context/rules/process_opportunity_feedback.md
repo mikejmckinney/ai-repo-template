@@ -32,7 +32,6 @@ Same shape in `agent-state:v1` `opportunity_notes` and `subagent_compliance.oppo
 | `scope` | enum | `rule`, `script`, `doc`, `workflow`, `code`, `test`, `process`. |
 | `suggested_next_action` | enum | `file-issue`, `fold-into-<n>`, `discuss`, `defer`. |
 | `confidence` | enum | `high`, `medium`, `low`. |
-| `role_relevance` | list[string] | Owner role(s) per `agent_ownership.md`. |
 | `duplicate_check` | string | Search/issue compared. `none` if not checked. |
 
 ## Cap
@@ -43,10 +42,9 @@ Maximum **3 opportunity notes per session per agent** (self-discipline, not tool
 
 MAY implement without a note ONLY when ALL FOUR hold:
 
-1. Inside agent's `owned_paths` per `agent_ownership.md`.
-2. **≤ ~20 LOC**, single file.
-3. **Directly necessary** for in-scope task (not "while I'm here").
-4. Does **not** touch role-sensitive surfaces (ADRs, ownership map, AGENTS.md canary, gate semantics, schemas).
+1. **≤ ~20 LOC**, single file.
+2. **Directly necessary** for in-scope task (not "while I'm here").
+3. Does **not** touch role-sensitive surfaces (ADRs, ownership map, AGENTS.md canary, gate semantics, schemas).
 
 When in doubt, surface the note.
 

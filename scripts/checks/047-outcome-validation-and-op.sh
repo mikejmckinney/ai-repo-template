@@ -22,12 +22,12 @@ else
   fail ".context/rules/process_work_style.md missing 'User outcome' (issue #311)"
 fi
 
-# 2. process_pr_completion.md must contain "User outcome validation" so the
+# 2. pull_request_template.md must contain "User outcome validation" so the
 #    PR gate explicitly requires outcome validation, not just generic checks.
-if grep -q "User outcome validation" .context/rules/process_pr_completion.md; then
-  pass ".context/rules/process_pr_completion.md contains 'User outcome validation' (issue #311)"
+if grep -q "User outcome validation" .github/pull_request_template.md; then
+  pass ".github/pull_request_template.md contains 'User outcome validation' (issue #311)"
 else
-  fail ".context/rules/process_pr_completion.md missing 'User outcome validation' (issue #311)"
+  fail ".github/pull_request_template.md missing 'User outcome validation' (issue #311)"
 fi
 
 # 3. PLAN_TEMPLATE.md must carry the outcome validation section heading.
@@ -115,27 +115,27 @@ else
 fi
 unset _critic
 
-# 7. process_role_selection.md must define "Parent Orchestrator" so the
+# 7. op-issue-workflow.md must define "Parent Orchestrator" so the
 #    default agent's OP role is explicit and unambiguous.
-if grep -q "Parent Orchestrator" .context/rules/process_role_selection.md; then
-  pass ".context/rules/process_role_selection.md defines 'Parent Orchestrator' (issue #311)"
+_opwf=".github/prompts/op-issue-workflow.md"
+if grep -q "Parent Orchestrator" "$_opwf"; then
+  pass "$_opwf defines 'Parent Orchestrator' (issue #311)"
 else
-  fail ".context/rules/process_role_selection.md missing 'Parent Orchestrator' definition (issue #311)"
+  fail "$_opwf missing 'Parent Orchestrator' definition (issue #311)"
 fi
 
-# 8. process_role_selection.md must include guidance that skipping subagents
-#    requires explicit user wording or a documented exception. Any of the
-#    following literals satisfies the check:
-#      "do not use subagents"   — canonical user instruction form
-#      "explicit special case"  — documented exception hook
-_rsel=".context/rules/process_role_selection.md"
-if grep -qi "do not use subagents" "$_rsel" \
-  || grep -qi "explicit special case" "$_rsel"; then
-  pass "$_rsel requires explicit wording to skip subagents (issue #311)"
+# 8. ADR-031 must include guidance that subagent fan-out is not the default.
+#    Any of the following literals satisfies the check:
+#      "do not default to subagent fan-out"   — canonical ADR-031 policy form
+#      "monolithic"                            — default execution shape keyword
+_adr031="docs/decisions/adr-031-agent-model-roi-benchmark-policy.md"
+if grep -qi "do not default to subagent fan-out" "$_adr031" \
+  || grep -qi "monolithic over multi-role pipeline" "$_adr031"; then
+  pass "$_adr031 documents monolithic default over subagent fan-out (issue #311, ADR-031)"
 else
-  fail "$_rsel missing guidance on explicit subagent-skip wording (issue #311)"
+  fail "$_adr031 missing monolithic-default / subagent-fan-out guidance (issue #311, ADR-031)"
 fi
-unset _rsel
+unset _opwf _adr031
 
 # 9. Wire the check-047 bats fixture suite into CI (PR #312 round 6 cursor
 #    medium ISS-24). Without this call, the 12 fixture tests in

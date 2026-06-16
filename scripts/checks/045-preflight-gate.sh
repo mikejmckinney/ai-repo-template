@@ -79,13 +79,13 @@ else
   fail "ADR-005 Status line missing 'superseded in part by ADR-014' (supersession discipline)"
 fi
 
-# Extract the "Analyst pre-flight gate" subsection (now in process_gates.md per ADR-021)
+# Extract the Analyst pre-flight opt-out (now in .agents/analyst.md per ADR-031)
 # and confirm it mentions the opt-out label literally.
-gate_section=$(awk '/^## Analyst pre-flight gate/,/^## Plan-as-comment requirement/' .context/rules/process_gates.md 2>/dev/null)
+gate_section=$(awk '/^## Pre-Flight Validation/{found=1; next} found && /^## /{exit} found{print}' .agents/analyst.md 2>/dev/null)
 if printf '%s' "$gate_section" | grep -q 'outcome-validated'; then
-  pass "process_gates.md \"Analyst pre-flight gate\" section names outcome-validated (ADR-014)"
+  pass ".agents/analyst.md Pre-Flight Validation section names outcome-validated (ADR-014)"
 else
-  fail "process_gates.md \"Analyst pre-flight gate\" section does not mention outcome-validated (ADR-014)"
+  fail ".agents/analyst.md Pre-Flight Validation section does not mention outcome-validated (ADR-014)"
 fi
 
 # Check context 00_INDEX.md has truth hierarchy

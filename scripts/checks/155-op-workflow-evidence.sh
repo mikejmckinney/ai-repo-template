@@ -16,7 +16,7 @@
 #      sole permitted literal is the explicit Anti-pattern example
 #      illustrating what NOT to do.
 #   4. Playbook contains an Anti-patterns section (recurrence prevention).
-#   5. CLAUDE.md, .github/copilot-instructions.md,
+#   5. `.github/prompts/README.md`, `.github/copilot-instructions.md`,
 #      .github/prompts/repo-onboarding.md, and
 #      .github/prompts/pr-resolve-all.md each cross-link to the playbook.
 #
@@ -119,7 +119,7 @@ fi
 
 # 5. Cross-link presence in each linkage file.
 linkage_files=(
-  "CLAUDE.md"
+  ".github/prompts/README.md"
   ".github/copilot-instructions.md"
   ".github/prompts/repo-onboarding.md"
   ".github/prompts/pr-resolve-all.md"

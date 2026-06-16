@@ -1,6 +1,6 @@
 # Subagent Bootstrap — Reference Guide
 
-> **Purpose**: Extended narrative, runtime observations, and schema-variance handling for ADR-026 subagent dispatch. The normative contract lives in [`.context/rules/process_subagent_bootstrap.md`](../../.context/rules/process_subagent_bootstrap.md).
+> **Purpose**: Extended narrative, runtime observations, and schema-variance handling for ADR-026 subagent dispatch when role dispatch is used. Normative startup and compliance surfaces: [`AGENTS.md`](../../AGENTS.md), [`.context/rules/process_session_start.md`](../../.context/rules/process_session_start.md), and [`docs/compliance_schemas.md`](../compliance_schemas.md). Monolithic default: [ADR-031](../decisions/adr-031-agent-model-roi-benchmark-policy.md).
 
 ## Pass-back gold standard (PR #312)
 
@@ -11,8 +11,6 @@ Granting subagents broader write/exec permissions is **not** the right remediati
 ## Ghost-success empirical observation
 
 A subagent that performs file edits and then claims `git commit` + `git push` from inside its own terminal can return a plausible success response when no commit landed on the remote. Parent OP detects this only by independently running `git fetch && git log origin/<branch> -1` after each dispatch.
-
-Recorded in [`.context/rules/process_model_tier.md`](../../.context/rules/process_model_tier.md) § "Known runtime observation: dispatched-subagent ghost-success". The rule-file discipline hedges without granting broader permissions or weakening OP's diff-gate authority.
 
 **Verification snippet placement**: v1 schema has no `verification` field; record `git log origin/<branch> -1 --oneline` output inline in narrative above `subagent_compliance`, in `apply_replays[].anchor` prose, or in parent pass-through after replay.
 

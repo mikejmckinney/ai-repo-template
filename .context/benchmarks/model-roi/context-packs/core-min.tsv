@@ -1,4 +1,3 @@
 # path	reason
 .context/00_INDEX.md	Map of available context surfaces and lazy-load expectations.
-.context/rules/agent_ownership.md	Required before touching files.
 .context/sessions/latest_summary.md	Durable lessons from recent work.

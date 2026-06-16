@@ -58,6 +58,13 @@ set -euo pipefail
 _MDS_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _MDS_REPO_ROOT="$(cd "$_MDS_LIB_DIR/.." && pwd)"
 _MDS_OWNERSHIP_FILE="${MULTI_DISPATCH_OWNERSHIP_FILE:-$_MDS_REPO_ROOT/.context/rules/agent_ownership.md}"
+if [[ ! -f "$_MDS_OWNERSHIP_FILE" ]]; then
+  _MDS_OWNERSHIP_FIXTURE="$_MDS_REPO_ROOT/scripts/tests/fixtures/agent_ownership.md"
+  if [[ "${MULTI_DISPATCH_TEST_MODE:-0}" == "1" || "${AUTO_REBASE_TEST_MODE:-0}" == "1" ]] \
+    && [[ -f "$_MDS_OWNERSHIP_FIXTURE" ]]; then
+    _MDS_OWNERSHIP_FILE="$_MDS_OWNERSHIP_FIXTURE"
+  fi
+fi
 _MDS_PARSE_OWNERSHIP="$_MDS_REPO_ROOT/scripts/parse-ownership-table.sh"
 
 # ── Internal helpers ──

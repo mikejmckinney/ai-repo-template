@@ -6,7 +6,7 @@ agent: agent
 # OP issue→merge playbook
 
 > **Mode:** persistent — read top to bottom on first pickup of an issue, then halt-and-resume per phase.
-> **Audience:** the default agent (Parent Orchestrator) per `.context/rules/process_role_selection.md` §"Default role: Parent Orchestrator (OP)".
+> **Audience:** the default agent (Parent Orchestrator). Monolithic implementation is the default per [ADR-031](../../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md); use subagent dispatch only when gates or explicit multi-perspective review require it.
 > **Style:** mirrors `.github/prompts/pr-resolve-all.md` halt/resume convention. Each phase has a goal, concrete actions, a halt-or-continue gate, and a pointer to the rule file that codifies the behavior.
 
 This playbook captures the ideal end-to-end workflow for taking an issue from intake to merged PR. It exists because issue #313 surfaced an evidence-drift recurrence: PR #311 implicitly followed the workflow but dropped both `plan_compliance:` and `agent-state:v1` evidence; the gap was caught only after merge and backfilled by PR #312.
@@ -15,10 +15,11 @@ This playbook captures the ideal end-to-end workflow for taking an issue from in
 
 ## Read first
 
-- [`AGENTS.md`](../../AGENTS.md) — truth hierarchy, handshake token, per-concern table.
+- [`AGENTS.md`](../../AGENTS.md) — truth hierarchy, handshake token, read-profile routing.
 - [`.context/00_INDEX.md`](../../.context/00_INDEX.md) — project memory entry point.
-- [`.context/rules/process_role_selection.md`](../../.context/rules/process_role_selection.md) — OP defaults and direct-implementation gate.
+- [`.context/rules/process_work_style.md`](../../.context/rules/process_work_style.md) — work style, testing, and direct-implementation discipline.
 - [`.context/rules/process_session_state.md`](../../.context/rules/process_session_state.md) — `agent-state:v1` cadence and close-out triggers.
+- [`docs/guides/agent-pipeline.md`](../../docs/guides/agent-pipeline.md) — workflow gates, labels, and review automation.
 - [`docs/compliance_schemas.md`](../../docs/compliance_schemas.md) — `plan_compliance` / `parent_compliance` / `subagent_compliance` v1 schemas (ADR-026).
 
 ---
@@ -32,7 +33,7 @@ This playbook captures the ideal end-to-end workflow for taking an issue from in
 1. Read `AGENTS.md` end-to-end.
 2. Note the **current** `AGENTS_MD_VERSION` value at the top of the file (it changes every material edit per ADR-021). Read the canary token next to it (e.g., the `Session handshake vN` line in §"Session handshake (read-receipt)").
 3. Emit that exact token on its own line as the first substantive content of your reply. **This is the parent startup receipt for ADR-026.** Do not paraphrase the number — copy it verbatim from the file you just read.
-4. Identify your role. Default = Parent Orchestrator (OP) unless the user explicitly assigned one of the ten canonical roles (see [`.context/rules/process_role_selection.md`](../../.context/rules/process_role_selection.md) §"Default role: Parent Orchestrator (OP)").
+4. Identify your role. Default = Parent Orchestrator (OP) unless the user explicitly assigned one of the ten canonical roles (see `.agents/<role>.md` and [ADR-031](../../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) for monolithic vs dispatch defaults).
 5. Read [`.context/rules/process_critical_thinking.md`](../../.context/rules/process_critical_thinking.md) (every reply) and [`.context/rules/process_session_state.md`](../../.context/rules/process_session_state.md) (cadence).
 
 **Halt-gate:** handshake token emitted with the current AGENTS_MD_VERSION value; role identified.
@@ -53,7 +54,7 @@ The user gave you an issue number, link, or "work on #N". Take this path.
 2. `gh issue view <N> --comments` — read every comment, especially any `agent-state:v1` blocks (latest one is authoritative live state per ADR-025).
 3. Read all labels — `chore:no-plan`, `outcome-validated`, and similar gating labels change downstream behavior.
 4. Identify any prior plan, plan-gate verdict, partial work, or branch claim already in the comment thread.
-5. If a plan already exists and is APPROVED, jump to Phase 4 (you are resuming, not starting). If a plan exists but is REQUEST_CHANGES, jump to Phase 3 and produce a v2.
+5. If a plan already exists and is APPROVED, jump to [Phase 4](#phase-4--branch--staged-dispatch) (you are resuming, not starting). If a plan exists but is REQUEST_CHANGES, jump to Phase 3 and produce a v2.
 6. If no plan exists, continue to Phase 2.
 
 ### Mode B — no issue exists yet
@@ -119,7 +120,7 @@ The user described work without filing an issue ("can you fix X", "we should add
 7. On REQUEST_CHANGES, dispatch Architect with the verdict items inlined. When the Architect returns an amendment, **edit the original plan comment in place** to fold the amendment into a new plan version (label sections `Plan v2 — amendments to v1` etc.); use `gh api --method PATCH /repos/{owner}/{repo}/issues/comments/<id> -F body=@-`. Then re-dispatch Critic (step 4) on the amended plan before re-dispatching Judge (step 5) — the Critic-before-Judge ordering applies to every iteration, not only round 1. Keep Critic and Judge verdicts as separate comments per steps 4 and 6. Iterate until APPROVE. **Fallback:** if the edited plan exceeds GitHub's ~65 KB single-comment limit, post the new version as a follow-up comment and edit a one-line stub into the original (`Plan superseded by v<N> at <link>`).
 8. **Comment-extraction tooling note.** When extracting subagent output for posting, prefer line-number-based extraction (`grep -n` to locate boundaries, then `sed -n 'A,Bp'`) over pattern-range awk/sed (`awk '/start/,/end/'`) — embedded ` ```yaml ` fences inside the body will silently truncate range-pattern extractors. Verify byte length on disk against the post-server length immediately after each `gh ... comment` (the server normalizes newlines so values within ~50 bytes of each other are fine; orders-of-magnitude differences indicate truncation).
 
-**Canary lifecycle:** if your plan touches anything that hardcodes the AGENTS.md version (the canary itself, `CLAUDE.md`, `.github/copilot-instructions.md`, `docs/compliance_schemas.md`, fixtures under `scripts/tests/fixtures/compliance/**`, etc.), enumerate every affected file flatly in `doc_sync.companions: [<path>, ...]` so they all land in the same atomic commit. Group them in the plan's prose under a "Canary-lifecycle group" heading for human readers; the YAML block stays a flat list because v1 does not accept `companions.canary_lifecycle.grouped_files`. Missing one breaks the test suite the moment the canary bumps.
+**Canary lifecycle:** if your plan touches anything that hardcodes the AGENTS.md version (the canary itself, `.github/copilot-instructions.md`, `docs/compliance_schemas.md`, fixtures under `scripts/tests/fixtures/compliance/**`, etc.), enumerate every affected file flatly in `doc_sync.companions: [<path>, ...]` so they all land in the same atomic commit.
 
 **Halt-gate:** Critic plan-review posted **and** Judge plan-gate APPROVE on the (post-Critic) plan comment.
 
@@ -132,7 +133,7 @@ The user described work without filing an issue ("can you fix X", "we should add
 **Actions:**
 
 1. Create branch following the documented convention in [`.context/rules/process_work_style.md`](../../.context/rules/process_work_style.md) §"Work style": `feature/<role>-<task-id>` for role-driven work, or `fix/<issue>-<slug>` for bug-fix branches. Example role-work form: `git checkout -b feature/architect-313-op-workflow origin/main`. Example bug-fix form: `git checkout -b fix/313-op-workflow-evidence origin/main`. The exact slug is author choice; the prefix and shape follow the rule.
-2. Walk the plan's prose dispatch ordering (the "Dispatch order" section in the plan body, not a YAML field) in declared order. For each stage, dispatch the named role via `runSubagent` with a dispatch packet containing: role, goal, expected output, plan/issue link, process files to load, owned-paths constraints, gate state, current `AGENTS_MD_VERSION`, and any allowed deviations (per [`.context/rules/process_subagent_bootstrap.md`](../../.context/rules/process_subagent_bootstrap.md)). **Self-state-tick reminder.** If the dispatch will produce or update an artifact whose own body lists items that this dispatch completes (an ADR's Implementation checklist, a plan's `dispatch_order` checkboxes, a postmortem's action items, etc.), include in the dispatch packet an explicit instruction: "If your edit completes any item listed elsewhere in your output or in the file you're editing, tick that item in the same edit batch." The Mode A dogfood test (sandbox issue #2, May 2026) caught a recurring Critic finding that mechanically-executed playbooks ship ADRs whose Implementation section disagrees with the PR they land in — this reminder closes that hole at dispatch time, not in review.
+2. Walk the plan's prose dispatch ordering (the "Dispatch order" section in the plan body, not a YAML field) in declared order. For each stage, dispatch the named role via `runSubagent` with a dispatch packet containing: role, goal, expected output, plan/issue link, process files to load, owned-paths constraints, gate state, current `AGENTS_MD_VERSION`, and any allowed deviations (per [`docs/guides/subagent-bootstrap-reference.md`](../../docs/guides/subagent-bootstrap-reference.md)). **Self-state-tick reminder.** If the dispatch will produce or update an artifact whose own body lists items that this dispatch completes (an ADR's Implementation checklist, a plan's `dispatch_order` checkboxes, a postmortem's action items, etc.), include in the dispatch packet an explicit instruction: "If your edit completes any item listed elsewhere in your output or in the file you're editing, tick that item in the same edit batch." The Mode A dogfood test (sandbox issue #2, May 2026) caught a recurring Critic finding that mechanically-executed playbooks ship ADRs whose Implementation section disagrees with the PR they land in — this reminder closes that hole at dispatch time, not in review.
 3. Each subagent returns either a real commit + push (verify via `git fetch && git log origin/<branch> -1`) OR `BLOCKED_ON_RUNTIME` with an `apply_replays` block. **Never trust a "push succeeded" claim without fetching to confirm** — runtime ghost-success is a known failure mode in some agent surfaces.
 4. After every stage handoff, **update the latest `agent-state:v1` comment on the issue** following the canonical template at [`.context/state/agent_state_comment_template.md`](../../.context/state/agent_state_comment_template.md): refresh the `Status:` enum value, the `Since last update` bullets, the `Next 1–3 actions` list, and the `Handoff` `To:` field. The comment is a **mutable baton** (ADR-025, [`.context/rules/process_session_state.md`](../../.context/rules/process_session_state.md)) — update it in place rather than scattering live state across multiple new comments per stage; only post a new comment when the previous one would otherwise be too far back in the timeline to find. **This is the recurrence-prevention discipline** — issue #313 exists because PR #311 backfilled the entire `agent-state:v1` cadence at close-out instead of updating live.
 5. **Apply_replays absorption (parent-OP path).** If a subagent's runtime is dead and it returns `BLOCKED_ON_RUNTIME` with an `apply_replays[]` block, parent OP applies it directly. The full ritual:
@@ -212,7 +213,7 @@ These are the failure modes #313 exists to prevent. Read them once; check yourse
 - **Backfilling cadence at close-out.** Posting a single `agent-state:v1` at the end of the work instead of one per stage handoff. The point of cadence is live coordination, not historical narration.
 - **Hardcoding the canary.** Pasting `Session handshake v17` (or whatever today's value happens to be) into a plan, ADR, or downstream prompt instead of "the current handshake token in AGENTS.md". The canary drifts.
 - **Trusting runtime ghost-success.** Claiming a subagent push succeeded without `git fetch && git log origin/<branch> -1` to confirm. Real failure mode this session: Architect and Docs both ghost-succeeded; PM actually pushed.
-- **Absorbing role-owned work into the default agent.** "Just doing it directly" because dispatch overhead feels heavy. Direct implementation is gated by [`.context/rules/process_role_selection.md`](../../.context/rules/process_role_selection.md) §"Default role: Parent Orchestrator (OP)" — ≤ ~20 LOC, single file, single role, no role-sensitive surfaces.
+- **Absorbing role-owned work into the default agent.** "Just doing it directly" because dispatch overhead feels heavy. Prefer monolithic implementation for routine work (ADR-031); use role dispatch when ownership, gates, or explicit multi-perspective review require it.
 - **`gh ... --body-file <path>` without length verification.** Has silently dropped bodies more than once (see `/memories/gh-cli.md` (agent user-memory note)). Always pipe via stdin AND verify length.
 - **Skipping plan-gate on a "small change".** ADR-011 has explicit exemptions (`chore:no-plan` label); use them rather than skipping the gate informally.
 
@@ -222,14 +223,15 @@ These are the failure modes #313 exists to prevent. Read them once; check yourse
 
 - Truth hierarchy and handshake: [`AGENTS.md`](../../AGENTS.md)
 - Project memory: [`.context/00_INDEX.md`](../../.context/00_INDEX.md)
-- Role defaults / OP gate: [`.context/rules/process_role_selection.md`](../../.context/rules/process_role_selection.md)
+- Work style / implementation discipline: [`.context/rules/process_work_style.md`](../../.context/rules/process_work_style.md)
 - Cadence / close-out: [`.context/rules/process_session_state.md`](../../.context/rules/process_session_state.md)
-- Pre-implementation gates: [`.context/rules/process_gates.md`](../../.context/rules/process_gates.md)
-- Subagent bootstrap + compliance: [`.context/rules/process_subagent_bootstrap.md`](../../.context/rules/process_subagent_bootstrap.md)
-- PR completion: [`.context/rules/process_pr_completion.md`](../../.context/rules/process_pr_completion.md)
+- Workflow gates and labels: [`docs/guides/agent-pipeline.md`](../../docs/guides/agent-pipeline.md)
+- Subagent bootstrap + compliance (when dispatching): [`docs/guides/subagent-bootstrap-reference.md`](../../docs/guides/subagent-bootstrap-reference.md)
+- PR completion surfaces: [`.github/pull_request_template.md`](../pull_request_template.md), [`.github/prompts/pr-resolve-all.md`](pr-resolve-all.md)
+- Monolithic default policy: [`docs/decisions/adr-031-agent-model-roi-benchmark-policy.md`](../../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md)
 - Plan template: [`.github/PLAN_TEMPLATE.md`](../PLAN_TEMPLATE.md)
 - PR template: [`.github/pull_request_template.md`](../pull_request_template.md)
 - pr-resolve-all (Phase 6): [`.github/prompts/pr-resolve-all.md`](pr-resolve-all.md)
 - Sandbox verification (Phase 4 / default-branch-only workflow PRs): [`docs/guides/sandbox-verification.md`](../../docs/guides/sandbox-verification.md)
-- Onboarding (precedes this playbook): [`.github/prompts/repo-onboarding.md`](repo-onboarding.md)
+- Onboarding (precedes this playbook; complete at **A7**, then start here at **Workflow Phase 0**): [`.github/prompts/repo-onboarding.md`](repo-onboarding.md)
 - ADRs: [`docs/decisions/adr-005-analyst-preflight-gate.md`](../../docs/decisions/adr-005-analyst-preflight-gate.md), [`docs/decisions/adr-011-plan-as-comment-requirement.md`](../../docs/decisions/adr-011-plan-as-comment-requirement.md), [`docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md`](../../docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md), [`docs/decisions/adr-016-pre-merge-verification-gate.md`](../../docs/decisions/adr-016-pre-merge-verification-gate.md), [`docs/decisions/adr-021-agents-md-decomposition.md`](../../docs/decisions/adr-021-agents-md-decomposition.md), [`docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md`](../../docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md), [`docs/decisions/adr-026-compliance-contracts.md`](../../docs/decisions/adr-026-compliance-contracts.md)

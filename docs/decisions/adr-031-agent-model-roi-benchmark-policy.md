@@ -71,7 +71,7 @@ Issue #376 tested repo-native **orchestration pipelines** (subagents + handoffs)
 - **Do not default to subagent fan-out** for ROI reasons alone. Use role dispatch when ownership, gates, or explicit multi-perspective review require it — not as the default implementation shape.
 - **Stage 1D duo** (planner + implementer) did not beat the best monolithic ROI leaders on either class; treat duo as experimental, not default.
 
-This aligns with [ADR-019 Amendment guidance](./adr-019-per-role-model-tiering.md) and [`.context/rules/process_model_tier.md`](../../.context/rules/process_model_tier.md) (ghost-success / pass-back caveats for dispatched subagents).
+This aligns with [ADR-019 Amendment guidance](./adr-019-per-role-model-tiering.md) and [`.agents/analyst.md`](../../.agents/analyst.md) (ghost-success / pass-back caveats for dispatched subagents).
 
 #### 2b. Model / platform shortlist (where telemetry exists)
 
@@ -121,6 +121,28 @@ Re-run benchmark stages or amend this ADR when **any** of the following change m
 
 Class C results, when available, must be merged into this ADR (or a superseding ADR) before claiming benchmark completeness.
 
+## Amendment 2026-06-15 — Slim `.context/rules/` catalog (issue #437 / PR #438)
+
+**Motivation:** Phase A benchmark evidence (especially issue #376 pipeline vs monolithic) supports a **monolithic default** for routine implementation. A large per-concern rule catalog increased context cost without improving ROI on Class A/B tasks. Production routing should match the slimmer catalog in [`.context/rules/README.md`](../../.context/rules/README.md).
+
+**Decision:**
+
+- **Remove** these normative rule files from `.context/rules/` (restore point: `origin/backup-2026-06-15`):
+  - `agent_ownership.md`
+  - `process_gates.md`
+  - `process_model_tier.md`
+  - `process_pr_completion.md`
+  - `process_role_selection.md`
+  - `process_subagent_bootstrap.md`
+  - `process_template_detection.md`
+- **Retain** durable surfaces for the same concerns outside the rule catalog:
+  - Template detection / Mode B bootstrap → [`.github/prompts/repo-onboarding.md`](../../.github/prompts/repo-onboarding.md) Steps 1–2
+  - Gates, PR completion, model tier, role selection, subagent bootstrap → role files under `.agents/`, [`.github/prompts/op-issue-workflow.md`](../../.github/prompts/op-issue-workflow.md), [`.github/pull_request_template.md`](../../.github/pull_request_template.md), [`.github/prompts/pr-resolve-all.md`](../../.github/prompts/pr-resolve-all.md), [ADR-019](./adr-019-per-role-model-tiering.md), and historical guides under `docs/guides/`
+  - Ownership / parallelism → [ADR-009](./adr-009-parallelism-report.md) tooling remains; live ownership table enforcement is **deferred** until a future benchmark or operational need justifies restoring `agent_ownership.md`
+- **Stage 1E context packs** on `main` drop references to removed rule files so harness manifests match the production catalog.
+
+**Reversal:** If a future benchmark score set (documented in [`.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`](../../.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md) with a new `score_set_id`) shows favorable ROI for multi-role pipeline or full-rule injection as the default, **amend this ADR** with the contradicting evidence and restore removed rule files from `origin/backup-2026-06-15` (or a successor backup) as needed. Until then, monolithic default + slim catalog stand.
+
 ## Options Considered
 
 ### Option 1: Keep benchmark guidance only in `.context/benchmarks/` (status quo)
@@ -163,6 +185,7 @@ Class C results, when available, must be merged into this ADR (or a superseding 
 - [ ] Class C greenfield benchmark (`06-implement-class-c-framework-benchmark.md` on `benchmark/roi`).
 - [ ] Stage 1E CP-2 robustness (deferred).
 - [ ] Refresh Stage 1E / overlay policy against current `AGENTS.md` before production context-pack routing change.
+- [x] Slim `.context/rules/` catalog per Amendment 2026-06-15 (issue #437 / PR #438).
 - [ ] Link this ADR from ADR-019 next amendment tranche when Copilot pins are remapped.
 
 ## References

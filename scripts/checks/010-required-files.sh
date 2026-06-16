@@ -10,8 +10,6 @@ REQUIRED_FILES=(
   "AI_REPO_GUIDE.md"
   "AGENTS.md"
   "AGENT.md"
-  "CLAUDE.md"
-  "GEMINI.md"
   "README.md"
   "DESIGN.md"
   "install.sh"

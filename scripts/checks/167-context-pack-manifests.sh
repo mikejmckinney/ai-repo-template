@@ -85,7 +85,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       printf '# AGENTS\n' >"${fixture_wt}/AGENTS.md"
       printf '# CLAUDE\n' >"${fixture_wt}/CLAUDE.md"
       cp .context/00_INDEX.md "${fixture_wt}/.context/00_INDEX.md"
-      cp .context/rules/agent_ownership.md "${fixture_wt}/.context/rules/agent_ownership.md"
       cp .context/sessions/latest_summary.md "${fixture_wt}/.context/sessions/latest_summary.md"
       git -C "${fixture_wt}" add -A
 
@@ -112,7 +111,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       printf '# AGENTS\n' >"${fixture_wt}/AGENTS.md"
       printf '# CLAUDE\n' >"${fixture_wt}/CLAUDE.md"
       cp .context/00_INDEX.md "${fixture_wt}/.context/00_INDEX.md"
-      cp .context/rules/agent_ownership.md "${fixture_wt}/.context/rules/agent_ownership.md"
       cp .context/sessions/latest_summary.md "${fixture_wt}/.context/sessions/latest_summary.md"
       git -C "${fixture_wt}" add -A
 

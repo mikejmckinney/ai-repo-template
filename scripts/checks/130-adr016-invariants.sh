@@ -42,12 +42,12 @@ else
   fail "agent-pipeline.md missing Workflow verifiability matrix (issue #227)"
 fi
 
-# PR completion criteria mentions pre-merge verification (now in process_pr_completion.md per ADR-021).
-if grep -q 'pre-merge verification' .context/rules/process_pr_completion.md 2>/dev/null \
-  || grep -q 'sandbox-verification.md' .context/rules/process_pr_completion.md 2>/dev/null; then
-  pass "process_pr_completion.md references pre-merge verification (issue #227)"
+# PR completion / pre-merge verification lives in PR template and resolve prompt (ADR-031).
+if grep -q 'sandbox-verification.md' .github/pull_request_template.md 2>/dev/null \
+  || grep -q 'pre-merge verification' .github/prompts/pr-resolve-all.md 2>/dev/null; then
+  pass "PR surfaces reference pre-merge verification (issue #227)"
 else
-  fail "process_pr_completion.md missing pre-merge verification reference (issue #227)"
+  fail "pull_request_template.md or pr-resolve-all.md missing pre-merge verification reference (issue #227)"
 fi
 
 # pr-resolve-all.md Phase 2 calls out the sandbox path.

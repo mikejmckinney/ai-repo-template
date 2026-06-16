@@ -20,7 +20,7 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 - `.agents/{analyst,architect,backend,critic,devops,docs,frontend,judge,pm,qa}.md` — canonical strategy bodies (ADR-023)
 - `.github/agents/<role>.agent.md`, `.claude/agents/<role>.md`, `.cursor/agents/<role>.md`, `.codex/agents/<role>.toml` — registration overlays
-- Role selection in `.context/rules/process_role_selection.md`
+- Role selection: [ADR-031](../decisions/adr-031-agent-model-roi-benchmark-policy.md) (monolithic default); historical multi-role detail in this guide and `.agents/<role>.md`
 
 **What good usage looks like**: each role file has one focused responsibility (`H1`); roles don't reach into each other's owned paths; cross-role coordination goes through PM (`P3`).
 
@@ -30,8 +30,8 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 **Where it appears**:
 
-- `docs/guides/multi-agent-coordination.md` — canonical sequence
-- `.context/rules/process_gates.md` — Analyst pre-flight and plan-as-comment block points
+- `docs/guides/multi-agent-coordination.md` — canonical sequence (historical multi-role reference)
+- `.agents/analyst.md` — Analyst pre-flight; [`docs/guides/agent-pipeline.md`](./agent-pipeline.md) — workflow gates
 - `.agents/judge.md`, `.agents/critic.md` — review-stage handlers
 
 **What good usage looks like**: each handler has clear pass/block criteria traceable to a rule file or ADR; new handlers added via ADR, not drive-by pipeline edits.
@@ -42,7 +42,7 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 **Where it appears**:
 
-- `.agents/pm.md`, `.context/rules/agent_ownership.md` → Live-state protocol
+- `.agents/pm.md`, GitHub `agent-state:v1` comments (ADR-025) → Live-state protocol
 - Latest `agent-state:v1` issue/PR comments (ADR-025)
 
 **What good usage looks like**: implementers escalate to PM; claims are explicit in GitHub live state; PM holds edit privilege over another role's live-state baton.
@@ -70,7 +70,7 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 ### P6 — Facade (tool-specific entry points)
 
-**Where it appears**: `CLAUDE.md`, `AGENT.md`, `AI_REPO_GUIDE.md`, `.github/copilot-instructions.md`.
+**Where it appears**: `AGENT.md`, `AI_REPO_GUIDE.md`, `.github/copilot-instructions.md`.
 
 **What good usage looks like**: facades stay thin pointers; update in lockstep with canonical (`process_doc_maintenance.md` trigger table).
 
@@ -90,7 +90,7 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 - Shipped: ADR-023 role canonical + thin overlays (#248, #330)
 - Candidates: pipeline labels, budget variables, doc-sync triggers, PR-label state machine
-- Conceptual: `agent_ownership.md` as human-edited manifest
+- Conceptual: role files under `.agents/` and GitHub live-state claims (historical ownership table removed per ADR-031; restore from `origin/backup-2026-06-15` if needed)
 
 **What good usage looks like**: one canonical source; generators in `scripts/`; pre-commit + CI stale-output checks; new consumers = one generator template.
 

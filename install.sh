@@ -140,7 +140,7 @@ if [[ ! -d "$PROMPTS_DIR" ]]; then
   log_info "  Created: $PROMPTS_DIR"
 fi
 
-# Copy repo-onboarding prompt
+# Copy repo-onboarding prompts
 ONBOARD_SRC="$DOTFILES/.github/prompts/repo-onboarding.md"
 ONBOARD_DST="$PROMPTS_DIR/repo-onboarding.md"
 ONBOARD_SRC_EXISTS=false
@@ -173,12 +173,11 @@ if [[ -f "$AGENTS_SRC" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Multi-agent kit: role files, ownership map, coordination board, CLAUDE.md
+# Multi-agent kit: role files, coordination board
 # ---------------------------------------------------------------------------
 # AGENTS.md tells agents to read .agents/<role>.md (canonical) and the
 # vendor overlays under .github/agents/*.agent.md / .claude/agents/*.md /
 # .cursor/agents/*.md / .codex/agents/*.toml,
-# the ownership map,
 # and the coordination board before editing. Without these files in the target
 # workspace the mandatory onboarding flow is non-actionable, so we copy the
 # full kit (skipping anything that already exists so we never clobber a repo
@@ -236,9 +235,7 @@ copy_template_file() {
 log_info "Installing multi-agent kit (role files + coordination)..."
 
 MULTIAGENT_FILES=(
-  "CLAUDE.md"
   "AGENT.md"
-  "GEMINI.md"
   "requirements.txt"
   ".github/PLAN_TEMPLATE.md"
   ".github/copilot-instructions.md"
@@ -300,19 +297,13 @@ MULTIAGENT_FILES=(
   ".context/backlog.yaml"
   ".context/roadmap.md"
   ".context/rules/README.md"
-  ".context/rules/agent_ownership.md"
   ".context/rules/domain_code_quality.md"
   ".context/rules/process_clarification.md"
   ".context/rules/process_critical_thinking.md"
   ".context/rules/process_doc_maintenance.md"
-  ".context/rules/process_gates.md"
-  ".context/rules/process_model_tier.md"
   ".context/rules/process_opportunity_feedback.md"
-  ".context/rules/process_pr_completion.md"
-  ".context/rules/process_role_selection.md"
+  ".context/rules/process_session_start.md"
   ".context/rules/process_session_state.md"
-  ".context/rules/process_subagent_bootstrap.md"
-  ".context/rules/process_template_detection.md"
   ".context/rules/process_work_style.md"
   ".context/rules/repo_orchestration_patterns.md"
   ".context/sessions/README.md"

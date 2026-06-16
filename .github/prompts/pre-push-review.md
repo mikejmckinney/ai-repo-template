@@ -18,7 +18,7 @@ agent: agent
 > **When to skip**: trivial diffs are exempt — i.e. ≤50 LOC changed
 > AND no change to `scripts/*.sh`, `.github/workflows/*.yml`, role
 > files (`.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`, `.cursor/agents/*.md`, `.codex/agents/*.toml`), or
-> `AGENTS.md` / `CLAUDE.md` / `.github/copilot-instructions.md`. (Same
+> `AGENTS.md` / `.github/copilot-instructions.md`. (Same
 > non-trivial definition as `.context/rules/process_work_style.md`.) Revert PRs and
 > bot-authored PRs (Renovate, Dependabot) are also exempt. Phase 1's
 > CI lint and the post-push bot-review loop still run.
@@ -82,7 +82,7 @@ Build three artifacts:
   `git diff --cached` (in that order), then one `git diff --no-index --
   /dev/null "$file" || true` block for each untracked file. This is the input to
   Critic.
-3. **Change class** — classify the diff into one or more of: `shell` (any `scripts/*.sh`, `*.sh`, or shell within `run:` blocks), `workflow` (any `.github/workflows/*.yml`), `role-file` (any `.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`, `.cursor/agents/*.md`, or `.codex/agents/*.toml`), `agents-md` (`AGENTS.md`, `CLAUDE.md`, or `.github/copilot-instructions.md`), or `other`.
+3. **Change class** — classify the diff into one or more of: `shell` (any `scripts/*.sh`, `*.sh`, or shell within `run:` blocks), `workflow` (any `.github/workflows/*.yml`), `role-file` (any `.agents/*.md`, `.github/agents/*.agent.md`, `.claude/agents/*.md`, `.cursor/agents/*.md`, or `.codex/agents/*.toml`), `agents-md` (`AGENTS.md` or `.github/copilot-instructions.md`), or `other`.
 
 The change class drives Step 3's lint scope and Step 4's test scope.
 

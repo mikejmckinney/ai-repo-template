@@ -1,17 +1,17 @@
 ---
 name: docs
-description: Use to update README, AI_REPO_GUIDE, CLAUDE.md, or docs/. Runs in parallel with implementers when visible behavior changes.
+description: Use to update README, AI_REPO_GUIDE, AGENTS.md, or docs/. Runs in parallel with implementers when visible behavior changes.
 role_contract_version: 1
 owned_paths:
   - 'README.md'
   - 'AI_REPO_GUIDE.md'
-  - 'CLAUDE.md'
+  - 'AGENTS.md'
   - 'AGENT.md'
   - 'docs/*.md'                  # top-level docs files (FAQ.md, README.md, smoke-*.md, etc.)
   - 'docs/guides/**'
   - 'docs/reference/**'
   # Note: docs/decisions/**, docs/postmortems/**, docs/research/** are excluded
-  # per .context/rules/agent_ownership.md (Architect / Analyst own those).
+  # per role ownership (Architect / Analyst own docs/decisions, postmortems, research).
   # The non-recursive 'docs/*.md' glob intentionally does not match files in
   # those subdirectories.
 handoff_targets:

@@ -27,8 +27,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `AI_REPO_GUIDE.md` | AI agents | Token-optimized command/structure/convention reference |
 | `docs/` | Humans | Deep reference: guides, ADRs, research |
 | `.context/` | AI agents | Canonical project truth: rules, state, roadmap, vision (lazy-loaded) |
-| `CLAUDE.md` (root) | Claude Code native loader | Project memory pointer to `AGENTS.md`. Kept at root by convention; `./.claude/CLAUDE.md` would also work ([memory docs](https://code.claude.com/docs/en/memory#choose-where-to-put-claude-md-files)) |
-| `AGENTS.md` (root) | Most other AI tools | Root agent instructions (Copilot, Cursor, Gemini, etc.) |
+| `AGENTS.md` (root) | Most AI tools | Root startup contract (Copilot, Cursor, Gemini, Claude Code, etc.) |
 | `.agents/` | AI agent platforms | Canonical role bodies for the 10 repo roles |
 | `.claude/agents/` | Claude Code subagent loader | Claude Code overlays that point back to `.agents/<role>.md` |
 | `.cursor/agents/` | Cursor agent loader | Cursor overlays (`model`, `readonly`, `is_background`) that point back to `.agents/<role>.md` |
@@ -40,7 +39,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 
 Canonical role behavior lives in `.agents/<role>.md`; the platform folders are thin registration shims. Their file shapes and model tiers are intentionally platform-specific: Copilot and Claude carry different `model` formats, Cursor adds `readonly` and `is_background`, and Codex uses TOML plus `model_reasoning_effort` and `sandbox_mode`.
 
-**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow. `CLAUDE.md` is a soft convention — it *could* live at `./.claude/CLAUDE.md` and Claude Code would still auto-discover it, but we keep it at the root alongside `AGENTS.md` and `AI_REPO_GUIDE.md` for visibility.
+**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow.
 
 ## Features
 
@@ -98,7 +97,7 @@ The full workflow catalog (~17 entries with required secrets and customization n
 1. Click "Use this template" on GitHub
 2. Create your new repository
 3. Run `.github/prompts/repo-onboarding.md`
-4. In Mode B, restore `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` from the prompt's canonical stubs, delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md`, then repopulate the resettable `.context` files with project-specific content
+4. In Mode B, complete **Step 2** of [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md) to reset and repopulate `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md`, delete template-only architecture diagrams, then customize with project-specific content
 5. Replace remaining `TEMPLATE_PLACEHOLDER` and `PLEASE_UPDATE_THIS/URL` values and customize `ci-tests.yml` for your tech stack
 
 ### Option 3: Copy to Existing Repository
@@ -188,7 +187,7 @@ EXTENSIONS=(
 
 ### Platform-Specific Files
 
-- **Claude Code**: Use `CLAUDE.md` for the root loader pointer and `.claude/agents/` for native subagent overlays.
+- **Claude Code**: use `.claude/agents/` for native subagent overlays.
 - **Cursor**: Use `.cursor/agents/` for role overlays and `.cursor/BUGBOT.md` for review rules.
 - **Codex**: Use `.codex/agents/` for TOML custom-agent overlays.
 - **Gemini**: Add files to `.gemini/`.
@@ -198,14 +197,13 @@ EXTENSIONS=(
 
 When using this template in a new repository:
 
-1. **Start with `.github/prompts/repo-onboarding.md`** - It is the canonical Mode B reset workflow and stub source for the resettable `.context` files
-2. **Repopulate `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md`** - Replace the canonical stubs with project-specific purpose, plan, and design context before regenerating `AI_REPO_GUIDE.md`
-3. **Create domain rules** - Add constraints to `.context/rules/`
-4. **Start with mockups** - Add design artifacts to `.context/vision/` before coding
-5. **Use GitHub live state** - Keep issue/PR `agent-state:v1` comments current for cognitive handoff between sessions
-6. **Keep AGENTS.md as the canonical agent instructions** - Per [`docs/decisions/adr-002-agents-md-ownership.md`](docs/decisions/adr-002-agents-md-ownership.md), AGENTS.md is read by most AI tools (Copilot, Cursor, Gemini, Claude Code via `CLAUDE.md`) and references `AI_REPO_GUIDE.md` for structured detail. Edit it directly when agent-facing rules change; do not strip it down to a pointer.
-7. **Customize CI pipeline** - Update `ci-tests.yml` for your tech stack
-8. **Run tests** - Use `./test.sh` to verify your customizations
+1. **Start with [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md)** — canonical onboarding procedure. This will instruct agents to repopulate files including `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` with project-specific purpose, plan, and design context before regenerating `AI_REPO_GUIDE.md`
+2. **Create domain rules** - Add constraints to `.context/rules/`
+3. **Start with mockups** - Add design artifacts to `.context/vision/` before coding
+4. **Use GitHub live state** - Keep issue/PR `agent-state:v1` comments current for cognitive handoff between sessions
+5. **Keep AGENTS.md as the canonical agent instructions** - Per [`docs/decisions/adr-002-agents-md-ownership.md`](docs/decisions/adr-002-agents-md-ownership.md), `AGENTS.md` is read by most AI tools (Copilot, Cursor, Gemini, Claude Code) and references `AI_REPO_GUIDE.md` for structured detail. Edit it directly when agent-facing rules change; do not strip it down to a pointer.
+6. **Customize CI pipeline** - Update `ci-tests.yml` for your tech stack
+7. **Run tests** - Use `./test.sh` to verify your customizations
 
 ## Limitations
 
