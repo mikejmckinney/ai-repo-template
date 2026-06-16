@@ -16,7 +16,7 @@ setup() {
   STUB_BIN="$(mktemp -d "${TMPDIR:-/tmp}/checkout-fix-branch-stub.XXXXXX")"
   export WORKDIR STUB_BIN
 
-  git init -q "$WORKDIR/repo"
+  git init -q -b main "$WORKDIR/repo"
   git init -q --bare "$WORKDIR/bare.git"
   git -C "$WORKDIR/repo" config user.email "test@example.com"
   git -C "$WORKDIR/repo" config user.name "Test User"
