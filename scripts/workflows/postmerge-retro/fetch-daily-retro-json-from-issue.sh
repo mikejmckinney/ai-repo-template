@@ -22,7 +22,8 @@ ISSUE_NUM="$(bash "$SCRIPT_DIR/resolve-umbrella-issue.sh" "$RUN_DATE" "$OUT" 2>/
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-gh api "repos/${REPO}/issues/${ISSUE_NUM}/comments" --paginate >"$WORKDIR/comments.json"
+gh api "repos/${REPO}/issues/${ISSUE_NUM}/comments" --paginate \
+  | jq -s 'if length == 0 then [] else add end' >"$WORKDIR/comments.json"
 
 python3 - "$RUN_DATE" "$WORKDIR/comments.json" "$WORKDIR/daily-retro.json" <<'PY'
 import json

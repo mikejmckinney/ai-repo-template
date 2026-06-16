@@ -97,6 +97,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'weekly-review-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'checkout-fix-branch.sh' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'link-fix-pr-to-issue.sh' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'Fixes #' "$FIX_PR_TEMPLATE" 2>/dev/null \
     && grep -q 'WEEKLY_REVIEW_FIX_REEXEC' "$FIX_SCRIPT" 2>/dev/null; then

@@ -350,6 +350,9 @@ MULTIAGENT_FILES=(
   ".github/agents/consensus-candidate-gemini.agent.md"
   "scripts/diag-sandbox.sh"
   "scripts/diag-hang-snapshot.sh"
+  "scripts/codespace-post-start.sh"
+  "scripts/lib/ensure-gh-pat-auth.sh"
+  "scripts/lib/sandbox-remote.sh"
   "scripts/lib/assertions.sh"
   "scripts/lib/bot-allowlist.txt"
   "scripts/lib/compliance_schema.py"
@@ -368,6 +371,21 @@ for rel in "${MULTIAGENT_FILES[@]}"; do
 done
 
 log_info "Multi-agent kit: copied=$MULTIAGENT_COPIED skipped=$MULTIAGENT_SKIPPED missing=$MULTIAGENT_MISSING"
+
+# =============================================================================
+# 2b. Codespace post-start (gh PAT auth + sandbox advisory; non-fatal)
+# =============================================================================
+
+if [[ "${CODESPACES:-}" == "true" ]] && [[ -f "$WORKSPACE/scripts/codespace-post-start.sh" ]]; then
+  log_info "Running Codespace post-start hook..."
+  if (cd "$WORKSPACE" && bash scripts/codespace-post-start.sh); then
+    log_info "Codespace post-start hook finished."
+  else
+    log_warn "Codespace post-start hook reported issues (non-fatal)."
+  fi
+elif [[ "${CODESPACES:-}" == "true" ]]; then
+  log_warn "scripts/codespace-post-start.sh not found in workspace; skipping PAT auth hook."
+fi
 
 # =============================================================================
 # 3. Verification

@@ -48,6 +48,17 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "prompt_helpers cap-json failed"
   fi
 
+  run_bats_check scripts/tests/paginate-comments.bats "paginate-comments.bats"
+  run_bats_check scripts/tests/prompt-helpers.bats "prompt-helpers.bats"
+
+  if [[ -f scripts/workflows/lib/cursor-sdk-version.sh ]] \
+    && grep -q 'CURSOR_SDK_VERSION=' scripts/workflows/lib/cursor-sdk-version.sh 2>/dev/null \
+    && ! grep -rE 'npm install --no-save @cursor/sdk[^@"$]' scripts/workflows --include='*.sh' 2>/dev/null | grep -q .; then
+    pass "@cursor/sdk workflow installs are version-pinned"
+  else
+    fail "unpinned @cursor/sdk npm install; use cursor-sdk-version.sh"
+  fi
+
   echo ""
   return 0
 fi

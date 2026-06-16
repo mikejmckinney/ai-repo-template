@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Generate advisory review body via Cursor SDK (Composer 2.5 standard tier).
- * Requires: npm install @cursor/sdk (workflow step), CURSOR_API_KEY.
+ * Requires: npm install @cursor/sdk@<pinned> (workflow step), CURSOR_API_KEY.
+ * Pin: scripts/workflows/lib/cursor-sdk-version.sh (CURSOR_SDK_VERSION).
  *
  * Composer 2.5 billing: passing only model id "composer-2.5" defaults to the
  * fast (higher-cost) variant in the SDK. We always set fast=false for standard
@@ -50,11 +51,29 @@ console.error(
   `Cursor advisory review context: repo=${runContext.repo} workflow=${runContext.workflow} job=${runContext.job} run_id=${runContext.run_id} attempt=${runContext.run_attempt}`,
 );
 
-const result = await Agent.prompt(prompt, {
-  apiKey,
-  model,
-  local: { cwd: process.cwd() },
-});
+let result;
+try {
+  result = await Agent.prompt(prompt, {
+    apiKey,
+    model,
+    local: { cwd: process.cwd() },
+  });
+} catch (err) {
+  const message = err instanceof Error ? err.message : String(err);
+  const stack = err instanceof Error && err.stack ? err.stack : message;
+  const cause =
+    err instanceof Error && err.cause instanceof Error
+      ? err.cause.stack || err.cause.message
+      : err instanceof Error && err.cause
+        ? String(err.cause)
+        : "";
+  console.error(`::error::Cursor Agent.prompt failed: ${message}`);
+  console.error(stack);
+  if (cause) {
+    console.error(`Caused by: ${cause}`);
+  }
+  process.exit(1);
+}
 
 const observedModel = result?.model?.id ?? "unknown";
 const fastParam = model.params?.find((p) => p.id === "fast")?.value;

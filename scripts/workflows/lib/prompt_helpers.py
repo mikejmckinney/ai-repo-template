@@ -30,13 +30,15 @@ PR_REVIEW_MINIMUM = STANDARD_MINIMUM
 # Path-pattern → additional rule files (catalog-aligned triggers).
 PATH_TRIGGERED: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"^\.github/workflows/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^scripts/workflows/"), ".context/rules/repo_orchestration_patterns.md"),
+    (re.compile(r"^scripts/checks/"), ".context/rules/domain_code_quality.md"),
+    (re.compile(r"^scripts/"), ".context/rules/repo_orchestration_patterns.md"),
+    (re.compile(r"^AGENTS\.md$"), ".context/rules/repo_orchestration_patterns.md"),
+    (re.compile(r"^\.github/prompts/"), ".context/rules/repo_orchestration_patterns.md"),
     (re.compile(r"^\.agents/"), ".context/rules/repo_orchestration_patterns.md"),
     (re.compile(r"^\.github/agents/"), ".context/rules/repo_orchestration_patterns.md"),
     (re.compile(r"^\.cursor/agents/"), ".context/rules/repo_orchestration_patterns.md"),
     (re.compile(r"^\.claude/agents/"), ".context/rules/repo_orchestration_patterns.md"),
     (re.compile(r"^\.context/rules/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^scripts/checks/"), ".context/rules/domain_code_quality.md"),
     (re.compile(r"^src/"), ".context/rules/domain_code_quality.md"),
     (re.compile(r"^tests/"), ".context/rules/domain_code_quality.md"),
     (re.compile(r"^docs/decisions/"), "docs/decisions/adr-template.md"),
@@ -103,6 +105,50 @@ def select_review_context(changed_files: list[str], profile: str = "pr-review") 
     return selected
 
 
+def _compact_json(data: object) -> bytes:
+    return json.dumps(data, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _fits(data: object, max_bytes: int) -> bool:
+    return len(_compact_json(data)) <= max_bytes
+
+
+def _shrink_single_item(one: dict, max_bytes: int) -> dict | None:
+    if not isinstance(one, dict):
+        return None
+
+    candidate = dict(one)
+    if "diff_hunk" in candidate:
+        without_hunk = {k: v for k, v in candidate.items() if k != "diff_hunk"}
+        if _fits([without_hunk], max_bytes):
+            return without_hunk
+        candidate = without_hunk
+
+    if "body" in candidate and isinstance(candidate.get("body"), str):
+        body = candidate["body"]
+        budget = max(0, max_bytes - 512)
+        if budget < len(body):
+            body = body[:budget]
+        while body:
+            trial = {**candidate, "body": body, "_truncated": True}
+            if _fits([trial], max_bytes):
+                return trial
+            body = body[: max(0, len(body) - 1024)]
+        trial = {**candidate, "body": "", "_truncated": True}
+        if _fits([trial], max_bytes):
+            return trial
+
+    minimal = {
+        k: candidate[k]
+        for k in ("id", "user", "body", "path", "line", "state", "commit_id")
+        if k in candidate
+    }
+    minimal["_truncated"] = True
+    if _fits([minimal], max_bytes):
+        return minimal
+    return None
+
+
 def cap_jq_json(input_path: Path, jq_filter: str, max_bytes: int) -> str:
     raw = subprocess.check_output(
         ["jq", "-c", jq_filter, str(input_path)],
@@ -117,27 +163,21 @@ def cap_jq_json(input_path: Path, jq_filter: str, max_bytes: int) -> str:
 
     trimmed = arr
     while trimmed:
-        compact = json.dumps(trimmed, separators=(",", ":"), ensure_ascii=False)
-        if len(compact.encode("utf-8")) <= max_bytes:
-            return compact
+        if _fits(trimmed, max_bytes):
+            return _compact_json(trimmed).decode("utf-8")
         if len(trimmed) == 1:
-            one = trimmed[0]
-            if isinstance(one, dict) and "body" in one and isinstance(one["body"], str):
-                body = one["body"]
-                budget = max(0, max_bytes - 512)
-                if budget < len(body):
-                    body = body[:budget]
-                while body and len(
-                    json.dumps([{**one, "body": body}], separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-                ) > max_bytes:
-                    body = body[: max(0, len(body) - 1024)]
-                one = {**one, "body": body, "_truncated": True}
-                compact = json.dumps([one], separators=(",", ":"), ensure_ascii=False)
-                if len(compact.encode("utf-8")) <= max_bytes:
-                    return compact
+            shrunk = _shrink_single_item(trimmed[0], max_bytes)
+            if shrunk is not None:
+                return _compact_json([shrunk]).decode("utf-8")
             break
-        trimmed = trimmed[: max(1, (len(trimmed) * 3) // 4)]
+        drop = max(1, len(trimmed) // 4)
+        trimmed = trimmed[drop:]
 
+    print(
+        f"::warning::cap-json: could not fit review data under {max_bytes}-byte budget; "
+        "returning empty array",
+        file=sys.stderr,
+    )
     return "[]"
 
 

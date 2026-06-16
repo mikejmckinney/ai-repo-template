@@ -60,6 +60,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/logging.sh
 source "$SCRIPT_DIR/lib/logging.sh"
+# shellcheck source=scripts/lib/sandbox-remote.sh
+source "$SCRIPT_DIR/lib/sandbox-remote.sh"
 
 # ── Preconditions ───────────────────────────────────────────────────────────
 
@@ -106,11 +108,10 @@ trap 'rm -rf "$_WORK_DIR"' EXIT
 
 log_step "Resolving upstream repo from 'origin' remote"
 
-UPSTREAM_URL=$(git remote get-url origin)
-UPSTREAM_NAME=$(basename "$UPSTREAM_URL" .git)
-UPSTREAM_OWNER=$(gh repo view --json owner -q .owner.login)
-SANDBOX_REPO="${SANDBOX_REPO_NAME:-${UPSTREAM_OWNER}/${UPSTREAM_NAME}-sandbox}"
-SANDBOX_REMOTE="${SANDBOX_REMOTE:-sandbox}"
+if ! sandbox_resolve_targets "$(pwd)"; then
+  log_error "Could not resolve upstream/sandbox targets from origin and gh."
+  exit 1
+fi
 
 log_info "Upstream: ${UPSTREAM_OWNER}/${UPSTREAM_NAME}"
 log_info "Sandbox:  ${SANDBOX_REPO}"
@@ -159,6 +160,8 @@ fi
 # ── Step 3: Mirror upstream main into sandbox ───────────────────────────────
 
 log_step "Mirroring upstream into sandbox"
+
+UPSTREAM_URL=$(git remote get-url origin)
 
 MIRROR_DIR="${_WORK_DIR}/upstream.git"
 
@@ -246,19 +249,7 @@ fi
 
 log_step "Adding '${SANDBOX_REMOTE}' git remote on this checkout"
 
-SANDBOX_URL="https://github.com/${SANDBOX_REPO}.git"
-if git remote get-url "$SANDBOX_REMOTE" >/dev/null 2>&1; then
-  current_url=$(git remote get-url "$SANDBOX_REMOTE")
-  if [[ "$current_url" == "$SANDBOX_URL" ]]; then
-    log_info "Remote '${SANDBOX_REMOTE}' already configured."
-  else
-    log_warn "Remote '${SANDBOX_REMOTE}' points elsewhere (${current_url}); leaving untouched."
-    log_warn "Run 'git remote set-url ${SANDBOX_REMOTE} ${SANDBOX_URL}' to repoint manually."
-  fi
-else
-  git remote add "$SANDBOX_REMOTE" "$SANDBOX_URL"
-  log_info "Remote added."
-fi
+sandbox_ensure_git_remote "$(pwd)"
 
 # ── Step 7: Ensure pipeline labels on sandbox ───────────────────────────────
 

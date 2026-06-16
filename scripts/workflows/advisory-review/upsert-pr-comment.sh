@@ -36,6 +36,7 @@ fi
 
 comment_id=$(
   gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+    | jq -s 'if length == 0 then [] else add end' \
     | jq -r --arg marker "$MARKER" '
         [.[] | select((.body | type) == "string" and (.body | contains($marker)))]
         | last | .id // empty'

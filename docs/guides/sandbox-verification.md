@@ -83,6 +83,15 @@ post-merge retro umbrella issues. Re-run `./scripts/setup/ensure-pipeline-labels
 > repos. You will hit `Resource not accessible by integration
 > (createRepository)` unless you set `BOOTSTRAP_GH_TOKEN` to a
 > classic PAT with `repo` AND `workflow` scopes (see above).
+>
+> On every Codespace start, `install.sh` runs
+> [`scripts/codespace-post-start.sh`](../../scripts/codespace-post-start.sh),
+> which upgrades `gh` to a Codespaces user PAT (`GH_PAT`, etc.) when set,
+> installs a shell hook so new terminals prefer that PAT over
+> `GITHUB_TOKEN`, and **adds the `sandbox` git remote** when missing (same
+> `SANDBOX_REPO_NAME` / `SANDBOX_REMOTE` defaults as bootstrap). It does
+> **not** create the sandbox repo or set secrets — run
+> `sandbox-bootstrap.sh` once for that.
 
 ### What the script does (for reference)
 

@@ -73,9 +73,8 @@ _PIPELINE_LABEL_LIST_LIMIT="${PIPELINE_LABEL_LIST_LIMIT:-200}"
 # (needs admin) will 403. Rather than spam ~13 warnings, print one clear
 # remediation block and skip Step 5.
 #
-# If the user has set a Codespaces user secret named GH_PAT (or one of the
-# common aliases), prefer it: unset GITHUB_TOKEN and `gh auth login --with-token`
-# so subsequent gh calls use the elevated PAT automatically. Recommended PAT:
+# PAT upgrade logic lives in scripts/lib/ensure-gh-pat-auth.sh (also used by
+# scripts/codespace-post-start.sh on every Codespace start). Recommended PAT:
 # fine-grained, scoped to this repo, with Issues + Variables + Contents +
 # Metadata + Pull requests = read/write, and Workflows = read/write if you
 # edit workflows. Set it once at https://github.com/settings/codespaces.
@@ -83,35 +82,11 @@ _pipeline_setup_skip_reason=""
 _gh_auth_ok=""
 if command -v gh &>/dev/null && gh auth status &>/dev/null; then
   _gh_auth_ok="true"
-  # Only treat the `(GITHUB_TOKEN)` auth source as the Codespaces-limited
-  # case when we're actually running inside a Codespace (`CODESPACES=true`).
-  # In GitHub Actions or when a user has set `GITHUB_TOKEN` manually, the
-  # same auth-source string shows up but the remediation below (Codespaces
-  # user secret) doesn't apply — fall through to the normal per-command
-  # error reporting instead.
-  # `gh auth status` writes the token-source line to stderr.
-  if [[ "${CODESPACES:-}" == "true" ]] \
-    && gh auth status 2>&1 | grep -qE 'Logged in to github\.com.*\(GITHUB_TOKEN\)'; then
-    # Try to upgrade auth using a Codespaces user secret if one is set.
-    _user_pat=""
-    for _var in GH_PAT GH_TOKEN_PAT CODESPACES_GH_PAT GITHUB_PAT; do
-      if [[ -n "${!_var:-}" ]]; then
-        _user_pat="${!_var}"
-        _user_pat_var="$_var"
-        break
-      fi
-    done
-    if [[ -n "$_user_pat" ]]; then
-      log_info "Found Codespaces secret \$$_user_pat_var; logging gh in with it."
-      unset GITHUB_TOKEN
-      if printf '%s' "$_user_pat" | gh auth login --with-token 2>/dev/null; then
-        log_info "gh re-authenticated with \$$_user_pat_var"
-      else
-        log_warn "Failed to authenticate gh with \$$_user_pat_var; falling back to skip."
-      fi
-      unset _user_pat
-    fi
+  # shellcheck source=../lib/ensure-gh-pat-auth.sh
+  source "$SCRIPT_DIR/lib/ensure-gh-pat-auth.sh"
+  ensure_gh_pat_auth
 
+  if [[ "${ENSURE_GH_PAT_AUTH_LIMITED:-false}" == "true" ]]; then
     # Re-probe permission after potential upgrade. Only skip when the
     # probe succeeds AND explicitly returns "false" (token is
     # authenticated against the repo but lacks admin). If the probe
@@ -132,7 +107,7 @@ if [[ -n "$_pipeline_setup_skip_reason" ]]; then
   log_warn "  1) Create a fine-grained PAT: https://github.com/settings/personal-access-tokens/new"
   log_warn "     Repo permissions: Issues r/w, Variables r/w, Contents r/w, Metadata r, Pull requests r/w, Workflows r/w"
   log_warn "  2) Add as a Codespaces user secret named GH_PAT: https://github.com/settings/codespaces"
-  log_warn "     Grant it access to this repo, then rebuild the Codespace (or re-run setup.sh in a new one)."
+  log_warn "     Grant it access to this repo, then rebuild the Codespace (or re-run ./scripts/codespace-post-start.sh)."
   log_warn "Ad-hoc alternative (current Codespace only):"
   log_warn "  unset GITHUB_TOKEN && gh auth login -s repo,workflow && ./scripts/setup.sh"
   log_warn "Or create the following manually:"

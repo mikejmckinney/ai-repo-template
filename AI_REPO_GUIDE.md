@@ -104,7 +104,7 @@ bash install.sh
 │   │   ├── pr-feedback/      # agent-review-finalize.yml collect + consolidate dispatch
 │   │   ├── postmerge-retro/  # agent-postmerge-retro.yml daily batch + fix PR
 │   │   ├── weekly-review/    # agent-weekly-review.yml full-repo scan + fix PR
-│   │   └── lib/              # shared prompt helpers + fix PR issue linker
+│   │   └── lib/              # shared prompt helpers, fix-branch checkout, SDK version pin, fix PR linker
 │   ├── setup.sh              # First-run project customization (thin orchestrator over scripts/setup/)
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
@@ -295,7 +295,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 
 | File | Purpose |
 |------|---------|
-| `install.sh` | Runs on Codespace start; installs extensions and copies the multi-agent kit / prompt files into the workspace without cloning the full template repo |
+| `install.sh` | Runs on Codespace start; installs extensions, copies the multi-agent kit / prompt files into the workspace, then runs [`scripts/codespace-post-start.sh`](scripts/codespace-post-start.sh) (non-fatal `gh` PAT upgrade + sandbox remote advisory) |
 | `test.sh` | Template-integrity entry point (see Verification Commands below for live check count). Thin orchestrator (~95 lines) that sources `scripts/checks/[0-9][0-9][0-9]-*.sh` modules (3-digit zero-padded prefix so lexical sort matches numeric order) (issue #255 Phase 4d) |
 | `scripts/checks/*.sh` | Per-concern check modules (issue #255 Phase 4d): structural file checks, content/invariant checks, ADR/phase invariants, and parser unit-test smokes. See `scripts/checks/README.md` for the convention and how to add a new module. |
 | `scripts/setup.sh` | First-run project customization helper. Thin orchestrator that sources `scripts/setup/[0-9][0-9]-*.sh` modules in lexical order (issue #255 Phase 4c) |

@@ -41,8 +41,10 @@ fi
 git config user.email "${GIT_AUTHOR_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
 git config user.name "${GIT_AUTHOR_NAME:-github-actions[bot]}"
 
-git fetch origin main
-git checkout -B "$BRANCH" origin/main
+# shellcheck source=../lib/checkout-fix-branch.sh
+source "$LIB_DIR/checkout-fix-branch.sh"
+checkout_fix_branch "$REPO" "$BRANCH"
+existing_pr="${CHECKOUT_FIX_OPEN_PR_NUM:-}"
 
 prompt_file="$WORKDIR/prompt.md"
 {
@@ -68,7 +70,8 @@ prompt_file="$WORKDIR/prompt.md"
   echo ""
   echo "## Instruction"
   echo ""
-  echo "Implement all findings on branch \`${BRANCH}\`. For Cursor/local mode, edit the repo directly."
+  echo "Review the current branch state against each finding (by \`dedupe_key\`); implement only findings not yet addressed on \`${BRANCH}\`."
+  echo "For Cursor/local mode, edit the repo directly."
   echo "For Gemini JSON mode, respond with JSON only (file_edits + commit_message)."
 } >"$prompt_file"
 
@@ -126,7 +129,9 @@ PROVIDER="$(pick_provider)"
 llm_raw="$WORKDIR/llm-fix-output.txt"
 case "$PROVIDER" in
   cursor)
-    npm install --no-save @cursor/sdk >/dev/null 2>&1
+    # shellcheck source=../lib/cursor-sdk-version.sh
+    source "$LIB_DIR/cursor-sdk-version.sh"
+    npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
     CURSOR_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}}" \
       node "$ADVISORY_DIR/run-advisory-cursor.mjs" "$prompt_file" "$llm_raw"
     ;;
@@ -142,18 +147,26 @@ esac
 
 strip_workflow_changes
 
+has_diff=0
 if ! git diff --quiet || ! git diff --cached --quiet; then
   commit_msg="fix: weekly repo review fixes for ${RUN_WEEK}"
   git add -A
   git reset HEAD -- .github/workflows/ 2>/dev/null || true
   git checkout HEAD -- .github/workflows/ 2>/dev/null || true
   git commit -m "$commit_msg"
+  has_diff=1
 else
   echo "::warning::Fix pass produced no git diff"
-  exit 0
 fi
 
-git push -u origin "$BRANCH"
+if [[ "$has_diff" -eq 1 ]]; then
+  git push -u origin "$BRANCH"
+elif [[ -z "$existing_pr" ]]; then
+  skip_notice="(skipped — no code changes; see retro/fix-notes-${RUN_WEEK}.md if present)"
+  bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_WEEK" "$skip_notice" "$WEEKLY_JSON"
+  echo "Fix pass complete for ${RUN_WEEK} (no changes)"
+  exit 0
+fi
 
 render_fix_pr_body() {
   local body_file="$WORKDIR/fix-pr-body.md"
@@ -192,7 +205,6 @@ link_pr_to_umbrella() {
   bash "$LIB_DIR/link-fix-pr-to-issue.sh" "$REPO" "$pr_num" "$umbrella_num"
 }
 
-existing_pr="$(gh pr list -R "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
 if [[ -n "$existing_pr" ]]; then
   echo "Open draft PR already exists: #${existing_pr}"
   PR_URL="$(gh pr view "$existing_pr" -R "$REPO" --json url --jq .url)"

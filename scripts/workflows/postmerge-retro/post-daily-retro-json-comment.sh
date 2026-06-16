@@ -13,6 +13,7 @@ usage() {
 
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 RUN_DATE="$(jq -r .run_date "$DAILY_JSON")"
 RUN_ID="${GITHUB_RUN_ID:-local}"
 RUN_ATTEMPT="${GITHUB_RUN_ATTEMPT:-0}"
@@ -28,17 +29,12 @@ fi
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 body_file="$WORKDIR/comment.md"
-{
-  echo "$MARKER"
-  echo ""
-  echo "## Daily retro JSON snapshot"
-  echo ""
-  echo "Automation archive for fix-only recovery (\`workflow_dispatch fix_only\` + \`restore_json_from_issue\`)."
-  echo ""
-  echo '```json'
-  cat "$DAILY_JSON"
-  echo '```'
-} >"$body_file"
+python3 "$REPO_ROOT/scripts/workflows/lib/build-json-snapshot-comment.py" \
+  --marker "$MARKER" \
+  --heading "Daily retro JSON snapshot" \
+  --intro "Automation archive for fix-only recovery (\`workflow_dispatch fix_only\` + \`restore_json_from_issue\`)." \
+  --json-file "$DAILY_JSON" \
+  >"$body_file"
 
 gh issue comment "$ISSUE_NUM" -R "$REPO" --body-file "$body_file"
 echo "Posted daily-retro.json snapshot comment on issue #${ISSUE_NUM} (${RUN_DATE})"

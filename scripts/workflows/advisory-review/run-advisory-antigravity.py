@@ -54,37 +54,35 @@ def main() -> int:
     prompt_path = os.path.join(repo_root, ".github/prompts/pr-advisory-review.md")
     system_instruction = read_file(prompt_path)
 
-    sources = [
+    sources: list[dict] = [
         inline_source(".agents/AGENTS.md", os.path.join(repo_root, "AGENTS.md")),
-        inline_source(
-            ".agents/context/rules/process_session_start.md",
-            os.path.join(repo_root, ".context/rules/process_session_start.md"),
-        ),
-        inline_source(
-            ".agents/context/rules/README.md",
-            os.path.join(repo_root, ".context/rules/README.md"),
-        ),
-        inline_source(
-            ".agents/context/rules/process_critical_thinking.md",
-            os.path.join(repo_root, ".context/rules/process_critical_thinking.md"),
-        ),
-        inline_source(
-            ".agents/context/rules/process_clarification.md",
-            os.path.join(repo_root, ".context/rules/process_clarification.md"),
-        ),
-        inline_source(
-            ".workspace/pr-context/pr-body.md",
-            os.path.join(workdir, "pr-body.md"),
-        ),
-        inline_source(
-            ".workspace/pr-context/changed-files.txt",
-            os.path.join(workdir, "changed-files.txt"),
-        ),
-        inline_source(
-            ".workspace/pr-context/diff.patch",
-            os.path.join(workdir, "full.diff"),
-        ),
     ]
+    context_list = os.path.join(workdir, "context-files.txt")
+    if os.path.isfile(context_list):
+        for rel in read_file(context_list).splitlines():
+            rel = rel.strip()
+            if not rel or rel == "AGENTS.md":
+                continue
+            abs_path = os.path.join(repo_root, rel)
+            if os.path.isfile(abs_path):
+                sources.append(inline_source(f".agents/{rel}", abs_path))
+
+    sources.extend(
+        [
+            inline_source(
+                ".workspace/pr-context/pr-body.md",
+                os.path.join(workdir, "pr-body.md"),
+            ),
+            inline_source(
+                ".workspace/pr-context/changed-files.txt",
+                os.path.join(workdir, "changed-files.txt"),
+            ),
+            inline_source(
+                ".workspace/pr-context/diff.patch",
+                os.path.join(workdir, "full.diff"),
+            ),
+        ]
+    )
 
     coverage_path = os.path.join(workdir, "diff-coverage.md")
     coverage = read_file(coverage_path) if os.path.isfile(coverage_path) else ""

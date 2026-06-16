@@ -5,11 +5,13 @@ agent: agent
 
 # Weekly repo review fix implementation
 
-You are implementing **all findings** from the weekly full-repo review batch on branch `weekly/fix-<RUN_WEEK>`. A human or agent will review before merge.
+You are implementing findings from the weekly full-repo review batch on branch `weekly/fix-<RUN_WEEK>`. A human or agent will review before merge.
 
 ## Hard rules
 
-- Implement **every finding** in the supplied weekly review JSON unless technically impossible — then explain in a short comment file `weekly/fix-notes-<RUN_WEEK>.md`.
+- Review the **current branch state** first (diff vs `main`, existing commits, and any `weekly/fix-notes-<RUN_WEEK>.md`). Map each `findings[]` row by `dedupe_key` and implement **only findings not yet addressed**.
+- If the branch already contains partial fixes from a prior fix pass, **do not redo** completed work — finish the remainder.
+- When a finding is technically impossible, explain in `weekly/fix-notes-<RUN_WEEK>.md`.
 - **Do not** auto-merge. Leave changes on the branch for review.
 - Prefer **minimal, focused diffs** — fix the evidence-backed issue, no drive-by refactors.
 - Run `./test.sh` when you change scripts/workflows/checks (or document why skipped).
@@ -36,7 +38,7 @@ When running with repository write access, **edit files directly** in the workin
 
 The automation supplies `weekly-review.json` with a `findings[]` array. Each row has `scope`, `category`, `title`, `body`, `dedupe_key`, and optional `evidence`.
 
-Implement fixes on **current `main`**, not on historical branches.
+The fix job may continue an **existing draft PR branch** (merged with latest `main`) or start fresh from `main`. Always verify what is already implemented on the branch before editing.
 
 ## Verification
 

@@ -99,7 +99,10 @@ EOF
 existing_snapshot=""
 existing_snapshot=$(
   gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-    --jq "[.[] | select(.body | contains(\"${MARKER_TOKEN}\"))] | last | .body // empty" 2>/dev/null || true
+    | jq -s 'if length == 0 then [] else add end' \
+    | jq -r --arg token "$MARKER_TOKEN" \
+      '[.[] | select((.body | type) == "string" and (.body | contains($token)))] | last | .body // empty' \
+      2>/dev/null || true
 )
 
 changed_file_count="$(wc -l <"$WORKDIR/changed-files.txt" | tr -d ' ')"
@@ -256,7 +259,9 @@ run_gemini() {
 
 case "$PROVIDER" in
   cursor)
-    npm install --no-save @cursor/sdk >/dev/null 2>&1
+    # shellcheck source=../lib/cursor-sdk-version.sh
+    source "$LIB_DIR/cursor-sdk-version.sh"
+    npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
     node "$SCRIPT_DIR/run-advisory-cursor.mjs" "$prompt_file" "$out_file"
     ;;
   gemini)
