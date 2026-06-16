@@ -38,9 +38,7 @@ Session handshake vAGENTS_MD_VERSION
 
 Replace `AGENTS_MD_VERSION` with the version number specified in the HTML comment at the top of `AGENTS.md`.
 
-The session handshake should be on its own line before any other content for parent/default agents. See the subagent rule below for exact-output roles.
-
-`Dispatch mode`: dispatched subagents record the mode from the dispatch packet (`plan-gate` or `diff-gate`). Parent/default agents and non-exact-output subagents use `n/a`. Required for Judge and Critic; see `.context/rules/process_subagent_bootstrap.md` § "Positional output contract".
+The session handshake should be on its own line before any other content.
 
 `Read profile`: record the named profile from `.context/rules/README.md`, `full` if all standard startup/rule files were loaded, or `none` only when no rule profile was loaded and no repo-changing work is being performed.
 
@@ -53,19 +51,6 @@ The session handshake should be on its own line before any other content for par
 Emit the handshake at each task boundary and after context compaction. Suppress it on later replies in the same conversation only when the task, role, repo boundary, and receipt boundary are unchanged and every receipt row still has `In context: yes` for files you may cite.
 
 For parent/default-agent work, this token is the parent startup receipt required by ADR-026 compliance evidence. Follow the handshake with a `## Session context receipt` section (or `## Session context receipt (stale)` when applicable).
-
-For dispatched subagents, emit role-specific output **first** so exact-output contracts are satisfied:
-
-- Judge: `DECISION:` is the literal first line.
-- Critic: `CRITIC DECISION:` is the literal first line.
-
-After the role body, append in order:
-
-1. `## Subagent session handshake` — the 8-field table above.
-2. `## Subagent context receipt` — the file table from `## Session context receipt`.
-3. `subagent_compliance` YAML block.
-
-`subagent_compliance` is required for all dispatched subagents. The heading sections are required for exact-output roles and encouraged for all other roles; see `.context/rules/process_subagent_bootstrap.md` § "Positional output contract".
 
 ## Session context receipt
 

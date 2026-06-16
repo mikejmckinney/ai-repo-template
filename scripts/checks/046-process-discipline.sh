@@ -22,10 +22,10 @@ make_private_tmp() {
 # --- Process Discipline / Compliance Contract Checks ---
 echo "Checking process discipline contracts..."
 
-if grep -q "process_subagent_bootstrap.md" AGENTS.md .context/rules/README.md .context/rules/process_session_start.md 2>/dev/null; then
-  pass "startup contract links process_subagent_bootstrap.md (ADR-026)"
+if [[ -f docs/guides/subagent-bootstrap-reference.md ]]; then
+  pass "subagent bootstrap reference guide exists (ADR-026 historical surface; ADR-031 monolithic default)"
 else
-  fail "AGENTS.md or rule catalog missing process_subagent_bootstrap.md link (ADR-026)"
+  fail "docs/guides/subagent-bootstrap-reference.md missing (ADR-026 historical reference)"
 fi
 
 session_start=".context/rules/process_session_start.md"

@@ -27,11 +27,11 @@ else
   warn "process_work_style.md missing testing requirements section"
 fi
 
-# Check PR completion criteria section exists (now in process_pr_completion.md per ADR-021; issue #206)
-if grep -q "^## PR completion criteria" .context/rules/process_pr_completion.md 2>/dev/null; then
-  pass "process_pr_completion.md has PR completion criteria section"
+# Check PR completion criteria section exists (now in pull_request_template.md per ADR-031; issue #206)
+if grep -q "^## User outcome validation" .github/pull_request_template.md 2>/dev/null; then
+  pass "pull_request_template.md has user outcome validation section"
 else
-  warn "process_pr_completion.md missing PR completion criteria section"
+  warn "pull_request_template.md missing user outcome validation section"
 fi
 
 # Check thin AGENTS.md links to per-concern process_*.md files (ADR-021).
@@ -41,12 +41,10 @@ fi
 # pointer link elsewhere in the file (e.g. the Section-anchor redirects table)
 # can't mask a missing table row. Reported by codex on PR #264 R5.
 CORE_RULE_FILES=(
-  "process_template_detection.md" "process_critical_thinking.md" "process_work_style.md"
-  "process_clarification.md" "process_role_selection.md" "process_gates.md"
-  "process_session_state.md" "process_pr_completion.md" "process_model_tier.md"
-  "process_subagent_bootstrap.md"
+  "process_session_start.md" "process_critical_thinking.md" "process_work_style.md"
+  "process_clarification.md" "process_session_state.md"
   "process_doc_maintenance.md" "domain_code_quality.md" "repo_orchestration_patterns.md"
-  "agent_ownership.md"
+  "process_opportunity_feedback.md"
 )
 # Extract markdown table rows (lines starting with '|') from the
 # "Per-concern process rules" section. Restricting to table rows guards

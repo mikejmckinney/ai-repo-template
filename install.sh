@@ -143,8 +143,6 @@ fi
 # Copy repo-onboarding prompts
 ONBOARD_SRC="$DOTFILES/.github/prompts/repo-onboarding.md"
 ONBOARD_DST="$PROMPTS_DIR/repo-onboarding.md"
-ONBOARD_STUBS_SRC="$DOTFILES/.github/prompts/repo-onboarding-stubs.md"
-ONBOARD_STUBS_DST="$PROMPTS_DIR/repo-onboarding-stubs.md"
 ONBOARD_SRC_EXISTS=false
 
 if [[ -f "$ONBOARD_SRC" ]]; then
@@ -157,17 +155,6 @@ if [[ -f "$ONBOARD_SRC" ]]; then
   fi
 else
   log_warn "  ⚠ Source not found: $ONBOARD_SRC"
-fi
-
-if [[ -f "$ONBOARD_STUBS_SRC" ]]; then
-  if [[ -f "$ONBOARD_STUBS_DST" ]]; then
-    log_warn "  ⚠ $ONBOARD_STUBS_DST already exists, skipping"
-  else
-    cp "$ONBOARD_STUBS_SRC" "$ONBOARD_STUBS_DST"
-    log_info "  ✓ Copied: repo-onboarding-stubs.md"
-  fi
-else
-  log_warn "  ⚠ Source not found: $ONBOARD_STUBS_SRC"
 fi
 
 # Copy AGENTS.md to workspace root if not present
@@ -313,19 +300,13 @@ MULTIAGENT_FILES=(
   ".context/backlog.yaml"
   ".context/roadmap.md"
   ".context/rules/README.md"
-  ".context/rules/agent_ownership.md"
   ".context/rules/domain_code_quality.md"
   ".context/rules/process_clarification.md"
   ".context/rules/process_critical_thinking.md"
   ".context/rules/process_doc_maintenance.md"
-  ".context/rules/process_gates.md"
-  ".context/rules/process_model_tier.md"
   ".context/rules/process_opportunity_feedback.md"
-  ".context/rules/process_pr_completion.md"
-  ".context/rules/process_role_selection.md"
+  ".context/rules/process_session_start.md"
   ".context/rules/process_session_state.md"
-  ".context/rules/process_subagent_bootstrap.md"
-  ".context/rules/process_template_detection.md"
   ".context/rules/process_work_style.md"
   ".context/rules/repo_orchestration_patterns.md"
   ".context/sessions/README.md"
@@ -367,7 +348,6 @@ MULTIAGENT_FILES=(
   ".github/prompts/pre-push-review.md"
   ".github/prompts/pr-resolve-all.md"
   ".github/prompts/repo-onboarding.md"
-  ".github/prompts/repo-onboarding-stubs.md"
   ".github/agents/consensus-candidate-claude.agent.md"
   ".github/agents/consensus-candidate-gpt.agent.md"
   ".github/agents/consensus-candidate-gemini.agent.md"

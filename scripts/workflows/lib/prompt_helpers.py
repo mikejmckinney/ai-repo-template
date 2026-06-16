@@ -19,18 +19,13 @@ STANDARD_MINIMUM = [
     ".context/rules/process_clarification.md",
     ".context/00_INDEX.md",
     ".context/rules/README.md",
-    ".context/rules/agent_ownership.md",
     ".context/rules/process_work_style.md",
     ".context/rules/process_doc_maintenance.md",
-    ".context/rules/process_role_selection.md",
     ".context/rules/process_session_state.md",
     ".context/rules/process_opportunity_feedback.md",
 ]
 
-PR_REVIEW_MINIMUM = STANDARD_MINIMUM + [
-    ".context/rules/process_pr_completion.md",
-    ".context/rules/process_gates.md",
-]
+PR_REVIEW_MINIMUM = STANDARD_MINIMUM
 
 # Path-pattern → additional rule files (catalog-aligned triggers).
 PATH_TRIGGERED: list[tuple[re.Pattern[str], str]] = [

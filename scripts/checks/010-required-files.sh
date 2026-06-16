@@ -76,7 +76,6 @@ REQUIRED_FILES=(
   ".codex/agents/analyst.toml"
   ".github/prompts/README.md"
   ".github/prompts/repo-onboarding.md"
-  ".github/prompts/repo-onboarding-stubs.md"
   ".github/prompts/pr-resolve-all.md"
   ".github/prompts/op-issue-workflow.md"
   ".github/prompts/expand-backlog-entry.md"
