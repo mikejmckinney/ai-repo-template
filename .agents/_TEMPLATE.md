@@ -22,8 +22,8 @@ Before doing role work, load:
 1. `AGENTS.md` and its current `AGENTS_MD_VERSION`.
 2. This canonical role file and its `role_contract_version`.
 3. `.context/rules/agent_ownership.md`.
-5. Any process rules listed in the parent dispatch packet.
-6. The issue, PR, plan, or diff context supplied in the dispatch packet.
+4. Any process rules listed in the parent dispatch packet.
+5. The issue, PR, plan, or diff context supplied in the dispatch packet.
 
 If the dispatch packet omits the role, goal, expected output, required context,
 or relevant issue/PR/plan/diff link, do not guess. Non-exact-output roles may

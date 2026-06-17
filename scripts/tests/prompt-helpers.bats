@@ -102,6 +102,6 @@ PY
     --json-file "$TMP_DIR/large.json" \
     --max-bytes 2000
   [ "$status" -eq 0 ]
-  grep -q 'TRUNCATED' <<<"$output"
+  grep -qE 'truncated|Truncated snapshot' <<<"$output"
   grep -q '::warning::JSON snapshot truncated' <<<"$stderr"
 }

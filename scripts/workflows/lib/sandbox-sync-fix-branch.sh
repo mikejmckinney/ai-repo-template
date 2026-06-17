@@ -58,7 +58,7 @@ sandbox_sync_fix_branch() {
   fi
 
   if [[ -x "$repo_root/scripts/diag-sandbox.sh" ]]; then
-    (cd "$repo_root" && ./scripts/diag-sandbox.sh) || {
+    (cd "$repo_root" && ./scripts/diag-sandbox.sh) >&2 || {
       echo "::warning::diag-sandbox.sh reported issues; continuing sandbox push" >&2
     }
   fi
@@ -72,7 +72,7 @@ sandbox_sync_fix_branch() {
     fi
     return 1
   }
-  sandbox_ensure_git_remote "$repo_root" || true
+  { sandbox_ensure_git_remote "$repo_root" || true; } >&2
 
   local remote="${SANDBOX_REMOTE:-sandbox}"
   if ! git -C "$repo_root" remote get-url "$remote" &>/dev/null; then
@@ -85,11 +85,38 @@ sandbox_sync_fix_branch() {
     return 1
   fi
 
-  echo "::notice::sandbox-sync pushing HEAD -> ${remote}/${sandbox_branch}" >&2
-  if [[ -n "${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]; then
-    GH_TOKEN="$SANDBOX_BOOTSTRAP_TOKEN" gh auth setup-git >/dev/null 2>&1 || true
+  local push_token="${SANDBOX_BOOTSTRAP_TOKEN:-}"
+  if [[ -z "$push_token" ]]; then
+    echo "::error::sandbox-sync: SANDBOX_BOOTSTRAP_TOKEN is required for sandbox push" >&2
+    if [[ -n "$saved_gh_token" ]]; then
+      export GH_TOKEN="$saved_gh_token"
+    else
+      unset GH_TOKEN || true
+    fi
+    return 1
   fi
-  if ! git -C "$repo_root" push -f "$remote" "HEAD:${sandbox_branch}"; then
+
+  local work_dir tok_file askpass push_err
+  work_dir="$(mktemp -d)"
+  tok_file="${work_dir}/.tok"
+  askpass="${work_dir}/.askpass"
+  push_err="${work_dir}/push.err"
+  trap 'rm -rf "$work_dir"' RETURN
+  printf '%s\n' "$push_token" >"$tok_file"
+  printf '#!/bin/sh\ncat "%s"\n' "$tok_file" >"$askpass"
+  chmod 600 "$tok_file"
+  chmod 700 "$askpass"
+
+  echo "::notice::sandbox-sync pushing HEAD -> ${SANDBOX_REPO}/${sandbox_branch}" >&2
+  if ! GIT_ASKPASS="$askpass" GIT_TERMINAL_PROMPT=0 \
+    git -C "$repo_root" \
+    -c credential.helper= \
+    push -f "https://x-access-token@github.com/${SANDBOX_REPO}.git" "HEAD:${sandbox_branch}" \
+    2>"$push_err"; then
+    echo "::error::sandbox-sync: git push to ${SANDBOX_REPO} failed" >&2
+    if [[ -s "$push_err" ]]; then
+      sed -E 's#(https?://)[^/@[:space:]]+@#\1***@#g' "$push_err" >&2 || cat "$push_err" >&2
+    fi
     if [[ -n "$saved_gh_token" ]]; then
       export GH_TOKEN="$saved_gh_token"
     else

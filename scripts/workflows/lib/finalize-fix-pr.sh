@@ -81,7 +81,7 @@ maybe_sandbox_sync() {
   sandbox_pr_url="$(sandbox_sync_fix_branch "$repo_root" "$sandbox_branch" "$title" "$body_file" || true)"
   rm -f "$body_file"
 
-  if [[ -z "$sandbox_pr_url" ]]; then
+  if [[ -z "$sandbox_pr_url" || "$sandbox_pr_url" != https://github.com/* ]]; then
     echo "::warning::sandbox-sync failed or returned no PR URL; continuing upstream PR finalization" >&2
     return 0
   fi
