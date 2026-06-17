@@ -9,7 +9,6 @@
 
 # shellcheck disable=SC2034
 SANDBOX_REPO=""
-SANDBOX_REMOTE=""
 SANDBOX_URL=""
 UPSTREAM_OWNER=""
 UPSTREAM_NAME=""
@@ -17,6 +16,7 @@ UPSTREAM_NAME=""
 sandbox_resolve_targets() {
   local repo_root="$1"
   local upstream_url
+  local caller_remote="${SANDBOX_REMOTE:-}"
 
   SANDBOX_REPO=""
   SANDBOX_REMOTE=""
@@ -38,7 +38,7 @@ sandbox_resolve_targets() {
   fi
 
   SANDBOX_REPO="${SANDBOX_REPO_NAME:-${UPSTREAM_OWNER}/${UPSTREAM_NAME}-sandbox}"
-  SANDBOX_REMOTE="${SANDBOX_REMOTE:-sandbox}"
+  SANDBOX_REMOTE="${caller_remote:-sandbox}"
   SANDBOX_URL="https://github.com/${SANDBOX_REPO}.git"
   return 0
 }

@@ -7,7 +7,7 @@
 1. **[`AGENTS.md`](../AGENTS.md)** — thin contract: handshake, truth hierarchy, link table to per-concern process rules. All other AI tools (Claude, Cursor, Gemini) also read this file. Per-concern rules live under `.context/rules/process_*.md`.
 2. **[`AI_REPO_GUIDE.md`](../AI_REPO_GUIDE.md)** — structured reference (files, conventions, verification commands) optimized for agent consumption.
 3. **[`.context/00_INDEX.md`](../.context/00_INDEX.md)** — project memory entry point. Lazy-loads rules, state, roadmap, and vision.
-4. **[`.github/PLAN_TEMPLATE.md`](PLAN_TEMPLATE.md)** — copy this template into a comment on any issue you're about to implement, before writing code. See [`.context/rules/process_gates.md`](../.context/rules/process_gates.md) and ADR-011 for the full rules and exemptions.
+4. **[`.github/PLAN_TEMPLATE.md`](PLAN_TEMPLATE.md)** — copy this template into a comment on any issue you're about to implement, before writing code. See ADR-011 and `.github/PLAN_TEMPLATE.md` § plan-as-comment requirement for the full rules and exemptions.
 5. **[`.github/prompts/op-issue-workflow.md`](prompts/op-issue-workflow.md)** — end-to-end OP issue→merge playbook for the default agent. Read the first time you pick up an issue.
 
 ## Parent startup compliance
@@ -23,7 +23,7 @@ When dispatching subagents, provide a dispatch packet containing: role, goal,
 expected output, issue/PR/plan/diff link, process files to load, ownership
 constraints, gate state, current `AGENTS_MD_VERSION`, and any allowed
 deviations. Require the subagent to return `subagent_compliance` per
-`.context/rules/process_subagent_bootstrap.md`. Do not claim CI proves runtime
+[`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md). Do not claim CI proves runtime
 dispatch; it can only validate declared evidence shape and references.
 
 ## Default agent is Parent Orchestrator (OP)

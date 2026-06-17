@@ -23,6 +23,8 @@ duration of a run only (skip-worktree + restore before diff capture).
 | `class-b-implementation` | Class B reasoning/code: core-min + code quality and doc-sync rules |
 | `workflow-risk` | High verification-risk workflow changes: core-min + ADR-016 + sandbox guide |
 | `adr-docs` | ADR/docs work: core-min + ADR index/template + model tier + orchestration patterns |
+| `pr-review-automation` | Automated pr-review / bot-feedback consolidation surfaces |
+| `implementation` | Fix-job libs and ADR-029 §1.1 ordering/failure-semantics invariants |
 
 ## Harness usage
 

@@ -16,36 +16,40 @@ def main() -> int:
     root = Path(sys.argv[2]).resolve()
 
     edits = data.get("file_edits") or []
-    if not isinstance(edits, list) or not edits:
-        print("No file_edits to apply", file=sys.stderr)
-        return 1
-
-    for i, edit in enumerate(edits):
-        if not isinstance(edit, dict):
-            print(f"file_edits[{i}] must be object", file=sys.stderr)
-            return 1
-        rel = edit.get("path")
-        content = edit.get("content")
-        if not isinstance(rel, str) or not rel.strip():
-            print(f"file_edits[{i}].path required", file=sys.stderr)
-            return 1
-        if ".." in Path(rel).parts:
-            print(f"Rejected path traversal: {rel}", file=sys.stderr)
-            return 1
-        if not isinstance(content, str):
-            print(f"file_edits[{i}].content must be string", file=sys.stderr)
-            return 1
-        target = root / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(content, encoding="utf-8")
-        print(f"Wrote {rel}")
-
-    notes = data.get("notes")
     fix_verify = data.get("fix_verify")
     run_date = data.get("run_date", "batch")
     run_week = data.get("run_week")
 
-    verify_path = None
+    if not isinstance(edits, list):
+        print("file_edits must be an array when present", file=sys.stderr)
+        return 1
+
+    if not edits:
+        if not isinstance(fix_verify, dict):
+            print("No file_edits to apply and no fix_verify block", file=sys.stderr)
+            return 1
+    else:
+        for i, edit in enumerate(edits):
+            if not isinstance(edit, dict):
+                print(f"file_edits[{i}] must be object", file=sys.stderr)
+                return 1
+            rel = edit.get("path")
+            content = edit.get("content")
+            if not isinstance(rel, str) or not rel.strip():
+                print(f"file_edits[{i}].path required", file=sys.stderr)
+                return 1
+            if ".." in Path(rel).parts:
+                print(f"Rejected path traversal: {rel}", file=sys.stderr)
+                return 1
+            if not isinstance(content, str):
+                print(f"file_edits[{i}].content must be string", file=sys.stderr)
+                return 1
+            target = root / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(content, encoding="utf-8")
+            print(f"Wrote {rel}")
+
+    notes = data.get("notes")
     if isinstance(fix_verify, dict):
         verify_path = root / f"retro/fix-verify-{run_date}.json"
         if run_week:

@@ -162,16 +162,12 @@ payload = {
     },
     "test_sh": "unknown",
 }
+Path(out).parent.mkdir(parents=True, exist_ok=True)
 Path(out).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 fi
 
 strip_workflow_changes
-
-# shellcheck source=../lib/finalize-fix-pr.sh
-source "$LIB_DIR/finalize-fix-pr.sh"
-maybe_sandbox_sync "$REPO_ROOT" "$SANDBOX_BRANCH" "[sandbox] Post-merge retro fix ${RUN_DATE}" "$VERIFY_JSON" "$LIB_DIR"
-fix_phase_log "sandbox-sync"
 
 has_diff=0
 if ! git diff --quiet || ! git diff --cached --quiet; then
@@ -189,9 +185,24 @@ else
 fi
 fix_phase_log "commit"
 
+needs_push=0
 if [[ "$has_diff" -eq 1 ]]; then
+  needs_push=1
+elif git rev-parse "origin/${BRANCH}" >/dev/null 2>&1 \
+  && [[ "$(git rev-parse HEAD)" != "$(git rev-parse "origin/${BRANCH}")" ]]; then
+  needs_push=1
+fi
+if [[ "$needs_push" -eq 1 ]]; then
   git push -u origin "$BRANCH"
-elif [[ -z "$existing_pr" ]]; then
+fi
+
+# shellcheck source=../lib/finalize-fix-pr.sh
+source "$LIB_DIR/finalize-fix-pr.sh"
+maybe_sandbox_sync "$REPO_ROOT" "$SANDBOX_BRANCH" "[sandbox] Post-merge retro fix ${RUN_DATE}" "$VERIFY_JSON" "$LIB_DIR"
+fix_phase_log "sandbox-sync"
+
+if [[ "$has_diff" -eq 0 && "$needs_push" -eq 0 && -z "$existing_pr" ]] \
+  && ! git rev-list "origin/main..HEAD" 2>/dev/null | grep -q .; then
   skip_notice="(skipped — no code changes; see fix-verify.json if present)"
   bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_DATE" "$skip_notice" "$DAILY_JSON"
   echo "Fix pass complete for ${RUN_DATE} (no changes)"

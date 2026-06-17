@@ -5,3 +5,4 @@
 .context/rules/process_doc_maintenance.md	Doc-sync triggers for companion file updates.
 docs/decisions/adr-016-pre-merge-verification-gate.md	Pre-merge verification and sandbox evidence gate.
 docs/guides/sandbox-verification.md	Sandbox dogfood verification procedure.
+docs/guides/agent-pipeline.md	Fix-only recovery; truncated issue-comment snapshots require artifact_run_id.

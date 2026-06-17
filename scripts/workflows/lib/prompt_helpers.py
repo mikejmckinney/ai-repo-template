@@ -25,7 +25,10 @@ STANDARD_MINIMUM = [
     ".context/rules/process_opportunity_feedback.md",
 ]
 
-PR_REVIEW_MINIMUM = STANDARD_MINIMUM
+PR_REVIEW_MINIMUM = STANDARD_MINIMUM + [
+    "docs/guides/agent-pipeline.md",
+    ".github/prompts/pr-resolve-all.md",
+]
 
 # Path-pattern → additional rule files (catalog-aligned triggers).
 PATH_TRIGGERED: list[tuple[re.Pattern[str], str]] = [
@@ -144,7 +147,20 @@ def _shrink_single_item(one: dict, max_bytes: int) -> dict | None:
         if k in candidate
     }
     minimal["_truncated"] = True
-    if _fits([minimal], max_bytes):
+    if "body" in minimal and isinstance(minimal.get("body"), str):
+        body = minimal["body"]
+        budget = max(0, max_bytes - 512)
+        if budget < len(body):
+            body = body[:budget]
+        while body:
+            trial = {**minimal, "body": body}
+            if _fits([trial], max_bytes):
+                return trial
+            body = body[: max(0, len(body) - 1024)]
+        trial = {**minimal, "body": ""}
+        if _fits([trial], max_bytes):
+            return trial
+    elif _fits([minimal], max_bytes):
         return minimal
     return None
 

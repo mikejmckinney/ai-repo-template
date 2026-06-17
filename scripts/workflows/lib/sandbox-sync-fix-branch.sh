@@ -15,16 +15,16 @@ set -euo pipefail
 
 sandbox_sync_should_skip() {
   if [[ "${SKIP_SANDBOX_FIX_VERIFY:-}" == "true" ]]; then
-    echo "::notice::sandbox-sync skipped (SKIP_SANDBOX_FIX_VERIFY=true)"
+    echo "::notice::sandbox-sync skipped (SKIP_SANDBOX_FIX_VERIFY=true)" >&2
     return 0
   fi
   local repo="${GITHUB_REPOSITORY:-}"
   if [[ "$repo" == *-sandbox ]]; then
-    echo "::notice::sandbox-sync skipped (running on sandbox repo)"
+    echo "::notice::sandbox-sync skipped (running on sandbox repo)" >&2
     return 0
   fi
   if [[ "${FIX_JOB_SANDBOX_VERIFY:-false}" != "true" ]]; then
-    echo "::notice::sandbox-sync skipped (FIX_JOB_SANDBOX_VERIFY not true)"
+    echo "::notice::sandbox-sync skipped (FIX_JOB_SANDBOX_VERIFY not true)" >&2
     return 0
   fi
   return 1
@@ -35,6 +35,7 @@ sandbox_sync_fix_branch() {
   local sandbox_branch="$2"
   local title="$3"
   local body_file="$4"
+  local saved_gh_token="${GH_TOKEN:-}"
 
   if sandbox_sync_should_skip; then
     return 0
@@ -53,17 +54,22 @@ sandbox_sync_fix_branch() {
   if [[ -n "${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]; then
     export GH_TOKEN="$SANDBOX_BOOTSTRAP_TOKEN"
   elif [[ -z "${GH_TOKEN:-}" ]]; then
-    echo "::warning::sandbox-sync: SANDBOX_BOOTSTRAP_TOKEN unset; using existing gh auth"
+    echo "::warning::sandbox-sync: SANDBOX_BOOTSTRAP_TOKEN unset; using existing gh auth" >&2
   fi
 
   if [[ -x "$repo_root/scripts/diag-sandbox.sh" ]]; then
     (cd "$repo_root" && ./scripts/diag-sandbox.sh) || {
-      echo "::warning::diag-sandbox.sh reported issues; continuing sandbox push"
+      echo "::warning::diag-sandbox.sh reported issues; continuing sandbox push" >&2
     }
   fi
 
   sandbox_resolve_targets "$repo_root" || {
     echo "::error::sandbox-sync: could not resolve sandbox targets" >&2
+    if [[ -n "$saved_gh_token" ]]; then
+      export GH_TOKEN="$saved_gh_token"
+    else
+      unset GH_TOKEN || true
+    fi
     return 1
   }
   sandbox_ensure_git_remote "$repo_root" || true
@@ -71,15 +77,25 @@ sandbox_sync_fix_branch() {
   local remote="${SANDBOX_REMOTE:-sandbox}"
   if ! git -C "$repo_root" remote get-url "$remote" &>/dev/null; then
     echo "::error::sandbox-sync: git remote '${remote}' not configured" >&2
+    if [[ -n "$saved_gh_token" ]]; then
+      export GH_TOKEN="$saved_gh_token"
+    else
+      unset GH_TOKEN || true
+    fi
     return 1
   fi
 
-  echo "::notice::sandbox-sync pushing HEAD -> ${remote}/${sandbox_branch}"
+  echo "::notice::sandbox-sync pushing HEAD -> ${remote}/${sandbox_branch}" >&2
   if [[ -n "${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]; then
-    local push_url="https://x-access-token:${SANDBOX_BOOTSTRAP_TOKEN}@github.com/${SANDBOX_REPO}.git"
-    git -C "$repo_root" push -f "$push_url" "HEAD:${sandbox_branch}"
-  else
-    git -C "$repo_root" push -f "$remote" "HEAD:${sandbox_branch}"
+    GH_TOKEN="$SANDBOX_BOOTSTRAP_TOKEN" gh auth setup-git >/dev/null 2>&1 || true
+  fi
+  if ! git -C "$repo_root" push -f "$remote" "HEAD:${sandbox_branch}"; then
+    if [[ -n "$saved_gh_token" ]]; then
+      export GH_TOKEN="$saved_gh_token"
+    else
+      unset GH_TOKEN || true
+    fi
+    return 1
   fi
 
   local existing_pr
@@ -89,14 +105,20 @@ sandbox_sync_fix_branch() {
   if [[ -n "$existing_pr" ]]; then
     gh pr edit "$existing_pr" --repo "$SANDBOX_REPO" --title "$title" --body-file "$body_file" >/dev/null
     pr_url="$(gh pr view "$existing_pr" --repo "$SANDBOX_REPO" --json url --jq .url)"
-    echo "::notice::sandbox-sync updated sandbox PR #${existing_pr}"
+    echo "::notice::sandbox-sync updated sandbox PR #${existing_pr}" >&2
   else
     pr_url="$(gh pr create --repo "$SANDBOX_REPO" \
       --title "$title" \
       --body-file "$body_file" \
       --base main \
       --head "$sandbox_branch")"
-    echo "::notice::sandbox-sync created sandbox PR ${pr_url}"
+    echo "::notice::sandbox-sync created sandbox PR ${pr_url}" >&2
+  fi
+
+  if [[ -n "$saved_gh_token" ]]; then
+    export GH_TOKEN="$saved_gh_token"
+  else
+    unset GH_TOKEN || true
   fi
 
   printf '%s\n' "$pr_url"

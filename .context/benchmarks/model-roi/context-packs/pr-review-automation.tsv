@@ -1,0 +1,7 @@
+# path	reason
+.context/00_INDEX.md	Map of available context surfaces and lazy-load expectations.
+.context/sessions/latest_summary.md	Durable lessons from recent work.
+.context/rules/README.md	Named read profiles including pr-review bot-feedback floor.
+docs/guides/agent-pipeline.md	PR/review automation pipeline and fix-only recovery contract.
+.github/prompts/pr-resolve-all.md	Bot-feedback consolidation and Phase 4 resolution rules.
+scripts/workflows/lib/prompt_helpers.py	Catalog-aligned PR_REVIEW_MINIMUM injection.

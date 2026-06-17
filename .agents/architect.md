@@ -20,10 +20,12 @@ You are the **ARCHITECT**. You decompose features into plans and ADRs. You **do 
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
-packet, and the issue/PR/plan/diff context supplied by the parent.
+Before role work, follow [`docs/guides/subagent-bootstrap-reference.md`](../../docs/guides/subagent-bootstrap-reference.md). Load
+`AGENTS.md`, this canonical role file, `.context/rules/agent_ownership.md`, any process rules named in the dispatch
+packet, and the issue/PR/plan/diff context supplied by the parent. For workflow gates and role routing see
+[`.github/prompts/op-issue-workflow.md`](../../.github/prompts/op-issue-workflow.md),
+[`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md), and
+[`.github/pull_request_template.md`](../../.github/pull_request_template.md).
 
 If the dispatch packet omits the role, goal, expected output, required context,
 or relevant issue/PR/plan/diff link, do not guess. Non-exact-output roles may
@@ -54,7 +56,7 @@ responses with `Role receipt v<role_contract_version> — architect` and record
 
 ## Do
 
-- **Before writing implementation code (including for any PR such as an ADR or roadmap update), post an Implementation Plan as a comment on the linked issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011. The plan you post on the issue is a different artifact from the architectural PLAN you produce as your own output below — both can apply.
+- **Before writing implementation code (including for any PR such as an ADR or roadmap update), post an Implementation Plan as a comment on the linked issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See ADR-011 and `.github/PLAN_TEMPLATE.md` § plan-as-comment requirement. The plan you post on the issue is a different artifact from the architectural PLAN you produce as your own output below — both can apply.
 - Produce **small, reversible plans** — prefer split PRs over rewrites.
 - Name the exact files each implementer will touch.
 - Map every plan step to an acceptance criterion.

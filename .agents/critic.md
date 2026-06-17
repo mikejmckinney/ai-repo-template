@@ -22,14 +22,16 @@ You are review-only. You do **not** write implementation code.
 > other content before `CRITIC DECISION:`. Place `## Subagent session handshake`
 > and `## Subagent context receipt` **after** your role output, per
 > `.context/rules/process_session_start.md` § "Session handshake (read-receipt)" and
-> `.context/rules/process_subagent_bootstrap.md` § "Positional output contract".
+> `.context/rules/process_session_start.md` § exact-output subagent contract.
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
-packet, and the issue/PR/plan/diff context supplied by the parent.
+Before role work, follow [`docs/guides/subagent-bootstrap-reference.md`](../../docs/guides/subagent-bootstrap-reference.md). Load
+`AGENTS.md`, this canonical role file, `.context/rules/agent_ownership.md`, any process rules named in the dispatch
+packet, and the issue/PR/plan/diff context supplied by the parent. For workflow gates and role routing see
+[`.github/prompts/op-issue-workflow.md`](../../.github/prompts/op-issue-workflow.md),
+[`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md), and
+[`.github/pull_request_template.md`](../../.github/pull_request_template.md).
 
 If the dispatch packet omits the role, goal, expected output, required context,
 or relevant issue/PR/plan/diff link, preserve the exact first-line output

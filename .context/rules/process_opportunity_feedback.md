@@ -32,6 +32,7 @@ Same shape in `agent-state:v1` `opportunity_notes` and `subagent_compliance.oppo
 | `scope` | enum | `rule`, `script`, `doc`, `workflow`, `code`, `test`, `process`. |
 | `suggested_next_action` | enum | `file-issue`, `fold-into-<n>`, `discuss`, `defer`. |
 | `confidence` | enum | `high`, `medium`, `low`. |
+| `role_relevance` | list of strings | Role(s) this note most affects (e.g. `devops`, `docs`). Use canonical role names from `.agents/`. |
 | `duplicate_check` | string | Search/issue compared. `none` if not checked. |
 
 ## Cap
@@ -40,7 +41,7 @@ Maximum **3 opportunity notes per session per agent** (self-discipline, not tool
 
 ## When agents may implement directly
 
-MAY implement without a note ONLY when ALL FOUR hold:
+MAY implement without a note ONLY when ALL THREE hold:
 
 1. **≤ ~20 LOC**, single file.
 2. **Directly necessary** for in-scope task (not "while I'm here").

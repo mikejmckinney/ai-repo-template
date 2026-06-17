@@ -1,0 +1,491 @@
+{
+  "run_date": "2026-06-17",
+  "run_kind": "retro",
+  "findings": [
+    {
+      "dedupe_key": "pr438-opportunity-role-relevance-drift",
+      "repro_steps": [
+        "Checkout main at merge commit 5c3f31f4a286ef3e82ec7e1536109ee0c9e900b1",
+        "Run: python3 -c \"import sys; sys.path.insert(0,'scripts/lib'); from compliance_schema import _validate_opportunity_notes; _validate_opportunity_notes([{'title':'t','evidence':'e','impact':'i','recommendation':'r','scope':'doc','suggested_next_action':'defer','confidence':'high','duplicate_check':'none'}], 'test')\"",
+        "Observe ValidationError: missing required keys: role_relevance",
+        "Compare with `.context/rules/process_opportunity_feedback.md` field table — no role_relevance row for agents to follow"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Restored role_relevance row; direct-implementation gate now ALL THREE."
+      }
+    },
+    {
+      "dedupe_key": "pr438-role-files-stale-bootstrap-refs",
+      "repro_steps": [
+        "Checkout main after PR #438 merge",
+        "Run: grep -l 'process_subagent_bootstrap\\|agent_ownership\\.md\\|process_gates\\.md' .agents/*.md",
+        "Observe all ten role files (analyst, architect, backend, critic, devops, docs, frontend, judge, pm, qa) still reference deleted paths",
+        "Run: test -f .context/rules/process_subagent_bootstrap.md && echo exists || echo missing",
+        "Confirm missing — dispatched subagent bootstrap instructions are broken"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Bulk-updated .agents/*.md, _TEMPLATE.md, copilot-instructions.md to ADR-031 surfaces."
+      }
+    },
+    {
+      "dedupe_key": "pr438-multi-dispatch-ownership-gap",
+      "repro_steps": [
+        "Checkout main at merge commit 5c3f31f4a286ef3e82ec7e1536109ee0c9e900b1",
+        "Run: test -f .context/rules/agent_ownership.md || echo 'ownership map missing'",
+        "Run: MULTI_DISPATCH_TEST_MODE=0 bash -c 'source scripts/multi-dispatch-safety.sh; _mds_load_role_prefixes; echo prefixes=${_mds_role_prefixes:-empty}'",
+        "Observe prefixes=empty despite known roles from parse-ownership-table --list-roles",
+        "Open `.github/workflows/agent-parallelism-report.yml` and confirm OWNERSHIP_FILE still points at deleted path"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Restored .context/rules/agent_ownership.md from canonical fixture; prefixes load in production mode."
+      }
+    },
+    {
+      "dedupe_key": "pr438-judge-handshake-conflict",
+      "repro_steps": [
+        "Read `.context/rules/process_session_start.md` line 41 (handshake before any other content)",
+        "Read `.agents/judge.md` lines 19-24 (DECISION: before handshake)",
+        "Dispatch Judge on a plan-gate task with both files in the required-read set",
+        "Follow process_session_start literally → prepend Session handshake vN",
+        "Observe output no longer starts with DECISION: — plan-gate parsers/classifiers break"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Restored exact-output subagent exception in process_session_start.md; updated judge/critic citations."
+      }
+    },
+    {
+      "dedupe_key": "pr438-onboarding-substeps-stubs",
+      "repro_steps": [
+        "Open `.github/prompts/repo-onboarding.md` and read the How to execute table (Step 2 → 2.1–2.9)",
+        "Scroll to Step 2 bootstrap table — only 2.1–2.6 are defined",
+        "Run: find . -name 'repo-onboarding-stubs.md' → no results",
+        "Attempt Mode B onboarding on a fresh derived clone per Step 2.1 — no documented canonical stub source to restore resettable files before repopulation"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Added repo-onboarding-stubs.md; wired Step 2.1; aligned execution table to 2.1–2.6; updated 00_INDEX copy."
+      }
+    },
+    {
+      "dedupe_key": "pr438-op-workflow-stale-a7",
+      "repro_steps": [
+        "Open `.github/prompts/op-issue-workflow.md` and search for A7",
+        "Open `.github/prompts/repo-onboarding.md` and search for A7 or Track A",
+        "Confirm A7 is referenced in the playbook but undefined in onboarding — agents cannot locate the handoff step"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "A7 → Step 3 (Orient) handoff."
+      }
+    },
+    {
+      "dedupe_key": "pr438-prompt-helpers-pr-review-floor",
+      "repro_steps": [
+        "Run: python3 scripts/workflows/lib/prompt_helpers.py select-context --profile pr-review --changed-files README.md",
+        "Pipe through: grep -E 'agent-pipeline|pr-resolve-all' — no matches",
+        "Compare with `.context/rules/README.md` pr-review mandatory files",
+        "Trace `run-feedback-consolidation.sh` — it calls select-context with profile pr-review for bot feedback consolidation"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Extended PR_REVIEW_MINIMUM with agent-pipeline.md and pr-resolve-all.md."
+      }
+    },
+    {
+      "dedupe_key": "pr438-agents-md-ownership-conflict",
+      "repro_steps": [
+        "Read docs/decisions/adr-002-agents-md-ownership.md — Architect owns AGENTS.md",
+        "Read .agents/docs.md owned_paths — includes AGENTS.md",
+        "Read .agents/architect.md owned_paths — also includes AGENTS.md",
+        "Simulate owned_paths dispatch for an AGENTS.md canary bump — both Docs and Architect appear valid owners"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Removed AGENTS.md from Docs owned_paths; Architect remains sole owner per ADR-002."
+      }
+    },
+    {
+      "dedupe_key": "pr438-adr031-ghost-success-pointer",
+      "repro_steps": [
+        "Open docs/decisions/adr-031-agent-model-roi-benchmark-policy.md line 74",
+        "Search .agents/analyst.md for ghost-success or pass-back — not found",
+        "Open docs/guides/subagent-bootstrap-reference.md — pass-back/ghost-success content is here"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "ADR-031 citation retargeted to subagent-bootstrap-reference.md."
+      }
+    },
+    {
+      "dedupe_key": "pr438-adr031-ownership-deferral-ops",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "ADR edit out of scope; operational gap closed by restoring production agent_ownership.md. ADR amendment candidate: document deferral ops consequence."
+      }
+    },
+    {
+      "dedupe_key": "pr438-adr002-ownership-clarify",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "ADR edit out of scope; conflict resolved in code (Docs overlay reverted). ADR-002 reaffirmed via Architect ownership."
+      }
+    },
+    {
+      "dedupe_key": "pr438-class-a-pack-onboarding",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Added .github/prompts/repo-onboarding.md to class-a-process.tsv."
+      }
+    },
+    {
+      "dedupe_key": "pr438-pr-review-pack-bot-feedback",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Created pr-review-automation.tsv context pack aligned with PR_REVIEW_MINIMUM fix."
+      }
+    },
+    {
+      "dedupe_key": "pr440-json-snapshot-invalid-restore",
+      "repro_steps": [
+        "Create a large daily-retro.json (e.g. one finding with a multi-KB body) exceeding the 60k comment budget.",
+        "Run `python3 scripts/workflows/lib/build-json-snapshot-comment.py --marker '<!-- postmerge-retro:daily-json:2026-06-15 run:1 attempt:0 -->' --heading 'Daily retro JSON snapshot' --intro 'test' --json-file <large.json> --max-bytes 2000` and confirm `TRUNCATED` appears inside the json fence.",
+        "Extract the fenced block and run `python3 -m json.tool` on it — observe JSONDecodeError (invalid control character / truncated structure).",
+        "Write the extracted text to a file and run `python3 scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py <file>` — observe exit code 1."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Snapshot builder now trims findings[]/bodies; truncation notice moved outside JSON fence; output stays valid JSON."
+      }
+    },
+    {
+      "dedupe_key": "pr440-fix-orphan-branch-no-pr",
+      "repro_steps": [
+        "On a test repo, push commits to `retro/fix-2026-06-14` without opening a draft PR.",
+        "Run the post-merge fix job (`fix_only=true`) so `checkout_fix_branch` logs 'Continuing existing fix branch … (no open draft PR yet)'.",
+        "Let the fix agent produce no additional working-tree changes (findings already addressed or empty batch).",
+        "Observe `has_diff=0`, script writes skip notice via `update-umbrella-fix-link.sh`, and exits 0 without `gh pr create`.",
+        "Confirm remote branch has unpushed-to-PR commits and no open draft PR exists."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Skip early-exit only when branch has no commits ahead of main; orphan branches with commits proceed to gh pr create."
+      }
+    },
+    {
+      "dedupe_key": "pr440-cap-json-minimal-body-drop",
+      "repro_steps": [
+        "Create `/tmp/review.json` with one object: `{\"id\":1,\"user\":\"u\",\"body\":\"x\"*1500,\"extra\":\"y\"*10000,\"state\":\"s\"}`.",
+        "Run `python3 scripts/workflows/lib/prompt_helpers.py cap-json --input /tmp/review.json --jq-filter 'map({id,user,body,extra,state})' --max-bytes 800`.",
+        "Observe stdout `[]` and stderr `::warning::cap-json: could not fit review data`.",
+        "In Python, confirm `_shrink_single_item` returns `None` but `{'id':1,'user':'u','body':'x'*200,'state':'s','_truncated':True}` fits under 800 bytes."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Minimal fallback re-applies body truncation before drop."
+      }
+    },
+    {
+      "dedupe_key": "pr440-sandbox-remote-override-cleared",
+      "repro_steps": [
+        "From a git checkout with `origin` remote, run `SANDBOX_REMOTE=my-custom bash -c 'source scripts/lib/sandbox-remote.sh; sandbox_resolve_targets \"$(pwd)\"; echo SANDBOX_REMOTE=$SANDBOX_REMOTE'`.",
+        "Observe output `SANDBOX_REMOTE=sandbox` instead of `my-custom`.",
+        "Run `./scripts/sandbox-bootstrap.sh` or `codespace-post-start.sh` with `SANDBOX_REMOTE` preset and confirm the added git remote name is `sandbox`, not the override."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Stopped clearing SANDBOX_REMOTE at module source; preserve caller override through sandbox_resolve_targets."
+      }
+    },
+    {
+      "dedupe_key": "pr440-fix-merge-not-pushed",
+      "repro_steps": [
+        "Ensure an open draft fix PR exists on `retro/fix-2026-06-14` and `main` has advanced since the branch tip.",
+        "Run the fix job so `checkout_fix_branch` merges `origin/main` into the branch (log: 'Continuing existing draft PR #N').",
+        "Simulate or wait for a fix pass that produces no working-tree diff (`has_diff=0`).",
+        "Observe the job skips `git push` and completes after `gh pr edit`.",
+        "Compare `git rev-parse HEAD` locally vs `git rev-parse origin/retro/fix-2026-06-14` — merge commit exists only locally."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Push when HEAD differs from origin/$BRANCH even if working tree is clean."
+      }
+    },
+    {
+      "dedupe_key": "pr440-json-snapshot-exceeds-cap",
+      "repro_steps": [
+        "Run `python3 scripts/workflows/lib/build-json-snapshot-comment.py` with a JSON file whose compact form exceeds the budget and `--max-bytes 2000`.",
+        "Pipe stdout to `wc -c` and compare against 2000.",
+        "Observe total body bytes exceed `max_bytes` when truncation occurs."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Reserve bytes for truncation notice; post-fix body 1111 bytes under 2000 cap."
+      }
+    },
+    {
+      "dedupe_key": "pr440-antigravity-dot-context-path",
+      "repro_steps": [
+        "Run advisory review with Antigravity provider on a PR that triggers `.context/rules/*` in `context-files.txt`.",
+        "Inspect Antigravity `inline_source` target paths in `run-advisory-antigravity.py` output/logs.",
+        "Confirm rule files mount as `.agents/.context/rules/...` rather than `.agents/context/rules/...`."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Strip leading dot from rel before building .agents/ mount path."
+      }
+    },
+    {
+      "dedupe_key": "pr440-cursor-sdk-regex-eol",
+      "repro_steps": [
+        "Add a test shell script under `scripts/workflows/` containing exactly `npm install --no-save @cursor/sdk` at end of line.",
+        "Run the grep from `054-finalize-collector-hardening-invariants.sh:56` against `scripts/workflows`.",
+        "Observe no match despite unpinned install.",
+        "Run `./test.sh` — invariant still passes."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Regex now matches EOL-unpinned @cursor/sdk installs."
+      }
+    },
+    {
+      "dedupe_key": "pr440-weekly-fix-notes-path",
+      "repro_steps": [
+        "Open `scripts/workflows/weekly-review/run-weekly-review-fix.sh` at merge commit eb78ae1.",
+        "Compare line 91 (`weekly/fix-notes-...`) with line 165 (`retro/fix-notes-...`).",
+        "Trigger a weekly fix job that exits via the no-diff skip path and read the umbrella link text — it references `retro/fix-notes`."
+      ],
+      "verify": {
+        "pre": "cant_reproduce",
+        "post": "n/a",
+        "sandbox": "n/a",
+        "notes": "retro/fix-notes string absent on current branch; finding appears already removed or stale."
+      }
+    },
+    {
+      "dedupe_key": "pr440-adr030-snapshot-recovery-contract",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "ADR edit out of scope; invalid snapshot restore fixed in build-json-snapshot-comment.py. ADR-030 amendment candidate."
+      }
+    },
+    {
+      "dedupe_key": "pr440-pipeline-truncated-snapshot-warning",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Added agent-pipeline.md to workflow-risk context pack for artifact_run_id recovery contract."
+      }
+    },
+    {
+      "dedupe_key": "pr440-sandbox-remote-doc-drift",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "sandbox-remote.sh override bug fixed; doc drift resolved by code fix."
+      }
+    },
+    {
+      "dedupe_key": "pr441-sandbox-sync-before-commit",
+      "repro_steps": [
+        "Inspect scripts/workflows/postmerge-retro/run-postmerge-retro-fix.sh and note maybe_sandbox_sync at line 173 precedes git commit at line 185",
+        "Trace sandbox_sync_fix-branch.sh:80 — pushes HEAD:${sandbox_branch} from current checkout",
+        "Conclude sandbox receives the pre-commit tree while LLM edits and fix-verify.json are still uncommitted"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "skipped",
+        "notes": "Moved maybe_sandbox_sync after commit and push in both fix runners. Sandbox repo unreachable from runner."
+      }
+    },
+    {
+      "dedupe_key": "pr441-sandbox-failure-blocks-pr",
+      "repro_steps": [
+        "Set FIX_JOB_SANDBOX_VERIFY=true and craft fix-verify.json with sandbox.needs_sync=true",
+        "Make sandbox_sync_fix_branch return 1 (e.g., unset SANDBOX_BOOTSTRAP_TOKEN with no sandbox remote)",
+        "Run maybe_sandbox_sync under bash -e and observe the fix runner exits before render_fix_pr_body / gh pr create"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "skipped",
+        "notes": "maybe_sandbox_sync guards sync failure with || true and continues upstream PR finalization."
+      }
+    },
+    {
+      "dedupe_key": "pr441-token-in-push-url",
+      "repro_steps": [
+        "Open scripts/workflows/lib/sandbox-sync-fix-branch.sh lines 78-80",
+        "Note push_url interpolates SANDBOX_BOOTSTRAP_TOKEN into the git remote URL",
+        "Simulate push failure (invalid token) in Actions and inspect stderr for token substring in URL"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "skipped",
+        "notes": "Push via configured remote + gh auth setup-git; no token embedded in push URL."
+      }
+    },
+    {
+      "dedupe_key": "pr441-gh-token-not-restored",
+      "repro_steps": [
+        "Export GH_TOKEN to a valid upstream PAT, then source sandbox-sync-fix-branch.sh with a different SANDBOX_BOOTSTRAP_TOKEN",
+        "Call sandbox_sync_fix_branch (with FIX_JOB_SANDBOX_VERIFY=true and needs_sync true)",
+        "Run gh pr view against the upstream repo and observe auth failure when sandbox token lacks upstream scope"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "skipped",
+        "notes": "Save/restore GH_TOKEN around sandbox_sync_fix_branch."
+      }
+    },
+    {
+      "dedupe_key": "pr441-verify-only-empty-edits",
+      "repro_steps": [
+        "Create JSON with empty file_edits array and a populated fix_verify object",
+        "Run: python3 scripts/workflows/postmerge-retro/apply-retro-fix-json.py <json> .",
+        "Observe stderr 'No file_edits to apply' and exit 1; no retro/fix-verify-*.json written"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "apply-retro-fix-json.py accepts empty file_edits when fix_verify is present."
+      }
+    },
+    {
+      "dedupe_key": "pr441-stub-missing-mkdir",
+      "repro_steps": [
+        "In a temp directory without retro/ subdirectory, run Path('retro/fix-verify-2026-06-15.json').write_text('{}')",
+        "Observe FileNotFoundError",
+        "Confirm merged stub path in run-postmerge-retro-fix.sh lacks parent.mkdir"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Stub writers in both fix runners now mkdir parent before write_text."
+      }
+    },
+    {
+      "dedupe_key": "pr441-fix-phase-unbound",
+      "repro_steps": [
+        "Run: bash -c 'set -euo pipefail; source scripts/workflows/lib/fix-phase-log.sh; fix_phase_log test'",
+        "Observe: FIX_PHASE_START: unbound variable",
+        "Note fix runners source this lib under set -u without guarding init order"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "fix_phase_log defaults FIX_PHASE_START to current time."
+      }
+    },
+    {
+      "dedupe_key": "pr441-render-verify-json-crash",
+      "repro_steps": [
+        "Write a non-JSON file to /tmp/bad.json",
+        "Run: python3 scripts/workflows/lib/render-fix-pr-sections.py /tmp/bad.json",
+        "Observe JSONDecodeError traceback and exit 1",
+        "Trace finalize_append_verify_sections — same python3 call with no error guard"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "render-fix-pr-sections.py catches JSONDecodeError; finalize_append_verify_sections falls back to static warning."
+      }
+    },
+    {
+      "dedupe_key": "pr441-sandbox-stdout-pollution",
+      "repro_steps": [
+        "Define a stub sandbox_sync_fix_branch that echoes ::notice:: lines then printf URL",
+        "Run: sandbox_pr_url=\"$(stub)\"",
+        "Observe sandbox_pr_url contains notice text plus URL on separate lines"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "skipped",
+        "notes": "sandbox-sync notices redirected to stderr; stdout is PR URL only."
+      }
+    },
+    {
+      "dedupe_key": "pr441-adr029-post-commit-sync",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "ADR edit out of scope; ordering fixed in fix runners. ADR-029 §1.1 amendment candidate for explicit post-commit push bullet."
+      }
+    },
+    {
+      "dedupe_key": "pr441-context-fix-job-invariants",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Created implementation.tsv context pack with fix-job libs and ADR-029 surfaces."
+      }
+    }
+  ],
+  "sandbox": {
+    "needs_sync": true,
+    "issue_url": "n/a",
+    "pr_url": "========================================\nSandbox Doctor\n========================================\n\nChecking auth source...\n\u001b[0;32m[INFO]\u001b[0m Not running in Codespaces\n\u001b[0;32m[INFO]\u001b[0m gh identity:   ✓ Logged in to github.com account mikejmckinney (GH_TOKEN)\n\u001b[0;32m[INFO]\u001b[0m Token source:   - Token: ghp_************************************\n\nChecking sandbox remote reachability...\n\u001b[0;32m[INFO]\u001b[0m Sandbox remote 'sandbox': https://github.com/mikejmckinney/ai-repo-template-sandbox.git\n\u001b[1;33m[WARN]\u001b[0m git ls-remote failed (exit 128) — sandbox may not be accessible with current auth\n\u001b[1;33m[WARN]\u001b[0m Output: remote: Repository not found.\nfatal: repository 'https://github.com/mikejmckinney/ai-repo-template-sandbox.git/' not found\n\u001b[0;32m[INFO]\u001b[0m Sandbox git remote 'sandbox' already configured (https://github.com/mikejmckinney/ai-repo-template-sandbox.git).",
+    "skip_reason": "sandbox repo mikejmckinney/ai-repo-template-sandbox not reachable from runner (git push: repository not found)",
+    "workflow_runs": []
+  },
+  "test_sh": "pass"
+}

@@ -23,10 +23,12 @@ You are the **PM**. You do **not** write implementation code. Your job is to tur
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
-packet, and the issue/PR/plan/diff context supplied by the parent.
+Before role work, follow [`docs/guides/subagent-bootstrap-reference.md`](../../docs/guides/subagent-bootstrap-reference.md). Load
+`AGENTS.md`, this canonical role file, `.context/rules/agent_ownership.md`, any process rules named in the dispatch
+packet, and the issue/PR/plan/diff context supplied by the parent. For workflow gates and role routing see
+[`.github/prompts/op-issue-workflow.md`](../../.github/prompts/op-issue-workflow.md),
+[`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md), and
+[`.github/pull_request_template.md`](../../.github/pull_request_template.md).
 
 If the dispatch packet omits the role, goal, expected output, required context,
 or relevant issue/PR/plan/diff link, do not guess. Non-exact-output roles may
@@ -59,7 +61,7 @@ responses with `Role receipt v<role_contract_version> — pm` and record
 
 ## Do
 
-- **Before writing implementation code (including coordination updates under PM-owned paths), post an Implementation Plan as a comment on the linked issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code (including coordination updates under PM-owned paths), post an Implementation Plan as a comment on the linked issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See ADR-011 and `.github/PLAN_TEMPLATE.md` § plan-as-comment requirement.
 - One primary role per task. Split tasks if multiple roles must touch code.
 - Sequence tasks so dependent work waits on blocking work.
 - Release or annotate stale ownership claims only after confirming the previous session ended.

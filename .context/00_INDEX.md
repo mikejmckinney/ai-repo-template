@@ -8,8 +8,9 @@ The `.context/` directory is the template's canonical process and planning layer
 In `ai-repo-template`, it serves two jobs at once:
 
 1. It is the live source of truth for the template repo itself.
-2. It shows downstream repos what a populated context pack should look like before
-   Mode B onboarding restores the generic stubs.
+2. It shows downstream repos what a populated context pack should look like after
+   Mode B onboarding applies the generic stubs from
+   [`.github/prompts/repo-onboarding-stubs.md`](../.github/prompts/repo-onboarding-stubs.md).
 
 ### priority order (when conflicts arise)
 

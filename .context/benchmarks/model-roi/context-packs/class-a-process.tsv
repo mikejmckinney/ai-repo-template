@@ -4,3 +4,4 @@
 .context/rules/process_work_style.md	Work style, testing, and validation expectations.
 .context/rules/process_doc_maintenance.md	Doc-sync triggers for companion file updates.
 .context/rules/process_opportunity_feedback.md	Out-of-scope opportunity notes channel.
+.github/prompts/repo-onboarding.md	Mode B bootstrap and template-detection surface (ADR-031).

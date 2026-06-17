@@ -19,7 +19,7 @@ You are an AI agent onboarding to an existing codebase. Build an accurate mental
 | Step | When |
 |---|---|
 | **Step 1** — Classify mode | Always first |
-| **Step 2** — Bootstrap `2.1`–`2.9` | Mode B only |
+| **Step 2** — Bootstrap `2.1`–`2.6` | Mode B only |
 | **Step 3** — Orient `3.1`–`3.6` | All modes |
 | **Step 4** - implementation (Optional) | Only if this session also assigns implementation work |
 
@@ -50,7 +50,7 @@ If ambiguous (e.g. `ai-repo-template` remote *and* a stray `TEMPLATE_PLACEHOLDER
 
 | Step | Action |
 |---|---|
-| **2.1** | Reset and repopulate [README.md](/README.md), [00_INDEX.md](/.context/00_INDEX.md), [roadmap.md](/.context/roadmap.md), [.context/vision/README.md](/.context/vision/README.md), and [DESIGN.md](/DESIGN.md) with project-specific content (delete template stub language, preserve useful structure), then regenerate [AI_REPO_GUIDE.md](/AI_REPO_GUIDE.md) from the repo's real assets (`.context/*`, `./docs/*`, source, etc.). This file is canonical for agents and must not retain template placeholder language. |
+| **2.1** | Reset resettable files using canonical stubs from [repo-onboarding-stubs.md](repo-onboarding-stubs.md), then repopulate [README.md](/README.md), [00_INDEX.md](/.context/00_INDEX.md), [roadmap.md](/.context/roadmap.md), [.context/vision/README.md](/.context/vision/README.md), and [DESIGN.md](/DESIGN.md) with project-specific content (delete template stub language, preserve useful structure), then regenerate [AI_REPO_GUIDE.md](/AI_REPO_GUIDE.md) from the repo's real assets (`.context/*`, `./docs/*`, source, etc.). This file is canonical for agents and must not retain template placeholder language. |
 | **2.2** | Customize [docs/FAQ.md](/docs/FAQ.md) — remove `Template:`-prefixed entries; add project Q&A. |
 | **2.3** | Delete `.context/vision/architecture/multi-agent-flow.md` and `.context/vision/architecture/state-surfaces.md` (template-only diagrams). |
 | **2.4** | Reset `.context/sessions/latest_summary.md` body to a single `No sessions yet` line (keep `TEMPLATE_PLACEHOLDER` marker until first durable entry). Keep `.context/state/agent_state_comment_template.md`, `.context/sessions/feedback_template.md`, and directory `README.md` files. |

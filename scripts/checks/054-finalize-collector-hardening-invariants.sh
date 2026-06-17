@@ -53,7 +53,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if [[ -f scripts/workflows/lib/cursor-sdk-version.sh ]] \
     && grep -q 'CURSOR_SDK_VERSION=' scripts/workflows/lib/cursor-sdk-version.sh 2>/dev/null \
-    && ! grep -rE 'npm install --no-save @cursor/sdk[^@"$]' scripts/workflows --include='*.sh' 2>/dev/null | grep -q .; then
+    && ! grep -rE 'npm install --no-save @cursor/sdk(@[^"'"'"'$]|$)' scripts/workflows --include='*.sh' 2>/dev/null | grep -q .; then
     pass "@cursor/sdk workflow installs are version-pinned"
   else
     fail "unpinned @cursor/sdk npm install; use cursor-sdk-version.sh"

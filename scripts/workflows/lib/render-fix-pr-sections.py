@@ -74,7 +74,11 @@ def main() -> int:
         print(f"Missing fix-verify.json at {path}", file=sys.stderr)
         return 1
 
-    data = json.loads(path.read_text(encoding="utf-8"))
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        print(f"Invalid fix-verify.json at {path}: {exc}", file=sys.stderr)
+        return 1
     findings = data.get("findings") or []
     sandbox = data.get("sandbox") or {}
     if not isinstance(findings, list):

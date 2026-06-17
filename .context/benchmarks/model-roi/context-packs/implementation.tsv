@@ -1,0 +1,8 @@
+# path	reason
+.context/00_INDEX.md	Map of available context surfaces and lazy-load expectations.
+.context/sessions/latest_summary.md	Durable lessons from recent work.
+docs/guides/agent-pipeline.md	Fix-job ordering, sandbox sync, and verification matrix.
+docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md	ADR-029 §1.1 sandbox batch and failure semantics.
+scripts/workflows/lib/finalize-fix-pr.sh	Shared fix PR finalization and non-blocking sandbox sync.
+scripts/workflows/lib/sandbox-sync-fix-branch.sh	Sandbox push/PR helper; token and stdout contracts.
+scripts/workflows/postmerge-retro/run-postmerge-retro-fix.sh	Post-merge fix runner ordering invariants.

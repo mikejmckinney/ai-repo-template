@@ -14,7 +14,7 @@ fix_phase_log() {
   local label="${1:-unknown}"
   local now elapsed
   now=$(date +%s)
-  elapsed=$((now - FIX_PHASE_START))
+  elapsed=$((now - ${FIX_PHASE_START:-$now}))
   echo "::notice::fix-phase=${label} elapsed_s=${elapsed}"
   FIX_PHASE_START=$now
 }

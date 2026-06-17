@@ -23,7 +23,21 @@ finalize_append_verify_sections() {
     return 0
   fi
 
-  python3 "$lib_dir/render-fix-pr-sections.py" "$verify_json" all >>"$body_file"
+  if ! python3 "$lib_dir/render-fix-pr-sections.py" "$verify_json" all >>"$body_file" 2>/dev/null; then
+    {
+      echo ""
+      echo "## Fix verification"
+      echo ""
+      echo "_fix-verify.json present but could not be rendered — see branch artifact._"
+      echo ""
+      echo "## Sandbox dogfood evidence"
+      echo ""
+      echo "Sandbox issue: n/a"
+      echo "Sandbox PR: n/a"
+      echo ""
+    } >>"$body_file"
+    echo "::warning::render-fix-pr-sections.py failed for ${verify_json}" >&2
+  fi
 }
 
 maybe_sandbox_sync() {
@@ -63,11 +77,16 @@ maybe_sandbox_sync() {
 
   # shellcheck source=sandbox-sync-fix-branch.sh
   source "$lib_dir/sandbox-sync-fix-branch.sh"
-  local sandbox_pr_url
-  sandbox_pr_url="$(sandbox_sync_fix_branch "$repo_root" "$sandbox_branch" "$title" "$body_file")"
+  local sandbox_pr_url=""
+  sandbox_pr_url="$(sandbox_sync_fix_branch "$repo_root" "$sandbox_branch" "$title" "$body_file" || true)"
   rm -f "$body_file"
 
-  if [[ -n "$sandbox_pr_url" && -f "$verify_json" ]]; then
+  if [[ -z "$sandbox_pr_url" ]]; then
+    echo "::warning::sandbox-sync failed or returned no PR URL; continuing upstream PR finalization" >&2
+    return 0
+  fi
+
+  if [[ -f "$verify_json" ]]; then
     local tmp
     tmp="$(mktemp)"
     jq --arg url "$sandbox_pr_url" '.sandbox.pr_url = $url | .sandbox.issue_url = (.sandbox.issue_url // "n/a")' \

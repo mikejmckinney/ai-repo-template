@@ -65,7 +65,10 @@ def main() -> int:
                 continue
             abs_path = os.path.join(repo_root, rel)
             if os.path.isfile(abs_path):
-                sources.append(inline_source(f".agents/{rel}", abs_path))
+                mount_rel = rel.lstrip("./")
+                if mount_rel.startswith("."):
+                    mount_rel = mount_rel[1:]
+                sources.append(inline_source(f".agents/{mount_rel}", abs_path))
 
     sources.extend(
         [
