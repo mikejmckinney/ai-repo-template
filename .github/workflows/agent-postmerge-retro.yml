@@ -134,6 +134,7 @@ jobs:
             export GH_TOKEN="$GITHUB_TOKEN"
           fi
           export RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"
+          echo "RUN_DATE=${RUN_DATE}" >>"$GITHUB_ENV"
           chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
           chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
           bash scripts/workflows/postmerge-retro/run-postmerge-retro-daily.sh
@@ -229,14 +230,14 @@ jobs:
           ARTIFACT_DIR=".artifacts/postmerge-retro/daily-${RUN_DATE}"
           mkdir -p "$ARTIFACT_DIR"
           DAILY_JSON="${ARTIFACT_DIR}/daily-retro.json"
-          if [[ "${{ github.event.inputs.restore_json_from_issue }}" == "true" ]]; then
-            chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
-            bash scripts/workflows/postmerge-retro/fetch-daily-retro-json-from-issue.sh "$RUN_DATE" "$DAILY_JSON"
-          elif [[ -n "${{ github.event.inputs.artifact_run_id }}" ]]; then
+          if [[ -n "${{ github.event.inputs.artifact_run_id }}" ]]; then
             ATTEMPT="${{ github.event.inputs.artifact_run_attempt || '1' }}"
             ARTIFACT_NAME="postmerge-retro-daily-${RUN_DATE}-attempt-${ATTEMPT}"
             gh run download "${{ github.event.inputs.artifact_run_id }}" -R "$GITHUB_REPOSITORY" -n "$ARTIFACT_NAME" -D .artifacts/postmerge-retro/
             [[ -f "$DAILY_JSON" ]] || { echo "::error::Missing $DAILY_JSON after artifact download"; exit 1; }
+          elif [[ "${{ github.event.inputs.restore_json_from_issue }}" == "true" ]]; then
+            chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
+            bash scripts/workflows/postmerge-retro/fetch-daily-retro-json-from-issue.sh "$RUN_DATE" "$DAILY_JSON"
           else
             echo "::error::fix_only requires restore_json_from_issue=true or artifact_run_id" >&2
             exit 1
