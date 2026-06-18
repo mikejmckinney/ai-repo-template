@@ -232,7 +232,7 @@ Nightly **06:00 UTC** cron plus **`workflow_dispatch`** run the **full daily pip
 1. Scan **all merges to `main` in the rolling last 24 hours** (no label gate; Option C — no `pull_request: closed` trigger).
 2. Per-PR evidence + LLM retro → merge into `daily-retro.json`.
 3. **One umbrella GitHub issue per calendar day** (create or append rows; marker `<!-- postmerge-retro:daily:YYYY-MM-DD -->`).
-4. **Draft fix PR** on `retro/fix-YYYY-MM-DD` implementing findings (second job; skip when zero findings). Re-runs **continue** an existing open draft PR branch (or remote branch with no PR yet): `checkout-fix-branch.sh` checks out `origin/<branch>`, merges `main`, then applies incremental fixes by `dedupe_key`. Fails only when a **closed** PR still owns the branch.
+4. **Draft fix PR** on `retro/fix-YYYY-MM-DD` implementing findings (same job; skip when zero findings). Re-runs **continue** an existing open draft PR branch (or remote branch with no PR yet): `checkout-fix-branch.sh` checks out `origin/<branch>`, merges `main`, then applies incremental fixes by `dedupe_key`. Fails only when a **closed** PR still owns the branch.
 
 Human or agent reviews the draft fix PR before merge. Design: [ADR-030](../decisions/adr-030-non-blocking-review-pipeline.md); dogfood umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425). Tracking: [#426](https://github.com/mikejmckinney/ai-repo-template/issues/426), PR [#427](https://github.com/mikejmckinney/ai-repo-template/pull/427).
 
@@ -247,13 +247,22 @@ per-PR retro → daily-retro.json
   ↓
 umbrella issue (create or append)
   ↓
-fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
+fix step → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 ```
 
 | Trigger | Behavior |
 |---|---|
-| `schedule` `0 6 * * *` | Daily retro job + fix job when findings exist |
-| `workflow_dispatch` | Same full daily pipeline |
+| `schedule` `0 6 * * *` | Single `daily-pipeline` job: retro + fix when findings exist |
+| `workflow_dispatch` | Same full daily pipeline (`fix_only` skips retro) |
+
+**Stale-finding controls (#446):**
+
+| Layer | Behavior |
+|---|---|
+| **A — merge dedupe** | Skip per-PR retro when `merge_commit_sha` is indexed in umbrella Meta (`<!-- postmerge-retro:merge:<sha> pr:N -->`). Override with `force_re_retro_prs` or `ignore_retro_dedupe=true`. |
+| **B — HEAD lens** | Retro prompt injects current `main` file snapshots for PR-touched paths; do not emit findings already resolved on HEAD. |
+| **C — fix superseded** | `mark-superseded-findings.py` pre-flags findings whose missing-file evidence is contradicted on HEAD; fix agent sets `cant_reproduce`. |
+| **D — umbrella column** | Table column **Suggested fix** (from finding `## Suggested fix` excerpt). |
 
 **Legacy v1 scripts** (`postmerge-retro-create-issues.sh`, per-PR issue markers) remain for reference; v2 does not create per-finding issues.
 
@@ -263,13 +272,13 @@ fix job → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 **Fix dispatch:** `run-postmerge-retro-fix.sh` — Cursor local edits or Gemini JSON `file_edits`; requires `contents: write` + `pull-requests: write` on fix job. Shared `scripts/workflows/lib/checkout-fix-branch.sh` prepares the working branch (continue open draft PR / existing remote branch + merge `main`, or fresh from `main`; fail on closed PR + lingering branch). Provider routing uses `scripts/workflows/lib/pick-advisory-provider.sh` + `invoke-advisory-llm.sh` (`auto`: Cursor first, else Gemini; antigravity is advisory-only). Reporting agents must emit `repro_steps[]` on each `follow_up_issues` row (validated by `validate-postmerge-retro.py` / daily batch). Fix agents record per-finding pre/post repro in `retro/fix-verify-<RUN_DATE>.json` and render `## Fix verification` on the draft PR (ADR-029 §1.1). When repo variable `FIX_JOB_SANDBOX_VERIFY=true`, the fix job may push `test/fix-retro-<RUN_DATE>` to sandbox via `scripts/workflows/lib/sandbox-sync-fix-branch.sh` using `SANDBOX_BOOTSTRAP_TOKEN` (default off). Phase durations log as `::notice::fix-phase=…`. After the draft fix PR is created (or found open), `update-umbrella-fix-link.sh` replaces the umbrella Meta placeholder `(pending — fix job)` with the PR URL, and `link-fix-pr-to-issue.sh` ensures a native **`Fixes #N`** line in the PR body. Umbrella issue number is written into `daily-retro.json` (`umbrella_issue`) and sidecar `umbrella-issue.txt` during the daily job; the fix job resolves it via `UMBRELLA_ISSUE_NUM` / JSON (no `gh search` when present). Legacy runs fall back to `GITHUB_TOKEN` + `find-umbrella-issue.sh`.
 
-**Idempotency:** umbrella append by dedupe key; PR rows skipped if already in today's table. Manual dispatch before cron same day **appends**, does not skip the job.
+**Idempotency:** umbrella append by dedupe key; PR rows skipped if already in today's table; **cross-run** dedupe by indexed `merge_commit_sha` (Layer A). Manual dispatch before cron same day **appends**, does not skip the job.
 
 **Script checkout:** workflow checks out **`main`** for scripts, not merge commits.
 
 **Smoke test:** `gh workflow run agent-postmerge-retro.yml` after merge. For sandbox A/B, pass `workflow_dispatch` inputs `context_profile`, `only_prs`, and a distinct `run_date` per arm (retro checks out **`main`** for scripts — unlike advisory/finalize PR-head checkout).
 
-**Sandbox A/B inputs (retro):** `only_prs=<merged-pr>` pins a single PR; `context_profile=standard|pr-review|full` selects the catalog floor; use distinct valid `run_date` values (`YYYY-MM-DD` only — e.g. `2026-06-14`, `2026-06-15`, `2026-06-16`) to isolate umbrella dedupe between runs. Dispatch sequentially — the workflow concurrency group queues overlapping runs. Artifacts are named `postmerge-retro-daily-<run_date>-attempt-<n>` (rerun-safe). Each umbrella issue also gets a **daily JSON snapshot comment** (`<!-- postmerge-retro:daily-json:... -->`) for fix-only recovery. To re-run the fix job without re-running retro: `workflow_dispatch` with `fix_only=true`, `run_date`, and `restore_json_from_issue=true` or `artifact_run_id`. **Never full-rerun** daily-retro when only the fix job failed and findings are unchanged — use `gh run rerun RUN_ID --failed`, fix-only dispatch, or `fix_only` with artifacts. Fix re-runs against an existing `retro/fix-YYYY-MM-DD` branch are supported when an open draft PR (or remote branch without a closed PR) exists.
+**Sandbox A/B inputs (retro):** `only_prs=<merged-pr>` pins a single PR; `context_profile=standard|pr-review|full` selects the catalog floor; `force_re_retro_prs` / `ignore_retro_dedupe` control merge-sha dedupe; use distinct valid `run_date` values (`YYYY-MM-DD` only — e.g. `2026-06-14`, `2026-06-15`, `2026-06-16`) to isolate umbrella dedupe between runs. Dispatch sequentially — the workflow concurrency group queues overlapping runs. Artifacts are named `postmerge-retro-daily-<run_date>-attempt-<n>` (rerun-safe). Each umbrella issue also gets a **daily JSON snapshot comment** (`<!-- postmerge-retro:daily-json:... -->`) for fix-only recovery. To re-run the fix job without re-running retro: `workflow_dispatch` with `fix_only=true`, `run_date`, and `restore_json_from_issue=true` or `artifact_run_id`. **Never full-rerun** daily-retro when only the fix job failed and findings are unchanged — use `gh run rerun RUN_ID --failed`, fix-only dispatch, or `fix_only` with artifacts. Fix re-runs against an existing `retro/fix-YYYY-MM-DD` branch are supported when an open draft PR (or remote branch without a closed PR) exists.
 
 ### Weekly repository review (full-repo static scan)
 

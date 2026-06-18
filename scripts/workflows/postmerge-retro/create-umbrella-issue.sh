@@ -31,17 +31,26 @@ fi
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-python3 - "$DAILY_JSON" "$WORKDIR/rows.txt" <<'PY'
+python3 - "$DAILY_JSON" "$WORKDIR/rows.txt" "$SCRIPT_DIR" <<'PY'
 import json
-from pathlib import Path
+import subprocess
 import sys
+from pathlib import Path
 
 data = json.loads(Path(sys.argv[1]).read_text())
+script_dir = Path(sys.argv[3])
+extract = script_dir / "extract-suggested-fix.py"
 rows = []
 for f in data.get("findings") or []:
     title = str(f.get("title", "")).replace("|", "/")
+    body = f.get("body") or ""
+    suggested = subprocess.check_output(
+        [sys.executable, str(extract), "-"],
+        input=body,
+        text=True,
+    ).strip().replace("|", "/")
     rows.append(
-        f"| #{f['pr']} | {f['category']} | `{f['dedupe_key']}` | {f.get('severity') or 'medium'} | {title} | Review in draft fix PR |"
+        f"| #{f['pr']} | {f['category']} | `{f['dedupe_key']}` | {f.get('severity') or 'medium'} | {title} | {suggested} |"
     )
 Path(sys.argv[2]).write_text("\n".join(rows) + ("\n" if rows else ""))
 PY
@@ -151,5 +160,6 @@ fi
 
 bash "$SCRIPT_DIR/write-umbrella-issue-ref.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
 bash "$SCRIPT_DIR/post-daily-retro-json-comment.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
+bash "$SCRIPT_DIR/append-merge-index-markers.sh" "$UMBRELLA_ISSUE" "$DAILY_JSON"
 
 echo "Umbrella issue step complete for ${RUN_DATE} (#${UMBRELLA_ISSUE})"

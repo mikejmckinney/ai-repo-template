@@ -20,6 +20,7 @@ REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner
 
 python3 "$SCRIPT_DIR/validate-postmerge-retro-daily.py" "$DAILY_JSON"
 RUN_DATE="$(jq -r .run_date "$DAILY_JSON")"
+python3 "$SCRIPT_DIR/mark-superseded-findings.py" "$DAILY_JSON" --repo-root "$REPO_ROOT"
 VERIFY_JSON="$REPO_ROOT/retro/fix-verify-${RUN_DATE}.json"
 SANDBOX_BRANCH="test/fix-retro-${RUN_DATE}"
 FINDINGS_COUNT="$(python3 "$SCRIPT_DIR/count-daily-retro-findings.py" "$DAILY_JSON")"
@@ -64,6 +65,17 @@ prompt_file="$WORKDIR/prompt.md"
   echo "- Branch: \`${BRANCH}\`"
   echo "- Findings count: ${FINDINGS_COUNT}"
   echo "- FIX_JOB_SANDBOX_VERIFY: ${FIX_JOB_SANDBOX_VERIFY:-false}"
+  echo ""
+  echo "### Superseded findings (automation pre-check on main HEAD)"
+  echo ""
+  superseded="$(jq -c '.superseded_findings // []' "$DAILY_JSON")"
+  if [[ "$superseded" == "[]" ]]; then
+    echo "_None detected._"
+  else
+    echo '```json'
+    echo "$superseded"
+    echo '```'
+  fi
   echo ""
   echo "### daily-retro.json"
   echo ""

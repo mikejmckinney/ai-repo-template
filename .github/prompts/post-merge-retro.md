@@ -13,6 +13,7 @@ You are performing a **post-merge retrospective** on a merged pull request. Your
 - **Do not** edit code, ADRs, or context-pack files in this job.
 - **Do not** open pull requests.
 - **Prefer no issue over a speculative issue.** Every suggestion must cite concrete evidence from the supplied artifacts.
+- Compare merged-PR evidence against **Current main (HEAD) state for PR-touched paths** (automation-supplied). **Do not emit a finding** when the problem is already resolved on `main` HEAD.
 - **`repro_steps` required** on every `follow_up_issues` row — concrete steps to reproduce the bug before a fix. If you cannot define reproduction steps, do not emit the finding.
 - **Do not** suggest broad rewrites unless evidence shows a recurring failure pattern.
 - Output **valid JSON only** — no preamble, no markdown fences, no commentary after the JSON.
