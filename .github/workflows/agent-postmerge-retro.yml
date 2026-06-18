@@ -77,7 +77,7 @@ jobs:
       POSTMERGE_RETRO_CONTEXT_PROFILE: ${{ github.event.inputs.context_profile || vars.POSTMERGE_RETRO_CONTEXT_PROFILE || 'full' }}
       POSTMERGE_RETRO_ONLY_PRS: ${{ github.event.inputs.only_prs || vars.POSTMERGE_RETRO_ONLY_PRS || '' }}
       POSTMERGE_RETRO_FORCE_RE_RETRO_PRS: ${{ github.event.inputs.force_re_retro_prs || '' }}
-      POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE: ${{ github.event.inputs.ignore_retro_dedupe && 'true' || '' }}
+      POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE: ${{ github.event.inputs.ignore_retro_dedupe == true && 'true' || '' }}
       RUN_DATE: ${{ github.event.inputs.run_date || '' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
