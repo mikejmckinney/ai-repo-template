@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 ROW_RE = re.compile(
-    r"^\|\s*#(\d+)\s*\|\s*([^|]+)\|\s*`([^`]+)`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*[^|]*\|\s*$"
+    r"^\|\s*#(\d+)\s*\|\s*([^|]+)\|\s*`([^`]+)`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*$"
 )
 MARKER_RE = re.compile(r"<!-- postmerge-retro:daily:(\d{4}-\d{2}-\d{2}) -->")
 
@@ -50,18 +50,21 @@ def parse_umbrella_body(body: str, run_date: str | None) -> dict:
         dedupe_key = match.group(3).strip()
         severity = match.group(4).strip() or "medium"
         title = match.group(5).strip()
+        suggested_fix = match.group(6).strip()
         prs.add(pr)
+        body = (
+            f"Reconstructed from umbrella issue table for {run_date}.\n\n"
+            f"**Finding:** {title}\n\n"
+            f"**Suggested fix:** {suggested_fix}\n\n"
+            f"**Dedupe key:** `{dedupe_key}`"
+        )
         findings.append(
             {
                 "pr": pr,
                 "category": category,
                 "title": title,
                 "severity": severity,
-                "body": (
-                    f"Reconstructed from umbrella issue table for {run_date}.\n\n"
-                    f"**Finding:** {title}\n\n"
-                    f"**Dedupe key:** `{dedupe_key}`"
-                ),
+                "body": body,
                 "dedupe_key": dedupe_key,
                 "evidence": [f"umbrella-table:{run_date}"],
                 "labels": _labels_for(category),

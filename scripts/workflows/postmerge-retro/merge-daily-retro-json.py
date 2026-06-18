@@ -77,11 +77,27 @@ def main() -> int:
     all_findings: list[dict] = []
     prs: list[int] = []
     summaries: list[str] = []
+    pr_merges: list[dict] = []
+    pr_changed_files: list[dict] = []
 
     for path in paths:
         data = json.loads(path.read_text(encoding="utf-8"))
         pr = int(data["pr"])
         prs.append(pr)
+        merge_sha = str(data.get("merge_commit_sha") or "").strip()
+        if merge_sha:
+            pr_merges.append({"pr": pr, "merge_commit_sha": merge_sha})
+
+        changed_path = path.parent / f"pr-{pr}-changed-files.txt"
+        if changed_path.is_file():
+            paths_list = [
+                ln.strip()
+                for ln in changed_path.read_text(encoding="utf-8").splitlines()
+                if ln.strip()
+            ]
+            if paths_list:
+                pr_changed_files.append({"pr": pr, "paths": paths_list})
+
         summary = (data.get("summary") or "").strip()
         if summary:
             summaries.append(f"PR #{pr}: {summary}")
@@ -95,6 +111,10 @@ def main() -> int:
         "prs": prs,
         "findings": all_findings,
     }
+    if pr_merges:
+        batch["pr_merges"] = pr_merges
+    if pr_changed_files:
+        batch["pr_changed_files"] = pr_changed_files
     json.dump(batch, sys.stdout, indent=2, ensure_ascii=False)
     sys.stdout.write("\n")
     return 0

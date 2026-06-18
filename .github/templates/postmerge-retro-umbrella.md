@@ -10,7 +10,7 @@ Daily post-merge retrospective for merges to `main` in the rolling last **{{WIND
 
 ## Findings
 
-| PR | Category | Dedupe key | Severity | Finding | Suggested action |
+| PR | Category | Dedupe key | Severity | Finding | Suggested fix |
 |---|---|---|---|---|---|
 {{FINDING_ROWS}}
 

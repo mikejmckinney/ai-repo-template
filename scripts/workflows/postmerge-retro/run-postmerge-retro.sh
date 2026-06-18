@@ -190,6 +190,46 @@ prompt_file="$WORKDIR/prompt.md"
     cat "$WORKDIR/prior-inbox.md"
     echo ""
   fi
+  echo "### Current main (HEAD) state for PR-touched paths"
+  echo ""
+  echo "Compare against this section before emitting findings. **Do not emit a finding** when the issue is already resolved on \`main\` HEAD."
+  echo ""
+  head_file_cap=12000
+  head_total_cap=120000
+  head_total=0
+  while IFS= read -r rel; do
+    [[ -z "$rel" ]] && continue
+    target="$REPO_ROOT/$rel"
+    if [[ ! -f "$target" ]]; then
+      echo "#### \`${rel}\`"
+      echo ""
+      echo "_File absent on main HEAD._"
+      echo ""
+      continue
+    fi
+    size="$(wc -c <"$target" | tr -d ' ')"
+    if [[ "$head_total" -ge "$head_total_cap" ]]; then
+      echo "_HEAD snapshot budget exhausted; remaining paths omitted._"
+      break
+    fi
+    take="$size"
+    if [[ "$take" -gt "$head_file_cap" ]]; then
+      take="$head_file_cap"
+    fi
+    if [[ $((head_total + take)) -gt "$head_total_cap" ]]; then
+      take=$((head_total_cap - head_total))
+    fi
+    echo "#### \`${rel}\`"
+    echo ""
+    echo '```'
+    head -c "$take" "$target"
+    if [[ "$take" -lt "$size" ]]; then
+      printf '\n... (truncated; %s bytes total on HEAD)\n' "$size"
+    fi
+    echo '```'
+    echo ""
+    head_total=$((head_total + take))
+  done <"$WORKDIR/changed-files.txt"
   echo "### Diff (truncated excerpt)"
   echo ""
   echo '```diff'
@@ -256,6 +296,8 @@ esac
 
 retro_json="$WORKDIR/retro.json"
 python3 "$SCRIPT_DIR/extract-retro-json.py" "$llm_raw" "$PR" "$retro_json"
+jq --arg sha "$MERGE_SHA" '. + {merge_commit_sha: $sha}' "$retro_json" >"$WORKDIR/retro-with-sha.json"
+mv "$WORKDIR/retro-with-sha.json" "$retro_json"
 python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "$retro_json"
 
 cp -f "$retro_json" "$WORKDIR/retro.json.final"
@@ -265,6 +307,7 @@ if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
   cp -f "$retro_json" "$artifact_dir/retro.json"
   cp -f "$llm_raw" "$artifact_dir/llm-output.txt" 2>/dev/null || true
   cp -f "$WORKDIR/pr.json" "$artifact_dir/pr.json" 2>/dev/null || true
+  cp -f "$WORKDIR/changed-files.txt" "$artifact_dir/changed-files.txt" 2>/dev/null || true
 fi
 echo "Post-merge retro JSON written for PR #${PR} via ${PROVIDER}"
 

@@ -57,11 +57,37 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "retro workflow must not use pull_request close trigger in v2"
   fi
 
-  if grep -q 'run-postmerge-retro-daily.sh' "$RETRO_WORKFLOW" 2>/dev/null \
+  if grep -q 'daily-pipeline:' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-daily.sh' "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q 'run-postmerge-retro-fix.sh' "$RETRO_WORKFLOW" 2>/dev/null; then
-    pass "workflow invokes daily retro + fix scripts"
+    pass "workflow uses single daily-pipeline job with retro + fix scripts"
   else
-    fail "workflow must invoke daily retro and fix scripts"
+    fail "workflow must use daily-pipeline job invoking retro and fix scripts"
+  fi
+
+  if ! grep -q 'daily-retro:' "$RETRO_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'daily-fix:' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "workflow consolidated to single job (no daily-retro/daily-fix split)"
+  else
+    fail "workflow must not define separate daily-retro and daily-fix jobs (#446)"
+  fi
+
+  if grep -q 'force_re_retro_prs' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'ignore_retro_dedupe' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'list-indexed-merge-shas.sh' "$DAILY_SCRIPT" 2>/dev/null \
+    && grep -q 'merge_commit_sha' "$RUN_SCRIPT" 2>/dev/null; then
+    pass "merge_commit_sha dedupe + operator overrides wired"
+  else
+    fail "postmerge retro missing merge_commit_sha dedupe wiring"
+  fi
+
+  if grep -q 'Suggested fix' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'extract-suggested-fix.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'Current main (HEAD)' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'mark-superseded-findings.py' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "layers B–D: HEAD lens, superseded helper, Suggested fix column"
+  else
+    fail "postmerge retro missing layers B–D wiring"
   fi
 
   if grep -q 'issues: write' "$RETRO_WORKFLOW" 2>/dev/null; then
@@ -72,9 +98,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'contents: write' "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q 'pull-requests: write' "$RETRO_WORKFLOW" 2>/dev/null; then
-    pass "fix job grants contents and pull-requests write"
+    pass "daily-pipeline job grants contents and pull-requests write"
   else
-    fail "fix job missing write permissions"
+    fail "daily-pipeline job missing write permissions"
   fi
 
   if grep -q 'postmerge-retro-umbrella.md' "$UMBRELLA_SCRIPT" 2>/dev/null \
@@ -102,7 +128,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && grep -q 'resolve-umbrella-issue.sh' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'umbrella_issue_num' "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q 'UMBRELLA_ISSUE_NUM' "$RETRO_WORKFLOW" 2>/dev/null; then
-    pass "fix job resolves umbrella issue from JSON/env (search fallback only)"
+    pass "fix step resolves umbrella issue from JSON/env (search fallback only)"
   else
     fail "postmerge retro missing resolve-umbrella-issue wiring in fix path"
   fi
@@ -212,6 +238,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && bash -n "scripts/workflows/lib/fix-phase-log.sh" 2>/dev/null \
     && bash -n "scripts/workflows/lib/sandbox-sync-fix-branch.sh" 2>/dev/null \
     && bash -n "scripts/workflows/lib/finalize-fix-pr.sh" 2>/dev/null \
+    && bash -n "${RETRO_DIR}/list-indexed-merge-shas.sh" 2>/dev/null \
+    && bash -n "${RETRO_DIR}/append-merge-index-markers.sh" 2>/dev/null \
     && bash -n "$LIST_SCRIPT" 2>/dev/null; then
     pass "postmerge-retro shell scripts have valid bash syntax"
   else
@@ -236,6 +264,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   else
     warn "postmerge-retro fixtures missing under $fixture_dir"
   fi
+
+  run_bats_check scripts/tests/postmerge-retro-batch.bats "postmerge-retro-batch.bats"
 
   if grep -q 'AGENTS_MD_VERSION: 26' AGENTS.md 2>/dev/null \
     && grep -q 'After context compaction' AGENTS.md 2>/dev/null \

@@ -10,6 +10,7 @@ You are implementing findings from the daily post-merge retrospective batch on b
 ## Hard rules
 
 - Review the **current branch state** first (diff vs `main`, existing commits, and `retro/fix-verify-<RUN_DATE>.json` if present). Map each `findings[]` row by `dedupe_key` and implement **only findings not yet addressed**.
+- Automation may pre-mark findings with `superseded_on_main: true` in `daily-retro.json`. For those rows, set `verify.pre: cant_reproduce` with `verify.notes` citing `superseded_reason` — **do not re-implement**.
 - If the branch already contains partial fixes from a prior fix pass, **do not redo** completed work — finish the remainder.
 - **Per-finding verification (ADR-029 §1.1):** for each `follow_up_issues` finding you implement:
   1. Run `repro_steps` **before** editing (pre-repro). If the bug cannot be reproduced, set `verify.pre: cant_reproduce`, skip implementation for **that finding only**, and continue others.

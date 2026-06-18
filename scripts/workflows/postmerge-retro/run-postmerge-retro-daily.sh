@@ -10,6 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"
 ARTIFACT_ROOT="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/daily-${RUN_DATE}"
 mkdir -p "$ARTIFACT_ROOT"
+REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 
 mapfile -t ALL_PRS < <(bash "$SCRIPT_DIR/list-merges-last-24h.sh" || true)
 if [[ -n "${POSTMERGE_RETRO_ONLY_PRS:-}" ]]; then
@@ -24,11 +25,43 @@ fi
 
 echo "Merged PRs in window: ${ALL_PRS[*]}"
 
+FORCE_PRS=()
+if [[ -n "${POSTMERGE_RETRO_FORCE_RE_RETRO_PRS:-}" ]]; then
+  mapfile -t FORCE_PRS < <(tr ',' '\n' <<<"${POSTMERGE_RETRO_FORCE_RE_RETRO_PRS}" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed '/^$/d')
+  echo "POSTMERGE_RETRO_FORCE_RE_RETRO_PRS override: ${FORCE_PRS[*]}"
+fi
+
+is_force_pr() {
+  local pr="$1"
+  for f in "${FORCE_PRS[@]:-}"; do
+    [[ "$f" == "$pr" ]] && return 0
+  done
+  return 1
+}
+
+INDEXED_MERGES=()
+if [[ "${POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE:-}" != "true" ]]; then
+  mapfile -t INDEXED_MERGES < <(bash "$SCRIPT_DIR/list-indexed-merge-shas.sh" || true)
+  if ((${#INDEXED_MERGES[@]} > 0)); then
+    echo "Indexed merge_commit_sha count: ${#INDEXED_MERGES[@]}"
+  fi
+else
+  echo "POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE=true; skipping merge_commit_sha dedupe"
+fi
+
+is_indexed_merge() {
+  local sha="${1,,}"
+  for existing in "${INDEXED_MERGES[@]:-}"; do
+    [[ "${existing,,}" == "$sha" ]] && return 0
+  done
+  return 1
+}
+
 # Skip PRs already listed in today's umbrella (append semantics).
 SKIP_PRS=()
 EXISTING_ISSUE=""
 if existing_num="$(bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE" 2>/dev/null)"; then
-  EXISTING_ISSUE="$(gh issue view "$existing_num" -R "${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}" --json body --jq .body 2>/dev/null || true)"
+  EXISTING_ISSUE="$(gh issue view "$existing_num" -R "$REPO" --json body --jq .body 2>/dev/null || true)"
 fi
 if [[ -n "$EXISTING_ISSUE" ]]; then
   while IFS= read -r pr; do
@@ -50,6 +83,19 @@ for pr in "${ALL_PRS[@]}"; do
     echo "Skip PR #${pr} (already in umbrella for ${RUN_DATE})"
     continue
   fi
+
+  merge_sha="$(gh pr view "$pr" -R "$REPO" --json mergeCommit --jq '.mergeCommit.oid // empty' 2>/dev/null || true)"
+  if [[ -z "$merge_sha" ]]; then
+    merge_sha="$(gh pr view "$pr" -R "$REPO" --json merge_commit_sha --jq '.merge_commit_sha // empty' 2>/dev/null || true)"
+  fi
+  if [[ -n "$merge_sha" ]] && is_indexed_merge "$merge_sha" && ! is_force_pr "$pr"; then
+    echo "Skip PR #${pr} (merge_commit_sha ${merge_sha} already indexed)"
+    continue
+  fi
+  if is_force_pr "$pr"; then
+    echo "Force re-retro for PR #${pr} (POSTMERGE_RETRO_FORCE_RE_RETRO_PRS)"
+  fi
+
   echo "Running retro for PR #${pr}..."
   bash "$SCRIPT_DIR/run-postmerge-retro.sh" "$pr" false
   pr_artifact="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${pr}/retro.json"
@@ -58,6 +104,10 @@ for pr in "${ALL_PRS[@]}"; do
     continue
   fi
   cp -f "$pr_artifact" "$ARTIFACT_ROOT/pr-${pr}-retro.json"
+  pr_changed="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${pr}/changed-files.txt"
+  if [[ -f "$pr_changed" ]]; then
+    cp -f "$pr_changed" "$ARTIFACT_ROOT/pr-${pr}-changed-files.txt"
+  fi
   RETRO_FILES+=("$ARTIFACT_ROOT/pr-${pr}-retro.json")
 done
 
