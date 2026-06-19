@@ -23,6 +23,7 @@ Benchmark runs on `mikejmckinney/ai-repo-template-sandbox`. Upstream PR numbers 
 |---|---|
 | `pre-bench-447-arm-a-20260618-235233` | Before Arm A (`origin/main` → `sandbox/main`) |
 | `pre-bench-447-bc-20260619-003037` | Before Arms B/C (`bench/447-retro-execution` → `sandbox/main`) |
+| `pre-bench-447-arm-b-r3-20260619-040248` | Before Arm B R3 (fair diff budget) |
 
 ## Results table
 
@@ -96,14 +97,14 @@ Fix pass LLM: ~3m 40s additional on Arm A.
 | **Retro wall clock** | **Arm B (monolithic)** † | ~2m vs ~4.5m (C) vs ~13m retro-only (A); R1/R2 B used ¼ diff budget |
 | **LLM cost (calls)** | **Arm B** | 1 call vs 6 for A/C |
 | **Isolation / debuggability** | **Arm A (sequential)** | Per-PR artifacts, prompts, failures |
-| **Finding completeness** | **Inconclusive** | B R1/R2 under ¼ diff budget; **R3 at full budget required** |
+| **Finding completeness** | **Arm A/C** | B R3 at full diff: **9** findings vs A **14** / C **16**; monolithic still under-reports |
 | **Context window risk** | **Arm A/C** | Monolithic prompt grows with PR count + diff size |
 
 **Suggested path**
 
 1. **Keep sequential as production default** — best isolation, matches current ops, lowest parse-failure blast radius.
 2. **Upgrade to parallel (C)** if retro latency becomes painful — ~2× faster retro-only than A in R1/R2 with same per-PR diff budget as sequential.
-3. **Optional monolithic (B)** only after **R3** at full per-PR diff — do not adopt for completeness-sensitive runs until fair rerun completes.
+3. **Do not adopt monolithic for completeness-sensitive runs** — R3 at full per-PR diff (300k) yielded **9** findings vs **8** at ¼ budget; still missed all PR #85/#87 themes present in A/C. Speed advantage stands; completeness does not.
 
 **Follow-up (out of scope for #453 merge):** file issue to harden monolithic JSON schema validation, add `skip_fix` to scheduled runs documentation, and resolve sandbox #82 so upstream #438 maps 1:1.
 
@@ -204,11 +205,15 @@ Round 2 Arm A semantic theme overlap with Round 1 Arm A: **7/14** themes (title 
 
 **Goal:** Re-run monolithic at **full per-PR diff** (`POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR=300000`, matching A/C). Default changed from `diff_limit/4` → `diff_limit` in `run-postmerge-retro-monolithic.sh`.
 
-| Arm | Round | `run_date` | Per-PR diff | Wall clock | Findings | Run |
-|---|---|---|---|---:|---:|---|
-| B | **3** | `2026-06-30` | **300,000** | _pending_ | _pending_ | _pending_ |
+| Arm | Round | `run_date` | Per-PR diff | Wall clock | Findings | PRs w/ findings | Run | Umbrella |
+|---|---|---|---|---:|---:|---|---|---|
+| B | **3** | `2026-06-30` | **300,000** | **2m 33s** | **9** | 63, 83, 90 | [27804588010](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27804588010) | [sandbox #98](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/98) |
 
-Dispatch: `benchmark_arm=monolithic`, `skip_fix=true`, `monolithic_diff_per_pr=300000`, same `only_prs` / `force_re_retro_prs` as R1/R2.
+Dispatch: `benchmark_arm=monolithic`, `skip_fix=true`, `monolithic_diff_per_pr=300000`, same `only_prs` / `force_re_retro_prs` as R1/R2. Env confirmed in run log: `POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR: 300000`.
+
+**R3 vs R1/R2 B:** +1 finding (9 vs 8); same PR coverage (63, 83, 90). Still **no PR #85** themes (present in A/C). Exact `dedupe_key` overlap with Arm A R1: **1/22** union keys — semantic themes align better than keys.
+
+**Conclusion:** ¼ diff budget was a confound for R1/R2, but **not the sole cause** of monolithic under-reporting. Even at fair budget, monolithic misses ~half the findings A/C surface on this PR set.
 
 ### Consolidated fix issue
 
