@@ -29,7 +29,7 @@ Benchmark runs on `mikejmckinney/ai-repo-template-sandbox`. Upstream PR numbers 
 | Arm | Strategy | `run_date` | Wall clock (job) | Retro-only (approx) | Findings | Superseded | LLM calls (retro) | Provider | Run URL | Umbrella |
 |---|---|---|---:|---:|---:|---:|---:|---|---|---|
 | **A** | Sequential per-PR | `2026-06-24` | **16m 53s** | **~13m 3s** | **14** | 3 (fix prefilter) | 6 + 1 fix | Cursor `composer-2.5-standard` | [27796546251](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27796546251) | [sandbox #73](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/73) |
-| **B** | Monolithic (1× LLM) | `2026-06-25` | **2m 40s** | **~2m 2s** | **8** | n/a (`skip_fix`) | **1** | Cursor `composer-2.5-standard` | [27797882347](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27797882347) | [sandbox #92](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/92) |
+| **B** | Monolithic (1× LLM) | `2026-06-25` | **2m 40s** | **~2m 2s** | **8** † | n/a (`skip_fix`) | **1** | Cursor `composer-2.5-standard` | [27797882347](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27797882347) | [sandbox #92](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/92) |
 | **C** | Parallel per-PR | `2026-06-26` | **4m 39s** | **~4m 36s** | **16** | n/a (`skip_fix`) | **6** | Cursor (6× parallel) | [27797996992](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27797996992) | [sandbox #93](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/93) |
 
 ### Shared dispatch inputs
@@ -73,7 +73,8 @@ Fix pass LLM: ~3m 40s additional on Arm A.
 
 ### Caveats (all arms)
 
-- **Finding count variance** (14 / 8 / 16) — LLM non-determinism + monolithic bundling may miss per-PR nuance; not a quality tie.
+- **Arm B diff budget (R1/R2):** Default `POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR` was **`POSTMERGE_RETRO_DIFF_LIMIT / 4` (75,000 bytes/PR)** while Arms A and C used the full per-PR cap (**300,000**). Arm B completeness vs A/C is **not fair** until **R3** at full budget (`run_date=2026-06-30`). † = R1/R2 finding counts under-trusted for completeness comparison.
+- **Finding count variance** (14 / 8 † / 16) — LLM non-determinism + monolithic bundling/truncation may miss per-PR nuance; not a quality tie.
 - **Arm A included fix**; B/C used `skip_fix=true` for retro timing fairness.
 - **#438 proxy** on sandbox (PR #45).
 - **Domain skew:** pipeline/retro-heavy PR set (expected).
@@ -92,17 +93,17 @@ Fix pass LLM: ~3m 40s additional on Arm A.
 
 | Criterion | Winner | Notes |
 |---|---|---|
-| **Retro wall clock** | **Arm B (monolithic)** | ~2m vs ~4.5m (C) vs ~13m retro-only (A) |
+| **Retro wall clock** | **Arm B (monolithic)** † | ~2m vs ~4.5m (C) vs ~13m retro-only (A); R1/R2 B used ¼ diff budget |
 | **LLM cost (calls)** | **Arm B** | 1 call vs 6 for A/C |
 | **Isolation / debuggability** | **Arm A (sequential)** | Per-PR artifacts, prompts, failures |
-| **Finding completeness (uncertain)** | **Inconclusive** | Counts diverged; monolithic may under-report |
+| **Finding completeness** | **Inconclusive** | B R1/R2 under ¼ diff budget; **R3 at full budget required** |
 | **Context window risk** | **Arm A/C** | Monolithic prompt grows with PR count + diff size |
 
 **Suggested path**
 
 1. **Keep sequential as production default** — best isolation, matches current ops, lowest parse-failure blast radius.
-2. **Optional monolithic mode** for bounded smoke windows (e.g. ≤6 PRs, `skip_fix` benchmarks) when latency matters and operators accept quality spot-checks.
-3. **Parallel mode** as middle ground when sequential latency hurts but monolithic context/parsing risk is too high — ~2× faster than sequential retro-only in this run, but 6× LLM cost vs monolithic.
+2. **Upgrade to parallel (C)** if retro latency becomes painful — ~2× faster retro-only than A in R1/R2 with same per-PR diff budget as sequential.
+3. **Optional monolithic (B)** only after **R3** at full per-PR diff — do not adopt for completeness-sensitive runs until fair rerun completes.
 
 **Follow-up (out of scope for #453 merge):** file issue to harden monolithic JSON schema validation, add `skip_fix` to scheduled runs documentation, and resolve sandbox #82 so upstream #438 maps 1:1.
 
@@ -120,36 +121,57 @@ Source: `daily-retro.json` artifacts from runs [A](https://github.com/mikejmckin
 | Exact `dedupe_key` overlap A∩B or B∩C | — | **0** | **0** |
 | Semantic clusters in all 3 arms | — | **5** | **5** |
 
-**Interpretation:** Count variance is mostly **LLM non-determinism**, not pipeline dedupe. Monolithic (B) **under-reports** (missed all PR #85 themes; 0 exact key matches with A/C). A and C also disagree (12 A-only keys, 14 C-only keys).
+**Interpretation:** Count variance is mostly **LLM non-determinism**, not pipeline dedupe. Monolithic (B) **under-reported in R1/R2** (missed all PR #85 themes; 0 exact key matches with A/C) — **confounded by ¼ per-PR diff budget**; R3 pending. A and C also disagree (12 A-only keys, 14 C-only keys).
 
-### Theme-level comparison (semantic clusters)
+## Finding priority classifier (manual scoring for #447)
 
-Title similarity ≥72% within the same PR. **Present** = at least one finding in that theme in the arm.
+Pending automation in a **separate PR** (schema + prompt + `classify-finding-priority.py`). Replaces deprecated `severity: low|medium|high` with **`impact`** and adds **`trigger_likelihood`**, **`fix_cost`**, optional **`regression_guard`**, and derived **`priority_band`**.
 
-| Theme (PR) | A | B | C | Triage | Notes |
-|---|---|---|---|---|---|
-| `mark-superseded` substring false positive | ✓ | ✓ | ✓ | **Fix** | Layer C can skip real fixes; prefix `path in text` is a real bug |
-| `mark-superseded` directory (`is_file` only) | ✓ | ✓ | ✓ | **Should fix** | Edge case (dir vs file); small change, low risk |
-| Umbrella subprocess-per-finding | ✓ | ✓ | ✓ | **Defer** | Perf nit; matters only on very large batches |
-| Fix re-exec WORKDIR temp leak | ✓ | ✓ | ✓ | **Should fix** | Orphaned `/tmp` each fix pass; easy fix, flagged pre-merge |
-| Truncated JSON snapshot unrestorable | ✓ | ✓ | ✓ | **Should fix** | Real `fix_only` failure when snapshot exceeds cap; rare but high impact |
-| merge SHA `gh pr view` fallback | ✓ | ✗ | ✓ | **Should fix** | Layer A dedupe silently weakens; one-line `gh api` fallback |
-| PIPESTATUS error message unreachable | ✓ | ✗ | ✗ | **Defer** | Job still fails; DX/logging only |
-| cap-json minimal-body shrink edge | ✓ | partial | ✓ | **Defer** | Unusual review JSON shapes; fails safe to `[]` |
-| No-op fix rerun stale draft PR | ✓ | partial | ✓ | **Should fix** | Operator confusion on re-dispatch; skip `gh pr edit` when `has_diff=0` |
-| ADR-030 snapshot recovery doc | ✓ | ✗ | ✓ | **Defer** | Doc/process follow-up after truncation behavior is decided |
-| PR #85 sandbox verification meta (×4) | ✓ | ✗ | ✓ | **Defer / meta** | Sandbox dogfood hygiene, not production defects |
-| PR #87 RUN_DATE + artifact invariants | ✗ | ✗ | ✓ | **Should fix** | Cheap `052` invariant rows; prevents silent regression |
+### LLM-emitted fields (future schema)
 
-### Priority bands (recommended)
-
-| Band | Themes | Action |
+| Field | Values | Meaning |
 |---|---|---|
-| **Fix now** (1) | superseded substring | Incorrect Layer C behavior |
-| **Should fix** (6) | directory exists, WORKDIR leak, truncated snapshot, merge-sha fallback, noop fix rerun, #87 invariants | Real bugs or cheap regression guards |
-| **Defer** (5+) | subprocess perf, PIPESTATUS message, cap-json edge, ADR doc, most #85 meta | Fringe, DX, or process — file `agent-suggested` or close as won't-fix |
+| `impact` | `incorrect-behavior` \| `dx-perf-doc` \| `meta-harness` | Incorrect output on realistic input vs fails-safe DX/perf vs harness/sandbox meta |
+| `trigger_likelihood` | `common` \| `edge` \| `fringe` | Fires on normal inputs vs unusual shape vs rare path |
+| `fix_cost` | `trivial` \| `moderate` \| `large` | Implementation cost |
+| `regression_guard` | `true` \| `false` (optional) | Set `true` only for invariant/test/check rows that prevent silent regression (`052` rows, etc.) |
 
-**Not every legitimate finding needs a fix PR.** Retro is tuned to prefer evidence-backed suggestions (ADR-027); sandbox-heavy PRs (#85) inflate meta findings. Use umbrella **Suggested fix** + severity + repro likelihood before opening fix work.
+Prompt rule: use `fix_cost=trivial` + `regression_guard=true` **only** for cheap test/invariant guards — not for general small fixes.
+
+### Derived `priority_band` (deterministic — not LLM)
+
+1. **`fix-now`** — `impact=incorrect-behavior` AND `trigger_likelihood=common`
+2. **`should-fix`** — (`impact=incorrect-behavior` AND `trigger_likelihood=edge`) OR (`fix_cost=trivial` AND `regression_guard=true`)
+3. **`defer`** — `impact∈{dx-perf-doc, meta-harness}` OR `trigger_likelihood=fringe` (unless `should-fix` via regression guard)
+
+### Theme-level comparison (semantic clusters + classifier scores)
+
+Manual scores applied to cross-arm themes (Arms A/C at full diff; B R1/R2 at ¼ diff — presence columns unchanged).
+
+| Theme (PR) | A | B | C | impact | trigger | fix_cost | guard | **band** | Notes |
+|---|---|---|---|---|---|---|---|---|---|
+| `mark-superseded` substring false positive | ✓ | ✓ | ✓ | incorrect-behavior | common | moderate | false | **fix-now** | Layer C skips real fixes |
+| `mark-superseded` directory (`is_file` only) | ✓ | ✓ | ✓ | incorrect-behavior | edge | trivial | false | **should-fix** | Dir vs file on HEAD |
+| Umbrella subprocess-per-finding | ✓ | ✓ | ✓ | dx-perf-doc | fringe | moderate | false | **defer** | Perf; large batches only |
+| Fix re-exec WORKDIR temp leak | ✓ | ✓ | ✓ | incorrect-behavior | common | trivial | false | **fix-now** | Orphan `/tmp` each fix pass |
+| Truncated JSON snapshot unrestorable | ✓ | ✓ | ✓ | incorrect-behavior | edge | moderate | false | **should-fix** | Rare but breaks `fix_only` |
+| merge SHA `gh pr view` fallback | ✓ | ✗ | ✓ | incorrect-behavior | edge | trivial | false | **should-fix** | Weakens Layer A dedupe |
+| PIPESTATUS error message unreachable | ✓ | ✗ | ✗ | dx-perf-doc | fringe | trivial | false | **defer** | Job still fails |
+| cap-json minimal-body shrink edge | ✓ | partial | ✓ | incorrect-behavior | fringe | moderate | false | **defer** | Fails safe to `[]` |
+| No-op fix rerun stale draft PR | ✓ | partial | ✓ | incorrect-behavior | edge | trivial | false | **should-fix** | Operator confusion |
+| ADR-030 snapshot recovery doc | ✓ | ✗ | ✓ | dx-perf-doc | edge | moderate | false | **defer** | Doc after truncation decision |
+| PR #85 sandbox verification meta (×4) | ✓ | ✗ | ✓ | meta-harness | fringe | trivial | false | **defer** | Sandbox hygiene |
+| PR #87 RUN_DATE + artifact invariants | ✗ | ✗ | ✓ | incorrect-behavior | edge | trivial | **true** | **should-fix** | `052` regression guard |
+
+### Priority bands (classifier output)
+
+| Band | Count | Themes |
+|---|---:|---|
+| **fix-now** | 2 | superseded substring, WORKDIR leak |
+| **should-fix** | 5 | superseded directory, truncated snapshot, merge-sha fallback, noop fix rerun, #87 invariants |
+| **defer** | 5+ | subprocess perf, PIPESTATUS, cap-json edge, ADR doc, #85 meta |
+
+[#454](https://github.com/mikejmckinney/ai-repo-template/issues/454) tracks fix-now + should-fix themes (7 total under prior hand triage; classifier promotes WORKDIR leak to fix-now).
 
 ## Round 2 — variance rerun (2026-06-19)
 
@@ -175,6 +197,18 @@ Title similarity ≥72% within the same PR. **Present** = at least one finding i
 | C | 1 | 31 | **High variance** — count stable (16) but keys differ |
 
 Round 2 Arm A semantic theme overlap with Round 1 Arm A: **7/14** themes (title ≥72% match). **Core themes persist** (superseded substring/dir, WORKDIR leak, truncated snapshot) but wording/keys change.
+
+**Arm B R1/R2 diff note:** Both used **75,000 bytes/PR** (default `diff_limit/4`). Not comparable to A/C for completeness.
+
+## Arm B Round 3 — fair diff budget (2026-06-30)
+
+**Goal:** Re-run monolithic at **full per-PR diff** (`POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR=300000`, matching A/C). Default changed from `diff_limit/4` → `diff_limit` in `run-postmerge-retro-monolithic.sh`.
+
+| Arm | Round | `run_date` | Per-PR diff | Wall clock | Findings | Run |
+|---|---|---|---|---:|---:|---|
+| B | **3** | `2026-06-30` | **300,000** | _pending_ | _pending_ | _pending_ |
+
+Dispatch: `benchmark_arm=monolithic`, `skip_fix=true`, `monolithic_diff_per_pr=300000`, same `only_prs` / `force_re_retro_prs` as R1/R2.
 
 ### Consolidated fix issue
 

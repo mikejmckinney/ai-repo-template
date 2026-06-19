@@ -39,7 +39,7 @@ fi
 
 DEFAULT_DIFF_LIMIT=300000
 diff_limit="$(parse_positive_int POSTMERGE_RETRO_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${POSTMERGE_RETRO_DIFF_LIMIT:-}")"
-per_pr_diff="$(parse_positive_int POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR "$((diff_limit / 4))" "${POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR:-}")"
+per_pr_diff="$(parse_positive_int POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR "$diff_limit" "${POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR:-}")"
 context_profile="${POSTMERGE_RETRO_CONTEXT_PROFILE:-full}"
 
 WORKDIR="$(mktemp -d)"
