@@ -3,7 +3,7 @@
 Prototype branch: `bench/447-retro-execution`  
 Prototype PR: [#453](https://github.com/mikejmckinney/ai-repo-template/pull/453)  
 Plan: [#447 comment](https://github.com/mikejmckinney/ai-repo-template/issues/447#issuecomment-4746808980)  
-Finding classifier schema: [#456](https://github.com/mikejmckinney/ai-repo-template/issues/455) (planned)
+Finding classifier schema: [#456](https://github.com/mikejmckinney/ai-repo-template/issues/456) (planned)
 
 ## Sandbox PR mapping (upstream → sandbox)
 
@@ -120,7 +120,7 @@ Fix pass LLM: ~3m 40s additional on Arm A.
 2. **Upgrade to parallel (C) when latency hurts** — same `run-postmerge-retro.sh` per PR as A; ~3× faster retro-only in R1. Set **`POSTMERGE_RETRO_PARALLEL_MAX=6`** (matches daily batch size cap; benchmark used 6 concurrent).
 3. **Do not adopt monolithic for completeness-sensitive runs** — R3 at 300k/PR: **9** findings vs **8** at ¼ budget; still misses PR #85/#87 themes present in A/C. Speed/cost advantage only.
 
-**Follow-up:** [#454](https://github.com/mikejmckinney/ai-repo-template/issues/454) (fixes), [#456](https://github.com/mikejmckinney/ai-repo-template/issues/455) (finding classifier schema), resolve sandbox #82 for #438 mapping.
+**Follow-up:** [#454](https://github.com/mikejmckinney/ai-repo-template/issues/454) (fixes), [#456](https://github.com/mikejmckinney/ai-repo-template/issues/456) (finding classifier schema), resolve sandbox #82 for #438 mapping.
 
 ## Cross-arm findings comparison (R1 artifacts)
 
@@ -140,7 +140,7 @@ Source: `daily-retro.json` from [A R1](https://github.com/mikejmckinney/ai-repo-
 
 ## Finding priority classifier (manual scoring for #447)
 
-Automation tracked in [#456](https://github.com/mikejmckinney/ai-repo-template/issues/455). Replaces deprecated `severity: low|medium|high` with **`impact`** plus **`trigger_likelihood`**, **`fix_cost`**, optional **`regression_guard`**, and derived **`priority_band`**.
+Automation tracked in [#456](https://github.com/mikejmckinney/ai-repo-template/issues/456). Replaces deprecated `severity: low|medium|high` with **`impact`** plus **`trigger_likelihood`**, **`fix_cost`**, optional **`regression_guard`**, and derived **`priority_band`**.
 
 ### LLM-emitted fields (future schema)
 
@@ -191,7 +191,7 @@ Manual scores on cross-arm themes. **Presence (A/B/C columns):** R1 artifacts; B
 | **should-fix** | 5 | superseded directory, truncated snapshot, merge-sha fallback, noop fix rerun, #87 invariants |
 | **defer** | 5+ | subprocess perf, PIPESTATUS, cap-json edge, ADR doc, #85 meta |
 
-[#454](https://github.com/mikejmckinney/ai-repo-template/issues/454) tracks implementation for fix-now + should-fix themes (**7** total; classifier promotes WORKDIR leak to fix-now vs original hand triage).
+[#454](https://github.com/mikejmckinney/ai-repo-template/issues/454) tracks implementation for fix-now + should-fix themes (**7** total: 2 fix-now + 5 should-fix per classifier).
 
 ## Round 2 — variance rerun (2026-06-19)
 
