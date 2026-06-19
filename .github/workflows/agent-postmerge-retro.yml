@@ -38,20 +38,10 @@ on:
         description: "Fix-only: optional workflow run ID to download artifact from"
         required: false
         type: string
-      artifact_run_attempt:
-        description: "Fix-only: attempt number when using artifact_run_id"
-        required: false
-        type: string
-        default: "1"
       force_re_retro_prs:
         description: "Comma-separated PR numbers to re-run retro even when merge_commit_sha is indexed"
         required: false
         type: string
-      ignore_retro_dedupe:
-        description: "Skip merge_commit_sha dedupe (operator override)"
-        required: false
-        type: boolean
-        default: false
       benchmark_arm:
         description: "Benchmark execution mode (#447): sequential (A), monolithic (B), parallel (C)"
         required: false
@@ -96,7 +86,7 @@ jobs:
       POSTMERGE_RETRO_CONTEXT_PROFILE: ${{ github.event.inputs.context_profile || vars.POSTMERGE_RETRO_CONTEXT_PROFILE || 'full' }}
       POSTMERGE_RETRO_ONLY_PRS: ${{ github.event.inputs.only_prs || vars.POSTMERGE_RETRO_ONLY_PRS || '' }}
       POSTMERGE_RETRO_FORCE_RE_RETRO_PRS: ${{ github.event.inputs.force_re_retro_prs || '' }}
-      POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE: ${{ github.event.inputs.ignore_retro_dedupe == true && 'true' || '' }}
+      POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE: ${{ vars.POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE || '' }}
       RUN_DATE: ${{ github.event.inputs.run_date || '' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
@@ -170,7 +160,7 @@ jobs:
           mkdir -p "$ARTIFACT_DIR"
           DAILY_JSON="${ARTIFACT_DIR}/daily-retro.json"
           if [[ -n "${{ github.event.inputs.artifact_run_id }}" ]]; then
-            ATTEMPT="${{ github.event.inputs.artifact_run_attempt || '1' }}"
+            ATTEMPT="1"
             ARTIFACT_NAME="postmerge-retro-daily-${RUN_DATE}-attempt-${ATTEMPT}"
             gh run download "${{ github.event.inputs.artifact_run_id }}" -R "$GITHUB_REPOSITORY" -n "$ARTIFACT_NAME" -D .artifacts/postmerge-retro/
             [[ -f "$DAILY_JSON" ]] || { echo "::error::Missing $DAILY_JSON after artifact download"; exit 1; }

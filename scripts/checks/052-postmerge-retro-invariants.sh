@@ -75,7 +75,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'force_re_retro_prs' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'ignore_retro_dedupe' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE' "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q 'list-indexed-merge-shas.sh' "$DAILY_SELECT_SCRIPT" 2>/dev/null \
     && grep -q 'merge_commit_sha' "$RUN_SCRIPT" 2>/dev/null; then
     pass "merge_commit_sha dedupe + operator overrides wired"
