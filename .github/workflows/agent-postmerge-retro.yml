@@ -52,6 +52,20 @@ on:
         required: false
         type: boolean
         default: false
+      benchmark_arm:
+        description: "Benchmark execution mode (#447): sequential (A), monolithic (B), parallel (C)"
+        required: false
+        type: choice
+        options:
+          - sequential
+          - monolithic
+          - parallel
+        default: sequential
+      skip_fix:
+        description: "Skip fix pass after retro (benchmark timing fairness)"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -83,6 +97,7 @@ jobs:
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
       FIX_JOB_SANDBOX_VERIFY: ${{ vars.FIX_JOB_SANDBOX_VERIFY || 'false' }}
+      POSTMERGE_RETRO_EXECUTION_MODE: ${{ github.event.inputs.benchmark_arm || 'sequential' }}
     steps:
       - name: Verify required secrets
         env:
@@ -178,7 +193,7 @@ jobs:
           fi
           chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
           chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
-          bash scripts/workflows/postmerge-retro/run-postmerge-retro-daily.sh
+          bash scripts/workflows/postmerge-retro/run-postmerge-retro-daily-dispatch.sh
 
       - name: Capture daily retro outputs
         id: meta
@@ -225,6 +240,7 @@ jobs:
             github.event.inputs.run_date != ''
           ) || (
             github.event.inputs.fix_only != 'true' &&
+            github.event.inputs.skip_fix != 'true' &&
             steps.meta.outputs.findings_count != '0' &&
             steps.meta.outputs.has_daily_json == 'true'
           )
