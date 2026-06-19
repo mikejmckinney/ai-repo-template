@@ -143,6 +143,37 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "agent-postmerge-retro.yml missing attempt artifact / fix-only wiring"
   fi
 
+  if grep -q 'Pin RUN_DATE' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'GITHUB_ENV' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'RUN_DATE=\${RUN_DATE' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "RUN_DATE pinned to GITHUB_ENV before pipeline steps"
+  else
+    fail "agent-postmerge-retro.yml must pin RUN_DATE to GITHUB_ENV"
+  fi
+
+  if grep -q 'artifact_run_id' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'gh run download' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'restore_json_from_issue' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "fix_only downloads artifact_run_id before issue snapshot restore"
+  else
+    fail "fix_only must prefer artifact_run_id over issue snapshot restore"
+  fi
+
+  if [[ -f "${RETRO_DIR}/parse-daily-json-snapshot.py" ]] \
+    && grep -q 'parse-daily-json-snapshot.py' "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" 2>/dev/null; then
+    pass "issue snapshot restore validates JSON via parse-daily-json-snapshot.py"
+  else
+    fail "fetch-daily-retro-json-from-issue.sh must validate snapshots with parse-daily-json-snapshot.py"
+  fi
+
+  if grep -q 'FIX_REEXEC_DIR' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'has_diff' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'leaving draft PR' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "fix script uses artifact re-exec dir + skips PR edit on no-op rerun"
+  else
+    fail "run-postmerge-retro-fix.sh missing re-exec workdir / no-op PR edit guard"
+  fi
+
   if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'checkout-fix-branch.sh' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'update-umbrella-fix-link.sh' "$FIX_SCRIPT" 2>/dev/null \

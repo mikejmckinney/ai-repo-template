@@ -25,13 +25,13 @@ trap 'rm -rf "$WORKDIR"' EXIT
 gh api "repos/${REPO}/issues/${ISSUE_NUM}/comments" --paginate \
   | jq -s 'if length == 0 then [] else add end' >"$WORKDIR/comments.json"
 
-python3 - "$RUN_DATE" "$WORKDIR/comments.json" "$WORKDIR/daily-retro.json" <<'PY'
+python3 - "$RUN_DATE" "$WORKDIR/comments.json" "$WORKDIR/snapshot-body.md" <<'PY'
 import json
 import re
 import sys
 from pathlib import Path
 
-run_date, comments_path, out_path = sys.argv[1:4]
+run_date, comments_path, body_path = sys.argv[1:4]
 prefix = f"<!-- postmerge-retro:daily-json:{run_date}"
 comments = json.loads(Path(comments_path).read_text(encoding="utf-8"))
 
@@ -52,14 +52,10 @@ if not candidates:
     sys.exit(1)
 
 candidates.sort(key=lambda item: (item[0], item[1]))
-body = candidates[-1][2]
-match = re.search(r"```json\s*(.*?)\s*```", body, re.DOTALL)
-if not match:
-    print("Snapshot comment missing ```json block", file=sys.stderr)
-    sys.exit(1)
-
-Path(out_path).write_text(match.group(1).strip() + "\n", encoding="utf-8")
+Path(body_path).write_text(candidates[-1][2], encoding="utf-8")
 PY
+
+python3 "$SCRIPT_DIR/parse-daily-json-snapshot.py" "$WORKDIR/snapshot-body.md" >"$WORKDIR/daily-retro.json"
 
 mkdir -p "$(dirname "$OUT")"
 cp "$WORKDIR/daily-retro.json" "$OUT"
