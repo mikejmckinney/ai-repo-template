@@ -3,7 +3,6 @@
 # Shared by sequential, monolithic, and parallel daily runners.
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"

@@ -14,7 +14,6 @@ usage() {
 [[ -n "$RUN_DATE" && -n "$ARTIFACT_ROOT" ]] || usage
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 RETRO_FILES=("$@")
 if [[ ${#RETRO_FILES[@]} -eq 0 ]]; then
