@@ -11,6 +11,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   COLLECT_SCRIPT="${RETRO_DIR}/collect-postmerge-evidence.sh"
   RUN_SCRIPT="${RETRO_DIR}/run-postmerge-retro.sh"
   DAILY_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily.sh"
+  DAILY_DISPATCH_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily-dispatch.sh"
+  DAILY_SELECT_SCRIPT="${RETRO_DIR}/daily-retro-select-prs.sh"
   FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
   UMBRELLA_LINK_SCRIPT="${RETRO_DIR}/update-umbrella-fix-link.sh"
   RESOLVE_UMBRELLA_SCRIPT="${RETRO_DIR}/resolve-umbrella-issue.sh"
@@ -27,7 +29,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   FEEDBACK_COLLECTOR="scripts/workflows/pr-feedback/collect-pr-feedback.sh"
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
-    "$DAILY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
+    "$DAILY_SCRIPT" "$DAILY_DISPATCH_SCRIPT" "$DAILY_SELECT_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
     "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
     "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$CHECKOUT_FIX_BRANCH_SCRIPT" \
     "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR"; do
@@ -58,7 +60,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'daily-pipeline:' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'run-postmerge-retro-daily.sh' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-daily-dispatch.sh' "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q 'run-postmerge-retro-fix.sh' "$RETRO_WORKFLOW" 2>/dev/null; then
     pass "workflow uses single daily-pipeline job with retro + fix scripts"
   else
@@ -73,8 +75,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'force_re_retro_prs' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'ignore_retro_dedupe' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'list-indexed-merge-shas.sh' "$DAILY_SCRIPT" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'list-indexed-merge-shas.sh' "$DAILY_SELECT_SCRIPT" 2>/dev/null \
     && grep -q 'merge_commit_sha' "$RUN_SCRIPT" 2>/dev/null; then
     pass "merge_commit_sha dedupe + operator overrides wired"
   else
@@ -225,6 +227,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   if bash -n "$COLLECT_SCRIPT" 2>/dev/null \
     && bash -n "$RUN_SCRIPT" 2>/dev/null \
     && bash -n "$DAILY_SCRIPT" 2>/dev/null \
+    && bash -n "$DAILY_DISPATCH_SCRIPT" 2>/dev/null \
+    && bash -n "$DAILY_SELECT_SCRIPT" 2>/dev/null \
+    && bash -n "${RETRO_DIR}/run-postmerge-retro-monolithic.sh" 2>/dev/null \
+    && bash -n "${RETRO_DIR}/run-postmerge-retro-parallel.sh" 2>/dev/null \
     && bash -n "$FIX_SCRIPT" 2>/dev/null \
     && bash -n "$UMBRELLA_SCRIPT" 2>/dev/null \
     && bash -n "$RESOLVE_UMBRELLA_SCRIPT" 2>/dev/null \
