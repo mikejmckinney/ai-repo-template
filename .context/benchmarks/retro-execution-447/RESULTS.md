@@ -105,3 +105,49 @@ Fix pass LLM: ~3m 40s additional on Arm A.
 3. **Parallel mode** as middle ground when sequential latency hurts but monolithic context/parsing risk is too high — ~2× faster than sequential retro-only in this run, but 6× LLM cost vs monolithic.
 
 **Follow-up (out of scope for #453 merge):** file issue to harden monolithic JSON schema validation, add `skip_fix` to scheduled runs documentation, and resolve sandbox #82 so upstream #438 maps 1:1.
+
+## Cross-arm findings comparison
+
+Source: `daily-retro.json` artifacts from runs [A](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27796546251), [B](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27797882347), [C](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27797996992).
+
+### Summary statistics
+
+| Metric | Arm A | Arm B | Arm C |
+|---|---:|---:|---:|
+| Total findings | 14 | 8 | 16 |
+| PRs with ≥1 finding | 63, 83, 85, 90 | 63, 83, 90 | 63, 83, 85, 87, 90 |
+| Exact `dedupe_key` overlap A∩C | — | — | **2** |
+| Exact `dedupe_key` overlap A∩B or B∩C | — | **0** | **0** |
+| Semantic clusters in all 3 arms | — | **5** | **5** |
+
+**Interpretation:** Count variance is mostly **LLM non-determinism**, not pipeline dedupe. Monolithic (B) **under-reports** (missed all PR #85 themes; 0 exact key matches with A/C). A and C also disagree (12 A-only keys, 14 C-only keys).
+
+### Theme-level comparison (semantic clusters)
+
+Title similarity ≥72% within the same PR. **Present** = at least one finding in that theme in the arm.
+
+| Theme (PR) | A | B | C | Triage | Notes |
+|---|---|---|---|---|---|
+| `mark-superseded` substring false positive | ✓ | ✓ | ✓ | **Fix** | Layer C can skip real fixes; prefix `path in text` is a real bug |
+| `mark-superseded` directory (`is_file` only) | ✓ | ✓ | ✓ | **Should fix** | Edge case (dir vs file); small change, low risk |
+| Umbrella subprocess-per-finding | ✓ | ✓ | ✓ | **Defer** | Perf nit; matters only on very large batches |
+| Fix re-exec WORKDIR temp leak | ✓ | ✓ | ✓ | **Should fix** | Orphaned `/tmp` each fix pass; easy fix, flagged pre-merge |
+| Truncated JSON snapshot unrestorable | ✓ | ✓ | ✓ | **Should fix** | Real `fix_only` failure when snapshot exceeds cap; rare but high impact |
+| merge SHA `gh pr view` fallback | ✓ | ✗ | ✓ | **Should fix** | Layer A dedupe silently weakens; one-line `gh api` fallback |
+| PIPESTATUS error message unreachable | ✓ | ✗ | ✗ | **Defer** | Job still fails; DX/logging only |
+| cap-json minimal-body shrink edge | ✓ | partial | ✓ | **Defer** | Unusual review JSON shapes; fails safe to `[]` |
+| No-op fix rerun stale draft PR | ✓ | partial | ✓ | **Should fix** | Operator confusion on re-dispatch; skip `gh pr edit` when `has_diff=0` |
+| ADR-030 snapshot recovery doc | ✓ | ✗ | ✓ | **Defer** | Doc/process follow-up after truncation behavior is decided |
+| PR #85 sandbox verification meta (×4) | ✓ | ✗ | ✓ | **Defer / meta** | Sandbox dogfood hygiene, not production defects |
+| PR #87 RUN_DATE + artifact invariants | ✗ | ✗ | ✓ | **Should fix** | Cheap `052` invariant rows; prevents silent regression |
+
+### Priority bands (recommended)
+
+| Band | Themes | Action |
+|---|---|---|
+| **Fix now** (1) | superseded substring | Incorrect Layer C behavior |
+| **Should fix** (6) | directory exists, WORKDIR leak, truncated snapshot, merge-sha fallback, noop fix rerun, #87 invariants | Real bugs or cheap regression guards |
+| **Defer** (5+) | subprocess perf, PIPESTATUS message, cap-json edge, ADR doc, most #85 meta | Fringe, DX, or process — file `agent-suggested` or close as won't-fix |
+
+**Not every legitimate finding needs a fix PR.** Retro is tuned to prefer evidence-backed suggestions (ADR-027); sandbox-heavy PRs (#85) inflate meta findings. Use umbrella **Suggested fix** + severity + repro likelihood before opening fix work.
+
