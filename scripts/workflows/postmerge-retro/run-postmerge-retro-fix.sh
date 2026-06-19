@@ -30,18 +30,21 @@ if [[ "$FINDINGS_COUNT" -eq 0 ]]; then
 fi
 
 BRANCH="retro/fix-${RUN_DATE}"
+
+if [[ -z "${POSTMERGE_RETRO_FIX_REEXEC:-}" ]]; then
+  export POSTMERGE_RETRO_FIX_REEXEC=1
+  FIX_REEXEC_DIR="${REPO_ROOT}/.artifacts/postmerge-retro/fix-reexec-${RUN_DATE}"
+  mkdir -p "$FIX_REEXEC_DIR"
+  cp "$SCRIPT_DIR/run-postmerge-retro-fix.sh" "$FIX_REEXEC_DIR/fix-runner.sh"
+  exec bash "$FIX_REEXEC_DIR/fix-runner.sh" "$@"
+fi
+
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 # shellcheck source=../lib/fix-phase-log.sh
 source "$LIB_DIR/fix-phase-log.sh"
 fix_phase_log_init
-
-if [[ -z "${POSTMERGE_RETRO_FIX_REEXEC:-}" ]]; then
-  export POSTMERGE_RETRO_FIX_REEXEC=1
-  cp "$SCRIPT_DIR/run-postmerge-retro-fix.sh" "$WORKDIR/fix-runner.sh"
-  exec bash "$WORKDIR/fix-runner.sh" "$@"
-fi
 
 git config user.email "${GIT_AUTHOR_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
 git config user.name "${GIT_AUTHOR_NAME:-github-actions[bot]}"
@@ -255,6 +258,14 @@ link_pr_to_umbrella() {
 if [[ -n "$existing_pr" ]]; then
   echo "Open draft PR already exists: #${existing_pr}"
   PR_URL="$(gh pr view "$existing_pr" -R "$REPO" --json url --jq .url)"
+  if [[ "$has_diff" -eq 0 ]]; then
+    echo "::notice::No code changes; leaving draft PR #${existing_pr} body unchanged"
+    link_pr_to_umbrella "$PR_URL"
+    bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_DATE" "$PR_URL" "$DAILY_JSON"
+    fix_phase_log "publish"
+    echo "Fix pass complete for ${RUN_DATE} (no changes)"
+    exit 0
+  fi
   render_fix_pr_body
   gh pr edit "$existing_pr" -R "$REPO" --body-file "$WORKDIR/fix-pr-body.md"
 else

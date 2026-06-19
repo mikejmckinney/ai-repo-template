@@ -19,11 +19,32 @@ MISSING_HINTS = (
     "no longer present",
 )
 
+def _is_path_char(ch: str) -> bool:
+    return ch.isalnum() or ch in "/._-"
+
+
+def path_token_in_text(path: str, text: str) -> bool:
+    """Return True when path appears as its own token, not as a substring of a longer path."""
+    norm = path.strip().lstrip("./")
+    if not norm:
+        return False
+    start = 0
+    while True:
+        idx = text.find(norm, start)
+        if idx == -1:
+            return False
+        before_ok = idx == 0 or not _is_path_char(text[idx - 1])
+        after_idx = idx + len(norm)
+        after_ok = after_idx >= len(text) or not _is_path_char(text[after_idx])
+        if before_ok and after_ok:
+            return True
+        start = idx + 1
+
 
 def _paths_in_text(text: str, candidates: list[str]) -> list[str]:
     found: list[str] = []
     for path in candidates:
-        if path and path in text:
+        if path and path_token_in_text(path, text):
             found.append(path)
     return found
 
@@ -48,18 +69,20 @@ def check_superseded(finding: dict, changed_files: list[str], repo_root: Path) -
 
     paths = _paths_in_text(blob, changed_files)
     if not paths:
-        # Also match backtick paths in body
+        # Also match backtick paths in body (exact token, not substring).
         for match in re.findall(r"`([^`]+)`", blob):
-            if "/" in match or "." in match:
-                paths.append(match.strip())
+            candidate = match.strip()
+            if ("/" in candidate or "." in candidate) and path_token_in_text(candidate, blob):
+                paths.append(candidate)
 
     for rel in paths:
         rel = rel.strip().lstrip("./")
         if not rel or rel.startswith("http"):
             continue
         target = repo_root / rel
-        if target.is_file():
-            return True, f"{rel} exists on main HEAD (finding described missing/absent state)"
+        if target.is_file() or target.is_dir():
+            kind = "directory" if target.is_dir() else "file"
+            return True, f"{rel} exists on main HEAD as {kind} (finding described missing/absent state)"
     return False, ""
 
 

@@ -33,9 +33,10 @@ def build_comment_body(
 
     body = prefix + json_text + suffix
     if truncated:
+        body += "\n<!-- postmerge-retro:daily-json:truncated -->\n"
         print(
             f"::warning::JSON snapshot truncated to fit issue comment size ({max_bytes} bytes); "
-            "see Actions artifact for the full file",
+            "fix_only must use artifact_run_id — issue comment is not restorable",
             file=sys.stderr,
         )
     return body
