@@ -151,3 +151,33 @@ Title similarity ≥72% within the same PR. **Present** = at least one finding i
 
 **Not every legitimate finding needs a fix PR.** Retro is tuned to prefer evidence-backed suggestions (ADR-027); sandbox-heavy PRs (#85) inflate meta findings. Use umbrella **Suggested fix** + severity + repro likelihood before opening fix work.
 
+## Round 2 — variance rerun (2026-06-19)
+
+**Goal:** Same PR set, new `run_date`s — measure finding stability vs Round 1.
+
+**Codebase note:** Round 2 **Arm A** used **upstream `main`** (`a3a8820`, #452 only). Round 2 **B/C** used **sandbox `main` = `bench/447-retro-execution`** (`5ca2786`, includes #453 prototype) because `benchmark_arm` / `skip_fix` are not on upstream `main` yet.
+
+| Arm | Round | `run_date` | Code @ sandbox `main` | Wall clock | Findings | Run |
+|---|---|---|---|---:|---:|---|
+| A | 1 | 2026-06-24 | `a3a8820` | 16m 53s | 14 | [27796546251](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27796546251) |
+| A | **2** | 2026-06-27 | **`a3a8820`** | **11m 46s** | **16** | [27800860456](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27800860456) |
+| B | 1 | 2026-06-25 | `f4b9416` | 2m 40s | 8 | [27797882347](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27797882347) |
+| B | **2** | 2026-06-28 | `5ca2786` | **2m 26s** | **8** | [27801245644](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27801245644) |
+| C | 1 | 2026-06-26 | `f4b9416` | 4m 39s | 16 | [27797996992](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27797996992) |
+| C | **2** | 2026-06-29 | `5ca2786` | **2m 53s** | **16** | [27801246377](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27801246377) |
+
+### Round 1 vs Round 2 — exact `dedupe_key` overlap (same arm)
+
+| Arm | R1∩R2 keys | Union | Interpretation |
+|---|---:|---:|---|
+| A | 3 | 27 | **High variance** — only 3/27 keys repeat |
+| B | 1 | 15 | **High variance** — count stable (8) but keys differ |
+| C | 1 | 31 | **High variance** — count stable (16) but keys differ |
+
+Round 2 Arm A semantic theme overlap with Round 1 Arm A: **7/14** themes (title ≥72% match). **Core themes persist** (superseded substring/dir, WORKDIR leak, truncated snapshot) but wording/keys change.
+
+### Consolidated fix issue
+
+[#454](https://github.com/mikejmckinney/ai-repo-template/issues/454) — 7 should-fix themes from triage; deferred items explicitly out of scope.
+
+
