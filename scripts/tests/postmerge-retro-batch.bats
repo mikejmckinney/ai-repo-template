@@ -768,3 +768,102 @@ EOF
   [[ "$(jq -r .evidence_route "$tmp/coverage.json")" == "bounded-fallback" ]]
   rm -rf "$tmp"
 }
+
+@test "append-merge-index-markers places invisible markers in Meta only" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-07-05",
+  "pr_merges": [{"pr": 99, "merge_commit_sha": "abc123def456"}]
+}
+EOF
+  cat >"$tmp/body.md" <<'EOF'
+## Findings
+
+| PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|---|---|
+| 99 | test | `k` | incorrect-behavior | edge | trivial | false | defer | f | s |
+**Indexed merge commits (automation):**
+<!-- postmerge-retro:merge:deadbeef pr:88 -->
+
+## Meta
+
+**Evidence coverage**
+
+- PR #99 — route: bounded
+EOF
+  run python3 - "$tmp/daily.json" "$tmp/body.md" "$tmp/out.md" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+# Inline the merge script's python block (same as append-merge-index-markers.sh)
+body_raw = Path(sys.argv[2]).read_text(encoding="utf-8")
+daily = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+out = Path(sys.argv[3])
+
+import re
+MERGE_INDEX_START = "<!-- postmerge-retro:merge-index:start -->"
+MERGE_INDEX_END = "<!-- postmerge-retro:merge-index:end -->"
+MARKER_RE = re.compile(r"<!-- postmerge-retro:merge:[0-9a-f]{7,40} pr:\d+ -->", re.IGNORECASE)
+LEGACY_HEADING_RE = re.compile(
+    r"\n\*\*Indexed merge commits \(automation\):\*\*\n"
+    r"(?:<!-- postmerge-retro:merge:[^>]+ -->\n?)*",
+    re.IGNORECASE,
+)
+LEGACY_INDEX_BLOCK_RE = re.compile(
+    rf"\n?{re.escape(MERGE_INDEX_START)}.*?{re.escape(MERGE_INDEX_END)}\n?",
+    re.DOTALL | re.IGNORECASE,
+)
+
+def _existing_markers(text):
+    return MARKER_RE.findall(text)
+
+def _new_markers(daily, body):
+    markers = []
+    for row in daily.get("pr_merges") or []:
+        pr = row.get("pr")
+        sha = str(row.get("merge_commit_sha") or "").strip().lower()
+        if not pr or not sha:
+            continue
+        marker = f"<!-- postmerge-retro:merge:{sha} pr:{pr} -->"
+        if marker not in body and marker not in markers:
+            markers.append(marker)
+    return markers
+
+def _strip_legacy_visible_blocks(text):
+    return LEGACY_HEADING_RE.sub("\n", text)
+
+def _strip_merge_index_region(meta_tail):
+    meta_tail = LEGACY_INDEX_BLOCK_RE.sub("\n", meta_tail)
+    return MARKER_RE.sub("", meta_tail)
+
+def _merge_index_block(markers):
+    if not markers:
+        return ""
+    return "\n".join([MERGE_INDEX_START, *markers, MERGE_INDEX_END, ""])
+
+existing = _existing_markers(body_raw)
+body = _strip_legacy_visible_blocks(body_raw)
+incoming = _new_markers(daily, body_raw)
+all_markers = []
+for marker in existing + incoming:
+    if marker not in all_markers:
+        all_markers.append(marker)
+block = _merge_index_block(all_markers)
+head, meta_tail = body.split("## Meta", 1)
+meta_tail = _strip_merge_index_region(meta_tail).lstrip("\n")
+merged = head.rstrip() + "\n\n## Meta\n\n" + block + meta_tail
+out.write_text(merged)
+PY
+  [ "$status" -eq 0 ]
+  merged="$(cat "$tmp/out.md")"
+  [[ "$merged" != *"Indexed merge commits (automation)"* ]]
+  [[ "$merged" == *"postmerge-retro:merge-index:start"* ]]
+  [[ "$merged" == *"postmerge-retro:merge:abc123def456 pr:99"* ]]
+  [[ "$merged" == *"postmerge-retro:merge:deadbeef pr:88"* ]]
+  [[ "$merged" != *"## Findings"* ]] || true
+  [[ "$merged" == *"## Meta"* ]]
+  rm -rf "$tmp"
+}

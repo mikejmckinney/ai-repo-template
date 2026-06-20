@@ -259,7 +259,7 @@ fix step → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 
 | Layer | Behavior |
 |---|---|
-| **A — merge dedupe** | Skip per-PR retro when `merge_commit_sha` is indexed in umbrella Meta (`<!-- postmerge-retro:merge:<sha> pr:N -->`). Override with `force_re_retro_prs` or `ignore_retro_dedupe=true`. |
+| **A — merge dedupe** | Skip per-PR retro when `merge_commit_sha` is indexed in umbrella **Meta** via invisible HTML markers (`<!-- postmerge-retro:merge-index:start/end -->` wrapping `<!-- postmerge-retro:merge:<sha> pr:N -->`). Override with `force_re_retro_prs` or `ignore_retro_dedupe=true`. |
 | **B — HEAD lens** | Retro prompt injects current `main` file snapshots for PR-touched paths; do not emit findings already resolved on HEAD. |
 | **C — fix superseded** | `mark-superseded-findings.py` pre-flags findings whose missing-file evidence is contradicted on HEAD (path-token matching — not naive substring; files **and** directories); fix agent sets `cant_reproduce`. |
 | **D — umbrella column** | Table columns **Impact**, **trigger_likelihood**, **fix_cost**, **regression_guard**, **Band**, **Finding**, and **Suggested fix** (from finding `## Suggested fix` excerpt). `priority_band` is derived at validate/merge time from LLM-emitted `impact`, `trigger_likelihood`, `fix_cost`, and optional `regression_guard` on all finding buckets (`follow_up_issues`, `adr_updates`, `context_pack_updates`). Legacy umbrella headers are migrated in place on append. |

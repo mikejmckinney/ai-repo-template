@@ -139,7 +139,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && grep -q 'run-postmerge-retro-full-cursor.mjs' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'run-postmerge-retro-antigravity.py' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'POSTMERGE_RETRO_ADAPTIVE_EVIDENCE' "$COVERAGE_SCRIPT" 2>/dev/null \
-    && grep -q 'default=True' "$COVERAGE_SCRIPT" 2>/dev/null; then
+    && grep -q 'default=True' "$COVERAGE_SCRIPT" 2>/dev/null \
+    && grep -q 'postmerge-retro:merge-index:start' "${RETRO_DIR}/append-merge-index-markers.sh" 2>/dev/null \
+    && ! grep -q 'Indexed merge commits (automation)' "${RETRO_DIR}/append-merge-index-markers.sh" 2>/dev/null; then
     pass "adaptive evidence routing wired (#461)"
   else
     fail "postmerge retro missing adaptive evidence routing (#461)"
