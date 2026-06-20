@@ -652,3 +652,86 @@ EOF
   [ "$status" -eq 0 ]
   rm -rf "$tmp"
 }
+
+@test "compute-evidence-coverage adaptive default routes truncated PR to full-evidence-cursor" {
+  tmp="$(mktemp -d)"
+  head -c 5000 /dev/zero | tr '\0' 'a' >"$tmp/diff.patch"
+  echo "noop.txt" >"$tmp/changed-files.txt"
+  touch "$tmp/noop.txt"
+  export CURSOR_API_KEY="test-key"
+  unset POSTMERGE_RETRO_ADAPTIVE_EVIDENCE
+  run python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
+    "$tmp" --pr 7 --diff-limit 1000 --repo-root "$tmp"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"evidence_route": "full-evidence-cursor"'* ]]
+  [[ "$output" == *'"adaptive_enabled": true'* ]]
+  unset CURSOR_API_KEY
+  rm -rf "$tmp"
+}
+
+@test "assemble-retro-prompt full-evidence references diff.patch path" {
+  tmp="$(mktemp -d)"
+  repo_root="$(pwd)"
+  mkdir -p "$tmp/evidence"
+  printf '{"number": 1, "title": "t", "body": "b", "html_url": "https://example/pr/1", "head": {"sha": "abc"}, "merge_commit_sha": "def", "merged_at": "2026-01-01T00:00:00Z", "merged": true}' >"$tmp/evidence/pr.json"
+  echo "[]" >"$tmp/evidence/labels.json"
+  echo "[]" >"$tmp/evidence/reviews.json"
+  echo "[]" >"$tmp/evidence/review-comments.json"
+  echo "summary" >"$tmp/evidence/summary.txt"
+  echo "README.md" >"$tmp/evidence/changed-files.txt"
+  echo "hello" >"$repo_root/README.md"
+  head -c 200 /dev/zero | tr '\0' 'x' >"$tmp/evidence/diff.patch"
+  run bash scripts/workflows/postmerge-retro/assemble-retro-prompt.sh \
+    1 "$tmp/evidence" full-evidence "$tmp/prompt.md"
+  [ "$status" -eq 0 ]
+  [[ "$(cat "$tmp/prompt.md")" == *"diff.patch"* ]]
+  [[ "$(cat "$tmp/prompt.md")" == *"full-evidence"* ]]
+  [[ "$(cat "$tmp/prompt.md")" != *"### Diff (truncated excerpt)"* ]]
+  rm -rf "$tmp"
+}
+
+@test "run-postmerge-retro-antigravity rejects oversized payload" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/repo/.github/prompts" "$tmp/workdir"
+  echo "system" >"$tmp/repo/.github/prompts/post-merge-retro.md"
+  echo "agents" >"$tmp/repo/AGENTS.md"
+  echo "task" >"$tmp/prompt.md"
+  head -c 5000000 /dev/zero | tr '\0' 'z' >"$tmp/workdir/diff.patch"
+  echo '{"number": 1}' >"$tmp/workdir/pr.json"
+  export GEMINI_API_KEY="dummy"
+  export POSTMERGE_RETRO_ANTIGRAVITY_PAYLOAD_LIMIT=1000
+  run python3 scripts/workflows/postmerge-retro/run-postmerge-retro-antigravity.py \
+    "$tmp/repo" "$tmp/workdir" "$tmp/prompt.md" "$tmp/out.txt"
+  [ "$status" -eq 3 ]
+  unset GEMINI_API_KEY POSTMERGE_RETRO_ANTIGRAVITY_PAYLOAD_LIMIT
+  rm -rf "$tmp"
+}
+
+@test "compute-evidence-coverage --set-route bounded-fallback emits warning" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/coverage.json" <<'EOF'
+{
+  "pr": 9,
+  "diff_included": 1000,
+  "diff_total": 5000,
+  "head_included": 100,
+  "head_total": 100,
+  "would_truncate": true,
+  "diff_truncated": true,
+  "head_truncated": false,
+  "evidence_route": "full-evidence-cursor",
+  "routing_context": {
+    "adaptive_enabled": true,
+    "provider_resolved": "cursor",
+    "cursor_available": true,
+    "antigravity_available": false
+  }
+}
+EOF
+  run --separate-stderr python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
+    --warn-record "$tmp/coverage.json" --set-route bounded-fallback
+  [ "$status" -eq 0 ]
+  [[ "$stderr" == *"fell back to bounded"* ]]
+  [[ "$(jq -r .evidence_route "$tmp/coverage.json")" == "bounded-fallback" ]]
+  rm -rf "$tmp"
+}
