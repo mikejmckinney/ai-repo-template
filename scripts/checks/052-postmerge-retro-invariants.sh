@@ -183,7 +183,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'artifact_run_id' "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q 'gh run download' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'restore_json_from_issue' "$RETRO_WORKFLOW" 2>/dev/null; then
+    && grep -q 'fetch-daily-retro-json-from-issue.sh' "$RETRO_WORKFLOW" 2>/dev/null; then
     pass "fix_only downloads artifact_run_id before issue snapshot restore"
   else
     fail "fix_only must prefer artifact_run_id over issue snapshot restore"
