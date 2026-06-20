@@ -712,10 +712,14 @@ EOF
   echo "[]" >"$tmp/evidence/review-comments.json"
   echo "summary" >"$tmp/evidence/summary.txt"
   echo "README.md" >"$tmp/evidence/changed-files.txt"
+  readme_backup="$(mktemp)"
+  cp "$repo_root/README.md" "$readme_backup"
   echo "hello" >"$repo_root/README.md"
   head -c 200 /dev/zero | tr '\0' 'x' >"$tmp/evidence/diff.patch"
   run bash scripts/workflows/postmerge-retro/assemble-retro-prompt.sh \
     1 "$tmp/evidence" full-evidence "$tmp/prompt.md"
+  cp "$readme_backup" "$repo_root/README.md"
+  rm -f "$readme_backup"
   [ "$status" -eq 0 ]
   [[ "$(cat "$tmp/prompt.md")" == *"diff.patch"* ]]
   [[ "$(cat "$tmp/prompt.md")" == *"full-evidence"* ]]
