@@ -8,6 +8,7 @@ Daily post-merge retrospective for merges to `main` in the rolling last **{{WIND
 **Window end (UTC):** {{WINDOW_END}}  
 **PRs in this update:** {{PR_LIST}}
 
+{{EVIDENCE_TRUNCATION_SUMMARY}}
 ## Findings
 
 | PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |

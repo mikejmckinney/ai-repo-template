@@ -59,6 +59,72 @@ def render_block(records: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def render_summary_callout(records: list[dict]) -> str:
+    """High-visibility Summary callout when any PR would truncate evidence."""
+    truncated = [record for record in records if record.get("would_truncate")]
+    if not truncated:
+        return ""
+
+    lines = [
+        "> [!WARNING]",
+        "> **Evidence truncated** — retro used partial diff/HEAD excerpts for the PR(s) below. "
+        "Findings may miss unseen changes. See **Evidence coverage** in Meta for full route context.",
+        ">",
+    ]
+    for record in sorted(truncated, key=lambda item: int(item["pr"])):
+        pr = int(record["pr"])
+        diff_included = int(record["diff_included"])
+        diff_total = int(record["diff_total"])
+        route = str(record.get("evidence_route") or "bounded")
+        line = f"> - **PR #{pr}** — diff {diff_included}/{diff_total} bytes; route: `{route}`"
+        if route == "bounded-fallback":
+            ctx = record.get("routing_context") or {}
+            line += f"; fallback: {_fallback_reason(ctx)}"
+        if record.get("head_truncated"):
+            line += f"; HEAD {record['head_included']}/{record['head_total']} bytes"
+        lines.append(line)
+    lines.append("")
+    return "\n".join(lines)
+
+
+SUMMARY_START = "<!-- postmerge-retro:truncation-summary:start -->"
+SUMMARY_END = "<!-- postmerge-retro:truncation-summary:end -->"
+
+
+def _wrap_summary_callout(callout: str) -> str:
+    if not callout.strip():
+        return ""
+    return "\n".join([SUMMARY_START, callout.rstrip(), SUMMARY_END, ""])
+
+
+def merge_summary_into_body(body: str, records: list[dict]) -> str:
+    wrapped = _wrap_summary_callout(render_summary_callout(records))
+    if SUMMARY_START in body and SUMMARY_END in body:
+        before, _, rest = body.partition(SUMMARY_START)
+        _, _, after = rest.partition(SUMMARY_END)
+        if wrapped:
+            return before.rstrip() + "\n\n" + wrapped + after.lstrip("\n")
+        return before.rstrip() + "\n" + after.lstrip("\n")
+
+    if not wrapped:
+        return body
+
+    marker = f"**PRs in this update:**"
+    if marker in body:
+        lines = body.splitlines()
+        out: list[str] = []
+        inserted = False
+        for i, line in enumerate(lines):
+            out.append(line)
+            if not inserted and line.strip().startswith(marker):
+                out.append("")
+                out.extend(wrapped.rstrip("\n").splitlines())
+                inserted = True
+        if inserted:
+            return "\n".join(out) + ("\n" if body.endswith("\n") else "")
+    return body.rstrip() + "\n\n" + wrapped
+
+
 def _coverage_prs_in_body(body: str) -> set[int]:
     prs: set[int] = set()
     for line in body.splitlines():
@@ -92,6 +158,7 @@ def merge_coverage_into_body(body: str, records: list[dict]) -> str:
 
 
 def append_coverage_into_body(body: str, records: list[dict]) -> str:
+    body = merge_summary_into_body(body, records)
     if not records:
         return body
     existing = _coverage_prs_in_body(body)
@@ -126,6 +193,12 @@ def main() -> int:
         default="pr_evidence_coverage",
         help="JSON array field to render (default: pr_evidence_coverage)",
     )
+    parser.add_argument(
+        "--section",
+        choices=("meta", "summary", "all"),
+        default="meta",
+        help="Render Meta coverage block (default), Summary callout, or both",
+    )
     args = parser.parse_args()
 
     if args.input:
@@ -138,9 +211,16 @@ def main() -> int:
         print(f"{args.field} must be an array", file=sys.stderr)
         return 1
 
-    block = render_block(records)
+    block = render_block(records) if args.section in ("meta", "all") else ""
+    summary = render_summary_callout(records) if args.section in ("summary", "all") else ""
+    if args.section == "summary":
+        if summary:
+            sys.stdout.write(_wrap_summary_callout(summary))
+        return 0
     if block:
         sys.stdout.write(block)
+    if summary and args.section == "all":
+        sys.stdout.write(_wrap_summary_callout(summary))
     return 0
 
 

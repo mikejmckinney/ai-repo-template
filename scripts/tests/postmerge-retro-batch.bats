@@ -437,6 +437,74 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "render-evidence-coverage-meta renders summary warning for truncated PR" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "prs": [9],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 9,
+      "diff_included": 10000,
+      "diff_total": 450000,
+      "head_included": 1000,
+      "head_total": 1000,
+      "would_truncate": true,
+      "head_truncated": false,
+      "evidence_route": "bounded",
+      "routing_context": {
+        "adaptive_enabled": false,
+        "provider_resolved": "cursor",
+        "cursor_available": true,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py --section summary "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[!WARNING]"* ]]
+  [[ "$output" == *"Evidence truncated"* ]]
+  [[ "$output" == *"PR #9"* ]]
+  [[ "$output" == *"postmerge-retro:truncation-summary:start"* ]]
+  rm -rf "$tmp"
+}
+
+@test "render-evidence-coverage-meta summary empty when no truncation" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "prs": [1],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 1,
+      "diff_included": 100,
+      "diff_total": 100,
+      "head_included": 50,
+      "head_total": 50,
+      "would_truncate": false,
+      "evidence_route": "bounded",
+      "routing_context": {
+        "adaptive_enabled": false,
+        "provider_resolved": "cursor",
+        "cursor_available": true,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py --section summary "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  rm -rf "$tmp"
+}
+
 @test "render-evidence-coverage-meta renders bounded fallback line" {
   tmp="$(mktemp -d)"
   cat >"$tmp/daily.json" <<'EOF'

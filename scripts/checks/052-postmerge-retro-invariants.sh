@@ -122,6 +122,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && grep -q 'pr_evidence_coverage' "$RETRO_DIR/validate-postmerge-retro-daily.py" 2>/dev/null \
     && grep -q 'render-evidence-coverage-meta.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'EVIDENCE_COVERAGE' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'EVIDENCE_TRUNCATION_SUMMARY' "$UMBRELLA_TEMPLATE" 2>/dev/null \
     && grep -q 'compute-evidence-coverage.py' "$RETRO_DIR/run-postmerge-retro-monolithic.sh" 2>/dev/null; then
     pass "evidence coverage pre-check + Meta render wired (#460)"
   else
