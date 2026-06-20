@@ -10,8 +10,8 @@ Daily post-merge retrospective for merges to `main` in the rolling last **{{WIND
 
 ## Findings
 
-| PR | Category | Key | Impact | Trigger | Band | Finding | Suggested fix |
-|---|---|---|---|---|---|---|---|
+| PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|---|---|
 {{FINDING_ROWS}}
 
 ## Meta

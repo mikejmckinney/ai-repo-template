@@ -52,7 +52,33 @@ EOF
   rm -rf "$tmp"
 }
 
-@test "reconstruct-daily-retro-from-umbrella parses Suggested fix column" {
+@test "reconstruct-daily-retro-from-umbrella parses 10-column triage table" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/body.md" <<'EOF'
+<!-- postmerge-retro:daily:2026-06-19 -->
+| PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|---|---|
+| #1 | follow_up_issues | `key-a` | incorrect-behavior | edge | moderate | false | should-fix | Title one | Add tests |
+EOF
+  run python3 scripts/workflows/postmerge-retro/reconstruct-daily-retro-from-umbrella.py \
+    --body-file "$tmp/body.md" -o "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].fix_cost == "moderate"' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].regression_guard == false' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].body | contains("Suggested fix")' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].impact == "incorrect-behavior"' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].priority_band == "should-fix"' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
+@test "reconstruct-daily-retro-from-umbrella parses legacy 8-column table" {
   tmp="$(mktemp -d)"
   cat >"$tmp/body.md" <<'EOF'
 <!-- postmerge-retro:daily:2026-06-19 -->
@@ -72,6 +98,64 @@ EOF
   run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py "$tmp/daily.json"
   [ "$status" -eq 0 ]
   rm -rf "$tmp"
+}
+
+@test "umbrella-findings-table migrates legacy severity header" {
+  run python3 - <<'PY'
+from pathlib import Path
+import importlib.util
+
+path = Path("scripts/workflows/postmerge-retro/umbrella-findings-table.py")
+spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+body = """## Findings
+
+| PR | Category | Dedupe key | Severity | Suggested action |
+|---|---|---|---|---|
+| #1 | follow_up_issues | `k` | low | fix |
+
+## Meta
+x
+"""
+out, migrated = mod.migrate_findings_table(body)
+assert migrated
+assert mod.FINDINGS_HEADER in out
+assert "Severity" not in out.split("## Meta")[0]
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "umbrella-findings-table format_row emits triage columns" {
+  run python3 - <<'PY'
+from pathlib import Path
+import importlib.util
+
+path = Path("scripts/workflows/postmerge-retro/umbrella-findings-table.py")
+spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+row = mod.format_row(
+    {
+        "pr": 42,
+        "category": "adr_updates",
+        "dedupe_key": "adr-k",
+        "impact": "dx-perf-doc",
+        "trigger_likelihood": "common",
+        "fix_cost": "trivial",
+        "regression_guard": True,
+        "priority_band": "defer",
+        "title": "T",
+    },
+    suggested_fix="Do thing",
+)
+assert "| trigger_likelihood |" not in row
+assert "| common |" in row
+assert "| true |" in row
+PY
+  [ "$status" -eq 0 ]
 }
 
 @test "classify-finding-priority derives fix-now for incorrect-behavior + common" {

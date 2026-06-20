@@ -20,6 +20,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   RESOLVE_UMBRELLA_SCRIPT="${RETRO_DIR}/resolve-umbrella-issue.sh"
   WRITE_UMBRELLA_REF_SCRIPT="${RETRO_DIR}/write-umbrella-issue-ref.sh"
   UMBRELLA_SCRIPT="${RETRO_DIR}/create-umbrella-issue.sh"
+  UMBRELLA_TABLE_SCRIPT="${RETRO_DIR}/umbrella-findings-table.py"
   LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
   LINK_SCRIPT="scripts/workflows/lib/link-fix-pr-to-issue.sh"
@@ -86,9 +87,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'Suggested fix' "$UMBRELLA_TEMPLATE" 2>/dev/null \
-    && grep -q '| Impact | Trigger | Band |' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'trigger_likelihood' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'fix_cost' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'regression_guard' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'umbrella-findings-table.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'extract-suggested-fix.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && grep -q 'trigger_likelihood' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'migrate_findings_table' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'trigger_likelihood' "$UMBRELLA_TABLE_SCRIPT" 2>/dev/null \
     && grep -q 'Current main (HEAD)' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'mark-superseded-findings.py' "$FIX_SCRIPT" 2>/dev/null; then
     pass "layers B–D: HEAD lens, superseded helper, triage umbrella columns + Suggested fix"
