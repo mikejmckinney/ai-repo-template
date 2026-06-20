@@ -262,7 +262,11 @@ fix step → draft PR retro/fix-YYYY-MM-DD (skip if zero findings)
 | **A — merge dedupe** | Skip per-PR retro when `merge_commit_sha` is indexed in umbrella Meta (`<!-- postmerge-retro:merge:<sha> pr:N -->`). Override with `force_re_retro_prs` or `ignore_retro_dedupe=true`. |
 | **B — HEAD lens** | Retro prompt injects current `main` file snapshots for PR-touched paths; do not emit findings already resolved on HEAD. |
 | **C — fix superseded** | `mark-superseded-findings.py` pre-flags findings whose missing-file evidence is contradicted on HEAD (path-token matching — not naive substring; files **and** directories); fix agent sets `cant_reproduce`. |
-| **D — umbrella column** | Table column **Suggested fix** (from finding `## Suggested fix` excerpt). |
+| **D — umbrella column** | Table columns **Impact**, **Trigger**, **Band**, **Finding**, and **Suggested fix** (from finding `## Suggested fix` excerpt). `priority_band` is derived at validate/merge time from LLM-emitted `impact`, `trigger_likelihood`, `fix_cost`, and optional `regression_guard` on all finding buckets (`follow_up_issues`, `adr_updates`, `context_pack_updates`). |
+
+**Finding classifier (#456):** LLM emits triage fields on every row in all three buckets; automation derives `priority_band` via `classify-finding-priority.py` (see `.context/benchmarks/retro-execution-447/RESULTS.md`). Deprecated `severity` is rejected.
+
+**Parallel execution:** `run-postmerge-retro-parallel.sh` caps concurrent per-PR retros at **`POSTMERGE_RETRO_PARALLEL_MAX`** (default **6**).
 
 **Legacy v1 scripts** (`postmerge-retro-create-issues.sh`, per-PR issue markers) remain for reference; v2 does not create per-finding issues.
 
@@ -562,6 +566,7 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `FINALIZE_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for finalize inbox rule injection: `standard`, `pr-review`, or `full`. |
 | `POSTMERGE_RETRO_CONTEXT_PROFILE` | `full` | Catalog read profile for post-merge retro rule injection: `standard`, `pr-review`, or `full`. |
 | `POSTMERGE_RETRO_ONLY_PRS` | *(unset)* | Comma-separated PR numbers; when set, daily retro runs only those PRs (sandbox smoke/A-B). |
+| `POSTMERGE_RETRO_PARALLEL_MAX` | `6` | Max concurrent per-PR retro jobs when `POSTMERGE_RETRO_EXECUTION_MODE=parallel`. Override via `workflow_dispatch` input `parallel_max` or repo variable. |
 | `PR_RESOLVE_MAX_ROUNDS` | `3` | Max rounds `pr-resolve-all.md` runs per PR before escalating. **Also caps `agent-review-on-push.yml`** so Gemini/Copilot push-nudges stop firing after the same N rounds — without this, every fix-commit re-triggers stateless reviewers that re-flag already-deferred findings (PR #246 saw this across 13 rounds). Per-PR override: `cap-override` label on the PR (unbounded; bypasses both the agent-side cap and the push-nudge cap) or `@<agent> cap-override N` comment on the PR (N rounds). Manual `/gemini review` comments by humans are never gated. Only raise the default from 3 when a recurring class of PRs genuinely needs more rounds — raising it casually defeats the cost discipline the cap was designed to enforce. **Override justification (issue #229 Phase 4):** when override is in effect AND the round count is > 3, every Resolution Report from round 4 onward must include a literal `Override justification: <category>` line under `### Summary`. Categories: `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <≤80-char reason>`. Judge BLOCKs at diff-gate when the line is missing or its category text is malformed (`.github/agents/judge.agent.md` item 15). See `docs/guides/agent-pipeline.md` § "Manual Intervention Points" for the escape hatch. |
 
 ### 1. Copilot subscription

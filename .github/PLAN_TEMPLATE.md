@@ -22,17 +22,13 @@ v1 has no formal approval gate (see ADR-011). The plan is a documented
 artifact reviewed at PR-time. Approval-gating, expiry rules, and
 automated CI enforcement are deferred to issue #155.
 
-If your actual diff diverges from the plan by more than ~30% in file count
-or scope, post a "Plan revision" comment on the same issue before pushing
-the divergent code, so reviewers see what changed and why.
-
 After posting the plan comment (or any revision), copy the comment's
 permalink into the PR's `## Plan` section and refresh the
 "Latest in 1–2 sentences" line. The PR body is the breadcrumb that
 sends reviewers to the canonical version on the issue; an out-of-date
 breadcrumb is the failure mode this template is here to prevent.
 
-If the revision happens after a PR is already open, do that refresh in
+If a revision happens after a PR is already open, do that refresh in
 the same push as the divergent code and tick the matching box in the
 PR template's `## Plan revision sync` section, so re-runs don't
 evaluate stale intent.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import subprocess
@@ -10,9 +11,25 @@ import sys
 from pathlib import Path
 
 ROW_RE = re.compile(
-    r"^\|\s*#(\d+)\s*\|\s*([^|]+)\|\s*`([^`]+)`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*$"
+    r"^\|\s*#(\d+)\s*\|\s*([^|]+)\|\s*`([^`]+)`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*$"
 )
 MARKER_RE = re.compile(r"<!-- postmerge-retro:daily:(\d{4}-\d{2}-\d{2}) -->")
+
+
+def _load_classifier():
+    path = Path(__file__).resolve().parent / "classify-finding-priority.py"
+    spec = importlib.util.spec_from_file_location("classify_finding_priority", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load classifier from {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_CL = _load_classifier()
+FIX_COSTS = _CL.FIX_COSTS
+derive_priority_band = _CL.derive_priority_band
+apply_triage_to_item = _CL.apply_triage_to_item
 
 
 def _labels_for(category: str) -> list[str]:
@@ -21,6 +38,17 @@ def _labels_for(category: str) -> list[str]:
     if category == "context_pack_updates":
         return ["context-pack"]
     return ["agent-suggested"]
+
+
+def _infer_fix_cost_and_guard(impact: str, trigger: str, table_band: str) -> tuple[str, bool]:
+    """Best-effort triage fields when umbrella table omits fix_cost."""
+    for fix_cost in ("trivial", "moderate", "large"):
+        for guard in (False, True):
+            if guard and trigger == "fringe":
+                continue
+            if derive_priority_band(impact, trigger, fix_cost, regression_guard=guard) == table_band:
+                return fix_cost, guard
+    return "moderate", False
 
 
 def parse_umbrella_body(body: str, run_date: str | None) -> dict:
@@ -48,28 +76,47 @@ def parse_umbrella_body(body: str, run_date: str | None) -> dict:
         pr = int(match.group(1))
         category = match.group(2).strip()
         dedupe_key = match.group(3).strip()
-        severity = match.group(4).strip() or "medium"
-        title = match.group(5).strip()
-        suggested_fix = match.group(6).strip()
+        impact = match.group(4).strip()
+        trigger_likelihood = match.group(5).strip()
+        table_band = match.group(6).strip()
+        title = match.group(7).strip()
+        suggested_fix = match.group(8).strip()
         prs.add(pr)
-        body = (
+        fix_cost, regression_guard = _infer_fix_cost_and_guard(
+            impact, trigger_likelihood, table_band
+        )
+        finding_body = (
             f"Reconstructed from umbrella issue table for {run_date}.\n\n"
             f"**Finding:** {title}\n\n"
             f"**Suggested fix:** {suggested_fix}\n\n"
             f"**Dedupe key:** `{dedupe_key}`"
         )
-        findings.append(
-            {
-                "pr": pr,
-                "category": category,
-                "title": title,
-                "severity": severity,
-                "body": body,
-                "dedupe_key": dedupe_key,
-                "evidence": [f"umbrella-table:{run_date}"],
-                "labels": _labels_for(category),
-            }
-        )
+        row: dict = {
+            "pr": pr,
+            "category": category,
+            "title": title,
+            "impact": impact,
+            "trigger_likelihood": trigger_likelihood,
+            "fix_cost": fix_cost,
+            "regression_guard": regression_guard,
+            "body": finding_body,
+            "dedupe_key": dedupe_key,
+            "evidence": [f"umbrella-table:{run_date}"],
+            "labels": _labels_for(category),
+        }
+        if category == "follow_up_issues":
+            row["repro_steps"] = [
+                "Reconstructed from umbrella findings table; re-run per-PR retro for concrete repro steps."
+            ]
+        apply_triage_to_item(row, f"findings[{len(findings)}]")
+        derived_band = row.get("priority_band")
+        if derived_band != table_band:
+            print(
+                f"::warning::Reconstructed band for `{dedupe_key}` is {derived_band!r}; "
+                f"umbrella table had {table_band!r} (inferred fix_cost={fix_cost!r})",
+                file=sys.stderr,
+            )
+        findings.append(row)
 
     if not findings:
         print("No findings rows parsed from umbrella table", file=sys.stderr)

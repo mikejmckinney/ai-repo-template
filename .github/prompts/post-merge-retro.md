@@ -38,7 +38,10 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
     {
       "title": "string",
       "labels": ["agent-suggested"],
-      "severity": "low|medium|high",
+      "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
+      "trigger_likelihood": "common|edge|fringe",
+      "fix_cost": "trivial|moderate|large",
+      "regression_guard": false,
       "body": "markdown body",
       "evidence": ["string"],
       "repro_steps": ["step 1 to reproduce", "step 2 observe failure"],
@@ -50,6 +53,10 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
       "adr": "docs/decisions/adr-019-per-role-model-tiering.md",
       "title": "string",
       "body": "markdown body",
+      "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
+      "trigger_likelihood": "common|edge|fringe",
+      "fix_cost": "trivial|moderate|large",
+      "regression_guard": false,
       "dedupe_key": "stable-short-key"
     }
   ],
@@ -60,11 +67,33 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
       "add": ["path"],
       "remove": ["path"],
       "evidence": ["string"],
+      "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
+      "trigger_likelihood": "common|edge|fringe",
+      "fix_cost": "trivial|moderate|large",
+      "regression_guard": false,
       "dedupe_key": "stable-short-key"
     }
   ]
 }
 ```
+
+## Finding triage (all buckets)
+
+Every row in **`follow_up_issues`**, **`adr_updates`**, and **`context_pack_updates`** must include:
+
+| Field | Values | Meaning |
+|---|---|---|
+| `impact` | `incorrect-behavior` \| `dx-perf-doc` \| `meta-harness` | Incorrect output on realistic input vs fails-safe DX/perf vs harness/sandbox meta |
+| `trigger_likelihood` | `common` \| `edge` \| `fringe` | Fires on normal inputs vs unusual shape vs rare path |
+| `fix_cost` | `trivial` \| `moderate` \| `large` | Implementation cost |
+| `regression_guard` | `true` \| `false` (optional, default false) | `true` only for invariant/test/check rows that prevent silent regression |
+
+**Do not emit** deprecated `severity` or derived `priority_band` — automation stamps `priority_band` at validate/merge time.
+
+Rules:
+
+- Use `fix_cost=trivial` + `regression_guard=true` **only** for cheap test/invariant guards — not for general small fixes.
+- Do not set `regression_guard=true` when `trigger_likelihood=fringe`.
 
 ## Dedupe keys
 

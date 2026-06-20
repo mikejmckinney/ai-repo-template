@@ -20,7 +20,7 @@ if [[ ${#SELECTED_PRS[@]} -eq 0 ]]; then
   exit 0
 fi
 
-max_parallel="${POSTMERGE_RETRO_PARALLEL_MAX:-${#SELECTED_PRS[@]}}"
+max_parallel="${POSTMERGE_RETRO_PARALLEL_MAX:-6}"
 echo "Parallel retro: ${#SELECTED_PRS[@]} PR(s), max_parallel=${max_parallel}"
 
 tmpdir="$(mktemp -d)"

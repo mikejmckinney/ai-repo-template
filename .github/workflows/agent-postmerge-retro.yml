@@ -60,6 +60,10 @@ on:
         description: "Monolithic Arm B per-PR diff byte cap (POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR; default matches POSTMERGE_RETRO_DIFF_LIMIT)"
         required: false
         type: string
+      parallel_max:
+        description: "Max concurrent per-PR retro jobs when benchmark_arm=parallel (POSTMERGE_RETRO_PARALLEL_MAX; default 6)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -93,6 +97,7 @@ jobs:
       POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
       FIX_JOB_SANDBOX_VERIFY: ${{ vars.FIX_JOB_SANDBOX_VERIFY || 'false' }}
       POSTMERGE_RETRO_EXECUTION_MODE: ${{ github.event.inputs.benchmark_arm || 'sequential' }}
+      POSTMERGE_RETRO_PARALLEL_MAX: ${{ github.event.inputs.parallel_max || vars.POSTMERGE_RETRO_PARALLEL_MAX || '6' }}
     steps:
       - name: Verify required secrets
         env:

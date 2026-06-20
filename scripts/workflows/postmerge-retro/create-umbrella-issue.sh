@@ -50,7 +50,8 @@ for f in data.get("findings") or []:
         text=True,
     ).strip().replace("|", "/")
     rows.append(
-        f"| #{f['pr']} | {f['category']} | `{f['dedupe_key']}` | {f.get('severity') or 'medium'} | {title} | {suggested} |"
+        f"| #{f['pr']} | {f['category']} | `{f['dedupe_key']}` | {f.get('impact', '')} | "
+        f"{f.get('trigger_likelihood', '')} | {f.get('priority_band', '')} | {title} | {suggested} |"
     )
 Path(sys.argv[2]).write_text("\n".join(rows) + ("\n" if rows else ""))
 PY
