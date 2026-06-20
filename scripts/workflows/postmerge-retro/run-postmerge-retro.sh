@@ -85,7 +85,7 @@ case "$evidence_route" in
     source "$LIB_DIR/cursor-sdk-version.sh"
     if npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1 \
       && CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
-      node "$SCRIPT_DIR/run-postmerge-retro-full-cursor.mjs" "$prompt_file" "$llm_raw"; then
+        node "$SCRIPT_DIR/run-postmerge-retro-full-cursor.mjs" "$prompt_file" "$llm_raw"; then
       provider_used="cursor-full-evidence"
     else
       echo "::warning::Full-evidence Cursor retro failed for PR #${PR}; falling back to bounded truncated pass" >&2

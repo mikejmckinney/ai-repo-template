@@ -203,7 +203,7 @@ done
       continue
     fi
     size="$(wc -c <"$target" | tr -d ' ')"
-    if [[ "$PROMPT_MODE" == "full-evidence" && ( "$size" -gt "$head_file_cap" || "$head_total" -ge "$head_total_cap" ) ]]; then
+    if [[ "$PROMPT_MODE" == "full-evidence" && ("$size" -gt "$head_file_cap" || "$head_total" -ge "$head_total_cap") ]]; then
       echo "#### \`${rel}\`"
       echo ""
       echo "_Full file on main HEAD (${size} bytes) — **read from repo**: \`${rel}\`_"
