@@ -505,6 +505,72 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "render-evidence-coverage-meta merges summary into legacy umbrella body" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "prs": [9],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 9,
+      "diff_included": 10000,
+      "diff_total": 20601,
+      "head_included": 1000,
+      "head_total": 1000,
+      "would_truncate": true,
+      "evidence_route": "bounded",
+      "routing_context": {
+        "adaptive_enabled": false,
+        "provider_resolved": "cursor",
+        "cursor_available": true,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  cat >"$tmp/body.md" <<'EOF'
+## Summary
+
+**PRs in this update:** #9
+
+## Findings
+
+| PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|---|---|
+| 9 | test | `key-1` | low | low | low | none | info | x | y |
+
+## Meta
+
+**Evidence coverage**
+
+- PR #9 — diff 10000/20601 (truncated); route: bounded; provider: cursor; antigravity: false
+EOF
+  run python3 - "$tmp/body.md" "$tmp/daily.json" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+body = Path(sys.argv[1]).read_text(encoding="utf-8")
+data = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+path = Path("scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py")
+spec = importlib.util.spec_from_file_location("render_evidence_coverage_meta", path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+records = data.get("pr_evidence_coverage") or []
+print(mod.merge_summary_into_body(body, records))
+PY
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[!WARNING]"* ]]
+  [[ "$output" == *"Evidence truncated"* ]]
+  [[ "$output" == *"## Findings"* ]]
+  [[ "$output" == *"postmerge-retro:truncation-summary:start"* ]]
+  rm -rf "$tmp"
+}
+
 @test "render-evidence-coverage-meta renders bounded fallback line" {
   tmp="$(mktemp -d)"
   cat >"$tmp/daily.json" <<'EOF'
