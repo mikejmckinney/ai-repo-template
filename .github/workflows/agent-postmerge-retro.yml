@@ -93,6 +93,9 @@ jobs:
       FIX_JOB_SANDBOX_VERIFY: ${{ vars.FIX_JOB_SANDBOX_VERIFY || 'false' }}
       POSTMERGE_RETRO_EXECUTION_MODE: ${{ github.event.inputs.benchmark_arm || 'sequential' }}
       POSTMERGE_RETRO_PARALLEL_MAX: ${{ github.event.inputs.parallel_max || vars.POSTMERGE_RETRO_PARALLEL_MAX || '6' }}
+      POSTMERGE_RETRO_ADAPTIVE_EVIDENCE: ${{ vars.POSTMERGE_RETRO_ADAPTIVE_EVIDENCE || 'true' }}
+      POSTMERGE_RETRO_ANTIGRAVITY_ON_TRUNCATE: ${{ vars.POSTMERGE_RETRO_ANTIGRAVITY_ON_TRUNCATE || 'true' }}
+      ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
     steps:
       - name: Verify required secrets
         env:

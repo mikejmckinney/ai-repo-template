@@ -31,14 +31,12 @@ parse_positive_int() {
 }
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ADVISORY_DIR="$REPO_ROOT/scripts/workflows/advisory-review"
-REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
+LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 DEFAULT_DIFF_LIMIT=300000
 diff_limit="$(parse_positive_int POSTMERGE_RETRO_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${POSTMERGE_RETRO_DIFF_LIMIT:-}")"
-context_profile="${POSTMERGE_RETRO_CONTEXT_PROFILE:-full}"
 
 bash "$SCRIPT_DIR/collect-postmerge-evidence.sh" "$PR" "$WORKDIR"
 
@@ -58,249 +56,67 @@ if [[ -z "$merged_at" || "$merged_at" == "null" ]]; then
   exit 1
 fi
 
-HEAD_SHA="$(jq -r .head.sha "$WORKDIR/pr.json")"
 MERGE_SHA="$(jq -r '.merge_commit_sha // .head.sha' "$WORKDIR/pr.json")"
+jq -r '.body // ""' "$WORKDIR/pr.json" >"$WORKDIR/pr-body.md"
 
-pr_json="$(cat "$WORKDIR/pr.json")"
-pr_title="$(printf '%s' "$pr_json" | jq -r '.title // ""')"
-pr_body="$(printf '%s' "$pr_json" | jq -r '.body // ""')"
-pr_url="$(printf '%s' "$pr_json" | jq -r '.html_url // ""')"
-merged_at="$(printf '%s' "$pr_json" | jq -r '.merged_at // ""')"
-labels="$(jq -r '.[]?.name // empty' "$WORKDIR/labels.json" 2>/dev/null | paste -sd ', ' - || true)"
-
-full_diff_bytes="$(wc -c <"$WORKDIR/diff.patch" | tr -d ' ')"
-truncated=false
-diff_included="$full_diff_bytes"
-if [[ "$full_diff_bytes" -gt "$diff_limit" ]]; then
-  truncated=true
-  diff_included="$diff_limit"
-fi
-diff_text="$(head -c "$diff_limit" "$WORKDIR/diff.patch")"
-truncated_word="no"
-[[ "$truncated" == "true" ]] && truncated_word="yes"
-
-LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
-reviews_json_compact="$(
-  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
-    --input "$WORKDIR/reviews.json" \
-    --jq-filter 'map({id, user: (.user?.login // null), body, state, commit_id})' \
-    --max-bytes 120000
-)"
-comments_json_compact="$(
-  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
-    --input "$WORKDIR/review-comments.json" \
-    --jq-filter 'map({id, path, line, user: (.user?.login // null), body})' \
-    --max-bytes 120000
-)"
-
-if ! python3 "$LIB_DIR/prompt_helpers.py" select-context \
-  --profile "$context_profile" \
-  --changed-files "$WORKDIR/changed-files.txt" >"$WORKDIR/context-files.txt"; then
-  echo "::error::select-context failed for profile ${context_profile}" >&2
-  exit 1
-fi
-if [[ ! -s "$WORKDIR/context-files.txt" ]]; then
-  echo "::error::select-context returned no files for profile ${context_profile}" >&2
-  exit 1
-fi
-mapfile -t context_files <"$WORKDIR/context-files.txt"
-
-context_file_count="${#context_files[@]}"
-context_bytes=0
-for rel in "${context_files[@]}"; do
-  if [[ -f "$REPO_ROOT/$rel" ]]; then
-    context_bytes=$((context_bytes + $(wc -c <"$REPO_ROOT/$rel" | tr -d ' ')))
-  fi
-done
-
-# Retro prompt cites ADR-027; inject after catalog selection (not in full-rules floor).
-RETRO_EXTRA_CONTEXT=(
-  "docs/decisions/adr-027-opportunity-feedback-channel.md"
-)
-for extra in "${RETRO_EXTRA_CONTEXT[@]}"; do
-  found=0
-  for rel in "${context_files[@]}"; do
-    [[ "$rel" == "$extra" ]] && found=1 && break
-  done
-  if [[ "$found" -eq 0 && -f "$REPO_ROOT/$extra" ]]; then
-    context_files+=("$extra")
-    context_bytes=$((context_bytes + $(wc -c <"$REPO_ROOT/$extra" | tr -d ' ')))
-    context_file_count="${#context_files[@]}"
-  fi
-done
-
-prompt_file="$WORKDIR/prompt.md"
-{
-  cat "$REPO_ROOT/.github/prompts/post-merge-retro.md"
-  echo ""
-  echo "---"
-  echo ""
-  echo "## Repo startup context (automation-supplied, catalog-driven ${context_profile} + path triggers)"
-  echo ""
-  echo "- Context profile: \`${context_profile}\`"
-  echo "- Context files injected: \`${context_file_count}\`"
-  echo "- Context bytes injected: \`${context_bytes}\`"
-  echo ""
-  for rel in "${context_files[@]}"; do
-    echo "### ${rel}"
-    echo ""
-    cat "$REPO_ROOT/$rel"
-    echo ""
-  done
-  echo "---"
-  echo ""
-  echo "## Merged PR context (automation-supplied)"
-  echo ""
-  echo "- Repository: \`${REPO}\`"
-  echo "- PR: #${PR} — ${pr_title}"
-  echo "- URL: ${pr_url}"
-  echo "- Head SHA: \`${HEAD_SHA}\`"
-  echo "- Merge commit SHA: \`${MERGE_SHA}\`"
-  echo "- Merged at: ${merged_at}"
-  echo "- Labels at merge: \`${labels}\`"
-  echo "- Diff bytes total: \`${full_diff_bytes}\`"
-  echo "- Diff bytes included: \`${diff_included}\`"
-  echo "- Diff truncated: \`${truncated_word}\`"
-  echo ""
-  echo "### Collection summary"
-  echo ""
-  cat "$WORKDIR/summary.txt"
-  echo ""
-  echo "### PR body"
-  echo ""
-  printf '%s\n' "$pr_body"
-  echo ""
-  echo "### Changed files"
-  echo ""
-  sed 's/^/- /' "$WORKDIR/changed-files.txt"
-  echo ""
-  echo "### Formal PR reviews (JSON excerpt)"
-  echo ""
-  echo '```json'
-  printf '%s\n' "$reviews_json_compact"
-  echo ""
-  echo '```'
-  echo ""
-  echo "### Inline review comments (JSON excerpt)"
-  echo ""
-  echo '```json'
-  printf '%s\n' "$comments_json_compact"
-  echo ""
-  echo '```'
-  echo ""
-  if [[ -s "$WORKDIR/advisory-comments.md" ]]; then
-    echo "### Advisory snapshots"
-    echo ""
-    cat "$WORKDIR/advisory-comments.md"
-    echo ""
-  fi
-  if [[ -s "$WORKDIR/prior-inbox.md" ]]; then
-    echo "### Feedback inbox comments"
-    echo ""
-    cat "$WORKDIR/prior-inbox.md"
-    echo ""
-  fi
-  echo "### Current main (HEAD) state for PR-touched paths"
-  echo ""
-  echo "Compare against this section before emitting findings. **Do not emit a finding** when the issue is already resolved on \`main\` HEAD."
-  echo ""
-  head_file_cap=12000
-  head_total_cap=120000
-  head_total=0
-  while IFS= read -r rel; do
-    [[ -z "$rel" ]] && continue
-    target="$REPO_ROOT/$rel"
-    if [[ ! -f "$target" ]]; then
-      echo "#### \`${rel}\`"
-      echo ""
-      echo "_File absent on main HEAD._"
-      echo ""
-      continue
-    fi
-    size="$(wc -c <"$target" | tr -d ' ')"
-    if [[ "$head_total" -ge "$head_total_cap" ]]; then
-      echo "_HEAD snapshot budget exhausted; remaining paths omitted._"
-      break
-    fi
-    take="$size"
-    if [[ "$take" -gt "$head_file_cap" ]]; then
-      take="$head_file_cap"
-    fi
-    if [[ $((head_total + take)) -gt "$head_total_cap" ]]; then
-      take=$((head_total_cap - head_total))
-    fi
-    echo "#### \`${rel}\`"
-    echo ""
-    echo '```'
-    head -c "$take" "$target"
-    if [[ "$take" -lt "$size" ]]; then
-      printf '\n... (truncated; %s bytes total on HEAD)\n' "$size"
-    fi
-    echo '```'
-    echo ""
-    head_total=$((head_total + take))
-  done <"$WORKDIR/changed-files.txt"
-  echo "### Diff (truncated excerpt)"
-  echo ""
-  echo '```diff'
-  printf '%s\n' "$diff_text"
-  echo '```'
-  echo ""
-  echo "---"
-  echo ""
-  echo "## Output instruction (automation-supplied)"
-  echo ""
-  echo "Respond with **JSON only** matching the required shape. Set \`pr\` to ${PR}."
-} >"$prompt_file"
-
-has_cursor=0
-has_gemini=0
-[[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
-[[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
-
-pick_provider() {
-  local want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
-  if [[ "$want" == "antigravity" ]]; then
-    echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (cursor, else gemini)." >&2
-    want=auto
-  fi
-  case "$want" in
-    cursor) echo cursor ;;
-    gemini) echo gemini ;;
-    auto)
-      if [[ "$has_cursor" -eq 1 ]]; then
-        echo cursor
-      elif [[ "$has_gemini" -eq 1 ]]; then
-        echo gemini
-      else
-        echo ""
-      fi
-      ;;
-    *)
-      echo "::error::Unknown POSTMERGE_RETRO_PROVIDER=${want} (use auto, cursor, or gemini)"
-      exit 1
-      ;;
-  esac
+mark_bounded_fallback() {
+  python3 "$SCRIPT_DIR/compute-evidence-coverage.py" \
+    --warn-record "$COVERAGE_JSON" \
+    --set-route bounded-fallback
 }
 
-PROVIDER="$(pick_provider)"
-if [[ -z "$PROVIDER" ]]; then
-  echo "::error::No post-merge retro provider configured. Set CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
-  exit 1
-fi
+run_bounded_pass() {
+  bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON"
+}
 
+evidence_route="$(jq -r '.evidence_route // "bounded"' "$COVERAGE_JSON")"
 llm_raw="$WORKDIR/llm-output.txt"
-case "$PROVIDER" in
-  cursor)
+provider_used=""
+
+case "$evidence_route" in
+  bounded | bounded-fallback)
+    run_bounded_pass
+    provider_used="$(jq -r '.routing_context.provider_resolved // "bounded"' "$COVERAGE_JSON")"
+    ;;
+  full-evidence-cursor)
+    prompt_file="$WORKDIR/prompt.md"
+    bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" full-evidence "$prompt_file"
     # shellcheck source=../lib/cursor-sdk-version.sh
     source "$LIB_DIR/cursor-sdk-version.sh"
-    npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
-    CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
-      node "$ADVISORY_DIR/run-advisory-cursor.mjs" "$prompt_file" "$llm_raw"
+    if npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1 \
+      && CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
+        node "$SCRIPT_DIR/run-postmerge-retro-full-cursor.mjs" "$prompt_file" "$llm_raw"; then
+      provider_used="cursor-full-evidence"
+    else
+      echo "::warning::Full-evidence Cursor retro failed for PR #${PR}; falling back to bounded truncated pass" >&2
+      mark_bounded_fallback
+      run_bounded_pass
+      provider_used="$(jq -r '.routing_context.provider_resolved // "bounded"' "$COVERAGE_JSON")-fallback"
+    fi
     ;;
-  gemini)
-    GEMINI_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}" \
-      python3 "$ADVISORY_DIR/run-advisory-gemini.py" "$prompt_file" "$llm_raw"
+  full-evidence-antigravity)
+    prompt_file="$WORKDIR/prompt.md"
+    bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" full-evidence "$prompt_file"
+    ag_rc=0
+    python3 "$SCRIPT_DIR/run-postmerge-retro-antigravity.py" \
+      "$REPO_ROOT" "$WORKDIR" "$prompt_file" "$llm_raw" || ag_rc=$?
+    if [[ "$ag_rc" -eq 0 ]]; then
+      provider_used="antigravity-full-evidence"
+    else
+      if [[ "$ag_rc" -eq 3 ]]; then
+        echo "::warning::Antigravity retro payload too large for PR #${PR}; falling back to bounded truncated pass" >&2
+      else
+        echo "::warning::Antigravity full-evidence retro failed for PR #${PR}; falling back to bounded truncated pass" >&2
+      fi
+      mark_bounded_fallback
+      run_bounded_pass
+      provider_used="$(jq -r '.routing_context.provider_resolved // "gemini"' "$COVERAGE_JSON")-fallback"
+    fi
+    ;;
+  *)
+    echo "::warning::Unknown evidence_route=${evidence_route}; using bounded pass" >&2
+    run_bounded_pass
+    provider_used="bounded"
     ;;
 esac
 
@@ -310,6 +126,7 @@ jq --arg sha "$MERGE_SHA" '. + {merge_commit_sha: $sha}' "$retro_json" >"$WORKDI
 mv "$WORKDIR/retro-with-sha.json" "$retro_json"
 python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "$retro_json"
 
+final_route="$(jq -r '.evidence_route // "bounded"' "$COVERAGE_JSON")"
 cp -f "$retro_json" "$WORKDIR/retro.json.final"
 if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
   artifact_dir="${GITHUB_WORKSPACE}/.artifacts/postmerge-retro/pr-${PR}"
@@ -320,7 +137,7 @@ if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
   cp -f "$WORKDIR/pr.json" "$artifact_dir/pr.json" 2>/dev/null || true
   cp -f "$WORKDIR/changed-files.txt" "$artifact_dir/changed-files.txt" 2>/dev/null || true
 fi
-echo "Post-merge retro JSON written for PR #${PR} via ${PROVIDER}"
+echo "Post-merge retro JSON written for PR #${PR} route=${final_route} provider=${provider_used}"
 
 if [[ "$CREATE_ISSUES" == "true" || "$CREATE_ISSUES" == "1" ]]; then
   bash "$SCRIPT_DIR/postmerge-retro-create-issues.sh" "$retro_json"
@@ -329,4 +146,4 @@ else
   cat "$retro_json"
 fi
 
-echo "Post-merge retrospective complete for PR #${PR} @ merge ${MERGE_SHA}"
+echo "Post-merge retrospective complete for PR #${PR} @ merge ${MERGE_SHA} (route=${final_route})"

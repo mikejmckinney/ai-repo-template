@@ -16,6 +16,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
   CLASSIFIER_SCRIPT="${RETRO_DIR}/classify-finding-priority.py"
   COVERAGE_SCRIPT="${RETRO_DIR}/compute-evidence-coverage.py"
+  BOUNDED_SCRIPT="${RETRO_DIR}/run-postmerge-retro-bounded.sh"
+  FULL_CURSOR_SCRIPT="${RETRO_DIR}/run-postmerge-retro-full-cursor.mjs"
+  ANTIGRAVITY_RETRO_SCRIPT="${RETRO_DIR}/run-postmerge-retro-antigravity.py"
+  ASSEMBLE_PROMPT_SCRIPT="${RETRO_DIR}/assemble-retro-prompt.sh"
   COVERAGE_META_SCRIPT="${RETRO_DIR}/render-evidence-coverage-meta.py"
   DAILY_SCHEMA=".github/schemas/postmerge-retro-daily.schema.json"
   PARALLEL_SCRIPT="${RETRO_DIR}/run-postmerge-retro-parallel.sh"
@@ -39,7 +43,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
     "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$CHECKOUT_FIX_BRANCH_SCRIPT" \
     "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
-    "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA"; do
+    "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA" \
+    "$BOUNDED_SCRIPT" "$FULL_CURSOR_SCRIPT" "$ANTIGRAVITY_RETRO_SCRIPT" "$ASSEMBLE_PROMPT_SCRIPT"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -98,7 +103,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && grep -q 'extract-suggested-fix.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'migrate_findings_table' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'trigger_likelihood' "$UMBRELLA_TABLE_SCRIPT" 2>/dev/null \
-    && grep -q 'Current main (HEAD)' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'Current main (HEAD)' "$ASSEMBLE_PROMPT_SCRIPT" 2>/dev/null \
     && grep -q 'mark-superseded-findings.py' "$FIX_SCRIPT" 2>/dev/null; then
     pass "layers B–D: HEAD lens, superseded helper, triage umbrella columns + Suggested fix"
   else
@@ -127,6 +132,19 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "evidence coverage pre-check + Meta render wired (#460)"
   else
     fail "postmerge retro missing evidence coverage truncation visibility (#460)"
+  fi
+
+  if grep -q 'full-evidence-cursor' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-bounded.sh' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-full-cursor.mjs' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-antigravity.py' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_ADAPTIVE_EVIDENCE' "$COVERAGE_SCRIPT" 2>/dev/null \
+    && grep -q 'default=True' "$COVERAGE_SCRIPT" 2>/dev/null \
+    && grep -q 'postmerge-retro:merge-index:start' "${RETRO_DIR}/append-merge-index-markers.sh" 2>/dev/null \
+    && ! grep -q 'Indexed merge commits (automation)' "${RETRO_DIR}/append-merge-index-markers.sh" 2>/dev/null; then
+    pass "adaptive evidence routing wired (#461)"
+  else
+    fail "postmerge retro missing adaptive evidence routing (#461)"
   fi
 
   if grep -q 'POSTMERGE_RETRO_PARALLEL_MAX:-6' "$PARALLEL_SCRIPT" 2>/dev/null \
@@ -280,10 +298,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'select-context' scripts/workflows/lib/prompt_helpers.py 2>/dev/null \
-    && grep -qE 'prompt_helpers\.py.*select-context' "$RUN_SCRIPT" 2>/dev/null; then
+    && grep -qE 'prompt_helpers\.py.*select-context' "$ASSEMBLE_PROMPT_SCRIPT" 2>/dev/null; then
     pass "post-merge retro uses catalog-driven context selection"
   else
-    fail "run-postmerge-retro.sh must use prompt_helpers select-context"
+    fail "assemble-retro-prompt.sh must use prompt_helpers select-context"
   fi
 
   if grep -q 'POSTMERGE_RETRO_CONTEXT_PROFILE' .github/workflows/agent-postmerge-retro.yml 2>/dev/null; then

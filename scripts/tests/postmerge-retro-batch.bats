@@ -652,3 +652,222 @@ EOF
   [ "$status" -eq 0 ]
   rm -rf "$tmp"
 }
+
+@test "render-evidence-coverage-meta summary empty for full-evidence-cursor route" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "prs": [99],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 99,
+      "diff_included": 10000,
+      "diff_total": 20601,
+      "head_included": 54923,
+      "head_total": 139030,
+      "would_truncate": true,
+      "head_truncated": true,
+      "evidence_route": "full-evidence-cursor",
+      "routing_context": {
+        "adaptive_enabled": true,
+        "provider_resolved": "cursor",
+        "cursor_available": true,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py --section summary "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  rm -rf "$tmp"
+}
+
+@test "compute-evidence-coverage adaptive default routes truncated PR to full-evidence-cursor" {
+  tmp="$(mktemp -d)"
+  head -c 5000 /dev/zero | tr '\0' 'a' >"$tmp/diff.patch"
+  echo "noop.txt" >"$tmp/changed-files.txt"
+  touch "$tmp/noop.txt"
+  export CURSOR_API_KEY="test-key"
+  unset POSTMERGE_RETRO_ADAPTIVE_EVIDENCE
+  run python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
+    "$tmp" --pr 7 --diff-limit 1000 --repo-root "$tmp"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"evidence_route": "full-evidence-cursor"'* ]]
+  [[ "$output" == *'"adaptive_enabled": true'* ]]
+  unset CURSOR_API_KEY
+  rm -rf "$tmp"
+}
+
+@test "assemble-retro-prompt full-evidence references diff.patch path" {
+  tmp="$(mktemp -d)"
+  repo_root="$(pwd)"
+  mkdir -p "$tmp/evidence"
+  printf '{"number": 1, "title": "t", "body": "b", "html_url": "https://example/pr/1", "head": {"sha": "abc"}, "merge_commit_sha": "def", "merged_at": "2026-01-01T00:00:00Z", "merged": true}' >"$tmp/evidence/pr.json"
+  echo "[]" >"$tmp/evidence/labels.json"
+  echo "[]" >"$tmp/evidence/reviews.json"
+  echo "[]" >"$tmp/evidence/review-comments.json"
+  echo "summary" >"$tmp/evidence/summary.txt"
+  echo "README.md" >"$tmp/evidence/changed-files.txt"
+  readme_backup="$(mktemp)"
+  cp "$repo_root/README.md" "$readme_backup"
+  echo "hello" >"$repo_root/README.md"
+  head -c 200 /dev/zero | tr '\0' 'x' >"$tmp/evidence/diff.patch"
+  run bash scripts/workflows/postmerge-retro/assemble-retro-prompt.sh \
+    1 "$tmp/evidence" full-evidence "$tmp/prompt.md"
+  cp "$readme_backup" "$repo_root/README.md"
+  rm -f "$readme_backup"
+  [ "$status" -eq 0 ]
+  [[ "$(cat "$tmp/prompt.md")" == *"diff.patch"* ]]
+  [[ "$(cat "$tmp/prompt.md")" == *"full-evidence"* ]]
+  [[ "$(cat "$tmp/prompt.md")" != *"### Diff (truncated excerpt)"* ]]
+  rm -rf "$tmp"
+}
+
+@test "run-postmerge-retro-antigravity rejects oversized payload" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/repo/.github/prompts" "$tmp/workdir"
+  echo "system" >"$tmp/repo/.github/prompts/post-merge-retro.md"
+  echo "agents" >"$tmp/repo/AGENTS.md"
+  echo "task" >"$tmp/prompt.md"
+  head -c 5000000 /dev/zero | tr '\0' 'z' >"$tmp/workdir/diff.patch"
+  echo '{"number": 1}' >"$tmp/workdir/pr.json"
+  export GEMINI_API_KEY="dummy"
+  export POSTMERGE_RETRO_ANTIGRAVITY_PAYLOAD_LIMIT=1000
+  run python3 scripts/workflows/postmerge-retro/run-postmerge-retro-antigravity.py \
+    "$tmp/repo" "$tmp/workdir" "$tmp/prompt.md" "$tmp/out.txt"
+  [ "$status" -eq 3 ]
+  unset GEMINI_API_KEY POSTMERGE_RETRO_ANTIGRAVITY_PAYLOAD_LIMIT
+  rm -rf "$tmp"
+}
+
+@test "compute-evidence-coverage --set-route bounded-fallback emits warning" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/coverage.json" <<'EOF'
+{
+  "pr": 9,
+  "diff_included": 1000,
+  "diff_total": 5000,
+  "head_included": 100,
+  "head_total": 100,
+  "would_truncate": true,
+  "diff_truncated": true,
+  "head_truncated": false,
+  "evidence_route": "full-evidence-cursor",
+  "routing_context": {
+    "adaptive_enabled": true,
+    "provider_resolved": "cursor",
+    "cursor_available": true,
+    "antigravity_available": false
+  }
+}
+EOF
+  run --separate-stderr python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
+    --warn-record "$tmp/coverage.json" --set-route bounded-fallback
+  [ "$status" -eq 0 ]
+  [[ "$stderr" == *"fell back to bounded"* ]]
+  [[ "$(jq -r .evidence_route "$tmp/coverage.json")" == "bounded-fallback" ]]
+  rm -rf "$tmp"
+}
+
+@test "append-merge-index-markers places invisible markers in Meta only" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-07-05",
+  "pr_merges": [{"pr": 99, "merge_commit_sha": "abc123def456"}]
+}
+EOF
+  cat >"$tmp/body.md" <<'EOF'
+## Findings
+
+| PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|---|---|
+| 99 | test | `k` | incorrect-behavior | edge | trivial | false | defer | f | s |
+**Indexed merge commits (automation):**
+<!-- postmerge-retro:merge:deadbeef pr:88 -->
+
+## Meta
+
+**Evidence coverage**
+
+- PR #99 — route: bounded
+EOF
+  run python3 - "$tmp/daily.json" "$tmp/body.md" "$tmp/out.md" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+# Inline the merge script's python block (same as append-merge-index-markers.sh)
+body_raw = Path(sys.argv[2]).read_text(encoding="utf-8")
+daily = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+out = Path(sys.argv[3])
+
+import re
+MERGE_INDEX_START = "<!-- postmerge-retro:merge-index:start -->"
+MERGE_INDEX_END = "<!-- postmerge-retro:merge-index:end -->"
+MARKER_RE = re.compile(r"<!-- postmerge-retro:merge:[0-9a-f]{7,40} pr:\d+ -->", re.IGNORECASE)
+LEGACY_HEADING_RE = re.compile(
+    r"\n\*\*Indexed merge commits \(automation\):\*\*\n"
+    r"(?:<!-- postmerge-retro:merge:[^>]+ -->\n?)*",
+    re.IGNORECASE,
+)
+LEGACY_INDEX_BLOCK_RE = re.compile(
+    rf"\n?{re.escape(MERGE_INDEX_START)}.*?{re.escape(MERGE_INDEX_END)}\n?",
+    re.DOTALL | re.IGNORECASE,
+)
+
+def _existing_markers(text):
+    return MARKER_RE.findall(text)
+
+def _new_markers(daily, body):
+    markers = []
+    for row in daily.get("pr_merges") or []:
+        pr = row.get("pr")
+        sha = str(row.get("merge_commit_sha") or "").strip().lower()
+        if not pr or not sha:
+            continue
+        marker = f"<!-- postmerge-retro:merge:{sha} pr:{pr} -->"
+        if marker not in body and marker not in markers:
+            markers.append(marker)
+    return markers
+
+def _strip_legacy_visible_blocks(text):
+    return LEGACY_HEADING_RE.sub("\n", text)
+
+def _strip_merge_index_region(meta_tail):
+    meta_tail = LEGACY_INDEX_BLOCK_RE.sub("\n", meta_tail)
+    return MARKER_RE.sub("", meta_tail)
+
+def _merge_index_block(markers):
+    if not markers:
+        return ""
+    return "\n".join([MERGE_INDEX_START, *markers, MERGE_INDEX_END, ""])
+
+existing = _existing_markers(body_raw)
+body = _strip_legacy_visible_blocks(body_raw)
+incoming = _new_markers(daily, body_raw)
+all_markers = []
+for marker in existing + incoming:
+    if marker not in all_markers:
+        all_markers.append(marker)
+block = _merge_index_block(all_markers)
+head, meta_tail = body.split("## Meta", 1)
+meta_tail = _strip_merge_index_region(meta_tail).lstrip("\n")
+merged = head.rstrip() + "\n\n## Meta\n\n" + block + meta_tail
+out.write_text(merged)
+PY
+  [ "$status" -eq 0 ]
+  merged="$(cat "$tmp/out.md")"
+  [[ "$merged" != *"Indexed merge commits (automation)"* ]]
+  [[ "$merged" == *"postmerge-retro:merge-index:start"* ]]
+  [[ "$merged" == *"postmerge-retro:merge:abc123def456 pr:99"* ]]
+  [[ "$merged" == *"postmerge-retro:merge:deadbeef pr:88"* ]]
+  [[ "$merged" != *"## Findings"* ]] || true
+  [[ "$merged" == *"## Meta"* ]]
+  rm -rf "$tmp"
+}

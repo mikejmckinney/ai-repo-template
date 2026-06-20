@@ -169,7 +169,7 @@ def compute_coverage(
     cursor_available = bool(os.environ.get("CURSOR_API_KEY"))
     antigravity_available = _antigravity_available()
     provider = _resolve_provider()
-    adaptive_enabled = _truthy_env("POSTMERGE_RETRO_ADAPTIVE_EVIDENCE", default=False)
+    adaptive_enabled = _truthy_env("POSTMERGE_RETRO_ADAPTIVE_EVIDENCE", default=True)
     antigravity_on_truncate = _truthy_env("POSTMERGE_RETRO_ANTIGRAVITY_ON_TRUNCATE", default=True)
 
     routing_context = {
@@ -250,8 +250,13 @@ def emit_truncation_warnings(record: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("evidence_dir", type=Path, help="Collector output directory")
-    parser.add_argument("--pr", type=int, required=True, help="PR number")
+    parser.add_argument(
+        "evidence_dir",
+        type=Path,
+        nargs="?",
+        help="Collector output directory",
+    )
+    parser.add_argument("--pr", type=int, help="PR number")
     parser.add_argument(
         "-o",
         "--output",
@@ -286,7 +291,39 @@ def main() -> int:
         action="store_true",
         help="Emit ::warning:: lines when truncation is predicted",
     )
+    parser.add_argument(
+        "--warn-record",
+        type=Path,
+        metavar="FILE",
+        help="Load evidence-coverage.json, emit warnings for its route, write back unchanged",
+    )
+    parser.add_argument(
+        "--set-route",
+        choices=EVIDENCE_ROUTES,
+        help="With --warn-record, overwrite evidence_route before emitting warnings",
+    )
     args = parser.parse_args()
+
+    if args.warn_record:
+        record_path = args.warn_record
+        if not record_path.is_file():
+            print(f"Coverage record not found: {record_path}", file=sys.stderr)
+            return 1
+        record = json.loads(record_path.read_text(encoding="utf-8"))
+        if args.set_route:
+            record["evidence_route"] = args.set_route
+            record_path.write_text(
+                json.dumps(record, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+        if record.get("would_truncate"):
+            emit_truncation_warnings(record)
+        return 0
+
+    if args.evidence_dir is None:
+        parser.error("evidence_dir is required unless --warn-record is used")
+    if args.pr is None:
+        parser.error("--pr is required unless --warn-record is used")
 
     evidence_dir = args.evidence_dir
     if not evidence_dir.is_dir():
