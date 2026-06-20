@@ -2,60 +2,103 @@
 """Merge per-PR retro.json files into one daily batch document."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 from pathlib import Path
 
 
+def _load_classifier():
+    path = Path(__file__).resolve().parent / "classify-finding-priority.py"
+    spec = importlib.util.spec_from_file_location("classify_finding_priority", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load classifier from {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_CL = _load_classifier()
+copy_triage_fields = _CL.copy_triage_fields
+
+
+def _flatten_item(
+    pr: int,
+    category: str,
+    item: dict,
+    *,
+    title: str,
+    body: str,
+    labels: list[str],
+    evidence: list[str],
+    repro_steps: list[str] | None = None,
+    path: str,
+) -> dict:
+    triage = copy_triage_fields(item, path)
+    row: dict = {
+        "pr": pr,
+        "category": category,
+        "title": title,
+        "body": body,
+        "dedupe_key": item.get("dedupe_key", ""),
+        "evidence": evidence,
+        "labels": labels,
+        **triage,
+    }
+    if repro_steps is not None:
+        row["repro_steps"] = repro_steps
+    return row
+
+
 def _flatten_pr_retro(data: dict) -> list[dict]:
     pr = int(data["pr"])
     findings: list[dict] = []
-    for item in data.get("follow_up_issues") or []:
+    for i, item in enumerate(data.get("follow_up_issues") or []):
         if not isinstance(item, dict):
             continue
         findings.append(
-            {
-                "pr": pr,
-                "category": "follow_up_issues",
-                "title": item.get("title", ""),
-                "severity": item.get("severity") or "medium",
-                "body": item.get("body", ""),
-                "dedupe_key": item.get("dedupe_key", ""),
-                "repro_steps": item.get("repro_steps") or [],
-                "evidence": item.get("evidence") or [],
-                "labels": item.get("labels") or [],
-            }
+            _flatten_item(
+                pr,
+                "follow_up_issues",
+                item,
+                title=item.get("title", ""),
+                body=item.get("body", ""),
+                labels=item.get("labels") or [],
+                evidence=item.get("evidence") or [],
+                repro_steps=item.get("repro_steps") or [],
+                path=f"follow_up_issues[{i}]",
+            )
         )
-    for item in data.get("adr_updates") or []:
+    for i, item in enumerate(data.get("adr_updates") or []):
         if not isinstance(item, dict):
             continue
         findings.append(
-            {
-                "pr": pr,
-                "category": "adr_updates",
-                "title": item.get("title", ""),
-                "severity": "medium",
-                "body": item.get("body", ""),
-                "dedupe_key": item.get("dedupe_key", ""),
-                "evidence": [item.get("adr") or ""],
-                "labels": ["adr:update"],
-            }
+            _flatten_item(
+                pr,
+                "adr_updates",
+                item,
+                title=item.get("title", ""),
+                body=item.get("body", ""),
+                labels=["adr:update"],
+                evidence=[item.get("adr") or ""],
+                path=f"adr_updates[{i}]",
+            )
         )
-    for item in data.get("context_pack_updates") or []:
+    for i, item in enumerate(data.get("context_pack_updates") or []):
         if not isinstance(item, dict):
             continue
         body = f"**Pack:** {item.get('pack', '')}\n\n**Reason:** {item.get('reason', '')}"
         findings.append(
-            {
-                "pr": pr,
-                "category": "context_pack_updates",
-                "title": f"Context pack update: {item.get('pack', '')}",
-                "severity": "medium",
-                "body": body,
-                "dedupe_key": item.get("dedupe_key", ""),
-                "evidence": item.get("evidence") or [],
-                "labels": ["context-pack"],
-            }
+            _flatten_item(
+                pr,
+                "context_pack_updates",
+                item,
+                title=f"Context pack update: {item.get('pack', '')}",
+                body=body,
+                labels=["context-pack"],
+                evidence=item.get("evidence") or [],
+                path=f"context_pack_updates[{i}]",
+            )
         )
     return findings
 

@@ -52,18 +52,230 @@ EOF
   rm -rf "$tmp"
 }
 
-@test "reconstruct-daily-retro-from-umbrella parses Suggested fix column" {
+@test "reconstruct-daily-retro-from-umbrella parses 10-column triage table" {
   tmp="$(mktemp -d)"
   cat >"$tmp/body.md" <<'EOF'
 <!-- postmerge-retro:daily:2026-06-19 -->
-| PR | Category | Dedupe key | Severity | Finding | Suggested fix |
-|---|---|---|---|---|---|
-| #1 | follow_up_issues | `key-a` | medium | Title one | Add tests |
+| PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|---|---|
+| #1 | follow_up_issues | `key-a` | incorrect-behavior | edge | moderate | false | should-fix | Title one | Add tests |
+EOF
+  run python3 scripts/workflows/postmerge-retro/reconstruct-daily-retro-from-umbrella.py \
+    --body-file "$tmp/body.md" -o "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].fix_cost == "moderate"' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].regression_guard == false' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].body | contains("Suggested fix")' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].impact == "incorrect-behavior"' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].priority_band == "should-fix"' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
+@test "reconstruct-daily-retro-from-umbrella parses legacy 8-column table" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/body.md" <<'EOF'
+<!-- postmerge-retro:daily:2026-06-19 -->
+| PR | Category | Key | Impact | Trigger | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|
+| #1 | follow_up_issues | `key-a` | incorrect-behavior | edge | should-fix | Title one | Add tests |
 EOF
   run python3 scripts/workflows/postmerge-retro/reconstruct-daily-retro-from-umbrella.py \
     --body-file "$tmp/body.md" -o "$tmp/daily.json"
   [ "$status" -eq 0 ]
   run jq -e '.findings[0].body | contains("Suggested fix")' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].impact == "incorrect-behavior"' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].priority_band == "should-fix"' "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
+@test "umbrella-findings-table migrates legacy severity header" {
+  run python3 - <<'PY'
+from pathlib import Path
+import importlib.util
+
+path = Path("scripts/workflows/postmerge-retro/umbrella-findings-table.py")
+spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+body = """## Findings
+
+| PR | Category | Dedupe key | Severity | Suggested action |
+|---|---|---|---|---|
+| #1 | follow_up_issues | `k` | low | fix |
+
+## Meta
+x
+"""
+out, migrated = mod.migrate_findings_table(body)
+assert migrated
+assert mod.FINDINGS_HEADER in out
+assert "Severity" not in out.split("## Meta")[0]
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "umbrella-findings-table format_row emits triage columns" {
+  run python3 - <<'PY'
+from pathlib import Path
+import importlib.util
+
+path = Path("scripts/workflows/postmerge-retro/umbrella-findings-table.py")
+spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+
+row = mod.format_row(
+    {
+        "pr": 42,
+        "category": "adr_updates",
+        "dedupe_key": "adr-k",
+        "impact": "dx-perf-doc",
+        "trigger_likelihood": "common",
+        "fix_cost": "trivial",
+        "regression_guard": True,
+        "priority_band": "defer",
+        "title": "T",
+    },
+    suggested_fix="Do thing",
+)
+assert "| trigger_likelihood |" not in row
+assert "| common |" in row
+assert "| true |" in row
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "classify-finding-priority derives fix-now for incorrect-behavior + common" {
+  run python3 scripts/workflows/postmerge-retro/classify-finding-priority.py \
+    --impact incorrect-behavior --trigger common --fix-cost moderate
+  [ "$status" -eq 0 ]
+  [ "$output" = "fix-now" ]
+}
+
+@test "classify-finding-priority derives should-fix for incorrect-behavior + edge" {
+  run python3 scripts/workflows/postmerge-retro/classify-finding-priority.py \
+    --impact incorrect-behavior --trigger edge --fix-cost trivial
+  [ "$status" -eq 0 ]
+  [ "$output" = "should-fix" ]
+}
+
+@test "classify-finding-priority derives should-fix for trivial regression guard" {
+  run python3 scripts/workflows/postmerge-retro/classify-finding-priority.py \
+    --impact incorrect-behavior --trigger edge --fix-cost trivial --guard true
+  [ "$status" -eq 0 ]
+  [ "$output" = "should-fix" ]
+}
+
+@test "classify-finding-priority derives defer for meta-harness fringe guard" {
+  run python3 scripts/workflows/postmerge-retro/classify-finding-priority.py \
+    --impact meta-harness --trigger fringe --fix-cost trivial --guard true
+  [ "$status" -eq 0 ]
+  [ "$output" = "defer" ]
+}
+
+@test "classify-finding-priority derives defer for dx-perf-doc fringe" {
+  run python3 scripts/workflows/postmerge-retro/classify-finding-priority.py \
+    --impact dx-perf-doc --trigger fringe --fix-cost trivial
+  [ "$status" -eq 0 ]
+  [ "$output" = "defer" ]
+}
+
+@test "validate-postmerge-retro rejects deprecated severity" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/retro.json" <<'EOF'
+{
+  "pr": 1,
+  "summary": "test",
+  "follow_up_issues": [
+    {
+      "title": "t",
+      "body": "b",
+      "dedupe_key": "k",
+      "severity": "low",
+      "repro_steps": ["step"],
+      "impact": "meta-harness",
+      "trigger_likelihood": "edge",
+      "fix_cost": "trivial"
+    }
+  ],
+  "adr_updates": [],
+  "context_pack_updates": []
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py "$tmp/retro.json"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"severity is deprecated"* ]]
+  rm -rf "$tmp"
+}
+
+@test "validate-postmerge-retro rejects LLM-emitted priority_band" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/retro.json" <<'EOF'
+{
+  "pr": 1,
+  "summary": "test",
+  "follow_up_issues": [
+    {
+      "title": "t",
+      "body": "b",
+      "dedupe_key": "k",
+      "priority_band": "defer",
+      "repro_steps": ["step"],
+      "impact": "meta-harness",
+      "trigger_likelihood": "edge",
+      "fix_cost": "trivial"
+    }
+  ],
+  "adr_updates": [],
+  "context_pack_updates": []
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py "$tmp/retro.json"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"priority_band is derived"* ]]
+  rm -rf "$tmp"
+}
+
+@test "merge-daily-retro-json propagates triage on adr_updates" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/retro.json" <<'EOF'
+{
+  "pr": 99,
+  "summary": "adr triage fixture",
+  "follow_up_issues": [],
+  "adr_updates": [
+    {
+      "adr": "docs/decisions/adr-019-per-role-model-tiering.md",
+      "title": "Clarify model tier table",
+      "body": "ADR table is ambiguous.",
+      "dedupe_key": "adr-tier-clarity",
+      "impact": "dx-perf-doc",
+      "trigger_likelihood": "fringe",
+      "fix_cost": "moderate"
+    }
+  ],
+  "context_pack_updates": []
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/merge-daily-retro-json.py 2026-06-20 "$tmp/retro.json"
+  [ "$status" -eq 0 ]
+  merged="$output"
+  run jq -e '.findings[0].category == "adr_updates"' <<<"$merged"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].priority_band == "defer"' <<<"$merged"
   [ "$status" -eq 0 ]
   rm -rf "$tmp"
 }

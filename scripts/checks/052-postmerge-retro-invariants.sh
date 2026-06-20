@@ -14,10 +14,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   DAILY_DISPATCH_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily-dispatch.sh"
   DAILY_SELECT_SCRIPT="${RETRO_DIR}/daily-retro-select-prs.sh"
   FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
+  CLASSIFIER_SCRIPT="${RETRO_DIR}/classify-finding-priority.py"
+  PARALLEL_SCRIPT="${RETRO_DIR}/run-postmerge-retro-parallel.sh"
   UMBRELLA_LINK_SCRIPT="${RETRO_DIR}/update-umbrella-fix-link.sh"
   RESOLVE_UMBRELLA_SCRIPT="${RETRO_DIR}/resolve-umbrella-issue.sh"
   WRITE_UMBRELLA_REF_SCRIPT="${RETRO_DIR}/write-umbrella-issue-ref.sh"
   UMBRELLA_SCRIPT="${RETRO_DIR}/create-umbrella-issue.sh"
+  UMBRELLA_TABLE_SCRIPT="${RETRO_DIR}/umbrella-findings-table.py"
   LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
   LINK_SCRIPT="scripts/workflows/lib/link-fix-pr-to-issue.sh"
@@ -32,7 +35,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "$DAILY_SCRIPT" "$DAILY_DISPATCH_SCRIPT" "$DAILY_SELECT_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
     "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
     "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$CHECKOUT_FIX_BRANCH_SCRIPT" \
-    "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR"; do
+    "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
+    "$UMBRELLA_TABLE_SCRIPT"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -84,12 +88,38 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'Suggested fix' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'trigger_likelihood' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'fix_cost' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'regression_guard' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'umbrella-findings-table.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'extract-suggested-fix.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'migrate_findings_table' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'trigger_likelihood' "$UMBRELLA_TABLE_SCRIPT" 2>/dev/null \
     && grep -q 'Current main (HEAD)' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'mark-superseded-findings.py' "$FIX_SCRIPT" 2>/dev/null; then
-    pass "layers B–D: HEAD lens, superseded helper, Suggested fix column"
+    pass "layers B–D: HEAD lens, superseded helper, triage umbrella columns + Suggested fix"
   else
     fail "postmerge retro missing layers B–D wiring"
+  fi
+
+  if grep -q 'impact' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'trigger_likelihood' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'fix_cost' "$RETRO_PROMPT" 2>/dev/null \
+    && ! grep -q '"severity"' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'impact' "$SCHEMA" 2>/dev/null \
+    && grep -q 'classify-finding-priority.py' "$RETRO_DIR/validate-postmerge-retro.py" 2>/dev/null \
+    && grep -q 'derive_priority_band' "$CLASSIFIER_SCRIPT" 2>/dev/null; then
+    pass "finding classifier schema + prompt + validator wired (#456)"
+  else
+    fail "postmerge retro missing finding classifier contract (#456)"
+  fi
+
+  if grep -q 'POSTMERGE_RETRO_PARALLEL_MAX:-6' "$PARALLEL_SCRIPT" 2>/dev/null \
+    && grep -q 'parallel_max' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_PARALLEL_MAX' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "parallel retro defaults POSTMERGE_RETRO_PARALLEL_MAX to 6 + workflow dispatch input"
+  else
+    fail "run-postmerge-retro-parallel.sh must default POSTMERGE_RETRO_PARALLEL_MAX to 6 and workflow must expose parallel_max"
   fi
 
   if grep -q 'issues: write' "$RETRO_WORKFLOW" 2>/dev/null; then
@@ -153,7 +183,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'artifact_run_id' "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q 'gh run download' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'restore_json_from_issue' "$RETRO_WORKFLOW" 2>/dev/null; then
+    && grep -q 'fetch-daily-retro-json-from-issue.sh' "$RETRO_WORKFLOW" 2>/dev/null; then
     pass "fix_only downloads artifact_run_id before issue snapshot restore"
   else
     fail "fix_only must prefer artifact_run_id over issue snapshot restore"

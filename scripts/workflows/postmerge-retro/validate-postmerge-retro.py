@@ -2,8 +2,25 @@
 """Lightweight validator for postmerge-retro.json (stdlib only)."""
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
+from pathlib import Path
+
+
+def _load_classifier():
+    path = Path(__file__).resolve().parent / "classify-finding-priority.py"
+    spec = importlib.util.spec_from_file_location("classify_finding_priority", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load classifier from {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_CL = _load_classifier()
+apply_triage_to_retro = _CL.apply_triage_to_retro
+validate_triage_item = _CL.validate_triage_item
 
 
 def _require_str(obj: dict, key: str, path: str) -> None:
@@ -39,9 +56,7 @@ def _validate_follow_up(item: dict, path: str) -> None:
     _require_str(item, "body", path)
     _require_str(item, "dedupe_key", path)
     _require_repro_steps(item, path)
-    sev = item.get("severity")
-    if sev is not None and sev not in ("low", "medium", "high"):
-        raise ValueError(f"{path}.severity invalid: {sev}")
+    validate_triage_item(item, path, from_llm=True)
     _require_str_array(item, "labels", path)
     _require_str_array(item, "evidence", path)
 
@@ -52,6 +67,7 @@ def _validate_adr(item: dict, path: str) -> None:
     _require_str(item, "title", path)
     _require_str(item, "body", path)
     _require_str(item, "dedupe_key", path)
+    validate_triage_item(item, path, from_llm=True)
     _require_str_array(item, "labels", path)
     _require_str_array(item, "evidence", path)
 
@@ -62,6 +78,7 @@ def _validate_context(item: dict, path: str) -> None:
     _require_str(item, "pack", path)
     _require_str(item, "reason", path)
     _require_str(item, "dedupe_key", path)
+    validate_triage_item(item, path, from_llm=True)
     _require_str_array(item, "labels", path)
     _require_str_array(item, "evidence", path)
 
@@ -72,7 +89,8 @@ def main() -> int:
         return 2
 
     path = sys.argv[1]
-    data = json.load(open(path, encoding="utf-8"))
+    with open(path, encoding="utf-8") as fh:
+        data = json.load(fh)
     if not isinstance(data, dict):
         print("Root must be object", file=sys.stderr)
         return 1
@@ -86,17 +104,24 @@ def main() -> int:
         print("summary must be a string", file=sys.stderr)
         return 1
 
-    for key, validator in (
-        ("follow_up_issues", _validate_follow_up),
-        ("adr_updates", _validate_adr),
-        ("context_pack_updates", _validate_context),
-    ):
-        arr = data.get(key)
-        if not isinstance(arr, list):
-            print(f"{key} must be an array", file=sys.stderr)
-            return 1
-        for i, item in enumerate(arr):
-            validator(item, f"{key}[{i}]")
+    try:
+        for key, validator in (
+            ("follow_up_issues", _validate_follow_up),
+            ("adr_updates", _validate_adr),
+            ("context_pack_updates", _validate_context),
+        ):
+            arr = data.get(key)
+            if not isinstance(arr, list):
+                raise ValueError(f"{key} must be an array")
+            for i, item in enumerate(arr):
+                validator(item, f"{key}[{i}]")
+        apply_triage_to_retro(data)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, indent=2, ensure_ascii=False)
+            fh.write("\n")
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
 
     print(f"OK: retro.json valid for PR #{pr}")
     return 0

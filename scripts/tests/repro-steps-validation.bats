@@ -29,9 +29,13 @@ JSON
 }
 
 @test "validate-postmerge-retro.py accepts follow_up with repro_steps" {
-  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py \
-    scripts/tests/fixtures/postmerge-retro/sample-retro.json
+  tmp="$(mktemp -d)"
+  cp scripts/tests/fixtures/postmerge-retro/sample-retro.json "$tmp/retro.json"
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py "$tmp/retro.json"
   [[ "$status" -eq 0 ]]
+  run jq -e '.follow_up_issues[0].priority_band == "should-fix"' "$tmp/retro.json"
+  [[ "$status" -eq 0 ]]
+  rm -rf "$tmp"
 }
 
 @test "validate-postmerge-retro-daily.py requires repro_steps on follow_up_issues" {
@@ -46,7 +50,10 @@ JSON
       "category": "follow_up_issues",
       "title": "t",
       "body": "b",
-      "dedupe_key": "k"
+      "dedupe_key": "k",
+      "impact": "meta-harness",
+      "trigger_likelihood": "edge",
+      "fix_cost": "trivial"
     }
   ]
 }

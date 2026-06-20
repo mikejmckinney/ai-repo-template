@@ -29,13 +29,8 @@ on:
         required: false
         type: boolean
         default: false
-      restore_json_from_issue:
-        description: "Fix-only: restore daily-retro.json from umbrella issue snapshot comment"
-        required: false
-        type: boolean
-        default: true
       artifact_run_id:
-        description: "Fix-only: optional workflow run ID to download artifact from"
+        description: "Fix-only: optional workflow run ID to download artifact from (else restore from umbrella issue snapshot)"
         required: false
         type: string
       force_re_retro_prs:
@@ -58,6 +53,10 @@ on:
         default: false
       monolithic_diff_per_pr:
         description: "Monolithic Arm B per-PR diff byte cap (POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR; default matches POSTMERGE_RETRO_DIFF_LIMIT)"
+        required: false
+        type: string
+      parallel_max:
+        description: "Max concurrent per-PR retro jobs when benchmark_arm=parallel (POSTMERGE_RETRO_PARALLEL_MAX; default 6)"
         required: false
         type: string
 
@@ -93,6 +92,7 @@ jobs:
       POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
       FIX_JOB_SANDBOX_VERIFY: ${{ vars.FIX_JOB_SANDBOX_VERIFY || 'false' }}
       POSTMERGE_RETRO_EXECUTION_MODE: ${{ github.event.inputs.benchmark_arm || 'sequential' }}
+      POSTMERGE_RETRO_PARALLEL_MAX: ${{ github.event.inputs.parallel_max || vars.POSTMERGE_RETRO_PARALLEL_MAX || '6' }}
     steps:
       - name: Verify required secrets
         env:
@@ -164,12 +164,9 @@ jobs:
             ARTIFACT_NAME="postmerge-retro-daily-${RUN_DATE}-attempt-${ATTEMPT}"
             gh run download "${{ github.event.inputs.artifact_run_id }}" -R "$GITHUB_REPOSITORY" -n "$ARTIFACT_NAME" -D .artifacts/postmerge-retro/
             [[ -f "$DAILY_JSON" ]] || { echo "::error::Missing $DAILY_JSON after artifact download"; exit 1; }
-          elif [[ "${{ github.event.inputs.restore_json_from_issue }}" == "true" ]]; then
+          else
             chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
             bash scripts/workflows/postmerge-retro/fetch-daily-retro-json-from-issue.sh "$RUN_DATE" "$DAILY_JSON"
-          else
-            echo "::error::fix_only requires restore_json_from_issue=true or artifact_run_id" >&2
-            exit 1
           fi
 
       - name: Run daily retrospective

@@ -27,9 +27,43 @@
     }
   },
   "$defs": {
+    "triageFields": {
+      "type": "object",
+      "required": ["impact", "trigger_likelihood", "fix_cost"],
+      "properties": {
+        "impact": {
+          "type": "string",
+          "enum": ["incorrect-behavior", "dx-perf-doc", "meta-harness"]
+        },
+        "trigger_likelihood": {
+          "type": "string",
+          "enum": ["common", "edge", "fringe"]
+        },
+        "fix_cost": {
+          "type": "string",
+          "enum": ["trivial", "moderate", "large"]
+        },
+        "regression_guard": {
+          "type": "boolean"
+        },
+        "priority_band": {
+          "type": "string",
+          "enum": ["fix-now", "should-fix", "defer"],
+          "description": "Derived by automation at validate/merge time; LLM must not emit."
+        }
+      }
+    },
     "followUpIssue": {
       "type": "object",
-      "required": ["title", "body", "dedupe_key", "repro_steps"],
+      "required": [
+        "title",
+        "body",
+        "dedupe_key",
+        "repro_steps",
+        "impact",
+        "trigger_likelihood",
+        "fix_cost"
+      ],
       "additionalProperties": true,
       "properties": {
         "title": { "type": "string", "minLength": 1 },
@@ -37,10 +71,6 @@
         "labels": {
           "type": "array",
           "items": { "type": "string" }
-        },
-        "severity": {
-          "type": "string",
-          "enum": ["low", "medium", "high"]
         },
         "evidence": {
           "type": "array",
@@ -51,23 +81,46 @@
           "minItems": 1,
           "items": { "type": "string", "minLength": 1 }
         },
-        "dedupe_key": { "type": "string", "minLength": 1 }
+        "dedupe_key": { "type": "string", "minLength": 1 },
+        "impact": { "$ref": "#/$defs/triageFields/properties/impact" },
+        "trigger_likelihood": { "$ref": "#/$defs/triageFields/properties/trigger_likelihood" },
+        "fix_cost": { "$ref": "#/$defs/triageFields/properties/fix_cost" },
+        "regression_guard": { "$ref": "#/$defs/triageFields/properties/regression_guard" },
+        "priority_band": { "$ref": "#/$defs/triageFields/properties/priority_band" }
+      },
+      "not": {
+        "required": ["severity"]
       }
     },
     "adrUpdate": {
       "type": "object",
-      "required": ["title", "body", "dedupe_key"],
+      "required": [
+        "title",
+        "body",
+        "dedupe_key",
+        "impact",
+        "trigger_likelihood",
+        "fix_cost"
+      ],
       "additionalProperties": true,
       "properties": {
         "adr": { "type": "string" },
         "title": { "type": "string", "minLength": 1 },
         "body": { "type": "string", "minLength": 1 },
-        "dedupe_key": { "type": "string", "minLength": 1 }
+        "dedupe_key": { "type": "string", "minLength": 1 },
+        "impact": { "$ref": "#/$defs/triageFields/properties/impact" },
+        "trigger_likelihood": { "$ref": "#/$defs/triageFields/properties/trigger_likelihood" },
+        "fix_cost": { "$ref": "#/$defs/triageFields/properties/fix_cost" },
+        "regression_guard": { "$ref": "#/$defs/triageFields/properties/regression_guard" },
+        "priority_band": { "$ref": "#/$defs/triageFields/properties/priority_band" }
+      },
+      "not": {
+        "required": ["severity"]
       }
     },
     "contextPackUpdate": {
       "type": "object",
-      "required": ["pack", "reason", "dedupe_key"],
+      "required": ["pack", "reason", "dedupe_key", "impact", "trigger_likelihood", "fix_cost"],
       "additionalProperties": true,
       "properties": {
         "pack": { "type": "string", "minLength": 1 },
@@ -84,7 +137,15 @@
           "type": "array",
           "items": { "type": "string" }
         },
-        "dedupe_key": { "type": "string", "minLength": 1 }
+        "dedupe_key": { "type": "string", "minLength": 1 },
+        "impact": { "$ref": "#/$defs/triageFields/properties/impact" },
+        "trigger_likelihood": { "$ref": "#/$defs/triageFields/properties/trigger_likelihood" },
+        "fix_cost": { "$ref": "#/$defs/triageFields/properties/fix_cost" },
+        "regression_guard": { "$ref": "#/$defs/triageFields/properties/regression_guard" },
+        "priority_band": { "$ref": "#/$defs/triageFields/properties/priority_band" }
+      },
+      "not": {
+        "required": ["severity"]
       }
     }
   }

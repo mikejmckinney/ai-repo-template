@@ -142,7 +142,7 @@ Source: `daily-retro.json` from [A R1](https://github.com/mikejmckinney/ai-repo-
 
 Automation tracked in [#456](https://github.com/mikejmckinney/ai-repo-template/issues/456). Replaces deprecated `severity: low|medium|high` with **`impact`** plus **`trigger_likelihood`**, **`fix_cost`**, optional **`regression_guard`**, and derived **`priority_band`**.
 
-### LLM-emitted fields (future schema)
+### LLM-emitted fields
 
 | Field | Values | Meaning |
 |---|---|---|

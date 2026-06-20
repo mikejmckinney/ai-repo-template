@@ -32,26 +32,32 @@ WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 python3 - "$DAILY_JSON" "$WORKDIR/rows.txt" "$SCRIPT_DIR" <<'PY'
+import importlib.util
 import json
 import subprocess
 import sys
 from pathlib import Path
 
+def _load_table():
+    path = Path(sys.argv[3]) / "umbrella-findings-table.py"
+    spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
 data = json.loads(Path(sys.argv[1]).read_text())
 script_dir = Path(sys.argv[3])
 extract = script_dir / "extract-suggested-fix.py"
+table = _load_table()
 rows = []
 for f in data.get("findings") or []:
-    title = str(f.get("title", "")).replace("|", "/")
     body = f.get("body") or ""
     suggested = subprocess.check_output(
         [sys.executable, str(extract), "-"],
         input=body,
         text=True,
-    ).strip().replace("|", "/")
-    rows.append(
-        f"| #{f['pr']} | {f['category']} | `{f['dedupe_key']}` | {f.get('severity') or 'medium'} | {title} | {suggested} |"
-    )
+    ).strip()
+    rows.append(table.format_row(f, suggested_fix=suggested))
 Path(sys.argv[2]).write_text("\n".join(rows) + ("\n" if rows else ""))
 PY
 
@@ -90,10 +96,24 @@ append_to_issue() {
   printf '%s' "$new_rows" >"$WORKDIR/new-rows.txt"
   printf '%s' "$body" >"$WORKDIR/existing-body.md"
   merged="$(
-    python3 - "$WORKDIR/existing-body.md" "$WORKDIR/new-rows.txt" <<'PY'
+    python3 - "$WORKDIR/existing-body.md" "$WORKDIR/new-rows.txt" "$SCRIPT_DIR" <<'PY'
+import importlib.util
+import re
 import sys
+from pathlib import Path
 
+def _load_table():
+    path = Path(sys.argv[3]) / "umbrella-findings-table.py"
+    spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+table = _load_table()
 body = open(sys.argv[1], encoding="utf-8").read()
+body, migrated = table.migrate_findings_table(body)
+if migrated:
+    print("Migrated legacy umbrella findings table header", file=sys.stderr)
 new_rows = [ln for ln in open(sys.argv[2], encoding="utf-8").read().splitlines() if ln.strip()]
 if "## Meta" in body:
     head, tail = body.split("## Meta", 1)
