@@ -39,7 +39,7 @@ import sys
 from pathlib import Path
 
 def _load_table():
-    path = Path(sys.argv[3]).parent / "umbrella-findings-table.py"
+    path = Path(sys.argv[3]) / "umbrella-findings-table.py"
     spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
@@ -103,7 +103,7 @@ import sys
 from pathlib import Path
 
 def _load_table():
-    path = Path(sys.argv[3]).parent / "umbrella-findings-table.py"
+    path = Path(sys.argv[3]) / "umbrella-findings-table.py"
     spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
