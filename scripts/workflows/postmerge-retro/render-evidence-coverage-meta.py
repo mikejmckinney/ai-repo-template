@@ -39,7 +39,9 @@ def render_line(record: dict) -> str:
 
     truncated = bool(record.get("would_truncate"))
     diff_part = f"diff {diff_included}/{diff_total}"
-    if truncated:
+    if route in ("full-evidence-cursor", "full-evidence-antigravity"):
+        diff_part += " (full-evidence)"
+    elif truncated:
         diff_part += " (truncated)"
 
     parts = [f"PR #{pr} — {diff_part}", f"route: {route}", f"provider: {provider}"]
@@ -59,9 +61,17 @@ def render_block(records: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _needs_truncation_warning(record: dict) -> bool:
+    """Summary warns only when retro actually ran a truncated bounded pass."""
+    if not record.get("would_truncate"):
+        return False
+    route = str(record.get("evidence_route") or "bounded")
+    return route in ("bounded", "bounded-fallback")
+
+
 def render_summary_callout(records: list[dict]) -> str:
-    """High-visibility Summary callout when any PR would truncate evidence."""
-    truncated = [record for record in records if record.get("would_truncate")]
+    """High-visibility Summary callout when truncated bounded evidence was used."""
+    truncated = [record for record in records if _needs_truncation_warning(record)]
     if not truncated:
         return ""
 

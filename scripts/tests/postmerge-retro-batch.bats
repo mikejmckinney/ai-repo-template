@@ -653,6 +653,39 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "render-evidence-coverage-meta summary empty for full-evidence-cursor route" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "prs": [99],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 99,
+      "diff_included": 10000,
+      "diff_total": 20601,
+      "head_included": 54923,
+      "head_total": 139030,
+      "would_truncate": true,
+      "head_truncated": true,
+      "evidence_route": "full-evidence-cursor",
+      "routing_context": {
+        "adaptive_enabled": true,
+        "provider_resolved": "cursor",
+        "cursor_available": true,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py --section summary "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  rm -rf "$tmp"
+}
+
 @test "compute-evidence-coverage adaptive default routes truncated PR to full-evidence-cursor" {
   tmp="$(mktemp -d)"
   head -c 5000 /dev/zero | tr '\0' 'a' >"$tmp/diff.patch"
