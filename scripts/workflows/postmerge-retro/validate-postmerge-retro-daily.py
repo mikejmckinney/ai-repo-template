@@ -22,6 +22,87 @@ _CL = _load_classifier()
 apply_triage_to_item = _CL.apply_triage_to_item
 validate_triage_item = _CL.validate_triage_item
 
+EVIDENCE_ROUTES = {
+    "bounded",
+    "full-evidence-cursor",
+    "full-evidence-antigravity",
+    "bounded-fallback",
+}
+SCHEMA_PATH = (
+    Path(__file__).resolve().parents[3] / ".github/schemas/postmerge-retro-daily.schema.json"
+)
+
+
+def _validate_evidence_coverage(item: dict, path: str) -> None:
+    if not isinstance(item, dict):
+        raise ValueError(f"{path} must be an object")
+    for key in (
+        "pr",
+        "diff_included",
+        "diff_total",
+        "head_included",
+        "head_total",
+        "would_truncate",
+        "evidence_route",
+        "routing_context",
+    ):
+        if key not in item:
+            raise ValueError(f"{path}.{key} required")
+    pr = item["pr"]
+    if not isinstance(pr, int) or pr < 1:
+        raise ValueError(f"{path}.pr must be a positive integer")
+    for key in (
+        "diff_included",
+        "diff_total",
+        "head_included",
+        "head_total",
+    ):
+        val = item[key]
+        if not isinstance(val, int) or val < 0:
+            raise ValueError(f"{path}.{key} must be a non-negative integer")
+    if not isinstance(item["would_truncate"], bool):
+        raise ValueError(f"{path}.would_truncate must be a boolean")
+    route = item["evidence_route"]
+    if route not in EVIDENCE_ROUTES:
+        raise ValueError(f"{path}.evidence_route invalid: {route!r}")
+    ctx = item["routing_context"]
+    if not isinstance(ctx, dict):
+        raise ValueError(f"{path}.routing_context must be an object")
+    for key in (
+        "adaptive_enabled",
+        "provider_resolved",
+        "cursor_available",
+        "antigravity_available",
+    ):
+        if key not in ctx:
+            raise ValueError(f"{path}.routing_context.{key} required")
+    if not isinstance(ctx["adaptive_enabled"], bool):
+        raise ValueError(f"{path}.routing_context.adaptive_enabled must be boolean")
+    if not isinstance(ctx["provider_resolved"], str) or not ctx["provider_resolved"].strip():
+        raise ValueError(f"{path}.routing_context.provider_resolved must be a non-empty string")
+    if not isinstance(ctx["cursor_available"], bool):
+        raise ValueError(f"{path}.routing_context.cursor_available must be boolean")
+    if not isinstance(ctx["antigravity_available"], bool):
+        raise ValueError(f"{path}.routing_context.antigravity_available must be boolean")
+    omitted = item.get("omitted_head_paths")
+    if omitted is not None:
+        if not isinstance(omitted, list):
+            raise ValueError(f"{path}.omitted_head_paths must be an array when present")
+        for i, entry in enumerate(omitted):
+            if not isinstance(entry, str):
+                raise ValueError(f"{path}.omitted_head_paths[{i}] must be a string")
+
+
+def _validate_with_schema(data: dict) -> None:
+    if not SCHEMA_PATH.is_file():
+        return
+    try:
+        import jsonschema  # type: ignore[import-not-found]
+    except ImportError:
+        return
+    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
+    jsonschema.validate(instance=data, schema=schema)
+
 
 def main() -> int:
     if len(sys.argv) != 2:
@@ -77,6 +158,24 @@ def main() -> int:
             apply_triage_to_item(item, f"findings[{i}]")
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
+        return 1
+
+    coverage = data.get("pr_evidence_coverage")
+    if coverage is not None:
+        if not isinstance(coverage, list):
+            print("pr_evidence_coverage must be an array when present", file=sys.stderr)
+            return 1
+        try:
+            for i, item in enumerate(coverage):
+                _validate_evidence_coverage(item, f"pr_evidence_coverage[{i}]")
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+
+    try:
+        _validate_with_schema(data)
+    except Exception as exc:  # noqa: BLE001 — surface schema failures
+        print(f"schema validation failed: {exc}", file=sys.stderr)
         return 1
 
     umbrella_issue = data.get("umbrella_issue")

@@ -422,3 +422,233 @@ EOF
   [[ "$stderr" == *"merge_commit_sha abc123def456 already indexed"* ]]
   rm -rf "$tmp"
 }
+
+@test "compute-evidence-coverage detects diff truncation" {
+  tmp="$(mktemp -d)"
+  head -c 5000 /dev/zero | tr '\0' 'a' >"$tmp/diff.patch"
+  echo "noop.txt" >"$tmp/changed-files.txt"
+  touch "$tmp/noop.txt"
+  run python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
+    "$tmp" --pr 1 --diff-limit 1000 --repo-root "$tmp"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"would_truncate": true'* ]]
+  [[ "$output" == *'"diff_total": 5000'* ]]
+  [[ "$output" == *'"diff_included": 1000'* ]]
+  rm -rf "$tmp"
+}
+
+@test "render-evidence-coverage-meta renders summary warning for truncated PR" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "prs": [9],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 9,
+      "diff_included": 10000,
+      "diff_total": 450000,
+      "head_included": 1000,
+      "head_total": 1000,
+      "would_truncate": true,
+      "head_truncated": false,
+      "evidence_route": "bounded",
+      "routing_context": {
+        "adaptive_enabled": false,
+        "provider_resolved": "cursor",
+        "cursor_available": true,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py --section summary "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[!WARNING]"* ]]
+  [[ "$output" == *"Evidence truncated"* ]]
+  [[ "$output" == *"PR #9"* ]]
+  [[ "$output" == *"postmerge-retro:truncation-summary:start"* ]]
+  rm -rf "$tmp"
+}
+
+@test "render-evidence-coverage-meta summary empty when no truncation" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "prs": [1],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 1,
+      "diff_included": 100,
+      "diff_total": 100,
+      "head_included": 50,
+      "head_total": 50,
+      "would_truncate": false,
+      "evidence_route": "bounded",
+      "routing_context": {
+        "adaptive_enabled": false,
+        "provider_resolved": "cursor",
+        "cursor_available": true,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py --section summary "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  rm -rf "$tmp"
+}
+
+@test "render-evidence-coverage-meta merges summary into legacy umbrella body" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "prs": [9],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 9,
+      "diff_included": 10000,
+      "diff_total": 20601,
+      "head_included": 1000,
+      "head_total": 1000,
+      "would_truncate": true,
+      "evidence_route": "bounded",
+      "routing_context": {
+        "adaptive_enabled": false,
+        "provider_resolved": "cursor",
+        "cursor_available": true,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  cat >"$tmp/body.md" <<'EOF'
+## Summary
+
+**PRs in this update:** #9
+
+## Findings
+
+| PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|---|---|
+| 9 | test | `key-1` | low | low | low | none | info | x | y |
+
+## Meta
+
+**Evidence coverage**
+
+- PR #9 — diff 10000/20601 (truncated); route: bounded; provider: cursor; antigravity: false
+EOF
+  run python3 - "$tmp/body.md" "$tmp/daily.json" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+body = Path(sys.argv[1]).read_text(encoding="utf-8")
+data = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+path = Path("scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py")
+spec = importlib.util.spec_from_file_location("render_evidence_coverage_meta", path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+records = data.get("pr_evidence_coverage") or []
+print(mod.merge_summary_into_body(body, records))
+PY
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"[!WARNING]"* ]]
+  [[ "$output" == *"Evidence truncated"* ]]
+  [[ "$output" == *"## Findings"* ]]
+  [[ "$output" == *"postmerge-retro:truncation-summary:start"* ]]
+  rm -rf "$tmp"
+}
+
+@test "render-evidence-coverage-meta renders bounded fallback line" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "prs": [9],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 9,
+      "diff_included": 300000,
+      "diff_total": 450000,
+      "head_included": 1000,
+      "head_total": 2000,
+      "would_truncate": true,
+      "evidence_route": "bounded-fallback",
+      "routing_context": {
+        "adaptive_enabled": true,
+        "provider_resolved": "gemini",
+        "cursor_available": false,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PR #9"* ]]
+  [[ "$output" == *"route: bounded-fallback"* ]]
+  [[ "$output" == *"antigravity unavailable"* ]]
+  rm -rf "$tmp"
+}
+
+@test "merge-daily-retro-json includes pr_evidence_coverage sidecars" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/pr-1-retro.json" <<'EOF'
+{"pr": 1, "summary": "s", "follow_up_issues": [], "adr_updates": [], "context_pack_updates": []}
+EOF
+  cat >"$tmp/pr-1-evidence-coverage.json" <<'EOF'
+{"pr": 1, "diff_included": 10, "diff_total": 20, "head_included": 5, "head_total": 5, "would_truncate": true, "evidence_route": "bounded", "routing_context": {"adaptive_enabled": false, "provider_resolved": "cursor", "cursor_available": true, "antigravity_available": false}}
+EOF
+  run python3 scripts/workflows/postmerge-retro/merge-daily-retro-json.py 2026-06-20 "$tmp/pr-1-retro.json"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"pr_evidence_coverage"'* ]]
+  [[ "$output" == *'"evidence_route": "bounded"'* ]]
+  rm -rf "$tmp"
+}
+
+@test "validate-postmerge-retro-daily accepts pr_evidence_coverage" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/daily.json" <<'EOF'
+{
+  "run_date": "2026-06-20",
+  "window_hours": 24,
+  "summary": "test",
+  "prs": [1],
+  "findings": [],
+  "pr_evidence_coverage": [
+    {
+      "pr": 1,
+      "diff_included": 1,
+      "diff_total": 2,
+      "head_included": 1,
+      "head_total": 2,
+      "would_truncate": true,
+      "evidence_route": "bounded",
+      "routing_context": {
+        "adaptive_enabled": false,
+        "provider_resolved": "cursor",
+        "cursor_available": true,
+        "antigravity_available": false
+      }
+    }
+  ]
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}

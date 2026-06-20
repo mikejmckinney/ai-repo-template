@@ -15,6 +15,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   DAILY_SELECT_SCRIPT="${RETRO_DIR}/daily-retro-select-prs.sh"
   FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
   CLASSIFIER_SCRIPT="${RETRO_DIR}/classify-finding-priority.py"
+  COVERAGE_SCRIPT="${RETRO_DIR}/compute-evidence-coverage.py"
+  COVERAGE_META_SCRIPT="${RETRO_DIR}/render-evidence-coverage-meta.py"
+  DAILY_SCHEMA=".github/schemas/postmerge-retro-daily.schema.json"
   PARALLEL_SCRIPT="${RETRO_DIR}/run-postmerge-retro-parallel.sh"
   UMBRELLA_LINK_SCRIPT="${RETRO_DIR}/update-umbrella-fix-link.sh"
   RESOLVE_UMBRELLA_SCRIPT="${RETRO_DIR}/resolve-umbrella-issue.sh"
@@ -36,7 +39,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
     "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$CHECKOUT_FIX_BRANCH_SCRIPT" \
     "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
-    "$UMBRELLA_TABLE_SCRIPT"; do
+    "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -112,6 +115,18 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "finding classifier schema + prompt + validator wired (#456)"
   else
     fail "postmerge retro missing finding classifier contract (#456)"
+  fi
+
+  if grep -q 'compute-evidence-coverage.py' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'pr_evidence_coverage' "$RETRO_DIR/merge-daily-retro-json.py" 2>/dev/null \
+    && grep -q 'pr_evidence_coverage' "$RETRO_DIR/validate-postmerge-retro-daily.py" 2>/dev/null \
+    && grep -q 'render-evidence-coverage-meta.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'EVIDENCE_COVERAGE' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'EVIDENCE_TRUNCATION_SUMMARY' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'compute-evidence-coverage.py' "$RETRO_DIR/run-postmerge-retro-monolithic.sh" 2>/dev/null; then
+    pass "evidence coverage pre-check + Meta render wired (#460)"
+  else
+    fail "postmerge retro missing evidence coverage truncation visibility (#460)"
   fi
 
   if grep -q 'POSTMERGE_RETRO_PARALLEL_MAX:-6' "$PARALLEL_SCRIPT" 2>/dev/null \

@@ -8,6 +8,7 @@ Daily post-merge retrospective for merges to `main` in the rolling last **{{WIND
 **Window end (UTC):** {{WINDOW_END}}  
 **PRs in this update:** {{PR_LIST}}
 
+{{EVIDENCE_TRUNCATION_SUMMARY}}
 ## Findings
 
 | PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |
@@ -15,6 +16,8 @@ Daily post-merge retrospective for merges to `main` in the rolling last **{{WIND
 {{FINDING_ROWS}}
 
 ## Meta
+
+{{EVIDENCE_COVERAGE}}
 
 Automated by [`agent-postmerge-retro.yml`](https://github.com/{{REPO}}/blob/main/.github/workflows/agent-postmerge-retro.yml) (daily batch v2).  
 Draft fix PR (if created): {{FIX_PR_LINK}}

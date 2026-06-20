@@ -122,6 +122,7 @@ def main() -> int:
     summaries: list[str] = []
     pr_merges: list[dict] = []
     pr_changed_files: list[dict] = []
+    pr_evidence_coverage: list[dict] = []
 
     for path in paths:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -146,6 +147,12 @@ def main() -> int:
             summaries.append(f"PR #{pr}: {summary}")
         all_findings.extend(_flatten_pr_retro(data))
 
+        coverage_path = path.parent / f"pr-{pr}-evidence-coverage.json"
+        if coverage_path.is_file():
+            coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
+            if isinstance(coverage, dict):
+                pr_evidence_coverage.append(coverage)
+
     prs = sorted(set(prs))
     batch = {
         "run_date": run_date,
@@ -158,6 +165,10 @@ def main() -> int:
         batch["pr_merges"] = pr_merges
     if pr_changed_files:
         batch["pr_changed_files"] = pr_changed_files
+    if pr_evidence_coverage:
+        batch["pr_evidence_coverage"] = sorted(
+            pr_evidence_coverage, key=lambda item: int(item["pr"])
+        )
     json.dump(batch, sys.stdout, indent=2, ensure_ascii=False)
     sys.stdout.write("\n")
     return 0

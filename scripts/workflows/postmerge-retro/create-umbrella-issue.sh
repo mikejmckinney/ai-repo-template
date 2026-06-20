@@ -22,14 +22,18 @@ MARKER="<!-- postmerge-retro:daily:${RUN_DATE} -->"
 WINDOW_END="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 FIX_PR_LINK="(pending — fix job)"
 
+WORKDIR="$(mktemp -d)"
+trap 'rm -rf "$WORKDIR"' EXIT
+
 FINDINGS_COUNT="$(python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/count-daily-retro-findings.py" "$DAILY_JSON")"
+python3 "$SCRIPT_DIR/render-evidence-coverage-meta.py" --section meta "$DAILY_JSON" >"$WORKDIR/evidence-coverage-block.txt" 2>/dev/null \
+  || : >"$WORKDIR/evidence-coverage-block.txt"
+python3 "$SCRIPT_DIR/render-evidence-coverage-meta.py" --section summary "$DAILY_JSON" >"$WORKDIR/evidence-summary-block.txt" 2>/dev/null \
+  || : >"$WORKDIR/evidence-summary-block.txt"
 if [[ "$FINDINGS_COUNT" -eq 0 ]]; then
   echo "Zero findings in daily retro; skipping umbrella issue"
   exit 0
 fi
-
-WORKDIR="$(mktemp -d)"
-trap 'rm -rf "$WORKDIR"' EXIT
 
 python3 - "$DAILY_JSON" "$WORKDIR/rows.txt" "$SCRIPT_DIR" <<'PY'
 import importlib.util
@@ -67,6 +71,39 @@ find_issue() {
   bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE" 2>/dev/null || true
 }
 
+update_issue_evidence_blocks() {
+  local issue_num="$1"
+  if [[ ! -s "$WORKDIR/evidence-coverage-block.txt" && ! -s "$WORKDIR/evidence-summary-block.txt" ]]; then
+    return 0
+  fi
+  local body merged_coverage
+  body="$(gh issue view "$issue_num" -R "$REPO" --json body --jq .body)"
+  merged_coverage="$(
+    python3 - "$body" "$DAILY_JSON" "$REPO_ROOT" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+body = sys.argv[1]
+data = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+repo_root = Path(sys.argv[3])
+path = repo_root / "scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py"
+spec = importlib.util.spec_from_file_location("render_evidence_coverage_meta", path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+records = data.get("pr_evidence_coverage") or []
+body = mod.merge_summary_into_body(body, records)
+body = mod.append_coverage_into_body(body, records)
+print(body, end="")
+PY
+  )"
+  if [[ "$merged_coverage" != "$body" ]]; then
+    gh issue edit "$issue_num" -R "$REPO" --body "$merged_coverage"
+    echo "Updated evidence summary/coverage on umbrella issue #${issue_num}" >&2
+  fi
+}
+
 append_to_issue() {
   local issue_num="$1"
   local body merged
@@ -90,6 +127,7 @@ append_to_issue() {
 
   if [[ -z "${new_rows//[$'\t\r\n ']/}" ]]; then
     echo "No new rows to append to issue #${issue_num}" >&2
+    update_issue_evidence_blocks "$issue_num"
     return 0
   fi
 
@@ -123,14 +161,14 @@ else:
 PY
   )"
   gh issue edit "$issue_num" -R "$REPO" --body "$merged"
+  update_issue_evidence_blocks "$issue_num"
   echo "Appended findings to umbrella issue #${issue_num}" >&2
 }
 
 create_new_issue() {
-  local title body_file rows issue_url issue_num
+  local title body_file issue_url issue_num
   title="Post-merge retro daily: ${RUN_DATE} (${PR_LIST})"
   body_file="$WORKDIR/umbrella.md"
-  rows="$(cat "$WORKDIR/rows.txt")"
   cp "$REPO_ROOT/.github/templates/postmerge-retro-umbrella.md" "$body_file"
   sed -i \
     -e "s/{{RUN_DATE}}/${RUN_DATE}/g" \
@@ -140,15 +178,20 @@ create_new_issue() {
     -e "s|{{REPO}}|${REPO}|g" \
     -e "s|{{FIX_PR_LINK}}|${FIX_PR_LINK}|g" \
     "$body_file"
-  python3 - "$body_file" "$rows" <<PY
+  python3 - "$body_file" "$WORKDIR/rows.txt" "$WORKDIR/evidence-coverage-block.txt" "$WORKDIR/evidence-summary-block.txt" <<'PY'
 from pathlib import Path
 import sys
 
 p = Path(sys.argv[1])
 text = p.read_text().replace(
     "{{FINDING_ROWS}}",
-    sys.argv[2].rstrip() + ("\n" if sys.argv[2].strip() else ""),
+    Path(sys.argv[2]).read_text(encoding="utf-8").rstrip()
+    + ("\n" if Path(sys.argv[2]).read_text(encoding="utf-8").strip() else ""),
 )
+coverage = Path(sys.argv[3]).read_text(encoding="utf-8") if Path(sys.argv[3]).exists() else ""
+summary = Path(sys.argv[4]).read_text(encoding="utf-8") if Path(sys.argv[4]).exists() else ""
+text = text.replace("{{EVIDENCE_COVERAGE}}", coverage)
+text = text.replace("{{EVIDENCE_TRUNCATION_SUMMARY}}", summary)
 p.write_text(text)
 PY
   issue_url="$(gh issue create -R "$REPO" --title "$title" --body-file "$body_file")"
