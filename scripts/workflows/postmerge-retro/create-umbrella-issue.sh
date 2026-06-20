@@ -23,9 +23,8 @@ WINDOW_END="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 FIX_PR_LINK="(pending — fix job)"
 
 FINDINGS_COUNT="$(python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/count-daily-retro-findings.py" "$DAILY_JSON")"
-EVIDENCE_COVERAGE_BLOCK="$(
-  python3 "$SCRIPT_DIR/render-evidence-coverage-meta.py" "$DAILY_JSON" 2>/dev/null || true
-)"
+python3 "$SCRIPT_DIR/render-evidence-coverage-meta.py" "$DAILY_JSON" >"$WORKDIR/evidence-coverage-block.txt" 2>/dev/null \
+  || : >"$WORKDIR/evidence-coverage-block.txt"
 if [[ "$FINDINGS_COUNT" -eq 0 ]]; then
   echo "Zero findings in daily retro; skipping umbrella issue"
   exit 0
@@ -126,7 +125,7 @@ else:
 PY
   )"
   gh issue edit "$issue_num" -R "$REPO" --body "$merged"
-  if [[ -n "${EVIDENCE_COVERAGE_BLOCK//[$'\t\r\n ']/}" ]]; then
+  if [[ -s "$WORKDIR/evidence-coverage-block.txt" ]]; then
     body="$(gh issue view "$issue_num" -R "$REPO" --json body --jq .body)"
     merged_coverage="$(
       python3 - "$body" "$DAILY_JSON" "$REPO_ROOT" <<'PY'
@@ -155,7 +154,7 @@ create_new_issue() {
   local title body_file rows issue_url issue_num
   title="Post-merge retro daily: ${RUN_DATE} (${PR_LIST})"
   body_file="$WORKDIR/umbrella.md"
-  rows="$(cat "$WORKDIR/rows.txt")"
+  printf '%s' "$rows" >"$WORKDIR/rows.txt"
   cp "$REPO_ROOT/.github/templates/postmerge-retro-umbrella.md" "$body_file"
   sed -i \
     -e "s/{{RUN_DATE}}/${RUN_DATE}/g" \
@@ -165,8 +164,8 @@ create_new_issue() {
     -e "s|{{REPO}}|${REPO}|g" \
     -e "s|{{FIX_PR_LINK}}|${FIX_PR_LINK}|g" \
     "$body_file"
-  printf '%s' "$EVIDENCE_COVERAGE_BLOCK" >"$WORKDIR/evidence-coverage-block.txt"
-  python3 - "$body_file" "$rows" "$WORKDIR/evidence-coverage-block.txt" <<'PY'
+  printf '%s' "$rows" >"$WORKDIR/rows-for-template.txt"
+  python3 - "$body_file" "$WORKDIR/rows-for-template.txt" "$WORKDIR/evidence-coverage-block.txt" <<'PY'
 from pathlib import Path
 import sys
 
