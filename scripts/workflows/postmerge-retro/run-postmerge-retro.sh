@@ -42,6 +42,16 @@ context_profile="${POSTMERGE_RETRO_CONTEXT_PROFILE:-full}"
 
 bash "$SCRIPT_DIR/collect-postmerge-evidence.sh" "$PR" "$WORKDIR"
 
+COVERAGE_JSON="$WORKDIR/evidence-coverage.json"
+python3 "$SCRIPT_DIR/compute-evidence-coverage.py" "$WORKDIR" \
+  --pr "$PR" \
+  --repo-root "$REPO_ROOT" \
+  --diff-limit "$diff_limit" \
+  --head-file-cap 12000 \
+  --head-total-cap 120000 \
+  --warn \
+  -o "$COVERAGE_JSON"
+
 merged_at="$(jq -r '.merged_at // ""' "$WORKDIR/pr.json")"
 if [[ -z "$merged_at" || "$merged_at" == "null" ]]; then
   echo "::error::PR #${PR} is not merged (merged_at=${merged_at})"
@@ -305,6 +315,7 @@ if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
   artifact_dir="${GITHUB_WORKSPACE}/.artifacts/postmerge-retro/pr-${PR}"
   mkdir -p "$artifact_dir"
   cp -f "$retro_json" "$artifact_dir/retro.json"
+  cp -f "$COVERAGE_JSON" "$artifact_dir/evidence-coverage.json" 2>/dev/null || true
   cp -f "$llm_raw" "$artifact_dir/llm-output.txt" 2>/dev/null || true
   cp -f "$WORKDIR/pr.json" "$artifact_dir/pr.json" 2>/dev/null || true
   cp -f "$WORKDIR/changed-files.txt" "$artifact_dir/changed-files.txt" 2>/dev/null || true

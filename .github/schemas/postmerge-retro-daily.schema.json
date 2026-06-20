@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/.github/schemas/postmerge-retro-daily.schema.json",
+  "title": "Post-merge daily retro batch JSON",
+  "type": "object",
+  "required": ["run_date", "window_hours", "summary", "prs", "findings"],
+  "additionalProperties": true,
+  "properties": {
+    "run_date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "window_hours": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "summary": {
+      "type": "string"
+    },
+    "prs": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "findings": {
+      "type": "array"
+    },
+    "umbrella_issue": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "pr_merges": {
+      "type": "array"
+    },
+    "pr_changed_files": {
+      "type": "array"
+    },
+    "pr_evidence_coverage": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidenceCoverage"
+      }
+    }
+  },
+  "$defs": {
+    "routingContext": {
+      "type": "object",
+      "required": [
+        "adaptive_enabled",
+        "provider_resolved",
+        "cursor_available",
+        "antigravity_available"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "adaptive_enabled": { "type": "boolean" },
+        "provider_resolved": { "type": "string", "minLength": 1 },
+        "cursor_available": { "type": "boolean" },
+        "antigravity_available": { "type": "boolean" },
+        "antigravity_on_truncate": { "type": "boolean" }
+      }
+    },
+    "evidenceCoverage": {
+      "type": "object",
+      "required": [
+        "pr",
+        "diff_included",
+        "diff_total",
+        "head_included",
+        "head_total",
+        "would_truncate",
+        "evidence_route",
+        "routing_context"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "pr": { "type": "integer", "minimum": 1 },
+        "diff_included": { "type": "integer", "minimum": 0 },
+        "diff_total": { "type": "integer", "minimum": 0 },
+        "head_included": { "type": "integer", "minimum": 0 },
+        "head_total": { "type": "integer", "minimum": 0 },
+        "would_truncate": { "type": "boolean" },
+        "diff_truncated": { "type": "boolean" },
+        "head_truncated": { "type": "boolean" },
+        "omitted_head_paths": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "evidence_route": {
+          "type": "string",
+          "enum": [
+            "bounded",
+            "full-evidence-cursor",
+            "full-evidence-antigravity",
+            "bounded-fallback"
+          ]
+        },
+        "routing_context": {
+          "$ref": "#/$defs/routingContext"
+        }
+      }
+    }
+  }
+}

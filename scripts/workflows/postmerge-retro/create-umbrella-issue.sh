@@ -23,6 +23,9 @@ WINDOW_END="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 FIX_PR_LINK="(pending — fix job)"
 
 FINDINGS_COUNT="$(python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/count-daily-retro-findings.py" "$DAILY_JSON")"
+EVIDENCE_COVERAGE_BLOCK="$(
+  python3 "$SCRIPT_DIR/render-evidence-coverage-meta.py" "$DAILY_JSON" 2>/dev/null || true
+)"
 if [[ "$FINDINGS_COUNT" -eq 0 ]]; then
   echo "Zero findings in daily retro; skipping umbrella issue"
   exit 0
@@ -123,6 +126,28 @@ else:
 PY
   )"
   gh issue edit "$issue_num" -R "$REPO" --body "$merged"
+  if [[ -n "${EVIDENCE_COVERAGE_BLOCK//[$'\t\r\n ']/}" ]]; then
+    body="$(gh issue view "$issue_num" -R "$REPO" --json body --jq .body)"
+    merged_coverage="$(
+      python3 - "$body" "$DAILY_JSON" "$REPO_ROOT" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+body = sys.argv[1]
+data = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+repo_root = Path(sys.argv[3])
+path = repo_root / "scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py"
+spec = importlib.util.spec_from_file_location("render_evidence_coverage_meta", path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+records = data.get("pr_evidence_coverage") or []
+print(mod.append_coverage_into_body(body, records), end="")
+PY
+    )"
+    gh issue edit "$issue_num" -R "$REPO" --body "$merged_coverage"
+  fi
   echo "Appended findings to umbrella issue #${issue_num}" >&2
 }
 
@@ -140,7 +165,8 @@ create_new_issue() {
     -e "s|{{REPO}}|${REPO}|g" \
     -e "s|{{FIX_PR_LINK}}|${FIX_PR_LINK}|g" \
     "$body_file"
-  python3 - "$body_file" "$rows" <<PY
+  printf '%s' "$EVIDENCE_COVERAGE_BLOCK" >"$WORKDIR/evidence-coverage-block.txt"
+  python3 - "$body_file" "$rows" "$WORKDIR/evidence-coverage-block.txt" <<'PY'
 from pathlib import Path
 import sys
 
@@ -149,6 +175,8 @@ text = p.read_text().replace(
     "{{FINDING_ROWS}}",
     sys.argv[2].rstrip() + ("\n" if sys.argv[2].strip() else ""),
 )
+coverage = Path(sys.argv[3]).read_text(encoding="utf-8") if Path(sys.argv[3]).exists() else ""
+text = text.replace("{{EVIDENCE_COVERAGE}}", coverage)
 p.write_text(text)
 PY
   issue_url="$(gh issue create -R "$REPO" --title "$title" --body-file "$body_file")"

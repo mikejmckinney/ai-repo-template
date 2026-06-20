@@ -64,6 +64,14 @@ for pr in "${SELECTED_PRS[@]}"; do
   fi
   merge_sha="$(jq -r '.merge_commit_sha // .head.sha' "$pr_dir/pr.json")"
   MERGE_SHAS["$pr"]="$merge_sha"
+  python3 "$SCRIPT_DIR/compute-evidence-coverage.py" "$pr_dir" \
+    --pr "$pr" \
+    --repo-root "$REPO_ROOT" \
+    --diff-limit "$per_pr_diff" \
+    --head-file-cap 8000 \
+    --head-total-cap 80000 \
+    --warn \
+    -o "$ARTIFACT_ROOT/pr-${pr}-evidence-coverage.json"
   if [[ -s "$pr_dir/changed-files.txt" ]]; then
     cat "$pr_dir/changed-files.txt" >>"$ALL_CHANGED"
   fi

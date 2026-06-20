@@ -71,8 +71,12 @@ for pr in "${SELECTED_PRS[@]}"; do
   fi
   cp -f "$pr_artifact" "$ARTIFACT_ROOT/pr-${pr}-retro.json"
   pr_changed="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${pr}/changed-files.txt"
+  pr_coverage="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${pr}/evidence-coverage.json"
   if [[ -f "$pr_changed" ]]; then
     cp -f "$pr_changed" "$ARTIFACT_ROOT/pr-${pr}-changed-files.txt"
+  fi
+  if [[ -f "$pr_coverage" ]]; then
+    cp -f "$pr_coverage" "$ARTIFACT_ROOT/pr-${pr}-evidence-coverage.json"
   fi
   RETRO_FILES+=("$ARTIFACT_ROOT/pr-${pr}-retro.json")
 done
