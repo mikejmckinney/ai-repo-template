@@ -62,7 +62,7 @@ Many unit tests, fewer integration tests, minimal E2E tests. Concrete CI command
 
 | Role | Enforcement behavior |
 |---|---|
-| **Architect** | Writes an ADR when a Hard rule is deliberately relaxed. Updates this file when adding stack-specific rules. Owns `.context/rules/**` per `agent_ownership.md`. |
+| **Architect** | Writes an ADR when a Hard rule is deliberately relaxed. Updates this file when adding stack-specific rules. Owns `.context/rules/**` per [`.context/rules/agent_ownership.md`](./agent_ownership.md). |
 | **Frontend / Backend** | Obey Hard rules. Justify Soft-rule exceptions in commit messages. Don't silently lower thresholds. |
 | **QA** | Enforces via tests. Flags untested branches of Hard-rule code during the hand-off to Judge. |
 | **Critic** | Flags subjective violations under `CRAFT NOTES` / `NITS`. Cites the rule ID (H1–H8, S1–S6) so the author can look it up. |

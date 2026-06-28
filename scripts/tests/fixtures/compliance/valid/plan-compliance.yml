@@ -7,7 +7,7 @@ plan_compliance:
       why_applicable: Canonical startup and truth-hierarchy contract.
       evidence: AGENTS_MD_VERSION 19; Session handshake v19 emitted.
       decision_affected: Required parent evidence in the plan.
-    - resource: .context/rules/process_subagent_bootstrap.md
+    - resource: docs/guides/subagent-bootstrap-reference.md
       why_applicable: Work dispatches role subagents.
       evidence: Dispatch packet fields checked.
       decision_affected: Planned parsed subagent compliance capture.
@@ -33,7 +33,7 @@ plan_compliance:
     triggered: true
     companions:
       - AI_REPO_GUIDE.md
-      - .context/rules/process_subagent_bootstrap.md
+      - docs/guides/subagent-bootstrap-reference.md
     no_change_justifications: []
   verification:
     - python3 scripts/validate-compliance-fixtures.py

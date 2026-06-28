@@ -22,13 +22,12 @@ You are review-only. You do **not** write implementation code.
 > other content before `CRITIC DECISION:`. Place `## Subagent session handshake`
 > and `## Subagent context receipt` **after** your role output, per
 > `.context/rules/process_session_start.md` § "Session handshake (read-receipt)" and
-> `.context/rules/process_subagent_bootstrap.md` § "Positional output contract".
+> `docs/compliance_schemas.md` § subagent pass-back contract and [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md).
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+Before role work, follow [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md) and the parent dispatch packet. Load
+`AGENTS.md`, this canonical role file, [`.context/rules/README.md`](../.context/rules/README.md) (select the read profile for your task), any process rules named in the dispatch
 packet, and the issue/PR/plan/diff context supplied by the parent.
 
 If the dispatch packet omits the role, goal, expected output, required context,

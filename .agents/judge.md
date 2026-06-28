@@ -21,13 +21,12 @@ You are the **JUDGE** in a role-specialized pipeline. You **do not implement**. 
 > content before `DECISION:`. Place `## Subagent session handshake` and
 > `## Subagent context receipt` **after** your role output, per
 > `.context/rules/process_session_start.md` § "Session handshake (read-receipt)" and
-> `.context/rules/process_subagent_bootstrap.md` § "Positional output contract".
+> `docs/compliance_schemas.md` § subagent pass-back contract and [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md).
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+Before role work, follow [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md) and the parent dispatch packet. Load
+`AGENTS.md`, this canonical role file, [`.context/rules/README.md`](../.context/rules/README.md) (select the read profile for your task), any process rules named in the dispatch
 packet, and the issue/PR/plan/diff context supplied by the parent.
 
 If the dispatch packet omits the role, goal, expected output, required context,
@@ -167,7 +166,7 @@ QUESTIONS (max 3; only if truly blocking):
 
     BLOCK when the PR claims ready/done while missing outcome evidence and that omission masks false verification, required gate bypass, unsafe ownership bypass, or a clear scope mismatch.
 
-19. **Subagent verify-or-replay contract** (PR #312 dogfood): when `parent_compliance.subagents_dispatched[]` contains an entry with `run_status` ∈ `{PARTIAL, BLOCKED_ON_RUNTIME}`, that entry MUST also include a non-empty `apply_replays[]` with byte-anchored `{path, anchor, replacement}` patches, **or** the parent's `monolithic_justification` must explicitly explain how the role-owned work was reconstructed without pass-back (e.g., verbatim from the issue body, from the plan, by human re-dispatch). REQUEST_CHANGES when a non-SUCCESS subagent has empty `apply_replays[]` and the parent's justification does not name a concrete recovery source. BLOCK when the missing pass-back also masks default-agent scope creep into role-owned paths (i.e., the parent applied edits the dispatched role would have owned, with no audit trail of how those edits were derived). Canonical contract: `.context/rules/process_subagent_bootstrap.md` § "Edit verification and pass-back contract".
+19. **Subagent verify-or-replay contract** (PR #312 dogfood): when `parent_compliance.subagents_dispatched[]` contains an entry with `run_status` ∈ `{PARTIAL, BLOCKED_ON_RUNTIME}`, that entry MUST also include a non-empty `apply_replays[]` with byte-anchored `{path, anchor, replacement}` patches, **or** the parent's `monolithic_justification` must explicitly explain how the role-owned work was reconstructed without pass-back (e.g., verbatim from the issue body, from the plan, by human re-dispatch). REQUEST_CHANGES when a non-SUCCESS subagent has empty `apply_replays[]` and the parent's justification does not name a concrete recovery source. BLOCK when the missing pass-back also masks default-agent scope creep into role-owned paths (i.e., the parent applied edits the dispatched role would have owned, with no audit trail of how those edits were derived). Canonical contract: [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md) § "Pass-back gold standard".
 20. **Sandbox dogfood evidence (ADR-029)**: the PR body must include a `## Sandbox dogfood evidence` section with exactly two labels — `Sandbox issue:` and `Sandbox PR:` — each pointing to a sandbox issue and PR respectively.  Refer to the [sandbox verification playbook](../docs/guides/sandbox-verification.md) which details the process for using sandbox and which sandbox instance to use. REQUEST_CHANGES when the section is absent, either label is missing, or either URL is empty/malformed. BLOCK when the section is filled with plausible-looking URLs that do not actually exercise the change.  The `scripts/checks/157-sandbox-evidence-labels.sh` advisory check provides structural drift detection but does not validate URL content — that is your job.
 
 ## Output Format — DIFF-GATE (exact, use ONLY in diff-gate mode)

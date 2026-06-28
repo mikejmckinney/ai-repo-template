@@ -21,8 +21,8 @@ Before doing role work, load:
 
 1. `AGENTS.md` and its current `AGENTS_MD_VERSION`.
 2. This canonical role file and its `role_contract_version`.
-3. `.context/rules/process_role_selection.md`.
-4. `.context/rules/agent_ownership.md`.
+3. [`.context/rules/README.md`](../.context/rules/README.md) — select the read profile for your task.
+4. [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md) when dispatched as a subagent.
 5. Any process rules listed in the parent dispatch packet.
 6. The issue, PR, plan, or diff context supplied in the dispatch packet.
 

@@ -28,11 +28,11 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 |       |-- results/     # Scored agent ROI benchmark records and cost source register
 |       `-- tasks/       # Candidate-safe task injections + sealed reference metadata
 |-- roadmap.md           # Template-development phases and current hardening track
-|-- rules/               # Immutable constraints and process rules
-|   |-- agent_ownership.md            # Canonical role -> owned paths map (read before editing)
+|-- rules/               # Immutable constraints and process rules (slim catalog per ADR-031)
+|   |-- README.md                     # Rule catalog and read profiles — start here for rules
+|   |-- agent_ownership.md            # Path-ownership map (ADR-009 tooling; not startup-required)
 |   |-- domain_code_quality.md        # Built-in language-neutral SOLID/TDD/clean-code floor
 |   |-- process_doc_maintenance.md    # Doc-sync trigger table
-|   |-- process_subagent_bootstrap.md # ADR-026 dispatch packet + subagent return contract
 |   `-- process_*.md                  # Additional process rules by concern
 |-- sessions/            # Durable retrospectives and feedback records
 |   |-- feedback_template.md # Stakeholder feedback capture template
@@ -53,7 +53,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 1. Read `AGENTS.md`, then this file.
 2. Read your role file (for example, `.agents/<your-role>.md`).
 3. Read the assigned GitHub issue body, linked PR, latest `agent-state:v1` comment, and labels.
-4. Read `rules/agent_ownership.md` before touching files.
+4. Read [`.context/rules/README.md`](rules/README.md) to select the read profile for your task; consult [`.context/rules/agent_ownership.md`](rules/agent_ownership.md) before cross-role edits.
 5. Treat `state/` as the GitHub-first live-state reference surface; use `state/agent_state_comment_template.md` when updating the latest `agent-state:v1` baton.
 6. Read `sessions/latest_summary.md` for durable lessons from recent work.
 7. Read `roadmap.md` for the current template phase and open hardening track.

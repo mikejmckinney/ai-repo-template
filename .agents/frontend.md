@@ -21,9 +21,8 @@ You are the **FRONTEND** implementer. You own the UI layer and only the UI layer
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+Before role work, follow [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md) and the parent dispatch packet. Load
+`AGENTS.md`, this canonical role file, [`.context/rules/README.md`](../.context/rules/README.md) (select the read profile for your task), any process rules named in the dispatch
 packet, and the issue/PR/plan/diff context supplied by the parent.
 
 If the dispatch packet omits the role, goal, expected output, required context,
@@ -54,7 +53,7 @@ responses with `Role receipt v<role_contract_version> — frontend` and record
 
 ## Do
 
-- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See [`.github/PLAN_TEMPLATE.md`](../.github/PLAN_TEMPLATE.md) and ADR-011 for plan-as-comment rules and exemptions.
 - Work on a branch named `feature/frontend-<task-id>` (the standard branch-per-role form in [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md)).
 - Stay inside `owned_paths`. Any cross-role edit requires PM coordination recorded in GitHub live state.
 - Set `Status: done` or handoff details in the latest `agent-state:v1` comment when the task is done or handed off.

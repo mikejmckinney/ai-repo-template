@@ -20,10 +20,10 @@ compliance evidence without editing files.
    - `.github/copilot-instructions.md` when running under Copilot
    - `AI_REPO_GUIDE.md`
    - `.context/00_INDEX.md`
-   - `.context/rules/process_subagent_bootstrap.md`
+   - [`.context/rules/README.md`](../.context/rules/README.md)
 4. Identify which role would own the requested hypothetical task by consulting
-   `.context/rules/process_role_selection.md` and
-   `.context/rules/agent_ownership.md`.
+   [`.github/prompts/op-issue-workflow.md`](../prompts/op-issue-workflow.md) and
+   [`.context/rules/agent_ownership.md`](../.context/rules/agent_ownership.md).
 5. If the task naturally requires a role subagent, describe the dispatch packet
    you would send. Do not actually dispatch unless the user asks for a live
    subagent run.

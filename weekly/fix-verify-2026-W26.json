@@ -1,0 +1,86 @@
+{
+  "run_week": "2026-W26",
+  "run_kind": "weekly",
+  "findings": [
+    {
+      "dedupe_key": "repo-bootstrap-stale-rule-pointers",
+      "repro_steps": [
+        "Checkout `main` and run `test -f .context/rules/process_subagent_bootstrap.md && echo exists || echo MISSING` — prints MISSING",
+        "Open `.agents/judge.md` and note the bootstrap block (lines 28–30) requires reading `.context/rules/process_subagent_bootstrap.md` and `.context/rules/process_role_selection.md`",
+        "Attempt `cat .context/rules/process_role_selection.md` — file not found",
+        "Run `.github/prompts/instruction-compliance-smoke.md` step 3–4: agent is instructed to read the same missing paths before role identification"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Repointed .agents/**, copilot-instructions.md, instruction-compliance-smoke.md, domain_code_quality.md, and compliance fixtures to ADR-031 durable surfaces."
+      }
+    },
+    {
+      "dedupe_key": "repo-check-040-judge-overlay-stale",
+      "repro_steps": [
+        "Run `./test.sh` on `main`",
+        "Observe warnings: `judge.agent.md missing PLAN-GATE section` and `judge.agent.md missing DIFF-GATE section`",
+        "Open `.github/agents/judge.agent.md` — 26 lines, overlay pointer only, no gate sections",
+        "Open `.agents/judge.md` — contains `# PLAN-GATE Mode` (line 75) and `# DIFF-GATE Mode` (line 140)"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "040-file-content.sh now asserts PLAN-GATE/DIFF-GATE on canonical .agents/judge.md per ADR-023."
+      }
+    },
+    {
+      "dedupe_key": "repo-parallelism-ownership-map-gap",
+      "repro_steps": [
+        "Confirm `test -f .context/rules/agent_ownership.md` fails on `main`",
+        "Read `.github/workflows/agent-parallelism-report.yml` lines 108–113: missing file sets `parse_warning` and empty `ROLE_PREFIXES`",
+        "Open any PR in this repo and inspect the Parallelism Report comment — soft overlaps will never appear while ownership map is absent",
+        "Run `bats scripts/tests/parallelism-report-parser.bats` — note `skipped: .context/rules/agent_ownership.md not present` in live guard section"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Restored .context/rules/agent_ownership.md from scripts/tests/fixtures/agent_ownership.md for ADR-009 tooling without re-adding to slim rule catalog startup profile."
+      }
+    },
+    {
+      "dedupe_key": "repo-adr-031-pointer-migration-gap",
+      "verify": {
+        "pre": "n/a",
+        "post": "deferred",
+        "sandbox": "n/a",
+        "notes": "ADR edits out of scope per fix-pass rules. Pointer sweep and test.sh invariant implemented in code; ADR checklist amendment left for human follow-up."
+      }
+    },
+    {
+      "dedupe_key": "repo-index-stale-rule-listings",
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Updated .context/00_INDEX.md directory tree and quick-start step 4 to match ADR-031 slim catalog."
+      }
+    },
+    {
+      "dedupe_key": "repo-invariant-bootstrap-pointer-check",
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Added scripts/checks/044-bootstrap-rule-pointers.sh; wired via test.sh lexical module load."
+      }
+    }
+  ],
+  "sandbox": {
+    "needs_sync": false,
+    "issue_url": "n/a",
+    "pr_url": "n/a",
+    "skip_reason": "No workflow edits; agent_ownership restore fixes parallelism without sandbox workflow_dispatch. diag-sandbox.sh: sandbox remote not configured in this runner.",
+    "workflow_runs": []
+  },
+  "test_sh": "pass"
+}
