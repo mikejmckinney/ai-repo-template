@@ -61,7 +61,7 @@ All four overlay trees describe the **same 10 roles** and delegate to the canoni
 
 `test.sh` enforces an N-way parity check (`scripts/checks/050-agent-mirror.sh`): every overlay's `description:` must match the canonical byte-for-byte, every overlay body must reference its canonical, and every overlay's `model:` value must satisfy that platform's allowlist. Any drift is a hard failure.
 
-**Adding a new role** means adding the canonical `.agents/<role>.md` plus one overlay in each first-class platform folder (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) and updating `install.sh`'s `MULTIAGENT_FILES`, the `.context/rules/agent_ownership.md` table, and this guide. `test.sh` will fail loudly if any file is missing.
+**Adding a new role** means adding the canonical `.agents/<role>.md` plus one overlay in each first-class platform folder (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) and updating `install.sh`'s `MULTIAGENT_FILES`, each role's `owned_paths` frontmatter, and this guide. `test.sh` will fail loudly if any file is missing.
 
 **Adding a new platform** means adding one overlay file per role pointing at the same canonical, plus one row to the parallel arrays in `scripts/checks/050-agent-mirror.sh`.
 
@@ -302,7 +302,7 @@ The report is **comment-only and non-blocking**. Overlap is not intrinsically wr
 
 For deliberately fanning out a planned set of issues to Copilot in one shot, use the `Multi-Issue Dispatch (Parallel Copilot Fan-Out)` workflow (`.github/workflows/agent-multi-dispatch.yml`, issue [#114](https://github.com/mikejmckinney/ai-repo-template/issues/114)). Trigger from the Actions UI with a whitespace- or comma-separated list of issue numbers in **priority order**. The workflow:
 
-1. Resolves each issue's scope from (a) the first comment carrying an `<!-- architect-plan-files -->` marker followed by a fenced path list, or (b) the first `role:<name>` label whose name matches a row in `agent_ownership.md`. Issues with neither are dispatched but flagged with a WARN.
+1. Resolves each issue's scope from (a) the first comment carrying an `<!-- architect-plan-files -->` marker followed by a fenced path list, or (b) the first `role:<name>` label whose name matches a canonical role in `scripts/parse-ownership-table.sh --list-roles`, using that role's `owned_paths` from `.agents/<role>.md` (or `agent_ownership.md` when present). Issues with neither are dispatched but flagged with a WARN.
 2. Walks the input list **sequentially first-fit**: each issue is dispatched unless it hard-overlaps something already dispatched in this run, fails a `Depends-on: #N` body-line check, or sits in a depends-on cycle within the input set. Soft overlap (different files under the same owned-path prefix) is permitted **when at least one of the two issues has an explicit architect file list**. Two issues that both fall back to the same `role:<name>` label resolve to identical prefix lists, which the classifier reports as **hard** overlap, so the later issue is refused. To dispatch two same-role issues together, post a `<!-- architect-plan-files -->` comment on at least one of them naming the specific files it touches.
 3. Caps total dispatches at `min(MAX_COPILOT_CONCURRENT − in-flight, MAX_COPILOT_DAILY − last-24h)`. Anything past the cap is reported as **Skipped (budget cap)** and gets a comment so the human knows to retrigger after a slot frees up.
 4. Labels each ✅ issue `copilot:ready` and lets `agent-assign-copilot.yml` do the actual GraphQL assignment — there is no second assignment path.
@@ -311,7 +311,7 @@ Conventions surfaced by this workflow:
 
 - **`Depends-on: #N`** body line, one per dependency. Multiple allowed. Cycles within an input set are rejected (all members refused). External dependencies must be closed.
 - **`<!-- architect-plan-files -->`** HTML-comment marker followed by a fenced code block of paths. Any commenter can post one; the dispatcher uses the first match found.
-- **`role:<name>`** label (lowercase role name from `agent_ownership.md`) is the fallback when no architect marker is present. Only one role label per issue is honored (first match wins).
+- **`role:<name>`** label (lowercase role name from `.agents/<role>.md`) is the fallback when no architect marker is present. Only one role label per issue is honored (first match wins).
 
 A `dry_run: true` input posts the dispatch report to the workflow run summary without applying any labels — useful for previewing what an ordering would do.
 

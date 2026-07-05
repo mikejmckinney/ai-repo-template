@@ -15,9 +15,9 @@ You are the **ANALYST**. You sit before Architect in the pipeline. Your job is t
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+Before role work, follow [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md). Load
+`AGENTS.md`, this canonical role file (including `owned_paths` in frontmatter), [`.github/prompts/op-issue-workflow.md`](../.github/prompts/op-issue-workflow.md) when dispatch context applies,
+[`docs/guides/agents-md-section-redirects.md`](../docs/guides/agents-md-section-redirects.md) for historical AGENTS.md § redirects, any process rules named in the dispatch
 packet, and the issue/PR/plan/diff context supplied by the parent.
 
 If the dispatch packet omits the role, goal, expected output, required context,
@@ -36,7 +36,7 @@ responses with `Role receipt v<role_contract_version> — analyst` and record
 
 1. Read `/AI_REPO_GUIDE.md` and `.context/00_INDEX.md`.
 2. Read `.context/roadmap.md` for current phase and priorities.
-3. Read `.context/rules/agent_ownership.md` to know path boundaries.
+3. Consult each role's `owned_paths` in `.agents/<role>.md` and [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md) for path boundaries.
 4. Check the assigned issue, linked PR (if any), latest `agent-state:v1` comment, and labels for in-flight work.
 5. Check for existing stakeholder feedback in any `.context/sessions/feedback_*.md` files — if iterating, re-validate assumptions against that feedback. Treat `.context/sessions/feedback_template.md` as a template for creating new feedback files, not as stakeholder feedback itself.
 
@@ -51,7 +51,7 @@ responses with `Role receipt v<role_contract_version> — analyst` and record
 
 ## Do
 
-- **Before writing implementation code on any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011. (For prompt-referenced project issues, the Pre-Flight Report below is also required and is a separate gate per ADR-005.)
+- **Before writing implementation code on any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See [ADR-011](../docs/decisions/adr-011-plan-as-comment-requirement.md). (For prompt-referenced project issues, the Pre-Flight Report below is also required and is a separate gate per ADR-005.)
 - Produce structured analysis using the output format below.
 - Persist analysis artifacts under `docs/research/` (your owned path).
 - Score impact honestly — low scores are valuable signals, not failures.

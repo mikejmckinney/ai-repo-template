@@ -518,11 +518,10 @@ def validate_subagent(
             _require_type(item["replacement"], str, f"{item_source}.replacement")
     # NOTE: a non-SUCCESS run_status with empty apply_replays is permitted at
     # the schema layer. The verify-or-replay contract documented in
-    # `.context/rules/process_subagent_bootstrap.md` § "Parent handling of
-    # pass-back evidence" treats this case as a process compliance failure
-    # the parent must document in `monolithic_justification` (and the judge
-    # diff-gates per `.agents/judge.md` item 19). Enforcing it here would
-    # make that documented "without-replay" path unsatisfiable.
+    # docs/guides/subagent-bootstrap-reference.md and `.agents/judge.md` item 19
+    # treats this case as a process compliance failure the parent must document
+    # in `monolithic_justification`. Enforcing it here would make that documented
+    # "without-replay" path unsatisfiable.
 
     # v1.2 optional: opportunity_notes (cap <=3 entries per session per agent).
     # Reuse the already-computed ``versions`` map so opportunity_notes

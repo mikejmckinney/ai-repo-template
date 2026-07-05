@@ -186,6 +186,18 @@ files=$(extract_scope 204 2>/dev/null)
 assert_contains "marker without fence → role-glob fallback" "MODE: role-glob" "$mode"
 assert_contains "fallback returns backend prefixes" "src/backend" "$files"
 
+# 6. Role-file owned_paths fallback when agent_ownership.md is absent
+#    (production path; fixture ownership table must not mask this).
+export MULTI_DISPATCH_FORCE_ROLE_FILES=1
+_mds_role_prefixes=""
+_mds_role_prefixes_loaded=""
+make_issue 205 "title body" $'role:backend' "" "open"
+mode=$(extract_scope 205 2>&1 >/dev/null)
+files=$(extract_scope 205 2>/dev/null)
+assert_contains "role-file fallback → role-glob mode" "MODE: role-glob (role:backend)" "$mode"
+assert_contains "role-file fallback includes src/backend" "src/backend" "$files"
+unset MULTI_DISPATCH_FORCE_ROLE_FILES
+
 echo ""
 
 # ── Tests: classify_overlap ──

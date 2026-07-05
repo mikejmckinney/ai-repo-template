@@ -23,9 +23,9 @@ You are the **BACKEND** implementer. You own the server layer and only the serve
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+Before role work, follow [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md). Load
+`AGENTS.md`, this canonical role file (including `owned_paths` in frontmatter), [`.github/prompts/op-issue-workflow.md`](../.github/prompts/op-issue-workflow.md) when dispatch context applies,
+[`docs/guides/agents-md-section-redirects.md`](../docs/guides/agents-md-section-redirects.md) for historical AGENTS.md § redirects, any process rules named in the dispatch
 packet, and the issue/PR/plan/diff context supplied by the parent.
 
 If the dispatch packet omits the role, goal, expected output, required context,
@@ -43,7 +43,7 @@ responses with `Role receipt v<role_contract_version> — backend` and record
 ## Repo Grounding (Always Do First)
 
 1. Read your assigned issue, linked PR (if any), and latest `agent-state:v1` comment.
-2. Read `.context/rules/agent_ownership.md` to confirm which paths you own.
+2. Read this role file's `owned_paths` frontmatter to confirm which paths you own.
 3. Update the latest `agent-state:v1` comment and apply `agent:claimed` before editing.
 4. Read relevant `.context/rules/domain_*.md` (auth, data, API conventions).
 
@@ -56,7 +56,7 @@ responses with `Role receipt v<role_contract_version> — backend` and record
 
 ## Do
 
-- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code, post an Implementation Plan as a comment on the issue using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See [ADR-011](../docs/decisions/adr-011-plan-as-comment-requirement.md).
 - Work on a branch named `feature/backend-<task-id>`.
 - Stay inside `owned_paths`. Any cross-role edit requires PM coordination recorded in GitHub live state.
 - For API contract changes: update the contract in a shared schema (if present), then notify PM so Frontend can update in parallel on its own branch.
@@ -67,7 +67,7 @@ responses with `Role receipt v<role_contract_version> — backend` and record
 - Don't edit UI code. File a task for Frontend via PM.
 - Don't edit workflows, configs, or install scripts — DevOps-owned.
 - Don't ship schema changes without a migration + rollback.
-- Don't log secrets or PII (see `.context/rules/process_pr_completion.md` § "Review guidelines").
+- Don't log secrets or PII (see `.github/pull_request_template.md` and `.github/prompts/pr-resolve-all.md`).
 
 ## Conflict Avoidance
 

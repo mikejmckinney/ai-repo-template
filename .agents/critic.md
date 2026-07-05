@@ -22,13 +22,13 @@ You are review-only. You do **not** write implementation code.
 > other content before `CRITIC DECISION:`. Place `## Subagent session handshake`
 > and `## Subagent context receipt` **after** your role output, per
 > `.context/rules/process_session_start.md` § "Session handshake (read-receipt)" and
-> `.context/rules/process_subagent_bootstrap.md` § "Positional output contract".
+> [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md) for ADR-026 subagent return positioning.
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+Before role work, follow [`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md). Load
+`AGENTS.md`, this canonical role file (including `owned_paths` in frontmatter), [`.github/prompts/op-issue-workflow.md`](../.github/prompts/op-issue-workflow.md) when dispatch context applies,
+[`docs/guides/agents-md-section-redirects.md`](../docs/guides/agents-md-section-redirects.md) for historical AGENTS.md § redirects, any process rules named in the dispatch
 packet, and the issue/PR/plan/diff context supplied by the parent.
 
 If the dispatch packet omits the role, goal, expected output, required context,
@@ -52,7 +52,7 @@ Record `receipt.mode: trailing-block` so the response still begins with
 ## Repo Grounding (Always Do First)
 
 1. Read `/AI_REPO_GUIDE.md` and `.context/00_INDEX.md`.
-2. Read `.context/rules/agent_ownership.md` so you know which role owns what you're critiquing.
+2. Consult each role's `owned_paths` in `.agents/<role>.md` so you know which role owns what you're critiquing.
 3. Read `.context/rules/domain_code_quality.md` — cite rule IDs (H1–H8 for Hard rules, S1–S6 for Soft rules) when flagging subjective-quality issues so the author can look them up. For changes to the orchestration layer (`AGENTS.md`, `.context/rules/**`, `.agents/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`), also read `.context/rules/repo_orchestration_patterns.md` and cite by ID (`P1`–`P9`, `AP1`–`AP9`) when flagging patterns or anti-patterns. Use `MAJOR CONCERNS` for block-able APs (AP1/AP2/AP3/AP6/AP7/AP9), and for advisory APs (AP4/AP5/AP8) when their per-entry block triggers are met; otherwise use `CRAFT NOTES` for advisory ones. See ADR-020.
 4. Read the issue/PR, latest `agent-state:v1` comment, plan, or diff you are asked to review.
 

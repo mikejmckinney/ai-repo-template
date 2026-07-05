@@ -1,16 +1,33 @@
-# Session: 2026-06-14 — main — OP
+# Session: 2026-07-05 — weekly/fix-2026-W27 — OP
 
-**Status**: #430 merged (#431); #428 next
-**Issue/PR**: [#430](https://github.com/mikejmckinney/ai-repo-template/issues/430) closed / [#431](https://github.com/mikejmckinney/ai-repo-template/pull/431) merged
+**Status**: in_progress
+**Issue/PR**: [#467](https://github.com/mikejmckinney/ai-repo-template/issues/467) umbrella / weekly fix pass 2026-W27
+**Started**: 2026-07-05T08:00:00Z
 
-## Latest
+## What Was Accomplished
 
-- Merged session receipt contract (#431 → `712626d`): **Load** vs **In context**, `Receipt boundary`, stale replay rules; `AGENTS.md` v26
-- Preserved WIP governance edits: `most relevant` profiles, mandatory-at-selection catalog, clarification wording, intentional `read:` opener
-- CI green on PR branch; user dogfood in separate session — positive
-- Sandbox N/A (policy/docs; no workflow changes)
+- Weekly review fix pass: retargeted ADR-031-removed bootstrap pointers in role files, Copilot instructions, `00_INDEX.md`, and instruction-compliance-smoke prompt.
+- Restored production `role:<name>` multi-dispatch scope via `.agents/*.md` `owned_paths` fallback (`scripts/load-role-owned-paths.sh`).
+- Added `076-bootstrap-surface-pointers.sh` invariant; rotated stale `latest_summary.md` archive.
 
-## Next
+## What Shipped
 
-1. Implement [#428](https://github.com/mikejmckinney/ai-repo-template/issues/428) (finalize + shared collector hardening)
-2. Optional: record `handshake-and-shape-smoke.md` Scenario E output as durable manual evidence
+Pending PR merge — consumer migration for ADR-031 slim catalog and multi-dispatch role-glob fallback.
+
+## Harder Than Expected
+
+nothing notable
+
+## Generalizable Lessons
+
+When slimming `.context/rules/`, update bootstrap consumers in the same change set or add a `test.sh` invariant immediately — context-pack manifest updates alone do not prevent ghost-path drift.
+
+## Files Modified
+
+- `.agents/*.md`, `.github/copilot-instructions.md`, `.context/00_INDEX.md`, `.github/prompts/instruction-compliance-smoke.md`
+- `scripts/load-role-owned-paths.sh`, `scripts/multi-dispatch-safety.sh`, `scripts/checks/076-bootstrap-surface-pointers.sh`
+
+## Open Items / Next
+
+1. Human review of `weekly/fix-2026-W27` draft PR
+2. Sandbox workflow proof for `agent-parallelism-report.yml` ownership source (still reads `agent_ownership.md` when present)

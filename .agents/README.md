@@ -43,9 +43,8 @@ recognizes** — they exist as machine-readable documentation of the role's
 intended scope and pipeline neighbors:
 
 - `owned_paths:` — the file/glob patterns this role is allowed to write.
-  Authoritative copy lives in
-  [`.context/rules/agent_ownership.md`](../.context/rules/agent_ownership.md);
-  the canonical frontmatter mirror is for at-a-glance reference only.
+  Authoritative per-role copy lives in this canonical frontmatter; dispatch and
+  parallelism tooling read it when `agent_ownership.md` is absent (ADR-031).
 - `handoff_targets:` — the downstream roles this role typically dispatches to.
 
 Both Claude Code and the Copilot SDK silently ignore unknown frontmatter

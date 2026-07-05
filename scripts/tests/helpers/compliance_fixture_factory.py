@@ -87,7 +87,7 @@ def make_plan_compliance(**overrides: Any) -> dict[str, Any]:
                     "decision_affected": "Required parent evidence in plan.",
                 },
                 {
-                    "resource": ".context/rules/process_subagent_bootstrap.md",
+                    "resource": "docs/guides/subagent-bootstrap-reference.md",
                     "why_applicable": "Work dispatches role subagents.",
                     "evidence": "Dispatch packet fields checked.",
                     "decision_affected": "Planned parsed subagent compliance capture.",

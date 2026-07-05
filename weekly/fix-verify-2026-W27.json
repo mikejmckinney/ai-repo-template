@@ -1,0 +1,129 @@
+{
+  "run_week": "2026-W27",
+  "run_kind": "weekly",
+  "run_date": "2026-07-05",
+  "findings": [
+    {
+      "dedupe_key": "repo-role-bootstrap-stale-refs",
+      "repro_steps": [
+        "On main, run: `test ! -f .context/rules/process_subagent_bootstrap.md && test ! -f .context/rules/process_role_selection.md && test ! -f .context/rules/agent_ownership.md` (all three should succeed — files absent).",
+        "Open `.agents/judge.md` and read the \"Bootstrap and compliance return\" section (lines 26–31); note it requires loading the three deleted paths.",
+        "Attempt to read any cited file, e.g. `cat .context/rules/process_subagent_bootstrap.md` — observe \"No such file or directory\".",
+        "Repeat for `.github/copilot-instructions.md` line 10 (`process_gates.md`) and line 26 (`process_subagent_bootstrap.md`) — same failure."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Retargeted bootstrap sections in all canonical role files, _TEMPLATE.md, and copilot-instructions.md to ADR-031 durable surfaces."
+      }
+    },
+    {
+      "dedupe_key": "repo-multi-dispatch-role-glob-broken",
+      "repro_steps": [
+        "Confirm `.context/rules/agent_ownership.md` is absent: `test ! -f .context/rules/agent_ownership.md`.",
+        "From repo root, run a production-mode simulation with cleared prefix cache; observe MODE: none instead of role-glob.",
+        "Contrast with CI fixture substitution masking production behavior."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "deferred",
+        "notes": "Added scripts/load-role-owned-paths.sh and role-file fallback in multi-dispatch-safety.sh; MULTI_DISPATCH_FORCE_ROLE_FILES=1 bats case. agent-parallelism-report.yml still reads agent_ownership.md on upstream — sandbox workflow proof deferred (no .github/workflows edit on upstream)."
+      }
+    },
+    {
+      "dedupe_key": "repo-index-ownership-stale",
+      "repro_steps": [
+        "Open `.context/00_INDEX.md` Quick Start step 4 — it names `rules/agent_ownership.md`.",
+        "Run `test -f .context/rules/agent_ownership.md` — exits non-zero.",
+        "Directory tree lists removed rule files."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Updated directory tree and Quick Start step 4 to role-file owned_paths + multi-agent-coordination.md."
+      }
+    },
+    {
+      "dedupe_key": "repo-compliance-smoke-stale-pointers",
+      "repro_steps": [
+        "instruction-compliance-smoke.md read chain cites three removed .context/rules paths.",
+        "Each `test -f <path>` fails on main."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Retargeted smoke prompt read chain to subagent-bootstrap-reference.md and role owned_paths."
+      }
+    },
+    {
+      "dedupe_key": "repo-sessions-summary-stale",
+      "repro_steps": [
+        "./test.sh warns latest_summary.md entry is 21 days old.",
+        "Header still # Session: 2026-06-14."
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Archived 2026-06-14 entry to .context/sessions/2026-06-14_main-session-receipt.md; fresh 2026-07-05 entry in latest_summary.md."
+      }
+    },
+    {
+      "dedupe_key": "repo-adr031-migration-incomplete",
+      "verify": {
+        "pre": "n/a",
+        "post": "notes_only",
+        "sandbox": "n/a",
+        "notes": "ADR edit out of scope. Proposed Migration status subsection: context-pack manifests updated in prior PRs; consumer migration completed in this fix pass except parallelism-report workflow ownership source (deferred sandbox)."
+      }
+    },
+    {
+      "dedupe_key": "repo-adr026-bootstrap-pointer-retired",
+      "verify": {
+        "pre": "n/a",
+        "post": "notes_only",
+        "sandbox": "n/a",
+        "notes": "ADR edit out of scope. Updated compliance_schema.py comment, valid fixtures, and compliance_fixture_factory.py to cite docs/guides/subagent-bootstrap-reference.md instead of process_subagent_bootstrap.md."
+      }
+    },
+    {
+      "dedupe_key": "repo-context-index-stale-tree",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Addressed with repo-index-ownership-stale (00_INDEX.md tree + quick start)."
+      }
+    },
+    {
+      "dedupe_key": "repo-invariant-bootstrap-path-check",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Added scripts/checks/076-bootstrap-surface-pointers.sh."
+      }
+    },
+    {
+      "dedupe_key": "repo-context-smoke-prompt-refresh",
+      "verify": {
+        "pre": "skipped_collateral",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Addressed with repo-compliance-smoke-stale-pointers."
+      }
+    }
+  ],
+  "sandbox": {
+    "needs_sync": true,
+    "issue_url": "n/a",
+    "pr_url": "n/a",
+    "skip_reason": "diag-sandbox.sh: sandbox git remote not configured in this runner; parallelism-report workflow proof requires sandbox host with SANDBOX_BOOTSTRAP_TOKEN",
+    "workflow_runs": []
+  },
+  "test_sh": "passed (990 pass, 0 fail, 24 warn)"
+}

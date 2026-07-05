@@ -14,7 +14,8 @@
 #            marker followed by a fenced code block (any author).
 #         2. The first `role:<name>` label whose <name> matches a role
 #            in scripts/parse-ownership-table.sh --list-roles. The role's
-#            owned-path prefixes are emitted.
+#            owned-path prefixes are emitted from agent_ownership.md when
+#            present, else from .agents/*.md owned_paths frontmatter.
 #         3. Nothing — emit `WARN: no scope detected for #N` to stderr
 #            and exit 0 with empty stdout (caller treats as no overlap).
 #       Mode reported on stderr as `MODE: architect|role-glob|none`.
@@ -60,12 +61,14 @@ _MDS_REPO_ROOT="$(cd "$_MDS_LIB_DIR/.." && pwd)"
 _MDS_OWNERSHIP_FILE="${MULTI_DISPATCH_OWNERSHIP_FILE:-$_MDS_REPO_ROOT/.context/rules/agent_ownership.md}"
 if [[ ! -f "$_MDS_OWNERSHIP_FILE" ]]; then
   _MDS_OWNERSHIP_FIXTURE="$_MDS_REPO_ROOT/scripts/tests/fixtures/agent_ownership.md"
-  if [[ "${MULTI_DISPATCH_TEST_MODE:-0}" == "1" || "${AUTO_REBASE_TEST_MODE:-0}" == "1" ]] \
+  if [[ "${MULTI_DISPATCH_FORCE_ROLE_FILES:-0}" != "1" ]] \
+    && [[ "${MULTI_DISPATCH_TEST_MODE:-0}" == "1" || "${AUTO_REBASE_TEST_MODE:-0}" == "1" ]] \
     && [[ -f "$_MDS_OWNERSHIP_FIXTURE" ]]; then
     _MDS_OWNERSHIP_FILE="$_MDS_OWNERSHIP_FIXTURE"
   fi
 fi
 _MDS_PARSE_OWNERSHIP="$_MDS_REPO_ROOT/scripts/parse-ownership-table.sh"
+_MDS_LOAD_ROLE_PATHS="$_MDS_REPO_ROOT/scripts/load-role-owned-paths.sh"
 
 # ── Internal helpers ──
 
@@ -77,11 +80,15 @@ _mds_load_role_prefixes() {
     return 0
   fi
   _mds_role_prefixes_loaded=1
-  if [[ ! -f "$_MDS_OWNERSHIP_FILE" || ! -x "$_MDS_PARSE_OWNERSHIP" ]]; then
-    _mds_role_prefixes=""
+  if [[ -f "$_MDS_OWNERSHIP_FILE" && -x "$_MDS_PARSE_OWNERSHIP" ]]; then
+    _mds_role_prefixes=$("$_MDS_PARSE_OWNERSHIP" <"$_MDS_OWNERSHIP_FILE" || true)
     return 0
   fi
-  _mds_role_prefixes=$("$_MDS_PARSE_OWNERSHIP" <"$_MDS_OWNERSHIP_FILE" || true)
+  if [[ -x "$_MDS_LOAD_ROLE_PATHS" ]]; then
+    _mds_role_prefixes=$("$_MDS_LOAD_ROLE_PATHS" || true)
+  else
+    _mds_role_prefixes=""
+  fi
 }
 
 # Print the canonical role names this dispatcher recognizes (lowercased).

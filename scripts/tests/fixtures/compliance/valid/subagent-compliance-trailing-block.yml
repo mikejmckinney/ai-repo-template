@@ -8,7 +8,7 @@ subagent_compliance:
   context_files_used:
     - AGENTS.md
     - .agents/judge.md
-    - .context/rules/process_subagent_bootstrap.md
+    - docs/guides/subagent-bootstrap-reference.md
   pointers_skipped: []
   task_scope: Plan-gate review — smoke fixture for trailing-block receipt mode.
   files_modified: []

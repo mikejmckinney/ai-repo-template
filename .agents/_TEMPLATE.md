@@ -20,9 +20,9 @@ and `.codex/agents/` stay thin and must not duplicate this role body.
 Before doing role work, load:
 
 1. `AGENTS.md` and its current `AGENTS_MD_VERSION`.
-2. This canonical role file and its `role_contract_version`.
-3. `.context/rules/process_role_selection.md`.
-4. `.context/rules/agent_ownership.md`.
+2. This canonical role file and its `role_contract_version` (including `owned_paths`).
+3. [`.github/prompts/op-issue-workflow.md`](../.github/prompts/op-issue-workflow.md) when dispatch context applies.
+4. [`docs/guides/agents-md-section-redirects.md`](../docs/guides/agents-md-section-redirects.md) for historical AGENTS.md § redirects.
 5. Any process rules listed in the parent dispatch packet.
 6. The issue, PR, plan, or diff context supplied in the dispatch packet.
 
