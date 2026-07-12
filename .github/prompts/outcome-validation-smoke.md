@@ -16,7 +16,7 @@ issue #311's outcome-first validation regime.
 ## Rules
 
 1. Do **not** modify files, open PRs, or post comments.
-2. Read [`.context/rules/process_pr_completion.md`](../../.context/rules/process_pr_completion.md)
+2. Read [`.github/pull_request_template.md`](../pull_request_template.md)
    § "User outcome validation", [`.agents/judge.md`](../../.agents/judge.md)
    diff-gate item 18, and [`.agents/critic.md`](../../.agents/critic.md)
    "Outcome theater" smell before evaluating the scenarios.

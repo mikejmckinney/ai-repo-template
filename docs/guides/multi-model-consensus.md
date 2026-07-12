@@ -25,7 +25,7 @@ platforms; it does not combine text/image/audio modalities.
 
 - **Not approval.** The final consensus plan is still a plan. Judge
   plan-gate runs on it just like any other plan-as-comment per
-  [`.context/rules/process_gates.md`](../../.context/rules/process_gates.md).
+  [ADR-011](../decisions/adr-011-plan-as-comment-requirement.md).
 - **Not the default planning path.** The default for almost every
   issue is one plan-as-comment using
   [`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md).
@@ -186,7 +186,7 @@ GitHub live-state comments and labels when two roles share a path glob. This is
 ADR-worthy and has multiple plausible designs.
 
 1. Initiating Architect reads issue #NNN, the relevant ADRs (009, 018),
-  `agent_ownership.md`, and the latest `agent-state:v1` comment/labels.
+  each role's `owned_paths:` in `.agents/`, and the latest `agent-state:v1` comment/labels.
   Posts a Context Brief in a comment.
 2. Architect dispatches three candidate planners:
    - Subagent A: Architect role on Opus.

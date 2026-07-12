@@ -1,0 +1,150 @@
+{
+  "run_week": "2026-W28",
+  "run_kind": "weekly",
+  "findings": [
+    {
+      "dedupe_key": "repo-adr031-live-surfaces-stale-refs",
+      "repro_steps": [
+        "Clone the repo and run: `test ! -f .context/rules/process_subagent_bootstrap.md && echo missing`",
+        "Open `.agents/judge.md` and note the bootstrap instruction at lines 28-29 referencing the missing file",
+        "Attempt: `cat .context/rules/process_subagent_bootstrap.md` — observe 'No such file or directory'",
+        "Repeat for `process_gates.md` and `process_role_selection.md` cited from `.github/copilot-instructions.md:10`"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Repainted canonical .agents/*, copilot-instructions, 00_INDEX, active prompts/guides, and PR template to ADR-031 durable surfaces. Added scripts/checks/169-adr031-removed-rule-surfaces.sh."
+      }
+    },
+    {
+      "dedupe_key": "repo-max-copilot-daily-default-split",
+      "repro_steps": [
+        "Ensure `MAX_COPILOT_DAILY` repo variable is unset (or delete it in a test repo)",
+        "Grep workflows: `rg \"MAX_COPILOT_DAILY \\|\\|\" .github/workflows/` — observe `'20'` in agent-multi-dispatch.yml vs `'10'` in agent-assign-copilot.yml",
+        "Trigger `agent-multi-dispatch` with 11 eligible issues after 10 daily assignments — multi-dispatch reports remaining daily headroom using cap 20 while assign-copilot refuses the 11th assignment"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "pending",
+        "notes": "Aligned docs (multi-agent-coordination default 10). Per hard rule, workflow literals in agent-multi-dispatch.yml and backlog-to-issues.yml were not edited on upstream; sandbox branch test/fix-weekly-2026-W28 should carry `|| '10'` patch before workflow_dispatch proof."
+      }
+    },
+    {
+      "dedupe_key": "repo-verify-pr-ci-not-wired",
+      "repro_steps": [
+        "Run `rg 'verify-pr' .github/workflows/` — observe zero matches",
+        "Open `docs/guides/agent-pipeline.md` line 486 and read the CI blocking claim",
+        "Open a PR whose plan declares `Change class: code-or-docs` but only edits `.github/workflows/agent-review-on-push.yml` (a default-branch-only change per the matrix) — no CI job runs verify-pr.sh or blocks merge on the mismatch"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Revised agent-pipeline.md step 3 to state ADR-016 defers CI wiring; enforcement is local pre-push plus Judge/plan-gate until wired."
+      }
+    },
+    {
+      "dedupe_key": "repo-agent-ownership-soft-overlap-disabled",
+      "repro_steps": [
+        "Confirm `test ! -f .context/rules/agent_ownership.md`",
+        "Run `./scripts/parse-ownership-table.sh < scripts/tests/fixtures/agent_ownership.md` — succeeds on fixture",
+        "Run `./scripts/parse-ownership-table.sh < .context/rules/agent_ownership.md` — fails with 'No such file'",
+        "Dispatch `agent-parallelism-report` on a repo with two open `copilot/` PRs under `scripts/` — workflow logs `ownership map (.context/rules/agent_ownership.md) not found; soft-overlap classification disabled`"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Documented intentional soft-overlap disablement in multi-agent-coordination.md; repointed live agent surfaces to canonical owned_paths frontmatter instead of the removed table."
+      }
+    },
+    {
+      "dedupe_key": "repo-040-judge-overlay-stale-check",
+      "repro_steps": [
+        "Run `./test.sh 2>&1 | rg 'judge.agent.md missing'` — observe two warnings",
+        "Open `.github/agents/judge.agent.md` — confirm it only points at canonical `.agents/judge.md`",
+        "Open `.agents/judge.md` — confirm `# PLAN-GATE Mode` and diff-gate sections exist"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "040-file-content.sh now greps canonical .agents/judge.md per ADR-023."
+      }
+    },
+    {
+      "dedupe_key": "repo-adr-031-broken-adr009-link",
+      "repro_steps": [
+        "Open `docs/decisions/adr-031-agent-model-roi-benchmark-policy.md` line 141",
+        "Attempt `test -f docs/decisions/adr-009-parallelism-report.md` — fails",
+        "Confirm `docs/decisions/adr-009-parallel-multi-agent-execution.md` exists"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Link target corrected to adr-009-parallel-multi-agent-execution.md."
+      }
+    },
+    {
+      "dedupe_key": "repo-agent-pipeline-composer-anchor-drift",
+      "repro_steps": [
+        "Render `docs/guides/agent-pipeline.md` on GitHub",
+        "Click the 'Composer 2.5 standard vs fast' link in the repository variables table (line 563)",
+        "Observe the page does not scroll to the Composer section (anchor mismatch)"
+      ],
+      "verify": {
+        "pre": "reproduced",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Repository variables table anchor aligned with line 312 slug."
+      }
+    },
+    {
+      "dedupe_key": "repo-adr031-migration-checklist",
+      "verify": {
+        "pre": "n/a",
+        "post": "skipped",
+        "sandbox": "n/a",
+        "notes": "ADR update out of scope for weekly fix pass; migration completion partially landed via live-surface repoint + check 169."
+      }
+    },
+    {
+      "dedupe_key": "repo-adr016-verify-pr-ci-status",
+      "verify": {
+        "pre": "n/a",
+        "post": "skipped",
+        "sandbox": "n/a",
+        "notes": "ADR update out of scope; agent-pipeline.md cross-link added in repo-verify-pr-ci-not-wired fix."
+      }
+    },
+    {
+      "dedupe_key": "repo-00-index-phantom-rule-files",
+      "verify": {
+        "pre": "n/a",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "Addressed with repo-adr031-live-surfaces-stale-refs (.context/00_INDEX.md tree + quick-start)."
+      }
+    },
+    {
+      "dedupe_key": "repo-benchmark-results-core-min-stale",
+      "verify": {
+        "pre": "n/a",
+        "post": "fixed",
+        "sandbox": "n/a",
+        "notes": "core-min pack row now matches core-min.tsv (2 files; no agent_ownership.md)."
+      }
+    }
+  ],
+  "sandbox": {
+    "needs_sync": true,
+    "issue_url": "n/a",
+    "pr_url": "n/a",
+    "skip_reason": "sandbox git remote not configured in runner; workflow default patch deferred to sandbox PR test/fix-weekly-2026-W28",
+    "workflow_runs": []
+  },
+  "test_sh": "passed (994 passed, 23 warnings, 0 failed)"
+}

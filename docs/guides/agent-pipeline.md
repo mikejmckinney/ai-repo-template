@@ -483,7 +483,7 @@ label (defense in depth).
 
 1. **At plan time** — Walk every changed path. Pick the most-restrictive class present and put it under the Verification section of your Implementation Plan comment as `Change class: <class>` and `Verification target: <PR branch | sandbox repo | both>`. The PLAN_TEMPLATE has the placeholder.
 2. **Pre-push** — `bash scripts/verify-pr.sh --declared "<your declared class>"` (no args needed beyond `--declared`; it uses `git diff --name-only origin/main...HEAD`). Exit 0 means your declaration matches reality. Exit 1 prints the detected class and points you at the next step.
-3. **In CI** — `verify-pr.sh` runs against the PR's changed-file list (sourced from the PR API into `PR_FILES`) and BLOCKs the merge if the declaration is too permissive for the diff. The Plan-comment authoring step is the gate; CI is the safety net.
+3. **In CI** — `verify-pr.sh` CI wiring is **deferred** per [ADR-016](../decisions/adr-016-pre-merge-verification-gate.md) § Consequences. Until a workflow step runs it against `PR_FILES`, enforcement is local pre-push (`bash scripts/verify-pr.sh --declared "<class>"`) plus Judge/plan-gate review — not an automated merge block.
 4. **For default-branch-only / mixed PRs** — follow `docs/guides/sandbox-verification.md`. Push the same branch to the sandbox repo, merge it there, exercise the trigger event, and confirm green before merging here.
 
 The classifier deliberately defaults to *more* restrictive when in doubt: a deleted workflow file (the body can't be inspected) is treated as `default-branch-only` so reviewers consciously confirm the removal is safe. False positives are easy to override (re-declare and proceed); false negatives are exactly the failure mode the gate exists to prevent.
@@ -560,7 +560,7 @@ Set via **Settings → Secrets and variables → Actions → Variables tab**.
 | `ADVISORY_REVIEW_DIFF_LIMIT_FULL` | `300000` | Max diff bytes in cursor/gemini prompt when `ai-review:full` is also set. |
 | `ADVISORY_REVIEW_COMMENT_LIMIT` | `65000` | Max bytes for posted advisory issue comment (automation truncates with warning). |
 | `ADVISORY_CONTEXT_PROFILE` | `pr-review` | Catalog read profile for injected rules: `standard`, `pr-review`, or `full` (plus path-triggered rules). |
-| `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Cursor SDK model id for advisory, finalize, and retro runners. **`composer-2.5` = standard tier** (`fast=false` in `run-advisory-cursor.mjs`). Set `composer-2.5-fast` only when you intentionally want the fast tier. See [Composer 2.5 standard vs fast](agent-pipeline.md#composer-25-standard-vs-fast-cursor-sdk). |
+| `CURSOR_ADVISORY_MODEL` | `composer-2.5` | Cursor SDK model id for advisory, finalize, and retro runners. **`composer-2.5` = standard tier** (`fast=false` in `run-advisory-cursor.mjs`). Set `composer-2.5-fast` only when you intentionally want the fast tier. See [Composer 2.5 standard vs fast](agent-pipeline.md#composer-25-standard-vs-fast-cursor-sdk-and-cli). |
 | `GEMINI_ADVISORY_MODEL` | `gemini-3.5-flash` | Gemini `generateContent` model id (`gemini-3.5-flash`, `gemini-flash-latest`, …). |
 | `FINALIZE_REVIEW_PROVIDER` | *(falls back to `ADVISORY_REVIEW_PROVIDER`)* | Final inbox runtime: `auto`, `cursor`, or `gemini` (no antigravity path in PR 3). |
 | `FINALIZE_REVIEW_DIFF_LIMIT` | `300000` | Max diff bytes embedded in finalize consolidation prompt. |

@@ -268,17 +268,17 @@ else
   pass "install.sh has no \"Dotfiles\" log strings (rebrand intact)"
 fi
 
-# Check judge.agent.md has required sections
-if grep -q "PLAN-GATE" .github/agents/judge.agent.md 2>/dev/null; then
-  pass "judge.agent.md has PLAN-GATE section"
+# Check judge role has required gate sections (canonical per ADR-023)
+if grep -q "PLAN-GATE" .agents/judge.md 2>/dev/null; then
+  pass "judge.md has PLAN-GATE section"
 else
-  warn "judge.agent.md missing PLAN-GATE section"
+  warn "judge.md missing PLAN-GATE section"
 fi
 
-if grep -q "DIFF-GATE" .github/agents/judge.agent.md 2>/dev/null; then
-  pass "judge.agent.md has DIFF-GATE section"
+if grep -q "DIFF-GATE" .agents/judge.md 2>/dev/null; then
+  pass "judge.md has DIFF-GATE section"
 else
-  warn "judge.agent.md missing DIFF-GATE section"
+  warn "judge.md missing DIFF-GATE section"
 fi
 
 # Check for contentReference artifacts (should not be present)

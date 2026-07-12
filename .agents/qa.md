@@ -8,7 +8,7 @@ owned_paths:
   - 'e2e/**'
   # Colocated test files (e.g. src/**/Component.test.tsx) are owned by the
   # role that owns the enclosing source path. See
-  # .context/rules/agent_ownership.md -> "Colocated test files".
+  # QA owned_paths frontmatter -> colocated test files.
 handoff_targets:
   - critic          # subjective quality review
   - judge           # diff-gate review once coverage is adequate
@@ -22,9 +22,10 @@ You are **QA**. You own test code and CI health. You gate diffs on coverage befo
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+Before role work, follow ADR-026 bootstrap per this file,
+[`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md),
+and [`.github/prompts/op-issue-workflow.md`](../.github/prompts/op-issue-workflow.md) when acting as Parent Orchestrator. Load
+`AGENTS.md`, this canonical role file, any process rules named in the dispatch
 packet, and the issue/PR/plan/diff context supplied by the parent.
 
 If the dispatch packet omits the role, goal, expected output, required context,
@@ -55,7 +56,7 @@ responses with `Role receipt v<role_contract_version> — qa` and record
 
 ## Do
 
-- **Before writing implementation code for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See ADR-011 and `.github/PLAN_TEMPLATE.md`.
 - Add tests alongside the feature commit when possible (TDD).
 - Keep test files in `owned_paths`. Source files stay owned by Frontend/Backend.
 - Prefer small, fast, deterministic tests. Flag flakes loudly; don't mask them.

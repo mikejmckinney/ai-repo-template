@@ -61,7 +61,7 @@ All four overlay trees describe the **same 10 roles** and delegate to the canoni
 
 `test.sh` enforces an N-way parity check (`scripts/checks/050-agent-mirror.sh`): every overlay's `description:` must match the canonical byte-for-byte, every overlay body must reference its canonical, and every overlay's `model:` value must satisfy that platform's allowlist. Any drift is a hard failure.
 
-**Adding a new role** means adding the canonical `.agents/<role>.md` plus one overlay in each first-class platform folder (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) and updating `install.sh`'s `MULTIAGENT_FILES`, the `.context/rules/agent_ownership.md` table, and this guide. `test.sh` will fail loudly if any file is missing.
+**Adding a new role** means adding the canonical `.agents/<role>.md` plus one overlay in each first-class platform folder (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) and updating `install.sh`'s `MULTIAGENT_FILES`, each role's `owned_paths:` frontmatter, and this guide. `test.sh` will fail loudly if any file is missing.
 
 **Adding a new platform** means adding one overlay file per role pointing at the same canonical, plus one row to the parallel arrays in `scripts/checks/050-agent-mirror.sh`.
 
@@ -95,7 +95,7 @@ all other roles:
 Exact-output roles (Judge, Critic) emit `DECISION:` / `CRITIC DECISION:` as
 their literal first line before any other content, so the trailing blocks
 coexist with rather than precede the role output. See
-`.context/rules/process_subagent_bootstrap.md` § "Positional output contract"
+[`docs/guides/multi-agent-coordination.md`](./multi-agent-coordination.md) § "Subagent output format (positional contract)"
 for the authoritative rule.
 
 See `docs/decisions/adr-003-claude-code-subagent-registration.md` for the original Claude/Copilot registry rationale and `docs/decisions/adr-023-shared-subagent-canonical.md` for the canonical-plus-overlays refactor.
@@ -185,7 +185,7 @@ This refines the "Use Git Branches" pattern in `docs/guides/agent-best-practices
 
 Conflicts are prevented by layered defenses. Earlier layers are cheaper.
 
-1. **Path ownership** (agent_ownership.md) — two roles physically cannot share a file by default.
+1. **Path ownership** (canonical `owned_paths:` in `.agents/<role>.md`) — two roles physically cannot share a file by default.
 2. **GitHub live state** (`agent-state:v1` comments + labels) — within a role's owned paths, visible claims prevent two sessions of the same role from overlapping.
 3. **Branch isolation** — each role works on its own branch, so unrelated changes never touch.
 4. **PM arbitration** — when a task genuinely needs a cross-role edit, PM decides: sequence, split, or shared claim.
@@ -263,7 +263,7 @@ Each branch goes through QA → Judge → merge independently.
 1. `AGENTS.md` — universal rules.
 2. `.context/00_INDEX.md` — where everything lives.
 3. Assigned GitHub issue, linked PR (if any), latest `agent-state:v1` comment, and labels — what's in flight right now.
-4. `.context/rules/agent_ownership.md` — what you may touch.
+4. Your role's `owned_paths:` frontmatter in `.agents/<your-role>.md` — what you may touch.
 5. `.agents/<your-role>.md` — your specific responsibilities (canonical, platform-agnostic). Your platform's overlay (`.github/agents/<role>.agent.md`, `.claude/agents/<role>.md`, `.cursor/agents/<role>.md`, or `.codex/agents/<role>.toml`) just points here.
 6. `.context/sessions/latest_summary.md` — durable lessons from recent work.
 7. Report readiness (see the "Report readiness (The Report Step)" subsection in `docs/guides/agent-best-practices.md`).
@@ -276,33 +276,37 @@ When working multiple issues in parallel against this repo, the practical model 
 
 Two issues may be worked in parallel — by Copilot, Claude, or a human in any combination — when **all three** of the following hold:
 
-1. Their owned-path globs in `agent_ownership.md` are **disjoint** (no overlap in either direction).
+1. Their `owned_paths:` globs in `.agents/<role>.md` are **disjoint** (no overlap in either direction).
 2. Neither lists the other in `depends_on` (transitively).
-3. They do not both touch any file in the "Shared / Contested Files" table of `agent_ownership.md`.
+3. They do not both touch any intentionally shared/contested path called out in this guide or the assigned plan.
 
-When any of those fail, the work must be **sequenced** (one PR after the other) or **PM-arbitrated** (a temporary shared-edit claim recorded in GitHub live state per `agent_ownership.md` §"Cross-Role Edit Protocol").
+When any of those fail, the work must be **sequenced** (one PR after the other) or **PM-arbitrated** (a temporary shared-edit claim recorded in GitHub live state per the PM cross-role protocol in `.agents/pm.md`).
 
 ### How `MAX_COPILOT_CONCURRENT` interacts
 
 `agent-assign-copilot.yml` only allows up to `MAX_COPILOT_CONCURRENT` (default 3) Copilot sessions to be in flight at any one time, counting open `copilot/*` head-branch PRs plus issues currently labeled `copilot:in-progress`. Beyond that cap, additional `copilot:ready` issues are swapped to `copilot:queued` and re-evaluated when a PR merges. This budget is independent of the parallel-safety check above — it caps wall-clock concurrency regardless of whether the issues happen to be path-disjoint.
 
-`MAX_COPILOT_DAILY` (default 20) is a separate 24-hour assignment cap that gates the *issue-assignment* path only; it does not affect `@copilot` mentions on PRs or the `copilot-relay` workflow.
+`MAX_COPILOT_DAILY` (default 10) is a separate 24-hour assignment cap that gates the *issue-assignment* path only; it does not affect `@copilot` mentions on PRs or the `copilot-relay` workflow.
 
 ### Reading the Parallelism Report
 
 Every PR receives a single upserted comment with the `<!-- parallelism-report -->` marker. The comment lists every other open PR and classifies the overlap with the current PR as:
 
 - **hard** — the two PRs touch at least one identical file path. Sequence them (decide which merges first), or capture a PM shared-edit claim.
-- **soft** — the two PRs touch different files but inside the same top-level owned-path glob. Likely fine; merge order may matter if one introduces a renaming or shared interface change.
+- **soft** — the two PRs touch different files but inside the same top-level owned-path glob. Likely fine; merge order may matter if one introduces a renaming or shared interface change. **Note:** soft classification requires a live ownership table on disk; per ADR-031 Amendment 2026-06-15 that table was removed from the production catalog, so `agent-parallelism-report.yml` logs a parser warning and reports **hard**/**none** only until the table is restored.
 - **none** — disjoint paths. No coordination needed.
 
 The report is **comment-only and non-blocking**. Overlap is not intrinsically wrong — sequential merges resolve cleanly, and PM-arbitrated shared claims are legitimate. The report's purpose is to make the overlap visible at PR-open time. See ADR-009 for the rationale and the future hardening path.
+
+### Soft-overlap classification status (ADR-031)
+
+ADR-031 removed the production ownership table from `.context/rules/`. Production workflows (`agent-parallelism-report.yml`, `scripts/multi-dispatch-safety.sh`) still accept that table when present but **fail soft** when it is missing: they emit `ownership map not found; soft-overlap classification disabled` and continue with hard-overlap detection only. Path discipline for agents now lives in each canonical `.agents/<role>.md` `owned_paths:` frontmatter and the conflict-avoidance hierarchy above — not in a live ownership table on disk.
 
 ### Multi-issue dispatcher
 
 For deliberately fanning out a planned set of issues to Copilot in one shot, use the `Multi-Issue Dispatch (Parallel Copilot Fan-Out)` workflow (`.github/workflows/agent-multi-dispatch.yml`, issue [#114](https://github.com/mikejmckinney/ai-repo-template/issues/114)). Trigger from the Actions UI with a whitespace- or comma-separated list of issue numbers in **priority order**. The workflow:
 
-1. Resolves each issue's scope from (a) the first comment carrying an `<!-- architect-plan-files -->` marker followed by a fenced path list, or (b) the first `role:<name>` label whose name matches a row in `agent_ownership.md`. Issues with neither are dispatched but flagged with a WARN.
+1. Resolves each issue's scope from (a) the first comment carrying an `<!-- architect-plan-files -->` marker followed by a fenced path list, or (b) the first `role:<name>` label whose name matches a canonical role in `.agents/`. Issues with neither are dispatched but flagged with a WARN.
 2. Walks the input list **sequentially first-fit**: each issue is dispatched unless it hard-overlaps something already dispatched in this run, fails a `Depends-on: #N` body-line check, or sits in a depends-on cycle within the input set. Soft overlap (different files under the same owned-path prefix) is permitted **when at least one of the two issues has an explicit architect file list**. Two issues that both fall back to the same `role:<name>` label resolve to identical prefix lists, which the classifier reports as **hard** overlap, so the later issue is refused. To dispatch two same-role issues together, post a `<!-- architect-plan-files -->` comment on at least one of them naming the specific files it touches.
 3. Caps total dispatches at `min(MAX_COPILOT_CONCURRENT − in-flight, MAX_COPILOT_DAILY − last-24h)`. Anything past the cap is reported as **Skipped (budget cap)** and gets a comment so the human knows to retrigger after a slot frees up.
 4. Labels each ✅ issue `copilot:ready` and lets `agent-assign-copilot.yml` do the actual GraphQL assignment — there is no second assignment path.
@@ -311,7 +315,7 @@ Conventions surfaced by this workflow:
 
 - **`Depends-on: #N`** body line, one per dependency. Multiple allowed. Cycles within an input set are rejected (all members refused). External dependencies must be closed.
 - **`<!-- architect-plan-files -->`** HTML-comment marker followed by a fenced code block of paths. Any commenter can post one; the dispatcher uses the first match found.
-- **`role:<name>`** label (lowercase role name from `agent_ownership.md`) is the fallback when no architect marker is present. Only one role label per issue is honored (first match wins).
+- **`role:<name>`** label (lowercase role name matching a file under `.agents/`) is the fallback when no architect marker is present. Only one role label per issue is honored (first match wins).
 
 A `dry_run: true` input posts the dispatch report to the workflow run summary without applying any labels — useful for previewing what an ordering would do.
 
@@ -378,7 +382,7 @@ Practical implication: when "parallel multi-agent execution" is discussed in thi
 
 ## Verifying overlap workflow changes
 
-Any PR that modifies `.github/workflows/agent-parallelism-report.yml`, the parser in `scripts/test-parallelism-report-parser.sh`, or the role table in `.context/rules/agent_ownership.md` should run the live smoke test below before merge. Unit tests cover the parser logic but cannot exercise the GitHub API calls (PR list, file fetch, comment upsert) or real-world path classification.
+Any PR that modifies `.github/workflows/agent-parallelism-report.yml` or the parser in `scripts/test-parallelism-report-parser.sh` should run the live smoke test below before merge. Unit tests cover the parser logic but cannot exercise the GitHub API calls (PR list, file fetch, comment upsert) or real-world path classification.
 
 **Setup.** Branch each scratch PR off the *workflow's source branch* (the PR being verified) and target it back at the same source branch. Targeting `main` defeats the test because PRs branched from `main` won't have the workflow file yet, and PRs targeting `main` will show every parent-branch file as a "diff" and trip every classification as `hard`. Targeting the source branch isolates each scratch PR to a single-file diff.
 
@@ -388,7 +392,7 @@ Any PR that modifies `.github/workflows/agent-parallelism-report.yml`, the parse
 2. **Soft overlap** — touch a different file inside an owned-path glob the source branch also touches (e.g., the source branch edits `docs/guides/foo.md`, your scratch PR edits `docs/FAQ.md`; both fall under Docs `docs` prefix). Expect `soft` with the role + prefix as evidence.
 3. **None** — touch a file outside every prefix the source branch hits (e.g., `config/README.md` when the source branch only touches `docs/`, `scripts/`, `.context/rules/`). Expect `none`.
 4. **Upsert idempotency** — push a second commit to the hard-overlap scratch PR. Capture the parallelism-report comment ID before and after; it must be unchanged (the workflow edits, never duplicates).
-5. **Fail-soft on broken table** — on the same scratch PR, mangle the role names in `agent_ownership.md` so the parser regex no longer matches (e.g., `s/^| Analyst /| ZZAnalyst/`). Push. The next report must include the `> ⚠️ Parser warning:` block AND must still detect hard overlaps (which don't depend on the prefix table).
+5. **Fail-soft on broken table** — when testing parser warnings, point `OWNERSHIP_FILE` at `scripts/tests/fixtures/agent_ownership.md` in a scratch workflow run or temporarily restore the table from `origin/backup-2026-06-15`. The report must include the `> ⚠️ Parser warning:` block when parsing yields zero prefixes AND must still detect hard overlaps (which don't depend on the prefix table).
 
 **Cleanup.** Close all scratch PRs unmerged and delete their branches. Record the run in the PR description (5 ✅/❌ rows is enough — no separate doc needed).
 

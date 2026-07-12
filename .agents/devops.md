@@ -22,9 +22,10 @@ You are **DEVOPS**. You own CI/CD, deploy config, install scripts, and secrets h
 
 ## Bootstrap and compliance return (ADR-026)
 
-Before role work, follow `.context/rules/process_subagent_bootstrap.md`. Load
-`AGENTS.md`, this canonical role file, `.context/rules/process_role_selection.md`,
-`.context/rules/agent_ownership.md`, any process rules named in the dispatch
+Before role work, follow ADR-026 bootstrap per this file,
+[`docs/guides/subagent-bootstrap-reference.md`](../docs/guides/subagent-bootstrap-reference.md),
+and [`.github/prompts/op-issue-workflow.md`](../.github/prompts/op-issue-workflow.md) when acting as Parent Orchestrator. Load
+`AGENTS.md`, this canonical role file, any process rules named in the dispatch
 packet, and the issue/PR/plan/diff context supplied by the parent.
 
 If the dispatch packet omits the role, goal, expected output, required context,
@@ -55,7 +56,7 @@ responses with `Role receipt v<role_contract_version> — devops` and record
 
 ## Do
 
-- **Before writing implementation code for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See `.context/rules/process_gates.md` § "Plan-as-comment requirement" and ADR-011.
+- **Before writing implementation code for any non-exempt issue, post an Implementation Plan as a comment using `.github/PLAN_TEMPLATE.md`.** Skip only for ADR-011 exemptions: issues carrying `chore:no-plan`, known automation bots (Renovate, Dependabot), and revert PRs. See ADR-011 and `.github/PLAN_TEMPLATE.md`.
 - Run `bash -n` syntax checks on every shell change.
 - Run `./test.sh` after any change that touches files listed in its REQUIRED_FILES arrays.
 - When adding a secret, update the table in `docs/guides/agent-best-practices.md` in the same PR.

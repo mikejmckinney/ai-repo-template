@@ -29,8 +29,7 @@ Produces, for one issue:
 
 The final consensus plan is **not approval**. It must still go through
 Judge plan-gate exactly like a single-author plan would (per
-[`.context/rules/process_gates.md`](../../.context/rules/process_gates.md)
-§"Plan-as-comment requirement").
+[ADR-011](../../docs/decisions/adr-011-plan-as-comment-requirement.md)).
 
 ## When to use
 
@@ -68,7 +67,7 @@ visibility.
   agent so all candidate planners see the same facts. At minimum:
   - [`AI_REPO_GUIDE.md`](../../AI_REPO_GUIDE.md)
   - [`.context/00_INDEX.md`](../../.context/00_INDEX.md)
-  - [`.context/rules/agent_ownership.md`](../../.context/rules/agent_ownership.md)
+  - [`.agents/`](../../.agents/) (`owned_paths:` per role)
   - The latest `agent-state:v1` issue/PR comment and labels for live coordination state
   - The relevant ADRs and rule files named in the issue.
 
@@ -315,7 +314,7 @@ dispatch. The final consensus plan is a plan, not an approval.
 If Judge returns `APPROVE`, PM dispatches per the normal pipeline. If
 Judge returns `REQUEST_CHANGES` or `BLOCK`, the initiating agent
 revises (a "Plan revision" comment per
-[`.context/rules/process_gates.md`](../../.context/rules/process_gates.md))
+[ADR-011](../../docs/decisions/adr-011-plan-as-comment-requirement.md))
 or, if the disagreement was structural, considers re-running consensus
 planning. Re-running is rarely worth the cost — usually a targeted
 revision on the existing final plan is enough.
@@ -355,7 +354,7 @@ example instead of ending the block early.
 
 - `AI_REPO_GUIDE.md`
 - `.context/00_INDEX.md`
-- `.context/rules/agent_ownership.md`
+- `.agents/<role>.md` (`owned_paths:`)
 - Latest `agent-state:v1` issue/PR comment and labels
 - Relevant issue body and comments
 

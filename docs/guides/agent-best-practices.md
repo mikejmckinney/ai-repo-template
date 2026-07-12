@@ -210,7 +210,7 @@ If a future runner becomes the primary one and exposes new caching knobs (e.g., 
 
 ## Live-State Conflict Prevention
 
-> **Primary mechanism**: role-based path ownership (`.context/rules/agent_ownership.md`). The mitigations below are secondary defenses for conflicts within a single role. For the full parallel-agent workflow, see [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md).
+> **Primary mechanism**: role-based path ownership (canonical `owned_paths:` in `.agents/<role>.md`). The mitigations below are secondary defenses for conflicts within a single role. For the full parallel-agent workflow, see [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md).
 
 ### The Problem
 
@@ -220,7 +220,7 @@ If multiple agents work simultaneously (or a human and agent), they can overwrit
 
 #### 0. Role-Based Path Ownership (Primary)
 
-The strongest defense is role-based path ownership. Each role in `.agents/<role>.md` (with platform overlays in `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/`) is assigned path globs in `.context/rules/agent_ownership.md`, and conflicts are greatly reduced when those globs are kept non-overlapping. In practice a few cases still need coordination: some path patterns may overlap (colocated test files, generated artifacts, lockfiles), and some files are intentionally shared or contested (for example, `.context/rules/**`). Any cross-role edit must be coordinated through PM and recorded in GitHub live state. This is the primary mechanism — the fallbacks below mainly apply when two sessions of the **same role** overlap, or when work touches one of those shared/overlapping exceptions.
+The strongest defense is role-based path ownership. Each role in `.agents/<role>.md` (with platform overlays in `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/`) declares path globs in its `owned_paths:` frontmatter, and conflicts are greatly reduced when those globs are kept non-overlapping. In practice a few cases still need coordination: some path patterns may overlap (colocated test files, generated artifacts, lockfiles), and some files are intentionally shared or contested (for example, `.context/rules/**`). Any cross-role edit must be coordinated through PM and recorded in GitHub live state. This is the primary mechanism — the fallbacks below mainly apply when two sessions of the **same role** overlap, or when work touches one of those shared/overlapping exceptions.
 
 #### 1. One Active Task at a Time
 
