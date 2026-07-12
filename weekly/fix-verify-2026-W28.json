@@ -142,7 +142,7 @@
   "sandbox": {
     "needs_sync": true,
     "issue_url": "n/a",
-    "pr_url": "n/a",
+    "pr_url": "========================================\nSandbox Doctor\n========================================\n\nChecking auth source...\n\u001b[0;32m[INFO]\u001b[0m Not running in Codespaces\n\u001b[0;32m[INFO]\u001b[0m gh identity:   ✓ Logged in to github.com account mikejmckinney (GH_TOKEN)\n\u001b[0;32m[INFO]\u001b[0m Token source:   - Token: ghp_************************************\n\nChecking sandbox remote reachability...\n\u001b[0;32m[INFO]\u001b[0m Sandbox remote 'sandbox': https://github.com/mikejmckinney/ai-repo-template-sandbox.git\n\u001b[1;33m[WARN]\u001b[0m git ls-remote failed (exit 128) — sandbox may not be accessible with current auth\n\u001b[1;33m[WARN]\u001b[0m Output: remote: Repository not found.\nfatal: repository 'https://github.com/mikejmckinney/ai-repo-template-sandbox.git/' not found\n::warning::diag-sandbox.sh reported issues; continuing sandbox push\n\u001b[0;32m[INFO]\u001b[0m Sandbox git remote 'sandbox' already configured (https://github.com/mikejmckinney/ai-repo-template-sandbox.git).\n::notice::sandbox-sync pushing HEAD -> sandbox/test/fix-weekly-2026-W28\n::notice::sandbox-sync created sandbox PR ",
     "skip_reason": "sandbox git remote not configured in runner; workflow default patch deferred to sandbox PR test/fix-weekly-2026-W28",
     "workflow_runs": []
   },
