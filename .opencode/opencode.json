@@ -1,0 +1,45 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "small_model": "openai/gpt-5.6-sol",
+  "permission": "allow",
+  "compaction": {
+    "auto": false,
+    "prune": false,
+    "reserved": 10000
+  },
+  "mcp": {
+    "open-design": {
+      "type": "local",
+      "command": ["node", "/Applications/Open Design.app/Contents/Resources/app/prebundled/daemon/daemon-cli.mjs", "mcp", "--daemon-url", "http://127.0.0.1:7456"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": [
+        "npx",
+        "@playwright/mcp@latest"
+      ],
+      "enabled": true
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["npx", "-y", "chrome-devtools-mcp@latest"]
+    },
+    "shadcn": {
+      "type": "local",
+      "command": ["npx", "-y", "shadcn@latest", "mcp"],
+      "enabled": true
+    }
+  },
+  "provider": {
+    "openrouter": {
+      "models": {
+        "deepseek/deepseek-v4-pro@preset/default": {},
+        "minimax/minimax-m3@preset/default": {},
+        "z-ai/glm-5.2@preset/default": {},
+        "xiaomi/mimo-v2.5-pro@preset/default": {},
+        "openrouter/auto@preset/default": {}
+      }
+    }
+  }
+}

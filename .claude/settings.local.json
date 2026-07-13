@@ -1,0 +1,7 @@
+{
+  "enabledMcpjsonServers": [
+    "open-design",
+    "playwright",
+    "chrome-devtools"
+  ]
+}
