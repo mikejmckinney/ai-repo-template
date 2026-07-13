@@ -209,7 +209,7 @@ git push --force sandbox origin/main:main
 
 This is the only force-push the playbook authorizes. It runs against
 the sandbox remote only, never against `origin`. Document the choice
-in the PR body's `parent_compliance.deviations[]` so a future Judge
+in the PR body's risks or deviations prose so a future Judge
 can see why the safer default was overridden.
 
 ### 2. Push your PR branch to sandbox

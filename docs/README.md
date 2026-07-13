@@ -15,7 +15,6 @@ see `AGENTS.md` §"Truth hierarchy" for the canonical order (summary:
 ```text
 docs/
 ├── README.md           # This file
-├── compliance_schemas.md # ADR-026 compliance evidence schemas
 ├── reference/          # Historical specs, research, external references
 │   └── *.md            # Specification documents
 ├── research/           # Analyst output (analysis artifacts)
@@ -68,7 +67,7 @@ docs/
 
 - Current project state → use `.context/state/`
 - Project roadmap → use `.context/roadmap.md`
-- Domain rules/constraints → use `.context/rules/`
+- Repository-wide operating policy → use `AGENTS.md`
 - Design mockups → use `.context/vision/`
 
 ## Creating an ADR
@@ -98,14 +97,12 @@ What are the positive and negative consequences?
 - [Context Files Explained](guides/context-files-explained.md) - **Start here**: Understanding all the documentation files
 - [Agent Best Practices](guides/agent-best-practices.md) - Token limits, state conflicts, secrets, session handoff
 - [Design Patterns](guides/design-patterns.md) - Lead index for advisory code-layer pattern catalogs, including concurrency, integration / messaging, and data / persistence citations
-- [Repo Orchestration Patterns Reference](guides/repo-orchestration-patterns-reference.md) - Long-form `P*` / `AP*` detail (normative contract in `.context/rules/repo_orchestration_patterns.md`)
+- [Repo Orchestration Patterns Reference](guides/repo-orchestration-patterns-reference.md) - Historical orchestration vocabulary; no longer an active review gate
 - [Opportunity Feedback Examples](guides/opportunity-feedback-examples.md) - Worked examples for the `opportunity_notes` channel
-- [Subagent Bootstrap Reference](guides/subagent-bootstrap-reference.md) - Extended ADR-026 dispatch/pass-back narrative
 - [AGENTS.md Section Redirects](guides/agents-md-section-redirects.md) - ADR-021 anchor migration table
 
 ### Decisions (ADRs)
 
-- [Compliance Schemas](compliance_schemas.md) - ADR-026 `plan_compliance`, `parent_compliance`, and `subagent_compliance` schemas
 - [ADR-001: Context Pack Structure](decisions/adr-001-context-pack-structure.md) - Why we use `.context/` for LLM memory
 - [ADR-004: Analyst Role and Feedback Loop](decisions/adr-004-analyst-role-and-feedback-loop.md) - Adding pre-Architect validation and iterative feedback
 - [ADR Template](decisions/adr-template.md) - Template for new architecture decisions

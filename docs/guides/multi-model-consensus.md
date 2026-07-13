@@ -24,8 +24,7 @@ platforms; it does not combine text/image/audio modalities.
 ## What this is not
 
 - **Not approval.** The final consensus plan is still a plan. Judge
-  plan-gate runs on it just like any other plan-as-comment per
-  [`.context/rules/process_gates.md`](../../.context/rules/process_gates.md).
+  plan-gate runs on it just like any other plan-as-comment.
 - **Not the default planning path.** The default for almost every
   issue is one plan-as-comment using
   [`.github/PLAN_TEMPLATE.md`](../../.github/PLAN_TEMPLATE.md).
@@ -186,7 +185,7 @@ GitHub live-state comments and labels when two roles share a path glob. This is
 ADR-worthy and has multiple plausible designs.
 
 1. Initiating Architect reads issue #NNN, the relevant ADRs (009, 018),
-  `agent_ownership.md`, and the latest `agent-state:v1` comment/labels.
+  explicit file scopes, and the latest `agent-state:v1` comment/labels.
   Posts a Context Brief in a comment.
 2. Architect dispatches three candidate planners:
    - Subagent A: Architect role on Opus.
@@ -252,7 +251,7 @@ that is the suspect-first hypothesis.
 
 - [`.github/prompts/multi-model-consensus-plan.md`](../../.github/prompts/multi-model-consensus-plan.md) — the prompt itself.
 - [`docs/decisions/adr-024-multi-model-consensus-planning.md`](../decisions/adr-024-multi-model-consensus-planning.md) — prompt-first / no-new-role decision.
-- [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) §`P9` — pattern entry.
+- [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md) — historical orchestration vocabulary.
 - [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md) — where consensus planning fits in the pipeline.
 - [`docs/decisions/adr-019-per-role-model-tiering.md`](../decisions/adr-019-per-role-model-tiering.md) — model-tier rules this workflow inherits.
 - [`docs/decisions/adr-009-parallel-multi-agent-execution.md`](../decisions/adr-009-parallel-multi-agent-execution.md) Decision 3 — dispatch reality matrix that motivates the runtime fallback.

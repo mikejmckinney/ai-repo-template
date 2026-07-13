@@ -50,12 +50,7 @@ lists come after, not before.
     for trigger criteria, and
     [`docs/decisions/adr-024-multi-model-consensus-planning.md`](../../docs/decisions/adr-024-multi-model-consensus-planning.md)
     for the prompt-first / no-new-role rationale.
-  - **`instruction-compliance-smoke.md`** — no-edit smoke prompt for checking
-    startup pointer loading, role-dispatch reasoning, and ADR-026 compliance
-    evidence shape before relying on an agent run.
   - **`judge-mode-smoke.md`** — no-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance (structural heading verification for both modes)
-  - **`handshake-and-shape-smoke.md`** — no-edit smoke prompt for session handshake
-    positional contract and response-shape verification (Scenarios A–E manual).
 - **Benchmark prompts** (repo-internal evaluation surfaces) — `model-roi-benchmark-candidate.md`.
   These are controlled benchmark prompts, not downstream project stage prompts.
   - **`model-roi-grader-v1.md`** — locked subjective grader for benchmark score sets;

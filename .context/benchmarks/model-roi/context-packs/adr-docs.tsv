@@ -3,4 +3,3 @@
 .context/sessions/latest_summary.md	Durable lessons from recent work.
 docs/decisions/README.md	ADR index and supersession discipline.
 docs/decisions/adr-template.md	Architecture Decision Record template.
-.context/rules/repo_orchestration_patterns.md	Orchestration patterns cited at review gates.

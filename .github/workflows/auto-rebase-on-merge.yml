@@ -2,7 +2,7 @@ name: Auto-Rebase on Merge
 # Issue #116. After a PR merges to `main`, walk every other open PR
 # that opted in via the `auto-rebase` label and decide what to do:
 #
-#   - soft overlap (same owned-path prefix, different files) →
+#   - soft overlap (same concrete directory, different files) →
 #     attempt `git rebase origin/main`; on success force-push-with-lease
 #     and post a one-line success comment; on conflict, leave the branch
 #     alone and post a structured `auto-rebase-conflict` comment +

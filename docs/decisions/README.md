@@ -33,8 +33,8 @@
 | [ADR-017](./adr-017-template-repo-pre-commit-default.md) | Template repo installs pre-commit shellcheck + actionlint by default (template-only; ADR-013 unchanged for derived repos) | Accepted |
 | [ADR-018](./adr-018-multi-task-active-md-schema.md) | Multi-task schema for `.context/state/_active.md` (refines ADR-009) | Accepted (superseded in part by ADR-025) |
 | [ADR-019](./adr-019-per-role-model-tiering.md) | Per-role model tiering across Claude Code and Copilot (Phase 2 of #220; supersedes ADR-003's `model: inherit` choice) | Accepted |
-| [ADR-020](./adr-020-orchestration-patterns-reference.md) | Orchestration patterns and anti-patterns reference file (`.context/rules/repo_orchestration_patterns.md`) | Accepted |
-| [ADR-021](./adr-021-agents-md-decomposition.md) | Decompose AGENTS.md into thin contract + per-concern `process_*.md` files (extends ADR-002) | Accepted (superseded in part by ADR-025) |
+| [ADR-020](./adr-020-orchestration-patterns-reference.md) | Historical orchestration patterns and anti-patterns vocabulary | Accepted (active gates retired by ADR-026 amendment) |
+| [ADR-021](./adr-021-agents-md-decomposition.md) | Historical decomposition of AGENTS.md into per-concern rule files | Accepted (decomposition retired by ADR-026 amendment) |
 | [ADR-022](./adr-022-top-level-md-scope-split.md) | Top-level markdown scope split (README / AI_REPO_GUIDE / AGENTS) — also extends ADR-002 | Accepted |
 | [ADR-023](./adr-023-shared-subagent-canonical.md) | Canonical role bodies in `.agents/<role>.md`; vendor folders carry thin overlays (supersedes ADR-003 in part) | Accepted |
 | [ADR-024](./adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning — optional opt-in workflow shipped as prompt + guide; no new `synthesizer` role in v1 | Accepted |
@@ -77,9 +77,9 @@ When ADR-NNN replaces ADR-XXX, both files must be updated in the **same PR**:
 4. **Deprecation without replacement**: set the old ADR's `Status:
    Deprecated` and explain in the body. No new ADR required.
 
-Judge enforces this at diff-gate per
-`.context/rules/process_doc_maintenance.md` — a PR that changes a
-documented decision without updating the old ADR's status line is a BLOCK.
+Judge enforces this at diff-gate per `AGENTS.md`'s documentation
+synchronization contract: a PR that changes a documented decision without
+updating the old ADR's status line is a BLOCK.
 
 ## What a well-documented ADR looks like
 

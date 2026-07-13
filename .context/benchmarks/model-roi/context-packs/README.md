@@ -18,11 +18,11 @@ duration of a run only (skip-worktree + restore before diff capture).
 
 | Pack ID | Intended use |
 |---|---|
-| `core-min` | Smallest lazy-load floor: index, ownership map, latest session lessons |
-| `class-a-process` | Class A operational-fit: core-min + process/doc/PR completion rules |
-| `class-b-implementation` | Class B reasoning/code: core-min + code quality and doc-sync rules |
+| `core-min` | Smallest lazy-load floor: index and latest session lessons |
+| `class-a-process` | Class A operational-fit: core-min + repository guide and plan template |
+| `class-b-implementation` | Class B reasoning/code: core-min + repository guide |
 | `workflow-risk` | High verification-risk workflow changes: core-min + ADR-016 + sandbox guide |
-| `adr-docs` | ADR/docs work: core-min + ADR index/template + model tier + orchestration patterns |
+| `adr-docs` | ADR/docs work: core-min + ADR index and template |
 
 ## Harness usage
 
@@ -41,7 +41,7 @@ sweet_spot_pack =
   highest marginal ROI pack
   with score >= best_score_for_task_class - 2
   and no model-specific degradation > 3 points
-  and lower injected bytes/tokens than full-rules injection
+  and lower injected bytes/tokens than broad context injection
 ```
 
 This is benchmark evidence only — not a production routing change.

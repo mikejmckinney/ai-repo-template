@@ -1,6 +1,6 @@
 # Repo Orchestration Patterns — Reference Guide
 
-> **Purpose**: Long-form reference for the orchestration-layer pattern catalog. The normative contract (IDs, detection signals, block/advisory designations) lives in [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md). Read that file at review time; use this guide for "where it appears," remediation detail, and historical context.
+> **Purpose**: Historical reference for the retired P1-P9/AP1-AP9 orchestration vocabulary. These IDs are no longer active review gates; use this guide only to resolve historical citations.
 >
 > **Scope**: Multi-agent workflow, role definitions, rule files, gates, and coordination state in this template. Code-layer patterns for downstream projects live in [`design-patterns.md`](./design-patterns.md).
 
@@ -190,7 +190,7 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 Downstream projects:
 
-1. May add project-specific patterns in a separate `.context/rules/` file.
+1. May add project-specific guidance under `docs/guides/`.
 2. Should not delete entries without an ADR (postmortem-derived entries are load-bearing).
 3. May tighten advisory entries to block-on-sight with an ADR amending block conditions.
 
@@ -200,5 +200,5 @@ New entries: next `P<n>` or `AP<n>` ID; include description, where it appears, d
 
 - `docs/decisions/` — ADRs ratifying structural choices
 - `docs/postmortems/` — originating postmortems for `AP3`, `AP4`, `AP6`, `P7`
-- `.context/rules/domain_code_quality.md` — code-layer `H*` / `S*` rules
+- `AGENTS.md` — current code-quality and review rules
 - [ADR-020](../decisions/adr-020-orchestration-patterns-reference.md) — ratification of the pattern catalog

@@ -9,15 +9,11 @@
 # ---------
 #   extract_scope <issue_number>
 #       Print the file-glob scope for an issue, one path per line.
-#       Resolution order:
-#         1. The first comment carrying an `<!-- architect-plan-files -->`
-#            marker followed by a fenced code block (any author).
-#         2. The first `role:<name>` label whose <name> matches a role
-#            in scripts/parse-ownership-table.sh --list-roles. The role's
-#            owned-path prefixes are emitted.
-#         3. Nothing — emit `WARN: no scope detected for #N` to stderr
+#       Resolution: the first comment carrying an
+#       `<!-- architect-plan-files -->` marker followed by a fenced code block.
+#       Otherwise emit `WARN: no scope detected for #N` to stderr
 #            and exit 0 with empty stdout (caller treats as no overlap).
-#       Mode reported on stderr as `MODE: architect|role-glob|none`.
+#       Mode reported on stderr as `MODE: explicit|none`.
 #
 #   extract_depends_on <issue_number>
 #       Parse the issue body for `^Depends-on: #([0-9]+)$` lines and
@@ -25,8 +21,8 @@
 #
 #   classify_overlap <fileset_a_file> <fileset_b_file>
 #       Compare two newline-separated path lists; print one of
-#       `hard` (any identical path), `soft` (any shared owned-path
-#       prefix from agent_ownership.md), or `none`.
+#       `hard` (any identical path), `soft` (different paths in the
+#       same concrete directory), or `none`.
 #
 #   select_dispatchable <issue_list>
 #       Walk the input issue numbers in order (= priority). For each
@@ -54,44 +50,6 @@
 
 set -euo pipefail
 
-# ── Resolve repo paths regardless of CWD ──
-_MDS_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-_MDS_REPO_ROOT="$(cd "$_MDS_LIB_DIR/.." && pwd)"
-_MDS_OWNERSHIP_FILE="${MULTI_DISPATCH_OWNERSHIP_FILE:-$_MDS_REPO_ROOT/.context/rules/agent_ownership.md}"
-if [[ ! -f "$_MDS_OWNERSHIP_FILE" ]]; then
-  _MDS_OWNERSHIP_FIXTURE="$_MDS_REPO_ROOT/scripts/tests/fixtures/agent_ownership.md"
-  if [[ "${MULTI_DISPATCH_TEST_MODE:-0}" == "1" || "${AUTO_REBASE_TEST_MODE:-0}" == "1" ]] \
-    && [[ -f "$_MDS_OWNERSHIP_FIXTURE" ]]; then
-    _MDS_OWNERSHIP_FILE="$_MDS_OWNERSHIP_FIXTURE"
-  fi
-fi
-_MDS_PARSE_OWNERSHIP="$_MDS_REPO_ROOT/scripts/parse-ownership-table.sh"
-
-# ── Internal helpers ──
-
-# Lazily compute the role -> prefix map. Caches in a module-level var.
-_mds_role_prefixes=""
-_mds_role_prefixes_loaded=""
-_mds_load_role_prefixes() {
-  if [[ -n "$_mds_role_prefixes_loaded" ]]; then
-    return 0
-  fi
-  _mds_role_prefixes_loaded=1
-  if [[ ! -f "$_MDS_OWNERSHIP_FILE" || ! -x "$_MDS_PARSE_OWNERSHIP" ]]; then
-    _mds_role_prefixes=""
-    return 0
-  fi
-  _mds_role_prefixes=$("$_MDS_PARSE_OWNERSHIP" <"$_MDS_OWNERSHIP_FILE" || true)
-}
-
-# Print the canonical role names this dispatcher recognizes (lowercased).
-_mds_known_roles_lc() {
-  if [[ ! -x "$_MDS_PARSE_OWNERSHIP" ]]; then
-    return 0
-  fi
-  "$_MDS_PARSE_OWNERSHIP" --list-roles | tr '[:upper:]' '[:lower:]'
-}
-
 # Read an issue body (test-mode aware).
 _mds_issue_body() {
   local n="$1"
@@ -99,16 +57,6 @@ _mds_issue_body() {
     cat "${FIXTURE_DIR}/${n}.body" 2>/dev/null || true
   else
     gh issue view "$n" --json body --jq '.body' 2>/dev/null || true
-  fi
-}
-
-# Read an issue's labels, one per line (test-mode aware).
-_mds_issue_labels() {
-  local n="$1"
-  if [[ "${MULTI_DISPATCH_TEST_MODE:-0}" == "1" ]]; then
-    cat "${FIXTURE_DIR}/${n}.labels" 2>/dev/null || true
-  else
-    gh issue view "$n" --json labels --jq '.labels[].name' 2>/dev/null || true
   fi
 }
 
@@ -142,7 +90,7 @@ _mds_issue_state() {
 # list itself is on stdout.
 extract_scope() {
   local n="$1"
-  local body comments labels
+  local body comments
 
   # 1. Architect marker in any comment.
   comments="$(_mds_issue_comments "$n")"
@@ -161,55 +109,12 @@ extract_scope() {
   ' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | grep -v '^$' || true)
 
   if [[ -n "$plan_files" ]]; then
-    echo "MODE: architect" >&2
+    echo "MODE: explicit" >&2
     printf '%s\n' "$plan_files"
     return 0
   fi
 
-  # 2. role:<name> label fallback.
-  labels="$(_mds_issue_labels "$n")"
-  _mds_load_role_prefixes
-  if [[ -n "$_mds_role_prefixes" ]]; then
-    local known_lc
-    known_lc="$(_mds_known_roles_lc)"
-    local picked_role=""
-    while IFS= read -r lbl; do
-      [[ -z "$lbl" ]] && continue
-      case "$lbl" in
-        role:*)
-          local rname="${lbl#role:}"
-          rname="$(printf '%s' "$rname" | tr '[:upper:]' '[:lower:]')"
-          if printf '%s\n' "$known_lc" | grep -qFx "$rname"; then
-            picked_role="$rname"
-            break
-          fi
-          ;;
-      esac
-    done <<<"$labels"
-    if [[ -n "$picked_role" ]]; then
-      # Emit prefixes for that role from the ownership map. Compare
-      # case-insensitively against the role column. Filter out
-      # English-prose rows (e.g. `colocated *.test.* / *.spec.* under
-      # those paths`) by rejecting any prefix that contains internal
-      # whitespace — real path globs never have spaces, prose always
-      # does. This preserves glob metacharacters (`*`, `?`, `[`, `]`)
-      # so future ownership rows with explicit globs aren't dropped
-      # (gemini #7).
-      local prefixes
-      prefixes=$(printf '%s\n' "$_mds_role_prefixes" \
-        | awk -F'\t' -v r="$picked_role" '
-            { role=tolower($1); if (role==r) print $2 }
-          ' | grep -v '[[:space:]]' | awk 'NF' | sort -u || true)
-      if [[ -n "$prefixes" ]]; then
-        echo "MODE: role-glob (role:$picked_role)" >&2
-        printf '%s\n' "$prefixes"
-        return 0
-      fi
-    fi
-  fi
-
-  # 3. None.
-  echo "MODE: none (WARN: no scope detected for #$n — add a role:<name> label or post a comment with <!-- architect-plan-files --> followed by a fenced path list)" >&2
+  echo "MODE: none (WARN: no scope detected for #$n — post a comment with <!-- architect-plan-files --> followed by a fenced path list)" >&2
   return 0
 }
 
@@ -237,7 +142,7 @@ extract_depends_on() {
 # ── Public: classify_overlap ──
 #
 # Two file-list arguments; emits exactly one of: hard | soft | none.
-# Mirrors the classifier in agent-parallelism-report.yml.
+# The Parallelism Report intentionally uses only the exact-file subset.
 classify_overlap() {
   local a="$1" b="$2"
   if [[ ! -s "$a" || ! -s "$b" ]]; then
@@ -249,22 +154,18 @@ classify_overlap() {
     echo "hard"
     return 0
   fi
-  # Soft = any owned-path prefix appears in BOTH.
-  _mds_load_role_prefixes
-  if [[ -z "$_mds_role_prefixes" ]]; then
-    echo "none"
+
+  # Soft = different concrete paths in at least one shared directory.
+  # Explicit scopes may also contain globs; exclude those because their
+  # directory cannot be compared without the retired ownership parser.
+  local a_dirs b_dirs
+  a_dirs=$(awk 'index($0, "*")==0 && index($0, "?")==0 && index($0, "[")==0 && index($0, "/") {sub("/[^/]+$", ""); print}' "$a" | sort -u)
+  b_dirs=$(awk 'index($0, "*")==0 && index($0, "?")==0 && index($0, "[")==0 && index($0, "/") {sub("/[^/]+$", ""); print}' "$b" | sort -u)
+  if [[ -n "$a_dirs" && -n "$b_dirs" ]] \
+    && comm -12 <(printf '%s\n' "$a_dirs") <(printf '%s\n' "$b_dirs") | grep -q .; then
+    echo "soft"
     return 0
   fi
-  while IFS=$'\t' read -r _ prefix; do
-    [[ -z "$prefix" ]] && continue
-    local a_hit b_hit
-    a_hit=$(awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {print "y"; exit}' "$a")
-    b_hit=$(awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {print "y"; exit}' "$b")
-    if [[ "$a_hit" == "y" && "$b_hit" == "y" ]]; then
-      echo "soft"
-      return 0
-    fi
-  done <<<"$_mds_role_prefixes"
   echo "none"
 }
 
@@ -282,14 +183,6 @@ classify_overlap() {
 #   - depends-on target outside the input set AND not closed → refuse.
 #   - depends-on target inside the input set but earlier and refused
 #     → refuse (transitive refusal).
-#   - soft overlap (different files under the same owned-path prefix)
-#     is permitted. NOTE: this only fires when at least one of the two
-#     issues has an explicit architect file list. Two issues that both
-#     fall back to the same `role:<name>` label resolve to identical
-#     prefix lists, which classify_overlap reports as HARD overlap, so
-#     the later issue is refused. To dispatch two same-role issues
-#     together, post an architect-plan-files comment on at least one
-#     of them naming the specific files it touches.
 select_dispatchable() {
   # Collect inputs.
   local issues=("$@")

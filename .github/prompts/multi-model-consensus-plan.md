@@ -28,9 +28,7 @@ Produces, for one issue:
    posted as the canonical plan-as-comment for that issue.
 
 The final consensus plan is **not approval**. It must still go through
-Judge plan-gate exactly like a single-author plan would (per
-[`.context/rules/process_gates.md`](../../.context/rules/process_gates.md)
-§"Plan-as-comment requirement").
+Judge plan-gate exactly like a single-author plan would.
 
 ## When to use
 
@@ -68,7 +66,7 @@ visibility.
   agent so all candidate planners see the same facts. At minimum:
   - [`AI_REPO_GUIDE.md`](../../AI_REPO_GUIDE.md)
   - [`.context/00_INDEX.md`](../../.context/00_INDEX.md)
-  - [`.context/rules/agent_ownership.md`](../../.context/rules/agent_ownership.md)
+  - [`AGENTS.md`](../../AGENTS.md)
   - The latest `agent-state:v1` issue/PR comment and labels for live coordination state
   - The relevant ADRs and rule files named in the issue.
 
@@ -314,8 +312,7 @@ dispatch. The final consensus plan is a plan, not an approval.
 
 If Judge returns `APPROVE`, PM dispatches per the normal pipeline. If
 Judge returns `REQUEST_CHANGES` or `BLOCK`, the initiating agent
-revises (a "Plan revision" comment per
-[`.context/rules/process_gates.md`](../../.context/rules/process_gates.md))
+revises with a "Plan revision" comment
 or, if the disagreement was structural, considers re-running consensus
 planning. Re-running is rarely worth the cost — usually a targeted
 revision on the existing final plan is enough.
@@ -355,7 +352,7 @@ example instead of ending the block early.
 
 - `AI_REPO_GUIDE.md`
 - `.context/00_INDEX.md`
-- `.context/rules/agent_ownership.md`
+- `AGENTS.md`
 - Latest `agent-state:v1` issue/PR comment and labels
 - Relevant issue body and comments
 
@@ -525,7 +522,7 @@ grep -q multi-model-consensus-plan .github/prompts/README.md
 
 - [`docs/guides/multi-model-consensus.md`](../../docs/guides/multi-model-consensus.md) — when/when-not, cost guardrails, examples, runtime fallback walkthrough.
 - [`docs/decisions/adr-024-multi-model-consensus-planning.md`](../../docs/decisions/adr-024-multi-model-consensus-planning.md) — why this is a prompt + guide rather than a new role.
-- [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) §`P9` — Multi-Model Plan Consensus pattern entry.
+- [`docs/guides/repo-orchestration-patterns-reference.md`](../../docs/guides/repo-orchestration-patterns-reference.md) — historical orchestration vocabulary.
 - [`docs/decisions/adr-009-parallel-multi-agent-execution.md`](../../docs/decisions/adr-009-parallel-multi-agent-execution.md) Decision 3 — dispatch reality matrix that motivates the runtime fallback.
 - [`docs/decisions/adr-019-per-role-model-tiering.md`](../../docs/decisions/adr-019-per-role-model-tiering.md) — model tier rules this workflow inherits, including Amendment #6 (Copilot subagent cost-tier ceiling).
 - [`.github/PLAN_TEMPLATE.md`](../PLAN_TEMPLATE.md) — the standard plan format the final consensus plan must remain compatible with.

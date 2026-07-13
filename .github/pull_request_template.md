@@ -147,9 +147,8 @@ justification.
 
 <!-- Optional. Up to 3 out-of-scope improvement opportunities surfaced
      during the work that produced this PR. Each entry uses the
-     9-field shape defined in
-     `.context/rules/process_opportunity_feedback.md` § "Required
-     fields (9 total)". Cap is ≤3 per session per agent. Omit this
+     9-field shape defined in `AGENTS.md` § "Opportunity feedback".
+     Cap is ≤3 per session per agent. Omit this
      section or write "None" if nothing to surface; do not fold
      opportunities into the PR scope. -->
 

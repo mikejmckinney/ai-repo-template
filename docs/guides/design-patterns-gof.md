@@ -453,4 +453,4 @@ class EvalVisitor:
 
 - [`design-patterns.md`](design-patterns.md) — lead file, framing and `CAP1` / `CAP2` / `CP1`.
 - [`design-patterns-post-gof.md`](design-patterns-post-gof.md) — sibling file, `CP25`–`CP34`.
-- [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) — orchestration-layer patterns for *this* template.
+- [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md) — historical orchestration-layer vocabulary.

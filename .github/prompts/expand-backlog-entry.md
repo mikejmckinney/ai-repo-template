@@ -34,7 +34,7 @@ message:
 3. **Roadmap phase section** — the matching phase from `.context/roadmap.md`
    (may be empty for template placeholder repos). This is the primary source of
    requirements.
-4. **Domain code quality rules** — `.context/rules/domain_code_quality.md`.
+4. **Code quality contract** — `AGENTS.md` §"Code quality".
    Hard rules H1–H8 and Soft rules S1–S6 constrain all acceptance criteria.
 
 After reading, determine if you have enough context to write a

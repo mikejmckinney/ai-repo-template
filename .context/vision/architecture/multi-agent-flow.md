@@ -1,7 +1,7 @@
 # Multi-Agent Flow
 
 This diagram is the template repo's current working model for issue-to-merge execution.
-It summarizes the flow described in `docs/guides/multi-agent-coordination.md` and the role/prompt rules under `.context/rules/**`.
+It summarizes the optional flow described in `docs/guides/multi-agent-coordination.md`; routine work defaults to one implementing agent under `AGENTS.md`.
 
 ```mermaid
 flowchart TD

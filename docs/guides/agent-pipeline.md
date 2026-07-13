@@ -69,12 +69,6 @@ issue template, which captures the *what* and *why*. v1 has no
 approval gate: the plan is reviewed at PR time, but writing it forces
 implementation thinking before code (ADR-011).
 
-ADR-026 extends the plan with a `plan_compliance` block. For non-exempt
-work, include the parent startup evidence, applicable roles, process resources
-that affected decisions, planned subagents, gate state, ADR/doc-sync state,
-and planned verification. The block is review evidence first; it must not
-claim that CI can prove a model runtime actually read or dispatched anything.
-
 Exemptions: issues labeled `chore:no-plan`, automation-bot authors
 (Renovate, Dependabot), and revert PRs of a prior PR. The companion
 rule — every PR body must link the issue or a parent PR (`Closes #NN`,
@@ -92,11 +86,6 @@ Copilot creates a `copilot/issue-{number}` branch, implements the feature,
 and opens a draft PR. After the Copilot run finishes, the
 `agent-auto-ready.yml` workflow transitions the PR from draft to ready
 for review automatically (Copilot itself leaves PRs as drafts).
-
-For non-exempt PRs, fill the PR template's `parent_compliance` block before
-requesting review. If role subagents were used, copy their parsed
-`subagent_compliance` objects into `subagents_dispatched`; raw pasted YAML may
-be retained for provenance but is not the canonical validator input.
 
 ### Step 3: Review bots fire (automatic)
 
@@ -364,11 +353,13 @@ Both succeeded; dashboard showed **standard** `composer-2.5` (not `-fast`) for e
 
 **Workflows covered (SDK):** `agent-advisory-review.yml`, `agent-review-finalize.yml`, `agent-postmerge-retro.yml` (daily retro + fix jobs), `agent-weekly-review.yml` (weekly scan + fix jobs). Do not call `@cursor/sdk` directly elsewhere without the same `fast=false` guard when using `composer-2.5`. **Version pin:** `scripts/workflows/lib/cursor-sdk-version.sh` (`CURSOR_SDK_VERSION`, currently `1.0.18`) is the single source; runners `npm install --no-save @cursor/sdk@${CURSOR_SDK_VERSION}`. `scripts/checks/054-finalize-collector-hardening-invariants.sh` fails on unpinned SDK installs.
 
-**Handshake / receipt in advisory comments:** The model **self-reports** the session handshake and context receipt in each snapshot. `pr-advisory-review.md` **pointer-links** to `.context/rules/process_session_start.md` for the canonical templates (no mirrored copy in the prompt — avoids AP1-style drift). Automation injects diff-coverage facts only; it does not override handshake fields.
+**Handshake in advisory comments:** The model self-reports the lightweight
+`AGENTS.md` handshake in each snapshot. Context-receipt tables are retired.
 
 **Startup rules loaded for advisory:** `process_critical_thinking.md` and `process_clarification.md` are `startup-required` in the rule catalog and included in `startup-min`. After context compaction, agents should re-emit handshake per `process_session_start.md` § "Context compaction / resumed-session behavior".
 
-**Read-profile / compaction verification:** AGENTS.md v25 and `.context/rules/README.md` define named read profiles and minimum files. There is **no automated CI smoke** for profile loading — agents do not reliably read every minimum file from disk when only instructed via contract prose. Manual check: `handshake-and-shape-smoke.md` **Scenario E** (post-compaction read profile + receipt shape).
+**Context selection:** automation always supplies `AGENTS.md` and adds only
+task-specific guides, ADRs, or benchmark references selected from changed paths.
 
 **Manual override** — anyone (agent or human) can comment `/gemini review` directly on a PR to force a fresh Gemini review. This is documented as a belt-and-suspenders escape hatch; the workflow is the primary mechanism.
 
@@ -826,9 +817,9 @@ squash-merges when CI is green.
 For the first project on the pipeline, run **sequentially** (one
 issue at a time) until you've verified the loop works end-to-end in
 your repo. After that, run **in parallel** — assign multiple issues
-at once. Stages whose role scopes (per `.agents/<role>.md` owned-path hints) don't overlap are safe to run
-concurrently. The Parallelism Report workflow (ADR-009) classifies
-overlap per PR; auto-rebase-on-merge (ADR-010) handles soft overlaps
+at once. Stages with explicit, non-overlapping file scopes are safe to run
+concurrently. The Parallelism Report workflow (ADR-009) reports exact-file
+overlap per PR; auto-rebase-on-merge (ADR-010) handles shared-directory overlap
 automatically post-merge.
 
 **5. Monitor progress.**

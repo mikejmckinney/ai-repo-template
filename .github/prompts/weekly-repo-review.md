@@ -7,7 +7,7 @@ agent: agent
 
 You are performing a **weekly full-repo health review** on the current `main` branch. Your job is to inspect the repository and output **structured JSON only** — no Markdown prose outside the JSON object.
 
-The automation appends the **context pack** (`full` profile: `AGENTS.md`, `.context/rules/**`, and related governance files). That pack is **rules and process**, not the full codebase. **You must read the repository working tree** (Cursor local mode) or mounted workspace sources (Antigravity path) to review code, scripts, workflows, checks, docs, and tests.
+The automation appends a **context pack** containing `AGENTS.md` plus task-specific governance context. That pack is **rules and process**, not the full codebase. **You must read the repository working tree** (Cursor local mode) or mounted workspace sources (Antigravity path) to review code, scripts, workflows, checks, docs, and tests.
 
 ## Hard rules
 
@@ -28,7 +28,7 @@ Separate your analysis into three buckets in the JSON output:
 2. **`adr_updates`** — ADR amendment **candidates** (create follow-up issues only; do not edit ADRs).
 3. **`context_pack_updates`** — context-pack tuning candidates (rules, indexes, prompts) with paths to add/remove.
 
-Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rules/process_opportunity_feedback.md) and [ADR-027](../../docs/decisions/adr-027-opportunity-feedback-channel.md): high-impact, evidence-backed, bounded scope.
+Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027](../../docs/decisions/adr-027-opportunity-feedback-channel.md): high-impact, evidence-backed, bounded scope.
 
 ## Required JSON shape
 
@@ -76,7 +76,7 @@ Align with [`.context/rules/process_opportunity_feedback.md`](../../.context/rul
 
 ## Session handshake / context receipt
 
-Pointer only — do **not** mirror full templates here. If you need them for reasoning, follow [`.context/rules/process_session_start.md`](../../.context/rules/process_session_start.md). **Your final output must still be JSON only**.
+Pointer only — do **not** mirror full templates here. Follow the startup contract in [`AGENTS.md`](../../AGENTS.md). **Your final output must still be JSON only**.
 
 ## Empty arrays are valid
 

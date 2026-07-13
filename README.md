@@ -198,7 +198,7 @@ EXTENSIONS=(
 When using this template in a new repository:
 
 1. **Start with [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md)** — canonical onboarding procedure. This will instruct agents to repopulate files including `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` with project-specific purpose, plan, and design context before regenerating `AI_REPO_GUIDE.md`
-2. **Create domain rules** - Add constraints to `.context/rules/`
+2. **Customize the operating contract** - Add project-wide constraints to `AGENTS.md`
 3. **Start with mockups** - Add design artifacts to `.context/vision/` before coding
 4. **Use GitHub live state** - Keep issue/PR `agent-state:v1` comments current for cognitive handoff between sessions
 5. **Keep AGENTS.md as the canonical agent instructions** - Per [`docs/decisions/adr-002-agents-md-ownership.md`](docs/decisions/adr-002-agents-md-ownership.md), `AGENTS.md` is read by most AI tools (Copilot, Cursor, Gemini, Claude Code) and references `AI_REPO_GUIDE.md` for structured detail. Edit it directly when agent-facing rules change; do not strip it down to a pointer.

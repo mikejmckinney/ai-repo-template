@@ -81,17 +81,12 @@ REQUIRED_FILES=(
   ".github/prompts/mirror-postmortem.md"
   ".github/prompts/pre-push-review.md"
   ".github/prompts/multi-model-consensus-plan.md"
-  ".github/prompts/instruction-compliance-smoke.md"
   ".github/prompts/outcome-validation-smoke.md"
   ".github/prompts/judge-mode-smoke.md"
-  ".github/prompts/handshake-and-shape-smoke.md"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
   "scripts/diag-hang-snapshot.sh"
   "scripts/diag-sandbox.sh"
-  "scripts/lib/compliance_schema.py"
-  "scripts/validate-compliance-examples.py"
-  "scripts/validate-compliance-fixtures.py"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do
