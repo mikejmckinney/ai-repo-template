@@ -42,11 +42,8 @@ Mode: final consolidation, non-blocking unless a human applies `review:blocking-
 
 ### Session handshake
 
-Emit the session handshake from [`.context/rules/process_session_start.md`](../../.context/rules/process_session_start.md) § "Session handshake (read-receipt)" (self-reported).
-
-### Context receipt
-
-Emit `## Session context receipt` from the same file § "Session context receipt". Include collected artifacts you used (`pr.json`, reviews, review-comments, advisory snapshots, diff) with accurate `Load` and `In context` values.
+Emit the current handshake from [`AGENTS.md`](../../AGENTS.md). Do not append a
+context-receipt table.
 
 ### Must fix before merge
 

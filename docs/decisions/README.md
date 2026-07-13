@@ -24,7 +24,7 @@
 | [ADR-008](./adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 runs by default; Copilot-path relay-side fallback | Accepted |
 | [ADR-009](./adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution (patterns, dispatch reality, conflict enforcement) | Accepted (superseded in part by ADR-025) |
 | [ADR-010](./adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge for parallel agent PRs | Accepted |
-| [ADR-011](./adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement + PR-must-link-issue (v1) | Accepted (superseded in part by ADR-026) |
+| [ADR-011](./adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement + PR-must-link-issue (v1) | Accepted |
 | [ADR-012](./adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions in AGENTS.md (branch-and-commit, cadence sharpenings) | Accepted |
 | [ADR-013](./adr-013-pre-commit-on-main-default.md) | Pre-commit hook for `main` protection — not installed by default | Accepted |
 | [ADR-014](./adr-014-extend-preflight-to-adhoc-deliverables.md) | Extend Analyst Pre-Flight gate to ad-hoc deliverable issues | Accepted |
@@ -36,10 +36,10 @@
 | [ADR-020](./adr-020-orchestration-patterns-reference.md) | Orchestration patterns and anti-patterns reference file (`.context/rules/repo_orchestration_patterns.md`) | Accepted |
 | [ADR-021](./adr-021-agents-md-decomposition.md) | Decompose AGENTS.md into thin contract + per-concern `process_*.md` files (extends ADR-002) | Accepted (superseded in part by ADR-025) |
 | [ADR-022](./adr-022-top-level-md-scope-split.md) | Top-level markdown scope split (README / AI_REPO_GUIDE / AGENTS) — also extends ADR-002 | Accepted |
-| [ADR-023](./adr-023-shared-subagent-canonical.md) | Canonical role bodies in `.agents/<role>.md`; vendor folders carry thin overlays (supersedes ADR-003 in part) | Accepted (superseded in part by ADR-026) |
+| [ADR-023](./adr-023-shared-subagent-canonical.md) | Canonical role bodies in `.agents/<role>.md`; vendor folders carry thin overlays (supersedes ADR-003 in part) | Accepted |
 | [ADR-024](./adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning — optional opt-in workflow shipped as prompt + guide; no new `synthesizer` role in v1 | Accepted |
 | [ADR-025](./adr-025-github-issues-pr-comments-as-live-state.md) | GitHub Issues, PRs, comments, and labels as live agent state | Accepted |
-| [ADR-026](./adr-026-compliance-contracts.md) | Agent compliance contracts and role receipt evidence | Accepted |
+| [ADR-026](./adr-026-compliance-contracts.md) | Agent compliance contracts and role receipt evidence | Accepted (structured contracts retired by 2026-07-13 amendment) |
 | [ADR-027](./adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel for in-scope agent observations | Accepted |
 | [ADR-029](./adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence requirement on every PR + canary placeholder convention; narrows ADR-021 §"Per-file cadence bump" scope | Accepted |
 | [ADR-030](./adr-030-non-blocking-review-pipeline.md) | Non-blocking LLM review pipeline (advisory → finalize → daily retro → weekly repo review) | Proposed |
@@ -51,8 +51,9 @@ changes.
 ## When to write a new ADR
 
 See `adr-template.md` → "When to write a new ADR" for the canonical trigger
-list. Short version: any change to a previously documented decision needs a
-new ADR (and the old one updated) — not an in-place rewrite.
+list. Normally, a changed decision needs a new ADR. A dated amendment to the
+owning ADR is also permitted when the maintainer explicitly requests it and the
+original rationale remains intact.
 
 ## Supersession discipline
 

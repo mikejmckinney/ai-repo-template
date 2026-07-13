@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (supersedes part of [ADR-003](./adr-003-claude-code-subagent-registration.md); superseded in part by [ADR-026](./adr-026-compliance-contracts.md))
+Accepted (supersedes part of [ADR-003](./adr-003-claude-code-subagent-registration.md); ADR-026 structured evidence extension retired 2026-07-13)
 
 ## Date
 

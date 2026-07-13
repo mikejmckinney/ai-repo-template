@@ -51,15 +51,13 @@ for label in 'agent:claimed' 'agent:blocked' 'agent:awaiting-review'; do
   fi
 done
 
-# Use targeted prose regexes for the required cadence concepts instead of
-# pinning full sentences; process_session_state.md is human-facing guidance
-# and may be polished without changing the underlying ADR-025 contract.
-if grep -qiE 'wait-for-input[[:space:]-]*pause' .context/rules/process_session_state.md 2>/dev/null \
-  && grep -qiE 'auto-summar(y|izes|ized)\b' .context/rules/process_session_state.md 2>/dev/null \
-  && grep -qiE 'session ends.*not merged/closed' .context/rules/process_session_state.md 2>/dev/null; then
-  pass "process_session_state.md preserves ADR-025 live-state cadence triggers"
+# AGENTS.md keeps the slim live-state and handoff contract.
+if grep -qF 'Session and handoff state' AGENTS.md 2>/dev/null \
+  && grep -qF 'agent-state:v1' AGENTS.md 2>/dev/null \
+  && grep -qF 'paused' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md preserves ADR-025 live-state guidance"
 else
-  fail "process_session_state.md missing one or more ADR-025 live-state cadence triggers"
+  fail "AGENTS.md missing ADR-025 live-state guidance"
 fi
 
 if grep -q '#263.*superseded' "$ADR025_PATH" 2>/dev/null \

@@ -52,22 +52,22 @@ EOF
   [ "$(jq -r '.[0].diff_hunk // empty' <<<"$output")" = "" ]
 }
 
-@test "select-context triggers orchestration rules for AGENTS.md changes" {
+@test "select-context uses AGENTS.md as the only baseline" {
   printf 'AGENTS.md\n' >"$TMP_DIR/changed.txt"
   run python3 "$PROMPT_HELPERS" select-context \
     --profile pr-review \
     --changed-files "$TMP_DIR/changed.txt"
   [ "$status" -eq 0 ]
-  grep -qxF '.context/rules/repo_orchestration_patterns.md' <<<"$output"
+  [ "$output" = $'AGENTS.md\n.github/pull_request_template.md' ]
 }
 
-@test "select-context triggers orchestration rules for scripts outside workflows" {
-  printf 'scripts/benchmark/lib.sh\n' >"$TMP_DIR/changed.txt"
+@test "select-context adds task-specific workflow guidance" {
+  printf '.github/workflows/ci-tests.yml\n' >"$TMP_DIR/changed.txt"
   run python3 "$PROMPT_HELPERS" select-context \
     --profile pr-review \
     --changed-files "$TMP_DIR/changed.txt"
   [ "$status" -eq 0 ]
-  grep -qxF '.context/rules/repo_orchestration_patterns.md' <<<"$output"
+  grep -qxF 'docs/guides/agent-pipeline.md' <<<"$output"
 }
 
 @test "cap-json warns on stderr when returning empty array" {

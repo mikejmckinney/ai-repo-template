@@ -58,12 +58,12 @@ else
   fail "pr-resolve-all.md missing sandbox-verification callout (issue #227)"
 fi
 
-# process_doc_maintenance.md ties PLAN_TEMPLATE + verify-pr.sh + matrix together.
-if grep -q 'verify-pr.sh' .context/rules/process_doc_maintenance.md 2>/dev/null \
-  && grep -q 'sandbox-verification.md' .context/rules/process_doc_maintenance.md 2>/dev/null; then
-  pass "process_doc_maintenance.md links verify-pr.sh + sandbox-verification.md (issue #227)"
+# AGENTS.md ties workflow verification changes to the classifier and sandbox guide.
+if grep -q 'scripts/verify-pr.sh' AGENTS.md 2>/dev/null \
+  && grep -q 'sandbox verification guide' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md links verify-pr.sh + sandbox verification (issue #227)"
 else
-  fail "process_doc_maintenance.md missing issue-#227 doc-sync row (issue #227)"
+  fail "AGENTS.md missing issue-#227 workflow verification guidance"
 fi
 
 echo ""

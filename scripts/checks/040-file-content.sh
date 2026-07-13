@@ -6,11 +6,11 @@
 # --- File Content Checks ---
 echo "Checking file contents..."
 
-# Check startup contract surfaces reference AI_REPO_GUIDE.md (AGENTS.md or rule catalog).
-if grep -q "AI_REPO_GUIDE.md" AGENTS.md .context/rules/README.md 2>/dev/null; then
+# Check startup contract references AI_REPO_GUIDE.md.
+if grep -q "AI_REPO_GUIDE.md" AGENTS.md 2>/dev/null; then
   pass "startup contract references AI_REPO_GUIDE.md"
 else
-  fail "AGENTS.md or .context/rules/README.md should reference AI_REPO_GUIDE.md"
+  fail "AGENTS.md should reference AI_REPO_GUIDE.md"
 fi
 
 # Check AGENTS.md has truth hierarchy
@@ -20,11 +20,11 @@ else
   warn "AGENTS.md missing truth hierarchy section"
 fi
 
-# Check AGENTS.md has testing requirements (now in process_work_style.md per ADR-021)
-if grep -q "Testing requirements" .context/rules/process_work_style.md 2>/dev/null; then
-  pass "process_work_style.md has testing requirements section"
+# Check AGENTS.md has testing requirements.
+if grep -q "Testing and validation" AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md has testing and validation section"
 else
-  warn "process_work_style.md missing testing requirements section"
+  fail "AGENTS.md missing testing and validation section"
 fi
 
 # Check PR completion criteria section exists (now in pull_request_template.md per ADR-031; issue #206)
@@ -34,59 +34,12 @@ else
   warn "pull_request_template.md missing user outcome validation section"
 fi
 
-# Check thin AGENTS.md links to per-concern process_*.md files (ADR-021).
-# Rationale: hard-coded contract assertion per repo convention. Limitation: regex
-# matches standard markdown link syntax `[label](file)`; assumes no nested parens.
-# Scope is restricted to the "Per-concern process rules" section so an unrelated
-# pointer link elsewhere in the file (e.g. the Section-anchor redirects table)
-# can't mask a missing table row. Reported by codex on PR #264 R5.
-CORE_RULE_FILES=(
-  "process_session_start.md" "process_critical_thinking.md" "process_work_style.md"
-  "process_clarification.md" "process_session_state.md"
-  "process_doc_maintenance.md" "domain_code_quality.md" "repo_orchestration_patterns.md"
-  "process_opportunity_feedback.md"
-)
-# Extract markdown table rows (lines starting with '|') from the
-# "Per-concern process rules" section. Restricting to table rows guards
-# against false-pass from prose mentions of the same filename within the
-# section (reported by codex on PR #264 R6).
-# Limitation: awk's range pattern terminates at the next '## ' header.
-# This is robust as long as AGENTS.md keeps the table inside its own
-# section. If a contributor inserts non-table content (e.g., another
-# table) between the section header and the link table, the filter could
-# include extra rows; the regex below still requires the canonical
-# `.context/rules/<file>.md` link target so unrelated rows wouldn't
-# false-match. Documented per repo "document simplification" rule
-# (Gemini, R10).
-LINK_TABLE_BLOCK=""
-LINK_TABLE_SOURCE=""
-LINK_TABLE_LINK_RE=""
-if [[ -f "AGENTS.md" ]] && grep -q '^## Per-concern process rules' AGENTS.md 2>/dev/null; then
-  LINK_TABLE_BLOCK=$(awk '/^## Per-concern process rules/{flag=1; next} /^## /{flag=0} flag && /^\|/' AGENTS.md)
-  LINK_TABLE_SOURCE="AGENTS.md"
-  LINK_TABLE_LINK_RE='\.context/rules/'
-elif [[ -f ".context/rules/README.md" ]]; then
-  LINK_TABLE_BLOCK=$(awk '/^## Rule catalog/{flag=1; next} /^## /{flag=0} flag && /^\|/' .context/rules/README.md)
-  LINK_TABLE_SOURCE=".context/rules/README.md"
-  LINK_TABLE_LINK_RE='\./'
-fi
-MISSING_LINKS=0
-for pfile in "${CORE_RULE_FILES[@]}"; do
-  # Escape regex metachars (notably '.') in filename for grep -E.
-  pfile_re=${pfile//./\\.}
-  # Require the canonical link target `.context/rules/<file>.md` exactly,
-  # optionally followed by '#anchor', then ')'. The leading '.context/rules/'
-  # prefix prevents wrong-directory false-positives like `docs/process_X.md`
-  # (Codex, R9). The trailing terminator prevents suffix typos like '.mdx'
-  # (Codex, R7). Together they pin the regex to the exact canonical paths
-  # used in the link table.
-  if ! printf '%s\n' "$LINK_TABLE_BLOCK" | grep -qE "\[[^]]*\]\(${LINK_TABLE_LINK_RE}${pfile_re}(#[^)]*)?\)" 2>/dev/null; then
-    fail "${LINK_TABLE_SOURCE:-AGENTS.md} missing link table entry for $pfile (ADR-021)"
-    MISSING_LINKS=$((MISSING_LINKS + 1))
-  fi
-done
-if [[ $MISSING_LINKS -eq 0 ]]; then
-  pass "${LINK_TABLE_SOURCE:-AGENTS.md} link table references all core process files (ADR-021)"
+# Active policy is consolidated in AGENTS.md; no secondary rule catalog is
+# required at startup.
+if grep -q "Do not require agents to reread it" AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md is the sole always-loaded operating contract"
+else
+  fail "AGENTS.md missing always-loaded contract guidance"
 fi
 
 # Check agent-review-on-push.yml has required invariants (issue #205)
@@ -201,37 +154,25 @@ else
   fail "agent-pipeline.md should document REVIEW_ON_PUSH knob"
 fi
 
-# Check AGENTS.md has versioned session handshake (read-receipt canary)
+# Check AGENTS.md has versioned session handshake canary.
 if grep -qE '^<!-- AGENTS_MD_VERSION: [0-9]+ -->' AGENTS.md 2>/dev/null; then
   pass "AGENTS.md has AGENTS_MD_VERSION marker"
 else
   fail "AGENTS.md missing AGENTS_MD_VERSION marker (handshake canary)"
 fi
 
-HANDSHAKE_SOURCE=""
-for handshake_file in AGENTS.md .context/rules/process_session_start.md; do
-  if [[ -f "$handshake_file" ]] \
-    && grep -q "Session handshake" "$handshake_file" 2>/dev/null \
-    && (grep -qE 'Session handshake vAGENTS_MD_VERSION' "$handshake_file" 2>/dev/null \
-      || grep -qE 'Session handshake v?[0-9]+' "$handshake_file" 2>/dev/null); then
-    HANDSHAKE_SOURCE="$handshake_file"
-    break
-  fi
-done
-if [[ -n "$HANDSHAKE_SOURCE" ]]; then
-  pass "${HANDSHAKE_SOURCE} has Session handshake instruction with token placeholder or legacy literal"
+if grep -qE 'Session handshake v?[0-9]+' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md has Session handshake instruction"
 else
-  fail "AGENTS.md or process_session_start.md missing Session handshake instruction or token"
+  fail "AGENTS.md missing Session handshake instruction or token"
 fi
 
 # Verify the handshake token either defers to AGENTS_MD_VERSION via the
 # template placeholder or (legacy form) embeds a matching literal version.
 agents_md_version=$(grep -oE '^<!-- AGENTS_MD_VERSION: [0-9]+ -->' AGENTS.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
-handshake_version=$(grep -oE 'Session handshake v?[0-9]+' "${HANDSHAKE_SOURCE:-AGENTS.md}" 2>/dev/null | grep -oE '[0-9]+' | head -1)
-if grep -qE 'Session handshake vAGENTS_MD_VERSION' "${HANDSHAKE_SOURCE:-AGENTS.md}" 2>/dev/null; then
-  pass "${HANDSHAKE_SOURCE:-AGENTS.md} handshake token defers to AGENTS_MD_VERSION placeholder ($agents_md_version)"
-elif [ -n "$agents_md_version" ] && [ "$agents_md_version" = "$handshake_version" ]; then
-  pass "${HANDSHAKE_SOURCE:-AGENTS.md} handshake token version matches AGENTS_MD_VERSION ($agents_md_version)"
+handshake_version=$(grep -oE 'Session handshake v?[0-9]+' AGENTS.md 2>/dev/null | grep -oE '[0-9]+' | head -1)
+if [ -n "$agents_md_version" ] && [ "$agents_md_version" = "$handshake_version" ]; then
+  pass "AGENTS.md handshake token version matches AGENTS_MD_VERSION ($agents_md_version)"
 else
   fail "session handshake token does not align with AGENTS_MD_VERSION ($agents_md_version)"
 fi

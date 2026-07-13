@@ -38,58 +38,26 @@ it's 10 thin overlays, each pointing back to `.agents/<role>.md`.
 
 ## Documentation-only frontmatter (canonical)
 
-The canonical files carry two frontmatter keys that **no runtime currently
-recognizes** — they exist as machine-readable documentation of the role's
-intended scope and pipeline neighbors:
+The canonical files may carry two frontmatter keys that **no runtime currently
+recognizes**. They are optional specialty guidance:
 
-- `owned_paths:` — the file/glob patterns this role is allowed to write.
-  Authoritative copy lives in
-  [`.context/rules/agent_ownership.md`](../.context/rules/agent_ownership.md);
-  the canonical frontmatter mirror is for at-a-glance reference only.
+- `owned_paths:` — file/glob patterns commonly associated with this specialty;
+  they are not mandatory path-ownership gates.
 - `handoff_targets:` — the downstream roles this role typically dispatches to.
 
 Both Claude Code and the Copilot SDK silently ignore unknown frontmatter
 keys, so these are inert at load time. They are deliberately **not** mirrored
 into the platform overlays.
 
-## Role contract versioning (ADR-026)
-
-Canonical role files carry a `role_contract_version:` integer. This
-is the version a dispatched subagent reports in its `subagent_compliance`
-block, and it belongs only to `.agents/<role>.md` because the canonical file is
-where role bootstrap rules, output formats, handoff behavior, and compliance
-return contracts live.
-
-Do **not** add `overlay_version` to v1 role or platform files. Platform
-overlays under `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and
-`.codex/agents/` are registration shims; they own platform fields (`name`,
-`tools`, `model`, Copilot `handoffs`, Cursor `readonly`, Codex
-`developer_instructions`, etc.) but do not own the role compliance contract.
-
-Bump `role_contract_version` only when a canonical role's bootstrap, output
-format, handoff behavior, or compliance return contract changes. Ordinary
-responsibility wording, examples, or typo fixes do not require a bump unless
-they alter what a dispatched role must emit or load.
-
 Use [`_TEMPLATE.md`](_TEMPLATE.md) when adding or migrating a role contract.
 It is a documentation template, not a canonical role, and parity checks must
 not require platform overlays for it.
 
-`_TEMPLATE.md` also carries the template-only metadata key
-`agents_md_compat: <AGENTS_MD_VERSION>`. Replace the placeholder with the
-current `AGENTS_MD_VERSION` only while drafting a concrete role contract that
-needs that audit note; do not mirror it into platform overlays, and do not treat
-it as a runtime dispatch key. Existing canonical role files rely on
-`agents_md_version` in emitted compliance blocks for per-run startup evidence.
-
 ### Exact-output roles
 
 Some roles have exact first-line output formats. Judge responses begin with
-`DECISION:`; Critic responses begin with `CRITIC DECISION:`. ADR-026 preserves
-those contracts: exact-output roles put receipt evidence in the trailing
-`subagent_compliance` block instead of prepending a receipt line. Non-exact
-roles may emit a visible `Role receipt v<N> — <role>` line, but the canonical
-audit field remains `subagent_compliance.receipt`.
+`DECISION:`; Critic responses begin with `CRITIC DECISION:`. Do not prepend the
+repository handshake when invoking those role-specific output contracts.
 
 ### Active handoff mapping (Copilot only)
 

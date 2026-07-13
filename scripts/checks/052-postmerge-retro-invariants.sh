@@ -367,13 +367,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   run_bats_check scripts/tests/postmerge-retro-batch.bats "postmerge-retro-batch.bats"
 
-  if grep -q 'AGENTS_MD_VERSION: 26' AGENTS.md 2>/dev/null \
-    && grep -q 'After context compaction' AGENTS.md 2>/dev/null \
-    && grep -q 'In context' AGENTS.md 2>/dev/null \
-    && grep -q 'out of compliance' AGENTS.md 2>/dev/null; then
-    pass "AGENTS.md v26 includes compaction + in-context receipt rules"
+  if grep -q 'After context compaction' AGENTS.md 2>/dev/null \
+    && grep -q 'context-receipt tables' AGENTS.md 2>/dev/null; then
+    pass "AGENTS.md uses handshake-only post-compaction freshness"
   else
-    fail "AGENTS.md missing v26 compaction/in-context receipt rules"
+    fail "AGENTS.md missing handshake-only post-compaction guidance"
   fi
 
   echo ""

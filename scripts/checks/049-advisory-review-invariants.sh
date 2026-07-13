@@ -63,12 +63,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'Session handshake' "$ADVISORY_PROMPT" 2>/dev/null \
-    && grep -q 'Context receipt' "$ADVISORY_PROMPT" 2>/dev/null \
-    && grep -q 'process_session_start.md' "$ADVISORY_PROMPT" 2>/dev/null \
-    && ! grep -q 'Session handshake vAGENTS_MD_VERSION' "$ADVISORY_PROMPT" 2>/dev/null; then
-    pass "advisory prompt requires handshake/receipt via process_session_start pointer (no mirrored template)"
+    && grep -q 'AGENTS.md' "$ADVISORY_PROMPT" 2>/dev/null \
+    && grep -q 'Do not append a' "$ADVISORY_PROMPT" 2>/dev/null; then
+    pass "advisory prompt requires the AGENTS.md handshake without a receipt table"
   else
-    fail "advisory prompt must pointer-link handshake/receipt to process_session_start.md without duplicating the template"
+    fail "advisory prompt must require the AGENTS.md handshake without receipt bookkeeping"
   fi
 
   if grep -q '^ai-review:live|' "$LABELS_SCRIPT" 2>/dev/null; then
