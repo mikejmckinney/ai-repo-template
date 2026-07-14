@@ -69,37 +69,6 @@ def _flatten_pr_retro(data: dict) -> list[dict]:
                 path=f"follow_up_issues[{i}]",
             )
         )
-    for i, item in enumerate(data.get("adr_updates") or []):
-        if not isinstance(item, dict):
-            continue
-        findings.append(
-            _flatten_item(
-                pr,
-                "adr_updates",
-                item,
-                title=item.get("title", ""),
-                body=item.get("body", ""),
-                labels=["adr:update"],
-                evidence=[item.get("adr") or ""],
-                path=f"adr_updates[{i}]",
-            )
-        )
-    for i, item in enumerate(data.get("context_pack_updates") or []):
-        if not isinstance(item, dict):
-            continue
-        body = f"**Pack:** {item.get('pack', '')}\n\n**Reason:** {item.get('reason', '')}"
-        findings.append(
-            _flatten_item(
-                pr,
-                "context_pack_updates",
-                item,
-                title=f"Context pack update: {item.get('pack', '')}",
-                body=body,
-                labels=["context-pack"],
-                evidence=item.get("evidence") or [],
-                path=f"context_pack_updates[{i}]",
-            )
-        )
     return findings
 
 

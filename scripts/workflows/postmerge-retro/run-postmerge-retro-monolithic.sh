@@ -158,9 +158,7 @@ prompt_file="$WORKDIR/prompt.md"
     {
       "pr": 90,
       "summary": "brief summary",
-      "follow_up_issues": [],
-      "adr_updates": [],
-      "context_pack_updates": []
+      "follow_up_issues": []
     }
   ]
 }

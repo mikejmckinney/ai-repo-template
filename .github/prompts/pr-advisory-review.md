@@ -15,12 +15,7 @@ workflow and process changes.
 
 ## Hard constraints
 
-- **Do not** push commits.
-- **Do not** submit a formal PR review (`gh api .../pulls/.../reviews`).
-- **Do not** apply or remove labels.
-- **Do not** resolve review threads.
 - **Do not** mark anything blocking or require implementation to wait for this run.
-- Prefer concise, deduplicated findings.
 - If an existing advisory snapshot is provided, **do not** repeat findings unless still present at head and material.
 - Emit the **session handshake** yourself (self-reported; automation will not override it).
 - Include the factual **Diff coverage** line in the snapshot header using automation-supplied numbers when provided.

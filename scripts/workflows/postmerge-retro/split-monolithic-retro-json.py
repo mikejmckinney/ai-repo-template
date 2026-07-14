@@ -51,9 +51,11 @@ def _find_json_object(text: str) -> str:
 def _validate_retro(data: dict, expected_pr: int) -> None:
     if int(data.get("pr", 0)) != expected_pr:
         raise ValueError(f"retro pr={data.get('pr')} does not match expected {expected_pr}")
-    for key in ("follow_up_issues", "adr_updates", "context_pack_updates"):
-        if key not in data or not isinstance(data[key], list):
-            raise ValueError(f"Missing or invalid array field: {key}")
+    for retired in ("adr_updates", "context_pack_updates"):
+        if retired in data:
+            raise ValueError(f"Retired array field: {retired}")
+    if not isinstance(data.get("follow_up_issues"), list):
+        raise ValueError("Missing or invalid array field: follow_up_issues")
 
 
 def main() -> int:

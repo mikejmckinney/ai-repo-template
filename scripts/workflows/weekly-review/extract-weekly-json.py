@@ -63,10 +63,13 @@ def main() -> int:
         print("Weekly review output must be a JSON object", file=sys.stderr)
         return 1
 
-    for key in ("follow_up_issues", "adr_updates", "context_pack_updates"):
-        if key not in data or not isinstance(data[key], list):
-            print(f"Missing or invalid array field: {key}", file=sys.stderr)
+    for retired in ("adr_updates", "context_pack_updates"):
+        if retired in data:
+            print(f"Retired array field: {retired}", file=sys.stderr)
             return 1
+    if not isinstance(data.get("follow_up_issues"), list):
+        print("Missing or invalid array field: follow_up_issues", file=sys.stderr)
+        return 1
 
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(data, fh, indent=2, ensure_ascii=False)

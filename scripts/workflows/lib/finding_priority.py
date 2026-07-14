@@ -8,7 +8,7 @@ TRIGGERS = frozenset({"common", "edge", "fringe"})
 FIX_COSTS = frozenset({"trivial", "moderate", "large"})
 BANDS = frozenset({"fix-now", "should-fix", "defer"})
 
-FINDING_ARRAYS = ("follow_up_issues", "adr_updates", "context_pack_updates")
+FINDING_ARRAYS = ("follow_up_issues",)
 
 
 def derive_priority_band(

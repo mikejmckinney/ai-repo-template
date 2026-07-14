@@ -1,7 +1,22 @@
-# Shared review lenses
+# Shared review contract
 
-Apply these lenses proportionally to the supplied evidence. Report only concrete,
-actionable findings; prefer no finding over speculation or duplicated noise.
+This is the canonical common contract for advisory, daily, and weekly review.
+Cadence prompts define only their evidence boundary and output format.
+
+## Common constraints
+
+- Analyze and report only. Do not edit files, push commits, submit formal reviews,
+  change labels or PR state, resolve threads, or open issues or pull requests.
+- Report only concrete, actionable findings supported by supplied or repository
+  evidence. Prefer no finding over speculation.
+- Evaluate current state, not only historical evidence. Do not report an issue
+  already resolved at the reviewed head.
+- Deduplicate findings and accepted exceptions. Cite paths and reproduction
+  evidence, and distinguish verified facts from uncertainty.
+
+## Lenses
+
+Apply these lenses proportionally to the available evidence.
 
 1. **Outcome and scope:** Does the change solve the stated user problem without unrelated scope or hidden assumptions?
 2. **Correctness:** Check realistic inputs, edge cases, regressions, failure paths, and silent error handling.

@@ -47,6 +47,17 @@ teardown() {
   [[ "$output" == *"priority_band is derived"* ]]
 }
 
+@test "weekly LLM output rejects retired output buckets" {
+  for bucket in adr_updates context_pack_updates; do
+    jq --arg bucket "$bucket" '. + {($bucket): []}' "$FIXTURE" >"$TEST_ROOT/review.json"
+
+    run python3 "$WEEKLY_DIR/validate-weekly-review.py" "$TEST_ROOT/review.json"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"$bucket is retired"* ]]
+  done
+}
+
 @test "weekly detail renderer shows classifier fields and reproduction" {
   python3 "$WEEKLY_DIR/build-weekly-review-batch.py" \
     2026-W24 2026-06-14 "$FIXTURE" >"$TEST_ROOT/weekly.json"

@@ -37,10 +37,8 @@ apply_triage_to_item = _CL.apply_triage_to_item
 
 
 def _labels_for(category: str) -> list[str]:
-    if category == "adr_updates":
-        return ["adr:update"]
-    if category == "context_pack_updates":
-        return ["context-pack"]
+    # Historical umbrellas retain their category for traceability, but all
+    # reconstructed findings now use the single active follow-up label.
     return ["agent-suggested"]
 
 

@@ -18,9 +18,7 @@ setup() {
       "body": "b",
       "dedupe_key": "k"
     }
-  ],
-  "adr_updates": [],
-  "context_pack_updates": []
+  ]
 }
 JSON
   run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py "$tmp/retro.json"
