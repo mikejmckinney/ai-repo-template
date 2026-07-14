@@ -64,3 +64,53 @@ teardown() {
   run grep -F '**Severity:**' "$TEST_ROOT/findings.md"
   [ "$status" -eq 1 ]
 }
+
+@test "weekly umbrella merge upgrades legacy details and adds hybrid summary" {
+  python3 "$WEEKLY_DIR/build-weekly-review-batch.py" \
+    2026-W24 2026-06-14 "$FIXTURE" >"$TEST_ROOT/weekly.json"
+  python3 "$WEEKLY_DIR/render-umbrella-findings.py" \
+    "$TEST_ROOT/weekly.json" owner/repo deadbeef "$TEST_ROOT/details.md"
+  python3 "$WEEKLY_DIR/render-umbrella-findings.py" \
+    "$TEST_ROOT/weekly.json" owner/repo deadbeef "$TEST_ROOT/rows.md" --summary
+  printf '%s\n' '<!-- weekly-review:2026-W24 -->' '## Findings' '' '## Meta' >"$TEST_ROOT/body.md"
+
+  run python3 "$WEEKLY_DIR/merge-umbrella-content.py" \
+    "$TEST_ROOT/body.md" "$TEST_ROOT/rows.md" "$TEST_ROOT/details.md" "$TEST_ROOT/merged.md"
+  [ "$status" -eq 0 ]
+
+  run grep -F '## Triage summary' "$TEST_ROOT/merged.md"
+  [ "$status" -eq 0 ]
+  run grep -F '| meta-harness | edge | trivial | true | should-fix |' "$TEST_ROOT/merged.md"
+  [ "$status" -eq 0 ]
+  run grep -F '## Finding details' "$TEST_ROOT/merged.md"
+  [ "$status" -eq 0 ]
+  [ "$(grep -Fc '<!-- weekly-review:finding:repo-invariant-052-missing-link -->' "$TEST_ROOT/merged.md")" -eq 1 ]
+}
+
+@test "weekly superseded prefilter uses evidence paths without removing findings" {
+  mkdir -p "$TEST_ROOT/scripts/lib"
+  printf '%s\n' present >"$TEST_ROOT/scripts/lib/existing.sh"
+  cat >"$TEST_ROOT/weekly.json" <<'EOF'
+{
+  "run_week": "2026-W24",
+  "findings": [
+    {
+      "category": "follow_up_issues",
+      "title": "Missing helper",
+      "body": "scripts/lib/existing.sh is missing",
+      "dedupe_key": "missing-helper",
+      "evidence": ["scripts/lib/existing.sh"],
+      "repro_steps": ["Check scripts/lib/existing.sh"]
+    }
+  ]
+}
+EOF
+
+  run python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/mark-superseded-findings.py" \
+    "$TEST_ROOT/weekly.json" --repo-root "$TEST_ROOT" --mode weekly
+  [ "$status" -eq 0 ]
+  run jq -e '.findings | length == 1 and .[0].superseded_on_main == true' "$TEST_ROOT/weekly.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.superseded_findings[0].dedupe_key == "missing-helper"' "$TEST_ROOT/weekly.json"
+  [ "$status" -eq 0 ]
+}

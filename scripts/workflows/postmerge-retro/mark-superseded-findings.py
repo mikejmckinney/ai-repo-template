@@ -4,86 +4,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 
-MISSING_HINTS = (
-    "missing",
-    "absent",
-    "not found",
-    "does not exist",
-    "doesn't exist",
-    "lack ",
-    "without ",
-    "no longer present",
-)
+LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(LIB_DIR))
 
-def _is_path_char(ch: str) -> bool:
-    return ch.isalnum() or ch in "/._-"
-
-
-def path_token_in_text(path: str, text: str) -> bool:
-    """Return True when path appears as its own token, not as a substring of a longer path."""
-    norm = path.strip().lstrip("./")
-    if not norm:
-        return False
-    start = 0
-    while True:
-        idx = text.find(norm, start)
-        if idx == -1:
-            return False
-        before_ok = idx == 0 or not _is_path_char(text[idx - 1])
-        after_idx = idx + len(norm)
-        after_ok = after_idx >= len(text) or not _is_path_char(text[after_idx])
-        if before_ok and after_ok:
-            return True
-        start = idx + 1
-
-
-def _paths_in_text(text: str, candidates: list[str]) -> list[str]:
-    found: list[str] = []
-    for path in candidates:
-        if path and path_token_in_text(path, text):
-            found.append(path)
-    return found
-
-
-def _finding_text(finding: dict) -> str:
-    parts = [
-        finding.get("body") or "",
-        finding.get("title") or "",
-        " ".join(str(x) for x in finding.get("evidence") or []),
-        " ".join(str(x) for x in finding.get("repro_steps") or []),
-    ]
-    return "\n".join(parts)
-
-
-def check_superseded(finding: dict, changed_files: list[str], repo_root: Path) -> tuple[bool, str]:
-    if finding.get("category") != "follow_up_issues":
-        return False, ""
-    blob = _finding_text(finding)
-    blob_lower = blob.lower()
-    if not any(hint in blob_lower for hint in MISSING_HINTS):
-        return False, ""
-
-    paths = _paths_in_text(blob, changed_files)
-    if not paths:
-        # Also match backtick paths in body (exact token, not substring).
-        for match in re.findall(r"`([^`]+)`", blob):
-            candidate = match.strip()
-            if ("/" in candidate or "." in candidate) and path_token_in_text(candidate, blob):
-                paths.append(candidate)
-
-    for rel in paths:
-        rel = rel.strip().lstrip("./")
-        if not rel or rel.startswith("http"):
-            continue
-        target = repo_root / rel
-        if target.is_file() or target.is_dir():
-            kind = "directory" if target.is_dir() else "file"
-            return True, f"{rel} exists on main HEAD as {kind} (finding described missing/absent state)"
-    return False, ""
+from superseded_findings import check_superseded  # noqa: E402
 
 
 def annotate_daily(daily: dict, repo_root: Path) -> dict:
@@ -114,15 +41,45 @@ def annotate_daily(daily: dict, repo_root: Path) -> dict:
     return daily
 
 
+def annotate_weekly(weekly: dict, repo_root: Path) -> dict:
+    superseded: list[dict] = []
+    for finding in weekly.get("findings") or []:
+        candidates = [
+            str(path)
+            for path in finding.get("evidence") or []
+            if isinstance(path, str)
+        ]
+        ok, reason = check_superseded(finding, candidates, repo_root)
+        if ok:
+            finding["superseded_on_main"] = True
+            finding["superseded_reason"] = reason
+            superseded.append(
+                {"dedupe_key": finding.get("dedupe_key", ""), "reason": reason}
+            )
+        else:
+            finding.pop("superseded_on_main", None)
+            finding.pop("superseded_reason", None)
+    weekly["superseded_findings"] = superseded
+    return weekly
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("daily_json", type=Path)
     parser.add_argument("--repo-root", type=Path, default=Path("."))
+    parser.add_argument("--mode", choices=("auto", "daily", "weekly"), default="auto")
     parser.add_argument("-o", "--output", type=Path, help="default: overwrite input")
     args = parser.parse_args()
 
     daily = json.loads(args.daily_json.read_text(encoding="utf-8"))
-    daily = annotate_daily(daily, args.repo_root.resolve())
+    mode = args.mode
+    if mode == "auto":
+        mode = "weekly" if daily.get("run_week") else "daily"
+    daily = (
+        annotate_weekly(daily, args.repo_root.resolve())
+        if mode == "weekly"
+        else annotate_daily(daily, args.repo_root.resolve())
+    )
     out = args.output or args.daily_json
     out.write_text(json.dumps(daily, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(

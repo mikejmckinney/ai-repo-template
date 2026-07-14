@@ -11,7 +11,13 @@ Full-repository health review on `main` (static scan; not PR-scoped).
 | **Scan date (UTC)** | `{{RUN_DATE}}` |
 | **HEAD SHA** | [`{{HEAD_SHA}}`](https://github.com/{{REPO}}/commit/{{HEAD_SHA}}) — tip of `main` at scan time, not the diff boundary |
 
-## Findings
+## Triage summary
+
+| Category | Key | Impact | Trigger | Cost | Guard | Band | Finding |
+|---|---|---|---|---|---|---|---|
+{{TRIAGE_ROWS}}<!-- weekly-review:triage:end -->
+
+## Finding details
 
 {{FINDING_BLOCKS}}
 

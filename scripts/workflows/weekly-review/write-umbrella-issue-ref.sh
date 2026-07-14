@@ -11,27 +11,11 @@ usage() {
 }
 [[ -n "$WEEKLY_JSON" && -f "$WEEKLY_JSON" && -n "$ISSUE_NUM" ]] || usage
 
-normalize_issue_num() {
-  tr -d '[:space:]' <<<"${1:-}"
-}
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# shellcheck source=../lib/umbrella-lifecycle.sh
+source "$REPO_ROOT/scripts/workflows/lib/umbrella-lifecycle.sh"
 
-ISSUE_NUM="$(normalize_issue_num "$ISSUE_NUM")"
-[[ "$ISSUE_NUM" =~ ^[0-9]+$ ]] || {
-  echo "::error::issue-number must be a positive integer: '${ISSUE_NUM}'" >&2
-  exit 1
-}
-
-python3 - "$WEEKLY_JSON" "$ISSUE_NUM" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-path = Path(sys.argv[1])
-issue_num = int(sys.argv[2])
-data = json.loads(path.read_text(encoding="utf-8"))
-data["umbrella_issue"] = issue_num
-path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-PY
-
-printf '%s\n' "$ISSUE_NUM" >"$(dirname "$WEEKLY_JSON")/umbrella-issue.txt"
+umbrella_write_issue_ref \
+  "$WEEKLY_JSON" "$ISSUE_NUM" \
+  python3 "$REPO_ROOT/scripts/workflows/weekly-review/validate-weekly-review-batch.py"
 echo "Recorded umbrella_issue=${ISSUE_NUM} in ${WEEKLY_JSON}"
