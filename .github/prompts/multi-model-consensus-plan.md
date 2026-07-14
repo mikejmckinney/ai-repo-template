@@ -522,7 +522,7 @@ grep -q multi-model-consensus-plan .github/prompts/README.md
 
 - [`docs/guides/multi-model-consensus.md`](../../docs/guides/multi-model-consensus.md) — when/when-not, cost guardrails, examples, runtime fallback walkthrough.
 - [`docs/decisions/adr-024-multi-model-consensus-planning.md`](../../docs/decisions/adr-024-multi-model-consensus-planning.md) — why this is a prompt + guide rather than a new role.
-- [`docs/guides/repo-orchestration-patterns-reference.md`](../../docs/guides/repo-orchestration-patterns-reference.md) — historical orchestration vocabulary.
+- [`docs/guides/repo-orchestration-patterns-reference.md`](../../docs/guides/repo-orchestration-patterns-reference.md) — advisory orchestration vocabulary, including P9.
 - [`docs/decisions/adr-009-parallel-multi-agent-execution.md`](../../docs/decisions/adr-009-parallel-multi-agent-execution.md) Decision 3 — dispatch reality matrix that motivates the runtime fallback.
 - [`docs/decisions/adr-019-per-role-model-tiering.md`](../../docs/decisions/adr-019-per-role-model-tiering.md) — model tier rules this workflow inherits, including Amendment #6 (Copilot subagent cost-tier ceiling).
 - [`.github/PLAN_TEMPLATE.md`](../PLAN_TEMPLATE.md) — the standard plan format the final consensus plan must remain compatible with.

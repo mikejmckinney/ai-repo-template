@@ -28,6 +28,9 @@ Effective with this amendment:
   and documentation synchronization as ordinary prose contracts.
 - Keep role files as optional specialty guidance rather than mandatory dispatch
   or path-ownership boundaries.
+- Retire P1-P9/AP1-AP9 as standalone blocking gates while preserving the catalog
+  in `AGENTS.md` as advisory design and review vocabulary. Concrete findings must
+  still map to an active rule, observable regression, or unmet user outcome.
 
 This is an explicit maintainer-approved amendment to the ADR that introduced
 the mechanism. It preserves the original rationale below as historical context

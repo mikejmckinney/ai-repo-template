@@ -251,7 +251,7 @@ that is the suspect-first hypothesis.
 
 - [`.github/prompts/multi-model-consensus-plan.md`](../../.github/prompts/multi-model-consensus-plan.md) — the prompt itself.
 - [`docs/decisions/adr-024-multi-model-consensus-planning.md`](../decisions/adr-024-multi-model-consensus-planning.md) — prompt-first / no-new-role decision.
-- [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md) — historical orchestration vocabulary.
+- [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md) — advisory orchestration vocabulary, including P9.
 - [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md) — where consensus planning fits in the pipeline.
 - [`docs/decisions/adr-019-per-role-model-tiering.md`](../decisions/adr-019-per-role-model-tiering.md) — model-tier rules this workflow inherits.
 - [`docs/decisions/adr-009-parallel-multi-agent-execution.md`](../decisions/adr-009-parallel-multi-agent-execution.md) Decision 3 — dispatch reality matrix that motivates the runtime fallback.

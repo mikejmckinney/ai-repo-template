@@ -7,8 +7,8 @@
 ## Priority Note for AI Agents
 
 This directory contains **supporting documentation**. When sources conflict,
-see `AGENTS.md` §"Truth hierarchy" for the canonical order (summary:
-`.context/**` > `docs/**` > codebase).
+see `AGENTS.md` §"Truth hierarchy" for the canonical order (summary: current
+issue/PR > `AGENTS.md` > `.context/**` > `docs/**` > codebase).
 
 ## Directory Structure
 
@@ -97,7 +97,7 @@ What are the positive and negative consequences?
 - [Context Files Explained](guides/context-files-explained.md) - **Start here**: Understanding all the documentation files
 - [Agent Best Practices](guides/agent-best-practices.md) - Token limits, state conflicts, secrets, session handoff
 - [Design Patterns](guides/design-patterns.md) - Lead index for advisory code-layer pattern catalogs, including concurrency, integration / messaging, and data / persistence citations
-- [Repo Orchestration Patterns Reference](guides/repo-orchestration-patterns-reference.md) - Historical orchestration vocabulary; no longer an active review gate
+- [Repo Orchestration Patterns Reference](guides/repo-orchestration-patterns-reference.md) - Detail for the advisory orchestration vocabulary summarized in `AGENTS.md`
 - [Opportunity Feedback Examples](guides/opportunity-feedback-examples.md) - Worked examples for the `opportunity_notes` channel
 - [AGENTS.md Section Redirects](guides/agents-md-section-redirects.md) - ADR-021 anchor migration table
 

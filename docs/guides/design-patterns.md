@@ -1,6 +1,6 @@
 # Design Patterns — Code-Layer Reference (Lead / Index)
 
-> **Purpose**: shared vocabulary for downstream code-layer reviews. Reviewers in projects derived from this template cite entries from this file and its sibling files by stable ID (`CP1`–`CP34`, `CAP1`–`CAP2`, `CCP1`–`CCP8`, `CDP1`–`CDP14`, `CIP1`–`CIP11`) when flagging a code-level pattern or anti-pattern. Historical orchestration vocabulary remains in [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md), but is no longer an active review gate.
+> **Purpose**: shared vocabulary for downstream code-layer reviews. Reviewers in projects derived from this template cite entries from this file and its sibling files by stable ID (`CP1`–`CP34`, `CAP1`–`CAP2`, `CCP1`–`CCP8`, `CDP1`–`CDP14`, `CIP1`–`CIP11`) when flagging a code-level pattern or anti-pattern. Advisory orchestration vocabulary is summarized in `AGENTS.md` with detail in [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md).
 >
 > **Scope**: code-layer patterns for downstream projects derived from this template: application code, libraries, services, and infrastructure-as-code constructs. Not the orchestration or governance layer.
 >
@@ -113,7 +113,7 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 - [`design-patterns-concurrency.md`](design-patterns-concurrency.md) — sibling file, concurrency entries `CCP1`–`CCP8`; Actor, Reactor, and structured concurrency remain pointer-only there.
 - [`design-patterns-data.md`](design-patterns-data.md) — sibling file, data / persistence entries `CDP1`–`CDP14`.
 - [`design-patterns-integration.md`](design-patterns-integration.md) — sibling file, integration / messaging entries `CIP1`–`CIP11`.
-- [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md) — historical orchestration vocabulary retained for old citations.
+- [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md) — detailed advisory orchestration vocabulary.
 - [`AGENTS.md`](../../AGENTS.md) — active language-neutral code-quality requirements.
 - [`docs/postmortems/README.md`](../postmortems/README.md) — index of postmortems, including the three (PM-001, PM-002, PM-003) that the entries above generalize from.
 - [`docs/decisions/adr-020-orchestration-patterns-reference.md`](../decisions/adr-020-orchestration-patterns-reference.md) — ADR ratifying the orchestration-layer patterns file; this file is the parallel code-layer addition under sub-issue 5 of parent epic #251.

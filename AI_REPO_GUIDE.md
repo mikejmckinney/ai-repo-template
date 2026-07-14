@@ -228,7 +228,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.context/benchmarks/model-roi/result-template.md` | Per-alias blind-safe plus sealed benchmark result template |
 | `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template for the same benchmark |
 | `.context/roadmap.md` | Phase-by-phase plan |
-| `AGENTS.md` | Always-loaded work style, code quality, testing, documentation synchronization, and opportunity-feedback policy |
+| `AGENTS.md` | Always-loaded work style, code quality, testing, documentation synchronization, opportunity-feedback policy, and advisory orchestration vocabulary |
 | `.agents/<role>.md` | Role-specific gates, ownership hints, and dispatch behavior when subagents are used |
 | `docs/guides/agent-pipeline.md` | Workflow gates, labels, and review/fix automation |
 | Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025). Opportunity notes use the concise prose contract in `AGENTS.md`. |
@@ -328,7 +328,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching, issue/PR granularity |
 | `docs/guides/agents-md-section-redirects.md` | ADR-021 section-anchor redirect table (post-decomposition `AGENTS.md` citations) |
 | `docs/guides/opportunity-feedback-examples.md` | Worked examples for the opportunity-note contract in `AGENTS.md` |
-| `docs/guides/repo-orchestration-patterns-reference.md` | Historical `P*` / `AP*` orchestration vocabulary; no longer an active review gate |
+| `docs/guides/repo-orchestration-patterns-reference.md` | Detailed reference for the advisory `P*` / `AP*` vocabulary summarized in `AGENTS.md` |
 | `docs/guides/design-patterns.md` | Lead index for advisory code-layer design-pattern catalogs (`CAP`, `CP`, `CCP`, `CDP`, `CIP`) |
 | `docs/guides/design-patterns-concurrency.md` | Concurrency pattern catalog with stable `CCP1`-`CCP8` citation handles |
 | `docs/guides/design-patterns-data.md` | Data / persistence pattern catalog with stable `CDP1`-`CDP14` citation handles |
