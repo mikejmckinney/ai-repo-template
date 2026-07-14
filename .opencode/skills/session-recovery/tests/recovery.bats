@@ -89,9 +89,60 @@ teardown() {
   [[ "$keywords" == *"SQLite"* ]]
 }
 
+@test "recovery caps keywords without failing on a large dirty worktree" {
+  suffix=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  for number in $(seq 1 1000); do
+    printf -v index '%04d' "$number"
+    printf 'initial\n' >"$REPO/dirty-$index-$suffix.txt"
+  done
+  git -C "$REPO" add dirty-*.txt
+  git -C "$REPO" commit -qm 'Add dirty-worktree fixture paths'
+  for number in $(seq 1 1000); do
+    printf -v index '%04d' "$number"
+    printf 'changed\n' >>"$REPO/dirty-$index-$suffix.txt"
+  done
+
+  run "$SKILL_ROOT/scripts/recover-context.sh" \
+    --session-id ses_target --repo "$REPO" --db "$DB" \
+    --output-dir "$TEST_ROOT/output"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq '.keywords | length' <<<"$output")" -eq 20 ]
+  [ "$(jq '.keywords | unique | length' <<<"$output")" -eq 20 ]
+  jq -e '.keywords | all(type == "string" and length >= 3)' <<<"$output"
+  [ "$(jq -r '.keywords[0]' <<<"$output")" = issue-321-session-recovery ]
+  [ "$(jq -r '.keywords[1]' <<<"$output")" = context.txt ]
+  [ "$(jq -r '.keywords[19]' <<<"$output")" = "dirty-0018-$suffix.txt" ]
+
+  packet=$(jq -r '.packet_file' <<<"$output")
+  receipt=$(jq -r '.receipt_file' <<<"$output")
+  [ -f "$packet" ]
+  [ -f "$receipt" ]
+  [ "$(jq -r '.status' "$receipt")" = success ]
+}
+
 @test "recovery fails for an unknown session" {
   run "$SKILL_ROOT/scripts/recover-context.sh" \
     --session-id ses_missing --repo "$REPO" --db "$DB"
   [ "$status" -ne 0 ]
   [[ "$output" == *"session not found"* ]]
+}
+
+@test "recovery fails when the database is unavailable" {
+  run "$SKILL_ROOT/scripts/recover-context.sh" \
+    --session-id ses_target --repo "$REPO" --db "$TEST_ROOT/missing.db"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"database not found"* ]]
+}
+
+@test "recovery enforces message and byte limits" {
+  run "$SKILL_ROOT/scripts/recover-context.sh" \
+    --session-id ses_target --repo "$REPO" --db "$DB" \
+    --output-dir "$TEST_ROOT/output" --max-messages 2 --max-bytes 800
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.messages_selected' <<<"$output")" -eq 2 ]
+  [ "$(jq -r '.bytes' <<<"$output")" -le 800 ]
+  packet=$(jq -r '.packet_file' <<<"$output")
+  grep -q '\[Recovery packet truncated\]' "$packet"
 }

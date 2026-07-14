@@ -82,7 +82,7 @@ branch=$(git -C "$REPO" branch --show-current)
   git -C "$REPO" status --short | cut -c4-
   git -C "$REPO" log -5 --pretty=%s | grep -Eo '(#[0-9]+|[Pp][Rr]-?[0-9]+|[Ii][Ss][Ss][Uu][Ee]-?[0-9]+)' || true
   printf '%s\n' "${EXPLICIT_KEYWORDS[@]-}"
-} | awk 'NF && length($0) >= 3 && !seen[$0]++' | head -20 >"$KEYWORDS_FILE"
+} | awk 'NF && length($0) >= 3 && !seen[$0]++ { if (selected++ < 20) print }' >"$KEYWORDS_FILE"
 
 KEYWORDS_JSON=$(jq -R . <"$KEYWORDS_FILE" | jq -s .)
 
