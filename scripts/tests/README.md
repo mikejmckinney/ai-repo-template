@@ -7,10 +7,8 @@ Bats test suite (issue #255 Phase 4b). Each `.bats` file in this directory is a 
 | `.bats` file | Legacy script wrapped | Concern |
 |---|---|---|
 | `auto-rebase-overlapping.bats` | `test-auto-rebase-overlapping.sh` | ADR-010 auto-rebase logic |
-| `compliance-contracts.bats` | n/a (Python validators) | ADR-026 compliance schema examples and fixtures |
 | `jq-filters.bats` | `test-jq-filters.sh` | `scripts/lib/jq/*.jq` fixture-driven tests |
-| `multi-dispatch-safety.bats` | `test-multi-dispatch-safety.sh` | `agent-multi-dispatch.yml` ownership safety |
-| `parallelism-report-parser.bats` | `test-parallelism-report-parser.sh` | Parallelism report parser |
+| `multi-dispatch-safety.bats` | n/a | Explicit scope and exact-overlap safety for `agent-multi-dispatch.yml` |
 | `phase4-fallback-parser.bats` | `test-phase4-fallback-parser.sh` | Phase-4 Copilot fallback parser |
 | `pr-iteration-stats.bats` | `test-pr-iteration-stats.sh` | `pr-iteration-stats.sh` rolling metrics |
 | `verify-env.bats` | `test-verify-env.sh` | `verify-env.sh` environment checks |

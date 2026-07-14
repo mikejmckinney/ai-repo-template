@@ -155,4 +155,4 @@ The sidecar model also breaks down when the main app and sidecar disagree about 
 - [`design-patterns-concurrency.md`](design-patterns-concurrency.md) — sibling file, `CCP1`–`CCP8` (concurrency control and scheduling).
 - [`design-patterns-data.md`](design-patterns-data.md) — sibling file, `CDP1`–`CDP14` (data / persistence).
 - [`design-patterns-integration.md`](design-patterns-integration.md) — sibling file, `CIP1`–`CIP11` (integration / messaging); `CIP9` receiver-side message dedupe remains separate from [`CDP13`](design-patterns-data.md#cdp13--idempotency-key) request-key durability.
-- [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) — orchestration-layer patterns for *this* template.
+- [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md) — advisory orchestration-layer vocabulary.

@@ -15,15 +15,13 @@ name: Multi-Issue Dispatch (Parallel Copilot Fan-Out)
 #   - Hard overlap (any identical file path in scope) → refuse later issue
 #   - `Depends-on: #N` body line: target must be closed OR earlier in the
 #     same dispatch input. Cycles within the input → all members refused.
-#   - Soft overlap (same role-glob, different files) is permitted.
+#   - Soft overlap (different files in one concrete directory) is permitted.
 #
-# Scope source per issue (resolved in order)
-#   1. First comment carrying `<!-- architect-plan-files -->` followed by
-#      a fenced code block of paths (any author).
-#   2. First `role:<name>` label whose name matches a role in
-#      .context/rules/agent_ownership.md.
-#   3. None — the issue is dispatched (no overlap claim) but the dispatch
-#      report flags it with a WARN so the user can add a label or marker.
+# Scope source per issue
+#   - First comment carrying `<!-- architect-plan-files -->` followed by
+#     a fenced code block of paths (any author).
+#   - Without that marker, the issue is dispatched with no overlap claim
+#     and the report warns that explicit scope is missing.
 #
 # Inputs
 # ------

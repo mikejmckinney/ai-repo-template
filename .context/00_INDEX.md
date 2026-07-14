@@ -28,12 +28,6 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 |       |-- results/     # Scored agent ROI benchmark records and cost source register
 |       `-- tasks/       # Candidate-safe task injections + sealed reference metadata
 |-- roadmap.md           # Template-development phases and current hardening track
-|-- rules/               # Immutable constraints and process rules
-|   |-- agent_ownership.md            # Canonical role -> owned paths map (read before editing)
-|   |-- domain_code_quality.md        # Built-in language-neutral SOLID/TDD/clean-code floor
-|   |-- process_doc_maintenance.md    # Doc-sync trigger table
-|   |-- process_subagent_bootstrap.md # ADR-026 dispatch packet + subagent return contract
-|   `-- process_*.md                  # Additional process rules by concern
 |-- sessions/            # Durable retrospectives and feedback records
 |   |-- feedback_template.md # Stakeholder feedback capture template
 |   `-- latest_summary.md   # Durable retrospective lessons
@@ -51,18 +45,14 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ## Quick Start for Agents (Lazy Load Pattern)
 
 1. Read `AGENTS.md`, then this file.
-2. Read your role file (for example, `.agents/<your-role>.md`).
-3. Read the assigned GitHub issue body, linked PR, latest `agent-state:v1` comment, and labels.
-4. Read `rules/agent_ownership.md` before touching files.
-5. Treat `state/` as the GitHub-first live-state reference surface; use `state/agent_state_comment_template.md` when updating the latest `agent-state:v1` baton.
-6. Read `sessions/latest_summary.md` for durable lessons from recent work.
-7. Read `roadmap.md` for the current template phase and open hardening track.
-8. Pull additional `rules/` and `vision/` files only when their domain intersects your change.
-9. Read `benchmarks/` when the assigned issue or PR works on benchmark protocol, scoring, or grading surfaces.
+2. Read the assigned GitHub issue body and linked PR when a durable task exists.
+3. Use role files under `.agents/` only as optional specialty guidance.
+4. Treat `state/` as the GitHub-first live-state reference surface.
+5. Read `sessions/latest_summary.md`, `roadmap.md`, benchmarks, or vision files only when their domain intersects the task.
 
-**Multi-agent workflow**: See [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md) for the end-to-end Analyst -> Architect -> plan-gate (Critic notes + Judge approval) -> PM -> implementers -> QA -> Critic -> Judge flow.
-
-**Compliance contracts**: See `docs/compliance_schemas.md` and `docs/decisions/adr-026-compliance-contracts.md` for the ADR-026 evidence blocks (`plan_compliance`, `parent_compliance`, `subagent_compliance`) and role-contract versioning model.
+**Execution model**: routine work uses one implementing agent. See ADR-031 for
+benchmark evidence; role dispatch is optional when specialization or independent
+review justifies it.
 
 ## Project Summary
 
@@ -77,7 +67,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 **What ships from this repo**:
 
 - Canonical role definitions under `.agents/` plus first-class Copilot, Claude, Cursor, and Codex overlays.
-- Process rules under `.context/rules/` and reference diagrams under `.context/vision/architecture/`.
+- The always-loaded operating contract in `AGENTS.md` and reference diagrams under `.context/vision/architecture/`.
 - Durable benchmark protocols and grading templates under `.context/benchmarks/`.
 - GitHub prompts, issue/PR templates, and workflow scaffolding under `.github/`.
 - Bootstrap and verification helpers under `install.sh`, `test.sh`, and `scripts/**`.
@@ -113,9 +103,10 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-023](../docs/decisions/adr-023-shared-subagent-canonical.md) | Canonical role bodies plus thin overlays | Made `.agents/<role>.md` the shared source for Copilot, Claude, Cursor, and Codex overlays. |
 | [ADR-024](../docs/decisions/adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning | Added the optional three-candidate planning workflow. |
 | [ADR-025](../docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md) | GitHub as live state | Moved normal coordination to issue/PR bodies, comments, and labels. |
-| [ADR-026](../docs/decisions/adr-026-compliance-contracts.md) | Compliance contracts | Added receipt/evidence schemas for parent and subagent work. |
+| [ADR-026](../docs/decisions/adr-026-compliance-contracts.md) | Compliance contracts | Structured evidence schemas retired by the 2026-07-13 amendment. |
 | [ADR-027](../docs/decisions/adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel | Added an out-of-scope observation path without widening task scope. |
 | [ADR-029](../docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence | Requires sandbox proof for behavior/process claims on every PR. |
+| [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI policy | Makes monolithic implementation the default for routine work. |
 
 ## Next Steps
 

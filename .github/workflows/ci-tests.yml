@@ -126,9 +126,6 @@ jobs:
       - name: Install bats (issue #255 Phase 4b)
         run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel
 
-      - name: Install Python dependencies
-        run: python3 -m pip install --user -r requirements.txt
-
       - name: Run bats suite (issue #255 Phase 4b)
         id: bats
         continue-on-error: true

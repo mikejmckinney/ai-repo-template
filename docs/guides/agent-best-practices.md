@@ -92,14 +92,14 @@ This prevents the "Lost in the Middle" attention issue where LLMs struggle to at
 
 Example:
 ```
-# Instead of one 500-line rules file:
-.context/rules/all_rules.md (500 lines) ❌
+# Instead of one 500-line domain guide:
+docs/domains/all-domains.md (500 lines)
 
 # Split into focused modules:
-.context/rules/domain_auth.md (100 lines) ✓
-.context/rules/domain_api.md (120 lines) ✓
-.context/rules/domain_ui.md (80 lines) ✓
-.context/rules/coding_standards.md (90 lines) ✓
+docs/domains/auth.md (100 lines)
+docs/domains/api.md (120 lines)
+docs/domains/ui.md (80 lines)
+docs/guides/coding-standards.md (90 lines)
 ```
 
 ### Mitigations
@@ -115,12 +115,12 @@ Example:
 If a file exceeds these limits, split it:
 ```
 # Instead of one large file:
-.context/rules.md (800 lines)
+docs/domains.md (800 lines)
 
 # Split into focused files:
-.context/rules/domain_auth.md (150 lines)
-.context/rules/domain_data.md (200 lines)
-.context/rules/domain_api.md (180 lines)
+docs/domains/auth.md (150 lines)
+docs/domains/data.md (200 lines)
+docs/domains/api.md (180 lines)
 ```
 
 #### 2. Use Clear File Names
@@ -129,11 +129,11 @@ Agents can selectively load files based on names. Use descriptive names:
 
 ```
 # Good - agent knows what to load
-.context/rules/domain_authentication.md
+docs/domains/authentication.md
 .context/state/active_task_user_registration.md
 
 # Bad - agent must read to understand
-.context/rules/misc.md
+docs/misc.md
 .context/state/current.md
 ```
 
@@ -145,15 +145,15 @@ For large projects with many context files, consider creating a summary file tha
 # .context/SUMMARY.md (optional - create if needed)
 
 ## Quick Reference
-- Auth: See rules/domain_auth.md
-- API: See rules/domain_api.md
+- Auth: See docs/domains/auth.md
+- API: See docs/domains/api.md
 - Current task: Implementing user registration
 - Blocked by: Waiting for design review
 
 ## What to Read
 1. Start with 00_INDEX.md (the default entry point)
 2. Check the assigned issue/PR and latest agent-state:v1 comment (current work)
-3. Only load rules/* files when making changes to those domains
+3. Load task-specific domain guides only when the task intersects them
 ```
 
 **Note:** For most projects, `00_INDEX.md` is sufficient. Only add `SUMMARY.md` if your context grows large enough to need an additional quick-reference layer.
@@ -164,7 +164,7 @@ Don't duplicate information across files. Reference instead:
 
 ```markdown
 # Good - reference, don't duplicate
-See .context/rules/domain_auth.md for authentication requirements.
+See docs/domains/auth.md for authentication requirements.
 
 # Bad - duplicated content that may get out of sync
 Authentication must use bcrypt with cost factor 12...
@@ -195,7 +195,7 @@ Modern LLM providers offer prompt caching: long, stable prefixes (e.g., a full s
 The single biggest cache-friendliness lever is **stability of long prefixes**. This repo already does the right things:
 
 - `AGENTS.md` and `.agents/*.md` change rarely; behavioral overrides go in role-scoped sections rather than rewriting the canonical text. Platform overlays (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) are thin shims and only carry platform-specific registration fields (ADR-023).
-- Role files cite shared rules by reference (`.context/rules/domain_code_quality.md` H1–H8, etc.) instead of copy-pasting them. Copy-paste defeats caching because each call inlines a slightly different snapshot.
+- Role files rely on the always-loaded `AGENTS.md` contract instead of copy-pasting it. Copy-paste defeats caching because each call inlines a slightly different snapshot.
 - The role description is byte-identical between the canonical `.agents/<role>.md` and every platform overlay (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) — enforced by `scripts/checks/050-agent-mirror.sh` — so multi-runner setups dispatch on the same hashable string.
 
 ### What would *hurt* caching (don't do this)
@@ -210,7 +210,7 @@ If a future runner becomes the primary one and exposes new caching knobs (e.g., 
 
 ## Live-State Conflict Prevention
 
-> **Primary mechanism**: role-based path ownership (`.context/rules/agent_ownership.md`). The mitigations below are secondary defenses for conflicts within a single role. For the full parallel-agent workflow, see [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md).
+> **Primary mechanism**: one implementing agent for routine work. When parallel work is justified, use separate branches plus explicit file scopes and live-state claims. See [docs/guides/multi-agent-coordination.md](multi-agent-coordination.md).
 
 ### The Problem
 
@@ -218,9 +218,9 @@ If multiple agents work simultaneously (or a human and agent), they can overwrit
 
 ### Mitigations
 
-#### 0. Role-Based Path Ownership (Primary)
+#### 0. Prefer One Implementer
 
-The strongest defense is role-based path ownership. Each role in `.agents/<role>.md` (with platform overlays in `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/`) is assigned path globs in `.context/rules/agent_ownership.md`, and conflicts are greatly reduced when those globs are kept non-overlapping. In practice a few cases still need coordination: some path patterns may overlap (colocated test files, generated artifacts, lockfiles), and some files are intentionally shared or contested (for example, `.context/rules/**`). Any cross-role edit must be coordinated through PM and recorded in GitHub live state. This is the primary mechanism — the fallbacks below mainly apply when two sessions of the **same role** overlap, or when work touches one of those shared/overlapping exceptions.
+Routine work should use one implementing agent. If specialization or independent review justifies parallel work, give each branch an explicit file list, check exact-file overlap before dispatch, and record claims in GitHub live state. Role names are guidance, not path-ownership enforcement.
 
 #### 1. One Active Task at a Time
 

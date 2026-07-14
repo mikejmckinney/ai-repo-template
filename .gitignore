@@ -26,6 +26,7 @@
 
 # --- CI / local artifacts ---
 .artifacts/
+.context/session-recovery/
 .env
 .env.*
 !.env.example

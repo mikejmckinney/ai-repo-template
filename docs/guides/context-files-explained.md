@@ -106,7 +106,7 @@ A recurring question is whether duplicated-looking docs should be merged, or whe
 | `README.md` + `AI_REPO_GUIDE.md` (not merged) | Different audiences. README is verbose human onboarding; AI_REPO_GUIDE is token-optimized for agents. Merging was explicitly rejected in `docs/decisions/adr-001-context-pack-structure.md` as "unwieldy". |
 | `docs/` + `.context/` (not merged) | Different audiences **and** a truth hierarchy. `AGENTS.md` codifies `.context/** > docs/** > codebase` for conflict resolution. `.context/` is canonical project memory for agents; `docs/` is human reference. ADR-001 rejected reusing `docs/` for agent context because it "mixes human docs with agent context, no clear priority." |
 | `install.sh` at the repo root | GitHub Codespaces' "Dotfiles" feature expects the bootstrap script at the repo root and runs it automatically when a Codespace starts. Platform convention, not a repo choice. |
-| `test.sh` at the repo root | Invoked by `.github/workflows/ci-tests.yml` as `./test.sh`, referenced from `README.md`, `AI_REPO_GUIDE.md`, `CLAUDE.md`, `.context/rules/agent_ownership.md`, and the devops role files. `scripts/` is scoped to **post-clone project customization** (`setup.sh`, `verify-env.sh`) — a different role from template-level bootstrap and integrity tooling. |
+| `test.sh` at the repo root | Invoked by `.github/workflows/ci-tests.yml` as `./test.sh` and referenced from `README.md`, `AI_REPO_GUIDE.md`, and the DevOps specialty guidance. `scripts/` is scoped to post-clone project customization and supporting automation. |
 
 ### Soft convention (could move, we keep it where it is)
 

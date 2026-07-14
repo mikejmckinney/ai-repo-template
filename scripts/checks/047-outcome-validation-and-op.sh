@@ -8,18 +8,17 @@
 # --- Outcome-first validation and Parent Orchestrator (OP) guardrails ---
 echo "Checking outcome-first validation and OP guardrails (issue #311)..."
 
-# 1. process_work_style.md must carry "Primary validation" and "User outcome"
-#    so user-outcome validation is the primary completion gate, not just CI.
-if grep -q "Primary validation" .context/rules/process_work_style.md; then
-  pass ".context/rules/process_work_style.md contains 'Primary validation' (issue #311)"
+# 1. AGENTS.md must keep outcome validation as the primary completion gate.
+if grep -q "Primary validation" AGENTS.md; then
+  pass "AGENTS.md contains 'Primary validation' (issue #311)"
 else
-  fail ".context/rules/process_work_style.md missing 'Primary validation' (issue #311)"
+  fail "AGENTS.md missing 'Primary validation' (issue #311)"
 fi
 
-if grep -q "User outcome" .context/rules/process_work_style.md; then
-  pass ".context/rules/process_work_style.md contains 'User outcome' (issue #311)"
+if grep -q "user outcome" AGENTS.md; then
+  pass "AGENTS.md contains 'user outcome' (issue #311)"
 else
-  fail ".context/rules/process_work_style.md missing 'User outcome' (issue #311)"
+  fail "AGENTS.md missing 'user outcome' (issue #311)"
 fi
 
 # 2. pull_request_template.md must contain "User outcome validation" so the

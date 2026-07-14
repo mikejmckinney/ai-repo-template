@@ -325,7 +325,7 @@ The linked issue should have a `## 📋 Implementation Plan` comment before code
 
 ### Doc-sync trigger check
 
-Walk `.context/rules/process_doc_maintenance.md`'s trigger table against the diff. For every matching row, the listed companion file(s) must appear in the diff, or the PR description must contain `<file>: no changes required` with a one-line justification. Flag as **Blocker** if a required companion update is missing.
+Walk `AGENTS.md`'s documentation synchronization table against the diff. For every matching row, the listed companion file(s) must appear in the diff, or the PR description must contain `<file>: no changes required` with a one-line justification. Flag as **Blocker** if a required companion update is missing.
 (canonical: `.agents/judge.md` § "Doc trigger check")
 
 ### ADR supersession check
@@ -362,20 +362,6 @@ Any PR diff that adds or modifies `grep -c`, `wc -l`, `$?`, `pipefail`, or `set 
 
 When the PR carries the `cap-override` label (or an `@<agent> cap-override <N>` comment with `N > 3` is in effect), every Resolution Report posted by `pr-resolve-all.md` from round 4 onward must include a literal `Override justification: <category>` line directly under `### Summary`. Category must be one of `sandbox-class`, `legitimate refactor`, `complex semantic dependency`, or `other: <reason>` (exact text). Flag as **Blocker** if override is in effect, the latest Resolution Report's round number is > 3, and the justification line is missing or its category text doesn't match one of the four allowed forms.
 (canonical: `.agents/judge.md` § "Cap-override justification gate")
-
-### Canary placeholder substitution in `compliance_schema.py` (PR #351)
-
-`load_markdown_yaml_blocks()` in `scripts/lib/compliance_schema.py` uses three
-literal `text.replace()` calls to substitute the `<N>` canary placeholder
-(`Session handshake v<N>`, `agents_md_version: <N>`, and `AGENTS_MD_VERSION <N>`)
-before YAML parsing.
-This is intentional minimalism: those are the only three forms emitted by
-`docs/compliance_schemas.md` and the agent overlays. Do **not** flag this as
-"fragile" / "too specific" / "should be a regex" — see ADR-029 §"Canary
-placeholder convention" and PR #351 R5 discussion. If a new canary form is
-introduced elsewhere, the substitution surface gets a new line and a new
-docs/compliance_schemas.md example in the same PR; that is the change
-contract, not regex generality.
 
 ## Tone
 

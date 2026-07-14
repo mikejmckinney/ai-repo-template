@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-026)
+Accepted (ADR-026 structured evidence extension retired 2026-07-13)
 
 ## Date
 

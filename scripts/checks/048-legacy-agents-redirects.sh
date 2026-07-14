@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/checks/048-legacy-agents-redirects.sh — ADR-021 redirect surface hygiene.
+# scripts/checks/048-legacy-agents-redirects.sh — historical AGENTS.md anchor hygiene.
 
 standalone=0
 if ! declare -F pass >/dev/null 2>&1 || ! declare -F fail >/dev/null 2>&1; then
@@ -20,10 +20,6 @@ fi
 
 echo "Checking AGENTS.md redirect compatibility..."
 
-rule_part1="legacy_agents_anchor"
-rule_part2="_redirects"
-legacy_rule_name="${rule_part1}${rule_part2}"
-LEGACY_RULE=".context/rules/${legacy_rule_name}.md"
 REDIRECT_GUIDE="docs/guides/agents-md-section-redirects.md"
 SELF_CHECK='scripts/checks/048-legacy-agents-redirects.sh'
 
@@ -41,22 +37,10 @@ if [[ $grep_status -gt 1 ]]; then
   fail "git grep failed with exit code $grep_status"
 fi
 
-if [[ -f "$LEGACY_RULE" ]]; then
-  fail "$LEGACY_RULE must not exist; use $REDIRECT_GUIDE (PR 1B retirement)"
-else
-  pass "${legacy_rule_name}.md retired from .context/rules"
-fi
-
 if [[ ! -f "$REDIRECT_GUIDE" ]]; then
   fail "$REDIRECT_GUIDE missing (ADR-021 section redirect table)"
 else
   pass "$REDIRECT_GUIDE exists"
-fi
-
-if grep -q "$legacy_rule_name" AGENTS.md .context/rules/README.md 2>/dev/null; then
-  fail "startup surfaces still reference ${legacy_rule_name}.md"
-else
-  pass "startup surfaces point at docs redirect guide, not legacy rule file"
 fi
 
 if [[ -n "$external_hash_refs" ]]; then

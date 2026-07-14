@@ -245,7 +245,7 @@ If `/AI_REPO_GUIDE.md` does NOT exist, create it with:
 
 If it exists, verify accuracy and update if needed.
 
-Do not retain template placeholder language in derived repos. Further `AI_REPO_GUIDE.md` edits during implementation follow [`.context/rules/process_doc_maintenance.md`](../../.context/rules/process_doc_maintenance.md) triggers only.
+Do not retain template placeholder language in derived repos. Further `AI_REPO_GUIDE.md` edits during implementation follow the documentation synchronization table in [`AGENTS.md`](../../AGENTS.md).
 
 ---
 

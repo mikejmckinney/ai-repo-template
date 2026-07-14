@@ -115,7 +115,7 @@ If your postmortem is missing one of these, the postmortem isn't done.
 
 - **Sessions** (`.context/sessions/`) — running session summaries. Postmortems are the formal version when a session summary surfaces a pattern worth preserving.
 - **ADRs** (`docs/decisions/`) — prospective. A postmortem may *trigger* a new ADR (or supersede one), but lives separately.
-- **Rules** (`.context/rules/`) — prescriptive. A postmortem may justify a new rule, but the rule lives there, not here.
+- **Operating contract** (`AGENTS.md`) — prescriptive. A postmortem may justify a concise contract change, but the rule lives there, not here.
 - **Issues** — operational. A postmortem may file an issue for follow-up, but is not itself an issue.
 
 ## Downstream-project lessons
@@ -147,13 +147,13 @@ records the rationale; the operational rules:
 
 - **Universal** — lesson applies to every repo built from the template,
   regardless of stack. Follow-up artifact is an edit to `AGENTS.md`,
-  `.context/rules/`, a prompt under `.github/prompts/`, or a new ADR.
+  a prompt under `.github/prompts/`, a guide, or a new ADR.
   The mirrored postmortem documents the incident; the rule lives in
   the conventional surface.
 - **Stack-specific** — lesson applies only to repos using the named
   stack(s) in `stacks:`. Follow-up is the mirrored postmortem itself
   plus its row in the stack-tagged index above. **Does NOT** modify
-  `AGENTS.md` or `.context/rules/`. This boundary is load-bearing —
+  `AGENTS.md`. This boundary is load-bearing —
   see ADR-015. If you find yourself wanting to add a Terraform /
   Python / Rust / etc. tip to AGENTS.md, that is the signal to stop
   and re-read this section.

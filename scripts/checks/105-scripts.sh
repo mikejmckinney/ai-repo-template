@@ -14,7 +14,6 @@ SCRIPT_FILES=(
   "scripts/db-reset.sh"
   "scripts/auto-rebase-overlapping.sh"
   "scripts/multi-dispatch-safety.sh"
-  "scripts/parse-ownership-table.sh"
   "scripts/pr-iteration-stats.sh"
 )
 

@@ -137,9 +137,9 @@ assert_eq "unresolved threads block rebase" "skip:unresolved-threads" "$(should_
 
 # 7. Soft overlap → attempt-rebase.
 # 200 touches docs/decisions/adr-010.md; 207 touches a different file
-# under docs/decisions/. Same Architect prefix, different path = soft.
+# under docs/decisions/. Same concrete directory, different path = soft.
 make_pr 207 "auto-rebase" "false" "false" "docs/decisions/adr-099.md" "0"
-assert_eq "soft overlap (same prefix, diff file) → attempt-rebase" "attempt-rebase" "$(should_rebase_pr 207 200)"
+assert_eq "soft overlap (same directory, diff file) → attempt-rebase" "attempt-rebase" "$(should_rebase_pr 207 200)"
 
 # 8. Hard overlap → comment-only.
 # 208 touches the *same* file as 200.
@@ -147,7 +147,7 @@ make_pr 208 "auto-rebase" "false" "false" "docs/decisions/adr-010.md" "0"
 assert_eq "hard overlap (identical file) → comment-only" "comment-only" "$(should_rebase_pr 208 200)"
 
 # 9. None overlap → skip.
-# 209 touches a path under a different role's prefix.
+# 209 touches a path under a different directory.
 make_pr 209 "auto-rebase" "false" "false" "src/backend/server.py" "0"
 assert_eq "no overlap → skip:none-overlap" "skip:none-overlap" "$(should_rebase_pr 209 200)"
 
@@ -156,7 +156,7 @@ assert_eq "no overlap → skip:none-overlap" "skip:none-overlap" "$(should_rebas
 make_pr 210 "auto-rebase" "false" "true" "src/backend/server.py" "5"
 assert_eq "draft check fires before overlap check" "skip:draft" "$(should_rebase_pr 210 200)"
 
-# 11. Opted-in + soft overlap + 0 unresolved threads, on a Docs prefix.
+# 11. Opted-in + soft overlap + 0 unresolved threads, in one directory.
 make_pr 211 "auto-rebase" "false" "false" "docs/guides/foo.md" "0"
 make_pr 212 "" "false" "false" "docs/guides/bar.md" "0"
 assert_eq "soft overlap on docs/ prefix → attempt-rebase" "attempt-rebase" "$(should_rebase_pr 211 212)"

@@ -4,7 +4,7 @@
 # AI_REPO_GUIDE.md
 
 > **Purpose**: Canonical reference for AI agents working with this template repository.  
-> **Last verified**: 2026-06-15
+> **Last verified**: 2026-07-13
 >
 > **Note**: This file is for agents. For human documentation, see `README.md`.
 
@@ -42,7 +42,6 @@ bash install.sh
 ├── README.md                 # User-facing documentation
 ├── DESIGN.md                 # Root design contract for UI tools + frontend handoff
 ├── install.sh                # Codespace bootstrap script
-├── requirements.txt          # Python dependency pin for local validation helpers
 ├── test.sh                   # Verification script
 │
 ├── .context/                 # Project context (canonical truth)
@@ -53,12 +52,6 @@ bash install.sh
 │   ├── backlog.yaml          # Machine-readable task list (dispatched into issues)
 │   ├── backlog.schema.json   # JSON Schema for backlog.yaml
 │   ├── roadmap.md            # Phase-by-phase plan
-│   ├── rules/                # Canonical domain constraints + process rules
-│   │   ├── README.md         # Rule catalog and read profiles
-│   │   ├── process_session_start.md
-│   │   ├── process_*.md      # Work style, gates, doc maintenance, etc.
-│   │   ├── domain_code_quality.md
-│   │   └── repo_orchestration_patterns.md
 │   ├── sessions/             # Durable retrospectives + feedback records
 │   │   ├── README.md
 │   │   ├── feedback_template.md  # Stakeholder feedback template
@@ -77,7 +70,7 @@ bash install.sh
 │   ├── smoke-a.md            # Smoke test scenario A
 │   ├── smoke-e.md            # Smoke test scenario E
 │   ├── decisions/            # Architecture Decision Records, index, and template
-│   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, agents-md-section-redirects, context-files-explained, design-patterns* splits, multi-agent-coordination, opportunity-feedback-examples, repo-orchestration-patterns-reference, subagent-bootstrap-reference, multi-model-consensus, optional-skills)
+│   ├── guides/               # How-to guides (agent-best-practices, agent-pipeline, agents-md-section-redirects, context-files-explained, design-patterns* splits, multi-agent-coordination, opportunity-feedback-examples, repo-orchestration-patterns-reference, multi-model-consensus, optional-skills)
 │   ├── postmortems/          # Postmortems (template + project-specific)
 │   ├── reference/            # Specs, external docs
 │   └── research/             # Analyst output (analysis artifacts)
@@ -109,12 +102,9 @@ bash install.sh
 │   ├── verify-env.sh         # Environment & placeholder sanity check
 │   ├── diag-sandbox.sh       # Read-only sandbox auth/access doctor (issue #365)
 │   ├── verify-pr.sh          # Plan-template Change-class classifier (issue #227, ADR-016)
-│   ├── validate-compliance-examples.py # ADR-026 docs YAML example validator
-│   ├── validate-compliance-fixtures.py # ADR-026 fixture validator
 │   ├── db-reset.sh           # Optional DB reset stub
 │   ├── auto-rebase-overlapping.sh    # Auto-rebase library (ADR-010)
 │   ├── multi-dispatch-safety.sh      # Parallel-dispatch safety classifier
-│   ├── parse-ownership-table.sh      # Ownership-table parser used by workflows
 │   ├── pr-iteration-stats.sh         # Rolling PR review-loop metrics (issue #229)
 │   ├── pr-resolve-all-poll.sh        # Pre-#321 settle-window poll helper for pr-resolve-all (issue #326)
 │   └── lint-shell-conventions.sh     # Project-specific shell rules (RULE-01/02, issue #229)
@@ -159,8 +149,6 @@ bash install.sh
     │   ├── README.md             # Prompt catalog
     │   ├── capture-postmortem.md # Postmortem capture workflow prompt
     │   ├── expand-backlog-entry.md # Backlog → issue expansion prompt
-    │   ├── handshake-and-shape-smoke.md # No-edit smoke: handshake positional contract + response shape (4 scenarios)
-    │   ├── instruction-compliance-smoke.md # No-edit ADR-026 compliance smoke prompt
     │   ├── judge-mode-smoke.md   # No-edit smoke prompt for Judge PLAN-GATE/DIFF-GATE mode selection
     │   ├── mirror-postmortem.md  # Postmortem mirror/sync workflow prompt
     │   ├── model-roi-benchmark-candidate.md # Canonical prompt for the model ROI benchmark (issue #374)
@@ -202,7 +190,7 @@ bash install.sh
 
 | File | Tool/Platform | Purpose |
 |------|--------------|---------|
-| `AGENTS.md` | Most AI tools (Copilot, Cursor, Gemini, Claude Code, etc.) | Root startup contract and read-profile routing |
+| `AGENTS.md` | Most AI tools (Copilot, Cursor, Gemini, Claude Code, etc.) | Always-loaded operating contract and startup handshake |
 | `.github/copilot-instructions.md` | GitHub Copilot | Pointer to AGENTS.md + Copilot-specific rules (e.g., `@copilot follow`) |
 | `.cursor/BUGBOT.md` | Cursor Bugbot | PR review rules |
 | `.gemini/styleguide.md` | Gemini Code Assist | PR review style guide |
@@ -212,7 +200,7 @@ bash install.sh
 | `.cursor/agents/*.md` | Cursor | Cursor agent registration overlays (`model`, `readonly`, `is_background`) plus a pointer to the canonical role body |
 | `.codex/agents/*.toml` | Codex | Codex custom-agent overlays (`name`, `description`, `model`, `model_reasoning_effort`, `sandbox_mode`, `developer_instructions`) pointing to the canonical role body |
 | `.agents/<role>.md` | Multi-tool (canonical) | Platform-agnostic role definition (responsibilities, Do/Don't, output format) per ADR-023 — read by every overlay above |
-| `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template for ADR-026 `role_contract_version` and `subagent_compliance` return guidance; not a dispatchable role |
+| `.agents/_TEMPLATE.md` | Multi-tool (template) | Canonical role-contract template; not a dispatchable role |
 
 Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields stay in the platform folders: Copilot and Claude carry platform-specific `model` strings, Cursor adds `readonly` and `is_background`, and Codex uses TOML plus `model_reasoning_effort` and `sandbox_mode`. ADR-019 keeps those model tiers platform-specific, and `scripts/checks/050-agent-mirror.sh` enforces per-platform allowlists.
 
@@ -222,7 +210,6 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 |------|--------------|---------|
 | `README.md` | Humans + AI agents | User-facing repository overview |
 | `DESIGN.md` | AI agents + design tools (OpenDesign, Claude Design, etc.) | Root design contract — tokens, UX, a11y floor, mockup workflow; customize during Mode B onboarding |
-| `requirements.txt` | Python tooling | Dependency pin for local validation helpers |
 
 ### Context Pack (project memory)
 
@@ -241,16 +228,10 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.context/benchmarks/model-roi/result-template.md` | Per-alias blind-safe plus sealed benchmark result template |
 | `.context/benchmarks/model-roi/summary-template.md` | Task-level Stage 1 summary and shortlist template for the same benchmark |
 | `.context/roadmap.md` | Phase-by-phase plan |
-| `.context/rules/` | Domain constraints and process rules (catalog in `README.md`) |
-| `.context/rules/process_session_start.md` | Startup handshake, read credit, and context receipt |
-| `.context/rules/domain_code_quality.md` | Built-in language-neutral SOLID/TDD/clean-code floor |
-| `.context/rules/process_doc_maintenance.md` | Doc-sync triggers (which companion files must update together); enforced by Judge at diff-gate |
-| `.context/rules/process_opportunity_feedback.md` | Opportunity feedback channel (9-field `opportunity_notes` contract); examples in `docs/guides/opportunity-feedback-examples.md` |
-| `.context/rules/repo_orchestration_patterns.md` | Normative orchestration patterns (`P1`–`P9`) and anti-patterns (`AP1`–`AP9`) for Critic/Judge; long-form reference in `docs/guides/repo-orchestration-patterns-reference.md` (ADR-020, P9 in ADR-024) |
+| `AGENTS.md` | Always-loaded work style, code quality, testing, documentation synchronization, opportunity-feedback policy, and advisory orchestration vocabulary |
 | `.agents/<role>.md` | Role-specific gates, ownership hints, and dispatch behavior when subagents are used |
-| `docs/guides/subagent-bootstrap-reference.md` | ADR-026 dispatch packet and pass-back narrative (historical; monolithic default per ADR-031) |
 | `docs/guides/agent-pipeline.md` | Workflow gates, labels, and review/fix automation |
-| Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025). May embed an optional `opportunity_notes` YAML block (v1.2; ADR-027) for out-of-scope improvement notes — see `docs/compliance_schemas.md` § "agent-state:v1". |
+| Assigned GitHub issue / linked PR / latest `agent-state:v1` comment | Primary live coordination state for GitHub-connected work (ADR-025). Opportunity notes use the concise prose contract in `AGENTS.md`. |
 | `.context/sessions/feedback_template.md` | Stakeholder feedback capture template |
 | `.context/sessions/latest_summary.md` | Durable retrospective lessons; not the live coordination baton |
 | `.context/state/README.md` | Reference contract for the in-repo live-state artifacts |
@@ -264,8 +245,6 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/prompts/README.md` | Prompt catalog and usage notes |
 | `.github/prompts/capture-postmortem.md` | Capture a postmortem from a completed issue/PR into the docs postmortem workflow |
 | `.github/prompts/expand-backlog-entry.md` | Expand a backlog entry into an issue-ready task description |
-| `.github/prompts/handshake-and-shape-smoke.md` | No-edit smoke prompt: handshake positional contract and response-shape verification (parent vs subagent, Judge/Critic exact-output first-line, receipt-section placement — 4 scenarios) |
-| `.github/prompts/instruction-compliance-smoke.md` | No-edit smoke prompt for startup pointer loading, role-dispatch reasoning, and ADR-026 evidence shape |
 | `.github/prompts/judge-mode-smoke.md` | No-edit smoke prompt: Judge PLAN-GATE/DIFF-GATE mode selection and output-format heading conformance |
 | `.github/prompts/mirror-postmortem.md` | Mirror a postmortem into the repo's postmortem surfaces after capture/review |
 | `.github/prompts/model-roi-benchmark-candidate.md` | Canonical prompt for monolithic agent/model ROI benchmark candidates tracked in issue `#374`; pairs with `.context/benchmarks/model-roi/README.md` and `.context/benchmarks/model-roi/benchmark-runbook.md` |
@@ -283,13 +262,11 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/prompts/pr-resolve-all.md` | PR-review resolution procedure |
 | `.github/prompts/repo-onboarding.md` | Repo onboarding procedure prompt (Mode B bootstrap inlined in Step 2) |
 
-### Compliance Contracts
+### Retired Compliance Decision
 
 | File | Purpose |
 |------|---------|
-| `docs/compliance_schemas.md` | ADR-026 schema reference for `plan_compliance`, `parent_compliance`, and `subagent_compliance` evidence blocks |
-| `docs/decisions/adr-026-compliance-contracts.md` | Decision record for role contract versioning, exact-output receipt coexistence, and staged compliance enforcement |
-| `docs/guides/subagent-bootstrap-reference.md` | Parent dispatch packet and subagent return contract reference (ADR-026) |
+| `docs/decisions/adr-026-compliance-contracts.md` | Historical decision record and 2026-07-13 amendment retiring structured compliance contracts |
 
 ### Setup Scripts
 
@@ -309,8 +286,6 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `scripts/benchmark/stage-*-llm-responses-v1/` | Recorded subjective JSON for `cursor-llm-blind-v1` regrades (Stage 1 / 1C / 1D / pipeline / 1E). **Not on `main`** (gitignored); tracked on branch `benchmark/roi` and tag `benchmark/phase-a-artifacts-20260608`. Deferred follow-ups: `.context/benchmarks/model-roi/FOLLOW_UPS.md`. |
 | `scripts/benchmark/update-benchmark-results.py` | Refresh `agent-roi-benchmark-results.md` canonical columns, ROI, and table sort order (`scores` \| `roi` \| `sort` \| `all`). |
 | `.context/benchmarks/model-roi/grading/` | Rubric v1 + pipeline v1, JSON schemas, task grading specs, and score-set comparability rules for script-first benchmark grading. |
-| `scripts/validate-compliance-examples.py` | Validates fenced YAML examples in `docs/compliance_schemas.md` against ADR-026 v1 shape |
-| `scripts/validate-compliance-fixtures.py` | Validates ADR-026 valid/invalid fixtures under `scripts/tests/fixtures/compliance/` |
 | `scripts/db-reset.sh` | Optional database reset stub |
 | `scripts/pr-iteration-stats.sh` | Rolling 14-day PR review-loop metrics (total/fix/rejected rounds, threads); `--window <days>`, `--json` |
 | `scripts/pr-resolve-all-poll.sh` | Pre-#321 settle-window poll helper for `pr-resolve-all.md`; emits `RESULT=...` and, when the current PR head is available, `HEAD=...`; uses `INTERVAL`, `QUIET_WINDOW`, and `MAX_WAIT` overrides |
@@ -352,9 +327,8 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `.github/pull_request_template.md` | PR template with `## Plan` pointer (permalinks to original plan and revisions + 1–2 sentence summary; advisory per ADR-011), `## Plan revision sync` checkbox (advisory), required doc-sync checklist, and `## Sandbox dogfood evidence` section (two labels: `Sandbox issue:`, `Sandbox PR:`) required by ADR-029 for PRs that modify agent contracts, gate predicates, compliance schemas, or `.agents/.context/.github/agents` loaders |
 | `docs/guides/agent-best-practices.md` | Token limits, session handoff, secrets, prompt caching, issue/PR granularity |
 | `docs/guides/agents-md-section-redirects.md` | ADR-021 section-anchor redirect table (post-decomposition `AGENTS.md` citations) |
-| `docs/guides/opportunity-feedback-examples.md` | Worked opportunity-note examples and 9-field schema rationale (pairs with `process_opportunity_feedback.md`) |
-| `docs/guides/repo-orchestration-patterns-reference.md` | Long-form `P*` / `AP*` reference detail (pairs with slim `repo_orchestration_patterns.md` rule) |
-| `docs/guides/subagent-bootstrap-reference.md` | Pass-back narrative, ghost-success, schema-variance detail (ADR-026; monolithic default per ADR-031) |
+| `docs/guides/opportunity-feedback-examples.md` | Worked examples for the opportunity-note contract in `AGENTS.md` |
+| `docs/guides/repo-orchestration-patterns-reference.md` | Detailed reference for the advisory `P*` / `AP*` vocabulary summarized in `AGENTS.md` |
 | `docs/guides/design-patterns.md` | Lead index for advisory code-layer design-pattern catalogs (`CAP`, `CP`, `CCP`, `CDP`, `CIP`) |
 | `docs/guides/design-patterns-concurrency.md` | Concurrency pattern catalog with stable `CCP1`-`CCP8` citation handles |
 | `docs/guides/design-patterns-data.md` | Data / persistence pattern catalog with stable `CDP1`-`CDP14` citation handles |
@@ -390,12 +364,13 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 ## Truth Hierarchy
 
 See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
-`.context/**` > `docs/**` > codebase.
+current issue/PR > `AGENTS.md` > `.context/**` > `docs/**` > codebase.
 
 For live agent coordination on GitHub-connected work, ADR-025 narrows the
 source-of-truth order to: issue body → PR body → latest `agent-state:v1`
-comment → labels. In-tree `.context/**` remains canonical for rules,
-decisions, durable lessons, and process constraints.
+comment → labels. `AGENTS.md` remains the operating contract; in-tree
+`.context/**` remains canonical for project direction, durable lessons,
+benchmarks, and planning context.
 
 ## Conventions
 
@@ -406,7 +381,7 @@ Three locations — different consumers; do not duplicate across them:
 | Location | Consumer | Purpose |
 |---|---|---|
 | `.github/ISSUE_TEMPLATE/*.md` | Human issue chooser (GitHub UI) | Structured issue intake (`bug_report`, `feature_request`, `agent_init`) |
-| `.github/pull_request_template.md` | Human PR opener (GitHub UI) | Full Judge-gated PR body (plan pointer, compliance, doc sync, sandbox evidence) |
+| `.github/pull_request_template.md` | Human PR opener (GitHub UI) | Full Judge-gated PR body (plan pointer, doc sync, sandbox evidence) |
 | `.github/templates/*.md` | Workflow scripts (`gh issue create` / `gh pr create`) | Slim automation bodies with `{{placeholders}}` (post-merge retro umbrella + fix PR) |
 | `.github/PLAN_TEMPLATE.md` | Issue/PR comments | Implementation plan pasted before coding (ADR-011) |
 
@@ -454,8 +429,7 @@ bash scripts/pr-iteration-stats.sh --window 14
 
 # Pre-push review (Critic + lint + ./test.sh on the working-tree diff)
 # SHOULD before `git push` on non-trivial diffs; MUST for DevOps on
-# shell/workflow changes. See `.context/rules/process_work_style.md` and
-# .agents/devops.md.
+# shell/workflow changes. See `AGENTS.md` and `.agents/devops.md`.
 #
 # This is a Markdown prompt — not a shell script — so it must be
 # consumed by an agent runtime, not executed with bash. To dispatch:
@@ -534,7 +508,7 @@ Use this prompt to onboard a fresh agent session onto in-flight work:
 read and follow .github/prompts/repo-onboarding.md
 ```
 
-This protocol keeps live task state in GitHub while preserving in-tree rules and durable retrospective lessons.
+This protocol keeps live task state in GitHub while preserving the always-loaded contract and durable retrospective lessons.
 
 ## Gotchas / Known Issues
 

@@ -47,7 +47,8 @@ if [[ -x "$REPO/scripts/verify-env.sh" ]]; then
   verify_log=$(mktemp "${TMPDIR:-/tmp}/repo-onboarding-verify.XXXXXX")
   if ! (cd "$REPO" && ./scripts/verify-env.sh) >"$verify_log" 2>&1; then
     blocking+=("scripts/verify-env.sh exited nonzero")
-  elif grep -qE '[1-9][0-9]* files still contain TEMPLATE_PLACEHOLDER' "$verify_log"; then
+  elif [[ "$mode" != A ]] \
+    && grep -qE '[1-9][0-9]* files still contain TEMPLATE_PLACEHOLDER' "$verify_log"; then
     blocking+=("scripts/verify-env.sh reports unresolved template placeholders")
   fi
   rm -f "$verify_log"

@@ -9,8 +9,6 @@
 | `verify-env.sh` | Check environment setup | `./scripts/verify-env.sh` |
 | `db-reset.sh` | Reset database to clean state | `./scripts/db-reset.sh` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
-| `validate-compliance-examples.py` | Validate ADR-026 YAML examples in `docs/compliance_schemas.md` | `python3 scripts/validate-compliance-examples.py` |
-| `validate-compliance-fixtures.py` | Validate ADR-026 valid/invalid fixtures | `python3 scripts/validate-compliance-fixtures.py` |
 
 ## Usage Guidelines
 

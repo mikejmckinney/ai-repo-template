@@ -16,15 +16,6 @@ if [[ -f "$PRE_PUSH_PROMPT" ]]; then
   fi
 fi
 
-# "Work style" rule references the prompt as a SHOULD (now in process_work_style.md per ADR-021).
-if grep -q 'pre-push-review.md' .context/rules/process_work_style.md 2>/dev/null \
-  && grep -q 'SHOULD' .context/rules/process_work_style.md 2>/dev/null \
-  && grep -q 'non-trivial' .context/rules/process_work_style.md 2>/dev/null; then
-  pass "process_work_style.md references pre-push-review.md (issue #229 Phase 3)"
-else
-  fail "process_work_style.md missing pre-push-review.md SHOULD reference (issue #229 Phase 3)"
-fi
-
 # DevOps role MUSTs the prompt for shell/workflow changes. Role definition
 # lives at .agents/devops.md (canonical, ADR-023).
 if grep -q 'pre-push-review.md' .agents/devops.md 2>/dev/null \

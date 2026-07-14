@@ -58,67 +58,6 @@ N/A — empty headings are noise.
 - [ ] No post-open plan revision comment was posted on the linked issue.
 - [ ] Post-open plan revision comment was posted; `## Plan` section above is updated with the revision link and a refreshed summary.
 
-## Parent compliance (ADR-026)
-
-<!-- REQUIRED for non-exempt work. This records what the parent/default agent
-     loaded and how role dispatch/gates were handled. Copy parsed
-     `subagent_compliance` objects into `subagents_dispatched`; do not leave
-     only raw YAML-in-YAML. CI validates declared evidence shape only — it
-     does not prove Copilot runtime dispatch or handoff execution. -->
-
-```yaml
-parent_compliance:
-  handshake_token: "Session handshake v<N>"
-  agents_md_version: <N>
-  runtime_pointer:
-    path: .github/copilot-instructions.md
-    loaded: "<true | false>"
-    decision_affected: "<specific decision affected, or null when exempt>"
-  applicable_roles:
-    - "<role>"
-  subagents_dispatched:
-    - role: "<role>"
-      role_contract_version: 1
-      agents_md_version: <N>
-      receipt:
-        mode: "<visible-line | trailing-block>"
-        value: "<receipt evidence>"
-      context_files_used:
-        - AGENTS.md
-        - .agents/<role>.md
-      pointers_skipped: []
-      task_scope: "<parent-assigned task scope>"
-      files_modified:
-        - "<path or omit entry if empty list>"
-      gates_invoked:
-        - "<gate name>"
-      run_status: "<SUCCESS | PARTIAL | BLOCKED_ON_RUNTIME | NEEDS_CONTEXT>"
-  monolithic_justification: "<null or required one-sentence justification>"
-  plan_gate:
-    status: "<linked | pending | exempt>"
-    link: "<URL or null>"
-    gate_status:
-      triggered: <true | false>
-      applied: <true | false>
-  diff_gate:
-    status: "<pending | linked | exempt>"
-    link: "<URL or null>"
-    gate_status:
-      triggered: <true | false>
-      applied: <true | false>
-  adr_required:
-    required: "<true | false>"
-    link: "<path/URL or null>"
-  deviations:
-    - planned: "<planned behavior>"
-      actual: "<actual behavior>"
-      reason: "<why acceptable>"
-  verification_results:
-    - command: "<command>"
-      result: "<pass | fail | sandbox-deferred | n/a>"
-      evidence: "<one-line pointer>"
-```
-
 ## User outcome validation — PRIMARY
 
 <!-- REQUIRED for non-exempt work. This proves the issue problem statement was
@@ -191,15 +130,14 @@ Sandbox PR: <URL>
 
 ## Doc sync (REQUIRED — Judge enforces at diff-gate)
 
-Walk `.context/rules/process_doc_maintenance.md`'s trigger table. Tick each
-companion that needed updating, OR state `<file>: no changes required` with
-a one-line justification.
+Walk `AGENTS.md`'s documentation synchronization table. Tick each companion
+that needed updating, OR state `<file>: no changes required` with a one-line
+justification.
 
 - [ ] `AI_REPO_GUIDE.md` updated (or: `AI_REPO_GUIDE.md: no changes required — <why>`)
 - [ ] ADR added/superseded (or: `ADR: no changes required — <why>`)
 - [ ] `docs/guides/multi-agent-coordination.md` updated (or: `not required — <why>`)
-- [ ] Role changes mirrored across registries and `agent_ownership.md` (or: `not required — <why>`)
-- [ ] `.context/rules/<file>.md` added/updated (or: `not required — <why>`)
+- [ ] Role registration changes mirrored across platform overlays and inventories (or: `not required — <why>`)
 - [ ] Workflow inline-prompt mirrors updated alongside `.github/prompts/*.md` edits (or: `not required — <why>`)
 - [ ] `scripts/setup.sh` `_ensure_label` list updated alongside pipeline label additions (or: `not required — <why>`)
 - [ ] `test.sh` / `install.sh` updated for new template files (or: `not required — <why>`)
@@ -209,9 +147,8 @@ a one-line justification.
 
 <!-- Optional. Up to 3 out-of-scope improvement opportunities surfaced
      during the work that produced this PR. Each entry uses the
-     9-field shape defined in
-     `.context/rules/process_opportunity_feedback.md` § "Required
-     fields (9 total)". Cap is ≤3 per session per agent. Omit this
+     9-field shape defined in `AGENTS.md` § "Opportunity feedback".
+     Cap is ≤3 per session per agent. Omit this
      section or write "None" if nothing to surface; do not fold
      opportunities into the PR scope. -->
 

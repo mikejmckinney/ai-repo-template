@@ -27,6 +27,11 @@ make_repo() {
   printf '%s' "$repo"
 }
 
+@test "onboarding entrypoint scripts are executable" {
+  [ -x "$SKILL_ROOT/scripts/classify-mode.sh" ]
+  [ -x "$SKILL_ROOT/scripts/validate-onboarding.sh" ]
+}
+
 @test "classifier chooses Mode A for the template even with placeholder signals" {
   repo=$(make_repo template)
   git -C "$repo" remote add origin git@github.com:mikejmckinney/ai-repo-template.git

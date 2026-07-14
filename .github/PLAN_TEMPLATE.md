@@ -71,54 +71,6 @@ list by more than ~30%, post a revised plan before pushing. -->
      this field is the implementer's signal to a human or PM about whether
      to upshift before dispatching. -->
 
-### Compliance evidence (ADR-026)
-
-```yaml
-plan_compliance:
-     applicable_roles:
-          - <role>
-     instruction_resources:
-          -
-               resource: AGENTS.md
-               why_applicable: Canonical startup, truth hierarchy, and process-rule index.
-               evidence: AGENTS_MD_VERSION <N>; Session handshake v<N> emitted.
-               decision_affected: <specific plan choice affected by this resource>
-          -
-               resource: .context/rules/<rule>.md
-               why_applicable: <why this rule applies to the work>
-               evidence: <what was loaded or checked>
-               decision_affected: <specific plan choice affected by this resource>
-     role_dispatch:
-          decision: "<staged-dispatch | monolithic | exempt>"
-          planned_subagents:
-               - <role>
-          monolithic_justification: <null or one-sentence justification>
-     plan_gate:
-          status: "<pending | linked | exempt>"
-          link: <URL or null>
-          gate_status:
-               triggered: <true | false>
-               applied: <true | false>
-     adr_required:
-          required: "<true | false>"
-          link: <path/URL or null>
-          supersession_notes:
-               - <ADR status update or N/A>
-     doc_sync:
-          triggered: "<true | false>"
-          companions:
-               - <path or N/A>
-          no_change_justifications:
-               - "<path>: <reason>"
-     verification:
-          - <exact command or manual check>
-```
-
-<!-- Keep this block specific. Generic evidence such as "read all docs" is
-           not useful; name the resource, why it applied, and what decision it
-           changed. Use `role_contract_version` only in subagent returns, never
-           `overlay_version`. See `docs/compliance_schemas.md`. -->
-
 ### User outcome validation plan — PRIMARY
 
 **Issue problem statement:** <one-sentence summary>
@@ -145,7 +97,7 @@ plan_compliance:
      section below covers regression/hygiene evidence (./test.sh, lint,
      CI, schema checks, sandbox runs). A green CI run with no
      user-outcome evidence is not ready for review. See
-     `.context/rules/process_work_style.md` § Validation. -->
+     `AGENTS.md` § Testing and validation. -->
 
 ### Supporting verification
 
@@ -183,7 +135,6 @@ explicit acknowledgment, not silent omission.>
 <Optional. Surface up to 3 out-of-scope improvement opportunities
 you noticed during planning (toil patterns, stale docs, adjacent
 risks). Each note uses the 9-field shape defined in
-`.context/rules/process_opportunity_feedback.md` § "Required fields
-(9 total)". Cap is ≤3 per session per agent. Omit this section or
+`AGENTS.md` § "Opportunity feedback". Cap is ≤3 per session per agent. Omit this section or
 write "None" if nothing to surface; do not fold opportunities into
 the plan scope.>

@@ -11,52 +11,22 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
-# Catalog-aligned profile floors (README § Named read profiles). Paths relative to repo root.
-STANDARD_MINIMUM = [
-    "AGENTS.md",
-    ".context/rules/process_session_start.md",
-    ".context/rules/process_critical_thinking.md",
-    ".context/rules/process_clarification.md",
-    ".context/00_INDEX.md",
-    ".context/rules/README.md",
-    ".context/rules/process_work_style.md",
-    ".context/rules/process_doc_maintenance.md",
-    ".context/rules/process_session_state.md",
-    ".context/rules/process_opportunity_feedback.md",
-]
+# AGENTS.md is always loaded. Add only task-specific durable references.
+STANDARD_MINIMUM = ["AGENTS.md"]
 
-PR_REVIEW_MINIMUM = STANDARD_MINIMUM
+PR_REVIEW_MINIMUM = ["AGENTS.md", ".github/pull_request_template.md"]
 
-# Path-pattern → additional rule files (catalog-aligned triggers).
+# Path-pattern → task-specific references.
 PATH_TRIGGERED: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"^\.github/workflows/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^scripts/checks/"), ".context/rules/domain_code_quality.md"),
-    (re.compile(r"^scripts/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^AGENTS\.md$"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^\.github/prompts/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^\.agents/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^\.github/agents/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^\.cursor/agents/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^\.claude/agents/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^\.context/rules/"), ".context/rules/repo_orchestration_patterns.md"),
-    (re.compile(r"^src/"), ".context/rules/domain_code_quality.md"),
-    (re.compile(r"^tests/"), ".context/rules/domain_code_quality.md"),
+    (re.compile(r"^\.github/workflows/"), "docs/guides/agent-pipeline.md"),
     (re.compile(r"^docs/decisions/"), "docs/decisions/adr-template.md"),
     (re.compile(r"^\.context/benchmarks/"), ".context/benchmarks/model-roi/README.md"),
 ]
 
 
 def full_rules_context() -> list[str]:
-    """All rule files under .context/rules/ plus AGENTS.md (stable sort)."""
-    rules_dir = REPO_ROOT / ".context" / "rules"
-    selected: list[str] = ["AGENTS.md"]
-    seen = {"AGENTS.md"}
-    for path in sorted(rules_dir.glob("*.md")):
-        rel = path.relative_to(REPO_ROOT).as_posix()
-        if rel not in seen:
-            seen.add(rel)
-            selected.append(rel)
-    return selected
+    """Compatibility alias for the retired full-rules profile."""
+    return ["AGENTS.md"]
 
 
 def _apply_path_triggers(changed_files: list[str], selected: list[str], seen: set[str]) -> None:

@@ -22,7 +22,7 @@ Only install an optional skill when:
 
 ## Built-in Baseline
 
-Before reaching for any of the external options below, note that the template already ships `.context/rules/domain_code_quality.md` — a language-neutral SOLID / TDD / clean-code floor that Judge and Critic enforce during review. The curated options in this file **extend or replace** that baseline for teams that want stricter or stack-specific enforcement.
+Before reaching for any external option below, note that `AGENTS.md` already ships a language-neutral SOLID, testing, and clean-code floor. The curated options extend that baseline for teams that want stricter or stack-specific enforcement.
 
 ## Curated Options
 

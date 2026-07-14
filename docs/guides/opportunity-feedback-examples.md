@@ -1,6 +1,6 @@
 # Opportunity Feedback — Examples and Rationale
 
-> **Purpose**: Worked examples and schema rationale for the opportunity feedback channel. The normative contract lives in [`.context/rules/process_opportunity_feedback.md`](../../.context/rules/process_opportunity_feedback.md).
+> **Purpose**: Worked examples for the prose-governed opportunity feedback channel in `AGENTS.md`.
 
 ## Schema-size rationale (9 vs. 3)
 
@@ -43,7 +43,7 @@ Not opportunity-class because: halt-on-discovery is correct; failure mode is sec
 
 ```yaml
 - title: "Task-boundary rereads still use one flat profile"
-  evidence: "AGENTS.md and .context/rules/process_session_state.md still require the same top-level reread pattern even when only one concern changed."
+  evidence: "AGENTS.md repeats task-specific context that the runtime already supplies."
   impact: "Each task boundary pays repeated context cost and the handoff story stays harder to explain than necessary."
   recommendation: "File a follow-up to define named read profiles or a narrower task-boundary receipt keyed to the concern being edited."
   scope: process

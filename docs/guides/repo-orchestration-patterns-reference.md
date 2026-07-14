@@ -1,8 +1,8 @@
 # Repo Orchestration Patterns — Reference Guide
 
-> **Purpose**: Long-form reference for the orchestration-layer pattern catalog. The normative contract (IDs, detection signals, block/advisory designations) lives in [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md). Read that file at review time; use this guide for "where it appears," remediation detail, and historical context.
+> **Purpose**: Detailed reference for the advisory P1-P9/AP1-AP9 orchestration vocabulary summarized in `AGENTS.md`. Pattern IDs support reasoning and review, but an ID alone is never a blocking finding.
 >
-> **Scope**: Multi-agent workflow, role definitions, rule files, gates, and coordination state in this template. Code-layer patterns for downstream projects live in [`design-patterns.md`](./design-patterns.md).
+> **Scope**: Agent workflows, role definitions, gates, and coordination state in this template. Code-layer patterns for downstream projects live in [`design-patterns.md`](./design-patterns.md).
 
 ## Framing
 
@@ -22,7 +22,7 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 - `.github/agents/<role>.agent.md`, `.claude/agents/<role>.md`, `.cursor/agents/<role>.md`, `.codex/agents/<role>.toml` — registration overlays
 - Role selection: [ADR-031](../decisions/adr-031-agent-model-roi-benchmark-policy.md) (monolithic default); historical multi-role detail in this guide and `.agents/<role>.md`
 
-**What good usage looks like**: each role file has one focused responsibility (`H1`); roles don't reach into each other's owned paths; cross-role coordination goes through PM (`P3`).
+**What good usage looks like**: each role file has one focused responsibility (`H1`); explicit file scopes avoid concurrent edits; cross-agent dependencies use an explicit coordinator or live-state surface (`P3`).
 
 ---
 
@@ -34,7 +34,7 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 - `.agents/analyst.md` — Analyst pre-flight; [`docs/guides/agent-pipeline.md`](./agent-pipeline.md) — workflow gates
 - `.agents/judge.md`, `.agents/critic.md` — review-stage handlers
 
-**What good usage looks like**: each handler has clear pass/block criteria traceable to a rule file or ADR; new handlers added via ADR, not drive-by pipeline edits.
+**What good usage looks like**: each handler has clear pass/block criteria traceable to `AGENTS.md`, a role contract, or an ADR; new handlers are added deliberately rather than through drive-by pipeline edits.
 
 ---
 
@@ -45,7 +45,7 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 - `.agents/pm.md`, GitHub `agent-state:v1` comments (ADR-025) → Live-state protocol
 - Latest `agent-state:v1` issue/PR comments (ADR-025)
 
-**What good usage looks like**: implementers escalate to PM; claims are explicit in GitHub live state; PM holds edit privilege over another role's live-state baton.
+**What good usage looks like**: cross-agent dependencies are explicit in GitHub live state and one coordinator resolves conflicts rather than relying on hidden peer-to-peer state.
 
 ---
 
@@ -72,7 +72,7 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 **Where it appears**: `AGENT.md`, `AI_REPO_GUIDE.md`, `.github/copilot-instructions.md`.
 
-**What good usage looks like**: facades stay thin pointers; update in lockstep with canonical (`process_doc_maintenance.md` trigger table).
+**What good usage looks like**: facades stay thin pointers and update in lockstep with the canonical contract under `AGENTS.md`'s documentation synchronization rules.
 
 ---
 
@@ -116,9 +116,9 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 ### AP1 — God Object
 
-**Currently triggered by**: `AGENTS.md` (~330+ lines, version-canary, 18+ concerns). Tracked in sub-issue 2 of epic #251.
+**Detection signals**: unrelated task-specific procedures accumulate in one file; repeated cross-domain edits make review unreliable; readers cannot complete one focused policy pass.
 
-**Remediation**: decompose by concern; top-level becomes thin contract + link table; ADR documents decomposition; re-evaluate version-canary after split.
+**Remediation**: keep always-needed policy together, but move task-specific examples, history, and procedures to focused guides. Do not replace one always-loaded contract with a mandatory reread chain.
 
 ---
 
@@ -148,9 +148,9 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 ### AP5 — Sequential Coupling
 
-**Currently flagged**: onboarding + session-state cadence together specify ~7 files per task boundary (epic #251 sub-issues 2–3).
+**Detection signals**: useful work requires a long ordered read or execution chain; the chain grows without removals; steps are routinely skipped in practice.
 
-**Remediation**: shorten canonical read list; task-specific rules in focused files; narrower per-boundary re-read scope.
+**Remediation**: keep the automatic baseline in `AGENTS.md`; load focused task context only when its trigger applies.
 
 ---
 
@@ -190,9 +190,9 @@ Postmortem-derived entries (`AP3`, `AP4`, `AP6`, `P7`) cross-link to code-layer 
 
 Downstream projects:
 
-1. May add project-specific patterns in a separate `.context/rules/` file.
+1. May add project-specific guidance under `docs/guides/`.
 2. Should not delete entries without an ADR (postmortem-derived entries are load-bearing).
-3. May tighten advisory entries to block-on-sight with an ADR amending block conditions.
+3. May promote an advisory entry into a blocking rule only through an ADR that defines concrete conditions.
 
 New entries: next `P<n>` or `AP<n>` ID; include description, where it appears, detection signals, remediation, block-or-advisory designation. Structural pattern choices need an ADR; anti-pattern block conditions always need an ADR.
 
@@ -200,5 +200,5 @@ New entries: next `P<n>` or `AP<n>` ID; include description, where it appears, d
 
 - `docs/decisions/` — ADRs ratifying structural choices
 - `docs/postmortems/` — originating postmortems for `AP3`, `AP4`, `AP6`, `P7`
-- `.context/rules/domain_code_quality.md` — code-layer `H*` / `S*` rules
+- `AGENTS.md` — active advisory summary plus code-quality and review rules
 - [ADR-020](../decisions/adr-020-orchestration-patterns-reference.md) — ratification of the pattern catalog
