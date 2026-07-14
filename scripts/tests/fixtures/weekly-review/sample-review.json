@@ -4,7 +4,10 @@
     {
       "title": "Example invariant gap",
       "labels": ["agent-suggested"],
-      "severity": "low",
+      "impact": "meta-harness",
+      "trigger_likelihood": "edge",
+      "fix_cost": "trivial",
+      "regression_guard": true,
       "body": "Fixture finding body.",
       "repro_steps": [
         "Open scripts/checks/053-weekly-review-invariants.sh",

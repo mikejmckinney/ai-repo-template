@@ -6,58 +6,70 @@ import json
 import sys
 from pathlib import Path
 
+LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(LIB_DIR))
+
+from finding_priority import copy_triage_fields  # noqa: E402
+
+
+def _flatten_item(item: dict, path: str, **fields: object) -> dict:
+    return {**fields, **copy_triage_fields(item, path)}
+
 
 def _flatten(data: dict) -> list[dict]:
     findings: list[dict] = []
-    for item in data.get("follow_up_issues") or []:
+    for index, item in enumerate(data.get("follow_up_issues") or []):
         if not isinstance(item, dict):
             continue
         findings.append(
-            {
-                "pr": 0,
-                "scope": "repo",
-                "category": "follow_up_issues",
-                "title": item.get("title", ""),
-                "severity": item.get("severity") or "medium",
-                "body": item.get("body", ""),
-                "dedupe_key": item.get("dedupe_key", ""),
-                "repro_steps": item.get("repro_steps") or [],
-                "evidence": item.get("evidence") or [],
-                "labels": item.get("labels") or [],
-            }
+            _flatten_item(
+                item,
+                f"follow_up_issues[{index}]",
+                pr=0,
+                scope="repo",
+                category="follow_up_issues",
+                title=item.get("title", ""),
+                body=item.get("body", ""),
+                dedupe_key=item.get("dedupe_key", ""),
+                repro_steps=item.get("repro_steps") or [],
+                evidence=item.get("evidence") or [],
+                labels=item.get("labels") or [],
+            )
         )
-    for item in data.get("adr_updates") or []:
+    for index, item in enumerate(data.get("adr_updates") or []):
         if not isinstance(item, dict):
             continue
         findings.append(
-            {
-                "pr": 0,
-                "scope": "repo",
-                "category": "adr_updates",
-                "title": item.get("title", ""),
-                "severity": "medium",
-                "body": item.get("body", ""),
-                "dedupe_key": item.get("dedupe_key", ""),
-                "evidence": [item.get("adr") or ""],
-                "labels": ["adr:update"],
-            }
+            _flatten_item(
+                item,
+                f"adr_updates[{index}]",
+                pr=0,
+                scope="repo",
+                category="adr_updates",
+                title=item.get("title", ""),
+                body=item.get("body", ""),
+                dedupe_key=item.get("dedupe_key", ""),
+                evidence=[item.get("adr") or ""],
+                labels=["adr:update"],
+            )
         )
-    for item in data.get("context_pack_updates") or []:
+    for index, item in enumerate(data.get("context_pack_updates") or []):
         if not isinstance(item, dict):
             continue
         body = f"**Pack:** {item.get('pack', '')}\n\n**Reason:** {item.get('reason', '')}"
         findings.append(
-            {
-                "pr": 0,
-                "scope": "repo",
-                "category": "context_pack_updates",
-                "title": f"Context pack update: {item.get('pack', '')}",
-                "severity": "medium",
-                "body": body,
-                "dedupe_key": item.get("dedupe_key", ""),
-                "evidence": item.get("evidence") or [],
-                "labels": ["context-pack"],
-            }
+            _flatten_item(
+                item,
+                f"context_pack_updates[{index}]",
+                pr=0,
+                scope="repo",
+                category="context_pack_updates",
+                title=f"Context pack update: {item.get('pack', '')}",
+                body=body,
+                dedupe_key=item.get("dedupe_key", ""),
+                evidence=item.get("evidence") or [],
+                labels=["context-pack"],
+            )
         )
     return findings
 

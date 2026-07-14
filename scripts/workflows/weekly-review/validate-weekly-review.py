@@ -4,6 +4,12 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
+
+LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(LIB_DIR))
+
+from finding_priority import validate_triage_item  # noqa: E402
 
 
 def main() -> int:
@@ -29,6 +35,11 @@ def main() -> int:
         for i, item in enumerate(items):
             if not isinstance(item, dict):
                 print(f"{key}[{i}] must be object", file=sys.stderr)
+                return 1
+            try:
+                validate_triage_item(item, f"{key}[{i}]", from_llm=True)
+            except ValueError as exc:
+                print(str(exc), file=sys.stderr)
                 return 1
             if key == "follow_up_issues":
                 for req in ("title", "body", "dedupe_key"):

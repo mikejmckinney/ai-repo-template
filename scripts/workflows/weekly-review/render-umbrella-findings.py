@@ -52,7 +52,11 @@ def render_finding(repo: str, sha: str, finding: dict) -> str:
     key = str(finding.get("dedupe_key") or "").strip()
     title = str(finding.get("title") or "").strip()
     category = str(finding.get("category") or "").strip()
-    severity = str(finding.get("severity") or "medium").strip()
+    impact = str(finding.get("impact") or "").strip()
+    trigger = str(finding.get("trigger_likelihood") or "").strip()
+    fix_cost = str(finding.get("fix_cost") or "").strip()
+    guard = "true" if finding.get("regression_guard") is True else "false"
+    band = str(finding.get("priority_band") or "").strip()
     body = str(finding.get("body") or "").strip()
     evidence = finding.get("evidence") or []
 
@@ -61,7 +65,9 @@ def render_finding(repo: str, sha: str, finding: dict) -> str:
         marker,
         f"### `{key}` — {title}",
         "",
-        f"**Category:** `{category}` · **Severity:** `{severity}`",
+        f"**Category:** `{category}` · **Band:** `{band}`",
+        "",
+        f"**Triage:** impact `{impact}` · trigger `{trigger}` · cost `{fix_cost}` · guard `{guard}`",
         "",
     ]
     if body:
@@ -69,6 +75,15 @@ def render_finding(repo: str, sha: str, finding: dict) -> str:
     ev_lines = _evidence_lines(repo, sha, evidence if isinstance(evidence, list) else [])
     if ev_lines:
         parts.extend(["**Evidence:**", "", *ev_lines, ""])
+    repro_steps = finding.get("repro_steps") or []
+    if isinstance(repro_steps, list) and repro_steps:
+        parts.extend(["**Reproduction:**", ""])
+        parts.extend(
+            f"{index}. {step}"
+            for index, step in enumerate(repro_steps, start=1)
+            if isinstance(step, str) and step.strip()
+        )
+        parts.append("")
     parts.append("**Suggested action:** Review in draft fix PR")
     parts.append("")
     return "\n".join(parts)
