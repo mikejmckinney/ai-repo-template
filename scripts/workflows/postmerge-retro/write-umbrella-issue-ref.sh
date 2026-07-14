@@ -10,17 +10,11 @@ usage() {
   exit 2
 }
 [[ -n "$DAILY_JSON" && -f "$DAILY_JSON" && -n "$ISSUE_NUM" ]] || usage
-[[ "$ISSUE_NUM" =~ ^[0-9]+$ ]] || {
-  echo "issue-number must be a positive integer" >&2
-  exit 2
-}
-
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-WORKDIR="$(mktemp -d)"
-trap 'rm -rf "$WORKDIR"' EXIT
+# shellcheck source=../lib/umbrella-lifecycle.sh
+source "$REPO_ROOT/scripts/workflows/lib/umbrella-lifecycle.sh"
 
-jq --argjson n "$ISSUE_NUM" '. + {umbrella_issue: $n}' "$DAILY_JSON" >"$WORKDIR/daily-with-umbrella.json"
-mv "$WORKDIR/daily-with-umbrella.json" "$DAILY_JSON"
-echo "$ISSUE_NUM" >"$(dirname "$DAILY_JSON")/umbrella-issue.txt"
-python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py" "$DAILY_JSON"
+umbrella_write_issue_ref \
+  "$DAILY_JSON" "$ISSUE_NUM" \
+  python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py"
 echo "Recorded umbrella issue #${ISSUE_NUM} in ${DAILY_JSON}"

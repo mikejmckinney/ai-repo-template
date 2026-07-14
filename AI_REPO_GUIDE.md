@@ -294,6 +294,7 @@ Canonical role behavior lives only in `.agents/<role>.md`. Overlay-local fields 
 | `scripts/lib/assertions.sh` | Shared `PASS`/`FAIL`/`WARN` counters + `pass`/`fail`/`warn` helpers (issue #255 Phase 4a). Depends on `logging.sh` color vars. Sourced by `test.sh`, `verify-env.sh` |
 | `scripts/lib/bot-allowlist.txt` | Canonical normalized bot identities for `pr-resolve-all.md` settle polling and Phase 4 auto-resolution (issue #326) |
 | `scripts/lib/jq/*.jq` | Extracted jq filters (e.g. `relay-cycle-count.jq`); each has matching fixture pairs in `scripts/lib/jq/fixtures/` and is tested by `scripts/tests/jq-filters.bats` |
+| `scripts/workflows/lib/` | Shared workflow primitives for provider dispatch, finding priority/supersession, umbrella lifecycle, fix-branch checkout, batch-fix publication, sandbox sync, and fix-PR rendering. Daily and weekly adapters retain cadence-specific prompts, templates, markers, and metadata hooks. |
 | `scripts/tests/*.bats` | Bats test suite (issue #255 Phase 4b, expanded by issue #280); each `.bats` file inlines the legacy test logic as a `_legacy_body()` shell function and invokes it via bats `run` inside a single `@test` block. No `scripts/test-*.sh` delegate layer remains. Run: `bats scripts/tests/`. CI installs bats via `apt-get` in `ci-tests.yml`. |
 
 ### Issue Templates

@@ -34,13 +34,13 @@ bats --tap scripts/tests/
 
 ```bash
 # Ubuntu/Debian (parallel is required for `bats --jobs`)
-sudo apt-get install -y bats parallel
+sudo apt-get install -y bats parallel ripgrep
 
 # macOS
 brew install bats-core parallel
 ```
 
-CI installs both via `apt-get install -y bats parallel` in `.github/workflows/ci-tests.yml`.
+CI installs them via `apt-get install -y bats parallel ripgrep` in `.github/workflows/ci-tests.yml`.
 
 ## Migration approach (Phase 4b scope)
 

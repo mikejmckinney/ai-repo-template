@@ -13,6 +13,8 @@ DAILY_JSON="${1:-}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/umbrella-lifecycle.sh
+source "$REPO_ROOT/scripts/workflows/lib/umbrella-lifecycle.sh"
 python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py" "$DAILY_JSON"
 
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
@@ -99,7 +101,8 @@ print(body, end="")
 PY
   )"
   if [[ "$merged_coverage" != "$body" ]]; then
-    gh issue edit "$issue_num" -R "$REPO" --body "$merged_coverage"
+    printf '%s' "$merged_coverage" >"$WORKDIR/merged-coverage.md"
+    umbrella_edit_issue_body "$REPO" "$issue_num" "$WORKDIR/merged-coverage.md"
     echo "Updated evidence summary/coverage on umbrella issue #${issue_num}" >&2
   fi
 }
@@ -108,10 +111,7 @@ append_to_issue() {
   local issue_num="$1"
   local body merged
   body="$(gh issue view "$issue_num" -R "$REPO" --json body --jq .body)"
-  grep -Fq "$MARKER" <<<"$body" || {
-    echo "::error::Issue #${issue_num} missing daily marker"
-    exit 1
-  }
+  umbrella_require_marker "$body" "$MARKER" "$issue_num"
 
   new_rows=""
   while IFS= read -r row; do
@@ -160,13 +160,14 @@ else:
     print(body.rstrip() + "\n" + "\n".join(new_rows) + "\n")
 PY
   )"
-  gh issue edit "$issue_num" -R "$REPO" --body "$merged"
+  printf '%s' "$merged" >"$WORKDIR/merged-body.md"
+  umbrella_edit_issue_body "$REPO" "$issue_num" "$WORKDIR/merged-body.md"
   update_issue_evidence_blocks "$issue_num"
   echo "Appended findings to umbrella issue #${issue_num}" >&2
 }
 
 create_new_issue() {
-  local title body_file issue_url issue_num
+  local title body_file issue_num
   title="Post-merge retro daily: ${RUN_DATE} (${PR_LIST})"
   body_file="$WORKDIR/umbrella.md"
   cp "$REPO_ROOT/.github/templates/postmerge-retro-umbrella.md" "$body_file"
@@ -194,14 +195,8 @@ text = text.replace("{{EVIDENCE_COVERAGE}}", coverage)
 text = text.replace("{{EVIDENCE_TRUNCATION_SUMMARY}}", summary)
 p.write_text(text)
 PY
-  issue_url="$(gh issue create -R "$REPO" --title "$title" --body-file "$body_file")"
-  issue_num="${issue_url##*/}"
+  issue_num="$(umbrella_create_issue "$REPO" "$title" "$body_file" agent-suggested)"
   printf '%s' "$issue_num" >"$WORKDIR/issue-num.txt"
-  if gh issue edit "$issue_num" -R "$REPO" --add-label agent-suggested 2>/dev/null; then
-    echo "Created umbrella issue #${issue_num} (agent-suggested)" >&2
-  else
-    echo "::notice::Umbrella issue #${issue_num} created without agent-suggested label (missing label or permissions)" >&2
-  fi
 }
 
 normalize_issue_num() {

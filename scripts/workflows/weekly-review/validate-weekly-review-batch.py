@@ -4,6 +4,12 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
+
+LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(LIB_DIR))
+
+from finding_priority import validate_triage_item  # noqa: E402
 
 
 def main() -> int:
@@ -44,6 +50,14 @@ def main() -> int:
             if key not in item or not str(item[key]).strip():
                 print(f"findings[{i}].{key} required", file=sys.stderr)
                 return 1
+        if item.get("priority_band") is None:
+            print(f"findings[{i}].priority_band required", file=sys.stderr)
+            return 1
+        try:
+            validate_triage_item(item, f"findings[{i}]", from_llm=False)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
         if item.get("category") == "follow_up_issues":
             steps = item.get("repro_steps")
             if not isinstance(steps, list) or not steps:

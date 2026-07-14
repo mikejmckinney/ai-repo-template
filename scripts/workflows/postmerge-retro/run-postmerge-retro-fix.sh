@@ -44,6 +44,8 @@ trap 'rm -rf "$WORKDIR"' EXIT
 
 # shellcheck source=../lib/fix-phase-log.sh
 source "$LIB_DIR/fix-phase-log.sh"
+# shellcheck source=../lib/run-batch-fix.sh
+source "$LIB_DIR/run-batch-fix.sh"
 fix_phase_log_init
 
 git config user.email "${GIT_AUTHOR_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
@@ -108,24 +110,6 @@ PROVIDER="$(pick_advisory_provider retro-fix)"
   exit 1
 }
 
-strip_workflow_changes() {
-  local paths=()
-  while IFS= read -r -d '' f; do
-    paths+=("$f")
-  done < <(git status --porcelain .github/workflows/ 2>/dev/null | awk '{print $2}' | tr '\n' '\0')
-  if ((${#paths[@]} == 0)); then
-    return 0
-  fi
-  echo "::notice::Stripping ${#paths[@]} .github/workflows/ change(s) from fix commit (token lacks workflows:write). Document in fix-verify.json verify.notes if needed." >&2
-  for f in "${paths[@]}"; do
-    if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
-      git checkout HEAD -- "$f"
-    else
-      rm -f "$f"
-    fi
-  done
-}
-
 llm_raw="$WORKDIR/llm-fix-output.txt"
 invoke_advisory_llm "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
 fix_phase_log "llm-fix"
@@ -141,78 +125,21 @@ esac
 
 if [[ ! -f "$VERIFY_JSON" ]]; then
   echo "::warning::fix-verify.json missing after fix pass; creating minimal stub" >&2
-  python3 - "$VERIFY_JSON" "$RUN_DATE" "$DAILY_JSON" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-out, run_date, daily_path = sys.argv[1:4]
-daily = json.loads(Path(daily_path).read_text(encoding="utf-8"))
-rows = []
-for item in daily.get("findings") or []:
-    if item.get("category") != "follow_up_issues":
-        continue
-    rows.append(
-        {
-            "dedupe_key": item.get("dedupe_key", ""),
-            "repro_steps": item.get("repro_steps") or [],
-            "verify": {
-                "pre": "pending",
-                "post": "pending",
-                "sandbox": "n/a",
-                "notes": "stub — fix agent did not write fix-verify.json",
-            },
-        }
-    )
-payload = {
-    "run_date": run_date,
-    "run_kind": "retro",
-    "findings": rows,
-    "sandbox": {
-        "needs_sync": False,
-        "issue_url": "n/a",
-        "pr_url": "n/a",
-        "skip_reason": "fix-verify stub",
-        "workflow_runs": [],
-    },
-    "test_sh": "unknown",
-}
-Path(out).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-PY
+  batch_fix_write_verify_stub "$VERIFY_JSON" retro run_date "$RUN_DATE" "$DAILY_JSON"
 fi
 
-strip_workflow_changes
+batch_fix_strip_workflow_changes
 
 # shellcheck source=../lib/finalize-fix-pr.sh
 source "$LIB_DIR/finalize-fix-pr.sh"
 maybe_sandbox_sync "$REPO_ROOT" "$SANDBOX_BRANCH" "[sandbox] Post-merge retro fix ${RUN_DATE}" "$VERIFY_JSON" "$LIB_DIR"
 fix_phase_log "sandbox-sync"
 
-has_diff=0
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  commit_msg="fix: post-merge retro daily fixes for ${RUN_DATE}"
-  if [[ -f "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt" ]]; then
-    commit_msg="$(head -1 "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt")"
-  fi
-  git add -A
-  git reset HEAD -- .github/workflows/ 2>/dev/null || true
-  git checkout HEAD -- .github/workflows/ 2>/dev/null || true
-  git commit -m "$commit_msg"
-  has_diff=1
-else
-  echo "::warning::Fix pass produced no git diff"
-fi
+batch_fix_commit_changes \
+  "fix: post-merge retro daily fixes for ${RUN_DATE}" \
+  "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt"
+has_diff="$BATCH_FIX_HAS_DIFF"
 fix_phase_log "commit"
-
-if [[ "$has_diff" -eq 1 ]]; then
-  git push -u origin "$BRANCH"
-elif [[ -z "$existing_pr" ]]; then
-  skip_notice="(skipped — no code changes; see fix-verify.json if present)"
-  bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_DATE" "$skip_notice" "$DAILY_JSON"
-  echo "Fix pass complete for ${RUN_DATE} (no changes)"
-  fix_phase_log "publish"
-  exit 0
-fi
 
 render_fix_pr_body() {
   local body_file="$WORKDIR/fix-pr-body.md"
@@ -245,42 +172,10 @@ render_fix_pr_body() {
   cat "$verify_sections_file" >>"$body_file"
 }
 
-link_pr_to_umbrella() {
-  local pr_ref="$1"
-  local pr_num umbrella_num
-  pr_num="${pr_ref##*/}"
-  [[ "$pr_num" =~ ^[0-9]+$ ]] || return 0
-  umbrella_num="$(bash "$SCRIPT_DIR/resolve-umbrella-issue.sh" "$RUN_DATE" "$DAILY_JSON" 2>/dev/null || true)"
-  [[ -n "$umbrella_num" ]] || return 0
-  bash "$LIB_DIR/link-fix-pr-to-issue.sh" "$REPO" "$pr_num" "$umbrella_num"
-}
-
-if [[ -n "$existing_pr" ]]; then
-  echo "Open draft PR already exists: #${existing_pr}"
-  PR_URL="$(gh pr view "$existing_pr" -R "$REPO" --json url --jq .url)"
-  if [[ "$has_diff" -eq 0 ]]; then
-    echo "::notice::No code changes; leaving draft PR #${existing_pr} body unchanged"
-    link_pr_to_umbrella "$PR_URL"
-    bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_DATE" "$PR_URL" "$DAILY_JSON"
-    fix_phase_log "publish"
-    echo "Fix pass complete for ${RUN_DATE} (no changes)"
-    exit 0
-  fi
-  render_fix_pr_body
-  gh pr edit "$existing_pr" -R "$REPO" --body-file "$WORKDIR/fix-pr-body.md"
-else
-  render_fix_pr_body
-  PR_URL="$(gh pr create -R "$REPO" \
-    --base main \
-    --head "$BRANCH" \
-    --draft \
-    --title "Post-merge retro fix: ${RUN_DATE}" \
-    --body-file "$WORKDIR/fix-pr-body.md")"
-  echo "Created draft PR: ${PR_URL}"
-fi
-
-link_pr_to_umbrella "$PR_URL"
-bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_DATE" "$PR_URL" "$DAILY_JSON"
-fix_phase_log "publish"
+batch_fix_publish \
+  "$REPO" "$BRANCH" "$existing_pr" "$has_diff" "$RUN_DATE" "$DAILY_JSON" \
+  "Post-merge retro fix: ${RUN_DATE}" "$WORKDIR/fix-pr-body.md" render_fix_pr_body \
+  "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$SCRIPT_DIR/resolve-umbrella-issue.sh" \
+  "$LIB_DIR/link-fix-pr-to-issue.sh"
 
 echo "Fix pass complete for ${RUN_DATE}"

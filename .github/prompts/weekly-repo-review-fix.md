@@ -20,6 +20,7 @@ You are implementing findings from the weekly full-repo review batch on branch `
 - Prefer **minimal, focused diffs**.
 - Run `./test.sh` when you change scripts/workflows/checks; record in `fix-verify.json` (`test_sh`).
 - **Do not** edit `.github/workflows/**` on upstream — prove workflow fixes on sandbox when needed.
+- Findings marked `superseded_on_main: true` describe missing paths that now exist on `main`. Do not implement them again; record `verify.pre: cant_reproduce` and cite `superseded_reason`.
 - For **Gemini JSON mode**: output **valid JSON only** (include `fix_verify`).
 
 ## End-of-job sandbox (when `FIX_JOB_SANDBOX_VERIFY=true`)

@@ -31,6 +31,7 @@ Shared properties:
 
 - **Providers:** `POSTMERGE_RETRO_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (Cursor SDK if key present, else Gemini API).
 - **Scripts:** `scripts/workflows/advisory-review/` (LLM runners), `scripts/workflows/pr-feedback/` (finalize collect), `scripts/workflows/postmerge-retro/` (retro + daily batch), `scripts/workflows/weekly-review/` (weekly full-repo scan + fix).
+- **Lifecycle libraries:** daily and weekly adapters share provider dispatch, umbrella issue transport/reference handling, priority derivation, superseded-path detection, and batch-fix publication under `scripts/workflows/lib/`. Cadence-specific prompts, templates, markers, and metadata hooks remain explicit.
 - **Non-goals:** No auto-merge of fix PRs; no automatic `claude-fix`; no ADR/context-pack file edits in retro jobs; no formal PR review submission from advisory/finalize.
 
 ### Post-merge retro v2 (supersedes v1 trigger/output)
@@ -57,8 +58,8 @@ Shared properties:
 **Batch behavior:**
 
 1. Collect run metadata (HEAD SHA, run week) + inject **`full`** context profile via `prompt_helpers.py select-context` (context pack only — no path-trigger expansion).
-2. Single LLM pass with **repository read access** (Cursor `local.cwd`; Antigravity when `auto` lacks Cursor) → `weekly-review.json` (retro-compatible `findings[]` shape).
-3. Create or **append** one umbrella issue per ISO week (`<!-- weekly-review:YYYY-Www -->`). Each finding renders as a **detailed block** (full `body`, `repo-*` dedupe keys, clickable evidence paths at scan HEAD SHA) via `scripts/workflows/weekly-review/render-umbrella-findings.py` — not a terse summary table.
+2. Single LLM pass with **repository read access** (Cursor `local.cwd`; Antigravity when `auto` lacks Cursor) → `weekly-review.json`. Findings use the same classifier inputs as daily retro; automation derives `priority_band` and rejects deprecated `severity`.
+3. Create or **append** one umbrella issue per ISO week (`<!-- weekly-review:YYYY-Www -->`). Each finding appears in a compact triage summary table and a detailed block containing its full body, `repo-*` key, reproduction steps, and evidence links pinned to scan HEAD.
 4. If findings &gt; 0: second LLM pass opens/updates a **draft** fix PR `weekly/fix-YYYY-Www`; native GitHub issue link via `Fixes #N` in PR body (`scripts/workflows/lib/link-fix-pr-to-issue.sh`).
 
 **Idempotency:** Re-runs the same ISO week **append** new finding blocks by dedupe marker (`<!-- weekly-review:finding:repo-… -->`); they do not skip because the weekly marker exists.
@@ -66,6 +67,8 @@ Shared properties:
 **Smoke-test inputs:** `workflow_dispatch` may pass explicit `run_week` / `run_date` (e.g. sandbox `2099-Www` + far-future dates) to isolate idempotency keys from production ISO weeks. Production cron computes `RUN_WEEK` from UTC `RUN_DATE` via `resolve-run-week.sh`.
 
 **Empty windows:** Zero findings → skip umbrella and fix PR (same as daily retro).
+
+**Deferred routing parity:** Weekly review does not copy the per-PR evidence coverage or adaptive routing model. Add weekly coverage warnings/routing only when explicit weekly context caps exist or observed truncation provides a concrete trigger.
 
 ## Options Considered
 

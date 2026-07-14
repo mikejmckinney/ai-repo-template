@@ -123,8 +123,8 @@ jobs:
       # =====================================================
       # PLACEHOLDER: Remove after customizing
       # =====================================================
-      - name: Install bats (issue #255 Phase 4b)
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel
+      - name: Install test dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel ripgrep
 
       - name: Run bats suite (issue #255 Phase 4b)
         id: bats

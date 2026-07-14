@@ -22,6 +22,8 @@ REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner
 python3 "$SCRIPT_DIR/validate-weekly-review-batch.py" "$WEEKLY_JSON"
 RUN_WEEK="$(jq -r .run_week "$WEEKLY_JSON")"
 RUN_DATE="$(jq -r .run_date "$WEEKLY_JSON")"
+python3 "$RETRO_DIR/mark-superseded-findings.py" \
+  "$WEEKLY_JSON" --repo-root "$REPO_ROOT" --mode weekly
 VERIFY_JSON="$REPO_ROOT/weekly/fix-verify-${RUN_WEEK}.json"
 SANDBOX_BRANCH="test/fix-weekly-${RUN_WEEK}"
 FINDINGS_COUNT="$(python3 "$SCRIPT_DIR/count-weekly-findings.py" "$WEEKLY_JSON")"
@@ -31,18 +33,23 @@ if [[ "$FINDINGS_COUNT" -eq 0 ]]; then
 fi
 
 BRANCH="weekly/fix-${RUN_WEEK}"
+
+if [[ -z "${WEEKLY_REVIEW_FIX_REEXEC:-}" ]]; then
+  export WEEKLY_REVIEW_FIX_REEXEC=1
+  FIX_REEXEC_DIR="${REPO_ROOT}/.artifacts/weekly-review/fix-reexec-${RUN_WEEK}"
+  mkdir -p "$FIX_REEXEC_DIR"
+  cp "$SCRIPT_DIR/run-weekly-review-fix.sh" "$FIX_REEXEC_DIR/fix-runner.sh"
+  exec bash "$FIX_REEXEC_DIR/fix-runner.sh" "$@"
+fi
+
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 # shellcheck source=../lib/fix-phase-log.sh
 source "$LIB_DIR/fix-phase-log.sh"
+# shellcheck source=../lib/run-batch-fix.sh
+source "$LIB_DIR/run-batch-fix.sh"
 fix_phase_log_init
-
-if [[ -z "${WEEKLY_REVIEW_FIX_REEXEC:-}" ]]; then
-  export WEEKLY_REVIEW_FIX_REEXEC=1
-  cp "$SCRIPT_DIR/run-weekly-review-fix.sh" "$WORKDIR/fix-runner.sh"
-  exec bash "$WORKDIR/fix-runner.sh" "$@"
-fi
 
 git config user.email "${GIT_AUTHOR_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
 git config user.name "${GIT_AUTHOR_NAME:-github-actions[bot]}"
@@ -68,6 +75,17 @@ prompt_file="$WORKDIR/prompt.md"
   echo "- Findings count: ${FINDINGS_COUNT}"
   echo "- FIX_JOB_SANDBOX_VERIFY: ${FIX_JOB_SANDBOX_VERIFY:-false}"
   echo ""
+  echo "### Superseded findings (automation pre-check on main HEAD)"
+  echo ""
+  superseded="$(jq -c '.superseded_findings // []' "$WEEKLY_JSON")"
+  if [[ "$superseded" == "[]" ]]; then
+    echo "_None detected._"
+  else
+    echo '```json'
+    echo "$superseded"
+    echo '```'
+  fi
+  echo ""
   echo "### weekly-review.json"
   echo ""
   echo '```json'
@@ -87,24 +105,6 @@ PROVIDER="$(pick_advisory_provider weekly-fix)"
   exit 1
 }
 
-strip_workflow_changes() {
-  local paths=()
-  while IFS= read -r -d '' f; do
-    paths+=("$f")
-  done < <(git status --porcelain .github/workflows/ 2>/dev/null | awk '{print $2}' | tr '\n' '\0')
-  if ((${#paths[@]} == 0)); then
-    return 0
-  fi
-  echo "::notice::Stripping ${#paths[@]} .github/workflows/ change(s) from fix commit." >&2
-  for f in "${paths[@]}"; do
-    if git ls-files --error-unmatch "$f" >/dev/null 2>&1; then
-      git checkout HEAD -- "$f"
-    else
-      rm -f "$f"
-    fi
-  done
-}
-
 llm_raw="$WORKDIR/llm-fix-output.txt"
 invoke_advisory_llm "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
 fix_phase_log "llm-fix"
@@ -120,75 +120,19 @@ esac
 
 if [[ ! -f "$VERIFY_JSON" ]]; then
   echo "::warning::fix-verify.json missing after fix pass; creating minimal stub" >&2
-  python3 - "$VERIFY_JSON" "$RUN_WEEK" "$WEEKLY_JSON" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-out, run_week, weekly_path = sys.argv[1:4]
-weekly = json.loads(Path(weekly_path).read_text(encoding="utf-8"))
-rows = []
-for item in weekly.get("findings") or []:
-    if item.get("category") != "follow_up_issues":
-        continue
-    rows.append(
-        {
-            "dedupe_key": item.get("dedupe_key", ""),
-            "repro_steps": item.get("repro_steps") or [],
-            "verify": {
-                "pre": "pending",
-                "post": "pending",
-                "sandbox": "n/a",
-                "notes": "stub — fix agent did not write fix-verify.json",
-            },
-        }
-    )
-payload = {
-    "run_week": run_week,
-    "run_kind": "weekly",
-    "findings": rows,
-    "sandbox": {
-        "needs_sync": False,
-        "issue_url": "n/a",
-        "pr_url": "n/a",
-        "skip_reason": "fix-verify stub",
-        "workflow_runs": [],
-    },
-    "test_sh": "unknown",
-}
-Path(out).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-PY
+  batch_fix_write_verify_stub "$VERIFY_JSON" weekly run_week "$RUN_WEEK" "$WEEKLY_JSON"
 fi
 
-strip_workflow_changes
+batch_fix_strip_workflow_changes
 
 # shellcheck source=../lib/finalize-fix-pr.sh
 source "$LIB_DIR/finalize-fix-pr.sh"
 maybe_sandbox_sync "$REPO_ROOT" "$SANDBOX_BRANCH" "[sandbox] Weekly review fix ${RUN_WEEK}" "$VERIFY_JSON" "$LIB_DIR"
 fix_phase_log "sandbox-sync"
 
-has_diff=0
-if ! git diff --quiet || ! git diff --cached --quiet; then
-  commit_msg="fix: weekly repo review fixes for ${RUN_WEEK}"
-  git add -A
-  git reset HEAD -- .github/workflows/ 2>/dev/null || true
-  git checkout HEAD -- .github/workflows/ 2>/dev/null || true
-  git commit -m "$commit_msg"
-  has_diff=1
-else
-  echo "::warning::Fix pass produced no git diff"
-fi
+batch_fix_commit_changes "fix: weekly repo review fixes for ${RUN_WEEK}"
+has_diff="$BATCH_FIX_HAS_DIFF"
 fix_phase_log "commit"
-
-if [[ "$has_diff" -eq 1 ]]; then
-  git push -u origin "$BRANCH"
-elif [[ -z "$existing_pr" ]]; then
-  skip_notice="(skipped — no code changes; see fix-verify.json if present)"
-  bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_WEEK" "$skip_notice" "$WEEKLY_JSON"
-  echo "Fix pass complete for ${RUN_WEEK} (no changes)"
-  fix_phase_log "publish"
-  exit 0
-fi
 
 render_fix_pr_body() {
   local body_file="$WORKDIR/fix-pr-body.md"
@@ -222,34 +166,10 @@ render_fix_pr_body() {
   cat "$verify_sections_file" >>"$body_file"
 }
 
-link_pr_to_umbrella() {
-  local pr_ref="$1"
-  local pr_num umbrella_num
-  pr_num="${pr_ref##*/}"
-  [[ "$pr_num" =~ ^[0-9]+$ ]] || return 0
-  umbrella_num="$(bash "$SCRIPT_DIR/resolve-umbrella-issue.sh" "$RUN_WEEK" "$WEEKLY_JSON" 2>/dev/null || true)"
-  [[ -n "$umbrella_num" ]] || return 0
-  bash "$LIB_DIR/link-fix-pr-to-issue.sh" "$REPO" "$pr_num" "$umbrella_num"
-}
-
-if [[ -n "$existing_pr" ]]; then
-  echo "Open draft PR already exists: #${existing_pr}"
-  PR_URL="$(gh pr view "$existing_pr" -R "$REPO" --json url --jq .url)"
-  render_fix_pr_body
-  gh pr edit "$existing_pr" -R "$REPO" --body-file "$WORKDIR/fix-pr-body.md"
-else
-  render_fix_pr_body
-  PR_URL="$(gh pr create -R "$REPO" \
-    --base main \
-    --head "$BRANCH" \
-    --draft \
-    --title "Weekly repo review fix: ${RUN_WEEK}" \
-    --body-file "$WORKDIR/fix-pr-body.md")"
-  echo "Created draft PR: ${PR_URL}"
-fi
-
-link_pr_to_umbrella "$PR_URL"
-bash "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$RUN_WEEK" "$PR_URL" "$WEEKLY_JSON"
-fix_phase_log "publish"
+batch_fix_publish \
+  "$REPO" "$BRANCH" "$existing_pr" "$has_diff" "$RUN_WEEK" "$WEEKLY_JSON" \
+  "Weekly repo review fix: ${RUN_WEEK}" "$WORKDIR/fix-pr-body.md" render_fix_pr_body \
+  "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$SCRIPT_DIR/resolve-umbrella-issue.sh" \
+  "$LIB_DIR/link-fix-pr-to-issue.sh"
 
 echo "Fix pass complete for ${RUN_WEEK}"

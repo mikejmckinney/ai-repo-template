@@ -43,10 +43,6 @@ pick_advisory_provider() {
       ;;
     weekly-scan)
       want="${WEEKLY_REVIEW_PROVIDER:-${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}}"
-      if [[ "$want" == "antigravity" ]]; then
-        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; weekly scan uses auto (cursor, else gemini)." >&2
-        want=auto
-      fi
       ;;
     weekly-fix)
       want="${WEEKLY_REVIEW_PROVIDER:-${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}}"
@@ -66,8 +62,8 @@ pick_advisory_provider() {
       echo cursor
       ;;
     antigravity)
-      if [[ "$mode" != "advisory" ]]; then
-        echo "::error::antigravity is only valid for advisory mode" >&2
+      if [[ "$mode" != "advisory" && "$mode" != "weekly-scan" ]]; then
+        echo "::error::antigravity is only valid for advisory and weekly-scan modes" >&2
         return 1
       fi
       echo antigravity
@@ -78,7 +74,8 @@ pick_advisory_provider() {
     auto)
       if [[ "$has_cursor" -eq 1 ]]; then
         echo cursor
-      elif [[ "$mode" == "advisory" && "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
+      elif [[ ("$mode" == "advisory" || "$mode" == "weekly-scan") &&
+        "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
         echo antigravity
       elif [[ "$has_gemini" -eq 1 ]]; then
         echo gemini

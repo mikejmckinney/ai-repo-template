@@ -89,36 +89,12 @@ if [[ "${ADVISORY_ANTIGRAVITY_ENABLED:-}" == "true" ]]; then
   antigravity_enabled=true
 fi
 
-has_cursor=0
-has_gemini=0
-[[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
-[[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
-
-pick_provider() {
-  local want="${WEEKLY_REVIEW_PROVIDER:-${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}}"
-  case "$want" in
-    cursor) echo cursor ;;
-    antigravity) echo antigravity ;;
-    gemini) echo gemini ;;
-    auto)
-      if [[ "$has_cursor" -eq 1 ]]; then
-        echo cursor
-      elif [[ "$antigravity_enabled" == "true" && "$has_gemini" -eq 1 ]]; then
-        echo antigravity
-      elif [[ "$has_gemini" -eq 1 ]]; then
-        echo gemini
-      else
-        echo ""
-      fi
-      ;;
-    *)
-      echo "::error::Unknown WEEKLY_REVIEW_PROVIDER=${want} (use auto, cursor, antigravity, or gemini)"
-      exit 1
-      ;;
-  esac
-}
-
-PROVIDER="$(pick_provider)"
+# shellcheck source=../lib/pick-advisory-provider.sh
+source "$LIB_DIR/pick-advisory-provider.sh"
+# shellcheck source=../lib/invoke-advisory-llm.sh
+source "$LIB_DIR/invoke-advisory-llm.sh"
+init_advisory_provider_credentials
+PROVIDER="$(pick_advisory_provider weekly-scan)"
 [[ -n "$PROVIDER" ]] || {
   echo "::error::No weekly review provider configured. Set CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
   exit 1
@@ -126,15 +102,13 @@ PROVIDER="$(pick_provider)"
 
 llm_raw="$WORKDIR/llm-output.txt"
 case "$PROVIDER" in
-  cursor)
-    # shellcheck source=../lib/cursor-sdk-version.sh
-    source "$LIB_DIR/cursor-sdk-version.sh"
-    npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
-    CURSOR_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}}" \
-      node "$ADVISORY_DIR/run-advisory-cursor.mjs" "$prompt_file" "$llm_raw"
+  cursor | gemini)
+    invoke_advisory_llm \
+      "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" \
+      "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
     ;;
   antigravity)
-    [[ "$has_gemini" -eq 1 ]] || {
+    [[ -n "${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}" ]] || {
       echo "::error::WEEKLY_REVIEW_PROVIDER=antigravity but GEMINI_API_KEY/GOOGLE_API_KEY is unset"
       exit 1
     }
@@ -146,10 +120,6 @@ case "$PROVIDER" in
       echo "::error::Antigravity weekly review failed"
       exit 1
     fi
-    ;;
-  gemini)
-    GEMINI_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}}" \
-      python3 "$ADVISORY_DIR/run-advisory-gemini.py" "$prompt_file" "$llm_raw"
     ;;
 esac
 

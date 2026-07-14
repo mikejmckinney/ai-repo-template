@@ -13,6 +13,8 @@ WEEKLY_JSON="${1:-}"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/umbrella-lifecycle.sh
+source "$REPO_ROOT/scripts/workflows/lib/umbrella-lifecycle.sh"
 python3 "$REPO_ROOT/scripts/workflows/weekly-review/validate-weekly-review-batch.py" "$WEEKLY_JSON"
 
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
@@ -32,6 +34,8 @@ WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
 python3 "$SCRIPT_DIR/render-umbrella-findings.py" "$WEEKLY_JSON" "$REPO" "$HEAD_SHA" "$WORKDIR/findings.md"
+python3 "$SCRIPT_DIR/render-umbrella-findings.py" \
+  "$WEEKLY_JSON" "$REPO" "$HEAD_SHA" "$WORKDIR/triage-rows.md" --summary
 
 find_issue() {
   bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_WEEK" 2>/dev/null || true
@@ -39,14 +43,13 @@ find_issue() {
 
 append_to_issue() {
   local issue_num="$1"
-  local body merged
+  local body index key marker block_file row_file
   body="$(gh issue view "$issue_num" -R "$REPO" --json body --jq .body)"
-  grep -Fq "$MARKER" <<<"$body" || {
-    echo "::error::Issue #${issue_num} missing weekly marker"
-    exit 1
-  }
+  umbrella_require_marker "$body" "$MARKER" "$issue_num"
 
-  new_blocks=""
+  : >"$WORKDIR/new-blocks.md"
+  : >"$WORKDIR/new-rows.md"
+  index=0
   while IFS= read -r key; do
     [[ -z "$key" ]] && continue
     marker="<!-- weekly-review:finding:${key} -->"
@@ -54,41 +57,37 @@ append_to_issue() {
       echo "Skip append (exists): ${key}" >&2
       continue
     fi
-    block_file="$WORKDIR/block-${key}.md"
+    block_file="$WORKDIR/block-${index}.md"
+    row_file="$WORKDIR/row-${index}.md"
     python3 "$SCRIPT_DIR/render-umbrella-findings.py" "$WEEKLY_JSON" "$REPO" "$HEAD_SHA" "$block_file" "$key"
+    python3 "$SCRIPT_DIR/render-umbrella-findings.py" \
+      "$WEEKLY_JSON" "$REPO" "$HEAD_SHA" "$row_file" "$key" --summary
     [[ -s "$block_file" ]] || continue
-    new_blocks+="$(cat "$block_file")"$'\n'
+    cat "$block_file" >>"$WORKDIR/new-blocks.md"
+    printf '\n' >>"$WORKDIR/new-blocks.md"
+    cat "$row_file" >>"$WORKDIR/new-rows.md"
+    index=$((index + 1))
   done < <(jq -r '.findings[].dedupe_key' "$WEEKLY_JSON")
 
-  if [[ -z "${new_blocks//[$'\t\r\n ']/}" ]]; then
+  if [[ ! -s "$WORKDIR/new-blocks.md" ]]; then
     echo "No new findings to append to issue #${issue_num}" >&2
     return 0
   fi
 
-  printf '%s' "$new_blocks" >"$WORKDIR/new-blocks.md"
   printf '%s' "$body" >"$WORKDIR/existing-body.md"
-  merged="$(
-    python3 - "$WORKDIR/existing-body.md" "$WORKDIR/new-blocks.md" <<'PY'
-import sys
-
-body = open(sys.argv[1], encoding="utf-8").read()
-new_blocks = open(sys.argv[2], encoding="utf-8").read().rstrip()
-if "## Meta" in body:
-    head, tail = body.split("## Meta", 1)
-    print(head.rstrip() + "\n\n" + new_blocks + "\n\n## Meta" + tail)
-else:
-    print(body.rstrip() + "\n\n" + new_blocks + "\n")
-PY
-  )"
-  gh issue edit "$issue_num" -R "$REPO" --body "$merged"
+  python3 "$SCRIPT_DIR/merge-umbrella-content.py" \
+    "$WORKDIR/existing-body.md" "$WORKDIR/new-rows.md" \
+    "$WORKDIR/new-blocks.md" "$WORKDIR/merged-body.md"
+  umbrella_edit_issue_body "$REPO" "$issue_num" "$WORKDIR/merged-body.md"
   echo "Appended findings to umbrella issue #${issue_num}" >&2
 }
 
 create_new_issue() {
-  local title body_file findings_md issue_url issue_num
+  local title body_file findings_md triage_rows issue_num
   title="Repository health review: ${RUN_WEEK} (main @ ${HEAD_SHA:0:7})"
   body_file="$WORKDIR/umbrella.md"
   findings_md="$(cat "$WORKDIR/findings.md")"
+  triage_rows="$(cat "$WORKDIR/triage-rows.md")"
   cp "$REPO_ROOT/.github/templates/weekly-review-umbrella.md" "$body_file"
   sed -i \
     -e "s/{{RUN_WEEK}}/${RUN_WEEK}/g" \
@@ -97,25 +96,24 @@ create_new_issue() {
     -e "s|{{REPO}}|${REPO}|g" \
     -e "s|{{FIX_PR_LINK}}|${FIX_PR_LINK}|g" \
     "$body_file"
-  python3 - "$body_file" "$findings_md" <<'PY'
+  python3 - "$body_file" "$triage_rows" "$findings_md" <<'PY'
 from pathlib import Path
 import sys
 
 p = Path(sys.argv[1])
-text = p.read_text().replace(
-    "{{FINDING_BLOCKS}}",
-    sys.argv[2].rstrip() + ("\n" if sys.argv[2].strip() else ""),
-)
+text = p.read_text()
+for placeholder, value in (
+    ("{{TRIAGE_ROWS}}", sys.argv[2]),
+    ("{{FINDING_BLOCKS}}", sys.argv[3]),
+):
+    text = text.replace(
+        placeholder,
+        value.rstrip() + ("\n" if value.strip() else ""),
+    )
 p.write_text(text)
 PY
-  issue_url="$(gh issue create -R "$REPO" --title "$title" --body-file "$body_file")"
-  issue_num="${issue_url##*/}"
+  issue_num="$(umbrella_create_issue "$REPO" "$title" "$body_file" agent-suggested)"
   printf '%s' "$issue_num" >"$WORKDIR/issue-num.txt"
-  if gh issue edit "$issue_num" -R "$REPO" --add-label agent-suggested 2>/dev/null; then
-    echo "Created umbrella issue #${issue_num} (agent-suggested)" >&2
-  else
-    echo "::notice::Umbrella issue #${issue_num} created without agent-suggested label (missing label or permissions)" >&2
-  fi
 }
 
 normalize_issue_num() {

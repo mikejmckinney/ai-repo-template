@@ -11,18 +11,10 @@ RUN_WEEK="${1:-}"
 
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 MARKER="<!-- weekly-review:${RUN_WEEK} -->"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+# shellcheck source=../lib/umbrella-lifecycle.sh
+source "$REPO_ROOT/scripts/workflows/lib/umbrella-lifecycle.sh"
 
-while read -r candidate; do
-  [[ -z "$candidate" ]] && continue
-  if gh api "repos/${REPO}/issues/${candidate}" --jq -e '.pull_request != null' >/dev/null 2>&1; then
-    continue
-  fi
-  body="$(gh issue view "$candidate" -R "$REPO" --json body --jq .body 2>/dev/null || true)"
-  [[ -n "$body" ]] || continue
-  if grep -Fq "$MARKER" <<<"$body" && grep -Eq "^[[:space:]]*<!-- weekly-review:" <<<"$body"; then
-    echo "$candidate"
-    exit 0
-  fi
-done < <(gh search issues "weekly-review:${RUN_WEEK}" --repo "$REPO" --json number --limit 10 --jq '.[].number' 2>/dev/null || true)
-
-exit 1
+umbrella_find_issue \
+  "$REPO" "weekly-review:${RUN_WEEK}" "$MARKER" \
+  '^[[:space:]]*<!-- weekly-review:'

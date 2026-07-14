@@ -39,7 +39,10 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
     {
       "title": "string",
       "labels": ["agent-suggested"],
-      "severity": "low|medium|high",
+      "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
+      "trigger_likelihood": "common|edge|fringe",
+      "fix_cost": "trivial|moderate|large",
+      "regression_guard": false,
       "body": "markdown body",
       "evidence": ["string"],
       "repro_steps": ["step 1 to reproduce", "step 2 observe failure"],
@@ -51,6 +54,10 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
       "adr": "docs/decisions/adr-019-per-role-model-tiering.md",
       "title": "string",
       "body": "markdown body",
+      "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
+      "trigger_likelihood": "common|edge|fringe",
+      "fix_cost": "trivial|moderate|large",
+      "regression_guard": false,
       "dedupe_key": "repo-invariant-example"
     }
   ],
@@ -58,6 +65,10 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
     {
       "pack": "string",
       "reason": "string",
+      "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
+      "trigger_likelihood": "common|edge|fringe",
+      "fix_cost": "trivial|moderate|large",
+      "regression_guard": false,
       "add": ["path"],
       "remove": ["path"],
       "evidence": ["string"],
@@ -66,6 +77,8 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
   ]
 }
 ```
+
+`priority_band` is derived by automation. Do not emit it. `severity` is deprecated.
 
 ## Dedupe keys
 
