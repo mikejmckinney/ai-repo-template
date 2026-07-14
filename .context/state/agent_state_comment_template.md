@@ -35,10 +35,10 @@ command substitution stripped trailing newline — wrote render output to file i
 verify Summary block on sandbox #102
 
 ## References (Optional)
-issues: #461
-prs: #463
-files: create-umbrella-issue.sh
-runs: 27877287063
+- Issue: https://github.com/OWNER/REPO/issues/NNN
+- PR: https://github.com/OWNER/REPO/pull/MMM
+- File: https://github.com/OWNER/REPO/blob/COMMIT/path/to/file
+- Run: https://github.com/OWNER/REPO/actions/runs/RUN_ID
 
 ```
 
@@ -52,6 +52,7 @@ runs: 27877287063
   mid-flight turns (a fabricated outcome is worse than an absent one).
 - **`lessons learned`** = concise recovery-relevant surprises; durable retrospective detail belongs in session archives.
 - **`References`** = bounded pointers to the issue, PR, files, commits, or runs needed to continue.
+  Use full GitHub URLs so references remain clickable across repositories; do not use bare IDs.
 
 Do not add long decision history, full file lists, verification matrices,
 here. Use plan comments, PR bodies, ADRs, CI for those.

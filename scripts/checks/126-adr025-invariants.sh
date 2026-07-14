@@ -71,6 +71,14 @@ else
   fail "agent-state:v1 continuation contract is not synchronized with ADR-025"
 fi
 
+if grep -qF 'https://github.com/OWNER/REPO/issues/NNN' .context/state/agent_state_comment_template.md \
+  && grep -qF 'https://github.com/OWNER/REPO/pull/MMM' .context/state/agent_state_comment_template.md \
+  && grep -qF 'https://github.com/OWNER/REPO/actions/runs/RUN_ID' .context/state/agent_state_comment_template.md; then
+  pass "agent-state:v1 reference examples use clickable GitHub URLs"
+else
+  fail "agent-state:v1 reference examples must use clickable GitHub URLs"
+fi
+
 if grep -q '#263.*superseded' "$ADR025_PATH" 2>/dev/null \
   && grep -q '#299' "$ADR025_PATH" 2>/dev/null; then
   pass "ADR-025 marks #263 superseded and defers archive retention to #299"

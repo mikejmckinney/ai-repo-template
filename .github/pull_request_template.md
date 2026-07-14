@@ -19,7 +19,8 @@ N/A — empty headings are noise.
 
 **Closes / Refs:** #
 
-<!-- Examples: "Closes #42", "Refs #100", "Implements ADR-007".
+<!-- Examples: "Closes #42", "Refs #100", or
+     "Implements [ADR-007](https://github.com/OWNER/REPO/blob/COMMIT/docs/decisions/adr-007-<slug>.md)".
      For follow-up PRs, link the parent PR by its number: "Refs #123"
      (PRs and issues share the same number space on GitHub). -->
 
@@ -161,4 +162,5 @@ justification.
 
 <!-- Cite repo files (path:line where it matters) for any factual claim
      about the codebase made above. Per AGENTS.md §"Critical thinking",
-     uncited claims are treated as assumptions. Skip for trivial PRs. -->
+     uncited claims are treated as assumptions. Render citations as Markdown
+     links or full GitHub URLs rather than plain text. Skip for trivial PRs. -->
