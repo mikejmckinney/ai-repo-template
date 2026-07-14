@@ -4,7 +4,7 @@
 # =============================================================================
 # This script runs automatically when a GitHub Codespace starts (via the
 # Codespaces "Dotfiles" feature). It installs VS Code extensions and copies
-# the multi-agent kit into the workspace.
+# the agent workflow kit into the workspace.
 #
 # About the $DOTFILES variable (legacy naming, intentional):
 #   The GitHub Codespaces "Dotfiles" feature sets $DOTFILES to the path of the
@@ -158,15 +158,9 @@ if [[ -f "$AGENTS_SRC" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Multi-agent kit: role files, coordination board
+# Agent workflow kit
 # ---------------------------------------------------------------------------
-# AGENTS.md tells agents to read .agents/<role>.md (canonical) and the
-# vendor overlays under .github/agents/*.agent.md / .claude/agents/*.md /
-# .cursor/agents/*.md / .codex/agents/*.toml,
-# and the coordination board before editing. Without these files in the target
-# workspace the mandatory onboarding flow is non-actionable, so we copy the
-# full kit (skipping anything that already exists so we never clobber a repo
-# that was created from this template).
+# Copy the monolithic workflow, review, context, and verification surfaces.
 #
 # Each copy is best-effort: a missing source is a warning, not a fatal error,
 # so Codespaces bootstrap does not fail for users of older template versions.
@@ -217,65 +211,13 @@ copy_template_file() {
   MULTIAGENT_COPIED=$((MULTIAGENT_COPIED + 1))
 }
 
-log_info "Installing multi-agent kit (role files + coordination)..."
+log_info "Installing agent workflow kit..."
 
 MULTIAGENT_FILES=(
   "AGENT.md"
   ".github/PLAN_TEMPLATE.md"
   ".github/copilot-instructions.md"
   ".github/pull_request_template.md"
-  ".agents/README.md"
-  ".agents/_TEMPLATE.md"
-  ".agents/architect.md"
-  ".agents/judge.md"
-  ".agents/critic.md"
-  ".agents/pm.md"
-  ".agents/frontend.md"
-  ".agents/backend.md"
-  ".agents/qa.md"
-  ".agents/devops.md"
-  ".agents/docs.md"
-  ".agents/analyst.md"
-  ".github/agents/architect.agent.md"
-  ".github/agents/judge.agent.md"
-  ".github/agents/critic.agent.md"
-  ".github/agents/pm.agent.md"
-  ".github/agents/frontend.agent.md"
-  ".github/agents/backend.agent.md"
-  ".github/agents/qa.agent.md"
-  ".github/agents/devops.agent.md"
-  ".github/agents/docs.agent.md"
-  ".github/agents/analyst.agent.md"
-  ".claude/agents/architect.md"
-  ".claude/agents/judge.md"
-  ".claude/agents/critic.md"
-  ".claude/agents/pm.md"
-  ".claude/agents/frontend.md"
-  ".claude/agents/backend.md"
-  ".claude/agents/qa.md"
-  ".claude/agents/devops.md"
-  ".claude/agents/docs.md"
-  ".claude/agents/analyst.md"
-  ".cursor/agents/architect.md"
-  ".cursor/agents/judge.md"
-  ".cursor/agents/critic.md"
-  ".cursor/agents/pm.md"
-  ".cursor/agents/frontend.md"
-  ".cursor/agents/backend.md"
-  ".cursor/agents/qa.md"
-  ".cursor/agents/devops.md"
-  ".cursor/agents/docs.md"
-  ".cursor/agents/analyst.md"
-  ".codex/agents/architect.toml"
-  ".codex/agents/judge.toml"
-  ".codex/agents/critic.toml"
-  ".codex/agents/pm.toml"
-  ".codex/agents/frontend.toml"
-  ".codex/agents/backend.toml"
-  ".codex/agents/qa.toml"
-  ".codex/agents/devops.toml"
-  ".codex/agents/docs.toml"
-  ".codex/agents/analyst.toml"
   ".context/00_INDEX.md"
   ".context/backlog.schema.json"
   ".context/backlog.yaml"
@@ -300,33 +242,22 @@ MULTIAGENT_FILES=(
   "docs/guides/design-patterns-gof.md"
   "docs/guides/design-patterns-integration.md"
   "docs/guides/design-patterns-post-gof.md"
-  "docs/guides/multi-agent-coordination.md"
-  "docs/guides/multi-model-consensus.md"
   "docs/guides/optional-skills.md"
   "docs/guides/sandbox-verification.md"
   ".github/prompts/README.md"
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/expand-backlog-entry.md"
-  ".github/prompts/judge-mode-smoke.md"
   ".github/prompts/mirror-postmortem.md"
-  ".github/prompts/multi-model-consensus-plan.md"
   ".github/prompts/op-issue-workflow.md"
-  ".github/prompts/outcome-validation-smoke.md"
-  ".github/prompts/pre-push-review.md"
-  ".github/prompts/pr-resolve-all.md"
+  ".github/prompts/shared-review-lenses.md"
   ".github/prompts/repo-onboarding.md"
-  ".github/agents/consensus-candidate-claude.agent.md"
-  ".github/agents/consensus-candidate-gpt.agent.md"
-  ".github/agents/consensus-candidate-gemini.agent.md"
   "scripts/diag-sandbox.sh"
   "scripts/diag-hang-snapshot.sh"
   "scripts/codespace-post-start.sh"
   "scripts/lib/ensure-gh-pat-auth.sh"
   "scripts/lib/sandbox-remote.sh"
   "scripts/lib/assertions.sh"
-  "scripts/lib/bot-allowlist.txt"
   "scripts/lib/logging.sh"
-  "scripts/pr-resolve-all-poll.sh"
   "scripts/verify-env.sh"
   "scripts/verify-pr.sh"
   "docs/research/.gitkeep"
@@ -336,7 +267,7 @@ for rel in "${MULTIAGENT_FILES[@]}"; do
   copy_template_file "$rel"
 done
 
-log_info "Multi-agent kit: copied=$MULTIAGENT_COPIED skipped=$MULTIAGENT_SKIPPED missing=$MULTIAGENT_MISSING"
+log_info "Agent workflow kit: copied=$MULTIAGENT_COPIED skipped=$MULTIAGENT_SKIPPED missing=$MULTIAGENT_MISSING"
 
 # =============================================================================
 # 2b. Codespace post-start (gh PAT auth + sandbox advisory; non-fatal)

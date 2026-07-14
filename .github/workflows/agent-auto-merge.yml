@@ -60,7 +60,6 @@ on:
   # The three names below must match the `name:` fields in:
   #   - ci-tests.yml              → "CI Tests"
   #   - lint-and-format.yml       → "Lint and Format"
-  #   - agent-fix-reviews.yml     → "Auto-Fix Reviews (Claude)"
   #
   # If ANY of those names are changed, update here too — an exact string
   # match is required for `workflow_run` to fire. Without the match,
@@ -371,7 +370,7 @@ jobs:
 
           # Slow-bot settle window (issue #182): on fast PRs, CI can finish
           # before Gemini/Copilot reviewers post. Give them a bounded chance
-          # to weigh in before merge so findings can flow through claude-fix.
+          # to finish before merge when formal reviews are configured externally.
           # Settle is anchored on the PR's head SHA — a review only counts
           # toward "settled" if it was submitted against the current head
           # commit. This closes the rebase/cherry-pick gap where an older

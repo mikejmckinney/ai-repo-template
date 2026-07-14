@@ -30,23 +30,22 @@ Both locations are valid — Claude Code auto-discovers either. Root is the `/in
 
 Decision record: [`docs/decisions/adr-001-context-pack-structure.md`](decisions/adr-001-context-pack-structure.md).
 
-### Template: What's the difference between `.agents/`, `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/`?
+### Template: What agent execution model does the repository use?
 
-- `.agents/<role>.md` — **canonical** role definitions (platform-agnostic). Single source of truth for responsibilities, Do/Don't lists, output formats. (ADR-023)
-- `.github/agents/<role>.agent.md` — GitHub Copilot SDK custom-agent registration overlay. Thin shim: platform-specific frontmatter + pointer to canonical.
-- `.claude/agents/<role>.md` — Claude Code native subagent registration overlay. Thin shim: platform-specific frontmatter + pointer to canonical.
-- `.cursor/agents/<role>.md` — Cursor agent registration overlay. Markdown shim with YAML frontmatter (`model`, `readonly`, `is_background`) + pointer to canonical.
-- `.codex/agents/<role>.toml` — Codex custom-agent overlay. TOML shim with `name`, `description`, `model`, `model_reasoning_effort`, `sandbox_mode`, and `developer_instructions` pointing to canonical.
-
-Model tiers are intentionally platform-specific per ADR-019: Copilot, Claude, Cursor, and Codex each have their own allowed value space, and `test.sh` enforces the per-platform allowlists. Decision records: [`docs/decisions/adr-003-claude-code-subagent-registration.md`](decisions/adr-003-claude-code-subagent-registration.md), [`docs/decisions/adr-019-per-role-model-tiering.md`](decisions/adr-019-per-role-model-tiering.md), [`docs/decisions/adr-023-shared-subagent-canonical.md`](decisions/adr-023-shared-subagent-canonical.md).
+One monolithic agent implements routine work. CI and lint are blocking;
+`ai-review:live` optionally supplies a parallel advisory snapshot; daily and
+weekly workflows perform recurring review; and the OpenCode `local-consensus`
+skill is the sole opt-in multi-model mechanism. See ADR-032.
 
 ---
 
 ## Using the template
 
-### Do I have to use multi-agent roles, or can I work solo?
+### Does advisory review block implementation or merge?
 
-Solo work is fine. The 10 roles (analyst, architect, judge, critic, pm, frontend, backend, qa, devops, docs) are helpful when multiple agents work in parallel without stepping on each other, but a single agent can wear any hat as needed. Full workflow: see [docs/guides/multi-agent-coordination.md](guides/multi-agent-coordination.md).
+No. It runs only when `ai-review:live` is applied, updates one sticky comment,
+and may finish while implementation continues. CI and maintainer decisions remain
+authoritative.
 
 ### How do I know whether I'm editing the template itself or a derived project?
 

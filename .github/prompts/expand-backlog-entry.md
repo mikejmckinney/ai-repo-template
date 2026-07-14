@@ -29,8 +29,7 @@ message:
 
 1. **Entry YAML** — the sparse entry with `id`, `title`, and any other fields
    already set.
-2. **Role context** — the matching `.github/agents/<role>.agent.md` file (may
-   be "N/A" if no role is set). Use the Do/Don't list to constrain scope.
+2. **Execution context** — ADR-032's monolithic implementation model.
 3. **Roadmap phase section** — the matching phase from `.context/roadmap.md`
    (may be empty for template placeholder repos). This is the primary source of
    requirements.

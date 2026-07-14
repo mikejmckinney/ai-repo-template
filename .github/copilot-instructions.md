@@ -17,15 +17,9 @@ the user explicitly requests a freshness check.
 
 ## Execution model
 
-Prefer one implementing agent for routine work. Do not dispatch subagents merely
-because role files exist or to satisfy an ownership pipeline. Use
-[`../.agents/`](../.agents/) as optional specialty guidance, and dispatch only
-when the user requests it or independent review, isolation, or specialized
-expertise justifies the overhead.
-
-Judge and Critic retain exact first-line output contracts when explicitly
-invoked: `DECISION:` and `CRITIC DECISION:` respectively. Do not prepend the
-repository handshake to those role-specific outputs.
+Use one monolithic implementing agent. Use the OpenCode `local-consensus` skill
+only when the user requests it or consequential uncertainty justifies independent
+multi-model review. Advisory review is optional and never blocks implementation.
 
 ## Following prompt files
 
@@ -37,22 +31,8 @@ When a comment or issue contains `@copilot follow <path>`:
 4. If output would exceed GitHub's comment limit, split it into numbered parts
    rather than truncating it.
 
-## Repository variables
-
-- `REVIEW_ON_PUSH=false` disables Gemini and Copilot review nudges after pushes
-  to open non-draft PRs. Unset means enabled.
-- `PR_RESOLVE_MAX_ROUNDS` sets the review-resolution round cap (default `3`).
-  The `cap-override` label or an explicit override comment adjusts it per PR.
-
 See [`docs/guides/agent-pipeline.md`](../docs/guides/agent-pipeline.md) for the
-full workflow and variable reference.
-
-## Pull-request review behavior
-
-When acting as `copilot-pull-request-reviewer[bot]`:
-
-- Review existing open and resolved threads before reporting a finding.
-- Do not repeat a finding already reported on the same file and line.
+active advisory, CI, and retro lifecycle.
 - Skip findings whose thread contains a reply beginning with `Deferred —`.
 - Honor project-convention exclusions in [`.cursor/BUGBOT.md`](../.cursor/BUGBOT.md)
   and [`.gemini/styleguide.md`](../.gemini/styleguide.md).

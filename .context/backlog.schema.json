@@ -32,22 +32,6 @@
           "minLength": 1,
           "maxLength": 256
         },
-        "role": {
-          "type": "string",
-          "description": "Maps to .github/agents/<role>.agent.md.",
-          "enum": [
-            "analyst",
-            "architect",
-            "backend",
-            "critic",
-            "devops",
-            "docs",
-            "frontend",
-            "judge",
-            "pm",
-            "qa"
-          ]
-        },
         "phase": {
           "type": "integer",
           "description": "Phase number from .context/roadmap.md.",

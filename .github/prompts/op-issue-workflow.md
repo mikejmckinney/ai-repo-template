@@ -5,17 +5,17 @@ agent: agent
 
 # OP issue-to-merge playbook
 
-The default agent acts as the Parent Orchestrator, but routine implementation is
-monolithic by default per
-[ADR-031](../../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md).
-Dispatch another agent only when the user requests it or independent review,
-isolation, or specialized expertise justifies the overhead.
+One agent implements the issue end to end per
+[ADR-032](../../docs/decisions/adr-032-monolithic-agent-and-review-lifecycle.md).
+Use `local-consensus` only when the user requests it or consequential uncertainty
+justifies independent model perspectives. Optional advisory review may run in
+parallel but never owns implementation or blocks progress.
 
 ## Phase 0 — Start
 
 1. Follow [`AGENTS.md`](../../AGENTS.md), which is already loaded by supported
    runtimes.
-2. Emit its current `Session handshake v<N>` line at a new task boundary.
+2. Emit the current handshake from `AGENTS.md` at a new task boundary.
 3. Read the assigned issue and linked PR. Use `.context/00_INDEX.md` only when
    project direction or state is relevant.
 4. Resolve ambiguity from current sources; ask the user when materially
@@ -29,8 +29,8 @@ isolation, or specialized expertise justifies the overhead.
    applies.
 3. State the user outcome, approach, expected files, risks, and exact validation
    steps.
-4. Prefer one implementing agent. Record any independent review or specialist
-   dispatch in ordinary prose; no compliance YAML is required.
+4. Keep implementation with one agent. Record any independent advisory input in
+   ordinary prose; no compliance YAML is required.
 
 ## Phase 2 — Implement
 
@@ -57,7 +57,8 @@ isolation, or specialized expertise justifies the overhead.
 1. Inspect `git status`, the complete diff, and recent commits.
 2. Ensure the PR links its issue, plan, verification results, user-outcome
    evidence, documentation synchronization, risks, and rollback path.
-3. Request independent review when risk or uncertainty justifies it.
+3. Use optional advisory review or `local-consensus` when risk or uncertainty
+   justifies independent input.
 4. Resolve review findings by fixing the underlying behavior; never weaken tests
    merely to force a green result.
 
@@ -84,5 +85,5 @@ isolation, or specialized expertise justifies the overhead.
 
 - Do not hardcode handshake versions outside `AGENTS.md`.
 - Do not recreate structured compliance blocks or context-receipt tables.
-- Do not dispatch multiple agents merely because role files exist.
+- Do not recreate role dispatch or a multi-agent implementation pipeline.
 - Do not treat green CI as a substitute for user-outcome validation.

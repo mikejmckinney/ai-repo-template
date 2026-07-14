@@ -137,18 +137,9 @@ jobs:
 
           def expand_with_claude(entry):
               """Call Anthropic API to fill in body/acceptance_criteria for a sparse entry."""
-              role = entry.get('role', '') or ''
               phase = entry.get('phase')
 
               entry_yaml = yaml.dump(entry, default_flow_style=False)
-
-              role_content = ''
-              # Read canonical role body from .agents/ (not the overlay shim
-              # at .github/agents/, which is a thin pointer post-ADR-023).
-              agent_path = f'.agents/{role}.md'
-              if role and os.path.isfile(agent_path):
-                  with open(agent_path) as f:
-                      role_content = f.read()
 
               roadmap_section = ''
               if phase is not None:
@@ -176,7 +167,7 @@ jobs:
 
               user_msg = (
                   f'Entry YAML:\n```yaml\n{entry_yaml}```\n\n'
-                  f'Role context ({role or "none"}):\n{role_content or "N/A"}\n\n'
+                  'Execution model: one monolithic implementing agent (ADR-032).\n\n'
                   f'Roadmap Phase {phase if phase is not None else "N/A"}:\n'
                   f'{roadmap_section or "N/A (template placeholder — see no-fabrication rule)"}\n\n'
                   f'Domain code quality rules:\n{quality_rules or "N/A"}\n'

@@ -12,7 +12,7 @@
 #            check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml
 #
 # Required per entry: id, title.
-# Optional:           role, phase, labels, depends_on, auto_assign, body,
+# Optional:           phase, labels, depends_on, auto_assign, body,
 #                     acceptance_criteria, issue.
 # Filled by Claude (when ANTHROPIC_API_KEY is set and the field is missing):
 #                     body, acceptance_criteria.
@@ -24,7 +24,6 @@
 entries:
   - id: example-auth-login
     title: "Add email+password login"
-    role: backend # maps to .github/agents/<role>.agent.md
     phase: 2 # matches a phase number in roadmap.md
     labels: [enhancement]
     depends_on: [] # other entry ids; dispatch waits until each

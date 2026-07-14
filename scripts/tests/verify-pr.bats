@@ -75,8 +75,8 @@ fixture_dir="$TMP_BASE/fixture"
 mkdir -p "$fixture_dir/.github/workflows"
 
 # A workflow that pins to default-branch via pull_request_review.
-cat >"$fixture_dir/.github/workflows/agent-fix-reviews.yml" <<'YAML'
-name: agent-fix-reviews
+cat >"$fixture_dir/.github/workflows/review-event.yml" <<'YAML'
+name: review-event
 on:
   pull_request_review:
     types: [submitted]
@@ -87,8 +87,8 @@ jobs:
 YAML
 
 # A workflow triggered by issue_comment (also default-branch-only).
-cat >"$fixture_dir/.github/workflows/agent-relay-reviews.yml" <<'YAML'
-name: agent-relay-reviews
+cat >"$fixture_dir/.github/workflows/comment-event.yml" <<'YAML'
+name: comment-event
 on:
   issue_comment:
     types: [created]
@@ -267,14 +267,14 @@ assert_contains "CASE-02 reports match" "matches detection" "${result#*:}"
 echo ""
 echo "CASE-03: pull_request_review workflow → declared default-branch-only (exit 0)"
 result=$(run_case "default-branch-only workflow" \
-  ".github/workflows/agent-fix-reviews.yml")
+  ".github/workflows/review-event.yml")
 assert_eq "CASE-03 exit code" "0" "${result%%:*}"
 
 # ── CASE-04: misclassified default-branch-only as code-or-docs (the PR #225 bug) ──
 echo ""
 echo "CASE-04: default-branch-only declared as code-or-docs (exit 1, mismatch)"
 result=$(run_case "code-or-docs" \
-  ".github/workflows/agent-relay-reviews.yml")
+  ".github/workflows/comment-event.yml")
 assert_eq "CASE-04 exit code" "1" "${result%%:*}"
 assert_contains "CASE-04 names sandbox playbook" \
   "sandbox-verification.md" "${result#*:}"
@@ -285,7 +285,7 @@ assert_contains "CASE-04 names detected class" \
 echo ""
 echo "CASE-05: code + default-branch-only declared as mixed (exit 0)"
 result=$(run_case "mixed" "README.md
-.github/workflows/agent-fix-reviews.yml")
+.github/workflows/review-event.yml")
 assert_eq "CASE-05 exit code" "0" "${result%%:*}"
 assert_contains "CASE-05 reports match (mixed == mixed equality branch)" \
   "matches detection" "${result#*:}"
@@ -294,13 +294,13 @@ assert_contains "CASE-05 reports match (mixed == mixed equality branch)" \
 echo ""
 echo "CASE-06: mixed diff declared as code-or-docs (exit 1)"
 result=$(run_case "code-or-docs" "README.md
-.github/workflows/agent-fix-reviews.yml")
+.github/workflows/review-event.yml")
 assert_eq "CASE-06 exit code" "1" "${result%%:*}"
 
 # ── CASE-07: detection-only mode (no --declared) — exit 0 with detected line ─
 echo ""
 echo "CASE-07: detection-only run (no --declared) exits 0 with detected class"
-result=$(run_detect ".github/workflows/agent-fix-reviews.yml
+result=$(run_detect ".github/workflows/review-event.yml
 README.md")
 assert_eq "CASE-07 exit code" "0" "${result%%:*}"
 assert_contains "CASE-07 prints detected class" \

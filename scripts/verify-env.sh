@@ -226,11 +226,11 @@ echo "Checking for template placeholders..."
 #   separately so lingering post-bootstrap markers stay visible as a non-
 #   blocking warn.
 # _PLACEHOLDER_LEGIT — infrastructure/documentation files that reference
-#   TEMPLATE_PLACEHOLDER as grep patterns, onboarding guides, or role
-#   definitions — not as markers for downstream customization. Excluded so
+#   TEMPLATE_PLACEHOLDER as grep patterns, onboarding guides, or templates,
+#   not as markers for downstream customization. Excluded so
 #   a properly-onboarded derived repo can reach PLACEHOLDER_COUNT=0.
 _PLACEHOLDER_EXCLUDE='^\./\.context/sessions/latest_summary\.md$'
-_PLACEHOLDER_LEGIT='^\./scripts/verify-env\.sh$|^\./AGENTS\.md$|^\./\.github/prompts/.*|^\./\.github/agents/.*\.agent\.md$|^\./\.github/ISSUE_TEMPLATE/agent_init\.md$|^\./.*\.template$|^\./.*_template\.md$'
+_PLACEHOLDER_LEGIT='^\./scripts/verify-env\.sh$|^\./AGENTS\.md$|^\./\.github/prompts/.*|^\./\.github/ISSUE_TEMPLATE/agent_init\.md$|^\./.*\.template$|^\./.*_template\.md$'
 if grep --help 2>&1 | grep -q -- "--exclude-dir"; then
   # grep supports --exclude-dir (GNU grep) — scan once, filter in memory
   _ALL_PLACEHOLDER_FILES=$(grep -rl --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=venv --exclude-dir=.venv --exclude-dir=__pycache__ "TEMPLATE_PLACEHOLDER" . 2>/dev/null || true)

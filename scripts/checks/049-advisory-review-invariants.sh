@@ -76,10 +76,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "ai-review:live missing from $LABELS_SCRIPT"
   fi
 
-  if grep -q '^implementation-complete|' "$LABELS_SCRIPT" 2>/dev/null; then
-    pass "implementation-complete declared in label setup (PR 3 hook)"
+  if grep -q 'cancel-in-progress: true' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'review:blocking-ai' "$ADVISORY_PROMPT" 2>/dev/null \
+    && ! grep -q 'implementation-complete' "$ADVISORY_PROMPT" 2>/dev/null; then
+    pass "advisory review is parallel, replaceable, and independent of completion gates"
   else
-    fail "implementation-complete missing from $LABELS_SCRIPT"
+    fail "advisory review must remain non-blocking and independent of completion gates"
   fi
 
   if grep -qF -- '-F body=@' "$UPSERT_SCRIPT" 2>/dev/null \

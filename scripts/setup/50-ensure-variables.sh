@@ -52,18 +52,3 @@ _ensure_variable MAX_COPILOT_DAILY 10
 # later intentionally sets the value to 20 would have it silently forced back
 # to 10 on the next setup.sh run.
 _ensure_variable MAX_COPILOT_DAILY_MIGRATED_V1 "true"
-_ensure_variable PR_RESOLVE_MAX_ROUNDS 3
-
-# REVIEW_ON_PUSH (issue #205): opt-out toggle for agent-review-on-push.yml,
-# which nudges Gemini (`/gemini review` comment under CLAUDE_PAT) and
-# Copilot (re-request via GraphQL `requestReviewsByLogin` mutation with
-# `botLogins: ["copilot-pull-request-reviewer[bot]"]`) after each push
-# to an open non-draft PR. Earlier attempts (REST `requested_reviewers`,
-# GraphQL `requestReviews` with Bot node ID) all silently no-op'd or
-# returned HTTP 422 — only `requestReviewsByLogin` exposes a `botLogins`
-# field that actually fires Copilot review.
-# Default ON: leaving the variable unset = on is the desired default.
-# Opt out with:
-#   gh variable set REVIEW_ON_PUSH --body false
-# To re-enable:
-#   gh variable delete REVIEW_ON_PUSH

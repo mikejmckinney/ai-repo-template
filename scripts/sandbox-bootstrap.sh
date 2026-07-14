@@ -47,9 +47,8 @@
 #
 #                         When unset, the script uses your existing
 #                         `gh auth` identity.
-#   SANDBOX_ANTHROPIC_KEY Anthropic API key for sandbox-only claude.yml /
-#                         agent-fix-reviews.yml runs. A separate
-#                         sandbox-budget key is recommended.
+#   SANDBOX_ANTHROPIC_KEY Anthropic API key for sandbox-only backlog expansion.
+#                         A separate sandbox-budget key is recommended.
 #   SANDBOX_REPO_NAME     Override the default sandbox slug
 #                         ("<upstream-owner>/<upstream-name>-sandbox").
 #                         Use full "owner/repo" form.
@@ -242,7 +241,7 @@ if [[ -n "${SANDBOX_ANTHROPIC_KEY:-}" ]]; then
     --repo "$SANDBOX_REPO"
   log_info "ANTHROPIC_API_KEY set."
 else
-  log_warn "SANDBOX_ANTHROPIC_KEY not set — skipping ANTHROPIC_API_KEY (sandbox claude.yml runs will be unavailable until set manually)."
+  log_warn "SANDBOX_ANTHROPIC_KEY not set — skipping ANTHROPIC_API_KEY (sandbox backlog expansion will use its no-key fallback)."
 fi
 
 # ── Step 6: Add sandbox git remote ──────────────────────────────────────────

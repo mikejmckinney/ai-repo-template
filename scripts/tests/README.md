@@ -8,9 +8,9 @@ Bats test suite (issue #255 Phase 4b). Each `.bats` file in this directory is a 
 |---|---|---|
 | `auto-rebase-overlapping.bats` | `test-auto-rebase-overlapping.sh` | ADR-010 auto-rebase logic |
 | `jq-filters.bats` | `test-jq-filters.sh` | `scripts/lib/jq/*.jq` fixture-driven tests |
-| `multi-dispatch-safety.bats` | n/a | Explicit scope and exact-overlap safety for `agent-multi-dispatch.yml` |
-| `phase4-fallback-parser.bats` | `test-phase4-fallback-parser.sh` | Phase-4 Copilot fallback parser |
-| `pr-iteration-stats.bats` | `test-pr-iteration-stats.sh` | `pr-iteration-stats.sh` rolling metrics |
+| `prompt-helpers.bats` | n/a | Shared review context and bounded JSON helpers |
+| `postmerge-retro-batch.bats` | n/a | Daily retro evidence and lifecycle behavior |
+| `weekly-classifier.bats` | n/a | Weekly review classifier behavior |
 | `verify-env.bats` | `test-verify-env.sh` | `verify-env.sh` environment checks |
 | `verify-pr.bats` | `test-verify-pr.sh` | `verify-pr.sh` Change-class classifier (ADR-016) |
 

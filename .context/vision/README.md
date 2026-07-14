@@ -11,18 +11,17 @@ This repo is a process/template project, not a product UI, so its most useful vi
 
 ## Current Artifacts
 
-- [architecture/multi-agent-flow.md](architecture/multi-agent-flow.md) - the current Parent Orchestrator -> Analyst -> Architect -> plan-gate (Critic notes + Judge approval) -> PM -> implementers -> QA -> Critic -> Judge workflow.
 - [architecture/state-surfaces.md](architecture/state-surfaces.md) - the ADR-025 live-state hierarchy plus the repo-local reference surfaces that remain.
 
 ## How to Use These Files
 
-1. Start with `architecture/multi-agent-flow.md` when you need the control flow for planning, dispatch, or review.
+1. Start with ADR-032 and `docs/guides/agent-pipeline.md` for execution and review flow.
 2. Read `architecture/state-surfaces.md` when touching live-state, session-summary, or onboarding reset behavior.
-3. Keep these diagrams aligned with `.context/roadmap.md`, `.context/state/README.md`, and `docs/guides/multi-agent-coordination.md`.
+3. Keep these diagrams aligned with `.context/roadmap.md` and `.context/state/README.md`.
 
 ## Related References
 
 - [../00_INDEX.md](../00_INDEX.md)
 - [../roadmap.md](../roadmap.md)
 - [../state/README.md](../state/README.md)
-- [../../docs/guides/multi-agent-coordination.md](../../docs/guides/multi-agent-coordination.md)
+- [../../docs/guides/agent-pipeline.md](../../docs/guides/agent-pipeline.md)

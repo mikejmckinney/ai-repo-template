@@ -59,7 +59,7 @@ Each entry uses the canonical structure below. The fields capture durable outcom
 The `Status` field tracks the retrospective entry state: `in_progress` while a durable closeout summary is being drafted, `awaiting_user_input` only when retrospective content is blocked on the user, and `done` when the durable entry is complete. PR/live task state lives in GitHub and the latest `agent-state:v1` comment.
 
 ```markdown
-# Session: <YYYY-MM-DD> — <branch-or-task-id> — <role>
+# Session: <YYYY-MM-DD> — <branch-or-task-id> — <owner>
 
 **Status**: in_progress | awaiting_user_input | done
 **Issue/PR**: #NNN / #MMM (or `pending` / `N/A`)

@@ -23,10 +23,7 @@ auto-merge|0E8A16|Enable auto-merge workflow for this PR
 auto-merge-fast|1D76DB|Bypass auto-merge bot-review settle wait for this PR
 agent-complete|0E8A16|PR merged and linked issue closed
 no-auto-ready|BFDADC|Opt out of automatic ready-state handling
-claude-fix|FBCA04|Opt PR in to agent-fix-reviews.yml (Claude resolution)
-claude-review|1D76DB|Opt PR in to claude.yml auto-review (invokes judge subagent)
-copilot-relay|5319E7|Opt PR in to agent-relay-reviews.yml (Copilot resolution; included in subscription)
-smoke-test|E99695|Workflow-validation PR; auto-merge/relay/fix-reviews skip to avoid mid-test interference
+smoke-test|E99695|Workflow-validation PR
 copilot:ready|0E8A16|Assign Copilot when budget allows
 copilot:in-progress|1D76DB|Assigned to Copilot, counts toward concurrent budget
 copilot:queued|FBCA04|Waiting for an open Copilot slot
@@ -38,25 +35,23 @@ agent:claimed|0969DA|Agent has claimed the issue or PR; details live in the late
 agent:blocked|D93F0B|Agent work is blocked; details live in the latest agent-state:v1 comment
 agent:awaiting-review|F29513|Agent work is awaiting review; details live in the latest agent-state:v1 comment
 chore:no-plan|EDEDED|Exempt this issue/PR from the plan-as-comment requirement (ADR-011)
-outcome-validated|0E8A16|Issue author has validated the user outcome inline; opts out of Analyst pre-flight gate (ADR-005, ADR-014)
-cap-override|FBCA04|Bypass max-round cap (pr-resolve-all.md) and 90% daily spend pause (agent-assign-copilot.yml)
+outcome-validated|0E8A16|Issue author has validated the user outcome inline
+cap-override|FBCA04|Bypass the 90% daily spend pause in agent-assign-copilot.yml
 agent-suggested|BFD4F2|Agent-surfaced opportunity; see process_opportunity_feedback rule.
 ai-review:live|1D76DB|Enable rolling non-blocking advisory review snapshots (draft/WIP OK; agent-advisory-review.yml)
 ai-review:full|5319E7|Request deeper advisory review depth on this PR
-implementation-complete|0E8A16|Implementation finished; triggers final feedback consolidation (agent-review-finalize.yml, PR 3)
 retro-review|FBCA04|Opt merged PR into post-merge retrospective review (PR 4)
 retro:adr|C5DEF5|Post-merge retro may propose ADR follow-up issues
 retro:context-pack|BFD4F2|Post-merge retro may propose context-pack follow-up issues
 adr:update|C2E0C6|ADR amendment candidate from post-merge retro or maintainer triage
 context-pack|BFD4F2|Context-pack improvement follow-up from retro or agent-suggested
-review:blocking-ai|D93F0B|Human escalation: an AI advisory finding should block until resolved
 LABEL_SPECS
 )
 _PIPELINE_LABELS=$(printf '%s\n' "$_PIPELINE_LABEL_SPECS" | awk -F'|' 'NF { printf "%s%s", sep, $1; sep=", " } END { print "" }')
 _SETUP_VARIABLES_FILE="${SCRIPT_DIR:-scripts}/setup/50-ensure-variables.sh"
 _PIPELINE_VARIABLES=$(
   awk '
-    /^[[:space:]]*_ensure_variable (MAX_COPILOT_CONCURRENT|MAX_COPILOT_DAILY|PR_RESOLVE_MAX_ROUNDS) / {
+    /^[[:space:]]*_ensure_variable (MAX_COPILOT_CONCURRENT|MAX_COPILOT_DAILY) / {
       value = $3
       gsub(/^"|"$/, "", value)
       printf "%s%s=%s", sep, $2, value

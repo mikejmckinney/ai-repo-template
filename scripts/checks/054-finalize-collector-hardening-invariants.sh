@@ -1,37 +1,26 @@
 #!/usr/bin/env bash
-# scripts/checks/054-finalize-collector-hardening-invariants.sh — issue #428 wiring.
+# scripts/checks/054-finalize-collector-hardening-invariants.sh — retained evidence collector wiring.
 
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
-  echo "Checking finalize/collector hardening invariants (#428)..."
+  echo "Checking retained evidence collector invariants..."
 
   PROMPT_HELPERS="scripts/workflows/lib/prompt_helpers.py"
-  FINALIZE_WORKFLOW=".github/workflows/agent-review-finalize.yml"
 
   for f in "$PROMPT_HELPERS" \
-    scripts/workflows/pr-feedback/collect-pr-feedback.sh \
-    scripts/workflows/pr-feedback/run-feedback-consolidation.sh \
+    scripts/workflows/lib/collect-pr-evidence.sh \
     scripts/workflows/advisory-review/upsert-pr-comment.sh; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
-      fail "$f missing (#428 finalize hardening)"
+      fail "$f missing (retained review evidence)"
     fi
   done
 
   if grep -q 'select-context' "$PROMPT_HELPERS" 2>/dev/null \
-    && grep -qE 'prompt_helpers\.py.*select-context' scripts/workflows/pr-feedback/run-feedback-consolidation.sh 2>/dev/null \
     && grep -qE 'prompt_helpers\.py.*select-context' scripts/workflows/advisory-review/run-advisory-review.sh 2>/dev/null; then
-    pass "finalize and advisory use catalog-driven context selection"
+    pass "advisory uses catalog-driven context selection"
   else
-    fail "finalize/advisory must use prompt_helpers select-context"
-  fi
-
-  if grep -q 'opened' "$FINALIZE_WORKFLOW" 2>/dev/null \
-    && grep -q 'synchronize' "$FINALIZE_WORKFLOW" 2>/dev/null \
-    && grep -q '\-\-repo "\$REPO"' "$FINALIZE_WORKFLOW" 2>/dev/null; then
-    pass "finalize workflow has expanded triggers and gh pr view --repo"
-  else
-    fail "finalize workflow missing #428 trigger/repo fixes"
+    fail "advisory must use prompt_helpers select-context"
   fi
 
   if grep -q '^\.env$' .gitignore 2>/dev/null; then

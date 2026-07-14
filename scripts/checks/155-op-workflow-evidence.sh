@@ -16,9 +16,8 @@
 #      sole permitted literal is the explicit Anti-pattern example
 #      illustrating what NOT to do.
 #   4. Playbook contains an Anti-patterns section (recurrence prevention).
-#   5. `.github/prompts/README.md`, `.github/copilot-instructions.md`,
-#      .github/prompts/repo-onboarding.md, and
-#      .github/prompts/pr-resolve-all.md each cross-link to the playbook.
+#   5. `.github/prompts/README.md`, `.github/copilot-instructions.md`, and
+#      `.github/prompts/repo-onboarding.md` each cross-link to the playbook.
 #
 # All findings emit `pass` or `warn` only — never `fail`. Hardening to
 # `fail`-on-recurrence is a separate, explicitly-gated PR per the
@@ -122,7 +121,6 @@ linkage_files=(
   ".github/prompts/README.md"
   ".github/copilot-instructions.md"
   ".github/prompts/repo-onboarding.md"
-  ".github/prompts/pr-resolve-all.md"
 )
 for f in "${linkage_files[@]}"; do
   if [[ ! -f "$f" ]]; then

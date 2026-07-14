@@ -42,20 +42,19 @@ else
   fail "agent-pipeline.md missing Workflow verifiability matrix (issue #227)"
 fi
 
-# PR completion / pre-merge verification lives in PR template and resolve prompt (ADR-031).
-if grep -q 'sandbox-verification.md' .github/pull_request_template.md 2>/dev/null \
-  || grep -q 'pre-merge verification' .github/prompts/pr-resolve-all.md 2>/dev/null; then
-  pass "PR surfaces reference pre-merge verification (issue #227)"
+# PR completion / pre-merge verification lives in the PR template.
+if grep -q 'sandbox-verification.md' .github/pull_request_template.md 2>/dev/null; then
+  pass "PR template references pre-merge verification (issue #227)"
 else
-  fail "pull_request_template.md or pr-resolve-all.md missing pre-merge verification reference (issue #227)"
+  fail "pull_request_template.md missing pre-merge verification reference (issue #227)"
 fi
 
-# pr-resolve-all.md Phase 2 calls out the sandbox path.
-if grep -q 'sandbox-verification.md' .github/prompts/pr-resolve-all.md 2>/dev/null \
-  || grep -q 'default-branch-only workflow' .github/prompts/pr-resolve-all.md 2>/dev/null; then
-  pass "pr-resolve-all.md Phase 2 references the sandbox verification path (issue #227)"
+# The active OP workflow calls out the sandbox path.
+if grep -q 'sandbox-verification.md' .github/prompts/op-issue-workflow.md 2>/dev/null \
+  || grep -q 'default-branch-only workflow' .github/prompts/op-issue-workflow.md 2>/dev/null; then
+  pass "OP workflow references the sandbox verification path (issue #227)"
 else
-  fail "pr-resolve-all.md missing sandbox-verification callout (issue #227)"
+  fail "OP workflow missing sandbox-verification callout (issue #227)"
 fi
 
 # AGENTS.md ties workflow verification changes to the classifier and sandbox guide.

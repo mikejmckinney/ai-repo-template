@@ -48,8 +48,7 @@ checkout:
 # Actions R, Variables R, Metadata R.
 export SANDBOX_PAT="<sandbox-scoped PAT value>"
 
-# Optional: separate sandbox-budget Anthropic key. Skip to defer
-# claude.yml / agent-fix-reviews.yml exercise in sandbox.
+# Optional: separate sandbox-budget Anthropic key for backlog expansion.
 export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
 
 # Optional: override the default sandbox slug
@@ -265,8 +264,7 @@ Now reproduce the trigger that the workflow depends on. Examples:
 
 | Workflow under test | Trigger to fire in sandbox |
 |---|---|
-| `agent-relay-reviews.yml` | Open a sandbox PR, post a `pull_request_review` (`gh api`) carrying inline comments. |
-| `agent-fix-reviews.yml` | Same; submit a `changes_requested` review. |
+| `agent-advisory-review.yml` | Open a draft PR, apply `ai-review:live`, then push another commit while review runs. |
 | `auto-rebase-on-merge.yml` | Merge any PR; the workflow fires on `pull_request.closed`. |
 | `keep-warm.yml` / scheduled jobs | Trigger via `gh workflow run <name>` (`workflow_dispatch` is also wired). |
 | `backlog-to-issues.yml` | Edit `.context/backlog.yaml` on sandbox `main`. |
