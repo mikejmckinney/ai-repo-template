@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (amended 2026-07-13: structured compliance contracts retired)
+Accepted (amended 2026-07-14: startup handshake retired)
 
 ## Date
 
@@ -37,6 +37,28 @@ the mechanism. It preserves the original rationale below as historical context
 instead of creating a replacement ADR. ADR-011's plan-as-comment decision and
 ADR-023's canonical-role decision remain accepted without ADR-026's structured
 evidence extensions.
+
+## Amendment 2026-07-14 — Retire the startup handshake
+
+The session handshake no longer provides enough freshness evidence to justify a
+mandatory user-facing token. Current repository state, exact-session recovery
+receipts, live issue/PR state, and CI provide stronger evidence without adding a
+preamble to every task boundary.
+
+Effective with this amendment:
+
+- Retire the required `Session handshake v<N>` output from agents, prompts,
+  recovery tools, and checks.
+- Retain `AGENTS_MD_VERSION` as file metadata; it no longer implies a matching
+  user-facing token.
+- Keep exact-session recovery receipts and current-source rereads after import
+  or compaction.
+- Treat handshake references in older ADR rationale, postmortems, transcripts,
+  and benchmark results as historical evidence.
+
+This supersedes the handshake-preservation clause in the 2026-07-13 amendment
+and the active handshake/canary requirements in ADR-021, ADR-022, and ADR-029.
+It does not restore the structured compliance contracts retired above.
 
 ## Context
 

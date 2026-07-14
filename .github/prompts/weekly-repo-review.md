@@ -58,10 +58,6 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
 - Each finding **must** include `evidence[]` with at least one **repo-relative file path** (e.g. `scripts/checks/040-file-content.sh`) so automation can link evidence in the umbrella issue.
 - The `body` field must explain the finding in full (what is wrong, why it matters, suggested fix). The umbrella issue renders `body` + linked evidence — do not rely on the title alone.
 
-## Session handshake
-
-Pointer only — do **not** mirror full templates here. Follow the startup contract in [`AGENTS.md`](../../AGENTS.md). **Your final output must still be JSON only**.
-
 ## An empty array is valid
 
 If nothing actionable is found, return an empty `follow_up_issues` array and a short summary explaining why.

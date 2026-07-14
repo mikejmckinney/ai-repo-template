@@ -85,7 +85,7 @@ excerpts.
 4. Re-read startup-required and task-relevant files from disk.
 5. Verify issue and PR state from live sources when relevant.
 6. State what was imported and what was independently verified.
-7. Emit a fresh receiving-platform handshake and context receipt.
+7. Report the receiving-platform context receipt.
 8. Continue only after resolving conflicts in favor of current evidence.
 
 If the receiving repository is unfamiliar or `AI_REPO_GUIDE.md` is missing or

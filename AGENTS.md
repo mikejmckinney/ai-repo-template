@@ -134,7 +134,7 @@ Adjacent improvements (brittle script, stale doc, automation gap) historically c
 - Concrete — names a file, behavior, or symptom.
 - NOT urgent for correctness, security, or in-flight work (use escalation below).
 
-### Required fields
+### Required fields (8 total)
 
 Empty list permitted; partially-filled entries are not.
 
@@ -151,7 +151,7 @@ Empty list permitted; partially-filled entries are not.
 
 ### When agents may implement directly
 
-MAY implement without a note ONLY when ALL FOUR hold:
+MAY implement without a note ONLY when BOTH hold:
 
 1. **≤ ~20 LOC**, single file.
 2. **Directly necessary** for in-scope task (not "while I'm here").
@@ -160,7 +160,7 @@ When in doubt, surface the note.
 
 ### Escalation (blocking observations)
 
-For items that **halt current work**, use `## Blocking observation` — not the 9-field schema.
+For items that **halt current work**, use `## Blocking observation` — not the 8-field schema.
 
 Use when: **security** (secrets, auth, injection); **data-loss** risk; **CI-breaking** change the task can't fix; **plan-invalidating** false precondition.
 
@@ -214,7 +214,7 @@ When a downstream project (a repo built *from* this template) hits an incident w
 
 ### Work style
 
-- **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: use `feature/<task-id>` as the standard form; a `fix/<slug>` form is also acceptable for bug-fix branches when that naming is clearer. 
+- **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: use `feature/<task-id>` as the standard form; a `fix/<slug>` form is also acceptable for bug-fix branches when that naming is clearer.
 - **Surface prerequisites and edge cases** when explaining a plan or how-to: required tools, dependencies, non-obvious failure modes, safety issues. Skip boilerplate warnings on trivial work.
 - **Don't weaken tests or make unrelated source changes to force them green.** If a test exposes a real bug, fix the bug in the source. Tests document behavior; weakening them to go green is a regression in disguise.
 - **GitHub issue close keywords — intentional in PRs, careful in commits.** Use `Closes #N` / `Fixes #N` / `Resolves #N` (and synonyms: `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves`, `resolved`) in the **PR description** when merge should link and close the tracked issue(s). That is the intended workflow; reference the **correct** issue numbers only. **Commit messages and squash-merge bodies also parse these keywords** when the commit lands on the default branch — a subject like `fix #N links` closes issue N even when you only meant to fix markdown URLs pointing at that issue. In commits: reference issues without a closing keyword (`issue N`, `(#N)`, `for issue N`) unless the commit itself should close the issue. **Do not use real issue numbers in bad examples** in commit or PR merge text (even as illustrations); GitHub still parses them. Repo setting **Settings → General → Issues → Auto-close issues with merged linked pull requests** controls sidebar/PR-body links; it does not fully disable commit-message keyword closes. See [linking a PR to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue).
@@ -224,7 +224,7 @@ When a downstream project (a repo built *from* this template) hits an incident w
 - Follow the test pyramid: many unit tests, fewer integration tests, minimal E2E tests.
 - Write tests before or alongside implementation (TDD preferred).
 - All behavioral changes must include appropriate tests.
-- A pragmatic sandbox/dogfood test must be performed and `Sandbox issue:` and `Sandbox PR:` labels (with real URLs) must appear in the test/verification section per ADR-029. Read and follow the [sandbox verification playbook](/docs/guides/sandbox-verification.md) which details the process for using sandbox and which sandbox instance to use.
+- A pragmatic sandbox/dogfood test must be performed and `Sandbox issue:` and `Sandbox PR:` labels (with real URLs) must appear in the test/verification section per ADR-029. Read and follow the [sandbox verification playbook](docs/guides/sandbox-verification.md) which details the process for using sandbox and which sandbox instance to use.
 - CI must pass before marking tasks complete. If CI fails:
   1. Read the error logs
   2. Fix the underlying issue
@@ -247,7 +247,7 @@ escalate to the user or revise the issue/plan.
 
 A pragmatic sandbox/dogfood test with concrete steps is required in the
 verification section of issues and plans. Read and follow the
-[sandbox verification playbook](/docs/guides/sandbox-verification.md)
+[sandbox verification playbook](docs/guides/sandbox-verification.md)
 playbook which details the process for using sandbox and which sandbox instance to use.
 The `Sandbox issue:` and `Sandbox PR:`
 labels (canonical literals per ADR-029, the PR template) should be linked as proof that

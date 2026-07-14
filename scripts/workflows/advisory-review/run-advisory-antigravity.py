@@ -92,7 +92,6 @@ def main() -> int:
             "Perform a non-blocking advisory PR review using the mounted workspace files.",
             "Follow pr-advisory-review.md (system instruction) and mounted AGENTS/rules sources.",
             "Return only the markdown structure required by pr-advisory-review.md.",
-            "Include the session handshake and context receipt as specified.",
             "",
             coverage,
         ]

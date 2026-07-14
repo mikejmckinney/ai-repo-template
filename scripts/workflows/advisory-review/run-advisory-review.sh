@@ -300,7 +300,7 @@ if ! grep -q 'Diff coverage:' "$out_file"; then
   mv "$out_file.tmp" "$out_file"
 fi
 
-# Head/provider hints if model omitted (do not override handshake).
+  # Add head/provider hints when the model omits them.
 if ! grep -q '^Head:' "$out_file"; then
   sed -i "0,/^## Advisory Review Snapshot/s//## Advisory Review Snapshot\n\nHead: \`${HEAD_SHA}\`\nProvider: \`${PROVIDER}\`/" "$out_file" 2>/dev/null || true
 fi

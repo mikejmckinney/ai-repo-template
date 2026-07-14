@@ -77,8 +77,8 @@ Follow the repository's normal startup instructions. At minimum:
 12. Read `.github/PLAN_TEMPLATE.md`.
 13. Check the current branch and repository status before editing.
 
-Emit the AGENTS.md session handshake. If the runtime exposes an exact model
-name, report it in the handshake and final summary; otherwise write
+If the runtime exposes an exact model name, report it in the final summary;
+otherwise write
 `unknown - not exposed by runtime`.
 
 ## Task
@@ -204,7 +204,7 @@ Never claim a check passed unless it actually ran and passed.
 - `path` - reason
 
 ### Process Compliance
-- AGENTS.md handshake emitted:
+- AGENTS.md instructions loaded:
 - Plan posted-or-included:
 - Subagents/handoffs used or explicitly unavailable:
 - Ownership respected:

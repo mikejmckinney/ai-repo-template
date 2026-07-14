@@ -27,7 +27,7 @@ candidate_branch: benchmark/model-roi/<taskid>-cand-<NN>-r<run_index>
 subissue: #<benchmark subissue number>
 ```
 
-> The evaluator records the alias→model mapping privately. You will report your model in the handshake and final summary for the evaluator's sealed record, but candidate branches stay aliased so grading is blind.
+> The evaluator records the alias→model mapping privately. You will report your model in the final summary for the evaluator's sealed record, but candidate branches stay aliased so grading is blind.
 
 ## Objective
 
@@ -72,7 +72,7 @@ Follow the repository's normal startup instructions. At minimum:
 8. Read `.github/PLAN_TEMPLATE.md`.
 9. Check the current branch and repository status before editing.
 
-Emit the AGENTS.md session handshake. If the runtime exposes an exact model name, report it in the handshake and final summary; otherwise write `unknown — not exposed by runtime`.
+If the runtime exposes an exact model name, report it in the final summary; otherwise write `unknown — not exposed by runtime`.
 
 ## Task
 
@@ -165,7 +165,7 @@ Also run any task-specific checks the task body names. Do **not** author your ow
 - `path` — reason
 
 ### Process compliance
-- AGENTS.md handshake emitted / Plan posted-or-included / Subagents used: no /
+- AGENTS.md instructions loaded / Plan posted-or-included / Subagents used: no /
   Monolithic justification recorded / PR template completed / Doc-sync decisions recorded /
   Phase A scope guard honored: <yes/no each>
 
@@ -178,7 +178,7 @@ Also run any task-specific checks the task body names. Do **not** author your ow
 
 ## Acceptance criteria for this candidate run
 
-- [ ] Startup instructions followed and reported (handshake emitted).
+- [ ] AGENTS.md instructions followed and reported.
 - [ ] Implementation plan posted or included, with the monolithic `role_dispatch` block.
 - [ ] No subagents or other model delegation used.
 - [ ] Injected task deliverables implemented per its body, scope-controlled.

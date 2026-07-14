@@ -2,11 +2,32 @@
 
 ## Status
 
-Accepted
+Accepted (amended 2026-07-14: continuation state replaces explicit handoff)
 
 ## Date
 
 2026-05-12
+
+## Amendment 2026-07-14 — Continuation state without a handoff field
+
+The latest `agent-state:v1` comment exists so any later agent or session can
+continue the work from current evidence. A separate `handoff_needed` status and
+`Handoff` field duplicate that purpose and force the author to predict who will
+resume the task.
+
+Effective with this amendment:
+
+- Remove `handoff_needed` from the status enum and remove the separate handoff
+  field.
+- Require `status`, `updated`, and `actions` as the minimum continuation state.
+- Permit concise blockers, outcomes, lessons learned, next steps, and reference
+  pointers when they materially reduce recovery work.
+- Keep long decision history, exhaustive file lists, verification matrices, and
+  retrospective narratives in plans, PR bodies, ADRs, CI, or session archives.
+
+This amendment supersedes the handoff-specific requirements in the original
+decision below. It does not change GitHub's role as the primary live-state
+surface or the requirement to keep one canonical comment updated in place.
 
 ## Context
 

@@ -12,10 +12,10 @@ label_declared() {
 }
 
 if [[ -f "$ADR025_PATH" ]] \
-  && grep -qE '^Accepted$' "$ADR025_PATH" 2>/dev/null; then
+  && grep -q '^Accepted' "$ADR025_PATH" 2>/dev/null; then
   pass "ADR-025 exists with Status: Accepted"
 else
-  fail "ADR-025 missing or Status line is not 'Accepted' ($ADR025_PATH)"
+  fail "ADR-025 missing or Status line does not begin with 'Accepted' ($ADR025_PATH)"
 fi
 
 if grep -q 'ADR-025' docs/decisions/README.md 2>/dev/null; then
@@ -52,13 +52,23 @@ for label in 'agent:claimed' 'agent:blocked' 'agent:awaiting-review'; do
   fi
 done
 
-# AGENTS.md keeps the slim live-state and handoff contract.
-if grep -qF 'Session and handoff state' AGENTS.md 2>/dev/null \
+# AGENTS.md keeps the slim continuation-state contract.
+if grep -qF 'Session-state cadence' AGENTS.md 2>/dev/null \
   && grep -qF 'agent-state:v1' AGENTS.md 2>/dev/null \
-  && grep -qF 'paused' AGENTS.md 2>/dev/null; then
+  && grep -qF 'next actions' AGENTS.md 2>/dev/null; then
   pass "AGENTS.md preserves ADR-025 live-state guidance"
 else
   fail "AGENTS.md missing ADR-025 live-state guidance"
+fi
+
+if grep -qF 'Amendment 2026-07-14' "$ADR025_PATH" \
+  && ! grep -qF 'handoff_needed' .context/state/agent_state_comment_template.md \
+  && grep -qF '## actions' .context/state/agent_state_comment_template.md \
+  && grep -qF '## Outcomes' .context/state/agent_state_comment_template.md \
+  && grep -qF '## Next steps' .context/state/agent_state_comment_template.md; then
+  pass "agent-state:v1 supports continuation without a separate handoff field"
+else
+  fail "agent-state:v1 continuation contract is not synchronized with ADR-025"
 fi
 
 if grep -q '#263.*superseded' "$ADR025_PATH" 2>/dev/null \

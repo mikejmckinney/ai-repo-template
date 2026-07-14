@@ -374,11 +374,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   run_bats_check scripts/tests/postmerge-retro-batch.bats "postmerge-retro-batch.bats"
 
-  if grep -q 'After context compaction' AGENTS.md 2>/dev/null \
-    && grep -q 'context-receipt tables' AGENTS.md 2>/dev/null; then
-    pass "AGENTS.md uses handshake-only post-compaction freshness"
+  if grep -q 'runtime auto-summarizes' AGENTS.md 2>/dev/null \
+    && grep -q 'agent-state:v1' AGENTS.md 2>/dev/null \
+    && ! grep -q 'Session handshake' AGENTS.md 2>/dev/null; then
+    pass "AGENTS.md preserves post-compaction state without a handshake"
   else
-    fail "AGENTS.md missing handshake-only post-compaction guidance"
+    fail "AGENTS.md missing post-compaction state guidance or still requires a handshake"
   fi
 
   echo ""

@@ -49,10 +49,11 @@ else
   fail "pull_request_template.md missing pre-merge verification reference (issue #227)"
 fi
 
-# AGENTS.md ties workflow verification changes to the classifier and sandbox guide.
-if grep -q 'scripts/verify-pr.sh' AGENTS.md 2>/dev/null \
-  && grep -q 'sandbox verification guide' AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md links verify-pr.sh + sandbox verification (issue #227)"
+# AGENTS.md preserves the observable sandbox-evidence contract.
+if grep -q 'sandbox-verification.md' AGENTS.md 2>/dev/null \
+  && grep -q 'Sandbox issue:' AGENTS.md 2>/dev/null \
+  && grep -q 'Sandbox PR:' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md requires sandbox verification evidence (issue #227)"
 else
   fail "AGENTS.md missing issue-#227 workflow verification guidance"
 fi

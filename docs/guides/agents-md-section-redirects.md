@@ -14,7 +14,7 @@ Historical citations now resolve as follows:
 | Session state and handoff | `AGENTS.md` § Session and handoff state |
 | Opportunity feedback | `AGENTS.md` § Opportunity feedback |
 | Code quality | `AGENTS.md` § Code quality |
-| Session handshake | `AGENTS.md` § Startup |
+| Session handshake | Retired by ADR-026's 2026-07-14 amendment |
 | Context profiles and receipt tables | Retired; no replacement |
 | P1-P9/AP1-AP9 vocabulary | Advisory summary in `AGENTS.md`; detail in `repo-orchestration-patterns-reference.md` |
 

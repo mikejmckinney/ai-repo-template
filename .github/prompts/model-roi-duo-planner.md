@@ -58,8 +58,8 @@ At minimum:
 7. Read `.github/PLAN_TEMPLATE.md`.
 8. Inspect the files named by the injected task before proposing edits.
 
-Emit the AGENTS.md session handshake. If the runtime exposes an exact model
-name, report it in the handshake and final summary; otherwise write
+If the runtime exposes an exact model name, report it in the final summary;
+otherwise write
 `unknown - not exposed by runtime`.
 
 ## Task
