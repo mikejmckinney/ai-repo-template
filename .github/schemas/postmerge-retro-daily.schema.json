@@ -57,6 +57,7 @@
       "properties": {
         "adaptive_enabled": { "type": "boolean" },
         "provider_resolved": { "type": "string", "minLength": 1 },
+        "opencode_available": { "type": "boolean" },
         "cursor_available": { "type": "boolean" },
         "antigravity_available": { "type": "boolean" },
         "antigravity_on_truncate": { "type": "boolean" }
@@ -92,6 +93,7 @@
           "type": "string",
           "enum": [
             "bounded",
+            "full-evidence-opencode",
             "full-evidence-cursor",
             "full-evidence-antigravity",
             "bounded-fallback"

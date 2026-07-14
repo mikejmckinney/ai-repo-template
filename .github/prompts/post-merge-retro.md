@@ -7,6 +7,11 @@ agent: agent
 
 You are performing a **post-merge retrospective** on a merged pull request. Your job is to review evidence and output **structured JSON only** — no Markdown prose outside the JSON object.
 
+When repository or read-only GitHub tools are available, use them to retrieve
+omitted or truncated PR diffs, discussion, reviews, checks, and current files.
+Treat the automation evidence inventory as a minimum coverage contract. Never
+use a GitHub write operation.
+
 ## Cadence-specific rules
 
 - Review the **merged PR only** — do not propose changes to the working tree.

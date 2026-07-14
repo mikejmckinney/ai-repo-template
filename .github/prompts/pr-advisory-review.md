@@ -8,6 +8,11 @@ agent: agent
 You are producing a **single advisory PR comment** for an in-progress pull request.
 Apply the injected `shared-review-lenses.md` contract in one pass. This is **not** a formal PR review and **must not** block implementation or merge.
 
+When repository or read-only GitHub tools are available, use them to inspect
+relevant files, PR discussion, reviews, and checks beyond the bounded prompt
+excerpt. Treat the supplied changed-file/evidence inventory as a minimum
+coverage contract. Never use a GitHub write operation.
+
 The automation appends `AGENTS.md`, the shared review lenses, task-triggered
 governance context, and PR diff evidence below this prompt (Cursor/Gemini paths),
 or mounts equivalent files (Antigravity path). Apply that context when reviewing

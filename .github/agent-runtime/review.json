@@ -1,0 +1,40 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "autoupdate": false,
+  "share": "disabled",
+  "snapshot": false,
+  "formatter": false,
+  "lsp": false,
+  "enabled_providers": ["openai", "openrouter"],
+  "permission": {
+    "*": "deny",
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "edit": "deny",
+    "bash": "deny",
+    "task": "deny",
+    "webfetch": "deny",
+    "websearch": "deny",
+    "external_directory": "deny",
+    "doom_loop": "deny",
+    "github_read_*": "allow"
+  },
+  "mcp": {
+    "github_read": {
+      "type": "local",
+      "command": [
+        "github-mcp-server",
+        "stdio",
+        "--read-only",
+        "--lockdown-mode",
+        "--toolsets=repos,issues,pull_requests,actions"
+      ],
+      "environment": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "{env:OPENCODE_GITHUB_TOKEN}"
+      },
+      "enabled": true,
+      "timeout": 10000
+    }
+  }
+}

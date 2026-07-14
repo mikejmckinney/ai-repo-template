@@ -270,37 +270,12 @@ JSON
   echo "Respond with **JSON only** matching the monolithic shape. Include one \`retros[]\` entry for each PR: ${SELECTED_PRS[*]}."
 } >"$prompt_file"
 
-has_cursor=0
-has_gemini=0
-[[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
-[[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
-
-pick_provider() {
-  local want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
-  if [[ "$want" == "antigravity" ]]; then
-    echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (cursor, else gemini)." >&2
-    want=auto
-  fi
-  case "$want" in
-    cursor) echo cursor ;;
-    gemini) echo gemini ;;
-    auto)
-      if [[ "$has_cursor" -eq 1 ]]; then
-        echo cursor
-      elif [[ "$has_gemini" -eq 1 ]]; then
-        echo gemini
-      else
-        echo ""
-      fi
-      ;;
-    *)
-      echo "::error::Unknown POSTMERGE_RETRO_PROVIDER=${want}"
-      exit 1
-      ;;
-  esac
-}
-
-PROVIDER="$(pick_provider)"
+# shellcheck source=../lib/pick-advisory-provider.sh
+source "$LIB_DIR/pick-advisory-provider.sh"
+# shellcheck source=../lib/invoke-advisory-llm.sh
+source "$LIB_DIR/invoke-advisory-llm.sh"
+init_advisory_provider_credentials
+PROVIDER="$(pick_advisory_provider retro)"
 if [[ -z "$PROVIDER" ]]; then
   echo "::error::No post-merge retro provider configured."
   exit 1
@@ -308,19 +283,10 @@ fi
 
 llm_raw="$WORKDIR/llm-output.txt"
 echo "Monolithic retro LLM call via ${PROVIDER} for PR(s): ${SELECTED_PRS[*]}"
-case "$PROVIDER" in
-  cursor)
-    # shellcheck source=../lib/cursor-sdk-version.sh
-    source "$LIB_DIR/cursor-sdk-version.sh"
-    npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
-    CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
-      node "$ADVISORY_DIR/run-advisory-cursor.mjs" "$prompt_file" "$llm_raw"
-    ;;
-  gemini)
-    GEMINI_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}" \
-      python3 "$ADVISORY_DIR/run-advisory-gemini.py" "$prompt_file" "$llm_raw"
-    ;;
-esac
+OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro-monolithic.schema.json" \
+  invoke_advisory_llm \
+  "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" \
+  "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
 
 cp -f "$llm_raw" "$ARTIFACT_ROOT/monolithic-llm-output.txt"
 python3 "$SCRIPT_DIR/split-monolithic-retro-json.py" \

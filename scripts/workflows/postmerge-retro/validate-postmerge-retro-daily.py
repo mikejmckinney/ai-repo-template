@@ -24,6 +24,7 @@ validate_triage_item = _CL.validate_triage_item
 
 EVIDENCE_ROUTES = {
     "bounded",
+    "full-evidence-opencode",
     "full-evidence-cursor",
     "full-evidence-antigravity",
     "bounded-fallback",
@@ -80,6 +81,8 @@ def _validate_evidence_coverage(item: dict, path: str) -> None:
         raise ValueError(f"{path}.routing_context.adaptive_enabled must be boolean")
     if not isinstance(ctx["provider_resolved"], str) or not ctx["provider_resolved"].strip():
         raise ValueError(f"{path}.routing_context.provider_resolved must be a non-empty string")
+    if "opencode_available" in ctx and not isinstance(ctx["opencode_available"], bool):
+        raise ValueError(f"{path}.routing_context.opencode_available must be boolean")
     if not isinstance(ctx["cursor_available"], bool):
         raise ValueError(f"{path}.routing_context.cursor_available must be boolean")
     if not isinstance(ctx["antigravity_available"], bool):

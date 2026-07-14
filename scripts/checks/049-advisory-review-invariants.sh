@@ -12,17 +12,38 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   GEMINI_SCRIPT="${ADVISORY_DIR}/run-advisory-gemini.py"
   CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
   ANTIGRAVITY_SCRIPT="${ADVISORY_DIR}/run-advisory-antigravity.py"
+  OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
+  OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
+  OPENCODE_REVIEW_CONFIG=".github/agent-runtime/review.json"
+  OPENCODE_FIX_CONFIG=".github/agent-runtime/fix.json"
+  OPENCODE_DOCKERFILE=".github/agent-runtime/Dockerfile"
+  OPENCODE_IMAGE_WORKFLOW=".github/workflows/agent-runtime-image.yml"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
   MARKER='ai-advisory-review:v1'
 
   for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
-    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$ANTIGRAVITY_SCRIPT"; do
+    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$ANTIGRAVITY_SCRIPT" "$OPENCODE_RUNNER" \
+    "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG" \
+    "$OPENCODE_DOCKERFILE" "$OPENCODE_IMAGE_WORKFLOW"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
       fail "$f missing (advisory review)"
     fi
   done
+
+  if grep -q 'AGENT_RUNTIME_IMAGE' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'OPENCODE_GITHUB_TOKEN' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'opencode' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q '@opencode-ai/sdk/v2' "$OPENCODE_RUNNER" 2>/dev/null \
+    && grep -q -- '--read-only' "$OPENCODE_REVIEW_CONFIG" 2>/dev/null \
+    && grep -q -- '--lockdown-mode' "$OPENCODE_REVIEW_CONFIG" 2>/dev/null; then
+    pass "advisory uses pinned OpenCode SDK runtime with read-only locked-down GitHub MCP"
+  else
+    fail "advisory missing OpenCode runtime, dedicated token, or MCP security boundary"
+  fi
+
+  run_bats_check scripts/tests/opencode-provider.bats "opencode-provider.bats"
 
   if [[ -f .github/scripts/run-advisory-review.sh ]] \
     || compgen -G ".github/scripts/run-advisory-*" >/dev/null 2>&1; then

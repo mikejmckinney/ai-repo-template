@@ -28,7 +28,7 @@ We adopt a **three-stage non-blocking review pipeline** on `main`:
 
 Shared properties:
 
-- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (Cursor SDK if key present, else Gemini API).
+- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (OpenCode SDK first, then the retained Cursor/Antigravity/Gemini adapters).
 - **Scripts:** `scripts/workflows/advisory-review/` (LLM runners), `scripts/workflows/pr-feedback/` (finalize collect), `scripts/workflows/postmerge-retro/` (retro + daily batch), `scripts/workflows/weekly-review/` (weekly full-repo scan + fix).
 - **Lifecycle libraries:** daily and weekly adapters share provider dispatch, umbrella issue transport/reference handling, priority derivation, superseded-path detection, and batch-fix publication under `scripts/workflows/lib/`. Cadence-specific prompts, templates, markers, and metadata hooks remain explicit.
 - **Non-goals:** No auto-merge of fix PRs; no automatic `claude-fix`; no ADR/context-pack file edits in retro jobs; no formal PR review submission from advisory/finalize.
@@ -104,6 +104,36 @@ Shared properties:
 
 - Provider routing can evolve independently after benchmark and sandbox evidence supports a change.
 
+## Amendment 2026-07-14 — OpenCode runtime and GitHub MCP
+
+Issue [#480](https://github.com/mikejmckinney/ai-repo-template/issues/480)
+moves all three stages to an OpenCode-first runtime without moving evidence or
+publication authority into the agent.
+
+- The production adapter uses pinned `@opencode-ai/sdk/v2` structured output.
+  Headless CLI remains a diagnostic surface, not the workflow protocol.
+- The ordered model cascade is `openai/gpt-5.6-sol`,
+  `openrouter/z-ai/glm-5.2@preset/default`, then
+  `openrouter/minimax/minimax-m3@preset/default`. One SDK schema retry occurs
+  before advancing models.
+- Jobs run in the digest-addressed image configured by `AGENT_RUNTIME_IMAGE`.
+  The image pins OpenCode and SDK `1.18.0` plus GitHub MCP source commit
+  `c36e4e4493c76eafe2c1a9cbc5272e8eede29189`, built with patched Go `1.25.12`.
+- Agent-directed GitHub reads use a dedicated `OPENCODE_GITHUB_TOKEN` through
+  GitHub MCP with `--read-only`, `--lockdown-mode`, and only the `repos`,
+  `issues`, `pull_requests`, and `actions` toolsets.
+- Deterministic scripts retain pagination, evidence coverage, schema validation,
+  dedupe, comments, issues, commits, pushes, and draft-PR publication. The
+  OpenCode child process is launched without `GITHUB_TOKEN`, `GH_TOKEN`,
+  `CLAUDE_PAT`, or `SANDBOX_BOOTSTRAP_TOKEN`.
+- Review profiles deny edits, shell, web, and subagents. Fix profiles allow edits
+  but deny shell because command allowlists cannot prevent an editable script from
+  reading inherited model or MCP credentials. Every model attempt runs in a
+  disposable detached worktree, and the deterministic controller runs `./test.sh`
+  without credentials. Only the first schema-valid, verified patch is promoted.
+- Cursor, Antigravity, and Gemini remain explicit rollback providers during the
+  rollout.
+
 ## Implementation
 
 - [x] Pack PRs 2–4 on `main` (advisory, finalize, retro v1).
@@ -114,6 +144,7 @@ Shared properties:
 - [x] Triage legacy umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425) (2026-06-13 post-merge).
 - [x] Sandbox smoke of `agent-weekly-review.yml` — [run 27516674507](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27516674507) (`2099-W05`, umbrella [#79](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/79), fix PR [#80](https://github.com/mikejmckinney/ai-repo-template-sandbox/pull/80); detailed finding blocks + native link verified on PR #433 branch).
 - [x] Merge PR [#433](https://github.com/mikejmckinney/ai-repo-template/pull/433) (weekly review + collector hardening) to upstream `main` (merged 2026-06-15).
+- [ ] Issue #480 — complete sandbox evidence and merge the OpenCode-first amendment.
 
 ## References
 

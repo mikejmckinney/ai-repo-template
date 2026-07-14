@@ -89,7 +89,7 @@ For **implementation-shaped** work (Classes A/B), Phase A marginal ROI and canon
 | **Use with care** | Copilot **Auto** (routed model varies), Codex default | Useful rows exist; verify routed model and partial-run caveats |
 | **Escalation / gates** | High-tier models per ADR-019 (Opus-class, GPT-5.4 xhigh on Copilot parent for reasoning-heavy parent sessions) | Not default for routine implementation; use for plan-gate, diff-gate, architecture, hard review resolution |
 
-Advisory/retro **CI defaults** (`gemini-3.5-flash`, `composer-2.5` with `fast=false` for SDK paths) remain governed by [ADR-030](./adr-030-non-blocking-review-pipeline.md) and workflow vars — this ADR informs those choices but does not replace per-workflow env documentation.
+Advisory/retro **CI defaults** are governed by [ADR-030](./adr-030-non-blocking-review-pipeline.md) and workflow vars. OpenCode is the first runtime for issue #480's rollout, with GPT-5.6 Sol and two OpenRouter fallbacks; Cursor Composer 2.5 and Gemini remain rollback providers while sandbox telemetry tests runtime reliability, cost, and MCP overhead. This ADR informs those choices but does not replace per-workflow environment documentation.
 
 #### 2c. Context loading (Stage 1C / 1E)
 
@@ -148,6 +148,17 @@ Re-run benchmark stages or amend this ADR when **any** of the following change m
 **Minimum:** review recommendations **quarterly** or before any ADR-019 overlay remap PR.
 
 Class C results, when available, must be merged into this ADR (or a superseding ADR) before claiming benchmark completeness.
+
+### OpenCode rollout evidence requirement
+
+Issue #480 changes the runtime/tool boundary rather than claiming that the new
+models outperform prior benchmark leaders. Before removing the retained
+Cursor/Gemini adapters, compare sandbox advisory, daily, and weekly runs against
+the latest successful Cursor runs for schema success, elapsed time, token/tool
+context, finding usefulness, and fix verification. Record requested and observed
+models and the pinned image digest. A regression in evidence completeness,
+structured-output reliability, or fix isolation reverses `auto` to Cursor while
+the OpenCode adapter remains available explicitly.
 
 ## Amendment 2026-06-15 — Slim `.context/rules/` catalog (issue #437 / PR #438)
 
@@ -219,6 +230,7 @@ Class C results, when available, must be merged into this ADR (or a superseding 
 - [x] Slim `.context/rules/` catalog per Amendment 2026-06-15 (issue #437 / PR #438).
 - [x] Apply the monolithic implementation and review lifecycle (issue #474 / PR #476).
 - [ ] Refresh the model shortlist when Copilot pins are remapped.
+- [ ] Record issue #480 sandbox OpenCode-versus-Cursor telemetry before retiring rollback providers.
 
 ## References
 

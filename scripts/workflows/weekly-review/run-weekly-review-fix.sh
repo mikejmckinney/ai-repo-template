@@ -106,7 +106,8 @@ PROVIDER="$(pick_advisory_provider weekly-fix)"
 }
 
 llm_raw="$WORKDIR/llm-fix-output.txt"
-invoke_advisory_llm "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+OPENCODE_FIX_MODE=true \
+  invoke_advisory_llm "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
 fix_phase_log "llm-fix"
 
 case "$PROVIDER" in

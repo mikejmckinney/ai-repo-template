@@ -6,12 +6,15 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   # shellcheck source=scripts/workflows/lib/pick-advisory-provider.sh
   source "$REPO_ROOT/scripts/workflows/lib/pick-advisory-provider.sh"
-  unset CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY WEEKLY_REVIEW_PROVIDER
+  unset CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
+  unset WEEKLY_REVIEW_PROVIDER
   unset POSTMERGE_RETRO_PROVIDER ADVISORY_REVIEW_PROVIDER
   antigravity_enabled=false
 }
 
-@test "weekly scan auto routing prefers Cursor" {
+@test "weekly scan auto routing prefers OpenCode" {
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
   GEMINI_API_KEY=gemini-test
   antigravity_enabled=true
@@ -20,7 +23,7 @@ setup() {
   run pick_advisory_provider weekly-scan
 
   [ "$status" -eq 0 ]
-  [ "$output" = cursor ]
+  [ "$output" = opencode ]
 }
 
 @test "weekly scan auto routing uses Antigravity before Gemini" {

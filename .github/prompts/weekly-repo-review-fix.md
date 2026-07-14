@@ -7,6 +7,15 @@ agent: agent
 
 You are implementing findings from the weekly full-repo review batch on branch `weekly/fix-<RUN_WEEK>`. A human or agent will review before merge.
 
+Use repository edit tools only inside the provided worktree. GitHub tools are
+read-only evidence sources; never comment, create an issue or pull request,
+push, or otherwise publish from the agent.
+
+OpenCode fix sessions intentionally have no shell tool because the process holds
+model credentials. Use repository and GitHub read tools for reproduction evidence,
+never claim a command ran when it did not, and let the deterministic controller
+run `./test.sh` without credentials before it accepts the patch.
+
 ## Hard rules
 
 - Review the **current branch state** first (diff vs `main`, existing commits, and `weekly/fix-verify-<RUN_WEEK>.json` if present). Map each `findings[]` row by `dedupe_key` and implement **only findings not yet addressed**.
@@ -18,7 +27,7 @@ You are implementing findings from the weekly full-repo review batch on branch `
 - Record outcomes in **`weekly/fix-verify-<RUN_WEEK>.json`** (commit on branch).
 - **Do not** auto-merge. Leave changes on the branch for review.
 - Prefer **minimal, focused diffs**.
-- Run `./test.sh` when you change scripts/workflows/checks; record in `fix-verify.json` (`test_sh`).
+- Record agent-side `test_sh` as `skipped` when shell is unavailable. The deterministic controller runs `./test.sh` before accepting an OpenCode patch.
 - **Do not** edit `.github/workflows/**` on upstream — prove workflow fixes on sandbox when needed.
 - Findings marked `superseded_on_main: true` describe missing paths that now exist on `main`. Do not implement them again; record `verify.pre: cant_reproduce` and cite `superseded_reason`.
 - For **Gemini JSON mode**: output **valid JSON only** (include `fix_verify`).

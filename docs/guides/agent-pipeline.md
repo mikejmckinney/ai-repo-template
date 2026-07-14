@@ -47,6 +47,34 @@ supersession, umbrella transport, and batch-fix publication under
 `scripts/workflows/lib/`. Their schemas, templates, markers, and evidence inputs
 remain cadence-specific.
 
+## OpenCode Runtime
+
+Advisory, daily, and weekly automation resolve `auto` in this order:
+
+1. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and at least one model key are available.
+2. Cursor.
+3. Antigravity where the cadence permits it.
+4. Gemini.
+
+OpenCode runs through `scripts/workflows/lib/run-opencode.mjs` using the SDK v2
+JSON Schema interface. It retries invalid structured output once, then tries
+`openai/gpt-5.6-sol`, `openrouter/z-ai/glm-5.2@preset/default`, and
+`openrouter/minimax/minimax-m3@preset/default` in order. Fix calls go through
+`run-opencode-fix.sh`, which creates and discards one detached worktree per model
+and applies only a schema-valid attempt whose credential-free controller-side
+`./test.sh` run passes. The fix agent may edit but cannot invoke shell commands;
+this prevents editable repository scripts from reading inherited credentials.
+
+The agent runtime is built by `agent-runtime-image.yml`. Set
+`AGENT_RUNTIME_IMAGE` to the emitted `ghcr.io/...@sha256:...` reference; tags are
+not accepted as deployment evidence. Review and fix profiles live under
+`.github/agent-runtime/` and are intentionally separate from interactive
+`.opencode/opencode.json`.
+
+GitHub MCP is read-only and locked down. Agents receive only the dedicated
+read-only token, while deterministic shell code retains all GitHub writes. The
+agent subprocess explicitly drops publisher and sandbox credentials.
+
 ## Local Consensus
 
 The OpenCode `local-consensus` skill is the sole opt-in multi-model path. Use it
@@ -93,6 +121,18 @@ Use `scripts/verify-pr.sh` to classify the diff and
 - `POSTMERGE_RETRO_PROVIDER` and `WEEKLY_REVIEW_PROVIDER` control retro providers.
 - `MAX_COPILOT_CONCURRENT` and `MAX_COPILOT_DAILY` bound monolithic assignment.
 - Provider model and context variables are documented inline in their workflows.
+- `AGENT_RUNTIME_IMAGE` is the digest-addressed GHCR image emitted by the runtime-image workflow.
+
+## Required Secrets
+
+- `OPENCODE_GITHUB_TOKEN`: fine-grained token with read-only Metadata, Contents,
+  Pull requests, Issues, and Actions access to the target repository.
+- `OPENAI_API_KEY` and/or `OPENROUTER_API_KEY`: model credentials for the ordered
+  OpenCode cascade.
+- Existing `CURSOR_API_KEY`, `GEMINI_API_KEY`, and `GOOGLE_API_KEY` remain
+  optional rollback-provider credentials.
+- `CLAUDE_PAT` and `SANDBOX_BOOTSTRAP_TOKEN` remain deterministic publication or
+  sandbox credentials and are never forwarded to OpenCode.
 
 ## Retired Surfaces
 

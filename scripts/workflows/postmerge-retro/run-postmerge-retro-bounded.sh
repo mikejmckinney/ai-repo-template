@@ -34,21 +34,18 @@ if [[ -z "$provider" || "$provider" == "null" || "$provider" == "unknown" ]]; th
   provider="$(pick_advisory_provider retro)"
 fi
 if [[ -z "$provider" ]]; then
-  echo "::error::No post-merge retro provider configured. Set CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
+  echo "::error::No post-merge retro provider configured. Configure OpenCode, Cursor, or Gemini credentials."
   exit 1
 fi
 
 case "$provider" in
-  cursor)
-    # shellcheck source=../lib/cursor-sdk-version.sh
-    source "$LIB_DIR/cursor-sdk-version.sh"
-    npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
-    CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
-      node "$ADVISORY_DIR/run-advisory-cursor.mjs" "$prompt_file" "$LLM_OUT"
-    ;;
-  gemini)
-    GEMINI_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}" \
-      python3 "$ADVISORY_DIR/run-advisory-gemini.py" "$prompt_file" "$LLM_OUT"
+  opencode | cursor | gemini)
+    # shellcheck source=../lib/invoke-advisory-llm.sh
+    source "$LIB_DIR/invoke-advisory-llm.sh"
+    OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro.schema.json" \
+      invoke_advisory_llm \
+      "$prompt_file" "$LLM_OUT" "$provider" "$ADVISORY_DIR" \
+      "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
     ;;
   *)
     echo "::error::Bounded retro does not support provider=${provider}"

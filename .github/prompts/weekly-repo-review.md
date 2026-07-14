@@ -7,6 +7,11 @@ agent: agent
 
 You are performing a **weekly full-repo health review** on the current `main` branch. Your job is to inspect the repository and output **structured JSON only** — no Markdown prose outside the JSON object.
 
+Use repository tools for source evidence and read-only GitHub tools for relevant
+issues, pull requests, and workflow runs when available. The supplied context
+pack is startup context, not the review boundary. Never use a GitHub write
+operation.
+
 The automation appends a **context pack** containing `AGENTS.md` plus task-specific governance context. That pack is **rules and process**, not the full codebase. **You must read the repository working tree** (Cursor local mode) or mounted workspace sources (Antigravity path) to review code, scripts, workflows, checks, docs, and tests.
 
 ## Cadence-specific rules
