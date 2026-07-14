@@ -8,8 +8,6 @@ echo "Checking context pack structure..."
 
 CONTEXT_FILES=(
   ".context/00_INDEX.md"
-  ".context/backlog.yaml"
-  ".context/backlog.schema.json"
   ".context/benchmarks/model-roi/result.schema.json"
   ".context/roadmap.md"
   ".context/sessions/README.md"

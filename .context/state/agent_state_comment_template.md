@@ -13,7 +13,7 @@ invent synonyms or add new values without updating ADR-025 and the
 associated checks/docs.
 
 ```markdown
-<!-- agent-state:v1 issue:NNN pr:pending branch:feature/example role:devops -->
+<!-- agent-state:v1 issue:NNN pr:pending branch:feature/example owner:implementer -->
 
 **Status:** in_progress | awaiting_user_input | blocked | awaiting_review | handoff_needed | done
 **Updated:** YYYY-MM-DDTHH:MM:SSZ

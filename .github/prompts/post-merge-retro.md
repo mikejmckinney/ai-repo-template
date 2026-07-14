@@ -7,12 +7,9 @@ agent: agent
 
 You are performing a **post-merge retrospective** on a merged pull request. Your job is to review evidence and output **structured JSON only** — no Markdown prose outside the JSON object.
 
-## Hard rules
+## Cadence-specific rules
 
 - Review the **merged PR only** — do not propose changes to the working tree.
-- **Do not** edit code, ADRs, or context-pack files in this job.
-- **Do not** open pull requests.
-- **Prefer no issue over a speculative issue.** Every suggestion must cite concrete evidence from the supplied artifacts.
 - Compare merged-PR evidence against **Current main (HEAD) state for PR-touched paths** (automation-supplied). **Do not emit a finding** when the problem is already resolved on `main` HEAD.
 - **`repro_steps` required** on every `follow_up_issues` row — concrete steps to reproduce the bug before a fix. If you cannot define reproduction steps, do not emit the finding.
 - **Do not** suggest broad rewrites unless evidence shows a recurring failure pattern.
@@ -20,11 +17,11 @@ You are performing a **post-merge retrospective** on a merged pull request. Your
 
 ## Lenses
 
-Separate your analysis into three buckets in the JSON output:
+Apply the injected `shared-review-lenses.md` contract before categorizing findings.
 
-1. **`follow_up_issues`** — actionable bug/process/test/doc follow-ups with evidence.
-2. **`adr_updates`** — ADR amendment **candidates** (create follow-up issues only; do not edit ADRs).
-3. **`context_pack_updates`** — context-pack tuning candidates (rules, indexes, prompts) with paths to add/remove.
+Emit actionable bug, process, test, and documentation follow-ups in
+`follow_up_issues`. Do not emit separate ADR or context-pack candidate buckets;
+those are ordinary follow-up issues when they identify a concrete defect.
 
 Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027](../../docs/decisions/adr-027-opportunity-feedback-channel.md): high-impact, evidence-backed, bounded scope.
 
@@ -47,39 +44,13 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
       "repro_steps": ["step 1 to reproduce", "step 2 observe failure"],
       "dedupe_key": "stable-short-key"
     }
-  ],
-  "adr_updates": [
-    {
-      "adr": "docs/decisions/adr-019-per-role-model-tiering.md",
-      "title": "string",
-      "body": "markdown body",
-      "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
-      "trigger_likelihood": "common|edge|fringe",
-      "fix_cost": "trivial|moderate|large",
-      "regression_guard": false,
-      "dedupe_key": "stable-short-key"
-    }
-  ],
-  "context_pack_updates": [
-    {
-      "pack": "string",
-      "reason": "string",
-      "add": ["path"],
-      "remove": ["path"],
-      "evidence": ["string"],
-      "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
-      "trigger_likelihood": "common|edge|fringe",
-      "fix_cost": "trivial|moderate|large",
-      "regression_guard": false,
-      "dedupe_key": "stable-short-key"
-    }
   ]
 }
 ```
 
-## Finding triage (all buckets)
+## Finding triage
 
-Every row in **`follow_up_issues`**, **`adr_updates`**, and **`context_pack_updates`** must include:
+Every row in **`follow_up_issues`** must include:
 
 | Field | Values | Meaning |
 |---|---|---|
@@ -101,10 +72,10 @@ Rules:
 - Automation creates issues with marker `<!-- postmerge-retro:pr=<PR>:key=<dedupe_key> -->`.
 - Re-runs must not duplicate issues — reuse the same key only for the same finding.
 
-## Session handshake / context receipt
+## Session handshake
 
 Pointer only — do **not** mirror full templates here. Follow the startup contract in [`AGENTS.md`](../../AGENTS.md). **Your final output must still be JSON only**; do not emit the handshake in the JSON file.
 
-## Empty arrays are valid
+## An empty array is valid
 
-If nothing actionable is found, return empty arrays and a short summary explaining why.
+If nothing actionable is found, return an empty `follow_up_issues` array and a short summary explaining why.

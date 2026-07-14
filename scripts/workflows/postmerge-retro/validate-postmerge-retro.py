@@ -61,28 +61,6 @@ def _validate_follow_up(item: dict, path: str) -> None:
     _require_str_array(item, "evidence", path)
 
 
-def _validate_adr(item: dict, path: str) -> None:
-    if not isinstance(item, dict):
-        raise ValueError(f"{path} must be an object")
-    _require_str(item, "title", path)
-    _require_str(item, "body", path)
-    _require_str(item, "dedupe_key", path)
-    validate_triage_item(item, path, from_llm=True)
-    _require_str_array(item, "labels", path)
-    _require_str_array(item, "evidence", path)
-
-
-def _validate_context(item: dict, path: str) -> None:
-    if not isinstance(item, dict):
-        raise ValueError(f"{path} must be an object")
-    _require_str(item, "pack", path)
-    _require_str(item, "reason", path)
-    _require_str(item, "dedupe_key", path)
-    validate_triage_item(item, path, from_llm=True)
-    _require_str_array(item, "labels", path)
-    _require_str_array(item, "evidence", path)
-
-
 def main() -> int:
     if len(sys.argv) != 2:
         print("Usage: validate-postmerge-retro.py <retro.json>", file=sys.stderr)
@@ -105,16 +83,14 @@ def main() -> int:
         return 1
 
     try:
-        for key, validator in (
-            ("follow_up_issues", _validate_follow_up),
-            ("adr_updates", _validate_adr),
-            ("context_pack_updates", _validate_context),
-        ):
-            arr = data.get(key)
-            if not isinstance(arr, list):
-                raise ValueError(f"{key} must be an array")
-            for i, item in enumerate(arr):
-                validator(item, f"{key}[{i}]")
+        for retired in ("adr_updates", "context_pack_updates"):
+            if retired in data:
+                raise ValueError(f"{retired} is retired; use follow_up_issues")
+        arr = data.get("follow_up_issues")
+        if not isinstance(arr, list):
+            raise ValueError("follow_up_issues must be an array")
+        for i, item in enumerate(arr):
+            _validate_follow_up(item, f"follow_up_issues[{i}]")
         apply_triage_to_retro(data)
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=2, ensure_ascii=False)

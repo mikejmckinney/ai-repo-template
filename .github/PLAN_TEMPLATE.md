@@ -37,7 +37,6 @@ evaluate stale intent.
 ## 📋 Implementation Plan
 
 **Issue:** #<number>
-**Role:** <analyst | architect | backend | frontend | devops | docs | qa | pm>
 
 ### Outcome
 
@@ -56,20 +55,6 @@ issue, write "Direct implementation per issue.">
 
 <!-- List every file you expect to touch. If the actual diff exceeds this
 list by more than ~30%, post a revised plan before pushing. -->
-
-### Model tier
-
-**Tier**: <top | mid | cheap>
-**Justification (required when `top`)**: <one line: why this task warrants High-tier dispatch above the role default>
-
-<!-- Per-task override on top of the role defaults set in ADR-019.
-     Default is `mid`. Use `top` only when the task genuinely needs Opus-class
-     reasoning (novel architecture, irreversible decision, complex review
-     gate). Use `cheap` only for trivial mechanical work (typo fixes,
-     dependency bumps, generated-file regeneration). When in doubt, leave
-     at `mid`. The role default still applies if the dispatcher honors it;
-     this field is the implementer's signal to a human or PM about whether
-     to upshift before dispatching. -->
 
 ### User outcome validation plan — PRIMARY
 
@@ -120,8 +105,8 @@ specific test names. "Tests pass" is not sufficient — name them.>
      PR's `## Supporting verification results` section before the PR enters review.
      Sandbox-deferred items (where Verification target is `sandbox repo`
      or `both` and the change can't be exercised from the PR branch) are
-     marked `⏭️ sandbox-deferred — see Phase 2` per ADR-016. Judge
-     enforces this mapping at diff-gate. -->
+     marked `⏭️ sandbox-deferred — see Phase 2` per ADR-016. Reviewers
+     enforce this mapping. -->
 
 ### Risks / out-of-scope
 

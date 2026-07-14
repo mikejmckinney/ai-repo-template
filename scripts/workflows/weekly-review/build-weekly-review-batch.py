@@ -36,41 +36,6 @@ def _flatten(data: dict) -> list[dict]:
                 labels=item.get("labels") or [],
             )
         )
-    for index, item in enumerate(data.get("adr_updates") or []):
-        if not isinstance(item, dict):
-            continue
-        findings.append(
-            _flatten_item(
-                item,
-                f"adr_updates[{index}]",
-                pr=0,
-                scope="repo",
-                category="adr_updates",
-                title=item.get("title", ""),
-                body=item.get("body", ""),
-                dedupe_key=item.get("dedupe_key", ""),
-                evidence=[item.get("adr") or ""],
-                labels=["adr:update"],
-            )
-        )
-    for index, item in enumerate(data.get("context_pack_updates") or []):
-        if not isinstance(item, dict):
-            continue
-        body = f"**Pack:** {item.get('pack', '')}\n\n**Reason:** {item.get('reason', '')}"
-        findings.append(
-            _flatten_item(
-                item,
-                f"context_pack_updates[{index}]",
-                pr=0,
-                scope="repo",
-                category="context_pack_updates",
-                title=f"Context pack update: {item.get('pack', '')}",
-                body=body,
-                dedupe_key=item.get("dedupe_key", ""),
-                evidence=item.get("evidence") or [],
-                labels=["context-pack"],
-            )
-        )
     return findings
 
 

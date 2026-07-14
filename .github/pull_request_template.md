@@ -1,7 +1,7 @@
 <!--
 Pull request template. Keep concise; reviewers expect to scan this in
-<30 seconds. Sections marked REQUIRED are enforced by Judge at diff-gate
-(see .github/agents/judge.agent.md). Delete any section that's genuinely
+<30 seconds. Sections marked REQUIRED are checked by maintainers and CI.
+Delete any section that's genuinely
 N/A — empty headings are noise.
 -->
 
@@ -11,7 +11,7 @@ N/A — empty headings are noise.
 
 ## Linked issues / ADRs
 
-<!-- REQUIRED. Judge BLOCKs at diff-gate when this is empty unless an
+<!-- REQUIRED unless an
      ADR-011 exemption applies: exemption label (chore:no-plan,
      smoke-test), known automation bot author (Renovate, Dependabot),
      or revert PR. An ADR-only reference (e.g. "Implements ADR-007")
@@ -33,8 +33,7 @@ N/A — empty headings are noise.
      exemption applies (chore:no-plan, automation bot, revert).
      Note: smoke-test exempts only from the PR-link rule, not from
      the plan requirement.
-     Judge advises (REQUEST_CHANGES) at diff-gate when missing or
-     stale; not a v1 BLOCK. -->
+     Keep this pointer current when the plan changes. -->
 
 - **Original plan:** <link to plan comment, e.g. https://github.com/.../issues/42#issuecomment-NNN>
 - **Revisions:** <links to any "Plan revision" comments, or "none">
@@ -104,7 +103,7 @@ Sandbox PR: <URL>
 - [ ] `<command>` — pass / fail
 - [ ] Manual check: `<step>` — result
 
-## Supporting verification results (REQUIRED — Judge enforces at diff-gate)
+## Supporting verification results (REQUIRED)
 
 <!-- Mirror your plan's `### Supporting verification` section 1:1. Every command
      listed in the plan must have a result entry here BEFORE the PR
@@ -128,7 +127,7 @@ Sandbox PR: <URL>
 - [ ] `<command from plan>` — ✅ pass — <evidence pointer>
 - [ ] Manual: `<step from plan>` — ✅ pass — <one-line result>
 
-## Doc sync (REQUIRED — Judge enforces at diff-gate)
+## Doc sync (REQUIRED)
 
 Walk `AGENTS.md`'s documentation synchronization table. Tick each companion
 that needed updating, OR state `<file>: no changes required` with a one-line
@@ -136,8 +135,7 @@ justification.
 
 - [ ] `AI_REPO_GUIDE.md` updated (or: `AI_REPO_GUIDE.md: no changes required — <why>`)
 - [ ] ADR added/superseded (or: `ADR: no changes required — <why>`)
-- [ ] `docs/guides/multi-agent-coordination.md` updated (or: `not required — <why>`)
-- [ ] Role registration changes mirrored across platform overlays and inventories (or: `not required — <why>`)
+- [ ] Review lifecycle documentation updated (or: `not required — <why>`)
 - [ ] Workflow inline-prompt mirrors updated alongside `.github/prompts/*.md` edits (or: `not required — <why>`)
 - [ ] `scripts/setup.sh` `_ensure_label` list updated alongside pipeline label additions (or: `not required — <why>`)
 - [ ] `test.sh` / `install.sh` updated for new template files (or: `not required — <why>`)

@@ -52,13 +52,13 @@ EOF
   [ "$(jq -r '.[0].diff_hunk // empty' <<<"$output")" = "" ]
 }
 
-@test "select-context uses AGENTS.md as the only baseline" {
+@test "select-context includes the shared review lenses" {
   printf 'AGENTS.md\n' >"$TMP_DIR/changed.txt"
   run python3 "$PROMPT_HELPERS" select-context \
     --profile pr-review \
     --changed-files "$TMP_DIR/changed.txt"
   [ "$status" -eq 0 ]
-  [ "$output" = $'AGENTS.md\n.github/pull_request_template.md' ]
+  [ "$output" = $'AGENTS.md\n.github/prompts/shared-review-lenses.md\n.github/pull_request_template.md' ]
 }
 
 @test "select-context adds task-specific workflow guidance" {

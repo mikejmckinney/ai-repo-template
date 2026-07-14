@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # scripts/workflows/postmerge-retro/collect-postmerge-evidence.sh
-# Wraps collect-pr-feedback.sh and normalizes artifact names for post-merge retro.
+# Wraps collect-pr-evidence.sh and normalizes artifact names for post-merge retro.
 # Usage: collect-postmerge-evidence.sh <pr-number> <out-dir>
 set -euo pipefail
 umask 077
@@ -15,7 +15,7 @@ OUT_DIR="${2:-}"
 [[ -n "$PR" && -n "$OUT_DIR" ]] || usage
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-FEEDBACK_COLLECTOR="$REPO_ROOT/scripts/workflows/pr-feedback/collect-pr-feedback.sh"
+FEEDBACK_COLLECTOR="$REPO_ROOT/scripts/workflows/lib/collect-pr-evidence.sh"
 
 [[ -f "$FEEDBACK_COLLECTOR" ]] || {
   echo "Missing $FEEDBACK_COLLECTOR" >&2

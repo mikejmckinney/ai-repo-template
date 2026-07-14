@@ -3,7 +3,7 @@
   "$id": "https://github.com/mikejmckinney/ai-repo-template/.github/schemas/postmerge-retro.schema.json",
   "title": "Post-merge retrospective output",
   "type": "object",
-  "required": ["pr", "summary", "follow_up_issues", "adr_updates", "context_pack_updates"],
+  "required": ["pr", "summary", "follow_up_issues"],
   "additionalProperties": true,
   "properties": {
     "pr": {
@@ -17,14 +17,8 @@
       "type": "array",
       "items": { "$ref": "#/$defs/followUpIssue" }
     },
-    "adr_updates": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/adrUpdate" }
-    },
-    "context_pack_updates": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/contextPackUpdate" }
-    }
+    "adr_updates": false,
+    "context_pack_updates": false
   },
   "$defs": {
     "triageFields": {
@@ -80,62 +74,6 @@
           "type": "array",
           "minItems": 1,
           "items": { "type": "string", "minLength": 1 }
-        },
-        "dedupe_key": { "type": "string", "minLength": 1 },
-        "impact": { "$ref": "#/$defs/triageFields/properties/impact" },
-        "trigger_likelihood": { "$ref": "#/$defs/triageFields/properties/trigger_likelihood" },
-        "fix_cost": { "$ref": "#/$defs/triageFields/properties/fix_cost" },
-        "regression_guard": { "$ref": "#/$defs/triageFields/properties/regression_guard" },
-        "priority_band": { "$ref": "#/$defs/triageFields/properties/priority_band" }
-      },
-      "not": {
-        "required": ["severity"]
-      }
-    },
-    "adrUpdate": {
-      "type": "object",
-      "required": [
-        "title",
-        "body",
-        "dedupe_key",
-        "impact",
-        "trigger_likelihood",
-        "fix_cost"
-      ],
-      "additionalProperties": true,
-      "properties": {
-        "adr": { "type": "string" },
-        "title": { "type": "string", "minLength": 1 },
-        "body": { "type": "string", "minLength": 1 },
-        "dedupe_key": { "type": "string", "minLength": 1 },
-        "impact": { "$ref": "#/$defs/triageFields/properties/impact" },
-        "trigger_likelihood": { "$ref": "#/$defs/triageFields/properties/trigger_likelihood" },
-        "fix_cost": { "$ref": "#/$defs/triageFields/properties/fix_cost" },
-        "regression_guard": { "$ref": "#/$defs/triageFields/properties/regression_guard" },
-        "priority_band": { "$ref": "#/$defs/triageFields/properties/priority_band" }
-      },
-      "not": {
-        "required": ["severity"]
-      }
-    },
-    "contextPackUpdate": {
-      "type": "object",
-      "required": ["pack", "reason", "dedupe_key", "impact", "trigger_likelihood", "fix_cost"],
-      "additionalProperties": true,
-      "properties": {
-        "pack": { "type": "string", "minLength": 1 },
-        "reason": { "type": "string", "minLength": 1 },
-        "add": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "remove": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
-        "evidence": {
-          "type": "array",
-          "items": { "type": "string" }
         },
         "dedupe_key": { "type": "string", "minLength": 1 },
         "impact": { "$ref": "#/$defs/triageFields/properties/impact" },

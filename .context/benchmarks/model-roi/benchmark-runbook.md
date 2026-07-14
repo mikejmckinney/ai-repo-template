@@ -454,7 +454,7 @@ Post-merge maintainer steps (**completed 2026-06-08**):
 2. ~~Merge Phase A PR #379 to `main` (`eb8fff6`).~~ Done.
 3. ~~Create `benchmark/roi` from tag `benchmark/phase-a-artifacts-20260608`.~~ Done.
 4. ~~Merge `main` into `benchmark/roi` and re-commit `stage-*-llm-responses-v1/` fixtures~~ (fast-forward dropped tracked fixtures; restored from tag on `benchmark/roi`).
-5. **Next:** follow-on prompts — `agent-pr-prompts-combined-v2` + `07-implement-gemini-free-paid-routing` on `main`; `06-implement-class-c-framework-benchmark` on `benchmark/roi`.
+5. **Next:** run `06-implement-class-c-framework-benchmark.md` on `benchmark/roi` when Class C evidence is prioritized.
 
 Deferred harness items from PR #379 bot triage: [FOLLOW_UPS.md](./FOLLOW_UPS.md).
 

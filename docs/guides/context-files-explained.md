@@ -112,7 +112,7 @@ A recurring question is whether duplicated-looking docs should be merged, or whe
 
 | File / location | Why we keep it where it is |
 |-----------------|---------------------------|
-| `CLAUDE.md` at the repo root | Claude Code's memory loader auto-discovers **either** `./CLAUDE.md` **or** `./.claude/CLAUDE.md` — see the ["Choose where to put CLAUDE.md files" table in the memory docs](https://code.claude.com/docs/en/memory#choose-where-to-put-claude-md-files). Both locations work for the standalone CLI and for `anthropics/claude-code-action@v1` (the Action runs the CLI under the hood). We keep it at the root because it's the `/init` default and it sits visibly next to `AGENTS.md` / `AI_REPO_GUIDE.md` / `README.md`. Moving it to `.claude/CLAUDE.md` would be functionally equivalent; `.claude/agents/**` (the 9 role subagent registrations from ADR-003) is a separate slot and can coexist with a `.claude/CLAUDE.md`. |
+| `CLAUDE.md` at the repo root | Claude Code's memory loader auto-discovers **either** `./CLAUDE.md` or `./.claude/CLAUDE.md`. Root is the `/init` default and keeps the pointer visible next to `AGENTS.md`, `AI_REPO_GUIDE.md`, and `README.md`. |
 
 **Rule of thumb**: before merging or moving `docs/`, `.context/`, `README.md`, `AI_REPO_GUIDE.md`, `install.sh`, or `test.sh`, read ADR-001 and ADR-003 first. `CLAUDE.md` is flexible — move it if it helps your repo, but confirm the chosen location is on Anthropic's [CLAUDE.md location table](https://code.claude.com/docs/en/memory#choose-where-to-put-claude-md-files).
 

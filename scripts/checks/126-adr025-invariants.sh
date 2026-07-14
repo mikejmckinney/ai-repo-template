@@ -7,8 +7,9 @@
 echo "Checking ADR-025 components (issue #298 / GitHub-first live state)..."
 
 ADR025_PATH="docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md"
-# label_declared() is defined by 045-preflight-gate.sh, which test.sh sources
-# before this check.
+label_declared() {
+  grep -qE "^${1}\\|" scripts/setup/40-ensure-labels.sh
+}
 
 if [[ -f "$ADR025_PATH" ]] \
   && grep -qE '^Accepted$' "$ADR025_PATH" 2>/dev/null; then

@@ -10,8 +10,8 @@
 > **Don't cite from this file without reading the lead file's "Read this first"
 > section.** Patterns are vocabulary, not rules.
 >
-> **Status**: advisory. A `CIP` citation is a review handle; it does not create a
-> Judge block condition.
+> **Status**: advisory. A `CIP` citation is a review handle; it is not independently
+> blocking.
 
 Examples are intentionally compact. Most integration patterns span queues,
 workers, schema contracts, retries, and operational monitoring; a short sketch

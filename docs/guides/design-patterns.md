@@ -4,7 +4,7 @@
 >
 > **Scope**: code-layer patterns for downstream projects derived from this template: application code, libraries, services, and infrastructure-as-code constructs. Not the orchestration or governance layer.
 >
-> **Status**: advisory. Critic cites entries as `CRAFT NOTES`; Judge does NOT block at diff-gate on a citation from this file. Tightening any entry to block-on-sight requires an ADR. See [ADR-020 §"Block-vs-advisory designation"](../decisions/adr-020-orchestration-patterns-reference.md#block-vs-advisory-designation) for the parallel decision on the orchestration file — the same logic applies here (this file ships everything advisory by default; the orchestration file ships a per-entry mix).
+> **Status**: advisory. Reviewers may cite entries as `CRAFT NOTES`, but a citation from this file is not independently blocking. Tightening any entry to block-on-sight requires an ADR. See [ADR-020 §"Block-vs-advisory designation"](../decisions/adr-020-orchestration-patterns-reference.md#block-vs-advisory-designation) for the parallel decision on the orchestration file - the same logic applies here (this file ships everything advisory by default; the orchestration file ships a per-entry mix).
 
 ## Read this first — descriptive vocabulary, not prescription
 
@@ -48,7 +48,7 @@ Cite from any file by ID alone — the prefix and range tell the reader which fi
 1. **The list isn't exhaustive.** Functional (Functor, Monad, Lens, Reader) and frontend-specific (Hooks, Container/Presenter, Compound Components) patterns still sit outside it. Concurrency now has a live sibling catalog at [`design-patterns-concurrency.md`](design-patterns-concurrency.md), but Actor, Reactor, and structured concurrency stay there as external pointers rather than internal IDs; cite an external authority for those instead of inventing a local handle.
 2. **GoF reflects 1994 constraints.** Singleton, Visitor, and Interpreter are particularly likely to be anti-patterns today. Use the per-entry "When NOT" notes in [`design-patterns-gof.md`](design-patterns-gof.md) before reaching for them.
 3. **Language matters.** Iterator, Strategy, Command, Observer, and Template Method are mostly language features in modern languages. The per-entry notes flag this where it applies.
-4. **No backing ADR.** This guide is Docs-owned and advisory. Adding new patterns needs a Docs PR; tightening an entry to block-on-sight needs an ADR (because that changes the Critic/Judge contract). New entries go into the appropriate namespace without renumbering existing IDs; postmortem-derived entries use the next available `CAP<N>` / `CP<N>` number, concurrency entries use `CCP<N>`, data / persistence entries use `CDP<N>`, and integration / messaging entries use `CIP<N>`.
+4. **No backing ADR.** This guide is Docs-owned and advisory. Adding new patterns needs a Docs PR; tightening an entry to block-on-sight needs an ADR because that changes the review contract. New entries go into the appropriate namespace without renumbering existing IDs; postmortem-derived entries use the next available `CAP<N>` / `CP<N>` number, concurrency entries use `CCP<N>`, data / persistence entries use `CDP<N>`, and integration / messaging entries use `CIP<N>`.
 
 ---
 

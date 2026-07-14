@@ -28,23 +28,20 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `docs/` | Humans | Deep reference: guides, ADRs, research |
 | `.context/` | AI agents | Canonical project truth: rules, state, roadmap, vision (lazy-loaded) |
 | `AGENTS.md` (root) | Most AI tools | Root startup contract (Copilot, Cursor, Gemini, Claude Code, etc.) |
-| `.agents/` | AI agent platforms | Canonical role bodies for the 10 repo roles |
-| `.claude/agents/` | Claude Code subagent loader | Claude Code overlays that point back to `.agents/<role>.md` |
-| `.cursor/agents/` | Cursor agent loader | Cursor overlays (`model`, `readonly`, `is_background`) that point back to `.agents/<role>.md` |
-| `.codex/agents/` | Codex custom-agent loader | TOML overlays (`model`, `model_reasoning_effort`, `sandbox_mode`) that point back to `.agents/<role>.md` |
-| `.github/agents/` | Copilot SDK custom-agent runtime | Copilot overlays that point back to `.agents/<role>.md` |
+| `.github/prompts/` | Review and workflow automation | Shared lenses plus advisory, daily, and weekly prompts |
+| `.opencode/skills/local-consensus/` | OpenCode | Optional independent multi-model review |
 | `install.sh` (root) | GitHub Codespaces "Dotfiles" | Bootstrap script — Codespaces expects it at repo root |
 | `test.sh` (root) | `.github/workflows/ci-tests.yml` | Template verification, invoked by CI as `./test.sh` |
 | `scripts/` | Project consumers (post-clone) | One-time project customization (`setup.sh`, `verify-env.sh`) |
 
-Canonical role behavior lives in `.agents/<role>.md`; the platform folders are thin registration shims. Their file shapes and model tiers are intentionally platform-specific: Copilot and Claude carry different `model` formats, Cursor adds `readonly` and `is_background`, and Codex uses TOML plus `model_reasoning_effort` and `sandbox_mode`.
+ADR-031 defines the active model: one implementing agent, blocking CI, optional parallel advisory review, recurring retro, and opt-in local consensus.
 
 **Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow.
 
 ## Features
 
 - **AI Agent Prompts** - Pre-configured prompts for onboarding AI assistants to any codebase
-- **Multi-Agent Roles** - Role-specialized agent files (Analyst, Architect, Frontend, Backend, PM, QA, DevOps, Docs, Judge, Critic) with an ownership map so multiple agents can work in parallel without code conflicts
+- **Monolithic Agent Workflow** - One implementing agent with optional parallel advisory feedback and recurring retro automation
 - **Context Pack** - Structured directory (`.context/`) for project memory across LLM sessions
 - **Automatic Extension Installation** - Essential VS Code extensions installed on Codespace start
 - **Multi-Platform Support** - Works with Cursor, GitHub Copilot, Gemini Code Assist, and more
@@ -54,13 +51,14 @@ Canonical role behavior lives in `.agents/<role>.md`; the platform folders are t
 - **Pre-commit Hooks** - Template for linting, secret detection, and commit standards
 - **ADR Templates** - Architecture Decision Record templates with examples
 - **Verification Scripts** - Built-in testing (see `./test.sh` output for current check count) to ensure template integrity
-- **Backlog-Ready Issue Pipeline** - `.context/backlog.yaml` is a machine-readable task list (validated by `.context/backlog.schema.json`). The backlog is auto-converted into GitHub issues and routed through a gated Copilot assignment workflow with concurrent + daily budgets and a queue. The pipeline relies on state labels (`copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) which `scripts/setup.sh` creates automatically. See [`docs/guides/agent-pipeline.md`](docs/guides/agent-pipeline.md) for the intended end-to-end flow.
 
 ## Repository reference (for agents)
 
-The full directory tree, the agent-file catalog, the context-pack catalog, the prompts catalog, the issue-template catalog, the deployment-config catalog, the development-tools catalog, and the CI/CD-workflow catalog all live in [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) — the structured reference optimized for AI agents.
+The active repository layout, context-pack catalog, prompt catalog, workflow catalog,
+and validation commands live in [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md), the
+structured reference optimized for AI agents.
 
-Why split? Per [`docs/decisions/adr-022-top-level-md-scope-split.md`](docs/decisions/adr-022-top-level-md-scope-split.md), `README.md` (this file) is for human onboarding; [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) is for agent reference; [`AGENTS.md`](AGENTS.md) is the thin contract every AI tool reads first. The Repo map above is the human-oriented summary; [`AI_REPO_GUIDE.md` § Repository Structure](AI_REPO_GUIDE.md#repository-structure) has the full ASCII tree.
+Why split? Per [`docs/decisions/adr-022-top-level-md-scope-split.md`](docs/decisions/adr-022-top-level-md-scope-split.md), `README.md` (this file) is for human onboarding; [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) is for agent reference; and [`AGENTS.md`](AGENTS.md) is the operating contract every AI tool reads first.
 
 ## Included VS Code Extensions
 
@@ -73,7 +71,10 @@ Why split? Per [`docs/decisions/adr-022-top-level-md-scope-split.md`](docs/decis
 
 ## CI/CD Workflows
 
-The full workflow catalog (~17 entries with required secrets and customization notes) lives in [`AI_REPO_GUIDE.md` § CI/CD Workflows](AI_REPO_GUIDE.md#cicd-workflows). At a glance: `ci-tests.yml` runs build/lint/test, `claude.yml` powers `@claude` triggers, the `agent-*` family handles autonomous Copilot dispatch and review, and `auto-rebase-on-merge.yml` keeps parallel branches current. Most workflows require `CLAUDE_PAT` or `ANTHROPIC_API_KEY` secrets — see the table.
+The active workflow map lives in [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md). At a
+glance, CI and lint block merge; Copilot assignment remains monolithic;
+`ai-review:live` enables optional parallel advisory review; and scheduled daily
+and weekly workflows perform retrospective review and draft-fix work.
 
 ## Setup
 
@@ -84,7 +85,7 @@ The full workflow catalog (~17 entries with required secrets and customization n
 > Note: GitHub Codespaces has a feature literally named **Dotfiles** that runs
 > an install script at Codespace startup. This template is not a Unix dotfiles
 > repo (no `~/.bashrc` etc.) — it just uses that Codespaces hook to bootstrap
-> the multi-agent kit. The quoted strings below are the exact labels in the
+> the repository kit. The quoted strings below are the exact labels in the
 > GitHub Codespaces settings UI.
 
 1. Go to [GitHub Codespaces settings](https://github.com/settings/codespaces)
@@ -96,8 +97,8 @@ The full workflow catalog (~17 entries with required secrets and customization n
 
 1. Click "Use this template" on GitHub
 2. Create your new repository
-3. Run `.github/prompts/repo-onboarding.md`
-4. In Mode B, complete **Step 2** of [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md) to reset and repopulate `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md`, delete template-only architecture diagrams, then customize with project-specific content
+3. Run the OpenCode `repo-onboarding` skill
+4. In Mode B, follow the skill's bootstrap procedure to reset and repopulate `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md`, delete template-only architecture diagrams, then customize with project-specific content
 5. Replace remaining `TEMPLATE_PLACEHOLDER` and `PLEASE_UPDATE_THIS/URL` values and customize `ci-tests.yml` for your tech stack
 
 ### Option 3: Copy to Existing Repository
@@ -107,9 +108,11 @@ The full workflow catalog (~17 entries with required secrets and customization n
 3. Create an `AI_REPO_GUIDE.md` specific to your project
 4. Customize `.context/` for your project state
 
-## Onboarding prompts (for AI agents)
+## Repository onboarding
 
-Two agent-facing prompts — the **first-time repo initialization** prompt to bootstrap a new project from this template, and the **per-session onboarding** prompt to continue work on an existing repo — live in [`AI_REPO_GUIDE.md` § Onboarding Prompts](AI_REPO_GUIDE.md#onboarding-prompts). After creating a repo from this template, paste the first-time-init prompt into a GitHub issue and assign it to your AI agent.
+Use the OpenCode `repo-onboarding` skill for first-clone orientation, Mode B
+template bootstrap, or rebuilding `AI_REPO_GUIDE.md`. Use the Agent
+Initialization issue template when the work needs a durable issue contract.
 
 ## Verification
 
@@ -185,19 +188,17 @@ EXTENSIONS=(
 2. Update `install.sh` to copy them if needed
 3. Update `test.sh` to verify them
 
-### Platform-Specific Files
+### Review Automation
 
-- **Claude Code**: use `.claude/agents/` for native subagent overlays.
-- **Cursor**: Use `.cursor/agents/` for role overlays and `.cursor/BUGBOT.md` for review rules.
-- **Codex**: Use `.codex/agents/` for TOML custom-agent overlays.
-- **Gemini**: Add files to `.gemini/`.
-- **GitHub Copilot**: Use `.github/agents/` for custom-agent overlays and `.github/prompts/` for prompt files.
+- Add `ai-review:live` when optional advisory feedback is useful during implementation.
+- Daily and weekly workflows review merged work and repository health.
+- Use the OpenCode `local-consensus` skill only for consequential uncertainty.
 
 ## Best Practices
 
 When using this template in a new repository:
 
-1. **Start with [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md)** — canonical onboarding procedure. This will instruct agents to repopulate files including `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` with project-specific purpose, plan, and design context before regenerating `AI_REPO_GUIDE.md`
+1. **Start with the OpenCode `repo-onboarding` skill** - it repopulates `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and other project context before regenerating `AI_REPO_GUIDE.md`
 2. **Customize the operating contract** - Add project-wide constraints to `AGENTS.md`
 3. **Start with mockups** - Add design artifacts to `.context/vision/` before coding
 4. **Use GitHub live state** - Keep issue/PR `agent-state:v1` comments current for cognitive handoff between sessions
@@ -209,7 +210,7 @@ When using this template in a new repository:
 
 Known constraints of this template. Agent-facing detail (environment variables, tool-specific path rules, workflow placeholders) lives in [`AI_REPO_GUIDE.md` § Gotchas / Known Issues](AI_REPO_GUIDE.md#gotchas--known-issues).
 
-- **Opinionated scaffolding.** The 10-role multi-agent model, `.context/` lazy-loading pattern, and first-class platform overlays (`.github/agents/`, `.claude/agents/`, `.cursor/agents/`, `.codex/agents/`) reflect specific design choices recorded in `docs/decisions/`. Forks that disagree should strip rather than bend.
+- **Opinionated scaffolding.** The monolithic workflow, `.context/` lazy-loading pattern, and review lifecycle reflect decisions recorded in `docs/decisions/`.
 - **No runtime code.** This is a docs/config template, not a language-specific starter. Your project brings its own build, test, and deploy toolchain; `ci-tests.yml` ships with placeholder commands you must replace.
 - **Codespaces-centric bootstrap.** `install.sh` is wired to the GitHub Codespaces "Dotfiles" feature (via the `$DOTFILES` env var). It falls back to its own directory elsewhere, but some convenience features (extension install, prompt copy) assume a Codespace.
 - **Template placeholders are text, not schema.** The `TEMPLATE_PLACEHOLDER` marker is grep-discoverable but not validated for correctness. Running `scripts/verify-env.sh` lists them; the agent still has to make the judgement call on replacement content.
@@ -218,15 +219,13 @@ Known constraints of this template. Agent-facing detail (environment variables, 
 
 Template-level items under consideration. Per-decision follow-ups live in the "Future Work" subsection of each ADR under `docs/decisions/`.
 
-- **Automate platform overlay generation from `.agents/`.** Current sync is manual; `test.sh` verifies overlay presence, `description:` parity, and per-platform `model:` allowlists across `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/`.
 - **Stricter placeholder scanning in CI.** Move `TEMPLATE_PLACEHOLDER` detection from an ad-hoc script into a required CI check so derived projects cannot merge partial customizations.
-- **Nested auto-handoff validation for subagent chaining.** Exercise `architect → pm → implementer → judge` end-to-end in CI to prevent role-boundary regressions.
 - **More deployment templates.** Cloudflare Workers, Fly.io, and Kubernetes manifests are candidates. Each addition is a maintenance commitment — contribute only if you'll maintain it.
 - **First-class dotfiles separation.** Splitting the repo into "template assets" and "Codespaces bootstrap" would let teams adopt one without the other.
 
 ## FAQ
 
-Answers to common questions about using this template — why the multiple agent files exist, how to tell template vs derived project, whether you need all the deployment configs, and more. See [`docs/FAQ.md`](docs/FAQ.md).
+Answers to common questions about using this template, derived-project detection, and deployment configs live in [`docs/FAQ.md`](docs/FAQ.md).
 
 ## License
 

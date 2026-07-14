@@ -13,8 +13,6 @@ SCRIPT_FILES=(
   "scripts/verify-pr.sh"
   "scripts/db-reset.sh"
   "scripts/auto-rebase-overlapping.sh"
-  "scripts/multi-dispatch-safety.sh"
-  "scripts/pr-iteration-stats.sh"
 )
 
 for file in "${SCRIPT_FILES[@]}"; do

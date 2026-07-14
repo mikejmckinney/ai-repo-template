@@ -168,15 +168,14 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 
 ### Active Track
 - Dogfood `.context/**` in the template repo itself so agents stop reading placeholder context in normal template work.
-- Finish the multi-platform overlay extension and associated cleanup under issue #327.
-- Harden the `pr-resolve-all` / merge loop under issue #321.
+- Complete the monolithic lifecycle cleanup under issue #474.
 - Continue draining repo-local compatibility references that can make ADR-025 look optional.
 
 ### Current Deliverables
 - Populate `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` with real template content.
-- Add architecture diagrams for multi-agent flow and live-state surfaces.
-- Keep Mode B onboarding explicit via [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md) Step 2 (inline bootstrap).
-- Keep the reset rule explicit in onboarding Step 2.6 verification after live template files lose their bootstrap placeholder markers.
+- Keep architecture guidance aligned with ADR-031 and GitHub-backed live state.
+- Keep Mode B onboarding explicit through the OpenCode `repo-onboarding` skill.
+- Keep the reset rule explicit in onboarding verification after live template files lose their bootstrap placeholder markers.
 
 ### Exit Criteria
 - The template repo demonstrates its own lazy-load context pattern.

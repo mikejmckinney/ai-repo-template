@@ -35,18 +35,18 @@ session notes.
 
 ## Execution model
 
-- Prefer one implementing agent for routine work. ADR-031 found no favorable
-  ROI crossover for the multi-role pipeline on the benchmarked task classes.
-- Use role files under `.agents/` as specialty guidance, not as a mandatory
-  dispatch pipeline or path-ownership gate.
-- Dispatch another agent only when the user requests it or independent review,
-  isolation, or specialized expertise justifies the overhead.
+- Use one monolithic implementing agent. ADR-031 found no favorable ROI crossover
+  for the multi-role pipeline and retired the role registry.
+- Use the `local-consensus` skill only when the user requests it or consequential
+  uncertainty justifies independent multi-model review.
+- Advisory review is optional, non-blocking, and may run in parallel with active
+  PR implementation. CI and lint remain the blocking pre-merge controls.
 - Do not require structured parent, plan, or subagent compliance blocks.
 
 ## Work style
 
 - Create a non-default branch before non-trivial edits. Use
-  `feature/<role>-<task>` or `fix/<issue>-<slug>` when applicable.
+  `feature/<task>` or `fix/<issue>-<slug>` when applicable.
 - Prefer the smallest reversible change that fully solves the task.
 - Do not bundle unrelated refactors. Record worthwhile adjacent work separately.
 - Preserve unrelated user changes in a dirty worktree.
@@ -128,8 +128,7 @@ Update companion documentation in the same PR when a change affects it:
 |---|---|
 | Build, test, lint, run, install, layout, entry points, or troubleshooting | `AI_REPO_GUIDE.md` |
 | An accepted architectural decision | Amend or supersede the relevant ADR and update `docs/decisions/README.md` |
-| Multi-agent flow, role boundaries, or coordination | `docs/guides/multi-agent-coordination.md` |
-| Role registration | Canonical `.agents/<role>.md`, platform overlays, install inventory, and mirror checks |
+| Agent execution or review lifecycle | ADR-031, `docs/guides/agent-pipeline.md` |
 | Workflow trigger or verification class | `docs/guides/agent-pipeline.md`, `scripts/verify-pr.sh`, tests, and sandbox guide as applicable |
 | File listed in repository inventories | Owning check module, human index, and install inventory as applicable |
 | Live-state schema or location | `.context/state/`, session guidance, and coordination guide |
@@ -226,9 +225,8 @@ Detailed history and examples remain in
 
 ### Patterns in use
 
-- **P1 Strategy (role specialization):** role files provide focused strategies
-  selected when specialization is worth the overhead; routine implementation
-  still defaults to one agent.
+- **P1 Strategy:** one implementing agent applies task-appropriate strategies;
+  optional local consensus supplies independent perspectives when justified.
 - **P2 Chain of Responsibility (pipeline):** staged handlers have explicit
   pass/block criteria and short-circuit on a blocking result. The full pipeline
   is optional, not the routine default.

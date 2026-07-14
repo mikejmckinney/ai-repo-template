@@ -6,36 +6,16 @@ agent: agent
 # Advisory review snapshot (non-blocking)
 
 You are producing a **single advisory PR comment** for an in-progress pull request.
-Combine four review lenses in one pass. This is **not** a formal PR review and **must not** block merge.
+Apply the injected `shared-review-lenses.md` contract in one pass. This is **not** a formal PR review and **must not** block implementation or merge.
 
-The automation appends **repo startup context** (`AGENTS.md`, `process_session_start.md`, rule catalog, `process_critical_thinking.md`, `process_clarification.md`) and **PR diff context** below this prompt (cursor/gemini paths), or mounts equivalent files (antigravity path). Apply those rules when judging gates and orchestration-layer changes.
-
-## Analyst lens
-
-- Is the PR still aligned to the linked issue outcome?
-- Is there scope drift?
-
-## Judge lens
-
-- Are hard gates at risk (plan-as-comment, verification evidence, doc-sync, compliance)?
-- Are acceptance criteria and verification evidence likely sufficient at finalization?
-
-## Critic lens
-
-- Hidden assumptions, overengineering, unclear reasoning, or maintainability issues?
-
-## Code review lens
-
-- Concrete defects in the current diff?
+The automation appends `AGENTS.md`, the shared review lenses, task-triggered
+governance context, and PR diff evidence below this prompt (Cursor/Gemini paths),
+or mounts equivalent files (Antigravity path). Apply that context when reviewing
+workflow and process changes.
 
 ## Hard constraints
 
-- **Do not** push commits.
-- **Do not** submit a formal PR review (`gh api .../pulls/.../reviews`).
-- **Do not** apply or remove labels.
-- **Do not** resolve review threads.
-- **Do not** mark anything blocking unless a human later applies `review:blocking-ai`.
-- Prefer concise, deduplicated findings.
+- **Do not** mark anything blocking or require implementation to wait for this run.
 - If an existing advisory snapshot is provided, **do not** repeat findings unless still present at head and material.
 - Emit the **session handshake** yourself (self-reported; automation will not override it).
 - Include the factual **Diff coverage** line in the snapshot header using automation-supplied numbers when provided.
@@ -59,7 +39,7 @@ Diff coverage: `<included>/<total>` bytes, truncated: `<yes|no>`
 Emit the current handshake from [`AGENTS.md`](../../AGENTS.md). Do not append a
 context-receipt table.
 
-### Findings to consider before finalization
+### Findings to consider
 
 | ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
 |---|---|---|---|---|---|---|
@@ -67,7 +47,7 @@ context-receipt table.
 
 ### Not blocking
 
-These findings are advisory until final feedback consolidation or human escalation via `review:blocking-ai`.
+These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
 ```
 
-Severity: `info`, `low`, `medium`, `high`. Lens: `analyst`, `judge`, `critic`, `code`. Use `ADV-NN` IDs. Empty findings table is allowed when no findings.
+Severity: `info`, `low`, `medium`, `high`. Use the shared lens names and `ADV-NN` IDs. Empty findings table is allowed when no findings.

@@ -103,6 +103,3 @@ risks, and any files changed during Mode B bootstrap or guide repair.
 Stop when classification is ambiguous, Mode B lacks explicit authorization,
 required current sources are unavailable, or validation reports blockers that
 cannot be resolved safely.
-
-The standalone cross-platform procedure remains at
-`.github/prompts/repo-onboarding.md` for agents without OpenCode skills.

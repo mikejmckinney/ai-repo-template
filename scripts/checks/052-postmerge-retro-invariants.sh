@@ -36,7 +36,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   FIX_PR_TEMPLATE=".github/templates/postmerge-retro-fix-pr.md"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
   ENSURE_LABELS_SCRIPT="scripts/setup/ensure-pipeline-labels.sh"
-  FEEDBACK_COLLECTOR="scripts/workflows/pr-feedback/collect-pr-feedback.sh"
+  FEEDBACK_COLLECTOR="scripts/workflows/lib/collect-pr-evidence.sh"
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
     "$DAILY_SCRIPT" "$DAILY_DISPATCH_SCRIPT" "$DAILY_SELECT_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
@@ -252,10 +252,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "sandbox-bootstrap.sh must call ensure-pipeline-labels.sh"
   fi
 
-  if grep -q 'collect-pr-feedback.sh' "$COLLECT_SCRIPT" 2>/dev/null; then
-    pass "postmerge collector wraps collect-pr-feedback.sh"
+  if grep -q 'collect-pr-evidence.sh' "$COLLECT_SCRIPT" 2>/dev/null; then
+    pass "postmerge collector wraps collect-pr-evidence.sh"
   else
-    fail "collect-postmerge-evidence.sh must wrap collect-pr-feedback.sh"
+    fail "collect-postmerge-evidence.sh must wrap collect-pr-evidence.sh"
   fi
 
   if grep -q 'follow_up_issues' "$RETRO_PROMPT" 2>/dev/null \
@@ -309,11 +309,17 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "agent-postmerge-retro.yml missing POSTMERGE_RETRO_CONTEXT_PROFILE env"
   fi
 
-  for label in retro-review adr:update context-pack agent-suggested; do
+  if grep -q '^agent-suggested|' "$LABELS_SCRIPT" 2>/dev/null; then
+    pass "agent-suggested follow-up label declared in setup"
+  else
+    fail "agent-suggested label missing from $LABELS_SCRIPT"
+  fi
+
+  for label in retro-review retro:adr retro:context-pack adr:update context-pack; do
     if grep -q "^${label}|" "$LABELS_SCRIPT" 2>/dev/null; then
-      pass "label ${label} declared in setup"
+      fail "retired label ${label} remains in $LABELS_SCRIPT"
     else
-      fail "label ${label} missing from $LABELS_SCRIPT"
+      pass "retired label ${label} is absent from setup"
     fi
   done
 

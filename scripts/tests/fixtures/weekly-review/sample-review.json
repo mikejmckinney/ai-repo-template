@@ -16,7 +16,5 @@
       "evidence": ["scripts/checks/053-weekly-review-invariants.sh"],
       "dedupe_key": "repo-invariant-052-missing-link"
     }
-  ],
-  "adr_updates": [],
-  "context_pack_updates": []
+  ]
 }

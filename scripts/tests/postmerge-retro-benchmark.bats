@@ -16,16 +16,12 @@ setup() {
     {
       "pr": 10,
       "summary": "one",
-      "follow_up_issues": [],
-      "adr_updates": [],
-      "context_pack_updates": []
+      "follow_up_issues": []
     },
     {
       "pr": 11,
       "summary": "two",
-      "follow_up_issues": [],
-      "adr_updates": [],
-      "context_pack_updates": []
+      "follow_up_issues": []
     }
   ]
 }
@@ -44,7 +40,7 @@ EOF
 @test "split-monolithic-retro-json.py fails when expected PR missing" {
   tmp="$(mktemp -d)"
   cat >"$tmp/llm.txt" <<'EOF'
-{"prs":[10],"retros":[{"pr":10,"summary":"x","follow_up_issues":[],"adr_updates":[],"context_pack_updates":[]}]}
+{"prs":[10],"retros":[{"pr":10,"summary":"x","follow_up_issues":[]}]}
 EOF
   run python3 scripts/workflows/postmerge-retro/split-monolithic-retro-json.py \
     "$tmp/llm.txt" "$tmp/out" 10 11

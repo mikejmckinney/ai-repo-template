@@ -17,7 +17,7 @@ docs/
 ├── README.md           # This file
 ├── reference/          # Historical specs, research, external references
 │   └── *.md            # Specification documents
-├── research/           # Analyst output (analysis artifacts)
+├── research/           # Research and analysis artifacts
 │   └── *.md            # Needs analysis, competitive landscape, impact scores
 ├── guides/             # How-to guides for developers
 │   └── *.md            # Setup, deployment, contribution guides
@@ -39,7 +39,7 @@ docs/
 
 ### `research/`
 
-- Analyst output (needs analysis, competitive landscape, impact scores)
+- Research output (needs analysis, competitive landscape, impact scores)
 - Problem validation artifacts
 - Stakeholder feedback summaries
 - Market research findings

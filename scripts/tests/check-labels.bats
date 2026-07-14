@@ -34,13 +34,19 @@ _label_declared() {
 }
 
 @test "core pipeline labels are still declared" {
-  for label in auto-merge claude-fix copilot-relay agent:claimed agent:blocked agent:awaiting-review cap-override; do
+  for label in auto-merge agent:claimed agent:blocked agent:awaiting-review cap-override; do
     _label_declared "$label" || { echo "missing label: $label"; return 1; }
   done
 }
 
 @test "advisory review labels are declared in 40-ensure-labels.sh" {
-  for label in ai-review:live ai-review:full implementation-complete retro-review review:blocking-ai retro:adr retro:context-pack adr:update context-pack; do
+  for label in ai-review:live ai-review:full; do
     _label_declared "$label" || { echo "missing label: $label"; return 1; }
+  done
+}
+
+@test "retired backlog and retro labels are absent" {
+  for label in from-backlog retro-review retro:adr retro:context-pack adr:update context-pack; do
+    ! _label_declared "$label" || { echo "retired label remains: $label"; return 1; }
   done
 }

@@ -13,9 +13,8 @@ This repository was created from the `ai-repo-template`. Please initialize it fo
 ## User outcome (15-minute test)
 
 <!--
-Optional but recommended. If you can answer this clearly here, you may
-add the `outcome-validated` label to opt out of the Analyst pre-flight
-gate (see ADR-014).
+Optional but recommended. If you can answer this clearly here, add the
+`outcome-validated` label to record that the user outcome is explicit.
 
 The test: "If a user spent 15 minutes with the initialized repo, what
 would they be able to DO?" Focus on user actions (run, build, deploy,
@@ -32,7 +31,7 @@ Use this priority order when information conflicts:
 ## Preflight Checks
 
 - [ ] Verify `.context/00_INDEX.md` exists
-- [ ] Verify `.github/prompts/repo-onboarding.md` exists
+- [ ] Verify the OpenCode `repo-onboarding` skill is available
 - [ ] Scan and list all files containing `TEMPLATE_PLACEHOLDER`
 - [ ] Run `git remote -v` to detect repository owner/name
 
@@ -45,10 +44,9 @@ Determine the project purpose and current status from:
 - `docs/**`
 - Existing codebase (if any)
 
-### 2. Run Onboarding Prompts
+### 2. Run Repository Onboarding
 
-Execute:
-1. `.github/prompts/repo-onboarding.md`
+Execute the OpenCode `repo-onboarding` skill in Mode B.
 
 ### 3. Update README.md
 

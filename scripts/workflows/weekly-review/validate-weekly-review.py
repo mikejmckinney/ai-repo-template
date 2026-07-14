@@ -27,43 +27,36 @@ def main() -> int:
         print("summary must be a string", file=sys.stderr)
         return 1
 
-    for key in ("follow_up_issues", "adr_updates", "context_pack_updates"):
-        items = data.get(key)
-        if not isinstance(items, list):
-            print(f"{key} must be an array", file=sys.stderr)
+    for retired in ("adr_updates", "context_pack_updates"):
+        if retired in data:
+            print(f"{retired} is retired; use follow_up_issues", file=sys.stderr)
             return 1
-        for i, item in enumerate(items):
-            if not isinstance(item, dict):
-                print(f"{key}[{i}] must be object", file=sys.stderr)
+    items = data.get("follow_up_issues")
+    if not isinstance(items, list):
+        print("follow_up_issues must be an array", file=sys.stderr)
+        return 1
+    for i, item in enumerate(items):
+        key = "follow_up_issues"
+        if not isinstance(item, dict):
+            print(f"{key}[{i}] must be object", file=sys.stderr)
+            return 1
+        try:
+            validate_triage_item(item, f"{key}[{i}]", from_llm=True)
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
+        for req in ("title", "body", "dedupe_key"):
+            if not str(item.get(req, "")).strip():
+                print(f"{key}[{i}].{req} required", file=sys.stderr)
                 return 1
-            try:
-                validate_triage_item(item, f"{key}[{i}]", from_llm=True)
-            except ValueError as exc:
-                print(str(exc), file=sys.stderr)
+        steps = item.get("repro_steps")
+        if not isinstance(steps, list) or not steps:
+            print(f"{key}[{i}].repro_steps required", file=sys.stderr)
+            return 1
+        for j, step in enumerate(steps):
+            if not isinstance(step, str) or not str(step).strip():
+                print(f"{key}[{i}].repro_steps[{j}] must be non-empty string", file=sys.stderr)
                 return 1
-            if key == "follow_up_issues":
-                for req in ("title", "body", "dedupe_key"):
-                    if not str(item.get(req, "")).strip():
-                        print(f"{key}[{i}].{req} required", file=sys.stderr)
-                        return 1
-                steps = item.get("repro_steps")
-                if not isinstance(steps, list) or not steps:
-                    print(f"{key}[{i}].repro_steps required", file=sys.stderr)
-                    return 1
-                for j, step in enumerate(steps):
-                    if not isinstance(step, str) or not str(step).strip():
-                        print(f"{key}[{i}].repro_steps[{j}] must be non-empty string", file=sys.stderr)
-                        return 1
-            elif key == "adr_updates":
-                for req in ("title", "body", "dedupe_key"):
-                    if not str(item.get(req, "")).strip():
-                        print(f"{key}[{i}].{req} required", file=sys.stderr)
-                        return 1
-            elif key == "context_pack_updates":
-                for req in ("pack", "reason", "dedupe_key"):
-                    if not str(item.get(req, "")).strip():
-                        print(f"{key}[{i}].{req} required", file=sys.stderr)
-                        return 1
 
     print(f"OK: weekly review valid ({len(data.get('follow_up_issues') or [])} follow-ups)")
     return 0

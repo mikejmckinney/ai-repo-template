@@ -17,7 +17,5 @@
       "evidence": ["scripts/checks/052-postmerge-retro-invariants.sh"],
       "dedupe_key": "fixture-retro-schema-test"
     }
-  ],
-  "adr_updates": [],
-  "context_pack_updates": []
+  ]
 }

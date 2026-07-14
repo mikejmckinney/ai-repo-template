@@ -140,7 +140,7 @@ spec.loader.exec_module(mod)
 row = mod.format_row(
     {
         "pr": 42,
-        "category": "adr_updates",
+        "category": "follow_up_issues",
         "dedupe_key": "adr-k",
         "impact": "dx-perf-doc",
         "trigger_likelihood": "common",
@@ -210,9 +210,7 @@ PY
       "trigger_likelihood": "edge",
       "fix_cost": "trivial"
     }
-  ],
-  "adr_updates": [],
-  "context_pack_updates": []
+  ]
 }
 EOF
   run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py "$tmp/retro.json"
@@ -238,9 +236,7 @@ EOF
       "trigger_likelihood": "edge",
       "fix_cost": "trivial"
     }
-  ],
-  "adr_updates": [],
-  "context_pack_updates": []
+  ]
 }
 EOF
   run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py "$tmp/retro.json"
@@ -249,34 +245,21 @@ EOF
   rm -rf "$tmp"
 }
 
-@test "merge-daily-retro-json propagates triage on adr_updates" {
+@test "validate-postmerge-retro rejects retired output buckets" {
   tmp="$(mktemp -d)"
-  cat >"$tmp/retro.json" <<'EOF'
+  cat >"$tmp/base.json" <<'EOF'
 {
   "pr": 99,
-  "summary": "adr triage fixture",
-  "follow_up_issues": [],
-  "adr_updates": [
-    {
-      "adr": "docs/decisions/adr-019-per-role-model-tiering.md",
-      "title": "Clarify model tier table",
-      "body": "ADR table is ambiguous.",
-      "dedupe_key": "adr-tier-clarity",
-      "impact": "dx-perf-doc",
-      "trigger_likelihood": "fringe",
-      "fix_cost": "moderate"
-    }
-  ],
-  "context_pack_updates": []
+  "summary": "retired bucket fixture",
+  "follow_up_issues": []
 }
 EOF
-  run python3 scripts/workflows/postmerge-retro/merge-daily-retro-json.py 2026-06-20 "$tmp/retro.json"
-  [ "$status" -eq 0 ]
-  merged="$output"
-  run jq -e '.findings[0].category == "adr_updates"' <<<"$merged"
-  [ "$status" -eq 0 ]
-  run jq -e '.findings[0].priority_band == "defer"' <<<"$merged"
-  [ "$status" -eq 0 ]
+  for bucket in adr_updates context_pack_updates; do
+    jq --arg bucket "$bucket" '. + {($bucket): []}' "$tmp/base.json" >"$tmp/retro.json"
+    run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py "$tmp/retro.json"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"$bucket is retired"* ]]
+  done
   rm -rf "$tmp"
 }
 
@@ -608,7 +591,7 @@ EOF
 @test "merge-daily-retro-json includes pr_evidence_coverage sidecars" {
   tmp="$(mktemp -d)"
   cat >"$tmp/pr-1-retro.json" <<'EOF'
-{"pr": 1, "summary": "s", "follow_up_issues": [], "adr_updates": [], "context_pack_updates": []}
+{"pr": 1, "summary": "s", "follow_up_issues": []}
 EOF
   cat >"$tmp/pr-1-evidence-coverage.json" <<'EOF'
 {"pr": 1, "diff_included": 10, "diff_total": 20, "head_included": 5, "head_total": 5, "would_truncate": true, "evidence_route": "bounded", "routing_context": {"adaptive_enabled": false, "provider_resolved": "cursor", "cursor_available": true, "antigravity_available": false}}

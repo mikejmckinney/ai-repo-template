@@ -26,6 +26,7 @@
 
 # --- CI / local artifacts ---
 .artifacts/
+.context/context-imports/
 .context/session-recovery/
 .env
 .env.*

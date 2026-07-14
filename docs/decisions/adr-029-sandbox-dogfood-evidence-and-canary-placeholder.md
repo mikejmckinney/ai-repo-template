@@ -138,15 +138,11 @@ checklist can enforce mechanically. Content checks — that the sandbox
 issue actually describes the change, that the sandbox PR actually
 exercises it should also be reviewed by judge and if needed critic.
 
-### 4. Critic-before-Judge plan-gate ordering convention (Δ14)
+### 4. Historical plan-gate ordering convention (Δ14)
 
-`.github/prompts/op-issue-workflow.md` Phase 3 (plan-gate) dispatches
-Critic *before* Judge, matching Phase 5 (diff-gate) ordering already
-established. Critic surfaces hidden assumptions and AI clichés on the
-plan; Judge then renders APPROVE / REQUEST_CHANGES / BLOCK with full
-information. Reversing the order forces Judge to render twice when Critic
-later catches issues. This convention applies to all OP-mediated
-plan-gates, not only #349's.
+The former role pipeline dispatched Critic before Judge so the final gate
+received all review evidence. ADR-031 retired that pipeline; this section is
+retained only as historical rationale and is not an operational instruction.
 
 ### 5. Canary placeholder convention
 

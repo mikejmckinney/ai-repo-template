@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Description: One-time bootstrap of the sandbox sibling repo (ADR-016).
-# Usage: SANDBOX_PAT=<value> [SANDBOX_ANTHROPIC_KEY=<value>] \
+# Usage: SANDBOX_PAT=<value> \
 #        [SANDBOX_REPO_NAME=<owner/repo>] [SANDBOX_REMOTE=sandbox] \
 #        ./scripts/sandbox-bootstrap.sh
 #
@@ -10,8 +10,7 @@
 #   2. Create the sandbox sibling repo (private; same owner).
 #   3. Mirror upstream main into the sandbox.
 #   4. Set CLAUDE_PAT secret on the sandbox repo from $SANDBOX_PAT.
-#   5. (Optional) Set ANTHROPIC_API_KEY from $SANDBOX_ANTHROPIC_KEY.
-#   6. Add a git remote on this checkout pointing at the sandbox.
+#   5. Add a git remote on this checkout pointing at the sandbox.
 #
 # Idempotent: re-running on an already-bootstrapped sandbox is safe.
 # Existing repo / existing remote / existing secret are skipped with a
@@ -47,9 +46,6 @@
 #
 #                         When unset, the script uses your existing
 #                         `gh auth` identity.
-#   SANDBOX_ANTHROPIC_KEY Anthropic API key for sandbox-only claude.yml /
-#                         agent-fix-reviews.yml runs. A separate
-#                         sandbox-budget key is recommended.
 #   SANDBOX_REPO_NAME     Override the default sandbox slug
 #                         ("<upstream-owner>/<upstream-name>-sandbox").
 #                         Use full "owner/repo" form.
@@ -234,24 +230,13 @@ printf '%s' "$SANDBOX_PAT" | gh secret set CLAUDE_PAT \
   --repo "$SANDBOX_REPO"
 log_info "CLAUDE_PAT set."
 
-# ── Step 5: (Optional) Set ANTHROPIC_API_KEY ────────────────────────────────
-
-if [[ -n "${SANDBOX_ANTHROPIC_KEY:-}" ]]; then
-  log_step "Setting ANTHROPIC_API_KEY secret on sandbox repo"
-  printf '%s' "$SANDBOX_ANTHROPIC_KEY" | gh secret set ANTHROPIC_API_KEY \
-    --repo "$SANDBOX_REPO"
-  log_info "ANTHROPIC_API_KEY set."
-else
-  log_warn "SANDBOX_ANTHROPIC_KEY not set — skipping ANTHROPIC_API_KEY (sandbox claude.yml runs will be unavailable until set manually)."
-fi
-
-# ── Step 6: Add sandbox git remote ──────────────────────────────────────────
+# ── Step 5: Add sandbox git remote ──────────────────────────────────────────
 
 log_step "Adding '${SANDBOX_REMOTE}' git remote on this checkout"
 
 sandbox_ensure_git_remote "$(pwd)"
 
-# ── Step 7: Ensure pipeline labels on sandbox ───────────────────────────────
+# ── Step 6: Ensure pipeline labels on sandbox ───────────────────────────────
 
 log_step "Ensuring pipeline labels on sandbox repo"
 
