@@ -19,6 +19,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   UMBRELLA_TEMPLATE=".github/templates/weekly-review-umbrella.md"
   FIX_PR_TEMPLATE=".github/templates/weekly-review-fix-pr.md"
   LIB_DIR="scripts/workflows/lib"
+  # shellcheck source=scripts/lib/search.sh
+  source "scripts/lib/search.sh"
 
   for f in "$WEEKLY_WORKFLOW" "$WEEKLY_PROMPT" "$WEEKLY_FIX_PROMPT" "$SCAN_SCRIPT" \
     "$WEEKLY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
@@ -35,20 +37,20 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fi
   done
 
-  if grep -q 'schedule:' "$WEEKLY_WORKFLOW" 2>/dev/null \
-    && grep -q '0 7 \* \* 0' "$WEEKLY_WORKFLOW" 2>/dev/null; then
+  if search_fixed 'schedule:' "$WEEKLY_WORKFLOW" >/dev/null 2>&1 \
+    && search_regex '0 7 \* \* 0' "$WEEKLY_WORKFLOW" >/dev/null 2>&1; then
     pass "weekly workflow scheduled Sunday 07:00 UTC"
   else
     fail "weekly workflow missing Sunday 07:00 UTC schedule"
   fi
 
-  if grep -q 'workflow_dispatch' "$WEEKLY_WORKFLOW" 2>/dev/null; then
+  if search_fixed 'workflow_dispatch' "$WEEKLY_WORKFLOW" >/dev/null 2>&1; then
     pass "weekly workflow supports manual workflow_dispatch"
   else
     fail "weekly workflow must support workflow_dispatch"
   fi
 
-  if ! grep -q 'pull_request:' "$WEEKLY_WORKFLOW" 2>/dev/null; then
+  if ! search_fixed 'pull_request:' "$WEEKLY_WORKFLOW" >/dev/null 2>&1; then
     pass "weekly workflow has no pull_request trigger"
   else
     fail "weekly workflow must not use pull_request trigger"
@@ -61,7 +63,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "workflow must invoke weekly scan and fix scripts"
   fi
 
-  if grep -q 'group: weekly-review' "$WEEKLY_WORKFLOW" 2>/dev/null; then
+  if search_fixed 'group: weekly-review' "$WEEKLY_WORKFLOW" >/dev/null 2>&1; then
     pass "weekly workflow uses dedicated concurrency group"
   else
     fail "weekly workflow missing weekly-review concurrency group"
