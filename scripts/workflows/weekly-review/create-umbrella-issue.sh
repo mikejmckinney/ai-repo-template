@@ -64,6 +64,7 @@ append_to_issue() {
       "$WEEKLY_JSON" "$REPO" "$HEAD_SHA" "$row_file" "$key" --summary
     [[ -s "$block_file" ]] || continue
     cat "$block_file" >>"$WORKDIR/new-blocks.md"
+    printf '\n' >>"$WORKDIR/new-blocks.md"
     cat "$row_file" >>"$WORKDIR/new-rows.md"
     index=$((index + 1))
   done < <(jq -r '.findings[].dedupe_key' "$WEEKLY_JSON")

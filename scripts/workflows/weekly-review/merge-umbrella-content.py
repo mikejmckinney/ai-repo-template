@@ -2,6 +2,7 @@
 """Atomically add weekly triage rows and detail blocks to an umbrella body."""
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -35,8 +36,10 @@ def merge_content(body: str, rows: str, blocks: str) -> str:
     if clean_rows:
         merged = merged.replace(TRIAGE_END, f"{clean_rows}\n{TRIAGE_END}", 1)
     if clean_blocks:
-        if "## Meta" in merged:
-            head, tail = merged.split("## Meta", 1)
+        meta = re.search(r"(?m)^## Meta[ \t]*$", merged)
+        if meta:
+            head = merged[: meta.start()]
+            tail = merged[meta.end() :]
             merged = f"{head.rstrip()}\n\n{clean_blocks}\n\n## Meta{tail}"
         else:
             merged = f"{merged.rstrip()}\n\n{clean_blocks}\n"

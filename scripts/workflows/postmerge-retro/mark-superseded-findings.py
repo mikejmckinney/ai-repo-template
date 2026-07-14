@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Annotate daily-retro findings superseded on main HEAD (fix-prefilter helper)."""
+"""Annotate batch findings superseded on main HEAD before a fix pass."""
 from __future__ import annotations
 
 import argparse
@@ -65,13 +65,13 @@ def annotate_weekly(weekly: dict, repo_root: Path) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("daily_json", type=Path)
+    parser.add_argument("batch_json", type=Path)
     parser.add_argument("--repo-root", type=Path, default=Path("."))
     parser.add_argument("--mode", choices=("auto", "daily", "weekly"), default="auto")
     parser.add_argument("-o", "--output", type=Path, help="default: overwrite input")
     args = parser.parse_args()
 
-    daily = json.loads(args.daily_json.read_text(encoding="utf-8"))
+    daily = json.loads(args.batch_json.read_text(encoding="utf-8"))
     mode = args.mode
     if mode == "auto":
         mode = "weekly" if daily.get("run_week") else "daily"
@@ -80,7 +80,7 @@ def main() -> int:
         if mode == "weekly"
         else annotate_daily(daily, args.repo_root.resolve())
     )
-    out = args.output or args.daily_json
+    out = args.output or args.batch_json
     out.write_text(json.dumps(daily, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(
         f"superseded={len(daily.get('superseded_findings') or [])} "

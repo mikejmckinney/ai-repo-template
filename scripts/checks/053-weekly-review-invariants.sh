@@ -29,7 +29,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${WEEKLY_DIR}/build-weekly-review-batch.py" \
     "${WEEKLY_DIR}/validate-weekly-review-batch.py" "${WEEKLY_DIR}/post-weekly-review-json-comment.sh" \
     "${WEEKLY_DIR}/fetch-weekly-review-json-from-issue.sh" \
-    "${WEEKLY_DIR}/render-umbrella-findings.py"; do
+    "${WEEKLY_DIR}/render-umbrella-findings.py" \
+    "${WEEKLY_DIR}/merge-umbrella-content.py" \
+    "$LIB_DIR/run-batch-fix.sh" "$LIB_DIR/umbrella-lifecycle.sh" \
+    "$LIB_DIR/finding_priority.py" "$LIB_DIR/superseded_findings.py"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -103,6 +106,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   if grep -q 'weekly-review-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'checkout-fix-branch.sh' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'link-fix-pr-to-issue.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'batch_fix_publish' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'leaving draft PR' "$LIB_DIR/run-batch-fix.sh" 2>/dev/null \
     && grep -q 'Fixes #' "$FIX_PR_TEMPLATE" 2>/dev/null \
     && grep -q 'WEEKLY_REVIEW_FIX_REEXEC' "$FIX_SCRIPT" 2>/dev/null; then
     pass "weekly fix uses template + native issue link + re-exec guard"
@@ -112,11 +117,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'render-umbrella-findings.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q '{{FINDING_BLOCKS}}' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q '{{TRIAGE_ROWS}}' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'merge-umbrella-content.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
     && grep -q 'repo-' "$WEEKLY_PROMPT" 2>/dev/null \
     && grep -q 'weekly-review:finding:' "${WEEKLY_DIR}/render-umbrella-findings.py" 2>/dev/null; then
-    pass "umbrella issue renders detailed finding blocks with evidence links"
+    pass "umbrella issue renders hybrid triage summary and detailed findings"
   else
-    fail "weekly umbrella must use render-umbrella-findings.py + FINDING_BLOCKS template"
+    fail "weekly umbrella must render TRIAGE_ROWS and detailed FINDING_BLOCKS"
   fi
 
   if grep -q 'write-umbrella-issue-ref.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
@@ -129,8 +136,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'follow_up_issues' "$WEEKLY_PROMPT" 2>/dev/null \
     && grep -q 'dedupe_key' "$WEEKLY_PROMPT" 2>/dev/null \
-    && grep -q 'repro_steps' "$WEEKLY_PROMPT" 2>/dev/null; then
-    pass "weekly prompt defines JSON output shape with repro_steps"
+    && grep -q 'repro_steps' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'trigger_likelihood' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'priority_band.*derived' "$WEEKLY_PROMPT" 2>/dev/null; then
+    pass "weekly prompt defines classifier JSON shape with repro_steps"
   else
     fail "weekly prompt missing required JSON contract (repro_steps)"
   fi
@@ -159,6 +168,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && bash -n "${WEEKLY_DIR}/resolve-run-week.sh" 2>/dev/null \
     && python3 -m py_compile "${WEEKLY_DIR}/run-weekly-antigravity.py" 2>/dev/null \
     && python3 -m py_compile "${WEEKLY_DIR}/render-umbrella-findings.py" 2>/dev/null \
+    && python3 -m py_compile "${WEEKLY_DIR}/merge-umbrella-content.py" 2>/dev/null \
+    && python3 -m py_compile "$LIB_DIR/finding_priority.py" 2>/dev/null \
+    && python3 -m py_compile "$LIB_DIR/superseded_findings.py" 2>/dev/null \
+    && bash -n "$LIB_DIR/run-batch-fix.sh" 2>/dev/null \
+    && bash -n "$LIB_DIR/umbrella-lifecycle.sh" 2>/dev/null \
     && bash -n "${WEEKLY_DIR}/post-weekly-review-json-comment.sh" 2>/dev/null \
     && bash -n "${WEEKLY_DIR}/fetch-weekly-review-json-from-issue.sh" 2>/dev/null; then
     pass "weekly-review shell scripts have valid bash syntax"

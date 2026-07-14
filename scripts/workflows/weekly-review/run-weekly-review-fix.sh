@@ -33,6 +33,15 @@ if [[ "$FINDINGS_COUNT" -eq 0 ]]; then
 fi
 
 BRANCH="weekly/fix-${RUN_WEEK}"
+
+if [[ -z "${WEEKLY_REVIEW_FIX_REEXEC:-}" ]]; then
+  export WEEKLY_REVIEW_FIX_REEXEC=1
+  FIX_REEXEC_DIR="${REPO_ROOT}/.artifacts/weekly-review/fix-reexec-${RUN_WEEK}"
+  mkdir -p "$FIX_REEXEC_DIR"
+  cp "$SCRIPT_DIR/run-weekly-review-fix.sh" "$FIX_REEXEC_DIR/fix-runner.sh"
+  exec bash "$FIX_REEXEC_DIR/fix-runner.sh" "$@"
+fi
+
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
@@ -41,12 +50,6 @@ source "$LIB_DIR/fix-phase-log.sh"
 # shellcheck source=../lib/run-batch-fix.sh
 source "$LIB_DIR/run-batch-fix.sh"
 fix_phase_log_init
-
-if [[ -z "${WEEKLY_REVIEW_FIX_REEXEC:-}" ]]; then
-  export WEEKLY_REVIEW_FIX_REEXEC=1
-  cp "$SCRIPT_DIR/run-weekly-review-fix.sh" "$WORKDIR/fix-runner.sh"
-  exec bash "$WORKDIR/fix-runner.sh" "$@"
-fi
 
 git config user.email "${GIT_AUTHOR_EMAIL:-41898282+github-actions[bot]@users.noreply.github.com}"
 git config user.name "${GIT_AUTHOR_NAME:-github-actions[bot]}"

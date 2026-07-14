@@ -66,7 +66,7 @@ batch_fix_commit_changes() {
   local commit_message="$1" override_file="${2:-}"
   # shellcheck disable=SC2034 # consumed by the sourcing cadence adapter
   BATCH_FIX_HAS_DIFF=0
-  if git diff --quiet && git diff --cached --quiet; then
+  if [[ -z "$(git status --porcelain)" ]]; then
     echo "::warning::Fix pass produced no git diff"
     return 0
   fi

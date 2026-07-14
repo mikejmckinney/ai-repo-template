@@ -169,8 +169,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'postmerge-retro-umbrella.md' "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && grep -q 'agent-suggested' "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && grep -q 'gh issue create' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_create_issue.*agent-suggested' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'gh issue create' "scripts/workflows/lib/umbrella-lifecycle.sh" 2>/dev/null \
     && grep -q 'existing-body.md' "$UMBRELLA_SCRIPT" 2>/dev/null; then
     pass "umbrella creator uses template + resilient agent-suggested label + body file append"
   else
@@ -178,10 +178,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'write-umbrella-issue-ref.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && grep -q 'umbrella_issue' "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
-    && grep -q 'Created umbrella issue #' "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && grep -q '>&2' "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && grep -q 'normalize_issue_num' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_write_issue_ref' "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_issue' "scripts/workflows/lib/umbrella-lifecycle.sh" 2>/dev/null \
     && [[ -f "${RETRO_DIR}/post-daily-retro-json-comment.sh" ]] \
     && [[ -f "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" ]]; then
     pass "umbrella step records umbrella_issue ref + JSON snapshot comment + fix-only restore"
@@ -231,7 +229,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'FIX_REEXEC_DIR' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'has_diff' "$FIX_SCRIPT" 2>/dev/null \
-    && grep -q 'leaving draft PR' "$FIX_SCRIPT" 2>/dev/null; then
+    && grep -q 'leaving draft PR' "scripts/workflows/lib/run-batch-fix.sh" 2>/dev/null; then
     pass "fix script uses artifact re-exec dir + skips PR edit on no-op rerun"
   else
     fail "run-postmerge-retro-fix.sh missing re-exec workdir / no-op PR edit guard"
@@ -283,7 +281,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   for lib in pick-advisory-provider.sh invoke-advisory-llm.sh fix-phase-log.sh \
-    sandbox-sync-fix-branch.sh finalize-fix-pr.sh render-fix-pr-sections.py; do
+    sandbox-sync-fix-branch.sh finalize-fix-pr.sh render-fix-pr-sections.py \
+    run-batch-fix.sh umbrella-lifecycle.sh finding_priority.py superseded_findings.py; do
     if [[ -f "scripts/workflows/lib/$lib" ]]; then
       pass "workflow lib $lib exists"
     else
@@ -338,6 +337,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && bash -n "scripts/workflows/lib/fix-phase-log.sh" 2>/dev/null \
     && bash -n "scripts/workflows/lib/sandbox-sync-fix-branch.sh" 2>/dev/null \
     && bash -n "scripts/workflows/lib/finalize-fix-pr.sh" 2>/dev/null \
+    && bash -n "scripts/workflows/lib/run-batch-fix.sh" 2>/dev/null \
+    && bash -n "scripts/workflows/lib/umbrella-lifecycle.sh" 2>/dev/null \
     && bash -n "${RETRO_DIR}/list-indexed-merge-shas.sh" 2>/dev/null \
     && bash -n "${RETRO_DIR}/append-merge-index-markers.sh" 2>/dev/null \
     && bash -n "$LIST_SCRIPT" 2>/dev/null; then

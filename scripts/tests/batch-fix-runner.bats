@@ -82,3 +82,22 @@ EOF
   run grep -F 'update 2026-W24 https://example.test/pr/17' "$CALL_LOG"
   [ "$status" -eq 0 ]
 }
+
+@test "batch fix commit includes untracked outputs" {
+  mkdir -p "$TEST_ROOT/repo"
+  git -C "$TEST_ROOT/repo" init -q
+  git -C "$TEST_ROOT/repo" config user.email test@example.com
+  git -C "$TEST_ROOT/repo" config user.name test
+  printf '%s\n' base >"$TEST_ROOT/repo/tracked.txt"
+  git -C "$TEST_ROOT/repo" add tracked.txt
+  git -C "$TEST_ROOT/repo" commit -qm base
+  printf '%s\n' generated >"$TEST_ROOT/repo/generated.txt"
+  cd "$TEST_ROOT/repo"
+
+  batch_fix_commit_changes 'test: include generated output'
+
+  [ "$BATCH_FIX_HAS_DIFF" -eq 1 ]
+  run git show --name-only --format= HEAD
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"generated.txt"* ]]
+}
