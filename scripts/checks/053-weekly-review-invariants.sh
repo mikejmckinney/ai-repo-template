@@ -85,10 +85,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   if grep -q 'select-context' "$LIB_DIR/prompt_helpers.py" 2>/dev/null \
     && grep -qE 'prompt_helpers\.py.*select-context' "$SCAN_SCRIPT" 2>/dev/null \
     && grep -q 'changed-files.txt' "$SCAN_SCRIPT" 2>/dev/null \
+    && grep -q 'pick_advisory_provider weekly-scan' "$SCAN_SCRIPT" 2>/dev/null \
+    && grep -q 'invoke_advisory_llm' "$SCAN_SCRIPT" 2>/dev/null \
     && grep -q 'run-weekly-antigravity.py' "$SCAN_SCRIPT" 2>/dev/null; then
-    pass "weekly scan uses context pack only + antigravity fallback routing"
+    pass "weekly scan uses context pack + shared provider routing"
   else
-    fail "run-weekly-review-scan.sh must use select-context (full, empty triggers) + antigravity path"
+    fail "run-weekly-review-scan.sh must use select-context + shared providers + antigravity path"
   fi
 
   if grep -qE 'read the repository working tree\b|Inspect the repository\b' "$WEEKLY_PROMPT" 2>/dev/null \
