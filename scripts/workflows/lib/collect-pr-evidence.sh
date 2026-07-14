@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/workflows/pr-feedback/collect-pr-feedback.sh — deterministic PR feedback harvest.
+# scripts/workflows/lib/collect-pr-evidence.sh — deterministic PR evidence harvest.
 # Usage: collect-pr-feedback.sh <pr-number> <out-dir>
 # Read-only: uses gh api / gh pr view (no write permissions required).
 set -euo pipefail

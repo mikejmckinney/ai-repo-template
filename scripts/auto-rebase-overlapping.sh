@@ -10,8 +10,7 @@
 #   should_rebase_pr <pr_number> <merged_pr_number>
 #       Decide what to do with `<pr_number>` after `<merged_pr_number>`
 #       merged. Reads PR metadata (labels, fork-flag, draft-flag, files,
-#       unresolved-thread count) and reuses classify_overlap from
-#       multi-dispatch-safety.sh.
+#       unresolved-thread count) and reuses the neutral overlap library.
 #       Emits exactly one line on stdout:
 #         attempt-rebase           — soft overlap, opted in, all checks pass
 #         comment-only             — hard overlap, opted in, all checks pass
@@ -63,13 +62,9 @@ set -euo pipefail
 _ARO_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _ARO_REPO_ROOT="$(cd "$_ARO_LIB_DIR/.." && pwd)"
 
-# Source the shared classify_overlap implementation. The multi-dispatch
-# library uses `set -euo pipefail` and exposes classify_overlap. We
-# explicitly do NOT want its MULTI_DISPATCH_TEST_MODE to leak in here,
-# but classify_overlap itself only reads two file arguments + the
-# ownership map, so it's safe in either mode.
+# Source the shared classify_overlap implementation.
 # shellcheck disable=SC1091
-source "$_ARO_REPO_ROOT/scripts/multi-dispatch-safety.sh"
+source "$_ARO_REPO_ROOT/scripts/lib/overlap.sh"
 
 # ── Internal helpers ──
 
