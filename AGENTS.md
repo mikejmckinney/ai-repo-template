@@ -1,25 +1,5 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 29 -->
-
-This file is the always-loaded operating contract for agents in this repository.
-Do not require agents to reread it from disk unless the user explicitly asks for
-a freshness check. Load issue, PR, ADR, benchmark, or guide context only when it
-is relevant to the current task.
-
-## Startup
-
-Open the first substantive response in a new session or task boundary with:
-
-```text
-Session handshake v29
-```
-
-The handshake is a lightweight freshness canary, not a compliance schema. Do
-not append context-receipt tables or read-accounting evidence.
-
-After context compaction, emit the handshake again before substantive work.
-
 ## Truth hierarchy
 
 When sources conflict, use this order:
@@ -41,169 +21,256 @@ session notes.
   uncertainty justifies independent multi-model review.
 - Advisory review is optional, non-blocking, and may run in parallel with active
   PR implementation. CI and lint remain the blocking pre-merge controls.
-- Do not require structured parent, plan, or subagent compliance blocks.
 
-## Work style
+## Domain: Code Quality
 
-- Create a non-default branch before non-trivial edits. Use
-  `feature/<task>` or `fix/<issue>-<slug>` when applicable.
-- Prefer the smallest reversible change that fully solves the task.
-- Do not bundle unrelated refactors. Record worthwhile adjacent work separately.
-- Preserve unrelated user changes in a dirty worktree.
-- Never use destructive Git commands to discard work unless the user explicitly
-  approves them.
-- Do not commit secrets or bypass hooks with `--no-verify`.
-- Commit coherent task boundaries. Push and open PRs only when requested or when
-  the user has explicitly approved that workflow.
-- Explain non-obvious prerequisites, tradeoffs, and failure modes.
+### Hard Rules (Never Violate)
 
-## Code quality
+#### H1 — Single Responsibility
 
-These hard rules block review unless an ADR records an explicit exception:
+Every function, class, and module has **one reason to change**. If you can describe a unit with "and" ("parses input **and** writes to the database"), split it. Flag any unit where two unrelated reasons to change live in the same file.
 
-- **H1 Single responsibility:** every function, class, and module has one reason
-  to change. If a unit parses input and writes to storage, split those unrelated
-  concerns.
-- **H2 Open/closed:** extend behavior with new code instead of silently mutating
-  stable interfaces. Breaking a published interface, exported type, or public
-  API requires an ADR and migration guidance for downstream callers.
-- **H3 Liskov substitution:** subtypes honor their base contract. Do not narrow
-  preconditions or widen postconditions in an override; compose when the
-  contract cannot be honored.
-- **H4 Interface segregation:** callers do not depend on methods they do not
-  use. Split broad interfaces along caller concerns.
-- **H5 Dependency inversion:** business logic depends on abstractions, not
-  concrete low-level modules. Inject dependencies; keep concrete wiring at the
-  composition boundary.
-- **H6 Test discipline:** write or update a focused test with every behavioral
-  change. Prefer an explicit red-green-refactor loop when practical.
-- **H7 No dead code:** remove unreachable branches, unused exports, commented-out
-  blocks, and speculative helpers. Open a follow-up instead of leaving a stub.
-- **H8 No silent error swallowing:** every error handler rethrows with context,
-  logs enough detail to diagnose, or returns a handled result the caller can act
-  on. Empty handlers and bare `except: pass` fail review.
+#### H2 — Open / Closed
 
-The following soft rules are preferred unless the change explains why another
-shape is clearer:
+Extend behavior by adding new code, not by mutating stable interfaces. Any breaking change to a published interface, exported type, or public API requires an ADR plus a migration note for downstream callers.
 
-- **S1 Function length:** aim for a function that fits on one screen. Keep a
-  longer function when splitting it would obscure the control flow.
-- **S2 Complexity and nesting:** keep control flow easy to hold in working
-  memory. A fourth indentation level is a strong extraction signal.
-- **S3 Intent-revealing names:** name code for what it accomplishes, not its
-  current mechanism. Prefer `calculateRenewalDate` over `addThirtyDays`.
-- **S4 Comments explain why:** document non-obvious tradeoffs, issue context,
-  and decisions the reader cannot reconstruct. Delete comments that merely
-  restate the code.
-- **S5 Duplication beats the wrong abstraction:** two similar blocks are often
-  cheaper than premature coupling. Extract only when the instances genuinely
-  share a reason to change.
-- **S6 Test pyramid:** keep many focused tests, fewer integration tests, and
-  minimal end-to-end tests.
+#### H3 — Liskov Substitution
 
-Downstream projects should record stack-specific thresholds, lint and format
-tools, test commands, and coverage expectations in `AI_REPO_GUIDE.md`.
+Subtypes must honor their base contract. Do not narrow preconditions or widen postconditions in an override. If a subtype can't honor the contract, it's not a subtype — compose instead of inherit.
 
-## Testing and validation
+#### H4 — Interface Segregation
 
-- Follow the test pyramid: many focused tests, fewer integration tests, minimal
-  end-to-end tests.
-- Do not weaken tests to force a green result. Fix the underlying behavior.
-- Run the repository commands documented in `AI_REPO_GUIDE.md` for affected
-  surfaces. Run `./test.sh` before declaring repository changes complete.
-- Treat lint, unit tests, schema checks, and CI as supporting evidence.
-- Primary validation is the user outcome: perform the issue's observable
-  15-minute test or explain concretely why it is not applicable.
-- If the implementation does not resolve the stated problem, stop and surface
-  the framing mismatch rather than patching around the test.
-- For default-branch-only workflow behavior, use the sandbox verification guide
-  and record real issue, PR, and run links when the workflow cannot be exercised
-  from the feature branch.
+Callers must not be forced to depend on methods they don't use. Split fat interfaces into role-specific ones. "One method per caller concern" is the floor, not the ceiling.
 
-## Documentation synchronization
+#### H5 — Dependency Inversion
 
-Update companion documentation in the same PR when a change affects it:
+High-level modules depend on abstractions, not concrete low-level modules. Inject dependencies; don't `new` them inside business logic. Concrete wiring lives at the composition root (main / entry point).
 
-| Change | Companion surface |
-|---|---|
-| Build, test, lint, run, install, layout, entry points, or troubleshooting | `AI_REPO_GUIDE.md` |
-| An accepted architectural decision | Amend or supersede the relevant ADR and update `docs/decisions/README.md` |
-| Agent execution or review lifecycle | ADR-031, `docs/guides/agent-pipeline.md` |
-| Workflow trigger or verification class | `docs/guides/agent-pipeline.md`, `scripts/verify-pr.sh`, tests, and sandbox guide as applicable |
-| File listed in repository inventories | Owning check module, human index, and install inventory as applicable |
-| Live-state schema or location | `.context/state/`, session guidance, and coordination guide |
+#### H6 — TDD Discipline
 
-If a listed companion does not need a change, state `<path>: no changes
-required` with a one-line reason in the PR description.
+Write a failing test **before** implementation. Keep the red-green-refactor loop explicit. See `AGENTS.md` → "Testing requirements" for the test pyramid and CI expectations — this file does not duplicate them.
 
-## Clarification and critical thinking
+#### H7 — No Dead Code
 
-- Resolve ambiguity from current repository and live task sources first. Ask a
-  clarifying question when the request has materially different reasonable
-  interpretations, requires business context only the user has, conflicts with
-  a verified rule or decision, or would require inventing an API, data shape, or
-  domain fact.
-- When clarification is necessary, stop before implementation. Recommend one
-  interpretation, explain the tradeoff, and wait for the answer; do not ask and
-  build in parallel.
-- Push back directly when a premise or proposed design conflicts with verified
-  evidence. Explain the flaw and recommend the better approach rather than
-  agreeing by default.
-- Distinguish verified facts from assumptions and uncertainty. State confidence
-  plainly; do not hide uncertainty behind vague qualifiers.
-- Cite repository facts with relative paths and line numbers when precision
-  matters. Do not guess file contents, APIs, or runtime behavior.
-- Compare viable approaches honestly across cost, risk, reversibility, and blast
-  radius.
-- Explain enough reasoning to make non-obvious decisions reviewable, while
-  keeping routine communication concise.
-- When an unexpected process repeatedly hangs or fails despite grounded local
-  attempts, research whether it is a known upstream issue before inventing a
-  repository-specific workaround.
+Unreachable branches, unused exports, commented-out blocks, and speculative helpers ship zero value. Delete them before merge. If you think you'll need something "soon," open a task instead of leaving a stub.
 
-## Session and handoff state
+#### H8 — No Silent Error Swallowing
 
-- For issue-backed work, use the issue body and linked PR as the durable task
-  contract. Use the latest `agent-state:v1` comment only when work is paused,
-  blocked, awaiting review, or handed off.
-- Keep live-state comments short: status, blocker, next actions, and handoff.
-- Keep decision history in plans, PRs, ADRs, or postmortems, not live-state
-  comments.
-- Never create a second committed claim board or task-state system.
+Every `catch` / `rescue` / `recover` block must either rethrow with context, log with enough detail to diagnose, or convert to a handled result that the caller can act on. Empty catch blocks and bare `except: pass` fail diff-gate.
 
-## Opportunity feedback
+### Soft Rules (Prefer Unless Justified)
 
-Use opportunity notes for adjacent improvements that are outside the current
-task but inside the repository improvement surface. A note must be deferrable,
-concrete, and supported by a file, command, or observed behavior. Do not widen
-the current task to implement it.
+#### S1 — Function Length
 
-This channel fires for brittle scripts, stale or contradictory documentation,
-automation gaps, and recommendations that benefit future sessions but are not
-required for the current outcome. Surface at most three notes per task. Empty
-lists are valid; partially filled notes are not.
+Target: a function fits on one screen without scrolling. The exact line count is stack-specific — set a threshold in the "How to extend" block below. Rationale matters more than the count: if a longer function is genuinely more readable than its split form, keep it and say why in a comment.
 
-Each note uses these nine fields:
+#### S2 — Complexity and Nesting
 
-| Field | Meaning |
-|---|---|
-| `title` | Short headline |
-| `evidence` | Observed file, command, or behavior |
-| `impact` | Who or what is affected |
-| `recommendation` | Concrete proposed action |
-| `scope` | `rule`, `script`, `doc`, `workflow`, `code`, `test`, or `process` |
-| `suggested_next_action` | `file-issue`, `fold-into-<n>`, `discuss`, or `defer` |
-| `confidence` | `high`, `medium`, or `low` |
-| `role_relevance` | Role or owner most relevant to follow-up |
-| `duplicate_check` | Search or issue checked, or `none` |
+Target: cyclomatic complexity and nesting depth stay low enough that a reader can hold the control flow in their head. When you feel yourself indenting a fourth level, extract.
 
-Security, data-loss, CI-breaking, and plan-invalidating findings are blockers,
-not opportunity notes. Stop and report them as blocking observations.
+#### S3 — Names Describe Intent
 
-An adjacent fix may be folded into the current task without an opportunity note
-only when it is directly necessary for the requested outcome, is roughly 20
-lines or less in one file, and does not touch a role-sensitive contract or
-workflow surface. When in doubt, keep it out of scope and surface the note.
+Names say **what the code is for**, not **how it works**. Prefer `calculateRenewalDate` over `addThirtyDays`. Avoid abbreviations unless the abbreviation is a term of art in your domain — and if it is, capture it in a glossary.
+
+#### S4 — Comments Explain Why
+
+Comments say **why**, not **what**. If the code already says what it does, a comment that restates it is noise — delete it. Use comments to record non-obvious tradeoffs, links to issues, and decisions the reader can't reconstruct from the code.
+
+#### S5 — Duplication Beats the Wrong Abstraction
+
+Two similar blocks are cheaper than a premature abstraction. Three is a signal to extract — but only if the three genuinely share a reason to change (see H1). Rushing to DRY fuses code that should diverge.
+
+#### S6 — Test Pyramid
+
+Many unit tests, fewer integration tests, minimal E2E tests. Concrete CI commands and coverage expectations live in `AGENTS.md` → "Testing requirements" and the project's own `README.md`.
+
+### Stack-Specific Overrides
+
+- S1 function length:     &lt;N&gt; lines (target), &lt;N&gt; lines (hard max)
+- S2 cyclomatic complexity: &lt;N&gt; (target), &lt;N&gt; (hard max)
+- S2 nesting depth:       &lt;N&gt; (target), &lt;N&gt; (hard max)
+- Lint / format tool:     <tool + config path>
+- Test framework:         <framework + command>
+- Coverage target:        &lt;percent&gt; (changed files only)
+
+## Clarification and ambiguity
+
+When a request is ambiguous — where different reasonable interpretations lead to meaningfully different work — stop, ask, recommend and explain reasoning before proceeding. Don't guess and build, and don't ask and build in parallel; ask, then wait.
+
+- **Always Verify details with live sources when available and cite sources**
+- **When to trigger a clarifying question.** Ask specifically when: (1) the request could reasonably mean two or more different things, (2) a decision requires information only the user has (business context, preferences, external constraints), (3) the request conflicts with something in the repo's rules or prior decisions (follow the **Push back** rule in [Critical thinking and communication](#critical-thinking-and-communication) rather than just asking), or (4) proceeding would require inventing facts (API shapes, data structures, domain terms) that can't be verified.
+
+For unexpected issues that are difficult to resolve like a process that consistently hangs or fails despite multiple attempts to fix it, research the issue on the internet to see if it is a known issue others have encountered and what the fix or workaround is.
+
+## Critical thinking and communication
+
+Agents must reason critically rather than agree by default. The bar is "objective and evidence-based," not "agreeable."
+
+- **Push back when warranted.** If the user's plan, premise, or proposed code has a flaw, say so directly and explain why. Don't hedge to be polite. If a better approach exists, recommend it and justify the tradeoff.
+- **Calibrate confidence.** State what you verified vs. what you assumed. When something is uncertain, say "uncertain" — don't pad with false confidence and don't hide behind vague qualifiers.
+- **Don't guess APIs, file contents, or runtime behavior.** Verify by reading the file or searching the codebase. If you can't verify, say so explicitly rather than asserting.
+- **Compare approaches honestly.** When multiple options are viable, name the tradeoffs (cost, risk, reversibility, blast radius) before recommending one.
+- **Cite your sources.** When stating a fact about the codebase or docs, include a relative path (and a line number when precision matters: `path/to/file.md:42`). Statements without a citation are treated as assumptions and must be marked `uncertain`.
+- **Always Explain your reasoning and Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs. If a complete answer genuinely requires length, use multiple parts or multiple responses rather than cutting corners.
+
+## Opportunity feedback channel
+
+### Purpose
+
+Adjacent improvements (brittle script, stale doc, automation gap) historically caused scope creep or got dropped. The `opportunity_notes` channel gives agents a capped, evaluable triage queue.
+
+### When this rule fires
+
+- Out-of-scope observation during in-scope work.
+- Recommendation benefiting future sessions but not needed now.
+- Duplicate, contradictory, or stale convention noticed while reading.
+
+### What counts as an opportunity note
+
+- Outside current task scope but inside repo improvement surface.
+- Deferrable — current task can complete without it.
+- Concrete — names a file, behavior, or symptom.
+- NOT urgent for correctness, security, or in-flight work (use escalation below).
+
+### Required fields (9 total)
+
+Empty list permitted; partially-filled entries are not.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `title` | string | One-line headline. ≤80 chars. |
+| `evidence` | string | What you observed. File path, command output, or behavior. |
+| `impact` | string | Who/what is affected and how. |
+| `recommendation` | string | Concrete enough to file. |
+| `scope` | enum | `rule`, `script`, `doc`, `workflow`, `code`, `test`, `process`. |
+| `suggested_next_action` | enum | `file-issue`, `fold-into-<n>`, `discuss`, `defer`. |
+| `confidence` | enum | `high`, `medium`, `low`. |
+| `duplicate_check` | string | Search/issue compared. `none` if not checked. |
+
+### When agents may implement directly
+
+MAY implement without a note ONLY when ALL FOUR hold:
+
+1. **≤ ~20 LOC**, single file.
+2. **Directly necessary** for in-scope task (not "while I'm here").
+3. Does **not** touch role-sensitive surfaces.
+
+When in doubt, surface the note.
+
+### Escalation (blocking observations)
+
+For items that **halt current work**, use `## Blocking observation` — not the 9-field schema.
+
+Use when: **security** (secrets, auth, injection); **data-loss** risk; **CI-breaking** change the task can't fix; **plan-invalidating** false precondition.
+
+If unsure, treat as blocking.
+
+## Session-state cadence
+
+Keep agent working memory current so the next session can resume cleanly. For normal GitHub-connected work, **live coordination state lives in GitHub**, not in manually maintained repo-local markdown.
+
+### Live coordination surface
+
+- **Issue body** — stable task contract. Do not rewrite it for live progress updates.
+- **PR body** — implementation/review contract. Link the issue, plan comment(s), verification results, and latest live-state comment when relevant.
+- **Latest `agent-state:v1` comment** — mutable baton for current status, blockers, next actions. Use [`.context/state/agent_state_comment_template.md`](../state/agent_state_comment_template.md) as the copy/paste template.
+- **Local scratch copies** — if GitHub access is temporarily unavailable, temporarily record the same `agent-state:v1` content locally. Copy it into the issue/PR comment once access returns, then discard the local scratch copy. Do not commit local live-state scratch files as the normal path or reconcile a second persistent state surface.
+
+### `agent-state:v1` update cadence
+
+Update or post the latest `agent-state:v1` issue/PR comment at each of these boundaries:
+
+1. **Task start.** Record branch/role, current status, blockers, and next actions.
+2. **Every wait-for-input pause, no exceptions.** This includes clarification questions mid-task, plan approval pauses, review-feedback pauses, and "task done, what's next?" pauses. Write now; do not defer until closeout or merge.
+3. **Durability-risk boundaries.** If a single conversation exceeds ~30 turns, the runtime auto-summarizes mid-flight, or the session ends while the task is not merged/closed, update the `agent-state:v1` comment before responding to the next message. Use runtime-provided turn counters or auto-summary notices when available; otherwise self-count approximately and treat any injected conversation summary as an auto-summary boundary.
+4. **Closeout.** Set `Status: done` when the agent has fully left the work.
+
+Each turn, update the `agent-state:v1` comment on the active issue/PR. **Maintain a current
+comprehensive snapshot — merge, do not replace, do not append:**
+
+- **Carry forward** items still relevant; **add** new; **drop** superseded; **compress landed items
+  to `references`** — when an outcome lands durably (commit/PR/doc edit), replace its prose with the pointer
+  (commit SHA / PR #) since git is the permanent record. The snapshot evolves "thinking about X" →
+  "X → `6315da1`".
+- **Why merge, not replace:** during the *deliberation* phase (hashing out an issue/plan across many
+  turns, no commit yet) the comment is the only running record; a replace would lose earlier
+  decisions on compaction. **Why merge, not append:** git already captures landed work permanently, so
+  accumulating per-turn JSON in the comment is redundant and hits the 65,536-char comment cap. A
+  merged snapshot stays naturally bounded (superseded/landed items drop out).
+- Edited **in place** (one canonical comment).
+- **Rate limits:** binding limit is GitHub's secondary content-creation cap (~500/hour per user). A
+  turn spans minutes → ~20–30 writes/hour even with pipeline + other agents on the same PAT (>15×
+  headroom).
+- **Circuit breaker (required):** check `x-ratelimit-remaining`/`retry-after`; on 403/429 stop GitHub
+  writes for the session and fall to local-only — never retry into a ban.
+- **Fall back to local buffer** on any GitHub failure / no active issue/PR.
+
+### Postmortem feedback loop
+
+When a downstream project (a repo built *from* this template) hits an incident worth a postmortem, run `.github/prompts/capture-postmortem.md` in that project repo. If the resulting postmortem's `generalizes:` is `Yes` or `Unclear`, run `.github/prompts/mirror-postmortem.md` against this template to mirror it back with a same-PR follow-up. The three-tier promotion policy (universal → AGENTS.md / `.context/rules/` / new ADR; stack-specific → mirrored postmortem only, never AGENTS.md; project-only → stays in source repo) is defined in `docs/postmortems/README.md` and ratified in [ADR-015](../../docs/decisions/adr-015-postmortem-feedback-loop.md). Do NOT add per-stack guidance (Terraform, Python, Rust, etc.) to this file — that is the failure mode the policy exists to prevent.
+
+## Work style, testing, validation
+
+### Work style
+
+- **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: use `feature/<role>-<task-id>` as the standard branch-per-role form from [docs/guides/multi-agent-coordination.md](../../docs/guides/multi-agent-coordination.md); a `fix/<issue>-<slug>` form is also acceptable for bug-fix branches when that naming is clearer. See ADR-012 for why this rule needs explicit statement.
+- **Surface prerequisites and edge cases** when explaining a plan or how-to: required tools, dependencies, non-obvious failure modes, safety issues. Skip boilerplate warnings on trivial work.
+- **Don't weaken tests or make unrelated source changes to force them green.** If a test exposes a real bug, fix the bug in the source. Tests document behavior; weakening them to go green is a regression in disguise.
+- **GitHub issue close keywords — intentional in PRs, careful in commits.** Use `Closes #N` / `Fixes #N` / `Resolves #N` (and synonyms: `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves`, `resolved`) in the **PR description** when merge should link and close the tracked issue(s). That is the intended workflow; reference the **correct** issue numbers only. **Commit messages and squash-merge bodies also parse these keywords** when the commit lands on the default branch — a subject like `fix #N links` closes issue N even when you only meant to fix markdown URLs pointing at that issue. In commits: reference issues without a closing keyword (`issue N`, `(#N)`, `for issue N`) unless the commit itself should close the issue. **Do not use real issue numbers in bad examples** in commit or PR merge text (even as illustrations); GitHub still parses them. Repo setting **Settings → General → Issues → Auto-close issues with merged linked pull requests** controls sidebar/PR-body links; it does not fully disable commit-message keyword closes. See [linking a PR to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue).
+
+### Testing requirements
+
+- Follow the test pyramid: many unit tests, fewer integration tests, minimal E2E tests.
+- Write tests before or alongside implementation (TDD preferred).
+- All behavioral changes must include appropriate tests.
+- A pragmatic sandbox/dogfood test must be performed and `Sandbox issue:` and `Sandbox PR:` labels (with real URLs) must appear in the test/verification section per ADR-029. Read and follow the [sandbox verification playbook](/docs/guides/sandbox-verification.md) which details the process for using sandbox and which sandbox instance to use.
+- CI must pass before marking tasks complete. If CI fails:
+  1. Read the error logs
+  2. Fix the underlying issue
+  3. Push and retry until green
+
+### Validation
+
+#### Primary validation: User outcome / 15-minute test
+
+Before marking any non-exempt issue implementation complete, perform the issue's
+`User outcome (15-minute test)` against the actual problem statement and record
+the result with concrete evidence in the PR body.
+
+Outcome validation answers: did the shipped artifact solve the user's stated
+problem?
+
+If the user outcome does not resolve the problem statement, do not patch around
+the test merely to make it pass. Stop, document the framing disconnect, and
+escalate to the user or revise the issue/plan.
+
+A pragmatic sandbox/dogfood test with concrete steps is required in the
+verification section of issues and plans. Read and follow the
+[sandbox verification playbook](/docs/guides/sandbox-verification.md)
+playbook which details the process for using sandbox and which sandbox instance to use.
+The `Sandbox issue:` and `Sandbox PR:`
+labels (canonical literals per ADR-029, the PR template) should be linked as proof that
+the user outcome solves the problem. For example,
+An issue opened to add a .md file that walks an agent through the development and
+implementation of a new feature should, as part of the test and validation, walk
+through and run the process defined in the .md file in a sandbox or test environment
+to verify that it meets the user outcome which in turn, should solve the problem.
+If this does not happen, then there is a disconnect between the user outcome
+and the problem statement and that should be raised to the user for review.
+
+#### Supporting validation
+
+Unit tests, integration tests, `./test.sh`, lint, pre-commit, schema validators,
+and CI are supporting regression and hygiene evidence.
+They do not replace user-outcome validation.  Artifact creation, static prose
+review, schema validation, or logical similarity are not sufficient evidence for
+operational process/user-outcome claims.
+
+A green CI run with no user-outcome evidence is not ready for review.
+
+- Run the repo's verification commands (prefer those documented in AI_REPO_GUIDE.md) before declaring done.
+- Ensure all tests pass locally before pushing.
+- Check that CI pipeline is green.
 
 ## Reviews
 
@@ -212,7 +279,7 @@ missing tests. Findings come first, ordered by severity, with file and line
 references. State explicitly when no findings are found and identify residual
 testing risk.
 
-## Advisory orchestration patterns
+## Repo Orchestration Patterns
 
 The P1-P9/AP1-AP9 catalog is shared vocabulary for reasoning about agent,
 workflow, and coordination changes. It is descriptive, not a standalone review
@@ -225,8 +292,9 @@ Detailed history and examples remain in
 
 ### Patterns in use
 
-- **P1 Strategy:** one implementing agent applies task-appropriate strategies;
-  optional local consensus supplies independent perspectives when justified.
+- **P1 Strategy (role specialization):** role files provide focused strategies
+  selected when specialization is worth the overhead; routine implementation
+  still defaults to one agent.
 - **P2 Chain of Responsibility (pipeline):** staged handlers have explicit
   pass/block criteria and short-circuit on a blocking result. The full pipeline
   is optional, not the routine default.
@@ -278,7 +346,3 @@ Detailed history and examples remain in
 - **AP9 Compatibility Surface Entrenchment:** a replacement is accepted, but the
   deprecated path remains a normal operational dependency. Stop extending the
   old surface and retire, archive, or clearly demote it.
-
-New structural pattern IDs require an ADR. New anti-pattern IDs must include
-detection signals and remediation, and any promotion from advisory vocabulary to
-a blocking rule requires an explicit ADR.
