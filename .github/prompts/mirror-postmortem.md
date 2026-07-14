@@ -207,15 +207,14 @@ three-tier policy from `docs/postmortems/README.md` →
 - **Universal lesson** (the postmortem's body explains why this is not
   stack-specific) → either:
   - amend `AGENTS.md` (a single bullet, no per-stack content), or
-  - amend `AGENTS.md`, or
   - add a new ADR under `docs/decisions/`, or
   - amend a file under `.github/prompts/`.
 
   Pick the smallest change that captures the rule. Do not bundle.
 
-- **Stack-specific lesson** → **do NOT** amend `AGENTS.md` or
-  `AGENTS.md`. The follow-up is the mirrored postmortem itself
-  + its row in the stack-tagged index. The promotion gate is
+- **Stack-specific lesson** → **do NOT** amend `AGENTS.md`. The follow-up
+  is the mirrored postmortem itself plus its row in the stack-tagged index.
+  The promotion gate is
   intentional: AGENTS.md must not accumulate per-stack tips. If you
   feel the urge to add a Terraform / Python / Rust / etc. tip to
   AGENTS.md, that's the signal to stop and re-read this section.
