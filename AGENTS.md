@@ -1,5 +1,7 @@
 # AGENTS.md
 
+<!-- AGENTS_MD_VERSION: 30 -->
+
 ## Truth hierarchy
 
 When sources conflict, use this order:
@@ -132,7 +134,7 @@ Adjacent improvements (brittle script, stale doc, automation gap) historically c
 - Concrete — names a file, behavior, or symptom.
 - NOT urgent for correctness, security, or in-flight work (use escalation below).
 
-### Required fields (9 total)
+### Required fields
 
 Empty list permitted; partially-filled entries are not.
 
@@ -153,7 +155,6 @@ MAY implement without a note ONLY when ALL FOUR hold:
 
 1. **≤ ~20 LOC**, single file.
 2. **Directly necessary** for in-scope task (not "while I'm here").
-3. Does **not** touch role-sensitive surfaces.
 
 When in doubt, surface the note.
 
@@ -173,14 +174,14 @@ Keep agent working memory current so the next session can resume cleanly. For no
 
 - **Issue body** — stable task contract. Do not rewrite it for live progress updates.
 - **PR body** — implementation/review contract. Link the issue, plan comment(s), verification results, and latest live-state comment when relevant.
-- **Latest `agent-state:v1` comment** — mutable baton for current status, blockers, next actions. Use [`.context/state/agent_state_comment_template.md`](../state/agent_state_comment_template.md) as the copy/paste template.
+- **Latest `agent-state:v1` comment** — mutable baton for current status, blockers, next actions. Use [`.context/state/agent_state_comment_template.md`](./.context/state/agent_state_comment_template.md) as the copy/paste template.
 - **Local scratch copies** — if GitHub access is temporarily unavailable, temporarily record the same `agent-state:v1` content locally. Copy it into the issue/PR comment once access returns, then discard the local scratch copy. Do not commit local live-state scratch files as the normal path or reconcile a second persistent state surface.
 
 ### `agent-state:v1` update cadence
 
 Update or post the latest `agent-state:v1` issue/PR comment at each of these boundaries:
 
-1. **Task start.** Record branch/role, current status, blockers, and next actions.
+1. **Task start.** Record branch, current status, blockers, and next actions.
 2. **Every wait-for-input pause, no exceptions.** This includes clarification questions mid-task, plan approval pauses, review-feedback pauses, and "task done, what's next?" pauses. Write now; do not defer until closeout or merge.
 3. **Durability-risk boundaries.** If a single conversation exceeds ~30 turns, the runtime auto-summarizes mid-flight, or the session ends while the task is not merged/closed, update the `agent-state:v1` comment before responding to the next message. Use runtime-provided turn counters or auto-summary notices when available; otherwise self-count approximately and treat any injected conversation summary as an auto-summary boundary.
 4. **Closeout.** Set `Status: done` when the agent has fully left the work.
@@ -207,13 +208,13 @@ comprehensive snapshot — merge, do not replace, do not append:**
 
 ### Postmortem feedback loop
 
-When a downstream project (a repo built *from* this template) hits an incident worth a postmortem, run `.github/prompts/capture-postmortem.md` in that project repo. If the resulting postmortem's `generalizes:` is `Yes` or `Unclear`, run `.github/prompts/mirror-postmortem.md` against this template to mirror it back with a same-PR follow-up. The promotion policy is defined in `docs/postmortems/README.md` and ratified in [ADR-015](../../docs/decisions/adr-015-postmortem-feedback-loop.md). Do NOT add per-stack guidance (Terraform, Python, Rust, etc.) to this file — that is the failure mode the policy exists to prevent.
+When a downstream project (a repo built *from* this template) hits an incident worth a postmortem, run `.github/prompts/capture-postmortem.md` in that project repo. If the resulting postmortem's `generalizes:` is `Yes` or `Unclear`, run `.github/prompts/mirror-postmortem.md` against this template to mirror it back with a same-PR follow-up. The promotion policy is defined in `docs/postmortems/README.md` and ratified in [ADR-015](docs/decisions/adr-015-postmortem-feedback-loop.md). Do NOT add per-stack guidance (Terraform, Python, Rust, etc.) to this file — that is the failure mode the policy exists to prevent.
 
 ## Work style, testing, validation
 
 ### Work style
 
-- **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: use `feature/<role>-<task-id>` as the standard branch-per-role form; a `fix/<issue>-<slug>` form is also acceptable for bug-fix branches when that naming is clearer. 
+- **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: use `feature/<task-id>` as the standard form; a `fix/<slug>` form is also acceptable for bug-fix branches when that naming is clearer. 
 - **Surface prerequisites and edge cases** when explaining a plan or how-to: required tools, dependencies, non-obvious failure modes, safety issues. Skip boilerplate warnings on trivial work.
 - **Don't weaken tests or make unrelated source changes to force them green.** If a test exposes a real bug, fix the bug in the source. Tests document behavior; weakening them to go green is a regression in disguise.
 - **GitHub issue close keywords — intentional in PRs, careful in commits.** Use `Closes #N` / `Fixes #N` / `Resolves #N` (and synonyms: `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves`, `resolved`) in the **PR description** when merge should link and close the tracked issue(s). That is the intended workflow; reference the **correct** issue numbers only. **Commit messages and squash-merge bodies also parse these keywords** when the commit lands on the default branch — a subject like `fix #N links` closes issue N even when you only meant to fix markdown URLs pointing at that issue. In commits: reference issues without a closing keyword (`issue N`, `(#N)`, `for issue N`) unless the commit itself should close the issue. **Do not use real issue numbers in bad examples** in commit or PR merge text (even as illustrations); GitHub still parses them. Repo setting **Settings → General → Issues → Auto-close issues with merged linked pull requests** controls sidebar/PR-body links; it does not fully disable commit-message keyword closes. See [linking a PR to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue).
@@ -292,7 +293,7 @@ Detailed history and examples remain in
 
 ### Patterns in use
 
-- **P1 Strategy (role specialization):** role files provide focused strategies
+- **P1 Strategy (role specialization - deprecated):** role files provide focused strategies
   selected when specialization is worth the overhead; routine implementation
   still defaults to one agent.
 - **P2 Chain of Responsibility (pipeline):** staged handlers have explicit
@@ -300,9 +301,9 @@ Detailed history and examples remain in
   is optional, not the routine default.
 - **P3 Mediator (coordination):** a coordinator or explicit live-state surface
   resolves cross-agent dependencies instead of peer-to-peer hidden state.
-- **P4 Adapter (multi-registry):** canonical role behavior is wrapped by thin
+- **P4 Adapter (multi-registry - deprecated):** canonical role behavior is wrapped by thin
   platform-specific overlays, with parity checks preventing drift.
-- **P5 Template Method (skeletal artifacts):** plans, PRs, ADRs, and role
+- **P5 Template Method (skeletal artifacts):** plans, PRs, ADRs, and roles (deprecated)
   registrations use stable skeletons while allowing task-specific content.
 - **P6 Facade (tool-specific entry points):** `AGENT.md`, `AI_REPO_GUIDE.md`, and
   tool instructions remain thin entry points to canonical contracts.
