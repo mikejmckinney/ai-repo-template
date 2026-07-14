@@ -137,16 +137,14 @@ plan template's Verification section verbatim.
 
 For changes to advisory, retro, or weekly OpenCode automation:
 
-1. Run `agent-runtime-image.yml` in the sandbox and retain its build, scan,
-   provenance, and digest links.
-2. Set sandbox variable `AGENT_RUNTIME_IMAGE` to the emitted
-   `ghcr.io/...@sha256:...` reference.
-3. Configure sandbox-only `OPENCODE_GITHUB_TOKEN` with read-only repository
+1. Configure sandbox-only `OPENCODE_GITHUB_TOKEN` with read-only repository
    access plus non-production `OPENAI_API_KEY` and/or `OPENROUTER_API_KEY`.
-4. Verify the agent cannot create or update an issue through MCP, then verify the
+2. Verify `npm ci` installs the locked OpenCode runtime on `ubuntu-latest` and
+   record the runner image release from the job setup log.
+3. Verify the agent cannot create or update an issue through hosted MCP, then verify the
    deterministic publisher still creates the expected comment, umbrella issue,
    or draft PR.
-5. Force the primary model to fail and capture ordered fallback telemetry. For a
+4. Force the primary model to fail and capture ordered fallback telemetry. For a
    fix run, also capture worktree paths and the final patch to prove the failed
    attempt was discarded.
 

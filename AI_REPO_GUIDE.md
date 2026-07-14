@@ -43,8 +43,7 @@ Run `bash install.sh` only when testing the Codespaces bootstrap/install surface
 | `.github/workflows/agent-advisory-review.yml` | Label-gated, non-blocking sticky advisory comment |
 | `.github/workflows/agent-postmerge-retro.yml` | Scheduled daily retro and draft-fix lifecycle |
 | `.github/workflows/agent-weekly-review.yml` | Scheduled weekly scan and draft-fix lifecycle |
-| `.github/workflows/agent-runtime-image.yml` | Build, scan, attest, and publish the pinned OpenCode runtime |
-| `.github/agent-runtime/` | Locked review/fix profiles, Dockerfile, and npm lockfile |
+| `.github/agent-runtime/` | Locked OpenCode dependencies and review/fix permission profiles |
 | `.opencode/skills/local-consensus/` | Explicit independent advisor/consensus mechanism |
 | `scripts/workflows/advisory-review/` | Advisory provider adapters and comment upsert |
 | `scripts/workflows/postmerge-retro/` | Daily evidence, analysis, umbrella, and fix adapters |
@@ -97,8 +96,8 @@ user PAT is required. Never commit tokens.
 
 OpenCode workflow agents use only `OPENCODE_GITHUB_TOKEN`, a dedicated read-only
 fine-grained token. Set `OPENAI_API_KEY` and/or `OPENROUTER_API_KEY` for model
-access. Set repository variable `AGENT_RUNTIME_IMAGE` to the digest reference
-printed by `agent-runtime-image.yml`; do not use a mutable tag.
+access. Workflows install the pinned OpenCode runtime from
+`.github/agent-runtime/package-lock.json` on GitHub-managed `ubuntu-latest`.
 
 ## Documentation Synchronization
 

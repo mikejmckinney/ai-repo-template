@@ -60,10 +60,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && grep -q 'OPENCODE_OUTPUT_SCHEMA' "$BOUNDED_SCRIPT" 2>/dev/null \
     && grep -q 'OPENCODE_FIX_MODE=true' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'OPENCODE_GITHUB_TOKEN' "$RETRO_WORKFLOW" 2>/dev/null \
-    && grep -q 'AGENT_RUNTIME_IMAGE' "$RETRO_WORKFLOW" 2>/dev/null; then
-    pass "postmerge retro routes scan/fix through isolated OpenCode runtime"
+    && grep -q 'npm ci --prefix .github/agent-runtime' "$RETRO_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'AGENT_RUNTIME_IMAGE' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "postmerge retro routes scan/fix through locked OpenCode runtime on Ubuntu"
   else
-    fail "postmerge retro missing OpenCode scan/fix isolation wiring"
+    fail "postmerge retro missing OpenCode install or scan/fix isolation wiring"
   fi
 
   if grep -q 'schedule:' "$RETRO_WORKFLOW" 2>/dev/null \

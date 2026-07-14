@@ -116,12 +116,12 @@ publication authority into the agent.
   `openrouter/z-ai/glm-5.2@preset/default`, then
   `openrouter/minimax/minimax-m3@preset/default`. One SDK schema retry occurs
   before advancing models.
-- Jobs run in the digest-addressed image configured by `AGENT_RUNTIME_IMAGE`.
-  The image pins OpenCode and SDK `1.18.0` plus GitHub MCP source commit
-  `c36e4e4493c76eafe2c1a9cbc5272e8eede29189`, built with patched Go `1.25.12`.
+- Jobs run on GitHub-managed `ubuntu-latest`, matching the established Cursor
+  workflow pattern. Node 22 is configured with `actions/setup-node`, and
+  `npm ci` installs pinned OpenCode and SDK `1.18.0` from the committed lockfile.
 - Agent-directed GitHub reads use a dedicated `OPENCODE_GITHUB_TOKEN` through
-  GitHub MCP with `--read-only`, `--lockdown-mode`, and only the `repos`,
-  `issues`, `pull_requests`, and `actions` toolsets.
+  GitHub's hosted MCP endpoint with read-only and lockdown headers and only the
+  `repos`, `issues`, `pull_requests`, and `actions` toolsets.
 - Deterministic scripts retain pagination, evidence coverage, schema validation,
   dedupe, comments, issues, commits, pushes, and draft-PR publication. The
   OpenCode child process is launched without `GITHUB_TOKEN`, `GH_TOKEN`,

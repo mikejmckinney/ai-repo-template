@@ -77,16 +77,19 @@ EOF
   rm -rf "$tmp"
 }
 
-@test "CI configs enforce read-only GitHub MCP and separate review from fix tools" {
+@test "CI configs enforce hosted read-only GitHub MCP and separate review from fix tools" {
   run jq -e '
     .autoupdate == false and
     .share == "disabled" and
     .permission.edit == "deny" and
     .permission.bash == "deny" and
     .permission.task == "deny" and
-    (.mcp.github_read.command | any(. == "--read-only")) and
-    (.mcp.github_read.command | any(. == "--lockdown-mode")) and
-    (.mcp.github_read.command | any(. == "--toolsets=repos,issues,pull_requests,actions"))
+    .mcp.github_read.type == "remote" and
+    .mcp.github_read.url == "https://api.githubcopilot.com/mcp/" and
+    .mcp.github_read.oauth == false and
+    .mcp.github_read.headers["X-MCP-Readonly"] == "true" and
+    .mcp.github_read.headers["X-MCP-Lockdown"] == "true" and
+    .mcp.github_read.headers["X-MCP-Toolsets"] == "repos,issues,pull_requests,actions"
   ' "$REPO_ROOT/.github/agent-runtime/review.json"
   [ "$status" -eq 0 ]
 
@@ -96,10 +99,24 @@ EOF
     .permission.edit == "allow" and
     .permission.task == "deny" and
     .permission.bash == "deny" and
-    (.mcp.github_read.command | any(. == "--read-only")) and
-    (.mcp.github_read.command | any(. == "--lockdown-mode"))
+    .mcp.github_read.type == "remote" and
+    .mcp.github_read.url == "https://api.githubcopilot.com/mcp/" and
+    .mcp.github_read.headers["X-MCP-Readonly"] == "true" and
+    .mcp.github_read.headers["X-MCP-Lockdown"] == "true"
   ' "$REPO_ROOT/.github/agent-runtime/fix.json"
   [ "$status" -eq 0 ]
+}
+
+@test "workflows install the locked OpenCode runtime on GitHub-hosted Ubuntu" {
+  for workflow in agent-advisory-review agent-postmerge-retro agent-weekly-review; do
+    file="$REPO_ROOT/.github/workflows/${workflow}.yml"
+    run grep -q 'npm ci --prefix .github/agent-runtime' "$file"
+    [ "$status" -eq 0 ]
+    run grep -q 'actions/setup-node@v4' "$file"
+    [ "$status" -eq 0 ]
+    run grep -q 'AGENT_RUNTIME_IMAGE' "$file"
+    [ "$status" -ne 0 ]
+  done
 }
 
 @test "unverified OpenCode fix attempts are discarded before a verified patch is promoted" {

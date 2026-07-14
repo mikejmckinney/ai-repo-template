@@ -192,7 +192,6 @@ MULTIAGENT_FILES=(
   ".github/PLAN_TEMPLATE.md"
   ".github/pull_request_template.md"
   ".github/agent-runtime"
-  ".github/workflows/agent-runtime-image.yml"
   ".github/schemas/postmerge-retro-monolithic.schema.json"
   ".github/schemas/weekly-review.schema.json"
   ".opencode/opencode.json"

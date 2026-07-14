@@ -156,7 +156,7 @@ models outperform prior benchmark leaders. Before removing the retained
 Cursor/Gemini adapters, compare sandbox advisory, daily, and weekly runs against
 the latest successful Cursor runs for schema success, elapsed time, token/tool
 context, finding usefulness, and fix verification. Record requested and observed
-models and the pinned image digest. A regression in evidence completeness,
+models, locked runtime version, and GitHub runner image release. A regression in evidence completeness,
 structured-output reliability, or fix isolation reverses `auto` to Cursor while
 the OpenCode adapter remains available explicitly.
 

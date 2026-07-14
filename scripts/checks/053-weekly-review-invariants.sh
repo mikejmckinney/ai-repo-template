@@ -45,10 +45,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   if grep -q 'OPENCODE_OUTPUT_SCHEMA' "$SCAN_SCRIPT" 2>/dev/null \
     && grep -q 'OPENCODE_FIX_MODE=true' "$FIX_SCRIPT" 2>/dev/null \
     && grep -q 'OPENCODE_GITHUB_TOKEN' "$WEEKLY_WORKFLOW" 2>/dev/null \
-    && grep -q 'AGENT_RUNTIME_IMAGE' "$WEEKLY_WORKFLOW" 2>/dev/null; then
-    pass "weekly scan/fix uses OpenCode structured output and isolated fix attempts"
+    && grep -q 'npm ci --prefix .github/agent-runtime' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'AGENT_RUNTIME_IMAGE' "$WEEKLY_WORKFLOW" 2>/dev/null; then
+    pass "weekly scan/fix uses locked OpenCode runtime and isolated fix attempts"
   else
-    fail "weekly review missing OpenCode structured-output or isolation wiring"
+    fail "weekly review missing OpenCode install, structured output, or isolation wiring"
   fi
 
   if search_fixed 'schedule:' "$WEEKLY_WORKFLOW" >/dev/null 2>&1 \

@@ -76,11 +76,6 @@ concurrency:
 jobs:
   daily-pipeline:
     runs-on: ubuntu-latest
-    container:
-      image: ${{ vars.AGENT_RUNTIME_IMAGE }}
-      credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
     timeout-minutes: 90
     permissions:
       contents: write
@@ -152,6 +147,19 @@ jobs:
           ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: .github/agent-runtime/package-lock.json
+
+      - name: Install OpenCode runtime
+        run: |
+          npm ci --prefix .github/agent-runtime
+          echo "$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/.bin" >> "$GITHUB_PATH"
+          echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
 
       - name: Pin RUN_DATE
         run: |

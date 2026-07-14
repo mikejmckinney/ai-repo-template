@@ -65,15 +65,15 @@ and applies only a schema-valid attempt whose credential-free controller-side
 `./test.sh` run passes. The fix agent may edit but cannot invoke shell commands;
 this prevents editable repository scripts from reading inherited credentials.
 
-The agent runtime is built by `agent-runtime-image.yml`. Set
-`AGENT_RUNTIME_IMAGE` to the emitted `ghcr.io/...@sha256:...` reference; tags are
-not accepted as deployment evidence. Review and fix profiles live under
-`.github/agent-runtime/` and are intentionally separate from interactive
+Workflows use GitHub-managed `ubuntu-latest`, configure Node 22, and run `npm ci`
+against `.github/agent-runtime/package-lock.json`. Review and fix profiles live
+beside that lockfile and are intentionally separate from interactive
 `.opencode/opencode.json`.
 
-GitHub MCP is read-only and locked down. Agents receive only the dedicated
-read-only token, while deterministic shell code retains all GitHub writes. The
-agent subprocess explicitly drops publisher and sandbox credentials.
+GitHub's hosted MCP endpoint is read-only and locked down through request headers.
+Agents receive only the dedicated read-only token, while deterministic shell code
+retains all GitHub writes. The agent subprocess explicitly drops publisher and
+sandbox credentials.
 
 ## Local Consensus
 
@@ -121,8 +121,6 @@ Use `scripts/verify-pr.sh` to classify the diff and
 - `POSTMERGE_RETRO_PROVIDER` and `WEEKLY_REVIEW_PROVIDER` control retro providers.
 - `MAX_COPILOT_CONCURRENT` and `MAX_COPILOT_DAILY` bound monolithic assignment.
 - Provider model and context variables are documented inline in their workflows.
-- `AGENT_RUNTIME_IMAGE` is the digest-addressed GHCR image emitted by the runtime-image workflow.
-
 ## Required Secrets
 
 - `OPENCODE_GITHUB_TOKEN`: fine-grained token with read-only Metadata, Contents,
