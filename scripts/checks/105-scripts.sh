@@ -35,4 +35,14 @@ for script in scripts/*.sh; do
   fi
 done
 
+# Skill instructions invoke these files directly, so a missing Git executable
+# bit breaks the documented entrypoint before the script can report an error.
+while IFS= read -r script; do
+  if [[ -x "$script" ]]; then
+    pass "$script is executable"
+  else
+    fail "$script is not executable"
+  fi
+done < <(find .opencode/skills -type f -path '*/scripts/*.sh' -print | sort)
+
 echo ""
