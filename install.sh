@@ -192,8 +192,6 @@ MULTIAGENT_FILES=(
   ".github/PLAN_TEMPLATE.md"
   ".github/pull_request_template.md"
   ".context/00_INDEX.md"
-  ".context/backlog.schema.json"
-  ".context/backlog.yaml"
   ".context/roadmap.md"
   ".context/sessions/README.md"
   ".context/sessions/feedback_template.md"

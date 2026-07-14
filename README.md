@@ -51,7 +51,6 @@ ADR-031 defines the active model: one implementing agent, blocking CI, optional 
 - **Pre-commit Hooks** - Template for linting, secret detection, and commit standards
 - **ADR Templates** - Architecture Decision Record templates with examples
 - **Verification Scripts** - Built-in testing (see `./test.sh` output for current check count) to ensure template integrity
-- **Optional Machine-Readable Backlog** - `.context/backlog.yaml` can track structured project tasks and is validated by `.context/backlog.schema.json`.
 
 ## Repository reference (for agents)
 

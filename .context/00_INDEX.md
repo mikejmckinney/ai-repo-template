@@ -21,8 +21,6 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ```text
 .context/
 |-- 00_INDEX.md          # This file - start here (The Map)
-|-- backlog.yaml         # Machine-readable task list dispatched into issues
-|-- backlog.schema.json  # JSON Schema for backlog.yaml
 |-- benchmarks/          # Durable benchmark protocols, schemas, and grading templates
 |   `-- model-roi/       # Issue #374 model ROI benchmark apparatus
 |       |-- results/     # Scored agent ROI benchmark records and cost source register
