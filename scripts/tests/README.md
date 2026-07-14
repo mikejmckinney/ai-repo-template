@@ -7,7 +7,6 @@ Bats test suite (issue #255 Phase 4b). Each `.bats` file in this directory is a 
 | `.bats` file | Legacy script wrapped | Concern |
 |---|---|---|
 | `auto-rebase-overlapping.bats` | `test-auto-rebase-overlapping.sh` | ADR-010 auto-rebase logic |
-| `jq-filters.bats` | `test-jq-filters.sh` | `scripts/lib/jq/*.jq` fixture-driven tests |
 | `prompt-helpers.bats` | n/a | Shared review context and bounded JSON helpers |
 | `postmerge-retro-batch.bats` | n/a | Daily retro evidence and lifecycle behavior |
 | `weekly-classifier.bats` | n/a | Weekly review classifier behavior |
