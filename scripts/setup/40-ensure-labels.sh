@@ -29,7 +29,6 @@ copilot:in-progress|1D76DB|Assigned to Copilot, counts toward concurrent budget
 copilot:queued|FBCA04|Waiting for an open Copilot slot
 copilot:budget-paused|E4E669|90% daily spend threshold hit; not auto-drained; add cap-override + copilot:ready to resume
 copilot:daily-cap-hit|D93F0B|Hit daily assignment cap; manual re-queue required
-from-backlog|5319E7|Issue auto-created from .context/backlog.yaml
 needs-human|B60205|Requires human input (e.g., empty roadmap phase, CI failure)
 agent:claimed|0969DA|Agent has claimed the issue or PR; details live in the latest agent-state:v1 comment
 agent:blocked|D93F0B|Agent work is blocked; details live in the latest agent-state:v1 comment
@@ -40,11 +39,6 @@ cap-override|FBCA04|Bypass the 90% daily spend pause in agent-assign-copilot.yml
 agent-suggested|BFD4F2|Agent-surfaced opportunity; see process_opportunity_feedback rule.
 ai-review:live|1D76DB|Enable rolling non-blocking advisory review snapshots (draft/WIP OK; agent-advisory-review.yml)
 ai-review:full|5319E7|Request deeper advisory review depth on this PR
-retro-review|FBCA04|Opt merged PR into post-merge retrospective review (PR 4)
-retro:adr|C5DEF5|Post-merge retro may propose ADR follow-up issues
-retro:context-pack|BFD4F2|Post-merge retro may propose context-pack follow-up issues
-adr:update|C2E0C6|ADR amendment candidate from post-merge retro or maintainer triage
-context-pack|BFD4F2|Context-pack improvement follow-up from retro or agent-suggested
 LABEL_SPECS
 )
 _PIPELINE_LABELS=$(printf '%s\n' "$_PIPELINE_LABEL_SPECS" | awk -F'|' 'NF { printf "%s%s", sep, $1; sep=", " } END { print "" }')

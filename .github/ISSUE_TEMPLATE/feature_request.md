@@ -26,9 +26,8 @@ As a [type of user], I want [goal] so that [benefit].
 ## User outcome (15-minute test)
 
 <!--
-Optional but recommended. If you can answer this clearly here, you may
-add the `outcome-validated` label to opt out of the Analyst pre-flight
-gate (see ADR-014).
+Optional but recommended. If you can answer this clearly here, add the
+`outcome-validated` label to record that the user outcome is explicit.
 
 The test: "If a user spent 15 minutes with the final deliverable,
 would they EXPERIENCE the outcome, or would they READ ABOUT it?"
@@ -38,8 +37,7 @@ one paragraph what a user will be able to DO when this ships — focus on
 user actions, not files created. Example:
 
 > A reviewer will be able to open a PR, see the Plan comment was posted
-> before the first code commit, and confirm Judge applied PLAN-GATE
-> BLOCK if it was missing.
+> before the first code commit, and confirm required checks catch a missing plan.
 -->
 
 ## Acceptance Criteria

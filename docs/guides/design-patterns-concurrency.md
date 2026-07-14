@@ -4,7 +4,7 @@
 >
 > **Read first**: [`design-patterns.md`](design-patterns.md#read-this-first--descriptive-vocabulary-not-prescription) — lead file with framing, descriptive-not-prescriptive caveats, and citation conventions. **Don't cite from this file without reading the lead file's "Read this first" section.** Patterns are vocabulary, not rules.
 >
-> **Status**: advisory. A `CCP` citation is a review handle; it does not create a Judge block condition.
+> **Status**: advisory. A `CCP` citation is a review handle; it is not independently blocking.
 
 Examples stay compact on purpose. Concurrency shapes are easy to overfit to one runtime or library; the point here is to name the coordination idea, not to bless one framework's API.
 

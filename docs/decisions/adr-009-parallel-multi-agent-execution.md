@@ -2,7 +2,7 @@
 
 ## Status
 
-Superseded by [ADR-032](./adr-032-monolithic-agent-and-review-lifecycle.md)
+Superseded by [ADR-031](./adr-031-agent-model-roi-benchmark-policy.md)
 
 ## Date
 

@@ -34,7 +34,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `test.sh` (root) | `.github/workflows/ci-tests.yml` | Template verification, invoked by CI as `./test.sh` |
 | `scripts/` | Project consumers (post-clone) | One-time project customization (`setup.sh`, `verify-env.sh`) |
 
-ADR-032 defines the active model: one implementing agent, blocking CI, optional parallel advisory review, recurring retro, and opt-in local consensus.
+ADR-031 defines the active model: one implementing agent, blocking CI, optional parallel advisory review, recurring retro, and opt-in local consensus.
 
 **Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow.
 
@@ -51,7 +51,7 @@ ADR-032 defines the active model: one implementing agent, blocking CI, optional 
 - **Pre-commit Hooks** - Template for linting, secret detection, and commit standards
 - **ADR Templates** - Architecture Decision Record templates with examples
 - **Verification Scripts** - Built-in testing (see `./test.sh` output for current check count) to ensure template integrity
-- **Backlog-Ready Issue Pipeline** - `.context/backlog.yaml` is a machine-readable task list (validated by `.context/backlog.schema.json`). The backlog is auto-converted into GitHub issues and routed through a gated Copilot assignment workflow with concurrent + daily budgets and a queue. The pipeline relies on state labels (`copilot:ready`, `copilot:in-progress`, `copilot:queued`, `copilot:daily-cap-hit`, `from-backlog`, `needs-human`) which `scripts/setup.sh` creates automatically. See [`docs/guides/agent-pipeline.md`](docs/guides/agent-pipeline.md) for the intended end-to-end flow.
+- **Optional Machine-Readable Backlog** - `.context/backlog.yaml` can track structured project tasks and is validated by `.context/backlog.schema.json`.
 
 ## Repository reference (for agents)
 
@@ -98,8 +98,8 @@ and weekly workflows perform retrospective review and draft-fix work.
 
 1. Click "Use this template" on GitHub
 2. Create your new repository
-3. Run `.github/prompts/repo-onboarding.md`
-4. In Mode B, complete **Step 2** of [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md) to reset and repopulate `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md`, delete template-only architecture diagrams, then customize with project-specific content
+3. Run the OpenCode `repo-onboarding` skill
+4. In Mode B, follow the skill's bootstrap procedure to reset and repopulate `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and `DESIGN.md`, delete template-only architecture diagrams, then customize with project-specific content
 5. Replace remaining `TEMPLATE_PLACEHOLDER` and `PLEASE_UPDATE_THIS/URL` values and customize `ci-tests.yml` for your tech stack
 
 ### Option 3: Copy to Existing Repository
@@ -109,9 +109,11 @@ and weekly workflows perform retrospective review and draft-fix work.
 3. Create an `AI_REPO_GUIDE.md` specific to your project
 4. Customize `.context/` for your project state
 
-## Onboarding prompts (for AI agents)
+## Repository onboarding
 
-Two agent-facing prompts — the **first-time repo initialization** prompt to bootstrap a new project from this template, and the **per-session onboarding** prompt to continue work on an existing repo — live in [`AI_REPO_GUIDE.md` § Onboarding Prompts](AI_REPO_GUIDE.md#onboarding-prompts). After creating a repo from this template, paste the first-time-init prompt into a GitHub issue and assign it to your AI agent.
+Use the OpenCode `repo-onboarding` skill for first-clone orientation, Mode B
+template bootstrap, or rebuilding `AI_REPO_GUIDE.md`. Use the Agent
+Initialization issue template when the work needs a durable issue contract.
 
 ## Verification
 
@@ -197,7 +199,7 @@ EXTENSIONS=(
 
 When using this template in a new repository:
 
-1. **Start with [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md)** — canonical onboarding procedure. This will instruct agents to repopulate files including `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` with project-specific purpose, plan, and design context before regenerating `AI_REPO_GUIDE.md`
+1. **Start with the OpenCode `repo-onboarding` skill** - it repopulates `.context/00_INDEX.md`, `.context/roadmap.md`, `.context/vision/README.md`, and other project context before regenerating `AI_REPO_GUIDE.md`
 2. **Customize the operating contract** - Add project-wide constraints to `AGENTS.md`
 3. **Start with mockups** - Add design artifacts to `.context/vision/` before coding
 4. **Use GitHub live state** - Keep issue/PR `agent-state:v1` comments current for cognitive handoff between sessions

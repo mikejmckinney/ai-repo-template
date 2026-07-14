@@ -34,9 +34,9 @@
 
 - [ ] Continue as planned
 - [ ] Pivot: <describe pivot>
-- [ ] Re-run Analyst with new constraints
+- [ ] Re-run problem analysis with new constraints
 - [ ] Stop / deprioritize
 
 ## Next Iteration Input
 
-**Feed to**: Analyst (if assumptions changed) / Architect (if design feedback only)
+**Feed to**: implementing agent (if assumptions changed) / architecture review (if design feedback only)

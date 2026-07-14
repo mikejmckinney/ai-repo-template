@@ -5,9 +5,6 @@ review automation.
 
 | Prompt | Purpose |
 |---|---|
-| `repo-onboarding.md` | Classify and initialize a repository |
-| `op-issue-workflow.md` | Issue-to-merge implementation procedure |
-| `expand-backlog-entry.md` | Expand sparse backlog entries without inventing requirements |
 | `shared-review-lenses.md` | Canonical review criteria used by advisory and retro |
 | `pr-advisory-review.md` | Optional in-progress PR advisory snapshot |
 | `post-merge-retro.md` | Daily merged-PR structured review |
@@ -18,6 +15,6 @@ review automation.
 | `mirror-postmortem.md` | Mirror a generalized postmortem upstream |
 | `model-roi-*.md` | Benchmark and grading prompts |
 
-ADR-032 retired role-specific, pre-push, formal-review resolution, finalization,
+ADR-031 retired role-specific, pre-push, formal-review resolution, finalization,
 and legacy consensus-planning prompts. Use the OpenCode `local-consensus` skill
 for explicit independent multi-model review.

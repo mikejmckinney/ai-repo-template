@@ -15,7 +15,7 @@ This repo is a process/template project, not a product UI, so its most useful vi
 
 ## How to Use These Files
 
-1. Start with ADR-032 and `docs/guides/agent-pipeline.md` for execution and review flow.
+1. Start with ADR-031 and `docs/guides/agent-pipeline.md` for execution and review flow.
 2. Read `architecture/state-surfaces.md` when touching live-state, session-summary, or onboarding reset behavior.
 3. Keep these diagrams aligned with `.context/roadmap.md` and `.context/state/README.md`.
 

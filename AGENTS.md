@@ -36,7 +36,7 @@ session notes.
 ## Execution model
 
 - Use one monolithic implementing agent. ADR-031 found no favorable ROI crossover
-  for the multi-role pipeline, and ADR-032 retired the role registry.
+  for the multi-role pipeline and retired the role registry.
 - Use the `local-consensus` skill only when the user requests it or consequential
   uncertainty justifies independent multi-model review.
 - Advisory review is optional, non-blocking, and may run in parallel with active
@@ -128,7 +128,7 @@ Update companion documentation in the same PR when a change affects it:
 |---|---|
 | Build, test, lint, run, install, layout, entry points, or troubleshooting | `AI_REPO_GUIDE.md` |
 | An accepted architectural decision | Amend or supersede the relevant ADR and update `docs/decisions/README.md` |
-| Agent execution or review lifecycle | ADR-032, `docs/guides/agent-pipeline.md` |
+| Agent execution or review lifecycle | ADR-031, `docs/guides/agent-pipeline.md` |
 | Workflow trigger or verification class | `docs/guides/agent-pipeline.md`, `scripts/verify-pr.sh`, tests, and sandbox guide as applicable |
 | File listed in repository inventories | Owning check module, human index, and install inventory as applicable |
 | Live-state schema or location | `.context/state/`, session guidance, and coordination guide |

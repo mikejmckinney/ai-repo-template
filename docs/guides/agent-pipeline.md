@@ -1,6 +1,6 @@
 # Agent Pipeline
 
-ADR-032 defines a monolithic implementation and review lifecycle. One agent owns
+ADR-031 defines a monolithic implementation and review lifecycle. One agent owns
 routine implementation; CI blocks regressions; advisory review is optional and
 parallel; daily and weekly review operate after changes reach `main`.
 
@@ -86,8 +86,6 @@ Use `scripts/verify-pr.sh` to classify the diff and
 | `agent:blocked` | Work is blocked |
 | `agent:awaiting-review` | Work awaits review |
 | `agent-suggested` | Retro/advisory improvement candidate |
-| `adr:update` | ADR amendment candidate |
-| `context-pack` | Context-pack candidate |
 
 ## Repository Variables
 
@@ -98,7 +96,7 @@ Use `scripts/verify-pr.sh` to classify the diff and
 
 ## Retired Surfaces
 
-ADR-032 retired role registries and overlays, formal Claude/Gemini review,
+ADR-031 retired role registries and overlays, formal Claude/Gemini review,
 review-on-push, review resolution, final feedback consolidation, pre-push role
 review, multi-role dispatch, and legacy consensus planning. Historical ADRs and
 benchmark artifacts remain evidence, not operational instructions.

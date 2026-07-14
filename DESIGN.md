@@ -4,7 +4,7 @@
 >
 > **For design tools** (OpenDesign, Claude Design, Figma AI exports, etc.): load this file as the primary context before generating mockups or interactive prototypes. It defines product feel, tokens, accessibility floor, layout patterns, and where artifacts land in the repo.
 >
-> **Template repo note (`ai-repo-template`):** This repo has no product UI. The sections below are a **generic contract template** shipped so derived projects and agents know the expected shape. During Mode B onboarding, complete [`.github/prompts/repo-onboarding.md`](.github/prompts/repo-onboarding.md) **Step 2.1** to reset and repopulate this file with product-specific direction **before frontend implementation starts**.
+> **Template repo note (`ai-repo-template`):** This repo has no product UI. The sections below are a **generic contract template** shipped so derived projects and agents know the expected shape. During Mode B onboarding, use the OpenCode `repo-onboarding` skill to reset and repopulate this file with product-specific direction **before frontend implementation starts**.
 
 ## Status
 

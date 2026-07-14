@@ -8,5 +8,5 @@ The repository's sole opt-in multi-model mechanism is
 such as session recovery, onboarding, browser tooling, and frontend guidance.
 
 Review a skill's permissions, external services, generated files, and maintenance
-cost before adoption. Skills do not create a role registry or change ADR-032's
+cost before adoption. Skills do not create a role registry or change ADR-031's
 monolithic implementation default.

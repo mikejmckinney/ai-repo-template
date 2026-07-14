@@ -48,9 +48,6 @@ checkout:
 # Actions R, Variables R, Metadata R.
 export SANDBOX_PAT="<sandbox-scoped PAT value>"
 
-# Optional: separate sandbox-budget Anthropic key for backlog expansion.
-export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
-
 # Optional: override the default sandbox slug
 # (defaults to "<upstream-owner>/<upstream-name>-sandbox").
 # export SANDBOX_REPO_NAME="my-org/my-custom-sandbox"
@@ -118,14 +115,10 @@ rm -rf "$(dirname "$MIRROR_DIR")"
 printf '%s' "$SANDBOX_PAT" | gh secret set CLAUDE_PAT \
   --repo "$SANDBOX_REPO"
 
-# 5. (Optional) Set ANTHROPIC_API_KEY from $SANDBOX_ANTHROPIC_KEY.
-printf '%s' "$SANDBOX_ANTHROPIC_KEY" | gh secret set ANTHROPIC_API_KEY \
-  --repo "$SANDBOX_REPO"
-
-# 6. Add the sandbox remote on this checkout.
+# 5. Add the sandbox remote on this checkout.
 git remote add "${SANDBOX_REMOTE:-sandbox}" "https://github.com/${SANDBOX_REPO}.git"
 
-# 7. Ensure pipeline labels (agent-suggested, retro-review, etc.) on sandbox.
+# 6. Ensure active pipeline labels on sandbox.
 ./scripts/setup/ensure-pipeline-labels.sh "$SANDBOX_REPO"
 ```
 
@@ -208,7 +201,7 @@ git push --force sandbox origin/main:main
 
 This is the only force-push the playbook authorizes. It runs against
 the sandbox remote only, never against `origin`. Document the choice
-in the PR body's risks or deviations prose so a future Judge
+in the PR body's risks or deviations prose so a future reviewer
 can see why the safer default was overridden.
 
 ### 2. Push your PR branch to sandbox
@@ -267,7 +260,6 @@ Now reproduce the trigger that the workflow depends on. Examples:
 | `agent-advisory-review.yml` | Open a draft PR, apply `ai-review:live`, then push another commit while review runs. |
 | `auto-rebase-on-merge.yml` | Merge any PR; the workflow fires on `pull_request.closed`. |
 | `keep-warm.yml` / scheduled jobs | Trigger via `gh workflow run <name>` (`workflow_dispatch` is also wired). |
-| `backlog-to-issues.yml` | Edit `.context/backlog.yaml` on sandbox `main`. |
 
 Watch the run in the sandbox repo's Actions tab. The whole point of
 sandbox is that a real failure surfaces *here*, in logs you can read,
@@ -288,7 +280,7 @@ before manual or agent-driven sandbox operations.
 
 - **Green** — paste a one-line link to the green sandbox run into a
   comment on the real PR (`Sandbox verification: <run URL> — green`).
-  The maintainer / Judge can now merge here with confidence.
+  The maintainer can now merge here with confidence.
 - **Red** — fix the change on your PR branch, push the new tip to
   `sandbox` under the same `test/sandbox-<short-slug>` name (or to your
   PR branch under the override flow), and re-run from step 3 if the
@@ -324,10 +316,6 @@ git push --force sandbox origin/main:main
 - **Sandbox PAT scope** matches production CLAUDE_PAT (Contents R/W,
   Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R)
   but is fine-grained to the sandbox repo only.
-- **No copy of `ANTHROPIC_API_KEY` if you can avoid it.** If the
-  workflow under test calls Anthropic, mint a separate API key on a
-  sandbox-budget account so a sandbox runaway can't drain production
-  budget.
 - **Don't mirror SSH keys, deploy keys, or personal tokens** into the
   sandbox. The two repos are independent; cross-pollination
   re-introduces the blast-radius risk this playbook is trying to

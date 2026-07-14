@@ -1,44 +1,22 @@
 # TEMPLATE_PLACEHOLDER: Replace the example entry below with your project's tasks.
 #
-# .context/backlog.yaml — machine-readable task list dispatched by
-# .github/workflows/backlog-to-issues.yml (added in PR 3 of the
-# backlog-driven issue creation pipeline). Each entry becomes one GitHub
-# issue and is then funneled through the gated Copilot assignment workflow
-# (added in PR 2) and the existing downstream pipeline documented in
-# docs/guides/agent-pipeline.md.
+# .context/backlog.yaml — optional machine-readable project task list.
 #
 # Schema:    .context/backlog.schema.json
 # Validate:  pip install check-jsonschema && \
 #            check-jsonschema --schemafile .context/backlog.schema.json .context/backlog.yaml
 #
 # Required per entry: id, title.
-# Optional:           phase, labels, depends_on, auto_assign, body,
-#                     acceptance_criteria, issue.
-# Filled by Claude (when ANTHROPIC_API_KEY is set and the field is missing):
-#                     body, acceptance_criteria.
-#
-# `issue: N` is written back by the dispatch workflow after an issue is
-# created — do not set it by hand. The dispatch is idempotent: entries with
-# `issue:` already set are skipped.
+# Optional:           phase, labels, depends_on, body, acceptance_criteria.
 
 entries:
   - id: example-auth-login
     title: "Add email+password login"
     phase: 2 # matches a phase number in roadmap.md
     labels: [enhancement]
-    depends_on: [] # other entry ids; dispatch waits until each
-    # listed entry has `issue:` set AND that
-    # issue is closed
-    auto_assign: true # default; false = create the issue but
-    # withhold `copilot:ready` for human review
+    depends_on: [] # other entry ids that must be completed first
     body: |
-      Short description of what to build and why. The dispatch workflow
-      uses this verbatim as the issue body, then appends a rendered
-      acceptance criteria checklist and a `<!-- backlog-entry-id: <id> -->`
-      footer used for the duplicate-issue guard.
+      Short description of what to build and why.
     acceptance_criteria:
       - "POST /login returns 200 with valid credentials"
       - "Rate limit: 5 attempts / 15 min per IP"
-    # issue: 42                  # ← filled in by the workflow; do not edit
-
-    issue: 51

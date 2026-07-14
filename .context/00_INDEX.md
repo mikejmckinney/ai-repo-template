@@ -50,7 +50,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 5. Read `sessions/latest_summary.md`, `roadmap.md`, benchmarks, or vision files only when their domain intersects the task.
 
 **Execution model**: one implementing agent, blocking CI, optional parallel
-advisory review, recurring retro, and opt-in local consensus. See ADR-032.
+advisory review, recurring retro, and opt-in local consensus. See ADR-031.
 
 ## Project Summary
 
@@ -83,29 +83,28 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-005](../docs/decisions/adr-005-analyst-preflight-gate.md) | Analyst pre-flight gate | Established the original pre-implementation research gate. |
 | [ADR-006](../docs/decisions/adr-006-auto-merge-opt-in-model.md) | Auto-merge opt-in | Kept merge automation explicitly label-gated instead of default-on. |
 | [ADR-007](../docs/decisions/adr-007-auto-resolve-review-threads.md) | Bot-thread auto-resolution v1 | Started the review-thread automation path later replaced by ADR-008. |
-| [ADR-008](../docs/decisions/adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 default plus Copilot fallback | Historical review-resolution fallback; superseded by ADR-032. |
-| [ADR-009](../docs/decisions/adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution | Historical role-specialized pipeline; superseded by ADR-032. |
+| [ADR-008](../docs/decisions/adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 default plus Copilot fallback | Historical review-resolution fallback; superseded by ADR-031. |
+| [ADR-009](../docs/decisions/adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution | Historical role-specialized pipeline; superseded by ADR-031. |
 | [ADR-010](../docs/decisions/adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge | Added the soft-overlap rebase path for open parallel PRs. |
 | [ADR-011](../docs/decisions/adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement | Made issue comments the required plan artifact before implementation. |
 | [ADR-012](../docs/decisions/adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions | Codified branch-first, commit cadence, and other non-implicit rules. |
 | [ADR-013](../docs/decisions/adr-013-pre-commit-on-main-default.md) | Derived-repo pre-commit stance | Kept heavy pre-commit optional for downstream repos by default. |
-| [ADR-014](../docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md) | Wider Analyst gate | Historical pre-flight policy; superseded by ADR-032. |
+| [ADR-014](../docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md) | Wider Analyst gate | Historical pre-flight policy; superseded by ADR-031. |
 | [ADR-015](../docs/decisions/adr-015-postmortem-feedback-loop.md) | Postmortem feedback loop | Added the downstream-project capture -> mirror -> promote path. |
 | [ADR-016](../docs/decisions/adr-016-pre-merge-verification-gate.md) | Pre-merge verification gate | Bound plans and PRs to explicit change-class and sandbox evidence. |
 | [ADR-017](../docs/decisions/adr-017-template-repo-pre-commit-default.md) | Template repo pre-commit default | Turned on shellcheck and actionlint for this repo itself. |
 | [ADR-018](../docs/decisions/adr-018-multi-task-active-md-schema.md) | Multi-task active-state schema | Added owner-keyed repo-local state before ADR-025 moved live state to GitHub. |
-| [ADR-019](../docs/decisions/adr-019-per-role-model-tiering.md) | Per-role model tiering | Historical model-tier policy; superseded by ADR-032. |
+| [ADR-019](../docs/decisions/adr-019-per-role-model-tiering.md) | Per-role model tiering | Historical model-tier policy; superseded by ADR-031. |
 | [ADR-020](../docs/decisions/adr-020-orchestration-patterns-reference.md) | Orchestration patterns reference | Gave Critic and Judge shared pattern/anti-pattern vocabulary. |
 | [ADR-021](../docs/decisions/adr-021-agents-md-decomposition.md) | AGENTS decomposition | Split the monolithic contract into focused `process_*.md` rules. |
 | [ADR-022](../docs/decisions/adr-022-top-level-md-scope-split.md) | Top-level markdown scope split | Separated README, AI_REPO_GUIDE, and AGENTS responsibilities. |
-| [ADR-023](../docs/decisions/adr-023-shared-subagent-canonical.md) | Canonical role bodies plus thin overlays | Historical role registry; superseded by ADR-032. |
-| [ADR-024](../docs/decisions/adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning | Historical planning workflow; superseded by ADR-032. |
+| [ADR-023](../docs/decisions/adr-023-shared-subagent-canonical.md) | Canonical role bodies plus thin overlays | Historical role registry; superseded by ADR-031. |
+| [ADR-024](../docs/decisions/adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning | Historical planning workflow; superseded by ADR-031. |
 | [ADR-025](../docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md) | GitHub as live state | Moved normal coordination to issue/PR bodies, comments, and labels. |
 | [ADR-026](../docs/decisions/adr-026-compliance-contracts.md) | Compliance contracts | Structured evidence schemas retired by the 2026-07-13 amendment. |
 | [ADR-027](../docs/decisions/adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel | Added an out-of-scope observation path without widening task scope. |
 | [ADR-029](../docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence | Requires sandbox proof for behavior/process claims on every PR. |
-| [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI policy | Makes monolithic implementation the default for routine work. |
-| [ADR-032](../docs/decisions/adr-032-monolithic-agent-and-review-lifecycle.md) | Monolithic agent and review lifecycle | Retires role registries and keeps optional advisory plus recurring retro. |
+| [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI and execution lifecycle policy | Makes monolithic implementation the default, retires role registries, and retains optional advisory plus recurring retro. |
 
 ## Next Steps
 

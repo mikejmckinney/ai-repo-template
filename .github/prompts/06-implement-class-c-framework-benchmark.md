@@ -50,7 +50,6 @@ Before editing, read:
 - `.context/benchmarks/model-roi/benchmark-runbook.md`
 - `.context/benchmarks/model-roi/grading/README.md`
 - `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`
-- `.github/prompts/05-implement-benchmark-grading-standardization.md`
 - `scripts/benchmark/Makefile`
 - `scripts/benchmark/lib.sh`
 - `scripts/benchmark/run-candidate.sh`

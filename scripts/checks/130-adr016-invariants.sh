@@ -49,14 +49,6 @@ else
   fail "pull_request_template.md missing pre-merge verification reference (issue #227)"
 fi
 
-# The active OP workflow calls out the sandbox path.
-if grep -q 'sandbox-verification.md' .github/prompts/op-issue-workflow.md 2>/dev/null \
-  || grep -q 'default-branch-only workflow' .github/prompts/op-issue-workflow.md 2>/dev/null; then
-  pass "OP workflow references the sandbox verification path (issue #227)"
-else
-  fail "OP workflow missing sandbox-verification callout (issue #227)"
-fi
-
 # AGENTS.md ties workflow verification changes to the classifier and sandbox guide.
 if grep -q 'scripts/verify-pr.sh' AGENTS.md 2>/dev/null \
   && grep -q 'sandbox verification guide' AGENTS.md 2>/dev/null; then

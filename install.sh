@@ -113,34 +113,8 @@ else
 fi
 
 # =============================================================================
-# 2. Copy AI Prompts to Workspace
+# 2. Copy Agent Workflow Kit to Workspace
 # =============================================================================
-
-log_info "Setting up AI prompts..."
-
-# Create .github/prompts directory if it doesn't exist
-PROMPTS_DIR="$WORKSPACE/.github/prompts"
-if [[ ! -d "$PROMPTS_DIR" ]]; then
-  mkdir -p "$PROMPTS_DIR"
-  log_info "  Created: $PROMPTS_DIR"
-fi
-
-# Copy repo-onboarding prompts
-ONBOARD_SRC="$DOTFILES/.github/prompts/repo-onboarding.md"
-ONBOARD_DST="$PROMPTS_DIR/repo-onboarding.md"
-ONBOARD_SRC_EXISTS=false
-
-if [[ -f "$ONBOARD_SRC" ]]; then
-  ONBOARD_SRC_EXISTS=true
-  if [[ -f "$ONBOARD_DST" ]]; then
-    log_warn "  ⚠ $ONBOARD_DST already exists, skipping"
-  else
-    cp "$ONBOARD_SRC" "$ONBOARD_DST"
-    log_info "  ✓ Copied: repo-onboarding.md"
-  fi
-else
-  log_warn "  ⚠ Source not found: $ONBOARD_SRC"
-fi
 
 # Copy AGENTS.md to workspace root if not present
 AGENTS_SRC="$DOTFILES/AGENTS.md"
@@ -216,7 +190,6 @@ log_info "Installing agent workflow kit..."
 MULTIAGENT_FILES=(
   "AGENT.md"
   ".github/PLAN_TEMPLATE.md"
-  ".github/copilot-instructions.md"
   ".github/pull_request_template.md"
   ".context/00_INDEX.md"
   ".context/backlog.schema.json"
@@ -246,11 +219,8 @@ MULTIAGENT_FILES=(
   "docs/guides/sandbox-verification.md"
   ".github/prompts/README.md"
   ".github/prompts/capture-postmortem.md"
-  ".github/prompts/expand-backlog-entry.md"
   ".github/prompts/mirror-postmortem.md"
-  ".github/prompts/op-issue-workflow.md"
   ".github/prompts/shared-review-lenses.md"
-  ".github/prompts/repo-onboarding.md"
   "scripts/diag-sandbox.sh"
   "scripts/diag-hang-snapshot.sh"
   "scripts/codespace-post-start.sh"
@@ -317,9 +287,6 @@ if [[ "$SKIP_EXTENSIONS" == "false" ]]; then
 fi
 
 # Verify copied files (only if source existed)
-if [[ "$ONBOARD_SRC_EXISTS" == "true" ]]; then
-  verify "$ONBOARD_DST"
-fi
 if [[ "$AGENTS_SRC_EXISTS" == "true" ]]; then
   verify "$AGENTS_DST"
 fi

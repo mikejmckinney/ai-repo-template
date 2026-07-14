@@ -1,4 +1,4 @@
-# ADR-031: Agent/model ROI benchmark procedure and current recommendations
+# ADR-031: Agent/model ROI benchmark and execution lifecycle policy
 
 ## Status
 
@@ -23,6 +23,11 @@ Operators and agents need a single durable **policy surface** for:
 1. How to run and extend benchmarks (without re-deriving protocol from issues).
 2. What the completed Class A / Class B evidence supports **today** for model, context, and orchestration choices.
 3. What is **still missing** (Class C greenfield) and when to re-run.
+
+Issue [#474](https://github.com/mikejmckinney/ai-repo-template/issues/474)
+applied the benchmark result to the repository's operating model. Maintaining
+unused role registries, platform overlays, and separate formal-review stages
+continued to create drift after the evidence favored monolithic execution.
 
 Benchmark evidence is **not static**. Platforms rename models, pricing changes, agent runtimes change tool behavior, and repo process (`AGENTS.md`, context packs, subagent dispatch) evolves. Recommendations here are **current as of the cited score sets** and must be revisited when those inputs change materially.
 
@@ -68,10 +73,11 @@ Issue #376 tested repo-native **orchestration pipelines** (subagents + handoffs)
 **Policy:**
 
 - **Prefer a single implementing agent** (monolithic pass) for routine issue/PR implementation, retro fix passes, and weekly fix passes.
-- **Do not use subagent fan-out for routine repository work.** ADR-032 retires the role registry; use `local-consensus` only when independent multi-model review is explicitly justified.
+- **Do not use subagent fan-out for routine repository work.** The role registry is retired; use `local-consensus` only when independent multi-model review is explicitly justified.
 - **Stage 1D duo** (planner + implementer) did not beat the best monolithic ROI leaders on either class; treat duo as experimental, not default.
 
-This aligns with [ADR-019 Amendment guidance](./adr-019-per-role-model-tiering.md) and [`.agents/analyst.md`](../../.agents/analyst.md) (ghost-success / pass-back caveats for dispatched subagents).
+This supersedes ADR-019's active role-tiering guidance while preserving that
+ADR as historical benchmark context.
 
 #### 2b. Model / platform shortlist (where telemetry exists)
 
@@ -105,7 +111,29 @@ Sweet-spot rule (from benchmark README): highest marginal ROI pack within **−2
 - **Class C greenfield** app/framework benchmarks (`06-implement-class-c-framework-benchmark.md`) — **still required** for complete adoption decisions on greenfield work and framework comparison (ai-repo-template vs Spec Kit).
 - **Stage 1E CP-2** robustness screen — deferred.
 - **Copilot overlay remap** to GPT-5.4 xhigh or verified fallback arrays — still deferred pending refreshed #220 benchmark tranche ([ADR-019](./adr-019-per-role-model-tiering.md)).
-- Production changes to default read profiles, workflow model vars, or subagent registration based solely on Class A/B premerge tasks.
+- Production changes to default read profiles or workflow model variables based solely on Class A/B premerge tasks.
+
+#### 2e. Active execution and review lifecycle
+
+The repository applies the benchmark recommendation as follows:
+
+- Routine implementation uses one monolithic implementing agent.
+- CI and lint are the blocking pre-merge controls.
+- Advisory review is optional via `ai-review:live`, runs in parallel with active
+  implementation, updates one sticky comment, and cannot mutate or block the PR.
+- Daily post-merge retro and weekly full-repository review remain the recurring
+  review and draft-fix pipelines.
+- `.opencode/skills/local-consensus/` is the sole opt-in multi-model mechanism.
+- One shared review contract feeds advisory, daily, and weekly prompts; cadence
+  prompts retain only their evidence boundary and output interface.
+- Canonical roles, platform overlays, native reviewer rules, multi-role dispatch,
+  formal AI review, review resolution, finalization, and legacy consensus
+  planning are retired.
+- Monolithic assignment, cross-PR overlap visibility, and auto-rebase safety remain.
+
+This lifecycle supersedes ADR-003, ADR-004, ADR-005, ADR-008, ADR-009, ADR-014,
+ADR-019, ADR-023, and ADR-024 for active operations. Their bodies and benchmark
+artifacts remain historical evidence. ADR-007 remains superseded through ADR-008.
 
 ### 3. Revisit cadence
 
@@ -136,9 +164,9 @@ Class C results, when available, must be merged into this ADR (or a superseding 
   - `process_subagent_bootstrap.md`
   - `process_template_detection.md`
 - **Retain** durable surfaces for the same concerns outside the rule catalog:
-  - Template detection / Mode B bootstrap → [`.github/prompts/repo-onboarding.md`](../../.github/prompts/repo-onboarding.md) Steps 1–2
-  - Gates, PR completion, model tier, role selection, subagent bootstrap → role files under `.agents/`, [`.github/prompts/op-issue-workflow.md`](../../.github/prompts/op-issue-workflow.md), [`.github/pull_request_template.md`](../../.github/pull_request_template.md), [`.github/prompts/pr-resolve-all.md`](../../.github/prompts/pr-resolve-all.md), [ADR-019](./adr-019-per-role-model-tiering.md), and historical guides under `docs/guides/`
-  - Ownership / parallelism → [ADR-009](./adr-009-parallelism-report.md) tooling remains; live ownership table enforcement is **deferred** until a future benchmark or operational need justifies restoring `agent_ownership.md`
+  - Template detection / Mode B bootstrap → the OpenCode `repo-onboarding` skill
+  - Gates and PR completion → `AGENTS.md`, [`.github/pull_request_template.md`](../../.github/pull_request_template.md), and `scripts/verify-pr.sh`
+  - Ownership / parallelism → `agent-parallelism-report.yml` remains; live ownership table enforcement is **deferred** until a future benchmark or operational need justifies restoring `agent_ownership.md`
 - **Stage 1E context packs** on `main` drop references to removed rule files so harness manifests match the production catalog.
 
 **Reversal:** If a future benchmark score set (documented in [`.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`](../../.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md) with a new `score_set_id`) shows favorable ROI for multi-role pipeline or full-rule injection as the default, **amend this ADR** with the contradicting evidence and restore removed rule files from `origin/backup-2026-06-15` (or a successor backup) as needed. Until then, monolithic default + slim catalog stand.
@@ -166,12 +194,15 @@ Class C results, when available, must be merged into this ADR (or a superseding 
 
 - Single place to answer "how do we benchmark?" and "what did we learn?"
 - Clear default: monolithic implementation unless coordination is the goal.
+- One active review lifecycle replaces unused role and formal-review surfaces.
 - Explicit Class C gap prevents over-generalizing from premerge Class A/B tasks.
 
 ### Negative
 
 - Recommendations age; owners must update ADR or supersede when re-benchmarking.
 - Stage 1E pack guidance remains benchmark-scoped until a separate production context-loading ADR lands.
+- Optional advisory feedback can complete after implementation advances; some
+  defects will instead be found by recurring post-merge review.
 
 ### Neutral
 
@@ -184,13 +215,15 @@ Class C results, when available, must be merged into this ADR (or a superseding 
 - [x] Canonical regrades for Stage 1, 1C, 1D, pipeline, 1E CP-1 documented in results file.
 - [ ] Class C greenfield benchmark (`06-implement-class-c-framework-benchmark.md` on `benchmark/roi`).
 - [ ] Stage 1E CP-2 robustness (deferred).
-- [ ] Refresh Stage 1E / overlay policy against current `AGENTS.md` before production context-pack routing change.
+- [ ] Refresh Stage 1E policy against current `AGENTS.md` before a production context-pack routing change.
 - [x] Slim `.context/rules/` catalog per Amendment 2026-06-15 (issue #437 / PR #438).
-- [ ] Link this ADR from ADR-019 next amendment tranche when Copilot pins are remapped.
+- [x] Apply the monolithic implementation and review lifecycle (issue #474 / PR #476).
+- [ ] Refresh the model shortlist when Copilot pins are remapped.
 
 ## References
 
 - Issue [#374](https://github.com/mikejmckinney/ai-repo-template/issues/374), [#376](https://github.com/mikejmckinney/ai-repo-template/issues/376), [#378](https://github.com/mikejmckinney/ai-repo-template/issues/378), [#220](https://github.com/mikejmckinney/ai-repo-template/issues/220)
+- Issue [#474](https://github.com/mikejmckinney/ai-repo-template/issues/474), PR [#476](https://github.com/mikejmckinney/ai-repo-template/pull/476)
 - [`.context/benchmarks/model-roi/README.md`](../../.context/benchmarks/model-roi/README.md)
 - [`.context/benchmarks/model-roi/benchmark-runbook.md`](../../.context/benchmarks/model-roi/benchmark-runbook.md)
 - [`.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`](../../.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md)

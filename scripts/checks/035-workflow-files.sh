@@ -16,7 +16,6 @@ WORKFLOW_FILES=(
   ".github/workflows/agent-parallelism-report.yml"
   ".github/workflows/agent-release-slot.yml"
   ".github/workflows/auto-rebase-on-merge.yml"
-  ".github/workflows/backlog-to-issues.yml"
   ".github/workflows/ci-tests.yml"
   ".github/workflows/keep-warm.yml"
   ".github/workflows/lint-and-format.yml"

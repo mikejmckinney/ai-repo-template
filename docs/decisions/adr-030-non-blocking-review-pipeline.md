@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (finalize stage retired by ADR-032)
+Accepted (finalize stage retired by ADR-031)
 
 ## Date
 
@@ -35,7 +35,7 @@ Shared properties:
 
 ### Post-merge retro v2 (supersedes v1 trigger/output)
 
-**Triggers (Option C):** cron + `workflow_dispatch` only. **Removed:** `pull_request: closed` and retro label workflow gates (`retro-review`, `retro:adr`, etc.). Labels may remain as optional human metadata; they do **not** gate automation.
+**Triggers (Option C):** cron + `workflow_dispatch` only. **Removed:** `pull_request: closed` and retro label workflow gates (`retro-review`, `retro:adr`, etc.). The obsolete retro labels are retired and do **not** gate automation.
 
 **Batch behavior:**
 
@@ -102,7 +102,7 @@ Shared properties:
 
 ### Neutral
 
-- Gemini free/paid routing ([`07-implement-gemini-free-paid-routing.md`](../../.github/prompts/07-implement-gemini-free-paid-routing.md)) remains queued after v2 sandbox smoke.
+- Provider routing can evolve independently after benchmark and sandbox evidence supports a change.
 
 ## Implementation
 

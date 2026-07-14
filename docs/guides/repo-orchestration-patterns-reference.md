@@ -1,7 +1,7 @@
 # Repository Orchestration Patterns Reference
 
 This advisory vocabulary describes structure; an identifier alone never blocks a
-change. ADR-032 applies these patterns through one implementing agent, optional
+change. ADR-031 applies these patterns through one implementing agent, optional
 local consensus, retained workflow adapters, and owner-keyed GitHub state.
 
 ## Active Patterns

@@ -309,11 +309,17 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "agent-postmerge-retro.yml missing POSTMERGE_RETRO_CONTEXT_PROFILE env"
   fi
 
-  for label in retro-review adr:update context-pack agent-suggested; do
+  if grep -q '^agent-suggested|' "$LABELS_SCRIPT" 2>/dev/null; then
+    pass "agent-suggested follow-up label declared in setup"
+  else
+    fail "agent-suggested label missing from $LABELS_SCRIPT"
+  fi
+
+  for label in retro-review retro:adr retro:context-pack adr:update context-pack; do
     if grep -q "^${label}|" "$LABELS_SCRIPT" 2>/dev/null; then
-      pass "label ${label} declared in setup"
+      fail "retired label ${label} remains in $LABELS_SCRIPT"
     else
-      fail "label ${label} missing from $LABELS_SCRIPT"
+      pass "retired label ${label} is absent from setup"
     fi
   done
 

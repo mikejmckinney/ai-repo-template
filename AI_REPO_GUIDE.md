@@ -8,7 +8,7 @@
 ## Overview
 
 This repository is a Codespaces-first template for AI-assisted software delivery.
-ADR-032 defines the active execution model:
+ADR-031 defines the active execution model:
 
 - one monolithic implementing agent;
 - CI and lint as blocking pre-merge controls;
@@ -34,7 +34,7 @@ Run `bash install.sh` only when testing the Codespaces bootstrap/install surface
 | `AGENTS.md` | Always-loaded operating contract |
 | `README.md` | Human-facing overview and setup |
 | `.context/` | Current project state, roadmap, benchmarks, and design context |
-| `docs/decisions/` | Durable architecture decisions; ADR-032 owns the execution model |
+| `docs/decisions/` | Durable architecture decisions; ADR-031 owns the execution model |
 | `docs/guides/agent-pipeline.md` | Active workflow and trigger behavior |
 | `.github/prompts/shared-review-lenses.md` | Canonical criteria for advisory and retro review |
 | `.github/prompts/pr-advisory-review.md` | Optional in-progress PR advisory output contract |
@@ -96,7 +96,7 @@ user PAT is required. Never commit tokens.
 ## Documentation Synchronization
 
 - Build, test, install, layout, and troubleshooting changes update this guide.
-- Review lifecycle changes update ADR-032 and `docs/guides/agent-pipeline.md`.
+- Review lifecycle changes update ADR-031 and `docs/guides/agent-pipeline.md`.
 - Workflow trigger changes update the pipeline and sandbox guides plus tests.
 - File inventory changes update `install.sh` and the owning check module.
 

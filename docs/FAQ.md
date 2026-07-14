@@ -35,7 +35,7 @@ Decision record: [`docs/decisions/adr-001-context-pack-structure.md`](decisions/
 One monolithic agent implements routine work. CI and lint are blocking;
 `ai-review:live` optionally supplies a parallel advisory snapshot; daily and
 weekly workflows perform recurring review; and the OpenCode `local-consensus`
-skill is the sole opt-in multi-model mechanism. See ADR-032.
+skill is the sole opt-in multi-model mechanism. See ADR-031.
 
 ---
 
