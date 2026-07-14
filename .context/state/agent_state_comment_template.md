@@ -35,7 +35,10 @@ command substitution stripped trailing newline — wrote render output to file i
 verify Summary block on sandbox #102
 
 ## References (Optional)
-"issues": [461], "prs": [463], "files": ["create-umbrella-issue.sh"], "runs": [27877287063]
+issues: #461
+prs: #463
+files: create-umbrella-issue.sh 
+runs: 27877287063
 
 ```
 
@@ -55,8 +58,8 @@ here. Use plan comments, PR bodies, ADRs, CI for those.
 
 ## Optional opportunity notes
 
-The comment may include opportunity notes using the nine
+The comment may include opportunity notes using the 
 fields in `AGENTS.md`: title, evidence, impact, recommendation, scope,
-suggested_next_action, confidence, role_relevance, and duplicate_check. These
+suggested_next_action, confidence, and duplicate_check. These
 notes are prose-governed and are not schema-validated. PMs may apply the
 `agent-suggested` label to follow-up issues filed from this channel.
