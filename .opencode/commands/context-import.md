@@ -14,5 +14,5 @@ Expected forms:
 
 Run this command on the receiving agent. Require an exact source identifier;
 never infer the most recent source session. Read the generated packet, re-read
-current authoritative sources, report the persistent receipt path, and emit a
-fresh receiving-platform handshake and context receipt before continuing work.
+current authoritative sources, and report the persistent context receipt path
+before continuing work.

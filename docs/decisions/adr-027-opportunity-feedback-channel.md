@@ -2,11 +2,34 @@
 
 ## Status
 
-Accepted
+Accepted (amended 2026-07-14: role-free eight-field notes)
 
 ## Date
 
 2026-05-18
+
+## Amendment 2026-07-14 — Remove role relevance
+
+ADR-031 retired the active role registry and made one monolithic implementing
+agent the default. `role_relevance` therefore no longer identifies a real
+routing target and adds ambiguity to otherwise actionable notes.
+
+Effective with this amendment:
+
+- Opportunity notes use eight fields: `title`, `evidence`, `impact`,
+  `recommendation`, `scope`, `suggested_next_action`, `confidence`, and
+  `duplicate_check`.
+- Remove `role_relevance` from active templates and examples.
+- Route follow-up through the linked issue/PR, `suggested_next_action`, and
+  repository maintainers instead of a role label.
+- Preserve the cap of three notes and the distinction between deferrable
+  opportunities and blocking observations.
+
+The remaining five fields beyond the minimum useful trio (`title`, `evidence`,
+and `recommendation`) still earn their cost: `impact` prioritizes, `scope`
+classifies, `suggested_next_action` routes, `confidence` calibrates, and
+`duplicate_check` prevents repeat filing. This amendment supersedes the
+nine-field and role-routing rationale in the original decision below.
 
 ## Context
 

@@ -83,8 +83,8 @@ this receipt when you need independent confirmation that recovery ran.
 4. Re-read mandatory rule/profile files from disk.
 5. Re-read files involved in the active task.
 6. Check current GitHub state when issue or PR facts affect decisions.
-7. Emit the repository-required handshake and context receipt with receipt
-   boundary `post-compaction`.
+7. Report the repository-required context receipt with boundary
+   `post-compaction`.
 8. Continue only after current evidence confirms the recovered direction.
 
 If the repository itself is unfamiliar or `AI_REPO_GUIDE.md` is missing or

@@ -72,10 +72,6 @@ Rules:
 - Automation creates issues with marker `<!-- postmerge-retro:pr=<PR>:key=<dedupe_key> -->`.
 - Re-runs must not duplicate issues — reuse the same key only for the same finding.
 
-## Session handshake
-
-Pointer only — do **not** mirror full templates here. Follow the startup contract in [`AGENTS.md`](../../AGENTS.md). **Your final output must still be JSON only**; do not emit the handshake in the JSON file.
-
 ## An empty array is valid
 
 If nothing actionable is found, return an empty `follow_up_issues` array and a short summary explaining why.

@@ -2,13 +2,13 @@
 
 > **Purpose**: Worked examples for the prose-governed opportunity feedback channel in `AGENTS.md`.
 
-## Schema-size rationale (9 vs. 3)
+## Schema-size rationale (8 vs. 3)
 
-The minimum useful note is roughly `title + evidence + recommendation`. The six added fields reduce OP triage cost:
+The minimum useful note is roughly `title + evidence + recommendation`. The five added fields reduce maintainer triage cost:
 
 | Field | Triage cost moved |
 |---|---|
-| `scope`, `suggested_next_action`, `role_relevance` | Answers "what kind," "what next," "who owns" |
+| `scope`, `suggested_next_action` | Answers "what kind" and "what next" |
 | `duplicate_check` | Prevents re-surfacing filed items |
 | `confidence` | Lets OP defer low-confidence notes |
 | `impact` | Separates thoughts from actionable opportunities |
@@ -49,7 +49,6 @@ Not opportunity-class because: halt-on-discovery is correct; failure mode is sec
   scope: process
   suggested_next_action: file-issue
   confidence: medium
-  role_relevance: [architect, pm]
   duplicate_check: "Searched issue titles for 'read profile' and 'task-boundary reread' before surfacing this note."
 ```
 
@@ -63,11 +62,10 @@ Not opportunity-class because: halt-on-discovery is correct; failure mode is sec
   scope: script
   suggested_next_action: discuss
   confidence: low
-  role_relevance: []
   duplicate_check: none
 ```
 
-Fails: no specific file, no measured signal, no concrete recommendation, no owner, no duplicate check.
+Fails: no specific file, no measured signal, no concrete recommendation, and no meaningful duplicate check.
 
 ## Cross-references
 

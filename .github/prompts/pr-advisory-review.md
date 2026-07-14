@@ -17,7 +17,6 @@ workflow and process changes.
 
 - **Do not** mark anything blocking or require implementation to wait for this run.
 - If an existing advisory snapshot is provided, **do not** repeat findings unless still present at head and material.
-- Emit the **session handshake** yourself (self-reported; automation will not override it).
 - Include the factual **Diff coverage** line in the snapshot header using automation-supplied numbers when provided.
 
 ## Output format (exact structure)
@@ -33,11 +32,6 @@ Head: `<sha>`
 Provider: `<cursor|gemini|antigravity>`
 Mode: advisory, non-blocking
 Diff coverage: `<included>/<total>` bytes, truncated: `<yes|no>`
-
-### Session handshake
-
-Emit the current handshake from [`AGENTS.md`](../../AGENTS.md). Do not append a
-context-receipt table.
 
 ### Findings to consider
 

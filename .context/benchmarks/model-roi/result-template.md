@@ -53,7 +53,7 @@ Use one copy of this template per alias/run. Keep the **blind-safe** section sha
 
 ## Process compliance
 
-- AGENTS.md handshake emitted:
+- AGENTS.md instructions loaded:
 - Plan posted or included:
 - Subagents used: `no`
 - Monolithic justification recorded:

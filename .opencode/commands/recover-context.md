@@ -11,6 +11,6 @@ the user for the session ID. Never infer it from session recency after child
 sessions may exist.
 
 After reading the generated packet, re-read required current-source files and
-emit the repository-required post-compaction handshake and context receipt
-before continuing work. Report the generated `receipt_file` so the user can
+emit the repository-required post-compaction context receipt before continuing
+work. Report the generated `receipt_file` so the user can
 independently verify that recovery completed.

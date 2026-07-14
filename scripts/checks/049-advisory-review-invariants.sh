@@ -62,12 +62,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "advisory prompt missing $MARKER marker"
   fi
 
-  if grep -q 'Session handshake' "$ADVISORY_PROMPT" 2>/dev/null \
-    && grep -q 'AGENTS.md' "$ADVISORY_PROMPT" 2>/dev/null \
-    && grep -q 'Do not append a' "$ADVISORY_PROMPT" 2>/dev/null; then
-    pass "advisory prompt requires the AGENTS.md handshake without a receipt table"
+  if ! grep -q 'Session handshake' "$ADVISORY_PROMPT" 2>/dev/null; then
+    pass "advisory prompt omits the retired session handshake"
   else
-    fail "advisory prompt must require the AGENTS.md handshake without receipt bookkeeping"
+    fail "advisory prompt still requires the retired session handshake"
   fi
 
   if grep -q '^ai-review:live|' "$LABELS_SCRIPT" 2>/dev/null; then
