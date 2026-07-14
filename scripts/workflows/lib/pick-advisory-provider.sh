@@ -74,8 +74,8 @@ pick_advisory_provider() {
     auto)
       if [[ "$has_cursor" -eq 1 ]]; then
         echo cursor
-      elif [[ ("$mode" == "advisory" || "$mode" == "weekly-scan") \
-        && "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
+      elif [[ ("$mode" == "advisory" || "$mode" == "weekly-scan") &&
+        "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
         echo antigravity
       elif [[ "$has_gemini" -eq 1 ]]; then
         echo gemini
