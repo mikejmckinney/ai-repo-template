@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (supersedes part of [ADR-003](./adr-003-claude-code-subagent-registration.md); ADR-026 structured evidence extension retired 2026-07-13)
+Superseded by [ADR-032](./adr-032-monolithic-agent-and-review-lifecycle.md)
 
 ## Date
 

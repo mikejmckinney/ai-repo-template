@@ -68,7 +68,7 @@ Issue #376 tested repo-native **orchestration pipelines** (subagents + handoffs)
 **Policy:**
 
 - **Prefer a single implementing agent** (monolithic pass) for routine issue/PR implementation, retro fix passes, and weekly fix passes.
-- **Do not default to subagent fan-out** for ROI reasons alone. Use role dispatch when ownership, gates, or explicit multi-perspective review require it — not as the default implementation shape.
+- **Do not use subagent fan-out for routine repository work.** ADR-032 retires the role registry; use `local-consensus` only when independent multi-model review is explicitly justified.
 - **Stage 1D duo** (planner + implementer) did not beat the best monolithic ROI leaders on either class; treat duo as experimental, not default.
 
 This aligns with [ADR-019 Amendment guidance](./adr-019-per-role-model-tiering.md) and [`.agents/analyst.md`](../../.agents/analyst.md) (ghost-success / pass-back caveats for dispatched subagents).

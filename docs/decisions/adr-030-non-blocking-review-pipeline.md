@@ -1,8 +1,8 @@
-# ADR-030: Non-blocking LLM review pipeline (advisory → finalize → daily post-merge retro)
+# ADR-030: Non-blocking LLM review pipeline (advisory, daily retro, weekly review)
 
 ## Status
 
-Proposed
+Accepted (finalize stage retired by ADR-032)
 
 ## Date
 
@@ -18,14 +18,13 @@ No ADR previously documented the three-phase pipeline, trigger model, or the v1�
 
 ## Decision
 
-We adopt a **four-stage non-blocking review pipeline** on `main`:
+We adopt a **three-stage non-blocking review pipeline** on `main`:
 
 | Stage | Workflow | Opt-in | When | Output |
 |---|---|---|---|---|
 | **1. Advisory** | `agent-advisory-review.yml` | `ai-review:live` (+ optional `ai-review:full` for depth) | During PR life (incl. draft); on push/label | Single sticky PR comment `<!-- ai-advisory-review:v1 -->` |
-| **2. Finalize** | `agent-review-finalize.yml` | `implementation-complete` | Near end of implementation | Single sticky **Feedback Inbox** comment |
-| **3. Post-merge retro** | `agent-postmerge-retro.yml` | **None** (daily batch; no label gate) | `schedule: 0 6 * * *` UTC + `workflow_dispatch` | One **umbrella issue**/day + optional **draft fix PR** `retro/fix-YYYY-MM-DD` |
-| **4. Weekly repo review** | `agent-weekly-review.yml` | **None** (weekly batch; no label gate) | `schedule: 0 7 * * 0` UTC (Sunday) + `workflow_dispatch` | One **umbrella issue**/ISO week + optional **draft fix PR** `weekly/fix-YYYY-Www` |
+| **2. Post-merge retro** | `agent-postmerge-retro.yml` | **None** (daily batch; no label gate) | `schedule: 0 6 * * *` UTC + `workflow_dispatch` | One **umbrella issue**/day + optional **draft fix PR** `retro/fix-YYYY-MM-DD` |
+| **3. Weekly repo review** | `agent-weekly-review.yml` | **None** (weekly batch; no label gate) | `schedule: 0 7 * * 0` UTC (Sunday) + `workflow_dispatch` | One **umbrella issue**/ISO week + optional **draft fix PR** `weekly/fix-YYYY-Www` |
 
 Shared properties:
 

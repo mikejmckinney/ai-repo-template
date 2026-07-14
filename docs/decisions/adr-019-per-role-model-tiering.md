@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR-032](./adr-032-monolithic-agent-and-review-lifecycle.md)
 
 ## Date
 

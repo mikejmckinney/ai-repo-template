@@ -20,6 +20,8 @@ You are performing a **post-merge retrospective** on a merged pull request. Your
 
 ## Lenses
 
+Apply the injected `shared-review-lenses.md` contract before categorizing findings.
+
 Separate your analysis into three buckets in the JSON output:
 
 1. **`follow_up_issues`** — actionable bug/process/test/doc follow-ups with evidence.
@@ -101,7 +103,7 @@ Rules:
 - Automation creates issues with marker `<!-- postmerge-retro:pr=<PR>:key=<dedupe_key> -->`.
 - Re-runs must not duplicate issues — reuse the same key only for the same finding.
 
-## Session handshake / context receipt
+## Session handshake
 
 Pointer only — do **not** mirror full templates here. Follow the startup contract in [`AGENTS.md`](../../AGENTS.md). **Your final output must still be JSON only**; do not emit the handshake in the JSON file.
 

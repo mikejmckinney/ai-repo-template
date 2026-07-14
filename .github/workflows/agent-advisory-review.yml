@@ -2,7 +2,7 @@
 # -----------------------------------------------------------
 # Non-blocking rolling advisory review for draft/WIP PRs. Posts or updates
 # one sticky issue comment (marker: <!-- ai-advisory-review:v1 -->).
-# Does NOT submit formal PR reviews, apply claude-fix, or push commits.
+# Does NOT submit formal PR reviews, mutate PR state, or push commits.
 #
 # Providers (ADVISORY_REVIEW_PROVIDER repo variable, default auto):
 #   - cursor      — Cursor SDK (CURSOR_API_KEY)
@@ -117,8 +117,8 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          # Prefer CLAUDE_PAT for issue-comment POST/PATCH — matches agent-review-on-push
-          # and avoids org policies that restrict GITHUB_TOKEN write on pull_request.
+          # Prefer CLAUDE_PAT for issue-comment POST/PATCH when org policies
+          # restrict GITHUB_TOKEN write on pull_request.
           if [[ -n "${CLAUDE_PAT:-}" ]]; then
             export GH_TOKEN="$CLAUDE_PAT"
             echo "Using CLAUDE_PAT for gh PR comment API."

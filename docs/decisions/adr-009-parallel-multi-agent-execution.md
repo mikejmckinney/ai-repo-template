@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-025)
+Superseded by [ADR-032](./adr-032-monolithic-agent-and-review-lifecycle.md)
 
 ## Date
 
@@ -76,7 +76,7 @@ ADR-009 makes four coupled decisions:
 
 Multi-agent orchestration is no longer the default implementation path. Use it only when the issue is explicitly cross-role, high-risk, or ADR-grade, or when a human/operator opts into a coordinated review/remediation pass. For ordinary implementation, use one implementing agent plus deterministic checks and post-diff review.
 
-### 1. Inter-agent parallelism: keep the cross-session model. Document the prerequisites.
+### 1. Inter-agent parallelism: keep the cross-session model and document the prerequisites
 
 Parallel multi-agent work in this repo means **separate agent sessions
 working on separate issues, each producing a separate PR**, gated by
@@ -101,7 +101,7 @@ in `coordination.md`). PM arbitration is described in
 `agent_ownership.md` §"Cross-Role Edit Protocol" and is unchanged
 by this ADR.
 
-### 2. Conflict resolution: add a sixth defense layer (cross-PR overlap CI).
+### 2. Conflict resolution: add a sixth defense layer (cross-PR overlap CI)
 
 The existing five-layer defense from `docs/guides/multi-agent-coordination.md`
 ("Conflict-Avoidance Hierarchy") is preserved verbatim:
@@ -136,7 +136,7 @@ The report parses ownership globs from `agent_ownership.md` directly
 parse fails, the report posts a warning and skips the soft-overlap
 classification rather than blocking.
 
-### 3. Dispatch reality: name what works where.
+### 3. Dispatch reality: name what works where
 
 This ADR records, as a stable contract, the matrix of which runtimes
 support in-session parallel role dispatch from `.github/agents/**` /
@@ -155,7 +155,7 @@ in this repo, it almost always means **cross-session parallelism**
 `Task()`-style fan-out. Claude Code CLI is the exception. The new
 overlap CI is what makes the cross-session model safe at scale.
 
-### 4. Recursive subagent nesting: disabled by default.
+### 4. Recursive subagent nesting: disabled by default
 
 A "nested subagent" means a dispatched subagent itself dispatching
 another subagent (e.g. PM dispatches Architect, Architect dispatches

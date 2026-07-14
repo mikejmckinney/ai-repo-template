@@ -22,6 +22,8 @@ The automation appends a **context pack** containing `AGENTS.md` plus task-speci
 
 ## Lenses
 
+Apply the injected `shared-review-lenses.md` contract before categorizing findings.
+
 Separate your analysis into three buckets in the JSON output:
 
 1. **`follow_up_issues`** — actionable bug/process/test/doc/invariant follow-ups with evidence.
@@ -82,12 +84,12 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
 
 ## Dedupe keys
 
-- Use stable, short, kebab-case keys scoped to the **repository** (not the weekly workflow): `repo-<area>-<short-desc>` (e.g. `repo-invariant-052-missing-link`, `repo-040-judge-overlay-stale`).
+- Use stable, short, kebab-case keys scoped to the **repository** (not the weekly workflow): `repo-<area>-<short-desc>` (e.g. `repo-invariant-052-missing-link`, `repo-advisory-stale-context`).
 - Do **not** prefix keys with `weekly-` — the batch cadence is already captured by `run_week`.
 - Each finding **must** include `evidence[]` with at least one **repo-relative file path** (e.g. `scripts/checks/040-file-content.sh`) so automation can link evidence in the umbrella issue.
 - The `body` field must explain the finding in full (what is wrong, why it matters, suggested fix). The umbrella issue renders `body` + linked evidence — do not rely on the title alone.
 
-## Session handshake / context receipt
+## Session handshake
 
 Pointer only — do **not** mirror full templates here. Follow the startup contract in [`AGENTS.md`](../../AGENTS.md). **Your final output must still be JSON only**.
 

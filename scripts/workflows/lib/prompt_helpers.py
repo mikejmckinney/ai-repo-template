@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Shared helpers for advisory/finalize/retro LLM prompt assembly."""
+"""Shared helpers for advisory and retro LLM prompt assembly."""
 from __future__ import annotations
 
 import argparse
@@ -12,9 +12,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 # AGENTS.md is always loaded. Add only task-specific durable references.
-STANDARD_MINIMUM = ["AGENTS.md"]
+REVIEW_LENSES = ".github/prompts/shared-review-lenses.md"
+STANDARD_MINIMUM = ["AGENTS.md", REVIEW_LENSES]
 
-PR_REVIEW_MINIMUM = ["AGENTS.md", ".github/pull_request_template.md"]
+PR_REVIEW_MINIMUM = ["AGENTS.md", REVIEW_LENSES, ".github/pull_request_template.md"]
 
 # Path-pattern → task-specific references.
 PATH_TRIGGERED: list[tuple[re.Pattern[str], str]] = [
@@ -26,7 +27,7 @@ PATH_TRIGGERED: list[tuple[re.Pattern[str], str]] = [
 
 def full_rules_context() -> list[str]:
     """Compatibility alias for the retired full-rules profile."""
-    return ["AGENTS.md"]
+    return ["AGENTS.md", REVIEW_LENSES]
 
 
 def _apply_path_triggers(changed_files: list[str], selected: list[str], seen: set[str]) -> None:
