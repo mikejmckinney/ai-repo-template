@@ -53,6 +53,10 @@ verify Summary block on sandbox #102
 - **`lessons learned`** = concise recovery-relevant surprises; durable retrospective detail belongs in session archives.
 - **`References`** = bounded pointers to the issue, PR, files, commits, or runs needed to continue.
   Use full GitHub URLs so references remain clickable across repositories; do not use bare IDs.
+- Link every addressable GitHub resource on first mention in every section, not
+  only under `References`. This applies to issues, PRs, comments, commits,
+  branches, Actions runs, ADRs, and repository files. Local-only paths and
+  commands remain inline code.
 
 Do not add long decision history, full file lists, verification matrices,
 here. Use plan comments, PR bodies, ADRs, CI for those.

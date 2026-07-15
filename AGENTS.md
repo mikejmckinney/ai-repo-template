@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 30 -->
+<!-- AGENTS_MD_VERSION: 31 -->
 
 ## Truth hierarchy
 
@@ -176,6 +176,11 @@ Keep agent working memory current so the next session can resume cleanly. For no
 - **PR body** — implementation/review contract. Link the issue, plan comment(s), verification results, and latest live-state comment when relevant.
 - **Latest `agent-state:v1` comment** — mutable baton for current status, blockers, next actions. Use [`.context/state/agent_state_comment_template.md`](./.context/state/agent_state_comment_template.md) as the copy/paste template.
 - **Local scratch copies** — if GitHub access is temporarily unavailable, temporarily record the same `agent-state:v1` content locally. Copy it into the issue/PR comment once access returns, then discard the local scratch copy. Do not commit local live-state scratch files as the normal path or reconcile a second persistent state surface.
+- **Clickable resources** — in agent-managed GitHub artifacts (plans, issue/PR
+  updates, PR bodies, automated comments, and `agent-state:v1` comments), link
+  every addressable issue, PR, comment, commit, branch, Actions run, ADR, or
+  repository file on first mention. Use inline code only for local-only paths,
+  commands, and identifiers that have no stable URL.
 
 ### `agent-state:v1` update cadence
 
@@ -259,7 +264,7 @@ and the problem statement and that should be raised to the user for review.
 
 #### Supporting validation
 
-Unit tests, integration tests, `./test.sh`, lint, pre-commit, schema validators,
+Unit tests, integration tests, `./test.sh`, lint, schema validators,
 and CI are supporting regression and hygiene evidence.
 They do not replace user-outcome validation.  Artifact creation, static prose
 review, schema validation, or logical similarity are not sufficient evidence for

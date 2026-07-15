@@ -26,11 +26,11 @@
 | [ADR-010](./adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge for parallel agent PRs | Deprecated |
 | [ADR-011](./adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement + PR-must-link-issue (v1) | Accepted |
 | [ADR-012](./adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions in AGENTS.md (branch-and-commit, cadence sharpenings) | Accepted |
-| [ADR-013](./adr-013-pre-commit-on-main-default.md) | Pre-commit hook for `main` protection — not installed by default | Accepted |
+| [ADR-013](./adr-013-pre-commit-on-main-default.md) | Pre-commit hook for `main` protection — not installed by default | Deprecated |
 | [ADR-014](./adr-014-extend-preflight-to-adhoc-deliverables.md) | Extend Analyst Pre-Flight gate to ad-hoc deliverable issues | Superseded by ADR-031 |
 | [ADR-015](./adr-015-postmortem-feedback-loop.md) | Postmortem feedback loop from downstream projects (capture + mirror prompts; three-tier promotion policy; v1 = manual) | Accepted |
 | [ADR-016](./adr-016-pre-merge-verification-gate.md) | Pre-merge verification gate (Plan-template Change-class field + `verify-pr.sh` classifier + sandbox sibling repo) | Accepted |
-| [ADR-017](./adr-017-template-repo-pre-commit-default.md) | Template repo installs pre-commit shellcheck + actionlint by default (template-only; ADR-013 unchanged for derived repos) | Accepted |
+| [ADR-017](./adr-017-template-repo-pre-commit-default.md) | Template repo installs pre-commit shellcheck + actionlint by default | Deprecated |
 | [ADR-018](./adr-018-multi-task-active-md-schema.md) | Multi-task schema for `.context/state/_active.md` (refines ADR-009) | Accepted (superseded in part by ADR-025) |
 | [ADR-019](./adr-019-per-role-model-tiering.md) | Per-role model tiering across Claude Code and Copilot (Phase 2 of #220; supersedes ADR-003's `model: inherit` choice) | Superseded by ADR-031 |
 | [ADR-020](./adr-020-orchestration-patterns-reference.md) | Advisory orchestration patterns and anti-patterns vocabulary | Accepted (standalone blocking gates retired by ADR-026 amendment) |

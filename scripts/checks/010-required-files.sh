@@ -15,7 +15,6 @@ REQUIRED_FILES=(
   "install.sh"
   "test.sh"
   ".cursorignore"
-  ".pre-commit-config.yaml.template"
   ".github/prompts/README.md"
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"
@@ -37,6 +36,8 @@ REQUIRED_FILES=(
   "scripts/verify-pr.sh"
   "scripts/diag-hang-snapshot.sh"
   "scripts/diag-sandbox.sh"
+  "scripts/format.sh"
+  "scripts/check-markdown-links.py"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do
@@ -44,6 +45,14 @@ for file in "${REQUIRED_FILES[@]}"; do
     pass "$file exists"
   else
     fail "$file is missing"
+  fi
+done
+
+for retired_file in .pre-commit-config.yaml .pre-commit-config.yaml.template; do
+  if [[ -e "$retired_file" ]]; then
+    fail "$retired_file is retired but still present"
+  else
+    pass "$retired_file is absent"
   fi
 done
 

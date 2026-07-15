@@ -14,9 +14,8 @@
 # Sibling decisions:
 #   - ADR-012 (docs/decisions/adr-012-explicit-workflow-preconditions.md)
 #     adds the AGENTS.md branch-precondition rule.
-#   - ADR-013 (docs/decisions/adr-013-pre-commit-on-main-default.md)
-#     records why we ship .pre-commit-config.yaml.template only and do NOT
-#     install a block-commits-to-main hook by default.
+#   - ADR-013 and ADR-017 record the retired pre-commit experiments; branch
+#     discipline and read-only CI checks are the maintained controls.
 #
 # What's intentionally NOT here:
 #   - .terraform.lock.hcl — convention is to commit dependency lock files.

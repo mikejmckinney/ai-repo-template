@@ -85,11 +85,11 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-010](../docs/decisions/adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge | Deprecated historical mechanism; branch owners update their own branches. |
 | [ADR-011](../docs/decisions/adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement | Made issue comments the required plan artifact before implementation. |
 | [ADR-012](../docs/decisions/adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions | Codified branch-first, commit cadence, and other non-implicit rules. |
-| [ADR-013](../docs/decisions/adr-013-pre-commit-on-main-default.md) | Derived-repo pre-commit stance | Kept heavy pre-commit optional for downstream repos by default. |
+| [ADR-013](../docs/decisions/adr-013-pre-commit-on-main-default.md) | Derived-repo pre-commit stance | Deprecated generic scaffolding; onboarding selects stack-specific tools. |
 | [ADR-014](../docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md) | Wider Analyst gate | Historical pre-flight policy; superseded by ADR-031. |
 | [ADR-015](../docs/decisions/adr-015-postmortem-feedback-loop.md) | Postmortem feedback loop | Added the downstream-project capture -> mirror -> promote path. |
 | [ADR-016](../docs/decisions/adr-016-pre-merge-verification-gate.md) | Pre-merge verification gate | Bound plans and PRs to explicit change-class and sandbox evidence. |
-| [ADR-017](../docs/decisions/adr-017-template-repo-pre-commit-default.md) | Template repo pre-commit default | Turned on shellcheck and actionlint for this repo itself. |
+| [ADR-017](../docs/decisions/adr-017-template-repo-pre-commit-default.md) | Template repo pre-commit default | Deprecated dormant hooks in favor of explicit local fixes and CI. |
 | [ADR-018](../docs/decisions/adr-018-multi-task-active-md-schema.md) | Multi-task active-state schema | Added owner-keyed repo-local state before ADR-025 moved live state to GitHub. |
 | [ADR-019](../docs/decisions/adr-019-per-role-model-tiering.md) | Per-role model tiering | Historical model-tier policy; superseded by ADR-031. |
 | [ADR-020](../docs/decisions/adr-020-orchestration-patterns-reference.md) | Orchestration patterns reference | Gave Critic and Judge shared pattern/anti-pattern vocabulary. |

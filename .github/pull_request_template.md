@@ -26,18 +26,16 @@ N/A — empty headings are noise.
 
 ## Plan
 
-<!-- Pointer to the implementation plan comment(s) on the linked issue.
-     Per ADR-011, the plan lives on the issue, not here — this section
-     is the breadcrumb so reviewers always land on the latest version.
-     Update this when you post a "Plan revision" comment.
+<!-- Pointer to the one mutable implementation plan comment on the linked issue.
+     Per ADR-011, the plan lives on the issue, not here. Edit that comment in
+     place when intent changes and refresh this summary.
      Skip (or write "N/A — <reason>") only when an ADR-011 plan
      exemption applies (chore:no-plan, automation bot, revert).
      Note: smoke-test exempts only from the PR-link rule, not from
      the plan requirement.
      Keep this pointer current when the plan changes. -->
 
-- **Original plan:** <link to plan comment, e.g. https://github.com/.../issues/42#issuecomment-NNN>
-- **Revisions:** <links to any "Plan revision" comments, or "none">
+- **Canonical plan:** <link to the implementation-plan:v1 comment>
 - **Latest in 1–2 sentences:** <current outcome + approach>
 
 ## Live agent state
@@ -48,15 +46,12 @@ N/A — empty headings are noise.
 
 - **Latest `agent-state:v1` comment:** <link or "N/A — work completes in this PR without handoff">
 
-## Plan revision sync (REQUIRED when applicable)
+## Plan sync
 
-<!-- If a plan revision comment was posted on the linked issue AFTER this
-     PR was opened, the `## Plan` section above must include the revision
-     link and a refreshed "Latest in 1–2 sentences" line. Tick the matching
-     box below so reviewers don't evaluate stale intent. -->
+<!-- Confirm that the canonical plan comment contains the current merged plan,
+     including a bounded revision-history entry for material changes. -->
 
-- [ ] No post-open plan revision comment was posted on the linked issue.
-- [ ] Post-open plan revision comment was posted; `## Plan` section above is updated with the revision link and a refreshed summary.
+- [ ] Canonical plan and current summary match this PR.
 
 ## User outcome validation — PRIMARY
 
@@ -146,7 +141,7 @@ justification.
 
 <!-- Optional. Up to 3 out-of-scope improvement opportunities surfaced
      during the work that produced this PR. Each entry uses the
-     9-field shape defined in `AGENTS.md` § "Opportunity feedback".
+     eight-field shape defined in `AGENTS.md` § "Opportunity feedback".
      Cap is ≤3 per session per agent. Omit this
      section or write "None" if nothing to surface; do not fold
      opportunities into the PR scope. -->

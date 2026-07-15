@@ -9,6 +9,8 @@
 | `verify-env.sh` | Check environment setup | `./scripts/verify-env.sh` |
 | `db-reset.sh` | Reset database to clean state | `./scripts/db-reset.sh` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
+| `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
+| `check-markdown-links.py` | Validate repository-local Markdown targets | `python3 scripts/check-markdown-links.py <files...>` |
 
 ## Usage Guidelines
 

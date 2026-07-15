@@ -22,10 +22,14 @@ ADR-031 defines the active execution model:
 ./test.sh
 bats --jobs 4 scripts/tests/
 bash scripts/lint-shell-conventions.sh scripts/
+scripts/format.sh --check <changed-files...>
+python3 scripts/check-markdown-links.py <changed-markdown-files...>
 git diff --check
 ```
 
 Run `bash install.sh` only when testing the Codespaces bootstrap/install surface.
+Use `scripts/format.sh --write <files...>` for deterministic local shfmt and
+markdownlint fixes. CI remains read-only and never commits formatting changes.
 
 ## Repository Layout
 

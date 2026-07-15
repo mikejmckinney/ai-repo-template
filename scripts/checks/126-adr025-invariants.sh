@@ -79,6 +79,13 @@ else
   fail "agent-state:v1 reference examples must use clickable GitHub URLs"
 fi
 
+if grep -qF 'first mention' .context/state/agent_state_comment_template.md \
+  && grep -qF 'agent-managed GitHub artifacts' AGENTS.md; then
+  pass "agent-managed GitHub artifacts link addressable resources on first mention"
+else
+  fail "clickable-resource policy is not synchronized across agent guidance"
+fi
+
 if grep -q '#263.*superseded' "$ADR025_PATH" 2>/dev/null \
   && grep -q '#299' "$ADR025_PATH" 2>/dev/null; then
   pass "ADR-025 marks #263 superseded and defers archive retention to #299"

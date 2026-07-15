@@ -42,4 +42,25 @@ else
   fail "opportunity feedback role-free field set is not synchronized"
 fi
 
+if grep -qF 'implementation-plan:v1' .github/PLAN_TEMPLATE.md \
+  && grep -qiF 'edit' .github/PLAN_TEMPLATE.md \
+  && grep -qF 'Revision history' .github/PLAN_TEMPLATE.md \
+  && grep -qF 'Canonical plan:' .github/pull_request_template.md \
+  && ! grep -qF 'Original plan:' .github/pull_request_template.md \
+  && ! grep -qF 'Revisions:' .github/pull_request_template.md; then
+  pass "implementation plans use one mutable canonical comment"
+else
+  fail "implementation plan templates still permit fragmented revision comments"
+fi
+
+RECOVERY_SKILL=.opencode/skills/session-recovery/SKILL.md
+if grep -qF 'active issue' "$RECOVERY_SKILL" \
+  && grep -qF 'linked PR' "$RECOVERY_SKILL" \
+  && grep -qF 'agent-state:v1' "$RECOVERY_SKILL" \
+  && grep -qF 'offline' "$RECOVERY_SKILL"; then
+  pass "session recovery requires GitHub hydration with an offline fallback"
+else
+  fail "session recovery does not require current issue/PR/live-state hydration"
+fi
+
 echo ""

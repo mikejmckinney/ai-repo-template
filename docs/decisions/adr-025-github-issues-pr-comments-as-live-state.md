@@ -8,6 +8,14 @@ Accepted (amended 2026-07-14: continuation state replaces explicit handoff)
 
 2026-05-12
 
+## Amendment 2026-07-15 — Clickable agent-managed artifacts
+
+Agent-managed GitHub artifacts link addressable issues, PRs, comments, commits,
+branches, Actions runs, ADRs, and repository files on first mention in every
+section. The rule applies to plans, agent-authored issue/PR updates, PR bodies,
+automated comments, and `agent-state:v1` comments, but not arbitrary human
+comments. Local-only paths, commands, and identifiers remain inline code.
+
 ## Amendment 2026-07-14 — Continuation state without a handoff field
 
 The latest `agent-state:v1` comment exists so any later agent or session can

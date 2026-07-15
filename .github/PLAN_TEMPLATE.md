@@ -22,17 +22,18 @@ v1 has no formal approval gate (see ADR-011). The plan is a documented
 artifact reviewed at PR-time. Approval-gating, expiry rules, and
 automated CI enforcement are deferred to issue #155.
 
-After posting the plan comment (or any revision), copy the comment's
-permalink into the PR's `## Plan` section and refresh the
-"Latest in 1–2 sentences" line. The PR body is the breadcrumb that
-sends reviewers to the canonical version on the issue; an out-of-date
-breadcrumb is the failure mode this template is here to prevent.
+Post one comment containing the `implementation-plan:v1` marker below. When the
+plan changes, edit that comment in place, merge the new current state into its
+body, and append one bounded entry to `Revision history`. Do not post separate
+plan-revision comments. Existing multi-comment plans are grandfathered.
 
-If a revision happens after a PR is already open, do that refresh in
-the same push as the divergent code and tick the matching box in the
-PR template's `## Plan revision sync` section, so re-runs don't
-evaluate stale intent.
+Copy the canonical comment permalink into the PR's `## Plan` section and refresh
+the current summary whenever the plan changes. Link addressable GitHub resources
+on first mention rather than writing bare issue, PR, commit, branch, run, ADR, or
+repository-file references.
 -->
+
+<!-- implementation-plan:v1 issue:NNN -->
 
 ## 📋 Implementation Plan
 
@@ -119,7 +120,11 @@ explicit acknowledgment, not silent omission.>
 
 <Optional. Surface up to 3 out-of-scope improvement opportunities
 you noticed during planning (toil patterns, stale docs, adjacent
-risks). Each note uses the 9-field shape defined in
+risks). Each note uses the eight-field shape defined in
 `AGENTS.md` § "Opportunity feedback". Cap is ≤3 per session per agent. Omit this section or
 write "None" if nothing to surface; do not fold opportunities into
 the plan scope.>
+
+### Revision history
+
+- YYYY-MM-DD: Initial plan.
