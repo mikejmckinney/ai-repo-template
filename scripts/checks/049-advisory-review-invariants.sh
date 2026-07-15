@@ -41,8 +41,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "advisory missing locked OpenCode install, dedicated token, or hosted MCP security boundary"
   fi
 
-  run_bats_check scripts/tests/opencode-provider.bats "opencode-provider.bats"
-
   if [[ -f .github/scripts/run-advisory-review.sh ]] \
     || compgen -G ".github/scripts/run-advisory-*" >/dev/null 2>&1; then
     fail "legacy advisory scripts still present under .github/scripts; use ${ADVISORY_DIR}/"

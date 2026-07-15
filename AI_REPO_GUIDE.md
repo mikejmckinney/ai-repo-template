@@ -22,10 +22,14 @@ ADR-031 defines the active execution model:
 ./test.sh
 bats --jobs 4 scripts/tests/
 bash scripts/lint-shell-conventions.sh scripts/
+scripts/format.sh --check <changed-files...>
+python3 scripts/check-markdown-links.py <changed-markdown-files...>
 git diff --check
 ```
 
 Run `bash install.sh` only when testing the Codespaces bootstrap/install surface.
+Use `scripts/format.sh --write <files...>` for deterministic local shfmt and
+markdownlint fixes. CI remains read-only and never commits formatting changes.
 
 ## Repository Layout
 
@@ -33,8 +37,10 @@ Run `bash install.sh` only when testing the Codespaces bootstrap/install surface
 |---|---|
 | `AGENTS.md` | Always-loaded operating contract |
 | `README.md` | Human-facing overview and setup |
-| `.context/` | Current project state, roadmap, benchmarks, and design context |
+| `.context/` | Current project state, roadmap, and design context |
 | `docs/decisions/` | Durable architecture decisions; ADR-031 owns the execution model |
+| `docs/benchmarks/` | Published benchmark result records used for decisions |
+| `docs/guides/model-roi-benchmark-runbook.md` | Canonical benchmark campaign procedure |
 | `docs/guides/agent-pipeline.md` | Active workflow and trigger behavior |
 | `.github/prompts/shared-review-lenses.md` | Canonical criteria for advisory and retro review |
 | `.github/prompts/pr-advisory-review.md` | Optional in-progress PR advisory output contract |

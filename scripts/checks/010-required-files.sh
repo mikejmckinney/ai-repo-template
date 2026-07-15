@@ -3,8 +3,8 @@
 # Sourced by test.sh; relies on $PASS/$FAIL/$WARN, pass()/fail()/warn() from
 # scripts/lib/{logging,assertions}.sh and CWD == repo root.
 
-# --- Required Files Check ---
-echo "Checking required files..."
+# --- Public Entrypoints Check ---
+echo "Checking public entrypoints..."
 
 REQUIRED_FILES=(
   "AI_REPO_GUIDE.md"
@@ -13,14 +13,31 @@ REQUIRED_FILES=(
   "README.md"
   "DESIGN.md"
   "install.sh"
+  "test.sh"
+  ".cursorignore"
   ".github/prompts/README.md"
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"
   ".github/prompts/shared-review-lenses.md"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
+  ".github/ISSUE_TEMPLATE/bug_report.md"
+  ".github/ISSUE_TEMPLATE/feature_request.md"
+  ".github/ISSUE_TEMPLATE/agent_init.md"
+  ".github/ISSUE_TEMPLATE/config.yml"
+  ".github/workflows/agent-advisory-review.yml"
+  ".github/workflows/agent-auto-merge.yml"
+  ".github/workflows/agent-postmerge-retro.yml"
+  ".github/workflows/agent-weekly-review.yml"
+  ".github/workflows/ci-tests.yml"
+  ".github/workflows/lint-and-format.yml"
+  "scripts/setup.sh"
+  "scripts/verify-env.sh"
+  "scripts/verify-pr.sh"
   "scripts/diag-hang-snapshot.sh"
   "scripts/diag-sandbox.sh"
+  "scripts/format.sh"
+  "scripts/check-markdown-links.py"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do
@@ -28,6 +45,14 @@ for file in "${REQUIRED_FILES[@]}"; do
     pass "$file exists"
   else
     fail "$file is missing"
+  fi
+done
+
+for retired_file in .pre-commit-config.yaml .pre-commit-config.yaml.template; do
+  if [[ -e "$retired_file" ]]; then
+    fail "$retired_file is retired but still present"
+  else
+    pass "$retired_file is absent"
   fi
 done
 

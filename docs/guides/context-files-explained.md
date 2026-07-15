@@ -84,7 +84,6 @@ These are NOT redundant with project docs—they explain their specific director
 | `.context/state/README.md` | ADR-025 live-state split, legacy compatibility, and comment template |
 | `.context/sessions/README.md` | How to create durable retrospective summaries |
 | `scripts/README.md` | Available scripts and usage |
-| `config/README.md` | Platform recommendations |
 | `docs/README.md` | Documentation structure |
 
 ## Reading Order for Agents

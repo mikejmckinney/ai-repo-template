@@ -11,9 +11,8 @@ module owns one phase of project bootstrap and is independently re-runnable.
 | `10-env-file.sh` | Copy `.env.example` → `.env` if missing. | Idempotent — never overwrites an existing `.env`. |
 | `20-install-dependencies.sh` | `npm ci` / `pip install` for declared manifests; database-migration stub. | DB block is template scaffolding for project customization. |
 | `30-build.sh` | Run `npm run build` if `package.json` declares a build script. | Logs "No build step configured" otherwise. |
-| `40-ensure-labels.sh` | Probe `gh auth`, resolve `FULL_REPO` fallback, `export GH_REPO`, create pipeline labels. | Sets shared gating vars (`_pipeline_setup_skip_reason`, `_gh_auth_ok`) consumed by 50/60. |
+| `40-ensure-labels.sh` | Probe `gh auth`, resolve `FULL_REPO` fallback, `export GH_REPO`, create maintained pipeline labels. | Sets shared gating vars consumed by 60. |
 | `ensure-pipeline-labels.sh` | Standalone wrapper: `ensure-pipeline-labels.sh owner/repo` | Used by `sandbox-bootstrap.sh` and operators; sources `40-ensure-labels.sh`. |
-| `50-ensure-variables.sh` | `gh variable set` for `MAX_COPILOT_*`, `PR_RESOLVE_MAX_ROUNDS`. | No-ops when 40 requested skip. Includes one-time `MAX_COPILOT_DAILY` 20→10 migration. |
 | `60-check-secrets.sh` | Report presence of `CLAUDE_PAT` (repo + org tiers). | Cannot read values; presence-only. |
 | `70-verify-env.sh` | Delegate to `scripts/verify-env.sh`. | Final gate. |
 

@@ -25,7 +25,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 |----------|-------------------|------|
 | `README.md` (this file) | Humans | Setup, features, customization — verbose on purpose |
 | `AI_REPO_GUIDE.md` | AI agents | Token-optimized command/structure/convention reference |
-| `docs/` | Humans | Deep reference: guides, ADRs, research |
+| `docs/` | Humans | Deep reference: guides, ADRs, benchmark results, research |
 | `.context/` | AI agents | Canonical project truth: rules, state, roadmap, vision (lazy-loaded) |
 | `AGENTS.md` (root) | Most AI tools | Root startup contract (Copilot, Cursor, Gemini, Claude Code, etc.) |
 | `.github/prompts/` | Review and workflow automation | Shared lenses plus advisory, daily, and weekly prompts |
@@ -45,8 +45,7 @@ ADR-031 defines the active model: one implementing agent, blocking CI, optional 
 - **Context Pack** - Structured directory (`.context/`) for project memory across LLM sessions
 - **Automatic Extension Installation** - Essential VS Code extensions installed on Codespace start
 - **Multi-Platform Support** - Works with Cursor, GitHub Copilot, Gemini Code Assist, and more
-- **CI/CD Templates** - Self-healing pipeline, keep-warm, and connectivity check workflows
-- **Deployment Configs** - Templates for Vercel, Railway, and Render
+- **CI/CD Automation** - Blocking tests and lint with opt-in advisory and recurring repository review
 - **Issue Templates** - Bug reports, feature requests, and agent initialization
 - **Pre-commit Hooks** - Template for linting, secret detection, and commit standards
 - **ADR Templates** - Architecture Decision Record templates with examples

@@ -52,6 +52,20 @@ EOF
   [ "$(jq -r '.[0].diff_hunk // empty' <<<"$output")" = "" ]
 }
 
+@test "cap-json preserves null review authors with the production filter" {
+  cat >"$TMP_DIR/reviews.json" <<'EOF'
+[{"id":1,"user":null,"body":"automated review"}]
+EOF
+
+  run python3 "$PROMPT_HELPERS" cap-json \
+    --input "$TMP_DIR/reviews.json" \
+    --jq-filter 'map({id, user: (.user?.login // null), body})' \
+    --max-bytes 500
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.[0] | has("user")' <<<"$output")" = "true" ]
+  [ "$(jq -r '.[0].user == null' <<<"$output")" = "true" ]
+}
+
 @test "select-context includes the shared review lenses" {
   printf 'AGENTS.md\n' >"$TMP_DIR/changed.txt"
   run python3 "$PROMPT_HELPERS" select-context \

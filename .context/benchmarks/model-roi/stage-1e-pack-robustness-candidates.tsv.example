@@ -1,5 +1,0 @@
-# alias	platform	model	agent	stage	effort	effort_mechanism
-ctx-cursor-auto	cursor	auto	cursor-cli	1	default	none
-ctx-gemini-auto	gemini-cli	auto	gemini-cli	1	default	none
-ctx-claude-haiku	claude-code	haiku	claude-code-cli	1	medium	prompt
-ctx-copilot-auto	copilot	auto	copilot-cli	1	default	none

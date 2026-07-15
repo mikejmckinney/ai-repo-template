@@ -34,7 +34,7 @@ _label_declared() {
 }
 
 @test "core pipeline labels are still declared" {
-  for label in auto-merge agent:claimed agent:blocked agent:awaiting-review cap-override; do
+  for label in auto-merge auto-merge-fast agent-complete agent:claimed agent:blocked agent:awaiting-review; do
     _label_declared "$label" || { echo "missing label: $label"; return 1; }
   done
 }
@@ -46,7 +46,9 @@ _label_declared() {
 }
 
 @test "retired backlog and retro labels are absent" {
-  for label in from-backlog retro-review retro:adr retro:context-pack adr:update context-pack; do
+  for label in from-backlog retro-review retro:adr retro:context-pack adr:update context-pack \
+    no-auto-ready cap-override copilot:ready copilot:in-progress copilot:queued \
+    copilot:budget-paused copilot:daily-cap-hit; do
     ! _label_declared "$label" || { echo "retired label remains: $label"; return 1; }
   done
 }

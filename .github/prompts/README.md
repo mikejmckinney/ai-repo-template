@@ -13,8 +13,10 @@ review automation.
 | `weekly-repo-review-fix.md` | Weekly batch fix pass |
 | `capture-postmortem.md` | Capture a downstream lesson |
 | `mirror-postmortem.md` | Mirror a generalized postmortem upstream |
-| `model-roi-*.md` | Benchmark and grading prompts |
 
 ADR-031 retired role-specific, pre-push, formal-review resolution, finalization,
 and legacy consensus-planning prompts. Use the OpenCode `local-consensus` skill
 for explicit independent multi-model review.
+
+Model-ROI benchmark and grading prompts live on `benchmark/roi`; they are
+evaluation-lab inputs rather than template runtime prompts.

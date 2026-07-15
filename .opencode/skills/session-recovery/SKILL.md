@@ -82,7 +82,10 @@ this receipt when you need independent confirmation that recovery ran.
 3. Treat transcript decisions and command results as claims to verify.
 4. Re-read mandatory rule/profile files from disk.
 5. Re-read files involved in the active task.
-6. Check current GitHub state when issue or PR facts affect decisions.
+6. When an active issue can be identified and GitHub is available, read its
+   current body, linked PR, and latest `agent-state:v1` comment. This required
+   agent step happens after the offline-capable packet script; if GitHub is
+   unavailable, state the offline limitation and use the local scratch fallback.
 7. Report the repository-required context receipt with boundary
    `post-compaction`.
 8. Continue only after current evidence confirms the recovered direction.

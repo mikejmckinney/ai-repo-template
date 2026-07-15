@@ -212,6 +212,14 @@ jobs:
           mapfile -d '' -t changed_files < /tmp/changed-markdown-files-z
           markdownlint-cli2 --config .markdownlint-cli2.jsonc "${changed_files[@]}"
 
+      - name: Check changed Markdown links (blocking)
+        if: steps.markdown-files.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t changed_files < /tmp/changed-markdown-files-z
+          python3 scripts/check-markdown-links.py "${changed_files[@]}"
+
       - name: Markdownlint advisory repo-wide summary
         if: ${{ always() }}
         shell: bash

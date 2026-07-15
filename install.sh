@@ -225,6 +225,8 @@ MULTIAGENT_FILES=(
   ".github/prompts/shared-review-lenses.md"
   "scripts/diag-sandbox.sh"
   "scripts/diag-hang-snapshot.sh"
+  "scripts/format.sh"
+  "scripts/check-markdown-links.py"
   "scripts/codespace-post-start.sh"
   "scripts/lib/ensure-gh-pat-auth.sh"
   "scripts/lib/sandbox-remote.sh"

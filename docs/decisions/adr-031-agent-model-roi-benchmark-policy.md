@@ -8,13 +8,23 @@ Accepted
 
 2026-06-15
 
+## Amendment 2026-07-15 — Isolate benchmark apparatus
+
+Benchmark harnesses, prompts, tasks, schemas, grading tools, and benchmark-only
+checks live on `benchmark/roi`. `main` retains this policy, the canonical
+operator guide, and published result records under `docs/`. The completed
+pre-isolation apparatus is pinned at
+[`8c296458`](https://github.com/mikejmckinney/ai-repo-template/tree/8c2964583af04b3352561410e22511304001ec21),
+and raw Phase A evidence remains tagged at
+[`benchmark/phase-a-artifacts-20260608`](https://github.com/mikejmckinney/ai-repo-template/tree/benchmark/phase-a-artifacts-20260608).
+
 ## Context
 
-Issue [#374](https://github.com/mikejmckinney/ai-repo-template/issues/374) and follow-ons ([#376](https://github.com/mikejmckinney/ai-repo-template/issues/376), [#378](https://github.com/mikejmckinney/ai-repo-template/issues/378)) produced a reproducible **model ROI benchmark harness** on `main` (Phase A merged in PR [#379](https://github.com/mikejmckinney/ai-repo-template/pull/379)). Scored results live in [`.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`](../../.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md).
+Issue [#374](https://github.com/mikejmckinney/ai-repo-template/issues/374) and follow-ons ([#376](https://github.com/mikejmckinney/ai-repo-template/issues/376), [#378](https://github.com/mikejmckinney/ai-repo-template/issues/378)) produced a reproducible **model ROI benchmark harness** (Phase A merged in PR [#379](https://github.com/mikejmckinney/ai-repo-template/pull/379)). Issue [#483](https://github.com/mikejmckinney/ai-repo-template/issues/483) later isolated the apparatus on `benchmark/roi`. Scored results live in [`docs/benchmarks/agent-roi-benchmark-results.md`](../benchmarks/agent-roi-benchmark-results.md).
 
 Until this ADR, benchmark **procedure** and **actionable recommendations** were scattered across:
 
-- `.context/benchmarks/model-roi/README.md` and `benchmark-runbook.md` (operator protocol)
+- the `benchmark/roi` README and runbook (operator protocol)
 - Issue comments and prompt pack notes (ad hoc guidance)
 - Partial pointers in [ADR-019](./adr-019-per-role-model-tiering.md) (tier policy deferred pending benchmark refresh)
 
@@ -39,12 +49,13 @@ We treat the following as the **single operator contract** for agent/model ROI b
 
 | Surface | Role |
 |---|---|
-| [`.context/benchmarks/model-roi/README.md`](../../.context/benchmarks/model-roi/README.md) | Protocol, artifact model, task classes, stage definitions |
-| [`.context/benchmarks/model-roi/benchmark-runbook.md`](../../.context/benchmarks/model-roi/benchmark-runbook.md) | Repeatable setup, run, grade, telemetry, known issues |
-| [`.context/benchmarks/model-roi/grading/`](../../.context/benchmarks/model-roi/grading/) | Rubrics, schemas, score-set comparability rules |
-| [`scripts/benchmark/`](../../scripts/benchmark/) | Harness entrypoints (`make doctor`, `base`, `run`, `suite`, `regrade-stage.sh`, etc.) |
-| [`.github/prompts/model-roi-benchmark-candidate.md`](../../.github/prompts/model-roi-benchmark-candidate.md) | Shared candidate prompt body (task injected per run) |
-| [`.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`](../../.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md) | Scored record and ROI tables (operator source of truth on `main`) |
+| [`8c296458` protocol](https://github.com/mikejmckinney/ai-repo-template/blob/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/README.md) | Protocol, artifact model, task classes, stage definitions |
+| [`docs/guides/model-roi-benchmark-runbook.md`](../guides/model-roi-benchmark-runbook.md) | Canonical setup, synchronization, run, grade, and publication procedure |
+| [`8c296458` grading](https://github.com/mikejmckinney/ai-repo-template/tree/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/grading) | Rubrics, schemas, score-set comparability rules |
+| [`8c296458` harness](https://github.com/mikejmckinney/ai-repo-template/tree/8c2964583af04b3352561410e22511304001ec21/scripts/benchmark) | Harness entrypoints (`make doctor`, `base`, `run`, `suite`, `regrade-stage.sh`, etc.) |
+| [`8c296458` candidate prompt](https://github.com/mikejmckinney/ai-repo-template/blob/8c2964583af04b3352561410e22511304001ec21/.github/prompts/model-roi-benchmark-candidate.md) | Shared candidate prompt body (task injected per run) |
+| [`docs/benchmarks/agent-roi-benchmark-results.md`](../benchmarks/agent-roi-benchmark-results.md) | Scored record and ROI tables (operator source of truth on `main`) |
+| [`docs/benchmarks/retro-execution-447-results.md`](../benchmarks/retro-execution-447-results.md) | Retro execution benchmark record |
 
 **Primary ranking metric:** **marginal ROI** = canonical weighted score ÷ marginal cost USD (token telemetry × public rate card where available). Amortized/subscription ROI is secondary unless explicitly scoped.
 
@@ -54,11 +65,14 @@ We treat the following as the **single operator contract** for agent/model ROI b
 |---|---|---|---|
 | **A** | Operational fit — small/medium repo-process implementation | `opfit-281-class-a` (+ pipeline variant) | Benchmarked (Stage 1, 1C, 1D, 1E, #376 pipeline) |
 | **B** | Reasoning / code — harder implementation | `opfit-326-class-b` (+ pipeline variant) | Benchmarked (same stages) |
-| **C** | Greenfield app / framework comparison | Planned in `.github/prompts/06-implement-class-c-framework-benchmark.md` | **Not yet run** — required for a complete picture |
+| **C** | Greenfield app / framework comparison | Planned on `benchmark/roi` | **Not yet run** — required for a complete picture |
 
 **Blind / sealed discipline:** alias manifests, frozen bases, blind grading before unseal, and `score_set_id` citation for canonical conclusions (see grading README).
 
-**Read profile:** agents changing benchmark protocol, scoring, adapters, or results must use the `benchmark` profile in [`.context/rules/README.md`](../../.context/rules/README.md).
+Before a benchmark campaign, synchronize `benchmark/roi` from current `main` and
+refresh its operator contract for any repository changes. The pinned snapshot
+above is the completed-campaign reference; result-only changes to `main` follow
+the normal repository contract.
 
 ### 2. Current recommendations (Phase A evidence)
 
@@ -68,7 +82,7 @@ These recommendations apply to **routine repo implementation and non-blocking re
 
 Issue #376 tested repo-native **orchestration pipelines** (subagents + handoffs) against completed monolithic Stage 1 baselines on the same Class A/B tasks.
 
-**Finding:** No favorable ROI crossover was observed. Monolithic Cursor Auto / Composer-style runs and strong Gemini Flash rows remain the better default direction; pipeline runs were generally slower, often costlier, and did not materially improve quality on simple Class A work ([`agent-roi-benchmark-results.md` § Issue #376](../../.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md)).
+**Finding:** No favorable ROI crossover was observed. Monolithic Cursor Auto / Composer-style runs and strong Gemini Flash rows remain the better default direction; pipeline runs were generally slower, often costlier, and did not materially improve quality on simple Class A work ([`agent-roi-benchmark-results.md` § Issue #376](../benchmarks/agent-roi-benchmark-results.md)).
 
 **Policy:**
 
@@ -108,7 +122,7 @@ Sweet-spot rule (from benchmark README): highest marginal ROI pack within **−2
 
 #### 2d. What Phase A does **not** yet justify
 
-- **Class C greenfield** app/framework benchmarks (`06-implement-class-c-framework-benchmark.md`) — **still required** for complete adoption decisions on greenfield work and framework comparison (ai-repo-template vs Spec Kit).
+- **Class C greenfield** app/framework benchmarks (planned on `benchmark/roi`) — **still required** for complete adoption decisions on greenfield work and framework comparison (ai-repo-template vs Spec Kit).
 - **Stage 1E CP-2** robustness screen — deferred.
 - **Copilot overlay remap** to GPT-5.4 xhigh or verified fallback arrays — still deferred pending refreshed #220 benchmark tranche ([ADR-019](./adr-019-per-role-model-tiering.md)).
 - Production changes to default read profiles or workflow model variables based solely on Class A/B premerge tasks.
@@ -129,7 +143,8 @@ The repository applies the benchmark recommendation as follows:
 - Canonical roles, platform overlays, native reviewer rules, multi-role dispatch,
   formal AI review, review resolution, finalization, and legacy consensus
   planning are retired.
-- Monolithic assignment, cross-PR overlap visibility, and auto-rebase safety remain.
+- Cross-PR overlap visibility remains; issue assignment and branch updates are
+  operator-owned.
 
 This lifecycle supersedes ADR-003, ADR-004, ADR-005, ADR-008, ADR-009, ADR-014,
 ADR-019, ADR-023, and ADR-024 for active operations. Their bodies and benchmark
@@ -140,7 +155,7 @@ artifacts remain historical evidence. ADR-007 remains superseded through ADR-008
 Re-run benchmark stages or amend this ADR when **any** of the following change materially:
 
 - Platform model catalogs, pricing, or API telemetry shape
-- Agent runtime / SDK / CLI adapter behavior (`scripts/benchmark/adapters/`)
+- Agent runtime / SDK / CLI adapter behavior on `benchmark/roi`
 - Repo orchestration: `AGENTS.md` version, context-pack layout, subagent dispatch contract, or role overlays
 - Task class definitions or grading rubrics (`grading/rubric.v*.md`)
 - Observed production ROI drift (e.g., advisory/retro cost or quality regressions)
@@ -162,7 +177,7 @@ the OpenCode adapter remains available explicitly.
 
 ## Amendment 2026-06-15 — Slim `.context/rules/` catalog (issue #437 / PR #438)
 
-**Motivation:** Phase A benchmark evidence (especially issue #376 pipeline vs monolithic) supports a **monolithic default** for routine implementation. A large per-concern rule catalog increased context cost without improving ROI on Class A/B tasks. Production routing should match the slimmer catalog in [`.context/rules/README.md`](../../.context/rules/README.md).
+**Motivation:** Phase A benchmark evidence (especially issue #376 pipeline vs monolithic) supports a **monolithic default** for routine implementation. A large per-concern rule catalog increased context cost without improving ROI on Class A/B tasks. The slim catalog adopted by this historical amendment is pinned at [`.context/rules/README.md`](https://github.com/mikejmckinney/ai-repo-template/blob/b21f76149c84962566950d61eeca7d54fcaeb505/.context/rules/README.md); the catalog was later retired from `main`.
 
 **Decision:**
 
@@ -180,7 +195,7 @@ the OpenCode adapter remains available explicitly.
   - Ownership / parallelism → `agent-parallelism-report.yml` remains; live ownership table enforcement is **deferred** until a future benchmark or operational need justifies restoring `agent_ownership.md`
 - **Stage 1E context packs** on `main` drop references to removed rule files so harness manifests match the production catalog.
 
-**Reversal:** If a future benchmark score set (documented in [`.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`](../../.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md) with a new `score_set_id`) shows favorable ROI for multi-role pipeline or full-rule injection as the default, **amend this ADR** with the contradicting evidence and restore removed rule files from `origin/backup-2026-06-15` (or a successor backup) as needed. Until then, monolithic default + slim catalog stand.
+**Reversal:** If a future benchmark score set (documented in [`docs/benchmarks/agent-roi-benchmark-results.md`](../benchmarks/agent-roi-benchmark-results.md) with a new `score_set_id`) shows favorable ROI for multi-role pipeline or full-rule injection as the default, **amend this ADR** with the contradicting evidence and restore removed rule files from `origin/backup-2026-06-15` (or a successor backup) as needed. Until then, monolithic default + slim catalog stand.
 
 ## Options Considered
 
@@ -222,7 +237,8 @@ the OpenCode adapter remains available explicitly.
 
 ## Implementation
 
-- [x] Phase A harness + results on `main` (PR #379).
+- [x] Phase A harness + results originally landed on `main` (PR #379); issue
+  #483 later isolated apparatus on `benchmark/roi` and results under `docs/`.
 - [x] Canonical regrades for Stage 1, 1C, 1D, pipeline, 1E CP-1 documented in results file.
 - [ ] Class C greenfield benchmark (`06-implement-class-c-framework-benchmark.md` on `benchmark/roi`).
 - [ ] Stage 1E CP-2 robustness (deferred).
@@ -236,9 +252,10 @@ the OpenCode adapter remains available explicitly.
 
 - Issue [#374](https://github.com/mikejmckinney/ai-repo-template/issues/374), [#376](https://github.com/mikejmckinney/ai-repo-template/issues/376), [#378](https://github.com/mikejmckinney/ai-repo-template/issues/378), [#220](https://github.com/mikejmckinney/ai-repo-template/issues/220)
 - Issue [#474](https://github.com/mikejmckinney/ai-repo-template/issues/474), PR [#476](https://github.com/mikejmckinney/ai-repo-template/pull/476)
-- [`.context/benchmarks/model-roi/README.md`](../../.context/benchmarks/model-roi/README.md)
-- [`.context/benchmarks/model-roi/benchmark-runbook.md`](../../.context/benchmarks/model-roi/benchmark-runbook.md)
-- [`.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`](../../.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md)
+- [`8c296458` protocol](https://github.com/mikejmckinney/ai-repo-template/blob/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/README.md)
+- [`docs/guides/model-roi-benchmark-runbook.md`](../guides/model-roi-benchmark-runbook.md)
+- [`docs/benchmarks/agent-roi-benchmark-results.md`](../benchmarks/agent-roi-benchmark-results.md)
+- [`docs/benchmarks/retro-execution-447-results.md`](../benchmarks/retro-execution-447-results.md)
 - [ADR-019 Per-role model tiering](./adr-019-per-role-model-tiering.md)
 - [ADR-030 Non-blocking review pipeline](./adr-030-non-blocking-review-pipeline.md)
-- [`.github/prompts/06-implement-class-c-framework-benchmark.md`](../../.github/prompts/06-implement-class-c-framework-benchmark.md)
+- [`benchmark/roi` Class C prompt](https://github.com/mikejmckinney/ai-repo-template/blob/benchmark/roi/.github/prompts/06-implement-class-c-framework-benchmark.md)

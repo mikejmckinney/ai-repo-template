@@ -1,3 +1,0 @@
-# alias	platform	model	agent	stage	effort	effort_mechanism
-ctx-cur	cursor	composer-2.5	cursor-cli	1	medium	prompt
-ctx-gem	gemini-cli	gemini-3.5-flash	gemini-cli	1	medium	config

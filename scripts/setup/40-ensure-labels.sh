@@ -3,63 +3,44 @@
 #
 # Sourced by scripts/setup.sh AFTER 00-detect-repo.sh (needs FULL_REPO).
 #
-# Sets these shared variables for 50-ensure-variables.sh / 60-check-secrets.sh:
-#   _pipeline_setup_skip_reason  — non-empty when Step 5/6 should skip
+# Sets these shared variables for 60-check-secrets.sh:
+#   _pipeline_setup_skip_reason  — non-empty when later GitHub setup should skip
 #   _gh_auth_ok                  — "true" when gh auth status succeeded
 #   FULL_REPO                    — possibly upgraded via `gh repo view` fallback
 #   GH_REPO                      — exported so downstream gh calls inherit scope
 #
 # All labels created here are documented in docs/guides/agent-pipeline.md.
 
-# Labels and budget knobs consumed by the autonomous agent pipeline (see
+# Labels consumed by the maintained agent pipeline (see
 # docs/guides/agent-pipeline.md). Safe to re-run: `gh label
 # create` returns non-zero when a label already exists, which we swallow.
 # Requires `gh auth login` first; otherwise the whole step is skipped.
-log_step "Configuring pipeline labels and repo variables"
+log_step "Configuring pipeline labels"
 
 _PIPELINE_LABEL_SPECS=$(
   cat <<'LABEL_SPECS'
 auto-merge|0E8A16|Enable auto-merge workflow for this PR
 auto-merge-fast|1D76DB|Bypass auto-merge bot-review settle wait for this PR
 agent-complete|0E8A16|PR merged and linked issue closed
-no-auto-ready|BFDADC|Opt out of automatic ready-state handling
 smoke-test|E99695|Workflow-validation PR
-copilot:ready|0E8A16|Assign Copilot when budget allows
-copilot:in-progress|1D76DB|Assigned to Copilot, counts toward concurrent budget
-copilot:queued|FBCA04|Waiting for an open Copilot slot
-copilot:budget-paused|E4E669|90% daily spend threshold hit; not auto-drained; add cap-override + copilot:ready to resume
-copilot:daily-cap-hit|D93F0B|Hit daily assignment cap; manual re-queue required
 needs-human|B60205|Requires human input (e.g., empty roadmap phase, CI failure)
 agent:claimed|0969DA|Agent has claimed the issue or PR; details live in the latest agent-state:v1 comment
 agent:blocked|D93F0B|Agent work is blocked; details live in the latest agent-state:v1 comment
 agent:awaiting-review|F29513|Agent work is awaiting review; details live in the latest agent-state:v1 comment
 chore:no-plan|EDEDED|Exempt this issue/PR from the plan-as-comment requirement (ADR-011)
 outcome-validated|0E8A16|Issue author has validated the user outcome inline
-cap-override|FBCA04|Bypass the 90% daily spend pause in agent-assign-copilot.yml
 agent-suggested|BFD4F2|Agent-surfaced opportunity; see process_opportunity_feedback rule.
 ai-review:live|1D76DB|Enable rolling non-blocking advisory review snapshots (draft/WIP OK; agent-advisory-review.yml)
 ai-review:full|5319E7|Request deeper advisory review depth on this PR
 LABEL_SPECS
 )
 _PIPELINE_LABELS=$(printf '%s\n' "$_PIPELINE_LABEL_SPECS" | awk -F'|' 'NF { printf "%s%s", sep, $1; sep=", " } END { print "" }')
-_SETUP_VARIABLES_FILE="${SCRIPT_DIR:-scripts}/setup/50-ensure-variables.sh"
-_PIPELINE_VARIABLES=$(
-  awk '
-    /^[[:space:]]*_ensure_variable (MAX_COPILOT_CONCURRENT|MAX_COPILOT_DAILY) / {
-      value = $3
-      gsub(/^"|"$/, "", value)
-      printf "%s%s=%s", sep, $2, value
-      sep = ", "
-    }
-    END { print "" }
-  ' "$_SETUP_VARIABLES_FILE"
-)
 _PIPELINE_LABEL_LIST_LIMIT="${PIPELINE_LABEL_LIST_LIMIT:-200}"
 
 # Pre-flight: detect the Codespaces auto-injected GITHUB_TOKEN case. That
 # token is scoped to `contents:write, metadata:read` by default, which means
-# every `gh label create` (needs `issues:write`) and every `gh variable set`
-# (needs admin) will 403. Rather than spam ~13 warnings, print one clear
+# every `gh label create` (needs `issues:write`) will 403. Rather than spam
+# warnings, print one clear
 # remediation block and skip Step 5.
 #
 # PAT upgrade logic lives in scripts/lib/ensure-gh-pat-auth.sh (also used by
@@ -91,7 +72,7 @@ fi
 
 if [[ -n "$_pipeline_setup_skip_reason" ]]; then
   log_warn "gh is using the Codespaces-injected GITHUB_TOKEN, which lacks 'issues:write' and admin scopes."
-  log_warn "Skipping label/variable creation to avoid noisy 403 errors."
+  log_warn "Skipping label creation to avoid noisy 403 errors."
   log_warn "Recommended (one-time setup, auto-applies to every future Codespace):"
   log_warn "  1) Create a fine-grained PAT: https://github.com/settings/personal-access-tokens/new"
   log_warn "     Repo permissions: Issues r/w, Variables r/w, Contents r/w, Metadata r, Pull requests r/w, Workflows r/w"
@@ -101,7 +82,6 @@ if [[ -n "$_pipeline_setup_skip_reason" ]]; then
   log_warn "  unset GITHUB_TOKEN && gh auth login -s repo,workflow && ./scripts/setup.sh"
   log_warn "Or create the following manually:"
   log_warn "  Labels: $_PIPELINE_LABELS"
-  log_warn "  Variables: $_PIPELINE_VARIABLES"
 elif [[ -n "$_gh_auth_ok" ]]; then
   # Last-resort FULL_REPO fallback: if Step 0 couldn't parse a remote and
   # no env override was provided, ask gh itself. This works when gh has
@@ -125,7 +105,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
   # variable` call below would emit the raw "no git remotes found" error.
   # Surface one consolidated remediation block instead.
   if [[ -z "$FULL_REPO" ]]; then
-    log_warn "No GitHub repo target found; cannot create labels/variables."
+    log_warn "No GitHub repo target found; cannot create labels."
     log_warn "Cause: no 'origin' git remote, and neither GH_REPO nor GITHUB_REPOSITORY is set."
     log_warn "Pick one:"
     log_warn "  a) Add a remote, then re-run:"
@@ -135,7 +115,6 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     log_warn "       GH_REPO=<owner>/<repo> ./scripts/setup.sh"
     log_warn "Or create the following manually in the GitHub UI:"
     log_warn "  Labels: $_PIPELINE_LABELS"
-    log_warn "  Variables: $_PIPELINE_VARIABLES"
   else
     # Scope every `gh` call in this block to FULL_REPO. gh respects
     # GH_REPO as the "default repo" override, which avoids having to
@@ -184,8 +163,7 @@ elif [[ -n "$_gh_auth_ok" ]]; then
     log_info "Pipeline labels ensured ($_PIPELINE_LABELS)"
   fi
 else
-  log_warn "gh CLI not authenticated; skipping label/variable creation."
+  log_warn "gh CLI not authenticated; skipping label creation."
   log_warn "After running 'gh auth login', re-run scripts/setup.sh, or create the following manually:"
   log_warn "  Labels: $_PIPELINE_LABELS"
-  log_warn "  Variables: $_PIPELINE_VARIABLES"
 fi

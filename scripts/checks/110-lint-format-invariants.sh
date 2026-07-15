@@ -96,8 +96,24 @@ if [[ -f "$LF_FILE" ]]; then
   else
     fail "$LF_FILE missing always() guard on markdownlint advisory summary"
   fi
+
+  if grep -qF 'python3 scripts/check-markdown-links.py' "$LF_FILE" \
+    && grep -qF 'contents: read' "$LF_FILE" \
+    && ! grep -qF 'contents: write' "$LF_FILE"; then
+    pass "$LF_FILE validates local Markdown links without write permission"
+  else
+    fail "$LF_FILE must check local Markdown links and remain read-only"
+  fi
 else
   fail "$LF_FILE is missing"
+fi
+
+if [[ -x scripts/format.sh ]] \
+  && grep -qF -- '--write' scripts/format.sh \
+  && [[ -x scripts/check-markdown-links.py ]]; then
+  pass "local formatting and Markdown-link entrypoints exist"
+else
+  fail "local formatting or Markdown-link entrypoint is missing"
 fi
 
 echo ""

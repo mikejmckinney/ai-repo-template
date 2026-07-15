@@ -275,8 +275,7 @@ Now reproduce the trigger that the workflow depends on. Examples:
 | Workflow under test | Trigger to fire in sandbox |
 |---|---|
 | `agent-advisory-review.yml` | Open a draft PR, apply `ai-review:live`, then push another commit while review runs. |
-| `auto-rebase-on-merge.yml` | Merge any PR; the workflow fires on `pull_request.closed`. |
-| `keep-warm.yml` / scheduled jobs | Trigger via `gh workflow run <name>` (`workflow_dispatch` is also wired). |
+| Scheduled jobs | Trigger via `gh workflow run <name>` (`workflow_dispatch` is also wired). |
 
 Watch the run in the sandbox repo's Actions tab. The whole point of
 sandbox is that a real failure surfaces *here*, in logs you can read,

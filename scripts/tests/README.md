@@ -6,7 +6,6 @@ Bats test suite (issue #255 Phase 4b). Each `.bats` file in this directory is a 
 
 | `.bats` file | Legacy script wrapped | Concern |
 |---|---|---|
-| `auto-rebase-overlapping.bats` | `test-auto-rebase-overlapping.sh` | ADR-010 auto-rebase logic |
 | `prompt-helpers.bats` | n/a | Shared review context and bounded JSON helpers |
 | `postmerge-retro-batch.bats` | n/a | Daily retro evidence and lifecycle behavior |
 | `weekly-classifier.bats` | n/a | Weekly review classifier behavior |
@@ -40,6 +39,7 @@ brew install bats-core parallel
 ```
 
 CI installs them via `apt-get install -y bats parallel ripgrep` in `.github/workflows/ci-tests.yml`.
+Run this suite separately from `./test.sh`; neither command invokes the other.
 
 ## Migration approach (Phase 4b scope)
 

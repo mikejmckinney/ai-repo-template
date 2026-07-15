@@ -524,26 +524,3 @@ jobs:
         run: |
           gh pr comment "$PR_NUMBER" --repo "$REPO" \
             --body "🎉 **Auto-merged.** All CI checks passed, all review comments resolved."
-
-      - name: Drain Copilot queue
-        # NOTE: this drain logic is intentionally duplicated from agent-release-slot.yml.
-        # Per issue #51 authoritative decisions: do NOT extract to a composite action
-        # (YAGNI until a fourth trigger needs it).
-        #
-        # Only drain when the merged branch was copilot/*. A non-copilot PR
-        # doesn't consume a Copilot slot, so draining on its merge would
-        # promote a queued issue without freeing a slot (off-by-one).
-        if: steps.find.outputs.eligible == 'true' && startsWith(steps.find.outputs.branch, 'copilot/')
-        env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
-          REPO: ${{ github.repository }}
-        run: |
-          next=$(gh issue list --repo "$REPO" --state open \
-            --label "copilot:queued" --json number,createdAt \
-            --jq 'sort_by(.createdAt) | .[0].number // empty')
-          if [[ -n "$next" ]]; then
-            echo "Promoting issue #$next from queued to ready"
-            gh issue edit "$next" --repo "$REPO" \
-              --remove-label "copilot:queued" \
-              --add-label "copilot:ready"
-          fi

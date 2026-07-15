@@ -29,16 +29,18 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail ".gitignore missing standalone .env entry"
   fi
 
-  if python3 -m py_compile "$PROMPT_HELPERS" 2>/dev/null \
-    && python3 "$PROMPT_HELPERS" cap-json --input scripts/tests/fixtures/pr-feedback/reviews-sample.json \
-      --jq-filter 'map({id, user: (.user.login // null), body})' --max-bytes 500 >/dev/null 2>&1; then
-    pass "prompt_helpers cap-json runs on fixture"
+  if python3 -m py_compile "$PROMPT_HELPERS" 2>/dev/null; then
+    pass "prompt_helpers compiles"
   else
-    fail "prompt_helpers cap-json failed"
+    fail "prompt_helpers failed to compile"
   fi
 
-  run_bats_check scripts/tests/paginate-comments.bats "paginate-comments.bats"
-  run_bats_check scripts/tests/prompt-helpers.bats "prompt-helpers.bats"
+  if grep -qF 'user: (.user?.login // null)' scripts/workflows/postmerge-retro/assemble-retro-prompt.sh \
+    && grep -qF 'user: (.user?.login // null)' scripts/workflows/postmerge-retro/run-postmerge-retro-monolithic.sh; then
+    pass "retro prompt assembly preserves nullable review authors"
+  else
+    fail "retro prompt assembly must use optional user access"
+  fi
 
   if [[ -f scripts/workflows/lib/cursor-sdk-version.sh ]] \
     && grep -q 'CURSOR_SDK_VERSION=' scripts/workflows/lib/cursor-sdk-version.sh 2>/dev/null \

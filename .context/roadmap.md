@@ -72,7 +72,8 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 ### Shipped Highlights
 - Auto-merge stayed opt-in.
 - Review-thread automation evolved from ADR-007 to ADR-008.
-- Pre-merge verification and template-local pre-commit enforcement landed.
+- Pre-merge verification and explicit local formatting commands landed; CI
+  remains the blocking lint surface.
 
 ### Key Decisions
 - ADR-006

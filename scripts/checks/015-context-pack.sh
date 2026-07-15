@@ -8,7 +8,6 @@ echo "Checking context pack structure..."
 
 CONTEXT_FILES=(
   ".context/00_INDEX.md"
-  ".context/benchmarks/model-roi/result.schema.json"
   ".context/roadmap.md"
   ".context/sessions/README.md"
   ".context/sessions/latest_summary.md"
@@ -16,6 +15,9 @@ CONTEXT_FILES=(
   ".context/state/README.md"
   ".context/state/agent_state_comment_template.md"
   ".context/vision/README.md"
+  "docs/benchmarks/agent-roi-benchmark-results.md"
+  "docs/benchmarks/retro-execution-447-results.md"
+  "docs/guides/model-roi-benchmark-runbook.md"
 )
 
 for file in "${CONTEXT_FILES[@]}"; do
@@ -28,8 +30,6 @@ done
 
 # Check context directories exist
 CONTEXT_DIRS=(
-  ".context/benchmarks"
-  ".context/benchmarks/model-roi"
   ".context/sessions"
   ".context/state"
   ".context/vision/mockups"

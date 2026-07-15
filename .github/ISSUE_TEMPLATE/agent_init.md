@@ -102,7 +102,6 @@ Update `.context/` files:
 ### 9. Configure Secrets (if needed)
 
 Document any required repository secrets:
-- `BACKEND_URL` for keep-warm workflow
 - API keys, database URLs, etc.
 
 ## Important Notes

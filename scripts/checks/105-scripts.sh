@@ -6,23 +6,6 @@
 # --- Scripts Check ---
 echo "Checking scripts..."
 
-SCRIPT_FILES=(
-  "scripts/README.md"
-  "scripts/setup.sh"
-  "scripts/verify-env.sh"
-  "scripts/verify-pr.sh"
-  "scripts/db-reset.sh"
-  "scripts/auto-rebase-overlapping.sh"
-)
-
-for file in "${SCRIPT_FILES[@]}"; do
-  if [[ -f "$file" ]]; then
-    pass "$file exists"
-  else
-    fail "$file is missing"
-  fi
-done
-
 # Check scripts are executable
 for script in scripts/*.sh; do
   [ -f "$script" ] || continue
