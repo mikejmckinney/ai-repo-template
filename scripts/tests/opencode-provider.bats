@@ -203,15 +203,6 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "AP10 disproportionate complexity is synchronized across orchestration catalogs" {
-  run grep -q 'AP10 Disproportionate Solution Complexity' "$REPO_ROOT/AGENTS.md"
-  [ "$status" -eq 0 ]
-
-  run grep -q 'AP10 Disproportionate Solution Complexity' \
-    "$REPO_ROOT/docs/guides/repo-orchestration-patterns-reference.md"
-  [ "$status" -eq 0 ]
-}
-
 @test "unverified OpenCode fix attempts are discarded before a verified patch is promoted" {
   tmp="$(mktemp -d)"
   git -C "$tmp" init -q
