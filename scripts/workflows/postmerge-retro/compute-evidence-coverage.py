@@ -72,7 +72,7 @@ def _resolve_provider() -> str:
 def _opencode_available() -> bool:
     binary = os.environ.get("OPENCODE_BIN", "opencode")
     has_binary = bool(shutil.which(binary))
-    has_model = bool(os.environ.get("OPENAI_API_KEY") or os.environ.get("OPENROUTER_API_KEY"))
+    has_model = bool(os.environ.get("OPENROUTER_API_KEY"))
     has_github = bool(os.environ.get("OPENCODE_GITHUB_TOKEN"))
     return has_binary and has_model and has_github
 

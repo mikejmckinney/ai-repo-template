@@ -278,3 +278,23 @@ EOF
   [[ "$output" == *'"provider_resolved": "opencode"'* ]]
   rm -rf "$tmp"
 }
+
+@test "OpenAI credentials alone do not route truncated evidence to OpenCode" {
+  tmp="$(mktemp -d)"
+  head -c 5000 /dev/zero | tr '\0' 'a' >"$tmp/diff.patch"
+  printf 'noop.txt\n' >"$tmp/changed-files.txt"
+  touch "$tmp/noop.txt"
+
+  run env \
+    OPENCODE_BIN=/bin/true \
+    OPENAI_API_KEY=openai-test \
+    OPENCODE_GITHUB_TOKEN=github-read-test \
+    CURSOR_API_KEY=cursor-test \
+    python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/compute-evidence-coverage.py" \
+    "$tmp" --pr 7 --diff-limit 1000 --repo-root "$tmp"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"evidence_route": "full-evidence-cursor"'* ]]
+  [[ "$output" == *'"provider_resolved": "cursor"'* ]]
+  rm -rf "$tmp"
+}
