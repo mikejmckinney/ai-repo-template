@@ -347,8 +347,9 @@ Detailed history and examples remain in
 - **AP9 Compatibility Surface Entrenchment:** a replacement is accepted, but the
   deprecated path remains a normal operational dependency. Stop extending the
   old surface and retire, archive, or clearly demote it.
-- **AP10 Undifferentiated Infrastructure Ownership:** the project owns custom
-  infrastructure that duplicates a maintained platform capability without a
-  verified project-specific requirement or measurable benefit. Prefer the
-  maintained capability; retain custom infrastructure when evidence justifies
-  its compliance, isolation, performance, or reproducibility cost.
+- **AP10 Disproportionate Solution Complexity:** a solution adds custom
+  components, abstractions, infrastructure, or process whose lifecycle cost is
+  not justified by a verified requirement or measurable benefit. Prefer the
+  simplest maintained capability that satisfies the outcome. Additional
+  complexity is justified only by demonstrated constraints such as compliance,
+  isolation, performance, extensibility, or reproducibility.

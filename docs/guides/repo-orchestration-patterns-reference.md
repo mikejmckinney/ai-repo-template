@@ -35,12 +35,13 @@ local consensus, retained workflow adapters, and owner-keyed GitHub state.
 - **AP7 Magic String Sprawl:** identifiers drift across unvalidated consumers.
 - **AP8 Workflow-as-Application:** business logic lives in workflow YAML instead of tested scripts.
 - **AP9 Compatibility Surface Entrenchment:** retired paths remain normal dependencies.
-- **AP10 Undifferentiated Infrastructure Ownership:** project-owned runners,
-  images, services, or update pipelines duplicate a maintained platform
-  capability without a verified requirement or measurable benefit. Prefer the
-  platform capability and its maintenance boundary. Custom infrastructure is
-  justified when demonstrated compliance, isolation, performance, or
-  reproducibility needs outweigh its lifecycle cost.
+- **AP10 Disproportionate Solution Complexity:** a solution adds custom code,
+  components, abstractions, architecture, infrastructure, workflows, or process
+  whose lifecycle cost is not justified by a verified requirement or measurable
+  benefit. Prefer the simplest maintained capability that satisfies the user
+  outcome. Additional complexity is justified when demonstrated compliance,
+  isolation, performance, extensibility, or reproducibility constraints outweigh
+  its implementation, operational, and maintenance costs.
 
 Historical role-registry and multi-agent examples remain in superseded ADRs and
 benchmark artifacts. They are evidence, not active operational triggers.

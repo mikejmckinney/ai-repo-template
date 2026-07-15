@@ -203,11 +203,11 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "AP10 infrastructure ownership is synchronized across orchestration catalogs" {
-  run grep -q 'AP10 Undifferentiated Infrastructure Ownership' "$REPO_ROOT/AGENTS.md"
+@test "AP10 disproportionate complexity is synchronized across orchestration catalogs" {
+  run grep -q 'AP10 Disproportionate Solution Complexity' "$REPO_ROOT/AGENTS.md"
   [ "$status" -eq 0 ]
 
-  run grep -q 'AP10 Undifferentiated Infrastructure Ownership' \
+  run grep -q 'AP10 Disproportionate Solution Complexity' \
     "$REPO_ROOT/docs/guides/repo-orchestration-patterns-reference.md"
   [ "$status" -eq 0 ]
 }
