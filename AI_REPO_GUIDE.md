@@ -95,9 +95,11 @@ Use command-local `GH_TOKEN="$GH_PAT"` with `GITHUB_TOKEN` unset when the config
 user PAT is required. Never commit tokens.
 
 OpenCode workflow agents use only `OPENCODE_GITHUB_TOKEN`, a dedicated read-only
-fine-grained token. Set `OPENAI_API_KEY` and/or `OPENROUTER_API_KEY` for model
-access. Workflows install the pinned OpenCode runtime from
-`.github/agent-runtime/package-lock.json` on GitHub-managed `ubuntu-latest`.
+fine-grained token. Set `OPENROUTER_API_KEY` for the public-CI model cascade.
+Interactive OpenCode may use ChatGPT Plus/Pro authentication for Sol, but that
+personal OAuth credential is not forwarded to public GitHub Actions. Workflows
+install the pinned OpenCode runtime from `.github/agent-runtime/package-lock.json`
+on GitHub-managed `ubuntu-latest`.
 
 ## Documentation Synchronization
 

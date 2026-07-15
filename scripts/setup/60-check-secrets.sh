@@ -70,8 +70,8 @@ done
 
 if [[ "$_repo_secrets" != "__unknown__" && "$_org_secrets" != "__unknown__" ]]; then
   if ! printf '%s\n%s\n' "$_repo_secrets" "$_org_secrets" \
-    | grep -Eq '^(OPENAI_API_KEY|OPENROUTER_API_KEY)$'; then
-    log_warn "  OPENAI_API_KEY / OPENROUTER_API_KEY — MISSING. OpenCode needs at least one model credential."
+    | grep -qx 'OPENROUTER_API_KEY'; then
+    log_warn "  OPENROUTER_API_KEY — MISSING. Public-CI OpenCode jobs use the OpenRouter model cascade."
   else
     log_info "  OpenCode model credential — present"
   fi

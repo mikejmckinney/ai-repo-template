@@ -112,10 +112,11 @@ publication authority into the agent.
 
 - The production adapter uses pinned `@opencode-ai/sdk/v2` structured output.
   Headless CLI remains a diagnostic surface, not the workflow protocol.
-- The ordered model cascade is `openai/gpt-5.6-sol`,
-  `openrouter/z-ai/glm-5.2@preset/default`, then
+- The public-CI model cascade is `openrouter/z-ai/glm-5.2@preset/default`, then
   `openrouter/minimax/minimax-m3@preset/default`. One SDK schema retry occurs
-  before advancing models.
+  before advancing models. Subscription-backed `openai/gpt-5.6-sol` remains an
+  interactive local and `local-consensus` model because OpenAI excludes personal
+  ChatGPT-managed credentials from public/open-source CI automation.
 - Jobs run on GitHub-managed `ubuntu-latest`, matching the established Cursor
   workflow pattern. Node 22 is configured with `actions/setup-node`, and
   `npm ci` installs pinned OpenCode and SDK `1.18.0` from the committed lockfile.

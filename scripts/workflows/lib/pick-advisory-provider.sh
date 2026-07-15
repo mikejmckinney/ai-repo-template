@@ -18,7 +18,7 @@ init_advisory_provider_credentials() {
   has_gemini=0
   local opencode_bin="${OPENCODE_BIN:-opencode}"
   if command -v "$opencode_bin" >/dev/null 2>&1 \
-    && [[ -n "${OPENAI_API_KEY:-}${OPENROUTER_API_KEY:-}" ]] \
+    && [[ -n "${OPENROUTER_API_KEY:-}" ]] \
     && [[ -n "${OPENCODE_GITHUB_TOKEN:-}" ]]; then
     has_opencode=1
   fi

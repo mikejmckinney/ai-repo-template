@@ -11,7 +11,6 @@ if (!promptPath || !outputPath) {
 }
 
 const defaultModels = [
-  "openai/gpt-5.6-sol",
   "openrouter/z-ai/glm-5.2@preset/default",
   "openrouter/minimax/minimax-m3@preset/default",
 ]

@@ -5,7 +5,7 @@
   "snapshot": false,
   "formatter": false,
   "lsp": false,
-  "enabled_providers": ["openai", "openrouter"],
+  "enabled_providers": ["openrouter"],
   "permission": {
     "*": "deny",
     "read": "allow",

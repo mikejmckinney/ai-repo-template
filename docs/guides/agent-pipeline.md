@@ -51,15 +51,18 @@ remain cadence-specific.
 
 Advisory, daily, and weekly automation resolve `auto` in this order:
 
-1. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and at least one model key are available.
+1. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
+   `OPENROUTER_API_KEY` are available.
 2. Cursor.
 3. Antigravity where the cadence permits it.
 4. Gemini.
 
 OpenCode runs through `scripts/workflows/lib/run-opencode.mjs` using the SDK v2
 JSON Schema interface. It retries invalid structured output once, then tries
-`openai/gpt-5.6-sol`, `openrouter/z-ai/glm-5.2@preset/default`, and
-`openrouter/minimax/minimax-m3@preset/default` in order. Fix calls go through
+`openrouter/z-ai/glm-5.2@preset/default` and
+`openrouter/minimax/minimax-m3@preset/default` in order. Subscription-backed
+`openai/gpt-5.6-sol` remains available to interactive local OpenCode and
+`local-consensus`, not public CI. Fix calls go through
 `run-opencode-fix.sh`, which creates and discards one detached worktree per model
 and applies only a schema-valid attempt whose credential-free controller-side
 `./test.sh` run passes. The fix agent may edit but cannot invoke shell commands;
@@ -125,8 +128,7 @@ Use `scripts/verify-pr.sh` to classify the diff and
 
 - `OPENCODE_GITHUB_TOKEN`: fine-grained token with read-only Metadata, Contents,
   Pull requests, Issues, and Actions access to the target repository.
-- `OPENAI_API_KEY` and/or `OPENROUTER_API_KEY`: model credentials for the ordered
-  OpenCode cascade.
+- `OPENROUTER_API_KEY`: model credential for the ordered public-CI OpenCode cascade.
 - Existing `CURSOR_API_KEY`, `GEMINI_API_KEY`, and `GOOGLE_API_KEY` remain
   optional rollback-provider credentials.
 - `CLAUDE_PAT` and `SANDBOX_BOOTSTRAP_TOKEN` remain deterministic publication or

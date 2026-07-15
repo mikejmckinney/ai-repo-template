@@ -104,7 +104,6 @@ jobs:
       - name: Verify required secrets
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -112,7 +111,7 @@ jobs:
           PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
         run: |
           has_opencode=0 has_cursor=0 has_gemini=0
-          if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "${OPENAI_API_KEY}${OPENROUTER_API_KEY}" ]]; then has_opencode=1; fi
+          if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "$OPENROUTER_API_KEY" ]]; then has_opencode=1; fi
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
           if [[ "$PROVIDER" == "antigravity" ]]; then
@@ -121,7 +120,7 @@ jobs:
           fi
           case "$PROVIDER" in
             opencode)
-              [[ "$has_opencode" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=opencode requires OPENAI_API_KEY or OPENROUTER_API_KEY plus OPENCODE_GITHUB_TOKEN"; exit 1; }
+              [[ "$has_opencode" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=opencode requires OPENROUTER_API_KEY plus OPENCODE_GITHUB_TOKEN"; exit 1; }
               ;;
             cursor)
               [[ "$has_cursor" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=cursor but CURSOR_API_KEY is missing"; exit 1; }
@@ -197,7 +196,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
@@ -266,7 +264,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

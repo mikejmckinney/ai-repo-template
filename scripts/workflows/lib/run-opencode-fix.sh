@@ -12,7 +12,7 @@ REPO_ROOT="${3:-}"
 
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNNER="${OPENCODE_RUNNER:-$LIB_DIR/run-opencode.mjs}"
-MODELS="${OPENCODE_MODELS:-openai/gpt-5.6-sol,openrouter/z-ai/glm-5.2@preset/default,openrouter/minimax/minimax-m3@preset/default}"
+MODELS="${OPENCODE_MODELS:-openrouter/z-ai/glm-5.2@preset/default,openrouter/minimax/minimax-m3@preset/default}"
 VERIFY_COMMAND="${OPENCODE_FIX_VERIFY_COMMAND:-./test.sh}"
 ATTEMPT_ROOT="$(mktemp -d)"
 active_worktree=""

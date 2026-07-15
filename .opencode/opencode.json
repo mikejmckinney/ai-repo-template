@@ -8,16 +8,13 @@
     "reserved": 10000
   },
   "mcp": {
-    "github-read": {
+    "github": {
       "type": "remote",
       "url": "https://api.githubcopilot.com/mcp/",
       "enabled": true,
       "oauth": false,
       "headers": {
-        "Authorization": "Bearer {env:OPENCODE_GITHUB_TOKEN}",
-        "X-MCP-Toolsets": "repos,issues,pull_requests,actions",
-        "X-MCP-Readonly": "true",
-        "X-MCP-Lockdown": "true"
+        "Authorization": "Bearer {env:OPENCODE_GITHUB_TOKEN}"
       }
     },
     "open-design": {

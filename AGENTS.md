@@ -282,7 +282,7 @@ testing risk.
 
 ## Repo Orchestration Patterns
 
-The P1-P9/AP1-AP9 catalog is shared vocabulary for reasoning about agent,
+The P1-P9/AP1-AP10 catalog is shared vocabulary for reasoning about agent,
 workflow, and coordination changes. It is descriptive, not a standalone review
 gate: an ID alone never blocks a change. A finding must identify concrete harm
 and map it to an active rule, observable regression, or unmet user outcome.
@@ -347,3 +347,8 @@ Detailed history and examples remain in
 - **AP9 Compatibility Surface Entrenchment:** a replacement is accepted, but the
   deprecated path remains a normal operational dependency. Stop extending the
   old surface and retire, archive, or clearly demote it.
+- **AP10 Undifferentiated Infrastructure Ownership:** the project owns custom
+  infrastructure that duplicates a maintained platform capability without a
+  verified project-specific requirement or measurable benefit. Prefer the
+  maintained capability; retain custom infrastructure when evidence justifies
+  its compliance, isolation, performance, or reproducibility cost.

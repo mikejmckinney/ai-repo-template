@@ -12,7 +12,7 @@ setup() {
 }
 
 @test "auto routing prefers OpenCode when its runtime and credentials are available" {
-  OPENAI_API_KEY=openai-test
+  OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
   GEMINI_API_KEY=gemini-test
@@ -22,6 +22,18 @@ setup() {
 
   [ "$status" -eq 0 ]
   [ "$output" = opencode ]
+}
+
+@test "OpenAI API credentials alone do not enable OpenCode in public CI" {
+  OPENAI_API_KEY=openai-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  CURSOR_API_KEY=cursor-test
+  init_advisory_provider_credentials
+
+  run pick_advisory_provider advisory
+
+  [ "$status" -eq 0 ]
+  [ "$output" = cursor ]
 }
 
 @test "auto routing falls back to Cursor when OpenCode credentials are unavailable" {
@@ -58,6 +70,7 @@ export async function createOpencode(options) {
     server: { close() {} }
   }
 }
+
 EOF
   printf 'review this' >"$tmp/prompt.md"
 
@@ -67,7 +80,7 @@ EOF
     MOCK_FAIL_MODEL="openai/gpt-5.6-sol" \
     OPENAI_API_KEY="secret-test-value" \
     node "$REPO_ROOT/scripts/workflows/lib/run-opencode.mjs" \
-      "$tmp/prompt.md" "$tmp/output.txt"
+    "$tmp/prompt.md" "$tmp/output.txt"
 
   [ "$status" -eq 0 ]
   [ "$(cat "$tmp/output.txt")" = "ok:openrouter/z-ai/glm-5.2@preset/default" ]
@@ -77,10 +90,48 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "OpenCode defaults to the approved OpenRouter model cascade" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/mock-sdk.mjs" <<'EOF'
+export async function createOpencode() {
+  return {
+    client: {
+      session: {
+        create: async () => ({ data: { id: "session-test" } }),
+        prompt: async ({ body }) => {
+          const model = `${body.model.providerID}/${body.model.modelID}`
+          if (model === "openrouter/z-ai/glm-5.2@preset/default") {
+            return { data: { info: { error: { name: "ModelError", data: {} } } } }
+          }
+          return { data: { info: { modelID: body.model.modelID, structured: { output: `ok:${model}` } } } }
+        },
+        delete: async () => ({ data: true })
+      }
+    },
+    server: { close() {} }
+  }
+}
+EOF
+  printf 'review this' >"$tmp/prompt.md"
+
+  run env \
+    OPENCODE_SDK_MODULE="$tmp/mock-sdk.mjs" \
+    node "$REPO_ROOT/scripts/workflows/lib/run-opencode.mjs" \
+    "$tmp/prompt.md" "$tmp/output.txt"
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$tmp/output.txt")" = "ok:openrouter/minimax/minimax-m3@preset/default" ]
+  [[ "$output" == *'requested_model=openrouter/z-ai/glm-5.2@preset/default'* ]]
+  [[ "$output" == *'requested_model=openrouter/minimax/minimax-m3@preset/default'* ]]
+  [[ "$output" != *'requested_model=openai/'* ]]
+  rm -rf "$tmp"
+}
+
 @test "CI configs enforce hosted read-only GitHub MCP and separate review from fix tools" {
   run jq -e '
     .autoupdate == false and
     .share == "disabled" and
+    .enabled_providers == ["openrouter"] and
     .permission.edit == "deny" and
     .permission.bash == "deny" and
     .permission.task == "deny" and
@@ -96,6 +147,7 @@ EOF
   run jq -e '
     .autoupdate == false and
     .share == "disabled" and
+    .enabled_providers == ["openrouter"] and
     .permission.edit == "allow" and
     .permission.task == "deny" and
     .permission.bash == "deny" and
@@ -116,7 +168,18 @@ EOF
     [ "$status" -eq 0 ]
     run grep -q 'AGENT_RUNTIME_IMAGE' "$file"
     [ "$status" -ne 0 ]
+    run grep -q 'OPENAI_API_KEY' "$file"
+    [ "$status" -ne 0 ]
   done
+}
+
+@test "AP10 infrastructure ownership is synchronized across orchestration catalogs" {
+  run grep -q 'AP10 Undifferentiated Infrastructure Ownership' "$REPO_ROOT/AGENTS.md"
+  [ "$status" -eq 0 ]
+
+  run grep -q 'AP10 Undifferentiated Infrastructure Ownership' \
+    "$REPO_ROOT/docs/guides/repo-orchestration-patterns-reference.md"
+  [ "$status" -eq 0 ]
 }
 
 @test "unverified OpenCode fix attempts are discarded before a verified patch is promoted" {
@@ -162,7 +225,7 @@ EOF
     OPENCODE_GITHUB_TOKEN="github-secret-test" \
     GITHUB_TOKEN="publisher-secret-test" \
     bash "$REPO_ROOT/scripts/workflows/lib/run-opencode-fix.sh" \
-      "$tmp/prompt.md" "$tmp/output.txt" "$tmp"
+    "$tmp/prompt.md" "$tmp/output.txt" "$tmp"
 
   [ "$status" -eq 0 ]
   [ "$(cat "$tmp/result.txt")" = "openrouter/z-ai/glm-5.2@preset/default" ]
@@ -179,10 +242,10 @@ EOF
 
   run env \
     OPENCODE_BIN=/bin/true \
-    OPENAI_API_KEY=openai-test \
+    OPENROUTER_API_KEY=openrouter-test \
     OPENCODE_GITHUB_TOKEN=github-read-test \
     python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/compute-evidence-coverage.py" \
-      "$tmp" --pr 7 --diff-limit 1000 --repo-root "$tmp"
+    "$tmp" --pr 7 --diff-limit 1000 --repo-root "$tmp"
 
   [ "$status" -eq 0 ]
   [[ "$output" == *'"evidence_route": "full-evidence-opencode"'* ]]

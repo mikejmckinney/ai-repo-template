@@ -138,7 +138,7 @@ plan template's Verification section verbatim.
 For changes to advisory, retro, or weekly OpenCode automation:
 
 1. Configure sandbox-only `OPENCODE_GITHUB_TOKEN` with read-only repository
-   access plus non-production `OPENAI_API_KEY` and/or `OPENROUTER_API_KEY`.
+   access plus a non-production `OPENROUTER_API_KEY`.
 2. Verify `npm ci` installs the locked OpenCode runtime on `ubuntu-latest` and
    record the runner image release from the job setup log.
 3. Verify the agent cannot create or update an issue through hosted MCP, then verify the
