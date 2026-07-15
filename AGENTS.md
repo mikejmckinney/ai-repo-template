@@ -202,7 +202,7 @@ comprehensive snapshot — merge, do not replace, do not append:**
 - **Rate limits:** binding limit is GitHub's secondary content-creation cap (~500/hour per user). A
   turn spans minutes → ~20–30 writes/hour even with pipeline + other agents on the same PAT (>15×
   headroom). check `x-ratelimit-remaining`/`retry-after` on 403/429 as needed.
-- **Fall back to local buffer** on any GitHub failure / no active issue/PR.
+- **Fall back to local scratch copy** on any GitHub failure / no active issue/PR.
 
 ### Postmortem feedback loop
 
