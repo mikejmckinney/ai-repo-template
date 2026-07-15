@@ -10,9 +10,10 @@ Accepted
 
 ## Amendment 2026-07-15 — Retire Copilot queue draining
 
-ADR-032 removes the unused Copilot assignment queue and its drain step. The
-opt-in `auto-merge` decision remains active; only the queue-specific behavior in
-this ADR is superseded.
+The unused Copilot assignment queue and its drain step are retired. The opt-in
+`auto-merge` decision remains active; only the queue-specific behavior in this
+ADR is deprecated. Existing queue labels remain as historical metadata, but the
+template no longer provisions or acts on them.
 
 ## Context
 

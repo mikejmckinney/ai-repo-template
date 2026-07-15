@@ -15,6 +15,8 @@ issue/PR > `AGENTS.md` > `.context/**` > `docs/**` > codebase).
 ```text
 docs/
 ├── README.md           # This file
+├── benchmarks/         # Published benchmark result records
+│   └── *.md            # Decision evidence with immutable source citations
 ├── reference/          # Historical specs, research, external references
 │   └── *.md            # Specification documents
 ├── research/           # Research and analysis artifacts
@@ -50,6 +52,12 @@ docs/
 - Deployment procedures
 - Troubleshooting guides
 - Contribution guidelines
+
+### `benchmarks/`
+
+- Published benchmark results used for repository decisions
+- Immutable source, run, commit, and artifact references
+- No harnesses, raw responses, worktrees, or unsealed candidate mappings
 
 ### `decisions/`
 
@@ -100,6 +108,12 @@ What are the positive and negative consequences?
 - [Repo Orchestration Patterns Reference](guides/repo-orchestration-patterns-reference.md) - Detail for the advisory orchestration vocabulary summarized in `AGENTS.md`
 - [Opportunity Feedback Examples](guides/opportunity-feedback-examples.md) - Worked examples for the `opportunity_notes` channel
 - [AGENTS.md Section Redirects](guides/agents-md-section-redirects.md) - ADR-021 anchor migration table
+- [Model ROI Benchmark Runbook](guides/model-roi-benchmark-runbook.md) - Prepare, synchronize, run, grade, and publish benchmark campaigns
+
+### Benchmarks
+
+- [Agent ROI Benchmark Results](benchmarks/agent-roi-benchmark-results.md) - Model, context, and orchestration score sets
+- [Retro Execution 447 Results](benchmarks/retro-execution-447-results.md) - Sequential, monolithic, and parallel retro comparison
 
 ### Decisions (ADRs)
 

@@ -9,8 +9,8 @@ Evidence locations:
 - Locked Phase A artifacts: [`benchmark/phase-a-artifacts-20260608`](https://github.com/mikejmckinney/ai-repo-template/tree/benchmark/phase-a-artifacts-20260608)
 
 Apparatus paths cited below resolve against the pinned completed-harness snapshot
-unless another commit or tag is named. Only this canonical result record remains
-on `main`.
+unless another commit or tag is named. Only this canonical result record and the
+retro-execution result record remain on `main` under `docs/benchmarks/`.
 
 Status: blind scores locked for the completed benchmark sessions; sealed alias
 mapping and cost addenda appended. This record covers monolithic Stage 1,
@@ -21,7 +21,7 @@ those stages. Published **Canonical | Objective | Subjective** columns in this f
 are the operator source of truth on `main`. Subjective JSON fixtures used to
 compile those columns are preserved on git tag `benchmark/phase-a-artifacts-20260608`
 (not merged to `main`; see the
-[`8c296458` runbook](https://github.com/mikejmckinney/ai-repo-template/blob/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/benchmark-runbook.md)).
+[mainline runbook](../guides/model-roi-benchmark-runbook.md)).
 
 This file supersedes the earlier local `grading-scores-blind.tsv` `score_10` shorthand files. Those
 10-point scores were evaluator notes from blind diff review, not the official #374 weighted scoring

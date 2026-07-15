@@ -25,7 +25,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 |----------|-------------------|------|
 | `README.md` (this file) | Humans | Setup, features, customization — verbose on purpose |
 | `AI_REPO_GUIDE.md` | AI agents | Token-optimized command/structure/convention reference |
-| `docs/` | Humans | Deep reference: guides, ADRs, research |
+| `docs/` | Humans | Deep reference: guides, ADRs, benchmark results, research |
 | `.context/` | AI agents | Canonical project truth: rules, state, roadmap, vision (lazy-loaded) |
 | `AGENTS.md` (root) | Most AI tools | Root startup contract (Copilot, Cursor, Gemini, Claude Code, etc.) |
 | `.github/prompts/` | Review and workflow automation | Shared lenses plus advisory, daily, and weekly prompts |

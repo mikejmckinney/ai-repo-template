@@ -2,11 +2,19 @@
 
 ## Status
 
-Superseded by ADR-032
+Deprecated
 
 ## Date
 
 2026-04-23
+
+## Amendment 2026-07-15 — Retire auto-rebase
+
+The opt-in auto-rebase mechanism is retired without replacement. It was not used
+by the maintained workflow lifecycle, while its default-branch trigger,
+force-push authority, labels, implementation, and tests imposed ongoing cost.
+Branch owners now update their own branches; the parallelism report remains
+advisory. The original decision below remains as historical rationale.
 
 ## Context
 

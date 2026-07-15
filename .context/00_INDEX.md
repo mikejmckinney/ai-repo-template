@@ -21,9 +21,6 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ```text
 .context/
 |-- 00_INDEX.md          # This file - start here (The Map)
-|-- benchmarks/          # Durable benchmark decision evidence
-|   |-- model-roi/results/agent-roi-benchmark-results.md
-|   `-- retro-execution-447/RESULTS.md
 |-- roadmap.md           # Template-development phases and current hardening track
 |-- sessions/            # Durable retrospectives and feedback records
 |   |-- feedback_template.md # Stakeholder feedback capture template
@@ -44,7 +41,9 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 2. Read the assigned GitHub issue body and linked PR when a durable task exists.
 3. Use one monolithic implementing agent; use local consensus only when justified.
 4. Treat `state/` as the GitHub-first live-state reference surface.
-5. Read `sessions/latest_summary.md`, `roadmap.md`, benchmarks, or vision files only when their domain intersects the task.
+5. Read `sessions/latest_summary.md`, `roadmap.md`, or vision files only when their domain intersects the task.
+6. For benchmark work, use `docs/guides/model-roi-benchmark-runbook.md` and
+   published evidence under `docs/benchmarks/`.
 
 **Execution model**: one implementing agent, blocking CI, optional parallel
 advisory review, recurring retro, and opt-in local consensus. See ADR-031.
@@ -63,7 +62,7 @@ advisory review, recurring retro, and opt-in local consensus. See ADR-031.
 
 - Shared advisory/daily/weekly review lenses and workflow scaffolding.
 - The always-loaded operating contract in `AGENTS.md` and reference diagrams under `.context/vision/architecture/`.
-- Canonical benchmark decision evidence under `.context/benchmarks/`; evaluation
+- Canonical benchmark guidance and decision evidence under `docs/`; evaluation
   apparatus lives on `benchmark/roi`.
 - GitHub prompts, issue/PR templates, and workflow scaffolding under `.github/`.
 - Bootstrap and verification helpers under `install.sh`, `test.sh`, and `scripts/**`.
@@ -83,7 +82,7 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-007](../docs/decisions/adr-007-auto-resolve-review-threads.md) | Bot-thread auto-resolution v1 | Started the review-thread automation path later replaced by ADR-008. |
 | [ADR-008](../docs/decisions/adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 default plus Copilot fallback | Historical review-resolution fallback; superseded by ADR-031. |
 | [ADR-009](../docs/decisions/adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution | Historical role-specialized pipeline; superseded by ADR-031. |
-| [ADR-010](../docs/decisions/adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge | Historical mechanism; superseded by ADR-032. |
+| [ADR-010](../docs/decisions/adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge | Deprecated historical mechanism; branch owners update their own branches. |
 | [ADR-011](../docs/decisions/adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement | Made issue comments the required plan artifact before implementation. |
 | [ADR-012](../docs/decisions/adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions | Codified branch-first, commit cadence, and other non-implicit rules. |
 | [ADR-013](../docs/decisions/adr-013-pre-commit-on-main-default.md) | Derived-repo pre-commit stance | Kept heavy pre-commit optional for downstream repos by default. |
@@ -103,7 +102,6 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-027](../docs/decisions/adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel | Added an out-of-scope observation path without widening task scope. |
 | [ADR-029](../docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence | Requires sandbox proof for behavior/process claims on every PR. |
 | [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI and execution lifecycle policy | Makes monolithic implementation the default, retires role registries, and retains optional advisory plus recurring retro. |
-| [ADR-032](../docs/decisions/adr-032-automation-surface-retirement.md) | Automation surface retirement | Removes unused automation and moves benchmark apparatus off `main`. |
 
 ## Next Steps
 

@@ -15,6 +15,9 @@ CONTEXT_FILES=(
   ".context/state/README.md"
   ".context/state/agent_state_comment_template.md"
   ".context/vision/README.md"
+  "docs/benchmarks/agent-roi-benchmark-results.md"
+  "docs/benchmarks/retro-execution-447-results.md"
+  "docs/guides/model-roi-benchmark-runbook.md"
 )
 
 for file in "${CONTEXT_FILES[@]}"; do
@@ -27,9 +30,6 @@ done
 
 # Check context directories exist
 CONTEXT_DIRS=(
-  ".context/benchmarks"
-  ".context/benchmarks/model-roi/results"
-  ".context/benchmarks/retro-execution-447"
   ".context/sessions"
   ".context/state"
   ".context/vision/mockups"

@@ -23,7 +23,7 @@
 | [ADR-007](./adr-007-auto-resolve-review-threads.md) | Auto-resolve bot-authored review threads (opt-in label; Copilot-path gap tracked in #100) | Superseded by ADR-008 |
 | [ADR-008](./adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 runs by default; Copilot-path relay-side fallback | Superseded by ADR-031 |
 | [ADR-009](./adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution (patterns, dispatch reality, conflict enforcement) | Superseded by ADR-031 |
-| [ADR-010](./adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge for parallel agent PRs | Superseded by ADR-032 |
+| [ADR-010](./adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge for parallel agent PRs | Deprecated |
 | [ADR-011](./adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement + PR-must-link-issue (v1) | Accepted |
 | [ADR-012](./adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions in AGENTS.md (branch-and-commit, cadence sharpenings) | Accepted |
 | [ADR-013](./adr-013-pre-commit-on-main-default.md) | Pre-commit hook for `main` protection — not installed by default | Accepted |
@@ -44,7 +44,6 @@
 | [ADR-029](./adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence requirement on every PR + canary placeholder convention; narrows ADR-021 §"Per-file cadence bump" scope | Accepted |
 | [ADR-030](./adr-030-non-blocking-review-pipeline.md) | Non-blocking LLM review pipeline (advisory → finalize → daily retro → weekly repo review) | Accepted (finalize stage retired by ADR-031) |
 | [ADR-031](./adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI benchmark and execution lifecycle policy | Accepted |
-| [ADR-032](./adr-032-automation-surface-retirement.md) | Retire unused automation and isolate benchmark apparatus | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.

@@ -8,7 +8,7 @@ When sources conflict, use this order:
 
 1. Current assigned issue and linked PR for task scope and acceptance criteria.
 2. `AGENTS.md` for repository-wide operating policy.
-3. `.context/**` for current project direction, state guidance, and benchmarks.
+3. `.context/**` for current project direction and state guidance.
 4. `docs/**` for durable decisions, guides, and historical rationale.
 5. The codebase for implementation reality.
 

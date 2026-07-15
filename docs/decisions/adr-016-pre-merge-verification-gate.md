@@ -10,9 +10,9 @@ Accepted
 
 ## Amendment 2026-07-15 — Retired workflow examples
 
-ADR-032 removes auto-rebase and unused deployment workflows. References below
-remain historical examples of default-branch trigger risk; the verification
-classifier and sandbox requirement continue to apply to maintained workflows.
+Auto-rebase and unused deployment workflows are retired. References below remain
+historical examples of default-branch trigger risk; the verification classifier
+and sandbox requirement continue to apply to maintained workflows.
 
 ## Context
 
