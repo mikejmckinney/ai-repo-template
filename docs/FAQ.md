@@ -55,10 +55,6 @@ authoritative.
 
 It's a marker used by this template to flag scaffolding that derived projects should replace. Run [`scripts/verify-env.sh`](../scripts/verify-env.sh) to check for the marker and report how many matches it finds.
 
-### Why are there deployment templates for Vercel, Railway, and Render — do I need all three?
-
-No. Pick one (or none). The templates in `config/` each have a `.template` suffix so nothing is active until you rename. See [`config/README.md`](../config/README.md) for the decision criteria per platform.
-
 ### Template: Where should I file limitations or known issues I've hit?
 
 If it's an agent-facing gotcha, add it to `AI_REPO_GUIDE.md § Gotchas / Known Issues`. If it's human-facing, add it to `README.md § Limitations`. If it's a decision-specific follow-up, add it to the relevant ADR's "Future Work" subsection.

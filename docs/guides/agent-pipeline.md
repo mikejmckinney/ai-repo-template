@@ -9,9 +9,8 @@ parallel; daily and weekly review operate after changes reach `main`.
 Use one implementing agent on a non-default branch. Keep issue/PR live-state
 comments only when work is paused, blocked, awaiting review, or handed off.
 
-The retained assignment workflows (`agent-assign-copilot.yml`,
-`agent-auto-ready.yml`, and `agent-release-slot.yml`) assign one agent to an issue;
-they do not dispatch role pipelines.
+Issue assignment is operator-driven. The template does not provision a coding-agent
+queue or automatically transition draft PRs.
 
 ## Advisory Review
 
@@ -93,9 +92,8 @@ perspectives. It does not replace the implementing agent or CI.
 ## Cross-PR Safety
 
 `agent-parallelism-report.yml` reports exact path overlap between independent PRs.
-`auto-rebase-on-merge.yml` uses `scripts/lib/overlap.sh` to distinguish hard and
-soft overlap for opted-in PRs. These are repository-concurrency safeguards, not
-multi-agent orchestration.
+Branch owners remain responsible for updating their branches and resolving
+overlap; the template does not force-push automated rebases.
 
 ## Workflow verifiability matrix
 
@@ -117,8 +115,6 @@ Use `scripts/verify-pr.sh` to classify the diff and
 | `ai-review:live` | Enable rolling non-blocking advisory snapshots |
 | `ai-review:full` | Increase advisory context depth |
 | `auto-merge` | Opt in to auto-merge after required checks |
-| `auto-rebase` | Opt in to overlap-aware rebase after another PR merges |
-| `do-not-rebase` | Disable automatic rebase |
 | `agent:claimed` | Work is actively claimed |
 | `agent:blocked` | Work is blocked |
 | `agent:awaiting-review` | Work awaits review |
@@ -128,7 +124,6 @@ Use `scripts/verify-pr.sh` to classify the diff and
 
 - `ADVISORY_REVIEW_PROVIDER` controls optional advisory provider selection.
 - `POSTMERGE_RETRO_PROVIDER` and `WEEKLY_REVIEW_PROVIDER` control retro providers.
-- `MAX_COPILOT_CONCURRENT` and `MAX_COPILOT_DAILY` bound monolithic assignment.
 - Provider model and context variables are documented inline in their workflows.
 ## Required Secrets
 

@@ -8,6 +8,12 @@ Accepted
 
 2026-05-06
 
+## Amendment 2026-07-15 — Retired workflow examples
+
+ADR-032 removes auto-rebase and unused deployment workflows. References below
+remain historical examples of default-branch trigger risk; the verification
+classifier and sandbox requirement continue to apply to maintained workflows.
+
 ## Context
 
 GitHub Actions runs a workflow file from a specific git ref depending on the

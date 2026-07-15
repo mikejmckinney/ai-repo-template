@@ -16,7 +16,7 @@
 log_step "Auto-detecting repository"
 
 # FULL_REPO is the canonical "owner/repo" slug used by Step 5 to scope every
-# `gh` call (labels, variables). Initialized empty; populated below from any
+# `gh` call (labels and secret-presence checks). Initialized empty; populated below from any
 # of: explicit env override, parsed git remote, or (later, in Step 5)
 # `gh repo view` once gh is authenticated.
 FULL_REPO=""

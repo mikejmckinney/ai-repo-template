@@ -45,8 +45,7 @@ ADR-031 defines the active model: one implementing agent, blocking CI, optional 
 - **Context Pack** - Structured directory (`.context/`) for project memory across LLM sessions
 - **Automatic Extension Installation** - Essential VS Code extensions installed on Codespace start
 - **Multi-Platform Support** - Works with Cursor, GitHub Copilot, Gemini Code Assist, and more
-- **CI/CD Templates** - Self-healing pipeline, keep-warm, and connectivity check workflows
-- **Deployment Configs** - Templates for Vercel, Railway, and Render
+- **CI/CD Automation** - Blocking tests and lint with opt-in advisory and recurring repository review
 - **Issue Templates** - Bug reports, feature requests, and agent initialization
 - **Pre-commit Hooks** - Template for linting, secret detection, and commit standards
 - **ADR Templates** - Architecture Decision Record templates with examples

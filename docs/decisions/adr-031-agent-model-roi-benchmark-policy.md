@@ -129,7 +129,8 @@ The repository applies the benchmark recommendation as follows:
 - Canonical roles, platform overlays, native reviewer rules, multi-role dispatch,
   formal AI review, review resolution, finalization, and legacy consensus
   planning are retired.
-- Monolithic assignment, cross-PR overlap visibility, and auto-rebase safety remain.
+- Cross-PR overlap visibility remains; issue assignment and branch updates are
+  operator-owned.
 
 This lifecycle supersedes ADR-003, ADR-004, ADR-005, ADR-008, ADR-009, ADR-014,
 ADR-019, ADR-023, and ADR-024 for active operations. Their bodies and benchmark

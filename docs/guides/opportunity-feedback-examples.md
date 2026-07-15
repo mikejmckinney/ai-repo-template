@@ -22,8 +22,8 @@ The following routes to **`## Blocking observation`**, not opportunity notes:
 ```markdown
 ## Blocking observation
 
-While editing `config/docker-compose.yml.template` to wire the new
-service, I noticed line 47 contains `POSTGRES_PASSWORD=hunter2` as a
+While editing a derived project's `docker-compose.yml` to wire the new
+service, I noticed it contains `POSTGRES_PASSWORD=hunter2` as a
 hardcoded literal in a template that gets copy-rendered into user
 clones. Anyone who installs the template inherits a known
 credential. This is a security defect, not a style nit: it cannot be

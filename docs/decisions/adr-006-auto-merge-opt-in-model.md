@@ -8,6 +8,12 @@ Accepted
 
 2026-04-21
 
+## Amendment 2026-07-15 — Retire Copilot queue draining
+
+ADR-032 removes the unused Copilot assignment queue and its drain step. The
+opt-in `auto-merge` decision remains active; only the queue-specific behavior in
+this ADR is superseded.
+
 ## Context
 
 Issue [#50](https://github.com/mikejmckinney/ai-repo-template/issues/50) asked
