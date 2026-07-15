@@ -8,20 +8,15 @@ Frequently asked questions about the `ai-repo-template`. Answers link to deeper 
 
 ## Repo structure
 
-### Template: Why does this repo have `README.md`, `AGENTS.md`, `AI_REPO_GUIDE.md`, and `CLAUDE.md`?
+### Template: Why does this repo have `README.md`, `AGENTS.md`, and `AI_REPO_GUIDE.md`?
 
 Each targets a different audience or loader:
 
 - `README.md` — humans reading on GitHub.
 - `AGENTS.md` — root instructions most AI tools auto-load (Copilot, Cursor, Gemini).
 - `AI_REPO_GUIDE.md` — token-optimized agent reference.
-- `CLAUDE.md` — pointer file that Claude Code's native memory loader picks up; delegates to `AGENTS.md`.
 
 Full rationale and a comparison table live in [`docs/guides/context-files-explained.md`](guides/context-files-explained.md) and [`docs/decisions/adr-001-context-pack-structure.md`](decisions/adr-001-context-pack-structure.md).
-
-### Template: Why is `CLAUDE.md` at the repo root and not inside `.claude/`?
-
-Both locations are valid — Claude Code auto-discovers either. Root is the `/init` default and keeps the file visible next to the other top-level docs. Moving it to `.claude/CLAUDE.md` is a preference, not a requirement. See the explanation inside [`CLAUDE.md`](../CLAUDE.md) itself.
 
 ### Template: What's the difference between `docs/` and `.context/`?
 

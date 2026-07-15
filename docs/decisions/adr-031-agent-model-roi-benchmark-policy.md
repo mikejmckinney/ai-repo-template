@@ -177,7 +177,7 @@ the OpenCode adapter remains available explicitly.
 
 ## Amendment 2026-06-15 — Slim `.context/rules/` catalog (issue #437 / PR #438)
 
-**Motivation:** Phase A benchmark evidence (especially issue #376 pipeline vs monolithic) supports a **monolithic default** for routine implementation. A large per-concern rule catalog increased context cost without improving ROI on Class A/B tasks. Production routing should match the slimmer catalog in [`.context/rules/README.md`](../../.context/rules/README.md).
+**Motivation:** Phase A benchmark evidence (especially issue #376 pipeline vs monolithic) supports a **monolithic default** for routine implementation. A large per-concern rule catalog increased context cost without improving ROI on Class A/B tasks. The slim catalog adopted by this historical amendment is pinned at [`.context/rules/README.md`](https://github.com/mikejmckinney/ai-repo-template/blob/b21f76149c84962566950d61eeca7d54fcaeb505/.context/rules/README.md); the catalog was later retired from `main`.
 
 **Decision:**
 
