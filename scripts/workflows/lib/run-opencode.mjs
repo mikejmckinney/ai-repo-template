@@ -4,6 +4,7 @@ import { readFile, readdir, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
+import Ajv2020 from "../../../.github/agent-runtime/node_modules/ajv/dist/2020.js"
 
 const [promptPath, outputPath, schemaPath] = process.argv.slice(2)
 if (!promptPath || !outputPath) {
@@ -21,14 +22,8 @@ const models = (process.env.OPENCODE_MODELS || defaultModels.join(","))
   .filter(Boolean)
 if (models.length === 0) throw new Error("OPENCODE_MODELS resolved to an empty model list")
 const prompt = await readFile(promptPath, "utf8")
-const schema = schemaPath
-  ? JSON.parse(await readFile(schemaPath, "utf8"))
-  : {
-      type: "object",
-      properties: { output: { type: "string" } },
-      required: ["output"],
-      additionalProperties: false,
-    }
+const schema = schemaPath ? JSON.parse(await readFile(schemaPath, "utf8")) : undefined
+const validate = schema ? new Ajv2020({ allErrors: true }).compile(schema) : undefined
 
 const mode = process.env.OPENCODE_MODE === "fix" ? "fix" : "review"
 const defaultConfig = path.resolve(`.github/agent-runtime/${mode}.json`)
@@ -88,6 +83,35 @@ function modelRef(model) {
   }
 }
 
+function responseText(result) {
+  return (result.parts || [])
+    .filter((part) => part.type === "text" && typeof part.text === "string")
+    .map((part) => part.text)
+    .join("\n")
+    .trim()
+}
+
+function validatedOutput(result) {
+  if (result.info?.error) {
+    throw new Error(`${result.info.error.name}: ${JSON.stringify(result.info.error.data || {})}`)
+  }
+  const text = responseText(result)
+  if (!text) return { error: "response omitted text output" }
+  if (!validate) return { output: `${text}\n` }
+
+  const candidate = text.replace(/^```(?:json)?\s*([\s\S]*?)\s*```$/i, "$1")
+  let parsed
+  try {
+    parsed = JSON.parse(candidate)
+  } catch (error) {
+    return { error: `invalid JSON: ${error.message}` }
+  }
+  if (!validate(parsed)) {
+    return { error: `schema validation failed: ${JSON.stringify(validate.errors)}` }
+  }
+  return { output: `${JSON.stringify(parsed, null, 2)}\n` }
+}
+
 let lastError
 for (const requestedModel of models) {
   const abortController = new AbortController()
@@ -112,29 +136,35 @@ for (const requestedModel of models) {
       }),
     )
     sessionID = session.id
-    const result = responseData(
-      await opencode.client.session.prompt({
-        sessionID,
-        model: modelRef(requestedModel),
-        parts: [{ type: "text", text: prompt }],
-        format: { type: "json_schema", schema, retryCount: 1 },
-      }),
-    )
-    if (result.info?.error) {
-      throw new Error(`${result.info.error.name}: ${JSON.stringify(result.info.error.data || {})}`)
+    let result
+    let checked
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const text = attempt === 0
+        ? prompt
+        : `Your previous response failed deterministic validation: ${checked.error}\n` +
+          `Return only JSON matching this schema, with no code fence:\n${JSON.stringify(schema)}`
+      result = responseData(
+        await opencode.client.session.prompt({
+          sessionID,
+          model: modelRef(requestedModel),
+          parts: [{ type: "text", text }],
+        }),
+      )
+      checked = validatedOutput(result)
+      if (checked.output) break
+      console.error(
+        `OpenCode: output_validation_failed model=${requestedModel} attempt=${attempt + 1} ` +
+        `error=${redacted(checked.error)}`,
+      )
     }
-    const structured = result.info?.structured
-    if (structured === undefined) throw new Error("OpenCode response omitted structured output")
+    if (!checked.output) throw new Error(checked.error)
     const observedModel = result.info?.modelID || "unknown"
     const tokens = result.info?.tokens || {}
     console.log(
       `OpenCode: observed_model=${observedModel} requested_model=${requestedModel} ` +
       `input_tokens=${tokens.input ?? "unknown"} output_tokens=${tokens.output ?? "unknown"}`,
     )
-    const output = typeof structured.output === "string"
-      ? structured.output
-      : `${JSON.stringify(structured, null, 2)}\n`
-    await writeFile(outputPath, output)
+    await writeFile(outputPath, checked.output)
     process.exitCode = 0
     lastError = undefined
     break

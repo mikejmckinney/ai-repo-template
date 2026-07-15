@@ -7,6 +7,11 @@
   "lsp": false,
   "enabled_providers": ["openrouter"],
   "small_model": "openrouter/z-ai/glm-5.2@preset/default",
+  "agent": {
+    "build": {
+      "steps": 4
+    }
+  },
   "permission": {
     "*": "deny",
     "read": "allow",

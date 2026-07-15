@@ -46,9 +46,11 @@ setup() {
   [ "$output" = cursor ]
 }
 
-@test "OpenCode runner retries structured output once then advances models" {
+@test "OpenCode runner validates text output, retries once, then advances models" {
   tmp="$(mktemp -d)"
   cat >"$tmp/mock-sdk.mjs" <<'EOF'
+import { appendFileSync } from "node:fs"
+
 export async function createOpencode(options) {
   if (options.port !== 0) throw new Error("OpenCode server port must be ephemeral")
   return {
@@ -57,12 +59,13 @@ export async function createOpencode(options) {
         create: async () => ({ data: { id: "session-test" } }),
         prompt: async (parameters) => {
           if (!parameters.sessionID) throw new Error("sessionID must be flattened")
-          if (parameters.format?.retryCount !== 1) throw new Error("retryCount must be 1")
+          if (parameters.format) throw new Error("OpenCode format must not be used")
           const model = `${parameters.model.providerID}/${parameters.model.modelID}`
+          appendFileSync(process.env.ATTEMPT_LOG, `${model}\n`)
           if (model === process.env.MOCK_FAIL_MODEL) {
-            return { data: { info: { modelID: parameters.model.modelID, error: { name: "StructuredOutputError", data: { message: `invalid ${process.env.OPENAI_API_KEY}`, retries: 1 } } } } }
+            return { data: { info: { modelID: parameters.model.modelID }, parts: [{ type: "text", text: `invalid ${process.env.OPENAI_API_KEY}` }] } }
           }
-          return { data: { info: { modelID: parameters.model.modelID, structured: { output: `ok:${model}` } } } }
+          return { data: { info: { modelID: parameters.model.modelID }, parts: [{ type: "text", text: JSON.stringify({ output: `ok:${model}` }) }] } }
         },
         delete: async () => ({ data: true }),
         abort: async () => ({ data: true })
@@ -74,6 +77,7 @@ export async function createOpencode(options) {
 
 EOF
   printf 'review this' >"$tmp/prompt.md"
+  printf '%s\n' '{"type":"object","properties":{"output":{"type":"string"}},"required":["output"],"additionalProperties":false}' >"$tmp/schema.json"
   mkdir -p "$tmp/log"
   printf 'provider diagnostic includes %s\n' 'secret-test-value' >"$tmp/log/2026-07-15T011800.log"
 
@@ -82,12 +86,15 @@ EOF
     OPENCODE_LOG_DIR="$tmp/log" \
     OPENCODE_MODELS="openai/gpt-5.6-sol,openrouter/z-ai/glm-5.2@preset/default" \
     MOCK_FAIL_MODEL="openai/gpt-5.6-sol" \
+    ATTEMPT_LOG="$tmp/attempts.log" \
     OPENAI_API_KEY="secret-test-value" \
     node "$REPO_ROOT/scripts/workflows/lib/run-opencode.mjs" \
-    "$tmp/prompt.md" "$tmp/output.txt"
+    "$tmp/prompt.md" "$tmp/output.txt" "$tmp/schema.json"
 
   [ "$status" -eq 0 ]
-  [ "$(cat "$tmp/output.txt")" = "ok:openrouter/z-ai/glm-5.2@preset/default" ]
+  [ "$(jq -r .output "$tmp/output.txt")" = "ok:openrouter/z-ai/glm-5.2@preset/default" ]
+  [ "$(grep -c '^openai/gpt-5.6-sol$' "$tmp/attempts.log")" -eq 2 ]
+  [ "$(grep -c '^openrouter/z-ai/glm-5.2@preset/default$' "$tmp/attempts.log")" -eq 1 ]
   [[ "$output" == *'requested_model=openai/gpt-5.6-sol'* ]]
   [[ "$output" == *'requested_model=openrouter/z-ai/glm-5.2@preset/default'* ]]
   [[ "$output" == *'provider diagnostic includes [REDACTED]'* ]]
@@ -109,7 +116,7 @@ export async function createOpencode() {
           if (model === "openrouter/z-ai/glm-5.2@preset/default") {
             return { data: { info: { error: { name: "ModelError", data: {} } } } }
           }
-          return { data: { info: { modelID: parameters.model.modelID, structured: { output: `ok:${model}` } } } }
+          return { data: { info: { modelID: parameters.model.modelID }, parts: [{ type: "text", text: `ok:${model}` }] } }
         },
         delete: async () => ({ data: true })
       }
@@ -171,6 +178,7 @@ EOF
       .[0] as $interactive |
       .[1] as $ci |
       $ci.small_model == "openrouter/z-ai/glm-5.2@preset/default" and
+      $ci.agent.build.steps == 4 and
       all($interactive.mcp | keys[]; $ci.mcp[.].enabled == false)
     ' "$REPO_ROOT/.opencode/opencode.json" "$REPO_ROOT/.github/agent-runtime/$profile.json"
     [ "$status" -eq 0 ]

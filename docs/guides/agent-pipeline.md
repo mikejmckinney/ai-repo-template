@@ -57,8 +57,9 @@ Advisory, daily, and weekly automation resolve `auto` in this order:
 3. Antigravity where the cadence permits it.
 4. Gemini.
 
-OpenCode runs through `scripts/workflows/lib/run-opencode.mjs` using the SDK v2
-JSON Schema interface. It retries invalid structured output once, then tries
+OpenCode runs through `scripts/workflows/lib/run-opencode.mjs` using SDK v2
+sessions. The adapter validates model text against the cadence JSON Schema and
+sends one explicit corrective prompt when validation fails, then tries
 `openrouter/z-ai/glm-5.2@preset/default` and
 `openrouter/minimax/minimax-m3@preset/default` in order. Subscription-backed
 `openai/gpt-5.6-sol` remains available to interactive local OpenCode and
@@ -72,6 +73,11 @@ Workflows use GitHub-managed `ubuntu-latest`, configure Node 22, and run `npm ci
 against `.github/agent-runtime/package-lock.json`. Review and fix profiles live
 beside that lockfile and are intentionally separate from interactive
 `.opencode/opencode.json`.
+
+The adapter does not use OpenCode 1.18.0's `format` field. That release ignores
+`retryCount` and can finish without invoking its synthetic structured-output
+tool. Adapter-owned validation keeps retries observable and leaves the existing
+cadence-specific validators as the final deterministic gate.
 
 GitHub's hosted MCP endpoint is read-only and locked down through request headers.
 Agents receive only the dedicated read-only token, while deterministic shell code

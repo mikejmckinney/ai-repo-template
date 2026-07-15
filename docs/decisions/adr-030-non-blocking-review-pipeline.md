@@ -110,11 +110,15 @@ Issue [#480](https://github.com/mikejmckinney/ai-repo-template/issues/480)
 moves all three stages to an OpenCode-first runtime without moving evidence or
 publication authority into the agent.
 
-- The production adapter uses pinned `@opencode-ai/sdk/v2` structured output.
-  Headless CLI remains a diagnostic surface, not the workflow protocol.
+- The production adapter uses pinned `@opencode-ai/sdk/v2` sessions. Headless
+  CLI remains a diagnostic surface, not the workflow protocol.
 - The public-CI model cascade is `openrouter/z-ai/glm-5.2@preset/default`, then
-  `openrouter/minimax/minimax-m3@preset/default`. One SDK schema retry occurs
-  before advancing models. Subscription-backed `openai/gpt-5.6-sol` remains an
+  `openrouter/minimax/minimax-m3@preset/default`. The adapter validates model
+  text against the cadence schema, sends one corrective prompt, and then
+  advances models. OpenCode 1.18.0's `format` path is not a correctness boundary
+  because its synthetic output tool and `retryCount` are unreliable (upstream
+  [issue #25430](https://github.com/anomalyco/opencode/issues/25430)).
+  Subscription-backed `openai/gpt-5.6-sol` remains an
   interactive local and `local-consensus` model because OpenAI excludes personal
   ChatGPT-managed credentials from public/open-source CI automation.
 - Jobs run on GitHub-managed `ubuntu-latest`, matching the established Cursor

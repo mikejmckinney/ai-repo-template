@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@opencode-ai/sdk": "1.18.0",
+    "ajv": "8.20.0",
     "opencode-ai": "1.18.0"
   }
 }

@@ -49,7 +49,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && ! grep -q 'AGENT_RUNTIME_IMAGE' "$WEEKLY_WORKFLOW" 2>/dev/null; then
     pass "weekly scan/fix uses locked OpenCode runtime and isolated fix attempts"
   else
-    fail "weekly review missing OpenCode install, structured output, or isolation wiring"
+    fail "weekly review missing OpenCode install, schema validation, or isolation wiring"
   fi
 
   if search_fixed 'schedule:' "$WEEKLY_WORKFLOW" >/dev/null 2>&1 \
