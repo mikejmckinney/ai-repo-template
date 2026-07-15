@@ -65,6 +65,10 @@ permissions:
   pull-requests: read
   issues: write
 
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: postmerge-retro-daily
   cancel-in-progress: false
@@ -100,11 +104,14 @@ jobs:
       - name: Verify required secrets
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
         run: |
-          has_cursor=0 has_gemini=0
+          has_opencode=0 has_cursor=0 has_gemini=0
+          if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "$OPENROUTER_API_KEY" ]]; then has_opencode=1; fi
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
           if [[ "$PROVIDER" == "antigravity" ]]; then
@@ -112,6 +119,9 @@ jobs:
             PROVIDER=auto
           fi
           case "$PROVIDER" in
+            opencode)
+              [[ "$has_opencode" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=opencode requires OPENROUTER_API_KEY plus OPENCODE_GITHUB_TOKEN"; exit 1; }
+              ;;
             cursor)
               [[ "$has_cursor" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=cursor but CURSOR_API_KEY is missing"; exit 1; }
               ;;
@@ -119,8 +129,8 @@ jobs:
               [[ "$has_gemini" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
               ;;
             auto)
-              [[ "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
-                echo "::error::Post-merge retro needs CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
+              [[ "$has_opencode" -eq 1 || "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
+                echo "::error::Post-merge retro needs OpenCode, Cursor, or Gemini credentials."
                 exit 1
               }
               ;;
@@ -137,10 +147,18 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Node.js (Cursor SDK path)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: .github/agent-runtime/package-lock.json
+
+      - name: Install OpenCode runtime
+        run: |
+          npm ci --prefix .github/agent-runtime
+          echo "$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/.bin" >> "$GITHUB_PATH"
+          echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
 
       - name: Pin RUN_DATE
         run: |
@@ -178,6 +196,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
@@ -244,6 +264,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           SANDBOX_BOOTSTRAP_TOKEN: ${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}

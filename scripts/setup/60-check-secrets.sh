@@ -26,7 +26,7 @@ if [[ -n "${_pipeline_setup_skip_reason:-}" ]] \
 fi
 
 log_step "Checking required pipeline secrets"
-_required_secrets=(CLAUDE_PAT)
+_required_secrets=(CLAUDE_PAT OPENCODE_GITHUB_TOKEN)
 _repo_secrets=""
 _org_secrets=""
 if _repo_secrets=$(gh secret list --limit 100 --json name --jq '.[].name' 2>/dev/null); then
@@ -67,3 +67,12 @@ for _secret in "${_required_secrets[@]}"; do
     log_warn "             See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
   fi
 done
+
+if [[ "$_repo_secrets" != "__unknown__" && "$_org_secrets" != "__unknown__" ]]; then
+  if ! printf '%s\n%s\n' "$_repo_secrets" "$_org_secrets" \
+    | grep -qx 'OPENROUTER_API_KEY'; then
+    log_warn "  OPENROUTER_API_KEY — MISSING. Public-CI OpenCode jobs use the OpenRouter model cascade."
+  else
+    log_info "  OpenCode model credential — present"
+  fi
+fi

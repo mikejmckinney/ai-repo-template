@@ -7,6 +7,15 @@ agent: agent
 
 You are implementing findings from the daily post-merge retrospective batch on branch `retro/fix-<RUN_DATE>`. A human or agent will review before merge.
 
+Use repository edit tools only inside the provided worktree. GitHub tools are
+read-only evidence sources; never comment, create an issue or pull request,
+push, or otherwise publish from the agent.
+
+OpenCode fix sessions intentionally have no shell tool because the process holds
+model credentials. Use repository and GitHub read tools for reproduction evidence,
+never claim a command ran when it did not, and let the deterministic controller
+run `./test.sh` without credentials before it accepts the patch.
+
 ## Hard rules
 
 - Review the **current branch state** first (diff vs `main`, existing commits, and `retro/fix-verify-<RUN_DATE>.json` if present). Map each `findings[]` row by `dedupe_key` and implement **only findings not yet addressed**.
@@ -19,7 +28,7 @@ You are implementing findings from the daily post-merge retrospective batch on b
 - Record outcomes in **`retro/fix-verify-<RUN_DATE>.json`** (commit on branch). Rendered into the PR `## Fix verification` section by automation.
 - **Do not** auto-merge. Leave changes on the branch for review.
 - Prefer **minimal, focused diffs** — fix the evidence-backed issue, no drive-by refactors.
-- Run `./test.sh` when you change scripts/workflows/checks; record result in `fix-verify.json` (`test_sh`: `pass` | `fail` | `skipped`).
+- Record agent-side `test_sh` as `skipped` when shell is unavailable. The deterministic controller runs `./test.sh` before accepting an OpenCode patch.
 - **Do not** edit `.github/workflows/**` on upstream — note workflow-only findings in `verify.notes` and prove on **sandbox** when needed.
 - For **Gemini JSON mode**: output **valid JSON only** with shape below (include `fix_verify` object).
 

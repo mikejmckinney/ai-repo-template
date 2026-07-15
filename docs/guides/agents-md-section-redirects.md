@@ -16,7 +16,7 @@ Historical citations now resolve as follows:
 | Code quality | `AGENTS.md` § Code quality |
 | Session handshake | Retired by ADR-026's 2026-07-14 amendment |
 | Context profiles and receipt tables | Retired; no replacement |
-| P1-P9/AP1-AP9 vocabulary | Advisory summary in `AGENTS.md`; detail in `repo-orchestration-patterns-reference.md` |
+| P1-P9/AP1-AP10 vocabulary | Advisory summary in `AGENTS.md`; detail in `repo-orchestration-patterns-reference.md` |
 
 This file exists only to resolve old ADR, postmortem, and issue citations. It is
 not startup context and does not add operating requirements.

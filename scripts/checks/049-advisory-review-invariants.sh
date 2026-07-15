@@ -12,17 +12,36 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   GEMINI_SCRIPT="${ADVISORY_DIR}/run-advisory-gemini.py"
   CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
   ANTIGRAVITY_SCRIPT="${ADVISORY_DIR}/run-advisory-antigravity.py"
+  OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
+  OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
+  OPENCODE_REVIEW_CONFIG=".github/agent-runtime/review.json"
+  OPENCODE_FIX_CONFIG=".github/agent-runtime/fix.json"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
   MARKER='ai-advisory-review:v1'
 
   for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
-    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$ANTIGRAVITY_SCRIPT"; do
+    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$ANTIGRAVITY_SCRIPT" "$OPENCODE_RUNNER" \
+    "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
       fail "$f missing (advisory review)"
     fi
   done
+
+  if grep -q 'npm ci --prefix .github/agent-runtime' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'OPENCODE_GITHUB_TOKEN' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'opencode' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q '@opencode-ai/sdk/v2' "$OPENCODE_RUNNER" 2>/dev/null \
+    && grep -q 'api.githubcopilot.com/mcp' "$OPENCODE_REVIEW_CONFIG" 2>/dev/null \
+    && grep -q 'X-MCP-Readonly' "$OPENCODE_REVIEW_CONFIG" 2>/dev/null \
+    && grep -q 'X-MCP-Lockdown' "$OPENCODE_REVIEW_CONFIG" 2>/dev/null; then
+    pass "advisory installs pinned OpenCode SDK on Ubuntu with hosted read-only GitHub MCP"
+  else
+    fail "advisory missing locked OpenCode install, dedicated token, or hosted MCP security boundary"
+  fi
+
+  run_bats_check scripts/tests/opencode-provider.bats "opencode-provider.bats"
 
   if [[ -f .github/scripts/run-advisory-review.sh ]] \
     || compgen -G ".github/scripts/run-advisory-*" >/dev/null 2>&1; then

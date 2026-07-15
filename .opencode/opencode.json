@@ -8,6 +8,15 @@
     "reserved": 10000
   },
   "mcp": {
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:OPENCODE_GITHUB_TOKEN}"
+      }
+    },
     "open-design": {
       "type": "local",
       "command": ["node", "/Applications/Open Design.app/Contents/Resources/app/prebundled/daemon/daemon-cli.mjs", "mcp", "--daemon-url", "http://127.0.0.1:7456"],

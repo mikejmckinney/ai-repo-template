@@ -37,6 +37,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
   ENSURE_LABELS_SCRIPT="scripts/setup/ensure-pipeline-labels.sh"
   FEEDBACK_COLLECTOR="scripts/workflows/lib/collect-pr-evidence.sh"
+  OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
+  OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
+  MONOLITHIC_SCHEMA=".github/schemas/postmerge-retro-monolithic.schema.json"
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
     "$DAILY_SCRIPT" "$DAILY_DISPATCH_SCRIPT" "$DAILY_SELECT_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
@@ -44,13 +47,25 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$CHECKOUT_FIX_BRANCH_SCRIPT" \
     "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
     "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA" \
-    "$BOUNDED_SCRIPT" "$FULL_CURSOR_SCRIPT" "$ANTIGRAVITY_RETRO_SCRIPT" "$ASSEMBLE_PROMPT_SCRIPT"; do
+    "$BOUNDED_SCRIPT" "$FULL_CURSOR_SCRIPT" "$ANTIGRAVITY_RETRO_SCRIPT" "$ASSEMBLE_PROMPT_SCRIPT" \
+    "$OPENCODE_RUNNER" "$OPENCODE_FIX_RUNNER" "$MONOLITHIC_SCHEMA"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
       fail "$f missing (post-merge retro)"
     fi
   done
+
+  if grep -q 'full-evidence-opencode' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'OPENCODE_OUTPUT_SCHEMA' "$BOUNDED_SCRIPT" 2>/dev/null \
+    && grep -q 'OPENCODE_FIX_MODE=true' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'OPENCODE_GITHUB_TOKEN' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'npm ci --prefix .github/agent-runtime' "$RETRO_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'AGENT_RUNTIME_IMAGE' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "postmerge retro routes scan/fix through locked OpenCode runtime on Ubuntu"
+  else
+    fail "postmerge retro missing OpenCode install or scan/fix isolation wiring"
+  fi
 
   if grep -q 'schedule:' "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q '0 6 \* \* \*' "$RETRO_WORKFLOW" 2>/dev/null; then
@@ -280,7 +295,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "agent-postmerge-retro.yml fix job missing FIX_JOB_SANDBOX_VERIFY / SANDBOX_BOOTSTRAP_TOKEN"
   fi
 
-  for lib in pick-advisory-provider.sh invoke-advisory-llm.sh fix-phase-log.sh \
+  for lib in pick-advisory-provider.sh invoke-advisory-llm.sh run-opencode.mjs run-opencode-fix.sh fix-phase-log.sh \
     sandbox-sync-fix-branch.sh finalize-fix-pr.sh render-fix-pr-sections.py \
     run-batch-fix.sh umbrella-lifecycle.sh finding_priority.py superseded_findings.py; do
     if [[ -f "scripts/workflows/lib/$lib" ]]; then

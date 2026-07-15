@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Monolithic post-merge retrospective output",
+  "type": "object",
+  "required": ["prs", "retros"],
+  "additionalProperties": true,
+  "properties": {
+    "prs": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 }
+    },
+    "retros": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pr", "summary", "follow_up_issues"],
+        "additionalProperties": true,
+        "properties": {
+          "pr": { "type": "integer", "minimum": 1 },
+          "summary": { "type": "string" },
+          "follow_up_issues": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/followUpIssue" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "followUpIssue": {
+      "type": "object",
+      "required": [
+        "title",
+        "body",
+        "dedupe_key",
+        "repro_steps",
+        "impact",
+        "trigger_likelihood",
+        "fix_cost"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "body": { "type": "string", "minLength": 1 },
+        "dedupe_key": { "type": "string", "minLength": 1 },
+        "repro_steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "impact": {
+          "type": "string",
+          "enum": ["incorrect-behavior", "dx-perf-doc", "meta-harness"]
+        },
+        "trigger_likelihood": {
+          "type": "string",
+          "enum": ["common", "edge", "fringe"]
+        },
+        "fix_cost": {
+          "type": "string",
+          "enum": ["trivial", "moderate", "large"]
+        },
+        "regression_guard": { "type": "boolean" }
+      },
+      "not": {
+        "anyOf": [
+          { "required": ["severity"] },
+          { "required": ["priority_band"] }
+        ]
+      }
+    }
+  }
+}

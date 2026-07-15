@@ -94,7 +94,7 @@ prompt_file="$WORKDIR/prompt.md"
   echo ""
   echo "Review the current branch state against each finding (by \`dedupe_key\`); implement only findings not yet addressed on \`${BRANCH}\`."
   echo "Write \`retro/fix-verify-${RUN_DATE}.json\` with per-finding verify outcomes before finishing."
-  echo "For Cursor/local mode, edit the repo directly."
+  echo "For OpenCode/Cursor local mode, edit the repo directly."
   echo "For Gemini JSON mode, respond with JSON only (file_edits + commit_message + fix_verify)."
 } >"$prompt_file"
 
@@ -111,7 +111,8 @@ PROVIDER="$(pick_advisory_provider retro-fix)"
 }
 
 llm_raw="$WORKDIR/llm-fix-output.txt"
-invoke_advisory_llm "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+OPENCODE_FIX_MODE=true \
+  invoke_advisory_llm "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
 fix_phase_log "llm-fix"
 
 case "$PROVIDER" in

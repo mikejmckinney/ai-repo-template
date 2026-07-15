@@ -133,6 +133,23 @@ Use this when your Implementation Plan declares
 `Verification target: sandbox repo` (or `both`). The verbs follow the
 plan template's Verification section verbatim.
 
+### OpenCode runtime prerequisite
+
+For changes to advisory, retro, or weekly OpenCode automation:
+
+1. Configure sandbox-only `OPENCODE_GITHUB_TOKEN` with read-only repository
+   access plus a non-production `OPENROUTER_API_KEY`.
+2. Verify `npm ci` installs the locked OpenCode runtime on `ubuntu-latest` and
+   record the runner image release from the job setup log.
+3. Verify the agent cannot create or update an issue through hosted MCP, then verify the
+   deterministic publisher still creates the expected comment, umbrella issue,
+   or draft PR.
+4. Force the primary model to fail and capture ordered fallback telemetry. For a
+   fix run, also capture worktree paths and the final patch to prove the failed
+   attempt was discarded.
+
+Never reuse a production write PAT as `OPENCODE_GITHUB_TOKEN`.
+
 > **Authentication**: the `git push` and `gh` commands below require a
 > token with `repo` + `workflow` scopes on the sandbox repo. In a
 > workflow step, this is available as `${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}`

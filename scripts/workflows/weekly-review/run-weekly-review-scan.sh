@@ -96,14 +96,15 @@ source "$LIB_DIR/invoke-advisory-llm.sh"
 init_advisory_provider_credentials
 PROVIDER="$(pick_advisory_provider weekly-scan)"
 [[ -n "$PROVIDER" ]] || {
-  echo "::error::No weekly review provider configured. Set CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
+  echo "::error::No weekly review provider configured. Configure OpenCode, Cursor, or Gemini credentials."
   exit 1
 }
 
 llm_raw="$WORKDIR/llm-output.txt"
 case "$PROVIDER" in
-  cursor | gemini)
-    invoke_advisory_llm \
+  opencode | cursor | gemini)
+    OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/weekly-review.schema.json" \
+      invoke_advisory_llm \
       "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" \
       "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
     ;;

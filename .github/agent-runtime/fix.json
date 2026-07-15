@@ -1,0 +1,69 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "autoupdate": false,
+  "share": "disabled",
+  "snapshot": false,
+  "formatter": false,
+  "lsp": false,
+  "enabled_providers": ["openrouter"],
+  "small_model": "openrouter/z-ai/glm-5.2@preset/default",
+  "agent": {
+    "build": {
+      "steps": 4
+    }
+  },
+  "permission": {
+    "*": "deny",
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "edit": "allow",
+    "bash": "deny",
+    "task": "deny",
+    "webfetch": "deny",
+    "websearch": "deny",
+    "external_directory": "deny",
+    "doom_loop": "deny",
+    "github_read_*": "allow"
+  },
+  "mcp": {
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": false
+    },
+    "open-design": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "shadcn": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "github_read": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:OPENCODE_GITHUB_TOKEN}",
+        "X-MCP-Toolsets": "repos,issues,pull_requests,actions",
+        "X-MCP-Readonly": "true",
+        "X-MCP-Lockdown": "true"
+      },
+      "enabled": true,
+      "timeout": 10000
+    }
+  }
+}

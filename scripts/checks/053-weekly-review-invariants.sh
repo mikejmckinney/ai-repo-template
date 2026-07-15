@@ -19,6 +19,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   UMBRELLA_TEMPLATE=".github/templates/weekly-review-umbrella.md"
   FIX_PR_TEMPLATE=".github/templates/weekly-review-fix-pr.md"
   LIB_DIR="scripts/workflows/lib"
+  OPENCODE_SCHEMA=".github/schemas/weekly-review.schema.json"
   # shellcheck source=scripts/lib/search.sh
   source "scripts/lib/search.sh"
 
@@ -32,13 +33,24 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${WEEKLY_DIR}/render-umbrella-findings.py" \
     "${WEEKLY_DIR}/merge-umbrella-content.py" \
     "$LIB_DIR/run-batch-fix.sh" "$LIB_DIR/umbrella-lifecycle.sh" \
-    "$LIB_DIR/finding_priority.py" "$LIB_DIR/superseded_findings.py"; do
+    "$LIB_DIR/finding_priority.py" "$LIB_DIR/superseded_findings.py" \
+    "$LIB_DIR/run-opencode.mjs" "$LIB_DIR/run-opencode-fix.sh" "$OPENCODE_SCHEMA"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
       fail "$f missing (weekly review)"
     fi
   done
+
+  if grep -q 'OPENCODE_OUTPUT_SCHEMA' "$SCAN_SCRIPT" 2>/dev/null \
+    && grep -q 'OPENCODE_FIX_MODE=true' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'OPENCODE_GITHUB_TOKEN' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'npm ci --prefix .github/agent-runtime' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'AGENT_RUNTIME_IMAGE' "$WEEKLY_WORKFLOW" 2>/dev/null; then
+    pass "weekly scan/fix uses locked OpenCode runtime and isolated fix attempts"
+  else
+    fail "weekly review missing OpenCode install, schema validation, or isolation wiring"
+  fi
 
   if search_fixed 'schedule:' "$WEEKLY_WORKFLOW" >/dev/null 2>&1 \
     && search_regex '0 7 \* \* 0' "$WEEKLY_WORKFLOW" >/dev/null 2>&1; then

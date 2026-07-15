@@ -78,6 +78,10 @@ case "$evidence_route" in
     run_bounded_pass
     provider_used="$(jq -r '.routing_context.provider_resolved // "bounded"' "$COVERAGE_JSON")"
     ;;
+  full-evidence-opencode)
+    run_bounded_pass
+    provider_used="opencode-full-evidence"
+    ;;
   full-evidence-cursor)
     prompt_file="$WORKDIR/prompt.md"
     bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" full-evidence "$prompt_file"

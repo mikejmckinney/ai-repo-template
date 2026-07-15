@@ -6,17 +6,25 @@
 #   PROVIDER="$(pick_advisory_provider MODE)"
 #
 # MODE:
-#   advisory      — cursor / antigravity / gemini (ADVISORY_REVIEW_PROVIDER)
+#   advisory      — opencode / cursor / antigravity / gemini (ADVISORY_REVIEW_PROVIDER)
 #   retro         — post-merge retro scan (POSTMERGE_RETRO_PROVIDER cascade)
 #   retro-fix     — fix pass (no antigravity)
 #   weekly-scan   — weekly scan (WEEKLY_REVIEW_PROVIDER cascade)
 #   weekly-fix    — weekly fix (no antigravity)
 
 init_advisory_provider_credentials() {
+  has_opencode=0
   has_cursor=0
   has_gemini=0
+  local opencode_bin="${OPENCODE_BIN:-opencode}"
+  if command -v "$opencode_bin" >/dev/null 2>&1 \
+    && [[ -n "${OPENROUTER_API_KEY:-}" ]] \
+    && [[ -n "${OPENCODE_GITHUB_TOKEN:-}" ]]; then
+    has_opencode=1
+  fi
   [[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
   [[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
+  return 0
 }
 
 pick_advisory_provider() {
@@ -58,6 +66,9 @@ pick_advisory_provider() {
   esac
 
   case "$want" in
+    opencode)
+      echo opencode
+      ;;
     cursor)
       echo cursor
       ;;
@@ -72,7 +83,9 @@ pick_advisory_provider() {
       echo gemini
       ;;
     auto)
-      if [[ "$has_cursor" -eq 1 ]]; then
+      if [[ "$has_opencode" -eq 1 ]]; then
+        echo opencode
+      elif [[ "$has_cursor" -eq 1 ]]; then
         echo cursor
       elif [[ ("$mode" == "advisory" || "$mode" == "weekly-scan") &&
         "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
@@ -85,7 +98,7 @@ pick_advisory_provider() {
       ;;
     *)
       if [[ "$mode" == "advisory" ]]; then
-        echo "::error::Unknown ADVISORY_REVIEW_PROVIDER=${want} (use auto, cursor, antigravity, or gemini)" >&2
+        echo "::error::Unknown ADVISORY_REVIEW_PROVIDER=${want} (use auto, opencode, cursor, antigravity, or gemini)" >&2
         return 1
       fi
       echo "$want"

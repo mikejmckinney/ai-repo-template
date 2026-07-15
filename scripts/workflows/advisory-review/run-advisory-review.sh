@@ -186,48 +186,25 @@ if [[ "${ADVISORY_ANTIGRAVITY_ENABLED:-}" == "true" ]]; then
   antigravity_enabled=true
 fi
 
-has_cursor=0
-has_gemini=0
-[[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
-[[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
-
-pick_provider() {
-  local want="${ADVISORY_REVIEW_PROVIDER:-auto}"
-  case "$want" in
-    cursor)
-      echo cursor
-      ;;
-    antigravity)
-      echo antigravity
-      ;;
-    gemini)
-      echo gemini
-      ;;
-    auto)
-      if [[ "$has_cursor" -eq 1 ]]; then
-        echo cursor
-      elif [[ "$antigravity_enabled" == "true" && "$has_gemini" -eq 1 ]]; then
-        echo antigravity
-      elif [[ "$has_gemini" -eq 1 ]]; then
-        echo gemini
-      else
-        echo ""
-      fi
-      ;;
-    *)
-      echo "::error::Unknown ADVISORY_REVIEW_PROVIDER=${want} (use auto, cursor, antigravity, or gemini)"
-      exit 1
-      ;;
-  esac
-}
-
-PROVIDER="$(pick_provider)"
+# shellcheck disable=SC1091
+source "$LIB_DIR/pick-advisory-provider.sh"
+# shellcheck disable=SC1091
+source "$LIB_DIR/invoke-advisory-llm.sh"
+has_opencode=0 has_cursor=0 has_gemini=0
+init_advisory_provider_credentials
+PROVIDER="$(pick_advisory_provider advisory)"
 if [[ -z "$PROVIDER" ]]; then
-  echo "::error::No advisory review provider configured. Set CURSOR_API_KEY and/or GEMINI_API_KEY (or GOOGLE_API_KEY)."
+  echo "::error::No advisory review provider configured. Configure OpenCode, Cursor, or Gemini credentials."
   exit 1
 fi
 
 case "$PROVIDER" in
+  opencode)
+    [[ "$has_opencode" -eq 1 ]] || {
+      echo "::error::ADVISORY_REVIEW_PROVIDER=opencode requires the OpenCode runtime, model credentials, and OPENCODE_GITHUB_TOKEN"
+      exit 1
+    }
+    ;;
   cursor)
     [[ "$has_cursor" -eq 1 ]] || {
       echo "::error::ADVISORY_REVIEW_PROVIDER=cursor but CURSOR_API_KEY is unset"
@@ -253,29 +230,9 @@ case "$PROVIDER" in
 esac
 
 out_file="$WORKDIR/advisory-body.md"
-run_gemini() {
-  python3 "$SCRIPT_DIR/run-advisory-gemini.py" "$prompt_file" "$out_file"
-}
-
-case "$PROVIDER" in
-  cursor)
-    # shellcheck source=../lib/cursor-sdk-version.sh
-    source "$LIB_DIR/cursor-sdk-version.sh"
-    npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
-    node "$SCRIPT_DIR/run-advisory-cursor.mjs" "$prompt_file" "$out_file"
-    ;;
-  gemini)
-    run_gemini
-    ;;
-  antigravity)
-    echo "Antigravity: full_diff_bytes=${full_diff_bytes}" >&2
-    if ! python3 "$SCRIPT_DIR/run-advisory-antigravity.py" "$REPO_ROOT" "$WORKDIR" "$out_file"; then
-      echo "::warning::Antigravity advisory review failed; falling back to Gemini generateContent"
-      PROVIDER="gemini"
-      run_gemini
-    fi
-    ;;
-esac
+ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
+  invoke_advisory_llm "$prompt_file" "$out_file" "$PROVIDER" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+PROVIDER="${ADVISORY_PROVIDER_USED:-$PROVIDER}"
 
 if [[ "$PROVIDER" == "antigravity" ]]; then
   diff_coverage_line="Diff coverage: \`${full_diff_bytes}/${full_diff_bytes}\` bytes via antigravity sources; prompt excerpt truncated: \`${truncated_word}\`"

@@ -38,11 +38,11 @@ teardown() {
 
 @test "batch fix writes cadence-neutral verification stubs" {
   run batch_fix_write_verify_stub \
-    "$TEST_ROOT/verify.json" weekly run_week 2026-W24 "$TEST_ROOT/batch.json"
+    "$TEST_ROOT/nested/verify.json" weekly run_week 2026-W24 "$TEST_ROOT/batch.json"
 
   [ "$status" -eq 0 ]
   run jq -e '.run_kind == "weekly" and .run_week == "2026-W24" and .findings[0].dedupe_key == "key-a"' \
-    "$TEST_ROOT/verify.json"
+    "$TEST_ROOT/nested/verify.json"
   [ "$status" -eq 0 ]
 }
 

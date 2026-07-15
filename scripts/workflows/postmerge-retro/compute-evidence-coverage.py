@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -14,6 +15,7 @@ DEFAULT_HEAD_TOTAL_CAP = 120_000
 
 EVIDENCE_ROUTES = (
     "bounded",
+    "full-evidence-opencode",
     "full-evidence-cursor",
     "full-evidence-antigravity",
     "bounded-fallback",
@@ -49,17 +51,30 @@ def _resolve_provider() -> str:
         want = "auto"
     has_cursor = bool(os.environ.get("CURSOR_API_KEY"))
     has_gemini = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
+    has_opencode = _opencode_available()
+    if want == "opencode":
+        return "opencode"
     if want == "cursor":
         return "cursor"
     if want == "gemini":
         return "gemini"
     if want == "auto":
+        if has_opencode:
+            return "opencode"
         if has_cursor:
             return "cursor"
         if has_gemini:
             return "gemini"
         return "unknown"
     return want
+
+
+def _opencode_available() -> bool:
+    binary = os.environ.get("OPENCODE_BIN", "opencode")
+    has_binary = bool(shutil.which(binary))
+    has_model = bool(os.environ.get("OPENROUTER_API_KEY"))
+    has_github = bool(os.environ.get("OPENCODE_GITHUB_TOKEN"))
+    return has_binary and has_model and has_github
 
 
 def _antigravity_available() -> bool:
@@ -73,6 +88,7 @@ def _resolve_evidence_route(
     would_truncate: bool,
     adaptive_enabled: bool,
     provider: str,
+    opencode_available: bool,
     cursor_available: bool,
     antigravity_available: bool,
     antigravity_on_truncate: bool,
@@ -81,6 +97,8 @@ def _resolve_evidence_route(
         return "bounded"
     if not adaptive_enabled:
         return "bounded"
+    if provider == "opencode" and opencode_available:
+        return "full-evidence-opencode"
     if provider == "cursor" and cursor_available:
         return "full-evidence-cursor"
     if (
@@ -167,6 +185,7 @@ def compute_coverage(
     would_truncate = diff_truncated or head_truncated
 
     cursor_available = bool(os.environ.get("CURSOR_API_KEY"))
+    opencode_available = _opencode_available()
     antigravity_available = _antigravity_available()
     provider = _resolve_provider()
     adaptive_enabled = _truthy_env("POSTMERGE_RETRO_ADAPTIVE_EVIDENCE", default=True)
@@ -175,6 +194,7 @@ def compute_coverage(
     routing_context = {
         "adaptive_enabled": adaptive_enabled,
         "provider_resolved": provider,
+        "opencode_available": opencode_available,
         "cursor_available": cursor_available,
         "antigravity_available": antigravity_available,
         "antigravity_on_truncate": antigravity_on_truncate,
@@ -184,6 +204,7 @@ def compute_coverage(
         would_truncate=would_truncate,
         adaptive_enabled=adaptive_enabled,
         provider=provider,
+        opencode_available=opencode_available,
         cursor_available=cursor_available,
         antigravity_available=antigravity_available,
         antigravity_on_truncate=antigravity_on_truncate,
@@ -233,6 +254,8 @@ def emit_truncation_warnings(record: dict) -> None:
             reasons.append("adaptive disabled")
         elif provider == "cursor" and not ctx.get("cursor_available"):
             reasons.append("CURSOR_API_KEY unset")
+        elif provider == "opencode" and not ctx.get("opencode_available"):
+            reasons.append("OpenCode runtime or credentials unavailable")
         elif provider == "gemini":
             if not ctx.get("antigravity_available"):
                 reasons.append("antigravity unavailable")

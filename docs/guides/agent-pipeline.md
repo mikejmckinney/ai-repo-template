@@ -47,6 +47,43 @@ supersession, umbrella transport, and batch-fix publication under
 `scripts/workflows/lib/`. Their schemas, templates, markers, and evidence inputs
 remain cadence-specific.
 
+## OpenCode Runtime
+
+Advisory, daily, and weekly automation resolve `auto` in this order:
+
+1. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
+   `OPENROUTER_API_KEY` are available.
+2. Cursor.
+3. Antigravity where the cadence permits it.
+4. Gemini.
+
+OpenCode runs through `scripts/workflows/lib/run-opencode.mjs` using SDK v2
+sessions. The adapter validates model text against the cadence JSON Schema and
+sends one explicit corrective prompt when validation fails, then tries
+`openrouter/z-ai/glm-5.2@preset/default` and
+`openrouter/minimax/minimax-m3@preset/default` in order. Subscription-backed
+`openai/gpt-5.6-sol` remains available to interactive local OpenCode and
+`local-consensus`, not public CI. Fix calls go through
+`run-opencode-fix.sh`, which creates and discards one detached worktree per model
+and applies only a schema-valid attempt whose credential-free controller-side
+`./test.sh` run passes. The fix agent may edit but cannot invoke shell commands;
+this prevents editable repository scripts from reading inherited credentials.
+
+Workflows use GitHub-managed `ubuntu-latest`, configure Node 22, and run `npm ci`
+against `.github/agent-runtime/package-lock.json`. Review and fix profiles live
+beside that lockfile and are intentionally separate from interactive
+`.opencode/opencode.json`.
+
+The adapter does not use OpenCode 1.18.0's `format` field. That release ignores
+`retryCount` and can finish without invoking its synthetic structured-output
+tool. Adapter-owned validation keeps retries observable and leaves the existing
+cadence-specific validators as the final deterministic gate.
+
+GitHub's hosted MCP endpoint is read-only and locked down through request headers.
+Agents receive only the dedicated read-only token, while deterministic shell code
+retains all GitHub writes. The agent subprocess explicitly drops publisher and
+sandbox credentials.
+
 ## Local Consensus
 
 The OpenCode `local-consensus` skill is the sole opt-in multi-model path. Use it
@@ -93,6 +130,15 @@ Use `scripts/verify-pr.sh` to classify the diff and
 - `POSTMERGE_RETRO_PROVIDER` and `WEEKLY_REVIEW_PROVIDER` control retro providers.
 - `MAX_COPILOT_CONCURRENT` and `MAX_COPILOT_DAILY` bound monolithic assignment.
 - Provider model and context variables are documented inline in their workflows.
+## Required Secrets
+
+- `OPENCODE_GITHUB_TOKEN`: fine-grained token with read-only Metadata, Contents,
+  Pull requests, Issues, and Actions access to the target repository.
+- `OPENROUTER_API_KEY`: model credential for the ordered public-CI OpenCode cascade.
+- Existing `CURSOR_API_KEY`, `GEMINI_API_KEY`, and `GOOGLE_API_KEY` remain
+  optional rollback-provider credentials.
+- `CLAUDE_PAT` and `SANDBOX_BOOTSTRAP_TOKEN` remain deterministic publication or
+  sandbox credentials and are never forwarded to OpenCode.
 
 ## Retired Surfaces
 
