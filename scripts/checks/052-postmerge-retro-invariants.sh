@@ -387,8 +387,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     warn "postmerge-retro fixtures missing under $fixture_dir"
   fi
 
-  run_bats_check scripts/tests/postmerge-retro-batch.bats "postmerge-retro-batch.bats"
-
   if grep -q 'runtime auto-summarizes' AGENTS.md 2>/dev/null \
     && grep -q 'agent-state:v1' AGENTS.md 2>/dev/null \
     && ! grep -q 'Session handshake' AGENTS.md 2>/dev/null; then

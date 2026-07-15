@@ -17,6 +17,10 @@ Numbered verification modules sourced by `test.sh` (issue #255 Phase 4d).
    checks and increments the shared counters via `pass`/`fail`/`warn`.
 4. Prints the aggregate `Passed/Warnings/Failed` summary and exits.
 
+Focused behavioral tests are intentionally separate. Run
+`bats --jobs 4 scripts/tests/` in addition to `./test.sh`; check modules do not
+invoke Bats themselves.
+
 Modules expect:
 
 - CWD == repo root (orchestrator guarantees this).
@@ -56,8 +60,6 @@ Numbers leave room for insertion: increments of 5 (010-, 015-, 020-,
 
 ## History
 
-Pre-Phase-4d, `test.sh` was a 1,720-line monolith with all of these
-checks inlined. Phase 4d split each `# --- <Section> ---` block into a
-separate module. The split is shape-preserving — every assertion that
-existed before the split exists after, in the same order, with the same
-output bytes. `bash test.sh` still reports `365 / 1 / 0`.
+Pre-Phase-4d, `test.sh` was a 1,720-line monolith. Phase 4d split its
+structural and invariant assertions into modules. Issue #483 later removed
+presence inventories, weak lint approximations, and duplicate Bats execution.
