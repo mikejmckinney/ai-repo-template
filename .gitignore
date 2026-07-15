@@ -28,6 +28,7 @@
 .artifacts/
 .context/context-imports/
 .context/session-recovery/
+scripts/benchmark/
 .env
 .env.*
 !.env.example

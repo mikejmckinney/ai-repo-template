@@ -33,7 +33,7 @@ Run `bash install.sh` only when testing the Codespaces bootstrap/install surface
 |---|---|
 | `AGENTS.md` | Always-loaded operating contract |
 | `README.md` | Human-facing overview and setup |
-| `.context/` | Current project state, roadmap, benchmarks, and design context |
+| `.context/` | Current project state, roadmap, benchmark results, and design context |
 | `docs/decisions/` | Durable architecture decisions; ADR-031 owns the execution model |
 | `docs/guides/agent-pipeline.md` | Active workflow and trigger behavior |
 | `.github/prompts/shared-review-lenses.md` | Canonical criteria for advisory and retro review |

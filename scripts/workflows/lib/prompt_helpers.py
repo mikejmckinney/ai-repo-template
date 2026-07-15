@@ -21,7 +21,6 @@ PR_REVIEW_MINIMUM = ["AGENTS.md", REVIEW_LENSES, ".github/pull_request_template.
 PATH_TRIGGERED: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"^\.github/workflows/"), "docs/guides/agent-pipeline.md"),
     (re.compile(r"^docs/decisions/"), "docs/decisions/adr-template.md"),
-    (re.compile(r"^\.context/benchmarks/"), ".context/benchmarks/model-roi/README.md"),
 ]
 
 

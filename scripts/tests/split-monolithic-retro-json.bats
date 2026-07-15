@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# Benchmark execution helpers (#447).
+# Production monolithic-retro result splitting.
 
 setup() {
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"

@@ -21,10 +21,9 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ```text
 .context/
 |-- 00_INDEX.md          # This file - start here (The Map)
-|-- benchmarks/          # Durable benchmark protocols, schemas, and grading templates
-|   `-- model-roi/       # Issue #374 model ROI benchmark apparatus
-|       |-- results/     # Scored agent ROI benchmark records and cost source register
-|       `-- tasks/       # Candidate-safe task injections + sealed reference metadata
+|-- benchmarks/          # Durable benchmark decision evidence
+|   |-- model-roi/results/agent-roi-benchmark-results.md
+|   `-- retro-execution-447/RESULTS.md
 |-- roadmap.md           # Template-development phases and current hardening track
 |-- sessions/            # Durable retrospectives and feedback records
 |   |-- feedback_template.md # Stakeholder feedback capture template
@@ -64,7 +63,8 @@ advisory review, recurring retro, and opt-in local consensus. See ADR-031.
 
 - Shared advisory/daily/weekly review lenses and workflow scaffolding.
 - The always-loaded operating contract in `AGENTS.md` and reference diagrams under `.context/vision/architecture/`.
-- Durable benchmark protocols and grading templates under `.context/benchmarks/`.
+- Canonical benchmark decision evidence under `.context/benchmarks/`; evaluation
+  apparatus lives on `benchmark/roi`.
 - GitHub prompts, issue/PR templates, and workflow scaffolding under `.github/`.
 - Bootstrap and verification helpers under `install.sh`, `test.sh`, and `scripts/**`.
 

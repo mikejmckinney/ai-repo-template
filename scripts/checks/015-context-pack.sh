@@ -8,7 +8,6 @@ echo "Checking context pack structure..."
 
 CONTEXT_FILES=(
   ".context/00_INDEX.md"
-  ".context/benchmarks/model-roi/result.schema.json"
   ".context/roadmap.md"
   ".context/sessions/README.md"
   ".context/sessions/latest_summary.md"
@@ -29,7 +28,8 @@ done
 # Check context directories exist
 CONTEXT_DIRS=(
   ".context/benchmarks"
-  ".context/benchmarks/model-roi"
+  ".context/benchmarks/model-roi/results"
+  ".context/benchmarks/retro-execution-447"
   ".context/sessions"
   ".context/state"
   ".context/vision/mockups"

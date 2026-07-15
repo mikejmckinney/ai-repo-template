@@ -28,8 +28,6 @@ shopt -s nullglob
 SYNTAX_CHECK_GLOBS=(
   ./*.sh
   scripts/*.sh
-  scripts/benchmark/*.sh
-  scripts/benchmark/adapters/*.sh
   scripts/checks/*.sh
   scripts/lib/*.sh
   scripts/setup/*.sh

@@ -2,6 +2,16 @@
 
 Issues: #374, #376
 
+Evidence locations:
+
+- Maintained evaluation lab: [`benchmark/roi`](https://github.com/mikejmckinney/ai-repo-template/tree/benchmark/roi)
+- Completed harness snapshot: [`8c296458`](https://github.com/mikejmckinney/ai-repo-template/tree/8c2964583af04b3352561410e22511304001ec21)
+- Locked Phase A artifacts: [`benchmark/phase-a-artifacts-20260608`](https://github.com/mikejmckinney/ai-repo-template/tree/benchmark/phase-a-artifacts-20260608)
+
+Apparatus paths cited below resolve against the pinned completed-harness snapshot
+unless another commit or tag is named. Only this canonical result record remains
+on `main`.
+
 Status: blind scores locked for the completed benchmark sessions; sealed alias
 mapping and cost addenda appended. This record covers monolithic Stage 1,
 extended Stage 1, Stage 1C context injection, Stage 1D duo planner/implementer,
@@ -10,7 +20,8 @@ issue #376 orchestration pipeline runs, and Stage 1E targeted context-pack scree
 those stages. Published **Canonical | Objective | Subjective** columns in this file
 are the operator source of truth on `main`. Subjective JSON fixtures used to
 compile those columns are preserved on git tag `benchmark/phase-a-artifacts-20260608`
-(not merged to `main`; see runbook § "Branch and fixture retention").
+(not merged to `main`; see the
+[`8c296458` runbook](https://github.com/mikejmckinney/ai-repo-template/blob/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/benchmark-runbook.md)).
 
 This file supersedes the earlier local `grading-scores-blind.tsv` `score_10` shorthand files. Those
 10-point scores were evaluator notes from blind diff review, not the official #374 weighted scoring
@@ -631,18 +642,18 @@ Stage 1E compares five **context conditions** per task class. Each row in the
 tables below sets `CONTEXT_VARIANT` on the harness; pack rows inject the listed
 files into the worktree's `AGENTS.md` for the run only (skip-worktree restore
 before diff capture). Manifests live under
-[`.context/benchmarks/model-roi/context-packs/`](../context-packs/).
+[`context-packs/`](https://github.com/mikejmckinney/ai-repo-template/tree/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/context-packs).
 
 | Context variant | CP-1 Class A | CP-1 Class B | Pack files | Pack bytes (typ.) | What it adds |
 |---|---|---|---|---:|---|
 | `baseline` | yes | yes | 0 | 0 | **No injection.** Frozen-base `AGENTS.md` only — lazy-load / pointer-table discipline with no extra pack append. Control arm for token cost and scope. |
-| `pack:core-min` | yes | yes | 3 | ~28k | **Smallest targeted floor:** [`.context/00_INDEX.md`](../../../00_INDEX.md) (context map), [`.context/rules/agent_ownership.md`](../../../rules/agent_ownership.md) (path ownership), [`.context/sessions/latest_summary.md`](../../../sessions/latest_summary.md) (recent session lessons). Manifest: [`context-packs/core-min.tsv`](../context-packs/core-min.tsv). |
-| `pack:class-a-process` | yes | no | 6 | ~46k | **Class A process/doc arm:** `core-min` plus PR completion, doc-sync triggers, work-style/testing expectations, and opportunity-feedback channel — [process_pr_completion.md](../../../rules/process_pr_completion.md), [process_doc_maintenance.md](../../../rules/process_doc_maintenance.md), [process_work_style.md](../../../rules/process_work_style.md), [process_opportunity_feedback.md](../../../rules/process_opportunity_feedback.md). Manifest: [`context-packs/class-a-process.tsv`](../context-packs/class-a-process.tsv). |
-| `pack:class-b-implementation` | no | yes | 6 | ~50k | **Class B code/reasoning arm:** `core-min` plus code-quality floor (SOLID/TDD), work-style/testing, and doc-sync triggers — [domain_code_quality.md](../../../rules/domain_code_quality.md), [process_work_style.md](../../../rules/process_work_style.md), [process_doc_maintenance.md](../../../rules/process_doc_maintenance.md). Manifest: [`context-packs/class-b-implementation.tsv`](../context-packs/class-b-implementation.tsv). |
+| `pack:core-min` | yes | yes | 3 | ~28k | **Smallest targeted floor:** context map, path ownership, and recent session lessons. Manifest: [`context-packs/core-min.tsv`](https://github.com/mikejmckinney/ai-repo-template/blob/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/context-packs/core-min.tsv). |
+| `pack:class-a-process` | yes | no | 6 | ~46k | **Class A process/doc arm:** `core-min` plus PR completion, doc-sync triggers, work-style/testing expectations, and opportunity-feedback. Manifest: [`context-packs/class-a-process.tsv`](https://github.com/mikejmckinney/ai-repo-template/blob/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/context-packs/class-a-process.tsv). |
+| `pack:class-b-implementation` | no | yes | 6 | ~50k | **Class B code/reasoning arm:** `core-min` plus code-quality, work-style/testing, and doc-sync guidance. Manifest: [`context-packs/class-b-implementation.tsv`](https://github.com/mikejmckinney/ai-repo-template/blob/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/context-packs/class-b-implementation.tsv). |
 | `full-rules-injected` | yes | yes | 14 / 16 | ~103k / ~143k | **Stage 1C-style full rule dump:** all `.context/rules/*.md` appended to `AGENTS.md` (14 rule files on Class A base, 16 on Class B base because the frozen bases differ). Upper-bound cost/quality comparison vs targeted packs — not a production default. |
 
 CP-1 did **not** screen `workflow-risk` or `adr-docs` packs (defined in
-[`context-packs/README.md`](../context-packs/README.md) for future stages).
+[`context-packs/README.md`](https://github.com/mikejmckinney/ai-repo-template/blob/8c2964583af04b3352561410e22511304001ec21/.context/benchmarks/model-roi/context-packs/README.md) for future stages).
 
 Per-row **Pack files** / **Pack bytes** in the score tables are measured at run
 time from the resolved manifest + injection metadata, not from this summary.
