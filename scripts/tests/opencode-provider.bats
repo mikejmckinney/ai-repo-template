@@ -197,6 +197,10 @@ EOF
     run grep -q 'OPENAI_API_KEY' "$file"
     [ "$status" -ne 0 ]
   done
+
+  run grep -q 'npm ci --prefix .github/agent-runtime' \
+    "$REPO_ROOT/.github/workflows/ci-tests.yml"
+  [ "$status" -eq 0 ]
 }
 
 @test "AP10 infrastructure ownership is synchronized across orchestration catalogs" {

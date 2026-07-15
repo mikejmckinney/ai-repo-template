@@ -126,6 +126,14 @@ jobs:
       - name: Install test dependencies
         run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel ripgrep
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install OpenCode test dependencies
+        run: npm ci --prefix .github/agent-runtime
+
       - name: Run bats suite (issue #255 Phase 4b)
         id: bats
         continue-on-error: true
