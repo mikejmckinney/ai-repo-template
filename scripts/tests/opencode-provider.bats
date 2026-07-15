@@ -163,6 +163,18 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "CI configs override merged interactive providers and MCP servers" {
+  for profile in review fix; do
+    run jq -s -e '
+      .[0] as $interactive |
+      .[1] as $ci |
+      $ci.small_model == "openrouter/z-ai/glm-5.2@preset/default" and
+      all($interactive.mcp | keys[]; $ci.mcp[.].enabled == false)
+    ' "$REPO_ROOT/.opencode/opencode.json" "$REPO_ROOT/.github/agent-runtime/$profile.json"
+    [ "$status" -eq 0 ]
+  done
+}
+
 @test "workflows install the locked OpenCode runtime on GitHub-hosted Ubuntu" {
   for workflow in agent-advisory-review agent-postmerge-retro agent-weekly-review; do
     file="$REPO_ROOT/.github/workflows/${workflow}.yml"

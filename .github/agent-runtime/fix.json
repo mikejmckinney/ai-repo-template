@@ -6,6 +6,7 @@
   "formatter": false,
   "lsp": false,
   "enabled_providers": ["openrouter"],
+  "small_model": "openrouter/z-ai/glm-5.2@preset/default",
   "permission": {
     "*": "deny",
     "read": "allow",
@@ -21,6 +22,31 @@
     "github_read_*": "allow"
   },
   "mcp": {
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": false
+    },
+    "open-design": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "shadcn": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
     "github_read": {
       "type": "remote",
       "url": "https://api.githubcopilot.com/mcp/",
