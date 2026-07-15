@@ -58,7 +58,9 @@ payload = {
     },
     "test_sh": "unknown",
 }
-Path(output).write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+output_path = Path(output)
+output_path.parent.mkdir(parents=True, exist_ok=True)
+output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 PY
 }
 
