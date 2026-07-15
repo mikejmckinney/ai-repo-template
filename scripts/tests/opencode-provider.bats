@@ -55,13 +55,14 @@ export async function createOpencode(options) {
     client: {
       session: {
         create: async () => ({ data: { id: "session-test" } }),
-        prompt: async ({ body }) => {
-          if (body.format?.retryCount !== 1) throw new Error("retryCount must be 1")
-          const model = `${body.model.providerID}/${body.model.modelID}`
+        prompt: async (parameters) => {
+          if (!parameters.sessionID) throw new Error("sessionID must be flattened")
+          if (parameters.format?.retryCount !== 1) throw new Error("retryCount must be 1")
+          const model = `${parameters.model.providerID}/${parameters.model.modelID}`
           if (model === process.env.MOCK_FAIL_MODEL) {
-            return { data: { info: { modelID: body.model.modelID, error: { name: "StructuredOutputError", data: { message: `invalid ${process.env.OPENAI_API_KEY}`, retries: 1 } } } } }
+            return { data: { info: { modelID: parameters.model.modelID, error: { name: "StructuredOutputError", data: { message: `invalid ${process.env.OPENAI_API_KEY}`, retries: 1 } } } } }
           }
-          return { data: { info: { modelID: body.model.modelID, structured: { output: `ok:${model}` } } } }
+          return { data: { info: { modelID: parameters.model.modelID, structured: { output: `ok:${model}` } } } }
         },
         delete: async () => ({ data: true }),
         abort: async () => ({ data: true })
@@ -102,12 +103,13 @@ export async function createOpencode() {
     client: {
       session: {
         create: async () => ({ data: { id: "session-test" } }),
-        prompt: async ({ body }) => {
-          const model = `${body.model.providerID}/${body.model.modelID}`
+        prompt: async (parameters) => {
+          if (!parameters.sessionID) throw new Error("sessionID must be flattened")
+          const model = `${parameters.model.providerID}/${parameters.model.modelID}`
           if (model === "openrouter/z-ai/glm-5.2@preset/default") {
             return { data: { info: { error: { name: "ModelError", data: {} } } } }
           }
-          return { data: { info: { modelID: body.model.modelID, structured: { output: `ok:${model}` } } } }
+          return { data: { info: { modelID: parameters.model.modelID, structured: { output: `ok:${model}` } } } }
         },
         delete: async () => ({ data: true })
       }

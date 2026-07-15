@@ -108,20 +108,16 @@ for (const requestedModel of models) {
     }
     const session = responseData(
       await opencode.client.session.create({
-        body: {
-          title: `workflow:${process.env.GITHUB_WORKFLOW || "local"}:${process.env.GITHUB_RUN_ID || "none"}`,
-        },
+        title: `workflow:${process.env.GITHUB_WORKFLOW || "local"}:${process.env.GITHUB_RUN_ID || "none"}`,
       }),
     )
     sessionID = session.id
     const result = responseData(
       await opencode.client.session.prompt({
-        path: { sessionID },
-        body: {
-          model: modelRef(requestedModel),
-          parts: [{ type: "text", text: prompt }],
-          format: { type: "json_schema", schema, retryCount: 1 },
-        },
+        sessionID,
+        model: modelRef(requestedModel),
+        parts: [{ type: "text", text: prompt }],
+        format: { type: "json_schema", schema, retryCount: 1 },
       }),
     )
     if (result.info?.error) {
@@ -150,7 +146,9 @@ for (const requestedModel of models) {
   } finally {
     clearTimeout(timer)
     if (sessionID && opencode?.client?.session) {
-      await opencode.client.session.delete({ path: { sessionID } }).catch(() => {})
+      await opencode.client.session.delete({ sessionID }).catch((error) => {
+        console.error(`OpenCode: session_cleanup_failed error=${redacted(error.message)}`)
+      })
     }
     opencode?.server?.close()
   }
