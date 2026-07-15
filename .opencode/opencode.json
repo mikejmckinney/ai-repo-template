@@ -14,7 +14,7 @@
       "enabled": true,
       "oauth": false,
       "headers": {
-        "Authorization": "Bearer {env:OPENCODE_GITHUB_TOKEN}"
+        "Authorization": "Bearer {env:GH_PAT}"
       }
     },
     "open-design": {
