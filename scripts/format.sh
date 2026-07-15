@@ -24,7 +24,10 @@ for file in "$@"; do
   case "$file" in
     *.sh) shell_files+=("$file") ;;
     *.md) markdown_files+=("$file") ;;
-    *) echo "format: unsupported file type: $file" >&2; exit 1 ;;
+    *)
+      echo "format: unsupported file type: $file" >&2
+      exit 1
+      ;;
   esac
 done
 
