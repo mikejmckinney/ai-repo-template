@@ -73,9 +73,12 @@ export async function createOpencode(options) {
 
 EOF
   printf 'review this' >"$tmp/prompt.md"
+  mkdir -p "$tmp/log"
+  printf 'provider diagnostic includes %s\n' 'secret-test-value' >"$tmp/log/2026-07-15T011800.log"
 
   run env \
     OPENCODE_SDK_MODULE="$tmp/mock-sdk.mjs" \
+    OPENCODE_LOG_DIR="$tmp/log" \
     OPENCODE_MODELS="openai/gpt-5.6-sol,openrouter/z-ai/glm-5.2@preset/default" \
     MOCK_FAIL_MODEL="openai/gpt-5.6-sol" \
     OPENAI_API_KEY="secret-test-value" \
@@ -86,6 +89,7 @@ EOF
   [ "$(cat "$tmp/output.txt")" = "ok:openrouter/z-ai/glm-5.2@preset/default" ]
   [[ "$output" == *'requested_model=openai/gpt-5.6-sol'* ]]
   [[ "$output" == *'requested_model=openrouter/z-ai/glm-5.2@preset/default'* ]]
+  [[ "$output" == *'provider diagnostic includes [REDACTED]'* ]]
   [[ "$output" != *'secret-test-value'* ]]
   rm -rf "$tmp"
 }

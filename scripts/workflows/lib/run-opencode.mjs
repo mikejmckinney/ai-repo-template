@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { readFile, writeFile } from "node:fs/promises"
+import { readFile, readdir, writeFile } from "node:fs/promises"
+import { homedir } from "node:os"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 
@@ -60,6 +61,22 @@ function redacted(message) {
     if (value && value.length >= 8) result = result.replaceAll(value, "[REDACTED]")
   }
   return result
+}
+
+async function latestServerLog() {
+  const logDir = process.env.OPENCODE_LOG_DIR || path.join(homedir(), ".local/share/opencode/log")
+  try {
+    const files = (await readdir(logDir, { withFileTypes: true }))
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .sort()
+    const latest = files.at(-1)
+    if (!latest) return ""
+    return redacted((await readFile(path.join(logDir, latest), "utf8")).slice(-12000))
+  } catch (error) {
+    if (error.code === "ENOENT") return ""
+    return `diagnostic_log_unavailable error=${redacted(error.message)}`
+  }
 }
 
 function modelRef(model) {
@@ -128,6 +145,8 @@ for (const requestedModel of models) {
   } catch (error) {
     lastError = error
     console.error(`OpenCode: model_failed=${requestedModel} error=${redacted(error.message)}`)
+    const serverLog = await latestServerLog()
+    if (serverLog) console.error(`OpenCode: server_log_tail\n${serverLog}`)
   } finally {
     clearTimeout(timer)
     if (sessionID && opencode?.client?.session) {
