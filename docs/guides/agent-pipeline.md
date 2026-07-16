@@ -94,7 +94,9 @@ ignored `.artifacts/` so the read-only OpenCode profile can inspect it without
 external-directory permission. The review profile allows 24 agent steps for
 repository and GitHub reads. Full-evidence OpenCode runs persist a sanitized
 retrieval trace and fail provider validation unless observed reads cover the
-complete diff, local evidence inventory, startup context, and touched HEAD paths.
+complete diff, local evidence inventory, non-auto-loaded startup context, and
+touched HEAD paths. OpenCode's system loader supplies the root `AGENTS.md`, so a
+redundant tool read is not required for that file.
 
 With `auto`, analysis attempts available providers in OpenCode, Cursor, then
 Gemini order. A provider transport, empty-result, or validation failure advances

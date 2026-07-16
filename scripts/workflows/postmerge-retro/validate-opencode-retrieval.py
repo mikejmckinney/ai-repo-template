@@ -17,6 +17,7 @@ EVIDENCE_FILES = (
     "advisory-comments.md",
     "prior-inbox.md",
 )
+AUTO_LOADED_CONTEXT = {"AGENTS.md"}
 
 
 def listed_paths(path: Path) -> list[str]:
@@ -57,6 +58,9 @@ def main() -> int:
 
     required = {workdir / name for name in EVIDENCE_FILES if (workdir / name).is_file()}
     for rel in listed_paths(workdir / "context-files.txt"):
+        # OpenCode injects the root AGENTS.md through Instruction.system().
+        if rel in AUTO_LOADED_CONTEXT:
+            continue
         target = repo_root / rel
         if target.is_file():
             required.add(target.resolve())
