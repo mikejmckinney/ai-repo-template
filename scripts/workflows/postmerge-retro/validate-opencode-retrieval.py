@@ -14,6 +14,7 @@ EVIDENCE_FILES = (
     "changed-files.txt",
     "reviews.json",
     "review-comments.json",
+    "checks.json",
     "advisory-comments.md",
     "prior-inbox.md",
 )

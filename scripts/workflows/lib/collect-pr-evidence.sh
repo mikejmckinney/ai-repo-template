@@ -40,6 +40,19 @@ paginate_to_array "repos/${REPO}/pulls/${PR}/reviews" "$OUT_DIR/reviews.json"
 paginate_to_array "repos/${REPO}/pulls/${PR}/comments" "$OUT_DIR/review-comments.json"
 paginate_to_array "repos/${REPO}/pulls/${PR}/files" "$OUT_DIR/changed-files.json"
 
+checks_endpoint="repos/${REPO}/commits/${head_sha}/check-runs?per_page=100&filter=all"
+if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+  checks_json="$(GH_TOKEN="$GITHUB_TOKEN" gh api "$checks_endpoint" 2>/dev/null)" || checks_json=""
+else
+  checks_json="$(gh api "$checks_endpoint" 2>/dev/null)" || checks_json=""
+fi
+if [[ -n "$checks_json" ]]; then
+  printf '%s\n' "$checks_json" >"$OUT_DIR/checks.json"
+else
+  echo '{"total_count":0,"check_runs":[],"collection_error":"unavailable"}' >"$OUT_DIR/checks.json"
+  echo "::warning::Check-run collection unavailable for PR #${PR} head ${head_sha}" >&2
+fi
+
 git fetch origin "$head_sha" "$base_sha" 2>/dev/null || true
 git diff "${base_sha}...${head_sha}" >"$OUT_DIR/diff.patch" 2>/dev/null || : >"$OUT_DIR/diff.patch"
 
@@ -85,6 +98,7 @@ Base SHA: ${base_sha}
 Issue comments: $(jq 'length' "$OUT_DIR/comments.json")
 Formal reviews: $(jq 'length' "$OUT_DIR/reviews.json")
 Inline review comments: $(jq 'length' "$OUT_DIR/review-comments.json")
+Check runs: $(jq '.total_count // (.check_runs | length) // 0' "$OUT_DIR/checks.json")
 Changed files: $(wc -l <"$OUT_DIR/changed-files.txt" | tr -d ' ')
 Diff bytes: $(wc -c <"$OUT_DIR/diff.patch" | tr -d ' ')
 EOF

@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 # Post-merge retro batch improvements (#446) unit tests.
 
+bats_require_minimum_version 1.5.0
+
 setup() {
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
   cd "$REPO_ROOT"
@@ -741,6 +743,51 @@ EOF
   [[ "$(cat "$tmp/prompt.md")" == *"context-files.txt"* ]]
   [[ "$(cat "$tmp/prompt.md")" == *"$tmp/evidence/diff.patch"* ]]
   [[ "$(cat "$tmp/prompt.md")" == *'"evidence_complete": true'* ]]
+  rm -rf "$tmp"
+}
+
+@test "post-merge collector supplies check runs with the workflow token" {
+  run python3 - <<'PY'
+from pathlib import Path
+
+collector = Path("scripts/workflows/lib/collect-pr-evidence.sh").read_text(encoding="utf-8")
+workflow = Path(".github/workflows/agent-postmerge-retro.yml").read_text(encoding="utf-8")
+prompt = Path("scripts/workflows/postmerge-retro/assemble-retro-prompt.sh").read_text(encoding="utf-8")
+validator = Path("scripts/workflows/postmerge-retro/validate-opencode-retrieval.py").read_text(encoding="utf-8")
+
+assert 'commits/${head_sha}/check-runs' in collector
+assert 'GH_TOKEN="$GITHUB_TOKEN"' in collector
+assert "checks: read" in workflow
+assert "checks.json" in prompt
+assert '"checks.json"' in validator
+PY
+
+  [ "$status" -eq 0 ]
+}
+
+@test "full-evidence HEAD warning identifies only the bounded snapshot limit" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/coverage.json" <<'EOF'
+{
+  "pr": 131,
+  "diff_included": 1,
+  "diff_total": 1,
+  "head_included": 50008,
+  "head_total": 69796,
+  "would_truncate": true,
+  "diff_truncated": false,
+  "head_truncated": true,
+  "omitted_head_paths": ["scripts/tests/opencode-provider.bats"],
+  "evidence_route": "full-evidence-opencode"
+}
+EOF
+
+  run --separate-stderr python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
+    --warn-record "$tmp/coverage.json"
+
+  [ "$status" -eq 0 ]
+  [[ "$stderr" == *"bounded HEAD snapshot would truncate"* ]]
+  [[ "$stderr" == *"full-evidence-opencode retrieves full paths"* ]]
   rm -rf "$tmp"
 }
 

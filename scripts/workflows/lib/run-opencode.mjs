@@ -121,6 +121,13 @@ function responseText(result) {
     .trim()
 }
 
+function hasDerivedPriority(value) {
+  if (Array.isArray(value)) return value.some(hasDerivedPriority)
+  if (!value || typeof value !== "object") return false
+  if (Object.hasOwn(value, "priority_band")) return true
+  return Object.values(value).some(hasDerivedPriority)
+}
+
 function validatedOutput(result) {
   if (result.info?.error) {
     throw new Error(`${result.info.error.name}: ${JSON.stringify(result.info.error.data || {})}`)
@@ -135,6 +142,9 @@ function validatedOutput(result) {
     parsed = JSON.parse(candidate)
   } catch (error) {
     return { error: `invalid JSON: ${error.message}` }
+  }
+  if (hasDerivedPriority(parsed)) {
+    return { error: "priority_band is derived by automation; do not emit it" }
   }
   if (!validate(parsed)) {
     return { error: `schema validation failed: ${JSON.stringify(validate.errors)}` }

@@ -214,6 +214,67 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "OpenCode runner corrects model-authored priority bands" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/mock-sdk.mjs" <<'EOF'
+import { appendFileSync, readFileSync } from "node:fs"
+
+export async function createOpencode() {
+  return {
+    client: {
+      session: {
+        create: async () => ({ data: { id: "session-test" } }),
+        prompt: async (parameters) => {
+          appendFileSync(process.env.ATTEMPT_LOG, "attempt\n")
+          const attempts = readFileSync(process.env.ATTEMPT_LOG, "utf8").trim().split("\n").length
+          const issue = {
+            title: "Finding",
+            body: "Body",
+            dedupe_key: "finding",
+            repro_steps: ["Reproduce"],
+            impact: "incorrect-behavior",
+            trigger_likelihood: "common",
+            fix_cost: "trivial",
+            ...(attempts === 1 ? { priority_band: "fix-now" } : {})
+          }
+          return {
+            data: {
+              info: { modelID: parameters.model.modelID },
+              parts: [{
+                type: "text",
+                text: JSON.stringify({
+                  pr: 1,
+                  summary: "Summary",
+                  evidence_complete: true,
+                  follow_up_issues: [issue]
+                })
+              }]
+            }
+          }
+        },
+        delete: async () => ({ data: true })
+      }
+    },
+    server: { close() {} }
+  }
+}
+EOF
+  printf 'review this' >"$tmp/prompt.md"
+
+  run env \
+    OPENCODE_SDK_MODULE="$tmp/mock-sdk.mjs" \
+    OPENCODE_MODELS="openrouter/test-model" \
+    ATTEMPT_LOG="$tmp/attempts.log" \
+    node "$REPO_ROOT/scripts/workflows/lib/run-opencode.mjs" \
+    "$tmp/prompt.md" "$tmp/output.json" \
+    "$REPO_ROOT/.github/schemas/postmerge-retro.schema.json"
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$tmp/attempts.log" | tr -d ' ')" -eq 2 ]
+  [ "$(jq 'any(.follow_up_issues[]; has("priority_band"))' "$tmp/output.json")" = false ]
+  rm -rf "$tmp"
+}
+
 @test "CI configs enforce hosted read-only GitHub MCP and separate review from fix tools" {
   run jq -e '
     .autoupdate == false and

@@ -176,7 +176,7 @@ done
   if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
     echo "### Required evidence inventory"
     echo ""
-    for evidence_file in diff.patch pr.json summary.txt changed-files.txt reviews.json review-comments.json advisory-comments.md prior-inbox.md; do
+    for evidence_file in diff.patch pr.json summary.txt changed-files.txt reviews.json review-comments.json checks.json advisory-comments.md prior-inbox.md; do
       if [[ -f "$WORKDIR/$evidence_file" ]]; then
         evidence_size="$(wc -c <"$WORKDIR/$evidence_file" | tr -d ' ')"
         # shellcheck disable=SC2016 # Backticks are Markdown delimiters.
@@ -184,7 +184,7 @@ done
       fi
     done
     echo ""
-    echo "Read every listed evidence source. Use read-only GitHub tools to confirm PR discussion, reviews, and checks when the local inventory is incomplete."
+    echo "Read every listed evidence source. The deterministic collector supplies check runs in checks.json using the workflow token; use read-only GitHub tools only to close remaining inventory gaps."
     echo ""
   else
     echo "### Collection summary"
