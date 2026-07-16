@@ -3,7 +3,7 @@
   "$id": "https://github.com/mikejmckinney/ai-repo-template/.github/schemas/postmerge-retro.schema.json",
   "title": "Post-merge retrospective output",
   "type": "object",
-  "required": ["pr", "summary", "follow_up_issues"],
+  "required": ["pr", "summary", "evidence_complete", "follow_up_issues"],
   "additionalProperties": true,
   "properties": {
     "pr": {
@@ -12,6 +12,10 @@
     },
     "summary": {
       "type": "string"
+    },
+    "evidence_complete": {
+      "const": true,
+      "description": "True only after every required full-evidence source has been read."
     },
     "follow_up_issues": {
       "type": "array",

@@ -149,9 +149,13 @@ retro_json="$WORKDIR/retro.json"
 candidate_json="$WORKDIR/retro-candidate.json"
 
 validate_provider_output() {
+  local -a validation_args=()
   rm -f "$candidate_json"
+  if [[ "$route" == full-evidence-* ]]; then
+    validation_args+=(--require-evidence-complete)
+  fi
   python3 "$SCRIPT_DIR/extract-retro-json.py" "$llm_raw" "$PR" "$candidate_json" \
-    && python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "$candidate_json"
+    && python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "${validation_args[@]}" "$candidate_json"
 }
 
 for provider in "${provider_candidates[@]}"; do

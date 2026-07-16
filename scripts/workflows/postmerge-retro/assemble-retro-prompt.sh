@@ -176,7 +176,7 @@ done
   if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
     echo "### Required evidence inventory"
     echo ""
-    for evidence_file in pr.json summary.txt changed-files.txt reviews.json review-comments.json advisory-comments.md prior-inbox.md; do
+    for evidence_file in diff.patch pr.json summary.txt changed-files.txt reviews.json review-comments.json advisory-comments.md prior-inbox.md; do
       if [[ -f "$WORKDIR/$evidence_file" ]]; then
         evidence_size="$(wc -c <"$WORKDIR/$evidence_file" | tr -d ' ')"
         # shellcheck disable=SC2016 # Backticks are Markdown delimiters.
@@ -297,4 +297,7 @@ done
   echo "## Output instruction (automation-supplied)"
   echo ""
   echo "Respond with **JSON only** matching the required shape. Set \`pr\` to ${PR}."
+  if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
+    echo "Set \`evidence_complete\` to \`true\` only after reading every required evidence source, the complete diff, and every PR-touched path on current \`main\` HEAD."
+  fi
 } >"$OUT_PROMPT"

@@ -226,7 +226,7 @@ EOF
       .[0] as $interactive |
       .[1] as $ci |
       $ci.small_model == "openrouter/z-ai/glm-5.2@preset/default" and
-      $ci.agent.build.steps == (if $profile == "review" then 12 else 4 end) and
+      $ci.agent.build.steps == (if $profile == "review" then 24 else 4 end) and
       all($interactive.mcp | keys[]; $ci.mcp[.].enabled == false)
     ' "$REPO_ROOT/.opencode/opencode.json" "$REPO_ROOT/.github/agent-runtime/$profile.json"
     [ "$status" -eq 0 ]

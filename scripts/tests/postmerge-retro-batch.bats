@@ -739,6 +739,27 @@ EOF
   [[ "$(cat "$tmp/prompt.md")" != *"### Diff (truncated excerpt)"* ]]
   [[ "$(cat "$tmp/prompt.md")" != *"FULL_EVIDENCE_MUST_NOT_INLINE_THIS_CONTENT"* ]]
   [[ "$(cat "$tmp/prompt.md")" == *"context-files.txt"* ]]
+  [[ "$(cat "$tmp/prompt.md")" == *"$tmp/evidence/diff.patch"* ]]
+  [[ "$(cat "$tmp/prompt.md")" == *'"evidence_complete": true'* ]]
+  rm -rf "$tmp"
+}
+
+@test "validate-postmerge-retro requires completion for full-evidence output" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/retro.json" <<'JSON'
+{
+  "pr": 1,
+  "summary": "Evidence retrieval stopped before the complete diff was read.",
+  "evidence_complete": false,
+  "follow_up_issues": []
+}
+JSON
+
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py \
+    --require-evidence-complete "$tmp/retro.json"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"evidence_complete must be true"* ]]
   rm -rf "$tmp"
 }
 
