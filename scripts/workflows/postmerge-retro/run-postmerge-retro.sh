@@ -37,12 +37,12 @@ ARTIFACT_DIR="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${PR
 mkdir -p "$WORK_ROOT"
 WORKDIR="$(mktemp -d "$WORK_ROOT/pr-${PR}.XXXXXX")"
 mkdir -p "$ARTIFACT_DIR"
-rm -f "$ARTIFACT_DIR"/{retro.json,evidence-coverage.json,llm-output.txt,pr.json,changed-files.txt}
+rm -f "$ARTIFACT_DIR"/{retro.json,evidence-coverage.json,llm-output.txt,pr.json,changed-files.txt,retrieval-trace.json}
 
 persist_artifacts() {
   local rc=$?
   mkdir -p "$ARTIFACT_DIR"
-  for name in retro.json evidence-coverage.json llm-output.txt pr.json changed-files.txt; do
+  for name in retro.json evidence-coverage.json llm-output.txt pr.json changed-files.txt retrieval-trace.json; do
     [[ -f "$WORKDIR/$name" ]] && cp -f "$WORKDIR/$name" "$ARTIFACT_DIR/$name"
   done
   rm -rf "$WORKDIR"
@@ -122,6 +122,7 @@ run_full_evidence_provider() {
   case "$provider" in
     opencode)
       OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro.schema.json" \
+        OPENCODE_RETRIEVAL_TRACE_FILE="$WORKDIR/retrieval-trace.json" \
         invoke_advisory_llm \
         "$prompt_file" "$llm_raw" opencode "$REPO_ROOT/scripts/workflows/advisory-review" \
         "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
@@ -155,11 +156,16 @@ validate_provider_output() {
     validation_args+=(--require-evidence-complete)
   fi
   python3 "$SCRIPT_DIR/extract-retro-json.py" "$llm_raw" "$PR" "$candidate_json" \
-    && python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "${validation_args[@]}" "$candidate_json"
+    && python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "${validation_args[@]}" "$candidate_json" \
+    && {
+      [[ "$provider" != "opencode" || "$route" != full-evidence-* ]] \
+        || python3 "$SCRIPT_DIR/validate-opencode-retrieval.py" \
+          "$WORKDIR/retrieval-trace.json" "$WORKDIR" "$REPO_ROOT"
+    }
 }
 
 for provider in "${provider_candidates[@]}"; do
-  rm -f "$llm_raw"
+  rm -f "$llm_raw" "$WORKDIR/retrieval-trace.json"
   if [[ "$would_truncate" == "true" ]]; then
     case "$provider" in
       opencode) route=full-evidence-opencode ;;

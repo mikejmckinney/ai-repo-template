@@ -763,6 +763,44 @@ JSON
   rm -rf "$tmp"
 }
 
+@test "validate-opencode-retrieval requires every full-evidence source" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/repo/src" "$tmp/repo/.artifacts/work"
+  echo "diff" >"$tmp/repo/.artifacts/work/diff.patch"
+  echo "{}" >"$tmp/repo/.artifacts/work/pr.json"
+  echo "summary" >"$tmp/repo/.artifacts/work/summary.txt"
+  echo "src/app.py" >"$tmp/repo/.artifacts/work/changed-files.txt"
+  echo "README.md" >"$tmp/repo/.artifacts/work/context-files.txt"
+  echo "app" >"$tmp/repo/src/app.py"
+  echo "readme" >"$tmp/repo/README.md"
+  cat >"$tmp/repo/.artifacts/work/retrieval-trace.json" <<JSON
+{
+  "paths": [
+    "$tmp/repo/.artifacts/work/diff.patch",
+    "$tmp/repo/.artifacts/work/pr.json",
+    "$tmp/repo/.artifacts/work/summary.txt",
+    "$tmp/repo/.artifacts/work/changed-files.txt",
+    "src/app.py",
+    "README.md"
+  ]
+}
+JSON
+
+  run python3 scripts/workflows/postmerge-retro/validate-opencode-retrieval.py \
+    "$tmp/repo/.artifacts/work/retrieval-trace.json" \
+    "$tmp/repo/.artifacts/work" "$tmp/repo"
+  [ "$status" -eq 0 ]
+
+  jq 'del(.paths[0])' "$tmp/repo/.artifacts/work/retrieval-trace.json" \
+    >"$tmp/repo/.artifacts/work/incomplete-trace.json"
+  run python3 scripts/workflows/postmerge-retro/validate-opencode-retrieval.py \
+    "$tmp/repo/.artifacts/work/incomplete-trace.json" \
+    "$tmp/repo/.artifacts/work" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"diff.patch"* ]]
+  rm -rf "$tmp"
+}
+
 @test "run-postmerge-retro-antigravity rejects oversized payload" {
   tmp="$(mktemp -d)"
   mkdir -p "$tmp/repo/.github/prompts" "$tmp/workdir"

@@ -88,8 +88,10 @@ collector supplies repository/PR identity, merge and head SHAs, required source
 paths, byte counts, and coverage metadata; it does not preload full startup
 files or a capped diff into a tool-capable agent's prompt. Evidence lives under
 ignored `.artifacts/` so the read-only OpenCode profile can inspect it without
-external-directory permission. The review profile allows twelve agent steps for
-repository and GitHub reads.
+external-directory permission. The review profile allows 24 agent steps for
+repository and GitHub reads. Full-evidence OpenCode runs persist a sanitized
+retrieval trace and fail provider validation unless observed reads cover the
+complete diff, local evidence inventory, startup context, and touched HEAD paths.
 
 With `auto`, analysis attempts available providers in OpenCode, Cursor, then
 Gemini order. A provider transport, empty-result, or validation failure advances

@@ -74,6 +74,16 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "full-evidence OpenCode dispatch records and validates retrieval" {
+  run grep -q 'OPENCODE_RETRIEVAL_TRACE_FILE=' \
+    "$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro.sh"
+  [ "$status" -eq 0 ]
+
+  run grep -q 'validate-opencode-retrieval.py' \
+    "$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro.sh"
+  [ "$status" -eq 0 ]
+}
+
 @test "OpenCode lifecycle diagnostics records a terminating signal" {
   tmp="$(mktemp -d)"
   cat >"$tmp/mock-opencode" <<'EOF'
@@ -127,7 +137,11 @@ EOF
   printf 'review this' >"$tmp/prompt.md"
   printf '%s\n' '{"type":"object","properties":{"output":{"type":"string"}},"required":["output"],"additionalProperties":false}' >"$tmp/schema.json"
   mkdir -p "$tmp/log"
-  printf 'provider diagnostic includes %s\n' 'secret-test-value' >"$tmp/log/2026-07-15T011800.log"
+  {
+    printf 'provider diagnostic includes %s\n' 'secret-test-value'
+    printf 'timestamp=x message=evaluated permission=read pattern=%s/diff.patch action.permission=read action.action=allow\n' "$tmp"
+    printf 'timestamp=x message=evaluated permission=read pattern=README.md action.permission=read action.action=allow\n'
+  } >"$tmp/log/2026-07-15T011800.log"
 
   run env \
     OPENCODE_SDK_MODULE="$tmp/mock-sdk.mjs" \
@@ -135,6 +149,7 @@ EOF
     OPENCODE_MODELS="openai/gpt-5.6-sol,openrouter/z-ai/glm-5.2@preset/default" \
     MOCK_FAIL_MODEL="openai/gpt-5.6-sol" \
     ATTEMPT_LOG="$tmp/attempts.log" \
+    OPENCODE_RETRIEVAL_TRACE_FILE="$tmp/retrieval-trace.json" \
     OPENAI_API_KEY="secret-test-value" \
     node "$REPO_ROOT/scripts/workflows/lib/run-opencode.mjs" \
     "$tmp/prompt.md" "$tmp/output.txt" "$tmp/schema.json"
@@ -147,6 +162,7 @@ EOF
   [[ "$output" == *'requested_model=openrouter/z-ai/glm-5.2@preset/default'* ]]
   [[ "$output" == *'provider diagnostic includes [REDACTED]'* ]]
   [[ "$output" != *'secret-test-value'* ]]
+  [ "$(jq -r '.paths | join("|")' "$tmp/retrieval-trace.json")" = "$tmp/diff.patch|README.md" ]
   rm -rf "$tmp"
 }
 

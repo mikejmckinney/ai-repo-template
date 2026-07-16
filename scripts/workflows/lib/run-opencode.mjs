@@ -74,6 +74,34 @@ async function latestServerLog() {
   }
 }
 
+async function writeRetrievalTrace(sessionID) {
+  const outputPath = process.env.OPENCODE_RETRIEVAL_TRACE_FILE
+  if (!outputPath) return
+  const logDir = process.env.OPENCODE_LOG_DIR || path.join(homedir(), ".local/share/opencode/log")
+  let content = ""
+  try {
+    const files = (await readdir(logDir, { withFileTypes: true }))
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .sort()
+    const latest = files.at(-1)
+    if (latest) content = await readFile(path.join(logDir, latest), "utf8")
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.error(`OpenCode: retrieval_trace_unavailable error=${redacted(error.message)}`)
+    }
+  }
+
+  const paths = [...content.matchAll(/message=evaluated permission=read pattern=(.*?) action\.permission=read action\.action=allow/g)]
+    .map((match) => match[1].replace(/^"|"$/g, ""))
+  const uniquePaths = [...new Set(paths)]
+  await writeFile(
+    outputPath,
+    `${JSON.stringify({ session_id: sessionID, paths: uniquePaths }, null, 2)}\n`,
+  )
+  console.log(`OpenCode: retrieval_trace paths=${uniquePaths.length}`)
+}
+
 function modelRef(model) {
   const separator = model.indexOf("/")
   if (separator < 1) throw new Error(`Invalid OpenCode model: ${model}`)
@@ -164,6 +192,7 @@ for (const requestedModel of models) {
       `OpenCode: observed_model=${observedModel} requested_model=${requestedModel} ` +
       `input_tokens=${tokens.input ?? "unknown"} output_tokens=${tokens.output ?? "unknown"}`,
     )
+    await writeRetrievalTrace(sessionID)
     await writeFile(outputPath, checked.output)
     process.exitCode = 0
     lastError = undefined
