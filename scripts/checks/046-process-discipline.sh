@@ -63,4 +63,14 @@ else
   fail "session recovery does not require current issue/PR/live-state hydration"
 fi
 
+if grep -qF '### Post-compaction recovery gate' AGENTS.md \
+  && grep -qF 'session-recovery' AGENTS.md \
+  && grep -qF 'exact session ID' AGENTS.md \
+  && grep -qF 'post-compaction' AGENTS.md \
+  && grep -qF 'Do not treat the compaction summary alone as sufficient context' AGENTS.md; then
+  pass "AGENTS.md blocks post-compaction work until exact-session recovery"
+else
+  fail "AGENTS.md lacks the mandatory post-compaction recovery gate"
+fi
+
 echo ""

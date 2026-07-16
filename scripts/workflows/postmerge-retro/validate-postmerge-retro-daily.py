@@ -94,6 +94,18 @@ def _validate_evidence_coverage(item: dict, path: str) -> None:
         for i, entry in enumerate(omitted):
             if not isinstance(entry, str):
                 raise ValueError(f"{path}.omitted_head_paths[{i}] must be a string")
+    attempts = item.get("provider_attempts")
+    if attempts is not None:
+        if not isinstance(attempts, list):
+            raise ValueError(f"{path}.provider_attempts must be an array when present")
+        for i, attempt in enumerate(attempts):
+            if not isinstance(attempt, dict):
+                raise ValueError(f"{path}.provider_attempts[{i}] must be an object")
+            for key in ("provider", "status", "evidence_route"):
+                if not isinstance(attempt.get(key), str) or not attempt[key].strip():
+                    raise ValueError(f"{path}.provider_attempts[{i}].{key} must be a non-empty string")
+            if attempt["status"] not in ("success", "failed"):
+                raise ValueError(f"{path}.provider_attempts[{i}].status invalid")
 
 
 def _validate_with_schema(data: dict) -> None:
@@ -174,6 +186,23 @@ def main() -> int:
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 1
+
+    failed_prs = data.get("failed_prs")
+    if failed_prs is not None:
+        if not isinstance(failed_prs, list):
+            print("failed_prs must be an array when present", file=sys.stderr)
+            return 1
+        for i, item in enumerate(failed_prs):
+            if not isinstance(item, dict):
+                print(f"failed_prs[{i}] must be an object", file=sys.stderr)
+                return 1
+            if not isinstance(item.get("pr"), int) or item["pr"] < 1:
+                print(f"failed_prs[{i}].pr must be a positive integer", file=sys.stderr)
+                return 1
+            for key in ("stage", "reason"):
+                if not isinstance(item.get(key), str) or not item[key].strip():
+                    print(f"failed_prs[{i}].{key} must be a non-empty string", file=sys.stderr)
+                    return 1
 
     try:
         _validate_with_schema(data)

@@ -45,6 +45,12 @@ def render_line(record: dict) -> str:
         diff_part += " (truncated)"
 
     parts = [f"PR #{pr} — {diff_part}", f"route: {route}", f"provider: {provider}"]
+    attempts = record.get("provider_attempts") or []
+    if attempts:
+        attempt_text = ", ".join(
+            f"{item.get('provider', 'unknown')}:{item.get('status', 'unknown')}" for item in attempts
+        )
+        parts.append(f"attempts: {attempt_text}")
     if route == "bounded-fallback":
         parts.append(f"fallback: {_fallback_reason(ctx)}")
     parts.append(f"antigravity: {antigravity}")

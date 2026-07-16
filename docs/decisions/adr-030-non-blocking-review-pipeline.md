@@ -139,6 +139,28 @@ publication authority into the agent.
 - Cursor, Antigravity, and Gemini remain explicit rollback providers during the
   rollout.
 
+## Amendment 2026-07-16 — Retrieval-first evidence and durable fallback
+
+[Issue #485](https://github.com/mikejmckinney/ai-repo-template/issues/485)
+corrects two gaps exposed by
+[run 29477823468](https://github.com/mikejmckinney/ai-repo-template/actions/runs/29477823468):
+
+- Tool-capable full-evidence review receives a deterministic inventory of
+  addressable local and GitHub sources instead of injected source bodies and
+  capped diff/HEAD excerpts. The inventory remains the completeness control;
+  agent retrieval does not replace coverage accounting.
+- Ephemeral evidence lives inside ignored repository `.artifacts/` so the
+  read-only OpenCode profile can inspect it without external-directory access.
+- `auto` attempts available analysis providers in OpenCode, Cursor, then Gemini
+  order. A failed provider advances to the next provider rather than retrying a
+  bounded version of the same incomplete review.
+- Daily per-PR failures become explicit sidecars and batch metadata. They do not
+  prevent successful PR results, final daily JSON, or workflow artifacts from
+  surviving.
+- Empty Cursor results include sanitized status/error metadata. Interactive
+  process termination uses prospective lifecycle and signal diagnostics rather
+  than attributing graceful disposal to model output limits without evidence.
+
 ## Implementation
 
 - [x] Pack PRs 2–4 on `main` (advisory, finalize, retro v1).
@@ -149,7 +171,7 @@ publication authority into the agent.
 - [x] Triage legacy umbrella [#425](https://github.com/mikejmckinney/ai-repo-template/issues/425) (2026-06-13 post-merge).
 - [x] Sandbox smoke of `agent-weekly-review.yml` — [run 27516674507](https://github.com/mikejmckinney/ai-repo-template-sandbox/actions/runs/27516674507) (`2099-W05`, umbrella [#79](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/79), fix PR [#80](https://github.com/mikejmckinney/ai-repo-template-sandbox/pull/80); detailed finding blocks + native link verified on PR #433 branch).
 - [x] Merge PR [#433](https://github.com/mikejmckinney/ai-repo-template/pull/433) (weekly review + collector hardening) to upstream `main` (merged 2026-06-15).
-- [ ] Issue #480 — complete sandbox evidence and merge the OpenCode-first amendment.
+- [x] Issue [#480](https://github.com/mikejmckinney/ai-repo-template/issues/480) — OpenCode-first amendment merged in [PR #481](https://github.com/mikejmckinney/ai-repo-template/pull/481).
 
 ## References
 

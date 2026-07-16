@@ -12,6 +12,11 @@ omitted or truncated PR diffs, discussion, reviews, checks, and current files.
 Treat the automation evidence inventory as a minimum coverage contract. Never
 use a GitHub write operation.
 
+For a `full-evidence` run, the prompt contains addresses and byte counts rather
+than inline source bodies. Read the listed local evidence files and relevant
+current repository paths, then use read-only GitHub tools to close inventory
+gaps. Do not emit a finding from an excerpt when its full source is addressable.
+
 ## Cadence-specific rules
 
 - Review the **merged PR only** — do not propose changes to the working tree.

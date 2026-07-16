@@ -35,6 +35,20 @@ function buildCursorModelConfig(id) {
 }
 
 const model = buildCursorModelConfig(modelId);
+
+function sanitizedErrorDetails(value) {
+  const details = {
+    status: value?.status ?? "unknown",
+    error: value?.error ?? null,
+    message: value?.message ?? null,
+    keys: value && typeof value === "object" ? Object.keys(value).sort() : [],
+  };
+  let text = JSON.stringify(details);
+  for (const secret of [process.env.CURSOR_API_KEY, process.env.OPENROUTER_API_KEY]) {
+    if (secret && secret.length >= 8) text = text.replaceAll(secret, "[REDACTED]");
+  }
+  return text;
+}
 const runContext = {
   repo: process.env.GITHUB_REPOSITORY || "local",
   workflow: process.env.GITHUB_WORKFLOW || "local",
@@ -78,7 +92,7 @@ console.error(
 const text = result?.result ?? "";
 if (!text.trim()) {
   console.error(
-    `Cursor full-evidence retro returned empty result (status=${result?.status ?? "unknown"})`,
+    `Cursor full-evidence retro returned empty result: ${sanitizedErrorDetails(result)}`,
   );
   process.exit(1);
 }

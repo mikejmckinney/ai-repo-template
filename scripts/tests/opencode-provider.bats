@@ -46,6 +46,54 @@ setup() {
   [ "$output" = cursor ]
 }
 
+@test "auto routing exposes an ordered cross-provider cascade" {
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  CURSOR_API_KEY=cursor-test
+  GEMINI_API_KEY=gemini-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers retro
+
+  [ "$status" -eq 0 ]
+  [ "$output" = $'opencode\ncursor\ngemini' ]
+}
+
+@test "full-evidence OpenCode dispatch does not call the bounded pass" {
+  run python3 - "$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro.sh" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+assert "opencode) route=full-evidence-opencode" in text
+assert 'run_full_evidence_provider "$provider"' in text
+assert "validate_provider_output" in text
+assert "full-evidence-opencode)\n    run_bounded_pass" not in text
+PY
+
+  [ "$status" -eq 0 ]
+}
+
+@test "OpenCode lifecycle diagnostics records a terminating signal" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/mock-opencode" <<'EOF'
+#!/usr/bin/env bash
+kill -TERM "$$"
+EOF
+  chmod +x "$tmp/mock-opencode"
+
+  run env \
+    OPENCODE_BIN="$tmp/mock-opencode" \
+    OPENCODE_DIAG_DIR="$tmp/diag" \
+    "$REPO_ROOT/scripts/diagnose-opencode-session.sh"
+
+  [ "$status" -eq 143 ]
+  run grep -q 'status=143 signal=15' "$tmp/diag/lifecycle.log"
+  [ "$status" -eq 0 ]
+  [ -f "$tmp/diag/process.start" ]
+  rm -rf "$tmp"
+}
+
 @test "OpenCode runner validates text output, retries once, then advances models" {
   tmp="$(mktemp -d)"
   cat >"$tmp/mock-sdk.mjs" <<'EOF'
@@ -174,11 +222,11 @@ EOF
 
 @test "CI configs override merged interactive providers and MCP servers" {
   for profile in review fix; do
-    run jq -s -e '
+    run jq --arg profile "$profile" -s -e '
       .[0] as $interactive |
       .[1] as $ci |
       $ci.small_model == "openrouter/z-ai/glm-5.2@preset/default" and
-      $ci.agent.build.steps == 4 and
+      $ci.agent.build.steps == (if $profile == "review" then 12 else 4 end) and
       all($interactive.mcp | keys[]; $ci.mcp[.].enabled == false)
     ' "$REPO_ROOT/.opencode/opencode.json" "$REPO_ROOT/.github/agent-runtime/$profile.json"
     [ "$status" -eq 0 ]

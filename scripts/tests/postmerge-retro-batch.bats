@@ -603,6 +603,36 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "merge-daily-retro-json preserves failed PR sidecars" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/pr-1-retro.json" <<'EOF'
+{"pr": 1, "summary": "completed", "follow_up_issues": []}
+EOF
+  cat >"$tmp/pr-2-failure.json" <<'EOF'
+{"pr": 2, "stage": "analysis", "reason": "provider cascade exhausted"}
+EOF
+
+  run python3 scripts/workflows/postmerge-retro/merge-daily-retro-json.py \
+    2026-07-16 "$tmp/pr-1-retro.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.failed_prs == [{"pr": 2, "stage": "analysis", "reason": "provider cascade exhausted"}]' <<<"$output"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
+@test "daily retro isolates per-PR failures before finalization" {
+  run python3 - <<'PY'
+from pathlib import Path
+
+text = Path("scripts/workflows/postmerge-retro/run-postmerge-retro-daily.sh").read_text(encoding="utf-8")
+assert 'if bash "$SCRIPT_DIR/run-postmerge-retro.sh"' in text
+assert 'failure.json' in text
+PY
+
+  [ "$status" -eq 0 ]
+}
+
 @test "validate-postmerge-retro-daily accepts pr_evidence_coverage" {
   tmp="$(mktemp -d)"
   cat >"$tmp/daily.json" <<'EOF'
@@ -697,7 +727,7 @@ EOF
   echo "README.md" >"$tmp/evidence/changed-files.txt"
   readme_backup="$(mktemp)"
   cp "$repo_root/README.md" "$readme_backup"
-  echo "hello" >"$repo_root/README.md"
+  echo "FULL_EVIDENCE_MUST_NOT_INLINE_THIS_CONTENT" >"$repo_root/README.md"
   head -c 200 /dev/zero | tr '\0' 'x' >"$tmp/evidence/diff.patch"
   run bash scripts/workflows/postmerge-retro/assemble-retro-prompt.sh \
     1 "$tmp/evidence" full-evidence "$tmp/prompt.md"
@@ -707,6 +737,8 @@ EOF
   [[ "$(cat "$tmp/prompt.md")" == *"diff.patch"* ]]
   [[ "$(cat "$tmp/prompt.md")" == *"full-evidence"* ]]
   [[ "$(cat "$tmp/prompt.md")" != *"### Diff (truncated excerpt)"* ]]
+  [[ "$(cat "$tmp/prompt.md")" != *"FULL_EVIDENCE_MUST_NOT_INLINE_THIS_CONTENT"* ]]
+  [[ "$(cat "$tmp/prompt.md")" == *"context-files.txt"* ]]
   rm -rf "$tmp"
 }
 

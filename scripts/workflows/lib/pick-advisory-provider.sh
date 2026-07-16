@@ -27,6 +27,40 @@ init_advisory_provider_credentials() {
   return 0
 }
 
+list_advisory_providers() {
+  local mode="${1:-advisory}"
+  local want=""
+
+  case "$mode" in
+    advisory)
+      want="${ADVISORY_REVIEW_PROVIDER:-auto}"
+      ;;
+    retro | retro-fix)
+      want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
+      ;;
+    weekly-scan | weekly-fix)
+      want="${WEEKLY_REVIEW_PROVIDER:-${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}}"
+      ;;
+    *)
+      echo "::error::list_advisory_providers: unknown mode '${mode}'" >&2
+      return 1
+      ;;
+  esac
+
+  if [[ "$want" != "auto" && "$want" != "antigravity" ]]; then
+    printf '%s\n' "$want"
+    return 0
+  fi
+
+  [[ "$has_opencode" -eq 1 ]] && printf '%s\n' opencode
+  [[ "$has_cursor" -eq 1 ]] && printf '%s\n' cursor
+  if [[ ("$mode" == "advisory" || "$mode" == "weekly-scan") &&
+    "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
+    printf '%s\n' antigravity
+  fi
+  [[ "$has_gemini" -eq 1 ]] && printf '%s\n' gemini
+}
+
 pick_advisory_provider() {
   local mode="${1:-advisory}"
   local want=""

@@ -209,6 +209,18 @@ comprehensive snapshot — merge, do not replace, do not append:**
   headroom). check `x-ratelimit-remaining`/`retry-after` on 403/429 as needed.
 - **Fall back to local scratch copy** on any GitHub failure / no active issue/PR.
 
+### Post-compaction recovery gate
+
+When the conversation contains a compaction summary or retains an exact session
+ID, load the `session-recovery` skill before taking any repository action.
+Recover the exact session ID, re-read the packet and required current files,
+hydrate the active issue, linked PR, and latest `agent-state:v1` comment when
+GitHub is available, and report the receipt with boundary `post-compaction`.
+
+Do not treat the compaction summary alone as sufficient context. If no exact
+session ID is available, ask the user. If recovery fails, stop and report the
+failure rather than inferring another session or continuing from stale context.
+
 ### Postmortem feedback loop
 
 When a downstream project (a repo built *from* this template) hits an incident worth a postmortem, run `.github/prompts/capture-postmortem.md` in that project repo. If the resulting postmortem's `generalizes:` is `Yes` or `Unclear`, run `.github/prompts/mirror-postmortem.md` against this template to mirror it back with a same-PR follow-up. The promotion policy is defined in `docs/postmortems/README.md` and ratified in [ADR-015](docs/decisions/adr-015-postmortem-feedback-loop.md). Do NOT add per-stack guidance (Terraform, Python, Rust, etc.) to this file — that is the failure mode the policy exists to prevent.

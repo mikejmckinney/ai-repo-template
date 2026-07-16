@@ -83,6 +83,21 @@ Agents receive only the dedicated read-only token, while deterministic shell cod
 retains all GitHub writes. The agent subprocess explicitly drops publisher and
 sandbox credentials.
 
+Large post-merge reviews use retrieval-first evidence. The deterministic
+collector supplies repository/PR identity, merge and head SHAs, required source
+paths, byte counts, and coverage metadata; it does not preload full startup
+files or a capped diff into a tool-capable agent's prompt. Evidence lives under
+ignored `.artifacts/` so the read-only OpenCode profile can inspect it without
+external-directory permission. The review profile allows twelve agent steps for
+repository and GitHub reads.
+
+With `auto`, analysis attempts available providers in OpenCode, Cursor, then
+Gemini order. A provider transport, empty-result, or validation failure advances
+to the next available provider. A large review is not reported as successful
+after silently degrading to bounded evidence. Daily sequential runs record
+failed PRs and continue finalization so successful retros and coverage artifacts
+remain available.
+
 ## Local Consensus
 
 The OpenCode `local-consensus` skill is the sole opt-in multi-model path. Use it
@@ -134,6 +149,9 @@ Use `scripts/verify-pr.sh` to classify the diff and
   optional rollback-provider credentials.
 - `CLAUDE_PAT` and `SANDBOX_BOOTSTRAP_TOKEN` remain deterministic publication or
   sandbox credentials and are never forwarded to OpenCode.
+
+Use [`opencode-termination-diagnostics.md`](./opencode-termination-diagnostics.md)
+when an interactive OpenCode process restarts unexpectedly.
 
 ## Retired Surfaces
 

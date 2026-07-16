@@ -16,14 +16,18 @@ usage() {
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 RETRO_FILES=("$@")
-if [[ ${#RETRO_FILES[@]} -eq 0 ]]; then
+shopt -s nullglob
+FAILURE_FILES=("$ARTIFACT_ROOT"/pr-*-failure.json)
+shopt -u nullglob
+if [[ ${#RETRO_FILES[@]} -eq 0 && ${#FAILURE_FILES[@]} -eq 0 ]]; then
   echo "No new PR retros produced; skipping merge/umbrella"
   echo "0" >"$ARTIFACT_ROOT/findings-count.txt"
   exit 0
 fi
 
 DAILY_JSON="$ARTIFACT_ROOT/daily-retro.json"
-python3 "$SCRIPT_DIR/merge-daily-retro-json.py" "$RUN_DATE" "${RETRO_FILES[@]}" >"$DAILY_JSON"
+DAILY_RETRO_FAILURE_DIR="$ARTIFACT_ROOT" \
+  python3 "$SCRIPT_DIR/merge-daily-retro-json.py" "$RUN_DATE" "${RETRO_FILES[@]}" >"$DAILY_JSON"
 python3 "$SCRIPT_DIR/validate-postmerge-retro-daily.py" "$DAILY_JSON"
 
 bash "$SCRIPT_DIR/create-umbrella-issue.sh" "$DAILY_JSON"

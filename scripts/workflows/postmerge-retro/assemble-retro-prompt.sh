@@ -46,7 +46,10 @@ head_total_cap=120000
 
 pr_json="$(cat "$WORKDIR/pr.json")"
 pr_title="$(printf '%s' "$pr_json" | jq -r '.title // ""')"
-pr_body="$(printf '%s' "$pr_json" | jq -r '.body // ""')"
+pr_body=""
+if [[ "$PROMPT_MODE" == "bounded" ]]; then
+  pr_body="$(printf '%s' "$pr_json" | jq -r '.body // ""')"
+fi
 pr_url="$(printf '%s' "$pr_json" | jq -r '.html_url // ""')"
 HEAD_SHA="$(jq -r .head.sha "$WORKDIR/pr.json")"
 MERGE_SHA="$(jq -r '.merge_commit_sha // .head.sha' "$WORKDIR/pr.json")"
@@ -64,18 +67,22 @@ diff_text="$(head -c "$diff_limit" "$WORKDIR/diff.patch")"
 truncated_word="no"
 [[ "$truncated" == "true" ]] && truncated_word="yes"
 
-reviews_json_compact="$(
-  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
-    --input "$WORKDIR/reviews.json" \
-    --jq-filter 'map({id, user: (.user?.login // null), body, state, commit_id})' \
-    --max-bytes 120000
-)"
-comments_json_compact="$(
-  python3 "$LIB_DIR/prompt_helpers.py" cap-json \
-    --input "$WORKDIR/review-comments.json" \
-    --jq-filter 'map({id, path, line, user: (.user?.login // null), body})' \
-    --max-bytes 120000
-)"
+reviews_json_compact=""
+comments_json_compact=""
+if [[ "$PROMPT_MODE" == "bounded" ]]; then
+  reviews_json_compact="$(
+    python3 "$LIB_DIR/prompt_helpers.py" cap-json \
+      --input "$WORKDIR/reviews.json" \
+      --jq-filter 'map({id, user: (.user?.login // null), body, state, commit_id})' \
+      --max-bytes 120000
+  )"
+  comments_json_compact="$(
+    python3 "$LIB_DIR/prompt_helpers.py" cap-json \
+      --input "$WORKDIR/review-comments.json" \
+      --jq-filter 'map({id, path, line, user: (.user?.login // null), body})' \
+      --max-bytes 120000
+  )"
+fi
 
 if ! python3 "$LIB_DIR/prompt_helpers.py" select-context \
   --profile "$context_profile" \
@@ -120,16 +127,33 @@ done
   echo "## Repo startup context (automation-supplied, catalog-driven ${context_profile} + path triggers)"
   echo ""
   echo "- Context profile: \`${context_profile}\`"
-  echo "- Context files injected: \`${context_file_count}\`"
-  echo "- Context bytes injected: \`${context_bytes}\`"
+  if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
+    echo "- Context files addressable: \`${context_file_count}\`"
+    echo "- Context bytes available: \`${context_bytes}\`"
+  else
+    echo "- Context files injected: \`${context_file_count}\`"
+    echo "- Context bytes injected: \`${context_bytes}\`"
+  fi
   echo "- Evidence prompt mode: \`${PROMPT_MODE}\`"
   echo ""
-  for rel in "${context_files[@]}"; do
-    echo "### ${rel}"
+  if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
+    echo "- Context inventory: \`${WORKDIR}/context-files.txt\`"
     echo ""
-    cat "$REPO_ROOT/$rel"
+    echo "Read these required startup files from the checked-out repository:"
     echo ""
-  done
+    for rel in "${context_files[@]}"; do
+      # shellcheck disable=SC2016 # Backticks are Markdown delimiters.
+      printf -- '- `%s`\n' "$rel"
+    done
+    echo ""
+  else
+    for rel in "${context_files[@]}"; do
+      echo "### ${rel}"
+      echo ""
+      cat "$REPO_ROOT/$rel"
+      echo ""
+    done
+  fi
   echo "---"
   echo ""
   echo "## Merged PR context (automation-supplied)"
@@ -142,42 +166,63 @@ done
   echo "- Merged at: ${merged_at}"
   echo "- Labels at merge: \`${labels}\`"
   echo "- Diff bytes total: \`${full_diff_bytes}\`"
-  echo "- Diff bytes included in bounded excerpt: \`${diff_included}\`"
+  if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
+    echo "- Diff bytes injected: \`0\`"
+  else
+    echo "- Diff bytes included in bounded excerpt: \`${diff_included}\`"
+  fi
   echo "- Diff truncated at cap: \`${truncated_word}\`"
   echo ""
-  echo "### Collection summary"
-  echo ""
-  cat "$WORKDIR/summary.txt"
-  echo ""
-  echo "### PR body"
-  echo ""
-  printf '%s\n' "$pr_body"
-  echo ""
+  if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
+    echo "### Required evidence inventory"
+    echo ""
+    for evidence_file in pr.json summary.txt changed-files.txt reviews.json review-comments.json advisory-comments.md prior-inbox.md; do
+      if [[ -f "$WORKDIR/$evidence_file" ]]; then
+        evidence_size="$(wc -c <"$WORKDIR/$evidence_file" | tr -d ' ')"
+        # shellcheck disable=SC2016 # Backticks are Markdown delimiters.
+        printf -- '- `%s/%s` (%s bytes)\n' "$WORKDIR" "$evidence_file" "$evidence_size"
+      fi
+    done
+    echo ""
+    echo "Read every listed evidence source. Use read-only GitHub tools to confirm PR discussion, reviews, and checks when the local inventory is incomplete."
+    echo ""
+  else
+    echo "### Collection summary"
+    echo ""
+    cat "$WORKDIR/summary.txt"
+    echo ""
+    echo "### PR body"
+    echo ""
+    printf '%s\n' "$pr_body"
+    echo ""
+  fi
   echo "### Changed files"
   echo ""
   sed 's/^/- /' "$WORKDIR/changed-files.txt"
   echo ""
-  echo "### Formal PR reviews (JSON excerpt)"
-  echo ""
-  echo '```json'
-  printf '%s\n' "$reviews_json_compact"
-  echo ""
-  echo '```'
-  echo ""
-  echo "### Inline review comments (JSON excerpt)"
-  echo ""
-  echo '```json'
-  printf '%s\n' "$comments_json_compact"
-  echo ""
-  echo '```'
-  echo ""
-  if [[ -s "$WORKDIR/advisory-comments.md" ]]; then
+  if [[ "$PROMPT_MODE" != "full-evidence" ]]; then
+    echo "### Formal PR reviews (JSON excerpt)"
+    echo ""
+    echo '```json'
+    printf '%s\n' "$reviews_json_compact"
+    echo ""
+    echo '```'
+    echo ""
+    echo "### Inline review comments (JSON excerpt)"
+    echo ""
+    echo '```json'
+    printf '%s\n' "$comments_json_compact"
+    echo ""
+    echo '```'
+    echo ""
+  fi
+  if [[ "$PROMPT_MODE" != "full-evidence" && -s "$WORKDIR/advisory-comments.md" ]]; then
     echo "### Advisory snapshots"
     echo ""
     cat "$WORKDIR/advisory-comments.md"
     echo ""
   fi
-  if [[ -s "$WORKDIR/prior-inbox.md" ]]; then
+  if [[ "$PROMPT_MODE" != "full-evidence" && -s "$WORKDIR/prior-inbox.md" ]]; then
     echo "### Feedback inbox comments"
     echo ""
     cat "$WORKDIR/prior-inbox.md"
@@ -203,7 +248,7 @@ done
       continue
     fi
     size="$(wc -c <"$target" | tr -d ' ')"
-    if [[ "$PROMPT_MODE" == "full-evidence" && ("$size" -gt "$head_file_cap" || "$head_total" -ge "$head_total_cap") ]]; then
+    if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
       echo "#### \`${rel}\`"
       echo ""
       echo "_Full file on main HEAD (${size} bytes) — **read from repo**: \`${rel}\`_"
@@ -211,13 +256,6 @@ done
       continue
     fi
     if [[ "$head_total" -ge "$head_total_cap" ]]; then
-      if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
-        echo "#### \`${rel}\`"
-        echo ""
-        echo "_HEAD snapshot budget exhausted — **read from repo**: \`${rel}\`_"
-        echo ""
-        continue
-      fi
       echo "_HEAD snapshot budget exhausted; remaining paths omitted._"
       break
     fi
@@ -233,11 +271,7 @@ done
     echo '```'
     head -c "$take" "$target"
     if [[ "$take" -lt "$size" ]]; then
-      if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
-        printf '\n... (excerpt only; %s bytes total on HEAD — read full file from repo)\n' "$size"
-      else
-        printf '\n... (truncated; %s bytes total on HEAD)\n' "$size"
-      fi
+      printf '\n... (truncated; %s bytes total on HEAD)\n' "$size"
     fi
     echo '```'
     echo ""

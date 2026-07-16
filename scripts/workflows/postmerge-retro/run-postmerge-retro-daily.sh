@@ -23,7 +23,25 @@ fi
 RETRO_FILES=()
 for pr in "${SELECTED_PRS[@]}"; do
   echo "Running retro for PR #${pr}..."
-  bash "$SCRIPT_DIR/run-postmerge-retro.sh" "$pr" false
+  rm -f "$ARTIFACT_ROOT/pr-${pr}-failure.json"
+  if bash "$SCRIPT_DIR/run-postmerge-retro.sh" "$pr" false; then
+    :
+  else
+    rc=$?
+    jq -n \
+      --argjson pr "$pr" \
+      --argjson exit_code "$rc" \
+      --arg stage analysis \
+      --arg reason "provider cascade exhausted or analysis failed" \
+      '{pr: $pr, stage: $stage, reason: $reason, exit_code: $exit_code}' \
+      >"$ARTIFACT_ROOT/pr-${pr}-failure.json"
+    pr_root="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${pr}"
+    for sidecar in changed-files.txt evidence-coverage.json pr.json llm-output.txt; do
+      [[ -f "$pr_root/$sidecar" ]] && cp -f "$pr_root/$sidecar" "$ARTIFACT_ROOT/pr-${pr}-${sidecar}"
+    done
+    echo "::warning::Retro failed for PR #${pr}; recorded failure and continuing daily batch" >&2
+    continue
+  fi
   pr_artifact="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${pr}/retro.json"
   if [[ ! -f "$pr_artifact" ]]; then
     echo "::warning::Missing retro.json for PR #${pr}; skipping"
