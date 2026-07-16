@@ -35,6 +35,11 @@ Run `scripts/diagnose-opencode-session.sh` instead of bare `opencode` when
 capturing an unexpected interactive process restart; see
 `docs/guides/opencode-termination-diagnostics.md`.
 
+OpenCode workflow calls use `OPENCODE_TIMEOUT_MS` for both the Node HTTP
+transport and the outer abort, defaulting to `900000` (15 minutes). Set a larger
+positive millisecond value only when a review legitimately needs a longer
+end-to-end budget.
+
 ## Repository Layout
 
 | Path | Purpose |

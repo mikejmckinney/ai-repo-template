@@ -5,6 +5,7 @@ import { homedir } from "node:os"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 import Ajv2020 from "../../../.github/agent-runtime/node_modules/ajv/dist/2020.js"
+import { Agent, setGlobalDispatcher } from "../../../.github/agent-runtime/node_modules/undici/index.js"
 
 const [promptPath, outputPath, schemaPath] = process.argv.slice(2)
 if (!promptPath || !outputPath) {
@@ -37,6 +38,7 @@ const timeoutMs = Number.parseInt(process.env.OPENCODE_TIMEOUT_MS || "900000", 1
 if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
   throw new Error("OPENCODE_TIMEOUT_MS must be a positive integer")
 }
+setGlobalDispatcher(new Agent({ headersTimeout: timeoutMs, bodyTimeout: timeoutMs }))
 
 function responseData(response) {
   if (response?.error) throw new Error(JSON.stringify(response.error))

@@ -71,7 +71,10 @@ this prevents editable repository scripts from reading inherited credentials.
 Workflows use GitHub-managed `ubuntu-latest`, configure Node 22, and run `npm ci`
 against `.github/agent-runtime/package-lock.json`. Review and fix profiles live
 beside that lockfile and are intentionally separate from interactive
-`.opencode/opencode.json`.
+`.opencode/opencode.json`. The adapter configures Undici's response-header and
+body timeouts from `OPENCODE_TIMEOUT_MS` (default `900000`) so Node's five-minute
+HTTP default cannot terminate a still-running `session.prompt()` before the
+adapter's outer abort.
 
 The adapter does not use OpenCode 1.18.0's `format` field. That release ignores
 `retryCount` and can finish without invoking its synthetic structured-output

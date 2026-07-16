@@ -204,6 +204,16 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "OpenCode runner aligns the Node transport with its outer timeout" {
+  run grep -q 'setGlobalDispatcher(new Agent({ headersTimeout: timeoutMs, bodyTimeout: timeoutMs }))' \
+    "$REPO_ROOT/scripts/workflows/lib/run-opencode.mjs"
+  [ "$status" -eq 0 ]
+
+  run jq -e '.dependencies.undici == "7.28.0"' \
+    "$REPO_ROOT/.github/agent-runtime/package.json"
+  [ "$status" -eq 0 ]
+}
+
 @test "CI configs enforce hosted read-only GitHub MCP and separate review from fix tools" {
   run jq -e '
     .autoupdate == false and
