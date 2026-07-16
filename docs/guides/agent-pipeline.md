@@ -71,17 +71,42 @@ this prevents editable repository scripts from reading inherited credentials.
 Workflows use GitHub-managed `ubuntu-latest`, configure Node 22, and run `npm ci`
 against `.github/agent-runtime/package-lock.json`. Review and fix profiles live
 beside that lockfile and are intentionally separate from interactive
-`.opencode/opencode.json`.
+`.opencode/opencode.json`. The adapter configures Undici's response-header and
+body timeouts from `OPENCODE_TIMEOUT_MS` (default `900000`) so Node's five-minute
+HTTP default cannot terminate a still-running `session.prompt()` before the
+adapter's outer abort.
 
 The adapter does not use OpenCode 1.18.0's `format` field. That release ignores
 `retryCount` and can finish without invoking its synthetic structured-output
-tool. Adapter-owned validation keeps retries observable and leaves the existing
-cadence-specific validators as the final deterministic gate.
+tool. Adapter-owned validation also rejects model-authored `priority_band`
+values before retrying; cadence-specific validators remain the final
+deterministic gate.
 
 GitHub's hosted MCP endpoint is read-only and locked down through request headers.
 Agents receive only the dedicated read-only token, while deterministic shell code
 retains all GitHub writes. The agent subprocess explicitly drops publisher and
-sandbox credentials.
+sandbox credentials. The deterministic collector uses the workflow-scoped
+`GITHUB_TOKEN` with `checks: read` to write check-run metadata into the local
+evidence inventory; the agent PAT does not need Checks permission or shell access.
+
+Large post-merge reviews use retrieval-first evidence. The deterministic
+collector supplies repository/PR identity, merge and head SHAs, required source
+paths, byte counts, and coverage metadata; it does not preload full startup
+files or a capped diff into a tool-capable agent's prompt. Evidence lives under
+ignored `.artifacts/` so the read-only OpenCode profile can inspect it without
+external-directory permission. The review profile allows 24 agent steps for
+repository and GitHub reads. Full-evidence OpenCode runs persist a sanitized
+retrieval trace and fail provider validation unless observed reads cover the
+complete diff, local evidence inventory, non-auto-loaded startup context, and
+touched HEAD paths. OpenCode's system loader supplies the root `AGENTS.md`, so a
+redundant tool read is not required for that file.
+
+With `auto`, analysis attempts available providers in OpenCode, Cursor, then
+Gemini order. A provider transport, empty-result, or validation failure advances
+to the next available provider. A large review is not reported as successful
+after silently degrading to bounded evidence. Daily sequential runs record
+failed PRs and continue finalization so successful retros and coverage artifacts
+remain available.
 
 ## Local Consensus
 
@@ -134,6 +159,9 @@ Use `scripts/verify-pr.sh` to classify the diff and
   optional rollback-provider credentials.
 - `CLAUDE_PAT` and `SANDBOX_BOOTSTRAP_TOKEN` remain deterministic publication or
   sandbox credentials and are never forwarded to OpenCode.
+
+Use [`opencode-termination-diagnostics.md`](./opencode-termination-diagnostics.md)
+when an interactive OpenCode process restarts unexpectedly.
 
 ## Retired Surfaces
 

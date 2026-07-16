@@ -9,7 +9,7 @@
   "small_model": "openrouter/z-ai/glm-5.2@preset/default",
   "agent": {
     "build": {
-      "steps": 4
+      "steps": 24
     }
   },
   "permission": {

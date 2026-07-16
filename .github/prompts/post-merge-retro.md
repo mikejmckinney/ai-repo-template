@@ -12,6 +12,11 @@ omitted or truncated PR diffs, discussion, reviews, checks, and current files.
 Treat the automation evidence inventory as a minimum coverage contract. Never
 use a GitHub write operation.
 
+For a `full-evidence` run, the prompt contains addresses and byte counts rather
+than inline source bodies. Read the listed local evidence files and relevant
+current repository paths, then use read-only GitHub tools to close inventory
+gaps. Do not emit a finding from an excerpt when its full source is addressable.
+
 ## Cadence-specific rules
 
 - Review the **merged PR only** — do not propose changes to the working tree.
@@ -36,6 +41,7 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
 {
   "pr": 123,
   "summary": "brief summary",
+  "evidence_complete": true,
   "follow_up_issues": [
     {
       "title": "string",
@@ -52,6 +58,10 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
   ]
 }
 ```
+
+Set `evidence_complete` to `true` only after reading every required local
+evidence source, the complete diff, and the current versions of all PR-touched
+paths. An incomplete review is a failed run, not an empty-finding result.
 
 ## Finding triage
 

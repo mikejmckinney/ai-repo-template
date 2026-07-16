@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -73,7 +74,7 @@ def _flatten_pr_retro(data: dict) -> list[dict]:
 
 
 def main() -> int:
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 2:
         print(
             "Usage: merge-daily-retro-json.py <run-date YYYY-MM-DD> <retro.json> [...]",
             file=sys.stderr,
@@ -82,16 +83,38 @@ def main() -> int:
 
     run_date = sys.argv[1]
     paths = [Path(p) for p in sys.argv[2:]]
-    if not paths:
-        print("No retro.json inputs", file=sys.stderr)
-        return 1
-
     all_findings: list[dict] = []
     prs: list[int] = []
     summaries: list[str] = []
     pr_merges: list[dict] = []
     pr_changed_files: list[dict] = []
     pr_evidence_coverage: list[dict] = []
+    failure_dirs = {path.parent for path in paths}
+    configured_failure_dir = os.environ.get("DAILY_RETRO_FAILURE_DIR")
+    if configured_failure_dir:
+        failure_dirs.add(Path(configured_failure_dir))
+    failed_prs: list[dict] = []
+
+    for failure_dir in sorted(failure_dirs):
+        for failure_path in sorted(failure_dir.glob("pr-*-failure.json")):
+            failure = json.loads(failure_path.read_text(encoding="utf-8"))
+            if isinstance(failure, dict):
+                failed_prs.append(failure)
+                pr = int(failure["pr"])
+                coverage_path = failure_dir / f"pr-{pr}-evidence-coverage.json"
+                if coverage_path.is_file():
+                    coverage = json.loads(coverage_path.read_text(encoding="utf-8"))
+                    if isinstance(coverage, dict):
+                        pr_evidence_coverage.append(coverage)
+                changed_path = failure_dir / f"pr-{pr}-changed-files.txt"
+                if changed_path.is_file():
+                    changed = [
+                        line.strip()
+                        for line in changed_path.read_text(encoding="utf-8").splitlines()
+                        if line.strip()
+                    ]
+                    if changed:
+                        pr_changed_files.append({"pr": pr, "paths": changed})
 
     for path in paths:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -123,6 +146,7 @@ def main() -> int:
                 pr_evidence_coverage.append(coverage)
 
     prs = sorted(set(prs))
+    prs = sorted(set(prs) | {int(item["pr"]) for item in failed_prs})
     batch = {
         "run_date": run_date,
         "window_hours": 24,
@@ -138,6 +162,8 @@ def main() -> int:
         batch["pr_evidence_coverage"] = sorted(
             pr_evidence_coverage, key=lambda item: int(item["pr"])
         )
+    if failed_prs:
+        batch["failed_prs"] = sorted(failed_prs, key=lambda item: int(item["pr"]))
     json.dump(batch, sys.stdout, indent=2, ensure_ascii=False)
     sys.stdout.write("\n")
     return 0

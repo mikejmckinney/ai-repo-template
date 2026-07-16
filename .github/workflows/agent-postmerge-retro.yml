@@ -61,6 +61,7 @@ on:
         type: string
 
 permissions:
+  checks: read
   contents: read
   pull-requests: read
   issues: write
@@ -78,6 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
+      checks: read
       contents: write
       pull-requests: write
       issues: write
@@ -211,6 +213,7 @@ jobs:
           bash scripts/workflows/postmerge-retro/run-postmerge-retro-daily-dispatch.sh
 
       - name: Capture daily retro outputs
+        if: always()
         id: meta
         run: |
           RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"
@@ -240,7 +243,7 @@ jobs:
           fi
 
       - name: Upload daily retro artifacts
-        if: steps.meta.outputs.has_daily_json == 'true' && github.event.inputs.fix_only != 'true'
+        if: always() && steps.meta.outputs.has_daily_json == 'true' && github.event.inputs.fix_only != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.meta.outputs.artifact_name }}

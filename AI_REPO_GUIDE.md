@@ -3,7 +3,7 @@
 # AI_REPO_GUIDE.md
 
 > Canonical command and layout reference for agents working in this template.
-> Last verified: 2026-07-14.
+> Last verified: 2026-07-16.
 
 ## Overview
 
@@ -24,12 +24,21 @@ bats --jobs 4 scripts/tests/
 bash scripts/lint-shell-conventions.sh scripts/
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
+scripts/diagnose-opencode-session.sh
 git diff --check
 ```
 
 Run `bash install.sh` only when testing the Codespaces bootstrap/install surface.
 Use `scripts/format.sh --write <files...>` for deterministic local shfmt and
 markdownlint fixes. CI remains read-only and never commits formatting changes.
+Run `scripts/diagnose-opencode-session.sh` instead of bare `opencode` when
+capturing an unexpected interactive process restart; see
+`docs/guides/opencode-termination-diagnostics.md`.
+
+OpenCode workflow calls use `OPENCODE_TIMEOUT_MS` for both the Node HTTP
+transport and the outer abort, defaulting to `900000` (15 minutes). Set a larger
+positive millisecond value only when a review legitimately needs a longer
+end-to-end budget.
 
 ## Repository Layout
 

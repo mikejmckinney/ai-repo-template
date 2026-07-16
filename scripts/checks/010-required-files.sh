@@ -36,6 +36,7 @@ REQUIRED_FILES=(
   "scripts/verify-pr.sh"
   "scripts/diag-hang-snapshot.sh"
   "scripts/diag-sandbox.sh"
+  "scripts/diagnose-opencode-session.sh"
   "scripts/format.sh"
   "scripts/check-markdown-links.py"
 )

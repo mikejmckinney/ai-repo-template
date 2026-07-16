@@ -5,6 +5,7 @@ import { homedir } from "node:os"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
 import Ajv2020 from "../../../.github/agent-runtime/node_modules/ajv/dist/2020.js"
+import { Agent, setGlobalDispatcher } from "../../../.github/agent-runtime/node_modules/undici/index.js"
 
 const [promptPath, outputPath, schemaPath] = process.argv.slice(2)
 if (!promptPath || !outputPath) {
@@ -37,6 +38,7 @@ const timeoutMs = Number.parseInt(process.env.OPENCODE_TIMEOUT_MS || "900000", 1
 if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
   throw new Error("OPENCODE_TIMEOUT_MS must be a positive integer")
 }
+setGlobalDispatcher(new Agent({ headersTimeout: timeoutMs, bodyTimeout: timeoutMs }))
 
 function responseData(response) {
   if (response?.error) throw new Error(JSON.stringify(response.error))
@@ -74,6 +76,34 @@ async function latestServerLog() {
   }
 }
 
+async function writeRetrievalTrace(sessionID) {
+  const outputPath = process.env.OPENCODE_RETRIEVAL_TRACE_FILE
+  if (!outputPath) return
+  const logDir = process.env.OPENCODE_LOG_DIR || path.join(homedir(), ".local/share/opencode/log")
+  let content = ""
+  try {
+    const files = (await readdir(logDir, { withFileTypes: true }))
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .sort()
+    const latest = files.at(-1)
+    if (latest) content = await readFile(path.join(logDir, latest), "utf8")
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.error(`OpenCode: retrieval_trace_unavailable error=${redacted(error.message)}`)
+    }
+  }
+
+  const paths = [...content.matchAll(/message=evaluated permission=read pattern=(.*?) action\.permission=read action\.action=allow/g)]
+    .map((match) => match[1].replace(/^"|"$/g, ""))
+  const uniquePaths = [...new Set(paths)]
+  await writeFile(
+    outputPath,
+    `${JSON.stringify({ session_id: sessionID, paths: uniquePaths }, null, 2)}\n`,
+  )
+  console.log(`OpenCode: retrieval_trace paths=${uniquePaths.length}`)
+}
+
 function modelRef(model) {
   const separator = model.indexOf("/")
   if (separator < 1) throw new Error(`Invalid OpenCode model: ${model}`)
@@ -91,6 +121,13 @@ function responseText(result) {
     .trim()
 }
 
+function hasDerivedPriority(value) {
+  if (Array.isArray(value)) return value.some(hasDerivedPriority)
+  if (!value || typeof value !== "object") return false
+  if (Object.hasOwn(value, "priority_band")) return true
+  return Object.values(value).some(hasDerivedPriority)
+}
+
 function validatedOutput(result) {
   if (result.info?.error) {
     throw new Error(`${result.info.error.name}: ${JSON.stringify(result.info.error.data || {})}`)
@@ -105,6 +142,9 @@ function validatedOutput(result) {
     parsed = JSON.parse(candidate)
   } catch (error) {
     return { error: `invalid JSON: ${error.message}` }
+  }
+  if (hasDerivedPriority(parsed)) {
+    return { error: "priority_band is derived by automation; do not emit it" }
   }
   if (!validate(parsed)) {
     return { error: `schema validation failed: ${JSON.stringify(validate.errors)}` }
@@ -164,6 +204,7 @@ for (const requestedModel of models) {
       `OpenCode: observed_model=${observedModel} requested_model=${requestedModel} ` +
       `input_tokens=${tokens.input ?? "unknown"} output_tokens=${tokens.output ?? "unknown"}`,
     )
+    await writeRetrievalTrace(sessionID)
     await writeFile(outputPath, checked.output)
     process.exitCode = 0
     lastError = undefined

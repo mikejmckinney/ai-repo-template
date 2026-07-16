@@ -62,11 +62,19 @@ def _validate_follow_up(item: dict, path: str) -> None:
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("Usage: validate-postmerge-retro.py <retro.json>", file=sys.stderr)
+    args = sys.argv[1:]
+    require_evidence_complete = False
+    if args and args[0] == "--require-evidence-complete":
+        require_evidence_complete = True
+        args = args[1:]
+    if len(args) != 1:
+        print(
+            "Usage: validate-postmerge-retro.py [--require-evidence-complete] <retro.json>",
+            file=sys.stderr,
+        )
         return 2
 
-    path = sys.argv[1]
+    path = args[0]
     with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
     if not isinstance(data, dict):
@@ -83,6 +91,8 @@ def main() -> int:
         return 1
 
     try:
+        if require_evidence_complete and data.get("evidence_complete") is not True:
+            raise ValueError("evidence_complete must be true for full-evidence output")
         for retired in ("adr_updates", "context_pack_updates"):
             if retired in data:
                 raise ValueError(f"{retired} is retired; use follow_up_issues")

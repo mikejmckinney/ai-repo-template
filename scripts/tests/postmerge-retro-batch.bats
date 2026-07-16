@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 # Post-merge retro batch improvements (#446) unit tests.
 
+bats_require_minimum_version 1.5.0
+
 setup() {
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"
   cd "$REPO_ROOT"
@@ -603,6 +605,36 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "merge-daily-retro-json preserves failed PR sidecars" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/pr-1-retro.json" <<'EOF'
+{"pr": 1, "summary": "completed", "follow_up_issues": []}
+EOF
+  cat >"$tmp/pr-2-failure.json" <<'EOF'
+{"pr": 2, "stage": "analysis", "reason": "provider cascade exhausted"}
+EOF
+
+  run python3 scripts/workflows/postmerge-retro/merge-daily-retro-json.py \
+    2026-07-16 "$tmp/pr-1-retro.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.failed_prs == [{"pr": 2, "stage": "analysis", "reason": "provider cascade exhausted"}]' <<<"$output"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
+@test "daily retro isolates per-PR failures before finalization" {
+  run python3 - <<'PY'
+from pathlib import Path
+
+text = Path("scripts/workflows/postmerge-retro/run-postmerge-retro-daily.sh").read_text(encoding="utf-8")
+assert 'if bash "$SCRIPT_DIR/run-postmerge-retro.sh"' in text
+assert 'failure.json' in text
+PY
+
+  [ "$status" -eq 0 ]
+}
+
 @test "validate-postmerge-retro-daily accepts pr_evidence_coverage" {
   tmp="$(mktemp -d)"
   cat >"$tmp/daily.json" <<'EOF'
@@ -697,7 +729,7 @@ EOF
   echo "README.md" >"$tmp/evidence/changed-files.txt"
   readme_backup="$(mktemp)"
   cp "$repo_root/README.md" "$readme_backup"
-  echo "hello" >"$repo_root/README.md"
+  echo "FULL_EVIDENCE_MUST_NOT_INLINE_THIS_CONTENT" >"$repo_root/README.md"
   head -c 200 /dev/zero | tr '\0' 'x' >"$tmp/evidence/diff.patch"
   run bash scripts/workflows/postmerge-retro/assemble-retro-prompt.sh \
     1 "$tmp/evidence" full-evidence "$tmp/prompt.md"
@@ -707,6 +739,122 @@ EOF
   [[ "$(cat "$tmp/prompt.md")" == *"diff.patch"* ]]
   [[ "$(cat "$tmp/prompt.md")" == *"full-evidence"* ]]
   [[ "$(cat "$tmp/prompt.md")" != *"### Diff (truncated excerpt)"* ]]
+  [[ "$(cat "$tmp/prompt.md")" != *"FULL_EVIDENCE_MUST_NOT_INLINE_THIS_CONTENT"* ]]
+  [[ "$(cat "$tmp/prompt.md")" == *"context-files.txt"* ]]
+  [[ "$(cat "$tmp/prompt.md")" == *"$tmp/evidence/diff.patch"* ]]
+  [[ "$(cat "$tmp/prompt.md")" == *'"evidence_complete": true'* ]]
+  rm -rf "$tmp"
+}
+
+@test "post-merge collector supplies check runs with the workflow token" {
+  run python3 - <<'PY'
+from pathlib import Path
+
+collector = Path("scripts/workflows/lib/collect-pr-evidence.sh").read_text(encoding="utf-8")
+workflow = Path(".github/workflows/agent-postmerge-retro.yml").read_text(encoding="utf-8")
+prompt = Path("scripts/workflows/postmerge-retro/assemble-retro-prompt.sh").read_text(encoding="utf-8")
+validator = Path("scripts/workflows/postmerge-retro/validate-opencode-retrieval.py").read_text(encoding="utf-8")
+
+assert 'commits/${head_sha}/check-runs' in collector
+assert 'GH_TOKEN="$GITHUB_TOKEN"' in collector
+assert "checks: read" in workflow
+assert "checks.json" in prompt
+assert '"checks.json"' in validator
+PY
+
+  [ "$status" -eq 0 ]
+}
+
+@test "full-evidence HEAD warning identifies only the bounded snapshot limit" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/coverage.json" <<'EOF'
+{
+  "pr": 131,
+  "diff_included": 1,
+  "diff_total": 1,
+  "head_included": 50008,
+  "head_total": 69796,
+  "would_truncate": true,
+  "diff_truncated": false,
+  "head_truncated": true,
+  "omitted_head_paths": ["scripts/tests/opencode-provider.bats"],
+  "evidence_route": "full-evidence-opencode"
+}
+EOF
+
+  run --separate-stderr python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
+    --warn-record "$tmp/coverage.json"
+
+  [ "$status" -eq 0 ]
+  [[ "$stderr" == *"bounded HEAD snapshot would truncate"* ]]
+  [[ "$stderr" == *"full-evidence-opencode retrieves full paths"* ]]
+  rm -rf "$tmp"
+}
+
+@test "validate-postmerge-retro requires completion for full-evidence output" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/retro.json" <<'JSON'
+{
+  "pr": 1,
+  "summary": "Evidence retrieval stopped before the complete diff was read.",
+  "evidence_complete": false,
+  "follow_up_issues": []
+}
+JSON
+
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py \
+    --require-evidence-complete "$tmp/retro.json"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"evidence_complete must be true"* ]]
+  rm -rf "$tmp"
+}
+
+@test "validate-opencode-retrieval requires evidence beyond auto-loaded AGENTS.md" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/repo/src" "$tmp/repo/.artifacts/work"
+  echo "diff" >"$tmp/repo/.artifacts/work/diff.patch"
+  echo "{}" >"$tmp/repo/.artifacts/work/pr.json"
+  echo "summary" >"$tmp/repo/.artifacts/work/summary.txt"
+  echo "src/app.py" >"$tmp/repo/.artifacts/work/changed-files.txt"
+  printf 'AGENTS.md\nREADME.md\n' >"$tmp/repo/.artifacts/work/context-files.txt"
+  echo "instructions" >"$tmp/repo/AGENTS.md"
+  echo "app" >"$tmp/repo/src/app.py"
+  echo "readme" >"$tmp/repo/README.md"
+  cat >"$tmp/repo/.artifacts/work/retrieval-trace.json" <<JSON
+{
+  "paths": [
+    "$tmp/repo/.artifacts/work/diff.patch",
+    "$tmp/repo/.artifacts/work/pr.json",
+    "$tmp/repo/.artifacts/work/summary.txt",
+    "$tmp/repo/.artifacts/work/changed-files.txt",
+    "src/app.py",
+    "README.md"
+  ]
+}
+JSON
+
+  run python3 scripts/workflows/postmerge-retro/validate-opencode-retrieval.py \
+    "$tmp/repo/.artifacts/work/retrieval-trace.json" \
+    "$tmp/repo/.artifacts/work" "$tmp/repo"
+  [ "$status" -eq 0 ]
+
+  jq 'del(.paths[] | select(. == "README.md"))' \
+    "$tmp/repo/.artifacts/work/retrieval-trace.json" \
+    >"$tmp/repo/.artifacts/work/missing-context-trace.json"
+  run python3 scripts/workflows/postmerge-retro/validate-opencode-retrieval.py \
+    "$tmp/repo/.artifacts/work/missing-context-trace.json" \
+    "$tmp/repo/.artifacts/work" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"README.md"* ]]
+
+  jq 'del(.paths[0])' "$tmp/repo/.artifacts/work/retrieval-trace.json" \
+    >"$tmp/repo/.artifacts/work/incomplete-trace.json"
+  run python3 scripts/workflows/postmerge-retro/validate-opencode-retrieval.py \
+    "$tmp/repo/.artifacts/work/incomplete-trace.json" \
+    "$tmp/repo/.artifacts/work" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"diff.patch"* ]]
   rm -rf "$tmp"
 }
 

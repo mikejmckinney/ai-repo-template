@@ -42,6 +42,20 @@
       "items": {
         "$ref": "#/$defs/evidenceCoverage"
       }
+    },
+    "failed_prs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pr", "stage", "reason"],
+        "additionalProperties": true,
+        "properties": {
+          "pr": { "type": "integer", "minimum": 1 },
+          "stage": { "type": "string", "minLength": 1 },
+          "reason": { "type": "string", "minLength": 1 },
+          "exit_code": { "type": "integer", "minimum": 1 }
+        }
+      }
     }
   },
   "$defs": {
@@ -88,6 +102,19 @@
         "omitted_head_paths": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "provider_attempts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["provider", "status", "evidence_route"],
+            "additionalProperties": false,
+            "properties": {
+              "provider": { "type": "string", "minLength": 1 },
+              "status": { "type": "string", "enum": ["success", "failed"] },
+              "evidence_route": { "type": "string", "minLength": 1 }
+            }
+          }
         },
         "evidence_route": {
           "type": "string",

@@ -32,8 +32,23 @@ parse_positive_int() {
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
-WORKDIR="$(mktemp -d)"
-trap 'rm -rf "$WORKDIR"' EXIT
+WORK_ROOT="$REPO_ROOT/.artifacts/postmerge-retro/work"
+ARTIFACT_DIR="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${PR}"
+mkdir -p "$WORK_ROOT"
+WORKDIR="$(mktemp -d "$WORK_ROOT/pr-${PR}.XXXXXX")"
+mkdir -p "$ARTIFACT_DIR"
+rm -f "$ARTIFACT_DIR"/{retro.json,evidence-coverage.json,llm-output.txt,pr.json,changed-files.txt,retrieval-trace.json}
+
+persist_artifacts() {
+  local rc=$?
+  mkdir -p "$ARTIFACT_DIR"
+  for name in retro.json evidence-coverage.json llm-output.txt pr.json changed-files.txt retrieval-trace.json; do
+    [[ -f "$WORKDIR/$name" ]] && cp -f "$WORKDIR/$name" "$ARTIFACT_DIR/$name"
+  done
+  rm -rf "$WORKDIR"
+  return "$rc"
+}
+trap persist_artifacts EXIT
 
 DEFAULT_DIFF_LIMIT=300000
 diff_limit="$(parse_positive_int POSTMERGE_RETRO_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${POSTMERGE_RETRO_DIFF_LIMIT:-}")"
@@ -59,88 +74,136 @@ fi
 MERGE_SHA="$(jq -r '.merge_commit_sha // .head.sha' "$WORKDIR/pr.json")"
 jq -r '.body // ""' "$WORKDIR/pr.json" >"$WORKDIR/pr-body.md"
 
-mark_bounded_fallback() {
-  python3 "$SCRIPT_DIR/compute-evidence-coverage.py" \
-    --warn-record "$COVERAGE_JSON" \
-    --set-route bounded-fallback
-}
-
 run_bounded_pass() {
-  bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON"
+  local provider="$1"
+  bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
+    "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON" "$provider"
 }
 
-evidence_route="$(jq -r '.evidence_route // "bounded"' "$COVERAGE_JSON")"
 llm_raw="$WORKDIR/llm-output.txt"
 provider_used=""
+would_truncate="$(jq -r '.would_truncate // false' "$COVERAGE_JSON")"
+prompt_file="$WORKDIR/prompt.md"
 
-case "$evidence_route" in
-  bounded | bounded-fallback)
-    run_bounded_pass
-    provider_used="$(jq -r '.routing_context.provider_resolved // "bounded"' "$COVERAGE_JSON")"
-    ;;
-  full-evidence-opencode)
-    run_bounded_pass
-    provider_used="opencode-full-evidence"
-    ;;
-  full-evidence-cursor)
-    prompt_file="$WORKDIR/prompt.md"
-    bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" full-evidence "$prompt_file"
-    # shellcheck source=../lib/cursor-sdk-version.sh
-    source "$LIB_DIR/cursor-sdk-version.sh"
-    if npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1 \
-      && CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
-        node "$SCRIPT_DIR/run-postmerge-retro-full-cursor.mjs" "$prompt_file" "$llm_raw"; then
-      provider_used="cursor-full-evidence"
-    else
-      echo "::warning::Full-evidence Cursor retro failed for PR #${PR}; falling back to bounded truncated pass" >&2
-      mark_bounded_fallback
-      run_bounded_pass
-      provider_used="$(jq -r '.routing_context.provider_resolved // "bounded"' "$COVERAGE_JSON")-fallback"
-    fi
-    ;;
-  full-evidence-antigravity)
-    prompt_file="$WORKDIR/prompt.md"
-    bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" full-evidence "$prompt_file"
-    ag_rc=0
-    python3 "$SCRIPT_DIR/run-postmerge-retro-antigravity.py" \
-      "$REPO_ROOT" "$WORKDIR" "$prompt_file" "$llm_raw" || ag_rc=$?
-    if [[ "$ag_rc" -eq 0 ]]; then
-      provider_used="antigravity-full-evidence"
-    else
-      if [[ "$ag_rc" -eq 3 ]]; then
-        echo "::warning::Antigravity retro payload too large for PR #${PR}; falling back to bounded truncated pass" >&2
-      else
-        echo "::warning::Antigravity full-evidence retro failed for PR #${PR}; falling back to bounded truncated pass" >&2
-      fi
-      mark_bounded_fallback
-      run_bounded_pass
-      provider_used="$(jq -r '.routing_context.provider_resolved // "gemini"' "$COVERAGE_JSON")-fallback"
-    fi
-    ;;
-  *)
-    echo "::warning::Unknown evidence_route=${evidence_route}; using bounded pass" >&2
-    run_bounded_pass
-    provider_used="bounded"
-    ;;
-esac
+# shellcheck source=../lib/pick-advisory-provider.sh
+source "$LIB_DIR/pick-advisory-provider.sh"
+# shellcheck source=../lib/invoke-advisory-llm.sh
+source "$LIB_DIR/invoke-advisory-llm.sh"
+init_advisory_provider_credentials
+mapfile -t provider_candidates < <(list_advisory_providers retro)
+if [[ ${#provider_candidates[@]} -eq 0 ]]; then
+  echo "::error::No post-merge retro provider configured." >&2
+  exit 1
+fi
 
+record_provider_attempt() {
+  local provider="$1" status="$2" route="$3"
+  python3 - "$COVERAGE_JSON" "$provider" "$status" "$route" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+provider, status, route = sys.argv[2:]
+record = json.loads(path.read_text(encoding="utf-8"))
+record.setdefault("provider_attempts", []).append(
+    {"provider": provider, "status": status, "evidence_route": route}
+)
+if status == "success":
+    record["evidence_route"] = route
+    record.setdefault("routing_context", {})["provider_resolved"] = provider
+path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+PY
+}
+
+run_full_evidence_provider() {
+  local provider="$1"
+  bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" full-evidence "$prompt_file"
+  case "$provider" in
+    opencode)
+      OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro.schema.json" \
+        OPENCODE_RETRIEVAL_TRACE_FILE="$WORKDIR/retrieval-trace.json" \
+        invoke_advisory_llm \
+        "$prompt_file" "$llm_raw" opencode "$REPO_ROOT/scripts/workflows/advisory-review" \
+        "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+      ;;
+    cursor)
+      # shellcheck source=../lib/cursor-sdk-version.sh
+      source "$LIB_DIR/cursor-sdk-version.sh"
+      npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1 \
+        && CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
+          node "$SCRIPT_DIR/run-postmerge-retro-full-cursor.mjs" "$prompt_file" "$llm_raw"
+      ;;
+    gemini)
+      [[ "$(jq -r '.routing_context.antigravity_available // false' "$COVERAGE_JSON")" == "true" ]] || return 1
+      python3 "$SCRIPT_DIR/run-postmerge-retro-antigravity.py" \
+        "$REPO_ROOT" "$WORKDIR" "$prompt_file" "$llm_raw"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+provider_succeeded=false
 retro_json="$WORKDIR/retro.json"
-python3 "$SCRIPT_DIR/extract-retro-json.py" "$llm_raw" "$PR" "$retro_json"
+candidate_json="$WORKDIR/retro-candidate.json"
+
+validate_provider_output() {
+  local -a validation_args=()
+  rm -f "$candidate_json"
+  if [[ "$route" == full-evidence-* ]]; then
+    validation_args+=(--require-evidence-complete)
+  fi
+  python3 "$SCRIPT_DIR/extract-retro-json.py" "$llm_raw" "$PR" "$candidate_json" \
+    && python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "${validation_args[@]}" "$candidate_json" \
+    && {
+      [[ "$provider" != "opencode" || "$route" != full-evidence-* ]] \
+        || python3 "$SCRIPT_DIR/validate-opencode-retrieval.py" \
+          "$WORKDIR/retrieval-trace.json" "$WORKDIR" "$REPO_ROOT"
+    }
+}
+
+for provider in "${provider_candidates[@]}"; do
+  rm -f "$llm_raw" "$WORKDIR/retrieval-trace.json"
+  if [[ "$would_truncate" == "true" ]]; then
+    case "$provider" in
+      opencode) route=full-evidence-opencode ;;
+      cursor) route=full-evidence-cursor ;;
+      gemini) route=full-evidence-antigravity ;;
+      *) route=bounded-fallback ;;
+    esac
+    if run_full_evidence_provider "$provider" && validate_provider_output; then
+      provider_succeeded=true
+    fi
+  else
+    route=bounded
+    if run_bounded_pass "$provider" && validate_provider_output; then
+      provider_succeeded=true
+    fi
+  fi
+
+  if [[ "$provider_succeeded" == "true" ]]; then
+    provider_used="$provider"
+    cp -f "$candidate_json" "$retro_json"
+    record_provider_attempt "$provider" success "$route"
+    break
+  fi
+  record_provider_attempt "$provider" failed "$route"
+  echo "::warning::Post-merge retro provider ${provider} failed for PR #${PR}; trying next available provider" >&2
+done
+
+if [[ "$provider_succeeded" != "true" ]]; then
+  echo "::error::Post-merge retro provider cascade exhausted for PR #${PR}" >&2
+  exit 1
+fi
+
 jq --arg sha "$MERGE_SHA" '. + {merge_commit_sha: $sha}' "$retro_json" >"$WORKDIR/retro-with-sha.json"
 mv "$WORKDIR/retro-with-sha.json" "$retro_json"
 python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "$retro_json"
 
 final_route="$(jq -r '.evidence_route // "bounded"' "$COVERAGE_JSON")"
 cp -f "$retro_json" "$WORKDIR/retro.json.final"
-if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
-  artifact_dir="${GITHUB_WORKSPACE}/.artifacts/postmerge-retro/pr-${PR}"
-  mkdir -p "$artifact_dir"
-  cp -f "$retro_json" "$artifact_dir/retro.json"
-  cp -f "$COVERAGE_JSON" "$artifact_dir/evidence-coverage.json" 2>/dev/null || true
-  cp -f "$llm_raw" "$artifact_dir/llm-output.txt" 2>/dev/null || true
-  cp -f "$WORKDIR/pr.json" "$artifact_dir/pr.json" 2>/dev/null || true
-  cp -f "$WORKDIR/changed-files.txt" "$artifact_dir/changed-files.txt" 2>/dev/null || true
-fi
 echo "Post-merge retro JSON written for PR #${PR} route=${final_route} provider=${provider_used}"
 
 if [[ "$CREATE_ISSUES" == "true" || "$CREATE_ISSUES" == "1" ]]; then

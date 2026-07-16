@@ -241,11 +241,19 @@ def emit_truncation_warnings(record: dict) -> None:
             if len(omitted) > 5:
                 preview += f", … (+{len(omitted) - 5} more)"
             omitted_note = f"; omitted HEAD paths: {preview}"
-        print(
-            f"::warning::Post-merge retro PR #{pr}: HEAD evidence truncated "
-            f"({record['head_included']}/{record['head_total']} bytes{omitted_note})",
-            file=sys.stderr,
-        )
+        route = record.get("evidence_route", "bounded")
+        if route.startswith("full-evidence-"):
+            message = (
+                f"bounded HEAD snapshot would truncate "
+                f"({record['head_included']}/{record['head_total']} bytes{omitted_note}); "
+                f"{route} retrieves full paths"
+            )
+        else:
+            message = (
+                f"HEAD evidence truncated "
+                f"({record['head_included']}/{record['head_total']} bytes{omitted_note})"
+            )
+        print(f"::warning::Post-merge retro PR #{pr}: {message}", file=sys.stderr)
     if record.get("evidence_route") == "bounded-fallback":
         ctx = record.get("routing_context") or {}
         provider = ctx.get("provider_resolved", "unknown")
