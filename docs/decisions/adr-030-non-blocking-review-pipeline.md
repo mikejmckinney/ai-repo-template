@@ -176,7 +176,7 @@ corrects two gaps exposed by
 ## References
 
 - [Agent pipeline guide § Post-merge retrospective](../guides/agent-pipeline.md)
-- [Combined prompt pack v2](../../.github/prompts/agent-pr-prompts-combined-v2.md) — PRs 2–4
+- [Combined prompt pack v2 at its final retained commit](https://github.com/mikejmckinney/ai-repo-template/blob/57630c8bc3409798ca4844cc807b406d57108bd8/.github/prompts/agent-pr-prompts-combined-v2.md) — PRs 2–4
 - [ADR-016 Pre-merge verification gate](./adr-016-pre-merge-verification-gate.md)
 - [ADR-027 Opportunity feedback channel](./adr-027-opportunity-feedback-channel.md)
 - [ADR-029 Sandbox dogfood evidence](./adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md)
