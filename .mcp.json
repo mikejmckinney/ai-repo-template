@@ -7,6 +7,30 @@
         "Authorization": "Bearer ${GH_PAT}"
       }
     },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}"
+    },
+    "netlify": {
+      "type": "http",
+      "url": "https://netlify-mcp.netlify.app/mcp"
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com"
+    },
+    "cloudflare-api": {
+      "type": "http",
+      "url": "https://mcp.cloudflare.com/mcp"
+    },
+    "cloudflare-docs": {
+      "type": "http",
+      "url": "https://docs.mcp.cloudflare.com/mcp"
+    },
+    "railway": {
+      "command": "railway",
+      "args": ["mcp"]
+    },
     "open-design": {
       "command": "node",
       "args": [

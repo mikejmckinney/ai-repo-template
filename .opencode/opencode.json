@@ -17,6 +17,36 @@
         "Authorization": "Bearer {env:GH_PAT}"
       }
     },
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp?project_ref={env:SUPABASE_PROJECT_REF}",
+      "enabled": false
+    },
+    "netlify": {
+      "type": "remote",
+      "url": "https://netlify-mcp.netlify.app/mcp",
+      "enabled": true
+    },
+    "vercel": {
+      "type": "remote",
+      "url": "https://mcp.vercel.com",
+      "enabled": true
+    },
+    "cloudflare-api": {
+      "type": "remote",
+      "url": "https://mcp.cloudflare.com/mcp",
+      "enabled": true
+    },
+    "cloudflare-docs": {
+      "type": "remote",
+      "url": "https://docs.mcp.cloudflare.com/mcp",
+      "enabled": true
+    },
+    "railway": {
+      "type": "local",
+      "command": ["railway", "mcp"],
+      "enabled": true
+    },
     "open-design": {
       "type": "local",
       "command": ["node", "/Applications/Open Design.app/Contents/Resources/app/prebundled/daemon/daemon-cli.mjs", "mcp", "--daemon-url", "http://127.0.0.1:7456"],

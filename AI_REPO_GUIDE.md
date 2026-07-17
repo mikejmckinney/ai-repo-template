@@ -116,6 +116,20 @@ personal OAuth credential is not forwarded to public GitHub Actions. Workflows
 install the pinned OpenCode runtime from `.github/agent-runtime/package-lock.json`
 on GitHub-managed `ubuntu-latest`.
 
+Interactive provider MCPs use browser OAuth and support write/deploy capabilities
+within the access granted during authorization. Limit Cloudflare authorization to
+the developer-platform resources needed by the project.
+Set `SUPABASE_PROJECT_REF` before starting an MCP client so Supabase remains scoped
+to one development project. Its OpenCode server is disabled by default; enable it
+only after setting the variable. Generic clients leave an unset variable
+unexpanded and report the server as unconfigured. Authenticate OpenCode servers with
+`opencode mcp auth <supabase|netlify|vercel|cloudflare-api>`; Cloudflare docs does
+not require account access. Install and authenticate the Railway CLI before using
+its local server (`railway login`). Vercel does not currently list OpenCode among
+its reviewed native clients; try native OAuth first. If Vercel rejects the client,
+change its OpenCode entry to type `local` with command
+`["npx", "-y", "mcp-remote", "https://mcp.vercel.com"]` and remove its `url`.
+
 ## Documentation Synchronization
 
 - Build, test, install, layout, and troubleshooting changes update this guide.
