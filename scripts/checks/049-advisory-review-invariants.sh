@@ -113,6 +113,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'cursor-grok-4.5-medium' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'parameter.id === "effort" && parameter.value === "medium"' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'parameter.id === "fast" && parameter.value === "false"' "$CURSOR_SCRIPT" 2>/dev/null \
     && grep -q 'GITHUB_RUN_ID' "$CURSOR_SCRIPT" 2>/dev/null \
     && grep -q 'buildCursorModelConfig' "$CURSOR_SCRIPT" 2>/dev/null; then
     pass "run-advisory-cursor.mjs pins Cursor Grok 4.5 Medium and logs GITHUB_RUN_ID context"

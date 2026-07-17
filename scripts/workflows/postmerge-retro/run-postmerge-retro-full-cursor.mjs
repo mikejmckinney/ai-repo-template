@@ -29,7 +29,13 @@ async function buildCursorModelConfig(id) {
     const catalog = await Cursor.models.list({ apiKey });
     const grok = catalog.find((candidate) => candidate.id === "grok-4.5");
     const medium = grok?.variants?.find(
-      (variant) => /medium/i.test(variant.displayName) && !/fast/i.test(variant.displayName),
+      (variant) =>
+        variant.params.some(
+          (parameter) => parameter.id === "effort" && parameter.value === "medium",
+        ) &&
+        variant.params.some(
+          (parameter) => parameter.id === "fast" && parameter.value === "false",
+        ),
     );
     if (!grok || !medium) {
       throw new Error(
