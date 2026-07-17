@@ -59,6 +59,31 @@ setup() {
   [ "$output" = $'cursor\nopencode\ngemini' ]
 }
 
+@test "Cursor SDK resolves Grok Medium without fast mode" {
+  run node --input-type=module - "$REPO_ROOT/scripts/workflows/lib/cursor-model-config.mjs" <<'EOF'
+import assert from "node:assert/strict"
+import { pathToFileURL } from "node:url"
+
+const modulePath = pathToFileURL(process.argv[2]).href
+const { buildCursorModelConfig, cursorBillingTier } = await import(modulePath)
+const catalog = [{
+  id: "grok-4.5",
+  variants: [
+    { params: [{ id: "effort", value: "high" }, { id: "fast", value: "true" }] },
+    { params: [{ id: "effort", value: "medium" }, { id: "fast", value: "false" }] },
+  ],
+}]
+const model = await buildCursorModelConfig("cursor-grok-4.5-medium", async () => catalog)
+assert.deepEqual(model, {
+  id: "grok-4.5",
+  params: catalog[0].variants[1].params,
+})
+assert.equal(cursorBillingTier(model, "grok-4.5"), "grok-4.5-medium")
+EOF
+
+  [ "$status" -eq 0 ]
+}
+
 @test "full-evidence OpenCode dispatch does not call the bounded pass" {
   run python3 - "$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro.sh" <<'PY'
 import sys

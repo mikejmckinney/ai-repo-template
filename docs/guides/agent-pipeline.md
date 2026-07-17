@@ -50,9 +50,9 @@ remain cadence-specific.
 
 Advisory, daily, and weekly automation resolve `auto` in this order:
 
-1. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
+1. Cursor when `CURSOR_API_KEY` is available.
+2. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
    `OPENROUTER_API_KEY` are available.
-2. Cursor.
 3. Antigravity where the cadence permits it.
 4. Gemini.
 

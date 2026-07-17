@@ -5,6 +5,11 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { Agent, Cursor } from "@cursor/sdk";
+import {
+  buildCursorModelConfig,
+  cursorBillingTier,
+  DEFAULT_CURSOR_MODEL,
+} from "../lib/cursor-model-config.mjs";
 
 const [promptFile, outFile] = process.argv.slice(2);
 if (!promptFile || !outFile) {
@@ -20,42 +25,12 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const modelId = process.env.CURSOR_ADVISORY_MODEL || "cursor-grok-4.5-medium";
+const modelId = process.env.CURSOR_ADVISORY_MODEL || DEFAULT_CURSOR_MODEL;
 const prompt = readFileSync(promptFile, "utf8");
-
-/** @param {string} id */
-async function buildCursorModelConfig(id) {
-  if (id === "cursor-grok-4.5-medium") {
-    const catalog = await Cursor.models.list({ apiKey });
-    const grok = catalog.find((candidate) => candidate.id === "grok-4.5");
-    const medium = grok?.variants?.find(
-      (variant) =>
-        variant.params.some(
-          (parameter) => parameter.id === "effort" && parameter.value === "medium",
-        ) &&
-        variant.params.some(
-          (parameter) => parameter.id === "fast" && parameter.value === "false",
-        ),
-    );
-    if (!grok || !medium) {
-      throw new Error(
-        `Cursor SDK catalog does not expose Grok 4.5 Medium non-fast: ${JSON.stringify(grok ?? null)}`,
-      );
-    }
-    return { id: grok.id, params: medium.params };
-  }
-  if (id === "composer-2.5-fast") {
-    return { id: "composer-2.5", params: [{ id: "fast", value: "true" }] };
-  }
-  if (id === "composer-2.5") {
-    return { id: "composer-2.5", params: [{ id: "fast", value: "false" }] };
-  }
-  return { id };
-}
 
 let model;
 try {
-  model = await buildCursorModelConfig(modelId);
+  model = await buildCursorModelConfig(modelId, () => Cursor.models.list({ apiKey }));
 } catch (err) {
   const message = err instanceof Error ? err.message : String(err);
   console.error(`::error::Cursor model resolution failed: ${message}`);
@@ -104,16 +79,7 @@ try {
 
 const observedModel = result?.model?.id ?? "unknown";
 const fastParam = model.params?.find((p) => p.id === "fast")?.value;
-const billingTier =
-  model.id === "grok-4.5"
-    ? fastParam === "true"
-      ? "grok-4.5-fast"
-      : "grok-4.5-standard"
-    : observedModel.includes("fast") || fastParam === "true"
-      ? "composer-2.5-fast"
-      : fastParam === "false"
-        ? "composer-2.5-standard"
-        : "unknown";
+const billingTier = cursorBillingTier(model, observedModel);
 
 console.error(
   `Cursor full-evidence retro: requested=${modelId} resolved=${JSON.stringify(model)} observed=${observedModel} fast_param=${fastParam ?? "unset"} billing_tier=${billingTier} status=${result?.status ?? "unknown"}`,
