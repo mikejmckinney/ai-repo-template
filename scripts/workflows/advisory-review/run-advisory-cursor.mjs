@@ -117,11 +117,15 @@ try {
 const observedModel = result?.model?.id ?? "unknown";
 const fastParam = model.params?.find((p) => p.id === "fast")?.value;
 const billingTier =
-  observedModel.includes("fast") || fastParam === "true"
-    ? "composer-2.5-fast"
-    : fastParam === "false"
-      ? "composer-2.5-standard"
-      : "unknown";
+  model.id === "grok-4.5"
+    ? fastParam === "true"
+      ? "grok-4.5-fast"
+      : "grok-4.5-standard"
+    : observedModel.includes("fast") || fastParam === "true"
+      ? "composer-2.5-fast"
+      : fastParam === "false"
+        ? "composer-2.5-standard"
+        : "unknown";
 
 console.error(
   `Cursor advisory review: requested=${modelId} resolved=${JSON.stringify(model)} observed=${observedModel} fast_param=${fastParam ?? "unset"} billing_tier=${billingTier} status=${result?.status ?? "unknown"}`,
