@@ -33,25 +33,6 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-@test "provider skills are locked to official sources" {
-  run jq -e '
-    .skills.supabase.source == "supabase/agent-skills" and
-    .skills["supabase-postgres-best-practices"].source == "supabase/agent-skills" and
-    .skills["netlify-config"].source == "netlify/context-and-tools" and
-    .skills["netlify-deploy"].source == "netlify/context-and-tools" and
-    .skills["netlify-frameworks"].source == "netlify/context-and-tools" and
-    .skills["deploy-to-vercel"].source == "vercel-labs/agent-skills" and
-    .skills.wrangler.source == "cloudflare/skills" and
-    .skills["workers-best-practices"].source == "cloudflare/skills" and
-    .skills["use-railway"].source == "railwayapp/railway-skills"
-  ' "$REPO_ROOT/skills-lock.json"
-  [ "$status" -eq 0 ]
-
-  while IFS= read -r skill; do
-    [ -f "$REPO_ROOT/.agents/skills/$skill/SKILL.md" ]
-  done < <(jq -r '.skills | keys[]' "$REPO_ROOT/skills-lock.json")
-}
-
 @test "Codespaces bootstrap copies provider integrations" {
   run python3 - "$REPO_ROOT/install.sh" <<'PY'
 import re

@@ -57,10 +57,10 @@ invoke_panel_engine() {
   return "$result"
 }
 
-primary_engines=(sol fable glm)
-fallback_engines=(mm mi ds)
+primary_engines=(sol fable grok)
+fallback_engines=(glm mm mi ds)
 pids=()
-panel_engines=(sol fable glm)
+panel_engines=(sol fable grok)
 panel_statuses=(success success success)
 panel_files=(
   "$OUTPUT_DIR/panel-1.md"

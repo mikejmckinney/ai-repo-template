@@ -12,6 +12,8 @@ setup() {
   export LOCAL_CONSENSUS_SESSION_LIMIT=100
   export MOCK_LOG="$TEST_ROOT/calls.log"
   export MOCK_SOL_MODE=success
+  export MOCK_GROK_MODE=success
+  export MOCK_GLM_MODE=success
   printf '%s\n' 'Analyze this problem.' >"$TEST_ROOT/prompt.md"
   cat >"$BIN_DIR/opencode" <<'EOF'
 #!/usr/bin/env bash
@@ -38,16 +40,33 @@ printf 'prompt-bytes=%s\n' "${#prompt}" >>"$MOCK_LOG"
 if [[ "$model" == "openai/gpt-5.6-sol" ]]; then
   [[ "$MOCK_SOL_MODE" == success ]] || exit 7
   printf 'Sol answer\n'
+elif [[ "$title" == *-glm ]]; then
+  [[ "$MOCK_GLM_MODE" == success ]] || exit 10
+  printf 'GLM answer\n'
 elif [[ "$title" == *-mi || "$title" == *-ds ]]; then
   printf 'Panel answer from %s\n' "$title"
 elif [[ "$title" == *-mm ]]; then
   [[ "${MOCK_MM_MODE:-success}" == success ]] || exit 9
   printf 'Panel answer from %s\n' "$title"
 else
-  printf 'GLM answer\n'
+  printf 'OpenCode answer\n'
 fi
 EOF
   chmod +x "$BIN_DIR/opencode"
+
+  cat >"$BIN_DIR/agent" <<'EOF'
+#!/usr/bin/env bash
+printf 'agent %s\n' "$*" >>"$MOCK_LOG"
+if [[ "$1" == "--list-models" ]]; then
+  printf 'cursor-grok-4.5-medium - Cursor Grok 4.5 Medium\n'
+  exit 0
+fi
+prompt=$(cat)
+printf 'prompt-bytes=%s\n' "${#prompt}" >>"$MOCK_LOG"
+[[ "$MOCK_GROK_MODE" == success ]] || exit 11
+printf '{"type":"result","subtype":"success","is_error":false,"result":"Grok answer","session_id":"ses_grok"}\n'
+EOF
+  chmod +x "$BIN_DIR/agent"
 
   cat >"$BIN_DIR/claude" <<'EOF'
 #!/usr/bin/env bash
@@ -90,6 +109,22 @@ teardown() {
   [ "$(jq -r '.failed_engines[0]' <<<"$output")" = sol ]
 }
 
+@test "advisor falls back to Cursor Grok before GLM" {
+  export MOCK_SOL_MODE=fail
+  export MOCK_FABLE_MODE=fail
+  run "$SKILL_ROOT/scripts/run-advisor.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title local-advisor-test \
+    --output-dir "$TEST_ROOT/advisor"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.engine' <<<"$output")" = grok ]
+  [ "$(jq -r '.session_id' <<<"$output")" = ses_grok ]
+  grep -q -- '--model cursor-grok-4.5-medium' "$MOCK_LOG"
+  run ! grep -q -- '-glm' "$MOCK_LOG"
+}
+
 @test "advisor transports a large prompt through stdin" {
   dd if=/dev/zero bs=1024 count=256 2>/dev/null | tr '\0' x >"$TEST_ROOT/large.md"
   run "$SKILL_ROOT/scripts/run-advisor.sh" \
@@ -103,7 +138,7 @@ teardown() {
   [ "$prompt_bytes" -ge 262144 ]
 }
 
-@test "fusion uses Sol, Fable, and GLM as its primary panel" {
+@test "fusion uses Sol, Fable, and Cursor Grok as its primary panel" {
   run "$SKILL_ROOT/scripts/run-fusion.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
@@ -114,12 +149,12 @@ teardown() {
   [ "$(jq -r '.status' <<<"$output")" = success ]
   [ "$(jq -r '.panels_succeeded' <<<"$output")" -eq 3 ]
   [ "$(jq -r '.engine' <<<"$output")" = sol ]
-  [ "$(jq -r '[.panels[].engine] | join(",")' <<<"$output")" = "sol,fable,glm" ]
+  [ "$(jq -r '[.panels[].engine] | join(",")' <<<"$output")" = "sol,fable,grok" ]
   [ "$(jq -r '.judge_overlap' <<<"$output")" = true ]
   run ! grep -q '## Panel SOL\|## Panel FABLE\|## Panel GLM' "$TEST_ROOT/fusion/judge-prompt.md"
 }
 
-@test "fusion backfills a failed primary with the first legacy fallback" {
+@test "fusion backfills a failed primary with GLM" {
   run env MOCK_FABLE_MODE=fail "$SKILL_ROOT/scripts/run-fusion.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
@@ -129,13 +164,13 @@ teardown() {
   [ "$status" -eq 0 ]
   [ "$(jq -r '.panels_succeeded' <<<"$output")" -eq 3 ]
   [ "$(jq -r '.panels[1].slot' <<<"$output")" = fable ]
-  [ "$(jq -r '.panels[1].engine' <<<"$output")" = mm ]
+  [ "$(jq -r '.panels[1].engine' <<<"$output")" = glm ]
   [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
-  grep -q -- '--model openrouter/minimax/minimax-m3@preset/default' "$MOCK_LOG"
+  grep -q -- '--model openrouter/z-ai/glm-5.2@preset/default' "$MOCK_LOG"
 }
 
-@test "fusion advances through the legacy fallback pool without reuse" {
-  run env MOCK_FABLE_MODE=fail MOCK_MM_MODE=fail \
+@test "fusion advances from GLM to MiniMax without reuse" {
+  run env MOCK_FABLE_MODE=fail MOCK_GLM_MODE=fail \
     "$SKILL_ROOT/scripts/run-fusion.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
@@ -143,13 +178,13 @@ teardown() {
     --output-dir "$TEST_ROOT/fusion"
 
   [ "$status" -eq 0 ]
-  [ "$(jq -r '.panels[1].engine' <<<"$output")" = mi ]
+  [ "$(jq -r '.panels[1].engine' <<<"$output")" = mm ]
   [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
+  grep -q -- '--model openrouter/z-ai/glm-5.2@preset/default' "$MOCK_LOG"
   grep -q -- '--model openrouter/minimax/minimax-m3@preset/default' "$MOCK_LOG"
-  grep -q -- '--model openrouter/xiaomi/mimo-v2.5-pro@preset/default' "$MOCK_LOG"
 }
 
-@test "environment validation confirms configured Sol model" {
+@test "environment validation confirms configured Sol and Grok models" {
   run "$SKILL_ROOT/scripts/validate-environment.sh"
   [ "$status" -eq 0 ]
   [ "$(jq -r '.status' <<<"$output")" = success ]

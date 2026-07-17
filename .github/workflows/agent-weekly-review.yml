@@ -8,7 +8,7 @@
 #   - cursor      — Cursor SDK (CURSOR_API_KEY); agent reads repo via local.cwd
 #   - antigravity — Gemini Interactions (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
 #   - gemini      — Gemini generateContent (flat prompt; no repo browse)
-#   - auto        — opencode, cursor, antigravity (when enabled), then gemini
+#   - auto        — cursor, opencode, antigravity (when enabled), then gemini
 
 name: Agent — weekly repository review
 
@@ -81,7 +81,7 @@ jobs:
       WEEKLY_REVIEW_CONTEXT_PROFILE: ${{ github.event.inputs.context_profile || vars.WEEKLY_REVIEW_CONTEXT_PROFILE || 'full' }}
       RUN_WEEK: ${{ github.event.inputs.run_week || '' }}
       RUN_DATE: ${{ github.event.inputs.run_date || '' }}
-      CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
+      CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'cursor-grok-4.5-medium' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       WEEKLY_REVIEW_MODEL: ${{ vars.WEEKLY_REVIEW_MODEL || '' }}
       POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
@@ -231,7 +231,7 @@ jobs:
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
       WEEKLY_REVIEW_MODEL: ${{ vars.WEEKLY_REVIEW_MODEL || '' }}
       POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
-      CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'composer-2.5' }}
+      CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'cursor-grok-4.5-medium' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       RUN_WEEK: ${{ github.event.inputs.run_week || needs.weekly-review.outputs.run_week }}
       RUN_DATE: ${{ github.event.inputs.run_date || needs.weekly-review.outputs.run_date }}

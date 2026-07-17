@@ -32,7 +32,7 @@ invoke_advisory_llm() {
       # shellcheck source=cursor-sdk-version.sh
       source "$lib_dir/cursor-sdk-version.sh"
       npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
-      CURSOR_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}}" \
+      CURSOR_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}}" \
         env -u GITHUB_TOKEN -u GH_TOKEN -u CLAUDE_PAT -u SANDBOX_BOOTSTRAP_TOKEN \
         node "$advisory_dir/run-advisory-cursor.mjs" "$prompt_file" "$out_file"
       ;;

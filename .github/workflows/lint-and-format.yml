@@ -77,8 +77,10 @@ jobs:
         # `-r -0` is required on GNU xargs: `-r` skips invocation when no
         # input; `-0` (null-delimited, pairs with -print0) handles filenames
         # with spaces or special characters (SC2038).
+        # `.agents/skills` contains provenance-locked third-party source; lint
+        # repository-owned shell instead of carrying local vendor patches.
         run: |
-          find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
+          find . \( -name '.git' -o -name 'node_modules' -o -path './.agents/skills' \) -prune -o \
             -name '*.sh' -print0 \
             | xargs -r -0 shellcheck --severity=warning --exclude=SC1091
 
@@ -100,8 +102,9 @@ jobs:
         # -ci: indent case statements.
         # `-r -0` pairs with -print0 to handle filenames with spaces or
         # special characters (SC2038).
+        # Keep provenance-locked third-party skills byte-for-byte upstream.
         run: |
-          find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
+          find . \( -name '.git' -o -name 'node_modules' -o -path './.agents/skills' \) -prune -o \
             -name '*.sh' -print0 \
             | xargs -r -0 shfmt -d -i 2 -bn -ci
 

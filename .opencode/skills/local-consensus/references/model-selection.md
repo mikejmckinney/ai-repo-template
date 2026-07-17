@@ -6,7 +6,8 @@ The deterministic fallback order is:
 |---|---|---|
 | 1 | Judge/Advisor | OpenAI `openai/gpt-5.6-sol` |
 | 2 | Judge/Advisor | Claude CLI `fable` |
-| 3 | Judge/Advisor | OpenRouter `openrouter/z-ai/glm-5.2@preset/default` |
+| 3 | Judge/Advisor | Cursor CLI `cursor-grok-4.5-medium` |
+| 4 | Judge/Advisor | OpenRouter `openrouter/z-ai/glm-5.2@preset/default` |
 
 Fusion primary panels use:
 
@@ -14,20 +15,22 @@ Fusion primary panels use:
 |---|---|
 | Sol | OpenAI `openai/gpt-5.6-sol` |
 | Fable | Claude CLI `fable` |
-| GLM | OpenRouter `openrouter/z-ai/glm-5.2@preset/default` |
+| Grok | Cursor CLI `cursor-grok-4.5-medium` |
 
 Failed primary slots are backfilled without duplication in this order:
 
 | Priority | Provider and model |
 |---|---|
-| 1 | `openrouter/minimax/minimax-m3@preset/default` |
-| 2 | `openrouter/xiaomi/mimo-v2.5-pro@preset/default` |
-| 3 | `openrouter/deepseek/deepseek-v4-pro@preset/default` |
+| 1 | `openrouter/z-ai/glm-5.2@preset/default` |
+| 2 | `openrouter/minimax/minimax-m3@preset/default` |
+| 3 | `openrouter/xiaomi/mimo-v2.5-pro@preset/default` |
+| 4 | `openrouter/deepseek/deepseek-v4-pro@preset/default` |
 
-Because the Judge uses the same Sol/Fable/GLM fallback chain, its selected
+Because the Judge uses the same Sol/Fable/Grok/GLM fallback chain, its selected
 engine may overlap with a panelist. Fusion reports this as `judge_overlap` and
 anonymizes panel labels before judging.
 
-Override Sol or GLM for controlled testing with
-`LOCAL_CONSENSUS_SOL_MODEL` or `LOCAL_CONSENSUS_GLM_MODEL`. Do not override
+Override Sol, Grok, or GLM for controlled testing with
+`LOCAL_CONSENSUS_SOL_MODEL`, `LOCAL_CONSENSUS_GROK_MODEL`, or
+`LOCAL_CONSENSUS_GLM_MODEL`. Do not override
 production model selection without a task-specific reason.

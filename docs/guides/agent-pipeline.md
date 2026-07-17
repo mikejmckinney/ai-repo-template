@@ -101,7 +101,7 @@ complete diff, local evidence inventory, non-auto-loaded startup context, and
 touched HEAD paths. OpenCode's system loader supplies the root `AGENTS.md`, so a
 redundant tool read is not required for that file.
 
-With `auto`, analysis attempts available providers in OpenCode, Cursor, then
+With `auto`, analysis attempts available providers in Cursor, OpenCode, then
 Gemini order. A provider transport, empty-result, or validation failure advances
 to the next available provider. A large review is not reported as successful
 after silently degrading to bounded evidence. Daily sequential runs record

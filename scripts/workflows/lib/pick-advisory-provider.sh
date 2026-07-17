@@ -6,7 +6,7 @@
 #   PROVIDER="$(pick_advisory_provider MODE)"
 #
 # MODE:
-#   advisory      — opencode / cursor / antigravity / gemini (ADVISORY_REVIEW_PROVIDER)
+#   advisory      — cursor / opencode / antigravity / gemini (ADVISORY_REVIEW_PROVIDER)
 #   retro         — post-merge retro scan (POSTMERGE_RETRO_PROVIDER cascade)
 #   retro-fix     — fix pass (no antigravity)
 #   weekly-scan   — weekly scan (WEEKLY_REVIEW_PROVIDER cascade)
@@ -52,8 +52,8 @@ list_advisory_providers() {
     return 0
   fi
 
-  [[ "$has_opencode" -eq 1 ]] && printf '%s\n' opencode
   [[ "$has_cursor" -eq 1 ]] && printf '%s\n' cursor
+  [[ "$has_opencode" -eq 1 ]] && printf '%s\n' opencode
   if [[ ("$mode" == "advisory" || "$mode" == "weekly-scan") &&
     "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
     printf '%s\n' antigravity
@@ -117,10 +117,10 @@ pick_advisory_provider() {
       echo gemini
       ;;
     auto)
-      if [[ "$has_opencode" -eq 1 ]]; then
-        echo opencode
-      elif [[ "$has_cursor" -eq 1 ]]; then
+      if [[ "$has_cursor" -eq 1 ]]; then
         echo cursor
+      elif [[ "$has_opencode" -eq 1 ]]; then
+        echo opencode
       elif [[ ("$mode" == "advisory" || "$mode" == "weekly-scan") &&
         "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
         echo antigravity

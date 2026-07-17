@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 31 -->
+<!-- AGENTS_MD_VERSION: 32 -->
 
 ## Truth hierarchy
 
@@ -297,7 +297,7 @@ testing risk.
 
 ## Repo Orchestration Patterns
 
-The P1-P9/AP1-AP10 catalog is shared vocabulary for reasoning about agent,
+The P1-P9/AP1-AP11 catalog is shared vocabulary for reasoning about agent,
 workflow, and coordination changes. It is descriptive, not a standalone review
 gate: an ID alone never blocks a change. A finding must identify concrete harm
 and map it to an active rule, observable regression, or unmet user outcome.
@@ -368,3 +368,11 @@ Detailed history and examples remain in
   simplest maintained capability that satisfies the outcome. Additional
   complexity is justified only by demonstrated constraints such as compliance,
   isolation, performance, extensibility, or reproducibility.
+- **AP11 Probability Neglect:** risk handling focuses on the emotional salience
+  or mere possibility of an outcome while ignoring its likelihood, exposure
+  window, expected impact, mitigation cost, or opportunity cost. This can
+  produce excessive prevention for rare bounded risks while common material
+  risks remain under-addressed. Classify probability and impact separately,
+  account for reversibility and affected scope, compare mitigations by expected
+  benefit and cost, and state the evidence and uncertainty behind the
+  classification.

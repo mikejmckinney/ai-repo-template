@@ -28,7 +28,7 @@ We adopt a **three-stage non-blocking review pipeline** on `main`:
 
 Shared properties:
 
-- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (OpenCode SDK first, then the retained Cursor/Antigravity/Gemini adapters).
+- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (Cursor first, then the retained OpenCode/Antigravity/Gemini adapters).
 - **Scripts:** `scripts/workflows/advisory-review/` (LLM runners), `scripts/workflows/pr-feedback/` (finalize collect), `scripts/workflows/postmerge-retro/` (retro + daily batch), `scripts/workflows/weekly-review/` (weekly full-repo scan + fix).
 - **Lifecycle libraries:** daily and weekly adapters share provider dispatch, umbrella issue transport/reference handling, priority derivation, superseded-path detection, and batch-fix publication under `scripts/workflows/lib/`. Cadence-specific prompts, templates, markers, and metadata hooks remain explicit.
 - **Non-goals:** No auto-merge of fix PRs; no automatic `claude-fix`; no ADR/context-pack file edits in retro jobs; no formal PR review submission from advisory/finalize.
@@ -160,6 +160,15 @@ corrects two gaps exposed by
 - Empty Cursor results include sanitized status/error metadata. Interactive
   process termination uses prospective lifecycle and signal diagnostics rather
   than attributing graceful disposal to model output limits without evidence.
+
+## Amendment 2026-07-17 — Cursor Grok primary review routing
+
+Review automation now prefers Cursor `cursor-grok-4.5-medium` when Cursor
+credentials are available, then falls back to the retained OpenCode and Gemini
+adapters. This supersedes only the provider order established by the 2026-07-16
+amendment; the OpenCode isolation, retrieval, validation, and durable-fallback
+controls remain unchanged. Composer 2.5 remains an explicit override rather
+than the workflow default.
 
 ## Implementation
 

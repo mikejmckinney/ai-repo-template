@@ -42,6 +42,11 @@ local consensus, retained workflow adapters, and owner-keyed GitHub state.
   outcome. Additional complexity is justified when demonstrated compliance,
   isolation, performance, extensibility, or reproducibility constraints outweigh
   its implementation, operational, and maintenance costs.
+- **AP11 Probability Neglect:** risk handling substitutes salience or mere
+  possibility for a calibrated assessment of likelihood and impact. Compare the
+  exposure window, affected scope, reversibility, mitigation cost, and
+  opportunity cost before selecting a response, and state the evidence and
+  uncertainty behind the classification.
 
 Historical role-registry and multi-agent examples remain in superseded ADRs and
 benchmark artifacts. They are evidence, not active operational triggers.

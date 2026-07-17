@@ -11,7 +11,7 @@ setup() {
   antigravity_enabled=false
 }
 
-@test "auto routing prefers OpenCode when its runtime and credentials are available" {
+@test "auto routing prefers Cursor when Cursor and OpenCode are available" {
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -21,7 +21,7 @@ setup() {
   run pick_advisory_provider advisory
 
   [ "$status" -eq 0 ]
-  [ "$output" = opencode ]
+  [ "$output" = cursor ]
 }
 
 @test "OpenAI API credentials alone do not enable OpenCode in public CI" {
@@ -56,7 +56,7 @@ setup() {
   run list_advisory_providers retro
 
   [ "$status" -eq 0 ]
-  [ "$output" = $'opencode\ncursor\ngemini' ]
+  [ "$output" = $'cursor\nopencode\ngemini' ]
 }
 
 @test "full-evidence OpenCode dispatch does not call the bounded pass" {

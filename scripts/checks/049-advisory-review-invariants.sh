@@ -112,12 +112,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "advisory shell script bash -n failed"
   fi
 
-  if grep -q 'fast", value: "false"' "$CURSOR_SCRIPT" 2>/dev/null \
+  if grep -q 'cursor-grok-4.5-medium' "$CURSOR_SCRIPT" 2>/dev/null \
     && grep -q 'GITHUB_RUN_ID' "$CURSOR_SCRIPT" 2>/dev/null \
     && grep -q 'buildCursorModelConfig' "$CURSOR_SCRIPT" 2>/dev/null; then
-    pass "run-advisory-cursor.mjs pins composer-2.5 standard tier and logs GITHUB_RUN_ID context"
+    pass "run-advisory-cursor.mjs pins Cursor Grok 4.5 Medium and logs GITHUB_RUN_ID context"
   else
-    fail "run-advisory-cursor.mjs must set SDK fast=false for composer-2.5 and log workflow run context"
+    fail "run-advisory-cursor.mjs must pin Cursor Grok 4.5 Medium and log workflow run context"
   fi
 
   if command -v shellcheck >/dev/null 2>&1; then

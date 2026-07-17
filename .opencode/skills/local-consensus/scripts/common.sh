@@ -7,6 +7,7 @@ export SKILL_ROOT
 TIMEOUT_SECONDS="${LOCAL_CONSENSUS_TIMEOUT:-300}"
 SESSION_LIMIT="${LOCAL_CONSENSUS_SESSION_LIMIT:-100}"
 SOL_MODEL="${LOCAL_CONSENSUS_SOL_MODEL:-openai/gpt-5.6-sol}"
+GROK_MODEL="${LOCAL_CONSENSUS_GROK_MODEL:-cursor-grok-4.5-medium}"
 GLM_MODEL="${LOCAL_CONSENSUS_GLM_MODEL:-openrouter/z-ai/glm-5.2@preset/default}"
 MM_MODEL="${LOCAL_CONSENSUS_MM_MODEL:-openrouter/minimax/minimax-m3@preset/default}"
 MI_MODEL="${LOCAL_CONSENSUS_MI_MODEL:-openrouter/xiaomi/mimo-v2.5-pro@preset/default}"
@@ -67,6 +68,14 @@ invoke_engine() {
         [[ -s "$output_file" ]] && return 0
       fi
       ;;
+    grok)
+      if run_with_timeout "$TIMEOUT_SECONDS" agent -p --model "$GROK_MODEL" \
+        --output-format json <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
+        jq -r '.result // empty' "${output_file}.json" >"$output_file"
+        ENGINE_SESSION=$(jq -r '.session_id // empty' "${output_file}.json")
+        [[ -s "$output_file" ]] && return 0
+      fi
+      ;;
     glm)
       if run_with_timeout "$TIMEOUT_SECONDS" opencode run --title "${title}-glm" \
         --model "$GLM_MODEL" <"$prompt_file" >"$output_file" 2>"$error_file" \
@@ -98,7 +107,7 @@ invoke_with_fallback() {
   local title="$1" prompt_file="$2" output_file="$3"
   local engine
   FAILED_ENGINES=()
-  for engine in sol fable glm; do
+  for engine in sol fable grok glm; do
     if invoke_engine "$engine" "$title" "$prompt_file" "$output_file"; then
       SELECTED_ENGINE="$engine"
       SELECTED_SESSION="$ENGINE_SESSION"

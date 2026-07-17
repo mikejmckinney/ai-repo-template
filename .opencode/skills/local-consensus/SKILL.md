@@ -77,8 +77,8 @@ Run validation before first use or after provider/configuration changes:
 .opencode/skills/local-consensus/scripts/validate-environment.sh
 ```
 
-The command confirms required tools and the OpenAI-provider model
-`openai/gpt-5.6-sol`. Fable and GLM remain runtime fallbacks.
+The command confirms required tools and the models `openai/gpt-5.6-sol` and
+`cursor-grok-4.5-medium`. Fable, Grok, and GLM remain runtime fallbacks.
 
 ## Prepare The Prompt
 
@@ -112,9 +112,9 @@ guidance, read only one of:
   --invoking-session "$MY_SID"
 ```
 
-The Fusion runner launches Sol, Fable, and GLM as three bounded primary panels
+The Fusion runner launches Sol, Fable, and Grok as three bounded primary panels
 in parallel. A failed primary slot is backfilled by the next unused model from
-MM, MI, then DS. It proceeds when at least two unique panels succeed, then
+GLM, MM, MI, then DS. It proceeds when at least two unique panels succeed, then
 invokes the shared Judge fallback chain. The Judge specification is internal
 to `prompts/judge.md`; do not duplicate or inline it in the caller prompt.
 
@@ -143,8 +143,8 @@ answer file, verify material claims, and synthesize it for the user. Do not
 paste raw panel output.
 
 Engine order is Sol through OpenCode's OpenAI provider, Fable through the
-Claude CLI, then GLM through OpenCode's OpenRouter provider. Scripts, not the
-agent, own this ordering.
+Claude CLI, Grok through the Cursor CLI, then GLM through OpenCode's OpenRouter
+provider. Scripts, not the agent, own this ordering.
 
 ## Follow-Up
 
@@ -160,6 +160,12 @@ Fable uses its Claude session:
 ```bash
 printf '%s\n' "$FOLLOW_UP" | claude -p --model fable \
   --output-format json --dangerously-skip-permissions -r "$SESSION_ID"
+```
+
+Grok uses its Cursor session:
+
+```bash
+agent -p --resume "$SESSION_ID" --model cursor-grok-4.5-medium "$FOLLOW_UP"
 ```
 
 Use follow-up only to resolve a material omission or ambiguity. Do not start a
