@@ -32,7 +32,9 @@ async function buildCursorModelConfig(id) {
       (variant) => /medium/i.test(variant.displayName) && !/fast/i.test(variant.displayName),
     );
     if (!grok || !medium) {
-      throw new Error("Cursor SDK catalog does not expose Grok 4.5 Medium non-fast");
+      throw new Error(
+        `Cursor SDK catalog does not expose Grok 4.5 Medium non-fast: ${JSON.stringify(grok ?? null)}`,
+      );
     }
     return { id: grok.id, params: medium.params };
   }
