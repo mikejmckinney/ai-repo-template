@@ -5,8 +5,8 @@
 # Does NOT submit formal PR reviews, mutate PR state, or push commits.
 #
 # Providers (ADVISORY_REVIEW_PROVIDER repo variable, default auto):
-#   - opencode    — OpenCode SDK + read-only GitHub MCP (preferred)
-#   - cursor      — Cursor SDK (CURSOR_API_KEY)
+#   - cursor      — Cursor SDK (CURSOR_API_KEY; preferred)
+#   - opencode    — OpenCode SDK + read-only GitHub MCP
 #   - antigravity — Gemini Interactions / Antigravity (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
 #   - gemini      — Gemini generateContent API (GEMINI_API_KEY or GOOGLE_API_KEY)
 #   - auto        — cursor, opencode, antigravity (when enabled), then gemini

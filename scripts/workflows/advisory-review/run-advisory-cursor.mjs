@@ -9,7 +9,7 @@
  * @see https://forum.cursor.com/t/sdk-reports-composer-2-5-but-usage-dashboard-bills-composer-2-5-fast/163046
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { Agent } from "@cursor/sdk";
+import { Agent, Cursor } from "@cursor/sdk";
 
 const [promptFile, outFile] = process.argv.slice(2);
 if (!promptFile || !outFile) {
@@ -27,7 +27,18 @@ const modelId = process.env.CURSOR_ADVISORY_MODEL || "cursor-grok-4.5-medium";
 const prompt = readFileSync(promptFile, "utf8");
 
 /** @param {string} id */
-function buildCursorModelConfig(id) {
+async function buildCursorModelConfig(id) {
+  if (id === "cursor-grok-4.5-medium") {
+    const catalog = await Cursor.models.list({ apiKey });
+    const grok = catalog.find((candidate) => candidate.id === "grok-4.5");
+    const medium = grok?.variants?.find(
+      (variant) => /medium/i.test(variant.displayName) && !/fast/i.test(variant.displayName),
+    );
+    if (!grok || !medium) {
+      throw new Error("Cursor SDK catalog does not expose Grok 4.5 Medium non-fast");
+    }
+    return { id: grok.id, params: medium.params };
+  }
   if (id === "composer-2.5-fast") {
     return { id: "composer-2.5", params: [{ id: "fast", value: "true" }] };
   }
@@ -37,7 +48,14 @@ function buildCursorModelConfig(id) {
   return { id };
 }
 
-const model = buildCursorModelConfig(modelId);
+let model;
+try {
+  model = await buildCursorModelConfig(modelId);
+} catch (err) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(`::error::Cursor model resolution failed: ${message}`);
+  process.exit(1);
+}
 
 function sanitizedErrorDetails(value) {
   const details = {
@@ -98,7 +116,7 @@ const billingTier =
       : "unknown";
 
 console.error(
-  `Cursor advisory review: requested=${modelId} observed=${observedModel} fast_param=${fastParam ?? "unset"} billing_tier=${billingTier} status=${result?.status ?? "unknown"}`,
+  `Cursor advisory review: requested=${modelId} resolved=${JSON.stringify(model)} observed=${observedModel} fast_param=${fastParam ?? "unset"} billing_tier=${billingTier} status=${result?.status ?? "unknown"}`,
 );
 
 if (modelId === "composer-2.5" && billingTier === "composer-2.5-fast") {

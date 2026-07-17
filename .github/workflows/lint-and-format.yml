@@ -187,7 +187,9 @@ jobs:
 
           : > /tmp/changed-markdown-files-z
           while IFS= read -r -d '' file; do
-            if [[ "${file}" == *.md ]] && [[ ! "${file}" =~ (^|/)node_modules/|(^|/)\.git/ ]]; then
+            if [[ "${file}" == *.md ]] \
+              && [[ ! "${file}" =~ (^|/)node_modules/|(^|/)\.git/ ]] \
+              && [[ "${file}" != .agents/skills/* ]]; then
               printf '%s\0' "${file}" >> /tmp/changed-markdown-files-z
             fi
           done < /tmp/changed-files-z
@@ -229,7 +231,7 @@ jobs:
         run: |
           set +e
           markdownlint-cli2 --config .markdownlint-cli2.jsonc \
-            "**/*.md" "!node_modules/**" "!.git/**" \
+            "**/*.md" "!node_modules/**" "!.git/**" "!.agents/skills/**" \
             > /tmp/markdownlint-advisory.log 2>&1
           status=$?
           set -e

@@ -4,8 +4,8 @@
 # then open a draft fix PR. Offset from daily retro (06:00 UTC) to avoid collisions.
 #
 # Provider (WEEKLY_REVIEW_PROVIDER or ADVISORY_REVIEW_PROVIDER):
-#   - opencode    — OpenCode SDK + read-only GitHub MCP (preferred)
-#   - cursor      — Cursor SDK (CURSOR_API_KEY); agent reads repo via local.cwd
+#   - cursor      — Cursor SDK (CURSOR_API_KEY; preferred); agent reads repo via local.cwd
+#   - opencode    — OpenCode SDK + read-only GitHub MCP
 #   - antigravity — Gemini Interactions (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
 #   - gemini      — Gemini generateContent (flat prompt; no repo browse)
 #   - auto        — cursor, opencode, antigravity (when enabled), then gemini
