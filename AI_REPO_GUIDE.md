@@ -121,11 +121,10 @@ Supabase, and Railway read credentials from `VERCEL_API_KEY`, `NETLIFY_API_KEY`,
 `SUPABASE_API_KEY`, and `RAILWAY_API_KEY`; never commit these values. Cloudflare
 continues to use browser OAuth, which should be limited to the developer-platform
 resources needed by the project.
-Set `SUPABASE_PROJECT_REF` before starting an MCP client so Supabase remains scoped
-to one development project. Its OpenCode server is disabled by default; enable it
-only after setting the variable. Generic clients leave an unset variable
-unexpanded and report the server as unconfigured. Cloudflare API uses
-`opencode mcp auth cloudflare-api`; Cloudflare docs does not require account access.
+Supabase is account-wide by default. Add `?project_ref=<id>` to its MCP URL when
+one-project scope is preferred; project scope also disables account-management
+tools. Cloudflare API uses `opencode mcp auth cloudflare-api`; Cloudflare docs does
+not require account access.
 Railway maps `RAILWAY_API_KEY` to the CLI's `RAILWAY_API_TOKEN` variable.
 Netlify uses pinned `mcp-remote` as a compatibility adapter because OpenCode's
 native HTTP transport drops the hosted server's connection. The shell expands

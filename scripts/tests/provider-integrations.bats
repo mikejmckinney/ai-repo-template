@@ -10,8 +10,8 @@ setup() {
   run jq -e '
     .mcp.supabase == {
       type: "remote",
-      url: "https://mcp.supabase.com/mcp?project_ref={env:SUPABASE_PROJECT_REF}",
-      enabled: false,
+      url: "https://mcp.supabase.com/mcp",
+      enabled: true,
       oauth: false,
       headers: {Authorization: "Bearer {env:SUPABASE_API_KEY}"}
     } and
@@ -39,7 +39,7 @@ setup() {
   [ "$status" -eq 0 ]
 
   run jq -e '
-    .mcpServers.supabase.url == "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}" and
+    .mcpServers.supabase.url == "https://mcp.supabase.com/mcp" and
     .mcpServers.supabase.headers.Authorization == "Bearer ${SUPABASE_API_KEY}" and
     .mcpServers.netlify.command == "bash" and
     .mcpServers.netlify.args == [
