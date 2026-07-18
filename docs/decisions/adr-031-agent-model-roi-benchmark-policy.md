@@ -160,6 +160,30 @@ retained. Fusion uses OpenRouter Kimi K3, Fable, and Cursor Grok as primary
 panels, then backfills with Sol, GLM, MiniMax, MiMo, and DeepSeek. Judge/Advisor
 ordering remains Sol, Fable, Grok, then GLM.
 
+#### Amendment 2026-07-18 - Risk-based problem framing and critical review
+
+The monolithic implementing agent validates the problem and user outcome before
+designing implementation when work introduces net-new behavior, has ambiguous
+scope, makes a user-facing product choice, or is costly or difficult to reverse.
+Routine deterministic fixes and behavior-neutral maintenance do not acquire a
+mandatory framing stage unless their expected behavior is itself ambiguous.
+
+This is a reasoning contract, not a restoration of the retired Analyst, Judge,
+or Critic roles. It adds no role handoff, pipeline stage, verdict, or mandatory
+approval pause. `AGENTS.md` contains the concise normative policy, while
+`docs/guides/problem-framing.md` provides an optional detailed scaffold for
+product and market decisions.
+
+Critical review must identify the concrete failure mode, evidence, affected
+surface, and a proportionate path forward. Supporting checks cannot substitute
+for the issue's user-outcome test. Conditional impact dimensions remain separate
+and evidence-backed rather than being collapsed into a composite score.
+
+Class C greenfield work remains unbenchmarked. This amendment therefore does not
+claim that deeper framing improves model ROI for all product work; it bounds the
+new policy by consequence and ambiguity and requires sandbox dogfood before the
+change is treated as complete.
+
 ### 3. Revisit cadence
 
 Re-run benchmark stages or amend this ADR when **any** of the following change materially:
@@ -255,6 +279,7 @@ the OpenCode adapter remains available explicitly.
 - [ ] Refresh Stage 1E policy against current `AGENTS.md` before a production context-pack routing change.
 - [x] Slim `.context/rules/` catalog per Amendment 2026-06-15 (issue #437 / PR #438).
 - [x] Apply the monolithic implementation and review lifecycle (issue #474 / PR #476).
+- [x] Add risk-based problem framing and actionable critical review (issue #488 / PR #487).
 - [ ] Refresh the model shortlist when Copilot pins are remapped.
 - [ ] Record issue #480 sandbox OpenCode-versus-Cursor telemetry before retiring rollback providers.
 

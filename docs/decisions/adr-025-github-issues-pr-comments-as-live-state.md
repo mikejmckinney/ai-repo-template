@@ -8,6 +8,14 @@ Accepted (amended 2026-07-14: continuation state replaces explicit handoff)
 
 2026-05-12
 
+## Amendment 2026-07-18 - Role-free problem framing
+
+The issue body remains the durable feature/task contract and the input for
+problem framing, planning, and critical review. References below to Analyst,
+Judge, or Critic gates are superseded by ADR-031's monolithic execution and
+review lifecycle. Framing evolves in the canonical issue/plan artifacts; live
+progress remains in the latest `agent-state:v1` comment.
+
 ## Amendment 2026-07-15 — Clickable agent-managed artifacts
 
 Agent-managed GitHub artifacts link addressable issues, PRs, comments, commits,
@@ -81,8 +89,8 @@ agent work, and keep in-tree files for durable knowledge.
 
 The source-of-truth split is:
 
-1. **GitHub issue body** — durable feature/task contract and Analyst /
-   Judge / Critic gate input. The existing feature-request issue template
+1. **GitHub issue body** — durable feature/task contract and problem-framing,
+   planning, and critical-review input. The existing feature-request issue template
    remains canonical for problem statement, proposed solution, user outcome,
    acceptance criteria, and technical considerations.
 2. **GitHub PR body** — implementation review contract: linked issue, plan
@@ -208,8 +216,8 @@ the normal coordination path.
 - A fresh agent can resume from the issue body, linked PR, latest
   `agent-state:v1` comment, labels, and relevant repo rules without relying
   on drift-prone manual mirrors.
-- Existing Analyst/Judge/Critic gate inputs in feature-request issues remain
-  stable and are not moved into mutable comments.
+- Existing problem-framing, user-outcome, and review inputs in feature-request
+  issues remain stable and are not moved into mutable comments.
 - Durable lessons remain in-tree for template consumers and forks.
 
 ### Negative
@@ -246,8 +254,7 @@ the normal coordination path.
 ### Out of scope for this ADR
 
 - Replacing or bypassing the existing `feature_request.md` issue-body
-  contract (preserved unchanged as the durable Analyst/Judge/Critic gate
-  input).
+  contract (preserved as the durable problem-framing and review input).
 - Demoting `.context/sessions/latest_summary.md` and date-stamped
   archives (preserved as canonical durable retrospective surface).
 - Removing `.github/prompts/**` reusable procedural prompts.
@@ -284,8 +291,8 @@ the normal coordination path.
   from #298).
 - Issue #220 — parent epic on cost mitigation (ADR-019 is downstream of
   the same epic).
-- ADR-005 / ADR-014 — Analyst pre-flight gate; preserves
-  `feature_request.md` as the durable gate input contract.
+- ADR-005 / ADR-014 - historical Analyst pre-flight gates superseded by
+  ADR-031; `feature_request.md` remains the durable task contract.
 - ADR-007 — auto-resolve bot-authored review threads; unaffected
   (operates on review threads, not live-state files).
 - ADR-009 — parallel multi-agent execution + dispatch reality matrix; PM

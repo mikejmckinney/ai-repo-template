@@ -214,6 +214,7 @@ MULTIAGENT_FILES=(
   "docs/guides/context-files-explained.md"
   "docs/guides/opportunity-feedback-examples.md"
   "docs/guides/opencode-termination-diagnostics.md"
+  "docs/guides/problem-framing.md"
   "docs/guides/repo-orchestration-patterns-reference.md"
   "docs/guides/design-patterns.md"
   "docs/guides/design-patterns-concurrency.md"

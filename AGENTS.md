@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 34 -->
+<!-- AGENTS_MD_VERSION: 35 -->
 
 ## Truth hierarchy
 
@@ -104,6 +104,44 @@ When a request is ambiguous — where different reasonable interpretations lead 
 
 For unexpected issues that are difficult to resolve like a process that consistently hangs or fails despite multiple attempts to fix it, research the issue on the internet to see if it is a known issue others have encountered and what the fix or workaround is.
 
+## Problem framing
+
+Validate the **what** and **why** before designing the **how** when work involves
+net-new behavior, ambiguous scope, a user-facing product choice, or a costly or
+difficult-to-reverse decision.
+
+Before implementation planning, establish:
+
+- **Affected actor:** who experiences the problem and what job they are trying
+  to complete.
+- **Problem:** the observable pain, limitation, or unmet need.
+- **Why it matters:** impact supported by repository evidence, user evidence, or
+  cited external sources.
+- **User outcome:** what the affected actor will be able to do when the work
+  succeeds. State this in do-language, not as files or deliverables.
+- **Use cases:** the realistic workflows that must succeed.
+- **Evidence:** verified facts, relevant sources, and explicitly uncertain
+  claims.
+- **Load-bearing assumptions:** what must be true for the proposed direction to
+  solve the problem.
+- **Alternatives:** existing repository behavior or external solutions that
+  could satisfy the outcome with less cost or risk.
+
+If missing information could materially change scope or the user outcome, stop,
+ask a focused question, recommend a direction, and explain the tradeoff. If the
+outcome is directly inferable from verified evidence, state it and proceed
+without adding a mandatory approval pause.
+
+This deeper framing is normally unnecessary for deterministic bug fixes,
+dependency updates, reverts, behavior-neutral refactors, and documentation with
+no operational behavior. The exemption does not apply when the reported bug,
+documentation procedure, or expected behavior is itself ambiguous.
+
+For product or market decisions, use
+[`docs/guides/problem-framing.md`](docs/guides/problem-framing.md) for conditional
+audience, alternative, competitive, and impact analysis. Do not require market
+analysis for routine repository implementation.
+
 ## Critical thinking and communication
 
 Agents must reason critically rather than agree by default. The bar is "objective and evidence-based," not "agreeable."
@@ -113,6 +151,9 @@ Agents must reason critically rather than agree by default. The bar is "objectiv
 - **Don't guess APIs, file contents, or runtime behavior.** Verify by reading the file or searching the codebase. If you can't verify, say so explicitly rather than asserting.
 - **Compare approaches honestly.** When multiple options are viable, name the tradeoffs (cost, risk, reversibility, blast radius) before recommending one.
 - **Cite your sources.** When stating a fact about the codebase or docs, include a relative path (and a line number when precision matters: `path/to/file.md:42`). Statements without a citation are treated as assumptions and must be marked `uncertain`.
+- **Surface load-bearing assumptions.** State what the recommendation depends on, how each assumption was verified, and what changes if it is false.
+- **Use evidence instead of evaluative adjectives.** Words such as "comprehensive," "seamless," "robust," and "enterprise-grade" are not evidence. Replace them with observable behavior, constraints, or measured results.
+- **Separate facts from estimates.** Audience reach, market size, impact, and feasibility estimates must identify their source, confidence, and uncertainty. Do not present arithmetic precision as validated evidence.
 - **Always Explain your reasoning and Default to concise.** Add structure only when it earns its keep; don't pad length or drop detail the answer needs. If a complete answer genuinely requires length, use multiple parts or multiple responses rather than cutting corners.
 
 ## Opportunity feedback channel
@@ -290,10 +331,34 @@ A green CI run with no user-outcome evidence is not ready for review.
 
 ## Reviews
 
-Code reviews prioritize bugs, regressions, security, behavioral risk, and
-missing tests. Findings come first, ordered by severity, with file and line
-references. State explicitly when no findings are found and identify residual
-testing risk.
+Code reviews prioritize bugs, regressions, security, behavioral risk, outcome
+mismatch, and missing or ineffective tests. Apply the canonical review contract
+in [`.github/prompts/shared-review-lenses.md`](.github/prompts/shared-review-lenses.md)
+proportionally to the available evidence.
+
+Findings come first, ordered by severity, with file and line references. Each
+finding must identify:
+
+- the concrete failure mode or reasoning defect;
+- the evidence supporting it;
+- the affected user, behavior, or maintenance surface;
+- a specific, proportionate path forward.
+
+Challenge hidden assumptions and determine whether the reasoning supports the
+conclusion. Check for unnecessary abstractions, speculative code or
+configuration, copy-paste drift, silent failures, unhelpful errors, stale
+documentation, and tests whose mocks, order dependence, or hidden global state
+make them ineffective.
+
+Reject outcome theater: CI, lint, schema checks, pre-commit hooks, and unit tests
+are supporting evidence, not proof that the issue's user outcome was achieved.
+Cross-reference the issue's problem statement, 15-minute test, and any problem
+framing report. Flag plans or implementations that produce the wrong kind of
+artifact or experience for the stated outcome.
+
+Do not report vague criticism such as "this is bad." Explain what fails, why it
+matters, and the smallest credible correction. If no findings are discovered,
+state that explicitly and identify residual risk or untested behavior.
 
 ## Repo Orchestration Patterns
 

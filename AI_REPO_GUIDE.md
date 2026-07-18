@@ -50,6 +50,7 @@ end-to-end budget.
 | `docs/decisions/` | Durable architecture decisions; ADR-031 owns the execution model |
 | `docs/benchmarks/` | Published benchmark result records used for decisions |
 | `docs/guides/model-roi-benchmark-runbook.md` | Canonical benchmark campaign procedure |
+| `docs/guides/problem-framing.md` | Conditional problem, audience, alternatives, and impact analysis |
 | `docs/guides/agent-pipeline.md` | Active workflow and trigger behavior |
 | `.github/prompts/shared-review-lenses.md` | Canonical criteria for advisory and retro review |
 | `.github/prompts/pr-advisory-review.md` | Optional in-progress PR advisory output contract |
@@ -108,6 +109,16 @@ weekly aggregation of merged PRs.
 Use the `multi-model-consensus` skill only when requested or when consequential
 uncertainty warrants independent model perspectives. It is not the default
 implementation path.
+
+### Problem Framing And Critical Review
+
+The monolithic implementing agent applies the risk-based trigger in `AGENTS.md`
+before designing consequential or ambiguous work. Use
+`docs/guides/problem-framing.md` only when deeper audience, competitive, or
+impact analysis could change the decision; routine deterministic maintenance
+does not require the full scaffold. Reviews must identify a concrete failure
+mode and proportionate correction, and supporting checks never replace the
+issue's user-outcome test.
 
 ## Workflow Verification
 

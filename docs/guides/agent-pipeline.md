@@ -114,6 +114,14 @@ The OpenCode `multi-model-consensus` skill is the sole opt-in multi-model path. 
 only when requested or when consequential uncertainty justifies independent
 perspectives. It does not replace the implementing agent or CI.
 
+## Problem Framing And Critical Review
+
+Problem framing and critical review are reasoning behaviors of the monolithic
+implementing agent, not pipeline roles or blocking AI stages. The agent applies
+the risk-based trigger in `AGENTS.md`; deeper product or market analysis uses
+`docs/guides/problem-framing.md` only when it could materially change scope or
+the user outcome. CI and lint remain the blocking pre-merge controls.
+
 ## Cross-PR Safety
 
 `agent-parallelism-report.yml` reports exact path overlap between independent PRs.

@@ -104,6 +104,7 @@ What are the positive and negative consequences?
 
 - [Context Files Explained](guides/context-files-explained.md) - **Start here**: Understanding all the documentation files
 - [Agent Best Practices](guides/agent-best-practices.md) - Token limits, state conflicts, secrets, session handoff
+- [Problem Framing](guides/problem-framing.md) - Conditional problem, audience, alternatives, impact, and user-outcome analysis
 - [Design Patterns](guides/design-patterns.md) - Lead index for advisory code-layer pattern catalogs, including concurrency, integration / messaging, and data / persistence citations
 - [Repo Orchestration Patterns Reference](guides/repo-orchestration-patterns-reference.md) - Detail for the advisory orchestration vocabulary summarized in `AGENTS.md`
 - [Opportunity Feedback Examples](guides/opportunity-feedback-examples.md) - Worked examples for the `opportunity_notes` channel
