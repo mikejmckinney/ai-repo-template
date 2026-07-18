@@ -22,7 +22,12 @@ local consensus, retained workflow adapters, and owner-keyed GitHub state.
 - **P8 Canonical Manifest:** repeated labels, review lenses, and lifecycle values
   have one source with parity checks where worthwhile.
 - **P9 Multi-Model Plan Consensus:** retained only through explicit use of the
-  OpenCode `local-consensus` skill.
+  OpenCode `multi-model-consensus` skill.
+- **P10 Classifier:** deterministic rules map explicit evidence fields to a
+  stable class without coupling classification to the downstream response.
+  `scripts/workflows/lib/finding_priority.py` is the working example: post-merge
+  retro and weekly review findings supply impact, trigger likelihood, fix cost,
+  and an optional regression guard; automation derives the priority band.
 
 ## Anti-Patterns
 

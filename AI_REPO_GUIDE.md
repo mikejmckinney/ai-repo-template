@@ -14,7 +14,7 @@ ADR-031 defines the active execution model:
 - CI and lint as blocking pre-merge controls;
 - optional `ai-review:live` advisory snapshots during implementation;
 - automatic daily post-merge and weekly full-repository review;
-- OpenCode `local-consensus` as the sole opt-in multi-model mechanism.
+- OpenCode `multi-model-consensus` as the sole opt-in multi-model mechanism.
 
 ## Commands
 
@@ -59,7 +59,7 @@ end-to-end budget.
 | `.github/workflows/agent-postmerge-retro.yml` | Scheduled daily retro and draft-fix lifecycle |
 | `.github/workflows/agent-weekly-review.yml` | Scheduled weekly scan and draft-fix lifecycle |
 | `.github/agent-runtime/` | Locked OpenCode dependencies and review/fix permission profiles |
-| `.opencode/skills/local-consensus/` | Explicit independent advisor/consensus mechanism |
+| `.agents/skills/` | Canonical cross-agent skills, including multi-model consensus and provider operations |
 | `scripts/workflows/advisory-review/` | Advisory provider adapters and comment upsert |
 | `scripts/workflows/postmerge-retro/` | Daily evidence, analysis, umbrella, and fix adapters |
 | `scripts/workflows/weekly-review/` | Weekly scan, umbrella, and fix adapters |
@@ -90,9 +90,9 @@ The weekly workflow scans current `main`, creates or updates one ISO-week umbrel
 and may open a draft fix PR. It remains a full-repository scan rather than a
 weekly aggregation of merged PRs.
 
-### Local Consensus
+### Multi-Model Consensus
 
-Use the `local-consensus` skill only when requested or when consequential
+Use the `multi-model-consensus` skill only when requested or when consequential
 uncertainty warrants independent model perspectives. It is not the default
 implementation path.
 
@@ -116,19 +116,22 @@ personal OAuth credential is not forwarded to public GitHub Actions. Workflows
 install the pinned OpenCode runtime from `.github/agent-runtime/package-lock.json`
 on GitHub-managed `ubuntu-latest`.
 
-Interactive provider MCPs use browser OAuth and support write/deploy capabilities
-within the access granted during authorization. Limit Cloudflare authorization to
-the developer-platform resources needed by the project.
+Interactive provider MCPs support write/deploy capabilities. Vercel, Netlify,
+Supabase, and Railway read credentials from `VERCEL_API_KEY`, `NETLIFY_API_KEY`,
+`SUPABASE_API_KEY`, and `RAILWAY_API_KEY`; never commit these values. Cloudflare
+continues to use browser OAuth, which should be limited to the developer-platform
+resources needed by the project.
 Set `SUPABASE_PROJECT_REF` before starting an MCP client so Supabase remains scoped
 to one development project. Its OpenCode server is disabled by default; enable it
 only after setting the variable. Generic clients leave an unset variable
-unexpanded and report the server as unconfigured. Authenticate OpenCode servers with
-`opencode mcp auth <supabase|netlify|vercel|cloudflare-api>`; Cloudflare docs does
-not require account access. Install and authenticate the Railway CLI before using
-its local server (`railway login`). Vercel does not currently list OpenCode among
-its reviewed native clients; try native OAuth first. If Vercel rejects the client,
-change its OpenCode entry to type `local` with command
-`["npx", "-y", "mcp-remote", "https://mcp.vercel.com"]` and remove its `url`.
+unexpanded and report the server as unconfigured. Cloudflare API uses
+`opencode mcp auth cloudflare-api`; Cloudflare docs does not require account access.
+Railway maps `RAILWAY_API_KEY` to the CLI's `RAILWAY_API_TOKEN` variable.
+Netlify uses pinned `mcp-remote` as a compatibility adapter because OpenCode's
+native HTTP transport drops the hosted server's connection. The shell expands
+`NETLIFY_API_KEY` into the adapter's authorization header, so the token is
+visible briefly in the child process arguments but is not persisted as OAuth
+state or committed.
 
 ## Documentation Synchronization
 

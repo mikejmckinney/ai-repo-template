@@ -62,7 +62,7 @@ sends one explicit corrective prompt when validation fails, then tries
 `openrouter/z-ai/glm-5.2@preset/default` and
 `openrouter/minimax/minimax-m3@preset/default` in order. Subscription-backed
 `openai/gpt-5.6-sol` remains available to interactive local OpenCode and
-`local-consensus`, not public CI. Fix calls go through
+`multi-model-consensus`, not public CI. Fix calls go through
 `run-opencode-fix.sh`, which creates and discards one detached worktree per model
 and applies only a schema-valid attempt whose credential-free controller-side
 `./test.sh` run passes. The fix agent may edit but cannot invoke shell commands;
@@ -108,9 +108,9 @@ after silently degrading to bounded evidence. Daily sequential runs record
 failed PRs and continue finalization so successful retros and coverage artifacts
 remain available.
 
-## Local Consensus
+## Multi-Model Consensus
 
-The OpenCode `local-consensus` skill is the sole opt-in multi-model path. Use it
+The OpenCode `multi-model-consensus` skill is the sole opt-in multi-model path. Use it
 only when requested or when consequential uncertainty justifies independent
 perspectives. It does not replace the implementing agent or CI.
 

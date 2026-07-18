@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 32 -->
+<!-- AGENTS_MD_VERSION: 34 -->
 
 ## Truth hierarchy
 
@@ -19,7 +19,7 @@ session notes.
 
 - Use one monolithic implementing agent. ADR-031 found no favorable ROI crossover
   for the multi-role pipeline and retired the role registry.
-- Use the `local-consensus` skill only when the user requests it or consequential
+- Use the `multi-model-consensus` skill only when the user requests it or consequential
   uncertainty justifies independent multi-model review.
 - Advisory review is optional, non-blocking, and may run in parallel with active
   PR implementation. CI and lint remain the blocking pre-merge controls.
@@ -297,7 +297,7 @@ testing risk.
 
 ## Repo Orchestration Patterns
 
-The P1-P9/AP1-AP11 catalog is shared vocabulary for reasoning about agent,
+The P1-P10/AP1-AP11 catalog is shared vocabulary for reasoning about agent,
 workflow, and coordination changes. It is descriptive, not a standalone review
 gate: an ID alone never blocks a change. A finding must identify concrete harm
 and map it to an active rule, observable regression, or unmet user outcome.
@@ -330,6 +330,9 @@ Detailed history and examples remain in
 - **P9 Multi-Model Plan Consensus:** high-risk or ambiguous work may compare up
   to three isolated candidate plans and synthesize one reviewable plan. It is an
   explicit opt-in technique, not default fan-out.
+- **P10 Classifier:** a deterministic classifier maps explicit observed attributes
+  to an operational class while keeping classification separate from the action
+  taken for that class. `scripts/workflows/lib/finding_priority.py` classifies post-merge retro and weekly review findings from impact, trigger likelihood, fix cost, and regression-guard value into reviewable priority bands.
 
 ### Anti-patterns to watch
 

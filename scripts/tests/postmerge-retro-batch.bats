@@ -247,6 +247,36 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "validate-postmerge-retro accepts automation-derived priority_band on final validation" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/retro.json" <<'EOF'
+{
+  "pr": 486,
+  "summary": "test",
+  "evidence_complete": true,
+  "follow_up_issues": [
+    {
+      "title": "t",
+      "body": "b",
+      "dedupe_key": "k",
+      "priority_band": "should-fix",
+      "repro_steps": ["step"],
+      "impact": "incorrect-behavior",
+      "trigger_likelihood": "edge",
+      "fix_cost": "trivial"
+    }
+  ],
+  "merge_commit_sha": "58300efc5a87de5bc9d25c8e47d87af245a726d7"
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py \
+    --allow-derived-priority "$tmp/retro.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.follow_up_issues[0].priority_band == "should-fix"' "$tmp/retro.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
 @test "validate-postmerge-retro rejects retired output buckets" {
   tmp="$(mktemp -d)"
   cat >"$tmp/base.json" <<'EOF'

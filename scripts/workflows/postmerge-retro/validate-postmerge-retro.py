@@ -49,14 +49,14 @@ def _require_repro_steps(item: dict, path: str) -> None:
             raise ValueError(f"{path}.repro_steps[{i}] must be a non-empty string")
 
 
-def _validate_follow_up(item: dict, path: str) -> None:
+def _validate_follow_up(item: dict, path: str, *, from_llm: bool) -> None:
     if not isinstance(item, dict):
         raise ValueError(f"{path} must be an object")
     _require_str(item, "title", path)
     _require_str(item, "body", path)
     _require_str(item, "dedupe_key", path)
     _require_repro_steps(item, path)
-    validate_triage_item(item, path, from_llm=True)
+    validate_triage_item(item, path, from_llm=from_llm)
     _require_str_array(item, "labels", path)
     _require_str_array(item, "evidence", path)
 
@@ -64,12 +64,19 @@ def _validate_follow_up(item: dict, path: str) -> None:
 def main() -> int:
     args = sys.argv[1:]
     require_evidence_complete = False
-    if args and args[0] == "--require-evidence-complete":
-        require_evidence_complete = True
+    allow_derived_priority = False
+    while args and args[0].startswith("--"):
+        if args[0] == "--require-evidence-complete":
+            require_evidence_complete = True
+        elif args[0] == "--allow-derived-priority":
+            allow_derived_priority = True
+        else:
+            break
         args = args[1:]
     if len(args) != 1:
         print(
-            "Usage: validate-postmerge-retro.py [--require-evidence-complete] <retro.json>",
+            "Usage: validate-postmerge-retro.py [--require-evidence-complete] "
+            "[--allow-derived-priority] <retro.json>",
             file=sys.stderr,
         )
         return 2
@@ -100,7 +107,11 @@ def main() -> int:
         if not isinstance(arr, list):
             raise ValueError("follow_up_issues must be an array")
         for i, item in enumerate(arr):
-            _validate_follow_up(item, f"follow_up_issues[{i}]")
+            _validate_follow_up(
+                item,
+                f"follow_up_issues[{i}]",
+                from_llm=not allow_derived_priority,
+            )
         apply_triage_to_retro(data)
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(data, fh, indent=2, ensure_ascii=False)

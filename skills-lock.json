@@ -7,6 +7,24 @@
       "skillPath": "skills/deploy-to-vercel/SKILL.md",
       "computedHash": "03e0eaaa9bf13ba1e7ffa387f5893de6f324c0868c627001f179395a8feaa7c9"
     },
+    "game-setup-and-config": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/game-setup-and-config/SKILL.md",
+      "computedHash": "9864274b28b515d15ea06e10c45c7dd44133013ae381664ff8cd445d2c0c4403"
+    },
+    "input-keyboard-mouse-touch": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/input-keyboard-mouse-touch/SKILL.md",
+      "computedHash": "dee585dd36d5c96ecb7a0bf49fece4c74fcdd58518723e1ecf17231d5e189ed3"
+    },
+    "loading-assets": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/loading-assets/SKILL.md",
+      "computedHash": "808045d32bd62c664da2c8772f5bed99e2b7cb3bb72d34ae274cce8557b8ae2b"
+    },
     "netlify-config": {
       "source": "netlify/context-and-tools",
       "sourceType": "github",
@@ -24,6 +42,24 @@
       "sourceType": "github",
       "skillPath": "skills/netlify-frameworks/SKILL.md",
       "computedHash": "e30c83706cf0d448339a799f338616c81e59b99967ddcb1226ce66d16cb64c95"
+    },
+    "physics-arcade": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/physics-arcade/SKILL.md",
+      "computedHash": "6dd1fe0aae16e1e62ec3b5b124e9f0de2c58f5cbb9f35ba3be507815ee8255b8"
+    },
+    "scenes": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/scenes/SKILL.md",
+      "computedHash": "3bcf15713cc8dcabe2df26f7eb1fa22b24c0a467a436c35b691ea3baf6677400"
+    },
+    "sprites-and-images": {
+      "source": "phaserjs/phaser",
+      "sourceType": "github",
+      "skillPath": "skills/sprites-and-images/SKILL.md",
+      "computedHash": "dfa048c9121566261eae554b4c4b20854991c59736df199809966b4ddcc743e0"
     },
     "supabase": {
       "source": "supabase/agent-skills",

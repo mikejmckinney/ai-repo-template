@@ -20,17 +20,32 @@
     "supabase": {
       "type": "remote",
       "url": "https://mcp.supabase.com/mcp?project_ref={env:SUPABASE_PROJECT_REF}",
-      "enabled": false
+      "enabled": false,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:SUPABASE_API_KEY}"
+      }
     },
     "netlify": {
-      "type": "remote",
-      "url": "https://netlify-mcp.netlify.app/mcp",
-      "enabled": true
+      "type": "local",
+      "command": [
+        "bash",
+        "-lc",
+        "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
+      ],
+      "enabled": true,
+      "env": {
+        "NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"
+      }
     },
     "vercel": {
       "type": "remote",
       "url": "https://mcp.vercel.com",
-      "enabled": true
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:VERCEL_API_KEY}"
+      }
     },
     "cloudflare-api": {
       "type": "remote",
@@ -45,11 +60,14 @@
     "railway": {
       "type": "local",
       "command": ["railway", "mcp"],
-      "enabled": true
+      "enabled": true,
+      "env": {
+        "RAILWAY_API_TOKEN": "{env:RAILWAY_API_KEY}"
+      }
     },
     "open-design": {
       "type": "local",
-      "command": ["node", "/Applications/Open Design.app/Contents/Resources/app/prebundled/daemon/daemon-cli.mjs", "mcp", "--daemon-url", "http://127.0.0.1:7456"],
+      "command": ["bash", "scripts/open-design-mcp.sh"],
       "enabled": true
     },
     "playwright": {
@@ -73,6 +91,7 @@
   "provider": {
     "openrouter": {
       "models": {
+        "moonshotai/kimi-k3": {},
         "deepseek/deepseek-v4-pro@preset/default": {},
         "minimax/minimax-m3@preset/default": {},
         "z-ai/glm-5.2@preset/default": {},

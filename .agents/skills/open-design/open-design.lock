@@ -1,0 +1,4 @@
+repo: https://github.com/nexu-io/open-design.git
+ref: open-design-v0.15.0
+commit: 79e257d62c0e6a8d9084f2a6464f08a251a5c0bb
+install_dir: ~/.local/share/open-design

@@ -77,11 +77,19 @@ jobs:
         # `-r -0` is required on GNU xargs: `-r` skips invocation when no
         # input; `-0` (null-delimited, pairs with -print0) handles filenames
         # with spaces or special characters (SC2038).
-        # `.agents/skills` contains provenance-locked third-party source; lint
-        # repository-owned shell instead of carrying local vendor patches.
+        # Skip only provenance-locked third-party skills. Repository-owned
+        # cross-agent skills in the same canonical directory remain blocking.
         run: |
-          find . \( -name '.git' -o -name 'node_modules' -o -path './.agents/skills' \) -prune -o \
-            -name '*.sh' -print0 \
+          find . \( -name '.git' -o -name 'node_modules' \) -prune -o -name '*.sh' -print0 \
+            | while IFS= read -r -d '' file; do
+                skill="${file#./.agents/skills/}"
+                skill="${skill%%/*}"
+                if [[ "${file}" == ./.agents/skills/* ]] \
+                  && jq -e --arg skill "${skill}" '.skills[$skill] != null' skills-lock.json >/dev/null; then
+                  continue
+                fi
+                printf '%s\0' "${file}"
+              done \
             | xargs -r -0 shellcheck --severity=warning --exclude=SC1091
 
       # =====================================================
@@ -104,8 +112,16 @@ jobs:
         # special characters (SC2038).
         # Keep provenance-locked third-party skills byte-for-byte upstream.
         run: |
-          find . \( -name '.git' -o -name 'node_modules' -o -path './.agents/skills' \) -prune -o \
-            -name '*.sh' -print0 \
+          find . \( -name '.git' -o -name 'node_modules' \) -prune -o -name '*.sh' -print0 \
+            | while IFS= read -r -d '' file; do
+                skill="${file#./.agents/skills/}"
+                skill="${skill%%/*}"
+                if [[ "${file}" == ./.agents/skills/* ]] \
+                  && jq -e --arg skill "${skill}" '.skills[$skill] != null' skills-lock.json >/dev/null; then
+                  continue
+                fi
+                printf '%s\0' "${file}"
+              done \
             | xargs -r -0 shfmt -d -i 2 -bn -ci
 
       # =====================================================
@@ -187,9 +203,16 @@ jobs:
 
           : > /tmp/changed-markdown-files-z
           while IFS= read -r -d '' file; do
+            skill="${file#.agents/skills/}"
+            skill="${skill%%/*}"
+            locked_skill=false
+            if [[ "${file}" == .agents/skills/* ]] \
+              && jq -e --arg skill "${skill}" '.skills[$skill] != null' skills-lock.json >/dev/null; then
+              locked_skill=true
+            fi
             if [[ "${file}" == *.md ]] \
               && [[ ! "${file}" =~ (^|/)node_modules/|(^|/)\.git/ ]] \
-              && [[ "${file}" != .agents/skills/* ]]; then
+              && [[ "${locked_skill}" == false ]]; then
               printf '%s\0' "${file}" >> /tmp/changed-markdown-files-z
             fi
           done < /tmp/changed-files-z
@@ -230,8 +253,13 @@ jobs:
         shell: bash
         run: |
           set +e
+          mapfile -t locked_skills < <(jq -r '.skills | keys[]' skills-lock.json)
+          locked_ignores=()
+          for skill in "${locked_skills[@]}"; do
+            locked_ignores+=("!.agents/skills/${skill}/**")
+          done
           markdownlint-cli2 --config .markdownlint-cli2.jsonc \
-            "**/*.md" "!node_modules/**" "!.git/**" "!.agents/skills/**" \
+            "**/*.md" "!node_modules/**" "!.git/**" "${locked_ignores[@]}" \
             > /tmp/markdownlint-advisory.log 2>&1
           status=$?
           set -e

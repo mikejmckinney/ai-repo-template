@@ -119,7 +119,7 @@ publication authority into the agent.
   because its synthetic output tool and `retryCount` are unreliable (upstream
   [issue #25430](https://github.com/anomalyco/opencode/issues/25430)).
   Subscription-backed `openai/gpt-5.6-sol` remains an
-  interactive local and `local-consensus` model because OpenAI excludes personal
+  interactive local and `multi-model-consensus` model because OpenAI excludes personal
   ChatGPT-managed credentials from public/open-source CI automation.
 - Jobs run on GitHub-managed `ubuntu-latest`, matching the established Cursor
   workflow pattern. Node 22 is configured with `actions/setup-node`, and

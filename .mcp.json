@@ -9,15 +9,27 @@
     },
     "supabase": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}"
+      "url": "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}",
+      "headers": {
+        "Authorization": "Bearer ${SUPABASE_API_KEY}"
+      }
     },
     "netlify": {
-      "type": "http",
-      "url": "https://netlify-mcp.netlify.app/mcp"
+      "command": "bash",
+      "args": [
+        "-lc",
+        "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
+      ],
+      "env": {
+        "NETLIFY_API_KEY": "${NETLIFY_API_KEY}"
+      }
     },
     "vercel": {
       "type": "http",
-      "url": "https://mcp.vercel.com"
+      "url": "https://mcp.vercel.com",
+      "headers": {
+        "Authorization": "Bearer ${VERCEL_API_KEY}"
+      }
     },
     "cloudflare-api": {
       "type": "http",
@@ -29,16 +41,14 @@
     },
     "railway": {
       "command": "railway",
-      "args": ["mcp"]
+      "args": ["mcp"],
+      "env": {
+        "RAILWAY_API_TOKEN": "${RAILWAY_API_KEY}"
+      }
     },
     "open-design": {
-      "command": "node",
-      "args": [
-        "/Applications/Open Design.app/Contents/Resources/app/prebundled/daemon/daemon-cli.mjs",
-        "mcp",
-        "--daemon-url",
-        "http://127.0.0.1:7456"
-      ]
+      "command": "bash",
+      "args": ["scripts/open-design-mcp.sh"]
     },
     "playwright": {
       "command": "npx",

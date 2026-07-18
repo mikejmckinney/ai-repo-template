@@ -24,6 +24,6 @@ while IFS= read -r script; do
   else
     fail "$script is not executable"
   fi
-done < <(find .opencode/skills -type f -path '*/scripts/*.sh' -print | sort)
+done < <(find .agents/skills -type f -path '*/scripts/*.sh' -print | sort)
 
 echo ""

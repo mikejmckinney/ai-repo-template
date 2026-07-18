@@ -200,7 +200,7 @@ fi
 
 jq --arg sha "$MERGE_SHA" '. + {merge_commit_sha: $sha}' "$retro_json" >"$WORKDIR/retro-with-sha.json"
 mv "$WORKDIR/retro-with-sha.json" "$retro_json"
-python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "$retro_json"
+python3 "$SCRIPT_DIR/validate-postmerge-retro.py" --allow-derived-priority "$retro_json"
 
 final_route="$(jq -r '.evidence_route // "bounded"' "$COVERAGE_JSON")"
 cp -f "$retro_json" "$WORKDIR/retro.json.final"
