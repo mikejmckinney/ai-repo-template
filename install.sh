@@ -230,6 +230,7 @@ MULTIAGENT_FILES=(
   ".github/prompts/shared-review-lenses.md"
   "scripts/diag-sandbox.sh"
   "scripts/diag-hang-snapshot.sh"
+  "scripts/archive-opencode-database.sh"
   "scripts/diagnose-opencode-session.sh"
   "scripts/format.sh"
   "scripts/check-markdown-links.py"

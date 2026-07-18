@@ -11,3 +11,7 @@ Give every panel the same neutral, self-contained problem statement. Include:
 Ask each panel to reason independently, cite evidence, challenge assumptions,
 name failure modes, and state what cannot be decided from available evidence.
 Do not ask panelists to seek consensus; the Judge performs synthesis.
+
+The runner appends the canonical completion contract from
+`prompts/panel-completion.md`. Do not duplicate or override it in the caller
+prompt.
