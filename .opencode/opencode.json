@@ -50,7 +50,11 @@
     "cloudflare-api": {
       "type": "remote",
       "url": "https://mcp.cloudflare.com/mcp",
-      "enabled": true
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:CLOUDFLARE_API_KEY}"
+      }
     },
     "cloudflare-docs": {
       "type": "remote",
@@ -58,11 +62,12 @@
       "enabled": true
     },
     "railway": {
-      "type": "local",
-      "command": ["railway", "mcp"],
+      "type": "remote",
+      "url": "https://mcp.railway.com",
       "enabled": true,
-      "env": {
-        "RAILWAY_API_TOKEN": "{env:RAILWAY_API_KEY}"
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:RAILWAY_API_KEY}"
       }
     },
     "open-design": {

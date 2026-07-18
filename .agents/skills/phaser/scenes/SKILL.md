@@ -447,3 +447,4 @@ For detailed API reference tables and source file maps, see [the reference guide
 15. **`switch()` restarts a paused scene, never resumes it.** If you need resume behavior, use `run()` instead.
 
 16. **Scenes update in reverse order, render in forward order.** The top scene updates first (gets input priority), but renders last (appears on top). Establish render order in the game config scene array.
+

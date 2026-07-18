@@ -33,17 +33,20 @@
     },
     "cloudflare-api": {
       "type": "http",
-      "url": "https://mcp.cloudflare.com/mcp"
+      "url": "https://mcp.cloudflare.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${CLOUDFLARE_API_KEY}"
+      }
     },
     "cloudflare-docs": {
       "type": "http",
       "url": "https://docs.mcp.cloudflare.com/mcp"
     },
     "railway": {
-      "command": "railway",
-      "args": ["mcp"],
-      "env": {
-        "RAILWAY_API_TOKEN": "${RAILWAY_API_KEY}"
+      "type": "http",
+      "url": "https://mcp.railway.com",
+      "headers": {
+        "Authorization": "Bearer ${RAILWAY_API_KEY}"
       }
     },
     "open-design": {

@@ -59,7 +59,7 @@ end-to-end budget.
 | `.github/workflows/agent-postmerge-retro.yml` | Scheduled daily retro and draft-fix lifecycle |
 | `.github/workflows/agent-weekly-review.yml` | Scheduled weekly scan and draft-fix lifecycle |
 | `.github/agent-runtime/` | Locked OpenCode dependencies and review/fix permission profiles |
-| `.agents/skills/` | Canonical cross-agent skills, including multi-model consensus and provider operations |
+| `.agents/skills/` | Canonical skills, including multi-model consensus and nested provider skill sets |
 | `scripts/workflows/advisory-review/` | Advisory provider adapters and comment upsert |
 | `scripts/workflows/postmerge-retro/` | Daily evidence, analysis, umbrella, and fix adapters |
 | `scripts/workflows/weekly-review/` | Weekly scan, umbrella, and fix adapters |
@@ -67,6 +67,19 @@ end-to-end budget.
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
 | `install.sh` | Codespaces bootstrap and template-file copy inventory |
+
+### Nested Provider Skills
+
+All 28 official Phaser 4 skills are pinned in `skills-lock.json` and grouped at
+`.agents/skills/phaser/<name>/SKILL.md`. OpenCode, Cursor, Codex, and current
+GitHub Copilot discover this recursive layout. Gemini CLI and `npx skills list`
+only scan direct skill children, so they do not expose nested skills. Vercel,
+Netlify, Supabase, and Cloudflare skills are likewise grouped under provider
+parents; singleton providers and repository-owned skills remain direct children.
+Use `npx skills add . --list --full-depth` to inspect the nested source tree. Do
+not use `npx skills experimental_install` to restore its layout: the lock format
+records upstream `skillPath` but installs destinations as flat
+`.agents/skills/<name>` directories.
 
 ## Review Lifecycle
 
@@ -117,15 +130,14 @@ install the pinned OpenCode runtime from `.github/agent-runtime/package-lock.jso
 on GitHub-managed `ubuntu-latest`.
 
 Interactive provider MCPs support write/deploy capabilities. Vercel, Netlify,
-Supabase, and Railway read credentials from `VERCEL_API_KEY`, `NETLIFY_API_KEY`,
-`SUPABASE_API_KEY`, and `RAILWAY_API_KEY`; never commit these values. Cloudflare
-continues to use browser OAuth, which should be limited to the developer-platform
-resources needed by the project.
+Supabase, Railway, and Cloudflare read credentials from `VERCEL_API_KEY`,
+`NETLIFY_API_KEY`, `SUPABASE_API_KEY`, `RAILWAY_API_KEY`, and
+`CLOUDFLARE_API_KEY`; never commit these values. Limit the Cloudflare token to
+the accounts and developer-platform resources needed by the project.
 Supabase is account-wide by default. Add `?project_ref=<id>` to its MCP URL when
 one-project scope is preferred; project scope also disables account-management
-tools. Cloudflare API uses `opencode mcp auth cloudflare-api`; Cloudflare docs does
-not require account access.
-Railway maps `RAILWAY_API_KEY` to the CLI's `RAILWAY_API_TOKEN` variable.
+tools. Cloudflare docs does not require account access.
+Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
 Netlify uses pinned `mcp-remote` as a compatibility adapter because OpenCode's
 native HTTP transport drops the hosted server's connection. The shell expands
 `NETLIFY_API_KEY` into the adapter's authorization header, so the token is
