@@ -121,7 +121,7 @@ to `prompts/judge.md`; do not duplicate or inline it in the caller prompt.
 
 The runner appends `prompts/panel-completion.md` to every panel request. A panel
 is successful only when its final non-empty line is the exact completion marker.
-Zero-exit partial output is preserved as
+Partial output that fails validation or accompanies a failed invocation is preserved as
 `panel-N.rejected-ENGINE.md`, recorded in the panel result, and backfilled like
 an engine failure. The Judge sees only validated panel files.
 
@@ -149,7 +149,7 @@ than fully independent consensus. The complete answer is stored at
 answer file, verify material claims, and synthesize it for the user. Do not
 paste raw panel output.
 
-When a panel is rejected after a nominally successful provider/process call,
+When a panel is rejected after a provider/process call,
 its panel record includes `rejected_engines` and parallel `rejection_reasons`
 arrays. These report validation, not provider ownership of the underlying
 stream failure. An OpenCode child ending with `finish=unknown` can produce this

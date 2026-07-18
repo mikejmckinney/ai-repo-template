@@ -51,12 +51,19 @@ if [[ "$model" == "openai/gpt-5.6-sol" ]]; then
   if $panel; then printf '%s\n' "$marker"; fi
 elif [[ "$model" == "openrouter/moonshotai/kimi-k3" ]]; then
   [[ "$MOCK_KIMI_MODE" != fail ]] || exit 12
-  if [[ "$MOCK_KIMI_MODE" == preamble ]]; then
-    printf 'I will inspect the evidence before answering.\n'
-  else
-    printf 'Kimi answer\n'
-    if $panel; then printf '%s\n' "$marker"; fi
-  fi
+  case "$MOCK_KIMI_MODE" in
+    preamble) printf 'I will inspect the evidence before answering.\n' ;;
+    marker-only) printf '%s\n' "$marker" ;;
+    marker-not-final) printf 'Kimi answer\n%s\ntrailing output\n' "$marker" ;;
+    marked-fail)
+      printf 'Kimi answer\n%s\n' "$marker"
+      exit 12
+      ;;
+    *)
+      printf 'Kimi answer\n'
+      if $panel; then printf '%s\n' "$marker"; fi
+      ;;
+  esac
 elif [[ "$title" == *-glm ]]; then
   [[ "$MOCK_GLM_MODE" == success ]] || exit 10
   printf 'GLM answer\n'
@@ -212,6 +219,43 @@ teardown() {
   [ -s "$TEST_ROOT/fusion/panel-1.rejected-kimi.md" ]
   run grep -q 'I will inspect the evidence' "$TEST_ROOT/fusion/judge-prompt.md"
   [ "$status" -ne 0 ]
+}
+
+@test "fusion rejects marker-only output" {
+  run env MOCK_KIMI_MODE=marker-only "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title multi-model-fusion-test \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.panels[0].rejection_reasons[0]' <<<"$output")" = empty_answer_before_marker ]
+  [ "$(jq -r '.panels[0].engine' <<<"$output")" = sol ]
+}
+
+@test "fusion rejects a completion marker that is not final" {
+  run env MOCK_KIMI_MODE=marker-not-final "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title multi-model-fusion-test \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.panels[0].rejection_reasons[0]' <<<"$output")" = missing_completion_marker ]
+  [ "$(jq -r '.panels[0].engine' <<<"$output")" = sol ]
+}
+
+@test "fusion rejects and preserves marked output from a failed invocation" {
+  run env MOCK_KIMI_MODE=marked-fail "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title multi-model-fusion-test \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.panels[0].rejection_reasons[0]' <<<"$output")" = invocation_failed ]
+  [ "$(jq -r '.panels[0].engine' <<<"$output")" = sol ]
+  grep -q 'Kimi answer' "$TEST_ROOT/fusion/panel-1.rejected-kimi.md"
 }
 
 @test "fusion advances from Sol to GLM without reuse" {

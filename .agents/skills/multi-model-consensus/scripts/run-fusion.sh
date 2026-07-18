@@ -107,6 +107,8 @@ for index in "${!pids[@]}"; do
       continue
     fi
     preserve_rejected_panel "$index" "${panel_engines[$index]}" "$PANEL_REJECTION_REASON"
+  elif [[ -e "${panel_files[$index]}" ]]; then
+    preserve_rejected_panel "$index" "${panel_engines[$index]}" invocation_failed
   fi
 
   panel_statuses[index]=failed
@@ -122,6 +124,8 @@ for index in "${!pids[@]}"; do
         break
       fi
       preserve_rejected_panel "$index" "$fallback_engine" "$PANEL_REJECTION_REASON"
+    elif [[ -e "${panel_files[$index]}" ]]; then
+      preserve_rejected_panel "$index" "$fallback_engine" invocation_failed
     fi
   done
 done
