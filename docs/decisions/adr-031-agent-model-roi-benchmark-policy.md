@@ -87,7 +87,7 @@ Issue #376 tested repo-native **orchestration pipelines** (subagents + handoffs)
 **Policy:**
 
 - **Prefer a single implementing agent** (monolithic pass) for routine issue/PR implementation, retro fix passes, and weekly fix passes.
-- **Do not use subagent fan-out for routine repository work.** The role registry is retired; use `local-consensus` only when independent multi-model review is explicitly justified.
+- **Do not use subagent fan-out for routine repository work.** The role registry is retired; use `multi-model-consensus` only when independent multi-model review is explicitly justified.
 - **Stage 1D duo** (planner + implementer) did not beat the best monolithic ROI leaders on either class; treat duo as experimental, not default.
 
 This supersedes ADR-019's active role-tiering guidance while preserving that
@@ -103,7 +103,7 @@ For **implementation-shaped** work (Classes A/B), Phase A marginal ROI and canon
 | **Use with care** | Copilot **Auto** (routed model varies), Codex default | Useful rows exist; verify routed model and partial-run caveats |
 | **Escalation / gates** | High-tier models per ADR-019 (Opus-class, GPT-5.4 xhigh on Copilot parent for reasoning-heavy parent sessions) | Not default for routine implementation; use for plan-gate, diff-gate, architecture, hard review resolution |
 
-Advisory/retro **CI defaults** are governed by [ADR-030](./adr-030-non-blocking-review-pipeline.md) and workflow vars. OpenCode is the first runtime for issue #480's rollout, with GPT-5.6 Sol and two OpenRouter fallbacks; Cursor Composer 2.5 and Gemini remain rollback providers while sandbox telemetry tests runtime reliability, cost, and MCP overhead. This ADR informs those choices but does not replace per-workflow environment documentation.
+Advisory/retro **CI defaults** are governed by [ADR-030](./adr-030-non-blocking-review-pipeline.md) and workflow vars. Cursor Grok 4.5 Medium is the first runtime; the isolated OpenCode GLM/MiniMax cascade and Gemini remain fallback providers. GPT-5.6 Sol remains the first multi-model Judge/Advisor model. This ADR informs those choices but does not replace per-workflow environment documentation.
 
 #### 2c. Context loading (Stage 1C / 1E)
 
@@ -137,7 +137,7 @@ The repository applies the benchmark recommendation as follows:
   implementation, updates one sticky comment, and cannot mutate or block the PR.
 - Daily post-merge retro and weekly full-repository review remain the recurring
   review and draft-fix pipelines.
-- `.opencode/skills/local-consensus/` is the sole opt-in multi-model mechanism.
+- `.agents/skills/multi-model-consensus/` is the sole opt-in multi-model mechanism.
 - One shared review contract feeds advisory, daily, and weekly prompts; cadence
   prompts retain only their evidence boundary and output interface.
 - Canonical roles, platform overlays, native reviewer rules, multi-role dispatch,
@@ -149,6 +149,40 @@ The repository applies the benchmark recommendation as follows:
 This lifecycle supersedes ADR-003, ADR-004, ADR-005, ADR-008, ADR-009, ADR-014,
 ADR-019, ADR-023, and ADR-024 for active operations. Their bodies and benchmark
 artifacts remain historical evidence. ADR-007 remains superseded through ADR-008.
+
+#### Amendment 2026-07-17 — Multi-model skill identity and Fusion panel
+
+The public skill identity moves from `local-consensus` to
+`multi-model-consensus`; callers must update the directory, skill slug, and
+`LOCAL_CONSENSUS_*` overrides to `.agents/skills/multi-model-consensus/`,
+`multi-model-consensus`, and `MULTI_MODEL_CONSENSUS_*`. No deprecated alias is
+retained. Fusion uses OpenRouter Kimi K3, Fable, and Cursor Grok as primary
+panels, then backfills with Sol, GLM, MiniMax, MiMo, and DeepSeek. Judge/Advisor
+ordering remains Sol, Fable, Grok, then GLM.
+
+#### Amendment 2026-07-18 - Risk-based problem framing and critical review
+
+The monolithic implementing agent validates the problem and user outcome before
+designing implementation when work introduces net-new behavior, has ambiguous
+scope, makes a user-facing product choice, or is costly or difficult to reverse.
+Routine deterministic fixes and behavior-neutral maintenance do not acquire a
+mandatory framing stage unless their expected behavior is itself ambiguous.
+
+This is a reasoning contract, not a restoration of the retired Analyst, Judge,
+or Critic roles. It adds no role handoff, pipeline stage, verdict, or mandatory
+approval pause. `AGENTS.md` contains the concise normative policy, while
+`docs/guides/problem-framing.md` provides an optional detailed scaffold for
+product and market decisions.
+
+Critical review must identify the concrete failure mode, evidence, affected
+surface, and a proportionate path forward. Supporting checks cannot substitute
+for the issue's user-outcome test. Conditional impact dimensions remain separate
+and evidence-backed rather than being collapsed into a composite score.
+
+Class C greenfield work remains unbenchmarked. This amendment therefore does not
+claim that deeper framing improves model ROI for all product work; it bounds the
+new policy by consequence and ambiguity and requires sandbox dogfood before the
+change is treated as complete.
 
 ### 3. Revisit cadence
 
@@ -245,6 +279,7 @@ the OpenCode adapter remains available explicitly.
 - [ ] Refresh Stage 1E policy against current `AGENTS.md` before a production context-pack routing change.
 - [x] Slim `.context/rules/` catalog per Amendment 2026-06-15 (issue #437 / PR #438).
 - [x] Apply the monolithic implementation and review lifecycle (issue #474 / PR #476).
+- [x] Add risk-based problem framing and actionable critical review (issue #488 / PR #487).
 - [ ] Refresh the model shortlist when Copilot pins are remapped.
 - [ ] Record issue #480 sandbox OpenCode-versus-Cursor telemetry before retiring rollback providers.
 

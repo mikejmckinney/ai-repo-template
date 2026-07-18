@@ -15,7 +15,7 @@ remain subject to normal verification before their draft fixes merge.
 
 ## Independent Perspectives
 
-Use the OpenCode `local-consensus` skill only when requested or when consequential
+Use the OpenCode `multi-model-consensus` skill only when requested or when consequential
 uncertainty remains after grounded analysis. Treat it as decision support, not a
 replacement implementer.
 

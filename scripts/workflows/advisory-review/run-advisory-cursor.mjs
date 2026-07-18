@@ -1,16 +1,20 @@
 #!/usr/bin/env node
 /**
- * Generate advisory review body via Cursor SDK (Composer 2.5 standard tier).
+ * Generate advisory review body via Cursor SDK (Cursor Grok 4.5 Medium).
  * Requires: npm install @cursor/sdk@<pinned> (workflow step), CURSOR_API_KEY.
  * Pin: scripts/workflows/lib/cursor-sdk-version.sh (CURSOR_SDK_VERSION).
  *
- * Composer 2.5 billing: passing only model id "composer-2.5" defaults to the
- * fast (higher-cost) variant in the SDK. We always set fast=false for standard
- * tier unless the model id explicitly ends with "-fast".
+ * Composer 2.5 remains a supported override. Its bare model id defaults to the
+ * fast variant in the SDK, so overrides still explicitly set the billing tier.
  * @see https://forum.cursor.com/t/sdk-reports-composer-2-5-but-usage-dashboard-bills-composer-2-5-fast/163046
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { Agent } from "@cursor/sdk";
+import { Agent, Cursor } from "@cursor/sdk";
+import {
+  buildCursorModelConfig,
+  cursorBillingTier,
+  DEFAULT_CURSOR_MODEL,
+} from "../lib/cursor-model-config.mjs";
 
 const [promptFile, outFile] = process.argv.slice(2);
 if (!promptFile || !outFile) {
@@ -24,21 +28,17 @@ if (!apiKey) {
   process.exit(1);
 }
 
-const modelId = process.env.CURSOR_ADVISORY_MODEL || "composer-2.5";
+const modelId = process.env.CURSOR_ADVISORY_MODEL || DEFAULT_CURSOR_MODEL;
 const prompt = readFileSync(promptFile, "utf8");
 
-/** @param {string} id */
-function buildCursorModelConfig(id) {
-  if (id === "composer-2.5-fast") {
-    return { id: "composer-2.5", params: [{ id: "fast", value: "true" }] };
-  }
-  if (id === "composer-2.5") {
-    return { id: "composer-2.5", params: [{ id: "fast", value: "false" }] };
-  }
-  return { id };
+let model;
+try {
+  model = await buildCursorModelConfig(modelId, () => Cursor.models.list({ apiKey }));
+} catch (err) {
+  const message = err instanceof Error ? err.message : String(err);
+  console.error(`::error::Cursor model resolution failed: ${message}`);
+  process.exit(1);
 }
-
-const model = buildCursorModelConfig(modelId);
 
 function sanitizedErrorDetails(value) {
   const details = {
@@ -91,15 +91,10 @@ try {
 
 const observedModel = result?.model?.id ?? "unknown";
 const fastParam = model.params?.find((p) => p.id === "fast")?.value;
-const billingTier =
-  observedModel.includes("fast") || fastParam === "true"
-    ? "composer-2.5-fast"
-    : fastParam === "false"
-      ? "composer-2.5-standard"
-      : "unknown";
+const billingTier = cursorBillingTier(model, observedModel);
 
 console.error(
-  `Cursor advisory review: requested=${modelId} observed=${observedModel} fast_param=${fastParam ?? "unset"} billing_tier=${billingTier} status=${result?.status ?? "unknown"}`,
+  `Cursor advisory review: requested=${modelId} resolved=${JSON.stringify(model)} observed=${observedModel} fast_param=${fastParam ?? "unset"} billing_tier=${billingTier} status=${result?.status ?? "unknown"}`,
 );
 
 if (modelId === "composer-2.5" && billingTier === "composer-2.5-fast") {

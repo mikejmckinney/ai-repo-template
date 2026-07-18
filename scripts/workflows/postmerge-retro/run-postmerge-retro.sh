@@ -131,7 +131,7 @@ run_full_evidence_provider() {
       # shellcheck source=../lib/cursor-sdk-version.sh
       source "$LIB_DIR/cursor-sdk-version.sh"
       npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1 \
-        && CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-composer-2.5}}" \
+        && CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}" \
           node "$SCRIPT_DIR/run-postmerge-retro-full-cursor.mjs" "$prompt_file" "$llm_raw"
       ;;
     gemini)
@@ -200,7 +200,7 @@ fi
 
 jq --arg sha "$MERGE_SHA" '. + {merge_commit_sha: $sha}' "$retro_json" >"$WORKDIR/retro-with-sha.json"
 mv "$WORKDIR/retro-with-sha.json" "$retro_json"
-python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "$retro_json"
+python3 "$SCRIPT_DIR/validate-postmerge-retro.py" --allow-derived-priority "$retro_json"
 
 final_route="$(jq -r '.evidence_route // "bounded"' "$COVERAGE_JSON")"
 cp -f "$retro_json" "$WORKDIR/retro.json.final"

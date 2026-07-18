@@ -7,14 +7,51 @@
         "Authorization": "Bearer ${GH_PAT}"
       }
     },
-    "open-design": {
-      "command": "node",
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SUPABASE_API_KEY}"
+      }
+    },
+    "netlify": {
+      "command": "bash",
       "args": [
-        "/Applications/Open Design.app/Contents/Resources/app/prebundled/daemon/daemon-cli.mjs",
-        "mcp",
-        "--daemon-url",
-        "http://127.0.0.1:7456"
-      ]
+        "-lc",
+        "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
+      ],
+      "env": {
+        "NETLIFY_API_KEY": "${NETLIFY_API_KEY}"
+      }
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com",
+      "headers": {
+        "Authorization": "Bearer ${VERCEL_API_KEY}"
+      }
+    },
+    "cloudflare-api": {
+      "type": "http",
+      "url": "https://mcp.cloudflare.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${CLOUDFLARE_API_KEY}"
+      }
+    },
+    "cloudflare-docs": {
+      "type": "http",
+      "url": "https://docs.mcp.cloudflare.com/mcp"
+    },
+    "railway": {
+      "type": "http",
+      "url": "https://mcp.railway.com",
+      "headers": {
+        "Authorization": "Bearer ${RAILWAY_API_KEY}"
+      }
+    },
+    "open-design": {
+      "command": "bash",
+      "args": ["scripts/open-design-mcp.sh"]
     },
     "playwright": {
       "command": "npx",

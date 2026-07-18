@@ -53,7 +53,7 @@ else
   fail "implementation plan templates still permit fragmented revision comments"
 fi
 
-RECOVERY_SKILL=.opencode/skills/session-recovery/SKILL.md
+RECOVERY_SKILL=.agents/skills/session-recovery/SKILL.md
 if grep -qF 'active issue' "$RECOVERY_SKILL" \
   && grep -qF 'linked PR' "$RECOVERY_SKILL" \
   && grep -qF 'agent-state:v1' "$RECOVERY_SKILL" \

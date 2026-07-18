@@ -13,7 +13,7 @@ setup() {
   antigravity_enabled=false
 }
 
-@test "weekly scan auto routing prefers OpenCode" {
+@test "weekly scan auto routing prefers Cursor" {
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -24,7 +24,7 @@ setup() {
   run pick_advisory_provider weekly-scan
 
   [ "$status" -eq 0 ]
-  [ "$output" = opencode ]
+  [ "$output" = cursor ]
 }
 
 @test "weekly scan auto routing uses Antigravity before Gemini" {

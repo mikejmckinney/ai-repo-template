@@ -50,9 +50,9 @@ remain cadence-specific.
 
 Advisory, daily, and weekly automation resolve `auto` in this order:
 
-1. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
+1. Cursor when `CURSOR_API_KEY` is available.
+2. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
    `OPENROUTER_API_KEY` are available.
-2. Cursor.
 3. Antigravity where the cadence permits it.
 4. Gemini.
 
@@ -62,7 +62,7 @@ sends one explicit corrective prompt when validation fails, then tries
 `openrouter/z-ai/glm-5.2@preset/default` and
 `openrouter/minimax/minimax-m3@preset/default` in order. Subscription-backed
 `openai/gpt-5.6-sol` remains available to interactive local OpenCode and
-`local-consensus`, not public CI. Fix calls go through
+`multi-model-consensus`, not public CI. Fix calls go through
 `run-opencode-fix.sh`, which creates and discards one detached worktree per model
 and applies only a schema-valid attempt whose credential-free controller-side
 `./test.sh` run passes. The fix agent may edit but cannot invoke shell commands;
@@ -101,18 +101,26 @@ complete diff, local evidence inventory, non-auto-loaded startup context, and
 touched HEAD paths. OpenCode's system loader supplies the root `AGENTS.md`, so a
 redundant tool read is not required for that file.
 
-With `auto`, analysis attempts available providers in OpenCode, Cursor, then
+With `auto`, analysis attempts available providers in Cursor, OpenCode, then
 Gemini order. A provider transport, empty-result, or validation failure advances
 to the next available provider. A large review is not reported as successful
 after silently degrading to bounded evidence. Daily sequential runs record
 failed PRs and continue finalization so successful retros and coverage artifacts
 remain available.
 
-## Local Consensus
+## Multi-Model Consensus
 
-The OpenCode `local-consensus` skill is the sole opt-in multi-model path. Use it
+The OpenCode `multi-model-consensus` skill is the sole opt-in multi-model path. Use it
 only when requested or when consequential uncertainty justifies independent
 perspectives. It does not replace the implementing agent or CI.
+
+## Problem Framing And Critical Review
+
+Problem framing and critical review are reasoning behaviors of the monolithic
+implementing agent, not pipeline roles or blocking AI stages. The agent applies
+the risk-based trigger in `AGENTS.md`; deeper product or market analysis uses
+`docs/guides/problem-framing.md` only when it could materially change scope or
+the user outcome. CI and lint remain the blocking pre-merge controls.
 
 ## Cross-PR Safety
 

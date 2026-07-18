@@ -14,7 +14,7 @@ ADR-031 defines the active execution model:
 - CI and lint as blocking pre-merge controls;
 - optional `ai-review:live` advisory snapshots during implementation;
 - automatic daily post-merge and weekly full-repository review;
-- OpenCode `local-consensus` as the sole opt-in multi-model mechanism.
+- OpenCode `multi-model-consensus` as the sole opt-in multi-model mechanism.
 
 ## Commands
 
@@ -50,6 +50,7 @@ end-to-end budget.
 | `docs/decisions/` | Durable architecture decisions; ADR-031 owns the execution model |
 | `docs/benchmarks/` | Published benchmark result records used for decisions |
 | `docs/guides/model-roi-benchmark-runbook.md` | Canonical benchmark campaign procedure |
+| `docs/guides/problem-framing.md` | Conditional problem, audience, alternatives, and impact analysis |
 | `docs/guides/agent-pipeline.md` | Active workflow and trigger behavior |
 | `.github/prompts/shared-review-lenses.md` | Canonical criteria for advisory and retro review |
 | `.github/prompts/pr-advisory-review.md` | Optional in-progress PR advisory output contract |
@@ -59,7 +60,7 @@ end-to-end budget.
 | `.github/workflows/agent-postmerge-retro.yml` | Scheduled daily retro and draft-fix lifecycle |
 | `.github/workflows/agent-weekly-review.yml` | Scheduled weekly scan and draft-fix lifecycle |
 | `.github/agent-runtime/` | Locked OpenCode dependencies and review/fix permission profiles |
-| `.opencode/skills/local-consensus/` | Explicit independent advisor/consensus mechanism |
+| `.agents/skills/` | Canonical skills, including multi-model consensus and nested provider skill sets |
 | `scripts/workflows/advisory-review/` | Advisory provider adapters and comment upsert |
 | `scripts/workflows/postmerge-retro/` | Daily evidence, analysis, umbrella, and fix adapters |
 | `scripts/workflows/weekly-review/` | Weekly scan, umbrella, and fix adapters |
@@ -67,6 +68,19 @@ end-to-end budget.
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
 | `install.sh` | Codespaces bootstrap and template-file copy inventory |
+
+### Nested Provider Skills
+
+All 28 official Phaser 4 skills are pinned in `skills-lock.json` and grouped at
+`.agents/skills/phaser/<name>/SKILL.md`. OpenCode, Cursor, Codex, and current
+GitHub Copilot discover this recursive layout. Gemini CLI and `npx skills list`
+only scan direct skill children, so they do not expose nested skills. Vercel,
+Netlify, Supabase, and Cloudflare skills are likewise grouped under provider
+parents; singleton providers and repository-owned skills remain direct children.
+Use `npx skills add . --list --full-depth` to inspect the nested source tree. Do
+not use `npx skills experimental_install` to restore its layout: the lock format
+records upstream `skillPath` but installs destinations as flat
+`.agents/skills/<name>` directories.
 
 ## Review Lifecycle
 
@@ -90,11 +104,21 @@ The weekly workflow scans current `main`, creates or updates one ISO-week umbrel
 and may open a draft fix PR. It remains a full-repository scan rather than a
 weekly aggregation of merged PRs.
 
-### Local Consensus
+### Multi-Model Consensus
 
-Use the `local-consensus` skill only when requested or when consequential
+Use the `multi-model-consensus` skill only when requested or when consequential
 uncertainty warrants independent model perspectives. It is not the default
 implementation path.
+
+### Problem Framing And Critical Review
+
+The monolithic implementing agent applies the risk-based trigger in `AGENTS.md`
+before designing consequential or ambiguous work. Use
+`docs/guides/problem-framing.md` only when deeper audience, competitive, or
+impact analysis could change the decision; routine deterministic maintenance
+does not require the full scaffold. Reviews must identify a concrete failure
+mode and proportionate correction, and supporting checks never replace the
+issue's user-outcome test.
 
 ## Workflow Verification
 
@@ -115,6 +139,21 @@ Interactive OpenCode may use ChatGPT Plus/Pro authentication for Sol, but that
 personal OAuth credential is not forwarded to public GitHub Actions. Workflows
 install the pinned OpenCode runtime from `.github/agent-runtime/package-lock.json`
 on GitHub-managed `ubuntu-latest`.
+
+Interactive provider MCPs support write/deploy capabilities. Vercel, Netlify,
+Supabase, Railway, and Cloudflare read credentials from `VERCEL_API_KEY`,
+`NETLIFY_API_KEY`, `SUPABASE_API_KEY`, `RAILWAY_API_KEY`, and
+`CLOUDFLARE_API_KEY`; never commit these values. Limit the Cloudflare token to
+the accounts and developer-platform resources needed by the project.
+Supabase is account-wide by default. Add `?project_ref=<id>` to its MCP URL when
+one-project scope is preferred; project scope also disables account-management
+tools. Cloudflare docs does not require account access.
+Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
+Netlify uses pinned `mcp-remote` as a compatibility adapter because OpenCode's
+native HTTP transport drops the hosted server's connection. The shell expands
+`NETLIFY_API_KEY` into the adapter's authorization header, so the token is
+visible briefly in the child process arguments but is not persisted as OAuth
+state or committed.
 
 ## Documentation Synchronization
 

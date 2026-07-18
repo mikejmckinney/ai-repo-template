@@ -46,6 +46,8 @@ concurrency:
 jobs:
   lint-and-format:
     runs-on: ubuntu-latest
+    env:
+      REPOSITORY_OWNED_SKILLS: context-import multi-model-consensus open-design repo-onboarding session-recovery
 
     # Skip if commit message contains [skip lint] or is from the formatter bot
     if: |
@@ -77,9 +79,19 @@ jobs:
         # `-r -0` is required on GNU xargs: `-r` skips invocation when no
         # input; `-0` (null-delimited, pairs with -print0) handles filenames
         # with spaces or special characters (SC2038).
+        # Third-party skills remain byte-for-byte upstream. Repository-owned
+        # cross-agent skills in the same canonical directory remain blocking.
         run: |
-          find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
-            -name '*.sh' -print0 \
+          find . \( -name '.git' -o -name 'node_modules' \) -prune -o -name '*.sh' -print0 \
+            | while IFS= read -r -d '' file; do
+                skill="${file#./.agents/skills/}"
+                skill="${skill%%/*}"
+                if [[ "${file}" == ./.agents/skills/* ]] \
+                  && [[ " ${REPOSITORY_OWNED_SKILLS} " != *" ${skill} "* ]]; then
+                  continue
+                fi
+                printf '%s\0' "${file}"
+              done \
             | xargs -r -0 shellcheck --severity=warning --exclude=SC1091
 
       # =====================================================
@@ -100,9 +112,18 @@ jobs:
         # -ci: indent case statements.
         # `-r -0` pairs with -print0 to handle filenames with spaces or
         # special characters (SC2038).
+        # Keep third-party skills byte-for-byte upstream.
         run: |
-          find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
-            -name '*.sh' -print0 \
+          find . \( -name '.git' -o -name 'node_modules' \) -prune -o -name '*.sh' -print0 \
+            | while IFS= read -r -d '' file; do
+                skill="${file#./.agents/skills/}"
+                skill="${skill%%/*}"
+                if [[ "${file}" == ./.agents/skills/* ]] \
+                  && [[ " ${REPOSITORY_OWNED_SKILLS} " != *" ${skill} "* ]]; then
+                  continue
+                fi
+                printf '%s\0' "${file}"
+              done \
             | xargs -r -0 shfmt -d -i 2 -bn -ci
 
       # =====================================================
@@ -184,7 +205,16 @@ jobs:
 
           : > /tmp/changed-markdown-files-z
           while IFS= read -r -d '' file; do
-            if [[ "${file}" == *.md ]] && [[ ! "${file}" =~ (^|/)node_modules/|(^|/)\.git/ ]]; then
+            skill="${file#.agents/skills/}"
+            skill="${skill%%/*}"
+            repository_owned_skill=false
+            if [[ "${file}" == .agents/skills/* ]] \
+              && [[ " ${REPOSITORY_OWNED_SKILLS} " == *" ${skill} "* ]]; then
+              repository_owned_skill=true
+            fi
+            if [[ "${file}" == *.md ]] \
+              && [[ ! "${file}" =~ (^|/)node_modules/|(^|/)\.git/ ]] \
+              && { [[ "${file}" != .agents/skills/* ]] || [[ "${repository_owned_skill}" == true ]]; }; then
               printf '%s\0' "${file}" >> /tmp/changed-markdown-files-z
             fi
           done < /tmp/changed-files-z
@@ -225,8 +255,16 @@ jobs:
         shell: bash
         run: |
           set +e
+          third_party_ignores=()
+          for skill_dir in .agents/skills/*; do
+            [[ -d "${skill_dir}" ]] || continue
+            skill="${skill_dir##*/}"
+            if [[ " ${REPOSITORY_OWNED_SKILLS} " != *" ${skill} "* ]]; then
+              third_party_ignores+=("!${skill_dir}/**")
+            fi
+          done
           markdownlint-cli2 --config .markdownlint-cli2.jsonc \
-            "**/*.md" "!node_modules/**" "!.git/**" \
+            "**/*.md" "!node_modules/**" "!.git/**" "${third_party_ignores[@]}" \
             > /tmp/markdownlint-advisory.log 2>&1
           status=$?
           set -e

@@ -17,9 +17,62 @@
         "Authorization": "Bearer {env:GH_PAT}"
       }
     },
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:SUPABASE_API_KEY}"
+      }
+    },
+    "netlify": {
+      "type": "local",
+      "command": [
+        "bash",
+        "-lc",
+        "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
+      ],
+      "enabled": true,
+      "env": {
+        "NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"
+      }
+    },
+    "vercel": {
+      "type": "remote",
+      "url": "https://mcp.vercel.com",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:VERCEL_API_KEY}"
+      }
+    },
+    "cloudflare-api": {
+      "type": "remote",
+      "url": "https://mcp.cloudflare.com/mcp",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:CLOUDFLARE_API_KEY}"
+      }
+    },
+    "cloudflare-docs": {
+      "type": "remote",
+      "url": "https://docs.mcp.cloudflare.com/mcp",
+      "enabled": true
+    },
+    "railway": {
+      "type": "remote",
+      "url": "https://mcp.railway.com",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:RAILWAY_API_KEY}"
+      }
+    },
     "open-design": {
       "type": "local",
-      "command": ["node", "/Applications/Open Design.app/Contents/Resources/app/prebundled/daemon/daemon-cli.mjs", "mcp", "--daemon-url", "http://127.0.0.1:7456"],
+      "command": ["bash", "scripts/open-design-mcp.sh"],
       "enabled": true
     },
     "playwright": {
@@ -43,6 +96,7 @@
   "provider": {
     "openrouter": {
       "models": {
+        "moonshotai/kimi-k3": {},
         "deepseek/deepseek-v4-pro@preset/default": {},
         "minimax/minimax-m3@preset/default": {},
         "z-ai/glm-5.2@preset/default": {},

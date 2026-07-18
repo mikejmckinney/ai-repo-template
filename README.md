@@ -29,12 +29,12 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `.context/` | AI agents | Canonical project truth: rules, state, roadmap, vision (lazy-loaded) |
 | `AGENTS.md` (root) | Most AI tools | Root startup contract (Copilot, Cursor, Gemini, Claude Code, etc.) |
 | `.github/prompts/` | Review and workflow automation | Shared lenses plus advisory, daily, and weekly prompts |
-| `.opencode/skills/local-consensus/` | OpenCode | Optional independent multi-model review |
+| `.agents/skills/multi-model-consensus/` | Cross-agent | Optional independent multi-model review |
 | `install.sh` (root) | GitHub Codespaces "Dotfiles" | Bootstrap script — Codespaces expects it at repo root |
 | `test.sh` (root) | `.github/workflows/ci-tests.yml` | Template verification, invoked by CI as `./test.sh` |
 | `scripts/` | Project consumers (post-clone) | One-time project customization (`setup.sh`, `verify-env.sh`) |
 
-ADR-031 defines the active model: one implementing agent, blocking CI, optional parallel advisory review, recurring retro, and opt-in local consensus.
+ADR-031 defines the active model: one implementing agent, blocking CI, optional parallel advisory review, recurring retro, and opt-in multi-model consensus.
 
 **Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow.
 
@@ -191,7 +191,7 @@ EXTENSIONS=(
 
 - Add `ai-review:live` when optional advisory feedback is useful during implementation.
 - Daily and weekly workflows review merged work and repository health.
-- Use the OpenCode `local-consensus` skill only for consequential uncertainty.
+- Use the OpenCode `multi-model-consensus` skill only for consequential uncertainty.
 
 ## Best Practices
 

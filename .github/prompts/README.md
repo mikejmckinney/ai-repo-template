@@ -15,7 +15,7 @@ review automation.
 | `mirror-postmortem.md` | Mirror a generalized postmortem upstream |
 
 ADR-031 retired role-specific, pre-push, formal-review resolution, finalization,
-and legacy consensus-planning prompts. Use the OpenCode `local-consensus` skill
+and legacy consensus-planning prompts. Use the OpenCode `multi-model-consensus` skill
 for explicit independent multi-model review.
 
 Model-ROI benchmark and grading prompts live on `benchmark/roi`; they are

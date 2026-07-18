@@ -8,7 +8,7 @@ bats_require_minimum_version 1.5.0
 
   while IFS= read -r script; do
     [[ -x "$script" ]] || failures+=("${script#"$repo_root/"}")
-  done < <(find "$repo_root/.opencode/skills" -type f -path '*/scripts/*.sh' -print | sort)
+  done < <(find "$repo_root/.agents/skills" -type f -path '*/scripts/*.sh' -print | sort)
 
   if [[ ${#failures[@]} -ne 0 ]]; then
     printf 'Non-executable skill scripts:\n%s\n' "${failures[*]}" >&2

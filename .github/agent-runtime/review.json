@@ -32,6 +32,24 @@
       "url": "https://api.githubcopilot.com/mcp/",
       "enabled": false
     },
+    "supabase": {
+      "enabled": false
+    },
+    "netlify": {
+      "enabled": false
+    },
+    "vercel": {
+      "enabled": false
+    },
+    "cloudflare-api": {
+      "enabled": false
+    },
+    "cloudflare-docs": {
+      "enabled": false
+    },
+    "railway": {
+      "enabled": false
+    },
     "open-design": {
       "type": "local",
       "command": ["false"],
