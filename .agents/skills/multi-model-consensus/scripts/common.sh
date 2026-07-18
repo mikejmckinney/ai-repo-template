@@ -13,6 +13,7 @@ GLM_MODEL="${MULTI_MODEL_CONSENSUS_GLM_MODEL:-openrouter/z-ai/glm-5.2@preset/def
 MM_MODEL="${MULTI_MODEL_CONSENSUS_MM_MODEL:-openrouter/minimax/minimax-m3@preset/default}"
 MI_MODEL="${MULTI_MODEL_CONSENSUS_MI_MODEL:-openrouter/xiaomi/mimo-v2.5-pro@preset/default}"
 DS_MODEL="${MULTI_MODEL_CONSENSUS_DS_MODEL:-openrouter/deepseek/deepseek-v4-pro@preset/default}"
+PANEL_COMPLETION_MARKER='<!-- multi-model-panel-complete:v1 -->'
 
 fail() {
   printf 'multi-model-consensus: %s\n' "$*" >&2
@@ -21,6 +22,34 @@ fail() {
 
 require_value() {
   [[ $# -ge 2 && -n "$2" ]] || fail "$1 requires a value"
+}
+
+# shellcheck disable=SC2034 # Rejection reason is consumed by scripts that source this library.
+validate_panel_output() {
+  local output_file="$1" line trimmed last='' content=false
+  PANEL_REJECTION_REASON=
+  if [[ ! -s "$output_file" ]]; then
+    PANEL_REJECTION_REASON=empty_output
+    return 1
+  fi
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%$'\r'}"
+    trimmed="${line#"${line%%[![:space:]]*}"}"
+    trimmed="${trimmed%"${trimmed##*[![:space:]]}"}"
+    [[ -n "$trimmed" ]] || continue
+    last="$trimmed"
+    [[ "$trimmed" == "$PANEL_COMPLETION_MARKER" ]] || content=true
+  done <"$output_file"
+
+  if [[ "$last" != "$PANEL_COMPLETION_MARKER" ]]; then
+    PANEL_REJECTION_REASON=missing_completion_marker
+    return 1
+  fi
+  if [[ "$content" != true ]]; then
+    PANEL_REJECTION_REASON=empty_answer_before_marker
+    return 1
+  fi
 }
 
 run_with_timeout() {

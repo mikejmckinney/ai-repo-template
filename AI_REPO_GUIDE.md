@@ -25,6 +25,7 @@ bash scripts/lint-shell-conventions.sh scripts/
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
 scripts/diagnose-opencode-session.sh
+scripts/archive-opencode-database.sh
 git diff --check
 ```
 
@@ -34,6 +35,10 @@ markdownlint fixes. CI remains read-only and never commits formatting changes.
 Run `scripts/diagnose-opencode-session.sh` instead of bare `opencode` when
 capturing an unexpected interactive process restart; see
 `docs/guides/opencode-termination-diagnostics.md`.
+Run `scripts/archive-opencode-database.sh` first in dry-run mode when a large
+OpenCode database prevents startup. Apply mode requires every OpenCode process
+to be stopped, creates and verifies a coherent backup, and preserves the raw
+DB/WAL/SHM generation before leaving the active path empty for a fresh start.
 
 OpenCode workflow calls use `OPENCODE_TIMEOUT_MS` for both the Node HTTP
 transport and the outer abort, defaulting to `900000` (15 minutes). Set a larger
@@ -109,6 +114,9 @@ weekly aggregation of merged PRs.
 Use the `multi-model-consensus` skill only when requested or when consequential
 uncertainty warrants independent model perspectives. It is not the default
 implementation path.
+Fusion accepts a panel only when it ends with the injected completion marker.
+A provider/process success with partial research or `finish=unknown` is rejected,
+preserved for diagnosis, and replaced through the normal fallback chain.
 
 ### Problem Framing And Critical Review
 

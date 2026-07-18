@@ -119,6 +119,12 @@ Sol, GLM, MM, MI, then DS. It proceeds when at least two unique panels succeed, 
 invokes the shared Judge fallback chain. The Judge specification is internal
 to `prompts/judge.md`; do not duplicate or inline it in the caller prompt.
 
+The runner appends `prompts/panel-completion.md` to every panel request. A panel
+is successful only when its final non-empty line is the exact completion marker.
+Zero-exit partial output is preserved as
+`panel-N.rejected-ENGINE.md`, recorded in the panel result, and backfilled like
+an engine failure. The Judge sees only validated panel files.
+
 ## Output Contract
 
 Both commands write exactly one JSON object to stdout:
@@ -142,6 +148,12 @@ than fully independent consensus. The complete answer is stored at
 `output_file`; diagnostics go to stderr and adjacent `.err` files. Read the
 answer file, verify material claims, and synthesize it for the user. Do not
 paste raw panel output.
+
+When a panel is rejected after a nominally successful provider/process call,
+its panel record includes `rejected_engines` and parallel `rejection_reasons`
+arrays. These report validation, not provider ownership of the underlying
+stream failure. An OpenCode child ending with `finish=unknown` can produce this
+case and must not count as a substantive panel.
 
 Judge/Advisor engine order is Sol through OpenCode's OpenAI provider, Fable through the
 Claude CLI, Grok through the Cursor CLI, then GLM through OpenCode's OpenRouter

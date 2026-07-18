@@ -43,6 +43,8 @@ mkdir -p "$OUTPUT_DIR"
 
 RUNTIME_PROMPT="$OUTPUT_DIR/panel-prompt.md"
 append_session_context "$PROMPT_FILE" "$INVOKING_SESSION" "$RUNTIME_PROMPT"
+printf '\n' >>"$RUNTIME_PROMPT"
+cat "$SKILL_ROOT/prompts/panel-completion.md" >>"$RUNTIME_PROMPT"
 PANEL_TIMEOUT_SECONDS="${MULTI_MODEL_CONSENSUS_PANEL_TIMEOUT:-${MULTI_MODEL_CONSENSUS_TIMEOUT:-600}}"
 
 invoke_panel_engine() {
@@ -62,11 +64,32 @@ fallback_engines=(sol glm mm mi ds)
 pids=()
 panel_engines=(kimi fable grok)
 panel_statuses=(success success success)
+panel_rejected_engines=("" "" "")
+panel_rejection_reasons=("" "" "")
 panel_files=(
   "$OUTPUT_DIR/panel-1.md"
   "$OUTPUT_DIR/panel-2.md"
   "$OUTPUT_DIR/panel-3.md"
 )
+
+preserve_rejected_panel() {
+  local index="$1" engine="$2" reason="$3"
+  local source="${panel_files[$index]}"
+  local rejected="$OUTPUT_DIR/panel-$((index + 1)).rejected-${engine}.md"
+  if [[ -e "$source" ]]; then
+    mv "$source" "$rejected"
+  else
+    : >"$rejected"
+  fi
+  printf '%s\n' "$reason" >"${rejected%.md}.validation.err"
+  if [[ -n "${panel_rejected_engines[$index]}" ]]; then
+    panel_rejected_engines[index]+=",$engine"
+    panel_rejection_reasons[index]+=",$reason"
+  else
+    panel_rejected_engines[index]="$engine"
+    panel_rejection_reasons[index]="$reason"
+  fi
+}
 
 for index in "${!primary_engines[@]}"; do
   engine="${primary_engines[$index]}"
@@ -78,9 +101,12 @@ done
 PANELS_SUCCEEDED=0
 fallback_cursor=0
 for index in "${!pids[@]}"; do
-  if wait "${pids[$index]}" && [[ -s "${panel_files[$index]}" ]]; then
-    PANELS_SUCCEEDED=$((PANELS_SUCCEEDED + 1))
-    continue
+  if wait "${pids[$index]}"; then
+    if validate_panel_output "${panel_files[$index]}"; then
+      PANELS_SUCCEEDED=$((PANELS_SUCCEEDED + 1))
+      continue
+    fi
+    preserve_rejected_panel "$index" "${panel_engines[$index]}" "$PANEL_REJECTION_REASON"
   fi
 
   panel_statuses[index]=failed
@@ -89,10 +115,13 @@ for index in "${!pids[@]}"; do
     fallback_cursor=$((fallback_cursor + 1))
     if invoke_panel_engine "$fallback_engine" "${TITLE}-panel-$((index + 1))" \
       "$RUNTIME_PROMPT" "${panel_files[$index]}"; then
-      panel_engines[index]="$fallback_engine"
-      panel_statuses[index]=fallback
-      PANELS_SUCCEEDED=$((PANELS_SUCCEEDED + 1))
-      break
+      if validate_panel_output "${panel_files[$index]}"; then
+        panel_engines[index]="$fallback_engine"
+        panel_statuses[index]=fallback
+        PANELS_SUCCEEDED=$((PANELS_SUCCEEDED + 1))
+        break
+      fi
+      preserve_rejected_panel "$index" "$fallback_engine" "$PANEL_REJECTION_REASON"
     fi
   done
 done
@@ -119,7 +148,13 @@ for index in "${!panel_engines[@]}"; do
     --arg slot "${primary_engines[$index]}" \
     --arg engine "${panel_engines[$index]}" \
     --arg status "${panel_statuses[$index]}" \
-    '{slot: $slot, engine: $engine, status: $status}')")
+    --arg rejected_engines "${panel_rejected_engines[$index]}" \
+    --arg rejection_reasons "${panel_rejection_reasons[$index]}" \
+    '{slot: $slot, engine: $engine, status: $status}
+      + (if $rejected_engines == "" then {} else {
+          rejected_engines: ($rejected_engines | split(",")),
+          rejection_reasons: ($rejection_reasons | split(","))
+        } end)')")
 done
 PANELS_JSON=$(printf '%s\n' "${panel_records[@]}" | jq -s .)
 
