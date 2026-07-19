@@ -299,3 +299,39 @@ EOF
     --lock "$REPO_ROOT/skills-lock.json"
   [ "$status" -eq 0 ]
 }
+
+@test "single-file skill packages update without importing sibling content" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output" "skills/acme/SKILL.md"
+  jq '.skills.acme.packageType = "file"' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  upstream="$BATS_TEST_TMPDIR/upstream"
+  mkdir -p "$upstream/skills/acme" "$upstream/skills/unrelated"
+  cat >"$upstream/skills/acme/SKILL.md" <<'EOF'
+---
+name: acme
+description: Updated single-file skill.
+---
+
+# Updated Acme
+EOF
+  printf 'must not be imported\n' >"$upstream/skills/unrelated/content.txt"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+  [ "$status" -eq 0 ]
+  grep -q "Updated Acme" "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md"
+  [ "$(find "$FIXTURE_ROOT/.agents/skills/acme" -type f | wc -l)" -eq 1 ]
+
+  run python3 "$TOOL" validate-lock \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+}

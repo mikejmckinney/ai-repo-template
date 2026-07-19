@@ -136,6 +136,23 @@ def package_hash(
     return digest.hexdigest()
 
 
+def file_package_hash(path: Path) -> str:
+    if path.is_symlink() or not path.is_file():
+        raise SupplyChainError(f"single-file package must be a regular file: {path}")
+    digest = hashlib.sha256()
+    digest.update(f"{HASH_ALGORITHM}\0".encode())
+    data = path.read_bytes()
+    executable = bool(path.stat().st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
+    digest.update(b"SKILL.md\0")
+    digest.update(b"100755" if executable else b"100644")
+    digest.update(b"\0")
+    digest.update(str(len(data)).encode())
+    digest.update(b"\0")
+    digest.update(data)
+    digest.update(b"\0")
+    return digest.hexdigest()
+
+
 def load_json(path: Path) -> dict:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -211,9 +228,14 @@ def validate_external_record(repo: Path, key: str, record: object) -> tuple[Path
         raise SupplyChainError(f"external skill {key} has unsupported hashAlgorithm")
     if not isinstance(record["computedHash"], str) or not HASH_PATTERN.fullmatch(record["computedHash"]):
         raise SupplyChainError(f"external skill {key} has invalid computedHash")
+    package_type = record.get("packageType", "directory")
+    if package_type not in {"directory", "file"}:
+        raise SupplyChainError(f"external skill {key} has invalid packageType")
     exclusions = excluded_paths(
         record.get("excludedPaths"), f"external skill {key} excludedPaths"
     )
+    if package_type == "file" and exclusions:
+        raise SupplyChainError(f"external skill {key} file package cannot declare exclusions")
 
     destination = confined_destination(repo, record["destinationPath"], f"external skill {key} destinationPath")
     for exclusion in exclusions:
@@ -223,7 +245,15 @@ def validate_external_record(repo: Path, key: str, record: object) -> tuple[Path
             )
     metadata_name = skill_name(destination / "SKILL.md")
 
-    actual_hash = package_hash(destination, exclusions)
+    if package_type == "file":
+        local_files = [path.relative_to(destination).as_posix() for path in package_files(destination)]
+        if local_files != ["SKILL.md"]:
+            raise SupplyChainError(
+                f"external skill {key} file package destination must contain only SKILL.md"
+            )
+        actual_hash = file_package_hash(destination / "SKILL.md")
+    else:
+        actual_hash = package_hash(destination, exclusions)
     if actual_hash != record["computedHash"]:
         raise SupplyChainError(
             f"external skill {key} hash mismatch: expected {record['computedHash']}, got {actual_hash}"
@@ -317,7 +347,11 @@ def source_packages(
             record["skillPath"], f"external skill {key} skillPath"
         )
         upstream_package = source_dir.joinpath(*upstream_relative.parts)
-        metadata_name = skill_name(upstream_package / "SKILL.md")
+        package_type = record.get("packageType", "directory")
+        upstream_skill_file = (
+            upstream_package if package_type == "file" else upstream_package / "SKILL.md"
+        )
+        metadata_name = skill_name(upstream_skill_file)
         if metadata_name != key:
             raise SupplyChainError(
                 f"external skill key {key} does not match upstream metadata name {metadata_name}"
@@ -326,7 +360,12 @@ def source_packages(
         exclusions = excluded_paths(
             record.get("excludedPaths"), f"external skill {key} excludedPaths"
         )
-        new_hash = package_hash(upstream_package, exclusions, require_exclusions=True)
+        if package_type == "file":
+            if exclusions:
+                raise SupplyChainError(f"external skill {key} file package cannot declare exclusions")
+            new_hash = file_package_hash(upstream_package)
+        else:
+            new_hash = package_hash(upstream_package, exclusions, require_exclusions=True)
         old_hash = record["computedHash"]
         if target_ref == record["ref"] and new_hash != old_hash:
             raise SupplyChainError(
@@ -344,6 +383,7 @@ def source_packages(
                 "oldHash": old_hash,
                 "newHash": new_hash,
                 "excludedPaths": exclusions,
+                "packageType": package_type,
                 "changed": target_ref != record["ref"] or new_hash != old_hash,
             }
         )
@@ -392,8 +432,12 @@ def copy_package(
     source: Path,
     destination: Path,
     exclusions: tuple[PurePosixPath, ...],
+    package_type: str,
 ) -> None:
     destination.mkdir(parents=True)
+    if package_type == "file":
+        shutil.copy2(source, destination / "SKILL.md")
+        return
     for source_file in package_files(source, exclusions, require_exclusions=True):
         relative = source_file.relative_to(source)
         destination_file = destination / relative
@@ -596,11 +640,15 @@ def update_source(
                 package["sourcePackage"],
                 staged_root / package["key"],
                 package["excludedPaths"],
+                package["packageType"],
             )
-            if (
-                package_hash(staged_root / package["key"], package["excludedPaths"])
-                != package["newHash"]
-            ):
+            staged_package = staged_root / package["key"]
+            staged_hash = (
+                file_package_hash(staged_package / "SKILL.md")
+                if package["packageType"] == "file"
+                else package_hash(staged_package, package["excludedPaths"])
+            )
+            if staged_hash != package["newHash"]:
                 raise SupplyChainError(f"staged package hash mismatch: {package['key']}")
 
         replaced: list[dict] = []
