@@ -171,16 +171,18 @@ See [Render MCP Server](https://render.com/docs/mcp-server) and
 
 ## Netlify
 
-OpenCode and generic MCP clients connect directly to
-`https://netlify-mcp.netlify.app/mcp` over remote HTTP with an environment-backed
-`Authorization` header. Do not wrap this endpoint with `mcp-remote`: OpenCode
-already supports remote HTTP, while the experimental bridge adds an `npx`
-subprocess, OAuth discovery, and local proxy startup.
+Generic MCP clients, including Cursor through `.cursor/mcp.json`, connect
+directly to `https://netlify-mcp.netlify.app/mcp` over remote HTTP with an
+environment-backed `Authorization` header. OpenCode 1.17.20 cannot use that path:
+its native remote transport reports that Netlify closes the stream unexpectedly.
 
-The timeout investigation measured a direct authenticated MCP initialization at
-about 232 ms. The hosted service was healthy; delay occurred in the local bridge
-path. Bridge diagnostics also expand custom headers into process logs, so native
-transport removes both the unnecessary startup path and that logging risk.
+OpenCode therefore uses pinned `mcp-remote@0.1.38` as a local compatibility
+bridge with `http-only` transport and a 15-second tool-fetch timeout. The hosted
+server answered a direct authenticated initialization in about 232 ms, and the
+isolated bridge connected successfully. The reported timeout came from the
+bridge's cold `npx` startup, OAuth discovery, and local proxy setup competing
+with OpenCode's default 5-second local MCP timeout. Keep `--silent`; verbose
+bridge diagnostics expand custom authorization headers into logs.
 
 Use a constrained non-production token where possible and expose it only to the
 interactive process:
