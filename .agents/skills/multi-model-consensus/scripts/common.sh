@@ -6,7 +6,7 @@ SKILL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export SKILL_ROOT
 TIMEOUT_SECONDS="${MULTI_MODEL_CONSENSUS_TIMEOUT:-600}"
 SESSION_LIMIT="${MULTI_MODEL_CONSENSUS_SESSION_LIMIT:-100}"
-KIMI_MODEL="${MULTI_MODEL_CONSENSUS_KIMI_MODEL:-openrouter/moonshotai/kimi-k3@preset/default}"
+KIMI_MODEL="${MULTI_MODEL_CONSENSUS_KIMI_MODEL:-openrouter/moonshotai/kimi-k3@preset/consensus}"
 SOL_MODEL="${MULTI_MODEL_CONSENSUS_SOL_MODEL:-openai/gpt-5.6-sol}"
 GROK_MODEL="${MULTI_MODEL_CONSENSUS_GROK_MODEL:-cursor-grok-4.5-medium}"
 GLM_MODEL="${MULTI_MODEL_CONSENSUS_GLM_MODEL:-openrouter/z-ai/glm-5.2@preset/default}"

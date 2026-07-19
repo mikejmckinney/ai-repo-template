@@ -16,13 +16,11 @@ setup() {
       headers: {Authorization: "Bearer {env:SUPABASE_API_KEY}"}
     } and
     .mcp.netlify == {
-      type: "local",
-      command: [
-        "bash", "-lc",
-        "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
-      ],
+      type: "remote",
+      url: "https://netlify-mcp.netlify.app/mcp",
       enabled: true,
-      env: {NETLIFY_API_KEY: "{env:NETLIFY_API_KEY}"}
+      oauth: false,
+      headers: {Authorization: "Bearer {env:NETLIFY_API_KEY}"}
     } and
     .mcp.vercel == {
       type: "remote",
@@ -52,12 +50,9 @@ setup() {
   run jq -e '
     .mcpServers.supabase.url == "https://mcp.supabase.com/mcp" and
     .mcpServers.supabase.headers.Authorization == "Bearer ${SUPABASE_API_KEY}" and
-    .mcpServers.netlify.command == "bash" and
-    .mcpServers.netlify.args == [
-      "-lc",
-      "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
-    ] and
-    .mcpServers.netlify.env.NETLIFY_API_KEY == "${NETLIFY_API_KEY}" and
+    .mcpServers.netlify.type == "http" and
+    .mcpServers.netlify.url == "https://netlify-mcp.netlify.app/mcp" and
+    .mcpServers.netlify.headers.Authorization == "Bearer ${NETLIFY_API_KEY}" and
     .mcpServers.vercel.url == "https://mcp.vercel.com" and
     .mcpServers.vercel.headers.Authorization == "Bearer ${VERCEL_API_KEY}" and
     .mcpServers["cloudflare-api"].url == "https://mcp.cloudflare.com/mcp" and
@@ -168,6 +163,46 @@ for path in ('.agents/skills', '.mcp.json', '.opencode/opencode.json', 'skills-l
 PY
 
   [ "$status" -eq 0 ]
+}
+
+@test "Cursor uses the canonical root MCP configuration" {
+  [ -L "$REPO_ROOT/.cursor/mcp.json" ]
+  [ "$(readlink "$REPO_ROOT/.cursor/mcp.json")" = "../.mcp.json" ]
+  [ "$(realpath "$REPO_ROOT/.cursor/mcp.json")" = "$REPO_ROOT/.mcp.json" ]
+}
+
+@test "official AWS successor and complete Azure catalogs are installed" {
+  run jq -e '
+    ([.skills[] | select(.source == "aws/agent-toolkit-for-aws")] | length) == 84 and
+    ([.skills[] | select(.source == "awslabs/agent-plugins")] | length) == 0 and
+    ([.skills[] | select(.source == "microsoft/azure-skills")] | length) == 26 and
+    all(.skills[] | select(.source == "aws/agent-toolkit-for-aws");
+      .ref == "36f16570de2015c0f0ce94ba9e391bd703c9ffb7" and
+      (.skillPath | startswith("skills/")) and
+      (.destinationPath | startswith(".agents/skills/aws/"))) and
+    all(.skills[] | select(.source == "microsoft/azure-skills");
+      .ref == "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae" and
+      (.skillPath | startswith("skills/")) and
+      (.destinationPath | startswith(".agents/skills/azure/")))
+  ' "$REPO_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+
+  run find "$REPO_ROOT/.agents/skills/aws" -type f -name SKILL.md
+  [ "$status" -eq 0 ]
+  [ "${#lines[@]}" -eq 84 ]
+
+  azure_skills=(
+    airunway-aks-setup appinsights-instrumentation azure-ai azure-aigateway
+    azure-cloud-migrate azure-compliance azure-compute azure-cost azure-deploy
+    azure-diagnostics azure-enterprise-infra-planner azure-kubernetes azure-kusto
+    azure-messaging azure-prepare azure-quotas azure-reliability
+    azure-resource-lookup azure-resource-visualizer azure-storage azure-upgrade
+    azure-validate entra-agent-id entra-app-registration microsoft-foundry
+    python-appservice-deploy
+  )
+  for skill in "${azure_skills[@]}"; do
+    [ -f "$REPO_ROOT/.agents/skills/azure/$skill/SKILL.md" ]
+  done
 }
 
 @test "OpenDesign MCP uses the portable project launcher" {

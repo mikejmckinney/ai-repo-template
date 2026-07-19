@@ -27,15 +27,12 @@
       }
     },
     "netlify": {
-      "type": "local",
-      "command": [
-        "bash",
-        "-lc",
-        "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
-      ],
+      "type": "remote",
+      "url": "https://netlify-mcp.netlify.app/mcp",
       "enabled": true,
-      "env": {
-        "NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:NETLIFY_API_KEY}"
       }
     },
     "vercel": {
@@ -128,7 +125,7 @@
   "provider": {
     "openrouter": {
       "models": {
-        "moonshotai/kimi-k3@preset/default": {},
+        "moonshotai/kimi-k3@preset/consensus": {},
         "deepseek/deepseek-v4-pro@preset/default": {},
         "minimax/minimax-m3@preset/default": {},
         "z-ai/glm-5.2@preset/default": {},

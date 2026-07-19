@@ -13,7 +13,7 @@ Fusion primary panels use:
 
 | Panel | Provider and model |
 |---|---|
-| Kimi | OpenRouter `openrouter/moonshotai/kimi-k3` |
+| Kimi | OpenRouter `openrouter/moonshotai/kimi-k3@preset/consensus` |
 | Fable | Claude CLI `fable` |
 | Grok | Cursor CLI `cursor-grok-4.5-medium` |
 

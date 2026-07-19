@@ -78,7 +78,8 @@ Run validation before first use or after provider/configuration changes:
 ```
 
 The command confirms required tools and the models `openai/gpt-5.6-sol`,
-`openrouter/moonshotai/kimi-k3`, and `cursor-grok-4.5-medium`. Fable, Grok,
+`openrouter/moonshotai/kimi-k3@preset/consensus`, and
+`cursor-grok-4.5-medium`. Fable, Grok,
 and GLM remain runtime fallbacks.
 
 ## Prepare The Prompt
