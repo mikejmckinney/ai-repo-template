@@ -44,6 +44,71 @@
       "source": "phaserjs/phaser",
       "sourceType": "github"
     },
+    "azure-cost": {
+      "computedHash": "c9ac677bd36e5cf2acdfb271ce0f88ad8829118980ea6d9404b50068f1334984",
+      "destinationPath": ".agents/skills/azure/azure-cost",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "skillPath": "skills/azure-cost",
+      "source": "microsoft/azure-skills",
+      "sourceType": "github"
+    },
+    "azure-deploy": {
+      "computedHash": "3f92ce063c5d113e06bf70770ba1e3dc7aae944de43281e3d76a8825842c9ac5",
+      "destinationPath": ".agents/skills/azure/azure-deploy",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "skillPath": "skills/azure-deploy",
+      "source": "microsoft/azure-skills",
+      "sourceType": "github"
+    },
+    "azure-diagnostics": {
+      "computedHash": "22757ddddf04dcd894aa0c22df582a8b9636134a63c37baf3778a7abc28fc857",
+      "destinationPath": ".agents/skills/azure/azure-diagnostics",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "skillPath": "skills/azure-diagnostics",
+      "source": "microsoft/azure-skills",
+      "sourceType": "github"
+    },
+    "azure-prepare": {
+      "computedHash": "5f834f49c06216c16c7800dcab0722a8bc924bc05442a28a4e51fc17f4a6b7da",
+      "destinationPath": ".agents/skills/azure/azure-prepare",
+      "excludedPaths": [
+        "references/services/functions/templates/base/eval",
+        "references/services/functions/templates/recipes/blob-eventgrid/eval",
+        "references/services/functions/templates/recipes/cosmosdb/eval",
+        "references/services/functions/templates/recipes/durable/eval",
+        "references/services/functions/templates/recipes/eventhubs/eval",
+        "references/services/functions/templates/recipes/mcp/eval",
+        "references/services/functions/templates/recipes/servicebus/eval",
+        "references/services/functions/templates/recipes/sql/eval",
+        "references/services/functions/templates/recipes/timer/eval"
+      ],
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "skillPath": "skills/azure-prepare",
+      "source": "microsoft/azure-skills",
+      "sourceType": "github"
+    },
+    "azure-reliability": {
+      "computedHash": "881fe5dfbf6f7bd0216292e5ae769ec7cd4147593714fb451b466f7a8c15ab02",
+      "destinationPath": ".agents/skills/azure/azure-reliability",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "skillPath": "skills/azure-reliability",
+      "source": "microsoft/azure-skills",
+      "sourceType": "github"
+    },
+    "azure-validate": {
+      "computedHash": "9168c293c6325411b677bb3dff149c99474a60d08fbb9fb7c1d81b825ad5eac7",
+      "destinationPath": ".agents/skills/azure/azure-validate",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "skillPath": "skills/azure-validate",
+      "source": "microsoft/azure-skills",
+      "sourceType": "github"
+    },
     "cameras": {
       "computedHash": "5ad7e3800dc875369e36ede4f221f7b860377b7fe4e425b4cf55fc9dba9e382a",
       "destinationPath": ".agents/skills/phaser/cameras",
@@ -89,6 +154,15 @@
       "source": "phaserjs/phaser",
       "sourceType": "github"
     },
+    "deploy": {
+      "computedHash": "ae7dea887387352ce72a004bf668d2a850843bdaffed6b403515306890f25f25",
+      "destinationPath": ".agents/skills/aws/deploy",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "d2822e9483fd03aed5556d4e03dfad6d60eac91b",
+      "skillPath": "plugins/deploy-on-aws/skills/deploy",
+      "source": "awslabs/agent-plugins",
+      "sourceType": "github"
+    },
     "deploy-to-vercel": {
       "computedHash": "f62064c7f1ba59558e7b532a024f3e741dbc49cd4cd09a25e77716a548e9e66d",
       "destinationPath": ".agents/skills/vercel/deploy-to-vercel",
@@ -99,6 +173,15 @@
       "ref": "f8a72b9603728bb92a217a879b7e62e43ad76c81",
       "skillPath": "skills/deploy-to-vercel",
       "source": "vercel-labs/agent-skills",
+      "sourceType": "github"
+    },
+    "elastic-beanstalk": {
+      "computedHash": "04b7a4535e8854458e02e4608b8d0df8252012de4a2806ad8fbf8c710a0d0c45",
+      "destinationPath": ".agents/skills/aws/elastic-beanstalk",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "d2822e9483fd03aed5556d4e03dfad6d60eac91b",
+      "skillPath": "plugins/deploy-on-aws/skills/elastic-beanstalk",
+      "source": "awslabs/agent-plugins",
       "sourceType": "github"
     },
     "events-system": {
@@ -227,6 +310,34 @@
       "source": "netlify/context-and-tools",
       "sourceType": "github"
     },
+    "oci": {
+      "computedHash": "a72945ac589343b9179813c235f77180e1390dd5d52380675fff55818b38b83a",
+      "destinationPath": ".agents/skills/oci/oci",
+      "hashAlgorithm": "sha256-tree-v1",
+      "packageType": "file",
+      "ref": "30e30dbcbf5f92f3564bc85f8fd59d32736adcd6",
+      "skillPath": "oci/SKILL.md",
+      "source": "oracle/skills",
+      "sourceType": "github"
+    },
+    "oci-functions-deploy": {
+      "computedHash": "2c268aeef6741124fb580ce3e198f69dce80a24e2988daf0c2b000069d712c15",
+      "destinationPath": ".agents/skills/oci/oci-functions-deploy",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "30e30dbcbf5f92f3564bc85f8fd59d32736adcd6",
+      "skillPath": "oci/functions/oci-functions-deploy",
+      "source": "oracle/skills",
+      "sourceType": "github"
+    },
+    "oci-functions-troubleshoot": {
+      "computedHash": "b73bab954f42a32e8570279471b0b26869aeecd3c1318f3c47dbbc4462a41473",
+      "destinationPath": ".agents/skills/oci/oci-functions-troubleshoot",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "30e30dbcbf5f92f3564bc85f8fd59d32736adcd6",
+      "skillPath": "oci/functions/oci-functions-troubleshoot",
+      "source": "oracle/skills",
+      "sourceType": "github"
+    },
     "particles": {
       "computedHash": "5a610376cc091bb0016623514bda47cd35033b3b9ff753c6915c6c3de9bc4427",
       "destinationPath": ".agents/skills/phaser/particles",
@@ -263,6 +374,177 @@
       "source": "microsoft/playwright",
       "sourceType": "github"
     },
+    "render-background-workers": {
+      "computedHash": "1f745834cffe5eca93a54672d273ecff07a5965c7262fe222c0b141da64ad4ee",
+      "destinationPath": ".agents/skills/render/render-background-workers",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-background-workers",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-blueprints": {
+      "computedHash": "b0a2b73dd1cbdb77e9f16c87cf21c2d70d72d131b811b03b5d5e63cd5dc382df",
+      "destinationPath": ".agents/skills/render/render-blueprints",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-blueprints",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-cli": {
+      "computedHash": "8732217f8636443227c668e211f65d332e33f7d55c4e9d388d9cc96ffe027e8e",
+      "destinationPath": ".agents/skills/render/render-cli",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-cli",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-cron-jobs": {
+      "computedHash": "feb198cedb0e1c91248a9b7064582de1979ba7d7ce877116c446fe2e72c7f4e4",
+      "destinationPath": ".agents/skills/render/render-cron-jobs",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-cron-jobs",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-debug": {
+      "computedHash": "181e0d0edb15aa0a3ffd929f873a3e1d73767ffa87d475b01459693bde832509",
+      "destinationPath": ".agents/skills/render/render-debug",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-debug",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-deploy": {
+      "computedHash": "f16aa9a31df180623e60dd49cdbc792f187541ca3d33ccf53f2f1745e6fe665e",
+      "destinationPath": ".agents/skills/render/render-deploy",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-deploy",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-disks": {
+      "computedHash": "7810d6e6b551c1a651ad7ab8a8ee737fda8387ddc29b99b6c681ee357a120c60",
+      "destinationPath": ".agents/skills/render/render-disks",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-disks",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-docker": {
+      "computedHash": "3fba46c8f37a00129e90695281fa503ec9dc7d7a51c863a5520f8c71af6be96e",
+      "destinationPath": ".agents/skills/render/render-docker",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-docker",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-domains": {
+      "computedHash": "5ee2b3b67b5d7661228f4acd16e5a82f48509a28342350b294028c67ae866e4e",
+      "destinationPath": ".agents/skills/render/render-domains",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-domains",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-env-vars": {
+      "computedHash": "3e886261e4c82ec2fbfc0fbdb22bc9a9ee3f1f9d4b5b06fb59055184ffd59227",
+      "destinationPath": ".agents/skills/render/render-env-vars",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-env-vars",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-keyvalue": {
+      "computedHash": "51d6b347faa2680835db28e62f779eb4c255eb0d362512ddea26abadbe11f467",
+      "destinationPath": ".agents/skills/render/render-keyvalue",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-keyvalue",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-mcp": {
+      "computedHash": "81610e7ece2b03f48709c4db43df589fab60dd0ee0c9529a2ce0da1575ad8f48",
+      "destinationPath": ".agents/skills/render/render-mcp",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-mcp",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-migrate-from-heroku": {
+      "computedHash": "f804244a28bfed7958297911efc72fbf594bfb8ea577e43a1329e8a27c41d2f6",
+      "destinationPath": ".agents/skills/render/render-migrate-from-heroku",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-migrate-from-heroku",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-monitor": {
+      "computedHash": "4494e451b443fa3e06653e45a8d6f2d6979d9cb2a2e96d43b61aaeef763f0252",
+      "destinationPath": ".agents/skills/render/render-monitor",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-monitor",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-networking": {
+      "computedHash": "ebe0c89bf366d8be05e30ce868cd370224dc7ad39a491e43af6b226c0d955f0f",
+      "destinationPath": ".agents/skills/render/render-networking",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-networking",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-postgres": {
+      "computedHash": "c16933d03a8384fbbc4afda50cc0fc618b2aeec313661c39ca5244be7c3a429a",
+      "destinationPath": ".agents/skills/render/render-postgres",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-postgres",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-private-services": {
+      "computedHash": "be89e4654bf2a052bb03dff92c3aca70171d54feb102f561fe99e10bdfad3912",
+      "destinationPath": ".agents/skills/render/render-private-services",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-private-services",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-scaling": {
+      "computedHash": "9bbf20c5d25c4321532839e5a62c74bff2b16793a51a10c95afa01d7e932bf31",
+      "destinationPath": ".agents/skills/render/render-scaling",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-scaling",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-static-sites": {
+      "computedHash": "fd1156a89aab3dabe452cb39af4061230ba536d38ed0944cc6a55e4af290d0fb",
+      "destinationPath": ".agents/skills/render/render-static-sites",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-static-sites",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
     "render-textures": {
       "computedHash": "39aa74da92caa6ae9bc08c66c412b288c181bef372507dcbc152c2e44a4ea82b",
       "destinationPath": ".agents/skills/phaser/render-textures",
@@ -270,6 +552,24 @@
       "ref": "41be1e462bc600064e498cba370bfa8c5c055a22",
       "skillPath": "skills/render-textures",
       "source": "phaserjs/phaser",
+      "sourceType": "github"
+    },
+    "render-web-services": {
+      "computedHash": "df8a7dc12e428818e9adaf1313d7399683da2382100c152b1c289ca1268a996f",
+      "destinationPath": ".agents/skills/render/render-web-services",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-web-services",
+      "source": "render-oss/skills",
+      "sourceType": "github"
+    },
+    "render-workflows": {
+      "computedHash": "5f09bec13268b5d68ad3b43e542d6f5ce0cb9da1d95709127fc9db8c147f887f",
+      "destinationPath": ".agents/skills/render/render-workflows",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1b8496570748203351f628b2ae738805ac2c23d5",
+      "skillPath": "skills/render-workflows",
+      "source": "render-oss/skills",
       "sourceType": "github"
     },
     "scale-and-responsive": {
