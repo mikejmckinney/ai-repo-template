@@ -70,6 +70,90 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
+@test "cloud MCP configurations are pinned and aligned" {
+  # shellcheck disable=SC2016
+  aws_command='exec uvx mcp-proxy-for-aws@1.6.3 "https://aws-mcp.${AWS_REGION:-us-east-1}.api.aws/mcp" --profile "${AWS_PROFILE:-default}" --region "${AWS_REGION:-us-east-1}"'
+  # shellcheck disable=SC2016
+  oci_command='[[ "${OCI_MCP_ENABLED:-false}" == "true" ]] || { echo "OCI MCP is disabled; set OCI_MCP_ENABLED=true to opt in" >&2; exit 1; }; exec uvx --python 3.13 oracle.oci-cloud-mcp-server@2.1.0'
+
+  run jq -e --arg aws_command "$aws_command" --arg oci_command "$oci_command" '
+    .mcp.aws == {
+      type: "local",
+      command: ["bash", "-lc", $aws_command],
+      enabled: true
+    } and
+    .mcp.azure == {
+      type: "local",
+      command: ["npx", "-y", "@azure/mcp@2.0.5", "server", "start"],
+      enabled: true
+    } and
+    .mcp.oci == {
+      type: "local",
+      command: ["uvx", "--python", "3.13", "oracle.oci-cloud-mcp-server@2.1.0"],
+      enabled: false,
+      env: {
+        OCI_CONFIG_PROFILE: "{env:OCI_CONFIG_PROFILE}",
+        FASTMCP_LOG_LEVEL: "ERROR"
+      }
+    } and
+    .mcp.render == {
+      type: "remote",
+      url: "https://mcp.render.com/mcp",
+      enabled: true,
+      oauth: false,
+      headers: {Authorization: "Bearer {env:RENDER_API_KEY}"}
+    }
+  ' "$REPO_ROOT/.opencode/opencode.json"
+  [ "$status" -eq 0 ]
+
+  run jq -e --arg aws_command "$aws_command" --arg oci_command "$oci_command" '
+    .mcpServers.aws == {
+      command: "bash",
+      args: ["-lc", $aws_command]
+    } and
+    .mcpServers.azure == {
+      command: "npx",
+      args: ["-y", "@azure/mcp@2.0.5", "server", "start"]
+    } and
+    .mcpServers.oci == {
+      command: "bash",
+      args: ["-lc", $oci_command],
+      disabled: true,
+      env: {
+        OCI_CONFIG_PROFILE: "${OCI_CONFIG_PROFILE}",
+        FASTMCP_LOG_LEVEL: "ERROR"
+      }
+    } and
+    .mcpServers.render == {
+      type: "http",
+      url: "https://mcp.render.com/mcp",
+      headers: {Authorization: "Bearer ${RENDER_API_KEY}"}
+    }
+  ' "$REPO_ROOT/.mcp.json"
+  [ "$status" -eq 0 ]
+}
+
+@test "locked agent profiles disable account-connected cloud MCPs" {
+  for profile in review fix; do
+    run jq -e '
+      .mcp.aws == {type: "local", command: ["false"], enabled: false} and
+      .mcp.azure == {type: "local", command: ["false"], enabled: false} and
+      .mcp.oci == {type: "local", command: ["false"], enabled: false} and
+      .mcp.render == {enabled: false}
+    ' "$REPO_ROOT/.github/agent-runtime/$profile.json"
+    [ "$status" -eq 0 ]
+  done
+}
+
+@test "GCP and Colyseus MCPs remain deferred" {
+  run jq -e '(.mcp | has("gcp") or has("colyseus")) | not' \
+    "$REPO_ROOT/.opencode/opencode.json"
+  [ "$status" -eq 0 ]
+  run jq -e '(.mcpServers | has("gcp") or has("colyseus")) | not' \
+    "$REPO_ROOT/.mcp.json"
+  [ "$status" -eq 0 ]
+}
+
 @test "Codespaces bootstrap copies provider integrations" {
   run python3 - "$REPO_ROOT/install.sh" <<'PY'
 import re
@@ -136,7 +220,7 @@ PY
       .skills[$skill].source == "phaserjs/phaser" and
       .skills[$skill].ref == "41be1e462bc600064e498cba370bfa8c5c055a22" and
       .skills[$skill].sourceType == "github" and
-      .skills[$skill].skillPath == ("skills/" + $skill + "/SKILL.md")
+      .skills[$skill].skillPath == ("skills/" + $skill)
     ' "$REPO_ROOT/skills-lock.json"
     [ "$status" -eq 0 ]
   done
