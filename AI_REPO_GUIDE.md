@@ -39,6 +39,9 @@ Run `scripts/archive-opencode-database.sh` first in dry-run mode when a large
 OpenCode database prevents startup. Apply mode requires every OpenCode process
 to be stopped, creates and verifies a coherent backup, and preserves the raw
 DB/WAL/SHM generation before leaving the active path empty for a fresh start.
+For implementation work, fill the issue plan, create and push an empty bootstrap
+commit, and open a draft PR before meaningful edits. Commit and push each
+changed turn before updating `agent-state:v1`; stage only task-owned paths.
 
 OpenCode workflow calls use `OPENCODE_TIMEOUT_MS` for both the Node HTTP
 transport and the outer abort, defaulting to `900000` (15 minutes). Set a larger

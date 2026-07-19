@@ -175,6 +175,12 @@ Never reuse a production write PAT as `OPENCODE_GITHUB_TOKEN`.
 
 ### 1. Prepare sandbox state — fresh test branches (default)
 
+For durability-policy changes, first prove that an empty bootstrap commit can
+open a draft PR. Then push a known-red checkpoint, record it in
+`agent-state:v1`, and resume from a second session. Verify issue-plan edits
+preserve all text outside the v2 delimiters and squash output excludes WIP
+checkpoint messages.
+
 The sandbox `main` ref is shared across PRs and may carry head-branch
 references from prior merged sandbox PRs (e.g. PR descriptions in this
 repo's history that link `mikejmckinney/ai-repo-template-sandbox#NNN`

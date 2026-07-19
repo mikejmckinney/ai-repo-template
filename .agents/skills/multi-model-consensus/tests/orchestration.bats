@@ -29,6 +29,7 @@ if [[ "$1 $2" == "models openai" ]]; then
 fi
 if [[ "$1 $2" == "models openrouter" ]]; then
   printf 'openrouter/moonshotai/kimi-k3\n'
+  printf 'openrouter/moonshotai/kimi-k3@preset/default\n'
   exit 0
 fi
 model=
@@ -49,7 +50,7 @@ if [[ "$model" == "openai/gpt-5.6-sol" ]]; then
   [[ "$MOCK_SOL_MODE" == success ]] || exit 7
   printf 'Sol answer\n'
   if $panel; then printf '%s\n' "$marker"; fi
-elif [[ "$model" == "openrouter/moonshotai/kimi-k3" ]]; then
+elif [[ "$model" == "openrouter/moonshotai/kimi-k3@preset/default" ]]; then
   [[ "$MOCK_KIMI_MODE" != fail ]] || exit 12
   case "$MOCK_KIMI_MODE" in
     preamble) printf 'I will inspect the evidence before answering.\n' ;;
@@ -276,5 +277,13 @@ teardown() {
   run "$SKILL_ROOT/scripts/validate-environment.sh"
   [ "$status" -eq 0 ]
   [ "$(jq -r '.status' <<<"$output")" = success ]
-  [ "$(jq -r '.kimi_model' <<<"$output")" = openrouter/moonshotai/kimi-k3 ]
+  [ "$(jq -r '.kimi_model' <<<"$output")" = openrouter/moonshotai/kimi-k3@preset/default ]
+}
+
+@test "panel completion contract ends with the bare unfenced marker" {
+  contract="$SKILL_ROOT/prompts/panel-completion.md"
+
+  [ "$(grep -v '^[[:space:]]*$' "$contract" | tail -1)" = '<!-- multi-model-panel-complete:v1 -->' ]
+  run grep -q '^```' "$contract"
+  [ "$status" -ne 0 ]
 }

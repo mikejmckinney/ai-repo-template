@@ -47,6 +47,9 @@ verify Summary block on sandbox #102
   These are empty when none apply.
 - **`actions`** = what the turn did (per-turn by nature — deliberately not `task`/`objective`, which
   read as standing goals and would be copied identically every turn).
+- When a turn changes repository-owned task files, commit and push first, then
+  include the durable commit or PR URL in `outcomes`. Known failing tests remain
+  explicit; they do not justify leaving task work only on local disk.
 - **`outcomes`** = results the transcript redacts (highest recovery value). No enforcement: an agent
   narrating its turn states this naturally; a hard non-empty rule would induce fabrication on
   mid-flight turns (a fabricated outcome is worse than an absent one).

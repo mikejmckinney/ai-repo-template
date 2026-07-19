@@ -1,8 +1,10 @@
 <!--
 Implementation Plan template (#164).
 
-Copy the block below into a comment on the issue you're about to work on.
-Post it BEFORE writing implementation code.
+New issue templates include the block below in the issue body. Before writing
+implementation code, fill it in and edit only between its v2 delimiters. For an
+untemplated new issue, append the block once. Existing issues with a canonical
+`implementation-plan:v1` comment are grandfathered and remain comment-based.
 
 When this template applies:
   - Default: every issue you're about to implement.
@@ -22,18 +24,18 @@ v1 has no formal approval gate (see ADR-011). The plan is a documented
 artifact reviewed at PR-time. Approval-gating, expiry rules, and
 automated CI enforcement are deferred to issue #155.
 
-Post one comment containing the `implementation-plan:v1` marker below. When the
-plan changes, edit that comment in place, merge the new current state into its
-body, and append one bounded entry to `Revision history`. Do not post separate
-plan-revision comments. Existing multi-comment plans are grandfathered.
+When the plan changes, fetch the current issue body, preserve everything outside
+the delimiters byte-for-byte, merge the new current state into the block, and
+append one bounded entry to `Revision history`. Re-fetch after writing and verify
+requester-owned content survived. Do not post separate plan-revision comments.
 
-Copy the canonical comment permalink into the PR's `## Plan` section and refresh
+Copy the canonical issue URL into the PR's `## Plan` section and refresh
 the current summary whenever the plan changes. Link addressable GitHub resources
 on first mention rather than writing bare issue, PR, commit, branch, run, ADR, or
 repository-file references.
 -->
 
-<!-- implementation-plan:v1 issue:NNN -->
+<!-- implementation-plan:v2:begin -->
 
 ## 📋 Implementation Plan
 
@@ -128,3 +130,5 @@ the plan scope.>
 ### Revision history
 
 - YYYY-MM-DD: Initial plan.
+
+<!-- implementation-plan:v2:end -->

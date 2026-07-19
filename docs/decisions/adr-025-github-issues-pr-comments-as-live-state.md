@@ -2,11 +2,19 @@
 
 ## Status
 
-Accepted (amended 2026-07-14: continuation state replaces explicit handoff)
+Accepted
 
 ## Date
 
 2026-05-12
+
+## Amendment 2026-07-19 — Delimited issue-body plans
+
+New issue bodies permit one mutable `implementation-plan:v2` block.
+Requester-owned content remains stable. Implementation-ready work publishes an
+empty bootstrap commit and linked draft PR before meaningful edits, then commits
+and pushes every changed turn before updating the latest `agent-state:v1`
+comment. Live progress remains exclusively in that comment.
 
 ## Amendment 2026-07-18 - Role-free problem framing
 

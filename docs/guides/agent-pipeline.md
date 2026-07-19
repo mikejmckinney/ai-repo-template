@@ -6,8 +6,11 @@ parallel; daily and weekly review operate after changes reach `main`.
 
 ## Implementation
 
-Use one implementing agent on a non-default branch. Keep issue/PR live-state
-comments only when work is paused, blocked, awaiting review, or handed off.
+Use one implementing agent on a non-default branch. Fill the issue body's v2
+plan block (or grandfathered v1 comment), create an empty bootstrap commit,
+push, and open a linked draft PR before meaningful edits. Each changed turn
+commits and pushes task-owned work before updating `agent-state:v1`; known-red
+draft state is explicit and does not block checkpoint durability.
 
 Issue assignment is operator-driven. The template does not provision a coding-agent
 queue or automatically transition draft PRs.

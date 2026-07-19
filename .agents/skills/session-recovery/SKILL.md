@@ -83,7 +83,8 @@ this receipt when you need independent confirmation that recovery ran.
 4. Re-read mandatory rule/profile files from disk.
 5. Re-read files involved in the active task.
 6. When an active issue can be identified and GitHub is available, read its
-   current body, linked PR, and latest `agent-state:v1` comment. This required
+   current body (including its v2 plan block), linked PR, grandfathered v1 plan
+   comment when present, and latest `agent-state:v1` comment. This required
    agent step happens after the offline-capable packet script; if GitHub is
    unavailable, state the offline limitation and use the local scratch fallback.
 7. Report the repository-required context receipt with boundary

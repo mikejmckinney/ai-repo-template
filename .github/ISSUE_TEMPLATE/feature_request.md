@@ -68,3 +68,27 @@ user actions, not files created. Example:
 <!-- Any other relevant information -->
 
 <!-- Live agent coordination status belongs in the latest `agent-state:v1` issue/PR comment, not in the issue body. Keep this body focused on the durable feature/task contract. -->
+
+<!-- implementation-plan:v2:begin -->
+
+## Implementation Plan
+
+### Outcome
+
+### Approach
+
+### Files to change
+
+### User outcome validation plan — PRIMARY
+
+### Supporting verification
+
+### Risks / out-of-scope
+
+### Opportunity notes
+
+### Revision history
+
+- Not yet planned.
+
+<!-- implementation-plan:v2:end -->

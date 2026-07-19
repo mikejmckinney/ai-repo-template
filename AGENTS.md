@@ -213,8 +213,11 @@ Keep agent working memory current so the next session can resume cleanly. For no
 
 ### Live coordination surface
 
-- **Issue body** — stable task contract. Do not rewrite it for live progress updates.
-- **PR body** — implementation/review contract. Link the issue, plan comment(s), verification results, and latest live-state comment when relevant.
+- **Issue body** — stable task contract plus, for new issues, one delimited
+  `implementation-plan:v2` block. Agents edit only that block unless the user
+  explicitly authorizes another correction. Do not write live progress there.
+- **PR body** — implementation/review contract. Link the issue-body plan or a
+  grandfathered v1 plan comment, verification results, and latest live-state comment when relevant.
 - **Latest `agent-state:v1` comment** — mutable baton for current status, blockers, next actions. Use [`.context/state/agent_state_comment_template.md`](./.context/state/agent_state_comment_template.md) as the copy/paste template.
 - **Local scratch copies** — if GitHub access is temporarily unavailable, temporarily record the same `agent-state:v1` content locally. Copy it into the issue/PR comment once access returns, then discard the local scratch copy. Do not commit local live-state scratch files as the normal path or reconcile a second persistent state surface.
 - **Clickable resources** — in agent-managed GitHub artifacts (plans, issue/PR
@@ -232,7 +235,9 @@ Update or post the latest `agent-state:v1` issue/PR comment at each of these bou
 3. **Durability-risk boundaries.** If a single conversation exceeds ~30 turns, the runtime auto-summarizes mid-flight, or the session ends while the task is not merged/closed, update the `agent-state:v1` comment before responding to the next message. Use runtime-provided turn counters or auto-summary notices when available; otherwise self-count approximately and treat any injected conversation summary as an auto-summary boundary.
 4. **Closeout.** Set `Status: done` when the agent has fully left the work.
 
-Each turn, update the `agent-state:v1` comment on the active issue/PR. **Maintain a current
+When a turn changes repository-owned task files, commit and push those scoped
+changes before updating `agent-state:v1`; the state comment then links durable
+GitHub evidence. Each turn, update the comment on the active issue/PR. **Maintain a current
 comprehensive snapshot — merge, do not replace, do not append:**
 
 - **Carry forward** items still relevant; **add** new; **drop** superseded; **compress landed items
@@ -270,7 +275,16 @@ When a downstream project (a repo built *from* this template) hits an incident w
 
 ### Work style
 
-- **Branch first, then commit per task boundary.** You MUST be on a non-default branch *before* making any non-trivial edit — branching is a precondition for the work, not a wrap-up step. You MUST also commit (and push, when a remote exists) at least once per task boundary, *not* only at the end of a multi-task session. Working directly on `main`/`master` is not acceptable, even for "I'll branch later" exploration. Branch naming: use `feature/<task-id>` as the standard form; a `fix/<slug>` form is also acceptable for bug-fix branches when that naming is clearer.
+- **Branch, publish, then checkpoint each changed turn.** Before meaningful edits,
+  create a non-default branch, make an empty bootstrap commit, push it, and open
+  a linked draft PR. At the end of every turn that changes repository-owned task
+  files, stage only task-owned paths, commit and push before updating
+  `agent-state:v1`. Failing tests or incomplete behavior are not reasons to keep
+  work local; record them in the draft PR and state comment. Never checkpoint
+  secrets, unrelated user changes, ignored/generated artifacts, unresolved
+  conflicts, or corrupt/destructive state. No-change turns create no commit.
+  Checkpoint-heavy branches must be squash-merged or cleaned before review.
+  Branch naming: use `feature/<task-id>` or `fix/<slug>`.
 - **Surface prerequisites and edge cases** when explaining a plan or how-to: required tools, dependencies, non-obvious failure modes, safety issues. Skip boilerplate warnings on trivial work.
 - **Don't weaken tests or make unrelated source changes to force them green.** If a test exposes a real bug, fix the bug in the source. Tests document behavior; weakening them to go green is a regression in disguise.
 - **GitHub issue close keywords — intentional in PRs, careful in commits.** Use `Closes #N` / `Fixes #N` / `Resolves #N` (and synonyms: `close`, `closes`, `closed`, `fix`, `fixes`, `fixed`, `resolve`, `resolves`, `resolved`) in the **PR description** when merge should link and close the tracked issue(s). That is the intended workflow; reference the **correct** issue numbers only. **Commit messages and squash-merge bodies also parse these keywords** when the commit lands on the default branch — a subject like `fix #N links` closes issue N even when you only meant to fix markdown URLs pointing at that issue. In commits: reference issues without a closing keyword (`issue N`, `(#N)`, `for issue N`) unless the commit itself should close the issue. **Do not use real issue numbers in bad examples** in commit or PR merge text (even as illustrations); GitHub still parses them. Repo setting **Settings → General → Issues → Auto-close issues with merged linked pull requests** controls sidebar/PR-body links; it does not fully disable commit-message keyword closes. See [linking a PR to an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue).
