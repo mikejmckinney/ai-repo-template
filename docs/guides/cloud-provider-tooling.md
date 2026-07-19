@@ -12,8 +12,8 @@ delete resources merely to prove connectivity.
 
 | Provider | Interactive MCP | Skill coverage | Authentication |
 |---|---|---|---|
-| AWS | Managed regional AWS MCP through `mcp-proxy-for-aws@1.6.3` | Official deploy and Elastic Beanstalk packages | Standard AWS credential chain, `AWS_PROFILE`, `AWS_REGION` |
-| Azure | `@azure/mcp@2.0.5` | Prepare, deploy, validate, diagnostics, cost, reliability | Azure CLI / `DefaultAzureCredential` |
+| AWS | Managed regional AWS MCP through `mcp-proxy-for-aws@1.6.3` | All 19 official core packages from Agent Toolkit for AWS | Standard AWS credential chain, `AWS_PROFILE`, `AWS_REGION` |
+| Azure | `@azure/mcp@2.0.5` | All 26 official package trees with 32 skill entrypoints | Azure CLI / `DefaultAzureCredential` |
 | OCI | `oracle.oci-cloud-mcp-server@2.1.0`, disabled by default | OCI router and Functions deploy/troubleshoot | OCI config profile, `OCI_CONFIG_PROFILE` |
 | Render | Hosted `https://mcp.render.com/mcp` | All 21 official Render packages | `RENDER_API_KEY` bearer token |
 | GCP | Deferred | Repository-owned `gcp` skill | `gcloud` and Application Default Credentials |
@@ -21,7 +21,11 @@ delete resources merely to prove connectivity.
 
 `.opencode/opencode.json` is the OpenCode configuration. `.mcp.json` supplies the
 same integrations to clients that use the generic MCP configuration format.
-Restart the client after changing credentials or enabled state.
+Cursor reads that canonical file through `.cursor/mcp.json`, a symlink to
+`../.mcp.json`. Git installations with symlink support disabled, commonly on
+Windows, may check it out as a plain text file and must enable symlinks or replace
+it with a real synchronized config. Restart the client after changing credentials
+or enabled state.
 
 ## AWS
 
@@ -56,6 +60,14 @@ broad administrator policy for MCP access.
 
 See [AWS MCP Server](https://docs.aws.amazon.com/aws-mcp/latest/userguide/what-is-aws-mcp.html)
 and [AWS CLI profiles](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html).
+The vendored skills come from the current
+[Agent Toolkit for AWS](https://github.com/aws/agent-toolkit-for-aws), which AWS
+identifies as the successor to its AWS Labs agent plugins. The repository keeps
+the 19 `aws-core` skills; specialized groups remain opt-in because the complete
+catalog adds materially more files, scripts, review surface, and refresh churn.
+On supported hosts, the `aws-core` plugin bundles these skills with AWS MCP
+configuration. This repository vendors them so all supported agents use one
+pinned, reviewable source.
 
 ## Azure
 
@@ -87,6 +99,17 @@ permissions only when a required read cannot use management-plane metadata.
 
 See [Azure MCP Server](https://github.com/microsoft/mcp) and
 [Azure CLI authentication](https://learn.microsoft.com/cli/azure/authenticate-azure-cli).
+The 26 vendored package trees contain 32 discoverable skill entrypoints. The
+lock's `skillEntrypoints` field represents nested Azure Kubernetes and Microsoft
+Foundry skills without flattening or overlapping package updates.
+
+Microsoft also publishes an Azure plugin for supported hosts. Installing the
+Cursor plugin automatically configures Azure MCP, Foundry MCP, and the full
+skills layer; equivalent plugin installs are available for Copilot CLI, Claude
+Code, Codex, and other listed hosts. Plugin installation therefore includes the
+skills, but it is host-local and follows that host's update lifecycle. This
+repository still vendors the packages for immutable cross-agent provenance. See
+[Install and configure Azure Skills](https://learn.microsoft.com/azure/developer/azure-skills/install).
 
 ## OCI
 
@@ -145,6 +168,30 @@ high-privilege production account merely for agent connectivity.
 
 See [Render MCP Server](https://render.com/docs/mcp-server) and
 [Render API keys](https://render.com/docs/api#1-create-an-api-key).
+
+## Netlify
+
+OpenCode and generic MCP clients connect directly to
+`https://netlify-mcp.netlify.app/mcp` over remote HTTP with an environment-backed
+`Authorization` header. Do not wrap this endpoint with `mcp-remote`: OpenCode
+already supports remote HTTP, while the experimental bridge adds an `npx`
+subprocess, OAuth discovery, and local proxy startup.
+
+The timeout investigation measured a direct authenticated MCP initialization at
+about 232 ms. The hosted service was healthy; delay occurred in the local bridge
+path. Bridge diagnostics also expand custom headers into process logs, so native
+transport removes both the unnecessary startup path and that logging risk.
+
+Use a constrained non-production token where possible and expose it only to the
+interactive process:
+
+```bash
+export NETLIFY_API_KEY="<non-production-api-key>"
+```
+
+Ask the MCP to list sites or inspect one known test site without deploying or
+changing configuration. See the
+[Netlify MCP Server documentation](https://docs.netlify.com/build/build-with-ai/netlify-mcp-server/).
 
 ## GCP
 

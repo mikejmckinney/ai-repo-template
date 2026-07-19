@@ -158,7 +158,7 @@ from pathlib import Path
 text = Path(sys.argv[1]).read_text(encoding="utf-8")
 match = re.search(r"MULTIAGENT_FILES=\(\n(?P<body>.*?)\n\)", text, re.DOTALL)
 assert match is not None
-for path in ('.agents/skills', '.mcp.json', '.opencode/opencode.json', 'skills-lock.json'):
+for path in ('.agents/skills', '.cursor', '.mcp.json', '.opencode/opencode.json', 'skills-lock.json'):
     assert f'  "{path}"' in match.group("body"), path
 PY
 

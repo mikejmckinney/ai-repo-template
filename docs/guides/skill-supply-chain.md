@@ -10,7 +10,9 @@ separately and never enter the external refresh path.
 
 - `skills` contains externally sourced packages. Every record declares the
   GitHub source, immutable commit, upstream package path, installed destination,
-  hash algorithm, and computed package hash.
+  hash algorithm, and computed package hash. Packages with nested skills add a
+  sorted `skillEntrypoints` list; it defaults to `SKILL.md` and must include the
+  package root.
 - `ownedSkills` contains repository-owned packages. These records declare only
   their installed destination and require manual freshness review.
 
@@ -34,7 +36,9 @@ python3 scripts/skill-supply-chain.py validate-lock \
 
 Validation rejects undeclared or missing skills, mutable refs, malformed
 metadata, duplicate names, hash mismatches, unsafe destinations, symlinks, and
-locally present excluded paths.
+locally present excluded paths. A bundle record validates every declared nested
+entrypoint while hashing and replacing its package tree once, avoiding
+overlapping update destinations.
 
 ## Check and update a source
 
@@ -132,7 +136,9 @@ downloaded packages are treated as data and are never run by the workflow.
 4. Copy upstream bytes and executable modes without rewriting them. Use
    `packageType: "file"` only when the upstream package is genuinely one file.
 5. Add the external lock record and calculate its hash with
-   `scripts/skill-supply-chain.py hash`. Declare audited exclusions first.
+   `scripts/skill-supply-chain.py hash`. Declare audited exclusions first. If
+   the package contains nested skills, declare every relative `SKILL.md` path in
+   sorted `skillEntrypoints` rather than creating overlapping package records.
 6. Add or extend tests for package structure, provider nesting, discovery, and
    any new exclusion or package-type behavior.
 7. Run lock validation, the refreshed-package secret scan, focused Bats tests,
@@ -157,9 +163,9 @@ changes; this table is not a substitute for complying with the linked terms.
 |---|---:|---|---|
 | `ChromeDevTools/chrome-devtools-mcp` | 3 | Apache-2.0 | [LICENSE](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/76fd2424984827802867672fcc8d0e0036f4a3af/LICENSE) |
 | `anthropics/skills` | 1 | Apache-2.0 | [package LICENSE](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/frontend-design/LICENSE.txt) |
-| `awslabs/agent-plugins` | 2 | Apache-2.0 | [LICENSE](https://github.com/awslabs/agent-plugins/blob/d2822e9483fd03aed5556d4e03dfad6d60eac91b/LICENSE) |
+| `aws/agent-toolkit-for-aws` | 19 | Apache-2.0 | [LICENSE](https://github.com/aws/agent-toolkit-for-aws/blob/36f16570de2015c0f0ce94ba9e391bd703c9ffb7/LICENSE) |
 | `cloudflare/skills` | 2 | Apache-2.0 | [LICENSE](https://github.com/cloudflare/skills/blob/70215303d44a81a0db3219428f4825b604fc6061/LICENSE) |
-| `microsoft/azure-skills` | 6 | MIT | [LICENSE](https://github.com/microsoft/azure-skills/blob/6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae/LICENSE) |
+| `microsoft/azure-skills` | 26 | MIT | [LICENSE](https://github.com/microsoft/azure-skills/blob/6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae/LICENSE) |
 | `microsoft/playwright` | 1 | Apache-2.0 | [LICENSE](https://github.com/microsoft/playwright/blob/449349caea6d1c81dc8b6a6f447cf9bfca6b1350/LICENSE) |
 | `netlify/context-and-tools` | 3 | MIT | [LICENSE](https://github.com/netlify/context-and-tools/blob/b4ac277e6795f90e6a1d163c001c0d7667ff9143/LICENSE) |
 | `oracle/skills` | 3 | UPL-1.0 | [LICENSE](https://github.com/oracle/skills/blob/30e30dbcbf5f92f3564bc85f8fd59d32736adcd6/LICENSE.txt) |

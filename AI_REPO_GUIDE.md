@@ -92,8 +92,9 @@ parents; AWS, Azure, OCI, and Render use the same provider-parent layout.
 Singleton providers and repository-owned skills remain direct children.
 Use `npx skills add . --list --full-depth` to inspect the nested source tree. Do
 not use `npx skills experimental_install` to restore its layout: the lock format
-records upstream `skillPath` but installs destinations as flat
-`.agents/skills/<name>` directories.
+records upstream `skillPath` and explicit nested destinations. External package
+trees with more than one skill declare sorted `skillEntrypoints` so validation
+can discover nested skills without overlapping refresh records.
 
 ## Review Lifecycle
 
@@ -165,11 +166,12 @@ Supabase is account-wide by default. Add `?project_ref=<id>` to its MCP URL when
 one-project scope is preferred; project scope also disables account-management
 tools. Cloudflare docs does not require account access.
 Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
-Netlify uses pinned `mcp-remote` as a compatibility adapter because OpenCode's
-native HTTP transport drops the hosted server's connection. The shell expands
-`NETLIFY_API_KEY` into the adapter's authorization header, so the token is
-visible briefly in the child process arguments but is not persisted as OAuth
-state or committed.
+Netlify uses OpenCode's native remote HTTP transport with `NETLIFY_API_KEY` in an
+environment-backed header. The previous `mcp-remote` bridge was removed because
+the hosted endpoint initialized directly while bridge startup performed
+unnecessary OAuth discovery and could print expanded authorization headers.
+Cursor reads the generic root MCP configuration through `.cursor/mcp.json`, a
+tracked symlink; Windows Git checkouts require symlink support.
 
 AWS uses `AWS_PROFILE` and `AWS_REGION` through pinned `mcp-proxy-for-aws`;
 Azure uses Azure CLI / `DefaultAzureCredential`; OCI uses
@@ -177,6 +179,10 @@ Azure uses Azure CLI / `DefaultAzureCredential`; OCI uses
 scoped `RENDER_API_KEY`. GCP and Colyseus have repository-owned skills but no
 configured MCPs. Follow `docs/guides/cloud-provider-tooling.md` for
 least-privilege setup, opt-in boundaries, and non-destructive smoke tests.
+The 19 AWS core skills come from the current Agent Toolkit for AWS successor
+repository. All 26 Azure package trees are vendored; supported Azure plugin
+installs also include the skills plus Azure and Foundry MCP configuration, but
+host plugins do not replace the repository's immutable cross-agent lock.
 
 ## Documentation Synchronization
 
