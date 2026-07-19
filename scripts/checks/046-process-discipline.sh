@@ -42,15 +42,26 @@ else
   fail "opportunity feedback role-free field set is not synchronized"
 fi
 
-if grep -qF 'implementation-plan:v1' .github/PLAN_TEMPLATE.md \
-  && grep -qiF 'edit' .github/PLAN_TEMPLATE.md \
+if grep -qF 'implementation-plan:v2:begin' .github/PLAN_TEMPLATE.md \
+  && grep -qF 'implementation-plan:v2:end' .github/PLAN_TEMPLATE.md \
+  && grep -qF 'implementation-plan:v2:begin' .github/ISSUE_TEMPLATE/feature_request.md \
+  && grep -qF 'implementation-plan:v2:begin' .github/ISSUE_TEMPLATE/bug_report.md \
+  && grep -qF 'implementation-plan:v2:begin' .github/ISSUE_TEMPLATE/agent_init.md \
   && grep -qF 'Revision history' .github/PLAN_TEMPLATE.md \
   && grep -qF 'Canonical plan:' .github/pull_request_template.md \
   && ! grep -qF 'Original plan:' .github/pull_request_template.md \
   && ! grep -qF 'Revisions:' .github/pull_request_template.md; then
-  pass "implementation plans use one mutable canonical comment"
+  pass "new issues use one mutable plan block and retain one canonical PR pointer"
 else
-  fail "implementation plan templates still permit fragmented revision comments"
+  fail "implementation plan templates missing the v2 issue-body contract"
+fi
+
+if grep -qF 'empty bootstrap commit' AGENTS.md \
+  && grep -qF 'commit and push' AGENTS.md \
+  && grep -qF 'before updating `agent-state:v1`' AGENTS.md; then
+  pass "work becomes durable before each changed-turn state update"
+else
+  fail "AGENTS.md missing early draft/checkpoint durability ordering"
 fi
 
 RECOVERY_SKILL=.agents/skills/session-recovery/SKILL.md
