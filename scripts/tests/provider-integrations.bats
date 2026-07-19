@@ -253,3 +253,30 @@ PY
 
   [ -f "$REPO_ROOT/.agents/skills/use-railway/SKILL.md" ]
 }
+
+@test "repository-owned GCP and Colyseus skills are explicit and complete" {
+  for skill in gcp colyseus; do
+    [ -f "$REPO_ROOT/.agents/skills/$skill/SKILL.md" ]
+    run jq -e --arg skill "$skill" '
+      .ownedSkills[$skill].destinationPath == (".agents/skills/" + $skill) and
+      (.skills | has($skill) | not)
+    ' "$REPO_ROOT/skills-lock.json"
+    [ "$status" -eq 0 ]
+    run grep -q '## Ownership and freshness' "$REPO_ROOT/.agents/skills/$skill/SKILL.md"
+    [ "$status" -eq 0 ]
+  done
+
+  for topic in "Cloud Run" GKE "Compute Engine" Terraform; do
+    run grep -Fq "$topic" "$REPO_ROOT/.agents/skills/gcp/SKILL.md"
+    [ "$status" -eq 0 ]
+  done
+  for topic in rooms "state synchronization" matchmaking "unit testing" \
+    "load testing" deployment scalability "Colyseus Cloud"; do
+    run grep -Fq "$topic" "$REPO_ROOT/.agents/skills/colyseus/SKILL.md"
+    [ "$status" -eq 0 ]
+  done
+  run grep -q 'https://docs.colyseus.io/' "$REPO_ROOT/.agents/skills/colyseus/SKILL.md"
+  [ "$status" -eq 0 ]
+  run grep -q 'https://cloud.google.com/' "$REPO_ROOT/.agents/skills/gcp/SKILL.md"
+  [ "$status" -eq 0 ]
+}

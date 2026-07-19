@@ -1,7 +1,13 @@
 {
   "ownedSkills": {
+    "colyseus": {
+      "destinationPath": ".agents/skills/colyseus"
+    },
     "context-import": {
       "destinationPath": ".agents/skills/context-import"
+    },
+    "gcp": {
+      "destinationPath": ".agents/skills/gcp"
     },
     "multi-model-consensus": {
       "destinationPath": ".agents/skills/multi-model-consensus"
