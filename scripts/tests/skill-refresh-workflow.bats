@@ -27,11 +27,22 @@ EOF
 api_key = "${RENDER_API_KEY}"
 password = "replace-with-your-password"
 token = "<your-token>"
+password = "strong-password-here"
+token="$env:TEMP\hf-token.txt"
+CLIENT_SECRET="abc123~defGHI456jklMNO789pqrSTU"
 EOF
 
   run python3 "$SCANNER" "$FIXTURE_ROOT"
   [ "$status" -eq 0 ]
   [[ "$output" == *'"findings": 0'* ]]
+}
+
+@test "skill secret scan still rejects unrecognized generic assignments" {
+  printf '%s\n' 'password = "actualSensitiveValue12345"' >"$FIXTURE_ROOT/generic.md"
+
+  run python3 "$SCANNER" "$FIXTURE_ROOT"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"generic.md:1: generic-secret-assignment"* ]]
 }
 
 @test "nightly refresh workflow is source-scoped and review-first" {

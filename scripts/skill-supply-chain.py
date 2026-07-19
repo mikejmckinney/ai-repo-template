@@ -50,6 +50,28 @@ def excluded_paths(value: object, field: str) -> tuple[PurePosixPath, ...]:
     return tuple(safe_relative_path(item, field) for item in value)
 
 
+def skill_entrypoints(
+    record: dict, key: str, package_type: str
+) -> tuple[PurePosixPath, ...]:
+    field = f"external skill {key} skillEntrypoints"
+    value = record.get("skillEntrypoints", ["SKILL.md"])
+    if not isinstance(value, list) or not value or not all(
+        isinstance(item, str) for item in value
+    ):
+        raise SupplyChainError(f"{field} must be a non-empty array of relative paths")
+    if value != sorted(set(value)):
+        raise SupplyChainError(f"{field} must be sorted and contain no duplicates")
+
+    entrypoints = tuple(safe_relative_path(item, field) for item in value)
+    if PurePosixPath("SKILL.md") not in entrypoints:
+        raise SupplyChainError(f"{field} must include SKILL.md")
+    if any(path.name != "SKILL.md" for path in entrypoints):
+        raise SupplyChainError(f"{field} entries must end with SKILL.md")
+    if package_type == "file" and entrypoints != (PurePosixPath("SKILL.md"),):
+        raise SupplyChainError(f"{field} cannot add entries to a single-file package")
+    return entrypoints
+
+
 def matching_exclusion(
     relative: PurePosixPath, exclusions: tuple[PurePosixPath, ...]
 ) -> PurePosixPath | None:
@@ -201,7 +223,7 @@ def confined_destination(repo: Path, value: object, field: str) -> Path:
     return destination
 
 
-def validate_external_record(repo: Path, key: str, record: object) -> tuple[Path, str]:
+def validate_external_record(repo: Path, key: str, record: object) -> list[tuple[Path, str]]:
     if not isinstance(record, dict):
         raise SupplyChainError(f"external skill record must be an object: {key}")
 
@@ -236,6 +258,7 @@ def validate_external_record(repo: Path, key: str, record: object) -> tuple[Path
     )
     if package_type == "file" and exclusions:
         raise SupplyChainError(f"external skill {key} file package cannot declare exclusions")
+    entrypoints = skill_entrypoints(record, key, package_type)
 
     destination = confined_destination(repo, record["destinationPath"], f"external skill {key} destinationPath")
     for exclusion in exclusions:
@@ -243,7 +266,14 @@ def validate_external_record(repo: Path, key: str, record: object) -> tuple[Path
             raise SupplyChainError(
                 f"external skill {key} contains excluded local path: {exclusion}"
             )
-    metadata_name = skill_name(destination / "SKILL.md")
+    declared_entrypoints = []
+    for entrypoint in entrypoints:
+        if matching_exclusion(entrypoint, exclusions) is not None:
+            raise SupplyChainError(
+                f"external skill {key} entrypoint is excluded: {entrypoint}"
+            )
+        skill_file = destination.joinpath(*entrypoint.parts)
+        declared_entrypoints.append((skill_file, skill_name(skill_file)))
 
     if package_type == "file":
         local_files = [path.relative_to(destination).as_posix() for path in package_files(destination)]
@@ -258,7 +288,7 @@ def validate_external_record(repo: Path, key: str, record: object) -> tuple[Path
         raise SupplyChainError(
             f"external skill {key} hash mismatch: expected {record['computedHash']}, got {actual_hash}"
         )
-    return destination / "SKILL.md", metadata_name
+    return declared_entrypoints
 
 
 def validate_owned_record(repo: Path, key: str, record: object) -> tuple[Path, str]:
@@ -286,13 +316,23 @@ def validate_lock(repo: Path, lock_path: Path) -> None:
     declared_files: set[Path] = set()
     metadata_names: dict[str, str] = {}
     for key, record in sorted(external.items()):
-        skill_file, name = validate_external_record(repo, key, record)
-        declared_files.add(skill_file.resolve())
-        if name in metadata_names:
-            raise SupplyChainError(f"duplicate skill name {name}: {metadata_names[name]} and {key}")
-        metadata_names[name] = key
-        if name != key:
-            raise SupplyChainError(f"external skill key {key} does not match metadata name {name}")
+        entrypoints = validate_external_record(repo, key, record)
+        destination_path = safe_relative_path(
+            record["destinationPath"], f"external skill {key} destinationPath"
+        )
+        root_file = repo.joinpath(*destination_path.parts) / "SKILL.md"
+        root_name = next(name for path, name in entrypoints if path == root_file)
+        if root_name != key:
+            raise SupplyChainError(
+                f"external skill key {key} does not match metadata name {root_name}"
+            )
+        for skill_file, name in entrypoints:
+            declared_files.add(skill_file.resolve())
+            if name in metadata_names:
+                raise SupplyChainError(
+                    f"duplicate skill name {name}: {metadata_names[name]} and {key}"
+                )
+            metadata_names[name] = key
 
     for key, record in sorted(owned.items()):
         skill_file, name = validate_owned_record(repo, key, record)
@@ -379,6 +419,23 @@ def source_packages(
             raise SupplyChainError(
                 f"external skill key {key} does not match upstream metadata name {metadata_name}"
             )
+
+        if package_type != "file":
+            destination = confined_destination(
+                repo,
+                record["destinationPath"],
+                f"external skill {key} destinationPath",
+            )
+            for entrypoint in skill_entrypoints(record, key, package_type):
+                upstream_entrypoint = upstream_package.joinpath(*entrypoint.parts)
+                local_entrypoint = destination.joinpath(*entrypoint.parts)
+                upstream_name = skill_name(upstream_entrypoint)
+                local_name = skill_name(local_entrypoint)
+                if upstream_name != local_name:
+                    raise SupplyChainError(
+                        f"external skill {key} entrypoint {entrypoint} changed name "
+                        f"from {local_name} to {upstream_name}"
+                    )
 
         if package_type == "file":
             if exclusions:

@@ -81,6 +81,66 @@ write_lock() {
   [ "$status" -eq 0 ]
 }
 
+@test "bundle records declare and update nested skill entrypoints" {
+  mkdir -p "$FIXTURE_ROOT/.agents/skills/acme/nested"
+  cat >"$FIXTURE_ROOT/.agents/skills/acme/nested/SKILL.md" <<'EOF'
+---
+name: acme-nested
+description: Nested fixture skill.
+---
+
+# Nested Acme
+EOF
+
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.skills.acme.skillEntrypoints = ["SKILL.md", "nested/SKILL.md"]' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  run python3 "$TOOL" validate-lock \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+
+  upstream="$BATS_TEST_TMPDIR/upstream-bundle"
+  mkdir -p "$upstream/skills/acme/nested"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" "$upstream/skills/acme/SKILL.md"
+  cat >"$upstream/skills/acme/nested/SKILL.md" <<'EOF'
+---
+name: acme-nested
+description: Updated nested fixture skill.
+---
+
+# Updated Nested Acme
+EOF
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+  [ "$status" -eq 0 ]
+  grep -q "Updated Nested Acme" "$FIXTURE_ROOT/.agents/skills/acme/nested/SKILL.md"
+}
+
+@test "bundle entrypoints must be sorted safe SKILL.md paths" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.skills.acme.skillEntrypoints = ["nested/SKILL.md", "SKILL.md"]' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  run python3 "$TOOL" validate-lock \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"skillEntrypoints"*"sorted"* ]]
+}
+
 @test "lock validation rejects path traversal" {
   run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
   [ "$status" -eq 0 ]

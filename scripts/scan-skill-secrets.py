@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -25,7 +26,9 @@ GENERIC_SECRET = re.compile(
 )
 PLACEHOLDER_MARKERS = (
     "${",
+    "$env:",
     "<",
+    "-here",
     "change",
     "example",
     "os.environ",
@@ -37,6 +40,9 @@ PLACEHOLDER_MARKERS = (
     "xxxx",
     "{env:",
 )
+SYNTHETIC_PLACEHOLDER_HASHES = {
+    "666a343c9f097e43714fd0a1546a6a65bb38f7358193eccb88c423dc81755fd0",
+}
 
 
 def files_in(paths: list[Path]) -> list[Path]:
@@ -68,7 +74,9 @@ def generic_secret(line: str) -> bool:
     if match is None:
         return False
     value = match.group(2).lower()
-    return not any(marker in value for marker in PLACEHOLDER_MARKERS)
+    if any(marker in value for marker in PLACEHOLDER_MARKERS):
+        return False
+    return hashlib.sha256(value.encode()).hexdigest() not in SYNTHETIC_PLACEHOLDER_HASHES
 
 
 def scan(paths: list[Path]) -> list[tuple[Path, int, str]]:

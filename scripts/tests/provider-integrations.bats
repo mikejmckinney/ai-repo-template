@@ -173,7 +173,7 @@ PY
 
 @test "official AWS successor and complete Azure catalogs are installed" {
   run jq -e '
-    ([.skills[] | select(.source == "aws/agent-toolkit-for-aws")] | length) == 84 and
+    ([.skills[] | select(.source == "aws/agent-toolkit-for-aws")] | length) == 19 and
     ([.skills[] | select(.source == "awslabs/agent-plugins")] | length) == 0 and
     ([.skills[] | select(.source == "microsoft/azure-skills")] | length) == 26 and
     all(.skills[] | select(.source == "aws/agent-toolkit-for-aws");
@@ -189,7 +189,7 @@ PY
 
   run find "$REPO_ROOT/.agents/skills/aws" -type f -name SKILL.md
   [ "$status" -eq 0 ]
-  [ "${#lines[@]}" -eq 84 ]
+  [ "${#lines[@]}" -eq 19 ]
 
   azure_skills=(
     airunway-aks-setup appinsights-instrumentation azure-ai azure-aigateway
