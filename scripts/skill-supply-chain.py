@@ -40,21 +40,52 @@ def safe_relative_path(value: object, field: str) -> PurePosixPath:
     return path
 
 
-def package_files(package: Path) -> list[Path]:
+def excluded_paths(value: object, field: str) -> tuple[PurePosixPath, ...]:
+    if value is None:
+        return ()
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise SupplyChainError(f"{field} must be an array of relative paths")
+    if value != sorted(set(value)):
+        raise SupplyChainError(f"{field} must be sorted and contain no duplicates")
+    return tuple(safe_relative_path(item, field) for item in value)
+
+
+def matching_exclusion(
+    relative: PurePosixPath, exclusions: tuple[PurePosixPath, ...]
+) -> PurePosixPath | None:
+    for exclusion in exclusions:
+        if relative == exclusion or exclusion in relative.parents:
+            return exclusion
+    return None
+
+
+def package_files(
+    package: Path,
+    exclusions: tuple[PurePosixPath, ...] = (),
+    require_exclusions: bool = False,
+) -> list[Path]:
     if package.is_symlink():
         raise SupplyChainError(f"package path is a symlink: {package}")
     if not package.is_dir():
         raise SupplyChainError(f"package directory does not exist: {package}")
 
     files: list[Path] = []
+    matched_exclusions: set[PurePosixPath] = set()
     for root, directories, filenames in os.walk(package, followlinks=False):
         root_path = Path(root)
-        directories[:] = sorted(directory for directory in directories if directory != ".git")
-
-        for directory in directories:
+        retained_directories = []
+        for directory in sorted(directories):
             path = root_path / directory
             if path.is_symlink():
                 raise SupplyChainError(f"package contains symlink directory: {path}")
+            relative = PurePosixPath(path.relative_to(package).as_posix())
+            exclusion = matching_exclusion(relative, exclusions)
+            if directory == ".git" or exclusion is not None:
+                if exclusion is not None:
+                    matched_exclusions.add(exclusion)
+                continue
+            retained_directories.append(directory)
+        directories[:] = retained_directories
 
         for filename in sorted(filenames):
             path = root_path / filename
@@ -62,16 +93,33 @@ def package_files(package: Path) -> list[Path]:
                 raise SupplyChainError(f"package contains symlink file: {path}")
             if not path.is_file():
                 raise SupplyChainError(f"package contains non-regular file: {path}")
+            relative = PurePosixPath(path.relative_to(package).as_posix())
+            exclusion = matching_exclusion(relative, exclusions)
+            if exclusion is not None:
+                matched_exclusions.add(exclusion)
+                continue
             files.append(path)
 
+    if require_exclusions:
+        missing = sorted(exclusion.as_posix() for exclusion in set(exclusions) - matched_exclusions)
+        if missing:
+            raise SupplyChainError(f"declared excluded paths are missing upstream: {', '.join(missing)}")
     return sorted(files, key=lambda path: path.relative_to(package).as_posix())
 
 
-def package_hash(package: Path) -> str:
+def package_hash(
+    package: Path,
+    exclusions: tuple[PurePosixPath, ...] = (),
+    require_exclusions: bool = False,
+) -> str:
     digest = hashlib.sha256()
     digest.update(f"{HASH_ALGORITHM}\0".encode())
+    for exclusion in exclusions:
+        digest.update(b"exclude\0")
+        digest.update(exclusion.as_posix().encode())
+        digest.update(b"\0")
 
-    for path in package_files(package):
+    for path in package_files(package, exclusions, require_exclusions):
         relative_path = path.relative_to(package).as_posix().encode()
         data = path.read_bytes()
         executable = bool(path.stat().st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
@@ -163,11 +211,19 @@ def validate_external_record(repo: Path, key: str, record: object) -> tuple[Path
         raise SupplyChainError(f"external skill {key} has unsupported hashAlgorithm")
     if not isinstance(record["computedHash"], str) or not HASH_PATTERN.fullmatch(record["computedHash"]):
         raise SupplyChainError(f"external skill {key} has invalid computedHash")
+    exclusions = excluded_paths(
+        record.get("excludedPaths"), f"external skill {key} excludedPaths"
+    )
 
     destination = confined_destination(repo, record["destinationPath"], f"external skill {key} destinationPath")
+    for exclusion in exclusions:
+        if destination.joinpath(*exclusion.parts).exists():
+            raise SupplyChainError(
+                f"external skill {key} contains excluded local path: {exclusion}"
+            )
     metadata_name = skill_name(destination / "SKILL.md")
 
-    actual_hash = package_hash(destination)
+    actual_hash = package_hash(destination, exclusions)
     if actual_hash != record["computedHash"]:
         raise SupplyChainError(
             f"external skill {key} hash mismatch: expected {record['computedHash']}, got {actual_hash}"
@@ -267,7 +323,10 @@ def source_packages(
                 f"external skill key {key} does not match upstream metadata name {metadata_name}"
             )
 
-        new_hash = package_hash(upstream_package)
+        exclusions = excluded_paths(
+            record.get("excludedPaths"), f"external skill {key} excludedPaths"
+        )
+        new_hash = package_hash(upstream_package, exclusions, require_exclusions=True)
         old_hash = record["computedHash"]
         if target_ref == record["ref"] and new_hash != old_hash:
             raise SupplyChainError(
@@ -284,6 +343,7 @@ def source_packages(
                 ),
                 "oldHash": old_hash,
                 "newHash": new_hash,
+                "excludedPaths": exclusions,
                 "changed": target_ref != record["ref"] or new_hash != old_hash,
             }
         )
@@ -306,6 +366,11 @@ def change_result(source: str, old_ref: str, new_ref: str, packages: list[dict])
             }
             for package in changed_packages
         },
+        "excludedPaths": {
+            package["key"]: [path.as_posix() for path in package["excludedPaths"]]
+            for package in packages
+            if package["excludedPaths"]
+        },
     }
 
 
@@ -321,6 +386,19 @@ def write_json_atomically(path: Path, value: dict) -> None:
         os.replace(temporary_path, path)
     finally:
         temporary_path.unlink(missing_ok=True)
+
+
+def copy_package(
+    source: Path,
+    destination: Path,
+    exclusions: tuple[PurePosixPath, ...],
+) -> None:
+    destination.mkdir(parents=True)
+    for source_file in package_files(source, exclusions, require_exclusions=True):
+        relative = source_file.relative_to(source)
+        destination_file = destination / relative
+        destination_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_file, destination_file)
 
 
 def run_git(arguments: list[str]) -> str:
@@ -514,12 +592,15 @@ def update_source(
 
         changed_packages = [package for package in packages if package["changed"]]
         for package in changed_packages:
-            shutil.copytree(
+            copy_package(
                 package["sourcePackage"],
                 staged_root / package["key"],
-                copy_function=shutil.copy2,
+                package["excludedPaths"],
             )
-            if package_hash(staged_root / package["key"]) != package["newHash"]:
+            if (
+                package_hash(staged_root / package["key"], package["excludedPaths"])
+                != package["newHash"]
+            ):
                 raise SupplyChainError(f"staged package hash mismatch: {package['key']}")
 
         replaced: list[dict] = []
@@ -549,6 +630,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     hash_parser = commands.add_parser("hash", help="hash a skill package")
     hash_parser.add_argument("--package", required=True, type=Path)
+    hash_parser.add_argument("--exclude", action="append", default=[])
 
     validate_parser = commands.add_parser("validate-lock", help="validate the skills lock")
     validate_parser.add_argument("--repo", required=True, type=Path)
@@ -568,7 +650,10 @@ def main() -> int:
     args = build_parser().parse_args()
     try:
         if args.command == "hash":
-            print(package_hash(args.package))
+            exclusions = excluded_paths(
+                sorted(args.exclude), "--exclude"
+            )
+            print(package_hash(args.package, exclusions))
         elif args.command == "validate-lock":
             validate_lock(args.repo, args.lock)
             print(json.dumps({"status": "success", "lock": str(args.lock)}))

@@ -256,3 +256,46 @@ EOF
   run grep -q "changed without" "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md"
   [ "$status" -eq 1 ]
 }
+
+@test "declared generated artifacts are excluded from hashes and updates" {
+  run python3 "$TOOL" hash \
+    --package "$FIXTURE_ROOT/.agents/skills/acme" \
+    --exclude "Archive.zip"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.skills.acme.excludedPaths = ["Archive.zip"]' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  upstream="$BATS_TEST_TMPDIR/upstream"
+  mkdir -p "$upstream/skills/acme"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" "$upstream/skills/acme/SKILL.md"
+  printf 'opaque generated content\n' >"$upstream/skills/acme/Archive.zip"
+  target_ref="1111111111111111111111111111111111111111"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "$target_ref"
+  [ "$status" -eq 0 ]
+  run jq -e '
+    .changed == true and
+    .excludedPaths.acme == ["Archive.zip"]
+  ' <<<"$output"
+  [ "$status" -eq 0 ]
+  [ ! -e "$FIXTURE_ROOT/.agents/skills/acme/Archive.zip" ]
+
+  run python3 "$TOOL" validate-lock \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+}
+
+@test "repository lock classifies and verifies every installed skill" {
+  run python3 "$TOOL" validate-lock \
+    --repo "$REPO_ROOT" \
+    --lock "$REPO_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+}
