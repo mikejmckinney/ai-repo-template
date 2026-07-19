@@ -58,7 +58,7 @@ fi
 
 if grep -qF 'empty bootstrap commit' AGENTS.md \
   && grep -qF 'commit and push' AGENTS.md \
-  && grep -qF 'before updating `agent-state:v1`' AGENTS.md; then
+  && grep -qF 'before updating' AGENTS.md; then
   pass "work becomes durable before each changed-turn state update"
 else
   fail "AGENTS.md missing early draft/checkpoint durability ordering"

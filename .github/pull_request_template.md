@@ -26,16 +26,16 @@ N/A — empty headings are noise.
 
 ## Plan
 
-<!-- Pointer to the one mutable implementation plan comment on the linked issue.
-     Per ADR-011, the plan lives on the issue, not here. Edit that comment in
-     place when intent changes and refresh this summary.
+<!-- Pointer to the linked issue's implementation-plan:v2 block, or to the
+     grandfathered implementation-plan:v1 comment. The plan lives on the issue,
+     not here. Edit the canonical plan in place when intent changes.
      Skip (or write "N/A — <reason>") only when an ADR-011 plan
      exemption applies (chore:no-plan, automation bot, revert).
      Note: smoke-test exempts only from the PR-link rule, not from
      the plan requirement.
      Keep this pointer current when the plan changes. -->
 
-- **Canonical plan:** <link to the implementation-plan:v1 comment>
+- **Canonical plan:** <link to the issue-body plan or grandfathered v1 comment>
 - **Latest in 1–2 sentences:** <current outcome + approach>
 
 ## Live agent state
@@ -48,7 +48,7 @@ N/A — empty headings are noise.
 
 ## Plan sync
 
-<!-- Confirm that the canonical plan comment contains the current merged plan,
+<!-- Confirm that the canonical issue plan contains the current merged plan,
      including a bounded revision-history entry for material changes. -->
 
 - [ ] Canonical plan and current summary match this PR.

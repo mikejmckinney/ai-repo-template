@@ -118,3 +118,27 @@ Document any required repository secrets:
 **Description**: 
 **Tech Stack**: 
 **Primary Language**: 
+
+<!-- implementation-plan:v2:begin -->
+
+## Implementation Plan
+
+### Outcome
+
+### Approach
+
+### Files to change
+
+### User outcome validation plan — PRIMARY
+
+### Supporting verification
+
+### Risks / out-of-scope
+
+### Opportunity notes
+
+### Revision history
+
+- Not yet planned.
+
+<!-- implementation-plan:v2:end -->

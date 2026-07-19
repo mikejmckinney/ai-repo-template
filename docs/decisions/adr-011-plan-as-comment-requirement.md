@@ -2,11 +2,16 @@
 
 ## Status
 
-Accepted (ADR-026 structured evidence extension retired 2026-07-13)
+Accepted (superseded in part by ADR-032)
 
 ## Date
 
 2026-04-24
+
+## Amendment 2026-07-19 — New plans move into issue bodies
+
+ADR-032 supersedes the comment location for newly created issues. Existing v1
+plan comments are grandfathered; all other planning rationale remains active.
 
 ## Amendment 2026-07-15 — One mutable canonical plan
 

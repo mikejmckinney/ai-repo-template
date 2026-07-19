@@ -96,7 +96,7 @@
   "provider": {
     "openrouter": {
       "models": {
-        "moonshotai/kimi-k3": {},
+        "moonshotai/kimi-k3@preset/default": {},
         "deepseek/deepseek-v4-pro@preset/default": {},
         "minimax/minimax-m3@preset/default": {},
         "z-ai/glm-5.2@preset/default": {},

@@ -50,7 +50,7 @@ if [[ "$model" == "openai/gpt-5.6-sol" ]]; then
   [[ "$MOCK_SOL_MODE" == success ]] || exit 7
   printf 'Sol answer\n'
   if $panel; then printf '%s\n' "$marker"; fi
-elif [[ "$model" == "openrouter/moonshotai/kimi-k3" ]]; then
+elif [[ "$model" == "openrouter/moonshotai/kimi-k3@preset/default" ]]; then
   [[ "$MOCK_KIMI_MODE" != fail ]] || exit 12
   case "$MOCK_KIMI_MODE" in
     preamble) printf 'I will inspect the evidence before answering.\n' ;;
