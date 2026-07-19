@@ -351,15 +351,35 @@ def source_packages(
         upstream_skill_file = (
             upstream_package if package_type == "file" else upstream_package / "SKILL.md"
         )
+        destination = confined_destination(
+            repo,
+            record["destinationPath"],
+            f"external skill {key} destinationPath",
+        )
+        exclusions = excluded_paths(
+            record.get("excludedPaths"), f"external skill {key} excludedPaths"
+        )
+        if not upstream_skill_file.exists():
+            packages.append(
+                {
+                    "key": key,
+                    "sourcePackage": upstream_package,
+                    "destination": destination,
+                    "oldHash": record["computedHash"],
+                    "newHash": None,
+                    "excludedPaths": exclusions,
+                    "packageType": package_type,
+                    "deleted": True,
+                    "changed": True,
+                }
+            )
+            continue
         metadata_name = skill_name(upstream_skill_file)
         if metadata_name != key:
             raise SupplyChainError(
                 f"external skill key {key} does not match upstream metadata name {metadata_name}"
             )
 
-        exclusions = excluded_paths(
-            record.get("excludedPaths"), f"external skill {key} excludedPaths"
-        )
         if package_type == "file":
             if exclusions:
                 raise SupplyChainError(f"external skill {key} file package cannot declare exclusions")
@@ -375,15 +395,12 @@ def source_packages(
             {
                 "key": key,
                 "sourcePackage": upstream_package,
-                "destination": confined_destination(
-                    repo,
-                    record["destinationPath"],
-                    f"external skill {key} destinationPath",
-                ),
+                "destination": destination,
                 "oldHash": old_hash,
                 "newHash": new_hash,
                 "excludedPaths": exclusions,
                 "packageType": package_type,
+                "deleted": False,
                 "changed": target_ref != record["ref"] or new_hash != old_hash,
             }
         )
@@ -399,6 +416,7 @@ def change_result(source: str, old_ref: str, new_ref: str, packages: list[dict])
         "oldRef": old_ref,
         "newRef": new_ref,
         "packages": [package["key"] for package in changed_packages],
+        "deletedPackages": [package["key"] for package in changed_packages if package["deleted"]],
         "hashes": {
             package["key"]: {
                 "old": package["oldHash"],
@@ -556,18 +574,28 @@ def acquire_github_source(lock: dict, source: str, requested_ref: str | None, de
         raise SupplyChainError(
             f"ref mismatch for {source}: requested {requested_ref}, fetched {resolved_ref}"
         )
-    run_git(
-        [
-            f"--git-dir={bare_repository}",
-            "archive",
-            "--format=tar",
-            f"--output={archive_path}",
-            "FETCH_HEAD",
-            "--",
-            *package_paths,
-        ]
-    )
-    extract_archive(archive_path, destination)
+    available_paths = [
+        path
+        for path in package_paths
+        if run_git(
+            [f"--git-dir={bare_repository}", "ls-tree", "--name-only", "FETCH_HEAD", "--", path]
+        )
+    ]
+    if available_paths:
+        run_git(
+            [
+                f"--git-dir={bare_repository}",
+                "archive",
+                "--format=tar",
+                f"--output={archive_path}",
+                "FETCH_HEAD",
+                "--",
+                *available_paths,
+            ]
+        )
+        extract_archive(archive_path, destination)
+    else:
+        destination.mkdir(parents=True)
     return resolved_ref
 
 
@@ -622,6 +650,9 @@ def update_source(
     next_lock = copy.deepcopy(lock)
     for package in packages:
         if package["changed"]:
+            if package["deleted"]:
+                del next_lock["skills"][package["key"]]
+                continue
             record = next_lock["skills"][package["key"]]
             record["ref"] = target_ref
             record["computedHash"] = package["newHash"]
@@ -636,6 +667,8 @@ def update_source(
 
         changed_packages = [package for package in packages if package["changed"]]
         for package in changed_packages:
+            if package["deleted"]:
+                continue
             copy_package(
                 package["sourcePackage"],
                 staged_root / package["key"],
@@ -658,7 +691,8 @@ def update_source(
                 backup = backup_root / package["key"]
                 os.replace(destination, backup)
                 replaced.append(package)
-                os.replace(staged_root / package["key"], destination)
+                if not package["deleted"]:
+                    os.replace(staged_root / package["key"], destination)
             write_json_atomically(lock_path, next_lock)
             validate_lock(repo, lock_path)
         except Exception:

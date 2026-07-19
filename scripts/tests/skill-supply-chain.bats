@@ -335,3 +335,33 @@ EOF
     --lock "$FIXTURE_ROOT/skills-lock.json"
   [ "$status" -eq 0 ]
 }
+
+@test "upstream package deletion becomes an explicit update diff" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+
+  upstream="$BATS_TEST_TMPDIR/upstream"
+  mkdir -p "$upstream/skills"
+
+  run python3 "$TOOL" check \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.changed' <<<"$output")" = "true" ]
+  [ "$(jq -r '.deletedPackages[0]' <<<"$output")" = "acme" ]
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+  [ "$status" -eq 0 ]
+  [ ! -e "$FIXTURE_ROOT/.agents/skills/acme" ]
+  run jq -e '.skills | has("acme") | not' "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+}
