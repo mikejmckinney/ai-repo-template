@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-032)
+Accepted
 
 ## Date
 
@@ -10,7 +10,9 @@ Accepted (superseded in part by ADR-032)
 
 ## Amendment 2026-07-19 — New plans move into issue bodies
 
-ADR-032 supersedes the comment location for newly created issues. Existing v1
+New issues store one delimited `implementation-plan:v2` block in the issue body.
+Agents edit only that block, preserve requester-owned content outside it, and
+maintain one current plan plus bounded material revision history. Existing v1
 plan comments are grandfathered; all other planning rationale remains active.
 
 ## Amendment 2026-07-15 — One mutable canonical plan

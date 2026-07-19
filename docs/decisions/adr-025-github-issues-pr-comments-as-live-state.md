@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-032)
+Accepted
 
 ## Date
 
@@ -10,9 +10,11 @@ Accepted (superseded in part by ADR-032)
 
 ## Amendment 2026-07-19 — Delimited issue-body plans
 
-ADR-032 permits one mutable implementation-plan block in new issue bodies.
-Requester-owned content remains stable; live progress remains exclusively in
-the latest `agent-state:v1` comment.
+New issue bodies permit one mutable `implementation-plan:v2` block.
+Requester-owned content remains stable. Implementation-ready work publishes an
+empty bootstrap commit and linked draft PR before meaningful edits, then commits
+and pushes every changed turn before updating the latest `agent-state:v1`
+comment. Live progress remains exclusively in that comment.
 
 ## Amendment 2026-07-18 - Role-free problem framing
 
