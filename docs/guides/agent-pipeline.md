@@ -170,8 +170,9 @@ Use `docs/guides/sandbox-verification.md` when the classifier reports
 - `OPENROUTER_API_KEY`: model credential for the ordered public-CI OpenCode cascade.
 - Existing `CURSOR_API_KEY`, `GEMINI_API_KEY`, and `GOOGLE_API_KEY` remain
   optional rollback-provider credentials.
-- `CLAUDE_PAT` and `SANDBOX_BOOTSTRAP_TOKEN` remain deterministic publication or
-  sandbox credentials and are never forwarded to OpenCode.
+- Workflow publication uses the automatic job-scoped `GITHUB_TOKEN` with
+  explicit least-privilege permissions. `SANDBOX_BOOTSTRAP_TOKEN` remains a
+  sandbox-only credential and is never forwarded to OpenCode.
 
 Use [`opencode-termination-diagnostics.md`](./opencode-termination-diagnostics.md)
 when an interactive OpenCode process restarts unexpectedly.

@@ -36,16 +36,10 @@ a round trip.
 ### Bootstrap script
 
 The procedure is automated in [`scripts/sandbox-bootstrap.sh`](../../scripts/sandbox-bootstrap.sh).
-Set the required environment variables and run it from your upstream
-checkout:
+Run it from your upstream checkout. When the current `gh` identity cannot
+create and mirror repositories, provide the optional bootstrap token:
 
 ```bash
-# Required: a fine-grained PAT scoped to the sandbox repo only.
-# Do NOT reuse production CLAUDE_PAT — see "Secrets hygiene" below.
-# Required scopes: Contents R/W, Pull requests R/W, Issues R/W,
-# Actions R, Variables R, Metadata R.
-export SANDBOX_PAT="<sandbox-scoped PAT value>"
-
 # Optional: override the default sandbox slug
 # (defaults to "<upstream-owner>/<upstream-name>-sandbox").
 # export SANDBOX_REPO_NAME="my-org/my-custom-sandbox"
@@ -109,14 +103,10 @@ git clone --bare "$UPSTREAM_URL" "$MIRROR_DIR"
 git -C "$MIRROR_DIR" push --mirror "https://github.com/${SANDBOX_REPO}.git"
 rm -rf "$(dirname "$MIRROR_DIR")"
 
-# 4. Set the sandbox CLAUDE_PAT secret from $SANDBOX_PAT.
-printf '%s' "$SANDBOX_PAT" | gh secret set CLAUDE_PAT \
-  --repo "$SANDBOX_REPO"
-
-# 5. Add the sandbox remote on this checkout.
+# 4. Add the sandbox remote on this checkout.
 git remote add "${SANDBOX_REMOTE:-sandbox}" "https://github.com/${SANDBOX_REPO}.git"
 
-# 6. Ensure active pipeline labels on sandbox.
+# 5. Ensure active pipeline labels on sandbox.
 ./scripts/setup/ensure-pipeline-labels.sh "$SANDBOX_REPO"
 ```
 
@@ -329,13 +319,12 @@ git push --force sandbox origin/main:main
 
 ## Secrets hygiene
 
-- **Use a sandbox-only PAT.** Do not reuse the production `CLAUDE_PAT`.
-  If sandbox is ever compromised (it's lower-trust by design — anyone
-  who needs to verify a default-branch-only workflow has push access),
-  the blast radius stops at the sandbox.
-- **Sandbox PAT scope** matches production CLAUDE_PAT (Contents R/W,
-  Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R)
-  but is fine-grained to the sandbox repo only.
+- **Use a sandbox-only PAT for `SANDBOX_BOOTSTRAP_TOKEN`.** If sandbox is
+  ever compromised (it's lower-trust by design), the blast radius stops at
+  the sandbox. Repository workflows use their automatic `GITHUB_TOKEN` for
+  ordinary publication and do not need a copied upstream publication secret.
+- **Sandbox token scope** is Contents R/W, Pull requests R/W, Issues R/W,
+  Actions R, Variables R, and Metadata R, fine-grained to the sandbox repo.
 - **Don't mirror SSH keys, deploy keys, or personal tokens** into the
   sandbox. The two repos are independent; cross-pollination
   re-introduces the blast-radius risk this playbook is trying to
@@ -349,9 +338,8 @@ git push --force sandbox origin/main:main
   production `main`, not a stale snapshot.
 - **Garbage collection** — once a quarter, prune merged sandbox
   branches and closed PRs. None of them carry semantic value.
-- **Secret rotation** — rotate the sandbox PAT at the same cadence as
-  the production `CLAUDE_PAT` (or sooner if there's any reason to
-  suspect leakage).
+- **Secret rotation** — rotate the sandbox token on its configured cadence or
+  sooner if there is any reason to suspect leakage.
 
 ## Sandbox Doctor (`diag-sandbox.sh`)
 

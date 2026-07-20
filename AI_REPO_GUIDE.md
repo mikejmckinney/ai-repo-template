@@ -172,6 +172,12 @@ Follow `docs/guides/sandbox-verification.md` and record real run/artifact links.
 
 ## Authentication
 
+GitHub creates a short-lived `GITHUB_TOKEN` for each workflow job. Workflows
+declare the minimum job permissions and use `github.token` for repository API
+writes. Automated merges intentionally do not trigger duplicate `push` CI/lint
+runs; the strict main ruleset requires both checks against the current base
+before merge.
+
 Inside Codespaces, the injected `GITHUB_TOKEN` may not access the sibling sandbox.
 Use command-local `GH_TOKEN="$GH_PAT"` with `GITHUB_TOKEN` unset when the configured
 user PAT is required. Never commit tokens.

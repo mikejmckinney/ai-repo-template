@@ -17,8 +17,7 @@ name: Parallelism Report
 #   - PRs from forks (mutation token isn't available there)
 #   - draft PRs that aren't being marked ready
 #
-# Requires:
-#   - CLAUDE_PAT repo secret (pull-requests:write to upsert the comment)
+# Authentication uses the job-scoped GITHUB_TOKEN with pull-requests:write.
 #
 # Related:
 #   - ADR-009 — design rationale and dispatch reality matrix
@@ -42,8 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     # Skip:
-    #   - Fork PRs: CLAUDE_PAT is not exposed to forks; the comment
-    #     write would fail with a misleading error.
+    #   - Fork PRs: their GITHUB_TOKEN is read-only, so comment writes are
+    #     intentionally skipped.
     #   - Draft PRs that aren't being explicitly marked ready: avoids
     #     spamming the report on every WIP push. The first run will
     #     happen on the `ready_for_review` event.
@@ -56,18 +55,6 @@ jobs:
       contents: read
 
     steps:
-      - name: Verify required secrets
-        env:
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
-        run: |
-          if [[ -z "$CLAUDE_PAT" ]]; then
-            echo "::error::Missing required secret: CLAUDE_PAT"
-            echo "::error::Per-repo:  Settings → Secrets and variables → Actions → New repository secret"
-            echo "::error::Org-wide:  Org settings → Secrets and variables → Actions → New organization secret (then grant this repo access)"
-            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
-            exit 1
-          fi
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -76,7 +63,7 @@ jobs:
 
       - name: Build and upsert Parallelism Report
         env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |

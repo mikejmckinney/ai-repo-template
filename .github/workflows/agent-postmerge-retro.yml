@@ -171,13 +171,8 @@ jobs:
         if: github.event.inputs.fix_only == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [[ -n "${CLAUDE_PAT:-}" ]]; then
-            export GH_TOKEN="$CLAUDE_PAT"
-          else
-            export GH_TOKEN="$GITHUB_TOKEN"
-          fi
           RUN_DATE="${RUN_DATE:-${{ github.event.inputs.run_date }}}"
           ARTIFACT_DIR=".artifacts/postmerge-retro/daily-${RUN_DATE}"
           mkdir -p "$ARTIFACT_DIR"
@@ -196,18 +191,13 @@ jobs:
         if: github.event.inputs.fix_only != 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          if [[ -n "${CLAUDE_PAT:-}" ]]; then
-            export GH_TOKEN="$CLAUDE_PAT"
-          else
-            export GH_TOKEN="$GITHUB_TOKEN"
-          fi
           chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
           chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
           bash scripts/workflows/postmerge-retro/run-postmerge-retro-daily-dispatch.sh
@@ -265,7 +255,7 @@ jobs:
         id: fix
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
@@ -275,11 +265,6 @@ jobs:
           FIX_JOB_SANDBOX_VERIFY: ${{ vars.FIX_JOB_SANDBOX_VERIFY || 'false' }}
           UMBRELLA_ISSUE_NUM: ${{ steps.meta.outputs.umbrella_issue_num }}
         run: |
-          if [[ -n "${CLAUDE_PAT:-}" ]]; then
-            export GH_TOKEN="$CLAUDE_PAT"
-          else
-            export GH_TOKEN="$GITHUB_TOKEN"
-          fi
           chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
           chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
           RUN_DATE="${RUN_DATE:-${{ github.event.inputs.run_date || steps.meta.outputs.run_date }}}"

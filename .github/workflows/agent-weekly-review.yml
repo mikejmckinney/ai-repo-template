@@ -151,7 +151,7 @@ jobs:
         id: review
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
@@ -160,11 +160,6 @@ jobs:
           ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
           ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
         run: |
-          if [[ -n "${CLAUDE_PAT:-}" ]]; then
-            export GH_TOKEN="$CLAUDE_PAT"
-          else
-            export GH_TOKEN="$GITHUB_TOKEN"
-          fi
           export RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"
           export RUN_WEEK="${RUN_WEEK:-$(bash scripts/workflows/weekly-review/resolve-run-week.sh)}"
           chmod +x scripts/workflows/weekly-review/*.sh 2>/dev/null || true
@@ -269,13 +264,8 @@ jobs:
         if: github.event.inputs.fix_only == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [[ -n "${CLAUDE_PAT:-}" ]]; then
-            export GH_TOKEN="$CLAUDE_PAT"
-          else
-            export GH_TOKEN="$GITHUB_TOKEN"
-          fi
           RUN_WEEK="${RUN_WEEK:-${{ github.event.inputs.run_week }}}"
           ARTIFACT_DIR=".artifacts/weekly-review/week-${RUN_WEEK}"
           mkdir -p "$ARTIFACT_DIR"
@@ -297,7 +287,7 @@ jobs:
         id: fix
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
@@ -306,11 +296,6 @@ jobs:
           SANDBOX_BOOTSTRAP_TOKEN: ${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}
           FIX_JOB_SANDBOX_VERIFY: ${{ vars.FIX_JOB_SANDBOX_VERIFY || 'false' }}
         run: |
-          if [[ -n "${CLAUDE_PAT:-}" ]]; then
-            export GH_TOKEN="$CLAUDE_PAT"
-          else
-            export GH_TOKEN="$GITHUB_TOKEN"
-          fi
           chmod +x scripts/workflows/weekly-review/*.sh 2>/dev/null || true
           chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
           RUN_WEEK="${RUN_WEEK:-${{ github.event.inputs.run_week || needs.weekly-review.outputs.run_week }}}"

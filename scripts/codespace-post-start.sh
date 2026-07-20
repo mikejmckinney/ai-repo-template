@@ -6,7 +6,8 @@
 # available, exports session tokens for sandbox git/gh, and ensures the
 # sandbox git remote exists (same defaults as sandbox-bootstrap.sh).
 #
-# Does NOT run sandbox-bootstrap.sh (repo create, mirror, secrets require SANDBOX_PAT).
+# Does NOT run sandbox-bootstrap.sh because repository creation and mirroring
+# require an explicit maintainer action.
 #
 # Usage (from repo root):
 #   ./scripts/codespace-post-start.sh
@@ -58,7 +59,6 @@ if git -C "$REPO_ROOT" rev-parse --is-inside-work-tree &>/dev/null; then
     log_warn "Sandbox git remote still missing after post-start."
     log_warn "One-time maintainer bootstrap (if sandbox repo does not exist yet):"
     log_warn "  export BOOTSTRAP_GH_TOKEN=\"\${GH_PAT}\"   # classic PAT: repo + workflow"
-    log_warn "  export SANDBOX_PAT=\"<sandbox-scoped PAT>\""
     log_warn "  ./scripts/sandbox-bootstrap.sh"
     log_warn "See docs/guides/sandbox-verification.md § One-time setup."
   fi

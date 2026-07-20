@@ -37,13 +37,13 @@ for model in "${models[@]}"; do
 
   if (
     cd "$active_worktree"
-    env -u GITHUB_TOKEN -u GH_TOKEN -u CLAUDE_PAT -u SANDBOX_BOOTSTRAP_TOKEN \
+    env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN \
       OPENCODE_MODE=fix OPENCODE_MODELS="$model" \
       node "$RUNNER" "$PROMPT_FILE" "$attempt_output" "${OPENCODE_OUTPUT_SCHEMA:-}"
   ); then
     if ! (
       cd "$active_worktree"
-      env -u GITHUB_TOKEN -u GH_TOKEN -u CLAUDE_PAT -u SANDBOX_BOOTSTRAP_TOKEN \
+      env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN \
         -u OPENCODE_GITHUB_TOKEN -u OPENAI_API_KEY -u OPENROUTER_API_KEY \
         -u CURSOR_API_KEY -u GEMINI_API_KEY -u GOOGLE_API_KEY \
         bash -c "$VERIFY_COMMAND"
