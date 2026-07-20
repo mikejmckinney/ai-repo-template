@@ -28,12 +28,12 @@
     },
     "netlify": {
       "type": "local",
+      "enabled": true,
       "command": [
         "bash",
         "-lc",
         "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
       ],
-      "enabled": true,
       "timeout": 60000,
       "environment": {
         "NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"
@@ -82,12 +82,23 @@
     },
     "azure": {
       "type": "local",
-      "command": ["npx", "-y", "@azure/mcp@2.0.5", "server", "start"],
+      "command": [
+        "npx",
+        "-y",
+        "@azure/mcp@2.0.5",
+        "server",
+        "start"
+      ],
       "enabled": true
     },
     "oci": {
       "type": "local",
-      "command": ["uvx", "--python", "3.13", "oracle.oci-cloud-mcp-server@2.1.0"],
+      "command": [
+        "uvx",
+        "--python",
+        "3.13",
+        "oracle.oci-cloud-mcp-server@2.1.0"
+      ],
       "enabled": false,
       "env": {
         "OCI_CONFIG_PROFILE": "{env:OCI_CONFIG_PROFILE}",
@@ -105,7 +116,10 @@
     },
     "open-design": {
       "type": "local",
-      "command": ["bash", "scripts/open-design-mcp.sh"],
+      "command": [
+        "bash",
+        "scripts/open-design-mcp.sh"
+      ],
       "enabled": true
     },
     "playwright": {
@@ -118,11 +132,21 @@
     },
     "chrome-devtools": {
       "type": "local",
-      "command": ["npx", "-y", "chrome-devtools-mcp@latest"]
+      "command": [
+        "npx",
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ],
+      "enabled": true
     },
     "shadcn": {
       "type": "local",
-      "command": ["npx", "-y", "shadcn@latest", "mcp"],
+      "command": [
+        "npx",
+        "-y",
+        "shadcn@latest",
+        "mcp"
+      ],
       "enabled": true
     }
   },

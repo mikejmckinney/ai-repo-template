@@ -1,0 +1,41 @@
+{
+  "servers": {
+    "github": {"transport": "remote", "url": "https://api.githubcopilot.com/mcp/", "auth_env": "GH_PAT"},
+    "supabase": {"transport": "remote", "url": "https://mcp.supabase.com/mcp", "auth_env": "SUPABASE_API_KEY"},
+    "netlify": {
+      "transport": "remote",
+      "url": "https://netlify-mcp.netlify.app/mcp",
+      "auth_env": "NETLIFY_API_KEY",
+      "opencode": {
+        "type": "local",
+        "url": null,
+        "oauth": null,
+        "headers": null,
+        "command": ["bash", "-lc", "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"],
+        "timeout": 60000,
+        "environment": {"NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"}
+      }
+    },
+    "vercel": {"transport": "remote", "url": "https://mcp.vercel.com", "auth_env": "VERCEL_API_KEY"},
+    "cloudflare-api": {"transport": "remote", "url": "https://mcp.cloudflare.com/mcp", "auth_env": "CLOUDFLARE_API_KEY"},
+    "cloudflare-docs": {"transport": "remote", "url": "https://docs.mcp.cloudflare.com/mcp"},
+    "railway": {"transport": "remote", "url": "https://mcp.railway.com", "auth_env": "RAILWAY_API_KEY"},
+    "aws": {
+      "transport": "local",
+      "command": ["bash", "-lc", "exec uvx mcp-proxy-for-aws@1.6.3 \"https://aws-mcp.${AWS_REGION:-us-east-1}.api.aws/mcp\" --profile \"${AWS_PROFILE:-default}\" --region \"${AWS_REGION:-us-east-1}\""]
+    },
+    "azure": {"transport": "local", "command": ["npx", "-y", "@azure/mcp@2.0.5", "server", "start"]},
+    "oci": {
+      "transport": "local",
+      "enabled": false,
+      "command": ["uvx", "--python", "3.13", "oracle.oci-cloud-mcp-server@2.1.0"],
+      "generic_command": ["bash", "-lc", "[[ \"${OCI_MCP_ENABLED:-false}\" == \"true\" ]] || { echo \"OCI MCP is disabled; set OCI_MCP_ENABLED=true to opt in\" >&2; exit 1; }; exec uvx --python 3.13 oracle.oci-cloud-mcp-server@2.1.0"],
+      "environment": {"OCI_CONFIG_PROFILE": "OCI_CONFIG_PROFILE", "FASTMCP_LOG_LEVEL": "ERROR"}
+    },
+    "render": {"transport": "remote", "url": "https://mcp.render.com/mcp", "auth_env": "RENDER_API_KEY"},
+    "open-design": {"transport": "local", "command": ["bash", "scripts/open-design-mcp.sh"]},
+    "playwright": {"transport": "local", "command": ["npx", "@playwright/mcp@latest"]},
+    "chrome-devtools": {"transport": "local", "command": ["npx", "-y", "chrome-devtools-mcp@latest"]},
+    "shadcn": {"transport": "local", "command": ["npx", "-y", "shadcn@latest", "mcp"]}
+  }
+}

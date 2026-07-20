@@ -55,7 +55,12 @@
     },
     "azure": {
       "command": "npx",
-      "args": ["-y", "@azure/mcp@2.0.5", "server", "start"]
+      "args": [
+        "-y",
+        "@azure/mcp@2.0.5",
+        "server",
+        "start"
+      ]
     },
     "oci": {
       "command": "bash",
@@ -63,11 +68,11 @@
         "-lc",
         "[[ \"${OCI_MCP_ENABLED:-false}\" == \"true\" ]] || { echo \"OCI MCP is disabled; set OCI_MCP_ENABLED=true to opt in\" >&2; exit 1; }; exec uvx --python 3.13 oracle.oci-cloud-mcp-server@2.1.0"
       ],
-      "disabled": true,
       "env": {
         "OCI_CONFIG_PROFILE": "${OCI_CONFIG_PROFILE}",
         "FASTMCP_LOG_LEVEL": "ERROR"
-      }
+      },
+      "disabled": true
     },
     "render": {
       "type": "http",
@@ -78,19 +83,30 @@
     },
     "open-design": {
       "command": "bash",
-      "args": ["scripts/open-design-mcp.sh"]
+      "args": [
+        "scripts/open-design-mcp.sh"
+      ]
     },
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp@latest"]
+      "args": [
+        "@playwright/mcp@latest"
+      ]
     },
     "chrome-devtools": {
       "command": "npx",
-      "args": ["-y", "chrome-devtools-mcp@latest"]
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
     },
     "shadcn": {
       "command": "npx",
-      "args": ["-y", "shadcn@latest", "mcp"]
+      "args": [
+        "-y",
+        "shadcn@latest",
+        "mcp"
+      ]
     }
   }
 }

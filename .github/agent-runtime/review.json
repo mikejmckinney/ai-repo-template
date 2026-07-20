@@ -5,26 +5,23 @@
   "snapshot": false,
   "formatter": false,
   "lsp": false,
-  "enabled_providers": ["openrouter"],
+  "enabled_providers": [
+    "openrouter"
+  ],
   "small_model": "openrouter/z-ai/glm-5.2@preset/default",
-  "agent": {
-    "build": {
-      "steps": 24
-    }
-  },
   "permission": {
     "*": "deny",
     "read": "allow",
     "glob": "allow",
     "grep": "allow",
-    "edit": "deny",
     "bash": "deny",
     "task": "deny",
     "webfetch": "deny",
     "websearch": "deny",
     "external_directory": "deny",
     "doom_loop": "deny",
-    "github_read_*": "allow"
+    "github_read_*": "allow",
+    "edit": "deny"
   },
   "mcp": {
     "github": {
@@ -52,17 +49,23 @@
     },
     "aws": {
       "type": "local",
-      "command": ["false"],
+      "command": [
+        "false"
+      ],
       "enabled": false
     },
     "azure": {
       "type": "local",
-      "command": ["false"],
+      "command": [
+        "false"
+      ],
       "enabled": false
     },
     "oci": {
       "type": "local",
-      "command": ["false"],
+      "command": [
+        "false"
+      ],
       "enabled": false
     },
     "render": {
@@ -70,22 +73,30 @@
     },
     "open-design": {
       "type": "local",
-      "command": ["false"],
+      "command": [
+        "false"
+      ],
       "enabled": false
     },
     "playwright": {
       "type": "local",
-      "command": ["false"],
+      "command": [
+        "false"
+      ],
       "enabled": false
     },
     "chrome-devtools": {
       "type": "local",
-      "command": ["false"],
+      "command": [
+        "false"
+      ],
       "enabled": false
     },
     "shadcn": {
       "type": "local",
-      "command": ["false"],
+      "command": [
+        "false"
+      ],
       "enabled": false
     },
     "github_read": {
@@ -100,6 +111,11 @@
       },
       "enabled": true,
       "timeout": 10000
+    }
+  },
+  "agent": {
+    "build": {
+      "steps": 24
     }
   }
 }

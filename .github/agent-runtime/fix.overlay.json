@@ -1,0 +1,4 @@
+{
+  "agent": {"build": {"steps": 4}},
+  "permission": {"edit": "allow"}
+}

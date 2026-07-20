@@ -21,4 +21,16 @@ else
   fail "active structured label references include undeclared labels"
 fi
 
+if python3 scripts/generate-agent-runtime.py --repo . --check; then
+  pass "generated agent runtime profiles are current"
+else
+  fail "generated agent runtime profiles are stale"
+fi
+
+if python3 scripts/generate-mcp-configs.py --repo . --check; then
+  pass "generated MCP host configurations are current"
+else
+  fail "generated MCP host configurations are stale"
+fi
+
 echo ""
