@@ -47,10 +47,12 @@ verified before this report was recorded.
 
 ### Issue 443: sandbox credential handling
 
-`scripts/workflows/lib/sandbox-sync-fix-branch.sh:53-80` overwrites `GH_TOKEN`
-without restoring the caller's value and embeds `SANDBOX_BOOTSTRAP_TOKEN` in a
-Git push URL. Issue 443 must be rebaselined to these findings before issue 442
-closes as its duplicate.
+`scripts/workflows/lib/sandbox-sync-fix-branch.sh:78-80` embeds
+`SANDBOX_BOOTSTRAP_TOKEN` in a Git push URL. The only current caller invokes the
+function through command substitution at
+`scripts/workflows/lib/finalize-fix-pr.sh:67`, so the function's `GH_TOKEN`
+export does not modify the parent shell. Issue 443 must be rebaselined to the
+confirmed token-bearing URL finding before issue 442 closes as its duplicate.
 
 ### Issue 455: superseded-finding detection
 
@@ -133,7 +135,7 @@ weekly review issues.
 | [#434](https://github.com/mikejmckinney/ai-repo-template/issues/434) | `CLOSE_OBSOLETE` | Recovery and issue-body plans later landed | Handshake/compliance findings target removed surfaces | Close not planned |
 | [#436](https://github.com/mikejmckinney/ai-repo-template/issues/436) | `CLOSE_COMPLETED` | Per-turn checkpoints and exact-session recovery landed | Optional Cursor hooks not required for outcome | Close completed |
 | [#442](https://github.com/mikejmckinney/ai-repo-template/issues/442) | `CLOSE_DUPLICATE` | Later rerun exists | Same review window as #443 | Carry live findings, then close duplicate of #443 |
-| [#443](https://github.com/mikejmckinney/ai-repo-template/issues/443) | `REBASELINE` | Role/compliance findings retired | Token-in-URL and token-restoration defects remain | Trim to live security findings and prioritize |
+| [#443](https://github.com/mikejmckinney/ai-repo-template/issues/443) | `REBASELINE` | Role/compliance findings retired | Token-bearing Git URL remains | Trim to the confirmed security finding and prioritize |
 | [#455](https://github.com/mikejmckinney/ai-repo-template/issues/455) | `REBASELINE` | RUN_DATE/artifact invariants landed | Supersession false positives and containment remain | Trim to supersession hardening |
 | [#465](https://github.com/mikejmckinney/ai-repo-template/issues/465) | `REBASELINE` | Role/bootstrap findings retired | Weekly validators omit evidence arrays | Retain only evidence-validation finding |
 | [#466](https://github.com/mikejmckinney/ai-repo-template/issues/466) | `CLOSE_OBSOLETE` | Later retirement removed principal findings | No unique current finding verified | Close after carry-forward review |

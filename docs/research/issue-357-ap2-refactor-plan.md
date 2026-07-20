@@ -54,6 +54,8 @@ advisory review vocabulary rather than generic CI failures.
 - Dispatch-only workflow changes require sandbox default-branch verification.
   A workflow with a `pull_request` trigger and optional `workflow_dispatch`
   remains PR-branch verifiable.
+- Extend Fusion orchestration so interrupted audits can resume explicit panel
+  and judge sessions while preserving raw output outside temporary storage.
 
 ## Fusion Provenance
 
@@ -128,6 +130,14 @@ security, permissions, deduplication, concurrency, artifact-scoping, sandbox,
 schema, and incident-regression contracts. Every assertion requires an explicit
 keep, replace, or remove disposition before modification.
 
+### 9. Fusion continuation loses durable panel provenance
+
+`run-fusion.sh` writes panel outputs to its output directory but always starts
+new panel sessions and reports only the selected judge session. Manual
+continuation therefore bypasses the runner, and outputs stored under `/tmp` can
+be lost across compaction or environment cleanup. The runner needs an explicit
+continuation contract and a durable ignored output location.
+
 ## Candidate Inventory
 
 | Surface | Planned treatment |
@@ -138,6 +148,7 @@ keep, replace, or remove disposition before modification.
 | Runtime review/fix profiles | Shared security source plus explicit overlays generate JSON |
 | Development MCP configs | Neutral inventory plus host overrides generate host forms |
 | Cursor MCP config | Preserve symlink to root `.mcp.json` |
+| Fusion panel/judge outputs | Resume explicit sessions and persist raw output under `.artifacts/` |
 | Pipeline labels | Retain current structured label block initially; derive bounded tests |
 | Checks 046/049/052/053/126 | Per-assertion keep/replace/remove disposition |
 | Historical ADRs/postmortems | Preserve bodies; add current-state amendments where needed |
@@ -284,7 +295,25 @@ Rollback boundary: runtime source, overlays, generator, and generated profiles.
 
 Rollback boundary: MCP inventory, generator, and generated host sections.
 
-### Phase 9: Triage existing invariant assertions
+### Phase 9: Add resumable Fusion output persistence
+
+- Add explicit optional panel and judge session inputs without inferring
+  sessions from recency.
+- Preserve the existing new-session behavior when continuation inputs are not
+  supplied.
+- Default durable manual/audit output to an ignored path below
+  `.artifacts/multi-model-consensus/`; keep caller-supplied `--output-dir`
+  support.
+- Report every accepted panel session, the judge session, output paths, and
+  continuation status in the result contract.
+- Capture raw model stdout through orchestration rather than granting panel
+  agents repository write access.
+- Test new runs, resumed runs, partial panel failure, interrupted-run recovery,
+  explicit-session validation, and output survival outside `/tmp`.
+
+Rollback boundary: Fusion CLI contract, result metadata, and persistence tests.
+
+### Phase 10: Triage existing invariant assertions
 
 The PR body records every assertion removed from checks 046, 049, 052, 053,
 and 126 and names its replacement.
@@ -303,7 +332,7 @@ replacement validation is green, and no behavior or security contract is lost.
 
 Rollback boundary: invariant cleanup only.
 
-### Phase 10: Full validation and sandbox dogfood
+### Phase 11: Full validation and sandbox dogfood
 
 Supporting local verification:
 
@@ -329,6 +358,9 @@ User-outcome validation:
    overrides remain.
 7. Exercise dispatch-only and PR-plus-dispatch classifier cases.
 8. Confirm a long declarative workflow does not fail solely for line count.
+9. Interrupt a Fusion audit, resume the exact panel and judge sessions, and
+   confirm raw outputs and session provenance remain available under
+   `.artifacts/` without asking models to re-emit completed reports.
 
 Required sandbox evidence:
 
