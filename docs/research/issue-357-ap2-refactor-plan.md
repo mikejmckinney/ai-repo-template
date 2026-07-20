@@ -8,11 +8,14 @@ Related issue: [#357](https://github.com/mikejmckinney/ai-repo-template/issues/3
 
 Planning PR: [#497](https://github.com/mikejmckinney/ai-repo-template/pull/497)
 
+Companion open-issue audit:
+[`open-issue-audit-2026-07-20.md`](./open-issue-audit-2026-07-20.md)
+
 This file records the maintainer-approved direction before issue 357 is
 rebaselined. The issue body remains the future live implementation contract.
-The repository-wide open-issue audit requested after this plan must validate
-the final relationship between issue 357, parent issue 279, and overlapping
-children before implementation begins.
+The repository-wide open-issue audit validates the relationship between issue
+357, parent issue 279, and overlapping children. Its approved carry-forward and
+closure recommendations must be applied before implementation begins.
 
 ## Outcome
 
