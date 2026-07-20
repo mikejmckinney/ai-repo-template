@@ -20,7 +20,7 @@ setup() {
 #!/usr/bin/env bash
 printf 'opencode %s\n' "$*" >>"$MOCK_LOG"
 if [[ "$1 $2" == "session list" ]]; then
-  printf '[{"id":"ses_sol","title":"multi-model-advisor-test-sol"},{"id":"ses_judge","title":"multi-model-fusion-test-judge-sol"}]\n'
+  printf '[{"id":"ses_sol","title":"multi-model-advisor-test-sol"},{"id":"ses_kimi","title":"multi-model-fusion-test-panel-1-kimi"},{"id":"ses_panel_sol","title":"multi-model-fusion-test-panel-2-sol"},{"id":"ses_judge","title":"multi-model-fusion-test-judge-sol"}]\n'
   exit 0
 fi
 if [[ "$1 $2" == "models openai" ]]; then
@@ -185,6 +185,9 @@ teardown() {
   [ "$(jq -r '.panels_succeeded' <<<"$output")" -eq 3 ]
   [ "$(jq -r '.engine' <<<"$output")" = sol ]
   [ "$(jq -r '[.panels[].engine] | join(",")' <<<"$output")" = "kimi,fable,grok" ]
+  [ "$(jq -r '[.panels[].session_id | length > 0] | all' <<<"$output")" = true ]
+  [ "$(jq -r '[.panels[].output_file | length > 0] | all' <<<"$output")" = true ]
+  [ "$(jq -r '.judge_continued' <<<"$output")" = false ]
   grep -q -- '--model openrouter/moonshotai/kimi-k3' "$MOCK_LOG"
   run ! grep -q '## Panel SOL\|## Panel FABLE\|## Panel GLM' "$TEST_ROOT/fusion/judge-prompt.md"
 }
@@ -271,6 +274,81 @@ teardown() {
   [ "$(jq -r '.panels[1].engine' <<<"$output")" = glm ]
   [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
   grep -q -- '--model openrouter/z-ai/glm-5.2@preset/default' "$MOCK_LOG"
+}
+
+@test "fusion resumes explicit panel and judge sessions with provenance" {
+  run "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title multi-model-fusion-test \
+    --panel-session 1:kimi:ses_kimi_old \
+    --panel-session 2:fable:ses_fable_old \
+    --panel-session 3:grok:ses_grok_old \
+    --judge-session sol:ses_judge_old \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '[.panels[].session_id] | join(",")' <<<"$output")" = \
+    "ses_kimi_old,ses_fable_old,ses_grok_old" ]
+  [ "$(jq -r '[.panels[].continued] | all' <<<"$output")" = true ]
+  [ "$(jq -r '.session_id' <<<"$output")" = ses_judge_old ]
+  [ "$(jq -r '.judge_continued' <<<"$output")" = true ]
+  [ "$(jq -r '.output_dir' <<<"$output")" = "$TEST_ROOT/fusion" ]
+  grep -q -- '--session ses_kimi_old --continue' "$MOCK_LOG"
+  grep -q -- '-r ses_fable_old' "$MOCK_LOG"
+  grep -q -- '--resume ses_grok_old' "$MOCK_LOG"
+  grep -q -- '--session ses_judge_old --continue' "$MOCK_LOG"
+}
+
+@test "fusion records failed resume before accepting a fallback panel" {
+  run env MOCK_FABLE_MODE=fail "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title multi-model-fusion-test \
+    --panel-session 2:fable:ses_fable_old \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
+  [ "$(jq -r '.panels[1].requested_session_id' <<<"$output")" = ses_fable_old ]
+  [ "$(jq -r '.panels[1].session_id' <<<"$output")" = ses_panel_sol ]
+  [ "$(jq -r '.panels[1].continued' <<<"$output")" = false ]
+}
+
+@test "fusion rejects malformed explicit session specifications" {
+  run "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --panel-session latest \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"panel session must be SLOT:ENGINE:SESSION_ID"* ]]
+  [ ! -e "$MOCK_LOG" ]
+}
+
+@test "fusion rejects duplicate panel session slots" {
+  run "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --panel-session 1:kimi:ses_one \
+    --panel-session 1:sol:ses_two \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"panel session slot specified more than once"* ]]
+}
+
+@test "fusion defaults to durable artifact output" {
+  export MULTI_MODEL_CONSENSUS_ARTIFACT_ROOT="$TEST_ROOT/artifacts"
+  run "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title multi-model-fusion-test
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.output_dir' <<<"$output")" = "$TEST_ROOT/artifacts/multi-model-fusion-test" ]
+  [ -s "$TEST_ROOT/artifacts/multi-model-fusion-test/answer.md" ]
 }
 
 @test "environment validation confirms configured Kimi, Sol, and Grok models" {

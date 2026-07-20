@@ -9,6 +9,8 @@ PROMPT_FILE=
 INVOKING_SESSION=
 TITLE="multi-model-fusion-$(date +%Y%m%d-%H%M%S)"
 OUTPUT_DIR=
+PANEL_SESSION_SPECS=()
+JUDGE_SESSION_SPEC=
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -32,14 +34,60 @@ while [[ $# -gt 0 ]]; do
       OUTPUT_DIR="$2"
       shift 2
       ;;
+    --panel-session)
+      require_value "$1" "${2:-}"
+      PANEL_SESSION_SPECS+=("$2")
+      shift 2
+      ;;
+    --judge-session)
+      require_value "$1" "${2:-}"
+      JUDGE_SESSION_SPEC="$2"
+      shift 2
+      ;;
     *) fail "unknown argument: $1" ;;
   esac
 done
 
 [[ -f "$PROMPT_FILE" ]] || fail "--prompt-file must name a readable file"
 [[ -n "$INVOKING_SESSION" ]] || fail "--invoking-session is required"
-OUTPUT_DIR="${OUTPUT_DIR:-$(mktemp -d "${TMPDIR:-/tmp}/multi-model-fusion.XXXXXX")}"
+
+panel_resume_engines=("" "" "")
+panel_resume_sessions=("" "" "")
+for spec in "${PANEL_SESSION_SPECS[@]}"; do
+  IFS=: read -r slot engine session_id extra <<<"$spec"
+  [[ -z "${extra:-}" && "$slot" =~ ^[123]$ && -n "$engine" && -n "$session_id" ]] \
+    || fail "panel session must be SLOT:ENGINE:SESSION_ID"
+  case "$engine" in
+    kimi | sol | fable | grok | glm | mm | mi | ds) ;;
+    *) fail "unsupported panel session engine: $engine" ;;
+  esac
+  index=$((slot - 1))
+  [[ -z "${panel_resume_sessions[$index]}" ]] \
+    || fail "panel session slot specified more than once: $slot"
+  panel_resume_engines[index]="$engine"
+  panel_resume_sessions[index]="$session_id"
+done
+
+JUDGE_RESUME_ENGINE=
+JUDGE_RESUME_SESSION=
+if [[ -n "$JUDGE_SESSION_SPEC" ]]; then
+  IFS=: read -r JUDGE_RESUME_ENGINE JUDGE_RESUME_SESSION extra <<<"$JUDGE_SESSION_SPEC"
+  [[ -z "${extra:-}" && -n "$JUDGE_RESUME_ENGINE" && -n "$JUDGE_RESUME_SESSION" ]] \
+    || fail "judge session must be ENGINE:SESSION_ID"
+  case "$JUDGE_RESUME_ENGINE" in
+    kimi | sol | fable | grok | glm | mm | mi | ds) ;;
+    *) fail "unsupported judge session engine: $JUDGE_RESUME_ENGINE" ;;
+  esac
+fi
+
+if [[ -z "$OUTPUT_DIR" ]]; then
+  repo_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+  artifact_root="${MULTI_MODEL_CONSENSUS_ARTIFACT_ROOT:-$repo_root/.artifacts/multi-model-consensus}"
+  artifact_name="${TITLE//[^A-Za-z0-9._-]/-}"
+  OUTPUT_DIR="$artifact_root/$artifact_name"
+fi
 mkdir -p "$OUTPUT_DIR"
+OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
 
 RUNTIME_PROMPT="$OUTPUT_DIR/panel-prompt.md"
 append_session_context "$PROMPT_FILE" "$INVOKING_SESSION" "$RUNTIME_PROMPT"
@@ -48,9 +96,24 @@ cat "$SKILL_ROOT/prompts/panel-completion.md" >>"$RUNTIME_PROMPT"
 PANEL_TIMEOUT_SECONDS="${MULTI_MODEL_CONSENSUS_PANEL_TIMEOUT:-${MULTI_MODEL_CONSENSUS_TIMEOUT:-600}}"
 
 invoke_panel_engine() {
-  local previous_timeout="$TIMEOUT_SECONDS" result
+  local output_file="$4" previous_timeout="$TIMEOUT_SECONDS" result
   TIMEOUT_SECONDS="$PANEL_TIMEOUT_SECONDS"
   if invoke_engine "$@"; then
+    printf '%s\n' "$ENGINE_SESSION" >"${output_file%.md}.session"
+    result=0
+  else
+    result=$?
+  fi
+  TIMEOUT_SECONDS="$previous_timeout"
+  return "$result"
+}
+
+invoke_panel_session() {
+  local engine="$1" session_id="$2" prompt_file="$3" output_file="$4"
+  local previous_timeout="$TIMEOUT_SECONDS" result
+  TIMEOUT_SECONDS="$PANEL_TIMEOUT_SECONDS"
+  if invoke_engine_session "$engine" "$session_id" "$prompt_file" "$output_file"; then
+    printf '%s\n' "$ENGINE_SESSION" >"${output_file%.md}.session"
     result=0
   else
     result=$?
@@ -66,6 +129,8 @@ panel_engines=(kimi fable grok)
 panel_statuses=(success success success)
 panel_rejected_engines=("" "" "")
 panel_rejection_reasons=("" "" "")
+panel_sessions=("" "" "")
+panel_continued=(false false false)
 panel_files=(
   "$OUTPUT_DIR/panel-1.md"
   "$OUTPUT_DIR/panel-2.md"
@@ -92,9 +157,16 @@ preserve_rejected_panel() {
 }
 
 for index in "${!primary_engines[@]}"; do
-  engine="${primary_engines[$index]}"
-  invoke_panel_engine "$engine" "${TITLE}-panel-$((index + 1))" \
-    "$RUNTIME_PROMPT" "${panel_files[$index]}" &
+  if [[ -n "${panel_resume_sessions[$index]}" ]]; then
+    engine="${panel_resume_engines[$index]}"
+    panel_engines[index]="$engine"
+    invoke_panel_session "$engine" "${panel_resume_sessions[$index]}" \
+      "$RUNTIME_PROMPT" "${panel_files[$index]}" &
+  else
+    engine="${primary_engines[$index]}"
+    invoke_panel_engine "$engine" "${TITLE}-panel-$((index + 1))" \
+      "$RUNTIME_PROMPT" "${panel_files[$index]}" &
+  fi
   pids+=("$!")
 done
 
@@ -103,6 +175,11 @@ fallback_cursor=0
 for index in "${!pids[@]}"; do
   if wait "${pids[$index]}"; then
     if validate_panel_output "${panel_files[$index]}"; then
+      panel_sessions[index]="$(<"${panel_files[$index]%.md}.session")"
+      if [[ -n "${panel_resume_sessions[$index]}" ]]; then
+        panel_statuses[index]=resumed
+        panel_continued[index]=true
+      fi
       PANELS_SUCCEEDED=$((PANELS_SUCCEEDED + 1))
       continue
     fi
@@ -115,11 +192,14 @@ for index in "${!pids[@]}"; do
   while [[ "$fallback_cursor" -lt "${#fallback_engines[@]}" ]]; do
     fallback_engine="${fallback_engines[$fallback_cursor]}"
     fallback_cursor=$((fallback_cursor + 1))
+    [[ "$fallback_engine" != "${panel_engines[$index]}" ]] || continue
     if invoke_panel_engine "$fallback_engine" "${TITLE}-panel-$((index + 1))" \
       "$RUNTIME_PROMPT" "${panel_files[$index]}"; then
       if validate_panel_output "${panel_files[$index]}"; then
         panel_engines[index]="$fallback_engine"
         panel_statuses[index]=fallback
+        panel_sessions[index]="$(<"${panel_files[$index]%.md}.session")"
+        panel_continued[index]=false
         PANELS_SUCCEEDED=$((PANELS_SUCCEEDED + 1))
         break
       fi
@@ -143,8 +223,19 @@ for index in "${!panel_files[@]}"; do
 done
 
 ANSWER_FILE="$OUTPUT_DIR/answer.md"
-invoke_with_fallback "${TITLE}-judge" "$JUDGE_PROMPT" "$ANSWER_FILE" \
-  || fail "all judge engines failed; inspect $OUTPUT_DIR"
+JUDGE_CONTINUED=false
+if [[ -n "$JUDGE_RESUME_SESSION" ]]; then
+  FAILED_ENGINES=()
+  invoke_engine_session "$JUDGE_RESUME_ENGINE" "$JUDGE_RESUME_SESSION" \
+    "$JUDGE_PROMPT" "$ANSWER_FILE" \
+    || fail "explicit judge session failed; inspect $OUTPUT_DIR"
+  SELECTED_ENGINE="$JUDGE_RESUME_ENGINE"
+  SELECTED_SESSION="$JUDGE_RESUME_SESSION"
+  JUDGE_CONTINUED=true
+else
+  invoke_with_fallback "${TITLE}-judge" "$JUDGE_PROMPT" "$ANSWER_FILE" \
+    || fail "all judge engines failed; inspect $OUTPUT_DIR"
+fi
 
 panel_records=()
 for index in "${!panel_engines[@]}"; do
@@ -152,9 +243,16 @@ for index in "${!panel_engines[@]}"; do
     --arg slot "${primary_engines[$index]}" \
     --arg engine "${panel_engines[$index]}" \
     --arg status "${panel_statuses[$index]}" \
+    --arg session_id "${panel_sessions[$index]}" \
+    --arg requested_session_id "${panel_resume_sessions[$index]}" \
+    --arg output_file "${panel_files[$index]}" \
+    --argjson continued "${panel_continued[$index]}" \
     --arg rejected_engines "${panel_rejected_engines[$index]}" \
     --arg rejection_reasons "${panel_rejection_reasons[$index]}" \
-    '{slot: $slot, engine: $engine, status: $status}
+    '{slot: $slot, engine: $engine, status: $status,
+      session_id: $session_id, output_file: $output_file, continued: $continued}
+      + (if $requested_session_id == "" then {} else
+          {requested_session_id: $requested_session_id} end)
       + (if $rejected_engines == "" then {} else {
           rejected_engines: ($rejected_engines | split(",")),
           rejection_reasons: ($rejection_reasons | split(","))
@@ -173,4 +271,7 @@ done
 emit_result fusion "$ANSWER_FILE" "$PANELS_SUCCEEDED" \
   | jq --argjson panels "$PANELS_JSON" \
     --argjson judge_overlap "$JUDGE_OVERLAP" \
-    '. + {panels: $panels, judge_overlap: $judge_overlap}'
+    --argjson judge_continued "$JUDGE_CONTINUED" \
+    --arg output_dir "$OUTPUT_DIR" \
+    '. + {panels: $panels, judge_overlap: $judge_overlap,
+      judge_continued: $judge_continued, output_dir: $output_dir}'

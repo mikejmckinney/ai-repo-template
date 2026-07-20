@@ -141,6 +141,42 @@ invoke_engine() {
   return 1
 }
 
+invoke_engine_session() {
+  local engine="$1" session_id="$2" prompt_file="$3" output_file="$4"
+  local error_file="${output_file%.md}.err"
+  ENGINE_SESSION="$session_id"
+
+  case "$engine" in
+    kimi | sol | glm | mm | mi | ds)
+      run_with_timeout "$TIMEOUT_SECONDS" opencode run \
+        --session "$session_id" --continue \
+        <"$prompt_file" >"$output_file" 2>"$error_file" \
+        && [[ -s "$output_file" ]]
+      ;;
+    fable)
+      if run_with_timeout "$TIMEOUT_SECONDS" claude -p --model fable \
+        --output-format json --dangerously-skip-permissions -r "$session_id" \
+        <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
+        jq -r '.result // empty' "${output_file}.json" >"$output_file"
+        [[ -s "$output_file" ]]
+      else
+        return 1
+      fi
+      ;;
+    grok)
+      if run_with_timeout "$TIMEOUT_SECONDS" agent -p --resume "$session_id" \
+        --model "$GROK_MODEL" --output-format json \
+        <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
+        jq -r '.result // empty' "${output_file}.json" >"$output_file"
+        [[ -s "$output_file" ]]
+      else
+        return 1
+      fi
+      ;;
+    *) fail "unknown engine: $engine" ;;
+  esac
+}
+
 invoke_with_fallback() {
   local title="$1" prompt_file="$2" output_file="$3"
   local engine
