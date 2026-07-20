@@ -177,12 +177,13 @@ environment-backed `Authorization` header. OpenCode 1.17.20 cannot use that path
 its native remote transport reports that Netlify closes the stream unexpectedly.
 
 OpenCode therefore uses pinned `mcp-remote@0.1.38` as a local compatibility
-bridge with `http-only` transport and a 15-second tool-fetch timeout. The hosted
+bridge with `http-only` transport and a 60-second tool-fetch timeout. The hosted
 server answered a direct authenticated initialization in about 232 ms, and the
-isolated bridge connected successfully. The reported timeout came from the
+isolated bridge connected in 12 seconds. The reported timeout came from the
 bridge's cold `npx` startup, OAuth discovery, and local proxy setup competing
-with OpenCode's default 5-second local MCP timeout. Keep `--silent`; verbose
-bridge diagnostics expand custom authorization headers into logs.
+with concurrent `npx`/`uvx` package resolution during full MCP startup. Keep
+`--silent`; verbose bridge diagnostics expand custom authorization headers into
+logs.
 
 Use a constrained non-production token where possible and expose it only to the
 interactive process:

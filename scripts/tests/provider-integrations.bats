@@ -22,7 +22,7 @@ setup() {
         "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
       ],
       enabled: true,
-      timeout: 15000,
+      timeout: 60000,
       environment: {NETLIFY_API_KEY: "{env:NETLIFY_API_KEY}"}
     } and
     .mcp.vercel == {

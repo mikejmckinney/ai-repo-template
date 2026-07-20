@@ -168,11 +168,11 @@ tools. Cloudflare docs does not require account access.
 Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
 Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
 remote transport closes the hosted stream unexpectedly. The local MCP timeout is
-15 seconds so cold `npx`, OAuth discovery, and proxy startup do not hit OpenCode's
-5-second default. Keep bridge logs silent because verbose diagnostics expand the
-authorization header. Cursor reads the direct-HTTP root configuration through
-`.cursor/mcp.json`, a tracked symlink; Windows Git checkouts require symlink
-support.
+60 seconds so concurrent cold `npx`/`uvx` package resolution, OAuth discovery, and
+proxy startup have enough headroom. Keep bridge logs silent because verbose
+diagnostics expand the authorization header. Cursor reads the direct-HTTP root
+configuration through `.cursor/mcp.json`, a tracked symlink; Windows Git
+checkouts require symlink support.
 
 AWS uses `AWS_PROFILE` and `AWS_REGION` through pinned `mcp-proxy-for-aws`;
 Azure uses Azure CLI / `DefaultAzureCredential`; OCI uses
