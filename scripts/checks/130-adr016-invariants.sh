@@ -35,11 +35,12 @@ else
   fail "docs/guides/sandbox-verification.md missing (issue #227 Phase 2)"
 fi
 
-# Trigger-event matrix lives in agent-pipeline.md.
-if grep -q 'Workflow verifiability matrix' docs/guides/agent-pipeline.md 2>/dev/null; then
-  pass "agent-pipeline.md documents the Workflow verifiability matrix (issue #227)"
+# The guide points to the executable classifier instead of repeating triggers.
+if grep -q 'scripts/verify-pr.sh.*canonical classifier' docs/guides/agent-pipeline.md 2>/dev/null \
+  && ! grep -q '| `schedule`, `workflow_dispatch`, `push`' docs/guides/agent-pipeline.md 2>/dev/null; then
+  pass "agent-pipeline.md points to the canonical executable classifier"
 else
-  fail "agent-pipeline.md missing Workflow verifiability matrix (issue #227)"
+  fail "agent-pipeline.md must point to verify-pr.sh without a trigger mirror"
 fi
 
 # PR completion / pre-merge verification lives in the PR template.

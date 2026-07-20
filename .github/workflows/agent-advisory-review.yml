@@ -66,7 +66,6 @@ jobs:
     steps:
       - name: Verify required secrets
         env:
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
@@ -79,9 +78,6 @@ jobs:
           if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "$OPENROUTER_API_KEY" ]]; then has_opencode=1; fi
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
-          if [[ -z "${CLAUDE_PAT:-}" ]]; then
-            echo "::notice::CLAUDE_PAT unset; PR comment API will use GITHUB_TOKEN (set CLAUDE_PAT if comment POST returns 403)."
-          fi
           case "$PROVIDER" in
             opencode)
               [[ "$has_opencode" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=opencode requires OPENROUTER_API_KEY plus OPENCODE_GITHUB_TOKEN"; exit 1; }
@@ -131,22 +127,13 @@ jobs:
       - name: Run advisory review
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
-          # Prefer CLAUDE_PAT for issue-comment POST/PATCH when org policies
-          # restrict GITHUB_TOKEN write on pull_request.
-          if [[ -n "${CLAUDE_PAT:-}" ]]; then
-            export GH_TOKEN="$CLAUDE_PAT"
-            echo "Using CLAUDE_PAT for gh PR comment API."
-          else
-            export GH_TOKEN="$GITHUB_TOKEN"
-            echo "Using GITHUB_TOKEN for gh PR comment API (CLAUDE_PAT unset)."
-          fi
           chmod +x scripts/workflows/advisory-review/*.sh scripts/workflows/advisory-review/*.py 2>/dev/null || true
           bash scripts/workflows/advisory-review/run-advisory-review.sh \
             "${{ github.event.pull_request.number }}" \

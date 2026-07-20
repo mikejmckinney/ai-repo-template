@@ -13,10 +13,10 @@ module owns one phase of project bootstrap and is independently re-runnable.
 | `30-build.sh` | Run `npm run build` if `package.json` declares a build script. | Logs "No build step configured" otherwise. |
 | `40-ensure-labels.sh` | Probe `gh auth`, resolve `FULL_REPO` fallback, `export GH_REPO`, create maintained pipeline labels. | Sets shared gating vars consumed by 60. |
 | `ensure-pipeline-labels.sh` | Standalone wrapper: `ensure-pipeline-labels.sh owner/repo` | Used by `sandbox-bootstrap.sh` and operators; sources `40-ensure-labels.sh`. |
-| `60-check-secrets.sh` | Report presence of `CLAUDE_PAT` (repo + org tiers). | Cannot read values; presence-only. |
+| `60-check-secrets.sh` | Report required model/runtime secret presence (repo + org tiers). | Cannot read values; presence-only. |
 | `70-verify-env.sh` | Delegate to `scripts/verify-env.sh`. | Final gate. |
 
-**Codespace post-start (not part of `setup.sh`):** [`scripts/codespace-post-start.sh`](../codespace-post-start.sh) runs from [`install.sh`](../../install.sh) on every Codespace start. It upgrades `gh` from the injected `GITHUB_TOKEN` to a user PAT when `GH_PAT` (etc.) is set, exports session tokens, installs a shell hook, and advises when the sandbox git remote is missing. It does **not** invoke `sandbox-bootstrap.sh` (maintainer one-time; requires `SANDBOX_PAT`).
+**Codespace post-start (not part of `setup.sh`):** [`scripts/codespace-post-start.sh`](../codespace-post-start.sh) runs from [`install.sh`](../../install.sh) on every Codespace start. It upgrades `gh` from the injected `GITHUB_TOKEN` to a user PAT when `GH_PAT` (etc.) is set, exports session tokens, installs a shell hook, and advises when the sandbox git remote is missing. It does **not** invoke `sandbox-bootstrap.sh`; repository creation and mirroring remain an explicit maintainer action.
 
 ## How the modules are loaded
 

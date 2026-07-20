@@ -111,6 +111,18 @@ jobs:
     steps: [{ run: "echo" }]
 YAML
 
+# A dispatch-only workflow is loaded from the default branch. It cannot be
+# introduced or changed and then exercised from the same PR branch.
+cat >"$fixture_dir/.github/workflows/manual-only.yml" <<'YAML'
+name: manual-only
+on:
+  workflow_dispatch:
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps: [{ run: "echo" }]
+YAML
+
 # A pull_request_target workflow — default-branch-only despite the
 # "pull_request" prefix, because GitHub loads it from the base branch.
 cat >"$fixture_dir/.github/workflows/agent-fork-handler.yml" <<'YAML'
@@ -425,6 +437,13 @@ result=$(run_case "pull_request-triggered workflow" \
 assert_eq "CASE-20 exit code" "0" "${result%%:*}"
 assert_contains "CASE-20 reports match (no false positive on env/job/step named push)" \
   "matches detection" "${result#*:}"
+
+# ── CASE-21: workflow_dispatch without pull_request is default-branch-only ───
+echo ""
+echo "CASE-21: dispatch-only workflow → default-branch-only"
+result=$(run_case "default-branch-only workflow" \
+  ".github/workflows/manual-only.yml")
+assert_eq "CASE-21 exit code" "0" "${result%%:*}"
 
 # ── summary ──────────────────────────────────────────────────────────────────
 

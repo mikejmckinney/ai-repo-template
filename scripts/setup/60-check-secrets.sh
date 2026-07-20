@@ -26,7 +26,7 @@ if [[ -n "${_pipeline_setup_skip_reason:-}" ]] \
 fi
 
 log_step "Checking required pipeline secrets"
-_required_secrets=(CLAUDE_PAT OPENCODE_GITHUB_TOKEN)
+_required_secrets=(OPENCODE_GITHUB_TOKEN)
 _repo_secrets=""
 _org_secrets=""
 if _repo_secrets=$(gh secret list --limit 100 --json name --jq '.[].name' 2>/dev/null); then

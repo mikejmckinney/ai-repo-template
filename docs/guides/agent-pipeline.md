@@ -131,18 +131,20 @@ the user outcome. CI and lint remain the blocking pre-merge controls.
 Branch owners remain responsible for updating their branches and resolving
 overlap; the template does not force-push automated rebases.
 
-## Workflow verifiability matrix
+## Workflow verifiability classes
 
-| Trigger or surface | Verification |
+`scripts/verify-pr.sh` is the canonical classifier and owns the trigger rules.
+Its fixtures in `scripts/tests/verify-pr.bats` define supported YAML shapes.
+
+| Detected class | Verification |
 |---|---|
-| Code/docs only | PR branch tests |
-| `pull_request` workflow | PR branch plus event run |
-| `schedule`, `workflow_dispatch`, `push`, `workflow_run` | Sandbox default branch |
-| `pull_request_target`, reviews, issue comments | Sandbox trigger event |
-| Mixed changes | Both PR branch and sandbox |
+| Code or documentation only | PR branch tests |
+| Workflow includes `pull_request` and no default-only trigger | PR branch plus event run |
+| Every other workflow, including dispatch-only | Sandbox default branch and relevant trigger event |
+| Mixed paths | PR branch plus the most restrictive workflow target |
 
-Use `scripts/verify-pr.sh` to classify the diff and
-`docs/guides/sandbox-verification.md` for default-branch-only exercise.
+Use `docs/guides/sandbox-verification.md` when the classifier reports
+`default-branch-only workflow` or a mixed diff with that verification floor.
 
 ## Labels
 
@@ -168,8 +170,9 @@ Use `scripts/verify-pr.sh` to classify the diff and
 - `OPENROUTER_API_KEY`: model credential for the ordered public-CI OpenCode cascade.
 - Existing `CURSOR_API_KEY`, `GEMINI_API_KEY`, and `GOOGLE_API_KEY` remain
   optional rollback-provider credentials.
-- `CLAUDE_PAT` and `SANDBOX_BOOTSTRAP_TOKEN` remain deterministic publication or
-  sandbox credentials and are never forwarded to OpenCode.
+- Workflow publication uses the automatic job-scoped `GITHUB_TOKEN` with
+  explicit least-privilege permissions. `SANDBOX_BOOTSTRAP_TOKEN` remains a
+  sandbox-only credential and is never forwarded to OpenCode.
 
 Use [`opencode-termination-diagnostics.md`](./opencode-termination-diagnostics.md)
 when an interactive OpenCode process restarts unexpectedly.

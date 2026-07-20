@@ -185,6 +185,11 @@ with concurrent `npx`/`uvx` package resolution during full MCP startup. Keep
 `--silent`; verbose bridge diagnostics expand custom authorization headers into
 logs.
 
+The command passes the literal `Authorization:Bearer ${NETLIFY_API_KEY}`
+placeholder to `mcp-remote`, which expands it from the child environment. Do not
+wrap the command in a shell that expands the token first: doing so places the
+credential in process arguments where local process inspection can expose it.
+
 Use a constrained non-production token where possible and expose it only to the
 interactive process:
 

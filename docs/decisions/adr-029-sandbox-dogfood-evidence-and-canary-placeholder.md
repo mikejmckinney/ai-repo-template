@@ -12,6 +12,16 @@ backward-compat default for the Phase C migrations recorded in this ADR.
 
 2026-05-20
 
+## 2026-07-20 Current-State Amendment
+
+The sandbox outcome requirement and canonical `Sandbox issue:` / `Sandbox PR:`
+labels remain active. ADR-026 retired structured compliance contracts, and
+ADR-031 retired the Judge role and role pipeline. The former check 157 drift
+detector and Judge checklist no longer exist; current enforcement is the PR
+template, `AGENTS.md` outcome contract, live review, and the sandbox playbook.
+Sections 2-6 and the original verification record below describe the historical
+implementation rather than active mirror-maintenance instructions.
+
 ## Context
 
 Issue #349 surfaced two related failure modes:

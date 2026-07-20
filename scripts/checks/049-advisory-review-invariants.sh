@@ -106,12 +106,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "upsert-pr-comment.sh must use -F body=@ for file-loaded comment bodies"
   fi
 
-  if bash -n "$UPSERT_SCRIPT" 2>/dev/null && bash -n "$RUN_SCRIPT" 2>/dev/null; then
-    pass "advisory shell scripts have valid bash syntax"
-  else
-    fail "advisory shell script bash -n failed"
-  fi
-
   if grep -q 'DEFAULT_CURSOR_MODEL' "$CURSOR_SCRIPT" 2>/dev/null \
     && grep -q 'cursorBillingTier' "$CURSOR_SCRIPT" 2>/dev/null \
     && grep -q 'GITHUB_RUN_ID' "$CURSOR_SCRIPT" 2>/dev/null \

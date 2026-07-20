@@ -114,6 +114,34 @@ guidance, read only one of:
   --invoking-session "$MY_SID"
 ```
 
+Fusion stores new runs under
+`.artifacts/multi-model-consensus/<title>/` by default. The directory is ignored
+by Git and survives temporary-directory cleanup. Use `--output-dir <path>` when
+a caller owns another durable location.
+
+Resume exact prior sessions without inferring them from recency:
+
+```bash
+.agents/skills/multi-model-consensus/scripts/run-fusion.sh \
+  --prompt-file "$PROMPT_FILE" \
+  --invoking-session "$MY_SID" \
+  --title issue-audit \
+  --reuse-completed \
+  --panel-session 1:sol:ses_existing_sol \
+  --panel-session 2:fable:existing-fable-uuid \
+  --panel-session 3:grok:existing-grok-uuid \
+  --judge-session sol:ses_existing_judge
+```
+
+Panel specifications are `SLOT:ENGINE:SESSION_ID`, where slots are 1-3. Judge
+specifications are `ENGINE:SESSION_ID`. A failed resumed panel may use the normal
+unused fallback chain and records both the requested session and accepted
+fallback session. A failed explicit judge session stops rather than silently
+starting a different judge. `--reuse-completed` adopts an already validated
+`panel-N.md` only when its session sidecar exactly matches that slot's requested
+session. Use the same title or explicit output directory after interruption so
+completed panels are not invoked again.
+
 The Fusion runner launches Kimi, Fable, and Grok as three bounded primary panels
 in parallel. A failed primary slot is backfilled by the next unused model from
 Sol, GLM, MM, MI, then DS. It proceeds when at least two unique panels succeed, then
@@ -122,9 +150,12 @@ to `prompts/judge.md`; do not duplicate or inline it in the caller prompt.
 
 The runner appends `prompts/panel-completion.md` to every panel request. A panel
 is successful only when its final non-empty line is the exact completion marker.
-Partial output that fails validation or accompanies a failed invocation is preserved as
-`panel-N.rejected-ENGINE.md`, recorded in the panel result, and backfilled like
-an engine failure. The Judge sees only validated panel files.
+Panel calls write attempt-specific files and atomically promote only validated
+output. Partial output that fails validation or accompanies a failed invocation
+is preserved as `panel-N.rejected-ENGINE.ATTEMPT.md`, recorded in the panel result, and backfilled like
+an engine failure. Structured provider responses with `is_error: true` are
+invocation failures even when the CLI exits zero. The Judge sees only validated
+panel files.
 
 ## Output Contract
 
@@ -141,14 +172,19 @@ Both commands write exactly one JSON object to stdout:
 }
 ```
 
-Fusion also returns `panels_succeeded`, a `panels` array recording primary-slot
-substitutions, and `judge_overlap`. Panel labels given to the Judge are
-anonymized. `judge_overlap` is true when the selected Judge engine also served
-as a panelist; in that case, treat the result as practical synthesis rather
-than fully independent consensus. The complete answer is stored at
-`output_file`; diagnostics go to stderr and adjacent `.err` files. Read the
-answer file, verify material claims, and synthesize it for the user. Do not
-paste raw panel output.
+Fusion also returns `panels_succeeded`, `output_dir`, `judge_continued`, a
+`panels` array, and `judge_overlap`. Every accepted panel record includes its
+engine, session ID, output file, SHA-256 checksum, status, `continued`, and
+`reused` booleans. A resumed slot
+that falls back also includes `requested_session_id`. Panel labels given to the
+Judge are anonymized. `judge_overlap` is true when the selected Judge engine
+also served as a panelist; in that case, treat the result as practical synthesis
+rather than fully independent consensus. The complete answer is stored at
+`output_file`; raw panels and diagnostics remain beside it. Read the answer
+file, verify material claims, and synthesize it for the user. The runner
+atomically writes the same final object to `output_dir/result.json`; before the
+Judge completes, that file contains recoverable panel provenance with status
+`panels_complete`. Do not paste raw panel output.
 
 When a panel is rejected after a provider/process call,
 its panel record includes `rejected_engines` and parallel `rejection_reasons`
@@ -182,8 +218,10 @@ Grok uses its Cursor session:
 agent -p --resume "$SESSION_ID" --model cursor-grok-4.5-medium "$FOLLOW_UP"
 ```
 
-Use follow-up only to resolve a material omission or ambiguity. Do not start a
-new session when the existing one can continue.
+For another full Fusion round, prefer the explicit `--panel-session` and
+`--judge-session` inputs above so the runner preserves output and provenance.
+Use direct follow-up only to resolve one material omission or ambiguity. Do not
+start a new session when the existing one can continue.
 
 ## Stop And Failure Behavior
 

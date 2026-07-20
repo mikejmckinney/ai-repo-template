@@ -3,7 +3,7 @@
 # AI_REPO_GUIDE.md
 
 > Canonical command and layout reference for agents working in this template.
-> Last verified: 2026-07-16.
+> Last verified: 2026-07-20.
 
 ## Overview
 
@@ -126,6 +126,31 @@ implementation path.
 Fusion accepts a panel only when it ends with the injected completion marker.
 A provider/process success with partial research or `finish=unknown` is rejected,
 preserved for diagnosis, and replaced through the normal fallback chain.
+Fusion stores raw panels and the judge result under ignored
+`.artifacts/multi-model-consensus/<title>/` by default. Resume an interrupted
+round with explicit `--panel-session SLOT:ENGINE:SESSION_ID` and
+`--judge-session ENGINE:SESSION_ID` arguments. Add `--reuse-completed` with the
+same output directory to adopt validated panel files whose session sidecars
+match, rather than invoking those panels again. Never rediscover sessions from
+recency after child sessions exist. The runner atomically persists accepted
+panels and `result.json`, including accepted/requested session provenance,
+checksums, and output paths.
+
+## Canonical Generated Sources
+
+Edit the source for a governed concept, then run its generator. Do not edit the
+generated consumer directly.
+
+| Governed concept | Canonical source | Generator |
+|---|---|---|
+| Concise P/AP catalog | `docs/guides/repo-orchestration-patterns-reference.md` | `python3 scripts/generate-pap-catalog.py --repo .` |
+| Issue implementation-plan block | `.github/templates/issue-implementation-plan.md` | `python3 scripts/generate-issue-plans.py --repo .` |
+| Review/fix runtime profiles | `.github/agent-runtime/base.json` plus overlays | `python3 scripts/generate-agent-runtime.py --repo .` |
+| Development MCP host forms | `.config/mcp-inventory.json` | `python3 scripts/generate-mcp-configs.py --repo .` |
+
+Pass `--check` to any generator for read-only freshness validation. `test.sh`
+runs all four checks plus bounded structured-label validation. Runtime security
+assertions remain direct tests even though the profiles are generated.
 
 ### Problem Framing And Critical Review
 
@@ -139,12 +164,19 @@ issue's user-outcome test.
 
 ## Workflow Verification
 
-Changes to `schedule`, `workflow_dispatch`, `push`, `workflow_run`,
-`pull_request_target`, review, issue-comment, or other default-branch-only
-triggers require sandbox verification. Follow
-`docs/guides/sandbox-verification.md` and record real run/artifact links.
+Run `scripts/verify-pr.sh` to classify the changed paths; its fixtures own the
+trigger rules. A workflow with `pull_request` and optional `workflow_dispatch`
+is PR-branch verifiable when it has no default-only trigger. Dispatch-only and
+other default-branch-only workflow changes require sandbox-default verification.
+Follow `docs/guides/sandbox-verification.md` and record real run/artifact links.
 
 ## Authentication
+
+GitHub creates a short-lived `GITHUB_TOKEN` for each workflow job. Workflows
+declare the minimum job permissions and use `github.token` for repository API
+writes. Automated merges intentionally do not trigger duplicate `push` CI/lint
+runs; the strict main ruleset requires both checks against the current base
+before merge.
 
 Inside Codespaces, the injected `GITHUB_TOKEN` may not access the sibling sandbox.
 Use command-local `GH_TOKEN="$GH_PAT"` with `GITHUB_TOKEN` unset when the configured
@@ -170,7 +202,9 @@ Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
 remote transport closes the hosted stream unexpectedly. The local MCP timeout is
 60 seconds so concurrent cold `npx`/`uvx` package resolution, OAuth discovery, and
 proxy startup have enough headroom. Keep bridge logs silent because verbose
-diagnostics expand the authorization header. Cursor reads the direct-HTTP root
+diagnostics expand the authorization header. Pass its environment placeholder
+directly to `mcp-remote`; shell expansion would expose the token in process
+arguments. Cursor reads the direct-HTTP root
 configuration through `.cursor/mcp.json`, a tracked symlink; Windows Git
 checkouts require symlink support.
 
@@ -187,7 +221,8 @@ host plugins do not replace the repository's immutable cross-agent lock.
 
 ## Documentation Synchronization
 
-- Build, test, install, layout, and troubleshooting changes update this guide.
+- Build, test, install, layout, generated-source ownership, and troubleshooting
+  changes update this guide.
 - Review lifecycle changes update ADR-031 and `docs/guides/agent-pipeline.md`.
 - Workflow trigger changes update the pipeline and sandbox guides plus tests.
 - File inventory changes update `install.sh` and the owning check module.

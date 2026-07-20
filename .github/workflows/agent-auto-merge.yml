@@ -31,18 +31,12 @@
 #   - Uses squash merge for clean history
 #   - Branch protection rules still apply
 #
-# Setup:
-#   - CLAUDE_PAT repo secret is required for the merge and post-merge
-#     issue/comment steps. A merge performed with the built-in
-#     GITHUB_TOKEN does NOT fire downstream workflow_run events on main,
-#     which would break any post-merge automation that depends on them.
-#     CLAUDE_PAT needs:
-#     `contents: write` + `pull-requests: write` + `issues: write`.
-#   - All READ operations (gh pr view, GraphQL reviewThreads, etc.) use
-#     the built-in GITHUB_TOKEN with scopes declared in this workflow's
-#     `permissions:` block. This keeps CLAUDE_PAT's blast radius narrow
-#     and avoids the trap where the PAT silently lacks Checks/Statuses
-#     read — `statusCheckRollup` requires both.
+# Authentication:
+#   - The job-scoped GITHUB_TOKEN performs reads and writes with the explicit
+#     permissions below. Merges performed with it do not trigger new push
+#     workflows. This is intentional: the strict main ruleset already requires
+#     current CI and lint results before merge, and no post-merge automation
+#     consumes duplicate main-branch runs.
 #   - If you have branch protection requiring reviews, either:
 #     (a) Add github-actions[bot] to bypass list, OR
 #     (b) Count the bot reviewers (Gemini/Claude/Copilot) as approvals
@@ -110,14 +104,9 @@ jobs:
     timeout-minutes: 10
 
     permissions:
-      # GITHUB_TOKEN is only used by the read-only eligibility step —
-      # all write operations (merge, linked-issue close, drain queue,
-      # post-merge comment) explicitly use CLAUDE_PAT. Keeping
-      # GITHUB_TOKEN read-only shrinks the blast radius of
-      # pull_request_target runs on label events.
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       # statusCheckRollup aggregates both Check Runs (checks:) and
       # Commit Statuses (statuses:). Declare both so GITHUB_TOKEN can
       # read it without needing a PAT. `actions: read` is also required
@@ -130,25 +119,10 @@ jobs:
       actions: read
 
     steps:
-      - name: Verify required secrets
-        env:
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
-        run: |
-          if [[ -z "$CLAUDE_PAT" ]]; then
-            echo "::error::Missing required secret: CLAUDE_PAT"
-            echo "::error::Per-repo:  Settings → Secrets and variables → Actions → New repository secret"
-            echo "::error::Org-wide:  Org settings → Secrets and variables → Actions → New organization secret (then grant this repo access)"
-            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
-            exit 1
-          fi
-
       - name: Find PRs ready to merge
         id: find
         env:
-          # Read-only step: use the built-in GITHUB_TOKEN with the
-          # workflow-declared permissions. Do NOT use CLAUDE_PAT here —
-          # fine-grained PATs frequently lack Checks/Statuses read,
-          # which silently breaks the statusCheckRollup query.
+          # statusCheckRollup requires Checks, Statuses, and Actions read.
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           # Pass event data via env vars (not inline interpolation) to
@@ -480,7 +454,7 @@ jobs:
       - name: Squash and merge
         if: steps.find.outputs.eligible == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.find.outputs.number }}
           REPO: ${{ github.repository }}
         run: |
@@ -500,7 +474,7 @@ jobs:
       - name: Close linked issues
         if: steps.find.outputs.eligible == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.find.outputs.number }}
           PR_BODY: ${{ steps.find.outputs.body }}
           REPO: ${{ github.repository }}
@@ -518,7 +492,7 @@ jobs:
       - name: Post merge confirmation
         if: steps.find.outputs.eligible == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.find.outputs.number }}
           REPO: ${{ github.repository }}
         run: |
