@@ -104,7 +104,11 @@ EOF
 #!/usr/bin/env bash
 printf 'claude %s\n' "$*" >>"$MOCK_LOG"
 prompt=$(cat)
-[[ "${MOCK_FABLE_MODE:-success}" == success ]] || exit 8
+if [[ "${MOCK_FABLE_MODE:-success}" == fail ]]; then exit 8; fi
+if [[ "${MOCK_FABLE_MODE:-success}" == api-error ]]; then
+  jq -cn '{is_error:true,result:"spend limit",session_id:"ses_fable"}'
+  exit 0
+fi
 result='Fable answer'
 [[ "$prompt" != *'<!-- multi-model-panel-complete:v1 -->'* ]] || result="$result
 <!-- multi-model-panel-complete:v1 -->"
@@ -189,6 +193,7 @@ teardown() {
   [ "$(jq -r '[.panels[].output_file | length > 0] | all' <<<"$output")" = true ]
   [ "$(jq -r '.judge_continued' <<<"$output")" = false ]
   grep -q -- '--model openrouter/moonshotai/kimi-k3' "$MOCK_LOG"
+  grep -q -- 'agent -p --trust' "$MOCK_LOG"
   run ! grep -q '## Panel SOL\|## Panel FABLE\|## Panel GLM' "$TEST_ROOT/fusion/judge-prompt.md"
 }
 
@@ -205,6 +210,19 @@ teardown() {
   [ "$(jq -r '.panels[1].engine' <<<"$output")" = sol ]
   [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
   grep -q -- '--model openai/gpt-5.6-sol' "$MOCK_LOG"
+}
+
+@test "fusion rejects a zero-exit Fable API error" {
+  run env MOCK_FABLE_MODE=api-error "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title multi-model-fusion-test \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.panels[1].engine' <<<"$output")" = sol ]
+  [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
+  grep -q 'spend limit' "$TEST_ROOT/fusion/panel-2.rejected-fable.md"
 }
 
 @test "fusion rejects a zero-exit preamble and backfills the panel" {

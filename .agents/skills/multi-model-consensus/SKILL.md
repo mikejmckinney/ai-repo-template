@@ -148,7 +148,9 @@ The runner appends `prompts/panel-completion.md` to every panel request. A panel
 is successful only when its final non-empty line is the exact completion marker.
 Partial output that fails validation or accompanies a failed invocation is preserved as
 `panel-N.rejected-ENGINE.md`, recorded in the panel result, and backfilled like
-an engine failure. The Judge sees only validated panel files.
+an engine failure. Structured provider responses with `is_error: true` are
+invocation failures even when the CLI exits zero. The Judge sees only validated
+panel files.
 
 ## Output Contract
 

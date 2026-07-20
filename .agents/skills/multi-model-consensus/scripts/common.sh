@@ -103,15 +103,21 @@ invoke_engine() {
         <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
         jq -r '.result // empty' "${output_file}.json" >"$output_file"
         ENGINE_SESSION=$(jq -r '.session_id // empty' "${output_file}.json")
-        [[ -s "$output_file" ]] && return 0
+        if jq -e '.is_error != true and ((.result // "") | length > 0)' \
+          "${output_file}.json" >/dev/null && [[ -s "$output_file" ]]; then
+          return 0
+        fi
       fi
       ;;
     grok)
-      if run_with_timeout "$TIMEOUT_SECONDS" agent -p --model "$GROK_MODEL" \
+      if run_with_timeout "$TIMEOUT_SECONDS" agent -p --trust --model "$GROK_MODEL" \
         --output-format json <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
         jq -r '.result // empty' "${output_file}.json" >"$output_file"
         ENGINE_SESSION=$(jq -r '.session_id // empty' "${output_file}.json")
-        [[ -s "$output_file" ]] && return 0
+        if jq -e '.is_error != true and ((.result // "") | length > 0)' \
+          "${output_file}.json" >/dev/null && [[ -s "$output_file" ]]; then
+          return 0
+        fi
       fi
       ;;
     glm)
@@ -158,17 +164,19 @@ invoke_engine_session() {
         --output-format json --dangerously-skip-permissions -r "$session_id" \
         <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
         jq -r '.result // empty' "${output_file}.json" >"$output_file"
-        [[ -s "$output_file" ]]
+        jq -e '.is_error != true and ((.result // "") | length > 0)' \
+          "${output_file}.json" >/dev/null && [[ -s "$output_file" ]]
       else
         return 1
       fi
       ;;
     grok)
-      if run_with_timeout "$TIMEOUT_SECONDS" agent -p --resume "$session_id" \
+      if run_with_timeout "$TIMEOUT_SECONDS" agent -p --trust --resume "$session_id" \
         --model "$GROK_MODEL" --output-format json \
         <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
         jq -r '.result // empty' "${output_file}.json" >"$output_file"
-        [[ -s "$output_file" ]]
+        jq -e '.is_error != true and ((.result // "") | length > 0)' \
+          "${output_file}.json" >/dev/null && [[ -s "$output_file" ]]
       else
         return 1
       fi
