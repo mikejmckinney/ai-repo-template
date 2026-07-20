@@ -2,14 +2,20 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-025; §"Per-file cadence bump" scope
-narrowed by ADR-029 §7 — canary covers `AGENTS.md` content only,
-per-concern `.context/rules/process_*.md` files evolve through their own
-PRs without bumping the canary)
+Accepted (decomposition retired by ADR-026; catalog ownership superseded in
+part by ADR-032)
 
 ## Date
 
 2026-05-08
+
+## 2026-07-20 Current-State Amendment
+
+ADR-026 restored the monolithic always-loaded `AGENTS.md` contract, and ADR-031
+retired role-specialized execution. ADR-032 now makes the comprehensive P/AP
+guide canonical and generates only its bounded catalog into `AGENTS.md`.
+The decomposition mechanics below are historical and are not active onboarding
+or synchronization instructions.
 
 ## Context
 

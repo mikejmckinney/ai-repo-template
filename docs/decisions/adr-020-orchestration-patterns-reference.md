@@ -17,6 +17,15 @@ Accepted (superseded in part by ADR-032)
 
 2026-05-08
 
+## 2026-07-20 Current-State Amendment
+
+ADR-032 supersedes this decision's catalog location and standalone blocking
+designations. The canonical advisory catalog now lives in
+`docs/guides/repo-orchestration-patterns-reference.md` and generates the bounded
+`AGENTS.md` catalog. An AP identifier alone does not block; current reviews must
+name a concrete deterministic contract violation or observable harm. The
+original rationale below remains historical evidence.
+
 ## Context
 
 PR review on changes to the orchestration layer (AGENTS.md, `.context/rules/**`, `.github/agents/**`, `.github/workflows/**`, `scripts/**`) currently lacks shared vocabulary for naming the patterns the template uses and the anti-patterns it has accumulated. Reviewers (Critic, Judge) argue quality and structural drift in vague terms, with no citable handle. This is the same gap that motivated `domain_code_quality.md` for the code layer — but at the orchestration layer, no equivalent file exists.

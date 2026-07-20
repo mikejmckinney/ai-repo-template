@@ -83,9 +83,8 @@ N/A — empty headings are noise.
 
 <!-- REQUIRED Both labels MUST
      point to real sandbox URLs (issue link and PR link). Refer to the [sandbox 
-     verification playbook](../docs/guides/sandbox-verification.md) which details the 
-     process for using sandbox and which sandbox instance to use.
-     Advisory drift detector: `scripts/checks/157-sandbox-evidence-labels.sh`. -->
+     verification playbook](../docs/guides/sandbox-verification.md) which details the
+     process for using sandbox and which sandbox instance to use. -->
 
 Sandbox issue: <URL>
 Sandbox PR: <URL>
@@ -101,7 +100,7 @@ Sandbox PR: <URL>
 
 ## Supporting verification results (REQUIRED)
 
-<!-- Mirror your plan's `### Supporting verification` section 1:1. Every command
+<!-- Match your plan's `### Supporting verification` section 1:1. Every command
      listed in the plan must have a result entry here BEFORE the PR
      enters review. CI is a backstop, not a substitute for local
      verification (issue #208/#225 lessons learned).
@@ -125,15 +124,15 @@ Sandbox PR: <URL>
 
 ## Doc sync (REQUIRED)
 
-Walk `AGENTS.md`'s documentation synchronization table. Tick each companion
-that needed updating, OR state `<file>: no changes required` with a one-line
+Follow `AI_REPO_GUIDE.md` § "Documentation Synchronization". Tick each companion
+that needed updating, or state `<file>: no changes required` with a one-line
 justification.
 
 - [ ] `AI_REPO_GUIDE.md` updated (or: `AI_REPO_GUIDE.md: no changes required — <why>`)
 - [ ] ADR added/superseded (or: `ADR: no changes required — <why>`)
 - [ ] Review lifecycle documentation updated (or: `not required — <why>`)
-- [ ] Workflow inline-prompt mirrors updated alongside `.github/prompts/*.md` edits (or: `not required — <why>`)
-- [ ] `scripts/setup.sh` `_ensure_label` list updated alongside pipeline label additions (or: `not required — <why>`)
+- [ ] Review lifecycle docs updated alongside `.github/prompts/*.md` edits (or: `not required — <why>`)
+- [ ] `scripts/setup/40-ensure-labels.sh` updated alongside pipeline label additions (or: `not required — <why>`)
 - [ ] `test.sh` / `install.sh` updated for new template files (or: `not required — <why>`)
 - [ ] Cadence/format changes updated in READMEs and templates (or: `not required — <why>`)
 

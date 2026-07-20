@@ -1,16 +1,23 @@
 # scripts/tests/
 
-Bats test suite (issue #255 Phase 4b). Each `.bats` file in this directory is a TAP-compliant test file that wraps the matching legacy `scripts/test-<name>.sh` script.
+Bats is the focused behavior and fixture test suite. Tests run directly from
+this directory; removed `scripts/test-*.sh` wrappers are not a second execution
+path.
 
 ## Layout
 
-| `.bats` file | Legacy script wrapped | Concern |
+| Example | Concern |
 |---|---|---|
-| `prompt-helpers.bats` | n/a | Shared review context and bounded JSON helpers |
-| `postmerge-retro-batch.bats` | n/a | Daily retro evidence and lifecycle behavior |
-| `weekly-classifier.bats` | n/a | Weekly review classifier behavior |
-| `verify-env.bats` | `test-verify-env.sh` | `verify-env.sh` environment checks |
-| `verify-pr.bats` | `test-verify-pr.sh` | `verify-pr.sh` Change-class classifier (ADR-016) |
+| `generated-governance-surfaces.bats` | Canonical-source generation and stale-output detection |
+| `orchestration.bats` | Multi-model consensus provider and Fusion behavior |
+| `postmerge-retro-batch.bats` | Daily retro evidence and lifecycle behavior |
+| `verify-env.bats` | Environment checks |
+| `verify-pr.bats` | Change-class classifier fixtures (ADR-016) |
+| `weekly-classifier.bats` | Weekly review classifier behavior |
+
+Files may contain multiple focused `@test` cases or one inlined historical
+harness while it is split incrementally. They must not invoke a removed external
+test wrapper.
 
 ## Running
 
@@ -41,20 +48,11 @@ brew install bats-core parallel
 CI installs them via `apt-get install -y bats parallel ripgrep` in `.github/workflows/ci-tests.yml`.
 Run this suite separately from `./test.sh`; neither command invokes the other.
 
-## Migration approach (Phase 4b scope)
-
-This phase establishes the **infrastructure**: bats is installed in CI, the directory exists, and every legacy `test-<name>.sh` is reachable via a named `@test` case. Each `.bats` file currently contains **one** `@test` per concern that delegates to the legacy script.
-
-Finer-grained per-test splitting (e.g., `test-verify-env.sh` contains multiple fixture cases that should each become their own `@test`) is **out of scope for Phase 4b**. It's tracked as follow-up because:
-
-1. The legacy scripts are already passing in CI; converting them in-place gives us bats parallelism + TAP output now without re-implementing already-working logic.
-2. The split-per-fixture work is best done concern-by-concern in dedicated PRs where reviewers can verify parity with the legacy assertions side-by-side.
-
-The legacy `scripts/test-<name>.sh` files **stay in place** for this phase — both forms run in CI, which is the parity-check the issue plan calls for. Phase 4d removes the legacy scripts after a green soak.
-
 ## Conventions
 
-- One `@test` per concern in this phase. Future PRs may split into multiple `@test` cases.
-- `@test` names use the legacy script's filename minus the `test-` prefix and `.sh` suffix.
+- Name tests for observable behavior rather than an implementation phase.
+- Keep fixtures local, deterministic, and independent of network access.
+- Add the failing fixture before changing the behavior it protects.
 - Per-test timeout is set at **file-load time** via top-level `export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-300}"` (5 min). Setting `BATS_TEST_TIMEOUT` inside `setup()` is a no-op — bats reads it in the parent process before forking the subprocess. Override per-run with `BATS_TEST_TIMEOUT=600 bats scripts/tests/`.
-- No bats helper libraries (bats-assert, bats-support) are required yet — wrapping mode doesn't need them. Add when finer-grained `@test` cases land.
+- No bats helper libraries are required. Add one only when repeated assertion
+  code justifies the dependency.

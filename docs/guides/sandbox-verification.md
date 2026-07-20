@@ -1,12 +1,10 @@
 # Sandbox Verification Playbook
 
-> **Audience**: Maintainers and agents shipping a change that touches a
-> **default-branch-only workflow** (any `.github/workflows/*.yml` whose
-> triggers include `pull_request_review`, `pull_request_review_comment`,
-> `pull_request_target`, `issue_comment`, `push`, `schedule`, or
-> `workflow_run`). See the
-> [Workflow verifiability matrix](agent-pipeline.md#workflow-verifiability-matrix)
-> for the canonical trigger list. ADR-016 is the durable rationale.
+> **Audience**: Maintainers and agents shipping a change that
+> [`scripts/verify-pr.sh`](../../scripts/verify-pr.sh) classifies as a
+> **default-branch-only workflow**. This includes dispatch-only workflows.
+> See [Workflow verifiability classes](agent-pipeline.md#workflow-verifiability-classes)
+> for the verification outcomes. ADR-016 is the durable rationale.
 
 ## Why this exists
 

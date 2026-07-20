@@ -131,18 +131,20 @@ the user outcome. CI and lint remain the blocking pre-merge controls.
 Branch owners remain responsible for updating their branches and resolving
 overlap; the template does not force-push automated rebases.
 
-## Workflow verifiability matrix
+## Workflow verifiability classes
 
-| Trigger or surface | Verification |
+`scripts/verify-pr.sh` is the canonical classifier and owns the trigger rules.
+Its fixtures in `scripts/tests/verify-pr.bats` define supported YAML shapes.
+
+| Detected class | Verification |
 |---|---|
-| Code/docs only | PR branch tests |
-| `pull_request` workflow | PR branch plus event run |
-| `schedule`, `workflow_dispatch`, `push`, `workflow_run` | Sandbox default branch |
-| `pull_request_target`, reviews, issue comments | Sandbox trigger event |
-| Mixed changes | Both PR branch and sandbox |
+| Code or documentation only | PR branch tests |
+| Workflow includes `pull_request` and no default-only trigger | PR branch plus event run |
+| Every other workflow, including dispatch-only | Sandbox default branch and relevant trigger event |
+| Mixed paths | PR branch plus the most restrictive workflow target |
 
-Use `scripts/verify-pr.sh` to classify the diff and
-`docs/guides/sandbox-verification.md` for default-branch-only exercise.
+Use `docs/guides/sandbox-verification.md` when the classifier reports
+`default-branch-only workflow` or a mixed diff with that verification floor.
 
 ## Labels
 

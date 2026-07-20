@@ -94,10 +94,10 @@ list by more than ~30%, post a revised plan before pushing. -->
 
 <!-- Pick the most-restrictive class your diff touches. The classifier in
      `scripts/verify-pr.sh` will compare your declaration against the
-     actual changed paths and flag mismatches. The full trigger-event
-     matrix lives in `docs/guides/agent-pipeline.md` § "Workflow
-     verifiability matrix" — use it when you're unsure which bucket
-     applies. Default-branch-only changes MUST be verified in the
+     actual changed paths and flag mismatches. It is the canonical trigger
+     classifier; `docs/guides/agent-pipeline.md` explains the resulting
+     verification classes without duplicating its trigger rules.
+     Default-branch-only changes MUST be verified in the
      sandbox sibling repo before merging here (see ADR-016 and
      `docs/guides/sandbox-verification.md`). -->
 
