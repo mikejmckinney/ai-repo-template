@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 35 -->
+<!-- AGENTS_MD_VERSION: 36 -->
 
 ## Truth hierarchy
 
@@ -385,6 +385,7 @@ Authors and reviewers may cite these patterns to make design tradeoffs explicit.
 Detailed history and examples remain in
 `docs/guides/repo-orchestration-patterns-reference.md`.
 
+<!-- generated:pap-catalog:begin -->
 ### Patterns in use
 
 - **P1 Strategy (role specialization - deprecated):** role files provide focused strategies
@@ -395,17 +396,17 @@ Detailed history and examples remain in
   is optional, not the routine default.
 - **P3 Mediator (coordination):** a coordinator or explicit live-state surface
   resolves cross-agent dependencies instead of peer-to-peer hidden state.
-- **P4 Adapter (multi-registry - deprecated):** canonical role behavior is wrapped by thin
-  platform-specific overlays, with parity checks preventing drift.
-- **P5 Template Method (skeletal artifacts):** plans, PRs, ADRs, and roles (deprecated)
-  registrations use stable skeletons while allowing task-specific content.
+- **P4 Adapter:** provider-specific runners wrap canonical advisory and retro
+  contracts. The former multi-registry role adapters are deprecated.
+- **P5 Template Method (skeletal artifacts):** plans, PRs, ADRs, and review
+  artifacts use stable skeletons while allowing task-specific content.
 - **P6 Facade (tool-specific entry points):** `AGENT.md`, `AI_REPO_GUIDE.md`, and
   tool instructions remain thin entry points to canonical contracts.
 - **P7 Owner-Keyed Concurrent State:** concurrent state is partitioned by branch,
   issue, PR, role, or another explicit owner so independent writes can merge.
 - **P8 Canonical Manifest with Generated Surfaces:** frequently repeated values
-  or structures have one canonical source and generated or parity-checked
-  consumers when that automation costs less than manual synchronization.
+  or structures have one canonical source and deterministic native consumers
+  with freshness checks when tools cannot follow a direct pointer.
 - **P9 Multi-Model Plan Consensus:** high-risk or ambiguous work may compare up
   to three isolated candidate plans and synthesize one reviewable plan. It is an
   explicit opt-in technique, not default fan-out.
@@ -421,8 +422,8 @@ Detailed history and examples remain in
   focused pass. Remediate by separating stable policy from task-specific detail,
   but do not split always-needed policy into mandatory rereads.
 - **AP2 Mirror Duplication:** identical substantive content is manually copied
-  across files. Keep one canonical body and use thin adapters, generation, or a
-  parity check where multiple consumer formats are unavoidable.
+  across files. Keep one canonical body and use pointers, symlinks, thin
+  adapters, or deterministic generation where native formats are unavoidable.
 - **AP3 Implicit Contract:** correctness depends on an ordering, precondition, or
   convention that exists only in contributor memory. Encode it in the closest
   contract, type, test, or workflow predicate.
@@ -458,3 +459,4 @@ Detailed history and examples remain in
   account for reversibility and affected scope, compare mitigations by expected
   benefit and cost, and state the evidence and uncertainty behind the
   classification.
+<!-- generated:pap-catalog:end -->

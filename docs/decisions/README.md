@@ -33,7 +33,7 @@
 | [ADR-017](./adr-017-template-repo-pre-commit-default.md) | Template repo installs pre-commit shellcheck + actionlint by default | Deprecated |
 | [ADR-018](./adr-018-multi-task-active-md-schema.md) | Multi-task schema for `.context/state/_active.md` (refines ADR-009) | Accepted (superseded in part by ADR-025) |
 | [ADR-019](./adr-019-per-role-model-tiering.md) | Per-role model tiering across Claude Code and Copilot (Phase 2 of #220; supersedes ADR-003's `model: inherit` choice) | Superseded by ADR-031 |
-| [ADR-020](./adr-020-orchestration-patterns-reference.md) | Advisory orchestration patterns and anti-patterns vocabulary | Accepted (standalone blocking gates retired by ADR-026 amendment) |
+| [ADR-020](./adr-020-orchestration-patterns-reference.md) | Advisory orchestration patterns and anti-patterns vocabulary | Accepted (superseded in part by ADR-032) |
 | [ADR-021](./adr-021-agents-md-decomposition.md) | Historical decomposition of AGENTS.md into per-concern rule files | Accepted (decomposition retired by ADR-026 amendment) |
 | [ADR-022](./adr-022-top-level-md-scope-split.md) | Top-level markdown scope split (README / AI_REPO_GUIDE / AGENTS) — also extends ADR-002 | Accepted |
 | [ADR-023](./adr-023-shared-subagent-canonical.md) | Canonical role bodies in `.agents/<role>.md`; vendor folders carry thin overlays (supersedes ADR-003 in part) | Superseded by ADR-031 |
@@ -44,6 +44,7 @@
 | [ADR-029](./adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence requirement on every PR + canary placeholder convention; narrows ADR-021 §"Per-file cadence bump" scope | Accepted |
 | [ADR-030](./adr-030-non-blocking-review-pipeline.md) | Non-blocking LLM review pipeline (advisory → finalize → daily retro → weekly repo review) | Accepted (finalize stage retired by ADR-031) |
 | [ADR-031](./adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI benchmark and execution lifecycle policy | Accepted |
+| [ADR-032](./adr-032-canonical-governance-sources.md) | Canonical governance sources and layered enforcement | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.

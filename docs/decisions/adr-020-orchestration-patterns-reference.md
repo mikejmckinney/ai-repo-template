@@ -11,7 +11,7 @@ ADR's decision, not a separate code change.
 
 ## Status
 
-Accepted
+Accepted (superseded in part by ADR-032)
 
 ## Date
 

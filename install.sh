@@ -235,6 +235,7 @@ MULTIAGENT_FILES=(
   "scripts/diagnose-opencode-session.sh"
   "scripts/format.sh"
   "scripts/check-markdown-links.py"
+  "scripts/generate-pap-catalog.py"
   "scripts/codespace-post-start.sh"
   "scripts/lib/ensure-gh-pat-auth.sh"
   "scripts/lib/sandbox-remote.sh"
