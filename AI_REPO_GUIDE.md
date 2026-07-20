@@ -129,9 +129,12 @@ preserved for diagnosis, and replaced through the normal fallback chain.
 Fusion stores raw panels and the judge result under ignored
 `.artifacts/multi-model-consensus/<title>/` by default. Resume an interrupted
 round with explicit `--panel-session SLOT:ENGINE:SESSION_ID` and
-`--judge-session ENGINE:SESSION_ID` arguments; never rediscover those sessions
-from recency after child sessions exist. The result reports accepted and
-requested session provenance plus every output path.
+`--judge-session ENGINE:SESSION_ID` arguments. Add `--reuse-completed` with the
+same output directory to adopt validated panel files whose session sidecars
+match, rather than invoking those panels again. Never rediscover sessions from
+recency after child sessions exist. The runner atomically persists accepted
+panels and `result.json`, including accepted/requested session provenance,
+checksums, and output paths.
 
 ## Canonical Generated Sources
 

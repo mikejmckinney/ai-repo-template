@@ -11,6 +11,7 @@ TITLE="multi-model-fusion-$(date +%Y%m%d-%H%M%S)"
 OUTPUT_DIR=
 PANEL_SESSION_SPECS=()
 JUDGE_SESSION_SPEC=
+REUSE_COMPLETED=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -43,6 +44,10 @@ while [[ $# -gt 0 ]]; do
       require_value "$1" "${2:-}"
       JUDGE_SESSION_SPEC="$2"
       shift 2
+      ;;
+    --reuse-completed)
+      REUSE_COMPLETED=true
+      shift
       ;;
     *) fail "unknown argument: $1" ;;
   esac
@@ -88,6 +93,7 @@ if [[ -z "$OUTPUT_DIR" ]]; then
 fi
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR="$(cd "$OUTPUT_DIR" && pwd)"
+RUN_ATTEMPT="$(date +%s)-$$"
 
 RUNTIME_PROMPT="$OUTPUT_DIR/panel-prompt.md"
 append_session_context "$PROMPT_FILE" "$INVOKING_SESSION" "$RUNTIME_PROMPT"
@@ -124,27 +130,44 @@ invoke_panel_session() {
 
 primary_engines=(kimi fable grok)
 fallback_engines=(sol glm mm mi ds)
-pids=()
+panel_pids=("" "" "")
 panel_engines=(kimi fable grok)
 panel_statuses=(success success success)
 panel_rejected_engines=("" "" "")
 panel_rejection_reasons=("" "" "")
 panel_sessions=("" "" "")
 panel_continued=(false false false)
+panel_reused=(false false false)
 panel_files=(
   "$OUTPUT_DIR/panel-1.md"
   "$OUTPUT_DIR/panel-2.md"
   "$OUTPUT_DIR/panel-3.md"
 )
+panel_attempt_files=(
+  "$OUTPUT_DIR/.panel-1.${RUN_ATTEMPT}.md"
+  "$OUTPUT_DIR/.panel-2.${RUN_ATTEMPT}.md"
+  "$OUTPUT_DIR/.panel-3.${RUN_ATTEMPT}.md"
+)
+
+promote_panel() {
+  local index="$1" source="$2" destination="${panel_files[$1]}"
+  mv "$source" "$destination"
+  mv "${source%.md}.session" "${destination%.md}.session"
+}
 
 preserve_rejected_panel() {
-  local index="$1" engine="$2" reason="$3"
-  local source="${panel_files[$index]}"
-  local rejected="$OUTPUT_DIR/panel-$((index + 1)).rejected-${engine}.md"
+  local index="$1" engine="$2" reason="$3" source="$4"
+  local rejected="$OUTPUT_DIR/panel-$((index + 1)).rejected-${engine}.${RUN_ATTEMPT}.md"
   if [[ -e "$source" ]]; then
     mv "$source" "$rejected"
   else
     : >"$rejected"
+  fi
+  if [[ -e "${source%.md}.session" ]]; then
+    mv "${source%.md}.session" "${rejected%.md}.session"
+  fi
+  if [[ -e "${source}.json" ]]; then
+    mv "${source}.json" "${rejected}.json"
   fi
   printf '%s\n' "$reason" >"${rejected%.md}.validation.err"
   if [[ -n "${panel_rejected_engines[$index]}" ]]; then
@@ -156,25 +179,41 @@ preserve_rejected_panel() {
   fi
 }
 
+PANELS_SUCCEEDED=0
 for index in "${!primary_engines[@]}"; do
+  if [[ "$REUSE_COMPLETED" == true \
+    && -n "${panel_resume_sessions[$index]}" \
+    && -s "${panel_files[$index]}" \
+    && -s "${panel_files[$index]%.md}.session" \
+    && "$(<"${panel_files[$index]%.md}.session")" == "${panel_resume_sessions[$index]}" ]] \
+    && validate_panel_output "${panel_files[$index]}"; then
+    panel_engines[index]="${panel_resume_engines[$index]}"
+    panel_statuses[index]=reused
+    panel_sessions[index]="${panel_resume_sessions[$index]}"
+    panel_reused[index]=true
+    PANELS_SUCCEEDED=$((PANELS_SUCCEEDED + 1))
+    continue
+  fi
   if [[ -n "${panel_resume_sessions[$index]}" ]]; then
     engine="${panel_resume_engines[$index]}"
     panel_engines[index]="$engine"
     invoke_panel_session "$engine" "${panel_resume_sessions[$index]}" \
-      "$RUNTIME_PROMPT" "${panel_files[$index]}" &
+      "$RUNTIME_PROMPT" "${panel_attempt_files[$index]}" &
   else
     engine="${primary_engines[$index]}"
     invoke_panel_engine "$engine" "${TITLE}-panel-$((index + 1))" \
-      "$RUNTIME_PROMPT" "${panel_files[$index]}" &
+      "$RUNTIME_PROMPT" "${panel_attempt_files[$index]}" &
   fi
-  pids+=("$!")
+  panel_pids[index]="$!"
 done
 
-PANELS_SUCCEEDED=0
 fallback_cursor=0
-for index in "${!pids[@]}"; do
-  if wait "${pids[$index]}"; then
-    if validate_panel_output "${panel_files[$index]}"; then
+for index in "${!primary_engines[@]}"; do
+  [[ "${panel_reused[$index]}" == false ]] || continue
+  attempt_file="${panel_attempt_files[$index]}"
+  if wait "${panel_pids[$index]}"; then
+    if validate_panel_output "$attempt_file"; then
+      promote_panel "$index" "$attempt_file"
       panel_sessions[index]="$(<"${panel_files[$index]%.md}.session")"
       if [[ -n "${panel_resume_sessions[$index]}" ]]; then
         panel_statuses[index]=resumed
@@ -183,9 +222,9 @@ for index in "${!pids[@]}"; do
       PANELS_SUCCEEDED=$((PANELS_SUCCEEDED + 1))
       continue
     fi
-    preserve_rejected_panel "$index" "${panel_engines[$index]}" "$PANEL_REJECTION_REASON"
-  elif [[ -e "${panel_files[$index]}" ]]; then
-    preserve_rejected_panel "$index" "${panel_engines[$index]}" invocation_failed
+    preserve_rejected_panel "$index" "${panel_engines[$index]}" "$PANEL_REJECTION_REASON" "$attempt_file"
+  elif [[ -e "$attempt_file" ]]; then
+    preserve_rejected_panel "$index" "${panel_engines[$index]}" invocation_failed "$attempt_file"
   fi
 
   panel_statuses[index]=failed
@@ -193,9 +232,11 @@ for index in "${!pids[@]}"; do
     fallback_engine="${fallback_engines[$fallback_cursor]}"
     fallback_cursor=$((fallback_cursor + 1))
     [[ "$fallback_engine" != "${panel_engines[$index]}" ]] || continue
+    attempt_file="$OUTPUT_DIR/.panel-$((index + 1)).${RUN_ATTEMPT}-${fallback_engine}.md"
     if invoke_panel_engine "$fallback_engine" "${TITLE}-panel-$((index + 1))" \
-      "$RUNTIME_PROMPT" "${panel_files[$index]}"; then
-      if validate_panel_output "${panel_files[$index]}"; then
+      "$RUNTIME_PROMPT" "$attempt_file"; then
+      if validate_panel_output "$attempt_file"; then
+        promote_panel "$index" "$attempt_file"
         panel_engines[index]="$fallback_engine"
         panel_statuses[index]=fallback
         panel_sessions[index]="$(<"${panel_files[$index]%.md}.session")"
@@ -203,14 +244,64 @@ for index in "${!pids[@]}"; do
         PANELS_SUCCEEDED=$((PANELS_SUCCEEDED + 1))
         break
       fi
-      preserve_rejected_panel "$index" "$fallback_engine" "$PANEL_REJECTION_REASON"
-    elif [[ -e "${panel_files[$index]}" ]]; then
-      preserve_rejected_panel "$index" "$fallback_engine" invocation_failed
+      preserve_rejected_panel "$index" "$fallback_engine" "$PANEL_REJECTION_REASON" "$attempt_file"
+    elif [[ -e "$attempt_file" ]]; then
+      preserve_rejected_panel "$index" "$fallback_engine" invocation_failed "$attempt_file"
     fi
   done
 done
 [[ "$PANELS_SUCCEEDED" -ge 2 ]] \
   || fail "fewer than two panels succeeded; inspect $OUTPUT_DIR"
+
+build_panels_json() {
+  local index checksum
+  panel_records=()
+  for index in "${!panel_engines[@]}"; do
+    checksum=
+    if [[ -s "${panel_files[$index]}" ]]; then
+      checksum=$(sha256sum "${panel_files[$index]}" | cut -d' ' -f1)
+    fi
+    panel_records+=("$(jq -n \
+      --arg slot "${primary_engines[$index]}" \
+      --arg engine "${panel_engines[$index]}" \
+      --arg status "${panel_statuses[$index]}" \
+      --arg session_id "${panel_sessions[$index]}" \
+      --arg requested_session_id "${panel_resume_sessions[$index]}" \
+      --arg output_file "${panel_files[$index]}" \
+      --arg sha256 "$checksum" \
+      --argjson continued "${panel_continued[$index]}" \
+      --argjson reused "${panel_reused[$index]}" \
+      --arg rejected_engines "${panel_rejected_engines[$index]}" \
+      --arg rejection_reasons "${panel_rejection_reasons[$index]}" \
+      '{slot: $slot, engine: $engine, status: $status,
+        session_id: $session_id, output_file: $output_file, sha256: $sha256,
+        continued: $continued, reused: $reused}
+        + (if $requested_session_id == "" then {} else
+            {requested_session_id: $requested_session_id} end)
+        + (if $rejected_engines == "" then {} else {
+            rejected_engines: ($rejected_engines | split(",")),
+            rejection_reasons: ($rejection_reasons | split(","))
+          } end)')")
+  done
+  PANELS_JSON=$(printf '%s\n' "${panel_records[@]}" | jq -s .)
+}
+
+persist_result() {
+  local content="$1" temp="$OUTPUT_DIR/.result.${RUN_ATTEMPT}.json"
+  printf '%s\n' "$content" >"$temp"
+  mv "$temp" "$OUTPUT_DIR/result.json"
+}
+
+build_panels_json
+PARTIAL_RESULT=$(jq -n \
+  --arg status panels_complete \
+  --arg mode fusion \
+  --arg output_dir "$OUTPUT_DIR" \
+  --argjson panels_succeeded "$PANELS_SUCCEEDED" \
+  --argjson panels "$PANELS_JSON" \
+  '{status: $status, mode: $mode, output_dir: $output_dir,
+    panels_succeeded: $panels_succeeded, panels: $panels}')
+persist_result "$PARTIAL_RESULT"
 
 JUDGE_PROMPT="$OUTPUT_DIR/judge-prompt.md"
 cat "$SKILL_ROOT/prompts/judge.md" >"$JUDGE_PROMPT"
@@ -223,42 +314,21 @@ for index in "${!panel_files[@]}"; do
 done
 
 ANSWER_FILE="$OUTPUT_DIR/answer.md"
+ANSWER_ATTEMPT="$OUTPUT_DIR/.answer.${RUN_ATTEMPT}.md"
 JUDGE_CONTINUED=false
 if [[ -n "$JUDGE_RESUME_SESSION" ]]; then
   FAILED_ENGINES=()
   invoke_engine_session "$JUDGE_RESUME_ENGINE" "$JUDGE_RESUME_SESSION" \
-    "$JUDGE_PROMPT" "$ANSWER_FILE" \
+    "$JUDGE_PROMPT" "$ANSWER_ATTEMPT" \
     || fail "explicit judge session failed; inspect $OUTPUT_DIR"
   SELECTED_ENGINE="$JUDGE_RESUME_ENGINE"
   SELECTED_SESSION="$JUDGE_RESUME_SESSION"
   JUDGE_CONTINUED=true
 else
-  invoke_with_fallback "${TITLE}-judge" "$JUDGE_PROMPT" "$ANSWER_FILE" \
+  invoke_with_fallback "${TITLE}-judge" "$JUDGE_PROMPT" "$ANSWER_ATTEMPT" \
     || fail "all judge engines failed; inspect $OUTPUT_DIR"
 fi
-
-panel_records=()
-for index in "${!panel_engines[@]}"; do
-  panel_records+=("$(jq -n \
-    --arg slot "${primary_engines[$index]}" \
-    --arg engine "${panel_engines[$index]}" \
-    --arg status "${panel_statuses[$index]}" \
-    --arg session_id "${panel_sessions[$index]}" \
-    --arg requested_session_id "${panel_resume_sessions[$index]}" \
-    --arg output_file "${panel_files[$index]}" \
-    --argjson continued "${panel_continued[$index]}" \
-    --arg rejected_engines "${panel_rejected_engines[$index]}" \
-    --arg rejection_reasons "${panel_rejection_reasons[$index]}" \
-    '{slot: $slot, engine: $engine, status: $status,
-      session_id: $session_id, output_file: $output_file, continued: $continued}
-      + (if $requested_session_id == "" then {} else
-          {requested_session_id: $requested_session_id} end)
-      + (if $rejected_engines == "" then {} else {
-          rejected_engines: ($rejected_engines | split(",")),
-          rejection_reasons: ($rejection_reasons | split(","))
-        } end)')")
-done
-PANELS_JSON=$(printf '%s\n' "${panel_records[@]}" | jq -s .)
+mv "$ANSWER_ATTEMPT" "$ANSWER_FILE"
 
 JUDGE_OVERLAP=false
 for engine in "${panel_engines[@]}"; do
@@ -268,10 +338,12 @@ for engine in "${panel_engines[@]}"; do
   fi
 done
 
-emit_result fusion "$ANSWER_FILE" "$PANELS_SUCCEEDED" \
+RESULT_JSON=$(emit_result fusion "$ANSWER_FILE" "$PANELS_SUCCEEDED" \
   | jq --argjson panels "$PANELS_JSON" \
     --argjson judge_overlap "$JUDGE_OVERLAP" \
     --argjson judge_continued "$JUDGE_CONTINUED" \
     --arg output_dir "$OUTPUT_DIR" \
     '. + {panels: $panels, judge_overlap: $judge_overlap,
-      judge_continued: $judge_continued, output_dir: $output_dir}'
+      judge_continued: $judge_continued, output_dir: $output_dir}')
+persist_result "$RESULT_JSON"
+printf '%s\n' "$RESULT_JSON"

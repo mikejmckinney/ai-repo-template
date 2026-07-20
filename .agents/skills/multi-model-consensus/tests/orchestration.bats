@@ -52,6 +52,7 @@ if [[ "$model" == "openai/gpt-5.6-sol" ]]; then
   if $panel; then printf '%s\n' "$marker"; fi
 elif [[ "$model" == "openrouter/moonshotai/kimi-k3@preset/consensus" ]]; then
   [[ "$MOCK_KIMI_MODE" != fail ]] || exit 12
+  sleep "${MOCK_KIMI_DELAY:-0}"
   case "$MOCK_KIMI_MODE" in
     preamble) printf 'I will inspect the evidence before answering.\n' ;;
     marker-only) printf '%s\n' "$marker" ;;
@@ -92,6 +93,7 @@ if [[ "$1" == "--list-models" ]]; then
 fi
 prompt=$(cat)
 printf 'prompt-bytes=%s\n' "${#prompt}" >>"$MOCK_LOG"
+sleep "${MOCK_GROK_DELAY:-0}"
 [[ "$MOCK_GROK_MODE" == success ]] || exit 11
 result='Grok answer'
 [[ "$prompt" != *'<!-- multi-model-panel-complete:v1 -->'* ]] || result="$result
@@ -104,6 +106,7 @@ EOF
 #!/usr/bin/env bash
 printf 'claude %s\n' "$*" >>"$MOCK_LOG"
 prompt=$(cat)
+sleep "${MOCK_FABLE_DELAY:-0}"
 if [[ "${MOCK_FABLE_MODE:-success}" == fail ]]; then exit 8; fi
 if [[ "${MOCK_FABLE_MODE:-success}" == api-error ]]; then
   jq -cn '{is_error:true,result:"spend limit",session_id:"ses_fable"}'
@@ -192,6 +195,8 @@ teardown() {
   [ "$(jq -r '[.panels[].session_id | length > 0] | all' <<<"$output")" = true ]
   [ "$(jq -r '[.panels[].output_file | length > 0] | all' <<<"$output")" = true ]
   [ "$(jq -r '.judge_continued' <<<"$output")" = false ]
+  [ "$(jq -r '[.panels[].reused] | any' <<<"$output")" = false ]
+  cmp -s <(jq -S . <<<"$output") <(jq -S . "$TEST_ROOT/fusion/result.json")
   grep -q -- '--model openrouter/moonshotai/kimi-k3' "$MOCK_LOG"
   grep -q -- 'agent -p --trust' "$MOCK_LOG"
   run ! grep -q '## Panel SOL\|## Panel FABLE\|## Panel GLM' "$TEST_ROOT/fusion/judge-prompt.md"
@@ -222,7 +227,8 @@ teardown() {
   [ "$status" -eq 0 ]
   [ "$(jq -r '.panels[1].engine' <<<"$output")" = sol ]
   [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
-  grep -q 'spend limit' "$TEST_ROOT/fusion/panel-2.rejected-fable.md"
+  rejected=("$TEST_ROOT"/fusion/panel-2.rejected-fable.*.md)
+  grep -q 'spend limit' "${rejected[0]}"
 }
 
 @test "fusion rejects a zero-exit preamble and backfills the panel" {
@@ -238,7 +244,8 @@ teardown() {
   [ "$(jq -r '.panels[0].status' <<<"$output")" = fallback ]
   [ "$(jq -r '.panels[0].rejected_engines[0]' <<<"$output")" = kimi ]
   [ "$(jq -r '.panels[0].rejection_reasons[0]' <<<"$output")" = missing_completion_marker ]
-  [ -s "$TEST_ROOT/fusion/panel-1.rejected-kimi.md" ]
+  rejected=("$TEST_ROOT"/fusion/panel-1.rejected-kimi.*.md)
+  [ -s "${rejected[0]}" ]
   run grep -q 'I will inspect the evidence' "$TEST_ROOT/fusion/judge-prompt.md"
   [ "$status" -ne 0 ]
 }
@@ -277,7 +284,8 @@ teardown() {
   [ "$status" -eq 0 ]
   [ "$(jq -r '.panels[0].rejection_reasons[0]' <<<"$output")" = invocation_failed ]
   [ "$(jq -r '.panels[0].engine' <<<"$output")" = sol ]
-  grep -q 'Kimi answer' "$TEST_ROOT/fusion/panel-1.rejected-kimi.md"
+  rejected=("$TEST_ROOT"/fusion/panel-1.rejected-kimi.*.md)
+  grep -q 'Kimi answer' "${rejected[0]}"
 }
 
 @test "fusion advances from Sol to GLM without reuse" {
@@ -367,6 +375,35 @@ teardown() {
   [ "$status" -eq 0 ]
   [ "$(jq -r '.output_dir' <<<"$output")" = "$TEST_ROOT/artifacts/multi-model-fusion-test" ]
   [ -s "$TEST_ROOT/artifacts/multi-model-fusion-test/answer.md" ]
+  [ -s "$TEST_ROOT/artifacts/multi-model-fusion-test/result.json" ]
+}
+
+@test "fusion reuses a completed panel after interruption" {
+  run env MOCK_FABLE_DELAY=3 MOCK_GROK_DELAY=3 timeout 1 \
+    "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title multi-model-fusion-test \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -eq 124 ]
+  [ -s "$TEST_ROOT/fusion/panel-1.md" ]
+  [ "$(<"$TEST_ROOT/fusion/panel-1.session")" = ses_kimi ]
+
+  : >"$MOCK_LOG"
+  run "$SKILL_ROOT/scripts/run-fusion.sh" \
+    --prompt-file "$TEST_ROOT/prompt.md" \
+    --invoking-session ses_parent \
+    --title multi-model-fusion-test \
+    --reuse-completed \
+    --panel-session 1:kimi:ses_kimi \
+    --output-dir "$TEST_ROOT/fusion"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.panels[0].status' <<<"$output")" = reused ]
+  [ "$(jq -r '.panels[0].reused' <<<"$output")" = true ]
+  run grep -q -- '--session ses_kimi' "$MOCK_LOG"
+  [ "$status" -ne 0 ]
 }
 
 @test "environment validation confirms configured Kimi, Sol, and Grok models" {
