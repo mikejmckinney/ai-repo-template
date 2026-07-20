@@ -105,13 +105,13 @@ share one reason to change; it does not justify a universal governance manifest.
 
 - [x] Make the patterns guide canonical and generate the bounded `AGENTS.md`
   catalog.
-- [ ] Make the executable workflow classifier authoritative over prose.
-- [ ] Generate native issue-plan skeletons from one slim fragment.
-- [ ] Generate runtime profiles from a shared security source plus overlays.
-- [ ] Generate development MCP host forms from a neutral inventory plus
+- [x] Make the executable workflow classifier authoritative over prose.
+- [x] Generate native issue-plan skeletons from one slim fragment.
+- [x] Generate runtime profiles from a shared security source plus overlays.
+- [x] Generate development MCP host forms from a neutral inventory plus
   explicit overrides.
-- [ ] Add resumable Fusion output and provenance contracts.
-- [ ] Triage synchronization assertions in checks 046, 049, 052, 053, and 126.
+- [x] Add resumable Fusion output and provenance contracts.
+- [x] Triage synchronization assertions in checks 046, 049, 052, 053, and 126.
 
 ## Verification
 
