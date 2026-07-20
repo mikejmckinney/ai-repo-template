@@ -16,14 +16,16 @@ for script in scripts/*.sh; do
   fi
 done
 
-# Skill instructions invoke these files directly, so a missing Git executable
-# bit breaks the documented entrypoint before the script can report an error.
-while IFS= read -r script; do
-  if [[ -x "$script" ]]; then
-    pass "$script is executable"
-  else
-    fail "$script is not executable"
-  fi
-done < <(find .agents/skills -type f -path '*/scripts/*.sh' -print | sort)
+# Repository-owned skill instructions invoke their scripts directly. External
+# package modes must instead remain identical to the deterministic lock hash.
+while IFS= read -r destination; do
+  while IFS= read -r script; do
+    if [[ -x "$script" ]]; then
+      pass "$script is executable"
+    else
+      fail "$script is not executable"
+    fi
+  done < <(find "$destination" -type f -path '*/scripts/*.sh' -print | sort)
+done < <(jq -r '.ownedSkills[].destinationPath' skills-lock.json)
 
 echo ""

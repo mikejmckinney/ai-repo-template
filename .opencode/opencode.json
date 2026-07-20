@@ -34,7 +34,8 @@
         "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
       ],
       "enabled": true,
-      "env": {
+      "timeout": 60000,
+      "environment": {
         "NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"
       }
     },
@@ -70,6 +71,38 @@
         "Authorization": "Bearer {env:RAILWAY_API_KEY}"
       }
     },
+    "aws": {
+      "type": "local",
+      "command": [
+        "bash",
+        "-lc",
+        "exec uvx mcp-proxy-for-aws@1.6.3 \"https://aws-mcp.${AWS_REGION:-us-east-1}.api.aws/mcp\" --profile \"${AWS_PROFILE:-default}\" --region \"${AWS_REGION:-us-east-1}\""
+      ],
+      "enabled": true
+    },
+    "azure": {
+      "type": "local",
+      "command": ["npx", "-y", "@azure/mcp@2.0.5", "server", "start"],
+      "enabled": true
+    },
+    "oci": {
+      "type": "local",
+      "command": ["uvx", "--python", "3.13", "oracle.oci-cloud-mcp-server@2.1.0"],
+      "enabled": false,
+      "env": {
+        "OCI_CONFIG_PROFILE": "{env:OCI_CONFIG_PROFILE}",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    },
+    "render": {
+      "type": "remote",
+      "url": "https://mcp.render.com/mcp",
+      "enabled": true,
+      "oauth": false,
+      "headers": {
+        "Authorization": "Bearer {env:RENDER_API_KEY}"
+      }
+    },
     "open-design": {
       "type": "local",
       "command": ["bash", "scripts/open-design-mcp.sh"],
@@ -96,7 +129,7 @@
   "provider": {
     "openrouter": {
       "models": {
-        "moonshotai/kimi-k3@preset/default": {},
+        "moonshotai/kimi-k3@preset/consensus": {},
         "deepseek/deepseek-v4-pro@preset/default": {},
         "minimax/minimax-m3@preset/default": {},
         "z-ai/glm-5.2@preset/default": {},

@@ -15,13 +15,10 @@
       }
     },
     "netlify": {
-      "command": "bash",
-      "args": [
-        "-lc",
-        "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
-      ],
-      "env": {
-        "NETLIFY_API_KEY": "${NETLIFY_API_KEY}"
+      "type": "http",
+      "url": "https://netlify-mcp.netlify.app/mcp",
+      "headers": {
+        "Authorization": "Bearer ${NETLIFY_API_KEY}"
       }
     },
     "vercel": {
@@ -47,6 +44,36 @@
       "url": "https://mcp.railway.com",
       "headers": {
         "Authorization": "Bearer ${RAILWAY_API_KEY}"
+      }
+    },
+    "aws": {
+      "command": "bash",
+      "args": [
+        "-lc",
+        "exec uvx mcp-proxy-for-aws@1.6.3 \"https://aws-mcp.${AWS_REGION:-us-east-1}.api.aws/mcp\" --profile \"${AWS_PROFILE:-default}\" --region \"${AWS_REGION:-us-east-1}\""
+      ]
+    },
+    "azure": {
+      "command": "npx",
+      "args": ["-y", "@azure/mcp@2.0.5", "server", "start"]
+    },
+    "oci": {
+      "command": "bash",
+      "args": [
+        "-lc",
+        "[[ \"${OCI_MCP_ENABLED:-false}\" == \"true\" ]] || { echo \"OCI MCP is disabled; set OCI_MCP_ENABLED=true to opt in\" >&2; exit 1; }; exec uvx --python 3.13 oracle.oci-cloud-mcp-server@2.1.0"
+      ],
+      "disabled": true,
+      "env": {
+        "OCI_CONFIG_PROFILE": "${OCI_CONFIG_PROFILE}",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      }
+    },
+    "render": {
+      "type": "http",
+      "url": "https://mcp.render.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${RENDER_API_KEY}"
       }
     },
     "open-design": {

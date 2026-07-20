@@ -1,0 +1,159 @@
+name: Refresh external skills
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+    inputs:
+      source:
+        description: "Optional owner/repository source to refresh"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  discover-sources:
+    runs-on: ubuntu-latest
+    outputs:
+      sources: ${{ steps.sources.outputs.sources }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Select locked sources
+        id: sources
+        env:
+          REQUESTED_SOURCE: ${{ inputs.source || '' }}
+        run: |
+          sources="$(jq -ce --arg requested "$REQUESTED_SOURCE" '
+            ([.skills[].source] | unique) as $sources
+            | if $requested == "" then $sources
+              elif ($sources | index($requested)) != null then [$requested]
+              else error("requested source is not declared in skills-lock.json")
+              end
+          ' skills-lock.json)"
+          echo "sources=$sources" >>"$GITHUB_OUTPUT"
+
+  refresh-source:
+    needs: discover-sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        source: ${{ fromJSON(needs.discover-sources.outputs.sources) }}
+    concurrency:
+      group: skill-refresh-${{ matrix.source }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check source head
+        id: check
+        env:
+          SOURCE: ${{ matrix.source }}
+          RESULT_PATH: ${{ runner.temp }}/skill-refresh-check.json
+        run: |
+          python3 scripts/skill-supply-chain.py check \
+            --repo "$PWD" \
+            --lock skills-lock.json \
+            --source "$SOURCE" | tee "$RESULT_PATH"
+          echo "changed=$(jq -r '.changed' "$RESULT_PATH")" >>"$GITHUB_OUTPUT"
+          echo "target_ref=$(jq -r '.newRef' "$RESULT_PATH")" >>"$GITHUB_OUTPUT"
+
+      - name: Update source packages
+        if: steps.check.outputs.changed == 'true'
+        env:
+          SOURCE: ${{ matrix.source }}
+          TARGET_REF: ${{ steps.check.outputs.target_ref }}
+          RESULT_PATH: ${{ runner.temp }}/skill-refresh-update.json
+        run: |
+          python3 scripts/skill-supply-chain.py update \
+            --repo "$PWD" \
+            --lock skills-lock.json \
+            --source "$SOURCE" \
+            --ref "$TARGET_REF" | tee "$RESULT_PATH"
+
+      - name: Scan refreshed packages for secrets
+        if: steps.check.outputs.changed == 'true'
+        env:
+          RESULT_PATH: ${{ runner.temp }}/skill-refresh-update.json
+        run: |
+          mapfile -t package_paths < <(
+            jq -r --slurpfile result "$RESULT_PATH" '
+              . as $lock
+              | $result[0].packages[]
+              | select($lock.skills[.] != null)
+              | $lock.skills[.].destinationPath
+            ' skills-lock.json
+          )
+          if ((${#package_paths[@]})); then
+            python3 scripts/scan-skill-secrets.py "${package_paths[@]}"
+          fi
+
+      - name: Run repository validation
+        if: steps.check.outputs.changed == 'true'
+        env:
+          VALIDATION_PATH: ${{ runner.temp }}/skill-refresh-validation.log
+        run: |
+          {
+            python3 scripts/skill-supply-chain.py validate-lock \
+              --repo "$PWD" \
+              --lock skills-lock.json
+            bats scripts/tests/skill-supply-chain.bats scripts/tests/skill-refresh-workflow.bats
+            ./test.sh
+          } | tee "$VALIDATION_PATH"
+
+      - name: Render pull request body
+        if: steps.check.outputs.changed == 'true'
+        env:
+          SOURCE: ${{ matrix.source }}
+          RESULT_PATH: ${{ runner.temp }}/skill-refresh-update.json
+          BODY_PATH: ${{ runner.temp }}/skill-refresh-pr.md
+        run: |
+          old_ref="$(jq -r '.oldRef' "$RESULT_PATH")"
+          new_ref="$(jq -r '.newRef' "$RESULT_PATH")"
+          {
+            printf '## External skill refresh\n\n'
+            printf -- '- Source: [%s](https://github.com/%s)\n' "$SOURCE" "$SOURCE"
+            printf -- '- Previous ref: [`%s`](https://github.com/%s/commit/%s)\n' "$old_ref" "$SOURCE" "$old_ref"
+            printf -- '- Proposed ref: [`%s`](https://github.com/%s/commit/%s)\n\n' "$new_ref" "$SOURCE" "$new_ref"
+            printf '### Changed packages\n\n'
+            jq -r '.packages[] | "- `\(.)`"' "$RESULT_PATH"
+            printf '\n### Deterministic hashes\n\n```json\n'
+            jq '.hashes' "$RESULT_PATH"
+            printf '```\n\n### Validation\n\n'
+            printf -- '- Deterministic lock validation passed.\n'
+            printf -- '- Refreshed-package secret scan passed.\n'
+            printf -- '- Supply-chain Bats tests and repository checks passed.\n\n'
+            printf '> Third-party review required: inspect the upstream diff and all vendored changes before merge. This workflow never auto-merges.\n'
+          } >"$BODY_PATH"
+
+      - name: Create or update review pull request
+        if: steps.check.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1
+        with:
+          token: ${{ github.token }}
+          base: main
+          branch: automation/skill-refresh/${{ matrix.source }}
+          delete-branch: false
+          add-paths: |
+            .agents/skills
+            skills-lock.json
+          commit-message: "chore: refresh ${{ matrix.source }} skills"
+          title: "chore: refresh ${{ matrix.source }} skills"
+          body-path: ${{ runner.temp }}/skill-refresh-pr.md
+          labels: |
+            automated
+            dependencies
+          draft: always

@@ -17,8 +17,8 @@ if ! opencode models openai | grep -qx 'openai/gpt-5.6-sol'; then
   exit 1
 fi
 
-if ! opencode models openrouter | grep -qx 'openrouter/moonshotai/kimi-k3@preset/default'; then
-  printf 'OpenRouter provider does not expose openrouter/moonshotai/kimi-k3@preset/default\n' >&2
+if ! opencode models openrouter | grep -qx 'openrouter/moonshotai/kimi-k3@preset/consensus'; then
+  printf 'OpenRouter provider does not expose openrouter/moonshotai/kimi-k3@preset/consensus\n' >&2
   exit 1
 fi
 
@@ -27,4 +27,4 @@ if ! agent --list-models | grep -q '^cursor-grok-4.5-medium - '; then
   exit 1
 fi
 
-jq -n '{status: "success", kimi_model: "openrouter/moonshotai/kimi-k3@preset/default", sol_model: "openai/gpt-5.6-sol", grok_model: "cursor-grok-4.5-medium"}'
+jq -n '{status: "success", kimi_model: "openrouter/moonshotai/kimi-k3@preset/consensus", sol_model: "openai/gpt-5.6-sol", grok_model: "cursor-grok-4.5-medium"}'

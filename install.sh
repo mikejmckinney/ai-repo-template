@@ -195,6 +195,7 @@ MULTIAGENT_FILES=(
   ".github/schemas/postmerge-retro-monolithic.schema.json"
   ".github/schemas/weekly-review.schema.json"
   ".agents/skills"
+  ".cursor"
   ".mcp.json"
   ".opencode/opencode.json"
   "skills-lock.json"

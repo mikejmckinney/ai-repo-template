@@ -24,6 +24,7 @@ bats --jobs 4 scripts/tests/
 bash scripts/lint-shell-conventions.sh scripts/
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
+python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock skills-lock.json
 scripts/diagnose-opencode-session.sh
 scripts/archive-opencode-database.sh
 git diff --check
@@ -69,6 +70,9 @@ end-to-end budget.
 | `.github/workflows/agent-weekly-review.yml` | Scheduled weekly scan and draft-fix lifecycle |
 | `.github/agent-runtime/` | Locked OpenCode dependencies and review/fix permission profiles |
 | `.agents/skills/` | Canonical skills, including multi-model consensus and nested provider skill sets |
+| `skills-lock.json` | Immutable provenance, destinations, and hashes for external and repository-owned skills |
+| `docs/guides/skill-supply-chain.md` | Skill lock, refresh, review, recovery, source onboarding, and license inventory |
+| `docs/guides/cloud-provider-tooling.md` | AWS, Azure, GCP, OCI, Render, and Colyseus setup and smoke tests |
 | `scripts/workflows/advisory-review/` | Advisory provider adapters and comment upsert |
 | `scripts/workflows/postmerge-retro/` | Daily evidence, analysis, umbrella, and fix adapters |
 | `scripts/workflows/weekly-review/` | Weekly scan, umbrella, and fix adapters |
@@ -84,11 +88,13 @@ All 28 official Phaser 4 skills are pinned in `skills-lock.json` and grouped at
 GitHub Copilot discover this recursive layout. Gemini CLI and `npx skills list`
 only scan direct skill children, so they do not expose nested skills. Vercel,
 Netlify, Supabase, and Cloudflare skills are likewise grouped under provider
-parents; singleton providers and repository-owned skills remain direct children.
+parents; AWS, Azure, OCI, and Render use the same provider-parent layout.
+Singleton providers and repository-owned skills remain direct children.
 Use `npx skills add . --list --full-depth` to inspect the nested source tree. Do
 not use `npx skills experimental_install` to restore its layout: the lock format
-records upstream `skillPath` but installs destinations as flat
-`.agents/skills/<name>` directories.
+records upstream `skillPath` and explicit nested destinations. External package
+trees with more than one skill declare sorted `skillEntrypoints` so validation
+can discover nested skills without overlapping refresh records.
 
 ## Review Lifecycle
 
@@ -160,11 +166,24 @@ Supabase is account-wide by default. Add `?project_ref=<id>` to its MCP URL when
 one-project scope is preferred; project scope also disables account-management
 tools. Cloudflare docs does not require account access.
 Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
-Netlify uses pinned `mcp-remote` as a compatibility adapter because OpenCode's
-native HTTP transport drops the hosted server's connection. The shell expands
-`NETLIFY_API_KEY` into the adapter's authorization header, so the token is
-visible briefly in the child process arguments but is not persisted as OAuth
-state or committed.
+Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
+remote transport closes the hosted stream unexpectedly. The local MCP timeout is
+60 seconds so concurrent cold `npx`/`uvx` package resolution, OAuth discovery, and
+proxy startup have enough headroom. Keep bridge logs silent because verbose
+diagnostics expand the authorization header. Cursor reads the direct-HTTP root
+configuration through `.cursor/mcp.json`, a tracked symlink; Windows Git
+checkouts require symlink support.
+
+AWS uses `AWS_PROFILE` and `AWS_REGION` through pinned `mcp-proxy-for-aws`;
+Azure uses Azure CLI / `DefaultAzureCredential`; OCI uses
+`OCI_CONFIG_PROFILE` and remains disabled by default; Render uses the broadly
+scoped `RENDER_API_KEY`. GCP and Colyseus have repository-owned skills but no
+configured MCPs. Follow `docs/guides/cloud-provider-tooling.md` for
+least-privilege setup, opt-in boundaries, and non-destructive smoke tests.
+The 19 AWS core skills come from the current Agent Toolkit for AWS successor
+repository. All 26 Azure package trees are vendored; supported Azure plugin
+installs also include the skills plus Azure and Foundry MCP configuration, but
+host plugins do not replace the repository's immutable cross-agent lock.
 
 ## Documentation Synchronization
 

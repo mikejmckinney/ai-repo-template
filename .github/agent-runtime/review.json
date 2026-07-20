@@ -50,6 +50,24 @@
     "railway": {
       "enabled": false
     },
+    "aws": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "azure": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "oci": {
+      "type": "local",
+      "command": ["false"],
+      "enabled": false
+    },
+    "render": {
+      "enabled": false
+    },
     "open-design": {
       "type": "local",
       "command": ["false"],
