@@ -175,6 +175,9 @@ affected issues are the durable result surface. Execution completed on
 - Draft PRs 444, 468, and 470 received changed-file/diff review comments and
   closed without merge. PR 444's surviving token-URL requirement was preserved
   in issue 443; the other branches contained no unique current scope.
+- Draft PR 435 closed unmerged by explicit maintainer disposition after its
+  linked issue 434 closed obsolete; its attempted work targeted the same retired
+  handshake/compliance surfaces.
 - The 13 issues expected to remain from this snapshot are open. Automation
   created issue 498 after capture, so the live repository has 14 open issues;
   issue 498 is outside this audit boundary.
@@ -237,6 +240,8 @@ The audit strengthens the approved AP2 plan and changes its issue relationships:
 - Draft PRs #444, #468, and #470 were reviewed during execution. Their broad,
   conflict-heavy branches target retired or superseded surfaces and were closed
   without merge after surviving scope was preserved.
+- Draft PR #435 closed with its obsolete linked issue by maintainer disposition;
+  that closure did not depend on a new diff review.
 - No runtime test suite or sandbox workflow was executed because audit
   execution changed GitHub metadata and research documentation, not application
   or workflow behavior. Markdown and repository-diff checks cover the tracked
