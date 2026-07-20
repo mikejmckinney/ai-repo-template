@@ -1,6 +1,6 @@
 # Open Issue Audit: 2026-07-20
 
-Status: Read-only disposition plan
+Status: Executed disposition record
 
 Baseline: `main` at `bf500dd2f61aba82194f91619ad9a47c5793df3d`
 
@@ -9,8 +9,9 @@ Related planning issue: [#357](https://github.com/mikejmckinney/ai-repo-template
 Planning PR: [#497](https://github.com/mikejmckinney/ai-repo-template/pull/497)
 
 This audit reviews every issue open at the capture time, including generated
-weekly/retro umbrellas, tracking parents, and child issues. It recommends issue
-dispositions but does not authorize or perform issue mutations.
+weekly/retro umbrellas, tracking parents, and child issues. The maintainer
+approved execution on 2026-07-20; the issue and stale-PR dispositions are
+recorded below.
 
 ## Method
 
@@ -156,7 +157,30 @@ weekly review issues.
 | `CLOSE_DUPLICATE` | 1 |
 | **Total** | **55** |
 
-If approved for execution, 42 issues close and 13 remain active.
+The approved execution target was 42 closures and 13 active snapshot issues.
+
+## Execution Results
+
+The maintainer approved execution without a separate tracking issue because the
+affected issues are the durable result surface. Execution completed on
+2026-07-20:
+
+- 12 issues were rebaselined with current titles, bodies, acceptance criteria,
+  user-outcome tests, and disposition comments.
+- Issue 496 was retained and cross-linked to issue 357 for overlapping stale
+  guidance.
+- 36 issues closed as not planned or obsolete.
+- Five issues closed completed.
+- Issue 442 closed as a duplicate of rebaselined issue 443.
+- Draft PRs 444, 468, and 470 received changed-file/diff review comments and
+  closed without merge. PR 444's surviving token-URL requirement was preserved
+  in issue 443; the other branches contained no unique current scope.
+- The 13 issues expected to remain from this snapshot are open. Automation
+  created issue 498 after capture, so the live repository has 14 open issues;
+  issue 498 is outside this audit boundary.
+
+Every affected issue received a comment linking this audit before its state
+changed. Rebaselined issues retain GitHub edit history and existing discussion.
 
 ## Dependency And Carry-Forward Map
 
@@ -210,13 +234,17 @@ The audit strengthens the approved AP2 plan and changes its issue relationships:
   requires that external validation.
 - Every historical finding in generated umbrellas was not replayed. Closure
   decisions use current source evidence plus documented architectural retirement.
-- Draft PRs #444, #468, and #470 were not fully diff-reviewed.
-- No local test suite or sandbox workflow was executed because this was a
-  read-only issue audit rather than an implementation.
+- Draft PRs #444, #468, and #470 were reviewed during execution. Their broad,
+  conflict-heavy branches target retired or superseded surfaces and were closed
+  without merge after surviving scope was preserved.
+- No runtime test suite or sandbox workflow was executed because audit
+  execution changed GitHub metadata and research documentation, not application
+  or workflow behavior. Markdown and repository-diff checks cover the tracked
+  artifacts.
 
 ## Overall Assessment
 
-The backlog can be reduced from 55 to 13 active issues, but not through blind
-bulk closure. Preserve and prioritize the verified findings in #443 and #496,
-then rebaseline the other current defects and issue 357 before performing the
-bottom-up closure pass.
+The audited backlog was reduced from 55 to 13 active snapshot issues through a
+bottom-up closure pass. Verified findings remain in #443 and #496, and every
+other retained issue now has a current implementation contract. Issue 498 was
+created after capture and remains outside this record.
