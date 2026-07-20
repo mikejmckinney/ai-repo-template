@@ -9,4 +9,16 @@ else
   fail "generated P/AP catalog is stale"
 fi
 
+if python3 scripts/generate-issue-plans.py --repo . --check; then
+  pass "generated issue-plan blocks are current"
+else
+  fail "generated issue-plan blocks are stale"
+fi
+
+if python3 scripts/validate-active-labels.py --repo .; then
+  pass "active structured label references are declared"
+else
+  fail "active structured label references include undeclared labels"
+fi
+
 echo ""
