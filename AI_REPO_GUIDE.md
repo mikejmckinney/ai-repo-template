@@ -193,7 +193,9 @@ Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
 remote transport closes the hosted stream unexpectedly. The local MCP timeout is
 60 seconds so concurrent cold `npx`/`uvx` package resolution, OAuth discovery, and
 proxy startup have enough headroom. Keep bridge logs silent because verbose
-diagnostics expand the authorization header. Cursor reads the direct-HTTP root
+diagnostics expand the authorization header. Pass its environment placeholder
+directly to `mcp-remote`; shell expansion would expose the token in process
+arguments. Cursor reads the direct-HTTP root
 configuration through `.cursor/mcp.json`, a tracked symlink; Windows Git
 checkouts require symlink support.
 

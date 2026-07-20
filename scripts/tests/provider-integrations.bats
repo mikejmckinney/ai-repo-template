@@ -18,8 +18,10 @@ setup() {
     .mcp.netlify == {
       type: "local",
       command: [
-        "bash", "-lc",
-        "exec npx -y mcp-remote@0.1.38 https://netlify-mcp.netlify.app/mcp --header \"Authorization:Bearer $NETLIFY_API_KEY\" --transport http-only --silent"
+        "npx", "-y", "mcp-remote@0.1.38",
+        "https://netlify-mcp.netlify.app/mcp",
+        "--header", "Authorization:Bearer ${NETLIFY_API_KEY}",
+        "--transport", "http-only", "--silent"
       ],
       enabled: true,
       timeout: 60000,
