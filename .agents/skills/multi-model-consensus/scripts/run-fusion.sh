@@ -181,11 +181,11 @@ preserve_rejected_panel() {
 
 PANELS_SUCCEEDED=0
 for index in "${!primary_engines[@]}"; do
-  if [[ "$REUSE_COMPLETED" == true \
-    && -n "${panel_resume_sessions[$index]}" \
-    && -s "${panel_files[$index]}" \
-    && -s "${panel_files[$index]%.md}.session" \
-    && "$(<"${panel_files[$index]%.md}.session")" == "${panel_resume_sessions[$index]}" ]] \
+  if [[ "$REUSE_COMPLETED" == true &&
+    -n "${panel_resume_sessions[$index]}" &&
+    -s "${panel_files[$index]}" &&
+    -s "${panel_files[$index]%.md}.session" &&
+    "$(<"${panel_files[$index]%.md}.session")" == "${panel_resume_sessions[$index]}" ]] \
     && validate_panel_output "${panel_files[$index]}"; then
     panel_engines[index]="${panel_resume_engines[$index]}"
     panel_statuses[index]=reused
