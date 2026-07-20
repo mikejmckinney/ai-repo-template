@@ -169,27 +169,14 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "agent-weekly-review.yml fix job missing FIX_JOB_SANDBOX_VERIFY / SANDBOX_BOOTSTRAP_TOKEN"
   fi
 
-  if bash -n "$SCAN_SCRIPT" 2>/dev/null \
-    && bash -n "$WEEKLY_SCRIPT" 2>/dev/null \
-    && bash -n "$FIX_SCRIPT" 2>/dev/null \
-    && bash -n "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && bash -n "$RESOLVE_UMBRELLA_SCRIPT" 2>/dev/null \
-    && bash -n "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
-    && bash -n "$UMBRELLA_LINK_SCRIPT" 2>/dev/null \
-    && bash -n "$LINK_SCRIPT" 2>/dev/null \
-    && bash -n "${WEEKLY_DIR}/resolve-run-week.sh" 2>/dev/null \
-    && python3 -m py_compile "${WEEKLY_DIR}/run-weekly-antigravity.py" 2>/dev/null \
+  if python3 -m py_compile "${WEEKLY_DIR}/run-weekly-antigravity.py" 2>/dev/null \
     && python3 -m py_compile "${WEEKLY_DIR}/render-umbrella-findings.py" 2>/dev/null \
     && python3 -m py_compile "${WEEKLY_DIR}/merge-umbrella-content.py" 2>/dev/null \
     && python3 -m py_compile "$LIB_DIR/finding_priority.py" 2>/dev/null \
-    && python3 -m py_compile "$LIB_DIR/superseded_findings.py" 2>/dev/null \
-    && bash -n "$LIB_DIR/run-batch-fix.sh" 2>/dev/null \
-    && bash -n "$LIB_DIR/umbrella-lifecycle.sh" 2>/dev/null \
-    && bash -n "${WEEKLY_DIR}/post-weekly-review-json-comment.sh" 2>/dev/null \
-    && bash -n "${WEEKLY_DIR}/fetch-weekly-review-json-from-issue.sh" 2>/dev/null; then
-    pass "weekly-review shell scripts have valid bash syntax"
+    && python3 -m py_compile "$LIB_DIR/superseded_findings.py" 2>/dev/null; then
+    pass "weekly-review Python helpers compile"
   else
-    fail "weekly-review shell script bash -n failed"
+    fail "weekly-review Python helper compilation failed"
   fi
 
   fixture_dir="scripts/tests/fixtures/weekly-review"

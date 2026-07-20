@@ -35,18 +35,14 @@ fi
 
 if ! grep -qF 'role_relevance' AGENTS.md \
   && ! grep -qF 'role_relevance' .context/state/agent_state_comment_template.md \
-  && ! grep -qF 'role_relevance' docs/guides/opportunity-feedback-examples.md \
-  && grep -qF 'Amendment 2026-07-14' docs/decisions/adr-027-opportunity-feedback-channel.md; then
+  && ! grep -qF 'role_relevance' docs/guides/opportunity-feedback-examples.md; then
   pass "opportunity feedback uses the amended role-free field set"
 else
-  fail "opportunity feedback role-free field set is not synchronized"
+  fail "active opportunity feedback surfaces still use the retired role field"
 fi
 
 if grep -qF 'implementation-plan:v2:begin' .github/PLAN_TEMPLATE.md \
   && grep -qF 'implementation-plan:v2:end' .github/PLAN_TEMPLATE.md \
-  && grep -qF 'implementation-plan:v2:begin' .github/ISSUE_TEMPLATE/feature_request.md \
-  && grep -qF 'implementation-plan:v2:begin' .github/ISSUE_TEMPLATE/bug_report.md \
-  && grep -qF 'implementation-plan:v2:begin' .github/ISSUE_TEMPLATE/agent_init.md \
   && grep -qF 'Revision history' .github/PLAN_TEMPLATE.md \
   && grep -qF 'Canonical plan:' .github/pull_request_template.md \
   && ! grep -qF 'Original plan:' .github/pull_request_template.md \

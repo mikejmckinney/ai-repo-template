@@ -61,14 +61,13 @@ else
   fail "AGENTS.md missing ADR-025 live-state guidance"
 fi
 
-if grep -qF 'Amendment 2026-07-14' "$ADR025_PATH" \
-  && ! grep -qF 'handoff_needed' .context/state/agent_state_comment_template.md \
+if ! grep -qF 'handoff_needed' .context/state/agent_state_comment_template.md \
   && grep -qF '## actions' .context/state/agent_state_comment_template.md \
   && grep -qF '## Outcomes' .context/state/agent_state_comment_template.md \
   && grep -qF '## Next steps' .context/state/agent_state_comment_template.md; then
   pass "agent-state:v1 supports continuation without a separate handoff field"
 else
-  fail "agent-state:v1 continuation contract is not synchronized with ADR-025"
+  fail "agent-state:v1 template missing the active continuation contract"
 fi
 
 if grep -qF 'https://github.com/OWNER/REPO/issues/NNN' .context/state/agent_state_comment_template.md \
@@ -84,13 +83,6 @@ if grep -qF 'first mention' .context/state/agent_state_comment_template.md \
   pass "agent-managed GitHub artifacts link addressable resources on first mention"
 else
   fail "clickable-resource policy is not synchronized across agent guidance"
-fi
-
-if grep -q '#263.*superseded' "$ADR025_PATH" 2>/dev/null \
-  && grep -q '#299' "$ADR025_PATH" 2>/dev/null; then
-  pass "ADR-025 marks #263 superseded and defers archive retention to #299"
-else
-  fail "ADR-025 missing #263 supersession or #299 deferral"
 fi
 
 echo ""

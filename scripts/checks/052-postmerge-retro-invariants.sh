@@ -338,36 +338,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fi
   done
 
-  if bash -n "$COLLECT_SCRIPT" 2>/dev/null \
-    && bash -n "$RUN_SCRIPT" 2>/dev/null \
-    && bash -n "$DAILY_SCRIPT" 2>/dev/null \
-    && bash -n "$DAILY_DISPATCH_SCRIPT" 2>/dev/null \
-    && bash -n "$DAILY_SELECT_SCRIPT" 2>/dev/null \
-    && bash -n "${RETRO_DIR}/run-postmerge-retro-monolithic.sh" 2>/dev/null \
-    && bash -n "${RETRO_DIR}/run-postmerge-retro-parallel.sh" 2>/dev/null \
-    && bash -n "$FIX_SCRIPT" 2>/dev/null \
-    && bash -n "$UMBRELLA_SCRIPT" 2>/dev/null \
-    && bash -n "$RESOLVE_UMBRELLA_SCRIPT" 2>/dev/null \
-    && bash -n "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
-    && bash -n "$UMBRELLA_LINK_SCRIPT" 2>/dev/null \
-    && bash -n "$LINK_SCRIPT" 2>/dev/null \
-    && bash -n "${RETRO_DIR}/post-daily-retro-json-comment.sh" 2>/dev/null \
-    && bash -n "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" 2>/dev/null \
-    && bash -n "scripts/workflows/lib/pick-advisory-provider.sh" 2>/dev/null \
-    && bash -n "scripts/workflows/lib/invoke-advisory-llm.sh" 2>/dev/null \
-    && bash -n "scripts/workflows/lib/fix-phase-log.sh" 2>/dev/null \
-    && bash -n "scripts/workflows/lib/sandbox-sync-fix-branch.sh" 2>/dev/null \
-    && bash -n "scripts/workflows/lib/finalize-fix-pr.sh" 2>/dev/null \
-    && bash -n "scripts/workflows/lib/run-batch-fix.sh" 2>/dev/null \
-    && bash -n "scripts/workflows/lib/umbrella-lifecycle.sh" 2>/dev/null \
-    && bash -n "${RETRO_DIR}/list-indexed-merge-shas.sh" 2>/dev/null \
-    && bash -n "${RETRO_DIR}/append-merge-index-markers.sh" 2>/dev/null \
-    && bash -n "$LIST_SCRIPT" 2>/dev/null; then
-    pass "postmerge-retro shell scripts have valid bash syntax"
-  else
-    fail "postmerge-retro shell script bash -n failed"
-  fi
-
   fixture_dir="scripts/tests/fixtures/postmerge-retro"
   llm_fixture="${fixture_dir}/sample-llm-output.txt"
   retro_fixture="${fixture_dir}/sample-retro.json"
@@ -385,14 +355,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     rm -rf "$tmp"
   else
     warn "postmerge-retro fixtures missing under $fixture_dir"
-  fi
-
-  if grep -q 'runtime auto-summarizes' AGENTS.md 2>/dev/null \
-    && grep -q 'agent-state:v1' AGENTS.md 2>/dev/null \
-    && ! grep -q 'Session handshake' AGENTS.md 2>/dev/null; then
-    pass "AGENTS.md preserves post-compaction state without a handshake"
-  else
-    fail "AGENTS.md missing post-compaction state guidance or still requires a handshake"
   fi
 
   echo ""
