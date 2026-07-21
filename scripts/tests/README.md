@@ -9,6 +9,7 @@ path.
 | Example | Concern |
 |---|---|---|
 | `generated-governance-surfaces.bats` | Canonical-source generation and stale-output detection |
+| `codespace-cache-cleanup.bats` | Dry-run and bounded Codespaces cache cleanup behavior |
 | `codespace-tools.bats` | Codespaces tool manifest and idempotent installer behavior |
 | `orchestration.bats` | Multi-model consensus provider and Fusion behavior |
 | `postmerge-retro-batch.bats` | Daily retro evidence and lifecycle behavior |

@@ -22,6 +22,7 @@ ADR-031 defines the active execution model:
 ./test.sh
 bats --jobs 4 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
+scripts/cleanup-codespace-caches.sh
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
 python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock skills-lock.json
@@ -35,6 +36,10 @@ The default `core` profile installs repository quality tools plus runtime
 prerequisites for enabled local MCPs. Use `bash install.sh --profile agents` to
 also install or verify OpenCode, Claude Code, Cursor Agent, and Codex; each agent
 still requires its own authentication flow.
+Run `scripts/cleanup-codespace-caches.sh` to preview reproducible package and
+build caches when Codespace storage is low. Pass `--apply` explicitly to clean
+them. Active uv runtimes are skipped; agent databases, history, credentials,
+installed tools, and editor extensions are outside the cleanup scope.
 Use `scripts/format.sh --write <files...>` for deterministic local shfmt and
 markdownlint fixes. CI remains read-only and never commits formatting changes.
 Run `scripts/diagnose-opencode-session.sh` instead of bare `opencode` when

@@ -13,6 +13,7 @@
 | `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile core` |
 | `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
 | `check-markdown-links.py` | Validate repository-local Markdown targets | `python3 scripts/check-markdown-links.py <files...>` |
+| `cleanup-codespace-caches.sh` | Report or clean reproducible Codespaces caches | `./scripts/cleanup-codespace-caches.sh [--apply]` |
 | `diagnose-opencode-session.sh` | Record OpenCode process exit and signal evidence | `./scripts/diagnose-opencode-session.sh` |
 
 ## Usage Guidelines
@@ -42,6 +43,18 @@ The optional agent CLI profile includes the core profile:
 ```bash
 ./scripts/install-codespace-tools.sh --profile agents
 ```
+
+Preview package and build caches when a Codespace approaches its storage limit:
+
+```bash
+./scripts/cleanup-codespace-caches.sh
+```
+
+The preview does not modify files. Use `--apply` to clean npm content and npx,
+Bun, uv, pip, and Go caches. Cleanup skips uv while a uv process is active and
+never removes agent databases, history, credentials, installed tools, or editor
+extensions. The next package or tool invocation may require network access and
+take longer while its cache is rebuilt.
 
 ## Creating New Scripts
 
