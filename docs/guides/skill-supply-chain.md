@@ -83,9 +83,12 @@ deletion in the resulting diff.
 dispatch. A manual run can set `source` to one declared `owner/repository` value;
 an empty value checks every external source.
 
-Each source has its own concurrency group and stable branch:
-`automation/skill-refresh/<owner>/<repository>`. A no-change result stops before
-any write. A changed result:
+The workflow creates one branch and draft PR per upstream source repository,
+not per skill and not for the entire matrix. Each source has its own concurrency
+group and stable branch: `automation/skill-refresh/<owner>/<repository>`. All
+skills from that source update atomically on the same branch, while unrelated
+vendors remain independently reviewable. A no-change result stops before any
+write. A changed result:
 
 1. updates only that source's packages and lock records;
 2. scans refreshed package paths for credential signatures;
@@ -96,6 +99,17 @@ any write. A changed result:
 The workflow has `contents: write` and `pull-requests: write` because it must push
 the source branch and maintain the draft PR. It has no auto-merge path. The
 downloaded packages are treated as data and are never run by the workflow.
+
+Repository controls:
+
+- Required setting: **Allow GitHub Actions to create and approve pull requests**.
+- Merge gate: required code-owner approval on `main` through `CODEOWNERS`.
+
+The setting lets the job-scoped `GITHUB_TOKEN` open the draft. GitHub combines
+creation and review submission under that setting; it does not offer a
+create-only switch. The separate merge gate prevents the creating workflow from
+satisfying maintainer review. Keep refresh PRs draft and never apply
+`auto-merge`.
 
 ### Human review checklist
 

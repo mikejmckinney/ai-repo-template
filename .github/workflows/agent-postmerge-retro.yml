@@ -87,6 +87,7 @@ jobs:
       POSTMERGE_RETRO_PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || '' }}
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
       POSTMERGE_RETRO_DIFF_LIMIT: ${{ vars.POSTMERGE_RETRO_DIFF_LIMIT || '' }}
+      POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS: ${{ vars.POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS || '900' }}
       POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR: ${{ github.event.inputs.monolithic_diff_per_pr || vars.POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR || '' }}
       POSTMERGE_RETRO_CONTEXT_PROFILE: ${{ github.event.inputs.context_profile || vars.POSTMERGE_RETRO_CONTEXT_PROFILE || 'full' }}
       POSTMERGE_RETRO_ONLY_PRS: ${{ github.event.inputs.only_prs || vars.POSTMERGE_RETRO_ONLY_PRS || '' }}

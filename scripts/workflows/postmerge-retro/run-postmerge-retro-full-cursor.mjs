@@ -94,3 +94,4 @@ if (!text.trim()) {
 }
 
 writeFileSync(outFile, text, "utf8");
+process.exit(0);

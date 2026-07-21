@@ -52,6 +52,10 @@ OpenCode workflow calls use `OPENCODE_TIMEOUT_MS` for both the Node HTTP
 transport and the outer abort, defaulting to `900000` (15 minutes). Set a larger
 positive millisecond value only when a review legitimately needs a longer
 end-to-end budget.
+Postmerge Cursor attempts use `POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS`,
+defaulting to `900` seconds. A timeout terminates the stuck Cursor process and
+returns failure to the existing provider cascade instead of consuming the
+90-minute workflow budget.
 
 ## Repository Layout
 
@@ -186,6 +190,11 @@ declare the minimum job permissions and use `github.token` for repository API
 writes. Automated merges intentionally do not trigger duplicate `push` CI/lint
 runs; the strict main ruleset requires both checks against the current base
 before merge.
+Actions-created draft PRs require the repository setting **Allow GitHub Actions
+to create and approve pull requests**. Because GitHub exposes no create-only
+variant, `.github/CODEOWNERS` and the `main` ruleset require maintainer
+code-owner approval before merge. Skill-refresh and review-fix publication stay
+draft and do not opt into auto-merge.
 
 Inside Codespaces, the injected `GITHUB_TOKEN` may not access the sibling sandbox.
 Use command-local `GH_TOKEN="$GH_PAT"` with `GITHUB_TOKEN` unset when the configured

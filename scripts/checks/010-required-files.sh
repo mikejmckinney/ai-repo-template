@@ -20,6 +20,7 @@ REQUIRED_FILES=(
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"
   ".github/prompts/shared-review-lenses.md"
+  ".github/CODEOWNERS"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
   ".github/ISSUE_TEMPLATE/bug_report.md"

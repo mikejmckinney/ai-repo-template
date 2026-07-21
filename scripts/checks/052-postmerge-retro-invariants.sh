@@ -41,6 +41,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
   OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
   MONOLITHIC_SCHEMA=".github/schemas/postmerge-retro-monolithic.schema.json"
+  PROVIDER_TIMEOUT_SCRIPT="scripts/workflows/lib/postmerge-provider-timeout.sh"
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
     "$DAILY_SCRIPT" "$DAILY_DISPATCH_SCRIPT" "$DAILY_SELECT_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
@@ -49,7 +50,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
     "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA" \
     "$BOUNDED_SCRIPT" "$FULL_CURSOR_SCRIPT" "$ANTIGRAVITY_RETRO_SCRIPT" "$ASSEMBLE_PROMPT_SCRIPT" \
-    "$OPENCODE_RUNNER" "$OPENCODE_FIX_RUNNER" "$MONOLITHIC_SCHEMA"; do
+    "$OPENCODE_RUNNER" "$OPENCODE_FIX_RUNNER" "$MONOLITHIC_SCHEMA" "$PROVIDER_TIMEOUT_SCRIPT"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -161,6 +162,15 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "adaptive evidence routing wired (#461)"
   else
     fail "postmerge retro missing adaptive evidence routing (#461)"
+  fi
+
+  if grep -q 'POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'run_postmerge_provider_with_timeout.*cursor bounded' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'run_postmerge_provider_with_timeout.*cursor full-evidence' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'process.exit(0)' "$FULL_CURSOR_SCRIPT" 2>/dev/null; then
+    pass "Cursor retro attempts have bounded timeout and explicit successful exit"
+  else
+    fail "Cursor retro attempts must time out into fallback and exit after output"
   fi
 
   if grep -q 'POSTMERGE_RETRO_PARALLEL_MAX:-6' "$PARALLEL_SCRIPT" 2>/dev/null \
@@ -304,7 +314,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   for lib in pick-advisory-provider.sh invoke-advisory-llm.sh run-opencode.mjs run-opencode-fix.sh fix-phase-log.sh \
     sandbox-sync-fix-branch.sh finalize-fix-pr.sh render-fix-pr-sections.py \
-    run-batch-fix.sh umbrella-lifecycle.sh finding_priority.py superseded_findings.py; do
+    run-batch-fix.sh umbrella-lifecycle.sh finding_priority.py superseded_findings.py \
+    postmerge-provider-timeout.sh; do
     if [[ -f "scripts/workflows/lib/$lib" ]]; then
       pass "workflow lib $lib exists"
     else

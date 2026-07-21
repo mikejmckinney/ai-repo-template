@@ -506,6 +506,40 @@ NODE
   [ "$status" -eq 0 ]
 }
 
+@test "postmerge provider timeout terminates a stuck command" {
+  source scripts/workflows/lib/postmerge-provider-timeout.sh
+
+  run --separate-stderr run_postmerge_provider_with_timeout \
+    1 cursor full-evidence bash -c 'sleep 10'
+
+  [ "$status" -eq 124 ]
+  [[ "$stderr" == *"cursor full-evidence timed out after 1s"* ]]
+}
+
+@test "postmerge routes both Cursor paths through the provider timeout" {
+  run python3 - <<'PY'
+from pathlib import Path
+
+script = Path("scripts/workflows/postmerge-retro/run-postmerge-retro.sh").read_text(encoding="utf-8")
+assert 'run_postmerge_provider_with_timeout "$provider_timeout_seconds" cursor bounded' in script
+assert 'run_postmerge_provider_with_timeout "$provider_timeout_seconds" cursor full-evidence' in script
+assert 'POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS' in script
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "Cursor full-evidence runner exits after writing output" {
+  run python3 - <<'PY'
+from pathlib import Path
+
+script = Path("scripts/workflows/postmerge-retro/run-postmerge-retro-full-cursor.mjs").read_text(encoding="utf-8")
+write_index = script.index("writeFileSync(outFile, text, \"utf8\");")
+exit_index = script.index("process.exit(0);", write_index)
+assert exit_index > write_index
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "parse-daily-json-snapshot.py rejects truncated snapshot bodies" {
   tmp="$(mktemp -d)"
   cat >"$tmp/snapshot.md" <<'EOF'

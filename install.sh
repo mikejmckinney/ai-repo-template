@@ -216,6 +216,7 @@ log_info "Installing agent workflow kit..."
 MULTIAGENT_FILES=(
   "AGENT.md"
   "CLAUDE.md"
+  ".github/CODEOWNERS"
   ".github/PLAN_TEMPLATE.md"
   ".github/pull_request_template.md"
   ".github/templates/issue-implementation-plan.md"
