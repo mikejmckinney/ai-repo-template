@@ -6,7 +6,7 @@
 #   PROVIDER="$(pick_advisory_provider MODE)"
 #
 # MODE:
-#   advisory      — cursor / opencode / antigravity / gemini (ADVISORY_REVIEW_PROVIDER)
+#   advisory      — opencode / cursor / antigravity / gemini (ADVISORY_REVIEW_PROVIDER)
 #   retro         — post-merge retro scan (POSTMERGE_RETRO_PROVIDER cascade)
 #   retro-fix     — fix pass (no antigravity)
 #   weekly-scan   — weekly scan (WEEKLY_REVIEW_PROVIDER cascade)
@@ -17,6 +17,11 @@ init_advisory_provider_credentials() {
   has_cursor=0
   has_gemini=0
   local opencode_bin="${OPENCODE_BIN:-opencode}"
+  local lib_dir
+  lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  # shellcheck source=opencode-oauth.sh
+  source "$lib_dir/opencode-oauth.sh"
+  configure_opencode_oauth
   if command -v "$opencode_bin" >/dev/null 2>&1 \
     && [[ -n "${OPENROUTER_API_KEY:-}" ]] \
     && [[ -n "${OPENCODE_GITHUB_TOKEN:-}" ]]; then
@@ -47,7 +52,16 @@ list_advisory_providers() {
       ;;
   esac
 
-  if [[ "$want" != "auto" && "$want" != "antigravity" ]]; then
+  if [[ "$want" == "antigravity" ]]; then
+    if [[ "$mode" == "advisory" || "$mode" == "weekly-scan" ]]; then
+      printf '%s\n' antigravity
+      return 0
+    fi
+    echo "::notice::Antigravity is scan-only; ${mode} uses the automatic provider cascade." >&2
+    want=auto
+  fi
+
+  if [[ "$want" != "auto" ]]; then
     case "$want" in
       opencode | cursor | gemini) printf '%s\n' "$want" ;;
       *)
@@ -58,8 +72,8 @@ list_advisory_providers() {
     return 0
   fi
 
-  [[ "$has_cursor" -eq 1 ]] && printf '%s\n' cursor
   [[ "$has_opencode" -eq 1 ]] && printf '%s\n' opencode
+  [[ "$has_cursor" -eq 1 ]] && printf '%s\n' cursor
   if [[ ("$mode" == "advisory" || "$mode" == "weekly-scan") &&
     "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
     printf '%s\n' antigravity
@@ -78,14 +92,14 @@ pick_advisory_provider() {
     retro)
       want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
       if [[ "$want" == "antigravity" ]]; then
-        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (cursor, else opencode, else gemini)." >&2
+        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (opencode, else cursor, else gemini)." >&2
         want=auto
       fi
       ;;
     retro-fix)
       want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
       if [[ "$want" == "antigravity" ]]; then
-        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro fix uses auto (cursor, else opencode, else gemini)." >&2
+        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro fix uses auto (opencode, else cursor, else gemini)." >&2
         want=auto
       fi
       ;;
@@ -95,7 +109,7 @@ pick_advisory_provider() {
     weekly-fix)
       want="${WEEKLY_REVIEW_PROVIDER:-${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}}"
       if [[ "$want" == "antigravity" ]]; then
-        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; weekly fix uses auto (cursor, else opencode, else gemini)." >&2
+        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; weekly fix uses auto (opencode, else cursor, else gemini)." >&2
         want=auto
       fi
       ;;
@@ -123,10 +137,10 @@ pick_advisory_provider() {
       echo gemini
       ;;
     auto)
-      if [[ "$has_cursor" -eq 1 ]]; then
-        echo cursor
-      elif [[ "$has_opencode" -eq 1 ]]; then
+      if [[ "$has_opencode" -eq 1 ]]; then
         echo opencode
+      elif [[ "$has_cursor" -eq 1 ]]; then
+        echo cursor
       elif [[ ("$mode" == "advisory" || "$mode" == "weekly-scan") &&
         "${antigravity_enabled:-false}" == "true" && "$has_gemini" -eq 1 ]]; then
         echo antigravity

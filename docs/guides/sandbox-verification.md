@@ -135,6 +135,10 @@ For changes to advisory, retro, or weekly OpenCode automation:
 4. Force the primary model to fail and capture ordered fallback telemetry. For a
    fix run, also capture worktree paths and the final patch to prove the failed
    attempt was discarded.
+5. Exercise Sol eligibility with synthetic access-only fixtures unless the
+   maintainer explicitly approves a short-lived sandbox credential. Never copy
+   a production ChatGPT refresh token into the sandbox; the expected fixture
+   refresh value is `ci-refresh-disabled`.
 
 Never reuse a production write PAT as `OPENCODE_GITHUB_TOKEN`.
 

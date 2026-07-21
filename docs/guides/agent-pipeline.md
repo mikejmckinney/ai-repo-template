@@ -53,23 +53,33 @@ remain cadence-specific.
 
 Advisory, daily, and weekly automation resolve `auto` in this order:
 
-1. Cursor when `CURSOR_API_KEY` is available.
-2. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
-   `OPENROUTER_API_KEY` are available.
+1. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
+   `OPENROUTER_API_KEY` are available. It tries Sol first when a preflighted
+   access-only OAuth bundle is present, then Kimi K3.
+2. Cursor Grok 4.5 Medium when `CURSOR_API_KEY` is available.
 3. Antigravity where the cadence permits it.
 4. Gemini.
 
 OpenCode runs through `scripts/workflows/lib/run-opencode.mjs` using SDK v2
 sessions. The adapter validates model text against the cadence JSON Schema and
-sends one explicit corrective prompt when validation fails, then tries
-`openrouter/z-ai/glm-5.2@preset/default` and
-`openrouter/minimax/minimax-m3@preset/default` in order. Subscription-backed
-`openai/gpt-5.6-sol` remains available to interactive local OpenCode and
-`multi-model-consensus`, not public CI. Fix calls go through
-`run-opencode-fix.sh`, which creates and discards one detached worktree per model
-and applies only a schema-valid attempt whose credential-free controller-side
-`./test.sh` run passes. The fix agent may edit but cannot invoke shell commands;
-this prevents editable repository scripts from reading inherited credentials.
+sends one explicit corrective prompt when validation fails. The OpenCode order
+is `openai/gpt-5.6-sol`, when preflight permits it, then
+`openrouter/moonshotai/kimi-k3@preset/consensus`. Provider failure advances to
+Cursor `cursor-grok-4.5-medium`, then retained rollback providers when configured.
+Fix calls use provider-specific isolation inside a shared disposable worktree;
+the controller runs `./test.sh` without credentials and promotes only the first
+verified patch. The fix agent may edit but cannot invoke shell commands; this
+prevents editable repository scripts from reading inherited credentials.
+
+For trusted private repositories, `scripts/sync-opencode-oauth-secret.sh` reads
+the local OpenCode OpenAI entry and updates the `OPENCODE_OPENAI_AUTH` Actions
+secret only with `access`, `expires`, and `accountId`; `refresh` is replaced by
+the inert `ci-refresh-disabled` placeholder. Invocation steps map it to
+`OPENCODE_AUTH_CONTENT`. Preflight requires 35 minutes for advisory, 105 minutes
+for daily, and 75 minutes for each weekly job. Missing, malformed, stale, or
+refresh-enabled content is removed from the child environment and Sol is omitted.
+The real refresh token never enters Actions, and hosted jobs never refresh or
+write back OAuth state.
 
 Workflows use GitHub-managed `ubuntu-latest`, configure Node 22, and run `npm ci`
 against `.github/agent-runtime/package-lock.json`. Review and fix profiles live
@@ -104,8 +114,9 @@ complete diff, local evidence inventory, non-auto-loaded startup context, and
 touched HEAD paths. OpenCode's system loader supplies the root `AGENTS.md`, so a
 redundant tool read is not required for that file.
 
-With `auto`, analysis attempts available providers in Cursor, OpenCode, then
-Gemini order. A provider transport, empty-result, or validation failure advances
+With `auto`, analysis attempts available providers in OpenCode, Cursor, then
+Gemini order, with cadence-specific Antigravity retained where enabled. A
+provider transport, empty-result, or validation failure advances
 to the next available provider. A large review is not reported as successful
 after silently degrading to bounded evidence. Daily sequential runs record
 failed PRs and continue finalization so successful retros and coverage artifacts
@@ -167,7 +178,10 @@ Use `docs/guides/sandbox-verification.md` when the classifier reports
 
 - `OPENCODE_GITHUB_TOKEN`: fine-grained token with read-only Metadata, Contents,
   Pull requests, Issues, and Actions access to the target repository.
-- `OPENROUTER_API_KEY`: model credential for the ordered public-CI OpenCode cascade.
+- `OPENROUTER_API_KEY`: model credential for the hosted OpenCode Kimi fallback.
+- `OPENCODE_OPENAI_AUTH`: optional access-only ChatGPT OAuth JSON for Sol in a
+  trusted private repository. Generate it with
+  `scripts/sync-opencode-oauth-secret.sh`; never upload the real refresh token.
 - Existing `CURSOR_API_KEY`, `GEMINI_API_KEY`, and `GOOGLE_API_KEY` remain
   optional rollback-provider credentials.
 - Workflow publication uses the automatic job-scoped `GITHUB_TOKEN` with

@@ -5,11 +5,11 @@
 # Does NOT submit formal PR reviews, mutate PR state, or push commits.
 #
 # Providers (ADVISORY_REVIEW_PROVIDER repo variable, default auto):
-#   - cursor      — Cursor SDK (CURSOR_API_KEY; preferred)
-#   - opencode    — OpenCode SDK + read-only GitHub MCP
+#   - opencode    — OpenCode Sol/Kimi + read-only GitHub MCP (preferred)
+#   - cursor      — Cursor SDK (CURSOR_API_KEY)
 #   - antigravity — Gemini Interactions / Antigravity (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
 #   - gemini      — Gemini generateContent API (GEMINI_API_KEY or GOOGLE_API_KEY)
-#   - auto        — cursor, opencode, antigravity (when enabled), then gemini
+#   - auto        — opencode, cursor, antigravity (when enabled), then gemini
 #
 # Scripts: scripts/workflows/advisory-review/ (AP8 — not .github/scripts/).
 
@@ -62,6 +62,7 @@ jobs:
       ADVISORY_CONTEXT_PROFILE: ${{ vars.ADVISORY_CONTEXT_PROFILE || '' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'cursor-grok-4.5-medium' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
+      OPENCODE_OAUTH_MIN_TTL_SECONDS: 2100
       FULL_MODE: ${{ contains(github.event.pull_request.labels.*.name, 'ai-review:full') }}
     steps:
       - name: Verify required secrets
@@ -131,6 +132,7 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
+          OPENCODE_AUTH_CONTENT: ${{ secrets.OPENCODE_OPENAI_AUTH }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |

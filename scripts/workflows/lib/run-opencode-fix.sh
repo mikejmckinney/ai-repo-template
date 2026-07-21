@@ -12,14 +12,16 @@ REPO_ROOT="${3:-}"
 
 LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RUNNER="${OPENCODE_RUNNER:-$LIB_DIR/run-opencode.mjs}"
-MODELS="${OPENCODE_MODELS:-openrouter/z-ai/glm-5.2@preset/default,openrouter/minimax/minimax-m3@preset/default}"
+MODELS="${OPENCODE_MODELS:-openrouter/moonshotai/kimi-k3@preset/consensus}"
 VERIFY_COMMAND="${OPENCODE_FIX_VERIFY_COMMAND:-./test.sh}"
 ATTEMPT_ROOT="$(mktemp -d)"
 active_worktree=""
 
 cleanup() {
   if [[ -n "$active_worktree" ]]; then
-    git -C "$REPO_ROOT" worktree remove --force "$active_worktree" >/dev/null 2>&1 || true
+    if ! git -C "$REPO_ROOT" worktree remove --force "$active_worktree" >/dev/null 2>&1; then
+      echo "::warning::Could not remove OpenCode fix worktree: $active_worktree" >&2
+    fi
   fi
   rm -rf "$ATTEMPT_ROOT"
 }
@@ -44,7 +46,7 @@ for model in "${models[@]}"; do
     if ! (
       cd "$active_worktree"
       env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN \
-        -u OPENCODE_GITHUB_TOKEN -u OPENAI_API_KEY -u OPENROUTER_API_KEY \
+        -u OPENCODE_GITHUB_TOKEN -u OPENCODE_AUTH_CONTENT -u OPENAI_API_KEY -u OPENROUTER_API_KEY \
         -u CURSOR_API_KEY -u GEMINI_API_KEY -u GOOGLE_API_KEY \
         bash -c "$VERIFY_COMMAND"
     ); then
@@ -53,7 +55,9 @@ for model in "${models[@]}"; do
       active_worktree=""
       continue
     fi
-    git -C "$active_worktree" add -N -- . >/dev/null 2>&1 || true
+    if ! git -C "$active_worktree" add -N -- . >/dev/null 2>&1; then
+      echo "::warning::OpenCode fix worktree contains no paths to stage for diff detection" >&2
+    fi
     git -C "$active_worktree" diff --binary --full-index >"$patch_file"
     if [[ -s "$patch_file" ]]; then
       git -C "$REPO_ROOT" apply "$patch_file"

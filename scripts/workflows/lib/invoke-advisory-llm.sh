@@ -32,24 +32,29 @@ invoke_advisory_llm() {
       # shellcheck source=cursor-sdk-version.sh
       source "$lib_dir/cursor-sdk-version.sh"
       npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1
-      CURSOR_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}}" \
-        env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN \
-        node "$advisory_dir/run-advisory-cursor.mjs" "$prompt_file" "$out_file"
+      if [[ "${OPENCODE_FIX_MODE:-false}" == "true" ]]; then
+        CURSOR_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}}" \
+          bash "$lib_dir/run-cursor-fix.sh" "$prompt_file" "$out_file" "$repo_root"
+      else
+        CURSOR_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}}" \
+          env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN -u OPENCODE_AUTH_CONTENT \
+          node "$advisory_dir/run-advisory-cursor.mjs" "$prompt_file" "$out_file"
+      fi
       ;;
     gemini)
       GEMINI_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}}" \
-        env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN \
+        env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN -u OPENCODE_AUTH_CONTENT \
         python3 "$advisory_dir/run-advisory-gemini.py" "$prompt_file" "$out_file"
       ;;
     antigravity)
       local full_diff_bytes="${ADVISORY_FULL_DIFF_BYTES:-0}"
       echo "Antigravity: full_diff_bytes=${full_diff_bytes}" >&2
-      if ! env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN \
+      if ! env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN -u OPENCODE_AUTH_CONTENT \
         python3 "$advisory_dir/run-advisory-antigravity.py" "$repo_root" "$workdir" "$out_file"; then
         echo "::warning::Antigravity advisory review failed; falling back to Gemini generateContent"
         export ADVISORY_PROVIDER_USED=gemini
         GEMINI_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}}" \
-          env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN \
+          env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN -u OPENCODE_AUTH_CONTENT \
           python3 "$advisory_dir/run-advisory-gemini.py" "$prompt_file" "$out_file"
       fi
       ;;

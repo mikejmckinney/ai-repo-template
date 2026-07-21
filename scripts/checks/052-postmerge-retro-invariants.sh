@@ -40,6 +40,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   FEEDBACK_COLLECTOR="scripts/workflows/lib/collect-pr-evidence.sh"
   OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
   OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
+  FIX_PROVIDER_CASCADE="scripts/workflows/lib/run-fix-provider-cascade.sh"
   MONOLITHIC_SCHEMA=".github/schemas/postmerge-retro-monolithic.schema.json"
   PROVIDER_TIMEOUT_SCRIPT="scripts/workflows/lib/postmerge-provider-timeout.sh"
 
@@ -50,7 +51,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
     "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA" \
     "$BOUNDED_SCRIPT" "$FULL_CURSOR_SCRIPT" "$ANTIGRAVITY_RETRO_SCRIPT" "$ASSEMBLE_PROMPT_SCRIPT" \
-    "$OPENCODE_RUNNER" "$OPENCODE_FIX_RUNNER" "$MONOLITHIC_SCHEMA" "$PROVIDER_TIMEOUT_SCRIPT"; do
+    "$OPENCODE_RUNNER" "$OPENCODE_FIX_RUNNER" "$FIX_PROVIDER_CASCADE" "$MONOLITHIC_SCHEMA" "$PROVIDER_TIMEOUT_SCRIPT"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -60,7 +61,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'full-evidence-opencode' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'OPENCODE_OUTPUT_SCHEMA' "$BOUNDED_SCRIPT" 2>/dev/null \
-    && grep -q 'OPENCODE_FIX_MODE=true' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'run_fix_provider_cascade' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'OPENCODE_FIX_MODE=true' "$FIX_PROVIDER_CASCADE" 2>/dev/null \
     && grep -q 'OPENCODE_GITHUB_TOKEN' "$RETRO_WORKFLOW" 2>/dev/null \
     && grep -q 'npm ci --prefix .github/agent-runtime' "$RETRO_WORKFLOW" 2>/dev/null \
     && ! grep -q 'AGENT_RUNTIME_IMAGE' "$RETRO_WORKFLOW" 2>/dev/null; then

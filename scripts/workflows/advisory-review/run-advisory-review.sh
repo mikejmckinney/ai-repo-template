@@ -181,58 +181,42 @@ prompt_file="$WORKDIR/prompt.md"
   fi
 } >"$prompt_file"
 
+# shellcheck disable=SC2034 # Provider routing reads this global after sourcing.
 antigravity_enabled=false
 if [[ "${ADVISORY_ANTIGRAVITY_ENABLED:-}" == "true" ]]; then
   antigravity_enabled=true
 fi
+export antigravity_enabled
 
 # shellcheck disable=SC1091
 source "$LIB_DIR/pick-advisory-provider.sh"
 # shellcheck disable=SC1091
 source "$LIB_DIR/invoke-advisory-llm.sh"
+# shellcheck disable=SC2034 # Provider routing initializes and reads these globals.
 has_opencode=0 has_cursor=0 has_gemini=0
 init_advisory_provider_credentials
-PROVIDER="$(pick_advisory_provider advisory)"
-if [[ -z "$PROVIDER" ]]; then
+mapfile -t provider_candidates < <(list_advisory_providers advisory)
+if [[ ${#provider_candidates[@]} -eq 0 ]]; then
   echo "::error::No advisory review provider configured. Configure OpenCode, Cursor, or Gemini credentials."
   exit 1
 fi
 
-case "$PROVIDER" in
-  opencode)
-    [[ "$has_opencode" -eq 1 ]] || {
-      echo "::error::ADVISORY_REVIEW_PROVIDER=opencode requires the OpenCode runtime, model credentials, and OPENCODE_GITHUB_TOKEN"
-      exit 1
-    }
-    ;;
-  cursor)
-    [[ "$has_cursor" -eq 1 ]] || {
-      echo "::error::ADVISORY_REVIEW_PROVIDER=cursor but CURSOR_API_KEY is unset"
-      exit 1
-    }
-    ;;
-  antigravity)
-    [[ "$has_gemini" -eq 1 ]] || {
-      echo "::error::ADVISORY_REVIEW_PROVIDER=antigravity but GEMINI_API_KEY/GOOGLE_API_KEY is unset"
-      exit 1
-    }
-    [[ "$antigravity_enabled" == "true" ]] || {
-      echo "::error::ADVISORY_REVIEW_PROVIDER=antigravity but ADVISORY_ANTIGRAVITY_ENABLED is not true"
-      exit 1
-    }
-    ;;
-  gemini)
-    [[ "$has_gemini" -eq 1 ]] || {
-      echo "::error::ADVISORY_REVIEW_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is unset"
-      exit 1
-    }
-    ;;
-esac
-
 out_file="$WORKDIR/advisory-body.md"
-ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
-  invoke_advisory_llm "$prompt_file" "$out_file" "$PROVIDER" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
-PROVIDER="${ADVISORY_PROVIDER_USED:-$PROVIDER}"
+provider_succeeded=false
+for provider in "${provider_candidates[@]}"; do
+  rm -f "$out_file"
+  if ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
+    invoke_advisory_llm "$prompt_file" "$out_file" "$provider" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"; then
+    PROVIDER="${ADVISORY_PROVIDER_USED:-$provider}"
+    provider_succeeded=true
+    break
+  fi
+  echo "::warning::Advisory provider ${provider} failed; trying next available provider" >&2
+done
+if [[ "$provider_succeeded" != true ]]; then
+  echo "::error::Advisory provider cascade exhausted" >&2
+  exit 1
+fi
 
 if [[ "$PROVIDER" == "antigravity" ]]; then
   diff_coverage_line="Diff coverage: \`${full_diff_bytes}/${full_diff_bytes}\` bytes via antigravity sources; prompt excerpt truncated: \`${truncated_word}\`"

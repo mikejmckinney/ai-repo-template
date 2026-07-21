@@ -6,12 +6,13 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   source "$REPO_ROOT/scripts/workflows/lib/pick-advisory-provider.sh"
   unset CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
+  unset OPENCODE_AUTH_CONTENT OPENCODE_OAUTH_MIN_TTL_SECONDS OPENCODE_MODELS
   unset ADVISORY_REVIEW_PROVIDER POSTMERGE_RETRO_PROVIDER WEEKLY_REVIEW_PROVIDER
   OPENCODE_BIN=/bin/true
   antigravity_enabled=false
 }
 
-@test "auto routing prefers Cursor when Cursor and OpenCode are available" {
+@test "auto routing prefers OpenCode when Cursor and OpenCode are available" {
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -21,7 +22,7 @@ setup() {
   run pick_advisory_provider advisory
 
   [ "$status" -eq 0 ]
-  [ "$output" = cursor ]
+  [ "$output" = opencode ]
 }
 
 @test "OpenAI API credentials alone do not enable OpenCode in public CI" {
@@ -56,7 +57,7 @@ setup() {
   run list_advisory_providers retro
 
   [ "$status" -eq 0 ]
-  [ "$output" = $'cursor\nopencode\ngemini' ]
+  [ "$output" = $'opencode\ncursor\ngemini' ]
 }
 
 @test "Cursor SDK resolves Grok Medium without fast mode" {
@@ -146,7 +147,8 @@ export async function createOpencode(options) {
           const model = `${parameters.model.providerID}/${parameters.model.modelID}`
           appendFileSync(process.env.ATTEMPT_LOG, `${model}\n`)
           if (model === process.env.MOCK_FAIL_MODEL) {
-            return { data: { info: { modelID: parameters.model.modelID }, parts: [{ type: "text", text: `invalid ${process.env.OPENAI_API_KEY}` }] } }
+            const oauthAccess = JSON.parse(process.env.OPENCODE_AUTH_CONTENT).openai.access
+            return { data: { info: { modelID: parameters.model.modelID }, parts: [{ type: "text", text: `invalid ${process.env.OPENAI_API_KEY} ${oauthAccess}` }] } }
           }
           return { data: { info: { modelID: parameters.model.modelID }, parts: [{ type: "text", text: JSON.stringify({ output: `ok:${model}` }) }] } }
         },
@@ -175,6 +177,7 @@ EOF
     MOCK_FAIL_MODEL="openai/gpt-5.6-sol" \
     ATTEMPT_LOG="$tmp/attempts.log" \
     OPENCODE_RETRIEVAL_TRACE_FILE="$tmp/retrieval-trace.json" \
+    OPENCODE_AUTH_CONTENT='{"openai":{"access":"oauth-access-secret"}}' \
     OPENAI_API_KEY="secret-test-value" \
     node "$REPO_ROOT/scripts/workflows/lib/run-opencode.mjs" \
     "$tmp/prompt.md" "$tmp/output.txt" "$tmp/schema.json"
@@ -187,11 +190,12 @@ EOF
   [[ "$output" == *'requested_model=openrouter/z-ai/glm-5.2@preset/default'* ]]
   [[ "$output" == *'provider diagnostic includes [REDACTED]'* ]]
   [[ "$output" != *'secret-test-value'* ]]
+  [[ "$output" != *'oauth-access-secret'* ]]
   [ "$(jq -r '.paths | join("|")' "$tmp/retrieval-trace.json")" = "$tmp/diff.patch|README.md" ]
   rm -rf "$tmp"
 }
 
-@test "OpenCode defaults to the approved OpenRouter model cascade" {
+@test "OpenCode defaults to the approved Kimi model" {
   tmp="$(mktemp -d)"
   cat >"$tmp/mock-sdk.mjs" <<'EOF'
 export async function createOpencode() {
@@ -202,9 +206,6 @@ export async function createOpencode() {
         prompt: async (parameters) => {
           if (!parameters.sessionID) throw new Error("sessionID must be flattened")
           const model = `${parameters.model.providerID}/${parameters.model.modelID}`
-          if (model === "openrouter/z-ai/glm-5.2@preset/default") {
-            return { data: { info: { error: { name: "ModelError", data: {} } } } }
-          }
           return { data: { info: { modelID: parameters.model.modelID }, parts: [{ type: "text", text: `ok:${model}` }] } }
         },
         delete: async () => ({ data: true })
@@ -222,9 +223,8 @@ EOF
     "$tmp/prompt.md" "$tmp/output.txt"
 
   [ "$status" -eq 0 ]
-  [ "$(cat "$tmp/output.txt")" = "ok:openrouter/minimax/minimax-m3@preset/default" ]
-  [[ "$output" == *'requested_model=openrouter/z-ai/glm-5.2@preset/default'* ]]
-  [[ "$output" == *'requested_model=openrouter/minimax/minimax-m3@preset/default'* ]]
+  [ "$(cat "$tmp/output.txt")" = "ok:openrouter/moonshotai/kimi-k3@preset/consensus" ]
+  [[ "$output" == *'requested_model=openrouter/moonshotai/kimi-k3@preset/consensus'* ]]
   [[ "$output" != *'requested_model=openai/'* ]]
   rm -rf "$tmp"
 }
@@ -304,7 +304,7 @@ EOF
   run jq -e '
     .autoupdate == false and
     .share == "disabled" and
-    .enabled_providers == ["openrouter"] and
+    .enabled_providers == ["openai", "openrouter"] and
     .permission.edit == "deny" and
     .permission.bash == "deny" and
     .permission.task == "deny" and
@@ -320,7 +320,7 @@ EOF
   run jq -e '
     .autoupdate == false and
     .share == "disabled" and
-    .enabled_providers == ["openrouter"] and
+    .enabled_providers == ["openai", "openrouter"] and
     .permission.edit == "allow" and
     .permission.task == "deny" and
     .permission.bash == "deny" and
@@ -337,7 +337,7 @@ EOF
     run jq --arg profile "$profile" -s -e '
       .[0] as $interactive |
       .[1] as $ci |
-      $ci.small_model == "openrouter/z-ai/glm-5.2@preset/default" and
+      $ci.small_model == "openrouter/moonshotai/kimi-k3@preset/consensus" and
       $ci.agent.build.steps == (if $profile == "review" then 24 else 4 end) and
       all($interactive.mcp | keys[]; $ci.mcp[.].enabled == false)
     ' "$REPO_ROOT/.opencode/opencode.json" "$REPO_ROOT/.github/agent-runtime/$profile.json"

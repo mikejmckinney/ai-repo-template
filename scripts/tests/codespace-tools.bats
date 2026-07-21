@@ -132,7 +132,7 @@ EOF
   [ "$status" -eq 0 ]
 
   for path in .config/codespace-tools.json scripts/install-codespace-tools.sh \
-    scripts/browser-mcp.sh scripts/open-design-mcp.sh; do
+    scripts/cleanup-codespace-caches.sh scripts/browser-mcp.sh scripts/open-design-mcp.sh; do
     run grep -F "\"$path\"" "$REPO_ROOT/install.sh"
     [ "$status" -eq 0 ]
   done

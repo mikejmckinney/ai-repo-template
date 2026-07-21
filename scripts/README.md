@@ -13,6 +13,8 @@
 | `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile core` |
 | `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
 | `check-markdown-links.py` | Validate repository-local Markdown targets | `python3 scripts/check-markdown-links.py <files...>` |
+| `cleanup-codespace-caches.sh` | Report or clean reproducible Codespaces caches | `./scripts/cleanup-codespace-caches.sh [--apply]` |
+| `sync-opencode-oauth-secret.sh` | Preview or sync access-only OpenCode OAuth to Actions | `./scripts/sync-opencode-oauth-secret.sh [--apply]` |
 | `diagnose-opencode-session.sh` | Record OpenCode process exit and signal evidence | `./scripts/diagnose-opencode-session.sh` |
 
 ## Usage Guidelines
@@ -42,6 +44,31 @@ The optional agent CLI profile includes the core profile:
 ```bash
 ./scripts/install-codespace-tools.sh --profile agents
 ```
+
+Preview package and build caches when a Codespace approaches its storage limit:
+
+```bash
+./scripts/cleanup-codespace-caches.sh
+```
+
+The preview does not modify files. Use `--apply` to clean npm content and npx,
+Bun, uv, pip, and Go caches. Cleanup skips uv while a uv process is active and
+never removes agent databases, history, credentials, installed tools, or editor
+extensions. The next package or tool invocation may require network access and
+take longer while its cache is rebuilt.
+
+Preview the expiration of the local OpenCode OpenAI OAuth credential:
+
+```bash
+./scripts/sync-opencode-oauth-secret.sh
+```
+
+Pass `--apply` to update `OPENCODE_OPENAI_AUTH` in the current repository. The
+uploaded JSON contains the current access token, expiration, and account ID, but
+replaces the real refresh token with `ci-refresh-disabled`. Output includes only
+repository and expiration metadata. Re-run every one or two days when using the
+approximately three-day access-token lifetime observed for ChatGPT Pro; stale
+credentials automatically omit Sol in Actions.
 
 ## Creating New Scripts
 

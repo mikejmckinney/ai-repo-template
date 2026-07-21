@@ -4,11 +4,11 @@
 # then open a draft fix PR. Offset from daily retro (06:00 UTC) to avoid collisions.
 #
 # Provider (WEEKLY_REVIEW_PROVIDER or ADVISORY_REVIEW_PROVIDER):
-#   - cursor      — Cursor SDK (CURSOR_API_KEY; preferred); agent reads repo via local.cwd
-#   - opencode    — OpenCode SDK + read-only GitHub MCP
+#   - opencode    — OpenCode Sol/Kimi + read-only GitHub MCP (preferred)
+#   - cursor      — Cursor SDK (CURSOR_API_KEY); agent reads repo via local.cwd
 #   - antigravity — Gemini Interactions (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
 #   - gemini      — Gemini generateContent (flat prompt; no repo browse)
-#   - auto        — cursor, opencode, antigravity (when enabled), then gemini
+#   - auto        — opencode, cursor, antigravity (when enabled), then gemini
 
 name: Agent — weekly repository review
 
@@ -87,6 +87,7 @@ jobs:
       POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
       ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
       ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
+      OPENCODE_OAUTH_MIN_TTL_SECONDS: 4500
     steps:
       - name: Verify required secrets
         env:
@@ -155,6 +156,7 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
+          OPENCODE_AUTH_CONTENT: ${{ secrets.OPENCODE_OPENAI_AUTH }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
@@ -173,6 +175,7 @@ jobs:
           RUN_WEEK="${RUN_WEEK:-$(bash scripts/workflows/weekly-review/resolve-run-week.sh)}"
           ARTIFACT_DIR=".artifacts/weekly-review/week-${RUN_WEEK}"
           ARTIFACT_NAME="weekly-review-${RUN_WEEK}-attempt-${GITHUB_RUN_ATTEMPT}"
+          # shellcheck disable=SC2129
           echo "run_week=${RUN_WEEK}" >> "$GITHUB_OUTPUT"
           echo "run_date=${RUN_DATE}" >> "$GITHUB_OUTPUT"
           echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
@@ -232,6 +235,7 @@ jobs:
       RUN_DATE: ${{ github.event.inputs.run_date || needs.weekly-review.outputs.run_date }}
       UMBRELLA_ISSUE_NUM: ${{ needs.weekly-review.outputs.umbrella_issue_num }}
       FIX_JOB_SANDBOX_VERIFY: ${{ vars.FIX_JOB_SANDBOX_VERIFY || 'false' }}
+      OPENCODE_OAUTH_MIN_TTL_SECONDS: 4500
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -291,6 +295,7 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
+          OPENCODE_AUTH_CONTENT: ${{ secrets.OPENCODE_OPENAI_AUTH }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           SANDBOX_BOOTSTRAP_TOKEN: ${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}

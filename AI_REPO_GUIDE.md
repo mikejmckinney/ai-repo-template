@@ -22,6 +22,8 @@ ADR-031 defines the active execution model:
 ./test.sh
 bats --jobs 4 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
+scripts/cleanup-codespace-caches.sh
+scripts/sync-opencode-oauth-secret.sh
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
 python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock skills-lock.json
@@ -35,6 +37,10 @@ The default `core` profile installs repository quality tools plus runtime
 prerequisites for enabled local MCPs. Use `bash install.sh --profile agents` to
 also install or verify OpenCode, Claude Code, Cursor Agent, and Codex; each agent
 still requires its own authentication flow.
+Run `scripts/cleanup-codespace-caches.sh` to preview reproducible package and
+build caches when Codespace storage is low. Pass `--apply` explicitly to clean
+them. Active uv runtimes are skipped; agent databases, history, credentials,
+installed tools, and editor extensions are outside the cleanup scope.
 Use `scripts/format.sh --write <files...>` for deterministic local shfmt and
 markdownlint fixes. CI remains read-only and never commits formatting changes.
 Run `scripts/diagnose-opencode-session.sh` instead of bare `opencode` when
@@ -52,6 +58,10 @@ OpenCode workflow calls use `OPENCODE_TIMEOUT_MS` for both the Node HTTP
 transport and the outer abort, defaulting to `900000` (15 minutes). Set a larger
 positive millisecond value only when a review legitimately needs a longer
 end-to-end budget.
+Run `scripts/sync-opencode-oauth-secret.sh` from an OAuth-authenticated
+Codespace to preview the local OpenAI access-token expiration. Pass `--apply`
+to replace the private repository's `OPENCODE_OPENAI_AUTH` Actions secret with
+an access-only bundle. The script never uploads the real refresh token.
 Postmerge Cursor attempts use `POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS`,
 defaulting to `900` seconds. A timeout terminates the stuck Cursor process and
 returns failure to the existing provider cascade instead of consuming the
@@ -202,12 +212,15 @@ Inside Codespaces, the injected `GITHUB_TOKEN` may not access the sibling sandbo
 Use command-local `GH_TOKEN="$GH_PAT"` with `GITHUB_TOKEN` unset when the configured
 user PAT is required. Never commit tokens.
 
-OpenCode workflow agents use only `OPENCODE_GITHUB_TOKEN`, a dedicated read-only
-fine-grained token. Set `OPENROUTER_API_KEY` for the public-CI model cascade.
-Interactive OpenCode may use ChatGPT Plus/Pro authentication for Sol, but that
-personal OAuth credential is not forwarded to public GitHub Actions. Workflows
-install the pinned OpenCode runtime from `.github/agent-runtime/package-lock.json`
-on GitHub-managed `ubuntu-latest`.
+OpenCode workflow agents use `OPENCODE_GITHUB_TOKEN`, a dedicated read-only
+fine-grained token, and `OPENROUTER_API_KEY` for Kimi K3. A trusted private
+repository may additionally set `OPENCODE_OPENAI_AUTH` through the synchronization
+script above. Invocation steps map that secret to `OPENCODE_AUTH_CONTENT`, enable
+Sol only when its access token outlives the job timeout plus 15 minutes, and
+otherwise start with Kimi. The stored `refresh` value is the inert
+`ci-refresh-disabled` placeholder, so hosted runners never refresh or write back
+personal OAuth credentials. Workflows install the pinned OpenCode runtime from
+`.github/agent-runtime/package-lock.json` on GitHub-managed `ubuntu-latest`.
 
 Interactive provider MCPs support write/deploy capabilities. Vercel, Netlify,
 Supabase, Railway, and Cloudflare read credentials from `VERCEL_API_KEY`,

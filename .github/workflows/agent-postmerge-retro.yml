@@ -103,6 +103,7 @@ jobs:
       POSTMERGE_RETRO_ADAPTIVE_EVIDENCE: ${{ vars.POSTMERGE_RETRO_ADAPTIVE_EVIDENCE || 'true' }}
       POSTMERGE_RETRO_ANTIGRAVITY_ON_TRUNCATE: ${{ vars.POSTMERGE_RETRO_ANTIGRAVITY_ON_TRUNCATE || 'true' }}
       ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
+      OPENCODE_OAUTH_MIN_TTL_SECONDS: 6300
     steps:
       - name: Verify required secrets
         env:
@@ -118,7 +119,7 @@ jobs:
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
           if [[ "$PROVIDER" == "antigravity" ]]; then
-            echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (cursor, else opencode, else gemini)."
+            echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (opencode, else cursor, else gemini)."
             PROVIDER=auto
           fi
           case "$PROVIDER" in
@@ -196,6 +197,7 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
+          OPENCODE_AUTH_CONTENT: ${{ secrets.OPENCODE_OPENAI_AUTH }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
@@ -260,6 +262,7 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
+          OPENCODE_AUTH_CONTENT: ${{ secrets.OPENCODE_OPENAI_AUTH }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           SANDBOX_BOOTSTRAP_TOKEN: ${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}
