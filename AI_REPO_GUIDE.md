@@ -205,9 +205,10 @@ one-project scope is preferred; project scope also disables account-management
 tools. Cloudflare docs does not require account access.
 Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
 Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
-remote transport closes the hosted stream unexpectedly. The local MCP timeout is
-60 seconds so concurrent cold `npx`/`uvx` package resolution, OAuth discovery, and
-proxy startup have enough headroom. Keep bridge logs silent because verbose
+remote transport closes the hosted stream unexpectedly. Generated OpenCode MCP
+entries default to a 60-second timeout so cold `npx`/`uvx` package resolution,
+OAuth discovery, and proxy startup have enough headroom. Keep bridge logs silent
+because verbose
 diagnostics expand the authorization header. Pass its environment placeholder
 directly to `mcp-remote`; shell expansion would expose the token in process
 arguments. Cursor reads the direct-HTTP root

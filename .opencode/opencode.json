@@ -9,6 +9,7 @@
   },
   "mcp": {
     "github": {
+      "timeout": 60000,
       "type": "remote",
       "url": "https://api.githubcopilot.com/mcp/",
       "enabled": true,
@@ -18,6 +19,7 @@
       }
     },
     "supabase": {
+      "timeout": 60000,
       "type": "remote",
       "url": "https://mcp.supabase.com/mcp",
       "enabled": true,
@@ -27,6 +29,7 @@
       }
     },
     "netlify": {
+      "timeout": 60000,
       "type": "local",
       "enabled": true,
       "command": [
@@ -40,12 +43,12 @@
         "http-only",
         "--silent"
       ],
-      "timeout": 60000,
       "environment": {
         "NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"
       }
     },
     "vercel": {
+      "timeout": 60000,
       "type": "remote",
       "url": "https://mcp.vercel.com",
       "enabled": true,
@@ -55,6 +58,7 @@
       }
     },
     "cloudflare-api": {
+      "timeout": 60000,
       "type": "remote",
       "url": "https://mcp.cloudflare.com/mcp",
       "enabled": true,
@@ -64,11 +68,13 @@
       }
     },
     "cloudflare-docs": {
+      "timeout": 60000,
       "type": "remote",
       "url": "https://docs.mcp.cloudflare.com/mcp",
       "enabled": true
     },
     "railway": {
+      "timeout": 60000,
       "type": "remote",
       "url": "https://mcp.railway.com",
       "enabled": true,
@@ -78,6 +84,7 @@
       }
     },
     "aws": {
+      "timeout": 60000,
       "type": "local",
       "command": [
         "bash",
@@ -87,6 +94,7 @@
       "enabled": true
     },
     "azure": {
+      "timeout": 60000,
       "type": "local",
       "command": [
         "npx",
@@ -98,6 +106,7 @@
       "enabled": true
     },
     "oci": {
+      "timeout": 60000,
       "type": "local",
       "command": [
         "uvx",
@@ -112,6 +121,7 @@
       }
     },
     "render": {
+      "timeout": 60000,
       "type": "remote",
       "url": "https://mcp.render.com/mcp",
       "enabled": true,
@@ -121,6 +131,7 @@
       }
     },
     "open-design": {
+      "timeout": 60000,
       "type": "local",
       "command": [
         "bash",
@@ -129,6 +140,7 @@
       "enabled": true
     },
     "playwright": {
+      "timeout": 60000,
       "type": "local",
       "command": [
         "bash",
@@ -139,6 +151,7 @@
       "enabled": true
     },
     "chrome-devtools": {
+      "timeout": 60000,
       "type": "local",
       "command": [
         "bash",
@@ -149,6 +162,7 @@
       "enabled": true
     },
     "shadcn": {
+      "timeout": 60000,
       "type": "local",
       "command": [
         "npx",
