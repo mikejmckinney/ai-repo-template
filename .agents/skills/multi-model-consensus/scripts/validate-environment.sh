@@ -3,7 +3,7 @@
 set -euo pipefail
 
 missing=()
-for command_name in opencode agent jq perl sqlite3; do
+for command_name in opencode claude agent jq perl sqlite3; do
   command -v "$command_name" >/dev/null 2>&1 || missing+=("$command_name")
 done
 
@@ -27,4 +27,4 @@ if ! agent --list-models | grep -q '^cursor-grok-4.5-medium - '; then
   exit 1
 fi
 
-jq -n '{status: "success", kimi_model: "openrouter/moonshotai/kimi-k3@preset/consensus", sol_model: "openai/gpt-5.6-sol", grok_model: "cursor-grok-4.5-medium"}'
+jq -n '{status: "success", kimi_model: "openrouter/moonshotai/kimi-k3@preset/consensus", sol_model: "openai/gpt-5.6-sol", opus_model: "opus", grok_model: "cursor-grok-4.5-medium"}'

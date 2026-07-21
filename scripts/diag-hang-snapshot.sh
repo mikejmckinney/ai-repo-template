@@ -81,7 +81,6 @@ while ((i < MAX_SAMPLES)); do
     echo "--- top (top 20 by CPU) ---"
     top -b -n1 | head -27
     echo "--- ps node/code/gh/copilot ---"
-    # shell-conventions:disable=RULE-02 reason: substring match on ps/ss output is intentional — diagnostic filter wants any line containing 'node', 'copilot', etc., not whole-line matches
     # `extension` deliberately stays unanchored so it matches `extensionHost`
     # (the actual VS Code extension-host process name) — anchored-only would
     # miss the primary diagnostic target. (PR #297 R12 ISS-66.)
@@ -91,7 +90,6 @@ while ((i < MAX_SAMPLES)); do
     ps -eo pid,ppid,pcpu,pmem,rss,etime,cmd --sort=-pcpu \
       | awk 'NR==1 || tolower($0) ~ /(^|[^a-z])(node|code-server|gh|copilot)([^a-z]|$)|extension/' | head -n "$((PS_ROWS + 1))"
     echo "--- ss ESTABLISHED to copilot/github ---"
-    # shell-conventions:disable=RULE-02 reason: substring match on ss output is intentional — hostnames like *.githubcopilot.com:443 carry dots so word-boundary anchors would miss them
     # (Note on `-p`: showing process info typically requires root. In an
     # unprivileged container `ss` will still print the socket rows but may
     # omit the process column or emit a permission warning — both flow

@@ -63,7 +63,7 @@ for spec in "${PANEL_SESSION_SPECS[@]}"; do
   [[ -z "${extra:-}" && "$slot" =~ ^[123]$ && -n "$engine" && -n "$session_id" ]] \
     || fail "panel session must be SLOT:ENGINE:SESSION_ID"
   case "$engine" in
-    kimi | sol | fable | grok | glm | mm | mi | ds) ;;
+    kimi | sol | opus | grok | glm | mm | mi | ds) ;;
     *) fail "unsupported panel session engine: $engine" ;;
   esac
   index=$((slot - 1))
@@ -80,7 +80,7 @@ if [[ -n "$JUDGE_SESSION_SPEC" ]]; then
   [[ -z "${extra:-}" && -n "$JUDGE_RESUME_ENGINE" && -n "$JUDGE_RESUME_SESSION" ]] \
     || fail "judge session must be ENGINE:SESSION_ID"
   case "$JUDGE_RESUME_ENGINE" in
-    kimi | sol | fable | grok | glm | mm | mi | ds) ;;
+    kimi | sol | opus | grok | glm | mm | mi | ds) ;;
     *) fail "unsupported judge session engine: $JUDGE_RESUME_ENGINE" ;;
   esac
 fi
@@ -128,10 +128,10 @@ invoke_panel_session() {
   return "$result"
 }
 
-primary_engines=(kimi fable grok)
+primary_engines=(kimi opus grok)
 fallback_engines=(sol glm mm mi ds)
 panel_pids=("" "" "")
-panel_engines=(kimi fable grok)
+panel_engines=(kimi opus grok)
 panel_statuses=(success success success)
 panel_rejected_engines=("" "" "")
 panel_rejection_reasons=("" "" "")

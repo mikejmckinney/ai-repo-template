@@ -21,7 +21,6 @@ ADR-031 defines the active execution model:
 ```bash
 ./test.sh
 bats --jobs 4 scripts/tests/
-bash scripts/lint-shell-conventions.sh scripts/
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
 python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock skills-lock.json

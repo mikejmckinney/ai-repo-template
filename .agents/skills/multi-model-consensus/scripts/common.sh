@@ -97,8 +97,8 @@ invoke_engine() {
         return 0
       fi
       ;;
-    fable)
-      if run_with_timeout "$TIMEOUT_SECONDS" claude -p --model fable \
+    opus)
+      if run_with_timeout "$TIMEOUT_SECONDS" claude -p --model opus \
         --output-format json --dangerously-skip-permissions \
         <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
         jq -r '.result // empty' "${output_file}.json" >"$output_file"
@@ -159,8 +159,8 @@ invoke_engine_session() {
         <"$prompt_file" >"$output_file" 2>"$error_file" \
         && [[ -s "$output_file" ]]
       ;;
-    fable)
-      if run_with_timeout "$TIMEOUT_SECONDS" claude -p --model fable \
+    opus)
+      if run_with_timeout "$TIMEOUT_SECONDS" claude -p --model opus \
         --output-format json --dangerously-skip-permissions -r "$session_id" \
         <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
         jq -r '.result // empty' "${output_file}.json" >"$output_file"
@@ -189,7 +189,7 @@ invoke_with_fallback() {
   local title="$1" prompt_file="$2" output_file="$3"
   local engine
   FAILED_ENGINES=()
-  for engine in sol fable grok glm; do
+  for engine in sol opus grok glm; do
     if invoke_engine "$engine" "$title" "$prompt_file" "$output_file"; then
       SELECTED_ENGINE="$engine"
       SELECTED_SESSION="$ENGINE_SESSION"
