@@ -30,6 +30,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   UMBRELLA_TABLE_SCRIPT="${RETRO_DIR}/umbrella-findings-table.py"
   LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
+  BOUNDED_SCHEMA=".github/schemas/postmerge-retro-bounded.schema.json"
   LINK_SCRIPT="scripts/workflows/lib/link-fix-pr-to-issue.sh"
   CHECKOUT_FIX_BRANCH_SCRIPT="scripts/workflows/lib/checkout-fix-branch.sh"
   UMBRELLA_TEMPLATE=".github/templates/postmerge-retro-umbrella.md"
@@ -43,7 +44,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
     "$DAILY_SCRIPT" "$DAILY_DISPATCH_SCRIPT" "$DAILY_SELECT_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
-    "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" \
+    "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" "$BOUNDED_SCHEMA" \
     "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$CHECKOUT_FIX_BRANCH_SCRIPT" \
     "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
     "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA" \
@@ -259,6 +260,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "fix script uses postmerge-retro-fix-pr template + umbrella link update + native issue link + re-exec guard"
   else
     fail "run-postmerge-retro-fix.sh must render fix PR, update umbrella link, link issue, and re-exec from temp copy"
+  fi
+
+  if grep -q 'batch_fix_publish' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "postmerge fix delegates publication to shared batch helper"
+  else
+    fail "run-postmerge-retro-fix.sh must call batch_fix_publish"
   fi
 
   if grep -q 'ensure-pipeline-labels.sh' "scripts/sandbox-bootstrap.sh" 2>/dev/null; then

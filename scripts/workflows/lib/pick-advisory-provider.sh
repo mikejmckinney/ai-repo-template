@@ -48,7 +48,13 @@ list_advisory_providers() {
   esac
 
   if [[ "$want" != "auto" && "$want" != "antigravity" ]]; then
-    printf '%s\n' "$want"
+    case "$want" in
+      opencode | cursor | gemini) printf '%s\n' "$want" ;;
+      *)
+        echo "::error::unsupported provider '${want}' for ${mode}" >&2
+        return 1
+        ;;
+    esac
     return 0
   fi
 
@@ -72,14 +78,14 @@ pick_advisory_provider() {
     retro)
       want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
       if [[ "$want" == "antigravity" ]]; then
-        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (cursor, else gemini)." >&2
+        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (cursor, else opencode, else gemini)." >&2
         want=auto
       fi
       ;;
     retro-fix)
       want="${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}"
       if [[ "$want" == "antigravity" ]]; then
-        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro fix uses auto (cursor, else gemini)." >&2
+        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro fix uses auto (cursor, else opencode, else gemini)." >&2
         want=auto
       fi
       ;;
@@ -89,7 +95,7 @@ pick_advisory_provider() {
     weekly-fix)
       want="${WEEKLY_REVIEW_PROVIDER:-${POSTMERGE_RETRO_PROVIDER:-${ADVISORY_REVIEW_PROVIDER:-auto}}}"
       if [[ "$want" == "antigravity" ]]; then
-        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; weekly fix uses auto (cursor, else gemini)." >&2
+        echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; weekly fix uses auto (cursor, else opencode, else gemini)." >&2
         want=auto
       fi
       ;;
@@ -131,11 +137,8 @@ pick_advisory_provider() {
       fi
       ;;
     *)
-      if [[ "$mode" == "advisory" ]]; then
-        echo "::error::Unknown ADVISORY_REVIEW_PROVIDER=${want} (use auto, opencode, cursor, antigravity, or gemini)" >&2
-        return 1
-      fi
-      echo "$want"
+      echo "::error::unsupported provider '${want}' for ${mode} (use auto, opencode, cursor, antigravity, or gemini)" >&2
+      return 1
       ;;
   esac
 }

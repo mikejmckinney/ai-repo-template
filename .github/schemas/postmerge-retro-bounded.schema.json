@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/mikejmckinney/ai-repo-template/.github/schemas/postmerge-retro.schema.json",
-  "title": "Post-merge retrospective output",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/.github/schemas/postmerge-retro-bounded.schema.json",
+  "title": "Bounded post-merge retrospective output",
   "type": "object",
-  "required": ["pr", "summary", "evidence_complete", "follow_up_issues"],
+  "required": ["pr", "summary", "follow_up_issues"],
   "additionalProperties": true,
   "properties": {
     "pr": {
@@ -13,10 +13,7 @@
     "summary": {
       "type": "string"
     },
-    "evidence_complete": {
-      "const": true,
-      "description": "True only after every required full-evidence source has been read."
-    },
+    "evidence_complete": false,
     "follow_up_issues": {
       "type": "array",
       "items": { "$ref": "#/$defs/followUpIssue" }
@@ -43,11 +40,6 @@
         },
         "regression_guard": {
           "type": "boolean"
-        },
-        "priority_band": {
-          "type": "string",
-          "enum": ["fix-now", "should-fix", "defer"],
-          "description": "Derived by automation at validate/merge time; LLM must not emit."
         }
       }
     },
@@ -83,8 +75,7 @@
         "impact": { "$ref": "#/$defs/triageFields/properties/impact" },
         "trigger_likelihood": { "$ref": "#/$defs/triageFields/properties/trigger_likelihood" },
         "fix_cost": { "$ref": "#/$defs/triageFields/properties/fix_cost" },
-        "regression_guard": { "$ref": "#/$defs/triageFields/properties/regression_guard" },
-        "priority_band": { "$ref": "#/$defs/triageFields/properties/priority_band" }
+        "regression_guard": { "$ref": "#/$defs/triageFields/properties/regression_guard" }
       },
       "not": {
         "anyOf": [

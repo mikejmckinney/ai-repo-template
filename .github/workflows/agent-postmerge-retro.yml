@@ -117,7 +117,7 @@ jobs:
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
           if [[ "$PROVIDER" == "antigravity" ]]; then
-            echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (cursor, else gemini)."
+            echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (cursor, else opencode, else gemini)."
             PROVIDER=auto
           fi
           case "$PROVIDER" in

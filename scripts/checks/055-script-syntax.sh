@@ -22,7 +22,9 @@ shopt -s nullglob
 # explicitly (rather than `find . -name '*.sh'`) so generated/vendored
 # trees and node_modules-style directories can never sneak into the
 # check, and so adding a new top-level shell directory requires a
-# deliberate entry here. scripts/tests/*.bats is intentionally
+# deliberate entry here. Repository-authored skill roots are added from
+# skills-lock.json ownedSkills; externally locked skill packages remain excluded.
+# scripts/tests/*.bats is intentionally
 # excluded — bats files are not valid bash and should be exercised
 # via `bats`, not `bash -n` (see scripts/checks/070-*.sh ff.).
 SYNTAX_CHECK_GLOBS=(
@@ -32,6 +34,17 @@ SYNTAX_CHECK_GLOBS=(
   scripts/lib/*.sh
   scripts/setup/*.sh
 )
+
+if [[ -f skills-lock.json ]] && command -v jq >/dev/null 2>&1; then
+  while IFS= read -r skill_root; do
+    [[ -d "$skill_root" ]] || continue
+    while IFS= read -r -d '' skill_script; do
+      SYNTAX_CHECK_GLOBS+=("$skill_script")
+    done < <(find "$skill_root" -type f -name '*.sh' -print0 | sort -z)
+  done < <(jq -r '.ownedSkills[]?.destinationPath // empty' skills-lock.json)
+else
+  fail "skills-lock.json and jq are required to discover repository-authored skill scripts"
+fi
 
 shopt -u nullglob
 

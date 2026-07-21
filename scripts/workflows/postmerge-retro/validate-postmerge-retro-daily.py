@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -29,11 +30,6 @@ EVIDENCE_ROUTES = {
     "full-evidence-antigravity",
     "bounded-fallback",
 }
-SCHEMA_PATH = (
-    Path(__file__).resolve().parents[3] / ".github/schemas/postmerge-retro-daily.schema.json"
-)
-
-
 def _validate_evidence_coverage(item: dict, path: str) -> None:
     if not isinstance(item, dict):
         raise ValueError(f"{path} must be an object")
@@ -87,6 +83,11 @@ def _validate_evidence_coverage(item: dict, path: str) -> None:
         raise ValueError(f"{path}.routing_context.cursor_available must be boolean")
     if not isinstance(ctx["antigravity_available"], bool):
         raise ValueError(f"{path}.routing_context.antigravity_available must be boolean")
+    if "antigravity_on_truncate" in ctx and not isinstance(ctx["antigravity_on_truncate"], bool):
+        raise ValueError(f"{path}.routing_context.antigravity_on_truncate must be boolean")
+    for key in ("diff_truncated", "head_truncated"):
+        if key in item and not isinstance(item[key], bool):
+            raise ValueError(f"{path}.{key} must be a boolean")
     omitted = item.get("omitted_head_paths")
     if omitted is not None:
         if not isinstance(omitted, list):
@@ -106,17 +107,9 @@ def _validate_evidence_coverage(item: dict, path: str) -> None:
                     raise ValueError(f"{path}.provider_attempts[{i}].{key} must be a non-empty string")
             if attempt["status"] not in ("success", "failed"):
                 raise ValueError(f"{path}.provider_attempts[{i}].status invalid")
-
-
-def _validate_with_schema(data: dict) -> None:
-    if not SCHEMA_PATH.is_file():
-        return
-    try:
-        import jsonschema  # type: ignore[import-not-found]
-    except ImportError:
-        return
-    schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
-    jsonschema.validate(instance=data, schema=schema)
+            extra = set(attempt) - {"provider", "status", "evidence_route"}
+            if extra:
+                raise ValueError(f"{path}.provider_attempts[{i}] contains unsupported fields")
 
 
 def main() -> int:
@@ -132,14 +125,31 @@ def main() -> int:
         return 1
 
     run_date = data.get("run_date")
-    if not isinstance(run_date, str) or len(run_date) != 10:
+    if not isinstance(run_date, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", run_date):
         print("run_date must be YYYY-MM-DD", file=sys.stderr)
+        return 1
+
+    window_hours = data.get("window_hours")
+    if isinstance(window_hours, bool) or not isinstance(window_hours, int) or window_hours < 1:
+        print("window_hours must be a positive integer", file=sys.stderr)
+        return 1
+
+    if not isinstance(data.get("summary"), str):
+        print("summary must be a string", file=sys.stderr)
         return 1
 
     prs = data.get("prs")
     if not isinstance(prs, list):
         print("prs must be an array", file=sys.stderr)
         return 1
+    if any(isinstance(pr, bool) or not isinstance(pr, int) or pr < 1 for pr in prs):
+        print("prs entries must be positive integers", file=sys.stderr)
+        return 1
+
+    for key in ("pr_merges", "pr_changed_files"):
+        if key in data and not isinstance(data[key], list):
+            print(f"{key} must be an array when present", file=sys.stderr)
+            return 1
 
     findings = data.get("findings")
     if not isinstance(findings, list):
@@ -203,12 +213,11 @@ def main() -> int:
                 if not isinstance(item.get(key), str) or not item[key].strip():
                     print(f"failed_prs[{i}].{key} must be a non-empty string", file=sys.stderr)
                     return 1
-
-    try:
-        _validate_with_schema(data)
-    except Exception as exc:  # noqa: BLE001 — surface schema failures
-        print(f"schema validation failed: {exc}", file=sys.stderr)
-        return 1
+            if "exit_code" in item:
+                code = item["exit_code"]
+                if isinstance(code, bool) or not isinstance(code, int) or code < 1:
+                    print(f"failed_prs[{i}].exit_code must be a positive integer", file=sys.stderr)
+                    return 1
 
     umbrella_issue = data.get("umbrella_issue")
     if umbrella_issue is not None:

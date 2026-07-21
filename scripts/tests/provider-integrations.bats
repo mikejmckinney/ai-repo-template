@@ -171,12 +171,49 @@ for path in (
     '.opencode/opencode.json', 'scripts/browser-mcp.sh',
     'scripts/install-codespace-tools.sh', 'scripts/open-design-mcp.sh',
     'scripts/scan-skill-secrets.py', 'scripts/skill-supply-chain.py',
-    'skills-lock.json'
+    'skills-lock.json', 'CLAUDE.md'
 ):
     assert f'  "{path}"' in match.group("body"), path
 PY
 
   [ "$status" -eq 0 ]
+}
+
+@test "Claude Code entrypoint is an exact installed pointer" {
+  run python3 - "$REPO_ROOT" <<'PY'
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+assert (root / "CLAUDE.md").read_bytes() == b"@AGENTS.md\n"
+required = (root / "scripts/checks/010-required-files.sh").read_text(encoding="utf-8")
+assert '  "CLAUDE.md"' in required
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "script syntax check discovers only lock-declared owned skill scripts" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/scripts/checks" "$tmp/.agents/skills/owned/scripts" "$tmp/.agents/skills/vendor/scripts"
+  cp "$REPO_ROOT/scripts/checks/055-script-syntax.sh" "$tmp/scripts/checks/"
+  printf '%s\n' 'if then' >"$tmp/.agents/skills/owned/scripts/bad.sh"
+  printf '%s\n' 'if then' >"$tmp/.agents/skills/vendor/scripts/vendor-bad.sh"
+  cat >"$tmp/skills-lock.json" <<'EOF'
+{"ownedSkills":{"owned":{"destinationPath":".agents/skills/owned"}},"skills":{"vendor":{"destinationPath":".agents/skills/vendor"}}}
+EOF
+  run bash -c '
+    cd "$1"
+    PASS=0
+    FAIL=0
+    WARN=0
+    pass() { PASS=$((PASS + 1)); }
+    fail() { FAIL=$((FAIL + 1)); }
+    warn() { WARN=$((WARN + 1)); }
+    source scripts/checks/055-script-syntax.sh
+    [[ "$FAIL" -eq 1 ]]
+  ' _ "$tmp"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
 }
 
 @test "Cursor uses the canonical root MCP configuration" {

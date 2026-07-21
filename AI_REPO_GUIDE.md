@@ -117,6 +117,9 @@ merge. `ai-review:full` increases context depth but does not change authority.
 The daily workflow reviews PRs merged to `main` in its evidence window, creates or
 updates one dated umbrella issue, and may open a draft fix PR. It is not a
 pre-merge gate.
+Bounded provider output omits `evidence_complete`; full-evidence output must set
+it to `true` only after retrieving every required source. Separate schemas keep
+those claims from being conflated.
 
 ### Weekly Review
 

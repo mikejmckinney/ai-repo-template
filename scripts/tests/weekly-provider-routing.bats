@@ -49,3 +49,24 @@ setup() {
   [ "$status" -eq 0 ]
   [ "$output" = antigravity ]
 }
+
+@test "weekly routing rejects unsupported configured providers" {
+  WEEKLY_REVIEW_PROVIDER=unknown-provider
+  init_advisory_provider_credentials
+
+  run --separate-stderr pick_advisory_provider weekly-scan
+
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"unknown-provider"* ]]
+  [[ "$stderr" == *"unsupported"* ]]
+}
+
+@test "retro remap notices include OpenCode in the auto cascade" {
+  ADVISORY_REVIEW_PROVIDER=antigravity
+  init_advisory_provider_credentials
+
+  run --separate-stderr pick_advisory_provider retro
+
+  [ "$status" -eq 0 ]
+  [[ "$stderr" == *"cursor, else opencode, else gemini"* ]]
+}

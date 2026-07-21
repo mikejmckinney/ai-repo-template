@@ -13,18 +13,52 @@
 
 set -euo pipefail
 
+sandbox_push_with_askpass() (
+  local repo_root="$1"
+  local remote="$2"
+  local sandbox_branch="$3"
+  local askpass_file
+  askpass_file="$(mktemp "${TMPDIR:-/tmp}/sandbox-git-askpass.XXXXXX")"
+  cleanup_askpass() {
+    local status=$?
+    trap - EXIT HUP INT TERM
+    rm -f -- "$askpass_file"
+    exit "$status"
+  }
+  trap cleanup_askpass EXIT
+  trap 'exit 129' HUP
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  chmod 700 "$askpass_file"
+  cat >"$askpass_file" <<'EOF'
+#!/usr/bin/env bash
+case "${1:-}" in
+  Username*) printf '%s\n' x-access-token ;;
+  Password*) printf '%s\n' "${SANDBOX_BOOTSTRAP_TOKEN:?}" ;;
+  *) exit 1 ;;
+esac
+EOF
+  local push_status
+  set +e
+  GIT_ASKPASS="$askpass_file" GIT_TERMINAL_PROMPT=0 \
+    git -C "$repo_root" push -f "$remote" "HEAD:${sandbox_branch}"
+  push_status=$?
+  set -e
+  exit "$push_status"
+)
+
 sandbox_sync_should_skip() {
   if [[ "${SKIP_SANDBOX_FIX_VERIFY:-}" == "true" ]]; then
-    echo "::notice::sandbox-sync skipped (SKIP_SANDBOX_FIX_VERIFY=true)"
+    echo "::notice::sandbox-sync skipped (SKIP_SANDBOX_FIX_VERIFY=true)" >&2
     return 0
   fi
   local repo="${GITHUB_REPOSITORY:-}"
   if [[ "$repo" == *-sandbox ]]; then
-    echo "::notice::sandbox-sync skipped (running on sandbox repo)"
+    echo "::notice::sandbox-sync skipped (running on sandbox repo)" >&2
     return 0
   fi
   if [[ "${FIX_JOB_SANDBOX_VERIFY:-false}" != "true" ]]; then
-    echo "::notice::sandbox-sync skipped (FIX_JOB_SANDBOX_VERIFY not true)"
+    echo "::notice::sandbox-sync skipped (FIX_JOB_SANDBOX_VERIFY not true)" >&2
     return 0
   fi
   return 1
@@ -35,6 +69,8 @@ sandbox_sync_fix_branch() {
   local sandbox_branch="$2"
   local title="$3"
   local body_file="$4"
+  local GH_TOKEN="${GH_TOKEN:-}"
+  local SANDBOX_BOOTSTRAP_TOKEN="${SANDBOX_BOOTSTRAP_TOKEN:-}"
 
   if sandbox_sync_should_skip; then
     return 0
@@ -53,11 +89,11 @@ sandbox_sync_fix_branch() {
   if [[ -n "${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]; then
     export GH_TOKEN="$SANDBOX_BOOTSTRAP_TOKEN"
   elif [[ -z "${GH_TOKEN:-}" ]]; then
-    echo "::warning::sandbox-sync: SANDBOX_BOOTSTRAP_TOKEN unset; using existing gh auth"
+    echo "::warning::sandbox-sync: SANDBOX_BOOTSTRAP_TOKEN unset; using existing gh auth" >&2
   fi
 
   if [[ -x "$repo_root/scripts/diag-sandbox.sh" ]]; then
-    (cd "$repo_root" && ./scripts/diag-sandbox.sh) || {
+    (cd "$repo_root" && ./scripts/diag-sandbox.sh) >&2 || {
       echo "::warning::diag-sandbox.sh reported issues; continuing sandbox push"
     }
   fi
@@ -66,7 +102,15 @@ sandbox_sync_fix_branch() {
     echo "::error::sandbox-sync: could not resolve sandbox targets" >&2
     return 1
   }
-  sandbox_ensure_git_remote "$repo_root" || true
+  local configured_url
+  if configured_url="$(git -C "$repo_root" remote get-url "${SANDBOX_REMOTE:-sandbox}" 2>/dev/null)" \
+    && [[ "$configured_url" =~ ^https?://[^/@]+@ ]]; then
+    if ! git -C "$repo_root" remote set-url "${SANDBOX_REMOTE:-sandbox}" "$SANDBOX_URL"; then
+      echo "::error::sandbox-sync: could not remove credentials from sandbox remote" >&2
+      return 1
+    fi
+  fi
+  sandbox_ensure_git_remote "$repo_root" >&2 || true
 
   local remote="${SANDBOX_REMOTE:-sandbox}"
   if ! git -C "$repo_root" remote get-url "$remote" &>/dev/null; then
@@ -74,10 +118,14 @@ sandbox_sync_fix_branch() {
     return 1
   fi
 
-  echo "::notice::sandbox-sync pushing HEAD -> ${remote}/${sandbox_branch}"
+  echo "::notice::sandbox-sync pushing HEAD -> ${remote}/${sandbox_branch}" >&2
   if [[ -n "${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]; then
-    local push_url="https://x-access-token:${SANDBOX_BOOTSTRAP_TOKEN}@github.com/${SANDBOX_REPO}.git"
-    git -C "$repo_root" push -f "$push_url" "HEAD:${sandbox_branch}"
+    export SANDBOX_BOOTSTRAP_TOKEN
+    if sandbox_push_with_askpass "$repo_root" "$remote" "$sandbox_branch"; then
+      :
+    else
+      return $?
+    fi
   else
     git -C "$repo_root" push -f "$remote" "HEAD:${sandbox_branch}"
   fi
@@ -89,14 +137,14 @@ sandbox_sync_fix_branch() {
   if [[ -n "$existing_pr" ]]; then
     gh pr edit "$existing_pr" --repo "$SANDBOX_REPO" --title "$title" --body-file "$body_file" >/dev/null
     pr_url="$(gh pr view "$existing_pr" --repo "$SANDBOX_REPO" --json url --jq .url)"
-    echo "::notice::sandbox-sync updated sandbox PR #${existing_pr}"
+    echo "::notice::sandbox-sync updated sandbox PR #${existing_pr}" >&2
   else
     pr_url="$(gh pr create --repo "$SANDBOX_REPO" \
       --title "$title" \
       --body-file "$body_file" \
       --base main \
       --head "$sandbox_branch")"
-    echo "::notice::sandbox-sync created sandbox PR ${pr_url}"
+    echo "::notice::sandbox-sync created sandbox PR ${pr_url}" >&2
   fi
 
   printf '%s\n' "$pr_url"

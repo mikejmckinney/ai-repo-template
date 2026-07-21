@@ -15,6 +15,7 @@
           "body",
           "dedupe_key",
           "repro_steps",
+          "evidence",
           "impact",
           "trigger_likelihood",
           "fix_cost"
@@ -28,6 +29,15 @@
             "type": "array",
             "minItems": 1,
             "items": { "type": "string", "minLength": 1 }
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^(?![~/\\\\])(?![A-Za-z]:[/\\\\])(?!.*(?:^|/)\\.{1,2}(?:/|$))(?![A-Za-z][A-Za-z0-9+.-]*://)(?!.*\\\\).+$"
+            }
           },
           "impact": {
             "type": "string",

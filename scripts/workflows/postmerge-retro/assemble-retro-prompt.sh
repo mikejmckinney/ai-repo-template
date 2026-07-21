@@ -298,6 +298,6 @@ done
   echo ""
   echo "Respond with **JSON only** matching the required shape. Set \`pr\` to ${PR}."
   if [[ "$PROMPT_MODE" == "full-evidence" ]]; then
-    echo "Set \`evidence_complete\` to \`true\` only after reading every required evidence source, the complete diff, and every PR-touched path on current \`main\` HEAD."
+    echo 'Add `"evidence_complete": true` only after reading every required evidence source, the complete diff, and every PR-touched path on current `main` HEAD.'
   fi
 } >"$OUT_PROMPT"
