@@ -34,8 +34,8 @@
     },
     "render": {"transport": "remote", "url": "https://mcp.render.com/mcp", "auth_env": "RENDER_API_KEY"},
     "open-design": {"transport": "local", "command": ["bash", "scripts/open-design-mcp.sh"]},
-    "playwright": {"transport": "local", "command": ["npx", "@playwright/mcp@latest"]},
-    "chrome-devtools": {"transport": "local", "command": ["npx", "-y", "chrome-devtools-mcp@latest"]},
-    "shadcn": {"transport": "local", "command": ["npx", "-y", "shadcn@latest", "mcp"]}
+    "playwright": {"transport": "local", "command": ["bash", "scripts/browser-mcp.sh", "playwright", "@playwright/mcp@0.0.78"]},
+    "chrome-devtools": {"transport": "local", "command": ["bash", "scripts/browser-mcp.sh", "chrome-devtools", "chrome-devtools-mcp@1.6.0"]},
+    "shadcn": {"transport": "local", "command": ["npx", "-y", "shadcn@4.13.1", "mcp"]}
   }
 }

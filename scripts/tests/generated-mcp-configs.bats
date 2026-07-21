@@ -20,6 +20,17 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "local npm MCP launchers use exact reviewed packages" {
+  run jq -e '
+    .servers.playwright.command == ["bash", "scripts/browser-mcp.sh", "playwright", "@playwright/mcp@0.0.78"] and
+    .servers["chrome-devtools"].command == ["bash", "scripts/browser-mcp.sh", "chrome-devtools", "chrome-devtools-mcp@1.6.0"] and
+    .servers.shadcn.command == ["npx", "-y", "shadcn@4.13.1", "mcp"] and
+    ([.servers[].command? // [] | .[] | select(type == "string" and contains("@latest"))] | length) == 0
+  ' "$REPO_ROOT/.config/mcp-inventory.json"
+
+  [ "$status" -eq 0 ]
+}
+
 @test "MCP check reports stale host output" {
   jq '.mcpServers.github.url = "https://stale.invalid"' "$TEST_ROOT/.mcp.json" \
     >"$TEST_ROOT/stale.json"

@@ -10,6 +10,8 @@
 | `db-reset.sh` | Reset database to clean state | `./scripts/db-reset.sh` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
 | `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
+| `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile core` |
+| `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
 | `check-markdown-links.py` | Validate repository-local Markdown targets | `python3 scripts/check-markdown-links.py <files...>` |
 | `diagnose-opencode-session.sh` | Record OpenCode process exit and signal evidence | `./scripts/diagnose-opencode-session.sh` |
 
@@ -27,6 +29,18 @@ Before marking a task complete, run verification:
 One-command setup for new clones:
 ```bash
 ./scripts/setup.sh
+```
+
+Codespaces tool bootstrap can be checked without mutation:
+
+```bash
+./scripts/install-codespace-tools.sh --profile core --verify-only
+```
+
+The optional agent CLI profile includes the core profile:
+
+```bash
+./scripts/install-codespace-tools.sh --profile agents
 ```
 
 ## Creating New Scripts

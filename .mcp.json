@@ -88,23 +88,26 @@
       ]
     },
     "playwright": {
-      "command": "npx",
+      "command": "bash",
       "args": [
-        "@playwright/mcp@latest"
+        "scripts/browser-mcp.sh",
+        "playwright",
+        "@playwright/mcp@0.0.78"
       ]
     },
     "chrome-devtools": {
-      "command": "npx",
+      "command": "bash",
       "args": [
-        "-y",
-        "chrome-devtools-mcp@latest"
+        "scripts/browser-mcp.sh",
+        "chrome-devtools",
+        "chrome-devtools-mcp@1.6.0"
       ]
     },
     "shadcn": {
       "command": "npx",
       "args": [
         "-y",
-        "shadcn@latest",
+        "shadcn@4.13.1",
         "mcp"
       ]
     }

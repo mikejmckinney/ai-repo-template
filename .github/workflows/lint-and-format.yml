@@ -99,7 +99,7 @@ jobs:
       # =====================================================
       - name: Install shfmt
         run: |
-          SHFMT_VERSION="3.8.0"
+          SHFMT_VERSION="$(jq -r '.tools.shfmt.version' .config/codespace-tools.json)"
           curl -sSL \
             "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" \
             -o /usr/local/bin/shfmt
@@ -131,7 +131,7 @@ jobs:
       # =====================================================
       - name: Install actionlint
         run: |
-          ACTIONLINT_VERSION="1.7.7"
+          ACTIONLINT_VERSION="$(jq -r '.tools.actionlint.version' .config/codespace-tools.json)"
           curl -sSL \
             "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
             | tar -xz -C /usr/local/bin actionlint
@@ -164,7 +164,9 @@ jobs:
       # MARKDOWN LINTING — changed files block, repo-wide debt summarizes
       # =====================================================
       - name: Install markdownlint-cli2
-        run: npm install --global markdownlint-cli2@0.17.2
+        run: |
+          MARKDOWNLINT_PACKAGE="$(jq -r '.tools["markdownlint-cli2"].package' .config/codespace-tools.json)"
+          npm install --global "${MARKDOWNLINT_PACKAGE}"
 
       - name: Collect changed Markdown files
         id: markdown-files
