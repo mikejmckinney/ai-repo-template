@@ -5,7 +5,7 @@
 .agents/skills/chrome-devtools-cli/** whitespace=-blank-at-eof,-blank-at-eol
 .agents/skills/cloudflare/** whitespace=-blank-at-eof,-blank-at-eol
 .agents/skills/find-skills/** whitespace=-blank-at-eof,-blank-at-eol
-.agents/skills/frontend-design/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/anthropic/** whitespace=-blank-at-eof,-blank-at-eol
 .agents/skills/netlify/** whitespace=-blank-at-eof,-blank-at-eol
 .agents/skills/oci/** whitespace=-blank-at-eof,-blank-at-eol
 .agents/skills/phaser/** whitespace=-blank-at-eof,-blank-at-eol

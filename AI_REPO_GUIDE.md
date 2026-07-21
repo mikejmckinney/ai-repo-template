@@ -96,15 +96,17 @@ returns failure to the existing provider cascade instead of consuming the
 All 28 official Phaser 4 skills are pinned in `skills-lock.json` and grouped at
 `.agents/skills/phaser/<name>/SKILL.md`. OpenCode, Cursor, Codex, and current
 GitHub Copilot discover this recursive layout. Gemini CLI and `npx skills list`
-only scan direct skill children, so they do not expose nested skills. Vercel,
-Netlify, Supabase, and Cloudflare skills are likewise grouped under provider
-parents; AWS, Azure, OCI, and Render use the same provider-parent layout.
-Singleton providers and repository-owned skills remain direct children.
-Use `npx skills add . --list --full-depth` to inspect the nested source tree. Do
-not use `npx skills experimental_install` to restore its layout: the lock format
-records upstream `skillPath` and explicit nested destinations. External package
-trees with more than one skill declare sorted `skillEntrypoints` so validation
-can discover nested skills without overlapping refresh records.
+only scan direct skill children, so they do not expose nested skills. Anthropic,
+Vercel, Netlify, Supabase, and Cloudflare skills are likewise grouped under
+provider parents; AWS, Azure, OCI, and Render use the same provider-parent layout.
+Singleton providers and repository-owned skills remain direct children. Use
+`python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock
+skills-lock.json` to inspect the authoritative nested inventory. Do not treat
+`npx skills add . --list --full-depth` as complete; it omits some provider-parent
+layouts. Do not use `npx skills experimental_install` to restore the layout: the
+lock records upstream `skillPath` and explicit nested destinations. External
+package trees with more than one skill declare sorted `skillEntrypoints` so
+validation can discover nested skills without overlapping refresh records.
 
 ## Review Lifecycle
 

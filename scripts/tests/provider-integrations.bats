@@ -340,6 +340,24 @@ EOF
   [ -f "$REPO_ROOT/.agents/skills/use-railway/SKILL.md" ]
 }
 
+@test "Anthropic skills share one locked provider parent" {
+  anthropic_skills=(frontend-design mcp-builder skill-creator)
+
+  for skill in "${anthropic_skills[@]}"; do
+    [ -f "$REPO_ROOT/.agents/skills/anthropic/$skill/SKILL.md" ]
+    [ -f "$REPO_ROOT/.agents/skills/anthropic/$skill/LICENSE.txt" ]
+    [ ! -e "$REPO_ROOT/.agents/skills/$skill" ]
+    run jq -e --arg skill "$skill" '
+      .skills[$skill].source == "anthropics/skills" and
+      .skills[$skill].ref == "fa0fa64bdc967915dc8399e803be67759e1e62b8" and
+      .skills[$skill].skillPath == ("skills/" + $skill) and
+      .skills[$skill].destinationPath == (".agents/skills/anthropic/" + $skill) and
+      .skills[$skill].hashAlgorithm == "sha256-tree-v1"
+    ' "$REPO_ROOT/skills-lock.json"
+    [ "$status" -eq 0 ]
+  done
+}
+
 @test "repository-owned GCP and Colyseus skills are explicit and complete" {
   for skill in gcp colyseus; do
     [ -f "$REPO_ROOT/.agents/skills/$skill/SKILL.md" ]
