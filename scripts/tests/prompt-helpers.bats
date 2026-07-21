@@ -118,4 +118,17 @@ PY
   [ "$status" -eq 0 ]
   grep -q 'TRUNCATED' <<<"$output"
   grep -q '::warning::JSON snapshot truncated' <<<"$stderr"
+  comment="$output"
+  run python3 -c '
+import json
+import re
+import sys
+
+match = re.search(r"```json\s*(.*?)\s*```", sys.stdin.read(), re.DOTALL)
+assert match is not None
+payload = json.loads(match.group(1))
+assert payload["snapshot_status"] == "TRUNCATED"
+assert payload["original_bytes"] > 2000
+' <<<"$comment"
+  [ "$status" -eq 0 ]
 }
