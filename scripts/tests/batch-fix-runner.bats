@@ -120,6 +120,50 @@ teardown() {
   [[ "$output" == *"not-found.json"* ]]
 }
 
+@test "batch fix workflow-only run fails with human-authored PR requirement" {
+  BATCH_FIX_STRIPPED_WORKFLOWS=(.github/workflows/example.yml)
+
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/verify.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *".github/workflows/example.yml"* ]]
+  [[ "$output" == *"human-authored workflow PR required"* ]]
+  [ ! -f "$CALL_LOG" ]
+}
+
+@test "batch fix mixed run publishes partial draft then fails for workflow follow-up" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/git" <<'EOF'
+#!/usr/bin/env bash
+printf 'git %s\n' "$*" >>"$CALL_LOG"
+EOF
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+printf 'gh %s\n' "$*" >>"$CALL_LOG"
+if [[ "$1 $2" == "pr create" ]]; then
+  printf '%s\n' 'https://example.test/pr/18'
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/git" "$TEST_ROOT/bin/gh"
+  PATH="$TEST_ROOT/bin:$PATH"
+  BATCH_FIX_STRIPPED_WORKFLOWS=(.github/workflows/example.yml)
+
+  run batch_fix_publish \
+    owner/repo branch "" 1 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/verify.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"human-authored workflow PR required"* ]]
+  run grep -F 'gh pr create' "$CALL_LOG"
+  [ "$status" -eq 0 ]
+  run grep -F 'update 2026-W24 https://example.test/pr/18' "$CALL_LOG"
+  [ "$status" -eq 0 ]
+}
+
 @test "batch fix no-diff rerun preserves existing PR body" {
   mkdir -p "$TEST_ROOT/bin"
   cat >"$TEST_ROOT/bin/gh" <<'EOF'

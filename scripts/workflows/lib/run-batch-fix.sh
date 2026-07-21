@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 # Shared commit and publication lifecycle for daily and weekly batch-fix jobs.
 
+BATCH_FIX_STRIPPED_WORKFLOWS=()
+
 batch_fix_strip_workflow_changes() {
   local paths=()
   local path
+  BATCH_FIX_STRIPPED_WORKFLOWS=()
   while IFS= read -r -d '' path; do
     paths+=("$path")
   done < <(git status --porcelain .github/workflows/ 2>/dev/null | awk '{print $2}' | tr '\n' '\0')
   if ((${#paths[@]} == 0)); then
     return 0
   fi
+  BATCH_FIX_STRIPPED_WORKFLOWS=("${paths[@]}")
   echo "::notice::Stripping ${#paths[@]} .github/workflows/ change(s) from fix commit" >&2
   for path in "${paths[@]}"; do
     if git ls-files --error-unmatch "$path" >/dev/null 2>&1; then
@@ -18,6 +22,18 @@ batch_fix_strip_workflow_changes() {
       rm -f "$path"
     fi
   done
+}
+
+batch_fix_require_human_workflow_pr() {
+  local path
+  if ((${#BATCH_FIX_STRIPPED_WORKFLOWS[@]} == 0)); then
+    return 0
+  fi
+  echo "::error::Automated workflow edits were stripped; human-authored workflow PR required" >&2
+  for path in "${BATCH_FIX_STRIPPED_WORKFLOWS[@]}"; do
+    echo "::error::  - ${path}" >&2
+  done
+  return 1
 }
 
 batch_fix_write_verify_stub() {
@@ -101,6 +117,7 @@ batch_fix_publish() {
   local verify_json="${13}" pr_url skip_notice
 
   if [[ "$has_diff" -eq 0 ]]; then
+    batch_fix_require_human_workflow_pr || return 1
     python3 "$(dirname "${BASH_SOURCE[0]}")/validate-no-diff-fix.py" \
       "$input_json" "$verify_json" || return 1
   fi
@@ -138,4 +155,5 @@ batch_fix_publish() {
     "$repo" "$pr_url" "$run_key" "$input_json" "$resolve_script" "$link_script"
   bash "$update_script" "$run_key" "$pr_url" "$input_json"
   fix_phase_log "publish"
+  batch_fix_require_human_workflow_pr || return 1
 }
