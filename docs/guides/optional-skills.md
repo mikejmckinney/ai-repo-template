@@ -22,8 +22,10 @@ Normal `install.sh` execution installs the `core` profile from
 `.config/codespace-tools.json`. It includes local quality tools and the runtime
 prerequisites of MCPs that are enabled in the generated development config:
 checksum-verified Chrome for Testing, its declared Debian dependencies, and the
-locked Open Design daemon checkout. Playwright and Chrome DevTools npm packages
-remain exact, on-demand MCP launcher dependencies rather than global installs.
+locked Open Design daemon checkout. It also installs the locked npm dependencies
+under `.github/agent-runtime` that local quality tests and workflow helpers import.
+Playwright and Chrome DevTools npm packages remain exact, on-demand MCP launcher
+dependencies rather than global installs.
 
 Use `bash install.sh --profile agents` to include OpenCode, Claude Code, Cursor
 Agent, and Codex. Exact npm packages are integrity-checked where the vendor

@@ -226,8 +226,10 @@ Codespaces profile installs checksum-verified Chrome for Testing and its
 artifact-declared Debian dependencies, then both Playwright and Chrome DevTools
 launch that executable headlessly. Open Design uses its repository-owned lock
 and bootstrap under `.agents/skills/open-design/`; its daemon checkout is also
-part of the default core profile. Run the core profile with `--verify-only` to
-preflight these prerequisites without downloading or changing packages.
+part of the default core profile. The profile also installs the locked
+`.github/agent-runtime` npm dependencies required by the local Bats suite and
+OpenCode workflow helpers. Run the core profile with `--verify-only` to preflight
+these prerequisites without downloading or changing packages.
 The 19 AWS core skills come from the current Agent Toolkit for AWS successor
 repository. All 26 Azure package trees are vendored; supported Azure plugin
 installs also include the skills plus Azure and Foundry MCP configuration, but

@@ -35,7 +35,8 @@
       "markdownlint-cli2",
       "uv",
       "chrome-for-testing",
-      "open-design"
+      "open-design",
+      "agent-runtime"
     ],
     "agents": ["opencode", "claude", "cursor-agent", "codex"]
   },
@@ -101,6 +102,12 @@
       "version": "79e257d62c0e6a8d9084f2a6464f08a251a5c0bb",
       "lock": ".agents/skills/open-design/open-design.lock",
       "bootstrap": ".agents/skills/open-design/scripts/bootstrap.sh"
+    },
+    "agent-runtime": {
+      "type": "npm-project",
+      "command": "node",
+      "version": "locked",
+      "path": ".github/agent-runtime"
     },
     "opencode": {
       "type": "npm",

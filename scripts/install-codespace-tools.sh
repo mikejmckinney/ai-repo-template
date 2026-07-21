@@ -190,6 +190,24 @@ install_open_design() {
   bash "$bootstrap" --lock "$lock"
 }
 
+install_npm_project() {
+  local name="$1" project_path project_dir
+  project_path="$(jq -r --arg name "$name" '.tools[$name].path' "$MANIFEST")"
+  if [[ "$project_path" == /* ]]; then
+    project_dir="$project_path"
+  else
+    project_dir="$REPO_ROOT/$project_path"
+  fi
+  [[ -f "$project_dir/package-lock.json" ]] || die "$name lockfile not found: $project_dir/package-lock.json"
+  if npm ls --prefix "$project_dir" --omit=dev --depth=0 >/dev/null 2>&1; then
+    printf 'codespace-tools: %s lockfile dependencies already installed\n' "$name"
+    return
+  fi
+  [[ "$VERIFY_ONLY" == false ]] || die "$name lockfile dependencies are missing or mismatched"
+  npm ci --prefix "$project_dir"
+  printf 'codespace-tools: installed %s from lockfile\n' "$name"
+}
+
 install_vendor_channel() {
   local name="$1" command_name url package expected_integrity actual_integrity temp
   command_name="$(jq -r --arg name "$name" '.tools[$name].command' "$MANIFEST")"
@@ -255,6 +273,7 @@ for name in "${selected_tools[@]}"; do
     archive) install_archive "$name" ;;
     npm) install_npm "$name" ;;
     open-design) install_open_design "$name" ;;
+    npm-project) install_npm_project "$name" ;;
     vendor-channel) install_vendor_channel "$name" ;;
     *) die "unsupported tool type for $name: $type" ;;
   esac

@@ -74,6 +74,7 @@ run_installer() {
     (.profiles.core | index("uv")) and
     (.profiles.core | index("chrome-for-testing")) and
     (.profiles.core | index("open-design")) and
+    (.profiles.core | index("agent-runtime")) and
     (.profiles.agents | index("opencode")) and
     (.profiles.agents | index("claude")) and
     (.profiles.agents | index("cursor-agent")) and
@@ -82,6 +83,47 @@ run_installer() {
   ' "$REPO_ROOT/.config/codespace-tools.json"
 
   [ "$status" -eq 0 ]
+}
+
+@test "locked npm project installs once and then verifies without reinstalling" {
+  mkdir -p "$TEST_ROOT/runtime"
+  printf '%s\n' '{"name":"test-runtime","private":true}' >"$TEST_ROOT/runtime/package.json"
+  printf '%s\n' '{"lockfileVersion":3,"packages":{}}' >"$TEST_ROOT/runtime/package-lock.json"
+  jq --arg path "$TEST_ROOT/runtime" '
+    .profiles.core = ["agent-runtime"] |
+    .tools = {
+      "agent-runtime": {
+        type: "npm-project",
+        command: "node",
+        version: "locked",
+        path: $path
+      }
+    }
+  ' "$TEST_ROOT/manifest.json" >"$TEST_ROOT/npm-manifest.json"
+  mv "$TEST_ROOT/npm-manifest.json" "$TEST_ROOT/manifest.json"
+  cat >"$BIN_DIR/npm" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "ls" ]]; then
+  [[ -f "$NPM_PROJECT/.installed" ]]
+  exit
+fi
+if [[ "$1" == "ci" ]]; then
+  touch "$NPM_PROJECT/.installed"
+  printf 'ci\n' >>"$NPM_LOG"
+  exit
+fi
+exit 2
+EOF
+  chmod +x "$BIN_DIR/npm"
+
+  NPM_PROJECT="$TEST_ROOT/runtime" NPM_LOG="$TEST_ROOT/npm.log" run_installer --profile core
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"installed agent-runtime from lockfile"* ]]
+
+  NPM_PROJECT="$TEST_ROOT/runtime" NPM_LOG="$TEST_ROOT/npm.log" run_installer --profile core --verify-only
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"agent-runtime lockfile dependencies already installed"* ]]
+  [ "$(wc -l <"$TEST_ROOT/npm.log" | tr -d ' ')" -eq 1 ]
 }
 
 @test "install.sh invokes and copies the canonical Codespaces bootstrap" {
