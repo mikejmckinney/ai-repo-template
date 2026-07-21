@@ -102,27 +102,23 @@ prompt_file="$WORKDIR/prompt.md"
 source "$LIB_DIR/pick-advisory-provider.sh"
 # shellcheck source=../lib/invoke-advisory-llm.sh
 source "$LIB_DIR/invoke-advisory-llm.sh"
+# shellcheck source=../lib/run-fix-provider-cascade.sh
+source "$LIB_DIR/run-fix-provider-cascade.sh"
 
 init_advisory_provider_credentials
-PROVIDER="$(pick_advisory_provider retro-fix)"
-[[ -n "$PROVIDER" ]] || {
-  echo "::error::No fix provider configured"
-  exit 1
+llm_raw="$WORKDIR/llm-fix-output.txt"
+
+apply_daily_gemini_fix() {
+  local raw_output="$1" attempt_repo="$2"
+  local fix_json="$WORKDIR/fix.json" dated_json="$WORKDIR/fix-with-date.json"
+  python3 "$SCRIPT_DIR/extract-retro-fix-json.py" "$raw_output" "$fix_json" \
+    && jq --arg rd "$RUN_DATE" '. + {run_date: $rd}' "$fix_json" >"$dated_json" \
+    && python3 "$SCRIPT_DIR/apply-retro-fix-json.py" "$dated_json" "$attempt_repo"
 }
 
-llm_raw="$WORKDIR/llm-fix-output.txt"
-OPENCODE_FIX_MODE=true \
-  invoke_advisory_llm "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+run_fix_provider_cascade retro-fix "$prompt_file" "$llm_raw" "$REPO_ROOT" \
+  "$ADVISORY_DIR" "$WORKDIR" "$LIB_DIR" apply_daily_gemini_fix
 fix_phase_log "llm-fix"
-
-case "$PROVIDER" in
-  gemini)
-    fix_json="$WORKDIR/fix.json"
-    python3 "$SCRIPT_DIR/extract-retro-fix-json.py" "$llm_raw" "$fix_json"
-    jq --arg rd "$RUN_DATE" '. + {run_date: $rd}' "$fix_json" >"$WORKDIR/fix-with-date.json"
-    python3 "$SCRIPT_DIR/apply-retro-fix-json.py" "$WORKDIR/fix-with-date.json" "$REPO_ROOT"
-    ;;
-esac
 
 if [[ ! -f "$VERIFY_JSON" ]]; then
   echo "::warning::fix-verify.json missing after fix pass; creating minimal stub" >&2

@@ -84,49 +84,59 @@ prompt_file="$WORKDIR/prompt.md"
   echo "Inspect the repository working tree on \`main\` for code/scripts/workflows/checks evidence."
 } >"$prompt_file"
 
+# shellcheck disable=SC2034 # Provider routing reads this global after sourcing.
 antigravity_enabled=false
 if [[ "${ADVISORY_ANTIGRAVITY_ENABLED:-}" == "true" ]]; then
   antigravity_enabled=true
 fi
+export antigravity_enabled
 
 # shellcheck source=../lib/pick-advisory-provider.sh
 source "$LIB_DIR/pick-advisory-provider.sh"
 # shellcheck source=../lib/invoke-advisory-llm.sh
 source "$LIB_DIR/invoke-advisory-llm.sh"
 init_advisory_provider_credentials
-PROVIDER="$(pick_advisory_provider weekly-scan)"
-[[ -n "$PROVIDER" ]] || {
+mapfile -t provider_candidates < <(list_advisory_providers weekly-scan)
+[[ ${#provider_candidates[@]} -gt 0 ]] || {
   echo "::error::No weekly review provider configured. Configure OpenCode, Cursor, or Gemini credentials."
   exit 1
 }
 
 llm_raw="$WORKDIR/llm-output.txt"
-case "$PROVIDER" in
-  opencode | cursor | gemini)
-    OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/weekly-review.schema.json" \
-      invoke_advisory_llm \
-      "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" \
-      "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
-    ;;
-  antigravity)
-    [[ -n "${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}" ]] || {
-      echo "::error::WEEKLY_REVIEW_PROVIDER=antigravity but GEMINI_API_KEY/GOOGLE_API_KEY is unset"
-      exit 1
-    }
-    [[ "$antigravity_enabled" == "true" ]] || {
-      echo "::error::WEEKLY_REVIEW_PROVIDER=antigravity but ADVISORY_ANTIGRAVITY_ENABLED is not true"
-      exit 1
-    }
-    if ! python3 "$SCRIPT_DIR/run-weekly-antigravity.py" "$REPO_ROOT" "$WORKDIR" "$llm_raw"; then
-      echo "::error::Antigravity weekly review failed"
-      exit 1
-    fi
-    ;;
-esac
-
 review_json="$WORKDIR/review.json"
-python3 "$SCRIPT_DIR/extract-weekly-json.py" "$llm_raw" "$review_json"
-python3 "$SCRIPT_DIR/validate-weekly-review.py" "$review_json"
+provider_succeeded=false
+for provider in "${provider_candidates[@]}"; do
+  rm -f "$llm_raw" "$review_json"
+  ADVISORY_PROVIDER_USED="$provider"
+  provider_invoked=false
+  case "$provider" in
+    opencode | cursor | gemini)
+      if OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/weekly-review.schema.json" \
+        invoke_advisory_llm \
+        "$prompt_file" "$llm_raw" "$provider" "$ADVISORY_DIR" \
+        "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"; then
+        provider_invoked=true
+      fi
+      ;;
+    antigravity)
+      if python3 "$SCRIPT_DIR/run-weekly-antigravity.py" "$REPO_ROOT" "$WORKDIR" "$llm_raw"; then
+        provider_invoked=true
+      fi
+      ;;
+  esac
+  if [[ "$provider_invoked" == true ]] \
+    && python3 "$SCRIPT_DIR/extract-weekly-json.py" "$llm_raw" "$review_json" \
+    && python3 "$SCRIPT_DIR/validate-weekly-review.py" "$review_json"; then
+    PROVIDER="${ADVISORY_PROVIDER_USED:-$provider}"
+    provider_succeeded=true
+    break
+  fi
+  echo "::warning::Weekly review provider ${provider} failed; trying next available provider" >&2
+done
+if [[ "$provider_succeeded" != true ]]; then
+  echo "::error::Weekly review provider cascade exhausted" >&2
+  exit 1
+fi
 
 if [[ -n "$OUT_JSON" ]]; then
   cp -f "$review_json" "$OUT_JSON"

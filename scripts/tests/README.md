@@ -12,6 +12,7 @@ path.
 | `codespace-cache-cleanup.bats` | Dry-run and bounded Codespaces cache cleanup behavior |
 | `codespace-tools.bats` | Codespaces tool manifest and idempotent installer behavior |
 | `orchestration.bats` | Multi-model consensus provider and Fusion behavior |
+| `opencode-oauth-actions.bats` | Access-only OAuth sync, expiry routing, and fix isolation |
 | `postmerge-retro-batch.bats` | Daily retro evidence and lifecycle behavior |
 | `shell-tooling-policy.bats` | Bounded production shell command policy |
 | `verify-env.bats` | Environment checks |

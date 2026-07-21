@@ -275,22 +275,47 @@ source "$LIB_DIR/pick-advisory-provider.sh"
 # shellcheck source=../lib/invoke-advisory-llm.sh
 source "$LIB_DIR/invoke-advisory-llm.sh"
 init_advisory_provider_credentials
-PROVIDER="$(pick_advisory_provider retro)"
-if [[ -z "$PROVIDER" ]]; then
+mapfile -t provider_candidates < <(list_advisory_providers retro)
+if [[ ${#provider_candidates[@]} -eq 0 ]]; then
   echo "::error::No post-merge retro provider configured."
   exit 1
 fi
 
 llm_raw="$WORKDIR/llm-output.txt"
-echo "Monolithic retro LLM call via ${PROVIDER} for PR(s): ${SELECTED_PRS[*]}"
-OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro-monolithic.schema.json" \
-  invoke_advisory_llm \
-  "$prompt_file" "$llm_raw" "$PROVIDER" "$ADVISORY_DIR" \
-  "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+candidate_dir="$WORKDIR/monolithic-candidate"
+provider_succeeded=false
+validate_monolithic_candidate() {
+  local pr
+  for pr in "${SELECTED_PRS[@]}"; do
+    python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "$candidate_dir/pr-${pr}-retro.json" \
+      || return 1
+  done
+}
+
+for provider in "${provider_candidates[@]}"; do
+  rm -rf "$candidate_dir"
+  mkdir -p "$candidate_dir"
+  rm -f "$llm_raw"
+  echo "Monolithic retro LLM call via ${provider} for PR(s): ${SELECTED_PRS[*]}"
+  if OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro-monolithic.schema.json" \
+    invoke_advisory_llm \
+    "$prompt_file" "$llm_raw" "$provider" "$ADVISORY_DIR" \
+    "$REPO_ROOT" "$WORKDIR" "$LIB_DIR" \
+    && python3 "$SCRIPT_DIR/split-monolithic-retro-json.py" \
+      "$llm_raw" "$candidate_dir" "${SELECTED_PRS[@]}" \
+    && validate_monolithic_candidate; then
+    provider_succeeded=true
+    break
+  fi
+  echo "::warning::Monolithic retro provider ${provider} failed; trying next available provider" >&2
+done
+if [[ "$provider_succeeded" != true ]]; then
+  echo "::error::Monolithic retro provider cascade exhausted" >&2
+  exit 1
+fi
 
 cp -f "$llm_raw" "$ARTIFACT_ROOT/monolithic-llm-output.txt"
-python3 "$SCRIPT_DIR/split-monolithic-retro-json.py" \
-  "$llm_raw" "$ARTIFACT_ROOT" "${SELECTED_PRS[@]}"
+cp -f "$candidate_dir"/pr-*-retro.json "$ARTIFACT_ROOT/"
 
 RETRO_FILES=()
 for pr in "${SELECTED_PRS[@]}"; do

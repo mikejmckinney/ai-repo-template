@@ -5,8 +5,8 @@
   "snapshot": false,
   "formatter": false,
   "lsp": false,
-  "enabled_providers": ["openrouter"],
-  "small_model": "openrouter/z-ai/glm-5.2@preset/default",
+  "enabled_providers": ["openai", "openrouter"],
+  "small_model": "openrouter/moonshotai/kimi-k3@preset/consensus",
   "permission": {
     "*": "deny",
     "read": "allow",

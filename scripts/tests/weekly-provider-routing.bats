@@ -7,13 +7,14 @@ setup() {
   # shellcheck source=scripts/workflows/lib/pick-advisory-provider.sh
   source "$REPO_ROOT/scripts/workflows/lib/pick-advisory-provider.sh"
   unset CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
+  unset OPENCODE_AUTH_CONTENT OPENCODE_OAUTH_MIN_TTL_SECONDS OPENCODE_MODELS
   unset WEEKLY_REVIEW_PROVIDER
   unset POSTMERGE_RETRO_PROVIDER ADVISORY_REVIEW_PROVIDER
   OPENCODE_BIN=/bin/true
   antigravity_enabled=false
 }
 
-@test "weekly scan auto routing prefers Cursor" {
+@test "weekly scan auto routing prefers OpenCode" {
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -24,7 +25,7 @@ setup() {
   run pick_advisory_provider weekly-scan
 
   [ "$status" -eq 0 ]
-  [ "$output" = cursor ]
+  [ "$output" = opencode ]
 }
 
 @test "weekly scan auto routing uses Antigravity before Gemini" {
@@ -48,6 +49,11 @@ setup() {
 
   [ "$status" -eq 0 ]
   [ "$output" = antigravity ]
+
+  run list_advisory_providers weekly-scan
+
+  [ "$status" -eq 0 ]
+  [ "$output" = antigravity ]
 }
 
 @test "weekly routing rejects unsupported configured providers" {
@@ -68,5 +74,5 @@ setup() {
   run --separate-stderr pick_advisory_provider retro
 
   [ "$status" -eq 0 ]
-  [[ "$stderr" == *"cursor, else opencode, else gemini"* ]]
+  [[ "$stderr" == *"opencode, else cursor, else gemini"* ]]
 }

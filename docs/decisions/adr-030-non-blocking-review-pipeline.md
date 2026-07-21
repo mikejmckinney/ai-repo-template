@@ -28,7 +28,7 @@ We adopt a **three-stage non-blocking review pipeline** on `main`:
 
 Shared properties:
 
-- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (Cursor first, then the retained OpenCode/Antigravity/Gemini adapters).
+- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (OpenCode first, then Cursor and the retained Antigravity/Gemini adapters).
 - **Scripts:** `scripts/workflows/advisory-review/` (LLM runners), `scripts/workflows/pr-feedback/` (finalize collect), `scripts/workflows/postmerge-retro/` (retro + daily batch), `scripts/workflows/weekly-review/` (weekly full-repo scan + fix).
 - **Lifecycle libraries:** daily and weekly adapters share provider dispatch, umbrella issue transport/reference handling, priority derivation, superseded-path detection, and batch-fix publication under `scripts/workflows/lib/`. Cadence-specific prompts, templates, markers, and metadata hooks remain explicit.
 - **Non-goals:** No auto-merge of fix PRs; no automatic `claude-fix`; no ADR/context-pack file edits in retro jobs; no formal PR review submission from advisory/finalize.
@@ -169,6 +169,29 @@ adapters. This supersedes only the provider order established by the 2026-07-16
 amendment; the OpenCode isolation, retrieval, validation, and durable-fallback
 controls remain unchanged. Composer 2.5 remains an explicit override rather
 than the workflow default.
+
+## Amendment 2026-07-21 - Access-only Sol routing on hosted runners
+
+[Issue #503](https://github.com/mikejmckinney/ai-repo-template/issues/503)
+supersedes the 2026-07-17 provider order and the 2026-07-14 exclusion of
+subscription-backed Sol for this trusted private repository.
+
+- A maintainer-run Codespace utility copies the current OpenAI access token,
+  expiration, and account ID into `OPENCODE_OPENAI_AUTH`. It replaces the real
+  refresh token with `ci-refresh-disabled`; Actions cannot refresh or persist a
+  rotated credential.
+- Credential content is mapped to `OPENCODE_AUTH_CONTENT` only on invocation
+  steps. Preflight rejects malformed or refresh-enabled content and omits Sol
+  unless the token outlives the complete job timeout plus 15 minutes.
+- OpenCode attempts `openai/gpt-5.6-sol`, when eligible, then
+  `openrouter/moonshotai/kimi-k3@preset/consensus`. Provider fallback next uses
+  Cursor `cursor-grok-4.5-medium`; existing Antigravity/Gemini rollback adapters
+  remain available where configured.
+- Advisory accepts the existing same-repository branch trust boundary already
+  used for model credentials. Fork PRs remain excluded.
+- Review output must pass cadence validation. Every fix provider runs inside a
+  disposable worktree, controller verification receives no model, OAuth,
+  publisher, or sandbox credentials, and only a verified patch is promoted.
 
 ## Implementation
 

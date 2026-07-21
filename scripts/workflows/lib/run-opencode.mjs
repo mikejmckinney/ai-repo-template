@@ -14,8 +14,7 @@ if (!promptPath || !outputPath) {
 }
 
 const defaultModels = [
-  "openrouter/z-ai/glm-5.2@preset/default",
-  "openrouter/minimax/minimax-m3@preset/default",
+  "openrouter/moonshotai/kimi-k3@preset/consensus",
 ]
 const models = (process.env.OPENCODE_MODELS || defaultModels.join(","))
   .split(",")
@@ -47,14 +46,20 @@ function responseData(response) {
 
 function redacted(message) {
   let result = String(message)
-  for (const name of [
+  const values = [
     "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
     "OPENCODE_GITHUB_TOKEN",
     "CURSOR_API_KEY",
     "GEMINI_API_KEY",
-  ]) {
-    const value = process.env[name]
+  ].map((name) => process.env[name])
+  try {
+    const openai = JSON.parse(process.env.OPENCODE_AUTH_CONTENT || "{}").openai || {}
+    values.push(openai.access, openai.refresh)
+  } catch {
+    values.push(process.env.OPENCODE_AUTH_CONTENT)
+  }
+  for (const value of values) {
     if (value && value.length >= 8) result = result.replaceAll(value, "[REDACTED]")
   }
   return result

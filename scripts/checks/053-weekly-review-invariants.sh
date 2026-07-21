@@ -19,6 +19,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   UMBRELLA_TEMPLATE=".github/templates/weekly-review-umbrella.md"
   FIX_PR_TEMPLATE=".github/templates/weekly-review-fix-pr.md"
   LIB_DIR="scripts/workflows/lib"
+  FIX_PROVIDER_CASCADE="$LIB_DIR/run-fix-provider-cascade.sh"
   OPENCODE_SCHEMA=".github/schemas/weekly-review.schema.json"
   # shellcheck source=scripts/lib/search.sh
   source "scripts/lib/search.sh"
@@ -34,7 +35,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${WEEKLY_DIR}/merge-umbrella-content.py" \
     "$LIB_DIR/run-batch-fix.sh" "$LIB_DIR/umbrella-lifecycle.sh" \
     "$LIB_DIR/finding_priority.py" "$LIB_DIR/superseded_findings.py" \
-    "$LIB_DIR/run-opencode.mjs" "$LIB_DIR/run-opencode-fix.sh" "$OPENCODE_SCHEMA"; do
+    "$LIB_DIR/run-opencode.mjs" "$LIB_DIR/run-opencode-fix.sh" "$FIX_PROVIDER_CASCADE" "$OPENCODE_SCHEMA"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -43,7 +44,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   done
 
   if grep -q 'OPENCODE_OUTPUT_SCHEMA' "$SCAN_SCRIPT" 2>/dev/null \
-    && grep -q 'OPENCODE_FIX_MODE=true' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'run_fix_provider_cascade' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'OPENCODE_FIX_MODE=true' "$FIX_PROVIDER_CASCADE" 2>/dev/null \
     && grep -q 'OPENCODE_GITHUB_TOKEN' "$WEEKLY_WORKFLOW" 2>/dev/null \
     && grep -q 'npm ci --prefix .github/agent-runtime' "$WEEKLY_WORKFLOW" 2>/dev/null \
     && ! grep -q 'AGENT_RUNTIME_IMAGE' "$WEEKLY_WORKFLOW" 2>/dev/null; then
@@ -100,7 +102,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   if grep -q 'select-context' "$LIB_DIR/prompt_helpers.py" 2>/dev/null \
     && grep -qE 'prompt_helpers\.py.*select-context' "$SCAN_SCRIPT" 2>/dev/null \
     && grep -q 'changed-files.txt' "$SCAN_SCRIPT" 2>/dev/null \
-    && grep -q 'pick_advisory_provider weekly-scan' "$SCAN_SCRIPT" 2>/dev/null \
+    && grep -q 'list_advisory_providers weekly-scan' "$SCAN_SCRIPT" 2>/dev/null \
     && grep -q 'invoke_advisory_llm' "$SCAN_SCRIPT" 2>/dev/null \
     && grep -q 'run-weekly-antigravity.py' "$SCAN_SCRIPT" 2>/dev/null; then
     pass "weekly scan uses context pack + shared provider routing"
