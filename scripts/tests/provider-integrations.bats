@@ -166,8 +166,11 @@ match = re.search(r"MULTIAGENT_FILES=\(\n(?P<body>.*?)\n\)", text, re.DOTALL)
 assert match is not None
 for path in (
     '.agents/skills', '.cursor', '.config/codespace-tools.json', '.mcp.json',
+    'docs/guides/cloud-provider-tooling.md',
+    'docs/guides/skill-supply-chain.md',
     '.opencode/opencode.json', 'scripts/browser-mcp.sh',
     'scripts/install-codespace-tools.sh', 'scripts/open-design-mcp.sh',
+    'scripts/scan-skill-secrets.py', 'scripts/skill-supply-chain.py',
     'skills-lock.json'
 ):
     assert f'  "{path}"' in match.group("body"), path
