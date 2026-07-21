@@ -84,3 +84,21 @@ EOF
   run grep -Eiq 'enable-auto-merge|merge-method:|auto-merge:' "$WORKFLOW"
   [ "$status" -eq 1 ]
 }
+
+@test "skill refresh documentation explains source branches and PR authorization" {
+  guide="$REPO_ROOT/docs/guides/skill-supply-chain.md"
+
+  run grep -Fq 'one branch and draft PR per upstream source repository' "$guide"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'Allow GitHub Actions to create and approve pull requests' "$guide"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'required code-owner approval' "$guide"
+  [ "$status" -eq 0 ]
+}
+
+@test "repository assigns every path to the maintainer code owner" {
+  [ -f "$REPO_ROOT/.github/CODEOWNERS" ]
+  [ "$(cat "$REPO_ROOT/.github/CODEOWNERS")" = '* @mikejmckinney' ]
+  run grep -Fq '  ".github/CODEOWNERS"' "$REPO_ROOT/scripts/checks/010-required-files.sh"
+  [ "$status" -eq 0 ]
+}

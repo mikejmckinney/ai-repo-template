@@ -171,12 +171,49 @@ for path in (
     '.opencode/opencode.json', 'scripts/browser-mcp.sh',
     'scripts/install-codespace-tools.sh', 'scripts/open-design-mcp.sh',
     'scripts/scan-skill-secrets.py', 'scripts/skill-supply-chain.py',
-    'skills-lock.json'
+    'skills-lock.json', 'CLAUDE.md'
 ):
     assert f'  "{path}"' in match.group("body"), path
 PY
 
   [ "$status" -eq 0 ]
+}
+
+@test "Claude Code entrypoint is an exact installed pointer" {
+  run python3 - "$REPO_ROOT" <<'PY'
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+assert (root / "CLAUDE.md").read_bytes() == b"@AGENTS.md\n"
+required = (root / "scripts/checks/010-required-files.sh").read_text(encoding="utf-8")
+assert '  "CLAUDE.md"' in required
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "script syntax check discovers only lock-declared owned skill scripts" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/scripts/checks" "$tmp/.agents/skills/owned/scripts" "$tmp/.agents/skills/vendor/scripts"
+  cp "$REPO_ROOT/scripts/checks/055-script-syntax.sh" "$tmp/scripts/checks/"
+  printf '%s\n' 'if then' >"$tmp/.agents/skills/owned/scripts/bad.sh"
+  printf '%s\n' 'if then' >"$tmp/.agents/skills/vendor/scripts/vendor-bad.sh"
+  cat >"$tmp/skills-lock.json" <<'EOF'
+{"ownedSkills":{"owned":{"destinationPath":".agents/skills/owned"}},"skills":{"vendor":{"destinationPath":".agents/skills/vendor"}}}
+EOF
+  run bash -c '
+    cd "$1"
+    PASS=0
+    FAIL=0
+    WARN=0
+    pass() { PASS=$((PASS + 1)); }
+    fail() { FAIL=$((FAIL + 1)); }
+    warn() { WARN=$((WARN + 1)); }
+    source scripts/checks/055-script-syntax.sh
+    [[ "$FAIL" -eq 1 ]]
+  ' _ "$tmp"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
 }
 
 @test "Cursor uses the canonical root MCP configuration" {
@@ -301,6 +338,24 @@ PY
   done
 
   [ -f "$REPO_ROOT/.agents/skills/use-railway/SKILL.md" ]
+}
+
+@test "Anthropic skills share one locked provider parent" {
+  anthropic_skills=(frontend-design mcp-builder skill-creator)
+
+  for skill in "${anthropic_skills[@]}"; do
+    [ -f "$REPO_ROOT/.agents/skills/anthropic/$skill/SKILL.md" ]
+    [ -f "$REPO_ROOT/.agents/skills/anthropic/$skill/LICENSE.txt" ]
+    [ ! -e "$REPO_ROOT/.agents/skills/$skill" ]
+    run jq -e --arg skill "$skill" '
+      .skills[$skill].source == "anthropics/skills" and
+      .skills[$skill].ref == "fa0fa64bdc967915dc8399e803be67759e1e62b8" and
+      .skills[$skill].skillPath == ("skills/" + $skill) and
+      .skills[$skill].destinationPath == (".agents/skills/anthropic/" + $skill) and
+      .skills[$skill].hashAlgorithm == "sha256-tree-v1"
+    ' "$REPO_ROOT/skills-lock.json"
+    [ "$status" -eq 0 ]
+  done
 }
 
 @test "repository-owned GCP and Colyseus skills are explicit and complete" {

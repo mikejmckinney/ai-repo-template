@@ -52,6 +52,11 @@ trap persist_artifacts EXIT
 
 DEFAULT_DIFF_LIMIT=300000
 diff_limit="$(parse_positive_int POSTMERGE_RETRO_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${POSTMERGE_RETRO_DIFF_LIMIT:-}")"
+DEFAULT_PROVIDER_TIMEOUT_SECONDS=900
+provider_timeout_seconds="$(parse_positive_int POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS "$DEFAULT_PROVIDER_TIMEOUT_SECONDS" "${POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS:-}")"
+
+# shellcheck source=../lib/postmerge-provider-timeout.sh
+source "$LIB_DIR/postmerge-provider-timeout.sh"
 
 bash "$SCRIPT_DIR/collect-postmerge-evidence.sh" "$PR" "$WORKDIR"
 
@@ -76,6 +81,12 @@ jq -r '.body // ""' "$WORKDIR/pr.json" >"$WORKDIR/pr-body.md"
 
 run_bounded_pass() {
   local provider="$1"
+  if [[ "$provider" == "cursor" ]]; then
+    run_postmerge_provider_with_timeout "$provider_timeout_seconds" cursor bounded \
+      bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
+      "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON" "$provider"
+    return
+  fi
   bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
     "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON" "$provider"
 }
@@ -131,7 +142,8 @@ run_full_evidence_provider() {
       # shellcheck source=../lib/cursor-sdk-version.sh
       source "$LIB_DIR/cursor-sdk-version.sh"
       npm install --no-save "@cursor/sdk@${CURSOR_SDK_VERSION}" >/dev/null 2>&1 \
-        && CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}" \
+        && run_postmerge_provider_with_timeout "$provider_timeout_seconds" cursor full-evidence \
+          env CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}" \
           node "$SCRIPT_DIR/run-postmerge-retro-full-cursor.mjs" "$prompt_file" "$llm_raw"
       ;;
     gemini)

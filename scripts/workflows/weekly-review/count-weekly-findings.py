@@ -13,7 +13,11 @@ def main() -> int:
 
     data = json.load(open(sys.argv[1], encoding="utf-8"))
     findings = data.get("findings") or []
-    count = len(findings) if isinstance(findings, list) else 0
+    count = (
+        sum(item.get("superseded_on_main") is not True for item in findings if isinstance(item, dict))
+        if isinstance(findings, list)
+        else 0
+    )
     print(count)
     return 0
 

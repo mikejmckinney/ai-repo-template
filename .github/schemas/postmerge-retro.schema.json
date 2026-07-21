@@ -87,7 +87,10 @@
         "priority_band": { "$ref": "#/$defs/triageFields/properties/priority_band" }
       },
       "not": {
-        "required": ["severity"]
+        "anyOf": [
+          { "required": ["severity"] },
+          { "required": ["priority_band"] }
+        ]
       }
     }
   }

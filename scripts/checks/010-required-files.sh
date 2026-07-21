@@ -10,6 +10,7 @@ REQUIRED_FILES=(
   "AI_REPO_GUIDE.md"
   "AGENTS.md"
   "AGENT.md"
+  "CLAUDE.md"
   "README.md"
   "DESIGN.md"
   "install.sh"
@@ -19,6 +20,7 @@ REQUIRED_FILES=(
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"
   ".github/prompts/shared-review-lenses.md"
+  ".github/CODEOWNERS"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
   ".github/ISSUE_TEMPLATE/bug_report.md"
@@ -49,6 +51,12 @@ for file in "${REQUIRED_FILES[@]}"; do
     fail "$file is missing"
   fi
 done
+
+if printf '@AGENTS.md\n' | cmp -s - CLAUDE.md; then
+  pass "CLAUDE.md is the exact AGENTS.md pointer"
+else
+  fail "CLAUDE.md must contain exactly @AGENTS.md followed by a newline"
+fi
 
 for retired_file in .pre-commit-config.yaml .pre-commit-config.yaml.template; do
   if [[ -e "$retired_file" ]]; then

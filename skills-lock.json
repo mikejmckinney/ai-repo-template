@@ -520,7 +520,7 @@
     },
     "frontend-design": {
       "computedHash": "a581508c375f271a3887bc95e42152d0a26c7988ef8f78bdb3b2afa0c9ccee74",
-      "destinationPath": ".agents/skills/frontend-design",
+      "destinationPath": ".agents/skills/anthropic/frontend-design",
       "hashAlgorithm": "sha256-tree-v1",
       "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
       "skillPath": "skills/frontend-design",
@@ -597,6 +597,15 @@
       "ref": "41be1e462bc600064e498cba370bfa8c5c055a22",
       "skillPath": "skills/loading-assets",
       "source": "phaserjs/phaser",
+      "sourceType": "github"
+    },
+    "mcp-builder": {
+      "computedHash": "16f0bb36f125a69f3d5aff780c78b309e12d64910ac3a16dcb2be6d18fbefe1f",
+      "destinationPath": ".agents/skills/anthropic/mcp-builder",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
+      "skillPath": "skills/mcp-builder",
+      "source": "anthropics/skills",
       "sourceType": "github"
     },
     "microsoft-foundry": {
@@ -939,6 +948,15 @@
       "ref": "d28738b183c5eaa69d8d540826e450f30d39ab6c",
       "skillPath": "skills/shadcn",
       "source": "shadcn-ui/ui",
+      "sourceType": "github"
+    },
+    "skill-creator": {
+      "computedHash": "70098a2ed017fc9fe5a737e6b2baab95a6684115688f233897f2541bd9ead042",
+      "destinationPath": ".agents/skills/anthropic/skill-creator",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
+      "skillPath": "skills/skill-creator",
+      "source": "anthropics/skills",
       "sourceType": "github"
     },
     "signing-in-to-aws": {

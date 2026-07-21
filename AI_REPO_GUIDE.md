@@ -52,6 +52,10 @@ OpenCode workflow calls use `OPENCODE_TIMEOUT_MS` for both the Node HTTP
 transport and the outer abort, defaulting to `900000` (15 minutes). Set a larger
 positive millisecond value only when a review legitimately needs a longer
 end-to-end budget.
+Postmerge Cursor attempts use `POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS`,
+defaulting to `900` seconds. A timeout terminates the stuck Cursor process and
+returns failure to the existing provider cascade instead of consuming the
+90-minute workflow budget.
 
 ## Repository Layout
 
@@ -92,15 +96,17 @@ end-to-end budget.
 All 28 official Phaser 4 skills are pinned in `skills-lock.json` and grouped at
 `.agents/skills/phaser/<name>/SKILL.md`. OpenCode, Cursor, Codex, and current
 GitHub Copilot discover this recursive layout. Gemini CLI and `npx skills list`
-only scan direct skill children, so they do not expose nested skills. Vercel,
-Netlify, Supabase, and Cloudflare skills are likewise grouped under provider
-parents; AWS, Azure, OCI, and Render use the same provider-parent layout.
-Singleton providers and repository-owned skills remain direct children.
-Use `npx skills add . --list --full-depth` to inspect the nested source tree. Do
-not use `npx skills experimental_install` to restore its layout: the lock format
-records upstream `skillPath` and explicit nested destinations. External package
-trees with more than one skill declare sorted `skillEntrypoints` so validation
-can discover nested skills without overlapping refresh records.
+only scan direct skill children, so they do not expose nested skills. Anthropic,
+Vercel, Netlify, Supabase, and Cloudflare skills are likewise grouped under
+provider parents; AWS, Azure, OCI, and Render use the same provider-parent layout.
+Singleton providers and repository-owned skills remain direct children. Use
+`python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock
+skills-lock.json` to inspect the authoritative nested inventory. Do not treat
+`npx skills add . --list --full-depth` as complete; it omits some provider-parent
+layouts. Do not use `npx skills experimental_install` to restore the layout: the
+lock records upstream `skillPath` and explicit nested destinations. External
+package trees with more than one skill declare sorted `skillEntrypoints` so
+validation can discover nested skills without overlapping refresh records.
 
 ## Review Lifecycle
 
@@ -117,6 +123,9 @@ merge. `ai-review:full` increases context depth but does not change authority.
 The daily workflow reviews PRs merged to `main` in its evidence window, creates or
 updates one dated umbrella issue, and may open a draft fix PR. It is not a
 pre-merge gate.
+Bounded provider output omits `evidence_complete`; full-evidence output must set
+it to `true` only after retrieving every required source. Separate schemas keep
+those claims from being conflated.
 
 ### Weekly Review
 
@@ -183,6 +192,11 @@ declare the minimum job permissions and use `github.token` for repository API
 writes. Automated merges intentionally do not trigger duplicate `push` CI/lint
 runs; the strict main ruleset requires both checks against the current base
 before merge.
+Actions-created draft PRs require the repository setting **Allow GitHub Actions
+to create and approve pull requests**. Because GitHub exposes no create-only
+variant, `.github/CODEOWNERS` and the `main` ruleset require maintainer
+code-owner approval before merge. Skill-refresh and review-fix publication stay
+draft and do not opt into auto-merge.
 
 Inside Codespaces, the injected `GITHUB_TOKEN` may not access the sibling sandbox.
 Use command-local `GH_TOKEN="$GH_PAT"` with `GITHUB_TOKEN` unset when the configured

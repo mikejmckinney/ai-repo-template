@@ -83,9 +83,12 @@ deletion in the resulting diff.
 dispatch. A manual run can set `source` to one declared `owner/repository` value;
 an empty value checks every external source.
 
-Each source has its own concurrency group and stable branch:
-`automation/skill-refresh/<owner>/<repository>`. A no-change result stops before
-any write. A changed result:
+The workflow creates one branch and draft PR per upstream source repository,
+not per skill and not for the entire matrix. Each source has its own concurrency
+group and stable branch: `automation/skill-refresh/<owner>/<repository>`. All
+skills from that source update atomically on the same branch, while unrelated
+vendors remain independently reviewable. A no-change result stops before any
+write. A changed result:
 
 1. updates only that source's packages and lock records;
 2. scans refreshed package paths for credential signatures;
@@ -96,6 +99,17 @@ any write. A changed result:
 The workflow has `contents: write` and `pull-requests: write` because it must push
 the source branch and maintain the draft PR. It has no auto-merge path. The
 downloaded packages are treated as data and are never run by the workflow.
+
+Repository controls:
+
+- Required setting: **Allow GitHub Actions to create and approve pull requests**.
+- Merge gate: required code-owner approval on `main` through `CODEOWNERS`.
+
+The setting lets the job-scoped `GITHUB_TOKEN` open the draft. GitHub combines
+creation and review submission under that setting; it does not offer a
+create-only switch. The separate merge gate prevents the creating workflow from
+satisfying maintainer review. Keep refresh PRs draft and never apply
+`auto-merge`.
 
 ### Human review checklist
 
@@ -162,7 +176,7 @@ changes; this table is not a substitute for complying with the linked terms.
 | Source | Packages | License | Pinned evidence |
 |---|---:|---|---|
 | `ChromeDevTools/chrome-devtools-mcp` | 3 | Apache-2.0 | [LICENSE](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/76fd2424984827802867672fcc8d0e0036f4a3af/LICENSE) |
-| `anthropics/skills` | 1 | Apache-2.0 | [package LICENSE](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/frontend-design/LICENSE.txt) |
+| `anthropics/skills` | 3 | Apache-2.0 | [frontend-design](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/frontend-design/LICENSE.txt), [mcp-builder](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/mcp-builder/LICENSE.txt), [skill-creator](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/skill-creator/LICENSE.txt) |
 | `aws/agent-toolkit-for-aws` | 19 | Apache-2.0 | [LICENSE](https://github.com/aws/agent-toolkit-for-aws/blob/36f16570de2015c0f0ce94ba9e391bd703c9ffb7/LICENSE) |
 | `cloudflare/skills` | 2 | Apache-2.0 | [LICENSE](https://github.com/cloudflare/skills/blob/70215303d44a81a0db3219428f4825b604fc6061/LICENSE) |
 | `microsoft/azure-skills` | 26 | MIT | [LICENSE](https://github.com/microsoft/azure-skills/blob/6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae/LICENSE) |

@@ -10,6 +10,7 @@ LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
 sys.path.insert(0, str(LIB_DIR))
 
 from finding_priority import validate_triage_item  # noqa: E402
+from evidence_paths import validate_evidence_paths  # noqa: E402
 
 
 def main() -> int:
@@ -57,6 +58,11 @@ def main() -> int:
             if not isinstance(step, str) or not str(step).strip():
                 print(f"{key}[{i}].repro_steps[{j}] must be non-empty string", file=sys.stderr)
                 return 1
+        try:
+            validate_evidence_paths(item, f"{key}[{i}]")
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return 1
 
     print(f"OK: weekly review valid ({len(data.get('follow_up_issues') or [])} follow-ups)")
     return 0

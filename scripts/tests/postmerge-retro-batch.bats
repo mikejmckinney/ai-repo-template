@@ -75,7 +75,7 @@ EOF
   [ "$status" -eq 0 ]
   run jq -e '.findings[0].priority_band == "should-fix"' "$tmp/daily.json"
   [ "$status" -eq 0 ]
-  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py "$tmp/daily.json"
+  run python3 -S scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py "$tmp/daily.json"
   [ "$status" -eq 0 ]
   rm -rf "$tmp"
 }
@@ -356,6 +356,188 @@ EOF
   run jq -e '.findings[0].superseded_reason | contains("directory")' "$tmp/out.json"
   [ "$status" -eq 0 ]
   rm -rf "$tmp"
+}
+
+@test "mark-superseded-findings.py keeps quality findings actionable" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/scripts/lib"
+  printf '%s\n' present >"$tmp/scripts/lib/helper.sh"
+  cat >"$tmp/weekly.json" <<'EOF'
+{
+  "run_week": "2026-W29",
+  "findings": [
+    {
+      "category": "follow_up_issues",
+      "title": "Helper lacks tests",
+      "body": "scripts/lib/helper.sh exists but has a lack of tests.",
+      "dedupe_key": "helper-lacks-tests",
+      "repro_steps": ["Review scripts/lib/helper.sh"],
+      "evidence": ["scripts/lib/helper.sh"]
+    }
+  ]
+}
+EOF
+  run python3 scripts/workflows/postmerge-retro/mark-superseded-findings.py \
+    "$tmp/weekly.json" --repo-root "$tmp" --mode weekly
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0].superseded_on_main != true' "$tmp/weekly.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
+@test "mark-superseded-findings.py rejects traversal absolute and symlink escapes" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/repo" "$tmp/outside"
+  printf '%s\n' present >"$tmp/outside/secret.txt"
+  ln -s "$tmp/outside" "$tmp/repo/escape"
+  cat >"$tmp/repo/weekly.json" <<EOF
+{
+  "run_week": "2026-W29",
+  "findings": [
+    {
+      "category": "follow_up_issues",
+      "title": "Missing traversal",
+      "body": "../outside/secret.txt is missing",
+      "dedupe_key": "traversal",
+      "repro_steps": ["Check ../outside/secret.txt"],
+      "evidence": ["../outside/secret.txt"]
+    },
+    {
+      "category": "follow_up_issues",
+      "title": "Missing absolute",
+      "body": "$tmp/outside/secret.txt is missing",
+      "dedupe_key": "absolute",
+      "repro_steps": ["Check absolute path"],
+      "evidence": ["$tmp/outside/secret.txt"]
+    },
+    {
+      "category": "follow_up_issues",
+      "title": "Missing symlink target",
+      "body": "escape/secret.txt is missing",
+      "dedupe_key": "symlink",
+      "repro_steps": ["Check escape/secret.txt"],
+      "evidence": ["escape/secret.txt"]
+    }
+  ]
+}
+EOF
+  run --separate-stderr python3 scripts/workflows/postmerge-retro/mark-superseded-findings.py \
+    "$tmp/repo/weekly.json" --repo-root "$tmp/repo" --mode weekly
+  [ "$status" -eq 0 ]
+  [[ "$stderr" == *"outside repository"* ]]
+  [[ "$stderr" != *"$tmp/outside"* ]]
+  run jq -e '[.findings[] | .superseded_on_main == true] | any | not' "$tmp/repo/weekly.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
+@test "postmerge schemas distinguish bounded and full evidence" {
+  run node - <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const Ajv2020 = require(path.resolve('.github/agent-runtime/node_modules/ajv/dist/2020')).default;
+const ajv = new Ajv2020({ strict: false });
+const bounded = JSON.parse(fs.readFileSync('.github/schemas/postmerge-retro-bounded.schema.json', 'utf8'));
+const full = JSON.parse(fs.readFileSync('.github/schemas/postmerge-retro.schema.json', 'utf8'));
+const base = { pr: 1, summary: 'bounded', follow_up_issues: [] };
+if (!ajv.validate(bounded, base)) throw new Error(ajv.errorsText());
+if (ajv.validate(bounded, { ...base, evidence_complete: true })) throw new Error('bounded accepted evidence_complete');
+if (ajv.validate(full, base)) throw new Error('full accepted missing evidence_complete');
+if (!ajv.validate(full, { ...base, evidence_complete: true })) throw new Error(ajv.errorsText());
+NODE
+  [ "$status" -eq 0 ]
+}
+
+@test "postmerge LLM schema rejects derived priority_band" {
+  run node - <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const Ajv2020 = require(path.resolve('.github/agent-runtime/node_modules/ajv/dist/2020')).default;
+const schema = JSON.parse(fs.readFileSync('.github/schemas/postmerge-retro.schema.json', 'utf8'));
+const finding = {
+  title: 't', body: 'b', dedupe_key: 'k', repro_steps: ['step'],
+  impact: 'meta-harness', trigger_likelihood: 'edge', fix_cost: 'trivial',
+  priority_band: 'defer'
+};
+const valid = new Ajv2020({ strict: false }).validate(schema, {
+  pr: 1, summary: 's', evidence_complete: true, follow_up_issues: [finding]
+});
+if (valid) throw new Error('schema accepted derived priority_band');
+NODE
+  [ "$status" -eq 0 ]
+}
+
+@test "sample bounded retro fixture validates against its invocation schema" {
+  run node - <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const Ajv2020 = require(path.resolve('.github/agent-runtime/node_modules/ajv/dist/2020')).default;
+const schema = JSON.parse(fs.readFileSync('.github/schemas/postmerge-retro-bounded.schema.json', 'utf8'));
+const fixture = JSON.parse(fs.readFileSync('scripts/tests/fixtures/postmerge-retro/sample-retro.json', 'utf8'));
+const ajv = new Ajv2020({ strict: false });
+if (!ajv.validate(schema, fixture)) throw new Error(ajv.errorsText());
+NODE
+  [ "$status" -eq 0 ]
+}
+
+@test "daily validator requires deterministic schema fields" {
+  tmp="$(mktemp -d)"
+  printf '%s\n' '{"run_date":"2026-07-21","prs":[],"findings":[]}' >"$tmp/daily.json"
+  run python3 -S scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py "$tmp/daily.json"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"window_hours"* ]]
+  rm -rf "$tmp"
+}
+
+@test "daily and weekly counters exclude superseded findings" {
+  tmp="$(mktemp -d)"
+  printf '%s\n' '{"findings":[{"superseded_on_main":true},{"superseded_on_main":false},{}]}' >"$tmp/batch.json"
+  run python3 scripts/workflows/postmerge-retro/count-daily-retro-findings.py "$tmp/batch.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = 2 ]
+  run python3 scripts/workflows/weekly-review/count-weekly-findings.py "$tmp/batch.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = 2 ]
+  rm -rf "$tmp"
+}
+
+@test "postmerge invariant guards shared batch publication wiring" {
+  run grep -F "grep -q 'batch_fix_publish' \"\$FIX_SCRIPT\"" scripts/checks/052-postmerge-retro-invariants.sh
+  [ "$status" -eq 0 ]
+}
+
+@test "postmerge provider timeout terminates a stuck command" {
+  source scripts/workflows/lib/postmerge-provider-timeout.sh
+
+  run --separate-stderr run_postmerge_provider_with_timeout \
+    1 cursor full-evidence bash -c 'sleep 10'
+
+  [ "$status" -eq 124 ]
+  [[ "$stderr" == *"cursor full-evidence timed out after 1s"* ]]
+}
+
+@test "postmerge routes both Cursor paths through the provider timeout" {
+  run python3 - <<'PY'
+from pathlib import Path
+
+script = Path("scripts/workflows/postmerge-retro/run-postmerge-retro.sh").read_text(encoding="utf-8")
+assert 'run_postmerge_provider_with_timeout "$provider_timeout_seconds" cursor bounded' in script
+assert 'run_postmerge_provider_with_timeout "$provider_timeout_seconds" cursor full-evidence' in script
+assert 'POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS' in script
+PY
+  [ "$status" -eq 0 ]
+}
+
+@test "Cursor full-evidence runner exits after writing output" {
+  run python3 - <<'PY'
+from pathlib import Path
+
+script = Path("scripts/workflows/postmerge-retro/run-postmerge-retro-full-cursor.mjs").read_text(encoding="utf-8")
+write_index = script.index("writeFileSync(outFile, text, \"utf8\");")
+exit_index = script.index("process.exit(0);", write_index)
+assert exit_index > write_index
+PY
+  [ "$status" -eq 0 ]
 }
 
 @test "parse-daily-json-snapshot.py rejects truncated snapshot bodies" {
@@ -773,6 +955,24 @@ EOF
   [[ "$(cat "$tmp/prompt.md")" == *"context-files.txt"* ]]
   [[ "$(cat "$tmp/prompt.md")" == *"$tmp/evidence/diff.patch"* ]]
   [[ "$(cat "$tmp/prompt.md")" == *'"evidence_complete": true'* ]]
+  rm -rf "$tmp"
+}
+
+@test "assemble-retro-prompt bounded mode omits full-evidence completion field" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/evidence"
+  printf '{"number":1,"title":"t","body":"b","html_url":"https://example/pr/1","head":{"sha":"abc"},"merge_commit_sha":"def","merged_at":"2026-01-01T00:00:00Z","merged":true}' >"$tmp/evidence/pr.json"
+  printf '%s\n' '[]' >"$tmp/evidence/labels.json"
+  printf '%s\n' '[]' >"$tmp/evidence/reviews.json"
+  printf '%s\n' '[]' >"$tmp/evidence/review-comments.json"
+  printf '%s\n' summary >"$tmp/evidence/summary.txt"
+  printf '%s\n' README.md >"$tmp/evidence/changed-files.txt"
+  printf '%s\n' diff >"$tmp/evidence/diff.patch"
+  run bash scripts/workflows/postmerge-retro/assemble-retro-prompt.sh \
+    1 "$tmp/evidence" bounded "$tmp/prompt.md"
+  [ "$status" -eq 0 ]
+  [[ "$(cat "$tmp/prompt.md")" == *"Omit \`evidence_complete\`"* ]]
+  [[ "$(cat "$tmp/prompt.md")" != *'"evidence_complete": true'* ]]
   rm -rf "$tmp"
 }
 

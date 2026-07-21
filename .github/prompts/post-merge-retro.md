@@ -41,7 +41,6 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
 {
   "pr": 123,
   "summary": "brief summary",
-  "evidence_complete": true,
   "follow_up_issues": [
     {
       "title": "string",
@@ -59,9 +58,10 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
 }
 ```
 
-Set `evidence_complete` to `true` only after reading every required local
-evidence source, the complete diff, and the current versions of all PR-touched
-paths. An incomplete review is a failed run, not an empty-finding result.
+Omit `evidence_complete` in bounded mode. Full-evidence prompt assembly adds the
+field only when the provider can read every required local source, the complete
+diff, and the current versions of all PR-touched paths. An incomplete
+full-evidence review is a failed run, not an empty-finding result.
 
 ## Finding triage
 

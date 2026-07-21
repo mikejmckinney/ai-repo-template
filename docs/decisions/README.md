@@ -78,9 +78,9 @@ When ADR-NNN replaces ADR-XXX, both files must be updated in the **same PR**:
 4. **Deprecation without replacement**: set the old ADR's `Status:
    Deprecated` and explain in the body. No new ADR required.
 
-Reviewers and repository checks enforce this through `AGENTS.md`'s
-documentation synchronization contract: a PR that changes a documented
-decision without updating the old ADR's status is incomplete.
+Reviewers enforce status synchronization during ADR changes. Repository check
+`scripts/checks/030-docs-structure.sh` verifies only that every indexed ADR
+exists and every ADR file is indexed; it does not compare status text.
 
 ## What a well-documented ADR looks like
 

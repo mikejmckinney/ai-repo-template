@@ -43,7 +43,7 @@ case "$provider" in
   opencode | cursor | gemini)
     # shellcheck source=../lib/invoke-advisory-llm.sh
     source "$LIB_DIR/invoke-advisory-llm.sh"
-    OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro.schema.json" \
+    OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro-bounded.schema.json" \
       invoke_advisory_llm \
       "$prompt_file" "$LLM_OUT" "$provider" "$ADVISORY_DIR" \
       "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"

@@ -58,6 +58,58 @@ teardown() {
   done
 }
 
+@test "weekly validators require safe repository-relative evidence" {
+  for value in missing empty non_string absolute traversal url; do
+    case "$value" in
+      missing) jq 'del(.follow_up_issues[0].evidence)' "$FIXTURE" >"$TEST_ROOT/review.json" ;;
+      empty) jq '.follow_up_issues[0].evidence = []' "$FIXTURE" >"$TEST_ROOT/review.json" ;;
+      non_string) jq '.follow_up_issues[0].evidence = [42]' "$FIXTURE" >"$TEST_ROOT/review.json" ;;
+      absolute) jq '.follow_up_issues[0].evidence = ["/etc/passwd"]' "$FIXTURE" >"$TEST_ROOT/review.json" ;;
+      traversal) jq '.follow_up_issues[0].evidence = ["../outside.txt"]' "$FIXTURE" >"$TEST_ROOT/review.json" ;;
+      url) jq '.follow_up_issues[0].evidence = ["https://example.com/file"]' "$FIXTURE" >"$TEST_ROOT/review.json" ;;
+    esac
+    run python3 "$WEEKLY_DIR/validate-weekly-review.py" "$TEST_ROOT/review.json"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"follow_up_issues[0].evidence"* ]]
+  done
+
+  python3 "$WEEKLY_DIR/build-weekly-review-batch.py" \
+    2026-W24 2026-06-14 "$FIXTURE" >"$TEST_ROOT/weekly.json"
+  for value in missing empty non_string absolute traversal url; do
+    case "$value" in
+      missing) jq 'del(.findings[0].evidence)' "$TEST_ROOT/weekly.json" >"$TEST_ROOT/batch.json" ;;
+      empty) jq '.findings[0].evidence = []' "$TEST_ROOT/weekly.json" >"$TEST_ROOT/batch.json" ;;
+      non_string) jq '.findings[0].evidence = [42]' "$TEST_ROOT/weekly.json" >"$TEST_ROOT/batch.json" ;;
+      absolute) jq '.findings[0].evidence = ["/etc/passwd"]' "$TEST_ROOT/weekly.json" >"$TEST_ROOT/batch.json" ;;
+      traversal) jq '.findings[0].evidence = ["../outside.txt"]' "$TEST_ROOT/weekly.json" >"$TEST_ROOT/batch.json" ;;
+      url) jq '.findings[0].evidence = ["https://example.com/file"]' "$TEST_ROOT/weekly.json" >"$TEST_ROOT/batch.json" ;;
+    esac
+    run python3 "$WEEKLY_DIR/validate-weekly-review-batch.py" "$TEST_ROOT/batch.json"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"findings[0].evidence"* ]]
+  done
+}
+
+@test "weekly schema matches repository-relative evidence contract" {
+  run node - "$REPO_ROOT" "$FIXTURE" <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const root = process.argv[2];
+const fixturePath = process.argv[3];
+const Ajv2020 = require(path.join(root, '.github/agent-runtime/node_modules/ajv/dist/2020')).default;
+const schema = JSON.parse(fs.readFileSync(path.join(root, '.github/schemas/weekly-review.schema.json'), 'utf8'));
+const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf8'));
+const ajv = new Ajv2020({ strict: false });
+if (!ajv.validate(schema, fixture)) throw new Error(ajv.errorsText());
+for (const evidence of ['./file.txt', '~/file.txt', '../file.txt', 'https://example.com/file']) {
+  const invalid = structuredClone(fixture);
+  invalid.follow_up_issues[0].evidence = [evidence];
+  if (ajv.validate(schema, invalid)) throw new Error(`schema accepted ${evidence}`);
+}
+NODE
+  [ "$status" -eq 0 ]
+}
+
 @test "weekly detail renderer shows classifier fields and reproduction" {
   python3 "$WEEKLY_DIR/build-weekly-review-batch.py" \
     2026-W24 2026-06-14 "$FIXTURE" >"$TEST_ROOT/weekly.json"
