@@ -106,16 +106,16 @@ EOF
 #!/usr/bin/env bash
 printf 'claude %s\n' "$*" >>"$MOCK_LOG"
 prompt=$(cat)
-sleep "${MOCK_FABLE_DELAY:-0}"
-if [[ "${MOCK_FABLE_MODE:-success}" == fail ]]; then exit 8; fi
-if [[ "${MOCK_FABLE_MODE:-success}" == api-error ]]; then
-  jq -cn '{is_error:true,result:"spend limit",session_id:"ses_fable"}'
+  sleep "${MOCK_OPUS_DELAY:-0}"
+  if [[ "${MOCK_OPUS_MODE:-success}" == fail ]]; then exit 8; fi
+  if [[ "${MOCK_OPUS_MODE:-success}" == api-error ]]; then
+    jq -cn '{is_error:true,result:"spend limit",session_id:"ses_opus"}'
   exit 0
 fi
-result='Fable answer'
+  result='Opus answer'
 [[ "$prompt" != *'<!-- multi-model-panel-complete:v1 -->'* ]] || result="$result
 <!-- multi-model-panel-complete:v1 -->"
-jq -cn --arg result "$result" '{result:$result,session_id:"ses_fable"}'
+  jq -cn --arg result "$result" '{result:$result,session_id:"ses_opus"}'
 EOF
   chmod +x "$BIN_DIR/claude"
 }
@@ -138,7 +138,7 @@ teardown() {
   grep -q -- '--model openai/gpt-5.6-sol' "$MOCK_LOG"
 }
 
-@test "advisor falls back to Fable when Sol fails" {
+@test "advisor falls back to Opus when Sol fails" {
   export MOCK_SOL_MODE=fail
   run "$SKILL_ROOT/scripts/run-advisor.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
@@ -147,13 +147,14 @@ teardown() {
     --output-dir "$TEST_ROOT/advisor"
 
   [ "$status" -eq 0 ]
-  [ "$(jq -r '.engine' <<<"$output")" = fable ]
+  [ "$(jq -r '.engine' <<<"$output")" = opus ]
   [ "$(jq -r '.failed_engines[0]' <<<"$output")" = sol ]
+  grep -q -- '--model opus' "$MOCK_LOG"
 }
 
 @test "advisor falls back to Cursor Grok before GLM" {
   export MOCK_SOL_MODE=fail
-  export MOCK_FABLE_MODE=fail
+  export MOCK_OPUS_MODE=fail
   run "$SKILL_ROOT/scripts/run-advisor.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
@@ -180,7 +181,7 @@ teardown() {
   [ "$prompt_bytes" -ge 262144 ]
 }
 
-@test "fusion uses Kimi, Fable, and Cursor Grok as its primary panel" {
+@test "fusion uses Kimi, Opus, and Cursor Grok as its primary panel" {
   run "$SKILL_ROOT/scripts/run-fusion.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
@@ -191,7 +192,7 @@ teardown() {
   [ "$(jq -r '.status' <<<"$output")" = success ]
   [ "$(jq -r '.panels_succeeded' <<<"$output")" -eq 3 ]
   [ "$(jq -r '.engine' <<<"$output")" = sol ]
-  [ "$(jq -r '[.panels[].engine] | join(",")' <<<"$output")" = "kimi,fable,grok" ]
+  [ "$(jq -r '[.panels[].engine] | join(",")' <<<"$output")" = "kimi,opus,grok" ]
   [ "$(jq -r '[.panels[].session_id | length > 0] | all' <<<"$output")" = true ]
   [ "$(jq -r '[.panels[].output_file | length > 0] | all' <<<"$output")" = true ]
   [ "$(jq -r '.judge_continued' <<<"$output")" = false ]
@@ -199,11 +200,11 @@ teardown() {
   cmp -s <(jq -S . <<<"$output") <(jq -S . "$TEST_ROOT/fusion/result.json")
   grep -q -- '--model openrouter/moonshotai/kimi-k3' "$MOCK_LOG"
   grep -q -- 'agent -p --trust' "$MOCK_LOG"
-  run ! grep -q '## Panel SOL\|## Panel FABLE\|## Panel GLM' "$TEST_ROOT/fusion/judge-prompt.md"
+  run ! grep -q '## Panel SOL\|## Panel OPUS\|## Panel GLM' "$TEST_ROOT/fusion/judge-prompt.md"
 }
 
 @test "fusion backfills a failed primary with Sol" {
-  run env MOCK_FABLE_MODE=fail "$SKILL_ROOT/scripts/run-fusion.sh" \
+  run env MOCK_OPUS_MODE=fail "$SKILL_ROOT/scripts/run-fusion.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
     --title multi-model-fusion-test \
@@ -211,14 +212,14 @@ teardown() {
 
   [ "$status" -eq 0 ]
   [ "$(jq -r '.panels_succeeded' <<<"$output")" -eq 3 ]
-  [ "$(jq -r '.panels[1].slot' <<<"$output")" = fable ]
+  [ "$(jq -r '.panels[1].slot' <<<"$output")" = opus ]
   [ "$(jq -r '.panels[1].engine' <<<"$output")" = sol ]
   [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
   grep -q -- '--model openai/gpt-5.6-sol' "$MOCK_LOG"
 }
 
-@test "fusion rejects a zero-exit Fable API error" {
-  run env MOCK_FABLE_MODE=api-error "$SKILL_ROOT/scripts/run-fusion.sh" \
+@test "fusion rejects a zero-exit Opus API error" {
+  run env MOCK_OPUS_MODE=api-error "$SKILL_ROOT/scripts/run-fusion.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
     --title multi-model-fusion-test \
@@ -227,7 +228,7 @@ teardown() {
   [ "$status" -eq 0 ]
   [ "$(jq -r '.panels[1].engine' <<<"$output")" = sol ]
   [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
-  rejected=("$TEST_ROOT"/fusion/panel-2.rejected-fable.*.md)
+  rejected=("$TEST_ROOT"/fusion/panel-2.rejected-opus.*.md)
   grep -q 'spend limit' "${rejected[0]}"
 }
 
@@ -289,7 +290,7 @@ teardown() {
 }
 
 @test "fusion advances from Sol to GLM without reuse" {
-  run env MOCK_FABLE_MODE=fail MOCK_SOL_MODE=fail \
+  run env MOCK_OPUS_MODE=fail MOCK_SOL_MODE=fail \
     "$SKILL_ROOT/scripts/run-fusion.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
@@ -308,35 +309,35 @@ teardown() {
     --invoking-session ses_parent \
     --title multi-model-fusion-test \
     --panel-session 1:kimi:ses_kimi_old \
-    --panel-session 2:fable:ses_fable_old \
+    --panel-session 2:opus:ses_opus_old \
     --panel-session 3:grok:ses_grok_old \
     --judge-session sol:ses_judge_old \
     --output-dir "$TEST_ROOT/fusion"
 
   [ "$status" -eq 0 ]
   [ "$(jq -r '[.panels[].session_id] | join(",")' <<<"$output")" = \
-    "ses_kimi_old,ses_fable_old,ses_grok_old" ]
+    "ses_kimi_old,ses_opus_old,ses_grok_old" ]
   [ "$(jq -r '[.panels[].continued] | all' <<<"$output")" = true ]
   [ "$(jq -r '.session_id' <<<"$output")" = ses_judge_old ]
   [ "$(jq -r '.judge_continued' <<<"$output")" = true ]
   [ "$(jq -r '.output_dir' <<<"$output")" = "$TEST_ROOT/fusion" ]
   grep -q -- '--session ses_kimi_old --continue' "$MOCK_LOG"
-  grep -q -- '-r ses_fable_old' "$MOCK_LOG"
+  grep -q -- '-r ses_opus_old' "$MOCK_LOG"
   grep -q -- '--resume ses_grok_old' "$MOCK_LOG"
   grep -q -- '--session ses_judge_old --continue' "$MOCK_LOG"
 }
 
 @test "fusion records failed resume before accepting a fallback panel" {
-  run env MOCK_FABLE_MODE=fail "$SKILL_ROOT/scripts/run-fusion.sh" \
+  run env MOCK_OPUS_MODE=fail "$SKILL_ROOT/scripts/run-fusion.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
     --title multi-model-fusion-test \
-    --panel-session 2:fable:ses_fable_old \
+    --panel-session 2:opus:ses_opus_old \
     --output-dir "$TEST_ROOT/fusion"
 
   [ "$status" -eq 0 ]
   [ "$(jq -r '.panels[1].status' <<<"$output")" = fallback ]
-  [ "$(jq -r '.panels[1].requested_session_id' <<<"$output")" = ses_fable_old ]
+  [ "$(jq -r '.panels[1].requested_session_id' <<<"$output")" = ses_opus_old ]
   [ "$(jq -r '.panels[1].session_id' <<<"$output")" = ses_panel_sol ]
   [ "$(jq -r '.panels[1].continued' <<<"$output")" = false ]
 }
@@ -379,7 +380,7 @@ teardown() {
 }
 
 @test "fusion reuses a completed panel after interruption" {
-  run env MOCK_FABLE_DELAY=3 MOCK_GROK_DELAY=3 timeout 1 \
+  run env MOCK_OPUS_DELAY=3 MOCK_GROK_DELAY=3 timeout 1 \
     "$SKILL_ROOT/scripts/run-fusion.sh" \
     --prompt-file "$TEST_ROOT/prompt.md" \
     --invoking-session ses_parent \
@@ -411,6 +412,7 @@ teardown() {
   [ "$status" -eq 0 ]
   [ "$(jq -r '.status' <<<"$output")" = success ]
   [ "$(jq -r '.kimi_model' <<<"$output")" = openrouter/moonshotai/kimi-k3@preset/consensus ]
+  [ "$(jq -r '.opus_model' <<<"$output")" = opus ]
 }
 
 @test "panel completion contract ends with the bare unfenced marker" {

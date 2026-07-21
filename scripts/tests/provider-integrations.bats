@@ -8,14 +8,15 @@ setup() {
 
 @test "provider MCP configurations stay aligned" {
   run jq -e '
-    .mcp.supabase == {
+    (.mcp | with_entries(.value |= del(.timeout))) as $mcp |
+    $mcp.supabase == {
       type: "remote",
       url: "https://mcp.supabase.com/mcp",
       enabled: true,
       oauth: false,
       headers: {Authorization: "Bearer {env:SUPABASE_API_KEY}"}
     } and
-    .mcp.netlify == {
+    $mcp.netlify == {
       type: "local",
       command: [
         "npx", "-y", "mcp-remote@0.1.38",
@@ -24,25 +25,24 @@ setup() {
         "--transport", "http-only", "--silent"
       ],
       enabled: true,
-      timeout: 60000,
       environment: {NETLIFY_API_KEY: "{env:NETLIFY_API_KEY}"}
     } and
-    .mcp.vercel == {
+    $mcp.vercel == {
       type: "remote",
       url: "https://mcp.vercel.com",
       enabled: true,
       oauth: false,
       headers: {Authorization: "Bearer {env:VERCEL_API_KEY}"}
     } and
-    .mcp["cloudflare-api"] == {
+    $mcp["cloudflare-api"] == {
       type: "remote",
       url: "https://mcp.cloudflare.com/mcp",
       enabled: true,
       oauth: false,
       headers: {Authorization: "Bearer {env:CLOUDFLARE_API_KEY}"}
     } and
-    .mcp["cloudflare-docs"].url == "https://docs.mcp.cloudflare.com/mcp" and
-    .mcp.railway == {
+    $mcp["cloudflare-docs"].url == "https://docs.mcp.cloudflare.com/mcp" and
+    $mcp.railway == {
       type: "remote",
       url: "https://mcp.railway.com",
       enabled: true,
@@ -77,17 +77,18 @@ setup() {
   oci_command='[[ "${OCI_MCP_ENABLED:-false}" == "true" ]] || { echo "OCI MCP is disabled; set OCI_MCP_ENABLED=true to opt in" >&2; exit 1; }; exec uvx --python 3.13 oracle.oci-cloud-mcp-server@2.1.0'
 
   run jq -e --arg aws_command "$aws_command" --arg oci_command "$oci_command" '
-    .mcp.aws == {
+    (.mcp | with_entries(.value |= del(.timeout))) as $mcp |
+    $mcp.aws == {
       type: "local",
       command: ["bash", "-lc", $aws_command],
       enabled: true
     } and
-    .mcp.azure == {
+    $mcp.azure == {
       type: "local",
       command: ["npx", "-y", "@azure/mcp@2.0.5", "server", "start"],
       enabled: true
     } and
-    .mcp.oci == {
+    $mcp.oci == {
       type: "local",
       command: ["uvx", "--python", "3.13", "oracle.oci-cloud-mcp-server@2.1.0"],
       enabled: false,
@@ -96,7 +97,7 @@ setup() {
         FASTMCP_LOG_LEVEL: "ERROR"
       }
     } and
-    .mcp.render == {
+    $mcp.render == {
       type: "remote",
       url: "https://mcp.render.com/mcp",
       enabled: true,
@@ -163,7 +164,15 @@ from pathlib import Path
 text = Path(sys.argv[1]).read_text(encoding="utf-8")
 match = re.search(r"MULTIAGENT_FILES=\(\n(?P<body>.*?)\n\)", text, re.DOTALL)
 assert match is not None
-for path in ('.agents/skills', '.cursor', '.mcp.json', '.opencode/opencode.json', 'skills-lock.json'):
+for path in (
+    '.agents/skills', '.cursor', '.config/codespace-tools.json', '.mcp.json',
+    'docs/guides/cloud-provider-tooling.md',
+    'docs/guides/skill-supply-chain.md',
+    '.opencode/opencode.json', 'scripts/browser-mcp.sh',
+    'scripts/install-codespace-tools.sh', 'scripts/open-design-mcp.sh',
+    'scripts/scan-skill-secrets.py', 'scripts/skill-supply-chain.py',
+    'skills-lock.json'
+):
     assert f'  "{path}"' in match.group("body"), path
 PY
 

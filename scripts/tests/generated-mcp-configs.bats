@@ -20,6 +20,17 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "local npm MCP launchers use exact reviewed packages" {
+  run jq -e '
+    .servers.playwright.command == ["bash", "scripts/browser-mcp.sh", "playwright", "@playwright/mcp@0.0.78"] and
+    .servers["chrome-devtools"].command == ["bash", "scripts/browser-mcp.sh", "chrome-devtools", "chrome-devtools-mcp@1.6.0"] and
+    .servers.shadcn.command == ["npx", "-y", "shadcn@4.13.1", "mcp"] and
+    ([.servers[].command? // [] | .[] | select(type == "string" and contains("@latest"))] | length) == 0
+  ' "$REPO_ROOT/.config/mcp-inventory.json"
+
+  [ "$status" -eq 0 ]
+}
+
 @test "MCP check reports stale host output" {
   jq '.mcpServers.github.url = "https://stale.invalid"' "$TEST_ROOT/.mcp.json" \
     >"$TEST_ROOT/stale.json"
@@ -39,7 +50,7 @@ teardown() {
 
   [ "$status" -eq 0 ]
   [ "$before" = "$(jq -S 'del(.mcp)' "$TEST_ROOT/.opencode/opencode.json")" ]
-  [ "$(jq -r '.mcp.netlify.timeout' "$TEST_ROOT/.opencode/opencode.json")" = "60000" ]
+  [ "$(jq '[.mcp[].timeout == 60000] | all' "$TEST_ROOT/.opencode/opencode.json")" = "true" ]
   [ "$(jq -r '.mcp.oci.enabled' "$TEST_ROOT/.opencode/opencode.json")" = "false" ]
   [ "$(jq -r '.mcp.github.headers.Authorization' "$TEST_ROOT/.opencode/opencode.json")" = 'Bearer {env:GH_PAT}' ]
   [ "$(jq -r '.mcpServers.github.headers.Authorization' "$TEST_ROOT/.mcp.json")" = 'Bearer ${GH_PAT}' ]

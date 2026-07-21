@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -28,8 +29,16 @@ def build_comment_body(
     truncated = False
     if len(json_bytes) > budget:
         truncated = True
-        json_text = json_bytes[:budget].decode("utf-8", errors="ignore").rstrip()
-        json_text += "\n/* TRUNCATED — retrieve full JSON from the Actions workflow artifact */"
+        json_text = json.dumps(
+            {
+                "snapshot_status": "TRUNCATED",
+                "original_bytes": len(json_bytes),
+                "recovery": "Retrieve the full JSON from the Actions workflow artifact.",
+            },
+            indent=2,
+        )
+        if len(json_text.encode("utf-8")) > budget:
+            raise ValueError(f"max_bytes={max_bytes} too small for truncation envelope")
 
     body = prefix + json_text + suffix
     if truncated:

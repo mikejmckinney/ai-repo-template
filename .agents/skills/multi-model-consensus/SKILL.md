@@ -79,7 +79,7 @@ Run validation before first use or after provider/configuration changes:
 
 The command confirms required tools and the models `openai/gpt-5.6-sol`,
 `openrouter/moonshotai/kimi-k3@preset/consensus`, and
-`cursor-grok-4.5-medium`. Fable, Grok,
+`cursor-grok-4.5-medium`. Opus, Grok,
 and GLM remain runtime fallbacks.
 
 ## Prepare The Prompt
@@ -128,7 +128,7 @@ Resume exact prior sessions without inferring them from recency:
   --title issue-audit \
   --reuse-completed \
   --panel-session 1:sol:ses_existing_sol \
-  --panel-session 2:fable:existing-fable-uuid \
+  --panel-session 2:opus:existing-opus-uuid \
   --panel-session 3:grok:existing-grok-uuid \
   --judge-session sol:ses_existing_judge
 ```
@@ -142,7 +142,7 @@ starting a different judge. `--reuse-completed` adopts an already validated
 session. Use the same title or explicit output directory after interruption so
 completed panels are not invoked again.
 
-The Fusion runner launches Kimi, Fable, and Grok as three bounded primary panels
+The Fusion runner launches Kimi, Opus, and Grok as three bounded primary panels
 in parallel. A failed primary slot is backfilled by the next unused model from
 Sol, GLM, MM, MI, then DS. It proceeds when at least two unique panels succeed, then
 invokes the shared Judge fallback chain. The Judge specification is internal
@@ -192,7 +192,7 @@ arrays. These report validation, not provider ownership of the underlying
 stream failure. An OpenCode child ending with `finish=unknown` can produce this
 case and must not count as a substantive panel.
 
-Judge/Advisor engine order is Sol through OpenCode's OpenAI provider, Fable through the
+Judge/Advisor engine order is Sol through OpenCode's OpenAI provider, Opus through the
 Claude CLI, Grok through the Cursor CLI, then GLM through OpenCode's OpenRouter
 provider. Scripts, not the agent, own this ordering.
 
@@ -205,10 +205,10 @@ Sol and GLM use OpenCode sessions:
 opencode run --session "$SESSION_ID" --continue "$FOLLOW_UP"
 ```
 
-Fable uses its Claude session:
+Opus uses its Claude session:
 
 ```bash
-printf '%s\n' "$FOLLOW_UP" | claude -p --model fable \
+printf '%s\n' "$FOLLOW_UP" | claude -p --model opus \
   --output-format json --dangerously-skip-permissions -r "$SESSION_ID"
 ```
 

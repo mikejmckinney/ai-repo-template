@@ -21,7 +21,7 @@ ADR-031 defines the active execution model:
 ```bash
 ./test.sh
 bats --jobs 4 scripts/tests/
-bash scripts/lint-shell-conventions.sh scripts/
+scripts/install-codespace-tools.sh --profile core --verify-only
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
 python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock skills-lock.json
@@ -31,6 +31,10 @@ git diff --check
 ```
 
 Run `bash install.sh` only when testing the Codespaces bootstrap/install surface.
+The default `core` profile installs repository quality tools plus runtime
+prerequisites for enabled local MCPs. Use `bash install.sh --profile agents` to
+also install or verify OpenCode, Claude Code, Cursor Agent, and Codex; each agent
+still requires its own authentication flow.
 Use `scripts/format.sh --write <files...>` for deterministic local shfmt and
 markdownlint fixes. CI remains read-only and never commits formatting changes.
 Run `scripts/diagnose-opencode-session.sh` instead of bare `opencode` when
@@ -80,6 +84,8 @@ end-to-end budget.
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
 | `install.sh` | Codespaces bootstrap and template-file copy inventory |
+| `.config/codespace-tools.json` | Canonical Codespaces tool versions, release integrity, and profiles |
+| `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |
 
 ### Nested Provider Skills
 
@@ -199,9 +205,10 @@ one-project scope is preferred; project scope also disables account-management
 tools. Cloudflare docs does not require account access.
 Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
 Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
-remote transport closes the hosted stream unexpectedly. The local MCP timeout is
-60 seconds so concurrent cold `npx`/`uvx` package resolution, OAuth discovery, and
-proxy startup have enough headroom. Keep bridge logs silent because verbose
+remote transport closes the hosted stream unexpectedly. Generated OpenCode MCP
+entries default to a 60-second timeout so cold `npx`/`uvx` package resolution,
+OAuth discovery, and proxy startup have enough headroom. Keep bridge logs silent
+because verbose
 diagnostics expand the authorization header. Pass its environment placeholder
 directly to `mcp-remote`; shell expansion would expose the token in process
 arguments. Cursor reads the direct-HTTP root
@@ -214,6 +221,16 @@ Azure uses Azure CLI / `DefaultAzureCredential`; OCI uses
 scoped `RENDER_API_KEY`. GCP and Colyseus have repository-owned skills but no
 configured MCPs. Follow `docs/guides/cloud-provider-tooling.md` for
 least-privilege setup, opt-in boundaries, and non-destructive smoke tests.
+Enabled local browser MCPs use exact npm package versions from
+`.config/mcp-inventory.json` through `scripts/browser-mcp.sh`. The core
+Codespaces profile installs checksum-verified Chrome for Testing and its
+artifact-declared Debian dependencies, then both Playwright and Chrome DevTools
+launch that executable headlessly. Open Design uses its repository-owned lock
+and bootstrap under `.agents/skills/open-design/`; its daemon checkout is also
+part of the default core profile. The profile also installs the locked
+`.github/agent-runtime` npm dependencies required by the local Bats suite and
+OpenCode workflow helpers. Run the core profile with `--verify-only` to preflight
+these prerequisites without downloading or changing packages.
 The 19 AWS core skills come from the current Agent Toolkit for AWS successor
 repository. All 26 Azure package trees are vendored; supported Azure plugin
 installs also include the skills plus Azure and Foundry MCP configuration, but

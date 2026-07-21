@@ -22,9 +22,28 @@
 # Usage:
 #   Automatic: Linked via GitHub Codespaces "Dotfiles" setting.
 #   Manual:    DOTFILES=/path/to/ai-repo-template bash install.sh
+#   Agents:    DOTFILES=/path/to/ai-repo-template bash install.sh --profile agents
 # =============================================================================
 
 set -e # Exit on error
+
+TOOLS_PROFILE=core
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --profile)
+      if [[ $# -lt 2 ]]; then
+        printf 'error: --profile requires core or agents\n' >&2
+        exit 1
+      fi
+      TOOLS_PROFILE="$2"
+      shift 2
+      ;;
+    *)
+      printf 'error: unknown argument: %s\n' "$1" >&2
+      exit 1
+      ;;
+  esac
+done
 
 # Colors for output
 RED='\033[0;31m'
@@ -85,6 +104,13 @@ fi
 
 log_info "Template path: $DOTFILES"
 log_info "Workspace path: $WORKSPACE"
+
+if [[ -f "$DOTFILES/scripts/install-codespace-tools.sh" ]]; then
+  log_info "Installing Codespaces tool profile: $TOOLS_PROFILE"
+  bash "$DOTFILES/scripts/install-codespace-tools.sh" --profile "$TOOLS_PROFILE"
+else
+  log_warn "scripts/install-codespace-tools.sh not found; skipping CLI bootstrap."
+fi
 
 # =============================================================================
 # 1. Install VS Code Extensions
@@ -198,6 +224,7 @@ MULTIAGENT_FILES=(
   ".agents/skills"
   ".cursor"
   ".config/mcp-inventory.json"
+  ".config/codespace-tools.json"
   ".mcp.json"
   ".opencode/opencode.json"
   "skills-lock.json"
@@ -214,6 +241,7 @@ MULTIAGENT_FILES=(
   "docs/guides/agent-best-practices.md"
   "docs/guides/agent-pipeline.md"
   "docs/guides/agents-md-section-redirects.md"
+  "docs/guides/cloud-provider-tooling.md"
   "docs/guides/context-files-explained.md"
   "docs/guides/opportunity-feedback-examples.md"
   "docs/guides/opencode-termination-diagnostics.md"
@@ -227,6 +255,7 @@ MULTIAGENT_FILES=(
   "docs/guides/design-patterns-post-gof.md"
   "docs/guides/optional-skills.md"
   "docs/guides/sandbox-verification.md"
+  "docs/guides/skill-supply-chain.md"
   ".github/prompts/README.md"
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"
@@ -241,8 +270,13 @@ MULTIAGENT_FILES=(
   "scripts/generate-issue-plans.py"
   "scripts/generate-agent-runtime.py"
   "scripts/generate-mcp-configs.py"
+  "scripts/scan-skill-secrets.py"
+  "scripts/skill-supply-chain.py"
   "scripts/validate-active-labels.py"
   "scripts/codespace-post-start.sh"
+  "scripts/install-codespace-tools.sh"
+  "scripts/browser-mcp.sh"
+  "scripts/open-design-mcp.sh"
   "scripts/lib/ensure-gh-pat-auth.sh"
   "scripts/lib/sandbox-remote.sh"
   "scripts/lib/assertions.sh"

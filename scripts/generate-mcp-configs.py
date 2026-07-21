@@ -44,7 +44,7 @@ def generic_server(spec: dict) -> dict:
     return merged(result, spec.get("generic", {}))
 
 
-def opencode_server(spec: dict) -> dict:
+def opencode_server(spec: dict, defaults: dict) -> dict:
     enabled = spec.get("enabled", True)
     if spec["transport"] == "remote":
         result = {"type": "remote", "url": spec["url"], "enabled": enabled}
@@ -58,7 +58,7 @@ def opencode_server(spec: dict) -> dict:
                 key: value if value == "ERROR" else f"{{env:{value}}}"
                 for key, value in environment.items()
             }
-    return merged(result, spec.get("opencode", {}))
+    return merged(merged(defaults, result), spec.get("opencode", {}))
 
 
 def replace_json_object(text: str, key: str, value: dict) -> str:
@@ -104,7 +104,9 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        inventory = json.loads((args.repo / INVENTORY).read_text())["servers"]
+        inventory_data = json.loads((args.repo / INVENTORY).read_text())
+        inventory = inventory_data["servers"]
+        opencode_defaults = inventory_data.get("defaults", {}).get("opencode", {})
         generic = json.dumps(
             {"mcpServers": {name: generic_server(spec) for name, spec in inventory.items()}},
             indent=2,
@@ -113,7 +115,7 @@ def main() -> int:
         opencode = replace_json_object(
             opencode_text,
             "mcp",
-            {name: opencode_server(spec) for name, spec in inventory.items()},
+            {name: opencode_server(spec, opencode_defaults) for name, spec in inventory.items()},
         )
         json.loads(opencode)
     except (OSError, KeyError, ValueError, json.JSONDecodeError) as error:

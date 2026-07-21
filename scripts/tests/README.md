@@ -9,8 +9,10 @@ path.
 | Example | Concern |
 |---|---|---|
 | `generated-governance-surfaces.bats` | Canonical-source generation and stale-output detection |
+| `codespace-tools.bats` | Codespaces tool manifest and idempotent installer behavior |
 | `orchestration.bats` | Multi-model consensus provider and Fusion behavior |
 | `postmerge-retro-batch.bats` | Daily retro evidence and lifecycle behavior |
+| `shell-tooling-policy.bats` | Bounded production shell command policy |
 | `verify-env.bats` | Environment checks |
 | `verify-pr.bats` | Change-class classifier fixtures (ADR-016) |
 | `weekly-classifier.bats` | Weekly review classifier behavior |

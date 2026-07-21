@@ -1,4 +1,7 @@
 {
+  "defaults": {
+    "opencode": {"timeout": 60000}
+  },
   "servers": {
     "github": {"transport": "remote", "url": "https://api.githubcopilot.com/mcp/", "auth_env": "GH_PAT"},
     "supabase": {"transport": "remote", "url": "https://mcp.supabase.com/mcp", "auth_env": "SUPABASE_API_KEY"},
@@ -12,7 +15,6 @@
         "oauth": null,
         "headers": null,
         "command": ["npx", "-y", "mcp-remote@0.1.38", "https://netlify-mcp.netlify.app/mcp", "--header", "Authorization:Bearer ${NETLIFY_API_KEY}", "--transport", "http-only", "--silent"],
-        "timeout": 60000,
         "environment": {"NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"}
       }
     },
@@ -34,8 +36,8 @@
     },
     "render": {"transport": "remote", "url": "https://mcp.render.com/mcp", "auth_env": "RENDER_API_KEY"},
     "open-design": {"transport": "local", "command": ["bash", "scripts/open-design-mcp.sh"]},
-    "playwright": {"transport": "local", "command": ["npx", "@playwright/mcp@latest"]},
-    "chrome-devtools": {"transport": "local", "command": ["npx", "-y", "chrome-devtools-mcp@latest"]},
-    "shadcn": {"transport": "local", "command": ["npx", "-y", "shadcn@latest", "mcp"]}
+    "playwright": {"transport": "local", "command": ["bash", "scripts/browser-mcp.sh", "playwright", "@playwright/mcp@0.0.78"]},
+    "chrome-devtools": {"transport": "local", "command": ["bash", "scripts/browser-mcp.sh", "chrome-devtools", "chrome-devtools-mcp@1.6.0"]},
+    "shadcn": {"transport": "local", "command": ["npx", "-y", "shadcn@4.13.1", "mcp"]}
   }
 }

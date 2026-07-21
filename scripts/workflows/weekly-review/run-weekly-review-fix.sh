@@ -171,6 +171,6 @@ batch_fix_publish \
   "$REPO" "$BRANCH" "$existing_pr" "$has_diff" "$RUN_WEEK" "$WEEKLY_JSON" \
   "Weekly repo review fix: ${RUN_WEEK}" "$WORKDIR/fix-pr-body.md" render_fix_pr_body \
   "$SCRIPT_DIR/update-umbrella-fix-link.sh" "$SCRIPT_DIR/resolve-umbrella-issue.sh" \
-  "$LIB_DIR/link-fix-pr-to-issue.sh"
+  "$LIB_DIR/link-fix-pr-to-issue.sh" "$VERIFY_JSON"
 
 echo "Fix pass complete for ${RUN_WEEK}"

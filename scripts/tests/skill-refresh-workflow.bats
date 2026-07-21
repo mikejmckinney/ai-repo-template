@@ -65,7 +65,7 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -q 'draft: always' "$WORKFLOW"
+  run grep -q 'draft: always-true' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'delete-branch: false' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -74,6 +74,10 @@ EOF
   run grep -q 'scan-skill-secrets.py' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'validate-lock' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -q 'sudo apt-get install -y -qq bats parallel ripgrep' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -q 'set -o pipefail' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q './test.sh' "$WORKFLOW"
   [ "$status" -eq 0 ]

@@ -10,6 +10,20 @@ setup() {
   export CALL_LOG="$TEST_ROOT/calls.log"
   printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a","repro_steps":["step"]}]}' \
     >"$TEST_ROOT/batch.json"
+  cat >"$TEST_ROOT/verify.json" <<'EOF'
+{
+  "findings": [
+    {
+      "dedupe_key": "key-a",
+      "verify": {
+        "pre": "cant_reproduce",
+        "post": "n/a",
+        "notes": "Superseded on current main."
+      }
+    }
+  ]
+}
+EOF
   cat >"$TEST_ROOT/update.sh" <<'EOF'
 #!/usr/bin/env bash
 printf 'update %s\n' "$*" >>"$CALL_LOG"
@@ -46,16 +60,108 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "batch fix no-diff run without PR records skip and does not publish" {
+@test "batch fix no-diff run accepts complete cant-reproduce evidence" {
   run batch_fix_publish \
     owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
-    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh"
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/verify.json"
 
   [ "$status" -eq 0 ]
-  run grep -F 'update 2026-W24 (skipped — no code changes; see fix-verify.json if present)' "$CALL_LOG"
+  run grep -F 'update 2026-W24 (skipped — all actionable findings verified cant_reproduce)' "$CALL_LOG"
   [ "$status" -eq 0 ]
   run grep -F render "$CALL_LOG"
   [ "$status" -eq 1 ]
+}
+
+@test "batch fix no-diff run rejects pending verification" {
+  jq '.findings[0].verify.pre = "pending"' "$TEST_ROOT/verify.json" >"$TEST_ROOT/pending.json"
+
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/pending.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"key-a"* ]]
+}
+
+@test "batch fix no-diff run rejects missing finding verification" {
+  printf '%s\n' '{"findings":[]}' >"$TEST_ROOT/missing.json"
+
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/missing.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"key-a"* ]]
+}
+
+@test "batch fix no-diff run rejects fixed claim without patch" {
+  jq '.findings[0].verify = {pre: "reproduced", post: "fixed", notes: "claimed fixed"}' \
+    "$TEST_ROOT/verify.json" >"$TEST_ROOT/fixed.json"
+
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/fixed.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"key-a"* ]]
+}
+
+@test "batch fix no-diff run rejects missing verification file" {
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/not-found.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"not-found.json"* ]]
+}
+
+@test "batch fix workflow-only run fails with human-authored PR requirement" {
+  BATCH_FIX_STRIPPED_WORKFLOWS=(.github/workflows/example.yml)
+
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/verify.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *".github/workflows/example.yml"* ]]
+  [[ "$output" == *"human-authored workflow PR required"* ]]
+  [ ! -f "$CALL_LOG" ]
+}
+
+@test "batch fix mixed run publishes partial draft then fails for workflow follow-up" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/git" <<'EOF'
+#!/usr/bin/env bash
+printf 'git %s\n' "$*" >>"$CALL_LOG"
+EOF
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+printf 'gh %s\n' "$*" >>"$CALL_LOG"
+if [[ "$1 $2" == "pr create" ]]; then
+  printf '%s\n' 'https://example.test/pr/18'
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/git" "$TEST_ROOT/bin/gh"
+  PATH="$TEST_ROOT/bin:$PATH"
+  BATCH_FIX_STRIPPED_WORKFLOWS=(.github/workflows/example.yml)
+
+  run batch_fix_publish \
+    owner/repo branch "" 1 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/verify.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"human-authored workflow PR required"* ]]
+  run grep -F 'gh pr create' "$CALL_LOG"
+  [ "$status" -eq 0 ]
+  run grep -F 'update 2026-W24 https://example.test/pr/18' "$CALL_LOG"
+  [ "$status" -eq 0 ]
 }
 
 @test "batch fix no-diff rerun preserves existing PR body" {
@@ -72,7 +178,8 @@ EOF
 
   run batch_fix_publish \
     owner/repo branch 17 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
-    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh"
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/verify.json"
 
   [ "$status" -eq 0 ]
   run grep -F 'gh pr edit' "$CALL_LOG"
