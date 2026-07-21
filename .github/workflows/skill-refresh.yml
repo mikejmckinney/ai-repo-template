@@ -71,6 +71,10 @@ jobs:
           echo "changed=$(jq -r '.changed' "$RESULT_PATH")" >>"$GITHUB_OUTPUT"
           echo "target_ref=$(jq -r '.newRef' "$RESULT_PATH")" >>"$GITHUB_OUTPUT"
 
+      - name: Install test dependencies
+        if: steps.check.outputs.changed == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel ripgrep
+
       - name: Update source packages
         if: steps.check.outputs.changed == 'true'
         env:
@@ -106,6 +110,7 @@ jobs:
         env:
           VALIDATION_PATH: ${{ runner.temp }}/skill-refresh-validation.log
         run: |
+          set -o pipefail
           {
             python3 scripts/skill-supply-chain.py validate-lock \
               --repo "$PWD" \

@@ -75,6 +75,10 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'validate-lock' "$WORKFLOW"
   [ "$status" -eq 0 ]
+  run grep -q 'sudo apt-get install -y -qq bats parallel ripgrep' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -q 'set -o pipefail' "$WORKFLOW"
+  [ "$status" -eq 0 ]
   run grep -q './test.sh' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Eiq 'enable-auto-merge|merge-method:|auto-merge:' "$WORKFLOW"
