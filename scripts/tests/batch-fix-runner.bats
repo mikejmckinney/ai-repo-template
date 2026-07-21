@@ -10,6 +10,20 @@ setup() {
   export CALL_LOG="$TEST_ROOT/calls.log"
   printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a","repro_steps":["step"]}]}' \
     >"$TEST_ROOT/batch.json"
+  cat >"$TEST_ROOT/verify.json" <<'EOF'
+{
+  "findings": [
+    {
+      "dedupe_key": "key-a",
+      "verify": {
+        "pre": "cant_reproduce",
+        "post": "n/a",
+        "notes": "Superseded on current main."
+      }
+    }
+  ]
+}
+EOF
   cat >"$TEST_ROOT/update.sh" <<'EOF'
 #!/usr/bin/env bash
 printf 'update %s\n' "$*" >>"$CALL_LOG"
@@ -46,16 +60,64 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "batch fix no-diff run without PR records skip and does not publish" {
+@test "batch fix no-diff run accepts complete cant-reproduce evidence" {
   run batch_fix_publish \
     owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
-    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh"
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/verify.json"
 
   [ "$status" -eq 0 ]
-  run grep -F 'update 2026-W24 (skipped — no code changes; see fix-verify.json if present)' "$CALL_LOG"
+  run grep -F 'update 2026-W24 (skipped — all actionable findings verified cant_reproduce)' "$CALL_LOG"
   [ "$status" -eq 0 ]
   run grep -F render "$CALL_LOG"
   [ "$status" -eq 1 ]
+}
+
+@test "batch fix no-diff run rejects pending verification" {
+  jq '.findings[0].verify.pre = "pending"' "$TEST_ROOT/verify.json" >"$TEST_ROOT/pending.json"
+
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/pending.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"key-a"* ]]
+}
+
+@test "batch fix no-diff run rejects missing finding verification" {
+  printf '%s\n' '{"findings":[]}' >"$TEST_ROOT/missing.json"
+
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/missing.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"key-a"* ]]
+}
+
+@test "batch fix no-diff run rejects fixed claim without patch" {
+  jq '.findings[0].verify = {pre: "reproduced", post: "fixed", notes: "claimed fixed"}' \
+    "$TEST_ROOT/verify.json" >"$TEST_ROOT/fixed.json"
+
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/fixed.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"key-a"* ]]
+}
+
+@test "batch fix no-diff run rejects missing verification file" {
+  run batch_fix_publish \
+    owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/not-found.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"not-found.json"* ]]
 }
 
 @test "batch fix no-diff rerun preserves existing PR body" {
@@ -72,7 +134,8 @@ EOF
 
   run batch_fix_publish \
     owner/repo branch 17 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
-    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh"
+    render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
+    "$TEST_ROOT/verify.json"
 
   [ "$status" -eq 0 ]
   run grep -F 'gh pr edit' "$CALL_LOG"

@@ -98,12 +98,17 @@ batch_fix_publish() {
   local repo="$1" branch="$2" existing_pr="$3" has_diff="$4"
   local run_key="$5" input_json="$6" pr_title="$7" body_file="$8"
   local render_callback="$9" update_script="${10}" resolve_script="${11}" link_script="${12}"
-  local pr_url skip_notice
+  local verify_json="${13}" pr_url skip_notice
+
+  if [[ "$has_diff" -eq 0 ]]; then
+    python3 "$(dirname "${BASH_SOURCE[0]}")/validate-no-diff-fix.py" \
+      "$input_json" "$verify_json" || return 1
+  fi
 
   if [[ "$has_diff" -eq 1 ]]; then
     git push -u origin "$branch"
   elif [[ -z "$existing_pr" ]]; then
-    skip_notice="(skipped — no code changes; see fix-verify.json if present)"
+    skip_notice="(skipped — all actionable findings verified cant_reproduce)"
     bash "$update_script" "$run_key" "$skip_notice" "$input_json"
     fix_phase_log "publish"
     return 0
