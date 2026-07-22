@@ -4,7 +4,7 @@
 #
 # WARNING: This will DELETE all data in the database!
 #
-# TEMPLATE_PLACEHOLDER: Customize this for your database
+# Add a verified database-specific reset command before enabling this helper.
 
 set -e
 

@@ -1,5 +1,3 @@
-<!-- TEMPLATE_PLACEHOLDER: Update for your project's documentation -->
-
 # Documentation Directory
 
 > **Purpose**: Human-readable reference documentation, specifications, and research materials.

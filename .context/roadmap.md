@@ -175,12 +175,12 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 ### Current Deliverables
 - Populate `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` with real template content.
 - Keep architecture guidance aligned with ADR-031 and GitHub-backed live state.
-- Keep Mode B onboarding explicit through the OpenCode `repo-onboarding` skill.
-- Keep the reset rule explicit in onboarding verification after live template files lose their bootstrap placeholder markers.
+- Keep `template-seed` onboarding explicit through the OpenCode `repo-onboarding` skill.
+- Preserve useful dogfood resources while lifecycle state makes first onboarding deterministic.
 
 ### Exit Criteria
 - The template repo demonstrates its own lazy-load context pattern.
-- A fresh derived repo still resets to generic stubs during Mode B onboarding.
+- A fresh derived repo receives `template-seed` state and adapts resources from evidence.
 - The review/merge loop remains explicit, verifiable, and human-auditable.
 
 ---

@@ -232,6 +232,7 @@ MULTIAGENT_FILES=(
   ".mcp.json"
   ".opencode/opencode.json"
   "skills-lock.json"
+  ".context/onboarding-state.json"
   ".context/00_INDEX.md"
   ".context/roadmap.md"
   ".context/sessions/README.md"

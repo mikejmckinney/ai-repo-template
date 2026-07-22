@@ -9,7 +9,7 @@ In `ai-repo-template`, it serves two jobs at once:
 
 1. It is the live source of truth for the template repo itself.
 2. It shows downstream repos what a populated context pack should look like before
-   Mode B onboarding restores the generic stubs.
+   `template-seed` onboarding adapts only what their project evidence requires.
 
 ### priority order (when conflicts arise)
 
@@ -21,6 +21,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 ```text
 .context/
 |-- 00_INDEX.md          # This file - start here (The Map)
+|-- onboarding-state.json # Versioned template-seed/complete lifecycle state
 |-- roadmap.md           # Template-development phases and current hardening track
 |-- sessions/            # Durable retrospectives and feedback records
 |   |-- feedback_template.md # Stakeholder feedback capture template
@@ -45,14 +46,14 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 6. For benchmark work, use `docs/guides/model-roi-benchmark-runbook.md` and
    published evidence under `docs/benchmarks/`.
 
-**Execution model**: one implementing agent, blocking CI, optional parallel
+**Execution model**: one implementing agent, blocking CI, normal parallel
 advisory review, recurring retro, and opt-in local consensus. See ADR-031.
 
 ## Project Summary
 
 **Project Name**: `ai-repo-template`
 
-**Description**: A Codespaces-first repository template for monolithic AI-assisted software delivery with optional advisory review and recurring retro automation.
+**Description**: A Codespaces-first repository template for monolithic AI-assisted software delivery with parallel advisory review and recurring retro automation.
 
 **Current Phase**: Phase 7 - template dogfooding, overlay extension, and process hardening.
 
@@ -101,7 +102,7 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-026](../docs/decisions/adr-026-compliance-contracts.md) | Compliance contracts | Structured evidence schemas retired by the 2026-07-13 amendment. |
 | [ADR-027](../docs/decisions/adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel | Added an out-of-scope observation path without widening task scope. |
 | [ADR-029](../docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence | Requires sandbox proof for behavior/process claims on every PR. |
-| [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI and execution lifecycle policy | Makes monolithic implementation the default, retires role registries, and retains optional advisory plus recurring retro. |
+| [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI and execution lifecycle policy | Makes monolithic implementation the default, retires role registries, and uses normal non-blocking advisory plus recurring retro. |
 | [ADR-032](../docs/decisions/adr-032-canonical-governance-sources.md) | Canonical governance sources and layered enforcement | Uses one authored source with pointers, symlinks, or deterministic generated consumers and blocks only encoded contract violations. |
 
 ## Next Steps

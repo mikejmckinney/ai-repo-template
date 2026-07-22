@@ -13,6 +13,7 @@ REQUIRED_FILES=(
   "CLAUDE.md"
   "README.md"
   "DESIGN.md"
+  ".context/onboarding-state.json"
   "install.sh"
   "test.sh"
   ".cursorignore"

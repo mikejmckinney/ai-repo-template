@@ -23,65 +23,45 @@ done
 REPO="$(cd "$REPO" && pwd)"
 remote=$(git -C "$REPO" remote get-url origin 2>/dev/null || true)
 identity="${remote:-$(basename "$REPO")}"
-signals=()
+state_file="$REPO/.context/onboarding-state.json"
+warnings=()
 
-contains_pattern() {
-  local pattern="$1"
-  shift
-  grep -qE "$pattern" "$@" 2>/dev/null
-}
-
-if contains_pattern 'TEMPLATE_PLACEHOLDER' "$REPO/README.md" "$REPO/AI_REPO_GUIDE.md"; then
-  signals+=("primary documentation contains TEMPLATE_PLACEHOLDER")
-fi
-if contains_pattern 'PLEASE_UPDATE_THIS/URL' "$REPO/.github/ISSUE_TEMPLATE/config.yml"; then
-  signals+=("issue template contains placeholder URL")
-fi
-tick='`'
-context_identity_pattern="\\*\\*Project Name\\*\\*:[[:space:]]*${tick}?ai-repo-template${tick}?|A Codespaces-first repository template for AI-assisted software delivery"
-if contains_pattern "$context_identity_pattern" "$REPO/.context/00_INDEX.md"; then
-  signals+=("context index still describes ai-repo-template")
-fi
-if contains_pattern '^# ai-repo-template Roadmap' "$REPO/.context/roadmap.md"; then
-  signals+=("roadmap still describes ai-repo-template")
-fi
-if contains_pattern 'template repo.s design and workflow diagrams|process/template project' "$REPO/.context/vision/README.md"; then
-  signals+=("vision still describes the template repository")
-fi
-if [[ -e "$REPO/.context/vision/architecture/multi-agent-flow.md" ||
-  -e "$REPO/.context/vision/architecture/state-surfaces.md" ]]; then
-  signals+=("template-only architecture diagrams remain")
-fi
-if [[ -x "$REPO/scripts/verify-env.sh" ]]; then
-  verify_output=$(cd "$REPO" && ./scripts/verify-env.sh 2>&1 || true)
-  if printf '%s\n' "$verify_output" | grep -qE '[1-9][0-9]* files still contain TEMPLATE_PLACEHOLDER'; then
-    signals+=("verify-env reports unresolved template placeholders")
+if printf '%s\n' "$identity" | grep -qE '(^|[:/])(mikejmckinney/)?(ai-repo-template|dotfiles)(\.git)?$'; then
+  mode=ai-repo-template
+  requires_onboarding=false
+elif [[ ! -e "$state_file" ]]; then
+  mode=complete
+  requires_onboarding=false
+  warnings+=("legacy derived repository has no .context/onboarding-state.json; treating it as complete until state is backfilled")
+else
+  if ! jq -e '
+    type == "object" and
+    .schema_version == 1 and
+    .template == "mikejmckinney/ai-repo-template" and
+    (.status == "template-seed" or .status == "complete")
+  ' "$state_file" >/dev/null 2>&1; then
+    fail "invalid onboarding state in .context/onboarding-state.json"
+  fi
+  mode=$(jq -r '.status' "$state_file")
+  if [[ "$mode" == template-seed ]]; then
+    requires_onboarding=true
+  else
+    requires_onboarding=false
   fi
 fi
 
-if printf '%s\n' "$identity" | grep -qE '(^|[:/])(mikejmckinney/)?(ai-repo-template|dotfiles)(\.git)?$'; then
-  mode=A
-  requires_bootstrap=false
-elif [[ ${#signals[@]} -gt 0 ]]; then
-  mode=B
-  requires_bootstrap=true
+if [[ ${#warnings[@]} -eq 0 ]]; then
+  warnings_json='[]'
 else
-  mode=C
-  requires_bootstrap=false
-fi
-
-if [[ ${#signals[@]} -eq 0 ]]; then
-  signals_json='[]'
-else
-  signals_json=$(printf '%s\n' "${signals[@]}" | jq -R . | jq -s .)
+  warnings_json=$(printf '%s\n' "${warnings[@]}" | jq -R . | jq -s .)
 fi
 jq -n \
   --arg status success \
   --arg mode "$mode" \
   --arg repository "$REPO" \
   --arg identity "$identity" \
-  --argjson requires_bootstrap "$requires_bootstrap" \
-  --argjson signals "$signals_json" \
+  --argjson requires_onboarding "$requires_onboarding" \
+  --argjson warnings "$warnings_json" \
   '{status: $status, mode: $mode, repository: $repository,
-    identity: $identity, requires_bootstrap: $requires_bootstrap,
-    signals: $signals}'
+    identity: $identity, requires_onboarding: $requires_onboarding,
+    warnings: $warnings}'

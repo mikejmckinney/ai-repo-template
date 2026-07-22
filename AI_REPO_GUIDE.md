@@ -1,9 +1,7 @@
-<!-- TEMPLATE_PLACEHOLDER: Regenerate this guide for a derived project. -->
-
 # AI_REPO_GUIDE.md
 
 > Canonical command and layout reference for agents working in this template.
-> Last verified: 2026-07-20.
+> Last verified: 2026-07-22.
 
 ## Overview
 
@@ -12,7 +10,7 @@ ADR-031 defines the active execution model:
 
 - one monolithic implementing agent;
 - CI and lint as blocking pre-merge controls;
-- optional `ai-review:live` advisory snapshots during implementation;
+- normal `ai-review:live` advisory snapshots during eligible PR implementation;
 - automatic daily post-merge and weekly full-repository review;
 - OpenCode `multi-model-consensus` as the sole opt-in multi-model mechanism.
 
@@ -50,6 +48,11 @@ Run `scripts/archive-opencode-database.sh` first in dry-run mode when a large
 OpenCode database prevents startup. Apply mode requires every OpenCode process
 to be stopped, creates and verifies a coherent backup, and preserves the raw
 DB/WAL/SHM generation before leaving the active path empty for a fresh start.
+For an unfamiliar repository, run the `repo-onboarding` skill before repository
+action. Its descriptive modes are `ai-repo-template`, `template-seed`, and
+`complete`; the versioned state is `.context/onboarding-state.json`. Resumed or
+post-compaction work uses `session-recovery` first instead of repeating
+onboarding.
 For implementation work, fill the issue plan, create and push an empty bootstrap
 commit, and open a draft PR before meaningful edits. Commit and push each
 changed turn before updating `agent-state:v1`; stage only task-owned paths.
@@ -74,6 +77,7 @@ returns failure to the existing provider cascade instead of consuming the
 | `AGENTS.md` | Always-loaded operating contract |
 | `README.md` | Human-facing overview and setup |
 | `.context/` | Current project state, roadmap, and design context |
+| `.context/onboarding-state.json` | Versioned template-seed/complete lifecycle state |
 | `docs/decisions/` | Durable architecture decisions; ADR-031 owns the execution model |
 | `docs/benchmarks/` | Published benchmark result records used for decisions |
 | `docs/guides/model-roi-benchmark-runbook.md` | Canonical benchmark campaign procedure |
@@ -122,11 +126,14 @@ validation can discover nested skills without overlapping refresh records.
 
 ### Advisory
 
-Apply `ai-review:live` to an open same-repository PR to opt in. Draft PRs are
-supported. Each qualifying push cancels an older in-flight run and updates one
-comment marked `<!-- ai-advisory-review:v1 -->`. Advisory cannot submit a formal
-review, push commits, mutate labels, resolve threads, change readiness, or block
-merge. `ai-review:full` increases context depth but does not change authority.
+Agents apply `ai-review:live` to every eligible same-repository task PR they
+create or claim. Draft PRs are supported. Each qualifying push cancels an older
+in-flight run and updates one comment marked `<!-- ai-advisory-review:v1 -->`.
+Implementation continues without waiting. Before completion, agents independently
+triage any arrived snapshot whose `Head` matches the current PR head; stale,
+missing, running, or failed feedback is non-blocking. Advisory cannot submit a
+formal review, push commits, mutate labels, resolve threads, change readiness, or
+block merge. `ai-review:full` increases context depth but does not change authority.
 
 ### Daily Retro
 
@@ -274,5 +281,5 @@ host plugins do not replace the repository's immutable cross-agent lock.
 ## Known Warnings
 
 `./test.sh` may report advisory warnings for stale session summaries or downstream
-template placeholders. A non-zero failure count is blocking; warnings must still
-be reviewed for relevance to the active task.
+environment differences. A non-zero failure count is blocking; warnings must
+still be reviewed for relevance to the active task.

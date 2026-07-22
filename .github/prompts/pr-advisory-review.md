@@ -34,7 +34,7 @@ Return **only** the markdown below (no preamble). Replace placeholders.
 ## Advisory Review Snapshot
 
 Head: `<sha>`
-Provider: `<cursor|gemini|antigravity>`
+Provider: `<opencode|cursor|gemini|antigravity>`
 Mode: advisory, non-blocking
 Diff coverage: `<included>/<total>` bytes, truncated: `<yes|no>`
 

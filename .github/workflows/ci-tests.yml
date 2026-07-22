@@ -1,4 +1,4 @@
-# TEMPLATE_PLACEHOLDER: Customize for your project's build/test/lint commands
+# Extend with project-specific build/test commands while retaining template checks.
 #
 # Self-Healing CI Pipeline with Retry Budget
 # -------------------------------------------

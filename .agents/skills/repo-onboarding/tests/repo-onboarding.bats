@@ -27,71 +27,125 @@ make_repo() {
   printf '%s' "$repo"
 }
 
+write_state() {
+  local repo="$1" status="$2" schema_version="${3:-1}"
+  jq -n \
+    --argjson schema_version "$schema_version" \
+    --arg status "$status" \
+    '{schema_version: $schema_version, template: "mikejmckinney/ai-repo-template", status: $status}' \
+    >"$repo/.context/onboarding-state.json"
+}
+
 @test "onboarding entrypoint scripts are executable" {
   [ -x "$SKILL_ROOT/scripts/classify-mode.sh" ]
   [ -x "$SKILL_ROOT/scripts/validate-onboarding.sh" ]
 }
 
-@test "classifier chooses Mode A for the template even with placeholder signals" {
+@test "classifier chooses ai-repo-template for the canonical repository regardless of state" {
   repo=$(make_repo template)
   git -C "$repo" remote add origin git@github.com:mikejmckinney/ai-repo-template.git
-  printf '%s\n' 'TEMPLATE_PLACEHOLDER' >>"$repo/README.md"
+  write_state "$repo" template-seed
   before=$(git -C "$repo" status --porcelain=v1)
 
   run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
 
   [ "$status" -eq 0 ]
-  [ "$(jq -r '.mode' <<<"$output")" = A ]
-  [ "$(jq -r '.requires_bootstrap' <<<"$output")" = false ]
+  [ "$(jq -r '.mode' <<<"$output")" = ai-repo-template ]
+  [ "$(jq -r '.requires_onboarding' <<<"$output")" = false ]
   [ "$(git -C "$repo" status --porcelain=v1)" = "$before" ]
 }
 
-@test "classifier chooses Mode B for a derived repository with bootstrap signals" {
-  repo=$(make_repo derived-stub)
+@test "classifier chooses template-seed for a derived repository with seed state" {
+  repo=$(make_repo derived-seed)
   git -C "$repo" remote add origin git@github.com:example/product.git
-  printf '%s\n' 'TEMPLATE_PLACEHOLDER' >>"$repo/AI_REPO_GUIDE.md"
-  printf '%s\n' 'contact_links: PLEASE_UPDATE_THIS/URL' >"$repo/.github/ISSUE_TEMPLATE/config.yml"
+  write_state "$repo" template-seed
 
   run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
 
   [ "$status" -eq 0 ]
-  [ "$(jq -r '.mode' <<<"$output")" = B ]
-  [ "$(jq -r '.requires_bootstrap' <<<"$output")" = true ]
-  [ "$(jq -r '.signals | length' <<<"$output")" -ge 2 ]
+  [ "$(jq -r '.mode' <<<"$output")" = template-seed ]
+  [ "$(jq -r '.requires_onboarding' <<<"$output")" = true ]
+  [ "$(jq -r '.warnings | length' <<<"$output")" -eq 0 ]
 }
 
-@test "classifier chooses Mode C for an already customized repository" {
+@test "classifier chooses complete for an explicitly onboarded repository" {
   repo=$(make_repo customized)
   git -C "$repo" remote add origin git@github.com:example/product.git
-  printf '%s\n' "- Derived from \`ai-repo-template\`; send feedback upstream." >>"$repo/.context/00_INDEX.md"
+  write_state "$repo" complete
 
   run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
 
   [ "$status" -eq 0 ]
-  [ "$(jq -r '.mode' <<<"$output")" = C ]
-  [ "$(jq -r '.signals | length' <<<"$output")" -eq 0 ]
+  [ "$(jq -r '.mode' <<<"$output")" = complete ]
+  [ "$(jq -r '.requires_onboarding' <<<"$output")" = false ]
+  [ "$(jq -r '.warnings | length' <<<"$output")" -eq 0 ]
 }
 
-@test "validator reports Mode B blockers without changing files" {
-  repo=$(make_repo validation-stub)
+@test "classifier treats missing state as legacy complete with a migration warning" {
+  repo=$(make_repo legacy)
+  git -C "$repo" remote add origin git@github.com:example/product.git
+
+  run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.mode' <<<"$output")" = complete ]
+  [ "$(jq -r '.requires_onboarding' <<<"$output")" = false ]
+  [ "$(jq -r '.warnings | length' <<<"$output")" -eq 1 ]
+  [[ "$(jq -r '.warnings[0]' <<<"$output")" == *"onboarding-state.json"* ]]
+}
+
+@test "placeholder text does not change legacy derived classification" {
+  repo=$(make_repo legacy-placeholders)
+  git -C "$repo" remote add origin git@github.com:example/product.git
   printf '%s\n' 'TEMPLATE_PLACEHOLDER' >>"$repo/README.md"
+  printf '%s\n' 'contact_links: PLEASE_UPDATE_THIS/URL' >"$repo/.github/ISSUE_TEMPLATE/config.yml"
+  printf '%s\n' '**Project Name**: `ai-repo-template`' >"$repo/.context/00_INDEX.md"
+
+  run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.mode' <<<"$output")" = complete ]
+  [ "$(jq -r '.warnings | length' <<<"$output")" -eq 1 ]
+}
+
+@test "classifier rejects malformed or unsupported onboarding state" {
+  for fixture in malformed schema status; do
+    repo=$(make_repo "$fixture")
+    git -C "$repo" remote add origin git@github.com:example/product.git
+    case "$fixture" in
+      malformed) printf '%s\n' '{not-json' >"$repo/.context/onboarding-state.json" ;;
+      schema) write_state "$repo" complete 2 ;;
+      status) write_state "$repo" unknown ;;
+    esac
+
+    run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"onboarding state"* ]]
+  done
+}
+
+@test "validator reports template-seed as requiring authorized onboarding without changing files" {
+  repo=$(make_repo validation-seed)
+  write_state "$repo" template-seed
   before=$(git -C "$repo" status --porcelain=v1)
 
   run "$SKILL_ROOT/scripts/validate-onboarding.sh" --repo "$repo"
 
   [ "$status" -ne 0 ]
-  [ "$(jq -r '.mode' <<<"$output")" = B ]
+  [ "$(jq -r '.mode' <<<"$output")" = template-seed ]
   [ "$(jq -r '.stable' <<<"$output")" = false ]
   [ "$(jq -r '.blocking_findings | length' <<<"$output")" -ge 1 ]
   [ "$(git -C "$repo" status --porcelain=v1)" = "$before" ]
 }
 
-@test "validator accepts a customized repository and reports optional warnings" {
+@test "validator accepts a complete repository and reports optional warnings" {
   repo=$(make_repo stable)
+  write_state "$repo" complete
 
   run "$SKILL_ROOT/scripts/validate-onboarding.sh" --repo "$repo"
 
   [ "$status" -eq 0 ]
-  [ "$(jq -r '.mode' <<<"$output")" = C ]
+  [ "$(jq -r '.mode' <<<"$output")" = complete ]
   [ "$(jq -r '.stable' <<<"$output")" = true ]
 }

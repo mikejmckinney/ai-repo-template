@@ -24,15 +24,17 @@ onboard), not files created.
 ## Truth Hierarchy
 
 Use this priority order when information conflicts:
-1. `./.context/**` — canonical project direction and constraints
-2. `./docs/**` — supporting detail and reference material
-3. Codebase — current implementation reality
+1. Current assigned issue and linked PR
+2. `AGENTS.md`
+3. `./.context/**`
+4. `./docs/**`
+5. Codebase
 
 ## Preflight Checks
 
 - [ ] Verify `.context/00_INDEX.md` exists
 - [ ] Verify the OpenCode `repo-onboarding` skill is available
-- [ ] Scan and list all files containing `TEMPLATE_PLACEHOLDER`
+- [ ] Inspect `.context/onboarding-state.json` and run the onboarding classifier
 - [ ] Run `git remote -v` to detect repository owner/name
 
 ## Initialization Steps
@@ -46,12 +48,11 @@ Determine the project purpose and current status from:
 
 ### 2. Run Repository Onboarding
 
-Execute the OpenCode `repo-onboarding` skill in Mode B.
+Execute the OpenCode `repo-onboarding` skill in `template-seed` mode.
 
 ### 3. Update README.md
 
-- If README.md contains `TEMPLATE_PLACEHOLDER`, replace it entirely with project-specific content
-- Otherwise, revise without deleting real content
+- Preserve useful README structure and revise only where project evidence requires it
 
 Include:
 - Project name and description
@@ -64,7 +65,7 @@ Include:
 
 ### 4. Customize docs/FAQ.md
 
-- Remove template-specific entries (those prefixed with "Template:")
+- Preserve useful template entries and revise only those contradicted by project evidence
 - Add project-specific questions surfaced during onboarding
 - If the project will keep the FAQ in README instead, delete `docs/FAQ.md`
 
@@ -90,7 +91,6 @@ Update `.github/workflows/ci-tests.yml`:
 - Add project-specific build commands
 - Add test commands
 - Add lint commands
-- Remove placeholder comments
 
 ### 8. Fill in Context Pack
 
@@ -106,7 +106,7 @@ Document any required repository secrets:
 
 ## Important Notes
 
-- Do NOT modify `.context/**` beyond filling in placeholders unless explicitly instructed
+- Do not broadly reset `.context/**`; modify only evidence-backed project state
 - Propose changes via comments if you see issues
 - Run `./test.sh` to verify template integrity after changes
 

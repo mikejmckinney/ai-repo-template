@@ -21,6 +21,7 @@ Produce this concise structure from verified evidence:
 - API:
 
 ## Configuration
+- Onboarding mode:
 - Build:
 - Lint/format:
 - CI:

@@ -2,7 +2,10 @@
 
 ## Current State
 
-1. Read `AI_REPO_GUIDE.md` and `.context/00_INDEX.md` when present.
+1. Read `.context/onboarding-state.json`, `AI_REPO_GUIDE.md`, and
+   `.context/00_INDEX.md` when present. A legacy missing state is a migration
+   warning, not authorization for bootstrap; backfill `complete` only after
+   orientation confirms the repository is already customized.
 2. Read the assigned issue, linked PR, latest `agent-state:v1` comment, and
    labels when a durable task exists.
 3. Inspect `git status` and recent commits.

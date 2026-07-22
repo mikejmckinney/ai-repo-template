@@ -9,9 +9,11 @@ role fan-out for routine implementation.
 ## Review
 
 Run focused tests while editing and `./test.sh` before completion. CI and lint are
-blocking. Apply `ai-review:live` only when a parallel advisory snapshot is useful;
-never wait for it as a completion prerequisite. Daily and weekly retro findings
-remain subject to normal verification before their draft fixes merge.
+blocking. Apply `ai-review:live` to every eligible same-repository task PR and
+continue implementation without waiting. Before completion, independently verify
+findings from any arrived snapshot that matches the current PR head. Missing,
+stale, running, or failed advisory feedback remains non-blocking. Daily and weekly
+retro findings remain subject to normal verification before their draft fixes merge.
 
 ## Independent Perspectives
 

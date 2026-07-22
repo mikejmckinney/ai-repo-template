@@ -28,7 +28,7 @@ Decision record: [`docs/decisions/adr-001-context-pack-structure.md`](decisions/
 ### Template: What agent execution model does the repository use?
 
 One monolithic agent implements routine work. CI and lint are blocking;
-`ai-review:live` optionally supplies a parallel advisory snapshot; daily and
+agents normally apply `ai-review:live` for parallel advisory snapshots; daily and
 weekly workflows perform recurring review; and the OpenCode `multi-model-consensus`
 skill is the sole opt-in multi-model mechanism. See ADR-031.
 
@@ -38,17 +38,23 @@ skill is the sole opt-in multi-model mechanism. See ADR-031.
 
 ### Does advisory review block implementation or merge?
 
-No. It runs only when `ai-review:live` is applied, updates one sticky comment,
-and may finish while implementation continues. CI and maintainer decisions remain
-authoritative.
+No. Agents normally apply `ai-review:live` to eligible task PRs, but continue
+implementation without waiting. Before completion they independently verify any
+arrived snapshot matching the current PR head. Missing, stale, running, or failed
+feedback remains non-blocking; CI and maintainer decisions remain authoritative.
 
 ### How do I know whether I'm editing the template itself or a derived project?
 
-`AGENTS.md` has a template-detection block at the top. If the repo name is `ai-repo-template` (or the legacy `dotfiles`), the meta-docs are preserved. Otherwise, files containing `TEMPLATE_PLACEHOLDER` are treated as stubs to replace. See [`AGENTS.md`](../AGENTS.md) lines 3–12.
+Run the `repo-onboarding` classifier. Canonical template identity selects
+`ai-repo-template`; a derived copy with explicit seed state selects
+`template-seed`; and an onboarded or legacy derived repository selects
+`complete`. See [the onboarding skill](../.agents/skills/repo-onboarding/SKILL.md).
 
-### What does `TEMPLATE_PLACEHOLDER` mean and how do I find every instance?
+### Must a derived repository replace retained template resources?
 
-It's a marker used by this template to flag scaffolding that derived projects should replace. Run [`scripts/verify-env.sh`](../scripts/verify-env.sh) to check for the marker and report how many matches it finds.
+No. The lifecycle contract lives in `.context/onboarding-state.json`. During
+`template-seed` onboarding, preserve useful resources and extend, replace, or
+delete them only when current project evidence requires it.
 
 ### Template: Where should I file limitations or known issues I've hit?
 
