@@ -85,6 +85,46 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "Cursor runner resolves the SDK from the canonical runtime module" {
+  tmp="$(mktemp -d)"
+  printf 'review this' >"$tmp/prompt.md"
+  cat >"$tmp/cursor-sdk.mjs" <<'EOF'
+export const Cursor = {
+  models: {
+    list: async () => [{
+      id: "grok-4.5",
+      variants: [{ params: [{ id: "effort", value: "medium" }, { id: "fast", value: "false" }] }],
+    }],
+  },
+}
+export const Agent = {
+  prompt: async () => ({ model: { id: "grok-4.5" }, status: "completed", result: "cursor-ok\n" }),
+}
+EOF
+
+  run env CURSOR_API_KEY=cursor-test \
+    CURSOR_SDK_MODULE="$tmp/cursor-sdk.mjs" \
+    CURSOR_ADVISORY_MODEL=cursor-grok-4.5-medium \
+    node "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-cursor.mjs" \
+    "$tmp/prompt.md" "$tmp/output.txt"
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$tmp/output.txt")" = cursor-ok ]
+  rm -rf "$tmp"
+}
+
+@test "postmerge installs fix prerequisites and exports both locked SDK modules" {
+  workflow="$REPO_ROOT/.github/workflows/agent-postmerge-retro.yml"
+
+  grep -q 'sudo apt-get install -y -qq.*ripgrep' "$workflow"
+  grep -q 'OPENCODE_SDK_MODULE=.*@opencode-ai/sdk' "$workflow"
+  grep -q 'CURSOR_SDK_MODULE=.*@cursor/sdk/dist/esm/index.js' "$workflow"
+  run jq -e '.dependencies["@cursor/sdk"] == "1.0.24"' \
+    "$REPO_ROOT/.github/agent-runtime/package.json"
+
+  [ "$status" -eq 0 ]
+}
+
 @test "full-evidence OpenCode dispatch does not call the bounded pass" {
   run python3 - "$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro.sh" <<'PY'
 import sys

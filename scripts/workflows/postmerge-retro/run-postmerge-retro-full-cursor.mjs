@@ -1,15 +1,23 @@
 #!/usr/bin/env node
 /**
  * Full-evidence post-merge retro via Cursor SDK (tool-enabled read of diff.patch + HEAD paths).
- * Requires: npm install @cursor/sdk@<pinned>, CURSOR_API_KEY.
+ * Requires: locked @cursor/sdk in .github/agent-runtime, CURSOR_API_KEY.
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { Agent, Cursor } from "@cursor/sdk";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   buildCursorModelConfig,
   cursorBillingTier,
   DEFAULT_CURSOR_MODEL,
 } from "../lib/cursor-model-config.mjs";
+
+const cursorSdkSpecifier = process.env.CURSOR_SDK_MODULE || "@cursor/sdk";
+const { Agent, Cursor } = await import(
+  path.isAbsolute(cursorSdkSpecifier)
+    ? pathToFileURL(cursorSdkSpecifier).href
+    : cursorSdkSpecifier
+);
 
 const [promptFile, outFile] = process.argv.slice(2);
 if (!promptFile || !outFile) {
