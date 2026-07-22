@@ -36,7 +36,7 @@
       "computedHash": "b3b58099eed8142c0933e92c8fac089b522d9fd138e59184f90ee472ceea9b80",
       "destinationPath": ".agents/skills/azure/airunway-aks-setup",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/airunway-aks-setup",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -63,7 +63,7 @@
       "computedHash": "b54af92a99354e55f82c454543d3192303776666c984c4b515df36fb7e64359d",
       "destinationPath": ".agents/skills/azure/appinsights-instrumentation",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/appinsights-instrumentation",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -225,7 +225,7 @@
       "computedHash": "52afd7e1bf95e246ab0d7a58dce445905ba8727d5c4db18799f606529be9b394",
       "destinationPath": ".agents/skills/azure/azure-ai",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-ai",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -234,7 +234,7 @@
       "computedHash": "780f97cd20d0ecfd4649d252c995cb1a9a5f756573c40e51c817fed4592aaa04",
       "destinationPath": ".agents/skills/azure/azure-aigateway",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-aigateway",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -243,7 +243,7 @@
       "computedHash": "3aa04f9df9a55b4eaa959770b1e96def3b744b11b8415fbc426699bcd1ace0b7",
       "destinationPath": ".agents/skills/azure/azure-cloud-migrate",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-cloud-migrate",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -252,16 +252,16 @@
       "computedHash": "d2abbc15bc286c064ab66ad773e42be77e54a2210b48c684797e29300a973784",
       "destinationPath": ".agents/skills/azure/azure-compliance",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-compliance",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
     },
     "azure-compute": {
-      "computedHash": "04e0160605e412ca63dd23bab432103158f12f25b9131a1043605fd650fa7deb",
+      "computedHash": "2b068c1ad36d99584de6468b0f16d15ceae84aa11d03b423d9ba69f5cceb7b48",
       "destinationPath": ".agents/skills/azure/azure-compute",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-compute",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -270,7 +270,7 @@
       "computedHash": "c9ac677bd36e5cf2acdfb271ce0f88ad8829118980ea6d9404b50068f1334984",
       "destinationPath": ".agents/skills/azure/azure-cost",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-cost",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -279,16 +279,16 @@
       "computedHash": "3f92ce063c5d113e06bf70770ba1e3dc7aae944de43281e3d76a8825842c9ac5",
       "destinationPath": ".agents/skills/azure/azure-deploy",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-deploy",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
     },
     "azure-diagnostics": {
-      "computedHash": "22757ddddf04dcd894aa0c22df582a8b9636134a63c37baf3778a7abc28fc857",
+      "computedHash": "f1c4e82d613f9f122289b411416f35c0439baeec2e4dd17568a785779be6c030",
       "destinationPath": ".agents/skills/azure/azure-diagnostics",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-diagnostics",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -297,7 +297,7 @@
       "computedHash": "69376077fa8493dcd2bfe19cb3caaf40ffd93964409e39225ccfefd3d97c0a36",
       "destinationPath": ".agents/skills/azure/azure-enterprise-infra-planner",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-enterprise-infra-planner",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -306,7 +306,7 @@
       "computedHash": "2303ff2f983c3a1c51233b10e019fb56170c024be4b776cff96a3b6e6168a395",
       "destinationPath": ".agents/skills/azure/azure-kubernetes",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillEntrypoints": [
         "SKILL.md",
         "azure-kubernetes-automatic-readiness/SKILL.md"
@@ -319,7 +319,7 @@
       "computedHash": "6617702048a97581c7aedf5f601a20baa14afa936a19186eb13df5f177f6a1f9",
       "destinationPath": ".agents/skills/azure/azure-kusto",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-kusto",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -328,13 +328,13 @@
       "computedHash": "5b83526f93b612d35c40124cf62879896107580ffeb8708b1a2654b26a4ea277",
       "destinationPath": ".agents/skills/azure/azure-messaging",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-messaging",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
     },
     "azure-prepare": {
-      "computedHash": "5f834f49c06216c16c7800dcab0722a8bc924bc05442a28a4e51fc17f4a6b7da",
+      "computedHash": "bb456ba96f200210387b65563038025a5fdbf2f1c8ade1f8891fffb497fd83c1",
       "destinationPath": ".agents/skills/azure/azure-prepare",
       "excludedPaths": [
         "references/services/functions/templates/base/eval",
@@ -348,7 +348,7 @@
         "references/services/functions/templates/recipes/timer/eval"
       ],
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-prepare",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -357,7 +357,7 @@
       "computedHash": "14f40155f6931805fa5f5ce654bd4806aa46dd53172da103738caa3557605f04",
       "destinationPath": ".agents/skills/azure/azure-quotas",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-quotas",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -366,7 +366,7 @@
       "computedHash": "881fe5dfbf6f7bd0216292e5ae769ec7cd4147593714fb451b466f7a8c15ab02",
       "destinationPath": ".agents/skills/azure/azure-reliability",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-reliability",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -375,7 +375,7 @@
       "computedHash": "7dfeeebe0f924a75a6c4b40294dfd248a1ac2520719f0cbf4c5d5ef617c12736",
       "destinationPath": ".agents/skills/azure/azure-resource-lookup",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-resource-lookup",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -384,7 +384,7 @@
       "computedHash": "67c18b25d4bc66fd17ec7913ad5e8c6471c9f661badf0701e0afd7c6cd037820",
       "destinationPath": ".agents/skills/azure/azure-resource-visualizer",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-resource-visualizer",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -393,7 +393,7 @@
       "computedHash": "0a835710b42da3641575579bea69e2a6526d7ad4d2fc9783ec16f66d25bb806e",
       "destinationPath": ".agents/skills/azure/azure-storage",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-storage",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -402,16 +402,16 @@
       "computedHash": "d8beab80ec8079f509c6bc76decd7cc2f230b9126d6684a307b8da41d1ab503b",
       "destinationPath": ".agents/skills/azure/azure-upgrade",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-upgrade",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
     },
     "azure-validate": {
-      "computedHash": "9168c293c6325411b677bb3dff149c99474a60d08fbb9fb7c1d81b825ad5eac7",
+      "computedHash": "030f97a4cea1ca2c323ebbe4c2ebd532c5ba06829325a5f35644ae9ac5c23d36",
       "destinationPath": ".agents/skills/azure/azure-validate",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-validate",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -477,7 +477,7 @@
       "computedHash": "f1ee19bb2f4c547e07ec3e7072ec7dbce26481749e93c961b76affcfb3c83e4d",
       "destinationPath": ".agents/skills/azure/entra-agent-id",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/entra-agent-id",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -486,7 +486,7 @@
       "computedHash": "d93897bf4a1210d8ab7b58d6121f064de3158b237d5b4eb1e5088603e94be7f0",
       "destinationPath": ".agents/skills/azure/entra-app-registration",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/entra-app-registration",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -609,10 +609,10 @@
       "sourceType": "github"
     },
     "microsoft-foundry": {
-      "computedHash": "1378572fc5ab3cbc6f900b5638c82d2ebf957936bb50edb9b20f66cd6b2885cf",
+      "computedHash": "edbed63d67a2084053b761f611a1aa4443a59fe6a5d310ef8971137f3789c5a7",
       "destinationPath": ".agents/skills/azure/microsoft-foundry",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillEntrypoints": [
         "SKILL.md",
         "finetuning/SKILL.md",
@@ -720,7 +720,7 @@
       "computedHash": "742436f4287363e0fd1808f69f2700c9dd752b039e146aa95f0ea82e5f2c5b4b",
       "destinationPath": ".agents/skills/azure/python-appservice-deploy",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae",
+      "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/python-appservice-deploy",
       "source": "microsoft/azure-skills",
       "sourceType": "github"
@@ -950,15 +950,6 @@
       "source": "shadcn-ui/ui",
       "sourceType": "github"
     },
-    "skill-creator": {
-      "computedHash": "70098a2ed017fc9fe5a737e6b2baab95a6684115688f233897f2541bd9ead042",
-      "destinationPath": ".agents/skills/anthropic/skill-creator",
-      "hashAlgorithm": "sha256-tree-v1",
-      "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
-      "skillPath": "skills/skill-creator",
-      "source": "anthropics/skills",
-      "sourceType": "github"
-    },
     "signing-in-to-aws": {
       "computedHash": "da76ff453625155a2ec642b008721e61bcc35ede402651a4179c107d59d07494",
       "destinationPath": ".agents/skills/aws/core-skills/signing-in-to-aws",
@@ -966,6 +957,15 @@
       "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
       "skillPath": "skills/core-skills/signing-in-to-aws",
       "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github"
+    },
+    "skill-creator": {
+      "computedHash": "70098a2ed017fc9fe5a737e6b2baab95a6684115688f233897f2541bd9ead042",
+      "destinationPath": ".agents/skills/anthropic/skill-creator",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
+      "skillPath": "skills/skill-creator",
+      "source": "anthropics/skills",
       "sourceType": "github"
     },
     "sprites-and-images": {
