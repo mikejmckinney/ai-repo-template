@@ -1,221 +1,243 @@
 # AI-Ready Repository Template
 
-A template repository for GitHub Codespaces that provides pre-configured AI agent prompts, context management for LLM memory, and automatic development environment setup. Use this as a starting point for new repositories or link it to your Codespaces settings.
+**A repository operating baseline for teams that want coding agents to work
+inside explicit instructions, durable state, blocking checks, and human review.**
 
-> **For AI Agents**: See `AI_REPO_GUIDE.md` for a concise reference optimized for agent consumption.
+This is not an application starter or a replacement for your engineering
+process. It is the repository layer that makes an existing process legible to
+humans and coding agents across tools and sessions.
 
-## Motivation
+![Repository lifecycle from intent through verified change and learning](docs/media/readme/repository-lifecycle.svg)
 
-This template exists to give a new repository a working AI-collaboration baseline on day one: startup instructions, durable context, and human-readable docs that do not fight each other.
+The visual shows the core loop: a human defines intent in an issue, one agent
+implements against repository evidence, CI blocks regressions, advisory review
+adds non-blocking feedback, sandbox verification proves the user outcome, and
+post-merge review feeds useful lessons back into the repository.
 
-The split between `README.md`, `AI_REPO_GUIDE.md`, `AGENTS.md`, `.context/`, and `docs/` is intentional. Humans need setup and rationale; agents need a compact reference and canonical state surfaces. The template keeps those concerns separate so onboarding stays clear instead of collapsing into one noisy file.
+> **Agent entrypoint:** read [`AGENTS.md`](AGENTS.md) first, then use the compact
+> repository catalog in [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md).
 
-## Repo map
+## The problem this solves
 
-The repo looks like it has duplicated documentation. It doesn't — each location targets a different audience or loader. See `docs/guides/context-files-explained.md` for the full rationale and ADR references.
+AI coding sessions often begin with enough local context to produce code but
+not enough repository context to produce a trustworthy change. Instructions
+drift between tools, decisions disappear between sessions, green unit tests are
+mistaken for user-outcome proof, and review automation becomes another opaque
+agent rather than an auditable control.
 
-| Location | Audience / Loader | Role |
-|----------|-------------------|------|
-| `README.md` (this file) | Humans | Setup, features, customization — verbose on purpose |
-| `AI_REPO_GUIDE.md` | AI agents | Token-optimized command/structure/convention reference |
-| `docs/` | Humans | Deep reference: guides, ADRs, benchmark results, research |
-| `.context/` | AI agents | Project direction, roadmap, retrospective lessons, and vision (lazy-loaded) |
-| `AGENTS.md` (root) | Most AI tools | Root startup contract (Copilot, Cursor, Gemini, Claude Code, etc.) |
-| `.github/prompts/` | Review and workflow automation | Shared lenses plus advisory, daily, and weekly prompts |
-| `.agents/skills/multi-model-consensus/` | Cross-agent | Optional independent multi-model review |
-| `install.sh` (root) | GitHub Codespaces "Dotfiles" | Bootstrap script — Codespaces expects it at repo root |
-| `test.sh` (root) | `.github/workflows/ci-tests.yml` | Template verification, invoked by CI as `./test.sh` |
-| `scripts/` | Project consumers (post-clone) | One-time project customization (`setup.sh`, `verify-env.sh`) |
+This template turns those implicit expectations into repository-owned
+contracts:
 
-ADR-031 defines the active model: one implementing agent, blocking CI, normal parallel advisory review, recurring retro, and opt-in multi-model consensus.
+- one truth hierarchy for instructions, decisions, and live task state;
+- one implementing agent by default, without a multi-role coordination tax;
+- blocking CI and lint separated from non-blocking advisory feedback;
+- GitHub issues, PRs, and one mutable state comment as the durable handoff;
+- sandbox verification for behavior that cannot be proven safely on a PR branch;
+- recurring post-merge and weekly review that proposes follow-up work without
+  bypassing human review.
 
-**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow.
+## Good fit when
 
-## Features
+- Your team already uses GitHub and one or more coding agents.
+- Work crosses sessions, people, models, or IDEs and needs a durable baton.
+- You want repository policy to outlive any one agent vendor or chat history.
+- CI success is necessary but not sufficient; user outcomes need explicit proof.
+- You are willing to review and customize an opinionated operating baseline.
 
-- **AI Agent Prompts** - Pre-configured prompts for onboarding AI assistants to any codebase
-- **Monolithic Agent Workflow** - One implementing agent with normal parallel advisory feedback and recurring retro automation
-- **Context Pack** - Structured directory (`.context/`) for project memory across LLM sessions
-- **Automatic Extension Installation** - Essential VS Code extensions installed on Codespace start
-- **Multi-Platform Support** - Works with Cursor, GitHub Copilot, Gemini Code Assist, and more
-- **CI/CD Automation** - Blocking tests and lint with label-gated parallel advisory and recurring repository review
-- **Issue Templates** - Bug reports, feature requests, and agent initialization
-- **Explicit Quality Checks** - Read-only CI plus local formatting, lint, link, and repository verification commands
-- **ADR Templates** - Architecture Decision Record templates with examples
-- **Verification Scripts** - Built-in testing (see `./test.sh` output for current check count) to ensure template integrity
+## Not the right fit when
 
-## Repository reference (for agents)
+- You need a language, framework, database, or deployment starter.
+- The repository is a disposable experiment with no durable review lifecycle.
+- You want fully autonomous merge authority with no human-controlled gate.
+- You do not use GitHub for issues, pull requests, or Actions.
+- A smaller spec template or a single agent instruction file already solves the
+  coordination problem.
 
-The active repository layout, context-pack catalog, prompt catalog, workflow catalog,
-and validation commands live in [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md), the
-structured reference optimized for AI agents.
+## Six repository journeys
 
-Why split? Per [`docs/decisions/adr-022-top-level-md-scope-split.md`](docs/decisions/adr-022-top-level-md-scope-split.md), `README.md` (this file) is for human onboarding; [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) is for agent reference; and [`AGENTS.md`](AGENTS.md) is the operating contract every AI tool reads first.
+![Six repository journeys: ownership, onboarding, continuity, review, proof, and learning](docs/media/readme/feature-tour.svg)
 
-## Included VS Code Extensions
+The board above is a map, not hidden documentation. Each journey is described
+below in the order a maintainer encounters it.
 
-| Extension | Description |
-|-----------|-------------|
-| [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) | AI coding assistant |
-| [Live Preview](https://marketplace.visualstudio.com/items?itemName=ms-vscode.live-server) | Live server for web development |
-| [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) | Code formatter |
-| [Live Share](https://marketplace.visualstudio.com/items?itemName=ms-vsliveshare.vsliveshare) | Real-time collaborative development |
+### One owner for every instruction
 
-## CI/CD Workflows
+[`AGENTS.md`](AGENTS.md) owns repository-wide operating policy.
+[`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) catalogs commands and structure without
+duplicating that policy. Durable rationale lives under [`docs/`](docs/), while
+current project direction lives under [`.context/`](.context/).
 
-The active workflow map lives in [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md). At a
-glance, CI and lint block merge; Copilot assignment remains monolithic;
-agents normally enable parallel advisory review with `ai-review:live`; scheduled daily
-and weekly workflows perform retrospective review and draft-fix work.
+### Onboard from repository evidence
 
-## Setup
+The `repo-onboarding` skill classifies this canonical template, a fresh derived
+template seed, or an already-onboarded repository. It preserves useful files
+and adds stack-specific checks only when the repository supplies evidence for
+them.
 
-Choose the Codespaces hook, GitHub template, or selective-copy path according to
-how much of the repository kit the target project should inherit.
+### Resume from GitHub state
 
-### Option 1: Link as your Codespaces "Dotfiles" repo
+The issue body holds the stable task contract and implementation plan. The PR
+holds the implementation and verification contract. One `agent-state:v1`
+comment carries the current branch, blockers, outcomes, and next actions, so a
+new session does not depend on private chat memory.
 
-> Note: GitHub Codespaces has a feature literally named **Dotfiles** that runs
-> an install script at Codespace startup. This template is not a Unix dotfiles
-> repo (no `~/.bashrc` etc.) — it just uses that Codespaces hook to bootstrap
-> the repository kit. The quoted strings below are the exact labels in the
-> GitHub Codespaces settings UI.
+### Separate merge gates from advice
 
-1. Go to [GitHub Codespaces settings](https://github.com/settings/codespaces)
-2. Under "Dotfiles", select this repository
-3. Check "Automatically install dotfiles"
-4. Your next Codespace will automatically run `install.sh`
+CI and lint are blocking controls. The `ai-review:live` advisory workflow runs
+in parallel, publishes a replaceable current-head snapshot, and never becomes a
+merge gate. Optional multi-model consensus is reserved for consequential
+uncertainty instead of routine implementation.
 
-### Option 2: Create Repository from Template
+### Prove outcomes in a sandbox
 
-1. Click "Use this template" on GitHub
-2. Create your new repository
-3. Run the OpenCode `repo-onboarding` skill
-4. In `template-seed`, inspect the existing resources and extend, replace, or delete only what project evidence requires
-5. Complete `.context/onboarding-state.json` and add application checks only when the detected stack defines them
+Default-branch-only workflows cannot be fully exercised from an ordinary PR.
+The sibling sandbox playbook runs those triggers against disposable branches
+and records a real sandbox issue, PR, and Actions run as evidence. Supporting
+tests still run locally and in CI, but they do not substitute for the stated
+user outcome.
 
-### Option 3: Copy to Existing Repository
+### Learn after merge
 
-1. Clone this repository
-2. Copy desired files to your project
-3. Create an `AI_REPO_GUIDE.md` specific to your project
-4. Customize `.context/` for your project state
+Daily post-merge retrospectives and weekly repository review gather evidence,
+classify actionable findings, and open reviewable draft fixes. External skill
+refreshes are hash-driven, secret-scanned, and fail closed when an upstream
+package path moves.
 
-## Repository onboarding
+## What each root document does
 
-Use the OpenCode `repo-onboarding` skill for unfamiliar-repository orientation,
-`template-seed` onboarding, or rebuilding a missing/stale `AI_REPO_GUIDE.md`.
-Its modes are `ai-repo-template`, `template-seed`, and `complete`. Use the Agent
-Initialization issue template when the work needs a durable issue contract.
+The split is intentional; these files have different readers and loaders.
 
-## Verification
+| Location | Primary reader | Responsibility |
+| --- | --- | --- |
+| [`README.md`](README.md) | Human evaluator | Fit, lifecycle, setup, limitations, and public evidence |
+| [`AGENTS.md`](AGENTS.md) | Coding agents | Canonical operating contract, quality rules, and execution policy |
+| [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) | Coding agents | Compact repository map, commands, workflows, and known warnings |
+| [`.context/`](.context/) | Agents and maintainers | Current direction, roadmap, vision, and bounded session context |
+| [`docs/`](docs/) | Maintainers | Durable guides, ADRs, research, benchmarks, and postmortems |
+| [`.github/prompts/`](.github/prompts/) | Review automation | Shared review lenses and recurring workflow prompts |
 
-Run the verification script to ensure all template files are present and valid:
+[`ADR-022`](docs/decisions/adr-022-top-level-md-scope-split.md) defines this
+human/agent split. [`ADR-001`](docs/decisions/adr-001-context-pack-structure.md)
+explains why durable documentation and current context are separate.
 
-```bash
-./test.sh
-```
-
-The exact pass count changes as checks are added. A successful run ends with:
+## Review lifecycle
 
 ```text
-========================================
-Template Repository Verification
-========================================
-
-Summary
-========================================
-Failed: 0
-
-Template verification PASSED
+Issue + plan
+    -> draft PR + live state
+    -> implementation + tests
+    -> CI / lint                 [blocking]
+    -> advisory snapshot         [non-blocking]
+    -> sandbox user-outcome test [blocking when required]
+    -> human review + merge
+    -> post-merge / weekly learning
 ```
 
-## Testing Your Setup
+The active model is one implementing agent with parallel advisory feedback.
+This keeps ownership clear while still using independent review where it adds
+value. See [`ADR-031`](docs/decisions/adr-031-agent-model-roi-benchmark-policy.md)
+for the benchmark-backed rationale.
 
-### Manual Verification
+## Choose a setup path
+
+### Start a new repository from the template
+
+1. Select **Use this template** on GitHub.
+2. Create the target repository.
+3. Ask the agent to run the `repo-onboarding` skill.
+4. Review the `template-seed` classification before authorizing repository edits.
+5. Run `./test.sh`, then add application checks only for verified project commands.
+
+### Add the operating baseline to an existing repository
+
+Copy only the surfaces you intend to maintain, then run `repo-onboarding` to
+build a project-specific `AI_REPO_GUIDE.md` and context index. The minimum useful
+set is usually `AGENTS.md`, `AI_REPO_GUIDE.md`, `.context/`, the relevant GitHub
+templates/workflows, and verification scripts.
+
+### Use the Codespaces bootstrap
+
+GitHub Codespaces has a feature named **Dotfiles** that runs an install script
+at startup. Select this repository under
+[Codespaces settings](https://github.com/settings/codespaces), enable
+**Automatically install dotfiles**, and the next Codespace will run
+[`install.sh`](install.sh). This repository uses the hook as a bootstrap; it is
+not a traditional shell-dotfiles collection.
+
+## Verify the baseline
 
 ```bash
-# Check all files exist
-ls -la AI_REPO_GUIDE.md AGENTS.md install.sh test.sh
-
-# Validate shell script syntax
-bash -n install.sh
-bash -n test.sh
-
-# Run the test suite
 ./test.sh
-
-# Test install script (safe to run locally)
-bash install.sh
 ```
 
-### In a Codespace
+A successful run ends with `Failed: 0` and `Template verification PASSED`.
+Before merging a task, also run the focused tests named in its plan, classify
+workflow verifiability with [`scripts/verify-pr.sh`](scripts/verify-pr.sh), and
+follow the [sandbox playbook](docs/guides/sandbox-verification.md) when the
+behavior depends on a default-branch trigger.
 
-1. Create a new Codespace with this repo linked as your Codespaces "Dotfiles" repo
-2. Check that extensions are installed: `code --list-extensions`
-3. Verify prompts are copied to workspace
+## Compare adjacent approaches
 
-## Customization
+**Evaluated: 2026-07-22.** This table compares the projects' current official
+README claims, not every capability in their codebases or documentation. It is
+intended to help select a starting point, not rank the projects. `Not stated`
+means the official README does not make that claim; `Not evaluated` means this
+review did not test it.
 
-### Adding Extensions
+| Dimension | ai-repo-template | [GitHub Spec Kit](https://github.com/github/spec-kit) | [BMAD Method](https://github.com/bmad-code-org/BMAD-METHOD) | [Spec Kitty](https://github.com/Priivacy-ai/spec-kitty) |
+| --- | --- | --- | --- | --- |
+| Primary focus | Repository operating policy, continuity, review, and verification | Spec-driven development from constitution through implementation | Scale-adaptive agile method with specialized agent collaborators | Repo-native missions, work packages, governance, and agent execution |
+| Adoption path | GitHub template, selective copy, or Codespaces bootstrap | `specify` CLI through `uv`, `pipx`, or PyPI | Interactive or non-interactive `npx bmad-method install` | `pipx`, `uv tool`, or virtual-environment install |
+| Durable project state | GitHub issue/PR state plus `.context/`, docs, and ADRs | Specifications, plans, tasks, templates, extensions, and presets | Structured workflows and module configuration; artifact location not evaluated | `kitty-specs/` mission artifacts, work-package lanes, and review state |
+| Agent model stated in README | One implementing agent; optional independent advisory or consensus | 30+ agent integrations; concurrent execution model not stated | 12+ specialized agents and Party Mode | Multiple agents in isolated Git worktrees |
+| Review and merge model | Blocking CI/lint, non-blocking advisory, sandbox outcome proof, human merge | Optional analysis/checklist commands; merge policy not stated | Test Architect module exists; merge policy not stated | Explicit `review -> accept -> merge` loop |
+| Recurring learning | Daily post-merge retro, weekly review, and postmortem feedback | Not stated | Not stated | Per-mission retrospective by default |
+| Application stack included | No | No fixed application stack stated | No fixed application stack stated | No fixed application stack stated |
 
-Edit `install.sh` to add more extensions:
+Sources: [Spec Kit README](https://github.com/github/spec-kit/blob/main/README.md),
+[BMAD Method README](https://github.com/bmad-code-org/BMAD-METHOD/blob/main/README.md),
+and [Spec Kitty README](https://github.com/Priivacy-ai/spec-kitty/blob/main/README.md).
+Re-evaluate before using this table for a later decision because these projects
+change independently.
 
-```bash
-EXTENSIONS=(
-    "your.extension-id"
-    # ... existing extensions
-)
-```
+## Customize deliberately
 
-### Adding Prompts
+- Put repository-wide rules in [`AGENTS.md`](AGENTS.md), not in duplicated tool
+  prompts.
+- Update [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) when commands, paths, workflows,
+  or warnings change.
+- Add application checks only after onboarding verifies the project command.
+- Record architectural choices under [`docs/decisions/`](docs/decisions/).
+- Keep active direction in [`.context/`](.context/) and live coordination in
+  GitHub.
+- Review vendored skill bytes and immutable refs through
+  [`skills-lock.json`](skills-lock.json) and the
+  [skill supply-chain guide](docs/guides/skill-supply-chain.md).
 
-1. Create new prompt files in `.github/prompts/`
-2. Update `install.sh` to copy them if needed
-3. Update `test.sh` to verify them
+## Limits and explicit non-goals
 
-### Review Automation
+- **No application runtime.** Bring your own language, framework, data, build,
+  test, and deployment stack.
+- **Opinionated GitHub workflow.** The strongest continuity and sandbox controls
+  assume GitHub Issues, Pull Requests, Actions, and Codespaces.
+- **Human review remains required.** Advisory agents and recurring workflows
+  propose evidence and fixes; they do not receive merge authority.
+- **Maintenance is part of adoption.** Remove workflows and skills your project
+  will not own instead of retaining inactive complexity.
+- **Video is intentionally deferred.** Add capture tooling only if a documented
+  comprehension test finds a temporal misunderstanding that the static hero,
+  six-journey board, and equivalent prose cannot resolve.
 
-- Apply `ai-review:live` to every eligible same-repository task PR and use arrived current-head feedback without waiting for it.
-- Daily and weekly workflows review merged work and repository health.
-- Use the OpenCode `multi-model-consensus` skill only for consequential uncertainty.
+## Further reference
 
-## Best Practices
-
-When using this template in a new repository:
-
-1. **Start with the OpenCode `repo-onboarding` skill** - it classifies lifecycle state, preserves useful resources, and updates project context only where evidence requires it
-2. **Customize the operating contract** - Add project-wide constraints to `AGENTS.md`
-3. **Design before frontend implementation** - For verified UI work, generate
-   `DESIGN.md` with the onboarding helper and add design artifacts to
-   `.context/vision/`; non-UI repositories do not need a root design contract
-4. **Use GitHub live state** - Keep issue/PR `agent-state:v1` comments current for cognitive handoff between sessions
-5. **Keep AGENTS.md as the canonical agent instructions** - Per [`docs/decisions/adr-002-agents-md-ownership.md`](docs/decisions/adr-002-agents-md-ownership.md), `AGENTS.md` is read by most AI tools (Copilot, Cursor, Gemini, Claude Code) and references `AI_REPO_GUIDE.md` for structured detail. Edit it directly when agent-facing rules change; do not strip it down to a pointer.
-6. **Extend CI from evidence** - Add application checks only for commands the
-   detected stack actually defines
-7. **Run tests** - Use `./test.sh` to verify your customizations
-
-## Limitations
-
-Known constraints of this template. Agent-facing environment and tool warnings
-live in [`AI_REPO_GUIDE.md` § Known Warnings](AI_REPO_GUIDE.md#known-warnings).
-
-- **Opinionated scaffolding.** The monolithic workflow, `.context/` lazy-loading pattern, and review lifecycle reflect decisions recorded in `docs/decisions/`.
-- **No runtime code.** This is a docs/config template, not a language-specific starter. Your project brings its own build, test, and deploy toolchain; onboarding adds application checks only from verified project commands.
-- **Codespaces-centric bootstrap.** `install.sh` is wired to the GitHub Codespaces "Dotfiles" feature (via the `$DOTFILES` env var). It falls back to its own directory elsewhere, but some convenience features (extension install, prompt copy) assume a Codespace.
-- **Lifecycle state is explicit.** `.context/onboarding-state.json` distinguishes a fresh template seed from a completed derived repository; retained template resources are not treated as defects.
-
-## Future Improvements
-
-Template-level items under consideration. Per-decision follow-ups live in the "Future Work" subsection of each ADR under `docs/decisions/`.
-
-- **More deployment templates.** Cloudflare Workers, Fly.io, and Kubernetes manifests are candidates. Each addition is a maintenance commitment — contribute only if you'll maintain it.
-- **First-class dotfiles separation.** Splitting the repo into "template assets" and "Codespaces bootstrap" would let teams adopt one without the other.
-
-## FAQ
-
-Answers to common questions about using this template, derived-project detection, and deployment configs live in [`docs/FAQ.md`](docs/FAQ.md).
+- [Repository map and commands](AI_REPO_GUIDE.md)
+- [Why the context files are separate](docs/guides/context-files-explained.md)
+- [Agent pipeline and workflow classes](docs/guides/agent-pipeline.md)
+- [Sandbox verification](docs/guides/sandbox-verification.md)
+- [Frequently asked questions](docs/FAQ.md)
+- [Architecture decisions](docs/decisions/README.md)
 
 ## License
 
-MIT - Feel free to fork and customize for your own workflow!
+MIT. Fork and adapt the baseline to the process your team can actually
+maintain.

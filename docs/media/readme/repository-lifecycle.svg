@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title>Repository lifecycle from intent through verified change and learning</title>
+  <desc>A blueprint-style flow from issue and plan to one implementing agent, blocking checks, sandbox proof, human merge, and recurring learning. Advisory review runs on a separate non-blocking rail.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#1e3a5f" stroke-width="1" opacity="0.35"/>
+    </pattern>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#67e8f9"/>
+    </marker>
+    <marker id="amber-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#fbbf24"/>
+    </marker>
+    <style>
+      .label { font: 700 16px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #f8fafc; letter-spacing: 0.04em; }
+      .detail { font: 13px ui-sans-serif, system-ui, sans-serif; fill: #a8c4df; }
+      .eyebrow { font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #67e8f9; letter-spacing: 0.16em; }
+      .node { fill: #0b1f33; stroke: #315579; stroke-width: 2; }
+      .gate { fill: #0d2a2a; stroke: #34d399; stroke-width: 2; }
+      .human { fill: #2a2110; stroke: #fbbf24; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect width="1200" height="520" fill="#071525"/>
+  <rect width="1200" height="520" fill="url(#grid)"/>
+  <text x="64" y="58" class="eyebrow">REPOSITORY CONTROL PLANE</text>
+  <text x="64" y="91" style="font: 700 25px ui-sans-serif, system-ui, sans-serif; fill: #f8fafc;">Intent moves on a visible rail. Authority never does.</text>
+
+  <path d="M180 240 H1000" fill="none" stroke="#67e8f9" stroke-width="4" marker-end="url(#arrow)"/>
+  <path d="M405 315 C510 390 640 390 745 315" fill="none" stroke="#fbbf24" stroke-width="3" stroke-dasharray="8 8" marker-end="url(#amber-arrow)"/>
+
+  <g transform="translate(55 174)">
+    <rect width="170" height="132" rx="10" class="node"/>
+    <text x="20" y="36" class="eyebrow">CONTRACT</text>
+    <text x="20" y="66" class="label">Issue + plan</text>
+    <text x="20" y="91" class="detail">Problem, outcome,</text>
+    <text x="20" y="111" class="detail">acceptance, evidence</text>
+  </g>
+
+  <g transform="translate(265 174)">
+    <rect width="170" height="132" rx="10" class="node"/>
+    <text x="20" y="36" class="eyebrow">OWNER</text>
+    <text x="20" y="66" class="label">One agent</text>
+    <text x="20" y="91" class="detail">Repository evidence</text>
+    <text x="20" y="111" class="detail">and explicit state</text>
+  </g>
+
+  <g transform="translate(475 174)">
+    <rect width="170" height="132" rx="10" class="gate"/>
+    <text x="20" y="36" class="eyebrow" style="fill:#34d399">BLOCKING</text>
+    <text x="20" y="66" class="label">CI + lint</text>
+    <text x="20" y="91" class="detail">Regression and</text>
+    <text x="20" y="111" class="detail">hygiene controls</text>
+  </g>
+
+  <g transform="translate(685 174)">
+    <rect width="170" height="132" rx="10" class="gate"/>
+    <text x="20" y="36" class="eyebrow" style="fill:#34d399">BLOCKING*</text>
+    <text x="20" y="66" class="label">Sandbox proof</text>
+    <text x="20" y="91" class="detail">Real trigger and</text>
+    <text x="20" y="111" class="detail">user outcome</text>
+  </g>
+
+  <g transform="translate(895 174)">
+    <rect width="170" height="132" rx="10" class="human"/>
+    <text x="20" y="36" class="eyebrow" style="fill:#fbbf24">AUTHORITY</text>
+    <text x="20" y="66" class="label">Human merge</text>
+    <text x="20" y="91" class="detail">Review evidence,</text>
+    <text x="20" y="111" class="detail">then decide</text>
+  </g>
+
+  <g transform="translate(455 382)">
+    <rect width="250" height="88" rx="10" fill="#2a2110" stroke="#fbbf24" stroke-width="2" stroke-dasharray="7 6"/>
+    <text x="20" y="32" class="eyebrow" style="fill:#fbbf24">NON-BLOCKING RAIL</text>
+    <text x="20" y="58" class="label">Advisory snapshot</text>
+    <text x="20" y="77" class="detail">Independent, current-head, replaceable</text>
+  </g>
+
+  <path d="M980 306 V420 H745" fill="none" stroke="#67e8f9" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="785" y="408" class="eyebrow">POST-MERGE + WEEKLY LEARNING</text>
+  <text x="64" y="490" class="detail">* Required when the behavior cannot be proven safely from the pull request branch.</text>
+</svg>

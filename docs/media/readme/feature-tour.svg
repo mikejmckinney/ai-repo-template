@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title>Six repository journeys for agent-ready software work</title>
+  <desc>Six blueprint cards summarize instruction ownership, evidence-based onboarding, GitHub state continuity, blocking versus advisory review, sandbox outcome proof, and learning after merge.</desc>
+  <defs>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" fill="none" stroke="#d5e4ef" stroke-width="1" opacity="0.65"/>
+    </pattern>
+    <style>
+      .number { font: 700 13px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #08748c; letter-spacing: 0.12em; }
+      .heading { font: 700 20px ui-sans-serif, system-ui, sans-serif; fill: #102a43; }
+      .body { font: 14px ui-sans-serif, system-ui, sans-serif; fill: #486581; }
+      .code { font: 700 13px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #0e7490; }
+      .card { fill: #ffffff; stroke: #9fb8ca; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect width="1200" height="760" fill="#edf4f8"/>
+  <rect width="1200" height="760" fill="url(#grid)"/>
+  <text x="54" y="52" class="number">SIX JOURNEYS / ONE REPOSITORY TRUTH</text>
+  <text x="54" y="86" style="font: 700 26px ui-sans-serif, system-ui, sans-serif; fill:#102a43;">The operating baseline, seen from the maintainer's side</text>
+
+  <g transform="translate(54 122)">
+    <rect width="526" height="170" rx="8" class="card"/>
+    <path d="M0 0H10V170H0Z" fill="#0891b2"/>
+    <text x="34" y="37" class="number">01 / OWNERSHIP</text>
+    <text x="34" y="71" class="heading">One owner for every instruction</text>
+    <text x="34" y="103" class="code">AGENTS.md -> AI_REPO_GUIDE.md</text>
+    <text x="34" y="132" class="body">Policy and repository reference stay separate,</text>
+    <text x="34" y="153" class="body">so tools load the right detail without drift.</text>
+  </g>
+
+  <g transform="translate(620 122)">
+    <rect width="526" height="170" rx="8" class="card"/>
+    <path d="M0 0H10V170H0Z" fill="#0891b2"/>
+    <text x="34" y="37" class="number">02 / ONBOARDING</text>
+    <text x="34" y="71" class="heading">Onboard from repository evidence</text>
+    <text x="34" y="103" class="code">classify -> preserve -> verify</text>
+    <text x="34" y="132" class="body">The agent reads the codebase before changing it</text>
+    <text x="34" y="153" class="body">and adds checks only for commands that exist.</text>
+  </g>
+
+  <g transform="translate(54 322)">
+    <rect width="526" height="170" rx="8" class="card"/>
+    <path d="M0 0H10V170H0Z" fill="#0891b2"/>
+    <text x="34" y="37" class="number">03 / CONTINUITY</text>
+    <text x="34" y="71" class="heading">Resume from GitHub state</text>
+    <text x="34" y="103" class="code">issue + PR + agent-state:v1</text>
+    <text x="34" y="132" class="body">Stable intent and current progress survive model,</text>
+    <text x="34" y="153" class="body">tool, person, and session boundaries.</text>
+  </g>
+
+  <g transform="translate(620 322)">
+    <rect width="526" height="170" rx="8" class="card"/>
+    <path d="M0 0H10V170H0Z" fill="#f59e0b"/>
+    <text x="34" y="37" class="number" style="fill:#b45309">04 / REVIEW</text>
+    <text x="34" y="71" class="heading">Separate merge gates from advice</text>
+    <text x="34" y="103" class="code" style="fill:#b45309">CI blocks / advisory informs</text>
+    <text x="34" y="132" class="body">Independent review adds evidence without turning</text>
+    <text x="34" y="153" class="body">a probabilistic model into merge authority.</text>
+  </g>
+
+  <g transform="translate(54 522)">
+    <rect width="526" height="170" rx="8" class="card"/>
+    <path d="M0 0H10V170H0Z" fill="#10b981"/>
+    <text x="34" y="37" class="number" style="fill:#047857">05 / PROOF</text>
+    <text x="34" y="71" class="heading">Prove outcomes in a sandbox</text>
+    <text x="34" y="103" class="code" style="fill:#047857">real trigger -> observable result</text>
+    <text x="34" y="132" class="body">Default-branch behavior is exercised safely,</text>
+    <text x="34" y="153" class="body">with issue, PR, and Actions evidence.</text>
+  </g>
+
+  <g transform="translate(620 522)">
+    <rect width="526" height="170" rx="8" class="card"/>
+    <path d="M0 0H10V170H0Z" fill="#10b981"/>
+    <text x="34" y="37" class="number" style="fill:#047857">06 / LEARNING</text>
+    <text x="34" y="71" class="heading">Learn after merge</text>
+    <text x="34" y="103" class="code" style="fill:#047857">retro -> review -> draft fix</text>
+    <text x="34" y="132" class="body">Recurring evidence becomes reviewable follow-up,</text>
+    <text x="34" y="153" class="body">not silent self-modification.</text>
+  </g>
+
+  <text x="54" y="730" class="body">Static by design: every card has equivalent prose in README.md.</text>
+</svg>
