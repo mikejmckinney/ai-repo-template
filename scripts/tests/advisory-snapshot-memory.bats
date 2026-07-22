@@ -26,7 +26,7 @@ Mode: advisory, non-blocking
 
 ### Not blocking
 
-These findings are optional input while implementation continues.
+These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
 EOF
   printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
 
@@ -62,6 +62,8 @@ EOF
 | ADV-01 | high | Correctness | parser | It fails. | Fix it. | yes |
 
 ### Not blocking
+
+These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
 EOF
   printf '%s\n' '{"provider":"antigravity","model":"agent:antigravity-preview-05-2026"}' >"$TMP_DIR/provider.json"
 
@@ -184,6 +186,48 @@ EOF
   done
 }
 
+@test "advisory normalization rejects invalid non-blocking envelopes" {
+  printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
+  invalid_suffixes=(
+    ''
+    $'### Not blocking\n\nWait for these findings before merging.'
+    $'### Not blocking\n\nThese findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.\n\nTrailing model commentary.'
+  )
+
+  for suffix in "${invalid_suffixes[@]}"; do
+    cat >"$TMP_DIR/input.md" <<EOF
+## Advisory Review Snapshot
+
+Head: \`model-head\`
+Provider: \`model-provider / model-name\`
+Mode: advisory, non-blocking
+Diff coverage: \`1/1\` bytes, truncated: \`no\`
+
+### Findings to consider
+
+No findings identified at this head.
+
+$suffix
+EOF
+    rm -f "$TMP_DIR/output.md"
+    run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+      --input "$TMP_DIR/input.md" \
+      --output "$TMP_DIR/output.md" \
+      --provider-metadata "$TMP_DIR/provider.json" \
+      --head "3333333333333333333333333333333333333333" \
+      --base "0000000000000000000000000000000000000000" \
+      --review-basis full \
+      --diff-included 10 \
+      --diff-total 10 \
+      --truncated no \
+      --changed-files 1
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"non-blocking section"* ]]
+    [ ! -e "$TMP_DIR/output.md" ]
+  done
+}
+
 @test "advisory runner falls back after malformed provider output" {
   base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
   head=$(git -C "$REPO_ROOT" rev-parse HEAD)
@@ -221,6 +265,8 @@ invoke_advisory_llm() {
 No findings identified at this head.
 
 ### Not blocking
+
+These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
 SNAPSHOT
   fi
 }
@@ -305,6 +351,8 @@ EOF
 | ADV-01 | … | … | … | … | … | yes/no |
 
 ### Not blocking
+
+These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
 EOF
   printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
 

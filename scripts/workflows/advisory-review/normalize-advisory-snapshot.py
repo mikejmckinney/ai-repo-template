@@ -8,6 +8,14 @@ from pathlib import Path
 
 MARKER = "<!-- ai-advisory-review:v1 -->"
 MEMORY_PATTERN = re.compile(r"^<!-- ai-advisory-memory:v1 .* -->\n?", re.MULTILINE)
+FINDINGS_PATTERN = re.compile(
+    r"(### Findings to consider\s*\n\n)(.*?)(?=\n### |\Z)",
+    re.DOTALL,
+)
+NOT_BLOCKING_TEXT = (
+    "These findings are optional input while implementation continues. "
+    "CI and maintainer decisions remain authoritative."
+)
 SEVERITIES = {"info", "low", "medium", "high"}
 LENSES = {
     "Outcome and scope",
@@ -33,11 +41,7 @@ def replace_line(body: str, prefix: str, value: str) -> str:
 
 
 def normalize_findings(body: str) -> tuple[str, int]:
-    pattern = re.compile(
-        r"(### Findings to consider\s*\n\n)(.*?)(?=\n### |\Z)",
-        re.DOTALL,
-    )
-    match = pattern.search(body)
+    match = FINDINGS_PATTERN.search(body)
     if not match:
         raise ValueError("malformed findings section: required heading is missing")
 
@@ -84,6 +88,58 @@ def normalize_findings(body: str) -> tuple[str, int]:
     return f"{body[:match.start()]}{replacement}{body[match.end():]}", 0
 
 
+def canonicalize_envelope(body: str, head: str, provider: str, model: str, coverage: str) -> str:
+    match = FINDINGS_PATTERN.search(body)
+    if not match:
+        raise ValueError("malformed findings section: required heading is missing")
+
+    expected_lines = {
+        MARKER: 0,
+        "## Advisory Review Snapshot": 0,
+        "Head: ": 0,
+        "Provider: ": 0,
+        "Mode: ": 0,
+        "Diff coverage: ": 0,
+    }
+    for line in body[: match.start()].splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        matched = False
+        for expected in expected_lines:
+            if stripped == expected or (expected.endswith(": ") and stripped.startswith(expected)):
+                expected_lines[expected] += 1
+                matched = True
+                break
+        if not matched:
+            raise ValueError("malformed snapshot: substantive content outside canonical sections")
+    if any(count != 1 for count in expected_lines.values()):
+        raise ValueError("malformed snapshot: canonical header fields must appear exactly once")
+
+    suffix = body[match.end() :].strip()
+    expected_suffix = f"### Not blocking\n\n{NOT_BLOCKING_TEXT}"
+    if suffix != expected_suffix:
+        raise ValueError("malformed snapshot: invalid non-blocking section")
+
+    findings = match.group(2).strip()
+    return f"""{MARKER}
+
+## Advisory Review Snapshot
+
+Head: `{head}`
+Provider: `{provider} / {model}`
+Mode: advisory, non-blocking
+Diff coverage: {coverage}
+
+### Findings to consider
+
+{findings}
+
+### Not blocking
+
+{NOT_BLOCKING_TEXT}"""
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", required=True)
@@ -123,6 +179,7 @@ def main() -> int:
     body = replace_line(body, "Diff coverage: ", coverage)
     try:
         body, finding_count = normalize_findings(body)
+        body = canonicalize_envelope(body, args.head, provider, model, coverage)
     except ValueError as error:
         raise SystemExit(str(error)) from error
 
