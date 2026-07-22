@@ -79,9 +79,10 @@ lock backups.
 
 If a declared upstream package path disappears, both `check` and `update` fail
 closed without deleting the vendored package or lock record. Treat this as a
-possible upstream move: locate and review the replacement path, update
-`skillPath` and `ref` together, then rerun lock validation and the source check.
-Package removal requires an explicit reviewed lock and destination change.
+possible upstream move: locate and review the replacement path. Update only `skillPath`,
+then run `update --ref <reviewed-commit>` so the updater advances the ref and hash
+atomically. Pre-editing `ref` can turn changed upstream bytes into a same-ref hash
+mismatch. Package removal requires an explicit reviewed lock and destination change.
 
 ## Nightly review PRs
 
@@ -186,7 +187,7 @@ changes; this table is not a substitute for complying with the linked terms.
 | `aws/agent-toolkit-for-aws` | 19 | Apache-2.0 | [LICENSE](https://github.com/aws/agent-toolkit-for-aws/blob/36f16570de2015c0f0ce94ba9e391bd703c9ffb7/LICENSE) |
 | `cloudflare/skills` | 2 | Apache-2.0 | [LICENSE](https://github.com/cloudflare/skills/blob/70215303d44a81a0db3219428f4825b604fc6061/LICENSE) |
 | `microsoft/azure-skills` | 26 | MIT | [LICENSE](https://github.com/microsoft/azure-skills/blob/6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae/LICENSE) |
-| `microsoft/playwright` | 1 | Apache-2.0 | [LICENSE](https://github.com/microsoft/playwright/blob/449349caea6d1c81dc8b6a6f447cf9bfca6b1350/LICENSE) |
+| `microsoft/playwright` | 1 | Apache-2.0 | [LICENSE](https://github.com/microsoft/playwright/blob/0edafe4baab7fd20122939d3cfe1acabd8ed84a9/LICENSE) |
 | `netlify/context-and-tools` | 3 | MIT | [LICENSE](https://github.com/netlify/context-and-tools/blob/b4ac277e6795f90e6a1d163c001c0d7667ff9143/LICENSE) |
 | `oracle/skills` | 3 | UPL-1.0 | [LICENSE](https://github.com/oracle/skills/blob/30e30dbcbf5f92f3564bc85f8fd59d32736adcd6/LICENSE.txt) |
 | `phaserjs/phaser` | 28 | MIT | [LICENSE](https://github.com/phaserjs/phaser/blob/41be1e462bc600064e498cba370bfa8c5c055a22/LICENSE.md) |

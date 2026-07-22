@@ -498,3 +498,38 @@ EOF
   run jq -e '.skills | has("acme")' "$FIXTURE_ROOT/skills-lock.json"
   [ "$status" -eq 0 ]
 }
+
+@test "moved package recovery lets update advance changed bytes and ref atomically" {
+  run grep -q 'Update only `skillPath`' \
+    "$REPO_ROOT/docs/guides/skill-supply-chain.md"
+  [ "$status" -eq 0 ]
+
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+
+  upstream="$BATS_TEST_TMPDIR/upstream-moved"
+  mkdir -p "$upstream/packages/acme"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" \
+    "$upstream/packages/acme/SKILL.md"
+  printf '\nmoved package update\n' >>"$upstream/packages/acme/SKILL.md"
+
+  jq '.skills.acme.skillPath = "packages/acme"' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+  target_ref="1111111111111111111111111111111111111111"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "$target_ref"
+  [ "$status" -eq 0 ]
+  run jq -e --arg ref "$target_ref" \
+    '.changed == true and .packages == ["acme"] and .newRef == $ref' \
+    <<<"$output"
+  [ "$status" -eq 0 ]
+  grep -q "moved package update" "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md"
+  [ "$(jq -r '.skills.acme.ref' "$FIXTURE_ROOT/skills-lock.json")" = "$target_ref" ]
+}
