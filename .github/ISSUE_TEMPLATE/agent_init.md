@@ -48,7 +48,9 @@ Determine the project purpose and current status from:
 
 ### 2. Run Repository Onboarding
 
-Execute the OpenCode `repo-onboarding` skill in `template-seed` mode.
+Execute the OpenCode `repo-onboarding` skill and follow its classified mode.
+Make evidence-backed onboarding edits only when the classifier returns
+`template-seed`; `ai-repo-template` and `complete` require orientation only.
 
 ### 3. Update README.md
 

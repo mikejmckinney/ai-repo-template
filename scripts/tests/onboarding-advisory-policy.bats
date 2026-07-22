@@ -121,6 +121,21 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "initialization follows classifier output instead of forcing template-seed" {
+  template="$REPO_ROOT/.github/ISSUE_TEMPLATE/agent_init.md"
+
+  run python3 - "$template" <<'PY'
+import sys
+from pathlib import Path
+
+text = " ".join(Path(sys.argv[1]).read_text(encoding="utf-8").split())
+assert "follow its classified mode" in text
+assert "only when the classifier returns `template-seed`" in text
+assert "skill in `template-seed` mode" not in text
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "agent policy makes advisory normal, current-head aware, and non-blocking" {
   run python3 - "$REPO_ROOT/AGENTS.md" "$REPO_ROOT/docs/decisions/adr-031-agent-model-roi-benchmark-policy.md" <<'PY'
 import sys
