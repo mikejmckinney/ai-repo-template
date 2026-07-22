@@ -50,7 +50,8 @@ Mode `template-seed`:
 1. Read `references/template-seed.md`.
 2. Confirm that onboarding changes were explicitly requested before editing.
 3. Complete the inspect-and-adapt sequence in order.
-4. Continue with repository orientation and the repository brief.
+4. Set lifecycle state to `complete`, run final validation, and produce the
+   repository brief.
 
 Do not load the `template-seed` reference for other modes.
 

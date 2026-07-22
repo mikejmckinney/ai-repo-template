@@ -149,3 +149,19 @@ write_state() {
   [ "$(jq -r '.mode' <<<"$output")" = complete ]
   [ "$(jq -r '.stable' <<<"$output")" = true ]
 }
+
+@test "authorized seed onboarding transitions to complete before final validation" {
+  repo=$(make_repo transition)
+  write_state "$repo" template-seed
+
+  run "$SKILL_ROOT/scripts/validate-onboarding.sh" --repo "$repo"
+  [ "$status" -ne 0 ]
+  [ "$(jq -r '.mode' <<<"$output")" = template-seed ]
+
+  write_state "$repo" complete
+  run "$SKILL_ROOT/scripts/validate-onboarding.sh" --repo "$repo"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.mode' <<<"$output")" = complete ]
+  [ "$(jq -r '.stable' <<<"$output")" = true ]
+}

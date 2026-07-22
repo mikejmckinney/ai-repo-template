@@ -189,6 +189,13 @@ copy_template_file() {
     return
   fi
 
+  if [[ "$rel_path" == ".context/onboarding-state.json" ]] \
+    && git -C "$WORKSPACE" rev-parse --verify HEAD >/dev/null 2>&1; then
+    log_info "  = Established repository: preserving legacy missing-state migration"
+    MULTIAGENT_SKIPPED=$((MULTIAGENT_SKIPPED + 1))
+    return
+  fi
+
   local dst_dir
   dst_dir="$(dirname "$dst")"
   if [[ ! -d "$dst_dir" ]]; then

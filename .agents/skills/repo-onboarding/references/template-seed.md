@@ -17,8 +17,9 @@ preserve unrelated worktree changes.
 6. Update repository URLs, build/test commands, context, and ownership rules
    only after verifying their project-specific values.
 7. Obtain explicit authorization before destructive edits or broad resets.
-8. Set `.context/onboarding-state.json` to `status: "complete"` only after
-   orientation and validation succeed.
+8. After orientation and `scripts/verify-env.sh` succeed, set
+   `.context/onboarding-state.json` to `status: "complete"`, then run the
+   onboarding validator as the final state check.
 
 ## Verification
 
