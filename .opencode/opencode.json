@@ -4,7 +4,7 @@
   "lsp": false,
   "permission": "allow",
   "compaction": {
-    "auto": false,
+    "auto": true,
     "prune": false,
     "reserved": 10000
   },

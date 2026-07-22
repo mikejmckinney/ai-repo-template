@@ -35,6 +35,32 @@ teardown() {
   [[ "$output" == *"gone.md"* ]]
 }
 
+@test "Markdown link checker resolves portable issue-plan repository links" {
+  mkdir -p "$TEST_ROOT/.github/templates" "$TEST_ROOT/docs"
+  printf '# Target\n' >"$TEST_ROOT/docs/target.md"
+  printf '[file](../blob/main/docs/target.md) [directory](../tree/main/docs)\n' \
+    >"$TEST_ROOT/.github/templates/issue-implementation-plan.md"
+
+  run python3 "$REPO_ROOT/scripts/check-markdown-links.py" \
+    --repo-root "$TEST_ROOT" \
+    "$TEST_ROOT/.github/templates/issue-implementation-plan.md"
+
+  [ "$status" -eq 0 ]
+}
+
+@test "Markdown link checker rejects issue-plan links to missing targets" {
+  mkdir -p "$TEST_ROOT/.github/templates"
+  printf '[missing](../blob/main/docs/missing.md)\n' \
+    >"$TEST_ROOT/.github/templates/issue-implementation-plan.md"
+
+  run python3 "$REPO_ROOT/scripts/check-markdown-links.py" \
+    --repo-root "$TEST_ROOT" \
+    "$TEST_ROOT/.github/templates/issue-implementation-plan.md"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"docs/missing.md"* ]]
+}
+
 @test "local formatter check and write modes dispatch by file type" {
   mkdir -p "$TEST_ROOT/bin"
   printf '#!/usr/bin/env bash\nprintf "shfmt:%%s\\n" "$*" >>"$FORMAT_LOG"\n' >"$TEST_ROOT/bin/shfmt"

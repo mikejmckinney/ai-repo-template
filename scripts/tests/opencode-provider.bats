@@ -85,6 +85,55 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "Cursor runner resolves the SDK from the canonical runtime module" {
+  tmp="$(mktemp -d)"
+  printf 'review this' >"$tmp/prompt.md"
+  cat >"$tmp/cursor-sdk.mjs" <<'EOF'
+export const Cursor = {
+  models: {
+    list: async () => [{
+      id: "grok-4.5",
+      variants: [{ params: [{ id: "effort", value: "medium" }, { id: "fast", value: "false" }] }],
+    }],
+  },
+}
+export const Agent = {
+  prompt: async () => ({ model: { id: "grok-4.5" }, status: "completed", result: "cursor-ok\n" }),
+}
+EOF
+
+  run env CURSOR_API_KEY=cursor-test \
+    CURSOR_SDK_MODULE="$tmp/cursor-sdk.mjs" \
+    CURSOR_ADVISORY_MODEL=cursor-grok-4.5-medium \
+    node "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-cursor.mjs" \
+    "$tmp/prompt.md" "$tmp/output.txt"
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$tmp/output.txt")" = cursor-ok ]
+  rm -rf "$tmp"
+}
+
+@test "hosted workflows export both locked SDK modules" {
+  for workflow in agent-advisory-review.yml agent-postmerge-retro.yml agent-weekly-review.yml; do
+    grep -q 'sudo apt-get install -y -qq.*ripgrep' "$REPO_ROOT/.github/workflows/$workflow"
+    grep -q 'OPENCODE_SDK_MODULE=.*@opencode-ai/sdk' "$REPO_ROOT/.github/workflows/$workflow"
+    grep -q 'CURSOR_SDK_MODULE=.*@cursor/sdk/dist/esm/index.js' "$REPO_ROOT/.github/workflows/$workflow"
+  done
+  run jq -e '.dependencies["@cursor/sdk"] == "1.0.24"' \
+    "$REPO_ROOT/.github/agent-runtime/package.json"
+
+  [ "$status" -eq 0 ]
+}
+
+@test "Cursor runners fall back to the canonical runtime without workflow exports" {
+  for runner in \
+    scripts/workflows/advisory-review/run-advisory-cursor.mjs \
+    scripts/workflows/postmerge-retro/run-postmerge-retro-full-cursor.mjs; do
+    grep -q '.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js' \
+      "$REPO_ROOT/$runner"
+  done
+}
+
 @test "full-evidence OpenCode dispatch does not call the bounded pass" {
   run python3 - "$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro.sh" <<'PY'
 import sys

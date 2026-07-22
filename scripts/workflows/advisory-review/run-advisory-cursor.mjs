@@ -1,20 +1,32 @@
 #!/usr/bin/env node
 /**
  * Generate advisory review body via Cursor SDK (Cursor Grok 4.5 Medium).
- * Requires: npm install @cursor/sdk@<pinned> (workflow step), CURSOR_API_KEY.
- * Pin: scripts/workflows/lib/cursor-sdk-version.sh (CURSOR_SDK_VERSION).
+ * Requires: locked @cursor/sdk in .github/agent-runtime, CURSOR_API_KEY.
  *
  * Composer 2.5 remains a supported override. Its bare model id defaults to the
  * fast variant in the SDK, so overrides still explicitly set the billing tier.
  * @see https://forum.cursor.com/t/sdk-reports-composer-2-5-but-usage-dashboard-bills-composer-2-5-fast/163046
  */
 import { readFileSync, writeFileSync } from "node:fs";
-import { Agent, Cursor } from "@cursor/sdk";
+import path from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   buildCursorModelConfig,
   cursorBillingTier,
   DEFAULT_CURSOR_MODEL,
 } from "../lib/cursor-model-config.mjs";
+
+const cursorSdkSpecifier =
+  process.env.CURSOR_SDK_MODULE ||
+  path.resolve(
+    process.cwd(),
+    ".github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js",
+  );
+const { Agent, Cursor } = await import(
+  path.isAbsolute(cursorSdkSpecifier)
+    ? pathToFileURL(cursorSdkSpecifier).href
+    : cursorSdkSpecifier
+);
 
 const [promptFile, outFile] = process.argv.slice(2);
 if (!promptFile || !outFile) {

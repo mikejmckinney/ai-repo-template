@@ -30,6 +30,8 @@ git -C "$REPO_ROOT" worktree add --detach "$active_worktree" HEAD >/dev/null
 if ! (
   cd "$active_worktree"
   env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN -u OPENCODE_AUTH_CONTENT \
+    -u OPENCODE_GITHUB_TOKEN -u OPENAI_API_KEY -u OPENROUTER_API_KEY \
+    -u GEMINI_API_KEY -u GOOGLE_API_KEY \
     node "$RUNNER" "$PROMPT_FILE" "$attempt_output"
 ); then
   echo "::error::Cursor fix attempt failed" >&2

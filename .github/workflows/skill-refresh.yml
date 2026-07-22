@@ -68,15 +68,15 @@ jobs:
             --repo "$PWD" \
             --lock skills-lock.json \
             --source "$SOURCE" | tee "$RESULT_PATH"
-          echo "changed=$(jq -r '.changed' "$RESULT_PATH")" >>"$GITHUB_OUTPUT"
+          echo "content_changed=$(jq -r '.changed' "$RESULT_PATH")" >>"$GITHUB_OUTPUT"
           echo "target_ref=$(jq -r '.newRef' "$RESULT_PATH")" >>"$GITHUB_OUTPUT"
 
       - name: Install test dependencies
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.content_changed == 'true'
         run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel ripgrep
 
       - name: Update source packages
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.content_changed == 'true'
         env:
           SOURCE: ${{ matrix.source }}
           TARGET_REF: ${{ steps.check.outputs.target_ref }}
@@ -89,7 +89,7 @@ jobs:
             --ref "$TARGET_REF" | tee "$RESULT_PATH"
 
       - name: Scan refreshed packages for secrets
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.content_changed == 'true'
         env:
           RESULT_PATH: ${{ runner.temp }}/skill-refresh-update.json
         run: |
@@ -106,7 +106,7 @@ jobs:
           fi
 
       - name: Run repository validation
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.content_changed == 'true'
         env:
           VALIDATION_PATH: ${{ runner.temp }}/skill-refresh-validation.log
         run: |
@@ -120,7 +120,7 @@ jobs:
           } | tee "$VALIDATION_PATH"
 
       - name: Render pull request body
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.content_changed == 'true'
         env:
           SOURCE: ${{ matrix.source }}
           RESULT_PATH: ${{ runner.temp }}/skill-refresh-update.json
@@ -131,10 +131,16 @@ jobs:
           {
             printf '## External skill refresh\n\n'
             printf -- '- Source: [%s](https://github.com/%s)\n' "$SOURCE" "$SOURCE"
+            # shellcheck disable=SC2016
             printf -- '- Previous ref: [`%s`](https://github.com/%s/commit/%s)\n' "$old_ref" "$SOURCE" "$old_ref"
+            # shellcheck disable=SC2016
             printf -- '- Proposed ref: [`%s`](https://github.com/%s/commit/%s)\n\n' "$new_ref" "$SOURCE" "$new_ref"
-            printf '### Changed packages\n\n'
+            printf '### Content-changed packages\n\n'
             jq -r '.packages[] | "- `\(.)`"' "$RESULT_PATH"
+            printf '\n### Ref-only lock records\n\n'
+            jq -r 'if (.refOnlyPackages | length) == 0 then "- None" else .refOnlyPackages[] | "- `\(.)`" end' "$RESULT_PATH"
+            printf '\n### Automatic deletions\n\n'
+            printf -- '- None. Missing upstream paths block refresh and require explicit review.\n'
             printf '\n### Deterministic hashes\n\n```json\n'
             jq '.hashes' "$RESULT_PATH"
             printf '```\n\n### Validation\n\n'
@@ -145,7 +151,7 @@ jobs:
           } >"$BODY_PATH"
 
       - name: Create or update review pull request
-        if: steps.check.outputs.changed == 'true'
+        if: steps.check.outputs.content_changed == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ github.token }}
