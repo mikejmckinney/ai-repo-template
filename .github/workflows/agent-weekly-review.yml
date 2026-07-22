@@ -147,6 +147,7 @@ jobs:
           npm ci --prefix .github/agent-runtime
           echo "$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/.bin" >> "$GITHUB_PATH"
           echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
+          echo "CURSOR_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js" >> "$GITHUB_ENV"
 
       - name: Run weekly repository review
         id: review
@@ -256,6 +257,7 @@ jobs:
           npm ci --prefix .github/agent-runtime
           echo "$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/.bin" >> "$GITHUB_PATH"
           echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
+          echo "CURSOR_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js" >> "$GITHUB_ENV"
 
       - name: Download weekly review artifacts
         if: github.event.inputs.fix_only != 'true'
