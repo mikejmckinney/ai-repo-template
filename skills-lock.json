@@ -513,7 +513,7 @@
       "computedHash": "cf5ccb90a6c195db94e68d95aca4acf84acf314667e19b7fc488aa05c3ca83bd",
       "destinationPath": ".agents/skills/find-skills",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "777599e1159e401b11ce4c8a57c20f09a8f1596e",
+      "ref": "c042b919289e113a419da93d4c0db9b4c91fe368",
       "skillPath": "skills/find-skills",
       "source": "vercel-labs/skills",
       "sourceType": "github"
@@ -950,15 +950,6 @@
       "source": "shadcn-ui/ui",
       "sourceType": "github"
     },
-    "skill-creator": {
-      "computedHash": "70098a2ed017fc9fe5a737e6b2baab95a6684115688f233897f2541bd9ead042",
-      "destinationPath": ".agents/skills/anthropic/skill-creator",
-      "hashAlgorithm": "sha256-tree-v1",
-      "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
-      "skillPath": "skills/skill-creator",
-      "source": "anthropics/skills",
-      "sourceType": "github"
-    },
     "signing-in-to-aws": {
       "computedHash": "da76ff453625155a2ec642b008721e61bcc35ede402651a4179c107d59d07494",
       "destinationPath": ".agents/skills/aws/core-skills/signing-in-to-aws",
@@ -966,6 +957,15 @@
       "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
       "skillPath": "skills/core-skills/signing-in-to-aws",
       "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github"
+    },
+    "skill-creator": {
+      "computedHash": "70098a2ed017fc9fe5a737e6b2baab95a6684115688f233897f2541bd9ead042",
+      "destinationPath": ".agents/skills/anthropic/skill-creator",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
+      "skillPath": "skills/skill-creator",
+      "source": "anthropics/skills",
       "sourceType": "github"
     },
     "sprites-and-images": {
