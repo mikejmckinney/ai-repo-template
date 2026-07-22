@@ -12,7 +12,12 @@ import {
   DEFAULT_CURSOR_MODEL,
 } from "../lib/cursor-model-config.mjs";
 
-const cursorSdkSpecifier = process.env.CURSOR_SDK_MODULE || "@cursor/sdk";
+const cursorSdkSpecifier =
+  process.env.CURSOR_SDK_MODULE ||
+  path.resolve(
+    process.cwd(),
+    ".github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js",
+  );
 const { Agent, Cursor } = await import(
   path.isAbsolute(cursorSdkSpecifier)
     ? pathToFileURL(cursorSdkSpecifier).href

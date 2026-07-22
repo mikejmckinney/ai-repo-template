@@ -126,6 +126,15 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "Cursor runners fall back to the canonical runtime without workflow exports" {
+  for runner in \
+    scripts/workflows/advisory-review/run-advisory-cursor.mjs \
+    scripts/workflows/postmerge-retro/run-postmerge-retro-full-cursor.mjs; do
+    grep -q '.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js' \
+      "$REPO_ROOT/$runner"
+  done
+}
+
 @test "full-evidence OpenCode dispatch does not call the bounded pass" {
   run python3 - "$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro.sh" <<'PY'
 import sys
