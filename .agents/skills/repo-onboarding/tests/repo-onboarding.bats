@@ -55,6 +55,24 @@ write_state() {
   [ "$(git -C "$repo" status --porcelain=v1)" = "$before" ]
 }
 
+@test "classifier normalizes canonical GitHub URL casing and trailing slashes" {
+  index=0
+  for remote in \
+    https://GitHub.com/MikeJMcKinney/AI-Repo-Template/ \
+    https://github.com/mikejmckinney/ai-repo-template.git/; do
+    index=$((index + 1))
+    repo=$(make_repo "canonical-variant-$index")
+    git -C "$repo" remote add origin "$remote"
+    write_state "$repo" template-seed
+
+    run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
+
+    [ "$status" -eq 0 ]
+    [ "$(jq -r '.mode' <<<"$output")" = ai-repo-template ]
+    [ "$(jq -r '.requires_onboarding' <<<"$output")" = false ]
+  done
+}
+
 @test "classifier does not treat same-named repositories under another owner as canonical" {
   for name in ai-repo-template dotfiles; do
     repo=$(make_repo "derived-$name")

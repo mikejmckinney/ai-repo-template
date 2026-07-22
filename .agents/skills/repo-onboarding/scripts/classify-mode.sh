@@ -22,11 +22,13 @@ done
 [[ -d "$REPO/.git" || -f "$REPO/.git" ]] || fail "--repo must be a Git worktree"
 REPO="$(cd "$REPO" && pwd)"
 remote=$(git -C "$REPO" remote get-url origin 2>/dev/null || true)
+remote_normalized="${remote,,}"
+remote_normalized="${remote_normalized%/}"
 identity="${remote:-$(basename "$REPO")}"
 state_file="$REPO/.context/onboarding-state.json"
 warnings=()
 
-if [[ "$remote" =~ ^(https?://github\.com/|ssh://git@github\.com/|git@github\.com:|git://github\.com/)mikejmckinney/(ai-repo-template|dotfiles)(\.git)?$ ]]; then
+if [[ "$remote_normalized" =~ ^(https?://github\.com/|ssh://git@github\.com/|git@github\.com:|git://github\.com/)mikejmckinney/(ai-repo-template|dotfiles)(\.git)?$ ]]; then
   mode=ai-repo-template
   requires_onboarding=false
 elif [[ ! -e "$state_file" ]]; then
