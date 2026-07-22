@@ -27,21 +27,27 @@ def normalize_findings(body: str) -> tuple[str, int]:
     )
     match = pattern.search(body)
     if not match:
-        section = "### Findings to consider\n\nNo findings identified at this head.\n\n"
-        not_blocking = "### Not blocking"
-        if not_blocking in body:
-            return body.replace(not_blocking, f"{section}{not_blocking}", 1), 0
-        return f"{body.rstrip()}\n\n{section}", 0
+        raise ValueError("malformed findings section: required heading is missing")
 
     section = match.group(2).strip()
+    if section == "No findings identified at this head.":
+        return body, 0
     rows = [line for line in section.splitlines() if line.strip().startswith("|")]
+    non_rows = [line for line in section.splitlines() if line.strip() and not line.strip().startswith("|")]
+    if non_rows:
+        raise ValueError("malformed findings section: prose is not a finding table or the exact no-findings sentence")
+    if len(rows) < 2:
+        raise ValueError("malformed findings section: expected a canonical table or the exact no-findings sentence")
     finding_rows = [
         line
         for line in rows
         if not re.match(r"^\|\s*(?:ID|[-:]+)\s*\|", line.strip(), re.IGNORECASE)
     ]
-    finding_rows = [line for line in finding_rows if "ADV-01 | …" not in line]
     if finding_rows:
+        for row in finding_rows:
+            cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
+            if len(cells) != 7 or not re.fullmatch(r"ADV-\d{2}", cells[0]) or "…" in row:
+                raise ValueError("malformed findings section: invalid finding row")
         return body, len(finding_rows)
 
     replacement = f"{match.group(1)}No findings identified at this head.\n"
@@ -80,7 +86,10 @@ def main() -> int:
         f"truncated: `{args.truncated}`, basis: `{args.review_basis}`"
     )
     body = replace_line(body, "Diff coverage: ", coverage)
-    body, finding_count = normalize_findings(body)
+    try:
+        body, finding_count = normalize_findings(body)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
 
     summary = (
         f"Reviewed {args.changed_files} changed files using {args.review_basis} diff; "

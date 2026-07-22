@@ -82,6 +82,35 @@ EOF
   ! grep -q '^No findings identified' "$TMP_DIR/output.md"
 }
 
+@test "advisory normalization rejects malformed non-empty findings" {
+  cat >"$TMP_DIR/input.md" <<'EOF'
+## Advisory Review Snapshot
+
+### Findings to consider
+
+There may be a correctness problem, but I did not use the required table.
+
+### Not blocking
+EOF
+  printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
+
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+    --input "$TMP_DIR/input.md" \
+    --output "$TMP_DIR/output.md" \
+    --provider-metadata "$TMP_DIR/provider.json" \
+    --head "3333333333333333333333333333333333333333" \
+    --base "0000000000000000000000000000000000000000" \
+    --review-basis full \
+    --diff-included 10 \
+    --diff-total 10 \
+    --truncated no \
+    --changed-files 1
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"malformed findings section"* ]]
+  [ ! -e "$TMP_DIR/output.md" ]
+}
+
 @test "advisory memory selects an incremental range only for compatible state" {
   repo="$TMP_DIR/repo"
   mkdir -p "$repo"

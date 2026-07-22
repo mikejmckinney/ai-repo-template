@@ -234,6 +234,20 @@ for provider in "${provider_candidates[@]}"; do
       echo "::warning::Advisory provider ${provider} omitted provider/model metadata; trying next available provider" >&2
       continue
     fi
+    if ! python3 "$SCRIPT_DIR/normalize-advisory-snapshot.py" \
+      --input "$raw_out_file" \
+      --output "$out_file" \
+      --provider-metadata "$provider_metadata_file" \
+      --head "$HEAD_SHA" \
+      --base "$base_sha" \
+      --review-basis "$review_basis" \
+      --diff-included "$diff_included" \
+      --diff-total "$full_diff_bytes" \
+      --truncated "$truncated_word" \
+      --changed-files "$changed_file_count"; then
+      echo "::warning::Advisory provider ${provider} returned malformed snapshot output; trying next available provider" >&2
+      continue
+    fi
     provider_succeeded=true
     break
   fi
@@ -243,18 +257,6 @@ if [[ "$provider_succeeded" != true ]]; then
   echo "::error::Advisory provider cascade exhausted" >&2
   exit 1
 fi
-
-python3 "$SCRIPT_DIR/normalize-advisory-snapshot.py" \
-  --input "$raw_out_file" \
-  --output "$out_file" \
-  --provider-metadata "$provider_metadata_file" \
-  --head "$HEAD_SHA" \
-  --base "$base_sha" \
-  --review-basis "$review_basis" \
-  --diff-included "$diff_included" \
-  --diff-total "$full_diff_bytes" \
-  --truncated "$truncated_word" \
-  --changed-files "$changed_file_count"
 
 provider_label=$(jq -r '"\(.provider) / \(.model)"' "$provider_metadata_file")
 memory_line=$(grep '^<!-- ai-advisory-memory:v1 ' "$out_file")
