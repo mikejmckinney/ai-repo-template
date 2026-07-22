@@ -48,11 +48,45 @@ setup() {
 
 @test "required-file checks accept the documented legacy missing-state path" {
   check="$REPO_ROOT/scripts/checks/010-required-files.sh"
+  fixture="$(mktemp -d)"
+  repo="$fixture/legacy"
+  mkdir -p "$repo"
 
-  run grep -qF '  ".context/onboarding-state.json"' "$check"
-  [ "$status" -ne 0 ]
-  grep -qF 'legacy derived repository has no onboarding state' "$check"
-  grep -qF 'warn ' "$check"
+  while IFS= read -r path; do
+    mkdir -p "$repo/$(dirname "$path")"
+    : >"$repo/$path"
+  done < <(python3 - "$check" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+block = text.split("REQUIRED_FILES=(", 1)[1].split(")", 1)[0]
+for path in re.findall(r'^\s+"([^"]+)"$', block, re.MULTILINE):
+    print(path)
+PY
+  )
+  printf '@AGENTS.md\n' >"$repo/CLAUDE.md"
+  mkdir -p "$repo/.agents/skills/repo-onboarding/scripts"
+  cp "$REPO_ROOT/.agents/skills/repo-onboarding/scripts/classify-mode.sh" \
+    "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh"
+  chmod +x "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh"
+  git -C "$repo" init -q
+  git -C "$repo" remote add origin git@github.com:example/product.git
+
+  run bash -c '
+    cd "$1"
+    PASS=0 FAIL=0 WARN=0
+    pass() { PASS=$((PASS + 1)); }
+    fail() { FAIL=$((FAIL + 1)); }
+    warn() { WARN=$((WARN + 1)); }
+    source "$2"
+    printf "pass=%s fail=%s warn=%s\n" "$PASS" "$FAIL" "$WARN"
+  ' _ "$repo" "$check"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"fail=0 warn=1"* ]]
+  rm -rf "$fixture"
 }
 
 @test "active onboarding surfaces do not use placeholder replacement semantics" {

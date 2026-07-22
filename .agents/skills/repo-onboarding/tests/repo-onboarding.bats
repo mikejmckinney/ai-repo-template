@@ -69,6 +69,24 @@ write_state() {
   done
 }
 
+@test "classifier does not trust canonical paths on unrecognized hosts or local remotes" {
+  index=0
+  for remote in \
+    https://gitlab.example/mikejmckinney/ai-repo-template.git \
+    /tmp/mikejmckinney/ai-repo-template.git; do
+    index=$((index + 1))
+    repo=$(make_repo "untrusted-$index")
+    git -C "$repo" remote add origin "$remote"
+    write_state "$repo" template-seed
+
+    run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
+
+    [ "$status" -eq 0 ]
+    [ "$(jq -r '.mode' <<<"$output")" = template-seed ]
+    [ "$(jq -r '.requires_onboarding' <<<"$output")" = true ]
+  done
+}
+
 @test "classifier honors lifecycle state when origin is unavailable" {
   repo=$(make_repo ai-repo-template)
   write_state "$repo" template-seed

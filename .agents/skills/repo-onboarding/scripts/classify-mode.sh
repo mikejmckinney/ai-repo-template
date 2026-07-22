@@ -26,7 +26,7 @@ identity="${remote:-$(basename "$REPO")}"
 state_file="$REPO/.context/onboarding-state.json"
 warnings=()
 
-if [[ -n "$remote" ]] && printf '%s\n' "$remote" | grep -qE '(^|[:/])mikejmckinney/(ai-repo-template|dotfiles)(\.git)?$'; then
+if [[ "$remote" =~ ^(https?://github\.com/|ssh://git@github\.com/|git@github\.com:|git://github\.com/)mikejmckinney/(ai-repo-template|dotfiles)(\.git)?$ ]]; then
   mode=ai-repo-template
   requires_onboarding=false
 elif [[ ! -e "$state_file" ]]; then
