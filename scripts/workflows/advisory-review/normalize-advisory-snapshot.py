@@ -8,6 +8,18 @@ from pathlib import Path
 
 MARKER = "<!-- ai-advisory-review:v1 -->"
 MEMORY_PATTERN = re.compile(r"^<!-- ai-advisory-memory:v1 .* -->\n?", re.MULTILINE)
+SEVERITIES = {"info", "low", "medium", "high"}
+LENSES = {
+    "Outcome and scope",
+    "Correctness",
+    "Tests",
+    "Security and privacy",
+    "Compatibility",
+    "Reliability and performance",
+    "Maintainability",
+    "Documentation and process truth",
+    "Evidence and noise discipline",
+}
 
 
 def replace_line(body: str, prefix: str, value: str) -> str:
@@ -56,7 +68,15 @@ def normalize_findings(body: str) -> tuple[str, int]:
     if finding_rows:
         for row in finding_rows:
             cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
-            if len(cells) != 7 or not re.fullmatch(r"ADV-\d{2}", cells[0]) or "…" in row:
+            if (
+                len(cells) != 7
+                or not all(cells)
+                or not re.fullmatch(r"ADV-\d{2}", cells[0])
+                or cells[1] not in SEVERITIES
+                or cells[2] not in LENSES
+                or cells[6] not in {"yes", "no"}
+                or "…" in row
+            ):
                 raise ValueError("malformed findings section: invalid finding row")
         return body, len(finding_rows)
 
@@ -86,7 +106,10 @@ def main() -> int:
 
     body = Path(args.input).read_text(encoding="utf-8")
     if MARKER in body:
-        body = f"{MARKER}{body.split(MARKER, 1)[1]}"
+        preamble, snapshot = body.split(MARKER, 1)
+        if preamble.strip():
+            raise SystemExit("malformed snapshot: substantive preamble before canonical marker")
+        body = f"{MARKER}{snapshot}"
     body = MEMORY_PATTERN.sub("", body).strip()
     if MARKER not in body:
         body = f"{MARKER}\n\n{body}"

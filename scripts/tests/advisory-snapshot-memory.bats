@@ -11,8 +11,6 @@ teardown() {
 
 @test "advisory normalization owns provider model and no-findings output" {
   cat >"$TMP_DIR/input.md" <<'EOF'
-Model-authored analysis that must not appear in the sticky snapshot.
-
 <!-- ai-advisory-review:v1 -->
 
 ## Advisory Review Snapshot
@@ -51,7 +49,6 @@ EOF
   grep -q 'ai-advisory-memory:v1' "$TMP_DIR/output.md"
   grep -q '"reviewed_head":"1111111111111111111111111111111111111111"' "$TMP_DIR/output.md"
   [ "$(sed -n '1p' "$TMP_DIR/output.md")" = '<!-- ai-advisory-review:v1 -->' ]
-  ! grep -q 'Model-authored analysis' "$TMP_DIR/output.md"
 }
 
 @test "advisory normalization preserves actual findings" {
@@ -113,6 +110,188 @@ EOF
   [ "$status" -ne 0 ]
   [[ "$output" == *"malformed findings section"* ]]
   [ ! -e "$TMP_DIR/output.md" ]
+}
+
+@test "advisory normalization rejects substantive preamble" {
+  cat >"$TMP_DIR/input.md" <<'EOF'
+Model-authored analysis must trigger provider fallback.
+
+<!-- ai-advisory-review:v1 -->
+
+## Advisory Review Snapshot
+
+### Findings to consider
+
+No findings identified at this head.
+
+### Not blocking
+EOF
+  printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
+
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+    --input "$TMP_DIR/input.md" \
+    --output "$TMP_DIR/output.md" \
+    --provider-metadata "$TMP_DIR/provider.json" \
+    --head "3333333333333333333333333333333333333333" \
+    --base "0000000000000000000000000000000000000000" \
+    --review-basis full \
+    --diff-included 10 \
+    --diff-total 10 \
+    --truncated no \
+    --changed-files 1
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"substantive preamble"* ]]
+  [ ! -e "$TMP_DIR/output.md" ]
+}
+
+@test "advisory normalization rejects invalid finding fields" {
+  printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
+  invalid_rows=(
+    '| ADV-01 | urgent | Correctness | parser | It fails. | Fix it. | yes |'
+    '| ADV-01 | medium | Style | parser | It fails. | Fix it. | yes |'
+    '| ADV-01 | medium | Correctness | parser | It fails. | Fix it. | maybe |'
+  )
+
+  for row in "${invalid_rows[@]}"; do
+    cat >"$TMP_DIR/input.md" <<EOF
+## Advisory Review Snapshot
+
+### Findings to consider
+
+| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
+|---|---|---|---|---|---|---|
+$row
+
+### Not blocking
+EOF
+    rm -f "$TMP_DIR/output.md"
+    run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+      --input "$TMP_DIR/input.md" \
+      --output "$TMP_DIR/output.md" \
+      --provider-metadata "$TMP_DIR/provider.json" \
+      --head "3333333333333333333333333333333333333333" \
+      --base "0000000000000000000000000000000000000000" \
+      --review-basis full \
+      --diff-included 10 \
+      --diff-total 10 \
+      --truncated no \
+      --changed-files 1
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"invalid finding row"* ]]
+    [ ! -e "$TMP_DIR/output.md" ]
+  done
+}
+
+@test "advisory runner falls back after malformed provider output" {
+  base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
+  head=$(git -C "$REPO_ROOT" rev-parse HEAD)
+  mkdir -p "$TMP_DIR/bin"
+  cat >"$TMP_DIR/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1 $2" == "api repos/example/repo/pulls/506" ]]; then
+  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"test",html_url:"https://example.test/pr/506",base:{sha:$base}}'
+elif [[ "$1 $2" == "api repos/example/repo/issues/506/comments" ]]; then
+  printf '[]\n'
+else
+  printf 'unexpected gh call: %s\n' "$*" >&2
+  exit 1
+fi
+EOF
+  chmod +x "$TMP_DIR/bin/gh"
+  cat >"$TMP_DIR/providers.sh" <<'EOF'
+init_advisory_provider_credentials() { :; }
+list_advisory_providers() { printf '%s\n' first second; }
+EOF
+  cat >"$TMP_DIR/invoke.sh" <<'EOF'
+invoke_advisory_llm() {
+  local output_file="$2" provider="$3"
+  printf '%s\n' "$provider" >>"$ADVISORY_TEST_ATTEMPTS"
+  printf '{"provider":"%s","model":"test-model"}\n' "$provider" >"$ADVISORY_PROVIDER_METADATA_FILE"
+  if [[ "$provider" == first ]]; then
+    printf 'malformed output\n' >"$output_file"
+  else
+    cat >"$output_file" <<'SNAPSHOT'
+## Advisory Review Snapshot
+
+### Findings to consider
+
+No findings identified at this head.
+
+### Not blocking
+SNAPSHOT
+  fi
+}
+EOF
+  cat >"$TMP_DIR/upsert.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+cp "$3" "$ADVISORY_TEST_POSTED"
+EOF
+  chmod +x "$TMP_DIR/upsert.sh"
+
+  run env \
+    PATH="$TMP_DIR/bin:$PATH" \
+    GITHUB_REPOSITORY=example/repo \
+    GITHUB_EVENT_ACTION=synchronize \
+    ADVISORY_TEST_BASE="$base" \
+    ADVISORY_TEST_ATTEMPTS="$TMP_DIR/attempts" \
+    ADVISORY_TEST_POSTED="$TMP_DIR/posted.md" \
+    ADVISORY_PROVIDER_LIB="$TMP_DIR/providers.sh" \
+    ADVISORY_INVOKE_LIB="$TMP_DIR/invoke.sh" \
+    ADVISORY_UPSERT_SCRIPT="$TMP_DIR/upsert.sh" \
+    bash "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh" 506 "$head" false
+
+  [ "$status" -eq 0 ]
+  [ "$(tr '\n' ' ' <"$TMP_DIR/attempts")" = "first second " ]
+  grep -q '^Provider: `second / test-model`$' "$TMP_DIR/posted.md"
+  grep -q '^No findings identified at this head\.$' "$TMP_DIR/posted.md"
+}
+
+@test "advisory runner fails when every provider output is malformed" {
+  base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
+  head=$(git -C "$REPO_ROOT" rev-parse HEAD)
+  mkdir -p "$TMP_DIR/bin"
+  cat >"$TMP_DIR/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1 $2" == "api repos/example/repo/pulls/506" ]]; then
+  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"test",html_url:"https://example.test/pr/506",base:{sha:$base}}'
+elif [[ "$1 $2" == "api repos/example/repo/issues/506/comments" ]]; then
+  printf '[]\n'
+else
+  exit 1
+fi
+EOF
+  chmod +x "$TMP_DIR/bin/gh"
+  cat >"$TMP_DIR/providers.sh" <<'EOF'
+init_advisory_provider_credentials() { :; }
+list_advisory_providers() { printf '%s\n' first second; }
+EOF
+  cat >"$TMP_DIR/invoke.sh" <<'EOF'
+invoke_advisory_llm() {
+  local output_file="$2" provider="$3"
+  printf '%s\n' "$provider" >>"$ADVISORY_TEST_ATTEMPTS"
+  printf '{"provider":"%s","model":"test-model"}\n' "$provider" >"$ADVISORY_PROVIDER_METADATA_FILE"
+  printf 'malformed output\n' >"$output_file"
+}
+EOF
+
+  run env \
+    PATH="$TMP_DIR/bin:$PATH" \
+    GITHUB_REPOSITORY=example/repo \
+    GITHUB_EVENT_ACTION=synchronize \
+    ADVISORY_TEST_BASE="$base" \
+    ADVISORY_TEST_ATTEMPTS="$TMP_DIR/attempts" \
+    ADVISORY_PROVIDER_LIB="$TMP_DIR/providers.sh" \
+    ADVISORY_INVOKE_LIB="$TMP_DIR/invoke.sh" \
+    bash "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh" 506 "$head" false
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Advisory provider cascade exhausted"* ]]
+  [ "$(tr '\n' ' ' <"$TMP_DIR/attempts")" = "first second " ]
 }
 
 @test "advisory normalization converts the legacy sample row to no findings" {

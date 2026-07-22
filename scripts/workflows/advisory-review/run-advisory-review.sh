@@ -81,10 +81,10 @@ if [[ "${ADVISORY_ANTIGRAVITY_ENABLED:-}" == "true" ]]; then
 fi
 export antigravity_enabled
 
-# shellcheck disable=SC1091
-source "$LIB_DIR/pick-advisory-provider.sh"
-# shellcheck disable=SC1091
-source "$LIB_DIR/invoke-advisory-llm.sh"
+# shellcheck disable=SC1090,SC1091
+source "${ADVISORY_PROVIDER_LIB:-$LIB_DIR/pick-advisory-provider.sh}"
+# shellcheck disable=SC1090,SC1091
+source "${ADVISORY_INVOKE_LIB:-$LIB_DIR/invoke-advisory-llm.sh}"
 # shellcheck disable=SC2034 # Provider routing initializes and reads these globals.
 has_opencode=0 has_cursor=0 has_gemini=0
 init_advisory_provider_credentials
@@ -293,5 +293,5 @@ EOF
   echo "::warning::Advisory comment truncated to ${comment_limit} bytes (was ${comment_bytes})" >&2
 fi
 
-"$SCRIPT_DIR/upsert-pr-comment.sh" "$PR" "$MARKER" "$out_file"
+"${ADVISORY_UPSERT_SCRIPT:-$SCRIPT_DIR/upsert-pr-comment.sh}" "$PR" "$MARKER" "$out_file"
 echo "Advisory snapshot posted via ${PROVIDER} for PR #${PR} @ ${HEAD_SHA}"
