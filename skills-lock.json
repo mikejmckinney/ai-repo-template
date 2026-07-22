@@ -468,7 +468,7 @@
         "Archive.zip"
       ],
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "f8a72b9603728bb92a217a879b7e62e43ad76c81",
+      "ref": "4559f18a20c1691c744b4395194290db6a0df5e9",
       "skillPath": "skills/deploy-to-vercel",
       "source": "vercel-labs/agent-skills",
       "sourceType": "github"
@@ -950,15 +950,6 @@
       "source": "shadcn-ui/ui",
       "sourceType": "github"
     },
-    "skill-creator": {
-      "computedHash": "70098a2ed017fc9fe5a737e6b2baab95a6684115688f233897f2541bd9ead042",
-      "destinationPath": ".agents/skills/anthropic/skill-creator",
-      "hashAlgorithm": "sha256-tree-v1",
-      "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
-      "skillPath": "skills/skill-creator",
-      "source": "anthropics/skills",
-      "sourceType": "github"
-    },
     "signing-in-to-aws": {
       "computedHash": "da76ff453625155a2ec642b008721e61bcc35ede402651a4179c107d59d07494",
       "destinationPath": ".agents/skills/aws/core-skills/signing-in-to-aws",
@@ -966,6 +957,15 @@
       "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
       "skillPath": "skills/core-skills/signing-in-to-aws",
       "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github"
+    },
+    "skill-creator": {
+      "computedHash": "70098a2ed017fc9fe5a737e6b2baab95a6684115688f233897f2541bd9ead042",
+      "destinationPath": ".agents/skills/anthropic/skill-creator",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
+      "skillPath": "skills/skill-creator",
+      "source": "anthropics/skills",
       "sourceType": "github"
     },
     "sprites-and-images": {
@@ -1071,7 +1071,7 @@
       "computedHash": "919269480956db4f634cc8eb19b740994f5284e691e50b6a1993bf47cb21ca33",
       "destinationPath": ".agents/skills/vercel/vercel-composition-patterns",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "f8a72b9603728bb92a217a879b7e62e43ad76c81",
+      "ref": "4559f18a20c1691c744b4395194290db6a0df5e9",
       "skillPath": "skills/composition-patterns",
       "source": "vercel-labs/agent-skills",
       "sourceType": "github"
@@ -1080,16 +1080,16 @@
       "computedHash": "893456336db314d439180ccfdc1cb3fbf7647353cb23383516e5fd76e89a70c8",
       "destinationPath": ".agents/skills/vercel/vercel-react-best-practices",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "f8a72b9603728bb92a217a879b7e62e43ad76c81",
+      "ref": "4559f18a20c1691c744b4395194290db6a0df5e9",
       "skillPath": "skills/react-best-practices",
       "source": "vercel-labs/agent-skills",
       "sourceType": "github"
     },
     "vercel-react-view-transitions": {
-      "computedHash": "e1f685641dba0fcde574e1951960601cd1c9a5a774e092a7549c1a2c51d1d41e",
+      "computedHash": "5acc682bfcd263c1977b856c00b67680aa53f4eefc85d56adef0b1c85bc9a7a8",
       "destinationPath": ".agents/skills/vercel/vercel-react-view-transitions",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "f8a72b9603728bb92a217a879b7e62e43ad76c81",
+      "ref": "4559f18a20c1691c744b4395194290db6a0df5e9",
       "skillPath": "skills/react-view-transitions",
       "source": "vercel-labs/agent-skills",
       "sourceType": "github"
@@ -1098,7 +1098,7 @@
       "computedHash": "4642b9d24e4f4f0d759f5add5aa7e88930d740632c093cc683a8f948acbfcb13",
       "destinationPath": ".agents/skills/web-design-guidelines",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "f8a72b9603728bb92a217a879b7e62e43ad76c81",
+      "ref": "4559f18a20c1691c744b4395194290db6a0df5e9",
       "skillPath": "skills/web-design-guidelines",
       "source": "vercel-labs/agent-skills",
       "sourceType": "github"
