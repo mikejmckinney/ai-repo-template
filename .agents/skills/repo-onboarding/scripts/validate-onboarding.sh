@@ -27,13 +27,15 @@ mode=$(jq -r '.mode' <<<"$classification")
 blocking=()
 warnings=()
 
-if [[ "$mode" == B ]]; then
-  while IFS= read -r signal; do
-    blocking+=("$signal")
-  done < <(jq -r '.signals[]' <<<"$classification")
+while IFS= read -r warning; do
+  warnings+=("$warning")
+done < <(jq -r '.warnings[]' <<<"$classification")
+
+if [[ "$mode" == template-seed ]]; then
+  blocking+=("repository onboarding state is template-seed; explicit authorization is required")
 fi
 
-if [[ "$mode" != A ]]; then
+if [[ "$mode" != ai-repo-template ]]; then
   for required in README.md AI_REPO_GUIDE.md .context/00_INDEX.md; do
     [[ -f "$REPO/$required" ]] || blocking+=("required onboarding file missing: $required")
   done
@@ -47,9 +49,6 @@ if [[ -x "$REPO/scripts/verify-env.sh" ]]; then
   verify_log=$(mktemp "${TMPDIR:-/tmp}/repo-onboarding-verify.XXXXXX")
   if ! (cd "$REPO" && ./scripts/verify-env.sh) >"$verify_log" 2>&1; then
     blocking+=("scripts/verify-env.sh exited nonzero")
-  elif [[ "$mode" != A ]] \
-    && grep -qE '[1-9][0-9]* files still contain TEMPLATE_PLACEHOLDER' "$verify_log"; then
-    blocking+=("scripts/verify-env.sh reports unresolved template placeholders")
   fi
   rm -f "$verify_log"
 else

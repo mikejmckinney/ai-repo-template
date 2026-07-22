@@ -24,15 +24,17 @@ onboard), not files created.
 ## Truth Hierarchy
 
 Use this priority order when information conflicts:
-1. `./.context/**` — canonical project direction and constraints
-2. `./docs/**` — supporting detail and reference material
-3. Codebase — current implementation reality
+1. Current assigned issue and linked PR
+2. `AGENTS.md`
+3. `./.context/**`
+4. `./docs/**`
+5. Codebase
 
 ## Preflight Checks
 
 - [ ] Verify `.context/00_INDEX.md` exists
 - [ ] Verify the OpenCode `repo-onboarding` skill is available
-- [ ] Scan and list all files containing `TEMPLATE_PLACEHOLDER`
+- [ ] Inspect `.context/onboarding-state.json` and run the onboarding classifier
 - [ ] Run `git remote -v` to detect repository owner/name
 
 ## Initialization Steps
@@ -46,12 +48,13 @@ Determine the project purpose and current status from:
 
 ### 2. Run Repository Onboarding
 
-Execute the OpenCode `repo-onboarding` skill in Mode B.
+Execute the OpenCode `repo-onboarding` skill and follow its classified mode.
+Make evidence-backed onboarding edits only when the classifier returns
+`template-seed`; `ai-repo-template` and `complete` require orientation only.
 
 ### 3. Update README.md
 
-- If README.md contains `TEMPLATE_PLACEHOLDER`, replace it entirely with project-specific content
-- Otherwise, revise without deleting real content
+- Preserve useful README structure and revise only where project evidence requires it
 
 Include:
 - Project name and description
@@ -64,7 +67,7 @@ Include:
 
 ### 4. Customize docs/FAQ.md
 
-- Remove template-specific entries (those prefixed with "Template:")
+- Preserve useful template entries and revise only those contradicted by project evidence
 - Add project-specific questions surfaced during onboarding
 - If the project will keep the FAQ in README instead, delete `docs/FAQ.md`
 
@@ -78,35 +81,30 @@ Create a new AI_REPO_GUIDE.md for THIS repo (not the template), including:
 - Build/test/lint commands
 - Next steps
 
-### 6. Update Issue Template Config
-
-Update `.github/ISSUE_TEMPLATE/config.yml`:
-- Replace `PLEASE_UPDATE_THIS/URL` with the actual `owner/repo` from `git remote -v`
-- This enables the "Discussions" link on the New Issue page
-
-### 7. Customize CI Pipeline
+### 6. Verify Repository Checks
 
 Update `.github/workflows/ci-tests.yml`:
-- Add project-specific build commands
-- Add test commands
-- Add lint commands
-- Remove placeholder comments
+- Preserve the repository checks already in use
+- Add project-specific build, lint, typecheck, and test commands only when the
+  detected stack defines them
 
-### 8. Fill in Context Pack
+### 7. Fill in Context Pack
 
 Update `.context/` files:
 - `00_INDEX.md` — project summary and key decisions
-- `roadmap.md` — define project phases
+- `roadmap.md` — shipped milestones and issue-backed future work
 - `state/agent_state_comment_template.md` — copy into issues/PRs for live agent state when work begins
+- For verified UI work only, generate root `DESIGN.md` with the onboarding
+  helper and replace bracketed prompts from product evidence
 
-### 9. Configure Secrets (if needed)
+### 8. Configure Secrets (if needed)
 
 Document any required repository secrets:
 - API keys, database URLs, etc.
 
 ## Important Notes
 
-- Do NOT modify `.context/**` beyond filling in placeholders unless explicitly instructed
+- Do not broadly reset `.context/**`; modify only evidence-backed project state
 - Propose changes via comments if you see issues
 - Run `./test.sh` to verify template integrity after changes
 

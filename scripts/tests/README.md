@@ -13,6 +13,7 @@ path.
 | `codespace-tools.bats` | Codespaces tool manifest and idempotent installer behavior |
 | `orchestration.bats` | Multi-model consensus provider and Fusion behavior |
 | `opencode-oauth-actions.bats` | Access-only OAuth sync, expiry routing, and fix isolation |
+| `onboarding-advisory-policy.bats` | Onboarding lifecycle, LSP, and advisory policy invariants |
 | `postmerge-retro-batch.bats` | Daily retro evidence and lifecycle behavior |
 | `shell-tooling-policy.bats` | Bounded production shell command policy |
 | `verify-env.bats` | Environment checks |

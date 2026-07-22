@@ -1,8 +1,5 @@
 #!/bin/bash
-# 20-install-dependencies.sh — Install Node.js / Python deps + database stub.
-#
-# Sourced by scripts/setup.sh. Bundles legacy Step 2 (deps) + Step 3 (database)
-# because the database step is currently a placeholder for project customization.
+# 20-install-dependencies.sh — Install dependencies declared by project manifests.
 
 log_step "Installing dependencies"
 
@@ -27,21 +24,3 @@ elif [[ -f "pyproject.toml" ]]; then
   pip install -e .
   log_info "Python dependencies installed"
 fi
-
-# --- Database Setup (if applicable) ---
-log_step "Setting up database"
-
-# Uncomment and customize for your project:
-# if [[ -f "prisma/schema.prisma" ]]; then
-#     log_info "Running Prisma migrations..."
-#     npx prisma migrate dev
-#     log_info "Database migrations complete"
-# fi
-
-# if [[ -f "alembic.ini" ]]; then
-#     log_info "Running Alembic migrations..."
-#     alembic upgrade head
-#     log_info "Database migrations complete"
-# fi
-
-log_info "No database configuration detected (customize setup.sh if needed)"
