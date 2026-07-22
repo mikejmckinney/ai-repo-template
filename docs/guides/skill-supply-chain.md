@@ -51,10 +51,14 @@ python3 scripts/skill-supply-chain.py check \
   --source render-oss/skills
 ```
 
-The JSON result includes `changed`, old and new refs, changed and deleted
-packages, old and new hashes, and exclusions. Pin a known commit with `--ref`
-when reproducing a review. For fixture or offline testing, add both
-`--source-dir <path>` and `--ref <commit>`.
+The JSON result includes `changed`, `refChanged`, `packages`,
+`refOnlyPackages`, old and new refs and hashes, and exclusions. `changed` is
+true only when a declared package hash changes; an unrelated upstream commit
+reports `refChanged: true` without opening a lock-only refresh PR. When one
+package changes, unchanged sibling records appear under `refOnlyPackages`
+because their refs advance with the source's atomic snapshot. Pin a known
+commit with `--ref` when reproducing a review. For fixture or offline testing,
+add both `--source-dir <path>` and `--ref <commit>`.
 
 Update all declared packages from one source atomically:
 
@@ -73,9 +77,11 @@ downloaded content. It stages and verifies every changed package before replacin
 destinations and writing the lock. A failed replacement restores package and
 lock backups.
 
-An upstream package deletion is an explicit changed result. `update` removes
-only that declared destination and lock record so reviewers can evaluate the
-deletion in the resulting diff.
+If a declared upstream package path disappears, both `check` and `update` fail
+closed without deleting the vendored package or lock record. Treat this as a
+possible upstream move: locate and review the replacement path, update
+`skillPath` and `ref` together, then rerun lock validation and the source check.
+Package removal requires an explicit reviewed lock and destination change.
 
 ## Nightly review PRs
 
@@ -87,8 +93,8 @@ The workflow creates one branch and draft PR per upstream source repository,
 not per skill and not for the entire matrix. Each source has its own concurrency
 group and stable branch: `automation/skill-refresh/<owner>/<repository>`. All
 skills from that source update atomically on the same branch, while unrelated
-vendors remain independently reviewable. A no-change result stops before any
-write. A changed result:
+vendors remain independently reviewable. A ref-only result stops before any
+write or PR creation. A material package change:
 
 1. updates only that source's packages and lock records;
 2. scans refreshed package paths for credential signatures;
@@ -117,8 +123,8 @@ satisfying maintainer review. Keep refresh PRs draft and never apply
   packages that explain the release or migration.
 - Review every vendored byte and executable-mode change. Treat new scripts as
   untrusted even though automation does not execute them.
-- Confirm package additions, deletions, and renames are intentional. The updater
-  does not discover or adopt new packages automatically.
+- Confirm package additions, removals, moves, and renames are intentional. The
+  updater does not discover or adopt new paths or packages automatically.
 - Recheck upstream license evidence and security notices at the proposed commit.
 - Confirm exclusions still identify generated artifacts and do not hide
   substantive instructions or executable code.
@@ -131,9 +137,9 @@ satisfying maintainer review. Keep refresh PRs draft and never apply
   secret-scan, validation, or test step. Do not bypass the failed control.
 - If upstream moved again during review, rerun the stable source branch; the
   existing draft PR is updated instead of duplicated.
-- If a refresh PR contains an unexpected deletion, close it or restore the
-  previous immutable ref. Do not manually copy partial upstream state into the
-  branch.
+- If acquisition reports a missing upstream path, inspect the upstream tree for
+  a move and update the lock only after reviewing the replacement package. Do
+  not delete the local package or manually copy partial upstream state.
 - If a local `update` is interrupted, run `validate-lock`, inspect `git diff`, and
   rerun against the intended immutable ref. Commit only a complete source-scoped
   result.

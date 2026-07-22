@@ -69,9 +69,17 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'delete-branch: false' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -q "if: steps.check.outputs.changed == 'true'" "$WORKFLOW"
+  run grep -q "if: steps.check.outputs.content_changed == 'true'" "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -q "content_changed=.*\.changed" "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'scan-skill-secrets.py' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -q 'Content-changed packages' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -q 'Ref-only lock records' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -q 'Missing upstream paths block refresh' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'validate-lock' "$WORKFLOW"
   [ "$status" -eq 0 ]

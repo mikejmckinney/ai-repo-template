@@ -249,6 +249,28 @@ EOF
   [ "$(sha256sum "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md")" = "$before_skill" ]
 }
 
+@test "source-scoped check suppresses ref-only refreshes" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+
+  upstream="$BATS_TEST_TMPDIR/upstream-ref-only"
+  mkdir -p "$upstream/skills"
+  cp -R "$FIXTURE_ROOT/.agents/skills/acme" "$upstream/skills/acme"
+
+  run python3 "$TOOL" check \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+
+  [ "$status" -eq 0 ]
+  run jq -e \
+    '.changed == false and .refChanged == true and .packages == []' <<<"$output"
+  [ "$status" -eq 0 ]
+}
+
 @test "source-scoped update replaces declared packages and is idempotent" {
   run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
   [ "$status" -eq 0 ]
@@ -295,6 +317,57 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "material source refresh advances unchanged sibling package refs atomically" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+
+  mkdir -p "$FIXTURE_ROOT/.agents/skills/beta"
+  cat >"$FIXTURE_ROOT/.agents/skills/beta/SKILL.md" <<'EOF'
+---
+name: beta
+description: Unchanged sibling fixture.
+---
+
+# Beta
+EOF
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/beta"
+  [ "$status" -eq 0 ]
+  beta_hash="$output"
+  jq --arg hash "$beta_hash" '.skills.beta = (
+    .skills.acme
+    | .skillPath = "skills/beta"
+    | .destinationPath = ".agents/skills/beta"
+    | .computedHash = $hash
+  )' "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  upstream="$BATS_TEST_TMPDIR/upstream-siblings"
+  mkdir -p "$upstream/skills"
+  cp -R "$FIXTURE_ROOT/.agents/skills/acme" "$upstream/skills/acme"
+  cp -R "$FIXTURE_ROOT/.agents/skills/beta" "$upstream/skills/beta"
+  printf '\nmaterial update\n' >>"$upstream/skills/acme/SKILL.md"
+  target_ref="1111111111111111111111111111111111111111"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "$target_ref"
+
+  [ "$status" -eq 0 ]
+  run jq -e --arg ref "$target_ref" \
+    '.changed == true and .packages == ["acme"] and
+     .refOnlyPackages == ["beta"] and .deletedPackages == [] and
+     .newRef == $ref' <<<"$output"
+  [ "$status" -eq 0 ]
+  run jq -e --arg ref "$target_ref" \
+    '.skills.acme.ref == $ref and .skills.beta.ref == $ref' \
+    "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+}
+
 @test "source-scoped update rejects content changes at the same immutable ref" {
   run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
   [ "$status" -eq 0 ]
@@ -317,7 +390,7 @@ EOF
   [ "$status" -eq 1 ]
 }
 
-@test "declared generated artifacts are excluded from hashes and updates" {
+@test "excluded generated-only changes do not trigger refreshes" {
   run python3 "$TOOL" hash \
     --package "$FIXTURE_ROOT/.agents/skills/acme" \
     --exclude "Archive.zip"
@@ -341,7 +414,8 @@ EOF
     --ref "$target_ref"
   [ "$status" -eq 0 ]
   run jq -e '
-    .changed == true and
+    .changed == false and
+    .refChanged == true and
     .excludedPaths.acme == ["Archive.zip"]
   ' <<<"$output"
   [ "$status" -eq 0 ]
@@ -396,7 +470,7 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "upstream package deletion becomes an explicit update diff" {
+@test "missing upstream package fails closed without deleting vendored content" {
   run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
   [ "$status" -eq 0 ]
   write_lock "$output"
@@ -410,9 +484,8 @@ EOF
     --source "example/acme-skills" \
     --source-dir "$upstream" \
     --ref "1111111111111111111111111111111111111111"
-  [ "$status" -eq 0 ]
-  [ "$(jq -r '.changed' <<<"$output")" = "true" ]
-  [ "$(jq -r '.deletedPackages[0]' <<<"$output")" = "acme" ]
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"upstream skill path is missing"*"refusing deletion"* ]]
 
   run python3 "$TOOL" update \
     --repo "$FIXTURE_ROOT" \
@@ -420,8 +493,8 @@ EOF
     --source "example/acme-skills" \
     --source-dir "$upstream" \
     --ref "1111111111111111111111111111111111111111"
-  [ "$status" -eq 0 ]
-  [ ! -e "$FIXTURE_ROOT/.agents/skills/acme" ]
-  run jq -e '.skills | has("acme") | not' "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -ne 0 ]
+  [ -e "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" ]
+  run jq -e '.skills | has("acme")' "$FIXTURE_ROOT/skills-lock.json"
   [ "$status" -eq 0 ]
 }

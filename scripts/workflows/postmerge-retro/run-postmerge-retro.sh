@@ -141,8 +141,8 @@ run_full_evidence_provider() {
     cursor)
       run_postmerge_provider_with_timeout "$provider_timeout_seconds" cursor full-evidence \
         "$LIB_DIR/run-with-provider-credentials.sh" cursor \
-          env CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}" \
-          node "$SCRIPT_DIR/run-postmerge-retro-full-cursor.mjs" "$prompt_file" "$llm_raw"
+        env CURSOR_ADVISORY_MODEL="${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}" \
+        node "$SCRIPT_DIR/run-postmerge-retro-full-cursor.mjs" "$prompt_file" "$llm_raw"
       ;;
     gemini)
       [[ "$(jq -r '.routing_context.antigravity_available // false' "$COVERAGE_JSON")" == "true" ]] || return 1
