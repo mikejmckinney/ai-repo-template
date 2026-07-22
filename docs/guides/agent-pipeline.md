@@ -32,6 +32,15 @@ blocks completion. Forks, `smoke-test` PRs, and repositories lacking the workflo
 label, provider credentials, or label-write permission are exempt and record why.
 `ai-review:full` requests deeper context only.
 
+Automation owns the snapshot's head, provider/model, diff coverage, and hidden
+`ai-advisory-memory:v1` payload. The visible findings are the provider-neutral
+summary; an empty result says `No findings identified at this head.` rather than
+rendering an empty table. Compatible synchronize events review the accumulated
+delta from the last completed reviewed head. Missing or invalid memory, readiness,
+full mode, base changes, expected-provider changes, and non-ancestor history force
+a full PR refresh. If an in-flight run is canceled, the last completed sticky
+memory remains authoritative and the next delta spans every intervening commit.
+
 ## Blocking Pre-Merge Controls
 
 Repository tests and lint/format checks are the blocking controls. Branch rulesets

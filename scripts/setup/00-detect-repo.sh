@@ -6,11 +6,6 @@
 #                to scope every gh call. Empty if detection fails (downstream
 #                modules surface a single remediation block instead of erroring
 #                per-call).
-# Side effects:
-#   - Updates the PLEASE_UPDATE_THIS/URL or YOUR_USERNAME/YOUR_REPOSITORY
-#     placeholder in .github/ISSUE_TEMPLATE/config.yml when running outside
-#     the template repos themselves.
-#
 # Re-runnable: yes. Honors GH_REPO / GITHUB_REPOSITORY env overrides.
 
 log_step "Auto-detecting repository"
@@ -77,31 +72,4 @@ if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
   fi
 else
   log_warn "Not a git repository, skipping repo auto-detection"
-fi
-
-# Update config.yml placeholder using FULL_REPO. Runs after all detection paths
-# so env overrides (GH_REPO/GITHUB_REPOSITORY) work even without a git remote.
-if [[ -n "$FULL_REPO" ]]; then
-  CONFIG_FILE=".github/ISSUE_TEMPLATE/config.yml"
-  # Template-detection guard: when the current repo IS the template itself,
-  # leave placeholders intact so source files don't get rewritten.
-  # See AGENTS.md "Template detection (important)" section.
-  _is_template_repo=false
-  case "$FULL_REPO" in
-    mikejmckinney/ai-repo-template | mikejmckinney/dotfiles) _is_template_repo=true ;;
-  esac
-  if [[ "$_is_template_repo" == "true" ]]; then
-    log_info "Detected template repo ($FULL_REPO); leaving $CONFIG_FILE placeholders intact"
-  elif [[ -f "$CONFIG_FILE" ]]; then
-    # Note: Using temp file for portability (BSD sed on macOS differs from GNU sed)
-    if grep -q "PLEASE_UPDATE_THIS/URL" "$CONFIG_FILE"; then
-      sed "s|PLEASE_UPDATE_THIS/URL|${FULL_REPO}|g" "$CONFIG_FILE" >"${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-      log_info "Updated $CONFIG_FILE with repository URL"
-    elif grep -q "YOUR_USERNAME/YOUR_REPOSITORY" "$CONFIG_FILE"; then
-      sed "s|YOUR_USERNAME/YOUR_REPOSITORY|${FULL_REPO}|g" "$CONFIG_FILE" >"${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
-      log_info "Updated $CONFIG_FILE with repository URL"
-    else
-      log_info "$CONFIG_FILE already configured"
-    fi
-  fi
 fi

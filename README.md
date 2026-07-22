@@ -1,9 +1,5 @@
 # AI-Ready Repository Template
 
-<!-- Agent Status Badge - Update phase as project progresses -->
-<!-- Options: Phase 0: Design | Phase 1: Foundation | Phase 2: Development | Phase 3: Polish | Phase 4: Maintenance -->
-![Agent Status](https://img.shields.io/badge/Agent%20Status-Phase%200%3A%20Design-blue)
-
 A template repository for GitHub Codespaces that provides pre-configured AI agent prompts, context management for LLM memory, and automatic development environment setup. Use this as a starting point for new repositories or link it to your Codespaces settings.
 
 > **For AI Agents**: See `AI_REPO_GUIDE.md` for a concise reference optimized for agent consumption.
@@ -23,7 +19,7 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `README.md` (this file) | Humans | Setup, features, customization — verbose on purpose |
 | `AI_REPO_GUIDE.md` | AI agents | Token-optimized command/structure/convention reference |
 | `docs/` | Humans | Deep reference: guides, ADRs, benchmark results, research |
-| `.context/` | AI agents | Canonical project truth: rules, state, roadmap, vision (lazy-loaded) |
+| `.context/` | AI agents | Project direction, roadmap, retrospective lessons, and vision (lazy-loaded) |
 | `AGENTS.md` (root) | Most AI tools | Root startup contract (Copilot, Cursor, Gemini, Claude Code, etc.) |
 | `.github/prompts/` | Review and workflow automation | Shared lenses plus advisory, daily, and weekly prompts |
 | `.agents/skills/multi-model-consensus/` | Cross-agent | Optional independent multi-model review |
@@ -44,7 +40,7 @@ ADR-031 defines the active model: one implementing agent, blocking CI, normal pa
 - **Multi-Platform Support** - Works with Cursor, GitHub Copilot, Gemini Code Assist, and more
 - **CI/CD Automation** - Blocking tests and lint with label-gated parallel advisory and recurring repository review
 - **Issue Templates** - Bug reports, feature requests, and agent initialization
-- **Pre-commit Hooks** - Template for linting, secret detection, and commit standards
+- **Explicit Quality Checks** - Read-only CI plus local formatting, lint, link, and repository verification commands
 - **ADR Templates** - Architecture Decision Record templates with examples
 - **Verification Scripts** - Built-in testing (see `./test.sh` output for current check count) to ensure template integrity
 
@@ -74,7 +70,8 @@ and weekly workflows perform retrospective review and draft-fix work.
 
 ## Setup
 
-> Not sure whether to fork or use the template? See [AI_REPO_GUIDE.md § Template vs. Fork](AI_REPO_GUIDE.md#template-vs-fork-choosing-how-to-start) for guidance.
+Choose the Codespaces hook, GitHub template, or selective-copy path according to
+how much of the repository kit the target project should inherit.
 
 ### Option 1: Link as your Codespaces "Dotfiles" repo
 
@@ -95,7 +92,7 @@ and weekly workflows perform retrospective review and draft-fix work.
 2. Create your new repository
 3. Run the OpenCode `repo-onboarding` skill
 4. In `template-seed`, inspect the existing resources and extend, replace, or delete only what project evidence requires
-5. Complete `.context/onboarding-state.json`, verify repository URLs, and customize `ci-tests.yml` for your tech stack
+5. Complete `.context/onboarding-state.json` and add application checks only when the detected stack defines them
 
 ### Option 3: Copy to Existing Repository
 
@@ -119,23 +116,15 @@ Run the verification script to ensure all template files are present and valid:
 ./test.sh
 ```
 
-Expected output:
+The exact pass count changes as checks are added. A successful run ends with:
 
 ```text
 ========================================
 Template Repository Verification
 ========================================
 
-Checking required files...
-✓ AI_REPO_GUIDE.md exists
-✓ AGENTS.md exists
-...
-
-========================================
 Summary
 ========================================
-Passed: 74
-Warnings: 0
 Failed: 0
 
 Template verification PASSED
@@ -197,18 +186,22 @@ When using this template in a new repository:
 
 1. **Start with the OpenCode `repo-onboarding` skill** - it classifies lifecycle state, preserves useful resources, and updates project context only where evidence requires it
 2. **Customize the operating contract** - Add project-wide constraints to `AGENTS.md`
-3. **Start with mockups** - Add design artifacts to `.context/vision/` before coding
+3. **Design before frontend implementation** - For verified UI work, generate
+   `DESIGN.md` with the onboarding helper and add design artifacts to
+   `.context/vision/`; non-UI repositories do not need a root design contract
 4. **Use GitHub live state** - Keep issue/PR `agent-state:v1` comments current for cognitive handoff between sessions
 5. **Keep AGENTS.md as the canonical agent instructions** - Per [`docs/decisions/adr-002-agents-md-ownership.md`](docs/decisions/adr-002-agents-md-ownership.md), `AGENTS.md` is read by most AI tools (Copilot, Cursor, Gemini, Claude Code) and references `AI_REPO_GUIDE.md` for structured detail. Edit it directly when agent-facing rules change; do not strip it down to a pointer.
-6. **Customize CI pipeline** - Update `ci-tests.yml` for your tech stack
+6. **Extend CI from evidence** - Add application checks only for commands the
+   detected stack actually defines
 7. **Run tests** - Use `./test.sh` to verify your customizations
 
 ## Limitations
 
-Known constraints of this template. Agent-facing detail (environment variables, tool-specific path rules, workflow placeholders) lives in [`AI_REPO_GUIDE.md` § Gotchas / Known Issues](AI_REPO_GUIDE.md#gotchas--known-issues).
+Known constraints of this template. Agent-facing environment and tool warnings
+live in [`AI_REPO_GUIDE.md` § Known Warnings](AI_REPO_GUIDE.md#known-warnings).
 
 - **Opinionated scaffolding.** The monolithic workflow, `.context/` lazy-loading pattern, and review lifecycle reflect decisions recorded in `docs/decisions/`.
-- **No runtime code.** This is a docs/config template, not a language-specific starter. Your project brings its own build, test, and deploy toolchain; `ci-tests.yml` ships with placeholder commands you must replace.
+- **No runtime code.** This is a docs/config template, not a language-specific starter. Your project brings its own build, test, and deploy toolchain; onboarding adds application checks only from verified project commands.
 - **Codespaces-centric bootstrap.** `install.sh` is wired to the GitHub Codespaces "Dotfiles" feature (via the `$DOTFILES` env var). It falls back to its own directory elsewhere, but some convenience features (extension install, prompt copy) assume a Codespace.
 - **Lifecycle state is explicit.** `.context/onboarding-state.json` distinguishes a fresh template seed from a completed derived repository; retained template resources are not treated as defects.
 

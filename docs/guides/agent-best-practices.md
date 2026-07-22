@@ -14,6 +14,9 @@ continue implementation without waiting. Before completion, independently verify
 findings from any arrived snapshot that matches the current PR head. Missing,
 stale, running, or failed advisory feedback remains non-blocking. Daily and weekly
 retro findings remain subject to normal verification before their draft fixes merge.
+Treat the automation-owned provider/model and reviewed-head memory as provenance,
+not as a finding. An explicit no-findings statement is a completed current-head
+result; an empty or malformed findings section is not.
 
 ## Independent Perspectives
 

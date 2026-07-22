@@ -21,7 +21,8 @@ Full rationale and a comparison table live in [`docs/guides/context-files-explai
 ### Template: What's the difference between `docs/` and `.context/`?
 
 - `docs/` — human-facing reference (guides, ADRs, research). Verbose, explanatory.
-- `.context/` — agent-facing canonical truth (rules, state, roadmap, vision). Lazy-loaded.
+- `.context/` — agent-facing project direction, roadmap, retrospective lessons,
+  and vision beneath the always-loaded `AGENTS.md` contract. Lazy-loaded.
 
 Decision record: [`docs/decisions/adr-001-context-pack-structure.md`](decisions/adr-001-context-pack-structure.md).
 
@@ -58,4 +59,7 @@ delete them only when current project evidence requires it.
 
 ### Template: Where should I file limitations or known issues I've hit?
 
-If it's an agent-facing gotcha, add it to `AI_REPO_GUIDE.md § Gotchas / Known Issues`. If it's human-facing, add it to `README.md § Limitations`. If it's a decision-specific follow-up, add it to the relevant ADR's "Future Work" subsection.
+If it is an agent-facing environment or tool warning, add it to
+`AI_REPO_GUIDE.md` under "Known Warnings." If it is human-facing, add it to
+`README.md` under "Limitations." If it is a decision-specific follow-up, add it
+to the relevant ADR's "Future Work" subsection.

@@ -110,7 +110,7 @@ import sys
 from pathlib import Path
 
 text = Path(sys.argv[1]).read_text(encoding="utf-8")
-assert "AGENTS_MD_VERSION: 37" in text
+assert "AGENTS_MD_VERSION: 38" in text
 assert "unfamiliar repository" in text
 assert "repo-onboarding" in text
 assert "session-recovery" in text
@@ -172,12 +172,68 @@ PY
 
 @test "advisory snapshot contract remains SHA-bearing and non-blocking" {
   grep -q 'Head: `<sha>`' "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
-  grep -q 'Provider: `<opencode|cursor|gemini|antigravity>`' "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
+  grep -q 'Provider: `<provider> / <model-or-agent>`' "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
+  grep -q 'No findings identified at this head' "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
   grep -q 'cancel-in-progress: true' "$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
   grep -q 'ai-review:live' "$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
+  grep -q 'GITHUB_EVENT_ACTION:' "$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
+  grep -q 'select-advisory-range.py' "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
+  grep -q 'normalize-advisory-snapshot.py' "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
+  for path in \
+    scripts/workflows/lib/run-opencode.mjs \
+    scripts/workflows/advisory-review/run-advisory-cursor.mjs \
+    scripts/workflows/advisory-review/run-advisory-gemini.py \
+    scripts/workflows/advisory-review/run-advisory-antigravity.py; do
+    grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$REPO_ROOT/$path"
+  done
 }
 
 @test "verify-env ignores placeholder marker text" {
   run grep -q 'TEMPLATE_PLACEHOLDER' "$REPO_ROOT/scripts/verify-env.sh"
   [ "$status" -ne 0 ]
+}
+
+@test "unused operational scaffolding is absent" {
+  ! grep -q 'PLEASE_UPDATE_THIS' "$REPO_ROOT/.github/ISSUE_TEMPLATE/config.yml"
+  ! grep -q 'Run tests (placeholder)' "$REPO_ROOT/.github/workflows/ci-tests.yml"
+  ! grep -q 'CUSTOMIZE THIS SECTION FOR YOUR TECH STACK' "$REPO_ROOT/.github/workflows/ci-tests.yml"
+  ! grep -q '&lt;N&gt;\|<tool + config path>\|<framework + command>' "$REPO_ROOT/AGENTS.md"
+  [ ! -e "$REPO_ROOT/scripts/db-reset.sh" ]
+  ! grep -q 'Database Setup\|database step is currently a placeholder' \
+    "$REPO_ROOT/scripts/setup/20-install-dependencies.sh"
+}
+
+@test "design contract is created only on demand from the canonical asset" {
+  [ ! -e "$REPO_ROOT/DESIGN.md" ]
+  [ -f "$REPO_ROOT/.agents/skills/repo-onboarding/assets/DESIGN.md" ]
+  [ -x "$REPO_ROOT/.agents/skills/repo-onboarding/scripts/create-design-contract.sh" ]
+
+  repo="$(mktemp -d)"
+  run "$REPO_ROOT/.agents/skills/repo-onboarding/scripts/create-design-contract.sh" --repo "$repo"
+  [ "$status" -eq 0 ]
+  cmp -s "$REPO_ROOT/.agents/skills/repo-onboarding/assets/DESIGN.md" "$repo/DESIGN.md"
+  run "$REPO_ROOT/.agents/skills/repo-onboarding/scripts/create-design-contract.sh" --repo "$repo"
+  [ "$status" -ne 0 ]
+  rm -rf "$repo"
+}
+
+@test "active dogfood surfaces describe the completed current phase" {
+  ! grep -q 'Phase%200%3A%20Design\|Phase 0: Design' "$REPO_ROOT/README.md"
+  run python3 - "$REPO_ROOT/.context/roadmap.md" "$REPO_ROOT/.context/00_INDEX.md" <<'PY'
+import sys
+from pathlib import Path
+
+roadmap = Path(sys.argv[1]).read_text(encoding="utf-8")
+index = Path(sys.argv[2]).read_text(encoding="utf-8")
+phase7 = roadmap.split("## Phase 7:", 1)[1].split("\n---", 1)[0]
+assert "**Status**: Complete" in phase7
+assert "### Active Track" not in phase7
+assert "Issue #279" not in roadmap
+assert "Complete issue #474" not in index
+assert "**Current Phase**" not in index
+PY
+  [ "$status" -eq 0 ]
+  ! grep -q '#428 next' "$REPO_ROOT/.context/sessions/latest_summary.md"
+  ! grep -q 'Optional in-progress PR advisory' "$REPO_ROOT/AI_REPO_GUIDE.md"
+  ! grep -q 'Optional PR advisory' "$REPO_ROOT/.github/prompts/README.md"
 }

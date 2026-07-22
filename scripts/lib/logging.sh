@@ -13,12 +13,8 @@
 #   # shellcheck source=scripts/lib/logging.sh
 #   source "$(dirname "${BASH_SOURCE[0]}")/scripts/lib/logging.sh"
 #
-# Issue #255 Phase 4a — extracted from setup.sh, db-reset.sh,
-# sandbox-bootstrap.sh. One deliberate semantic change: log_error now
-# always writes to stderr (matching sandbox-bootstrap.sh's pre-extraction
-# behavior and Unix convention). The pre-extraction setup.sh and
-# db-reset.sh wrote log_error to stdout; that was a pre-existing
-# inconsistency, not contract.
+# Issue #255 Phase 4a — extracted from setup.sh and sandbox-bootstrap.sh.
+# log_error always writes to stderr, matching Unix convention.
 
 # Colors. Unconditional — matches the existing top-level scripts. Scripts
 # that need tty-aware colors gate them locally instead

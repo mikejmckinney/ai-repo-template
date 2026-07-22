@@ -14,7 +14,7 @@ In `ai-repo-template`, it serves two jobs at once:
 ### priority order (when conflicts arise)
 
 See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
-`.context/**` > `docs/**` > codebase.
+current issue/PR > `AGENTS.md` > `.context/**` > `docs/**` > codebase.
 
 ## Directory Structure
 
@@ -22,7 +22,7 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 .context/
 |-- 00_INDEX.md          # This file - start here (The Map)
 |-- onboarding-state.json # Versioned template-seed/complete lifecycle state
-|-- roadmap.md           # Template-development phases and current hardening track
+|-- roadmap.md           # Completed template phases and issue-backed future work
 |-- sessions/            # Durable retrospectives and feedback records
 |   |-- feedback_template.md # Stakeholder feedback capture template
 |   `-- latest_summary.md   # Durable retrospective lessons
@@ -55,7 +55,8 @@ advisory review, recurring retro, and opt-in local consensus. See ADR-031.
 
 **Description**: A Codespaces-first repository template for monolithic AI-assisted software delivery with parallel advisory review and recurring retro automation.
 
-**Current Phase**: Phase 7 - template dogfooding, overlay extension, and process hardening.
+**Program status**: Initial Phases 1-7 are complete. Current work is tracked by
+assigned GitHub issues rather than duplicated phase state in this index.
 
 **Primary Stack**: Markdown docs and prompts, shell automation, GitHub Actions workflow scaffolding, Python validation helpers, and VS Code/Codespaces bootstrap configuration.
 
@@ -105,9 +106,9 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI and execution lifecycle policy | Makes monolithic implementation the default, retires role registries, and uses normal non-blocking advisory plus recurring retro. |
 | [ADR-032](../docs/decisions/adr-032-canonical-governance-sources.md) | Canonical governance sources and layered enforcement | Uses one authored source with pointers, symlinks, or deterministic generated consumers and blocks only encoded contract violations. |
 
-## Next Steps
+## Issue-Backed Future Work
 
-- [ ] Complete issue #474 so active surfaces consistently use the monolithic implementation and review lifecycle.
-- [ ] Remove or archive any lingering repo-local `_active.md` compatibility references now that ADR-025 and issue #368 moved live state to GitHub.
-- [ ] Continue issue #279 to extract more machine-readable manifests and shrink workflow/business-logic drift.
-- [ ] Ship issue #322 so downstream repos get a clearer new-project and parent/phase issue playbook.
+- [ ] Issue #163 - automate derived-repository credential and variable bootstrap.
+- [ ] Issue #299 - define session archive retention and downstream reset policy.
+- [ ] Issue #316 - document sandbox-local verification for default-branch workflow changes.
+- [ ] Issue #322 - add an optional cross-repository project bootstrap skill.

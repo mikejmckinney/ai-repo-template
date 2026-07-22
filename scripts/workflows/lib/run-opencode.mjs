@@ -209,6 +209,12 @@ for (const requestedModel of models) {
       `OpenCode: observed_model=${observedModel} requested_model=${requestedModel} ` +
       `input_tokens=${tokens.input ?? "unknown"} output_tokens=${tokens.output ?? "unknown"}`,
     )
+    if (process.env.ADVISORY_PROVIDER_METADATA_FILE) {
+      await writeFile(
+        process.env.ADVISORY_PROVIDER_METADATA_FILE,
+        `${JSON.stringify({ provider: "opencode", model: requestedModel, observed_model: observedModel })}\n`,
+      )
+    }
     await writeRetrievalTrace(sessionID)
     await writeFile(outputPath, checked.output)
     process.exitCode = 0

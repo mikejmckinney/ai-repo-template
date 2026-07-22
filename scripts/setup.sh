@@ -76,9 +76,14 @@ printf '%bSetup Complete!%b\n' "$GREEN" "$NC"
 echo "========================================"
 echo ""
 echo "Next steps:"
-echo "  1. Review .env and update any placeholder values"
-echo "  2. Check .context/00_INDEX.md for project context"
-echo "  3. Start development!"
+if [[ -f ".env" ]]; then
+  echo "  1. Review .env for required project values"
+  echo "  2. Check .context/00_INDEX.md for project context"
+  echo "  3. Start development!"
+else
+  echo "  1. Check .context/00_INDEX.md for project context"
+  echo "  2. Start development!"
+fi
 echo ""
 
 # Show available scripts if package.json exists

@@ -17,7 +17,12 @@ preserve unrelated worktree changes.
 6. Update repository URLs, build/test commands, context, and ownership rules
    only after verifying their project-specific values.
 7. Obtain explicit authorization before destructive edits or broad resets.
-8. After orientation and `scripts/verify-env.sh` succeed, set
+8. When verified application files or the assigned outcome establish UI work,
+   run `scripts/create-design-contract.sh --repo "$PWD"` and replace its
+   bracketed prompts from product evidence before frontend implementation.
+   Do not create root `DESIGN.md` for backend-only, infrastructure-only, or
+   documentation repositories.
+9. After orientation and `scripts/verify-env.sh` succeed, set
    `.context/onboarding-state.json` to `status: "complete"`, then run the
    onboarding validator as the final state check.
 

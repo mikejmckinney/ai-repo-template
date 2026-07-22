@@ -81,27 +81,23 @@ Create a new AI_REPO_GUIDE.md for THIS repo (not the template), including:
 - Build/test/lint commands
 - Next steps
 
-### 6. Update Issue Template Config
-
-Update `.github/ISSUE_TEMPLATE/config.yml`:
-- Replace `PLEASE_UPDATE_THIS/URL` with the actual `owner/repo` from `git remote -v`
-- This enables the "Discussions" link on the New Issue page
-
-### 7. Customize CI Pipeline
+### 6. Verify Repository Checks
 
 Update `.github/workflows/ci-tests.yml`:
-- Add project-specific build commands
-- Add test commands
-- Add lint commands
+- Preserve the repository checks already in use
+- Add project-specific build, lint, typecheck, and test commands only when the
+  detected stack defines them
 
-### 8. Fill in Context Pack
+### 7. Fill in Context Pack
 
 Update `.context/` files:
 - `00_INDEX.md` — project summary and key decisions
-- `roadmap.md` — define project phases
+- `roadmap.md` — shipped milestones and issue-backed future work
 - `state/agent_state_comment_template.md` — copy into issues/PRs for live agent state when work begins
+- For verified UI work only, generate root `DESIGN.md` with the onboarding
+  helper and replace bracketed prompts from product evidence
 
-### 9. Configure Secrets (if needed)
+### 8. Configure Secrets (if needed)
 
 Document any required repository secrets:
 - API keys, database URLs, etc.

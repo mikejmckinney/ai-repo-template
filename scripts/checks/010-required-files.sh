@@ -12,7 +12,6 @@ REQUIRED_FILES=(
   "AGENT.md"
   "CLAUDE.md"
   "README.md"
-  "DESIGN.md"
   "install.sh"
   "test.sh"
   ".cursorignore"
@@ -52,6 +51,12 @@ for file in "${REQUIRED_FILES[@]}"; do
     fail "$file is missing"
   fi
 done
+
+if [[ -f "DESIGN.md" ]]; then
+  pass "DESIGN.md exists for a project with an explicit design contract"
+else
+  pass "DESIGN.md is absent (optional until verified UI work requires it)"
+fi
 
 if [[ -f ".context/onboarding-state.json" ]]; then
   pass ".context/onboarding-state.json exists"

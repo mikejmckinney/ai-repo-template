@@ -34,7 +34,7 @@ Return **only** the markdown below (no preamble). Replace placeholders.
 ## Advisory Review Snapshot
 
 Head: `<sha>`
-Provider: `<opencode|cursor|gemini|antigravity>`
+Provider: `<provider> / <model-or-agent>`
 Mode: advisory, non-blocking
 Diff coverage: `<included>/<total>` bytes, truncated: `<yes|no>`
 
@@ -44,9 +44,13 @@ Diff coverage: `<included>/<total>` bytes, truncated: `<yes|no>`
 |---|---|---|---|---|---|---|
 | ADV-01 | … | … | … | … | … | yes/no |
 
+When there are no findings, omit the table and write exactly:
+
+No findings identified at this head.
+
 ### Not blocking
 
 These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
 ```
 
-Severity: `info`, `low`, `medium`, `high`. Use the shared lens names and `ADV-NN` IDs. Empty findings table is allowed when no findings.
+Severity: `info`, `low`, `medium`, `high`. Use the shared lens names and `ADV-NN` IDs. Automation owns the final head, provider/model, diff-coverage, and hidden-memory fields.

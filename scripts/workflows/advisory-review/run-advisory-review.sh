@@ -62,14 +62,59 @@ pr_url="$(printf '%s' "$pr_json" | jq -r .html_url)"
 base_sha="$(printf '%s' "$pr_json" | jq -r .base.sha)"
 
 printf '%s\n' "$pr_body" >"$WORKDIR/pr-body.md"
-
-gh api "repos/${REPO}/pulls/${PR}/files" --paginate --jq '.[].filename' \
-  >"$WORKDIR/changed-files.txt" || true
-
 git fetch origin "$HEAD_SHA" "$base_sha" 2>/dev/null || true
 
+existing_snapshot=""
+existing_snapshot=$(
+  gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+    | jq -s 'if length == 0 then [] else add end' \
+    | jq -r --arg token "$MARKER_TOKEN" \
+      '[.[] | select((.body | type) == "string" and (.body | contains($token)))] | last | .body // empty' \
+      2>/dev/null || true
+)
+printf '%s\n' "$existing_snapshot" >"$WORKDIR/existing-snapshot.md"
+
+# shellcheck disable=SC2034 # Provider routing reads this global after sourcing.
+antigravity_enabled=false
+if [[ "${ADVISORY_ANTIGRAVITY_ENABLED:-}" == "true" ]]; then
+  antigravity_enabled=true
+fi
+export antigravity_enabled
+
+# shellcheck disable=SC1091
+source "$LIB_DIR/pick-advisory-provider.sh"
+# shellcheck disable=SC1091
+source "$LIB_DIR/invoke-advisory-llm.sh"
+# shellcheck disable=SC2034 # Provider routing initializes and reads these globals.
+has_opencode=0 has_cursor=0 has_gemini=0
+init_advisory_provider_credentials
+mapfile -t provider_candidates < <(list_advisory_providers advisory)
+if [[ ${#provider_candidates[@]} -eq 0 ]]; then
+  echo "::error::No advisory review provider configured. Configure OpenCode, Cursor, or Gemini credentials."
+  exit 1
+fi
+expected_provider="${provider_candidates[0]}"
+
+range_args=(
+  --repo "$REPO_ROOT"
+  --snapshot "$WORKDIR/existing-snapshot.md"
+  --base "$base_sha"
+  --head "$HEAD_SHA"
+  --expected-provider "$expected_provider"
+  --event-action "${GITHUB_EVENT_ACTION:-}"
+)
+if [[ "$FULL_MODE" == "true" ]]; then
+  range_args+=(--full)
+fi
+range_json=$(python3 "$SCRIPT_DIR/select-advisory-range.py" "${range_args[@]}")
+diff_base=$(jq -r .diff_base <<<"$range_json")
+review_basis=$(jq -r .review_basis <<<"$range_json")
+review_reason=$(jq -r .reason <<<"$range_json")
+
+git diff --name-only "${diff_base}...${HEAD_SHA}" >"$WORKDIR/changed-files.txt"
+
 full_diff_file="$WORKDIR/full.diff"
-git diff "${base_sha}...${HEAD_SHA}" >"$full_diff_file" 2>/dev/null || true
+git diff "${diff_base}...${HEAD_SHA}" >"$full_diff_file" 2>/dev/null || true
 full_diff_bytes="$(wc -c <"$full_diff_file" | tr -d ' ')"
 truncated=false
 if [[ "$full_diff_bytes" -gt "$diff_limit" ]]; then
@@ -93,17 +138,10 @@ cat >"$WORKDIR/diff-coverage.md" <<EOF
 - Diff bytes included: \`${diff_included}\`
 - Diff truncated: \`${truncated}\`
 - Advisory mode: \`${advisory_mode}\`
+- Review basis: \`${review_basis}\` (\`${review_reason}\`)
+- Diff base: \`${diff_base}\`
 - Review scope: if truncated, review only the included diff plus changed-file list; suggest \`ai-review:full\`.
 EOF
-
-existing_snapshot=""
-existing_snapshot=$(
-  gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
-    | jq -s 'if length == 0 then [] else add end' \
-    | jq -r --arg token "$MARKER_TOKEN" \
-      '[.[] | select((.body | type) == "string" and (.body | contains($token)))] | last | .body // empty' \
-      2>/dev/null || true
-)
 
 changed_file_count="$(wc -l <"$WORKDIR/changed-files.txt" | tr -d ' ')"
 if [[ "$full_diff_bytes" -eq 0 && "$changed_file_count" -gt 0 ]]; then
@@ -168,7 +206,7 @@ prompt_file="$WORKDIR/prompt.md"
   echo ""
   sed 's/^/- /' "$WORKDIR/changed-files.txt"
   echo ""
-  echo "### Diff (truncated excerpt for prompt)"
+  echo "### ${review_basis^} diff (truncated excerpt for prompt)"
   echo ""
   echo '```diff'
   printf '%s\n' "$diff_text"
@@ -181,33 +219,21 @@ prompt_file="$WORKDIR/prompt.md"
   fi
 } >"$prompt_file"
 
-# shellcheck disable=SC2034 # Provider routing reads this global after sourcing.
-antigravity_enabled=false
-if [[ "${ADVISORY_ANTIGRAVITY_ENABLED:-}" == "true" ]]; then
-  antigravity_enabled=true
-fi
-export antigravity_enabled
-
-# shellcheck disable=SC1091
-source "$LIB_DIR/pick-advisory-provider.sh"
-# shellcheck disable=SC1091
-source "$LIB_DIR/invoke-advisory-llm.sh"
-# shellcheck disable=SC2034 # Provider routing initializes and reads these globals.
-has_opencode=0 has_cursor=0 has_gemini=0
-init_advisory_provider_credentials
-mapfile -t provider_candidates < <(list_advisory_providers advisory)
-if [[ ${#provider_candidates[@]} -eq 0 ]]; then
-  echo "::error::No advisory review provider configured. Configure OpenCode, Cursor, or Gemini credentials."
-  exit 1
-fi
-
 out_file="$WORKDIR/advisory-body.md"
+raw_out_file="$WORKDIR/advisory-raw.md"
+provider_metadata_file="$WORKDIR/provider-metadata.json"
 provider_succeeded=false
 for provider in "${provider_candidates[@]}"; do
-  rm -f "$out_file"
+  rm -f "$raw_out_file" "$provider_metadata_file"
   if ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
-    invoke_advisory_llm "$prompt_file" "$out_file" "$provider" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"; then
+    ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+    invoke_advisory_llm "$prompt_file" "$raw_out_file" "$provider" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"; then
     PROVIDER="${ADVISORY_PROVIDER_USED:-$provider}"
+    if ! jq -e '.provider | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1 \
+      || ! jq -e '.model | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1; then
+      echo "::warning::Advisory provider ${provider} omitted provider/model metadata; trying next available provider" >&2
+      continue
+    fi
     provider_succeeded=true
     break
   fi
@@ -218,46 +244,34 @@ if [[ "$provider_succeeded" != true ]]; then
   exit 1
 fi
 
-if [[ "$PROVIDER" == "antigravity" ]]; then
-  diff_coverage_line="Diff coverage: \`${full_diff_bytes}/${full_diff_bytes}\` bytes via antigravity sources; prompt excerpt truncated: \`${truncated_word}\`"
-fi
+python3 "$SCRIPT_DIR/normalize-advisory-snapshot.py" \
+  --input "$raw_out_file" \
+  --output "$out_file" \
+  --provider-metadata "$provider_metadata_file" \
+  --head "$HEAD_SHA" \
+  --base "$base_sha" \
+  --review-basis "$review_basis" \
+  --diff-included "$diff_included" \
+  --diff-total "$full_diff_bytes" \
+  --truncated "$truncated_word" \
+  --changed-files "$changed_file_count"
 
-# Ensure marker present (model may omit).
-if ! grep -qF "$MARKER" "$out_file"; then
-  {
-    printf '%s\n\n' "$MARKER"
-    cat "$out_file"
-  } >"$out_file.tmp"
-  mv "$out_file.tmp" "$out_file"
-fi
-
-# Factual diff coverage line (workflow-known; inject if model omitted).
-diff_coverage_line="Diff coverage: \`${diff_included}/${full_diff_bytes}\` bytes, truncated: \`${truncated_word}\`"
-if ! grep -q 'Diff coverage:' "$out_file"; then
-  awk -v line="$diff_coverage_line" '
-    /^Mode: advisory, non-blocking/ { print; print line; next }
-    { print }
-  ' "$out_file" >"$out_file.tmp"
-  mv "$out_file.tmp" "$out_file"
-fi
-
-# Add head/provider hints when the model omits them.
-if ! grep -q '^Head:' "$out_file"; then
-  sed -i "0,/^## Advisory Review Snapshot/s//## Advisory Review Snapshot\n\nHead: \`${HEAD_SHA}\`\nProvider: \`${PROVIDER}\`/" "$out_file" 2>/dev/null || true
-fi
+provider_label=$(jq -r '"\(.provider) / \(.model)"' "$provider_metadata_file")
+memory_line=$(grep '^<!-- ai-advisory-memory:v1 ' "$out_file")
 
 comment_bytes="$(wc -c <"$out_file" | tr -d ' ')"
 if [[ "$comment_bytes" -gt "$comment_limit" ]]; then
   header_file="$WORKDIR/cap-header.md"
   cat >"$header_file" <<EOF
 $MARKER
+$memory_line
 
 ## Advisory Review Snapshot
 
 Head: \`${HEAD_SHA}\`
-Provider: \`${PROVIDER}\`
+Provider: \`${provider_label}\`
 Mode: advisory, non-blocking
-${diff_coverage_line}
+Diff coverage: \`${diff_included}/${full_diff_bytes}\` bytes, truncated: \`${truncated_word}\`, basis: \`${review_basis}\`
 
 ⚠️ Advisory output exceeded ${comment_limit} bytes and was truncated by automation.
 
@@ -267,7 +281,8 @@ EOF
   if [[ "$body_budget" -lt 0 ]]; then
     body_budget=0
   fi
-  grep -v 'ai-advisory-review:v1' "$out_file" >"$WORKDIR/body-stripped.md" || cp "$out_file" "$WORKDIR/body-stripped.md"
+  grep -v -e 'ai-advisory-review:v1' -e 'ai-advisory-memory:v1' \
+    "$out_file" >"$WORKDIR/body-stripped.md" || cp "$out_file" "$WORKDIR/body-stripped.md"
   {
     cat "$header_file"
     head -c "$body_budget" "$WORKDIR/body-stripped.md"

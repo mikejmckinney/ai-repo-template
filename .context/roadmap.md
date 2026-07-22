@@ -1,6 +1,7 @@
 # ai-repo-template Roadmap
 
-> **Purpose**: Record the template repo's shipped phases, the current hardening track, and the next process gaps to close.
+> **Purpose**: Record the template repo's shipped phases and the issue-backed
+> process gaps that remain after the initial hardening program.
 
 ## Roadmap Principles
 
@@ -10,11 +11,14 @@
 4. Pair every process claim with executable or sandbox verification.
 5. Keep phases reversible: small rules, small prompts, small workflow changes.
 
-## Current Phase
+## Program Status
 
-**Phase 7 - Template dogfooding, overlay extension, and process hardening**
+**Phases 1-7 complete.**
 
-The repo has already shipped the core multi-agent kit. Current work is about making the template prove its own rules in practice, tightening the review/merge loop, and reducing the remaining compatibility surfaces that can confuse downstream repos.
+The template now dogfoods its context, onboarding, monolithic implementation,
+parallel advisory review, recurring retro, and GitHub-backed live-state model.
+Further work is tracked by concrete GitHub issues rather than an open-ended
+phase label.
 
 ---
 
@@ -34,7 +38,8 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 - ADR-002
 
 ### Acceptance Criteria Met
-- `.context/**` is the canonical truth layer for repo rules and planning.
+- `.context/**` established canonical project direction and planning beneath
+  the always-loaded `AGENTS.md` operating contract.
 - The template has a durable ADR trail for process decisions.
 
 ---
@@ -46,8 +51,9 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 **Objective**: Make planning explicit before implementation begins.
 
 ### Shipped Highlights
-- Analyst became a required upstream validation role.
-- Pre-flight and plan-as-comment gates were added.
+- Analyst and pre-flight roles established the historical validation model,
+  later replaced by the risk-based problem-framing gate in ADR-031.
+- Issue-backed plans and explicit planning gates were added.
 - Workflow preconditions became explicit instead of tribal knowledge.
 
 ### Key Decisions
@@ -59,7 +65,8 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 
 ### Acceptance Criteria Met
 - Non-exempt implementation work starts from an issue-backed plan.
-- Problem framing and solution framing are separate stages.
+- Problem framing remains distinct from implementation when risk or ambiguity
+  warrants it; mandatory role handoffs are retired.
 
 ---
 
@@ -96,7 +103,8 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 
 ### Shipped Highlights
 - Parallel-dispatch patterns and overlap reporting landed.
-- Auto-rebase on merge handles soft overlaps.
+- Auto-rebase was trialed and later retired; branch owners now update their own
+  branches.
 - Owner-keyed live-state thinking evolved from repo-local files to GitHub-first coordination.
 
 ### Key Decisions
@@ -106,7 +114,7 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 - ADR-025
 
 ### Acceptance Criteria Met
-- Roles have explicit ownership boundaries.
+- Historical role ownership informed the current single-implementer model.
 - Normal live coordination happens in GitHub issues, PRs, comments, and labels.
 
 ---
@@ -118,10 +126,13 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 **Objective**: Make the role layer easier to maintain across tools and easier to audit.
 
 ### Shipped Highlights
-- Per-role model tiering landed across supported platforms.
-- `AGENTS.md` was decomposed into focused process rules.
+- Per-role model tiering and role registries landed, then were retired by
+  ADR-031 after the ROI benchmark favored one implementing agent.
+- `AGENTS.md` was decomposed into focused process rules, then reassembled as
+  the always-loaded contract when ADR-031 retired mandatory role surfaces.
 - Top-level markdown scope split and canonical role bodies plus thin overlays shipped.
-- ADR-026 added formal compliance evidence contracts.
+- ADR-026 added formal compliance evidence contracts, later retired in favor of
+  simpler native evidence.
 
 ### Key Decisions
 - ADR-019
@@ -131,8 +142,8 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 - ADR-026
 
 ### Acceptance Criteria Met
-- Canonical role bodies live in one place.
-- Parent/subagent compliance evidence has a stable schema.
+- The historical role and compliance experiments have durable decision records.
+- Active guidance no longer depends on retired registries or compliance schemas.
 
 ---
 
@@ -144,8 +155,9 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 
 ### Shipped Highlights
 - Postmortem capture/mirror workflow landed.
-- The orchestration patterns reference became part of Critic/Judge review vocabulary.
-- Multi-model consensus planning shipped as an opt-in path.
+- The orchestration patterns reference became shared review vocabulary that
+  remains available without retired Critic/Judge roles.
+- Multi-model consensus evolved into the current explicit OpenCode skill.
 - Opportunity feedback and sandbox dogfood evidence were added.
 
 ### Key Decisions
@@ -163,20 +175,21 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 
 ## Phase 7: Template Dogfooding and Process Hardening
 
-**Status**: In Progress
+**Status**: Complete
 
 **Objective**: Close the gap between what the template prescribes and what the template itself demonstrates.
 
-### Active Track
-- Dogfood `.context/**` in the template repo itself so agents stop reading placeholder context in normal template work.
-- Complete the monolithic lifecycle cleanup under issue #474.
-- Continue draining repo-local compatibility references that can make ADR-025 look optional.
-
-### Current Deliverables
-- Populate `.context/00_INDEX.md`, `.context/roadmap.md`, and `.context/vision/README.md` with real template content.
-- Keep architecture guidance aligned with ADR-031 and GitHub-backed live state.
-- Keep `template-seed` onboarding explicit through the OpenCode `repo-onboarding` skill.
-- Preserve useful dogfood resources while lifecycle state makes first onboarding deterministic.
+### Shipped Highlights
+- Populated `.context/00_INDEX.md`, this roadmap, and
+  `.context/vision/README.md` with template-specific evidence.
+- Replaced repo-local live task state with GitHub issue/PR coordination and a
+  reference-only `.context/state/` surface.
+- Retired role-pipeline compatibility under issue #474 and ADR-031.
+- Added explicit `template-seed` lifecycle state and evidence-based onboarding
+  without forced marker replacement.
+- Made rolling advisory review normal, non-blocking agent practice.
+- Removed unused operational scaffolding and made product design context
+  conditional on verified UI work.
 
 ### Exit Criteria
 - The template repo demonstrates its own lazy-load context pattern.
@@ -185,14 +198,17 @@ The repo has already shipped the core multi-agent kit. Current work is about mak
 
 ---
 
-## Watchlist After Phase 7
+## Issue-Backed Future Work
 
-- Issue #279 - extract more machine-readable manifests and move logic out of workflow YAML where appropriate.
-- Issue #322 - add a clearer new-project playbook and parent/phase issue templates.
-- Continue pruning documentation or reference surfaces that still imply repo-local live state.
+- Issue #163 - automate derived-repository credential and variable bootstrap.
+- Issue #299 - define session archive retention and downstream reset policy.
+- Issue #316 - document sandbox-local verification for default-branch workflow changes.
+- Issue #322 - add an optional cross-repository project bootstrap skill.
 
 ## How to Update This Roadmap
 
-1. Advance a phase only when the linked ADRs or issue slices are actually merged.
+1. Add another phase only when multiple accepted issues share one measurable
+   outcome; otherwise keep work issue-backed.
 2. Keep active work tied to concrete issue numbers rather than generic intentions.
-3. When a phase changes coordination rules, update the relevant `.context/vision/architecture/*.md` diagram in the same PR.
+3. When work changes coordination rules, update the relevant
+   `.context/vision/architecture/*.md` diagram in the same PR.

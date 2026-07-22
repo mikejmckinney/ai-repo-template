@@ -1,16 +1,36 @@
-# Session: 2026-06-14 — main — OP
+# Session: 2026-07-22 - main - OAuth routing and cache safety
 
-**Status**: #430 merged (#431); #428 next
-**Issue/PR**: [#430](https://github.com/mikejmckinney/ai-repo-template/issues/430) closed / [#431](https://github.com/mikejmckinney/ai-repo-template/pull/431) merged
+**Status**: done
+**Issue/PR**: [#503](https://github.com/mikejmckinney/ai-repo-template/issues/503) / [#504](https://github.com/mikejmckinney/ai-repo-template/pull/504)
+**Started**: 2026-07-21T19:29:17Z
 
-## Latest
+## What Was Accomplished
 
-- Merged session receipt contract (#431 → `712626d`): **Load** vs **In context**, `Receipt boundary`, stale replay rules; `AGENTS.md` v26
-- Preserved WIP governance edits: `most relevant` profiles, mandatory-at-selection catalog, clarification wording, intentional `read:` opener
-- CI green on PR branch; user dogfood in separate session — positive
-- Sandbox N/A (policy/docs; no workflow changes)
+- Codespaces cleanup must remain dry-run by default, preserve agent state, and
+  skip active uv runtimes.
+- Hosted Sol access uses an access-only OAuth bundle. The real refresh token is
+  never uploaded; stale or invalid content degrades to Kimi and then the normal
+  provider cascade.
 
-## Next
+## What Shipped
 
-1. Implement [#428](https://github.com/mikejmckinney/ai-repo-template/issues/428) (finalize + shared collector hardening)
-2. Optional: record `handshake-and-shape-smoke.md` Scenario E output as durable manual evidence
+- Every fix provider runs in a disposable worktree, and only a credential-free
+  verified patch can be promoted.
+
+## Harder Than Expected
+
+- Workflow credentials need transitive runtime audit coverage; the same change
+  patched `fast-uri` before merge.
+
+## Generalizable Lessons
+
+- Credential-bearing workflow changes require dependency-audit evidence in
+  addition to behavior tests.
+
+## Files Modified
+
+- Cache cleanup, OAuth synchronization, provider routing, and runtime lock files.
+
+## Open Items / Next
+
+- None. Merge: [`04df21b`](https://github.com/mikejmckinney/ai-repo-template/commit/04df21b5d6be69be26fec5b19560b43bdba653af).

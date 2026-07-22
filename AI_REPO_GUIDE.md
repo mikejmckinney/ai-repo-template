@@ -22,6 +22,7 @@ bats --jobs 4 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
 scripts/cleanup-codespace-caches.sh
 scripts/sync-opencode-oauth-secret.sh
+.agents/skills/repo-onboarding/scripts/create-design-contract.sh --repo "$PWD"
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
 python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock skills-lock.json
@@ -53,6 +54,11 @@ action. Its descriptive modes are `ai-repo-template`, `template-seed`, and
 `complete`; the versioned state is `.context/onboarding-state.json`. Resumed or
 post-compaction work uses `session-recovery` first instead of repeating
 onboarding.
+Root `DESIGN.md` is conditional. Generate it from the canonical onboarding asset
+only when verified project files or the assigned user outcome establish UI work;
+then replace bracketed prompts from product evidence before frontend
+implementation. Backend-only, infrastructure-only, and documentation
+repositories do not need the file.
 For implementation work, fill the issue plan, create and push an empty bootstrap
 commit, and open a draft PR before meaningful edits. Commit and push each
 changed turn before updating `agent-state:v1`; stage only task-owned paths.
@@ -84,7 +90,7 @@ returns failure to the existing provider cascade instead of consuming the
 | `docs/guides/problem-framing.md` | Conditional problem, audience, alternatives, and impact analysis |
 | `docs/guides/agent-pipeline.md` | Active workflow and trigger behavior |
 | `.github/prompts/shared-review-lenses.md` | Canonical criteria for advisory and retro review |
-| `.github/prompts/pr-advisory-review.md` | Optional in-progress PR advisory output contract |
+| `.github/prompts/pr-advisory-review.md` | Normally applied, label-gated PR advisory output contract |
 | `.github/prompts/post-merge-retro.md` | Daily merged-PR review contract |
 | `.github/prompts/weekly-repo-review.md` | Weekly full-repository review contract |
 | `.github/workflows/agent-advisory-review.yml` | Label-gated, non-blocking sticky advisory comment |
@@ -92,6 +98,7 @@ returns failure to the existing provider cascade instead of consuming the
 | `.github/workflows/agent-weekly-review.yml` | Scheduled weekly scan and draft-fix lifecycle |
 | `.github/agent-runtime/` | Locked OpenCode dependencies and review/fix permission profiles |
 | `.agents/skills/` | Canonical skills, including multi-model consensus and nested provider skill sets |
+| `.agents/skills/repo-onboarding/assets/DESIGN.md` | Canonical on-demand design-contract source for verified UI projects |
 | `skills-lock.json` | Immutable provenance, destinations, and hashes for external and repository-owned skills |
 | `docs/guides/skill-supply-chain.md` | Skill lock, refresh, review, recovery, source onboarding, and license inventory |
 | `docs/guides/cloud-provider-tooling.md` | AWS, Azure, GCP, OCI, Render, and Colyseus setup and smoke tests |
@@ -129,6 +136,11 @@ validation can discover nested skills without overlapping refresh records.
 Agents apply `ai-review:live` to every eligible same-repository task PR they
 create or claim. Draft PRs are supported. Each qualifying push cancels an older
 in-flight run and updates one comment marked `<!-- ai-advisory-review:v1 -->`.
+The snapshot header reports the automation-observed provider/model and writes an
+explicit no-findings statement when applicable. A hidden provider-neutral memory
+record retains the last reviewed head; compatible pushes review the accumulated
+delta, while readiness, full mode, base/provider changes, or invalid memory force
+a full PR refresh.
 Implementation continues without waiting. Before completion, agents independently
 triage any arrived snapshot whose `Head` matches the current PR head; stale,
 missing, running, or failed feedback is non-blocking. Advisory cannot submit a

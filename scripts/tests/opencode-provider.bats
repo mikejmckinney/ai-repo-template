@@ -177,6 +177,7 @@ EOF
     MOCK_FAIL_MODEL="openai/gpt-5.6-sol" \
     ATTEMPT_LOG="$tmp/attempts.log" \
     OPENCODE_RETRIEVAL_TRACE_FILE="$tmp/retrieval-trace.json" \
+    ADVISORY_PROVIDER_METADATA_FILE="$tmp/provider-metadata.json" \
     OPENCODE_AUTH_CONTENT='{"openai":{"access":"oauth-access-secret"}}' \
     OPENAI_API_KEY="secret-test-value" \
     node "$REPO_ROOT/scripts/workflows/lib/run-opencode.mjs" \
@@ -192,6 +193,8 @@ EOF
   [[ "$output" != *'secret-test-value'* ]]
   [[ "$output" != *'oauth-access-secret'* ]]
   [ "$(jq -r '.paths | join("|")' "$tmp/retrieval-trace.json")" = "$tmp/diff.patch|README.md" ]
+  [ "$(jq -r '.provider + "/" + .model' "$tmp/provider-metadata.json")" = \
+    "opencode/openrouter/z-ai/glm-5.2@preset/default" ]
   rm -rf "$tmp"
 }
 

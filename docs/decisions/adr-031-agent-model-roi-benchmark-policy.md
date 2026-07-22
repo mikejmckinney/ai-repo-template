@@ -162,6 +162,14 @@ repositories without the workflow, label, provider credentials, or label-write
 permission are exempt. CI, lint, sandbox verification, user-outcome validation,
 and maintainer controls remain authoritative.
 
+The sticky snapshot carries automation-owned provider/model identity and a
+bounded hidden provider-neutral memory record. Compatible pushes review the
+accumulated delta from the last completed head; readiness, full mode, base or
+expected-provider changes, invalid memory, and rewritten ancestry force a full
+refresh. This avoids persisting provider-native sessions or runner databases,
+keeps fallback portable, and lets canceled runs recover from the last completed
+snapshot. No-findings output is explicit rather than an empty table.
+
 #### Amendment 2026-07-17 — Multi-model skill identity and Fusion panel
 
 The public skill identity moves from `local-consensus` to

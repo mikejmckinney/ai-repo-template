@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 37 -->
+<!-- AGENTS_MD_VERSION: 38 -->
 
 ## Truth hierarchy
 
@@ -99,7 +99,10 @@ Every `catch` / `rescue` / `recover` block must either rethrow with context, log
 
 #### S1 — Function Length
 
-Target: a function fits on one screen without scrolling. The exact line count is stack-specific — set a threshold in the "How to extend" block below. Rationale matters more than the count: if a longer function is genuinely more readable than its split form, keep it and say why in a comment.
+Target: a function fits on one screen without scrolling. Add a numeric threshold
+only when the project has an actual stack-specific lint or review contract.
+Rationale matters more than the count: if a longer function is genuinely more
+readable than its split form, keep it and say why in a comment.
 
 #### S2 — Complexity and Nesting
 
@@ -120,15 +123,6 @@ Two similar blocks are cheaper than a premature abstraction. Three is a signal t
 #### S6 — Test Pyramid
 
 Many unit tests, fewer integration tests, minimal E2E tests. Concrete CI commands and coverage expectations live in `AGENTS.md` → "Testing requirements" and the project's own `README.md`.
-
-### Stack-Specific Overrides
-
-- S1 function length:     &lt;N&gt; lines (target), &lt;N&gt; lines (hard max)
-- S2 cyclomatic complexity: &lt;N&gt; (target), &lt;N&gt; (hard max)
-- S2 nesting depth:       &lt;N&gt; (target), &lt;N&gt; (hard max)
-- Lint / format tool:     <tool + config path>
-- Test framework:         <framework + command>
-- Coverage target:        &lt;percent&gt; (changed files only)
 
 ## Clarification and ambiguity
 
