@@ -292,6 +292,6 @@ host plugins do not replace the repository's immutable cross-agent lock.
 
 ## Known Warnings
 
-`./test.sh` may report advisory warnings for stale session summaries or downstream
-environment differences. A non-zero failure count is blocking; warnings must
-still be reviewed for relevance to the active task.
+`./test.sh` may report advisory warnings for downstream environment differences.
+A non-zero failure count is blocking; warnings must still be reviewed for
+relevance to the active task.

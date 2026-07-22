@@ -10,7 +10,6 @@ CONTEXT_FILES=(
   ".context/00_INDEX.md"
   ".context/roadmap.md"
   ".context/sessions/README.md"
-  ".context/sessions/latest_summary.md"
   ".context/sessions/feedback_template.md"
   ".context/state/README.md"
   ".context/state/agent_state_comment_template.md"

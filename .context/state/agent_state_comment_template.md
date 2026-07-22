@@ -53,7 +53,8 @@ verify Summary block on sandbox #102
 - **`outcomes`** = results the transcript redacts (highest recovery value). No enforcement: an agent
   narrating its turn states this naturally; a hard non-empty rule would induce fabrication on
   mid-flight turns (a fabricated outcome is worse than an absent one).
-- **`lessons learned`** = concise recovery-relevant surprises; durable retrospective detail belongs in session archives.
+- **`lessons learned`** = concise recovery-relevant surprises; promote durable
+  decisions or incidents to an ADR or postmortem.
 - **`References`** = bounded pointers to the issue, PR, files, commits, or runs needed to continue.
   Use full GitHub URLs so references remain clickable across repositories; do not use bare IDs.
 - Link every addressable GitHub resource on first mention in every section, not

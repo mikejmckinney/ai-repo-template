@@ -233,7 +233,27 @@ assert "Complete issue #474" not in index
 assert "**Current Phase**" not in index
 PY
   [ "$status" -eq 0 ]
-  ! grep -q '#428 next' "$REPO_ROOT/.context/sessions/latest_summary.md"
   ! grep -q 'Optional in-progress PR advisory' "$REPO_ROOT/AI_REPO_GUIDE.md"
   ! grep -q 'Optional PR advisory' "$REPO_ROOT/.github/prompts/README.md"
+}
+
+@test "GitHub state replaces the latest session summary surface" {
+  [ ! -e "$REPO_ROOT/.context/sessions/latest_summary.md" ]
+  [ ! -e "$REPO_ROOT/scripts/checks/025-sessions-hygiene.sh" ]
+
+  for path in \
+    install.sh \
+    scripts/checks/015-context-pack.sh \
+    .context/00_INDEX.md \
+    .context/sessions/README.md \
+    .context/state/README.md \
+    .context/state/agent_state_comment_template.md \
+    .context/vision/README.md \
+    .context/vision/architecture/state-surfaces.md \
+    .agents/skills/repo-onboarding/references/repository-orientation.md \
+    docs/guides/context-files-explained.md \
+    docs/postmortems/README.md \
+    AI_REPO_GUIDE.md; do
+    ! grep -q 'latest_summary\.md' "$REPO_ROOT/$path"
+  done
 }

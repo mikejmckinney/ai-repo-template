@@ -75,7 +75,7 @@ auto-merge / review / coordination workflows under
 The roadmap ([`/.context/roadmap.md`](../../.context/roadmap.md)) defines
 seven sequential phases mapped to numbered prompts (`01-init-project.md`
 through `10-ci-and-compliance-checks.md`). Phase 1 was completed and
-**recorded** in [`.context/sessions/latest_summary.md`](../../.context/sessions/latest_summary.md).
+**recorded** in the then-current `.context/sessions/latest_summary.md` file.
 Phases 2–7 were completed but **never** recorded — and never even
 committed.
 
@@ -328,7 +328,7 @@ the branch-precondition rule (see Action items).
 - [`AGENTS.md`](../../AGENTS.md) §"Work style" — where the new rule should land
 - [`AGENTS.md`](../../AGENTS.md) §"Session-state cadence" — the rule that was also missed
 - [`/.context/roadmap.md`](../../.context/roadmap.md) — phase acceptance criteria
-- [`/.context/sessions/latest_summary.md`](../../.context/sessions/latest_summary.md) — updated with Phases 2–7 close-out and bypass note
+- `/.context/sessions/latest_summary.md` — updated with Phases 2–7 close-out and bypass note (historical file, since retired)
 - Template repo: `mikejmckinney/ai-repo-template` (where the corrective ADR + rule should land)
 
 ## Follow-up — template-mirror notes (added 2026-04-25)

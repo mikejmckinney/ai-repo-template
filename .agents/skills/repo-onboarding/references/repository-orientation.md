@@ -10,7 +10,6 @@
    labels when a durable task exists.
 3. Inspect `git status` and recent commits.
 4. Run `scripts/verify-env.sh` when available.
-5. Read `.context/sessions/latest_summary.md` only as historical guidance.
 
 ## Targeted Exploration
 

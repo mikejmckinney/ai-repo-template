@@ -244,7 +244,6 @@ MULTIAGENT_FILES=(
   ".context/roadmap.md"
   ".context/sessions/README.md"
   ".context/sessions/feedback_template.md"
-  ".context/sessions/latest_summary.md"
   ".context/state/README.md"
   ".context/state/agent_state_comment_template.md"
   ".context/vision/README.md"

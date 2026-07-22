@@ -33,7 +33,7 @@ _legacy_body() {
   # and mixed paths so no filename can restore marker-based onboarding behavior.
   #
   #   FIXTURE-01  empty        — no marker text
-  #   FIXTURE-02  bootstrap    — marker in the historical session-summary path
+  #   FIXTURE-02  bootstrap    — marker in a historical archive path
   #   FIXTURE-03  overlap      — marker in similarly named paths
   #   FIXTURE-04  mixed        — marker in session and ordinary files
   #
@@ -124,7 +124,7 @@ _legacy_body() {
   echo "FIXTURE-02: only bootstrap files contain marker"
   D=$(make_fixture "bootstrap")
   mkdir -p "$D/.context/sessions"
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md"
   out=$(run_in_fixture "$D")
   assert_not_contains "bootstrap: no marker scan output" \
     "TEMPLATE_PLACEHOLDER" "$out"
@@ -138,13 +138,9 @@ _legacy_body() {
   echo "FIXTURE-03: substring-overlap filename tests \$-anchor"
   D=$(make_fixture "overlap")
   mkdir -p "$D/.context/sessions"
-  # latest_summary.md matches _PLACEHOLDER_EXCLUDE → excluded bootstrap file
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
-  # latest_summary.md.bak does NOT match the anchored pattern → unexpected
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md.bak"
-  # latest_summaryXmd would match if the '.' characters in the exclude regex
-  # were left unescaped, so it must remain unexpected.
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summaryXmd"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md.bak"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixtureXmd"
   out=$(run_in_fixture "$D")
   assert_not_contains "overlap: no marker pass output" \
     "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
@@ -158,10 +154,8 @@ _legacy_body() {
   echo "FIXTURE-03b: literal-dot near-match stays unexpected"
   D=$(make_fixture "overlap-dot")
   mkdir -p "$D/.context/sessions"
-  # latest_summary.md matches _PLACEHOLDER_EXCLUDE → excluded bootstrap file
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
-  # latest_summaryXmd would be wrongly excluded if '.' stayed unescaped.
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summaryXmd"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixtureXmd"
   out=$(run_in_fixture "$D")
   assert_not_contains "overlap-dot: no marker pass output" \
     "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
@@ -176,7 +170,7 @@ _legacy_body() {
   D=$(make_fixture "mixed")
   mkdir -p "$D/.context/sessions"
   # Bootstrap (excluded → does NOT count as unexpected)
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md"
   # Unexpected (not matched by either exclusion list)
   printf '%s\n' "# $marker" >"$D/some-real-file.md"
   out=$(run_in_fixture "$D")

@@ -23,9 +23,9 @@ current issue/PR > `AGENTS.md` > `.context/**` > `docs/**` > codebase.
 |-- 00_INDEX.md          # This file - start here (The Map)
 |-- onboarding-state.json # Versioned template-seed/complete lifecycle state
 |-- roadmap.md           # Completed template phases and issue-backed future work
-|-- sessions/            # Durable retrospectives and feedback records
+|-- sessions/            # Historical retrospectives and feedback records
 |   |-- feedback_template.md # Stakeholder feedback capture template
-|   `-- latest_summary.md   # Durable retrospective lessons
+|   `-- YYYY-MM-DD_*.md    # Historical retrospective archives
 |-- state/               # GitHub-first live-state guidance and comment template
 |   |-- README.md        # ADR-025 state-surface guide
 |   `-- agent_state_comment_template.md # GitHub live-state comment template
@@ -42,7 +42,8 @@ current issue/PR > `AGENTS.md` > `.context/**` > `docs/**` > codebase.
 2. Read the assigned GitHub issue body and linked PR when a durable task exists.
 3. Use one monolithic implementing agent; use local consensus only when justified.
 4. Treat `state/` as the GitHub-first live-state reference surface.
-5. Read `sessions/latest_summary.md`, `roadmap.md`, or vision files only when their domain intersects the task.
+5. Read `roadmap.md`, vision files, or dated session archives only when their
+   domain intersects the task or a specific historical investigation.
 6. For benchmark work, use `docs/guides/model-roi-benchmark-runbook.md` and
    published evidence under `docs/benchmarks/`.
 
