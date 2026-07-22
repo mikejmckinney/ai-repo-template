@@ -69,15 +69,15 @@ write_state() {
   done
 }
 
-@test "classifier retains canonical basename fallback when origin is unavailable" {
+@test "classifier honors lifecycle state when origin is unavailable" {
   repo=$(make_repo ai-repo-template)
   write_state "$repo" template-seed
 
   run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
 
   [ "$status" -eq 0 ]
-  [ "$(jq -r '.mode' <<<"$output")" = ai-repo-template ]
-  [ "$(jq -r '.requires_onboarding' <<<"$output")" = false ]
+  [ "$(jq -r '.mode' <<<"$output")" = template-seed ]
+  [ "$(jq -r '.requires_onboarding' <<<"$output")" = true ]
 }
 
 @test "classifier chooses template-seed for a derived repository with seed state" {

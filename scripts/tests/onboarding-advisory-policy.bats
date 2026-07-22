@@ -46,6 +46,15 @@ setup() {
   rm -rf "$fixture"
 }
 
+@test "required-file checks accept the documented legacy missing-state path" {
+  check="$REPO_ROOT/scripts/checks/010-required-files.sh"
+
+  run grep -qF '  ".context/onboarding-state.json"' "$check"
+  [ "$status" -ne 0 ]
+  grep -qF 'legacy derived repository has no onboarding state' "$check"
+  grep -qF 'warn ' "$check"
+}
+
 @test "active onboarding surfaces do not use placeholder replacement semantics" {
   for path in \
     .agents/skills/repo-onboarding/scripts/classify-mode.sh \
