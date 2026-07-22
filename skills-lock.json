@@ -45,7 +45,7 @@
       "computedHash": "884614fb3db58d6bab13e5d2dc6cf6484a3cb5ea03661e4d0fdd5dd4d9100277",
       "destinationPath": ".agents/skills/aws/core-skills/amazon-bedrock",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/amazon-bedrock",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -81,7 +81,7 @@
       "computedHash": "a991edc9e453d9e4109bf50b0f4c7889fe50220bd9e2fddac85fa644b468e50f",
       "destinationPath": ".agents/skills/aws/core-skills/aws-billing-and-cost-management",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-billing-and-cost-management",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -90,7 +90,7 @@
       "computedHash": "8d79a293b95d3908bb4699e4cd59fbb8a3e2712c5a18bfe161d7f6b0ae2f7d06",
       "destinationPath": ".agents/skills/aws/core-skills/aws-blocks",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-blocks",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -99,7 +99,7 @@
       "computedHash": "82d390ec021844b50fdbdd0180ebeae600b70b3bc9001e73c0f2ee5552620927",
       "destinationPath": ".agents/skills/aws/core-skills/aws-cdk",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-cdk",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -108,7 +108,7 @@
       "computedHash": "bac6b840fa8f5aaeef4c6fdbb68a82c8b9ef6a3ad60c929e813dbb53dc78350c",
       "destinationPath": ".agents/skills/aws/core-skills/aws-cloudformation",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-cloudformation",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -117,7 +117,7 @@
       "computedHash": "009e8aeb9179e7bea6dac28ee39f3d0a1166d92471bda884452e3849fb63ea32",
       "destinationPath": ".agents/skills/aws/core-skills/aws-compute",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-compute",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -126,7 +126,7 @@
       "computedHash": "1dced0f4894ad33e65406fe49e4bf36a3d8fe4597857a29925b5a0643ffa1445",
       "destinationPath": ".agents/skills/aws/core-skills/aws-containers",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-containers",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -135,7 +135,7 @@
       "computedHash": "40ef49def8f33bf4d7073562ecc7ee2310d6a8f9b5935402d497995ef8eec006",
       "destinationPath": ".agents/skills/aws/core-skills/aws-database",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-database",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -144,7 +144,7 @@
       "computedHash": "d89ecefea020f0c56eed524c7d73b83eb7f14f40796125b382e313b20a018a2d",
       "destinationPath": ".agents/skills/aws/core-skills/aws-deployment",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-deployment",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -153,7 +153,7 @@
       "computedHash": "861c14eda86769f9ba7597485e3b79eec1949e015ee71e612430579e1ae21049",
       "destinationPath": ".agents/skills/aws/core-skills/aws-iam",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-iam",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -162,7 +162,7 @@
       "computedHash": "811ba44117566f252ba65140da7e627c0f7206d34658c339ddfc768f35031478",
       "destinationPath": ".agents/skills/aws/core-skills/aws-messaging-and-streaming",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-messaging-and-streaming",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -171,16 +171,16 @@
       "computedHash": "f1c88c6ebda06fbfab303dffd2da1b10b8945b066a0075c1d398f29a611434a7",
       "destinationPath": ".agents/skills/aws/core-skills/aws-networking",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-networking",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
     },
     "aws-observability": {
-      "computedHash": "7cfc2c96d447697a10c68613da22844128300881bf9ab40b97a1573c273833ad",
+      "computedHash": "a369beb3da40dcde135ec48625b01db182fb422b3f88522d02fc477f4ad122e2",
       "destinationPath": ".agents/skills/aws/core-skills/aws-observability",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-observability",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -189,7 +189,7 @@
       "computedHash": "2e6b8aeb83857cabdea0c3c5982314ffe9794966f6973e0b9d440a28e73c5406",
       "destinationPath": ".agents/skills/aws/core-skills/aws-sdk-js-v3-usage",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-sdk-js-v3-usage",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -198,7 +198,7 @@
       "computedHash": "f44d7f6c83fbe1a880e16e46d8b88654df0face132e51a0449eeb9046acf3d03",
       "destinationPath": ".agents/skills/aws/core-skills/aws-sdk-python-usage",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-sdk-python-usage",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -207,16 +207,16 @@
       "computedHash": "4f2868f2528816760946d1bc747c198633c0e7677adf947c9d8c3f83348ac0e5",
       "destinationPath": ".agents/skills/aws/core-skills/aws-sdk-swift-usage",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-sdk-swift-usage",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
     },
     "aws-serverless": {
-      "computedHash": "8343ba0591b3d997876684e9378951af2b51512ec35ba6393e3bed3089dcf04d",
+      "computedHash": "929ef6edf8d99f7f67ce94be59ff2734b38f7b5e35b2261cb0b8e69a91ba0c7f",
       "destinationPath": ".agents/skills/aws/core-skills/aws-serverless",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/aws-serverless",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -585,7 +585,7 @@
       "computedHash": "76a016a21eeb3e3b9890c72e2a016c54c6ea8575a085b6040835f559b0fde8aa",
       "destinationPath": ".agents/skills/aws/core-skills/launch-with-aws",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
       "skillPath": "skills/core-skills/launch-with-aws",
       "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
@@ -950,6 +950,15 @@
       "source": "shadcn-ui/ui",
       "sourceType": "github"
     },
+    "signing-in-to-aws": {
+      "computedHash": "da76ff453625155a2ec642b008721e61bcc35ede402651a4179c107d59d07494",
+      "destinationPath": ".agents/skills/aws/core-skills/signing-in-to-aws",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "fae975d565b6c1752e3f4795c499fb3951039777",
+      "skillPath": "skills/core-skills/signing-in-to-aws",
+      "source": "aws/agent-toolkit-for-aws",
+      "sourceType": "github"
+    },
     "skill-creator": {
       "computedHash": "70098a2ed017fc9fe5a737e6b2baab95a6684115688f233897f2541bd9ead042",
       "destinationPath": ".agents/skills/anthropic/skill-creator",
@@ -957,15 +966,6 @@
       "ref": "fa0fa64bdc967915dc8399e803be67759e1e62b8",
       "skillPath": "skills/skill-creator",
       "source": "anthropics/skills",
-      "sourceType": "github"
-    },
-    "signing-in-to-aws": {
-      "computedHash": "da76ff453625155a2ec642b008721e61bcc35ede402651a4179c107d59d07494",
-      "destinationPath": ".agents/skills/aws/core-skills/signing-in-to-aws",
-      "hashAlgorithm": "sha256-tree-v1",
-      "ref": "36f16570de2015c0f0ce94ba9e391bd703c9ffb7",
-      "skillPath": "skills/core-skills/signing-in-to-aws",
-      "source": "aws/agent-toolkit-for-aws",
       "sourceType": "github"
     },
     "sprites-and-images": {
