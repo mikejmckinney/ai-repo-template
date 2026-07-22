@@ -44,6 +44,16 @@ def normalize_findings(body: str) -> tuple[str, int]:
         if not re.match(r"^\|\s*(?:ID|[-:]+)\s*\|", line.strip(), re.IGNORECASE)
     ]
     if finding_rows:
+        parsed_rows = [
+            [cell.strip() for cell in row.strip().strip("|").split("|")]
+            for row in finding_rows
+        ]
+        legacy_placeholder = ["ADV-01", "…", "…", "…", "…", "…", "yes/no"]
+        if parsed_rows == [legacy_placeholder]:
+            finding_rows = []
+        elif legacy_placeholder in parsed_rows:
+            raise ValueError("malformed findings section: placeholder row is mixed with findings")
+    if finding_rows:
         for row in finding_rows:
             cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
             if len(cells) != 7 or not re.fullmatch(r"ADV-\d{2}", cells[0]) or "…" in row:
@@ -75,6 +85,8 @@ def main() -> int:
         raise SystemExit("provider metadata requires non-empty provider and model")
 
     body = Path(args.input).read_text(encoding="utf-8")
+    if MARKER in body:
+        body = f"{MARKER}{body.split(MARKER, 1)[1]}"
     body = MEMORY_PATTERN.sub("", body).strip()
     if MARKER not in body:
         body = f"{MARKER}\n\n{body}"

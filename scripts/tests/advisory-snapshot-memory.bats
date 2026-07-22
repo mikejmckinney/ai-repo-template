@@ -11,6 +11,8 @@ teardown() {
 
 @test "advisory normalization owns provider model and no-findings output" {
   cat >"$TMP_DIR/input.md" <<'EOF'
+Model-authored analysis that must not appear in the sticky snapshot.
+
 <!-- ai-advisory-review:v1 -->
 
 ## Advisory Review Snapshot
@@ -48,6 +50,8 @@ EOF
   ! grep -q '^|---|---|---|---|---|---|---|$' "$TMP_DIR/output.md"
   grep -q 'ai-advisory-memory:v1' "$TMP_DIR/output.md"
   grep -q '"reviewed_head":"1111111111111111111111111111111111111111"' "$TMP_DIR/output.md"
+  [ "$(sed -n '1p' "$TMP_DIR/output.md")" = '<!-- ai-advisory-review:v1 -->' ]
+  ! grep -q 'Model-authored analysis' "$TMP_DIR/output.md"
 }
 
 @test "advisory normalization preserves actual findings" {
@@ -109,6 +113,37 @@ EOF
   [ "$status" -ne 0 ]
   [[ "$output" == *"malformed findings section"* ]]
   [ ! -e "$TMP_DIR/output.md" ]
+}
+
+@test "advisory normalization converts the legacy sample row to no findings" {
+  cat >"$TMP_DIR/input.md" <<'EOF'
+## Advisory Review Snapshot
+
+### Findings to consider
+
+| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
+|---|---|---|---|---|---|---|
+| ADV-01 | … | … | … | … | … | yes/no |
+
+### Not blocking
+EOF
+  printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
+
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+    --input "$TMP_DIR/input.md" \
+    --output "$TMP_DIR/output.md" \
+    --provider-metadata "$TMP_DIR/provider.json" \
+    --head "4444444444444444444444444444444444444444" \
+    --base "0000000000000000000000000000000000000000" \
+    --review-basis full \
+    --diff-included 10 \
+    --diff-total 10 \
+    --truncated no \
+    --changed-files 1
+
+  [ "$status" -eq 0 ]
+  grep -q '^No findings identified at this head\.$' "$TMP_DIR/output.md"
+  ! grep -q 'yes/no' "$TMP_DIR/output.md"
 }
 
 @test "advisory memory selects an incremental range only for compatible state" {

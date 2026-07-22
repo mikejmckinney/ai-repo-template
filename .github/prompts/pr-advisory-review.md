@@ -42,7 +42,6 @@ Diff coverage: `<included>/<total>` bytes, truncated: `<yes|no>`
 
 | ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
 |---|---|---|---|---|---|---|
-| ADV-01 | … | … | … | … | … | yes/no |
 
 When there are no findings, omit the table and write exactly:
 
