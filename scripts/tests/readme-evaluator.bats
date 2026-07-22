@@ -31,8 +31,9 @@ setup() {
   done
 
   for asset in repository-lifecycle.svg feature-tour.svg; do
-    grep -q '<title>' "$REPO_ROOT/docs/media/readme/$asset"
-    grep -q '<desc>' "$REPO_ROOT/docs/media/readme/$asset"
+    grep -q 'aria-labelledby="title desc"' "$REPO_ROOT/docs/media/readme/$asset"
+    grep -q '<title id="title">' "$REPO_ROOT/docs/media/readme/$asset"
+    grep -q '<desc id="desc">' "$REPO_ROOT/docs/media/readme/$asset"
   done
 }
 
