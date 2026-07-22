@@ -340,6 +340,83 @@ EOF
   [ "$(tr '\n' ' ' <"$TMP_DIR/attempts")" = "first second " ]
 }
 
+@test "oversized advisory output drops memory and preserves a canonical warning" {
+  base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
+  head=$(git -C "$REPO_ROOT" rev-parse HEAD)
+  mkdir -p "$TMP_DIR/bin"
+  cat >"$TMP_DIR/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1 $2" == "api repos/example/repo/pulls/506" ]]; then
+  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"test",html_url:"https://example.test/pr/506",base:{sha:$base}}'
+elif [[ "$1 $2" == "api repos/example/repo/issues/506/comments" ]]; then
+  printf '[]\n'
+else
+  exit 1
+fi
+EOF
+  chmod +x "$TMP_DIR/bin/gh"
+  cat >"$TMP_DIR/providers.sh" <<'EOF'
+init_advisory_provider_credentials() { :; }
+list_advisory_providers() { printf '%s\n' opencode; }
+EOF
+  cat >"$TMP_DIR/invoke.sh" <<'EOF'
+invoke_advisory_llm() {
+  local output_file="$2" long_finding
+  printf '%s\n' '{"provider":"opencode","model":"test-model"}' >"$ADVISORY_PROVIDER_METADATA_FILE"
+  long_finding=$(printf 'x%.0s' {1..2000})
+  cat >"$output_file" <<SNAPSHOT
+## Advisory Review Snapshot
+
+### Findings to consider
+
+| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
+|---|---|---|---|---|---|---|
+| ADV-01 | medium | Correctness | parser | $long_finding | Fix it. | yes |
+
+### Not blocking
+
+These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
+SNAPSHOT
+}
+EOF
+  cat >"$TMP_DIR/upsert.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+cp "$3" "$ADVISORY_TEST_POSTED"
+EOF
+  chmod +x "$TMP_DIR/upsert.sh"
+
+  run env \
+    PATH="$TMP_DIR/bin:$PATH" \
+    GITHUB_REPOSITORY=example/repo \
+    GITHUB_EVENT_ACTION=synchronize \
+    ADVISORY_REVIEW_COMMENT_LIMIT=1000 \
+    ADVISORY_TEST_BASE="$base" \
+    ADVISORY_TEST_POSTED="$TMP_DIR/posted.md" \
+    ADVISORY_PROVIDER_LIB="$TMP_DIR/providers.sh" \
+    ADVISORY_INVOKE_LIB="$TMP_DIR/invoke.sh" \
+    ADVISORY_UPSERT_SCRIPT="$TMP_DIR/upsert.sh" \
+    bash "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh" 506 "$head" false
+
+  [ "$status" -eq 0 ]
+  ! grep -q 'ai-advisory-memory:v1' "$TMP_DIR/posted.md"
+  grep -q '^| ADV-01 | info | Reliability and performance | Advisory output |' "$TMP_DIR/posted.md"
+  grep -q 'exceeded the 1000-byte comment limit' "$TMP_DIR/posted.md"
+  [ "$(wc -c <"$TMP_DIR/posted.md" | tr -d ' ')" -le 1000 ]
+
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/select-advisory-range.py" \
+    --repo "$REPO_ROOT" \
+    --snapshot "$TMP_DIR/posted.md" \
+    --base "$base" \
+    --head "$head" \
+    --expected-provider opencode \
+    --event-action synchronize
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .review_basis <<<"$output")" = full ]
+  [ "$(jq -r .reason <<<"$output")" = no-memory ]
+}
+
 @test "advisory normalization converts the legacy sample row to no findings" {
   cat >"$TMP_DIR/input.md" <<'EOF'
 ## Advisory Review Snapshot

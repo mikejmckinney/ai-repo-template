@@ -259,14 +259,11 @@ if [[ "$provider_succeeded" != true ]]; then
 fi
 
 provider_label=$(jq -r '"\(.provider) / \(.model)"' "$provider_metadata_file")
-memory_line=$(grep '^<!-- ai-advisory-memory:v1 ' "$out_file")
 
 comment_bytes="$(wc -c <"$out_file" | tr -d ' ')"
 if [[ "$comment_bytes" -gt "$comment_limit" ]]; then
-  header_file="$WORKDIR/cap-header.md"
-  cat >"$header_file" <<EOF
+  cat >"$out_file.tmp" <<EOF
 $MARKER
-$memory_line
 
 ## Advisory Review Snapshot
 
@@ -275,22 +272,24 @@ Provider: \`${provider_label}\`
 Mode: advisory, non-blocking
 Diff coverage: \`${diff_included}/${full_diff_bytes}\` bytes, truncated: \`${truncated_word}\`, basis: \`${review_basis}\`
 
-⚠️ Advisory output exceeded ${comment_limit} bytes and was truncated by automation.
+### Findings to consider
+
+| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
+|---|---|---|---|---|---|---|
+| ADV-01 | info | Reliability and performance | Advisory output | The normalized advisory output exceeded the ${comment_limit}-byte comment limit, so model findings were not published and reviewed-head memory was omitted. | Run a full advisory review after reducing provider output or increasing the configured comment limit. | yes |
+
+### Not blocking
+
+These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
 
 EOF
-  header_bytes="$(wc -c <"$header_file" | tr -d ' ')"
-  body_budget=$((comment_limit - header_bytes))
-  if [[ "$body_budget" -lt 0 ]]; then
-    body_budget=0
+  bounded_bytes="$(wc -c <"$out_file.tmp" | tr -d ' ')"
+  if [[ "$bounded_bytes" -gt "$comment_limit" ]]; then
+    echo "::error::Canonical over-limit advisory warning requires ${bounded_bytes} bytes, above configured limit ${comment_limit}" >&2
+    exit 1
   fi
-  grep -v -e 'ai-advisory-review:v1' -e 'ai-advisory-memory:v1' \
-    "$out_file" >"$WORKDIR/body-stripped.md" || cp "$out_file" "$WORKDIR/body-stripped.md"
-  {
-    cat "$header_file"
-    head -c "$body_budget" "$WORKDIR/body-stripped.md"
-  } >"$out_file.tmp"
   mv "$out_file.tmp" "$out_file"
-  echo "::warning::Advisory comment truncated to ${comment_limit} bytes (was ${comment_bytes})" >&2
+  echo "::warning::Advisory output exceeded ${comment_limit} bytes (was ${comment_bytes}); published bounded warning without reviewed-head memory" >&2
 fi
 
 "${ADVISORY_UPSERT_SCRIPT:-$SCRIPT_DIR/upsert-pr-comment.sh}" "$PR" "$MARKER" "$out_file"
