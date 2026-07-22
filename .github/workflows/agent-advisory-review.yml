@@ -120,6 +120,12 @@ jobs:
           cache: npm
           cache-dependency-path: .github/agent-runtime/package-lock.json
 
+      - name: Install agent prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ripgrep
+          command -v rg >/dev/null
+
       - name: Install agent runtime
         run: |
           npm ci --prefix .github/agent-runtime

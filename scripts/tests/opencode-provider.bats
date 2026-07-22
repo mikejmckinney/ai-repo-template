@@ -114,9 +114,8 @@ EOF
 }
 
 @test "hosted workflows export both locked SDK modules" {
-  grep -q 'sudo apt-get install -y -qq.*ripgrep' \
-    "$REPO_ROOT/.github/workflows/agent-postmerge-retro.yml"
   for workflow in agent-advisory-review.yml agent-postmerge-retro.yml agent-weekly-review.yml; do
+    grep -q 'sudo apt-get install -y -qq.*ripgrep' "$REPO_ROOT/.github/workflows/$workflow"
     grep -q 'OPENCODE_SDK_MODULE=.*@opencode-ai/sdk' "$REPO_ROOT/.github/workflows/$workflow"
     grep -q 'CURSOR_SDK_MODULE=.*@cursor/sdk/dist/esm/index.js' "$REPO_ROOT/.github/workflows/$workflow"
   done
