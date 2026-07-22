@@ -55,6 +55,31 @@ write_state() {
   [ "$(git -C "$repo" status --porcelain=v1)" = "$before" ]
 }
 
+@test "classifier does not treat same-named repositories under another owner as canonical" {
+  for name in ai-repo-template dotfiles; do
+    repo=$(make_repo "derived-$name")
+    git -C "$repo" remote add origin "git@github.com:example/$name.git"
+    write_state "$repo" template-seed
+
+    run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
+
+    [ "$status" -eq 0 ]
+    [ "$(jq -r '.mode' <<<"$output")" = template-seed ]
+    [ "$(jq -r '.requires_onboarding' <<<"$output")" = true ]
+  done
+}
+
+@test "classifier retains canonical basename fallback when origin is unavailable" {
+  repo=$(make_repo ai-repo-template)
+  write_state "$repo" template-seed
+
+  run "$SKILL_ROOT/scripts/classify-mode.sh" --repo "$repo"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.mode' <<<"$output")" = ai-repo-template ]
+  [ "$(jq -r '.requires_onboarding' <<<"$output")" = false ]
+}
+
 @test "classifier chooses template-seed for a derived repository with seed state" {
   repo=$(make_repo derived-seed)
   git -C "$repo" remote add origin git@github.com:example/product.git
