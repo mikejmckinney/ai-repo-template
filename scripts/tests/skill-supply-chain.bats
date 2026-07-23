@@ -28,6 +28,12 @@ write_lock() {
     --arg destination_path "$destination_path" \
     '{
       version: 2,
+      sourceMetadata: {
+        "example/acme-skills": {
+          license: "MIT",
+          evidence: [{label: "LICENSE", path: ($skill_path + (if ($skill_path | endswith(".md")) then "" else "/SKILL.md" end))}]
+        }
+      },
       skills: {
         acme: {
           source: "example/acme-skills",
@@ -41,6 +47,28 @@ write_lock() {
       },
       ownedSkills: {}
     }' >"$FIXTURE_ROOT/skills-lock.json"
+}
+
+@test "license inventory is rendered from canonical source metadata and refs" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  mkdir -p "$FIXTURE_ROOT/docs/guides"
+  cat >"$FIXTURE_ROOT/docs/guides/skill-supply-chain.md" <<'EOF'
+# Fixture
+
+<!-- generated:skill-license-inventory:begin -->
+stale
+<!-- generated:skill-license-inventory:end -->
+EOF
+
+  run python3 "$TOOL" render-license-inventory \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+
+  [ "$status" -eq 0 ]
+  grep -Fq '| `example/acme-skills` | 1 | MIT | [LICENSE](https://github.com/example/acme-skills/blob/0123456789abcdef0123456789abcdef01234567/skills/acme/SKILL.md) |' \
+    "$FIXTURE_ROOT/docs/guides/skill-supply-chain.md"
 }
 
 @test "package hash is deterministic and includes executable modes" {

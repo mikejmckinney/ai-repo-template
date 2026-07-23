@@ -85,6 +85,51 @@ EOF
   ! grep -q '^No findings identified' "$TMP_DIR/output.md"
 }
 
+@test "advisory normalization classifies structured AP11 findings" {
+  cat >"$TMP_DIR/input.md" <<'EOF'
+{
+  "findings": [
+    {
+      "id": "ADV-01",
+      "lens": "Correctness",
+      "area": "parser",
+      "finding": "Normal input produces the wrong result.",
+      "suggested_action": "Correct the parser and add a regression test.",
+      "still_present_at_head": true,
+      "triage_version": 2,
+      "impact": "incorrect-behavior",
+      "impact_magnitude": "material",
+      "trigger_likelihood": "common",
+      "affected_scope": "broad",
+      "reversibility": "hard",
+      "fix_cost": "moderate",
+      "confidence": "high",
+      "uncertainty": "none",
+      "regression_guard": false
+    }
+  ]
+}
+EOF
+  printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
+
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+    --input "$TMP_DIR/input.md" \
+    --output "$TMP_DIR/output.md" \
+    --provider-metadata "$TMP_DIR/provider.json" \
+    --head "2222222222222222222222222222222222222222" \
+    --base "0000000000000000000000000000000000000000" \
+    --review-basis incremental \
+    --diff-included 42 \
+    --diff-total 42 \
+    --truncated no \
+    --changed-files 1
+
+  [ "$status" -eq 0 ]
+  grep -q '^| ADV-01 | fix-now |' "$TMP_DIR/output.md"
+  grep -q 'material/common/broad/hard/moderate/high' "$TMP_DIR/output.md"
+  ! grep -q 'Severity' "$TMP_DIR/output.md"
+}
+
 @test "advisory normalization rejects malformed non-empty findings" {
   cat >"$TMP_DIR/input.md" <<'EOF'
 ## Advisory Review Snapshot

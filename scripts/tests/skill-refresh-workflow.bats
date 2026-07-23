@@ -55,6 +55,8 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'pull-requests: write' "$WORKFLOW"
   [ "$status" -eq 0 ]
+  run grep -q 'actions: write' "$WORKFLOW"
+  [ "$status" -eq 0 ]
   run grep -q 'matrix.source' "$WORKFLOW"
   [ "$status" -eq 0 ]
   # shellcheck disable=SC2016
@@ -68,6 +70,16 @@ EOF
   run grep -q 'draft: always-true' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'delete-branch: false' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'docs/guides/skill-supply-chain.md' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'scripts/tests/provider-integrations.bats' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh workflow run ci-tests.yml' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh workflow run lint-and-format.yml' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq -- '--ref "automation/skill-refresh/${{ matrix.source }}"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q "if: steps.check.outputs.content_changed == 'true'" "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -91,6 +103,20 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Eiq 'enable-auto-merge|merge-method:|auto-merge:' "$WORKFLOW"
   [ "$status" -eq 1 ]
+}
+
+@test "required workflows accept trusted exact-head skill refresh dispatches" {
+  ci_workflow="$REPO_ROOT/.github/workflows/ci-tests.yml"
+  lint_workflow="$REPO_ROOT/.github/workflows/lint-and-format.yml"
+
+  run grep -q 'workflow_dispatch:' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -q 'workflow_dispatch:' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -q 'base_sha:' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -q 'head_sha:' "$lint_workflow"
+  [ "$status" -eq 0 ]
 }
 
 @test "skill refresh documentation explains source branches and PR authorization" {
