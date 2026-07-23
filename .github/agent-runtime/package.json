@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@cursor/sdk": "1.0.24",
     "@opencode-ai/sdk": "1.18.0",
     "ajv": "8.20.0",
     "opencode-ai": "1.18.0",

@@ -212,6 +212,11 @@ PY
   cat >"$TEST_ROOT/mock-cursor.mjs" <<'EOF'
 import { writeFileSync } from "node:fs"
 const [, , , output] = process.argv
+const forbidden = [
+  "GITHUB_TOKEN", "GH_TOKEN", "SANDBOX_BOOTSTRAP_TOKEN", "OPENCODE_GITHUB_TOKEN",
+  "OPENCODE_AUTH_CONTENT", "OPENAI_API_KEY", "OPENROUTER_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY",
+]
+if (forbidden.some((name) => process.env[name])) process.exit(3)
 writeFileSync("result.txt", "cursor-verified\n")
 writeFileSync(output, "success\n")
 EOF
@@ -227,6 +232,10 @@ EOF
     CURSOR_FIX_RUNNER="$TEST_ROOT/mock-cursor.mjs" \
     CURSOR_FIX_VERIFY_COMMAND="$TEST_ROOT/verify.sh" \
     CURSOR_API_KEY=cursor-secret-test \
+    OPENCODE_GITHUB_TOKEN=opencode-github-secret-test \
+    OPENROUTER_API_KEY=openrouter-secret-test \
+    GEMINI_API_KEY=gemini-secret-test \
+    GOOGLE_API_KEY=google-secret-test \
     OPENCODE_AUTH_CONTENT="$(jq '.openai.refresh = "ci-refresh-disabled"' "$AUTH_FILE")" \
     GITHUB_TOKEN=publisher-secret-test \
     bash "$REPO_ROOT/scripts/workflows/lib/run-cursor-fix.sh" \
@@ -235,6 +244,51 @@ EOF
   [ "$status" -eq 0 ]
   [ "$(cat "$repo/result.txt")" = cursor-verified ]
   [ "$(cat "$TEST_ROOT/output.txt")" = success ]
+}
+
+@test "provider invocation exposes only the selected provider credentials" {
+  cat >"$TEST_ROOT/assert-provider-env.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+provider="$1"
+case "$provider" in
+  opencode)
+    [[ -n "${OPENROUTER_API_KEY:-}" && -n "${OPENCODE_GITHUB_TOKEN:-}" && -n "${OPENCODE_AUTH_CONTENT:-}" ]]
+    [[ -z "${CURSOR_API_KEY:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
+    ;;
+  cursor)
+    [[ -n "${CURSOR_API_KEY:-}" ]]
+    [[ -z "${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
+    ;;
+  gemini)
+    [[ -n "${GEMINI_API_KEY:-}" && -n "${GOOGLE_API_KEY:-}" ]]
+    [[ -z "${CURSOR_API_KEY:-}${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
+    ;;
+esac
+EOF
+  chmod +x "$TEST_ROOT/assert-provider-env.sh"
+
+  for provider in opencode cursor gemini; do
+    run env \
+      GITHUB_TOKEN=publisher-test GH_TOKEN=publisher-test SANDBOX_BOOTSTRAP_TOKEN=sandbox-test \
+      OPENROUTER_API_KEY=openrouter-test OPENCODE_GITHUB_TOKEN=opencode-github-test \
+      OPENCODE_AUTH_CONTENT=opencode-auth-test CURSOR_API_KEY=cursor-test \
+      GEMINI_API_KEY=gemini-test GOOGLE_API_KEY=google-test \
+      "$REPO_ROOT/scripts/workflows/lib/run-with-provider-credentials.sh" "$provider" \
+      "$TEST_ROOT/assert-provider-env.sh" "$provider"
+
+    [ "$status" -eq 0 ]
+  done
+}
+
+@test "provider credential isolation composes with the postmerge timeout" {
+  run env \
+    GITHUB_TOKEN=publisher-test OPENCODE_AUTH_CONTENT=opencode-auth-test \
+    CURSOR_API_KEY=cursor-test GEMINI_API_KEY=gemini-test \
+    timeout 5s "$REPO_ROOT/scripts/workflows/lib/run-with-provider-credentials.sh" cursor \
+    bash -c '[[ "$CURSOR_API_KEY" == cursor-test && -z "${GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GEMINI_API_KEY:-}" ]]'
+
+  [ "$status" -eq 0 ]
 }
 
 @test "fix provider fallback discards failed edits before promoting Cursor" {

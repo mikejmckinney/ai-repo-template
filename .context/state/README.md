@@ -35,5 +35,6 @@ If GitHub API access is unavailable, temporarily write the same `agent-state:v1`
 
 - Decisions belong in `docs/decisions/<adr>.md`.
 - Formal incidents belong in `docs/postmortems/**`.
-- Durable session lessons belong in `.context/sessions/latest_summary.md` and archives.
+- Completed task outcomes remain in issue and PR history; promote durable
+  decisions to ADRs and formal incidents to postmortems.
 - Repository-wide operating policy belongs in `AGENTS.md`.

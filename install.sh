@@ -189,6 +189,13 @@ copy_template_file() {
     return
   fi
 
+  if [[ "$rel_path" == ".context/onboarding-state.json" ]] \
+    && git -C "$WORKSPACE" rev-parse --verify HEAD >/dev/null 2>&1; then
+    log_info "  = Established repository: preserving legacy missing-state migration"
+    MULTIAGENT_SKIPPED=$((MULTIAGENT_SKIPPED + 1))
+    return
+  fi
+
   local dst_dir
   dst_dir="$(dirname "$dst")"
   if [[ ! -d "$dst_dir" ]]; then
@@ -232,11 +239,11 @@ MULTIAGENT_FILES=(
   ".mcp.json"
   ".opencode/opencode.json"
   "skills-lock.json"
+  ".context/onboarding-state.json"
   ".context/00_INDEX.md"
   ".context/roadmap.md"
   ".context/sessions/README.md"
   ".context/sessions/feedback_template.md"
-  ".context/sessions/latest_summary.md"
   ".context/state/README.md"
   ".context/state/agent_state_comment_template.md"
   ".context/vision/README.md"

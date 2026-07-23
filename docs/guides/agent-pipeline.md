@@ -1,8 +1,8 @@
 # Agent Pipeline
 
 ADR-031 defines a monolithic implementation and review lifecycle. One agent owns
-routine implementation; CI blocks regressions; advisory review is optional and
-parallel; daily and weekly review operate after changes reach `main`.
+routine implementation; CI blocks regressions; agents normally enable parallel
+advisory review; daily and weekly review operate after changes reach `main`.
 
 ## Implementation
 
@@ -17,14 +17,29 @@ queue or automatically transition draft PRs.
 
 ## Advisory Review
 
-`agent-advisory-review.yml` is explicitly opt-in through `ai-review:live`.
-It runs for same-repository open PRs, including drafts, on qualifying open,
+`agent-advisory-review.yml` remains label-gated through `ai-review:live`, which
+agents apply to every eligible same-repository task PR they create or claim. It
+runs for same-repository open PRs, including drafts, on qualifying open,
 reopen, synchronize, ready, and label events. Concurrency is keyed by PR and
 `cancel-in-progress: true`, so implementation never waits for an older snapshot.
 
 The workflow posts or updates one `<!-- ai-advisory-review:v1 -->` comment. It
 cannot submit formal reviews, push commits, mutate labels, resolve threads,
-change readiness, or block merge. `ai-review:full` requests deeper context only.
+change readiness, or block merge. Before completion, the implementing agent
+compares an arrived snapshot's `Head` SHA with the current PR head and independently
+verifies applicable findings. Missing, stale, running, or failed feedback never
+blocks completion. Forks, `smoke-test` PRs, and repositories lacking the workflow,
+label, provider credentials, or label-write permission are exempt and record why.
+`ai-review:full` requests deeper context only.
+
+Automation owns the snapshot's head, provider/model, diff coverage, and hidden
+`ai-advisory-memory:v1` payload. The visible findings are the provider-neutral
+summary; an empty result says `No findings identified at this head.` rather than
+rendering an empty table. Compatible synchronize events review the accumulated
+delta from the last completed reviewed head. Missing or invalid memory, readiness,
+full mode, base changes, expected-provider changes, and non-ancestor history force
+a full PR refresh. If an in-flight run is canceled, the last completed sticky
+memory remains authoritative and the next delta spans every intervening commit.
 
 ## Blocking Pre-Merge Controls
 
@@ -88,6 +103,13 @@ beside that lockfile and are intentionally separate from interactive
 body timeouts from `OPENCODE_TIMEOUT_MS` (default `900000`) so Node's five-minute
 HTTP default cannot terminate a still-running `session.prompt()` before the
 adapter's outer abort.
+
+OpenCode LSP remains explicitly disabled in interactive and automated profiles.
+The repository uses deterministic lint, schema, format, and test commands instead;
+language servers may auto-download, consume additional memory/disk, drift by
+version, and add latency. Enabling one requires a separate measured experiment
+with a pinned command and automatic downloads disabled. See the
+[OpenCode LSP guidance](https://opencode.ai/docs/lsp/).
 
 The adapter does not use OpenCode 1.18.0's `format` field. That release ignores
 `retryCount` and can finish without invoking its synthetic structured-output

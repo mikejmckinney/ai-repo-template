@@ -83,6 +83,14 @@ def main() -> int:
             ),
         ]
     )
+    existing_snapshot = os.path.join(workdir, "existing-snapshot.md")
+    if os.path.isfile(existing_snapshot) and read_file(existing_snapshot).strip():
+        sources.append(
+            inline_source(
+                ".workspace/pr-context/existing-snapshot.md",
+                existing_snapshot,
+            )
+        )
 
     coverage_path = os.path.join(workdir, "diff-coverage.md")
     coverage = read_file(coverage_path) if os.path.isfile(coverage_path) else ""
@@ -132,6 +140,11 @@ def main() -> int:
 
     with open(out_path, "w", encoding="utf-8") as fh:
         fh.write(text)
+    metadata_path = os.environ.get("ADVISORY_PROVIDER_METADATA_FILE")
+    if metadata_path:
+        with open(metadata_path, "w", encoding="utf-8") as fh:
+            json.dump({"provider": "antigravity", "model": f"agent:{agent}"}, fh)
+            fh.write("\n")
     return 0
 
 

@@ -28,10 +28,9 @@ This template has multiple documentation files that serve different audiences an
 │                                                              │
 │  00_INDEX.md ─────── The Map (start here)                   │
 │       │                                                      │
-│       ├── roadmap.md ─────── The Plan (project phases)      │
-│       ├── rules/ ─────────── Constraints (never violate)    │
-│       ├── state/ ─────────── Current Work (tasks)           │
-│       ├── sessions/ ───────── History (lessons learned)     │
+│       ├── roadmap.md ─────── Completed phases + future work │
+│       ├── state/ ─────────── GitHub live-state reference    │
+│       ├── sessions/ ───────── Historical records only       │
 │       └── vision/ ─────────── Design (mockups, diagrams)    │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -53,27 +52,25 @@ This template has multiple documentation files that serve different audiences an
 | File | Question It Answers | Scope | Update Frequency |
 |------|---------------------|-------|------------------|
 | `00_INDEX.md` | "What's in this context pack?" | Project overview | When context structure changes |
-| `roadmap.md` | "What are we building and in what order?" | Project phases | When phases complete/change |
-| `rules/*.md` | "What rules must I follow?" | Domain constraints | Rarely |
+| `roadmap.md` | "What phases shipped and what issue-backed work remains?" | Program history and future work | When phases or tracked work change |
 | GitHub issue/PR + latest `agent-state:v1` comment | "What am I working on?" | Live coordination | During development |
-| `state/*.md` | "What compatibility templates/views exist?" | Legacy state + comment template | Rarely |
-| `sessions/*.md` | "What happened before and what was learned?" | Durable retrospective lessons | PR merge/closeout |
+| `state/*.md` | "How is GitHub live state represented?" | Reference guidance and comment template | When coordination policy changes |
+| `sessions/*.md` | "What historical retrospective records remain?" | Historical evidence only | Not updated for normal task state |
 | `vision/**` | "What should this look like?" | Design artifacts | When designs change |
 
-### The Key Distinction: Live State vs Sessions
+### The Key Distinction: GitHub State vs Durable Knowledge
 
-| GitHub issue/PR + `agent-state:v1` comment | `sessions/*.md` |
-|---------------------------------------------|-----------------|
-| **What** you're doing now | **What happened** and **what you learned** |
-| Task/PR-scoped live baton | Retrospective lesson surface |
-| Status, blockers, next actions, handoff | Shipped outcome, surprises, generalizable lessons |
-| "Continue from step 3" | "Don't try approach X, it failed" |
-| Updated during development | Rotated at PR merge/closeout when worth preserving |
+| GitHub issue/PR + `agent-state:v1` comment | Repository durable knowledge |
+|---------------------------------------------|------------------------------|
+| Task contract, implementation evidence, and mutable baton | ADRs, postmortems, and operating policy |
+| Status, blockers, next actions, handoff, and completed outcome | Decisions or incidents that generalize beyond one task |
+| Updated during development and closeout | Updated only when the durable artifact is justified |
 
 **Example**:
-- A task "Implement auth" might take 3 sessions.
+- A task "Implement auth" might span several agent sessions.
 - The latest `agent-state:v1` comment tracks cumulative live progress.
-- `sessions/` captures durable lessons after merge/closeout.
+- The PR records the completed outcome; an ADR or postmortem captures only
+  knowledge that generalizes beyond that PR.
 
 ## Subdirectory READMEs
 
@@ -82,7 +79,7 @@ These are NOT redundant with project docs—they explain their specific director
 | File | Purpose |
 |------|---------|
 | `.context/state/README.md` | ADR-025 live-state split, legacy compatibility, and comment template |
-| `.context/sessions/README.md` | How to create durable retrospective summaries |
+| `.context/sessions/README.md` | Historical archive policy and GitHub-state pointer |
 | `scripts/README.md` | Available scripts and usage |
 | `docs/README.md` | Documentation structure |
 
@@ -91,8 +88,8 @@ These are NOT redundant with project docs—they explain their specific director
 1. `AI_REPO_GUIDE.md` — Quick reference
 2. `.context/00_INDEX.md` — Project overview
 3. Assigned GitHub issue/PR + latest `agent-state:v1` comment — Find active task(s)
-4. `.context/sessions/latest_summary.md` — Durable recent lessons
-5. Load other files on-demand (rules, vision) as needed
+4. Load roadmap, vision files, or historical archives only when their domain
+   intersects the task
 
 ## Why some things look duplicated but aren't
 
@@ -122,7 +119,8 @@ A recurring question is whether duplicated-looking docs should be merged, or whe
 | Project structure changes | `AI_REPO_GUIDE.md`, `README.md` |
 | Starting a new task | Post or update the latest `agent-state:v1` issue/PR comment |
 | Making progress on task | Update the latest `agent-state:v1` issue/PR comment |
-| PR merge/closeout with durable lessons | Update and rotate `sessions/latest_summary.md` |
-| Making a design decision | Add to `sessions/`, optionally create ADR |
+| PR merge/closeout | Finalize the PR body and latest `agent-state:v1` comment |
+| Durable technical decision or formal incident | Add an ADR or postmortem |
+| Making a design decision | Add to `docs/design/` or a project-specific equivalent; optionally create an ADR |
 | Phase complete | Update `roadmap.md` |
-| Adding a domain constraint | Create `rules/domain_<area>.md` |
+| Adding a repository-wide constraint | Update `AGENTS.md`; keep domain-specific rules near the code or durable docs they govern |
