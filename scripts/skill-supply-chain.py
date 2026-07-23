@@ -345,6 +345,86 @@ def source_ref(lock: dict, source: str) -> str:
     return next(iter(refs))
 
 
+def markdown_heading_fragments(path: Path) -> set[str]:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError) as error:
+        raise SupplyChainError(f"cannot read Markdown license evidence {path}: {error}") from error
+
+    headings = []
+    for index, line in enumerate(lines):
+        match = re.match(r"^ {0,3}#{1,6}[ \t]+(.+?)[ \t]*#*[ \t]*$", line)
+        if match:
+            headings.append(match.group(1))
+        elif index > 0 and re.match(r"^ {0,3}(?:=+|-+)[ \t]*$", line):
+            headings.append(lines[index - 1].strip())
+
+    fragments: set[str] = set()
+    counts: dict[str, int] = {}
+    for heading in headings:
+        base = re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-")
+        if not base:
+            continue
+        occurrence = counts.get(base, 0)
+        counts[base] = occurrence + 1
+        fragments.add(base if occurrence == 0 else f"{base}-{occurrence}")
+    return fragments
+
+
+def aggregate_refresh_report(base_lock: dict, current_lock: dict) -> list[dict]:
+    base_skills = base_lock.get("skills")
+    current_skills = current_lock.get("skills")
+    if not isinstance(base_skills, dict) or not isinstance(current_skills, dict):
+        raise SupplyChainError("base and current locks must contain skills objects")
+
+    changes: dict[str, list[dict]] = {}
+    for name, current in sorted(current_skills.items()):
+        previous = base_skills.get(name)
+        if not isinstance(previous, dict) or not isinstance(current, dict):
+            continue
+        if (
+            previous.get("ref") == current.get("ref")
+            and previous.get("computedHash") == current.get("computedHash")
+        ):
+            continue
+        source = current.get("source")
+        if not isinstance(source, str):
+            raise SupplyChainError(f"external skill {name} has no source")
+        changes.setdefault(source, []).append(
+            {
+                "name": name,
+                "oldRef": previous.get("ref"),
+                "newRef": current.get("ref"),
+                "oldHash": previous.get("computedHash"),
+                "newHash": current.get("computedHash"),
+            }
+        )
+
+    report = []
+    for source, packages in sorted(changes.items()):
+        old_refs = {package["oldRef"] for package in packages}
+        new_refs = {package["newRef"] for package in packages}
+        if len(old_refs) != 1 or len(new_refs) != 1:
+            raise SupplyChainError(f"aggregate refresh has inconsistent refs for {source}")
+        changed = [package for package in packages if package["oldHash"] != package["newHash"]]
+        report.append(
+            {
+                "source": source,
+                "oldRef": next(iter(old_refs)),
+                "newRef": next(iter(new_refs)),
+                "packages": [package["name"] for package in changed],
+                "refOnlyPackages": [
+                    package["name"] for package in packages if package["oldHash"] == package["newHash"]
+                ],
+                "hashes": {
+                    package["name"]: {"old": package["oldHash"], "new": package["newHash"]}
+                    for package in changed
+                },
+            }
+        )
+    return report
+
+
 def license_inventory(lock: dict) -> str:
     metadata = source_metadata(lock)
     rows = [
@@ -553,6 +633,17 @@ def source_packages(
             raise SupplyChainError(
                 f"license evidence is missing at {target_ref}: {source}/{evidence['path']}"
             )
+        fragment = evidence.get("fragment")
+        if fragment is not None:
+            if evidence_path.suffix.lower() not in {".md", ".markdown"}:
+                raise SupplyChainError(
+                    f"license evidence fragment requires Markdown: {source}/{evidence['path']}#{fragment}"
+                )
+            if fragment not in markdown_heading_fragments(evidence_path):
+                raise SupplyChainError(
+                    f"license evidence fragment is missing at {target_ref}: "
+                    f"{source}/{evidence['path']}#{fragment}"
+                )
     return lock, packages
 
 
@@ -911,6 +1002,12 @@ def build_parser() -> argparse.ArgumentParser:
     inventory_parser.add_argument("--lock", required=True, type=Path)
     inventory_parser.add_argument("--check", action="store_true")
 
+    report_parser = commands.add_parser(
+        "render-refresh-report", help="render all source changes between two skill locks"
+    )
+    report_parser.add_argument("--base-lock", required=True, type=Path)
+    report_parser.add_argument("--current-lock", required=True, type=Path)
+
     for command in ("check", "update"):
         source_parser = commands.add_parser(command, help=f"{command} one upstream source")
         source_parser.add_argument("--repo", required=True, type=Path)
@@ -937,6 +1034,11 @@ def main() -> int:
             source_metadata(lock)
             render_license_inventory(args.repo, lock, check=args.check)
             print(json.dumps({"status": "success", "check": args.check}))
+        elif args.command == "render-refresh-report":
+            for item in aggregate_refresh_report(
+                load_json(args.base_lock), load_json(args.current_lock)
+            ):
+                print(json.dumps(item, sort_keys=True))
         elif args.command == "check":
             print(json.dumps(run_source_operation(args), sort_keys=True))
         elif args.command == "update":

@@ -99,7 +99,8 @@ material package change:
 
 1. updates only that source's packages and lock records;
 2. verifies source-level license evidence at the proposed immutable commit and
-   regenerates the pinned inventory from `sourceMetadata` in the lock;
+   validates any declared Markdown heading fragment before regenerating the
+   pinned inventory from `sourceMetadata` in the lock;
 3. scans refreshed package paths for credential signatures;
 4. validates that source against the accumulated aggregate tree;
 5. restores the source's prior packages, lock, and generated inventory if its
