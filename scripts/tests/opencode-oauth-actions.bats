@@ -303,7 +303,7 @@ EOF
   git -C "$repo" commit -qm base
   printf 'fix this' >"$TEST_ROOT/cascade-prompt.md"
   cat >"$TEST_ROOT/cascade-batch.json" <<'EOF'
-{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"}]}
+{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"},{"category":"follow_up_issues","dedupe_key":"key-b"}]}
 EOF
   cat >"$TEST_ROOT/cascade-verify.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -328,7 +328,7 @@ EOF
         printf "cursor-verified\n" >result.txt
         mkdir -p retro
         cat >retro/fix-verify-test.json <<"JSON"
-{"findings":[{"dedupe_key":"key-a","verify":{"pre":"reproduced","post":"fixed","notes":"Verified after the edit."}}]}
+{"findings":[{"dedupe_key":"key-a","verify":{"pre":"reproduced","post":"fixed","notes":"Verified after the edit."}},{"dedupe_key":"key-b","verify":{"pre":"skipped_collateral","post":"fixed","notes":"Fixed by the same edit."}}]}
 JSON
         printf "success\n" >"$output_file"
       }

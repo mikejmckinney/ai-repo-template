@@ -64,11 +64,16 @@ def validate_fix(
         if pre == "cant_reproduce":
             if post not in (None, "n/a"):
                 failures.append(f"{key}: cant_reproduce verify.post must be n/a")
-        elif substantive_diff and pre == "reproduced" and post == "fixed":
+        elif (
+            substantive_diff
+            and pre in ("reproduced", "skipped_collateral")
+            and post == "fixed"
+        ):
             fixed_count += 1
         elif substantive_diff:
             failures.append(
-                f"{key}: verify must be reproduced/fixed or cant_reproduce"
+                f"{key}: verify must be reproduced/fixed, "
+                "skipped_collateral/fixed, or cant_reproduce"
             )
         else:
             failures.append(
