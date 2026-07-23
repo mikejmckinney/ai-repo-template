@@ -96,6 +96,7 @@ jq -e '
     (.codespaces | type == "boolean") and
     (.consumers | type == "array" and length > 0)
   ) and
+  all(.secrets[]; .env != "GH_TOKEN" and .env != "GITHUB_TOKEN") and
   ([.secrets[] | select(.env == "REPO_BOOTSTRAP_TOKEN")] | length == 1) and
   all(.secrets[] | select(.env == "REPO_BOOTSTRAP_TOKEN");
     .name == "REPO_BOOTSTRAP_TOKEN" and .actions == false and .codespaces == false

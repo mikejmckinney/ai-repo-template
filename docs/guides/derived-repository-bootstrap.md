@@ -76,7 +76,8 @@ and cannot run from a repository generated from this template.
 records the secret and environment-variable name, requirement level, Actions
 and Codespaces destinations, and consuming workflows or tools.
 Custom `--manifest` files are schema-validated and cannot route
-`REPO_BOOTSTRAP_TOKEN` to either destination under another entry.
+`REPO_BOOTSTRAP_TOKEN` or GitHub authentication aliases to either destination
+under another entry.
 
 `OPENCODE_GITHUB_TOKEN` is the required destination workflow credential.
 Provider credentials and `SANDBOX_BOOTSTRAP_TOKEN` are optional capabilities.

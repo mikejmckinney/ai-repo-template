@@ -121,10 +121,13 @@ PY
 @test "override manifests cannot publish the bootstrap token" {
   codespaces_manifest="$TEST_ROOT/bootstrap-codespaces.json"
   duplicate_env_manifest="$TEST_ROOT/bootstrap-actions.json"
+  gh_token_manifest="$TEST_ROOT/bootstrap-gh-token.json"
   jq '(.secrets[] | select(.name == "REPO_BOOTSTRAP_TOKEN")).codespaces = true' \
     "$MANIFEST" >"$codespaces_manifest"
   jq '(.secrets[] | select(.name == "OPENROUTER_API_KEY")).env = "REPO_BOOTSTRAP_TOKEN"' \
     "$MANIFEST" >"$duplicate_env_manifest"
+  jq '(.secrets[] | select(.name == "OPENROUTER_API_KEY")).env = "GH_TOKEN"' \
+    "$MANIFEST" >"$gh_token_manifest"
 
   run_bootstrap --manifest "$codespaces_manifest"
   [ "$status" -ne 0 ]
@@ -133,6 +136,13 @@ PY
   run_bootstrap --manifest "$duplicate_env_manifest"
   [ "$status" -ne 0 ]
   [[ "$output" == *"invalid credential manifest"* ]]
+
+  TEST_REPO_BOOTSTRAP_TOKEN="bootstrap-secret"
+  TEST_OPENCODE_GITHUB_TOKEN="available"
+  run_bootstrap --apply --manifest "$gh_token_manifest"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"invalid credential manifest"* ]]
+  [ ! -s "$GH_LOG" ]
 }
 
 @test "dry-run reports names and planned operations without requiring a token or printing values" {
