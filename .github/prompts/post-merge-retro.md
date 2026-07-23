@@ -45,9 +45,15 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
     {
       "title": "string",
       "labels": ["agent-suggested"],
+      "triage_version": 2,
       "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
+      "impact_magnitude": "bounded|material|critical",
       "trigger_likelihood": "common|edge|fringe",
+      "affected_scope": "isolated|limited|broad",
+      "reversibility": "easy|moderate|hard",
       "fix_cost": "trivial|moderate|large",
+      "confidence": "low|medium|high",
+      "uncertainty": "none or a concise statement of missing evidence",
       "regression_guard": false,
       "body": "markdown body",
       "evidence": ["string"],
@@ -65,16 +71,10 @@ full-evidence review is a failed run, not an empty-finding result.
 
 ## Finding triage
 
-Every row in **`follow_up_issues`** must include:
-
-| Field | Values | Meaning |
-|---|---|---|
-| `impact` | `incorrect-behavior` \| `dx-perf-doc` \| `meta-harness` | Incorrect output on realistic input vs fails-safe DX/perf vs harness/sandbox meta |
-| `trigger_likelihood` | `common` \| `edge` \| `fringe` | Fires on normal inputs vs unusual shape vs rare path |
-| `fix_cost` | `trivial` \| `moderate` \| `large` | Implementation cost |
-| `regression_guard` | `true` \| `false` (optional, default false) | `true` only for invariant/test/check rows that prevent silent regression |
-
-**Do not emit** deprecated `severity` or derived `priority_band` — automation stamps `priority_band` at validate/merge time.
+Every row in **`follow_up_issues`** must follow the injected normalized AP11
+observation contract. **Do not emit** deprecated `severity` or derived
+`priority_band`; automation validates observations and stamps `priority_band`
+at validate/merge time.
 
 Rules:
 

@@ -73,13 +73,15 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'docs/guides/skill-supply-chain.md' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq 'scripts/tests/provider-integrations.bats' "$WORKFLOW"
+  run grep -Fq 'render-license-inventory' "$REPO_ROOT/scripts/skill-supply-chain.py"
   [ "$status" -eq 0 ]
   run grep -Fq 'gh workflow run ci-tests.yml' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'gh workflow run lint-and-format.yml' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq -- '--ref "automation/skill-refresh/${{ matrix.source }}"' "$WORKFLOW"
+  run grep -Fq 'REFRESH_BRANCH: automation/skill-refresh/${{ matrix.source }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq -- '--ref "$REFRESH_BRANCH"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q "if: steps.check.outputs.content_changed == 'true'" "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -109,6 +111,11 @@ EOF
   ci_workflow="$REPO_ROOT/.github/workflows/ci-tests.yml"
   lint_workflow="$REPO_ROOT/.github/workflows/lint-and-format.yml"
 
+  run grep -Fq 'REFRESH_HEAD: ${{ steps.create-pr.outputs.pull-request-head-sha }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ "$(grep -Fc -- '-f head_sha="$REFRESH_HEAD"' "$WORKFLOW")" -eq 2 ]
+  run grep -Fq -- '-f base_sha="${{ github.sha }}"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
   run grep -q 'workflow_dispatch:' "$ci_workflow"
   [ "$status" -eq 0 ]
   run grep -q 'workflow_dispatch:' "$lint_workflow"
@@ -116,6 +123,24 @@ EOF
   run grep -q 'base_sha:' "$lint_workflow"
   [ "$status" -eq 0 ]
   run grep -q 'head_sha:' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -q 'head_sha:' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && inputs.head_sha || '' }}" "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'EXPECTED_HEAD: ${{ inputs.head_sha }}' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && inputs.head_sha || '' }}" "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'EXPECTED_HEAD: ${{ inputs.head_sha }}' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'base_ref="${{ inputs.base_sha }}"' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'head_ref="${{ inputs.head_sha }}"' "$lint_workflow"
   [ "$status" -eq 0 ]
 }
 

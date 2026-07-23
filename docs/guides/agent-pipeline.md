@@ -34,8 +34,11 @@ label, provider credentials, or label-write permission are exempt and record why
 
 Automation owns the snapshot's head, provider/model, diff coverage, and hidden
 `ai-advisory-memory:v1` payload. The visible findings are the provider-neutral
-summary; an empty result says `No findings identified at this head.` rather than
-rendering an empty table. Compatible synchronize events review the accumulated
+summary. Providers emit structured `triage_version: 2` observations; automation
+validates the shared AP11 fields, derives the priority band, and renders the
+table. Advisory authority stays non-blocking for every band. An empty result says
+`No findings identified at this head.` rather than rendering an empty table.
+Compatible synchronize events review the accumulated
 delta from the last completed reviewed head. Missing or invalid memory, readiness,
 full mode, base changes, expected-provider changes, and non-ancestor history force
 a full PR refresh. If an in-flight run is canceled, the last completed sticky
@@ -62,7 +65,10 @@ and may publish a draft fix PR.
 Daily and weekly adapters share provider routing, priority derivation,
 supersession, umbrella transport, and batch-fix publication under
 `scripts/workflows/lib/`. Their schemas, templates, markers, and evidence inputs
-remain cadence-specific.
+remain cadence-specific. New model output uses the same `triage_version: 2`
+observation fields as advisory. Unversioned persisted daily/weekly records keep
+the version 1 decision table during reconstruction; automation does not silently
+reinterpret historical findings.
 
 ## OpenCode Runtime
 
@@ -113,9 +119,9 @@ with a pinned command and automatic downloads disabled. See the
 
 The adapter does not use OpenCode 1.18.0's `format` field. That release ignores
 `retryCount` and can finish without invoking its synthetic structured-output
-tool. Adapter-owned validation also rejects model-authored `priority_band`
-values before retrying; cadence-specific validators remain the final
-deterministic gate.
+tool. Adapter-owned validation also rejects model-authored `severity` and
+`priority_band` values before retrying; cadence-specific validators remain the
+final deterministic gate.
 
 GitHub's hosted MCP endpoint is read-only and locked down through request headers.
 Agents receive only the dedicated read-only token, while deterministic shell code

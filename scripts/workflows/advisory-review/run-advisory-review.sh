@@ -274,9 +274,9 @@ Diff coverage: \`${diff_included}/${full_diff_bytes}\` bytes, truncated: \`${tru
 
 ### Findings to consider
 
-| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
-|---|---|---|---|---|---|---|
-| ADV-01 | info | Reliability and performance | Advisory output | The normalized advisory output exceeded the ${comment_limit}-byte comment limit, so model findings were not published and reviewed-head memory was omitted. | Run a full advisory review after reducing provider output or increasing the configured comment limit. | yes |
+| ID | Band | Lens | Area | AP11 evidence | Finding | Suggested action | Still present at head? |
+|---|---|---|---|---|---|---|---|
+| ADV-01 | defer | Reliability and performance | Advisory output | bounded/edge/limited/easy/trivial/high; uncertainty: none | The normalized advisory output exceeded the ${comment_limit}-byte comment limit, so model findings were not published and reviewed-head memory was omitted. | Run a full advisory review after reducing provider output or increasing the configured comment limit. | yes |
 
 ### Not blocking
 

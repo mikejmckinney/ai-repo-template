@@ -30,7 +30,7 @@ Shared properties:
 
 - **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (OpenCode first, then Cursor and the retained Antigravity/Gemini adapters).
 - **Scripts:** `scripts/workflows/advisory-review/` (LLM runners), `scripts/workflows/pr-feedback/` (finalize collect), `scripts/workflows/postmerge-retro/` (retro + daily batch), `scripts/workflows/weekly-review/` (weekly full-repo scan + fix).
-- **Lifecycle libraries:** daily and weekly adapters share provider dispatch, umbrella issue transport/reference handling, priority derivation, superseded-path detection, and batch-fix publication under `scripts/workflows/lib/`. Cadence-specific prompts, templates, markers, and metadata hooks remain explicit.
+- **Lifecycle libraries:** advisory, daily, and weekly adapters share the versioned AP11 observation validator and priority derivation in `scripts/workflows/lib/finding_priority.py`; daily and weekly also share provider dispatch, umbrella issue transport/reference handling, superseded-path detection, and batch-fix publication. Cadence-specific prompts, templates, markers, authority, and metadata hooks remain explicit.
 - **Non-goals:** No auto-merge of fix PRs; no automatic `claude-fix`; no ADR/context-pack file edits in retro jobs; no formal PR review submission from advisory/finalize.
 
 ### Post-merge retro v2 (supersedes v1 trigger/output)
@@ -57,7 +57,7 @@ Shared properties:
 **Batch behavior:**
 
 1. Collect run metadata (HEAD SHA, run week) + inject **`full`** context profile via `prompt_helpers.py select-context` (context pack only — no path-trigger expansion).
-2. Single LLM pass with **repository read access** (Cursor `local.cwd`; Antigravity when `auto` lacks Cursor) → `weekly-review.json`. Findings use the same classifier inputs as daily retro; automation derives `priority_band` and rejects deprecated `severity`.
+2. Single LLM pass with **repository read access** (Cursor `local.cwd`; Antigravity when `auto` lacks Cursor) → `weekly-review.json`. New findings use the shared `triage_version: 2` AP11 observations; automation validates them, derives `priority_band`, and rejects model-authored `severity` or priority.
 3. Create or **append** one umbrella issue per ISO week (`<!-- weekly-review:YYYY-Www -->`). Each finding appears in a compact triage summary table and a detailed block containing its full body, `repo-*` key, reproduction steps, and evidence links pinned to scan HEAD.
 4. If findings &gt; 0: second LLM pass opens/updates a **draft** fix PR `weekly/fix-YYYY-Www`; native GitHub issue link via `Fixes #N` in PR body (`scripts/workflows/lib/link-fix-pr-to-issue.sh`).
 
@@ -192,6 +192,18 @@ subscription-backed Sol for this trusted private repository.
 - Review output must pass cadence validation. Every fix provider runs inside a
   disposable worktree, controller verification receives no model, OAuth,
   publisher, or sandbox credentials, and only a verified patch is promoted.
+
+### Amendment 2026-07-23 — Shared AP11 classifier across review surfaces
+
+All new advisory, daily, and weekly model findings emit the normalized
+`triage_version: 2` observation fields defined in the shared review contract.
+Automation validates impact kind/magnitude, likelihood, scope, reversibility,
+cost, confidence, uncertainty, and regression-guard value before deriving one
+priority band. Advisory providers emit structured JSON; the deterministic
+adapter renders the sticky Markdown comment and keeps every band non-blocking.
+Formal/manual review uses the same classifier but applies its own authority only
+after classification. Unversioned persisted daily/weekly records remain version
+1 and retain their original decision table during reconstruction.
 
 ## Implementation
 

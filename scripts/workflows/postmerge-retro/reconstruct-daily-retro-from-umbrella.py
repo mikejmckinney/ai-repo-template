@@ -12,6 +12,11 @@ from pathlib import Path
 
 ROW_RE = re.compile(
     r"^\|\s*#(\d+)\s*\|\s*([^|]+)\|\s*`([^`]+)`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*"
+    r"([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*"
+    r"([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*$"
+)
+ROW_RE_LEGACY_10 = re.compile(
+    r"^\|\s*#(\d+)\s*\|\s*([^|]+)\|\s*`([^`]+)`\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*"
     r"([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*$"
 )
 ROW_RE_LEGACY_8 = re.compile(
@@ -63,7 +68,26 @@ def _infer_fix_cost_and_guard(impact: str, trigger: str, table_band: str) -> tup
 
 def _parse_row(match: re.Match[str], *, run_date: str) -> dict:
     groups = match.groups()
-    if len(groups) == 10:
+    if len(groups) == 15:
+        (
+            pr,
+            category,
+            dedupe_key,
+            impact,
+            magnitude,
+            trigger,
+            scope,
+            reversibility,
+            fix_cost,
+            confidence,
+            uncertainty,
+            guard_raw,
+            table_band,
+            title,
+            suggested,
+        ) = groups
+        regression_guard = _parse_guard(guard_raw)
+    elif len(groups) == 10:
         pr, category, dedupe_key, impact, trigger, fix_cost, guard_raw, table_band, title, suggested = (
             groups
         )
@@ -102,6 +126,17 @@ def _parse_row(match: re.Match[str], *, run_date: str) -> dict:
         "evidence": [f"umbrella-table:{run_date}"],
         "labels": _labels_for(category),
     }
+    if len(groups) == 15:
+        row.update(
+            {
+                "triage_version": 2,
+                "impact_magnitude": magnitude.strip(),
+                "affected_scope": scope.strip(),
+                "reversibility": reversibility.strip(),
+                "confidence": confidence.strip(),
+                "uncertainty": uncertainty.strip(),
+            }
+        )
     if category == "follow_up_issues":
         row["repro_steps"] = [
             "Reconstructed from umbrella findings table; re-run per-PR retro for concrete repro steps."
@@ -137,7 +172,11 @@ def parse_umbrella_body(body: str, run_date: str | None) -> dict:
     prs: set[int] = set()
     for line in body.splitlines():
         stripped = line.strip()
-        match = ROW_RE.match(stripped) or ROW_RE_LEGACY_8.match(stripped)
+        match = (
+            ROW_RE.match(stripped)
+            or ROW_RE_LEGACY_10.match(stripped)
+            or ROW_RE_LEGACY_8.match(stripped)
+        )
         if not match:
             continue
         row = _parse_row(match, run_date=run_date)

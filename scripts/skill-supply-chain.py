@@ -22,6 +22,8 @@ SOURCE_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 MAX_ARCHIVE_FILES = 50_000
 MAX_ARCHIVE_BYTES = 250 * 1024 * 1024
+LICENSE_INVENTORY_BEGIN = "<!-- generated:skill-license-inventory:begin -->"
+LICENSE_INVENTORY_END = "<!-- generated:skill-license-inventory:end -->"
 
 
 class SupplyChainError(Exception):
@@ -300,6 +302,91 @@ def validate_owned_record(repo: Path, key: str, record: object) -> tuple[Path, s
     return destination / "SKILL.md", metadata_name
 
 
+def source_metadata(lock: dict) -> dict[str, dict]:
+    sources = {record["source"] for record in lock.get("skills", {}).values()}
+    metadata = lock.get("sourceMetadata")
+    if not isinstance(metadata, dict):
+        raise SupplyChainError("sourceMetadata must be an object")
+    missing = sorted(sources - metadata.keys())
+    extra = sorted(metadata.keys() - sources)
+    if missing:
+        raise SupplyChainError(f"sourceMetadata is missing sources: {', '.join(missing)}")
+    if extra:
+        raise SupplyChainError(f"sourceMetadata has undeclared sources: {', '.join(extra)}")
+
+    for source, record in sorted(metadata.items()):
+        if not isinstance(record, dict):
+            raise SupplyChainError(f"sourceMetadata {source} must be an object")
+        license_name = record.get("license")
+        evidence = record.get("evidence")
+        if not isinstance(license_name, str) or not license_name.strip():
+            raise SupplyChainError(f"sourceMetadata {source} license must be a non-empty string")
+        if not isinstance(evidence, list) or not evidence:
+            raise SupplyChainError(f"sourceMetadata {source} evidence must be a non-empty array")
+        for index, item in enumerate(evidence):
+            path = f"sourceMetadata {source} evidence[{index}]"
+            if not isinstance(item, dict) or set(item) - {"label", "path", "fragment"}:
+                raise SupplyChainError(f"{path} must contain label, path, and optional fragment")
+            if not isinstance(item.get("label"), str) or not item["label"].strip():
+                raise SupplyChainError(f"{path} label must be a non-empty string")
+            safe_relative_path(item.get("path"), f"{path} path")
+            fragment = item.get("fragment")
+            if fragment is not None and (
+                not isinstance(fragment, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+", fragment)
+            ):
+                raise SupplyChainError(f"{path} fragment is invalid")
+    return metadata
+
+
+def source_ref(lock: dict, source: str) -> str:
+    refs = {record["ref"] for record in lock["skills"].values() if record["source"] == source}
+    if len(refs) != 1:
+        raise SupplyChainError(f"source has inconsistent locked refs: {source}")
+    return next(iter(refs))
+
+
+def license_inventory(lock: dict) -> str:
+    metadata = source_metadata(lock)
+    rows = [
+        "| Source | Packages | License | Pinned evidence |",
+        "|---|---:|---|---|",
+    ]
+    for source, record in sorted(metadata.items()):
+        ref = source_ref(lock, source)
+        count = sum(1 for skill in lock["skills"].values() if skill["source"] == source)
+        links = []
+        for evidence in record["evidence"]:
+            fragment = f"#{evidence['fragment']}" if evidence.get("fragment") else ""
+            url = f"https://github.com/{source}/blob/{ref}/{evidence['path']}{fragment}"
+            links.append(f"[{evidence['label']}]({url})")
+        rows.append(
+            f"| `{source}` | {count} | {record['license']} | {', '.join(links)} |"
+        )
+    return "\n".join(rows)
+
+
+def render_license_inventory(repo: Path, lock: dict, *, check: bool = False) -> None:
+    guide = repo / "docs" / "guides" / "skill-supply-chain.md"
+    try:
+        body = guide.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise SupplyChainError(f"cannot read license inventory guide: {error}") from error
+    if body.count(LICENSE_INVENTORY_BEGIN) != 1 or body.count(LICENSE_INVENTORY_END) != 1:
+        raise SupplyChainError("skill license inventory markers must appear exactly once")
+    prefix, remainder = body.split(LICENSE_INVENTORY_BEGIN, 1)
+    _, suffix = remainder.split(LICENSE_INVENTORY_END, 1)
+    rendered = (
+        f"{prefix}{LICENSE_INVENTORY_BEGIN}\n{license_inventory(lock)}\n"
+        f"{LICENSE_INVENTORY_END}{suffix}"
+    )
+    if check:
+        if rendered != body:
+            raise SupplyChainError("skill license inventory is stale")
+        return
+    if rendered != body:
+        write_text_atomically(guide, rendered)
+
+
 def validate_lock(repo: Path, lock_path: Path) -> None:
     lock = load_json(lock_path)
     if lock.get("version") != 2:
@@ -309,6 +396,7 @@ def validate_lock(repo: Path, lock_path: Path) -> None:
     owned = lock.get("ownedSkills")
     if not isinstance(external, dict) or not isinstance(owned, dict):
         raise SupplyChainError("skills and ownedSkills must be objects")
+    source_metadata(lock)
     overlap = sorted(external.keys() & owned.keys())
     if overlap:
         raise SupplyChainError(f"skills cannot be both external and owned: {', '.join(overlap)}")
@@ -369,6 +457,7 @@ def source_packages(
         raise SupplyChainError(f"source directory must be a real directory: {source_dir}")
 
     lock = load_json(lock_path)
+    metadata = source_metadata(lock)[source]
     selected = [
         (key, record)
         for key, record in sorted(lock["skills"].items())
@@ -450,6 +539,20 @@ def source_packages(
                 "changed": new_hash != old_hash,
             }
         )
+    for evidence in metadata["evidence"]:
+        evidence_path = source_dir.joinpath(
+            *safe_relative_path(
+                evidence["path"], f"sourceMetadata {source} evidence path"
+            ).parts
+        )
+        if (
+            not evidence_path.is_file()
+            or evidence_path.is_symlink()
+            or evidence_path.stat().st_size == 0
+        ):
+            raise SupplyChainError(
+                f"license evidence is missing at {target_ref}: {source}/{evidence['path']}"
+            )
     return lock, packages
 
 
@@ -492,6 +595,19 @@ def write_json_atomically(path: Path, value: dict) -> None:
         with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
             json.dump(value, stream, indent=2, sort_keys=True)
             stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def write_text_atomically(path: Path, value: str) -> None:
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(value)
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary_path, path)
@@ -597,6 +713,23 @@ def acquire_github_source(lock: dict, source: str, requested_ref: str | None, de
             for record in records
         }
     )
+    metadata = source_metadata(lock)[source]
+    candidate_paths = sorted(
+        set(package_paths)
+        | {
+            safe_relative_path(item["path"], f"sourceMetadata {source} evidence path").as_posix()
+            for item in metadata["evidence"]
+        }
+    )
+    acquisition_paths = [
+        path
+        for path in candidate_paths
+        if not any(
+            PurePosixPath(parent) in PurePosixPath(path).parents
+            for parent in candidate_paths
+            if parent != path
+        )
+    ]
     repository_url = f"https://github.com/{source}.git"
 
     if requested_ref is None:
@@ -629,7 +762,7 @@ def acquire_github_source(lock: dict, source: str, requested_ref: str | None, de
         )
     available_paths = [
         path
-        for path in package_paths
+        for path in acquisition_paths
         if run_git(
             [f"--git-dir={bare_repository}", "ls-tree", "--name-only", "FETCH_HEAD", "--", path]
         )
@@ -708,6 +841,8 @@ def update_source(
             record["computedHash"] = package["newHash"]
 
     lock_backup = lock_path.read_bytes()
+    guide_path = repo / "docs" / "guides" / "skill-supply-chain.md"
+    guide_backup = guide_path.read_bytes() if guide_path.exists() else None
     with tempfile.TemporaryDirectory(prefix=".skill-refresh-", dir=repo.parent) as temporary:
         temporary_root = Path(temporary)
         staged_root = temporary_root / "staged"
@@ -742,8 +877,12 @@ def update_source(
                 os.replace(staged_root / package["key"], destination)
             write_json_atomically(lock_path, next_lock)
             validate_lock(repo, lock_path)
+            if guide_backup is not None:
+                render_license_inventory(repo, next_lock)
         except Exception:
             lock_path.write_bytes(lock_backup)
+            if guide_backup is not None:
+                guide_path.write_bytes(guide_backup)
             for package in reversed(replaced):
                 destination = package["destination"]
                 if destination.exists():
@@ -764,6 +903,13 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser = commands.add_parser("validate-lock", help="validate the skills lock")
     validate_parser.add_argument("--repo", required=True, type=Path)
     validate_parser.add_argument("--lock", required=True, type=Path)
+
+    inventory_parser = commands.add_parser(
+        "render-license-inventory", help="render pinned license evidence from the lock"
+    )
+    inventory_parser.add_argument("--repo", required=True, type=Path)
+    inventory_parser.add_argument("--lock", required=True, type=Path)
+    inventory_parser.add_argument("--check", action="store_true")
 
     for command in ("check", "update"):
         source_parser = commands.add_parser(command, help=f"{command} one upstream source")
@@ -786,6 +932,11 @@ def main() -> int:
         elif args.command == "validate-lock":
             validate_lock(args.repo, args.lock)
             print(json.dumps({"status": "success", "lock": str(args.lock)}))
+        elif args.command == "render-license-inventory":
+            lock = load_json(args.lock)
+            source_metadata(lock)
+            render_license_inventory(args.repo, lock, check=args.check)
+            print(json.dumps({"status": "success", "check": args.check}))
         elif args.command == "check":
             print(json.dumps(run_source_operation(args), sort_keys=True))
         elif args.command == "update":

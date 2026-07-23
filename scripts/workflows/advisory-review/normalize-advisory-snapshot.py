@@ -3,7 +3,13 @@
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
+
+LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(LIB_DIR))
+
+from finding_priority import apply_triage_to_item, validate_triage_item  # noqa: E402
 
 
 MARKER = "<!-- ai-advisory-review:v1 -->"
@@ -16,7 +22,7 @@ NOT_BLOCKING_TEXT = (
     "These findings are optional input while implementation continues. "
     "CI and maintainer decisions remain authoritative."
 )
-SEVERITIES = {"info", "low", "medium", "high"}
+BANDS = {"fix-now", "should-fix", "defer"}
 LENSES = {
     "Outcome and scope",
     "Correctness",
@@ -38,6 +44,83 @@ def replace_line(body: str, prefix: str, value: str) -> str:
     if title not in body:
         body = f"{title}\n\n{body.lstrip()}"
     return body.replace(title, f"{title}\n\n{prefix}{value}", 1)
+
+
+def markdown_cell(value: object) -> str:
+    return str(value).replace("|", "/").replace("\n", " ").strip()
+
+
+def render_structured_findings(raw: str) -> str:
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"structured advisory output must be valid JSON: {error}") from error
+    if not isinstance(data, dict) or not isinstance(data.get("findings"), list):
+        raise ValueError("structured advisory output requires a findings array")
+
+    findings = data["findings"]
+    if not findings:
+        section = "No findings identified at this head."
+    else:
+        rows = [
+            "| ID | Band | Lens | Area | AP11 evidence | Finding | Suggested action | Still present at head? |",
+            "|---|---|---|---|---|---|---|---|",
+        ]
+        for index, finding in enumerate(findings):
+            path = f"findings[{index}]"
+            if not isinstance(finding, dict):
+                raise ValueError(f"{path} must be an object")
+            validate_triage_item(finding, path, from_llm=True)
+            apply_triage_to_item(finding, path)
+            required = {
+                "id": finding.get("id"),
+                "lens": finding.get("lens"),
+                "area": finding.get("area"),
+                "finding": finding.get("finding"),
+                "suggested_action": finding.get("suggested_action"),
+            }
+            if any(not isinstance(value, str) or not value.strip() for value in required.values()):
+                raise ValueError(f"{path} requires non-empty id, lens, area, finding, and suggested_action")
+            if not re.fullmatch(r"ADV-\d{2}", finding["id"]):
+                raise ValueError(f"{path}.id must match ADV-NN")
+            if finding["lens"] not in LENSES:
+                raise ValueError(f"{path}.lens is not a shared review lens")
+            if not isinstance(finding.get("still_present_at_head"), bool):
+                raise ValueError(f"{path}.still_present_at_head must be a boolean")
+            evidence = "/".join(
+                str(finding[field])
+                for field in (
+                    "impact_magnitude",
+                    "trigger_likelihood",
+                    "affected_scope",
+                    "reversibility",
+                    "fix_cost",
+                    "confidence",
+                )
+            )
+            evidence = f"{evidence}; uncertainty: {finding['uncertainty']}"
+            cells = (
+                finding["id"],
+                finding["priority_band"],
+                finding["lens"],
+                finding["area"],
+                evidence,
+                finding["finding"],
+                finding["suggested_action"],
+                "yes" if finding["still_present_at_head"] else "no",
+            )
+            rows.append(f"| {' | '.join(markdown_cell(cell) for cell in cells)} |")
+        section = "\n".join(rows)
+
+    return f"""## Advisory Review Snapshot
+
+### Findings to consider
+
+{section}
+
+### Not blocking
+
+{NOT_BLOCKING_TEXT}"""
 
 
 def normalize_findings(body: str) -> tuple[str, int]:
@@ -73,12 +156,12 @@ def normalize_findings(body: str) -> tuple[str, int]:
         for row in finding_rows:
             cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
             if (
-                len(cells) != 7
+                len(cells) != 8
                 or not all(cells)
                 or not re.fullmatch(r"ADV-\d{2}", cells[0])
-                or cells[1] not in SEVERITIES
+                or cells[1] not in BANDS
                 or cells[2] not in LENSES
-                or cells[6] not in {"yes", "no"}
+                or cells[7] not in {"yes", "no"}
                 or "…" in row
             ):
                 raise ValueError("malformed findings section: invalid finding row")
@@ -160,7 +243,12 @@ def main() -> int:
     if not isinstance(provider, str) or not provider or not isinstance(model, str) or not model:
         raise SystemExit("provider metadata requires non-empty provider and model")
 
-    body = Path(args.input).read_text(encoding="utf-8")
+    body = Path(args.input).read_text(encoding="utf-8").strip()
+    if body.startswith("{"):
+        try:
+            body = render_structured_findings(body)
+        except ValueError as error:
+            raise SystemExit(str(error)) from error
     if MARKER in body:
         preamble, snapshot = body.split(MARKER, 1)
         if preamble.strip():

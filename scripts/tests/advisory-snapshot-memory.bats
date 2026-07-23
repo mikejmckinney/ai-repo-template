@@ -51,7 +51,7 @@ EOF
   [ "$(sed -n '1p' "$TMP_DIR/output.md")" = '<!-- ai-advisory-review:v1 -->' ]
 }
 
-@test "advisory normalization preserves actual findings" {
+@test "advisory normalization rejects model-authored severity findings" {
   cat >"$TMP_DIR/input.md" <<'EOF'
 ## Advisory Review Snapshot
 
@@ -79,10 +79,9 @@ EOF
     --truncated no \
     --changed-files 1
 
-  [ "$status" -eq 0 ]
-  grep -q '^Provider: `antigravity / agent:antigravity-preview-05-2026`$' "$TMP_DIR/output.md"
-  grep -q '^| ADV-01 | high |' "$TMP_DIR/output.md"
-  ! grep -q '^No findings identified' "$TMP_DIR/output.md"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"invalid finding row"* ]]
+  [ ! -e "$TMP_DIR/output.md" ]
 }
 
 @test "advisory normalization classifies structured AP11 findings" {
@@ -410,19 +409,13 @@ invoke_advisory_llm() {
   local output_file="$2" long_finding
   printf '%s\n' '{"provider":"opencode","model":"test-model"}' >"$ADVISORY_PROVIDER_METADATA_FILE"
   long_finding=$(printf 'x%.0s' {1..2000})
-  cat >"$output_file" <<SNAPSHOT
-## Advisory Review Snapshot
-
-### Findings to consider
-
-| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
-|---|---|---|---|---|---|---|
-| ADV-01 | medium | Correctness | parser | $long_finding | Fix it. | yes |
-
-### Not blocking
-
-These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
-SNAPSHOT
+  jq -n --arg finding "$long_finding" '{findings:[{
+    id:"ADV-01", lens:"Correctness", area:"parser", finding:$finding,
+    suggested_action:"Fix it.", still_present_at_head:true,
+    triage_version:2, impact:"incorrect-behavior", impact_magnitude:"material",
+    trigger_likelihood:"common", affected_scope:"broad", reversibility:"hard",
+    fix_cost:"moderate", confidence:"high", uncertainty:"none", regression_guard:false
+  }]}' >"$output_file"
 }
 EOF
   cat >"$TMP_DIR/upsert.sh" <<'EOF'
@@ -446,7 +439,7 @@ EOF
 
   [ "$status" -eq 0 ]
   ! grep -q 'ai-advisory-memory:v1' "$TMP_DIR/posted.md"
-  grep -q '^| ADV-01 | info | Reliability and performance | Advisory output |' "$TMP_DIR/posted.md"
+  grep -q '^| ADV-01 | defer | Reliability and performance | Advisory output |' "$TMP_DIR/posted.md"
   grep -q 'exceeded the 1000-byte comment limit' "$TMP_DIR/posted.md"
   [ "$(wc -c <"$TMP_DIR/posted.md" | tr -d ' ')" -le 1000 ]
 

@@ -4,9 +4,15 @@
     {
       "title": "Example invariant gap",
       "labels": ["agent-suggested"],
+      "triage_version": 2,
       "impact": "meta-harness",
+      "impact_magnitude": "bounded",
       "trigger_likelihood": "edge",
+      "affected_scope": "limited",
+      "reversibility": "easy",
       "fix_cost": "trivial",
+      "confidence": "high",
+      "uncertainty": "none",
       "regression_guard": true,
       "body": "Fixture finding body.",
       "repro_steps": [

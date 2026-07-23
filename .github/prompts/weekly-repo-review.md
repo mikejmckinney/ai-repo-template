@@ -41,9 +41,15 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
     {
       "title": "string",
       "labels": ["agent-suggested"],
+      "triage_version": 2,
       "impact": "incorrect-behavior|dx-perf-doc|meta-harness",
+      "impact_magnitude": "bounded|material|critical",
       "trigger_likelihood": "common|edge|fringe",
+      "affected_scope": "isolated|limited|broad",
+      "reversibility": "easy|moderate|hard",
       "fix_cost": "trivial|moderate|large",
+      "confidence": "low|medium|high",
+      "uncertainty": "none or a concise statement of missing evidence",
       "regression_guard": false,
       "body": "markdown body",
       "evidence": ["string"],
@@ -54,7 +60,8 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
 }
 ```
 
-`priority_band` is derived by automation. Do not emit it. `severity` is deprecated.
+Follow the injected normalized AP11 observation contract.
+`priority_band` is derived by automation; do not emit it. `severity` is deprecated.
 
 ## Dedupe keys
 

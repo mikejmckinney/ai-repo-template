@@ -98,14 +98,22 @@ vendors remain independently reviewable. A ref-only result stops before any
 write or PR creation. A material package change:
 
 1. updates only that source's packages and lock records;
-2. scans refreshed package paths for credential signatures;
-3. validates the lock, focused Bats tests, and the full repository;
-4. opens or updates one draft PR with refs, packages, hashes, and validation
-   evidence.
+2. verifies source-level license evidence at the proposed immutable commit and
+   regenerates the pinned inventory from `sourceMetadata` in the lock;
+3. scans refreshed package paths for credential signatures;
+4. validates the lock, focused Bats tests, and the full repository;
+5. opens or updates one draft PR with refs, packages, hashes, generated license
+   evidence, and validation evidence;
+6. explicitly dispatches required CI and lint workflows on the generated branch
+   because `GITHUB_TOKEN`-created pull requests do not emit ordinary
+   `pull_request` workflow runs.
 
-The workflow has `contents: write` and `pull-requests: write` because it must push
-the source branch and maintain the draft PR. It has no auto-merge path. The
-downloaded packages are treated as data and are never run by the workflow.
+The workflow has `contents: write`, `pull-requests: write`, and `actions: write`
+because it must push the source branch, maintain the draft PR, and dispatch the
+existing required workflows at that exact branch head. It has no auto-merge
+path. Generated commits cannot include workflow or repository script changes;
+the downloaded packages are treated as data and are never run by the publishing
+job.
 
 Repository controls:
 
@@ -156,14 +164,17 @@ satisfying maintainer review. Keep refresh PRs draft and never apply
    Preserve provider parent directories for multi-skill providers.
 4. Copy upstream bytes and executable modes without rewriting them. Use
    `packageType: "file"` only when the upstream package is genuinely one file.
-5. Add the external lock record and calculate its hash with
-   `scripts/skill-supply-chain.py hash`. Declare audited exclusions first. If
+5. Add the external lock record and source-level `sourceMetadata` license
+   evidence, then calculate its hash with `scripts/skill-supply-chain.py hash`.
+   Declare audited exclusions first. If
    the package contains nested skills, declare every relative `SKILL.md` path in
    sorted `skillEntrypoints` rather than creating overlapping package records.
 6. Add or extend tests for package structure, provider nesting, discovery, and
    any new exclusion or package-type behavior.
 7. Run lock validation, the refreshed-package secret scan, focused Bats tests,
-   `./test.sh`, Markdown/link checks, and `git diff --check`.
+   `python3 scripts/skill-supply-chain.py render-license-inventory --repo "$PWD"
+   --lock skills-lock.json --check`, `./test.sh`, Markdown/link checks, and
+   `git diff --check`.
 8. Exercise the skill against a representative task. Static validation does not
    prove that the skill routes an agent to a correct user outcome.
 
@@ -174,12 +185,14 @@ the nightly workflow will not update it.
 
 ## License inventory
 
-The lock is canonical for package-to-source and package-to-commit mappings. This
-inventory records the license evidence reviewed at each currently pinned commit.
+The lock is canonical for package-to-source, package-to-commit, and source-level
+license-evidence mappings. The generated inventory records the evidence reviewed
+at each currently pinned commit.
 Per maintainer decision, it links the exact upstream evidence rather than copying
 license texts into this repository. Recheck the evidence whenever a source ref
 changes; this table is not a substitute for complying with the linked terms.
 
+<!-- generated:skill-license-inventory:begin -->
 | Source | Packages | License | Pinned evidence |
 |---|---:|---|---|
 | `ChromeDevTools/chrome-devtools-mcp` | 3 | Apache-2.0 | [LICENSE](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/76fd2424984827802867672fcc8d0e0036f4a3af/LICENSE) |
@@ -197,3 +210,4 @@ changes; this table is not a substitute for complying with the linked terms.
 | `supabase/agent-skills` | 2 | MIT | [LICENSE](https://github.com/supabase/agent-skills/blob/1ad9aaeb49caafd9e95c0a91116f71890eebbc53/LICENSE) |
 | `vercel-labs/agent-skills` | 5 | MIT | [README license declaration](https://github.com/vercel-labs/agent-skills/blob/4559f18a20c1691c744b4395194290db6a0df5e9/README.md#license) |
 | `vercel-labs/skills` | 1 | MIT | [README license declaration](https://github.com/vercel-labs/skills/blob/777599e1159e401b11ce4c8a57c20f09a8f1596e/README.md#license) |
+<!-- generated:skill-license-inventory:end -->

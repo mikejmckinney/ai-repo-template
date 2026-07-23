@@ -31,7 +31,7 @@ write_lock() {
       sourceMetadata: {
         "example/acme-skills": {
           license: "MIT",
-          evidence: [{label: "LICENSE", path: ($skill_path + (if ($skill_path | endswith(".md")) then "" else "/SKILL.md" end))}]
+          evidence: [{label: "LICENSE", path: "skills/acme/SKILL.md"}]
         }
       },
       skills: {
@@ -69,6 +69,70 @@ EOF
   [ "$status" -eq 0 ]
   grep -Fq '| `example/acme-skills` | 1 | MIT | [LICENSE](https://github.com/example/acme-skills/blob/0123456789abcdef0123456789abcdef01234567/skills/acme/SKILL.md) |' \
     "$FIXTURE_ROOT/docs/guides/skill-supply-chain.md"
+}
+
+@test "license inventory rejects missing or malformed metadata without mutation" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  mkdir -p "$FIXTURE_ROOT/docs/guides"
+  cat >"$FIXTURE_ROOT/docs/guides/skill-supply-chain.md" <<'EOF'
+# Fixture
+
+<!-- generated:skill-license-inventory:begin -->
+stale
+<!-- generated:skill-license-inventory:end -->
+EOF
+  guide_before="$(sha256sum "$FIXTURE_ROOT/docs/guides/skill-supply-chain.md")"
+
+  jq 'del(.sourceMetadata["example/acme-skills"])' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+  run python3 "$TOOL" render-license-inventory \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"sourceMetadata is missing sources"* ]]
+  [ "$(sha256sum "$FIXTURE_ROOT/docs/guides/skill-supply-chain.md")" = "$guide_before" ]
+
+  write_lock "$(python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme")"
+  jq '.sourceMetadata["example/acme-skills"].evidence[0].path = "../LICENSE"' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+  run python3 "$TOOL" render-license-inventory \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"path contains path traversal"* ]]
+  [ "$(sha256sum "$FIXTURE_ROOT/docs/guides/skill-supply-chain.md")" = "$guide_before" ]
+}
+
+@test "source refresh rejects unavailable license evidence without mutation" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.sourceMetadata["example/acme-skills"].evidence[0] = {label: "LICENSE", path: "LICENSE"}' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  upstream="$BATS_TEST_TMPDIR/upstream-missing-license"
+  mkdir -p "$upstream/skills/acme"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" "$upstream/skills/acme/SKILL.md"
+  printf '\nupdated package\n' >>"$upstream/skills/acme/SKILL.md"
+  lock_before="$(sha256sum "$FIXTURE_ROOT/skills-lock.json")"
+  skill_before="$(sha256sum "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md")"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"license evidence is missing"*"example/acme-skills/LICENSE"* ]]
+  [ "$(sha256sum "$FIXTURE_ROOT/skills-lock.json")" = "$lock_before" ]
+  [ "$(sha256sum "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md")" = "$skill_before" ]
 }
 
 @test "package hash is deterministic and includes executable modes" {
@@ -542,7 +606,7 @@ EOF
     "$upstream/packages/acme/SKILL.md"
   printf '\nmoved package update\n' >>"$upstream/packages/acme/SKILL.md"
 
-  jq '.skills.acme.skillPath = "packages/acme"' \
+  jq '.skills.acme.skillPath = "packages/acme" | .sourceMetadata["example/acme-skills"].evidence[0].path = "packages/acme/SKILL.md"' \
     "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
   mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
   target_ref="1111111111111111111111111111111111111111"

@@ -122,6 +122,10 @@ NODE
   [ "$status" -eq 0 ]
   run grep -F '**Triage:** impact `meta-harness`' "$TEST_ROOT/findings.md"
   [ "$status" -eq 0 ]
+  run grep -F 'scope `limited` · reversibility `easy`' "$TEST_ROOT/findings.md"
+  [ "$status" -eq 0 ]
+  run grep -F '**Uncertainty:** none' "$TEST_ROOT/findings.md"
+  [ "$status" -eq 0 ]
   run grep -F '**Reproduction:**' "$TEST_ROOT/findings.md"
   [ "$status" -eq 0 ]
   run grep -F '**Severity:**' "$TEST_ROOT/findings.md"

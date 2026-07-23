@@ -34,7 +34,12 @@ generated `AGENTS.md` catalog directly.
   explicit opt-in technique, not default fan-out.
 - **P10 Classifier:** a deterministic classifier maps explicit observed attributes
   to an operational class while keeping classification separate from the action
-  taken for that class. `scripts/workflows/lib/finding_priority.py` classifies post-merge retro and weekly review findings from impact, trigger likelihood, fix cost, and regression-guard value into reviewable priority bands.
+  taken for that class. `scripts/workflows/lib/finding_priority.py` validates the
+  versioned AP11 observation contract and classifies advisory, formal/manual,
+  post-merge, and weekly findings from impact magnitude, trigger likelihood,
+  affected scope, reversibility, fix cost, confidence, uncertainty, and optional
+  regression-guard value. Surface adapters apply authority only after deriving
+  the common priority band.
 
 ### Anti-patterns to watch
 
@@ -80,7 +85,9 @@ generated `AGENTS.md` catalog directly.
   risks remain under-addressed. Classify probability and impact separately,
   account for reversibility and affected scope, compare mitigations by expected
   benefit and cost, and state the evidence and uncertainty behind the
-  classification.
+  classification. New review findings use the canonical versioned observation
+  contract rather than model-authored severity; unversioned persisted records
+  retain their historical classifier semantics.
 <!-- canonical:pap-catalog:end -->
 
 Historical role-registry and multi-agent examples remain in superseded ADRs and

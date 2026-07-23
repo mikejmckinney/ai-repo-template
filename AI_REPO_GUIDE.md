@@ -26,6 +26,7 @@ scripts/sync-opencode-oauth-secret.sh
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
 python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock skills-lock.json
+python3 scripts/skill-supply-chain.py render-license-inventory --repo "$PWD" --lock skills-lock.json --check
 scripts/diagnose-opencode-session.sh
 scripts/archive-opencode-database.sh
 git diff --check
@@ -146,6 +147,9 @@ triage any arrived snapshot whose `Head` matches the current PR head; stale,
 missing, running, or failed feedback is non-blocking. Advisory cannot submit a
 formal review, push commits, mutate labels, resolve threads, change readiness, or
 block merge. `ai-review:full` increases context depth but does not change authority.
+Providers emit normalized AP11 observations; deterministic automation validates
+the shared fields, derives priority, and renders the sticky Markdown snapshot.
+Classification never changes advisory's non-blocking authority.
 
 ### Daily Retro
 
