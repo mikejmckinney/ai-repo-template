@@ -41,6 +41,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
   OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
   FIX_PROVIDER_CASCADE="scripts/workflows/lib/run-fix-provider-cascade.sh"
+  FIX_VERIFICATION_VALIDATOR="scripts/workflows/lib/validate-fix-verification.py"
   MONOLITHIC_SCHEMA=".github/schemas/postmerge-retro-monolithic.schema.json"
   PROVIDER_TIMEOUT_SCRIPT="scripts/workflows/lib/postmerge-provider-timeout.sh"
 
@@ -51,7 +52,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
     "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA" \
     "$BOUNDED_SCRIPT" "$FULL_CURSOR_SCRIPT" "$ANTIGRAVITY_RETRO_SCRIPT" "$ASSEMBLE_PROMPT_SCRIPT" \
-    "$OPENCODE_RUNNER" "$OPENCODE_FIX_RUNNER" "$FIX_PROVIDER_CASCADE" "$MONOLITHIC_SCHEMA" "$PROVIDER_TIMEOUT_SCRIPT"; do
+    "$OPENCODE_RUNNER" "$OPENCODE_FIX_RUNNER" "$FIX_PROVIDER_CASCADE" "$FIX_VERIFICATION_VALIDATOR" \
+    "$MONOLITHIC_SCHEMA" "$PROVIDER_TIMEOUT_SCRIPT"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -283,6 +285,14 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "postmerge fix delegates publication to shared batch helper"
   else
     fail "run-postmerge-retro-fix.sh must call batch_fix_publish"
+  fi
+
+  if grep -q 'validate-fix-verification.py' "$FIX_PROVIDER_CASCADE" 2>/dev/null \
+    && grep -q 'validate-fix-verification.py' "scripts/workflows/lib/run-batch-fix.sh" 2>/dev/null \
+    && ! grep -q 'batch_fix_write_verify_stub\|creating minimal stub' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "retro fixes require verification before provider promotion and publication"
+  else
+    fail "retro fixes must fail closed without valid per-finding verification"
   fi
 
   if grep -q 'ensure-pipeline-labels.sh' "scripts/sandbox-bootstrap.sh" 2>/dev/null; then

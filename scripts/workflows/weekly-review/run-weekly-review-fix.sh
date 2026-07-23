@@ -113,13 +113,9 @@ apply_weekly_gemini_fix() {
 }
 
 run_fix_provider_cascade weekly-fix "$prompt_file" "$llm_raw" "$REPO_ROOT" \
-  "$ADVISORY_DIR" "$WORKDIR" "$LIB_DIR" apply_weekly_gemini_fix
+  "$ADVISORY_DIR" "$WORKDIR" "$LIB_DIR" apply_weekly_gemini_fix \
+  "$WEEKLY_JSON" "weekly/fix-verify-${RUN_WEEK}.json"
 fix_phase_log "llm-fix"
-
-if [[ ! -f "$VERIFY_JSON" ]]; then
-  echo "::warning::fix-verify.json missing after fix pass; creating minimal stub" >&2
-  batch_fix_write_verify_stub "$VERIFY_JSON" weekly run_week "$RUN_WEEK" "$WEEKLY_JSON"
-fi
 
 batch_fix_strip_workflow_changes
 
@@ -128,7 +124,7 @@ source "$LIB_DIR/finalize-fix-pr.sh"
 maybe_sandbox_sync "$REPO_ROOT" "$SANDBOX_BRANCH" "[sandbox] Weekly review fix ${RUN_WEEK}" "$VERIFY_JSON" "$LIB_DIR"
 fix_phase_log "sandbox-sync"
 
-batch_fix_commit_changes "fix: weekly repo review fixes for ${RUN_WEEK}"
+batch_fix_commit_changes "fix: weekly repo review fixes for ${RUN_WEEK}" "" "$VERIFY_JSON"
 has_diff="$BATCH_FIX_HAS_DIFF"
 fix_phase_log "commit"
 

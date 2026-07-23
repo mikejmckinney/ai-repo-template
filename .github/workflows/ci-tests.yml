@@ -78,13 +78,13 @@ jobs:
             2>/dev/null || echo "0")
           
           echo "Recent failures in last hour: $RECENT_FAILURES"
-          echo "failure_count=$RECENT_FAILURES" >> $GITHUB_OUTPUT
+          echo "failure_count=$RECENT_FAILURES" >> "$GITHUB_OUTPUT"
           
           if [[ "$RECENT_FAILURES" -ge "$MAX_RETRIES" ]]; then
-            echo "exceeded=true" >> $GITHUB_OUTPUT
+            echo "exceeded=true" >> "$GITHUB_OUTPUT"
             echo "::warning::Retry budget exceeded ($RECENT_FAILURES failures in last hour)"
           else
-            echo "exceeded=false" >> $GITHUB_OUTPUT
+            echo "exceeded=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Install test dependencies
@@ -145,23 +145,18 @@ jobs:
       - name: Capture failure logs
         if: failure()
         id: capture_logs
+        env:
+          CI_WORKFLOW: ${{ github.workflow }}
+          CI_RUN_NUMBER: ${{ github.run_number }}
+          CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CI_BRANCH: ${{ github.ref_name }}
+          CI_COMMIT: ${{ github.sha }}
+          CI_RETRY_COUNT: ${{ steps.retry_check.outputs.failure_count }}
+          CI_MAX_RETRIES: ${{ env.MAX_RETRIES }}
         run: |
-          echo "## CI Failure Report" > failure-report.md
-          echo "" >> failure-report.md
-          echo "**Workflow:** ${{ github.workflow }}" >> failure-report.md
-          echo "**Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> failure-report.md
-          echo "**Branch:** ${{ github.ref_name }}" >> failure-report.md
-          echo "**Commit:** ${{ github.sha }}" >> failure-report.md
-          echo "**Retry Count:** ${{ steps.retry_check.outputs.failure_count }}/${{ env.MAX_RETRIES }}" >> failure-report.md
-          echo "" >> failure-report.md
-          echo "### Error Output" >> failure-report.md
-          echo '```' >> failure-report.md
-          if [[ -f "test-output.log" ]]; then
-            tail -100 test-output.log >> failure-report.md
-          else
-            echo "No test output captured" >> failure-report.md
-          fi
-          echo '```' >> failure-report.md
+          scripts/render-ci-failure-report.sh failure-report.md \
+            "${{ steps.bats.outcome }}" "${{ steps.tests.outcome }}" \
+            bats-output.log test-output.log
 
       - name: Post failure comment on PR
         if: failure() && github.event_name == 'pull_request'

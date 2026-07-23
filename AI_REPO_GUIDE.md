@@ -161,7 +161,10 @@ Classification never changes advisory's non-blocking authority.
 
 The daily workflow reviews PRs merged to `main` in its evidence window, creates or
 updates one dated umbrella issue, and may open a draft fix PR. It is not a
-pre-merge gate.
+pre-merge gate. Fix attempts fail closed unless every actionable finding has
+complete verification and either substantive changes or complete
+`cant_reproduce` evidence. Verification-only output opens no PR, and a published
+PR must have a confirmed native GitHub link to its umbrella issue.
 Bounded provider output omits `evidence_complete`; full-evidence output must set
 it to `true` only after retrieving every required source. Separate schemas keep
 those claims from being conflated.

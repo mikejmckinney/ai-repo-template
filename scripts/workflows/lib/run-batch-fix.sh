@@ -36,55 +36,22 @@ batch_fix_require_human_workflow_pr() {
   return 1
 }
 
-batch_fix_write_verify_stub() {
-  local output="$1" run_kind="$2" key_name="$3" key_value="$4" input_json="$5"
-  python3 - "$output" "$run_kind" "$key_name" "$key_value" "$input_json" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-output, run_kind, key_name, key_value, input_path = sys.argv[1:]
-batch = json.loads(Path(input_path).read_text(encoding="utf-8"))
-rows = []
-for item in batch.get("findings") or []:
-    if item.get("category") != "follow_up_issues":
-        continue
-    rows.append(
-        {
-            "dedupe_key": item.get("dedupe_key", ""),
-            "repro_steps": item.get("repro_steps") or [],
-            "verify": {
-                "pre": "pending",
-                "post": "pending",
-                "sandbox": "n/a",
-                "notes": "stub — fix agent did not write fix-verify.json",
-            },
-        }
-    )
-payload = {
-    key_name: key_value,
-    "run_kind": run_kind,
-    "findings": rows,
-    "sandbox": {
-        "needs_sync": False,
-        "issue_url": "n/a",
-        "pr_url": "n/a",
-        "skip_reason": "fix-verify stub",
-        "workflow_runs": [],
-    },
-    "test_sh": "unknown",
-}
-output_path = Path(output)
-output_path.parent.mkdir(parents=True, exist_ok=True)
-output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-PY
-}
-
 batch_fix_commit_changes() {
-  local commit_message="$1" override_file="${2:-}"
+  local commit_message="$1" override_file="${2:-}" verify_json="${3:-}"
+  local changed_path verify_relative_path="" substantive_diff=0
   # shellcheck disable=SC2034 # consumed by the sourcing cadence adapter
   BATCH_FIX_HAS_DIFF=0
-  if [[ -z "$(git status --porcelain)" ]]; then
+  if [[ -n "$verify_json" ]]; then
+    verify_relative_path="${verify_json#"$PWD"/}"
+  fi
+  git add -N -- . >/dev/null 2>&1 || true
+  while IFS= read -r changed_path; do
+    if [[ "$changed_path" != "$verify_relative_path" && "$changed_path" != .artifacts/* ]]; then
+      substantive_diff=1
+      break
+    fi
+  done < <(git diff HEAD --name-only)
+  if [[ "$substantive_diff" -eq 0 ]]; then
     echo "::warning::Fix pass produced no git diff"
     return 0
   fi
@@ -118,8 +85,11 @@ batch_fix_publish() {
 
   if [[ "$has_diff" -eq 0 ]]; then
     batch_fix_require_human_workflow_pr || return 1
-    python3 "$(dirname "${BASH_SOURCE[0]}")/validate-no-diff-fix.py" \
-      "$input_json" "$verify_json" || return 1
+    python3 "$(dirname "${BASH_SOURCE[0]}")/validate-fix-verification.py" \
+      "$input_json" "$verify_json" --no-substantive-diff || return 1
+  else
+    python3 "$(dirname "${BASH_SOURCE[0]}")/validate-fix-verification.py" \
+      "$input_json" "$verify_json" --substantive-diff || return 1
   fi
 
   if [[ "$has_diff" -eq 1 ]]; then

@@ -117,13 +117,9 @@ apply_daily_gemini_fix() {
 }
 
 run_fix_provider_cascade retro-fix "$prompt_file" "$llm_raw" "$REPO_ROOT" \
-  "$ADVISORY_DIR" "$WORKDIR" "$LIB_DIR" apply_daily_gemini_fix
+  "$ADVISORY_DIR" "$WORKDIR" "$LIB_DIR" apply_daily_gemini_fix \
+  "$DAILY_JSON" "retro/fix-verify-${RUN_DATE}.json"
 fix_phase_log "llm-fix"
-
-if [[ ! -f "$VERIFY_JSON" ]]; then
-  echo "::warning::fix-verify.json missing after fix pass; creating minimal stub" >&2
-  batch_fix_write_verify_stub "$VERIFY_JSON" retro run_date "$RUN_DATE" "$DAILY_JSON"
-fi
 
 batch_fix_strip_workflow_changes
 
@@ -134,7 +130,7 @@ fix_phase_log "sandbox-sync"
 
 batch_fix_commit_changes \
   "fix: post-merge retro daily fixes for ${RUN_DATE}" \
-  "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt"
+  "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt" "$VERIFY_JSON"
 has_diff="$BATCH_FIX_HAS_DIFF"
 fix_phase_log "commit"
 

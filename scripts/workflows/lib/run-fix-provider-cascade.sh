@@ -3,6 +3,7 @@
 run_fix_provider_cascade() {
   local mode="$1" prompt_file="$2" output_file="$3" repo_root="$4"
   local advisory_dir="$5" workdir="$6" lib_dir="$7" gemini_apply_callback="$8"
+  local batch_json="$9" verify_relative_path="${10}"
   local verify_command="${FIX_PROVIDER_VERIFY_COMMAND:-./test.sh}"
   local attempt_root active_worktree attempt_output patch_file provider
   local -a provider_candidates=()
@@ -36,6 +37,16 @@ run_fix_provider_cascade() {
         -u OPENCODE_GITHUB_TOKEN -u OPENCODE_AUTH_CONTENT -u OPENAI_API_KEY \
         -u OPENROUTER_API_KEY -u CURSOR_API_KEY -u GEMINI_API_KEY -u GOOGLE_API_KEY \
         bash -c "$verify_command"
+      git add -N -- . >/dev/null 2>&1 || true
+      validation_mode=--no-substantive-diff
+      while IFS= read -r changed_path; do
+        if [[ "$changed_path" != "$verify_relative_path" && "$changed_path" != .artifacts/* ]]; then
+          validation_mode=--substantive-diff
+          break
+        fi
+      done < <(git diff HEAD --name-only)
+      python3 "$lib_dir/validate-fix-verification.py" \
+        "$batch_json" "$active_worktree/$verify_relative_path" "$validation_mode"
     ); then
       if ! git -C "$active_worktree" add -N -- . >/dev/null 2>&1; then
         echo "::warning::Fix worktree contains no paths to stage for diff detection" >&2
