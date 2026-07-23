@@ -45,7 +45,7 @@ EOF
   [[ "$output" == *"generic.md:1: generic-secret-assignment"* ]]
 }
 
-@test "nightly refresh workflow is source-scoped and review-first" {
+@test "nightly refresh workflow publishes one aggregate review PR" {
   [ -f "$WORKFLOW" ]
   run grep -q 'cron: "0 5 \* \* \*"' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -58,12 +58,12 @@ EOF
   run grep -q 'actions: write' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'matrix.source' "$WORKFLOW"
+  [ "$status" -eq 1 ]
+  # shellcheck disable=SC2016
+  run grep -Fq 'group: skill-refresh-aggregate' "$WORKFLOW"
   [ "$status" -eq 0 ]
   # shellcheck disable=SC2016
-  run grep -Fq 'group: skill-refresh-${{ matrix.source }}' "$WORKFLOW"
-  [ "$status" -eq 0 ]
-  # shellcheck disable=SC2016
-  run grep -Fq 'branch: automation/skill-refresh/${{ matrix.source }}' "$WORKFLOW"
+  run grep -Fq 'branch: automation/skill-refresh/all' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -79,7 +79,7 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'gh workflow run lint-and-format.yml' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq 'REFRESH_BRANCH: automation/skill-refresh/${{ matrix.source }}' "$WORKFLOW"
+  run grep -Fq 'REFRESH_BRANCH: automation/skill-refresh/all' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq -- '--ref "$REFRESH_BRANCH"' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -105,6 +105,35 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Eiq 'enable-auto-merge|merge-method:|auto-merge:' "$WORKFLOW"
   [ "$status" -eq 1 ]
+}
+
+@test "aggregate refresh processes sources sequentially with source rollback" {
+  run grep -Fq 'REQUESTED_SOURCE: ${{ inputs.source || '\''\'' }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'for source in "${sources[@]}"; do' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'backup_source "$source"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'restore_source "$source"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'failed-sources.jsonl' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'successful-sources.jsonl' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'Failed sources remain unchanged' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+}
+
+@test "targeted dispatch reuses the aggregate branch and pull request" {
+  [ "$(grep -Fc 'automation/skill-refresh/all' "$WORKFLOW")" -ge 2 ]
+  run grep -Fq 'Aggregate branch exists' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'ref: ${{ steps.refresh-base.outputs.ref }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git rebase origin/main' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'Optional owner/repository source to refresh' "$WORKFLOW"
+  [ "$status" -eq 0 ]
 }
 
 @test "required workflows accept trusted exact-head skill refresh dispatches" {
@@ -144,10 +173,12 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "skill refresh documentation explains source branches and PR authorization" {
+@test "skill refresh documentation explains aggregate publication and PR authorization" {
   guide="$REPO_ROOT/docs/guides/skill-supply-chain.md"
 
-  run grep -Fq 'one branch and draft PR per upstream source repository' "$guide"
+  run grep -Fq 'one stable aggregate branch and draft PR' "$guide"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'failed source remains unchanged' "$guide"
   [ "$status" -eq 0 ]
   run grep -Fq 'Allow GitHub Actions to create and approve pull requests' "$guide"
   [ "$status" -eq 0 ]
