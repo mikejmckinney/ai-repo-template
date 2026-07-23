@@ -191,7 +191,7 @@ changes; this table is not a substitute for complying with the linked terms.
 | `netlify/context-and-tools` | 3 | MIT | [LICENSE](https://github.com/netlify/context-and-tools/blob/b4ac277e6795f90e6a1d163c001c0d7667ff9143/LICENSE) |
 | `oracle/skills` | 3 | UPL-1.0 | [LICENSE](https://github.com/oracle/skills/blob/30e30dbcbf5f92f3564bc85f8fd59d32736adcd6/LICENSE.txt) |
 | `phaserjs/phaser` | 28 | MIT | [LICENSE](https://github.com/phaserjs/phaser/blob/41be1e462bc600064e498cba370bfa8c5c055a22/LICENSE.md) |
-| `railwayapp/railway-skills` | 1 | MIT | [LICENSE](https://github.com/railwayapp/railway-skills/blob/2405547f2044071c9d43bf6782edeb5d93e5bb4e/LICENSE) |
+| `railwayapp/railway-skills` | 1 | MIT | [LICENSE](https://github.com/railwayapp/railway-skills/blob/191601b4954527a87f4f004eaa355c8f30a855bf/LICENSE) |
 | `render-oss/skills` | 21 | MIT | [LICENSE](https://github.com/render-oss/skills/blob/1b8496570748203351f628b2ae738805ac2c23d5/LICENSE) |
 | `shadcn-ui/ui` | 1 | MIT | [LICENSE](https://github.com/shadcn-ui/ui/blob/d28738b183c5eaa69d8d540826e450f30d39ab6c/LICENSE.md) |
 | `supabase/agent-skills` | 2 | MIT | [LICENSE](https://github.com/supabase/agent-skills/blob/1ad9aaeb49caafd9e95c0a91116f71890eebbc53/LICENSE) |
