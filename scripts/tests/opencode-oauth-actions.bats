@@ -380,3 +380,46 @@ JSON
   [[ "$output" == *"Fix provider cascade exhausted"* ]]
   [ "$(cat "$repo/result.txt")" = base ]
 }
+
+@test "fix provider cascade rejects substantive edits with invalid verification" {
+  repo="$TEST_ROOT/invalid-verify-repo"
+  mkdir -p "$repo"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email test@example.com
+  git -C "$repo" config user.name Test
+  printf 'base\n' >"$repo/result.txt"
+  git -C "$repo" add result.txt
+  git -C "$repo" commit -qm base
+  printf 'fix this' >"$TEST_ROOT/invalid-verify-prompt.md"
+  printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"}]}' \
+    >"$TEST_ROOT/invalid-verify-batch.json"
+
+  for verify_case in missing malformed pending incomplete; do
+    run env VERIFY_CASE="$verify_case" bash -c '
+      list_advisory_providers() { printf "%s\n" opencode; }
+      invoke_advisory_llm() {
+        printf "changed\n" >result.txt
+        mkdir -p retro
+        case "$VERIFY_CASE" in
+          missing) ;;
+          malformed) printf "{\n" >retro/fix-verify-test.json ;;
+          pending) printf "%s\n" '\''{"findings":[{"dedupe_key":"key-a","verify":{"pre":"pending","post":"pending","notes":"Not finished."}}]}'\'' >retro/fix-verify-test.json ;;
+          incomplete) printf "%s\n" '\''{"findings":[]}'\'' >retro/fix-verify-test.json ;;
+        esac
+        printf "success\n" >"$2"
+      }
+      apply_noop() { return 0; }
+      source "$1"
+      FIX_PROVIDER_VERIFY_COMMAND=true run_fix_provider_cascade \
+        retro-fix "$2" "$3" "$4" "$4" "$5" "$6" apply_noop \
+        "$7" retro/fix-verify-test.json
+    ' _ \
+      "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
+      "$TEST_ROOT/invalid-verify-prompt.md" "$TEST_ROOT/invalid-verify-output.txt" "$repo" \
+      "$TEST_ROOT" "$REPO_ROOT/scripts/workflows/lib" "$TEST_ROOT/invalid-verify-batch.json"
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"Fix provider cascade exhausted"* ]]
+    [ "$(cat "$repo/result.txt")" = base ]
+  done
+}

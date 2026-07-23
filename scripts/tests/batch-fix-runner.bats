@@ -227,6 +227,11 @@ printf 'gh %s\n' "$*" >>"$CALL_LOG"
 if [[ "$1 $2" == "pr view" ]]; then
   printf '## Linked issues\n\nFixes #42\n'
 elif [[ "$1 $2" == "api graphql" ]]; then
+  [[ "$*" == *'closingIssuesReferences'* ]]
+  [[ "$*" == *'-F owner=owner'* ]]
+  [[ "$*" == *'-F name=repo'* ]]
+  [[ "$*" == *'-F number=17'* ]]
+  [[ "$*" == *'any(.number == 42)'* ]]
   count_file="${CALL_LOG}.graphql"
   count=0
   [[ -f "$count_file" ]] && count="$(cat "$count_file")"
@@ -244,6 +249,8 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"native Development-graph link"* ]]
   run grep -F 'gh pr edit 17 -R owner/repo --body-file' "$CALL_LOG"
+  [ "$status" -eq 0 ]
+  run grep -F 'closingIssuesReferences' "$CALL_LOG"
   [ "$status" -eq 0 ]
   [ "$(cat "${CALL_LOG}.graphql")" -eq 2 ]
 }
