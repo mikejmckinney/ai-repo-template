@@ -106,7 +106,10 @@ preserves its existing core-plus-agents behavior.
 - [x] Canonical credential manifest and script.
 - [x] Guarded manual workflow.
 - [x] Combined default tool profile.
-- [x] Sandbox and exact-head evidence recorded in PR #520.
+- [x] Sandbox and exact-head evidence recorded in PR #520 through sandbox issue
+  [#180](https://github.com/mikejmckinney/ai-repo-template-sandbox/issues/180)
+  and sandbox PR
+  [#181](https://github.com/mikejmckinney/ai-repo-template-sandbox/pull/181).
 
 ## References
 
