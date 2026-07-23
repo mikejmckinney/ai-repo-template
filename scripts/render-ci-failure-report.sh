@@ -13,14 +13,23 @@ TEST_LOG="${5:-}"
 }
 
 append_failure() {
-  local heading="$1" outcome="$2" log_file="$3"
+  local heading="$1" outcome="$2" log_file="$3" failure_context=""
   [[ "$outcome" == failure ]] || return 0
   {
     echo ""
     echo "### ${heading}"
     echo '```text'
     if [[ -f "$log_file" ]]; then
-      tail -c 20000 "$log_file" | tail -n 100
+      if [[ "$heading" == "Bats Failure Output" ]]; then
+        failure_context="$(grep -n -B 3 -A 8 '^not ok ' "$log_file" 2>/dev/null | tail -c 10000 || true)"
+        if [[ -n "$failure_context" ]]; then
+          printf '%s\n' "$failure_context"
+          echo "--- recent output ---"
+        fi
+        tail -c 10000 "$log_file" | tail -n 60
+      else
+        tail -c 20000 "$log_file" | tail -n 100
+      fi
     else
       echo "No output captured"
     fi

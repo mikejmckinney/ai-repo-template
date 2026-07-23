@@ -125,6 +125,8 @@ teardown() {
 }
 
 @test "batch fix mixed run publishes partial draft then fails for workflow follow-up" {
+  jq '.findings[0].verify = {pre: "reproduced", post: "fixed", notes: "Verified partial fix."}' \
+    "$TEST_ROOT/verify.json" >"$TEST_ROOT/fixed.json"
   mkdir -p "$TEST_ROOT/bin"
   cat >"$TEST_ROOT/bin/git" <<'EOF'
 #!/usr/bin/env bash
@@ -144,7 +146,7 @@ EOF
   run batch_fix_publish \
     owner/repo branch "" 1 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
     render_body "$TEST_ROOT/update.sh" "$TEST_ROOT/resolve.sh" "$TEST_ROOT/link.sh" \
-    "$TEST_ROOT/verify.json"
+    "$TEST_ROOT/fixed.json"
 
   [ "$status" -ne 0 ]
   [[ "$output" == *"human-authored workflow PR required"* ]]

@@ -49,6 +49,7 @@ def validate_fix(
     outcomes = indexed_findings(verification, "fix-verify")
 
     failures = []
+    fixed_count = 0
     for key in actionable:
         outcome = outcomes.get(key)
         if outcome is None:
@@ -64,7 +65,7 @@ def validate_fix(
             if post not in (None, "n/a"):
                 failures.append(f"{key}: cant_reproduce verify.post must be n/a")
         elif substantive_diff and pre == "reproduced" and post == "fixed":
-            pass
+            fixed_count += 1
         elif substantive_diff:
             failures.append(
                 f"{key}: verify must be reproduced/fixed or cant_reproduce"
@@ -77,6 +78,10 @@ def validate_fix(
         if not isinstance(notes, str) or not notes.strip():
             failures.append(f"{key}: verify.notes must explain the resolved outcome")
 
+    if substantive_diff and actionable and fixed_count == 0:
+        failures.append(
+            "substantive diff requires at least one reproduced/fixed finding"
+        )
     if failures:
         raise ValueError("; ".join(failures))
     return len(actionable)

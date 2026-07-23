@@ -47,6 +47,9 @@ for path, prefix, marker in (
     (sys.argv[2], "checks", "CHECKS_TAIL_MARKER"),
 ):
     lines = [f"{prefix} diagnostic {i:04d} {'x' * 40}" for i in range(3000)]
+    if prefix == "bats":
+        lines[100] = "MIDDLE_BATS_FAILURE_MARKER"
+        lines[101] = "not ok 42 sandbox Bats failure"
     lines.append(marker)
     Path(path).write_text("\n".join(lines) + "\n", encoding="utf-8")
 PY
@@ -60,5 +63,7 @@ PY
   grep -q '### Repository Check Failure Output' "$TEST_ROOT/report.md"
   grep -q 'BATS_TAIL_MARKER' "$TEST_ROOT/report.md"
   grep -q 'CHECKS_TAIL_MARKER' "$TEST_ROOT/report.md"
+  grep -q 'MIDDLE_BATS_FAILURE_MARKER' "$TEST_ROOT/report.md"
+  grep -q 'not ok 42 sandbox Bats failure' "$TEST_ROOT/report.md"
   [ "$(wc -c <"$TEST_ROOT/report.md")" -lt 50000 ]
 }

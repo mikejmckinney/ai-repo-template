@@ -394,7 +394,7 @@ JSON
   printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"}]}' \
     >"$TEST_ROOT/invalid-verify-batch.json"
 
-  for verify_case in missing malformed pending incomplete; do
+  for verify_case in missing malformed pending incomplete all-cant-reproduce; do
     run env VERIFY_CASE="$verify_case" bash -c '
       list_advisory_providers() { printf "%s\n" opencode; }
       invoke_advisory_llm() {
@@ -405,6 +405,7 @@ JSON
           malformed) printf "{\n" >retro/fix-verify-test.json ;;
           pending) printf "%s\n" '\''{"findings":[{"dedupe_key":"key-a","verify":{"pre":"pending","post":"pending","notes":"Not finished."}}]}'\'' >retro/fix-verify-test.json ;;
           incomplete) printf "%s\n" '\''{"findings":[]}'\'' >retro/fix-verify-test.json ;;
+          all-cant-reproduce) printf "%s\n" '\''{"findings":[{"dedupe_key":"key-a","verify":{"pre":"cant_reproduce","post":"n/a","notes":"Already absent."}}]}'\'' >retro/fix-verify-test.json ;;
         esac
         printf "success\n" >"$2"
       }
