@@ -89,12 +89,15 @@ jobs:
           SUCCESS_PATH: ${{ runner.temp }}/successful-sources.jsonl
           FAILURE_PATH: ${{ runner.temp }}/failed-sources.jsonl
           UNCHANGED_PATH: ${{ runner.temp }}/unchanged-sources.jsonl
+          BASE_LOCK_PATH: ${{ runner.temp }}/skill-refresh-base-lock.json
+          AGGREGATE_PATH: ${{ runner.temp }}/aggregate-sources.json
           BACKUP_ROOT: ${{ runner.temp }}/skill-refresh-backups
         run: |
           set -euo pipefail
           : >"$SUCCESS_PATH"
           : >"$FAILURE_PATH"
           : >"$UNCHANGED_PATH"
+          git show HEAD:skills-lock.json >"$BASE_LOCK_PATH"
           mkdir -p "$BACKUP_ROOT"
 
           record_failure() {
@@ -197,6 +200,40 @@ jobs:
             jq -c '. + {status: "updated"}' "$update_path" >>"$SUCCESS_PATH"
           done
 
+          jq -cn \
+            --slurpfile base "$BASE_LOCK_PATH" \
+            --slurpfile current skills-lock.json '
+              [
+                ($current[0].skills | to_entries[]) as $package
+                | $base[0].skills[$package.key] as $previous
+                | select($previous != null)
+                | select(
+                    $previous.ref != $package.value.ref or
+                    $previous.computedHash != $package.value.computedHash
+                  )
+                | {
+                    name: $package.key,
+                    source: $package.value.source,
+                    oldRef: $previous.ref,
+                    newRef: $package.value.ref,
+                    oldHash: $previous.computedHash,
+                    newHash: $package.value.computedHash
+                  }
+              ]
+              | group_by(.source)[]
+              | {
+                  source: .[0].source,
+                  oldRef: .[0].oldRef,
+                  newRef: .[0].newRef,
+                  packages: [ .[] | select(.oldHash != .newHash) | .name ],
+                  refOnlyPackages: [ .[] | select(.oldHash == .newHash) | .name ],
+                  hashes: (
+                    reduce (.[] | select(.oldHash != .newHash)) as $package
+                      ({}; .[$package.name] = {old: $package.oldHash, new: $package.newHash})
+                  )
+                }
+            ' >"$AGGREGATE_PATH"
+
           successful_count="$(jq -s 'length' "$SUCCESS_PATH")"
           failed_count="$(jq -s 'length' "$FAILURE_PATH")"
           unchanged_count="$(jq -s 'length' "$UNCHANGED_PATH")"
@@ -244,7 +281,7 @@ jobs:
       - name: Render aggregate pull request body
         if: steps.refresh.outputs.content_changed == 'true'
         env:
-          SUCCESS_PATH: ${{ runner.temp }}/successful-sources.jsonl
+          AGGREGATE_PATH: ${{ runner.temp }}/aggregate-sources.json
           FAILURE_PATH: ${{ runner.temp }}/failed-sources.jsonl
           BODY_PATH: ${{ runner.temp }}/skill-refresh-pr.md
         run: |
@@ -268,7 +305,7 @@ jobs:
               printf -- '- Deterministic hashes:\n\n```json\n'
               jq '.hashes' <<<"$update"
               printf '```\n\n'
-            done <"$SUCCESS_PATH"
+            done <"$AGGREGATE_PATH"
             printf '### Failed sources\n\n'
             if [[ -s "$FAILURE_PATH" ]]; then
               jq -s -r '.[] | "- `\(.source)` failed during `\(.phase)` and was rolled back."' \
