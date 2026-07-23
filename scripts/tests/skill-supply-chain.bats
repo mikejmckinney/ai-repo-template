@@ -135,6 +135,58 @@ EOF
   [ "$(sha256sum "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md")" = "$skill_before" ]
 }
 
+@test "source refresh rejects a missing Markdown license fragment" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.sourceMetadata["example/acme-skills"].evidence[0] = {
+    label: "License section", path: "README.md", fragment: "license"
+  }' "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  upstream="$BATS_TEST_TMPDIR/upstream-missing-fragment"
+  mkdir -p "$upstream/skills/acme"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" "$upstream/skills/acme/SKILL.md"
+  printf '\nupdated package\n' >>"$upstream/skills/acme/SKILL.md"
+  printf '# Project\n\n## Terms\n' >"$upstream/README.md"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"license evidence fragment is missing"*"README.md#license"* ]]
+}
+
+@test "aggregate refresh report preserves prior and current source changes" {
+  base_lock="$BATS_TEST_TMPDIR/base-lock.json"
+  current_lock="$BATS_TEST_TMPDIR/current-lock.json"
+  report="$BATS_TEST_TMPDIR/aggregate-report.jsonl"
+  jq -n '{skills: {
+    alpha: {source: "example/alpha", ref: "1111111111111111111111111111111111111111", computedHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    beta: {source: "example/beta", ref: "2222222222222222222222222222222222222222", computedHash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
+  }}' >"$base_lock"
+  jq '.skills.alpha.ref = "3333333333333333333333333333333333333333"
+    | .skills.alpha.computedHash = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    | .skills.beta.ref = "4444444444444444444444444444444444444444"
+    | .skills.beta.computedHash = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"' \
+    "$base_lock" >"$current_lock"
+
+  run python3 "$TOOL" render-refresh-report \
+    --base-lock "$base_lock" \
+    --current-lock "$current_lock"
+
+  [ "$status" -eq 0 ]
+  printf '%s\n' "$output" >"$report"
+  [ "$(jq -s 'length' "$report")" -eq 2 ]
+  [ "$(jq -s -r 'map(.source) | join(",")' "$report")" = "example/alpha,example/beta" ]
+  [ "$(jq -s -r '.[0].hashes.alpha.new' "$report")" = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ]
+  [ "$(jq -s -r '.[1].hashes.beta.old' "$report")" = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" ]
+}
+
 @test "package hash is deterministic and includes executable modes" {
   mkdir -p "$FIXTURE_ROOT/.agents/skills/acme/scripts"
   printf '%s\n' '#!/usr/bin/env bash' 'exit 0' \

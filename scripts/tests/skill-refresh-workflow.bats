@@ -140,6 +140,8 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'git apply "$AGGREGATE_PATCH"' "$WORKFLOW"
   [ "$status" -eq 0 ]
+  run grep -Fq 'if [[ -s "$AGGREGATE_PATCH" ]]; then' "$WORKFLOW"
+  [ "$status" -eq 0 ]
   run grep -Fq 'echo "base_sha=$(git rev-parse HEAD)"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'Optional owner/repository source to refresh' "$WORKFLOW"
@@ -154,6 +156,8 @@ EOF
   run grep -Fq 'git show HEAD:skills-lock.json' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'aggregate-sources.json' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'render-refresh-report' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'done <"$AGGREGATE_PATH"' "$WORKFLOW"
   [ "$status" -eq 0 ]
