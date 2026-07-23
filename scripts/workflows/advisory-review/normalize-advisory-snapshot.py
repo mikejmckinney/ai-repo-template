@@ -244,11 +244,10 @@ def main() -> int:
         raise SystemExit("provider metadata requires non-empty provider and model")
 
     body = Path(args.input).read_text(encoding="utf-8").strip()
-    if body.startswith("{"):
-        try:
-            body = render_structured_findings(body)
-        except ValueError as error:
-            raise SystemExit(str(error)) from error
+    try:
+        body = render_structured_findings(body)
+    except ValueError as error:
+        raise SystemExit(str(error)) from error
     if MARKER in body:
         preamble, snapshot = body.split(MARKER, 1)
         if preamble.strip():

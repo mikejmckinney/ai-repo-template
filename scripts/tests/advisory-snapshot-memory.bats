@@ -11,22 +11,7 @@ teardown() {
 
 @test "advisory normalization owns provider model and no-findings output" {
   cat >"$TMP_DIR/input.md" <<'EOF'
-<!-- ai-advisory-review:v1 -->
-
-## Advisory Review Snapshot
-
-Head: `model-authored-head`
-Provider: `opencode`
-Mode: advisory, non-blocking
-
-### Findings to consider
-
-| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
-|---|---|---|---|---|---|---|
-
-### Not blocking
-
-These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
+{"findings": []}
 EOF
   printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
 
@@ -53,17 +38,13 @@ EOF
 
 @test "advisory normalization rejects model-authored severity findings" {
   cat >"$TMP_DIR/input.md" <<'EOF'
-## Advisory Review Snapshot
-
-### Findings to consider
-
-| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
-|---|---|---|---|---|---|---|
-| ADV-01 | high | Correctness | parser | It fails. | Fix it. | yes |
-
-### Not blocking
-
-These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
+{"findings":[{
+  "id":"ADV-01","lens":"Correctness","area":"parser",
+  "finding":"It fails.","suggested_action":"Fix it.","still_present_at_head":true,
+  "triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"material",
+  "trigger_likelihood":"common","affected_scope":"broad","reversibility":"hard",
+  "fix_cost":"moderate","confidence":"high","uncertainty":"none","severity":"high"
+}]}
 EOF
   printf '%s\n' '{"provider":"antigravity","model":"agent:antigravity-preview-05-2026"}' >"$TMP_DIR/provider.json"
 
@@ -80,7 +61,40 @@ EOF
     --changed-files 1
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"invalid finding row"* ]]
+  [[ "$output" == *"severity is deprecated"* ]]
+  [ ! -e "$TMP_DIR/output.md" ]
+}
+
+@test "advisory normalization rejects model-authored band tables" {
+  cat >"$TMP_DIR/input.md" <<'EOF'
+## Advisory Review Snapshot
+
+### Findings to consider
+
+| ID | Band | Lens | Area | AP11 evidence | Finding | Suggested action | Still present at head? |
+|---|---|---|---|---|---|---|---|
+| ADV-01 | fix-now | Correctness | parser | material/common/broad/hard/moderate/high; uncertainty: none | It fails. | Fix it. | yes |
+
+### Not blocking
+
+These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
+EOF
+  printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
+
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+    --input "$TMP_DIR/input.md" \
+    --output "$TMP_DIR/output.md" \
+    --provider-metadata "$TMP_DIR/provider.json" \
+    --head "2222222222222222222222222222222222222222" \
+    --base "0000000000000000000000000000000000000000" \
+    --review-basis incremental \
+    --diff-included 42 \
+    --diff-total 42 \
+    --truncated no \
+    --changed-files 1
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"structured advisory output must be valid JSON"* ]]
   [ ! -e "$TMP_DIR/output.md" ]
 }
 
@@ -154,7 +168,7 @@ EOF
     --changed-files 1
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"malformed findings section"* ]]
+  [[ "$output" == *"structured advisory output must be valid JSON"* ]]
   [ ! -e "$TMP_DIR/output.md" ]
 }
 
@@ -187,30 +201,29 @@ EOF
     --changed-files 1
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"substantive preamble"* ]]
+  [[ "$output" == *"structured advisory output must be valid JSON"* ]]
   [ ! -e "$TMP_DIR/output.md" ]
 }
 
 @test "advisory normalization rejects invalid finding fields" {
   printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
-  invalid_rows=(
-    '| ADV-01 | urgent | Correctness | parser | It fails. | Fix it. | yes |'
-    '| ADV-01 | medium | Style | parser | It fails. | Fix it. | yes |'
-    '| ADV-01 | medium | Correctness | parser | It fails. | Fix it. | maybe |'
+  cat >"$TMP_DIR/valid.json" <<'EOF'
+{"findings":[{
+  "id":"ADV-01","lens":"Correctness","area":"parser",
+  "finding":"It fails.","suggested_action":"Fix it.","still_present_at_head":true,
+  "triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"material",
+  "trigger_likelihood":"common","affected_scope":"broad","reversibility":"hard",
+  "fix_cost":"moderate","confidence":"high","uncertainty":"none"
+}]}
+EOF
+  invalid_filters=(
+    '.findings[0].id = "invalid"'
+    '.findings[0].lens = "Style"'
+    '.findings[0].still_present_at_head = "maybe"'
   )
 
-  for row in "${invalid_rows[@]}"; do
-    cat >"$TMP_DIR/input.md" <<EOF
-## Advisory Review Snapshot
-
-### Findings to consider
-
-| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
-|---|---|---|---|---|---|---|
-$row
-
-### Not blocking
-EOF
+  for filter in "${invalid_filters[@]}"; do
+    jq "$filter" "$TMP_DIR/valid.json" >"$TMP_DIR/input.md"
     rm -f "$TMP_DIR/output.md"
     run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
       --input "$TMP_DIR/input.md" \
@@ -225,51 +238,30 @@ EOF
       --changed-files 1
 
     [ "$status" -ne 0 ]
-    [[ "$output" == *"invalid finding row"* ]]
+    [[ "$output" == *"findings[0]"* ]]
     [ ! -e "$TMP_DIR/output.md" ]
   done
 }
 
-@test "advisory normalization rejects invalid non-blocking envelopes" {
+@test "advisory normalization rejects structured output without a findings array" {
   printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
-  invalid_suffixes=(
-    ''
-    $'### Not blocking\n\nWait for these findings before merging.'
-    $'### Not blocking\n\nThese findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.\n\nTrailing model commentary.'
-  )
+  printf '%s\n' '{"summary":"no findings"}' >"$TMP_DIR/input.md"
 
-  for suffix in "${invalid_suffixes[@]}"; do
-    cat >"$TMP_DIR/input.md" <<EOF
-## Advisory Review Snapshot
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+    --input "$TMP_DIR/input.md" \
+    --output "$TMP_DIR/output.md" \
+    --provider-metadata "$TMP_DIR/provider.json" \
+    --head "3333333333333333333333333333333333333333" \
+    --base "0000000000000000000000000000000000000000" \
+    --review-basis full \
+    --diff-included 10 \
+    --diff-total 10 \
+    --truncated no \
+    --changed-files 1
 
-Head: \`model-head\`
-Provider: \`model-provider / model-name\`
-Mode: advisory, non-blocking
-Diff coverage: \`1/1\` bytes, truncated: \`no\`
-
-### Findings to consider
-
-No findings identified at this head.
-
-$suffix
-EOF
-    rm -f "$TMP_DIR/output.md"
-    run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
-      --input "$TMP_DIR/input.md" \
-      --output "$TMP_DIR/output.md" \
-      --provider-metadata "$TMP_DIR/provider.json" \
-      --head "3333333333333333333333333333333333333333" \
-      --base "0000000000000000000000000000000000000000" \
-      --review-basis full \
-      --diff-included 10 \
-      --diff-total 10 \
-      --truncated no \
-      --changed-files 1
-
-    [ "$status" -ne 0 ]
-    [[ "$output" == *"non-blocking section"* ]]
-    [ ! -e "$TMP_DIR/output.md" ]
-  done
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"requires a findings array"* ]]
+  [ ! -e "$TMP_DIR/output.md" ]
 }
 
 @test "advisory runner falls back after malformed provider output" {
@@ -301,17 +293,7 @@ invoke_advisory_llm() {
   if [[ "$provider" == first ]]; then
     printf 'malformed output\n' >"$output_file"
   else
-    cat >"$output_file" <<'SNAPSHOT'
-## Advisory Review Snapshot
-
-### Findings to consider
-
-No findings identified at this head.
-
-### Not blocking
-
-These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
-SNAPSHOT
+    printf '%s\n' '{"findings":[]}' >"$output_file"
   fi
 }
 EOF
@@ -455,7 +437,7 @@ EOF
   [ "$(jq -r .reason <<<"$output")" = no-memory ]
 }
 
-@test "advisory normalization converts the legacy sample row to no findings" {
+@test "advisory normalization rejects the legacy sample row" {
   cat >"$TMP_DIR/input.md" <<'EOF'
 ## Advisory Review Snapshot
 
@@ -483,9 +465,9 @@ EOF
     --truncated no \
     --changed-files 1
 
-  [ "$status" -eq 0 ]
-  grep -q '^No findings identified at this head\.$' "$TMP_DIR/output.md"
-  ! grep -q 'yes/no' "$TMP_DIR/output.md"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"structured advisory output must be valid JSON"* ]]
+  [ ! -e "$TMP_DIR/output.md" ]
 }
 
 @test "advisory memory selects an incremental range only for compatible state" {
