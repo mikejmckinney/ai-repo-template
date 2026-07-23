@@ -21,7 +21,11 @@ EOF
     schema_version: 1,
     required_commands: [],
     apt_packages: [],
-    profiles: {core: ["fake-tool"], agents: []},
+    profiles: {
+      core: ["fake-tool"],
+      agents: ["fake-tool"],
+      default: ["fake-tool"]
+    },
     tools: {
       "fake-tool": {
         type: "binary",
@@ -79,9 +83,25 @@ run_installer() {
     (.profiles.agents | index("claude")) and
     (.profiles.agents | index("cursor-agent")) and
     (.profiles.agents | index("codex")) and
+    (.profiles.default | type == "array") and
+    ((.profiles.default | sort) == ((.profiles.core + .profiles.agents) | unique | sort)) and
+    ((.profiles.agents | sort) == (.profiles.default | sort)) and
     all(.tools[]; .type and .command and .version)
   ' "$REPO_ROOT/.config/codespace-tools.json"
 
+  [ "$status" -eq 0 ]
+}
+
+@test "default install profile includes core and agent tools without changing explicit profiles" {
+  run grep -F 'TOOLS_PROFILE=default' "$REPO_ROOT/install.sh"
+  [ "$status" -eq 0 ]
+
+  run jq -e '
+    (.profiles.core | index("opencode") | not) and
+    (.profiles.agents | index("shfmt")) and
+    (.profiles.agents | index("opencode")) and
+    (.profiles.default == .profiles.agents)
+  ' "$REPO_ROOT/.config/codespace-tools.json"
   [ "$status" -eq 0 ]
 }
 
