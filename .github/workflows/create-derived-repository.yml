@@ -1,0 +1,58 @@
+name: Create derived repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: Destination repository in OWNER/REPO form
+        required: true
+        type: string
+      visibility:
+        description: Destination repository visibility
+        required: true
+        default: private
+        type: choice
+        options:
+          - private
+          - public
+          - internal
+      reuse:
+        description: Synchronize an existing repository after validation
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  create:
+    if: github.repository == 'mikejmckinney/ai-repo-template' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out trusted template main
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Create and synchronize derived repository
+        env:
+          REPO_BOOTSTRAP_TOKEN: ${{ secrets.REPO_BOOTSTRAP_TOKEN }}
+          OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          OPENCODE_OPENAI_AUTH: ${{ secrets.OPENCODE_OPENAI_AUTH }}
+          SANDBOX_BOOTSTRAP_TOKEN: ${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}
+        run: |
+          args=(
+            --repo "${{ inputs.repository }}"
+            --visibility "${{ inputs.visibility }}"
+            --apply
+          )
+          if [[ "${{ inputs.reuse }}" == "true" ]]; then
+            args+=(--reuse)
+          fi
+          scripts/create-derived-repo.sh "${args[@]}"

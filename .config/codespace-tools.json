@@ -38,7 +38,32 @@
       "open-design",
       "agent-runtime"
     ],
-    "agents": ["opencode", "claude", "cursor-agent", "codex"]
+    "agents": [
+      "shfmt",
+      "actionlint",
+      "markdownlint-cli2",
+      "uv",
+      "chrome-for-testing",
+      "open-design",
+      "agent-runtime",
+      "opencode",
+      "claude",
+      "cursor-agent",
+      "codex"
+    ],
+    "default": [
+      "shfmt",
+      "actionlint",
+      "markdownlint-cli2",
+      "uv",
+      "chrome-for-testing",
+      "open-design",
+      "agent-runtime",
+      "opencode",
+      "claude",
+      "cursor-agent",
+      "codex"
+    ]
   },
   "tools": {
     "shfmt": {

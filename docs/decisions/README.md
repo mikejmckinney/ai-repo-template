@@ -45,6 +45,7 @@
 | [ADR-030](./adr-030-non-blocking-review-pipeline.md) | Non-blocking LLM review pipeline (advisory → finalize → daily retro → weekly repo review) | Accepted (finalize stage retired by ADR-031) |
 | [ADR-031](./adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI benchmark and execution lifecycle policy | Accepted |
 | [ADR-032](./adr-032-canonical-governance-sources.md) | Canonical governance sources and layered enforcement | Accepted |
+| [ADR-033](./adr-033-derived-repository-bootstrap.md) | Derived repository credential bootstrap | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.

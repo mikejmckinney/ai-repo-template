@@ -43,6 +43,7 @@ ADR-031 defines the active model: one implementing agent, blocking CI, normal pa
 - **Explicit Quality Checks** - Read-only CI plus local formatting, lint, link, and repository verification commands
 - **ADR Templates** - Architecture Decision Record templates with examples
 - **Verification Scripts** - Built-in testing (see `./test.sh` output for current check count) to ensure template integrity
+- **Derived Repository Bootstrap** - Remote template creation with allowlisted Actions and Codespaces credential synchronization
 
 ## Repository reference (for agents)
 
@@ -88,11 +89,22 @@ how much of the repository kit the target project should inherit.
 
 ### Option 2: Create Repository from Template
 
-1. Click "Use this template" on GitHub
-2. Create your new repository
-3. Run the OpenCode `repo-onboarding` skill
-4. In `template-seed`, inspect the existing resources and extend, replace, or delete only what project evidence requires
-5. Complete `.context/onboarding-state.json` and add application checks only when the detected stack defines them
+Preview the manifest-driven remote bootstrap:
+
+```bash
+scripts/create-derived-repo.sh --repo OWNER/PROJECT
+```
+
+Pass `--apply` to create a private repository and synchronize available
+allowlisted Actions secrets plus selected Codespaces user-secret grants. The
+same operation is available through the **Create derived repository** manual
+workflow. Complete the one-time bootstrap credential setup first; see
+[Derived Repository Bootstrap](docs/guides/derived-repository-bootstrap.md).
+
+After creation, run the OpenCode `repo-onboarding` skill. In `template-seed`,
+inspect existing resources and extend, replace, or delete only what project
+evidence requires. Complete `.context/onboarding-state.json` and add application
+checks only when the detected stack defines them.
 
 ### Option 3: Copy to Existing Repository
 

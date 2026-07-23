@@ -32,7 +32,11 @@ case "${1:-} ${2:-}" in
     exit 0
     ;;
   "api repos/acme/demo")
-    printf '{"id":4242,"template_repository":{"full_name":"mikejmckinney/ai-repo-template"}}\n'
+    printf '{"id":4242,"template_repository":{"full_name":"%s"}}\n' "${GH_TEMPLATE_REPO:-mikejmckinney/ai-repo-template}"
+    ;;
+  "api user/codespaces/secrets?per_page=100")
+    [[ "${GH_CODESPACES_ACCESS:-true}" == true ]] || exit 1
+    printf '{"secrets":[{"name":"OPENCODE_GITHUB_TOKEN","visibility":"selected"},{"name":"OPENROUTER_API_KEY","visibility":"all"}]}\n'
     ;;
   "api user/codespaces/secrets/OPENCODE_GITHUB_TOKEN")
     printf 'selected\n'
@@ -56,7 +60,10 @@ teardown() {
 }
 
 run_bootstrap() {
-  run env PATH="$BIN_DIR:$PATH" GH_LOG="$GH_LOG" \
+  run env -i PATH="$BIN_DIR:$PATH" HOME="$TEST_ROOT/home" GH_LOG="$GH_LOG" \
+    GH_REPO_EXISTS="${TEST_GH_REPO_EXISTS:-false}" \
+    GH_CODESPACES_ACCESS="${TEST_GH_CODESPACES_ACCESS:-true}" \
+    GH_TEMPLATE_REPO="${TEST_GH_TEMPLATE_REPO:-mikejmckinney/ai-repo-template}" \
     REPO_BOOTSTRAP_TOKEN="${TEST_REPO_BOOTSTRAP_TOKEN:-}" \
     OPENCODE_GITHUB_TOKEN="${TEST_OPENCODE_GITHUB_TOKEN:-}" \
     OPENROUTER_API_KEY="${TEST_OPENROUTER_API_KEY:-}" \
@@ -81,6 +88,27 @@ run_bootstrap() {
   [ "$status" -eq 0 ]
 }
 
+@test "credential manifest covers every non-ephemeral Actions secret reference" {
+  run python3 - "$REPO_ROOT" "$MANIFEST" <<'PY'
+import json
+import pathlib
+import re
+import sys
+
+root = pathlib.Path(sys.argv[1])
+manifest = json.loads(pathlib.Path(sys.argv[2]).read_text())
+declared = {item["name"] for item in manifest["secrets"]}
+referenced = set()
+for workflow in (root / ".github" / "workflows").glob("*.yml"):
+    referenced.update(re.findall(r"secrets\.([A-Z][A-Z0-9_]+)", workflow.read_text()))
+referenced.discard("GITHUB_TOKEN")
+missing = sorted(referenced - declared)
+if missing:
+    raise SystemExit(f"manifest entries missing: {missing}")
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "dry-run reports names and planned operations without requiring a token or printing values" {
   TEST_OPENCODE_GITHUB_TOKEN="do-not-print-this-value"
   run_bootstrap
@@ -99,6 +127,27 @@ run_bootstrap() {
   [ "$status" -ne 0 ]
   [[ "$output" == *"REPO_BOOTSTRAP_TOKEN"* ]]
   [ ! -s "$GH_LOG" ]
+}
+
+@test "missing required workflow value fails before any GitHub operation" {
+  TEST_REPO_BOOTSTRAP_TOKEN="bootstrap-secret"
+  run_bootstrap --apply
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"OPENCODE_GITHUB_TOKEN: MISSING (required)"* ]]
+  [ ! -s "$GH_LOG" ]
+}
+
+@test "missing Codespaces scope fails before repository creation" {
+  TEST_REPO_BOOTSTRAP_TOKEN="bootstrap-secret"
+  TEST_OPENCODE_GITHUB_TOKEN="available"
+  TEST_GH_CODESPACES_ACCESS=false
+  run_bootstrap --apply
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"codespace:secrets"* ]]
+  run grep -F 'repo create' "$GH_LOG"
+  [ "$status" -ne 0 ]
 }
 
 @test "apply creates a private template repository and synchronizes allowlisted secrets" {
@@ -125,15 +174,29 @@ run_bootstrap() {
 
 @test "existing repository requires explicit reuse and verified template metadata" {
   TEST_REPO_BOOTSTRAP_TOKEN="bootstrap-secret"
-  GH_REPO_EXISTS=true run_bootstrap --apply
+  TEST_OPENCODE_GITHUB_TOKEN="available"
+  TEST_GH_REPO_EXISTS=true run_bootstrap --apply
 
   [ "$status" -ne 0 ]
   [[ "$output" == *"--reuse"* ]]
 
   : >"$GH_LOG"
-  GH_REPO_EXISTS=true run_bootstrap --apply --reuse
+  TEST_GH_REPO_EXISTS=true run_bootstrap --apply --reuse
   [ "$status" -eq 0 ]
   run grep -F 'repo create' "$GH_LOG"
+  [ "$status" -ne 0 ]
+}
+
+@test "reuse rejects repository metadata that records another template" {
+  TEST_REPO_BOOTSTRAP_TOKEN="bootstrap-secret"
+  TEST_OPENCODE_GITHUB_TOKEN="available"
+  TEST_GH_REPO_EXISTS=true
+  TEST_GH_TEMPLATE_REPO="someone/other-template"
+  run_bootstrap --apply --reuse
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"records a different template"* ]]
+  run grep -F 'secret set' "$GH_LOG"
   [ "$status" -ne 0 ]
 }
 
@@ -145,6 +208,14 @@ run_bootstrap() {
   [ "$status" -eq 0 ]
   run grep -F 'REPO_BOOTSTRAP_TOKEN: ${{ secrets.REPO_BOOTSTRAP_TOKEN }}' "$workflow"
   [ "$status" -eq 0 ]
+  run grep -F "github.ref == 'refs/heads/main'" "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -F 'persist-credentials: false' "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -F 'contents: read' "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -F 'pull_request:' "$workflow"
+  [ "$status" -ne 0 ]
 
   run python3 - "$MANIFEST" "$workflow" <<'PY'
 import json
