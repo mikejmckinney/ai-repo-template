@@ -80,6 +80,23 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "reconstruct-daily-retro-from-umbrella preserves v2 AP11 observations" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/body.md" <<'EOF'
+<!-- postmerge-retro:daily:2026-07-23 -->
+| PR | Category | Key | Impact | Magnitude | trigger_likelihood | Scope | Reversibility | fix_cost | Confidence | Uncertainty | regression_guard | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| #1 | follow_up_issues | `key-v2` | incorrect-behavior | material | common | broad | hard | moderate | high | none | false | fix-now | Wrong output | Correct it |
+EOF
+  run python3 scripts/workflows/postmerge-retro/reconstruct-daily-retro-from-umbrella.py \
+    --body-file "$tmp/body.md" -o "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0] | .triage_version == 2 and .impact_magnitude == "material" and .affected_scope == "broad" and .reversibility == "hard" and .confidence == "high" and .uncertainty == "none" and .priority_band == "fix-now"' \
+    "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
 @test "reconstruct-daily-retro-from-umbrella parses legacy 8-column table" {
   tmp="$(mktemp -d)"
   cat >"$tmp/body.md" <<'EOF'
@@ -145,8 +162,13 @@ row = mod.format_row(
         "category": "follow_up_issues",
         "dedupe_key": "adr-k",
         "impact": "dx-perf-doc",
+        "impact_magnitude": "bounded",
         "trigger_likelihood": "common",
+        "affected_scope": "limited",
+        "reversibility": "easy",
         "fix_cost": "trivial",
+        "confidence": "high",
+        "uncertainty": "none",
         "regression_guard": True,
         "priority_band": "defer",
         "title": "T",
@@ -156,6 +178,8 @@ row = mod.format_row(
 assert "| trigger_likelihood |" not in row
 assert "| common |" in row
 assert "| true |" in row
+assert "| bounded |" in row
+assert "| limited | easy |" in row
 PY
   [ "$status" -eq 0 ]
 }

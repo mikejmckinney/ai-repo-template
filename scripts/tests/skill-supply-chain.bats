@@ -28,6 +28,12 @@ write_lock() {
     --arg destination_path "$destination_path" \
     '{
       version: 2,
+      sourceMetadata: {
+        "example/acme-skills": {
+          license: "MIT",
+          evidence: [{label: "LICENSE", path: "skills/acme/SKILL.md"}]
+        }
+      },
       skills: {
         acme: {
           source: "example/acme-skills",
@@ -41,6 +47,170 @@ write_lock() {
       },
       ownedSkills: {}
     }' >"$FIXTURE_ROOT/skills-lock.json"
+}
+
+@test "license inventory is rendered from canonical source metadata and refs" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  mkdir -p "$FIXTURE_ROOT/docs/guides"
+  cat >"$FIXTURE_ROOT/docs/guides/skill-supply-chain.md" <<'EOF'
+# Fixture
+
+<!-- generated:skill-license-inventory:begin -->
+stale
+<!-- generated:skill-license-inventory:end -->
+EOF
+
+  run python3 "$TOOL" render-license-inventory \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+
+  [ "$status" -eq 0 ]
+  grep -Fq '| `example/acme-skills` | 1 | MIT | [LICENSE](https://github.com/example/acme-skills/blob/0123456789abcdef0123456789abcdef01234567/skills/acme/SKILL.md) |' \
+    "$FIXTURE_ROOT/docs/guides/skill-supply-chain.md"
+}
+
+@test "license inventory rejects missing or malformed metadata without mutation" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  mkdir -p "$FIXTURE_ROOT/docs/guides"
+  cat >"$FIXTURE_ROOT/docs/guides/skill-supply-chain.md" <<'EOF'
+# Fixture
+
+<!-- generated:skill-license-inventory:begin -->
+stale
+<!-- generated:skill-license-inventory:end -->
+EOF
+  guide_before="$(sha256sum "$FIXTURE_ROOT/docs/guides/skill-supply-chain.md")"
+
+  jq 'del(.sourceMetadata["example/acme-skills"])' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+  run python3 "$TOOL" render-license-inventory \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"sourceMetadata is missing sources"* ]]
+  [ "$(sha256sum "$FIXTURE_ROOT/docs/guides/skill-supply-chain.md")" = "$guide_before" ]
+
+  write_lock "$(python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme")"
+  jq '.sourceMetadata["example/acme-skills"].evidence[0].path = "../LICENSE"' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+  run python3 "$TOOL" render-license-inventory \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"path contains path traversal"* ]]
+  [ "$(sha256sum "$FIXTURE_ROOT/docs/guides/skill-supply-chain.md")" = "$guide_before" ]
+}
+
+@test "source refresh rejects unavailable license evidence without mutation" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.sourceMetadata["example/acme-skills"].evidence[0] = {label: "LICENSE", path: "LICENSE"}' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  upstream="$BATS_TEST_TMPDIR/upstream-missing-license"
+  mkdir -p "$upstream/skills/acme"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" "$upstream/skills/acme/SKILL.md"
+  printf '\nupdated package\n' >>"$upstream/skills/acme/SKILL.md"
+  lock_before="$(sha256sum "$FIXTURE_ROOT/skills-lock.json")"
+  skill_before="$(sha256sum "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md")"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"license evidence is missing"*"example/acme-skills/LICENSE"* ]]
+  [ "$(sha256sum "$FIXTURE_ROOT/skills-lock.json")" = "$lock_before" ]
+  [ "$(sha256sum "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md")" = "$skill_before" ]
+}
+
+@test "source refresh rejects a missing Markdown license fragment" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.sourceMetadata["example/acme-skills"].evidence[0] = {
+    label: "License section", path: "README.md", fragment: "license"
+  }' "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  upstream="$BATS_TEST_TMPDIR/upstream-missing-fragment"
+  mkdir -p "$upstream/skills/acme"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" "$upstream/skills/acme/SKILL.md"
+  printf '\nupdated package\n' >>"$upstream/skills/acme/SKILL.md"
+  printf '# Project\n\n## Terms\n' >"$upstream/README.md"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"license evidence fragment is missing"*"README.md#license"* ]]
+}
+
+@test "source refresh accepts GitHub fragments from linked and repeated headings" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.sourceMetadata["example/acme-skills"].evidence = [
+    {label: "License", path: "README.md", fragment: "license"},
+    {label: "Repeated license", path: "README.md", fragment: "license-1"}
+  ]' "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  upstream="$BATS_TEST_TMPDIR/upstream-linked-fragments"
+  mkdir -p "$upstream/skills/acme"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" "$upstream/skills/acme/SKILL.md"
+  printf '\nupdated package\n' >>"$upstream/skills/acme/SKILL.md"
+  printf '# Project\n\n## [License](LICENSE)\n\n## License\n' >"$upstream/README.md"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+
+  [ "$status" -eq 0 ]
+}
+
+@test "aggregate refresh report preserves prior and current source changes" {
+  base_lock="$BATS_TEST_TMPDIR/base-lock.json"
+  current_lock="$BATS_TEST_TMPDIR/current-lock.json"
+  report="$BATS_TEST_TMPDIR/aggregate-report.jsonl"
+  jq -n '{skills: {
+    alpha: {source: "example/alpha", ref: "1111111111111111111111111111111111111111", computedHash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    beta: {source: "example/beta", ref: "2222222222222222222222222222222222222222", computedHash: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
+  }}' >"$base_lock"
+  jq '.skills.alpha.ref = "3333333333333333333333333333333333333333"
+    | .skills.alpha.computedHash = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    | .skills.beta.ref = "4444444444444444444444444444444444444444"
+    | .skills.beta.computedHash = "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"' \
+    "$base_lock" >"$current_lock"
+
+  run python3 "$TOOL" render-refresh-report \
+    --base-lock "$base_lock" \
+    --current-lock "$current_lock"
+
+  [ "$status" -eq 0 ]
+  printf '%s\n' "$output" >"$report"
+  [ "$(jq -s 'length' "$report")" -eq 2 ]
+  [ "$(jq -s -r 'map(.source) | join(",")' "$report")" = "example/alpha,example/beta" ]
+  [ "$(jq -s -r '.[0].hashes.alpha.new' "$report")" = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" ]
+  [ "$(jq -s -r '.[1].hashes.beta.old' "$report")" = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" ]
 }
 
 @test "package hash is deterministic and includes executable modes" {
@@ -514,7 +684,7 @@ EOF
     "$upstream/packages/acme/SKILL.md"
   printf '\nmoved package update\n' >>"$upstream/packages/acme/SKILL.md"
 
-  jq '.skills.acme.skillPath = "packages/acme"' \
+  jq '.skills.acme.skillPath = "packages/acme" | .sourceMetadata["example/acme-skills"].evidence[0].path = "packages/acme/SKILL.md"' \
     "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
   mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
   target_ref="1111111111111111111111111111111111111111"

@@ -140,7 +140,9 @@ The repository applies the benchmark recommendation as follows:
   review and draft-fix pipelines.
 - `.agents/skills/multi-model-consensus/` is the sole opt-in multi-model mechanism.
 - One shared review contract feeds advisory, daily, and weekly prompts; cadence
-  prompts retain only their evidence boundary and output interface.
+  prompts retain only their evidence boundary and output interface. The shared
+  contract supplies versioned AP11 observation fields; deterministic automation
+  derives priority while each review surface retains its own authority.
 - Canonical roles, platform overlays, native reviewer rules, multi-role dispatch,
   formal AI review, review resolution, finalization, and legacy consensus
   planning are retired.

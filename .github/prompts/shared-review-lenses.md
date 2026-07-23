@@ -14,6 +14,28 @@ Cadence prompts define only their evidence boundary and output format.
 - Deduplicate findings and accepted exceptions. Cite paths and reproduction
   evidence, and distinguish verified facts from uncertainty.
 
+## Normalized AP11 observation contract
+
+Every non-empty automated finding uses `triage_version: 2` and records
+observations rather than model-authored severity or priority:
+
+| Field | Values | Meaning |
+|---|---|---|
+| `impact` | `incorrect-behavior` \| `dx-perf-doc` \| `meta-harness` | Kind of affected behavior |
+| `impact_magnitude` | `bounded` \| `material` \| `critical` | Consequence if triggered |
+| `trigger_likelihood` | `common` \| `edge` \| `fringe` | Exposure frequency |
+| `affected_scope` | `isolated` \| `limited` \| `broad` | Population or surface affected |
+| `reversibility` | `easy` \| `moderate` \| `hard` | Recovery after occurrence |
+| `fix_cost` | `trivial` \| `moderate` \| `large` | Mitigation cost |
+| `confidence` | `low` \| `medium` \| `high` | Evidence confidence |
+| `uncertainty` | non-empty string | Missing or uncertain evidence; use `none` only when verified |
+| `regression_guard` | boolean | Cheap invariant or test value, not a general small-fix flag |
+
+Automation validates these fields and derives `priority_band`. Review-surface
+authority is separate: advisory output remains optional and non-blocking for
+every derived band. Do not reproduce or improvise the classifier decision table
+in a prompt.
+
 ## Lenses
 
 Apply these lenses proportionally to the available evidence.

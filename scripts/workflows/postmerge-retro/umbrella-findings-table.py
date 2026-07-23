@@ -5,10 +5,11 @@ from __future__ import annotations
 import re
 
 FINDINGS_HEADER = (
-    "| PR | Category | Key | Impact | trigger_likelihood | fix_cost | "
-    "regression_guard | Band | Finding | Suggested fix |"
+    "| PR | Category | Key | Impact | Magnitude | trigger_likelihood | Scope | "
+    "Reversibility | fix_cost | Confidence | Uncertainty | regression_guard | "
+    "Band | Finding | Suggested fix |"
 )
-FINDINGS_SEPARATOR = "|---|---|---|---|---|---|---|---|---|---|"
+FINDINGS_SEPARATOR = "|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|"
 
 LEGACY_HEADER_PATTERNS = (
     re.compile(
@@ -21,6 +22,10 @@ LEGACY_HEADER_PATTERNS = (
     ),
     re.compile(
         r"^\|\s*PR\s*\|\s*Category\s*\|\s*Key\s*\|\s*Impact\s*\|\s*trigger_likelihood\s*\|\s*Band\s*\|",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"^\|\s*PR\s*\|\s*Category\s*\|\s*Key\s*\|\s*Impact\s*\|\s*trigger_likelihood\s*\|\s*fix_cost\s*\|",
         re.IGNORECASE,
     ),
 )
@@ -37,10 +42,14 @@ def format_guard(val) -> str:
 def format_row(finding: dict, *, suggested_fix: str) -> str:
     title = str(finding.get("title", "")).replace("|", "/")
     suggested = suggested_fix.replace("|", "/")
+    uncertainty = str(finding.get("uncertainty", "")).replace("|", "/")
     return (
         f"| #{finding['pr']} | {finding['category']} | `{finding['dedupe_key']}` | "
-        f"{finding.get('impact', '')} | {finding.get('trigger_likelihood', '')} | "
-        f"{finding.get('fix_cost', '')} | {format_guard(finding.get('regression_guard'))} | "
+        f"{finding.get('impact', '')} | {finding.get('impact_magnitude', '')} | "
+        f"{finding.get('trigger_likelihood', '')} | {finding.get('affected_scope', '')} | "
+        f"{finding.get('reversibility', '')} | {finding.get('fix_cost', '')} | "
+        f"{finding.get('confidence', '')} | {uncertainty} | "
+        f"{format_guard(finding.get('regression_guard'))} | "
         f"{finding.get('priority_band', '')} | {title} | {suggested} |"
     )
 

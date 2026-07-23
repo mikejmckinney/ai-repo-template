@@ -227,12 +227,14 @@ EOF
     ([.skills[] | select(.source == "aws/agent-toolkit-for-aws")] | length) == 19 and
     ([.skills[] | select(.source == "awslabs/agent-plugins")] | length) == 0 and
     ([.skills[] | select(.source == "microsoft/azure-skills")] | length) == 26 and
+    ([.skills[] | select(.source == "aws/agent-toolkit-for-aws") | .ref] | unique | length) == 1 and
+    ([.skills[] | select(.source == "microsoft/azure-skills") | .ref] | unique | length) == 1 and
     all(.skills[] | select(.source == "aws/agent-toolkit-for-aws");
-      .ref == "fae975d565b6c1752e3f4795c499fb3951039777" and
+      (.ref | test("^[0-9a-f]{40}$")) and
       (.skillPath | startswith("skills/")) and
       (.destinationPath | startswith(".agents/skills/aws/"))) and
     all(.skills[] | select(.source == "microsoft/azure-skills");
-      .ref == "1b592c63641049ff33e4952c4021c63b4507f147" and
+      (.ref | test("^[0-9a-f]{40}$")) and
       (.skillPath | startswith("skills/")) and
       (.destinationPath | startswith(".agents/skills/azure/")))
   ' "$REPO_ROOT/skills-lock.json"

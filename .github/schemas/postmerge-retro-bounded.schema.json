@@ -24,8 +24,9 @@
   "$defs": {
     "triageFields": {
       "type": "object",
-      "required": ["impact", "trigger_likelihood", "fix_cost"],
+      "required": ["triage_version", "impact", "impact_magnitude", "trigger_likelihood", "affected_scope", "reversibility", "fix_cost", "confidence", "uncertainty"],
       "properties": {
+        "triage_version": { "const": 2 },
         "impact": {
           "type": "string",
           "enum": ["incorrect-behavior", "dx-perf-doc", "meta-harness"]
@@ -34,13 +35,18 @@
           "type": "string",
           "enum": ["common", "edge", "fringe"]
         },
+        "impact_magnitude": { "type": "string", "enum": ["bounded", "material", "critical"] },
+        "affected_scope": { "type": "string", "enum": ["isolated", "limited", "broad"] },
+        "reversibility": { "type": "string", "enum": ["easy", "moderate", "hard"] },
         "fix_cost": {
           "type": "string",
           "enum": ["trivial", "moderate", "large"]
         },
         "regression_guard": {
           "type": "boolean"
-        }
+        },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+        "uncertainty": { "type": "string", "minLength": 1 }
       }
     },
     "followUpIssue": {
@@ -50,9 +56,15 @@
         "body",
         "dedupe_key",
         "repro_steps",
+        "triage_version",
         "impact",
+        "impact_magnitude",
         "trigger_likelihood",
-        "fix_cost"
+        "affected_scope",
+        "reversibility",
+        "fix_cost",
+        "confidence",
+        "uncertainty"
       ],
       "additionalProperties": true,
       "properties": {
@@ -72,9 +84,15 @@
           "items": { "type": "string", "minLength": 1 }
         },
         "dedupe_key": { "type": "string", "minLength": 1 },
+        "triage_version": { "$ref": "#/$defs/triageFields/properties/triage_version" },
         "impact": { "$ref": "#/$defs/triageFields/properties/impact" },
+        "impact_magnitude": { "$ref": "#/$defs/triageFields/properties/impact_magnitude" },
         "trigger_likelihood": { "$ref": "#/$defs/triageFields/properties/trigger_likelihood" },
+        "affected_scope": { "$ref": "#/$defs/triageFields/properties/affected_scope" },
+        "reversibility": { "$ref": "#/$defs/triageFields/properties/reversibility" },
         "fix_cost": { "$ref": "#/$defs/triageFields/properties/fix_cost" },
+        "confidence": { "$ref": "#/$defs/triageFields/properties/confidence" },
+        "uncertainty": { "$ref": "#/$defs/triageFields/properties/uncertainty" },
         "regression_guard": { "$ref": "#/$defs/triageFields/properties/regression_guard" }
       },
       "not": {

@@ -76,16 +76,18 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "workflow missing antigravity provider wiring"
   fi
 
-  if grep -q "$MARKER" "$ADVISORY_PROMPT" 2>/dev/null; then
-    pass "advisory prompt defines sticky marker"
+  if grep -q "$MARKER" "$NORMALIZE_SCRIPT" 2>/dev/null \
+    && grep -q 'triage_version' "$ADVISORY_PROMPT" 2>/dev/null \
+    && ! grep -q 'Severity' "$ADVISORY_PROMPT" 2>/dev/null; then
+    pass "advisory automation owns the sticky marker and structured AP11 contract"
   else
-    fail "advisory prompt missing $MARKER marker"
+    fail "advisory normalization/prompt missing marker ownership or structured AP11 contract"
   fi
 
   if grep -q 'ai-advisory-memory:v1' "$NORMALIZE_SCRIPT" 2>/dev/null \
     && grep -q 'select-advisory-range.py' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'normalize-advisory-snapshot.py' "$RUN_SCRIPT" 2>/dev/null \
-    && grep -q 'No findings identified at this head' "$ADVISORY_PROMPT" 2>/dev/null; then
+    && grep -q 'No findings identified at this head' "$NORMALIZE_SCRIPT" 2>/dev/null; then
     pass "advisory snapshot has provider-neutral memory and explicit no-findings output"
   else
     fail "advisory snapshot missing memory, normalization, or explicit no-findings wiring"

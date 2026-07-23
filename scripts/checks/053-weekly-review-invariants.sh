@@ -151,7 +151,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   if grep -q 'follow_up_issues' "$WEEKLY_PROMPT" 2>/dev/null \
     && grep -q 'dedupe_key' "$WEEKLY_PROMPT" 2>/dev/null \
     && grep -q 'repro_steps' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'triage_version' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'impact_magnitude' "$WEEKLY_PROMPT" 2>/dev/null \
     && grep -q 'trigger_likelihood' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'affected_scope' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'reversibility' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'confidence' "$WEEKLY_PROMPT" 2>/dev/null \
+    && grep -q 'uncertainty' "$WEEKLY_PROMPT" 2>/dev/null \
     && grep -q 'priority_band.*derived' "$WEEKLY_PROMPT" 2>/dev/null; then
     pass "weekly prompt defines classifier JSON shape with repro_steps"
   else

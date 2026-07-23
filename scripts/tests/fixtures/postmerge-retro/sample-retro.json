@@ -5,9 +5,15 @@
     {
       "title": "Add invariant test for retro JSON schema",
       "labels": ["agent-suggested"],
+      "triage_version": 2,
       "impact": "meta-harness",
+      "impact_magnitude": "bounded",
       "trigger_likelihood": "edge",
+      "affected_scope": "limited",
+      "reversibility": "easy",
       "fix_cost": "trivial",
+      "confidence": "high",
+      "uncertainty": "none",
       "regression_guard": true,
       "body": "Ensure postmerge retro output stays schema-valid.",
       "repro_steps": [

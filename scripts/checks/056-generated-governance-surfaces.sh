@@ -33,4 +33,11 @@ else
   fail "generated MCP host configurations are stale"
 fi
 
+if python3 scripts/skill-supply-chain.py render-license-inventory \
+  --repo . --lock skills-lock.json --check; then
+  pass "generated skill license inventory is current"
+else
+  fail "generated skill license inventory is stale"
+fi
+
 echo ""

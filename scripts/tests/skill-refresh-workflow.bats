@@ -45,7 +45,7 @@ EOF
   [[ "$output" == *"generic.md:1: generic-secret-assignment"* ]]
 }
 
-@test "nightly refresh workflow is source-scoped and review-first" {
+@test "nightly refresh workflow publishes one aggregate review PR" {
   [ -f "$WORKFLOW" ]
   run grep -q 'cron: "0 5 \* \* \*"' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -55,13 +55,15 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'pull-requests: write' "$WORKFLOW"
   [ "$status" -eq 0 ]
+  run grep -q 'actions: write' "$WORKFLOW"
+  [ "$status" -eq 0 ]
   run grep -q 'matrix.source' "$WORKFLOW"
+  [ "$status" -eq 1 ]
+  # shellcheck disable=SC2016
+  run grep -Fq 'group: skill-refresh-aggregate' "$WORKFLOW"
   [ "$status" -eq 0 ]
   # shellcheck disable=SC2016
-  run grep -Fq 'group: skill-refresh-${{ matrix.source }}' "$WORKFLOW"
-  [ "$status" -eq 0 ]
-  # shellcheck disable=SC2016
-  run grep -Fq 'branch: automation/skill-refresh/${{ matrix.source }}' "$WORKFLOW"
+  run grep -Fq 'branch: automation/skill-refresh/all' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -69,9 +71,21 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'delete-branch: false' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -q "if: steps.check.outputs.content_changed == 'true'" "$WORKFLOW"
+  run grep -Fq 'docs/guides/skill-supply-chain.md' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -q "content_changed=.*\.changed" "$WORKFLOW"
+  run grep -Fq 'render-license-inventory' "$REPO_ROOT/scripts/skill-supply-chain.py"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh workflow run ci-tests.yml' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh workflow run lint-and-format.yml' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'REFRESH_BRANCH: automation/skill-refresh/all' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq -- '--ref "$REFRESH_BRANCH"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -q "if: steps.refresh.outputs.content_changed == 'true'" "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'echo "content_changed=true"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'scan-skill-secrets.py' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -79,7 +93,7 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'Ref-only lock records' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -q 'Missing upstream paths block refresh' "$WORKFLOW"
+  run grep -q 'Missing upstream paths block that source' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'validate-lock' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -93,10 +107,115 @@ EOF
   [ "$status" -eq 1 ]
 }
 
-@test "skill refresh documentation explains source branches and PR authorization" {
+@test "aggregate refresh processes sources sequentially with source rollback" {
+  run grep -Fq 'REQUESTED_SOURCE:' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'for source in "${sources[@]}"; do' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'backup_source "$source"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'restore_source "$source"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'failed-sources.jsonl' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'successful-sources.jsonl' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'Failed sources remain unchanged' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+}
+
+@test "targeted dispatch reuses the aggregate branch and pull request" {
+  [ "$(grep -Fc 'automation/skill-refresh/all' "$WORKFLOW")" -ge 2 ]
+  run grep -Fq 'Resolve aggregate refresh base' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'ref: ${{ steps.refresh-base.outputs.ref }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git -c user.name=github-actions[bot]' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'rebase origin/main' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git diff --binary origin/main...HEAD' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git checkout -B main origin/main' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git apply "$AGGREGATE_PATCH"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'if [[ -s "$AGGREGATE_PATCH" ]]; then' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'echo "base_sha=$(git rev-parse HEAD)"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'Optional owner/repository source to refresh' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+}
+
+@test "aggregate pull request body includes prior and current source updates" {
+  run grep -Fq 'BASE_LOCK_PATH:' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'AGGREGATE_PATH:' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git show HEAD:skills-lock.json' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'aggregate-sources.json' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'render-refresh-report' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'done <"$AGGREGATE_PATH"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+}
+
+@test "required workflows accept trusted exact-head skill refresh dispatches" {
+  ci_workflow="$REPO_ROOT/.github/workflows/ci-tests.yml"
+  lint_workflow="$REPO_ROOT/.github/workflows/lint-and-format.yml"
+
+  run grep -Fq 'REFRESH_HEAD: ${{ steps.create-pr.outputs.pull-request-head-sha }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ "$(grep -Fc -- '-f head_sha="$REFRESH_HEAD"' "$WORKFLOW")" -eq 2 ]
+  run grep -Fq 'REFRESH_BASE: ${{ steps.refresh.outputs.base_sha }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq -- '-f base_sha="$REFRESH_BASE"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -q 'workflow_dispatch:' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -q 'workflow_dispatch:' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -q 'base_sha:' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -q 'head_sha:' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -q 'head_sha:' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && github.sha || '' }}" "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'EXPECTED_HEAD: ${{ inputs.head_sha }}' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'DISPATCHED_HEAD: ${{ github.sha }}' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'test "$(git rev-parse HEAD)" = "$DISPATCHED_HEAD"' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && github.sha || '' }}" "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'EXPECTED_HEAD: ${{ inputs.head_sha }}' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'DISPATCHED_HEAD: ${{ github.sha }}' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'test "$(git rev-parse HEAD)" = "$DISPATCHED_HEAD"' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'base_ref="${{ inputs.base_sha }}"' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'head_ref="${{ inputs.head_sha }}"' "$lint_workflow"
+  [ "$status" -eq 0 ]
+}
+
+@test "skill refresh documentation explains aggregate publication and PR authorization" {
   guide="$REPO_ROOT/docs/guides/skill-supply-chain.md"
 
-  run grep -Fq 'one branch and draft PR per upstream source repository' "$guide"
+  run grep -Fq 'one stable aggregate branch and draft PR' "$guide"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'failed source remains unchanged' "$guide"
   [ "$status" -eq 0 ]
   run grep -Fq 'Allow GitHub Actions to create and approve pull requests' "$guide"
   [ "$status" -eq 0 ]

@@ -309,9 +309,15 @@ export async function createOpencode() {
             body: "Body",
             dedupe_key: "finding",
             repro_steps: ["Reproduce"],
+            triage_version: 2,
             impact: "incorrect-behavior",
+            impact_magnitude: "material",
             trigger_likelihood: "common",
+            affected_scope: "broad",
+            reversibility: "hard",
             fix_cost: "trivial",
+            confidence: "high",
+            uncertainty: "none",
             ...(attempts === 1 ? { priority_band: "fix-now" } : {})
           }
           return {

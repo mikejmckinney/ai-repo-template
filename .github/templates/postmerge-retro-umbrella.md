@@ -11,8 +11,8 @@ Daily post-merge retrospective for merges to `main` in the rolling last **{{WIND
 {{EVIDENCE_TRUNCATION_SUMMARY}}
 ## Findings
 
-| PR | Category | Key | Impact | trigger_likelihood | fix_cost | regression_guard | Band | Finding | Suggested fix |
-|---|---|---|---|---|---|---|---|---|---|
+| PR | Category | Key | Impact | Magnitude | trigger_likelihood | Scope | Reversibility | fix_cost | Confidence | Uncertainty | regression_guard | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 {{FINDING_ROWS}}
 
 ## Meta

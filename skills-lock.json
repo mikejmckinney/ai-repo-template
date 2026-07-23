@@ -22,6 +22,72 @@
       "destinationPath": ".agents/skills/session-recovery"
     }
   },
+  "sourceMetadata": {
+    "ChromeDevTools/chrome-devtools-mcp": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE" }],
+      "license": "Apache-2.0"
+    },
+    "anthropics/skills": {
+      "evidence": [
+        { "label": "frontend-design", "path": "skills/frontend-design/LICENSE.txt" },
+        { "label": "mcp-builder", "path": "skills/mcp-builder/LICENSE.txt" },
+        { "label": "skill-creator", "path": "skills/skill-creator/LICENSE.txt" }
+      ],
+      "license": "Apache-2.0"
+    },
+    "aws/agent-toolkit-for-aws": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE" }],
+      "license": "Apache-2.0"
+    },
+    "cloudflare/skills": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE" }],
+      "license": "Apache-2.0"
+    },
+    "microsoft/azure-skills": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE" }],
+      "license": "MIT"
+    },
+    "microsoft/playwright": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE" }],
+      "license": "Apache-2.0"
+    },
+    "netlify/context-and-tools": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE" }],
+      "license": "MIT"
+    },
+    "oracle/skills": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE.txt" }],
+      "license": "UPL-1.0"
+    },
+    "phaserjs/phaser": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE.md" }],
+      "license": "MIT"
+    },
+    "railwayapp/railway-skills": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE" }],
+      "license": "MIT"
+    },
+    "render-oss/skills": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE" }],
+      "license": "MIT"
+    },
+    "shadcn-ui/ui": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE.md" }],
+      "license": "MIT"
+    },
+    "supabase/agent-skills": {
+      "evidence": [{ "label": "LICENSE", "path": "LICENSE" }],
+      "license": "MIT"
+    },
+    "vercel-labs/agent-skills": {
+      "evidence": [{ "fragment": "license", "label": "README license declaration", "path": "README.md" }],
+      "license": "MIT"
+    },
+    "vercel-labs/skills": {
+      "evidence": [{ "fragment": "license", "label": "README license declaration", "path": "README.md" }],
+      "license": "MIT"
+    }
+  },
   "skills": {
     "actions-and-utilities": {
       "computedHash": "6ae1a119875436a6c2d93453dcdc8335c5928728cc44a77fd81682584eab9b1a",

@@ -26,30 +26,36 @@ workflow and process changes.
 
 ## Output format (exact structure)
 
-Return **only** the markdown below (no preamble). Replace placeholders.
+Return **only** one JSON object (no Markdown fence or preamble). Automation
+validates AP11 fields, derives the priority band, and renders the non-blocking
+Markdown envelope.
 
-```markdown
-<!-- ai-advisory-review:v1 -->
-
-## Advisory Review Snapshot
-
-Head: `<sha>`
-Provider: `<provider> / <model-or-agent>`
-Mode: advisory, non-blocking
-Diff coverage: `<included>/<total>` bytes, truncated: `<yes|no>`
-
-### Findings to consider
-
-| ID | Severity | Lens | Area | Finding | Suggested action | Still present at head? |
-|---|---|---|---|---|---|---|
-
-When there are no findings, omit the table and write exactly:
-
-No findings identified at this head.
-
-### Not blocking
-
-These findings are optional input while implementation continues. CI and maintainer decisions remain authoritative.
+```json
+{
+  "findings": [
+    {
+      "id": "ADV-01",
+      "lens": "Correctness",
+      "area": "path or component",
+      "finding": "Concrete failure mode with evidence and affected behavior.",
+      "suggested_action": "Smallest credible correction.",
+      "still_present_at_head": true,
+      "triage_version": 2,
+      "impact": "incorrect-behavior",
+      "impact_magnitude": "material",
+      "trigger_likelihood": "edge",
+      "affected_scope": "limited",
+      "reversibility": "moderate",
+      "fix_cost": "moderate",
+      "confidence": "high",
+      "uncertainty": "none",
+      "regression_guard": false
+    }
+  ]
+}
 ```
 
-Severity: `info`, `low`, `medium`, `high`. Use the shared lens names and `ADV-NN` IDs. Automation owns the final head, provider/model, diff-coverage, and hidden-memory fields.
+When there are no findings, return `{ "findings": [] }`. Use shared lens names
+and `ADV-NN` IDs. Follow the injected normalized AP11 observation contract;
+never emit `severity`, `priority_band`, or a blocking action. Automation owns
+classification, the final head, provider/model, diff coverage, and hidden memory.

@@ -64,8 +64,13 @@ def render_finding(repo: str, sha: str, finding: dict) -> str:
     title = str(finding.get("title") or "").strip()
     category = str(finding.get("category") or "").strip()
     impact = str(finding.get("impact") or "").strip()
+    magnitude = str(finding.get("impact_magnitude") or "").strip()
     trigger = str(finding.get("trigger_likelihood") or "").strip()
+    scope = str(finding.get("affected_scope") or "").strip()
+    reversibility = str(finding.get("reversibility") or "").strip()
     fix_cost = str(finding.get("fix_cost") or "").strip()
+    confidence = str(finding.get("confidence") or "").strip()
+    uncertainty = str(finding.get("uncertainty") or "").strip()
     guard = "true" if finding.get("regression_guard") is True else "false"
     band = str(finding.get("priority_band") or "").strip()
     body = str(finding.get("body") or "").strip()
@@ -78,7 +83,9 @@ def render_finding(repo: str, sha: str, finding: dict) -> str:
         "",
         f"**Category:** `{category}` · **Band:** `{band}`",
         "",
-        f"**Triage:** impact `{impact}` · trigger `{trigger}` · cost `{fix_cost}` · guard `{guard}`",
+        f"**Triage:** impact `{impact}` / `{magnitude}` · trigger `{trigger}` · scope `{scope}` · reversibility `{reversibility}` · cost `{fix_cost}` · confidence `{confidence}` · guard `{guard}`",
+        "",
+        f"**Uncertainty:** {uncertainty}",
         "",
     ]
     if body:

@@ -11,102 +11,233 @@ on:
         type: string
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
 jobs:
-  discover-sources:
+  refresh-sources:
     runs-on: ubuntu-latest
-    outputs:
-      sources: ${{ steps.sources.outputs.sources }}
+    timeout-minutes: 90
+    concurrency:
+      group: skill-refresh-aggregate
+      cancel-in-progress: false
     steps:
-      - name: Checkout main
+      - name: Resolve aggregate refresh base
+        id: refresh-base
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REFRESH_BRANCH: automation/skill-refresh/all
+        run: |
+          error_path="$RUNNER_TEMP/refresh-base-error.log"
+          if gh api --silent "repos/$GITHUB_REPOSITORY/git/ref/heads/$REFRESH_BRANCH" 2>"$error_path"; then
+            echo "ref=$REFRESH_BRANCH" >>"$GITHUB_OUTPUT"
+            echo "exists=true" >>"$GITHUB_OUTPUT"
+          elif grep -Fq '(HTTP 404)' "$error_path"; then
+            echo "ref=main" >>"$GITHUB_OUTPUT"
+            echo "exists=false" >>"$GITHUB_OUTPUT"
+          else
+            cat "$error_path" >&2
+            exit 1
+          fi
+
+      - name: Checkout aggregate branch or main
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
-          ref: main
+          ref: ${{ steps.refresh-base.outputs.ref }}
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Select locked sources
-        id: sources
+      - name: Verify aggregate branch contains publication paths only
+        if: steps.refresh-base.outputs.exists == 'true'
+        run: |
+          unexpected_paths="$(
+            git diff --name-only origin/main...HEAD -- \
+              ':(exclude).agents/skills/**' \
+              ':(exclude)docs/guides/skill-supply-chain.md' \
+              ':(exclude)skills-lock.json'
+          )"
+          if [[ -n "$unexpected_paths" ]]; then
+            printf 'Aggregate branch contains paths outside the publication allowlist:\n%s\n' \
+              "$unexpected_paths" >&2
+            exit 1
+          fi
+
+      - name: Rebase existing aggregate branch onto main
+        if: steps.refresh-base.outputs.exists == 'true'
+        run: >-
+          git -c user.name=github-actions[bot]
+          -c user.email=41898282+github-actions[bot]@users.noreply.github.com
+          rebase origin/main
+
+      - name: Stage existing aggregate changes on main
+        if: steps.refresh-base.outputs.exists == 'true'
+        env:
+          AGGREGATE_PATCH: ${{ runner.temp }}/existing-skill-refresh.patch
+        run: |
+          git diff --binary origin/main...HEAD -- \
+            .agents/skills \
+            docs/guides/skill-supply-chain.md \
+            skills-lock.json >"$AGGREGATE_PATCH"
+          git checkout -B main origin/main
+          if [[ -s "$AGGREGATE_PATCH" ]]; then
+            git apply "$AGGREGATE_PATCH"
+          fi
+
+      - name: Refresh selected sources sequentially
+        id: refresh
         env:
           REQUESTED_SOURCE: ${{ inputs.source || '' }}
+          SUCCESS_PATH: ${{ runner.temp }}/successful-sources.jsonl
+          FAILURE_PATH: ${{ runner.temp }}/failed-sources.jsonl
+          UNCHANGED_PATH: ${{ runner.temp }}/unchanged-sources.jsonl
+          BASE_LOCK_PATH: ${{ runner.temp }}/skill-refresh-base-lock.json
+          AGGREGATE_PATH: ${{ runner.temp }}/aggregate-sources.json
+          BACKUP_ROOT: ${{ runner.temp }}/skill-refresh-backups
         run: |
-          sources="$(jq -ce --arg requested "$REQUESTED_SOURCE" '
+          set -euo pipefail
+          : >"$SUCCESS_PATH"
+          : >"$FAILURE_PATH"
+          : >"$UNCHANGED_PATH"
+          git show HEAD:skills-lock.json >"$BASE_LOCK_PATH"
+          mkdir -p "$BACKUP_ROOT"
+
+          record_failure() {
+            local source="$1"
+            local phase="$2"
+            local log_path="$3"
+            jq -cn \
+              --arg source "$source" \
+              --arg phase "$phase" \
+              --rawfile detail "$log_path" \
+              '{source: $source, phase: $phase, detail: ($detail | if length > 4000 then .[0:4000] + "..." else . end)}' \
+              >>"$FAILURE_PATH"
+          }
+
+          backup_source() {
+            local source="$1"
+            local backup="$BACKUP_ROOT/${source//\//__}"
+            mkdir -p "$backup"
+            cp skills-lock.json "$backup/skills-lock.json"
+            cp docs/guides/skill-supply-chain.md "$backup/skill-supply-chain.md"
+            jq -j --arg source "$source" \
+              '.skills[] | select(.source == $source) | .destinationPath, "\u0000"' \
+              skills-lock.json >"$backup/package-paths"
+            tar --null -cf "$backup/packages.tar" -T "$backup/package-paths"
+          }
+
+          restore_source() {
+            local source="$1"
+            local backup="$BACKUP_ROOT/${source//\//__}"
+            local path
+            while IFS= read -r -d '' path; do
+              rm -rf -- "$path"
+            done <"$backup/package-paths"
+            tar -xf "$backup/packages.tar"
+            cp "$backup/skills-lock.json" skills-lock.json
+            cp "$backup/skill-supply-chain.md" docs/guides/skill-supply-chain.md
+          }
+
+          selected_sources="$(jq -ce --arg requested "$REQUESTED_SOURCE" '
             ([.skills[].source] | unique) as $sources
             | if $requested == "" then $sources
               elif ($sources | index($requested)) != null then [$requested]
               else error("requested source is not declared in skills-lock.json")
               end
-          ' skills-lock.json)"
-          echo "sources=$sources" >>"$GITHUB_OUTPUT"
+          ' skills-lock.json)" || exit 1
+          mapfile -t sources < <(jq -r '.[]' <<<"$selected_sources")
+          echo "base_sha=$(git rev-parse HEAD)" >>"$GITHUB_OUTPUT"
 
-  refresh-source:
-    needs: discover-sources
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        source: ${{ fromJSON(needs.discover-sources.outputs.sources) }}
-    concurrency:
-      group: skill-refresh-${{ matrix.source }}
-      cancel-in-progress: false
-    steps:
-      - name: Checkout main
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with:
-          ref: main
-          fetch-depth: 0
+          for source in "${sources[@]}"; do
+            source_slug="${source//\//__}"
+            check_path="$RUNNER_TEMP/$source_slug-check.json"
+            update_path="$RUNNER_TEMP/$source_slug-update.json"
+            error_path="$RUNNER_TEMP/$source_slug-error.log"
 
-      - name: Check source head
-        id: check
-        env:
-          SOURCE: ${{ matrix.source }}
-          RESULT_PATH: ${{ runner.temp }}/skill-refresh-check.json
-        run: |
-          python3 scripts/skill-supply-chain.py check \
-            --repo "$PWD" \
-            --lock skills-lock.json \
-            --source "$SOURCE" | tee "$RESULT_PATH"
-          echo "content_changed=$(jq -r '.changed' "$RESULT_PATH")" >>"$GITHUB_OUTPUT"
-          echo "target_ref=$(jq -r '.newRef' "$RESULT_PATH")" >>"$GITHUB_OUTPUT"
+            if ! python3 scripts/skill-supply-chain.py check \
+              --repo "$PWD" \
+              --lock skills-lock.json \
+              --source "$source" >"$check_path" 2>"$error_path"; then
+              record_failure "$source" check "$error_path"
+              continue
+            fi
+            if [[ "$(jq -r '.changed' "$check_path")" != "true" ]]; then
+              jq -c '. + {status: "unchanged"}' "$check_path" >>"$UNCHANGED_PATH"
+              continue
+            fi
 
-      - name: Install test dependencies
-        if: steps.check.outputs.content_changed == 'true'
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel ripgrep
+            backup_source "$source"
+            target_ref="$(jq -r '.newRef' "$check_path")"
+            if ! python3 scripts/skill-supply-chain.py update \
+              --repo "$PWD" \
+              --lock skills-lock.json \
+              --source "$source" \
+              --ref "$target_ref" >"$update_path" 2>"$error_path"; then
+              restore_source "$source"
+              record_failure "$source" update "$error_path"
+              continue
+            fi
 
-      - name: Update source packages
-        if: steps.check.outputs.content_changed == 'true'
-        env:
-          SOURCE: ${{ matrix.source }}
-          TARGET_REF: ${{ steps.check.outputs.target_ref }}
-          RESULT_PATH: ${{ runner.temp }}/skill-refresh-update.json
-        run: |
-          python3 scripts/skill-supply-chain.py update \
-            --repo "$PWD" \
-            --lock skills-lock.json \
-            --source "$SOURCE" \
-            --ref "$TARGET_REF" | tee "$RESULT_PATH"
+            mapfile -t package_paths < <(
+              jq -r --slurpfile result "$update_path" '
+                . as $lock
+                | $result[0].packages[]
+                | select($lock.skills[.] != null)
+                | $lock.skills[.].destinationPath
+              ' skills-lock.json
+            )
+            if ! python3 scripts/scan-skill-secrets.py "${package_paths[@]}" \
+              >"$error_path" 2>&1; then
+              restore_source "$source"
+              record_failure "$source" secret-scan "$error_path"
+              continue
+            fi
+            if ! python3 scripts/skill-supply-chain.py validate-lock \
+              --repo "$PWD" \
+              --lock skills-lock.json >"$error_path" 2>&1; then
+              restore_source "$source"
+              record_failure "$source" lock-validation "$error_path"
+              continue
+            fi
+            jq -c '. + {status: "updated"}' "$update_path" >>"$SUCCESS_PATH"
+          done
 
-      - name: Scan refreshed packages for secrets
-        if: steps.check.outputs.content_changed == 'true'
-        env:
-          RESULT_PATH: ${{ runner.temp }}/skill-refresh-update.json
-        run: |
-          mapfile -t package_paths < <(
-            jq -r --slurpfile result "$RESULT_PATH" '
-              . as $lock
-              | $result[0].packages[]
-              | select($lock.skills[.] != null)
-              | $lock.skills[.].destinationPath
-            ' skills-lock.json
-          )
-          if ((${#package_paths[@]})); then
-            python3 scripts/scan-skill-secrets.py "${package_paths[@]}"
+          python3 scripts/skill-supply-chain.py render-refresh-report \
+            --base-lock "$BASE_LOCK_PATH" \
+            --current-lock skills-lock.json >"$AGGREGATE_PATH"
+
+          successful_count="$(jq -s 'length' "$SUCCESS_PATH")"
+          failed_count="$(jq -s 'length' "$FAILURE_PATH")"
+          unchanged_count="$(jq -s 'length' "$UNCHANGED_PATH")"
+          if ((successful_count > 0)); then
+            echo "content_changed=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "content_changed=false" >>"$GITHUB_OUTPUT"
+          fi
+          echo "failed_count=$failed_count" >>"$GITHUB_OUTPUT"
+
+          {
+            printf '## Aggregate skill refresh\n\n'
+            printf -- '- Updated sources: %s\n' "$successful_count"
+            printf -- '- Unchanged sources: %s\n' "$unchanged_count"
+            printf -- '- Failed sources: %s\n\n' "$failed_count"
+            if ((failed_count > 0)); then
+              printf '### Failed sources\n\n'
+              jq -s -r '.[] | "- `\(.source)` during `\(.phase)`: \(.detail | gsub("[\\r\\n]+"; " "))"' \
+                "$FAILURE_PATH"
+            fi
+          } >>"$GITHUB_STEP_SUMMARY"
+
+          if ((successful_count == 0 && failed_count > 0)); then
+            exit 1
           fi
 
-      - name: Run repository validation
-        if: steps.check.outputs.content_changed == 'true'
+      - name: Install test dependencies
+        if: steps.refresh.outputs.content_changed == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel ripgrep
+
+      - name: Run combined repository validation
+        if: steps.refresh.outputs.content_changed == 'true'
         env:
           VALIDATION_PATH: ${{ runner.temp }}/skill-refresh-validation.log
         run: |
@@ -119,52 +250,85 @@ jobs:
             ./test.sh
           } | tee "$VALIDATION_PATH"
 
-      - name: Render pull request body
-        if: steps.check.outputs.content_changed == 'true'
+      - name: Render aggregate pull request body
+        if: steps.refresh.outputs.content_changed == 'true'
         env:
-          SOURCE: ${{ matrix.source }}
-          RESULT_PATH: ${{ runner.temp }}/skill-refresh-update.json
+          AGGREGATE_PATH: ${{ runner.temp }}/aggregate-sources.json
+          FAILURE_PATH: ${{ runner.temp }}/failed-sources.jsonl
           BODY_PATH: ${{ runner.temp }}/skill-refresh-pr.md
         run: |
-          old_ref="$(jq -r '.oldRef' "$RESULT_PATH")"
-          new_ref="$(jq -r '.newRef' "$RESULT_PATH")"
           {
             printf '## External skill refresh\n\n'
-            printf -- '- Source: [%s](https://github.com/%s)\n' "$SOURCE" "$SOURCE"
-            # shellcheck disable=SC2016
-            printf -- '- Previous ref: [`%s`](https://github.com/%s/commit/%s)\n' "$old_ref" "$SOURCE" "$old_ref"
-            # shellcheck disable=SC2016
-            printf -- '- Proposed ref: [`%s`](https://github.com/%s/commit/%s)\n\n' "$new_ref" "$SOURCE" "$new_ref"
-            printf '### Content-changed packages\n\n'
-            jq -r '.packages[] | "- `\(.)`"' "$RESULT_PATH"
-            printf '\n### Ref-only lock records\n\n'
-            jq -r 'if (.refOnlyPackages | length) == 0 then "- None" else .refOnlyPackages[] | "- `\(.)`" end' "$RESULT_PATH"
+            printf 'All validated source updates are accumulated in this aggregate draft. '
+            printf 'Failed sources remain unchanged and are reported below.\n\n'
+            while IFS= read -r update; do
+              source="$(jq -r '.source' <<<"$update")"
+              old_ref="$(jq -r '.oldRef' <<<"$update")"
+              new_ref="$(jq -r '.newRef' <<<"$update")"
+              printf '### [%s](https://github.com/%s)\n\n' "$source" "$source"
+              # shellcheck disable=SC2016
+              printf -- '- Previous ref: [`%s`](https://github.com/%s/commit/%s)\n' "$old_ref" "$source" "$old_ref"
+              # shellcheck disable=SC2016
+              printf -- '- Proposed ref: [`%s`](https://github.com/%s/commit/%s)\n' "$new_ref" "$source" "$new_ref"
+              printf -- '- Content-changed packages:\n'
+              jq -r '.packages[] | "  - `\(.)`"' <<<"$update"
+              printf -- '- Ref-only lock records:\n'
+              jq -r 'if (.refOnlyPackages | length) == 0 then "  - None" else .refOnlyPackages[] | "  - `\(.)`" end' <<<"$update"
+              printf -- '- Deterministic hashes:\n\n```json\n'
+              jq '.hashes' <<<"$update"
+              printf '```\n\n'
+            done <"$AGGREGATE_PATH"
+            printf '### Failed sources\n\n'
+            if [[ -s "$FAILURE_PATH" ]]; then
+              jq -s -r '.[] | "- `\(.source)` failed during `\(.phase)` and was rolled back."' \
+                "$FAILURE_PATH"
+            else
+              printf -- '- None.\n'
+            fi
             printf '\n### Automatic deletions\n\n'
-            printf -- '- None. Missing upstream paths block refresh and require explicit review.\n'
-            printf '\n### Deterministic hashes\n\n```json\n'
-            jq '.hashes' "$RESULT_PATH"
-            printf '```\n\n### Validation\n\n'
-            printf -- '- Deterministic lock validation passed.\n'
-            printf -- '- Refreshed-package secret scan passed.\n'
-            printf -- '- Supply-chain Bats tests and repository checks passed.\n\n'
-            printf '> Third-party review required: inspect the upstream diff and all vendored changes before merge. This workflow never auto-merges.\n'
+            printf -- '- None. Missing upstream paths block that source and require explicit review.\n'
+            printf '\n### Validation\n\n'
+            printf -- '- Every listed source passed immutable license-evidence and deterministic lock validation.\n'
+            printf -- '- Every refreshed package passed the credential-signature scan.\n'
+            printf -- '- The combined aggregate tree passed supply-chain Bats tests and repository checks.\n\n'
+            printf '> Third-party review required: inspect every upstream diff and vendored change before merge. This workflow never auto-merges.\n'
           } >"$BODY_PATH"
 
-      - name: Create or update review pull request
-        if: steps.check.outputs.content_changed == 'true'
+      - name: Create or update aggregate review pull request
+        id: create-pr
+        if: steps.refresh.outputs.content_changed == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ github.token }}
           base: main
-          branch: automation/skill-refresh/${{ matrix.source }}
+          branch: automation/skill-refresh/all
           delete-branch: false
           add-paths: |
             .agents/skills
+            docs/guides/skill-supply-chain.md
             skills-lock.json
-          commit-message: "chore: refresh ${{ matrix.source }} skills"
-          title: "chore: refresh ${{ matrix.source }} skills"
+          commit-message: "chore: refresh external skills"
+          title: "chore: refresh external skills"
           body-path: ${{ runner.temp }}/skill-refresh-pr.md
           labels: |
             automated
             dependencies
           draft: always-true
+
+      - name: Dispatch required checks for the generated head
+        if: >-
+          steps.refresh.outputs.content_changed == 'true' &&
+          steps.create-pr.outputs.pull-request-operation != 'none'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REFRESH_BRANCH: automation/skill-refresh/all
+          REFRESH_HEAD: ${{ steps.create-pr.outputs.pull-request-head-sha }}
+          REFRESH_BASE: ${{ steps.refresh.outputs.base_sha }}
+        run: |
+          gh workflow run ci-tests.yml \
+            --ref "$REFRESH_BRANCH" \
+            -f head_sha="$REFRESH_HEAD"
+          gh workflow run lint-and-format.yml \
+            --ref "$REFRESH_BRANCH" \
+            -f base_sha="$REFRESH_BASE" \
+            -f head_sha="$REFRESH_HEAD"

@@ -130,12 +130,17 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'impact' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'impact_magnitude' "$RETRO_PROMPT" 2>/dev/null \
     && grep -q 'trigger_likelihood' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'affected_scope' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'reversibility' "$RETRO_PROMPT" 2>/dev/null \
     && grep -q 'fix_cost' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'confidence' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'uncertainty' "$RETRO_PROMPT" 2>/dev/null \
     && ! grep -q '"severity"' "$RETRO_PROMPT" 2>/dev/null \
-    && grep -q 'impact' "$SCHEMA" 2>/dev/null \
+    && grep -q 'triage_version' "$SCHEMA" 2>/dev/null \
     && grep -q 'classify-finding-priority.py' "$RETRO_DIR/validate-postmerge-retro.py" 2>/dev/null \
-    && grep -q 'derive_priority_band' "$CLASSIFIER_SCRIPT" 2>/dev/null; then
+    && grep -q 'derive_priority_band_v2' "$CLASSIFIER_SCRIPT" 2>/dev/null; then
     pass "finding classifier schema + prompt + validator wired (#456)"
   else
     fail "postmerge retro missing finding classifier contract (#456)"

@@ -34,9 +34,15 @@
         "body",
         "dedupe_key",
         "repro_steps",
+        "triage_version",
         "impact",
+        "impact_magnitude",
         "trigger_likelihood",
-        "fix_cost"
+        "affected_scope",
+        "reversibility",
+        "fix_cost",
+        "confidence",
+        "uncertainty"
       ],
       "additionalProperties": true,
       "properties": {
@@ -48,19 +54,37 @@
           "minItems": 1,
           "items": { "type": "string", "minLength": 1 }
         },
+        "triage_version": { "const": 2 },
         "impact": {
           "type": "string",
           "enum": ["incorrect-behavior", "dx-perf-doc", "meta-harness"]
+        },
+        "impact_magnitude": {
+          "type": "string",
+          "enum": ["bounded", "material", "critical"]
         },
         "trigger_likelihood": {
           "type": "string",
           "enum": ["common", "edge", "fringe"]
         },
+        "affected_scope": {
+          "type": "string",
+          "enum": ["isolated", "limited", "broad"]
+        },
+        "reversibility": {
+          "type": "string",
+          "enum": ["easy", "moderate", "hard"]
+        },
         "fix_cost": {
           "type": "string",
           "enum": ["trivial", "moderate", "large"]
         },
-        "regression_guard": { "type": "boolean" }
+        "regression_guard": { "type": "boolean" },
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "uncertainty": { "type": "string", "minLength": 1 }
       },
       "not": {
         "anyOf": [

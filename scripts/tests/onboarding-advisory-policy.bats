@@ -171,9 +171,11 @@ PY
 }
 
 @test "advisory snapshot contract remains SHA-bearing and non-blocking" {
-  grep -q 'Head: `<sha>`' "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
-  grep -q 'Provider: `<provider> / <model-or-agent>`' "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
-  grep -q 'No findings identified at this head' "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
+  grep -q 'Head: `{head}`' "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py"
+  grep -q 'Provider: `{provider} / {model}`' "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py"
+  grep -q 'No findings identified at this head' "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py"
+  grep -q '"findings": \[\]' "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
+  ! grep -q 'Severity' "$REPO_ROOT/.github/prompts/pr-advisory-review.md"
   grep -q 'cancel-in-progress: true' "$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
   grep -q 'ai-review:live' "$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
   grep -q 'GITHUB_EVENT_ACTION:' "$REPO_ROOT/.github/workflows/agent-advisory-review.yml"

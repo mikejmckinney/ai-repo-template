@@ -379,13 +379,25 @@ mismatch, and missing or ineffective tests. Apply the canonical review contract
 in [`.github/prompts/shared-review-lenses.md`](.github/prompts/shared-review-lenses.md)
 proportionally to the available evidence.
 
-Findings come first, ordered by severity, with file and line references. Each
+Findings come first, ordered by the canonical AP11 priority band and then impact,
+with file and line references. Each
 finding must identify:
 
 - the concrete failure mode or reasoning defect;
 - the evidence supporting it;
 - the affected user, behavior, or maintenance surface;
 - a specific, proportionate path forward.
+
+Before recommending block, hold, fix, reject, or merge, normalize the finding
+with the `triage_version: 2` fields defined in
+[`.github/prompts/shared-review-lenses.md`](.github/prompts/shared-review-lenses.md):
+impact kind and magnitude, trigger likelihood, affected scope, reversibility,
+fix cost, confidence, uncertainty, and optional regression-guard value. Use
+`scripts/workflows/lib/finding_priority.py` (or its CLI wrapper) when executable.
+If it cannot be executed, present the same fields and mark the classification
+unverified; do not improvise severity or a second decision table. Classification
+does not grant authority: advisory findings remain non-blocking regardless of
+their derived band.
 
 Challenge hidden assumptions and determine whether the reasoning supports the
 conclusion. Check for unnecessary abstractions, speculative code or
@@ -441,7 +453,12 @@ Detailed history and examples remain in
   explicit opt-in technique, not default fan-out.
 - **P10 Classifier:** a deterministic classifier maps explicit observed attributes
   to an operational class while keeping classification separate from the action
-  taken for that class. `scripts/workflows/lib/finding_priority.py` classifies post-merge retro and weekly review findings from impact, trigger likelihood, fix cost, and regression-guard value into reviewable priority bands.
+  taken for that class. `scripts/workflows/lib/finding_priority.py` validates the
+  versioned AP11 observation contract and classifies advisory, formal/manual,
+  post-merge, and weekly findings from impact magnitude, trigger likelihood,
+  affected scope, reversibility, fix cost, confidence, uncertainty, and optional
+  regression-guard value. Surface adapters apply authority only after deriving
+  the common priority band.
 
 ### Anti-patterns to watch
 
@@ -487,5 +504,7 @@ Detailed history and examples remain in
   risks remain under-addressed. Classify probability and impact separately,
   account for reversibility and affected scope, compare mitigations by expected
   benefit and cost, and state the evidence and uncertainty behind the
-  classification.
+  classification. New review findings use the canonical versioned observation
+  contract rather than model-authored severity; unversioned persisted records
+  retain their historical classifier semantics.
 <!-- generated:pap-catalog:end -->
