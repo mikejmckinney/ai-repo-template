@@ -106,6 +106,9 @@ an earlier SHA, state:
 - the later SHA for which evidence is being reused.
 
 If those conditions cannot be established, rerun the outcome validation.
+For earlier-SHA evidence, format the field as `Paths: <later path analysis>;
+Conditions: <trigger, permissions, configuration, and runtime analysis>` so
+automation can distinguish the required analysis from vague reuse prose.
 
 ## Redact safely
 

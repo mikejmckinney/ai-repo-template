@@ -85,7 +85,7 @@ maybe_sandbox_sync() {
         artifact_type: "sandbox-pr",
         redaction: "No credential values are included.",
         retention: "Public PR-lifetime GitHub record; no expiration.",
-        evidence_reuse: "The later commit only records this evidence URL; candidate paths and runtime conditions are unchanged.",
+        evidence_reuse: "Paths: the later commit only records this evidence URL; Conditions: candidate runtime and trigger are unchanged.",
         result: "pass"
       }]' \
       "$verify_json" >"$tmp"

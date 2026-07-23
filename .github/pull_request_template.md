@@ -99,7 +99,7 @@ N/A — empty headings are noise.
 
 **Retention:** <PR-lifetime record plus access/expiration disclosure>
 
-**Evidence reuse:** <none, or earlier-SHA unchanged-path/condition justification>
+**Evidence reuse:** <none, or Paths: <later path analysis>; Conditions: <load-bearing condition analysis>>
 
 **Result:** <problem statement resolved | not resolved | framing disconnect | blocked>
 

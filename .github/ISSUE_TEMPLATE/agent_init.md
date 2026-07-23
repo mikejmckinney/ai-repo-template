@@ -152,7 +152,7 @@ Artifact:
 Artifact type:
 Redaction:
 Retention:
-Evidence reuse:
+Evidence reuse: <none, or Paths: <later path analysis>; Conditions: <load-bearing condition analysis>>
 Result: pass | fail | blocked
 ```
 

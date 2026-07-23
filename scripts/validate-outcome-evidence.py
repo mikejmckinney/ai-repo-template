@@ -118,10 +118,12 @@ def validate(payload: dict[str, Any]) -> int:
             and (
                 not isinstance(reuse, str)
                 or reuse.strip().lower() in PLACEHOLDERS
+                or not re.search(r"\bpaths?\s*:", reuse, re.IGNORECASE)
+                or not re.search(r"\bconditions?\s*:", reuse, re.IGNORECASE)
             )
         ):
             failures.append(
-                f"{label}.evidence_reuse must explain unchanged paths and conditions for earlier-SHA evidence"
+                f"{label}.evidence_reuse must include Paths: and Conditions: analysis for earlier-SHA evidence"
             )
 
     if failures:
