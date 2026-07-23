@@ -20,6 +20,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   FIX_PR_TEMPLATE=".github/templates/weekly-review-fix-pr.md"
   LIB_DIR="scripts/workflows/lib"
   FIX_PROVIDER_CASCADE="$LIB_DIR/run-fix-provider-cascade.sh"
+  FIX_VERIFICATION_VALIDATOR="$LIB_DIR/validate-fix-verification.py"
   OPENCODE_SCHEMA=".github/schemas/weekly-review.schema.json"
   # shellcheck source=scripts/lib/search.sh
   source "scripts/lib/search.sh"
@@ -35,7 +36,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${WEEKLY_DIR}/merge-umbrella-content.py" \
     "$LIB_DIR/run-batch-fix.sh" "$LIB_DIR/umbrella-lifecycle.sh" \
     "$LIB_DIR/finding_priority.py" "$LIB_DIR/superseded_findings.py" \
-    "$LIB_DIR/run-opencode.mjs" "$LIB_DIR/run-opencode-fix.sh" "$FIX_PROVIDER_CASCADE" "$OPENCODE_SCHEMA"; do
+    "$LIB_DIR/run-opencode.mjs" "$LIB_DIR/run-opencode-fix.sh" "$FIX_PROVIDER_CASCADE" \
+    "$FIX_VERIFICATION_VALIDATOR" "$OPENCODE_SCHEMA"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
     else
@@ -127,6 +129,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "weekly fix uses template + native issue link + re-exec guard"
   else
     fail "run-weekly-review-fix.sh must render fix PR, link issue, and re-exec from temp copy"
+  fi
+
+  if grep -q 'validate-fix-verification.py' "$FIX_PROVIDER_CASCADE" 2>/dev/null \
+    && ! grep -q 'batch_fix_write_verify_stub\|creating minimal stub' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "weekly fixes require valid verification before promotion"
+  else
+    fail "weekly fixes must fail closed without valid per-finding verification"
   fi
 
   if grep -q 'render-umbrella-findings.py' "$UMBRELLA_SCRIPT" 2>/dev/null \

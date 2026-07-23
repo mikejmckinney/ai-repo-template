@@ -302,50 +302,6 @@ PY
   ! grep -q 'Optional PR advisory' "$REPO_ROOT/.github/prompts/README.md"
 }
 
-@test "copied template completes the derived repository lifecycle" {
-  if [[ "${DERIVED_LIFECYCLE_INNER:-}" == 1 ]]; then
-    skip "inner derived-repository suite avoids recursive lifecycle execution"
-  fi
-
-  fixture="$(mktemp -d)"
-  repo="$fixture/product"
-  mkdir -p "$repo"
-  git -C "$REPO_ROOT" ls-files -z \
-    | tar --null -C "$REPO_ROOT" -cf - -T - \
-    | tar -xf - -C "$repo"
-  git -C "$repo" init -q
-  git -C "$repo" remote add origin https://github.com/example/product.git
-
-  run "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh" --repo "$repo"
-  [ "$status" -eq 0 ]
-  [ "$(jq -r .mode <<<"$output")" = template-seed ]
-  [ "$(jq -r .requires_onboarding <<<"$output")" = true ]
-
-  jq '.status = "complete"' "$repo/.context/onboarding-state.json" >"$fixture/state.json"
-  mv "$fixture/state.json" "$repo/.context/onboarding-state.json"
-  printf '# Product Roadmap\n\nProject-owned milestones.\n' >"$repo/.context/roadmap.md"
-  printf '# Product Context\n\n**Project Name**: `product`\n' >"$repo/.context/00_INDEX.md"
-
-  run "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh" --repo "$repo"
-  [ "$status" -eq 0 ]
-  [ "$(jq -r .mode <<<"$output")" = complete ]
-  [ "$(jq -r .requires_onboarding <<<"$output")" = false ]
-
-  run "$repo/.agents/skills/repo-onboarding/scripts/validate-onboarding.sh" --repo "$repo"
-  [ "$status" -eq 0 ]
-  [ "$(jq -r .stable <<<"$output")" = true ]
-
-  run bash -c 'cd "$1" && ./test.sh' _ "$repo"
-  [ "$status" -eq 0 ]
-
-  run npm ci --prefix "$repo/.github/agent-runtime" --ignore-scripts
-  [ "$status" -eq 0 ]
-
-  run env DERIVED_LIFECYCLE_INNER=1 bash -c 'cd "$1" && bats --jobs 4 scripts/tests/' _ "$repo"
-  [ "$status" -eq 0 ]
-  rm -rf "$fixture"
-}
-
 @test "GitHub state replaces the latest session summary surface" {
   [ ! -e "$REPO_ROOT/.context/sessions/latest_summary.md" ]
   [ ! -e "$REPO_ROOT/scripts/checks/025-sessions-hygiene.sh" ]

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate that a no-diff fix pass resolved every actionable finding."""
+"""Validate per-finding evidence before promoting or publishing a fix pass."""
 from __future__ import annotations
 
 import json
@@ -38,7 +38,9 @@ def indexed_findings(payload: dict[str, Any], label: str) -> dict[str, dict[str,
     return indexed
 
 
-def validate_no_diff(batch: dict[str, Any], verification: dict[str, Any]) -> int:
+def validate_fix(
+    batch: dict[str, Any], verification: dict[str, Any], substantive_diff: bool
+) -> int:
     actionable = {
         key: finding
         for key, finding in indexed_findings(batch, "batch").items()
@@ -56,8 +58,21 @@ def validate_no_diff(batch: dict[str, Any], verification: dict[str, Any]) -> int
         if not isinstance(verify, dict):
             failures.append(f"{key}: verify must be an object")
             continue
-        if verify.get("pre") != "cant_reproduce":
-            failures.append(f"{key}: verify.pre must be cant_reproduce for a no-diff pass")
+        pre = verify.get("pre")
+        post = verify.get("post")
+        if pre == "cant_reproduce":
+            if post not in (None, "n/a"):
+                failures.append(f"{key}: cant_reproduce verify.post must be n/a")
+        elif substantive_diff and pre == "reproduced" and post == "fixed":
+            pass
+        elif substantive_diff:
+            failures.append(
+                f"{key}: verify must be reproduced/fixed or cant_reproduce"
+            )
+        else:
+            failures.append(
+                f"{key}: verify.pre must be cant_reproduce for a no-diff pass"
+            )
         notes = verify.get("notes")
         if not isinstance(notes, str) or not notes.strip():
             failures.append(f"{key}: verify.notes must explain the resolved outcome")
@@ -68,18 +83,27 @@ def validate_no_diff(batch: dict[str, Any], verification: dict[str, Any]) -> int
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
-        print("Usage: validate-no-diff-fix.py <batch.json> <fix-verify.json>", file=sys.stderr)
+    if len(sys.argv) != 4 or sys.argv[3] not in {
+        "--substantive-diff",
+        "--no-substantive-diff",
+    }:
+        print(
+            "Usage: validate-fix-verification.py <batch.json> <fix-verify.json> "
+            "<--substantive-diff|--no-substantive-diff>",
+            file=sys.stderr,
+        )
         return 2
     try:
-        count = validate_no_diff(
+        count = validate_fix(
             load_object(Path(sys.argv[1]), "batch"),
             load_object(Path(sys.argv[2]), "fix-verify"),
+            sys.argv[3] == "--substantive-diff",
         )
     except ValueError as exc:
-        print(f"::error::No-diff fix verification failed: {exc}", file=sys.stderr)
+        print(f"::error::Fix verification failed: {exc}", file=sys.stderr)
         return 1
-    print(f"No-diff fix verification passed for {count} actionable finding(s)")
+    mode = "substantive" if sys.argv[3] == "--substantive-diff" else "no-diff"
+    print(f"Fix verification passed for {count} actionable finding(s) ({mode})")
     return 0
 
 

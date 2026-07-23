@@ -54,7 +54,12 @@ supporting evidence and never satisfy or replace deterministic CI.
 
 `agent-postmerge-retro.yml` runs at 06:00 UTC and by manual dispatch. It reviews
 merged PR evidence, writes one daily umbrella issue, and may publish a draft fix
-PR. Fix publication is never auto-merged.
+PR. A fix provider is promoted only after every actionable finding has completed
+verification and the worktree contains substantive changes or complete
+`cant_reproduce` evidence. Verification-only output opens no PR. Published PRs
+must acquire a native GitHub Development-graph link to the umbrella issue; a
+closing keyword without that relationship fails the job. Fix publication is
+never auto-merged.
 
 ## Weekly Repository Review
 
@@ -89,7 +94,9 @@ is `openai/gpt-5.6-sol`, when preflight permits it, then
 Cursor `cursor-grok-4.5-medium`, then retained rollback providers when configured.
 Fix calls use provider-specific isolation inside a shared disposable worktree;
 the controller runs `./test.sh` without credentials and promotes only the first
-verified patch. The fix agent may edit but cannot invoke shell commands; this
+patch with complete per-finding verification. Missing, malformed, or pending
+verification advances to the next provider instead of generating a committable
+stub. The fix agent may edit but cannot invoke shell commands; this
 prevents editable repository scripts from reading inherited credentials.
 
 For trusted private repositories, `scripts/sync-opencode-oauth-secret.sh` reads
