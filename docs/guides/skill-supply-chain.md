@@ -179,7 +179,7 @@ changes; this table is not a substitute for complying with the linked terms.
 | `anthropics/skills` | 3 | Apache-2.0 | [frontend-design](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/frontend-design/LICENSE.txt), [mcp-builder](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/mcp-builder/LICENSE.txt), [skill-creator](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/skill-creator/LICENSE.txt) |
 | `aws/agent-toolkit-for-aws` | 19 | Apache-2.0 | [LICENSE](https://github.com/aws/agent-toolkit-for-aws/blob/36f16570de2015c0f0ce94ba9e391bd703c9ffb7/LICENSE) |
 | `cloudflare/skills` | 2 | Apache-2.0 | [LICENSE](https://github.com/cloudflare/skills/blob/70215303d44a81a0db3219428f4825b604fc6061/LICENSE) |
-| `microsoft/azure-skills` | 26 | MIT | [LICENSE](https://github.com/microsoft/azure-skills/blob/6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae/LICENSE) |
+| `microsoft/azure-skills` | 26 | MIT | [LICENSE](https://github.com/microsoft/azure-skills/blob/1b592c63641049ff33e4952c4021c63b4507f147/LICENSE) |
 | `microsoft/playwright` | 1 | Apache-2.0 | [LICENSE](https://github.com/microsoft/playwright/blob/449349caea6d1c81dc8b6a6f447cf9bfca6b1350/LICENSE) |
 | `netlify/context-and-tools` | 3 | MIT | [LICENSE](https://github.com/netlify/context-and-tools/blob/b4ac277e6795f90e6a1d163c001c0d7667ff9143/LICENSE) |
 | `oracle/skills` | 3 | UPL-1.0 | [LICENSE](https://github.com/oracle/skills/blob/30e30dbcbf5f92f3564bc85f8fd59d32736adcd6/LICENSE.txt) |
