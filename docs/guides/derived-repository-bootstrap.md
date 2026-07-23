@@ -21,9 +21,9 @@ Store this token once as both:
   dispatch;
 - a Codespaces user secret visible to `ai-repo-template`, for local use.
 
-Do not store it in generated repositories as an Actions secret. The canonical
-manifest, `.config/derived-repo-secrets.json`, marks it Codespaces-only, and
-tests reject workflow drift that would publish it.
+Do not grant it to generated repositories as an Actions or Codespaces secret.
+The canonical manifest, `.config/derived-repo-secrets.json`, marks it as a
+source-only credential, and tests reject workflow drift that would publish it.
 
 The token has broad owner-level authority. Rotate it after suspected exposure,
 and do not reuse the sandbox-only `SANDBOX_BOOTSTRAP_TOKEN` for this purpose.
@@ -58,6 +58,10 @@ Run **Create derived repository** with `workflow_dispatch` from the `main`
 branch of `mikejmckinney/ai-repo-template`. The workflow maps only manifest
 approved Actions secret names into the script environment and checks out
 trusted `main` without persisted credentials.
+
+Workflow inputs are first mapped to step environment variables and are never
+interpolated into the Bash program. The script then validates `OWNER/REPO` and
+visibility values before mutation.
 
 The normal workflow `GITHUB_TOKEN` cannot create repositories, write another
 repository's Actions secrets, or manage user Codespaces secrets. The job uses

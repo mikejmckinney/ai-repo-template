@@ -29,7 +29,7 @@ guarded manual workflow:
 
 - values come only from an explicit process-environment allowlist;
 - a dedicated `REPO_BOOTSTRAP_TOKEN` authorizes GitHub mutations;
-- the bootstrap token is never copied into destination Actions secrets;
+- the bootstrap token is never granted to destination Actions or Codespaces;
 - selected Codespaces grants use the additive per-repository endpoint;
 - repository creation is private by default and remote-only;
 - existing repositories require explicit `--reuse`;

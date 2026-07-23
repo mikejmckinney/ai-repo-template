@@ -38,6 +38,9 @@ jobs:
 
       - name: Create and synchronize derived repository
         env:
+          TARGET_REPOSITORY: ${{ inputs.repository }}
+          TARGET_VISIBILITY: ${{ inputs.visibility }}
+          REUSE_EXISTING: ${{ inputs.reuse }}
           REPO_BOOTSTRAP_TOKEN: ${{ secrets.REPO_BOOTSTRAP_TOKEN }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
@@ -48,11 +51,11 @@ jobs:
           SANDBOX_BOOTSTRAP_TOKEN: ${{ secrets.SANDBOX_BOOTSTRAP_TOKEN }}
         run: |
           args=(
-            --repo "${{ inputs.repository }}"
-            --visibility "${{ inputs.visibility }}"
+            --repo "$TARGET_REPOSITORY"
+            --visibility "$TARGET_VISIBILITY"
             --apply
           )
-          if [[ "${{ inputs.reuse }}" == "true" ]]; then
+          if [[ "$REUSE_EXISTING" == "true" ]]; then
             args+=(--reuse)
           fi
           scripts/create-derived-repo.sh "${args[@]}"

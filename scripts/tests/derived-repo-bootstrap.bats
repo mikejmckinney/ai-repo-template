@@ -83,7 +83,7 @@ run_bootstrap() {
       (.codespaces | type == "boolean") and
       (.consumers | type == "array" and length > 0)
     ) and
-    ([.secrets[] | select(.name == "REPO_BOOTSTRAP_TOKEN" and .actions == false and .codespaces == true)] | length == 1)
+    ([.secrets[] | select(.name == "REPO_BOOTSTRAP_TOKEN" and .actions == false and .codespaces == false)] | length == 1)
   ' "$MANIFEST"
   [ "$status" -eq 0 ]
 }
@@ -170,6 +170,8 @@ PY
   [ "$status" -eq 0 ]
   run grep -F 'secret set REPO_BOOTSTRAP_TOKEN' "$GH_LOG"
   [ "$status" -ne 0 ]
+  run grep -F 'user/codespaces/secrets/REPO_BOOTSTRAP_TOKEN/repositories/' "$GH_LOG"
+  [ "$status" -ne 0 ]
 }
 
 @test "existing repository requires explicit reuse and verified template metadata" {
@@ -217,17 +219,34 @@ PY
   run grep -F 'pull_request:' "$workflow"
   [ "$status" -ne 0 ]
 
+  run grep -F 'TARGET_REPOSITORY: ${{ inputs.repository }}' "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -F -- '--repo "$TARGET_REPOSITORY"' "$workflow"
+  [ "$status" -eq 0 ]
+
   run python3 - "$MANIFEST" "$workflow" <<'PY'
 import json
 import pathlib
+import re
 import sys
 
 manifest = json.loads(pathlib.Path(sys.argv[1]).read_text())
 workflow = pathlib.Path(sys.argv[2]).read_text()
 expected = {item["env"] for item in manifest["secrets"] if item["actions"]}
-missing = sorted(name for name in expected if f"secrets.{name}" not in workflow)
-if missing:
-    raise SystemExit(f"workflow mappings missing: {missing}")
+expected.add("REPO_BOOTSTRAP_TOKEN")
+mappings = re.findall(
+    r"^\s{10}([A-Z][A-Z0-9_]+): \$\{\{ secrets\.([A-Z][A-Z0-9_]+) \}\}$",
+    workflow,
+    flags=re.MULTILINE,
+)
+actual_names = {name for name, _ in mappings}
+actual_refs = {ref for _, ref in mappings}
+if actual_names != expected or actual_refs != expected:
+    raise SystemExit(
+        f"workflow secret mappings differ: names={sorted(actual_names)} refs={sorted(actual_refs)} expected={sorted(expected)}"
+    )
+if workflow.count("${{ inputs.repository }}") != 1:
+    raise SystemExit("repository input must appear only in the step environment mapping")
 PY
   [ "$status" -eq 0 ]
 }
