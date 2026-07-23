@@ -1041,10 +1041,10 @@
       "sourceType": "github"
     },
     "use-railway": {
-      "computedHash": "4e608e4bc8d7ccc5c59d3fa49074001adba91a061d464fb0dfca8fff3516d08d",
+      "computedHash": "54e5e8caffc9ab61ee3e98f2f8824ee521f50cbbb7b61b97b186bacc0974bba2",
       "destinationPath": ".agents/skills/use-railway",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "2405547f2044071c9d43bf6782edeb5d93e5bb4e",
+      "ref": "191601b4954527a87f4f004eaa355c8f30a855bf",
       "skillPath": "plugins/railway/skills/use-railway",
       "source": "railwayapp/railway-skills",
       "sourceType": "github"
