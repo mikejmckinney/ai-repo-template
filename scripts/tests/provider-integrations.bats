@@ -228,7 +228,7 @@ EOF
     ([.skills[] | select(.source == "awslabs/agent-plugins")] | length) == 0 and
     ([.skills[] | select(.source == "microsoft/azure-skills")] | length) == 26 and
     all(.skills[] | select(.source == "aws/agent-toolkit-for-aws");
-      .ref == "36f16570de2015c0f0ce94ba9e391bd703c9ffb7" and
+      .ref == "fae975d565b6c1752e3f4795c499fb3951039777" and
       (.skillPath | startswith("skills/")) and
       (.destinationPath | startswith(".agents/skills/aws/"))) and
     all(.skills[] | select(.source == "microsoft/azure-skills");
