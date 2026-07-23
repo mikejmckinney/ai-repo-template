@@ -7,9 +7,9 @@ module owns one phase of project bootstrap and is independently re-runnable.
 
 | Module | Phase | Notes |
 |---|---|---|
-| `00-detect-repo.sh` | Resolve `FULL_REPO` from env/git remote; rewrite `.github/ISSUE_TEMPLATE/config.yml` placeholder. | Honors `GH_REPO` / `GITHUB_REPOSITORY` env overrides. |
+| `00-detect-repo.sh` | Resolve `FULL_REPO` from env/git remote. | Honors `GH_REPO` / `GITHUB_REPOSITORY` env overrides. |
 | `10-env-file.sh` | Copy `.env.example` → `.env` if missing. | Idempotent — never overwrites an existing `.env`. |
-| `20-install-dependencies.sh` | `npm ci` / `pip install` for declared manifests; database-migration stub. | DB block is template scaffolding for project customization. |
+| `20-install-dependencies.sh` | `npm ci` / `pip install` for declared manifests. | Does not invent database setup without a verified database stack. |
 | `30-build.sh` | Run `npm run build` if `package.json` declares a build script. | Logs "No build step configured" otherwise. |
 | `40-ensure-labels.sh` | Probe `gh auth`, resolve `FULL_REPO` fallback, `export GH_REPO`, create maintained pipeline labels. | Sets shared gating vars consumed by 60. |
 | `ensure-pipeline-labels.sh` | Standalone wrapper: `ensure-pipeline-labels.sh owner/repo` | Used by `sandbox-bootstrap.sh` and operators; sources `40-ensure-labels.sh`. |

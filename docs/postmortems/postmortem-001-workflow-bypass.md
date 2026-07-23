@@ -65,9 +65,9 @@ This repo (`cmmc-level2-aws-enclave-reference2`) was bootstrapped from
 `mikejmckinney/ai-repo-template`, which ships an extensive multi-agent
 governance layer:
 [`AGENTS.md`](../../AGENTS.md),
-[`.github/copilot-instructions.md`](../../.github/copilot-instructions.md),
-role files under [`.github/agents/*.agent.md`](../../.github/agents/),
-[`.context/state/coordination.md`](../../.context/state/coordination.md),
+`.github/copilot-instructions.md`,
+role files under `.github/agents/*.agent.md`,
+`.context/state/coordination.md`,
 the prompt series under [`.github/prompts/`](../../.github/prompts/), and
 auto-merge / review / coordination workflows under
 [`.github/workflows/agent-*.yml`](../../.github/workflows/).
@@ -75,7 +75,7 @@ auto-merge / review / coordination workflows under
 The roadmap ([`/.context/roadmap.md`](../../.context/roadmap.md)) defines
 seven sequential phases mapped to numbered prompts (`01-init-project.md`
 through `10-ci-and-compliance-checks.md`). Phase 1 was completed and
-**recorded** in [`.context/sessions/latest_summary.md`](../../.context/sessions/latest_summary.md).
+**recorded** in the then-current `.context/sessions/latest_summary.md` file.
 Phases 2–7 were completed but **never** recorded — and never even
 committed.
 
@@ -107,7 +107,7 @@ and ~150 untracked files (including a full `terraform/` tree with
 
 ### Expected
 
-Per [`AGENTS.md`](../../AGENTS.md), [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md), and the multi-agent
+Per [`AGENTS.md`](../../AGENTS.md), `.github/copilot-instructions.md`, and the multi-agent
 coordination guide, each roadmap phase should:
 
 1. Open a tracking issue using the appropriate template.
@@ -277,7 +277,7 @@ but were not captured in the original postmortem. They generalize beyond
 this repo and should inform the template:
 
 1. **`awk -F,` does not honor quoted CSV cells** (universal). The original
-   [`scripts/check-ssp.sh`](../../scripts/check-ssp.sh) used `awk -F,`
+   `scripts/check-ssp.sh` used `awk -F,`
    and silently missed two of ten written controls (3.1.1, 3.13.1)
    because their descriptions contain commas. Fixed by switching to a
    Python `csv.DictReader` heredoc. **Template implication**: any future
@@ -287,7 +287,7 @@ this repo and should inform the template:
 2. **Cross-check guards belong in the same PR as the second generator**
    (universal). When two artifacts share an invariant (here:
    `controls/nist-800-171-mapping.csv` "full" rows ↔
-   [`ssp/SSP.md`](../../ssp/SSP.md) fully-written controls), the CI guard
+   `ssp/SSP.md` fully-written controls), the CI guard
    enforcing alignment must land with the generator that creates the
    dependency, not bolted on later. Without it, the two artifacts drifted
    silently (CSV had 12 full rows; SSP had 10) until a manual audit
@@ -324,11 +324,11 @@ the branch-precondition rule (see Action items).
 ## References
 
 - Recovery branch: `recovery/phases-1-7-uncommitted-work` (commits `65bdb39` … `53491b9`)
-- Recovery handoff: [`/.context/state/handoff_phases-1-7-recovery.md`](../../.context/state/handoff_phases-1-7-recovery.md)
+- Recovery handoff: `/.context/state/handoff_phases-1-7-recovery.md`
 - [`AGENTS.md`](../../AGENTS.md) §"Work style" — where the new rule should land
 - [`AGENTS.md`](../../AGENTS.md) §"Session-state cadence" — the rule that was also missed
 - [`/.context/roadmap.md`](../../.context/roadmap.md) — phase acceptance criteria
-- [`/.context/sessions/latest_summary.md`](../../.context/sessions/latest_summary.md) — updated with Phases 2–7 close-out and bypass note
+- `/.context/sessions/latest_summary.md` — updated with Phases 2–7 close-out and bypass note (historical file, since retired)
 - Template repo: `mikejmckinney/ai-repo-template` (where the corrective ADR + rule should land)
 
 ## Follow-up — template-mirror notes (added 2026-04-25)

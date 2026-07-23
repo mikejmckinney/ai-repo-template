@@ -158,11 +158,18 @@ jobs:
           cache: npm
           cache-dependency-path: .github/agent-runtime/package-lock.json
 
-      - name: Install OpenCode runtime
+      - name: Install fix verification prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ripgrep shellcheck jq
+          command -v rg shellcheck jq >/dev/null
+
+      - name: Install agent runtime
         run: |
           npm ci --prefix .github/agent-runtime
           echo "$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/.bin" >> "$GITHUB_PATH"
           echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
+          echo "CURSOR_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js" >> "$GITHUB_ENV"
 
       - name: Pin RUN_DATE
         run: |

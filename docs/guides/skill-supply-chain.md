@@ -51,10 +51,14 @@ python3 scripts/skill-supply-chain.py check \
   --source render-oss/skills
 ```
 
-The JSON result includes `changed`, old and new refs, changed and deleted
-packages, old and new hashes, and exclusions. Pin a known commit with `--ref`
-when reproducing a review. For fixture or offline testing, add both
-`--source-dir <path>` and `--ref <commit>`.
+The JSON result includes `changed`, `refChanged`, `packages`,
+`refOnlyPackages`, old and new refs and hashes, and exclusions. `changed` is
+true only when a declared package hash changes; an unrelated upstream commit
+reports `refChanged: true` without opening a lock-only refresh PR. When one
+package changes, unchanged sibling records appear under `refOnlyPackages`
+because their refs advance with the source's atomic snapshot. Pin a known
+commit with `--ref` when reproducing a review. For fixture or offline testing,
+add both `--source-dir <path>` and `--ref <commit>`.
 
 Update all declared packages from one source atomically:
 
@@ -73,9 +77,12 @@ downloaded content. It stages and verifies every changed package before replacin
 destinations and writing the lock. A failed replacement restores package and
 lock backups.
 
-An upstream package deletion is an explicit changed result. `update` removes
-only that declared destination and lock record so reviewers can evaluate the
-deletion in the resulting diff.
+If a declared upstream package path disappears, both `check` and `update` fail
+closed without deleting the vendored package or lock record. Treat this as a
+possible upstream move: locate and review the replacement path. Update only `skillPath`,
+then run `update --ref <reviewed-commit>` so the updater advances the ref and hash
+atomically. Pre-editing `ref` can turn changed upstream bytes into a same-ref hash
+mismatch. Package removal requires an explicit reviewed lock and destination change.
 
 ## Nightly review PRs
 
@@ -87,8 +94,8 @@ The workflow creates one branch and draft PR per upstream source repository,
 not per skill and not for the entire matrix. Each source has its own concurrency
 group and stable branch: `automation/skill-refresh/<owner>/<repository>`. All
 skills from that source update atomically on the same branch, while unrelated
-vendors remain independently reviewable. A no-change result stops before any
-write. A changed result:
+vendors remain independently reviewable. A ref-only result stops before any
+write or PR creation. A material package change:
 
 1. updates only that source's packages and lock records;
 2. scans refreshed package paths for credential signatures;
@@ -117,8 +124,8 @@ satisfying maintainer review. Keep refresh PRs draft and never apply
   packages that explain the release or migration.
 - Review every vendored byte and executable-mode change. Treat new scripts as
   untrusted even though automation does not execute them.
-- Confirm package additions, deletions, and renames are intentional. The updater
-  does not discover or adopt new packages automatically.
+- Confirm package additions, removals, moves, and renames are intentional. The
+  updater does not discover or adopt new paths or packages automatically.
 - Recheck upstream license evidence and security notices at the proposed commit.
 - Confirm exclusions still identify generated artifacts and do not hide
   substantive instructions or executable code.
@@ -131,9 +138,9 @@ satisfying maintainer review. Keep refresh PRs draft and never apply
   secret-scan, validation, or test step. Do not bypass the failed control.
 - If upstream moved again during review, rerun the stable source branch; the
   existing draft PR is updated instead of duplicated.
-- If a refresh PR contains an unexpected deletion, close it or restore the
-  previous immutable ref. Do not manually copy partial upstream state into the
-  branch.
+- If acquisition reports a missing upstream path, inspect the upstream tree for
+  a move and update the lock only after reviewing the replacement package. Do
+  not delete the local package or manually copy partial upstream state.
 - If a local `update` is interrupted, run `validate-lock`, inspect `git diff`, and
   rerun against the intended immutable ref. Commit only a complete source-scoped
   result.
@@ -180,7 +187,7 @@ changes; this table is not a substitute for complying with the linked terms.
 | `aws/agent-toolkit-for-aws` | 19 | Apache-2.0 | [LICENSE](https://github.com/aws/agent-toolkit-for-aws/blob/fae975d565b6c1752e3f4795c499fb3951039777/LICENSE) |
 | `cloudflare/skills` | 2 | Apache-2.0 | [LICENSE](https://github.com/cloudflare/skills/blob/70215303d44a81a0db3219428f4825b604fc6061/LICENSE) |
 | `microsoft/azure-skills` | 26 | MIT | [LICENSE](https://github.com/microsoft/azure-skills/blob/6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae/LICENSE) |
-| `microsoft/playwright` | 1 | Apache-2.0 | [LICENSE](https://github.com/microsoft/playwright/blob/449349caea6d1c81dc8b6a6f447cf9bfca6b1350/LICENSE) |
+| `microsoft/playwright` | 1 | Apache-2.0 | [LICENSE](https://github.com/microsoft/playwright/blob/0edafe4baab7fd20122939d3cfe1acabd8ed84a9/LICENSE) |
 | `netlify/context-and-tools` | 3 | MIT | [LICENSE](https://github.com/netlify/context-and-tools/blob/b4ac277e6795f90e6a1d163c001c0d7667ff9143/LICENSE) |
 | `oracle/skills` | 3 | UPL-1.0 | [LICENSE](https://github.com/oracle/skills/blob/30e30dbcbf5f92f3564bc85f8fd59d32736adcd6/LICENSE.txt) |
 | `phaserjs/phaser` | 28 | MIT | [LICENSE](https://github.com/phaserjs/phaser/blob/41be1e462bc600064e498cba370bfa8c5c055a22/LICENSE.md) |

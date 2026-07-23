@@ -4,7 +4,10 @@
 >
 > **For design tools** (OpenDesign, Claude Design, Figma AI exports, etc.): load this file as the primary context before generating mockups or interactive prototypes. It defines product feel, tokens, accessibility floor, layout patterns, and where artifacts land in the repo.
 >
-> **Template repo note (`ai-repo-template`):** This repo has no product UI. The sections below are a **generic contract template** shipped so derived projects and agents know the expected shape. During Mode B onboarding, use the OpenCode `repo-onboarding` skill to reset and repopulate this file with product-specific direction **before frontend implementation starts**.
+> **Template asset note:** Generate this contract only when repository evidence
+> shows that the project has a user interface. Replace bracketed prompts from
+> verified product evidence before frontend implementation; do not invent them
+> merely to complete onboarding.
 
 ## Status
 
@@ -199,5 +202,5 @@ Before frontend implementation starts:
 
 ## Related references
 
-- [`.context/roadmap.md`](.context/roadmap.md) — Phase 0 deliverables (mockups, stack, domain rules)
-- [`.context/vision/README.md`](.context/vision/README.md) — mockup and diagram index
+- `.context/roadmap.md` - project milestones and issue-backed future work
+- `.context/vision/README.md` - mockup and diagram index

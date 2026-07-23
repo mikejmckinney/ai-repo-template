@@ -23,6 +23,23 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "issue-plan templates require clickable repository paths" {
+  templates=(
+    "$REPO_ROOT/.github/templates/issue-implementation-plan.md"
+    "$REPO_ROOT/.github/PLAN_TEMPLATE.md"
+    "$REPO_ROOT/.github/ISSUE_TEMPLATE/bug_report.md"
+    "$REPO_ROOT/.github/ISSUE_TEMPLATE/feature_request.md"
+    "$REPO_ROOT/.github/ISSUE_TEMPLATE/agent_init.md"
+  )
+
+  for template in "${templates[@]}"; do
+    grep -Fq '[`README.md`](../blob/main/README.md)' "$template"
+    grep -Fq '[`scripts/tests/`](../tree/main/scripts/tests)' "$template"
+    grep -Fq 'planned new path' "$template"
+    grep -Fq 'glob' "$template"
+  done
+}
+
 @test "issue-plan check reports every stale template" {
   sed -i '/implementation-plan:v2:end/i stale plan block' \
     "$TEST_ROOT/.github/ISSUE_TEMPLATE/bug_report.md"
