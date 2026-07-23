@@ -43,7 +43,7 @@ write_state() {
 
 @test "template-seed onboarding runs project setup before lifecycle completion" {
   reference="$SKILL_ROOT/references/template-seed.md"
-  setup_line=$(grep -n 'scripts/setup\.sh' "$reference" | cut -d: -f1)
+  setup_line=$(grep -n -m1 'scripts/setup\.sh' "$reference" | cut -d: -f1)
   complete_line=$(grep -n 'status: "complete"' "$reference" | cut -d: -f1)
 
   [ -n "$setup_line" ]

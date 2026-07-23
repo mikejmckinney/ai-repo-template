@@ -45,12 +45,16 @@ Mode `ai-repo-template` or `complete`:
 3. Produce the repository brief defined in `references/repo-brief-template.md`.
 4. Update `AI_REPO_GUIDE.md` only when missing or demonstrably stale.
 
+Do not run `scripts/setup.sh` for `ai-repo-template` or `complete` orientation.
+Those paths gather evidence and must not introduce setup side effects.
+
 Mode `template-seed`:
 
 1. Read `references/template-seed.md`.
 2. Confirm that onboarding changes were explicitly requested before editing.
 3. Complete the inspect-and-adapt sequence in order.
-4. Set lifecycle state to `complete`, run final validation, and produce the
+4. Run `scripts/setup.sh` from the repository root and stop if it fails.
+5. Set lifecycle state to `complete`, run final validation, and produce the
    repository brief.
 
 Do not load the `template-seed` reference for other modes.
