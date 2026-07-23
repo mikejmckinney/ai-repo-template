@@ -65,6 +65,39 @@ EOF
   [ ! -e "$TMP_DIR/output.md" ]
 }
 
+@test "advisory normalization rejects null deprecated fields by presence" {
+  cat >"$TMP_DIR/base.json" <<'EOF'
+{"findings":[{
+  "id":"ADV-01","lens":"Correctness","area":"parser",
+  "finding":"It fails.","suggested_action":"Fix it.","still_present_at_head":true,
+  "triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"material",
+  "trigger_likelihood":"common","affected_scope":"broad","reversibility":"hard",
+  "fix_cost":"moderate","confidence":"high","uncertainty":"none"
+}]}
+EOF
+  printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
+
+  for field in severity priority_band; do
+    jq --arg field "$field" '.findings[0][$field] = null' \
+      "$TMP_DIR/base.json" >"$TMP_DIR/input.md"
+    run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+      --input "$TMP_DIR/input.md" \
+      --output "$TMP_DIR/output.md" \
+      --provider-metadata "$TMP_DIR/provider.json" \
+      --head "2222222222222222222222222222222222222222" \
+      --base "0000000000000000000000000000000000000000" \
+      --review-basis incremental \
+      --diff-included 42 \
+      --diff-total 42 \
+      --truncated no \
+      --changed-files 1
+
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"$field"* ]]
+    [ ! -e "$TMP_DIR/output.md" ]
+  done
+}
+
 @test "advisory normalization rejects model-authored band tables" {
   cat >"$TMP_DIR/input.md" <<'EOF'
 ## Advisory Review Snapshot

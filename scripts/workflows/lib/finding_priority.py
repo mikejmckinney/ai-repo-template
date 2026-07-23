@@ -137,11 +137,11 @@ def _validate_v2(item: dict, path: str, guard: bool) -> str:
 def validate_triage_item(item: dict, path: str, *, from_llm: bool = False) -> None:
     if not isinstance(item, dict):
         raise ValueError(f"{path} must be an object")
-    if item.get("severity") is not None:
+    if "severity" in item:
         raise ValueError(
             f"{path}.severity is deprecated; use impact, trigger_likelihood, and fix_cost"
         )
-    if from_llm and item.get("priority_band") is not None:
+    if from_llm and "priority_band" in item:
         raise ValueError(f"{path}.priority_band is derived by automation; do not emit from LLM")
 
     _require_choice(item, "impact", IMPACTS, path)

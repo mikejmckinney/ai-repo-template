@@ -184,17 +184,25 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'head_sha:' "$ci_workflow"
   [ "$status" -eq 0 ]
-  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && inputs.head_sha || '' }}" "$ci_workflow"
+  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && github.sha || '' }}" "$ci_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'EXPECTED_HEAD: ${{ inputs.head_sha }}' "$ci_workflow"
   [ "$status" -eq 0 ]
-  run grep -Fq 'run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' "$ci_workflow"
+  run grep -Fq 'DISPATCHED_HEAD: ${{ github.sha }}' "$ci_workflow"
   [ "$status" -eq 0 ]
-  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && inputs.head_sha || '' }}" "$lint_workflow"
+  run grep -Fq 'test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'test "$(git rev-parse HEAD)" = "$DISPATCHED_HEAD"' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && github.sha || '' }}" "$lint_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'EXPECTED_HEAD: ${{ inputs.head_sha }}' "$lint_workflow"
   [ "$status" -eq 0 ]
-  run grep -Fq 'run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' "$lint_workflow"
+  run grep -Fq 'DISPATCHED_HEAD: ${{ github.sha }}' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'test "$(git rev-parse HEAD)" = "$DISPATCHED_HEAD"' "$lint_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'base_ref="${{ inputs.base_sha }}"' "$lint_workflow"
   [ "$status" -eq 0 ]
