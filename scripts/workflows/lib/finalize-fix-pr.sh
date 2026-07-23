@@ -62,29 +62,30 @@ maybe_sandbox_sync() {
 
   # shellcheck source=sandbox-sync-fix-branch.sh
   source "$lib_dir/sandbox-sync-fix-branch.sh"
-  local sandbox_pr_url
+  local sandbox_pr_url candidate_sha
+  candidate_sha="$(git -C "$repo_root" rev-parse HEAD)"
   sandbox_pr_url="$(sandbox_sync_fix_branch "$repo_root" "$sandbox_branch" "$title" "$body_file")"
   rm -f "$body_file"
 
   if [[ -n "$sandbox_pr_url" && -f "$verify_json" ]]; then
     local tmp
     tmp="$(mktemp)"
-    jq --arg url "$sandbox_pr_url" '
+    jq --arg url "$sandbox_pr_url" --arg sha "$candidate_sha" '
       .sandbox.pr_url = $url |
       .sandbox.issue_url = (.sandbox.issue_url // "n/a") |
       .outcome_evidence.claims += [{
         material_claim: "Candidate fix behavior is available in the sibling repository for default-branch verification.",
         environment: "sibling GitHub repository",
         why_representative: "The affected GitHub behavior requires candidate code on a repository ref.",
-        implementation_sha: "controller:current-head",
+        implementation_sha: $sha,
         action_performed: "Published the candidate fix branch to the sibling repository.",
         expected_result: "A sandbox PR exposes the candidate code for the required trigger walkthrough.",
         observed_result: "The sandbox PR was created; workflow run evidence is recorded separately when required.",
         artifact: $url,
         artifact_type: "sandbox-pr",
         redaction: "No credential values are included.",
-        retention: "PR-lifetime GitHub record.",
-        evidence_reuse: "none",
+        retention: "Public PR-lifetime GitHub record; no expiration.",
+        evidence_reuse: "The later commit only records this evidence URL; candidate paths and runtime conditions are unchanged.",
         result: "pass"
       }]' \
       "$verify_json" >"$tmp"

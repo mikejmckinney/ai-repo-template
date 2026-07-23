@@ -12,8 +12,8 @@ def _md_verify_table(findings: list[dict]) -> str:
     lines = [
         "## Fix verification",
         "",
-        "| dedupe_key | pre | post | sandbox | notes |",
-        "|---|---|---|---|---|",
+        "| dedupe_key | pre | post | notes |",
+        "|---|---|---|---|",
     ]
     for row in findings:
         key = row.get("dedupe_key", "")
@@ -21,11 +21,10 @@ def _md_verify_table(findings: list[dict]) -> str:
         if not isinstance(verify, dict):
             verify = {}
         lines.append(
-            "| `{key}` | {pre} | {post} | {sandbox} | {notes} |".format(
+            "| `{key}` | {pre} | {post} | {notes} |".format(
                 key=key,
                 pre=verify.get("pre", "pending"),
                 post=verify.get("post", "pending"),
-                sandbox=verify.get("sandbox", "n/a"),
                 notes=(verify.get("notes") or "").replace("|", "\\|").replace("\n", " "),
             )
         )

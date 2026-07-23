@@ -26,7 +26,7 @@ write_valid_evidence() {
       "artifact": "https://github.com/example/product",
       "artifact_type": "redacted-api-output",
       "redaction": "Secret values and user identifiers removed.",
-      "retention": "Embedded PR record; external locator is authenticated.",
+      "retention": "PR-lifetime embedded record; external locator is authenticated.",
       "evidence_reuse": "none",
       "result": "pass"
     }
@@ -106,6 +106,18 @@ JSON
 
   [ "$status" -ne 0 ]
   [[ "$output" == *"evidence_reuse"* ]]
+}
+
+@test "outcome evidence validator accepts earlier-SHA evidence with reuse analysis" {
+  write_valid_evidence "$TEST_ROOT/evidence.json"
+  jq '.claims[0].artifact = "embedded:redacted-api-output" |
+      .claims[0].implementation_sha = "0123456" |
+      .claims[0].evidence_reuse = "Later changes affect evidence text only; tested paths and runtime conditions are unchanged."' \
+    "$TEST_ROOT/evidence.json" >"$TEST_ROOT/reuse.json"
+
+  run python3 "$REPO_ROOT/scripts/validate-outcome-evidence.py" "$TEST_ROOT/reuse.json"
+
+  [ "$status" -eq 0 ]
 }
 
 @test "outcome evidence validator accepts an auditable material claim" {

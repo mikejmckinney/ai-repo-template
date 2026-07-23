@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -25,7 +26,9 @@ REQUIRED_FIELDS = (
     "result",
 )
 SHA_PATTERN = re.compile(r"^[0-9a-f]{7,40}$")
+ARTIFACT_PATTERN = re.compile(r"^(?:https://\S+|embedded:[a-z0-9][a-z0-9._-]*)$")
 RESULTS = {"pass", "fail", "blocked"}
+PLACEHOLDERS = {"n/a", "none", "pending", "tbd", "unknown"}
 
 
 def load_payload(path: Path) -> dict[str, Any]:
@@ -40,12 +43,23 @@ def load_payload(path: Path) -> dict[str, Any]:
     return payload
 
 
+def current_head() -> str | None:
+    result = subprocess.run(
+        ["git", "-C", str(Path(__file__).resolve().parent.parent), "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
 def validate(payload: dict[str, Any]) -> int:
     claims = payload.get("claims")
     if not isinstance(claims, list) or not claims:
         raise ValueError("claims must be a non-empty array")
 
     failures = []
+    head = current_head()
     for index, claim in enumerate(claims):
         label = f"claims[{index}]"
         if not isinstance(claim, dict):
@@ -68,6 +82,47 @@ def validate(payload: dict[str, Any]) -> int:
         result = claim.get("result")
         if isinstance(result, str) and result.strip() and result not in RESULTS:
             failures.append(f"{label}.result must be pass, fail, or blocked")
+        artifact = claim.get("artifact")
+        if (
+            isinstance(artifact, str)
+            and artifact.strip()
+            and not ARTIFACT_PATTERN.fullmatch(artifact.strip())
+        ):
+            failures.append(
+                f"{label}.artifact must be an HTTPS URL or embedded record locator"
+            )
+        retention = claim.get("retention")
+        if isinstance(retention, str) and retention.strip():
+            normalized_retention = retention.lower().replace("-", " ")
+            if normalized_retention.strip() in PLACEHOLDERS or "pr lifetime" not in normalized_retention:
+                failures.append(
+                    f"{label}.retention must preserve a PR-lifetime record"
+                )
+            elif (
+                isinstance(artifact, str)
+                and artifact.startswith("https://")
+                and not re.search(
+                    r"\b(public|authenticated|access|expir(?:es|ation|ing)?|non[ -]expiring)\b",
+                    normalized_retention,
+                )
+            ):
+                failures.append(
+                    f"{label}.retention must disclose external artifact access or expiration"
+                )
+        reuse = claim.get("evidence_reuse")
+        if (
+            head
+            and isinstance(sha, str)
+            and SHA_PATTERN.fullmatch(sha)
+            and not head.startswith(sha)
+            and (
+                not isinstance(reuse, str)
+                or reuse.strip().lower() in PLACEHOLDERS
+            )
+        ):
+            failures.append(
+                f"{label}.evidence_reuse must explain unchanged paths and conditions for earlier-SHA evidence"
+            )
 
     if failures:
         raise ValueError("; ".join(failures))

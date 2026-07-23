@@ -121,12 +121,17 @@ batch_fix_strip_workflow_changes
 
 # shellcheck source=../lib/finalize-fix-pr.sh
 source "$LIB_DIR/finalize-fix-pr.sh"
-maybe_sandbox_sync "$REPO_ROOT" "$SANDBOX_BRANCH" "[sandbox] Weekly review fix ${RUN_WEEK}" "$VERIFY_JSON" "$LIB_DIR"
-fix_phase_log "sandbox-sync"
-
 batch_fix_commit_changes "fix: weekly repo review fixes for ${RUN_WEEK}" "" "$VERIFY_JSON"
 has_diff="$BATCH_FIX_HAS_DIFF"
 fix_phase_log "commit"
+
+if [[ "$has_diff" -eq 1 ]]; then
+  maybe_sandbox_sync "$REPO_ROOT" "$SANDBOX_BRANCH" "[sandbox] Weekly review fix ${RUN_WEEK}" "$VERIFY_JSON" "$LIB_DIR"
+  fix_phase_log "sandbox-sync"
+  batch_fix_commit_verification_update \
+    "$VERIFY_JSON" "chore: record sandbox outcome evidence for ${RUN_WEEK}"
+  fix_phase_log "evidence-commit"
+fi
 
 render_fix_pr_body() {
   local body_file="$WORKDIR/fix-pr-body.md"
