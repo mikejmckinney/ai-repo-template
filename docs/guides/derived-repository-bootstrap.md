@@ -50,7 +50,9 @@ Use `--visibility public` or `--visibility internal` explicitly when required.
 Use `--reuse` to synchronize an existing repository. Without `--reuse`, an
 existing repository is an error. When GitHub returns template ancestry, the
 script rejects a repository generated from a different template; when ancestry
-is unavailable, `--reuse` is the explicit authorization to proceed.
+is unavailable, `--reuse` is the explicit authorization to proceed. Reuse reads
+the repository's actual visibility from GitHub before evaluating Codespaces
+coverage, regardless of the command's creation-visibility default.
 
 ## GitHub Actions usage
 
@@ -73,6 +75,8 @@ and cannot run from a repository generated from this template.
 `.config/derived-repo-secrets.json` is the canonical inventory. Each entry
 records the secret and environment-variable name, requirement level, Actions
 and Codespaces destinations, and consuming workflows or tools.
+Custom `--manifest` files are schema-validated and cannot route
+`REPO_BOOTSTRAP_TOKEN` to either destination under another entry.
 
 `OPENCODE_GITHUB_TOKEN` is the required destination workflow credential.
 Provider credentials and `SANDBOX_BOOTSTRAP_TOKEN` are optional capabilities.

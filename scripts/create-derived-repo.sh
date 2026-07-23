@@ -96,7 +96,10 @@ jq -e '
     (.codespaces | type == "boolean") and
     (.consumers | type == "array" and length > 0)
   ) and
-  ([.secrets[] | select(.name == "REPO_BOOTSTRAP_TOKEN" and .actions == false)] | length == 1)
+  ([.secrets[] | select(.env == "REPO_BOOTSTRAP_TOKEN")] | length == 1) and
+  all(.secrets[] | select(.env == "REPO_BOOTSTRAP_TOKEN");
+    .name == "REPO_BOOTSTRAP_TOKEN" and .actions == false and .codespaces == false
+  )
 ' "$MANIFEST" >/dev/null || die "invalid credential manifest: $MANIFEST"
 
 status "Target: $TARGET_REPO"
@@ -172,6 +175,12 @@ repo_id="$(jq -r '.id // empty' <<<"$repo_json")"
 [[ "$repo_id" =~ ^[0-9]+$ ]] || die "destination repository id is unavailable"
 
 if [[ "$repo_exists" == true ]]; then
+  existing_visibility="$(jq -r '.visibility // empty' <<<"$repo_json")"
+  case "$existing_visibility" in
+    private | public | internal) VISIBILITY="$existing_visibility" ;;
+    *) die "$TARGET_REPO returned unsupported visibility: $existing_visibility" ;;
+  esac
+  status "Existing repository visibility: $VISIBILITY"
   recorded_template="$(jq -r '.template_repository.full_name // empty' <<<"$repo_json")"
   if [[ -n "$recorded_template" && "$recorded_template" != "$TEMPLATE_REPO" ]]; then
     die "$TARGET_REPO records a different template: $recorded_template"

@@ -32,11 +32,12 @@ case "${1:-} ${2:-}" in
     exit 0
     ;;
   "api repos/acme/demo")
-    printf '{"id":4242,"template_repository":{"full_name":"%s"}}\n' "${GH_TEMPLATE_REPO:-mikejmckinney/ai-repo-template}"
+    printf '{"id":4242,"visibility":"%s","template_repository":{"full_name":"%s"}}\n' \
+      "${GH_REPO_VISIBILITY:-private}" "${GH_TEMPLATE_REPO:-mikejmckinney/ai-repo-template}"
     ;;
   "api user/codespaces/secrets?per_page=100")
     [[ "${GH_CODESPACES_ACCESS:-true}" == true ]] || exit 1
-    printf '{"secrets":[{"name":"OPENCODE_GITHUB_TOKEN","visibility":"selected"},{"name":"OPENROUTER_API_KEY","visibility":"all"}]}\n'
+    printf '{"secrets":[{"name":"OPENCODE_GITHUB_TOKEN","visibility":"selected"},{"name":"OPENROUTER_API_KEY","visibility":"all"},{"name":"CURSOR_API_KEY","visibility":"private"}]}\n'
     ;;
   "api user/codespaces/secrets/OPENCODE_GITHUB_TOKEN")
     printf 'selected\n'
@@ -64,6 +65,7 @@ run_bootstrap() {
     GH_REPO_EXISTS="${TEST_GH_REPO_EXISTS:-false}" \
     GH_CODESPACES_ACCESS="${TEST_GH_CODESPACES_ACCESS:-true}" \
     GH_TEMPLATE_REPO="${TEST_GH_TEMPLATE_REPO:-mikejmckinney/ai-repo-template}" \
+    GH_REPO_VISIBILITY="${TEST_GH_REPO_VISIBILITY:-private}" \
     REPO_BOOTSTRAP_TOKEN="${TEST_REPO_BOOTSTRAP_TOKEN:-}" \
     OPENCODE_GITHUB_TOKEN="${TEST_OPENCODE_GITHUB_TOKEN:-}" \
     OPENROUTER_API_KEY="${TEST_OPENROUTER_API_KEY:-}" \
@@ -114,6 +116,23 @@ if missing:
     raise SystemExit(f"manifest entries missing: {missing}")
 PY
   [ "$status" -eq 0 ]
+}
+
+@test "override manifests cannot publish the bootstrap token" {
+  codespaces_manifest="$TEST_ROOT/bootstrap-codespaces.json"
+  duplicate_env_manifest="$TEST_ROOT/bootstrap-actions.json"
+  jq '(.secrets[] | select(.name == "REPO_BOOTSTRAP_TOKEN")).codespaces = true' \
+    "$MANIFEST" >"$codespaces_manifest"
+  jq '(.secrets[] | select(.name == "OPENROUTER_API_KEY")).env = "REPO_BOOTSTRAP_TOKEN"' \
+    "$MANIFEST" >"$duplicate_env_manifest"
+
+  run_bootstrap --manifest "$codespaces_manifest"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"invalid credential manifest"* ]]
+
+  run_bootstrap --manifest "$duplicate_env_manifest"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"invalid credential manifest"* ]]
 }
 
 @test "dry-run reports names and planned operations without requiring a token or printing values" {
@@ -207,6 +226,18 @@ PY
   [[ "$output" == *"records a different template"* ]]
   run grep -F 'secret set' "$GH_LOG"
   [ "$status" -ne 0 ]
+}
+
+@test "reuse uses the existing repository visibility for Codespaces coverage" {
+  TEST_REPO_BOOTSTRAP_TOKEN="bootstrap-secret"
+  TEST_OPENCODE_GITHUB_TOKEN="available"
+  TEST_GH_REPO_EXISTS=true
+  TEST_GH_REPO_VISIBILITY="public"
+  run_bootstrap --apply --reuse
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Existing repository visibility: public"* ]]
+  [[ "$output" == *"CURSOR_API_KEY: private visibility does not cover a public repository"* ]]
 }
 
 @test "manual workflow is guarded and maps the canonical allowlist explicitly" {
