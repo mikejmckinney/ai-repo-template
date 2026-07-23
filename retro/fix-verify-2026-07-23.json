@@ -1,0 +1,116 @@
+{
+  "run_date": "2026-07-23",
+  "run_kind": "retro",
+  "findings": [
+    {
+      "dedupe_key": "pr506-design-contract-command-path",
+      "repro_steps": [
+        "In a derived repository classified as `template-seed`, establish verified UI work and follow step 8 of `.agents/skills/repo-onboarding/references/template-seed.md`.",
+        "From the repository root, run `scripts/create-design-contract.sh --repo \"$PWD\"` exactly as documented.",
+        "Observe that the shell reports the command path does not exist, while `.agents/skills/repo-onboarding/scripts/create-design-contract.sh --repo \"$PWD\"` is the available executable."
+      ],
+      "verify": {
+        "pre": "pending",
+        "post": "pending",
+        "sandbox": "n/a",
+        "notes": "stub \u2014 fix agent did not write fix-verify.json"
+      }
+    },
+    {
+      "dedupe_key": "pr508-generated-local-skill",
+      "repro_steps": [
+        "Install Railway CLI v5.27.1 and create a temporary repository without `.agents/skills/railway-config/SKILL.md`.",
+        "Run `railway config init` in that repository.",
+        "Observe that `.agents/skills/railway-config/SKILL.md` is created, contrary to `.agents/skills/use-railway/references/iac.md:34`."
+      ],
+      "verify": {
+        "pre": "pending",
+        "post": "pending",
+        "sandbox": "n/a",
+        "notes": "stub \u2014 fix agent did not write fix-verify.json"
+      }
+    },
+    {
+      "dedupe_key": "pr510-ambiguous-aspire-resources",
+      "repro_steps": [
+        "Create an azd environment whose `AZURE_RESOURCE_GROUP` contains two Azure Container Registries and two user-assigned managed identities.",
+        "Leave `AZURE_CONTAINER_REGISTRY_ENDPOINT`, `AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID`, and `MANAGED_IDENTITY_CLIENT_ID` unset.",
+        "Run `set-aspire-aca-env.sh` or `set-aspire-aca-env.ps1`.",
+        "Inspect `azd env get-values` and observe that the script silently writes the first registry and independently queried identity values instead of requiring the intended resources."
+      ],
+      "verify": {
+        "pre": "pending",
+        "post": "pending",
+        "sandbox": "n/a",
+        "notes": "stub \u2014 fix agent did not write fix-verify.json"
+      }
+    },
+    {
+      "dedupe_key": "pr510-powershell-false-success",
+      "repro_steps": [
+        "Place stub `az` and `azd` executables first on `PATH`; make `azd env get-values` return a valid resource group and make resolver calls return nonempty values.",
+        "Configure the stub `azd env set` command to exit with status 7 without writing the requested variable.",
+        "Run `pwsh -File .agents/skills/azure/azure-validate/references/recipes/azd/scripts/set-aspire-aca-env.ps1`.",
+        "Observe `set to` and final readiness messages even though the environment writes failed."
+      ],
+      "verify": {
+        "pre": "pending",
+        "post": "pending",
+        "sandbox": "n/a",
+        "notes": "stub \u2014 fix agent did not write fix-verify.json"
+      }
+    },
+    {
+      "dedupe_key": "pr510-persistent-terraform-plan",
+      "repro_steps": [
+        "Create a minimal Terraform configuration under an `infra` directory with at least one sensitive input or provider-derived value.",
+        "Authenticate the prerequisite CLIs and run `.agents/skills/azure/azure-validate/references/recipes/terraform/scripts/validate-terraform.sh ./infra`, or run the PowerShell equivalent.",
+        "After the plan step completes, list `infra/tfplan` and inspect it with `terraform show -json infra/tfplan`.",
+        "Observe that the plan remains after validation and can contain sensitive configuration values."
+      ],
+      "verify": {
+        "pre": "pending",
+        "post": "pending",
+        "sandbox": "n/a",
+        "notes": "stub \u2014 fix agent did not write fix-verify.json"
+      }
+    },
+    {
+      "dedupe_key": "pr512-optimistic-indicator-doc",
+      "repro_steps": [
+        "Implement the Routing-Driven Tabs example from `.agents/skills/vercel/vercel-react-view-transitions/references/nextjs.md` and make the destination route resolve slowly.",
+        "Click a different tab and observe that `aria-current` changes through `optimisticActive` while the underline remains under the committed `active` tab.",
+        "Observe that the underline moves only after navigation commits, contrary to the statement that `useOptimistic` slides it instantly."
+      ],
+      "verify": {
+        "pre": "pending",
+        "post": "pending",
+        "sandbox": "n/a",
+        "notes": "stub \u2014 fix agent did not write fix-verify.json"
+      }
+    },
+    {
+      "dedupe_key": "pr519-refresh-check-retry-gap",
+      "repro_steps": [
+        "Run the skill-refresh workflow with a source update and allow the create-pull-request step to push automation/skill-refresh/all.",
+        "Cancel the job or induce a dispatch failure before the required-check dispatch step completes.",
+        "Rerun the workflow without any newer upstream source commit.",
+        "Observe that every source is classified as unchanged, content_changed is false, the dispatch step is skipped, and the aggregate PR head receives no replacement CI or lint runs."
+      ],
+      "verify": {
+        "pre": "pending",
+        "post": "pending",
+        "sandbox": "n/a",
+        "notes": "stub \u2014 fix agent did not write fix-verify.json"
+      }
+    }
+  ],
+  "sandbox": {
+    "needs_sync": false,
+    "issue_url": "n/a",
+    "pr_url": "n/a",
+    "skip_reason": "fix-verify stub",
+    "workflow_runs": []
+  },
+  "test_sh": "unknown"
+}
