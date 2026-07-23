@@ -121,6 +121,19 @@ JSON
   [[ "$output" == *"Paths: and Conditions:"* ]]
 }
 
+@test "outcome evidence validator rejects empty earlier-SHA reuse sections" {
+  write_valid_evidence "$TEST_ROOT/evidence.json"
+  jq '.claims[0].artifact = "embedded:redacted-api-output" |
+      .claims[0].implementation_sha = "0123456" |
+      .claims[0].evidence_reuse = "Paths:; Conditions:"' \
+    "$TEST_ROOT/evidence.json" >"$TEST_ROOT/reuse.json"
+
+  run python3 "$REPO_ROOT/scripts/validate-outcome-evidence.py" "$TEST_ROOT/reuse.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"non-empty Paths: and Conditions:"* ]]
+}
+
 @test "outcome evidence validator accepts earlier-SHA evidence with reuse analysis" {
   write_valid_evidence "$TEST_ROOT/evidence.json"
   jq '.claims[0].artifact = "embedded:redacted-api-output" |
