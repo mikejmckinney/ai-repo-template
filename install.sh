@@ -22,17 +22,17 @@
 # Usage:
 #   Automatic: Linked via GitHub Codespaces "Dotfiles" setting.
 #   Manual:    DOTFILES=/path/to/ai-repo-template bash install.sh
-#   Agents:    DOTFILES=/path/to/ai-repo-template bash install.sh --profile agents
+#   Core only: DOTFILES=/path/to/ai-repo-template bash install.sh --profile core
 # =============================================================================
 
 set -e # Exit on error
 
-TOOLS_PROFILE=core
+TOOLS_PROFILE=default
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --profile)
       if [[ $# -lt 2 ]]; then
-        printf 'error: --profile requires core or agents\n' >&2
+        printf 'error: --profile requires default, core, or agents\n' >&2
         exit 1
       fi
       TOOLS_PROFILE="$2"
@@ -236,6 +236,7 @@ MULTIAGENT_FILES=(
   ".cursor"
   ".config/mcp-inventory.json"
   ".config/codespace-tools.json"
+  ".config/derived-repo-secrets.json"
   ".mcp.json"
   ".opencode/opencode.json"
   "skills-lock.json"
@@ -254,6 +255,7 @@ MULTIAGENT_FILES=(
   "docs/guides/agents-md-section-redirects.md"
   "docs/guides/cloud-provider-tooling.md"
   "docs/guides/context-files-explained.md"
+  "docs/guides/derived-repository-bootstrap.md"
   "docs/guides/opportunity-feedback-examples.md"
   "docs/guides/opencode-termination-diagnostics.md"
   "docs/guides/problem-framing.md"
@@ -277,6 +279,7 @@ MULTIAGENT_FILES=(
   "scripts/cleanup-codespace-caches.sh"
   "scripts/diagnose-opencode-session.sh"
   "scripts/sync-opencode-oauth-secret.sh"
+  "scripts/create-derived-repo.sh"
   "scripts/format.sh"
   "scripts/check-markdown-links.py"
   "scripts/generate-pap-catalog.py"

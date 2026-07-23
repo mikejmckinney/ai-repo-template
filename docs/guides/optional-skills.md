@@ -18,7 +18,7 @@ authentication and smoke-test boundaries are documented in
 
 ## Codespaces profiles
 
-Normal `install.sh` execution installs the `core` profile from
+Normal `install.sh` execution installs the `default` profile from
 `.config/codespace-tools.json`. It includes local quality tools and the runtime
 prerequisites of MCPs that are enabled in the generated development config:
 checksum-verified Chrome for Testing, its declared Debian dependencies, and the
@@ -27,12 +27,15 @@ under `.github/agent-runtime` that local quality tests and workflow helpers impo
 Playwright and Chrome DevTools npm packages remain exact, on-demand MCP launcher
 dependencies rather than global installs.
 
-Use `bash install.sh --profile agents` to include OpenCode, Claude Code, Cursor
-Agent, and Codex. Exact npm packages are integrity-checked where the vendor
+The default also installs OpenCode, Claude Code, Cursor Agent, and Codex because
+current workflow development and verification use those CLIs. Exact npm packages are integrity-checked where the vendor
 supports stable package versions. Cursor Agent and existing standalone Codex
 installations remain vendor-managed channels; bootstrap verifies them without
 overwriting their user-level launchers. Authentication is never embedded or
 performed by bootstrap.
+
+Use `bash install.sh --profile core` for the smaller quality/runtime-only set.
+Explicit `--profile agents` preserves the default core-plus-agents union.
 
 Verify the installed core without mutation:
 

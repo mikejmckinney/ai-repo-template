@@ -6,7 +6,8 @@
   "compaction": {
     "auto": true,
     "prune": false,
-    "reserved": 10000
+    "reserved": 10000,
+    "tail_turns": 0
   },
   "mcp": {
     "github": {

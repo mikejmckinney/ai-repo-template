@@ -9,11 +9,12 @@
 | `verify-env.sh` | Check environment setup | `./scripts/verify-env.sh` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
 | `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
-| `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile core` |
+| `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile default` |
 | `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
 | `check-markdown-links.py` | Validate repository-local Markdown targets | `python3 scripts/check-markdown-links.py <files...>` |
 | `cleanup-codespace-caches.sh` | Report or clean reproducible Codespaces caches | `./scripts/cleanup-codespace-caches.sh [--apply]` |
 | `sync-opencode-oauth-secret.sh` | Preview or sync access-only OpenCode OAuth to Actions | `./scripts/sync-opencode-oauth-secret.sh [--apply]` |
+| `create-derived-repo.sh` | Preview or create a derived repo and sync allowlisted credentials | `./scripts/create-derived-repo.sh --repo OWNER/PROJECT [--apply]` |
 | `diagnose-opencode-session.sh` | Record OpenCode process exit and signal evidence | `./scripts/diagnose-opencode-session.sh` |
 
 ## Usage Guidelines
@@ -32,13 +33,15 @@ One-command setup for new clones:
 ./scripts/setup.sh
 ```
 
-Codespaces tool bootstrap can be checked without mutation:
+Codespaces tool bootstrap installs core plus agent tools by default. It can be
+checked without mutation:
 
 ```bash
-./scripts/install-codespace-tools.sh --profile core --verify-only
+./scripts/install-codespace-tools.sh --profile default --verify-only
 ```
 
-The optional agent CLI profile includes the core profile:
+Use `--profile core` for only the quality/runtime prerequisites. The explicit
+agent profile preserves the same core-plus-agent union as the default:
 
 ```bash
 ./scripts/install-codespace-tools.sh --profile agents

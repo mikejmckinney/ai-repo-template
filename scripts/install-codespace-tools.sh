@@ -6,7 +6,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MANIFEST="$REPO_ROOT/.config/codespace-tools.json"
 PREFIX="${CODESPACE_TOOLS_PREFIX:-$HOME/.local}"
-PROFILE=core
+PROFILE=default
 VERIFY_ONLY=false
 
 die() {
@@ -262,9 +262,8 @@ for command_name in $(jq -r '.required_commands[]' "$MANIFEST"); do
   command -v "$command_name" >/dev/null 2>&1 || die "required base command is missing: $command_name"
 done
 
-mapfile -t selected_tools < <(jq -r --arg profile "$PROFILE" '
-  (.profiles.core + (if $profile == "agents" then .profiles.agents else [] end))[]
-' "$MANIFEST" | awk '!seen[$0]++')
+mapfile -t selected_tools < <(jq -r --arg profile "$PROFILE" \
+  '.profiles[$profile][]' "$MANIFEST" | awk '!seen[$0]++')
 
 for name in "${selected_tools[@]}"; do
   type="$(jq -r --arg name "$name" '.tools[$name].type' "$MANIFEST")"
@@ -279,6 +278,6 @@ for name in "${selected_tools[@]}"; do
   esac
 done
 
-if [[ "$PROFILE" == agents ]]; then
+if [[ "$PROFILE" == agents || "$PROFILE" == default ]]; then
   printf 'codespace-tools: agent CLIs installed; complete each vendor authentication flow separately\n'
 fi

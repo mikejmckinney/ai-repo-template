@@ -22,6 +22,7 @@ bats --jobs 4 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
 scripts/cleanup-codespace-caches.sh
 scripts/sync-opencode-oauth-secret.sh
+scripts/create-derived-repo.sh --repo OWNER/PROJECT
 .agents/skills/repo-onboarding/scripts/create-design-contract.sh --repo "$PWD"
 scripts/format.sh --check <changed-files...>
 python3 scripts/check-markdown-links.py <changed-markdown-files...>
@@ -33,10 +34,14 @@ git diff --check
 ```
 
 Run `bash install.sh` only when testing the Codespaces bootstrap/install surface.
-The default `core` profile installs repository quality tools plus runtime
-prerequisites for enabled local MCPs. Use `bash install.sh --profile agents` to
-also install or verify OpenCode, Claude Code, Cursor Agent, and Codex; each agent
-still requires its own authentication flow.
+The default profile installs repository quality tools, enabled local MCP
+prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex. Use
+`bash install.sh --profile core` for the minimal quality/runtime set. Explicit
+`--profile agents` preserves the full core-plus-agents set; each agent still
+requires its own authentication flow.
+Use `scripts/create-derived-repo.sh --repo OWNER/PROJECT` to preview remote
+creation and allowlisted credential synchronization. Pass `--apply` only after
+reviewing the redacted plan; see `docs/guides/derived-repository-bootstrap.md`.
 Run `scripts/cleanup-codespace-caches.sh` to preview reproducible package and
 build caches when Codespace storage is low. Pass `--apply` explicitly to clean
 them. Active uv runtimes are skipped; agent databases, history, credentials,
@@ -103,6 +108,7 @@ returns failure to the existing provider cascade instead of consuming the
 | `skills-lock.json` | Immutable provenance, destinations, and hashes for external and repository-owned skills |
 | `docs/guides/skill-supply-chain.md` | Skill lock, refresh, review, recovery, source onboarding, and license inventory |
 | `docs/guides/cloud-provider-tooling.md` | AWS, Azure, GCP, OCI, Render, and Colyseus setup and smoke tests |
+| `docs/guides/derived-repository-bootstrap.md` | Template creation, Actions secret sync, and Codespaces visibility |
 | `scripts/workflows/advisory-review/` | Advisory provider adapters and comment upsert |
 | `scripts/workflows/postmerge-retro/` | Daily evidence, analysis, umbrella, and fix adapters |
 | `scripts/workflows/weekly-review/` | Weekly scan, umbrella, and fix adapters |
