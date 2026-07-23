@@ -59,7 +59,10 @@ For an unfamiliar repository, run the `repo-onboarding` skill before repository
 action. Its descriptive modes are `ai-repo-template`, `template-seed`, and
 `complete`; the versioned state is `.context/onboarding-state.json`. Resumed or
 post-compaction work uses `session-recovery` first instead of repeating
-onboarding.
+onboarding. Explicitly authorized `template-seed` onboarding runs
+`scripts/setup.sh` after project-specific adaptation and before marking the
+lifecycle complete; canonical and already-complete orientation remains
+read-only.
 Root `DESIGN.md` is conditional. Generate it from the canonical onboarding asset
 only when verified project files or the assigned user outcome establish UI work;
 then replace bracketed prompts from product evidence before frontend

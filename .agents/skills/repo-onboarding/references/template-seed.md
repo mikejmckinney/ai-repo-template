@@ -22,15 +22,19 @@ preserve unrelated worktree changes.
    bracketed prompts from product evidence before frontend implementation.
    Do not create root `DESIGN.md` for backend-only, infrastructure-only, or
    documentation repositories.
-9. After orientation and `scripts/verify-env.sh` succeed, set
-   `.context/onboarding-state.json` to `status: "complete"`, then run the
-   onboarding validator as the final state check.
+9. After project-specific adaptation, run `scripts/setup.sh` from the repository
+   root. It owns dependency installation, build setup, repository labels,
+   secret-presence reporting, and the final `scripts/verify-env.sh` phase.
+   If setup fails, stop and leave lifecycle state as `template-seed`.
+10. After setup succeeds, set `.context/onboarding-state.json` to
+    `status: "complete"`, then run the onboarding validator as the final state
+    check.
 
 ## Verification
 
-Run `scripts/verify-env.sh` and the onboarding validator. Resolve actual
-environment and required-file blockers before continuing; retained template
-content is not independently blocking.
+The setup phase and onboarding validator must both succeed. Resolve actual
+setup, environment, and required-file blockers before continuing; retained
+template content is not independently blocking.
 
 Do not create local claim boards or checked-in handoff scaffolding. Live
 coordination remains in assigned GitHub issue/PR state.
