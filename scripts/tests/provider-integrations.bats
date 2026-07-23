@@ -232,7 +232,7 @@ EOF
       (.skillPath | startswith("skills/")) and
       (.destinationPath | startswith(".agents/skills/aws/"))) and
     all(.skills[] | select(.source == "microsoft/azure-skills");
-      .ref == "6f4ff3f2f4f547bb3d42e2a00e72a1c47ffad5ae" and
+      .ref == "1b592c63641049ff33e4952c4021c63b4507f147" and
       (.skillPath | startswith("skills/")) and
       (.destinationPath | startswith(".agents/skills/azure/")))
   ' "$REPO_ROOT/skills-lock.json"
