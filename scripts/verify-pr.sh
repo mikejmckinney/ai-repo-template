@@ -8,9 +8,9 @@
 # bot review for one such change because the bug class is structurally
 # unverifiable on the PR branch. This script is the surgical Plan-template
 # guard: if you declare `code-or-docs` but you actually touched a
-# default-branch-only workflow, you must either (a) reclassify and run
-# the sandbox playbook (`docs/guides/sandbox-verification.md`), or
-# (b) explain why the trigger event genuinely runs from the PR branch.
+# default-branch-only workflow, select the outcome environment using
+# `docs/guides/outcome-validation.md` and run the sibling repository adapter
+# in `docs/guides/sandbox-verification.md`.
 #
 # Usage:
 #   scripts/verify-pr.sh [--base <ref>] [--declared <class>] [--paths-from <file>]
@@ -317,10 +317,11 @@ printf '    detected:  %s\n' "$detected_overall" >&2
 printf '\nNext steps:\n' >&2
 case "$detected_overall" in
   "default-branch-only workflow")
-    printf '  - Update the issue Plan comment Verification section:\n' >&2
+    printf '  - Update the issue Plan outcome environments:\n' >&2
     printf '      Change class: %s\n' "$detected_overall" >&2
-    printf '      Verification target: sandbox repo (or both)\n' >&2
-    printf '  - Run the sandbox playbook before merging:\n' >&2
+    printf '  - Select and record material-claim evidence:\n' >&2
+    printf '      docs/guides/outcome-validation.md\n' >&2
+    printf '  - Run the sibling repository adapter before merging:\n' >&2
     printf '      docs/guides/sandbox-verification.md\n' >&2
     ;;
   "mixed")
@@ -330,20 +331,21 @@ case "$detected_overall" in
     # sandbox playbook applies; otherwise the floor is PR-branch
     # verifiable. Mirrors the matrix in
     # the executable classification contract above.
-    printf '  - Update the issue Plan comment Verification section:\n' >&2
+    printf '  - Update the issue Plan outcome environments:\n' >&2
     printf '      Change class: mixed\n' >&2
     if [[ "$has_default_only" -eq 1 ]]; then
-      printf '      Verification target: sandbox repo (or both)\n' >&2
-      printf '  - Run the sandbox playbook before merging:\n' >&2
+      printf '  - Select every required outcome environment:\n' >&2
+      printf '      docs/guides/outcome-validation.md\n' >&2
+      printf '  - Run the sibling repository adapter for default-branch behavior:\n' >&2
       printf '      docs/guides/sandbox-verification.md\n' >&2
     else
-      printf '      Verification target: PR branch\n' >&2
+      printf '      docs/guides/outcome-validation.md\n' >&2
     fi
     ;;
   "pull_request-triggered workflow")
-    printf '  - Update the issue Plan comment Verification section:\n' >&2
+    printf '  - Update the issue Plan outcome environments:\n' >&2
     printf '      Change class: pull_request-triggered workflow\n' >&2
-    printf '      Verification target: PR branch\n' >&2
+    printf '      docs/guides/outcome-validation.md\n' >&2
     ;;
   *)
     printf '  - Update the issue Plan comment Verification section to declare:\n' >&2

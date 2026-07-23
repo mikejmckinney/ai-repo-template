@@ -21,7 +21,24 @@ setup() {
         "notes": "Superseded on current main."
       }
     }
-  ]
+  ],
+  "outcome_evidence": {
+    "claims": [{
+      "material_claim": "The finding does not reproduce on current main.",
+      "environment": "isolated fix worktree",
+      "why_representative": "The recorded repro runs against current main.",
+      "implementation_sha": "controller:current-head",
+      "action_performed": "Ran the recorded repro steps.",
+      "expected_result": "The defect does not reproduce.",
+      "observed_result": "The defect did not reproduce.",
+      "artifact": "embedded:fix-verification-table",
+      "artifact_type": "command-record",
+      "redaction": "No secrets present.",
+      "retention": "PR lifetime.",
+      "evidence_reuse": "none",
+      "result": "pass"
+    }]
+  }
 }
 EOF
   cat >"$TEST_ROOT/update.sh" <<'EOF'

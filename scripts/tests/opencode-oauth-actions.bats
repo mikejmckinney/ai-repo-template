@@ -328,7 +328,7 @@ EOF
         printf "cursor-verified\n" >result.txt
         mkdir -p retro
         cat >retro/fix-verify-test.json <<"JSON"
-{"findings":[{"dedupe_key":"key-a","verify":{"pre":"reproduced","post":"fixed","notes":"Verified after the edit."}},{"dedupe_key":"key-b","verify":{"pre":"skipped_collateral","post":"fixed","notes":"Fixed by the same edit."}}]}
+{"findings":[{"dedupe_key":"key-a","verify":{"pre":"reproduced","post":"fixed","notes":"Verified after the edit."}},{"dedupe_key":"key-b","verify":{"pre":"skipped_collateral","post":"fixed","notes":"Fixed by the same edit."}}],"outcome_evidence":{"claims":[{"material_claim":"The candidate fixes both findings.","environment":"isolated fix worktree","why_representative":"The recorded repro runs against the candidate patch.","implementation_sha":"controller:current-head","action_performed":"Ran controller verification.","expected_result":"Both findings are fixed.","observed_result":"Both findings are fixed.","artifact":"embedded:fix-verification-table","artifact_type":"command-record","redaction":"No secrets present.","retention":"PR lifetime.","evidence_reuse":"none","result":"pass"}]}}
 JSON
         printf "success\n" >"$output_file"
       }

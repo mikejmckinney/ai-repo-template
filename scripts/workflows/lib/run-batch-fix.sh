@@ -91,6 +91,8 @@ batch_fix_publish() {
     python3 "$(dirname "${BASH_SOURCE[0]}")/validate-fix-verification.py" \
       "$input_json" "$verify_json" --substantive-diff || return 1
   fi
+  python3 "$(dirname "${BASH_SOURCE[0]}")/../../validate-outcome-evidence.py" \
+    "$verify_json" --from-fix-verify || return 1
 
   if [[ "$has_diff" -eq 1 ]]; then
     git push -u origin "$branch"

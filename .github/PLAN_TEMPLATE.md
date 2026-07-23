@@ -74,9 +74,28 @@ before pushing. -->
 2. <step from issue>
 3. <step from issue>
 
-**Evidence to capture in PR:**
+**Material claim evidence to capture in PR:**
 
-- <artifact, citation, screenshot, command transcript, review checklist, etc.>
+```text
+Material claim:
+Environment:
+Why representative:
+Implementation SHA:
+Action performed:
+Expected result:
+Observed result:
+Artifact:
+Artifact type:
+Redaction:
+Retention:
+Evidence reuse:
+Result: pass | fail | blocked
+```
+
+<!-- Repeat the record for each material claim. Use the least costly
+     outcome-equivalent environment and attach an inspectable artifact.
+     External-state and runtime claims cannot be prose-only. Mixed changes may
+     require multiple environments. See docs/guides/outcome-validation.md. -->
 
 **Pass condition:**
 
@@ -95,26 +114,25 @@ before pushing. -->
 ### Supporting verification
 
 **Change class**: <code-or-docs | pull_request-triggered workflow | default-branch-only workflow | mixed>
-**Verification target**: <PR branch | sandbox repo | both>
+**Outcome environments**: <PR branch, sibling GitHub sandbox, fresh Codespace, fresh repository, provider preview, disposable infrastructure, etc.>
 
 <!-- Pick the most-restrictive class your diff touches. The classifier in
      `scripts/verify-pr.sh` will compare your declaration against the
      actual changed paths and flag mismatches. It is the canonical trigger
      classifier; `docs/guides/agent-pipeline.md` explains the resulting
      verification classes without duplicating its trigger rules.
-     Default-branch-only changes MUST be verified in the
-     sandbox sibling repo before merging here (see ADR-016 and
-     `docs/guides/sandbox-verification.md`). -->
+     Select environments with `docs/guides/outcome-validation.md`.
+     Default-branch-only GitHub behavior uses the sibling repository adapter
+     in `docs/guides/sandbox-verification.md` (ADR-016/ADR-034). -->
 
 <How a reviewer can prove this works. Specific commands, specific assertions,
 specific test names. "Tests pass" is not sufficient — name them.>
 
 <!-- Each command listed here must have a matching result entry in the
      PR's `## Supporting verification results` section before the PR enters review.
-     Sandbox-deferred items (where Verification target is `sandbox repo`
-     or `both` and the change can't be exercised from the PR branch) are
-     marked `⏭️ sandbox-deferred — see Phase 2` per ADR-016. Reviewers
-     enforce this mapping. -->
+     Environment-deferred items that cannot run from the PR branch are marked
+     `⏭️ environment-deferred — <adapter + reason>`. Reviewers enforce this
+     mapping and inspect the captured outcome artifacts. -->
 
 ### Risks / out-of-scope
 

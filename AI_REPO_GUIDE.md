@@ -94,6 +94,7 @@ returns failure to the existing provider cascade instead of consuming the
 | `docs/benchmarks/` | Published benchmark result records used for decisions |
 | `docs/guides/model-roi-benchmark-runbook.md` | Canonical benchmark campaign procedure |
 | `docs/guides/problem-framing.md` | Conditional problem, audience, alternatives, and impact analysis |
+| `docs/guides/outcome-validation.md` | Outcome-equivalent environment selection and auditable evidence contract |
 | `docs/guides/agent-pipeline.md` | Active workflow and trigger behavior |
 | `.github/prompts/shared-review-lenses.md` | Canonical criteria for advisory and retro review |
 | `.github/prompts/pr-advisory-review.md` | Normally applied, label-gated PR advisory output contract |
@@ -225,7 +226,9 @@ Run `scripts/verify-pr.sh` to classify the changed paths; its fixtures own the
 trigger rules. A workflow with `pull_request` and optional `workflow_dispatch`
 is PR-branch verifiable when it has no default-only trigger. Dispatch-only and
 other default-branch-only workflow changes require sandbox-default verification.
-Follow `docs/guides/sandbox-verification.md` and record real run/artifact links.
+Use `docs/guides/outcome-validation.md` to select every required environment and
+record material-claim artifacts. Follow `docs/guides/sandbox-verification.md`
+for the specialized default-branch GitHub adapter and fire the real event.
 
 ## Authentication
 
