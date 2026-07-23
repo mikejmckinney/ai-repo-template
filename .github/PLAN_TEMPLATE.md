@@ -53,11 +53,16 @@ issue, write "Direct implementation per issue.">
 
 ### Files to change
 
-- `path/to/file1` — <one phrase: what change>
-- `path/to/file2` — <one phrase: what change>
+- [`README.md`](../blob/main/README.md) — <one phrase: what change>
+- [`scripts/tests/`](../tree/main/scripts/tests) — <one phrase: what change>
 
-<!-- List every file you expect to touch. If the actual diff exceeds this
-list by more than ~30%, post a revised plan before pushing. -->
+<!-- Replace the examples and list every file or directory you expect to touch.
+Existing files and directories must be clickable: use ../blob/main/<path> for a
+file and ../tree/main/<path> for a directory. For a planned new path, link its
+nearest existing parent and label the new path in the description. For a glob,
+link its containing directory and keep the glob in the link text or description.
+If the actual diff exceeds this list by more than ~30%, post a revised plan
+before pushing. -->
 
 ### User outcome validation plan — PRIMARY
 

@@ -1,4 +1,3 @@
-<!-- TEMPLATE_PLACEHOLDER: Copy this file to create a new feedback record -->
 <!-- Usage: cp .context/sessions/feedback_template.md .context/sessions/feedback_<iteration-or-feature>.md -->
 
 # Feedback: [Iteration/Feature Title]

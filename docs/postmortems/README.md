@@ -113,7 +113,9 @@ If your postmortem is missing one of these, the postmortem isn't done.
 
 ## Relationship to other artifacts
 
-- **Sessions** (`.context/sessions/`) — running session summaries. Postmortems are the formal version when a session summary surfaces a pattern worth preserving.
+- **Historical sessions** (`.context/sessions/`) — retained evidence from the
+  retired repo-local summary process. Normal task outcomes remain in GitHub;
+  formal incidents belong in postmortems.
 - **ADRs** (`docs/decisions/`) — prospective. A postmortem may *trigger* a new ADR (or supersede one), but lives separately.
 - **Operating contract** (`AGENTS.md`) — prescriptive. A postmortem may justify a concise contract change, but the rule lives there, not here.
 - **Issues** — operational. A postmortem may file an issue for follow-up, but is not itself an issue.

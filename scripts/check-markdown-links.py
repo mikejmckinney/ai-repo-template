@@ -9,6 +9,13 @@ from urllib.parse import unquote, urlsplit
 INLINE_LINK = re.compile(r"!?\[[^\]]*\]\(([^)\n]+)\)")
 REFERENCE_LINK = re.compile(r"^\s*\[[^\]]+\]:\s*(\S+)")
 FENCE = re.compile(r"^\s*(```|~~~)")
+ISSUE_PLAN_TEMPLATES = {
+    Path(".github/PLAN_TEMPLATE.md"),
+    Path(".github/templates/issue-implementation-plan.md"),
+    Path(".github/ISSUE_TEMPLATE/bug_report.md"),
+    Path(".github/ISSUE_TEMPLATE/feature_request.md"),
+    Path(".github/ISSUE_TEMPLATE/agent_init.md"),
+}
 
 
 def link_destinations(path: Path):
@@ -36,6 +43,14 @@ def local_target(destination: str, source: Path, root: Path):
     parsed = urlsplit(destination)
     if parsed.scheme or parsed.netloc or not parsed.path:
         return None
+    try:
+        source_path = source.relative_to(root)
+    except ValueError:
+        source_path = None
+    if source_path in ISSUE_PLAN_TEMPLATES:
+        for prefix in ("../blob/main/", "../tree/main/"):
+            if parsed.path.startswith(prefix):
+                return root / unquote(parsed.path.removeprefix(prefix))
     relative = Path(unquote(parsed.path).lstrip("/"))
     return root / relative if parsed.path.startswith("/") else source.parent / relative
 

@@ -1,12 +1,12 @@
 # Prompt Catalog
 
-The active prompt set supports one monolithic implementing agent plus optional
-review automation.
+The active prompt set supports one monolithic implementing agent plus normally
+applied, label-gated, non-blocking advisory review and recurring retro automation.
 
 | Prompt | Purpose |
 |---|---|
 | `shared-review-lenses.md` | Canonical review criteria used by advisory and retro |
-| `pr-advisory-review.md` | Optional in-progress PR advisory snapshot |
+| `pr-advisory-review.md` | Rolling in-progress PR advisory snapshot |
 | `post-merge-retro.md` | Daily merged-PR structured review |
 | `post-merge-retro-fix.md` | Daily batch fix pass |
 | `weekly-repo-review.md` | Weekly full-repository structured review |

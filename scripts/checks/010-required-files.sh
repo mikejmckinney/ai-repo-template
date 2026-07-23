@@ -12,7 +12,6 @@ REQUIRED_FILES=(
   "AGENT.md"
   "CLAUDE.md"
   "README.md"
-  "DESIGN.md"
   "install.sh"
   "test.sh"
   ".cursorignore"
@@ -52,6 +51,27 @@ for file in "${REQUIRED_FILES[@]}"; do
     fail "$file is missing"
   fi
 done
+
+if [[ -f "DESIGN.md" ]]; then
+  pass "DESIGN.md exists for a project with an explicit design contract"
+else
+  pass "DESIGN.md is absent (optional until verified UI work requires it)"
+fi
+
+if [[ -f ".context/onboarding-state.json" ]]; then
+  pass ".context/onboarding-state.json exists"
+elif onboarding_result=$(".agents/skills/repo-onboarding/scripts/classify-mode.sh" --repo "$PWD" 2>&1); then
+  if jq -e '
+    .mode == "complete" and
+    any(.warnings[]; contains("legacy derived repository"))
+  ' <<<"$onboarding_result" >/dev/null; then
+    warn "legacy derived repository has no onboarding state; backfill complete state after orientation"
+  else
+    fail ".context/onboarding-state.json is missing"
+  fi
+else
+  fail ".context/onboarding-state.json is missing and onboarding classification failed: $onboarding_result"
+fi
 
 if printf '@AGENTS.md\n' | cmp -s - CLAUDE.md; then
   pass "CLAUDE.md is the exact AGENTS.md pointer"

@@ -1,4 +1,4 @@
-# TEMPLATE_PLACEHOLDER: Customize for your project's build/test/lint commands
+# Extend with project-specific build/test commands while retaining template checks.
 #
 # Self-Healing CI Pipeline with Retry Budget
 # -------------------------------------------
@@ -71,58 +71,6 @@ jobs:
             echo "exceeded=false" >> $GITHUB_OUTPUT
           fi
 
-      # =====================================================
-      # CUSTOMIZE THIS SECTION FOR YOUR TECH STACK
-      # =====================================================
-      
-      # Node.js example:
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: '20'
-      #     cache: 'npm'
-      #
-      # - name: Install dependencies
-      #   run: npm ci
-      #
-      # - name: Run linter
-      #   run: npm run lint
-      #
-      # - name: Run type check
-      #   run: npm run typecheck
-      #
-      # - name: Run tests
-      #   id: tests
-      #   run: npm test 2>&1 | tee test-output.log
-      #   continue-on-error: true
-      #
-      # - name: Build
-      #   run: npm run build
-
-      # Python example:
-      # - name: Setup Python
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: '3.11'
-      #     cache: 'pip'
-      #
-      # - name: Install dependencies
-      #   run: pip install -r requirements.txt
-      #
-      # - name: Run linter
-      #   run: ruff check .
-      #
-      # - name: Run type check
-      #   run: mypy .
-      #
-      # - name: Run tests
-      #   id: tests
-      #   run: pytest --cov 2>&1 | tee test-output.log
-      #   continue-on-error: true
-
-      # =====================================================
-      # PLACEHOLDER: Remove after customizing
-      # =====================================================
       - name: Install test dependencies
         run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel ripgrep
 
@@ -145,22 +93,19 @@ jobs:
             echo "scripts/tests/ not present — skipping bats step"
           fi
 
-      - name: Run tests (placeholder)
+      - name: Run repository checks
         id: tests
         # Always run so the legacy ./test.sh parity gate executes even if
         # the bats step above failed (PR #274 review feedback). The final
         # gate step below fails the job if either suite failed.
         if: always()
         run: |
-          echo "CI pipeline placeholder - customize for your project"
-          echo "See comments in this file for Node.js and Python examples"
-          
-          # Verify template files exist (useful for template repo itself)
           if [ -f "./test.sh" ]; then
             set -o pipefail
             ./test.sh 2>&1 | tee test-output.log
           else
-            echo "No test.sh found - add project-specific tests"
+            echo "::error::Required repository check entrypoint ./test.sh is missing"
+            exit 1
           fi
 
       - name: Gate on combined test results

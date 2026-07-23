@@ -8,6 +8,14 @@ Accepted
 
 2026-05-12
 
+## Amendment 2026-07-22 — Retire rolling session summaries
+
+The rolling `.context/sessions/latest_summary.md` mirror is retired. Issue and
+PR history now preserve task outcomes in the same system that owns live state.
+Agents promote only genuinely reusable decisions or incidents into ADRs and
+postmortems. Existing date-stamped session archives remain historical evidence
+but are not updated, required during onboarding, or used as current-state input.
+
 ## Amendment 2026-07-19 — Delimited issue-body plans
 
 New issue bodies permit one mutable `implementation-plan:v2` block.
@@ -108,9 +116,8 @@ The source-of-truth split is:
    next 1–3 actions, and handoff baton.
 4. **GitHub labels** — coarse workflow filtering only in v1:
    `agent:claimed`, `agent:blocked`, and `agent:awaiting-review`.
-5. **Durable in-tree knowledge** — `.context/rules/**`, `.context/00_INDEX.md`,
-   `docs/decisions/**`, `docs/postmortems/**`, `.context/sessions/latest_summary.md`,
-   and `.context/sessions/*` archives.
+5. **Durable in-tree knowledge** — `.context/00_INDEX.md`,
+   `docs/decisions/**`, `docs/postmortems/**`, and repository operating policy.
 6. **Reusable procedures** — `.github/prompts/**` remain procedural prompts,
    not active task-state stores.
 7. **Legacy/manual live-state surfaces** — `_active.md`, `coordination.md`,
@@ -137,24 +144,19 @@ The template intentionally has **no separate `Pause reason` field** —
 `Status` already carries that signal (`awaiting_user_input`, `blocked`,
 `handoff_needed`) and a second free-text field invites contradiction
 between the two surfaces. Long decision history, full file lists,
-verification matrices, and durable retrospective lessons stay out of the
-comment; they belong in plan comments, PR bodies, ADRs, CI, and session
-summaries respectively.
+verification matrices, and durable decisions stay out of the comment; they
+belong in plan comments, PR bodies, ADRs, postmortems, and CI respectively.
 
-### Durable retrospectives stay in-tree
+### Completed outcomes stay in GitHub
 
-`.context/sessions/latest_summary.md` and session archives remain canonical
-for durable retrospective lessons: `What Shipped`, `Harder Than Expected`,
-and `Generalizable Lessons`. They are not the live coordination baton.
-
-For normal PR-backed work, the session-summary rotation boundary moves to PR
-merge/closeout because the landed PR is the stable provenance boundary. For
-abandoned or no-PR work, archive only when there are durable lessons worth
-preserving.
+Issue and PR history preserve what shipped, implementation evidence, review
+discussion, and closeout status. This avoids maintaining a repo-local mirror of
+the same task lifecycle. Existing date-stamped session archives remain
+historical records only.
 
 `docs/postmortems/**` remain the durable surface for formal incident/failure
-analysis. ADRs remain durable design decisions. `.context/rules/**` remain
-enforceable operating policy.
+analysis. ADRs remain durable design decisions. `AGENTS.md` remains enforceable
+operating policy.
 
 ### Relationship to #262, #263, and #299
 
@@ -164,8 +166,8 @@ enforceable operating policy.
 - #298 supersedes #263 as the forward design. #263's repo-local write-back
   automation should be closed as superseded or reduced to narrow temporary
   compatibility only.
-- #299 owns bounded session archive retention and promotion policy. This ADR
-  preserves session summaries but does not define pruning or retention limits.
+- #299 owns retention policy for the historical session archives that predate
+  the 2026-07-22 amendment.
 
 ### Failure mode when GitHub is unavailable
 
@@ -196,7 +198,7 @@ the normal coordination path.
 
 - **Pros**: Aligns live state with the system that owns issue/PR lifecycle
   events; removes the normal second state-only PR; keeps rules, ADRs,
-  postmortems, prompts, and retrospective lessons portable in the repo.
+  postmortems, prompts, and operating policy portable in the repo.
 - **Cons**: Requires agents to read GitHub comments/labels in addition to
   repo files. Offline operation needs a temporary local scratch fallback.
 
@@ -226,7 +228,8 @@ the normal coordination path.
   on drift-prone manual mirrors.
 - Existing problem-framing, user-outcome, and review inputs in feature-request
   issues remain stable and are not moved into mutable comments.
-- Durable lessons remain in-tree for template consumers and forks.
+- Durable decisions and incident analysis remain in-tree for template consumers
+  and forks without duplicating routine task history.
 
 ### Negative
 
@@ -263,8 +266,7 @@ the normal coordination path.
 
 - Replacing or bypassing the existing `feature_request.md` issue-body
   contract (preserved as the durable problem-framing and review input).
-- Demoting `.context/sessions/latest_summary.md` and date-stamped
-  archives (preserved as canonical durable retrospective surface).
+- Rewriting date-stamped session archives that predate the 2026-07-22 amendment.
 - Removing `.github/prompts/**` reusable procedural prompts.
 - Workflow validation enforcing `agent-state:v1` comment presence on
   every in-flight issue/PR (deferred to v2 — see Option 5).

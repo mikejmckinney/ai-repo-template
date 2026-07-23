@@ -12,6 +12,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   GEMINI_SCRIPT="${ADVISORY_DIR}/run-advisory-gemini.py"
   CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
   ANTIGRAVITY_SCRIPT="${ADVISORY_DIR}/run-advisory-antigravity.py"
+  NORMALIZE_SCRIPT="${ADVISORY_DIR}/normalize-advisory-snapshot.py"
+  RANGE_SCRIPT="${ADVISORY_DIR}/select-advisory-range.py"
   OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
   OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
   OPENCODE_REVIEW_CONFIG=".github/agent-runtime/review.json"
@@ -20,7 +22,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   MARKER='ai-advisory-review:v1'
 
   for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
-    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$ANTIGRAVITY_SCRIPT" "$OPENCODE_RUNNER" \
+    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$ANTIGRAVITY_SCRIPT" "$NORMALIZE_SCRIPT" \
+    "$RANGE_SCRIPT" "$OPENCODE_RUNNER" \
     "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG"; do
     if [[ -f "$f" ]]; then
       pass "$f exists"
@@ -77,6 +80,24 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "advisory prompt defines sticky marker"
   else
     fail "advisory prompt missing $MARKER marker"
+  fi
+
+  if grep -q 'ai-advisory-memory:v1' "$NORMALIZE_SCRIPT" 2>/dev/null \
+    && grep -q 'select-advisory-range.py' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'normalize-advisory-snapshot.py' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'No findings identified at this head' "$ADVISORY_PROMPT" 2>/dev/null; then
+    pass "advisory snapshot has provider-neutral memory and explicit no-findings output"
+  else
+    fail "advisory snapshot missing memory, normalization, or explicit no-findings wiring"
+  fi
+
+  if grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$OPENCODE_RUNNER" 2>/dev/null \
+    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$GEMINI_SCRIPT" 2>/dev/null \
+    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$ANTIGRAVITY_SCRIPT" 2>/dev/null; then
+    pass "every advisory provider records automation-owned model metadata"
+  else
+    fail "one or more advisory providers omit model metadata"
   fi
 
   if ! grep -q 'Session handshake' "$ADVISORY_PROMPT" 2>/dev/null; then

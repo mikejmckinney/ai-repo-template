@@ -711,8 +711,8 @@
       "computedHash": "8fcafad747436bdec2ae5655104062f4fb5ea6d072ff88dddc793562979d29aa",
       "destinationPath": ".agents/skills/playwright-cli",
       "hashAlgorithm": "sha256-tree-v1",
-      "ref": "449349caea6d1c81dc8b6a6f447cf9bfca6b1350",
-      "skillPath": "packages/playwright-core/src/tools/cli-client/skill",
+      "ref": "0edafe4baab7fd20122939d3cfe1acabd8ed84a9",
+      "skillPath": "packages/playwright-core/src/tools/skills/playwright-cli",
       "source": "microsoft/playwright",
       "sourceType": "github"
     },

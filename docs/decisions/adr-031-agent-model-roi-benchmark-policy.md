@@ -133,8 +133,9 @@ The repository applies the benchmark recommendation as follows:
 
 - Routine implementation uses one monolithic implementing agent.
 - CI and lint are the blocking pre-merge controls.
-- Advisory review is optional via `ai-review:live`, runs in parallel with active
-  implementation, updates one sticky comment, and cannot mutate or block the PR.
+- Advisory review is normal agent practice via `ai-review:live` for every eligible
+  same-repository task PR. It runs in parallel with active implementation, updates
+  one sticky comment, and cannot mutate or block the PR.
 - Daily post-merge retro and weekly full-repository review remain the recurring
   review and draft-fix pipelines.
 - `.agents/skills/multi-model-consensus/` is the sole opt-in multi-model mechanism.
@@ -149,6 +150,25 @@ The repository applies the benchmark recommendation as follows:
 This lifecycle supersedes ADR-003, ADR-004, ADR-005, ADR-008, ADR-009, ADR-014,
 ADR-019, ADR-023, and ADR-024 for active operations. Their bodies and benchmark
 artifacts remain historical evidence. ADR-007 remains superseded through ADR-008.
+
+#### Amendment 2026-07-22 — Advisory review as normal parallel practice
+
+Agents apply `ai-review:live` when they create or claim an eligible
+same-repository task PR, then continue implementation without waiting. Before
+completion they independently verify any findings from an arrived snapshot whose
+`Head` matches the current PR head. Missing, stale, running, or failed feedback is
+recorded but never blocks completion or merge. Forks, `smoke-test` PRs, and
+repositories without the workflow, label, provider credentials, or label-write
+permission are exempt. CI, lint, sandbox verification, user-outcome validation,
+and maintainer controls remain authoritative.
+
+The sticky snapshot carries automation-owned provider/model identity and a
+bounded hidden provider-neutral memory record. Compatible pushes review the
+accumulated delta from the last completed head; readiness, full mode, base or
+expected-provider changes, invalid memory, and rewritten ancestry force a full
+refresh. This avoids persisting provider-native sessions or runner databases,
+keeps fallback portable, and lets canceled runs recover from the last completed
+snapshot. No-findings output is explicit rather than an empty table.
 
 #### Amendment 2026-07-17 — Multi-model skill identity and Fusion panel
 
@@ -224,7 +244,7 @@ the OpenCode adapter remains available explicitly.
   - `process_subagent_bootstrap.md`
   - `process_template_detection.md`
 - **Retain** durable surfaces for the same concerns outside the rule catalog:
-  - Template detection / Mode B bootstrap → the OpenCode `repo-onboarding` skill
+  - Descriptive onboarding lifecycle (`ai-repo-template`, `template-seed`, `complete`) → the OpenCode `repo-onboarding` skill
   - Gates and PR completion → `AGENTS.md`, [`.github/pull_request_template.md`](../../.github/pull_request_template.md), and `scripts/verify-pr.sh`
   - Ownership / parallelism → `agent-parallelism-report.yml` remains; live ownership table enforcement is **deferred** until a future benchmark or operational need justifies restoring `agent_ownership.md`
 - **Stage 1E context packs** on `main` drop references to removed rule files so harness manifests match the production catalog.

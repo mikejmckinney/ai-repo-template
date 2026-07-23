@@ -1,5 +1,3 @@
-<!-- TEMPLATE_PLACEHOLDER: Update for your project's documentation -->
-
 # Documentation Directory
 
 > **Purpose**: Human-readable reference documentation, specifications, and research materials.
@@ -73,7 +71,8 @@ docs/
 
 ## What Does NOT Belong Here
 
-- Current project state → use `.context/state/`
+- Current task state → use the assigned GitHub issue/PR and latest
+  `agent-state:v1` comment; `.context/state/` documents the reference format
 - Project roadmap → use `.context/roadmap.md`
 - Repository-wide operating policy → use `AGENTS.md`
 - Design mockups → use `.context/vision/`

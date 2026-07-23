@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 36 -->
+<!-- AGENTS_MD_VERSION: 38 -->
 
 ## Truth hierarchy
 
@@ -15,14 +15,49 @@ When sources conflict, use this order:
 Current files and live GitHub state outrank historical transcripts and archived
 session notes.
 
+## Repository entry gate
+
+Before taking repository action in an unfamiliar repository, load and run the
+`repo-onboarding` skill. A repository is unfamiliar when the current
+conversation has neither a successful onboarding receipt for that repository
+nor recovered context containing a still-applicable receipt.
+
+Do not rerun onboarding during the same continuous session after a successful
+receipt. For resumed or post-compaction work with an exact session ID, run
+`session-recovery` first. Recovery takes precedence; run `repo-onboarding`
+afterward only when recovery does not establish current repository orientation.
+
+Onboarding is evidence gathering, not authorization for destructive changes.
+The `template-seed` mode still requires explicit approval before repository
+edits, while retained template resources may be extended or replaced only when
+current project evidence requires it.
+
 ## Execution model
 
 - Use one monolithic implementing agent. ADR-031 found no favorable ROI crossover
   for the multi-role pipeline and retired the role registry.
 - Use the `multi-model-consensus` skill only when the user requests it or consequential
   uncertainty justifies independent multi-model review.
-- Advisory review is optional, non-blocking, and may run in parallel with active
-  PR implementation. CI and lint remain the blocking pre-merge controls.
+- Advisory review normally runs in parallel with active PR implementation and
+  remains non-blocking. CI and lint remain the blocking pre-merge controls.
+
+## Parallel advisory review
+
+For every eligible same-repository task PR that an agent creates or claims,
+apply `ai-review:live` immediately after opening the draft PR or when work begins
+on an existing PR. Continue implementation, testing, and checkpoint pushes
+without waiting for advisory review.
+
+Before declaring implementation complete, inspect any advisory snapshot that
+has already arrived. Compare its `Head` SHA with the current PR head, treat a
+mismatch as stale evidence, and independently verify each applicable finding.
+Fix verified defects and reject unsupported findings with concise reasoning.
+
+Missing, stale, running, or failed advisory feedback is never a merge gate and
+does not justify waiting. Record the state and continue under the normal CI,
+lint, sandbox, user-outcome, and maintainer controls. Exempt fork PRs,
+`smoke-test` PRs, and repositories where the workflow, label, required provider
+credentials, or label-write permission are unavailable; record the exemption.
 
 ## Domain: Code Quality
 
@@ -64,7 +99,10 @@ Every `catch` / `rescue` / `recover` block must either rethrow with context, log
 
 #### S1 — Function Length
 
-Target: a function fits on one screen without scrolling. The exact line count is stack-specific — set a threshold in the "How to extend" block below. Rationale matters more than the count: if a longer function is genuinely more readable than its split form, keep it and say why in a comment.
+Target: a function fits on one screen without scrolling. Add a numeric threshold
+only when the project has an actual stack-specific lint or review contract.
+Rationale matters more than the count: if a longer function is genuinely more
+readable than its split form, keep it and say why in a comment.
 
 #### S2 — Complexity and Nesting
 
@@ -85,15 +123,6 @@ Two similar blocks are cheaper than a premature abstraction. Three is a signal t
 #### S6 — Test Pyramid
 
 Many unit tests, fewer integration tests, minimal E2E tests. Concrete CI commands and coverage expectations live in `AGENTS.md` → "Testing requirements" and the project's own `README.md`.
-
-### Stack-Specific Overrides
-
-- S1 function length:     &lt;N&gt; lines (target), &lt;N&gt; lines (hard max)
-- S2 cyclomatic complexity: &lt;N&gt; (target), &lt;N&gt; (hard max)
-- S2 nesting depth:       &lt;N&gt; (target), &lt;N&gt; (hard max)
-- Lint / format tool:     <tool + config path>
-- Test framework:         <framework + command>
-- Coverage target:        &lt;percent&gt; (changed files only)
 
 ## Clarification and ambiguity
 

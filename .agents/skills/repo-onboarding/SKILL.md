@@ -25,38 +25,42 @@ Run the read-only classifier:
 
 Modes:
 
-- **A**: the ai-repo-template or legacy dotfiles repository itself. Preserve
-  canonical template documentation and skip bootstrap.
-- **B**: a derived repository with unresolved template/bootstrap signals.
-- **C**: a derived repository that is already customized. Skip bootstrap.
+- **`ai-repo-template`**: the canonical template or legacy dotfiles repository. Preserve
+  canonical template documentation and skip seed onboarding.
+- **`template-seed`**: a derived repository whose versioned lifecycle state says
+  evidence-based onboarding is still required.
+- **`complete`**: a derived repository that is already onboarded, including
+  legacy repositories without lifecycle state. Skip seed onboarding.
 
-Mode A takes precedence when template identity and placeholder signals
-conflict. Do not regenerate the template's canonical documentation.
+Canonical template identity takes precedence over lifecycle state. Placeholder
+text and retained template resources never select a mode. Do not regenerate the
+template's canonical documentation.
 
 ## Select One Path
 
-Mode A or C:
+Mode `ai-repo-template` or `complete`:
 
 1. Read `references/repository-orientation.md`.
 2. Inspect current issue/PR coordination state when a task is assigned.
 3. Produce the repository brief defined in `references/repo-brief-template.md`.
 4. Update `AI_REPO_GUIDE.md` only when missing or demonstrably stale.
 
-Mode B:
+Mode `template-seed`:
 
-1. Read `references/bootstrap-mode-b.md`.
-2. Confirm that bootstrap changes were explicitly requested before editing.
-3. Complete the reset and repopulation sequence in order.
-4. Continue with repository orientation and the repository brief.
+1. Read `references/template-seed.md`.
+2. Confirm that onboarding changes were explicitly requested before editing.
+3. Complete the inspect-and-adapt sequence in order.
+4. Set lifecycle state to `complete`, run final validation, and produce the
+   repository brief.
 
-Do not load the Mode B reference for Mode A or C.
+Do not load the `template-seed` reference for other modes.
 
 ## Safety Boundary
 
-Classification and validation scripts are read-only. Mode B itself is not:
-it rewrites project documentation, resets historical template state, and
-deletes template-only diagrams. Never perform Mode B changes based only on a
-weak signal or implicit request.
+Classification and validation scripts are read-only. `template-seed` onboarding
+may edit repository resources, but retained template content is not a defect.
+Extend, replace, or delete only when current project evidence requires it, and
+never perform destructive changes from implicit authorization.
 
 - Verify file contents; do not guess project identity or architecture.
 - Preserve unrelated user changes in a dirty worktree.
@@ -78,7 +82,7 @@ The command emits JSON:
 ```json
 {
   "status": "success",
-  "mode": "C",
+  "mode": "complete",
   "stable": true,
   "blocking_findings": [],
   "warnings": []
@@ -93,13 +97,16 @@ orientation or environment checks that could not be completed.
 Report:
 
 ```text
-Context reviewed. Onboarding Mode: <A|B|C>. Current task is <name or none>.
+Context reviewed. Onboarding Mode: <ai-repo-template|template-seed|complete>.
+Repository: <canonical root or origin>. Current task is <name or none>.
 Environment is <Stable|Unstable: reason>. Ready for instructions.
 ```
 
 Also provide the concise repository brief, commands actually verified, known
-risks, and any files changed during Mode B bootstrap or guide repair.
+risks, and any files changed during `template-seed` onboarding or guide repair.
+This completion report is the session-local onboarding receipt. Do not create a
+second committed live-state artifact for the receipt.
 
-Stop when classification is ambiguous, Mode B lacks explicit authorization,
+Stop when classification is ambiguous, `template-seed` lacks explicit authorization,
 required current sources are unavailable, or validation reports blockers that
 cannot be resolved safely.
