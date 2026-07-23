@@ -3,6 +3,7 @@
 import argparse
 import copy
 import hashlib
+import html
 import json
 import os
 import re
@@ -362,7 +363,12 @@ def markdown_heading_fragments(path: Path) -> set[str]:
     fragments: set[str] = set()
     counts: dict[str, int] = {}
     for heading in headings:
-        base = re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-")
+        rendered = re.sub(r"!?\[([^]]*)\]\([^)]*\)", r"\1", heading)
+        rendered = re.sub(r"!?\[([^]]*)\]\[[^]]*\]", r"\1", rendered)
+        rendered = re.sub(r"<[^>]+>", "", rendered)
+        rendered = html.unescape(rendered)
+        base = re.sub(r"[^\w\-\s]", "", rendered.lower())
+        base = re.sub(r"\s", "-", base)
         if not base:
             continue
         occurrence = counts.get(base, 0)

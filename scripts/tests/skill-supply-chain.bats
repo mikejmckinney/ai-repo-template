@@ -161,6 +161,32 @@ EOF
   [[ "$output" == *"license evidence fragment is missing"*"README.md#license"* ]]
 }
 
+@test "source refresh accepts GitHub fragments from linked and repeated headings" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.sourceMetadata["example/acme-skills"].evidence = [
+    {label: "License", path: "README.md", fragment: "license"},
+    {label: "Repeated license", path: "README.md", fragment: "license-1"}
+  ]' "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  upstream="$BATS_TEST_TMPDIR/upstream-linked-fragments"
+  mkdir -p "$upstream/skills/acme"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" "$upstream/skills/acme/SKILL.md"
+  printf '\nupdated package\n' >>"$upstream/skills/acme/SKILL.md"
+  printf '# Project\n\n## [License](LICENSE)\n\n## License\n' >"$upstream/README.md"
+
+  run python3 "$TOOL" update \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+
+  [ "$status" -eq 0 ]
+}
+
 @test "aggregate refresh report preserves prior and current source changes" {
   base_lock="$BATS_TEST_TMPDIR/base-lock.json"
   current_lock="$BATS_TEST_TMPDIR/current-lock.json"
