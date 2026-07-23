@@ -26,7 +26,7 @@ if [[ -n "${_pipeline_setup_skip_reason:-}" ]] \
 fi
 
 log_step "Checking pipeline secrets from the canonical bootstrap manifest"
-_credential_manifest="$SCRIPT_DIR/../.config/derived-repo-secrets.json"
+_credential_manifest="$SCRIPT_DIR/../../.config/derived-repo-secrets.json"
 if [[ ! -f "$_credential_manifest" ]]; then
   log_warn "Credential manifest not found: $_credential_manifest"
   return 0 2>/dev/null || exit 0

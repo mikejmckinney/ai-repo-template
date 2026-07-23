@@ -88,6 +88,13 @@ run_bootstrap() {
   [ "$status" -eq 0 ]
 }
 
+@test "setup secret check resolves the canonical manifest from the repository root" {
+  run grep -F '_credential_manifest="$SCRIPT_DIR/../../.config/derived-repo-secrets.json"' \
+    "$REPO_ROOT/scripts/setup/60-check-secrets.sh"
+
+  [ "$status" -eq 0 ]
+}
+
 @test "credential manifest covers every non-ephemeral Actions secret reference" {
   run python3 - "$REPO_ROOT" "$MANIFEST" <<'PY'
 import json
