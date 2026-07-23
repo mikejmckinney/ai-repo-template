@@ -32,9 +32,9 @@ preserve unrelated worktree changes.
 
 ## Verification
 
-Run `scripts/setup.sh` and the onboarding validator. Resolve actual setup,
-environment, and required-file blockers before continuing; retained template
-content is not independently blocking.
+The setup phase and onboarding validator must both succeed. Resolve actual
+setup, environment, and required-file blockers before continuing; retained
+template content is not independently blocking.
 
 Do not create local claim boards or checked-in handoff scaffolding. Live
 coordination remains in assigned GitHub issue/PR state.
