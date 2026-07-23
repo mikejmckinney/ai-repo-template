@@ -53,6 +53,7 @@ jobs:
       GITHUB_REPOSITORY: ${{ github.repository }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      GITHUB_EVENT_ACTION: ${{ github.event.action }}
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
       ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
       ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
@@ -119,11 +120,18 @@ jobs:
           cache: npm
           cache-dependency-path: .github/agent-runtime/package-lock.json
 
-      - name: Install OpenCode runtime
+      - name: Install agent prerequisites
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ripgrep
+          command -v rg >/dev/null
+
+      - name: Install agent runtime
         run: |
           npm ci --prefix .github/agent-runtime
           echo "$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/.bin" >> "$GITHUB_PATH"
           echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
+          echo "CURSOR_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js" >> "$GITHUB_ENV"
 
       - name: Run advisory review
         env:

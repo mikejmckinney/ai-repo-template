@@ -42,12 +42,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "retro prompt assembly must use optional user access"
   fi
 
-  if [[ -f scripts/workflows/lib/cursor-sdk-version.sh ]] \
-    && grep -q 'CURSOR_SDK_VERSION=' scripts/workflows/lib/cursor-sdk-version.sh 2>/dev/null \
-    && ! grep -rE 'npm install --no-save @cursor/sdk[^@"$]' scripts/workflows --include='*.sh' 2>/dev/null | grep -q .; then
-    pass "@cursor/sdk workflow installs are version-pinned"
+  if jq -e '.dependencies["@cursor/sdk"] == "1.0.24"' .github/agent-runtime/package.json >/dev/null 2>&1 \
+    && grep -q 'CURSOR_SDK_MODULE=.*@cursor/sdk/dist/esm/index.js' .github/workflows/agent-postmerge-retro.yml \
+    && ! grep -rE 'npm install( --no-save)? .*@cursor/sdk' scripts/workflows --include='*.sh' 2>/dev/null | grep -q .; then
+    pass "@cursor/sdk uses the canonical locked agent runtime"
   else
-    fail "unpinned @cursor/sdk npm install; use cursor-sdk-version.sh"
+    fail "@cursor/sdk must use the canonical locked agent runtime"
   fi
 
   echo ""

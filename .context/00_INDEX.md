@@ -9,22 +9,23 @@ In `ai-repo-template`, it serves two jobs at once:
 
 1. It is the live source of truth for the template repo itself.
 2. It shows downstream repos what a populated context pack should look like before
-   Mode B onboarding restores the generic stubs.
+   `template-seed` onboarding adapts only what their project evidence requires.
 
 ### priority order (when conflicts arise)
 
 See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
-`.context/**` > `docs/**` > codebase.
+current issue/PR > `AGENTS.md` > `.context/**` > `docs/**` > codebase.
 
 ## Directory Structure
 
 ```text
 .context/
 |-- 00_INDEX.md          # This file - start here (The Map)
-|-- roadmap.md           # Template-development phases and current hardening track
-|-- sessions/            # Durable retrospectives and feedback records
+|-- onboarding-state.json # Versioned template-seed/complete lifecycle state
+|-- roadmap.md           # Completed template phases and issue-backed future work
+|-- sessions/            # Historical retrospectives and feedback records
 |   |-- feedback_template.md # Stakeholder feedback capture template
-|   `-- latest_summary.md   # Durable retrospective lessons
+|   `-- YYYY-MM-DD_*.md    # Historical retrospective archives
 |-- state/               # GitHub-first live-state guidance and comment template
 |   |-- README.md        # ADR-025 state-surface guide
 |   `-- agent_state_comment_template.md # GitHub live-state comment template
@@ -41,20 +42,22 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
 2. Read the assigned GitHub issue body and linked PR when a durable task exists.
 3. Use one monolithic implementing agent; use local consensus only when justified.
 4. Treat `state/` as the GitHub-first live-state reference surface.
-5. Read `sessions/latest_summary.md`, `roadmap.md`, or vision files only when their domain intersects the task.
+5. Read `roadmap.md`, vision files, or dated session archives only when their
+   domain intersects the task or a specific historical investigation.
 6. For benchmark work, use `docs/guides/model-roi-benchmark-runbook.md` and
    published evidence under `docs/benchmarks/`.
 
-**Execution model**: one implementing agent, blocking CI, optional parallel
+**Execution model**: one implementing agent, blocking CI, normal parallel
 advisory review, recurring retro, and opt-in local consensus. See ADR-031.
 
 ## Project Summary
 
 **Project Name**: `ai-repo-template`
 
-**Description**: A Codespaces-first repository template for monolithic AI-assisted software delivery with optional advisory review and recurring retro automation.
+**Description**: A Codespaces-first repository template for monolithic AI-assisted software delivery with parallel advisory review and recurring retro automation.
 
-**Current Phase**: Phase 7 - template dogfooding, overlay extension, and process hardening.
+**Program status**: Initial Phases 1-7 are complete. Current work is tracked by
+assigned GitHub issues rather than duplicated phase state in this index.
 
 **Primary Stack**: Markdown docs and prompts, shell automation, GitHub Actions workflow scaffolding, Python validation helpers, and VS Code/Codespaces bootstrap configuration.
 
@@ -101,12 +104,12 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-026](../docs/decisions/adr-026-compliance-contracts.md) | Compliance contracts | Structured evidence schemas retired by the 2026-07-13 amendment. |
 | [ADR-027](../docs/decisions/adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel | Added an out-of-scope observation path without widening task scope. |
 | [ADR-029](../docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence | Requires sandbox proof for behavior/process claims on every PR. |
-| [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI and execution lifecycle policy | Makes monolithic implementation the default, retires role registries, and retains optional advisory plus recurring retro. |
+| [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI and execution lifecycle policy | Makes monolithic implementation the default, retires role registries, and uses normal non-blocking advisory plus recurring retro. |
 | [ADR-032](../docs/decisions/adr-032-canonical-governance-sources.md) | Canonical governance sources and layered enforcement | Uses one authored source with pointers, symlinks, or deterministic generated consumers and blocks only encoded contract violations. |
 
-## Next Steps
+## Issue-Backed Future Work
 
-- [ ] Complete issue #474 so active surfaces consistently use the monolithic implementation and review lifecycle.
-- [ ] Remove or archive any lingering repo-local `_active.md` compatibility references now that ADR-025 and issue #368 moved live state to GitHub.
-- [ ] Continue issue #279 to extract more machine-readable manifests and shrink workflow/business-logic drift.
-- [ ] Ship issue #322 so downstream repos get a clearer new-project and parent/phase issue playbook.
+- [ ] Issue #163 - automate derived-repository credential and variable bootstrap.
+- [ ] Issue #299 - define session archive retention and downstream reset policy.
+- [ ] Issue #316 - document sandbox-local verification for default-branch workflow changes.
+- [ ] Issue #322 - add an optional cross-repository project bootstrap skill.

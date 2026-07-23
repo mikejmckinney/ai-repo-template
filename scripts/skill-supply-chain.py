@@ -400,20 +400,10 @@ def source_packages(
             record.get("excludedPaths"), f"external skill {key} excludedPaths"
         )
         if not upstream_skill_file.exists():
-            packages.append(
-                {
-                    "key": key,
-                    "sourcePackage": upstream_package,
-                    "destination": destination,
-                    "oldHash": record["computedHash"],
-                    "newHash": None,
-                    "excludedPaths": exclusions,
-                    "packageType": package_type,
-                    "deleted": True,
-                    "changed": True,
-                }
+            raise SupplyChainError(
+                f"upstream skill path is missing for {key}: {record['skillPath']}; "
+                "update skillPath explicitly after reviewing the upstream move; refusing deletion"
             )
-            continue
         metadata_name = skill_name(upstream_skill_file)
         if metadata_name != key:
             raise SupplyChainError(
@@ -457,8 +447,7 @@ def source_packages(
                 "newHash": new_hash,
                 "excludedPaths": exclusions,
                 "packageType": package_type,
-                "deleted": False,
-                "changed": target_ref != record["ref"] or new_hash != old_hash,
+                "changed": new_hash != old_hash,
             }
         )
     return lock, packages
@@ -466,14 +455,21 @@ def source_packages(
 
 def change_result(source: str, old_ref: str, new_ref: str, packages: list[dict]) -> dict:
     changed_packages = [package for package in packages if package["changed"]]
+    ref_only_packages = (
+        [package for package in packages if not package["changed"]]
+        if new_ref != old_ref and changed_packages
+        else []
+    )
     return {
         "status": "success",
         "source": source,
         "changed": bool(changed_packages),
+        "refChanged": new_ref != old_ref,
         "oldRef": old_ref,
         "newRef": new_ref,
         "packages": [package["key"] for package in changed_packages],
-        "deletedPackages": [package["key"] for package in changed_packages if package["deleted"]],
+        "refOnlyPackages": [package["key"] for package in ref_only_packages],
+        "deletedPackages": [],
         "hashes": {
             package["key"]: {
                 "old": package["oldHash"],
@@ -706,12 +702,9 @@ def update_source(
 
     next_lock = copy.deepcopy(lock)
     for package in packages:
+        record = next_lock["skills"][package["key"]]
+        record["ref"] = target_ref
         if package["changed"]:
-            if package["deleted"]:
-                del next_lock["skills"][package["key"]]
-                continue
-            record = next_lock["skills"][package["key"]]
-            record["ref"] = target_ref
             record["computedHash"] = package["newHash"]
 
     lock_backup = lock_path.read_bytes()
@@ -724,8 +717,6 @@ def update_source(
 
         changed_packages = [package for package in packages if package["changed"]]
         for package in changed_packages:
-            if package["deleted"]:
-                continue
             copy_package(
                 package["sourcePackage"],
                 staged_root / package["key"],
@@ -748,8 +739,7 @@ def update_source(
                 backup = backup_root / package["key"]
                 os.replace(destination, backup)
                 replaced.append(package)
-                if not package["deleted"]:
-                    os.replace(staged_root / package["key"], destination)
+                os.replace(staged_root / package["key"], destination)
             write_json_atomically(lock_path, next_lock)
             validate_lock(repo, lock_path)
         except Exception:

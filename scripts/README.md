@@ -7,7 +7,6 @@
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `verify-env.sh` | Check environment setup | `./scripts/verify-env.sh` |
-| `db-reset.sh` | Reset database to clean state | `./scripts/db-reset.sh` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
 | `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
 | `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile core` |
