@@ -1,8 +1,8 @@
 # Vendored Skill Supply Chain
 
 This repository tracks every vendored external skill in `skills-lock.json` and
-refreshes one upstream repository at a time. Repository-owned skills are listed
-separately and never enter the external refresh path.
+refreshes upstream repositories through one aggregate review branch. Repository-owned
+skills are listed separately and never enter the external refresh path.
 
 ## Lock contract
 
@@ -90,26 +90,35 @@ mismatch. Package removal requires an explicit reviewed lock and destination cha
 dispatch. A manual run can set `source` to one declared `owner/repository` value;
 an empty value checks every external source.
 
-The workflow creates one branch and draft PR per upstream source repository,
-not per skill and not for the entire matrix. Each source has its own concurrency
-group and stable branch: `automation/skill-refresh/<owner>/<repository>`. All
-skills from that source update atomically on the same branch, while unrelated
-vendors remain independently reviewable. A ref-only result stops before any
-write or PR creation. A material package change:
+The workflow creates or updates one stable aggregate branch and draft PR:
+`automation/skill-refresh/all`. A targeted manual dispatch starts from that same
+branch, so it updates the existing aggregate review instead of creating a second
+publication path. Sources are processed sequentially, and all skills from one
+source still update atomically. A ref-only result stops before any write. A
+material package change:
 
 1. updates only that source's packages and lock records;
 2. verifies source-level license evidence at the proposed immutable commit and
    regenerates the pinned inventory from `sourceMetadata` in the lock;
 3. scans refreshed package paths for credential signatures;
-4. validates the lock, focused Bats tests, and the full repository;
-5. opens or updates one draft PR with refs, packages, hashes, generated license
-   evidence, and validation evidence;
-6. explicitly dispatches required CI and lint workflows on the generated branch
+4. validates that source against the accumulated aggregate tree;
+5. restores the source's prior packages, lock, and generated inventory if its
+   update, secret scan, or validation fails, then continues to the next source;
+6. validates the combined tree once after all selected sources have run;
+7. opens or updates one draft PR with every successful source's refs, packages,
+   hashes, generated license evidence, validation evidence, and failed-source
+   summary;
+8. explicitly dispatches required CI and lint workflows on the generated branch
    because `GITHUB_TOKEN`-created pull requests do not emit ordinary
    `pull_request` workflow runs.
 
+If one source fails but another validates, the failed source remains unchanged
+and the validated sources can still publish. The workflow run records every
+failure; a mixed-result PR also lists the rolled-back sources. If every changed
+source fails, the run fails and no new publication is created.
+
 The workflow has `contents: write`, `pull-requests: write`, and `actions: write`
-because it must push the source branch, maintain the draft PR, and dispatch the
+because it must push the aggregate branch, maintain the draft PR, and dispatch the
 existing required workflows at that exact branch head. It has no auto-merge
 path. Generated commits cannot include workflow or repository script changes;
 the downloaded packages are treated as data and are never run by the publishing
@@ -142,16 +151,16 @@ satisfying maintainer review. Keep refresh PRs draft and never apply
 
 ### Recovery
 
-- Rerun a failed source job after diagnosing its first failing acquisition,
-  secret-scan, validation, or test step. Do not bypass the failed control.
-- If upstream moved again during review, rerun the stable source branch; the
-  existing draft PR is updated instead of duplicated.
+- Rerun the workflow after diagnosing a source's first failing acquisition,
+  secret-scan, or validation phase. Do not bypass the failed control.
+- If upstream moved again during review, rerun the workflow; the stable aggregate
+  branch and existing draft PR are updated instead of duplicated.
 - If acquisition reports a missing upstream path, inspect the upstream tree for
   a move and update the lock only after reviewing the replacement package. Do
   not delete the local package or manually copy partial upstream state.
 - If a local `update` is interrupted, run `validate-lock`, inspect `git diff`, and
-  rerun against the intended immutable ref. Commit only a complete source-scoped
-  result.
+  rerun against the intended immutable ref. Commit only a complete aggregate
+  result composed of source-atomic updates.
 
 ## Add an external source or package
 

@@ -83,9 +83,9 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq -- '--ref "$REFRESH_BRANCH"' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -q "if: steps.check.outputs.content_changed == 'true'" "$WORKFLOW"
+  run grep -q "if: steps.refresh.outputs.content_changed == 'true'" "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -q "content_changed=.*\.changed" "$WORKFLOW"
+  run grep -Fq 'echo "content_changed=true"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'scan-skill-secrets.py' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -93,7 +93,7 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'Ref-only lock records' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -q 'Missing upstream paths block refresh' "$WORKFLOW"
+  run grep -q 'Missing upstream paths block that source' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'validate-lock' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -108,7 +108,7 @@ EOF
 }
 
 @test "aggregate refresh processes sources sequentially with source rollback" {
-  run grep -Fq 'REQUESTED_SOURCE: ${{ inputs.source || '\''\'' }}' "$WORKFLOW"
+  run grep -Fq 'REQUESTED_SOURCE:' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'for source in "${sources[@]}"; do' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -126,11 +126,19 @@ EOF
 
 @test "targeted dispatch reuses the aggregate branch and pull request" {
   [ "$(grep -Fc 'automation/skill-refresh/all' "$WORKFLOW")" -ge 2 ]
-  run grep -Fq 'Aggregate branch exists' "$WORKFLOW"
+  run grep -Fq 'Resolve aggregate refresh base' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'ref: ${{ steps.refresh-base.outputs.ref }}' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'git rebase origin/main' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git diff --binary origin/main...HEAD' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git checkout -B main origin/main' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git apply "$AGGREGATE_PATCH"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'echo "base_sha=$(git rev-parse HEAD)"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'Optional owner/repository source to refresh' "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -143,7 +151,9 @@ EOF
   run grep -Fq 'REFRESH_HEAD: ${{ steps.create-pr.outputs.pull-request-head-sha }}' "$WORKFLOW"
   [ "$status" -eq 0 ]
   [ "$(grep -Fc -- '-f head_sha="$REFRESH_HEAD"' "$WORKFLOW")" -eq 2 ]
-  run grep -Fq -- '-f base_sha="${{ github.sha }}"' "$WORKFLOW"
+  run grep -Fq 'REFRESH_BASE: ${{ steps.refresh.outputs.base_sha }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq -- '-f base_sha="$REFRESH_BASE"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q 'workflow_dispatch:' "$ci_workflow"
   [ "$status" -eq 0 ]
