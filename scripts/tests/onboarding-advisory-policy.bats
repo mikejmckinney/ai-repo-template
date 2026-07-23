@@ -6,15 +6,70 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
-@test "template ships versioned onboarding seed state" {
+@test "versioned onboarding state agrees with repository classification" {
   run jq -e '
     .schema_version == 1 and
     .template == "mikejmckinney/ai-repo-template" and
-    .status == "template-seed"
+    (.status == "template-seed" or .status == "complete")
   ' "$REPO_ROOT/.context/onboarding-state.json"
 
   [ "$status" -eq 0 ]
+  run "$REPO_ROOT/.agents/skills/repo-onboarding/scripts/classify-mode.sh" --repo "$REPO_ROOT"
+  [ "$status" -eq 0 ]
+  mode="$(jq -r .mode <<<"$output")"
+  state="$(jq -r .status "$REPO_ROOT/.context/onboarding-state.json")"
+  case "$mode" in
+    ai-repo-template)
+      [ "$(jq -r .requires_onboarding <<<"$output")" = false ]
+      ;;
+    template-seed)
+      [ "$state" = template-seed ]
+      [ "$(jq -r .requires_onboarding <<<"$output")" = true ]
+      ;;
+    complete)
+      [ "$state" = complete ]
+      [ "$(jq -r .requires_onboarding <<<"$output")" = false ]
+      ;;
+    *) false ;;
+  esac
   grep -qF '  ".context/onboarding-state.json"' "$REPO_ROOT/install.sh"
+}
+
+@test "classifier distinguishes canonical identity from derived lifecycle state" {
+  fixture="$(mktemp -d)"
+  repo="$fixture/repo"
+  mkdir -p "$repo/.context" "$repo/.agents/skills/repo-onboarding/scripts"
+  cp "$REPO_ROOT/.agents/skills/repo-onboarding/scripts/classify-mode.sh" \
+    "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh"
+  cp "$REPO_ROOT/.context/onboarding-state.json" "$repo/.context/onboarding-state.json"
+  chmod +x "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh"
+  git -C "$repo" init -q
+  git -C "$repo" remote add origin https://github.com/mikejmckinney/ai-repo-template.git
+
+  for state in template-seed complete; do
+    jq --arg state "$state" '.status = $state' "$repo/.context/onboarding-state.json" \
+      >"$fixture/state.json"
+    mv "$fixture/state.json" "$repo/.context/onboarding-state.json"
+    run "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh" --repo "$repo"
+    [ "$status" -eq 0 ]
+    [ "$(jq -r .mode <<<"$output")" = ai-repo-template ]
+  done
+
+  git -C "$repo" remote set-url origin https://github.com/example/product.git
+  for state in template-seed complete; do
+    jq --arg state "$state" '.status = $state' "$repo/.context/onboarding-state.json" \
+      >"$fixture/state.json"
+    mv "$fixture/state.json" "$repo/.context/onboarding-state.json"
+    run "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh" --repo "$repo"
+    [ "$status" -eq 0 ]
+    [ "$(jq -r .mode <<<"$output")" = "$state" ]
+    if [[ "$state" == template-seed ]]; then
+      [ "$(jq -r .requires_onboarding <<<"$output")" = true ]
+    else
+      [ "$(jq -r .requires_onboarding <<<"$output")" = false ]
+    fi
+  done
+  rm -rf "$fixture"
 }
 
 @test "installer seeds only fresh repositories and preserves legacy missing state" {
@@ -219,24 +274,76 @@ PY
   rm -rf "$repo"
 }
 
-@test "active dogfood surfaces describe the completed current phase" {
+@test "roadmap assertions follow classified repository identity" {
+  classification="$($REPO_ROOT/.agents/skills/repo-onboarding/scripts/classify-mode.sh --repo "$REPO_ROOT")"
+  mode="$(jq -r .mode <<<"$classification")"
   ! grep -q 'Phase%200%3A%20Design\|Phase 0: Design' "$REPO_ROOT/README.md"
-  run python3 - "$REPO_ROOT/.context/roadmap.md" "$REPO_ROOT/.context/00_INDEX.md" <<'PY'
+  run python3 - "$mode" "$REPO_ROOT/.context/roadmap.md" "$REPO_ROOT/.context/00_INDEX.md" <<'PY'
 import sys
 from pathlib import Path
 
-roadmap = Path(sys.argv[1]).read_text(encoding="utf-8")
-index = Path(sys.argv[2]).read_text(encoding="utf-8")
-phase7 = roadmap.split("## Phase 7:", 1)[1].split("\n---", 1)[0]
-assert "**Status**: Complete" in phase7
-assert "### Active Track" not in phase7
-assert "Issue #279" not in roadmap
-assert "Complete issue #474" not in index
-assert "**Current Phase**" not in index
+mode = sys.argv[1]
+roadmap = Path(sys.argv[2]).read_text(encoding="utf-8")
+index = Path(sys.argv[3]).read_text(encoding="utf-8")
+if mode == "ai-repo-template":
+    phase7 = roadmap.split("## Phase 7:", 1)[1].split("\n---", 1)[0]
+    assert "**Status**: Complete" in phase7
+    assert "### Active Track" not in phase7
+    assert "Issue #279" not in roadmap
+    assert "Complete issue #474" not in index
+    assert "**Current Phase**" not in index
+elif mode == "complete":
+    assert not roadmap.startswith("# ai-repo-template Roadmap")
+    assert "Phases 1-7 complete" not in roadmap
+    assert "**Project Name**: `ai-repo-template`" not in index
 PY
   [ "$status" -eq 0 ]
   ! grep -q 'Optional in-progress PR advisory' "$REPO_ROOT/AI_REPO_GUIDE.md"
   ! grep -q 'Optional PR advisory' "$REPO_ROOT/.github/prompts/README.md"
+}
+
+@test "copied template completes the derived repository lifecycle" {
+  if [[ "${DERIVED_LIFECYCLE_INNER:-}" == 1 ]]; then
+    skip "inner derived-repository suite avoids recursive lifecycle execution"
+  fi
+
+  fixture="$(mktemp -d)"
+  repo="$fixture/product"
+  mkdir -p "$repo"
+  git -C "$REPO_ROOT" ls-files -z \
+    | tar --null -C "$REPO_ROOT" -cf - -T - \
+    | tar -xf - -C "$repo"
+  git -C "$repo" init -q
+  git -C "$repo" remote add origin https://github.com/example/product.git
+
+  run "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh" --repo "$repo"
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .mode <<<"$output")" = template-seed ]
+  [ "$(jq -r .requires_onboarding <<<"$output")" = true ]
+
+  jq '.status = "complete"' "$repo/.context/onboarding-state.json" >"$fixture/state.json"
+  mv "$fixture/state.json" "$repo/.context/onboarding-state.json"
+  printf '# Product Roadmap\n\nProject-owned milestones.\n' >"$repo/.context/roadmap.md"
+  printf '# Product Context\n\n**Project Name**: `product`\n' >"$repo/.context/00_INDEX.md"
+
+  run "$repo/.agents/skills/repo-onboarding/scripts/classify-mode.sh" --repo "$repo"
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .mode <<<"$output")" = complete ]
+  [ "$(jq -r .requires_onboarding <<<"$output")" = false ]
+
+  run "$repo/.agents/skills/repo-onboarding/scripts/validate-onboarding.sh" --repo "$repo"
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .stable <<<"$output")" = true ]
+
+  run bash -c 'cd "$1" && ./test.sh' _ "$repo"
+  [ "$status" -eq 0 ]
+
+  run npm ci --prefix "$repo/.github/agent-runtime" --ignore-scripts
+  [ "$status" -eq 0 ]
+
+  run env DERIVED_LIFECYCLE_INNER=1 bash -c 'cd "$1" && bats --jobs 4 scripts/tests/' _ "$repo"
+  [ "$status" -eq 0 ]
+  rm -rf "$fixture"
 }
 
 @test "GitHub state replaces the latest session summary surface" {

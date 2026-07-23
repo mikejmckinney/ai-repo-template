@@ -50,16 +50,6 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
-@test "batch fix writes cadence-neutral verification stubs" {
-  run batch_fix_write_verify_stub \
-    "$TEST_ROOT/nested/verify.json" weekly run_week 2026-W24 "$TEST_ROOT/batch.json"
-
-  [ "$status" -eq 0 ]
-  run jq -e '.run_kind == "weekly" and .run_week == "2026-W24" and .findings[0].dedupe_key == "key-a"' \
-    "$TEST_ROOT/nested/verify.json"
-  [ "$status" -eq 0 ]
-}
-
 @test "batch fix no-diff run accepts complete cant-reproduce evidence" {
   run batch_fix_publish \
     owner/repo branch "" 0 2026-W24 "$TEST_ROOT/batch.json" title "$TEST_ROOT/body.md" \
@@ -207,4 +197,74 @@ EOF
   run git show --name-only --format= HEAD
   [ "$status" -eq 0 ]
   [[ "$output" == *"generated.txt"* ]]
+}
+
+@test "batch fix does not commit a verification-only diff" {
+  mkdir -p "$TEST_ROOT/repo/retro"
+  git -C "$TEST_ROOT/repo" init -q
+  git -C "$TEST_ROOT/repo" config user.email test@example.com
+  git -C "$TEST_ROOT/repo" config user.name test
+  printf '%s\n' base >"$TEST_ROOT/repo/tracked.txt"
+  git -C "$TEST_ROOT/repo" add tracked.txt
+  git -C "$TEST_ROOT/repo" commit -qm base
+  cp "$TEST_ROOT/verify.json" "$TEST_ROOT/repo/retro/fix-verify-test.json"
+  cd "$TEST_ROOT/repo"
+
+  batch_fix_commit_changes 'test: reject verification-only output' "" \
+    "$TEST_ROOT/repo/retro/fix-verify-test.json"
+
+  [ "$BATCH_FIX_HAS_DIFF" -eq 0 ]
+  [ "$(git rev-list --count HEAD)" -eq 1 ]
+  [ -f "$TEST_ROOT/repo/retro/fix-verify-test.json" ]
+}
+
+@test "native issue link helper retries keyword text until GitHub reports the relationship" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf 'gh %s\n' "$*" >>"$CALL_LOG"
+if [[ "$1 $2" == "pr view" ]]; then
+  printf '## Linked issues\n\nFixes #42\n'
+elif [[ "$1 $2" == "api graphql" ]]; then
+  count_file="${CALL_LOG}.graphql"
+  count=0
+  [[ -f "$count_file" ]] && count="$(cat "$count_file")"
+  count=$((count + 1))
+  printf '%s' "$count" >"$count_file"
+  [[ "$count" -ge 2 ]] && printf 'true\n' || printf 'false\n'
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" CALL_LOG="$CALL_LOG" \
+    LINK_VERIFY_ATTEMPTS=3 LINK_VERIFY_DELAY_SECONDS=0 \
+    bash "$REPO_ROOT/scripts/workflows/lib/link-fix-pr-to-issue.sh" owner/repo 17 42
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"native Development-graph link"* ]]
+  run grep -F 'gh pr edit 17 -R owner/repo --body-file' "$CALL_LOG"
+  [ "$status" -eq 0 ]
+  [ "$(cat "${CALL_LOG}.graphql")" -eq 2 ]
+}
+
+@test "native issue link helper fails when GitHub never reports the relationship" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1 $2" == "pr view" ]]; then
+  printf '## Linked issues\n\nFixes #42\n'
+elif [[ "$1 $2" == "api graphql" ]]; then
+  printf 'false\n'
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" \
+    LINK_VERIFY_ATTEMPTS=2 LINK_VERIFY_DELAY_SECONDS=0 \
+    bash "$REPO_ROOT/scripts/workflows/lib/link-fix-pr-to-issue.sh" owner/repo 17 42
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"GitHub did not register"* ]]
+  [[ "$output" == *"owner/repo/pull/17"* ]]
 }

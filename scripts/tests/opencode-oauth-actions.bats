@@ -301,6 +301,9 @@ EOF
   git -C "$repo" add result.txt
   git -C "$repo" commit -qm base
   printf 'fix this' >"$TEST_ROOT/cascade-prompt.md"
+  cat >"$TEST_ROOT/cascade-batch.json" <<'EOF'
+{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"}]}
+EOF
   cat >"$TEST_ROOT/cascade-verify.sh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -322,21 +325,57 @@ EOF
           return 1
         fi
         printf "cursor-verified\n" >result.txt
+        mkdir -p retro
+        cat >retro/fix-verify-test.json <<"JSON"
+{"findings":[{"dedupe_key":"key-a","verify":{"pre":"reproduced","post":"fixed","notes":"Verified after the edit."}}]}
+JSON
         printf "success\n" >"$output_file"
       }
       apply_noop() { return 0; }
       source "$1"
       FIX_PROVIDER_VERIFY_COMMAND="$2" run_fix_provider_cascade \
-        retro-fix "$3" "$4" "$5" "$5" "$6" "$7" apply_noop
+        retro-fix "$3" "$4" "$5" "$5" "$6" "$7" apply_noop \
+        "$8" retro/fix-verify-test.json
     ' _ \
     "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
     "$TEST_ROOT/cascade-verify.sh" "$TEST_ROOT/cascade-prompt.md" \
     "$TEST_ROOT/cascade-output.txt" "$repo" "$TEST_ROOT" \
-    "$REPO_ROOT/scripts/workflows/lib"
+    "$REPO_ROOT/scripts/workflows/lib" "$TEST_ROOT/cascade-batch.json"
 
   [ "$status" -eq 0 ]
   [ "$(cat "$repo/result.txt")" = cursor-verified ]
   [ "$(cat "$TEST_ROOT/cascade-output.txt")" = success ]
   [ "$(cut -d: -f1 "$TEST_ROOT/attempts.log" | tr '\n' ' ')" = "opencode cursor " ]
   [ "$(cut -d: -f2- "$TEST_ROOT/attempts.log" | sort -u | wc -l | tr -d ' ')" -eq 2 ]
+}
+
+@test "fix provider cascade rejects a successful no-op without verification" {
+  repo="$TEST_ROOT/noop-repo"
+  mkdir -p "$repo"
+  git -C "$repo" init -q
+  git -C "$repo" config user.email test@example.com
+  git -C "$repo" config user.name Test
+  printf 'base\n' >"$repo/result.txt"
+  git -C "$repo" add result.txt
+  git -C "$repo" commit -qm base
+  printf 'fix this' >"$TEST_ROOT/noop-prompt.md"
+  printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"}]}' \
+    >"$TEST_ROOT/noop-batch.json"
+
+  run bash -c '
+    list_advisory_providers() { printf "%s\n" opencode; }
+    invoke_advisory_llm() { printf "success\n" >"$2"; }
+    apply_noop() { return 0; }
+    source "$1"
+    FIX_PROVIDER_VERIFY_COMMAND=true run_fix_provider_cascade \
+      retro-fix "$2" "$3" "$4" "$4" "$5" "$6" apply_noop \
+      "$7" retro/fix-verify-test.json
+  ' _ \
+    "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
+    "$TEST_ROOT/noop-prompt.md" "$TEST_ROOT/noop-output.txt" "$repo" \
+    "$TEST_ROOT" "$REPO_ROOT/scripts/workflows/lib" "$TEST_ROOT/noop-batch.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Fix provider cascade exhausted"* ]]
+  [ "$(cat "$repo/result.txt")" = base ]
 }
