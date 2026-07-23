@@ -69,7 +69,7 @@ JSON
   "findings": [
     {
       "dedupe_key": "k1",
-      "verify": {"pre": "reproduced", "post": "fixed", "sandbox": "n/a", "notes": ""}
+      "verify": {"pre": "reproduced", "post": "fixed", "notes": ""}
     }
   ],
   "sandbox": {"issue_url": "n/a", "pr_url": "n/a", "skip_reason": "local only"},
@@ -97,5 +97,6 @@ JSON
   [[ "$output" == *"## Fix verification"* ]]
   [[ "$output" == *"## User outcome evidence"* ]]
   [[ "$output" == *"k1"* ]]
+  [[ "$output" != *"| sandbox |"* ]]
   rm -rf "$tmp"
 }
