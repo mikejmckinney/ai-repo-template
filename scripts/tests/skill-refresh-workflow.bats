@@ -146,6 +146,19 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "aggregate pull request body includes prior and current source updates" {
+  run grep -Fq 'BASE_LOCK_PATH:' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'AGGREGATE_PATH:' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'git show HEAD:skills-lock.json' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'aggregate-sources.json' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'done <"$AGGREGATE_PATH"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+}
+
 @test "required workflows accept trusted exact-head skill refresh dispatches" {
   ci_workflow="$REPO_ROOT/.github/workflows/ci-tests.yml"
   lint_workflow="$REPO_ROOT/.github/workflows/lint-and-format.yml"
