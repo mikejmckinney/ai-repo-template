@@ -66,6 +66,15 @@ batch_fix_commit_changes() {
   BATCH_FIX_HAS_DIFF=1
 }
 
+batch_fix_commit_verification_update() {
+  local verify_json="$1" commit_message="$2"
+  if [[ -z "$(git status --porcelain -- "$verify_json")" ]]; then
+    return 0
+  fi
+  git add -- "$verify_json"
+  git commit --only -m "$commit_message" -- "$verify_json"
+}
+
 batch_fix_link_pr_to_umbrella() {
   local repo="$1" pr_ref="$2" run_key="$3" input_json="$4"
   local resolve_script="$5" link_script="$6"
@@ -91,6 +100,8 @@ batch_fix_publish() {
     python3 "$(dirname "${BASH_SOURCE[0]}")/validate-fix-verification.py" \
       "$input_json" "$verify_json" --substantive-diff || return 1
   fi
+  python3 "$(dirname "${BASH_SOURCE[0]}")/../../validate-outcome-evidence.py" \
+    "$verify_json" --from-fix-verify || return 1
 
   if [[ "$has_diff" -eq 1 ]]; then
     git push -u origin "$branch"

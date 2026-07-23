@@ -403,14 +403,14 @@ result=$(run_case "default-branch-only workflow" \
   ".github/workflows/repository-dispatch.yml")
 assert_eq "CASE-17 exit code" "0" "${result%%:*}"
 
-# ── CASE-18: mixed advice when no default-branch-only present points to PR branch ─
+# ── CASE-18: mixed advice points to environment selection without sandbox ─────
 echo ""
-echo "CASE-18: mixed (code + pull_request-only) declared as code-or-docs → mismatch advises PR branch, NOT sandbox"
+echo "CASE-18: mixed (code + pull_request-only) advises outcome selection, NOT sandbox"
 result=$(run_case "code-or-docs" "README.md
 .github/workflows/lint-and-format.yml")
 assert_eq "CASE-18 exit code" "1" "${result%%:*}"
-assert_contains "CASE-18 advises PR branch (no default-branch-only present)" \
-  "Verification target: PR branch" "${result#*:}"
+assert_contains "CASE-18 advises outcome selection" \
+  "outcome-validation.md" "${result#*:}"
 # Should NOT recommend sandbox here.
 case18_body="${result#*:}"
 if printf '%s' "$case18_body" | grep -qF 'sandbox-verification.md'; then

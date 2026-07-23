@@ -70,24 +70,41 @@ N/A — empty headings are noise.
 2. <step>
 3. <step>
 
-**Evidence:**
+## User outcome evidence
 
-- <link/excerpt/transcript/screenshot/checklist result>
+<!-- REQUIRED for each material outcome claim. Repeat this record as needed.
+     External-state and runtime claims cannot be prose-only. Prefer scoped,
+     machine-generated evidence over screenshots; redact before publication.
+     See docs/guides/outcome-validation.md. -->
+
+**Material claim:** <observation whose falsity changes the outcome conclusion>
+
+**Environment:** <selected adapter>
+
+**Why representative:** <load-bearing conditions preserved>
+
+**Implementation SHA:** <tested SHA>
+
+**Action performed:** <actual user action>
+
+**Expected result:** <expected observation>
+
+**Observed result:** <actual observation>
+
+**Artifact:** <durable link or embedded redacted excerpt>
+
+**Artifact type:** <API output | run URL | transcript | request/response | screenshot | rendered checklist>
+
+**Redaction:** <what was removed, or why no sensitive data was present>
+
+**Retention:** <PR-lifetime record plus access/expiration disclosure>
+
+**Evidence reuse:** <none, or Paths: <later path analysis>; Conditions: <load-bearing condition analysis>>
 
 **Result:** <problem statement resolved | not resolved | framing disconnect | blocked>
 
 **Explanation:**
 <brief explanation>
-
-## Sandbox dogfood evidence
-
-<!-- REQUIRED Both labels MUST
-     point to real sandbox URLs (issue link and PR link). Refer to the [sandbox 
-     verification playbook](../docs/guides/sandbox-verification.md) which details the
-     process for using sandbox and which sandbox instance to use. -->
-
-Sandbox issue: <URL>
-Sandbox PR: <URL>
 
 ## Supporting verification
 
@@ -110,9 +127,8 @@ Sandbox PR: <URL>
          excerpt, or local-output snippet)
        - `❌ fail` + what failed and why it's acceptable to merge
          anyway (rare; usually means re-do the work)
-       - `⏭️ sandbox-deferred — see Phase 2` for items the plan
-         declared `Verification target: sandbox repo` (ADR-016)
-         that cannot be exercised from a same-repo PR branch
+       - `⏭️ environment-deferred — <adapter + reason>` for items that
+         cannot be exercised from a same-repo PR branch
        - `⏭️ N/A — <reason>` if the plan section was N/A
 
      Exemptions match the Plan-as-comment rule (ADR-011): PRs labeled

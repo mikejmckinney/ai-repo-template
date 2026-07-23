@@ -323,7 +323,7 @@ When a downstream project (a repo built *from* this template) hits an incident w
 - Follow the test pyramid: many unit tests, fewer integration tests, minimal E2E tests.
 - Write tests before or alongside implementation (TDD preferred).
 - All behavioral changes must include appropriate tests.
-- A pragmatic sandbox/dogfood test must be performed and `Sandbox issue:` and `Sandbox PR:` labels (with real URLs) must appear in the test/verification section per ADR-029. Read and follow the [sandbox verification playbook](docs/guides/sandbox-verification.md) which details the process for using sandbox and which sandbox instance to use.
+- Perform the issue's user outcome in the least costly outcome-equivalent environment and publish a PR-lifetime redacted artifact for every material claim. External-state and runtime claims cannot be prose-only. Use [the outcome-validation guide](docs/guides/outcome-validation.md); use the [sibling sandbox playbook](docs/guides/sandbox-verification.md) only when GitHub default-branch state is load-bearing.
 - CI must pass before marking tasks complete. If CI fails:
   1. Read the error logs
   2. Fix the underlying issue
@@ -344,13 +344,12 @@ If the user outcome does not resolve the problem statement, do not patch around
 the test merely to make it pass. Stop, document the framing disconnect, and
 escalate to the user or revise the issue/plan.
 
-A pragmatic sandbox/dogfood test with concrete steps is required in the
-verification section of issues and plans. Read and follow the
-[sandbox verification playbook](docs/guides/sandbox-verification.md)
-playbook which details the process for using sandbox and which sandbox instance to use.
-The `Sandbox issue:` and `Sandbox PR:`
-labels (canonical literals per ADR-029, the PR template) should be linked as proof that
-the user outcome solves the problem. For example,
+A pragmatic user-outcome test with concrete steps and auditable material-claim
+evidence is required in issues, plans, and PRs. Read and follow the
+[outcome-validation guide](docs/guides/outcome-validation.md). Select the
+environment from the load-bearing user conditions; the
+[sandbox verification playbook](docs/guides/sandbox-verification.md) is the
+specialized adapter for GitHub default-branch behavior. For example,
 An issue opened to add a .md file that walks an agent through the development and
 implementation of a new feature should, as part of the test and validation, walk
 through and run the process defined in the .md file in a sandbox or test environment

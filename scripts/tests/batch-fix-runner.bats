@@ -21,7 +21,24 @@ setup() {
         "notes": "Superseded on current main."
       }
     }
-  ]
+  ],
+  "outcome_evidence": {
+    "claims": [{
+      "material_claim": "The finding does not reproduce on current main.",
+      "environment": "isolated fix worktree",
+      "why_representative": "The recorded repro runs against current main.",
+      "implementation_sha": "controller:current-head",
+      "action_performed": "Ran the recorded repro steps.",
+      "expected_result": "The defect does not reproduce.",
+      "observed_result": "The defect did not reproduce.",
+      "artifact": "embedded:fix-verification-table",
+      "artifact_type": "command-record",
+      "redaction": "No secrets present.",
+      "retention": "PR lifetime.",
+      "evidence_reuse": "none",
+      "result": "pass"
+    }]
+  }
 }
 EOF
   cat >"$TEST_ROOT/update.sh" <<'EOF'
@@ -218,6 +235,49 @@ EOF
   [ "$BATCH_FIX_HAS_DIFF" -eq 0 ]
   [ "$(git rev-list --count HEAD)" -eq 1 ]
   [ -f "$TEST_ROOT/repo/retro/fix-verify-test.json" ]
+}
+
+@test "batch fix commits a sandbox evidence update after the candidate commit" {
+  mkdir -p "$TEST_ROOT/repo/retro"
+  git -C "$TEST_ROOT/repo" init -q
+  git -C "$TEST_ROOT/repo" config user.email test@example.com
+  git -C "$TEST_ROOT/repo" config user.name test
+  printf '%s\n' base >"$TEST_ROOT/repo/tracked.txt"
+  git -C "$TEST_ROOT/repo" add tracked.txt
+  git -C "$TEST_ROOT/repo" commit -qm base
+  cp "$TEST_ROOT/verify.json" "$TEST_ROOT/repo/retro/fix-verify-test.json"
+  git -C "$TEST_ROOT/repo" add retro/fix-verify-test.json
+  git -C "$TEST_ROOT/repo" commit -qm candidate
+  jq '.sandbox.pr_url = "https://github.com/acme/sandbox/pull/1"' \
+    "$TEST_ROOT/repo/retro/fix-verify-test.json" >"$TEST_ROOT/repo/retro/updated.json"
+  mv "$TEST_ROOT/repo/retro/updated.json" "$TEST_ROOT/repo/retro/fix-verify-test.json"
+  cd "$TEST_ROOT/repo"
+
+  batch_fix_commit_verification_update \
+    retro/fix-verify-test.json 'chore: record sandbox outcome evidence'
+
+  [ "$(git log -1 --pretty=%s)" = 'chore: record sandbox outcome evidence' ]
+  run git show HEAD:retro/fix-verify-test.json
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"https://github.com/acme/sandbox/pull/1"* ]]
+}
+
+@test "daily and weekly fix jobs commit before sandbox sync and retain its evidence" {
+  for script in \
+    "$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro-fix.sh" \
+    "$REPO_ROOT/scripts/workflows/weekly-review/run-weekly-review-fix.sh"; do
+    run python3 - "$script" <<'PY'
+from pathlib import Path
+import sys
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+commit = text.index("batch_fix_commit_changes")
+sync = text.index("maybe_sandbox_sync", commit)
+evidence = text.index("batch_fix_commit_verification_update", sync)
+assert commit < sync < evidence
+PY
+    [ "$status" -eq 0 ]
+  done
 }
 
 @test "native issue link helper retries keyword text until GitHub reports the relationship" {

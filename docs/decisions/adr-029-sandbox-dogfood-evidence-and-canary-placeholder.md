@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (partially superseded by ADR-034)
 
 Narrows ADR-021 §"Per-file cadence bump" scope.
 Overrides `docs/compliance_schemas.md` §"Schema versioning" one-cycle
@@ -14,13 +14,24 @@ backward-compat default for the Phase C migrations recorded in this ADR.
 
 ## 2026-07-20 Current-State Amendment
 
-The sandbox outcome requirement and canonical `Sandbox issue:` / `Sandbox PR:`
-labels remain active. ADR-026 retired structured compliance contracts, and
+At the time of this amendment, the sandbox outcome requirement and canonical
+`Sandbox issue:` / `Sandbox PR:` labels remained active. ADR-034 later
+superseded that universal requirement. ADR-026 retired structured compliance contracts, and
 ADR-031 retired the Judge role and role pipeline. The former check 157 drift
 detector and Judge checklist no longer exist; current enforcement is the PR
 template, `AGENTS.md` outcome contract, live review, and the sandbox playbook.
 Sections 2-6 and the original verification record below describe the historical
 implementation rather than active mirror-maintenance instructions.
+
+## 2026-07-23 Outcome-Evidence Amendment
+
+ADR-034 supersedes the universal sibling-repository requirement in sections 1-2
+and 8 and replaces their active evidence fields with outcome-equivalent
+environment selection plus auditable material-claim artifacts. Section 3's
+structural-versus-semantic principle remains under ADR-034's broader schema.
+Section 1.1's per-finding verification semantics and sections 5-7's canary and
+schema history remain active. ADR-016 continues to own the sibling repository
+adapter for GitHub default-branch behavior.
 
 ## Context
 

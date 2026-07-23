@@ -41,8 +41,10 @@ REQUIRED_FILES=(
   "scripts/cleanup-codespace-caches.sh"
   "scripts/diagnose-opencode-session.sh"
   "scripts/render-ci-failure-report.sh"
+  "scripts/validate-outcome-evidence.py"
   "scripts/format.sh"
   "scripts/check-markdown-links.py"
+  "docs/guides/outcome-validation.md"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do

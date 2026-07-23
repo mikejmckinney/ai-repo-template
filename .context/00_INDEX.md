@@ -103,13 +103,14 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-025](../docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md) | GitHub as live state | Moved normal coordination to issue/PR bodies, comments, and labels. |
 | [ADR-026](../docs/decisions/adr-026-compliance-contracts.md) | Compliance contracts | Structured evidence schemas retired by the 2026-07-13 amendment. |
 | [ADR-027](../docs/decisions/adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel | Added an out-of-scope observation path without widening task scope. |
-| [ADR-029](../docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence | Requires sandbox proof for behavior/process claims on every PR. |
+| [ADR-029](../docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Historical sandbox evidence + active fix/canary semantics | Partially superseded by ADR-034. |
 | [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI and execution lifecycle policy | Makes monolithic implementation the default, retires role registries, and uses normal non-blocking advisory plus recurring retro. |
 | [ADR-032](../docs/decisions/adr-032-canonical-governance-sources.md) | Canonical governance sources and layered enforcement | Uses one authored source with pointers, symlinks, or deterministic generated consumers and blocks only encoded contract violations. |
+| [ADR-034](../docs/decisions/adr-034-outcome-equivalent-verification.md) | Outcome-equivalent verification | Requires representative environments and auditable material-claim artifacts. |
 
 ## Issue-Backed Future Work
 
 - [ ] Issue #163 - automate derived-repository credential and variable bootstrap.
 - [ ] Issue #299 - define session archive retention and downstream reset policy.
-- [ ] Issue #316 - document sandbox-local verification for default-branch workflow changes.
+- [ ] Issue #316 - folded into issue #517; close after the sandbox-local walkthrough lands.
 - [ ] Issue #322 - add an optional cross-repository project bootstrap skill.

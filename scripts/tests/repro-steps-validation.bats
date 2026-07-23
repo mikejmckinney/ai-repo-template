@@ -69,15 +69,34 @@ JSON
   "findings": [
     {
       "dedupe_key": "k1",
-      "verify": {"pre": "reproduced", "post": "fixed", "sandbox": "n/a", "notes": ""}
+      "verify": {"pre": "reproduced", "post": "fixed", "notes": ""}
     }
   ],
-  "sandbox": {"issue_url": "n/a", "pr_url": "n/a", "skip_reason": "local only"}
+  "sandbox": {"issue_url": "n/a", "pr_url": "n/a", "skip_reason": "local only"},
+  "outcome_evidence": {
+    "claims": [{
+      "material_claim": "The defect is fixed.",
+      "environment": "isolated fix worktree",
+      "why_representative": "The recorded repro runs here.",
+      "implementation_sha": "controller:current-head",
+      "action_performed": "Ran repro steps.",
+      "expected_result": "Post-repro passes.",
+      "observed_result": "Post-repro passed.",
+      "artifact": "embedded:fix-verification-table",
+      "artifact_type": "command-record",
+      "redaction": "No secrets present.",
+      "retention": "PR lifetime.",
+      "evidence_reuse": "none",
+      "result": "pass"
+    }]
+  }
 }
 JSON
   run python3 scripts/workflows/lib/render-fix-pr-sections.py "$tmp/fix-verify.json"
   [[ "$status" -eq 0 ]]
   [[ "$output" == *"## Fix verification"* ]]
+  [[ "$output" == *"## User outcome evidence"* ]]
   [[ "$output" == *"k1"* ]]
+  [[ "$output" != *"| sandbox |"* ]]
   rm -rf "$tmp"
 }

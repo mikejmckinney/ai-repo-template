@@ -125,14 +125,19 @@ batch_fix_strip_workflow_changes
 
 # shellcheck source=../lib/finalize-fix-pr.sh
 source "$LIB_DIR/finalize-fix-pr.sh"
-maybe_sandbox_sync "$REPO_ROOT" "$SANDBOX_BRANCH" "[sandbox] Post-merge retro fix ${RUN_DATE}" "$VERIFY_JSON" "$LIB_DIR"
-fix_phase_log "sandbox-sync"
-
 batch_fix_commit_changes \
   "fix: post-merge retro daily fixes for ${RUN_DATE}" \
   "$REPO_ROOT/.artifacts/postmerge-retro/fix-commit-message.txt" "$VERIFY_JSON"
 has_diff="$BATCH_FIX_HAS_DIFF"
 fix_phase_log "commit"
+
+if [[ "$has_diff" -eq 1 ]]; then
+  maybe_sandbox_sync "$REPO_ROOT" "$SANDBOX_BRANCH" "[sandbox] Post-merge retro fix ${RUN_DATE}" "$VERIFY_JSON" "$LIB_DIR"
+  fix_phase_log "sandbox-sync"
+  batch_fix_commit_verification_update \
+    "$VERIFY_JSON" "chore: record sandbox outcome evidence for ${RUN_DATE}"
+  fix_phase_log "evidence-commit"
+fi
 
 render_fix_pr_body() {
   local body_file="$WORKDIR/fix-pr-body.md"

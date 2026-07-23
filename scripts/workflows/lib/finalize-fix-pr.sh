@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/workflows/lib/finalize-fix-pr.sh — shared fix PR body + sandbox finalization.
+# Shared fix PR body, outcome evidence, and conditional sandbox finalization.
 
 finalize_append_verify_sections() {
   local body_file="$1"
@@ -13,10 +13,9 @@ finalize_append_verify_sections() {
       echo ""
       echo "_fix-verify.json missing — fix agent must record per-finding verify outcomes._"
       echo ""
-      echo "## Sandbox dogfood evidence"
+      echo "## User outcome evidence"
       echo ""
-      echo "Sandbox issue: n/a"
-      echo "Sandbox PR: n/a"
+      echo "_fix-verify.json missing - no material-claim evidence is available._"
       echo ""
     } >>"$body_file"
     echo "::warning::Missing fix-verify.json at ${verify_json}" >&2
@@ -63,14 +62,32 @@ maybe_sandbox_sync() {
 
   # shellcheck source=sandbox-sync-fix-branch.sh
   source "$lib_dir/sandbox-sync-fix-branch.sh"
-  local sandbox_pr_url
+  local sandbox_pr_url candidate_sha
+  candidate_sha="$(git -C "$repo_root" rev-parse HEAD)"
   sandbox_pr_url="$(sandbox_sync_fix_branch "$repo_root" "$sandbox_branch" "$title" "$body_file")"
   rm -f "$body_file"
 
   if [[ -n "$sandbox_pr_url" && -f "$verify_json" ]]; then
     local tmp
     tmp="$(mktemp)"
-    jq --arg url "$sandbox_pr_url" '.sandbox.pr_url = $url | .sandbox.issue_url = (.sandbox.issue_url // "n/a")' \
+    jq --arg url "$sandbox_pr_url" --arg sha "$candidate_sha" '
+      .sandbox.pr_url = $url |
+      .sandbox.issue_url = (.sandbox.issue_url // "n/a") |
+      .outcome_evidence.claims += [{
+        material_claim: "Candidate fix behavior is available in the sibling repository for default-branch verification.",
+        environment: "sibling GitHub repository",
+        why_representative: "The affected GitHub behavior requires candidate code on a repository ref.",
+        implementation_sha: $sha,
+        action_performed: "Published the candidate fix branch to the sibling repository.",
+        expected_result: "A sandbox PR exposes the candidate code for the required trigger walkthrough.",
+        observed_result: "The sandbox PR was created; workflow run evidence is recorded separately when required.",
+        artifact: $url,
+        artifact_type: "sandbox-pr",
+        redaction: "No credential values are included.",
+        retention: "Public PR-lifetime GitHub record; no expiration.",
+        evidence_reuse: "Paths: the later commit only records this evidence URL; Conditions: candidate runtime and trigger are unchanged.",
+        result: "pass"
+      }]' \
       "$verify_json" >"$tmp"
     mv "$tmp" "$verify_json"
   fi

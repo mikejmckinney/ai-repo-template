@@ -20,12 +20,12 @@ else
   fail "docs/decisions/README.md missing ADR-016 row"
 fi
 
-# Plan template carries the Change class + Verification target lines.
+# Plan template carries the Change class + outcome-environment lines.
 if grep -q 'Change class' .github/PLAN_TEMPLATE.md 2>/dev/null \
-  && grep -q 'Verification target' .github/PLAN_TEMPLATE.md 2>/dev/null; then
-  pass ".github/PLAN_TEMPLATE.md exposes Change class + Verification target (issue #227)"
+  && grep -q 'Outcome environments' .github/PLAN_TEMPLATE.md 2>/dev/null; then
+  pass ".github/PLAN_TEMPLATE.md exposes Change class + outcome environments"
 else
-  fail ".github/PLAN_TEMPLATE.md missing Change class / Verification target (issue #227)"
+  fail ".github/PLAN_TEMPLATE.md missing Change class / outcome environments"
 fi
 
 # Sandbox playbook lives at the documented path.
@@ -43,20 +43,21 @@ else
   fail "agent-pipeline.md must point to verify-pr.sh without a trigger mirror"
 fi
 
-# PR completion / pre-merge verification lives in the PR template.
-if grep -q 'sandbox-verification.md' .github/pull_request_template.md 2>/dev/null; then
-  pass "PR template references pre-merge verification (issue #227)"
+# PR completion / outcome evidence lives in the PR template.
+if grep -q '^## User outcome evidence' .github/pull_request_template.md 2>/dev/null \
+  && grep -q 'Implementation SHA:' .github/pull_request_template.md 2>/dev/null; then
+  pass "PR template requires auditable user outcome evidence"
 else
-  fail "pull_request_template.md missing pre-merge verification reference (issue #227)"
+  fail "pull_request_template.md missing auditable outcome evidence"
 fi
 
-# AGENTS.md preserves the observable sandbox-evidence contract.
-if grep -q 'sandbox-verification.md' AGENTS.md 2>/dev/null \
-  && grep -q 'Sandbox issue:' AGENTS.md 2>/dev/null \
-  && grep -q 'Sandbox PR:' AGENTS.md 2>/dev/null; then
-  pass "AGENTS.md requires sandbox verification evidence (issue #227)"
+# AGENTS.md preserves outcome evidence and the specialized adapter.
+if grep -q 'outcome-validation.md' AGENTS.md 2>/dev/null \
+  && grep -q 'sandbox-verification.md' AGENTS.md 2>/dev/null \
+  && ! grep -q 'Sandbox issue:' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md requires outcome evidence and conditional sandbox use"
 else
-  fail "AGENTS.md missing issue-#227 workflow verification guidance"
+  fail "AGENTS.md missing outcome evidence or adapter guidance"
 fi
 
 echo ""

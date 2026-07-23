@@ -47,6 +47,8 @@ run_fix_provider_cascade() {
       done < <(git diff HEAD --name-only)
       python3 "$lib_dir/validate-fix-verification.py" \
         "$batch_json" "$active_worktree/$verify_relative_path" "$validation_mode"
+      python3 "$lib_dir/../../validate-outcome-evidence.py" \
+        "$active_worktree/$verify_relative_path" --from-fix-verify
     ); then
       if ! git -C "$active_worktree" add -N -- . >/dev/null 2>&1; then
         echo "::warning::Fix worktree contains no paths to stage for diff detection" >&2

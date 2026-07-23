@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Render ## Fix verification and ## Sandbox dogfood evidence from fix-verify.json."""
+"""Render fix verification and auditable outcome evidence from fix-verify.json."""
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -11,8 +12,8 @@ def _md_verify_table(findings: list[dict]) -> str:
     lines = [
         "## Fix verification",
         "",
-        "| dedupe_key | pre | post | sandbox | notes |",
-        "|---|---|---|---|---|",
+        "| dedupe_key | pre | post | notes |",
+        "|---|---|---|---|",
     ]
     for row in findings:
         key = row.get("dedupe_key", "")
@@ -20,11 +21,10 @@ def _md_verify_table(findings: list[dict]) -> str:
         if not isinstance(verify, dict):
             verify = {}
         lines.append(
-            "| `{key}` | {pre} | {post} | {sandbox} | {notes} |".format(
+            "| `{key}` | {pre} | {post} | {notes} |".format(
                 key=key,
                 pre=verify.get("pre", "pending"),
                 post=verify.get("post", "pending"),
-                sandbox=verify.get("sandbox", "n/a"),
                 notes=(verify.get("notes") or "").replace("|", "\\|").replace("\n", " "),
             )
         )
@@ -36,34 +36,57 @@ def _md_verify_table(findings: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _md_sandbox_section(sandbox: dict) -> str:
-    issue = (sandbox.get("issue_url") or "n/a").strip()
-    pr = (sandbox.get("pr_url") or "n/a").strip()
-    skip = (sandbox.get("skip_reason") or "").strip()
-    runs = sandbox.get("workflow_runs") or []
-    lines = [
-        "## Sandbox dogfood evidence",
-        "",
-        f"Sandbox issue: {issue}",
-        f"Sandbox PR: {pr}",
-        "",
-    ]
-    if skip:
-        lines.append(f"Skip rationale: {skip}")
-        lines.append("")
-    if runs:
-        lines.append("Workflow runs:")
-        for url in runs:
-            if isinstance(url, str) and url.strip():
-                lines.append(f"- {url.strip()}")
-        lines.append("")
+def _clean(value: object) -> str:
+    return str(value or "").replace("|", "\\|").replace("\n", " ").strip()
+
+
+def _current_head() -> str:
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip() if result.returncode == 0 else "unavailable"
+
+
+def _md_outcome_section(evidence: dict) -> str:
+    claims = evidence.get("claims") or []
+    lines = ["## User outcome evidence", ""]
+    head = _current_head()
+    for index, claim in enumerate(claims, start=1):
+        if not isinstance(claim, dict):
+            continue
+        sha = _clean(claim.get("implementation_sha"))
+        if sha == "controller:current-head":
+            sha = head
+        lines.extend(
+            [
+                f"### Material claim {index}",
+                "",
+                f"- **Material claim:** {_clean(claim.get('material_claim'))}",
+                f"- **Environment:** {_clean(claim.get('environment'))}",
+                f"- **Why representative:** {_clean(claim.get('why_representative'))}",
+                f"- **Implementation SHA:** `{sha}`",
+                f"- **Action performed:** {_clean(claim.get('action_performed'))}",
+                f"- **Expected result:** {_clean(claim.get('expected_result'))}",
+                f"- **Observed result:** {_clean(claim.get('observed_result'))}",
+                f"- **Artifact:** {_clean(claim.get('artifact'))}",
+                f"- **Artifact type:** {_clean(claim.get('artifact_type'))}",
+                f"- **Redaction:** {_clean(claim.get('redaction'))}",
+                f"- **Retention:** {_clean(claim.get('retention'))}",
+                f"- **Evidence reuse:** {_clean(claim.get('evidence_reuse'))}",
+                f"- **Result:** {_clean(claim.get('result'))}",
+                "",
+            ]
+        )
     return "\n".join(lines)
 
 
 def main() -> int:
     if len(sys.argv) not in (2, 3):
         print(
-            "Usage: render-fix-pr-sections.py <fix-verify.json> [section: all|verify|sandbox]",
+            "Usage: render-fix-pr-sections.py <fix-verify.json> [section: all|verify|outcome]",
             file=sys.stderr,
         )
         return 2
@@ -76,18 +99,19 @@ def main() -> int:
 
     data = json.loads(path.read_text(encoding="utf-8"))
     findings = data.get("findings") or []
-    sandbox = data.get("sandbox") or {}
+    evidence = data.get("outcome_evidence") or {}
     if not isinstance(findings, list):
         print("fix-verify.json findings must be array", file=sys.stderr)
         return 1
-    if not isinstance(sandbox, dict):
-        sandbox = {}
+    if not isinstance(evidence, dict) or not isinstance(evidence.get("claims"), list):
+        print("fix-verify.json outcome_evidence.claims must be array", file=sys.stderr)
+        return 1
 
     out_parts: list[str] = []
     if section in ("all", "verify"):
         out_parts.append(_md_verify_table(findings))
-    if section in ("all", "sandbox"):
-        out_parts.append(_md_sandbox_section(sandbox))
+    if section in ("all", "outcome"):
+        out_parts.append(_md_outcome_section(evidence))
 
     sys.stdout.write("\n".join(out_parts).rstrip() + "\n")
     return 0

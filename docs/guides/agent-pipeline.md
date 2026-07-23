@@ -189,8 +189,10 @@ Its fixtures in `scripts/tests/verify-pr.bats` define supported YAML shapes.
 | Every other workflow, including dispatch-only | Sandbox default branch and relevant trigger event |
 | Mixed paths | PR branch plus the most restrictive workflow target |
 
-Use `docs/guides/sandbox-verification.md` when the classifier reports
-`default-branch-only workflow` or a mixed diff with that verification floor.
+Use `docs/guides/outcome-validation.md` to select all environments and evidence
+required by the user outcome. Use `docs/guides/sandbox-verification.md` when the
+classifier reports `default-branch-only workflow` or a mixed diff with that
+verification floor.
 
 ## Labels
 

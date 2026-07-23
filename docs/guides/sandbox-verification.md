@@ -1,10 +1,13 @@
-# Sandbox Verification Playbook
+# Sibling Repository Sandbox Verification
 
 > **Audience**: Maintainers and agents shipping a change that
 > [`scripts/verify-pr.sh`](../../scripts/verify-pr.sh) classifies as a
 > **default-branch-only workflow**. This includes dispatch-only workflows.
 > See [Workflow verifiability classes](agent-pipeline.md#workflow-verifiability-classes)
 > for the verification outcomes. ADR-016 is the durable rationale.
+
+This is a specialized environment adapter. Select environments and record
+material-claim artifacts with [Outcome Validation](outcome-validation.md).
 
 ## Why this exists
 
@@ -116,10 +119,10 @@ that aren't worth surfacing publicly.
 
 ## Per-PR verification flow
 
-Use this when your Implementation Plan declares
-`Change class: default-branch-only workflow` (or `mixed`) and
-`Verification target: sandbox repo` (or `both`). The verbs follow the
-plan template's Verification section verbatim.
+Use this when the classifier reports `default-branch-only workflow` (or a
+`mixed` change containing that class) and the outcome plan selects the sibling
+GitHub repository adapter. Record the adapter under `Outcome environments` and
+capture each material claim with the canonical evidence record.
 
 ### OpenCode runtime prerequisite
 
@@ -257,8 +260,9 @@ is useful as a test artifact reviewers can inspect.
 canary files (for example a throwaway markdown file merged only to
 exercise a workflow) belong in the **sandbox repo** for that smoke run,
 not as permanent files under upstream `.sandbox/` or `.github/prompts/`.
-Record evidence via sandbox issue/PR URLs in the upstream PR's
-`## Sandbox dogfood evidence` section per ADR-029.
+Record the sandbox PR, actual trigger run, implementation SHA, redaction, and
+retention in the upstream PR's `## User outcome evidence` claim record per
+ADR-034. A sandbox issue is optional unless it improves the walkthrough.
 
 ```bash
 # Only when the trigger requires it:
@@ -292,8 +296,8 @@ before manual or agent-driven sandbox operations.
 
 ### 5. Decide
 
-- **Green** — paste a one-line link to the green sandbox run into a
-  comment on the real PR (`Sandbox verification: <run URL> — green`).
+- **Green** — record the green sandbox run in the real PR's material-claim
+  evidence, including the tested SHA and actual event.
   The maintainer can now merge here with confidence.
 - **Red** — fix the change on your PR branch, push the new tip to
   `sandbox` under the same `test/sandbox-<short-slug>` name (or to your
