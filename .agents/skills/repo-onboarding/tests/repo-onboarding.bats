@@ -41,6 +41,30 @@ write_state() {
   [ -x "$SKILL_ROOT/scripts/validate-onboarding.sh" ]
 }
 
+@test "template-seed onboarding runs project setup before lifecycle completion" {
+  reference="$SKILL_ROOT/references/template-seed.md"
+  setup_line=$(grep -n 'scripts/setup\.sh' "$reference" | cut -d: -f1)
+  complete_line=$(grep -n 'status: "complete"' "$reference" | cut -d: -f1)
+
+  [ -n "$setup_line" ]
+  [ -n "$complete_line" ]
+  [ "$setup_line" -lt "$complete_line" ]
+}
+
+@test "routine repository orientation does not run project setup" {
+  run grep -F 'Do not run `scripts/setup.sh` for `ai-repo-template` or `complete` orientation.' \
+    "$SKILL_ROOT/SKILL.md"
+
+  [ "$status" -eq 0 ]
+}
+
+@test "template-seed setup failure leaves onboarding incomplete" {
+  run grep -F 'If setup fails, stop and leave lifecycle state as `template-seed`.' \
+    "$SKILL_ROOT/references/template-seed.md"
+
+  [ "$status" -eq 0 ]
+}
+
 @test "classifier chooses ai-repo-template for the canonical repository regardless of state" {
   repo=$(make_repo template)
   git -C "$repo" remote add origin git@github.com:mikejmckinney/ai-repo-template.git
