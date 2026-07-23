@@ -65,7 +65,10 @@ jobs:
 
       - name: Rebase existing aggregate branch onto main
         if: steps.refresh-base.outputs.exists == 'true'
-        run: git rebase origin/main
+        run: >-
+          git -c user.name=github-actions[bot]
+          -c user.email=41898282+github-actions[bot]@users.noreply.github.com
+          rebase origin/main
 
       - name: Stage existing aggregate changes on main
         if: steps.refresh-base.outputs.exists == 'true'

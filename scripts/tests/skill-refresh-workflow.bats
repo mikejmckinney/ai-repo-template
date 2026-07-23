@@ -130,7 +130,9 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'ref: ${{ steps.refresh-base.outputs.ref }}' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq 'git rebase origin/main' "$WORKFLOW"
+  run grep -Fq 'git -c user.name=github-actions[bot]' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'rebase origin/main' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'git diff --binary origin/main...HEAD' "$WORKFLOW"
   [ "$status" -eq 0 ]
