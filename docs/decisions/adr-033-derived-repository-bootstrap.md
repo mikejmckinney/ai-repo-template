@@ -106,7 +106,7 @@ preserves its existing core-plus-agents behavior.
 - [x] Canonical credential manifest and script.
 - [x] Guarded manual workflow.
 - [x] Combined default tool profile.
-- [ ] Sandbox and exact-head evidence recorded in PR #520.
+- [x] Sandbox and exact-head evidence recorded in PR #520.
 
 ## References
 
