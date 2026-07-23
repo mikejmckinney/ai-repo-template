@@ -27,6 +27,10 @@ REQUIRED_FIELDS = (
 )
 SHA_PATTERN = re.compile(r"^[0-9a-f]{7,40}$")
 ARTIFACT_PATTERN = re.compile(r"^(?:https://\S+|embedded:[a-z0-9][a-z0-9._-]*)$")
+REUSE_PATTERN = re.compile(
+    r"\bpaths?\s*:\s*(?P<paths>.*?)(?:;|\n)\s*\bconditions?\s*:\s*(?P<conditions>.*?)\s*$",
+    re.IGNORECASE | re.DOTALL,
+)
 RESULTS = {"pass", "fail", "blocked"}
 PLACEHOLDERS = {"n/a", "none", "pending", "tbd", "unknown"}
 
@@ -51,6 +55,16 @@ def current_head() -> str | None:
         text=True,
     )
     return result.stdout.strip() if result.returncode == 0 else None
+
+
+def valid_reuse_analysis(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    match = REUSE_PATTERN.fullmatch(value.strip())
+    if not match:
+        return False
+    sections = (match.group("paths").strip(), match.group("conditions").strip())
+    return all(section and section.lower() not in PLACEHOLDERS for section in sections)
 
 
 def validate(payload: dict[str, Any]) -> int:
@@ -115,15 +129,10 @@ def validate(payload: dict[str, Any]) -> int:
             and isinstance(sha, str)
             and SHA_PATTERN.fullmatch(sha)
             and not head.startswith(sha)
-            and (
-                not isinstance(reuse, str)
-                or reuse.strip().lower() in PLACEHOLDERS
-                or not re.search(r"\bpaths?\s*:", reuse, re.IGNORECASE)
-                or not re.search(r"\bconditions?\s*:", reuse, re.IGNORECASE)
-            )
+            and not valid_reuse_analysis(reuse)
         ):
             failures.append(
-                f"{label}.evidence_reuse must include Paths: and Conditions: analysis for earlier-SHA evidence"
+                f"{label}.evidence_reuse must include non-empty Paths: and Conditions: analysis for earlier-SHA evidence"
             )
 
     if failures:
