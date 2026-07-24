@@ -112,7 +112,7 @@ run_tf "terraform fmt -check" fmt -check -recursive
 run_tf "terraform validate" validate
 
 # --- 7. Plan preview ---------------------------------------------------------
-run_tf "terraform plan" plan -input=false -out=tfplan
+run_tf "terraform plan" plan -input=false
 
 # --- 8. State backend --------------------------------------------------------
 run_tf "terraform state list" state list

@@ -474,9 +474,20 @@
       "sourceType": "github"
     },
     "azure-validate": {
-      "computedHash": "030f97a4cea1ca2c323ebbe4c2ebd532c5ba06829325a5f35644ae9ac5c23d36",
+      "computedHash": "fc90bc19c9bbb5bb0f1d41b21512e837c3f5ee43544fa9883d22f3943f072671",
       "destinationPath": ".agents/skills/azure/azure-validate",
       "hashAlgorithm": "sha256-tree-v1",
+      "localOverride": {
+        "issue": "https://github.com/mikejmckinney/ai-repo-template/issues/521",
+        "paths": [
+          "references/recipes/azd/scripts/set-aspire-aca-env.ps1",
+          "references/recipes/azd/scripts/set-aspire-aca-env.sh",
+          "references/recipes/terraform/scripts/validate-terraform.ps1",
+          "references/recipes/terraform/scripts/validate-terraform.sh"
+        ],
+        "reason": "Temporary correctness fixes for ambiguous Azure resource selection and persistent Terraform plan artifacts pending equivalent upstream changes.",
+        "upstreamHash": "030f97a4cea1ca2c323ebbe4c2ebd532c5ba06829325a5f35644ae9ac5c23d36"
+      },
       "ref": "1b592c63641049ff33e4952c4021c63b4507f147",
       "skillPath": "skills/azure-validate",
       "source": "microsoft/azure-skills",

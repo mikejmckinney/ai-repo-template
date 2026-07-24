@@ -139,6 +139,10 @@ layouts. Do not use `npx skills experimental_install` to restore the layout: the
 lock records upstream `skillPath` and explicit nested destinations. External
 package trees with more than one skill declare sorted `skillEntrypoints` so
 validation can discover nested skills without overlapping refresh records.
+An external record may carry a bounded `localOverride` only for a tracked
+temporary correctness fix. Validation hashes the corrected package, while
+source checks and updates fail closed until the override is removed after an
+equivalent upstream fix is verified; see `docs/guides/skill-supply-chain.md`.
 
 ## Review Lifecycle
 
@@ -245,6 +249,12 @@ to create and approve pull requests**. Because GitHub exposes no create-only
 variant, `.github/CODEOWNERS` and the `main` ruleset require maintainer
 code-owner approval before merge. Skill-refresh and review-fix publication stay
 draft and do not opt into auto-merge.
+When `install.sh` adds a missing downstream `CODEOWNERS`, it assigns every path
+to the workspace repository owner resolved from `origin`, with
+`GITHUB_REPOSITORY_OWNER` as the Codespaces fallback. If neither is available,
+the installer skips the file with a warning instead of copying this template's
+maintainer. Organization-owned repositories should replace the organization
+handle with the user or team that actually provides required approval.
 
 Inside Codespaces, the injected `GITHUB_TOKEN` may not access the sibling sandbox.
 Use command-local `GH_TOKEN="$GH_PAT"` with `GITHUB_TOKEN` unset when the configured

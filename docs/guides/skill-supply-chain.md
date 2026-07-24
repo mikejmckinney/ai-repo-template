@@ -26,6 +26,15 @@ present in the upstream package, and absent from the installed package. Changing
 an exclusion changes the hash. Use exclusions only for audited generated
 artifacts that should not be redistributed or executed.
 
+`localOverride` records a temporary repository correction to an external
+package when waiting for upstream would leave a verified defect active. It must
+declare the tracking issue, reason, original upstream hash, and sorted modified
+paths; `computedHash` remains the hash of the installed corrected package. Any
+source containing a local override fails closed during `check` and `update`, so
+an automated refresh cannot silently remove the correction. Remove the override
+only after verifying that an upstream commit contains an equivalent fix, then
+refresh normally. This is a bounded exception, not a general patch mechanism.
+
 Validate the complete local inventory before and after any manual edit:
 
 ```bash
@@ -129,6 +138,12 @@ Repository controls:
 
 - Required setting: **Allow GitHub Actions to create and approve pull requests**.
 - Merge gate: required code-owner approval on `main` through `CODEOWNERS`.
+
+The Codespaces installer renders a missing downstream `CODEOWNERS` from the
+workspace repository owner (`origin`, then `GITHUB_REPOSITORY_OWNER`). It skips
+the file with a warning when no owner is available rather than copying the
+template maintainer. For organization-owned repositories, replace the
+organization handle with the user or team responsible for required approval.
 
 The setting lets the job-scoped `GITHUB_TOKEN` open the draft. GitHub combines
 creation and review submission under that setting; it does not offer a
