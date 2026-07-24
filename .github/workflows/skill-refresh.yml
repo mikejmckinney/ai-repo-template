@@ -333,6 +333,7 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/ci-tests.yml
     with:
+      reusable_call: true
       head_sha: ${{ needs.refresh-sources.outputs.head_sha }}
 
   required-lint:
@@ -344,6 +345,7 @@ jobs:
       contents: read
     uses: ./.github/workflows/lint-and-format.yml
     with:
+      reusable_call: true
       base_sha: ${{ needs.refresh-sources.outputs.base_sha }}
       head_sha: ${{ needs.refresh-sources.outputs.head_sha }}
 
@@ -368,7 +370,7 @@ jobs:
       - name: Verify current aggregate pull request head
         id: current-pr
         run: |
-          current="$(gh pr view "$REFRESH_PR" --json headRefOid,isDraft)"
+          current="$(gh pr view "$REFRESH_PR" --repo "$GITHUB_REPOSITORY" --json headRefOid,isDraft)"
           if [[ "$(jq -r .headRefOid <<<"$current")" == "$REFRESH_HEAD" \
             && "$(jq -r .isDraft <<<"$current")" == "true" ]]; then
             echo "is_current_draft=true" >>"$GITHUB_OUTPUT"
@@ -381,7 +383,7 @@ jobs:
           steps.current-pr.outputs.is_current_draft == 'true' &&
           needs.required-ci.result == 'success' &&
           needs.required-lint.result == 'success'
-        run: gh pr ready "$REFRESH_PR"
+        run: gh pr ready "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"
 
       - name: Report failed aggregate validation
         if: >-
@@ -389,7 +391,7 @@ jobs:
           (needs.required-ci.result != 'success' ||
           needs.required-lint.result != 'success')
         run: |
-          gh pr comment "$REFRESH_PR" --body "Exact-head validation failed for \`$REFRESH_HEAD\`; this pull request remains draft.
+          gh pr comment "$REFRESH_PR" --repo "$GITHUB_REPOSITORY" --body "Exact-head validation failed for \`$REFRESH_HEAD\`; this pull request remains draft.
 
           - CI: $CI_RESULT
           - Lint: $LINT_RESULT

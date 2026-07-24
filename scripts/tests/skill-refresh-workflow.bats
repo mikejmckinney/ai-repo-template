@@ -186,6 +186,7 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'base_sha: ${{ needs.refresh-sources.outputs.base_sha }}' "$WORKFLOW"
   [ "$status" -eq 0 ]
+  [ "$(grep -Fc 'reusable_call: true' "$WORKFLOW")" -eq 2 ]
   run grep -q 'workflow_call:' "$ci_workflow"
   [ "$status" -eq 0 ]
   run grep -q 'workflow_dispatch:' "$ci_workflow"
@@ -206,6 +207,8 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'DISPATCHED_HEAD: ${{ github.sha }}' "$ci_workflow"
   [ "$status" -eq 0 ]
+  run grep -Fq 'REUSABLE_CALL: ${{ inputs.reusable_call || false }}' "$ci_workflow"
+  [ "$status" -eq 0 ]
   run grep -Fq 'test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"' "$ci_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' "$ci_workflow"
@@ -218,6 +221,8 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'DISPATCHED_HEAD: ${{ github.sha }}' "$lint_workflow"
   [ "$status" -eq 0 ]
+  run grep -Fq 'REUSABLE_CALL: ${{ inputs.reusable_call || false }}' "$lint_workflow"
+  [ "$status" -eq 0 ]
   run grep -Fq 'test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"' "$lint_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' "$lint_workflow"
@@ -227,6 +232,15 @@ EOF
   run grep -Fq 'base_ref="${{ inputs.base_sha }}"' "$lint_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'head_ref="${{ inputs.head_sha }}"' "$lint_workflow"
+  [ "$status" -eq 0 ]
+}
+
+@test "aggregate finalizer addresses its repository without a checkout" {
+  run grep -Fq 'gh pr view "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh pr ready "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh pr comment "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"' "$WORKFLOW"
   [ "$status" -eq 0 ]
 }
 

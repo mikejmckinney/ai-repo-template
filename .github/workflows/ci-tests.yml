@@ -15,6 +15,10 @@ name: CI Tests
 on:
   workflow_call:
     inputs:
+      reusable_call:
+        description: Confirms the event SHA belongs to the caller workflow
+        required: true
+        type: boolean
       head_sha:
         description: Exact generated refresh head
         required: true
@@ -62,8 +66,9 @@ jobs:
           EXPECTED_HEAD: ${{ inputs.head_sha }}
           DISPATCHED_HEAD: ${{ github.sha }}
           EVENT_NAME: ${{ github.event_name }}
+          REUSABLE_CALL: ${{ inputs.reusable_call || false }}
         run: |
-          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$REUSABLE_CALL" != "true" ]]; then
             test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"
           fi
           test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
