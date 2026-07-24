@@ -14,10 +14,9 @@
 #                       Defaults to the current/default azd environment.
 #
 # The script only sets a variable if it is currently missing, and prints what it did so the
-# result can be understood without re-inspecting `azd env get-values`:
-#   AZURE_CONTAINER_REGISTRY_ENDPOINT              <- az acr list ... [0].loginServer
-#   AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID   <- az identity list ... [0].id
-#   MANAGED_IDENTITY_CLIENT_ID                     <- az identity list ... [0].clientId
+# result can be understood without re-inspecting `azd env get-values`. Missing
+# values are resolved only when the resource group contains exactly one registry
+# and exactly one user-assigned managed identity.
 
 set -e
 
@@ -37,14 +36,14 @@ while [ $# -gt 0 ]; do
 done
 
 # Build the shared `-e <name>` argument list for azd calls (empty when no env name given).
-AZD_ENV_ARGS=""
+AZD_ENV_ARGS=()
 if [ -n "$AZD_ENV_NAME" ]; then
-  AZD_ENV_ARGS="-e $AZD_ENV_NAME"
+  AZD_ENV_ARGS=(-e "$AZD_ENV_NAME")
 fi
 
 # Capture azd environment values via command substitution so `set -e` aborts if the
 # `azd env get-values` call itself fails (rather than silently continuing with no values).
-AZD_VALUES=$(azd env get-values $AZD_ENV_ARGS)
+AZD_VALUES=$(azd env get-values "${AZD_ENV_ARGS[@]}")
 
 # get_env_value <KEY> — print the (unquoted) value of KEY from AZD_VALUES, empty if absent.
 # Uses only POSIX-friendly tools so it works on the widely-available Bash 3.2 (e.g. macOS).
@@ -62,45 +61,61 @@ if [ -z "$RG_NAME" ]; then
   exit 1
 fi
 
-# set_if_missing <ENV_VAR_NAME> <description> <resolver command...>
-# The resolver command is passed as arguments and run via "$@" — no eval.
-set_if_missing() {
+require_single_row() {
+  rows="$1"
+  resource_description="$2"
+  nonempty_rows=$(printf '%s\n' "$rows" | sed '/^[[:space:]]*$/d')
+  row_count=$(printf '%s\n' "$nonempty_rows" | sed '/^[[:space:]]*$/d' | wc -l | tr -d ' ')
+  if [ "$row_count" -ne 1 ]; then
+    echo "ERROR: Expected exactly one $resource_description in resource group '$RG_NAME'; found $row_count." >&2
+    echo "Set the corresponding azd environment values explicitly before rerunning this script." >&2
+    return 1
+  fi
+  printf '%s\n' "$nonempty_rows"
+}
+
+set_env_value() {
   var_name="$1"
-  description="$2"
-  shift 2
-
-  existing=$(get_env_value "$var_name")
-  if [ -n "$existing" ]; then
-    echo "$var_name: already present ($existing)"
-    return 0
-  fi
-
-  value=$("$@")
-  if [ -z "$value" ]; then
-    echo "ERROR: Could not resolve $var_name ($description) in resource group '$RG_NAME'." >&2
-    echo "Confirm 'azd provision' completed and the resource exists." >&2
-    exit 1
-  fi
-
-  azd env set $AZD_ENV_ARGS "$var_name" "$value"
+  value="$2"
+  azd env set "${AZD_ENV_ARGS[@]}" "$var_name" "$value"
   echo "$var_name: set to $value"
 }
 
 echo "Resource group: $RG_NAME"
 
-set_if_missing \
-  "AZURE_CONTAINER_REGISTRY_ENDPOINT" \
-  "container registry login server" \
-  az acr list --resource-group "$RG_NAME" --query "[0].loginServer" -o tsv
+registry_endpoint=$(get_env_value AZURE_CONTAINER_REGISTRY_ENDPOINT)
+if [ -n "$registry_endpoint" ]; then
+  echo "AZURE_CONTAINER_REGISTRY_ENDPOINT: already present ($registry_endpoint)"
+else
+  registry_rows=$(az acr list --resource-group "$RG_NAME" --query "[].loginServer" -o tsv)
+  registry_endpoint=$(require_single_row "$registry_rows" "Azure Container Registry")
+  set_env_value "AZURE_CONTAINER_REGISTRY_ENDPOINT" "$registry_endpoint"
+fi
 
-set_if_missing \
-  "AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID" \
-  "managed identity resource id" \
-  az identity list --resource-group "$RG_NAME" --query "[0].id" -o tsv
-
-set_if_missing \
-  "MANAGED_IDENTITY_CLIENT_ID" \
-  "managed identity client id" \
-  az identity list --resource-group "$RG_NAME" --query "[0].clientId" -o tsv
+identity_id=$(get_env_value AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID)
+identity_client_id=$(get_env_value MANAGED_IDENTITY_CLIENT_ID)
+if [ -n "$identity_id" ] && [ -n "$identity_client_id" ]; then
+  echo "AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID: already present ($identity_id)"
+  echo "MANAGED_IDENTITY_CLIENT_ID: already present ($identity_client_id)"
+else
+  identity_rows=$(az identity list --resource-group "$RG_NAME" --query "[].[id,clientId]" -o tsv)
+  identity_row=$(require_single_row "$identity_rows" "user-assigned managed identity")
+  resolved_identity_id=$(printf '%s\n' "$identity_row" | cut -f1)
+  resolved_identity_client_id=$(printf '%s\n' "$identity_row" | cut -f2)
+  if [ -z "$resolved_identity_id" ] || [ -z "$resolved_identity_client_id" ]; then
+    echo "ERROR: The managed identity response did not include both id and clientId." >&2
+    exit 1
+  fi
+  if [ -z "$identity_id" ]; then
+    set_env_value "AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID" "$resolved_identity_id"
+  else
+    echo "AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID: already present ($identity_id)"
+  fi
+  if [ -z "$identity_client_id" ]; then
+    set_env_value "MANAGED_IDENTITY_CLIENT_ID" "$resolved_identity_client_id"
+  else
+    echo "MANAGED_IDENTITY_CLIENT_ID: already present ($identity_client_id)"
+  fi
+fi
 
 echo "Aspire Container Apps environment variables are ready for 'azd deploy'."

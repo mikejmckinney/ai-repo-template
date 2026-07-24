@@ -118,7 +118,7 @@ Invoke-Tf "terraform fmt -check" @("fmt", "-check", "-recursive")
 Invoke-Tf "terraform validate" @("validate")
 
 # --- 7. Plan preview ---------------------------------------------------------
-Invoke-Tf "terraform plan" @("plan", "-input=false", "-out=tfplan")
+Invoke-Tf "terraform plan" @("plan", "-input=false")
 
 # --- 8. State backend --------------------------------------------------------
 Invoke-Tf "terraform state list" @("state", "list")

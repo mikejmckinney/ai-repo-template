@@ -226,6 +226,45 @@ def confined_destination(repo: Path, value: object, field: str) -> Path:
     return destination
 
 
+def validate_local_override(key: str, record: dict, destination: Path) -> None:
+    value = record.get("localOverride")
+    if value is None:
+        return
+    if not isinstance(value, dict) or set(value) != {
+        "issue",
+        "paths",
+        "reason",
+        "upstreamHash",
+    }:
+        raise SupplyChainError(
+            f"external skill {key} localOverride must contain issue, paths, reason, and upstreamHash"
+        )
+    if not isinstance(value["issue"], str) or not re.fullmatch(
+        r"https://github\.com/[^/]+/[^/]+/issues/[1-9][0-9]*", value["issue"]
+    ):
+        raise SupplyChainError(f"external skill {key} localOverride issue must be a GitHub issue URL")
+    if not isinstance(value["reason"], str) or not value["reason"].strip():
+        raise SupplyChainError(f"external skill {key} localOverride reason must be non-empty")
+    if not isinstance(value["upstreamHash"], str) or not HASH_PATTERN.fullmatch(
+        value["upstreamHash"]
+    ):
+        raise SupplyChainError(f"external skill {key} localOverride upstreamHash is invalid")
+    if value["upstreamHash"] == record["computedHash"]:
+        raise SupplyChainError(f"external skill {key} localOverride does not change package content")
+    paths = value["paths"]
+    if not isinstance(paths, list) or not paths or paths != sorted(set(paths)):
+        raise SupplyChainError(
+            f"external skill {key} localOverride paths must be a sorted non-empty unique array"
+        )
+    for item in paths:
+        relative = safe_relative_path(item, f"external skill {key} localOverride paths")
+        path = destination.joinpath(*relative.parts)
+        if path.is_symlink() or not path.is_file():
+            raise SupplyChainError(
+                f"external skill {key} localOverride path is missing or not a regular file: {relative}"
+            )
+
+
 def validate_external_record(repo: Path, key: str, record: object) -> list[tuple[Path, str]]:
     if not isinstance(record, dict):
         raise SupplyChainError(f"external skill record must be an object: {key}")
@@ -264,6 +303,7 @@ def validate_external_record(repo: Path, key: str, record: object) -> list[tuple
     entrypoints = skill_entrypoints(record, key, package_type)
 
     destination = confined_destination(repo, record["destinationPath"], f"external skill {key} destinationPath")
+    validate_local_override(key, record, destination)
     for exclusion in exclusions:
         if destination.joinpath(*exclusion.parts).exists():
             raise SupplyChainError(
@@ -551,6 +591,13 @@ def source_packages(
     ]
     if not selected:
         raise SupplyChainError(f"source is not declared in the lock: {source}")
+
+    local_overrides = [key for key, record in selected if record.get("localOverride") is not None]
+    if local_overrides:
+        raise SupplyChainError(
+            f"source has local overrides that block refresh: {', '.join(local_overrides)}; "
+            "remove each override only after its upstream fix is present"
+        )
 
     old_refs = {record["ref"] for _, record in selected}
     if len(old_refs) != 1:

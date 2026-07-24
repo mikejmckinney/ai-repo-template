@@ -218,12 +218,66 @@ copy_template_file() {
   MULTIAGENT_COPIED=$((MULTIAGENT_COPIED + 1))
 }
 
+resolve_workspace_owner() {
+  local remote_url=""
+  local repository_path=""
+  local owner=""
+
+  remote_url="$(git -C "$WORKSPACE" remote get-url origin 2>/dev/null || true)"
+  case "$remote_url" in
+    https://github.com/* | http://github.com/* | ssh://git@github.com/* | git://github.com/*)
+      repository_path="${remote_url#*github.com/}"
+      ;;
+    git@github.com:*)
+      repository_path="${remote_url#git@github.com:}"
+      ;;
+  esac
+
+  if [[ -n "$repository_path" && "$repository_path" == */* ]]; then
+    owner="${repository_path%%/*}"
+  elif [[ -n "${GITHUB_REPOSITORY_OWNER:-}" ]]; then
+    owner="$GITHUB_REPOSITORY_OWNER"
+  fi
+
+  if [[ ! "$owner" =~ ^[A-Za-z0-9-]+$ ]]; then
+    return 1
+  fi
+  printf '%s\n' "$owner"
+}
+
+copy_codeowners() {
+  local rel_path=".github/CODEOWNERS"
+  local src="$DOTFILES/$rel_path"
+  local dst="$WORKSPACE/$rel_path"
+  local owner=""
+
+  if [[ ! -f "$src" ]]; then
+    log_warn "  ⚠ Source missing: $rel_path"
+    MULTIAGENT_MISSING=$((MULTIAGENT_MISSING + 1))
+    return
+  fi
+  if [[ -e "$dst" ]]; then
+    log_info "  = Exists: $rel_path (skipping)"
+    MULTIAGENT_SKIPPED=$((MULTIAGENT_SKIPPED + 1))
+    return
+  fi
+  if ! owner="$(resolve_workspace_owner)"; then
+    log_warn "  ⚠ Could not resolve workspace repository owner; skipping $rel_path"
+    MULTIAGENT_SKIPPED=$((MULTIAGENT_SKIPPED + 1))
+    return
+  fi
+
+  mkdir -p "$(dirname "$dst")"
+  printf '* @%s\n' "$owner" >"$dst"
+  log_info "  ✓ Copied: $rel_path (owner: @$owner)"
+  MULTIAGENT_COPIED=$((MULTIAGENT_COPIED + 1))
+}
+
 log_info "Installing agent workflow kit..."
 
 MULTIAGENT_FILES=(
   "AGENT.md"
   "CLAUDE.md"
-  ".github/CODEOWNERS"
   ".github/PLAN_TEMPLATE.md"
   ".github/pull_request_template.md"
   ".github/templates/issue-implementation-plan.md"
@@ -311,6 +365,7 @@ MULTIAGENT_FILES=(
   "docs/research/.gitkeep"
 )
 
+copy_codeowners
 for rel in "${MULTIAGENT_FILES[@]}"; do
   copy_template_file "$rel"
 done

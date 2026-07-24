@@ -597,6 +597,62 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "local overrides validate but block source refresh until removed" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  upstream_hash="$output"
+  write_lock "$upstream_hash"
+
+  printf '\nlocal correctness fix\n' >>"$FIXTURE_ROOT/.agents/skills/acme/SKILL.md"
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  local_hash="$output"
+  jq --arg local_hash "$local_hash" --arg upstream_hash "$upstream_hash" '
+    .skills.acme.computedHash = $local_hash |
+    .skills.acme.localOverride = {
+      issue: "https://github.com/example/repo/issues/1",
+      reason: "Temporary local correctness fix pending upstream support.",
+      upstreamHash: $upstream_hash,
+      paths: ["SKILL.md"]
+    }
+  ' "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  run python3 "$TOOL" validate-lock \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+
+  upstream="$BATS_TEST_TMPDIR/upstream-local-override"
+  mkdir -p "$upstream/skills/acme"
+  cp "$FIXTURE_ROOT/.agents/skills/acme/SKILL.md" "$upstream/skills/acme/SKILL.md"
+  run python3 "$TOOL" check \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json" \
+    --source "example/acme-skills" \
+    --source-dir "$upstream" \
+    --ref "1111111111111111111111111111111111111111"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"source has local overrides"*"acme"* ]]
+}
+
+@test "local override metadata fails closed when incomplete" {
+  run python3 "$TOOL" hash --package "$FIXTURE_ROOT/.agents/skills/acme"
+  [ "$status" -eq 0 ]
+  write_lock "$output"
+  jq '.skills.acme.localOverride = {reason: "missing evidence"}' \
+    "$FIXTURE_ROOT/skills-lock.json" >"$FIXTURE_ROOT/skills-lock.next"
+  mv "$FIXTURE_ROOT/skills-lock.next" "$FIXTURE_ROOT/skills-lock.json"
+
+  run python3 "$TOOL" validate-lock \
+    --repo "$FIXTURE_ROOT" \
+    --lock "$FIXTURE_ROOT/skills-lock.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"localOverride"* ]]
+}
+
 @test "repository lock classifies and verifies every installed skill" {
   run python3 "$TOOL" validate-lock \
     --repo "$REPO_ROOT" \
