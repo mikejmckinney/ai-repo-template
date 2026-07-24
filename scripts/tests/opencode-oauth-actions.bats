@@ -155,7 +155,7 @@ for path in (
     "scripts/workflows/lib/opencode-oauth.sh",
     "scripts/workflows/lib/run-cursor-fix.sh",
     "scripts/workflows/lib/run-fix-provider-cascade.sh",
-    "scripts/workflows/lib/dispatch-and-wait-workflow.sh",
+    "scripts/workflows/lib/finalize-skill-refresh.sh",
     "scripts/workflows/lib/validate-fix-verification.py",
 ):
     assert f'"{path}"' in match.group("body"), path

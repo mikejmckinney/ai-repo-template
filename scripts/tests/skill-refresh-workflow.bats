@@ -6,7 +6,8 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   SCANNER="$REPO_ROOT/scripts/scan-skill-secrets.py"
   WORKFLOW="$REPO_ROOT/.github/workflows/skill-refresh.yml"
-  CHECK_GATE="$REPO_ROOT/scripts/workflows/lib/dispatch-and-wait-workflow.sh"
+  FINALIZER_WORKFLOW="$REPO_ROOT/.github/workflows/skill-refresh-finalize.yml"
+  FINALIZER="$REPO_ROOT/scripts/workflows/lib/finalize-skill-refresh.sh"
   FIXTURE_ROOT="$BATS_TEST_TMPDIR/secret-fixtures"
   mkdir -p "$FIXTURE_ROOT"
 }
@@ -70,23 +71,25 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'draft: always-true' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq 'dispatch-and-wait-workflow.sh' "$WORKFLOW"
+  run grep -Fq 'gh workflow run ci-tests.yml' "$WORKFLOW"
   [ "$status" -eq 0 ]
+  run grep -Fq 'gh workflow run lint-and-format.yml' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh run watch' "$WORKFLOW"
+  [ "$status" -eq 1 ]
   run grep -Fq 'gh pr ready' "$WORKFLOW"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 1 ]
   run grep -q 'delete-branch: false' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'docs/guides/skill-supply-chain.md' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'render-license-inventory' "$REPO_ROOT/scripts/skill-supply-chain.py"
   [ "$status" -eq 0 ]
-  run grep -Fq 'ci-tests.yml "$REFRESH_BRANCH" "$REFRESH_HEAD"' "$WORKFLOW"
+  run grep -Fq 'gh workflow run ci-tests.yml --ref "$REFRESH_BRANCH"' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq 'lint-and-format.yml "$REFRESH_BRANCH" "$REFRESH_HEAD"' "$WORKFLOW"
+  run grep -Fq 'gh workflow run lint-and-format.yml --ref "$REFRESH_BRANCH"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'REFRESH_BRANCH: automation/skill-refresh/all' "$WORKFLOW"
-  [ "$status" -eq 0 ]
-  run grep -Fq 'gh workflow run "$workflow" --ref "$branch" "$@"' "$CHECK_GATE"
   [ "$status" -eq 0 ]
   run grep -q "if: steps.refresh.outputs.content_changed == 'true'" "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -112,70 +115,118 @@ EOF
   [ "$status" -eq 1 ]
 }
 
-@test "exact-head workflow gate waits for the newly dispatched run" {
+@test "completion finalizer marks the current exact-head aggregate PR ready" {
   stub_dir="$BATS_TEST_TMPDIR/bin"
   log="$BATS_TEST_TMPDIR/gh.log"
-  state="$BATS_TEST_TMPDIR/dispatched"
   mkdir -p "$stub_dir"
   cat >"$stub_dir/gh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 printf '%s\n' "$*" >>"$GH_LOG"
-if [[ "$1 $2" == "run list" ]]; then
-  if [[ -f "$GH_STATE" ]]; then
-    printf '%s\n' '[{"databaseId":22,"headSha":"expected-head","createdAt":"2026-07-24T06:00:01Z"},{"databaseId":11,"headSha":"old-head","createdAt":"2026-07-23T06:00:01Z"}]'
-  else
-    printf '%s\n' '[{"databaseId":11,"headSha":"old-head","createdAt":"2026-07-23T06:00:01Z"}]'
-  fi
-elif [[ "$1 $2" == "workflow run" ]]; then
-  touch "$GH_STATE"
-elif [[ "$1 $2" == "run watch" ]]; then
-  [[ "$3" == "22" && "$4" == "--exit-status" ]]
+if [[ "$1 $2" == "pr list" ]]; then
+  printf '%s\n' '[{"number":192,"isDraft":true,"headRefOid":"expected-head"}]'
+elif [[ "$1 $2" == "run list" && "$*" == *"--workflow ci-tests.yml"* ]]; then
+  printf '%s\n' '[{"headSha":"expected-head","status":"completed","conclusion":"success","createdAt":"2026-07-24T06:00:01Z","url":"https://example.test/ci"}]'
+elif [[ "$1 $2" == "run list" && "$*" == *"--workflow lint-and-format.yml"* ]]; then
+  printf '%s\n' '[{"headSha":"expected-head","status":"completed","conclusion":"success","createdAt":"2026-07-24T06:00:02Z","url":"https://example.test/lint"}]'
+elif [[ "$1 $2" == "pr view" ]]; then
+  printf '%s\n' '{"isDraft":true,"headRefOid":"expected-head"}'
+elif [[ "$1 $2" == "pr ready" ]]; then
+  [[ "$3" == "192" ]]
 else
   exit 2
 fi
 EOF
   chmod +x "$stub_dir/gh"
 
-  run env PATH="$stub_dir:$PATH" GH_LOG="$log" GH_STATE="$state" \
-    bash "$CHECK_GATE" ci-tests.yml automation/skill-refresh/all expected-head \
-    -f head_sha=expected-head
+  run env PATH="$stub_dir:$PATH" GH_LOG="$log" \
+    bash "$FINALIZER" automation/skill-refresh/all expected-head
 
   [ "$status" -eq 0 ]
-  run grep -Fq 'workflow run ci-tests.yml --ref automation/skill-refresh/all -f head_sha=expected-head' "$log"
-  [ "$status" -eq 0 ]
-  run grep -Fq 'run watch 22 --exit-status' "$log"
+  run grep -Fq 'pr ready 192' "$log"
   [ "$status" -eq 0 ]
 }
 
-@test "exact-head workflow gate propagates a failed run" {
+@test "completion finalizer leaves the PR draft when an exact-head check fails" {
   stub_dir="$BATS_TEST_TMPDIR/failing-bin"
-  state="$BATS_TEST_TMPDIR/failing-dispatched"
+  log="$BATS_TEST_TMPDIR/failing-gh.log"
   mkdir -p "$stub_dir"
   cat >"$stub_dir/gh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-if [[ "$1 $2" == "run list" ]]; then
-  if [[ -f "$GH_STATE" ]]; then
-    printf '%s\n' '[{"databaseId":33,"headSha":"expected-head","createdAt":"2026-07-24T06:00:01Z"}]'
-  else
-    printf '%s\n' '[]'
-  fi
-elif [[ "$1 $2" == "workflow run" ]]; then
-  touch "$GH_STATE"
-elif [[ "$1 $2" == "run watch" ]]; then
-  exit 1
+printf '%s\n' "$*" >>"$GH_LOG"
+if [[ "$1 $2" == "pr list" ]]; then
+  printf '%s\n' '[{"number":192,"isDraft":true,"headRefOid":"expected-head"}]'
+elif [[ "$1 $2" == "run list" && "$*" == *"--workflow ci-tests.yml"* ]]; then
+  printf '%s\n' '[{"headSha":"expected-head","status":"completed","conclusion":"failure","createdAt":"2026-07-24T06:00:01Z","url":"https://example.test/ci"}]'
+elif [[ "$1 $2" == "run list" && "$*" == *"--workflow lint-and-format.yml"* ]]; then
+  printf '%s\n' '[{"headSha":"expected-head","status":"completed","conclusion":"success","createdAt":"2026-07-24T06:00:02Z","url":"https://example.test/lint"}]'
+elif [[ "$1 $2" == "pr view" ]]; then
+  printf '%s\n' '{"isDraft":true,"headRefOid":"expected-head"}'
+elif [[ "$1" == "api" ]]; then
+  printf '%s\n' ''
+elif [[ "$1 $2" == "pr comment" ]]; then
+  exit 0
 else
   exit 2
 fi
 EOF
   chmod +x "$stub_dir/gh"
 
-  run env PATH="$stub_dir:$PATH" GH_STATE="$state" \
-    bash "$CHECK_GATE" ci-tests.yml automation/skill-refresh/all expected-head \
-    -f head_sha=expected-head
+  run env PATH="$stub_dir:$PATH" GH_LOG="$log" \
+    bash "$FINALIZER" automation/skill-refresh/all expected-head
 
+  [ "$status" -eq 0 ]
+  run grep -Fq 'pr comment 192' "$log"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'pr ready' "$log"
   [ "$status" -eq 1 ]
+}
+
+@test "completion finalizer waits while an exact-head check is incomplete" {
+  stub_dir="$BATS_TEST_TMPDIR/pending-bin"
+  log="$BATS_TEST_TMPDIR/pending-gh.log"
+  mkdir -p "$stub_dir"
+  cat >"$stub_dir/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$GH_LOG"
+if [[ "$1 $2" == "pr list" ]]; then
+  printf '%s\n' '[{"number":192,"isDraft":true,"headRefOid":"expected-head"}]'
+elif [[ "$1 $2" == "run list" && "$*" == *"--workflow ci-tests.yml"* ]]; then
+  printf '%s\n' '[{"headSha":"expected-head","status":"completed","conclusion":"success","createdAt":"2026-07-24T06:00:01Z","url":"https://example.test/ci"}]'
+elif [[ "$1 $2" == "run list" && "$*" == *"--workflow lint-and-format.yml"* ]]; then
+  printf '%s\n' '[{"headSha":"expected-head","status":"in_progress","conclusion":"","createdAt":"2026-07-24T06:00:02Z","url":"https://example.test/lint"}]'
+else
+  exit 2
+fi
+EOF
+  chmod +x "$stub_dir/gh"
+
+  run env PATH="$stub_dir:$PATH" GH_LOG="$log" \
+    bash "$FINALIZER" automation/skill-refresh/all expected-head
+
+  [ "$status" -eq 0 ]
+  run grep -Eq 'pr (ready|comment)' "$log"
+  [ "$status" -eq 1 ]
+}
+
+@test "completion finalizer workflow handles exact-head check completions" {
+  [ -f "$FINALIZER_WORKFLOW" ]
+  run grep -Fq 'workflows: ["CI Tests", "Lint and Format"]' "$FINALIZER_WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'types: [completed]' "$FINALIZER_WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq "github.event.workflow_run.event == 'workflow_dispatch'" "$FINALIZER_WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'finalize-skill-refresh.sh' "$FINALIZER_WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'contents: read' "$FINALIZER_WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'actions: read' "$FINALIZER_WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'pull-requests: write' "$FINALIZER_WORKFLOW"
+  [ "$status" -eq 0 ]
 }
 
 @test "aggregate refresh processes sources sequentially with source rollback" {
