@@ -102,13 +102,26 @@ if ($identityId -and $identityClientId) {
         Write-Error "Expected exactly one user-assigned managed identity in resource group '$rgName'; found $($identities.Count). Set the managed identity azd environment values explicitly before rerunning this script."
         exit 1
     }
+    $resolvedIdentity = $identities[0]
+    if (-not $resolvedIdentity.id -or -not $resolvedIdentity.clientId) {
+        Write-Error "The managed identity response did not include both id and clientId."
+        exit 1
+    }
+    if ($identityId -and $identityId -ine $resolvedIdentity.id) {
+        Write-Error "AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID does not match the discovered managed identity. Set both managed identity azd environment values explicitly before rerunning this script."
+        exit 1
+    }
+    if ($identityClientId -and $identityClientId -ine $resolvedIdentity.clientId) {
+        Write-Error "MANAGED_IDENTITY_CLIENT_ID does not match the discovered managed identity. Set both managed identity azd environment values explicitly before rerunning this script."
+        exit 1
+    }
     if (-not $identityId) {
-        Set-EnvironmentValue -VarName 'AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID' -Value $identities[0].id
+        Set-EnvironmentValue -VarName 'AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID' -Value $resolvedIdentity.id
     } else {
         Write-Host "AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID: already present ($identityId)"
     }
     if (-not $identityClientId) {
-        Set-EnvironmentValue -VarName 'MANAGED_IDENTITY_CLIENT_ID' -Value $identities[0].clientId
+        Set-EnvironmentValue -VarName 'MANAGED_IDENTITY_CLIENT_ID' -Value $resolvedIdentity.clientId
     } else {
         Write-Host "MANAGED_IDENTITY_CLIENT_ID: already present ($identityClientId)"
     }

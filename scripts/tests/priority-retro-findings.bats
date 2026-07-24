@@ -64,13 +64,21 @@ make_azure_stubs() {
 printf '%s\n' "$*" >>"$AZD_LOG"
 if [[ "$1 $2" == "env get-values" ]]; then
   printf '%s\n' 'AZURE_RESOURCE_GROUP="example-rg"'
+  if [[ -n "${AZD_VALUES_EXTRA:-}" ]]; then
+    printf '%s\n' "$AZD_VALUES_EXTRA"
+  fi
 fi
 EOF
 
   cat >"$TEST_ROOT/bin/az" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"$AZ_LOG"
-case "$1 $2:${RESOURCE_SCENARIO:-single}" in
+if [[ "$1 $2" == "acr list" ]]; then
+  scenario="${ACR_SCENARIO:-${RESOURCE_SCENARIO:-single}}"
+else
+  scenario="${IDENTITY_SCENARIO:-${RESOURCE_SCENARIO:-single}}"
+fi
+case "$1 $2:$scenario" in
   "acr list:zero"|"identity list:zero") ;;
   "acr list:single") printf '%s\n' 'example.azurecr.io' ;;
   "acr list:multiple") printf '%s\n' 'first.azurecr.io' 'second.azurecr.io' ;;
@@ -120,6 +128,30 @@ EOF
   [ ! -s "$AZD_LOG" ] || ! grep -q '^env set ' "$AZD_LOG"
 }
 
+@test "Aspire Bash helper rejects ambiguous managed identities independently" {
+  make_azure_stubs
+
+  run env PATH="$TEST_ROOT/bin:$PATH" ACR_SCENARIO=single IDENTITY_SCENARIO=multiple \
+    /bin/bash "$REPO_ROOT/.agents/skills/azure/azure-validate/references/recipes/azd/scripts/set-aspire-aca-env.sh"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Expected exactly one user-assigned managed identity"* ]]
+  ! grep -q 'env set AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID' "$AZD_LOG"
+  ! grep -q 'env set MANAGED_IDENTITY_CLIENT_ID' "$AZD_LOG"
+}
+
+@test "Aspire Bash helper rejects a mismatched partially configured identity" {
+  make_azure_stubs
+
+  run env PATH="$TEST_ROOT/bin:$PATH" RESOURCE_SCENARIO=single \
+    AZD_VALUES_EXTRA='AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID="/subscriptions/example/identities/other"' \
+    /bin/bash "$REPO_ROOT/.agents/skills/azure/azure-validate/references/recipes/azd/scripts/set-aspire-aca-env.sh"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID does not match"* ]]
+  ! grep -q 'env set MANAGED_IDENTITY_CLIENT_ID' "$AZD_LOG"
+}
+
 @test "Aspire PowerShell helper no longer selects independent first resources" {
   helper="$REPO_ROOT/.agents/skills/azure/azure-validate/references/recipes/azd/scripts/set-aspire-aca-env.ps1"
 
@@ -128,6 +160,8 @@ EOF
   [ "$(grep -c 'az identity list' "$helper")" -eq 1 ]
   grep -Fq 'Expected exactly one Azure Container Registry' "$helper"
   grep -Fq 'Expected exactly one user-assigned managed identity' "$helper"
+  grep -Fq 'AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID does not match' "$helper"
+  grep -Fq 'MANAGED_IDENTITY_CLIENT_ID does not match' "$helper"
 }
 
 make_terraform_stubs() {

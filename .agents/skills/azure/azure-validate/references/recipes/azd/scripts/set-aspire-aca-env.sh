@@ -81,6 +81,13 @@ set_env_value() {
   echo "$var_name: set to $value"
 }
 
+equals_case_insensitive() {
+  local left right
+  left=$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')
+  right=$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]')
+  [ "$left" = "$right" ]
+}
+
 echo "Resource group: $RG_NAME"
 
 registry_endpoint=$(get_env_value AZURE_CONTAINER_REGISTRY_ENDPOINT)
@@ -104,6 +111,16 @@ else
   resolved_identity_client_id=$(printf '%s\n' "$identity_row" | cut -f2)
   if [ -z "$resolved_identity_id" ] || [ -z "$resolved_identity_client_id" ]; then
     echo "ERROR: The managed identity response did not include both id and clientId." >&2
+    exit 1
+  fi
+  if [ -n "$identity_id" ] && ! equals_case_insensitive "$identity_id" "$resolved_identity_id"; then
+    echo "ERROR: AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID does not match the discovered managed identity." >&2
+    echo "Set both managed identity azd environment values explicitly before rerunning this script." >&2
+    exit 1
+  fi
+  if [ -n "$identity_client_id" ] && ! equals_case_insensitive "$identity_client_id" "$resolved_identity_client_id"; then
+    echo "ERROR: MANAGED_IDENTITY_CLIENT_ID does not match the discovered managed identity." >&2
+    echo "Set both managed identity azd environment values explicitly before rerunning this script." >&2
     exit 1
   fi
   if [ -z "$identity_id" ]; then

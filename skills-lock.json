@@ -474,7 +474,7 @@
       "sourceType": "github"
     },
     "azure-validate": {
-      "computedHash": "3aaf43559994f3c191cc80ae4fd2c238aafb6cfb73eaeb58a702081c20ae967f",
+      "computedHash": "fc90bc19c9bbb5bb0f1d41b21512e837c3f5ee43544fa9883d22f3943f072671",
       "destinationPath": ".agents/skills/azure/azure-validate",
       "hashAlgorithm": "sha256-tree-v1",
       "localOverride": {
