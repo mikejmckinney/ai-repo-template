@@ -106,7 +106,6 @@ returns failure to the existing provider cascade instead of consuming the
 | `.github/workflows/agent-advisory-review.yml` | Label-gated, non-blocking sticky advisory comment |
 | `.github/workflows/agent-postmerge-retro.yml` | Scheduled daily retro and draft-fix lifecycle |
 | `.github/workflows/agent-weekly-review.yml` | Scheduled weekly scan and draft-fix lifecycle |
-| `.github/workflows/skill-refresh-finalize.yml` | Exact-head CI/lint completion gate for aggregate skill refresh PRs |
 | `.github/agent-runtime/` | Locked OpenCode dependencies and review/fix permission profiles |
 | `.agents/skills/` | Canonical skills, including multi-model consensus and nested provider skill sets |
 | `.agents/skills/repo-onboarding/assets/DESIGN.md` | Canonical on-demand design-contract source for verified UI projects |

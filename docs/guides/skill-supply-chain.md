@@ -119,27 +119,24 @@ write. A material package change:
 7. opens or updates one draft PR with every successful source's refs, packages,
    hashes, generated license evidence, validation evidence, and failed-source
    summary;
-8. explicitly dispatches required CI and lint workflows on the generated branch
-   and completes without occupying a runner while those checks execute;
-9. lets `.github/workflows/skill-refresh-finalize.yml` correlate both completed
-   runs to the current PR head, mark the PR ready only when both pass, or leave it
-   draft with a failed-run comment. GitHub leaves `pull_request` runs created by
-   `GITHUB_TOKEN` awaiting maintainer approval, so those runs are not the
-   automated completion gate.
+8. releases the publishing runner, then invokes CI and lint as reusable jobs on
+   the generated head;
+9. runs a final job that correlates both results to the current PR head, marks the
+   PR ready only when both pass, or leaves it draft with a failure comment. GitHub
+   leaves `pull_request` runs created by `GITHUB_TOKEN` awaiting maintainer
+   approval, so those runs are not the automated completion gate.
 
 If one source fails but another validates, the failed source remains unchanged
 and the validated sources can still publish. The workflow run records every
 failure; a mixed-result PR also lists the rolled-back sources. If every changed
 source fails, the run fails and no new publication is created.
 
-The workflow has `contents: write`, `pull-requests: write`, and `actions: write`
-because it must push the aggregate branch and dispatch the existing required
-workflows at that exact branch head. The completion finalizer has only
-`actions: read`, `contents: read`, and `pull-requests: write`; it cannot use the
-merge endpoint, which requires contents write. Neither workflow has an auto-merge
-path. Generated commits cannot include workflow or repository script changes;
-the downloaded packages are treated as data and are never run by the publishing
-job.
+The publishing job has `contents: write` and `pull-requests: write` because it
+must push the aggregate branch and maintain its draft PR. The final job has only
+`contents: read` and `pull-requests: write`; it cannot use the merge endpoint,
+which requires contents write. The workflow has no auto-merge path. Generated
+commits cannot include workflow or repository script changes; the downloaded
+packages are treated as data and are never run by the publishing job.
 
 Repository controls:
 
