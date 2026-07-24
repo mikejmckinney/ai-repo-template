@@ -315,7 +315,7 @@ jobs:
             dependencies
           draft: always-true
 
-      - name: Dispatch required checks for the generated head
+      - name: Run required checks for the generated head
         if: >-
           steps.refresh.outputs.content_changed == 'true' &&
           steps.create-pr.outputs.pull-request-operation != 'none'
@@ -325,10 +325,22 @@ jobs:
           REFRESH_HEAD: ${{ steps.create-pr.outputs.pull-request-head-sha }}
           REFRESH_BASE: ${{ steps.refresh.outputs.base_sha }}
         run: |
-          gh workflow run ci-tests.yml \
-            --ref "$REFRESH_BRANCH" \
+          bash scripts/workflows/lib/dispatch-and-wait-workflow.sh \
+            ci-tests.yml "$REFRESH_BRANCH" "$REFRESH_HEAD" \
             -f head_sha="$REFRESH_HEAD"
-          gh workflow run lint-and-format.yml \
-            --ref "$REFRESH_BRANCH" \
+          bash scripts/workflows/lib/dispatch-and-wait-workflow.sh \
+            lint-and-format.yml "$REFRESH_BRANCH" "$REFRESH_HEAD" \
             -f base_sha="$REFRESH_BASE" \
             -f head_sha="$REFRESH_HEAD"
+
+      - name: Mark validated aggregate pull request ready for review
+        if: >-
+          steps.refresh.outputs.content_changed == 'true' &&
+          steps.create-pr.outputs.pull-request-operation != 'none'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REFRESH_PR: ${{ steps.create-pr.outputs.pull-request-number }}
+        run: |
+          if [[ "$(gh pr view "$REFRESH_PR" --json isDraft --jq .isDraft)" == "true" ]]; then
+            gh pr ready "$REFRESH_PR"
+          fi

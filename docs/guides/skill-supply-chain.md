@@ -99,12 +99,13 @@ mismatch. Package removal requires an explicit reviewed lock and destination cha
 dispatch. A manual run can set `source` to one declared `owner/repository` value;
 an empty value checks every external source.
 
-The workflow creates or updates one stable aggregate branch and draft PR:
-`automation/skill-refresh/all`. A targeted manual dispatch starts from that same
-branch, so it updates the existing aggregate review instead of creating a second
-publication path. Sources are processed sequentially, and all skills from one
-source still update atomically. A ref-only result stops before any write. A
-material package change:
+The workflow creates or updates one stable aggregate branch and review PR:
+`automation/skill-refresh/all`. The PR starts as a draft and becomes ready only
+after exact-head CI and lint both pass. A targeted manual dispatch starts from
+that same branch, so it updates the existing aggregate review instead of creating
+a second publication path. Sources are processed sequentially, and all skills
+from one source still update atomically. A ref-only result stops before any
+write. A material package change:
 
 1. updates only that source's packages and lock records;
 2. verifies source-level license evidence at the proposed immutable commit and
@@ -118,9 +119,10 @@ material package change:
 7. opens or updates one draft PR with every successful source's refs, packages,
    hashes, generated license evidence, validation evidence, and failed-source
    summary;
-8. explicitly dispatches required CI and lint workflows on the generated branch
-   because `GITHUB_TOKEN`-created pull requests do not emit ordinary
-   `pull_request` workflow runs.
+8. explicitly dispatches required CI and lint workflows on the generated branch,
+   waits for both exact-head runs to pass, and then marks the PR ready. GitHub
+   leaves `pull_request` runs created by `GITHUB_TOKEN` awaiting maintainer
+   approval, so those runs are not the automated completion gate.
 
 If one source fails but another validates, the failed source remains unchanged
 and the validated sources can still publish. The workflow run records every
@@ -128,11 +130,11 @@ failure; a mixed-result PR also lists the rolled-back sources. If every changed
 source fails, the run fails and no new publication is created.
 
 The workflow has `contents: write`, `pull-requests: write`, and `actions: write`
-because it must push the aggregate branch, maintain the draft PR, and dispatch the
-existing required workflows at that exact branch head. It has no auto-merge
-path. Generated commits cannot include workflow or repository script changes;
-the downloaded packages are treated as data and are never run by the publishing
-job.
+because it must push the aggregate branch, maintain PR readiness, and dispatch
+and observe the existing required workflows at that exact branch head. It has no
+auto-merge path. Generated commits cannot include workflow or repository script
+changes; the downloaded packages are treated as data and are never run by the
+publishing job.
 
 Repository controls:
 
@@ -145,10 +147,10 @@ the file with a warning when no owner is available rather than copying the
 template maintainer. For organization-owned repositories, replace the
 organization handle with the user or team responsible for required approval.
 
-The setting lets the job-scoped `GITHUB_TOKEN` open the draft. GitHub combines
-creation and review submission under that setting; it does not offer a
-create-only switch. The separate merge gate prevents the creating workflow from
-satisfying maintainer review. Keep refresh PRs draft and never apply
+The setting lets the job-scoped `GITHUB_TOKEN` open the draft and later mark it
+ready after validation. GitHub combines creation and review submission under that
+setting; it does not offer a create-only switch. The separate code-owner gate
+prevents the creating workflow from satisfying maintainer review. Never apply
 `auto-merge`.
 
 ### Human review checklist

@@ -6,6 +6,7 @@ run_fix_provider_cascade() {
   local batch_json="$9" verify_relative_path="${10}"
   local verify_command="${FIX_PROVIDER_VERIFY_COMMAND:-./test.sh}"
   local attempt_root active_worktree attempt_output patch_file provider
+  local batch_relative_path attempt_batch_json
   local -a provider_candidates=()
 
   mapfile -t provider_candidates < <(list_advisory_providers "$mode")
@@ -14,12 +15,21 @@ run_fix_provider_cascade() {
     return 1
   fi
 
+  if [[ "$batch_json" == "$repo_root/"* ]]; then
+    batch_relative_path="${batch_json#"$repo_root"/}"
+  else
+    batch_relative_path=".artifacts/fix-provider-input.json"
+  fi
+
   attempt_root="$(mktemp -d)"
   for provider in "${provider_candidates[@]}"; do
     active_worktree="$attempt_root/worktree-${RANDOM}"
     attempt_output="$attempt_root/output-${RANDOM}.txt"
     patch_file="$attempt_root/attempt.patch"
     git -C "$repo_root" worktree add --detach "$active_worktree" HEAD >/dev/null
+    attempt_batch_json="$active_worktree/$batch_relative_path"
+    mkdir -p "$(dirname "$attempt_batch_json")"
+    cp -- "$batch_json" "$attempt_batch_json"
 
     if (
       cd "$active_worktree"
@@ -46,7 +56,7 @@ run_fix_provider_cascade() {
         fi
       done < <(git diff HEAD --name-only)
       python3 "$lib_dir/validate-fix-verification.py" \
-        "$batch_json" "$active_worktree/$verify_relative_path" "$validation_mode"
+        "$attempt_batch_json" "$active_worktree/$verify_relative_path" "$validation_mode"
       python3 "$lib_dir/../../validate-outcome-evidence.py" \
         "$active_worktree/$verify_relative_path" --from-fix-verify
     ); then

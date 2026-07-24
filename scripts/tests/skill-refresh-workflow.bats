@@ -6,6 +6,7 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   SCANNER="$REPO_ROOT/scripts/scan-skill-secrets.py"
   WORKFLOW="$REPO_ROOT/.github/workflows/skill-refresh.yml"
+  CHECK_GATE="$REPO_ROOT/scripts/workflows/lib/dispatch-and-wait-workflow.sh"
   FIXTURE_ROOT="$BATS_TEST_TMPDIR/secret-fixtures"
   mkdir -p "$FIXTURE_ROOT"
 }
@@ -69,19 +70,23 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'draft: always-true' "$WORKFLOW"
   [ "$status" -eq 0 ]
+  run grep -Fq 'dispatch-and-wait-workflow.sh' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh pr ready' "$WORKFLOW"
+  [ "$status" -eq 0 ]
   run grep -q 'delete-branch: false' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'docs/guides/skill-supply-chain.md' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'render-license-inventory' "$REPO_ROOT/scripts/skill-supply-chain.py"
   [ "$status" -eq 0 ]
-  run grep -Fq 'gh workflow run ci-tests.yml' "$WORKFLOW"
+  run grep -Fq 'ci-tests.yml "$REFRESH_BRANCH" "$REFRESH_HEAD"' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq 'gh workflow run lint-and-format.yml' "$WORKFLOW"
+  run grep -Fq 'lint-and-format.yml "$REFRESH_BRANCH" "$REFRESH_HEAD"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'REFRESH_BRANCH: automation/skill-refresh/all' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq -- '--ref "$REFRESH_BRANCH"' "$WORKFLOW"
+  run grep -Fq 'gh workflow run "$workflow" --ref "$branch" "$@"' "$CHECK_GATE"
   [ "$status" -eq 0 ]
   run grep -q "if: steps.refresh.outputs.content_changed == 'true'" "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -104,6 +109,72 @@ EOF
   run grep -q './test.sh' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Eiq 'enable-auto-merge|merge-method:|auto-merge:' "$WORKFLOW"
+  [ "$status" -eq 1 ]
+}
+
+@test "exact-head workflow gate waits for the newly dispatched run" {
+  stub_dir="$BATS_TEST_TMPDIR/bin"
+  log="$BATS_TEST_TMPDIR/gh.log"
+  state="$BATS_TEST_TMPDIR/dispatched"
+  mkdir -p "$stub_dir"
+  cat >"$stub_dir/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$GH_LOG"
+if [[ "$1 $2" == "run list" ]]; then
+  if [[ -f "$GH_STATE" ]]; then
+    printf '%s\n' '[{"databaseId":22,"headSha":"expected-head","createdAt":"2026-07-24T06:00:01Z"},{"databaseId":11,"headSha":"old-head","createdAt":"2026-07-23T06:00:01Z"}]'
+  else
+    printf '%s\n' '[{"databaseId":11,"headSha":"old-head","createdAt":"2026-07-23T06:00:01Z"}]'
+  fi
+elif [[ "$1 $2" == "workflow run" ]]; then
+  touch "$GH_STATE"
+elif [[ "$1 $2" == "run watch" ]]; then
+  [[ "$3" == "22" && "$4" == "--exit-status" ]]
+else
+  exit 2
+fi
+EOF
+  chmod +x "$stub_dir/gh"
+
+  run env PATH="$stub_dir:$PATH" GH_LOG="$log" GH_STATE="$state" \
+    bash "$CHECK_GATE" ci-tests.yml automation/skill-refresh/all expected-head \
+    -f head_sha=expected-head
+
+  [ "$status" -eq 0 ]
+  run grep -Fq 'workflow run ci-tests.yml --ref automation/skill-refresh/all -f head_sha=expected-head' "$log"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'run watch 22 --exit-status' "$log"
+  [ "$status" -eq 0 ]
+}
+
+@test "exact-head workflow gate propagates a failed run" {
+  stub_dir="$BATS_TEST_TMPDIR/failing-bin"
+  state="$BATS_TEST_TMPDIR/failing-dispatched"
+  mkdir -p "$stub_dir"
+  cat >"$stub_dir/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1 $2" == "run list" ]]; then
+  if [[ -f "$GH_STATE" ]]; then
+    printf '%s\n' '[{"databaseId":33,"headSha":"expected-head","createdAt":"2026-07-24T06:00:01Z"}]'
+  else
+    printf '%s\n' '[]'
+  fi
+elif [[ "$1 $2" == "workflow run" ]]; then
+  touch "$GH_STATE"
+elif [[ "$1 $2" == "run watch" ]]; then
+  exit 1
+else
+  exit 2
+fi
+EOF
+  chmod +x "$stub_dir/gh"
+
+  run env PATH="$stub_dir:$PATH" GH_STATE="$state" \
+    bash "$CHECK_GATE" ci-tests.yml automation/skill-refresh/all expected-head \
+    -f head_sha=expected-head
+
   [ "$status" -eq 1 ]
 }
 
@@ -213,7 +284,9 @@ EOF
 @test "skill refresh documentation explains aggregate publication and PR authorization" {
   guide="$REPO_ROOT/docs/guides/skill-supply-chain.md"
 
-  run grep -Fq 'one stable aggregate branch and draft PR' "$guide"
+  run grep -Fq 'one stable aggregate branch and review PR' "$guide"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'becomes ready only' "$guide"
   [ "$status" -eq 0 ]
   run grep -Fq 'failed source remains unchanged' "$guide"
   [ "$status" -eq 0 ]

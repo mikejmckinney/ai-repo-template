@@ -359,6 +359,7 @@ MULTIAGENT_FILES=(
   "scripts/workflows/lib/opencode-oauth.sh"
   "scripts/workflows/lib/run-cursor-fix.sh"
   "scripts/workflows/lib/run-fix-provider-cascade.sh"
+  "scripts/workflows/lib/dispatch-and-wait-workflow.sh"
   "scripts/workflows/lib/validate-fix-verification.py"
   "scripts/verify-env.sh"
   "scripts/verify-pr.sh"
