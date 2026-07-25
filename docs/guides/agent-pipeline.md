@@ -215,6 +215,10 @@ verification floor.
 
 - `OPENCODE_GITHUB_TOKEN`: fine-grained token with read-only Metadata, Contents,
   Pull requests, Issues, and Actions access to the target repository.
+- `SKILL_REFRESH_PR_TOKEN`: fine-grained token restricted to the target
+  repository with `Contents: read` and `Pull requests: write`. The skill-refresh
+  finalizer uses it only to mark an exact-head validated draft ready; without
+  `Contents: write`, it cannot merge.
 - `OPENROUTER_API_KEY`: model credential for the hosted OpenCode Kimi fallback.
 - `OPENCODE_OPENAI_AUTH`: optional access-only ChatGPT OAuth JSON for Sol in a
   trusted private repository. Generate it with
@@ -222,8 +226,9 @@ verification floor.
 - Existing `CURSOR_API_KEY`, `GEMINI_API_KEY`, and `GOOGLE_API_KEY` remain
   optional rollback-provider credentials.
 - Workflow publication uses the automatic job-scoped `GITHUB_TOKEN` with
-  explicit least-privilege permissions. `SANDBOX_BOOTSTRAP_TOKEN` remains a
-  sandbox-only credential and is never forwarded to OpenCode.
+  explicit least-privilege permissions. The readiness mutation is the bounded
+  exception above. `SANDBOX_BOOTSTRAP_TOKEN` remains a sandbox-only credential
+  and is never forwarded to OpenCode.
 
 Use [`opencode-termination-diagnostics.md`](./opencode-termination-diagnostics.md)
 when an interactive OpenCode process restarts unexpectedly.

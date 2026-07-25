@@ -11,7 +11,6 @@ on:
         type: string
 
 permissions:
-  actions: write
   contents: write
   pull-requests: write
 
@@ -19,6 +18,12 @@ jobs:
   refresh-sources:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    outputs:
+      content_changed: ${{ steps.refresh.outputs.content_changed }}
+      pull_request_operation: ${{ steps.create-pr.outputs.pull-request-operation }}
+      pull_request_number: ${{ steps.create-pr.outputs.pull-request-number }}
+      head_sha: ${{ steps.create-pr.outputs.pull-request-head-sha }}
+      base_sha: ${{ steps.refresh.outputs.base_sha }}
     concurrency:
       group: skill-refresh-aggregate
       cancel-in-progress: false
@@ -315,20 +320,86 @@ jobs:
             dependencies
           draft: always-true
 
-      - name: Dispatch required checks for the generated head
-        if: >-
-          steps.refresh.outputs.content_changed == 'true' &&
-          steps.create-pr.outputs.pull-request-operation != 'none'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REFRESH_BRANCH: automation/skill-refresh/all
-          REFRESH_HEAD: ${{ steps.create-pr.outputs.pull-request-head-sha }}
-          REFRESH_BASE: ${{ steps.refresh.outputs.base_sha }}
+
+  required-ci:
+    needs: refresh-sources
+    if: >-
+      needs.refresh-sources.outputs.content_changed == 'true' &&
+      needs.refresh-sources.outputs.pull_request_operation != 'none'
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: write
+    uses: ./.github/workflows/ci-tests.yml
+    with:
+      reusable_call: true
+      head_sha: ${{ needs.refresh-sources.outputs.head_sha }}
+
+  required-lint:
+    needs: refresh-sources
+    if: >-
+      needs.refresh-sources.outputs.content_changed == 'true' &&
+      needs.refresh-sources.outputs.pull_request_operation != 'none'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/lint-and-format.yml
+    with:
+      reusable_call: true
+      base_sha: ${{ needs.refresh-sources.outputs.base_sha }}
+      head_sha: ${{ needs.refresh-sources.outputs.head_sha }}
+
+  finalize:
+    needs: [refresh-sources, required-ci, required-lint]
+    if: >-
+      always() &&
+      needs.refresh-sources.result == 'success' &&
+      needs.refresh-sources.outputs.content_changed == 'true' &&
+      needs.refresh-sources.outputs.pull_request_operation != 'none'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ secrets.SKILL_REFRESH_PR_TOKEN }}
+      REFRESH_HEAD: ${{ needs.refresh-sources.outputs.head_sha }}
+      REFRESH_PR: ${{ needs.refresh-sources.outputs.pull_request_number }}
+      CI_RESULT: ${{ needs.required-ci.result }}
+      LINT_RESULT: ${{ needs.required-lint.result }}
+    steps:
+      - name: Verify readiness credential
         run: |
-          gh workflow run ci-tests.yml \
-            --ref "$REFRESH_BRANCH" \
-            -f head_sha="$REFRESH_HEAD"
-          gh workflow run lint-and-format.yml \
-            --ref "$REFRESH_BRANCH" \
-            -f base_sha="$REFRESH_BASE" \
-            -f head_sha="$REFRESH_HEAD"
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::error::Missing required secret: SKILL_REFRESH_PR_TOKEN"
+            exit 1
+          fi
+
+      - name: Verify current aggregate pull request head
+        id: current-pr
+        run: |
+          current="$(gh pr view "$REFRESH_PR" --repo "$GITHUB_REPOSITORY" --json headRefOid,isDraft)"
+          if [[ "$(jq -r .headRefOid <<<"$current")" == "$REFRESH_HEAD" \
+            && "$(jq -r .isDraft <<<"$current")" == "true" ]]; then
+            echo "is_current_draft=true" >>"$GITHUB_OUTPUT"
+          else
+            echo "is_current_draft=false" >>"$GITHUB_OUTPUT"
+          fi
+
+      - name: Mark validated aggregate pull request ready for review
+        if: >-
+          steps.current-pr.outputs.is_current_draft == 'true' &&
+          needs.required-ci.result == 'success' &&
+          needs.required-lint.result == 'success'
+        run: gh pr ready "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"
+
+      - name: Report failed aggregate validation
+        if: >-
+          steps.current-pr.outputs.is_current_draft == 'true' &&
+          (needs.required-ci.result != 'success' ||
+          needs.required-lint.result != 'success')
+        run: |
+          gh pr comment "$REFRESH_PR" --repo "$GITHUB_REPOSITORY" --body "Exact-head validation failed for \`$REFRESH_HEAD\`; this pull request remains draft.
+
+          - CI: $CI_RESULT
+          - Lint: $LINT_RESULT
+          - Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

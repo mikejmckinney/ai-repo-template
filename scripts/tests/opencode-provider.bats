@@ -431,9 +431,12 @@ EOF
   git -C "$tmp" commit -qm base
   printf 'fix this' >"$tmp/prompt.md"
   cat >"$tmp/mock-runner.mjs" <<'EOF'
-import { appendFileSync, writeFileSync } from "node:fs"
+import { appendFileSync, existsSync, writeFileSync } from "node:fs"
 const [, , , output] = process.argv
 const model = process.env.OPENCODE_MODELS
+if (process.env.FIX_PROVIDER_BATCH_JSON && !process.env.FIX_PROVIDER_BATCH_JSON.endsWith("/.artifacts/postmerge-retro/daily-test/daily-retro.json")) process.exit(4)
+if (process.env.FIX_PROVIDER_BATCH_JSON && !process.env.FIX_PROVIDER_BATCH_JSON.startsWith(process.cwd())) process.exit(5)
+if (process.env.FIX_PROVIDER_BATCH_JSON && !existsSync(process.env.FIX_PROVIDER_BATCH_JSON)) process.exit(6)
 appendFileSync(process.env.ATTEMPT_LOG, `${model}:${process.cwd()}\n`)
 writeFileSync("result.txt", `${model}\n`)
 writeFileSync(output, "success\n")
@@ -454,6 +457,8 @@ actual="$(cat result.txt)"
 }
 EOF
   chmod +x "$tmp/verify.sh"
+  mkdir -p "$tmp/.artifacts/postmerge-retro/daily-test"
+  printf '{}\n' >"$tmp/.artifacts/postmerge-retro/daily-test/daily-retro.json"
 
   run env \
     ATTEMPT_LOG="$tmp/attempts.log" \
@@ -463,6 +468,7 @@ EOF
     OPENAI_API_KEY="openai-secret-test" \
     OPENCODE_GITHUB_TOKEN="github-secret-test" \
     GITHUB_TOKEN="publisher-secret-test" \
+    FIX_PROVIDER_BATCH_JSON="$tmp/.artifacts/postmerge-retro/daily-test/daily-retro.json" \
     bash "$REPO_ROOT/scripts/workflows/lib/run-opencode-fix.sh" \
     "$tmp/prompt.md" "$tmp/output.txt" "$tmp"
 

@@ -14,6 +14,18 @@ RUNNER="${CURSOR_FIX_RUNNER:-$LIB_DIR/../advisory-review/run-advisory-cursor.mjs
 VERIFY_COMMAND="${CURSOR_FIX_VERIFY_COMMAND:-./test.sh}"
 ATTEMPT_ROOT="$(mktemp -d)"
 active_worktree="$ATTEMPT_ROOT/worktree"
+batch_source=""
+batch_relative_path=""
+
+if [[ -n "${FIX_PROVIDER_BATCH_JSON:-}" ]]; then
+  batch_source="$(realpath "$FIX_PROVIDER_BATCH_JSON")"
+  canonical_repo="$(realpath "$REPO_ROOT")"
+  [[ "$batch_source" == "$canonical_repo/"* ]] || {
+    echo "::error::Fix provider batch input must be inside the source worktree" >&2
+    exit 1
+  }
+  batch_relative_path="${batch_source#"$canonical_repo"/}"
+fi
 
 cleanup() {
   if [[ -d "$active_worktree" ]] && ! git -C "$REPO_ROOT" worktree remove --force "$active_worktree" >/dev/null 2>&1; then
@@ -26,15 +38,21 @@ trap cleanup EXIT
 attempt_output="$ATTEMPT_ROOT/output.txt"
 patch_file="$ATTEMPT_ROOT/attempt.patch"
 git -C "$REPO_ROOT" worktree add --detach "$active_worktree" HEAD >/dev/null
+if [[ -n "$batch_source" ]]; then
+  mkdir -p "$active_worktree/$(dirname "$batch_relative_path")"
+  cp -- "$batch_source" "$active_worktree/$batch_relative_path"
+fi
 
 if ! (
   cd "$active_worktree"
   env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN -u OPENCODE_AUTH_CONTENT \
     -u OPENCODE_GITHUB_TOKEN -u OPENAI_API_KEY -u OPENROUTER_API_KEY \
     -u GEMINI_API_KEY -u GOOGLE_API_KEY \
+    FIX_PROVIDER_BATCH_JSON="${batch_source:+$active_worktree/$batch_relative_path}" \
     node "$RUNNER" "$PROMPT_FILE" "$attempt_output"
 ); then
   echo "::error::Cursor fix attempt failed" >&2
+  [[ -z "$batch_relative_path" ]] || rm -f -- "$active_worktree/$batch_relative_path"
   exit 1
 fi
 
@@ -46,9 +64,11 @@ if ! (
     bash -c "$VERIFY_COMMAND"
 ); then
   echo "::error::Discarding unverified Cursor fix attempt" >&2
+  [[ -z "$batch_relative_path" ]] || rm -f -- "$active_worktree/$batch_relative_path"
   exit 1
 fi
 
+[[ -z "$batch_relative_path" ]] || rm -f -- "$active_worktree/$batch_relative_path"
 if ! git -C "$active_worktree" add -N -- . >/dev/null 2>&1; then
   echo "::warning::Cursor fix worktree contains no paths to stage for diff detection" >&2
 fi
