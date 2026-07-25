@@ -17,9 +17,6 @@ write_valid_evidence() {
   "claims": [
     {
       "material_claim": "A disposable repository was created.",
-      "core_user_action": "Create a disposable repository.",
-      "irreducible_side_effect": "The repository exists with template ancestry.",
-      "cost_authorization": "Explicitly approved repository creation.",
       "environment": "fresh derived repository",
       "why_representative": "Repository creation is the user journey.",
       "implementation_sha": "controller:current-head",
@@ -42,9 +39,6 @@ JSON
   plan="$REPO_ROOT/.github/templates/issue-implementation-plan.md"
 
   grep -q 'Material claim:' "$plan"
-  grep -q 'Core user action:' "$plan"
-  grep -q 'Irreducible side effect:' "$plan"
-  grep -q 'Cost / authorization:' "$plan"
   grep -q 'Environment:' "$plan"
   grep -q 'Why representative:' "$plan"
   grep -q 'Implementation SHA:' "$plan"
@@ -64,59 +58,33 @@ JSON
 
   grep -q '^## User outcome evidence$' "$template"
   grep -q 'Material claim:' "$template"
-  grep -q 'Core user action:' "$template"
-  grep -q 'Irreducible side effect:' "$template"
-  grep -q 'Cost / authorization:' "$template"
   grep -q 'Environment:' "$template"
   ! grep -q '^## Sandbox dogfood evidence$' "$template"
   ! grep -q '^Sandbox issue:' "$template"
   ! grep -q '^Sandbox PR:' "$template"
 }
 
-@test "policy forbids least-cost validation from substituting supporting checks" {
+@test "policy prioritizes representative fidelity over cost" {
   policy="$REPO_ROOT/AGENTS.md"
   guide="$REPO_ROOT/docs/guides/outcome-validation.md"
 
-  grep -q 'must not remove, replace, or redefine the core user action' "$policy"
+  grep -q 'most representative practical environment' "$policy"
+  grep -q 'Cost, speed, safety, and resource use are constraints' "$policy"
   grep -q 'explicit approval before performing it' "$policy"
   grep -q 'keep the outcome result blocked' "$policy"
-  grep -q '^## Preserve the core action$' "$guide"
+  grep -q '^## Preserve the user journey$' "$guide"
   grep -q 'generate, send, deploy, publish, write, or mutate' "$guide"
-  grep -q 'reduction can change the environment; it cannot remove the action' "$guide"
+  grep -q 'among equally representative' "$guide"
 }
 
-@test "standalone plan and ADR preserve the core user action" {
+@test "standalone plan and ADR select environments by fidelity first" {
   plan="$REPO_ROOT/.github/PLAN_TEMPLATE.md"
   adr="$REPO_ROOT/docs/decisions/adr-034-outcome-equivalent-verification.md"
 
-  grep -q 'Core user action:' "$plan"
-  grep -q 'Irreducible side effect:' "$plan"
-  grep -q 'Cost / authorization:' "$plan"
-  grep -q 'remain blocked until' "$plan"
-  grep -q 'approved and exercised' "$plan"
+  grep -q 'most representative' "$plan"
+  grep -q 'equally representative options' "$plan"
   grep -q '^### Clarification (2026-07-25)$' "$adr"
-  grep -q 'does not permit substituting a cheaper action' "$adr"
-}
-
-@test "outcome evidence validator requires core action fields" {
-  write_valid_evidence "$TEST_ROOT/valid.json"
-  jq 'del(.claims[0].core_user_action, .claims[0].irreducible_side_effect, .claims[0].cost_authorization)' \
-    "$TEST_ROOT/valid.json" >"$TEST_ROOT/evidence.json"
-
-  run python3 "$REPO_ROOT/scripts/validate-outcome-evidence.py" "$TEST_ROOT/evidence.json"
-
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"core_user_action"* ]]
-  [[ "$output" == *"irreducible_side_effect"* ]]
-  [[ "$output" == *"cost_authorization"* ]]
-}
-
-@test "automated fix prompt emits the required core action fields" {
-  prompt="$REPO_ROOT/.github/prompts/post-merge-retro-fix.md"
-
-  grep -q '"core_user_action"' "$prompt"
-  grep -q '"irreducible_side_effect"' "$prompt"
-  grep -q '"cost_authorization"' "$prompt"
+  grep -q 'prioritizes evidentiary fidelity' "$adr"
 }
 
 @test "outcome evidence validator rejects prose-only external state" {
@@ -227,9 +195,6 @@ JSON
     "claims": [
       {
         "material_claim": "The reported defect no longer reproduces.",
-        "core_user_action": "Run the reported reproduction.",
-        "irreducible_side_effect": "The reported failure no longer occurs.",
-        "cost_authorization": "No cost or destructive action.",
         "environment": "isolated fix worktree",
         "why_representative": "The original reproduction command runs here.",
         "implementation_sha": "0123456789abcdef0123456789abcdef01234567",
@@ -254,9 +219,6 @@ JSON
   [ "$status" -eq 0 ]
   [[ "$output" == *"## User outcome evidence"* ]]
   [[ "$output" == *"The reported defect no longer reproduces."* ]]
-  [[ "$output" == *"**Core user action:** Run the reported reproduction."* ]]
-  [[ "$output" == *"**Irreducible side effect:** The reported failure no longer occurs."* ]]
-  [[ "$output" == *"**Cost / authorization:** No cost or destructive action."* ]]
   [[ "$output" == *"**Environment:** isolated fix worktree"* ]]
   [[ "$output" == *"**Why representative:** The original reproduction command runs here."* ]]
   [[ "$output" == *"**Implementation SHA:**"* ]]

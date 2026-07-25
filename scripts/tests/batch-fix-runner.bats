@@ -25,9 +25,6 @@ setup() {
   "outcome_evidence": {
     "claims": [{
       "material_claim": "The finding does not reproduce on current main.",
-      "core_user_action": "Run the recorded reproduction steps.",
-      "irreducible_side_effect": "The reported failure does not occur.",
-      "cost_authorization": "No cost or destructive action.",
       "environment": "isolated fix worktree",
       "why_representative": "The recorded repro runs against current main.",
       "implementation_sha": "controller:current-head",

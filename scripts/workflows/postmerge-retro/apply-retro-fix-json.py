@@ -68,9 +68,6 @@ def main() -> int:
                 "claims": [
                     {
                         "material_claim": "Legacy Gemini fix notes describe the candidate outcome.",
-                        "core_user_action": "Review the candidate fix behavior.",
-                        "irreducible_side_effect": "The controller accepts the candidate fix.",
-                        "cost_authorization": "No cost or destructive action.",
                         "environment": "isolated fix worktree",
                         "why_representative": "The deterministic controller verifies the candidate worktree.",
                         "implementation_sha": "controller:current-head",

@@ -76,9 +76,6 @@ JSON
   "outcome_evidence": {
     "claims": [{
       "material_claim": "The defect is fixed.",
-      "core_user_action": "Run the reported reproduction steps.",
-      "irreducible_side_effect": "The reported failure no longer occurs.",
-      "cost_authorization": "No cost or destructive action.",
       "environment": "isolated fix worktree",
       "why_representative": "The recorded repro runs here.",
       "implementation_sha": "controller:current-head",

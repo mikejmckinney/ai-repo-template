@@ -10,8 +10,8 @@ required, but they do not replace the affected user's journey.
 - **End-to-end testing** is one method for executable journeys.
 - **Supporting verification** includes unit, integration, regression, lint,
   schema, build, and CI checks.
-- **Outcome-equivalent environment** is the least costly isolated environment
-  preserving the conditions material to the outcome.
+- **Outcome-equivalent environment** is an isolated environment preserving the
+  conditions material to the outcome.
 - **Environment adapter** is the concrete mechanism used for that environment.
 - **Material claim** is an observation whose falsity would change the outcome
   conclusion.
@@ -30,7 +30,10 @@ Identify these load-bearing conditions before choosing an adapter:
 6. Representative inputs and configuration.
 7. Observable result that resolves the problem.
 
-Use the least costly environment preserving all applicable conditions.
+Choose the most representative practical environment. Fidelity to all
+applicable conditions is the primary criterion. Consider safety, reversibility,
+cost, speed, and resource use only after fidelity; among equally representative
+options, prefer the safer and lower-cost option.
 
 | Change | Representative adapter |
 | --- | --- |
@@ -49,18 +52,18 @@ For default-branch GitHub behavior, follow
 [`sandbox-verification.md`](sandbox-verification.md). The sibling repository is
 an adapter for that constraint, not a universal destination.
 
-## Preserve the core action
+## Preserve the user journey
 
-Derive the core user action and its irreducible observable side effect from the
+Derive the affected user's action and required observable result from the
 original request and problem statement before selecting an environment. Cost
-reduction can change the environment; it cannot remove the action. If evidence
-would still pass when the feature's defining side effect is broken, that
-evidence is supporting verification rather than outcome validation.
+or convenience cannot justify removing either one. If evidence would still
+pass when the required result is broken, that evidence is supporting
+verification rather than outcome validation.
 
 Features whose purpose is to generate, send, deploy, publish, write, or mutate
 external state require one representative real operation. Examples:
 
-| Feature | Core action and side effect | Supporting-only substitute |
+| Feature | User action and required result | Supporting-only substitute |
 | --- | --- | --- |
 | Media generation | Invoke generation and receive a usable media artifact | Startup, authentication, or listing models/tools |
 | Messaging | Send a representative message and observe delivery | Validating credentials or queue metadata |
@@ -94,9 +97,6 @@ Use this shape for every material claim:
 
 ```text
 Material claim:
-Core user action:
-Irreducible side effect:
-Cost / authorization:
 Environment:
 Why representative:
 Implementation SHA:
