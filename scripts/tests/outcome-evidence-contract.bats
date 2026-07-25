@@ -59,6 +59,8 @@ JSON
   grep -q '^## User outcome evidence$' "$template"
   grep -q 'Material claim:' "$template"
   grep -q 'Environment:' "$template"
+  grep -q 'Choose the most representative practical environment' "$template"
+  grep -q 'remain blocked until performed' "$template"
   ! grep -q '^## Sandbox dogfood evidence$' "$template"
   ! grep -q '^Sandbox issue:' "$template"
   ! grep -q '^Sandbox PR:' "$template"
