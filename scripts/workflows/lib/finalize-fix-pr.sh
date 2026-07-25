@@ -75,6 +75,9 @@ maybe_sandbox_sync() {
       .sandbox.issue_url = (.sandbox.issue_url // "n/a") |
       .outcome_evidence.claims += [{
         material_claim: "Candidate fix behavior is available in the sibling repository for default-branch verification.",
+        core_user_action: "Publish the candidate fix branch to the sibling repository.",
+        irreducible_side_effect: "The sandbox PR contains the candidate fix SHA.",
+        cost_authorization: "No cost or destructive action.",
         environment: "sibling GitHub repository",
         why_representative: "The affected GitHub behavior requires candidate code on a repository ref.",
         implementation_sha: $sha,

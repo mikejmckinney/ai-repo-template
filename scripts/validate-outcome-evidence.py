@@ -12,6 +12,9 @@ from typing import Any
 
 REQUIRED_FIELDS = (
     "material_claim",
+    "core_user_action",
+    "irreducible_side_effect",
+    "cost_authorization",
     "environment",
     "why_representative",
     "implementation_sha",

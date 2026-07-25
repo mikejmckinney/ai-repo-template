@@ -17,6 +17,9 @@ write_valid_evidence() {
   "claims": [
     {
       "material_claim": "A disposable repository was created.",
+      "core_user_action": "Create a disposable repository.",
+      "irreducible_side_effect": "The repository exists with template ancestry.",
+      "cost_authorization": "Explicitly approved repository creation.",
       "environment": "fresh derived repository",
       "why_representative": "Repository creation is the user journey.",
       "implementation_sha": "controller:current-head",
@@ -89,8 +92,23 @@ JSON
   grep -q 'Core user action:' "$plan"
   grep -q 'Irreducible side effect:' "$plan"
   grep -q 'Cost / authorization:' "$plan"
+  grep -q 'remain blocked until' "$plan"
+  grep -q 'approved and exercised' "$plan"
   grep -q '^### Clarification (2026-07-25)$' "$adr"
   grep -q 'does not permit substituting a cheaper action' "$adr"
+}
+
+@test "outcome evidence validator requires core action fields" {
+  write_valid_evidence "$TEST_ROOT/valid.json"
+  jq 'del(.claims[0].core_user_action, .claims[0].irreducible_side_effect, .claims[0].cost_authorization)' \
+    "$TEST_ROOT/valid.json" >"$TEST_ROOT/evidence.json"
+
+  run python3 "$REPO_ROOT/scripts/validate-outcome-evidence.py" "$TEST_ROOT/evidence.json"
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"core_user_action"* ]]
+  [[ "$output" == *"irreducible_side_effect"* ]]
+  [[ "$output" == *"cost_authorization"* ]]
 }
 
 @test "outcome evidence validator rejects prose-only external state" {
@@ -201,6 +219,9 @@ JSON
     "claims": [
       {
         "material_claim": "The reported defect no longer reproduces.",
+        "core_user_action": "Run the reported reproduction.",
+        "irreducible_side_effect": "The reported failure no longer occurs.",
+        "cost_authorization": "No cost or destructive action.",
         "environment": "isolated fix worktree",
         "why_representative": "The original reproduction command runs here.",
         "implementation_sha": "0123456789abcdef0123456789abcdef01234567",
@@ -225,6 +246,9 @@ JSON
   [ "$status" -eq 0 ]
   [[ "$output" == *"## User outcome evidence"* ]]
   [[ "$output" == *"The reported defect no longer reproduces."* ]]
+  [[ "$output" == *"**Core user action:** Run the reported reproduction."* ]]
+  [[ "$output" == *"**Irreducible side effect:** The reported failure no longer occurs."* ]]
+  [[ "$output" == *"**Cost / authorization:** No cost or destructive action."* ]]
   [[ "$output" == *"**Environment:** isolated fix worktree"* ]]
   [[ "$output" == *"**Why representative:** The original reproduction command runs here."* ]]
   [[ "$output" == *"**Implementation SHA:**"* ]]

@@ -99,8 +99,8 @@ Result: pass | fail | blocked
      outcome-equivalent environment without removing or redefining the core
      user action or side effect, and attach an inspectable artifact. Paid or
      destructive actions require explicit approval and remain blocked until
-     approved. External-state and runtime claims cannot be prose-only. Mixed
-     changes may require multiple environments. See
+     approved and exercised. External-state and runtime claims cannot be
+     prose-only. Mixed changes may require multiple environments. See
      docs/guides/outcome-validation.md. -->
 
 **Pass condition:**
