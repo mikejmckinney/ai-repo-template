@@ -55,8 +55,6 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'pull-requests: write' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -q 'actions: write' "$WORKFLOW"
-  [ "$status" -eq 0 ]
   run grep -q 'matrix.source' "$WORKFLOW"
   [ "$status" -eq 1 ]
   # shellcheck disable=SC2016
@@ -69,19 +67,19 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'draft: always-true' "$WORKFLOW"
   [ "$status" -eq 0 ]
+  run grep -Fq 'uses: ./.github/workflows/ci-tests.yml' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'uses: ./.github/workflows/lint-and-format.yml' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh pr ready' "$WORKFLOW"
+  [ "$status" -eq 0 ]
   run grep -q 'delete-branch: false' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'docs/guides/skill-supply-chain.md' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'render-license-inventory' "$REPO_ROOT/scripts/skill-supply-chain.py"
   [ "$status" -eq 0 ]
-  run grep -Fq 'gh workflow run ci-tests.yml' "$WORKFLOW"
-  [ "$status" -eq 0 ]
-  run grep -Fq 'gh workflow run lint-and-format.yml' "$WORKFLOW"
-  [ "$status" -eq 0 ]
   run grep -Fq 'REFRESH_BRANCH: automation/skill-refresh/all' "$WORKFLOW"
-  [ "$status" -eq 0 ]
-  run grep -Fq -- '--ref "$REFRESH_BRANCH"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -q "if: steps.refresh.outputs.content_changed == 'true'" "$WORKFLOW"
   [ "$status" -eq 0 ]
@@ -105,6 +103,23 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Eiq 'enable-auto-merge|merge-method:|auto-merge:' "$WORKFLOW"
   [ "$status" -eq 1 ]
+}
+
+@test "aggregate finalizer waits for reusable exact-head CI and lint" {
+  run grep -Fq 'required-ci:' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'required-lint:' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'needs: [refresh-sources, required-ci, required-lint]' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq "needs.required-ci.result == 'success'" "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq "needs.required-lint.result == 'success'" "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh pr comment' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ ! -e "$REPO_ROOT/.github/workflows/skill-refresh-finalize.yml" ]
+  [ ! -e "$REPO_ROOT/scripts/workflows/lib/finalize-skill-refresh.sh" ]
 }
 
 @test "aggregate refresh processes sources sequentially with source rollback" {
@@ -163,18 +178,20 @@ EOF
   [ "$status" -eq 0 ]
 }
 
-@test "required workflows accept trusted exact-head skill refresh dispatches" {
+@test "required workflows accept trusted exact-head skill refresh calls" {
   ci_workflow="$REPO_ROOT/.github/workflows/ci-tests.yml"
   lint_workflow="$REPO_ROOT/.github/workflows/lint-and-format.yml"
 
-  run grep -Fq 'REFRESH_HEAD: ${{ steps.create-pr.outputs.pull-request-head-sha }}' "$WORKFLOW"
+  run grep -Fq 'head_sha: ${{ needs.refresh-sources.outputs.head_sha }}' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  [ "$(grep -Fc -- '-f head_sha="$REFRESH_HEAD"' "$WORKFLOW")" -eq 2 ]
-  run grep -Fq 'REFRESH_BASE: ${{ steps.refresh.outputs.base_sha }}' "$WORKFLOW"
+  run grep -Fq 'base_sha: ${{ needs.refresh-sources.outputs.base_sha }}' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq -- '-f base_sha="$REFRESH_BASE"' "$WORKFLOW"
+  [ "$(grep -Fc 'reusable_call: true' "$WORKFLOW")" -eq 2 ]
+  run grep -q 'workflow_call:' "$ci_workflow"
   [ "$status" -eq 0 ]
   run grep -q 'workflow_dispatch:' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -q 'workflow_call:' "$lint_workflow"
   [ "$status" -eq 0 ]
   run grep -q 'workflow_dispatch:' "$lint_workflow"
   [ "$status" -eq 0 ]
@@ -184,25 +201,33 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'head_sha:' "$ci_workflow"
   [ "$status" -eq 0 ]
-  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && github.sha || '' }}" "$ci_workflow"
+  run grep -Fq "ref: \${{ inputs.head_sha || '' }}" "$ci_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'EXPECTED_HEAD: ${{ inputs.head_sha }}' "$ci_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'DISPATCHED_HEAD: ${{ github.sha }}' "$ci_workflow"
   [ "$status" -eq 0 ]
+  run grep -Fq 'REUSABLE_CALL: ${{ inputs.reusable_call || false }}' "$ci_workflow"
+  [ "$status" -eq 0 ]
   run grep -Fq 'test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"' "$ci_workflow"
   [ "$status" -eq 0 ]
-  run grep -Fq 'test "$(git rev-parse HEAD)" = "$DISPATCHED_HEAD"' "$ci_workflow"
+  run grep -Fq 'test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' "$ci_workflow"
   [ "$status" -eq 0 ]
-  run grep -Fq "ref: \${{ github.event_name == 'workflow_dispatch' && github.sha || '' }}" "$lint_workflow"
+  run grep -Fq 'group: ci-tests-${{ inputs.head_sha || github.ref }}' "$ci_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq "ref: \${{ inputs.head_sha || '' }}" "$lint_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'EXPECTED_HEAD: ${{ inputs.head_sha }}' "$lint_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'DISPATCHED_HEAD: ${{ github.sha }}' "$lint_workflow"
   [ "$status" -eq 0 ]
+  run grep -Fq 'REUSABLE_CALL: ${{ inputs.reusable_call || false }}' "$lint_workflow"
+  [ "$status" -eq 0 ]
   run grep -Fq 'test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"' "$lint_workflow"
   [ "$status" -eq 0 ]
-  run grep -Fq 'test "$(git rev-parse HEAD)" = "$DISPATCHED_HEAD"' "$lint_workflow"
+  run grep -Fq 'test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"' "$lint_workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'group: lint-and-format-${{ inputs.head_sha || github.ref }}' "$lint_workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'base_ref="${{ inputs.base_sha }}"' "$lint_workflow"
   [ "$status" -eq 0 ]
@@ -210,16 +235,33 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "aggregate finalizer addresses its repository without a checkout" {
+  run grep -Fq 'GH_TOKEN: ${{ secrets.SKILL_REFRESH_PR_TOKEN }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'Missing required secret: SKILL_REFRESH_PR_TOKEN' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh pr view "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh pr ready "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'gh pr comment "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+}
+
 @test "skill refresh documentation explains aggregate publication and PR authorization" {
   guide="$REPO_ROOT/docs/guides/skill-supply-chain.md"
 
-  run grep -Fq 'one stable aggregate branch and draft PR' "$guide"
+  run grep -Fq 'one stable aggregate branch and review PR' "$guide"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'becomes ready only' "$guide"
   [ "$status" -eq 0 ]
   run grep -Fq 'failed source remains unchanged' "$guide"
   [ "$status" -eq 0 ]
   run grep -Fq 'Allow GitHub Actions to create and approve pull requests' "$guide"
   [ "$status" -eq 0 ]
   run grep -Fq 'required code-owner approval' "$guide"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'SKILL_REFRESH_PR_TOKEN' "$guide"
   [ "$status" -eq 0 ]
 }
 

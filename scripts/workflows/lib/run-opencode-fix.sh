@@ -16,6 +16,18 @@ MODELS="${OPENCODE_MODELS:-openrouter/moonshotai/kimi-k3@preset/consensus}"
 VERIFY_COMMAND="${OPENCODE_FIX_VERIFY_COMMAND:-./test.sh}"
 ATTEMPT_ROOT="$(mktemp -d)"
 active_worktree=""
+batch_source=""
+batch_relative_path=""
+
+if [[ -n "${FIX_PROVIDER_BATCH_JSON:-}" ]]; then
+  batch_source="$(realpath "$FIX_PROVIDER_BATCH_JSON")"
+  canonical_repo="$(realpath "$REPO_ROOT")"
+  [[ "$batch_source" == "$canonical_repo/"* ]] || {
+    echo "::error::Fix provider batch input must be inside the source worktree" >&2
+    exit 1
+  }
+  batch_relative_path="${batch_source#"$canonical_repo"/}"
+fi
 
 cleanup() {
   if [[ -n "$active_worktree" ]]; then
@@ -36,10 +48,15 @@ for model in "${models[@]}"; do
   attempt_output="$ATTEMPT_ROOT/output-${RANDOM}.txt"
   patch_file="$ATTEMPT_ROOT/attempt.patch"
   git -C "$REPO_ROOT" worktree add --detach "$active_worktree" HEAD >/dev/null
+  if [[ -n "$batch_source" ]]; then
+    mkdir -p "$active_worktree/$(dirname "$batch_relative_path")"
+    cp -- "$batch_source" "$active_worktree/$batch_relative_path"
+  fi
 
   if (
     cd "$active_worktree"
     env -u GITHUB_TOKEN -u GH_TOKEN -u SANDBOX_BOOTSTRAP_TOKEN \
+      FIX_PROVIDER_BATCH_JSON="${batch_source:+$active_worktree/$batch_relative_path}" \
       OPENCODE_MODE=fix OPENCODE_MODELS="$model" \
       node "$RUNNER" "$PROMPT_FILE" "$attempt_output" "${OPENCODE_OUTPUT_SCHEMA:-}"
   ); then
@@ -51,10 +68,12 @@ for model in "${models[@]}"; do
         bash -c "$VERIFY_COMMAND"
     ); then
       echo "::warning::Discarding unverified OpenCode fix attempt for ${model}" >&2
+      [[ -z "$batch_relative_path" ]] || rm -f -- "$active_worktree/$batch_relative_path"
       git -C "$REPO_ROOT" worktree remove --force "$active_worktree" >/dev/null
       active_worktree=""
       continue
     fi
+    [[ -z "$batch_relative_path" ]] || rm -f -- "$active_worktree/$batch_relative_path"
     if ! git -C "$active_worktree" add -N -- . >/dev/null 2>&1; then
       echo "::warning::OpenCode fix worktree contains no paths to stage for diff detection" >&2
     fi
@@ -70,6 +89,7 @@ for model in "${models[@]}"; do
   fi
 
   echo "::warning::Discarding failed OpenCode fix attempt for ${model}" >&2
+  [[ -z "$batch_relative_path" ]] || rm -f -- "$active_worktree/$batch_relative_path"
   git -C "$REPO_ROOT" worktree remove --force "$active_worktree" >/dev/null
   active_worktree=""
 done

@@ -269,6 +269,11 @@ otherwise start with Kimi. The stored `refresh` value is the inert
 `ci-refresh-disabled` placeholder, so hosted runners never refresh or write back
 personal OAuth credentials. Workflows install the pinned OpenCode runtime from
 `.github/agent-runtime/package-lock.json` on GitHub-managed `ubuntu-latest`.
+Skill-refresh readiness uses a separate `SKILL_REFRESH_PR_TOKEN`, restricted to
+the target repository with `Contents: read` and `Pull requests: write`. Provision
+it manually after repository creation; the derived-repository bootstrap does not
+copy it because a repository-scoped token cannot authorize a repository that does
+not yet exist.
 
 Interactive provider MCPs support write/deploy capabilities. Vercel, Netlify,
 Supabase, Railway, and Cloudflare read credentials from `VERCEL_API_KEY`,

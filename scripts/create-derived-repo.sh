@@ -94,6 +94,7 @@ jq -e '
     (.required | type == "boolean") and
     (.actions | type == "boolean") and
     (.codespaces | type == "boolean") and
+    ((if has("bootstrap") then .bootstrap else true end) | type == "boolean") and
     (.consumers | type == "array" and length > 0)
   ) and
   all(.secrets[]; .env != "GH_TOKEN" and .env != "GITHUB_TOKEN") and
@@ -113,11 +114,12 @@ while IFS= read -r item; do
   env_name="$(jq -r '.env' <<<"$item")"
   required="$(jq -r '.required' <<<"$item")"
   actions="$(jq -r '.actions' <<<"$item")"
+  bootstrap="$(jq -r 'if has("bootstrap") then .bootstrap else true end' <<<"$item")"
   codespaces="$(jq -r '.codespaces' <<<"$item")"
   derive="$(jq -r '.derive // empty' <<<"$item")"
   value="${!env_name-}"
 
-  if [[ "$actions" == true ]]; then
+  if [[ "$actions" == true && "$bootstrap" == true ]]; then
     if [[ -n "$value" ]]; then
       status "Actions $name: available"
     elif [[ "$derive" == "opencode-oauth" && -f "${HOME:-}/.local/share/opencode/auth.json" ]]; then
@@ -197,8 +199,9 @@ while IFS= read -r item; do
   name="$(jq -r '.name' <<<"$item")"
   env_name="$(jq -r '.env' <<<"$item")"
   actions="$(jq -r '.actions' <<<"$item")"
+  bootstrap="$(jq -r 'if has("bootstrap") then .bootstrap else true end' <<<"$item")"
   derive="$(jq -r '.derive // empty' <<<"$item")"
-  [[ "$actions" == true ]] || continue
+  [[ "$actions" == true && "$bootstrap" == true ]] || continue
   value="${!env_name-}"
 
   if [[ -n "$value" ]]; then

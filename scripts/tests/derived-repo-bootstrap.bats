@@ -83,9 +83,17 @@ run_bootstrap() {
       (.required | type == "boolean") and
       (.actions | type == "boolean") and
       (.codespaces | type == "boolean") and
+      ((if has("bootstrap") then .bootstrap else true end) | type == "boolean") and
       (.consumers | type == "array" and length > 0)
     ) and
-    ([.secrets[] | select(.name == "REPO_BOOTSTRAP_TOKEN" and .actions == false and .codespaces == false)] | length == 1)
+    ([.secrets[] | select(.name == "REPO_BOOTSTRAP_TOKEN" and .actions == false and .codespaces == false)] | length == 1) and
+    ([.secrets[] | select(
+      .name == "SKILL_REFRESH_PR_TOKEN" and
+      .required == true and
+      .actions == true and
+      .codespaces == false and
+      .bootstrap == false
+    )] | length == 1)
   ' "$MANIFEST"
   [ "$status" -eq 0 ]
 }
@@ -206,6 +214,8 @@ PY
   [ "$status" -eq 0 ]
   run grep -F 'secret set REPO_BOOTSTRAP_TOKEN' "$GH_LOG"
   [ "$status" -ne 0 ]
+  run grep -F 'secret set SKILL_REFRESH_PR_TOKEN' "$GH_LOG"
+  [ "$status" -ne 0 ]
   run grep -F 'user/codespaces/secrets/REPO_BOOTSTRAP_TOKEN/repositories/' "$GH_LOG"
   [ "$status" -ne 0 ]
 }
@@ -280,7 +290,11 @@ import sys
 
 manifest = json.loads(pathlib.Path(sys.argv[1]).read_text())
 workflow = pathlib.Path(sys.argv[2]).read_text()
-expected = {item["env"] for item in manifest["secrets"] if item["actions"]}
+expected = {
+    item["env"]
+    for item in manifest["secrets"]
+    if item["actions"] and item.get("bootstrap", True)
+}
 expected.add("REPO_BOOTSTRAP_TOKEN")
 mappings = re.findall(
     r"^\s{10}([A-Z][A-Z0-9_]+): \$\{\{ secrets\.([A-Z][A-Z0-9_]+) \}\}$",
