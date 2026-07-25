@@ -107,6 +107,30 @@
       ],
       "enabled": true
     },
+    "elevenlabs": {
+      "timeout": 60000,
+      "type": "local",
+      "command": [
+        "bash",
+        "scripts/elevenlabs-mcp.sh"
+      ],
+      "enabled": true,
+      "env": {
+        "ELEVENLABS_API_KEY": "{env:ELEVENLABS_API_KEY}"
+      }
+    },
+    "mureka": {
+      "timeout": 60000,
+      "type": "local",
+      "command": [
+        "bash",
+        "scripts/mureka-mcp.sh"
+      ],
+      "enabled": true,
+      "env": {
+        "MUREKA_API_KEY": "{env:MUREKA_API_KEY}"
+      }
+    },
     "oci": {
       "timeout": 60000,
       "type": "local",

@@ -286,6 +286,11 @@ the accounts and developer-platform resources needed by the project.
 Supabase is account-wide by default. Add `?project_ref=<id>` to its MCP URL when
 one-project scope is preferred; project scope also disables account-management
 tools. Cloudflare docs does not require account access.
+ElevenLabs and Mureka read `ELEVENLABS_API_KEY` and `MUREKA_API_KEY` through
+pinned local MCP launchers. ElevenLabs writes generated files under ignored
+`.artifacts/audio/`; Mureka uses its documented API endpoint and a 300-second
+generation timeout. Starting either server does not generate media, but provider
+generation tool calls consume account credits.
 Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
 Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
 remote transport closes the hosted stream unexpectedly. Generated OpenCode MCP

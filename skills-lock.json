@@ -636,6 +636,15 @@
       "source": "microsoft/azure-skills",
       "sourceType": "github"
     },
+    "music": {
+      "computedHash": "0b5708347287ff418b129d2d9560aff13b75a19d4ebc9de24b1569ef884fe6ef",
+      "destinationPath": ".agents/skills/elevenlabs/music",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "37c0f2a682a8953cb9f09b152a0e1624d234193e",
+      "skillPath": "music",
+      "source": "elevenlabs/skills",
+      "sourceType": "github"
+    },
     "netlify-config": {
       "computedHash": "4d0bd9cc33de54e8931f17b572a7076c0980556a53cd9b729466b5e298f2a53c",
       "destinationPath": ".agents/skills/netlify/netlify-config",
@@ -979,6 +988,24 @@
       "source": "anthropics/skills",
       "sourceType": "github"
     },
+    "skywork-music-maker": {
+      "computedHash": "cbf9e1df66bf0a071ea8eac071712fd577698b3bbe499df212877b812ee357e2",
+      "destinationPath": ".agents/skills/skywork/skywork-music-maker",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "c8c6aeb742c3d6a2b728992142796702464b6fce",
+      "skillPath": "skywork-music-maker",
+      "source": "SkyworkAI/Skywork-Skills",
+      "sourceType": "github"
+    },
+    "sound-effects": {
+      "computedHash": "3e91350ad4c23d76175ce52e0c4ae52fb8123c6458e18e5b69796dc80c8299ac",
+      "destinationPath": ".agents/skills/elevenlabs/sound-effects",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "37c0f2a682a8953cb9f09b152a0e1624d234193e",
+      "skillPath": "sound-effects",
+      "source": "elevenlabs/skills",
+      "sourceType": "github"
+    },
     "sprites-and-images": {
       "computedHash": "f90cc8e622328b553e81c15d3afe48b1d72a96b91ea7d20f1235dd04e32b1eea",
       "destinationPath": ".agents/skills/phaser/sprites-and-images",
@@ -1143,6 +1170,15 @@
       ],
       "license": "Apache-2.0"
     },
+    "SkyworkAI/Skywork-Skills": {
+      "evidence": [
+        {
+          "label": "LICENSE",
+          "path": "LICENSE"
+        }
+      ],
+      "license": "MIT"
+    },
     "anthropics/skills": {
       "evidence": [
         {
@@ -1177,6 +1213,15 @@
         }
       ],
       "license": "Apache-2.0"
+    },
+    "elevenlabs/skills": {
+      "evidence": [
+        {
+          "label": "LICENSE",
+          "path": "LICENSE"
+        }
+      ],
+      "license": "MIT"
     },
     "microsoft/azure-skills": {
       "evidence": [
