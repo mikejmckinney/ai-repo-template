@@ -77,6 +77,8 @@ JSON
   grep -q '^## Preserve the user journey$' "$guide"
   grep -q 'generate, send, deploy, publish, write, or mutate' "$guide"
   grep -q 'among equally representative' "$guide"
+  ! grep -q 'is an isolated environment' "$guide"
+  grep -q 'Prefer isolation when it does not reduce fidelity' "$guide"
 }
 
 @test "standalone plan and ADR select environments by fidelity first" {
@@ -87,6 +89,8 @@ JSON
   grep -q 'equally representative options' "$plan"
   grep -q '^### Clarification (2026-07-25)$' "$adr"
   grep -q 'prioritizes evidentiary fidelity' "$adr"
+  ! grep -q 'practical isolated' "$adr"
+  grep -q 'Isolation is preferred when it does not reduce fidelity' "$adr"
 }
 
 @test "outcome evidence validator rejects prose-only external state" {

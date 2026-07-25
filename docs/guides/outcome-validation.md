@@ -10,8 +10,8 @@ required, but they do not replace the affected user's journey.
 - **End-to-end testing** is one method for executable journeys.
 - **Supporting verification** includes unit, integration, regression, lint,
   schema, build, and CI checks.
-- **Outcome-equivalent environment** is an isolated environment preserving the
-  conditions material to the outcome.
+- **Outcome-equivalent environment** is an environment preserving the conditions
+  material to the outcome.
 - **Environment adapter** is the concrete mechanism used for that environment.
 - **Material claim** is an observation whose falsity would change the outcome
   conclusion.
@@ -34,6 +34,10 @@ Choose the most representative practical environment. Fidelity to all
 applicable conditions is the primary criterion. Consider safety, reversibility,
 cost, speed, and resource use only after fidelity; among equally representative
 options, prefer the safer and lower-cost option.
+
+Prefer isolation when it does not reduce fidelity. A shared staging,
+production-like, or live provider environment is valid when it is needed to
+preserve load-bearing conditions.
 
 | Change | Representative adapter |
 | --- | --- |

@@ -35,12 +35,14 @@ User-outcome validation is the umbrella discipline. End-to-end testing,
 integration testing, rendered-document review, metadata inspection, and
 operational walkthroughs are methods selected according to the outcome.
 
-For each material claim, use the most representative practical isolated
-environment. It must preserve the load-bearing trigger, lifecycle phase,
-entrypoint, permissions, fresh state, platform/runtime, representative
-configuration, and observable result. Cost, speed, safety, reversibility, and
-resource use distinguish options only after those conditions are preserved. A
-mixed change can require more than one environment.
+For each material claim, use the most representative practical environment. It
+must preserve the load-bearing trigger, lifecycle phase, entrypoint,
+permissions, fresh state, platform/runtime, representative configuration, and
+observable result. Cost, speed, safety, reversibility, and resource use
+distinguish options only after those conditions are preserved.
+
+Isolation is preferred when it does not reduce fidelity; it is not a universal
+requirement. A mixed change can require more than one environment.
 
 Every material claim must publish an inspectable evidence artifact. External
 state and runtime claims cannot be prose-only. Evidence records:
