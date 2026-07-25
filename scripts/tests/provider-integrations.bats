@@ -169,6 +169,7 @@ for path in (
     'docs/guides/cloud-provider-tooling.md',
     'docs/guides/skill-supply-chain.md',
     '.opencode/opencode.json', 'scripts/browser-mcp.sh',
+    'scripts/elevenlabs-mcp.sh', 'scripts/mureka-mcp.sh',
     'scripts/install-codespace-tools.sh', 'scripts/open-design-mcp.sh',
     'scripts/scan-skill-secrets.py', 'scripts/skill-supply-chain.py',
     'skills-lock.json', 'CLAUDE.md'
@@ -256,6 +257,35 @@ EOF
   for skill in "${azure_skills[@]}"; do
     [ -f "$REPO_ROOT/.agents/skills/azure/$skill/SKILL.md" ]
   done
+}
+
+@test "requested audio skills use reviewed immutable packages" {
+  run jq -e '
+    .skills["skywork-music-maker"] == {
+      "computedHash": .skills["skywork-music-maker"].computedHash,
+      "destinationPath": ".agents/skills/skywork/skywork-music-maker",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "c8c6aeb742c3d6a2b728992142796702464b6fce",
+      "skillPath": "skywork-music-maker",
+      "source": "SkyworkAI/Skywork-Skills",
+      "sourceType": "github"
+    } and
+    .skills["sound-effects"].destinationPath == ".agents/skills/elevenlabs/sound-effects" and
+    .skills["sound-effects"].skillPath == "sound-effects" and
+    .skills["sound-effects"].source == "elevenlabs/skills" and
+    .skills["sound-effects"].ref == "37c0f2a682a8953cb9f09b152a0e1624d234193e" and
+    .skills.music.destinationPath == ".agents/skills/elevenlabs/music" and
+    .skills.music.skillPath == "music" and
+    .skills.music.source == "elevenlabs/skills" and
+    .skills.music.ref == "37c0f2a682a8953cb9f09b152a0e1624d234193e" and
+    .sourceMetadata["SkyworkAI/Skywork-Skills"].license == "MIT" and
+    .sourceMetadata["elevenlabs/skills"].license == "MIT"
+  ' "$REPO_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+
+  [ -f "$REPO_ROOT/.agents/skills/skywork/skywork-music-maker/SKILL.md" ]
+  [ -f "$REPO_ROOT/.agents/skills/elevenlabs/sound-effects/SKILL.md" ]
+  [ -f "$REPO_ROOT/.agents/skills/elevenlabs/music/SKILL.md" ]
 }
 
 @test "OpenDesign MCP uses the portable project launcher" {

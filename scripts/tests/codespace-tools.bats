@@ -153,7 +153,8 @@ EOF
 
   for path in .config/codespace-tools.json scripts/install-codespace-tools.sh \
     .config/derived-repo-secrets.json scripts/create-derived-repo.sh \
-    scripts/cleanup-codespace-caches.sh scripts/browser-mcp.sh scripts/open-design-mcp.sh; do
+    scripts/cleanup-codespace-caches.sh scripts/browser-mcp.sh \
+    scripts/elevenlabs-mcp.sh scripts/mureka-mcp.sh scripts/open-design-mcp.sh; do
     run grep -F "\"$path\"" "$REPO_ROOT/install.sh"
     [ "$status" -eq 0 ]
   done

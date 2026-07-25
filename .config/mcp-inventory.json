@@ -27,6 +27,16 @@
       "command": ["bash", "-lc", "exec uvx mcp-proxy-for-aws@1.6.3 \"https://aws-mcp.${AWS_REGION:-us-east-1}.api.aws/mcp\" --profile \"${AWS_PROFILE:-default}\" --region \"${AWS_REGION:-us-east-1}\""]
     },
     "azure": {"transport": "local", "command": ["npx", "-y", "@azure/mcp@2.0.5", "server", "start"]},
+    "elevenlabs": {
+      "transport": "local",
+      "command": ["bash", "scripts/elevenlabs-mcp.sh"],
+      "environment": {"ELEVENLABS_API_KEY": "ELEVENLABS_API_KEY"}
+    },
+    "mureka": {
+      "transport": "local",
+      "command": ["bash", "scripts/mureka-mcp.sh"],
+      "environment": {"MUREKA_API_KEY": "MUREKA_API_KEY"}
+    },
     "oci": {
       "transport": "local",
       "enabled": false,
