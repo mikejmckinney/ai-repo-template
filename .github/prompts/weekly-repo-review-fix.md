@@ -43,7 +43,10 @@ Edit files directly in the working tree.
 
 ## Gemini JSON mode
 
-Same shape as post-merge retro fix; use `run_week`, `run_kind: weekly`, and path `weekly/fix-verify-<RUN_WEEK>.json`.
+Use the same required evidence shape as post-merge retro fix, including
+`core_user_action`, `irreducible_side_effect`, and `cost_authorization`. Use
+`run_week`, `run_kind: weekly`, and path
+`weekly/fix-verify-<RUN_WEEK>.json`.
 
 ## Findings source
 

@@ -111,6 +111,14 @@ JSON
   [[ "$output" == *"cost_authorization"* ]]
 }
 
+@test "automated fix prompt emits the required core action fields" {
+  prompt="$REPO_ROOT/.github/prompts/post-merge-retro-fix.md"
+
+  grep -q '"core_user_action"' "$prompt"
+  grep -q '"irreducible_side_effect"' "$prompt"
+  grep -q '"cost_authorization"' "$prompt"
+}
+
 @test "outcome evidence validator rejects prose-only external state" {
   write_valid_evidence "$TEST_ROOT/valid.json"
   jq '.claims[0].artifact = "" | .claims[0].artifact_type = ""' \

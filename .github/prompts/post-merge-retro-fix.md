@@ -81,6 +81,9 @@ When running with repository write access, **edit files directly** in the workin
       "claims": [
         {
           "material_claim": "The reported defect no longer reproduces.",
+          "core_user_action": "Run the reported reproduction steps.",
+          "irreducible_side_effect": "The reported failure no longer occurs.",
+          "cost_authorization": "No cost or destructive action.",
           "environment": "isolated fix worktree",
           "why_representative": "The original repro steps execute against the candidate fix.",
           "implementation_sha": "controller:current-head",
