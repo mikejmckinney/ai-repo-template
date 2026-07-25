@@ -11,6 +11,8 @@
 | `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
 | `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile default` |
 | `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
+| `elevenlabs-mcp.sh` | Launch pinned ElevenLabs MCP with repository-local ignored audio output | Called by generated MCP configuration |
+| `mureka-mcp.sh` | Launch pinned Mureka MCP with generation timeout defaults | Called by generated MCP configuration |
 | `check-markdown-links.py` | Validate repository-local Markdown targets | `python3 scripts/check-markdown-links.py <files...>` |
 | `cleanup-codespace-caches.sh` | Report or clean reproducible Codespaces caches | `./scripts/cleanup-codespace-caches.sh [--apply]` |
 | `sync-opencode-oauth-secret.sh` | Preview or sync access-only OpenCode OAuth to Actions | `./scripts/sync-opencode-oauth-secret.sh [--apply]` |

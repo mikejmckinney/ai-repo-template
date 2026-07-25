@@ -349,6 +349,8 @@ MULTIAGENT_FILES=(
   "scripts/codespace-post-start.sh"
   "scripts/install-codespace-tools.sh"
   "scripts/browser-mcp.sh"
+  "scripts/elevenlabs-mcp.sh"
+  "scripts/mureka-mcp.sh"
   "scripts/open-design-mcp.sh"
   "scripts/lib/ensure-gh-pat-auth.sh"
   "scripts/lib/sandbox-remote.sh"

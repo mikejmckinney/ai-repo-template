@@ -62,6 +62,20 @@
       ],
       "enabled": false
     },
+    "elevenlabs": {
+      "type": "local",
+      "command": [
+        "false"
+      ],
+      "enabled": false
+    },
+    "mureka": {
+      "type": "local",
+      "command": [
+        "false"
+      ],
+      "enabled": false
+    },
     "oci": {
       "type": "local",
       "command": [

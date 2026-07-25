@@ -31,6 +31,57 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "audio MCP launchers use exact reviewed packages and credential names" {
+  run jq -e '
+    .servers.elevenlabs.command == ["bash", "scripts/elevenlabs-mcp.sh"] and
+    .servers.elevenlabs.environment == {"ELEVENLABS_API_KEY": "ELEVENLABS_API_KEY"} and
+    .servers.mureka.command == ["bash", "scripts/mureka-mcp.sh"] and
+    .servers.mureka.environment == {"MUREKA_API_KEY": "MUREKA_API_KEY"}
+  ' "$REPO_ROOT/.config/mcp-inventory.json"
+
+  [ "$status" -eq 0 ]
+
+  run jq -e '
+    .mcpServers.elevenlabs.command == "bash" and
+    .mcpServers.elevenlabs.args == ["scripts/elevenlabs-mcp.sh"] and
+    .mcpServers.elevenlabs.env.ELEVENLABS_API_KEY == "${ELEVENLABS_API_KEY}" and
+    .mcpServers.mureka.command == "bash" and
+    .mcpServers.mureka.args == ["scripts/mureka-mcp.sh"] and
+    .mcpServers.mureka.env.MUREKA_API_KEY == "${MUREKA_API_KEY}"
+  ' "$REPO_ROOT/.mcp.json"
+
+  [ "$status" -eq 0 ]
+}
+
+@test "audio MCP launchers apply portable non-secret defaults" {
+  bin_dir="$(mktemp -d)"
+  cat >"$bin_dir/uvx" <<'EOF'
+#!/usr/bin/env bash
+printf 'args=%s\n' "$*"
+printf 'base=%s\n' "${ELEVENLABS_MCP_BASE_PATH:-}"
+printf 'output=%s\n' "${ELEVENLABS_MCP_OUTPUT_MODE:-}"
+printf 'url=%s\n' "${MUREKA_API_URL:-}"
+printf 'timeout=%s\n' "${TIME_OUT_SECONDS:-}"
+EOF
+  chmod +x "$bin_dir/uvx"
+
+  run env PATH="$bin_dir:$PATH" ELEVENLABS_API_KEY=test-key \
+    bash -c 'cd /tmp && bash "$1/scripts/elevenlabs-mcp.sh"' _ "$REPO_ROOT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"args=--python 3.13 elevenlabs-mcp==0.11.0"* ]]
+  [[ "$output" == *"base=$REPO_ROOT/.artifacts/audio"* ]]
+  [[ "$output" == *"output=files"* ]]
+
+  run env PATH="$bin_dir:$PATH" MUREKA_API_KEY=test-key \
+    bash -c 'cd /tmp && bash "$1/scripts/mureka-mcp.sh"' _ "$REPO_ROOT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"args=--python 3.13 mureka-mcp==0.0.13"* ]]
+  [[ "$output" == *"url=https://api.mureka.ai"* ]]
+  [[ "$output" == *"timeout=300"* ]]
+
+  rm -rf "$bin_dir"
+}
+
 @test "MCP check reports stale host output" {
   jq '.mcpServers.github.url = "https://stale.invalid"' "$TEST_ROOT/.mcp.json" \
     >"$TEST_ROOT/stale.json"
