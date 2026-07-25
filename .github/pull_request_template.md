@@ -73,6 +73,10 @@ N/A — empty headings are noise.
 ## User outcome evidence
 
 <!-- REQUIRED for each material outcome claim. Repeat this record as needed.
+     Choose the most representative practical environment; cost and speed may
+     distinguish equally representative options but cannot replace the user's
+     action or required result. Paid or destructive actions require explicit
+     approval and remain blocked until performed.
      External-state and runtime claims cannot be prose-only. Prefer scoped,
      machine-generated evidence over screenshots; redact before publication.
      See docs/guides/outcome-validation.md. -->

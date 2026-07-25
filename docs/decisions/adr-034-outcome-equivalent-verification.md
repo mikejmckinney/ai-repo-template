@@ -35,10 +35,14 @@ User-outcome validation is the umbrella discipline. End-to-end testing,
 integration testing, rendered-document review, metadata inspection, and
 operational walkthroughs are methods selected according to the outcome.
 
-For each material claim, use the least costly isolated environment that
-preserves the load-bearing trigger, lifecycle phase, entrypoint, permissions,
-fresh state, platform/runtime, representative configuration, and observable
-result. A mixed change can require more than one environment.
+For each material claim, use the most representative practical environment. It
+must preserve the load-bearing trigger, lifecycle phase, entrypoint,
+permissions, fresh state, platform/runtime, representative configuration, and
+observable result. Cost, speed, safety, reversibility, and resource use
+distinguish options only after those conditions are preserved.
+
+Isolation is preferred when it does not reduce fidelity; it is not a universal
+requirement. A mixed change can require more than one environment.
 
 Every material claim must publish an inspectable evidence artifact. External
 state and runtime claims cannot be prose-only. Evidence records:
@@ -67,6 +71,19 @@ The sibling repository remains the adapter for GitHub behavior that requires
 candidate code on a default branch. The candidate workflow must be placed on
 the required ref and its real event fired. A copied branch or unrelated green
 CI run is insufficient.
+
+### Clarification (2026-07-25)
+
+Environment selection prioritizes evidentiary fidelity, not minimum spend or
+effort. A generate, send, deploy, publish, write, or external-mutation outcome
+therefore requires one representative real operation. Startup, metadata
+inspection, mocks, and tool listing remain supporting evidence when the
+affected user's action and required observable result have not occurred.
+
+When that operation spends money or is destructive, the author must obtain
+explicit approval and bound it to the smallest representative action. The
+outcome remains `blocked` while approval is pending; after the action is
+performed, its observed result determines `pass` or `fail`.
 
 ## ADR relationships
 

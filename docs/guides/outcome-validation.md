@@ -10,8 +10,8 @@ required, but they do not replace the affected user's journey.
 - **End-to-end testing** is one method for executable journeys.
 - **Supporting verification** includes unit, integration, regression, lint,
   schema, build, and CI checks.
-- **Outcome-equivalent environment** is the least costly isolated environment
-  preserving the conditions material to the outcome.
+- **Outcome-equivalent environment** is an environment preserving the conditions
+  material to the outcome.
 - **Environment adapter** is the concrete mechanism used for that environment.
 - **Material claim** is an observation whose falsity would change the outcome
   conclusion.
@@ -30,7 +30,14 @@ Identify these load-bearing conditions before choosing an adapter:
 6. Representative inputs and configuration.
 7. Observable result that resolves the problem.
 
-Use the least costly environment preserving all applicable conditions.
+Choose the most representative practical environment. Fidelity to all
+applicable conditions is the primary criterion. Consider safety, reversibility,
+cost, speed, and resource use only after fidelity; among equally representative
+options, prefer the safer and lower-cost option.
+
+Prefer isolation when it does not reduce fidelity. A shared staging,
+production-like, or live provider environment is valid when it is needed to
+preserve load-bearing conditions.
 
 | Change | Representative adapter |
 | --- | --- |
@@ -48,6 +55,31 @@ Use the least costly environment preserving all applicable conditions.
 For default-branch GitHub behavior, follow
 [`sandbox-verification.md`](sandbox-verification.md). The sibling repository is
 an adapter for that constraint, not a universal destination.
+
+## Preserve the user journey
+
+Derive the affected user's action and required observable result from the
+original request and problem statement before selecting an environment. Cost
+or convenience cannot justify removing either one. If evidence would still
+pass when the required result is broken, that evidence is supporting
+verification rather than outcome validation.
+
+Features whose purpose is to generate, send, deploy, publish, write, or mutate
+external state require one representative real operation. Examples:
+
+| Feature | User action and required result | Supporting-only substitute |
+| --- | --- | --- |
+| Media generation | Invoke generation and receive a usable media artifact | Startup, authentication, or listing models/tools |
+| Messaging | Send a representative message and observe delivery | Validating credentials or queue metadata |
+| Deployment | Deploy candidate behavior and exercise its user entrypoint | Build, plan, or configuration validation |
+| Data mutation | Perform the authorized write and read back the result | Schema validation or a mocked repository call |
+
+When the representative action spends money or is destructive, obtain explicit
+approval before performing it and bound the action to the smallest request that
+preserves the outcome. Record the result as `blocked` while approval is pending;
+after performing the action, use `pass` or `fail` based on the observed result.
+Do not rewrite the issue outcome around a cheaper startup, metadata, mock, or
+read-only action.
 
 ## Identify material claims
 

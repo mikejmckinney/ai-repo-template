@@ -82,8 +82,11 @@ Evidence reuse: <none, or Paths: <later path analysis>; Conditions: <load-bearin
 Result: pass | fail | blocked
 ```
 
-Use the least costly outcome-equivalent environment. Mixed changes may require
-more than one record. External-state and runtime claims cannot be prose-only.
+Choose the most representative practical environment; cost and speed may
+distinguish equally representative options but cannot replace the affected
+user's action or required result. Paid or destructive actions require explicit
+approval and remain blocked until performed. Mixed changes may require more
+than one record. External-state and runtime claims cannot be prose-only.
 See `docs/guides/outcome-validation.md`.
 
 ### Supporting verification

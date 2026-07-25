@@ -59,9 +59,38 @@ JSON
   grep -q '^## User outcome evidence$' "$template"
   grep -q 'Material claim:' "$template"
   grep -q 'Environment:' "$template"
+  grep -q 'Choose the most representative practical environment' "$template"
+  grep -q 'remain blocked until performed' "$template"
   ! grep -q '^## Sandbox dogfood evidence$' "$template"
   ! grep -q '^Sandbox issue:' "$template"
   ! grep -q '^Sandbox PR:' "$template"
+}
+
+@test "policy prioritizes representative fidelity over cost" {
+  policy="$REPO_ROOT/AGENTS.md"
+  guide="$REPO_ROOT/docs/guides/outcome-validation.md"
+
+  grep -q 'most representative practical environment' "$policy"
+  grep -q 'Cost, speed, safety, and resource use are constraints' "$policy"
+  grep -q 'explicit approval before performing it' "$policy"
+  grep -q 'keep the outcome result blocked' "$policy"
+  grep -q '^## Preserve the user journey$' "$guide"
+  grep -q 'generate, send, deploy, publish, write, or mutate' "$guide"
+  grep -q 'among equally representative' "$guide"
+  ! grep -q 'is an isolated environment' "$guide"
+  grep -q 'Prefer isolation when it does not reduce fidelity' "$guide"
+}
+
+@test "standalone plan and ADR select environments by fidelity first" {
+  plan="$REPO_ROOT/.github/PLAN_TEMPLATE.md"
+  adr="$REPO_ROOT/docs/decisions/adr-034-outcome-equivalent-verification.md"
+
+  grep -q 'most representative' "$plan"
+  grep -q 'equally representative options' "$plan"
+  grep -q '^### Clarification (2026-07-25)$' "$adr"
+  grep -q 'prioritizes evidentiary fidelity' "$adr"
+  ! grep -q 'practical isolated' "$adr"
+  grep -q 'Isolation is preferred when it does not reduce fidelity' "$adr"
 }
 
 @test "outcome evidence validator rejects prose-only external state" {

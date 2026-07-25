@@ -225,7 +225,11 @@ before designing consequential or ambiguous work. Use
 impact analysis could change the decision; routine deterministic maintenance
 does not require the full scaffold. Reviews must identify a concrete failure
 mode and proportionate correction, and supporting checks never replace the
-issue's user-outcome test.
+issue's user-outcome test. Choose the most representative practical validation
+environment; cost and speed may distinguish equally representative options but
+never justify omitting the affected user's action or required result. Obtain
+explicit approval before paid or destructive validation and keep the outcome
+blocked until that action is performed.
 
 ## Workflow Verification
 

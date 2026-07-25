@@ -92,10 +92,13 @@ Evidence reuse: <none, or Paths: <later path analysis>; Conditions: <load-bearin
 Result: pass | fail | blocked
 ```
 
-<!-- Repeat the record for each material claim. Use the least costly
-     outcome-equivalent environment and attach an inspectable artifact.
-     External-state and runtime claims cannot be prose-only. Mixed changes may
-     require multiple environments. See docs/guides/outcome-validation.md. -->
+<!-- Repeat the record for each material claim. Choose the most representative
+     practical environment and attach an inspectable artifact. Cost and speed
+     may distinguish equally representative options but cannot replace the
+     affected user's action or required result. Paid or destructive actions
+     require explicit approval and remain blocked until performed. External-
+     state and runtime claims cannot be prose-only. Mixed changes may require
+     multiple environments. See docs/guides/outcome-validation.md. -->
 
 **Pass condition:**
 
