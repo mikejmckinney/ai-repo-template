@@ -78,6 +78,9 @@ before pushing. -->
 
 ```text
 Material claim:
+Core user action:
+Irreducible side effect:
+Cost / authorization: <none, explicitly approved boundary, or blocked pending approval>
 Environment:
 Why representative:
 Implementation SHA:
@@ -93,9 +96,12 @@ Result: pass | fail | blocked
 ```
 
 <!-- Repeat the record for each material claim. Use the least costly
-     outcome-equivalent environment and attach an inspectable artifact.
-     External-state and runtime claims cannot be prose-only. Mixed changes may
-     require multiple environments. See docs/guides/outcome-validation.md. -->
+     outcome-equivalent environment without removing or redefining the core
+     user action or side effect, and attach an inspectable artifact. Paid or
+     destructive actions require explicit approval and remain blocked until
+     approved. External-state and runtime claims cannot be prose-only. Mixed
+     changes may require multiple environments. See
+     docs/guides/outcome-validation.md. -->
 
 **Pass condition:**
 

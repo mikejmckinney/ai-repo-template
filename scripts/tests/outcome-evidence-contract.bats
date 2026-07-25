@@ -39,6 +39,9 @@ JSON
   plan="$REPO_ROOT/.github/templates/issue-implementation-plan.md"
 
   grep -q 'Material claim:' "$plan"
+  grep -q 'Core user action:' "$plan"
+  grep -q 'Irreducible side effect:' "$plan"
+  grep -q 'Cost / authorization:' "$plan"
   grep -q 'Environment:' "$plan"
   grep -q 'Why representative:' "$plan"
   grep -q 'Implementation SHA:' "$plan"
@@ -58,10 +61,36 @@ JSON
 
   grep -q '^## User outcome evidence$' "$template"
   grep -q 'Material claim:' "$template"
+  grep -q 'Core user action:' "$template"
+  grep -q 'Irreducible side effect:' "$template"
+  grep -q 'Cost / authorization:' "$template"
   grep -q 'Environment:' "$template"
   ! grep -q '^## Sandbox dogfood evidence$' "$template"
   ! grep -q '^Sandbox issue:' "$template"
   ! grep -q '^Sandbox PR:' "$template"
+}
+
+@test "policy forbids least-cost validation from substituting supporting checks" {
+  policy="$REPO_ROOT/AGENTS.md"
+  guide="$REPO_ROOT/docs/guides/outcome-validation.md"
+
+  grep -q 'must not remove, replace, or redefine the core user action' "$policy"
+  grep -q 'explicit approval before performing it' "$policy"
+  grep -q 'keep the outcome result blocked' "$policy"
+  grep -q '^## Preserve the core action$' "$guide"
+  grep -q 'generate, send, deploy, publish, write, or mutate' "$guide"
+  grep -q 'reduction can change the environment; it cannot remove the action' "$guide"
+}
+
+@test "standalone plan and ADR preserve the core user action" {
+  plan="$REPO_ROOT/.github/PLAN_TEMPLATE.md"
+  adr="$REPO_ROOT/docs/decisions/adr-034-outcome-equivalent-verification.md"
+
+  grep -q 'Core user action:' "$plan"
+  grep -q 'Irreducible side effect:' "$plan"
+  grep -q 'Cost / authorization:' "$plan"
+  grep -q '^### Clarification (2026-07-25)$' "$adr"
+  grep -q 'does not permit substituting a cheaper action' "$adr"
 }
 
 @test "outcome evidence validator rejects prose-only external state" {

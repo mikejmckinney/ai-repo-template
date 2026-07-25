@@ -68,6 +68,20 @@ candidate code on a default branch. The candidate workflow must be placed on
 the required ref and its real event fired. A copied branch or unrelated green
 CI run is insufficient.
 
+### Clarification (2026-07-25)
+
+Least-cost environment selection does not permit substituting a cheaper action
+for the core user action or removing its irreducible observable side effect. A
+generate, send, deploy, publish, write, or external-mutation outcome therefore
+requires one representative real operation. Startup, metadata inspection,
+mocks, and tool listing remain supporting evidence when the defining operation
+has not occurred.
+
+When that operation spends money or is destructive, the author must obtain
+explicit approval and bound it to the smallest representative action. The
+outcome remains `blocked` while approval is pending; after the action is
+performed, its observed result determines `pass` or `fail`.
+
 ## ADR relationships
 
 ADR-016 remains active and owns deterministic workflow-trigger classification

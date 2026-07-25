@@ -324,6 +324,7 @@ When a downstream project (a repo built *from* this template) hits an incident w
 - Write tests before or alongside implementation (TDD preferred).
 - All behavioral changes must include appropriate tests.
 - Perform the issue's user outcome in the least costly outcome-equivalent environment and publish a PR-lifetime redacted artifact for every material claim. External-state and runtime claims cannot be prose-only. Use [the outcome-validation guide](docs/guides/outcome-validation.md); use the [sibling sandbox playbook](docs/guides/sandbox-verification.md) only when GitHub default-branch state is load-bearing.
+- Least-cost environment selection must not remove, replace, or redefine the core user action or its irreducible side effect. For features that generate, send, deploy, publish, write, or mutate external state, perform one representative real operation. When that operation spends money or is destructive, obtain explicit approval before performing it; until approved and exercised, keep the outcome result blocked rather than narrowing the issue outcome to startup, metadata, mocks, or supporting checks.
 - CI must pass before marking tasks complete. If CI fails:
   1. Read the error logs
   2. Fix the underlying issue
@@ -339,6 +340,11 @@ the result with concrete evidence in the PR body.
 
 Outcome validation answers: did the shipped artifact solve the user's stated
 problem?
+
+Derive the core user action from the original request and problem statement
+before selecting an environment. If the planned action would still pass when
+the feature's defining side effect is broken, it is supporting verification,
+not user-outcome validation.
 
 If the user outcome does not resolve the problem statement, do not patch around
 the test merely to make it pass. Stop, document the framing disconnect, and

@@ -79,6 +79,12 @@ N/A — empty headings are noise.
 
 **Material claim:** <observation whose falsity changes the outcome conclusion>
 
+**Core user action:** <action derived from the original request/problem>
+
+**Irreducible side effect:** <observable result that must occur for the feature to work>
+
+**Cost / authorization:** <none, explicitly approved boundary, or blocked pending approval>
+
 **Environment:** <selected adapter>
 
 **Why representative:** <load-bearing conditions preserved>

@@ -49,6 +49,31 @@ For default-branch GitHub behavior, follow
 [`sandbox-verification.md`](sandbox-verification.md). The sibling repository is
 an adapter for that constraint, not a universal destination.
 
+## Preserve the core action
+
+Derive the core user action and its irreducible observable side effect from the
+original request and problem statement before selecting an environment. Cost
+reduction can change the environment; it cannot remove the action. If evidence
+would still pass when the feature's defining side effect is broken, that
+evidence is supporting verification rather than outcome validation.
+
+Features whose purpose is to generate, send, deploy, publish, write, or mutate
+external state require one representative real operation. Examples:
+
+| Feature | Core action and side effect | Supporting-only substitute |
+| --- | --- | --- |
+| Media generation | Invoke generation and receive a usable media artifact | Startup, authentication, or listing models/tools |
+| Messaging | Send a representative message and observe delivery | Validating credentials or queue metadata |
+| Deployment | Deploy candidate behavior and exercise its user entrypoint | Build, plan, or configuration validation |
+| Data mutation | Perform the authorized write and read back the result | Schema validation or a mocked repository call |
+
+When the representative action spends money or is destructive, obtain explicit
+approval before performing it and bound the action to the smallest request that
+preserves the outcome. Record the result as `blocked` while approval is pending;
+after performing the action, use `pass` or `fail` based on the observed result.
+Do not rewrite the issue outcome around a cheaper startup, metadata, mock, or
+read-only action.
+
 ## Identify material claims
 
 Record observations that determine whether the outcome passed. Examples:
@@ -69,6 +94,9 @@ Use this shape for every material claim:
 
 ```text
 Material claim:
+Core user action:
+Irreducible side effect:
+Cost / authorization:
 Environment:
 Why representative:
 Implementation SHA:
