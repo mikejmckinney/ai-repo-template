@@ -210,14 +210,19 @@ PY
   git -C "$repo" add result.txt
   git -C "$repo" commit -qm base
   printf 'fix this' >"$TEST_ROOT/prompt.md"
+  mkdir -p "$repo/.artifacts/postmerge-retro/daily-test"
+  printf '{}\n' >"$repo/.artifacts/postmerge-retro/daily-test/daily-retro.json"
   cat >"$TEST_ROOT/mock-cursor.mjs" <<'EOF'
-import { writeFileSync } from "node:fs"
+import { existsSync, writeFileSync } from "node:fs"
 const [, , , output] = process.argv
 const forbidden = [
   "GITHUB_TOKEN", "GH_TOKEN", "SANDBOX_BOOTSTRAP_TOKEN", "OPENCODE_GITHUB_TOKEN",
   "OPENCODE_AUTH_CONTENT", "OPENAI_API_KEY", "OPENROUTER_API_KEY", "GEMINI_API_KEY", "GOOGLE_API_KEY",
 ]
 if (forbidden.some((name) => process.env[name])) process.exit(3)
+if (process.env.FIX_PROVIDER_BATCH_JSON && !process.env.FIX_PROVIDER_BATCH_JSON.endsWith("/.artifacts/postmerge-retro/daily-test/daily-retro.json")) process.exit(4)
+if (process.env.FIX_PROVIDER_BATCH_JSON && !process.env.FIX_PROVIDER_BATCH_JSON.startsWith(process.cwd())) process.exit(5)
+if (process.env.FIX_PROVIDER_BATCH_JSON && !existsSync(process.env.FIX_PROVIDER_BATCH_JSON)) process.exit(6)
 writeFileSync("result.txt", "cursor-verified\n")
 writeFileSync(output, "success\n")
 EOF
@@ -237,6 +242,7 @@ EOF
     OPENROUTER_API_KEY=openrouter-secret-test \
     GEMINI_API_KEY=gemini-secret-test \
     GOOGLE_API_KEY=google-secret-test \
+    FIX_PROVIDER_BATCH_JSON="$repo/.artifacts/postmerge-retro/daily-test/daily-retro.json" \
     OPENCODE_AUTH_CONTENT="$(jq '.openai.refresh = "ci-refresh-disabled"' "$AUTH_FILE")" \
     GITHUB_TOKEN=publisher-secret-test \
     bash "$REPO_ROOT/scripts/workflows/lib/run-cursor-fix.sh" \
@@ -344,7 +350,7 @@ JSON
     "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
     "$TEST_ROOT/cascade-verify.sh" "$TEST_ROOT/cascade-prompt.md" \
     "$TEST_ROOT/cascade-output.txt" "$repo" "$TEST_ROOT" \
-    "$REPO_ROOT/scripts/workflows/lib" "$repo/.artifacts/postmerge-retro/daily-test/daily-retro.json"
+    "$REPO_ROOT/scripts/workflows/lib" ".artifacts/postmerge-retro/daily-test/daily-retro.json"
 
   [ "$status" -eq 0 ]
   [ "$(cat "$repo/result.txt")" = cursor-verified ]

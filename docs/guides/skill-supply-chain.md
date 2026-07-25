@@ -122,9 +122,9 @@ write. A material package change:
 8. releases the publishing runner, then invokes CI and lint as reusable jobs on
    the generated head;
 9. runs a final job that correlates both results to the current PR head, marks the
-   PR ready only when both pass, or leaves it draft with a failure comment. GitHub
-   leaves `pull_request` runs created by `GITHUB_TOKEN` awaiting maintainer
-   approval, so those runs are not the automated completion gate.
+   PR ready only when both pass, or leaves it draft with a failure comment.
+   Same-repository pull request events created with `GITHUB_TOKEN` do not start
+   new workflow runs, so those events are not the automated completion gate.
 
 If one source fails but another validates, the failed source remains unchanged
 and the validated sources can still publish. The workflow run records every
@@ -132,15 +132,21 @@ failure; a mixed-result PR also lists the rolled-back sources. If every changed
 source fails, the run fails and no new publication is created.
 
 The publishing job has `contents: write` and `pull-requests: write` because it
-must push the aggregate branch and maintain its draft PR. The final job has only
-`contents: read` and `pull-requests: write`; it cannot use the merge endpoint,
-which requires contents write. The workflow has no auto-merge path. Generated
-commits cannot include workflow or repository script changes; the downloaded
-packages are treated as data and are never run by the publishing job.
+must push the aggregate branch and maintain its draft PR. The final job uses the
+required `SKILL_REFRESH_PR_TOKEN`, a fine-grained PAT restricted to the target
+repository with `Contents: read` and `Pull requests: write`. GitHub rejects the
+ready-for-review mutation from a job-scoped `GITHUB_TOKEN`; the PAT can perform
+that mutation but cannot use the merge endpoint, which requires contents write.
+The workflow has no auto-merge path. Generated commits cannot include workflow
+or repository script changes; the downloaded packages are treated as data and
+are never run by the publishing job.
 
 Repository controls:
 
 - Required setting: **Allow GitHub Actions to create and approve pull requests**.
+- Required secret: `SKILL_REFRESH_PR_TOKEN`, provisioned manually after creating
+  each repository because a repository-scoped token cannot authorize a repository
+  before it exists.
 - Merge gate: required code-owner approval on `main` through `CODEOWNERS`.
 
 The Codespaces installer renders a missing downstream `CODEOWNERS` from the
@@ -149,11 +155,11 @@ the file with a warning when no owner is available rather than copying the
 template maintainer. For organization-owned repositories, replace the
 organization handle with the user or team responsible for required approval.
 
-The setting lets the job-scoped `GITHUB_TOKEN` open the draft and later mark it
-ready after validation. GitHub combines creation and review submission under that
-setting; it does not offer a create-only switch. The separate code-owner gate
-prevents the creating workflow from satisfying maintainer review. Never apply
-`auto-merge`.
+The setting lets the job-scoped `GITHUB_TOKEN` open the draft. GitHub combines
+pull request creation and review submission under that setting; it does not offer
+a create-only switch. The finalizer uses `SKILL_REFRESH_PR_TOKEN` to mark the
+validated draft ready. The separate code-owner gate prevents the creating
+workflow from satisfying maintainer review. Never apply `auto-merge`.
 
 ### Human review checklist
 

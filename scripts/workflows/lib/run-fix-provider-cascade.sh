@@ -6,7 +6,7 @@ run_fix_provider_cascade() {
   local batch_json="$9" verify_relative_path="${10}"
   local verify_command="${FIX_PROVIDER_VERIFY_COMMAND:-./test.sh}"
   local attempt_root active_worktree attempt_output patch_file provider
-  local batch_relative_path attempt_batch_json
+  local batch_source batch_relative_path attempt_batch_json canonical_repo
   local -a provider_candidates=()
 
   mapfile -t provider_candidates < <(list_advisory_providers "$mode")
@@ -15,8 +15,14 @@ run_fix_provider_cascade() {
     return 1
   fi
 
-  if [[ "$batch_json" == "$repo_root/"* ]]; then
-    batch_relative_path="${batch_json#"$repo_root"/}"
+  canonical_repo="$(realpath "$repo_root")"
+  if [[ "$batch_json" == /* ]]; then
+    batch_source="$(realpath "$batch_json")"
+  else
+    batch_source="$(realpath "$canonical_repo/$batch_json")"
+  fi
+  if [[ "$batch_source" == "$canonical_repo/"* ]]; then
+    batch_relative_path="${batch_source#"$canonical_repo"/}"
   else
     batch_relative_path=".artifacts/fix-provider-input.json"
   fi
@@ -29,11 +35,12 @@ run_fix_provider_cascade() {
     git -C "$repo_root" worktree add --detach "$active_worktree" HEAD >/dev/null
     attempt_batch_json="$active_worktree/$batch_relative_path"
     mkdir -p "$(dirname "$attempt_batch_json")"
-    cp -- "$batch_json" "$attempt_batch_json"
+    cp -- "$batch_source" "$attempt_batch_json"
 
     if (
       cd "$active_worktree"
-      OPENCODE_FIX_MODE=true \
+      FIX_PROVIDER_BATCH_JSON="$attempt_batch_json" \
+        OPENCODE_FIX_MODE=true \
         OPENCODE_FIX_VERIFY_COMMAND=true \
         CURSOR_FIX_VERIFY_COMMAND=true \
         invoke_advisory_llm "$prompt_file" "$attempt_output" "$provider" \

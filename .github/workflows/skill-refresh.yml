@@ -359,14 +359,21 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write
+      pull-requests: read
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.SKILL_REFRESH_PR_TOKEN }}
       REFRESH_HEAD: ${{ needs.refresh-sources.outputs.head_sha }}
       REFRESH_PR: ${{ needs.refresh-sources.outputs.pull_request_number }}
       CI_RESULT: ${{ needs.required-ci.result }}
       LINT_RESULT: ${{ needs.required-lint.result }}
     steps:
+      - name: Verify readiness credential
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::error::Missing required secret: SKILL_REFRESH_PR_TOKEN"
+            exit 1
+          fi
+
       - name: Verify current aggregate pull request head
         id: current-pr
         run: |

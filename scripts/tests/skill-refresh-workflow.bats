@@ -236,6 +236,10 @@ EOF
 }
 
 @test "aggregate finalizer addresses its repository without a checkout" {
+  run grep -Fq 'GH_TOKEN: ${{ secrets.SKILL_REFRESH_PR_TOKEN }}' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'Missing required secret: SKILL_REFRESH_PR_TOKEN' "$WORKFLOW"
+  [ "$status" -eq 0 ]
   run grep -Fq 'gh pr view "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"' "$WORKFLOW"
   [ "$status" -eq 0 ]
   run grep -Fq 'gh pr ready "$REFRESH_PR" --repo "$GITHUB_REPOSITORY"' "$WORKFLOW"
@@ -256,6 +260,8 @@ EOF
   run grep -Fq 'Allow GitHub Actions to create and approve pull requests' "$guide"
   [ "$status" -eq 0 ]
   run grep -Fq 'required code-owner approval' "$guide"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'SKILL_REFRESH_PR_TOKEN' "$guide"
   [ "$status" -eq 0 ]
 }
 

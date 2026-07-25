@@ -79,7 +79,11 @@ Custom `--manifest` files are schema-validated and cannot route
 `REPO_BOOTSTRAP_TOKEN` or GitHub authentication aliases to either destination
 under another entry.
 
-`OPENCODE_GITHUB_TOKEN` is the required destination workflow credential.
+`OPENCODE_GITHUB_TOKEN` is a required destination workflow credential.
+`SKILL_REFRESH_PR_TOKEN` is also required, but the manifest marks it
+`bootstrap: false`: create the destination first, then create or expand a
+fine-grained PAT to include that repository and add it as an Actions secret.
+This preserves repository scope instead of requiring an all-repositories token.
 Provider credentials and `SANDBOX_BOOTSTRAP_TOKEN` are optional capabilities.
 When `OPENCODE_OPENAI_AUTH` is absent from the environment in a local run, the
 script can delegate to `sync-opencode-oauth-secret.sh` to upload an access-only
