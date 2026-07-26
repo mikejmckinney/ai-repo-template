@@ -40,7 +40,12 @@ the environment variable outside the conversation.
 
 Ace Data Cloud controls pricing, quotas, available models, retention, and API
 behavior. Check the current MCP schemas and provider documentation instead of
-guessing parameter names, model IDs, credit costs, or completion times.
+guessing parameter names, model IDs, credit costs, or completion times. Use the
+[pricing page](https://platform.acedata.cloud/services/suno?tab=pricing) for
+current per-call costs and the [Suno Audios API reference](https://platform.acedata.cloud/documents/suno-audios)
+for provider parameters. Treat the installed MCP tool schemas and
+`suno_list_actions` output as authoritative for actions available in the pinned
+server rather than copying a static action catalog into this skill.
 
 ## Approval boundary
 
@@ -102,7 +107,8 @@ media metadata rather than a secret-bearing transcript or signed URL.
 ## Sources
 
 - [Reviewed AceDataCloud/SunoMCP commit](https://github.com/AceDataCloud/SunoMCP/commit/0473b0ba5d454e2dd1eafdd06828627d06c23774)
-- [Ace Data Cloud Suno API documentation](https://platform.acedata.cloud/documents/4da95d9d-7722-4a72-857d-bf6be86036e9)
+- [Ace Data Cloud Suno pricing](https://platform.acedata.cloud/services/suno?tab=pricing)
+- [Ace Data Cloud Suno Audios API reference](https://platform.acedata.cloud/documents/suno-audios)
 - [Suno terms](https://suno.com/terms)
 
 ## Ownership and freshness

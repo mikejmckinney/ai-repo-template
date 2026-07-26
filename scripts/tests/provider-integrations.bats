@@ -428,6 +428,13 @@ EOF
     "$REPO_ROOT/.agents/skills/suno/SKILL.md"
   [ "$status" -eq 0 ]
 
+  for url in \
+    'https://platform.acedata.cloud/services/suno?tab=pricing' \
+    'https://platform.acedata.cloud/documents/suno-audios'; do
+    run grep -Fq "$url" "$REPO_ROOT/.agents/skills/suno/SKILL.md"
+    [ "$status" -eq 0 ]
+  done
+
   run grep -Fq "or an AI song" "$REPO_ROOT/.agents/skills/suno/SKILL.md"
   [ "$status" -eq 1 ]
 }
