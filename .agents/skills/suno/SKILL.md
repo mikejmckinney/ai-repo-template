@@ -66,9 +66,14 @@ current tool description or provider pricing indicates otherwise, stop and ask.
    style control, prefer `suno_generate_custom_music`.
 4. Preserve the returned task identifier. Use `suno_get_task` to retrieve status
    and results rather than resubmitting when processing is incomplete.
-5. Report the provider-observed status and returned media metadata. Do not claim
+5. Prefer the documented terminal signal: top-level `state` is `complete` and
+   `response.success` is true. In pinned `mcp-suno==2026.7.4.0`, Ace may omit the
+   top-level state after successful generation; accept the result as complete
+   only when `response.success` is true, `response.data` is non-empty, every data
+   item has `state` equal to `succeeded`, and every item has a final `audio_url`.
+6. Report the provider-observed status and returned media metadata. Do not claim
    completion from MCP startup, request acceptance, or a task identifier alone.
-6. Redact credentials, account identifiers, and signed or expiring media query
+7. Redact credentials, account identifiers, and signed or expiring media query
    parameters from durable evidence. Tell the user when provider URLs may expire.
 
 For multi-step transformations, complete and verify each prerequisite task before
@@ -84,6 +89,8 @@ Validate the user's requested outcome, not only transport health:
 - request acceptance proves only that Ace received the task;
 - a completed task with the requested playable or downloadable result is the
   minimum evidence for generation success;
+- an `unknown` MCP polling status is not authoritative when the pinned server's
+  raw result satisfies the strict `response.success`/`succeeded` fallback above;
 - subjective music quality remains the user's judgment.
 
 When repository evidence is required, retain a redacted task/result record and

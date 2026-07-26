@@ -418,7 +418,8 @@ EOF
   [ "$status" -eq 0 ]
 
   for phrase in "Ace Data Cloud" "third-party" "explicit approval" \
-    ACEDATACLOUD_API_TOKEN suno_generate_music suno_get_task; do
+    ACEDATACLOUD_API_TOKEN suno_generate_music suno_get_task \
+    "response.success" succeeded; do
     run grep -Fq "$phrase" "$REPO_ROOT/.agents/skills/suno/SKILL.md"
     [ "$status" -eq 0 ]
   done
