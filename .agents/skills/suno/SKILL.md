@@ -2,10 +2,11 @@
 name: suno
 description: |
   Create and manage Suno-backed music through Ace Data Cloud's third-party MCP.
-  Use whenever a user asks to generate a song, write lyrics for generation,
-  extend, remix, cover, remaster, separate stems, convert, or inspect Suno music,
-  even when they mention only Suno or an AI song. Require explicit approval
-  before chargeable operations and never describe this as an official Suno API.
+  Use when a user explicitly names Suno, selects Ace Data Cloud's Suno MCP, or
+  asks to extend, remix, cover, remaster, separate, convert, or inspect existing
+  Suno media through that integration. Do not use for a provider-neutral music
+  request. Require approval before chargeable operations and never describe this
+  as an official Suno API.
 ---
 
 # Suno Through Ace Data Cloud
@@ -71,6 +72,8 @@ current tool description or provider pricing indicates otherwise, stop and ask.
    top-level state after successful generation; accept the result as complete
    only when `response.success` is true, `response.data` is non-empty, every data
    item has `state` equal to `succeeded`, and every item has a final `audio_url`.
+   Treat audio URLs returned while a task is `pending` or `processing` as
+   streaming previews, not final results; they do not satisfy either path.
 6. Report the provider-observed status and returned media metadata. Do not claim
    completion from MCP startup, request acceptance, or a task identifier alone.
 7. Redact credentials, account identifiers, and signed or expiring media query

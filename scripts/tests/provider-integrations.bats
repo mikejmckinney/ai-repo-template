@@ -419,7 +419,7 @@ EOF
 
   for phrase in "Ace Data Cloud" "third-party" "explicit approval" \
     ACEDATACLOUD_API_TOKEN suno_generate_music suno_get_task \
-    "response.success" succeeded; do
+    "response.success" succeeded "streaming previews"; do
     run grep -Fq "$phrase" "$REPO_ROOT/.agents/skills/suno/SKILL.md"
     [ "$status" -eq 0 ]
   done
@@ -427,4 +427,7 @@ EOF
   run grep -Fq 'https://github.com/AceDataCloud/SunoMCP/commit/0473b0ba5d454e2dd1eafdd06828627d06c23774' \
     "$REPO_ROOT/.agents/skills/suno/SKILL.md"
   [ "$status" -eq 0 ]
+
+  run grep -Fq "or an AI song" "$REPO_ROOT/.agents/skills/suno/SKILL.md"
+  [ "$status" -eq 1 ]
 }
