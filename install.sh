@@ -351,6 +351,7 @@ MULTIAGENT_FILES=(
   "scripts/browser-mcp.sh"
   "scripts/elevenlabs-mcp.sh"
   "scripts/mureka-mcp.sh"
+  "scripts/suno-mcp.sh"
   "scripts/open-design-mcp.sh"
   "scripts/lib/ensure-gh-pat-auth.sh"
   "scripts/lib/sandbox-remote.sh"

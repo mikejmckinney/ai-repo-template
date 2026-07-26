@@ -36,6 +36,7 @@
     "azure": {"type": "local", "command": ["false"], "enabled": false},
     "elevenlabs": {"type": "local", "command": ["false"], "enabled": false},
     "mureka": {"type": "local", "command": ["false"], "enabled": false},
+    "suno": {"type": "local", "command": ["false"], "enabled": false},
     "oci": {"type": "local", "command": ["false"], "enabled": false},
     "render": {"enabled": false},
     "open-design": {"type": "local", "command": ["false"], "enabled": false},

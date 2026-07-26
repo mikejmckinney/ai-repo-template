@@ -80,6 +80,15 @@
         "MUREKA_API_KEY": "${MUREKA_API_KEY}"
       }
     },
+    "suno": {
+      "command": "bash",
+      "args": [
+        "scripts/suno-mcp.sh"
+      ],
+      "env": {
+        "ACEDATACLOUD_API_TOKEN": "${ACEDATACLOUD_API_TOKEN}"
+      }
+    },
     "oci": {
       "command": "bash",
       "args": [

@@ -76,6 +76,13 @@
       ],
       "enabled": false
     },
+    "suno": {
+      "type": "local",
+      "command": [
+        "false"
+      ],
+      "enabled": false
+    },
     "oci": {
       "type": "local",
       "command": [

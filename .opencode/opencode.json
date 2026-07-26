@@ -131,6 +131,18 @@
         "MUREKA_API_KEY": "{env:MUREKA_API_KEY}"
       }
     },
+    "suno": {
+      "timeout": 60000,
+      "type": "local",
+      "command": [
+        "bash",
+        "scripts/suno-mcp.sh"
+      ],
+      "enabled": true,
+      "env": {
+        "ACEDATACLOUD_API_TOKEN": "{env:ACEDATACLOUD_API_TOKEN}"
+      }
+    },
     "oci": {
       "timeout": 60000,
       "type": "local",
