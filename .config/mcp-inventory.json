@@ -37,6 +37,11 @@
       "command": ["bash", "scripts/mureka-mcp.sh"],
       "environment": {"MUREKA_API_KEY": "MUREKA_API_KEY"}
     },
+    "suno": {
+      "transport": "local",
+      "command": ["bash", "scripts/suno-mcp.sh"],
+      "environment": {"ACEDATACLOUD_API_TOKEN": "ACEDATACLOUD_API_TOKEN"}
+    },
     "oci": {
       "transport": "local",
       "enabled": false,

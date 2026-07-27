@@ -140,7 +140,8 @@ setup() {
       .mcp.aws == {type: "local", command: ["false"], enabled: false} and
       .mcp.azure == {type: "local", command: ["false"], enabled: false} and
       .mcp.oci == {type: "local", command: ["false"], enabled: false} and
-      .mcp.render == {enabled: false}
+      .mcp.render == {enabled: false} and
+      .mcp.suno == {type: "local", command: ["false"], enabled: false}
     ' "$REPO_ROOT/.github/agent-runtime/$profile.json"
     [ "$status" -eq 0 ]
   done
@@ -169,7 +170,7 @@ for path in (
     'docs/guides/cloud-provider-tooling.md',
     'docs/guides/skill-supply-chain.md',
     '.opencode/opencode.json', 'scripts/browser-mcp.sh',
-    'scripts/elevenlabs-mcp.sh', 'scripts/mureka-mcp.sh',
+    'scripts/elevenlabs-mcp.sh', 'scripts/mureka-mcp.sh', 'scripts/suno-mcp.sh',
     'scripts/install-codespace-tools.sh', 'scripts/open-design-mcp.sh',
     'scripts/scan-skill-secrets.py', 'scripts/skill-supply-chain.py',
     'skills-lock.json', 'CLAUDE.md'
@@ -390,8 +391,8 @@ EOF
   done
 }
 
-@test "repository-owned GCP and Colyseus skills are explicit and complete" {
-  for skill in gcp colyseus; do
+@test "repository-owned provider skills are explicit and complete" {
+  for skill in gcp colyseus suno; do
     [ -f "$REPO_ROOT/.agents/skills/$skill/SKILL.md" ]
     run jq -e --arg skill "$skill" '
       .ownedSkills[$skill].destinationPath == (".agents/skills/" + $skill) and
@@ -415,4 +416,25 @@ EOF
   [ "$status" -eq 0 ]
   run grep -q 'https://cloud.google.com/' "$REPO_ROOT/.agents/skills/gcp/SKILL.md"
   [ "$status" -eq 0 ]
+
+  for phrase in "Ace Data Cloud" "third-party" "explicit approval" \
+    ACEDATACLOUD_API_TOKEN suno_generate_music suno_get_task \
+    "response.success" succeeded "streaming previews"; do
+    run grep -Fq "$phrase" "$REPO_ROOT/.agents/skills/suno/SKILL.md"
+    [ "$status" -eq 0 ]
+  done
+
+  run grep -Fq 'https://github.com/AceDataCloud/SunoMCP/commit/0473b0ba5d454e2dd1eafdd06828627d06c23774' \
+    "$REPO_ROOT/.agents/skills/suno/SKILL.md"
+  [ "$status" -eq 0 ]
+
+  for url in \
+    'https://platform.acedata.cloud/services/suno?tab=pricing' \
+    'https://platform.acedata.cloud/documents/suno-audios'; do
+    run grep -Fq "$url" "$REPO_ROOT/.agents/skills/suno/SKILL.md"
+    [ "$status" -eq 0 ]
+  done
+
+  run grep -Fq "or an AI song" "$REPO_ROOT/.agents/skills/suno/SKILL.md"
+  [ "$status" -eq 1 ]
 }

@@ -20,6 +20,9 @@
     },
     "session-recovery": {
       "destinationPath": ".agents/skills/session-recovery"
+    },
+    "suno": {
+      "destinationPath": ".agents/skills/suno"
     }
   },
   "skills": {

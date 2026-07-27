@@ -36,7 +36,9 @@ teardown() {
     .servers.elevenlabs.command == ["bash", "scripts/elevenlabs-mcp.sh"] and
     .servers.elevenlabs.environment == {"ELEVENLABS_API_KEY": "ELEVENLABS_API_KEY"} and
     .servers.mureka.command == ["bash", "scripts/mureka-mcp.sh"] and
-    .servers.mureka.environment == {"MUREKA_API_KEY": "MUREKA_API_KEY"}
+    .servers.mureka.environment == {"MUREKA_API_KEY": "MUREKA_API_KEY"} and
+    .servers.suno.command == ["bash", "scripts/suno-mcp.sh"] and
+    .servers.suno.environment == {"ACEDATACLOUD_API_TOKEN": "ACEDATACLOUD_API_TOKEN"}
   ' "$REPO_ROOT/.config/mcp-inventory.json"
 
   [ "$status" -eq 0 ]
@@ -47,7 +49,10 @@ teardown() {
     .mcpServers.elevenlabs.env.ELEVENLABS_API_KEY == "${ELEVENLABS_API_KEY}" and
     .mcpServers.mureka.command == "bash" and
     .mcpServers.mureka.args == ["scripts/mureka-mcp.sh"] and
-    .mcpServers.mureka.env.MUREKA_API_KEY == "${MUREKA_API_KEY}"
+    .mcpServers.mureka.env.MUREKA_API_KEY == "${MUREKA_API_KEY}" and
+    .mcpServers.suno.command == "bash" and
+    .mcpServers.suno.args == ["scripts/suno-mcp.sh"] and
+    .mcpServers.suno.env.ACEDATACLOUD_API_TOKEN == "${ACEDATACLOUD_API_TOKEN}"
   ' "$REPO_ROOT/.mcp.json"
 
   [ "$status" -eq 0 ]
@@ -79,7 +84,21 @@ EOF
   [[ "$output" == *"url=https://api.mureka.ai"* ]]
   [[ "$output" == *"timeout=300"* ]]
 
+  run env PATH="$bin_dir:$PATH" ACEDATACLOUD_API_TOKEN=test-key \
+    bash -c 'cd /tmp && bash "$1/scripts/suno-mcp.sh"' _ "$REPO_ROOT"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"args=--python 3.13 mcp-suno==2026.7.4.0"* ]]
+
   rm -rf "$bin_dir"
+}
+
+@test "audio MCP launchers reject missing credentials before package resolution" {
+  for launcher in elevenlabs mureka suno; do
+    run env -u ELEVENLABS_API_KEY -u MUREKA_API_KEY -u ACEDATACLOUD_API_TOKEN \
+      bash "$REPO_ROOT/scripts/$launcher-mcp.sh"
+    [ "$status" -ne 0 ]
+    [[ "$output" == *"is required"* ]]
+  done
 }
 
 @test "MCP check reports stale host output" {

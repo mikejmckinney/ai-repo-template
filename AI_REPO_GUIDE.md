@@ -292,6 +292,14 @@ pinned local MCP launchers. ElevenLabs writes generated files under ignored
 `.artifacts/audio/`; Mureka uses its documented API endpoint and a 300-second
 generation timeout. Starting either server does not generate media, but provider
 generation tool calls consume account credits.
+The repository-owned `suno` skill uses Ace Data Cloud's third-party MCP, not an
+official Suno API. Its exact local package reads `ACEDATACLOUD_API_TOKEN` from the
+environment and calls Ace's hosted API. The reviewed upstream release workflow
+injects its CalVer into `pyproject.toml` before building `mcp-suno==2026.7.4.0`,
+but does not commit that generated version or expose artifact attestation. Keep
+the exact package pin and re-review provenance before upgrades. Model/action
+discovery and task lookup are supporting checks; generation and transformation
+calls may consume credits and require explicit approval.
 Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
 Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
 remote transport closes the hosted stream unexpectedly. Generated OpenCode MCP
