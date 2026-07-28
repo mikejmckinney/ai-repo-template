@@ -76,3 +76,20 @@ setup() {
   [ "$status" -eq 0 ]
   [[ "$stderr" == *"opencode, else cursor, else gemini"* ]]
 }
+
+@test "weekly review and fix retain independent timeout and OAuth budgets" {
+  run python3 - "$REPO_ROOT/.github/workflows/agent-weekly-review.yml" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+review = text.split("  weekly-review:", 1)[1].split("  weekly-fix:", 1)[0]
+fix = text.split("  weekly-fix:", 1)[1]
+assert "timeout-minutes: 120" in review
+assert "OPENCODE_OAUTH_MIN_TTL_SECONDS: 8100" in review
+assert "timeout-minutes: 60" in fix
+assert "OPENCODE_OAUTH_MIN_TTL_SECONDS: 4500" in fix
+PY
+
+  [ "$status" -eq 0 ]
+}

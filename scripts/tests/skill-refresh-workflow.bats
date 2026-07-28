@@ -139,6 +139,21 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "aggregate refresh separates local-override blocks from failures" {
+  run grep -Fq 'blocked-sources.jsonl' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'blocked_by_local_override' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'Blocked sources' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'blocked_count=' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'if ((failed_count > 0)); then' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'if ((successful_count == 0 && failed_count > 0)); then' "$WORKFLOW"
+  [ "$status" -eq 1 ]
+}
+
 @test "targeted dispatch reuses the aggregate branch and pull request" {
   [ "$(grep -Fc 'automation/skill-refresh/all' "$WORKFLOW")" -ge 2 ]
   run grep -Fq 'Resolve aggregate refresh base' "$WORKFLOW"
