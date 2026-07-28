@@ -31,6 +31,10 @@ if [[ "$1" == "auth" && "$2" == "status" ]]; then
   exit 0
 fi
 if [[ "$1" == "repo" && "$2" == "view" ]]; then
+  if [[ "$*" == *"visibility"* ]]; then
+    echo "PRIVATE"
+    exit 0
+  fi
   echo "example"
   exit 0
 fi
@@ -65,7 +69,9 @@ if [[ "$1" == "auth" && "$2" == "status" ]]; then
   exit 0
 fi
 if [[ "$1" == "repo" && "$2" == "view" ]]; then
-  if [[ "$*" == *"nameWithOwner"* ]]; then
+  if [[ "$*" == *"visibility"* ]]; then
+    echo "PRIVATE"
+  elif [[ "$*" == *"nameWithOwner"* ]]; then
     echo "example/my-repo"
   else
     echo "example"
@@ -108,7 +114,10 @@ EOF
   cat >"$stub_bin/gh" <<'EOF'
 #!/usr/bin/env bash
 if [[ "$1" == "auth" && "$2" == "status" ]]; then exit 0; fi
-if [[ "$1" == "repo" && "$2" == "view" ]]; then echo "example/my-repo"; exit 0; fi
+if [[ "$1" == "repo" && "$2" == "view" ]]; then
+  if [[ "$*" == *"visibility"* ]]; then echo "PRIVATE"; else echo "example/my-repo"; fi
+  exit 0
+fi
 if [[ "$1" == "secret" && "$2" == "set" ]]; then cat >/dev/null; exit 1; fi
 exit 0
 EOF
@@ -119,6 +128,42 @@ EOF
 
   [[ "$status" -eq 0 ]]
   [[ "$output" == *"OAuth access synchronization failed"* ]]
+
+  rm -rf "$stub_bin" "$tmp_home" "$tmp_repo"
+}
+
+@test "codespace-post-start: skips automatic OAuth sync for public repositories" {
+  local stub_bin tmp_home tmp_repo future_ms
+  stub_bin="$(mktemp -d)"
+  tmp_home="$(mktemp -d)"
+  tmp_repo="$(mktemp -d)"
+  future_ms="$((($(date +%s) + 10800) * 1000))"
+  git init -q "$tmp_repo"
+  git -C "$tmp_repo" remote add origin https://github.com/example/public-repo.git
+  mkdir -p "$tmp_home/.local/share/opencode"
+  jq -n --argjson expires "$future_ms" '{openai:{type:"oauth",access:"access-secret",refresh:"refresh-secret",expires:$expires,accountId:"account-test"}}' \
+    >"$tmp_home/.local/share/opencode/auth.json"
+
+  cat >"$stub_bin/gh" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$1" == "auth" && "$2" == "status" ]]; then exit 0; fi
+if [[ "$1" == "repo" && "$2" == "view" ]]; then
+  if [[ "$*" == *"visibility"* ]]; then echo "PUBLIC"; else echo "example/public-repo"; fi
+  exit 0
+fi
+if [[ "$1" == "secret" && "$2" == "set" ]]; then echo called >"$SYNC_CALLED"; exit 0; fi
+exit 0
+EOF
+  chmod +x "$stub_bin/gh"
+
+  run env CODESPACES=true HOME="$tmp_home" CODESPACE_POST_START_REPO_ROOT="$tmp_repo" \
+    PATH="$stub_bin:$PATH" SYNC_CALLED="$tmp_home/sync-called" bash "$SCRIPT"
+
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == *"not private; skipping automatic OpenCode OAuth synchronization"* ]]
+  [ ! -e "$tmp_home/sync-called" ]
+  [[ "$output" != *"access-secret"* ]]
+  [[ "$output" != *"refresh-secret"* ]]
 
   rm -rf "$stub_bin" "$tmp_home" "$tmp_repo"
 }

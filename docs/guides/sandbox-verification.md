@@ -81,8 +81,9 @@ post-merge retro umbrella issues. Re-run `./scripts/setup/ensure-pipeline-labels
 > installs a shell hook so new terminals prefer that PAT over
 > `GITHUB_TOKEN`, and **adds the `sandbox` git remote** when missing (same
 > `SANDBOX_REPO_NAME` / `SANDBOX_REMOTE` defaults as bootstrap). It also
-> attempts a non-fatal access-only OpenCode OAuth sync to the current repository.
-> It does **not** create the sandbox repo or set sandbox secrets — run
+> attempts a non-fatal access-only OpenCode OAuth sync when the current
+> repository is verified as private. It does **not** create the sandbox repo or
+> set sandbox secrets — run
 > `sandbox-bootstrap.sh` once for those.
 
 ### What the script does (for reference)

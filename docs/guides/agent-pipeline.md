@@ -106,12 +106,13 @@ For trusted private repositories, `scripts/sync-opencode-oauth-secret.sh` reads
 the local OpenCode OpenAI entry and updates the `OPENCODE_OPENAI_AUTH` Actions
 secret only with `access`, `expires`, and `accountId`; `refresh` is replaced by
 the inert `ci-refresh-disabled` placeholder. Invocation steps map it to
-`OPENCODE_AUTH_CONTENT`. Codespace startup attempts this sync after PAT setup;
-failure is non-fatal and leaves hosted provider fallback available. Preflight
-requires 35 minutes for advisory, 105 minutes for daily, 135 minutes for weekly
-review, and 75 minutes for weekly fix. Missing, malformed, stale, or
-refresh-enabled content is removed from the child environment and Sol is
-omitted. The real refresh token never enters Actions, and hosted jobs never
+`OPENCODE_AUTH_CONTENT`. Codespace startup attempts this sync after PAT setup
+only when repository visibility is verified as private; an unknown or public
+target is skipped. Failure is non-fatal and leaves hosted provider fallback
+available. Preflight requires 35 minutes for advisory, 105 minutes for daily,
+135 minutes for weekly review, and 75 minutes for weekly fix. Missing, malformed,
+stale, or refresh-enabled content is removed from the child environment and Sol
+is omitted. The real refresh token never enters Actions, and hosted jobs never
 refresh or write back OAuth state.
 
 Workflows use GitHub-managed `ubuntu-latest`, configure Node 22, and run `npm ci`

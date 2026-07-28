@@ -79,9 +79,10 @@ end-to-end budget.
 Run `scripts/sync-opencode-oauth-secret.sh` from an OAuth-authenticated
 Codespace to preview the local OpenAI access-token expiration. Pass `--apply`
 to replace the private repository's `OPENCODE_OPENAI_AUTH` Actions secret with
-an access-only bundle. Codespace startup attempts that sync after PAT setup and
-falls back non-fatally when auth is missing, expired, or unauthorized. The
-script never uploads the real refresh token.
+an access-only bundle. Codespace startup attempts that sync after PAT setup only
+when repository visibility is verified as private, and falls back non-fatally
+when visibility, auth, or authorization is unsuitable. The script never uploads
+the real refresh token.
 Postmerge Cursor attempts use `POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS`,
 defaulting to `900` seconds. A timeout terminates the stuck Cursor process and
 returns failure to the existing provider cascade instead of consuming the

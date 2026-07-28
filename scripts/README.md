@@ -73,8 +73,8 @@ uploaded JSON contains the current access token, expiration, and account ID, but
 replaces the real refresh token with `ci-refresh-disabled`. Output includes only
 repository and expiration metadata. Expired access is rejected before upload.
 In Codespaces, `codespace-post-start.sh` attempts this update automatically after
-PAT setup and treats failure as non-fatal; stale credentials automatically omit
-Sol in Actions.
+PAT setup only for a repository verified as private and treats skipped or failed
+sync as non-fatal; stale credentials automatically omit Sol in Actions.
 
 ## Creating New Scripts
 
