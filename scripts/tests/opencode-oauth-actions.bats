@@ -60,6 +60,27 @@ EOF
   [[ "$sync_output" != *"refresh-secret-value"* ]]
 }
 
+@test "OAuth sync rejects expired access before upload" {
+  expired_ms="$((($(date +%s) - 60) * 1000))"
+  jq --argjson expires "$expired_ms" '.openai.expires = $expires' "$AUTH_FILE" >"$TEST_ROOT/expired.json"
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+echo called >"$GH_CALLED_FILE"
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" GH_CALLED_FILE="$TEST_ROOT/gh-called" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --auth-file "$TEST_ROOT/expired.json" --repo owner/repo
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"OpenCode OAuth access token is expired"* ]]
+  [ ! -e "$TEST_ROOT/gh-called" ]
+  [[ "$output" != *"access-secret-value"* ]]
+  [[ "$output" != *"refresh-secret-value"* ]]
+}
+
 @test "OAuth preflight enables Sol before Kimi when lifetime is sufficient" {
   run env \
     OPENCODE_AUTH_CONTENT="$(jq '.openai.refresh = "ci-refresh-disabled"' "$AUTH_FILE")" \
@@ -108,7 +129,8 @@ EOF
   [ "$(grep -c 'OPENCODE_AUTH_CONTENT:.*secrets.OPENCODE_OPENAI_AUTH' "$weekly")" -eq 2 ]
   grep -q 'OPENCODE_OAUTH_MIN_TTL_SECONDS: 2100' "$advisory"
   grep -q 'OPENCODE_OAUTH_MIN_TTL_SECONDS: 6300' "$daily"
-  [ "$(grep -c 'OPENCODE_OAUTH_MIN_TTL_SECONDS: 4500' "$weekly")" -eq 2 ]
+  [ "$(grep -c 'OPENCODE_OAUTH_MIN_TTL_SECONDS: 8100' "$weekly")" -eq 1 ]
+  [ "$(grep -c 'OPENCODE_OAUTH_MIN_TTL_SECONDS: 4500' "$weekly")" -eq 1 ]
 
   run python3 - "$advisory" "$daily" "$weekly" <<'PY'
 import sys

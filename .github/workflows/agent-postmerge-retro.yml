@@ -78,6 +78,8 @@ jobs:
   daily-pipeline:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    outputs:
+      fixable_findings_count: ${{ steps.meta.outputs.fixable_findings_count }}
     permissions:
       checks: read
       contents: write
@@ -231,6 +233,12 @@ jobs:
           fi
           echo "findings_count=${count}" >> "$GITHUB_OUTPUT"
           if [[ -f "$DAILY_JSON" ]]; then
+            fixable_count="$(python3 scripts/workflows/postmerge-retro/count-daily-retro-fixable-findings.py "$DAILY_JSON")"
+          else
+            fixable_count=0
+          fi
+          echo "fixable_findings_count=${fixable_count}" >> "$GITHUB_OUTPUT"
+          if [[ -f "$DAILY_JSON" ]]; then
             echo "has_daily_json=true" >> "$GITHUB_OUTPUT"
             issue_num="$(jq -r '.umbrella_issue // empty' "$DAILY_JSON" 2>/dev/null || true)"
             if [[ -z "$issue_num" && -f "${ARTIFACT_DIR}/umbrella-issue.txt" ]]; then
@@ -259,7 +267,7 @@ jobs:
           ) || (
             github.event.inputs.fix_only != 'true' &&
             github.event.inputs.skip_fix != 'true' &&
-            steps.meta.outputs.findings_count != '0' &&
+            steps.meta.outputs.fixable_findings_count != '0' &&
             steps.meta.outputs.has_daily_json == 'true'
           )
         id: fix
@@ -281,6 +289,11 @@ jobs:
           RUN_DATE="${RUN_DATE:-${{ github.event.inputs.run_date || steps.meta.outputs.run_date }}}"
           DAILY_JSON=".artifacts/postmerge-retro/daily-${RUN_DATE}/daily-retro.json"
           [[ -f "$DAILY_JSON" ]] || { echo "::error::Missing $DAILY_JSON"; exit 1; }
+          FIXABLE_JSON=".artifacts/postmerge-retro/daily-${RUN_DATE}/daily-retro-fixable.json"
+          jq '.findings |= map(select(
+            .superseded_on_main != true and
+            (.priority_band == "should-fix" or .priority_band == "fix-now")
+          ))' "$DAILY_JSON" >"$FIXABLE_JSON"
           if [[ -z "${UMBRELLA_ISSUE_NUM:-}" ]]; then
             UMBRELLA_ISSUE_NUM="$(jq -r '.umbrella_issue // empty' "$DAILY_JSON" 2>/dev/null || true)"
             if [[ -z "$UMBRELLA_ISSUE_NUM" && -f "$(dirname "$DAILY_JSON")/umbrella-issue.txt" ]]; then
@@ -289,7 +302,7 @@ jobs:
           fi
           export UMBRELLA_ISSUE_NUM
           set -o pipefail
-          bash scripts/workflows/postmerge-retro/run-postmerge-retro-fix.sh "$DAILY_JSON" | tee fix.log
+          bash scripts/workflows/postmerge-retro/run-postmerge-retro-fix.sh "$FIXABLE_JSON" | tee fix.log
           fix_exit=${PIPESTATUS[0]}
           if [[ "$fix_exit" -ne 0 ]]; then
             echo "::error::run-postmerge-retro-fix.sh failed with exit ${fix_exit}" >&2

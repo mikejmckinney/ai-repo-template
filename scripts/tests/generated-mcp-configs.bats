@@ -58,6 +58,16 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "unmigrated audio MCP launchers pin the compatible Python SDK" {
+  run grep -Fq 'exec uvx --python 3.13 --with "mcp==1.29.0" mureka-mcp==0.0.13' \
+    "$REPO_ROOT/scripts/mureka-mcp.sh"
+  [ "$status" -eq 0 ]
+
+  run grep -Fq 'exec uvx --python 3.13 --with "mcp==1.29.0" mcp-suno==2026.7.4.0' \
+    "$REPO_ROOT/scripts/suno-mcp.sh"
+  [ "$status" -eq 0 ]
+}
+
 @test "audio MCP launchers apply portable non-secret defaults" {
   bin_dir="$(mktemp -d)"
   cat >"$bin_dir/uvx" <<'EOF'
@@ -80,14 +90,14 @@ EOF
   run env PATH="$bin_dir:$PATH" MUREKA_API_KEY=test-key \
     bash -c 'cd /tmp && bash "$1/scripts/mureka-mcp.sh"' _ "$REPO_ROOT"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"args=--python 3.13 mureka-mcp==0.0.13"* ]]
+  [[ "$output" == *"args=--python 3.13 --with mcp==1.29.0 mureka-mcp==0.0.13"* ]]
   [[ "$output" == *"url=https://api.mureka.ai"* ]]
   [[ "$output" == *"timeout=300"* ]]
 
   run env PATH="$bin_dir:$PATH" ACEDATACLOUD_API_TOKEN=test-key \
     bash -c 'cd /tmp && bash "$1/scripts/suno-mcp.sh"' _ "$REPO_ROOT"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"args=--python 3.13 mcp-suno==2026.7.4.0"* ]]
+  [[ "$output" == *"args=--python 3.13 --with mcp==1.29.0 mcp-suno==2026.7.4.0"* ]]
 
   rm -rf "$bin_dir"
 }

@@ -79,7 +79,10 @@ end-to-end budget.
 Run `scripts/sync-opencode-oauth-secret.sh` from an OAuth-authenticated
 Codespace to preview the local OpenAI access-token expiration. Pass `--apply`
 to replace the private repository's `OPENCODE_OPENAI_AUTH` Actions secret with
-an access-only bundle. The script never uploads the real refresh token.
+an access-only bundle. Codespace startup attempts that sync after PAT setup only
+when repository visibility is verified as private, and falls back non-fatally
+when visibility, auth, or authorization is unsuitable. The script never uploads
+the real refresh token.
 Postmerge Cursor attempts use `POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS`,
 defaulting to `900` seconds. A timeout terminates the stuck Cursor process and
 returns failure to the existing provider cascade instead of consuming the
@@ -142,7 +145,9 @@ validation can discover nested skills without overlapping refresh records.
 An external record may carry a bounded `localOverride` only for a tracked
 temporary correctness fix. Validation hashes the corrected package, while
 source checks and updates fail closed until the override is removed after an
-equivalent upstream fix is verified; see `docs/guides/skill-supply-chain.md`.
+equivalent upstream fix is verified. Scheduled aggregate refresh reports the
+affected source as blocked rather than failed while preserving the direct
+command guard; see `docs/guides/skill-supply-chain.md`.
 
 ## Review Lifecycle
 
@@ -173,6 +178,9 @@ pre-merge gate. Fix attempts fail closed unless every actionable finding has
 complete verification and either substantive changes or complete
 `cant_reproduce` evidence. Verification-only output opens no PR, and a published
 PR must have a confirmed native GitHub link to its umbrella issue.
+All non-superseded findings remain in the umbrella record, but only `should-fix`
+and `fix-now` findings enter the automated fix pass; a defer-only batch opens no
+fix PR.
 Bounded provider output omits `evidence_complete`; full-evidence output must set
 it to `true` only after retrieving every required source. Separate schemas keep
 those claims from being conflated.
@@ -181,7 +189,9 @@ those claims from being conflated.
 
 The weekly workflow scans current `main`, creates or updates one ISO-week umbrella,
 and may open a draft fix PR. It remains a full-repository scan rather than a
-weekly aggregation of merged PRs.
+weekly aggregation of merged PRs. The review job has a 120-minute budget and an
+8,100-second OAuth minimum lifetime; the separate fix job remains at 60 minutes
+and 4,500 seconds.
 
 ### Multi-Model Consensus
 
@@ -290,8 +300,10 @@ tools. Cloudflare docs does not require account access.
 ElevenLabs and Mureka read `ELEVENLABS_API_KEY` and `MUREKA_API_KEY` through
 pinned local MCP launchers. ElevenLabs writes generated files under ignored
 `.artifacts/audio/`; Mureka uses its documented API endpoint and a 300-second
-generation timeout. Starting either server does not generate media, but provider
-generation tool calls consume account credits.
+generation timeout. Mureka and Suno also force `mcp==1.29.0` because their
+current packages use MCP Python SDK v1 imports that were removed in v2. Starting
+either server does not generate media, but provider generation tool calls
+consume account credits.
 The repository-owned `suno` skill uses Ace Data Cloud's third-party MCP, not an
 official Suno API. Its exact local package reads `ACEDATACLOUD_API_TOKEN` from the
 environment and calls Ace's hosted API. The reviewed upstream release workflow

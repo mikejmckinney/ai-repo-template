@@ -48,6 +48,22 @@ else
   log_info "gh auth does not need PAT upgrade (or gh is not authenticated)."
 fi
 
+repo_visibility="$({
+  cd "$REPO_ROOT" || exit
+  gh repo view --json visibility --jq .visibility 2>/dev/null || true
+})"
+if [[ "${repo_visibility^^}" != "PRIVATE" ]]; then
+  if [[ -n "$repo_visibility" ]]; then
+    log_warn "Repository is not private; skipping automatic OpenCode OAuth synchronization."
+  else
+    log_warn "Repository visibility could not be verified; skipping automatic OpenCode OAuth synchronization."
+  fi
+elif (cd "$REPO_ROOT" && "$SCRIPT_DIR/sync-opencode-oauth-secret.sh" --apply); then
+  log_info "OpenCode OAuth access synchronized to Actions."
+else
+  log_warn "OpenCode OAuth access synchronization failed; hosted workflows will use their configured fallback provider."
+fi
+
 if git -C "$REPO_ROOT" rev-parse --is-inside-work-tree &>/dev/null; then
   sandbox_ensure_git_remote "$REPO_ROOT" || true
   if git -C "$REPO_ROOT" remote get-url "${SANDBOX_REMOTE:-sandbox}" &>/dev/null; then

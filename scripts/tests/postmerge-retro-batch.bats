@@ -525,6 +525,46 @@ NODE
   rm -rf "$tmp"
 }
 
+@test "daily fixable counter includes only should-fix and fix-now findings" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/batch.json" <<'EOF'
+{"findings":[
+  {"priority_band":"defer"},
+  {"priority_band":"should-fix"},
+  {"priority_band":"fix-now"},
+  {"priority_band":"fix-now","superseded_on_main":true}
+]}
+EOF
+
+  run python3 scripts/workflows/postmerge-retro/count-daily-retro-findings.py "$tmp/batch.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = 3 ]
+
+  run python3 scripts/workflows/postmerge-retro/count-daily-retro-fixable-findings.py "$tmp/batch.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = 2 ]
+
+  rm -rf "$tmp"
+}
+
+@test "daily workflow gates the fix pass on fixable findings" {
+  workflow=".github/workflows/agent-postmerge-retro.yml"
+
+  run grep -Fq 'fixable_findings_count: ${{ steps.meta.outputs.fixable_findings_count }}' "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'steps.meta.outputs.fixable_findings_count != '\''0'\''' "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'FIXABLE_JSON=".artifacts/postmerge-retro/daily-${RUN_DATE}/daily-retro-fixable.json"' "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq '.priority_band == "should-fix" or .priority_band == "fix-now"' "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'run-postmerge-retro-fix.sh "$FIXABLE_JSON"' "$workflow"
+  [ "$status" -eq 0 ]
+
+  run grep -Fq '"scripts/workflows/postmerge-retro/count-daily-retro-fixable-findings.py"' install.sh
+  [ "$status" -eq 0 ]
+}
+
 @test "postmerge invariant guards shared batch publication wiring" {
   run grep -F "grep -q 'batch_fix_publish' \"\$FIX_SCRIPT\"" scripts/checks/052-postmerge-retro-invariants.sh
   [ "$status" -eq 0 ]

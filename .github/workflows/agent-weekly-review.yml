@@ -66,7 +66,7 @@ jobs:
   weekly-review:
     if: github.event.inputs.fix_only != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     outputs:
       run_week: ${{ steps.meta.outputs.run_week }}
       run_date: ${{ steps.meta.outputs.run_date }}
@@ -87,7 +87,7 @@ jobs:
       POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
       ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
       ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
-      OPENCODE_OAUTH_MIN_TTL_SECONDS: 4500
+      OPENCODE_OAUTH_MIN_TTL_SECONDS: 8100
     steps:
       - name: Verify required secrets
         env:
