@@ -71,9 +71,10 @@ Preview the expiration of the local OpenCode OpenAI OAuth credential:
 Pass `--apply` to update `OPENCODE_OPENAI_AUTH` in the current repository. The
 uploaded JSON contains the current access token, expiration, and account ID, but
 replaces the real refresh token with `ci-refresh-disabled`. Output includes only
-repository and expiration metadata. Re-run every one or two days when using the
-approximately three-day access-token lifetime observed for ChatGPT Pro; stale
-credentials automatically omit Sol in Actions.
+repository and expiration metadata. Expired access is rejected before upload.
+In Codespaces, `codespace-post-start.sh` attempts this update automatically after
+PAT setup and treats failure as non-fatal; stale credentials automatically omit
+Sol in Actions.
 
 ## Creating New Scripts
 

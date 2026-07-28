@@ -90,14 +90,14 @@ EOF
   run env PATH="$bin_dir:$PATH" MUREKA_API_KEY=test-key \
     bash -c 'cd /tmp && bash "$1/scripts/mureka-mcp.sh"' _ "$REPO_ROOT"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"args=--python 3.13 mureka-mcp==0.0.13"* ]]
+  [[ "$output" == *"args=--python 3.13 --with mcp==1.29.0 mureka-mcp==0.0.13"* ]]
   [[ "$output" == *"url=https://api.mureka.ai"* ]]
   [[ "$output" == *"timeout=300"* ]]
 
   run env PATH="$bin_dir:$PATH" ACEDATACLOUD_API_TOKEN=test-key \
     bash -c 'cd /tmp && bash "$1/scripts/suno-mcp.sh"' _ "$REPO_ROOT"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"args=--python 3.13 mcp-suno==2026.7.4.0"* ]]
+  [[ "$output" == *"args=--python 3.13 --with mcp==1.29.0 mcp-suno==2026.7.4.0"* ]]
 
   rm -rf "$bin_dir"
 }

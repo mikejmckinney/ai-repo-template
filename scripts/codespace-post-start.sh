@@ -48,6 +48,12 @@ else
   log_info "gh auth does not need PAT upgrade (or gh is not authenticated)."
 fi
 
+if (cd "$REPO_ROOT" && "$SCRIPT_DIR/sync-opencode-oauth-secret.sh" --apply); then
+  log_info "OpenCode OAuth access synchronized to Actions."
+else
+  log_warn "OpenCode OAuth access synchronization failed; hosted workflows will use their configured fallback provider."
+fi
+
 if git -C "$REPO_ROOT" rev-parse --is-inside-work-tree &>/dev/null; then
   sandbox_ensure_git_remote "$REPO_ROOT" || true
   if git -C "$REPO_ROOT" remote get-url "${SANDBOX_REMOTE:-sandbox}" &>/dev/null; then

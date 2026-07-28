@@ -59,13 +59,16 @@ verification and the worktree contains substantive changes or complete
 `cant_reproduce` evidence. Verification-only output opens no PR. Published PRs
 must acquire a native GitHub Development-graph link to the umbrella issue; a
 closing keyword without that relationship fails the job. Fix publication is
-never auto-merged.
+never auto-merged. The umbrella retains every non-superseded finding, while only
+`should-fix` and `fix-now` findings enter the fix pass. A defer-only batch keeps
+its review record and invokes no fix provider.
 
 ## Weekly Repository Review
 
 `agent-weekly-review.yml` runs Sunday at 07:00 UTC and by manual dispatch. It
 performs a static full-repository scan of `main`, writes one ISO-week umbrella,
-and may publish a draft fix PR.
+and may publish a draft fix PR. The scan has a 120-minute job budget; its
+separate fix job retains the 60-minute budget.
 
 Daily and weekly adapters share provider routing, priority derivation,
 supersession, umbrella transport, and batch-fix publication under
@@ -103,11 +106,13 @@ For trusted private repositories, `scripts/sync-opencode-oauth-secret.sh` reads
 the local OpenCode OpenAI entry and updates the `OPENCODE_OPENAI_AUTH` Actions
 secret only with `access`, `expires`, and `accountId`; `refresh` is replaced by
 the inert `ci-refresh-disabled` placeholder. Invocation steps map it to
-`OPENCODE_AUTH_CONTENT`. Preflight requires 35 minutes for advisory, 105 minutes
-for daily, and 75 minutes for each weekly job. Missing, malformed, stale, or
-refresh-enabled content is removed from the child environment and Sol is omitted.
-The real refresh token never enters Actions, and hosted jobs never refresh or
-write back OAuth state.
+`OPENCODE_AUTH_CONTENT`. Codespace startup attempts this sync after PAT setup;
+failure is non-fatal and leaves hosted provider fallback available. Preflight
+requires 35 minutes for advisory, 105 minutes for daily, 135 minutes for weekly
+review, and 75 minutes for weekly fix. Missing, malformed, stale, or
+refresh-enabled content is removed from the child environment and Sol is
+omitted. The real refresh token never enters Actions, and hosted jobs never
+refresh or write back OAuth state.
 
 Workflows use GitHub-managed `ubuntu-latest`, configure Node 22, and run `npm ci`
 against `.github/agent-runtime/package-lock.json`. Review and fix profiles live

@@ -172,6 +172,19 @@ refresh. This avoids persisting provider-native sessions or runner databases,
 keeps fallback portable, and lets canceled runs recover from the last completed
 snapshot. No-findings output is explicit rather than an empty table.
 
+#### Amendment 2026-07-28 — Priority-gated retro fixes and weekly scan budget
+
+Daily retrospective findings remain visible in the dated umbrella regardless of
+priority, but deterministic automation sends only non-superseded `should-fix`
+and `fix-now` findings to the fix provider. A defer-only batch therefore retains
+its review record without spending a fix attempt or creating a draft PR.
+
+The weekly full-repository scan receives a 120-minute job budget after a real run
+was canceled at the prior 60-minute boundary. Its OAuth eligibility guard rises
+to 8,100 seconds, preserving the complete job budget plus 15 minutes. The
+separate weekly fix job remains at 60 minutes and 4,500 seconds because no
+evidence supports widening that budget.
+
 #### Amendment 2026-07-17 — Multi-model skill identity and Fusion panel
 
 The public skill identity moves from `local-consensus` to

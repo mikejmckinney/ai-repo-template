@@ -126,10 +126,12 @@ write. A material package change:
    Same-repository pull request events created with `GITHUB_TOKEN` do not start
    new workflow runs, so those events are not the automated completion gate.
 
-If one source fails but another validates, the failed source remains unchanged
-and the validated sources can still publish. The workflow run records every
-failure; a mixed-result PR also lists the rolled-back sources. If every changed
-source fails, the run fails and no new publication is created.
+Before acquisition, the scheduled aggregate classifies any source containing a
+declared `localOverride` as `blocked_by_local_override`. It reports that expected
+block separately and does not call `check` or `update` for the source; direct
+commands still fail closed. Updated and unchanged sources continue normally. Any
+unexpected acquisition, update, secret-scan, or validation failure fails the
+run, leaves that source unchanged, and prevents a new partial publication.
 
 The publishing job has `contents: write` and `pull-requests: write` because it
 must push the aggregate branch and maintain its draft PR. The final job uses the

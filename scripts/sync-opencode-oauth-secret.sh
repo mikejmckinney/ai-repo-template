@@ -98,6 +98,11 @@ now_ms="$(($(date +%s) * 1000))"
 remaining_seconds="$(((expires - now_ms) / 1000))"
 expiration_utc="$(date -u -d "@$((expires / 1000))" +%Y-%m-%dT%H:%M:%SZ)"
 
+if ((remaining_seconds <= 0)); then
+  echo "OpenCode OAuth access token is expired; authenticate with OpenCode before synchronization." >&2
+  exit 1
+fi
+
 printf 'Repository: %s\nSecret: %s\nExpires: %s\nRemaining seconds: %s\n' \
   "$REPO" "$SECRET_NAME" "$expiration_utc" "$remaining_seconds"
 

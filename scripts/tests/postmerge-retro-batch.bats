@@ -554,6 +554,9 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'steps.meta.outputs.fixable_findings_count != '\''0'\''' "$workflow"
   [ "$status" -eq 0 ]
+
+  run grep -Fq '"scripts/workflows/postmerge-retro/count-daily-retro-fixable-findings.py"' install.sh
+  [ "$status" -eq 0 ]
 }
 
 @test "postmerge invariant guards shared batch publication wiring" {

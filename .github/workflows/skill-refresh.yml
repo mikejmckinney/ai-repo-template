@@ -95,6 +95,7 @@ jobs:
           REQUESTED_SOURCE: ${{ inputs.source || '' }}
           SUCCESS_PATH: ${{ runner.temp }}/successful-sources.jsonl
           FAILURE_PATH: ${{ runner.temp }}/failed-sources.jsonl
+          BLOCKED_PATH: ${{ runner.temp }}/blocked-sources.jsonl
           UNCHANGED_PATH: ${{ runner.temp }}/unchanged-sources.jsonl
           BASE_LOCK_PATH: ${{ runner.temp }}/skill-refresh-base-lock.json
           AGGREGATE_PATH: ${{ runner.temp }}/aggregate-sources.json
@@ -103,6 +104,7 @@ jobs:
           set -euo pipefail
           : >"$SUCCESS_PATH"
           : >"$FAILURE_PATH"
+          : >"$BLOCKED_PATH"
           : >"$UNCHANGED_PATH"
           git show HEAD:skills-lock.json >"$BASE_LOCK_PATH"
           mkdir -p "$BACKUP_ROOT"
@@ -159,6 +161,20 @@ jobs:
             update_path="$RUNNER_TEMP/$source_slug-update.json"
             error_path="$RUNNER_TEMP/$source_slug-error.log"
 
+            blocked_packages="$(jq -c --arg source "$source" '[
+              .skills | to_entries[]
+              | select(.value.source == $source and .value.localOverride != null)
+              | .key
+            ]' skills-lock.json)"
+            if [[ "$blocked_packages" != "[]" ]]; then
+              jq -cn \
+                --arg source "$source" \
+                --argjson packages "$blocked_packages" \
+                '{source: $source, status: "blocked_by_local_override", packages: $packages}' \
+                >>"$BLOCKED_PATH"
+              continue
+            fi
+
             if ! python3 scripts/skill-supply-chain.py check \
               --repo "$PWD" \
               --lock skills-lock.json \
@@ -213,6 +229,7 @@ jobs:
 
           successful_count="$(jq -s 'length' "$SUCCESS_PATH")"
           failed_count="$(jq -s 'length' "$FAILURE_PATH")"
+          blocked_count="$(jq -s 'length' "$BLOCKED_PATH")"
           unchanged_count="$(jq -s 'length' "$UNCHANGED_PATH")"
           if ((successful_count > 0)); then
             echo "content_changed=true" >>"$GITHUB_OUTPUT"
@@ -220,12 +237,20 @@ jobs:
             echo "content_changed=false" >>"$GITHUB_OUTPUT"
           fi
           echo "failed_count=$failed_count" >>"$GITHUB_OUTPUT"
+          echo "blocked_count=$blocked_count" >>"$GITHUB_OUTPUT"
 
           {
             printf '## Aggregate skill refresh\n\n'
             printf -- '- Updated sources: %s\n' "$successful_count"
             printf -- '- Unchanged sources: %s\n' "$unchanged_count"
+            printf -- '- Blocked sources: %s\n' "$blocked_count"
             printf -- '- Failed sources: %s\n\n' "$failed_count"
+            if ((blocked_count > 0)); then
+              printf '### Blocked sources\n\n'
+              jq -s -r '.[] | "- `\(.source)` is `\(.status)` because of: " + (.packages | map("`" + . + "`") | join(", "))' \
+                "$BLOCKED_PATH"
+              printf '\n'
+            fi
             if ((failed_count > 0)); then
               printf '### Failed sources\n\n'
               jq -s -r '.[] | "- `\(.source)` during `\(.phase)`: \(.detail | gsub("[\\r\\n]+"; " "))"' \
@@ -233,7 +258,7 @@ jobs:
             fi
           } >>"$GITHUB_STEP_SUMMARY"
 
-          if ((successful_count == 0 && failed_count > 0)); then
+          if ((failed_count > 0)); then
             exit 1
           fi
 
@@ -260,6 +285,7 @@ jobs:
         env:
           AGGREGATE_PATH: ${{ runner.temp }}/aggregate-sources.json
           FAILURE_PATH: ${{ runner.temp }}/failed-sources.jsonl
+          BLOCKED_PATH: ${{ runner.temp }}/blocked-sources.jsonl
           BODY_PATH: ${{ runner.temp }}/skill-refresh-pr.md
         run: |
           {
@@ -283,6 +309,14 @@ jobs:
               jq '.hashes' <<<"$update"
               printf '```\n\n'
             done <"$AGGREGATE_PATH"
+            printf '### Blocked sources\n\n'
+            if [[ -s "$BLOCKED_PATH" ]]; then
+              jq -s -r '.[] | "- `\(.source)` is protected by local overrides in: " + (.packages | map("`" + . + "`") | join(", "))' \
+                "$BLOCKED_PATH"
+            else
+              printf -- '- None.\n'
+            fi
+            printf '\n'
             printf '### Failed sources\n\n'
             if [[ -s "$FAILURE_PATH" ]]; then
               jq -s -r '.[] | "- `\(.source)` failed during `\(.phase)` and was rolled back."' \

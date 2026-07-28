@@ -270,7 +270,9 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'becomes ready only' "$guide"
   [ "$status" -eq 0 ]
-  run grep -Fq 'failed source remains unchanged' "$guide"
+  run grep -Fq 'blocked_by_local_override' "$guide"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'unexpected acquisition, update, secret-scan, or validation failure fails' "$guide"
   [ "$status" -eq 0 ]
   run grep -Fq 'Allow GitHub Actions to create and approve pull requests' "$guide"
   [ "$status" -eq 0 ]

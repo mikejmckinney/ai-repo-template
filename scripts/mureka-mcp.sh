@@ -6,4 +6,4 @@ set -euo pipefail
 export MUREKA_API_URL="${MUREKA_API_URL:-https://api.mureka.ai}"
 export TIME_OUT_SECONDS="${TIME_OUT_SECONDS:-300}"
 
-exec uvx --python 3.13 mureka-mcp==0.0.13
+exec uvx --python 3.13 --with "mcp==1.29.0" mureka-mcp==0.0.13

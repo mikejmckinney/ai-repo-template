@@ -363,6 +363,7 @@ MULTIAGENT_FILES=(
   "scripts/workflows/lib/run-cursor-fix.sh"
   "scripts/workflows/lib/run-fix-provider-cascade.sh"
   "scripts/workflows/lib/validate-fix-verification.py"
+  "scripts/workflows/postmerge-retro/count-daily-retro-fixable-findings.py"
   "scripts/verify-env.sh"
   "scripts/verify-pr.sh"
   "docs/research/.gitkeep"
