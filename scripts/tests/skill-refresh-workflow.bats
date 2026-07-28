@@ -148,7 +148,14 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'blocked_count=' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  run grep -Fq 'if ((failed_count > 0)); then' "$WORKFLOW"
+  run python3 - "$WORKFLOW" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+assert re.search(r'if \(\(failed_count > 0\)\); then\s+exit 1\s+fi', text)
+PY
   [ "$status" -eq 0 ]
   run grep -Fq 'if ((successful_count == 0 && failed_count > 0)); then' "$WORKFLOW"
   [ "$status" -eq 1 ]

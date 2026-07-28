@@ -554,6 +554,12 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'steps.meta.outputs.fixable_findings_count != '\''0'\''' "$workflow"
   [ "$status" -eq 0 ]
+  run grep -Fq 'FIXABLE_JSON=".artifacts/postmerge-retro/daily-${RUN_DATE}/daily-retro-fixable.json"' "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq '.priority_band == "should-fix" or .priority_band == "fix-now"' "$workflow"
+  [ "$status" -eq 0 ]
+  run grep -Fq 'run-postmerge-retro-fix.sh "$FIXABLE_JSON"' "$workflow"
+  [ "$status" -eq 0 ]
 
   run grep -Fq '"scripts/workflows/postmerge-retro/count-daily-retro-fixable-findings.py"' install.sh
   [ "$status" -eq 0 ]
