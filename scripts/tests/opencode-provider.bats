@@ -98,11 +98,14 @@ export const Cursor = {
   },
 }
 export const Agent = {
-  prompt: async () => ({ model: { id: "grok-4.5" }, status: "completed", result: "cursor-ok\n" }),
+  prompt: async () => {
+    setInterval(() => {}, 1000)
+    return { model: { id: "grok-4.5" }, status: "completed", result: "cursor-ok\n" }
+  },
 }
 EOF
 
-  run env CURSOR_API_KEY=cursor-test \
+  run timeout 3s env CURSOR_API_KEY=cursor-test \
     CURSOR_SDK_MODULE="$tmp/cursor-sdk.mjs" \
     CURSOR_ADVISORY_MODEL=cursor-grok-4.5-medium \
     node "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-cursor.mjs" \

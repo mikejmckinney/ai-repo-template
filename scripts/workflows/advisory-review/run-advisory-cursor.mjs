@@ -45,7 +45,9 @@ const prompt = readFileSync(promptFile, "utf8");
 
 let model;
 try {
-  model = await buildCursorModelConfig(modelId, () => Cursor.models.list({ apiKey }));
+  model = await buildCursorModelConfig(modelId, () =>
+    Cursor.models.list({ apiKey }),
+  );
 } catch (err) {
   const message = err instanceof Error ? err.message : String(err);
   console.error(`::error::Cursor model resolution failed: ${message}`);
@@ -60,8 +62,12 @@ function sanitizedErrorDetails(value) {
     keys: value && typeof value === "object" ? Object.keys(value).sort() : [],
   };
   let text = JSON.stringify(details);
-  for (const secret of [process.env.CURSOR_API_KEY, process.env.OPENROUTER_API_KEY]) {
-    if (secret && secret.length >= 8) text = text.replaceAll(secret, "[REDACTED]");
+  for (const secret of [
+    process.env.CURSOR_API_KEY,
+    process.env.OPENROUTER_API_KEY,
+  ]) {
+    if (secret && secret.length >= 8)
+      text = text.replaceAll(secret, "[REDACTED]");
   }
   return text;
 }
@@ -117,7 +123,9 @@ if (modelId === "composer-2.5" && billingTier === "composer-2.5-fast") {
 
 const text = result?.result ?? "";
 if (!text.trim()) {
-  console.error(`Cursor agent returned empty result: ${sanitizedErrorDetails(result)}`);
+  console.error(
+    `Cursor agent returned empty result: ${sanitizedErrorDetails(result)}`,
+  );
   process.exit(1);
 }
 
@@ -131,3 +139,5 @@ if (process.env.ADVISORY_PROVIDER_METADATA_FILE) {
 }
 
 writeFileSync(outFile, text, "utf8");
+// Cursor SDK may retain background handles after Agent.prompt resolves.
+process.exit(0);
