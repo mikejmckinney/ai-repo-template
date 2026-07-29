@@ -160,6 +160,53 @@ EOF
   done
 }
 
+@test "apt package installation excludes the unrelated Yarn repository" {
+  mkdir -p "$TEST_ROOT/apt-sources"
+  printf '%s\n' 'deb https://dl.yarnpkg.com/debian stable main' >"$TEST_ROOT/apt-sources/yarn.list"
+  printf '%s\n' 'deb https://packages.microsoft.com/repos/test stable main' >"$TEST_ROOT/apt-sources/microsoft.list"
+  jq '
+    .apt_packages = [{command: "missing-apt-tool", package: "fake-package"}] |
+    .profiles.core = [] |
+    .tools = {}
+  ' "$TEST_ROOT/manifest.json" >"$TEST_ROOT/apt-manifest.json"
+  mv "$TEST_ROOT/apt-manifest.json" "$TEST_ROOT/manifest.json"
+  cat >"$BIN_DIR/apt-get" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+sourceparts=""
+for argument in "$@"; do
+  case "$argument" in
+    Dir::Etc::sourceparts=*) sourceparts="${argument#*=}" ;;
+  esac
+done
+if [[ " $* " == *" update "* ]]; then
+  [[ -n "$sourceparts" ]]
+  [[ ! -e "$sourceparts/yarn.list" ]]
+  [[ -e "$sourceparts/microsoft.list" ]]
+  printf 'update\n' >>"$APT_LOG"
+  exit 0
+fi
+if [[ " $* " == *" install "* ]]; then
+  printf 'install\n' >>"$APT_LOG"
+  exit 0
+fi
+exit 2
+EOF
+  chmod +x "$BIN_DIR/apt-get"
+  cat >"$BIN_DIR/sudo" <<'EOF'
+#!/usr/bin/env bash
+exec "$@"
+EOF
+  chmod +x "$BIN_DIR/sudo"
+  export CODESPACE_APT_SOURCE_PARTS="$TEST_ROOT/apt-sources"
+  export APT_LOG="$TEST_ROOT/apt.log"
+
+  run_installer --profile core
+
+  [ "$status" -eq 0 ]
+  [ "$(tr '\n' ' ' <"$APT_LOG")" = "update install " ]
+}
+
 @test "unknown profile is rejected before installation" {
   run_installer --profile unknown
 
