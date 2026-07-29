@@ -1,10 +1,11 @@
 #!/bin/bash
 # =============================================================================
-# AI Repo Template — Codespace Install Script
+# AI Repo Template — Legacy Codespaces Dotfiles Install Script
 # =============================================================================
-# This script runs automatically when a GitHub Codespace starts (via the
-# Codespaces "Dotfiles" feature). It installs VS Code extensions and copies
-# the agent workflow kit into the workspace.
+# This deprecated compatibility entrypoint runs only when this repository is
+# selected through the account-level Codespaces "Dotfiles" feature, or when it
+# is invoked manually. Template-derived repositories use the repository-owned
+# .devcontainer lifecycle instead.
 #
 # About the $DOTFILES variable (legacy naming, intentional):
 #   The GitHub Codespaces "Dotfiles" feature sets $DOTFILES to the path of the
@@ -62,6 +63,8 @@ log_warn() {
 log_error() {
   printf '%b[ERROR]%b %s\n' "$RED" "$NC" "$1"
 }
+
+log_warn "install.sh is a deprecated compatibility entrypoint; template-derived repositories use .devcontainer/devcontainer.json."
 
 # =============================================================================
 # Pre-flight Checks

@@ -16,7 +16,7 @@ module owns one phase of project bootstrap and is independently re-runnable.
 | `60-check-secrets.sh` | Report required model/runtime secret presence (repo + org tiers). | Cannot read values; presence-only. |
 | `70-verify-env.sh` | Delegate to `scripts/verify-env.sh`. | Final gate. |
 
-**Codespace post-start (not part of `setup.sh`):** [`scripts/codespace-post-start.sh`](../codespace-post-start.sh) runs from [`install.sh`](../../install.sh) on every Codespace start. It upgrades `gh` from the injected `GITHUB_TOKEN` to a user PAT when `GH_PAT` (etc.) is set, exports session tokens, installs a shell hook, and advises when the sandbox git remote is missing. It does **not** invoke `sandbox-bootstrap.sh`; repository creation and mirroring remain an explicit maintainer action.
+**Codespace lifecycle (not part of `setup.sh`):** [`.devcontainer/devcontainer.json`](../../.devcontainer/devcontainer.json) runs [`scripts/codespace-post-create.sh`](../codespace-post-create.sh) when the container is created and [`scripts/codespace-post-start.sh`](../codespace-post-start.sh) whenever it starts. Post-create installs the pinned default tool profile. Post-start upgrades `gh` from the injected `GITHUB_TOKEN` to a user PAT when `GH_PAT` (etc.) is set, exports session tokens, installs a shell hook, and advises when the sandbox git remote is missing. It does **not** invoke `setup.sh` or `sandbox-bootstrap.sh`; project adaptation, repository creation, and mirroring remain explicit maintainer actions.
 
 ## How the modules are loaded
 

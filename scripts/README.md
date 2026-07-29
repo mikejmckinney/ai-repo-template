@@ -8,6 +8,8 @@
 |--------|---------|-------|
 | `verify-env.sh` | Check environment setup | `./scripts/verify-env.sh` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
+| `codespace-post-create.sh` | Install the default tool profile when a Dev Container is created | Called by `.devcontainer/devcontainer.json` |
+| `codespace-post-start.sh` | Refresh non-fatal Codespaces auth and sandbox state on each start | Called by `.devcontainer/devcontainer.json` |
 | `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
 | `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile default` |
 | `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
@@ -31,10 +33,15 @@ Before marking a task complete, run verification:
 
 ### For Developers
 
-One-command setup for new clones:
+After adapting a new project, run its explicit project setup:
 ```bash
 ./scripts/setup.sh
 ```
+
+This command is intentionally not part of the Dev Container lifecycle because
+it can install project dependencies, run a build, and configure repository
+labels and secret checks. Codespaces environment creation uses
+`codespace-post-create.sh` instead.
 
 Codespaces tool bootstrap installs core plus agent tools by default. It can be
 checked without mutation:

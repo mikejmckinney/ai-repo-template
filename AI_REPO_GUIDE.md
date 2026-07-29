@@ -20,6 +20,8 @@ ADR-031 defines the active execution model:
 ./test.sh
 bats --jobs 4 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
+scripts/codespace-post-create.sh
+scripts/codespace-post-start.sh
 scripts/cleanup-codespace-caches.sh
 scripts/sync-opencode-oauth-secret.sh
 scripts/create-derived-repo.sh --repo OWNER/PROJECT
@@ -33,12 +35,12 @@ scripts/archive-opencode-database.sh
 git diff --check
 ```
 
-Run `bash install.sh` only when testing the Codespaces bootstrap/install surface.
-The default profile installs repository quality tools, enabled local MCP
-prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex. Use
-`bash install.sh --profile core` for the minimal quality/runtime set. Explicit
-`--profile agents` preserves the full core-plus-agents set; each agent still
-requires its own authentication flow.
+`.devcontainer/devcontainer.json` owns automatic Codespaces setup. Its
+post-create hook installs the default profile: repository quality tools, enabled
+local MCP prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex. Use
+`scripts/install-codespace-tools.sh --profile core` explicitly for the minimal
+quality/runtime set. Root `install.sh` is a deprecated compatibility entrypoint
+for existing account-level dotfiles users, not the canonical template path.
 Use `scripts/create-derived-repo.sh --repo OWNER/PROJECT` to preview remote
 creation and allowlisted credential synchronization. Pass `--apply` only after
 reviewing the redacted plan; see `docs/guides/derived-repository-bootstrap.md`.
@@ -122,9 +124,12 @@ returns failure to the existing provider cascade instead of consuming the
 | `scripts/workflows/lib/` | Shared provider, evidence, priority, and lifecycle helpers |
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
-| `install.sh` | Codespaces bootstrap and template-file copy inventory |
+| `.devcontainer/devcontainer.json` | Canonical repository-owned Codespaces lifecycle and extensions |
+| `install.sh` | Deprecated dotfiles/manual compatibility bootstrap and copy inventory |
 | `.config/codespace-tools.json` | Canonical Codespaces tool versions, release integrity, and profiles |
 | `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |
+| `scripts/codespace-post-create.sh` | Dev Container creation hook for the default tool profile |
+| `scripts/codespace-post-start.sh` | Non-fatal per-start PAT, OAuth, and sandbox hook |
 
 ### Nested Provider Skills
 
