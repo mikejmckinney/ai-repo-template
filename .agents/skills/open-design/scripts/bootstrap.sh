@@ -135,6 +135,7 @@ if [[ -n "$lock_commit" ]]; then
   git checkout "$lock_commit"
 fi
 
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 if command -v corepack >/dev/null 2>&1; then
   corepack enable
 fi

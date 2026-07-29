@@ -305,6 +305,10 @@ EOF
     "$REPO_ROOT/.opencode/opencode.json" "$REPO_ROOT/.mcp.json"
   [ "$status" -eq 1 ]
   [ -x "$REPO_ROOT/scripts/open-design-mcp.sh" ]
+
+  run grep -F 'export COREPACK_ENABLE_DOWNLOAD_PROMPT=0' \
+    "$REPO_ROOT/.agents/skills/open-design/scripts/bootstrap.sh"
+  [ "$status" -eq 0 ]
 }
 
 @test "shared skills have one canonical cross-agent directory" {
