@@ -35,11 +35,15 @@ def render_block(data: dict) -> str:
 
 def merge_into_body(body: str, data: dict) -> str:
     line = render_line(data)
-    if line in body:
-        return body
+    run_date = str(data.get("run_date") or "unknown")
+    line_prefix = f"- {run_date} —"
     if HEADING in body:
         before, after = body.split(HEADING, 1)
         lines = after.lstrip("\n").splitlines()
+        for index, existing in enumerate(lines):
+            if existing.startswith(line_prefix):
+                lines[index] = line
+                return before + HEADING + "\n\n" + "\n".join(lines)
         insert_at = 0
         while insert_at < len(lines) and lines[insert_at].startswith("-"):
             insert_at += 1

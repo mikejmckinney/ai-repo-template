@@ -244,6 +244,92 @@ EOF
   [[ "$output" == *"Automated footer."* ]]
 }
 
+@test "weekly provenance merge replaces a retried run date" {
+  cat >"$TMP_DIR/weekly.json" <<'EOF'
+{
+  "run_date": "2026-07-31",
+  "provenance": {
+    "version": 1,
+    "provider": "opencode",
+    "requested_model": "new-requested",
+    "observed_model": "new-observed"
+  },
+  "provider_attempts": [{"provider":"opencode","status":"success"}]
+}
+EOF
+  cat >"$TMP_DIR/body.md" <<'EOF'
+## Meta
+
+**Review provenance**
+
+- 2026-07-31 — provider: cursor; requested: old-requested; observed: old-observed; attempts: cursor:success
+
+Automated footer.
+EOF
+
+  run python3 "$REPO_ROOT/scripts/workflows/weekly-review/render-provider-provenance.py" \
+    "$TMP_DIR/weekly.json" --merge "$TMP_DIR/body.md"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"provider: opencode; requested: new-requested; observed: new-observed"* ]]
+  [[ "$output" != *"old-requested"* ]]
+  [ "$(grep -c '^- 2026-07-31 —' <<<"$output")" -eq 1 ]
+}
+
+@test "daily provenance merge replaces a retried PR and keeps other PRs" {
+  cat >"$TMP_DIR/daily.json" <<'EOF'
+{
+  "pr_evidence_coverage": [{
+    "pr": 7,
+    "diff_included": 10,
+    "diff_total": 10,
+    "would_truncate": false,
+    "evidence_route": "bounded",
+    "routing_context": {
+      "provider_resolved": "opencode",
+      "provenance": {
+        "requested_model": "new-requested",
+        "observed_model": "new-observed"
+      },
+      "antigravity_available": false
+    },
+    "provider_attempts": [{"provider":"opencode","status":"success"}]
+  }]
+}
+EOF
+  cat >"$TMP_DIR/body.md" <<'EOF'
+## Meta
+
+**Evidence coverage**
+
+- PR #7 — diff 10/10; route: bounded; provider: cursor; requested: old-requested; observed: old-observed; attempts: cursor:success; antigravity: false
+- PR #8 — diff 5/5; route: bounded; provider: gemini; requested: keep-requested; observed: keep-observed; attempts: gemini:success; antigravity: true
+
+Automated footer.
+EOF
+
+  run python3 - "$REPO_ROOT" "$TMP_DIR/body.md" "$TMP_DIR/daily.json" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1]) / "scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py"
+spec = importlib.util.spec_from_file_location("render_evidence_coverage_meta", path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+body = Path(sys.argv[2]).read_text(encoding="utf-8")
+records = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))["pr_evidence_coverage"]
+print(module.append_coverage_into_body(body, records), end="")
+PY
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PR #7"*"provider: opencode"*"requested: new-requested"* ]]
+  [[ "$output" != *"old-requested"* ]]
+  [[ "$output" == *"PR #8"*"keep-requested"* ]]
+  [ "$(grep -c '^- PR #7 —' <<<"$output")" -eq 1 ]
+}
+
 @test "daily and weekly runtime paths require normalized provider metadata" {
   run python3 - "$REPO_ROOT" <<'PY'
 import sys

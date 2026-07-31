@@ -81,6 +81,22 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "default-branch-only workflow rejects a contradictory no constraint" {
+  write_outcome \
+    "sandbox repo" \
+    "yes" \
+    "no"
+
+  run python3 "$VALIDATOR" \
+    --contract-version 1 \
+    --change-class "default-branch-only workflow" \
+    --verification-target "sandbox repo" \
+    --pr-body "$TMP_DIR/pr.md"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"requires Default-branch constrained: yes"* ]]
+}
+
 @test "supporting checks cannot replace user-outcome evidence" {
   cat >"$TMP_DIR/pr.md" <<'EOF'
 ## User outcome validation — PRIMARY

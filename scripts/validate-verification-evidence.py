@@ -93,6 +93,13 @@ def validate(
             errors.append(
                 "PR body Default-branch constrained value does not match the route"
             )
+    elif (
+        change_class == "default-branch-only workflow"
+        and declared_constraint != "yes"
+    ):
+        errors.append(
+            "default-branch-only workflow requires Default-branch constrained: yes"
+        )
 
     sandbox_required = (
         change_class == "default-branch-only workflow"

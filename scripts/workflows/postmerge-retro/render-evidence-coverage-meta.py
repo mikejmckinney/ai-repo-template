@@ -186,24 +186,42 @@ def append_coverage_into_body(body: str, records: list[dict]) -> str:
     body = merge_summary_into_body(body, records)
     if not records:
         return body
-    existing = _coverage_prs_in_body(body)
-    to_add = [record for record in records if int(record["pr"]) not in existing]
-    if not to_add:
-        return body
     if "**Evidence coverage**" not in body:
-        return merge_coverage_into_body(body, to_add)
+        return merge_coverage_into_body(body, records)
+
     lines = body.splitlines()
-    insert_at = len(lines)
+    heading_at = -1
     for i, line in enumerate(lines):
         if line.strip() == "**Evidence coverage**":
-            insert_at = i + 1
-            while insert_at < len(lines) and (
-                lines[insert_at].strip() == "" or lines[insert_at].startswith("- PR #")
-            ):
-                insert_at += 1
+            heading_at = i
             break
-    new_lines = [render_line(record) for record in sorted(to_add, key=lambda item: int(item["pr"]))]
-    return "\n".join(lines[:insert_at] + new_lines + lines[insert_at:])
+    if heading_at < 0:
+        return body
+
+    section_end = heading_at + 1
+    while section_end < len(lines) and (
+        not lines[section_end].strip() or lines[section_end].startswith("- PR #")
+    ):
+        section_end += 1
+
+    replacements = {int(record["pr"]): render_line(record) for record in records}
+    rendered: list[str] = []
+    seen: set[int] = set()
+    for line in lines[heading_at + 1 : section_end]:
+        if not line.startswith("- PR #"):
+            continue
+        try:
+            pr = int(line.split("PR #", 1)[1].split("—", 1)[0].strip())
+        except ValueError:
+            rendered.append(line)
+            continue
+        rendered.append(replacements.get(pr, line))
+        seen.add(pr)
+    rendered.extend(replacements[pr] for pr in sorted(replacements) if pr not in seen)
+
+    replacement_block = ["**Evidence coverage**", "", *rendered, ""]
+    merged = "\n".join(lines[:heading_at] + replacement_block + lines[section_end:])
+    return merged + ("\n" if body.endswith("\n") else "")
 
 
 def main() -> int:
