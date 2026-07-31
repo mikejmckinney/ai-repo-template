@@ -57,13 +57,11 @@ EOF
   [ "$(sort -u "$TEST_ROOT/install.log")" = "--profile default" ]
 }
 
-@test "legacy install remains a deprecated compatibility path" {
-  run grep -F "deprecated compatibility entrypoint" "$REPO_ROOT/install.sh"
-  [ "$status" -eq 0 ]
+@test "legacy install entrypoint is removed" {
+  [ ! -e "$REPO_ROOT/install.sh" ]
 
-  run grep -F "bash \"\$DOTFILES/scripts/install-codespace-tools.sh\" --profile \"\$TOOLS_PROFILE\"" \
-    "$REPO_ROOT/install.sh"
-  [ "$status" -eq 0 ]
+  run grep -F '"install.sh"' "$REPO_ROOT/scripts/checks/010-required-files.sh"
+  [ "$status" -eq 1 ]
 }
 
 @test "required-file checks include the repository-owned lifecycle" {
