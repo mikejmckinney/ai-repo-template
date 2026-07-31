@@ -2,6 +2,7 @@ name: Agent workflow PR smoke
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, edited]
     paths:
       - ".github/workflows/agent-postmerge-retro.yml"
       - ".github/workflows/agent-weekly-review.yml"

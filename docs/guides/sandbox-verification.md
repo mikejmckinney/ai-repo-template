@@ -25,6 +25,9 @@ Run one final sandbox integration canary after local and PR-native checks pass,
 unless that canary reveals a default-branch-specific defect that requires a
 second run.
 
+Editing the upstream PR body reruns the PR-native harness and revalidates its
+live verification declarations before the final sandbox result is accepted.
+
 ## Why this exists
 
 GitHub Actions runs default-branch-only workflows from the repository's

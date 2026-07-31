@@ -46,6 +46,7 @@ caller_text, caller = mapping_paths(sys.argv[1])
 reusable_text, reusable = mapping_paths(sys.argv[2])
 
 assert caller[("permissions", "contents")] == "read"
+assert caller[("on", "pull_request", "types")] == "[opened, synchronize, reopened, edited]"
 assert caller[("jobs", "smoke", "permissions", "contents")] == "read"
 assert {path[1] for path in caller if len(path) == 2 and path[0] == "jobs"} == {"smoke"}
 assert caller[("jobs", "smoke", "uses")] == "./.github/workflows/agent-workflow-smoke.yml"

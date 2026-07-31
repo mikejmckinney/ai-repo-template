@@ -200,6 +200,10 @@ required by the user outcome. Use `docs/guides/sandbox-verification.md` when the
 classifier reports `default-branch-only workflow` or a mixed diff with that
 verification floor.
 
+The read-only candidate harness reruns when relevant PR code changes and when
+the PR body is edited, so live verification declarations cannot rely on an
+earlier green result after they change.
+
 ## Labels
 
 | Label | Meaning |
