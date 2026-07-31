@@ -114,7 +114,15 @@ N/A — empty headings are noise.
 
 <!-- REQUIRED. Exact commands you ran (or N/A for docs-only). These are
      supporting regression/hygiene evidence; they do not replace the
-     primary user-outcome validation above. -->
+     primary user-outcome validation above. Structural change class comes from
+     scripts/verify-pr.sh. For mixed changes, pass the same execution-constraint
+     decision to scripts/validate-verification-evidence.py. -->
+
+Evidence contract: 1
+E2E target: <PR branch | preview | dogfood | sandbox repo | both>
+Sandbox required: <yes | no>
+Default-branch constrained: <yes | no>
+Reason: <specific changed-behavior constraint or branch-testability reason>
 
 - [ ] `<command>` — pass / fail
 - [ ] Manual check: `<step>` — result

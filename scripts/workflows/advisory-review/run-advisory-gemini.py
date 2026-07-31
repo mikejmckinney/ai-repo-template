@@ -61,8 +61,17 @@ def main() -> int:
         fh.write(text)
     metadata_path = os.environ.get("ADVISORY_PROVIDER_METADATA_FILE")
     if metadata_path:
+        observed_model = str(body.get("modelVersion") or "unknown")
         with open(metadata_path, "w", encoding="utf-8") as fh:
-            json.dump({"provider": "gemini", "model": model}, fh)
+            json.dump(
+                {
+                    "provider": "gemini",
+                    "model": model,
+                    "requested_model": model,
+                    "observed_model": observed_model,
+                },
+                fh,
+            )
             fh.write("\n")
     return 0
 

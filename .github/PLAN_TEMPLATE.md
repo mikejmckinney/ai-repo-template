@@ -117,6 +117,9 @@ Result: pass | fail | blocked
 ### Supporting verification
 
 **Change class**: <code-or-docs | pull_request-triggered workflow | default-branch-only workflow | mixed>
+**Verification evidence contract**: 1
+**Default-branch constrained**: <yes | no>
+**Verification target**: <PR branch | preview | dogfood | sandbox repo | both>
 **Outcome environments**: <PR branch, sibling GitHub sandbox, fresh Codespace, fresh repository, provider preview, disposable infrastructure, etc.>
 
 <!-- Pick the most-restrictive class your diff touches. The classifier in
@@ -125,8 +128,11 @@ Result: pass | fail | blocked
      classifier; `docs/guides/agent-pipeline.md` explains the resulting
      verification classes without duplicating its trigger rules.
      Select environments with `docs/guides/outcome-validation.md`.
-     Default-branch-only GitHub behavior uses the sibling repository adapter
-     in `docs/guides/sandbox-verification.md` (ADR-016/ADR-034). -->
+     For mixed changes, structural classification does not select the route:
+     record whether the changed behavior itself depends on default-branch event,
+     permission, secret, concurrency, environment, provider, or publication
+     semantics. Default-branch-constrained behavior uses the sibling repository
+     adapter in `docs/guides/sandbox-verification.md` (ADR-016/ADR-034). -->
 
 <How a reviewer can prove this works. Specific commands, specific assertions,
 specific test names. "Tests pass" is not sufficient — name them.>

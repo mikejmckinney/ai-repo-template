@@ -623,12 +623,15 @@ EOF
   cat >"$tmp/snapshot.md" <<'EOF'
 <!-- postmerge-retro:daily-json:2026-06-19 run:1 attempt:1 -->
 ```json
-{"run_date": "2026-06-19", "findings": []}
+{"run_date":"2026-06-19","findings":[],"pr_evidence_coverage":[{"pr":1,"routing_context":{"provenance":{"version":1,"provider":"opencode","requested_model":"requested","observed_model":"observed"}},"provider_attempts":[{"provider":"opencode","status":"success","evidence_route":"bounded"}]}]}
 ```
 EOF
   run python3 scripts/workflows/postmerge-retro/parse-daily-json-snapshot.py "$tmp/snapshot.md"
   [ "$status" -eq 0 ]
-  run jq -e '.run_date == "2026-06-19"' <<<"$output"
+  snapshot="$output"
+  run jq -e '.run_date == "2026-06-19"' <<<"$snapshot"
+  [ "$status" -eq 0 ]
+  run jq -e '.pr_evidence_coverage[0].routing_context.provenance.observed_model == "observed"' <<<"$snapshot"
   [ "$status" -eq 0 ]
   rm -rf "$tmp"
 }

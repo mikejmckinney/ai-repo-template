@@ -144,8 +144,9 @@ fi
 #   Anything else: source, docs, scripts, config, ADRs, role files, etc.
 #
 # A diff that contains paths from more than one bucket above classifies
-# as `mixed`; the most-restrictive bucket present sets the verification
-# floor (default-branch-only > pull_request-triggered > code-or-docs).
+# as `mixed`. That structural fact does not decide whether the changed behavior
+# requires default-branch execution; the versioned evidence validator owns that
+# separate declaration.
 
 has_default_only=0
 has_pr_triggered=0
@@ -325,18 +326,14 @@ case "$detected_overall" in
     printf '      docs/guides/sandbox-verification.md\n' >&2
     ;;
   "mixed")
-    # In a mixed diff the verification floor is set by the
-    # most-restrictive bucket present, NOT by the literal label
-    # "mixed". If any default-branch-only path is in the diff, the
-    # sandbox playbook applies; otherwise the floor is PR-branch
-    # verifiable. Mirrors the matrix in
-    # the executable classification contract above.
     printf '  - Update the issue Plan outcome environments:\n' >&2
     printf '      Change class: mixed\n' >&2
     if [[ "$has_default_only" -eq 1 ]]; then
-      printf '  - Select every required outcome environment:\n' >&2
+      printf '  - Declare whether the changed behavior itself is default-branch constrained:\n' >&2
+      printf '      Default-branch constrained: yes | no\n' >&2
+      printf '  - Select every required outcome environment from that constraint:\n' >&2
       printf '      docs/guides/outcome-validation.md\n' >&2
-      printf '  - Run the sibling repository adapter for default-branch behavior:\n' >&2
+      printf '  - Use the sibling adapter only for load-bearing default-branch behavior:\n' >&2
       printf '      docs/guides/sandbox-verification.md\n' >&2
     else
       printf '      docs/guides/outcome-validation.md\n' >&2

@@ -37,12 +37,12 @@ ARTIFACT_DIR="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${PR
 mkdir -p "$WORK_ROOT"
 WORKDIR="$(mktemp -d "$WORK_ROOT/pr-${PR}.XXXXXX")"
 mkdir -p "$ARTIFACT_DIR"
-rm -f "$ARTIFACT_DIR"/{retro.json,evidence-coverage.json,llm-output.txt,pr.json,changed-files.txt,retrieval-trace.json}
+rm -f "$ARTIFACT_DIR"/{retro.json,evidence-coverage.json,llm-output.txt,pr.json,changed-files.txt,retrieval-trace.json,provider-metadata.json}
 
 persist_artifacts() {
   local rc=$?
   mkdir -p "$ARTIFACT_DIR"
-  for name in retro.json evidence-coverage.json llm-output.txt pr.json changed-files.txt retrieval-trace.json; do
+  for name in retro.json evidence-coverage.json llm-output.txt pr.json changed-files.txt retrieval-trace.json provider-metadata.json; do
     [[ -f "$WORKDIR/$name" ]] && cp -f "$WORKDIR/$name" "$ARTIFACT_DIR/$name"
   done
   rm -rf "$WORKDIR"
@@ -95,6 +95,9 @@ llm_raw="$WORKDIR/llm-output.txt"
 provider_used=""
 would_truncate="$(jq -r '.would_truncate // false' "$COVERAGE_JSON")"
 prompt_file="$WORKDIR/prompt.md"
+provider_metadata_file="$WORKDIR/provider-metadata.json"
+normalized_provenance_file="$WORKDIR/provider-provenance.json"
+export ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file"
 
 # shellcheck source=../lib/pick-advisory-provider.sh
 source "$LIB_DIR/pick-advisory-provider.sh"
@@ -109,22 +112,30 @@ fi
 
 record_provider_attempt() {
   local provider="$1" status="$2" route="$3"
-  python3 - "$COVERAGE_JSON" "$provider" "$status" "$route" <<'PY'
+  python3 - "$COVERAGE_JSON" "$provider" "$status" "$route" "$normalized_provenance_file" <<'PY'
 import json
 import sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
-provider, status, route = sys.argv[2:]
+provider, status, route, provenance_path = sys.argv[2:]
 record = json.loads(path.read_text(encoding="utf-8"))
 record.setdefault("provider_attempts", []).append(
     {"provider": provider, "status": status, "evidence_route": route}
 )
 if status == "success":
+    provenance = json.loads(Path(provenance_path).read_text(encoding="utf-8"))
     record["evidence_route"] = route
-    record.setdefault("routing_context", {})["provider_resolved"] = provider
+    context = record.setdefault("routing_context", {})
+    context["provider_resolved"] = provenance["provider"]
+    context["provenance"] = provenance
 path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 PY
+}
+
+normalize_provider_metadata() {
+  python3 "$LIB_DIR/provider-provenance.py" normalize \
+    "$provider_metadata_file" >"$normalized_provenance_file"
 }
 
 run_full_evidence_provider() {
@@ -175,7 +186,8 @@ validate_provider_output() {
 }
 
 for provider in "${provider_candidates[@]}"; do
-  rm -f "$llm_raw" "$WORKDIR/retrieval-trace.json"
+  rm -f "$llm_raw" "$WORKDIR/retrieval-trace.json" \
+    "$provider_metadata_file" "$normalized_provenance_file"
   if [[ "$would_truncate" == "true" ]]; then
     case "$provider" in
       opencode) route=full-evidence-opencode ;;
@@ -183,20 +195,24 @@ for provider in "${provider_candidates[@]}"; do
       gemini) route=full-evidence-antigravity ;;
       *) route=bounded-fallback ;;
     esac
-    if run_full_evidence_provider "$provider" && validate_provider_output; then
+    if run_full_evidence_provider "$provider" \
+      && validate_provider_output \
+      && normalize_provider_metadata; then
       provider_succeeded=true
     fi
   else
     route=bounded
-    if run_bounded_pass "$provider" && validate_provider_output; then
+    if run_bounded_pass "$provider" \
+      && validate_provider_output \
+      && normalize_provider_metadata; then
       provider_succeeded=true
     fi
   fi
 
   if [[ "$provider_succeeded" == "true" ]]; then
-    provider_used="$provider"
+    provider_used="$(jq -r .provider "$normalized_provenance_file")"
     cp -f "$candidate_json" "$retro_json"
-    record_provider_attempt "$provider" success "$route"
+    record_provider_attempt "$provider_used" success "$route"
     break
   fi
   record_provider_attempt "$provider" failed "$route"

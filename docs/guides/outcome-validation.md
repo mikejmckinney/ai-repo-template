@@ -56,6 +56,14 @@ For default-branch GitHub behavior, follow
 [`sandbox-verification.md`](sandbox-verification.md). The sibling repository is
 an adapter for that constraint, not a universal destination.
 
+For a structurally mixed workflow diff, classify paths and select environments
+as separate steps. The path classifier proves which trigger classes are present;
+the execution-constraint declaration states whether the changed behavior needs
+default-branch event, permission, secret, concurrency, environment, provider, or
+publication semantics. Prefer deterministic and read-only same-commit PR
+execution for the correction loop. Add one final sibling-sandbox record only for
+the default-branch conditions the PR environment cannot preserve.
+
 ## Preserve the user journey
 
 Derive the affected user's action and required observable result from the

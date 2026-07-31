@@ -1,0 +1,30 @@
+name: Agent workflow PR smoke
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    paths:
+      - ".github/workflows/agent-postmerge-retro.yml"
+      - ".github/workflows/agent-weekly-review.yml"
+      - ".github/workflows/agent-workflow-*.yml"
+      - ".github/templates/*retro*.md"
+      - ".github/templates/weekly-review-umbrella.md"
+      - "scripts/validate-verification-evidence.py"
+      - "scripts/workflows/**"
+      - "scripts/tests/provider-provenance.bats"
+      - "scripts/tests/verification-evidence.bats"
+      - "scripts/tests/workflow-pr-smoke.bats"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/agent-workflow-smoke.yml
+    with:
+      ref: ${{ github.event.pull_request.head.sha }}
+      expected_sha: ${{ github.event.pull_request.head.sha }}
+      base_sha: ${{ github.event.pull_request.base.sha }}
+      pr_body: ${{ github.event.pull_request.body }}

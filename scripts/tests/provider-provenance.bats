@@ -1,0 +1,374 @@
+#!/usr/bin/env bats
+
+setup() {
+  REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
+  PROVENANCE="$REPO_ROOT/scripts/workflows/lib/provider-provenance.py"
+  TMP_DIR="$(mktemp -d)"
+}
+
+teardown() {
+  rm -rf "$TMP_DIR"
+}
+
+@test "provider provenance normalizes OpenCode requested and observed models" {
+  cat >"$TMP_DIR/metadata.json" <<'EOF'
+{"provider":"opencode","model":"openrouter/example/model@preset/default","observed_model":"example/model"}
+EOF
+
+  run python3 "$PROVENANCE" normalize "$TMP_DIR/metadata.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.version == 1 and .provider == "opencode" and .requested_model == "openrouter/example/model@preset/default" and .observed_model == "example/model"' <<<"$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "provider provenance preserves explicit unknown observed model" {
+  cat >"$TMP_DIR/metadata.json" <<'EOF'
+{"provider":"gemini","model":"gemini-test","requested_model":"gemini-test","observed_model":"unknown"}
+EOF
+
+  run python3 "$PROVENANCE" normalize "$TMP_DIR/metadata.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.requested_model == "gemini-test" and .observed_model == "unknown"' <<<"$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "provider provenance rejects missing provider" {
+  printf '%s\n' '{"model":"test"}' >"$TMP_DIR/metadata.json"
+
+  run python3 "$PROVENANCE" normalize "$TMP_DIR/metadata.json"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"provider"* ]]
+}
+
+@test "provider provenance never infers an observed model from model" {
+  cat >"$TMP_DIR/metadata.json" <<'EOF'
+{"provider":"cursor","requested_model":"cursor-requested","model":"cursor-resolved"}
+EOF
+
+  run python3 "$PROVENANCE" normalize "$TMP_DIR/metadata.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.requested_model == "cursor-requested" and .observed_model == "unknown"' <<<"$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "daily evidence renderer includes requested and observed model" {
+  cat >"$TMP_DIR/daily.json" <<'EOF'
+{
+  "run_date": "2026-07-31",
+  "prs": [7],
+  "findings": [],
+  "pr_evidence_coverage": [{
+    "pr": 7,
+    "diff_included": 10,
+    "diff_total": 10,
+    "head_included": 5,
+    "head_total": 5,
+    "would_truncate": false,
+    "evidence_route": "bounded",
+    "routing_context": {
+      "adaptive_enabled": true,
+      "provider_resolved": "opencode",
+      "cursor_available": false,
+      "antigravity_available": false,
+      "provenance": {
+        "version": 1,
+        "provider": "opencode",
+        "requested_model": "openrouter/example/model@preset/default",
+        "observed_model": "example/model"
+      }
+    },
+    "provider_attempts": [
+      {"provider":"cursor","status":"failed","evidence_route":"bounded"},
+      {"provider":"opencode","status":"success","evidence_route":"bounded"}
+    ]
+  }]
+}
+EOF
+
+  run python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py" "$TMP_DIR/daily.json"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"provider: opencode"* ]]
+  [[ "$output" == *"requested: openrouter/example/model@preset/default"* ]]
+  [[ "$output" == *"observed: example/model"* ]]
+  [[ "$output" == *"attempts: cursor:failed, opencode:success"* ]]
+}
+
+@test "daily evidence renderer gives historical records explicit unknown models" {
+  cat >"$TMP_DIR/daily.json" <<'EOF'
+{
+  "pr_evidence_coverage": [{
+    "pr": 8,
+    "diff_included": 1,
+    "diff_total": 1,
+    "would_truncate": false,
+    "evidence_route": "bounded",
+    "routing_context": {
+      "adaptive_enabled": false,
+      "provider_resolved": "unknown",
+      "cursor_available": false,
+      "antigravity_available": false
+    }
+  }]
+}
+EOF
+
+  run python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py" "$TMP_DIR/daily.json"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"provider: unknown"* ]]
+  [[ "$output" == *"requested: unknown"* ]]
+  [[ "$output" == *"observed: unknown"* ]]
+}
+
+@test "weekly batch preserves provenance added by automation after model validation" {
+  cat >"$TMP_DIR/review.json" <<'EOF'
+{
+  "summary": "No findings.",
+  "follow_up_issues": [],
+  "provenance": {
+    "version": 1,
+    "provider": "cursor",
+    "requested_model": "cursor-requested",
+    "observed_model": "cursor-observed"
+  },
+  "provider_attempts": [
+    {"provider":"opencode","status":"failed"},
+    {"provider":"cursor","status":"success"}
+  ]
+}
+EOF
+
+  run python3 "$REPO_ROOT/scripts/workflows/weekly-review/build-weekly-review-batch.py" \
+    2026-W31 2026-07-31 "$TMP_DIR/review.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.provenance.provider == "cursor" and .provenance.observed_model == "cursor-observed" and (.provider_attempts | length) == 2' <<<"$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "weekly model output cannot claim automation-owned provenance" {
+  cat >"$TMP_DIR/review.json" <<'EOF'
+{
+  "summary": "Untrusted model output.",
+  "follow_up_issues": [],
+  "provenance": {
+    "version": 1,
+    "provider": "forged",
+    "requested_model": "forged",
+    "observed_model": "forged"
+  },
+  "provider_attempts": [{"provider":"forged","status":"success"}]
+}
+EOF
+
+  run python3 "$REPO_ROOT/scripts/workflows/weekly-review/validate-weekly-review.py" \
+    "$TMP_DIR/review.json"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"automation-owned"* ]]
+}
+
+@test "weekly batch gives historical records explicit unknown provenance" {
+  printf '%s\n' '{"summary":"legacy","follow_up_issues":[]}' >"$TMP_DIR/review.json"
+
+  run python3 "$REPO_ROOT/scripts/workflows/weekly-review/build-weekly-review-batch.py" \
+    2026-W31 2026-07-31 "$TMP_DIR/review.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.provenance.provider == "unknown" and .provenance.requested_model == "unknown" and .provenance.observed_model == "unknown"' <<<"$output"
+  [ "$status" -eq 0 ]
+}
+
+@test "weekly provenance renderer shows requested observed and attempts" {
+  cat >"$TMP_DIR/weekly.json" <<'EOF'
+{
+  "run_week": "2026-W31",
+  "run_date": "2026-07-31",
+  "provenance": {
+    "version": 1,
+    "provider": "cursor",
+    "requested_model": "cursor-requested",
+    "observed_model": "cursor-observed"
+  },
+  "provider_attempts": [
+    {"provider":"opencode","status":"failed"},
+    {"provider":"cursor","status":"success"}
+  ]
+}
+EOF
+
+  run python3 "$REPO_ROOT/scripts/workflows/weekly-review/render-provider-provenance.py" \
+    "$TMP_DIR/weekly.json"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"provider: cursor"* ]]
+  [[ "$output" == *"requested: cursor-requested"* ]]
+  [[ "$output" == *"observed: cursor-observed"* ]]
+  [[ "$output" == *"opencode:failed, cursor:success"* ]]
+}
+
+@test "weekly provenance merge appends new attempts under the existing heading" {
+  cat >"$TMP_DIR/weekly.json" <<'EOF'
+{
+  "run_date": "2026-08-01",
+  "provenance": {
+    "version": 1,
+    "provider": "gemini",
+    "requested_model": "gemini-requested",
+    "observed_model": "unknown"
+  },
+  "provider_attempts": [{"provider":"gemini","status":"success"}]
+}
+EOF
+  cat >"$TMP_DIR/body.md" <<'EOF'
+## Meta
+
+**Review provenance**
+
+- 2026-07-31 — provider: cursor; requested: cursor-requested; observed: cursor-observed; attempts: cursor:success
+
+Automated footer.
+EOF
+
+  run python3 "$REPO_ROOT/scripts/workflows/weekly-review/render-provider-provenance.py" \
+    "$TMP_DIR/weekly.json" --merge "$TMP_DIR/body.md"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *$'**Review provenance**\n\n- 2026-07-31'* ]]
+  [[ "$output" == *"- 2026-08-01 — provider: gemini"* ]]
+  [[ "$output" == *"Automated footer."* ]]
+}
+
+@test "weekly provenance merge replaces a retried run date" {
+  cat >"$TMP_DIR/weekly.json" <<'EOF'
+{
+  "run_date": "2026-07-31",
+  "provenance": {
+    "version": 1,
+    "provider": "opencode",
+    "requested_model": "new-requested",
+    "observed_model": "new-observed"
+  },
+  "provider_attempts": [{"provider":"opencode","status":"success"}]
+}
+EOF
+  cat >"$TMP_DIR/body.md" <<'EOF'
+## Meta
+
+**Review provenance**
+
+- 2026-07-31 — provider: cursor; requested: old-requested; observed: old-observed; attempts: cursor:success
+- 2026-07-31 — provider: gemini; requested: duplicate-requested; observed: duplicate-observed; attempts: gemini:success
+
+Automated footer.
+EOF
+
+  run python3 "$REPO_ROOT/scripts/workflows/weekly-review/render-provider-provenance.py" \
+    "$TMP_DIR/weekly.json" --merge "$TMP_DIR/body.md"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"provider: opencode; requested: new-requested; observed: new-observed"* ]]
+  [[ "$output" != *"old-requested"* ]]
+  [[ "$output" != *"duplicate-requested"* ]]
+  [ "$(grep -c '^- 2026-07-31 —' <<<"$output")" -eq 1 ]
+}
+
+@test "daily provenance merge replaces a retried PR and keeps other PRs" {
+  cat >"$TMP_DIR/daily.json" <<'EOF'
+{
+  "pr_evidence_coverage": [{
+    "pr": 7,
+    "diff_included": 10,
+    "diff_total": 10,
+    "would_truncate": false,
+    "evidence_route": "bounded",
+    "routing_context": {
+      "provider_resolved": "opencode",
+      "provenance": {
+        "requested_model": "new-requested",
+        "observed_model": "new-observed"
+      },
+      "antigravity_available": false
+    },
+    "provider_attempts": [{"provider":"opencode","status":"success"}]
+  }]
+}
+EOF
+  cat >"$TMP_DIR/body.md" <<'EOF'
+## Meta
+
+**Evidence coverage**
+
+- PR #7 — diff 10/10; route: bounded; provider: cursor; requested: old-requested; observed: old-observed; attempts: cursor:success; antigravity: false
+- PR #8 — diff 5/5; route: bounded; provider: gemini; requested: keep-requested; observed: keep-observed; attempts: gemini:success; antigravity: true
+
+Automated footer.
+EOF
+
+  run python3 - "$REPO_ROOT" "$TMP_DIR/body.md" "$TMP_DIR/daily.json" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1]) / "scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py"
+spec = importlib.util.spec_from_file_location("render_evidence_coverage_meta", path)
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+body = Path(sys.argv[2]).read_text(encoding="utf-8")
+records = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))["pr_evidence_coverage"]
+print(module.append_coverage_into_body(body, records), end="")
+PY
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PR #7"*"provider: opencode"*"requested: new-requested"* ]]
+  [[ "$output" != *"old-requested"* ]]
+  [[ "$output" == *"PR #8"*"keep-requested"* ]]
+  [ "$(grep -c '^- PR #7 —' <<<"$output")" -eq 1 ]
+}
+
+@test "daily and weekly runtime paths require normalized provider metadata" {
+  run python3 - "$REPO_ROOT" <<'PY'
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+daily = (root / "scripts/workflows/postmerge-retro/run-postmerge-retro.sh").read_text(encoding="utf-8")
+weekly = (root / "scripts/workflows/weekly-review/run-weekly-review-scan.sh").read_text(encoding="utf-8")
+for text in (daily, weekly):
+    assert "ADVISORY_PROVIDER_METADATA_FILE" in text
+    assert "provider-provenance.py" in text
+PY
+
+  [ "$status" -eq 0 ]
+}
+
+@test "all analysis provider adapters emit requested and observed model metadata" {
+  run python3 - "$REPO_ROOT" <<'PY'
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+paths = (
+    "scripts/workflows/lib/run-opencode.mjs",
+    "scripts/workflows/advisory-review/run-advisory-cursor.mjs",
+    "scripts/workflows/advisory-review/run-advisory-gemini.py",
+    "scripts/workflows/advisory-review/run-advisory-antigravity.py",
+    "scripts/workflows/postmerge-retro/run-postmerge-retro-full-cursor.mjs",
+    "scripts/workflows/postmerge-retro/run-postmerge-retro-antigravity.py",
+    "scripts/workflows/weekly-review/run-weekly-antigravity.py",
+)
+for rel in paths:
+    text = (root / rel).read_text(encoding="utf-8")
+    assert "ADVISORY_PROVIDER_METADATA_FILE" in text, rel
+    assert "requested_model" in text, rel
+    assert "observed_model" in text, rel
+PY
+
+  [ "$status" -eq 0 ]
+}

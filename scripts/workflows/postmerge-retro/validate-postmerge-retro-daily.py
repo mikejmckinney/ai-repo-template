@@ -23,6 +23,19 @@ _CL = _load_classifier()
 apply_triage_to_item = _CL.apply_triage_to_item
 validate_triage_item = _CL.validate_triage_item
 
+
+def _load_provenance():
+    path = Path(__file__).resolve().parents[1] / "lib/provider-provenance.py"
+    spec = importlib.util.spec_from_file_location("provider_provenance", path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load provider provenance from {path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_PROVENANCE = _load_provenance()
+
 EVIDENCE_ROUTES = {
     "bounded",
     "full-evidence-opencode",
@@ -30,6 +43,8 @@ EVIDENCE_ROUTES = {
     "full-evidence-antigravity",
     "bounded-fallback",
 }
+
+
 def _validate_evidence_coverage(item: dict, path: str) -> None:
     if not isinstance(item, dict):
         raise ValueError(f"{path} must be an object")
@@ -83,6 +98,8 @@ def _validate_evidence_coverage(item: dict, path: str) -> None:
         raise ValueError(f"{path}.routing_context.cursor_available must be boolean")
     if not isinstance(ctx["antigravity_available"], bool):
         raise ValueError(f"{path}.routing_context.antigravity_available must be boolean")
+    if "provenance" in ctx:
+        _PROVENANCE.validate_provenance(ctx["provenance"], f"{path}.routing_context.provenance")
     if "antigravity_on_truncate" in ctx and not isinstance(ctx["antigravity_on_truncate"], bool):
         raise ValueError(f"{path}.routing_context.antigravity_on_truncate must be boolean")
     for key in ("diff_truncated", "head_truncated"):
@@ -97,19 +114,11 @@ def _validate_evidence_coverage(item: dict, path: str) -> None:
                 raise ValueError(f"{path}.omitted_head_paths[{i}] must be a string")
     attempts = item.get("provider_attempts")
     if attempts is not None:
-        if not isinstance(attempts, list):
-            raise ValueError(f"{path}.provider_attempts must be an array when present")
-        for i, attempt in enumerate(attempts):
-            if not isinstance(attempt, dict):
-                raise ValueError(f"{path}.provider_attempts[{i}] must be an object")
-            for key in ("provider", "status", "evidence_route"):
-                if not isinstance(attempt.get(key), str) or not attempt[key].strip():
-                    raise ValueError(f"{path}.provider_attempts[{i}].{key} must be a non-empty string")
-            if attempt["status"] not in ("success", "failed"):
-                raise ValueError(f"{path}.provider_attempts[{i}].status invalid")
-            extra = set(attempt) - {"provider", "status", "evidence_route"}
-            if extra:
-                raise ValueError(f"{path}.provider_attempts[{i}] contains unsupported fields")
+        _PROVENANCE.validate_provider_attempts(
+            attempts,
+            f"{path}.provider_attempts",
+            allowed_extra_fields={"evidence_route"},
+        )
 
 
 def main() -> int:

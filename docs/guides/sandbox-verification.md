@@ -9,6 +9,25 @@
 This is a specialized environment adapter. Select environments and record
 material-claim artifacts with [Outcome Validation](outcome-validation.md).
 
+For mixed changes, first separate the workflow file's structural trigger class
+from the changed behavior's execution constraint. Use deterministic fixtures,
+`actionlint`, ShellCheck, and a read-only same-commit `pull_request` reusable
+workflow as the correction loop. The reusable path must use synthetic inputs,
+verify the candidate SHA, receive no production provider or publisher secrets,
+and perform no repository or external mutation.
+
+Sandbox remains required when the changed behavior depends on real
+default-branch event delivery, token permissions, secret propagation,
+concurrency, environments, repository controls, provider execution, or publisher
+mutation. Record the decision with evidence contract `1`,
+`default-branch-constrained: yes|no`, the selected target, and a specific reason.
+Run one final sandbox integration canary after local and PR-native checks pass,
+unless that canary reveals a default-branch-specific defect that requires a
+second run.
+
+Editing the upstream PR body reruns the PR-native harness and revalidates its
+live verification declarations before the final sandbox result is accepted.
+
 ## Why this exists
 
 GitHub Actions runs default-branch-only workflows from the repository's
@@ -122,10 +141,12 @@ that aren't worth surfacing publicly.
 
 ## Per-PR verification flow
 
-Use this when the classifier reports `default-branch-only workflow` (or a
-`mixed` change containing that class) and the outcome plan selects the sibling
-GitHub repository adapter. Record the adapter under `Outcome environments` and
-capture each material claim with the canonical evidence record.
+Use this when the classifier reports `default-branch-only workflow`, or when a
+`mixed` change declares that its changed behavior is default-branch constrained,
+and the outcome plan selects the sibling GitHub repository adapter. A mixed
+classification alone does not force this route. Record the adapter under
+`Outcome environments` and capture each material claim with the canonical
+evidence record.
 
 ### OpenCode runtime prerequisite
 

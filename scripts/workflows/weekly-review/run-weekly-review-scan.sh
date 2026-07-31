@@ -104,14 +104,19 @@ mapfile -t provider_candidates < <(list_advisory_providers weekly-scan)
 
 llm_raw="$WORKDIR/llm-output.txt"
 review_json="$WORKDIR/review.json"
+provider_metadata_file="$WORKDIR/provider-metadata.json"
+normalized_provenance_file="$WORKDIR/provider-provenance.json"
+provider_attempts='[]'
 provider_succeeded=false
 for provider in "${provider_candidates[@]}"; do
-  rm -f "$llm_raw" "$review_json"
+  rm -f "$llm_raw" "$review_json" "$provider_metadata_file" "$normalized_provenance_file"
+  # shellcheck disable=SC2034 # Sourced provider dispatch reads this selection.
   ADVISORY_PROVIDER_USED="$provider"
   provider_invoked=false
   case "$provider" in
     opencode | cursor | gemini)
-      if OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/weekly-review.schema.json" \
+      if ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+        OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/weekly-review.schema.json" \
         invoke_advisory_llm \
         "$prompt_file" "$llm_raw" "$provider" "$ADVISORY_DIR" \
         "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"; then
@@ -119,18 +124,39 @@ for provider in "${provider_candidates[@]}"; do
       fi
       ;;
     antigravity)
-      if python3 "$SCRIPT_DIR/run-weekly-antigravity.py" "$REPO_ROOT" "$WORKDIR" "$llm_raw"; then
+      if ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+        python3 "$SCRIPT_DIR/run-weekly-antigravity.py" "$REPO_ROOT" "$WORKDIR" "$llm_raw"; then
         provider_invoked=true
       fi
       ;;
   esac
   if [[ "$provider_invoked" == true ]] \
     && python3 "$SCRIPT_DIR/extract-weekly-json.py" "$llm_raw" "$review_json" \
-    && python3 "$SCRIPT_DIR/validate-weekly-review.py" "$review_json"; then
-    PROVIDER="${ADVISORY_PROVIDER_USED:-$provider}"
+    && python3 "$SCRIPT_DIR/validate-weekly-review.py" "$review_json" \
+    && python3 "$LIB_DIR/provider-provenance.py" normalize \
+      "$provider_metadata_file" >"$normalized_provenance_file"; then
+    PROVIDER="$(jq -r .provider "$normalized_provenance_file")"
+    provider_attempts="$(
+      jq -cn \
+        --argjson attempts "$provider_attempts" \
+        --arg provider "$PROVIDER" \
+        '$attempts + [{provider: $provider, status: "success"}]'
+    )"
+    jq \
+      --argjson provenance "$(cat "$normalized_provenance_file")" \
+      --argjson attempts "$provider_attempts" \
+      '. + {provenance: $provenance, provider_attempts: $attempts}' \
+      "$review_json" >"$review_json.tmp"
+    mv "$review_json.tmp" "$review_json"
     provider_succeeded=true
     break
   fi
+  provider_attempts="$(
+    jq -cn \
+      --argjson attempts "$provider_attempts" \
+      --arg provider "$provider" \
+      '$attempts + [{provider: $provider, status: "failed"}]'
+  )"
   echo "::warning::Weekly review provider ${provider} failed; trying next available provider" >&2
 done
 if [[ "$provider_succeeded" != true ]]; then

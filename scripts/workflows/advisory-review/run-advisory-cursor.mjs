@@ -133,7 +133,12 @@ if (process.env.ADVISORY_PROVIDER_METADATA_FILE) {
   const modelName = observedModel === "unknown" ? modelId : observedModel;
   writeFileSync(
     process.env.ADVISORY_PROVIDER_METADATA_FILE,
-    `${JSON.stringify({ provider: "cursor", model: modelName, requested_model: modelId })}\n`,
+    `${JSON.stringify({
+      provider: "cursor",
+      model: modelName,
+      requested_model: modelId,
+      observed_model: observedModel,
+    })}\n`,
     "utf8",
   );
 }

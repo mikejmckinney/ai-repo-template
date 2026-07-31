@@ -212,7 +212,12 @@ for (const requestedModel of models) {
     if (process.env.ADVISORY_PROVIDER_METADATA_FILE) {
       await writeFile(
         process.env.ADVISORY_PROVIDER_METADATA_FILE,
-        `${JSON.stringify({ provider: "opencode", model: requestedModel, observed_model: observedModel })}\n`,
+        `${JSON.stringify({
+          provider: "opencode",
+          model: requestedModel,
+          requested_model: requestedModel,
+          observed_model: observedModel,
+        })}\n`,
       )
     }
     await writeRetrievalTrace(sessionID)
