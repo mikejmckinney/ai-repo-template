@@ -1,16 +1,6 @@
 {
   "name": "AI Repository",
   "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "customizations": {
-    "vscode": {
-      "extensions": [
-        "saoudrizwan.claude-dev",
-        "ms-vscode.live-server",
-        "esbenp.prettier-vscode",
-        "ms-vsliveshare.vsliveshare"
-      ]
-    }
-  },
   "postCreateCommand": "bash scripts/codespace-post-create.sh",
   "postStartCommand": "bash scripts/codespace-post-start.sh"
 }

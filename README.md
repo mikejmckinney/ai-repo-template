@@ -36,7 +36,6 @@ ADR-031 defines the active model: one implementing agent, blocking CI, normal pa
 - **AI Agent Prompts** - Pre-configured prompts for onboarding AI assistants to any codebase
 - **Monolithic Agent Workflow** - One implementing agent with normal parallel advisory feedback and recurring retro automation
 - **Context Pack** - Structured directory (`.context/`) for project memory across LLM sessions
-- **Automatic Extension Installation** - Essential VS Code extensions installed on Codespace start
 - **Multi-Platform Support** - Works with Cursor, GitHub Copilot, Gemini Code Assist, and more
 - **CI/CD Automation** - Blocking tests and lint with label-gated parallel advisory and recurring repository review
 - **Issue Templates** - Bug reports, feature requests, and agent initialization
@@ -52,15 +51,6 @@ and validation commands live in [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md), the
 structured reference optimized for AI agents.
 
 Why split? Per [`docs/decisions/adr-022-top-level-md-scope-split.md`](docs/decisions/adr-022-top-level-md-scope-split.md), `README.md` (this file) is for human onboarding; [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) is for agent reference; and [`AGENTS.md`](AGENTS.md) is the operating contract every AI tool reads first.
-
-## Included VS Code Extensions
-
-| Extension | Description |
-|-----------|-------------|
-| [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) | AI coding assistant |
-| [Live Preview](https://marketplace.visualstudio.com/items?itemName=ms-vscode.live-server) | Live server for web development |
-| [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) | Code formatter |
-| [Live Share](https://marketplace.visualstudio.com/items?itemName=ms-vsliveshare.vsliveshare) | Real-time collaborative development |
 
 ## CI/CD Workflows
 
@@ -90,9 +80,9 @@ workflow. Complete the one-time bootstrap credential setup first; see
 [Derived Repository Bootstrap](docs/guides/derived-repository-bootstrap.md).
 
 The new repository inherits `.devcontainer/devcontainer.json`. Creating its
-Codespace installs the pinned default tool profile and declared extensions;
-each later start runs the non-fatal authentication/sandbox hook. No account-level
-dotfiles repository is required.
+Codespace installs the pinned default tool profile; each later start runs the
+non-fatal authentication/sandbox hook. No account-level dotfiles repository is
+required.
 
 After creation, run the OpenCode `repo-onboarding` skill. In `template-seed`,
 inspect existing resources and extend, replace, or delete only what project
@@ -155,22 +145,9 @@ bash -n test.sh
 ### In a Codespace
 
 1. Create a new Codespace from this repository or a repository created from the template
-2. Check that extensions are installed: `code --list-extensions`
-3. Verify the post-create and post-start lifecycle commands completed in the creation log
+2. Verify the post-create and post-start lifecycle commands completed in the creation log
 
 ## Customization
-
-### Adding Extensions
-
-Edit `.devcontainer/devcontainer.json` to add more extensions:
-
-```json
-"customizations": {
-  "vscode": {
-    "extensions": ["your.extension-id"]
-  }
-}
-```
 
 ### Adding Prompts
 

@@ -124,7 +124,7 @@ returns failure to the existing provider cascade instead of consuming the
 | `scripts/workflows/lib/` | Shared provider, evidence, priority, and lifecycle helpers |
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
-| `.devcontainer/devcontainer.json` | Canonical repository-owned Codespaces lifecycle and extensions |
+| `.devcontainer/devcontainer.json` | Canonical repository-owned Codespaces lifecycle |
 | `.config/codespace-tools.json` | Canonical Codespaces tool versions, release integrity, and profiles |
 | `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |
 | `scripts/codespace-post-create.sh` | Dev Container creation hook for the default tool profile |

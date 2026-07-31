@@ -40,13 +40,14 @@ The canonical Codespaces lifecycle will be owned by
   only to `scripts/install-codespace-tools.sh --profile default`;
 - `postStartCommand` runs the existing non-fatal
   `scripts/codespace-post-start.sh` authentication and sandbox hook;
-- VS Code extensions are declared under
-  `customizations.vscode.extensions`; and
 - `scripts/setup.sh` remains an explicit command after project adaptation.
 
-Root `install.sh` is removed. Its tool installation, extension declaration, and
-startup responsibilities are owned by the Dev Container lifecycle, while its
-copy inventory duplicated files already inherited from the GitHub template.
+The template does not prescribe VS Code extensions. Maintainers choose editor
+extensions in each derived project or through their own user settings.
+
+Root `install.sh` is removed. Its tool installation and startup responsibilities
+are owned by the Dev Container lifecycle, while its copy inventory duplicated
+files already inherited from the GitHub template.
 Users who selected this repository as account-level Codespaces dotfiles must
 disable that setting. Development environments outside Dev Containers invoke
 `scripts/install-codespace-tools.sh` directly.
@@ -102,7 +103,7 @@ repository or copy explicitly selected files when adopting only part of the kit.
   account-level `ai-repo-template` clone.
 - Container creation, container startup, and project initialization have
   separate, testable responsibilities.
-- Extension declarations and lifecycle commands travel with the repository.
+- Lifecycle commands travel with the repository.
 
 ### Negative
 
@@ -120,9 +121,9 @@ repository or copy explicitly selected files when adopting only part of the kit.
 
 ## Verification
 
-- **V1 contract tests**: validate lifecycle commands, extension declarations,
-  default-profile delegation, repeatability, explicit project setup, and removal
-  of the legacy root entrypoint.
+- **V1 contract tests**: validate lifecycle commands, absence of prescribed
+  extensions, default-profile delegation, repeatability, explicit project setup,
+  and removal of the legacy root entrypoint.
 - **V2 repository checks**: run focused and full Bats, `test.sh`, JSON parsing,
   ShellCheck, formatting, Markdown links, generated-surface checks, and
   exact-head CI/lint.
