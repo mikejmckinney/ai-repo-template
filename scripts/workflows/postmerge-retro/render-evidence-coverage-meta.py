@@ -35,6 +35,9 @@ def render_line(record: dict) -> str:
     route = str(record.get("evidence_route") or "bounded")
     ctx = record.get("routing_context") or {}
     provider = str(ctx.get("provider_resolved") or "unknown")
+    provenance = ctx.get("provenance") or {}
+    requested_model = str(provenance.get("requested_model") or "unknown")
+    observed_model = str(provenance.get("observed_model") or "unknown")
     antigravity = _bool_word(bool(ctx.get("antigravity_available")))
 
     truncated = bool(record.get("would_truncate"))
@@ -44,7 +47,13 @@ def render_line(record: dict) -> str:
     elif truncated:
         diff_part += " (truncated)"
 
-    parts = [f"PR #{pr} — {diff_part}", f"route: {route}", f"provider: {provider}"]
+    parts = [
+        f"PR #{pr} — {diff_part}",
+        f"route: {route}",
+        f"provider: {provider}",
+        f"requested: {requested_model}",
+        f"observed: {observed_model}",
+    ]
     attempts = record.get("provider_attempts") or []
     if attempts:
         attempt_text = ", ".join(

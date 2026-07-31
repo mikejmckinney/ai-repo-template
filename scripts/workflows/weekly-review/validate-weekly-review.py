@@ -28,6 +28,14 @@ def main() -> int:
         print("summary must be a string", file=sys.stderr)
         return 1
 
+    for automation_owned in ("provenance", "provider_attempts"):
+        if automation_owned in data:
+            print(
+                f"{automation_owned} is automation-owned and must not come from model output",
+                file=sys.stderr,
+            )
+            return 1
+
     for retired in ("adr_updates", "context_pack_updates"):
         if retired in data:
             print(f"{retired} is retired; use follow_up_issues", file=sys.stderr)

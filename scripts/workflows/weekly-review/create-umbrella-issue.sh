@@ -43,9 +43,14 @@ find_issue() {
 
 append_to_issue() {
   local issue_num="$1"
-  local body index key marker block_file row_file
+  local body body_with_provenance index key marker block_file row_file
   body="$(gh issue view "$issue_num" -R "$REPO" --json body --jq .body)"
   umbrella_require_marker "$body" "$MARKER" "$issue_num"
+  printf '%s' "$body" >"$WORKDIR/existing-body.md"
+  python3 "$SCRIPT_DIR/render-provider-provenance.py" \
+    "$WEEKLY_JSON" --merge "$WORKDIR/existing-body.md" \
+    >"$WORKDIR/existing-body-with-provenance.md"
+  body_with_provenance="$(cat "$WORKDIR/existing-body-with-provenance.md")"
 
   : >"$WORKDIR/new-blocks.md"
   : >"$WORKDIR/new-rows.md"
@@ -70,24 +75,27 @@ append_to_issue() {
   done < <(jq -r '.findings[].dedupe_key' "$WEEKLY_JSON")
 
   if [[ ! -s "$WORKDIR/new-blocks.md" ]]; then
+    if [[ "$body_with_provenance" != "$body" ]]; then
+      umbrella_edit_issue_body "$REPO" "$issue_num" "$WORKDIR/existing-body-with-provenance.md"
+    fi
     echo "No new findings to append to issue #${issue_num}" >&2
     return 0
   fi
 
-  printf '%s' "$body" >"$WORKDIR/existing-body.md"
   python3 "$SCRIPT_DIR/merge-umbrella-content.py" \
-    "$WORKDIR/existing-body.md" "$WORKDIR/new-rows.md" \
+    "$WORKDIR/existing-body-with-provenance.md" "$WORKDIR/new-rows.md" \
     "$WORKDIR/new-blocks.md" "$WORKDIR/merged-body.md"
   umbrella_edit_issue_body "$REPO" "$issue_num" "$WORKDIR/merged-body.md"
   echo "Appended findings to umbrella issue #${issue_num}" >&2
 }
 
 create_new_issue() {
-  local title body_file findings_md triage_rows issue_num
+  local title body_file findings_md triage_rows provenance issue_num
   title="Repository health review: ${RUN_WEEK} (main @ ${HEAD_SHA:0:7})"
   body_file="$WORKDIR/umbrella.md"
   findings_md="$(cat "$WORKDIR/findings.md")"
   triage_rows="$(cat "$WORKDIR/triage-rows.md")"
+  provenance="$(python3 "$SCRIPT_DIR/render-provider-provenance.py" "$WEEKLY_JSON")"
   cp "$REPO_ROOT/.github/templates/weekly-review-umbrella.md" "$body_file"
   sed -i \
     -e "s/{{RUN_WEEK}}/${RUN_WEEK}/g" \
@@ -96,7 +104,7 @@ create_new_issue() {
     -e "s|{{REPO}}|${REPO}|g" \
     -e "s|{{FIX_PR_LINK}}|${FIX_PR_LINK}|g" \
     "$body_file"
-  python3 - "$body_file" "$triage_rows" "$findings_md" <<'PY'
+  python3 - "$body_file" "$triage_rows" "$findings_md" "$provenance" <<'PY'
 from pathlib import Path
 import sys
 
@@ -105,6 +113,7 @@ text = p.read_text()
 for placeholder, value in (
     ("{{TRIAGE_ROWS}}", sys.argv[2]),
     ("{{FINDING_BLOCKS}}", sys.argv[3]),
+    ("{{PROVENANCE}}", sys.argv[4]),
 ):
     text = text.replace(
         placeholder,

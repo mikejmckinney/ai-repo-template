@@ -23,6 +23,8 @@ Full-repository health review on `main` (static scan; not PR-scoped).
 
 ## Meta
 
+{{PROVENANCE}}
+
 Automated by [`agent-weekly-review.yml`](https://github.com/{{REPO}}/blob/main/.github/workflows/agent-weekly-review.yml).  
 Draft fix PR (if created): {{FIX_PR_LINK}}
 

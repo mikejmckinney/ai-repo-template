@@ -251,9 +251,25 @@ Run `scripts/verify-pr.sh` to classify the changed paths; its fixtures own the
 trigger rules. A workflow with `pull_request` and optional `workflow_dispatch`
 is PR-branch verifiable when it has no default-only trigger. Dispatch-only and
 other default-branch-only workflow changes require sandbox-default verification.
+For `mixed` changes, structural trigger class and changed-behavior execution
+constraint are separate decisions. Record evidence contract `1`,
+`default-branch-constrained: yes|no`, the verification target, and a specific
+reason, then run `scripts/validate-verification-evidence.py` against the completed
+PR body. Use `yes` when the changed behavior requires default-branch event
+delivery, permissions, secrets, concurrency, environments, provider execution,
+or publication. Use `no` when deterministic fixtures or the read-only
+same-commit PR workflow exercise the changed behavior. Local and PR-native checks
+are the correction loop; sandbox is one final integration canary when those
+default-branch conditions remain load-bearing.
 Use `docs/guides/outcome-validation.md` to select every required environment and
 record material-claim artifacts. Follow `docs/guides/sandbox-verification.md`
 for the specialized default-branch GitHub adapter and fire the real event.
+
+Daily post-merge and weekly review JSON persist automation-owned provider
+provenance: resolved provider, requested model, observed model or `unknown`, and
+ordered fallback attempts. Their umbrella issues render the same bounded
+metadata. Detailed provider diagnostics remain in workflow logs; configured
+model values are never substituted for an unavailable observed identity.
 
 ## Authentication
 

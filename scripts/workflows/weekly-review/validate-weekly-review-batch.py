@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -11,6 +12,13 @@ sys.path.insert(0, str(LIB_DIR))
 
 from finding_priority import validate_triage_item  # noqa: E402
 from evidence_paths import validate_evidence_paths  # noqa: E402
+
+PROVENANCE_LIB = LIB_DIR / "provider-provenance.py"
+spec = importlib.util.spec_from_file_location("provider_provenance", PROVENANCE_LIB)
+if spec is None or spec.loader is None:
+    raise RuntimeError(f"cannot load provider provenance from {PROVENANCE_LIB}")
+provider_provenance = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(provider_provenance)
 
 
 def main() -> int:
@@ -41,6 +49,21 @@ def main() -> int:
     findings = data.get("findings")
     if not isinstance(findings, list):
         print("findings must be an array", file=sys.stderr)
+        return 1
+
+    try:
+        provider_provenance.validate_provenance(
+            data.get("provenance") or provider_provenance.UNKNOWN_PROVENANCE
+        )
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    try:
+        provider_provenance.validate_provider_attempts(
+            data.get("provider_attempts") or []
+        )
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
         return 1
 
     for i, item in enumerate(findings):

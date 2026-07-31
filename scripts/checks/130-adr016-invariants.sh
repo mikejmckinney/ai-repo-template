@@ -20,6 +20,26 @@ else
   fail "docs/decisions/README.md missing ADR-016 row"
 fi
 
+if [[ -f scripts/validate-verification-evidence.py ]] \
+  && grep -q 'Evidence contract: 1' .github/pull_request_template.md \
+  && grep -q 'Default-branch constrained' .github/PLAN_TEMPLATE.md \
+  && grep -q 'Execution-constraint routing' "$ADR016_PATH"; then
+  pass "versioned execution-constraint evidence is wired into planning and ADR-016"
+else
+  fail "verification evidence validator, planning fields, or ADR-016 amendment missing"
+fi
+
+if [[ -f .github/workflows/agent-workflow-pr-smoke.yml ]] \
+  && [[ -f .github/workflows/agent-workflow-smoke.yml ]] \
+  && grep -q 'uses: ./.github/workflows/agent-workflow-smoke.yml' .github/workflows/agent-workflow-pr-smoke.yml \
+  && grep -q 'validate-pr-workflow-fixtures.py' .github/workflows/agent-workflow-smoke.yml \
+  && grep -q 'validate-postmerge-retro-daily.py' scripts/workflows/validate-pr-workflow-fixtures.py \
+  && grep -q 'validate-weekly-review-batch.py' scripts/workflows/validate-pr-workflow-fixtures.py; then
+  pass "same-commit PR harness exercises daily and weekly core scripts"
+else
+  fail "same-commit daily/weekly PR fixture harness is incomplete"
+fi
+
 # Plan template carries the Change class + outcome-environment lines.
 if grep -q 'Change class' .github/PLAN_TEMPLATE.md 2>/dev/null \
   && grep -q 'Outcome environments' .github/PLAN_TEMPLATE.md 2>/dev/null; then

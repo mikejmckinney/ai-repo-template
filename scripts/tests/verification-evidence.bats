@@ -13,8 +13,8 @@ teardown() {
 write_outcome() {
   local target="$1"
   local sandbox_required="$2"
-  local sandbox_issue="$3"
-  local sandbox_pr="$4"
+  local default_branch_constrained="${3:-no}"
+  local reason="${4-Synthetic PR fixtures exercise the changed artifact paths without default-branch state}"
 
   cat >"$TMP_DIR/pr.md" <<EOF
 ## User outcome validation — PRIMARY
@@ -27,23 +27,21 @@ write_outcome() {
 
 ## Sandbox dogfood evidence
 
+Evidence contract: 1
 E2E target: $target
 Sandbox required: $sandbox_required
-Reason: representative test constraint
-
-Sandbox issue: $sandbox_issue
-Sandbox PR: $sandbox_pr
+Default-branch constrained: $default_branch_constrained
+Reason: $reason
 EOF
 }
 
 @test "branch E2E accepts reasoned sandbox N/A" {
   write_outcome \
     "PR branch" \
-    "no" \
-    "N/A — branch E2E exercises the complete user journey" \
-    "N/A — no behavior depends on a default-branch trigger"
+    "no"
 
   run python3 "$VALIDATOR" \
+    --contract-version 1 \
     --change-class "code-or-docs" \
     --verification-target "PR branch" \
     --pr-body "$TMP_DIR/pr.md"
@@ -52,30 +50,30 @@ EOF
   [[ "$output" == *"verification evidence is valid"* ]]
 }
 
-@test "default-branch-only workflow rejects sandbox N/A" {
+@test "default-branch-only workflow rejects a branch target" {
   write_outcome \
-    "sandbox repo" \
+    "PR branch" \
     "yes" \
-    "N/A — branch tests passed" \
-    "N/A — branch tests passed"
+    "yes"
 
   run python3 "$VALIDATOR" \
+    --contract-version 1 \
     --change-class "default-branch-only workflow" \
-    --verification-target "sandbox repo" \
+    --verification-target "PR branch" \
     --pr-body "$TMP_DIR/pr.md"
 
   [ "$status" -eq 1 ]
-  [[ "$output" == *"requires real sandbox issue and PR URLs"* ]]
+  [[ "$output" == *"must target sandbox repo or both"* ]]
 }
 
-@test "default-branch-only workflow accepts distinct sandbox URLs" {
+@test "default-branch-only workflow accepts a sandbox target" {
   write_outcome \
     "sandbox repo" \
     "yes" \
-    "https://github.com/example/project-sandbox/issues/12" \
-    "https://github.com/example/project-sandbox/pull/13"
+    "yes"
 
   run python3 "$VALIDATOR" \
+    --contract-version 1 \
     --change-class "default-branch-only workflow" \
     --verification-target "sandbox repo" \
     --pr-body "$TMP_DIR/pr.md"
@@ -95,15 +93,16 @@ EOF
 
 ## Sandbox dogfood evidence
 
+Evidence contract: 1
 E2E target: PR branch
 Sandbox required: no
-Reason: representative test constraint
+Default-branch constrained: no
+Reason: Synthetic PR fixtures do not exercise the user outcome
 
-Sandbox issue: N/A — branch E2E exercises the complete user journey
-Sandbox PR: N/A — no behavior depends on a default-branch trigger
 EOF
 
   run python3 "$VALIDATOR" \
+    --contract-version 1 \
     --change-class "code-or-docs" \
     --verification-target "PR branch" \
     --pr-body "$TMP_DIR/pr.md"
@@ -115,11 +114,10 @@ EOF
 @test "mixed change requires an explicit default-branch constraint" {
   write_outcome \
     "PR branch" \
-    "no" \
-    "N/A — branch E2E exercises the complete user journey" \
-    "N/A — no behavior depends on a default-branch trigger"
+    "no"
 
   run python3 "$VALIDATOR" \
+    --contract-version 1 \
     --change-class "mixed" \
     --verification-target "PR branch" \
     --pr-body "$TMP_DIR/pr.md"
@@ -132,10 +130,10 @@ EOF
   write_outcome \
     "PR branch" \
     "no" \
-    "N/A — branch E2E exercises the complete user journey" \
-    "N/A — no behavior depends on a default-branch trigger"
+    "yes"
 
   run python3 "$VALIDATOR" \
+    --contract-version 1 \
     --change-class "mixed" \
     --default-branch-constrained "yes" \
     --verification-target "PR branch" \
@@ -143,17 +141,15 @@ EOF
 
   [ "$status" -eq 1 ]
   [[ "$output" == *"default-branch-constrained changes must target sandbox repo or both"* ]]
-  [[ "$output" == *"requires real sandbox issue and PR URLs"* ]]
 }
 
 @test "branch-testable mixed change accepts reasoned sandbox N/A" {
   write_outcome \
     "PR branch" \
-    "no" \
-    "N/A — pull request event exercises the changed behavior" \
-    "N/A — default-branch trigger wiring is unchanged"
+    "no"
 
   run python3 "$VALIDATOR" \
+    --contract-version 1 \
     --change-class "mixed" \
     --default-branch-constrained "no" \
     --verification-target "PR branch" \
@@ -163,14 +159,14 @@ EOF
   [[ "$output" == *"verification evidence is valid"* ]]
 }
 
-@test "default-branch-constrained mixed change accepts sandbox URLs" {
+@test "default-branch-constrained mixed change accepts a sandbox target" {
   write_outcome \
     "sandbox repo" \
     "yes" \
-    "https://github.com/example/project-sandbox/issues/12" \
-    "https://github.com/example/project-sandbox/pull/13"
+    "yes"
 
   run python3 "$VALIDATOR" \
+    --contract-version 1 \
     --change-class "mixed" \
     --default-branch-constrained "yes" \
     --verification-target "sandbox repo" \
@@ -185,4 +181,58 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"behavior requires default-branch execution"* ]]
   [[ "$output" != *"most restrictive detected path"* ]]
+}
+
+@test "validator rejects an unsupported evidence contract" {
+  write_outcome \
+    "PR branch" \
+    "no"
+
+  run python3 "$VALIDATOR" \
+    --contract-version 2 \
+    --change-class "mixed" \
+    --default-branch-constrained "no" \
+    --verification-target "PR branch" \
+    --pr-body "$TMP_DIR/pr.md"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"unsupported verification evidence contract"* ]]
+}
+
+@test "mixed change rejects a mismatched body constraint" {
+  write_outcome \
+    "PR branch" \
+    "no" \
+    "yes"
+
+  run python3 "$VALIDATOR" \
+    --contract-version 1 \
+    --change-class "mixed" \
+    --default-branch-constrained "no" \
+    --verification-target "PR branch" \
+    --pr-body "$TMP_DIR/pr.md"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Default-branch constrained value does not match"* ]]
+}
+
+@test "validator rejects missing placeholder and vague routing reasons" {
+  local reason
+  for reason in "" "<specific reason>" "representative test constraint"; do
+    write_outcome \
+      "PR branch" \
+      "no" \
+      "no" \
+      "$reason"
+
+    run python3 "$VALIDATOR" \
+      --contract-version 1 \
+      --change-class "mixed" \
+      --default-branch-constrained "no" \
+      --verification-target "PR branch" \
+      --pr-body "$TMP_DIR/pr.md"
+
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"requires a specific routing reason"* ]]
+  done
 }

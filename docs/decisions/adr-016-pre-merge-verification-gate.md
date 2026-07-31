@@ -14,6 +14,29 @@ Auto-rebase and unused deployment workflows are retired. References below remain
 historical examples of default-branch trigger risk; the verification classifier
 and sandbox requirement continue to apply to maintained workflows.
 
+## Amendment 2026-07-31 — Execution-constraint routing
+
+Structural workflow classification and verification routing answer different
+questions. `scripts/verify-pr.sh` continues to classify all changed paths and
+reports `mixed` when the diff spans buckets. For a mixed change, the author must
+also declare whether the changed behavior itself is default-branch constrained.
+
+Use `default-branch-constrained: yes` when the changed behavior depends on real
+default-branch event delivery, token permissions, secret propagation,
+concurrency, environments, repository controls, provider execution, or publisher
+mutation. Use `no` when deterministic fixtures or a read-only PR-triggered
+reusable workflow fully exercise the changed behavior, even if an unchanged
+production caller has a default-branch trigger. The versioned evidence validator
+fails closed on missing or inconsistent declarations.
+
+Local checks and the same-commit PR harness are the correction loop. Sandbox is
+one final integration canary for remaining default-branch constraints, not the
+default destination for every workflow edit. The PR harness receives no provider
+or publisher secrets, requests only `contents: read`, verifies the candidate SHA,
+and cannot publish repository state. It calls a dedicated reusable fixture
+workflow rather than the write-capable production wrappers, then exercises the
+same validators and renderers those wrappers use.
+
 ## Context
 
 GitHub Actions runs a workflow file from a specific git ref depending on the
@@ -57,13 +80,13 @@ declared the verification target as 'PR branch'."
 
 Adopt a **hybrid pre-merge verification gate** with three components:
 
-1. **Plan-template Change-class field** — every Implementation Plan
-   comment must declare `Change class: <code-or-docs |
-   pull_request-triggered workflow | default-branch-only workflow |
-   mixed>` and `Verification target: <PR branch | sandbox repo |
-   both>` under the Verification section. Defaults to `code-or-docs` /
-   `PR branch` for the typical PR (no friction increase for the 90%
-   case).
+1. **Plan-template verification fields** — every Implementation Plan
+    comment must declare `Change class: <code-or-docs |
+    pull_request-triggered workflow | default-branch-only workflow |
+    mixed>`, evidence contract `1`, `Default-branch constrained: <yes |
+    no>`, and `Verification target: <PR branch | sandbox repo | both>`
+    under the Verification section. Structural class and execution constraint
+    remain separate facts.
 
 2. **Classifier check `scripts/verify-pr.sh`** — reads the changed-path
    list (from `git diff` or `PR_FILES`), classifies each path against
@@ -72,12 +95,18 @@ Adopt a **hybrid pre-merge verification gate** with three components:
    mismatch and points the author at either (a) re-declaration or (b)
    the sandbox playbook. Runs locally pre-push and (planned) in CI.
 
-3. **Sandbox sibling repo `mikejmckinney/ai-repo-template-sandbox`** —
+3. **Candidate-code PR harness** — eligible daily and weekly fixture behavior
+   executes through reusable workflows loaded from the caller commit. It uses
+   synthetic inputs, read-only permissions, no inherited secrets, exact-SHA
+   verification, and retained bounded artifacts.
+
+4. **Sandbox sibling repo `mikejmckinney/ai-repo-template-sandbox`** —
    identical structure to this repo with its own scoped secrets
    (sandbox-only PAT recommended; do **not** reuse the production
    `CLAUDE_PAT`). Verification flow for default-branch-only workflows:
-   push the PR branch to sandbox → merge to sandbox `main` → trigger
-   the relevant event there → on green, merge the original PR here.
+   after local and PR-native checks pass, push the PR branch to sandbox → merge
+   to sandbox `main` → trigger the relevant event there → on green, merge the
+   original PR here.
    The playbook lives at `docs/guides/sandbox-verification.md`.
 
 The gate is codified in:

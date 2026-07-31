@@ -139,6 +139,21 @@ def main() -> int:
         return 1
 
     out_path.write_text(text, encoding="utf-8")
+    metadata_path = os.environ.get("ADVISORY_PROVIDER_METADATA_FILE")
+    if metadata_path:
+        model = f"agent:{agent}"
+        Path(metadata_path).write_text(
+            json.dumps(
+                {
+                    "provider": "antigravity",
+                    "model": model,
+                    "requested_model": model,
+                    "observed_model": "unknown",
+                }
+            )
+            + "\n",
+            encoding="utf-8",
+        )
     return 0
 
 

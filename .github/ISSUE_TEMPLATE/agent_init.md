@@ -166,10 +166,14 @@ See `docs/guides/outcome-validation.md`.
 ### Supporting verification
 
 **Change class**: <code-or-docs | pull_request-triggered workflow | default-branch-only workflow | mixed>
+**Verification evidence contract**: 1
+**Default-branch constrained**: <yes | no>
+**Verification target**: <PR branch | preview | dogfood | sandbox repo | both>
 
-The classifier owns workflow-trigger facts. Select outcome environments from
-the user journey; use the sibling sandbox adapter only when GitHub default-branch
-state is load-bearing.
+The classifier owns workflow-trigger facts. For mixed changes, separately state
+whether the changed behavior depends on default-branch execution. Select outcome
+environments from the user journey; use the sibling sandbox adapter only when
+GitHub default-branch state is load-bearing.
 
 ### Risks / out-of-scope
 

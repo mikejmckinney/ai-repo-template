@@ -1,0 +1,58 @@
+name: Agent workflow reusable smoke
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Candidate ref to check out
+        required: true
+        type: string
+      expected_sha:
+        description: Exact candidate SHA expected after checkout
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Verify candidate identity
+        env:
+          EXPECTED_SHA: ${{ inputs.expected_sha }}
+        run: |
+          actual_sha="$(git rev-parse HEAD)"
+          test "$actual_sha" = "$EXPECTED_SHA"
+          echo "candidate_sha=$actual_sha"
+
+      - name: Exercise synthetic daily and weekly artifact paths
+        run: >-
+          python3 scripts/workflows/validate-pr-workflow-fixtures.py
+          --output-dir .artifacts/workflow-smoke
+
+      - name: Run deterministic workflow contracts
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq bats
+          bats \
+            scripts/tests/verification-evidence.bats \
+            scripts/tests/provider-provenance.bats \
+            scripts/tests/workflow-pr-smoke.bats
+
+      - name: Upload synthetic workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow-smoke-${{ inputs.expected_sha }}
+          path: .artifacts/workflow-smoke/
+          if-no-files-found: error
+          retention-days: 7

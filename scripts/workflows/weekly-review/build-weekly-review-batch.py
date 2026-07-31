@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 import sys
 from pathlib import Path
 
@@ -10,6 +11,13 @@ LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
 sys.path.insert(0, str(LIB_DIR))
 
 from finding_priority import copy_triage_fields  # noqa: E402
+
+PROVENANCE_LIB = LIB_DIR / "provider-provenance.py"
+spec = importlib.util.spec_from_file_location("provider_provenance", PROVENANCE_LIB)
+if spec is None or spec.loader is None:
+    raise RuntimeError(f"cannot load provider provenance from {PROVENANCE_LIB}")
+provider_provenance = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(provider_provenance)
 
 
 def _flatten_item(item: dict, path: str, **fields: object) -> dict:
@@ -50,6 +58,9 @@ def main() -> int:
     run_week, run_date, review_path = sys.argv[1], sys.argv[2], Path(sys.argv[3])
     data = json.loads(review_path.read_text(encoding="utf-8"))
     findings = _flatten(data)
+    provenance = data.get("provenance") or provider_provenance.UNKNOWN_PROVENANCE
+    provider_provenance.validate_provenance(provenance)
+    attempts = data.get("provider_attempts") or []
     batch = {
         "run_week": run_week,
         "run_date": run_date,
@@ -58,6 +69,8 @@ def main() -> int:
         or f"Weekly full-repo review for {run_week}.",
         "prs": [],
         "findings": findings,
+        "provenance": provenance,
+        "provider_attempts": attempts,
     }
     json.dump(batch, sys.stdout, indent=2, ensure_ascii=False)
     sys.stdout.write("\n")
