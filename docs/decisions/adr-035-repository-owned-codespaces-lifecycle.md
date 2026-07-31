@@ -138,7 +138,7 @@ repository or copy explicitly selected files when adopting only part of the kit.
 - [x] Preserve the non-fatal startup hook and explicit project setup boundary.
 - [x] Remove root `install.sh` and its duplicate copy-inventory contracts.
 - [x] Update setup guidance and lifecycle contracts.
-- [ ] Record approved fresh-Codespace outcome evidence in PR
+- [x] Record approved fresh-Codespace outcome evidence in PR
   [#543](https://github.com/mikejmckinney/ai-repo-template/pull/543).
 
 ## References
