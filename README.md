@@ -1,6 +1,6 @@
 # AI-Ready Repository Template
 
-A template repository for GitHub Codespaces that provides pre-configured AI agent prompts, context management for LLM memory, and automatic development environment setup. Use this as a starting point for new repositories or link it to your Codespaces settings.
+A template repository for GitHub Codespaces that provides pre-configured AI agent prompts, context management for LLM memory, and automatic development environment setup. Use this as a starting point for new repositories; each derived repository inherits its own Dev Container configuration.
 
 > **For AI Agents**: See `AI_REPO_GUIDE.md` for a concise reference optimized for agent consumption.
 
@@ -23,20 +23,19 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `AGENTS.md` (root) | Most AI tools | Root startup contract (Copilot, Cursor, Gemini, Claude Code, etc.) |
 | `.github/prompts/` | Review and workflow automation | Shared lenses plus advisory, daily, and weekly prompts |
 | `.agents/skills/multi-model-consensus/` | Cross-agent | Optional independent multi-model review |
-| `install.sh` (root) | GitHub Codespaces "Dotfiles" | Bootstrap script — Codespaces expects it at repo root |
+| `.devcontainer/devcontainer.json` | GitHub Codespaces / Dev Container clients | Canonical repository-owned environment lifecycle |
 | `test.sh` (root) | `.github/workflows/ci-tests.yml` | Template verification, invoked by CI as `./test.sh` |
 | `scripts/` | Project consumers (post-clone) | One-time project customization (`setup.sh`, `verify-env.sh`) |
 
 ADR-031 defines the active model: one implementing agent, blocking CI, normal parallel advisory review, recurring retro, and opt-in multi-model consensus.
 
-**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `install.sh`/`test.sh` cannot move to `scripts/` without breaking the Codespaces Dotfiles convention and the CI workflow.
+**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `test.sh` remains a root CI entrypoint, while ADR-035 assigns Codespaces ownership to `.devcontainer/`.
 
 ## Features
 
 - **AI Agent Prompts** - Pre-configured prompts for onboarding AI assistants to any codebase
 - **Monolithic Agent Workflow** - One implementing agent with normal parallel advisory feedback and recurring retro automation
 - **Context Pack** - Structured directory (`.context/`) for project memory across LLM sessions
-- **Automatic Extension Installation** - Essential VS Code extensions installed on Codespace start
 - **Multi-Platform Support** - Works with Cursor, GitHub Copilot, Gemini Code Assist, and more
 - **CI/CD Automation** - Blocking tests and lint with label-gated parallel advisory and recurring repository review
 - **Issue Templates** - Bug reports, feature requests, and agent initialization
@@ -53,15 +52,6 @@ structured reference optimized for AI agents.
 
 Why split? Per [`docs/decisions/adr-022-top-level-md-scope-split.md`](docs/decisions/adr-022-top-level-md-scope-split.md), `README.md` (this file) is for human onboarding; [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md) is for agent reference; and [`AGENTS.md`](AGENTS.md) is the operating contract every AI tool reads first.
 
-## Included VS Code Extensions
-
-| Extension | Description |
-|-----------|-------------|
-| [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) | AI coding assistant |
-| [Live Preview](https://marketplace.visualstudio.com/items?itemName=ms-vscode.live-server) | Live server for web development |
-| [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) | Code formatter |
-| [Live Share](https://marketplace.visualstudio.com/items?itemName=ms-vsliveshare.vsliveshare) | Real-time collaborative development |
-
 ## CI/CD Workflows
 
 The active workflow map lives in [`AI_REPO_GUIDE.md`](AI_REPO_GUIDE.md). At a
@@ -71,25 +61,13 @@ and weekly workflows perform retrospective review and draft-fix work.
 
 ## Setup
 
-Choose the Codespaces hook, GitHub template, or selective-copy path according to
-how much of the repository kit the target project should inherit.
+Choose the GitHub template or selective-copy path according to how much of the
+repository kit the target project should inherit.
 
-### Option 1: Link as your Codespaces "Dotfiles" repo
+### Option 1: Create Repository from Template
 
-> Note: GitHub Codespaces has a feature literally named **Dotfiles** that runs
-> an install script at Codespace startup. This template is not a Unix dotfiles
-> repo (no `~/.bashrc` etc.) — it just uses that Codespaces hook to bootstrap
-> the repository kit. The quoted strings below are the exact labels in the
-> GitHub Codespaces settings UI.
-
-1. Go to [GitHub Codespaces settings](https://github.com/settings/codespaces)
-2. Under "Dotfiles", select this repository
-3. Check "Automatically install dotfiles"
-4. Your next Codespace will automatically run `install.sh`
-
-### Option 2: Create Repository from Template
-
-Preview the manifest-driven remote bootstrap:
+Create a repository from this GitHub template or use the manifest-driven remote
+bootstrap:
 
 ```bash
 scripts/create-derived-repo.sh --repo OWNER/PROJECT
@@ -101,12 +79,17 @@ same operation is available through the **Create derived repository** manual
 workflow. Complete the one-time bootstrap credential setup first; see
 [Derived Repository Bootstrap](docs/guides/derived-repository-bootstrap.md).
 
+The new repository inherits `.devcontainer/devcontainer.json`. Creating its
+Codespace installs the pinned default tool profile; each later start runs the
+non-fatal authentication/sandbox hook. No account-level dotfiles repository is
+required.
+
 After creation, run the OpenCode `repo-onboarding` skill. In `template-seed`,
 inspect existing resources and extend, replace, or delete only what project
 evidence requires. Complete `.context/onboarding-state.json` and add application
 checks only when the detected stack defines them.
 
-### Option 3: Copy to Existing Repository
+### Option 2: Copy to Existing Repository
 
 1. Clone this repository
 2. Copy desired files to your project
@@ -148,42 +131,28 @@ Template verification PASSED
 
 ```bash
 # Check all files exist
-ls -la AI_REPO_GUIDE.md AGENTS.md install.sh test.sh
+ls -la AI_REPO_GUIDE.md AGENTS.md .devcontainer/devcontainer.json test.sh
 
 # Validate shell script syntax
-bash -n install.sh
+bash -n scripts/codespace-post-create.sh
+bash -n scripts/codespace-post-start.sh
 bash -n test.sh
 
 # Run the test suite
 ./test.sh
-
-# Test install script (safe to run locally)
-bash install.sh
 ```
 
 ### In a Codespace
 
-1. Create a new Codespace with this repo linked as your Codespaces "Dotfiles" repo
-2. Check that extensions are installed: `code --list-extensions`
-3. Verify prompts are copied to workspace
+1. Create a new Codespace from this repository or a repository created from the template
+2. Verify the post-create and post-start lifecycle commands completed in the creation log
 
 ## Customization
-
-### Adding Extensions
-
-Edit `install.sh` to add more extensions:
-
-```bash
-EXTENSIONS=(
-    "your.extension-id"
-    # ... existing extensions
-)
-```
 
 ### Adding Prompts
 
 1. Create new prompt files in `.github/prompts/`
-2. Update `install.sh` to copy them if needed
+2. Confirm the file is part of the template or selective-copy path
 3. Update `test.sh` to verify them
 
 ### Review Automation
@@ -214,7 +183,8 @@ live in [`AI_REPO_GUIDE.md` § Known Warnings](AI_REPO_GUIDE.md#known-warnings).
 
 - **Opinionated scaffolding.** The monolithic workflow, `.context/` lazy-loading pattern, and review lifecycle reflect decisions recorded in `docs/decisions/`.
 - **No runtime code.** This is a docs/config template, not a language-specific starter. Your project brings its own build, test, and deploy toolchain; onboarding adds application checks only from verified project commands.
-- **Codespaces-centric bootstrap.** `install.sh` is wired to the GitHub Codespaces "Dotfiles" feature (via the `$DOTFILES` env var). It falls back to its own directory elsewhere, but some convenience features (extension install, prompt copy) assume a Codespace.
+- **Codespaces-centric bootstrap.** The repository-owned Dev Container installs a broad default tool profile. Other development environments can run `scripts/install-codespace-tools.sh` explicitly.
+- **No account-level dotfiles bootstrap.** Users who previously selected this repository as Codespaces dotfiles must disable that setting. Repository setup now requires the inherited Dev Container configuration; other environments invoke `scripts/install-codespace-tools.sh` directly.
 - **Lifecycle state is explicit.** `.context/onboarding-state.json` distinguishes a fresh template seed from a completed derived repository; retained template resources are not treated as defects.
 
 ## Future Improvements
@@ -222,7 +192,6 @@ live in [`AI_REPO_GUIDE.md` § Known Warnings](AI_REPO_GUIDE.md#known-warnings).
 Template-level items under consideration. Per-decision follow-ups live in the "Future Work" subsection of each ADR under `docs/decisions/`.
 
 - **More deployment templates.** Cloudflare Workers, Fly.io, and Kubernetes manifests are candidates. Each addition is a maintenance commitment — contribute only if you'll maintain it.
-- **First-class dotfiles separation.** Splitting the repo into "template assets" and "Codespaces bootstrap" would let teams adopt one without the other.
 
 ## FAQ
 

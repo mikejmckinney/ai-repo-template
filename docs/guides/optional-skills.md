@@ -18,9 +18,10 @@ authentication and smoke-test boundaries are documented in
 
 ## Codespaces profiles
 
-Normal `install.sh` execution installs the `default` profile from
-`.config/codespace-tools.json`. It includes local quality tools and the runtime
-prerequisites of MCPs that are enabled in the generated development config:
+The repository-owned Dev Container runs `scripts/codespace-post-create.sh`,
+which installs the `default` profile from `.config/codespace-tools.json`. It
+includes local quality tools and the runtime prerequisites of MCPs that are
+enabled in the generated development config:
 checksum-verified Chrome for Testing, its declared Debian dependencies, and the
 locked Open Design daemon checkout. It also installs the locked npm dependencies
 under `.github/agent-runtime` that local quality tests and workflow helpers import.
@@ -34,8 +35,10 @@ installations remain vendor-managed channels; bootstrap verifies them without
 overwriting their user-level launchers. Authentication is never embedded or
 performed by bootstrap.
 
-Use `bash install.sh --profile core` for the smaller quality/runtime-only set.
-Explicit `--profile agents` preserves the default core-plus-agents union.
+Use `scripts/install-codespace-tools.sh --profile core` explicitly for the
+smaller quality/runtime-only set. Explicit `--profile agents` preserves the
+default core-plus-agents union. Development environments outside the repository
+Dev Container can invoke this installer directly.
 
 Verify the installed core without mutation:
 

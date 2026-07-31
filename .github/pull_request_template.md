@@ -153,7 +153,7 @@ justification.
 - [ ] Review lifecycle documentation updated (or: `not required — <why>`)
 - [ ] Review lifecycle docs updated alongside `.github/prompts/*.md` edits (or: `not required — <why>`)
 - [ ] `scripts/setup/40-ensure-labels.sh` updated alongside pipeline label additions (or: `not required — <why>`)
-- [ ] `test.sh` / `install.sh` updated for new template files (or: `not required — <why>`)
+- [ ] Template inventory checks updated for new files (or: `not required — <why>`)
 - [ ] Cadence/format changes updated in READMEs and templates (or: `not required — <why>`)
 
 ## Opportunity notes

@@ -32,7 +32,6 @@ setup() {
       ;;
     *) false ;;
   esac
-  grep -qF '  ".context/onboarding-state.json"' "$REPO_ROOT/install.sh"
 }
 
 @test "classifier distinguishes canonical identity from derived lifecycle state" {
@@ -69,35 +68,6 @@ setup() {
       [ "$(jq -r .requires_onboarding <<<"$output")" = false ]
     fi
   done
-  rm -rf "$fixture"
-}
-
-@test "installer seeds only fresh repositories and preserves legacy missing state" {
-  fixture="$(mktemp -d)"
-  dotfiles="$fixture/dotfiles"
-  fresh="$fixture/fresh"
-  legacy="$fixture/legacy"
-  mkdir -p "$dotfiles/.context" "$fresh" "$legacy"
-  cp "$REPO_ROOT/.context/onboarding-state.json" "$dotfiles/.context/onboarding-state.json"
-  git -C "$fresh" init -q
-  git -C "$legacy" init -q
-  git -C "$legacy" config user.email test@example.com
-  git -C "$legacy" config user.name test
-  printf '%s\n' '# Existing project' >"$legacy/README.md"
-  git -C "$legacy" add README.md
-  git -C "$legacy" commit -qm 'existing project'
-
-  run env PATH=/usr/bin:/bin DOTFILES="$dotfiles" WORKSPACE="$fresh" \
-    /bin/bash "$REPO_ROOT/install.sh"
-  [ "$status" -eq 0 ]
-  [ -f "$fresh/.context/onboarding-state.json" ]
-
-  run env PATH=/usr/bin:/bin DOTFILES="$dotfiles" WORKSPACE="$legacy" \
-    /bin/bash "$REPO_ROOT/install.sh"
-  [ "$status" -eq 0 ]
-  [ ! -e "$legacy/.context/onboarding-state.json" ]
-  [[ "$output" == *"preserving legacy missing-state migration"* ]]
-
   rm -rf "$fixture"
 }
 
@@ -307,7 +277,6 @@ PY
   [ ! -e "$REPO_ROOT/scripts/checks/025-sessions-hygiene.sh" ]
 
   for path in \
-    install.sh \
     scripts/checks/015-context-pack.sh \
     .context/00_INDEX.md \
     .context/sessions/README.md \

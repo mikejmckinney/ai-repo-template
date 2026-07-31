@@ -163,26 +163,15 @@ PY
   done
 }
 
-@test "template installation includes OAuth and provider isolation helpers" {
-  run python3 - "$REPO_ROOT/install.sh" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-text = Path(sys.argv[1]).read_text(encoding="utf-8")
-match = re.search(r"MULTIAGENT_FILES=\(\n(?P<body>.*?)\n\)", text, re.DOTALL)
-assert match is not None
-for path in (
-    "scripts/sync-opencode-oauth-secret.sh",
-    "scripts/workflows/lib/opencode-oauth.sh",
-    "scripts/workflows/lib/run-cursor-fix.sh",
-    "scripts/workflows/lib/run-fix-provider-cascade.sh",
-    "scripts/workflows/lib/validate-fix-verification.py",
-):
-    assert f'"{path}"' in match.group("body"), path
-PY
-
-  [ "$status" -eq 0 ]
+@test "repository includes OAuth and provider isolation helpers" {
+  for path in \
+    scripts/sync-opencode-oauth-secret.sh \
+    scripts/workflows/lib/opencode-oauth.sh \
+    scripts/workflows/lib/run-cursor-fix.sh \
+    scripts/workflows/lib/run-fix-provider-cascade.sh \
+    scripts/workflows/lib/validate-fix-verification.py; do
+    [ -f "$REPO_ROOT/$path" ]
+  done
 }
 
 @test "advisory and weekly scans iterate provider candidates" {

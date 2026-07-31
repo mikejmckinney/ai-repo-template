@@ -93,9 +93,6 @@ run_installer() {
 }
 
 @test "default install profile includes core and agent tools without changing explicit profiles" {
-  run grep -F 'TOOLS_PROFILE=default' "$REPO_ROOT/install.sh"
-  [ "$status" -eq 0 ]
-
   run jq -e '
     (.profiles.core | index("opencode") | not) and
     (.profiles.agents | index("shfmt")) and
@@ -146,18 +143,51 @@ EOF
   [ "$(wc -l <"$TEST_ROOT/npm.log" | tr -d ' ')" -eq 1 ]
 }
 
-@test "install.sh invokes and copies the canonical Codespaces bootstrap" {
-  run grep -F 'bash "$DOTFILES/scripts/install-codespace-tools.sh" --profile "$TOOLS_PROFILE"' \
-    "$REPO_ROOT/install.sh"
-  [ "$status" -eq 0 ]
+@test "apt package installation excludes the unrelated Yarn repository" {
+  mkdir -p "$TEST_ROOT/apt-sources"
+  printf '%s\n' 'deb https://dl.yarnpkg.com/debian stable main' >"$TEST_ROOT/apt-sources/yarn.list"
+  printf '%s\n' 'deb https://packages.microsoft.com/repos/test stable main' >"$TEST_ROOT/apt-sources/microsoft.list"
+  jq '
+    .apt_packages = [{command: "missing-apt-tool", package: "fake-package"}] |
+    .profiles.core = [] |
+    .tools = {}
+  ' "$TEST_ROOT/manifest.json" >"$TEST_ROOT/apt-manifest.json"
+  mv "$TEST_ROOT/apt-manifest.json" "$TEST_ROOT/manifest.json"
+  cat >"$BIN_DIR/apt-get" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+sourceparts=""
+for argument in "$@"; do
+  case "$argument" in
+    Dir::Etc::sourceparts=*) sourceparts="${argument#*=}" ;;
+  esac
+done
+if [[ " $* " == *" update "* ]]; then
+  [[ -n "$sourceparts" ]]
+  [[ ! -e "$sourceparts/yarn.list" ]]
+  [[ -e "$sourceparts/microsoft.list" ]]
+  printf 'update\n' >>"$APT_LOG"
+  exit 0
+fi
+if [[ " $* " == *" install "* ]]; then
+  printf 'install\n' >>"$APT_LOG"
+  exit 0
+fi
+exit 2
+EOF
+  chmod +x "$BIN_DIR/apt-get"
+  cat >"$BIN_DIR/sudo" <<'EOF'
+#!/usr/bin/env bash
+exec "$@"
+EOF
+  chmod +x "$BIN_DIR/sudo"
+  export CODESPACE_APT_SOURCE_PARTS="$TEST_ROOT/apt-sources"
+  export APT_LOG="$TEST_ROOT/apt.log"
 
-  for path in .config/codespace-tools.json scripts/install-codespace-tools.sh \
-    .config/derived-repo-secrets.json scripts/create-derived-repo.sh \
-    scripts/cleanup-codespace-caches.sh scripts/browser-mcp.sh \
-    scripts/elevenlabs-mcp.sh scripts/mureka-mcp.sh scripts/open-design-mcp.sh; do
-    run grep -F "\"$path\"" "$REPO_ROOT/install.sh"
-    [ "$status" -eq 0 ]
-  done
+  run_installer --profile core
+
+  [ "$status" -eq 0 ]
+  [ "$(tr '\n' ' ' <"$APT_LOG")" = "update install " ]
 }
 
 @test "unknown profile is rejected before installation" {

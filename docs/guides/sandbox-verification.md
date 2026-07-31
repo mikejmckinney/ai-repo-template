@@ -75,7 +75,8 @@ post-merge retro umbrella issues. Re-run `./scripts/setup/ensure-pipeline-labels
 > (createRepository)` unless you set `BOOTSTRAP_GH_TOKEN` to a
 > classic PAT with `repo` AND `workflow` scopes (see above).
 >
-> On every Codespace start, `install.sh` runs
+> On every Codespace start, the repository-owned
+> [Dev Container configuration](../../.devcontainer/devcontainer.json) runs
 > [`scripts/codespace-post-start.sh`](../../scripts/codespace-post-start.sh),
 > which upgrades `gh` to a Codespaces user PAT (`GH_PAT`, etc.) when set,
 > installs a shell hook so new terminals prefer that PAT over

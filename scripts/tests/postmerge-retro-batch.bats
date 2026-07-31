@@ -561,8 +561,6 @@ EOF
   run grep -Fq 'run-postmerge-retro-fix.sh "$FIXABLE_JSON"' "$workflow"
   [ "$status" -eq 0 ]
 
-  run grep -Fq '"scripts/workflows/postmerge-retro/count-daily-retro-fixable-findings.py"' install.sh
-  [ "$status" -eq 0 ]
 }
 
 @test "postmerge invariant guards shared batch publication wiring" {

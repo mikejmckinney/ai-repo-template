@@ -101,7 +101,7 @@ A recurring question is whether duplicated-looking docs should be merged, or whe
 |-----------------|--------------------|
 | `README.md` + `AI_REPO_GUIDE.md` (not merged) | Different audiences. README is verbose human onboarding; AI_REPO_GUIDE is token-optimized for agents. Merging was explicitly rejected in `docs/decisions/adr-001-context-pack-structure.md` as "unwieldy". |
 | `docs/` + `.context/` (not merged) | Different audiences **and** a truth hierarchy. `AGENTS.md` codifies `.context/** > docs/** > codebase` for conflict resolution. `.context/` is canonical project memory for agents; `docs/` is human reference. ADR-001 rejected reusing `docs/` for agent context because it "mixes human docs with agent context, no clear priority." |
-| `install.sh` at the repo root | GitHub Codespaces' "Dotfiles" feature expects the bootstrap script at the repo root and runs it automatically when a Codespace starts. Platform convention, not a repo choice. |
+| `.devcontainer/devcontainer.json` | Dev Container clients discover repository configuration at this path. Template-derived repositories inherit it, so their Codespaces configure themselves without account-level dotfiles. |
 | `test.sh` at the repo root | Invoked by `.github/workflows/ci-tests.yml` as `./test.sh` and referenced from `README.md`, `AI_REPO_GUIDE.md`, and the DevOps specialty guidance. `scripts/` is scoped to post-clone project customization and supporting automation. |
 
 ### Soft convention (could move, we keep it where it is)
@@ -110,7 +110,7 @@ A recurring question is whether duplicated-looking docs should be merged, or whe
 |-----------------|---------------------------|
 | `CLAUDE.md` at the repo root | Claude Code's memory loader auto-discovers **either** `./CLAUDE.md` or `./.claude/CLAUDE.md`. Root is the `/init` default and keeps the pointer visible next to `AGENTS.md`, `AI_REPO_GUIDE.md`, and `README.md`. |
 
-**Rule of thumb**: before merging or moving `docs/`, `.context/`, `README.md`, `AI_REPO_GUIDE.md`, `install.sh`, or `test.sh`, read ADR-001 and ADR-003 first. `CLAUDE.md` is flexible — move it if it helps your repo, but confirm the chosen location is on Anthropic's [CLAUDE.md location table](https://code.claude.com/docs/en/memory#choose-where-to-put-claude-md-files).
+**Rule of thumb**: before merging or moving `docs/`, `.context/`, `README.md`, `AI_REPO_GUIDE.md`, `.devcontainer/`, or `test.sh`, read ADR-001, ADR-003, and ADR-035 first. `CLAUDE.md` is flexible — move it if it helps your repo, but confirm the chosen location is on Anthropic's [CLAUDE.md location table](https://code.claude.com/docs/en/memory#choose-where-to-put-claude-md-files).
 
 ## When to Update Each File
 

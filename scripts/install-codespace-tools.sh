@@ -62,16 +62,36 @@ tool_matches() {
   grep -Fq "$expected" <<<"$output"
 }
 
+apt_update() (
+  local source sourceparts filtered_sourceparts
+  sourceparts="${CODESPACE_APT_SOURCE_PARTS:-/etc/apt/sources.list.d}"
+  filtered_sourceparts="$(mktemp -d "${TMPDIR:-/tmp}/codespace-apt-sources.XXXXXX")"
+  trap 'rm -rf "$filtered_sourceparts"' EXIT
+
+  if [[ -d "$sourceparts" ]]; then
+    shopt -s nullglob
+    for source in "$sourceparts"/*.list "$sourceparts"/*.sources; do
+      if grep -Fq 'dl.yarnpkg.com/debian' "$source"; then
+        printf 'codespace-tools: ignoring unrelated Yarn apt source during package installation\n'
+        continue
+      fi
+      ln -s "$source" "$filtered_sourceparts/$(basename "$source")"
+    done
+  fi
+
+  "$@" apt-get -o "Dir::Etc::sourceparts=$filtered_sourceparts" update -qq
+)
+
 install_deb_dependencies() {
   local dependency_file="$1"
   mapfile -t dependencies < <(grep -Ev '^[[:space:]]*(#|$)' "$dependency_file")
   [[ ${#dependencies[@]} -gt 0 ]] || return 0
   command -v apt-get >/dev/null 2>&1 || die "apt-get is required for Chrome runtime dependencies"
   if [[ "$(id -u)" == 0 ]]; then
-    apt-get update -qq
+    apt_update
     apt-get satisfy -y --no-install-recommends "${dependencies[@]}"
   elif command -v sudo >/dev/null 2>&1; then
-    sudo apt-get update -qq
+    apt_update sudo
     sudo apt-get satisfy -y --no-install-recommends "${dependencies[@]}"
   else
     die "root or sudo is required for Chrome runtime dependencies"
@@ -247,10 +267,10 @@ install_apt_packages() {
   [[ "$VERIFY_ONLY" == false ]] || die "missing apt packages: ${missing[*]}"
   command -v apt-get >/dev/null 2>&1 || die "apt-get is required to install: ${missing[*]}"
   if [[ "$(id -u)" == 0 ]]; then
-    apt-get update -qq
+    apt_update
     apt-get install -y "${missing[@]}"
   elif command -v sudo >/dev/null 2>&1; then
-    sudo apt-get update -qq
+    apt_update sudo
     sudo apt-get install -y "${missing[@]}"
   else
     die "root or sudo is required to install: ${missing[*]}"

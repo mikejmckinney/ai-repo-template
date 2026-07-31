@@ -20,6 +20,8 @@ ADR-031 defines the active execution model:
 ./test.sh
 bats --jobs 4 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
+scripts/codespace-post-create.sh
+scripts/codespace-post-start.sh
 scripts/cleanup-codespace-caches.sh
 scripts/sync-opencode-oauth-secret.sh
 scripts/create-derived-repo.sh --repo OWNER/PROJECT
@@ -33,12 +35,12 @@ scripts/archive-opencode-database.sh
 git diff --check
 ```
 
-Run `bash install.sh` only when testing the Codespaces bootstrap/install surface.
-The default profile installs repository quality tools, enabled local MCP
-prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex. Use
-`bash install.sh --profile core` for the minimal quality/runtime set. Explicit
-`--profile agents` preserves the full core-plus-agents set; each agent still
-requires its own authentication flow.
+`.devcontainer/devcontainer.json` owns automatic Codespaces setup. Its
+post-create hook installs the default profile: repository quality tools, enabled
+local MCP prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex. Use
+`scripts/install-codespace-tools.sh --profile core` explicitly for the minimal
+quality/runtime set. Other development environments invoke that installer
+directly; this repository has no account-level dotfiles bootstrap.
 Use `scripts/create-derived-repo.sh --repo OWNER/PROJECT` to preview remote
 creation and allowlisted credential synchronization. Pass `--apply` only after
 reviewing the redacted plan; see `docs/guides/derived-repository-bootstrap.md`.
@@ -122,9 +124,11 @@ returns failure to the existing provider cascade instead of consuming the
 | `scripts/workflows/lib/` | Shared provider, evidence, priority, and lifecycle helpers |
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
-| `install.sh` | Codespaces bootstrap and template-file copy inventory |
+| `.devcontainer/devcontainer.json` | Canonical repository-owned Codespaces lifecycle |
 | `.config/codespace-tools.json` | Canonical Codespaces tool versions, release integrity, and profiles |
 | `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |
+| `scripts/codespace-post-create.sh` | Dev Container creation hook for the default tool profile |
+| `scripts/codespace-post-start.sh` | Non-fatal per-start PAT, OAuth, and sandbox hook |
 
 ### Nested Provider Skills
 
@@ -263,12 +267,10 @@ to create and approve pull requests**. Because GitHub exposes no create-only
 variant, `.github/CODEOWNERS` and the `main` ruleset require maintainer
 code-owner approval before merge. Skill-refresh and review-fix publication stay
 draft and do not opt into auto-merge.
-When `install.sh` adds a missing downstream `CODEOWNERS`, it assigns every path
-to the workspace repository owner resolved from `origin`, with
-`GITHUB_REPOSITORY_OWNER` as the Codespaces fallback. If neither is available,
-the installer skips the file with a warning instead of copying this template's
-maintainer. Organization-owned repositories should replace the organization
-handle with the user or team that actually provides required approval.
+Template-derived repositories inherit `.github/CODEOWNERS`. During
+`template-seed` onboarding, replace the template maintainer with the user or
+team that will provide required approval, especially for organization-owned
+repositories.
 
 Inside Codespaces, the injected `GITHUB_TOKEN` may not access the sibling sandbox.
 Use command-local `GH_TOKEN="$GH_PAT"` with `GITHUB_TOKEN` unset when the configured
@@ -351,7 +353,7 @@ host plugins do not replace the repository's immutable cross-agent lock.
   changes update this guide.
 - Review lifecycle changes update ADR-031 and `docs/guides/agent-pipeline.md`.
 - Workflow trigger changes update the pipeline and sandbox guides plus tests.
-- File inventory changes update `install.sh` and the owning check module.
+- File inventory changes update the owning check module and relevant template contracts.
 
 ## Known Warnings
 

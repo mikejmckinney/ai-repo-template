@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/codespace-post-start.sh — non-fatal Codespace post-start hook.
 #
-# Invoked from install.sh after the multi-agent kit is copied into WORKSPACE.
+# Invoked by .devcontainer/devcontainer.json whenever the container starts.
 # Upgrades gh from the injected GITHUB_TOKEN to a Codespaces user PAT when
 # available, exports session tokens for sandbox git/gh, and ensures the
 # sandbox git remote exists (same defaults as sandbox-bootstrap.sh).

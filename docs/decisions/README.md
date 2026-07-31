@@ -47,6 +47,7 @@
 | [ADR-032](./adr-032-canonical-governance-sources.md) | Canonical governance sources and layered enforcement | Accepted |
 | [ADR-033](./adr-033-derived-repository-bootstrap.md) | Derived repository credential bootstrap | Accepted |
 | [ADR-034](./adr-034-outcome-equivalent-verification.md) | Outcome-equivalent verification and auditable material-claim evidence | Accepted |
+| [ADR-035](./adr-035-repository-owned-codespaces-lifecycle.md) | Repository-owned Codespaces lifecycle | Accepted |
 
 When you add a new ADR, add a row above and update its status if it later
 changes.
