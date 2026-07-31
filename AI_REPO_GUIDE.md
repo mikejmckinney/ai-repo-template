@@ -39,8 +39,8 @@ git diff --check
 post-create hook installs the default profile: repository quality tools, enabled
 local MCP prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex. Use
 `scripts/install-codespace-tools.sh --profile core` explicitly for the minimal
-quality/runtime set. Root `install.sh` is a deprecated compatibility entrypoint
-for existing account-level dotfiles users, not the canonical template path.
+quality/runtime set. Other development environments invoke that installer
+directly; this repository has no account-level dotfiles bootstrap.
 Use `scripts/create-derived-repo.sh --repo OWNER/PROJECT` to preview remote
 creation and allowlisted credential synchronization. Pass `--apply` only after
 reviewing the redacted plan; see `docs/guides/derived-repository-bootstrap.md`.
@@ -125,7 +125,6 @@ returns failure to the existing provider cascade instead of consuming the
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
 | `.devcontainer/devcontainer.json` | Canonical repository-owned Codespaces lifecycle and extensions |
-| `install.sh` | Deprecated dotfiles/manual compatibility bootstrap and copy inventory |
 | `.config/codespace-tools.json` | Canonical Codespaces tool versions, release integrity, and profiles |
 | `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |
 | `scripts/codespace-post-create.sh` | Dev Container creation hook for the default tool profile |
@@ -268,12 +267,10 @@ to create and approve pull requests**. Because GitHub exposes no create-only
 variant, `.github/CODEOWNERS` and the `main` ruleset require maintainer
 code-owner approval before merge. Skill-refresh and review-fix publication stay
 draft and do not opt into auto-merge.
-When `install.sh` adds a missing downstream `CODEOWNERS`, it assigns every path
-to the workspace repository owner resolved from `origin`, with
-`GITHUB_REPOSITORY_OWNER` as the Codespaces fallback. If neither is available,
-the installer skips the file with a warning instead of copying this template's
-maintainer. Organization-owned repositories should replace the organization
-handle with the user or team that actually provides required approval.
+Template-derived repositories inherit `.github/CODEOWNERS`. During
+`template-seed` onboarding, replace the template maintainer with the user or
+team that will provide required approval, especially for organization-owned
+repositories.
 
 Inside Codespaces, the injected `GITHUB_TOKEN` may not access the sibling sandbox.
 Use command-local `GH_TOKEN="$GH_PAT"` with `GITHUB_TOKEN` unset when the configured
@@ -356,7 +353,7 @@ host plugins do not replace the repository's immutable cross-agent lock.
   changes update this guide.
 - Review lifecycle changes update ADR-031 and `docs/guides/agent-pipeline.md`.
 - Workflow trigger changes update the pipeline and sandbox guides plus tests.
-- File inventory changes update `install.sh` and the owning check module.
+- File inventory changes update the owning check module and relevant template contracts.
 
 ## Known Warnings
 

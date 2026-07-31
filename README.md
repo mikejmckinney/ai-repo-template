@@ -24,13 +24,12 @@ The repo looks like it has duplicated documentation. It doesn't — each locatio
 | `.github/prompts/` | Review and workflow automation | Shared lenses plus advisory, daily, and weekly prompts |
 | `.agents/skills/multi-model-consensus/` | Cross-agent | Optional independent multi-model review |
 | `.devcontainer/devcontainer.json` | GitHub Codespaces / Dev Container clients | Canonical repository-owned environment lifecycle |
-| `install.sh` (root) | Legacy GitHub Codespaces "Dotfiles" users | Deprecated compatibility bootstrap |
 | `test.sh` (root) | `.github/workflows/ci-tests.yml` | Template verification, invoked by CI as `./test.sh` |
 | `scripts/` | Project consumers (post-clone) | One-time project customization (`setup.sh`, `verify-env.sh`) |
 
 ADR-031 defines the active model: one implementing agent, blocking CI, normal parallel advisory review, recurring retro, and opt-in multi-model consensus.
 
-**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `test.sh` remains a root CI entrypoint; `install.sh` remains temporarily for existing dotfiles users while ADR-035 moves canonical Codespaces ownership to `.devcontainer/`.
+**Why not consolidate?** `docs/` vs `.context/` and `README.md` vs `AI_REPO_GUIDE.md` were explicitly evaluated and rejected in `docs/decisions/adr-001-context-pack-structure.md` — different audiences and a truth hierarchy. `test.sh` remains a root CI entrypoint, while ADR-035 assigns Codespaces ownership to `.devcontainer/`.
 
 ## Features
 
@@ -142,17 +141,15 @@ Template verification PASSED
 
 ```bash
 # Check all files exist
-ls -la AI_REPO_GUIDE.md AGENTS.md install.sh test.sh
+ls -la AI_REPO_GUIDE.md AGENTS.md .devcontainer/devcontainer.json test.sh
 
 # Validate shell script syntax
-bash -n install.sh
+bash -n scripts/codespace-post-create.sh
+bash -n scripts/codespace-post-start.sh
 bash -n test.sh
 
 # Run the test suite
 ./test.sh
-
-# Test install script (safe to run locally)
-bash install.sh
 ```
 
 ### In a Codespace
@@ -210,7 +207,7 @@ live in [`AI_REPO_GUIDE.md` § Known Warnings](AI_REPO_GUIDE.md#known-warnings).
 - **Opinionated scaffolding.** The monolithic workflow, `.context/` lazy-loading pattern, and review lifecycle reflect decisions recorded in `docs/decisions/`.
 - **No runtime code.** This is a docs/config template, not a language-specific starter. Your project brings its own build, test, and deploy toolchain; onboarding adds application checks only from verified project commands.
 - **Codespaces-centric bootstrap.** The repository-owned Dev Container installs a broad default tool profile. Other development environments can run `scripts/install-codespace-tools.sh` explicitly.
-- **Legacy dotfiles compatibility.** Root `install.sh` remains temporarily for users who previously selected this repository as account-level dotfiles. Disable that selection after adopting the Dev Container path; removal is a separate migration.
+- **No account-level dotfiles bootstrap.** Users who previously selected this repository as Codespaces dotfiles must disable that setting. Repository setup now requires the inherited Dev Container configuration; other environments invoke `scripts/install-codespace-tools.sh` directly.
 - **Lifecycle state is explicit.** `.context/onboarding-state.json` distinguishes a fresh template seed from a completed derived repository; retained template resources are not treated as defects.
 
 ## Future Improvements
@@ -218,7 +215,6 @@ live in [`AI_REPO_GUIDE.md` § Known Warnings](AI_REPO_GUIDE.md#known-warnings).
 Template-level items under consideration. Per-decision follow-ups live in the "Future Work" subsection of each ADR under `docs/decisions/`.
 
 - **More deployment templates.** Cloudflare Workers, Fly.io, and Kubernetes manifests are candidates. Each addition is a maintenance commitment — contribute only if you'll maintain it.
-- **Retire legacy dotfiles compatibility.** Remove root `install.sh` after evidence shows existing users have migrated to repository-owned Dev Containers.
 
 ## FAQ
 

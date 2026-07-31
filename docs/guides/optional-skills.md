@@ -37,8 +37,8 @@ performed by bootstrap.
 
 Use `scripts/install-codespace-tools.sh --profile core` explicitly for the
 smaller quality/runtime-only set. Explicit `--profile agents` preserves the
-default core-plus-agents union. Root `install.sh` accepts the same profile
-options only as a deprecated dotfiles/manual compatibility path.
+default core-plus-agents union. Development environments outside the repository
+Dev Container can invoke this installer directly.
 
 Verify the installed core without mutation:
 

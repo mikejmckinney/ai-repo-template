@@ -86,8 +86,6 @@ post-merge retro umbrella issues. Re-run `./scripts/setup/ensure-pipeline-labels
 > repository is verified as private. It does **not** create the sandbox repo or
 > set sandbox secrets — run
 > `sandbox-bootstrap.sh` once for those.
-> Legacy account-level dotfiles users receive the same post-start behavior
-> through the deprecated root `install.sh` compatibility path.
 
 ### What the script does (for reference)
 

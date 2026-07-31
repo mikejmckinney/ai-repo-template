@@ -44,11 +44,25 @@ The canonical Codespaces lifecycle will be owned by
   `customizations.vscode.extensions`; and
 - `scripts/setup.sh` remains an explicit command after project adaptation.
 
-Root `install.sh` remains functional as a deprecated compatibility entrypoint
-for existing account-level dotfiles and manual users. It is not the recommended
-path for template-derived repositories. Removing it requires a separate change
-after migration evidence shows that the compatibility surface is no longer
-needed.
+Root `install.sh` is removed. Its tool installation, extension declaration, and
+startup responsibilities are owned by the Dev Container lifecycle, while its
+copy inventory duplicated files already inherited from the GitHub template.
+Users who selected this repository as account-level Codespaces dotfiles must
+disable that setting. Development environments outside Dev Containers invoke
+`scripts/install-codespace-tools.sh` directly.
+
+## Migration
+
+1. In GitHub Codespaces settings, stop using `ai-repo-template` as the account
+   dotfiles repository.
+2. Create or rebuild the repository Codespace so GitHub reads the inherited
+   `.devcontainer/devcontainer.json`.
+3. Outside a Dev Container, install the pinned environment explicitly with
+   `scripts/install-codespace-tools.sh --profile default`.
+
+The removed root entrypoint no longer supports selectively copying this
+template into unrelated repositories. Use GitHub template creation for the full
+repository or copy explicitly selected files when adopting only part of the kit.
 
 ## Options Considered
 
@@ -66,13 +80,12 @@ needed.
 - **Cons**: Runs project dependencies, builds, labels, secret checks, and
   verification before maintainers finish adapting the template.
 
-### Use repository-owned lifecycle hooks with a compatibility period
+### Use repository-owned lifecycle hooks and remove the duplicate entrypoint
 
 - **Pros**: Scopes behavior to derived repositories, versions setup with each
-  project, avoids a duplicate template clone, and preserves existing users
-  during migration.
-- **Cons**: Maintains two entrypoints temporarily and requires existing users
-  to disable their account-level dotfiles selection manually.
+  project, avoids a duplicate template clone, and leaves one lifecycle owner.
+- **Cons**: Existing users must disable their account-level dotfiles selection
+  before creating or rebuilding Codespaces from this template.
 
 ### Maintain a separate minimal dotfiles repository
 
@@ -93,10 +106,8 @@ needed.
 
 ### Negative
 
-- Existing dotfiles users must disable that account setting after migration or
-  both the compatibility bootstrap and Dev Container lifecycle can run.
-- Root `install.sh` and its copy inventory remain maintenance surfaces until a
-  later removal decision.
+- Existing dotfiles users must disable that account setting; the repository no
+  longer supplies a dotfiles-discovered root installer.
 - Representative validation requires creating a fresh Codespace and may incur
   compute or storage cost.
 
@@ -110,8 +121,8 @@ needed.
 ## Verification
 
 - **V1 contract tests**: validate lifecycle commands, extension declarations,
-  default-profile delegation, repeatability, explicit project setup, and legacy
-  compatibility guidance.
+  default-profile delegation, repeatability, explicit project setup, and removal
+  of the legacy root entrypoint.
 - **V2 repository checks**: run focused and full Bats, `test.sh`, JSON parsing,
   ShellCheck, formatting, Markdown links, generated-surface checks, and
   exact-head CI/lint.
@@ -124,7 +135,7 @@ needed.
 
 - [x] Add the repository-owned Dev Container definition and creation hook.
 - [x] Preserve the non-fatal startup hook and explicit project setup boundary.
-- [x] Mark root `install.sh` as a deprecated compatibility entrypoint.
+- [x] Remove root `install.sh` and its duplicate copy-inventory contracts.
 - [x] Update setup guidance and lifecycle contracts.
 - [ ] Record approved fresh-Codespace outcome evidence in PR
   [#543](https://github.com/mikejmckinney/ai-repo-template/pull/543).

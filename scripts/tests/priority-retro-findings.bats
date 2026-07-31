@@ -11,47 +11,6 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
-make_installer_fixture() {
-  mkdir -p "$TEST_ROOT/dotfiles/.github" "$TEST_ROOT/workspace"
-  printf '%s\n' '* @mikejmckinney' >"$TEST_ROOT/dotfiles/.github/CODEOWNERS"
-  git -C "$TEST_ROOT/workspace" init -q
-}
-
-@test "installer assigns CODEOWNERS to the workspace repository owner" {
-  make_installer_fixture
-  git -C "$TEST_ROOT/workspace" remote add origin https://github.com/acme/example.git
-
-  run env -u GITHUB_REPOSITORY_OWNER PATH=/usr/bin:/bin \
-    DOTFILES="$TEST_ROOT/dotfiles" WORKSPACE="$TEST_ROOT/workspace" \
-    /bin/bash "$REPO_ROOT/install.sh"
-
-  [ "$status" -eq 0 ]
-  [ "$(cat "$TEST_ROOT/workspace/.github/CODEOWNERS")" = '* @acme' ]
-}
-
-@test "installer does not copy a maintainer-specific CODEOWNERS without a target owner" {
-  make_installer_fixture
-
-  run env -u GITHUB_REPOSITORY_OWNER PATH=/usr/bin:/bin \
-    DOTFILES="$TEST_ROOT/dotfiles" WORKSPACE="$TEST_ROOT/workspace" \
-    /bin/bash "$REPO_ROOT/install.sh"
-
-  [ "$status" -eq 0 ]
-  [ ! -e "$TEST_ROOT/workspace/.github/CODEOWNERS" ]
-  [[ "$output" == *"Could not resolve workspace repository owner; skipping .github/CODEOWNERS"* ]]
-}
-
-@test "installer falls back to the Codespaces repository owner" {
-  make_installer_fixture
-
-  run env PATH=/usr/bin:/bin GITHUB_REPOSITORY_OWNER=octocat \
-    DOTFILES="$TEST_ROOT/dotfiles" WORKSPACE="$TEST_ROOT/workspace" \
-    /bin/bash "$REPO_ROOT/install.sh"
-
-  [ "$status" -eq 0 ]
-  [ "$(cat "$TEST_ROOT/workspace/.github/CODEOWNERS")" = '* @octocat' ]
-}
-
 make_azure_stubs() {
   mkdir -p "$TEST_ROOT/bin"
   export AZ_LOG="$TEST_ROOT/az.log"

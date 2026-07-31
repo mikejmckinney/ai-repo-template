@@ -93,9 +93,6 @@ run_installer() {
 }
 
 @test "default install profile includes core and agent tools without changing explicit profiles" {
-  run grep -F 'TOOLS_PROFILE=default' "$REPO_ROOT/install.sh"
-  [ "$status" -eq 0 ]
-
   run jq -e '
     (.profiles.core | index("opencode") | not) and
     (.profiles.agents | index("shfmt")) and
@@ -144,20 +141,6 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"agent-runtime lockfile dependencies already installed"* ]]
   [ "$(wc -l <"$TEST_ROOT/npm.log" | tr -d ' ')" -eq 1 ]
-}
-
-@test "install.sh invokes and copies the canonical Codespaces bootstrap" {
-  run grep -F 'bash "$DOTFILES/scripts/install-codespace-tools.sh" --profile "$TOOLS_PROFILE"' \
-    "$REPO_ROOT/install.sh"
-  [ "$status" -eq 0 ]
-
-  for path in .config/codespace-tools.json scripts/install-codespace-tools.sh \
-    .config/derived-repo-secrets.json scripts/create-derived-repo.sh \
-    scripts/cleanup-codespace-caches.sh scripts/browser-mcp.sh \
-    scripts/elevenlabs-mcp.sh scripts/mureka-mcp.sh scripts/open-design-mcp.sh; do
-    run grep -F "\"$path\"" "$REPO_ROOT/install.sh"
-    [ "$status" -eq 0 ]
-  done
 }
 
 @test "apt package installation excludes the unrelated Yarn repository" {

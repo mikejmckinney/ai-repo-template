@@ -13,7 +13,6 @@ REQUIRED_FILES=(
   "CLAUDE.md"
   "README.md"
   ".devcontainer/devcontainer.json"
-  "install.sh"
   "test.sh"
   ".cursorignore"
   ".github/prompts/README.md"

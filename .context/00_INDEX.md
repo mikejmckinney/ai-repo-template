@@ -68,7 +68,7 @@ assigned GitHub issues rather than duplicated phase state in this index.
 - Canonical benchmark guidance and decision evidence under `docs/`; evaluation
   apparatus lives on `benchmark/roi`.
 - GitHub prompts, issue/PR templates, and workflow scaffolding under `.github/`.
-- Bootstrap and verification helpers under `install.sh`, `test.sh`, and `scripts/**`.
+- Bootstrap and verification helpers under `.devcontainer/`, `test.sh`, and `scripts/**`.
 
 ## Key Decisions Log
 

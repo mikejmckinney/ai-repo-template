@@ -156,29 +156,16 @@ setup() {
   [ "$status" -eq 0 ]
 }
 
-@test "Codespaces bootstrap copies provider integrations" {
-  run python3 - "$REPO_ROOT/install.sh" <<'PY'
-import re
-import sys
-from pathlib import Path
-
-text = Path(sys.argv[1]).read_text(encoding="utf-8")
-match = re.search(r"MULTIAGENT_FILES=\(\n(?P<body>.*?)\n\)", text, re.DOTALL)
-assert match is not None
-for path in (
-    '.agents/skills', '.cursor', '.config/codespace-tools.json', '.mcp.json',
-    'docs/guides/cloud-provider-tooling.md',
-    'docs/guides/skill-supply-chain.md',
-    '.opencode/opencode.json', 'scripts/browser-mcp.sh',
-    'scripts/elevenlabs-mcp.sh', 'scripts/mureka-mcp.sh', 'scripts/suno-mcp.sh',
-    'scripts/install-codespace-tools.sh', 'scripts/open-design-mcp.sh',
-    'scripts/scan-skill-secrets.py', 'scripts/skill-supply-chain.py',
-    'skills-lock.json', 'CLAUDE.md'
-):
-    assert f'  "{path}"' in match.group("body"), path
-PY
-
-  [ "$status" -eq 0 ]
+@test "repository includes provider integrations" {
+  for path in \
+    .agents/skills .cursor .config/codespace-tools.json .mcp.json \
+    docs/guides/cloud-provider-tooling.md docs/guides/skill-supply-chain.md \
+    .opencode/opencode.json scripts/browser-mcp.sh scripts/elevenlabs-mcp.sh \
+    scripts/mureka-mcp.sh scripts/suno-mcp.sh scripts/install-codespace-tools.sh \
+    scripts/open-design-mcp.sh scripts/scan-skill-secrets.py \
+    scripts/skill-supply-chain.py skills-lock.json CLAUDE.md; do
+    [ -e "$REPO_ROOT/$path" ]
+  done
 }
 
 @test "Claude Code entrypoint is an exact installed pointer" {
