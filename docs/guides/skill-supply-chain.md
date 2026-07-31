@@ -235,7 +235,7 @@ changes; this table is not a substitute for complying with the linked terms.
 | `ChromeDevTools/chrome-devtools-mcp` | 3 | Apache-2.0 | [LICENSE](https://github.com/ChromeDevTools/chrome-devtools-mcp/blob/76fd2424984827802867672fcc8d0e0036f4a3af/LICENSE) |
 | `SkyworkAI/Skywork-Skills` | 1 | MIT | [LICENSE](https://github.com/SkyworkAI/Skywork-Skills/blob/c8c6aeb742c3d6a2b728992142796702464b6fce/LICENSE) |
 | `anthropics/skills` | 3 | Apache-2.0 | [frontend-design](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/frontend-design/LICENSE.txt), [mcp-builder](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/mcp-builder/LICENSE.txt), [skill-creator](https://github.com/anthropics/skills/blob/fa0fa64bdc967915dc8399e803be67759e1e62b8/skills/skill-creator/LICENSE.txt) |
-| `aws/agent-toolkit-for-aws` | 19 | Apache-2.0 | [LICENSE](https://github.com/aws/agent-toolkit-for-aws/blob/b4416dddac9b6a0cc5412136e6dbf8f07ffdb31c/LICENSE) |
+| `aws/agent-toolkit-for-aws` | 19 | Apache-2.0 | [LICENSE](https://github.com/aws/agent-toolkit-for-aws/blob/222ce561d60ebd9627285640262eb0d853a38219/LICENSE) |
 | `cloudflare/skills` | 2 | Apache-2.0 | [LICENSE](https://github.com/cloudflare/skills/blob/70215303d44a81a0db3219428f4825b604fc6061/LICENSE) |
 | `elevenlabs/skills` | 2 | MIT | [LICENSE](https://github.com/elevenlabs/skills/blob/37c0f2a682a8953cb9f09b152a0e1624d234193e/LICENSE) |
 | `microsoft/azure-skills` | 26 | MIT | [LICENSE](https://github.com/microsoft/azure-skills/blob/1b592c63641049ff33e4952c4021c63b4507f147/LICENSE) |
@@ -243,10 +243,10 @@ changes; this table is not a substitute for complying with the linked terms.
 | `netlify/context-and-tools` | 3 | MIT | [LICENSE](https://github.com/netlify/context-and-tools/blob/b4ac277e6795f90e6a1d163c001c0d7667ff9143/LICENSE) |
 | `oracle/skills` | 3 | UPL-1.0 | [LICENSE](https://github.com/oracle/skills/blob/30e30dbcbf5f92f3564bc85f8fd59d32736adcd6/LICENSE.txt) |
 | `phaserjs/phaser` | 28 | MIT | [LICENSE](https://github.com/phaserjs/phaser/blob/41be1e462bc600064e498cba370bfa8c5c055a22/LICENSE.md) |
-| `railwayapp/railway-skills` | 1 | MIT | [LICENSE](https://github.com/railwayapp/railway-skills/blob/191601b4954527a87f4f004eaa355c8f30a855bf/LICENSE) |
-| `render-oss/skills` | 21 | MIT | [LICENSE](https://github.com/render-oss/skills/blob/1b8496570748203351f628b2ae738805ac2c23d5/LICENSE) |
+| `railwayapp/railway-skills` | 1 | MIT | [LICENSE](https://github.com/railwayapp/railway-skills/blob/c8b1487773d88f27b33e599300d6100b0978eafe/LICENSE) |
+| `render-oss/skills` | 21 | MIT | [LICENSE](https://github.com/render-oss/skills/blob/4e4a00a51a99aa772793b1a2ab3abe0e214c88ef/LICENSE) |
 | `shadcn-ui/ui` | 1 | MIT | [LICENSE](https://github.com/shadcn-ui/ui/blob/4baadbc6517070ae8f8feb2c97037adc2b305544/LICENSE.md) |
-| `supabase/agent-skills` | 2 | MIT | [LICENSE](https://github.com/supabase/agent-skills/blob/1ad9aaeb49caafd9e95c0a91116f71890eebbc53/LICENSE) |
+| `supabase/agent-skills` | 2 | MIT | [LICENSE](https://github.com/supabase/agent-skills/blob/1207767388a0ffb55f21fb4e6988fee96942431d/LICENSE) |
 | `vercel-labs/agent-skills` | 5 | MIT | [README license declaration](https://github.com/vercel-labs/agent-skills/blob/7c180d9044c9ae2b442b567aad4e42a28dd5ed62/README.md#license) |
 | `vercel-labs/skills` | 1 | MIT | [README license declaration](https://github.com/vercel-labs/skills/blob/777599e1159e401b11ce4c8a57c20f09a8f1596e/README.md#license) |
 <!-- generated:skill-license-inventory:end -->
