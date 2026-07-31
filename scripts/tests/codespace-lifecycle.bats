@@ -25,15 +25,8 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "Dev Container declares the canonical VS Code extensions" {
-  run jq -e '
-    .customizations.vscode.extensions == [
-      "saoudrizwan.claude-dev",
-      "ms-vscode.live-server",
-      "esbenp.prettier-vscode",
-      "ms-vsliveshare.vsliveshare"
-    ]
-  ' "$DEVCONTAINER"
+@test "Dev Container does not prescribe VS Code extensions" {
+  run jq -e 'has("customizations") | not' "$DEVCONTAINER"
 
   [ "$status" -eq 0 ]
 }
