@@ -137,21 +137,38 @@ def main() -> int:
             "requires default-branch execution, otherwise no."
         ),
     )
-    parser.add_argument("--verification-target", required=True)
+    parser.add_argument("--verification-target")
+    parser.add_argument(
+        "--derive-route-from-body",
+        action="store_true",
+        help="Read the verification target and execution constraint from the PR body.",
+    )
     parser.add_argument("--pr-body", required=True, type=Path)
     args = parser.parse_args()
 
     if not args.pr_body.is_file():
         parser.error(f"PR body file does not exist: {args.pr_body}")
 
+    body = args.pr_body.read_text(encoding="utf-8")
+    target = args.verification_target
+    constraint = args.default_branch_constrained
+    if args.derive_route_from_body:
+        target = sandbox_value(body, "E2E target")
+        declared_constraint = sandbox_value(
+            body, "Default-branch constrained"
+        ).lower()
+        constraint = declared_constraint if declared_constraint in {"yes", "no"} else None
+    elif target is None:
+        parser.error(
+            "--verification-target is required unless --derive-route-from-body is used"
+        )
+
     errors = validate(
         args.contract_version,
         args.change_class,
-        args.verification_target,
-        args.pr_body.read_text(encoding="utf-8"),
-        None
-        if args.default_branch_constrained is None
-        else args.default_branch_constrained == "yes",
+        target or "",
+        body,
+        None if constraint is None else constraint == "yes",
     )
     if errors:
         for error in errors:

@@ -51,6 +51,8 @@ assert {path[1] for path in caller if len(path) == 2 and path[0] == "jobs"} == {
 assert caller[("jobs", "smoke", "uses")] == "./.github/workflows/agent-workflow-smoke.yml"
 assert caller[("jobs", "smoke", "with", "ref")] == "${{ github.event.pull_request.head.sha }}"
 assert caller[("jobs", "smoke", "with", "expected_sha")] == "${{ github.event.pull_request.head.sha }}"
+assert caller[("jobs", "smoke", "with", "base_sha")] == "${{ github.event.pull_request.base.sha }}"
+assert caller[("jobs", "smoke", "with", "pr_body")] == "${{ github.event.pull_request.body }}"
 assert set(caller) & {
     ("jobs", "smoke", "runs-on"),
     ("jobs", "smoke", "steps"),
@@ -62,6 +64,8 @@ assert {path[1] for path in reusable if len(path) == 2 and path[0] == "jobs"} ==
 assert reusable[("jobs", "smoke", "runs-on")] == "ubuntu-latest"
 assert reusable[("on", "workflow_call", "inputs", "ref", "required")] == "true"
 assert reusable[("on", "workflow_call", "inputs", "expected_sha", "required")] == "true"
+assert reusable[("on", "workflow_call", "inputs", "base_sha", "required")] == "true"
+assert reusable[("on", "workflow_call", "inputs", "pr_body", "required")] == "true"
 
 allowed_permissions = {
     ("permissions",),
@@ -77,6 +81,9 @@ for text in (caller_text, reusable_text):
     assert "secrets: inherit" not in text
 assert "persist-credentials: false" in reusable_text
 assert "git rev-parse HEAD" in reusable_text
+assert "scripts/verify-pr.sh" in reusable_text
+assert "scripts/validate-verification-evidence.py" in reusable_text
+assert "--derive-route-from-body" in reusable_text
 PY
 
   [ "$status" -eq 0 ]

@@ -191,6 +191,45 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "validator derives the declared route from a live PR body" {
+  write_outcome \
+    "both" \
+    "yes" \
+    "yes" \
+    "Real provider invocation and issue publication require default-branch execution"
+
+  run python3 "$VALIDATOR" \
+    --contract-version 1 \
+    --change-class "mixed" \
+    --derive-route-from-body \
+    --pr-body "$TMP_DIR/pr.md"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"verification evidence is valid"* ]]
+}
+
+@test "live PR validation fails closed when the route declaration is missing" {
+  cat >"$TMP_DIR/pr.md" <<'EOF'
+## User outcome validation — PRIMARY
+
+**Problem statement tested:** yes
+
+**User outcome / 15-minute test performed:** yes
+
+**Result:** problem statement resolved
+EOF
+
+  run python3 "$VALIDATOR" \
+    --contract-version 1 \
+    --change-class "mixed" \
+    --derive-route-from-body \
+    --pr-body "$TMP_DIR/pr.md"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"mixed changes require --default-branch-constrained"* ]]
+  [[ "$output" == *"unsupported verification target"* ]]
+}
+
 @test "CLI help routes mixed changes by changed-behavior constraint" {
   run python3 "$VALIDATOR" --help
 

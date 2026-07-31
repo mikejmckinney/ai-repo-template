@@ -27,7 +27,8 @@ concurrency, environments, repository controls, provider execution, or publisher
 mutation. Use `no` when deterministic fixtures or a read-only PR-triggered
 reusable workflow fully exercise the changed behavior, even if an unchanged
 production caller has a default-branch trigger. The versioned evidence validator
-fails closed on missing or inconsistent declarations.
+fails closed on missing or inconsistent declarations and runs against the live PR
+body in the same-commit harness.
 
 Local checks and the same-commit PR harness are the correction loop. Sandbox is
 one final integration canary for remaining default-branch constraints, not the
@@ -93,7 +94,8 @@ Adopt a **hybrid pre-merge verification gate** with three components:
    the trigger-event matrix, and compares the most-restrictive bucket
    present against the author's declaration. Exits non-zero on
    mismatch and points the author at either (a) re-declaration or (b)
-   the sandbox playbook. Runs locally pre-push and (planned) in CI.
+   the sandbox playbook. Runs locally pre-push; the same-commit PR harness uses
+   its detected class to validate the actual PR body's route and outcome fields.
 
 3. **Candidate-code PR harness** — eligible daily and weekly fixture behavior
    executes through reusable workflows loaded from the caller commit. It uses

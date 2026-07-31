@@ -254,8 +254,9 @@ other default-branch-only workflow changes require sandbox-default verification.
 For `mixed` changes, structural trigger class and changed-behavior execution
 constraint are separate decisions. Record evidence contract `1`,
 `default-branch-constrained: yes|no`, the verification target, and a specific
-reason, then run `scripts/validate-verification-evidence.py` against the completed
-PR body. Use `yes` when the changed behavior requires default-branch event
+reason. The PR smoke harness validates those fields against the detected class;
+run `scripts/validate-verification-evidence.py` locally before completion. Use
+`yes` when the changed behavior requires default-branch event
 delivery, permissions, secrets, concurrency, environments, provider execution,
 or publication. Use `no` when deterministic fixtures or the read-only
 same-commit PR workflow exercise the changed behavior. Local and PR-native checks
