@@ -263,6 +263,7 @@ EOF
 **Review provenance**
 
 - 2026-07-31 — provider: cursor; requested: old-requested; observed: old-observed; attempts: cursor:success
+- 2026-07-31 — provider: gemini; requested: duplicate-requested; observed: duplicate-observed; attempts: gemini:success
 
 Automated footer.
 EOF
@@ -273,6 +274,7 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"provider: opencode; requested: new-requested; observed: new-observed"* ]]
   [[ "$output" != *"old-requested"* ]]
+  [[ "$output" != *"duplicate-requested"* ]]
   [ "$(grep -c '^- 2026-07-31 —' <<<"$output")" -eq 1 ]
 }
 

@@ -150,18 +150,6 @@ def merge_summary_into_body(body: str, records: list[dict]) -> str:
     return body.rstrip() + "\n\n" + wrapped
 
 
-def _coverage_prs_in_body(body: str) -> set[int]:
-    prs: set[int] = set()
-    for line in body.splitlines():
-        if not line.startswith("- PR #"):
-            continue
-        try:
-            prs.add(int(line.split("PR #", 1)[1].split("—", 1)[0].strip()))
-        except ValueError:
-            continue
-    return prs
-
-
 def merge_coverage_into_body(body: str, records: list[dict]) -> str:
     if not records:
         return body

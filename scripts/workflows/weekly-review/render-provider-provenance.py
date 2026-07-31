@@ -40,10 +40,17 @@ def merge_into_body(body: str, data: dict) -> str:
     if HEADING in body:
         before, after = body.split(HEADING, 1)
         lines = after.lstrip("\n").splitlines()
-        for index, existing in enumerate(lines):
-            if existing.startswith(line_prefix):
-                lines[index] = line
-                return before + HEADING + "\n\n" + "\n".join(lines)
+        if any(existing.startswith(line_prefix) for existing in lines):
+            replaced = False
+            merged_lines = []
+            for existing in lines:
+                if existing.startswith(line_prefix):
+                    if not replaced:
+                        merged_lines.append(line)
+                        replaced = True
+                    continue
+                merged_lines.append(existing)
+            return before + HEADING + "\n\n" + "\n".join(merged_lines)
         insert_at = 0
         while insert_at < len(lines) and lines[insert_at].startswith("-"):
             insert_at += 1
