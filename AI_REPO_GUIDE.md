@@ -178,17 +178,22 @@ Classification never changes advisory's non-blocking authority.
 
 The daily workflow reviews PRs merged to `main` in its evidence window, creates or
 updates one dated umbrella issue, and may open a draft fix PR. It is not a
-pre-merge gate. Fix attempts fail closed unless every actionable finding has
-complete verification and either substantive changes or complete
-`cant_reproduce` evidence. Verification-only output opens no PR, and a published
-PR must have a confirmed native GitHub link to its umbrella issue. The shared
-controller records a credential-free baseline separately, registers
-candidate-created paths before running the same deterministic check, and advances
-only when provider invocation, optional Gemini application, candidate
-verification, fix verification, and outcome evidence each return success.
-All non-superseded findings remain in the umbrella record, but only `should-fix`
-and `fix-now` findings enter the automated fix pass; a defer-only batch opens no
-fix PR.
+pre-merge gate. All non-superseded findings remain in the umbrella record, but
+automated implementation requires `should-fix` or `fix-now` priority plus the
+typed `isolated-worktree` / `repository-test-suite` capability. Codespaces,
+external-state, unsupported-runtime, missing, and invalid capability proposals
+remain human follow-ups and do not invoke a fix provider. Model-authored
+`repro_steps` are never executed.
+
+The shared controller preseeds finding identities, records the credential-free
+baseline and candidate exit codes, and overwrites provider-authored execution or
+outcome fields before validation. Provider invocation, optional Gemini
+application, candidate verification, fix verification, and outcome evidence must
+each succeed. Gemini receives one schema-correction retry after malformed output.
+Rejected attempts retain bounded redacted metadata under
+`.artifacts/fix-provider-diagnostics/`; raw model output and full patches remain
+ephemeral. Verification-only output opens no PR, and a published PR must have a
+confirmed native GitHub link to its umbrella issue.
 Bounded provider output omits `evidence_complete`; full-evidence output must set
 it to `true` only after retrieving every required source. Separate schemas keep
 those claims from being conflated.
@@ -273,8 +278,10 @@ for the specialized default-branch GitHub adapter and fire the real event.
 Daily post-merge and weekly review JSON persist automation-owned provider
 provenance: resolved provider, requested model, observed model or `unknown`, and
 ordered fallback attempts. Their umbrella issues render the same bounded
-metadata. Detailed provider diagnostics remain in workflow logs; configured
-model values are never substituted for an unavailable observed identity.
+metadata. Failed fix attempts upload bounded redacted diagnostics with provider,
+model, failed stage, exit status, changed paths, diff statistics, failing checks,
+and a capped excerpt. Configured model values are never substituted for an
+unavailable observed identity.
 
 ## Authentication
 

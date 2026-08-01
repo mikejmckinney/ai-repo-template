@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lib"))
+
+from verification_capability import is_fix_eligible  # noqa: E402
 
 
 def main() -> int:
@@ -18,8 +23,7 @@ def main() -> int:
     findings = data.get("findings") or []
     count = (
         sum(
-            item.get("superseded_on_main") is not True
-            and item.get("priority_band") in {"should-fix", "fix-now"}
+            is_fix_eligible(item)
             for item in findings
             if isinstance(item, dict)
         )

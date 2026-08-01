@@ -63,6 +63,12 @@ for f in data.get("findings") or []:
         input=body,
         text=True,
     ).strip()
+    capability = f.get("verification_capability") or {}
+    environment = capability.get("environment")
+    if environment and environment != "isolated-worktree":
+        suggested = f"Human follow-up required ({environment} verification): {suggested}"
+    elif not environment:
+        suggested = f"Human follow-up required (verification capability missing): {suggested}"
     rows.append(table.format_row(f, suggested_fix=suggested))
 Path(sys.argv[2]).write_text("\n".join(rows) + ("\n" if rows else ""))
 PY

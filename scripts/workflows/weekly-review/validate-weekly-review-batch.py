@@ -12,6 +12,7 @@ sys.path.insert(0, str(LIB_DIR))
 
 from finding_priority import validate_triage_item  # noqa: E402
 from evidence_paths import validate_evidence_paths  # noqa: E402
+from verification_capability import validate_capability  # noqa: E402
 
 PROVENANCE_LIB = LIB_DIR / "provider-provenance.py"
 spec = importlib.util.spec_from_file_location("provider_provenance", PROVENANCE_LIB)
@@ -93,6 +94,9 @@ def main() -> int:
                     return 1
         try:
             validate_evidence_paths(item, f"findings[{i}]")
+            capability = item.get("verification_capability")
+            if capability is not None:
+                validate_capability(capability, f"findings[{i}].verification_capability")
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 1

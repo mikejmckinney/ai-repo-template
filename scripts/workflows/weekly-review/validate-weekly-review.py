@@ -11,6 +11,7 @@ sys.path.insert(0, str(LIB_DIR))
 
 from finding_priority import validate_triage_item  # noqa: E402
 from evidence_paths import validate_evidence_paths  # noqa: E402
+from verification_capability import validate_capability  # noqa: E402
 
 
 def main() -> int:
@@ -68,6 +69,9 @@ def main() -> int:
                 return 1
         try:
             validate_evidence_paths(item, f"{key}[{i}]")
+            capability = item.get("verification_capability")
+            if capability is not None:
+                validate_capability(capability, f"{key}[{i}].verification_capability")
         except ValueError as exc:
             print(str(exc), file=sys.stderr)
             return 1

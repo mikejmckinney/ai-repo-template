@@ -54,9 +54,11 @@ supporting evidence and never satisfy or replace deterministic CI.
 
 `agent-postmerge-retro.yml` runs at 06:00 UTC and by manual dispatch. It reviews
 merged PR evidence, writes one daily umbrella issue, and may publish a draft fix
-PR. A fix provider is promoted only after every actionable finding has completed
-verification and the worktree contains substantive changes or complete
-`cant_reproduce` evidence. Verification-only output opens no PR. Published PRs
+PR. Only `should-fix` and `fix-now` findings with the typed
+`isolated-worktree` / `repository-test-suite` capability enter automated
+implementation. Findings requiring Codespaces, external state, secrets, or an
+unsupported runtime remain visible human follow-ups without provider invocation.
+Verification-only output opens no PR. Published PRs
 must acquire a native GitHub Development-graph link to the umbrella issue; a
 closing keyword without that relationship fails the job. Fix publication is
 never auto-merged. The umbrella retains every non-superseded finding, while only
@@ -100,10 +102,21 @@ the controller runs a credential-free baseline at clean `HEAD`, registers new
 candidate paths, then runs `./test.sh` against the candidate. Provider invocation,
 optional Gemini application, candidate verification, fix verification, and
 outcome evidence are explicit fail-closed stages; a failed stage prevents later
-stages from running and advances to the next provider. The controller promotes
-only the first patch with complete per-finding verification. Missing, malformed,
-or pending verification therefore cannot generate a committable stub. The fix
-agent may edit but cannot invoke shell commands; this
+stages from running and advances to the next provider. A malformed Gemini fix
+response receives one corrective retry containing a bounded parse diagnostic and
+the required schema. The controller promotes only the first patch with complete
+per-finding verification. Missing, malformed, or pending verification therefore
+cannot generate a committable stub.
+
+Providers receive `repro_steps` as context but never as executable shell input.
+They supply implementation reasoning, a proposed allowlisted harness identifier,
+and a disposition. The controller reconstructs every finding identity from its
+canonical batch, overwrites execution fields with baseline/candidate exit codes,
+and generates outcome evidence. Rejected attempts produce one bounded redacted
+diagnostic containing provider/model, failed stage/status, changed paths, diff
+statistics, failing check names, and a capped excerpt. Daily and weekly fix jobs
+upload those records with `always()`; raw responses and full patches are omitted.
+The fix agent may edit but cannot invoke shell commands; this
 prevents editable repository scripts from reading inherited credentials.
 
 For trusted private repositories, `scripts/sync-opencode-oauth-secret.sh` reads

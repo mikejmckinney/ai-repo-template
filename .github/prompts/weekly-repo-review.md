@@ -19,6 +19,10 @@ The automation appends a **context pack** containing `AGENTS.md` plus task-speci
 - Review the **repository state on `main`** — not individual open PRs.
 - **Inspect files as needed.** Every finding must cite concrete paths (and lines when possible) from the repo.
 - **`repro_steps` required** on every `follow_up_issues` row — concrete steps to reproduce the bug. If you cannot define reproduction steps, do not emit the finding.
+- Propose one typed `verification_capability`. Use `isolated-worktree` with
+  `repository-test-suite` only when repository-owned `./test.sh` can verify the
+  finding. Use `codespaces`, `external-state`, or `unsupported-runtime` with
+  `harness_id: null` when the required state is unavailable to the fix job.
 - **Do not** suggest broad rewrites unless evidence shows a recurring failure pattern.
 - Output **valid JSON only** — no preamble, no markdown fences, no commentary after the JSON.
 
@@ -54,6 +58,11 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
       "body": "markdown body",
       "evidence": ["string"],
       "repro_steps": ["step 1 to reproduce", "step 2 observe failure"],
+      "verification_capability": {
+        "environment": "isolated-worktree|codespaces|external-state|unsupported-runtime",
+        "harness_id": "repository-test-suite or null",
+        "reason": "why this environment and harness can verify the finding"
+      },
       "dedupe_key": "repo-invariant-example"
     }
   ]

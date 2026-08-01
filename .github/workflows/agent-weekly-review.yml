@@ -342,3 +342,12 @@ jobs:
             url="$(gh pr view "$num" --json url --jq .url)"
             echo "fix_pr_url=${url}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Upload failed fix-attempt diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-fix-diagnostics-${{ env.RUN_WEEK }}-attempt-${{ github.run_attempt }}
+          path: .artifacts/fix-provider-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 21

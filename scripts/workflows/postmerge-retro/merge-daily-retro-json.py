@@ -46,6 +46,8 @@ def _flatten_item(
         "labels": labels,
         **triage,
     }
+    if "verification_capability" in item:
+        row["verification_capability"] = item["verification_capability"]
     if repro_steps is not None:
         row["repro_steps"] = repro_steps
     return row

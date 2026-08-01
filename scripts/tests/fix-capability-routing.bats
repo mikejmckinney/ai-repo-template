@@ -123,11 +123,12 @@ EOF
   diagnostics="$TEST_ROOT/diagnostics"
 
   run env PATH="$TEST_ROOT/bin:$PATH" FIX_PROVIDER_DIAGNOSTICS_DIR="$diagnostics" \
-    POSTMERGE_RETRO_MODEL=test-model bash -c '
+    OPENCODE_MODELS=test-model bash -c '
       list_advisory_providers() { printf "%s\n" opencode; }
       invoke_advisory_llm() {
         printf "candidate\n" >result.txt
         printf "token=super-secret-value\n" >&2
+        printf "github_pat_123456789012345678901234567890\n" >&2
         return 7
       }
       apply_noop() { return 0; }
@@ -140,16 +141,18 @@ EOF
     "$REPO_ROOT/scripts/workflows/lib" "$TEST_ROOT/batch.json"
 
   [ "$status" -ne 0 ]
-  [ "$(find "$diagnostics" -type f -name '*.json' | wc -l | tr -d ' ')" -eq 1 ]
-  diagnostic="$(find "$diagnostics" -type f -name '*.json')"
-  run jq -e '
+  diagnostics_files=("$diagnostics"/*.json)
+  [ "${#diagnostics_files[@]}" -eq 1 ]
+  diagnostic="${diagnostics_files[0]}"
+  jq -e '
     .provider == "opencode" and .requested_model == "test-model" and
     .failed_stage == "provider invocation" and .exit_status == 7 and
     (.changed_paths | index("result.txt")) and
     (.excerpt | length <= 2000)
   ' "$diagnostic"
-  [ "$status" -eq 0 ]
   run grep -F 'super-secret-value' "$diagnostic"
+  [ "$status" -ne 0 ]
+  run grep -F 'github_pat_123456789012345678901234567890' "$diagnostic"
   [ "$status" -ne 0 ]
 }
 
@@ -203,12 +206,73 @@ for relative in (
 ):
     text = (root / relative).read_text(encoding="utf-8")
     assert "Upload failed fix-attempt diagnostics" in text, relative
+    assert text.index("Upload failed fix-attempt diagnostics") > text.index("Run daily fix pass" if "postmerge" in relative else "Run weekly fix pass"), relative
     section = text.split("- name: Upload failed fix-attempt diagnostics", 1)[1]
     assert "if: always()" in section[:200], relative
     assert ".artifacts/fix-provider-diagnostics/" in section[:600], relative
 PY
 
   [ "$status" -eq 0 ]
+}
+
+@test "verification capability schemas enforce the harness allowlist" {
+  run node - "$REPO_ROOT" <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const root = process.argv[2];
+const Ajv2020 = require(path.join(root, '.github/agent-runtime/node_modules/ajv/dist/2020')).default;
+const names = [
+  'postmerge-retro.schema.json',
+  'postmerge-retro-bounded.schema.json',
+  'postmerge-retro-monolithic.schema.json',
+  'postmerge-retro-daily.schema.json',
+  'weekly-review.schema.json',
+];
+for (const name of names) {
+  const schema = JSON.parse(fs.readFileSync(path.join(root, '.github/schemas', name), 'utf8'));
+  const capability = schema.$defs.verificationCapability;
+  const validate = new Ajv2020({strict: false}).compile(capability);
+  if (!validate({environment: 'isolated-worktree', harness_id: 'repository-test-suite', reason: 'owned harness'})) throw new Error(name);
+  if (validate({environment: 'isolated-worktree', harness_id: 'free-form-command', reason: 'unsafe'})) throw new Error(`${name} accepted arbitrary harness`);
+  if (!validate({environment: 'codespaces', harness_id: null, reason: 'external state'})) throw new Error(name);
+  if (validate({environment: 'codespaces', harness_id: 'repository-test-suite', reason: 'mismatch'})) throw new Error(`${name} accepted external harness`);
+}
+NODE
+
+  [ "$status" -eq 0 ]
+}
+
+@test "final Gemini parse failure is retained only as a redacted bounded diagnostic" {
+  prepare_cascade_repo
+  diagnostics="$TEST_ROOT/gemini-diagnostics"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" FIX_PROVIDER_DIAGNOSTICS_DIR="$diagnostics" \
+    INVOCATIONS="$TEST_ROOT/gemini-invocations" bash -c '
+      list_advisory_providers() { printf "%s\n" gemini; }
+      invoke_advisory_llm() {
+        count=0
+        [[ -f "$INVOCATIONS" ]] && count="$(cat "$INVOCATIONS")"
+        printf "%s\n" "$((count + 1))" >"$INVOCATIONS"
+        printf "malformed\n" >"$2"
+      }
+      apply_gemini() {
+        printf "No JSON object found; token=gemini-secret-value\n" >"$FIX_PROVIDER_GEMINI_ERROR_FILE"
+        return 1
+      }
+      source "$1"
+      FIX_PROVIDER_BASELINE_VERIFY_COMMAND=true FIX_PROVIDER_VERIFY_COMMAND=true \
+        run_fix_provider_cascade retro-fix "$2" "$3" "$4" "$4" "$5" "$6" \
+          apply_gemini "$7" retro/fix-verify-test.json
+    ' _ "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
+    "$TEST_ROOT/prompt.md" "$TEST_ROOT/output.txt" "$CASCADE_REPO" "$TEST_ROOT" \
+    "$REPO_ROOT/scripts/workflows/lib" "$TEST_ROOT/batch.json"
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$TEST_ROOT/gemini-invocations")" -eq 2 ]
+  diagnostic="$diagnostics/attempt-01-gemini.json"
+  jq -e '.failed_stage == "Gemini application" and .exit_status == 1 and (.excerpt | contains("No JSON object found"))' "$diagnostic"
+  run grep -F 'gemini-secret-value' "$diagnostic"
+  [ "$status" -ne 0 ]
 }
 
 @test "fix prompts delegate execution to repository-owned controller harnesses" {

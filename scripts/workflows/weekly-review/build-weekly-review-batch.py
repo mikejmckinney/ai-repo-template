@@ -42,6 +42,11 @@ def _flatten(data: dict) -> list[dict]:
                 repro_steps=item.get("repro_steps") or [],
                 evidence=item.get("evidence") or [],
                 labels=item.get("labels") or [],
+                **(
+                    {"verification_capability": item["verification_capability"]}
+                    if "verification_capability" in item
+                    else {}
+                ),
             )
         )
     return findings

@@ -12,20 +12,21 @@ def _md_verify_table(findings: list[dict]) -> str:
     lines = [
         "## Fix verification",
         "",
-        "| dedupe_key | pre | post | notes |",
-        "|---|---|---|---|",
+        "| dedupe_key | disposition | harness | controller status | reasoning |",
+        "|---|---|---|---|---|",
     ]
     for row in findings:
         key = row.get("dedupe_key", "")
-        verify = row.get("verify") or {}
-        if not isinstance(verify, dict):
-            verify = {}
+        execution = row.get("controller_execution") or {}
+        if not isinstance(execution, dict):
+            execution = {}
         lines.append(
-            "| `{key}` | {pre} | {post} | {notes} |".format(
+            "| `{key}` | {disposition} | {harness} | {status} | {reasoning} |".format(
                 key=key,
-                pre=verify.get("pre", "pending"),
-                post=verify.get("post", "pending"),
-                notes=(verify.get("notes") or "").replace("|", "\\|").replace("\n", " "),
+                disposition=row.get("disposition", "pending"),
+                harness=execution.get("harness_id", "n/a"),
+                status=execution.get("status", "pending"),
+                reasoning=(row.get("implementation_reasoning") or "").replace("|", "\\|").replace("\n", " "),
             )
         )
     lines.append("")

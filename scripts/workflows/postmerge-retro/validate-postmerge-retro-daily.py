@@ -8,6 +8,11 @@ import re
 import sys
 from pathlib import Path
 
+LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(LIB_DIR))
+
+from verification_capability import validate_capability  # noqa: E402
+
 
 def _load_classifier():
     path = Path(__file__).resolve().parent / "classify-finding-priority.py"
@@ -179,6 +184,9 @@ def main() -> int:
                 for j, step in enumerate(steps):
                     if not isinstance(step, str) or not str(step).strip():
                         raise ValueError(f"findings[{i}].repro_steps[{j}] must be non-empty string")
+                capability = item.get("verification_capability")
+                if capability is not None:
+                    validate_capability(capability, f"findings[{i}].verification_capability")
             for arr_key in ("labels", "evidence"):
                 val = item.get(arr_key)
                 if val is None:

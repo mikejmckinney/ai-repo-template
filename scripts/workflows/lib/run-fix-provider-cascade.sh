@@ -10,7 +10,8 @@ run_fix_provider_cascade() {
   local batch_source batch_relative_path attempt_batch_json canonical_repo
   local baseline_status provider_status application_status registration_status
   local verification_status fix_verification_status outcome_evidence_status
-  local failed_stage validation_mode
+  local failed_stage failed_status validation_mode requested_model verification_record_status
+  local diagnostics_dir stage_log gemini_error retry_prompt attempt_index
   local -a provider_candidates=()
 
   mapfile -t provider_candidates < <(list_advisory_providers "$mode")
@@ -32,6 +33,8 @@ run_fix_provider_cascade() {
   fi
 
   attempt_root="$(mktemp -d)"
+  diagnostics_dir="${FIX_PROVIDER_DIAGNOSTICS_DIR:-$canonical_repo/.artifacts/fix-provider-diagnostics}"
+  attempt_index=0
   baseline_worktree="$attempt_root/baseline"
   if ! git -C "$repo_root" worktree add --detach "$baseline_worktree" HEAD >/dev/null; then
     rm -rf "$attempt_root"
@@ -52,15 +55,32 @@ run_fix_provider_cascade() {
   echo "Baseline verification status: $baseline_status" >&2
 
   for provider in "${provider_candidates[@]}"; do
+    attempt_index=$((attempt_index + 1))
     active_worktree="$attempt_root/worktree-${RANDOM}"
     attempt_output="$attempt_root/output-${RANDOM}.txt"
     patch_file="$attempt_root/attempt.patch"
+    stage_log="$attempt_root/stage-${attempt_index}.log"
+    gemini_error="$attempt_root/gemini-error-${attempt_index}.log"
+    retry_prompt="$attempt_root/gemini-retry-${attempt_index}.md"
     git -C "$repo_root" worktree add --detach "$active_worktree" HEAD >/dev/null
     attempt_batch_json="$active_worktree/$batch_relative_path"
     mkdir -p "$(dirname "$attempt_batch_json")"
     cp -- "$batch_source" "$attempt_batch_json"
+    mkdir -p "$active_worktree/$(dirname "$verify_relative_path")"
+    python3 "$lib_dir/manage-fix-verification.py" prepare \
+      "$attempt_batch_json" "$active_worktree/$verify_relative_path"
 
     failed_stage=""
+    failed_status=0
+    case "$provider" in
+      opencode)
+        requested_model="${OPENCODE_MODELS:-unknown}"
+        requested_model="${requested_model%%,*}"
+        ;;
+      cursor) requested_model="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${CURSOR_ADVISORY_MODEL:-cursor-grok-4.5-medium}}}" ;;
+      gemini) requested_model="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}}" ;;
+      *) requested_model=unknown ;;
+    esac
     provider_status=0
     (
       cd "$active_worktree"
@@ -70,19 +90,52 @@ run_fix_provider_cascade() {
         CURSOR_FIX_VERIFY_COMMAND=true \
         invoke_advisory_llm "$prompt_file" "$attempt_output" "$provider" \
         "$advisory_dir" "$active_worktree" "$workdir" "$lib_dir"
-    ) || provider_status=$?
+    ) >"$stage_log" 2>&1 || provider_status=$?
     if ((provider_status != 0)); then
       failed_stage="provider invocation"
+      failed_status=$provider_status
     fi
 
     if [[ -z "$failed_stage" && "$provider" == "gemini" ]]; then
       application_status=0
       (
         cd "$active_worktree"
-        "$gemini_apply_callback" "$attempt_output" "$active_worktree"
-      ) || application_status=$?
+        FIX_PROVIDER_GEMINI_ERROR_FILE="$gemini_error" \
+          "$gemini_apply_callback" "$attempt_output" "$active_worktree"
+      ) >"$stage_log" 2>&1 || application_status=$?
       if ((application_status != 0)); then
-        failed_stage="Gemini application"
+        git -C "$active_worktree" reset --hard HEAD >/dev/null
+        git -C "$active_worktree" clean -fdx >/dev/null
+        mkdir -p "$(dirname "$attempt_batch_json")" \
+          "$active_worktree/$(dirname "$verify_relative_path")"
+        cp -- "$batch_source" "$attempt_batch_json"
+        python3 "$lib_dir/manage-fix-verification.py" prepare \
+          "$attempt_batch_json" "$active_worktree/$verify_relative_path"
+        python3 "$lib_dir/build-gemini-retry-prompt.py" \
+          "$prompt_file" "$gemini_error" "$retry_prompt"
+        provider_status=0
+        (
+          cd "$active_worktree"
+          FIX_PROVIDER_BATCH_JSON="$attempt_batch_json" \
+            invoke_advisory_llm "$retry_prompt" "$attempt_output" "$provider" \
+            "$advisory_dir" "$active_worktree" "$workdir" "$lib_dir"
+        ) >"$stage_log" 2>&1 || provider_status=$?
+        if ((provider_status != 0)); then
+          failed_stage="Gemini retry invocation"
+          failed_status=$provider_status
+        else
+          application_status=0
+          (
+            cd "$active_worktree"
+            FIX_PROVIDER_GEMINI_ERROR_FILE="$gemini_error" \
+              "$gemini_apply_callback" "$attempt_output" "$active_worktree"
+          ) >"$stage_log" 2>&1 || application_status=$?
+          if ((application_status != 0)); then
+            failed_stage="Gemini application"
+            failed_status=$application_status
+            cp -- "$gemini_error" "$stage_log" 2>/dev/null || true
+          fi
+        fi
       fi
     fi
 
@@ -91,6 +144,7 @@ run_fix_provider_cascade() {
       git -C "$active_worktree" add -N -- . >/dev/null 2>&1 || registration_status=$?
       if ((registration_status != 0)); then
         failed_stage="candidate path registration"
+        failed_status=$registration_status
       fi
     fi
 
@@ -102,10 +156,11 @@ run_fix_provider_cascade() {
           -u OPENCODE_GITHUB_TOKEN -u OPENCODE_AUTH_CONTENT -u OPENAI_API_KEY \
           -u OPENROUTER_API_KEY -u CURSOR_API_KEY -u GEMINI_API_KEY -u GOOGLE_API_KEY \
           bash -c "$verify_command"
-      ) || verification_status=$?
+      ) >"$stage_log" 2>&1 || verification_status=$?
       echo "Candidate verification status for ${provider}: $verification_status" >&2
       if ((verification_status != 0)); then
         failed_stage="deterministic verification"
+        failed_status=$verification_status
       fi
     fi
 
@@ -118,12 +173,27 @@ run_fix_provider_cascade() {
         fi
       done < <(git -C "$active_worktree" diff HEAD --name-only)
 
+      verification_record_status=0
+      python3 "$lib_dir/manage-fix-verification.py" finalize \
+        "$batch_source" "$active_worktree/$verify_relative_path" \
+        --provider "$provider" --requested-model "$requested_model" \
+        --baseline-exit-code "$baseline_status" \
+        --candidate-exit-code "$verification_status" \
+        || verification_record_status=$?
+      if ((verification_record_status != 0)); then
+        failed_stage="fix verification"
+        failed_status=$verification_record_status
+      fi
+    fi
+
+    if [[ -z "$failed_stage" ]]; then
       fix_verification_status=0
       python3 "$lib_dir/validate-fix-verification.py" \
-        "$attempt_batch_json" "$active_worktree/$verify_relative_path" "$validation_mode" \
-        || fix_verification_status=$?
+        "$batch_source" "$active_worktree/$verify_relative_path" "$validation_mode" \
+        >"$stage_log" 2>&1 || fix_verification_status=$?
       if ((fix_verification_status != 0)); then
         failed_stage="fix verification"
+        failed_status=$fix_verification_status
       fi
     fi
 
@@ -131,9 +201,10 @@ run_fix_provider_cascade() {
       outcome_evidence_status=0
       python3 "$lib_dir/../../validate-outcome-evidence.py" \
         "$active_worktree/$verify_relative_path" --from-fix-verify \
-        || outcome_evidence_status=$?
+        >"$stage_log" 2>&1 || outcome_evidence_status=$?
       if ((outcome_evidence_status != 0)); then
         failed_stage="outcome evidence"
+        failed_status=$outcome_evidence_status
       fi
     fi
 
@@ -150,6 +221,12 @@ run_fix_provider_cascade() {
     fi
 
     echo "::warning::Discarding fix provider ${provider} after failed ${failed_stage}" >&2
+    python3 "$lib_dir/write_fix_attempt_diagnostic.py" \
+      --repo "$active_worktree" --output-dir "$diagnostics_dir" \
+      --attempt "$attempt_index" --provider "$provider" \
+      --requested-model "$requested_model" --failed-stage "$failed_stage" \
+      --exit-status "$failed_status" --stage-log "$stage_log" \
+      || echo "::warning::Could not retain failed-attempt diagnostics for ${provider}" >&2
     if ! git -C "$repo_root" worktree remove --force "$active_worktree" >/dev/null 2>&1; then
       echo "::warning::Could not remove fix worktree: $active_worktree" >&2
     fi

@@ -7,6 +7,11 @@ import json
 import sys
 from pathlib import Path
 
+LIB_DIR = Path(__file__).resolve().parents[1] / "lib"
+sys.path.insert(0, str(LIB_DIR))
+
+from verification_capability import validate_capability  # noqa: E402
+
 
 def _load_classifier():
     path = Path(__file__).resolve().parent / "classify-finding-priority.py"
@@ -56,6 +61,9 @@ def _validate_follow_up(item: dict, path: str, *, from_llm: bool) -> None:
     _require_str(item, "body", path)
     _require_str(item, "dedupe_key", path)
     _require_repro_steps(item, path)
+    capability = item.get("verification_capability")
+    if capability is not None:
+        validate_capability(capability, f"{path}.verification_capability")
     validate_triage_item(item, path, from_llm=from_llm)
     _require_str_array(item, "labels", path)
     _require_str_array(item, "evidence", path)

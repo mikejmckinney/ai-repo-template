@@ -530,8 +530,8 @@ NODE
   cat >"$tmp/batch.json" <<'EOF'
 {"findings":[
   {"priority_band":"defer"},
-  {"priority_band":"should-fix"},
-  {"priority_band":"fix-now"},
+  {"priority_band":"should-fix","verification_capability":{"environment":"isolated-worktree","harness_id":"repository-test-suite","reason":"Fixture harness."}},
+  {"priority_band":"fix-now","verification_capability":{"environment":"isolated-worktree","harness_id":"repository-test-suite","reason":"Fixture harness."}},
   {"priority_band":"fix-now","superseded_on_main":true}
 ]}
 EOF
@@ -556,7 +556,7 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fq 'FIXABLE_JSON=".artifacts/postmerge-retro/daily-${RUN_DATE}/daily-retro-fixable.json"' "$workflow"
   [ "$status" -eq 0 ]
-  run grep -Fq '.priority_band == "should-fix" or .priority_band == "fix-now"' "$workflow"
+  run grep -Fq 'route-fixable-findings.py' "$workflow"
   [ "$status" -eq 0 ]
   run grep -Fq 'run-postmerge-retro-fix.sh "$FIXABLE_JSON"' "$workflow"
   [ "$status" -eq 0 ]

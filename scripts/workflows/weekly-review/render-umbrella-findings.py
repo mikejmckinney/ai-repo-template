@@ -75,6 +75,9 @@ def render_finding(repo: str, sha: str, finding: dict) -> str:
     band = str(finding.get("priority_band") or "").strip()
     body = str(finding.get("body") or "").strip()
     evidence = finding.get("evidence") or []
+    capability = finding.get("verification_capability") or {}
+    capability_environment = str(capability.get("environment") or "missing")
+    harness_id = str(capability.get("harness_id") or "none")
 
     marker = f"<!-- weekly-review:finding:{key} -->"
     parts = [
@@ -86,6 +89,8 @@ def render_finding(repo: str, sha: str, finding: dict) -> str:
         f"**Triage:** impact `{impact}` / `{magnitude}` · trigger `{trigger}` · scope `{scope}` · reversibility `{reversibility}` · cost `{fix_cost}` · confidence `{confidence}` · guard `{guard}`",
         "",
         f"**Uncertainty:** {uncertainty}",
+        "",
+        f"**Verification capability:** environment `{capability_environment}` · harness `{harness_id}`",
         "",
     ]
     if body:
@@ -102,7 +107,10 @@ def render_finding(repo: str, sha: str, finding: dict) -> str:
             if isinstance(step, str) and step.strip()
         )
         parts.append("")
-    parts.append("**Suggested action:** Review in draft fix PR")
+    if capability_environment == "isolated-worktree" and harness_id == "repository-test-suite":
+        parts.append("**Suggested action:** Review in draft fix PR")
+    else:
+        parts.append("**Suggested action:** Retain for human follow-up; automated verification is unavailable")
     parts.append("")
     return "\n".join(parts)
 

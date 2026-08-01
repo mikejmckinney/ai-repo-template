@@ -25,7 +25,13 @@
       }
     },
     "findings": {
-      "type": "array"
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "verification_capability": { "$ref": "#/$defs/verificationCapability" }
+        }
+      }
     },
     "umbrella_issue": {
       "type": "integer",
@@ -59,6 +65,25 @@
     }
   },
   "$defs": {
+    "verificationCapability": {
+      "type": "object",
+      "required": ["environment", "harness_id", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "enum": ["isolated-worktree", "codespaces", "external-state", "unsupported-runtime"]
+        },
+        "harness_id": { "type": ["string", "null"] },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "environment": { "const": "isolated-worktree" } } },
+          "then": { "properties": { "harness_id": { "const": "repository-test-suite" } } },
+          "else": { "properties": { "harness_id": { "type": "null" } } }
+        }
+      ]
+    },
     "routingContext": {
       "type": "object",
       "required": [

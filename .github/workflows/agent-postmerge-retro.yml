@@ -290,10 +290,8 @@ jobs:
           DAILY_JSON=".artifacts/postmerge-retro/daily-${RUN_DATE}/daily-retro.json"
           [[ -f "$DAILY_JSON" ]] || { echo "::error::Missing $DAILY_JSON"; exit 1; }
           FIXABLE_JSON=".artifacts/postmerge-retro/daily-${RUN_DATE}/daily-retro-fixable.json"
-          jq '.findings |= map(select(
-            .superseded_on_main != true and
-            (.priority_band == "should-fix" or .priority_band == "fix-now")
-          ))' "$DAILY_JSON" >"$FIXABLE_JSON"
+          python3 scripts/workflows/lib/route-fixable-findings.py \
+            "$DAILY_JSON" "$FIXABLE_JSON"
           if [[ -z "${UMBRELLA_ISSUE_NUM:-}" ]]; then
             UMBRELLA_ISSUE_NUM="$(jq -r '.umbrella_issue // empty' "$DAILY_JSON" 2>/dev/null || true)"
             if [[ -z "$UMBRELLA_ISSUE_NUM" && -f "$(dirname "$DAILY_JSON")/umbrella-issue.txt" ]]; then
@@ -316,3 +314,12 @@ jobs:
             url="$(gh pr view "$num" --json url --jq .url)"
             echo "fix_pr_url=${url}" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Upload failed fix-attempt diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postmerge-fix-diagnostics-${{ steps.meta.outputs.run_date }}-attempt-${{ github.run_attempt }}
+          path: .artifacts/fix-provider-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 14

@@ -32,7 +32,7 @@ prepare_cascade_gate_fixture() {
   git -C "$CASCADE_REPO" add result.txt
   git -C "$CASCADE_REPO" commit -qm base
   printf 'fix this\n' >"$TEST_ROOT/gate-prompt.md"
-  printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"}]}' \
+  printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a","verification_capability":{"environment":"isolated-worktree","harness_id":"repository-test-suite","reason":"Fixture harness."}}]}' \
     >"$TEST_ROOT/gate-batch.json"
 
   cat >"$TEST_ROOT/baseline-verify.sh" <<'EOF'
@@ -405,7 +405,7 @@ EOF
   printf 'fix this' >"$TEST_ROOT/cascade-prompt.md"
   mkdir -p "$repo/.artifacts/postmerge-retro/daily-test"
   cat >"$repo/.artifacts/postmerge-retro/daily-test/daily-retro.json" <<'EOF'
-{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"},{"category":"follow_up_issues","dedupe_key":"key-b"}]}
+{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a","verification_capability":{"environment":"isolated-worktree","harness_id":"repository-test-suite","reason":"Fixture harness."}},{"category":"follow_up_issues","dedupe_key":"key-b","verification_capability":{"environment":"isolated-worktree","harness_id":"repository-test-suite","reason":"Fixture harness."}}]}
 EOF
   cat >"$TEST_ROOT/cascade-verify.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -463,7 +463,7 @@ JSON
   git -C "$repo" add result.txt
   git -C "$repo" commit -qm base
   printf 'fix this' >"$TEST_ROOT/noop-prompt.md"
-  printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"}]}' \
+  printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a","verification_capability":{"environment":"isolated-worktree","harness_id":"repository-test-suite","reason":"Fixture harness."}}]}' \
     >"$TEST_ROOT/noop-batch.json"
 
   run bash -c '
@@ -494,7 +494,7 @@ JSON
   git -C "$repo" add result.txt
   git -C "$repo" commit -qm base
   printf 'fix this' >"$TEST_ROOT/invalid-verify-prompt.md"
-  printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"}]}' \
+  printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a","verification_capability":{"environment":"isolated-worktree","harness_id":"repository-test-suite","reason":"Fixture harness."}}]}' \
     >"$TEST_ROOT/invalid-verify-batch.json"
 
   for verify_case in missing malformed pending incomplete all-cant-reproduce; do
@@ -544,7 +544,7 @@ JSON
   run_cascade_gate_case gemini_application
 
   [ "$status" -ne 0 ]
-  [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ngemini-apply' ]
+  [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ngemini-apply\nprovider\ngemini-apply' ]
   [ "$(cat "$CASCADE_REPO/result.txt")" = base ]
 }
 

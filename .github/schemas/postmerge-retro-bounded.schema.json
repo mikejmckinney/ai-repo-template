@@ -83,6 +83,7 @@
           "minItems": 1,
           "items": { "type": "string", "minLength": 1 }
         },
+        "verification_capability": { "$ref": "#/$defs/verificationCapability" },
         "dedupe_key": { "type": "string", "minLength": 1 },
         "triage_version": { "$ref": "#/$defs/triageFields/properties/triage_version" },
         "impact": { "$ref": "#/$defs/triageFields/properties/impact" },
@@ -101,6 +102,25 @@
           { "required": ["priority_band"] }
         ]
       }
+    },
+    "verificationCapability": {
+      "type": "object",
+      "required": ["environment", "harness_id", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "enum": ["isolated-worktree", "codespaces", "external-state", "unsupported-runtime"]
+        },
+        "harness_id": { "type": ["string", "null"] },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "environment": { "const": "isolated-worktree" } } },
+          "then": { "properties": { "harness_id": { "const": "repository-test-suite" } } },
+          "else": { "properties": { "harness_id": { "type": "null" } } }
+        }
+      ]
     }
   }
 }
