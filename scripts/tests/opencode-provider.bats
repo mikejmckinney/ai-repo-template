@@ -108,6 +108,16 @@ valid_opencode_auth() {
   [ "$output" = cursor ]
 }
 
+@test "pre-merge auto routing fails clearly when no candidate is available" {
+  init_advisory_provider_credentials
+
+  run --separate-stderr pick_advisory_provider advisory
+
+  [ "$status" -eq 1 ]
+  [ -z "$output" ]
+  [[ "$stderr" == *"no advisory review provider configured"* ]]
+}
+
 @test "auto routing falls back to Cursor when OpenCode credentials are unavailable" {
   CURSOR_API_KEY=cursor-test
   init_advisory_provider_credentials
@@ -214,7 +224,10 @@ cat >/dev/null
     result: "free-form text is not the advisory contract",
     structured_output: {findings: []},
     session_id: "claude-session",
-    modelUsage: {"claude-opus-5": {inputTokens: 1, outputTokens: 1}}
+    modelUsage: {
+      "claude-haiku-4-5-20251001": {inputTokens: 1, outputTokens: 1},
+      "claude-opus-5": {inputTokens: 1, outputTokens: 1}
+    }
   }'
 EOF
   chmod +x "$tmp/claude"

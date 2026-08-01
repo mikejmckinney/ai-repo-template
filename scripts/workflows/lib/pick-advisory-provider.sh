@@ -181,8 +181,12 @@ pick_advisory_provider() {
       if [[ "$mode" == "advisory" ]]; then
         local candidate
         candidate="$(list_advisory_providers advisory | head -1)"
-        [[ -n "$candidate" ]] && advisory_candidate_provider "$candidate"
-        return 0
+        if [[ -z "$candidate" ]]; then
+          echo "::error::no advisory review provider configured" >&2
+          return 1
+        fi
+        advisory_candidate_provider "$candidate"
+        return
       fi
       if [[ "$has_opencode" -eq 1 ]]; then
         echo opencode

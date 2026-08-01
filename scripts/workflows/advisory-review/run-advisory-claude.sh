@@ -44,14 +44,13 @@ if ! jq -e '.is_error != true and (.structured_output | type == "object")' \
   exit 1
 fi
 
-observed_model="$(jq -r '
-  (.modelUsage // {}) | keys | sort |
-  if length > 0 then join(",") else empty end
-' "$response_file")"
-[[ -n "$observed_model" ]] || {
-  echo "::error::Claude advisory omitted observed model usage" >&2
+if ! jq -e --arg model "$requested_model" '
+  (.modelUsage | type == "object") and (.modelUsage | has($model))
+' "$response_file" >/dev/null; then
+  echo "::error::Claude advisory omitted observed model usage for ${requested_model}" >&2
   exit 1
-}
+fi
+observed_model="$requested_model"
 
 jq -c .structured_output "$response_file" >"$output_file"
 if [[ -n "${ADVISORY_PROVIDER_METADATA_FILE:-}" ]]; then
