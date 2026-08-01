@@ -42,8 +42,12 @@ start_suite() {
   setsid bash -c '
     started=$SECONDS
     cd "$1" || exit 2
-    timeout --foreground --signal=TERM --kill-after=5 "${2}s" bash -c "$4"
+    timeout --signal=TERM --kill-after=5 "${2}s" bash -c "$4" &
+    timeout_pid=$!
+    trap "kill -TERM -- -$timeout_pid 2>/dev/null || true" TERM INT
+    wait "$timeout_pid"
     status=$?
+    trap - TERM INT
     printf "%s\n" "$((SECONDS - started))" >"$3"
     exit "$status"
   ' verify-local-suite "$repo_root" "$timeout_seconds" "$elapsed_file" \
