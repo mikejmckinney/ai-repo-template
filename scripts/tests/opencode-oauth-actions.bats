@@ -38,6 +38,9 @@ prepare_cascade_gate_fixture() {
   cat >"$TEST_ROOT/baseline-verify.sh" <<'EOF'
 #!/usr/bin/env bash
 printf 'baseline\n' >>"$STAGE_LOG"
+if [[ "$GATE_CASE" == baseline_failure ]]; then
+  exit 1
+fi
 EOF
   cat >"$TEST_ROOT/candidate-verify.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -231,7 +234,8 @@ PY
   for profile in base review fix; do
     run jq -e '
       .enabled_providers == ["openai", "openrouter"] and
-      .small_model == "openrouter/moonshotai/kimi-k3@preset/consensus"
+      .small_model == "openrouter/moonshotai/kimi-k3@preset/consensus" and
+      (if input_filename | endswith("/fix.json") then .permission.bash == "deny" else true end)
     ' "$REPO_ROOT/.github/agent-runtime/${profile}.json"
     [ "$status" -eq 0 ]
   done
@@ -572,10 +576,12 @@ JSON
 @test "fix provider cascade records baseline and candidate verification separately" {
   prepare_cascade_gate_fixture
 
-  run_cascade_gate_case success
+  run_cascade_gate_case baseline_failure
 
   [ "$status" -eq 0 ]
   [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ncandidate\nfix-verification\noutcome-evidence' ]
+  [[ "$output" == *"Baseline verification status: 1"* ]]
+  [[ "$output" == *"Candidate verification status for opencode: 0"* ]]
   [ "$(cat "$CASCADE_REPO/result.txt")" = changed ]
 }
 

@@ -181,7 +181,11 @@ updates one dated umbrella issue, and may open a draft fix PR. It is not a
 pre-merge gate. Fix attempts fail closed unless every actionable finding has
 complete verification and either substantive changes or complete
 `cant_reproduce` evidence. Verification-only output opens no PR, and a published
-PR must have a confirmed native GitHub link to its umbrella issue.
+PR must have a confirmed native GitHub link to its umbrella issue. The shared
+controller records a credential-free baseline separately, registers
+candidate-created paths before running the same deterministic check, and advances
+only when provider invocation, optional Gemini application, candidate
+verification, fix verification, and outcome evidence each return success.
 All non-superseded findings remain in the umbrella record, but only `should-fix`
 and `fix-now` findings enter the automated fix pass; a defer-only batch opens no
 fix PR.
