@@ -250,6 +250,17 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "Claude advisory schema requires every normalized triage field" {
+  schema="$REPO_ROOT/.github/schemas/advisory-review.schema.json"
+
+  run jq -e '
+    .properties.findings.items.required
+    | index("regression_guard") != null
+  ' "$schema"
+
+  [ "$status" -eq 0 ]
+}
+
 @test "advisory provider commands honor the candidate timeout" {
   run env ADVISORY_CANDIDATE_TIMEOUT_SECONDS=1 CLAUDE_CODE_OAUTH_TOKEN=claude-test \
     bash -c '

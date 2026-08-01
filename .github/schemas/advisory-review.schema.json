@@ -75,7 +75,8 @@
           "reversibility",
           "fix_cost",
           "confidence",
-          "uncertainty"
+          "uncertainty",
+          "regression_guard"
         ]
       }
     }
