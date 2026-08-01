@@ -21,6 +21,11 @@ REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner
 python3 "$SCRIPT_DIR/validate-postmerge-retro-daily.py" "$DAILY_JSON"
 RUN_DATE="$(jq -r .run_date "$DAILY_JSON")"
 python3 "$SCRIPT_DIR/mark-superseded-findings.py" "$DAILY_JSON" --repo-root "$REPO_ROOT"
+WORKDIR="$(mktemp -d)"
+trap 'rm -rf "$WORKDIR"' EXIT
+ROUTED_JSON="$WORKDIR/daily-retro-routed.json"
+python3 "$LIB_DIR/route-fixable-findings.py" "$DAILY_JSON" "$ROUTED_JSON"
+DAILY_JSON="$ROUTED_JSON"
 VERIFY_JSON="$REPO_ROOT/retro/fix-verify-${RUN_DATE}.json"
 SANDBOX_BRANCH="test/fix-retro-${RUN_DATE}"
 FINDINGS_COUNT="$(python3 "$SCRIPT_DIR/count-daily-retro-findings.py" "$DAILY_JSON")"
@@ -38,9 +43,6 @@ if [[ -z "${POSTMERGE_RETRO_FIX_REEXEC:-}" ]]; then
   cp "$SCRIPT_DIR/run-postmerge-retro-fix.sh" "$FIX_REEXEC_DIR/fix-runner.sh"
   exec bash "$FIX_REEXEC_DIR/fix-runner.sh" "$@"
 fi
-
-WORKDIR="$(mktemp -d)"
-trap 'rm -rf "$WORKDIR"' EXIT
 
 # shellcheck source=../lib/fix-phase-log.sh
 source "$LIB_DIR/fix-phase-log.sh"
@@ -111,9 +113,12 @@ llm_raw="$WORKDIR/llm-fix-output.txt"
 apply_daily_gemini_fix() {
   local raw_output="$1" attempt_repo="$2"
   local fix_json="$WORKDIR/fix.json" dated_json="$WORKDIR/fix-with-date.json"
-  python3 "$SCRIPT_DIR/extract-retro-fix-json.py" "$raw_output" "$fix_json" \
-    && jq --arg rd "$RUN_DATE" '. + {run_date: $rd}' "$fix_json" >"$dated_json" \
-    && python3 "$SCRIPT_DIR/apply-retro-fix-json.py" "$dated_json" "$attempt_repo"
+  local error_file="${FIX_PROVIDER_GEMINI_ERROR_FILE:-/dev/null}"
+  {
+    python3 "$SCRIPT_DIR/extract-retro-fix-json.py" "$raw_output" "$fix_json" \
+      && jq --arg rd "$RUN_DATE" '. + {run_date: $rd}' "$fix_json" >"$dated_json" \
+      && python3 "$SCRIPT_DIR/apply-retro-fix-json.py" "$dated_json" "$attempt_repo"
+  } 2>"$error_file"
 }
 
 run_fix_provider_cascade retro-fix "$prompt_file" "$llm_raw" "$REPO_ROOT" \

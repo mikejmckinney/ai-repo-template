@@ -24,6 +24,11 @@ RUN_WEEK="$(jq -r .run_week "$WEEKLY_JSON")"
 RUN_DATE="$(jq -r .run_date "$WEEKLY_JSON")"
 python3 "$RETRO_DIR/mark-superseded-findings.py" \
   "$WEEKLY_JSON" --repo-root "$REPO_ROOT" --mode weekly
+WORKDIR="$(mktemp -d)"
+trap 'rm -rf "$WORKDIR"' EXIT
+ROUTED_JSON="$WORKDIR/weekly-review-routed.json"
+python3 "$LIB_DIR/route-fixable-findings.py" "$WEEKLY_JSON" "$ROUTED_JSON"
+WEEKLY_JSON="$ROUTED_JSON"
 VERIFY_JSON="$REPO_ROOT/weekly/fix-verify-${RUN_WEEK}.json"
 SANDBOX_BRANCH="test/fix-weekly-${RUN_WEEK}"
 FINDINGS_COUNT="$(python3 "$SCRIPT_DIR/count-weekly-findings.py" "$WEEKLY_JSON")"
@@ -41,9 +46,6 @@ if [[ -z "${WEEKLY_REVIEW_FIX_REEXEC:-}" ]]; then
   cp "$SCRIPT_DIR/run-weekly-review-fix.sh" "$FIX_REEXEC_DIR/fix-runner.sh"
   exec bash "$FIX_REEXEC_DIR/fix-runner.sh" "$@"
 fi
-
-WORKDIR="$(mktemp -d)"
-trap 'rm -rf "$WORKDIR"' EXIT
 
 # shellcheck source=../lib/fix-phase-log.sh
 source "$LIB_DIR/fix-phase-log.sh"
@@ -106,10 +108,13 @@ llm_raw="$WORKDIR/llm-fix-output.txt"
 apply_weekly_gemini_fix() {
   local raw_output="$1" attempt_repo="$2"
   local fix_json="$WORKDIR/fix.json" dated_json="$WORKDIR/fix-with-week.json"
-  python3 "$RETRO_DIR/extract-retro-fix-json.py" "$raw_output" "$fix_json" \
-    && jq --arg rw "$RUN_WEEK" --arg rd "$RUN_DATE" \
-      '. + {run_week: $rw, run_date: $rd}' "$fix_json" >"$dated_json" \
-    && python3 "$RETRO_DIR/apply-retro-fix-json.py" "$dated_json" "$attempt_repo"
+  local error_file="${FIX_PROVIDER_GEMINI_ERROR_FILE:-/dev/null}"
+  {
+    python3 "$RETRO_DIR/extract-retro-fix-json.py" "$raw_output" "$fix_json" \
+      && jq --arg rw "$RUN_WEEK" --arg rd "$RUN_DATE" \
+        '. + {run_week: $rw, run_date: $rd}' "$fix_json" >"$dated_json" \
+      && python3 "$RETRO_DIR/apply-retro-fix-json.py" "$dated_json" "$attempt_repo"
+  } 2>"$error_file"
 }
 
 run_fix_provider_cascade weekly-fix "$prompt_file" "$llm_raw" "$REPO_ROOT" \

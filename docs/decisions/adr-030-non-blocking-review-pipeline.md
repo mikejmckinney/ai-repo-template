@@ -204,6 +204,24 @@ recorded separately from candidate verification, and intent-to-add registration
 makes candidate-created files visible to tracked-file-derived fixtures before
 the candidate command runs. OpenCode retains edit access with Bash denied.
 
+### Amendment 2026-08-01 — Capability routing and controller evidence authority
+
+Daily and weekly findings now propose a typed verification environment and
+repository-owned harness identifier. Only `isolated-worktree` with the
+allowlisted `repository-test-suite` harness can enter automated implementation;
+missing, invalid, Codespaces, external-state, and unsupported-runtime proposals
+remain in umbrella output as human follow-ups. Free-form `repro_steps` are never
+executed.
+
+Fix providers supply implementation reasoning, harness proposals, and
+dispositions but cannot certify execution. The controller reconstructs finding
+identities from its canonical batch, replaces execution fields with immutable
+baseline/candidate exit codes, and creates outcome evidence. Failed attempts
+retain bounded redacted metadata, not raw responses or full patches, and both
+fix workflows upload those diagnostics even when the fix step fails. Gemini gets
+one bounded schema-correction retry before the attempt is discarded. OpenCode's
+Bash denial and provider credential isolation remain unchanged.
+
 ### Amendment 2026-07-23 — Shared AP11 classifier across review surfaces
 
 All new advisory, daily, and weekly model findings emit the normalized

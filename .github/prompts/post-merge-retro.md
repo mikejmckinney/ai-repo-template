@@ -22,6 +22,11 @@ gaps. Do not emit a finding from an excerpt when its full source is addressable.
 - Review the **merged PR only** — do not propose changes to the working tree.
 - Compare merged-PR evidence against **Current main (HEAD) state for PR-touched paths** (automation-supplied). **Do not emit a finding** when the problem is already resolved on `main` HEAD.
 - **`repro_steps` required** on every `follow_up_issues` row — concrete steps to reproduce the bug before a fix. If you cannot define reproduction steps, do not emit the finding.
+- Propose one typed `verification_capability`. Use `isolated-worktree` with
+  `repository-test-suite` only when the repository-owned `./test.sh` harness can
+  verify the finding. Otherwise choose `codespaces`, `external-state`, or
+  `unsupported-runtime` with `harness_id: null`; those findings remain visible
+  but are not sent to an automated fix provider.
 - **Do not** suggest broad rewrites unless evidence shows a recurring failure pattern.
 - Output **valid JSON only** — no preamble, no markdown fences, no commentary after the JSON.
 
@@ -58,6 +63,11 @@ Align with [`AGENTS.md`](../../AGENTS.md) §"Opportunity feedback" and [ADR-027]
       "body": "markdown body",
       "evidence": ["string"],
       "repro_steps": ["step 1 to reproduce", "step 2 observe failure"],
+      "verification_capability": {
+        "environment": "isolated-worktree|codespaces|external-state|unsupported-runtime",
+        "harness_id": "repository-test-suite or null",
+        "reason": "why this environment and harness can verify the finding"
+      },
       "dedupe_key": "stable-short-key"
     }
   ]
