@@ -180,6 +180,8 @@ assert_stopped() {
 
   wait_for_file "$TEST_ROOT/bats.pid"
   wait_for_file "$TEST_ROOT/repository.pid"
+  wait_for_file "$TEST_ROOT/bats.grandchild.pid"
+  wait_for_file "$TEST_ROOT/repository.grandchild.pid"
   kill -TERM "$runner_pid"
   runner_status=0
   wait "$runner_pid" || runner_status=$?
