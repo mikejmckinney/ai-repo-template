@@ -91,7 +91,8 @@ invoke_engine() {
       ;;
     sol)
       if run_with_timeout "$TIMEOUT_SECONDS" opencode run --title "${title}-sol" \
-        --model "$SOL_MODEL" <"$prompt_file" >"$output_file" 2>"$error_file" \
+        --model "$SOL_MODEL" --variant medium \
+        <"$prompt_file" >"$output_file" 2>"$error_file" \
         && [[ -s "$output_file" ]]; then
         ENGINE_SESSION=$(session_id_for_title "${title}-sol")
         return 0
@@ -99,7 +100,7 @@ invoke_engine() {
       ;;
     opus)
       if run_with_timeout "$TIMEOUT_SECONDS" claude -p --model opus \
-        --output-format json --dangerously-skip-permissions \
+        --effort medium --output-format json --dangerously-skip-permissions \
         <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
         jq -r '.result // empty' "${output_file}.json" >"$output_file"
         ENGINE_SESSION=$(jq -r '.session_id // empty' "${output_file}.json")
@@ -153,15 +154,21 @@ invoke_engine_session() {
   ENGINE_SESSION="$session_id"
 
   case "$engine" in
-    kimi | sol | glm | mm | mi | ds)
+    kimi | glm | mm | mi | ds)
       run_with_timeout "$TIMEOUT_SECONDS" opencode run \
         --session "$session_id" --continue \
         <"$prompt_file" >"$output_file" 2>"$error_file" \
         && [[ -s "$output_file" ]]
       ;;
+    sol)
+      run_with_timeout "$TIMEOUT_SECONDS" opencode run \
+        --session "$session_id" --continue --variant medium \
+        <"$prompt_file" >"$output_file" 2>"$error_file" \
+        && [[ -s "$output_file" ]]
+      ;;
     opus)
       if run_with_timeout "$TIMEOUT_SECONDS" claude -p --model opus \
-        --output-format json --dangerously-skip-permissions -r "$session_id" \
+        --effort medium --output-format json --dangerously-skip-permissions -r "$session_id" \
         <"$prompt_file" >"${output_file}.json" 2>"$error_file"; then
         jq -r '.result // empty' "${output_file}.json" >"$output_file"
         jq -e '.is_error != true and ((.result // "") | length > 0)' \

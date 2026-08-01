@@ -24,6 +24,7 @@ scripts/install-codespace-tools.sh --profile core --verify-only
 scripts/codespace-post-create.sh
 scripts/codespace-post-start.sh
 scripts/cleanup-codespace-caches.sh
+scripts/sync-claude-oauth-secret.sh --repo OWNER/REPO
 scripts/sync-opencode-oauth-secret.sh
 scripts/create-derived-repo.sh --repo OWNER/PROJECT
 .agents/skills/repo-onboarding/scripts/create-design-contract.sh --repo "$PWD"
@@ -323,6 +324,15 @@ otherwise start with Kimi. The stored `refresh` value is the inert
 `ci-refresh-disabled` placeholder, so hosted runners never refresh or write back
 personal OAuth credentials. Workflows install the pinned OpenCode runtime from
 `.github/agent-runtime/package-lock.json` on GitHub-managed `ubuntu-latest`.
+The label-gated pre-merge advisory separately attempts Claude Opus 5 Medium,
+Sol 5.6 Medium, Cursor Grok 4.5 Medium, then Kimi K3. Generate a one-year
+subscription token with `claude setup-token`, then preview
+`scripts/sync-claude-oauth-secret.sh --repo OWNER/REPO` and pass `--apply` to
+write `CLAUDE_OAUTH_SECRET`. The script reads `CLAUDE_CODE_OAUTH_TOKEN` or uses
+a hidden terminal prompt and never prints the token. The workflow maps that
+secret back to `CLAUDE_CODE_OAUTH_TOKEN` only for provider execution and runs
+pinned Claude Code `2.1.220` without built-in tools. Explicit `opencode` and the
+daily/weekly provider cascades retain their existing behavior.
 Skill-refresh readiness uses a separate `SKILL_REFRESH_PR_TOKEN`, restricted to
 the target repository with `Contents: read` and `Pull requests: write`. Provision
 it manually after repository creation; the derived-repository bootstrap does not

@@ -26,6 +26,23 @@ invoke_advisory_llm() {
   export ADVISORY_PROVIDER_USED="$provider"
 
   case "$provider" in
+    claude)
+      run_with_provider_credentials claude \
+        bash "$advisory_dir/run-advisory-claude.sh" "$prompt_file" "$out_file"
+      ;;
+    opencode-sol)
+      export ADVISORY_PROVIDER_USED=opencode
+      run_with_provider_credentials opencode env \
+        OPENCODE_MODELS="${OPENCODE_SOL_MODEL:-openai/gpt-5.6-sol}" \
+        OPENCODE_VARIANT=medium \
+        node "$lib_dir/run-opencode.mjs" "$prompt_file" "$out_file" "${OPENCODE_OUTPUT_SCHEMA:-}"
+      ;;
+    opencode-kimi)
+      export ADVISORY_PROVIDER_USED=opencode
+      run_with_provider_credentials opencode env \
+        OPENCODE_MODELS="${OPENCODE_KIMI_MODEL:-openrouter/moonshotai/kimi-k3@preset/consensus}" \
+        node "$lib_dir/run-opencode.mjs" "$prompt_file" "$out_file" "${OPENCODE_OUTPUT_SCHEMA:-}"
+      ;;
     opencode)
       if [[ "${OPENCODE_FIX_MODE:-false}" == "true" ]]; then
         run_with_provider_credentials opencode \

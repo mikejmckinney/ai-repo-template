@@ -5,11 +5,12 @@
 # Does NOT submit formal PR reviews, mutate PR state, or push commits.
 #
 # Providers (ADVISORY_REVIEW_PROVIDER repo variable, default auto):
-#   - opencode    — OpenCode Sol/Kimi + read-only GitHub MCP (preferred)
+#   - claude      — Claude Code Opus 5 Medium (CLAUDE_OAUTH_SECRET)
+#   - opencode    — explicit OpenCode Sol/Kimi + read-only GitHub MCP
 #   - cursor      — Cursor SDK (CURSOR_API_KEY)
 #   - antigravity — Gemini Interactions / Antigravity (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
 #   - gemini      — Gemini generateContent API (GEMINI_API_KEY or GOOGLE_API_KEY)
-#   - auto        — opencode, cursor, antigravity (when enabled), then gemini
+#   - auto        — Claude Opus 5 Medium, Sol 5.6 Medium, Grok 4.5 Medium, Kimi K3
 #
 # Scripts: scripts/workflows/advisory-review/ (AP8 — not .github/scripts/).
 
@@ -68,6 +69,8 @@ jobs:
     steps:
       - name: Verify required secrets
         env:
+          HAS_CLAUDE_OAUTH: ${{ secrets.CLAUDE_OAUTH_SECRET != '' }}
+          HAS_OPENCODE_AUTH: ${{ secrets.OPENCODE_OPENAI_AUTH != '' }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
@@ -76,11 +79,17 @@ jobs:
           PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
           ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
         run: |
-          has_opencode=0 has_cursor=0 has_gemini=0
-          if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "$OPENROUTER_API_KEY" ]]; then has_opencode=1; fi
+          has_claude=0 has_opencode=0 has_sol=0 has_kimi=0 has_cursor=0 has_gemini=0
+          [[ "$HAS_CLAUDE_OAUTH" == "true" ]] && has_claude=1
+          if [[ -n "$OPENCODE_GITHUB_TOKEN" && "$HAS_OPENCODE_AUTH" == "true" ]]; then has_sol=1; fi
+          if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "$OPENROUTER_API_KEY" ]]; then has_kimi=1; fi
+          has_opencode="$has_kimi"
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
           case "$PROVIDER" in
+            claude)
+              [[ "$has_claude" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=claude requires CLAUDE_OAUTH_SECRET"; exit 1; }
+              ;;
             opencode)
               [[ "$has_opencode" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=opencode requires OPENROUTER_API_KEY plus OPENCODE_GITHUB_TOKEN"; exit 1; }
               ;;
@@ -95,8 +104,8 @@ jobs:
               [[ "$has_gemini" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
               ;;
             auto)
-              [[ "$has_opencode" -eq 1 || "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
-                echo "::error::Advisory review needs OpenCode, Cursor, or Gemini credentials."
+              [[ "$has_claude" -eq 1 || "$has_sol" -eq 1 || "$has_cursor" -eq 1 || "$has_kimi" -eq 1 ]] || {
+                echo "::error::Advisory review needs Claude, Sol, Grok, or Kimi credentials."
                 echo "::error::Add at least one: Settings → Secrets and variables → Actions."
                 exit 1
               }
@@ -129,6 +138,8 @@ jobs:
       - name: Install agent runtime
         run: |
           npm ci --prefix .github/agent-runtime
+          npm install --global @anthropic-ai/claude-code@2.1.220
+          claude --version
           echo "$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/.bin" >> "$GITHUB_PATH"
           echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
           echo "CURSOR_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js" >> "$GITHUB_ENV"
@@ -137,6 +148,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_OAUTH_SECRET }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}

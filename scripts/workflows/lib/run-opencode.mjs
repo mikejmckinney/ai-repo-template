@@ -192,6 +192,7 @@ for (const requestedModel of models) {
         await opencode.client.session.prompt({
           sessionID,
           model: modelRef(requestedModel),
+          variant: process.env.OPENCODE_VARIANT || undefined,
           parts: [{ type: "text", text }],
         }),
       )

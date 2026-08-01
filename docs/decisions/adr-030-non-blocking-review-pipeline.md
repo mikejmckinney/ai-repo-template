@@ -28,7 +28,10 @@ We adopt a **three-stage non-blocking review pipeline** on `main`:
 
 Shared properties:
 
-- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (OpenCode first, then Cursor and the retained Antigravity/Gemini adapters).
+- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` default
+  `auto` remains OpenCode first, then Cursor and retained Antigravity/Gemini
+  adapters. `ADVISORY_REVIEW_PROVIDER=auto` uses the separately amended
+  pre-merge model cascade below.
 - **Scripts:** `scripts/workflows/advisory-review/` (LLM runners), `scripts/workflows/pr-feedback/` (finalize collect), `scripts/workflows/postmerge-retro/` (retro + daily batch), `scripts/workflows/weekly-review/` (weekly full-repo scan + fix).
 - **Lifecycle libraries:** advisory, daily, and weekly adapters share the versioned AP11 observation validator and priority derivation in `scripts/workflows/lib/finding_priority.py`; daily and weekly also share provider dispatch, umbrella issue transport/reference handling, superseded-path detection, and batch-fix publication. Cadence-specific prompts, templates, markers, authority, and metadata hooks remain explicit.
 - **Non-goals:** No auto-merge of fix PRs; no automatic `claude-fix`; no ADR/context-pack file edits in retro jobs; no formal PR review submission from advisory/finalize.
@@ -233,6 +236,27 @@ adapter renders the sticky Markdown comment and keeps every band non-blocking.
 Formal/manual review uses the same classifier but applies its own authority only
 after classification. Unversioned persisted daily/weekly records remain version
 1 and retain their original decision table during reconstruction.
+
+### Amendment 2026-08-01 — Model-specific pre-merge advisory cascade
+
+[Issue #556](https://github.com/mikejmckinney/ai-repo-template/issues/556)
+separates the label-gated pre-merge model order from the unchanged daily and
+weekly provider cascade.
+
+- Pre-merge `ADVISORY_REVIEW_PROVIDER=auto` attempts available candidates in
+  this order: Claude Code `claude-opus-5` at medium effort, OpenCode
+  `openai/gpt-5.6-sol` at medium effort, Cursor `cursor-grok-4.5-medium`, then
+  OpenCode `openrouter/moonshotai/kimi-k3@preset/consensus`.
+- Explicit `ADVISORY_REVIEW_PROVIDER=opencode` retains its Sol-then-Kimi
+  internal fallback. Daily and weekly `auto` retain OpenCode, Cursor, and
+  cadence-specific Antigravity/Gemini behavior.
+- Claude Code is pinned to `2.1.220` and runs with built-in tools disabled.
+  A maintainer-generated `claude setup-token` value is stored as
+  `CLAUDE_OAUTH_SECRET`, mapped to `CLAUDE_CODE_OAUTH_TOKEN` only for provider
+  execution, and isolated from publisher and other provider credentials.
+- Model-specific candidate names are internal routing details. Snapshot memory
+  continues to record stable observed providers so Sol and Kimi remain
+  compatible with `opencode` incremental-review history.
 
 ## Implementation
 

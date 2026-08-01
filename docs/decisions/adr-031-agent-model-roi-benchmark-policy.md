@@ -103,7 +103,7 @@ For **implementation-shaped** work (Classes A/B), Phase A marginal ROI and canon
 | **Use with care** | Copilot **Auto** (routed model varies), Codex default | Useful rows exist; verify routed model and partial-run caveats |
 | **Escalation / gates** | High-tier models per ADR-019 (Opus-class, GPT-5.4 xhigh on Copilot parent for reasoning-heavy parent sessions) | Not default for routine implementation; use for plan-gate, diff-gate, architecture, hard review resolution |
 
-Advisory/retro **CI defaults** are governed by [ADR-030](./adr-030-non-blocking-review-pipeline.md) and workflow vars. Its 2026-07-21 amendment makes eligible access-only Sol and OpenRouter Kimi K3 the first runtime, followed by Cursor Grok 4.5 Medium and retained rollback providers. GPT-5.6 Sol also remains the first multi-model Judge/Advisor model. This ADR informs those choices but does not replace per-workflow environment documentation.
+Advisory/retro **CI defaults** are governed by [ADR-030](./adr-030-non-blocking-review-pipeline.md) and workflow vars. Its 2026-08-01 amendment gives pre-merge advisory a Claude Opus 5 Medium, Sol 5.6 Medium, Cursor Grok 4.5 Medium, then Kimi K3 cascade while preserving the 2026-07-21 OpenCode-first daily/weekly behavior. GPT-5.6 Sol remains the first multi-model Judge/Advisor model, now with medium effort. This ADR informs those choices but does not replace per-workflow environment documentation.
 
 #### 2c. Context loading (Stage 1C / 1E)
 

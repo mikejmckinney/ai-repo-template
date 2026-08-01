@@ -11,6 +11,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   RUN_SCRIPT="${ADVISORY_DIR}/run-advisory-review.sh"
   GEMINI_SCRIPT="${ADVISORY_DIR}/run-advisory-gemini.py"
   CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
+  CLAUDE_SCRIPT="${ADVISORY_DIR}/run-advisory-claude.sh"
   ANTIGRAVITY_SCRIPT="${ADVISORY_DIR}/run-advisory-antigravity.py"
   NORMALIZE_SCRIPT="${ADVISORY_DIR}/normalize-advisory-snapshot.py"
   RANGE_SCRIPT="${ADVISORY_DIR}/select-advisory-range.py"
@@ -22,7 +23,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   MARKER='ai-advisory-review:v1'
 
   for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
-    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$ANTIGRAVITY_SCRIPT" "$NORMALIZE_SCRIPT" \
+    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$ANTIGRAVITY_SCRIPT" "$NORMALIZE_SCRIPT" \
     "$RANGE_SCRIPT" "$OPENCODE_RUNNER" \
     "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG"; do
     if [[ -f "$f" ]]; then
@@ -95,11 +96,22 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$OPENCODE_RUNNER" 2>/dev/null \
     && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CLAUDE_SCRIPT" 2>/dev/null \
     && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$GEMINI_SCRIPT" 2>/dev/null \
     && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$ANTIGRAVITY_SCRIPT" 2>/dev/null; then
     pass "every advisory provider records automation-owned model metadata"
   else
     fail "one or more advisory providers omit model metadata"
+  fi
+
+  if grep -q '@anthropic-ai/claude-code@2.1.220' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q -- '--model "$requested_model"' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--effort medium' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--tools ""' "$CLAUDE_SCRIPT" 2>/dev/null; then
+    pass "pre-merge advisory pins tool-free Claude Opus 5 Medium with scoped OAuth"
+  else
+    fail "pre-merge advisory missing pinned Claude Code, scoped OAuth, model, effort, or tool denial"
   fi
 
   if ! grep -q 'Session handshake' "$ADVISORY_PROMPT" 2>/dev/null; then

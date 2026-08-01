@@ -6,30 +6,51 @@
 #   PROVIDER="$(pick_advisory_provider MODE)"
 #
 # MODE:
-#   advisory      — opencode / cursor / antigravity / gemini (ADVISORY_REVIEW_PROVIDER)
+#   advisory      — Claude / model-specific OpenCode / Cursor cascade
 #   retro         — post-merge retro scan (POSTMERGE_RETRO_PROVIDER cascade)
 #   retro-fix     — fix pass (no antigravity)
 #   weekly-scan   — weekly scan (WEEKLY_REVIEW_PROVIDER cascade)
 #   weekly-fix    — weekly fix (no antigravity)
 
 init_advisory_provider_credentials() {
+  has_claude=0
   has_opencode=0
+  has_opencode_sol=0
+  has_opencode_kimi=0
   has_cursor=0
   has_gemini=0
+  local claude_bin="${CLAUDE_BIN:-claude}"
   local opencode_bin="${OPENCODE_BIN:-opencode}"
   local lib_dir
   lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   # shellcheck source=opencode-oauth.sh
   source "$lib_dir/opencode-oauth.sh"
   configure_opencode_oauth
-  if command -v "$opencode_bin" >/dev/null 2>&1 \
-    && [[ -n "${OPENROUTER_API_KEY:-}" ]] \
-    && [[ -n "${OPENCODE_GITHUB_TOKEN:-}" ]]; then
-    has_opencode=1
+  if command -v "$claude_bin" >/dev/null 2>&1 \
+    && [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]; then
+    has_claude=1
   fi
+  if command -v "$opencode_bin" >/dev/null 2>&1 \
+    && [[ -n "${OPENCODE_GITHUB_TOKEN:-}" ]]; then
+    [[ "${OPENCODE_SOL_AVAILABLE:-false}" == "true" ]] && has_opencode_sol=1
+    [[ -n "${OPENROUTER_API_KEY:-}" ]] && has_opencode_kimi=1
+  fi
+  # Preserve the existing explicit/shared OpenCode contract, which includes Kimi fallback.
+  has_opencode="$has_opencode_kimi"
   [[ -n "${CURSOR_API_KEY:-}" ]] && has_cursor=1
   [[ -n "${GEMINI_API_KEY:-}" || -n "${GOOGLE_API_KEY:-}" ]] && has_gemini=1
   return 0
+}
+
+advisory_candidate_provider() {
+  case "$1" in
+    opencode-sol | opencode-kimi) printf '%s\n' opencode ;;
+    claude | opencode | cursor | antigravity | gemini) printf '%s\n' "$1" ;;
+    *)
+      echo "::error::unknown advisory candidate '$1'" >&2
+      return 1
+      ;;
+  esac
 }
 
 list_advisory_providers() {
@@ -60,15 +81,27 @@ list_advisory_providers() {
     echo "::notice::Antigravity is scan-only; ${mode} uses the automatic provider cascade." >&2
     want=auto
   fi
+  if [[ "$want" == "claude" && "$mode" != "advisory" ]]; then
+    echo "::notice::Claude is pre-merge advisory-only; ${mode} uses the automatic provider cascade." >&2
+    want=auto
+  fi
 
   if [[ "$want" != "auto" ]]; then
     case "$want" in
-      opencode | cursor | gemini) printf '%s\n' "$want" ;;
+      claude | opencode | cursor | gemini) printf '%s\n' "$want" ;;
       *)
         echo "::error::unsupported provider '${want}' for ${mode}" >&2
         return 1
         ;;
     esac
+    return 0
+  fi
+
+  if [[ "$mode" == "advisory" ]]; then
+    [[ "$has_claude" -eq 1 ]] && printf '%s\n' claude
+    [[ "$has_opencode_sol" -eq 1 ]] && printf '%s\n' opencode-sol
+    [[ "$has_cursor" -eq 1 ]] && printf '%s\n' cursor
+    [[ "$has_opencode_kimi" -eq 1 ]] && printf '%s\n' opencode-kimi
     return 0
   fi
 
@@ -119,7 +152,15 @@ pick_advisory_provider() {
       ;;
   esac
 
+  if [[ "$want" == "claude" && "$mode" != "advisory" ]]; then
+    echo "::notice::ADVISORY_REVIEW_PROVIDER=claude is advisory-only; ${mode} uses auto (opencode, else cursor, else gemini)." >&2
+    want=auto
+  fi
+
   case "$want" in
+    claude)
+      echo claude
+      ;;
     opencode)
       echo opencode
       ;;
@@ -137,6 +178,12 @@ pick_advisory_provider() {
       echo gemini
       ;;
     auto)
+      if [[ "$mode" == "advisory" ]]; then
+        local candidate
+        candidate="$(list_advisory_providers advisory | head -1)"
+        [[ -n "$candidate" ]] && advisory_candidate_provider "$candidate"
+        return 0
+      fi
       if [[ "$has_opencode" -eq 1 ]]; then
         echo opencode
       elif [[ "$has_cursor" -eq 1 ]]; then
@@ -151,7 +198,7 @@ pick_advisory_provider() {
       fi
       ;;
     *)
-      echo "::error::unsupported provider '${want}' for ${mode} (use auto, opencode, cursor, antigravity, or gemini)" >&2
+      echo "::error::unsupported provider '${want}' for ${mode} (use auto, claude, opencode, cursor, antigravity, or gemini)" >&2
       return 1
       ;;
   esac

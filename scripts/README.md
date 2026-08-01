@@ -18,6 +18,7 @@
 | `suno-mcp.sh` | Launch pinned third-party Ace Data Cloud Suno MCP | Called by generated MCP configuration |
 | `check-markdown-links.py` | Validate repository-local Markdown targets | `python3 scripts/check-markdown-links.py <files...>` |
 | `cleanup-codespace-caches.sh` | Report or clean reproducible Codespaces caches | `./scripts/cleanup-codespace-caches.sh [--apply]` |
+| `sync-claude-oauth-secret.sh` | Preview or sync Claude Code subscription OAuth to Actions | `./scripts/sync-claude-oauth-secret.sh [--apply] [--repo OWNER/REPO]` |
 | `sync-opencode-oauth-secret.sh` | Preview or sync access-only OpenCode OAuth to Actions | `./scripts/sync-opencode-oauth-secret.sh [--apply]` |
 | `create-derived-repo.sh` | Preview or create a derived repo and sync allowlisted credentials | `./scripts/create-derived-repo.sh --repo OWNER/PROJECT [--apply]` |
 | `diagnose-opencode-session.sh` | Record OpenCode process exit and signal evidence | `./scripts/diagnose-opencode-session.sh` |
@@ -82,6 +83,18 @@ repository and expiration metadata. Expired access is rejected before upload.
 In Codespaces, `codespace-post-start.sh` attempts this update automatically after
 PAT setup only for a repository verified as private and treats skipped or failed
 sync as non-fatal; stale credentials automatically omit Sol in Actions.
+
+Generate and synchronize the separate Claude Code subscription token manually:
+
+```bash
+claude setup-token
+CLAUDE_CODE_OAUTH_TOKEN='<token>' ./scripts/sync-claude-oauth-secret.sh --repo OWNER/REPO
+```
+
+The first command prints but does not save the token. The synchronization script
+is dry-run by default and uses a hidden prompt when the environment variable is
+unset in a terminal. Pass `--apply` to update `CLAUDE_OAUTH_SECRET`; neither mode
+prints the token.
 
 ## Creating New Scripts
 

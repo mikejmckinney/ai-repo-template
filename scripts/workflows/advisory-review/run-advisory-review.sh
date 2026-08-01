@@ -86,14 +86,14 @@ source "${ADVISORY_PROVIDER_LIB:-$LIB_DIR/pick-advisory-provider.sh}"
 # shellcheck disable=SC1090,SC1091
 source "${ADVISORY_INVOKE_LIB:-$LIB_DIR/invoke-advisory-llm.sh}"
 # shellcheck disable=SC2034 # Provider routing initializes and reads these globals.
-has_opencode=0 has_cursor=0 has_gemini=0
+has_claude=0 has_opencode=0 has_opencode_sol=0 has_opencode_kimi=0 has_cursor=0 has_gemini=0
 init_advisory_provider_credentials
 mapfile -t provider_candidates < <(list_advisory_providers advisory)
 if [[ ${#provider_candidates[@]} -eq 0 ]]; then
-  echo "::error::No advisory review provider configured. Configure OpenCode, Cursor, or Gemini credentials."
+  echo "::error::No advisory review provider configured. Configure Claude, Sol, Grok, or Kimi credentials."
   exit 1
 fi
-expected_provider="${provider_candidates[0]}"
+expected_provider="$(advisory_candidate_provider "${provider_candidates[0]}")"
 
 range_args=(
   --repo "$REPO_ROOT"
@@ -228,12 +228,12 @@ for provider in "${provider_candidates[@]}"; do
   if ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
     ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
     invoke_advisory_llm "$prompt_file" "$raw_out_file" "$provider" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"; then
-    PROVIDER="${ADVISORY_PROVIDER_USED:-$provider}"
     if ! jq -e '.provider | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1 \
       || ! jq -e '.model | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1; then
       echo "::warning::Advisory provider ${provider} omitted provider/model metadata; trying next available provider" >&2
       continue
     fi
+    PROVIDER="$(jq -r .provider "$provider_metadata_file")"
     if ! python3 "$SCRIPT_DIR/normalize-advisory-snapshot.py" \
       --input "$raw_out_file" \
       --output "$out_file" \

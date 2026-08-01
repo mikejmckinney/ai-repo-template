@@ -83,7 +83,7 @@ valid_opencode_auth() {
   [ "$output" = claude ]
 }
 
-@test "auto routing prefers OpenCode when Cursor and OpenCode are available" {
+@test "pre-merge auto routing prefers Grok over Kimi when Sol is unavailable" {
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -93,7 +93,7 @@ valid_opencode_auth() {
   run pick_advisory_provider advisory
 
   [ "$status" -eq 0 ]
-  [ "$output" = opencode ]
+  [ "$output" = cursor ]
 }
 
 @test "OpenAI API credentials alone do not enable OpenCode in public CI" {
@@ -129,6 +129,21 @@ valid_opencode_auth() {
 
   [ "$status" -eq 0 ]
   [ "$output" = $'opencode\ncursor\ngemini' ]
+}
+
+@test "Claude advisory override does not change daily provider routing" {
+  ADVISORY_REVIEW_PROVIDER=claude
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  CURSOR_API_KEY=cursor-test
+  GEMINI_API_KEY=gemini-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers retro
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Claude is pre-merge advisory-only"* ]]
+  [[ "$output" == *$'opencode\ncursor\ngemini' ]]
 }
 
 @test "Cursor SDK resolves Grok Medium without fast mode" {
@@ -204,6 +219,7 @@ EOF
   chmod +x "$tmp/claude"
 
   run env PATH="$tmp:$PATH" CLAUDE_ARGS_FILE="$tmp/args" \
+    CLAUDE_CODE_OAUTH_TOKEN=claude-test \
     ADVISORY_PROVIDER_METADATA_FILE="$tmp/metadata.json" \
     "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-claude.sh" \
     "$tmp/prompt.md" "$tmp/output.txt"
@@ -216,6 +232,43 @@ EOF
   [ "$(jq -r '.provider + "/" + .model' "$tmp/metadata.json")" = "claude/claude-opus-5" ]
   [ "$(jq -r .requested_model "$tmp/metadata.json")" = claude-opus-5 ]
   rm -rf "$tmp"
+}
+
+@test "Claude runner rejects output without observed model usage" {
+  tmp="$(mktemp -d)"
+  printf 'review this' >"$tmp/prompt.md"
+  cat >"$tmp/claude" <<'EOF'
+#!/usr/bin/env bash
+cat >/dev/null
+jq -cn '{is_error: false, result: "claude-ok", session_id: "claude-session"}'
+EOF
+  chmod +x "$tmp/claude"
+
+  run env PATH="$tmp:$PATH" CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    ADVISORY_PROVIDER_METADATA_FILE="$tmp/metadata.json" \
+    "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-claude.sh" \
+    "$tmp/prompt.md" "$tmp/output.txt"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"omitted observed model usage"* ]]
+  [ ! -e "$tmp/metadata.json" ]
+  rm -rf "$tmp"
+}
+
+@test "model-specific OpenCode dispatch pins one model per attempt" {
+  run bash -c '
+    source "$1"
+    run_with_provider_credentials() { printf "%s\n" "$*"; }
+    invoke_advisory_llm prompt output opencode-sol advisory repo workdir lib
+    invoke_advisory_llm prompt output opencode-kimi advisory repo workdir lib
+  ' _ "$REPO_ROOT/scripts/workflows/lib/invoke-advisory-llm.sh"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OPENCODE_MODELS=openai/gpt-5.6-sol"* ]]
+  [[ "$output" == *"OPENCODE_VARIANT=medium"* ]]
+  [ "$(grep -c 'OPENCODE_VARIANT=medium' <<<"$output")" -eq 1 ]
+  [[ "$output" == *"OPENCODE_MODELS=openrouter/moonshotai/kimi-k3@preset/consensus"* ]]
+  [[ "$output" != *"OPENCODE_MODELS=openai/gpt-5.6-sol,openrouter/"* ]]
 }
 
 @test "hosted workflows export both locked SDK modules" {

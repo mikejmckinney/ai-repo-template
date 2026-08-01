@@ -4,8 +4,8 @@ The deterministic fallback order is:
 
 | Priority | Role | Provider and model |
 |---|---|---|
-| 1 | Judge/Advisor | OpenAI `openai/gpt-5.6-sol` |
-| 2 | Judge/Advisor | Claude CLI `opus` |
+| 1 | Judge/Advisor | OpenAI `openai/gpt-5.6-sol`, medium effort |
+| 2 | Judge/Advisor | Claude CLI `opus`, medium effort |
 | 3 | Judge/Advisor | Cursor CLI `cursor-grok-4.5-medium` |
 | 4 | Judge/Advisor | OpenRouter `openrouter/z-ai/glm-5.2@preset/default` |
 
@@ -14,14 +14,14 @@ Fusion primary panels use:
 | Panel | Provider and model |
 |---|---|
 | Kimi | OpenRouter `openrouter/moonshotai/kimi-k3@preset/consensus` |
-| Opus | Claude CLI `opus` |
+| Opus | Claude CLI `opus`, medium effort |
 | Grok | Cursor CLI `cursor-grok-4.5-medium` |
 
 Failed primary slots are backfilled without duplication in this order:
 
 | Priority | Provider and model |
 |---|---|
-| 1 | `openai/gpt-5.6-sol` |
+| 1 | `openai/gpt-5.6-sol`, medium effort |
 | 2 | `openrouter/z-ai/glm-5.2@preset/default` |
 | 3 | `openrouter/minimax/minimax-m3@preset/default` |
 | 4 | `openrouter/xiaomi/mimo-v2.5-pro@preset/default` |
