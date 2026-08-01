@@ -19,7 +19,7 @@ run_with_provider_credentials() {
       echo "::error::ADVISORY_CANDIDATE_TIMEOUT_SECONDS must be a positive integer" >&2
       return 2
     fi
-    "$credential_runner" "$provider" timeout --foreground --kill-after=10s \
+    "$credential_runner" "$provider" timeout --kill-after=10s \
       "${ADVISORY_CANDIDATE_TIMEOUT_SECONDS}s" "$@"
     return
   fi

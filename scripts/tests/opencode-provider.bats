@@ -260,6 +260,42 @@ EOF
   [ "$status" -eq 124 ]
 }
 
+@test "advisory candidate timeout terminates descendant processes" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/candidate.sh" <<'EOF'
+#!/usr/bin/env bash
+bash -c 'trap '\''touch "$DESCENDANT_TERM_MARKER"; exit 0'\'' TERM; while :; do sleep 1; done' \
+  </dev/null >/dev/null 2>&1 &
+echo "$!" >"$DESCENDANT_PID_FILE"
+wait
+EOF
+  chmod +x "$tmp/candidate.sh"
+
+  run env ADVISORY_CANDIDATE_TIMEOUT_SECONDS=1 CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    DESCENDANT_TERM_MARKER="$tmp/terminated" DESCENDANT_PID_FILE="$tmp/pid" \
+    bash -c '
+      source "$1"
+      run_with_provider_credentials claude "$2"
+    ' _ "$REPO_ROOT/scripts/workflows/lib/invoke-advisory-llm.sh" "$tmp/candidate.sh"
+
+  run_status="$status"
+  for _ in {1..20}; do
+    [ -e "$tmp/terminated" ] && break
+    sleep 0.1
+  done
+  terminated=0
+  [ -e "$tmp/terminated" ] && terminated=1
+  if [ -s "$tmp/pid" ]; then
+    descendant_pid="$(cat "$tmp/pid")"
+    pkill -TERM -P "$descendant_pid" 2>/dev/null || true
+    kill "$descendant_pid" 2>/dev/null || true
+  fi
+  rm -rf "$tmp"
+
+  [ "$run_status" -eq 124 ]
+  [ "$terminated" -eq 1 ]
+}
+
 @test "Claude runner rejects output without observed model usage" {
   tmp="$(mktemp -d)"
   printf 'review this' >"$tmp/prompt.md"
