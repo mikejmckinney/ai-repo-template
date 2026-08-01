@@ -87,9 +87,10 @@ wait_for_file() {
 }
 
 assert_stopped() {
-  local pid
+  local pid state
   pid="$(<"$1")"
-  ! kill -0 "$pid" 2>/dev/null
+  state="$(ps -o stat= -p "$pid" 2>/dev/null || true)"
+  [[ -z "$state" || "$state" == Z* ]]
 }
 
 @test "complete local verification starts both suites before either completes" {
