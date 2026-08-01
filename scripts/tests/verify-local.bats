@@ -28,7 +28,9 @@ if [[ -n "${PEER_STARTED:-}" ]]; then
 fi
 
 if [[ "${SUITE_MODE:-complete}" == "hang" ]]; then
-  while :; do sleep 1; done
+  sleep 30 &
+  printf '%s\n' "$!" >"$GRANDCHILD_PID_FILE"
+  wait "$!"
 fi
 
 sleep "${SUITE_DELAY:-0}"
@@ -46,6 +48,10 @@ EOF
 }
 
 teardown() {
+  for pid_file in "$TEST_ROOT"/*.grandchild.pid; do
+    [[ -f "$pid_file" ]] || continue
+    kill "$(<"$pid_file")" 2>/dev/null || true
+  done
   rm -rf "$TEST_ROOT"
 }
 
@@ -53,10 +59,11 @@ suite_command() {
   local name="$1" exit_code="$2" diagnostic="$3" mode="${4:-complete}"
   local peer="${5:-}"
 
-  printf 'env SUITE_NAME=%q SUITE_EXIT=%q SUITE_DIAGNOSTIC=%q SUITE_MODE=%q STARTED_FILE=%q PEER_STARTED=%q PID_FILE=%q TERM_FILE=%q bash %q' \
+  printf 'env SUITE_NAME=%q SUITE_EXIT=%q SUITE_DIAGNOSTIC=%q SUITE_MODE=%q STARTED_FILE=%q PEER_STARTED=%q PID_FILE=%q TERM_FILE=%q GRANDCHILD_PID_FILE=%q bash %q' \
     "$name" "$exit_code" "$diagnostic" "$mode" \
     "$TEST_ROOT/$name.started" "$peer" "$TEST_ROOT/$name.pid" \
-    "$TEST_ROOT/$name.term" "$TEST_ROOT/suite.sh"
+    "$TEST_ROOT/$name.term" "$TEST_ROOT/$name.grandchild.pid" \
+    "$TEST_ROOT/suite.sh"
 }
 
 run_runner() {
@@ -154,6 +161,7 @@ assert_stopped() {
   [[ "$output" == *"repository: passed=1 warnings=0 failed=0 exit=0"* ]]
   [ -f "$TEST_ROOT/bats.term" ]
   assert_stopped "$TEST_ROOT/bats.pid"
+  assert_stopped "$TEST_ROOT/bats.grandchild.pid"
 }
 
 @test "interrupting complete local verification terminates both suites" {
@@ -181,5 +189,7 @@ assert_stopped() {
   [ -f "$TEST_ROOT/repository.term" ]
   assert_stopped "$TEST_ROOT/bats.pid"
   assert_stopped "$TEST_ROOT/repository.pid"
+  assert_stopped "$TEST_ROOT/bats.grandchild.pid"
+  assert_stopped "$TEST_ROOT/repository.grandchild.pid"
   grep -Fq "Failure logs: $LOG_DIR" "$output_file"
 }
