@@ -176,6 +176,31 @@ JSON
     "$diagnostics/attempt-01-opencode.json"
 }
 
+@test "workflow edits created during verification are rejected before promotion" {
+  prepare_cascade_repo
+  diagnostics="$TEST_ROOT/verification-workflow-diagnostics"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" FIX_PROVIDER_DIAGNOSTICS_DIR="$diagnostics" \
+    bash -c '
+      list_advisory_providers() { printf "%s\n" opencode; }
+      invoke_advisory_llm() { printf "candidate\n" >result.txt; }
+      apply_noop() { return 0; }
+      source "$1"
+      FIX_PROVIDER_BASELINE_VERIFY_COMMAND=true \
+        FIX_PROVIDER_VERIFY_COMMAND="mkdir -p .github/workflows && printf unsafe >.github/workflows/unsafe.yml" \
+        run_fix_provider_cascade retro-fix "$2" "$3" "$4" "$4" "$5" "$6" \
+          apply_noop "$7" retro/fix-verify-test.json
+    ' _ "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
+    "$TEST_ROOT/prompt.md" "$TEST_ROOT/output.txt" "$CASCADE_REPO" "$TEST_ROOT" \
+    "$REPO_ROOT/scripts/workflows/lib" "$TEST_ROOT/batch.json"
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = base ]
+  [ ! -e "$CASCADE_REPO/.github/workflows/unsafe.yml" ]
+  jq -e '.failed_stage == "prohibited workflow change"' \
+    "$diagnostics/attempt-01-opencode.json"
+}
+
 @test "failed attempts retain bounded redacted controller diagnostics" {
   prepare_cascade_repo
   diagnostics="$TEST_ROOT/diagnostics"

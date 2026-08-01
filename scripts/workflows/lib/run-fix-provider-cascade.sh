@@ -170,6 +170,12 @@ run_fix_provider_cascade() {
       fi
     fi
 
+    if [[ -z "$failed_stage" ]] \
+      && [[ -n "$(git -C "$active_worktree" status --porcelain -- .github/workflows/)" ]]; then
+      failed_stage="prohibited workflow change"
+      failed_status=1
+    fi
+
     if [[ -z "$failed_stage" ]]; then
       validation_mode=--no-substantive-diff
       while IFS= read -r changed_path; do
