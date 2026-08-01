@@ -5,11 +5,82 @@ bats_require_minimum_version 1.5.0
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   source "$REPO_ROOT/scripts/workflows/lib/pick-advisory-provider.sh"
-  unset CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
+  unset CLAUDE_CODE_OAUTH_TOKEN CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
   unset OPENCODE_AUTH_CONTENT OPENCODE_OAUTH_MIN_TTL_SECONDS OPENCODE_MODELS
   unset ADVISORY_REVIEW_PROVIDER POSTMERGE_RETRO_PROVIDER WEEKLY_REVIEW_PROVIDER
   OPENCODE_BIN=/bin/true
+  CLAUDE_BIN=/bin/true
   antigravity_enabled=false
+}
+
+valid_opencode_auth() {
+  jq -cn --argjson expires "$((($(date +%s) + 7200) * 1000))" '{
+    openai: {
+      type: "oauth",
+      access: "access-test",
+      refresh: "ci-refresh-disabled",
+      expires: $expires,
+      accountId: "account-test"
+    }
+  }'
+}
+
+@test "pre-merge auto routing exposes the exact model-specific cascade" {
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
+  OPENCODE_AUTH_CONTENT="$(valid_opencode_auth)"
+  OPENCODE_OAUTH_MIN_TTL_SECONDS=3600
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  CURSOR_API_KEY=cursor-test
+  GEMINI_API_KEY=gemini-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers advisory
+
+  [ "$status" -eq 0 ]
+  [ "$output" = $'claude\nopencode-sol\ncursor\nopencode-kimi' ]
+}
+
+@test "pre-merge auto routing omits only unavailable model candidates" {
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  CURSOR_API_KEY=cursor-test
+  GEMINI_API_KEY=gemini-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers advisory
+
+  [ "$status" -eq 0 ]
+  [ "$output" = $'cursor\nopencode-kimi' ]
+}
+
+@test "explicit OpenCode preserves its internal Sol then Kimi cascade" {
+  ADVISORY_REVIEW_PROVIDER=opencode
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  OPENCODE_AUTH_CONTENT="$(valid_opencode_auth)"
+  OPENCODE_OAUTH_MIN_TTL_SECONDS=3600
+  init_advisory_provider_credentials
+
+  run list_advisory_providers advisory
+
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
+  [ "$OPENCODE_MODELS" = "openai/gpt-5.6-sol,openrouter/moonshotai/kimi-k3@preset/consensus" ]
+}
+
+@test "model-specific candidates map to stable provider provenance" {
+  run advisory_candidate_provider opencode-sol
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
+
+  run advisory_candidate_provider opencode-kimi
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
+
+  run advisory_candidate_provider claude
+  [ "$status" -eq 0 ]
+  [ "$output" = claude ]
 }
 
 @test "auto routing prefers OpenCode when Cursor and OpenCode are available" {
@@ -113,6 +184,37 @@ EOF
 
   [ "$status" -eq 0 ]
   [ "$(cat "$tmp/output.txt")" = cursor-ok ]
+  rm -rf "$tmp"
+}
+
+@test "Claude runner pins Opus 5 medium and records the observed model" {
+  tmp="$(mktemp -d)"
+  printf 'review this' >"$tmp/prompt.md"
+  cat >"$tmp/claude" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >"$CLAUDE_ARGS_FILE"
+cat >/dev/null
+jq -cn '{
+  is_error: false,
+  result: "claude-ok",
+  session_id: "claude-session",
+  modelUsage: {"claude-opus-5": {inputTokens: 1, outputTokens: 1}}
+}'
+EOF
+  chmod +x "$tmp/claude"
+
+  run env PATH="$tmp:$PATH" CLAUDE_ARGS_FILE="$tmp/args" \
+    ADVISORY_PROVIDER_METADATA_FILE="$tmp/metadata.json" \
+    "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-claude.sh" \
+    "$tmp/prompt.md" "$tmp/output.txt"
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$tmp/output.txt")" = claude-ok ]
+  grep -q -- '--model claude-opus-5' "$tmp/args"
+  grep -q -- '--effort medium' "$tmp/args"
+  grep -q -- '--output-format json' "$tmp/args"
+  [ "$(jq -r '.provider + "/" + .model' "$tmp/metadata.json")" = "claude/claude-opus-5" ]
+  [ "$(jq -r .requested_model "$tmp/metadata.json")" = claude-opus-5 ]
   rm -rf "$tmp"
 }
 

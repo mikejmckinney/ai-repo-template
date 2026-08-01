@@ -163,6 +163,47 @@ EOF
   [[ "$output" != *"refresh-secret-value"* ]]
 }
 
+@test "Claude OAuth sync dry-run reports metadata without exposing the token" {
+  run env CLAUDE_CODE_OAUTH_TOKEN=claude-oauth-secret \
+    "$REPO_ROOT/scripts/sync-claude-oauth-secret.sh" --repo owner/repo
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CLAUDE_OAUTH_SECRET"* ]]
+  [[ "$output" != *"claude-oauth-secret"* ]]
+  [[ "$output" == *"Dry-run only"* ]]
+}
+
+@test "Claude OAuth sync apply uploads the token through stdin" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >"$GH_ARGS_FILE"
+cat >"$GH_STDIN_FILE"
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" \
+    CLAUDE_CODE_OAUTH_TOKEN=claude-oauth-secret \
+    GH_ARGS_FILE="$TEST_ROOT/gh-args" GH_STDIN_FILE="$TEST_ROOT/gh-stdin" \
+    "$REPO_ROOT/scripts/sync-claude-oauth-secret.sh" \
+    --apply --repo owner/repo
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/gh-args")" = "secret set CLAUDE_OAUTH_SECRET --repo owner/repo" ]
+  [ "$(cat "$TEST_ROOT/gh-stdin")" = claude-oauth-secret ]
+  [[ "$output" != *"claude-oauth-secret"* ]]
+}
+
+@test "Claude OAuth sync fails closed without an environment token or terminal" {
+  run env -u CLAUDE_CODE_OAUTH_TOKEN \
+    "$REPO_ROOT/scripts/sync-claude-oauth-secret.sh" --repo owner/repo </dev/null
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Run claude setup-token"* ]]
+  [[ "$output" == *"CLAUDE_CODE_OAUTH_TOKEN"* ]]
+}
+
 @test "OAuth preflight enables Sol before Kimi when lifetime is sufficient" {
   run env \
     OPENCODE_AUTH_CONTENT="$(jq '.openai.refresh = "ci-refresh-disabled"' "$AUTH_FILE")" \
@@ -235,6 +276,16 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "premerge workflow scopes Claude OAuth and pins the hosted CLI" {
+  advisory="$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
+
+  [ "$(grep -c 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$advisory")" -eq 1 ]
+  grep -q '@anthropic-ai/claude-code@2.1.220' "$advisory"
+  grep -q 'CLAUDE_OAUTH_SECRET' "$advisory"
+  grep -q 'has_claude' "$advisory"
+  grep -q 'Claude, Sol, Grok, or Kimi credentials' "$advisory"
+}
+
 @test "generated OpenCode CI profiles allow OAuth and use Kimi as small model" {
   for profile in base review fix; do
     run jq -e '
@@ -248,6 +299,7 @@ PY
 
 @test "repository includes OAuth and provider isolation helpers" {
   for path in \
+    scripts/sync-claude-oauth-secret.sh \
     scripts/sync-opencode-oauth-secret.sh \
     scripts/workflows/lib/opencode-oauth.sh \
     scripts/workflows/lib/run-cursor-fix.sh \
@@ -353,6 +405,10 @@ EOF
 set -euo pipefail
 provider="$1"
 case "$provider" in
+  claude)
+    [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+    [[ -z "${ANTHROPIC_API_KEY:-}${ANTHROPIC_AUTH_TOKEN:-}${CURSOR_API_KEY:-}${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
+    ;;
   opencode)
     [[ -n "${OPENROUTER_API_KEY:-}" && -n "${OPENCODE_GITHUB_TOKEN:-}" && -n "${OPENCODE_AUTH_CONTENT:-}" ]]
     [[ -z "${CURSOR_API_KEY:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
@@ -369,9 +425,11 @@ esac
 EOF
   chmod +x "$TEST_ROOT/assert-provider-env.sh"
 
-  for provider in opencode cursor gemini; do
+  for provider in claude opencode cursor gemini; do
     run env \
       GITHUB_TOKEN=publisher-test GH_TOKEN=publisher-test SANDBOX_BOOTSTRAP_TOKEN=sandbox-test \
+      CLAUDE_CODE_OAUTH_TOKEN=claude-test ANTHROPIC_API_KEY=anthropic-key-test \
+      ANTHROPIC_AUTH_TOKEN=anthropic-auth-test \
       OPENROUTER_API_KEY=openrouter-test OPENCODE_GITHUB_TOKEN=opencode-github-test \
       OPENCODE_AUTH_CONTENT=opencode-auth-test CURSOR_API_KEY=cursor-test \
       GEMINI_API_KEY=gemini-test GOOGLE_API_KEY=google-test \
