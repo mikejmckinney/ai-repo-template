@@ -171,10 +171,8 @@ assert_stopped() {
   wait_for_file "$TEST_ROOT/bats.pid"
   wait_for_file "$TEST_ROOT/repository.pid"
   kill -TERM "$runner_pid"
-  set +e
-  wait "$runner_pid"
-  runner_status=$?
-  set -e
+  runner_status=0
+  wait "$runner_pid" || runner_status=$?
 
   [ "$runner_status" -eq 143 ]
   [ -f "$TEST_ROOT/bats.term" ]
