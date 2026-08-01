@@ -93,7 +93,10 @@ if [[ ${#provider_candidates[@]} -eq 0 ]]; then
   echo "::error::No advisory review provider configured. Configure Claude, Sol, Grok, or Kimi credentials."
   exit 1
 fi
-expected_provider="$(advisory_candidate_provider "${provider_candidates[0]}")"
+expected_provider="${provider_candidates[0]}"
+if declare -F advisory_candidate_provider >/dev/null 2>&1; then
+  expected_provider="$(advisory_candidate_provider "${provider_candidates[0]}")"
+fi
 
 range_args=(
   --repo "$REPO_ROOT"
