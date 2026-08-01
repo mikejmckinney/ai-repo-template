@@ -12,7 +12,9 @@ run_fix_provider_cascade() {
   local verification_status fix_verification_status outcome_evidence_status
   local failed_stage failed_status validation_mode requested_model verification_record_status
   local diagnostics_dir stage_log gemini_error retry_prompt attempt_index
+  local verification_path resolved_verification_path path_component
   local -a provider_candidates=()
+  local -a verification_components=()
 
   mapfile -t provider_candidates < <(list_advisory_providers "$mode")
   if [[ ${#provider_candidates[@]} -eq 0 ]]; then
@@ -186,12 +188,41 @@ run_fix_provider_cascade() {
       done < <(git -C "$active_worktree" diff HEAD --name-only)
 
       verification_record_status=0
-      python3 "$lib_dir/manage-fix-verification.py" finalize \
-        "$batch_source" "$active_worktree/$verify_relative_path" \
-        --provider "$provider" --requested-model "$requested_model" \
-        --baseline-exit-code "$baseline_status" \
-        --candidate-exit-code "$verification_status" \
-        || verification_record_status=$?
+      verification_path="$active_worktree"
+      IFS='/' read -r -a verification_components <<<"$verify_relative_path"
+      for path_component in "${verification_components[@]}"; do
+        if [[ -z "$path_component" || "$path_component" == "." ]]; then
+          continue
+        fi
+        if [[ "$path_component" == ".." ]]; then
+          verification_record_status=1
+          break
+        fi
+        verification_path="$verification_path/$path_component"
+        if [[ -L "$verification_path" ]]; then
+          verification_record_status=1
+          break
+        fi
+      done
+      if ((verification_record_status == 0)); then
+        resolved_verification_path="$(realpath "$verification_path" 2>/dev/null)" \
+          || verification_record_status=$?
+      fi
+      if ((verification_record_status == 0)) \
+        && [[ "$resolved_verification_path" != "$active_worktree/"* ]]; then
+        verification_record_status=1
+      fi
+      if ((verification_record_status == 0)); then
+        python3 "$lib_dir/manage-fix-verification.py" finalize \
+          "$batch_source" "$verification_path" \
+          --provider "$provider" --requested-model "$requested_model" \
+          --baseline-exit-code "$baseline_status" \
+          --candidate-exit-code "$verification_status" \
+          || verification_record_status=$?
+      else
+        printf 'Verification record path must stay inside the attempt worktree without symlinks\n' \
+          >"$stage_log"
+      fi
       if ((verification_record_status != 0)); then
         failed_stage="fix verification"
         failed_status=$verification_record_status
