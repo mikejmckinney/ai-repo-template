@@ -262,6 +262,35 @@ JSON
     "$diagnostics/attempt-01-opencode.json"
 }
 
+@test "verification record hard links cannot mutate files outside the attempt worktree" {
+  prepare_cascade_repo
+  diagnostics="$TEST_ROOT/external-hardlink-diagnostics"
+  outside="$TEST_ROOT/outside-hardlink-verification.json"
+  expected="$TEST_ROOT/expected-hardlink-verification.json"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" FIX_PROVIDER_DIAGNOSTICS_DIR="$diagnostics" \
+    OUTSIDE_TARGET="$outside" EXPECTED_TARGET="$expected" bash -c '
+      list_advisory_providers() { printf "%s\n" opencode; }
+      invoke_advisory_llm() {
+        cp retro/fix-verify-test.json "$OUTSIDE_TARGET"
+        cp retro/fix-verify-test.json "$EXPECTED_TARGET"
+        rm retro/fix-verify-test.json
+        ln "$OUTSIDE_TARGET" retro/fix-verify-test.json
+        printf "candidate\n" >result.txt
+      }
+      apply_noop() { return 0; }
+      source "$1"
+      FIX_PROVIDER_BASELINE_VERIFY_COMMAND=true FIX_PROVIDER_VERIFY_COMMAND=true \
+        run_fix_provider_cascade retro-fix "$2" "$3" "$4" "$4" "$5" "$6" \
+          apply_noop "$7" retro/fix-verify-test.json
+    ' _ "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
+    "$TEST_ROOT/prompt.md" "$TEST_ROOT/output.txt" "$CASCADE_REPO" "$TEST_ROOT" \
+    "$REPO_ROOT/scripts/workflows/lib" "$TEST_ROOT/batch.json"
+
+  [ "$status" -eq 0 ]
+  cmp -s "$outside" "$expected"
+}
+
 @test "failed attempts retain bounded redacted controller diagnostics" {
   prepare_cascade_repo
   diagnostics="$TEST_ROOT/diagnostics"

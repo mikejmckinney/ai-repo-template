@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,25 @@ def load_object(path: Path) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError(f"{path} must contain a JSON object")
     return value
+
+
+def write_object(path: Path, value: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            delete=False,
+        ) as temporary:
+            temporary.write(json.dumps(value, indent=2) + "\n")
+            temporary_path = Path(temporary.name)
+        temporary_path.replace(path)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
 
 
 def batch_rows(batch: dict[str, Any]) -> list[dict[str, Any]]:
@@ -86,8 +106,7 @@ def prepare(batch_path: Path, output_path: Path) -> None:
             "skip_reason": str(sandbox.get("skip_reason") or "controller verification only"),
         },
     }
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_object(output_path, payload)
 
 
 def finalize(args: argparse.Namespace) -> None:
@@ -150,7 +169,7 @@ def finalize(args: argparse.Namespace) -> None:
             ]
         },
     }
-    args.output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_object(args.output, payload)
 
 
 def main() -> int:
