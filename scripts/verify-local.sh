@@ -48,6 +48,12 @@ start_suite() {
     wait "$timeout_pid"
     status=$?
     trap - TERM INT
+    kill -TERM -- -$timeout_pid 2>/dev/null || true
+    for ((attempt = 0; attempt < 50; attempt++)); do
+      kill -0 -- -$timeout_pid 2>/dev/null || break
+      sleep 0.1
+    done
+    kill -KILL -- -$timeout_pid 2>/dev/null || true
     printf "%s\n" "$((SECONDS - started))" >"$3"
     exit "$status"
   ' verify-local-suite "$repo_root" "$timeout_seconds" "$elapsed_file" \

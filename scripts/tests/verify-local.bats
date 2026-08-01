@@ -28,7 +28,7 @@ if [[ -n "${PEER_STARTED:-}" ]]; then
 fi
 
 if [[ "${SUITE_MODE:-complete}" == "hang" ]]; then
-  sleep 30 &
+  bash -c 'trap "" TERM; sleep 30' &
   printf '%s\n' "$!" >"$GRANDCHILD_PID_FILE"
   wait "$!"
 fi
