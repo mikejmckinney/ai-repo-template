@@ -69,6 +69,28 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "weekly workflow must support workflow_dispatch"
   fi
 
+  if python3 - "$WEEKLY_WORKFLOW" <<'PY'; then
+import re
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+fix = text.split("  weekly-fix:", 1)[1]
+permissions = fix.split("    env:", 1)[0]
+actual = dict(re.findall(r"^      ([a-z-]+): (read|write|none)$", permissions, re.MULTILINE))
+expected = {
+    "actions": "read",
+    "contents": "write",
+    "pull-requests": "write",
+    "issues": "write",
+}
+raise SystemExit(0 if actual == expected else 1)
+PY
+    pass "weekly fix job grants exact least-privilege recovery permissions"
+  else
+    fail "weekly fix job permissions must exactly include read-only artifact recovery"
+  fi
+
   if ! search_fixed 'pull_request:' "$WEEKLY_WORKFLOW" >/dev/null 2>&1; then
     pass "weekly workflow has no pull_request trigger"
   else

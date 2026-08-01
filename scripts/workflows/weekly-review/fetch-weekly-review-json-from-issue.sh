@@ -19,18 +19,31 @@ issue_num="$(bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_WEEK")" || {
 }
 
 marker_prefix="<!-- weekly-review:json:${RUN_WEEK}"
-comments="$(gh issue view "$issue_num" -R "$REPO" --json comments --jq '.comments[] | select(.body | contains("'"$marker_prefix"'")) | .body' | tail -1)"
-[[ -n "$comments" ]] || {
-  echo "::error::No JSON snapshot comment on issue #${issue_num} for ${RUN_WEEK}" >&2
+comments_file="$(mktemp)"
+trap 'rm -f "$comments_file"' EXIT
+if ! gh api --paginate --slurp \
+  "repos/${REPO}/issues/${issue_num}/comments?per_page=100" >"$comments_file"; then
+  echo "::error::Unable to read comments on issue #${issue_num}" >&2
   exit 1
-}
+fi
 
-python3 - "$comments" "$OUT_JSON" <<'PY'
+python3 - "$comments_file" "$marker_prefix" "$OUT_JSON" "$issue_num" "$RUN_WEEK" <<'PY'
+import json
 import re
 import sys
 from pathlib import Path
 
-body, out = sys.argv[1], Path(sys.argv[2])
+comments_file = Path(sys.argv[1])
+marker, out = sys.argv[2], Path(sys.argv[3])
+issue_num, run_week = sys.argv[4], sys.argv[5]
+pages = json.loads(comments_file.read_text(encoding="utf-8"))
+comments = [comment for page in pages for comment in page]
+matching = [comment for comment in comments if marker in comment.get("body", "")]
+if not matching:
+    raise SystemExit(
+        f"::error::No JSON snapshot comment on issue #{issue_num} for {run_week}"
+    )
+body = max(matching, key=lambda comment: comment.get("id", 0))["body"]
 m = re.search(r"```json\s*\n(.*?)```", body, re.DOTALL)
 if not m:
     raise SystemExit("JSON fence not found in snapshot comment")
