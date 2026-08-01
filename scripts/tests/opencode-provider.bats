@@ -266,7 +266,13 @@ EOF
   cat >"$tmp/claude" <<'EOF'
 #!/usr/bin/env bash
 cat >/dev/null
-jq -cn '{is_error: false, result: "claude-ok", structured_output: {findings: []}, session_id: "claude-session"}'
+jq -cn '{
+  is_error: false,
+  result: "claude-ok",
+  structured_output: {findings: []},
+  session_id: "claude-session",
+  modelUsage: {"claude-haiku-4-5-20251001": {inputTokens: 1, outputTokens: 1}}
+}'
 EOF
   chmod +x "$tmp/claude"
 
