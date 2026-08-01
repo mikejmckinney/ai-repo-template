@@ -29,13 +29,19 @@ def main() -> int:
         if not isinstance(rel, str) or not rel.strip():
             print(f"file_edits[{i}].path required", file=sys.stderr)
             return 1
-        if ".." in Path(rel).parts:
+        relative_path = Path(rel)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
             print(f"Rejected path traversal: {rel}", file=sys.stderr)
             return 1
         if not isinstance(content, str):
             print(f"file_edits[{i}].content must be string", file=sys.stderr)
             return 1
-        target = root / rel
+        target = (root / relative_path).resolve()
+        try:
+            target.relative_to(root)
+        except ValueError:
+            print(f"Rejected path outside repository: {rel}", file=sys.stderr)
+            return 1
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content, encoding="utf-8")
         print(f"Wrote {rel}")

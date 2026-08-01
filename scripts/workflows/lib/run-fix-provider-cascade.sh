@@ -139,6 +139,12 @@ run_fix_provider_cascade() {
       fi
     fi
 
+    if [[ -z "$failed_stage" ]] \
+      && [[ -n "$(git -C "$active_worktree" status --porcelain -- .github/workflows/)" ]]; then
+      failed_stage="prohibited workflow change"
+      failed_status=1
+    fi
+
     if [[ -z "$failed_stage" ]]; then
       registration_status=0
       git -C "$active_worktree" add -N -- . >/dev/null 2>&1 || registration_status=$?

@@ -39,6 +39,16 @@ write_batch() {
     {
       "category": "follow_up_issues",
       "priority_band": "should-fix",
+      "dedupe_key": "unallowlisted-harness",
+      "verification_capability": {
+        "environment": "isolated-worktree",
+        "harness_id": "free-form-command",
+        "reason": "This harness is not repository-owned."
+      }
+    },
+    {
+      "category": "follow_up_issues",
+      "priority_band": "should-fix",
       "dedupe_key": "missing-capability"
     }
   ]
@@ -76,9 +86,10 @@ EOF
   [ "$status" -eq 0 ]
   run jq -e '
     [.findings[].dedupe_key] == ["worktree-finding"] and
-    [.deferred_findings[].dedupe_key] == ["codespaces-finding", "missing-capability"] and
+    [.deferred_findings[].dedupe_key] == ["codespaces-finding", "unallowlisted-harness", "missing-capability"] and
     (.deferred_findings[0].routing_reason | contains("codespaces")) and
-    (.deferred_findings[1].routing_reason | contains("missing"))
+    (.deferred_findings[1].routing_reason | contains("allowlisted")) and
+    (.deferred_findings[2].routing_reason | contains("missing"))
   ' "$TEST_ROOT/routed.json"
   [ "$status" -eq 0 ]
 }
@@ -104,7 +115,7 @@ EOF
 
   [ "$status" -eq 0 ]
   run jq -e '
-    [.findings[].dedupe_key] == ["worktree-finding", "codespaces-finding", "missing-capability"] and
+    [.findings[].dedupe_key] == ["worktree-finding", "codespaces-finding", "unallowlisted-harness", "missing-capability"] and
     .findings[0].implementation_reasoning == "Changed the failing branch." and
     .findings[0].controller_execution == {
       harness_id: "repository-test-suite",
@@ -116,6 +127,53 @@ EOF
     .controller.requested_model == "test-model"
   ' "$verify"
   [ "$status" -eq 0 ]
+}
+
+@test "Gemini file edits reject absolute paths outside the attempt worktree" {
+  repo="$TEST_ROOT/gemini-repo"
+  outside="$TEST_ROOT/outside.txt"
+  mkdir -p "$repo"
+  cat >"$TEST_ROOT/fix.json" <<JSON
+{
+  "file_edits": [
+    {"path": "$outside", "content": "escaped\n"}
+  ]
+}
+JSON
+
+  run python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/apply-retro-fix-json.py" \
+    "$TEST_ROOT/fix.json" "$repo"
+
+  [ "$status" -ne 0 ]
+  [ ! -e "$outside" ]
+}
+
+@test "provider workflow edits are rejected before verification and promotion" {
+  prepare_cascade_repo
+  diagnostics="$TEST_ROOT/workflow-diagnostics"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" FIX_PROVIDER_DIAGNOSTICS_DIR="$diagnostics" \
+    bash -c '
+      list_advisory_providers() { printf "%s\n" opencode; }
+      invoke_advisory_llm() {
+        mkdir -p .github/workflows
+        printf "name: unsafe\n" >.github/workflows/unsafe.yml
+        printf "candidate\n" >result.txt
+      }
+      apply_noop() { return 0; }
+      source "$1"
+      FIX_PROVIDER_BASELINE_VERIFY_COMMAND=true FIX_PROVIDER_VERIFY_COMMAND=true \
+        run_fix_provider_cascade retro-fix "$2" "$3" "$4" "$4" "$5" "$6" \
+          apply_noop "$7" retro/fix-verify-test.json
+    ' _ "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
+    "$TEST_ROOT/prompt.md" "$TEST_ROOT/output.txt" "$CASCADE_REPO" "$TEST_ROOT" \
+    "$REPO_ROOT/scripts/workflows/lib" "$TEST_ROOT/batch.json"
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = base ]
+  [ ! -e "$CASCADE_REPO/.github/workflows/unsafe.yml" ]
+  jq -e '.failed_stage == "prohibited workflow change"' \
+    "$diagnostics/attempt-01-opencode.json"
 }
 
 @test "failed attempts retain bounded redacted controller diagnostics" {
