@@ -163,47 +163,6 @@ EOF
   [[ "$output" != *"refresh-secret-value"* ]]
 }
 
-@test "Claude OAuth sync dry-run reports metadata without exposing the token" {
-  run env CLAUDE_CODE_OAUTH_TOKEN=claude-oauth-secret \
-    "$REPO_ROOT/scripts/sync-claude-oauth-secret.sh" --repo owner/repo
-
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"CLAUDE_OAUTH_SECRET"* ]]
-  [[ "$output" != *"claude-oauth-secret"* ]]
-  [[ "$output" == *"Dry-run only"* ]]
-}
-
-@test "Claude OAuth sync apply uploads the token through stdin" {
-  mkdir -p "$TEST_ROOT/bin"
-  cat >"$TEST_ROOT/bin/gh" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-printf '%s\n' "$*" >"$GH_ARGS_FILE"
-cat >"$GH_STDIN_FILE"
-EOF
-  chmod +x "$TEST_ROOT/bin/gh"
-
-  run env PATH="$TEST_ROOT/bin:$PATH" \
-    CLAUDE_CODE_OAUTH_TOKEN=claude-oauth-secret \
-    GH_ARGS_FILE="$TEST_ROOT/gh-args" GH_STDIN_FILE="$TEST_ROOT/gh-stdin" \
-    "$REPO_ROOT/scripts/sync-claude-oauth-secret.sh" \
-    --apply --repo owner/repo
-
-  [ "$status" -eq 0 ]
-  [ "$(cat "$TEST_ROOT/gh-args")" = "secret set CLAUDE_OAUTH_SECRET --repo owner/repo" ]
-  [ "$(cat "$TEST_ROOT/gh-stdin")" = claude-oauth-secret ]
-  [[ "$output" != *"claude-oauth-secret"* ]]
-}
-
-@test "Claude OAuth sync fails closed without an environment token or terminal" {
-  run env -u CLAUDE_CODE_OAUTH_TOKEN \
-    "$REPO_ROOT/scripts/sync-claude-oauth-secret.sh" --repo owner/repo </dev/null
-
-  [ "$status" -eq 1 ]
-  [[ "$output" == *"Run claude setup-token"* ]]
-  [[ "$output" == *"CLAUDE_CODE_OAUTH_TOKEN"* ]]
-}
-
 @test "OAuth preflight enables Sol before Kimi when lifetime is sufficient" {
   run env \
     OPENCODE_AUTH_CONTENT="$(jq '.openai.refresh = "ci-refresh-disabled"' "$AUTH_FILE")" \
@@ -299,7 +258,6 @@ PY
 
 @test "repository includes OAuth and provider isolation helpers" {
   for path in \
-    scripts/sync-claude-oauth-secret.sh \
     scripts/sync-opencode-oauth-secret.sh \
     scripts/workflows/lib/opencode-oauth.sh \
     scripts/workflows/lib/run-cursor-fix.sh \
