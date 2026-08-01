@@ -73,7 +73,8 @@ wait_for_group() {
   local pid="$1" attempt
   [[ -n "$pid" ]] || return 0
 
-  for ((attempt = 0; attempt < 50; attempt++)); do
+  # The suite wrapper gets five seconds to clean its nested timeout group.
+  for ((attempt = 0; attempt < 70; attempt++)); do
     kill -0 -- "-$pid" 2>/dev/null || return 0
     sleep 0.1
   done
