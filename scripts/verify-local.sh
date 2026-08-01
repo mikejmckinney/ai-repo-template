@@ -98,11 +98,11 @@ summarize_repository() {
   local line passed=0 warnings=0 failed=0
 
   while IFS= read -r line; do
-    if [[ "$line" =~ Passed:[^0-9]*([0-9]+) ]]; then
+    if [[ "$line" =~ Passed:.*[[:space:]]([0-9]+)$ ]]; then
       passed="${BASH_REMATCH[1]}"
-    elif [[ "$line" =~ Warnings:[^0-9]*([0-9]+) ]]; then
+    elif [[ "$line" =~ Warnings:.*[[:space:]]([0-9]+)$ ]]; then
       warnings="${BASH_REMATCH[1]}"
-    elif [[ "$line" =~ Failed:[^0-9]*([0-9]+) ]]; then
+    elif [[ "$line" =~ Failed:.*[[:space:]]([0-9]+)$ ]]; then
       failed="${BASH_REMATCH[1]}"
     fi
   done <"$log_file"
