@@ -49,3 +49,18 @@ Apply these lenses proportionally to the available evidence.
 7. **Maintainability:** Flag dead or speculative code, unclear ownership, unnecessary coupling, and abstractions that obscure control flow.
 8. **Documentation and process truth:** Verify active docs, ADRs, templates, inventories, and automation describe the implemented behavior.
 9. **Evidence and noise discipline:** Cite paths and reproduction evidence, deduplicate prior findings, honor accepted exceptions, and distinguish facts from uncertainty.
+
+## Persisted keyed-state matrix
+
+Apply this matrix only when the reviewed behavior appends, merges, upserts,
+replaces, migrates, deduplicates, or otherwise persists records by key. Verify
+the intended result and effective regression evidence for:
+
+- first write;
+- identical retry;
+- changed retry;
+- unrelated-key preservation;
+- duplicate legacy records;
+- missing-field compatibility.
+
+Do not require this matrix for changes without persisted keyed state.

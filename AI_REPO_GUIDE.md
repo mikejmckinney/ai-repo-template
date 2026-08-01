@@ -17,6 +17,7 @@ ADR-031 defines the active execution model:
 ## Commands
 
 ```bash
+scripts/verify-local.sh
 ./test.sh
 bats --jobs 4 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
@@ -34,6 +35,15 @@ scripts/diagnose-opencode-session.sh
 scripts/archive-opencode-database.sh
 git diff --check
 ```
+
+Use `scripts/verify-local.sh` for complete local verification. It runs full Bats
+and `./test.sh` concurrently with a 900-second timeout per suite, prints bounded
+summaries, and removes successful logs. If either suite fails, it reports both
+statuses and retains complete logs under `.artifacts/local-verification/`.
+Override timeouts with `VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` and
+`VERIFY_LOCAL_REPO_TIMEOUT_SECONDS`. The Codespace toolchain supplies required
+GNU `timeout` and `setsid`. Direct component commands remain available for
+targeted diagnosis, not as a second completion procedure.
 
 `.devcontainer/devcontainer.json` owns automatic Codespaces setup. Its
 post-create hook installs the default profile: repository quality tools, enabled

@@ -155,6 +155,12 @@ Before implementation planning, establish:
   solve the problem.
 - **Alternatives:** existing repository behavior or external solutions that
   could satisfy the outcome with less cost or risk.
+- **Delivery boundaries:** identify independently shippable and revertible
+  workstreams. For each, state dependencies, shared contracts, and rollback
+  effect; recommend one PR, stacked PRs, or separate PRs. If independently
+  revertible work remains combined, record the load-bearing reason, such as
+  atomic rollout, a shared contract, lower total process cost, or an explicit
+  maintainer decision.
 
 If missing information could materially change scope or the user outcome, stop,
 ask a focused question, recommend a direction, and explain the tradeoff. If the
@@ -291,6 +297,9 @@ ID, load the `session-recovery` skill before taking any repository action.
 Recover the exact session ID, re-read the packet and required current files,
 hydrate the active issue, linked PR, and latest `agent-state:v1` comment when
 GitHub is available, and report the receipt with boundary `post-compaction`.
+Before changing architecture, re-read any current committed failing tests and
+the current issue and PR design contract; these current sources outrank the
+recovery summary.
 
 Do not treat the compaction summary alone as sufficient context. If no exact
 session ID is available, ask the user. If recovery fails, stop and report the

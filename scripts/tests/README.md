@@ -27,7 +27,10 @@ test wrapper.
 ## Running
 
 ```bash
-# Run the whole suite
+# Run complete local verification (full Bats and ./test.sh concurrently)
+scripts/verify-local.sh
+
+# Run only the Bats component for targeted diagnosis
 bats scripts/tests/
 
 # Run one file
@@ -51,7 +54,8 @@ brew install bats-core parallel
 ```
 
 CI installs them via `apt-get install -y bats parallel ripgrep` in `.github/workflows/ci-tests.yml`.
-Run this suite separately from `./test.sh`; neither command invokes the other.
+The canonical runner invokes this suite and `./test.sh`; neither component
+invokes the other when run directly for targeted diagnosis.
 
 ## Conventions
 
