@@ -355,6 +355,68 @@ EOF
   grep -q '^No findings identified at this head\.$' "$TMP_DIR/posted.md"
 }
 
+@test "advisory runner exposes Claude OAuth only to the Claude candidate" {
+  base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
+  head=$(git -C "$REPO_ROOT" rev-parse HEAD)
+  mkdir -p "$TMP_DIR/bin"
+  cat >"$TMP_DIR/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+if [[ "$1 $2" == "api repos/example/repo/pulls/506" ]]; then
+  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"test",html_url:"https://example.test/pr/506",base:{sha:$base}}'
+elif [[ "$1 $2" == "api repos/example/repo/issues/506/comments" ]]; then
+  printf '[]\n'
+else
+  exit 1
+fi
+EOF
+  chmod +x "$TMP_DIR/bin/gh"
+  cat >"$TMP_DIR/providers.sh" <<'EOF'
+init_advisory_provider_credentials() {
+  [[ "${CLAUDE_OAUTH_AVAILABLE:-false}" == true ]]
+  [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+}
+list_advisory_providers() { printf '%s\n' claude cursor; }
+advisory_candidate_provider() { printf '%s\n' "$1"; }
+EOF
+  cat >"$TMP_DIR/invoke.sh" <<'EOF'
+invoke_advisory_llm() {
+  local output_file="$2" provider="$3"
+  if [[ "$provider" == claude ]]; then
+    [[ "${CLAUDE_CODE_OAUTH_TOKEN:-}" == claude-oauth-test ]]
+    printf 'malformed output\n' >"$output_file"
+  else
+    [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+    printf '%s\n' '{"findings":[]}' >"$output_file"
+  fi
+  printf '{"provider":"%s","model":"test-model"}\n' "$provider" >"$ADVISORY_PROVIDER_METADATA_FILE"
+}
+EOF
+  cat >"$TMP_DIR/upsert.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+cp "$3" "$ADVISORY_TEST_POSTED"
+EOF
+  chmod +x "$TMP_DIR/upsert.sh"
+
+  run env \
+    PATH="$TMP_DIR/bin:$PATH" \
+    GITHUB_REPOSITORY=example/repo \
+    GITHUB_EVENT_ACTION=synchronize \
+    CLAUDE_CODE_OAUTH_TOKEN=claude-oauth-test \
+    ADVISORY_TEST_BASE="$base" \
+    ADVISORY_TEST_POSTED="$TMP_DIR/posted.md" \
+    ADVISORY_PROVIDER_LIB="$TMP_DIR/providers.sh" \
+    ADVISORY_INVOKE_LIB="$TMP_DIR/invoke.sh" \
+    ADVISORY_UPSERT_SCRIPT="$TMP_DIR/upsert.sh" \
+    bash "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh" 506 "$head" false
+
+  [ "$status" -eq 0 ]
+  grep -q '^Provider: `cursor / test-model`$' "$TMP_DIR/posted.md"
+}
+
 @test "advisory runner fails when every provider output is malformed" {
   base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
   head=$(git -C "$REPO_ROOT" rev-parse HEAD)

@@ -16,6 +16,14 @@ usage() {
 
 [[ -n "$PR" && -n "$HEAD_SHA" ]] || usage
 
+claude_oauth_token="${CLAUDE_CODE_OAUTH_TOKEN:-}"
+CLAUDE_OAUTH_AVAILABLE=false
+if [[ -n "$claude_oauth_token" ]]; then
+  CLAUDE_OAUTH_AVAILABLE=true
+fi
+export CLAUDE_OAUTH_AVAILABLE
+unset CLAUDE_CODE_OAUTH_TOKEN
+
 parse_positive_int() {
   local name="$1" default="$2" raw="${3:-}"
   if [[ -z "$raw" ]]; then
@@ -225,12 +233,25 @@ prompt_file="$WORKDIR/prompt.md"
 out_file="$WORKDIR/advisory-body.md"
 raw_out_file="$WORKDIR/advisory-raw.md"
 provider_metadata_file="$WORKDIR/provider-metadata.json"
+
+invoke_provider_candidate() {
+  local candidate="$1"
+  if [[ "$candidate" == claude ]]; then
+    CLAUDE_CODE_OAUTH_TOKEN="$claude_oauth_token" \
+      ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
+      ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+      invoke_advisory_llm "$prompt_file" "$raw_out_file" "$candidate" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+    return
+  fi
+  ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
+    ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+    invoke_advisory_llm "$prompt_file" "$raw_out_file" "$candidate" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+}
+
 provider_succeeded=false
 for provider in "${provider_candidates[@]}"; do
   rm -f "$raw_out_file" "$provider_metadata_file"
-  if ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
-    ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
-    invoke_advisory_llm "$prompt_file" "$raw_out_file" "$provider" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"; then
+  if invoke_provider_candidate "$provider"; then
     if ! jq -e '.provider | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1 \
       || ! jq -e '.model | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1; then
       echo "::warning::Advisory provider ${provider} omitted provider/model metadata; trying next available provider" >&2

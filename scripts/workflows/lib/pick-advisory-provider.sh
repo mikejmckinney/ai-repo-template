@@ -27,7 +27,7 @@ init_advisory_provider_credentials() {
   source "$lib_dir/opencode-oauth.sh"
   configure_opencode_oauth
   if command -v "$claude_bin" >/dev/null 2>&1 \
-    && [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]; then
+    && { [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]] || [[ "${CLAUDE_OAUTH_AVAILABLE:-false}" == true ]]; }; then
     has_claude=1
   fi
   if command -v "$opencode_bin" >/dev/null 2>&1 \
