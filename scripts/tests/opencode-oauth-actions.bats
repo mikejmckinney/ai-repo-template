@@ -22,6 +22,80 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
+prepare_cascade_gate_fixture() {
+  CASCADE_REPO="$TEST_ROOT/gate-repo"
+  mkdir -p "$CASCADE_REPO" "$TEST_ROOT/bin"
+  git -C "$CASCADE_REPO" init -q
+  git -C "$CASCADE_REPO" config user.email test@example.com
+  git -C "$CASCADE_REPO" config user.name Test
+  printf 'base\n' >"$CASCADE_REPO/result.txt"
+  git -C "$CASCADE_REPO" add result.txt
+  git -C "$CASCADE_REPO" commit -qm base
+  printf 'fix this\n' >"$TEST_ROOT/gate-prompt.md"
+  printf '%s\n' '{"findings":[{"category":"follow_up_issues","dedupe_key":"key-a"}]}' \
+    >"$TEST_ROOT/gate-batch.json"
+
+  cat >"$TEST_ROOT/baseline-verify.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'baseline\n' >>"$STAGE_LOG"
+EOF
+  cat >"$TEST_ROOT/candidate-verify.sh" <<'EOF'
+#!/usr/bin/env bash
+printf 'candidate\n' >>"$STAGE_LOG"
+[[ "$GATE_CASE" != deterministic_verification ]]
+EOF
+  cat >"$TEST_ROOT/bin/python3" <<'EOF'
+#!/usr/bin/env bash
+case "${1##*/}" in
+  validate-fix-verification.py)
+    printf 'fix-verification\n' >>"$STAGE_LOG"
+    [[ "$GATE_CASE" != fix_verification ]]
+    ;;
+  validate-outcome-evidence.py)
+    printf 'outcome-evidence\n' >>"$STAGE_LOG"
+    [[ "$GATE_CASE" != outcome_evidence ]]
+    ;;
+  *) exec /usr/bin/python3 "$@" ;;
+esac
+EOF
+  chmod +x "$TEST_ROOT/baseline-verify.sh" "$TEST_ROOT/candidate-verify.sh" \
+    "$TEST_ROOT/bin/python3"
+}
+
+run_cascade_gate_case() {
+  local gate_case="$1"
+  run env PATH="$TEST_ROOT/bin:$PATH" GATE_CASE="$gate_case" \
+    STAGE_LOG="$TEST_ROOT/stages.log" bash -c '
+      list_advisory_providers() {
+        if [[ "$GATE_CASE" == gemini_application ]]; then
+          printf "%s\n" gemini
+        else
+          printf "%s\n" opencode
+        fi
+      }
+      invoke_advisory_llm() {
+        printf "provider\n" >>"$STAGE_LOG"
+        printf "changed\n" >result.txt
+        printf "provider output\n" >"$2"
+        [[ "$GATE_CASE" != provider_invocation ]]
+      }
+      apply_gemini() {
+        printf "gemini-apply\n" >>"$STAGE_LOG"
+        [[ "$GATE_CASE" != gemini_application ]]
+      }
+      source "$1"
+      FIX_PROVIDER_BASELINE_VERIFY_COMMAND="$2" \
+      FIX_PROVIDER_VERIFY_COMMAND="$3" \
+        run_fix_provider_cascade retro-fix "$4" "$5" "$6" "$6" \
+          "$7" "$8" apply_gemini "$9" retro/fix-verify-test.json
+    ' _ \
+    "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
+    "$TEST_ROOT/baseline-verify.sh" "$TEST_ROOT/candidate-verify.sh" \
+    "$TEST_ROOT/gate-prompt.md" "$TEST_ROOT/gate-output.txt" \
+    "$CASCADE_REPO" "$TEST_ROOT" "$REPO_ROOT/scripts/workflows/lib" \
+    "$TEST_ROOT/gate-batch.json"
+}
+
 @test "OAuth sync dry-run reports metadata without exposing token material" {
   run "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
     --auth-file "$AUTH_FILE" --repo owner/repo
@@ -443,4 +517,100 @@ JSON
     [[ "$output" == *"Fix provider cascade exhausted"* ]]
     [ "$(cat "$repo/result.txt")" = base ]
   done
+}
+
+@test "fix provider cascade stops after provider invocation failure" {
+  prepare_cascade_gate_fixture
+
+  run_cascade_gate_case provider_invocation
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider' ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = base ]
+}
+
+@test "fix provider cascade stops after Gemini application failure" {
+  prepare_cascade_gate_fixture
+
+  run_cascade_gate_case gemini_application
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ngemini-apply' ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = base ]
+}
+
+@test "fix provider cascade stops after deterministic verification failure" {
+  prepare_cascade_gate_fixture
+
+  run_cascade_gate_case deterministic_verification
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ncandidate' ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = base ]
+}
+
+@test "fix provider cascade stops after fix-verification failure" {
+  prepare_cascade_gate_fixture
+
+  run_cascade_gate_case fix_verification
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ncandidate\nfix-verification' ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = base ]
+}
+
+@test "fix provider cascade stops after outcome-evidence failure" {
+  prepare_cascade_gate_fixture
+
+  run_cascade_gate_case outcome_evidence
+
+  [ "$status" -ne 0 ]
+  [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ncandidate\nfix-verification\noutcome-evidence' ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = base ]
+}
+
+@test "fix provider cascade records baseline and candidate verification separately" {
+  prepare_cascade_gate_fixture
+
+  run_cascade_gate_case success
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ncandidate\nfix-verification\noutcome-evidence' ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = changed ]
+}
+
+@test "candidate-created files are visible during deterministic verification" {
+  prepare_cascade_gate_fixture
+  cat >"$TEST_ROOT/candidate-verify.sh" <<'EOF'
+#!/usr/bin/env bash
+if [[ "$(git status --porcelain -- created.txt)" != " A created.txt" ]]; then
+  exit 1
+fi
+printf 'candidate-new-file-visible\n' >>"$STAGE_LOG"
+EOF
+  chmod +x "$TEST_ROOT/candidate-verify.sh"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" GATE_CASE=success \
+    STAGE_LOG="$TEST_ROOT/stages.log" bash -c '
+      list_advisory_providers() { printf "%s\n" opencode; }
+      invoke_advisory_llm() {
+        printf "new candidate file\n" >created.txt
+        printf "provider output\n" >"$2"
+      }
+      apply_noop() { return 0; }
+      source "$1"
+      FIX_PROVIDER_BASELINE_VERIFY_COMMAND="$2" \
+      FIX_PROVIDER_VERIFY_COMMAND="$3" \
+        run_fix_provider_cascade retro-fix "$4" "$5" "$6" "$6" \
+          "$7" "$8" apply_noop "$9" retro/fix-verify-test.json
+    ' _ \
+    "$REPO_ROOT/scripts/workflows/lib/run-fix-provider-cascade.sh" \
+    "$TEST_ROOT/baseline-verify.sh" "$TEST_ROOT/candidate-verify.sh" \
+    "$TEST_ROOT/gate-prompt.md" "$TEST_ROOT/gate-output.txt" \
+    "$CASCADE_REPO" "$TEST_ROOT" "$REPO_ROOT/scripts/workflows/lib" \
+    "$TEST_ROOT/gate-batch.json"
+
+  [ "$status" -eq 0 ]
+  grep -q '^candidate-new-file-visible$' "$TEST_ROOT/stages.log"
+  [ "$(cat "$CASCADE_REPO/created.txt")" = "new candidate file" ]
 }
