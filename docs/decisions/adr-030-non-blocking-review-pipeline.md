@@ -193,6 +193,17 @@ subscription-backed Sol for this trusted private repository.
   disposable worktree, controller verification receives no model, OAuth,
   publisher, or sandbox credentials, and only a verified patch is promoted.
 
+### Amendment 2026-08-01 — Explicit fail-closed fix promotion stages
+
+The shared daily and weekly fix controller does not rely on Bash `errexit`
+inside conditional command lists. It captures provider invocation, optional
+Gemini application, candidate verification, fix-verification validation, and
+outcome-evidence validation separately; any nonzero status stops that attempt
+before later stages or patch promotion. A credential-free clean-HEAD baseline is
+recorded separately from candidate verification, and intent-to-add registration
+makes candidate-created files visible to tracked-file-derived fixtures before
+the candidate command runs. OpenCode retains edit access with Bash denied.
+
 ### Amendment 2026-07-23 — Shared AP11 classifier across review surfaces
 
 All new advisory, daily, and weekly model findings emit the normalized

@@ -96,10 +96,14 @@ is `openai/gpt-5.6-sol`, when preflight permits it, then
 `openrouter/moonshotai/kimi-k3@preset/consensus`. Provider failure advances to
 Cursor `cursor-grok-4.5-medium`, then retained rollback providers when configured.
 Fix calls use provider-specific isolation inside a shared disposable worktree;
-the controller runs `./test.sh` without credentials and promotes only the first
-patch with complete per-finding verification. Missing, malformed, or pending
-verification advances to the next provider instead of generating a committable
-stub. The fix agent may edit but cannot invoke shell commands; this
+the controller runs a credential-free baseline at clean `HEAD`, registers new
+candidate paths, then runs `./test.sh` against the candidate. Provider invocation,
+optional Gemini application, candidate verification, fix verification, and
+outcome evidence are explicit fail-closed stages; a failed stage prevents later
+stages from running and advances to the next provider. The controller promotes
+only the first patch with complete per-finding verification. Missing, malformed,
+or pending verification therefore cannot generate a committable stub. The fix
+agent may edit but cannot invoke shell commands; this
 prevents editable repository scripts from reading inherited credentials.
 
 For trusted private repositories, `scripts/sync-opencode-oauth-secret.sh` reads
