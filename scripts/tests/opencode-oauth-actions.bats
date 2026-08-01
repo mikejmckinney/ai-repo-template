@@ -45,7 +45,10 @@ EOF
   cat >"$TEST_ROOT/candidate-verify.sh" <<'EOF'
 #!/usr/bin/env bash
 printf 'candidate\n' >>"$STAGE_LOG"
-[[ "$GATE_CASE" != deterministic_verification ]]
+if [[ "$GATE_CASE" == deterministic_verification ]] ||
+  [[ "$GATE_CASE" == fallback_after_verification && "$(cat result.txt)" == opencode-changed ]]; then
+  exit 1
+fi
 EOF
   cat >"$TEST_ROOT/bin/python3" <<'EOF'
 #!/usr/bin/env bash
@@ -72,13 +75,15 @@ run_cascade_gate_case() {
       list_advisory_providers() {
         if [[ "$GATE_CASE" == gemini_application ]]; then
           printf "%s\n" gemini
+        elif [[ "$GATE_CASE" == fallback_after_verification ]]; then
+          printf "%s\n" opencode cursor
         else
           printf "%s\n" opencode
         fi
       }
       invoke_advisory_llm() {
         printf "provider\n" >>"$STAGE_LOG"
-        printf "changed\n" >result.txt
+        printf "%s-changed\n" "$3" >result.txt
         printf "provider output\n" >"$2"
         [[ "$GATE_CASE" != provider_invocation ]]
       }
@@ -582,7 +587,17 @@ JSON
   [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ncandidate\nfix-verification\noutcome-evidence' ]
   [[ "$output" == *"Baseline verification status: 1"* ]]
   [[ "$output" == *"Candidate verification status for opencode: 0"* ]]
-  [ "$(cat "$CASCADE_REPO/result.txt")" = changed ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = opencode-changed ]
+}
+
+@test "fix provider cascade continues after a candidate verification failure" {
+  prepare_cascade_gate_fixture
+
+  run_cascade_gate_case fallback_after_verification
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/stages.log")" = $'baseline\nprovider\ncandidate\nprovider\ncandidate\nfix-verification\noutcome-evidence' ]
+  [ "$(cat "$CASCADE_REPO/result.txt")" = cursor-changed ]
 }
 
 @test "candidate-created files are visible during deterministic verification" {
