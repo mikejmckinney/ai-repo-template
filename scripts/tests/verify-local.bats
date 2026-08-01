@@ -35,7 +35,9 @@ sleep "${SUITE_DELAY:-0}"
 if [[ "$SUITE_NAME" == "bats" ]]; then
   printf '1..1\nok 1 fixture\n'
 else
-  printf 'Passed: 1\nWarnings: 0\nFailed: 0\n'
+  printf '\033[0;32mPassed:\033[0m 1\n'
+  printf '\033[0;33mWarnings:\033[0m 0\n'
+  printf '\033[0;31mFailed:\033[0m 0\n'
 fi
 printf '%s\n' "$SUITE_DIAGNOSTIC"
 exit "$SUITE_EXIT"
