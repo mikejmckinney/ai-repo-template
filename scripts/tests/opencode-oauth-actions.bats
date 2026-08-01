@@ -243,6 +243,21 @@ PY
   grep -q 'CLAUDE_OAUTH_SECRET' "$advisory"
   grep -q 'has_claude' "$advisory"
   grep -q 'Claude, Sol, Grok, or Kimi credentials' "$advisory"
+
+  run python3 - "$advisory" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+steps = text.split("      - name: ")[1:]
+runtime = next(step for step in steps if step.startswith("Install agent runtime\n"))
+claude = next(step for step in steps if step.startswith("Install Claude Code\n"))
+assert "@anthropic-ai/claude-code" not in runtime
+assert "if: env.CLAUDE_CANDIDATE == 'true'" in claude
+assert "@anthropic-ai/claude-code@2.1.220" in claude
+assert 'echo "CLAUDE_CANDIDATE=$claude_candidate" >> "$GITHUB_ENV"' in text
+PY
+  [ "$status" -eq 0 ]
 }
 
 @test "generated OpenCode CI profiles allow OAuth and use Kimi as small model" {

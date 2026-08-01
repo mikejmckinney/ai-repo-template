@@ -53,6 +53,8 @@ DEFAULT_COMMENT_LIMIT=65000
 diff_limit_live="$(parse_positive_int ADVISORY_REVIEW_DIFF_LIMIT_LIVE "$DEFAULT_DIFF_LIVE" "${ADVISORY_REVIEW_DIFF_LIMIT_LIVE:-}")"
 diff_limit_full="$(parse_positive_int ADVISORY_REVIEW_DIFF_LIMIT_FULL "$DEFAULT_DIFF_FULL" "${ADVISORY_REVIEW_DIFF_LIMIT_FULL:-}")"
 comment_limit="$(parse_positive_int ADVISORY_REVIEW_COMMENT_LIMIT "$DEFAULT_COMMENT_LIMIT" "${ADVISORY_REVIEW_COMMENT_LIMIT:-}")"
+candidate_timeout="$(parse_positive_int ADVISORY_CANDIDATE_TIMEOUT_SECONDS 240 "${ADVISORY_CANDIDATE_TIMEOUT_SECONDS:-}")"
+export ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$candidate_timeout"
 context_profile="${ADVISORY_CONTEXT_PROFILE:-pr-review}"
 
 if [[ "$FULL_MODE" == "true" ]]; then

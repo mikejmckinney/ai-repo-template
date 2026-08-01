@@ -61,6 +61,7 @@ jobs:
       ADVISORY_REVIEW_DIFF_LIMIT_LIVE: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_LIVE || '' }}
       ADVISORY_REVIEW_DIFF_LIMIT_FULL: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_FULL || '' }}
       ADVISORY_REVIEW_COMMENT_LIMIT: ${{ vars.ADVISORY_REVIEW_COMMENT_LIMIT || '' }}
+      ADVISORY_CANDIDATE_TIMEOUT_SECONDS: ${{ vars.ADVISORY_CANDIDATE_TIMEOUT_SECONDS || '240' }}
       ADVISORY_CONTEXT_PROFILE: ${{ vars.ADVISORY_CONTEXT_PROFILE || '' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'cursor-grok-4.5-medium' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
@@ -80,6 +81,7 @@ jobs:
           ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
         run: |
           has_claude=0 has_opencode=0 has_sol=0 has_kimi=0 has_cursor=0 has_gemini=0
+          claude_candidate=false
           [[ "$HAS_CLAUDE_OAUTH" == "true" ]] && has_claude=1
           if [[ -n "$OPENCODE_GITHUB_TOKEN" && "$HAS_OPENCODE_AUTH" == "true" ]]; then has_sol=1; fi
           if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "$OPENROUTER_API_KEY" ]]; then has_kimi=1; fi
@@ -115,6 +117,10 @@ jobs:
               exit 1
               ;;
           esac
+          if [[ "$has_claude" -eq 1 && ( "$PROVIDER" == "auto" || "$PROVIDER" == "claude" ) ]]; then
+            claude_candidate=true
+          fi
+          echo "CLAUDE_CANDIDATE=$claude_candidate" >> "$GITHUB_ENV"
 
       - name: Checkout PR head
         uses: actions/checkout@v4
@@ -138,11 +144,15 @@ jobs:
       - name: Install agent runtime
         run: |
           npm ci --prefix .github/agent-runtime
-          npm install --global @anthropic-ai/claude-code@2.1.220
-          claude --version
           echo "$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/.bin" >> "$GITHUB_PATH"
           echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
           echo "CURSOR_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js" >> "$GITHUB_ENV"
+
+      - name: Install Claude Code
+        if: env.CLAUDE_CANDIDATE == 'true'
+        run: |
+          npm install --global @anthropic-ai/claude-code@2.1.220
+          claude --version
 
       - name: Run advisory review
         env:

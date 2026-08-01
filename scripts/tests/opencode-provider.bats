@@ -209,12 +209,13 @@ EOF
 #!/usr/bin/env bash
 printf '%s\n' "$*" >"$CLAUDE_ARGS_FILE"
 cat >/dev/null
-jq -cn '{
-  is_error: false,
-  result: "claude-ok",
-  session_id: "claude-session",
-  modelUsage: {"claude-opus-5": {inputTokens: 1, outputTokens: 1}}
-}'
+  jq -cn '{
+    is_error: false,
+    result: "free-form text is not the advisory contract",
+    structured_output: {findings: []},
+    session_id: "claude-session",
+    modelUsage: {"claude-opus-5": {inputTokens: 1, outputTokens: 1}}
+  }'
 EOF
   chmod +x "$tmp/claude"
 
@@ -225,13 +226,25 @@ EOF
     "$tmp/prompt.md" "$tmp/output.txt"
 
   [ "$status" -eq 0 ]
-  [ "$(cat "$tmp/output.txt")" = claude-ok ]
+  [ "$(cat "$tmp/output.txt")" = '{"findings":[]}' ]
   grep -q -- '--model claude-opus-5' "$tmp/args"
   grep -q -- '--effort medium' "$tmp/args"
   grep -q -- '--output-format json' "$tmp/args"
+  grep -q -- '--json-schema' "$tmp/args"
+  grep -q -- '"findings"' "$tmp/args"
   [ "$(jq -r '.provider + "/" + .model' "$tmp/metadata.json")" = "claude/claude-opus-5" ]
   [ "$(jq -r .requested_model "$tmp/metadata.json")" = claude-opus-5 ]
   rm -rf "$tmp"
+}
+
+@test "advisory provider commands honor the candidate timeout" {
+  run env ADVISORY_CANDIDATE_TIMEOUT_SECONDS=1 CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    bash -c '
+      source "$1"
+      run_with_provider_credentials claude bash -c "sleep 2"
+    ' _ "$REPO_ROOT/scripts/workflows/lib/invoke-advisory-llm.sh"
+
+  [ "$status" -eq 124 ]
 }
 
 @test "Claude runner rejects output without observed model usage" {
@@ -240,7 +253,7 @@ EOF
   cat >"$tmp/claude" <<'EOF'
 #!/usr/bin/env bash
 cat >/dev/null
-jq -cn '{is_error: false, result: "claude-ok", session_id: "claude-session"}'
+jq -cn '{is_error: false, result: "claude-ok", structured_output: {findings: []}, session_id: "claude-session"}'
 EOF
   chmod +x "$tmp/claude"
 

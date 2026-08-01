@@ -10,9 +10,20 @@
 #   GEMINI_ADVISORY_MODEL, POSTMERGE_RETRO_MODEL, WEEKLY_REVIEW_MODEL
 
 run_with_provider_credentials() {
+  local provider="$1"
+  shift
   local credential_runner
   credential_runner="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/run-with-provider-credentials.sh"
-  "$credential_runner" "$@"
+  if [[ -n "${ADVISORY_CANDIDATE_TIMEOUT_SECONDS:-}" ]]; then
+    if [[ ! "$ADVISORY_CANDIDATE_TIMEOUT_SECONDS" =~ ^[1-9][0-9]*$ ]]; then
+      echo "::error::ADVISORY_CANDIDATE_TIMEOUT_SECONDS must be a positive integer" >&2
+      return 2
+    fi
+    "$credential_runner" "$provider" timeout --foreground --kill-after=10s \
+      "${ADVISORY_CANDIDATE_TIMEOUT_SECONDS}s" "$@"
+    return
+  fi
+  "$credential_runner" "$provider" "$@"
 }
 
 invoke_advisory_llm() {

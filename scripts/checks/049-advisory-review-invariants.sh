@@ -105,7 +105,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q '@anthropic-ai/claude-code@2.1.220' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q "if: env.CLAUDE_CANDIDATE == 'true'" "$ADVISORY_WORKFLOW" 2>/dev/null \
     && grep -q 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q -- '--json-schema' "$CLAUDE_SCRIPT" 2>/dev/null \
     && grep -q -- '--model "$requested_model"' "$CLAUDE_SCRIPT" 2>/dev/null \
     && grep -q -- '--effort medium' "$CLAUDE_SCRIPT" 2>/dev/null \
     && grep -q -- '--tools ""' "$CLAUDE_SCRIPT" 2>/dev/null; then

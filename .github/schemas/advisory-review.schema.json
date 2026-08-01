@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^ADV-[0-9]{2}$" },
+          "lens": {
+            "type": "string",
+            "enum": [
+              "Outcome and scope",
+              "Correctness",
+              "Tests",
+              "Security and privacy",
+              "Compatibility",
+              "Reliability and performance",
+              "Maintainability",
+              "Documentation and process truth",
+              "Evidence and noise discipline"
+            ]
+          },
+          "area": { "type": "string", "minLength": 1 },
+          "finding": { "type": "string", "minLength": 1 },
+          "suggested_action": { "type": "string", "minLength": 1 },
+          "still_present_at_head": { "type": "boolean" },
+          "triage_version": { "const": 2 },
+          "impact": {
+            "type": "string",
+            "enum": ["incorrect-behavior", "dx-perf-doc", "meta-harness"]
+          },
+          "impact_magnitude": {
+            "type": "string",
+            "enum": ["bounded", "material", "critical"]
+          },
+          "trigger_likelihood": {
+            "type": "string",
+            "enum": ["common", "edge", "fringe"]
+          },
+          "affected_scope": {
+            "type": "string",
+            "enum": ["isolated", "limited", "broad"]
+          },
+          "reversibility": {
+            "type": "string",
+            "enum": ["easy", "moderate", "hard"]
+          },
+          "fix_cost": {
+            "type": "string",
+            "enum": ["trivial", "moderate", "large"]
+          },
+          "confidence": {
+            "type": "string",
+            "enum": ["low", "medium", "high"]
+          },
+          "uncertainty": { "type": "string", "minLength": 1 },
+          "regression_guard": { "type": "boolean" }
+        },
+        "required": [
+          "id",
+          "lens",
+          "area",
+          "finding",
+          "suggested_action",
+          "still_present_at_head",
+          "triage_version",
+          "impact",
+          "impact_magnitude",
+          "trigger_likelihood",
+          "affected_scope",
+          "reversibility",
+          "fix_cost",
+          "confidence",
+          "uncertainty"
+        ]
+      }
+    }
+  },
+  "required": ["findings"]
+}
