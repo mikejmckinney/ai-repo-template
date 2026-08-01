@@ -108,16 +108,20 @@ EOF
 
 @test "weekly fix job grants only the artifact read permission it needs" {
   run python3 - "$REPO_ROOT/.github/workflows/agent-weekly-review.yml" <<'PY'
+import re
 import sys
 from pathlib import Path
 
 text = Path(sys.argv[1]).read_text(encoding="utf-8")
 fix = text.split("  weekly-fix:", 1)[1]
 permissions = fix.split("    env:", 1)[0]
-assert "actions: read" in permissions
-assert "contents: write" in permissions
-assert "pull-requests: write" in permissions
-assert "issues: write" in permissions
+actual = dict(re.findall(r"^      ([a-z-]+): (read|write|none)$", permissions, re.MULTILINE))
+assert actual == {
+    "actions": "read",
+    "contents": "write",
+    "pull-requests": "write",
+    "issues": "write",
+}
 PY
 
   [ "$status" -eq 0 ]
