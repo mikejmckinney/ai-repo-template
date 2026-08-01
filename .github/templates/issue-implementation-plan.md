@@ -15,6 +15,28 @@ and directories must be clickable: use ../blob/main/<path> for a file and
 existing parent and label the new path in the description. For a glob, link its
 containing directory and keep the glob in the link text or description. -->
 
+### Keyed-state semantics (conditional)
+
+Complete this matrix when work appends, merges, upserts, replaces, migrates,
+deduplicates, or otherwise persists records by key. Otherwise state `Not
+applicable — no persisted keyed state`.
+
+- **first write:**
+- **identical retry:**
+- **changed retry:**
+- **unrelated-key preservation:**
+- **duplicate legacy records:**
+- **missing-field compatibility:**
+
+### Delivery boundaries
+
+Identify independently shippable and revertible workstreams. For each
+workstream, state its dependencies, shared contracts, and rollback effect.
+Recommend one PR, stacked PRs, or separate PRs. If independently revertible
+work remains combined, state the load-bearing reason, such as atomic rollout, a
+shared contract, lower total process cost, or an explicit maintainer decision.
+This is a recommendation, not an automatic split rule.
+
 ### User outcome validation plan — PRIMARY
 
 For each material claim, plan one auditable record:
