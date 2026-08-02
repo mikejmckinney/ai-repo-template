@@ -18,6 +18,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
   OPENCODE_REVIEW_CONFIG=".github/agent-runtime/review.json"
   OPENCODE_FIX_CONFIG=".github/agent-runtime/fix.json"
+  ADVISORY_TEST="scripts/tests/advisory-snapshot-memory.bats"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
   MARKER='ai-advisory-review:v1'
 
@@ -129,10 +130,19 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if ! grep -q 'prompt_helpers.py.*select-context\|Repo startup context (automation-supplied\|printf.*pr_body\|printf.*diff_text' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'Invocation coordinates' "$RUN_SCRIPT" 2>/dev/null \
-    && grep -q 'Retrieve the current issue, pull request, discussion, checks, and diff' "$ADVISORY_PROMPT" 2>/dev/null; then
-    pass "pre-merge advisory retrieves source evidence instead of injecting copied bodies"
+    && grep -q 'Retrieve the current issue, pull request, discussion, checks, and diff' "$ADVISORY_PROMPT" 2>/dev/null \
+    && grep -q 'INJECTED-PR-BODY-SENTINEL' "$ADVISORY_TEST" 2>/dev/null \
+    && grep -q 'ADVISORY_TEST_PROMPT_CAPTURE' "$ADVISORY_TEST" 2>/dev/null; then
+    pass "pre-merge advisory retrieves source evidence and tests generated prompts for copied bodies"
   else
-    fail "pre-merge advisory still injects source evidence or lacks direct-retrieval instructions"
+    fail "pre-merge advisory lacks direct-retrieval instructions or generated-prompt regression coverage"
+  fi
+
+  if jq -e '(.required | index("evidence_retrieved")) != null' ".github/schemas/advisory-review.schema.json" >/dev/null 2>&1 \
+    && grep -q 'evidence_retrieved must be true' "$NORMALIZE_SCRIPT" 2>/dev/null; then
+    pass "advisory retrieval failure advances the provider cascade without reviewed-head memory"
+  else
+    fail "advisory output contract cannot distinguish completed retrieval from an empty review"
   fi
 
   if jq -e '

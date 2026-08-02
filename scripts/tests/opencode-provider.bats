@@ -259,7 +259,7 @@ done
   jq -cn '{
     is_error: false,
     result: "free-form text is not the advisory contract",
-    structured_output: {findings: []},
+    structured_output: {evidence_retrieved: true, findings: []},
     session_id: "claude-session",
     modelUsage: {
       "claude-haiku-4-5-20251001": {inputTokens: 1, outputTokens: 1},
@@ -278,7 +278,7 @@ EOF
     "$tmp/prompt.md" "$tmp/output.txt"
 
   [ "$status" -eq 0 ]
-  [ "$(cat "$tmp/output.txt")" = '{"findings":[]}' ]
+  [ "$(cat "$tmp/output.txt")" = '{"evidence_retrieved":true,"findings":[]}' ]
   grep -q -- '--model claude-opus-5' "$tmp/args"
   grep -q -- '--effort medium' "$tmp/args"
   grep -q -- '--output-format json' "$tmp/args"
@@ -312,6 +312,7 @@ EOF
   ! grep -q 'printf.*diff_text' "$runner"
   ! grep -q 'Existing advisory snapshot (dedupe against this)' "$runner"
   grep -q 'Retrieve the current issue, pull request, discussion, checks, and diff' "$prompt"
+  grep -q 'Review only changes between the diff base and expected head' "$prompt"
   grep -q 'Expected head SHA' "$runner"
 }
 
@@ -319,8 +320,8 @@ EOF
   schema="$REPO_ROOT/.github/schemas/advisory-review.schema.json"
 
   run jq -e '
-    .properties.findings.items.required
-    | index("regression_guard") != null
+    (.required | index("evidence_retrieved")) != null and
+    ((.properties.findings.items.required | index("regression_guard")) != null)
   ' "$schema"
 
   [ "$status" -eq 0 ]

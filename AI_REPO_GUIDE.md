@@ -186,7 +186,9 @@ missing, running, or failed feedback is non-blocking. Advisory cannot submit a
 formal review, push commits, mutate labels, resolve threads, change readiness, or
 block merge. `ai-review:full` changes the review range, not authority.
 Providers emit normalized AP11 observations; deterministic automation validates
-the shared fields, derives priority, and renders the sticky Markdown snapshot.
+the shared fields and required `evidence_retrieved: true` claim, derives
+priority, and renders the sticky Markdown snapshot. Missing or failed retrieval
+advances the provider cascade without reviewed-head memory.
 Classification never changes advisory's non-blocking authority.
 Review agents may read/search the checked-out repository, use locked-down
 read-only GitHub MCP, and research the public web. They cannot use Bash, edit

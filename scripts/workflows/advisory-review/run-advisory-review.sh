@@ -120,8 +120,6 @@ if ! git diff "${diff_base}...${HEAD_SHA}" >"$full_diff_file"; then
 fi
 changed_file_count="$(wc -l <"$changed_files_file" | tr -d ' ')"
 full_diff_bytes="$(wc -c <"$full_diff_file" | tr -d ' ')"
-diff_included="$full_diff_bytes"
-truncated_word="no"
 
 prompt_file="$WORKDIR/prompt.md"
 {
@@ -149,20 +147,17 @@ invoke_provider_candidate() {
   if [[ "$candidate" == claude ]]; then
     CLAUDE_CODE_OAUTH_TOKEN="$claude_oauth_token" \
       ADVISORY_GITHUB_TOKEN="$advisory_github_token" \
-      ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
       ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
       invoke_advisory_llm "$prompt_file" "$raw_out_file" "$candidate" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
     return
   fi
   if [[ "$candidate" == cursor ]]; then
     ADVISORY_GITHUB_TOKEN="$advisory_github_token" \
-      ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
       ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
       invoke_advisory_llm "$prompt_file" "$raw_out_file" "$candidate" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
     return
   fi
-  ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
-    ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+  ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
     invoke_advisory_llm "$prompt_file" "$raw_out_file" "$candidate" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
 }
 
@@ -183,9 +178,7 @@ for provider in "${provider_candidates[@]}"; do
       --head "$HEAD_SHA" \
       --base "$base_sha" \
       --review-basis "$review_basis" \
-      --diff-included "$diff_included" \
-      --diff-total "$full_diff_bytes" \
-      --truncated "$truncated_word" \
+      --range-bytes "$full_diff_bytes" \
       --changed-files "$changed_file_count"; then
       echo "::warning::Advisory provider ${provider} returned malformed snapshot output; trying next available provider" >&2
       continue
@@ -212,7 +205,7 @@ $MARKER
 Head: \`${HEAD_SHA}\`
 Provider: \`${provider_label}\`
 Mode: advisory, non-blocking
-Diff coverage: \`${diff_included}/${full_diff_bytes}\` bytes, truncated: \`${truncated_word}\`, basis: \`${review_basis}\`
+Review range: \`${full_diff_bytes}\` bytes, basis: \`${review_basis}\`
 
 ### Findings to consider
 

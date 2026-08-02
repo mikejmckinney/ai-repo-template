@@ -54,11 +54,13 @@ providers remain available only where the daily or weekly contracts retain them.
 candidate cap takes precedence over longer provider transport budgets so the
 four-candidate cascade and publication remain within the 20-minute job.
 
-Automation owns the snapshot's head, provider/model, diff coverage, and hidden
+Automation owns the snapshot's head, provider/model, review-range metadata, and hidden
 `ai-advisory-memory:v1` payload. The visible findings are the provider-neutral
 summary. Providers emit structured `triage_version: 2` observations; automation
 validates the shared AP11 fields, derives the priority band, and renders the
-table. Advisory authority stays non-blocking for every band. An empty result says
+table. Providers must also assert `evidence_retrieved: true`; a false or missing
+value advances the cascade and writes no reviewed-head memory. Advisory authority
+stays non-blocking for every band. An empty result says
 `No findings identified at this head.` rather than rendering an empty table.
 Compatible synchronize events review the accumulated
 delta from the last completed reviewed head. Missing or invalid memory, readiness,

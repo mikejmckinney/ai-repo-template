@@ -297,8 +297,10 @@ candidate gained repository and read-only GitHub access.
   satisfy the direct-source contract. Daily and weekly provider routing,
   adapters, and fix behavior remain unchanged.
 - `ai-review:full` now forces a full base-to-head review range rather than a
-  larger injected context pack. Snapshot normalization still reports complete
-  range byte counts and the exact reviewed head.
+  larger injected context pack. Snapshot normalization reports range size rather
+  than unobservable model-consumption coverage, and records the exact reviewed
+  head only when the provider returns `evidence_retrieved: true` after required
+  source retrieval. A false or missing value advances the cascade.
 
 ## Implementation
 

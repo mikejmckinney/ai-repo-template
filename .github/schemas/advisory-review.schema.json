@@ -3,6 +3,7 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "evidence_retrieved": { "type": "boolean" },
     "findings": {
       "type": "array",
       "items": {
@@ -81,5 +82,5 @@
       }
     }
   },
-  "required": ["findings"]
+  "required": ["evidence_retrieved", "findings"]
 }
