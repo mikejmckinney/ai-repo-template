@@ -8,6 +8,40 @@ setup() {
   cd "$REPO_ROOT"
 }
 
+@test "bounded retro honors an explicit fallback provider over stale coverage metadata" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/bin" "$tmp/work"
+  cat >"$tmp/coverage.json" <<'JSON'
+{"routing_context":{"provider_resolved":"claude"}}
+JSON
+  cat >"$tmp/bin/bash" <<'SH'
+#!/usr/bin/bash
+if [[ "$1" == *"/assemble-retro-prompt.sh" ]]; then
+  : >"$5"
+  exit 0
+fi
+if [[ "$1" == *"/run-advisory-claude.sh" ]]; then
+  printf 'invoked claude\n' >"$3"
+  exit 0
+fi
+exec /usr/bin/bash "$@"
+SH
+  cat >"$tmp/bin/node" <<'SH'
+#!/usr/bin/bash
+printf 'invoked opencode\n' >"$3"
+SH
+  chmod +x "$tmp/bin/bash" "$tmp/bin/node"
+
+  run env PATH="$tmp/bin:$PATH" /usr/bin/bash \
+    scripts/workflows/postmerge-retro/run-postmerge-retro-bounded.sh \
+    1 "$tmp/work" "$tmp/output.txt" "$tmp/coverage.json" opencode
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"via opencode"* ]]
+  [ "$(cat "$tmp/output.txt")" = "invoked opencode" ]
+  rm -rf "$tmp"
+}
+
 @test "extract-suggested-fix.py reads ## Suggested fix section" {
   tmp="$(mktemp -d)"
   cat >"$tmp/body.md" <<'EOF'

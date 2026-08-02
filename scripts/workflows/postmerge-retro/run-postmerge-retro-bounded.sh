@@ -25,7 +25,7 @@ prompt_file="$WORKDIR/prompt.md"
 bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" bounded "$prompt_file"
 
 provider="$PROVIDER_OVERRIDE"
-if [[ -f "$COVERAGE_JSON" ]]; then
+if [[ -z "$provider" && -f "$COVERAGE_JSON" ]]; then
   provider="$(jq -r '.routing_context.provider_resolved // ""' "$COVERAGE_JSON")"
 fi
 if [[ -z "$provider" || "$provider" == "null" || "$provider" == "unknown" ]]; then

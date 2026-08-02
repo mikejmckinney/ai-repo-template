@@ -279,7 +279,8 @@ PY
   grep -q 'if \[\[ "$provider" == "claude" || "$provider" == "cursor" \]\]; then' "$monolithic_runner"
   grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$candidate_timeout"' "$monolithic_runner"
   grep -q 'WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS' "$weekly"
-  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS="${WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS:-900}"' "$weekly_runner"
+  grep -q 'weekly_provider_timeout_seconds="$(parse_positive_int WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS 900' "$weekly_runner"
+  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$weekly_provider_timeout_seconds"' "$weekly_runner"
 
   run python3 - "$daily" "$weekly" <<'PY'
 import sys
