@@ -5,6 +5,11 @@ umask 077
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$REPO_ROOT"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
+
+# shellcheck source=scripts/workflows/lib/parse-positive-int.sh
+source "$LIB_DIR/parse-positive-int.sh"
 
 PR="${1:-${PR_NUMBER:-}}"
 CREATE_ISSUES="${2:-${CREATE_ISSUES:-true}}"
@@ -16,22 +21,6 @@ usage() {
 
 [[ -n "$PR" ]] || usage
 
-parse_positive_int() {
-  local name="$1" default="$2" raw="${3:-}"
-  if [[ -z "$raw" ]]; then
-    echo "$default"
-    return
-  fi
-  if [[ "$raw" =~ ^[0-9]+$ ]] && [[ $((10#$raw)) -gt 0 ]]; then
-    echo "$((10#$raw))"
-    return
-  fi
-  echo "::warning::Invalid ${name}=${raw}; using default ${default}" >&2
-  echo "$default"
-}
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
 WORK_ROOT="$REPO_ROOT/.artifacts/postmerge-retro/work"
 ARTIFACT_DIR="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${PR}"
 mkdir -p "$WORK_ROOT"

@@ -446,6 +446,25 @@ JSONL
   grep -q '`300` seconds' "$REPO_ROOT/docs/guides/agent-pipeline.md"
 }
 
+@test "workflow positive integers use one decimal-safe parser" {
+  helper="$REPO_ROOT/scripts/workflows/lib/parse-positive-int.sh"
+  [ -f "$helper" ]
+
+  run bash -c 'source "$1"; parse_positive_int TEST_VALUE 9 08' _ "$helper"
+  [ "$status" -eq 0 ]
+  [ "$output" = 8 ]
+
+  for script in \
+    scripts/workflows/advisory-review/run-advisory-review.sh \
+    scripts/workflows/postmerge-retro/assemble-retro-prompt.sh \
+    scripts/workflows/postmerge-retro/run-postmerge-retro.sh \
+    scripts/workflows/postmerge-retro/run-postmerge-retro-monolithic.sh \
+    scripts/workflows/weekly-review/run-weekly-review-scan.sh; do
+    grep -q 'source "$LIB_DIR/parse-positive-int.sh"' "$REPO_ROOT/$script"
+    ! grep -q '^parse_positive_int()' "$REPO_ROOT/$script"
+  done
+}
+
 @test "advisory candidate timeout terminates descendant processes" {
   tmp="$(mktemp -d)"
   cat >"$tmp/candidate.sh" <<'EOF'

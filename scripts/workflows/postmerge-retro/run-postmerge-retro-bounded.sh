@@ -24,7 +24,7 @@ prompt_file="$WORKDIR/prompt.md"
 bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" bounded "$prompt_file"
 
 provider="$PROVIDER_OVERRIDE"
-if [[ -z "$provider" || "$provider" == "null" || "$provider" == "unknown" ]]; then
+if [[ -z "$provider" ]]; then
   # shellcheck source=../lib/pick-advisory-provider.sh
   source "$LIB_DIR/pick-advisory-provider.sh"
   init_advisory_provider_credentials

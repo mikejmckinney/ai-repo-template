@@ -1207,6 +1207,14 @@ JSON
   rm -rf "$tmp"
 }
 
+@test "bounded retro provider fallback only handles a missing override" {
+  runner="scripts/workflows/postmerge-retro/run-postmerge-retro-bounded.sh"
+
+  run grep -Eq '\$provider.*(null|unknown)' "$runner"
+
+  [ "$status" -eq 1 ]
+}
+
 @test "weekly Claude retrieval requires observed repository reads and path-backed findings" {
   tmp="$(mktemp -d)"
   mkdir -p "$tmp/repo/src"

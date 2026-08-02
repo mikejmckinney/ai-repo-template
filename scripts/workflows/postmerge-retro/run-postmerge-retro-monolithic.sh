@@ -14,19 +14,8 @@ ARTIFACT_ROOT="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/daily-
 mkdir -p "$ARTIFACT_ROOT"
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 
-parse_positive_int() {
-  local name="$1" default="$2" raw="${3:-}"
-  if [[ -z "$raw" ]]; then
-    echo "$default"
-    return
-  fi
-  if [[ "$raw" =~ ^[0-9]+$ ]] && [[ $((10#$raw)) -gt 0 ]]; then
-    echo "$((10#$raw))"
-    return
-  fi
-  echo "::warning::Invalid ${name}=${raw}; using default ${default}" >&2
-  echo "$default"
-}
+# shellcheck source=scripts/workflows/lib/parse-positive-int.sh
+source "$LIB_DIR/parse-positive-int.sh"
 
 mapfile -t SELECTED_PRS < <(bash "$SCRIPT_DIR/daily-retro-select-prs.sh" || true)
 if [[ ${#SELECTED_PRS[@]} -eq 0 ]]; then

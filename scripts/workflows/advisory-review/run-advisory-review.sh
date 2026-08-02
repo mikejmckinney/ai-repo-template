@@ -4,6 +4,11 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$REPO_ROOT"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
+
+# shellcheck source=scripts/workflows/lib/parse-positive-int.sh
+source "$LIB_DIR/parse-positive-int.sh"
 
 PR="${1:-${PR_NUMBER:-}}"
 HEAD_SHA="${2:-${HEAD_SHA:-}}"
@@ -25,22 +30,6 @@ fi
 export CLAUDE_OAUTH_AVAILABLE
 unset CLAUDE_CODE_OAUTH_TOKEN
 
-parse_positive_int() {
-  local name="$1" default="$2" raw="${3:-}"
-  if [[ -z "$raw" ]]; then
-    echo "$default"
-    return
-  fi
-  if [[ "$raw" =~ ^[0-9]+$ ]] && [[ "$raw" -gt 0 ]]; then
-    echo "$raw"
-    return
-  fi
-  echo "::warning::Invalid ${name}=${raw}; using default ${default}" >&2
-  echo "$default"
-}
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
 MARKER='<!-- ai-advisory-review:v1 -->'
 MARKER_TOKEN='ai-advisory-review:v1'
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"

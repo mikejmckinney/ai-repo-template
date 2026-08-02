@@ -14,19 +14,8 @@ RUN_WEEK="${RUN_WEEK:-$(bash "$SCRIPT_DIR/resolve-run-week.sh")}"
 OUT_JSON="${1:-}"
 context_profile="${WEEKLY_REVIEW_CONTEXT_PROFILE:-full}"
 
-parse_positive_int() {
-  local name="$1" default="$2" raw="${3:-}"
-  if [[ -z "$raw" ]]; then
-    echo "$default"
-    return
-  fi
-  if [[ "$raw" =~ ^[0-9]+$ ]] && [[ $((10#$raw)) -gt 0 ]]; then
-    echo "$((10#$raw))"
-    return
-  fi
-  echo "::warning::Invalid ${name}=${raw}; using default ${default}" >&2
-  echo "$default"
-}
+# shellcheck source=scripts/workflows/lib/parse-positive-int.sh
+source "$LIB_DIR/parse-positive-int.sh"
 
 weekly_provider_timeout_seconds="$(parse_positive_int WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS 900 "${WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS:-}")"
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
