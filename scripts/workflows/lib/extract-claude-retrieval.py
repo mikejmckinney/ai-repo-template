@@ -73,7 +73,11 @@ def main() -> int:
                 if name == "Read":
                     raw_path = inputs.get("file_path")
                 elif name == "Grep":
-                    raw_path = inputs.get("path", str(repo_root))
+                    raw_path = inputs.get("path")
+                    if raw_path is None or (
+                        isinstance(raw_path, str) and not raw_path.strip()
+                    ):
+                        raw_path = str(repo_root)
                 else:
                     continue
                 if not isinstance(raw_path, str) or not raw_path.strip():

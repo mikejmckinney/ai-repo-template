@@ -1206,6 +1206,12 @@ JSON
     "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
   [ "$status" -eq 0 ]
 
+  printf '{"paths":[],"directories":["%s"],"github_calls":0,"tools":["Grep"]}\n' \
+    "$tmp/repo" >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 0 ]
+
   printf '{"paths":[],"directories":"src","github_calls":0,"tools":["Grep"]}\n' >"$tmp/trace.json"
   run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
     "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"

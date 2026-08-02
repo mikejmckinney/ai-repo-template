@@ -364,6 +364,25 @@ JSONL
   rm -rf "$tmp"
 }
 
+@test "Claude retrieval extraction defaults null Grep paths without counting Glob" {
+  tmp="$(mktemp -d)"
+  session_id=44444444-4444-4444-8444-444444444444
+  mkdir -p "$tmp/home/.claude/projects/project-test" "$tmp/repo/src"
+  cat >"$tmp/home/.claude/projects/project-test/${session_id}.jsonl" <<'JSONL'
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Grep","input":{"pattern":"source","path":null}},{"type":"tool_use","name":"Glob","input":{"pattern":"src/**/*.py"}}]}}
+JSONL
+
+  run env HOME="$tmp/home" python3 \
+    "$REPO_ROOT/scripts/workflows/lib/extract-claude-retrieval.py" \
+    --session-id "$session_id" --repo-root "$tmp/repo" \
+    --output "$tmp/retrieval-trace.json"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.directories | join("|")' "$tmp/retrieval-trace.json")" = "$tmp/repo" ]
+  [ "$(jq -r '.paths | length' "$tmp/retrieval-trace.json")" -eq 0 ]
+  rm -rf "$tmp"
+}
+
 @test "advisory workflow uploads failure-only Claude sessions for seven days" {
   workflow="$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
   runner="$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
