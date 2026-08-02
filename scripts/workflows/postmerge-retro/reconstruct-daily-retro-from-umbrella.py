@@ -57,7 +57,7 @@ def _parse_guard(raw: str) -> bool:
 
 
 def _infer_fix_cost_and_guard(impact: str, trigger: str, table_band: str) -> tuple[str, bool]:
-    # Legacy rows did not record fix cost; candidate order supplies a stable
+    # Legacy 8-column rows did not record fix cost; candidate order supplies a stable
     # placeholder, while the guard is recovered only when the band determines it.
     for fix_cost in ("trivial", "moderate", "large"):
         for guard in (False, True):
