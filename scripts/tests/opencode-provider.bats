@@ -5,14 +5,94 @@ bats_require_minimum_version 1.5.0
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   source "$REPO_ROOT/scripts/workflows/lib/pick-advisory-provider.sh"
-  unset CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
+  unset CLAUDE_CODE_OAUTH_TOKEN CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
+  unset ADVISORY_GITHUB_TOKEN
   unset OPENCODE_AUTH_CONTENT OPENCODE_OAUTH_MIN_TTL_SECONDS OPENCODE_MODELS
   unset ADVISORY_REVIEW_PROVIDER POSTMERGE_RETRO_PROVIDER WEEKLY_REVIEW_PROVIDER
   OPENCODE_BIN=/bin/true
+  CLAUDE_BIN=/bin/true
   antigravity_enabled=false
 }
 
-@test "auto routing prefers OpenCode when Cursor and OpenCode are available" {
+valid_opencode_auth() {
+  jq -cn --argjson expires "$((($(date +%s) + 7200) * 1000))" '{
+    openai: {
+      type: "oauth",
+      access: "access-test",
+      refresh: "ci-refresh-disabled",
+      expires: $expires,
+      accountId: "account-test"
+    }
+  }'
+}
+
+@test "pre-merge auto routing exposes the exact model-specific cascade" {
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
+  OPENCODE_AUTH_CONTENT="$(valid_opencode_auth)"
+  OPENCODE_OAUTH_MIN_TTL_SECONDS=3600
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  CURSOR_API_KEY=cursor-test
+  GEMINI_API_KEY=gemini-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers advisory
+
+  [ "$status" -eq 0 ]
+  [ "$output" = $'claude\nopencode-sol\ncursor\nopencode-kimi' ]
+}
+
+@test "pre-merge auto routing omits only unavailable model candidates" {
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  CURSOR_API_KEY=cursor-test
+  GEMINI_API_KEY=gemini-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers advisory
+
+  [ "$status" -eq 0 ]
+  [ "$output" = $'cursor\nopencode-kimi' ]
+}
+
+@test "explicit OpenCode preserves its internal Sol then Kimi cascade" {
+  ADVISORY_REVIEW_PROVIDER=opencode
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  OPENCODE_AUTH_CONTENT="$(valid_opencode_auth)"
+  OPENCODE_OAUTH_MIN_TTL_SECONDS=3600
+  init_advisory_provider_credentials
+
+  run list_advisory_providers advisory
+
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
+  [ "$OPENCODE_MODELS" = "openai/gpt-5.6-sol,openrouter/moonshotai/kimi-k3@preset/consensus" ]
+}
+
+@test "model-specific candidates map to stable provider provenance" {
+  run advisory_candidate_provider opencode-sol
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
+
+  run advisory_candidate_provider opencode-kimi
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
+
+  run advisory_candidate_provider claude
+  [ "$status" -eq 0 ]
+  [ "$output" = claude ]
+
+  run --separate-stderr advisory_candidate_provider antigravity
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"unknown advisory candidate 'antigravity'"* ]]
+
+  run --separate-stderr advisory_candidate_provider gemini
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"unknown advisory candidate 'gemini'"* ]]
+}
+
+@test "pre-merge auto routing prefers Grok over Kimi when Sol is unavailable" {
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -22,7 +102,7 @@ setup() {
   run pick_advisory_provider advisory
 
   [ "$status" -eq 0 ]
-  [ "$output" = opencode ]
+  [ "$output" = cursor ]
 }
 
 @test "OpenAI API credentials alone do not enable OpenCode in public CI" {
@@ -35,6 +115,30 @@ setup() {
 
   [ "$status" -eq 0 ]
   [ "$output" = cursor ]
+}
+
+@test "pre-merge auto routing fails clearly when no candidate is available" {
+  init_advisory_provider_credentials
+
+  run --separate-stderr pick_advisory_provider advisory
+
+  [ "$status" -eq 1 ]
+  [ -z "$output" ]
+  [[ "$stderr" == *"no advisory review provider configured"* ]]
+}
+
+@test "pre-merge rejects retired Gemini and Antigravity overrides" {
+  init_advisory_provider_credentials
+
+  ADVISORY_REVIEW_PROVIDER=gemini
+  run --separate-stderr list_advisory_providers advisory
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"unsupported provider 'gemini' for advisory"* ]]
+
+  ADVISORY_REVIEW_PROVIDER=antigravity
+  run --separate-stderr list_advisory_providers advisory
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"unsupported provider 'antigravity' for advisory"* ]]
 }
 
 @test "auto routing falls back to Cursor when OpenCode credentials are unavailable" {
@@ -58,6 +162,21 @@ setup() {
 
   [ "$status" -eq 0 ]
   [ "$output" = $'opencode\ncursor\ngemini' ]
+}
+
+@test "Claude advisory override does not change daily provider routing" {
+  ADVISORY_REVIEW_PROVIDER=claude
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  CURSOR_API_KEY=cursor-test
+  GEMINI_API_KEY=gemini-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers retro
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"Claude is pre-merge advisory-only"* ]]
+  [[ "$output" == *$'opencode\ncursor\ngemini' ]]
 }
 
 @test "Cursor SDK resolves Grok Medium without fast mode" {
@@ -98,14 +217,22 @@ export const Cursor = {
   },
 }
 export const Agent = {
-  prompt: async () => {
+  prompt: async (_prompt, options) => {
+    if (options.mode !== "plan") throw new Error("Cursor advisory must run in plan mode")
+    const github = options.mcpServers?.github_read
+    if (github?.type !== "http") throw new Error("Cursor advisory omitted GitHub MCP")
+    if (github.url !== "https://api.githubcopilot.com/mcp/") throw new Error("Cursor advisory used the wrong GitHub MCP URL")
+    if (github.headers?.Authorization !== "Bearer github-read-test") throw new Error("Cursor advisory omitted the read-only token")
+    if (github.headers?.["X-MCP-Readonly"] !== "true" || github.headers?.["X-MCP-Lockdown"] !== "true") {
+      throw new Error("Cursor advisory omitted GitHub MCP lockdown headers")
+    }
     setInterval(() => {}, 1000)
     return { model: { id: "grok-4.5" }, status: "completed", result: "cursor-ok\n" }
   },
 }
 EOF
 
-  run timeout 3s env CURSOR_API_KEY=cursor-test \
+  run timeout 3s env CURSOR_API_KEY=cursor-test ADVISORY_GITHUB_TOKEN=github-read-test \
     CURSOR_SDK_MODULE="$tmp/cursor-sdk.mjs" \
     CURSOR_ADVISORY_MODEL=cursor-grok-4.5-medium \
     node "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-cursor.mjs" \
@@ -114,6 +241,225 @@ EOF
   [ "$status" -eq 0 ]
   [ "$(cat "$tmp/output.txt")" = cursor-ok ]
   rm -rf "$tmp"
+}
+
+@test "Claude runner pins Opus 5 medium and records the observed model" {
+  tmp="$(mktemp -d)"
+  printf 'review this' >"$tmp/prompt.md"
+  cat >"$tmp/claude" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$*" >"$CLAUDE_ARGS_FILE"
+cat >/dev/null
+for ((i = 1; i <= $#; i++)); do
+  if [[ "${!i}" == "--mcp-config" ]]; then
+    next=$((i + 1))
+    cp "${!next}" "$CLAUDE_MCP_CONFIG_CAPTURE"
+  fi
+done
+  jq -cn '{
+    is_error: false,
+    result: "free-form text is not the advisory contract",
+    structured_output: {evidence_retrieved: true, findings: []},
+    session_id: "claude-session",
+    modelUsage: {
+      "claude-haiku-4-5-20251001": {inputTokens: 1, outputTokens: 1},
+      "claude-opus-5": {inputTokens: 1, outputTokens: 1}
+    }
+  }'
+EOF
+  chmod +x "$tmp/claude"
+
+  run env PATH="$tmp:$PATH" CLAUDE_ARGS_FILE="$tmp/args" \
+    CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    ADVISORY_GITHUB_TOKEN=github-read-test \
+    CLAUDE_ADVISORY_SESSION_ID=11111111-1111-4111-8111-111111111111 \
+    CLAUDE_ADVISORY_SESSION_ID_FILE="$tmp/session-id.txt" \
+    CLAUDE_MCP_CONFIG_CAPTURE="$tmp/mcp.json" \
+    ADVISORY_PROVIDER_METADATA_FILE="$tmp/metadata.json" \
+    "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-claude.sh" \
+    "$tmp/prompt.md" "$tmp/output.txt"
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$tmp/output.txt")" = '{"evidence_retrieved":true,"findings":[]}' ]
+  grep -q -- '--model claude-opus-5' "$tmp/args"
+  grep -q -- '--effort medium' "$tmp/args"
+  grep -q -- '--output-format json' "$tmp/args"
+  grep -q -- '--json-schema' "$tmp/args"
+  grep -q -- '--tools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
+  grep -q -- '--allowedTools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
+  grep -q -- '--strict-mcp-config' "$tmp/args"
+  grep -q -- '--mcp-config' "$tmp/args"
+  [ "$(grep -c -- '--safe-mode' "$tmp/args")" -eq 0 ]
+  grep -q -- '--session-id 11111111-1111-4111-8111-111111111111' "$tmp/args"
+  ! grep -q -- '--no-session-persistence' "$tmp/args"
+  [ "$(cat "$tmp/session-id.txt")" = 11111111-1111-4111-8111-111111111111 ]
+  run jq -e '
+    .mcpServers.github_read.type == "http" and
+    .mcpServers.github_read.url == "https://api.githubcopilot.com/mcp/" and
+    .mcpServers.github_read.headers.Authorization == "Bearer ${ADVISORY_GITHUB_TOKEN}" and
+    .mcpServers.github_read.headers["X-MCP-Toolsets"] == "repos,issues,pull_requests,actions" and
+    .mcpServers.github_read.headers["X-MCP-Readonly"] == "true" and
+    .mcpServers.github_read.headers["X-MCP-Lockdown"] == "true"
+  ' "$tmp/mcp.json"
+  [ "$status" -eq 0 ]
+  grep -q -- '"findings"' "$tmp/args"
+  [ "$(jq -r '.provider + "/" + .model' "$tmp/metadata.json")" = "claude/claude-opus-5" ]
+  [ "$(jq -r .requested_model "$tmp/metadata.json")" = claude-opus-5 ]
+  rm -rf "$tmp"
+}
+
+@test "Claude advisory failure diagnostics copy the exact persisted session" {
+  tmp="$(mktemp -d)"
+  session_id=22222222-2222-4222-8222-222222222222
+  mkdir -p "$tmp/home/.claude/projects/project-test"
+  printf '%s\n' '{"type":"assistant","message":"diagnostic secret-value-test"}' \
+    >"$tmp/home/.claude/projects/project-test/${session_id}.jsonl"
+
+  run env HOME="$tmp/home" GITHUB_TOKEN=secret-value-test python3 \
+    "$REPO_ROOT/scripts/workflows/advisory-review/collect-claude-session.py" \
+    --session-id "$session_id" \
+    --output "$tmp/artifacts/${session_id}.jsonl" \
+    --redact-env GITHUB_TOKEN
+
+  [ "$status" -eq 0 ]
+  grep -q 'diagnostic' "$tmp/artifacts/${session_id}.jsonl"
+  grep -q '\[REDACTED:GITHUB_TOKEN\]' "$tmp/artifacts/${session_id}.jsonl"
+  ! grep -q 'secret-value-test' "$tmp/artifacts/${session_id}.jsonl"
+  rm -rf "$tmp"
+}
+
+@test "advisory workflow uploads failure-only Claude sessions for seven days" {
+  workflow="$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
+  runner="$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
+
+  grep -q 'actions/upload-artifact@v4' "$workflow"
+  grep -q 'path: .artifacts/advisory-claude-session/' "$workflow"
+  grep -q 'retention-days: 7' "$workflow"
+  grep -q 'collect-claude-session.py' "$runner"
+}
+
+@test "pre-merge advisory prompt is retrieval-first and injects no source bodies" {
+  runner="$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
+  prompt="$REPO_ROOT/.github/prompts/pr-advisory-review.md"
+
+  ! grep -q 'prompt_helpers.py.*select-context' "$runner"
+  ! grep -q 'Repo startup context (automation-supplied' "$runner"
+  ! grep -q 'printf.*pr_body' "$runner"
+  ! grep -q 'printf.*diff_text' "$runner"
+  ! grep -q 'Existing advisory snapshot (dedupe against this)' "$runner"
+  grep -q 'Retrieve the current issue, pull request, discussion, checks, and diff' "$prompt"
+  grep -q 'Review only changes between the diff base and expected head' "$prompt"
+  grep -q 'Expected head SHA' "$runner"
+}
+
+@test "Claude advisory schema requires every normalized triage field" {
+  schema="$REPO_ROOT/.github/schemas/advisory-review.schema.json"
+
+  run jq -e '
+    (.required | index("evidence_retrieved")) != null and
+    ((.properties.findings.items.required | index("regression_guard")) != null)
+  ' "$schema"
+
+  [ "$status" -eq 0 ]
+}
+
+@test "advisory provider commands honor the candidate timeout" {
+  run env ADVISORY_CANDIDATE_TIMEOUT_SECONDS=1 CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    bash -c '
+      source "$1"
+      run_with_provider_credentials claude bash -c "sleep 2"
+    ' _ "$REPO_ROOT/scripts/workflows/lib/invoke-advisory-llm.sh"
+
+  [ "$status" -eq 124 ]
+}
+
+@test "advisory candidate timeout defaults to 300 seconds" {
+  grep -q "ADVISORY_CANDIDATE_TIMEOUT_SECONDS || '300'" \
+    "$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
+  grep -q 'parse_positive_int ADVISORY_CANDIDATE_TIMEOUT_SECONDS 300' \
+    "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
+  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS' "$REPO_ROOT/docs/guides/agent-pipeline.md"
+  grep -q '`300` seconds' "$REPO_ROOT/docs/guides/agent-pipeline.md"
+}
+
+@test "advisory candidate timeout terminates descendant processes" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/candidate.sh" <<'EOF'
+#!/usr/bin/env bash
+bash -c 'trap '\''touch "$DESCENDANT_TERM_MARKER"; exit 0'\'' TERM; while :; do sleep 1; done' \
+  </dev/null >/dev/null 2>&1 &
+echo "$!" >"$DESCENDANT_PID_FILE"
+wait
+EOF
+  chmod +x "$tmp/candidate.sh"
+
+  run env ADVISORY_CANDIDATE_TIMEOUT_SECONDS=1 CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    DESCENDANT_TERM_MARKER="$tmp/terminated" DESCENDANT_PID_FILE="$tmp/pid" \
+    bash -c '
+      source "$1"
+      run_with_provider_credentials claude "$2"
+    ' _ "$REPO_ROOT/scripts/workflows/lib/invoke-advisory-llm.sh" "$tmp/candidate.sh"
+
+  run_status="$status"
+  for _ in {1..20}; do
+    [ -e "$tmp/terminated" ] && break
+    sleep 0.1
+  done
+  terminated=0
+  [ -e "$tmp/terminated" ] && terminated=1
+  if [ -s "$tmp/pid" ]; then
+    descendant_pid="$(cat "$tmp/pid")"
+    pkill -TERM -P "$descendant_pid" 2>/dev/null || true
+    kill "$descendant_pid" 2>/dev/null || true
+  fi
+  rm -rf "$tmp"
+
+  [ "$run_status" -eq 124 ]
+  [ "$terminated" -eq 1 ]
+}
+
+@test "Claude runner rejects output without observed model usage" {
+  tmp="$(mktemp -d)"
+  printf 'review this' >"$tmp/prompt.md"
+  cat >"$tmp/claude" <<'EOF'
+#!/usr/bin/env bash
+cat >/dev/null
+jq -cn '{
+  is_error: false,
+  result: "claude-ok",
+  structured_output: {findings: []},
+  session_id: "claude-session",
+  modelUsage: {"claude-haiku-4-5-20251001": {inputTokens: 1, outputTokens: 1}}
+}'
+EOF
+  chmod +x "$tmp/claude"
+
+  run env PATH="$tmp:$PATH" CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    ADVISORY_GITHUB_TOKEN=github-read-test \
+    ADVISORY_PROVIDER_METADATA_FILE="$tmp/metadata.json" \
+    "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-claude.sh" \
+    "$tmp/prompt.md" "$tmp/output.txt"
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"omitted observed model usage"* ]]
+  [ ! -e "$tmp/metadata.json" ]
+  rm -rf "$tmp"
+}
+
+@test "model-specific OpenCode dispatch pins one model per attempt" {
+  run bash -c '
+    source "$1"
+    run_with_provider_credentials() { printf "%s\n" "$*"; }
+    invoke_advisory_llm prompt output opencode-sol advisory repo workdir lib
+    invoke_advisory_llm prompt output opencode-kimi advisory repo workdir lib
+  ' _ "$REPO_ROOT/scripts/workflows/lib/invoke-advisory-llm.sh"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OPENCODE_MODELS=openai/gpt-5.6-sol"* ]]
+  [[ "$output" == *"OPENCODE_VARIANT=medium"* ]]
+  [ "$(grep -c 'OPENCODE_VARIANT=medium' <<<"$output")" -eq 1 ]
+  [[ "$output" == *"OPENCODE_MODELS=openrouter/moonshotai/kimi-k3@preset/consensus"* ]]
+  [[ "$output" != *"OPENCODE_MODELS=openai/gpt-5.6-sol,openrouter/"* ]]
 }
 
 @test "hosted workflows export both locked SDK modules" {
@@ -292,6 +638,23 @@ EOF
   run jq -e '.dependencies.undici == "7.28.0"' \
     "$REPO_ROOT/.github/agent-runtime/package.json"
   [ "$status" -eq 0 ]
+}
+
+@test "pinned OpenCode SDK and CLI accept model variants" {
+  run python3 - \
+    "$REPO_ROOT/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/gen/sdk.gen.d.ts" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+signature = text.split("prompt<ThrowOnError", 1)[1].split("deleteMessage<ThrowOnError", 1)[0]
+assert "variant?: string;" in signature
+PY
+  [ "$status" -eq 0 ]
+
+  run "$REPO_ROOT/.github/agent-runtime/node_modules/.bin/opencode" run --help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'--variant'* ]]
 }
 
 @test "OpenCode runner corrects model-authored priority bands" {

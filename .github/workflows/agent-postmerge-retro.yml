@@ -106,6 +106,7 @@ jobs:
       POSTMERGE_RETRO_ANTIGRAVITY_ON_TRUNCATE: ${{ vars.POSTMERGE_RETRO_ANTIGRAVITY_ON_TRUNCATE || 'true' }}
       ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
       OPENCODE_OAUTH_MIN_TTL_SECONDS: 6300
+      OPENCODE_ENABLE_EXA: 1
     steps:
       - name: Verify required secrets
         env:
@@ -121,7 +122,7 @@ jobs:
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
           if [[ "$PROVIDER" == "antigravity" ]]; then
-            echo "::notice::ADVISORY_REVIEW_PROVIDER=antigravity is advisory-only; post-merge retro uses auto (opencode, else cursor, else gemini)."
+            echo "::notice::Antigravity is weekly-scan-only; post-merge retro uses auto (opencode, else cursor, else gemini)."
             PROVIDER=auto
           fi
           case "$PROVIDER" in

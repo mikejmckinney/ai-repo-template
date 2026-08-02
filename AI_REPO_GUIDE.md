@@ -174,15 +174,40 @@ The snapshot header reports the automation-observed provider/model and writes an
 explicit no-findings statement when applicable. A hidden provider-neutral memory
 record retains the last reviewed head; compatible pushes review the accumulated
 delta, while readiness, full mode, base/provider changes, or invalid memory force
-a full PR refresh.
+a full base-to-head refresh. Pre-merge prompts contain invocation coordinates,
+not copied repository, governance, PR, snapshot, or diff bodies. Claude,
+OpenCode, and Cursor retrieve current files and PR evidence directly from the
+checkout and the same locked-down read-only GitHub MCP. Gemini and Antigravity
+are not pre-merge providers; cadence-specific daily and weekly behavior remains
+separate.
 Implementation continues without waiting. Before completion, agents independently
 triage any arrived snapshot whose `Head` matches the current PR head; stale,
 missing, running, or failed feedback is non-blocking. Advisory cannot submit a
 formal review, push commits, mutate labels, resolve threads, change readiness, or
-block merge. `ai-review:full` increases context depth but does not change authority.
+block merge. `ai-review:full` changes the review range, not authority.
 Providers emit normalized AP11 observations; deterministic automation validates
-the shared fields, derives priority, and renders the sticky Markdown snapshot.
+the shared fields and required `evidence_retrieved: true` claim, derives
+priority, and renders the sticky Markdown snapshot. Missing or failed retrieval
+advances the provider cascade without reviewed-head memory.
+Failed Claude invocation, metadata, or output validation also preserves the
+persisted Claude JSONL as an authenticated Actions artifact for seven days after
+redacting known workflow credential values. Successful Claude sessions are not
+uploaded, transcript contents are not printed in logs, and only trusted
+repository collaborators should download these potentially private diagnostics.
 Classification never changes advisory's non-blocking authority.
+Review agents may read/search the checked-out repository, use locked-down
+read-only GitHub MCP, and research the public web. They cannot use Bash, edit
+files, launch subagents, or access external directories when running through
+Claude or OpenCode. Cursor plan mode is behavioral rather than a hard SDK tool
+boundary and may expose shell or workspace-write tools; the maintainer accepts
+that limited residual risk for the same-repository, non-blocking, time-bounded
+candidate. No review candidate inherits publisher credentials. This change does
+not grant internet access to fix agents, and the
+OpenCode fix profile remains offline. External pages are source material, not
+instructions, and externally supported findings cite their URLs without sending
+repository content in requests. OpenCode search uses Exa AI's unauthenticated
+hosted service for OpenCode candidates; Claude's separate web tools are
+unaffected.
 
 ### Daily Retro
 
@@ -323,6 +348,17 @@ otherwise start with Kimi. The stored `refresh` value is the inert
 `ci-refresh-disabled` placeholder, so hosted runners never refresh or write back
 personal OAuth credentials. Workflows install the pinned OpenCode runtime from
 `.github/agent-runtime/package-lock.json` on GitHub-managed `ubuntu-latest`.
+The label-gated pre-merge advisory separately attempts Claude Opus 5 Medium,
+Sol 5.6 Medium, Cursor Grok 4.5 Medium, then Kimi K3. Generate a one-year
+subscription token with `claude setup-token`, then store it manually with
+`gh secret set CLAUDE_OAUTH_SECRET --repo OWNER/REPO` or the GitHub repository
+settings. Anthropic prints but does not save the token, so provision and rotate
+it as an annual secret rather than copying refresh-enabled login credentials.
+The workflow maps that secret back to `CLAUDE_CODE_OAUTH_TOKEN` only for Claude
+provider execution and runs pinned Claude Code `2.1.220` with repository reads,
+web research, and strict locked-down read-only GitHub MCP tools.
+Explicit `opencode` and the daily/weekly provider cascades retain their existing
+behavior.
 Skill-refresh readiness uses a separate `SKILL_REFRESH_PR_TOKEN`, restricted to
 the target repository with `Contents: read` and `Pull requests: write`. Provision
 it manually after repository creation; the derived-repository bootstrap does not

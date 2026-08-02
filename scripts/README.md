@@ -83,6 +83,18 @@ In Codespaces, `codespace-post-start.sh` attempts this update automatically afte
 PAT setup only for a repository verified as private and treats skipped or failed
 sync as non-fatal; stale credentials automatically omit Sol in Actions.
 
+Generate and provision the separate Claude Code subscription token annually:
+
+```bash
+claude setup-token
+gh secret set CLAUDE_OAUTH_SECRET --repo OWNER/REPO
+```
+
+The first command prints but does not save the one-year token. Copy it into the
+hidden prompt from the second command, or use the repository's Actions secret
+settings. Do not place the token in shell history or copy refresh-enabled Claude
+login credentials.
+
 ## Creating New Scripts
 
 1. Create the script in this directory

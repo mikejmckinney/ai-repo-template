@@ -11,7 +11,7 @@ teardown() {
 
 @test "advisory normalization owns provider model and no-findings output" {
   cat >"$TMP_DIR/input.md" <<'EOF'
-{"findings": []}
+{"evidence_retrieved":true,"findings": []}
 EOF
   printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
 
@@ -22,13 +22,13 @@ EOF
     --head "1111111111111111111111111111111111111111" \
     --base "0000000000000000000000000000000000000000" \
     --review-basis full \
-    --diff-included 120 \
-    --diff-total 120 \
-    --truncated no \
+    --range-bytes 120 \
     --changed-files 3
 
   [ "$status" -eq 0 ]
   grep -q '^Provider: `opencode / openai/gpt-5.6-sol`$' "$TMP_DIR/output.md"
+  grep -q '^Review range: `120` bytes, basis: `full`$' "$TMP_DIR/output.md"
+  ! grep -q '^Diff coverage:' "$TMP_DIR/output.md"
   grep -q '^No findings identified at this head\.$' "$TMP_DIR/output.md"
   ! grep -q '^|---|---|---|---|---|---|---|$' "$TMP_DIR/output.md"
   grep -q 'ai-advisory-memory:v1' "$TMP_DIR/output.md"
@@ -38,7 +38,7 @@ EOF
 
 @test "advisory normalization rejects model-authored severity findings" {
   cat >"$TMP_DIR/input.md" <<'EOF'
-{"findings":[{
+{"evidence_retrieved":true,"findings":[{
   "id":"ADV-01","lens":"Correctness","area":"parser",
   "finding":"It fails.","suggested_action":"Fix it.","still_present_at_head":true,
   "triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"material",
@@ -55,9 +55,7 @@ EOF
     --head "2222222222222222222222222222222222222222" \
     --base "0000000000000000000000000000000000000000" \
     --review-basis incremental \
-    --diff-included 42 \
-    --diff-total 42 \
-    --truncated no \
+    --range-bytes 42 \
     --changed-files 1
 
   [ "$status" -ne 0 ]
@@ -67,7 +65,7 @@ EOF
 
 @test "advisory normalization rejects null deprecated fields by presence" {
   cat >"$TMP_DIR/base.json" <<'EOF'
-{"findings":[{
+{"evidence_retrieved":true,"findings":[{
   "id":"ADV-01","lens":"Correctness","area":"parser",
   "finding":"It fails.","suggested_action":"Fix it.","still_present_at_head":true,
   "triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"material",
@@ -87,9 +85,7 @@ EOF
       --head "2222222222222222222222222222222222222222" \
       --base "0000000000000000000000000000000000000000" \
       --review-basis incremental \
-      --diff-included 42 \
-      --diff-total 42 \
-      --truncated no \
+      --range-bytes 42 \
       --changed-files 1
 
     [ "$status" -ne 0 ]
@@ -121,9 +117,7 @@ EOF
     --head "2222222222222222222222222222222222222222" \
     --base "0000000000000000000000000000000000000000" \
     --review-basis incremental \
-    --diff-included 42 \
-    --diff-total 42 \
-    --truncated no \
+    --range-bytes 42 \
     --changed-files 1
 
   [ "$status" -ne 0 ]
@@ -134,6 +128,7 @@ EOF
 @test "advisory normalization classifies structured AP11 findings" {
   cat >"$TMP_DIR/input.md" <<'EOF'
 {
+  "evidence_retrieved": true,
   "findings": [
     {
       "id": "ADV-01",
@@ -165,9 +160,7 @@ EOF
     --head "2222222222222222222222222222222222222222" \
     --base "0000000000000000000000000000000000000000" \
     --review-basis incremental \
-    --diff-included 42 \
-    --diff-total 42 \
-    --truncated no \
+    --range-bytes 42 \
     --changed-files 1
 
   [ "$status" -eq 0 ]
@@ -195,9 +188,7 @@ EOF
     --head "3333333333333333333333333333333333333333" \
     --base "0000000000000000000000000000000000000000" \
     --review-basis full \
-    --diff-included 10 \
-    --diff-total 10 \
-    --truncated no \
+    --range-bytes 10 \
     --changed-files 1
 
   [ "$status" -ne 0 ]
@@ -228,9 +219,7 @@ EOF
     --head "3333333333333333333333333333333333333333" \
     --base "0000000000000000000000000000000000000000" \
     --review-basis full \
-    --diff-included 10 \
-    --diff-total 10 \
-    --truncated no \
+    --range-bytes 10 \
     --changed-files 1
 
   [ "$status" -ne 0 ]
@@ -241,7 +230,7 @@ EOF
 @test "advisory normalization rejects invalid finding fields" {
   printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
   cat >"$TMP_DIR/valid.json" <<'EOF'
-{"findings":[{
+{"evidence_retrieved":true,"findings":[{
   "id":"ADV-01","lens":"Correctness","area":"parser",
   "finding":"It fails.","suggested_action":"Fix it.","still_present_at_head":true,
   "triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"material",
@@ -265,9 +254,7 @@ EOF
       --head "3333333333333333333333333333333333333333" \
       --base "0000000000000000000000000000000000000000" \
       --review-basis full \
-      --diff-included 10 \
-      --diff-total 10 \
-      --truncated no \
+      --range-bytes 10 \
       --changed-files 1
 
     [ "$status" -ne 0 ]
@@ -287,13 +274,30 @@ EOF
     --head "3333333333333333333333333333333333333333" \
     --base "0000000000000000000000000000000000000000" \
     --review-basis full \
-    --diff-included 10 \
-    --diff-total 10 \
-    --truncated no \
+    --range-bytes 10 \
     --changed-files 1
 
   [ "$status" -ne 0 ]
   [[ "$output" == *"requires a findings array"* ]]
+  [ ! -e "$TMP_DIR/output.md" ]
+}
+
+@test "advisory normalization rejects incomplete retrieval" {
+  printf '%s\n' '{"provider":"opencode","model":"openai/gpt-5.6-sol"}' >"$TMP_DIR/provider.json"
+  printf '%s\n' '{"evidence_retrieved":false,"findings":[]}' >"$TMP_DIR/input.md"
+
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+    --input "$TMP_DIR/input.md" \
+    --output "$TMP_DIR/output.md" \
+    --provider-metadata "$TMP_DIR/provider.json" \
+    --head "3333333333333333333333333333333333333333" \
+    --base "0000000000000000000000000000000000000000" \
+    --review-basis full \
+    --range-bytes 10 \
+    --changed-files 1
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"evidence_retrieved must be true"* ]]
   [ ! -e "$TMP_DIR/output.md" ]
 }
 
@@ -305,7 +309,7 @@ EOF
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ "$1 $2" == "api repos/example/repo/pulls/506" ]]; then
-  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"test",html_url:"https://example.test/pr/506",base:{sha:$base}}'
+  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"INJECTED-PR-BODY-SENTINEL",html_url:"https://example.test/pr/506",base:{sha:$base}}'
 elif [[ "$1 $2" == "api repos/example/repo/issues/506/comments" ]]; then
   printf '[]\n'
 else
@@ -320,13 +324,14 @@ list_advisory_providers() { printf '%s\n' first second; }
 EOF
   cat >"$TMP_DIR/invoke.sh" <<'EOF'
 invoke_advisory_llm() {
-  local output_file="$2" provider="$3"
+  local prompt_file="$1" output_file="$2" provider="$3"
+  cp "$prompt_file" "$ADVISORY_TEST_PROMPT_CAPTURE"
   printf '%s\n' "$provider" >>"$ADVISORY_TEST_ATTEMPTS"
   printf '{"provider":"%s","model":"test-model"}\n' "$provider" >"$ADVISORY_PROVIDER_METADATA_FILE"
   if [[ "$provider" == first ]]; then
     printf 'malformed output\n' >"$output_file"
   else
-    printf '%s\n' '{"findings":[]}' >"$output_file"
+    printf '%s\n' '{"evidence_retrieved":true,"findings":[]}' >"$output_file"
   fi
 }
 EOF
@@ -343,6 +348,7 @@ EOF
     GITHUB_EVENT_ACTION=synchronize \
     ADVISORY_TEST_BASE="$base" \
     ADVISORY_TEST_ATTEMPTS="$TMP_DIR/attempts" \
+    ADVISORY_TEST_PROMPT_CAPTURE="$TMP_DIR/prompt.md" \
     ADVISORY_TEST_POSTED="$TMP_DIR/posted.md" \
     ADVISORY_PROVIDER_LIB="$TMP_DIR/providers.sh" \
     ADVISORY_INVOKE_LIB="$TMP_DIR/invoke.sh" \
@@ -353,6 +359,118 @@ EOF
   [ "$(tr '\n' ' ' <"$TMP_DIR/attempts")" = "first second " ]
   grep -q '^Provider: `second / test-model`$' "$TMP_DIR/posted.md"
   grep -q '^No findings identified at this head\.$' "$TMP_DIR/posted.md"
+  ! grep -q 'INJECTED-PR-BODY-SENTINEL' "$TMP_DIR/prompt.md"
+  ! grep -q '^diff --git ' "$TMP_DIR/prompt.md"
+  [ "$(wc -c <"$TMP_DIR/prompt.md")" -lt 10000 ]
+}
+
+@test "advisory runner reports diff metadata failures" {
+  base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
+  head=$(git -C "$REPO_ROOT" rev-parse HEAD)
+  real_git=$(command -v git)
+  mkdir -p "$TMP_DIR/bin"
+  cat >"$TMP_DIR/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1 $2" == "api repos/example/repo/pulls/506" ]]; then
+  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"test",html_url:"https://example.test/pr/506",base:{sha:$base}}'
+elif [[ "$1 $2" == "api repos/example/repo/issues/506/comments" ]]; then
+  printf '[]\n'
+else
+  exit 1
+fi
+EOF
+  cat >"$TMP_DIR/bin/git" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == diff ]]; then
+  exit 42
+fi
+exec "$ADVISORY_TEST_REAL_GIT" "$@"
+EOF
+  chmod +x "$TMP_DIR/bin/gh" "$TMP_DIR/bin/git"
+  cat >"$TMP_DIR/providers.sh" <<'EOF'
+init_advisory_provider_credentials() { :; }
+list_advisory_providers() { printf '%s\n' opencode; }
+EOF
+  cat >"$TMP_DIR/invoke.sh" <<'EOF'
+invoke_advisory_llm() { return 99; }
+EOF
+
+  run env \
+    PATH="$TMP_DIR/bin:$PATH" \
+    GITHUB_REPOSITORY=example/repo \
+    GITHUB_EVENT_ACTION=synchronize \
+    ADVISORY_TEST_BASE="$base" \
+    ADVISORY_TEST_REAL_GIT="$real_git" \
+    ADVISORY_PROVIDER_LIB="$TMP_DIR/providers.sh" \
+    ADVISORY_INVOKE_LIB="$TMP_DIR/invoke.sh" \
+    bash "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh" 506 "$head" false
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Failed to compute advisory changed-file list"* ]]
+}
+
+@test "advisory runner exposes Claude OAuth only to the Claude candidate" {
+  base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
+  head=$(git -C "$REPO_ROOT" rev-parse HEAD)
+  mkdir -p "$TMP_DIR/bin"
+  cat >"$TMP_DIR/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+if [[ "$1 $2" == "api repos/example/repo/pulls/506" ]]; then
+  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"test",html_url:"https://example.test/pr/506",base:{sha:$base}}'
+elif [[ "$1 $2" == "api repos/example/repo/issues/506/comments" ]]; then
+  printf '[]\n'
+else
+  exit 1
+fi
+EOF
+  chmod +x "$TMP_DIR/bin/gh"
+  cat >"$TMP_DIR/providers.sh" <<'EOF'
+init_advisory_provider_credentials() {
+  [[ "${CLAUDE_OAUTH_AVAILABLE:-false}" == true ]]
+  [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+}
+list_advisory_providers() { printf '%s\n' claude cursor; }
+advisory_candidate_provider() { printf '%s\n' "$1"; }
+EOF
+  cat >"$TMP_DIR/invoke.sh" <<'EOF'
+invoke_advisory_llm() {
+  local output_file="$2" provider="$3"
+  if [[ "$provider" == claude ]]; then
+    [[ "${CLAUDE_CODE_OAUTH_TOKEN:-}" == claude-oauth-test ]]
+    printf 'malformed output\n' >"$output_file"
+  else
+    [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+    printf '%s\n' '{"evidence_retrieved":true,"findings":[]}' >"$output_file"
+  fi
+  printf '{"provider":"%s","model":"test-model"}\n' "$provider" >"$ADVISORY_PROVIDER_METADATA_FILE"
+}
+EOF
+  cat >"$TMP_DIR/upsert.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+[[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+cp "$3" "$ADVISORY_TEST_POSTED"
+EOF
+  chmod +x "$TMP_DIR/upsert.sh"
+
+  run env \
+    PATH="$TMP_DIR/bin:$PATH" \
+    GITHUB_REPOSITORY=example/repo \
+    GITHUB_EVENT_ACTION=synchronize \
+    CLAUDE_CODE_OAUTH_TOKEN=claude-oauth-test \
+    ADVISORY_TEST_BASE="$base" \
+    ADVISORY_TEST_POSTED="$TMP_DIR/posted.md" \
+    ADVISORY_PROVIDER_LIB="$TMP_DIR/providers.sh" \
+    ADVISORY_INVOKE_LIB="$TMP_DIR/invoke.sh" \
+    ADVISORY_UPSERT_SCRIPT="$TMP_DIR/upsert.sh" \
+    bash "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh" 506 "$head" false
+
+  [ "$status" -eq 0 ]
+  grep -q '^Provider: `cursor / test-model`$' "$TMP_DIR/posted.md"
 }
 
 @test "advisory runner fails when every provider output is malformed" {
@@ -424,7 +542,7 @@ invoke_advisory_llm() {
   local output_file="$2" long_finding
   printf '%s\n' '{"provider":"opencode","model":"test-model"}' >"$ADVISORY_PROVIDER_METADATA_FILE"
   long_finding=$(printf 'x%.0s' {1..2000})
-  jq -n --arg finding "$long_finding" '{findings:[{
+  jq -n --arg finding "$long_finding" '{evidence_retrieved:true,findings:[{
     id:"ADV-01", lens:"Correctness", area:"parser", finding:$finding,
     suggested_action:"Fix it.", still_present_at_head:true,
     triage_version:2, impact:"incorrect-behavior", impact_magnitude:"material",
@@ -493,9 +611,7 @@ EOF
     --head "4444444444444444444444444444444444444444" \
     --base "0000000000000000000000000000000000000000" \
     --review-basis full \
-    --diff-included 10 \
-    --diff-total 10 \
-    --truncated no \
+    --range-bytes 10 \
     --changed-files 1
 
   [ "$status" -ne 0 ]

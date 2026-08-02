@@ -16,6 +16,15 @@ usage() {
 
 [[ -n "$PR" && -n "$HEAD_SHA" ]] || usage
 
+claude_oauth_token="${CLAUDE_CODE_OAUTH_TOKEN:-}"
+advisory_github_token="${OPENCODE_GITHUB_TOKEN:-}"
+CLAUDE_OAUTH_AVAILABLE=false
+if [[ -n "$claude_oauth_token" ]]; then
+  CLAUDE_OAUTH_AVAILABLE=true
+fi
+export CLAUDE_OAUTH_AVAILABLE
+unset CLAUDE_CODE_OAUTH_TOKEN
+
 parse_positive_int() {
   local name="$1" default="$2" raw="${3:-}"
   if [[ -z "$raw" ]]; then
@@ -38,30 +47,22 @@ REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 
-DEFAULT_DIFF_LIVE=120000
-DEFAULT_DIFF_FULL=300000
 DEFAULT_COMMENT_LIMIT=65000
 
-diff_limit_live="$(parse_positive_int ADVISORY_REVIEW_DIFF_LIMIT_LIVE "$DEFAULT_DIFF_LIVE" "${ADVISORY_REVIEW_DIFF_LIMIT_LIVE:-}")"
-diff_limit_full="$(parse_positive_int ADVISORY_REVIEW_DIFF_LIMIT_FULL "$DEFAULT_DIFF_FULL" "${ADVISORY_REVIEW_DIFF_LIMIT_FULL:-}")"
 comment_limit="$(parse_positive_int ADVISORY_REVIEW_COMMENT_LIMIT "$DEFAULT_COMMENT_LIMIT" "${ADVISORY_REVIEW_COMMENT_LIMIT:-}")"
-context_profile="${ADVISORY_CONTEXT_PROFILE:-pr-review}"
+candidate_timeout="$(parse_positive_int ADVISORY_CANDIDATE_TIMEOUT_SECONDS 300 "${ADVISORY_CANDIDATE_TIMEOUT_SECONDS:-}")"
+export ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$candidate_timeout"
 
 if [[ "$FULL_MODE" == "true" ]]; then
-  diff_limit="$diff_limit_full"
   advisory_mode="full"
 else
-  diff_limit="$diff_limit_live"
   advisory_mode="live"
 fi
 
 pr_json="$(gh api "repos/${REPO}/pulls/${PR}")"
-pr_title="$(printf '%s' "$pr_json" | jq -r .title)"
-pr_body="$(printf '%s' "$pr_json" | jq -r .body)"
 pr_url="$(printf '%s' "$pr_json" | jq -r .html_url)"
 base_sha="$(printf '%s' "$pr_json" | jq -r .base.sha)"
 
-printf '%s\n' "$pr_body" >"$WORKDIR/pr-body.md"
 git fetch origin "$HEAD_SHA" "$base_sha" 2>/dev/null || true
 
 existing_snapshot=""
@@ -74,26 +75,22 @@ existing_snapshot=$(
 )
 printf '%s\n' "$existing_snapshot" >"$WORKDIR/existing-snapshot.md"
 
-# shellcheck disable=SC2034 # Provider routing reads this global after sourcing.
-antigravity_enabled=false
-if [[ "${ADVISORY_ANTIGRAVITY_ENABLED:-}" == "true" ]]; then
-  antigravity_enabled=true
-fi
-export antigravity_enabled
-
 # shellcheck disable=SC1090,SC1091
 source "${ADVISORY_PROVIDER_LIB:-$LIB_DIR/pick-advisory-provider.sh}"
 # shellcheck disable=SC1090,SC1091
 source "${ADVISORY_INVOKE_LIB:-$LIB_DIR/invoke-advisory-llm.sh}"
 # shellcheck disable=SC2034 # Provider routing initializes and reads these globals.
-has_opencode=0 has_cursor=0 has_gemini=0
+has_claude=0 has_opencode=0 has_opencode_sol=0 has_opencode_kimi=0 has_cursor=0 has_gemini=0
 init_advisory_provider_credentials
 mapfile -t provider_candidates < <(list_advisory_providers advisory)
 if [[ ${#provider_candidates[@]} -eq 0 ]]; then
-  echo "::error::No advisory review provider configured. Configure OpenCode, Cursor, or Gemini credentials."
+  echo "::error::No advisory review provider configured. Configure Claude, Sol, Grok, or Kimi credentials."
   exit 1
 fi
 expected_provider="${provider_candidates[0]}"
+if declare -F advisory_candidate_provider >/dev/null 2>&1; then
+  expected_provider="$(advisory_candidate_provider "${provider_candidates[0]}")"
+fi
 
 range_args=(
   --repo "$REPO_ROOT"
@@ -111,62 +108,18 @@ diff_base=$(jq -r .diff_base <<<"$range_json")
 review_basis=$(jq -r .review_basis <<<"$range_json")
 review_reason=$(jq -r .reason <<<"$range_json")
 
-git diff --name-only "${diff_base}...${HEAD_SHA}" >"$WORKDIR/changed-files.txt"
-
+changed_files_file="$WORKDIR/changed-files.txt"
+if ! git diff --name-only "${diff_base}...${HEAD_SHA}" >"$changed_files_file"; then
+  echo "::error::Failed to compute advisory changed-file list for ${diff_base}...${HEAD_SHA}" >&2
+  exit 1
+fi
 full_diff_file="$WORKDIR/full.diff"
-git diff "${diff_base}...${HEAD_SHA}" >"$full_diff_file" 2>/dev/null || true
+if ! git diff "${diff_base}...${HEAD_SHA}" >"$full_diff_file"; then
+  echo "::error::Failed to compute advisory diff for ${diff_base}...${HEAD_SHA}" >&2
+  exit 1
+fi
+changed_file_count="$(wc -l <"$changed_files_file" | tr -d ' ')"
 full_diff_bytes="$(wc -c <"$full_diff_file" | tr -d ' ')"
-truncated=false
-if [[ "$full_diff_bytes" -gt "$diff_limit" ]]; then
-  truncated=true
-fi
-diff_included="$full_diff_bytes"
-if [[ "$truncated" == "true" ]]; then
-  diff_included="$diff_limit"
-fi
-diff_text="$(head -c "$diff_limit" "$full_diff_file")"
-
-truncated_word="no"
-if [[ "$truncated" == "true" ]]; then
-  truncated_word="yes"
-fi
-
-cat >"$WORKDIR/diff-coverage.md" <<EOF
-### Diff coverage (automation-supplied)
-
-- Diff bytes total: \`${full_diff_bytes}\`
-- Diff bytes included: \`${diff_included}\`
-- Diff truncated: \`${truncated}\`
-- Advisory mode: \`${advisory_mode}\`
-- Review basis: \`${review_basis}\` (\`${review_reason}\`)
-- Diff base: \`${diff_base}\`
-- Review scope: if truncated, review only the included diff plus changed-file list; suggest \`ai-review:full\`.
-EOF
-
-changed_file_count="$(wc -l <"$WORKDIR/changed-files.txt" | tr -d ' ')"
-if [[ "$full_diff_bytes" -eq 0 && "$changed_file_count" -gt 0 ]]; then
-  echo "::warning::Advisory diff is empty (${changed_file_count} changed files listed) — review quality may be degraded (fetch/sha mismatch?)" >&2
-fi
-
-if ! python3 "$LIB_DIR/prompt_helpers.py" select-context \
-  --profile "$context_profile" \
-  --changed-files "$WORKDIR/changed-files.txt" >"$WORKDIR/context-files.txt"; then
-  echo "::error::select-context failed for profile ${context_profile}" >&2
-  exit 1
-fi
-if [[ ! -s "$WORKDIR/context-files.txt" ]]; then
-  echo "::error::select-context returned no files for profile ${context_profile}" >&2
-  exit 1
-fi
-mapfile -t context_files <"$WORKDIR/context-files.txt"
-
-context_file_count="${#context_files[@]}"
-context_bytes=0
-for rel in "${context_files[@]}"; do
-  if [[ -f "$REPO_ROOT/$rel" ]]; then
-    context_bytes=$((context_bytes + $(wc -c <"$REPO_ROOT/$rel" | tr -d ' ')))
-  fi
-done
 
 prompt_file="$WORKDIR/prompt.md"
 {
@@ -174,66 +127,76 @@ prompt_file="$WORKDIR/prompt.md"
   echo ""
   echo "---"
   echo ""
-  echo "## Repo startup context (automation-supplied, catalog-driven ${context_profile} + path triggers)"
-  echo ""
-  echo "- Context profile: \`${context_profile}\`"
-  echo "- Context files injected: \`${context_file_count}\`"
-  echo "- Context bytes injected: \`${context_bytes}\`"
-  echo ""
-  for rel in "${context_files[@]}"; do
-    echo "### ${rel}"
-    echo ""
-    cat "$REPO_ROOT/$rel"
-    echo ""
-  done
-  echo "---"
-  echo ""
-  echo "## PR context (automation-supplied)"
+  echo "## Invocation coordinates"
   echo ""
   echo "- Repository: \`${REPO}\`"
-  echo "- PR: #${PR} — ${pr_title}"
-  echo "- URL: ${pr_url}"
-  echo "- Head SHA: \`${HEAD_SHA}\`"
+  echo "- Pull request: [#${PR}](${pr_url})"
+  echo "- Expected head SHA: \`${HEAD_SHA}\`"
+  echo "- Base SHA: \`${base_sha}\`"
+  echo "- Diff base: \`${diff_base}\`"
+  echo "- Review basis: \`${review_basis}\` (\`${review_reason}\`)"
   echo "- Advisory mode: \`${advisory_mode}\`"
-  echo ""
-  cat "$WORKDIR/diff-coverage.md"
-  echo ""
-  echo "### PR body"
-  echo ""
-  printf '%s\n' "$pr_body"
-  echo ""
-  echo "### Changed files"
-  echo ""
-  sed 's/^/- /' "$WORKDIR/changed-files.txt"
-  echo ""
-  echo "### ${review_basis^} diff (truncated excerpt for prompt)"
-  echo ""
-  echo '```diff'
-  printf '%s\n' "$diff_text"
-  echo '```'
-  if [[ -n "$existing_snapshot" ]]; then
-    echo ""
-    echo "### Existing advisory snapshot (dedupe against this)"
-    echo ""
-    printf '%s\n' "$existing_snapshot"
-  fi
 } >"$prompt_file"
 
 out_file="$WORKDIR/advisory-body.md"
 raw_out_file="$WORKDIR/advisory-raw.md"
 provider_metadata_file="$WORKDIR/provider-metadata.json"
+claude_session_id_file="$WORKDIR/claude-session-id.txt"
+claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/advisory-claude-session"
+
+preserve_claude_session() {
+  if [[ ! -s "$claude_session_id_file" ]]; then
+    echo "::warning::Claude advisory failed without a persisted session identifier" >&2
+    return
+  fi
+  local session_id
+  session_id="$(<"$claude_session_id_file")"
+  if ! CLAUDE_DIAGNOSTIC_OAUTH_TOKEN="$claude_oauth_token" \
+    python3 "$SCRIPT_DIR/collect-claude-session.py" \
+    --session-id "$session_id" \
+    --output "$claude_diagnostics_dir/${session_id}.jsonl" \
+    --redact-env GITHUB_TOKEN \
+    --redact-env GH_TOKEN \
+    --redact-env OPENCODE_GITHUB_TOKEN \
+    --redact-env CLAUDE_DIAGNOSTIC_OAUTH_TOKEN \
+    --redact-env CURSOR_API_KEY \
+    --redact-env OPENROUTER_API_KEY \
+    --redact-env OPENCODE_AUTH_CONTENT; then
+    echo "::warning::Failed to preserve Claude advisory session ${session_id}" >&2
+  fi
+}
+
+invoke_provider_candidate() {
+  local candidate="$1"
+  if [[ "$candidate" == claude ]]; then
+    CLAUDE_CODE_OAUTH_TOKEN="$claude_oauth_token" \
+      ADVISORY_GITHUB_TOKEN="$advisory_github_token" \
+      CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
+      ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+      invoke_advisory_llm "$prompt_file" "$raw_out_file" "$candidate" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+    return
+  fi
+  if [[ "$candidate" == cursor ]]; then
+    ADVISORY_GITHUB_TOKEN="$advisory_github_token" \
+      ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+      invoke_advisory_llm "$prompt_file" "$raw_out_file" "$candidate" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+    return
+  fi
+  ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+    invoke_advisory_llm "$prompt_file" "$raw_out_file" "$candidate" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+}
+
 provider_succeeded=false
 for provider in "${provider_candidates[@]}"; do
   rm -f "$raw_out_file" "$provider_metadata_file"
-  if ADVISORY_FULL_DIFF_BYTES="$full_diff_bytes" \
-    ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
-    invoke_advisory_llm "$prompt_file" "$raw_out_file" "$provider" "$SCRIPT_DIR" "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"; then
-    PROVIDER="${ADVISORY_PROVIDER_USED:-$provider}"
+  if invoke_provider_candidate "$provider"; then
     if ! jq -e '.provider | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1 \
       || ! jq -e '.model | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1; then
       echo "::warning::Advisory provider ${provider} omitted provider/model metadata; trying next available provider" >&2
+      [[ "$provider" != claude ]] || preserve_claude_session
       continue
     fi
+    PROVIDER="$(jq -r .provider "$provider_metadata_file")"
     if ! python3 "$SCRIPT_DIR/normalize-advisory-snapshot.py" \
       --input "$raw_out_file" \
       --output "$out_file" \
@@ -241,16 +204,16 @@ for provider in "${provider_candidates[@]}"; do
       --head "$HEAD_SHA" \
       --base "$base_sha" \
       --review-basis "$review_basis" \
-      --diff-included "$diff_included" \
-      --diff-total "$full_diff_bytes" \
-      --truncated "$truncated_word" \
+      --range-bytes "$full_diff_bytes" \
       --changed-files "$changed_file_count"; then
       echo "::warning::Advisory provider ${provider} returned malformed snapshot output; trying next available provider" >&2
+      [[ "$provider" != claude ]] || preserve_claude_session
       continue
     fi
     provider_succeeded=true
     break
   fi
+  [[ "$provider" != claude ]] || preserve_claude_session
   echo "::warning::Advisory provider ${provider} failed; trying next available provider" >&2
 done
 if [[ "$provider_succeeded" != true ]]; then
@@ -270,7 +233,7 @@ $MARKER
 Head: \`${HEAD_SHA}\`
 Provider: \`${provider_label}\`
 Mode: advisory, non-blocking
-Diff coverage: \`${diff_included}/${full_diff_bytes}\` bytes, truncated: \`${truncated_word}\`, basis: \`${review_basis}\`
+Review range: \`${full_diff_bytes}\` bytes, basis: \`${review_basis}\`
 
 ### Findings to consider
 

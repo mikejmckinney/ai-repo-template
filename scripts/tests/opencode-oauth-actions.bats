@@ -235,6 +235,31 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "premerge workflow scopes Claude OAuth and pins the hosted CLI" {
+  advisory="$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
+
+  [ "$(grep -c 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$advisory")" -eq 1 ]
+  grep -q '@anthropic-ai/claude-code@2.1.220' "$advisory"
+  grep -q 'CLAUDE_OAUTH_SECRET' "$advisory"
+  grep -q 'has_claude' "$advisory"
+  grep -q 'Claude, Sol, Grok, or Kimi credentials' "$advisory"
+
+  run python3 - "$advisory" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+steps = text.split("      - name: ")[1:]
+runtime = next(step for step in steps if step.startswith("Install agent runtime\n"))
+claude = next(step for step in steps if step.startswith("Install Claude Code\n"))
+assert "@anthropic-ai/claude-code" not in runtime
+assert "if: env.CLAUDE_CANDIDATE == 'true'" in claude
+assert "@anthropic-ai/claude-code@2.1.220" in claude
+assert 'echo "CLAUDE_CANDIDATE=$claude_candidate" >> "$GITHUB_ENV"' in text
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "generated OpenCode CI profiles allow OAuth and use Kimi as small model" {
   for profile in base review fix; do
     run jq -e '
@@ -244,6 +269,35 @@ PY
     ' "$REPO_ROOT/.github/agent-runtime/${profile}.json"
     [ "$status" -eq 0 ]
   done
+}
+
+@test "OpenCode review profile can research the web while its fix profile remains offline" {
+  run jq -e '
+    .permission.webfetch == "allow" and
+    .permission.websearch == "allow" and
+    .permission.bash == "deny" and
+    .permission.edit == "deny" and
+    .permission.external_directory == "deny"
+  ' "$REPO_ROOT/.github/agent-runtime/review.json"
+  [ "$status" -eq 0 ]
+
+  run jq -e '
+    .permission.webfetch == "deny" and
+    .permission.websearch == "deny"
+  ' "$REPO_ROOT/.github/agent-runtime/fix.json"
+  [ "$status" -eq 0 ]
+
+  for workflow in \
+    agent-advisory-review.yml \
+    agent-postmerge-retro.yml \
+    agent-weekly-review.yml; do
+    grep -q 'OPENCODE_ENABLE_EXA: 1' "$REPO_ROOT/.github/workflows/$workflow"
+  done
+
+  grep -q 'Exa AI' "$REPO_ROOT/docs/guides/agent-pipeline.md"
+  grep -q 'OpenCode candidates only' "$REPO_ROOT/docs/guides/agent-pipeline.md"
+  grep -q 'residual risk' \
+    "$REPO_ROOT/docs/decisions/adr-030-non-blocking-review-pipeline.md"
 }
 
 @test "repository includes OAuth and provider isolation helpers" {
@@ -353,25 +407,32 @@ EOF
 set -euo pipefail
 provider="$1"
 case "$provider" in
+  claude)
+    [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" && -n "${ADVISORY_GITHUB_TOKEN:-}" ]]
+    [[ -z "${ANTHROPIC_API_KEY:-}${ANTHROPIC_AUTH_TOKEN:-}${CURSOR_API_KEY:-}${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
+    ;;
   opencode)
     [[ -n "${OPENROUTER_API_KEY:-}" && -n "${OPENCODE_GITHUB_TOKEN:-}" && -n "${OPENCODE_AUTH_CONTENT:-}" ]]
-    [[ -z "${CURSOR_API_KEY:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
+    [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}${ANTHROPIC_API_KEY:-}${ANTHROPIC_AUTH_TOKEN:-}${CURSOR_API_KEY:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
     ;;
   cursor)
-    [[ -n "${CURSOR_API_KEY:-}" ]]
-    [[ -z "${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
+    [[ -n "${CURSOR_API_KEY:-}" && -n "${ADVISORY_GITHUB_TOKEN:-}" ]]
+    [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}${ANTHROPIC_API_KEY:-}${ANTHROPIC_AUTH_TOKEN:-}${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
     ;;
   gemini)
     [[ -n "${GEMINI_API_KEY:-}" && -n "${GOOGLE_API_KEY:-}" ]]
-    [[ -z "${CURSOR_API_KEY:-}${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
+    [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}${ANTHROPIC_API_KEY:-}${ANTHROPIC_AUTH_TOKEN:-}${CURSOR_API_KEY:-}${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
     ;;
 esac
 EOF
   chmod +x "$TEST_ROOT/assert-provider-env.sh"
 
-  for provider in opencode cursor gemini; do
+  for provider in claude opencode cursor gemini; do
     run env \
       GITHUB_TOKEN=publisher-test GH_TOKEN=publisher-test SANDBOX_BOOTSTRAP_TOKEN=sandbox-test \
+      CLAUDE_CODE_OAUTH_TOKEN=claude-test ANTHROPIC_API_KEY=anthropic-key-test \
+      ANTHROPIC_AUTH_TOKEN=anthropic-auth-test \
+      ADVISORY_GITHUB_TOKEN=github-read-test \
       OPENROUTER_API_KEY=openrouter-test OPENCODE_GITHUB_TOKEN=opencode-github-test \
       OPENCODE_AUTH_CONTENT=opencode-auth-test CURSOR_API_KEY=cursor-test \
       GEMINI_API_KEY=gemini-test GOOGLE_API_KEY=google-test \
@@ -380,6 +441,9 @@ EOF
 
     [ "$status" -eq 0 ]
   done
+  run "$REPO_ROOT/scripts/workflows/lib/run-with-provider-credentials.sh" antigravity /bin/true
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"unsupported provider 'antigravity'"* ]]
 }
 
 @test "provider credential isolation composes with the postmerge timeout" {

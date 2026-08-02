@@ -57,6 +57,8 @@ def render_structured_findings(raw: str) -> str:
         raise ValueError(f"structured advisory output must be valid JSON: {error}") from error
     if not isinstance(data, dict) or not isinstance(data.get("findings"), list):
         raise ValueError("structured advisory output requires a findings array")
+    if data.get("evidence_retrieved") is not True:
+        raise ValueError("evidence_retrieved must be true after required source retrieval")
 
     findings = data["findings"]
     if not findings:
@@ -171,7 +173,7 @@ def normalize_findings(body: str) -> tuple[str, int]:
     return f"{body[:match.start()]}{replacement}{body[match.end():]}", 0
 
 
-def canonicalize_envelope(body: str, head: str, provider: str, model: str, coverage: str) -> str:
+def canonicalize_envelope(body: str, head: str, provider: str, model: str, review_range: str) -> str:
     match = FINDINGS_PATTERN.search(body)
     if not match:
         raise ValueError("malformed findings section: required heading is missing")
@@ -182,7 +184,7 @@ def canonicalize_envelope(body: str, head: str, provider: str, model: str, cover
         "Head: ": 0,
         "Provider: ": 0,
         "Mode: ": 0,
-        "Diff coverage: ": 0,
+        "Review range: ": 0,
     }
     for line in body[: match.start()].splitlines():
         stripped = line.strip()
@@ -212,7 +214,7 @@ def canonicalize_envelope(body: str, head: str, provider: str, model: str, cover
 Head: `{head}`
 Provider: `{provider} / {model}`
 Mode: advisory, non-blocking
-Diff coverage: {coverage}
+Review range: {review_range}
 
 ### Findings to consider
 
@@ -231,9 +233,7 @@ def main() -> int:
     parser.add_argument("--head", required=True)
     parser.add_argument("--base", required=True)
     parser.add_argument("--review-basis", choices=("full", "incremental"), required=True)
-    parser.add_argument("--diff-included", type=int, required=True)
-    parser.add_argument("--diff-total", type=int, required=True)
-    parser.add_argument("--truncated", choices=("yes", "no"), required=True)
+    parser.add_argument("--range-bytes", type=int, required=True)
     parser.add_argument("--changed-files", type=int, required=True)
     args = parser.parse_args()
 
@@ -259,14 +259,11 @@ def main() -> int:
     body = replace_line(body, "Head: ", f"`{args.head}`")
     body = replace_line(body, "Provider: ", f"`{provider} / {model}`")
     body = replace_line(body, "Mode: ", "advisory, non-blocking")
-    coverage = (
-        f"`{args.diff_included}/{args.diff_total}` bytes, "
-        f"truncated: `{args.truncated}`, basis: `{args.review_basis}`"
-    )
-    body = replace_line(body, "Diff coverage: ", coverage)
+    review_range = f"`{args.range_bytes}` bytes, basis: `{args.review_basis}`"
+    body = replace_line(body, "Review range: ", review_range)
     try:
         body, finding_count = normalize_findings(body)
-        body = canonicalize_envelope(body, args.head, provider, model, coverage)
+        body = canonicalize_envelope(body, args.head, provider, model, review_range)
     except ValueError as error:
         raise SystemExit(str(error)) from error
 

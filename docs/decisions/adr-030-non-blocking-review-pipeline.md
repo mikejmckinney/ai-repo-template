@@ -28,7 +28,10 @@ We adopt a **three-stage non-blocking review pipeline** on `main`:
 
 Shared properties:
 
-- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` / `ADVISORY_REVIEW_PROVIDER`, default `auto` (OpenCode first, then Cursor and the retained Antigravity/Gemini adapters).
+- **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` default
+  `auto` remains OpenCode first, then Cursor and retained Antigravity/Gemini
+  adapters. `ADVISORY_REVIEW_PROVIDER=auto` uses the separately amended
+  pre-merge model cascade below.
 - **Scripts:** `scripts/workflows/advisory-review/` (LLM runners), `scripts/workflows/pr-feedback/` (finalize collect), `scripts/workflows/postmerge-retro/` (retro + daily batch), `scripts/workflows/weekly-review/` (weekly full-repo scan + fix).
 - **Lifecycle libraries:** advisory, daily, and weekly adapters share the versioned AP11 observation validator and priority derivation in `scripts/workflows/lib/finding_priority.py`; daily and weekly also share provider dispatch, umbrella issue transport/reference handling, superseded-path detection, and batch-fix publication. Cadence-specific prompts, templates, markers, authority, and metadata hooks remain explicit.
 - **Non-goals:** No auto-merge of fix PRs; no automatic `claude-fix`; no ADR/context-pack file edits in retro jobs; no formal PR review submission from advisory/finalize.
@@ -233,6 +236,82 @@ adapter renders the sticky Markdown comment and keeps every band non-blocking.
 Formal/manual review uses the same classifier but applies its own authority only
 after classification. Unversioned persisted daily/weekly records remain version
 1 and retain their original decision table during reconstruction.
+
+### Amendment 2026-08-01 — Model-specific pre-merge advisory cascade
+
+[Issue #556](https://github.com/mikejmckinney/ai-repo-template/issues/556)
+separates the label-gated pre-merge model order from the unchanged daily and
+weekly provider cascade.
+
+- Pre-merge `ADVISORY_REVIEW_PROVIDER=auto` attempts available candidates in
+  this order: Claude Code `claude-opus-5` at medium effort, OpenCode
+  `openai/gpt-5.6-sol` at medium effort, Cursor `cursor-grok-4.5-medium`, then
+  OpenCode `openrouter/moonshotai/kimi-k3@preset/consensus`.
+- Explicit `ADVISORY_REVIEW_PROVIDER=opencode` retains its Sol-then-Kimi
+  internal fallback. Daily and weekly `auto` retain OpenCode, Cursor, and
+  cadence-specific Antigravity/Gemini behavior.
+- Each pre-merge candidate has a configurable outer timeout, defaulting to 300
+  seconds plus a 10-second termination grace period, inside the unchanged
+  20-minute advisory job budget.
+- Claude Code is pinned to `2.1.220` and receives only repository read/search
+  plus web fetch/search tools. OpenCode review profiles allow the same research
+  capability, while Bash, edits, subagents, and external-directory access remain
+  denied. OpenCode fix profiles remain offline, and this amendment grants no web
+  access to other fix providers. External content is evidence rather than
+  executable instruction, and prompts prohibit transmitting repository content
+  through URLs, search queries, or forms. Unrestricted review egress retains a
+  residual risk that repository or web content could induce an
+  outbound request containing private source. The maintainer accepts that risk
+  for read-only review because same-repository gating, credential isolation,
+  non-blocking authority, and deterministic publication limit likelihood and
+  impact. OpenCode web search uses Exa AI's unauthenticated hosted service for
+  OpenCode candidates only. It does not constrain Claude's separate
+  `WebFetch` and `WebSearch` tools. Downstream repositories that reject this
+  accepted egress policy must intentionally change the review profile, workflow,
+  and matching invariant rather than relying on an unverified environment-value
+  opt-out. A maintainer-generated `claude setup-token` value is stored as
+  `CLAUDE_OAUTH_SECRET`, mapped to `CLAUDE_CODE_OAUTH_TOKEN` only for provider
+  execution, and isolated from publisher and other provider credentials.
+- Model-specific candidate names are internal routing details. Snapshot memory
+  continues to record stable observed providers so Sol and Kimi remain
+  compatible with `opencode` incremental-review history.
+
+### Amendment 2026-08-02 — Direct-source pre-merge retrieval
+
+[Issue #556](https://github.com/mikejmckinney/ai-repo-template/issues/556)
+removes copied evidence from pre-merge model prompts after every automatic
+candidate gained repository and read-only GitHub access.
+
+- The prompt retains only the review/output contract and invocation coordinates.
+  It does not embed `AGENTS.md`, shared lenses, task-triggered governance bodies,
+  the PR body, changed-file lists, prior snapshots, or capped diff excerpts.
+- Claude, OpenCode, and Cursor run from the checked-out PR head and retrieve the
+  current issue, PR, discussion, checks, diff, startup instructions, shared
+  lenses, and relevant files directly. Claude and Cursor use the same dedicated
+  `OPENCODE_GITHUB_TOKEN` and hosted MCP lockdown headers as OpenCode; the token
+  is exposed to them only as `ADVISORY_GITHUB_TOKEN` for the candidate process.
+- Claude uses strict ephemeral MCP configuration and an explicit
+  `mcp__github_read__*` allowlist. Cursor uses inline HTTP MCP configuration,
+  disables ambient setting sources, and runs in plan mode. Cursor's local
+  headless SDK does not treat plan mode as a hard tool-permission boundary and
+  may still expose shell or workspace-write tools. The maintainer accepts this
+  residual risk because the candidate is same-repository, non-blocking,
+  time-bounded, and isolated from publisher credentials.
+- Pre-merge Gemini and Antigravity overrides are retired because they do not
+  satisfy the direct-source contract. Daily and weekly provider routing,
+  adapters, and fix behavior remain unchanged.
+- `ai-review:full` now forces a full base-to-head review range rather than a
+  larger injected context pack. Snapshot normalization reports range size rather
+  than unobservable model-consumption coverage, and records the exact reviewed
+  head only when the provider returns `evidence_retrieved: true` after required
+  source retrieval. A false or missing value advances the cascade.
+- Claude receives a generated session ID and persists its local JSONL during the
+  candidate attempt. Invocation, metadata, or output-validation failure copies
+  that session into an authenticated Actions artifact retained for seven days;
+  known workflow credential values are redacted and successful sessions are not
+  uploaded. The artifact is not printed in logs and may contain private
+  repository evidence or tool results, so it is restricted operationally to
+  trusted repository collaborators.
 
 ## Implementation
 

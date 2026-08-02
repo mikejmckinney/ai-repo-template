@@ -11,18 +11,20 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   RUN_SCRIPT="${ADVISORY_DIR}/run-advisory-review.sh"
   GEMINI_SCRIPT="${ADVISORY_DIR}/run-advisory-gemini.py"
   CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
-  ANTIGRAVITY_SCRIPT="${ADVISORY_DIR}/run-advisory-antigravity.py"
+  CLAUDE_SCRIPT="${ADVISORY_DIR}/run-advisory-claude.sh"
+  CLAUDE_SESSION_COLLECTOR="${ADVISORY_DIR}/collect-claude-session.py"
   NORMALIZE_SCRIPT="${ADVISORY_DIR}/normalize-advisory-snapshot.py"
   RANGE_SCRIPT="${ADVISORY_DIR}/select-advisory-range.py"
   OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
   OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
   OPENCODE_REVIEW_CONFIG=".github/agent-runtime/review.json"
   OPENCODE_FIX_CONFIG=".github/agent-runtime/fix.json"
+  ADVISORY_TEST="scripts/tests/advisory-snapshot-memory.bats"
   LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
   MARKER='ai-advisory-review:v1'
 
   for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
-    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$ANTIGRAVITY_SCRIPT" "$NORMALIZE_SCRIPT" \
+    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$CLAUDE_SESSION_COLLECTOR" "$NORMALIZE_SCRIPT" \
     "$RANGE_SCRIPT" "$OPENCODE_RUNNER" \
     "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG"; do
     if [[ -f "$f" ]]; then
@@ -42,6 +44,17 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "advisory installs pinned OpenCode SDK on Ubuntu with hosted read-only GitHub MCP"
   else
     fail "advisory missing locked OpenCode install, dedicated token, or hosted MCP security boundary"
+  fi
+
+  if grep -q -- '--session-id' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && ! grep -q -- '--no-session-persistence' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q 'collect-claude-session.py' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'actions/upload-artifact@v4' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'path: .artifacts/advisory-claude-session/' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'retention-days: 7' "$ADVISORY_WORKFLOW" 2>/dev/null; then
+    pass "failed Claude advisory sessions upload as seven-day diagnostics"
+  else
+    fail "Claude advisory failure diagnostics are not persisted and uploaded"
   fi
 
   if [[ -f .github/scripts/run-advisory-review.sh ]] \
@@ -69,11 +82,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "workflow must invoke scripts/workflows/advisory-review/run-advisory-review.sh"
   fi
 
-  if grep -q 'antigravity' "$ADVISORY_WORKFLOW" 2>/dev/null \
-    && grep -q 'ADVISORY_ANTIGRAVITY_ENABLED' "$ADVISORY_WORKFLOW" 2>/dev/null; then
-    pass "workflow documents antigravity provider gate"
+  if ! grep -q 'ADVISORY_ANTIGRAVITY_ENABLED\|GEMINI_ADVISORY_MODEL\|GEMINI_API_KEY\|GOOGLE_API_KEY' "$ADVISORY_WORKFLOW" 2>/dev/null; then
+    pass "pre-merge workflow omits retired Gemini and Antigravity providers"
   else
-    fail "workflow missing antigravity provider wiring"
+    fail "pre-merge workflow still exposes Gemini or Antigravity"
   fi
 
   if grep -q "$MARKER" "$NORMALIZE_SCRIPT" 2>/dev/null \
@@ -95,11 +107,70 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$OPENCODE_RUNNER" 2>/dev/null \
     && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CURSOR_SCRIPT" 2>/dev/null \
-    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$GEMINI_SCRIPT" 2>/dev/null \
-    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$ANTIGRAVITY_SCRIPT" 2>/dev/null; then
-    pass "every advisory provider records automation-owned model metadata"
+    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$GEMINI_SCRIPT" 2>/dev/null; then
+    pass "retained analysis providers record automation-owned model metadata"
   else
     fail "one or more advisory providers omit model metadata"
+  fi
+
+  if grep -q '@anthropic-ai/claude-code@2.1.220' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q "if: env.CLAUDE_CANDIDATE == 'true'" "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q -- '--json-schema' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--model "$requested_model"' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--effort medium' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--tools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*"' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--allowedTools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*"' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--strict-mcp-config' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q 'X-MCP-Readonly' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q 'X-MCP-Lockdown' "$CLAUDE_SCRIPT" 2>/dev/null; then
+    pass "pre-merge advisory pins Claude Opus 5 Medium with strict read-only GitHub MCP"
+  else
+    fail "pre-merge advisory missing pinned Claude Code, scoped OAuth, model, effort, or review tools"
+  fi
+
+  if grep -q 'mcpServers' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'github_read' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'X-MCP-Readonly' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'X-MCP-Lockdown' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'mode: "plan"' "$CURSOR_SCRIPT" 2>/dev/null; then
+    pass "pre-merge Cursor uses plan mode and the locked-down read-only GitHub MCP"
+  else
+    fail "pre-merge Cursor missing plan mode or read-only GitHub MCP"
+  fi
+
+  if ! grep -q 'prompt_helpers.py.*select-context\|Repo startup context (automation-supplied\|printf.*pr_body\|printf.*diff_text' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'Invocation coordinates' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'Retrieve the current issue, pull request, discussion, checks, and diff' "$ADVISORY_PROMPT" 2>/dev/null \
+    && grep -q 'INJECTED-PR-BODY-SENTINEL' "$ADVISORY_TEST" 2>/dev/null \
+    && grep -q 'ADVISORY_TEST_PROMPT_CAPTURE' "$ADVISORY_TEST" 2>/dev/null; then
+    pass "pre-merge advisory retrieves source evidence and tests generated prompts for copied bodies"
+  else
+    fail "pre-merge advisory lacks direct-retrieval instructions or generated-prompt regression coverage"
+  fi
+
+  if jq -e '(.required | index("evidence_retrieved")) != null' ".github/schemas/advisory-review.schema.json" >/dev/null 2>&1 \
+    && grep -q 'evidence_retrieved must be true' "$NORMALIZE_SCRIPT" 2>/dev/null; then
+    pass "advisory retrieval failure advances the provider cascade without reviewed-head memory"
+  else
+    fail "advisory output contract cannot distinguish completed retrieval from an empty review"
+  fi
+
+  if jq -e '
+    .permission.webfetch == "allow" and
+    .permission.websearch == "allow" and
+    .permission.bash == "deny" and
+    .permission.edit == "deny" and
+    .permission.external_directory == "deny"
+  ' "$OPENCODE_REVIEW_CONFIG" >/dev/null 2>&1 \
+    && jq -e '
+      .permission.webfetch == "deny" and
+      .permission.websearch == "deny"
+    ' "$OPENCODE_FIX_CONFIG" >/dev/null 2>&1; then
+    pass "OpenCode review profile can research the web while its fix profile remains offline"
+  else
+    fail "OpenCode review/fix internet permissions do not preserve the review-only boundary"
   fi
 
   if ! grep -q 'Session handshake' "$ADVISORY_PROMPT" 2>/dev/null; then

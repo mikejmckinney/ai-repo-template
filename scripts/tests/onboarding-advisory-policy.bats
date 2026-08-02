@@ -209,8 +209,7 @@ PY
   for path in \
     scripts/workflows/lib/run-opencode.mjs \
     scripts/workflows/advisory-review/run-advisory-cursor.mjs \
-    scripts/workflows/advisory-review/run-advisory-gemini.py \
-    scripts/workflows/advisory-review/run-advisory-antigravity.py; do
+    scripts/workflows/advisory-review/run-advisory-gemini.py; do
     grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$REPO_ROOT/$path"
   done
 }

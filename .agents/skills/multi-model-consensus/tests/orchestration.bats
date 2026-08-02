@@ -136,6 +136,7 @@ teardown() {
   [ "$(jq -r '.engine' <<<"$output")" = sol ]
   [ "$(jq -r '.session_id' <<<"$output")" = ses_sol ]
   grep -q -- '--model openai/gpt-5.6-sol' "$MOCK_LOG"
+  grep -q -- '--variant medium' "$MOCK_LOG"
 }
 
 @test "advisor falls back to Opus when Sol fails" {
@@ -150,6 +151,7 @@ teardown() {
   [ "$(jq -r '.engine' <<<"$output")" = opus ]
   [ "$(jq -r '.failed_engines[0]' <<<"$output")" = sol ]
   grep -q -- '--model opus' "$MOCK_LOG"
+  grep -q -- '--effort medium' "$MOCK_LOG"
 }
 
 @test "advisor falls back to Cursor Grok before GLM" {
@@ -322,7 +324,9 @@ teardown() {
   [ "$(jq -r '.judge_continued' <<<"$output")" = true ]
   [ "$(jq -r '.output_dir' <<<"$output")" = "$TEST_ROOT/fusion" ]
   grep -q -- '--session ses_kimi_old --continue' "$MOCK_LOG"
+  grep -q -- '--session ses_judge_old --continue --variant medium' "$MOCK_LOG"
   grep -q -- '-r ses_opus_old' "$MOCK_LOG"
+  grep -q -- '--effort medium' "$MOCK_LOG"
   grep -q -- '--resume ses_grok_old' "$MOCK_LOG"
   grep -q -- '--session ses_judge_old --continue' "$MOCK_LOG"
 }

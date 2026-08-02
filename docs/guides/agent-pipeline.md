@@ -30,14 +30,46 @@ compares an arrived snapshot's `Head` SHA with the current PR head and independe
 verifies applicable findings. Missing, stale, running, or failed feedback never
 blocks completion. Forks, `smoke-test` PRs, and repositories lacking the workflow,
 label, provider credentials, or label-write permission are exempt and record why.
-`ai-review:full` requests deeper context only.
+`ai-review:full` forces a full base-to-head refresh instead of an incremental
+review; every mode retrieves evidence directly from the repository and GitHub.
 
-Automation owns the snapshot's head, provider/model, diff coverage, and hidden
+Pre-merge `auto` attempts available model candidates in this order: Claude Code
+`claude-opus-5` at medium effort, OpenCode `openai/gpt-5.6-sol` at medium effort,
+Cursor `cursor-grok-4.5-medium`, then OpenCode
+`openrouter/moonshotai/kimi-k3@preset/consensus`. Missing credentials omit only
+their candidate. Explicit `ADVISORY_REVIEW_PROVIDER=opencode` retains the
+internal Sol-then-Kimi cascade.
+
+Pre-merge prompts contain only the review contract and invocation coordinates:
+repository, pull request, expected head, base and diff-base SHAs, review basis,
+and mode. They do not embed startup files, governance bodies, the PR body,
+changed-file inventories, prior snapshots, or diff excerpts. Every automatic
+candidate runs from the checkout and retrieves current repository and PR evidence
+itself. Claude and Cursor receive the same dedicated read-only GitHub MCP as
+OpenCode. Pre-merge Gemini and Antigravity overrides are unsupported; those
+providers remain available only where the daily or weekly contracts retain them.
+
+`ADVISORY_CANDIDATE_TIMEOUT_SECONDS` bounds each provider attempt; the default is
+`300` seconds. A 10-second forced-termination grace period follows. This outer
+candidate cap takes precedence over longer provider transport budgets so the
+four-candidate cascade and publication remain within the 20-minute job.
+
+Automation owns the snapshot's head, provider/model, review-range metadata, and hidden
 `ai-advisory-memory:v1` payload. The visible findings are the provider-neutral
 summary. Providers emit structured `triage_version: 2` observations; automation
 validates the shared AP11 fields, derives the priority band, and renders the
-table. Advisory authority stays non-blocking for every band. An empty result says
+table. Providers must also assert `evidence_retrieved: true`; a false or missing
+value advances the cascade and writes no reviewed-head memory. Advisory authority
+stays non-blocking for every band. An empty result says
 `No findings identified at this head.` rather than rendering an empty table.
+Claude candidates use a generated session ID and persist their local JSONL only
+long enough for failure handling. When Claude invocation, metadata, or output
+validation fails, the workflow copies that session into an authenticated Actions
+artifact with known workflow credential values redacted and seven-day retention.
+Successful Claude sessions are not uploaded, and transcript contents are never
+printed in workflow logs. Because a
+failure transcript can contain private repository evidence and tool results, only
+trusted repository collaborators should download it.
 Compatible synchronize events review the accumulated
 delta from the last completed reviewed head. Missing or invalid memory, readiness,
 full mode, base changes, expected-provider changes, and non-ancestor history force
@@ -82,7 +114,7 @@ reinterpret historical findings.
 
 ## OpenCode Runtime
 
-Advisory, daily, and weekly automation resolve `auto` in this order:
+Daily and weekly automation resolve `auto` in this order:
 
 1. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
    `OPENROUTER_API_KEY` are available. It tries Sol first when a preflighted
@@ -154,11 +186,31 @@ tool. Adapter-owned validation also rejects model-authored `severity` and
 final deterministic gate.
 
 GitHub's hosted MCP endpoint is read-only and locked down through request headers.
-Agents receive only the dedicated read-only token, while deterministic shell code
+Pre-merge Claude, OpenCode, and Cursor receive only the dedicated read-only token,
+while deterministic shell code
 retains all GitHub writes. The agent subprocess explicitly drops publisher and
 sandbox credentials. The deterministic collector uses the workflow-scoped
 `GITHUB_TOKEN` with `checks: read` to write check-run metadata into the local
 evidence inventory; the agent PAT does not need Checks permission or shell access.
+
+Review agents may fetch and search the public web to verify current documentation
+and upstream behavior. OpenCode review profiles allow `webfetch` and `websearch`;
+review workflows set `OPENCODE_ENABLE_EXA=1` so models routed through OpenAI or
+OpenRouter can use Exa AI's unauthenticated hosted search service. That setting
+applies to OpenCode candidates only; Claude's separate `WebFetch` and `WebSearch`
+tools are unaffected. Claude pre-merge review allows exactly `Read`, `Glob`,
+`Grep`, `WebFetch`, `WebSearch`, and the locked-down `github_read` MCP tools.
+Cursor runs in plan mode with inline configuration for that same MCP. Bash,
+edits, subagents, and external-directory access are hard-denied for Claude and
+OpenCode. Cursor plan mode is a behavioral constraint rather than an SDK
+permission boundary; its local headless runtime may expose shell and write tools.
+The maintainer accepts that limited residual risk because the candidate is
+same-repository, non-blocking, time-bounded, and receives no publisher
+credential. Provider isolation removes GitHub publisher credentials before model
+execution. OpenCode fix profiles remain
+offline, and this change grants no web access to other fix providers. External
+pages are source material, not instructions; externally supported findings cite
+URLs and must not transmit repository content in requests.
 
 Large post-merge reviews use retrieval-first evidence. The deterministic
 collector supplies repository/PR identity, merge and head SHAs, required source
@@ -172,8 +224,8 @@ complete diff, local evidence inventory, non-auto-loaded startup context, and
 touched HEAD paths. OpenCode's system loader supplies the root `AGENTS.md`, so a
 redundant tool read is not required for that file.
 
-With `auto`, analysis attempts available providers in OpenCode, Cursor, then
-Gemini order, with cadence-specific Antigravity retained where enabled. A
+Daily and weekly `auto` analysis attempts available providers in OpenCode,
+Cursor, then Gemini order, with cadence-specific Antigravity retained where enabled. A
 provider transport, empty-result, or validation failure advances
 to the next available provider. A large review is not reported as successful
 after silently degrading to bounded evidence. Daily sequential runs record
@@ -226,7 +278,7 @@ earlier green result after they change.
 | Label | Meaning |
 |---|---|
 | `ai-review:live` | Enable rolling non-blocking advisory snapshots |
-| `ai-review:full` | Increase advisory context depth |
+| `ai-review:full` | Force a full base-to-head advisory refresh |
 | `auto-merge` | Opt in to auto-merge after required checks |
 | `agent:claimed` | Work is actively claimed |
 | `agent:blocked` | Work is blocked |
@@ -241,12 +293,18 @@ earlier green result after they change.
 ## Required Secrets
 
 - `OPENCODE_GITHUB_TOKEN`: fine-grained token with read-only Metadata, Contents,
-  Pull requests, Issues, and Actions access to the target repository.
+  Pull requests, Issues, and Actions access to the target repository. Pre-merge
+  Claude, OpenCode, and Cursor candidates all use it through the locked-down
+  hosted MCP; none receives the workflow publisher token.
 - `SKILL_REFRESH_PR_TOKEN`: fine-grained token restricted to the target
   repository with `Contents: read` and `Pull requests: write`. The skill-refresh
   finalizer uses it only to mark an exact-head validated draft ready; without
   `Contents: write`, it cannot merge.
 - `OPENROUTER_API_KEY`: model credential for the hosted OpenCode Kimi fallback.
+- `CLAUDE_OAUTH_SECRET`: one-year Claude subscription OAuth token generated by
+  `claude setup-token` and stored manually with `gh secret set` or repository
+  settings. The pre-merge workflow maps it to `CLAUDE_CODE_OAUTH_TOKEN`; daily
+  and weekly workflows do not consume it.
 - `OPENCODE_OPENAI_AUTH`: optional access-only ChatGPT OAuth JSON for Sol in a
   trusted private repository. Generate it with
   `scripts/sync-opencode-oauth-secret.sh`; never upload the real refresh token.

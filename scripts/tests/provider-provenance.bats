@@ -358,7 +358,6 @@ paths = (
     "scripts/workflows/lib/run-opencode.mjs",
     "scripts/workflows/advisory-review/run-advisory-cursor.mjs",
     "scripts/workflows/advisory-review/run-advisory-gemini.py",
-    "scripts/workflows/advisory-review/run-advisory-antigravity.py",
     "scripts/workflows/postmerge-retro/run-postmerge-retro-full-cursor.mjs",
     "scripts/workflows/postmerge-retro/run-postmerge-retro-antigravity.py",
     "scripts/workflows/weekly-review/run-weekly-antigravity.py",

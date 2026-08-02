@@ -39,6 +39,11 @@ if (!apiKey) {
   console.error("CURSOR_API_KEY required");
   process.exit(1);
 }
+const githubToken = process.env.ADVISORY_GITHUB_TOKEN;
+if (!githubToken) {
+  console.error("ADVISORY_GITHUB_TOKEN required for direct PR retrieval");
+  process.exit(1);
+}
 
 const modelId = process.env.CURSOR_ADVISORY_MODEL || DEFAULT_CURSOR_MODEL;
 const prompt = readFileSync(promptFile, "utf8");
@@ -65,6 +70,7 @@ function sanitizedErrorDetails(value) {
   for (const secret of [
     process.env.CURSOR_API_KEY,
     process.env.OPENROUTER_API_KEY,
+    process.env.ADVISORY_GITHUB_TOKEN,
   ]) {
     if (secret && secret.length >= 8)
       text = text.replaceAll(secret, "[REDACTED]");
@@ -88,7 +94,20 @@ try {
   result = await Agent.prompt(prompt, {
     apiKey,
     model,
-    local: { cwd: process.cwd() },
+    mode: "plan",
+    local: { cwd: process.cwd(), settingSources: [] },
+    mcpServers: {
+      github_read: {
+        type: "http",
+        url: "https://api.githubcopilot.com/mcp/",
+        headers: {
+          Authorization: `Bearer ${githubToken}`,
+          "X-MCP-Toolsets": "repos,issues,pull_requests,actions",
+          "X-MCP-Readonly": "true",
+          "X-MCP-Lockdown": "true",
+        },
+      },
+    },
   });
 } catch (err) {
   const message = err instanceof Error ? err.message : String(err);

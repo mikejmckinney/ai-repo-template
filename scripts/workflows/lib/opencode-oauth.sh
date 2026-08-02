@@ -9,6 +9,7 @@ configure_opencode_oauth() {
   local expires now_ms remaining_seconds
 
   export OPENCODE_MODELS="$OPENCODE_KIMI_MODEL"
+  export OPENCODE_SOL_AVAILABLE=false
   [[ -n "$auth_content" ]] || return 0
 
   if [[ ! "$min_ttl_seconds" =~ ^[0-9]+$ ]]; then
@@ -39,5 +40,6 @@ configure_opencode_oauth() {
   fi
 
   export OPENCODE_MODELS="${OPENCODE_SOL_MODEL},${OPENCODE_KIMI_MODEL}"
+  export OPENCODE_SOL_AVAILABLE=true
   echo "::notice::OpenCode OAuth access accepted for Sol (${remaining_seconds}s remaining)" >&2
 }
