@@ -291,8 +291,13 @@ PY
     agent-advisory-review.yml \
     agent-postmerge-retro.yml \
     agent-weekly-review.yml; do
-    grep -q 'OPENCODE_ENABLE_EXA: 1' "$REPO_ROOT/.github/workflows/$workflow"
+    grep -q "OPENCODE_ENABLE_EXA:.*vars.OPENCODE_ENABLE_EXA.*|| '1'" \
+      "$REPO_ROOT/.github/workflows/$workflow"
   done
+
+  grep -q 'Exa AI' "$REPO_ROOT/docs/guides/agent-pipeline.md"
+  grep -q 'residual risk' \
+    "$REPO_ROOT/docs/decisions/adr-030-non-blocking-review-pipeline.md"
 }
 
 @test "repository includes OAuth and provider isolation helpers" {

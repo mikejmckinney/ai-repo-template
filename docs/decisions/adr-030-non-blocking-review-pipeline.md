@@ -259,8 +259,15 @@ weekly provider cascade.
   denied. OpenCode fix profiles remain offline, and this amendment grants no web
   access to other fix providers. External content is evidence rather than
   executable instruction, and prompts prohibit transmitting repository content
-  through URLs, search queries, or forms. A maintainer-generated `claude
-  setup-token` value is stored as
+  through URLs, search queries, or forms. Unrestricted review egress retains a
+  residual risk that prompt-injected repository or web content could induce an
+  outbound request containing private source. The maintainer accepts that risk
+  for read-only review because same-repository gating, credential isolation,
+  non-blocking authority, and deterministic publication limit likelihood and
+  impact. OpenCode web search uses Exa AI's unauthenticated hosted service by
+  default; downstream private repositories may set `OPENCODE_ENABLE_EXA=false`
+  to disable search while retaining direct web fetches. A maintainer-generated
+  `claude setup-token` value is stored as
   `CLAUDE_OAUTH_SECRET`, mapped to `CLAUDE_CODE_OAUTH_TOKEN` only for provider
   execution, and isolated from publisher and other provider credentials.
 - Model-specific candidate names are internal routing details. Snapshot memory

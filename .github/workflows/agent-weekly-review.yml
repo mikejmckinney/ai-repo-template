@@ -88,7 +88,7 @@ jobs:
       ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
       ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
       OPENCODE_OAUTH_MIN_TTL_SECONDS: 8100
-      OPENCODE_ENABLE_EXA: 1
+      OPENCODE_ENABLE_EXA: ${{ vars.OPENCODE_ENABLE_EXA || '1' }}
     steps:
       - name: Verify required secrets
         env:

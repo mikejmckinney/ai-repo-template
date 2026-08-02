@@ -174,14 +174,17 @@ evidence inventory; the agent PAT does not need Checks permission or shell acces
 
 Review agents may fetch and search the public web to verify current documentation
 and upstream behavior. OpenCode review profiles allow `webfetch` and `websearch`;
-review workflows set `OPENCODE_ENABLE_EXA=1` for non-OpenCode model providers.
-Claude pre-merge review allows exactly `Read`, `Glob`, `Grep`, `WebFetch`, and
-`WebSearch`. Bash, edits, subagents, and external-directory access remain denied,
-and provider isolation removes GitHub publisher credentials before model
-execution. OpenCode fix profiles remain offline, and this change grants no web
-access to other fix providers. External pages are source material, not
-instructions; externally supported findings cite URLs and must not transmit
-repository content in requests.
+review workflows default `OPENCODE_ENABLE_EXA=1` so OpenCode models routed
+through OpenAI or OpenRouter can use Exa AI's unauthenticated hosted search
+service. Set the repository variable `OPENCODE_ENABLE_EXA=false` to disable
+OpenCode search while retaining direct fetches. Claude pre-merge review allows
+exactly `Read`, `Glob`, `Grep`, `WebFetch`, and `WebSearch`. Bash, edits,
+subagents, and external-directory access remain denied, and provider isolation
+removes GitHub publisher credentials before model execution. OpenCode fix
+profiles remain offline, and this change grants no web access to other fix
+providers. External pages are source material, not instructions; externally
+supported findings cite URLs and must not transmit repository content in
+requests.
 
 Large post-merge reviews use retrieval-first evidence. The deterministic
 collector supplies repository/PR identity, merge and head SHAs, required source
@@ -260,8 +263,9 @@ earlier green result after they change.
 
 - `ADVISORY_REVIEW_PROVIDER` controls optional advisory provider selection.
 - `POSTMERGE_RETRO_PROVIDER` and `WEEKLY_REVIEW_PROVIDER` control retro providers.
-- Review workflows set `OPENCODE_ENABLE_EXA=1` so OpenCode web search is
-  available; fix workflows remain offline.
+- `OPENCODE_ENABLE_EXA` defaults to `1` in review workflows so OpenCode web
+  search is available through Exa AI. Set the repository variable to `false` to
+  disable it; OpenCode fix workflows remain offline.
 - Provider model and context variables are documented inline in their workflows.
 ## Required Secrets
 
