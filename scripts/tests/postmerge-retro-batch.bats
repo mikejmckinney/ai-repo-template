@@ -132,7 +132,7 @@ EOF
     --body-file "$tmp/body.md" -o "$tmp/daily.json"
 
   [ "$status" -eq 0 ]
-  run jq -e '.findings[0] | .regression_guard == false and .priority_band == "defer"' \
+  run jq -e '.findings[0] | .fix_cost == "trivial" and .regression_guard == false and .priority_band == "defer"' \
     "$tmp/daily.json"
   [ "$status" -eq 0 ]
   rm -rf "$tmp"
