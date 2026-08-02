@@ -357,7 +357,8 @@ JSONL
 
   [ "$status" -eq 0 ]
   [ "$(jq -r '.paths[0]' "$tmp/retrieval-trace.json")" = "$tmp/repo/src/app.py" ]
-  [ "$(jq -r '.paths[1]' "$tmp/retrieval-trace.json")" = "$tmp/repo/src" ]
+  [ "$(jq -r '.paths | length' "$tmp/retrieval-trace.json")" -eq 1 ]
+  [ "$(jq -r '.directories[0]' "$tmp/retrieval-trace.json")" = "$tmp/repo/src" ]
   [ "$(jq -r '.github_calls' "$tmp/retrieval-trace.json")" -eq 1 ]
   [ "$(jq -r '.tools | join("|")' "$tmp/retrieval-trace.json")" = "Read|Grep|Glob|mcp__github_read__get_pull_request" ]
   rm -rf "$tmp"

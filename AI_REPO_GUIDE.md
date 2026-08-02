@@ -248,7 +248,8 @@ weekly aggregation of merged PRs. The review job has a 120-minute budget and an
 and 4,500 seconds.
 
 Weekly analysis `auto` attempts Claude Opus 5 Medium, OpenCode, Cursor, optional
-Antigravity, then Gemini. Claude output must include observed repository reads,
+Antigravity, then Gemini. Claude output must include observed repository reads or
+content searches,
 and finding evidence must resolve to existing repository paths. This proves
 retrieval occurred and findings are path-backed without claiming every cited or
 repository file was read. Weekly fix routing remains Claude-free.

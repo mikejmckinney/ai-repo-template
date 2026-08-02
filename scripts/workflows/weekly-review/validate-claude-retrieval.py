@@ -10,7 +10,13 @@ LINE_SUFFIX = re.compile(r"(?::\d+(?:-\d+)?|#L\d+(?:-L?\d+)?)$")
 
 
 def normalized(raw: str, repo_root: Path) -> Path:
-    candidate = Path(LINE_SUFFIX.sub("", raw.strip()))
+    location = raw.strip()
+    while True:
+        stripped = LINE_SUFFIX.sub("", location)
+        if stripped == location:
+            break
+        location = stripped
+    candidate = Path(location)
     if not candidate.is_absolute():
         candidate = repo_root / candidate
     return candidate.resolve()
@@ -39,13 +45,28 @@ def main() -> int:
     ):
         print("Claude retrieval trace paths must be an array of strings", file=sys.stderr)
         return 1
-    observed = {normalized(path, repo_root) for path in raw_paths}
+    raw_directories = trace.get("directories", [])
+    if not isinstance(raw_directories, list) or not all(
+        isinstance(path, str) for path in raw_directories
+    ):
+        print(
+            "Claude retrieval trace directories must be an array of strings",
+            file=sys.stderr,
+        )
+        return 1
+    observed_paths = {normalized(path, repo_root) for path in raw_paths}
+    observed_directories = {normalized(path, repo_root) for path in raw_directories}
     repository_reads = {
         path
-        for path in observed
-        if path.is_file() and (path == repo_root or repo_root in path.parents)
+        for path in observed_paths
+        if path.is_file() and repo_root in path.parents
     }
-    if not repository_reads:
+    repository_searches = {
+        path
+        for path in observed_directories
+        if path.is_dir() and (path == repo_root or repo_root in path.parents)
+    }
+    if not repository_reads and not repository_searches:
         print(
             "Claude weekly retrieval trace must include at least one repository read",
             file=sys.stderr,
@@ -62,14 +83,15 @@ def main() -> int:
                 missing.add(evidence)
     if missing:
         print(
-            "Claude weekly findings cite missing repository paths: "
+            "Claude weekly findings cite invalid or missing repository file paths: "
             + ", ".join(sorted(missing)),
             file=sys.stderr,
         )
         return 1
 
     print(
-        f"OK: Claude weekly retrieval observed {len(repository_reads)} repository reads"
+        "OK: Claude weekly retrieval observed "
+        f"{len(repository_reads)} file reads and {len(repository_searches)} directory searches"
     )
     return 0
 

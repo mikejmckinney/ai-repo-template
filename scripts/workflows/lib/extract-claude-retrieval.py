@@ -48,6 +48,7 @@ def main() -> int:
     session_id = str(uuid.UUID(args.session_id))
     repo_root = Path(args.repo_root).resolve()
     paths: list[str] = []
+    directories: list[str] = []
     tools: list[str] = []
     github_calls = 0
 
@@ -76,7 +77,10 @@ def main() -> int:
                 if not candidate.is_absolute():
                     candidate = repo_root / candidate
                 resolved = str(candidate.resolve())
-                if resolved not in paths:
+                if name == "Grep" and candidate.resolve().is_dir():
+                    if resolved not in directories:
+                        directories.append(resolved)
+                elif resolved not in paths:
                     paths.append(resolved)
 
     output = Path(args.output)
@@ -86,6 +90,7 @@ def main() -> int:
             {
                 "session_id": session_id,
                 "paths": paths,
+                "directories": directories,
                 "github_calls": github_calls,
                 "tools": tools,
             },
