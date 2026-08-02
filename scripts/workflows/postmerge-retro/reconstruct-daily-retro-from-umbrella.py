@@ -59,8 +59,6 @@ def _parse_guard(raw: str) -> bool:
 def _infer_fix_cost_and_guard(impact: str, trigger: str, table_band: str) -> tuple[str, bool]:
     for fix_cost in ("trivial", "moderate", "large"):
         for guard in (False, True):
-            if guard and trigger == "fringe":
-                continue
             if derive_priority_band(impact, trigger, fix_cost, regression_guard=guard) == table_band:
                 return fix_cost, guard
     return "moderate", False
