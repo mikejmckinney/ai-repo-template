@@ -55,7 +55,6 @@ if ! "$claude_bin" -p \
   --effort medium \
   --output-format json \
   --json-schema "$schema_json" \
-  --safe-mode \
   --mcp-config "$mcp_config" \
   --strict-mcp-config \
   --tools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__*" \

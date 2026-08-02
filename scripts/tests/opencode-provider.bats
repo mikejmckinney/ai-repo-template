@@ -289,6 +289,7 @@ EOF
   grep -q -- '--allowedTools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
   grep -q -- '--strict-mcp-config' "$tmp/args"
   grep -q -- '--mcp-config' "$tmp/args"
+  [ "$(grep -c -- '--safe-mode' "$tmp/args")" -eq 0 ]
   grep -q -- '--session-id 11111111-1111-4111-8111-111111111111' "$tmp/args"
   ! grep -q -- '--no-session-persistence' "$tmp/args"
   [ "$(cat "$tmp/session-id.txt")" = 11111111-1111-4111-8111-111111111111 ]
