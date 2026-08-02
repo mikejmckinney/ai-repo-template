@@ -30,7 +30,8 @@ if ! "$claude_bin" -p \
   --output-format json \
   --json-schema "$schema_json" \
   --safe-mode \
-  --tools "" \
+  --tools "Read,Glob,Grep,WebFetch,WebSearch" \
+  --allowedTools "Read,Glob,Grep,WebFetch,WebSearch" \
   --permission-mode dontAsk \
   --no-session-persistence \
   <"$prompt_file" >"$response_file"; then

@@ -271,6 +271,30 @@ PY
   done
 }
 
+@test "OpenCode review profile can research the web while its fix profile remains offline" {
+  run jq -e '
+    .permission.webfetch == "allow" and
+    .permission.websearch == "allow" and
+    .permission.bash == "deny" and
+    .permission.edit == "deny" and
+    .permission.external_directory == "deny"
+  ' "$REPO_ROOT/.github/agent-runtime/review.json"
+  [ "$status" -eq 0 ]
+
+  run jq -e '
+    .permission.webfetch == "deny" and
+    .permission.websearch == "deny"
+  ' "$REPO_ROOT/.github/agent-runtime/fix.json"
+  [ "$status" -eq 0 ]
+
+  for workflow in \
+    agent-advisory-review.yml \
+    agent-postmerge-retro.yml \
+    agent-weekly-review.yml; do
+    grep -q 'OPENCODE_ENABLE_EXA: 1' "$REPO_ROOT/.github/workflows/$workflow"
+  done
+}
+
 @test "repository includes OAuth and provider isolation helpers" {
   for path in \
     scripts/sync-opencode-oauth-secret.sh \

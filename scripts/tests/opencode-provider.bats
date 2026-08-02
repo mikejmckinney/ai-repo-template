@@ -244,6 +244,8 @@ EOF
   grep -q -- '--effort medium' "$tmp/args"
   grep -q -- '--output-format json' "$tmp/args"
   grep -q -- '--json-schema' "$tmp/args"
+  grep -q -- '--tools Read,Glob,Grep,WebFetch,WebSearch' "$tmp/args"
+  grep -q -- '--allowedTools Read,Glob,Grep,WebFetch,WebSearch' "$tmp/args"
   grep -q -- '"findings"' "$tmp/args"
   [ "$(jq -r '.provider + "/" + .model' "$tmp/metadata.json")" = "claude/claude-opus-5" ]
   [ "$(jq -r .requested_model "$tmp/metadata.json")" = claude-opus-5 ]
@@ -269,6 +271,15 @@ EOF
     ' _ "$REPO_ROOT/scripts/workflows/lib/invoke-advisory-llm.sh"
 
   [ "$status" -eq 124 ]
+}
+
+@test "advisory candidate timeout defaults to 300 seconds" {
+  grep -q "ADVISORY_CANDIDATE_TIMEOUT_SECONDS || '300'" \
+    "$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
+  grep -q 'parse_positive_int ADVISORY_CANDIDATE_TIMEOUT_SECONDS 300' \
+    "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
+  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS' "$REPO_ROOT/docs/guides/agent-pipeline.md"
+  grep -q '`300` seconds' "$REPO_ROOT/docs/guides/agent-pipeline.md"
 }
 
 @test "advisory candidate timeout terminates descendant processes" {

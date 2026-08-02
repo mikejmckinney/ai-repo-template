@@ -61,11 +61,12 @@ jobs:
       ADVISORY_REVIEW_DIFF_LIMIT_LIVE: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_LIVE || '' }}
       ADVISORY_REVIEW_DIFF_LIMIT_FULL: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_FULL || '' }}
       ADVISORY_REVIEW_COMMENT_LIMIT: ${{ vars.ADVISORY_REVIEW_COMMENT_LIMIT || '' }}
-      ADVISORY_CANDIDATE_TIMEOUT_SECONDS: ${{ vars.ADVISORY_CANDIDATE_TIMEOUT_SECONDS || '240' }}
+      ADVISORY_CANDIDATE_TIMEOUT_SECONDS: ${{ vars.ADVISORY_CANDIDATE_TIMEOUT_SECONDS || '300' }}
       ADVISORY_CONTEXT_PROFILE: ${{ vars.ADVISORY_CONTEXT_PROFILE || '' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'cursor-grok-4.5-medium' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       OPENCODE_OAUTH_MIN_TTL_SECONDS: 2100
+      OPENCODE_ENABLE_EXA: 1
       FULL_MODE: ${{ contains(github.event.pull_request.labels.*.name, 'ai-review:full') }}
     steps:
       - name: Verify required secrets

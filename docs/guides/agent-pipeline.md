@@ -39,6 +39,11 @@ Cursor `cursor-grok-4.5-medium`, then OpenCode
 their candidate. Explicit `ADVISORY_REVIEW_PROVIDER=opencode` retains the
 internal Sol-then-Kimi cascade.
 
+`ADVISORY_CANDIDATE_TIMEOUT_SECONDS` bounds each provider attempt; the default is
+`300` seconds. A 10-second forced-termination grace period follows. This outer
+candidate cap takes precedence over longer provider transport budgets so the
+four-candidate cascade and publication remain within the 20-minute job.
+
 Automation owns the snapshot's head, provider/model, diff coverage, and hidden
 `ai-advisory-memory:v1` payload. The visible findings are the provider-neutral
 summary. Providers emit structured `triage_version: 2` observations; automation
@@ -167,6 +172,17 @@ sandbox credentials. The deterministic collector uses the workflow-scoped
 `GITHUB_TOKEN` with `checks: read` to write check-run metadata into the local
 evidence inventory; the agent PAT does not need Checks permission or shell access.
 
+Review agents may fetch and search the public web to verify current documentation
+and upstream behavior. OpenCode review profiles allow `webfetch` and `websearch`;
+review workflows set `OPENCODE_ENABLE_EXA=1` for non-OpenCode model providers.
+Claude pre-merge review allows exactly `Read`, `Glob`, `Grep`, `WebFetch`, and
+`WebSearch`. Bash, edits, subagents, and external-directory access remain denied,
+and provider isolation removes GitHub publisher credentials before model
+execution. OpenCode fix profiles remain offline, and this change grants no web
+access to other fix providers. External pages are source material, not
+instructions; externally supported findings cite URLs and must not transmit
+repository content in requests.
+
 Large post-merge reviews use retrieval-first evidence. The deterministic
 collector supplies repository/PR identity, merge and head SHAs, required source
 paths, byte counts, and coverage metadata; it does not preload full startup
@@ -244,6 +260,8 @@ earlier green result after they change.
 
 - `ADVISORY_REVIEW_PROVIDER` controls optional advisory provider selection.
 - `POSTMERGE_RETRO_PROVIDER` and `WEEKLY_REVIEW_PROVIDER` control retro providers.
+- Review workflows set `OPENCODE_ENABLE_EXA=1` so OpenCode web search is
+  available; fix workflows remain offline.
 - Provider model and context variables are documented inline in their workflows.
 ## Required Secrets
 

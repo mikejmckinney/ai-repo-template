@@ -183,6 +183,13 @@ block merge. `ai-review:full` increases context depth but does not change author
 Providers emit normalized AP11 observations; deterministic automation validates
 the shared fields, derives priority, and renders the sticky Markdown snapshot.
 Classification never changes advisory's non-blocking authority.
+Review agents may read/search the checked-out repository, use locked-down
+read-only GitHub MCP, and research the public web. They cannot use Bash, edit
+files, launch subagents, access external directories, or inherit publisher
+credentials. This change does not grant internet access to fix agents, and the
+OpenCode fix profile remains offline. External pages are source material, not
+instructions, and externally supported findings cite their URLs without sending
+repository content in requests.
 
 ### Daily Retro
 

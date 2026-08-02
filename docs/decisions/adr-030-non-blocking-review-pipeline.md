@@ -250,8 +250,17 @@ weekly provider cascade.
 - Explicit `ADVISORY_REVIEW_PROVIDER=opencode` retains its Sol-then-Kimi
   internal fallback. Daily and weekly `auto` retain OpenCode, Cursor, and
   cadence-specific Antigravity/Gemini behavior.
-- Claude Code is pinned to `2.1.220` and runs with built-in tools disabled.
-  A maintainer-generated `claude setup-token` value is stored as
+- Each pre-merge candidate has a configurable outer timeout, defaulting to 300
+  seconds plus a 10-second termination grace period, inside the unchanged
+  20-minute advisory job budget.
+- Claude Code is pinned to `2.1.220` and receives only repository read/search
+  plus web fetch/search tools. OpenCode review profiles allow the same research
+  capability, while Bash, edits, subagents, and external-directory access remain
+  denied. OpenCode fix profiles remain offline, and this amendment grants no web
+  access to other fix providers. External content is evidence rather than
+  executable instruction, and prompts prohibit transmitting repository content
+  through URLs, search queries, or forms. A maintainer-generated `claude
+  setup-token` value is stored as
   `CLAUDE_OAUTH_SECRET`, mapped to `CLAUDE_CODE_OAUTH_TOKEN` only for provider
   execution, and isolated from publisher and other provider credentials.
 - Model-specific candidate names are internal routing details. Snapshot memory

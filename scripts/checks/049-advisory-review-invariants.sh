@@ -110,10 +110,27 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && grep -q -- '--json-schema' "$CLAUDE_SCRIPT" 2>/dev/null \
     && grep -q -- '--model "$requested_model"' "$CLAUDE_SCRIPT" 2>/dev/null \
     && grep -q -- '--effort medium' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q -- '--tools ""' "$CLAUDE_SCRIPT" 2>/dev/null; then
-    pass "pre-merge advisory pins tool-free Claude Opus 5 Medium with scoped OAuth"
+    && grep -q -- '--tools "Read,Glob,Grep,WebFetch,WebSearch"' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--allowedTools "Read,Glob,Grep,WebFetch,WebSearch"' "$CLAUDE_SCRIPT" 2>/dev/null; then
+    pass "pre-merge advisory pins read-only web-capable Claude Opus 5 Medium with scoped OAuth"
   else
-    fail "pre-merge advisory missing pinned Claude Code, scoped OAuth, model, effort, or tool denial"
+    fail "pre-merge advisory missing pinned Claude Code, scoped OAuth, model, effort, or review tools"
+  fi
+
+  if jq -e '
+    .permission.webfetch == "allow" and
+    .permission.websearch == "allow" and
+    .permission.bash == "deny" and
+    .permission.edit == "deny" and
+    .permission.external_directory == "deny"
+  ' "$OPENCODE_REVIEW_CONFIG" >/dev/null 2>&1 \
+    && jq -e '
+      .permission.webfetch == "deny" and
+      .permission.websearch == "deny"
+    ' "$OPENCODE_FIX_CONFIG" >/dev/null 2>&1; then
+    pass "OpenCode review profile can research the web while its fix profile remains offline"
+  else
+    fail "OpenCode review/fix internet permissions do not preserve the review-only boundary"
   fi
 
   if ! grep -q 'Session handshake' "$ADVISORY_PROMPT" 2>/dev/null; then

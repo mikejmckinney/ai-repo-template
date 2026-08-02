@@ -106,6 +106,7 @@ jobs:
       POSTMERGE_RETRO_ANTIGRAVITY_ON_TRUNCATE: ${{ vars.POSTMERGE_RETRO_ANTIGRAVITY_ON_TRUNCATE || 'true' }}
       ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
       OPENCODE_OAUTH_MIN_TTL_SECONDS: 6300
+      OPENCODE_ENABLE_EXA: 1
     steps:
       - name: Verify required secrets
         env:
