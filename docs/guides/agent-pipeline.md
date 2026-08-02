@@ -262,8 +262,6 @@ earlier green result after they change.
 
 - `ADVISORY_REVIEW_PROVIDER` controls optional advisory provider selection.
 - `POSTMERGE_RETRO_PROVIDER` and `WEEKLY_REVIEW_PROVIDER` control retro providers.
-- Review workflows set `OPENCODE_ENABLE_EXA=1` so OpenCode web search is
-  available through Exa AI; OpenCode fix workflows remain offline.
 - Provider model and context variables are documented inline in their workflows.
 ## Required Secrets
 

@@ -540,8 +540,16 @@ EOF
 }
 
 @test "pinned OpenCode SDK and CLI accept model variants" {
-  grep -q 'variant?: string;' \
-    "$REPO_ROOT/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/gen/sdk.gen.d.ts"
+  run python3 - \
+    "$REPO_ROOT/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/gen/sdk.gen.d.ts" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+signature = text.split("prompt<ThrowOnError", 1)[1].split("deleteMessage<ThrowOnError", 1)[0]
+assert "variant?: string;" in signature
+PY
+  [ "$status" -eq 0 ]
 
   run "$REPO_ROOT/.github/agent-runtime/node_modules/.bin/opencode" run --help
   [ "$status" -eq 0 ]

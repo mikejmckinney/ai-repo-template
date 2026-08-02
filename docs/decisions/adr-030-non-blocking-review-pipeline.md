@@ -264,8 +264,8 @@ weekly provider cascade.
   outbound request containing private source. The maintainer accepts that risk
   for read-only review because same-repository gating, credential isolation,
   non-blocking authority, and deterministic publication limit likelihood and
-  impact. OpenCode web search uses Exa AI's unauthenticated hosted service by
-  default for OpenCode candidates only. It does not constrain Claude's separate
+  impact. OpenCode web search uses Exa AI's unauthenticated hosted service for
+  OpenCode candidates only. It does not constrain Claude's separate
   `WebFetch` and `WebSearch` tools. Downstream repositories that reject this
   accepted egress policy must intentionally change the review profile, workflow,
   and matching invariant rather than relying on an unverified environment-value
