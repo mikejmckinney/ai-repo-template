@@ -232,8 +232,9 @@ touched HEAD paths. OpenCode's system loader supplies the root `AGENTS.md`, so a
 redundant tool read is not required for that file.
 
 Weekly Claude validation requires at least one observed repository read and
-rejects findings whose evidence paths were not read. It does not claim exhaustive
-repository coverage because weekly review has no finite every-file inventory.
+rejects findings whose evidence does not resolve to an existing repository path.
+It does not claim exhaustive repository coverage or that every cited path was
+opened through a tool because the prompt also supplies startup context.
 
 Daily and weekly `auto` analysis attempts Claude, OpenCode, Cursor, then Gemini,
 with cadence-specific Antigravity retained before Gemini where enabled. A

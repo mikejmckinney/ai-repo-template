@@ -249,9 +249,9 @@ and 4,500 seconds.
 
 Weekly analysis `auto` attempts Claude Opus 5 Medium, OpenCode, Cursor, optional
 Antigravity, then Gemini. Claude output must include observed repository reads,
-and finding evidence must name paths present in that trace. This proves
-path-backed retrieval without claiming every repository file was read. Weekly
-fix routing remains Claude-free.
+and finding evidence must resolve to existing repository paths. This proves
+retrieval occurred and findings are path-backed without claiming every cited or
+repository file was read. Weekly fix routing remains Claude-free.
 
 ### Multi-Model Consensus
 

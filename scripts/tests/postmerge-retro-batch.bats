@@ -1177,14 +1177,21 @@ JSON
   tmp="$(mktemp -d)"
   mkdir -p "$tmp/repo/src"
   printf 'source\n' >"$tmp/repo/src/app.py"
+  printf 'startup\n' >"$tmp/repo/AGENTS.md"
   cat >"$tmp/review.json" <<'JSON'
-{"summary":"review","follow_up_issues":[{"title":"Finding","body":"Body","dedupe_key":"repo-finding","repro_steps":["Run"],"evidence":["src/app.py"],"triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"bounded","trigger_likelihood":"edge","affected_scope":"isolated","reversibility":"easy","fix_cost":"trivial","confidence":"high","uncertainty":"none"}]}
+{"summary":"review","follow_up_issues":[{"title":"Finding","body":"Body","dedupe_key":"repo-finding","repro_steps":["Run"],"evidence":["AGENTS.md:1"],"triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"bounded","trigger_likelihood":"edge","affected_scope":"isolated","reversibility":"easy","fix_cost":"trivial","confidence":"high","uncertainty":"none"}]}
 JSON
   printf '{"paths":["src/app.py"],"github_calls":0,"tools":["Read"]}\n' >"$tmp/trace.json"
 
   run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
     "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
   [ "$status" -eq 0 ]
+
+  sed 's/AGENTS.md:1/missing.md:1/' "$tmp/review.json" >"$tmp/missing-review.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/missing-review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing repository paths"* ]]
 
   printf '{"paths":[],"github_calls":1,"tools":["mcp__github_read__get_repository"]}\n' >"$tmp/trace.json"
   run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \

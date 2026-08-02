@@ -347,7 +347,7 @@ EOF
   mkdir -p "$tmp/home/.claude/projects/project-test" "$tmp/repo/src"
   printf 'source\n' >"$tmp/repo/src/app.py"
   cat >"$tmp/home/.claude/projects/project-test/${session_id}.jsonl" <<JSONL
-{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$tmp/repo/src/app.py"}},{"type":"tool_use","name":"mcp__github_read__get_pull_request","input":{"owner":"owner","repo":"repo","pull_number":1}}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$tmp/repo/src/app.py"}},{"type":"tool_use","name":"Grep","input":{"pattern":"source","path":"$tmp/repo/src"}},{"type":"tool_use","name":"Glob","input":{"pattern":"src/**/*.py"}},{"type":"tool_use","name":"mcp__github_read__get_pull_request","input":{"owner":"owner","repo":"repo","pull_number":1}}]}}
 JSONL
 
   run env HOME="$tmp/home" python3 \
@@ -357,8 +357,9 @@ JSONL
 
   [ "$status" -eq 0 ]
   [ "$(jq -r '.paths[0]' "$tmp/retrieval-trace.json")" = "$tmp/repo/src/app.py" ]
+  [ "$(jq -r '.paths[1]' "$tmp/retrieval-trace.json")" = "$tmp/repo/src" ]
   [ "$(jq -r '.github_calls' "$tmp/retrieval-trace.json")" -eq 1 ]
-  [ "$(jq -r '.tools | join("|")' "$tmp/retrieval-trace.json")" = "Read|mcp__github_read__get_pull_request" ]
+  [ "$(jq -r '.tools | join("|")' "$tmp/retrieval-trace.json")" = "Read|Grep|Glob|mcp__github_read__get_pull_request" ]
   rm -rf "$tmp"
 }
 

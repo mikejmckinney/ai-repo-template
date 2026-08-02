@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
+LINE_SUFFIX = re.compile(r"(?::\d+(?:-\d+)?|#L\d+(?:-L?\d+)?)$")
+
 
 def normalized(raw: str, repo_root: Path) -> Path:
-    candidate = Path(raw)
+    candidate = Path(LINE_SUFFIX.sub("", raw.strip()))
     if not candidate.is_absolute():
         candidate = repo_root / candidate
     return candidate.resolve()
@@ -53,11 +56,13 @@ def main() -> int:
     for finding in review.get("follow_up_issues", []):
         for evidence in finding.get("evidence", []):
             evidence_path = normalized(evidence, repo_root)
-            if evidence_path not in repository_reads:
+            if not evidence_path.is_file() or not (
+                evidence_path == repo_root or repo_root in evidence_path.parents
+            ):
                 missing.add(evidence)
     if missing:
         print(
-            "Claude weekly findings cite unread repository paths: "
+            "Claude weekly findings cite missing repository paths: "
             + ", ".join(sorted(missing)),
             file=sys.stderr,
         )
