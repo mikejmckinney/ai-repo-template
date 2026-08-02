@@ -169,6 +169,25 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "legacy fringe reconstruction pins placeholder fix cost and defer band" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/body.md" <<'EOF'
+<!-- postmerge-retro:daily:2026-06-19 -->
+| PR | Category | Key | Impact | Trigger | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|
+| #1 | follow_up_issues | `key-fringe` | dx-perf-doc | fringe | defer | Rare documentation gap | Add a cheap check |
+EOF
+
+  run python3 scripts/workflows/postmerge-retro/reconstruct-daily-retro-from-umbrella.py \
+    --body-file "$tmp/body.md" -o "$tmp/daily.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0] | .fix_cost == "trivial" and .regression_guard == false and .priority_band == "defer"' \
+    "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
 @test "umbrella-findings-table migrates legacy severity header" {
   run python3 - <<'PY'
 from pathlib import Path
@@ -347,6 +366,42 @@ EOF
     --allow-derived-priority "$tmp/retro.json"
   [ "$status" -eq 0 ]
   run jq -e '.follow_up_issues[0].priority_band == "should-fix"' "$tmp/retro.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
+@test "validate-postmerge-retro preserves a guarded fringe finding as defer" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/retro.json" <<'EOF'
+{
+  "pr": 562,
+  "summary": "guarded fringe finding",
+  "follow_up_issues": [
+    {
+      "title": "Rare invariant gap",
+      "body": "A rare path lacks a cheap invariant.",
+      "dedupe_key": "rare-invariant-gap",
+      "repro_steps": ["Exercise the rare path"],
+      "triage_version": 2,
+      "impact": "meta-harness",
+      "impact_magnitude": "bounded",
+      "trigger_likelihood": "fringe",
+      "affected_scope": "isolated",
+      "reversibility": "easy",
+      "fix_cost": "trivial",
+      "confidence": "high",
+      "uncertainty": "none",
+      "regression_guard": true
+    }
+  ]
+}
+EOF
+
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py "$tmp/retro.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.follow_up_issues[0] | .regression_guard == true and .priority_band == "defer"' \
+    "$tmp/retro.json"
   [ "$status" -eq 0 ]
   rm -rf "$tmp"
 }

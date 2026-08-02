@@ -169,6 +169,33 @@ EOF
   ! grep -q 'Severity' "$TMP_DIR/output.md"
 }
 
+@test "advisory normalization preserves a guarded fringe finding as defer" {
+  cat >"$TMP_DIR/input.md" <<'EOF'
+{"evidence_retrieved":true,"findings":[{
+  "id":"ADV-01","lens":"Tests","area":"validator",
+  "finding":"A rare input lacks a cheap invariant.","suggested_action":"Add the invariant.",
+  "still_present_at_head":true,"triage_version":2,"impact":"meta-harness",
+  "impact_magnitude":"bounded","trigger_likelihood":"fringe",
+  "affected_scope":"isolated","reversibility":"easy","fix_cost":"trivial",
+  "confidence":"high","uncertainty":"none","regression_guard":true
+}]}
+EOF
+  printf '%s\n' '{"provider":"claude","model":"claude-opus-5"}' >"$TMP_DIR/provider.json"
+
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+    --input "$TMP_DIR/input.md" \
+    --output "$TMP_DIR/output.md" \
+    --provider-metadata "$TMP_DIR/provider.json" \
+    --head "2222222222222222222222222222222222222222" \
+    --base "0000000000000000000000000000000000000000" \
+    --review-basis incremental \
+    --range-bytes 42 \
+    --changed-files 1
+
+  [ "$status" -eq 0 ]
+  grep -q '^| ADV-01 | defer | Tests |' "$TMP_DIR/output.md"
+}
+
 @test "advisory normalization rejects malformed non-empty findings" {
   cat >"$TMP_DIR/input.md" <<'EOF'
 ## Advisory Review Snapshot
@@ -362,6 +389,83 @@ EOF
   ! grep -q 'INJECTED-PR-BODY-SENTINEL' "$TMP_DIR/prompt.md"
   ! grep -q '^diff --git ' "$TMP_DIR/prompt.md"
   [ "$(wc -c <"$TMP_DIR/prompt.md")" -lt 10000 ]
+}
+
+@test "advisory runner accepts guarded fringe output without provider fallback" {
+  base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
+  head=$(git -C "$REPO_ROOT" rev-parse HEAD)
+  mkdir -p "$TMP_DIR/bin"
+  cat >"$TMP_DIR/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1 $2" == "api repos/example/repo/pulls/506" ]]; then
+  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"test",html_url:"https://example.test/pr/506",base:{sha:$base}}'
+elif [[ "$1 $2" == "api repos/example/repo/issues/506/comments" ]]; then
+  printf '[]\n'
+else
+  exit 1
+fi
+EOF
+  chmod +x "$TMP_DIR/bin/gh"
+  cat >"$TMP_DIR/providers.sh" <<'EOF'
+init_advisory_provider_credentials() { :; }
+list_advisory_providers() { printf '%s\n' first second; }
+EOF
+  cat >"$TMP_DIR/invoke.sh" <<'EOF'
+invoke_advisory_llm() {
+  local output_file="$2" provider="$3"
+  printf '%s\n' "$provider" >>"$ADVISORY_TEST_ATTEMPTS"
+  printf '{"provider":"%s","model":"test-model"}\n' "$provider" >"$ADVISORY_PROVIDER_METADATA_FILE"
+  if [[ "$provider" == first ]]; then
+    cat >"$output_file" <<'JSON'
+{"evidence_retrieved":true,"findings":[
+  {
+    "id":"ADV-01","lens":"Tests","area":"validator",
+    "finding":"A rare path lacks a cheap invariant.","suggested_action":"Add the invariant.",
+    "still_present_at_head":true,"triage_version":2,"impact":"meta-harness",
+    "impact_magnitude":"bounded","trigger_likelihood":"fringe",
+    "affected_scope":"isolated","reversibility":"easy","fix_cost":"trivial",
+    "confidence":"high","uncertainty":"none","regression_guard":true
+  },
+  {
+    "id":"ADV-02","lens":"Correctness","area":"parser",
+    "finding":"An edge input produces the wrong result.","suggested_action":"Correct the parser.",
+    "still_present_at_head":true,"triage_version":2,"impact":"incorrect-behavior",
+    "impact_magnitude":"material","trigger_likelihood":"edge",
+    "affected_scope":"limited","reversibility":"moderate","fix_cost":"moderate",
+    "confidence":"high","uncertainty":"none","regression_guard":false
+  }
+]}
+JSON
+  else
+    printf '%s\n' '{"evidence_retrieved":true,"findings":[]}' >"$output_file"
+  fi
+}
+EOF
+  cat >"$TMP_DIR/upsert.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+cp "$3" "$ADVISORY_TEST_POSTED"
+EOF
+  chmod +x "$TMP_DIR/upsert.sh"
+
+  run env \
+    PATH="$TMP_DIR/bin:$PATH" \
+    GITHUB_REPOSITORY=example/repo \
+    GITHUB_EVENT_ACTION=synchronize \
+    ADVISORY_TEST_BASE="$base" \
+    ADVISORY_TEST_ATTEMPTS="$TMP_DIR/attempts" \
+    ADVISORY_TEST_POSTED="$TMP_DIR/posted.md" \
+    ADVISORY_PROVIDER_LIB="$TMP_DIR/providers.sh" \
+    ADVISORY_INVOKE_LIB="$TMP_DIR/invoke.sh" \
+    ADVISORY_UPSERT_SCRIPT="$TMP_DIR/upsert.sh" \
+    bash "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh" 506 "$head" false
+
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TMP_DIR/attempts")" = first ]
+  grep -q '^Provider: `first / test-model`$' "$TMP_DIR/posted.md"
+  grep -q '^| ADV-01 | defer | Tests |' "$TMP_DIR/posted.md"
+  grep -q '^| ADV-02 | should-fix | Correctness |' "$TMP_DIR/posted.md"
 }
 
 @test "advisory runner reports diff metadata failures" {

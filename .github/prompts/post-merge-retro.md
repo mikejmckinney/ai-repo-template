@@ -94,7 +94,6 @@ at validate/merge time.
 Rules:
 
 - Use `fix_cost=trivial` + `regression_guard=true` **only** for cheap test/invariant guards — not for general small fixes.
-- Do not set `regression_guard=true` when `trigger_likelihood=fringe`.
 
 ## Dedupe keys
 

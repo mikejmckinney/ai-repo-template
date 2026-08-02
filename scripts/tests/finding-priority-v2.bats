@@ -42,6 +42,32 @@ classify_v2() {
   jq -e '.priority_band == "defer" and .surface_action == "no-action"' <<<"$output"
 }
 
+@test "v2 accepts a regression guard observation on a fringe finding" {
+  run python3 - "$REPO_ROOT/scripts/workflows/lib" <<'PY'
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from finding_priority import apply_triage_to_item
+
+finding = {
+    "triage_version": 2,
+    "impact": "meta-harness",
+    "impact_magnitude": "bounded",
+    "trigger_likelihood": "fringe",
+    "affected_scope": "isolated",
+    "reversibility": "easy",
+    "fix_cost": "trivial",
+    "confidence": "high",
+    "uncertainty": "none",
+    "regression_guard": True,
+}
+apply_triage_to_item(finding, "finding")
+assert finding["priority_band"] == "defer"
+PY
+
+  [ "$status" -eq 0 ]
+}
+
 @test "v2 low confidence cannot produce a fix-now recommendation" {
   run classify_v2 critical common broad hard moderate low "trigger frequency is unverified" formal
 

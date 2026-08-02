@@ -57,10 +57,10 @@ def _parse_guard(raw: str) -> bool:
 
 
 def _infer_fix_cost_and_guard(impact: str, trigger: str, table_band: str) -> tuple[str, bool]:
+    # Legacy 8-column rows did not record fix cost; candidate order supplies a stable
+    # placeholder, while the guard is recovered only when the band determines it.
     for fix_cost in ("trivial", "moderate", "large"):
         for guard in (False, True):
-            if guard and trigger == "fringe":
-                continue
             if derive_priority_band(impact, trigger, fix_cost, regression_guard=guard) == table_band:
                 return fix_cost, guard
     return "moderate", False

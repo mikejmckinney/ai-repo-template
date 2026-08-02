@@ -149,10 +149,6 @@ def validate_triage_item(item: dict, path: str, *, from_llm: bool = False) -> No
     _require_choice(item, "fix_cost", FIX_COSTS, path)
 
     guard = _parse_regression_guard(item, path)
-    if guard and trigger == "fringe":
-        raise ValueError(
-            f"{path}.regression_guard must not be true when trigger_likelihood=fringe"
-        )
 
     version = item.get("triage_version", 1)
     if version not in {1, TRIAGE_VERSION}:
