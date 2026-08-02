@@ -29,6 +29,22 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "weekly validation preserves a guarded fringe finding as defer" {
+  jq '.follow_up_issues[0].trigger_likelihood = "fringe"' \
+    "$FIXTURE" >"$TEST_ROOT/review.json"
+
+  run python3 "$WEEKLY_DIR/validate-weekly-review.py" "$TEST_ROOT/review.json"
+  [ "$status" -eq 0 ]
+
+  run bash -c 'python3 "$1/build-weekly-review-batch.py" 2026-W24 2026-06-14 "$2" >"$3"' \
+    _ "$WEEKLY_DIR" "$TEST_ROOT/review.json" "$TEST_ROOT/weekly.json"
+  [ "$status" -eq 0 ]
+
+  run jq -e '.findings[0] | .regression_guard == true and .priority_band == "defer"' \
+    "$TEST_ROOT/weekly.json"
+  [ "$status" -eq 0 ]
+}
+
 @test "weekly LLM output rejects deprecated severity" {
   jq '.follow_up_issues[0] += {severity: "low"}' "$FIXTURE" >"$TEST_ROOT/review.json"
 

@@ -169,6 +169,33 @@ EOF
   ! grep -q 'Severity' "$TMP_DIR/output.md"
 }
 
+@test "advisory normalization preserves a guarded fringe finding as defer" {
+  cat >"$TMP_DIR/input.md" <<'EOF'
+{"evidence_retrieved":true,"findings":[{
+  "id":"ADV-01","lens":"Tests","area":"validator",
+  "finding":"A rare input lacks a cheap invariant.","suggested_action":"Add the invariant.",
+  "still_present_at_head":true,"triage_version":2,"impact":"meta-harness",
+  "impact_magnitude":"bounded","trigger_likelihood":"fringe",
+  "affected_scope":"isolated","reversibility":"easy","fix_cost":"trivial",
+  "confidence":"high","uncertainty":"none","regression_guard":true
+}]}
+EOF
+  printf '%s\n' '{"provider":"claude","model":"claude-opus-5"}' >"$TMP_DIR/provider.json"
+
+  run python3 "$REPO_ROOT/scripts/workflows/advisory-review/normalize-advisory-snapshot.py" \
+    --input "$TMP_DIR/input.md" \
+    --output "$TMP_DIR/output.md" \
+    --provider-metadata "$TMP_DIR/provider.json" \
+    --head "2222222222222222222222222222222222222222" \
+    --base "0000000000000000000000000000000000000000" \
+    --review-basis incremental \
+    --range-bytes 42 \
+    --changed-files 1
+
+  [ "$status" -eq 0 ]
+  grep -q '^| ADV-01 | defer | Tests |' "$TMP_DIR/output.md"
+}
+
 @test "advisory normalization rejects malformed non-empty findings" {
   cat >"$TMP_DIR/input.md" <<'EOF'
 ## Advisory Review Snapshot

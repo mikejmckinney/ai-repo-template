@@ -301,6 +301,42 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "validate-postmerge-retro preserves a guarded fringe finding as defer" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/retro.json" <<'EOF'
+{
+  "pr": 562,
+  "summary": "guarded fringe finding",
+  "follow_up_issues": [
+    {
+      "title": "Rare invariant gap",
+      "body": "A rare path lacks a cheap invariant.",
+      "dedupe_key": "rare-invariant-gap",
+      "repro_steps": ["Exercise the rare path"],
+      "triage_version": 2,
+      "impact": "meta-harness",
+      "impact_magnitude": "bounded",
+      "trigger_likelihood": "fringe",
+      "affected_scope": "isolated",
+      "reversibility": "easy",
+      "fix_cost": "trivial",
+      "confidence": "high",
+      "uncertainty": "none",
+      "regression_guard": true
+    }
+  ]
+}
+EOF
+
+  run python3 scripts/workflows/postmerge-retro/validate-postmerge-retro.py "$tmp/retro.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.follow_up_issues[0] | .regression_guard == true and .priority_band == "defer"' \
+    "$tmp/retro.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
 @test "validate-postmerge-retro rejects retired output buckets" {
   tmp="$(mktemp -d)"
   cat >"$tmp/base.json" <<'EOF'
