@@ -260,6 +260,34 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "recurring workflows scope Claude OAuth and CLI installation to analysis" {
+  daily="$REPO_ROOT/.github/workflows/agent-postmerge-retro.yml"
+  weekly="$REPO_ROOT/.github/workflows/agent-weekly-review.yml"
+
+  [ "$(grep -c 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$daily")" -eq 1 ]
+  [ "$(grep -c 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$weekly")" -eq 1 ]
+  grep -q 'path: .artifacts/postmerge-retro/claude-session/' "$daily"
+  grep -q 'path: .artifacts/weekly-review/claude-session/' "$weekly"
+  [ "$(grep -c 'retention-days: 7' "$daily")" -ge 1 ]
+  [ "$(grep -c 'retention-days: 7' "$weekly")" -ge 1 ]
+
+  run python3 - "$daily" "$weekly" <<'PY'
+import sys
+from pathlib import Path
+
+for name in sys.argv[1:]:
+    text = Path(name).read_text(encoding="utf-8")
+    review = text.split("  daily-pipeline:", 1)[1] if name.endswith("agent-postmerge-retro.yml") else text.split("  weekly-review:", 1)[1].split("  weekly-fix:", 1)[0]
+    fix = text.split("      - name: Run daily fix pass", 1)[1] if name.endswith("agent-postmerge-retro.yml") else text.split("  weekly-fix:", 1)[1]
+    assert "@anthropic-ai/claude-code@2.1.220" in review
+    assert "CLAUDE_CODE_OAUTH_TOKEN:" in review
+    assert "CLAUDE_CODE_OAUTH_TOKEN:" not in fix
+    assert "CLAUDE_OAUTH_SECRET" not in fix
+PY
+
+  [ "$status" -eq 0 ]
+}
+
 @test "generated OpenCode CI profiles allow OAuth and use Kimi as small model" {
   for profile in base review fix; do
     run jq -e '

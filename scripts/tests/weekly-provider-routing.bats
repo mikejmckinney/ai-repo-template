@@ -6,15 +6,17 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   # shellcheck source=scripts/workflows/lib/pick-advisory-provider.sh
   source "$REPO_ROOT/scripts/workflows/lib/pick-advisory-provider.sh"
-  unset CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
+  unset CLAUDE_CODE_OAUTH_TOKEN CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
   unset OPENCODE_AUTH_CONTENT OPENCODE_OAUTH_MIN_TTL_SECONDS OPENCODE_MODELS
   unset WEEKLY_REVIEW_PROVIDER
   unset POSTMERGE_RETRO_PROVIDER ADVISORY_REVIEW_PROVIDER
   OPENCODE_BIN=/bin/true
+  CLAUDE_BIN=/bin/true
   antigravity_enabled=false
 }
 
-@test "weekly scan auto routing prefers OpenCode" {
+@test "weekly scan auto routing prefers Claude" {
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -25,7 +27,45 @@ setup() {
   run pick_advisory_provider weekly-scan
 
   [ "$status" -eq 0 ]
-  [ "$output" = opencode ]
+  [ "$output" = claude ]
+
+  run list_advisory_providers weekly-scan
+  [ "$status" -eq 0 ]
+  [ "$output" = $'claude\nopencode\ncursor\nantigravity\ngemini' ]
+}
+
+@test "weekly scan accepts explicit Claude" {
+  WEEKLY_REVIEW_PROVIDER=claude
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers weekly-scan
+
+  [ "$status" -eq 0 ]
+  [ "$output" = claude ]
+}
+
+@test "daily and weekly fix routing excludes Claude" {
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
+  OPENROUTER_API_KEY=openrouter-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  CURSOR_API_KEY=cursor-test
+  GEMINI_API_KEY=gemini-test
+  init_advisory_provider_credentials
+
+  POSTMERGE_RETRO_PROVIDER=claude
+  run --separate-stderr list_advisory_providers retro-fix
+  [ "$status" -eq 0 ]
+  [ "$output" = $'opencode\ncursor\ngemini' ]
+  [[ "$stderr" == *"Claude is analysis-only"* ]]
+
+  unset POSTMERGE_RETRO_PROVIDER
+  WEEKLY_REVIEW_PROVIDER=claude
+  run --separate-stderr list_advisory_providers weekly-fix
+  [ "$status" -eq 0 ]
+  [ "$output" = $'opencode\ncursor\ngemini' ]
+  [[ "$stderr" == *"Claude is analysis-only"* ]]
 }
 
 @test "weekly scan auto routing uses Antigravity before Gemini" {

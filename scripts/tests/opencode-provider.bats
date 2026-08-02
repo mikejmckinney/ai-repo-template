@@ -152,6 +152,7 @@ valid_opencode_auth() {
 }
 
 @test "auto routing exposes an ordered cross-provider cascade" {
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -161,11 +162,12 @@ valid_opencode_auth() {
   run list_advisory_providers retro
 
   [ "$status" -eq 0 ]
-  [ "$output" = $'opencode\ncursor\ngemini' ]
+  [ "$output" = $'claude\nopencode\ncursor\ngemini' ]
 }
 
-@test "Claude advisory override does not change daily provider routing" {
+@test "Claude advisory override is inherited by daily analysis" {
   ADVISORY_REVIEW_PROVIDER=claude
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -175,8 +177,19 @@ valid_opencode_auth() {
   run list_advisory_providers retro
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"Claude is pre-merge advisory-only"* ]]
-  [[ "$output" == *$'opencode\ncursor\ngemini' ]]
+  [ "$output" = claude ]
+}
+
+@test "daily analysis accepts an explicit Claude provider" {
+  POSTMERGE_RETRO_PROVIDER=claude
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers retro
+
+  [ "$status" -eq 0 ]
+  [ "$output" = claude ]
 }
 
 @test "Cursor SDK resolves Grok Medium without fast mode" {
@@ -325,6 +338,27 @@ EOF
   grep -q 'diagnostic' "$tmp/artifacts/${session_id}.jsonl"
   grep -q '\[REDACTED:GITHUB_TOKEN\]' "$tmp/artifacts/${session_id}.jsonl"
   ! grep -q 'secret-value-test' "$tmp/artifacts/${session_id}.jsonl"
+  rm -rf "$tmp"
+}
+
+@test "Claude retrieval extraction records local reads and read-only GitHub MCP calls" {
+  tmp="$(mktemp -d)"
+  session_id=33333333-3333-4333-8333-333333333333
+  mkdir -p "$tmp/home/.claude/projects/project-test" "$tmp/repo/src"
+  printf 'source\n' >"$tmp/repo/src/app.py"
+  cat >"$tmp/home/.claude/projects/project-test/${session_id}.jsonl" <<JSONL
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$tmp/repo/src/app.py"}},{"type":"tool_use","name":"mcp__github_read__get_pull_request","input":{"owner":"owner","repo":"repo","pull_number":1}}]}}
+JSONL
+
+  run env HOME="$tmp/home" python3 \
+    "$REPO_ROOT/scripts/workflows/lib/extract-claude-retrieval.py" \
+    --session-id "$session_id" --repo-root "$tmp/repo" \
+    --output "$tmp/retrieval-trace.json"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.paths[0]' "$tmp/retrieval-trace.json")" = "$tmp/repo/src/app.py" ]
+  [ "$(jq -r '.github_calls' "$tmp/retrieval-trace.json")" -eq 1 ]
+  [ "$(jq -r '.tools | join("|")' "$tmp/retrieval-trace.json")" = "Read|mcp__github_read__get_pull_request" ]
   rm -rf "$tmp"
 }
 

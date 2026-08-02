@@ -1127,6 +1127,7 @@ JSON
     "README.md"
   ]
 }
+
 JSON
 
   run python3 scripts/workflows/postmerge-retro/validate-opencode-retrieval.py \
@@ -1150,6 +1151,45 @@ JSON
     "$tmp/repo/.artifacts/work" "$tmp/repo"
   [ "$status" -eq 1 ]
   [[ "$output" == *"diff.patch"* ]]
+  rm -rf "$tmp"
+}
+
+@test "truncated daily evidence routes through Claude when available" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/repo"
+  head -c 5000 /dev/zero | tr '\0' 'a' >"$tmp/diff.patch"
+  printf 'README.md\n' >"$tmp/changed-files.txt"
+  printf 'readme\n' >"$tmp/repo/README.md"
+
+  run env CLAUDE_BIN=/bin/true CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    OPENCODE_GITHUB_TOKEN=github-read-test \
+    python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
+    "$tmp" --pr 7 --diff-limit 1000 --repo-root "$tmp/repo"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"evidence_route": "full-evidence-claude"'* ]]
+  [[ "$output" == *'"provider_resolved": "claude"'* ]]
+  rm -rf "$tmp"
+}
+
+@test "weekly Claude retrieval requires observed repository reads and path-backed findings" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/repo/src"
+  printf 'source\n' >"$tmp/repo/src/app.py"
+  cat >"$tmp/review.json" <<'JSON'
+{"summary":"review","follow_up_issues":[{"title":"Finding","body":"Body","dedupe_key":"repo-finding","repro_steps":["Run"],"evidence":["src/app.py"],"triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"bounded","trigger_likelihood":"edge","affected_scope":"isolated","reversibility":"easy","fix_cost":"trivial","confidence":"high","uncertainty":"none"}]}
+JSON
+  printf '{"paths":["src/app.py"],"github_calls":0,"tools":["Read"]}\n' >"$tmp/trace.json"
+
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 0 ]
+
+  printf '{"paths":[],"github_calls":1,"tools":["mcp__github_read__get_repository"]}\n' >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"repository read"* ]]
   rm -rf "$tmp"
 }
 
