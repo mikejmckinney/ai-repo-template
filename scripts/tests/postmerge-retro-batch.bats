@@ -119,6 +119,25 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "legacy fringe reconstruction keeps an uninferred guard and defer band" {
+  tmp="$(mktemp -d)"
+  cat >"$tmp/body.md" <<'EOF'
+<!-- postmerge-retro:daily:2026-06-19 -->
+| PR | Category | Key | Impact | Trigger | Band | Finding | Suggested fix |
+|---|---|---|---|---|---|---|---|
+| #1 | follow_up_issues | `key-fringe` | dx-perf-doc | fringe | defer | Rare documentation gap | Add a cheap check |
+EOF
+
+  run python3 scripts/workflows/postmerge-retro/reconstruct-daily-retro-from-umbrella.py \
+    --body-file "$tmp/body.md" -o "$tmp/daily.json"
+
+  [ "$status" -eq 0 ]
+  run jq -e '.findings[0] | .regression_guard == false and .priority_band == "defer"' \
+    "$tmp/daily.json"
+  [ "$status" -eq 0 ]
+  rm -rf "$tmp"
+}
+
 @test "umbrella-findings-table migrates legacy severity header" {
   run python3 - <<'PY'
 from pathlib import Path
