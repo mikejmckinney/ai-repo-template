@@ -260,7 +260,7 @@ weekly provider cascade.
   access to other fix providers. External content is evidence rather than
   executable instruction, and prompts prohibit transmitting repository content
   through URLs, search queries, or forms. Unrestricted review egress retains a
-  residual risk that prompt-injected repository or web content could induce an
+  residual risk that repository or web content could induce an
   outbound request containing private source. The maintainer accepts that risk
   for read-only review because same-repository gating, credential isolation,
   non-blocking authority, and deterministic publication limit likelihood and
@@ -275,6 +275,30 @@ weekly provider cascade.
 - Model-specific candidate names are internal routing details. Snapshot memory
   continues to record stable observed providers so Sol and Kimi remain
   compatible with `opencode` incremental-review history.
+
+### Amendment 2026-08-02 — Direct-source pre-merge retrieval
+
+[Issue #556](https://github.com/mikejmckinney/ai-repo-template/issues/556)
+removes copied evidence from pre-merge model prompts after every automatic
+candidate gained repository and read-only GitHub access.
+
+- The prompt retains only the review/output contract and invocation coordinates.
+  It does not embed `AGENTS.md`, shared lenses, task-triggered governance bodies,
+  the PR body, changed-file lists, prior snapshots, or capped diff excerpts.
+- Claude, OpenCode, and Cursor run from the checked-out PR head and retrieve the
+  current issue, PR, discussion, checks, diff, startup instructions, shared
+  lenses, and relevant files directly. Claude and Cursor use the same dedicated
+  `OPENCODE_GITHUB_TOKEN` and hosted MCP lockdown headers as OpenCode; the token
+  is exposed to them only as `ADVISORY_GITHUB_TOKEN` for the candidate process.
+- Claude uses strict ephemeral MCP configuration and an explicit
+  `mcp__github_read__*` allowlist. Cursor uses inline HTTP MCP configuration,
+  disables ambient setting sources, and runs in plan mode.
+- Pre-merge Gemini and Antigravity overrides are retired because they do not
+  satisfy the direct-source contract. Daily and weekly provider routing,
+  adapters, and fix behavior remain unchanged.
+- `ai-review:full` now forces a full base-to-head review range rather than a
+  larger injected context pack. Snapshot normalization still reports complete
+  range byte counts and the exact reviewed head.
 
 ## Implementation
 

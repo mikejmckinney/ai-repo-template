@@ -174,12 +174,17 @@ The snapshot header reports the automation-observed provider/model and writes an
 explicit no-findings statement when applicable. A hidden provider-neutral memory
 record retains the last reviewed head; compatible pushes review the accumulated
 delta, while readiness, full mode, base/provider changes, or invalid memory force
-a full PR refresh.
+a full base-to-head refresh. Pre-merge prompts contain invocation coordinates,
+not copied repository, governance, PR, snapshot, or diff bodies. Claude,
+OpenCode, and Cursor retrieve current files and PR evidence directly from the
+checkout and the same locked-down read-only GitHub MCP. Gemini and Antigravity
+are not pre-merge providers; cadence-specific daily and weekly behavior remains
+separate.
 Implementation continues without waiting. Before completion, agents independently
 triage any arrived snapshot whose `Head` matches the current PR head; stale,
 missing, running, or failed feedback is non-blocking. Advisory cannot submit a
 formal review, push commits, mutate labels, resolve threads, change readiness, or
-block merge. `ai-review:full` increases context depth but does not change authority.
+block merge. `ai-review:full` changes the review range, not authority.
 Providers emit normalized AP11 observations; deterministic automation validates
 the shared fields, derives priority, and renders the sticky Markdown snapshot.
 Classification never changes advisory's non-blocking authority.
@@ -339,7 +344,8 @@ subscription token with `claude setup-token`, then store it manually with
 settings. Anthropic prints but does not save the token, so provision and rotate
 it as an annual secret rather than copying refresh-enabled login credentials.
 The workflow maps that secret back to `CLAUDE_CODE_OAUTH_TOKEN` only for Claude
-provider execution and runs pinned Claude Code `2.1.220` without built-in tools.
+provider execution and runs pinned Claude Code `2.1.220` with repository reads,
+web research, and strict locked-down read-only GitHub MCP tools.
 Explicit `opencode` and the daily/weekly provider cascades retain their existing
 behavior.
 Skill-refresh readiness uses a separate `SKILL_REFRESH_PR_TOKEN`, restricted to

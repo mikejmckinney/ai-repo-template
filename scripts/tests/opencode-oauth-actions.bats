@@ -408,7 +408,7 @@ set -euo pipefail
 provider="$1"
 case "$provider" in
   claude)
-    [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]]
+    [[ -n "${CLAUDE_CODE_OAUTH_TOKEN:-}" && -n "${ADVISORY_GITHUB_TOKEN:-}" ]]
     [[ -z "${ANTHROPIC_API_KEY:-}${ANTHROPIC_AUTH_TOKEN:-}${CURSOR_API_KEY:-}${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
     ;;
   opencode)
@@ -416,7 +416,7 @@ case "$provider" in
     [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}${ANTHROPIC_API_KEY:-}${ANTHROPIC_AUTH_TOKEN:-}${CURSOR_API_KEY:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
     ;;
   cursor)
-    [[ -n "${CURSOR_API_KEY:-}" ]]
+    [[ -n "${CURSOR_API_KEY:-}" && -n "${ADVISORY_GITHUB_TOKEN:-}" ]]
     [[ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}${ANTHROPIC_API_KEY:-}${ANTHROPIC_AUTH_TOKEN:-}${OPENROUTER_API_KEY:-}${OPENCODE_GITHUB_TOKEN:-}${OPENCODE_AUTH_CONTENT:-}${GEMINI_API_KEY:-}${GOOGLE_API_KEY:-}${GITHUB_TOKEN:-}${GH_TOKEN:-}${SANDBOX_BOOTSTRAP_TOKEN:-}" ]]
     ;;
   gemini)
@@ -432,6 +432,7 @@ EOF
       GITHUB_TOKEN=publisher-test GH_TOKEN=publisher-test SANDBOX_BOOTSTRAP_TOKEN=sandbox-test \
       CLAUDE_CODE_OAUTH_TOKEN=claude-test ANTHROPIC_API_KEY=anthropic-key-test \
       ANTHROPIC_AUTH_TOKEN=anthropic-auth-test \
+      ADVISORY_GITHUB_TOKEN=github-read-test \
       OPENROUTER_API_KEY=openrouter-test OPENCODE_GITHUB_TOKEN=opencode-github-test \
       OPENCODE_AUTH_CONTENT=opencode-auth-test CURSOR_API_KEY=cursor-test \
       GEMINI_API_KEY=gemini-test GOOGLE_API_KEY=google-test \
@@ -440,6 +441,9 @@ EOF
 
     [ "$status" -eq 0 ]
   done
+  run "$REPO_ROOT/scripts/workflows/lib/run-with-provider-credentials.sh" antigravity /bin/true
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"unsupported provider 'antigravity'"* ]]
 }
 
 @test "provider credential isolation composes with the postmerge timeout" {

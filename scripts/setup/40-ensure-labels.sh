@@ -31,7 +31,7 @@ chore:no-plan|EDEDED|Exempt this issue/PR from the plan-as-comment requirement (
 outcome-validated|0E8A16|Issue author has validated the user outcome inline
 agent-suggested|BFD4F2|Agent-surfaced opportunity; see process_opportunity_feedback rule.
 ai-review:live|1D76DB|Enable rolling non-blocking advisory review snapshots (draft/WIP OK; agent-advisory-review.yml)
-ai-review:full|5319E7|Request deeper advisory review depth on this PR
+ai-review:full|5319E7|Request a full base-to-head advisory refresh on this PR
 ci-failure|B60205|CI workflow failure requiring investigation
 automated|EDEDED|Created by repository automation
 dependencies|0366D6|Dependency or vendored-skill maintenance

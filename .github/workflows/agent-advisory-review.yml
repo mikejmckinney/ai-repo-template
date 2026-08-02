@@ -5,11 +5,9 @@
 # Does NOT submit formal PR reviews, mutate PR state, or push commits.
 #
 # Providers (ADVISORY_REVIEW_PROVIDER repo variable, default auto):
-#   - claude      — Claude Code Opus 5 Medium (CLAUDE_OAUTH_SECRET)
+#   - claude      — Claude Code Opus 5 Medium + read-only GitHub MCP
 #   - opencode    — explicit OpenCode Sol/Kimi + read-only GitHub MCP
-#   - cursor      — Cursor SDK (CURSOR_API_KEY)
-#   - antigravity — Gemini Interactions / Antigravity (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
-#   - gemini      — Gemini generateContent API (GEMINI_API_KEY or GOOGLE_API_KEY)
+#   - cursor      — Cursor SDK + read-only GitHub MCP
 #   - auto        — Claude Opus 5 Medium, Sol 5.6 Medium, Grok 4.5 Medium, Kimi K3
 #
 # Scripts: scripts/workflows/advisory-review/ (AP8 — not .github/scripts/).
@@ -56,15 +54,9 @@ jobs:
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       GITHUB_EVENT_ACTION: ${{ github.event.action }}
       ADVISORY_REVIEW_PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
-      ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
-      ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
-      ADVISORY_REVIEW_DIFF_LIMIT_LIVE: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_LIVE || '' }}
-      ADVISORY_REVIEW_DIFF_LIMIT_FULL: ${{ vars.ADVISORY_REVIEW_DIFF_LIMIT_FULL || '' }}
       ADVISORY_REVIEW_COMMENT_LIMIT: ${{ vars.ADVISORY_REVIEW_COMMENT_LIMIT || '' }}
       ADVISORY_CANDIDATE_TIMEOUT_SECONDS: ${{ vars.ADVISORY_CANDIDATE_TIMEOUT_SECONDS || '300' }}
-      ADVISORY_CONTEXT_PROFILE: ${{ vars.ADVISORY_CONTEXT_PROFILE || '' }}
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'cursor-grok-4.5-medium' }}
-      GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       OPENCODE_OAUTH_MIN_TTL_SECONDS: 2100
       OPENCODE_ENABLE_EXA: 1
       FULL_MODE: ${{ contains(github.event.pull_request.labels.*.name, 'ai-review:full') }}
@@ -76,35 +68,26 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           PROVIDER: ${{ vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
-          ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
         run: |
-          has_claude=0 has_opencode=0 has_sol=0 has_kimi=0 has_cursor=0 has_gemini=0
+          has_claude=0 has_opencode=0 has_sol=0 has_kimi=0 has_cursor=0
           claude_candidate=false
           [[ "$HAS_CLAUDE_OAUTH" == "true" ]] && has_claude=1
           if [[ -n "$OPENCODE_GITHUB_TOKEN" && "$HAS_OPENCODE_AUTH" == "true" ]]; then has_sol=1; fi
           if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "$OPENROUTER_API_KEY" ]]; then has_kimi=1; fi
           has_opencode="$has_kimi"
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
-          [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
+          [[ "$has_claude" -eq 1 && -n "$OPENCODE_GITHUB_TOKEN" ]] || has_claude=0
+          [[ "$has_cursor" -eq 1 && -n "$OPENCODE_GITHUB_TOKEN" ]] || has_cursor=0
           case "$PROVIDER" in
             claude)
-              [[ "$has_claude" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=claude requires CLAUDE_OAUTH_SECRET"; exit 1; }
+              [[ "$has_claude" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=claude requires CLAUDE_OAUTH_SECRET plus OPENCODE_GITHUB_TOKEN"; exit 1; }
               ;;
             opencode)
               [[ "$has_opencode" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=opencode requires OPENROUTER_API_KEY plus OPENCODE_GITHUB_TOKEN"; exit 1; }
               ;;
             cursor)
-              [[ "$has_cursor" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=cursor but CURSOR_API_KEY is missing"; exit 1; }
-              ;;
-            antigravity)
-              [[ "$has_gemini" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=antigravity but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
-              [[ "$ANTIGRAVITY_ENABLED" == "true" ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=antigravity but ADVISORY_ANTIGRAVITY_ENABLED is not true"; exit 1; }
-              ;;
-            gemini)
-              [[ "$has_gemini" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
+              [[ "$has_cursor" -eq 1 ]] || { echo "::error::ADVISORY_REVIEW_PROVIDER=cursor requires CURSOR_API_KEY plus OPENCODE_GITHUB_TOKEN"; exit 1; }
               ;;
             auto)
               [[ "$has_claude" -eq 1 || "$has_sol" -eq 1 || "$has_cursor" -eq 1 || "$has_kimi" -eq 1 ]] || {
@@ -164,8 +147,6 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           OPENCODE_AUTH_CONTENT: ${{ secrets.OPENCODE_OPENAI_AUTH }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           chmod +x scripts/workflows/advisory-review/*.sh scripts/workflows/advisory-review/*.py 2>/dev/null || true
           bash scripts/workflows/advisory-review/run-advisory-review.sh \

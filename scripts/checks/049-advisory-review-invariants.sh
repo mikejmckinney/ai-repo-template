@@ -12,7 +12,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   GEMINI_SCRIPT="${ADVISORY_DIR}/run-advisory-gemini.py"
   CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
   CLAUDE_SCRIPT="${ADVISORY_DIR}/run-advisory-claude.sh"
-  ANTIGRAVITY_SCRIPT="${ADVISORY_DIR}/run-advisory-antigravity.py"
   NORMALIZE_SCRIPT="${ADVISORY_DIR}/normalize-advisory-snapshot.py"
   RANGE_SCRIPT="${ADVISORY_DIR}/select-advisory-range.py"
   OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
@@ -23,7 +22,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   MARKER='ai-advisory-review:v1'
 
   for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
-    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$ANTIGRAVITY_SCRIPT" "$NORMALIZE_SCRIPT" \
+    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$NORMALIZE_SCRIPT" \
     "$RANGE_SCRIPT" "$OPENCODE_RUNNER" \
     "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG"; do
     if [[ -f "$f" ]]; then
@@ -70,11 +69,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "workflow must invoke scripts/workflows/advisory-review/run-advisory-review.sh"
   fi
 
-  if grep -q 'antigravity' "$ADVISORY_WORKFLOW" 2>/dev/null \
-    && grep -q 'ADVISORY_ANTIGRAVITY_ENABLED' "$ADVISORY_WORKFLOW" 2>/dev/null; then
-    pass "workflow documents antigravity provider gate"
+  if ! grep -q 'ADVISORY_ANTIGRAVITY_ENABLED\|GEMINI_ADVISORY_MODEL\|GEMINI_API_KEY\|GOOGLE_API_KEY' "$ADVISORY_WORKFLOW" 2>/dev/null; then
+    pass "pre-merge workflow omits retired Gemini and Antigravity providers"
   else
-    fail "workflow missing antigravity provider wiring"
+    fail "pre-merge workflow still exposes Gemini or Antigravity"
   fi
 
   if grep -q "$MARKER" "$NORMALIZE_SCRIPT" 2>/dev/null \
@@ -97,9 +95,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   if grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$OPENCODE_RUNNER" 2>/dev/null \
     && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CURSOR_SCRIPT" 2>/dev/null \
     && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$GEMINI_SCRIPT" 2>/dev/null \
-    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$ANTIGRAVITY_SCRIPT" 2>/dev/null; then
-    pass "every advisory provider records automation-owned model metadata"
+    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$GEMINI_SCRIPT" 2>/dev/null; then
+    pass "retained analysis providers record automation-owned model metadata"
   else
     fail "one or more advisory providers omit model metadata"
   fi
@@ -110,11 +107,32 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && grep -q -- '--json-schema' "$CLAUDE_SCRIPT" 2>/dev/null \
     && grep -q -- '--model "$requested_model"' "$CLAUDE_SCRIPT" 2>/dev/null \
     && grep -q -- '--effort medium' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q -- '--tools "Read,Glob,Grep,WebFetch,WebSearch"' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q -- '--allowedTools "Read,Glob,Grep,WebFetch,WebSearch"' "$CLAUDE_SCRIPT" 2>/dev/null; then
-    pass "pre-merge advisory pins read-only web-capable Claude Opus 5 Medium with scoped OAuth"
+    && grep -q -- '--tools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*"' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--allowedTools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*"' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q -- '--strict-mcp-config' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q 'X-MCP-Readonly' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q 'X-MCP-Lockdown' "$CLAUDE_SCRIPT" 2>/dev/null; then
+    pass "pre-merge advisory pins Claude Opus 5 Medium with strict read-only GitHub MCP"
   else
     fail "pre-merge advisory missing pinned Claude Code, scoped OAuth, model, effort, or review tools"
+  fi
+
+  if grep -q 'mcpServers' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'github_read' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'X-MCP-Readonly' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'X-MCP-Lockdown' "$CURSOR_SCRIPT" 2>/dev/null \
+    && grep -q 'mode: "plan"' "$CURSOR_SCRIPT" 2>/dev/null; then
+    pass "pre-merge Cursor uses plan mode and the locked-down read-only GitHub MCP"
+  else
+    fail "pre-merge Cursor missing plan mode or read-only GitHub MCP"
+  fi
+
+  if ! grep -q 'prompt_helpers.py.*select-context\|Repo startup context (automation-supplied\|printf.*pr_body\|printf.*diff_text' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'Invocation coordinates' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'Retrieve the current issue, pull request, discussion, checks, and diff' "$ADVISORY_PROMPT" 2>/dev/null; then
+    pass "pre-merge advisory retrieves source evidence instead of injecting copied bodies"
+  else
+    fail "pre-merge advisory still injects source evidence or lacks direct-retrieval instructions"
   fi
 
   if jq -e '

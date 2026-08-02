@@ -32,7 +32,6 @@ invoke_advisory_llm() {
   local provider="$3"
   local advisory_dir="$4"
   local repo_root="$5"
-  local workdir="$6"
   local lib_dir="${7:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
   export ADVISORY_PROVIDER_USED="$provider"
 
@@ -78,18 +77,6 @@ invoke_advisory_llm() {
       run_with_provider_credentials gemini env \
         GEMINI_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}}" \
         python3 "$advisory_dir/run-advisory-gemini.py" "$prompt_file" "$out_file"
-      ;;
-    antigravity)
-      local full_diff_bytes="${ADVISORY_FULL_DIFF_BYTES:-0}"
-      echo "Antigravity: full_diff_bytes=${full_diff_bytes}" >&2
-      if ! run_with_provider_credentials antigravity \
-        python3 "$advisory_dir/run-advisory-antigravity.py" "$repo_root" "$workdir" "$out_file"; then
-        echo "::warning::Antigravity advisory review failed; falling back to Gemini generateContent"
-        export ADVISORY_PROVIDER_USED=gemini
-        run_with_provider_credentials gemini env \
-          GEMINI_ADVISORY_MODEL="${WEEKLY_REVIEW_MODEL:-${POSTMERGE_RETRO_MODEL:-${GEMINI_ADVISORY_MODEL:-gemini-3.5-flash}}}" \
-          python3 "$advisory_dir/run-advisory-gemini.py" "$prompt_file" "$out_file"
-      fi
       ;;
     *)
       echo "::error::invoke_advisory_llm: unsupported provider '${provider}'" >&2

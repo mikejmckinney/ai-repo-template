@@ -8,7 +8,8 @@ requested_model="claude-opus-5"
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 schema_file="${ADVISORY_OUTPUT_SCHEMA:-$repo_root/.github/schemas/advisory-review.schema.json}"
 response_file="$(mktemp)"
-trap 'rm -f "$response_file"' EXIT
+mcp_config="$(mktemp)"
+trap 'rm -f "$response_file" "$mcp_config"' EXIT
 
 command -v "$claude_bin" >/dev/null 2>&1 || {
   echo "::error::Claude Code is required for the Claude advisory candidate" >&2
@@ -18,11 +19,31 @@ command -v "$claude_bin" >/dev/null 2>&1 || {
   echo "::error::CLAUDE_CODE_OAUTH_TOKEN is required for the Claude advisory candidate" >&2
   exit 1
 }
+[[ -n "${ADVISORY_GITHUB_TOKEN:-}" ]] || {
+  echo "::error::ADVISORY_GITHUB_TOKEN is required for direct PR retrieval" >&2
+  exit 1
+}
 [[ -f "$schema_file" ]] || {
   echo "::error::Claude advisory schema is missing: $schema_file" >&2
   exit 1
 }
 schema_json="$(jq -c . "$schema_file")"
+cat >"$mcp_config" <<'EOF'
+{
+  "mcpServers": {
+    "github_read": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${ADVISORY_GITHUB_TOKEN}",
+        "X-MCP-Toolsets": "repos,issues,pull_requests,actions",
+        "X-MCP-Readonly": "true",
+        "X-MCP-Lockdown": "true"
+      }
+    }
+  }
+}
+EOF
 
 if ! "$claude_bin" -p \
   --model "$requested_model" \
@@ -30,8 +51,10 @@ if ! "$claude_bin" -p \
   --output-format json \
   --json-schema "$schema_json" \
   --safe-mode \
-  --tools "Read,Glob,Grep,WebFetch,WebSearch" \
-  --allowedTools "Read,Glob,Grep,WebFetch,WebSearch" \
+  --mcp-config "$mcp_config" \
+  --strict-mcp-config \
+  --tools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__*" \
+  --allowedTools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__*" \
   --permission-mode dontAsk \
   --no-session-persistence \
   <"$prompt_file" >"$response_file"; then

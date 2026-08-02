@@ -74,6 +74,7 @@ setup() {
   run --separate-stderr pick_advisory_provider retro
 
   [ "$status" -eq 0 ]
+  [[ "$stderr" == *"Antigravity is weekly-scan-only"* ]]
   [[ "$stderr" == *"opencode, else cursor, else gemini"* ]]
 }
 

@@ -17,10 +17,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   done
 
   if grep -q 'select-context' "$PROMPT_HELPERS" 2>/dev/null \
-    && grep -qE 'prompt_helpers\.py.*select-context' scripts/workflows/advisory-review/run-advisory-review.sh 2>/dev/null; then
-    pass "advisory uses catalog-driven context selection"
+    && ! grep -qE 'prompt_helpers\.py.*select-context' scripts/workflows/advisory-review/run-advisory-review.sh 2>/dev/null; then
+    pass "shared context selection remains for retro while advisory retrieves live sources"
   else
-    fail "advisory must use prompt_helpers select-context"
+    fail "context selection must remain available without pre-merge source injection"
   fi
 
   if grep -q '^\.env$' .gitignore 2>/dev/null; then

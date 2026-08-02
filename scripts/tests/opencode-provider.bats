@@ -6,6 +6,7 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   source "$REPO_ROOT/scripts/workflows/lib/pick-advisory-provider.sh"
   unset CLAUDE_CODE_OAUTH_TOKEN CURSOR_API_KEY GEMINI_API_KEY GOOGLE_API_KEY OPENAI_API_KEY OPENROUTER_API_KEY
+  unset ADVISORY_GITHUB_TOKEN
   unset OPENCODE_AUTH_CONTENT OPENCODE_OAUTH_MIN_TTL_SECONDS OPENCODE_MODELS
   unset ADVISORY_REVIEW_PROVIDER POSTMERGE_RETRO_PROVIDER WEEKLY_REVIEW_PROVIDER
   OPENCODE_BIN=/bin/true
@@ -81,6 +82,14 @@ valid_opencode_auth() {
   run advisory_candidate_provider claude
   [ "$status" -eq 0 ]
   [ "$output" = claude ]
+
+  run --separate-stderr advisory_candidate_provider antigravity
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"unknown advisory candidate 'antigravity'"* ]]
+
+  run --separate-stderr advisory_candidate_provider gemini
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"unknown advisory candidate 'gemini'"* ]]
 }
 
 @test "pre-merge auto routing prefers Grok over Kimi when Sol is unavailable" {
@@ -116,6 +125,20 @@ valid_opencode_auth() {
   [ "$status" -eq 1 ]
   [ -z "$output" ]
   [[ "$stderr" == *"no advisory review provider configured"* ]]
+}
+
+@test "pre-merge rejects retired Gemini and Antigravity overrides" {
+  init_advisory_provider_credentials
+
+  ADVISORY_REVIEW_PROVIDER=gemini
+  run --separate-stderr list_advisory_providers advisory
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"unsupported provider 'gemini' for advisory"* ]]
+
+  ADVISORY_REVIEW_PROVIDER=antigravity
+  run --separate-stderr list_advisory_providers advisory
+  [ "$status" -eq 1 ]
+  [[ "$stderr" == *"unsupported provider 'antigravity' for advisory"* ]]
 }
 
 @test "auto routing falls back to Cursor when OpenCode credentials are unavailable" {
@@ -194,14 +217,22 @@ export const Cursor = {
   },
 }
 export const Agent = {
-  prompt: async () => {
+  prompt: async (_prompt, options) => {
+    if (options.mode !== "plan") throw new Error("Cursor advisory must run in plan mode")
+    const github = options.mcpServers?.github_read
+    if (github?.type !== "http") throw new Error("Cursor advisory omitted GitHub MCP")
+    if (github.url !== "https://api.githubcopilot.com/mcp/") throw new Error("Cursor advisory used the wrong GitHub MCP URL")
+    if (github.headers?.Authorization !== "Bearer github-read-test") throw new Error("Cursor advisory omitted the read-only token")
+    if (github.headers?.["X-MCP-Readonly"] !== "true" || github.headers?.["X-MCP-Lockdown"] !== "true") {
+      throw new Error("Cursor advisory omitted GitHub MCP lockdown headers")
+    }
     setInterval(() => {}, 1000)
     return { model: { id: "grok-4.5" }, status: "completed", result: "cursor-ok\n" }
   },
 }
 EOF
 
-  run timeout 3s env CURSOR_API_KEY=cursor-test \
+  run timeout 3s env CURSOR_API_KEY=cursor-test ADVISORY_GITHUB_TOKEN=github-read-test \
     CURSOR_SDK_MODULE="$tmp/cursor-sdk.mjs" \
     CURSOR_ADVISORY_MODEL=cursor-grok-4.5-medium \
     node "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-cursor.mjs" \
@@ -219,6 +250,12 @@ EOF
 #!/usr/bin/env bash
 printf '%s\n' "$*" >"$CLAUDE_ARGS_FILE"
 cat >/dev/null
+for ((i = 1; i <= $#; i++)); do
+  if [[ "${!i}" == "--mcp-config" ]]; then
+    next=$((i + 1))
+    cp "${!next}" "$CLAUDE_MCP_CONFIG_CAPTURE"
+  fi
+done
   jq -cn '{
     is_error: false,
     result: "free-form text is not the advisory contract",
@@ -234,6 +271,8 @@ EOF
 
   run env PATH="$tmp:$PATH" CLAUDE_ARGS_FILE="$tmp/args" \
     CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    ADVISORY_GITHUB_TOKEN=github-read-test \
+    CLAUDE_MCP_CONFIG_CAPTURE="$tmp/mcp.json" \
     ADVISORY_PROVIDER_METADATA_FILE="$tmp/metadata.json" \
     "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-claude.sh" \
     "$tmp/prompt.md" "$tmp/output.txt"
@@ -244,12 +283,36 @@ EOF
   grep -q -- '--effort medium' "$tmp/args"
   grep -q -- '--output-format json' "$tmp/args"
   grep -q -- '--json-schema' "$tmp/args"
-  grep -q -- '--tools Read,Glob,Grep,WebFetch,WebSearch' "$tmp/args"
-  grep -q -- '--allowedTools Read,Glob,Grep,WebFetch,WebSearch' "$tmp/args"
+  grep -q -- '--tools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
+  grep -q -- '--allowedTools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
+  grep -q -- '--strict-mcp-config' "$tmp/args"
+  grep -q -- '--mcp-config' "$tmp/args"
+  run jq -e '
+    .mcpServers.github_read.type == "http" and
+    .mcpServers.github_read.url == "https://api.githubcopilot.com/mcp/" and
+    .mcpServers.github_read.headers.Authorization == "Bearer ${ADVISORY_GITHUB_TOKEN}" and
+    .mcpServers.github_read.headers["X-MCP-Toolsets"] == "repos,issues,pull_requests,actions" and
+    .mcpServers.github_read.headers["X-MCP-Readonly"] == "true" and
+    .mcpServers.github_read.headers["X-MCP-Lockdown"] == "true"
+  ' "$tmp/mcp.json"
+  [ "$status" -eq 0 ]
   grep -q -- '"findings"' "$tmp/args"
   [ "$(jq -r '.provider + "/" + .model' "$tmp/metadata.json")" = "claude/claude-opus-5" ]
   [ "$(jq -r .requested_model "$tmp/metadata.json")" = claude-opus-5 ]
   rm -rf "$tmp"
+}
+
+@test "pre-merge advisory prompt is retrieval-first and injects no source bodies" {
+  runner="$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
+  prompt="$REPO_ROOT/.github/prompts/pr-advisory-review.md"
+
+  ! grep -q 'prompt_helpers.py.*select-context' "$runner"
+  ! grep -q 'Repo startup context (automation-supplied' "$runner"
+  ! grep -q 'printf.*pr_body' "$runner"
+  ! grep -q 'printf.*diff_text' "$runner"
+  ! grep -q 'Existing advisory snapshot (dedupe against this)' "$runner"
+  grep -q 'Retrieve the current issue, pull request, discussion, checks, and diff' "$prompt"
+  grep -q 'Expected head SHA' "$runner"
 }
 
 @test "Claude advisory schema requires every normalized triage field" {
@@ -335,6 +398,7 @@ EOF
   chmod +x "$tmp/claude"
 
   run env PATH="$tmp:$PATH" CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    ADVISORY_GITHUB_TOKEN=github-read-test \
     ADVISORY_PROVIDER_METADATA_FILE="$tmp/metadata.json" \
     "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-claude.sh" \
     "$tmp/prompt.md" "$tmp/output.txt"

@@ -355,6 +355,53 @@ EOF
   grep -q '^No findings identified at this head\.$' "$TMP_DIR/posted.md"
 }
 
+@test "advisory runner reports diff metadata failures" {
+  base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
+  head=$(git -C "$REPO_ROOT" rev-parse HEAD)
+  real_git=$(command -v git)
+  mkdir -p "$TMP_DIR/bin"
+  cat >"$TMP_DIR/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1 $2" == "api repos/example/repo/pulls/506" ]]; then
+  jq -n --arg base "$ADVISORY_TEST_BASE" '{title:"test",body:"test",html_url:"https://example.test/pr/506",base:{sha:$base}}'
+elif [[ "$1 $2" == "api repos/example/repo/issues/506/comments" ]]; then
+  printf '[]\n'
+else
+  exit 1
+fi
+EOF
+  cat >"$TMP_DIR/bin/git" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == diff ]]; then
+  exit 42
+fi
+exec "$ADVISORY_TEST_REAL_GIT" "$@"
+EOF
+  chmod +x "$TMP_DIR/bin/gh" "$TMP_DIR/bin/git"
+  cat >"$TMP_DIR/providers.sh" <<'EOF'
+init_advisory_provider_credentials() { :; }
+list_advisory_providers() { printf '%s\n' opencode; }
+EOF
+  cat >"$TMP_DIR/invoke.sh" <<'EOF'
+invoke_advisory_llm() { return 99; }
+EOF
+
+  run env \
+    PATH="$TMP_DIR/bin:$PATH" \
+    GITHUB_REPOSITORY=example/repo \
+    GITHUB_EVENT_ACTION=synchronize \
+    ADVISORY_TEST_BASE="$base" \
+    ADVISORY_TEST_REAL_GIT="$real_git" \
+    ADVISORY_PROVIDER_LIB="$TMP_DIR/providers.sh" \
+    ADVISORY_INVOKE_LIB="$TMP_DIR/invoke.sh" \
+    bash "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh" 506 "$head" false
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Failed to compute advisory changed-file list"* ]]
+}
+
 @test "advisory runner exposes Claude OAuth only to the Claude candidate" {
   base=$(git -C "$REPO_ROOT" rev-parse HEAD^)
   head=$(git -C "$REPO_ROOT" rev-parse HEAD)
