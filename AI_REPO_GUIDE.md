@@ -189,11 +189,20 @@ Providers emit normalized AP11 observations; deterministic automation validates
 the shared fields and required `evidence_retrieved: true` claim, derives
 priority, and renders the sticky Markdown snapshot. Missing or failed retrieval
 advances the provider cascade without reviewed-head memory.
+Failed Claude invocation, metadata, or output validation also preserves the
+persisted Claude JSONL as an authenticated Actions artifact for seven days after
+redacting known workflow credential values. Successful Claude sessions are not
+uploaded, transcript contents are not printed in logs, and only trusted
+repository collaborators should download these potentially private diagnostics.
 Classification never changes advisory's non-blocking authority.
 Review agents may read/search the checked-out repository, use locked-down
 read-only GitHub MCP, and research the public web. They cannot use Bash, edit
-files, launch subagents, access external directories, or inherit publisher
-credentials. This change does not grant internet access to fix agents, and the
+files, launch subagents, or access external directories when running through
+Claude or OpenCode. Cursor plan mode is behavioral rather than a hard SDK tool
+boundary and may expose shell or workspace-write tools; the maintainer accepts
+that limited residual risk for the same-repository, non-blocking, time-bounded
+candidate. No review candidate inherits publisher credentials. This change does
+not grant internet access to fix agents, and the
 OpenCode fix profile remains offline. External pages are source material, not
 instructions, and externally supported findings cite their URLs without sending
 repository content in requests. OpenCode search uses Exa AI's unauthenticated

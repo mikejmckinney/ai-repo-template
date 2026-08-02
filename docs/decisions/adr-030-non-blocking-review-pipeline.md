@@ -292,7 +292,11 @@ candidate gained repository and read-only GitHub access.
   is exposed to them only as `ADVISORY_GITHUB_TOKEN` for the candidate process.
 - Claude uses strict ephemeral MCP configuration and an explicit
   `mcp__github_read__*` allowlist. Cursor uses inline HTTP MCP configuration,
-  disables ambient setting sources, and runs in plan mode.
+  disables ambient setting sources, and runs in plan mode. Cursor's local
+  headless SDK does not treat plan mode as a hard tool-permission boundary and
+  may still expose shell or workspace-write tools. The maintainer accepts this
+  residual risk because the candidate is same-repository, non-blocking,
+  time-bounded, and isolated from publisher credentials.
 - Pre-merge Gemini and Antigravity overrides are retired because they do not
   satisfy the direct-source contract. Daily and weekly provider routing,
   adapters, and fix behavior remain unchanged.
@@ -301,6 +305,13 @@ candidate gained repository and read-only GitHub access.
   than unobservable model-consumption coverage, and records the exact reviewed
   head only when the provider returns `evidence_retrieved: true` after required
   source retrieval. A false or missing value advances the cascade.
+- Claude receives a generated session ID and persists its local JSONL during the
+  candidate attempt. Invocation, metadata, or output-validation failure copies
+  that session into an authenticated Actions artifact retained for seven days;
+  known workflow credential values are redacted and successful sessions are not
+  uploaded. The artifact is not printed in logs and may contain private
+  repository evidence or tool results, so it is restricted operationally to
+  trusted repository collaborators.
 
 ## Implementation
 

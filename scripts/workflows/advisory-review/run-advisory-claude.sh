@@ -9,7 +9,12 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 schema_file="${ADVISORY_OUTPUT_SCHEMA:-$repo_root/.github/schemas/advisory-review.schema.json}"
 response_file="$(mktemp)"
 mcp_config="$(mktemp)"
+session_id="${CLAUDE_ADVISORY_SESSION_ID:-$(python3 -c 'import uuid; print(uuid.uuid4())')}"
 trap 'rm -f "$response_file" "$mcp_config"' EXIT
+
+if [[ -n "${CLAUDE_ADVISORY_SESSION_ID_FILE:-}" ]]; then
+  printf '%s\n' "$session_id" >"$CLAUDE_ADVISORY_SESSION_ID_FILE"
+fi
 
 command -v "$claude_bin" >/dev/null 2>&1 || {
   echo "::error::Claude Code is required for the Claude advisory candidate" >&2
@@ -56,7 +61,7 @@ if ! "$claude_bin" -p \
   --tools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__*" \
   --allowedTools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__*" \
   --permission-mode dontAsk \
-  --no-session-persistence \
+  --session-id "$session_id" \
   <"$prompt_file" >"$response_file"; then
   echo "::error::Claude advisory invocation failed" >&2
   exit 1

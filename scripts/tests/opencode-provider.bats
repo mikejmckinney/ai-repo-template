@@ -272,6 +272,8 @@ EOF
   run env PATH="$tmp:$PATH" CLAUDE_ARGS_FILE="$tmp/args" \
     CLAUDE_CODE_OAUTH_TOKEN=claude-test \
     ADVISORY_GITHUB_TOKEN=github-read-test \
+    CLAUDE_ADVISORY_SESSION_ID=11111111-1111-4111-8111-111111111111 \
+    CLAUDE_ADVISORY_SESSION_ID_FILE="$tmp/session-id.txt" \
     CLAUDE_MCP_CONFIG_CAPTURE="$tmp/mcp.json" \
     ADVISORY_PROVIDER_METADATA_FILE="$tmp/metadata.json" \
     "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-claude.sh" \
@@ -287,6 +289,9 @@ EOF
   grep -q -- '--allowedTools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
   grep -q -- '--strict-mcp-config' "$tmp/args"
   grep -q -- '--mcp-config' "$tmp/args"
+  grep -q -- '--session-id 11111111-1111-4111-8111-111111111111' "$tmp/args"
+  ! grep -q -- '--no-session-persistence' "$tmp/args"
+  [ "$(cat "$tmp/session-id.txt")" = 11111111-1111-4111-8111-111111111111 ]
   run jq -e '
     .mcpServers.github_read.type == "http" and
     .mcpServers.github_read.url == "https://api.githubcopilot.com/mcp/" and
@@ -300,6 +305,36 @@ EOF
   [ "$(jq -r '.provider + "/" + .model' "$tmp/metadata.json")" = "claude/claude-opus-5" ]
   [ "$(jq -r .requested_model "$tmp/metadata.json")" = claude-opus-5 ]
   rm -rf "$tmp"
+}
+
+@test "Claude advisory failure diagnostics copy the exact persisted session" {
+  tmp="$(mktemp -d)"
+  session_id=22222222-2222-4222-8222-222222222222
+  mkdir -p "$tmp/home/.claude/projects/project-test"
+  printf '%s\n' '{"type":"assistant","message":"diagnostic secret-value-test"}' \
+    >"$tmp/home/.claude/projects/project-test/${session_id}.jsonl"
+
+  run env HOME="$tmp/home" GITHUB_TOKEN=secret-value-test python3 \
+    "$REPO_ROOT/scripts/workflows/advisory-review/collect-claude-session.py" \
+    --session-id "$session_id" \
+    --output "$tmp/artifacts/${session_id}.jsonl" \
+    --redact-env GITHUB_TOKEN
+
+  [ "$status" -eq 0 ]
+  grep -q 'diagnostic' "$tmp/artifacts/${session_id}.jsonl"
+  grep -q '\[REDACTED:GITHUB_TOKEN\]' "$tmp/artifacts/${session_id}.jsonl"
+  ! grep -q 'secret-value-test' "$tmp/artifacts/${session_id}.jsonl"
+  rm -rf "$tmp"
+}
+
+@test "advisory workflow uploads failure-only Claude sessions for seven days" {
+  workflow="$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
+  runner="$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
+
+  grep -q 'actions/upload-artifact@v4' "$workflow"
+  grep -q 'path: .artifacts/advisory-claude-session/' "$workflow"
+  grep -q 'retention-days: 7' "$workflow"
+  grep -q 'collect-claude-session.py' "$runner"
 }
 
 @test "pre-merge advisory prompt is retrieval-first and injects no source bodies" {

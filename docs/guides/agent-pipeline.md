@@ -62,6 +62,14 @@ table. Providers must also assert `evidence_retrieved: true`; a false or missing
 value advances the cascade and writes no reviewed-head memory. Advisory authority
 stays non-blocking for every band. An empty result says
 `No findings identified at this head.` rather than rendering an empty table.
+Claude candidates use a generated session ID and persist their local JSONL only
+long enough for failure handling. When Claude invocation, metadata, or output
+validation fails, the workflow copies that session into an authenticated Actions
+artifact with known workflow credential values redacted and seven-day retention.
+Successful Claude sessions are not uploaded, and transcript contents are never
+printed in workflow logs. Because a
+failure transcript can contain private repository evidence and tool results, only
+trusted repository collaborators should download it.
 Compatible synchronize events review the accumulated
 delta from the last completed reviewed head. Missing or invalid memory, readiness,
 full mode, base changes, expected-provider changes, and non-ancestor history force
@@ -193,9 +201,13 @@ applies to OpenCode candidates only; Claude's separate `WebFetch` and `WebSearch
 tools are unaffected. Claude pre-merge review allows exactly `Read`, `Glob`,
 `Grep`, `WebFetch`, `WebSearch`, and the locked-down `github_read` MCP tools.
 Cursor runs in plan mode with inline configuration for that same MCP. Bash,
-edits, subagents, and
-external-directory access remain denied, and provider isolation removes GitHub
-publisher credentials before model execution. OpenCode fix profiles remain
+edits, subagents, and external-directory access are hard-denied for Claude and
+OpenCode. Cursor plan mode is a behavioral constraint rather than an SDK
+permission boundary; its local headless runtime may expose shell and write tools.
+The maintainer accepts that limited residual risk because the candidate is
+same-repository, non-blocking, time-bounded, and receives no publisher
+credential. Provider isolation removes GitHub publisher credentials before model
+execution. OpenCode fix profiles remain
 offline, and this change grants no web access to other fix providers. External
 pages are source material, not instructions; externally supported findings cite
 URLs and must not transmit repository content in requests.

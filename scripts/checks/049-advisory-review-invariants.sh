@@ -12,6 +12,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   GEMINI_SCRIPT="${ADVISORY_DIR}/run-advisory-gemini.py"
   CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
   CLAUDE_SCRIPT="${ADVISORY_DIR}/run-advisory-claude.sh"
+  CLAUDE_SESSION_COLLECTOR="${ADVISORY_DIR}/collect-claude-session.py"
   NORMALIZE_SCRIPT="${ADVISORY_DIR}/normalize-advisory-snapshot.py"
   RANGE_SCRIPT="${ADVISORY_DIR}/select-advisory-range.py"
   OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
@@ -23,7 +24,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   MARKER='ai-advisory-review:v1'
 
   for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
-    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$NORMALIZE_SCRIPT" \
+    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$CLAUDE_SESSION_COLLECTOR" "$NORMALIZE_SCRIPT" \
     "$RANGE_SCRIPT" "$OPENCODE_RUNNER" \
     "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG"; do
     if [[ -f "$f" ]]; then
@@ -43,6 +44,17 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "advisory installs pinned OpenCode SDK on Ubuntu with hosted read-only GitHub MCP"
   else
     fail "advisory missing locked OpenCode install, dedicated token, or hosted MCP security boundary"
+  fi
+
+  if grep -q -- '--session-id' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && ! grep -q -- '--no-session-persistence' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q 'collect-claude-session.py' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'actions/upload-artifact@v4' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'path: .artifacts/advisory-claude-session/' "$ADVISORY_WORKFLOW" 2>/dev/null \
+    && grep -q 'retention-days: 7' "$ADVISORY_WORKFLOW" 2>/dev/null; then
+    pass "failed Claude advisory sessions upload as seven-day diagnostics"
+  else
+    fail "Claude advisory failure diagnostics are not persisted and uploaded"
   fi
 
   if [[ -f .github/scripts/run-advisory-review.sh ]] \
