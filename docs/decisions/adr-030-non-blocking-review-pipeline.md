@@ -265,9 +265,11 @@ weekly provider cascade.
   for read-only review because same-repository gating, credential isolation,
   non-blocking authority, and deterministic publication limit likelihood and
   impact. OpenCode web search uses Exa AI's unauthenticated hosted service by
-  default; downstream private repositories may set `OPENCODE_ENABLE_EXA=false`
-  to disable search while retaining direct web fetches. A maintainer-generated
-  `claude setup-token` value is stored as
+  default for OpenCode candidates only. It does not constrain Claude's separate
+  `WebFetch` and `WebSearch` tools. Downstream repositories that reject this
+  accepted egress policy must intentionally change the review profile, workflow,
+  and matching invariant rather than relying on an unverified environment-value
+  opt-out. A maintainer-generated `claude setup-token` value is stored as
   `CLAUDE_OAUTH_SECRET`, mapped to `CLAUDE_CODE_OAUTH_TOKEN` only for provider
   execution, and isolated from publisher and other provider credentials.
 - Model-specific candidate names are internal routing details. Snapshot memory

@@ -539,6 +539,15 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+@test "pinned OpenCode SDK and CLI accept model variants" {
+  grep -q 'variant?: string;' \
+    "$REPO_ROOT/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/gen/sdk.gen.d.ts"
+
+  run "$REPO_ROOT/.github/agent-runtime/node_modules/.bin/opencode" run --help
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'--variant'* ]]
+}
+
 @test "OpenCode runner corrects model-authored priority bands" {
   tmp="$(mktemp -d)"
   cat >"$tmp/mock-sdk.mjs" <<'EOF'

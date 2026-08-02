@@ -190,8 +190,8 @@ credentials. This change does not grant internet access to fix agents, and the
 OpenCode fix profile remains offline. External pages are source material, not
 instructions, and externally supported findings cite their URLs without sending
 repository content in requests. OpenCode search uses Exa AI's unauthenticated
-hosted service by default; set repository variable `OPENCODE_ENABLE_EXA=false`
-to disable search while retaining direct fetches.
+hosted service for OpenCode candidates; Claude's separate web tools are
+unaffected.
 
 ### Daily Retro
 
