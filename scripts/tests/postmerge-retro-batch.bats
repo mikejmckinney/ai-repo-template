@@ -1206,6 +1206,24 @@ JSON
     "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
   [ "$status" -eq 0 ]
 
+  printf '{"paths":[],"directories":"src","github_calls":0,"tools":["Grep"]}\n' >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"directories must be an array of strings"* ]]
+
+  printf '{"paths":[],"directories":["src/app.py"],"github_calls":0,"tools":["Grep"]}\n' >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"repository read"* ]]
+
+  printf '{"paths":[],"directories":["/tmp"],"github_calls":0,"tools":["Grep"]}\n' >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"repository read"* ]]
+
   printf '{"paths":[],"github_calls":1,"tools":["mcp__github_read__get_repository"]}\n' >"$tmp/trace.json"
   run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
     "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"

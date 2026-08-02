@@ -70,7 +70,12 @@ def main() -> int:
                 inputs = tool.get("input")
                 if not isinstance(inputs, dict):
                     continue
-                raw_path = inputs.get("file_path") if name == "Read" else inputs.get("path") if name == "Grep" else None
+                if name == "Read":
+                    raw_path = inputs.get("file_path")
+                elif name == "Grep":
+                    raw_path = inputs.get("path", str(repo_root))
+                else:
+                    continue
                 if not isinstance(raw_path, str) or not raw_path.strip():
                     continue
                 candidate = Path(raw_path)

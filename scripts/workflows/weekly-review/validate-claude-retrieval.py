@@ -77,9 +77,7 @@ def main() -> int:
     for finding in review.get("follow_up_issues", []):
         for evidence in finding.get("evidence", []):
             evidence_path = normalized(evidence, repo_root)
-            if not evidence_path.is_file() or not (
-                evidence_path == repo_root or repo_root in evidence_path.parents
-            ):
+            if not evidence_path.is_file() or repo_root not in evidence_path.parents:
                 missing.add(evidence)
     if missing:
         print(
