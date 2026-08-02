@@ -446,7 +446,7 @@ JSONL
   grep -q '`300` seconds' "$REPO_ROOT/docs/guides/agent-pipeline.md"
 }
 
-@test "workflow positive integers use one decimal-safe parser" {
+@test "shell workflow positive integers use one decimal-safe parser" {
   helper="$REPO_ROOT/scripts/workflows/lib/parse-positive-int.sh"
   [ -f "$helper" ]
 

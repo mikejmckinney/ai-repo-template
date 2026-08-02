@@ -8,7 +8,7 @@ setup() {
   cd "$REPO_ROOT"
 }
 
-@test "bounded retro honors an explicit fallback provider over stale coverage metadata" {
+@test "bounded retro honors an explicit provider and falls back only when missing" {
   tmp="$(mktemp -d)"
   mkdir -p "$tmp/bin" "$tmp/work"
   cat >"$tmp/work/evidence-coverage.json" <<'JSON'
@@ -39,6 +39,22 @@ SH
   [ "$status" -eq 0 ]
   [[ "$output" == *"via opencode"* ]]
   [ "$(cat "$tmp/output.txt")" = "invoked opencode" ]
+
+  rm -f "$tmp/output.txt"
+  run env PATH="$tmp/bin:$PATH" CURSOR_API_KEY=cursor-test \
+    /bin/bash scripts/workflows/postmerge-retro/run-postmerge-retro-bounded.sh \
+    1 "$tmp/work" "$tmp/output.txt"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"via cursor"* ]]
+  [ "$(cat "$tmp/output.txt")" = "invoked opencode" ]
+
+  run env PATH="$tmp/bin:$PATH" /bin/bash \
+    scripts/workflows/postmerge-retro/run-postmerge-retro-bounded.sh \
+    1 "$tmp/work" "$tmp/output.txt" unknown
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Bounded retro does not support provider=unknown"* ]]
   rm -rf "$tmp"
 }
 
@@ -1205,14 +1221,6 @@ JSON
   [[ "$output" == *'"evidence_route": "full-evidence-claude"'* ]]
   [[ "$output" == *'"provider_resolved": "claude"'* ]]
   rm -rf "$tmp"
-}
-
-@test "bounded retro provider fallback only handles a missing override" {
-  runner="scripts/workflows/postmerge-retro/run-postmerge-retro-bounded.sh"
-
-  run grep -Eq '\$provider.*(null|unknown)' "$runner"
-
-  [ "$status" -eq 1 ]
 }
 
 @test "weekly Claude retrieval requires observed repository reads and path-backed findings" {
