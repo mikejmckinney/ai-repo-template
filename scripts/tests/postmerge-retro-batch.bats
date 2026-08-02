@@ -119,7 +119,7 @@ EOF
   rm -rf "$tmp"
 }
 
-@test "legacy fringe reconstruction keeps an uninferred guard and defer band" {
+@test "legacy fringe reconstruction pins placeholder fix cost and defer band" {
   tmp="$(mktemp -d)"
   cat >"$tmp/body.md" <<'EOF'
 <!-- postmerge-retro:daily:2026-06-19 -->
