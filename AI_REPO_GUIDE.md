@@ -187,8 +187,10 @@ formal review, push commits, mutate labels, resolve threads, change readiness, o
 block merge. `ai-review:full` changes the review range, not authority.
 Providers emit normalized AP11 observations; deterministic automation validates
 the shared fields and required `evidence_retrieved: true` claim, derives
-priority, and renders the sticky Markdown snapshot. Missing or failed retrieval
-advances the provider cascade without reviewed-head memory.
+priority, and renders the sticky Markdown snapshot. Regression-guard observations
+remain independent of trigger likelihood, but never raise a fringe finding's
+priority. Missing or failed retrieval advances the provider cascade without
+reviewed-head memory.
 Failed Claude invocation, metadata, or output validation also preserves the
 persisted Claude JSONL as an authenticated Actions artifact for seven days after
 redacting known workflow credential values. Successful Claude sessions are not

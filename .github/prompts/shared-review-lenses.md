@@ -29,12 +29,13 @@ observations rather than model-authored severity or priority:
 | `fix_cost` | `trivial` \| `moderate` \| `large` | Mitigation cost |
 | `confidence` | `low` \| `medium` \| `high` | Evidence confidence |
 | `uncertainty` | non-empty string | Missing or uncertain evidence; use `none` only when verified |
-| `regression_guard` | boolean | Cheap invariant or test value, not a general small-fix flag |
+| `regression_guard` | boolean | Cheap invariant or test value, not a general small-fix flag; independent of likelihood |
 
 Automation validates these fields and derives `priority_band`. Review-surface
 authority is separate: advisory output remains optional and non-blocking for
-every derived band. Do not reproduce or improvise the classifier decision table
-in a prompt.
+every derived band. A regression guard never raises the priority of a
+`trigger_likelihood: fringe` finding. Do not reproduce or improvise the
+classifier decision table in a prompt.
 
 ## Lenses
 

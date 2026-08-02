@@ -58,9 +58,12 @@ Automation owns the snapshot's head, provider/model, review-range metadata, and 
 `ai-advisory-memory:v1` payload. The visible findings are the provider-neutral
 summary. Providers emit structured `triage_version: 2` observations; automation
 validates the shared AP11 fields, derives the priority band, and renders the
-table. Providers must also assert `evidence_retrieved: true`; a false or missing
-value advances the cascade and writes no reviewed-head memory. Advisory authority
-stays non-blocking for every band. An empty result says
+table. `regression_guard` records cheap invariant or test value independently of
+trigger likelihood, while the classifier prevents that field from raising the
+priority of fringe findings. Providers must also assert
+`evidence_retrieved: true`; a false or missing value advances the cascade and
+writes no reviewed-head memory. Advisory authority stays non-blocking for every
+band. An empty result says
 `No findings identified at this head.` rather than rendering an empty table.
 Claude candidates use a generated session ID and persist their local JSONL only
 long enough for failure handling. When Claude invocation, metadata, or output
