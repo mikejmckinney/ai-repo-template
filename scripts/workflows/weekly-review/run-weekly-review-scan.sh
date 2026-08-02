@@ -110,7 +110,7 @@ provider_metadata_file="$WORKDIR/provider-metadata.json"
 normalized_provenance_file="$WORKDIR/provider-provenance.json"
 claude_retrieval_trace="$WORKDIR/claude-retrieval-trace.json"
 claude_session_id_file="$WORKDIR/claude-session-id.txt"
-claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/weekly-review/claude-session"
+claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/weekly-claude-session"
 provider_attempts='[]'
 provider_succeeded=false
 for provider in "${provider_candidates[@]}"; do
@@ -121,7 +121,8 @@ for provider in "${provider_candidates[@]}"; do
   provider_invoked=false
   case "$provider" in
     claude)
-      if CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
+      if ADVISORY_CANDIDATE_TIMEOUT_SECONDS="${WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS:-900}" \
+        CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
         CLAUDE_RETRIEVAL_TRACE_FILE="$claude_retrieval_trace" \
         ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
         OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/weekly-review.schema.json" \

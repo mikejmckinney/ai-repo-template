@@ -82,7 +82,8 @@ jq -r '.body // ""' "$WORKDIR/pr.json" >"$WORKDIR/pr-body.md"
 run_bounded_pass() {
   local provider="$1"
   if [[ "$provider" == "claude" ]]; then
-    CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
+    ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$provider_timeout_seconds" \
+      CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
       bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
       "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON" "$provider"
     return
@@ -104,7 +105,7 @@ prompt_file="$WORKDIR/prompt.md"
 provider_metadata_file="$WORKDIR/provider-metadata.json"
 normalized_provenance_file="$WORKDIR/provider-provenance.json"
 claude_session_id_file="$WORKDIR/claude-session-id.txt"
-claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/claude-session"
+claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-claude-session"
 export ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file"
 
 # shellcheck source=../lib/pick-advisory-provider.sh
@@ -153,7 +154,8 @@ run_full_evidence_provider() {
   bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" full-evidence "$prompt_file"
   case "$provider" in
     claude)
-      CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
+      ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$provider_timeout_seconds" \
+        CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
         CLAUDE_RETRIEVAL_TRACE_FILE="$WORKDIR/retrieval-trace.json" \
         OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro.schema.json" \
         invoke_advisory_llm \

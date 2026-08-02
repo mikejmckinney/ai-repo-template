@@ -263,13 +263,23 @@ PY
 @test "recurring workflows scope Claude OAuth and CLI installation to analysis" {
   daily="$REPO_ROOT/.github/workflows/agent-postmerge-retro.yml"
   weekly="$REPO_ROOT/.github/workflows/agent-weekly-review.yml"
+  daily_runner="$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro.sh"
+  monolithic_runner="$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro-monolithic.sh"
+  weekly_runner="$REPO_ROOT/scripts/workflows/weekly-review/run-weekly-review-scan.sh"
 
   [ "$(grep -c 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$daily")" -eq 1 ]
   [ "$(grep -c 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$weekly")" -eq 1 ]
-  grep -q 'path: .artifacts/postmerge-retro/claude-session/' "$daily"
-  grep -q 'path: .artifacts/weekly-review/claude-session/' "$weekly"
+  grep -q 'path: .artifacts/postmerge-claude-session/' "$daily"
+  grep -q 'path: .artifacts/weekly-claude-session/' "$weekly"
+  ! grep -q 'path: .artifacts/postmerge-retro/claude-session/' "$daily"
+  ! grep -q 'path: .artifacts/weekly-review/claude-session/' "$weekly"
   [ "$(grep -c 'retention-days: 7' "$daily")" -ge 1 ]
   [ "$(grep -c 'retention-days: 7' "$weekly")" -ge 1 ]
+  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$provider_timeout_seconds"' "$daily_runner"
+  grep -q 'if \[\[ "$provider" == "claude" || "$provider" == "cursor" \]\]; then' "$monolithic_runner"
+  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$candidate_timeout"' "$monolithic_runner"
+  grep -q 'WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS' "$weekly"
+  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS="${WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS:-900}"' "$weekly_runner"
 
   run python3 - "$daily" "$weekly" <<'PY'
 import sys

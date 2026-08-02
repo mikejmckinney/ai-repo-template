@@ -334,9 +334,11 @@ analysis without changing fix authority.
   repository reads and path-backed findings, without claiming exhaustive
   repository coverage.
 - Invocation, metadata, schema, or retrieval-validation failure advances the
-  cadence cascade. Failed Claude sessions use collision-safe IDs and the same
-  redacted seven-day diagnostic lifecycle as pre-merge review; successful
-  sessions create no transcript artifact.
+  cadence cascade. A 900-second candidate timeout prevents a stalled Claude
+  attempt from consuming the cadence job budget. Failed Claude sessions use
+  collision-safe IDs in diagnostic-only sibling artifact roots and the same
+  redacted seven-day lifecycle as pre-merge review; successful sessions create
+  no transcript artifact.
 - Daily and weekly fix providers, credentials, disposable-worktree isolation,
   verification, and promotion behavior are unchanged.
 

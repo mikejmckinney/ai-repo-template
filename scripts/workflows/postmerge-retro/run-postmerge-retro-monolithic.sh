@@ -40,6 +40,7 @@ fi
 DEFAULT_DIFF_LIMIT=300000
 diff_limit="$(parse_positive_int POSTMERGE_RETRO_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${POSTMERGE_RETRO_DIFF_LIMIT:-}")"
 per_pr_diff="$(parse_positive_int POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR "$diff_limit" "${POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR:-}")"
+provider_timeout_seconds="$(parse_positive_int POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS 900 "${POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS:-}")"
 context_profile="${POSTMERGE_RETRO_CONTEXT_PROFILE:-full}"
 
 WORKDIR="$(mktemp -d)"
@@ -288,7 +289,7 @@ candidate_dir="$WORKDIR/monolithic-candidate"
 provider_metadata_file="$WORKDIR/provider-metadata.json"
 normalized_provenance_file="$WORKDIR/provider-provenance.json"
 claude_session_id_file="$WORKDIR/claude-session-id.txt"
-claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/claude-session"
+claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-claude-session"
 provider_attempts='[]'
 provider_succeeded=false
 validate_monolithic_candidate() {
@@ -305,7 +306,12 @@ for provider in "${provider_candidates[@]}"; do
   rm -f "$llm_raw" "$provider_metadata_file" "$normalized_provenance_file" \
     "$claude_session_id_file"
   echo "Monolithic retro LLM call via ${provider} for PR(s): ${SELECTED_PRS[*]}"
-  if CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
+  candidate_timeout=""
+  if [[ "$provider" == "claude" || "$provider" == "cursor" ]]; then
+    candidate_timeout="$provider_timeout_seconds"
+  fi
+  if ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$candidate_timeout" \
+    CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
     ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
     OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro-monolithic.schema.json" \
     invoke_advisory_llm \

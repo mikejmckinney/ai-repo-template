@@ -18,6 +18,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   CLAUDE_TRACE_EXTRACTOR="scripts/workflows/lib/extract-claude-retrieval.py"
   POSTMERGE_WORKFLOW=".github/workflows/agent-postmerge-retro.yml"
   WEEKLY_WORKFLOW=".github/workflows/agent-weekly-review.yml"
+  POSTMERGE_CLAUDE_RUNNER="scripts/workflows/postmerge-retro/run-postmerge-retro.sh"
+  WEEKLY_CLAUDE_RUNNER="scripts/workflows/weekly-review/run-weekly-review-scan.sh"
   WEEKLY_CLAUDE_VALIDATOR="scripts/workflows/weekly-review/validate-claude-retrieval.py"
   NORMALIZE_SCRIPT="${ADVISORY_DIR}/normalize-advisory-snapshot.py"
   RANGE_SCRIPT="${ADVISORY_DIR}/select-advisory-range.py"
@@ -32,7 +34,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
     "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$CLAUDE_SESSION_COLLECTOR" \
     "$CLAUDE_RUNNER" "$CLAUDE_DIAGNOSTICS" "$CLAUDE_TRACE_EXTRACTOR" \
-    "$POSTMERGE_WORKFLOW" "$WEEKLY_WORKFLOW" "$WEEKLY_CLAUDE_VALIDATOR" "$NORMALIZE_SCRIPT" \
+    "$POSTMERGE_WORKFLOW" "$WEEKLY_WORKFLOW" "$POSTMERGE_CLAUDE_RUNNER" \
+    "$WEEKLY_CLAUDE_RUNNER" "$WEEKLY_CLAUDE_VALIDATOR" "$NORMALIZE_SCRIPT" \
     "$RANGE_SCRIPT" "$OPENCODE_RUNNER" \
     "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG"; do
     if [[ -f "$f" ]]; then
@@ -143,10 +146,15 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     && grep -q '@anthropic-ai/claude-code@2.1.220' "$WEEKLY_WORKFLOW" 2>/dev/null \
     && grep -q 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$POSTMERGE_WORKFLOW" 2>/dev/null \
     && grep -q 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$WEEKLY_WORKFLOW" 2>/dev/null \
-    && grep -q 'path: .artifacts/postmerge-retro/claude-session/' "$POSTMERGE_WORKFLOW" 2>/dev/null \
-    && grep -q 'path: .artifacts/weekly-review/claude-session/' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'path: .artifacts/postmerge-claude-session/' "$POSTMERGE_WORKFLOW" 2>/dev/null \
+    && grep -q 'path: .artifacts/weekly-claude-session/' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'path: .artifacts/postmerge-retro/claude-session/' "$POSTMERGE_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'path: .artifacts/weekly-review/claude-session/' "$WEEKLY_WORKFLOW" 2>/dev/null \
     && grep -q 'retention-days: 7' "$POSTMERGE_WORKFLOW" 2>/dev/null \
     && grep -q 'retention-days: 7' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS=' "$POSTMERGE_CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q 'WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS=' "$WEEKLY_CLAUDE_RUNNER" 2>/dev/null \
     && grep -q 'full-evidence-claude' scripts/workflows/postmerge-retro/run-postmerge-retro.sh 2>/dev/null \
     && grep -q 'validate-claude-retrieval.py' scripts/workflows/weekly-review/run-weekly-review-scan.sh 2>/dev/null; then
     pass "daily and weekly analysis reuse Claude with cadence-specific retrieval validation and diagnostics"

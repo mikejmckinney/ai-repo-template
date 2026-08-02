@@ -85,6 +85,7 @@ jobs:
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'cursor-grok-4.5-medium' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       WEEKLY_REVIEW_MODEL: ${{ vars.WEEKLY_REVIEW_MODEL || '' }}
+      WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS: ${{ vars.WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS || '900' }}
       POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
       ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
       ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
@@ -199,7 +200,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: weekly-claude-session-${{ github.run_id }}-${{ github.run_attempt }}
-          path: .artifacts/weekly-review/claude-session/
+          path: .artifacts/weekly-claude-session/
           if-no-files-found: ignore
           retention-days: 7
 

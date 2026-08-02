@@ -301,6 +301,9 @@ earlier green result after they change.
 
 - `ADVISORY_REVIEW_PROVIDER` controls optional advisory provider selection.
 - `POSTMERGE_RETRO_PROVIDER` and `WEEKLY_REVIEW_PROVIDER` control retro providers.
+- `POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS` bounds daily Claude and Cursor
+  attempts; `WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS` bounds weekly Claude
+  attempts. Both default to 900 seconds and fail into the cadence cascade.
 - Provider model and context variables are documented inline in their workflows.
 ## Required Secrets
 
@@ -317,8 +320,9 @@ earlier green result after they change.
   `claude setup-token` and stored manually with `gh secret set` or repository
   settings. Pre-merge, daily, and weekly analysis map it to
   `CLAUDE_CODE_OAUTH_TOKEN` only in their analysis execution steps. Failed Claude
-  sessions are redacted and retained for seven days; successful sessions create
-  no diagnostic artifact. Daily and weekly fix routing does not consume it.
+  sessions are redacted into sibling diagnostic-only artifact roots and retained
+  for seven days; successful sessions create no diagnostic artifact. Daily and
+  weekly fix routing does not consume it.
 - `OPENCODE_OPENAI_AUTH`: optional access-only ChatGPT OAuth JSON for Sol in a
   trusted private repository. Generate it with
   `scripts/sync-opencode-oauth-secret.sh`; never upload the real refresh token.

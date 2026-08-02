@@ -95,10 +95,11 @@ an access-only bundle. Codespace startup attempts that sync after PAT setup only
 when repository visibility is verified as private, and falls back non-fatally
 when visibility, auth, or authorization is unsuitable. The script never uploads
 the real refresh token.
-Postmerge Cursor attempts use `POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS`,
-defaulting to `900` seconds. A timeout terminates the stuck Cursor process and
-returns failure to the existing provider cascade instead of consuming the
-90-minute workflow budget.
+Daily Claude and Cursor attempts use
+`POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS`, defaulting to `900` seconds. Weekly
+Claude attempts use `WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS` with the same
+default. A timeout terminates the stuck candidate and advances the existing
+provider cascade instead of consuming the 90- or 120-minute workflow budget.
 
 ## Repository Layout
 
