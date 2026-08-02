@@ -29,9 +29,10 @@ We adopt a **three-stage non-blocking review pipeline** on `main`:
 Shared properties:
 
 - **Providers:** `POSTMERGE_RETRO_PROVIDER` / `WEEKLY_REVIEW_PROVIDER` default
-  `auto` remains OpenCode first, then Cursor and retained Antigravity/Gemini
-  adapters. `ADVISORY_REVIEW_PROVIDER=auto` uses the separately amended
-  pre-merge model cascade below.
+  `auto` attempts Claude first, then OpenCode, Cursor, and retained
+  Antigravity/Gemini adapters. `ADVISORY_REVIEW_PROVIDER=auto` uses the
+  separately amended pre-merge model cascade below. Daily and weekly fix
+  cascades remain Claude-free.
 - **Scripts:** `scripts/workflows/advisory-review/` (LLM runners), `scripts/workflows/pr-feedback/` (finalize collect), `scripts/workflows/postmerge-retro/` (retro + daily batch), `scripts/workflows/weekly-review/` (weekly full-repo scan + fix).
 - **Lifecycle libraries:** advisory, daily, and weekly adapters share the versioned AP11 observation validator and priority derivation in `scripts/workflows/lib/finding_priority.py`; daily and weekly also share provider dispatch, umbrella issue transport/reference handling, superseded-path detection, and batch-fix publication. Cadence-specific prompts, templates, markers, authority, and metadata hooks remain explicit.
 - **Non-goals:** No auto-merge of fix PRs; no automatic `claude-fix`; no ADR/context-pack file edits in retro jobs; no formal PR review submission from advisory/finalize.
@@ -312,6 +313,32 @@ candidate gained repository and read-only GitHub access.
   uploaded. The artifact is not printed in logs and may contain private
   repository evidence or tool results, so it is restricted operationally to
   trusted repository collaborators.
+
+### Amendment 2026-08-02 — Claude-first recurring analysis
+
+[Issue #560](https://github.com/mikejmckinney/ai-repo-template/issues/560)
+extends the established read-only Claude review adapter to daily and weekly
+analysis without changing fix authority.
+
+- Daily `auto` attempts Claude Opus 5 Medium, OpenCode, Cursor, then Gemini.
+  Weekly `auto` uses the same first three providers, followed by optional
+  Antigravity and Gemini. Explicit daily and weekly Claude overrides are
+  supported; inherited Claude selection is remapped to the existing automatic
+  cascade in both fix modes.
+- Claude remains fixed to `claude-opus-5` with medium effort and receives only
+  `Read`, `Glob`, `Grep`, `WebFetch`, `WebSearch`, and the locked-down read-only
+  GitHub MCP. The existing subscription OAuth secret is scoped to analysis
+  execution and removed from every non-Claude provider process.
+- Daily full-evidence success requires the observed Claude tool trace to cover
+  the finite per-PR evidence inventory. Weekly success requires observed
+  repository reads and path-backed findings, without claiming exhaustive
+  repository coverage.
+- Invocation, metadata, schema, or retrieval-validation failure advances the
+  cadence cascade. Failed Claude sessions use collision-safe IDs and the same
+  redacted seven-day diagnostic lifecycle as pre-merge review; successful
+  sessions create no transcript artifact.
+- Daily and weekly fix providers, credentials, disposable-worktree isolation,
+  verification, and promotion behavior are unchanged.
 
 ## Implementation
 

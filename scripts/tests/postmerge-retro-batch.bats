@@ -1126,8 +1126,7 @@ JSON
     "src/app.py",
     "README.md"
   ]
-}
-
+  }
 JSON
 
   run python3 scripts/workflows/postmerge-retro/validate-opencode-retrieval.py \
@@ -1162,7 +1161,9 @@ JSON
   printf 'readme\n' >"$tmp/repo/README.md"
 
   run env CLAUDE_BIN=/bin/true CLAUDE_CODE_OAUTH_TOKEN=claude-test \
-    OPENCODE_GITHUB_TOKEN=github-read-test \
+    OPENCODE_BIN=/bin/true OPENROUTER_API_KEY=openrouter-test \
+    OPENCODE_GITHUB_TOKEN=github-read-test CURSOR_API_KEY=cursor-test \
+    GEMINI_API_KEY=gemini-test \
     python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
     "$tmp" --pr 7 --diff-limit 1000 --repo-root "$tmp/repo"
 

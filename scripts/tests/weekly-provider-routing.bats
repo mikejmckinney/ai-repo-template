@@ -60,12 +60,31 @@ setup() {
   [ "$output" = $'opencode\ncursor\ngemini' ]
   [[ "$stderr" == *"Claude is analysis-only"* ]]
 
+  run --separate-stderr pick_advisory_provider retro-fix
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
+  [[ "$stderr" == *"Claude is analysis-only"* ]]
+
   unset POSTMERGE_RETRO_PROVIDER
   WEEKLY_REVIEW_PROVIDER=claude
   run --separate-stderr list_advisory_providers weekly-fix
   [ "$status" -eq 0 ]
   [ "$output" = $'opencode\ncursor\ngemini' ]
   [[ "$stderr" == *"Claude is analysis-only"* ]]
+
+  run --separate-stderr pick_advisory_provider weekly-fix
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
+  [[ "$stderr" == *"Claude is analysis-only"* ]]
+
+  unset WEEKLY_REVIEW_PROVIDER
+  run pick_advisory_provider retro-fix
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
+
+  run pick_advisory_provider weekly-fix
+  [ "$status" -eq 0 ]
+  [ "$output" = opencode ]
 }
 
 @test "weekly scan auto routing uses Antigravity before Gemini" {

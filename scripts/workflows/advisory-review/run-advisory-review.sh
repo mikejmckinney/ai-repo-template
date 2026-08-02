@@ -143,28 +143,8 @@ raw_out_file="$WORKDIR/advisory-raw.md"
 provider_metadata_file="$WORKDIR/provider-metadata.json"
 claude_session_id_file="$WORKDIR/claude-session-id.txt"
 claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/advisory-claude-session"
-
-preserve_claude_session() {
-  if [[ ! -s "$claude_session_id_file" ]]; then
-    echo "::warning::Claude advisory failed without a persisted session identifier" >&2
-    return
-  fi
-  local session_id
-  session_id="$(<"$claude_session_id_file")"
-  if ! CLAUDE_DIAGNOSTIC_OAUTH_TOKEN="$claude_oauth_token" \
-    python3 "$SCRIPT_DIR/collect-claude-session.py" \
-    --session-id "$session_id" \
-    --output "$claude_diagnostics_dir/${session_id}.jsonl" \
-    --redact-env GITHUB_TOKEN \
-    --redact-env GH_TOKEN \
-    --redact-env OPENCODE_GITHUB_TOKEN \
-    --redact-env CLAUDE_DIAGNOSTIC_OAUTH_TOKEN \
-    --redact-env CURSOR_API_KEY \
-    --redact-env OPENROUTER_API_KEY \
-    --redact-env OPENCODE_AUTH_CONTENT; then
-    echo "::warning::Failed to preserve Claude advisory session ${session_id}" >&2
-  fi
-}
+# shellcheck source=scripts/workflows/lib/claude-session-diagnostics.sh
+source "$LIB_DIR/claude-session-diagnostics.sh"
 
 invoke_provider_candidate() {
   local candidate="$1"
@@ -193,7 +173,7 @@ for provider in "${provider_candidates[@]}"; do
     if ! jq -e '.provider | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1 \
       || ! jq -e '.model | type == "string" and length > 0' "$provider_metadata_file" >/dev/null 2>&1; then
       echo "::warning::Advisory provider ${provider} omitted provider/model metadata; trying next available provider" >&2
-      [[ "$provider" != claude ]] || preserve_claude_session
+      [[ "$provider" != claude ]] || CLAUDE_DIAGNOSTIC_OAUTH_TOKEN="$claude_oauth_token" preserve_claude_session "$claude_session_id_file" "$claude_diagnostics_dir"
       continue
     fi
     PROVIDER="$(jq -r .provider "$provider_metadata_file")"
@@ -207,13 +187,13 @@ for provider in "${provider_candidates[@]}"; do
       --range-bytes "$full_diff_bytes" \
       --changed-files "$changed_file_count"; then
       echo "::warning::Advisory provider ${provider} returned malformed snapshot output; trying next available provider" >&2
-      [[ "$provider" != claude ]] || preserve_claude_session
+      [[ "$provider" != claude ]] || CLAUDE_DIAGNOSTIC_OAUTH_TOKEN="$claude_oauth_token" preserve_claude_session "$claude_session_id_file" "$claude_diagnostics_dir"
       continue
     fi
     provider_succeeded=true
     break
   fi
-  [[ "$provider" != claude ]] || preserve_claude_session
+  [[ "$provider" != claude ]] || CLAUDE_DIAGNOSTIC_OAUTH_TOKEN="$claude_oauth_token" preserve_claude_session "$claude_session_id_file" "$claude_diagnostics_dir"
   echo "::warning::Advisory provider ${provider} failed; trying next available provider" >&2
 done
 if [[ "$provider_succeeded" != true ]]; then

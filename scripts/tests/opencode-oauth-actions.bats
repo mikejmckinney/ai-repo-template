@@ -277,10 +277,19 @@ from pathlib import Path
 
 for name in sys.argv[1:]:
     text = Path(name).read_text(encoding="utf-8")
-    review = text.split("  daily-pipeline:", 1)[1] if name.endswith("agent-postmerge-retro.yml") else text.split("  weekly-review:", 1)[1].split("  weekly-fix:", 1)[0]
-    fix = text.split("      - name: Run daily fix pass", 1)[1] if name.endswith("agent-postmerge-retro.yml") else text.split("  weekly-fix:", 1)[1]
+    if name.endswith("agent-postmerge-retro.yml"):
+        pipeline = text.split("  daily-pipeline:", 1)[1]
+        review, fix = pipeline.split("      - name: Run daily fix pass", 1)
+    else:
+        review = text.split("  weekly-review:", 1)[1].split("  weekly-fix:", 1)[0]
+        fix = text.split("  weekly-fix:", 1)[1]
     assert "@anthropic-ai/claude-code@2.1.220" in review
-    assert "CLAUDE_CODE_OAUTH_TOKEN:" in review
+    steps = review.split("      - name: ")[1:]
+    token_steps = [step for step in steps if "CLAUDE_CODE_OAUTH_TOKEN:" in step]
+    assert len(token_steps) == 1, (name, len(token_steps))
+    assert token_steps[0].startswith(("Run daily retrospective\n", "Run weekly repository review\n")), name
+    preamble = review.split("      - name: ", 1)[0]
+    assert "CLAUDE_CODE_OAUTH_TOKEN:" not in preamble
     assert "CLAUDE_CODE_OAUTH_TOKEN:" not in fix
     assert "CLAUDE_OAUTH_SECRET" not in fix
 PY
@@ -351,6 +360,13 @@ for name in sys.argv[1:]:
     text = Path(name).read_text(encoding="utf-8")
     assert "list_advisory_providers" in text, name
     assert 'for provider in "${provider_candidates[@]}"' in text, name
+
+monolithic = Path(sys.argv[3]).read_text(encoding="utf-8")
+assert "ADVISORY_PROVIDER_METADATA_FILE" in monolithic
+assert "provider-provenance.py" in monolithic
+assert "provider_attempts" in monolithic
+assert "claude-session-diagnostics.sh" in monolithic
+assert "CLAUDE_ADVISORY_SESSION_ID_FILE" in monolithic
 PY
 
   [ "$status" -eq 0 ]

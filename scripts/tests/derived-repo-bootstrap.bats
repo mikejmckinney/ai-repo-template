@@ -93,7 +93,12 @@ run_bootstrap() {
       .actions == true and
       .codespaces == false and
       .bootstrap == false
-    )] | length == 1)
+    )] | length == 1) and
+    ([.secrets[] | select(.name == "CLAUDE_OAUTH_SECRET")][0].consumers == [
+      "pre-merge Claude advisory",
+      "daily post-merge Claude analysis",
+      "weekly Claude analysis"
+    ])
   ' "$MANIFEST"
   [ "$status" -eq 0 ]
 }

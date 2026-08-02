@@ -35,12 +35,12 @@ if [[ -z "$provider" || "$provider" == "null" || "$provider" == "unknown" ]]; th
   provider="$(pick_advisory_provider retro)"
 fi
 if [[ -z "$provider" ]]; then
-  echo "::error::No post-merge retro provider configured. Configure OpenCode, Cursor, or Gemini credentials."
+  echo "::error::No post-merge retro provider configured. Configure Claude, OpenCode, Cursor, or Gemini credentials."
   exit 1
 fi
 
 case "$provider" in
-  opencode | cursor | gemini)
+  claude | opencode | cursor | gemini)
     # shellcheck source=../lib/invoke-advisory-llm.sh
     source "$LIB_DIR/invoke-advisory-llm.sh"
     OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro-bounded.schema.json" \

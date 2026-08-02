@@ -42,7 +42,12 @@ def render_line(record: dict) -> str:
 
     truncated = bool(record.get("would_truncate"))
     diff_part = f"diff {diff_included}/{diff_total}"
-    if route in ("full-evidence-opencode", "full-evidence-cursor", "full-evidence-antigravity"):
+    if route in (
+        "full-evidence-claude",
+        "full-evidence-opencode",
+        "full-evidence-cursor",
+        "full-evidence-antigravity",
+    ):
         diff_part += " (full-evidence)"
     elif truncated:
         diff_part += " (truncated)"

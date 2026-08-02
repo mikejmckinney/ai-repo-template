@@ -1,7 +1,7 @@
 # AI_REPO_GUIDE.md
 
 > Canonical command and layout reference for agents working in this template.
-> Last verified: 2026-07-22.
+> Last verified: 2026-08-02.
 
 ## Overview
 
@@ -220,6 +220,12 @@ external-state, unsupported-runtime, missing, and invalid capability proposals
 remain human follow-ups and do not invoke a fix provider. Model-authored
 `repro_steps` are never executed.
 
+Daily analysis `auto` attempts Claude Opus 5 Medium, OpenCode, Cursor, then
+Gemini. Claude receives the shared read-only review tools and GitHub MCP. A
+full-evidence Claude result succeeds only when its persisted tool trace covers
+the finite per-PR evidence inventory. Claude remains analysis-only: inherited
+Claude selection is remapped to the existing automatic fix cascade.
+
 The shared controller preseeds finding identities, records the credential-free
 baseline and candidate exit codes, and overwrites provider-authored execution or
 outcome fields before validation. Provider invocation, optional Gemini
@@ -240,6 +246,12 @@ and may open a draft fix PR. It remains a full-repository scan rather than a
 weekly aggregation of merged PRs. The review job has a 120-minute budget and an
 8,100-second OAuth minimum lifetime; the separate fix job remains at 60 minutes
 and 4,500 seconds.
+
+Weekly analysis `auto` attempts Claude Opus 5 Medium, OpenCode, Cursor, optional
+Antigravity, then Gemini. Claude output must include observed repository reads,
+and finding evidence must name paths present in that trace. This proves
+path-backed retrieval without claiming every repository file was read. Weekly
+fix routing remains Claude-free.
 
 ### Multi-Model Consensus
 
@@ -348,17 +360,18 @@ otherwise start with Kimi. The stored `refresh` value is the inert
 `ci-refresh-disabled` placeholder, so hosted runners never refresh or write back
 personal OAuth credentials. Workflows install the pinned OpenCode runtime from
 `.github/agent-runtime/package-lock.json` on GitHub-managed `ubuntu-latest`.
-The label-gated pre-merge advisory separately attempts Claude Opus 5 Medium,
-Sol 5.6 Medium, Cursor Grok 4.5 Medium, then Kimi K3. Generate a one-year
-subscription token with `claude setup-token`, then store it manually with
+The label-gated pre-merge advisory attempts Claude Opus 5 Medium, Sol 5.6
+Medium, Cursor Grok 4.5 Medium, then Kimi K3. Daily and weekly analysis also
+attempt Claude first before their existing cadence-specific fallbacks. Generate
+a one-year subscription token with `claude setup-token`, then store it manually with
 `gh secret set CLAUDE_OAUTH_SECRET --repo OWNER/REPO` or the GitHub repository
 settings. Anthropic prints but does not save the token, so provision and rotate
 it as an annual secret rather than copying refresh-enabled login credentials.
-The workflow maps that secret back to `CLAUDE_CODE_OAUTH_TOKEN` only for Claude
-provider execution and runs pinned Claude Code `2.1.220` with repository reads,
-web research, and strict locked-down read-only GitHub MCP tools.
-Explicit `opencode` and the daily/weekly provider cascades retain their existing
-behavior.
+The workflows map that secret back to `CLAUDE_CODE_OAUTH_TOKEN` only in analysis
+execution steps and run pinned Claude Code `2.1.220` with repository reads, web
+research, and strict locked-down read-only GitHub MCP tools. Provider isolation
+removes it from non-Claude candidates, and neither recurring fix cascade
+enumerates Claude or receives the secret.
 Skill-refresh readiness uses a separate `SKILL_REFRESH_PR_TOKEN`, restricted to
 the target repository with `Contents: read` and `Pull requests: write`. Provision
 it manually after repository creation; the derived-repository bootstrap does not

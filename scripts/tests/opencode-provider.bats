@@ -369,7 +369,9 @@ JSONL
   grep -q 'actions/upload-artifact@v4' "$workflow"
   grep -q 'path: .artifacts/advisory-claude-session/' "$workflow"
   grep -q 'retention-days: 7' "$workflow"
-  grep -q 'collect-claude-session.py' "$runner"
+  grep -q 'claude-session-diagnostics.sh' "$runner"
+  grep -q 'collect-claude-session.py' \
+    "$REPO_ROOT/scripts/workflows/lib/claude-session-diagnostics.sh"
 }
 
 @test "pre-merge advisory prompt is retrieval-first and injects no source bodies" {

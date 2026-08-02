@@ -43,6 +43,7 @@ _PROVENANCE = _load_provenance()
 
 EVIDENCE_ROUTES = {
     "bounded",
+    "full-evidence-claude",
     "full-evidence-opencode",
     "full-evidence-cursor",
     "full-evidence-antigravity",
@@ -99,6 +100,8 @@ def _validate_evidence_coverage(item: dict, path: str) -> None:
         raise ValueError(f"{path}.routing_context.provider_resolved must be a non-empty string")
     if "opencode_available" in ctx and not isinstance(ctx["opencode_available"], bool):
         raise ValueError(f"{path}.routing_context.opencode_available must be boolean")
+    if "claude_available" in ctx and not isinstance(ctx["claude_available"], bool):
+        raise ValueError(f"{path}.routing_context.claude_available must be boolean")
     if not isinstance(ctx["cursor_available"], bool):
         raise ValueError(f"{path}.routing_context.cursor_available must be boolean")
     if not isinstance(ctx["antigravity_available"], bool):

@@ -110,22 +110,33 @@ jobs:
     steps:
       - name: Verify required secrets
         env:
+          HAS_CLAUDE_OAUTH: ${{ secrets.CLAUDE_OAUTH_SECRET != '' }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           PROVIDER: ${{ vars.POSTMERGE_RETRO_PROVIDER || vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
+          FIX_ONLY: ${{ github.event.inputs.fix_only || 'false' }}
         run: |
-          has_opencode=0 has_cursor=0 has_gemini=0
+          has_claude=0 has_opencode=0 has_cursor=0 has_gemini=0
+          claude_candidate=false
+          if [[ "$HAS_CLAUDE_OAUTH" == "true" && -n "$OPENCODE_GITHUB_TOKEN" ]]; then has_claude=1; fi
           if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "$OPENROUTER_API_KEY" ]]; then has_opencode=1; fi
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
+          if [[ "$FIX_ONLY" == "true" && "$PROVIDER" == "claude" ]]; then
+            echo "::notice::Claude is analysis-only; fix-only uses the automatic fix-provider cascade."
+            PROVIDER=auto
+          fi
           if [[ "$PROVIDER" == "antigravity" ]]; then
             echo "::notice::Antigravity is weekly-scan-only; post-merge retro uses auto (opencode, else cursor, else gemini)."
             PROVIDER=auto
           fi
           case "$PROVIDER" in
+            claude)
+              [[ "$has_claude" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=claude requires CLAUDE_OAUTH_SECRET plus OPENCODE_GITHUB_TOKEN"; exit 1; }
+              ;;
             opencode)
               [[ "$has_opencode" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=opencode requires OPENROUTER_API_KEY plus OPENCODE_GITHUB_TOKEN"; exit 1; }
               ;;
@@ -136,8 +147,9 @@ jobs:
               [[ "$has_gemini" -eq 1 ]] || { echo "::error::POSTMERGE_RETRO_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
               ;;
             auto)
-              [[ "$has_opencode" -eq 1 || "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
-                echo "::error::Post-merge retro needs OpenCode, Cursor, or Gemini credentials."
+              if [[ "$FIX_ONLY" == "true" ]]; then has_claude=0; fi
+              [[ "$has_claude" -eq 1 || "$has_opencode" -eq 1 || "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
+                echo "::error::Post-merge retro needs Claude, OpenCode, Cursor, or Gemini credentials."
                 exit 1
               }
               ;;
@@ -146,6 +158,10 @@ jobs:
               exit 1
               ;;
           esac
+          if [[ "$FIX_ONLY" != "true" && "$has_claude" -eq 1 && ( "$PROVIDER" == "auto" || "$PROVIDER" == "claude" ) ]]; then
+            claude_candidate=true
+          fi
+          echo "CLAUDE_ANALYSIS_CANDIDATE=$claude_candidate" >> "$GITHUB_ENV"
 
       - name: Checkout main (current workflow scripts)
         uses: actions/checkout@v4
@@ -173,6 +189,12 @@ jobs:
           echo "$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/.bin" >> "$GITHUB_PATH"
           echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
           echo "CURSOR_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js" >> "$GITHUB_ENV"
+
+      - name: Install Claude Code for analysis
+        if: env.CLAUDE_ANALYSIS_CANDIDATE == 'true' && github.event.inputs.fix_only != 'true'
+        run: |
+          npm install --global @anthropic-ai/claude-code@2.1.220
+          claude --version
 
       - name: Pin RUN_DATE
         run: |
@@ -204,6 +226,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_OAUTH_SECRET }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
@@ -214,6 +237,15 @@ jobs:
           chmod +x scripts/workflows/postmerge-retro/*.sh 2>/dev/null || true
           chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
           bash scripts/workflows/postmerge-retro/run-postmerge-retro-daily-dispatch.sh
+
+      - name: Upload failed daily Claude sessions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postmerge-claude-session-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/postmerge-retro/claude-session/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Capture daily retro outputs
         if: always()

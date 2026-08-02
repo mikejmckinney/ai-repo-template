@@ -85,14 +85,18 @@ list_advisory_providers() {
     echo "::notice::Antigravity is scan-only; ${mode} uses the automatic provider cascade." >&2
     want=auto
   fi
-  if [[ "$want" == "claude" && "$mode" != "advisory" ]]; then
-    echo "::notice::Claude is pre-merge advisory-only; ${mode} uses the automatic provider cascade." >&2
+  if [[ "$want" == "claude" && ("$mode" == "retro-fix" || "$mode" == "weekly-fix") ]]; then
+    echo "::notice::Claude is analysis-only; ${mode} uses the automatic provider cascade." >&2
     want=auto
   fi
 
   if [[ "$want" != "auto" ]]; then
     case "$want" in
       claude | opencode | cursor)
+        if [[ ("$mode" == "advisory" || "$mode" == "retro" || "$mode" == "weekly-scan") && "$want" == "claude" && -z "${OPENCODE_GITHUB_TOKEN:-}" ]]; then
+          echo "::error::provider '${want}' requires OPENCODE_GITHUB_TOKEN for read-only GitHub retrieval" >&2
+          return 1
+        fi
         if [[ "$mode" == "advisory" && -z "${OPENCODE_GITHUB_TOKEN:-}" ]]; then
           echo "::error::provider '${want}' requires OPENCODE_GITHUB_TOKEN for advisory retrieval" >&2
           return 1
@@ -120,6 +124,10 @@ list_advisory_providers() {
     [[ "$has_cursor" -eq 1 && -n "${OPENCODE_GITHUB_TOKEN:-}" ]] && printf '%s\n' cursor
     [[ "$has_opencode_kimi" -eq 1 ]] && printf '%s\n' opencode-kimi
     return 0
+  fi
+
+  if [[ "$mode" == "retro" || "$mode" == "weekly-scan" ]]; then
+    [[ "$has_claude" -eq 1 && -n "${OPENCODE_GITHUB_TOKEN:-}" ]] && printf '%s\n' claude
   fi
 
   [[ "$has_opencode" -eq 1 ]] && printf '%s\n' opencode
@@ -169,8 +177,8 @@ pick_advisory_provider() {
       ;;
   esac
 
-  if [[ "$want" == "claude" && "$mode" != "advisory" ]]; then
-    echo "::notice::ADVISORY_REVIEW_PROVIDER=claude is advisory-only; ${mode} uses auto (opencode, else cursor, else gemini)." >&2
+  if [[ "$want" == "claude" && ("$mode" == "retro-fix" || "$mode" == "weekly-fix") ]]; then
+    echo "::notice::Claude is analysis-only; ${mode} uses auto (opencode, else cursor, else gemini)." >&2
     want=auto
   fi
 
@@ -209,7 +217,9 @@ pick_advisory_provider() {
         advisory_candidate_provider "$candidate"
         return
       fi
-      if [[ "$has_opencode" -eq 1 ]]; then
+      if [[ ("$mode" == "retro" || "$mode" == "weekly-scan") && "$has_claude" -eq 1 && -n "${OPENCODE_GITHUB_TOKEN:-}" ]]; then
+        echo claude
+      elif [[ "$has_opencode" -eq 1 ]]; then
         echo opencode
       elif [[ "$has_cursor" -eq 1 ]]; then
         echo cursor
