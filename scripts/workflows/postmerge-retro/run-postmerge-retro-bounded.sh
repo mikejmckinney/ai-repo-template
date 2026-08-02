@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 # Bounded post-merge retro LLM pass (truncated diff/HEAD in prompt).
-# Usage: run-postmerge-retro-bounded.sh <pr> <workdir> <llm-output-file> [coverage-json] [provider]
+# Usage: run-postmerge-retro-bounded.sh <pr> <workdir> <llm-output-file> [provider]
 set -euo pipefail
 
 PR="${1:-}"
 WORKDIR="${2:-}"
 LLM_OUT="${3:-}"
-COVERAGE_JSON="${4:-${WORKDIR}/evidence-coverage.json}"
-PROVIDER_OVERRIDE="${5:-}"
+PROVIDER_OVERRIDE="${4:-}"
 
 usage() {
-  echo "Usage: run-postmerge-retro-bounded.sh <pr> <workdir> <llm-output-file> [coverage-json]" >&2
+  echo "Usage: run-postmerge-retro-bounded.sh <pr> <workdir> <llm-output-file> [provider]" >&2
   exit 2
 }
 
@@ -25,9 +24,6 @@ prompt_file="$WORKDIR/prompt.md"
 bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" bounded "$prompt_file"
 
 provider="$PROVIDER_OVERRIDE"
-if [[ -z "$provider" && -f "$COVERAGE_JSON" ]]; then
-  provider="$(jq -r '.routing_context.provider_resolved // ""' "$COVERAGE_JSON")"
-fi
 if [[ -z "$provider" || "$provider" == "null" || "$provider" == "unknown" ]]; then
   # shellcheck source=../lib/pick-advisory-provider.sh
   source "$LIB_DIR/pick-advisory-provider.sh"

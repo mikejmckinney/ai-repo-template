@@ -85,17 +85,17 @@ run_bounded_pass() {
     ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$provider_timeout_seconds" \
       CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
       bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
-      "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON" "$provider"
+      "$PR" "$WORKDIR" "$llm_raw" "$provider"
     return
   fi
   if [[ "$provider" == "cursor" ]]; then
     run_postmerge_provider_with_timeout "$provider_timeout_seconds" cursor bounded \
       bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
-      "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON" "$provider"
+      "$PR" "$WORKDIR" "$llm_raw" "$provider"
     return
   fi
   bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
-    "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON" "$provider"
+    "$PR" "$WORKDIR" "$llm_raw" "$provider"
 }
 
 llm_raw="$WORKDIR/llm-output.txt"
