@@ -13,6 +13,11 @@ RUN_DATE="${RUN_DATE:-$(date -u +%Y-%m-%d)}"
 RUN_WEEK="${RUN_WEEK:-$(bash "$SCRIPT_DIR/resolve-run-week.sh")}"
 OUT_JSON="${1:-}"
 context_profile="${WEEKLY_REVIEW_CONTEXT_PROFILE:-full}"
+
+# shellcheck source=scripts/workflows/lib/parse-positive-int.sh
+source "$LIB_DIR/parse-positive-int.sh"
+
+weekly_provider_timeout_seconds="$(parse_positive_int WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS 900 "${WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS:-}")"
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 HEAD_SHA="$(git rev-parse HEAD)"
 WORKDIR="$(mktemp -d)"
@@ -95,10 +100,12 @@ export antigravity_enabled
 source "$LIB_DIR/pick-advisory-provider.sh"
 # shellcheck source=../lib/invoke-advisory-llm.sh
 source "$LIB_DIR/invoke-advisory-llm.sh"
+# shellcheck source=scripts/workflows/lib/claude-session-diagnostics.sh
+source "$LIB_DIR/claude-session-diagnostics.sh"
 init_advisory_provider_credentials
 mapfile -t provider_candidates < <(list_advisory_providers weekly-scan)
 [[ ${#provider_candidates[@]} -gt 0 ]] || {
-  echo "::error::No weekly review provider configured. Configure OpenCode, Cursor, or Gemini credentials."
+  echo "::error::No weekly review provider configured. Configure Claude, OpenCode, Cursor, or Gemini credentials."
   exit 1
 }
 
@@ -106,14 +113,30 @@ llm_raw="$WORKDIR/llm-output.txt"
 review_json="$WORKDIR/review.json"
 provider_metadata_file="$WORKDIR/provider-metadata.json"
 normalized_provenance_file="$WORKDIR/provider-provenance.json"
+claude_retrieval_trace="$WORKDIR/claude-retrieval-trace.json"
+claude_session_id_file="$WORKDIR/claude-session-id.txt"
+claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/weekly-claude-session"
 provider_attempts='[]'
 provider_succeeded=false
 for provider in "${provider_candidates[@]}"; do
-  rm -f "$llm_raw" "$review_json" "$provider_metadata_file" "$normalized_provenance_file"
+  rm -f "$llm_raw" "$review_json" "$provider_metadata_file" \
+    "$normalized_provenance_file" "$claude_retrieval_trace" "$claude_session_id_file"
   # shellcheck disable=SC2034 # Sourced provider dispatch reads this selection.
   ADVISORY_PROVIDER_USED="$provider"
   provider_invoked=false
   case "$provider" in
+    claude)
+      if ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$weekly_provider_timeout_seconds" \
+        CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
+        CLAUDE_RETRIEVAL_TRACE_FILE="$claude_retrieval_trace" \
+        ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+        OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/weekly-review.schema.json" \
+        invoke_advisory_llm \
+        "$prompt_file" "$llm_raw" "$provider" "$ADVISORY_DIR" \
+        "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"; then
+        provider_invoked=true
+      fi
+      ;;
     opencode | cursor | gemini)
       if ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
         OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/weekly-review.schema.json" \
@@ -133,6 +156,11 @@ for provider in "${provider_candidates[@]}"; do
   if [[ "$provider_invoked" == true ]] \
     && python3 "$SCRIPT_DIR/extract-weekly-json.py" "$llm_raw" "$review_json" \
     && python3 "$SCRIPT_DIR/validate-weekly-review.py" "$review_json" \
+    && {
+      [[ "$provider" != "claude" ]] \
+        || python3 "$SCRIPT_DIR/validate-claude-retrieval.py" \
+          "$claude_retrieval_trace" "$review_json" "$REPO_ROOT"
+    } \
     && python3 "$LIB_DIR/provider-provenance.py" normalize \
       "$provider_metadata_file" >"$normalized_provenance_file"; then
     PROVIDER="$(jq -r .provider "$normalized_provenance_file")"
@@ -150,6 +178,9 @@ for provider in "${provider_candidates[@]}"; do
     mv "$review_json.tmp" "$review_json"
     provider_succeeded=true
     break
+  fi
+  if [[ "$provider" == "claude" ]]; then
+    preserve_claude_session "$claude_session_id_file" "$claude_diagnostics_dir"
   fi
   provider_attempts="$(
     jq -cn \
@@ -173,6 +204,8 @@ if [[ -n "${GITHUB_WORKSPACE:-}" ]]; then
   mkdir -p "$artifact_dir"
   cp -f "$review_json" "$artifact_dir/review.json"
   cp -f "$llm_raw" "$artifact_dir/llm-output.txt" 2>/dev/null || true
+  [[ ! -f "$claude_retrieval_trace" ]] \
+    || cp -f "$claude_retrieval_trace" "$artifact_dir/claude-retrieval-trace.json"
 fi
 
 echo "Weekly review JSON written for ${RUN_WEEK} via ${PROVIDER}" >&2

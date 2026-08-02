@@ -5,6 +5,11 @@ umask 077
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$REPO_ROOT"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
+
+# shellcheck source=scripts/workflows/lib/parse-positive-int.sh
+source "$LIB_DIR/parse-positive-int.sh"
 
 PR="${1:-${PR_NUMBER:-}}"
 CREATE_ISSUES="${2:-${CREATE_ISSUES:-true}}"
@@ -16,22 +21,6 @@ usage() {
 
 [[ -n "$PR" ]] || usage
 
-parse_positive_int() {
-  local name="$1" default="$2" raw="${3:-}"
-  if [[ -z "$raw" ]]; then
-    echo "$default"
-    return
-  fi
-  if [[ "$raw" =~ ^[0-9]+$ ]] && [[ $((10#$raw)) -gt 0 ]]; then
-    echo "$((10#$raw))"
-    return
-  fi
-  echo "::warning::Invalid ${name}=${raw}; using default ${default}" >&2
-  echo "$default"
-}
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIB_DIR="$REPO_ROOT/scripts/workflows/lib"
 WORK_ROOT="$REPO_ROOT/.artifacts/postmerge-retro/work"
 ARTIFACT_DIR="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/pr-${PR}"
 mkdir -p "$WORK_ROOT"
@@ -81,14 +70,21 @@ jq -r '.body // ""' "$WORKDIR/pr.json" >"$WORKDIR/pr-body.md"
 
 run_bounded_pass() {
   local provider="$1"
+  if [[ "$provider" == "claude" ]]; then
+    ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$provider_timeout_seconds" \
+      CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
+      bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
+      "$PR" "$WORKDIR" "$llm_raw" "$provider"
+    return
+  fi
   if [[ "$provider" == "cursor" ]]; then
     run_postmerge_provider_with_timeout "$provider_timeout_seconds" cursor bounded \
       bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
-      "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON" "$provider"
+      "$PR" "$WORKDIR" "$llm_raw" "$provider"
     return
   fi
   bash "$SCRIPT_DIR/run-postmerge-retro-bounded.sh" \
-    "$PR" "$WORKDIR" "$llm_raw" "$COVERAGE_JSON" "$provider"
+    "$PR" "$WORKDIR" "$llm_raw" "$provider"
 }
 
 llm_raw="$WORKDIR/llm-output.txt"
@@ -97,16 +93,20 @@ would_truncate="$(jq -r '.would_truncate // false' "$COVERAGE_JSON")"
 prompt_file="$WORKDIR/prompt.md"
 provider_metadata_file="$WORKDIR/provider-metadata.json"
 normalized_provenance_file="$WORKDIR/provider-provenance.json"
+claude_session_id_file="$WORKDIR/claude-session-id.txt"
+claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-claude-session"
 export ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file"
 
 # shellcheck source=../lib/pick-advisory-provider.sh
 source "$LIB_DIR/pick-advisory-provider.sh"
 # shellcheck source=../lib/invoke-advisory-llm.sh
 source "$LIB_DIR/invoke-advisory-llm.sh"
+# shellcheck source=scripts/workflows/lib/claude-session-diagnostics.sh
+source "$LIB_DIR/claude-session-diagnostics.sh"
 init_advisory_provider_credentials
 mapfile -t provider_candidates < <(list_advisory_providers retro)
 if [[ ${#provider_candidates[@]} -eq 0 ]]; then
-  echo "::error::No post-merge retro provider configured." >&2
+  echo "::error::No post-merge retro provider configured. Configure Claude, OpenCode, Cursor, or Gemini credentials." >&2
   exit 1
 fi
 
@@ -142,6 +142,15 @@ run_full_evidence_provider() {
   local provider="$1"
   bash "$SCRIPT_DIR/assemble-retro-prompt.sh" "$PR" "$WORKDIR" full-evidence "$prompt_file"
   case "$provider" in
+    claude)
+      ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$provider_timeout_seconds" \
+        CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
+        CLAUDE_RETRIEVAL_TRACE_FILE="$WORKDIR/retrieval-trace.json" \
+        OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro.schema.json" \
+        invoke_advisory_llm \
+        "$prompt_file" "$llm_raw" claude "$REPO_ROOT/scripts/workflows/advisory-review" \
+        "$REPO_ROOT" "$WORKDIR" "$LIB_DIR"
+      ;;
     opencode)
       OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro.schema.json" \
         OPENCODE_RETRIEVAL_TRACE_FILE="$WORKDIR/retrieval-trace.json" \
@@ -179,7 +188,7 @@ validate_provider_output() {
   python3 "$SCRIPT_DIR/extract-retro-json.py" "$llm_raw" "$PR" "$candidate_json" \
     && python3 "$SCRIPT_DIR/validate-postmerge-retro.py" "${validation_args[@]}" "$candidate_json" \
     && {
-      [[ "$provider" != "opencode" || "$route" != full-evidence-* ]] \
+      [[ ("$provider" != "opencode" && "$provider" != "claude") || "$route" != full-evidence-* ]] \
         || python3 "$SCRIPT_DIR/validate-opencode-retrieval.py" \
           "$WORKDIR/retrieval-trace.json" "$WORKDIR" "$REPO_ROOT"
     }
@@ -187,9 +196,10 @@ validate_provider_output() {
 
 for provider in "${provider_candidates[@]}"; do
   rm -f "$llm_raw" "$WORKDIR/retrieval-trace.json" \
-    "$provider_metadata_file" "$normalized_provenance_file"
+    "$provider_metadata_file" "$normalized_provenance_file" "$claude_session_id_file"
   if [[ "$would_truncate" == "true" ]]; then
     case "$provider" in
+      claude) route=full-evidence-claude ;;
       opencode) route=full-evidence-opencode ;;
       cursor) route=full-evidence-cursor ;;
       gemini) route=full-evidence-antigravity ;;
@@ -214,6 +224,9 @@ for provider in "${provider_candidates[@]}"; do
     cp -f "$candidate_json" "$retro_json"
     record_provider_attempt "$provider_used" success "$route"
     break
+  fi
+  if [[ "$provider" == "claude" ]]; then
+    preserve_claude_session "$claude_session_id_file" "$claude_diagnostics_dir"
   fi
   record_provider_attempt "$provider" failed "$route"
   echo "::warning::Post-merge retro provider ${provider} failed for PR #${PR}; trying next available provider" >&2

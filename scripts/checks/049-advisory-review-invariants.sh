@@ -13,6 +13,14 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
   CLAUDE_SCRIPT="${ADVISORY_DIR}/run-advisory-claude.sh"
   CLAUDE_SESSION_COLLECTOR="${ADVISORY_DIR}/collect-claude-session.py"
+  CLAUDE_RUNNER="scripts/workflows/lib/run-claude-review.sh"
+  CLAUDE_DIAGNOSTICS="scripts/workflows/lib/claude-session-diagnostics.sh"
+  CLAUDE_TRACE_EXTRACTOR="scripts/workflows/lib/extract-claude-retrieval.py"
+  POSTMERGE_WORKFLOW=".github/workflows/agent-postmerge-retro.yml"
+  WEEKLY_WORKFLOW=".github/workflows/agent-weekly-review.yml"
+  POSTMERGE_CLAUDE_RUNNER="scripts/workflows/postmerge-retro/run-postmerge-retro.sh"
+  WEEKLY_CLAUDE_RUNNER="scripts/workflows/weekly-review/run-weekly-review-scan.sh"
+  WEEKLY_CLAUDE_VALIDATOR="scripts/workflows/weekly-review/validate-claude-retrieval.py"
   NORMALIZE_SCRIPT="${ADVISORY_DIR}/normalize-advisory-snapshot.py"
   RANGE_SCRIPT="${ADVISORY_DIR}/select-advisory-range.py"
   OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
@@ -24,7 +32,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   MARKER='ai-advisory-review:v1'
 
   for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
-    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$CLAUDE_SESSION_COLLECTOR" "$NORMALIZE_SCRIPT" \
+    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$CLAUDE_SESSION_COLLECTOR" \
+    "$CLAUDE_RUNNER" "$CLAUDE_DIAGNOSTICS" "$CLAUDE_TRACE_EXTRACTOR" \
+    "$POSTMERGE_WORKFLOW" "$WEEKLY_WORKFLOW" "$POSTMERGE_CLAUDE_RUNNER" \
+    "$WEEKLY_CLAUDE_RUNNER" "$WEEKLY_CLAUDE_VALIDATOR" "$NORMALIZE_SCRIPT" \
     "$RANGE_SCRIPT" "$OPENCODE_RUNNER" \
     "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG"; do
     if [[ -f "$f" ]]; then
@@ -46,9 +57,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "advisory missing locked OpenCode install, dedicated token, or hosted MCP security boundary"
   fi
 
-  if grep -q -- '--session-id' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && ! grep -q -- '--no-session-persistence' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q 'collect-claude-session.py' "$RUN_SCRIPT" 2>/dev/null \
+  if grep -q -- '--session-id' "$CLAUDE_RUNNER" 2>/dev/null \
+    && ! grep -q -- '--no-session-persistence' "$CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q 'claude-session-diagnostics.sh' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'collect-claude-session.py' "$CLAUDE_DIAGNOSTICS" 2>/dev/null \
     && grep -q 'actions/upload-artifact@v4' "$ADVISORY_WORKFLOW" 2>/dev/null \
     && grep -q 'path: .artifacts/advisory-claude-session/' "$ADVISORY_WORKFLOW" 2>/dev/null \
     && grep -q 'retention-days: 7' "$ADVISORY_WORKFLOW" 2>/dev/null; then
@@ -107,7 +119,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$OPENCODE_RUNNER" 2>/dev/null \
     && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CURSOR_SCRIPT" 2>/dev/null \
-    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CLAUDE_SCRIPT" 2>/dev/null \
+    && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$CLAUDE_RUNNER" 2>/dev/null \
     && grep -q 'ADVISORY_PROVIDER_METADATA_FILE' "$GEMINI_SCRIPT" 2>/dev/null; then
     pass "retained analysis providers record automation-owned model metadata"
   else
@@ -117,17 +129,37 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   if grep -q '@anthropic-ai/claude-code@2.1.220' "$ADVISORY_WORKFLOW" 2>/dev/null \
     && grep -q "if: env.CLAUDE_CANDIDATE == 'true'" "$ADVISORY_WORKFLOW" 2>/dev/null \
     && grep -q 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$ADVISORY_WORKFLOW" 2>/dev/null \
-    && grep -q -- '--json-schema' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q -- '--model "$requested_model"' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q -- '--effort medium' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q -- '--tools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*"' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q -- '--allowedTools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*"' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q -- '--strict-mcp-config' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q 'X-MCP-Readonly' "$CLAUDE_SCRIPT" 2>/dev/null \
-    && grep -q 'X-MCP-Lockdown' "$CLAUDE_SCRIPT" 2>/dev/null; then
+    && grep -q -- '--json-schema' "$CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q -- '--model "$requested_model"' "$CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q -- '--effort medium' "$CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q -- '--tools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*"' "$CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q -- '--allowedTools "Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*"' "$CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q -- '--strict-mcp-config' "$CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q 'X-MCP-Readonly' "$CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q 'X-MCP-Lockdown' "$CLAUDE_RUNNER" 2>/dev/null; then
     pass "pre-merge advisory pins Claude Opus 5 Medium with strict read-only GitHub MCP"
   else
     fail "pre-merge advisory missing pinned Claude Code, scoped OAuth, model, effort, or review tools"
+  fi
+
+  if grep -q '@anthropic-ai/claude-code@2.1.220' "$POSTMERGE_WORKFLOW" 2>/dev/null \
+    && grep -q '@anthropic-ai/claude-code@2.1.220' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$POSTMERGE_WORKFLOW" 2>/dev/null \
+    && grep -q 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'path: .artifacts/postmerge-claude-session/' "$POSTMERGE_WORKFLOW" 2>/dev/null \
+    && grep -q 'path: .artifacts/weekly-claude-session/' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'path: .artifacts/postmerge-retro/claude-session/' "$POSTMERGE_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'path: .artifacts/weekly-review/claude-session/' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'retention-days: 7' "$POSTMERGE_WORKFLOW" 2>/dev/null \
+    && grep -q 'retention-days: 7' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS=' "$POSTMERGE_CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q 'WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS' "$WEEKLY_WORKFLOW" 2>/dev/null \
+    && grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS=' "$WEEKLY_CLAUDE_RUNNER" 2>/dev/null \
+    && grep -q 'full-evidence-claude' scripts/workflows/postmerge-retro/run-postmerge-retro.sh 2>/dev/null \
+    && grep -q 'validate-claude-retrieval.py' scripts/workflows/weekly-review/run-weekly-review-scan.sh 2>/dev/null; then
+    pass "daily and weekly analysis reuse Claude with cadence-specific retrieval validation and diagnostics"
+  else
+    fail "recurring Claude analysis is missing pinned runtime, scoped OAuth, retrieval validation, or diagnostics"
   fi
 
   if grep -q 'mcpServers' "$CURSOR_SCRIPT" 2>/dev/null \

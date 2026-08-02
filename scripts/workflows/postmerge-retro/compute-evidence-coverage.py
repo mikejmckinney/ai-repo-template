@@ -15,6 +15,7 @@ DEFAULT_HEAD_TOTAL_CAP = 120_000
 
 EVIDENCE_ROUTES = (
     "bounded",
+    "full-evidence-claude",
     "full-evidence-opencode",
     "full-evidence-cursor",
     "full-evidence-antigravity",
@@ -49,9 +50,12 @@ def _resolve_provider() -> str:
     )
     if want == "antigravity":
         want = "auto"
+    has_claude = _claude_available()
     has_cursor = bool(os.environ.get("CURSOR_API_KEY"))
     has_gemini = bool(os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY"))
     has_opencode = _opencode_available()
+    if want == "claude":
+        return "claude"
     if want == "opencode":
         return "opencode"
     if want == "cursor":
@@ -59,6 +63,8 @@ def _resolve_provider() -> str:
     if want == "gemini":
         return "gemini"
     if want == "auto":
+        if has_claude:
+            return "claude"
         if has_opencode:
             return "opencode"
         if has_cursor:
@@ -77,6 +83,15 @@ def _opencode_available() -> bool:
     return has_binary and has_model and has_github
 
 
+def _claude_available() -> bool:
+    binary = os.environ.get("CLAUDE_BIN", "claude")
+    return bool(
+        shutil.which(binary)
+        and os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")
+        and os.environ.get("OPENCODE_GITHUB_TOKEN")
+    )
+
+
 def _antigravity_available() -> bool:
     if not _truthy_env("ADVISORY_ANTIGRAVITY_ENABLED", default=False):
         return False
@@ -88,6 +103,7 @@ def _resolve_evidence_route(
     would_truncate: bool,
     adaptive_enabled: bool,
     provider: str,
+    claude_available: bool,
     opencode_available: bool,
     cursor_available: bool,
     antigravity_available: bool,
@@ -97,6 +113,8 @@ def _resolve_evidence_route(
         return "bounded"
     if not adaptive_enabled:
         return "bounded"
+    if provider == "claude" and claude_available:
+        return "full-evidence-claude"
     if provider == "opencode" and opencode_available:
         return "full-evidence-opencode"
     if provider == "cursor" and cursor_available:
@@ -185,6 +203,7 @@ def compute_coverage(
     would_truncate = diff_truncated or head_truncated
 
     cursor_available = bool(os.environ.get("CURSOR_API_KEY"))
+    claude_available = _claude_available()
     opencode_available = _opencode_available()
     antigravity_available = _antigravity_available()
     provider = _resolve_provider()
@@ -194,6 +213,7 @@ def compute_coverage(
     routing_context = {
         "adaptive_enabled": adaptive_enabled,
         "provider_resolved": provider,
+        "claude_available": claude_available,
         "opencode_available": opencode_available,
         "cursor_available": cursor_available,
         "antigravity_available": antigravity_available,
@@ -204,6 +224,7 @@ def compute_coverage(
         would_truncate=would_truncate,
         adaptive_enabled=adaptive_enabled,
         provider=provider,
+        claude_available=claude_available,
         opencode_available=opencode_available,
         cursor_available=cursor_available,
         antigravity_available=antigravity_available,
@@ -260,6 +281,8 @@ def emit_truncation_warnings(record: dict) -> None:
         reasons: list[str] = []
         if not ctx.get("adaptive_enabled"):
             reasons.append("adaptive disabled")
+        elif provider == "claude" and not ctx.get("claude_available"):
+            reasons.append("Claude runtime or credentials unavailable")
         elif provider == "cursor" and not ctx.get("cursor_available"):
             reasons.append("CURSOR_API_KEY unset")
         elif provider == "opencode" and not ctx.get("opencode_available"):
