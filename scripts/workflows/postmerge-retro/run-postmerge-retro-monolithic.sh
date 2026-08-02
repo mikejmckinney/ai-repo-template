@@ -14,19 +14,8 @@ ARTIFACT_ROOT="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-retro/daily-
 mkdir -p "$ARTIFACT_ROOT"
 REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 
-parse_positive_int() {
-  local name="$1" default="$2" raw="${3:-}"
-  if [[ -z "$raw" ]]; then
-    echo "$default"
-    return
-  fi
-  if [[ "$raw" =~ ^[0-9]+$ ]] && [[ $((10#$raw)) -gt 0 ]]; then
-    echo "$((10#$raw))"
-    return
-  fi
-  echo "::warning::Invalid ${name}=${raw}; using default ${default}" >&2
-  echo "$default"
-}
+# shellcheck source=scripts/workflows/lib/parse-positive-int.sh
+source "$LIB_DIR/parse-positive-int.sh"
 
 mapfile -t SELECTED_PRS < <(bash "$SCRIPT_DIR/daily-retro-select-prs.sh" || true)
 if [[ ${#SELECTED_PRS[@]} -eq 0 ]]; then
@@ -40,6 +29,7 @@ fi
 DEFAULT_DIFF_LIMIT=300000
 diff_limit="$(parse_positive_int POSTMERGE_RETRO_DIFF_LIMIT "$DEFAULT_DIFF_LIMIT" "${POSTMERGE_RETRO_DIFF_LIMIT:-}")"
 per_pr_diff="$(parse_positive_int POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR "$diff_limit" "${POSTMERGE_RETRO_MONOLITHIC_DIFF_PER_PR:-}")"
+provider_timeout_seconds="$(parse_positive_int POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS 900 "${POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS:-}")"
 context_profile="${POSTMERGE_RETRO_CONTEXT_PROFILE:-full}"
 
 WORKDIR="$(mktemp -d)"
@@ -274,15 +264,22 @@ JSON
 source "$LIB_DIR/pick-advisory-provider.sh"
 # shellcheck source=../lib/invoke-advisory-llm.sh
 source "$LIB_DIR/invoke-advisory-llm.sh"
+# shellcheck source=scripts/workflows/lib/claude-session-diagnostics.sh
+source "$LIB_DIR/claude-session-diagnostics.sh"
 init_advisory_provider_credentials
 mapfile -t provider_candidates < <(list_advisory_providers retro)
 if [[ ${#provider_candidates[@]} -eq 0 ]]; then
-  echo "::error::No post-merge retro provider configured."
+  echo "::error::No post-merge retro provider configured. Configure Claude, OpenCode, Cursor, or Gemini credentials."
   exit 1
 fi
 
 llm_raw="$WORKDIR/llm-output.txt"
 candidate_dir="$WORKDIR/monolithic-candidate"
+provider_metadata_file="$WORKDIR/provider-metadata.json"
+normalized_provenance_file="$WORKDIR/provider-provenance.json"
+claude_session_id_file="$WORKDIR/claude-session-id.txt"
+claude_diagnostics_dir="${GITHUB_WORKSPACE:-$REPO_ROOT}/.artifacts/postmerge-claude-session"
+provider_attempts='[]'
 provider_succeeded=false
 validate_monolithic_candidate() {
   local pr
@@ -295,18 +292,40 @@ validate_monolithic_candidate() {
 for provider in "${provider_candidates[@]}"; do
   rm -rf "$candidate_dir"
   mkdir -p "$candidate_dir"
-  rm -f "$llm_raw"
+  rm -f "$llm_raw" "$provider_metadata_file" "$normalized_provenance_file" \
+    "$claude_session_id_file"
   echo "Monolithic retro LLM call via ${provider} for PR(s): ${SELECTED_PRS[*]}"
-  if OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro-monolithic.schema.json" \
+  candidate_timeout=""
+  if [[ "$provider" == "claude" || "$provider" == "cursor" ]]; then
+    candidate_timeout="$provider_timeout_seconds"
+  fi
+  if ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$candidate_timeout" \
+    CLAUDE_ADVISORY_SESSION_ID_FILE="$claude_session_id_file" \
+    ADVISORY_PROVIDER_METADATA_FILE="$provider_metadata_file" \
+    OPENCODE_OUTPUT_SCHEMA="$REPO_ROOT/.github/schemas/postmerge-retro-monolithic.schema.json" \
     invoke_advisory_llm \
     "$prompt_file" "$llm_raw" "$provider" "$ADVISORY_DIR" \
     "$REPO_ROOT" "$WORKDIR" "$LIB_DIR" \
     && python3 "$SCRIPT_DIR/split-monolithic-retro-json.py" \
       "$llm_raw" "$candidate_dir" "${SELECTED_PRS[@]}" \
-    && validate_monolithic_candidate; then
+    && validate_monolithic_candidate \
+    && python3 "$LIB_DIR/provider-provenance.py" normalize \
+      "$provider_metadata_file" >"$normalized_provenance_file"; then
+    resolved_provider="$(jq -r .provider "$normalized_provenance_file")"
+    provider_attempts="$(
+      jq -cn --argjson attempts "$provider_attempts" --arg provider "$resolved_provider" \
+        '$attempts + [{provider: $provider, status: "success", evidence_route: "bounded"}]'
+    )"
     provider_succeeded=true
     break
   fi
+  if [[ "$provider" == "claude" ]]; then
+    preserve_claude_session "$claude_session_id_file" "$claude_diagnostics_dir"
+  fi
+  provider_attempts="$(
+    jq -cn --argjson attempts "$provider_attempts" --arg provider "$provider" \
+      '$attempts + [{provider: $provider, status: "failed", evidence_route: "bounded"}]'
+  )"
   echo "::warning::Monolithic retro provider ${provider} failed; trying next available provider" >&2
 done
 if [[ "$provider_succeeded" != true ]]; then
@@ -315,7 +334,20 @@ if [[ "$provider_succeeded" != true ]]; then
 fi
 
 cp -f "$llm_raw" "$ARTIFACT_ROOT/monolithic-llm-output.txt"
+cp -f "$normalized_provenance_file" "$ARTIFACT_ROOT/monolithic-provider-provenance.json"
 cp -f "$candidate_dir"/pr-*-retro.json "$ARTIFACT_ROOT/"
+
+for pr in "${SELECTED_PRS[@]}"; do
+  coverage="$ARTIFACT_ROOT/pr-${pr}-evidence-coverage.json"
+  jq \
+    --argjson provenance "$(cat "$normalized_provenance_file")" \
+    --argjson attempts "$provider_attempts" \
+    '.routing_context.provider_resolved = $provenance.provider
+      | .routing_context.provenance = $provenance
+      | .provider_attempts = $attempts' \
+    "$coverage" >"$coverage.tmp"
+  mv "$coverage.tmp" "$coverage"
+done
 
 RETRO_FILES=()
 for pr in "${SELECTED_PRS[@]}"; do

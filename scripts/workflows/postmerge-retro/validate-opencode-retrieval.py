@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate observed OpenCode reads against the full-evidence inventory."""
+"""Validate observed provider reads against the full-evidence inventory."""
 from __future__ import annotations
 
 import json
@@ -48,18 +48,18 @@ def main() -> int:
     try:
         trace = json.loads(trace_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        print(f"invalid OpenCode retrieval trace: {exc}", file=sys.stderr)
+        print(f"invalid review retrieval trace: {exc}", file=sys.stderr)
         return 1
 
     paths = trace.get("paths")
     if not isinstance(paths, list) or not all(isinstance(path, str) for path in paths):
-        print("OpenCode retrieval trace paths must be an array of strings", file=sys.stderr)
+        print("review retrieval trace paths must be an array of strings", file=sys.stderr)
         return 1
     observed = {normalized(path, repo_root) for path in paths}
 
     required = {workdir / name for name in EVIDENCE_FILES if (workdir / name).is_file()}
     for rel in listed_paths(workdir / "context-files.txt"):
-        # OpenCode injects the root AGENTS.md through Instruction.system().
+        # OpenCode injects AGENTS.md; Claude loads it through CLAUDE.md's @AGENTS.md.
         if rel in AUTO_LOADED_CONTEXT:
             continue
         target = repo_root / rel
@@ -73,12 +73,12 @@ def main() -> int:
     missing = sorted(str(path) for path in required - observed)
     if missing:
         print(
-            "missing required OpenCode retrieval sources: " + ", ".join(missing),
+            "missing required review retrieval sources: " + ", ".join(missing),
             file=sys.stderr,
         )
         return 1
 
-    print(f"OK: OpenCode retrieval trace covers {len(required)} required sources")
+    print(f"OK: review retrieval trace covers {len(required)} required sources")
     return 0
 
 

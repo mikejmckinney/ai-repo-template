@@ -43,6 +43,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   FIX_PROVIDER_CASCADE="scripts/workflows/lib/run-fix-provider-cascade.sh"
   FIX_VERIFICATION_VALIDATOR="scripts/workflows/lib/validate-fix-verification.py"
   MONOLITHIC_SCHEMA=".github/schemas/postmerge-retro-monolithic.schema.json"
+  MONOLITHIC_SCRIPT="${RETRO_DIR}/run-postmerge-retro-monolithic.sh"
   PROVIDER_TIMEOUT_SCRIPT="scripts/workflows/lib/postmerge-provider-timeout.sh"
 
   for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
@@ -174,12 +175,14 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   fi
 
   if grep -q 'POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS=' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS=' "$MONOLITHIC_SCRIPT" 2>/dev/null \
     && grep -q 'run_postmerge_provider_with_timeout.*cursor bounded' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'run_postmerge_provider_with_timeout.*cursor full-evidence' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'process.exit(0)' "$FULL_CURSOR_SCRIPT" 2>/dev/null; then
-    pass "Cursor retro attempts have bounded timeout and explicit successful exit"
+    pass "Claude and Cursor retro attempts have bounded timeouts and explicit successful exit"
   else
-    fail "Cursor retro attempts must time out into fallback and exit after output"
+    fail "Claude and Cursor retro attempts must time out into fallback and exit after output"
   fi
 
   if grep -q 'POSTMERGE_RETRO_PARALLEL_MAX:-6' "$PARALLEL_SCRIPT" 2>/dev/null \

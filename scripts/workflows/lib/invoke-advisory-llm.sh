@@ -37,7 +37,9 @@ invoke_advisory_llm() {
 
   case "$provider" in
     claude)
-      run_with_provider_credentials claude \
+      ADVISORY_GITHUB_TOKEN="${ADVISORY_GITHUB_TOKEN:-${OPENCODE_GITHUB_TOKEN:-}}" \
+        CLAUDE_REVIEW_SCHEMA="${OPENCODE_OUTPUT_SCHEMA:-${ADVISORY_OUTPUT_SCHEMA:-$repo_root/.github/schemas/advisory-review.schema.json}}" \
+        run_with_provider_credentials claude \
         bash "$advisory_dir/run-advisory-claude.sh" "$prompt_file" "$out_file"
       ;;
     opencode-sol)

@@ -8,6 +8,56 @@ setup() {
   cd "$REPO_ROOT"
 }
 
+@test "bounded retro honors an explicit provider and falls back only when missing" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/bin" "$tmp/work"
+  cat >"$tmp/work/evidence-coverage.json" <<'JSON'
+{"routing_context":{"provider_resolved":"claude"}}
+JSON
+  cat >"$tmp/bin/bash" <<'SH'
+#!/bin/bash
+if [[ "$1" == *"/assemble-retro-prompt.sh" ]]; then
+  : >"$5"
+  exit 0
+fi
+if [[ "$1" == *"/run-advisory-claude.sh" ]]; then
+  printf 'invoked claude\n' >"$3"
+  exit 0
+fi
+exec /bin/bash "$@"
+SH
+  cat >"$tmp/bin/node" <<'SH'
+#!/bin/bash
+printf 'invoked opencode\n' >"$3"
+SH
+  chmod +x "$tmp/bin/bash" "$tmp/bin/node"
+
+  run env PATH="$tmp/bin:$PATH" /bin/bash \
+    scripts/workflows/postmerge-retro/run-postmerge-retro-bounded.sh \
+    1 "$tmp/work" "$tmp/output.txt" opencode
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"via opencode"* ]]
+  [ "$(cat "$tmp/output.txt")" = "invoked opencode" ]
+
+  rm -f "$tmp/output.txt"
+  run env PATH="$tmp/bin:$PATH" CURSOR_API_KEY=cursor-test \
+    /bin/bash scripts/workflows/postmerge-retro/run-postmerge-retro-bounded.sh \
+    1 "$tmp/work" "$tmp/output.txt"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"via cursor"* ]]
+  [ "$(cat "$tmp/output.txt")" = "invoked opencode" ]
+
+  run env PATH="$tmp/bin:$PATH" /bin/bash \
+    scripts/workflows/postmerge-retro/run-postmerge-retro-bounded.sh \
+    1 "$tmp/work" "$tmp/output.txt" unknown
+
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"Bounded retro does not support provider=unknown"* ]]
+  rm -rf "$tmp"
+}
+
 @test "extract-suggested-fix.py reads ## Suggested fix section" {
   tmp="$(mktemp -d)"
   cat >"$tmp/body.md" <<'EOF'
@@ -1181,7 +1231,7 @@ JSON
     "src/app.py",
     "README.md"
   ]
-}
+  }
 JSON
 
   run python3 scripts/workflows/postmerge-retro/validate-opencode-retrieval.py \
@@ -1205,6 +1255,91 @@ JSON
     "$tmp/repo/.artifacts/work" "$tmp/repo"
   [ "$status" -eq 1 ]
   [[ "$output" == *"diff.patch"* ]]
+  rm -rf "$tmp"
+}
+
+@test "truncated daily evidence routes through Claude when available" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/repo"
+  head -c 5000 /dev/zero | tr '\0' 'a' >"$tmp/diff.patch"
+  printf 'README.md\n' >"$tmp/changed-files.txt"
+  printf 'readme\n' >"$tmp/repo/README.md"
+
+  run env CLAUDE_BIN=/bin/true CLAUDE_CODE_OAUTH_TOKEN=claude-test \
+    OPENCODE_BIN=/bin/true OPENROUTER_API_KEY=openrouter-test \
+    OPENCODE_GITHUB_TOKEN=github-read-test CURSOR_API_KEY=cursor-test \
+    GEMINI_API_KEY=gemini-test \
+    python3 scripts/workflows/postmerge-retro/compute-evidence-coverage.py \
+    "$tmp" --pr 7 --diff-limit 1000 --repo-root "$tmp/repo"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"evidence_route": "full-evidence-claude"'* ]]
+  [[ "$output" == *'"provider_resolved": "claude"'* ]]
+  rm -rf "$tmp"
+}
+
+@test "weekly Claude retrieval requires observed repository reads and path-backed findings" {
+  tmp="$(mktemp -d)"
+  mkdir -p "$tmp/repo/src"
+  printf 'source\n' >"$tmp/repo/src/app.py"
+  printf 'startup\n' >"$tmp/repo/README.md"
+  cat >"$tmp/review.json" <<'JSON'
+{"summary":"review","follow_up_issues":[{"title":"Finding","body":"Body","dedupe_key":"repo-finding","repro_steps":["Run"],"evidence":["README.md:1"],"triage_version":2,"impact":"incorrect-behavior","impact_magnitude":"bounded","trigger_likelihood":"edge","affected_scope":"isolated","reversibility":"easy","fix_cost":"trivial","confidence":"high","uncertainty":"none"}]}
+JSON
+  printf '{"paths":["src/app.py"],"github_calls":0,"tools":["Read"]}\n' >"$tmp/trace.json"
+
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 0 ]
+
+  for evidence in README.md#L1 README.md#L1-L1 README.md:1-1 README.md:1:7; do
+    jq --arg evidence "$evidence" '.follow_up_issues[0].evidence = [$evidence]' \
+      "$tmp/review.json" >"$tmp/location-review.json"
+    run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+      "$tmp/trace.json" "$tmp/location-review.json" "$tmp/repo"
+    [ "$status" -eq 0 ]
+  done
+
+  sed 's/README.md:1/missing.md:1/' "$tmp/review.json" >"$tmp/missing-review.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/missing-review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"invalid or missing repository file paths"* ]]
+
+  printf '{"paths":[],"directories":["src"],"github_calls":0,"tools":["Grep"]}\n' >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 0 ]
+
+  printf '{"paths":[],"directories":["%s"],"github_calls":0,"tools":["Grep"]}\n' \
+    "$tmp/repo" >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 0 ]
+
+  printf '{"paths":[],"directories":"src","github_calls":0,"tools":["Grep"]}\n' >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"directories must be an array of strings"* ]]
+
+  printf '{"paths":[],"directories":["src/app.py"],"github_calls":0,"tools":["Grep"]}\n' >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"repository read"* ]]
+
+  printf '{"paths":[],"directories":["/tmp"],"github_calls":0,"tools":["Grep"]}\n' >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"repository read"* ]]
+
+  printf '{"paths":[],"github_calls":1,"tools":["mcp__github_read__get_repository"]}\n' >"$tmp/trace.json"
+  run python3 scripts/workflows/weekly-review/validate-claude-retrieval.py \
+    "$tmp/trace.json" "$tmp/review.json" "$tmp/repo"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"repository read"* ]]
   rm -rf "$tmp"
 }
 

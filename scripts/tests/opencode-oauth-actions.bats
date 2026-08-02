@@ -260,6 +260,54 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "recurring workflows scope Claude OAuth and CLI installation to analysis" {
+  daily="$REPO_ROOT/.github/workflows/agent-postmerge-retro.yml"
+  weekly="$REPO_ROOT/.github/workflows/agent-weekly-review.yml"
+  daily_runner="$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro.sh"
+  monolithic_runner="$REPO_ROOT/scripts/workflows/postmerge-retro/run-postmerge-retro-monolithic.sh"
+  weekly_runner="$REPO_ROOT/scripts/workflows/weekly-review/run-weekly-review-scan.sh"
+
+  [ "$(grep -c 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$daily")" -eq 1 ]
+  [ "$(grep -c 'CLAUDE_CODE_OAUTH_TOKEN:.*secrets.CLAUDE_OAUTH_SECRET' "$weekly")" -eq 1 ]
+  grep -q 'path: .artifacts/postmerge-claude-session/' "$daily"
+  grep -q 'path: .artifacts/weekly-claude-session/' "$weekly"
+  ! grep -q 'path: .artifacts/postmerge-retro/claude-session/' "$daily"
+  ! grep -q 'path: .artifacts/weekly-review/claude-session/' "$weekly"
+  [ "$(grep -c 'retention-days: 7' "$daily")" -ge 1 ]
+  [ "$(grep -c 'retention-days: 7' "$weekly")" -ge 1 ]
+  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$provider_timeout_seconds"' "$daily_runner"
+  grep -q 'if \[\[ "$provider" == "claude" || "$provider" == "cursor" \]\]; then' "$monolithic_runner"
+  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$candidate_timeout"' "$monolithic_runner"
+  grep -q 'WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS' "$weekly"
+  grep -q 'weekly_provider_timeout_seconds="$(parse_positive_int WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS 900' "$weekly_runner"
+  grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS="$weekly_provider_timeout_seconds"' "$weekly_runner"
+
+  run python3 - "$daily" "$weekly" <<'PY'
+import sys
+from pathlib import Path
+
+for name in sys.argv[1:]:
+    text = Path(name).read_text(encoding="utf-8")
+    if name.endswith("agent-postmerge-retro.yml"):
+        pipeline = text.split("  daily-pipeline:", 1)[1]
+        review, fix = pipeline.split("      - name: Run daily fix pass", 1)
+    else:
+        review = text.split("  weekly-review:", 1)[1].split("  weekly-fix:", 1)[0]
+        fix = text.split("  weekly-fix:", 1)[1]
+    assert "@anthropic-ai/claude-code@2.1.220" in review
+    steps = review.split("      - name: ")[1:]
+    token_steps = [step for step in steps if "CLAUDE_CODE_OAUTH_TOKEN:" in step]
+    assert len(token_steps) == 1, (name, len(token_steps))
+    assert token_steps[0].startswith(("Run daily retrospective\n", "Run weekly repository review\n")), name
+    preamble = review.split("      - name: ", 1)[0]
+    assert "CLAUDE_CODE_OAUTH_TOKEN:" not in preamble
+    assert "CLAUDE_CODE_OAUTH_TOKEN:" not in fix
+    assert "CLAUDE_OAUTH_SECRET" not in fix
+PY
+
+  [ "$status" -eq 0 ]
+}
+
 @test "generated OpenCode CI profiles allow OAuth and use Kimi as small model" {
   for profile in base review fix; do
     run jq -e '
@@ -323,6 +371,13 @@ for name in sys.argv[1:]:
     text = Path(name).read_text(encoding="utf-8")
     assert "list_advisory_providers" in text, name
     assert 'for provider in "${provider_candidates[@]}"' in text, name
+
+monolithic = Path(sys.argv[3]).read_text(encoding="utf-8")
+assert "ADVISORY_PROVIDER_METADATA_FILE" in monolithic
+assert "provider-provenance.py" in monolithic
+assert "provider_attempts" in monolithic
+assert "claude-session-diagnostics.sh" in monolithic
+assert "CLAUDE_ADVISORY_SESSION_ID_FILE" in monolithic
 PY
 
   [ "$status" -eq 0 ]

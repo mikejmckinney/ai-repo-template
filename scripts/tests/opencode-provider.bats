@@ -152,6 +152,7 @@ valid_opencode_auth() {
 }
 
 @test "auto routing exposes an ordered cross-provider cascade" {
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -161,11 +162,12 @@ valid_opencode_auth() {
   run list_advisory_providers retro
 
   [ "$status" -eq 0 ]
-  [ "$output" = $'opencode\ncursor\ngemini' ]
+  [ "$output" = $'claude\nopencode\ncursor\ngemini' ]
 }
 
-@test "Claude advisory override does not change daily provider routing" {
+@test "Claude advisory override is inherited by daily analysis" {
   ADVISORY_REVIEW_PROVIDER=claude
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
   OPENROUTER_API_KEY=openrouter-test
   OPENCODE_GITHUB_TOKEN=github-read-test
   CURSOR_API_KEY=cursor-test
@@ -175,8 +177,19 @@ valid_opencode_auth() {
   run list_advisory_providers retro
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"Claude is pre-merge advisory-only"* ]]
-  [[ "$output" == *$'opencode\ncursor\ngemini' ]]
+  [ "$output" = claude ]
+}
+
+@test "daily analysis accepts an explicit Claude provider" {
+  POSTMERGE_RETRO_PROVIDER=claude
+  CLAUDE_CODE_OAUTH_TOKEN=claude-test
+  OPENCODE_GITHUB_TOKEN=github-read-test
+  init_advisory_provider_credentials
+
+  run list_advisory_providers retro
+
+  [ "$status" -eq 0 ]
+  [ "$output" = claude ]
 }
 
 @test "Cursor SDK resolves Grok Medium without fast mode" {
@@ -246,6 +259,9 @@ EOF
 @test "Claude runner pins Opus 5 medium and records the observed model" {
   tmp="$(mktemp -d)"
   printf 'review this' >"$tmp/prompt.md"
+  cat >"$tmp/schema.json" <<'JSON'
+{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"result":{"$ref":"#/$defs/result"}},"$defs":{"result":{"type":"string"}}}
+JSON
   cat >"$tmp/claude" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >"$CLAUDE_ARGS_FILE"
@@ -272,6 +288,7 @@ EOF
   run env PATH="$tmp:$PATH" CLAUDE_ARGS_FILE="$tmp/args" \
     CLAUDE_CODE_OAUTH_TOKEN=claude-test \
     ADVISORY_GITHUB_TOKEN=github-read-test \
+    CLAUDE_REVIEW_SCHEMA="$tmp/schema.json" \
     CLAUDE_ADVISORY_SESSION_ID=11111111-1111-4111-8111-111111111111 \
     CLAUDE_ADVISORY_SESSION_ID_FILE="$tmp/session-id.txt" \
     CLAUDE_MCP_CONFIG_CAPTURE="$tmp/mcp.json" \
@@ -285,6 +302,9 @@ EOF
   grep -q -- '--effort medium' "$tmp/args"
   grep -q -- '--output-format json' "$tmp/args"
   grep -q -- '--json-schema' "$tmp/args"
+  grep -q -- 'http://json-schema.org/draft-07/schema#' "$tmp/args"
+  grep -q -- '#/\$defs/result' "$tmp/args"
+  ! grep -q -- 'draft/2020-12' "$tmp/args"
   grep -q -- '--tools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
   grep -q -- '--allowedTools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
   grep -q -- '--strict-mcp-config' "$tmp/args"
@@ -302,7 +322,7 @@ EOF
     .mcpServers.github_read.headers["X-MCP-Lockdown"] == "true"
   ' "$tmp/mcp.json"
   [ "$status" -eq 0 ]
-  grep -q -- '"findings"' "$tmp/args"
+  grep -q -- '"result"' "$tmp/args"
   [ "$(jq -r '.provider + "/" + .model' "$tmp/metadata.json")" = "claude/claude-opus-5" ]
   [ "$(jq -r .requested_model "$tmp/metadata.json")" = claude-opus-5 ]
   rm -rf "$tmp"
@@ -328,6 +348,48 @@ EOF
   rm -rf "$tmp"
 }
 
+@test "Claude retrieval extraction records local reads and read-only GitHub MCP calls" {
+  tmp="$(mktemp -d)"
+  session_id=33333333-3333-4333-8333-333333333333
+  mkdir -p "$tmp/home/.claude/projects/project-test" "$tmp/repo/src"
+  printf 'source\n' >"$tmp/repo/src/app.py"
+  cat >"$tmp/home/.claude/projects/project-test/${session_id}.jsonl" <<JSONL
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Read","input":{"file_path":"$tmp/repo/src/app.py"}},{"type":"tool_use","name":"Grep","input":{"pattern":"source","path":"$tmp/repo/src"}},{"type":"tool_use","name":"Grep","input":{"pattern":"source"}},{"type":"tool_use","name":"Glob","input":{"pattern":"src/**/*.py"}},{"type":"tool_use","name":"mcp__github_read__get_pull_request","input":{"owner":"owner","repo":"repo","pull_number":1}}]}}
+JSONL
+
+  run env HOME="$tmp/home" python3 \
+    "$REPO_ROOT/scripts/workflows/lib/extract-claude-retrieval.py" \
+    --session-id "$session_id" --repo-root "$tmp/repo" \
+    --output "$tmp/retrieval-trace.json"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.paths[0]' "$tmp/retrieval-trace.json")" = "$tmp/repo/src/app.py" ]
+  [ "$(jq -r '.paths | length' "$tmp/retrieval-trace.json")" -eq 1 ]
+  [ "$(jq -r '.directories | join("|")' "$tmp/retrieval-trace.json")" = "$tmp/repo/src|$tmp/repo" ]
+  [ "$(jq -r '.github_calls' "$tmp/retrieval-trace.json")" -eq 1 ]
+  [ "$(jq -r '.tools | join("|")' "$tmp/retrieval-trace.json")" = "Read|Grep|Glob|mcp__github_read__get_pull_request" ]
+  rm -rf "$tmp"
+}
+
+@test "Claude retrieval extraction defaults null Grep paths without counting Glob" {
+  tmp="$(mktemp -d)"
+  session_id=44444444-4444-4444-8444-444444444444
+  mkdir -p "$tmp/home/.claude/projects/project-test" "$tmp/repo/src"
+  cat >"$tmp/home/.claude/projects/project-test/${session_id}.jsonl" <<'JSONL'
+{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Grep","input":{"pattern":"source","path":null}},{"type":"tool_use","name":"Glob","input":{"pattern":"src/**/*.py"}}]}}
+JSONL
+
+  run env HOME="$tmp/home" python3 \
+    "$REPO_ROOT/scripts/workflows/lib/extract-claude-retrieval.py" \
+    --session-id "$session_id" --repo-root "$tmp/repo" \
+    --output "$tmp/retrieval-trace.json"
+
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.directories | join("|")' "$tmp/retrieval-trace.json")" = "$tmp/repo" ]
+  [ "$(jq -r '.paths | length' "$tmp/retrieval-trace.json")" -eq 0 ]
+  rm -rf "$tmp"
+}
+
 @test "advisory workflow uploads failure-only Claude sessions for seven days" {
   workflow="$REPO_ROOT/.github/workflows/agent-advisory-review.yml"
   runner="$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
@@ -335,7 +397,9 @@ EOF
   grep -q 'actions/upload-artifact@v4' "$workflow"
   grep -q 'path: .artifacts/advisory-claude-session/' "$workflow"
   grep -q 'retention-days: 7' "$workflow"
-  grep -q 'collect-claude-session.py' "$runner"
+  grep -q 'claude-session-diagnostics.sh' "$runner"
+  grep -q 'collect-claude-session.py' \
+    "$REPO_ROOT/scripts/workflows/lib/claude-session-diagnostics.sh"
 }
 
 @test "pre-merge advisory prompt is retrieval-first and injects no source bodies" {
@@ -380,6 +444,25 @@ EOF
     "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh"
   grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS' "$REPO_ROOT/docs/guides/agent-pipeline.md"
   grep -q '`300` seconds' "$REPO_ROOT/docs/guides/agent-pipeline.md"
+}
+
+@test "shell workflow positive integers use one decimal-safe parser" {
+  helper="$REPO_ROOT/scripts/workflows/lib/parse-positive-int.sh"
+  [ -f "$helper" ]
+
+  run bash -c 'source "$1"; parse_positive_int TEST_VALUE 9 08' _ "$helper"
+  [ "$status" -eq 0 ]
+  [ "$output" = 8 ]
+
+  for script in \
+    scripts/workflows/advisory-review/run-advisory-review.sh \
+    scripts/workflows/postmerge-retro/assemble-retro-prompt.sh \
+    scripts/workflows/postmerge-retro/run-postmerge-retro.sh \
+    scripts/workflows/postmerge-retro/run-postmerge-retro-monolithic.sh \
+    scripts/workflows/weekly-review/run-weekly-review-scan.sh; do
+    grep -q 'source "$LIB_DIR/parse-positive-int.sh"' "$REPO_ROOT/$script"
+    ! grep -q '^parse_positive_int()' "$REPO_ROOT/$script"
+  done
 }
 
 @test "advisory candidate timeout terminates descendant processes" {

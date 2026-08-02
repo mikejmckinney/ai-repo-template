@@ -115,16 +115,23 @@ observation fields as advisory. Unversioned persisted daily/weekly records keep
 the version 1 decision table during reconstruction; automation does not silently
 reinterpret historical findings.
 
-## OpenCode Runtime
+## Analysis Provider Runtime
 
 Daily and weekly automation resolve `auto` in this order:
 
-1. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
+1. Claude Opus 5 Medium when the pinned runtime, `CLAUDE_OAUTH_SECRET`, and
+   `OPENCODE_GITHUB_TOKEN` are available.
+2. OpenCode when the runtime, `OPENCODE_GITHUB_TOKEN`, and
    `OPENROUTER_API_KEY` are available. It tries Sol first when a preflighted
    access-only OAuth bundle is present, then Kimi K3.
-2. Cursor Grok 4.5 Medium when `CURSOR_API_KEY` is available.
-3. Antigravity where the cadence permits it.
-4. Gemini.
+3. Cursor Grok 4.5 Medium when `CURSOR_API_KEY` is available.
+4. Antigravity where the cadence permits it.
+5. Gemini.
+
+Explicit `POSTMERGE_RETRO_PROVIDER=claude` and
+`WEEKLY_REVIEW_PROVIDER=claude` select Claude for analysis. Claude is not a fix
+provider; inherited Claude selection in `retro-fix` and `weekly-fix` is remapped
+to the existing OpenCode, Cursor, then Gemini cascade.
 
 OpenCode runs through `scripts/workflows/lib/run-opencode.mjs` using SDK v2
 sessions. The adapter validates model text against the cadence JSON Schema and
@@ -189,7 +196,7 @@ tool. Adapter-owned validation also rejects model-authored `severity` and
 final deterministic gate.
 
 GitHub's hosted MCP endpoint is read-only and locked down through request headers.
-Pre-merge Claude, OpenCode, and Cursor receive only the dedicated read-only token,
+Claude, OpenCode, and Cursor review candidates receive only the dedicated read-only token,
 while deterministic shell code
 retains all GitHub writes. The agent subprocess explicitly drops publisher and
 sandbox credentials. The deterministic collector uses the workflow-scoped
@@ -201,7 +208,7 @@ and upstream behavior. OpenCode review profiles allow `webfetch` and `websearch`
 review workflows set `OPENCODE_ENABLE_EXA=1` so models routed through OpenAI or
 OpenRouter can use Exa AI's unauthenticated hosted search service. That setting
 applies to OpenCode candidates only; Claude's separate `WebFetch` and `WebSearch`
-tools are unaffected. Claude pre-merge review allows exactly `Read`, `Glob`,
+tools are unaffected. Claude review allows exactly `Read`, `Glob`,
 `Grep`, `WebFetch`, `WebSearch`, and the locked-down `github_read` MCP tools.
 Cursor runs in plan mode with inline configuration for that same MCP. Bash,
 edits, subagents, and external-directory access are hard-denied for Claude and
@@ -219,16 +226,21 @@ Large post-merge reviews use retrieval-first evidence. The deterministic
 collector supplies repository/PR identity, merge and head SHAs, required source
 paths, byte counts, and coverage metadata; it does not preload full startup
 files or a capped diff into a tool-capable agent's prompt. Evidence lives under
-ignored `.artifacts/` so the read-only OpenCode profile can inspect it without
-external-directory permission. The review profile allows 24 agent steps for
-repository and GitHub reads. Full-evidence OpenCode runs persist a sanitized
-retrieval trace and fail provider validation unless observed reads cover the
+ignored `.artifacts/` so read-only tool-capable providers can inspect it without
+external-directory permission. The OpenCode review profile allows 24 agent steps
+for repository and GitHub reads. Full-evidence Claude and OpenCode runs persist a
+sanitized retrieval trace and fail provider validation unless observed reads cover the
 complete diff, local evidence inventory, non-auto-loaded startup context, and
 touched HEAD paths. OpenCode's system loader supplies the root `AGENTS.md`, so a
 redundant tool read is not required for that file.
 
-Daily and weekly `auto` analysis attempts available providers in OpenCode,
-Cursor, then Gemini order, with cadence-specific Antigravity retained where enabled. A
+Weekly Claude validation requires at least one observed repository read or content search and
+rejects findings whose evidence does not resolve to an existing repository path.
+It does not claim exhaustive repository coverage or that every cited path was
+opened through a tool because the prompt also supplies startup context.
+
+Daily and weekly `auto` analysis attempts Claude, OpenCode, Cursor, then Gemini,
+with cadence-specific Antigravity retained before Gemini where enabled. A
 provider transport, empty-result, or validation failure advances
 to the next available provider. A large review is not reported as successful
 after silently degrading to bounded evidence. Daily sequential runs record
@@ -292,6 +304,9 @@ earlier green result after they change.
 
 - `ADVISORY_REVIEW_PROVIDER` controls optional advisory provider selection.
 - `POSTMERGE_RETRO_PROVIDER` and `WEEKLY_REVIEW_PROVIDER` control retro providers.
+- `POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS` bounds daily Claude and Cursor
+  attempts; `WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS` bounds weekly Claude
+  attempts. Both default to 900 seconds and fail into the cadence cascade.
 - Provider model and context variables are documented inline in their workflows.
 ## Required Secrets
 
@@ -306,8 +321,11 @@ earlier green result after they change.
 - `OPENROUTER_API_KEY`: model credential for the hosted OpenCode Kimi fallback.
 - `CLAUDE_OAUTH_SECRET`: one-year Claude subscription OAuth token generated by
   `claude setup-token` and stored manually with `gh secret set` or repository
-  settings. The pre-merge workflow maps it to `CLAUDE_CODE_OAUTH_TOKEN`; daily
-  and weekly workflows do not consume it.
+  settings. Pre-merge, daily, and weekly analysis map it to
+  `CLAUDE_CODE_OAUTH_TOKEN` only in their analysis execution steps. Failed Claude
+  sessions are redacted into sibling diagnostic-only artifact roots and retained
+  for seven days; successful sessions create no diagnostic artifact. Daily and
+  weekly fix routing does not consume it.
 - `OPENCODE_OPENAI_AUTH`: optional access-only ChatGPT OAuth JSON for Sol in a
   trusted private repository. Generate it with
   `scripts/sync-opencode-oauth-secret.sh`; never upload the real refresh token.

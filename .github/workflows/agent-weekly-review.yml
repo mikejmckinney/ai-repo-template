@@ -4,11 +4,12 @@
 # then open a draft fix PR. Offset from daily retro (06:00 UTC) to avoid collisions.
 #
 # Provider (WEEKLY_REVIEW_PROVIDER or ADVISORY_REVIEW_PROVIDER):
-#   - opencode    — OpenCode Sol/Kimi + read-only GitHub MCP (preferred)
+#   - claude      — Claude Opus 5 Medium + read-only GitHub MCP (preferred)
+#   - opencode    — OpenCode Sol/Kimi + read-only GitHub MCP
 #   - cursor      — Cursor SDK (CURSOR_API_KEY); agent reads repo via local.cwd
 #   - antigravity — Gemini Interactions (GEMINI_API_KEY + ADVISORY_ANTIGRAVITY_ENABLED=true)
 #   - gemini      — Gemini generateContent (flat prompt; no repo browse)
-#   - auto        — opencode, cursor, antigravity (when enabled), then gemini
+#   - auto        — claude, opencode, cursor, antigravity (when enabled), then gemini
 
 name: Agent — weekly repository review
 
@@ -84,6 +85,7 @@ jobs:
       CURSOR_ADVISORY_MODEL: ${{ vars.CURSOR_ADVISORY_MODEL || 'cursor-grok-4.5-medium' }}
       GEMINI_ADVISORY_MODEL: ${{ vars.GEMINI_ADVISORY_MODEL || 'gemini-3.5-flash' }}
       WEEKLY_REVIEW_MODEL: ${{ vars.WEEKLY_REVIEW_MODEL || '' }}
+      WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS: ${{ vars.WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS || '900' }}
       POSTMERGE_RETRO_MODEL: ${{ vars.POSTMERGE_RETRO_MODEL || '' }}
       ADVISORY_ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
       ADVISORY_ANTIGRAVITY_AGENT: ${{ vars.ADVISORY_ANTIGRAVITY_AGENT || 'antigravity-preview-05-2026' }}
@@ -92,6 +94,7 @@ jobs:
     steps:
       - name: Verify required secrets
         env:
+          HAS_CLAUDE_OAUTH: ${{ secrets.CLAUDE_OAUTH_SECRET != '' }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
@@ -100,11 +103,16 @@ jobs:
           PROVIDER: ${{ vars.WEEKLY_REVIEW_PROVIDER || vars.POSTMERGE_RETRO_PROVIDER || vars.ADVISORY_REVIEW_PROVIDER || 'auto' }}
           ANTIGRAVITY_ENABLED: ${{ vars.ADVISORY_ANTIGRAVITY_ENABLED || 'false' }}
         run: |
-          has_opencode=0 has_cursor=0 has_gemini=0
+          has_claude=0 has_opencode=0 has_cursor=0 has_gemini=0
+          claude_candidate=false
+          if [[ "$HAS_CLAUDE_OAUTH" == "true" && -n "$OPENCODE_GITHUB_TOKEN" ]]; then has_claude=1; fi
           if [[ -n "$OPENCODE_GITHUB_TOKEN" && -n "$OPENROUTER_API_KEY" ]]; then has_opencode=1; fi
           [[ -n "$CURSOR_API_KEY" ]] && has_cursor=1
           [[ -n "$GEMINI_API_KEY" || -n "$GOOGLE_API_KEY" ]] && has_gemini=1
           case "$PROVIDER" in
+            claude)
+              [[ "$has_claude" -eq 1 ]] || { echo "::error::WEEKLY_REVIEW_PROVIDER=claude requires CLAUDE_OAUTH_SECRET plus OPENCODE_GITHUB_TOKEN"; exit 1; }
+              ;;
             opencode)
               [[ "$has_opencode" -eq 1 ]] || { echo "::error::WEEKLY_REVIEW_PROVIDER=opencode requires OPENROUTER_API_KEY plus OPENCODE_GITHUB_TOKEN"; exit 1; }
               ;;
@@ -119,8 +127,8 @@ jobs:
               [[ "$has_gemini" -eq 1 ]] || { echo "::error::WEEKLY_REVIEW_PROVIDER=gemini but GEMINI_API_KEY/GOOGLE_API_KEY is missing"; exit 1; }
               ;;
             auto)
-              [[ "$has_opencode" -eq 1 || "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
-                echo "::error::Weekly review needs OpenCode, Cursor, or Gemini credentials."
+              [[ "$has_claude" -eq 1 || "$has_opencode" -eq 1 || "$has_cursor" -eq 1 || "$has_gemini" -eq 1 ]] || {
+                echo "::error::Weekly review needs Claude, OpenCode, Cursor, or Gemini credentials."
                 exit 1
               }
               ;;
@@ -129,6 +137,10 @@ jobs:
               exit 1
               ;;
           esac
+          if [[ "$has_claude" -eq 1 && ( "$PROVIDER" == "auto" || "$PROVIDER" == "claude" ) ]]; then
+            claude_candidate=true
+          fi
+          echo "CLAUDE_ANALYSIS_CANDIDATE=$claude_candidate" >> "$GITHUB_ENV"
 
       - name: Checkout main (current workflow scripts)
         uses: actions/checkout@v4
@@ -156,11 +168,18 @@ jobs:
           echo "OPENCODE_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@opencode-ai/sdk/dist/v2/index.js" >> "$GITHUB_ENV"
           echo "CURSOR_SDK_MODULE=$GITHUB_WORKSPACE/.github/agent-runtime/node_modules/@cursor/sdk/dist/esm/index.js" >> "$GITHUB_ENV"
 
+      - name: Install Claude Code for analysis
+        if: env.CLAUDE_ANALYSIS_CANDIDATE == 'true'
+        run: |
+          npm install --global @anthropic-ai/claude-code@2.1.220
+          claude --version
+
       - name: Run weekly repository review
         id: review
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_OAUTH_SECRET }}
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           OPENCODE_GITHUB_TOKEN: ${{ secrets.OPENCODE_GITHUB_TOKEN }}
@@ -175,6 +194,15 @@ jobs:
           chmod +x scripts/workflows/weekly-review/*.sh 2>/dev/null || true
           chmod +x scripts/workflows/advisory-review/*.sh 2>/dev/null || true
           bash scripts/workflows/weekly-review/run-weekly-review-weekly.sh
+
+      - name: Upload failed weekly Claude session
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-claude-session-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .artifacts/weekly-claude-session/
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Capture weekly review outputs
         id: meta
