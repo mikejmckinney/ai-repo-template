@@ -259,6 +259,9 @@ EOF
 @test "Claude runner pins Opus 5 medium and records the observed model" {
   tmp="$(mktemp -d)"
   printf 'review this' >"$tmp/prompt.md"
+  cat >"$tmp/schema.json" <<'JSON'
+{"$schema":"https://json-schema.org/draft/2020-12/schema","type":"object","properties":{"result":{"$ref":"#/$defs/result"}},"$defs":{"result":{"type":"string"}}}
+JSON
   cat >"$tmp/claude" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >"$CLAUDE_ARGS_FILE"
@@ -285,6 +288,7 @@ EOF
   run env PATH="$tmp:$PATH" CLAUDE_ARGS_FILE="$tmp/args" \
     CLAUDE_CODE_OAUTH_TOKEN=claude-test \
     ADVISORY_GITHUB_TOKEN=github-read-test \
+    CLAUDE_REVIEW_SCHEMA="$tmp/schema.json" \
     CLAUDE_ADVISORY_SESSION_ID=11111111-1111-4111-8111-111111111111 \
     CLAUDE_ADVISORY_SESSION_ID_FILE="$tmp/session-id.txt" \
     CLAUDE_MCP_CONFIG_CAPTURE="$tmp/mcp.json" \
@@ -298,6 +302,9 @@ EOF
   grep -q -- '--effort medium' "$tmp/args"
   grep -q -- '--output-format json' "$tmp/args"
   grep -q -- '--json-schema' "$tmp/args"
+  grep -q -- 'http://json-schema.org/draft-07/schema#' "$tmp/args"
+  grep -q -- '#/\$defs/result' "$tmp/args"
+  ! grep -q -- 'draft/2020-12' "$tmp/args"
   grep -q -- '--tools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
   grep -q -- '--allowedTools Read,Glob,Grep,WebFetch,WebSearch,mcp__github_read__\*' "$tmp/args"
   grep -q -- '--strict-mcp-config' "$tmp/args"
@@ -315,7 +322,7 @@ EOF
     .mcpServers.github_read.headers["X-MCP-Lockdown"] == "true"
   ' "$tmp/mcp.json"
   [ "$status" -eq 0 ]
-  grep -q -- '"findings"' "$tmp/args"
+  grep -q -- '"result"' "$tmp/args"
   [ "$(jq -r '.provider + "/" + .model' "$tmp/metadata.json")" = "claude/claude-opus-5" ]
   [ "$(jq -r .requested_model "$tmp/metadata.json")" = claude-opus-5 ]
   rm -rf "$tmp"

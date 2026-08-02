@@ -33,7 +33,14 @@ command -v "$claude_bin" >/dev/null 2>&1 || {
   exit 1
 }
 
-schema_json="$(jq -c . "$schema_file")"
+schema_json="$(
+  jq -c '
+    if .["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+    then .["$schema"] = "http://json-schema.org/draft-07/schema#"
+    else .
+    end
+  ' "$schema_file"
+)"
 cat >"$mcp_config" <<'EOF'
 {
   "mcpServers": {
