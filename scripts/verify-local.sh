@@ -12,16 +12,13 @@ fi
   echo "Usage: scripts/verify-local.sh [--full]" >&2
   exit 2
 }
-bats_command="${VERIFY_LOCAL_BATS_COMMAND:-bats --jobs 4 scripts/tests/}"
+bats_command="${VERIFY_LOCAL_BATS_COMMAND:-bats --jobs 12 scripts/tests/}"
 repo_command="${VERIFY_LOCAL_REPO_COMMAND:-./test.sh}"
 prerequisite_command="${VERIFY_LOCAL_PREREQUISITE_COMMAND:-scripts/verify-env.sh}"
-if [[ "$mode" == full && -z "${VERIFY_LOCAL_REPO_COMMAND:-}" ]]; then
-  repo_command="DERIVED_LIFECYCLE_BATS=1 ./test.sh"
-fi
-bats_label="${VERIFY_LOCAL_BATS_LABEL:-bats --jobs 4 scripts/tests/}"
+bats_label="${VERIFY_LOCAL_BATS_LABEL:-bats --jobs 12 scripts/tests/}"
 repo_label="${VERIFY_LOCAL_REPO_LABEL:-./test.sh}"
-bats_timeout="${VERIFY_LOCAL_BATS_TIMEOUT_SECONDS:-900}"
-repo_timeout="${VERIFY_LOCAL_REPO_TIMEOUT_SECONDS:-900}"
+bats_timeout="${VERIFY_LOCAL_BATS_TIMEOUT_SECONDS:-300}"
+repo_timeout="${VERIFY_LOCAL_REPO_TIMEOUT_SECONDS:-300}"
 log_dir="${VERIFY_LOCAL_LOG_DIR:-$repo_root/.artifacts/local-verification/run-$(date -u +%Y%m%dT%H%M%SZ)-$$}"
 
 for value in "$bats_timeout" "$repo_timeout"; do

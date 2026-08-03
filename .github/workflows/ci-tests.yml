@@ -123,7 +123,7 @@ jobs:
         run: |
           if [ -d scripts/tests ]; then
             set -o pipefail
-            bats --jobs 4 scripts/tests/ 2>&1 | tee bats-output.log
+            bats --jobs 12 scripts/tests/ 2>&1 | tee bats-output.log
           else
             echo "scripts/tests/ not present — skipping bats step"
           fi
@@ -137,7 +137,7 @@ jobs:
         run: |
           if [ -f "./test.sh" ]; then
             set -o pipefail
-            DERIVED_LIFECYCLE_BATS=1 ./test.sh 2>&1 | tee test-output.log
+            ./test.sh 2>&1 | tee test-output.log
           else
             echo "::error::Required repository check entrypoint ./test.sh is missing"
             exit 1

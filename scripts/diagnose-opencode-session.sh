@@ -54,15 +54,20 @@ proc_value() {
   done <"$file"
 }
 
-sample_memory() {
+record_memory_sample() {
   local pid="$1" rss anon file
+  rss="$(proc_value "/proc/$pid/status" VmRSS)"
+  anon="$(proc_value "/proc/$pid/smaps_rollup" Pss_Anon)"
+  file="$(proc_value "/proc/$pid/smaps_rollup" Pss_File)"
+  printf '%s rss_kb=%s pss_anon_kb=%s pss_file_kb=%s\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${rss:-0}" "${anon:-0}" "${file:-0}" \
+    >>"$diag_dir/memory.samples"
+}
+
+sample_memory() {
+  local pid="$1"
   while kill -0 "$pid" 2>/dev/null; do
-    rss="$(proc_value "/proc/$pid/status" VmRSS)"
-    anon="$(proc_value "/proc/$pid/smaps_rollup" Pss_Anon)"
-    file="$(proc_value "/proc/$pid/smaps_rollup" Pss_File)"
-    printf '%s rss_kb=%s pss_anon_kb=%s pss_file_kb=%s\n' \
-      "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${rss:-0}" "${anon:-0}" "${file:-0}" \
-      >>"$diag_dir/memory.samples"
+    record_memory_sample "$pid"
     sleep "$sample_interval"
   done
 }
@@ -102,6 +107,7 @@ fi
 child_pid=$!
 record_event "child_started pid=$child_pid"
 ps -o pid=,ppid=,lstart=,etime=,rss=,comm= -p "$child_pid" >"$diag_dir/process.start" 2>/dev/null || true
+record_memory_sample "$child_pid"
 sample_memory "$child_pid" &
 monitor_pid=$!
 

@@ -30,7 +30,7 @@ test wrapper.
 # Run fast verification (prerequisites and structural repository checks)
 scripts/verify-local.sh
 
-# Run complete verification (top-level and derived-repository full Bats)
+# Run complete verification (one full Bats suite plus structural checks)
 scripts/verify-local.sh --full
 
 # Run only the Bats component for targeted diagnosis
@@ -40,7 +40,7 @@ bats scripts/tests/
 bats scripts/tests/verify-env.bats
 
 # Parallel execution (requires GNU parallel — apt: parallel)
-bats --jobs 4 scripts/tests/
+bats --jobs 12 scripts/tests/
 
 # TAP output (default)
 bats --tap scripts/tests/
