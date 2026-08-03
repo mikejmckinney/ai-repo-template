@@ -138,9 +138,22 @@ assert_stopped() {
   [ ! -e "$TEST_ROOT/bats-unexpected" ]
   [[ "$output" == *"Verification mode: fast"* ]]
   [[ "$output" == *"timeout: repository=10s"* ]]
-  [[ "$output" != *"bats=10s"* ]]
+  [[ "$output" != *"bats="* ]]
   [[ "$output" == *"repository: passed=1 warnings=0 failed=0 exit=0"* ]]
   [[ "$output" != *"bats: passed="* ]]
+}
+
+@test "complete verification rejects an invalid Bats timeout before suites start" {
+  bats_command="touch $TEST_ROOT/bats-unexpected"
+  repo_command="touch $TEST_ROOT/repository-unexpected"
+  VERIFY_LOCAL_BATS_TIMEOUT_SECONDS=invalid
+
+  run_runner "$bats_command" "$repo_command" --full
+
+  [ "$status" -eq 2 ]
+  [ ! -e "$TEST_ROOT/bats-unexpected" ]
+  [ ! -e "$TEST_ROOT/repository-unexpected" ]
+  [[ "$output" == *"verify-local: timeout values must be positive integers"* ]]
 }
 
 @test "complete local verification uses the bounded twelve-worker Bats default" {
