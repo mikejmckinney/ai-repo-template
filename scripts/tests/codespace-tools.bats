@@ -36,7 +36,12 @@ EOF
       "fake-tool": {
         type: "binary",
         command: "fake-tool",
-        companions: [{command: "fake-tool-alias", member: "fake-tool-alias", version_args: ["--version"]}],
+        companions: [{
+          command: "fake-tool-alias",
+          member: "fake-tool-alias",
+          version_prefix: "fake-tool-alias ",
+          version_args: ["--version"]
+        }],
         version: "1.2.3",
         version_args: ["--version"],
         asset: {
@@ -246,11 +251,23 @@ EOF
 
 @test "verify-only rejects a matching binary whose declared companion is missing" {
   cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool"
+  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool-alias"
 
   run_installer --profile core --verify-only
 
   [ "$status" -ne 0 ]
   [[ "$output" == *"fake-tool 1.2.3 is missing or mismatched"* ]]
+}
+
+@test "install replaces a companion with matching version but wrong identity" {
+  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool"
+  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool-alias"
+
+  run_installer --profile core
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"installed fake-tool 1.2.3"* ]]
+  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool-alias 1.2.3" ]
 }
 
 @test "checksum mismatch rejects the artifact without replacing the tool" {

@@ -110,6 +110,7 @@
         {
           "command": "uvx",
           "member": "uv-x86_64-unknown-linux-gnu/uvx",
+          "version_prefix": "uvx ",
           "version_args": ["--version"]
         }
       ],

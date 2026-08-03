@@ -9,9 +9,6 @@ PREFIX="${CODESPACE_TOOLS_PREFIX:-$HOME/.local}"
 PROFILE=default
 VERIFY_ONLY=false
 
-# shellcheck source=scripts/lib/versions.sh
-source "$SCRIPT_DIR/lib/versions.sh"
-
 die() {
   printf 'codespace-tools: %s\n' "$*" >&2
   exit 1
@@ -66,11 +63,16 @@ tool_matches() {
 }
 
 binary_companions_match() {
-  local name="$1" version="$2" companion command_name
+  local name="$1" version="$2" companion command_name version_prefix output
+  local -a version_args
   while IFS= read -r companion; do
     command_name="$(jq -r '.command' <<<"$companion")"
+    version_prefix="$(jq -r '.version_prefix // empty' <<<"$companion")"
     mapfile -t version_args < <(jq -r '.version_args[]' <<<"$companion")
-    tool_matches "$command_name" "$version" "${version_args[@]}" || return 1
+    command -v "$command_name" >/dev/null 2>&1 || return 1
+    output="$("$command_name" "${version_args[@]}" 2>&1 || true)"
+    grep -Fq "$version" <<<"$output" || return 1
+    [[ -z "$version_prefix" || "$output" == "$version_prefix"* ]] || return 1
   done < <(jq -c --arg name "$name" '.tools[$name].companions[]?' "$MANIFEST")
 }
 
@@ -119,6 +121,8 @@ download_verified() {
 
 install_binary() {
   local name="$1" command_name version archive url sha member temp extract_dir source
+  local companion companion_command companion_member
+  local -a members version_args
   command_name="$(jq -r --arg name "$name" '.tools[$name].command' "$MANIFEST")"
   version="$(jq -r --arg name "$name" '.tools[$name].version' "$MANIFEST")"
   mapfile -t version_args < <(jq -r --arg name "$name" '.tools[$name].version_args[]' "$MANIFEST")
@@ -276,25 +280,14 @@ install_vendor_channel() {
 }
 
 install_apt_packages() {
-  local missing=() command_name required_path package minimum_version observed output
+  local missing=() command_name required_path package
   while IFS= read -r item; do
     command_name="$(jq -r '.command // empty' <<<"$item")"
     required_path="$(jq -r '.path // empty' <<<"$item")"
     package="$(jq -r '.package' <<<"$item")"
-    minimum_version="$(jq -r '.minimum_version // empty' <<<"$item")"
     if { [[ -n "$command_name" ]] && command -v "$command_name" >/dev/null 2>&1; } \
       || { [[ -n "$required_path" ]] && [[ -e "$required_path" ]]; }; then
-      if [[ -z "$minimum_version" ]]; then
-        continue
-      fi
-      mapfile -t version_args < <(jq -r '.version_args[]? // empty' <<<"$item")
-      output="$("$command_name" "${version_args[@]}" 2>&1 || true)"
-      observed="$(extract_version "$output")"
-      if [[ -n "$observed" ]] && version_at_least "$observed" "$minimum_version"; then
-        continue
-      fi
-      [[ "$VERIFY_ONLY" == false ]] \
-        || die "$command_name $observed is below required version $minimum_version"
+      continue
     fi
     missing+=("$package")
   done < <(jq -c '.apt_packages[]' "$MANIFEST")
@@ -311,17 +304,6 @@ install_apt_packages() {
     die "root or sudo is required to install: ${missing[*]}"
   fi
 
-  while IFS= read -r item; do
-    command_name="$(jq -r '.command // empty' <<<"$item")"
-    minimum_version="$(jq -r '.minimum_version // empty' <<<"$item")"
-    [[ -n "$command_name" && -n "$minimum_version" ]] || continue
-    mapfile -t version_args < <(jq -r '.version_args[]? // empty' <<<"$item")
-    output="$("$command_name" "${version_args[@]}" 2>&1 || true)"
-    observed="$(extract_version "$output")"
-    if [[ -z "$observed" ]] || ! version_at_least "$observed" "$minimum_version"; then
-      die "$command_name $observed is below required version $minimum_version"
-    fi
-  done < <(jq -c '.apt_packages[]' "$MANIFEST")
 }
 
 install_apt_packages
