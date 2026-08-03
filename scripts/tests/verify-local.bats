@@ -136,6 +136,8 @@ assert_stopped() {
   [ "$status" -eq 0 ]
   [ ! -e "$TEST_ROOT/bats-unexpected" ]
   [[ "$output" == *"Verification mode: fast"* ]]
+  [[ "$output" == *"timeout: repository=10s"* ]]
+  [[ "$output" != *"bats=10s"* ]]
   [[ "$output" == *"repository: passed=1 warnings=0 failed=0 exit=0"* ]]
   [[ "$output" != *"bats: passed="* ]]
 }

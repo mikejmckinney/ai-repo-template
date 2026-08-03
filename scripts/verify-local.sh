@@ -163,7 +163,11 @@ trap 'handle_signal 130' INT
 trap 'handle_signal 143' TERM
 
 echo "Verification mode: $mode"
-printf 'timeouts: bats=%ss repository=%ss\n' "$bats_timeout" "$repo_timeout"
+if [[ "$mode" == full ]]; then
+  printf 'timeouts: bats=%ss repository=%ss\n' "$bats_timeout" "$repo_timeout"
+else
+  printf 'timeout: repository=%ss\n' "$repo_timeout"
+fi
 prerequisite_started=$SECONDS
 prerequisite_status=0
 prerequisite_output="$(cd "$repo_root" && bash -c "$prerequisite_command" 2>&1)" \
