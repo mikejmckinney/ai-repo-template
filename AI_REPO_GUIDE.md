@@ -67,7 +67,8 @@ creation and allowlisted credential synchronization. Pass `--apply` only after
 reviewing the redacted plan. The bootstrap grants the new repository access to
 allowlisted existing Codespaces user secrets without publishing provider keys to
 Actions. Dry-run lists planned names but remains offline; `--apply` resolves and
-prints actual secret visibility before each mutation. See
+reports each secret's resulting disposition during the mutation run. No mode
+previews the resolved grant set before mutation. See
 `docs/guides/derived-repository-bootstrap.md`.
 Run `scripts/cleanup-codespace-caches.sh` to preview reproducible package and
 build caches when Codespace storage is low. Pass `--apply` explicitly to clean

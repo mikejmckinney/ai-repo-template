@@ -97,9 +97,10 @@ Actions secrets. A missing user secret is reported and skipped.
 `GH_PAT` is injected into every derived Codespace covered by its user-secret
 visibility and becomes the interactive `gh`, Git, and sandbox bootstrap token.
 Use a dedicated classic PAT limited to the required upstream and sandbox access,
-with `repo` and `workflow` scopes as documented by the Codespace startup
-diagnostic. Any broader scopes are available to code running in each covered
-Codespace, so do not reuse an account-administration token.
+with the `repo` and `workflow` scopes reported by
+`scripts/codespace-post-start.sh`. Any broader scopes are available to code
+running in each covered Codespace, so do not reuse an account-administration
+token.
 
 ## Visibility behavior
 
@@ -112,7 +113,9 @@ review visibility manually before using a public destination.
 Dry-run remains offline: it reports the allowlisted names but does not query
 GitHub to resolve whether each existing user secret is `selected`, `all`,
 `private`, or missing. Those dispositions are resolved and printed only after
-`--apply` authenticates with `REPO_BOOTSTRAP_TOKEN`.
+`--apply` authenticates with `REPO_BOOTSTRAP_TOKEN`. For selected secrets, the
+script reports `repository granted` after the additive mutation; no mode previews
+the resolved grant set before mutation.
 
 If the bootstrap token lacks Codespaces scope, the script fails before creating
 the repository. Missing required environment values also fail before any GitHub
