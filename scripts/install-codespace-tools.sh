@@ -303,7 +303,6 @@ install_apt_packages() {
   else
     die "root or sudo is required to install: ${missing[*]}"
   fi
-
 }
 
 install_apt_packages

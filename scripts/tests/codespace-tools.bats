@@ -91,6 +91,7 @@ run_installer() {
     (.profiles.core | index("markdownlint-cli2")) and
     (.profiles.core | index("uv")) and
     (.tools.uv.companions[0].command == "uvx") and
+    (.tools.uv.companions[0].version_prefix == "uvx ") and
     (.tools.bats.minimum_version == "1.7.0") and
     (.profiles.core | index("chrome-for-testing")) and
     (.profiles.core | index("open-design")) and
@@ -251,7 +252,6 @@ EOF
 
 @test "verify-only rejects a matching binary whose declared companion is missing" {
   cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool"
-  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool-alias"
 
   run_installer --profile core --verify-only
 
