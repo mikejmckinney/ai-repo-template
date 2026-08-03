@@ -66,7 +66,9 @@ Use `scripts/create-derived-repo.sh --repo OWNER/PROJECT` to preview remote
 creation and allowlisted credential synchronization. Pass `--apply` only after
 reviewing the redacted plan. The bootstrap grants the new repository access to
 allowlisted existing Codespaces user secrets without publishing provider keys to
-Actions; see `docs/guides/derived-repository-bootstrap.md`.
+Actions. Dry-run lists planned names but remains offline; `--apply` resolves and
+prints actual secret visibility before each mutation. See
+`docs/guides/derived-repository-bootstrap.md`.
 Run `scripts/cleanup-codespace-caches.sh` to preview reproducible package and
 build caches when Codespace storage is low. Pass `--apply` explicitly to clean
 them. Active uv runtimes are skipped; agent databases, history, credentials,

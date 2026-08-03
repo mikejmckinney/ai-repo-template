@@ -89,13 +89,17 @@ When `OPENCODE_OPENAI_AUTH` is absent from the environment in a local run, the
 script can delegate to `sync-opencode-oauth-secret.sh` to upload an access-only
 bundle; it never uploads the real refresh token.
 
-The manifest also grants derived repositories access to existing selected
-Codespaces user secrets for interactive provider tooling: `ACEDATACLOUD_API_TOKEN`,
-`CLOUDFLARE_API_KEY`, `CLOUDFLARE_GLOBAL_API_KEY`, `ELEVENLABS_API_KEY`, `GH_PAT`,
-`MUREKA_API_KEY`, `NETLIFY_API_KEY`, `RAILWAY_API_KEY`, `RENDER_API_KEY`,
-`SUPABASE_API_KEY`, and `VERCEL_API_KEY`. These entries are Codespaces-only;
-the bootstrap does not publish them as Actions secrets. A missing user secret is
-reported and skipped.
+Entries marked `codespaces: true` and `actions: false` in the canonical manifest
+are Codespaces-only credentials for interactive provider tooling. The manifest
+is the authoritative name list; the bootstrap does not publish those entries as
+Actions secrets. A missing user secret is reported and skipped.
+
+`GH_PAT` is injected into every derived Codespace covered by its user-secret
+visibility and becomes the interactive `gh`, Git, and sandbox bootstrap token.
+Use a dedicated classic PAT limited to the required upstream and sandbox access,
+with `repo` and `workflow` scopes as documented by the Codespace startup
+diagnostic. Any broader scopes are available to code running in each covered
+Codespace, so do not reuse an account-administration token.
 
 ## Visibility behavior
 
@@ -104,6 +108,11 @@ additive per-repository endpoint. It does not replace the selected repository
 list, so prior grants remain intact. Secrets with `all` visibility need no
 change. `private` visibility already covers a private default destination;
 review visibility manually before using a public destination.
+
+Dry-run remains offline: it reports the allowlisted names but does not query
+GitHub to resolve whether each existing user secret is `selected`, `all`,
+`private`, or missing. Those dispositions are resolved and printed only after
+`--apply` authenticates with `REPO_BOOTSTRAP_TOKEN`.
 
 If the bootstrap token lacks Codespaces scope, the script fails before creating
 the repository. Missing required environment values also fail before any GitHub
@@ -117,6 +126,14 @@ changes repository access for an existing secret whose visibility is `selected`.
 
 - If creation succeeded but a later secret write failed, fix the named
   permission or missing value and rerun with `--reuse --apply`.
+- To revoke an accidental selected-secret grant without deleting the repository,
+  retrieve its numeric ID with `gh api repos/OWNER/PROJECT --jq .id`, then run
+  `gh api --method DELETE
+  user/codespaces/secrets/NAME/repositories/REPOSITORY_ID` for each affected
+  secret. Reverting a manifest entry prevents future grants but does not revoke
+  grants already applied.
+- Deleting a temporary repository removes it from selected-secret access lists;
+  verify both repository absence and grant removal after cleanup.
 - If an unrelated repository already owns the destination name, choose another
   name. Do not use `--reuse` unless synchronizing that repository is intended.
 - Run `scripts/setup.sh` inside a derived repository to report its current
