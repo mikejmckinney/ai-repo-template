@@ -150,10 +150,9 @@ EOF
   repo_command="$(suite_command repository 0 REPO_SUCCESS)"
 
   run env -u VERIFY_LOCAL_BATS_COMMAND -u VERIFY_LOCAL_BATS_LABEL \
+    -u VERIFY_LOCAL_BATS_TIMEOUT_SECONDS -u VERIFY_LOCAL_REPO_TIMEOUT_SECONDS \
     PATH="$TEST_ROOT:$PATH" \
     VERIFY_LOCAL_REPO_COMMAND="$repo_command" \
-    VERIFY_LOCAL_BATS_TIMEOUT_SECONDS=10 \
-    VERIFY_LOCAL_REPO_TIMEOUT_SECONDS=10 \
     VERIFY_LOCAL_PREREQUISITE_COMMAND=: \
     VERIFY_LOCAL_LOG_DIR="$LOG_DIR" \
     bash "$RUNNER" --full
@@ -161,6 +160,7 @@ EOF
   [ "$status" -eq 0 ]
   [ "$(<"$TEST_ROOT/bats.args")" = "--jobs 12 scripts/tests/" ]
   [[ "$output" == *'command="bats --jobs 12 scripts/tests/"'* ]]
+  [[ "$output" == *"timeouts: bats=300s repository=300s"* ]]
 }
 
 @test "complete local verification retains logs for a Bats-only failure" {
