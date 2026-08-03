@@ -12,6 +12,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/logging.sh"
 # shellcheck source=scripts/lib/assertions.sh
 source "$SCRIPT_DIR/lib/assertions.sh"
+# shellcheck source=scripts/lib/versions.sh
+source "$SCRIPT_DIR/lib/versions.sh"
 # ---------------------------------------------------------------------------
 # Argument parsing and --fix mode infrastructure (issue #365)
 # ---------------------------------------------------------------------------
@@ -136,6 +138,28 @@ for _tool in "${_REQUIRED_TOOLS[@]}"; do
   fi
 done
 unset _tool
+echo ""
+
+echo "Checking managed runtime prerequisites..."
+if command -v uvx &>/dev/null; then
+  pass "uvx is installed ($(uvx --version 2>&1 | head -1))"
+else
+  fail "uvx is not installed; install the pinned uv tool profile"
+fi
+
+bats_minimum="$(jq -r '.tools.bats.minimum_version' \
+  "$SCRIPT_DIR/../.config/codespace-tools.json")"
+if command -v bats &>/dev/null; then
+  bats_output="$(bats --version 2>&1 || true)"
+  bats_version="$(extract_version "$bats_output")"
+  if [[ -n "$bats_version" ]] && version_at_least "$bats_version" "$bats_minimum"; then
+    pass "bats $bats_version satisfies minimum version $bats_minimum"
+  else
+    fail "bats $bats_version is below required version $bats_minimum"
+  fi
+else
+  fail "bats is not installed; required version is $bats_minimum or newer"
+fi
 echo ""
 
 # --- Node.js (if package.json exists) ---

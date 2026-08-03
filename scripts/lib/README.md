@@ -9,6 +9,7 @@ top-level shell entry points. See issue #255 for the modularization plan.
 |---|---|---|
 | `logging.sh` | Color vars (`RED`/`GREEN`/`YELLOW`/`BLUE`/`NC`) and `log_info`/`log_warn`/`log_error`/`log_step` printf helpers. | `scripts/setup.sh`, `scripts/sandbox-bootstrap.sh`, `scripts/verify-env.sh` |
 | `assertions.sh` | `PASS`/`FAIL`/`WARN` counters and `pass`/`fail`/`warn` helpers used by verification scripts. Depends on `logging.sh` color vars. | `test.sh`, `scripts/verify-env.sh` |
+| `versions.sh` | Portable dotted-version extraction and minimum comparison. | `scripts/verify-env.sh` |
 | `jq/` | Standalone jq filter scripts and their fixtures (issue #229). | Workflows + `scripts/test-jq-filters.sh`. |
 
 ## Conventions

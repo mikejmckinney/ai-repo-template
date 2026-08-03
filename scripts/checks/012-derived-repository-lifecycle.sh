@@ -59,18 +59,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       fail "completed derived repository failed test.sh"
     fi
 
-    if [[ -d .github/agent-runtime/node_modules ]]; then
-      cp -a .github/agent-runtime/node_modules "$lifecycle_repo/.github/agent-runtime/"
-    elif ! npm ci --prefix "$lifecycle_repo/.github/agent-runtime" --ignore-scripts >/dev/null; then
-      fail "completed derived repository could not install Bats runtime dependencies"
-    fi
-    lifecycle_bats_log="$lifecycle_fixture/bats.log"
-    if (cd "$lifecycle_repo" && bats --jobs 4 scripts/tests/) >"$lifecycle_bats_log" 2>&1; then
-      pass "completed derived repository passes the Bats suite"
-    else
-      fail "completed derived repository failed the Bats suite"
-      grep '^not ok' "$lifecycle_bats_log" >&2 || true
-    fi
   else
     fail "could not copy tracked template files for lifecycle verification"
   fi

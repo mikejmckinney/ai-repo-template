@@ -27,8 +27,11 @@ test wrapper.
 ## Running
 
 ```bash
-# Run complete local verification (full Bats and ./test.sh concurrently)
+# Run fast verification (prerequisites and structural repository checks)
 scripts/verify-local.sh
+
+# Run complete verification (one full Bats suite plus structural checks)
+scripts/verify-local.sh --full
 
 # Run only the Bats component for targeted diagnosis
 bats scripts/tests/
@@ -37,7 +40,7 @@ bats scripts/tests/
 bats scripts/tests/verify-env.bats
 
 # Parallel execution (requires GNU parallel — apt: parallel)
-bats --jobs 4 scripts/tests/
+bats --jobs 12 scripts/tests/
 
 # TAP output (default)
 bats --tap scripts/tests/
@@ -46,16 +49,17 @@ bats --tap scripts/tests/
 ## Installation
 
 ```bash
-# Ubuntu/Debian (parallel is required for `bats --jobs`)
-sudo apt-get install -y bats parallel ripgrep
+# Supported Linux verification prerequisites, including pinned uv/uvx
+scripts/install-codespace-tools.sh --profile verification
 
 # macOS
 brew install bats-core parallel
+bats --version  # must be 1.7.0 or newer
 ```
 
-CI installs them via `apt-get install -y bats parallel ripgrep` in `.github/workflows/ci-tests.yml`.
-The canonical runner invokes this suite and `./test.sh`; neither component
-invokes the other when run directly for targeted diagnosis.
+The canonical tool manifest pins Bats 1.12.0 and requires Bats 1.7.0 or newer. CI installs its
+verification profile through `scripts/install-codespace-tools.sh`, then runs the
+intentional full gate. The fast local runner does not invoke full Bats.
 
 ## Conventions
 

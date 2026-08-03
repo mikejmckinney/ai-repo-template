@@ -3,15 +3,29 @@
 set -uo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-bats_command="${VERIFY_LOCAL_BATS_COMMAND:-bats --jobs 4 scripts/tests/}"
+mode=fast
+if [[ "${1:-}" == "--full" ]]; then
+  mode=full
+  shift
+fi
+[[ $# -eq 0 ]] || {
+  echo "Usage: scripts/verify-local.sh [--full]" >&2
+  exit 2
+}
+bats_command="${VERIFY_LOCAL_BATS_COMMAND:-bats --jobs 12 scripts/tests/}"
 repo_command="${VERIFY_LOCAL_REPO_COMMAND:-./test.sh}"
-bats_label="${VERIFY_LOCAL_BATS_LABEL:-bats --jobs 4 scripts/tests/}"
+prerequisite_command="${VERIFY_LOCAL_PREREQUISITE_COMMAND:-scripts/verify-env.sh}"
+bats_label="${VERIFY_LOCAL_BATS_LABEL:-bats --jobs 12 scripts/tests/}"
 repo_label="${VERIFY_LOCAL_REPO_LABEL:-./test.sh}"
-bats_timeout="${VERIFY_LOCAL_BATS_TIMEOUT_SECONDS:-900}"
-repo_timeout="${VERIFY_LOCAL_REPO_TIMEOUT_SECONDS:-900}"
+bats_timeout="${VERIFY_LOCAL_BATS_TIMEOUT_SECONDS:-300}"
+repo_timeout="${VERIFY_LOCAL_REPO_TIMEOUT_SECONDS:-300}"
 log_dir="${VERIFY_LOCAL_LOG_DIR:-$repo_root/.artifacts/local-verification/run-$(date -u +%Y%m%dT%H%M%SZ)-$$}"
 
-for value in "$bats_timeout" "$repo_timeout"; do
+timeout_values=("$repo_timeout")
+if [[ "$mode" == full ]]; then
+  timeout_values+=("$bats_timeout")
+fi
+for value in "${timeout_values[@]}"; do
   if [[ ! "$value" =~ ^[1-9][0-9]*$ ]]; then
     echo "verify-local: timeout values must be positive integers" >&2
     exit 2
@@ -127,7 +141,9 @@ report_results() {
 
   [[ -f "$bats_elapsed_file" ]] && bats_elapsed="$(<"$bats_elapsed_file")"
   [[ -f "$repo_elapsed_file" ]] && repo_elapsed="$(<"$repo_elapsed_file")"
-  summarize_bats "$bats_log" "$bats_status" "$bats_elapsed"
+  if [[ "$mode" == full ]]; then
+    summarize_bats "$bats_log" "$bats_status" "$bats_elapsed"
+  fi
   summarize_repository "$repo_log" "$repo_status" "$repo_elapsed"
 }
 
@@ -150,11 +166,34 @@ handle_signal() {
 trap 'handle_signal 130' INT
 trap 'handle_signal 143' TERM
 
-echo "Starting Bats and repository verification concurrently."
-start_suite "$bats_command" "$bats_timeout" "$bats_log" "$bats_elapsed_file" bats_pid
+echo "Verification mode: $mode"
+if [[ "$mode" == full ]]; then
+  printf 'timeouts: bats=%ss repository=%ss\n' "$bats_timeout" "$repo_timeout"
+else
+  printf 'timeout: repository=%ss\n' "$repo_timeout"
+fi
+prerequisite_started=$SECONDS
+prerequisite_status=0
+prerequisite_output="$(cd "$repo_root" && bash -c "$prerequisite_command" 2>&1)" \
+  || prerequisite_status=$?
+printf 'prerequisites: exit=%s elapsed=%ss command="%s"\n' \
+  "$prerequisite_status" "$((SECONDS - prerequisite_started))" "$prerequisite_command"
+if [[ "$prerequisite_status" -ne 0 ]]; then
+  printf '%s\n' "$prerequisite_output"
+  exit 1
+fi
+if [[ "$mode" == full ]]; then
+  echo "Starting Bats and repository verification concurrently."
+  start_suite "$bats_command" "$bats_timeout" "$bats_log" "$bats_elapsed_file" bats_pid
+else
+  echo "Starting repository verification without full Bats."
+fi
 start_suite "$repo_command" "$repo_timeout" "$repo_log" "$repo_elapsed_file" repo_pid
 
-wait_status "$bats_pid" bats_status
+bats_status=0
+if [[ "$mode" == full ]]; then
+  wait_status "$bats_pid" bats_status
+fi
 wait_status "$repo_pid" repo_status
 trap - INT TERM
 report_results "$bats_status" "$repo_status"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-bats_require_minimum_version 1.5.0
+bats_require_minimum_version 1.7.0
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -10,12 +10,18 @@ setup() {
   BIN_DIR="$TEST_ROOT/bin"
   mkdir -p "$PREFIX/bin" "$BIN_DIR"
 
-  cat >"$TEST_ROOT/fake-tool" <<'EOF'
+  mkdir -p "$TEST_ROOT/artifact"
+  cat >"$TEST_ROOT/artifact/fake-tool" <<'EOF'
 #!/usr/bin/env bash
 printf 'fake-tool 1.2.3\n'
 EOF
-  chmod +x "$TEST_ROOT/fake-tool"
-  ARTIFACT_SHA="$(sha256sum "$TEST_ROOT/fake-tool" | cut -d' ' -f1)"
+  cat >"$TEST_ROOT/artifact/fake-tool-alias" <<'EOF'
+#!/usr/bin/env bash
+printf 'fake-tool-alias 1.2.3\n'
+EOF
+  chmod +x "$TEST_ROOT/artifact/fake-tool" "$TEST_ROOT/artifact/fake-tool-alias"
+  tar -czf "$TEST_ROOT/fake-tool.tar.gz" -C "$TEST_ROOT/artifact" fake-tool fake-tool-alias
+  ARTIFACT_SHA="$(sha256sum "$TEST_ROOT/fake-tool.tar.gz" | cut -d' ' -f1)"
 
   jq -n --arg sha "$ARTIFACT_SHA" '{
     schema_version: 1,
@@ -30,12 +36,19 @@ EOF
       "fake-tool": {
         type: "binary",
         command: "fake-tool",
+        companions: [{
+          command: "fake-tool-alias",
+          member: "fake-tool-alias",
+          version_prefix: "fake-tool-alias ",
+          version_args: ["--version"]
+        }],
         version: "1.2.3",
         version_args: ["--version"],
         asset: {
           url: "https://example.invalid/fake-tool",
           sha256: $sha,
-          archive: "raw"
+          archive: "tar.gz",
+          member: "fake-tool"
         }
       }
     }
@@ -61,7 +74,7 @@ teardown() {
 }
 
 run_installer() {
-  run env PATH="$BIN_DIR:$PREFIX/bin:$PATH" FETCH_SOURCE="$TEST_ROOT/fake-tool" \
+  run env PATH="$BIN_DIR:$PREFIX/bin:$PATH" FETCH_SOURCE="$TEST_ROOT/fake-tool.tar.gz" \
     FETCH_MODE="${FETCH_MODE:-success}" bash "$INSTALLER" \
     --manifest "$TEST_ROOT/manifest.json" --prefix "$PREFIX" "$@"
   printf 'status=%s\n%s\n' "$status" "$output" | sed 's/^/# /' >&3
@@ -72,10 +85,14 @@ run_installer() {
     .schema_version == 1 and
     (.required_commands | type == "array" and length > 0) and
     (.apt_packages | type == "array" and length > 0) and
+    (.profiles.verification == ["uv", "bats"]) and
     (.profiles.core | index("shfmt")) and
     (.profiles.core | index("actionlint")) and
     (.profiles.core | index("markdownlint-cli2")) and
     (.profiles.core | index("uv")) and
+    (.tools.uv.companions[0].command == "uvx") and
+    (.tools.uv.companions[0].version_prefix == "uvx ") and
+    (.tools.bats.minimum_version == "1.7.0") and
     (.profiles.core | index("chrome-for-testing")) and
     (.profiles.core | index("open-design")) and
     (.profiles.core | index("agent-runtime")) and
@@ -90,6 +107,18 @@ run_installer() {
   ' "$REPO_ROOT/.config/codespace-tools.json"
 
   [ "$status" -eq 0 ]
+}
+
+@test "Bats declarations match the canonical manifest minimum" {
+  minimum="$(jq -r '.tools.bats.minimum_version' \
+    "$REPO_ROOT/.config/codespace-tools.json")"
+
+  run grep -Rhn '^bats_require_minimum_version ' "$REPO_ROOT/scripts/tests" --include='*.bats'
+
+  [ "$status" -eq 0 ]
+  while IFS= read -r declaration; do
+    [ "${declaration##* }" = "$minimum" ]
+  done <<<"$output"
 }
 
 @test "default install profile includes core and agent tools without changing explicit profiles" {
@@ -199,12 +228,14 @@ EOF
 }
 
 @test "matching binary version is skipped" {
-  cp "$TEST_ROOT/fake-tool" "$PREFIX/bin/fake-tool"
+  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool"
+  cp "$TEST_ROOT/artifact/fake-tool-alias" "$PREFIX/bin/fake-tool-alias"
 
   run_installer --profile core
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"fake-tool 1.2.3 already installed"* ]]
+  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool-alias 1.2.3" ]
 }
 
 @test "missing or mismatched binary is replaced by verified artifact" {
@@ -216,6 +247,27 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"installed fake-tool 1.2.3"* ]]
   [ "$("$PREFIX/bin/fake-tool" --version)" = "fake-tool 1.2.3" ]
+  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool-alias 1.2.3" ]
+}
+
+@test "verify-only rejects a matching binary whose declared companion is missing" {
+  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool"
+
+  run_installer --profile core --verify-only
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"fake-tool 1.2.3 is missing or mismatched"* ]]
+}
+
+@test "install replaces a companion with matching version but wrong identity" {
+  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool"
+  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool-alias"
+
+  run_installer --profile core
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"installed fake-tool 1.2.3"* ]]
+  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool-alias 1.2.3" ]
 }
 
 @test "checksum mismatch rejects the artifact without replacing the tool" {

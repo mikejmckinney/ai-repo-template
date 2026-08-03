@@ -101,8 +101,10 @@ jobs:
             echo "exceeded=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install test dependencies
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel ripgrep
+      - name: Install verification prerequisites
+        run: |
+          scripts/install-codespace-tools.sh --profile verification
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -112,18 +114,21 @@ jobs:
       - name: Install OpenCode test dependencies
         run: npm ci --prefix .github/agent-runtime
 
-      - name: Run bats suite (issue #255 Phase 4b)
+      - name: Verify environment prerequisites
+        run: scripts/verify-env.sh
+
+      - name: Run full Bats suite (issue #255 Phase 4b)
         id: bats
         continue-on-error: true
         run: |
           if [ -d scripts/tests ]; then
             set -o pipefail
-            bats scripts/tests/ 2>&1 | tee bats-output.log
+            bats --jobs 12 scripts/tests/ 2>&1 | tee bats-output.log
           else
             echo "scripts/tests/ not present — skipping bats step"
           fi
 
-      - name: Run repository checks
+      - name: Run full repository checks
         id: tests
         # Always run so the legacy ./test.sh parity gate executes even if
         # the bats step above failed (PR #274 review feedback). The final
