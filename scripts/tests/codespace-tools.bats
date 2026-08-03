@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 
-bats_require_minimum_version 1.5.0
+bats_require_minimum_version 1.7.0
 
 setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
@@ -30,6 +30,7 @@ EOF
       "fake-tool": {
         type: "binary",
         command: "fake-tool",
+        aliases: ["fake-tool-alias"],
         version: "1.2.3",
         version_args: ["--version"],
         asset: {
@@ -72,10 +73,13 @@ run_installer() {
     .schema_version == 1 and
     (.required_commands | type == "array" and length > 0) and
     (.apt_packages | type == "array" and length > 0) and
+    (.profiles.verification == ["uv"]) and
     (.profiles.core | index("shfmt")) and
     (.profiles.core | index("actionlint")) and
     (.profiles.core | index("markdownlint-cli2")) and
     (.profiles.core | index("uv")) and
+    (.tools.uv.aliases == ["uvx"]) and
+    ([.apt_packages[] | select(.command == "bats") | .minimum_version] == ["1.7.0"]) and
     (.profiles.core | index("chrome-for-testing")) and
     (.profiles.core | index("open-design")) and
     (.profiles.core | index("agent-runtime")) and
@@ -90,6 +94,18 @@ run_installer() {
   ' "$REPO_ROOT/.config/codespace-tools.json"
 
   [ "$status" -eq 0 ]
+}
+
+@test "Bats declarations match the canonical manifest minimum" {
+  minimum="$(jq -r '.apt_packages[] | select(.command == "bats") | .minimum_version' \
+    "$REPO_ROOT/.config/codespace-tools.json")"
+
+  run grep -Rhn '^bats_require_minimum_version ' "$REPO_ROOT/scripts/tests" --include='*.bats'
+
+  [ "$status" -eq 0 ]
+  while IFS= read -r declaration; do
+    [ "${declaration##* }" = "$minimum" ]
+  done <<<"$output"
 }
 
 @test "default install profile includes core and agent tools without changing explicit profiles" {
@@ -205,6 +221,31 @@ EOF
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"fake-tool 1.2.3 already installed"* ]]
+  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool 1.2.3" ]
+}
+
+@test "verify-only reports an apt-managed tool below its canonical minimum" {
+  jq '
+    .apt_packages = [{
+      command: "bats",
+      package: "bats",
+      minimum_version: "1.7.0",
+      version_args: ["--version"]
+    }] |
+    .profiles.core = [] |
+    .tools = {}
+  ' "$TEST_ROOT/manifest.json" >"$TEST_ROOT/version-manifest.json"
+  mv "$TEST_ROOT/version-manifest.json" "$TEST_ROOT/manifest.json"
+  cat >"$BIN_DIR/bats" <<'EOF'
+#!/usr/bin/env bash
+printf 'Bats 1.6.0\n'
+EOF
+  chmod +x "$BIN_DIR/bats"
+
+  run_installer --profile core --verify-only
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"bats 1.6.0 is below required version 1.7.0"* ]]
 }
 
 @test "missing or mismatched binary is replaced by verified artifact" {
@@ -216,6 +257,16 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"installed fake-tool 1.2.3"* ]]
   [ "$("$PREFIX/bin/fake-tool" --version)" = "fake-tool 1.2.3" ]
+  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool 1.2.3" ]
+}
+
+@test "verify-only rejects a matching binary whose declared alias is missing" {
+  cp "$TEST_ROOT/fake-tool" "$PREFIX/bin/fake-tool"
+
+  run_installer --profile core --verify-only
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"fake-tool alias fake-tool-alias is missing or mismatched"* ]]
 }
 
 @test "checksum mismatch rejects the artifact without replacing the tool" {

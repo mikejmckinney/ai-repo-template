@@ -68,13 +68,29 @@ suite_command() {
 
 run_runner() {
   local bats_command="$1" repo_command="$2"
+  shift 2
   run env \
     VERIFY_LOCAL_BATS_COMMAND="$bats_command" \
     VERIFY_LOCAL_REPO_COMMAND="$repo_command" \
     VERIFY_LOCAL_BATS_TIMEOUT_SECONDS="${VERIFY_LOCAL_BATS_TIMEOUT_SECONDS:-10}" \
     VERIFY_LOCAL_REPO_TIMEOUT_SECONDS="${VERIFY_LOCAL_REPO_TIMEOUT_SECONDS:-10}" \
+    VERIFY_LOCAL_PREREQUISITE_COMMAND="${VERIFY_LOCAL_PREREQUISITE_COMMAND:-:}" \
     VERIFY_LOCAL_LOG_DIR="$LOG_DIR" \
-    bash "$RUNNER"
+    bash "$RUNNER" "$@"
+}
+
+@test "failed prerequisite check prevents every expensive suite from starting" {
+  bats_command="touch $TEST_ROOT/bats-unexpected"
+  repo_command="touch $TEST_ROOT/repository-unexpected"
+  VERIFY_LOCAL_PREREQUISITE_COMMAND="printf MISSING_UVX >&2; exit 9"
+
+  run_runner "$bats_command" "$repo_command" --full
+
+  [ "$status" -eq 1 ]
+  [ ! -e "$TEST_ROOT/bats-unexpected" ]
+  [ ! -e "$TEST_ROOT/repository-unexpected" ]
+  [[ "$output" == *"MISSING_UVX"* ]]
+  [[ "$output" == *"prerequisites: exit=9 elapsed="* ]]
 }
 
 wait_for_file() {
@@ -97,11 +113,12 @@ assert_stopped() {
   bats_command="$(suite_command bats 0 BATS_SUCCESS complete "$TEST_ROOT/repository.started")"
   repo_command="$(suite_command repository 0 REPO_SUCCESS complete "$TEST_ROOT/bats.started")"
 
-  run_runner "$bats_command" "$repo_command"
+  run_runner "$bats_command" "$repo_command" --full
 
   [ "$status" -eq 0 ]
   [ -f "$TEST_ROOT/bats.started" ]
   [ -f "$TEST_ROOT/repository.started" ]
+  [[ "$output" == *"Verification mode: full"* ]]
   [[ "$output" == *"bats: passed=1 failed=0 exit=0"* ]]
   [[ "$output" == *"repository: passed=1 warnings=0 failed=0 exit=0"* ]]
   [[ "$output" != *"BATS_SUCCESS"* ]]
@@ -110,11 +127,24 @@ assert_stopped() {
   [ ! -e "$LOG_DIR" ]
 }
 
+@test "fast verification runs repository checks without starting Bats" {
+  bats_command="touch $TEST_ROOT/bats-unexpected"
+  repo_command="$(suite_command repository 0 REPO_SUCCESS)"
+
+  run_runner "$bats_command" "$repo_command"
+
+  [ "$status" -eq 0 ]
+  [ ! -e "$TEST_ROOT/bats-unexpected" ]
+  [[ "$output" == *"Verification mode: fast"* ]]
+  [[ "$output" == *"repository: passed=1 warnings=0 failed=0 exit=0"* ]]
+  [[ "$output" != *"bats: passed="* ]]
+}
+
 @test "complete local verification retains logs for a Bats-only failure" {
   bats_command="$(suite_command bats 7 BATS_COMPLETE_DIAGNOSTIC)"
   repo_command="$(suite_command repository 0 REPO_SUCCESS)"
 
-  run_runner "$bats_command" "$repo_command"
+  run_runner "$bats_command" "$repo_command" --full
 
   [ "$status" -eq 1 ]
   [[ "$output" == *"bats: passed=1 failed=0 exit=7"* ]]
@@ -128,7 +158,7 @@ assert_stopped() {
   bats_command="$(suite_command bats 0 BATS_SUCCESS)"
   repo_command="$(suite_command repository 9 REPO_COMPLETE_DIAGNOSTIC)"
 
-  run_runner "$bats_command" "$repo_command"
+  run_runner "$bats_command" "$repo_command" --full
 
   [ "$status" -eq 1 ]
   [[ "$output" == *"bats: passed=1 failed=0 exit=0"* ]]
@@ -141,7 +171,7 @@ assert_stopped() {
   bats_command="$(suite_command bats 7 BATS_COMPLETE_DIAGNOSTIC)"
   repo_command="$(suite_command repository 9 REPO_COMPLETE_DIAGNOSTIC)"
 
-  run_runner "$bats_command" "$repo_command"
+  run_runner "$bats_command" "$repo_command" --full
 
   [ "$status" -eq 1 ]
   [[ "$output" == *"bats: passed=1 failed=0 exit=7"* ]]
@@ -155,7 +185,7 @@ assert_stopped() {
   repo_command="$(suite_command repository 0 REPO_SUCCESS)"
   VERIFY_LOCAL_BATS_TIMEOUT_SECONDS=1
 
-  run_runner "$bats_command" "$repo_command"
+  run_runner "$bats_command" "$repo_command" --full
 
   [ "$status" -eq 1 ]
   [[ "$output" == *"bats: passed=0 failed=0 exit=124"* ]]
@@ -176,7 +206,7 @@ assert_stopped() {
     VERIFY_LOCAL_BATS_TIMEOUT_SECONDS=30 \
     VERIFY_LOCAL_REPO_TIMEOUT_SECONDS=30 \
     VERIFY_LOCAL_LOG_DIR="$LOG_DIR" \
-    bash "$RUNNER" >"$output_file" 2>&1 &
+    bash "$RUNNER" --full >"$output_file" 2>&1 &
   runner_pid=$!
 
   wait_for_file "$TEST_ROOT/bats.pid"

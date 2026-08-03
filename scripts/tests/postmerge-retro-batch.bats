@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # Post-merge retro batch improvements (#446) unit tests.
 
-bats_require_minimum_version 1.5.0
+bats_require_minimum_version 1.7.0
 
 setup() {
   REPO_ROOT="$(cd "$(dirname "$BATS_TEST_FILENAME")/../.." && pwd)"

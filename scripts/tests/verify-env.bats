@@ -251,8 +251,8 @@ _build_fix_env() {
   #   git, head — git checks
   #   grep — command availability checks
   #   python3, pip, pip3 — python checks
-  #   shellcheck, jq — required-tool checks (present so only rg triggers fix mode)
-  local needed=(bash dirname chmod git head grep python3 pip pip3 shellcheck jq apt-get)
+  #   shellcheck, jq, uvx, bats — required-tool checks
+  local needed=(bash dirname chmod git head grep python3 pip pip3 shellcheck jq uvx bats apt-get)
   local excl=("$@")
   for t in "${needed[@]}"; do
     local skip=false
@@ -262,6 +262,29 @@ _build_fix_env() {
     rp=$(command -v "$t" 2>/dev/null || true)
     [[ -n "$rp" ]] && ln -sf "$rp" "$stub_bin/$t" 2>/dev/null || true
   done
+}
+
+@test "verify-env: missing uvx reports the managed uv prerequisite" {
+  stub_bin=$(_make_stub_bin)
+  _build_fix_env "$stub_bin" uvx
+
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" 2>&1
+
+  rm -rf "$stub_bin"
+  [[ "$output" == *"uvx is not installed; install the pinned uv tool profile"* ]]
+  [ "$status" -ne 0 ]
+}
+
+@test "verify-env: Bats below the canonical floor reports required and observed versions" {
+  stub_bin=$(_make_stub_bin)
+  _build_fix_env "$stub_bin" bats
+  _add_stub "$stub_bin" "bats" 'printf "Bats 1.6.0\n"'
+
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" 2>&1
+
+  rm -rf "$stub_bin"
+  [[ "$output" == *"bats 1.6.0 is below required version 1.7.0"* ]]
+  [ "$status" -ne 0 ]
 }
 
 @test "verify-env: --fix: non-allowlisted tool rejected with advisory and non-zero exit" {

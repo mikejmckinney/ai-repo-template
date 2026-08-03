@@ -17,9 +17,10 @@ Numbered verification modules sourced by `test.sh` (issue #255 Phase 4d).
    checks and increments the shared counters via `pass`/`fail`/`warn`.
 4. Prints the aggregate `Passed/Warnings/Failed` summary and exits.
 
-Focused behavioral tests are intentionally separate. Run
-`bats --jobs 4 scripts/tests/` in addition to `./test.sh`; check modules do not
-invoke Bats themselves.
+Focused behavioral tests are intentionally separate. Normal `./test.sh` modules
+do not invoke Bats. Full verification sets `DERIVED_LIFECYCLE_BATS=1`, allowing
+the derived-repository lifecycle module to run the copied repository's full Bats
+suite in addition to top-level Bats.
 
 Modules expect:
 

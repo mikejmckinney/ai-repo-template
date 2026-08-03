@@ -7,6 +7,7 @@
 | Script | Purpose | Usage |
 |--------|---------|-------|
 | `verify-env.sh` | Check environment setup | `./scripts/verify-env.sh` |
+| `verify-local.sh` | Run fast or explicit full local verification | `./scripts/verify-local.sh [--full]` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
 | `codespace-post-create.sh` | Install the default tool profile when a Dev Container is created | Called by `.devcontainer/devcontainer.json` |
 | `codespace-post-start.sh` | Refresh non-fatal Codespaces auth and sandbox state on each start | Called by `.devcontainer/devcontainer.json` |
@@ -49,6 +50,10 @@ checked without mutation:
 ```bash
 ./scripts/install-codespace-tools.sh --profile default --verify-only
 ```
+
+The pinned `uv` installation provides both `uv` and `uvx`. The lightweight
+`verification` profile installs that runtime plus the apt-managed verification
+prerequisites without installing browser or agent tools.
 
 Use `--profile core` for only the quality/runtime prerequisites. The explicit
 agent profile preserves the same core-plus-agent union as the default:

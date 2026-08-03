@@ -1,7 +1,7 @@
 # AI_REPO_GUIDE.md
 
 > Canonical command and layout reference for agents working in this template.
-> Last verified: 2026-08-02.
+> Last verified: 2026-08-03.
 
 ## Overview
 
@@ -18,6 +18,7 @@ ADR-031 defines the active execution model:
 
 ```bash
 scripts/verify-local.sh
+scripts/verify-local.sh --full
 ./test.sh
 bats --jobs 4 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
@@ -36,14 +37,21 @@ scripts/archive-opencode-database.sh
 git diff --check
 ```
 
-Use `scripts/verify-local.sh` for complete local verification. It runs full Bats
-and `./test.sh` concurrently with a 900-second timeout per suite, prints bounded
-summaries, and removes successful logs. If either suite fails, it reports both
-statuses and retains complete logs under `.artifacts/local-verification/`.
+Use `scripts/verify-local.sh` for fast local feedback. It verifies prerequisites,
+then runs `./test.sh` without a full Bats suite or the derived-repository Bats
+copy. Use `scripts/verify-local.sh --full` for the intentional complete gate: it
+runs top-level full Bats and `./test.sh` with derived-repository full Bats
+concurrently. Both modes print elapsed summaries and remove successful logs. If
+a suite fails, the runner retains complete logs under
+`.artifacts/local-verification/`.
 Override timeouts with `VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` and
 `VERIFY_LOCAL_REPO_TIMEOUT_SECONDS`. The Codespace toolchain supplies required
 GNU `timeout` and `setsid`. Direct component commands remain available for
 targeted diagnosis, not as a second completion procedure.
+
+The canonical tool manifest requires Bats 1.7.0 or newer. Its pinned `uv` tool
+provides both `uv` and the equivalent `uvx` alias. Run `scripts/verify-env.sh`
+for actionable prerequisite failures before starting local MCP servers.
 
 `.devcontainer/devcontainer.json` owns automatic Codespaces setup. Its
 post-create hook installs the default profile: repository quality tools, enabled

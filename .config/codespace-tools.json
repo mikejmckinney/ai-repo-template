@@ -21,7 +21,7 @@
     {"command": "jq", "package": "jq"},
     {"command": "rg", "package": "ripgrep"},
     {"command": "shellcheck", "package": "shellcheck"},
-    {"command": "bats", "package": "bats"},
+    {"command": "bats", "package": "bats", "minimum_version": "1.7.0", "version_args": ["--version"]},
     {"command": "parallel", "package": "parallel"},
     {"command": "curl", "package": "curl"},
     {"command": "unzip", "package": "unzip"},
@@ -29,6 +29,9 @@
     {"path": "/etc/ssl/certs/ca-certificates.crt", "package": "ca-certificates"}
   ],
   "profiles": {
+    "verification": [
+      "uv"
+    ],
     "core": [
       "shfmt",
       "actionlint",
@@ -100,6 +103,7 @@
     "uv": {
       "type": "binary",
       "command": "uv",
+      "aliases": ["uvx"],
       "version": "0.11.29",
       "version_args": ["--version"],
       "asset": {

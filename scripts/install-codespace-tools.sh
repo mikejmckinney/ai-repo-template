@@ -9,6 +9,9 @@ PREFIX="${CODESPACE_TOOLS_PREFIX:-$HOME/.local}"
 PROFILE=default
 VERIFY_ONLY=false
 
+# shellcheck source=scripts/lib/versions.sh
+source "$SCRIPT_DIR/lib/versions.sh"
+
 die() {
   printf 'codespace-tools: %s\n' "$*" >&2
   exit 1
@@ -62,6 +65,20 @@ tool_matches() {
   grep -Fq "$expected" <<<"$output"
 }
 
+ensure_binary_aliases() {
+  local name="$1" command_name="$2" version="$3" alias source
+  source="$(command -v "$command_name")"
+  while IFS= read -r alias; do
+    [[ -n "$alias" ]] || continue
+    if tool_matches "$alias" "$version" --version; then
+      continue
+    fi
+    [[ "$VERIFY_ONLY" == false ]] \
+      || die "$name alias $alias is missing or mismatched"
+    ln -sfn "$source" "$PREFIX/bin/$alias"
+  done < <(jq -r --arg name "$name" '.tools[$name].aliases[]? // empty' "$MANIFEST")
+}
+
 apt_update() (
   local source sourceparts filtered_sourceparts
   sourceparts="${CODESPACE_APT_SOURCE_PARTS:-/etc/apt/sources.list.d}"
@@ -111,6 +128,7 @@ install_binary() {
   version="$(jq -r --arg name "$name" '.tools[$name].version' "$MANIFEST")"
   mapfile -t version_args < <(jq -r --arg name "$name" '.tools[$name].version_args[]' "$MANIFEST")
   if tool_matches "$command_name" "$version" "${version_args[@]}"; then
+    ensure_binary_aliases "$name" "$command_name" "$version"
     printf 'codespace-tools: %s %s already installed\n' "$name" "$version"
     return
   fi
@@ -134,6 +152,7 @@ install_binary() {
     *) die "unsupported binary archive for $name: $archive" ;;
   esac
   install -m 0755 "$source" "$PREFIX/bin/$command_name"
+  ensure_binary_aliases "$name" "$command_name" "$version"
   printf 'codespace-tools: installed %s %s\n' "$name" "$version"
 }
 
@@ -252,14 +271,25 @@ install_vendor_channel() {
 }
 
 install_apt_packages() {
-  local missing=() command_name required_path package
+  local missing=() command_name required_path package minimum_version observed output
   while IFS= read -r item; do
     command_name="$(jq -r '.command // empty' <<<"$item")"
     required_path="$(jq -r '.path // empty' <<<"$item")"
     package="$(jq -r '.package' <<<"$item")"
+    minimum_version="$(jq -r '.minimum_version // empty' <<<"$item")"
     if { [[ -n "$command_name" ]] && command -v "$command_name" >/dev/null 2>&1; } \
       || { [[ -n "$required_path" ]] && [[ -e "$required_path" ]]; }; then
-      continue
+      if [[ -z "$minimum_version" ]]; then
+        continue
+      fi
+      mapfile -t version_args < <(jq -r '.version_args[]? // empty' <<<"$item")
+      output="$("$command_name" "${version_args[@]}" 2>&1 || true)"
+      observed="$(extract_version "$output")"
+      if [[ -n "$observed" ]] && version_at_least "$observed" "$minimum_version"; then
+        continue
+      fi
+      [[ "$VERIFY_ONLY" == false ]] \
+        || die "$command_name $observed is below required version $minimum_version"
     fi
     missing+=("$package")
   done < <(jq -c '.apt_packages[]' "$MANIFEST")
@@ -275,6 +305,18 @@ install_apt_packages() {
   else
     die "root or sudo is required to install: ${missing[*]}"
   fi
+
+  while IFS= read -r item; do
+    command_name="$(jq -r '.command // empty' <<<"$item")"
+    minimum_version="$(jq -r '.minimum_version // empty' <<<"$item")"
+    [[ -n "$command_name" && -n "$minimum_version" ]] || continue
+    mapfile -t version_args < <(jq -r '.version_args[]? // empty' <<<"$item")
+    output="$("$command_name" "${version_args[@]}" 2>&1 || true)"
+    observed="$(extract_version "$output")"
+    if [[ -z "$observed" ]] || ! version_at_least "$observed" "$minimum_version"; then
+      die "$command_name $observed is below required version $minimum_version"
+    fi
+  done < <(jq -c '.apt_packages[]' "$MANIFEST")
 }
 
 install_apt_packages

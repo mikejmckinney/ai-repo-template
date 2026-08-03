@@ -2,7 +2,7 @@
 #
 # prompt_helpers.py cap-json and select-context behavior.
 
-bats_require_minimum_version 1.5.0
+bats_require_minimum_version 1.7.0
 export BATS_TEST_TIMEOUT="${BATS_TEST_TIMEOUT:-120}"
 
 setup_file() {
