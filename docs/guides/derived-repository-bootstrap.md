@@ -89,6 +89,14 @@ When `OPENCODE_OPENAI_AUTH` is absent from the environment in a local run, the
 script can delegate to `sync-opencode-oauth-secret.sh` to upload an access-only
 bundle; it never uploads the real refresh token.
 
+The manifest also grants derived repositories access to existing selected
+Codespaces user secrets for interactive provider tooling: `ACEDATACLOUD_API_TOKEN`,
+`CLOUDFLARE_API_KEY`, `CLOUDFLARE_GLOBAL_API_KEY`, `ELEVENLABS_API_KEY`, `GH_PAT`,
+`MUREKA_API_KEY`, `NETLIFY_API_KEY`, `RAILWAY_API_KEY`, `RENDER_API_KEY`,
+`SUPABASE_API_KEY`, and `VERCEL_API_KEY`. These entries are Codespaces-only;
+the bootstrap does not publish them as Actions secrets. A missing user secret is
+reported and skipped.
+
 ## Visibility behavior
 
 For a Codespaces user secret with `selected` visibility, the script calls the
@@ -101,6 +109,9 @@ If the bootstrap token lacks Codespaces scope, the script fails before creating
 the repository. Missing required environment values also fail before any GitHub
 operation. Optional absent values are reported by name and skipped. Secret
 values are never printed.
+
+The script does not create Codespaces user secrets or copy their values. It only
+changes repository access for an existing secret whose visibility is `selected`.
 
 ## Recovery
 

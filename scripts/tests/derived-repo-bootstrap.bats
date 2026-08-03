@@ -9,6 +9,19 @@ setup() {
   TEST_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/derived-repo-bootstrap.XXXXXX")"
   BIN_DIR="$TEST_ROOT/bin"
   GH_LOG="$TEST_ROOT/gh.log"
+  PROVIDER_CODESPACES_SECRETS=(
+    ACEDATACLOUD_API_TOKEN
+    CLOUDFLARE_API_KEY
+    CLOUDFLARE_GLOBAL_API_KEY
+    ELEVENLABS_API_KEY
+    GH_PAT
+    MUREKA_API_KEY
+    NETLIFY_API_KEY
+    RAILWAY_API_KEY
+    RENDER_API_KEY
+    SUPABASE_API_KEY
+    VERCEL_API_KEY
+  )
   mkdir -p "$BIN_DIR"
   : >"$GH_LOG"
 
@@ -37,7 +50,11 @@ case "${1:-} ${2:-}" in
     ;;
   "api user/codespaces/secrets?per_page=100")
     [[ "${GH_CODESPACES_ACCESS:-true}" == true ]] || exit 1
-    printf '{"secrets":[{"name":"OPENCODE_GITHUB_TOKEN","visibility":"selected"},{"name":"OPENROUTER_API_KEY","visibility":"all"},{"name":"CURSOR_API_KEY","visibility":"private"}]}\n'
+    if [[ -n "${GH_CODESPACES_JSON:-}" ]]; then
+      printf '%s\n' "$GH_CODESPACES_JSON"
+      exit 0
+    fi
+    printf '%s\n' '{"secrets":[{"name":"OPENCODE_GITHUB_TOKEN","visibility":"selected"},{"name":"OPENROUTER_API_KEY","visibility":"all"},{"name":"CURSOR_API_KEY","visibility":"private"},{"name":"ACEDATACLOUD_API_TOKEN","visibility":"selected"},{"name":"CLOUDFLARE_API_KEY","visibility":"selected"},{"name":"CLOUDFLARE_GLOBAL_API_KEY","visibility":"selected"},{"name":"ELEVENLABS_API_KEY","visibility":"selected"},{"name":"GH_PAT","visibility":"selected"},{"name":"MUREKA_API_KEY","visibility":"selected"},{"name":"NETLIFY_API_KEY","visibility":"selected"},{"name":"RAILWAY_API_KEY","visibility":"selected"},{"name":"RENDER_API_KEY","visibility":"selected"},{"name":"SUPABASE_API_KEY","visibility":"selected"},{"name":"VERCEL_API_KEY","visibility":"selected"}]}'
     ;;
   "api user/codespaces/secrets/OPENCODE_GITHUB_TOKEN")
     printf 'selected\n'
@@ -64,6 +81,7 @@ run_bootstrap() {
   run env -i PATH="$BIN_DIR:$PATH" HOME="$TEST_ROOT/home" GH_LOG="$GH_LOG" \
     GH_REPO_EXISTS="${TEST_GH_REPO_EXISTS:-false}" \
     GH_CODESPACES_ACCESS="${TEST_GH_CODESPACES_ACCESS:-true}" \
+    GH_CODESPACES_JSON="${TEST_GH_CODESPACES_JSON:-}" \
     GH_TEMPLATE_REPO="${TEST_GH_TEMPLATE_REPO:-mikejmckinney/ai-repo-template}" \
     GH_REPO_VISIBILITY="${TEST_GH_REPO_VISIBILITY:-private}" \
     REPO_BOOTSTRAP_TOKEN="${TEST_REPO_BOOTSTRAP_TOKEN:-}" \
@@ -101,6 +119,21 @@ run_bootstrap() {
     ])
   ' "$MANIFEST"
   [ "$status" -eq 0 ]
+}
+
+@test "provider credentials are Codespaces-only destinations" {
+  for name in "${PROVIDER_CODESPACES_SECRETS[@]}"; do
+    run jq -e --arg name "$name" '
+      [.secrets[] | select(
+        .name == $name and
+        .env == $name and
+        .required == false and
+        .actions == false and
+        .codespaces == true
+      )] | length == 1
+    ' "$MANIFEST"
+    [ "$status" -eq 0 ]
+  done
 }
 
 @test "setup secret check resolves the canonical manifest from the repository root" {
@@ -222,6 +255,38 @@ PY
   run grep -F 'secret set SKILL_REFRESH_PR_TOKEN' "$GH_LOG"
   [ "$status" -ne 0 ]
   run grep -F 'user/codespaces/secrets/REPO_BOOTSTRAP_TOKEN/repositories/' "$GH_LOG"
+  [ "$status" -ne 0 ]
+}
+
+@test "apply grants every selected provider Codespaces secret without granting the bootstrap token" {
+  TEST_REPO_BOOTSTRAP_TOKEN="bootstrap-secret"
+  TEST_OPENCODE_GITHUB_TOKEN="github-secret"
+  run_bootstrap --apply
+
+  [ "$status" -eq 0 ]
+  for name in "${PROVIDER_CODESPACES_SECRETS[@]}"; do
+    run grep -F "user/codespaces/secrets/$name/repositories/4242" "$GH_LOG"
+    [ "$status" -eq 0 ]
+  done
+  run grep -F 'user/codespaces/secrets/REPO_BOOTSTRAP_TOKEN/repositories/4242' "$GH_LOG"
+  [ "$status" -ne 0 ]
+}
+
+@test "apply preserves all private and missing provider visibility without mutation" {
+  TEST_REPO_BOOTSTRAP_TOKEN="bootstrap-secret"
+  TEST_OPENCODE_GITHUB_TOKEN="github-secret"
+  TEST_GH_CODESPACES_JSON='{"secrets":[{"name":"CLOUDFLARE_API_KEY","visibility":"all"},{"name":"NETLIFY_API_KEY","visibility":"private"}]}'
+  run_bootstrap --apply
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"CLOUDFLARE_API_KEY: already covered by all visibility"* ]]
+  [[ "$output" == *"NETLIFY_API_KEY: already covered by private visibility"* ]]
+  [[ "$output" == *"VERCEL_API_KEY: secret not configured for this user"* ]]
+  run grep -F 'user/codespaces/secrets/CLOUDFLARE_API_KEY/repositories/' "$GH_LOG"
+  [ "$status" -ne 0 ]
+  run grep -F 'user/codespaces/secrets/NETLIFY_API_KEY/repositories/' "$GH_LOG"
+  [ "$status" -ne 0 ]
+  run grep -F 'user/codespaces/secrets/VERCEL_API_KEY/repositories/' "$GH_LOG"
   [ "$status" -ne 0 ]
 }
 
