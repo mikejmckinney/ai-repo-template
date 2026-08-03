@@ -130,6 +130,7 @@ assert_stopped() {
 @test "fast verification runs repository checks without starting Bats" {
   bats_command="touch $TEST_ROOT/bats-unexpected"
   repo_command="$(suite_command repository 0 REPO_SUCCESS)"
+  VERIFY_LOCAL_BATS_TIMEOUT_SECONDS=invalid
 
   run_runner "$bats_command" "$repo_command"
 

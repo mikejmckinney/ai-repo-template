@@ -46,10 +46,10 @@ and remove successful logs. If a suite fails, the runner retains complete logs u
 `.artifacts/local-verification/`.
 Override timeouts with `VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` and
 `VERIFY_LOCAL_REPO_TIMEOUT_SECONDS`; both default to 300 seconds. A timeout is a
-performance failure to investigate, not a reason to normalize a longer gate. The
-Codespace toolchain supplies required GNU `timeout` and `setsid`. Direct component
-commands remain available for targeted diagnosis, not as a second completion
-procedure.
+performance failure to investigate, not a reason to normalize a longer gate.
+`VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` applies only to `--full`. The Codespace
+toolchain supplies required GNU `timeout` and `setsid`. Direct component commands
+remain available for targeted diagnosis, not as a second completion procedure.
 
 The canonical tool manifest pins Bats 1.12.0 with a 1.7.0 minimum contract. Its
 pinned `uv` archive installs both the `uv` and `uvx` executables. Run

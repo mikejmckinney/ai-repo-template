@@ -21,7 +21,11 @@ bats_timeout="${VERIFY_LOCAL_BATS_TIMEOUT_SECONDS:-300}"
 repo_timeout="${VERIFY_LOCAL_REPO_TIMEOUT_SECONDS:-300}"
 log_dir="${VERIFY_LOCAL_LOG_DIR:-$repo_root/.artifacts/local-verification/run-$(date -u +%Y%m%dT%H%M%SZ)-$$}"
 
-for value in "$bats_timeout" "$repo_timeout"; do
+timeout_values=("$repo_timeout")
+if [[ "$mode" == full ]]; then
+  timeout_values+=("$bats_timeout")
+fi
+for value in "${timeout_values[@]}"; do
   if [[ ! "$value" =~ ^[1-9][0-9]*$ ]]; then
     echo "verify-local: timeout values must be positive integers" >&2
     exit 2
