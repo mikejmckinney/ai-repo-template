@@ -49,9 +49,10 @@ Override timeouts with `VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` and
 GNU `timeout` and `setsid`. Direct component commands remain available for
 targeted diagnosis, not as a second completion procedure.
 
-The canonical tool manifest requires Bats 1.7.0 or newer. Its pinned `uv` tool
-provides both `uv` and the equivalent `uvx` alias. Run `scripts/verify-env.sh`
-for actionable prerequisite failures before starting local MCP servers.
+The canonical tool manifest pins Bats 1.12.0 with a 1.7.0 minimum contract. Its
+pinned `uv` archive installs both the `uv` and `uvx` executables. Run
+`scripts/verify-env.sh` for actionable prerequisite failures before starting
+local MCP servers.
 
 `.devcontainer/devcontainer.json` owns automatic Codespaces setup. Its
 post-create hook installs the default profile: repository quality tools, enabled

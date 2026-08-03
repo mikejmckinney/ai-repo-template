@@ -51,9 +51,10 @@ checked without mutation:
 ./scripts/install-codespace-tools.sh --profile default --verify-only
 ```
 
-The pinned `uv` installation provides both `uv` and `uvx`. The lightweight
-`verification` profile installs that runtime plus the apt-managed verification
-prerequisites without installing browser or agent tools.
+The pinned `uv` archive provides both `uv` and `uvx`. The lightweight
+`verification` profile installs that runtime plus pinned Bats and the
+apt-managed verification prerequisites without installing browser or agent
+tools.
 
 Use `--profile core` for only the quality/runtime prerequisites. The explicit
 agent profile preserves the same core-plus-agent union as the default:

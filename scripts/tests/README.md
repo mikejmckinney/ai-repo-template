@@ -57,7 +57,7 @@ brew install bats-core parallel
 bats --version  # must be 1.7.0 or newer
 ```
 
-The canonical tool manifest requires Bats 1.7.0 or newer. CI installs its
+The canonical tool manifest pins Bats 1.12.0 and requires Bats 1.7.0 or newer. CI installs its
 verification profile through `scripts/install-codespace-tools.sh`, then runs the
 intentional full gate. The fast local runner does not invoke full Bats.
 

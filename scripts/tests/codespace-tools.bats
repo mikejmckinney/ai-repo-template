@@ -10,12 +10,18 @@ setup() {
   BIN_DIR="$TEST_ROOT/bin"
   mkdir -p "$PREFIX/bin" "$BIN_DIR"
 
-  cat >"$TEST_ROOT/fake-tool" <<'EOF'
+  mkdir -p "$TEST_ROOT/artifact"
+  cat >"$TEST_ROOT/artifact/fake-tool" <<'EOF'
 #!/usr/bin/env bash
 printf 'fake-tool 1.2.3\n'
 EOF
-  chmod +x "$TEST_ROOT/fake-tool"
-  ARTIFACT_SHA="$(sha256sum "$TEST_ROOT/fake-tool" | cut -d' ' -f1)"
+  cat >"$TEST_ROOT/artifact/fake-tool-alias" <<'EOF'
+#!/usr/bin/env bash
+printf 'fake-tool-alias 1.2.3\n'
+EOF
+  chmod +x "$TEST_ROOT/artifact/fake-tool" "$TEST_ROOT/artifact/fake-tool-alias"
+  tar -czf "$TEST_ROOT/fake-tool.tar.gz" -C "$TEST_ROOT/artifact" fake-tool fake-tool-alias
+  ARTIFACT_SHA="$(sha256sum "$TEST_ROOT/fake-tool.tar.gz" | cut -d' ' -f1)"
 
   jq -n --arg sha "$ARTIFACT_SHA" '{
     schema_version: 1,
@@ -30,13 +36,14 @@ EOF
       "fake-tool": {
         type: "binary",
         command: "fake-tool",
-        aliases: ["fake-tool-alias"],
+        companions: [{command: "fake-tool-alias", member: "fake-tool-alias", version_args: ["--version"]}],
         version: "1.2.3",
         version_args: ["--version"],
         asset: {
           url: "https://example.invalid/fake-tool",
           sha256: $sha,
-          archive: "raw"
+          archive: "tar.gz",
+          member: "fake-tool"
         }
       }
     }
@@ -62,7 +69,7 @@ teardown() {
 }
 
 run_installer() {
-  run env PATH="$BIN_DIR:$PREFIX/bin:$PATH" FETCH_SOURCE="$TEST_ROOT/fake-tool" \
+  run env PATH="$BIN_DIR:$PREFIX/bin:$PATH" FETCH_SOURCE="$TEST_ROOT/fake-tool.tar.gz" \
     FETCH_MODE="${FETCH_MODE:-success}" bash "$INSTALLER" \
     --manifest "$TEST_ROOT/manifest.json" --prefix "$PREFIX" "$@"
   printf 'status=%s\n%s\n' "$status" "$output" | sed 's/^/# /' >&3
@@ -73,13 +80,13 @@ run_installer() {
     .schema_version == 1 and
     (.required_commands | type == "array" and length > 0) and
     (.apt_packages | type == "array" and length > 0) and
-    (.profiles.verification == ["uv"]) and
+    (.profiles.verification == ["uv", "bats"]) and
     (.profiles.core | index("shfmt")) and
     (.profiles.core | index("actionlint")) and
     (.profiles.core | index("markdownlint-cli2")) and
     (.profiles.core | index("uv")) and
-    (.tools.uv.aliases == ["uvx"]) and
-    ([.apt_packages[] | select(.command == "bats") | .minimum_version] == ["1.7.0"]) and
+    (.tools.uv.companions[0].command == "uvx") and
+    (.tools.bats.minimum_version == "1.7.0") and
     (.profiles.core | index("chrome-for-testing")) and
     (.profiles.core | index("open-design")) and
     (.profiles.core | index("agent-runtime")) and
@@ -97,7 +104,7 @@ run_installer() {
 }
 
 @test "Bats declarations match the canonical manifest minimum" {
-  minimum="$(jq -r '.apt_packages[] | select(.command == "bats") | .minimum_version' \
+  minimum="$(jq -r '.tools.bats.minimum_version' \
     "$REPO_ROOT/.config/codespace-tools.json")"
 
   run grep -Rhn '^bats_require_minimum_version ' "$REPO_ROOT/scripts/tests" --include='*.bats'
@@ -215,37 +222,14 @@ EOF
 }
 
 @test "matching binary version is skipped" {
-  cp "$TEST_ROOT/fake-tool" "$PREFIX/bin/fake-tool"
+  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool"
+  cp "$TEST_ROOT/artifact/fake-tool-alias" "$PREFIX/bin/fake-tool-alias"
 
   run_installer --profile core
 
   [ "$status" -eq 0 ]
   [[ "$output" == *"fake-tool 1.2.3 already installed"* ]]
-  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool 1.2.3" ]
-}
-
-@test "verify-only reports an apt-managed tool below its canonical minimum" {
-  jq '
-    .apt_packages = [{
-      command: "bats",
-      package: "bats",
-      minimum_version: "1.7.0",
-      version_args: ["--version"]
-    }] |
-    .profiles.core = [] |
-    .tools = {}
-  ' "$TEST_ROOT/manifest.json" >"$TEST_ROOT/version-manifest.json"
-  mv "$TEST_ROOT/version-manifest.json" "$TEST_ROOT/manifest.json"
-  cat >"$BIN_DIR/bats" <<'EOF'
-#!/usr/bin/env bash
-printf 'Bats 1.6.0\n'
-EOF
-  chmod +x "$BIN_DIR/bats"
-
-  run_installer --profile core --verify-only
-
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"bats 1.6.0 is below required version 1.7.0"* ]]
+  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool-alias 1.2.3" ]
 }
 
 @test "missing or mismatched binary is replaced by verified artifact" {
@@ -257,16 +241,16 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"installed fake-tool 1.2.3"* ]]
   [ "$("$PREFIX/bin/fake-tool" --version)" = "fake-tool 1.2.3" ]
-  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool 1.2.3" ]
+  [ "$("$PREFIX/bin/fake-tool-alias" --version)" = "fake-tool-alias 1.2.3" ]
 }
 
-@test "verify-only rejects a matching binary whose declared alias is missing" {
-  cp "$TEST_ROOT/fake-tool" "$PREFIX/bin/fake-tool"
+@test "verify-only rejects a matching binary whose declared companion is missing" {
+  cp "$TEST_ROOT/artifact/fake-tool" "$PREFIX/bin/fake-tool"
 
   run_installer --profile core --verify-only
 
   [ "$status" -ne 0 ]
-  [[ "$output" == *"fake-tool alias fake-tool-alias is missing or mismatched"* ]]
+  [[ "$output" == *"fake-tool 1.2.3 is missing or mismatched"* ]]
 }
 
 @test "checksum mismatch rejects the artifact without replacing the tool" {

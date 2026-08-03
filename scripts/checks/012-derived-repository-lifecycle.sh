@@ -73,7 +73,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
         grep '^not ok' "$lifecycle_bats_log" >&2 || true
       fi
     else
-      pass "derived repository Bats suite is reserved for full verification mode"
+      printf '  - derived repository Bats suite is reserved for full verification mode\n'
     fi
   else
     fail "could not copy tracked template files for lifecycle verification"

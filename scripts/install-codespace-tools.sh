@@ -65,18 +65,13 @@ tool_matches() {
   grep -Fq "$expected" <<<"$output"
 }
 
-ensure_binary_aliases() {
-  local name="$1" command_name="$2" version="$3" alias source
-  source="$(command -v "$command_name")"
-  while IFS= read -r alias; do
-    [[ -n "$alias" ]] || continue
-    if tool_matches "$alias" "$version" --version; then
-      continue
-    fi
-    [[ "$VERIFY_ONLY" == false ]] \
-      || die "$name alias $alias is missing or mismatched"
-    ln -sfn "$source" "$PREFIX/bin/$alias"
-  done < <(jq -r --arg name "$name" '.tools[$name].aliases[]? // empty' "$MANIFEST")
+binary_companions_match() {
+  local name="$1" version="$2" companion command_name
+  while IFS= read -r companion; do
+    command_name="$(jq -r '.command' <<<"$companion")"
+    mapfile -t version_args < <(jq -r '.version_args[]' <<<"$companion")
+    tool_matches "$command_name" "$version" "${version_args[@]}" || return 1
+  done < <(jq -c --arg name "$name" '.tools[$name].companions[]?' "$MANIFEST")
 }
 
 apt_update() (
@@ -127,8 +122,8 @@ install_binary() {
   command_name="$(jq -r --arg name "$name" '.tools[$name].command' "$MANIFEST")"
   version="$(jq -r --arg name "$name" '.tools[$name].version' "$MANIFEST")"
   mapfile -t version_args < <(jq -r --arg name "$name" '.tools[$name].version_args[]' "$MANIFEST")
-  if tool_matches "$command_name" "$version" "${version_args[@]}"; then
-    ensure_binary_aliases "$name" "$command_name" "$version"
+  if tool_matches "$command_name" "$version" "${version_args[@]}" \
+    && binary_companions_match "$name" "$version"; then
     printf 'codespace-tools: %s %s already installed\n' "$name" "$version"
     return
   fi
@@ -146,13 +141,22 @@ install_binary() {
   case "$archive" in
     raw) source="$temp" ;;
     tar.gz)
-      tar -xzf "$temp" -C "$extract_dir" "$member"
+      mapfile -t members < <(
+        jq -r --arg name "$name" \
+          '[.tools[$name].asset.member, (.tools[$name].companions[]?.member)] | .[]' \
+          "$MANIFEST"
+      )
+      tar -xzf "$temp" -C "$extract_dir" "${members[@]}"
       source="$extract_dir/$member"
       ;;
     *) die "unsupported binary archive for $name: $archive" ;;
   esac
   install -m 0755 "$source" "$PREFIX/bin/$command_name"
-  ensure_binary_aliases "$name" "$command_name" "$version"
+  while IFS= read -r companion; do
+    companion_command="$(jq -r '.command' <<<"$companion")"
+    companion_member="$(jq -r '.member' <<<"$companion")"
+    install -m 0755 "$extract_dir/$companion_member" "$PREFIX/bin/$companion_command"
+  done < <(jq -c --arg name "$name" '.tools[$name].companions[]?' "$MANIFEST")
   printf 'codespace-tools: installed %s %s\n' "$name" "$version"
 }
 
@@ -185,6 +189,7 @@ install_archive() {
   download_verified "$name" "$url" "$sha" "$temp"
   case "$archive" in
     zip) unzip -q "$temp" -d "$install_dir" ;;
+    tar.gz) tar -xzf "$temp" -C "$install_dir" ;;
     *) die "unsupported archive for $name: $archive" ;;
   esac
   if [[ -f "$install_dir/chrome-linux64/deb.deps" ]]; then

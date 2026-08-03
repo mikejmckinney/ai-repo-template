@@ -147,7 +147,7 @@ else
   fail "uvx is not installed; install the pinned uv tool profile"
 fi
 
-bats_minimum="$(jq -r '.apt_packages[] | select(.command == "bats") | .minimum_version' \
+bats_minimum="$(jq -r '.tools.bats.minimum_version' \
   "$SCRIPT_DIR/../.config/codespace-tools.json")"
 if command -v bats &>/dev/null; then
   bats_output="$(bats --version 2>&1 || true)"
