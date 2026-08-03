@@ -156,6 +156,19 @@ assert_stopped() {
   [[ "$output" == *"verify-local: timeout values must be positive integers"* ]]
 }
 
+@test "fast verification rejects an invalid repository timeout before suites start" {
+  bats_command="touch $TEST_ROOT/bats-unexpected"
+  repo_command="touch $TEST_ROOT/repository-unexpected"
+  VERIFY_LOCAL_REPO_TIMEOUT_SECONDS=invalid
+
+  run_runner "$bats_command" "$repo_command"
+
+  [ "$status" -eq 2 ]
+  [ ! -e "$TEST_ROOT/bats-unexpected" ]
+  [ ! -e "$TEST_ROOT/repository-unexpected" ]
+  [[ "$output" == *"verify-local: timeout values must be positive integers"* ]]
+}
+
 @test "complete local verification uses the bounded twelve-worker Bats default" {
   cat >"$TEST_ROOT/bats" <<EOF
 #!/usr/bin/env bash
