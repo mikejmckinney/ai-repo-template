@@ -3,10 +3,63 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vector Siege</title>
+    <meta name="theme-color" content="#08111f" />
+    <meta
+      name="description"
+      content="Vector Siege — a precision arena survival run."
+    />
+    <title>Vector Siege // Stage 1</title>
   </head>
   <body>
-    <main id="game"></main>
+    <main id="game-shell" aria-label="Vector Siege arena">
+      <div id="game"></div>
+      <div id="accessible-ui" aria-live="polite">
+        <div id="menu-actions" class="action-stack" aria-label="Start menu">
+          <button id="start-game" class="primary-action" data-action="start" type="button">
+            INITIATE RUN <span aria-hidden="true">↗</span>
+          </button>
+          <p class="microcopy">WASD / ARROWS to move · POINTER / SPACE to fire</p>
+        </div>
+
+        <div id="run-actions" class="run-actions" aria-label="Run controls">
+          <button id="pause-game" class="hud-action" data-action="pause" type="button">
+            PAUSE
+          </button>
+          <button id="mute-game" class="hud-action" data-action="mute" type="button" aria-pressed="false">
+            AUDIO: ON
+          </button>
+          <button id="restart-running" class="hud-action" data-action="restart" type="button">
+            RESTART
+          </button>
+        </div>
+
+        <div id="pause-actions" class="pause-actions" aria-label="Paused run controls">
+          <button id="resume-game" class="primary-action" data-action="resume" type="button">
+            RESUME RUN <span aria-hidden="true">▶</span>
+          </button>
+          <button class="hud-action" data-action="mute" type="button">AUDIO: ON</button>
+        </div>
+
+        <div id="game-over-actions" class="game-over-actions" aria-label="Game over controls">
+          <button id="restart-game" class="primary-action" data-action="restart" type="button">
+            RESTART RUN <span aria-hidden="true">↻</span>
+          </button>
+          <button class="hud-action" data-action="menu" type="button">RETURN TO MENU</button>
+        </div>
+
+        <div id="audio-controls" aria-label="Audio levels">
+          <label id="volume-control" class="volume-control" for="volume-slider">
+            <span>MUSIC</span>
+            <input id="volume-slider" type="range" min="0" max="1" step="0.05" value="0.55" aria-label="Music volume" />
+          </label>
+          <label id="effects-control" class="volume-control" for="effects-slider">
+            <span>EFFECTS</span>
+            <input id="effects-slider" type="range" min="0" max="1" step="0.05" value="0.55" aria-label="Effects volume" />
+          </label>
+        </div>
+        <p id="screen-reader-status" class="sr-only">Vector Siege is ready.</p>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
