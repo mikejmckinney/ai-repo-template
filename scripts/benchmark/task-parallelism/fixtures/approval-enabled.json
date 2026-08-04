@@ -1,0 +1,16 @@
+{
+  "assets": {"manifest": "assets/manifest.json", "provenance": "repository-owned-primitives"},
+  "campaign_id": "vector-siege-phase-0a",
+  "external_operations": [],
+  "freeze_state": {
+    "benchmark_base_sha": "00345c0f2bd82b6611608e1554bcfa805dcb3bbb",
+    "ffmpeg_version": "6.1.1-3ubuntu5",
+    "json_schema_draft": "2020-12",
+    "jsonschema_version": "4.26.0",
+    "skills_lock_sha256": "08c59ac3eb740085e749bfe19803527293263342d5756eb6987616607c83757f",
+    "status": "resolved"
+  },
+  "phase": "0A",
+  "phase_0b": {"approval_source": "fixture", "status": "approved"},
+  "schema_version": "task-parallelism-campaign.v1"
+}

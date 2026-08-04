@@ -3,8 +3,10 @@
 > Durable protocol surface for the model ROI benchmark tracked in issue `#374`.
 > The benchmark-specific prompt lives at `.github/prompts/model-roi-benchmark-candidate.md`.
 > The current execution direction lives under `scripts/benchmark/`.
-> Repeatable operator steps live in [`benchmark-runbook.md`](./benchmark-runbook.md).
-> Current scored results live in [`results/agent-roi-benchmark-results.md`](./results/agent-roi-benchmark-results.md).
+> Repeatable operator steps live in the canonical
+> [`docs/guides/model-roi-benchmark-runbook.md`](../../../docs/guides/model-roi-benchmark-runbook.md).
+> Current scored results live in
+> [`docs/benchmarks/agent-roi-benchmark-results.md`](../../../docs/benchmarks/agent-roi-benchmark-results.md).
 
 ## Status
 
@@ -12,7 +14,8 @@
 - **Primary decision metric:** marginal ROI, computed as `score / marginal cost USD`.
 - **Stage 1 effort policy:** target `medium` where selectable; use platform default only where no effort control exists and record the caveat.
 - **Manual fallback:** allowed after a documented headless failure via `make worktree` followed by `make record`; direct GUI agents such as Antigravity need explicit manual-capture evidence.
-- **Phase A merge (issue #374):** **merged** (`eb8fff6`, PR #379). Harness, rubrics, runbook, and `results/agent-roi-benchmark-results.md` are on `main`. Subjective JSON fixtures live on tag `benchmark/phase-a-artifacts-20260608` and branch `benchmark/roi` (see runbook § "Branch and fixture retention"). Deferred bot-review items: [`FOLLOW_UPS.md`](./FOLLOW_UPS.md).
+- **Phase A merge (issue #374):** **merged** (`eb8fff6`, PR #379). Harness and rubrics remain in the lab; the operator guide and published results are canonical under `docs/` on `main`. Subjective JSON fixtures live on tag `benchmark/phase-a-artifacts-20260608` and branch `benchmark/roi`. Deferred bot-review items: [`FOLLOW_UPS.md`](./FOLLOW_UPS.md).
+- **Task-parallelism Phase 0A:** [`task-parallelism/README.md`](./task-parallelism/README.md) defines the deterministic no-spend preflight and explicit Phase 0B approval boundary.
 - **Follow-on prompts (same PR, run after merge):** `.github/prompts/agent-pr-prompts-combined-v2.md` (five `main` PRs), `07-implement-gemini-free-paid-routing.md` (`main`), `06-implement-class-c-framework-benchmark.md` (`benchmark/roi`).
 
 ## Companion surfaces
@@ -28,10 +31,11 @@ agent must perform, plus sealed reference metadata for evaluators.
 | `.github/prompts/model-roi-duo-planner.md` | Stage 1D planner-phase prompt; creates the plan artifact only. |
 | `.github/prompts/model-roi-duo-implementer.md` | Stage 1D implementer-phase prompt; consumes the plan artifact and produces the scored diff. |
 | `.github/prompts/model-roi-orchestration-pipeline-candidate.md` | Issue #376 pipeline prompt; enables subagents/handoffs while keeping runner-owned push/PR creation. |
-| `.context/benchmarks/model-roi/benchmark-runbook.md` | Repeatable setup, run, grading, telemetry, and known-issues procedure for future benchmark sessions. |
+| `docs/guides/model-roi-benchmark-runbook.md` | Canonical setup, synchronization, run, grading, and publication procedure. |
+| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 tracked Phase 0A campaign, schemas, exact placeholder assets, and task contract. |
 | `.context/benchmarks/model-roi/stage-1d-duo-workflow.md` | Stage 1D planner/implementer experiment protocol, candidates, cost view, and commands. |
 | `.context/benchmarks/model-roi/issue-376-orchestration-pipeline.md` | Pipeline experiment protocol, candidate set, overlay policy, and grading notes for issue #376. |
-| `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md` | Current scored benchmark record, cost source register, and ROI tables used to justify repo-local ROI/performance revisions. |
+| `docs/benchmarks/agent-roi-benchmark-results.md` | Canonical scored benchmark record, cost source register, and ROI tables. |
 | `.context/benchmarks/model-roi/tasks/` | Maintainer-authored task specs. Each file has candidate-safe task text plus sealed reference metadata. |
 | `scripts/benchmark/Makefile` | Current operator entrypoint for `base`, `run`, `suite`, `duo-run`, `duo-suite`, `worktree`, `record`, `collect`, `unseal`, and `grade-*` targets. |
 | `.context/benchmarks/model-roi/grading/` | Canonical rubric (`rubric.v1`, `rubric.pipeline.v1`), JSON schemas, task grading specs, and score-set comparability rules. |
@@ -89,7 +93,7 @@ The runner refuses to run when `TASK=<id>` does not resolve to a task file, when
 The local `scripts/benchmark/` runner is the execution base for monolithic,
 context-injected, pipeline, and duo benchmark runs. The historical results now
 cover the paid Stage 1 screen and follow-on experiments; use
-[`benchmark-runbook.md`](./benchmark-runbook.md) when repeating or extending the
+[`docs/guides/model-roi-benchmark-runbook.md`](../../../docs/guides/model-roi-benchmark-runbook.md) when repeating or extending the
 benchmark.
 
 | Protocol requirement | Prototype status in this worktree | Notes |
@@ -107,7 +111,7 @@ benchmark.
 
 The commands below reflect the current monolithic Stage 1 operator flow. For a
 full reproduction guide, including context injection, pipeline, duo, telemetry,
-and known issues, use [`benchmark-runbook.md`](./benchmark-runbook.md).
+and known issues, use [`docs/guides/model-roi-benchmark-runbook.md`](../../../docs/guides/model-roi-benchmark-runbook.md).
 
 1. Choose one committed task id, for example `opfit-281-class-a` or `opfit-326-class-b`.
 2. Create the sealed manifest by copying `scripts/benchmark/candidates.tsv.example` to `scripts/benchmark/candidates.tsv`, then edit only the sealed mapping.
@@ -252,7 +256,7 @@ make -C scripts/benchmark suite \
 Repeat with `RUN_GROUP` and `CONTEXT_VARIANT` for the Class A matrix
 (`baseline`, `pack:core-min`, `pack:class-a-process`, `full-rules-injected`)
 and Class B matrix (`baseline`, `pack:core-min`, `pack:class-b-implementation`,
-`full-rules-injected`). See [`benchmark-runbook.md`](./benchmark-runbook.md).
+`full-rules-injected`). See [`docs/guides/model-roi-benchmark-runbook.md`](../../../docs/guides/model-roi-benchmark-runbook.md).
 
 Collect per group (do **not** unseal before blind scores are locked):
 

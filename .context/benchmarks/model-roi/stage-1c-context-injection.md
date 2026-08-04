@@ -14,7 +14,7 @@ Reuse the completed Stage 1 Class A/Class B results as the baseline:
 - Class A task: `opfit-281-class-a-premerge`
 - Class B task: `opfit-326-class-b-premerge`
 - Baseline context style: existing pointer-based `AGENTS.md`
-- Baseline results: `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`
+- Baseline results: `docs/benchmarks/agent-roi-benchmark-results.md`
 
 ## Injected Variant
 

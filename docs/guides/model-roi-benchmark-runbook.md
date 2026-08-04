@@ -95,6 +95,33 @@ from `benchmark/roi` in that campaign's preparation commit.
 5. Verify requested model identifiers against observed runtime telemetry.
 6. Run the non-spending doctor gate before invoking a candidate.
 
+### Task-parallelism Phase 0A
+
+Issue #545 has a stricter argument-free readiness gate before its feasibility
+campaign. Run it only from the synchronized feature branch:
+
+```bash
+python3 -c 'import importlib.metadata as m; assert m.version("jsonschema") == "4.26.0"'
+make -C scripts/benchmark/task-parallelism assets-check
+make -C scripts/benchmark/task-parallelism preflight
+jq '{status, campaign, freeze_state, assets, isolation, phase_0b}' \
+  .artifacts/task-parallelism/preflight-report.json
+bats --tap scripts/tests/task-parallelism-preflight.bats
+```
+
+The target accepts no campaign argument and always validates tracked
+`campaign.phase-0a.json`. It requires FFmpeg `6.1.1-3ubuntu5`, JSON Schema Draft
+2020-12 through `jsonschema==4.26.0`, and `unshare -Urn`. It clears inherited
+credentials, blocks network and named child-process paths through the isolated
+launcher, validates exact tracked asset hashes, and leaves Phase 0B blocked.
+Unsupported hosts or version mismatches fail closed; preflight never installs
+packages or invokes a provider.
+
+Passing Phase 0A does not authorize candidate runs. Obtain separate explicit
+maintainer approval before the five matched randomized Stage 1 repetitions for
+each of Arms A and B. Polished media, Cloudflare, deployment, publication, A2A,
+portability, and policy changes remain behind later gates.
+
 Typical preflight:
 
 ```bash

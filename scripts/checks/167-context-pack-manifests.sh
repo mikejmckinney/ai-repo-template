@@ -79,14 +79,15 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       trap 'rm -rf "${fixture_root}"' EXIT
 
       fixture_wt="${fixture_root}/wt"
-      mkdir -p "${fixture_wt}/.context/rules" "${fixture_wt}/.context/sessions" \
-        "${fixture_root}/out"
+      mkdir -p "${fixture_wt}" "${fixture_root}/out"
       git -C "${fixture_wt}" init -q
       printf '# AGENTS\n' >"${fixture_wt}/AGENTS.md"
       printf '# CLAUDE\n' >"${fixture_wt}/CLAUDE.md"
-      cp .context/00_INDEX.md "${fixture_wt}/.context/00_INDEX.md"
-      cp .context/rules/agent_ownership.md "${fixture_wt}/.context/rules/agent_ownership.md"
-      cp .context/sessions/latest_summary.md "${fixture_wt}/.context/sessions/latest_summary.md"
+      while IFS=$'\t' read -r path _reason; do
+        [[ "${path}" =~ ^#.*$ || -z "${path}" ]] && continue
+        mkdir -p "${fixture_wt}/$(dirname "${path}")"
+        cp "${path}" "${fixture_wt}/${path}"
+      done <"${PACKS_DIR}/core-min.tsv"
       git -C "${fixture_wt}" add -A
 
       apply_context_variant "${fixture_wt}" "${fixture_root}/out" "pack:core-min"
@@ -106,14 +107,15 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       trap 'rm -rf "${fixture_root}"' EXIT
 
       fixture_wt="${fixture_root}/wt"
-      mkdir -p "${fixture_wt}/.context/rules" "${fixture_wt}/.context/sessions" \
-        "${fixture_root}/out"
+      mkdir -p "${fixture_wt}" "${fixture_root}/out"
       git -C "${fixture_wt}" init -q
       printf '# AGENTS\n' >"${fixture_wt}/AGENTS.md"
       printf '# CLAUDE\n' >"${fixture_wt}/CLAUDE.md"
-      cp .context/00_INDEX.md "${fixture_wt}/.context/00_INDEX.md"
-      cp .context/rules/agent_ownership.md "${fixture_wt}/.context/rules/agent_ownership.md"
-      cp .context/sessions/latest_summary.md "${fixture_wt}/.context/sessions/latest_summary.md"
+      while IFS=$'\t' read -r path _reason; do
+        [[ "${path}" =~ ^#.*$ || -z "${path}" ]] && continue
+        mkdir -p "${fixture_wt}/$(dirname "${path}")"
+        cp "${path}" "${fixture_wt}/${path}"
+      done <"${PACKS_DIR}/core-min.tsv"
       git -C "${fixture_wt}" add -A
 
       apply_context_variant "${fixture_wt}" "${fixture_root}/out" "pack:core-min"
