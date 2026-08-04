@@ -3,10 +3,67 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vector Siege</title>
+    <meta name="theme-color" content="#08111f" />
+    <title>Vector Siege // Stage 1</title>
   </head>
   <body>
-    <main id="game"></main>
+    <main id="game" aria-label="Vector Siege arena">
+      <div id="ui-overlay" data-screen="menu">
+        <div id="screen-title" class="visually-hidden" aria-live="polite">VECTOR SIEGE</div>
+
+        <section id="menu-panel" class="screen-panel menu-panel" aria-labelledby="menu-heading">
+          <img class="menu-logo" src="/benchmark-assets/vector-siege/visuals/logo.webp" alt="Vector Siege" />
+          <p class="eyebrow">SINGLE PLAYER // STAGE 01</p>
+          <h1 id="menu-heading">VECTOR SIEGE</h1>
+          <p class="menu-copy">Hold the line. Break the signal. Survive the next wave.</p>
+          <div class="control-grid" aria-label="Controls">
+            <span><kbd>WASD</kbd> / <kbd>ARROWS</kbd><small>MOVE</small></span>
+            <span><kbd>POINTER</kbd><small>AIM</small></span>
+            <span><kbd>CLICK</kbd> / <kbd>SPACE</kbd><small>FIRE</small></span>
+            <span><kbd>P</kbd><small>PAUSE</small></span>
+          </div>
+          <label class="seed-control" for="seed-input">MISSION SEED
+            <input id="seed-input" type="text" maxlength="32" value="stage-1" autocomplete="off" spellcheck="false" />
+          </label>
+          <button id="start-game" class="primary-button" type="button">START MISSION <span aria-hidden="true">→</span></button>
+          <div class="menu-footer"><span>BEST <strong id="high-score-value">00000</strong></span><span id="game-status-menu" aria-live="polite">READY FOR DEPLOYMENT</span></div>
+        </section>
+
+        <section id="pause-panel" class="screen-panel compact-panel" hidden aria-labelledby="pause-heading">
+          <p class="eyebrow">SIMULATION HOLD</p>
+          <h2 id="pause-heading">PAUSED</h2>
+          <p class="menu-copy">The arena is frozen. Audio is safely suspended.</p>
+          <button id="resume-game" class="primary-button" type="button">RESUME <span aria-hidden="true">→</span></button>
+          <button id="back-to-menu-pause" class="secondary-button" type="button">ABORT TO MENU</button>
+        </section>
+
+        <section id="game-over-panel" class="screen-panel compact-panel" hidden aria-labelledby="game-over-heading">
+          <p class="eyebrow danger-text">SIGNAL LOST</p>
+          <h2 id="game-over-heading">MISSION ENDED</h2>
+          <div class="results-grid" aria-label="Mission results">
+            <span>SCORE <strong id="final-score">00000</strong></span>
+            <span>WAVE <strong id="final-wave">01</strong></span>
+            <span>FINAL TICK <strong id="final-tick">0</strong></span>
+            <span>SEED <strong id="final-seed">stage-1</strong></span>
+          </div>
+          <button id="restart-game" class="primary-button" type="button">RESTART MISSION <span aria-hidden="true">↻</span></button>
+          <button id="back-to-menu-gameover" class="secondary-button" type="button">RETURN TO MENU</button>
+        </section>
+
+        <aside id="game-hud" class="dom-hud" hidden aria-label="Mission telemetry">
+          <div class="hud-metric"><span class="hud-label">SCORE</span><strong id="score-value">00000</strong></div>
+          <div class="hud-metric"><span class="hud-label">WAVE</span><strong id="wave-value">01</strong></div>
+          <div class="hud-metric"><span class="hud-label">HEALTH</span><strong id="health-value">5 / 5</strong></div>
+          <span id="game-status-hud" class="visually-hidden" aria-live="polite">SIGNAL LOCKED</span>
+        </aside>
+        <button id="pause-game" class="floating-button" type="button" hidden aria-label="Pause game">Ⅱ</button>
+        <div class="audio-controls" aria-label="Audio controls">
+          <button id="mute-toggle" class="secondary-button small-button" type="button">MUTE</button>
+          <label for="music-volume">MUSIC <input id="music-volume" type="range" min="0" max="100" value="32" /><span id="music-volume-value">32%</span></label>
+          <label for="effects-volume">FX <input id="effects-volume" type="range" min="0" max="100" value="50" /><span id="effects-volume-value">50%</span></label>
+        </div>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
