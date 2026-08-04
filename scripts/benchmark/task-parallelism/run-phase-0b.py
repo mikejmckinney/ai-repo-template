@@ -330,6 +330,27 @@ def write_failure_result(run_id: str, arm: str, wall: int, terminal_status: str,
     }
 
 
+def apply_report_telemetry(result: dict, report: dict, usage: dict, drift_count: int) -> None:
+    result.update(
+        {
+            "tokens": usage,
+            "skill_loads": report["skill_loads"],
+            "skill_context_tokens": report["skill_context_tokens"],
+            "coordination_seconds": report["coordination_seconds"],
+            "provider_wait_seconds": report["provider_wait_seconds"],
+            "rescue_events": report["rescue_events"],
+            "duplicate_or_abandoned_work": report["duplicate_or_abandoned_work"],
+            "predicted_path_drift_count": drift_count,
+            "semantic_conflicts": report["semantic_conflicts"],
+            "interface_conflicts": report["interface_conflicts"],
+            "asset_conflicts": report["asset_conflicts"],
+            "dependency_conflicts": report["dependency_conflicts"],
+            "fanout_elected": report["fanout_elected"],
+            "worker_count": report["worker_count"],
+        }
+    )
+
+
 def execute_run(run_id: str) -> int:
     state, preparation = load_state()
     if state["status"] == "base-pending" or state["candidate_base"]["sha"] is None:
@@ -435,7 +456,10 @@ def execute_run(run_id: str) -> int:
             result = write_failure_result(
                 run_id, arm, int(time.monotonic() - started), terminal_status, harness
             )
-            result["tokens"] = usage
+            if report is not None:
+                apply_report_telemetry(result, report, usage, drift_count)
+            else:
+                result["tokens"] = usage
         validate_document(result, RESULT_SCHEMA)
         subprocess.run(
             ["git", "push", "origin", f"HEAD:refs/heads/{candidate_branch}"],

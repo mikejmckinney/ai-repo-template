@@ -160,6 +160,12 @@ assignments, complete required telemetry, at least 90% harness reliability, and
 at least two Arm B fan-out elections. Confirmatory design and any polished media
 remain separately gated.
 
+The 2026-08-04 Phase 0B pilot reached a no-go: all ten assignments were terminal,
+telemetry was complete, and Arm B recorded two fan-out elections, but harness
+reliability was 81.8% across eleven retained attempts. Do not start a
+confirmatory campaign from that result. Revise and separately approve the
+feasibility harness before any rerun.
+
 Typical preflight:
 
 ```bash

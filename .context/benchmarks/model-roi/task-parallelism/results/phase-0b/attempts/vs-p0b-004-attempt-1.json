@@ -18,8 +18,8 @@
   "run_id": "vs-p0b-004",
   "schema_version": "task-parallelism-phase-0b-candidate-result.v1",
   "semantic_conflicts": 0,
-  "skill_context_tokens": 0,
-  "skill_loads": 0,
+  "skill_context_tokens": 27726,
+  "skill_loads": 7,
   "terminal_status": "candidate-failed",
   "tokens": {
     "cached_input": 10057216,

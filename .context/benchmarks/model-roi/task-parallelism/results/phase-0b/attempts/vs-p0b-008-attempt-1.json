@@ -19,7 +19,7 @@
   "schema_version": "task-parallelism-phase-0b-candidate-result.v1",
   "semantic_conflicts": 0,
   "skill_context_tokens": 0,
-  "skill_loads": 0,
+  "skill_loads": 10,
   "terminal_status": "candidate-failed",
   "tokens": {
     "cached_input": 15684864,

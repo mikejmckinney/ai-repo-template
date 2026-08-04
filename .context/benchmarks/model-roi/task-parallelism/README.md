@@ -109,3 +109,25 @@ tests, 20 for the production build, and 30 for the Playwright journey. This
 lower-bound score is not blind product-quality grading and cannot support an
 adoption claim. The evaluator installs the lockfile's Chromium build before the
 Playwright journey so browser-cache state cannot change the score.
+
+### Phase 0B Pilot Outcome
+
+The approved pilot completed all ten assignments from the frozen base. Gate 0
+is a no-go:
+
+- 10 of 10 assignments reached a terminal state and required telemetry is
+  present for every assignment.
+- 1 assignment completed, 8 were candidate failures, and 1 was a harness
+  failure under intention-to-treat scoring.
+- Arm A recorded 0 total quality points across 5 runs. Arm B recorded 100 total
+  quality points across 5 runs; its one completed candidate passed install,
+  unit, build, and parent-evaluator Playwright checks.
+- Arm B recorded 2 fan-out elections, meeting that Gate 0 threshold.
+- Harness reliability was 9 of 11 retained attempts, or 81.8%, below the 90%
+  threshold. The original schema-rejection attempt and the later timeout
+  evidence-loss failure are both retained.
+- Final assignment records total 15,289 wall-clock seconds. The original
+  18-second harness-failed attempt is additional retained attempt time.
+
+The result does not support an adoption claim or confirmatory campaign. The
+observed data instead require harness revision before another feasibility run.

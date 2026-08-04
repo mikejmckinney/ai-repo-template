@@ -100,6 +100,47 @@ PY
 	[ "${status}" -eq 0 ]
 }
 
+@test "partial candidates retain self-reported coordination telemetry" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+result = module.write_failure_result("vs-p0b-007", "B", 120, "candidate-failed", False)
+report = {
+    "skill_loads": 6,
+    "skill_context_tokens": 3900,
+    "coordination_seconds": 35,
+    "provider_wait_seconds": 31,
+    "rescue_events": 1,
+    "duplicate_or_abandoned_work": 0,
+    "semantic_conflicts": 0,
+    "interface_conflicts": 0,
+    "asset_conflicts": 0,
+    "dependency_conflicts": 0,
+    "fanout_elected": True,
+    "worker_count": 1,
+}
+module.apply_report_telemetry(
+    result,
+    report,
+    {"input": 100, "cached_input": 50, "output": 20},
+    2,
+)
+assert result["terminal_status"] == "candidate-failed"
+assert result["quality_score"] == 0
+assert result["fanout_elected"] is True
+assert result["coordination_seconds"] == 35
+assert result["provider_wait_seconds"] == 31
+assert result["skill_loads"] == 6
+assert result["predicted_path_drift_count"] == 2
+assert result["tokens"]["input"] == 100
+PY
+	[ "${status}" -eq 0 ]
+}
+
 @test "one harness retry retains the original attempt" {
 	run python3 - "${RUNNER}" <<'PY'
 import importlib.util
@@ -171,10 +212,10 @@ PY
 
 	run python3 "${RUNNER}" --validate-state
 	[ "${status}" -eq 0 ]
-	[[ "${output}" == *'execution state valid: ready; candidate processes started:'* ]]
+	[[ "${output}" == *'execution state valid:'*'candidate processes started:'* ]]
 
 	run jq -e '
-	    .status == "ready" and
+	    .status == (if (.completed_runs | length) == 10 then "completed" else "ready" end) and
 	    (.candidate_base.sha | test("^[0-9a-f]{40}$")) and
 	    .candidate_processes_started == (.attempts | length) and
 	    .retry_processes_started == 1
