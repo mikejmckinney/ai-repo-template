@@ -112,7 +112,7 @@ run_installer() {
   [ "$status" -eq 0 ]
 
   run grep -Fq \
-    'uv pip install --system --requirement scripts/benchmark/task-parallelism/requirements.txt' \
+    'uv pip install --python "$TASK_PARALLELISM_VENV/bin/python" --requirement scripts/benchmark/task-parallelism/requirements.txt' \
     "$REPO_ROOT/.github/workflows/ci-tests.yml"
   [ "$status" -eq 0 ]
 }

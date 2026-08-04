@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 REPORT_PATH="${REPO_ROOT}/.artifacts/task-parallelism/preflight-report.json"
 SAFE_PATH="/usr/local/bin:/usr/bin:/bin"
+python_bin="$(command -v python3)"
 
 if ! command -v unshare >/dev/null 2>&1; then
   echo "task-parallelism preflight: unshare is required" >&2
@@ -16,7 +17,7 @@ if ! unshare -Urn true 2>/dev/null; then
   exit 2
 fi
 
-python3 - <<'PY'
+"${python_bin}" - <<'PY'
 import importlib.metadata
 
 version = importlib.metadata.version("jsonschema")
@@ -44,4 +45,4 @@ exec env -i \
   REPORT_PATH="${REPORT_PATH}" \
   TMPDIR="${TMPDIR:-/tmp}" \
   unshare -Urn --map-root-user \
-  python3 -P "${SCRIPT_DIR}/preflight_launcher.py" "$@"
+  "${python_bin}" -P "${SCRIPT_DIR}/preflight_launcher.py" "$@"
