@@ -116,7 +116,9 @@ The approved pilot completed all ten assignments from the frozen base. Gate 0
 is a no-go:
 
 - 10 of 10 assignments reached a terminal state and required telemetry is
-  present for every assignment.
+  schema-complete for every assignment. Candidate-measured coordination
+  telemetry is retained for 8 assignments; runs 001 and 005 timed out without a
+  final self-report and therefore retain explicit zero-filled fallback fields.
 - 1 assignment completed, 8 were candidate failures, and 1 was a harness
   failure under intention-to-treat scoring.
 - Arm A recorded 0 total quality points across 5 runs. Arm B recorded 100 total
@@ -128,6 +130,9 @@ is a no-go:
   evidence-loss failure are both retained.
 - Final assignment records total 15,289 wall-clock seconds. The original
   18-second harness-failed attempt is additional retained attempt time.
+- Recomputed diffs from every published candidate branch show zero writes to
+  `.agents/`, `TASK.md`, or supplied benchmark assets, matching all tracked
+  `predicted_path_drift_count` values.
 
 The result does not support an adoption claim or confirmatory campaign. The
 observed data instead require harness revision before another feasibility run.
