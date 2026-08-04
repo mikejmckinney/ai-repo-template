@@ -326,7 +326,7 @@ EOF
     [ "$status" -eq 0 ]
   done
 
-  run grep -F "start_run\` already launches" "$skill"
+  run grep -F "If the current task prohibits subagents, do not call it" "$skill"
   [ "$status" -eq 0 ]
 }
 
