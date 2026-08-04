@@ -27,6 +27,7 @@
 .artifacts/
 .context/context-imports/
 .context/session-recovery/
+.context/benchmarks/model-roi/task-parallelism/task-parallelism-assets-*/
 scripts/benchmark/
 .env
 .env.*

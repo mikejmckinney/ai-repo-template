@@ -205,7 +205,7 @@ def main() -> int:
         ASSETS_DIR.rename(previous)
         try:
             generated.rename(ASSETS_DIR)
-        except OSError:
+        except BaseException:
             previous.rename(ASSETS_DIR)
             raise
     print(f"generated deterministic assets under {ASSETS_DIR}")

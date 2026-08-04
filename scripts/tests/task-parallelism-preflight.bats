@@ -81,6 +81,42 @@ isolation_available() {
 	run env PATH="${stub_bin}:${PATH}" python3 "${fixture_runner}/generate-placeholder-assets.py"
 	[ "${status}" -ne 0 ]
 	[ -f "${fixture_assets}/marker.txt" ]
+
+	printf '%s\n' \
+		'#!/usr/bin/env bash' \
+		'printf "ffmpeg version 0.0.0\\n"' >"${stub_bin}/ffmpeg"
+	run env PATH="${stub_bin}:${PATH}" python3 "${fixture_runner}/generate-placeholder-assets.py"
+	[ "${status}" -ne 0 ]
+	[[ "${output}" == *'ffmpeg 6.1.1-3ubuntu5 required'* ]]
+
+	run python3 - "${fixture_runner}/generate-placeholder-assets.py" <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("generate_placeholder_assets", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+module.verify_ffmpeg = lambda: None
+module.generate = lambda path: path.mkdir(parents=True)
+real_rename = Path.rename
+
+def interrupt_generated_rename(path, target):
+    if path.name == "generated":
+        raise KeyboardInterrupt
+    return real_rename(path, target)
+
+Path.rename = interrupt_generated_rename
+sys.argv = [sys.argv[1]]
+try:
+    module.main()
+except KeyboardInterrupt:
+    pass
+finally:
+    Path.rename = real_rename
+PY
+	[ "${status}" -eq 0 ]
+	[ -f "${fixture_assets}/marker.txt" ]
 }
 
 @test "argument-free preflight validates real state and keeps Phase 0B blocked" {
@@ -141,6 +177,7 @@ PY
 	if isolation_available; then
 		run "${RUNNER}/run-preflight.sh" --fixtures "${fixtures[@]}"
 	else
+		printf '# isolation unavailable; validating fixtures in-process\n' >&3
 		run env REPO_ROOT="${REPO_ROOT}" python3 - "${RUNNER}" "${fixtures[@]}" <<'PY'
 import sys
 
