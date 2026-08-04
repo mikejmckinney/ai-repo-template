@@ -60,6 +60,16 @@ else
   fail "AGENTS.md missing early draft/checkpoint durability ordering"
 fi
 
+if grep -qF 'A `defer` band or' AGENTS.md \
+  && grep -qF 'Before each push, run focused tests' AGENTS.md \
+  && grep -qF 'Do not duplicate a local suite when exact-head CI' AGENTS.md \
+  && grep -qF 'Use direct component commands for focused local verification' AI_REPO_GUIDE.md \
+  && ! grep -qF 'Ensure all tests pass locally before pushing' AGENTS.md; then
+  pass "advisory disposition and local verification remain proportional to task scope"
+else
+  fail "AGENTS.md missing advisory scope or proportional verification guidance"
+fi
+
 RECOVERY_SKILL=.agents/skills/session-recovery/SKILL.md
 if grep -qF 'active issue' "$RECOVERY_SKILL" \
   && grep -qF 'linked PR' "$RECOVERY_SKILL" \

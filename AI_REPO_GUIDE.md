@@ -39,19 +39,21 @@ scripts/archive-opencode-database.sh
 git diff --check
 ```
 
-Use `scripts/verify-local.sh` for fast local feedback. It verifies prerequisites,
-then runs `./test.sh` without a full Bats suite or the derived-repository Bats
-copy. Use `scripts/verify-local.sh --full` for the intentional complete gate: it
-runs the full Bats suite once alongside `./test.sh`; copied-repository lifecycle
-checks remain structural and never rerun Bats. Both modes print elapsed summaries
-and remove successful logs. If a suite fails, the runner retains complete logs under
+Use direct component commands for focused local verification of changed behavior
+and directly affected consumers. Use `scripts/verify-local.sh` when broader
+repository checks are warranted; it verifies prerequisites, then runs `./test.sh`
+without a full Bats suite or the derived-repository Bats copy. Use
+`scripts/verify-local.sh --full` only when the change requires a complete local
+gate or exact-head CI cannot exercise the required behavior. It runs the full
+Bats suite once alongside `./test.sh`; copied-repository lifecycle checks remain
+structural and never rerun Bats. Both modes print elapsed summaries and remove
+successful logs. If a suite fails, the runner retains complete logs under
 `.artifacts/local-verification/`.
 Override timeouts with `VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` and
 `VERIFY_LOCAL_REPO_TIMEOUT_SECONDS`; both default to 300 seconds. A timeout is a
 performance failure to investigate, not a reason to normalize a longer gate.
 `VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` applies only to `--full`. The Codespace
-toolchain supplies required GNU `timeout` and `setsid`. Direct component commands
-remain available for targeted diagnosis, not as a second completion procedure.
+toolchain supplies required GNU `timeout` and `setsid`.
 
 The canonical tool manifest pins Bats 1.12.0 with a 1.7.0 minimum contract. Its
 pinned `uv` archive installs both the `uv` and `uvx` executables. Run

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-<!-- AGENTS_MD_VERSION: 38 -->
+<!-- AGENTS_MD_VERSION: 39 -->
 
 ## Truth hierarchy
 
@@ -51,7 +51,10 @@ without waiting for advisory review.
 Before declaring implementation complete, inspect any advisory snapshot that
 has already arrived. Compare its `Head` SHA with the current PR head, treat a
 mismatch as stale evidence, and independently verify each applicable finding.
-Fix verified defects and reject unsupported findings with concise reasoning.
+Fix only verified, in-scope defects that affect issue acceptance criteria, the
+user outcome, a hard rule, security, data safety, or blocking CI. Record other
+findings as deferred or rejected with concise reasoning. A `defer` band or
+trivial fix cost is not, by itself, authorization to expand scope or modify code.
 
 Missing, stale, running, or failed advisory feedback is never a merge gate and
 does not justify waiting. Record the state and continue under the normal CI,
@@ -382,9 +385,17 @@ operational process/user-outcome claims.
 
 A green CI run with no user-outcome evidence is not ready for review.
 
-- Run the repo's verification commands (prefer those documented in AI_REPO_GUIDE.md) before declaring done.
-- Ensure all tests pass locally before pushing.
-- Check that CI pipeline is green.
+- Before each push, run focused tests covering the changed behavior and directly
+  affected consumers.
+- Run a broader local suite only when the change affects shared repository
+  infrastructure, public contracts, multiple independently tested components,
+  or consumers that cannot be bounded reliably.
+- Do not duplicate a local suite when exact-head CI runs the same relevant
+  commands with the capabilities required by the changed behavior. If CI skips
+  or cannot exercise relevant behavior, run that missing coverage in a
+  representative local environment.
+- Before declaring completion, require focused local verification, user-outcome
+  validation, and green required exact-head CI and lint checks.
 
 ## Reviews
 
