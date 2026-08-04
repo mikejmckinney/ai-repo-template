@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-preparation.v1.json",
+  "title": "Task parallelism Phase 0B preparation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "campaign_id",
+    "phase",
+    "candidate_runtime",
+    "scaffold",
+    "prompts",
+    "run_policy",
+    "gate_0",
+    "execution"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "task-parallelism-phase-0b-preparation.v1"
+    },
+    "campaign_id": {
+      "const": "vector-siege-phase-0b"
+    },
+    "phase": {
+      "const": "0B-preparation"
+    },
+    "candidate_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform",
+        "cli",
+        "model",
+        "reasoning_effort",
+        "observed_contexts",
+        "evidence",
+        "repository_config_sha256",
+        "candidate_command"
+      ],
+      "properties": {
+        "platform": { "const": "codex" },
+        "cli": { "const": "codex-cli 0.146.0" },
+        "model": { "const": "gpt-5.6-luna" },
+        "reasoning_effort": { "const": "max" },
+        "observed_contexts": { "const": 3 },
+        "evidence": { "const": "evidence/codex-luna-max-diagnostics.json" },
+        "repository_config_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "candidate_command": {
+          "type": "array",
+          "minItems": 10,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "scaffold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_status", "path", "dependencies", "files"],
+      "properties": {
+        "base_status": { "const": "creation-deferred" },
+        "path": { "const": "scaffold" },
+        "dependencies": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["node", "npm", "phaser", "vite", "typescript", "playwright", "node_types"],
+          "properties": {
+            "node": { "const": "24.14.0" },
+            "npm": { "const": "11.9.0" },
+            "phaser": { "const": "4.2.1" },
+            "vite": { "const": "8.2.0" },
+            "typescript": { "const": "7.0.2" },
+            "playwright": { "const": "1.62.1" },
+            "node_types": { "const": "26.1.2" }
+          }
+        },
+        "files": {
+          "type": "object",
+          "minProperties": 9,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["common", "arm_a", "arm_b"],
+      "properties": {
+        "common": { "$ref": "#/$defs/fileDigest" },
+        "arm_a": { "$ref": "#/$defs/fileDigest" },
+        "arm_b": { "$ref": "#/$defs/fileDigest" }
+      }
+    },
+    "run_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution", "blocks", "assignments", "retries"],
+      "properties": {
+        "execution": { "const": "sequential" },
+        "blocks": {
+          "const": ["AB", "BA", "AB", "BA", "AB"]
+        },
+        "assignments": {
+          "type": "array",
+          "minItems": 10,
+          "maxItems": 10,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["run_id", "block", "position", "arm"],
+            "properties": {
+              "run_id": { "type": "string", "pattern": "^vs-p0b-[0-9]{3}$" },
+              "block": { "type": "integer", "minimum": 1, "maximum": 5 },
+              "position": { "type": "integer", "minimum": 1, "maximum": 2 },
+              "arm": { "enum": ["A", "B"] }
+            }
+          }
+        },
+        "retries": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidate_defect", "provider_transient", "verified_harness_failure"],
+          "properties": {
+            "candidate_defect": { "const": 0 },
+            "provider_transient": { "const": 1 },
+            "verified_harness_failure": { "const": 1 }
+          }
+        }
+      }
+    },
+    "gate_0": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "terminal_runs",
+        "required_telemetry_fraction",
+        "harness_reliability_fraction",
+        "arm_b_fanout_elections"
+      ],
+      "properties": {
+        "terminal_runs": { "const": 10 },
+        "required_telemetry_fraction": { "const": 1.0 },
+        "harness_reliability_fraction": { "const": 0.9 },
+        "arm_b_fanout_elections": { "const": 2 }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "approval_source", "candidate_processes_started"],
+      "properties": {
+        "status": { "const": "blocked" },
+        "approval_source": { "type": "null" },
+        "candidate_processes_started": { "const": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "fileDigest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    }
+  }
+}

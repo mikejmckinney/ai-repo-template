@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-candidate-result.v1.json",
+  "title": "Task parallelism Phase 0B candidate result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "arm",
+    "terminal_status",
+    "quality_score",
+    "model_cost_usd",
+    "wall_clock_seconds",
+    "human_intervention_minutes",
+    "infrastructure_cost_usd",
+    "tokens",
+    "skill_loads",
+    "skill_context_tokens",
+    "coordination_seconds",
+    "provider_wait_seconds",
+    "rescue_events",
+    "duplicate_or_abandoned_work",
+    "predicted_path_drift_count",
+    "semantic_conflicts",
+    "interface_conflicts",
+    "asset_conflicts",
+    "dependency_conflicts",
+    "merge_conflicts",
+    "fanout_elected",
+    "worker_count",
+    "harness_failure"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-candidate-result.v1" },
+    "run_id": { "type": "string", "pattern": "^vs-p0b-[0-9]{3}$" },
+    "arm": { "enum": ["A", "B"] },
+    "terminal_status": { "enum": ["completed", "candidate-failed", "provider-failed", "harness-failed"] },
+    "quality_score": { "type": "number", "minimum": 0 },
+    "wall_clock_seconds": { "type": "integer", "minimum": 0 },
+    "human_intervention_minutes": { "type": "number", "minimum": 0 },
+    "infrastructure_cost_usd": { "type": "number", "minimum": 0 },
+    "model_cost_usd": { "type": ["number", "null"], "minimum": 0 },
+    "tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "cached_input", "output"],
+      "properties": {
+        "input": { "type": "integer", "minimum": 0 },
+        "cached_input": { "type": "integer", "minimum": 0 },
+        "output": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "skill_loads": { "type": "integer", "minimum": 0 },
+    "skill_context_tokens": { "type": "integer", "minimum": 0 },
+    "coordination_seconds": { "type": "integer", "minimum": 0 },
+    "provider_wait_seconds": { "type": "integer", "minimum": 0 },
+    "rescue_events": { "type": "integer", "minimum": 0 },
+    "duplicate_or_abandoned_work": { "type": "integer", "minimum": 0 },
+    "predicted_path_drift_count": { "type": "integer", "minimum": 0 },
+    "semantic_conflicts": { "type": "integer", "minimum": 0 },
+    "interface_conflicts": { "type": "integer", "minimum": 0 },
+    "asset_conflicts": { "type": "integer", "minimum": 0 },
+    "dependency_conflicts": { "type": "integer", "minimum": 0 },
+    "merge_conflicts": { "type": "integer", "minimum": 0 },
+    "fanout_elected": { "type": "boolean" },
+    "worker_count": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "harness_failure": { "type": "boolean" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "terminal_status": { "not": { "const": "completed" } } },
+        "required": ["terminal_status"]
+      },
+      "then": { "properties": { "quality_score": { "const": 0 } } }
+    },
+    {
+      "if": {
+        "properties": { "arm": { "const": "A" } },
+        "required": ["arm"]
+      },
+      "then": {
+        "properties": {
+          "fanout_elected": { "const": false },
+          "worker_count": { "const": 1 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "fanout_elected": { "const": false } },
+        "required": ["fanout_elected"]
+      },
+      "then": { "properties": { "worker_count": { "const": 1 } } }
+    }
+  ]
+}

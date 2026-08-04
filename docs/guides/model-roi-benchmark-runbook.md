@@ -122,6 +122,40 @@ maintainer approval before the five matched randomized Stage 1 repetitions for
 each of Arms A and B. Polished media, Cloudflare, deployment, publication, A2A,
 portability, and policy changes remain behind later gates.
 
+### Task-parallelism Phase 0B preparation
+
+Harness preparation remains non-executing. Validate the tracked freeze and emit
+the reviewable plan:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-validate
+make -C scripts/benchmark/task-parallelism phase-0b-plan
+jq '{execution_status, candidate_processes_started, assignments, gate_0}' \
+  .artifacts/task-parallelism/phase-0b-run-plan.json
+bats --tap scripts/tests/task-parallelism-phase-0b.bats
+```
+
+The preparation contract freezes Codex `gpt-5.6-luna` at observed `max` effort,
+the exact scaffold lock and file hashes, arm-specific prompts, five
+counterbalanced `AB`/`BA` blocks, sequential execution, and bounded retries. The
+rendered plan must report `execution_status: blocked` and
+`candidate_processes_started: 0`.
+
+Before later execution approval, create the candidate base from the tracked
+scaffold and replace `base_status: creation-deferred` with its exact branch and
+commit. Candidate execution is not authorized by preparation or plan rendering.
+When pilot results exist, evaluate Gate 0 with:
+
+```bash
+python3 scripts/benchmark/task-parallelism/prepare-phase-0b.py \
+  --evaluate-gate <phase-0b-pilot-summary.json>
+```
+
+Gate 0 is a feasibility gate, not an adoption claim. It requires ten terminal
+assignments, complete required telemetry, at least 90% harness reliability, and
+at least two Arm B fan-out elections. Confirmatory design and any polished media
+remain separately gated.
+
 Typical preflight:
 
 ```bash

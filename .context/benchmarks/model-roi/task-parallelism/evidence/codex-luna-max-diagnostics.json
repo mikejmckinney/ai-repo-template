@@ -1,0 +1,25 @@
+{
+  "schema_version": "task-parallelism-runtime-evidence.v1",
+  "observed_at": "2026-08-04",
+  "cli": "codex-cli 0.146.0",
+  "contexts": [
+    {
+      "thread_id": "019fcd86-f928-7532-a7ba-8028ba12a612",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max",
+      "status": "completed"
+    },
+    {
+      "thread_id": "019fcd8a-27ef-7a63-8ea3-16641a3316e1",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max",
+      "status": "completed"
+    },
+    {
+      "thread_id": "019fcd8a-7716-75c3-b337-bc2167acfb31",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "max",
+      "status": "completed"
+    }
+  ]
+}
