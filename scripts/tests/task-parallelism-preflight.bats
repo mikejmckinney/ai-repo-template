@@ -60,6 +60,21 @@ isolation_available() {
 	[ "${status}" -eq 0 ]
 	[[ "${output}" == *'asset bundle is byte-stable'* ]]
 
+	run python3 - "${RUNNER}/generate-placeholder-assets.py" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("generate_placeholder_assets", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+print(module.TEMP_PREFIX)
+PY
+	[ "${status}" -eq 0 ]
+	temp_prefix="${output}"
+	run git -C "${REPO_ROOT}" check-ignore -q \
+		".context/benchmarks/model-roi/task-parallelism/${temp_prefix}probe/"
+	[ "${status}" -eq 0 ]
+
 	fixture_repo="${BATS_TEST_TMPDIR}/repo"
 	fixture_runner="${fixture_repo}/scripts/benchmark/task-parallelism"
 	fixture_assets="${fixture_repo}/.context/benchmarks/model-roi/task-parallelism/assets"
@@ -141,6 +156,7 @@ PY
 		make -C "${RUNNER}" preflight
 
 	if ! isolation_available; then
+		printf '# isolation unavailable; validating fail-closed path only\n' >&3
 		[ "${status}" -eq 2 ]
 		[[ "${output}" == *'unshare -Urn is unavailable'* ]]
 		[ ! -e "${REPORT}" ]

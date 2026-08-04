@@ -16,6 +16,7 @@ PROTOCOL_DIR = REPO_ROOT / ".context/benchmarks/model-roi/task-parallelism"
 ASSETS_DIR = PROTOCOL_DIR / "assets"
 PRIMITIVES_PATH = ASSETS_DIR / "source/primitives.json"
 FFMPEG_VERSION = "6.1.1-3ubuntu5"
+TEMP_PREFIX = "task-parallelism-assets-"
 
 
 def canonical_json(value: object) -> bytes:
@@ -197,7 +198,7 @@ def main() -> int:
         print("asset bundle is byte-stable")
         return 0
 
-    with tempfile.TemporaryDirectory(prefix="task-parallelism-assets-", dir=PROTOCOL_DIR) as temp:
+    with tempfile.TemporaryDirectory(prefix=TEMP_PREFIX, dir=PROTOCOL_DIR) as temp:
         temp_root = Path(temp)
         generated = temp_root / "generated"
         previous = temp_root / "previous"
