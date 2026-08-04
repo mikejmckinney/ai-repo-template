@@ -7,7 +7,97 @@ setup() {
 	STATE="${PROTOCOL}/campaign.phase-0b.execution.json"
 }
 
-@test "approved execution state remains unable to start before base freeze" {
+@test "candidate report schema stays within the Codex response-schema subset" {
+	run jq -e '[.. | objects | select(has("allOf"))] | length == 0' \
+		"${PROTOCOL}/phase-0b-candidate-report.schema.json"
+	[ "${status}" -eq 0 ]
+}
+
+@test "Codex schema rejection is a retryable harness failure" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import json
+import sys
+import tempfile
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+with tempfile.TemporaryDirectory() as directory:
+    jsonl = Path(directory) / "agent-output.jsonl"
+    jsonl.write_text(json.dumps({
+        "type": "error",
+        "message": "invalid_json_schema: 'allOf' is not permitted",
+    }) + "\n")
+    assert module.classify_failure(1, jsonl) == ("harness-failed", True, True)
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "one harness retry retains the original attempt" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+state = {
+    "retry_processes_started": 0,
+    "attempts": [{
+        "attempt_id": "vs-p0b-001-attempt-1",
+        "run_id": "vs-p0b-001",
+        "attempt_number": 1,
+        "terminal_status": "harness-failed",
+        "retry_eligible": True,
+        "result_path": "results/phase-0b/attempts/vs-p0b-001-attempt-1.json",
+    }],
+}
+attempt = module.plan_attempt(state, "vs-p0b-001")
+assert attempt == {
+    "attempt_id": "vs-p0b-001-attempt-2",
+    "attempt_number": 2,
+    "is_retry": True,
+}
+state["retry_processes_started"] = 1
+try:
+    module.plan_attempt(state, "vs-p0b-001")
+except ValueError as error:
+    assert "retry budget" in str(error)
+else:
+    raise AssertionError("second retry was permitted")
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "candidate environment excludes inherited credentials" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+environment = module.candidate_environment({
+    "HOME": "/home/test",
+    "PATH": "/usr/bin",
+    "LANG": "C.UTF-8",
+    "GH_TOKEN": "secret",
+    "GITHUB_TOKEN": "secret",
+    "OPENAI_API_KEY": "secret",
+})
+assert environment["HOME"] == "/home/test"
+assert environment["PATH"] == "/usr/bin"
+assert environment["LANG"] == "C.UTF-8"
+assert "GH_TOKEN" not in environment
+assert "GITHUB_TOKEN" not in environment
+assert "OPENAI_API_KEY" not in environment
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "approved execution state validates the frozen candidate base" {
 	[ -f "${PROTOCOL}/phase-0b-execution.schema.json" ]
 	[ -f "${PROTOCOL}/phase-0b-candidate-report.schema.json" ]
 	[ -f "${PROTOCOL}/candidate-base.gitignore" ]
@@ -16,17 +106,12 @@ setup() {
 
 	run python3 "${RUNNER}" --validate-state
 	[ "${status}" -eq 0 ]
-	[[ "${output}" == *'authorized; candidate base pending; candidate processes started: 0'* ]]
-
-	run python3 "${RUNNER}" --run-id vs-p0b-001
-	[ "${status}" -eq 2 ]
-	[[ "${output}" == *'candidate base is not frozen'* ]]
+	[[ "${output}" == *'execution state valid: ready; candidate processes started: 1'* ]]
 
 	run jq -e '
-	    .status == "base-pending" and
-	    .candidate_base.sha == null and
-	    .candidate_processes_started == 0 and
-	    .completed_runs == []
+	    .status == "ready" and
+	    (.candidate_base.sha | test("^[0-9a-f]{40}$")) and
+	    .candidate_processes_started == 1
 	  ' "${STATE}"
 	[ "${status}" -eq 0 ]
 }
@@ -82,6 +167,23 @@ PY
 	    .required_telemetry_fraction == 1 and
 	    .harness_reliability_fraction == 1 and
 	    .arm_b_fanout_elections == 2
+	  ' "${summary}"
+	[ "${status}" -eq 0 ]
+}
+
+@test "pilot summary diagnoses invalid result documents" {
+	results="${BATS_TEST_TMPDIR}/invalid-results"
+	summary="${BATS_TEST_TMPDIR}/invalid-summary.json"
+	mkdir -p "${results}"
+	printf '%s\n' '{"schema_version":"wrong"}' >"${results}/vs-p0b-001.json"
+
+	run python3 "${RUNNER}" --summarize "${results}" --output "${summary}"
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *'rejected result vs-p0b-001.json:'* ]]
+	run jq -e '
+	    .terminal_runs == 0 and
+	    .required_telemetry_fraction == 0 and
+	    .harness_reliability_fraction == 0
 	  ' "${summary}"
 	[ "${status}" -eq 0 ]
 }

@@ -144,6 +144,10 @@ rendered plan must report `execution_status: blocked` and
 Before later execution approval, create the candidate base from the tracked
 scaffold and replace `base_status: creation-deferred` with its exact branch and
 commit. Candidate execution is not authorized by preparation or plan rendering.
+During an approved run, retain every attempt separately. Candidate defects are
+terminal without retry; one verified provider or harness failure may consume the
+single bounded retry, and its original elapsed time and telemetry remain part of
+harness-reliability evidence.
 When pilot results exist, evaluate Gate 0 with:
 
 ```bash

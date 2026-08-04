@@ -35,11 +35,5 @@
     "interface_conflicts": { "type": "integer", "minimum": 0 },
     "asset_conflicts": { "type": "integer", "minimum": 0 },
     "dependency_conflicts": { "type": "integer", "minimum": 0 }
-  },
-  "allOf": [
-    {
-      "if": { "properties": { "fanout_elected": { "const": false } } },
-      "then": { "properties": { "worker_count": { "const": 1 } } }
-    }
-  ]
+  }
 }

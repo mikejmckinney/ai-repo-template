@@ -88,10 +88,13 @@ python3 scripts/benchmark/task-parallelism/run-phase-0b.py \
   --run-id vs-p0b-001
 ```
 
-The runner enforces frozen-base remote identity, sequential assignment order,
-the exact Luna/max command, candidate push isolation, schema-backed self-report
-and result telemetry, and one remote evidence branch per candidate. The runner
-does not retry. After all ten terminal results exist, derive the Gate 0 input:
+The runner enforces frozen-base and task-blob identity, sequential assignment
+order, the exact Luna/max command, a credential-stripped candidate environment,
+schema-backed self-report and result telemetry, and one remote evidence branch
+per attempt. Candidate defects receive no retry. One verified provider or
+harness failure may consume the campaign's single retry; the original attempt,
+elapsed time, and telemetry remain under `results/phase-0b/attempts/`. After all
+ten assignments have terminal results, derive the Gate 0 input:
 
 ```bash
 make -C scripts/benchmark/task-parallelism phase-0b-summary
@@ -104,4 +107,5 @@ The preregistered objective feasibility score awards 10 points for a completed
 Codex turn, 10 for produced work, 10 for dependency installation, 20 for unit
 tests, 20 for the production build, and 30 for the Playwright journey. This
 lower-bound score is not blind product-quality grading and cannot support an
-adoption claim.
+adoption claim. The evaluator installs the lockfile's Chromium build before the
+Playwright journey so browser-cache state cannot change the score.

@@ -1,0 +1,31 @@
+{
+  "arm": "A",
+  "asset_conflicts": 0,
+  "coordination_seconds": 0,
+  "dependency_conflicts": 0,
+  "duplicate_or_abandoned_work": 0,
+  "fanout_elected": false,
+  "harness_failure": true,
+  "human_intervention_minutes": 0,
+  "infrastructure_cost_usd": 0,
+  "interface_conflicts": 0,
+  "merge_conflicts": 0,
+  "model_cost_usd": null,
+  "predicted_path_drift_count": 0,
+  "provider_wait_seconds": 0,
+  "quality_score": 0,
+  "rescue_events": 0,
+  "run_id": "vs-p0b-001",
+  "schema_version": "task-parallelism-phase-0b-candidate-result.v1",
+  "semantic_conflicts": 0,
+  "skill_context_tokens": 0,
+  "skill_loads": 0,
+  "terminal_status": "harness-failed",
+  "tokens": {
+    "cached_input": 0,
+    "input": 0,
+    "output": 0
+  },
+  "wall_clock_seconds": 18,
+  "worker_count": 1
+}
