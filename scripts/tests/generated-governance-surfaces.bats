@@ -94,7 +94,8 @@ teardown() {
   grep -Fq "current issue and PR design contract" "$REPO_ROOT/AGENTS.md"
 }
 
-@test "command guide makes concurrent verification canonical" {
+@test "command guide distinguishes focused and broader verification" {
   grep -Fq "scripts/verify-local.sh" "$REPO_ROOT/AI_REPO_GUIDE.md"
-  grep -Fq "targeted diagnosis" "$REPO_ROOT/AI_REPO_GUIDE.md"
+  grep -Fq "direct component commands for focused local verification" "$REPO_ROOT/AI_REPO_GUIDE.md"
+  grep -Fq 'scripts/verify-local.sh --full` only when' "$REPO_ROOT/AI_REPO_GUIDE.md"
 }
