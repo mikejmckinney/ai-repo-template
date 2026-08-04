@@ -22,7 +22,7 @@
 #   <responses-dir>/ctx-b-core-min/eval-001.json
 #   ...
 #
-# See: .context/benchmarks/model-roi/benchmark-runbook.md § "Regrade Stage 1E (CP-1)"
+# See: docs/guides/model-roi-benchmark-runbook.md § "Regrade Stage 1E (CP-1)"
 
 set -euo pipefail
 
@@ -32,7 +32,7 @@ cd "${REPO_ROOT}"
 SCORE_SET_PREFIX="${SCORE_SET_PREFIX:-stage-1e-canonical-v1}"
 MAKE="make -C scripts/benchmark"
 
-# run_group:task pairs (order matches CP-1 matrix in benchmark-runbook.md)
+# run_group:task pairs (order matches CP-1 matrix in docs/guides/model-roi-benchmark-runbook.md)
 STAGE_1E_GROUPS=(
   "ctx-a-baseline:opfit-281-class-a-premerge"
   "ctx-a-core-min:opfit-281-class-a-premerge"

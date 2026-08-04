@@ -61,12 +61,9 @@ def main() -> int:
 
         return run_fixture_suite(sys.argv[2:])
 
-    fixture = None
-    if len(sys.argv) == 3 and sys.argv[1] == "--fixture":
-        fixture = sys.argv[2]
-    elif len(sys.argv) != 1:
-        raise SystemExit("usage: run-preflight.sh [--fixture PATH | --fixtures PATH ...]")
-    return run_preflight(fixture)
+    if len(sys.argv) != 1:
+        raise SystemExit("usage: run-preflight.sh [--fixtures PATH ...]")
+    return run_preflight(audit_hook_active=True)
 
 
 if __name__ == "__main__":

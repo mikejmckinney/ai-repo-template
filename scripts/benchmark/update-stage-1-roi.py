@@ -11,7 +11,7 @@ from canonical_scores_lib import lookup_marginal_score  # noqa: E402
 from roi_format_lib import fmt_roi, parse_cost, parse_row  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-RESULTS = REPO / ".context/benchmarks/model-roi/results/agent-roi-benchmark-results.md"
+RESULTS = REPO / "docs/benchmarks/agent-roi-benchmark-results.md"
 
 MARGINAL_HEADER = (
     "| Alias | Platform/model | Legacy /100 | Canonical /100 | Objective | Subjective "

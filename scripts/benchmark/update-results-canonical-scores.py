@@ -42,7 +42,7 @@ STAGE_GRADER_NOTES = {
 from roi_format_lib import parse_pipeline_tail, parse_row  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
-RESULTS = REPO / ".context/benchmarks/model-roi/results/agent-roi-benchmark-results.md"
+RESULTS = REPO / "docs/benchmarks/agent-roi-benchmark-results.md"
 
 VARIANT_TO_GROUP_A = {
     "baseline": "ctx-a-baseline",

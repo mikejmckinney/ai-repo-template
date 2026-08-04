@@ -41,7 +41,7 @@ agent must perform, plus sealed reference metadata for evaluators.
 | `.context/benchmarks/model-roi/grading/` | Canonical rubric (`rubric.v1`, `rubric.pipeline.v1`), JSON schemas, task grading specs, and score-set comparability rules. |
 | `scripts/benchmark/regrade-stage.sh` | Unified canonical regrade driver for stages `1`, `1c`, `1d`, `pipeline`, `1e` (`prepare`, `grade`, `record`, `compile`, `status`). |
 | `scripts/benchmark/llm_grade_subjective.py` | True LLM blind grader: feeds each bundle's `subjective-prompt.md` to Cursor agent (`model-roi-grader-v1`). |
-| `scripts/benchmark/update-benchmark-results.py` | Sync `results/agent-roi-benchmark-results.md` (`scores`, `roi`, `sort`, `all`). |
+| `scripts/benchmark/update-benchmark-results.py` | Sync `docs/benchmarks/agent-roi-benchmark-results.md` (`scores`, `roi`, `sort`, `all`). |
 | `scripts/benchmark/stage-llm-responses-v1/` | Recorded subjective JSON for `cursor-llm-blind-v1` regrades (Stage 1C / 1D / pipeline). **Gitignored on `main`** — restore from tag `benchmark/phase-a-artifacts-20260608` or `benchmark/roi`. |
 | `scripts/benchmark/stage-1-llm-responses-v1/` | Stage 1 monolithic LLM responses (separate dir — shares task ids with 1D). Same retention as above. |
 | `scripts/benchmark/stage-1e-llm-responses-v1/` | Stage 1E CP-1 LLM responses (`cursor-llm-blind-v1`, one JSON per run_group/eval). Same retention as above. |

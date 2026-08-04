@@ -197,7 +197,7 @@ grade-adjudicate:
 	  --bundle-root "$(HERE)grade-bundles/$(TASK)/$(SCORE_SET)" \
 	  $(if $(COMPARE_REPORT),--compare-report "$(COMPARE_REPORT)",)
 
-# Stage 1E CP-1 canonical regrade (see regrade-stage-1e.sh and benchmark-runbook.md)
+# Stage 1E CP-1 canonical regrade (see regrade-stage-1e.sh and docs/guides/model-roi-benchmark-runbook.md)
 # Examples:
 #   make -C scripts/benchmark regrade-stage-1e ARGS="prepare"
 #   make -C scripts/benchmark regrade-stage-1e ARGS="status"

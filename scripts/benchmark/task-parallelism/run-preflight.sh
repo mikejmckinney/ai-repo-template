@@ -31,12 +31,14 @@ if [[ "${ffmpeg_version}" != "6.1.1-3ubuntu5" ]]; then
 fi
 
 mkdir -p "$(dirname "${REPORT_PATH}")"
+parent_net_namespace="$(readlink /proc/self/ns/net)"
 
 exec env -i \
   HOME="${HOME}" \
   LANG=C.UTF-8 \
   LC_ALL=C.UTF-8 \
   PATH="${SAFE_PATH}" \
+  PARENT_NET_NAMESPACE="${parent_net_namespace}" \
   PYTHONDONTWRITEBYTECODE=1 \
   REPO_ROOT="${REPO_ROOT}" \
   REPORT_PATH="${REPORT_PATH}" \

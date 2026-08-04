@@ -27,6 +27,10 @@ setup() {
 	[ "${status}" -eq 0 ]
 	[[ "${output}" == *'Draft 2020-12'* ]]
 	[[ "${output}" == *'jsonschema 4.26.0'* ]]
+
+	run python3 "${RUNNER}/preflight.py" --validate-structure
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *'Draft 2020-12 campaign and asset schemas structurally valid'* ]]
 }
 
 @test "placeholder assets reproduce byte-for-byte" {
@@ -41,7 +45,6 @@ setup() {
 	run env \
 		OPENAI_API_KEY='fixture-openai-secret' \
 		CLOUDFLARE_API_TOKEN='fixture-cloudflare-secret' \
-		CAMPAIGN="${RUNNER}/fixtures/unresolved-freeze.json" \
 		make -C "${RUNNER}" preflight
 
 	[ "${status}" -eq 0 ]
@@ -49,6 +52,8 @@ setup() {
 	run jq -e '
     .status == "pass" and
     .campaign == "vector-siege-phase-0a" and
+    .campaign_source == ".context/benchmarks/model-roi/task-parallelism/campaign.phase-0a.json" and
+    (.campaign_sha256 | test("^[0-9a-f]{64}$")) and
     .freeze_state == "resolved" and
     .assets.status == "pass" and
     .isolation.network_namespace == "active" and
@@ -61,6 +66,18 @@ setup() {
 }
 
 @test "negative campaign fixtures fail closed with redacted reasons" {
+	fixture="${BATS_TEST_TMPDIR}/passing-campaign.json"
+	fixture_report="${BATS_TEST_TMPDIR}/preflight-report.json"
+	cp "${PROTOCOL}/campaign.phase-0a.json" "${fixture}"
+
+	run env \
+		REPO_ROOT="${REPO_ROOT}" \
+		REPORT_PATH="${fixture_report}" \
+		python3 "${RUNNER}/preflight_launcher.py" --fixture "${fixture}"
+	[ "${status}" -ne 0 ]
+	[[ "${output}" == *'usage: run-preflight.sh [--fixtures PATH ...]'* ]]
+	[ ! -e "${fixture_report}" ]
+
 	fixtures=(
 		"${RUNNER}/fixtures/unresolved-freeze.json"
 		"${RUNNER}/fixtures/approval-enabled.json"
