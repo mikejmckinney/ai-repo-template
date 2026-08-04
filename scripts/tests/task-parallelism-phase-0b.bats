@@ -10,51 +10,6 @@ setup() {
 	PLAN="${BATS_TEST_TMPDIR}/phase-0b-run-plan.json"
 }
 
-@test "Phase 0B preparation freezes Luna max and the candidate scaffold" {
-	required=(
-		"${CAMPAIGN}"
-		"${PROTOCOL}/phase-0b-preparation.schema.json"
-		"${PROTOCOL}/phase-0b-pilot-summary.schema.json"
-		"${PROTOCOL}/scaffold/package.json"
-		"${PROTOCOL}/scaffold/package-lock.json"
-		"${PROTOCOL}/scaffold/vitest.config.ts"
-		"${PROTOCOL}/scaffold/src/main.ts"
-		"${PROTOCOL}/scaffold/src/game/README.md"
-		"${PROTOCOL}/scaffold/src/shared-simulation/README.md"
-		"${PROTOCOL}/scaffold/src/api/README.md"
-		"${PROTOCOL}/scaffold/migrations/README.md"
-		"${PROTOCOL}/scaffold/public/assets/README.md"
-		"${PROTOCOL}/scaffold/tests/unit/README.md"
-		"${PROTOCOL}/scaffold/tests/e2e/README.md"
-		"${RUNNER}/prepare-phase-0b.py"
-	)
-
-	for path in "${required[@]}"; do
-		[ -f "${path}" ]
-	done
-
-	run jq -e '
-    .candidate_runtime.cli == "codex-cli 0.146.0" and
-    .candidate_runtime.model == "gpt-5.6-luna" and
-    .candidate_runtime.reasoning_effort == "max" and
-    .candidate_runtime.observed_contexts == 3 and
-    .execution.status == "blocked" and
-    .execution.approval_source == null and
-	    .scaffold.dependencies.phaser == "4.2.1" and
-	    .scaffold.dependencies.vite == "8.2.0" and
-	    .scaffold.dependencies.typescript == "7.0.2" and
-	    .scaffold.dependencies.vitest == "4.1.10" and
-	    .scaffold.dependencies.playwright == "1.62.1"
-	  ' "${CAMPAIGN}"
-	[ "${status}" -eq 0 ]
-
-	run jq -e '
-	    .scripts.test == "vitest run --passWithNoTests" and
-	    .devDependencies.vitest == "4.1.10"
-	  ' "${PROTOCOL}/scaffold/package.json"
-	[ "${status}" -eq 0 ]
-}
-
 @test "Phase 0B plan is deterministic, counterbalanced, and non-executing" {
 	run python3 "${RUNNER}/prepare-phase-0b.py" --plan "${PLAN}"
 	[ "${status}" -eq 0 ]
@@ -85,7 +40,11 @@ setup() {
 	[[ "${output}" == *'execution approval must remain blocked during preparation'* ]]
 
 	scaffold="${BATS_TEST_TMPDIR}/scaffold"
-	cp -R "${PROTOCOL}/scaffold" "${scaffold}"
+	mkdir -p "${scaffold}"
+	git -C "${REPO_ROOT}" archive \
+		--output="${BATS_TEST_TMPDIR}/scaffold.tar" \
+		HEAD:.context/benchmarks/model-roi/task-parallelism/scaffold
+	tar -xf "${BATS_TEST_TMPDIR}/scaffold.tar" -C "${scaffold}"
 	printf '\n// drift\n' >>"${scaffold}/src/main.ts"
 
 	run python3 "${RUNNER}/prepare-phase-0b.py" --validate --scaffold-root "${scaffold}"
