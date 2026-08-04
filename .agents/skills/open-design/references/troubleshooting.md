@@ -63,3 +63,28 @@ pnpm tools-dev logs web
 If MCP tools remain unavailable after the daemon is healthy, rerun the
 bootstrap's MCP dry-run, review the target client configuration, apply it if
 needed, and restart OpenCode.
+
+The repository launcher writes auto-start failures to
+`${XDG_RUNTIME_DIR:-/tmp}/ai-repo-open-design/daemon.log`.
+
+## Version mismatch
+
+The bootstrap requires Node 24 and pnpm 10.33.2 because those are the engines
+declared by the pinned Open Design release. In a Codespace, rerun
+`scripts/install-codespace-tools.sh --profile core` for those prerequisites, or
+`scripts/install-codespace-tools.sh --profile media` when FFmpeg is missing. Do
+not bypass the version check with a newer pnpm major.
+
+## HyperFrames browser or render failure
+
+Run these from the repository root:
+
+```bash
+bash scripts/hyperframes.sh doctor
+bash scripts/hyperframes.sh browser ensure
+```
+
+The wrapper sets `HYPERFRAMES_SKIP_SKILLS=1`; removing it lets `init` write
+mutable global skill copies outside the repository lock. In a low shared-memory
+Codespace, keep HyperFrames automatic low-memory rendering enabled rather than
+forcing additional browser workers.

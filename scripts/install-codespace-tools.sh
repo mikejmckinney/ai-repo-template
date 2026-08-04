@@ -229,7 +229,11 @@ install_open_design() {
   bootstrap="$REPO_ROOT/$(jq -r --arg name "$name" '.tools[$name].bootstrap' "$MANIFEST")"
   source_root="${OPEN_DESIGN_HOME:-$HOME/.local/share/open-design}"
   cli="$source_root/apps/daemon/bin/od.mjs"
-  if [[ -x "$cli" || -f "$cli" ]] \
+  if { [[ -x "$cli" ]] || [[ -f "$cli" ]]; } \
+    && [[ -f "$source_root/apps/web/package.json" ]] \
+    && [[ -d "$source_root/design-systems" ]] \
+    && [[ -d "$source_root/design-templates/hyperframes" ]] \
+    && [[ -d "$source_root/skills" ]] \
     && [[ "$(git -C "$source_root" rev-parse HEAD 2>/dev/null || true)" == "$commit" ]]; then
     printf 'codespace-tools: open-design %s already installed\n' "$commit"
     return
@@ -305,6 +309,27 @@ install_apt_packages() {
   fi
 }
 
+install_apt_tool() {
+  local name="$1" command_name package
+  command_name="$(jq -r --arg name "$name" '.tools[$name].command' "$MANIFEST")"
+  if command -v "$command_name" >/dev/null 2>&1; then
+    printf 'codespace-tools: %s already installed\n' "$name"
+    return
+  fi
+  [[ "$VERIFY_ONLY" == false ]] || die "$name is missing"
+  package="$(jq -r --arg name "$name" '.tools[$name].package' "$MANIFEST")"
+  command -v apt-get >/dev/null 2>&1 || die "apt-get is required to install: $package"
+  if [[ "$(id -u)" == 0 ]]; then
+    apt_update
+    apt-get install -y "$package"
+  elif command -v sudo >/dev/null 2>&1; then
+    apt_update sudo
+    sudo apt-get install -y "$package"
+  else
+    die "root or sudo is required to install: $package"
+  fi
+}
+
 install_apt_packages
 for command_name in $(jq -r '.required_commands[]' "$MANIFEST"); do
   command -v "$command_name" >/dev/null 2>&1 || die "required base command is missing: $command_name"
@@ -316,6 +341,7 @@ mapfile -t selected_tools < <(jq -r --arg profile "$PROFILE" \
 for name in "${selected_tools[@]}"; do
   type="$(jq -r --arg name "$name" '.tools[$name].type' "$MANIFEST")"
   case "$type" in
+    apt) install_apt_tool "$name" ;;
     binary) install_binary "$name" ;;
     archive) install_archive "$name" ;;
     npm) install_npm "$name" ;;

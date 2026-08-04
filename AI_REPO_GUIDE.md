@@ -22,6 +22,8 @@ scripts/verify-local.sh --full
 ./test.sh
 bats --jobs 12 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
+scripts/install-media-tools.sh
+scripts/test-media-tools-live.sh
 scripts/codespace-post-create.sh
 scripts/codespace-post-start.sh
 scripts/cleanup-codespace-caches.sh
@@ -446,8 +448,16 @@ Enabled local browser MCPs use exact npm package versions from
 Codespaces profile installs checksum-verified Chrome for Testing and its
 artifact-declared Debian dependencies, then both Playwright and Chrome DevTools
 launch that executable headlessly. Open Design uses its repository-owned lock
-and bootstrap under `.agents/skills/open-design/`; its daemon checkout is also
-part of the default core profile. The profile also installs the locked
+and bootstrap under `.agents/skills/open-design/`. The default core profile
+installs its pinned daemon, Studio, and complete generic catalogs. Run
+`scripts/install-media-tools.sh` once to disable HyperFrames telemetry and
+install the opt-in `media` profile (FFmpeg) plus the browser for the
+independently pinned `hyperframes@0.7.90` wrapper. Eight HyperFrames skill
+packages are vendored and hashed under
+`.agents/skills/hyperframes/`; the wrapper prevents mutable global skill
+installation. Keep daemon port `7456` loopback-only and use
+`scripts/test-media-tools-live.sh` for MCP discovery plus a real MP4 smoke test.
+The profile also installs the locked
 `.github/agent-runtime` npm dependencies required by the local Bats suite and
 OpenCode workflow helpers. Run the core profile with `--verify-only` to preflight
 these prerequisites without downloading or changing packages.
