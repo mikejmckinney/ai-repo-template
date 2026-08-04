@@ -35,6 +35,15 @@ isolation_available() {
 	run python3 "${RUNNER}/preflight.py" --validate-structure
 	[ "${status}" -eq 0 ]
 	[[ "${output}" == *'Draft 2020-12 campaign and asset schemas structurally valid'* ]]
+	run env REPO_ROOT="${BATS_TEST_TMPDIR}/wrong-repository" \
+		python3 "${RUNNER}/preflight.py" --validate-structure
+	[ "${status}" -eq 0 ]
+
+	run grep -Fq 'fixture-secret-value' "${RUNNER}/preflight.py"
+	[ "${status}" -ne 0 ]
+	run jq -e '.notes | test("^sk-[A-Za-z0-9_-]{8,}$")' \
+		"${RUNNER}/fixtures/secret-payload.json"
+	[ "${status}" -eq 0 ]
 
 	fixture="${BATS_TEST_TMPDIR}/passing-campaign.json"
 	fixture_report="${BATS_TEST_TMPDIR}/preflight-report.json"
@@ -52,10 +61,38 @@ isolation_available() {
 	run make -C "${RUNNER}" assets-check
 	[ "${status}" -eq 0 ]
 	[[ "${output}" == *'asset bundle is byte-stable'* ]]
+
+	fixture_repo="${BATS_TEST_TMPDIR}/repo"
+	fixture_runner="${fixture_repo}/scripts/benchmark/task-parallelism"
+	fixture_assets="${fixture_repo}/.context/benchmarks/model-roi/task-parallelism/assets"
+	stub_bin="${BATS_TEST_TMPDIR}/bin"
+	mkdir -p "${fixture_runner}" "${fixture_assets}/source" "${stub_bin}"
+	cp "${RUNNER}/generate-placeholder-assets.py" "${fixture_runner}/"
+	cp "${PROTOCOL}/assets/source/primitives.json" "${fixture_assets}/source/"
+	printf 'preserve me\n' >"${fixture_assets}/marker.txt"
+	printf '#!/usr/bin/env bash\nprintf "ffmpeg version 0.0.0\\n"\n' >"${stub_bin}/ffmpeg"
+	chmod +x "${stub_bin}/ffmpeg"
+
+	run env PATH="${stub_bin}:${PATH}" python3 "${fixture_runner}/generate-placeholder-assets.py"
+	[ "${status}" -ne 0 ]
+	[ -f "${fixture_assets}/marker.txt" ]
 }
 
 @test "argument-free preflight validates real state and keeps Phase 0B blocked" {
 	rm -f "${REPORT}"
+	unisolated_report="${BATS_TEST_TMPDIR}/unisolated-report.json"
+	run env REPO_ROOT="${REPO_ROOT}" REPORT_PATH="${unisolated_report}" \
+		python3 - "${RUNNER}" <<'PY'
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from preflight import run_preflight
+
+raise SystemExit(run_preflight(audit_hook_active=False))
+PY
+	[ "${status}" -ne 0 ]
+	[[ "${output}" == *'preflight isolation is inactive'* ]]
+	[ ! -e "${unisolated_report}" ]
 
 	run env \
 		OPENAI_API_KEY='fixture-openai-secret' \

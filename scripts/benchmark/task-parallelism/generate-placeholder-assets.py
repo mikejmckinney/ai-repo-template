@@ -113,7 +113,6 @@ def media_type(path: Path) -> str:
 
 
 def generate(output_dir: Path) -> None:
-    verify_ffmpeg()
     primitives = json.loads(PRIMITIVES_PATH.read_text(encoding="utf-8"))
     source_path = output_dir / "source/primitives.json"
     source_path.parent.mkdir(parents=True, exist_ok=True)
@@ -190,6 +189,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
+    verify_ffmpeg()
     if args.check:
         with tempfile.TemporaryDirectory(prefix="task-parallelism-assets-") as temp:
             regenerated = Path(temp) / "assets"

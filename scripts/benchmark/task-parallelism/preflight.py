@@ -46,7 +46,7 @@ PROVIDER_CREDENTIAL_PATTERN = re.compile(
     r"(?:API_KEY|API_TOKEN|AUTH_TOKEN|ACCESS_TOKEN|SECRET|PASSWORD|CREDENTIAL)$"
 )
 SECRET_VALUE_PATTERN = re.compile(
-    r"(?:(?:^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{8,}|fixture-secret-value|-----BEGIN [A-Z ]+ PRIVATE KEY-----)"
+    r"(?:(?:^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{8,}|-----BEGIN [A-Z ]+ PRIVATE KEY-----)"
 )
 
 
@@ -118,8 +118,9 @@ def evaluate(
     campaign_path: Path,
     fixture: Path | None = None,
     audit_hook_active: bool = False,
+    repo_root: Path | None = None,
 ) -> dict[str, object]:
-    repo_root = Path(os.environ.get("REPO_ROOT", Path(__file__).resolve().parents[3]))
+    repo_root = repo_root or Path(os.environ.get("REPO_ROOT", Path(__file__).resolve().parents[3]))
     protocol_dir = repo_root / ".context/benchmarks/model-roi/task-parallelism"
     campaign = load_json(campaign_path)
     validate(campaign, protocol_dir / "campaign.schema.json", "campaign")
@@ -157,7 +158,12 @@ def run_preflight(audit_hook_active: bool = False) -> int:
     protocol_dir = repo_root / ".context/benchmarks/model-roi/task-parallelism"
     campaign_path = protocol_dir / "campaign.phase-0a.json"
     try:
-        report = evaluate(campaign_path, audit_hook_active=audit_hook_active)
+        report = evaluate(campaign_path, audit_hook_active=audit_hook_active, repo_root=repo_root)
+        isolation = report["isolation"]
+        if isolation["network_namespace"] != "active" or isolation["python_audit_hook"] != "active":
+            raise ValueError("preflight isolation is inactive")
+        if isolation["provider_credentials_present"]:
+            raise ValueError("provider credentials reached the isolated preflight")
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"task-parallelism preflight failed: {exc}", file=sys.stderr)
         return 1
@@ -177,7 +183,7 @@ def run_fixture_suite(fixture_values: list[str]) -> int:
         fixture = Path(fixture_value).resolve()
         campaign_path = fixture if fixture.name != "invalid-asset-manifest.json" else protocol_dir / "campaign.phase-0a.json"
         try:
-            evaluate(campaign_path, fixture)
+            evaluate(campaign_path, fixture, repo_root=repo_root)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             print(f"{fixture.name}: {exc}", file=sys.stderr)
         else:
@@ -198,7 +204,7 @@ def validate_only() -> int:
 def validate_structure() -> int:
     repo_root = Path(__file__).resolve().parents[3]
     campaign = repo_root / ".context/benchmarks/model-roi/task-parallelism/campaign.phase-0a.json"
-    evaluate(campaign)
+    evaluate(campaign, repo_root=repo_root)
     print("Draft 2020-12 campaign and asset schemas structurally valid")
     return 0
 
