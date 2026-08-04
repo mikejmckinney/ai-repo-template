@@ -146,6 +146,7 @@ def verify_remote_base(state: dict) -> None:
         "package-lock.json",
         "package.json",
         "public/benchmark-assets/vector-siege/manifest.json",
+        "skills-lock.json",
     ]
     for path in required:
         present = subprocess.run(

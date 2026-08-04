@@ -1,13 +1,13 @@
 {
   "schema_version": "task-parallelism-phase-0b-execution.v1",
   "campaign_id": "vector-siege-phase-0b",
-  "status": "base-pending",
+  "status": "ready",
   "approval_source": "https://github.com/mikejmckinney/ai-repo-template/issues/545#issuecomment-5174532437",
   "approved_at": "2026-08-04T18:20:00Z",
   "candidate_base": {
     "branch": "benchmark/model-roi/base-vector-siege-phase-0b-20260804",
-    "sha": null,
-    "source_commit": "d21f8434244d9b523aed03ca8a5df41af12ca33e"
+    "sha": "acffeb51f6ba6d16be6872413a0fa9010d2547a2",
+    "source_commit": "cf8e1545d688f6880baf21da24bf40a44bd4fc8c"
   },
   "candidate_processes_started": 0,
   "completed_runs": []
