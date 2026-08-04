@@ -41,10 +41,15 @@ setup() {
 
 	scaffold="${BATS_TEST_TMPDIR}/scaffold"
 	mkdir -p "${scaffold}"
-	git -C "${REPO_ROOT}" archive \
-		--output="${BATS_TEST_TMPDIR}/scaffold.tar" \
-		HEAD:.context/benchmarks/model-roi/task-parallelism/scaffold
-	tar -xf "${BATS_TEST_TMPDIR}/scaffold.tar" -C "${scaffold}"
+	scaffold_relative=".context/benchmarks/model-roi/task-parallelism/scaffold"
+	while IFS= read -r -d '' path; do
+		destination="${scaffold}/${path#${scaffold_relative}/}"
+		mkdir -p "$(dirname "${destination}")"
+		cp "${REPO_ROOT}/${path}" "${destination}"
+	done < <(git -C "${REPO_ROOT}" ls-files -z -- "${scaffold_relative}")
+
+	run python3 "${RUNNER}/prepare-phase-0b.py" --validate --scaffold-root "${scaffold}"
+	[ "${status}" -eq 0 ]
 	printf '\n// drift\n' >>"${scaffold}/src/main.ts"
 
 	run python3 "${RUNNER}/prepare-phase-0b.py" --validate --scaffold-root "${scaffold}"

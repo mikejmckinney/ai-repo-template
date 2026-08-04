@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import hashlib
-import importlib.metadata
 import json
 import os
 import re
@@ -11,7 +10,6 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 
-EXPECTED_JSONSCHEMA = "4.26.0"
 SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
 EXPECTED_ASSET_PATHS = {
     "audio/enemy-defeat.wav",
@@ -192,15 +190,6 @@ def run_fixture_suite(fixture_values: list[str]) -> int:
     return 2 if unexpected_passes else 1
 
 
-def validate_only() -> int:
-    version = importlib.metadata.version("jsonschema")
-    if version != EXPECTED_JSONSCHEMA:
-        raise SystemExit(f"jsonschema {EXPECTED_JSONSCHEMA} required, found {version}")
-    validate_structure()
-    print(f"Draft 2020-12 campaign and asset schemas valid with jsonschema {version}")
-    return 0
-
-
 def validate_structure() -> int:
     repo_root = Path(__file__).resolve().parents[3]
     campaign = repo_root / ".context/benchmarks/model-roi/task-parallelism/campaign.phase-0a.json"
@@ -211,12 +200,11 @@ def validate_structure() -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--validate-structure", action="store_true")
     args = parser.parse_args()
-    if args.validate_only == args.validate_structure:
-        parser.error("choose exactly one validation mode outside the isolated launcher")
-    return validate_only() if args.validate_only else validate_structure()
+    if not args.validate_structure:
+        parser.error("--validate-structure is required outside the isolated launcher")
+    return validate_structure()
 
 
 if __name__ == "__main__":

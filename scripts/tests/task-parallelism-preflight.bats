@@ -19,8 +19,60 @@ isolation_available() {
 	[[ "${output}" == *'asset bundle is byte-stable'* ]]
 }
 
+@test "failed asset replacement restores the tracked bundle" {
+	fixture_repo="${BATS_TEST_TMPDIR}/repo"
+	fixture_runner="${fixture_repo}/scripts/benchmark/task-parallelism"
+	fixture_assets="${fixture_repo}/.context/benchmarks/model-roi/task-parallelism/assets"
+	mkdir -p "${fixture_runner}" "${fixture_assets}"
+	cp "${RUNNER}/generate-placeholder-assets.py" "${fixture_runner}/"
+	printf 'preserve me\n' >"${fixture_assets}/marker.txt"
+
+	run python3 - "${fixture_runner}/generate-placeholder-assets.py" <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("generate_placeholder_assets", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+module.verify_ffmpeg = lambda: None
+module.generate = lambda path: path.mkdir(parents=True)
+real_rename = Path.rename
+
+def interrupt_generated_rename(path, target):
+    if path.name == "generated":
+        raise KeyboardInterrupt
+    return real_rename(path, target)
+
+Path.rename = interrupt_generated_rename
+sys.argv = [sys.argv[1]]
+try:
+    module.main()
+except KeyboardInterrupt:
+    pass
+finally:
+    Path.rename = real_rename
+PY
+	[ "${status}" -eq 0 ]
+	[ -f "${fixture_assets}/marker.txt" ]
+}
+
 @test "argument-free preflight validates real state and keeps Phase 0B blocked" {
 	rm -f "${REPORT}"
+	unisolated_report="${BATS_TEST_TMPDIR}/unisolated-report.json"
+	run env REPO_ROOT="${REPO_ROOT}" REPORT_PATH="${unisolated_report}" \
+		python3 - "${RUNNER}" <<'PY'
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from preflight import run_preflight
+
+raise SystemExit(run_preflight(audit_hook_active=False))
+PY
+	[ "${status}" -ne 0 ]
+	[[ "${output}" == *'preflight isolation is inactive'* ]]
+	[ ! -e "${unisolated_report}" ]
+
 	run env \
 		OPENAI_API_KEY='fixture-openai-secret' \
 		CLOUDFLARE_API_TOKEN='fixture-cloudflare-secret' \
