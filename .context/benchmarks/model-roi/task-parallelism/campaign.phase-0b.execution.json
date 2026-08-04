@@ -41,6 +41,14 @@
       "retry_eligible": false,
       "run_id": "vs-p0b-004",
       "terminal_status": "candidate-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-005-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-005-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-005",
+      "terminal_status": "harness-failed"
     }
   ],
   "campaign_id": "vector-siege-phase-0b",
@@ -50,12 +58,13 @@
     "source_commit": "cf8e1545d688f6880baf21da24bf40a44bd4fc8c",
     "task_blob_sha": "f658eedd0c369d5b0323a098702eb6fd96bc418f"
   },
-  "candidate_processes_started": 5,
+  "candidate_processes_started": 6,
   "completed_runs": [
     "vs-p0b-001",
     "vs-p0b-002",
     "vs-p0b-003",
-    "vs-p0b-004"
+    "vs-p0b-004",
+    "vs-p0b-005"
   ],
   "retry_processes_started": 1,
   "schema_version": "task-parallelism-phase-0b-execution.v1",

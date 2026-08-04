@@ -271,6 +271,35 @@ def evaluate_candidate(worktree: Path, artifact_dir: Path, work_produced: bool) 
     return score, statuses
 
 
+def snapshot_candidate(worktree: Path, base_sha: str, attempt_id: str) -> tuple[list[str], str, int]:
+    subprocess.run(["git", "add", "-A"], cwd=worktree, check=True)
+    changed = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", base_sha],
+        cwd=worktree,
+        text=True,
+        stdout=subprocess.PIPE,
+        check=True,
+    ).stdout.splitlines()
+    forbidden = (".agents/", "TASK.md", "public/benchmark-assets/vector-siege/")
+    drift_count = sum(
+        path == forbidden[1] or path.startswith((forbidden[0], forbidden[2])) for path in changed
+    )
+    if changed:
+        subprocess.run(
+            ["git", "commit", "--no-gpg-sign", "-m", f"candidate: {attempt_id}"],
+            cwd=worktree,
+            check=True,
+        )
+    candidate_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=worktree,
+        text=True,
+        stdout=subprocess.PIPE,
+        check=True,
+    ).stdout.strip()
+    return changed, candidate_sha, drift_count
+
+
 def write_failure_result(run_id: str, arm: str, wall: int, terminal_status: str, harness: bool) -> dict:
     return {
         "schema_version": "task-parallelism-phase-0b-candidate-result.v1",
@@ -364,35 +393,11 @@ def execute_run(run_id: str) -> int:
             )
         rc = completed.returncode
         usage, thread_id = parse_usage(jsonl_path)
-        subprocess.run(["git", "add", "-A"], cwd=worktree, check=True)
-        changed = subprocess.run(
-            ["git", "diff", "--cached", "--name-only", base_sha],
-            cwd=worktree,
-            text=True,
-            stdout=subprocess.PIPE,
-            check=True,
-        ).stdout.splitlines()
-        forbidden = (".agents/", "TASK.md", "public/benchmark-assets/vector-siege/")
-        drift_count = sum(
-            path == forbidden[1] or path.startswith((forbidden[0], forbidden[2])) for path in changed
+        changed, candidate_sha, drift_count = snapshot_candidate(
+            worktree, base_sha, attempt["attempt_id"]
         )
         report_path = artifact_dir / "final-report.json"
         report = load_report(report_path, arm) if rc == 0 else None
-        if subprocess.run(
-            ["git", "diff", "--cached", "--quiet"], cwd=worktree, check=False
-        ).returncode != 0:
-            subprocess.run(
-                ["git", "commit", "--no-gpg-sign", "-m", f"candidate: {attempt['attempt_id']}"],
-                cwd=worktree,
-                check=True,
-            )
-        candidate_sha = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            cwd=worktree,
-            text=True,
-            stdout=subprocess.PIPE,
-            check=True,
-        ).stdout.strip()
         if rc == 0 and report is not None and report["completion_status"] == "completed":
             score, evaluation = evaluate_candidate(worktree, artifact_dir, bool(changed))
             result = {
@@ -447,16 +452,15 @@ def execute_run(run_id: str) -> int:
             run_id, arm, int(time.monotonic() - started), terminal_status, harness
         )
         result["tokens"] = usage
-        push = subprocess.run(
-            ["git", "push", "origin", f"HEAD:refs/heads/{candidate_branch}"],
-            cwd=worktree,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            check=False,
-        )
-        if push.returncode != 0:
-            harness_error = f"candidate evidence push failed: {push.stdout.strip()}"
+        try:
+            _, candidate_sha, _ = snapshot_candidate(worktree, base_sha, attempt["attempt_id"])
+            subprocess.run(
+                ["git", "push", "origin", f"HEAD:refs/heads/{candidate_branch}"],
+                cwd=worktree,
+                check=True,
+            )
+        except (OSError, subprocess.CalledProcessError) as error:
+            harness_error = f"candidate evidence snapshot failed: {error}"
             result = write_failure_result(
                 run_id, arm, int(time.monotonic() - started), "harness-failed", True
             )

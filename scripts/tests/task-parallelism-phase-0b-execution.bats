@@ -59,6 +59,47 @@ PY
 	[ "${status}" -eq 0 ]
 }
 
+@test "timeout snapshot preserves partial candidate work" {
+	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
+import importlib.util
+import subprocess
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+repo = Path(sys.argv[2]) / "candidate"
+repo.mkdir()
+subprocess.run(["git", "init", "-q", str(repo)], check=True)
+subprocess.run(["git", "-C", str(repo), "config", "user.name", "Benchmark"], check=True)
+subprocess.run(["git", "-C", str(repo), "config", "user.email", "benchmark@example.invalid"], check=True)
+(repo / "base.txt").write_text("base\n")
+subprocess.run(["git", "-C", str(repo), "add", "base.txt"], check=True)
+subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "base"], check=True)
+base = subprocess.run(
+    ["git", "-C", str(repo), "rev-parse", "HEAD"],
+    check=True,
+    text=True,
+    stdout=subprocess.PIPE,
+).stdout.strip()
+(repo / "partial.txt").write_text("retained\n")
+changed, candidate_sha, drift = module.snapshot_candidate(
+    repo, base, "vs-p0b-001-attempt-1"
+)
+assert changed == ["partial.txt"]
+assert candidate_sha != base
+assert drift == 0
+assert subprocess.run(
+    ["git", "-C", str(repo), "show", "HEAD:partial.txt"],
+    check=True,
+    text=True,
+    stdout=subprocess.PIPE,
+).stdout == "retained\n"
+PY
+	[ "${status}" -eq 0 ]
+}
+
 @test "one harness retry retains the original attempt" {
 	run python3 - "${RUNNER}" <<'PY'
 import importlib.util
@@ -130,12 +171,12 @@ PY
 
 	run python3 "${RUNNER}" --validate-state
 	[ "${status}" -eq 0 ]
-	[[ "${output}" == *'execution state valid: ready; candidate processes started: 2'* ]]
+	[[ "${output}" == *'execution state valid: ready; candidate processes started:'* ]]
 
 	run jq -e '
 	    .status == "ready" and
 	    (.candidate_base.sha | test("^[0-9a-f]{40}$")) and
-	    .candidate_processes_started == 2 and
+	    .candidate_processes_started == (.attempts | length) and
 	    .retry_processes_started == 1
 	  ' "${STATE}"
 	[ "${status}" -eq 0 ]
