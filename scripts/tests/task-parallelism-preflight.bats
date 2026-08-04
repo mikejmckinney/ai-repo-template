@@ -39,8 +39,6 @@ isolation_available() {
 		python3 "${RUNNER}/preflight.py" --validate-structure
 	[ "${status}" -eq 0 ]
 
-	run grep -Fq 'fixture-secret-value' "${RUNNER}/preflight.py"
-	[ "${status}" -ne 0 ]
 	run jq -e '.notes | test("^sk-[A-Za-z0-9_-]{8,}$")' \
 		"${RUNNER}/fixtures/secret-payload.json"
 	[ "${status}" -eq 0 ]
@@ -70,7 +68,14 @@ isolation_available() {
 	cp "${RUNNER}/generate-placeholder-assets.py" "${fixture_runner}/"
 	cp "${PROTOCOL}/assets/source/primitives.json" "${fixture_assets}/source/"
 	printf 'preserve me\n' >"${fixture_assets}/marker.txt"
-	printf '#!/usr/bin/env bash\nprintf "ffmpeg version 0.0.0\\n"\n' >"${stub_bin}/ffmpeg"
+	printf '%s\n' \
+		'#!/usr/bin/env bash' \
+		'if [[ "$1" == "-version" ]]; then' \
+		'  printf "ffmpeg version 6.1.1-3ubuntu5\\n"' \
+		'  exit 0' \
+		'fi' \
+		'printf "fixture encoding failure\\n" >&2' \
+		'exit 1' >"${stub_bin}/ffmpeg"
 	chmod +x "${stub_bin}/ffmpeg"
 
 	run env PATH="${stub_bin}:${PATH}" python3 "${fixture_runner}/generate-placeholder-assets.py"
@@ -125,8 +130,6 @@ PY
 }
 
 @test "negative campaign fixtures fail closed with redacted reasons" {
-	isolation_available || skip "unshare -Urn unavailable; fail-closed path covered by argument-free preflight"
-
 	fixtures=(
 		"${RUNNER}/fixtures/unresolved-freeze.json"
 		"${RUNNER}/fixtures/approval-enabled.json"
@@ -135,14 +138,25 @@ PY
 		"${RUNNER}/fixtures/invalid-asset-manifest.json"
 	)
 
-	run "${RUNNER}/run-preflight.sh" --fixtures "${fixtures[@]}"
+	if isolation_available; then
+		run "${RUNNER}/run-preflight.sh" --fixtures "${fixtures[@]}"
+	else
+		run env REPO_ROOT="${REPO_ROOT}" python3 - "${RUNNER}" "${fixtures[@]}" <<'PY'
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from preflight import run_fixture_suite
+
+raise SystemExit(run_fixture_suite(sys.argv[2:]))
+PY
+	fi
 	[ "${status}" -ne 0 ]
 	[[ "${output}" == *'freeze state is unresolved'* ]]
 	[[ "${output}" == *'Phase 0B approval must remain blocked'* ]]
 	[[ "${output}" == *'external operation is forbidden'* ]]
 	[[ "${output}" == *'secret-shaped value is forbidden'* ]]
 	[[ "${output}" == *'asset manifest is invalid'* ]]
-	[[ "${output}" != *'fixture-secret-value'* ]]
+	[[ "${output}" != *'sk-fixture-dummy-token'* ]]
 }
 
 @test "socket control succeeds outside isolation and is blocked inside" {

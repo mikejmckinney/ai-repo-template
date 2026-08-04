@@ -3,7 +3,6 @@ import argparse
 import hashlib
 import json
 import math
-import shutil
 import struct
 import subprocess
 import tempfile
@@ -198,12 +197,17 @@ def main() -> int:
         print("asset bundle is byte-stable")
         return 0
 
-    preserved_source = PRIMITIVES_PATH.read_bytes()
-    if ASSETS_DIR.exists():
-        shutil.rmtree(ASSETS_DIR)
-    PRIMITIVES_PATH.parent.mkdir(parents=True, exist_ok=True)
-    PRIMITIVES_PATH.write_bytes(preserved_source)
-    generate(ASSETS_DIR)
+    with tempfile.TemporaryDirectory(prefix="task-parallelism-assets-", dir=PROTOCOL_DIR) as temp:
+        temp_root = Path(temp)
+        generated = temp_root / "generated"
+        previous = temp_root / "previous"
+        generate(generated)
+        ASSETS_DIR.rename(previous)
+        try:
+            generated.rename(ASSETS_DIR)
+        except OSError:
+            previous.rename(ASSETS_DIR)
+            raise
     print(f"generated deterministic assets under {ASSETS_DIR}")
     return 0
 

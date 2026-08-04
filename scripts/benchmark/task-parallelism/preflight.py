@@ -118,9 +118,9 @@ def evaluate(
     campaign_path: Path,
     fixture: Path | None = None,
     audit_hook_active: bool = False,
-    repo_root: Path | None = None,
+    *,
+    repo_root: Path,
 ) -> dict[str, object]:
-    repo_root = repo_root or Path(os.environ.get("REPO_ROOT", Path(__file__).resolve().parents[3]))
     protocol_dir = repo_root / ".context/benchmarks/model-roi/task-parallelism"
     campaign = load_json(campaign_path)
     validate(campaign, protocol_dir / "campaign.schema.json", "campaign")
