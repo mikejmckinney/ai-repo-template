@@ -137,6 +137,7 @@ from pathlib import Path
 
 text = Path(sys.argv[1]).read_text(encoding="utf-8")
 assert re.search(r"<!-- AGENTS_MD_VERSION: [1-9][0-9]* -->", text)
+assert "AGENTS_MD_VERSION: 39" in text
 assert "unfamiliar repository" in text
 assert "repo-onboarding" in text
 assert "session-recovery" in text
