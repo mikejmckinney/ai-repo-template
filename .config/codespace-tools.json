@@ -30,7 +30,8 @@
   "profiles": {
     "verification": [
       "uv",
-      "bats"
+      "bats",
+      "ffmpeg"
     ],
     "media": [
       "ffmpeg"

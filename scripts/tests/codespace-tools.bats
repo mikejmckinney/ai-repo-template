@@ -85,7 +85,7 @@ run_installer() {
     .schema_version == 1 and
     (.required_commands | type == "array" and length > 0) and
     (.apt_packages | type == "array" and length > 0) and
-    (.profiles.verification == ["uv", "bats"]) and
+    (.profiles.verification == ["uv", "bats", "ffmpeg"]) and
     (.profiles.media == ["ffmpeg"]) and
     (.profiles.core | index("shfmt")) and
     (.profiles.core | index("actionlint")) and
@@ -109,6 +109,11 @@ run_installer() {
     all(.tools[]; .type and .command and .version)
   ' "$REPO_ROOT/.config/codespace-tools.json"
 
+  [ "$status" -eq 0 ]
+
+  run grep -Fq \
+    'uv pip install --system --requirement scripts/benchmark/task-parallelism/requirements.txt' \
+    "$REPO_ROOT/.github/workflows/ci-tests.yml"
   [ "$status" -eq 0 ]
 }
 
