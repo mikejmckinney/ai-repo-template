@@ -8,6 +8,59 @@ Accepted
 
 2026-05-12
 
+## Amendment 2026-07-22 — Retire rolling session summaries
+
+The rolling `.context/sessions/latest_summary.md` mirror is retired. Issue and
+PR history now preserve task outcomes in the same system that owns live state.
+Agents promote only genuinely reusable decisions or incidents into ADRs and
+postmortems. Existing date-stamped session archives remain historical evidence
+but are not updated, required during onboarding, or used as current-state input.
+
+## Amendment 2026-07-19 — Delimited issue-body plans
+
+New issue bodies permit one mutable `implementation-plan:v2` block.
+Requester-owned content remains stable. Implementation-ready work publishes an
+empty bootstrap commit and linked draft PR before meaningful edits, then commits
+and pushes every changed turn before updating the latest `agent-state:v1`
+comment. Live progress remains exclusively in that comment.
+
+## Amendment 2026-07-18 - Role-free problem framing
+
+The issue body remains the durable feature/task contract and the input for
+problem framing, planning, and critical review. References below to Analyst,
+Judge, or Critic gates are superseded by ADR-031's monolithic execution and
+review lifecycle. Framing evolves in the canonical issue/plan artifacts; live
+progress remains in the latest `agent-state:v1` comment.
+
+## Amendment 2026-07-15 — Clickable agent-managed artifacts
+
+Agent-managed GitHub artifacts link addressable issues, PRs, comments, commits,
+branches, Actions runs, ADRs, and repository files on first mention in every
+section. The rule applies to plans, agent-authored issue/PR updates, PR bodies,
+automated comments, and `agent-state:v1` comments, but not arbitrary human
+comments. Local-only paths, commands, and identifiers remain inline code.
+
+## Amendment 2026-07-14 — Continuation state without a handoff field
+
+The latest `agent-state:v1` comment exists so any later agent or session can
+continue the work from current evidence. A separate `handoff_needed` status and
+`Handoff` field duplicate that purpose and force the author to predict who will
+resume the task.
+
+Effective with this amendment:
+
+- Remove `handoff_needed` from the status enum and remove the separate handoff
+  field.
+- Require `status`, `updated`, and `actions` as the minimum continuation state.
+- Permit concise blockers, outcomes, lessons learned, next steps, and reference
+  pointers when they materially reduce recovery work.
+- Keep long decision history, exhaustive file lists, verification matrices, and
+  retrospective narratives in plans, PR bodies, ADRs, CI, or session archives.
+
+This amendment supersedes the handoff-specific requirements in the original
+decision below. It does not change GitHub's role as the primary live-state
+surface or the requirement to keep one canonical comment updated in place.
+
 ## Context
 
 Issue #298 identifies a recurring state-management failure in the
@@ -52,8 +105,8 @@ agent work, and keep in-tree files for durable knowledge.
 
 The source-of-truth split is:
 
-1. **GitHub issue body** — durable feature/task contract and Analyst /
-   Judge / Critic gate input. The existing feature-request issue template
+1. **GitHub issue body** — durable feature/task contract and problem-framing,
+   planning, and critical-review input. The existing feature-request issue template
    remains canonical for problem statement, proposed solution, user outcome,
    acceptance criteria, and technical considerations.
 2. **GitHub PR body** — implementation review contract: linked issue, plan
@@ -63,9 +116,8 @@ The source-of-truth split is:
    next 1–3 actions, and handoff baton.
 4. **GitHub labels** — coarse workflow filtering only in v1:
    `agent:claimed`, `agent:blocked`, and `agent:awaiting-review`.
-5. **Durable in-tree knowledge** — `.context/rules/**`, `.context/00_INDEX.md`,
-   `docs/decisions/**`, `docs/postmortems/**`, `.context/sessions/latest_summary.md`,
-   and `.context/sessions/*` archives.
+5. **Durable in-tree knowledge** — `.context/00_INDEX.md`,
+   `docs/decisions/**`, `docs/postmortems/**`, and repository operating policy.
 6. **Reusable procedures** — `.github/prompts/**` remain procedural prompts,
    not active task-state stores.
 7. **Legacy/manual live-state surfaces** — `_active.md`, `coordination.md`,
@@ -92,24 +144,19 @@ The template intentionally has **no separate `Pause reason` field** —
 `Status` already carries that signal (`awaiting_user_input`, `blocked`,
 `handoff_needed`) and a second free-text field invites contradiction
 between the two surfaces. Long decision history, full file lists,
-verification matrices, and durable retrospective lessons stay out of the
-comment; they belong in plan comments, PR bodies, ADRs, CI, and session
-summaries respectively.
+verification matrices, and durable decisions stay out of the comment; they
+belong in plan comments, PR bodies, ADRs, postmortems, and CI respectively.
 
-### Durable retrospectives stay in-tree
+### Completed outcomes stay in GitHub
 
-`.context/sessions/latest_summary.md` and session archives remain canonical
-for durable retrospective lessons: `What Shipped`, `Harder Than Expected`,
-and `Generalizable Lessons`. They are not the live coordination baton.
-
-For normal PR-backed work, the session-summary rotation boundary moves to PR
-merge/closeout because the landed PR is the stable provenance boundary. For
-abandoned or no-PR work, archive only when there are durable lessons worth
-preserving.
+Issue and PR history preserve what shipped, implementation evidence, review
+discussion, and closeout status. This avoids maintaining a repo-local mirror of
+the same task lifecycle. Existing date-stamped session archives remain
+historical records only.
 
 `docs/postmortems/**` remain the durable surface for formal incident/failure
-analysis. ADRs remain durable design decisions. `.context/rules/**` remain
-enforceable operating policy.
+analysis. ADRs remain durable design decisions. `AGENTS.md` remains enforceable
+operating policy.
 
 ### Relationship to #262, #263, and #299
 
@@ -119,8 +166,8 @@ enforceable operating policy.
 - #298 supersedes #263 as the forward design. #263's repo-local write-back
   automation should be closed as superseded or reduced to narrow temporary
   compatibility only.
-- #299 owns bounded session archive retention and promotion policy. This ADR
-  preserves session summaries but does not define pruning or retention limits.
+- #299 owns retention policy for the historical session archives that predate
+  the 2026-07-22 amendment.
 
 ### Failure mode when GitHub is unavailable
 
@@ -151,7 +198,7 @@ the normal coordination path.
 
 - **Pros**: Aligns live state with the system that owns issue/PR lifecycle
   events; removes the normal second state-only PR; keeps rules, ADRs,
-  postmortems, prompts, and retrospective lessons portable in the repo.
+  postmortems, prompts, and operating policy portable in the repo.
 - **Cons**: Requires agents to read GitHub comments/labels in addition to
   repo files. Offline operation needs a temporary local scratch fallback.
 
@@ -179,9 +226,10 @@ the normal coordination path.
 - A fresh agent can resume from the issue body, linked PR, latest
   `agent-state:v1` comment, labels, and relevant repo rules without relying
   on drift-prone manual mirrors.
-- Existing Analyst/Judge/Critic gate inputs in feature-request issues remain
-  stable and are not moved into mutable comments.
-- Durable lessons remain in-tree for template consumers and forks.
+- Existing problem-framing, user-outcome, and review inputs in feature-request
+  issues remain stable and are not moved into mutable comments.
+- Durable decisions and incident analysis remain in-tree for template consumers
+  and forks without duplicating routine task history.
 
 ### Negative
 
@@ -217,10 +265,8 @@ the normal coordination path.
 ### Out of scope for this ADR
 
 - Replacing or bypassing the existing `feature_request.md` issue-body
-  contract (preserved unchanged as the durable Analyst/Judge/Critic gate
-  input).
-- Demoting `.context/sessions/latest_summary.md` and date-stamped
-  archives (preserved as canonical durable retrospective surface).
+  contract (preserved as the durable problem-framing and review input).
+- Rewriting date-stamped session archives that predate the 2026-07-22 amendment.
 - Removing `.github/prompts/**` reusable procedural prompts.
 - Workflow validation enforcing `agent-state:v1` comment presence on
   every in-flight issue/PR (deferred to v2 — see Option 5).
@@ -255,8 +301,8 @@ the normal coordination path.
   from #298).
 - Issue #220 — parent epic on cost mitigation (ADR-019 is downstream of
   the same epic).
-- ADR-005 / ADR-014 — Analyst pre-flight gate; preserves
-  `feature_request.md` as the durable gate input contract.
+- ADR-005 / ADR-014 - historical Analyst pre-flight gates superseded by
+  ADR-031; `feature_request.md` remains the durable task contract.
 - ADR-007 — auto-resolve bot-authored review threads; unaffected
   (operates on review threads, not live-state files).
 - ADR-009 — parallel multi-agent execution + dispatch reality matrix; PM

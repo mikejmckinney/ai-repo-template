@@ -25,8 +25,12 @@ if [[ -n "${_pipeline_setup_skip_reason:-}" ]] \
   return 0 2>/dev/null || exit 0
 fi
 
-log_step "Checking required pipeline secrets"
-_required_secrets=(CLAUDE_PAT ANTHROPIC_API_KEY)
+log_step "Checking pipeline secrets from the canonical bootstrap manifest"
+_credential_manifest="$SCRIPT_DIR/../../.config/derived-repo-secrets.json"
+if [[ ! -f "$_credential_manifest" ]]; then
+  log_warn "Credential manifest not found: $_credential_manifest"
+  return 0 2>/dev/null || exit 0
+fi
 _repo_secrets=""
 _org_secrets=""
 if _repo_secrets=$(gh secret list --limit 100 --json name --jq '.[].name' 2>/dev/null); then
@@ -48,7 +52,9 @@ else
   # Set to special marker to distinguish "no secrets" from "query failed".
   _org_secrets="__unknown__"
 fi
-for _secret in "${_required_secrets[@]}"; do
+while IFS= read -r _secret_entry; do
+  _secret="$(jq -r '.name' <<<"$_secret_entry")"
+  _required="$(jq -r '.required' <<<"$_secret_entry")"
   if [[ "$_repo_secrets" != "__unknown__" ]] \
     && printf '%s\n' "$_repo_secrets" | grep -qx "$_secret"; then
     log_info "  $_secret — present (repo-level)"
@@ -60,10 +66,14 @@ for _secret in "${_required_secrets[@]}"; do
     log_warn "             'Missing required secret: $_secret', add it via either:"
     log_warn "             Per-repo: Settings → Secrets and variables → Actions"
     log_warn "             Org-wide: Org settings → Secrets and variables → Actions (then grant this repo)"
-  else
+  elif [[ "$_required" == true ]]; then
     log_warn "  $_secret — MISSING. Workflows depending on it will fail fast at runtime."
     log_warn "             Per-repo: Settings → Secrets and variables → Actions → New repository secret"
     log_warn "             Org-wide: Org settings → Secrets and variables → Actions → New organization secret"
     log_warn "             See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
+  else
+    log_warn "  $_secret — not configured (optional provider or sandbox capability)."
   fi
-done
+done < <(jq -c '.secrets[] | select(.actions == true)' "$_credential_manifest")
+
+unset _credential_manifest _secret_entry _secret _required

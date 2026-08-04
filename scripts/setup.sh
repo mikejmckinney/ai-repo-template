@@ -7,7 +7,7 @@
 # scripts/setup/README.md for the module table and how to run a single
 # module in isolation.
 #
-# TEMPLATE_PLACEHOLDER: Customize this for your project
+# Extend the numbered setup phases only when the derived project needs them.
 
 set -e
 
@@ -21,14 +21,14 @@ echo "========================================"
 
 # Source every setup module in lexical order. Modules share the parent
 # shell's environment (FULL_REPO, _gh_auth_ok, _pipeline_setup_skip_reason,
-# GH_REPO, etc.) so 50/60 can read state set up by 00 and 40.
+# GH_REPO, etc.) so 60 can read state set up by 00 and 40.
 #
 # Expected phases. Asserting the manifest (rather than just non-emptiness)
 # catches partial-checkout regressions where a single module file is
 # missing — without this check the orchestrator would silently skip that
 # phase and still print "Setup Complete". Keep this list in sync with
 # scripts/setup/README.md.
-_expected_phases=(00 10 20 30 40 50 60 70)
+_expected_phases=(00 10 20 30 40 60 70)
 _setup_modules=()
 shopt -s nullglob
 for _module in "$SCRIPT_DIR"/setup/[0-9][0-9]-*.sh; do
@@ -76,9 +76,14 @@ printf '%bSetup Complete!%b\n' "$GREEN" "$NC"
 echo "========================================"
 echo ""
 echo "Next steps:"
-echo "  1. Review .env and update any placeholder values"
-echo "  2. Check .context/00_INDEX.md for project context"
-echo "  3. Start development!"
+if [[ -f ".env" ]]; then
+  echo "  1. Review .env for required project values"
+  echo "  2. Check .context/00_INDEX.md for project context"
+  echo "  3. Start development!"
+else
+  echo "  1. Check .context/00_INDEX.md for project context"
+  echo "  2. Start development!"
+fi
 echo ""
 
 # Show available scripts if package.json exists

@@ -75,8 +75,8 @@ fixture_dir="$TMP_BASE/fixture"
 mkdir -p "$fixture_dir/.github/workflows"
 
 # A workflow that pins to default-branch via pull_request_review.
-cat >"$fixture_dir/.github/workflows/agent-fix-reviews.yml" <<'YAML'
-name: agent-fix-reviews
+cat >"$fixture_dir/.github/workflows/review-event.yml" <<'YAML'
+name: review-event
 on:
   pull_request_review:
     types: [submitted]
@@ -87,8 +87,8 @@ jobs:
 YAML
 
 # A workflow triggered by issue_comment (also default-branch-only).
-cat >"$fixture_dir/.github/workflows/agent-relay-reviews.yml" <<'YAML'
-name: agent-relay-reviews
+cat >"$fixture_dir/.github/workflows/comment-event.yml" <<'YAML'
+name: comment-event
 on:
   issue_comment:
     types: [created]
@@ -104,6 +104,18 @@ name: lint-and-format
 on:
   pull_request:
     branches: [main]
+  workflow_dispatch:
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps: [{ run: "echo" }]
+YAML
+
+# A dispatch-only workflow is loaded from the default branch. It cannot be
+# introduced or changed and then exercised from the same PR branch.
+cat >"$fixture_dir/.github/workflows/manual-only.yml" <<'YAML'
+name: manual-only
+on:
   workflow_dispatch:
 jobs:
   noop:
@@ -267,14 +279,14 @@ assert_contains "CASE-02 reports match" "matches detection" "${result#*:}"
 echo ""
 echo "CASE-03: pull_request_review workflow → declared default-branch-only (exit 0)"
 result=$(run_case "default-branch-only workflow" \
-  ".github/workflows/agent-fix-reviews.yml")
+  ".github/workflows/review-event.yml")
 assert_eq "CASE-03 exit code" "0" "${result%%:*}"
 
 # ── CASE-04: misclassified default-branch-only as code-or-docs (the PR #225 bug) ──
 echo ""
 echo "CASE-04: default-branch-only declared as code-or-docs (exit 1, mismatch)"
 result=$(run_case "code-or-docs" \
-  ".github/workflows/agent-relay-reviews.yml")
+  ".github/workflows/comment-event.yml")
 assert_eq "CASE-04 exit code" "1" "${result%%:*}"
 assert_contains "CASE-04 names sandbox playbook" \
   "sandbox-verification.md" "${result#*:}"
@@ -285,7 +297,7 @@ assert_contains "CASE-04 names detected class" \
 echo ""
 echo "CASE-05: code + default-branch-only declared as mixed (exit 0)"
 result=$(run_case "mixed" "README.md
-.github/workflows/agent-fix-reviews.yml")
+.github/workflows/review-event.yml")
 assert_eq "CASE-05 exit code" "0" "${result%%:*}"
 assert_contains "CASE-05 reports match (mixed == mixed equality branch)" \
   "matches detection" "${result#*:}"
@@ -294,13 +306,13 @@ assert_contains "CASE-05 reports match (mixed == mixed equality branch)" \
 echo ""
 echo "CASE-06: mixed diff declared as code-or-docs (exit 1)"
 result=$(run_case "code-or-docs" "README.md
-.github/workflows/agent-fix-reviews.yml")
+.github/workflows/review-event.yml")
 assert_eq "CASE-06 exit code" "1" "${result%%:*}"
 
 # ── CASE-07: detection-only mode (no --declared) — exit 0 with detected line ─
 echo ""
 echo "CASE-07: detection-only run (no --declared) exits 0 with detected class"
-result=$(run_detect ".github/workflows/agent-fix-reviews.yml
+result=$(run_detect ".github/workflows/review-event.yml
 README.md")
 assert_eq "CASE-07 exit code" "0" "${result%%:*}"
 assert_contains "CASE-07 prints detected class" \
@@ -391,14 +403,14 @@ result=$(run_case "default-branch-only workflow" \
   ".github/workflows/repository-dispatch.yml")
 assert_eq "CASE-17 exit code" "0" "${result%%:*}"
 
-# ── CASE-18: mixed advice when no default-branch-only present points to PR branch ─
+# ── CASE-18: mixed advice points to environment selection without sandbox ─────
 echo ""
-echo "CASE-18: mixed (code + pull_request-only) declared as code-or-docs → mismatch advises PR branch, NOT sandbox"
+echo "CASE-18: mixed (code + pull_request-only) advises outcome selection, NOT sandbox"
 result=$(run_case "code-or-docs" "README.md
 .github/workflows/lint-and-format.yml")
 assert_eq "CASE-18 exit code" "1" "${result%%:*}"
-assert_contains "CASE-18 advises PR branch (no default-branch-only present)" \
-  "Verification target: PR branch" "${result#*:}"
+assert_contains "CASE-18 advises outcome selection" \
+  "outcome-validation.md" "${result#*:}"
 # Should NOT recommend sandbox here.
 case18_body="${result#*:}"
 if printf '%s' "$case18_body" | grep -qF 'sandbox-verification.md'; then
@@ -425,6 +437,13 @@ result=$(run_case "pull_request-triggered workflow" \
 assert_eq "CASE-20 exit code" "0" "${result%%:*}"
 assert_contains "CASE-20 reports match (no false positive on env/job/step named push)" \
   "matches detection" "${result#*:}"
+
+# ── CASE-21: workflow_dispatch without pull_request is default-branch-only ───
+echo ""
+echo "CASE-21: dispatch-only workflow → default-branch-only"
+result=$(run_case "default-branch-only workflow" \
+  ".github/workflows/manual-only.yml")
+assert_eq "CASE-21 exit code" "0" "${result%%:*}"
 
 # ── summary ──────────────────────────────────────────────────────────────────
 

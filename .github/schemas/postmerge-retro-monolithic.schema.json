@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Monolithic post-merge retrospective output",
+  "type": "object",
+  "required": ["prs", "retros"],
+  "additionalProperties": true,
+  "properties": {
+    "prs": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 }
+    },
+    "retros": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pr", "summary", "follow_up_issues"],
+        "additionalProperties": true,
+        "properties": {
+          "pr": { "type": "integer", "minimum": 1 },
+          "summary": { "type": "string" },
+          "follow_up_issues": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/followUpIssue" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "followUpIssue": {
+      "type": "object",
+      "required": [
+        "title",
+        "body",
+        "dedupe_key",
+        "repro_steps",
+        "triage_version",
+        "impact",
+        "impact_magnitude",
+        "trigger_likelihood",
+        "affected_scope",
+        "reversibility",
+        "fix_cost",
+        "confidence",
+        "uncertainty"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "body": { "type": "string", "minLength": 1 },
+        "dedupe_key": { "type": "string", "minLength": 1 },
+        "repro_steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "verification_capability": { "$ref": "#/$defs/verificationCapability" },
+        "triage_version": { "const": 2 },
+        "impact": {
+          "type": "string",
+          "enum": ["incorrect-behavior", "dx-perf-doc", "meta-harness"]
+        },
+        "impact_magnitude": {
+          "type": "string",
+          "enum": ["bounded", "material", "critical"]
+        },
+        "trigger_likelihood": {
+          "type": "string",
+          "enum": ["common", "edge", "fringe"]
+        },
+        "affected_scope": {
+          "type": "string",
+          "enum": ["isolated", "limited", "broad"]
+        },
+        "reversibility": {
+          "type": "string",
+          "enum": ["easy", "moderate", "hard"]
+        },
+        "fix_cost": {
+          "type": "string",
+          "enum": ["trivial", "moderate", "large"]
+        },
+        "regression_guard": { "type": "boolean" },
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "uncertainty": { "type": "string", "minLength": 1 }
+      },
+      "not": {
+        "anyOf": [
+          { "required": ["severity"] },
+          { "required": ["priority_band"] }
+        ]
+      }
+    },
+    "verificationCapability": {
+      "type": "object",
+      "required": ["environment", "harness_id", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "enum": ["isolated-worktree", "codespaces", "external-state", "unsupported-runtime"]
+        },
+        "harness_id": { "type": ["string", "null"] },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "environment": { "const": "isolated-worktree" } } },
+          "then": { "properties": { "harness_id": { "const": "repository-test-suite" } } },
+          "else": { "properties": { "harness_id": { "type": "null" } } }
+        }
+      ]
+    }
+  }
+}

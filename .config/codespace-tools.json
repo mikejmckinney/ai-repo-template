@@ -1,0 +1,205 @@
+{
+  "schema_version": 1,
+  "required_commands": [
+    "bash",
+    "git",
+    "gh",
+    "node",
+    "npm",
+    "npx",
+    "python3",
+    "perl",
+    "sqlite3",
+    "jq",
+    "curl",
+    "sha256sum",
+    "tar",
+    "unzip",
+    "corepack"
+  ],
+  "apt_packages": [
+    {"command": "jq", "package": "jq"},
+    {"command": "rg", "package": "ripgrep"},
+    {"command": "shellcheck", "package": "shellcheck"},
+    {"command": "parallel", "package": "parallel"},
+    {"command": "curl", "package": "curl"},
+    {"command": "unzip", "package": "unzip"},
+    {"command": "sqlite3", "package": "sqlite3"},
+    {"path": "/etc/ssl/certs/ca-certificates.crt", "package": "ca-certificates"}
+  ],
+  "profiles": {
+    "verification": [
+      "uv",
+      "bats"
+    ],
+    "media": [
+      "ffmpeg"
+    ],
+    "core": [
+      "shfmt",
+      "actionlint",
+      "markdownlint-cli2",
+      "uv",
+      "bats",
+      "chrome-for-testing",
+      "open-design",
+      "agent-runtime"
+    ],
+    "agents": [
+      "shfmt",
+      "actionlint",
+      "markdownlint-cli2",
+      "uv",
+      "bats",
+      "chrome-for-testing",
+      "open-design",
+      "agent-runtime",
+      "opencode",
+      "claude",
+      "cursor-agent",
+      "codex"
+    ],
+    "default": [
+      "shfmt",
+      "actionlint",
+      "markdownlint-cli2",
+      "uv",
+      "bats",
+      "chrome-for-testing",
+      "open-design",
+      "agent-runtime",
+      "opencode",
+      "claude",
+      "cursor-agent",
+      "codex"
+    ]
+  },
+  "tools": {
+    "ffmpeg": {
+      "type": "apt",
+      "command": "ffmpeg",
+      "version": "system",
+      "package": "ffmpeg"
+    },
+    "shfmt": {
+      "type": "binary",
+      "command": "shfmt",
+      "version": "3.13.1",
+      "version_args": ["--version"],
+      "asset": {
+        "url": "https://github.com/mvdan/sh/releases/download/v3.13.1/shfmt_v3.13.1_linux_amd64",
+        "sha256": "fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1",
+        "archive": "raw"
+      }
+    },
+    "actionlint": {
+      "type": "binary",
+      "command": "actionlint",
+      "version": "1.7.12",
+      "version_args": ["-version"],
+      "asset": {
+        "url": "https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz",
+        "sha256": "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8",
+        "archive": "tar.gz",
+        "member": "actionlint"
+      }
+    },
+    "markdownlint-cli2": {
+      "type": "npm",
+      "command": "markdownlint-cli2",
+      "version": "0.23.1",
+      "version_args": ["--version"],
+      "package": "markdownlint-cli2@0.23.1",
+      "integrity": "sha512-20JPI5W+HpV1OA+pUM712wgvL4GzYNUvbmhLU8KlEYJ1kCDx4soZ4/Xqd+WkLrPTOKMAn8SfO3zYFrK8GLlwQg=="
+    },
+    "uv": {
+      "type": "binary",
+      "command": "uv",
+      "companions": [
+        {
+          "command": "uvx",
+          "member": "uv-x86_64-unknown-linux-gnu/uvx",
+          "version_prefix": "uvx ",
+          "version_args": ["--version"]
+        }
+      ],
+      "version": "0.11.29",
+      "version_args": ["--version"],
+      "asset": {
+        "url": "https://github.com/astral-sh/uv/releases/download/0.11.29/uv-x86_64-unknown-linux-gnu.tar.gz",
+        "sha256": "04f8b82f5d47f0512dcd32c67a4a6f16a0ea27c81537c338fd0ad6b23cebe829",
+        "archive": "tar.gz",
+        "member": "uv-x86_64-unknown-linux-gnu/uv"
+      }
+    },
+    "bats": {
+      "type": "archive",
+      "command": "bats",
+      "version": "1.12.0",
+      "minimum_version": "1.7.0",
+      "version_args": ["--version"],
+      "asset": {
+        "url": "https://github.com/bats-core/bats-core/archive/refs/tags/v1.12.0.tar.gz",
+        "sha256": "e36b020436228262731e3319ed013d84fcd7c4bd97a1b34dee33d170e9ae6bab",
+        "archive": "tar.gz",
+        "member": "bats-core-1.12.0/bin/bats"
+      }
+    },
+    "chrome-for-testing": {
+      "type": "archive",
+      "command": "google-chrome-for-testing",
+      "version": "151.0.7922.34",
+      "version_args": ["--version"],
+      "asset": {
+        "url": "https://storage.googleapis.com/chrome-for-testing-public/151.0.7922.34/linux64/chrome-linux64.zip",
+        "sha256": "ae8736ac28bc69278551500f219fc749575648263c43ec5990749eff43b9fcf8",
+        "archive": "zip",
+        "member": "chrome-linux64/chrome"
+      }
+    },
+    "open-design": {
+      "type": "open-design",
+      "command": "od.mjs",
+      "version": "90a660add511da6408464a1bf3d4d5945ad06400",
+      "lock": ".agents/skills/open-design/open-design.lock",
+      "bootstrap": ".agents/skills/open-design/scripts/bootstrap.sh"
+    },
+    "agent-runtime": {
+      "type": "npm-project",
+      "command": "node",
+      "version": "locked",
+      "path": ".github/agent-runtime"
+    },
+    "opencode": {
+      "type": "npm",
+      "command": "opencode",
+      "version": "1.18.4",
+      "version_args": ["--version"],
+      "package": "opencode-ai@1.18.4",
+      "integrity": "sha512-B8pFAs1g158ZU+C6eSiJz/5ZhG7Vr2mH7Z7ruYEHLElAlX9tehrRTnzTTgjSxHY2vwZ/5VplwR3odFU+Dai8jg=="
+    },
+    "claude": {
+      "type": "npm",
+      "command": "claude",
+      "version": "2.1.220",
+      "version_args": ["--version"],
+      "package": "@anthropic-ai/claude-code@2.1.220",
+      "integrity": "sha512-ogBrvwkqF9f8okmnXKxmRNHuvtFxFEffe5pWdqOV3iQDxlUOKirFqnyWC7NGXXnDA4WkkbPH8pvSbwyCR2Auyw=="
+    },
+    "cursor-agent": {
+      "type": "vendor-channel",
+      "command": "agent",
+      "version": "current",
+      "version_args": ["--version"],
+      "installer_url": "https://cursor.com/install"
+    },
+    "codex": {
+      "type": "vendor-channel",
+      "command": "codex",
+      "version": "current",
+      "version_args": ["--version"],
+      "package": "@openai/codex@0.144.6",
+      "integrity": "sha512-wk+2CWiBNXiJLBoN2D08N9RceWkSBnlgk5g2K1a4CXrP/C0gdlHyRUG7RFzm9y41DCK/7tvCct233JVxyFmznw=="
+    }
+  }
+}

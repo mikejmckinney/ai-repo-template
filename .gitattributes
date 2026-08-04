@@ -1,0 +1,21 @@
+# External skills remain byte-for-byte upstream, including upstream whitespace.
+.agents/skills/aws/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/azure/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/chrome-devtools/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/chrome-devtools-cli/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/cloudflare/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/elevenlabs/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/find-skills/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/anthropic/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/netlify/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/oci/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/phaser/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/playwright-cli/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/render/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/shadcn/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/skywork/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/supabase/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/troubleshooting/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/use-railway/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/vercel/** whitespace=-blank-at-eof,-blank-at-eol
+.agents/skills/web-design-guidelines/** whitespace=-blank-at-eof,-blank-at-eol

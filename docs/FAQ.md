@@ -8,58 +8,58 @@ Frequently asked questions about the `ai-repo-template`. Answers link to deeper 
 
 ## Repo structure
 
-### Template: Why does this repo have `README.md`, `AGENTS.md`, `AI_REPO_GUIDE.md`, and `CLAUDE.md`?
+### Template: Why does this repo have `README.md`, `AGENTS.md`, and `AI_REPO_GUIDE.md`?
 
 Each targets a different audience or loader:
 
 - `README.md` — humans reading on GitHub.
 - `AGENTS.md` — root instructions most AI tools auto-load (Copilot, Cursor, Gemini).
 - `AI_REPO_GUIDE.md` — token-optimized agent reference.
-- `CLAUDE.md` — pointer file that Claude Code's native memory loader picks up; delegates to `AGENTS.md`.
 
 Full rationale and a comparison table live in [`docs/guides/context-files-explained.md`](guides/context-files-explained.md) and [`docs/decisions/adr-001-context-pack-structure.md`](decisions/adr-001-context-pack-structure.md).
-
-### Template: Why is `CLAUDE.md` at the repo root and not inside `.claude/`?
-
-Both locations are valid — Claude Code auto-discovers either. Root is the `/init` default and keeps the file visible next to the other top-level docs. Moving it to `.claude/CLAUDE.md` is a preference, not a requirement. See the explanation inside [`CLAUDE.md`](../CLAUDE.md) itself.
 
 ### Template: What's the difference between `docs/` and `.context/`?
 
 - `docs/` — human-facing reference (guides, ADRs, research). Verbose, explanatory.
-- `.context/` — agent-facing canonical truth (rules, state, roadmap, vision). Lazy-loaded.
+- `.context/` — agent-facing project direction, roadmap, retrospective lessons,
+  and vision beneath the always-loaded `AGENTS.md` contract. Lazy-loaded.
 
 Decision record: [`docs/decisions/adr-001-context-pack-structure.md`](decisions/adr-001-context-pack-structure.md).
 
-### Template: What's the difference between `.agents/`, `.github/agents/`, `.claude/agents/`, `.cursor/agents/`, and `.codex/agents/`?
+### Template: What agent execution model does the repository use?
 
-- `.agents/<role>.md` — **canonical** role definitions (platform-agnostic). Single source of truth for responsibilities, Do/Don't lists, output formats. (ADR-023)
-- `.github/agents/<role>.agent.md` — GitHub Copilot SDK custom-agent registration overlay. Thin shim: platform-specific frontmatter + pointer to canonical.
-- `.claude/agents/<role>.md` — Claude Code native subagent registration overlay. Thin shim: platform-specific frontmatter + pointer to canonical.
-- `.cursor/agents/<role>.md` — Cursor agent registration overlay. Markdown shim with YAML frontmatter (`model`, `readonly`, `is_background`) + pointer to canonical.
-- `.codex/agents/<role>.toml` — Codex custom-agent overlay. TOML shim with `name`, `description`, `model`, `model_reasoning_effort`, `sandbox_mode`, and `developer_instructions` pointing to canonical.
-
-Model tiers are intentionally platform-specific per ADR-019: Copilot, Claude, Cursor, and Codex each have their own allowed value space, and `test.sh` enforces the per-platform allowlists. Decision records: [`docs/decisions/adr-003-claude-code-subagent-registration.md`](decisions/adr-003-claude-code-subagent-registration.md), [`docs/decisions/adr-019-per-role-model-tiering.md`](decisions/adr-019-per-role-model-tiering.md), [`docs/decisions/adr-023-shared-subagent-canonical.md`](decisions/adr-023-shared-subagent-canonical.md).
+One monolithic agent implements routine work. CI and lint are blocking;
+agents normally apply `ai-review:live` for parallel advisory snapshots; daily and
+weekly workflows perform recurring review; and the OpenCode `multi-model-consensus`
+skill is the sole opt-in multi-model mechanism. See ADR-031.
 
 ---
 
 ## Using the template
 
-### Do I have to use multi-agent roles, or can I work solo?
+### Does advisory review block implementation or merge?
 
-Solo work is fine. The 10 roles (analyst, architect, judge, critic, pm, frontend, backend, qa, devops, docs) are helpful when multiple agents work in parallel without stepping on each other, but a single agent can wear any hat as needed. Full workflow: see [docs/guides/multi-agent-coordination.md](guides/multi-agent-coordination.md).
+No. Agents normally apply `ai-review:live` to eligible task PRs, but continue
+implementation without waiting. Before completion they independently verify any
+arrived snapshot matching the current PR head. Missing, stale, running, or failed
+feedback remains non-blocking; CI and maintainer decisions remain authoritative.
 
 ### How do I know whether I'm editing the template itself or a derived project?
 
-`AGENTS.md` has a template-detection block at the top. If the repo name is `ai-repo-template` (or the legacy `dotfiles`), the meta-docs are preserved. Otherwise, files containing `TEMPLATE_PLACEHOLDER` are treated as stubs to replace. See [`AGENTS.md`](../AGENTS.md) lines 3–12.
+Run the `repo-onboarding` classifier. Canonical template identity selects
+`ai-repo-template`; a derived copy with explicit seed state selects
+`template-seed`; and an onboarded or legacy derived repository selects
+`complete`. See [the onboarding skill](../.agents/skills/repo-onboarding/SKILL.md).
 
-### What does `TEMPLATE_PLACEHOLDER` mean and how do I find every instance?
+### Must a derived repository replace retained template resources?
 
-It's a marker used by this template to flag scaffolding that derived projects should replace. Run [`scripts/verify-env.sh`](../scripts/verify-env.sh) to check for the marker and report how many matches it finds.
-
-### Why are there deployment templates for Vercel, Railway, and Render — do I need all three?
-
-No. Pick one (or none). The templates in `config/` each have a `.template` suffix so nothing is active until you rename. See [`config/README.md`](../config/README.md) for the decision criteria per platform.
+No. The lifecycle contract lives in `.context/onboarding-state.json`. During
+`template-seed` onboarding, preserve useful resources and extend, replace, or
+delete them only when current project evidence requires it.
 
 ### Template: Where should I file limitations or known issues I've hit?
 
-If it's an agent-facing gotcha, add it to `AI_REPO_GUIDE.md § Gotchas / Known Issues`. If it's human-facing, add it to `README.md § Limitations`. If it's a decision-specific follow-up, add it to the relevant ADR's "Future Work" subsection.
+If it is an agent-facing environment or tool warning, add it to
+`AI_REPO_GUIDE.md` under "Known Warnings." If it is human-facing, add it to
+`README.md` under "Limitations." If it is a decision-specific follow-up, add it
+to the relevant ADR's "Future Work" subsection.

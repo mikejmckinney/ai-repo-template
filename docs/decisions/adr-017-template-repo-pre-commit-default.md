@@ -2,11 +2,19 @@
 
 ## Status
 
-Accepted
+Deprecated
 
 ## Date
 
 2026-05-05
+
+## Amendment 2026-07-15 — Retire dormant template-local hooks
+
+The template-local `.pre-commit-config.yaml` is removed because neither the
+bootstrap nor this checkout installs it, while read-only CI already runs the
+same blocking checks. Deterministic formatting remains available through
+`scripts/format.sh`; contributors run it explicitly before CI. Existing local
+hook installations may be removed with `pre-commit uninstall`.
 
 ## Context
 

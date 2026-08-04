@@ -6,26 +6,6 @@
 # --- Scripts Check ---
 echo "Checking scripts..."
 
-SCRIPT_FILES=(
-  "scripts/README.md"
-  "scripts/setup.sh"
-  "scripts/verify-env.sh"
-  "scripts/verify-pr.sh"
-  "scripts/db-reset.sh"
-  "scripts/auto-rebase-overlapping.sh"
-  "scripts/multi-dispatch-safety.sh"
-  "scripts/parse-ownership-table.sh"
-  "scripts/pr-iteration-stats.sh"
-)
-
-for file in "${SCRIPT_FILES[@]}"; do
-  if [[ -f "$file" ]]; then
-    pass "$file exists"
-  else
-    fail "$file is missing"
-  fi
-done
-
 # Check scripts are executable
 for script in scripts/*.sh; do
   [ -f "$script" ] || continue
@@ -35,5 +15,17 @@ for script in scripts/*.sh; do
     warn "$script is not executable"
   fi
 done
+
+# Repository-owned skill instructions invoke their scripts directly. External
+# package modes must instead remain identical to the deterministic lock hash.
+while IFS= read -r destination; do
+  while IFS= read -r script; do
+    if [[ -x "$script" ]]; then
+      pass "$script is executable"
+    else
+      fail "$script is not executable"
+    fi
+  done < <(find "$destination" -type f -path '*/scripts/*.sh' -print | sort)
+done < <(jq -r '.ownedSkills[].destinationPath' skills-lock.json)
 
 echo ""

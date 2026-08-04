@@ -8,9 +8,9 @@
 # bot review for one such change because the bug class is structurally
 # unverifiable on the PR branch. This script is the surgical Plan-template
 # guard: if you declare `code-or-docs` but you actually touched a
-# default-branch-only workflow, you must either (a) reclassify and run
-# the sandbox playbook (`docs/guides/sandbox-verification.md`), or
-# (b) explain why the trigger event genuinely runs from the PR branch.
+# default-branch-only workflow, select the outcome environment using
+# `docs/guides/outcome-validation.md` and run the sibling repository adapter
+# in `docs/guides/sandbox-verification.md`.
 #
 # Usage:
 #   scripts/verify-pr.sh [--base <ref>] [--declared <class>] [--paths-from <file>]
@@ -32,9 +32,8 @@
 #        declared, or pure type mismatch).
 #   2  — usage / argument error.
 #
-# The matrix lives in docs/guides/agent-pipeline.md § "Workflow
-# verifiability matrix". Detection rules below mirror that doc — keep
-# them in lockstep.
+# Detection below is the canonical workflow-verifiability contract.
+# docs/guides/agent-pipeline.md describes the resulting classes and points here.
 
 set -euo pipefail
 
@@ -126,8 +125,7 @@ fi
 
 # ── Classify each path ──────────────────────────────────────────────────────
 #
-# Detection rules (mirror docs/guides/agent-pipeline.md § "Workflow
-# verifiability matrix"):
+# Detection rules:
 #
 # default-branch-only workflow
 #   Any `.github/workflows/<name>.yml` whose triggers include any of:
@@ -137,25 +135,24 @@ fi
 #   exercised pre-merge.
 #
 # pull_request-triggered workflow
-#   Any `.github/workflows/<name>.yml` whose triggers are limited to
-#   pull_request / workflow_dispatch. These run the workflow file from
-#   the PR branch, so PR-branch testing works. Note `pull_request_target`
-#   is intentionally NOT in this bucket — see the `default-branch-only
-#   workflow` block above.
+#   Any `.github/workflows/<name>.yml` that includes pull_request and has
+#   no default-only trigger. Optional workflow_dispatch does not change
+#   that classification. Dispatch-only workflows are loaded from the
+#   default branch and therefore belong to the default-only bucket.
 #
 # code-or-docs
 #   Anything else: source, docs, scripts, config, ADRs, role files, etc.
 #
 # A diff that contains paths from more than one bucket above classifies
-# as `mixed`; the most-restrictive bucket present sets the verification
-# floor (default-branch-only > pull_request-triggered > code-or-docs).
+# as `mixed`. That structural fact does not decide whether the changed behavior
+# requires default-branch execution; the versioned evidence validator owns that
+# separate declaration.
 
 has_default_only=0
 has_pr_triggered=0
 has_other=0
 
-# Surface-only triggers that pin a workflow to default-branch execution.
-# Keep this list in lockstep with docs/guides/agent-pipeline.md.
+# Triggers that pin a workflow to default-branch execution.
 #
 # Note on `pull_request_target`: per GitHub docs, this trigger runs in
 # the context of the PR's *base* branch (the target / default branch),
@@ -198,16 +195,17 @@ DEFAULT_ONLY_ALT=$(
 # classifier (real YAML parsing would require yq, intentionally avoided
 # per ADR-016 §Implementation).
 #
-# Adding more shapes is the documented extension point — see
-# scripts/test-verify-pr.sh fixtures.
-detect_default_only() {
+# Adding more shapes is the documented extension point. Add a regression
+# fixture to scripts/tests/verify-pr.bats before changing this parser.
+detect_on_trigger() {
   local file="$1"
+  local trigger_pattern="$2"
   # Strip comments (trailing `   # ...` and whole-line `# ...`) then
   # pipe directly into the awk state machine. Piping (rather than
   # capturing into a shell variable) avoids ARG_MAX risk on large
   # workflow files. See GEM-V (PR #246 review round 10).
   sed -E 's/[[:space:]]+#.*$//; s/^[[:space:]]*#.*$//' "$file" \
-    | awk -v triggers="$DEFAULT_ONLY_ALT" '
+    | awk -v triggers="$trigger_pattern" '
     BEGIN { in_on = 0; found = 0 }
     # Inline-scalar form: `on: push`
     /^on:[[:space:]]+[A-Za-z_]/ {
@@ -243,14 +241,20 @@ while IFS= read -r path; do
     if [[ -f "$path" ]]; then
       # Look at the `on:` block. We only care about top-level trigger
       # *keys*; values like `branches: [main]` are intentionally not
-      # treated as triggers. detect_default_only handles block-form,
+      # treated as triggers. detect_on_trigger handles block-form,
       # list-bullet, inline-scalar, and bracket-list YAML shapes.
-      if detect_default_only "$path"; then
+      if detect_on_trigger "$path" "$DEFAULT_ONLY_ALT"; then
         detected="default-branch-only workflow"
         has_default_only=1
-      else
+      elif detect_on_trigger "$path" "(pull_request)"; then
         detected="pull_request-triggered workflow"
         has_pr_triggered=1
+      else
+        # Dispatch-only and unrecognized trigger shapes are loaded from
+        # the default branch. Require sandbox verification rather than
+        # incorrectly claiming the PR branch can exercise them.
+        detected="default-branch-only workflow"
+        has_default_only=1
       fi
     else
       # File deleted in this diff — we can't read it. Be conservative:
@@ -314,33 +318,31 @@ printf '    detected:  %s\n' "$detected_overall" >&2
 printf '\nNext steps:\n' >&2
 case "$detected_overall" in
   "default-branch-only workflow")
-    printf '  - Update the issue Plan comment Verification section:\n' >&2
+    printf '  - Update the issue Plan outcome environments:\n' >&2
     printf '      Change class: %s\n' "$detected_overall" >&2
-    printf '      Verification target: sandbox repo (or both)\n' >&2
-    printf '  - Run the sandbox playbook before merging:\n' >&2
+    printf '  - Select and record material-claim evidence:\n' >&2
+    printf '      docs/guides/outcome-validation.md\n' >&2
+    printf '  - Run the sibling repository adapter before merging:\n' >&2
     printf '      docs/guides/sandbox-verification.md\n' >&2
     ;;
   "mixed")
-    # In a mixed diff the verification floor is set by the
-    # most-restrictive bucket present, NOT by the literal label
-    # "mixed". If any default-branch-only path is in the diff, the
-    # sandbox playbook applies; otherwise the floor is PR-branch
-    # verifiable. Mirrors the matrix in
-    # docs/guides/agent-pipeline.md § "Workflow verifiability matrix".
-    printf '  - Update the issue Plan comment Verification section:\n' >&2
+    printf '  - Update the issue Plan outcome environments:\n' >&2
     printf '      Change class: mixed\n' >&2
     if [[ "$has_default_only" -eq 1 ]]; then
-      printf '      Verification target: sandbox repo (or both)\n' >&2
-      printf '  - Run the sandbox playbook before merging:\n' >&2
+      printf '  - Declare whether the changed behavior itself is default-branch constrained:\n' >&2
+      printf '      Default-branch constrained: yes | no\n' >&2
+      printf '  - Select every required outcome environment from that constraint:\n' >&2
+      printf '      docs/guides/outcome-validation.md\n' >&2
+      printf '  - Use the sibling adapter only for load-bearing default-branch behavior:\n' >&2
       printf '      docs/guides/sandbox-verification.md\n' >&2
     else
-      printf '      Verification target: PR branch\n' >&2
+      printf '      docs/guides/outcome-validation.md\n' >&2
     fi
     ;;
   "pull_request-triggered workflow")
-    printf '  - Update the issue Plan comment Verification section:\n' >&2
+    printf '  - Update the issue Plan outcome environments:\n' >&2
     printf '      Change class: pull_request-triggered workflow\n' >&2
-    printf '      Verification target: PR branch\n' >&2
+    printf '      docs/guides/outcome-validation.md\n' >&2
     ;;
   *)
     printf '  - Update the issue Plan comment Verification section to declare:\n' >&2

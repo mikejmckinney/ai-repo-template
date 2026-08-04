@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted (partially superseded by ADR-034)
 
 Narrows ADR-021 §"Per-file cadence bump" scope.
 Overrides `docs/compliance_schemas.md` §"Schema versioning" one-cycle
@@ -11,6 +11,27 @@ backward-compat default for the Phase C migrations recorded in this ADR.
 ## Date
 
 2026-05-20
+
+## 2026-07-20 Current-State Amendment
+
+At the time of this amendment, the sandbox outcome requirement and canonical
+`Sandbox issue:` / `Sandbox PR:` labels remained active. ADR-034 later
+superseded that universal requirement. ADR-026 retired structured compliance contracts, and
+ADR-031 retired the Judge role and role pipeline. The former check 157 drift
+detector and Judge checklist no longer exist; current enforcement is the PR
+template, `AGENTS.md` outcome contract, live review, and the sandbox playbook.
+Sections 2-6 and the original verification record below describe the historical
+implementation rather than active mirror-maintenance instructions.
+
+## 2026-07-23 Outcome-Evidence Amendment
+
+ADR-034 supersedes the universal sibling-repository requirement in sections 1-2
+and 8 and replaces their active evidence fields with outcome-equivalent
+environment selection plus auditable material-claim artifacts. Section 3's
+structural-versus-semantic principle remains under ADR-034's broader schema.
+Section 1.1's per-finding verification semantics and sections 5-7's canary and
+schema history remain active. ADR-016 continues to own the sibling repository
+adapter for GitHub default-branch behavior.
 
 ## Context
 
@@ -52,6 +73,11 @@ Every PR opened against this repo's default branch MUST include a
 issue or PR in a sandbox sibling repo where the change was actually
 exercised before being proposed here.
 
+**Batch fix PR exception (§1.1):** daily/weekly retro fix draft PRs may
+use `n/a` for one or both labels when the fix job logged
+`sandbox: skipped — no workflow regression scope` and all implemented
+findings passed local pre/post reproduction. See §1.1.
+
 This ADR is repo-agnostic. Derived repositories using this template will
 have their own sandbox sibling (the convention is `<repo>-sandbox`,
 but nothing in this ADR pins the sandbox to a specific URL). The
@@ -67,6 +93,48 @@ the default branch. The `gate_status: {triggered, applied}` sub-block on
 gate fired and *whether* the parent claims it was applied; it is not the
 audit channel. The audit channel is the sandbox evidence section.
 
+### 1.1 Batch fix PR verification (daily / weekly fix jobs)
+
+When repository variable `FIX_JOB_SANDBOX_VERIFY=true` on the **upstream**
+repo (default `false`), the fix job in `agent-postmerge-retro.yml` /
+`agent-weekly-review.yml` MUST:
+
+1. **Reporting agent** — each `follow_up_issues` row that becomes a fix
+   finding includes non-empty `repro_steps[]` (how to reproduce the bug).
+2. **Fix agent** — for each `findings[]` row by `dedupe_key`:
+   - Run `repro_steps` **before** implementing (pre-repro). If the bug
+     cannot be reproduced on the current branch, record
+     `verify.pre: cant_reproduce` and **skip implementation for that
+     finding only** (other findings continue).
+   - After implementing, run `repro_steps` again (post-repro). Record
+     `verify.post: fixed` only when `verify.pre` was `reproduced` or
+     `skipped_collateral`.
+   - Write `retro/fix-verify-<RUN_DATE>.json` or
+     `weekly/fix-verify-<RUN_WEEK>.json` on the fix branch and render
+     `## Fix verification` on the draft PR body from that file.
+3. **End of job** — after all findings are addressed, run `./test.sh`
+   when scripts/workflows/checks changed.
+4. **Sandbox batch (end only)** — push once to sandbox branch
+   `test/fix-retro-<RUN_DATE>` or `test/fix-weekly-<RUN_WEEK>` when any
+   changed path is on the runtime path of a default-branch-only workflow
+   that local verification cannot exercise. Otherwise log
+   `sandbox: skipped — no workflow regression scope` and set sandbox
+   evidence labels to `n/a` on the upstream draft PR.
+5. **Workflow YAML on upstream** — fix job tokens still cannot push
+   `.github/workflows/**` on upstream; workflow fixes are proved on
+   sandbox; upstream PR may ship script/lib changes only.
+
+**Recursion guard:** jobs running on a `*-sandbox` repository OR with
+`SKIP_SANDBOX_FIX_VERIFY=true` skip automated sandbox sync.
+
+**Failure semantics:** sandbox verify failure marks umbrella Meta
+`sandbox verify: failed` and leaves the upstream PR **draft**; the draft
+PR is still created/updated.
+
+**Ephemeral artifact:** `fix-verify.json` on the fix branch is a review
+artifact; remove manually before undraft/merge. The PR body's
+`## Fix verification` section is the durable record on GitHub.
+
 ### 2. Canonical field labels
 
 The PR template (`.github/pull_request_template.md`) and `.agents/judge.md`
@@ -81,7 +149,8 @@ Sandbox PR: <URL>
 Both values must be present, non-empty, and point at distinct URLs in a
 sandbox repo (issue link and PR link are inherently distinct by GitHub's
 `/issues/` vs `/pull/` path discriminator). Missing label, missing value,
-or absence of the section header itself = malformed.
+or absence of the section header itself = malformed. Values of `n/a` are
+permitted only under §1.1 batch-fix local-verify exception.
 
 ### 3. Structural vs semantic
 
@@ -90,15 +159,11 @@ checklist can enforce mechanically. Content checks — that the sandbox
 issue actually describes the change, that the sandbox PR actually
 exercises it should also be reviewed by judge and if needed critic.
 
-### 4. Critic-before-Judge plan-gate ordering convention (Δ14)
+### 4. Historical plan-gate ordering convention (Δ14)
 
-`.github/prompts/op-issue-workflow.md` Phase 3 (plan-gate) dispatches
-Critic *before* Judge, matching Phase 5 (diff-gate) ordering already
-established. Critic surfaces hidden assumptions and AI clichés on the
-plan; Judge then renders APPROVE / REQUEST_CHANGES / BLOCK with full
-information. Reversing the order forces Judge to render twice when Critic
-later catches issues. This convention applies to all OP-mediated
-plan-gates, not only #349's.
+The former role pipeline dispatched Critic before Judge so the final gate
+received all review evidence. ADR-031 retired that pipeline; this section is
+retained only as historical rationale and is not an operational instruction.
 
 ### 5. Canary placeholder convention
 

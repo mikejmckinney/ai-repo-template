@@ -29,8 +29,6 @@ cd "$SCRIPT_DIR"
 source "$SCRIPT_DIR/scripts/lib/logging.sh"
 # shellcheck source=scripts/lib/assertions.sh
 source "$SCRIPT_DIR/scripts/lib/assertions.sh"
-# shellcheck source=scripts/lib/bats-helpers.sh
-source "$SCRIPT_DIR/scripts/lib/bats-helpers.sh"
 
 echo "========================================"
 echo "Template Repository Verification"

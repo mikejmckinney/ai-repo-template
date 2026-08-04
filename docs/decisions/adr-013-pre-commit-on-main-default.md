@@ -2,11 +2,20 @@
 
 ## Status
 
-Accepted
+Deprecated
 
 ## Date
 
 2026-04-25
+
+## Amendment 2026-07-15 — Retire generic pre-commit scaffolding
+
+The unused `.pre-commit-config.yaml.template` is removed. Derived repositories
+should select formatting, lint, secret-scanning, and commit-policy tools during
+onboarding based on their actual stack rather than inherit a stale generic
+configuration. The branch-first rule in `AGENTS.md` remains the maintained
+control. Existing derived repositories that adopted the file may keep it; there
+is no runtime migration.
 
 ## Context
 

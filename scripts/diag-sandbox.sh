@@ -18,10 +18,8 @@
 #   DIAG_GIT_TIMEOUT   Integer seconds for git ls-remote probe timeout.
 #                      Default: 10. Set to 0 to skip timeout wrapper.
 #
-# Auth-source detection uses the same PAT variable probe list
-# (GH_PAT, GH_TOKEN_PAT, CODESPACES_GH_PAT, GITHUB_PAT) as
-# scripts/setup/40-ensure-labels.sh.
-# Both files must be updated together if new PAT aliases are added.
+# Auth-source detection uses GH_PAT_PROBE_VARS from
+# scripts/lib/ensure-gh-pat-auth.sh (single source of truth).
 # Intentionally omits `set -e`: this is a diagnostic script, so it keeps
 # collecting explicit checks and uses targeted exits for hard-failure paths.
 set -uo pipefail
@@ -29,6 +27,8 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/logging.sh
 source "$SCRIPT_DIR/lib/logging.sh"
+# shellcheck source=lib/ensure-gh-pat-auth.sh
+source "$SCRIPT_DIR/lib/ensure-gh-pat-auth.sh"
 
 require_tool() {
   local tool="$1"
@@ -46,8 +46,8 @@ _redact_remote_text() {
 # Constants
 # ---------------------------------------------------------------------------
 SANDBOX_REMOTE="${SANDBOX_REMOTE:-sandbox}"
-# PAT probe list — must match scripts/setup/40-ensure-labels.sh.
-_PAT_VARS=(GH_PAT GH_TOKEN_PAT CODESPACES_GH_PAT GITHUB_PAT)
+# PAT probe list — must match scripts/lib/ensure-gh-pat-auth.sh.
+_PAT_VARS=("${GH_PAT_PROBE_VARS[@]}")
 
 echo "========================================"
 echo "Sandbox Doctor"

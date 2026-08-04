@@ -7,14 +7,16 @@ module owns one phase of project bootstrap and is independently re-runnable.
 
 | Module | Phase | Notes |
 |---|---|---|
-| `00-detect-repo.sh` | Resolve `FULL_REPO` from env/git remote; rewrite `.github/ISSUE_TEMPLATE/config.yml` placeholder. | Honors `GH_REPO` / `GITHUB_REPOSITORY` env overrides. |
+| `00-detect-repo.sh` | Resolve `FULL_REPO` from env/git remote. | Honors `GH_REPO` / `GITHUB_REPOSITORY` env overrides. |
 | `10-env-file.sh` | Copy `.env.example` → `.env` if missing. | Idempotent — never overwrites an existing `.env`. |
-| `20-install-dependencies.sh` | `npm ci` / `pip install` for declared manifests; database-migration stub. | DB block is template scaffolding for project customization. |
+| `20-install-dependencies.sh` | `npm ci` / `pip install` for declared manifests. | Does not invent database setup without a verified database stack. |
 | `30-build.sh` | Run `npm run build` if `package.json` declares a build script. | Logs "No build step configured" otherwise. |
-| `40-ensure-labels.sh` | Probe `gh auth`, resolve `FULL_REPO` fallback, `export GH_REPO`, create pipeline labels. | Sets shared gating vars (`_pipeline_setup_skip_reason`, `_gh_auth_ok`) consumed by 50/60. |
-| `50-ensure-variables.sh` | `gh variable set` for `MAX_COPILOT_*`, `PR_RESOLVE_MAX_ROUNDS`. | No-ops when 40 requested skip. Includes one-time `MAX_COPILOT_DAILY` 20→10 migration. |
-| `60-check-secrets.sh` | Report presence of `CLAUDE_PAT`, `ANTHROPIC_API_KEY` (repo + org tiers). | Cannot read values; presence-only. |
+| `40-ensure-labels.sh` | Probe `gh auth`, resolve `FULL_REPO` fallback, `export GH_REPO`, create maintained pipeline labels. | Sets shared gating vars consumed by 60. |
+| `ensure-pipeline-labels.sh` | Standalone wrapper: `ensure-pipeline-labels.sh owner/repo` | Used by `sandbox-bootstrap.sh` and operators; sources `40-ensure-labels.sh`. |
+| `60-check-secrets.sh` | Report required model/runtime secret presence (repo + org tiers). | Cannot read values; presence-only. |
 | `70-verify-env.sh` | Delegate to `scripts/verify-env.sh`. | Final gate. |
+
+**Codespace lifecycle (not part of `setup.sh`):** [`.devcontainer/devcontainer.json`](../../.devcontainer/devcontainer.json) runs [`scripts/codespace-post-create.sh`](../codespace-post-create.sh) when the container is created and [`scripts/codespace-post-start.sh`](../codespace-post-start.sh) whenever it starts. Post-create installs the pinned default tool profile. Post-start upgrades `gh` from the injected `GITHUB_TOKEN` to a user PAT when `GH_PAT` (etc.) is set, exports session tokens, installs a shell hook, and advises when the sandbox git remote is missing. It does **not** invoke `setup.sh` or `sandbox-bootstrap.sh`; project adaptation, repository creation, and mirroring remain explicit maintainer actions.
 
 ## How the modules are loaded
 

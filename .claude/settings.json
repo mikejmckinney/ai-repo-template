@@ -1,0 +1,12 @@
+{
+  "enabledMcpjsonServers": [
+    "open-design",
+    "playwright",
+    "chrome-devtools",
+    "shadcn"
+  ],
+  "enableAllProjectMcpServers": true,
+  "permissions": {
+    "defaultMode": "bypassPermissions"
+  }
+}

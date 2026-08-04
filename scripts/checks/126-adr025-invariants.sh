@@ -7,14 +7,15 @@
 echo "Checking ADR-025 components (issue #298 / GitHub-first live state)..."
 
 ADR025_PATH="docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md"
-# label_declared() is defined by 045-preflight-gate.sh, which test.sh sources
-# before this check.
+label_declared() {
+  grep -qE "^${1}\\|" scripts/setup/40-ensure-labels.sh
+}
 
 if [[ -f "$ADR025_PATH" ]] \
-  && grep -qE '^Accepted$' "$ADR025_PATH" 2>/dev/null; then
+  && grep -q '^Accepted' "$ADR025_PATH" 2>/dev/null; then
   pass "ADR-025 exists with Status: Accepted"
 else
-  fail "ADR-025 missing or Status line is not 'Accepted' ($ADR025_PATH)"
+  fail "ADR-025 missing or Status line does not begin with 'Accepted' ($ADR025_PATH)"
 fi
 
 if grep -q 'ADR-025' docs/decisions/README.md 2>/dev/null; then
@@ -51,22 +52,37 @@ for label in 'agent:claimed' 'agent:blocked' 'agent:awaiting-review'; do
   fi
 done
 
-# Use targeted prose regexes for the required cadence concepts instead of
-# pinning full sentences; process_session_state.md is human-facing guidance
-# and may be polished without changing the underlying ADR-025 contract.
-if grep -qiE 'wait-for-input[[:space:]-]*pause' .context/rules/process_session_state.md 2>/dev/null \
-  && grep -qiE 'auto-summar(y|izes|ized)\b' .context/rules/process_session_state.md 2>/dev/null \
-  && grep -qiE 'session ends.*not merged/closed' .context/rules/process_session_state.md 2>/dev/null; then
-  pass "process_session_state.md preserves ADR-025 live-state cadence triggers"
+# AGENTS.md keeps the slim continuation-state contract.
+if grep -qF 'Session-state cadence' AGENTS.md 2>/dev/null \
+  && grep -qF 'agent-state:v1' AGENTS.md 2>/dev/null \
+  && grep -qF 'next actions' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md preserves ADR-025 live-state guidance"
 else
-  fail "process_session_state.md missing one or more ADR-025 live-state cadence triggers"
+  fail "AGENTS.md missing ADR-025 live-state guidance"
 fi
 
-if grep -q '#263.*superseded' "$ADR025_PATH" 2>/dev/null \
-  && grep -q '#299' "$ADR025_PATH" 2>/dev/null; then
-  pass "ADR-025 marks #263 superseded and defers archive retention to #299"
+if ! grep -qF 'handoff_needed' .context/state/agent_state_comment_template.md \
+  && grep -qF '## actions' .context/state/agent_state_comment_template.md \
+  && grep -qF '## Outcomes' .context/state/agent_state_comment_template.md \
+  && grep -qF '## Next steps' .context/state/agent_state_comment_template.md; then
+  pass "agent-state:v1 supports continuation without a separate handoff field"
 else
-  fail "ADR-025 missing #263 supersession or #299 deferral"
+  fail "agent-state:v1 template missing the active continuation contract"
+fi
+
+if grep -qF 'https://github.com/OWNER/REPO/issues/NNN' .context/state/agent_state_comment_template.md \
+  && grep -qF 'https://github.com/OWNER/REPO/pull/MMM' .context/state/agent_state_comment_template.md \
+  && grep -qF 'https://github.com/OWNER/REPO/actions/runs/RUN_ID' .context/state/agent_state_comment_template.md; then
+  pass "agent-state:v1 reference examples use clickable GitHub URLs"
+else
+  fail "agent-state:v1 reference examples must use clickable GitHub URLs"
+fi
+
+if grep -qF 'first mention' .context/state/agent_state_comment_template.md \
+  && grep -qF 'agent-managed GitHub artifacts' AGENTS.md; then
+  pass "agent-managed GitHub artifacts link addressable resources on first mention"
+else
+  fail "clickable-resource policy is not synchronized across agent guidance"
 fi
 
 echo ""

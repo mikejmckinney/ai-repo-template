@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-014)
+Superseded by [ADR-031](./adr-031-agent-model-roi-benchmark-policy.md)
 
 > Note: ADR-014 broadened the trigger criteria to ad-hoc deliverable
 > issues. The 15-minute test, report template, and Judge PLAN-GATE BLOCK

@@ -10,8 +10,8 @@
 > **Don't cite from this file without reading the lead file's "Read this first"
 > section.** Patterns are vocabulary, not rules.
 >
-> **Status**: advisory. A `CDP` citation is a review handle; it does not create a
-> Judge block condition.
+> **Status**: advisory. A `CDP` citation is a review handle; it is not independently
+> blocking.
 
 Examples are intentionally small. Most entries describe a shape that spans
 application code, storage, and operational runbooks; a short sketch is safer

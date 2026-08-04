@@ -11,11 +11,20 @@ ADR's decision, not a separate code change.
 
 ## Status
 
-Accepted
+Accepted (superseded in part by ADR-032)
 
 ## Date
 
 2026-05-08
+
+## 2026-07-20 Current-State Amendment
+
+ADR-032 supersedes this decision's catalog location and standalone blocking
+designations. The canonical advisory catalog now lives in
+`docs/guides/repo-orchestration-patterns-reference.md` and generates the bounded
+`AGENTS.md` catalog. An AP identifier alone does not block; current reviews must
+name a concrete deterministic contract violation or observable harm. The
+original rationale below remains historical evidence.
 
 ## Context
 

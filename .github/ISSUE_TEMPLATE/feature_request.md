@@ -26,9 +26,8 @@ As a [type of user], I want [goal] so that [benefit].
 ## User outcome (15-minute test)
 
 <!--
-Optional but recommended. If you can answer this clearly here, you may
-add the `outcome-validated` label to opt out of the Analyst pre-flight
-gate (see ADR-014).
+Optional but recommended. If you can answer this clearly here, add the
+`outcome-validated` label to record that the user outcome is explicit.
 
 The test: "If a user spent 15 minutes with the final deliverable,
 would they EXPERIENCE the outcome, or would they READ ABOUT it?"
@@ -38,8 +37,7 @@ one paragraph what a user will be able to DO when this ships — focus on
 user actions, not files created. Example:
 
 > A reviewer will be able to open a PR, see the Plan comment was posted
-> before the first code commit, and confirm Judge applied PLAN-GATE
-> BLOCK if it was missing.
+> before the first code commit, and confirm required checks catch a missing plan.
 -->
 
 ## Acceptance Criteria
@@ -70,3 +68,93 @@ user actions, not files created. Example:
 <!-- Any other relevant information -->
 
 <!-- Live agent coordination status belongs in the latest `agent-state:v1` issue/PR comment, not in the issue body. Keep this body focused on the durable feature/task contract. -->
+
+<!-- implementation-plan:v2:begin -->
+
+## Implementation Plan
+
+### Outcome
+
+### Approach
+
+### Files to change
+
+- [`README.md`](../blob/main/README.md) — <one phrase: what change>
+- [`scripts/tests/`](../tree/main/scripts/tests) — <one phrase: what change>
+
+<!-- Replace the examples with every expected file or directory. Existing files
+and directories must be clickable: use ../blob/main/<path> for a file and
+../tree/main/<path> for a directory. For a planned new path, link its nearest
+existing parent and label the new path in the description. For a glob, link its
+containing directory and keep the glob in the link text or description. -->
+
+### Keyed-state semantics (conditional)
+
+Complete this matrix when work appends, merges, upserts, replaces, migrates,
+deduplicates, or otherwise persists records by key. Otherwise state `Not
+applicable — no persisted keyed state`.
+
+- **first write:**
+- **identical retry:**
+- **changed retry:**
+- **unrelated-key preservation:**
+- **duplicate legacy records:**
+- **missing-field compatibility:**
+
+### Delivery boundaries
+
+Identify independently shippable and revertible workstreams. For each
+workstream, state its dependencies, shared contracts, and rollback effect.
+Recommend one PR, stacked PRs, or separate PRs. If independently revertible
+work remains combined, state the load-bearing reason, such as atomic rollout, a
+shared contract, lower total process cost, or an explicit maintainer decision.
+This is a recommendation, not an automatic split rule.
+
+### User outcome validation plan — PRIMARY
+
+For each material claim, plan one auditable record:
+
+```text
+Material claim:
+Environment:
+Why representative:
+Implementation SHA:
+Action performed:
+Expected result:
+Observed result:
+Artifact:
+Artifact type:
+Redaction:
+Retention:
+Evidence reuse: <none, or Paths: <later path analysis>; Conditions: <load-bearing condition analysis>>
+Result: pass | fail | blocked
+```
+
+Choose the most representative practical environment; cost and speed may
+distinguish equally representative options but cannot replace the affected
+user's action or required result. Paid or destructive actions require explicit
+approval and remain blocked until performed. Mixed changes may require more
+than one record. External-state and runtime claims cannot be prose-only.
+See `docs/guides/outcome-validation.md`.
+
+### Supporting verification
+
+**Change class**: <code-or-docs | pull_request-triggered workflow | default-branch-only workflow | mixed>
+**Verification evidence contract**: 1
+**Default-branch constrained**: <yes | no>
+**Verification target**: <PR branch | preview | dogfood | sandbox repo | both>
+
+The classifier owns workflow-trigger facts. For mixed changes, separately state
+whether the changed behavior depends on default-branch execution. Select outcome
+environments from the user journey; use the sibling sandbox adapter only when
+GitHub default-branch state is load-bearing.
+
+### Risks / out-of-scope
+
+### Opportunity notes
+
+### Revision history
+
+- Not yet planned.
+
+<!-- implementation-plan:v2:end -->

@@ -141,7 +141,7 @@ projects. Three honest answers:
   evaluates lazily; assume nothing is materialized at plan time"). The
   `stacks:` field is what makes this discoverable. This still triggers
   Phase 5 — the postmortem is mirrored — but the follow-up artifact
-  does NOT modify AGENTS.md or `.context/rules/`. It stays in the
+  does NOT modify `AGENTS.md`. It stays in the
   postmortem; future projects find it via the stack-tagged index.
   Mark `generalizes: Yes` and explain the stack scope in the body.
 - **No** — project-specific. Stays in this repo. Do not mirror.

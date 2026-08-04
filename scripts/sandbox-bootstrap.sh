@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Description: One-time bootstrap of the sandbox sibling repo (ADR-016).
-# Usage: SANDBOX_PAT=<value> [SANDBOX_ANTHROPIC_KEY=<value>] \
+# Usage: [BOOTSTRAP_GH_TOKEN=<value>] \
 #        [SANDBOX_REPO_NAME=<owner/repo>] [SANDBOX_REMOTE=sandbox] \
 #        ./scripts/sandbox-bootstrap.sh
 #
@@ -9,20 +9,11 @@
 #   1. Resolve upstream repo (owner + name) from `origin`.
 #   2. Create the sandbox sibling repo (private; same owner).
 #   3. Mirror upstream main into the sandbox.
-#   4. Set CLAUDE_PAT secret on the sandbox repo from $SANDBOX_PAT.
-#   5. (Optional) Set ANTHROPIC_API_KEY from $SANDBOX_ANTHROPIC_KEY.
-#   6. Add a git remote on this checkout pointing at the sandbox.
+#   4. Add a git remote on this checkout pointing at the sandbox.
+#   5. Ensure pipeline labels exist in the sandbox.
 #
 # Idempotent: re-running on an already-bootstrapped sandbox is safe.
-# Existing repo / existing remote / existing secret are skipped with a
-# log line, not a hard error.
-#
-# Required environment:
-#   SANDBOX_PAT           Fine-grained PAT scoped to the sandbox repo only.
-#                         Must NOT reuse the production CLAUDE_PAT — see
-#                         "Secrets hygiene" in sandbox-verification.md.
-#                         Required scopes: Contents R/W, Pull requests R/W,
-#                         Issues R/W, Actions R, Variables R, Metadata R.
+# Existing repo and remote are skipped with a log line, not a hard error.
 #
 # Optional environment:
 #   BOOTSTRAP_GH_TOKEN    Personal token used ONLY for the repo-create +
@@ -39,7 +30,7 @@
 #                         Fine-grained PATs (github_pat_...) will also
 #                         work IF scoped to 'All repositories' (resource-
 #                         owner level) with Administration: R/W + Contents:
-#                         R/W + Secrets: R/W + Metadata: R. Fine-grained
+#                         R/W + Metadata: R. Fine-grained
 #                         tokens scoped to specific repos CANNOT create new
 #                         repos and will fail the mirror push with 403 'Write access not
 #                         granted' because the sandbox repo does not exist
@@ -47,9 +38,6 @@
 #
 #                         When unset, the script uses your existing
 #                         `gh auth` identity.
-#   SANDBOX_ANTHROPIC_KEY Anthropic API key for sandbox-only claude.yml /
-#                         agent-fix-reviews.yml runs. A separate
-#                         sandbox-budget key is recommended.
 #   SANDBOX_REPO_NAME     Override the default sandbox slug
 #                         ("<upstream-owner>/<upstream-name>-sandbox").
 #                         Use full "owner/repo" form.
@@ -60,6 +48,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=scripts/lib/logging.sh
 source "$SCRIPT_DIR/lib/logging.sh"
+# shellcheck source=scripts/lib/sandbox-remote.sh
+source "$SCRIPT_DIR/lib/sandbox-remote.sh"
 
 # ── Preconditions ───────────────────────────────────────────────────────────
 
@@ -72,10 +62,7 @@ fi
 # check so gh recognises the token even when no stored `gh auth login`
 # exists. gh's auth-precedence treats GH_TOKEN as overriding the stored
 # credential without modifying ~/.config/gh.
-# GH_TOKEN stays active for the full script run (Steps 1–6): classic PATs
-# with 'repo' + 'workflow' scopes have Secrets: R/W access, so the same
-# token that creates/mirrors the repo can also set its secrets.
-# (Fine-grained PATs must additionally include Secrets: R/W scope.)
+# GH_TOKEN stays active for the full script run.
 if [[ -n "${BOOTSTRAP_GH_TOKEN:-}" ]]; then
   export GH_TOKEN="$BOOTSTRAP_GH_TOKEN"
   log_info "Using BOOTSTRAP_GH_TOKEN for this script run."
@@ -91,12 +78,6 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ -z "${SANDBOX_PAT:-}" ]]; then
-  log_error "SANDBOX_PAT is required. Mint a sandbox-only PAT first; do NOT reuse production CLAUDE_PAT."
-  log_error "See docs/guides/sandbox-verification.md § 'One-time setup' for required scopes."
-  exit 1
-fi
-
 # Managed work directory for all temp files in this run; EXIT trap
 # guarantees cleanup even on signal or early exit.
 _WORK_DIR=$(mktemp -d)
@@ -106,11 +87,10 @@ trap 'rm -rf "$_WORK_DIR"' EXIT
 
 log_step "Resolving upstream repo from 'origin' remote"
 
-UPSTREAM_URL=$(git remote get-url origin)
-UPSTREAM_NAME=$(basename "$UPSTREAM_URL" .git)
-UPSTREAM_OWNER=$(gh repo view --json owner -q .owner.login)
-SANDBOX_REPO="${SANDBOX_REPO_NAME:-${UPSTREAM_OWNER}/${UPSTREAM_NAME}-sandbox}"
-SANDBOX_REMOTE="${SANDBOX_REMOTE:-sandbox}"
+if ! sandbox_resolve_targets "$(pwd)"; then
+  log_error "Could not resolve upstream/sandbox targets from origin and gh."
+  exit 1
+fi
 
 log_info "Upstream: ${UPSTREAM_OWNER}/${UPSTREAM_NAME}"
 log_info "Sandbox:  ${SANDBOX_REPO}"
@@ -142,8 +122,7 @@ else
       log_error "Recommended fix: mint a CLASSIC personal token at:"
       log_error "  https://github.com/settings/tokens/new"
       log_error "Check BOTH the 'repo' AND 'workflow' scopes. Then re-run:"
-      log_error "  BOOTSTRAP_GH_TOKEN=ghp_<classic PAT> SANDBOX_PAT=<...> \\"
-      log_error "    ./scripts/sandbox-bootstrap.sh"
+      log_error "  BOOTSTRAP_GH_TOKEN=ghp_<classic PAT> ./scripts/sandbox-bootstrap.sh"
       log_error ""
       log_error "If you want to use a fine-grained PAT instead, it must be"
       log_error "resource-owner-level (All repositories) with:"
@@ -159,6 +138,8 @@ fi
 # ── Step 3: Mirror upstream main into sandbox ───────────────────────────────
 
 log_step "Mirroring upstream into sandbox"
+
+UPSTREAM_URL=$(git remote get-url origin)
 
 MIRROR_DIR="${_WORK_DIR}/upstream.git"
 
@@ -220,44 +201,20 @@ fi
 rm -f "$_TOK_FILE" "$_ASKPASS"
 log_info "Mirror push complete."
 
-# ── Step 4: Set CLAUDE_PAT secret ───────────────────────────────────────────
-
-log_step "Setting CLAUDE_PAT secret on sandbox repo"
-
-# Pipe the secret value via stdin — gh reads from stdin when no --body
-# flag is given. This keeps the value out of argv (process listings,
-# shell history, error messages).
-printf '%s' "$SANDBOX_PAT" | gh secret set CLAUDE_PAT \
-  --repo "$SANDBOX_REPO"
-log_info "CLAUDE_PAT set."
-
-# ── Step 5: (Optional) Set ANTHROPIC_API_KEY ────────────────────────────────
-
-if [[ -n "${SANDBOX_ANTHROPIC_KEY:-}" ]]; then
-  log_step "Setting ANTHROPIC_API_KEY secret on sandbox repo"
-  printf '%s' "$SANDBOX_ANTHROPIC_KEY" | gh secret set ANTHROPIC_API_KEY \
-    --repo "$SANDBOX_REPO"
-  log_info "ANTHROPIC_API_KEY set."
-else
-  log_warn "SANDBOX_ANTHROPIC_KEY not set — skipping ANTHROPIC_API_KEY (sandbox claude.yml runs will be unavailable until set manually)."
-fi
-
-# ── Step 6: Add sandbox git remote ──────────────────────────────────────────
+# ── Step 4: Add sandbox git remote ──────────────────────────────────────────
 
 log_step "Adding '${SANDBOX_REMOTE}' git remote on this checkout"
 
-SANDBOX_URL="https://github.com/${SANDBOX_REPO}.git"
-if git remote get-url "$SANDBOX_REMOTE" >/dev/null 2>&1; then
-  current_url=$(git remote get-url "$SANDBOX_REMOTE")
-  if [[ "$current_url" == "$SANDBOX_URL" ]]; then
-    log_info "Remote '${SANDBOX_REMOTE}' already configured."
-  else
-    log_warn "Remote '${SANDBOX_REMOTE}' points elsewhere (${current_url}); leaving untouched."
-    log_warn "Run 'git remote set-url ${SANDBOX_REMOTE} ${SANDBOX_URL}' to repoint manually."
-  fi
+sandbox_ensure_git_remote "$(pwd)"
+
+# ── Step 5: Ensure pipeline labels on sandbox ───────────────────────────────
+
+log_step "Ensuring pipeline labels on sandbox repo"
+
+if bash "$SCRIPT_DIR/setup/ensure-pipeline-labels.sh" "$SANDBOX_REPO"; then
+  log_info "Pipeline labels ensured on ${SANDBOX_REPO}."
 else
-  git remote add "$SANDBOX_REMOTE" "$SANDBOX_URL"
-  log_info "Remote added."
+  log_warn "Could not ensure all pipeline labels on ${SANDBOX_REPO}; retro umbrella may land unlabeled."
 fi
 
 # ── Done ────────────────────────────────────────────────────────────────────

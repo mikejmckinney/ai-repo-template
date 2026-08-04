@@ -4,20 +4,12 @@
 # scripts/lib/{logging,assertions}.sh and CWD == repo root.
 
 # --- lint-and-format.yml invariants (issue #229 Phase 1) ---
-# These assertions verify that the TEMPLATE_PLACEHOLDER has been replaced with
-# real linters and that the three key tools are wired up.  They double as a
-# canary: if a future PR removes shellcheck/shfmt/actionlint or re-introduces
-# the placeholder, CI fails immediately rather than silently regressing.
+# These assertions verify that the real lint tools stay wired up. They double as
+# a canary: if a future PR removes shellcheck/shfmt/actionlint, CI fails instead
+# of silently regressing.
 LF_FILE=".github/workflows/lint-and-format.yml"
 echo "Checking lint-and-format.yml structure (issue #229)..."
 if [[ -f "$LF_FILE" ]]; then
-  # TEMPLATE_PLACEHOLDER must not appear in the workflow file
-  if grep -q 'TEMPLATE_PLACEHOLDER' "$LF_FILE"; then
-    fail "$LF_FILE still contains TEMPLATE_PLACEHOLDER (should be replaced with real linters)"
-  else
-    pass "$LF_FILE has no TEMPLATE_PLACEHOLDER marker"
-  fi
-
   # Shell linter run step must be present.
   # 'shellcheck --severity' only appears in the run: block — not in comments —
   # so removing the run step (while leaving comments) would fail this check.
@@ -96,8 +88,24 @@ if [[ -f "$LF_FILE" ]]; then
   else
     fail "$LF_FILE missing always() guard on markdownlint advisory summary"
   fi
+
+  if grep -qF 'python3 scripts/check-markdown-links.py' "$LF_FILE" \
+    && grep -qF 'contents: read' "$LF_FILE" \
+    && ! grep -qF 'contents: write' "$LF_FILE"; then
+    pass "$LF_FILE validates local Markdown links without write permission"
+  else
+    fail "$LF_FILE must check local Markdown links and remain read-only"
+  fi
 else
   fail "$LF_FILE is missing"
+fi
+
+if [[ -x scripts/format.sh ]] \
+  && grep -qF -- '--write' scripts/format.sh \
+  && [[ -x scripts/check-markdown-links.py ]]; then
+  pass "local formatting and Markdown-link entrypoints exist"
+else
+  fail "local formatting or Markdown-link entrypoint is missing"
 fi
 
 echo ""

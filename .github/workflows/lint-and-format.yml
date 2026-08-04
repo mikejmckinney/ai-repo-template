@@ -33,6 +33,30 @@
 name: Lint and Format
 
 on:
+  workflow_call:
+    inputs:
+      reusable_call:
+        description: Confirms the event SHA belongs to the caller workflow
+        required: true
+        type: boolean
+      base_sha:
+        description: Base commit used for changed-file checks
+        required: true
+        type: string
+      head_sha:
+        description: Exact generated refresh head
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      base_sha:
+        description: Base commit used for changed-file checks
+        required: true
+        type: string
+      head_sha:
+        description: Exact generated refresh head
+        required: true
+        type: string
   pull_request:
     branches: [main, develop]
   push:
@@ -40,17 +64,20 @@ on:
 
 # Only run one instance per PR/branch
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: lint-and-format-${{ inputs.head_sha || github.ref }}
   cancel-in-progress: true
 
 jobs:
   lint-and-format:
     runs-on: ubuntu-latest
+    env:
+      REPOSITORY_OWNED_SKILLS: context-import multi-model-consensus open-design repo-onboarding session-recovery
 
     # Skip if commit message contains [skip lint] or is from the formatter bot
     if: |
-      !contains(github.event.head_commit.message, '[skip lint]') &&
-      github.actor != 'github-actions[bot]'
+      github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call' ||
+      (!contains(github.event.head_commit.message, '[skip lint]') &&
+      github.actor != 'github-actions[bot]')
 
     permissions:
       contents: read
@@ -60,6 +87,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.head_sha || '' }}
+
+      - name: Verify dispatched head
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
+        env:
+          EXPECTED_HEAD: ${{ inputs.head_sha }}
+          DISPATCHED_HEAD: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          REUSABLE_CALL: ${{ inputs.reusable_call || false }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$REUSABLE_CALL" != "true" ]]; then
+            test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"
+          fi
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
 
       # =====================================================
       # SHELL LINTING — shellcheck (warning+, blocks)
@@ -77,9 +118,19 @@ jobs:
         # `-r -0` is required on GNU xargs: `-r` skips invocation when no
         # input; `-0` (null-delimited, pairs with -print0) handles filenames
         # with spaces or special characters (SC2038).
+        # Third-party skills remain byte-for-byte upstream. Repository-owned
+        # cross-agent skills in the same canonical directory remain blocking.
         run: |
-          find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
-            -name '*.sh' -print0 \
+          find . \( -name '.git' -o -name 'node_modules' \) -prune -o -name '*.sh' -print0 \
+            | while IFS= read -r -d '' file; do
+                skill="${file#./.agents/skills/}"
+                skill="${skill%%/*}"
+                if [[ "${file}" == ./.agents/skills/* ]] \
+                  && [[ " ${REPOSITORY_OWNED_SKILLS} " != *" ${skill} "* ]]; then
+                  continue
+                fi
+                printf '%s\0' "${file}"
+              done \
             | xargs -r -0 shellcheck --severity=warning --exclude=SC1091
 
       # =====================================================
@@ -87,7 +138,7 @@ jobs:
       # =====================================================
       - name: Install shfmt
         run: |
-          SHFMT_VERSION="3.8.0"
+          SHFMT_VERSION="$(jq -r '.tools.shfmt.version' .config/codespace-tools.json)"
           curl -sSL \
             "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64" \
             -o /usr/local/bin/shfmt
@@ -100,9 +151,18 @@ jobs:
         # -ci: indent case statements.
         # `-r -0` pairs with -print0 to handle filenames with spaces or
         # special characters (SC2038).
+        # Keep third-party skills byte-for-byte upstream.
         run: |
-          find . \( -name '.git' -o -name 'node_modules' \) -prune -o \
-            -name '*.sh' -print0 \
+          find . \( -name '.git' -o -name 'node_modules' \) -prune -o -name '*.sh' -print0 \
+            | while IFS= read -r -d '' file; do
+                skill="${file#./.agents/skills/}"
+                skill="${skill%%/*}"
+                if [[ "${file}" == ./.agents/skills/* ]] \
+                  && [[ " ${REPOSITORY_OWNED_SKILLS} " != *" ${skill} "* ]]; then
+                  continue
+                fi
+                printf '%s\0' "${file}"
+              done \
             | xargs -r -0 shfmt -d -i 2 -bn -ci
 
       # =====================================================
@@ -110,7 +170,7 @@ jobs:
       # =====================================================
       - name: Install actionlint
         run: |
-          ACTIONLINT_VERSION="1.7.7"
+          ACTIONLINT_VERSION="$(jq -r '.tools.actionlint.version' .config/codespace-tools.json)"
           curl -sSL \
             "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" \
             | tar -xz -C /usr/local/bin actionlint
@@ -140,21 +200,12 @@ jobs:
       # =====================================================
 
       # =====================================================
-      # SHELL CONVENTION LINTING (issue #229 Phase 1.5c)
-      # =====================================================
-      - name: Run lint-shell-conventions
-        # Encodes project-specific rules that shellcheck cannot catch:
-        # RULE-01: grep -c in set -e/pipefail scripts without || true
-        #          (grep -c exits 1 on 0 matches, killing set -e scripts)
-        # RULE-02: grep -E literal patterns with | alternatives that do
-        #          not end with $ or \ (unanchored substring matching)
-        run: bash scripts/lint-shell-conventions.sh scripts/
-
-      # =====================================================
       # MARKDOWN LINTING — changed files block, repo-wide debt summarizes
       # =====================================================
       - name: Install markdownlint-cli2
-        run: npm install --global markdownlint-cli2@0.17.2
+        run: |
+          MARKDOWNLINT_PACKAGE="$(jq -r '.tools["markdownlint-cli2"].package' .config/codespace-tools.json)"
+          npm install --global "${MARKDOWNLINT_PACKAGE}"
 
       - name: Collect changed Markdown files
         id: markdown-files
@@ -162,7 +213,11 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" \
+            || "${{ github.event_name }}" == "workflow_call" ]]; then
+            base_ref="${{ inputs.base_sha }}"
+            head_ref="${{ inputs.head_sha }}"
+          elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
             base_ref="${{ github.event.pull_request.base.sha }}"
             head_ref="${{ github.event.pull_request.head.sha }}"
 
@@ -184,7 +239,16 @@ jobs:
 
           : > /tmp/changed-markdown-files-z
           while IFS= read -r -d '' file; do
-            if [[ "${file}" == *.md ]] && [[ ! "${file}" =~ (^|/)node_modules/|(^|/)\.git/ ]]; then
+            skill="${file#.agents/skills/}"
+            skill="${skill%%/*}"
+            repository_owned_skill=false
+            if [[ "${file}" == .agents/skills/* ]] \
+              && [[ " ${REPOSITORY_OWNED_SKILLS} " == *" ${skill} "* ]]; then
+              repository_owned_skill=true
+            fi
+            if [[ "${file}" == *.md ]] \
+              && [[ ! "${file}" =~ (^|/)node_modules/|(^|/)\.git/ ]] \
+              && { [[ "${file}" != .agents/skills/* ]] || [[ "${repository_owned_skill}" == true ]]; }; then
               printf '%s\0' "${file}" >> /tmp/changed-markdown-files-z
             fi
           done < /tmp/changed-files-z
@@ -212,13 +276,29 @@ jobs:
           mapfile -d '' -t changed_files < /tmp/changed-markdown-files-z
           markdownlint-cli2 --config .markdownlint-cli2.jsonc "${changed_files[@]}"
 
+      - name: Check changed Markdown links (blocking)
+        if: steps.markdown-files.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t changed_files < /tmp/changed-markdown-files-z
+          python3 scripts/check-markdown-links.py "${changed_files[@]}"
+
       - name: Markdownlint advisory repo-wide summary
         if: ${{ always() }}
         shell: bash
         run: |
           set +e
+          third_party_ignores=()
+          for skill_dir in .agents/skills/*; do
+            [[ -d "${skill_dir}" ]] || continue
+            skill="${skill_dir##*/}"
+            if [[ " ${REPOSITORY_OWNED_SKILLS} " != *" ${skill} "* ]]; then
+              third_party_ignores+=("!${skill_dir}/**")
+            fi
+          done
           markdownlint-cli2 --config .markdownlint-cli2.jsonc \
-            "**/*.md" "!node_modules/**" "!.git/**" \
+            "**/*.md" "!node_modules/**" "!.git/**" "${third_party_ignores[@]}" \
             > /tmp/markdownlint-advisory.log 2>&1
           status=$?
           set -e

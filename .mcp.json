@@ -1,0 +1,142 @@
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GH_PAT}"
+      }
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${SUPABASE_API_KEY}"
+      }
+    },
+    "netlify": {
+      "type": "http",
+      "url": "https://netlify-mcp.netlify.app/mcp",
+      "headers": {
+        "Authorization": "Bearer ${NETLIFY_API_KEY}"
+      }
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com",
+      "headers": {
+        "Authorization": "Bearer ${VERCEL_API_KEY}"
+      }
+    },
+    "cloudflare-api": {
+      "type": "http",
+      "url": "https://mcp.cloudflare.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${CLOUDFLARE_API_KEY}"
+      }
+    },
+    "cloudflare-docs": {
+      "type": "http",
+      "url": "https://docs.mcp.cloudflare.com/mcp"
+    },
+    "railway": {
+      "type": "http",
+      "url": "https://mcp.railway.com",
+      "headers": {
+        "Authorization": "Bearer ${RAILWAY_API_KEY}"
+      }
+    },
+    "aws": {
+      "command": "bash",
+      "args": [
+        "-lc",
+        "exec uvx mcp-proxy-for-aws@1.6.3 \"https://aws-mcp.${AWS_REGION:-us-east-1}.api.aws/mcp\" --profile \"${AWS_PROFILE:-default}\" --region \"${AWS_REGION:-us-east-1}\""
+      ]
+    },
+    "azure": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure/mcp@2.0.5",
+        "server",
+        "start"
+      ]
+    },
+    "elevenlabs": {
+      "command": "bash",
+      "args": [
+        "scripts/elevenlabs-mcp.sh"
+      ],
+      "env": {
+        "ELEVENLABS_API_KEY": "${ELEVENLABS_API_KEY}"
+      }
+    },
+    "mureka": {
+      "command": "bash",
+      "args": [
+        "scripts/mureka-mcp.sh"
+      ],
+      "env": {
+        "MUREKA_API_KEY": "${MUREKA_API_KEY}"
+      }
+    },
+    "suno": {
+      "command": "bash",
+      "args": [
+        "scripts/suno-mcp.sh"
+      ],
+      "env": {
+        "ACEDATACLOUD_API_TOKEN": "${ACEDATACLOUD_API_TOKEN}"
+      }
+    },
+    "oci": {
+      "command": "bash",
+      "args": [
+        "-lc",
+        "[[ \"${OCI_MCP_ENABLED:-false}\" == \"true\" ]] || { echo \"OCI MCP is disabled; set OCI_MCP_ENABLED=true to opt in\" >&2; exit 1; }; exec uvx --python 3.13 oracle.oci-cloud-mcp-server@2.1.0"
+      ],
+      "env": {
+        "OCI_CONFIG_PROFILE": "${OCI_CONFIG_PROFILE}",
+        "FASTMCP_LOG_LEVEL": "ERROR"
+      },
+      "disabled": true
+    },
+    "render": {
+      "type": "http",
+      "url": "https://mcp.render.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${RENDER_API_KEY}"
+      }
+    },
+    "open-design": {
+      "command": "bash",
+      "args": [
+        "scripts/open-design-mcp.sh"
+      ]
+    },
+    "playwright": {
+      "command": "bash",
+      "args": [
+        "scripts/browser-mcp.sh",
+        "playwright",
+        "@playwright/mcp@0.0.78"
+      ]
+    },
+    "chrome-devtools": {
+      "command": "bash",
+      "args": [
+        "scripts/browser-mcp.sh",
+        "chrome-devtools",
+        "chrome-devtools-mcp@1.6.0"
+      ]
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "shadcn@4.13.1",
+        "mcp"
+      ]
+    }
+  }
+}
