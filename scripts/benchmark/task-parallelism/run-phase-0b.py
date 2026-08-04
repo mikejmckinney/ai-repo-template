@@ -100,9 +100,12 @@ def candidate_environment(source: dict[str, str]) -> dict[str, str]:
 
 
 def classify_failure(rc: int, jsonl_path: Path) -> tuple[str, bool, bool]:
-    if rc == 124:
-        return "provider-failed", False, True
     output = jsonl_path.read_text(encoding="utf-8", errors="replace") if jsonl_path.is_file() else ""
+    if rc == 124:
+        model_activity = ('"type":"item.started"', '"type": "item.started"')
+        if any(marker in output for marker in model_activity):
+            return "candidate-failed", False, False
+        return "provider-failed", False, True
     harness_markers = ("invalid_json_schema", "codex_output_schema", "output schema")
     if any(marker in output.lower() for marker in harness_markers):
         return "harness-failed", True, True
@@ -436,11 +439,29 @@ def execute_run(run_id: str) -> int:
         )
     except subprocess.TimeoutExpired:
         rc = 124
-        stderr_path.write_text("candidate timed out after 1800 seconds\n", encoding="utf-8")
+        with stderr_path.open("a", encoding="utf-8") as stderr:
+            stderr.write("candidate timed out after 1800 seconds\n")
+        usage, thread_id = parse_usage(jsonl_path)
+        terminal_status, harness, retry_eligible = classify_failure(rc, jsonl_path)
         result = write_failure_result(
-            run_id, arm, int(time.monotonic() - started), "provider-failed", False
+            run_id, arm, int(time.monotonic() - started), terminal_status, harness
         )
-        retry_eligible = True
+        result["tokens"] = usage
+        push = subprocess.run(
+            ["git", "push", "origin", f"HEAD:refs/heads/{candidate_branch}"],
+            cwd=worktree,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+        )
+        if push.returncode != 0:
+            harness_error = f"candidate evidence push failed: {push.stdout.strip()}"
+            result = write_failure_result(
+                run_id, arm, int(time.monotonic() - started), "harness-failed", True
+            )
+            result["tokens"] = usage
+            retry_eligible = True
     except (
         OSError,
         ValueError,

@@ -35,6 +35,30 @@ PY
 	[ "${status}" -eq 0 ]
 }
 
+@test "active work at the deadline is a candidate failure, not a provider failure" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import json
+import sys
+import tempfile
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+with tempfile.TemporaryDirectory() as directory:
+    jsonl = Path(directory) / "agent-output.jsonl"
+    jsonl.write_text(json.dumps({
+        "type": "item.started",
+        "item": {"type": "command_execution"},
+    }) + "\n")
+    assert module.classify_failure(124, jsonl) == ("candidate-failed", False, False)
+    jsonl.write_text(json.dumps({"type": "turn.started"}) + "\n")
+    assert module.classify_failure(124, jsonl) == ("provider-failed", False, True)
+PY
+	[ "${status}" -eq 0 ]
+}
+
 @test "one harness retry retains the original attempt" {
 	run python3 - "${RUNNER}" <<'PY'
 import importlib.util
@@ -106,12 +130,13 @@ PY
 
 	run python3 "${RUNNER}" --validate-state
 	[ "${status}" -eq 0 ]
-	[[ "${output}" == *'execution state valid: ready; candidate processes started: 1'* ]]
+	[[ "${output}" == *'execution state valid: ready; candidate processes started: 2'* ]]
 
 	run jq -e '
 	    .status == "ready" and
 	    (.candidate_base.sha | test("^[0-9a-f]{40}$")) and
-	    .candidate_processes_started == 1
+	    .candidate_processes_started == 2 and
+	    .retry_processes_started == 1
 	  ' "${STATE}"
 	[ "${status}" -eq 0 ]
 }
