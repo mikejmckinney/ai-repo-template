@@ -6,7 +6,27 @@
     <title>Vector Siege</title>
   </head>
   <body>
-    <main id="game"></main>
+    <main id="game-shell" aria-label="Vector Siege game">
+      <div id="game" role="application" aria-label="Vector Siege arena shooter"></div>
+      <div id="game-overlay" class="game-overlay">
+        <div id="menu-actions" class="menu-actions">
+          <button id="start-button" class="primary-button" type="button">START RUN</button>
+          <p class="button-hint">CLICK TO UNLOCK AUDIO</p>
+        </div>
+        <div id="run-controls" class="run-controls" hidden>
+          <button id="pause-button" class="small-button" type="button">PAUSE</button>
+          <button id="mute-button" class="small-button" type="button">SOUND: ON</button>
+          <label class="volume-control" for="volume-slider">
+            <span>VOL</span>
+            <input id="volume-slider" type="range" min="0" max="100" value="65" />
+          </label>
+        </div>
+        <div id="game-over-actions" class="game-over-actions" hidden>
+          <button id="restart-button" class="primary-button" type="button">RESTART RUN</button>
+        </div>
+        <p id="screen-reader-status" class="screen-reader-status" aria-live="polite"></p>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
