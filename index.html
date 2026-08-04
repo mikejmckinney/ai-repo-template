@@ -6,7 +6,59 @@
     <title>Vector Siege</title>
   </head>
   <body>
-    <main id="game"></main>
+    <main id="game" aria-label="Vector Siege game">
+      <div id="ui-overlay">
+        <section id="start-panel" class="screen-panel" aria-labelledby="start-title">
+          <div class="eyebrow">SINGLE-PLAYER ARENA // STAGE 01</div>
+          <h1 id="start-title">VECTOR SIEGE</h1>
+          <p class="lede">Hold the line. Break the wave. Leave no signal behind.</p>
+          <div class="mission-card">
+            <div class="mission-card__label">MISSION BRIEF</div>
+            <p>Move with <kbd>WASD</kbd> or <kbd>ARROWS</kbd>. Aim with the pointer. Fire with <kbd>SPACE</kbd> or pointer hold.</p>
+          </div>
+          <label class="seed-control" for="seed-input">RUN SEED <input id="seed-input" name="seed" value="vector-siege-stage-1" maxlength="40" /></label>
+          <button id="start-button" class="primary-button" type="button">START MISSION <span>↗</span></button>
+          <div class="settings-row">
+            <label for="music-volume">MUSIC <input id="music-volume" type="range" min="0" max="1" step="0.05" value="0.42" /></label>
+            <label for="effects-volume">EFFECTS <input id="effects-volume" type="range" min="0" max="1" step="0.05" value="0.7" /></label>
+            <button id="menu-mute-button" class="quiet-button" type="button" aria-pressed="false">SOUND ON</button>
+          </div>
+          <div id="audio-badge" class="audio-badge">◉ AUDIO READY AFTER FIRST INPUT</div>
+        </section>
+
+        <section id="hud" class="hud" aria-label="Mission HUD" hidden>
+          <div class="hud-metric"><img class="metric-icon" src="/benchmark-assets/vector-siege/visuals/ui/score.webp" alt="" /><span class="hud-label">SCORE</span><strong id="hud-score">000000</strong></div>
+          <div class="hud-metric"><img class="metric-icon" src="/benchmark-assets/vector-siege/visuals/ui/wave.webp" alt="" /><span class="hud-label">WAVE</span><strong id="hud-wave">01</strong></div>
+          <div class="hud-metric hud-health"><img class="metric-icon" src="/benchmark-assets/vector-siege/visuals/ui/heart.webp" alt="" /><span class="hud-label">HULL</span><strong id="hud-health">♥♥♥</strong></div>
+          <div class="hud-spacer"></div>
+          <span id="hud-status" class="hud-status">LIVE</span>
+          <button id="pause-button" class="hud-button" type="button">PAUSE <kbd>ESC</kbd></button>
+          <button id="hud-mute-button" class="hud-button" type="button" aria-pressed="false">SOUND ON</button>
+        </section>
+
+        <section id="pause-panel" class="screen-panel compact-panel" hidden aria-labelledby="pause-title">
+          <div class="eyebrow">SIGNAL PAUSED</div>
+          <h2 id="pause-title">SYSTEMS HOLD</h2>
+          <p class="lede">Your simulation is frozen. Audio is parked until you return.</p>
+          <button id="resume-button" class="primary-button" type="button">RESUME RUN <span>↗</span></button>
+        </section>
+
+        <section id="game-over-panel" class="screen-panel compact-panel" hidden aria-labelledby="game-over-title">
+          <div class="eyebrow danger-text">SIGNAL LOST</div>
+          <h2 id="game-over-title">THE SIEGE CONTINUES</h2>
+          <p class="lede">Your final trace has been recorded. Recalibrate and deploy again.</p>
+          <div class="result-grid">
+            <div><span>SCORE</span><strong id="final-score">000000</strong></div>
+            <div><span>WAVE</span><strong id="final-wave">01</strong></div>
+            <div><span>FINAL TICK</span><strong id="final-tick">000000</strong></div>
+          </div>
+          <button id="restart-button" class="primary-button" type="button">RESTART MISSION <span>↗</span></button>
+          <button id="return-menu-button" class="quiet-button" type="button">RETURN TO BRIEFING</button>
+        </section>
+
+        <div id="game-state" class="sr-only" aria-live="polite">MENU</div>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
