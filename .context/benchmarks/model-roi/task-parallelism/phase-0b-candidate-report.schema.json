@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-candidate-report.v1.json",
+  "title": "Task parallelism Phase 0B candidate self-report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "completion_status",
+    "fanout_elected",
+    "fanout_reason",
+    "worker_count",
+    "skill_loads",
+    "skill_context_tokens",
+    "coordination_seconds",
+    "provider_wait_seconds",
+    "rescue_events",
+    "duplicate_or_abandoned_work",
+    "semantic_conflicts",
+    "interface_conflicts",
+    "asset_conflicts",
+    "dependency_conflicts"
+  ],
+  "properties": {
+    "completion_status": { "enum": ["completed", "partial", "failed"] },
+    "fanout_elected": { "type": "boolean" },
+    "fanout_reason": { "type": "string" },
+    "worker_count": { "type": "integer", "minimum": 1, "maximum": 2 },
+    "skill_loads": { "type": "integer", "minimum": 0 },
+    "skill_context_tokens": { "type": "integer", "minimum": 0 },
+    "coordination_seconds": { "type": "integer", "minimum": 0 },
+    "provider_wait_seconds": { "type": "integer", "minimum": 0 },
+    "rescue_events": { "type": "integer", "minimum": 0 },
+    "duplicate_or_abandoned_work": { "type": "integer", "minimum": 0 },
+    "semantic_conflicts": { "type": "integer", "minimum": 0 },
+    "interface_conflicts": { "type": "integer", "minimum": 0 },
+    "asset_conflicts": { "type": "integer", "minimum": 0 },
+    "dependency_conflicts": { "type": "integer", "minimum": 0 }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "fanout_elected": { "const": false } } },
+      "then": { "properties": { "worker_count": { "const": 1 } } }
+    }
+  ]
+}

@@ -70,3 +70,38 @@ The preparation manifest remains `execution.status: blocked`. A later approval
 must create and record the frozen base before any of the five Arm A and five Arm
 B assignments can execute. This preparation approval does not authorize those
 candidate runs.
+
+## Phase 0B Execution
+
+The maintainer approved the ten-run pilot on 2026-08-04. The separate execution
+state records that authorization while preserving the preparation manifest as a
+blocked, immutable freeze. Validate current progress with:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-execution-validate
+```
+
+Candidate processes start only through an explicit run identifier:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b.py \
+  --run-id vs-p0b-001
+```
+
+The runner enforces frozen-base remote identity, sequential assignment order,
+the exact Luna/max command, candidate push isolation, schema-backed self-report
+and result telemetry, and one remote evidence branch per candidate. The runner
+does not retry. After all ten terminal results exist, derive the Gate 0 input:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-summary
+python3 scripts/benchmark/task-parallelism/prepare-phase-0b.py \
+  --evaluate-gate \
+  .context/benchmarks/model-roi/task-parallelism/results/phase-0b-summary.json
+```
+
+The preregistered objective feasibility score awards 10 points for a completed
+Codex turn, 10 for produced work, 10 for dependency installation, 20 for unit
+tests, 20 for the production build, and 30 for the Playwright journey. This
+lower-bound score is not blind product-quality grading and cannot support an
+adoption claim.

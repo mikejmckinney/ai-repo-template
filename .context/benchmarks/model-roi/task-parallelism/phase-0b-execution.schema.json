@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-execution.v1.json",
+  "title": "Task parallelism Phase 0B execution state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "campaign_id",
+    "status",
+    "approval_source",
+    "approved_at",
+    "candidate_base",
+    "candidate_processes_started",
+    "completed_runs"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-execution.v1" },
+    "campaign_id": { "const": "vector-siege-phase-0b" },
+    "status": { "enum": ["base-pending", "ready", "running", "completed"] },
+    "approval_source": { "type": "string", "format": "uri", "minLength": 1 },
+    "approved_at": { "type": "string", "format": "date-time" },
+    "candidate_base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branch", "sha", "source_commit"],
+      "properties": {
+        "branch": { "const": "benchmark/model-roi/base-vector-siege-phase-0b-20260804" },
+        "sha": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+          ]
+        },
+        "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "candidate_processes_started": { "type": "integer", "minimum": 0, "maximum": 10 },
+    "completed_runs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^vs-p0b-[0-9]{3}$" },
+      "maxItems": 10
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "base-pending" } } },
+      "then": { "properties": { "candidate_base": { "properties": { "sha": { "type": "null" } } } } }
+    },
+    {
+      "if": { "properties": { "status": { "enum": ["ready", "running", "completed"] } } },
+      "then": {
+        "properties": {
+          "candidate_base": {
+            "properties": { "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" } }
+          }
+        }
+      }
+    }
+  ]
+}

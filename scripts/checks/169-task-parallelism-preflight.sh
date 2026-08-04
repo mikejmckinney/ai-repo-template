@@ -15,9 +15,14 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.preparation.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-preparation.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-result.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-report.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-execution.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-pilot-summary.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.execution.json"
+    "${TASK_PARALLELISM_PROTOCOL}/candidate-base.gitignore"
     "${TASK_PARALLELISM_PROTOCOL}/scaffold/package-lock.json"
     "${TASK_PARALLELISM_PROTOCOL}/tasks/vector-siege.md"
+    "${TASK_PARALLELISM_PROTOCOL}/tasks/vector-siege-stage-1-candidate.md"
     "${TASK_PARALLELISM_RUNNER}/Makefile"
     "${TASK_PARALLELISM_RUNNER}/requirements.txt"
     "${TASK_PARALLELISM_RUNNER}/run-preflight.sh"
@@ -25,8 +30,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_RUNNER}/preflight.py"
     "${TASK_PARALLELISM_RUNNER}/generate-placeholder-assets.py"
     "${TASK_PARALLELISM_RUNNER}/prepare-phase-0b.py"
+    "${TASK_PARALLELISM_RUNNER}/run-phase-0b.py"
     "scripts/tests/task-parallelism-preflight.bats"
     "scripts/tests/task-parallelism-phase-0b.bats"
+    "scripts/tests/task-parallelism-phase-0b-execution.bats"
   )
 
   for path in "${required[@]}"; do
@@ -45,6 +52,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.preparation.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-preparation.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-result.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-report.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-execution.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.execution.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-pilot-summary.schema.json"; do
     if jq -e . "${path}" >/dev/null 2>&1; then
       pass "valid JSON: ${path}"
@@ -69,6 +79,12 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "tracked Phase 0B preparation validates and remains blocked"
   else
     fail "tracked Phase 0B preparation is invalid"
+  fi
+
+  if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/run-phase-0b.py" --validate-state >/dev/null; then
+    pass "tracked Phase 0B execution state validates"
+  else
+    fail "tracked Phase 0B execution state is invalid"
   fi
 
   echo ""
