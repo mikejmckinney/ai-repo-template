@@ -46,6 +46,8 @@ load_lock() {
       ref) lock_ref="$value" ;;
       commit) lock_commit="$value" ;;
       install_dir) lock_install_dir="$value" ;;
+      node) lock_node="$value" ;;
+      pnpm) lock_pnpm="$value" ;;
     esac
   done <"$lock_file"
 }
@@ -94,11 +96,20 @@ lock_repo=""
 lock_ref=""
 lock_commit=""
 lock_install_dir=""
+lock_node=""
+lock_pnpm=""
 load_lock
 
 [[ -n "$lock_repo" ]] || die "lock key 'repo' is required"
 [[ -n "$lock_ref" ]] || die "lock key 'ref' is required"
+[[ -n "$lock_commit" ]] || die "lock key 'commit' is required"
 [[ -n "$lock_install_dir" ]] || die "lock key 'install_dir' is required"
+[[ -n "$lock_node" ]] || die "lock key 'node' is required"
+[[ -n "$lock_pnpm" ]] || die "lock key 'pnpm' is required"
+command -v node >/dev/null 2>&1 || die "Node.js $lock_node is required"
+node_major="$(node -p 'process.versions.node.split(".")[0]')"
+[[ "$node_major" == "${lock_node#\~}" ]] \
+  || die "Node.js $lock_node is required (found $(node --version))"
 
 install_dir="${install_dir_override:-$lock_install_dir}"
 install_dir="$(expand_home "$install_dir")"
@@ -127,22 +138,40 @@ if [[ "$existing_checkout" == true ]]; then
     || die "existing checkout has uncommitted changes: $install_dir"
 fi
 
+remote_ref_commit="$(git ls-remote origin "refs/tags/$lock_ref" | awk 'NR == 1 {print $1}')"
+[[ "$remote_ref_commit" == "$lock_commit" ]] \
+  || die "remote tag '$lock_ref' does not resolve to locked commit '$lock_commit'"
+git fetch --no-tags origin "$lock_commit"
+git checkout --detach "$lock_commit"
+
+# Keep the checkout bounded while exposing every generic design catalog.
 git sparse-checkout init --cone
-git sparse-checkout set apps/daemon packages scripts
-git fetch --tags origin
-git checkout "$lock_ref"
-if [[ -n "$lock_commit" ]]; then
-  git checkout "$lock_commit"
-fi
+git sparse-checkout set \
+  apps/daemon \
+  apps/web \
+  design-systems \
+  design-templates \
+  packages \
+  prompt-templates \
+  scripts \
+  skills
 
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+export NEXT_TELEMETRY_DISABLED=1
 if command -v corepack >/dev/null 2>&1; then
   corepack enable
 fi
+command -v pnpm >/dev/null 2>&1 || die "pnpm $lock_pnpm is required"
+[[ "$(pnpm --version)" == "$lock_pnpm" ]] \
+  || die "pnpm $lock_pnpm is required (found $(pnpm --version))"
 
-pnpm install --frozen-lockfile --ignore-scripts --filter @open-design/daemon...
+pnpm install --frozen-lockfile --ignore-scripts \
+  --filter @open-design/daemon... \
+  --filter @open-design/web...
 pnpm --filter @open-design/daemon rebuild better-sqlite3
 pnpm --filter @open-design/daemon... --if-present build
+pnpm --filter '@open-design/web^...' --if-present build
+pnpm --filter @open-design/web run build:sidecar
 node apps/daemon/bin/od.mjs --help
 
 if [[ -n "$mcp_client" ]]; then

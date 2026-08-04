@@ -586,6 +586,51 @@
       "source": "phaserjs/phaser",
       "sourceType": "github"
     },
+    "hyperframes": {
+      "computedHash": "9251550aea196ed3f0d09f6be3f03d82913bee7789906e0437a976237fa3b546",
+      "destinationPath": ".agents/skills/hyperframes/hyperframes",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c",
+      "skillPath": "skills/hyperframes",
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github"
+    },
+    "hyperframes-animation": {
+      "computedHash": "6aebedd393c058a35fa512405df145ebb719b73d9ceaf1145ba6c6786ed3d652",
+      "destinationPath": ".agents/skills/hyperframes/hyperframes-animation",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c",
+      "skillPath": "skills/hyperframes-animation",
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github"
+    },
+    "hyperframes-cli": {
+      "computedHash": "6d039d78df53950560042706719aac459199a057ccc27a51aee1bf95ef58b77f",
+      "destinationPath": ".agents/skills/hyperframes/hyperframes-cli",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c",
+      "skillPath": "skills/hyperframes-cli",
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github"
+    },
+    "hyperframes-core": {
+      "computedHash": "cc2f2eca37b49f53f1ac90299287bab163393cdc081106d42d9047e09078ea6b",
+      "destinationPath": ".agents/skills/hyperframes/hyperframes-core",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c",
+      "skillPath": "skills/hyperframes-core",
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github"
+    },
+    "hyperframes-creative": {
+      "computedHash": "66ec8bf992a956f58f739780ddd875b5c775b15adb4146ced4eff0812513594b",
+      "destinationPath": ".agents/skills/hyperframes/hyperframes-creative",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c",
+      "skillPath": "skills/hyperframes-creative",
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github"
+    },
     "input-keyboard-mouse-touch": {
       "computedHash": "d0a0e69106dc6b916ae56483f56bf87e2f1b459bb70c7841571f6713cc1e5ec4",
       "destinationPath": ".agents/skills/phaser/input-keyboard-mouse-touch",
@@ -622,6 +667,15 @@
       "source": "anthropics/skills",
       "sourceType": "github"
     },
+    "media-use": {
+      "computedHash": "03cd7739b79d58d0a1bfb693a04098b0d24c8d76e232489f8056c73c12d1affa",
+      "destinationPath": ".agents/skills/hyperframes/media-use",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c",
+      "skillPath": "skills/media-use",
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github"
+    },
     "microsoft-foundry": {
       "computedHash": "edbed63d67a2084053b761f611a1aa4443a59fe6a5d310ef8971137f3789c5a7",
       "destinationPath": ".agents/skills/azure/microsoft-foundry",
@@ -637,6 +691,15 @@
       ],
       "skillPath": "skills/microsoft-foundry",
       "source": "microsoft/azure-skills",
+      "sourceType": "github"
+    },
+    "motion-graphics": {
+      "computedHash": "66420cb3d8234d9914ff1992c23a8dd84ce6f59512677bf6f80fc22c6b9e5b9e",
+      "destinationPath": ".agents/skills/hyperframes/motion-graphics",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c",
+      "skillPath": "skills/motion-graphics",
+      "source": "heygen-com/hyperframes",
       "sourceType": "github"
     },
     "music": {
@@ -737,6 +800,15 @@
       "ref": "0edafe4baab7fd20122939d3cfe1acabd8ed84a9",
       "skillPath": "packages/playwright-core/src/tools/skills/playwright-cli",
       "source": "microsoft/playwright",
+      "sourceType": "github"
+    },
+    "product-launch-video": {
+      "computedHash": "f0caa540abefd9a24fa4642cc44499827e983b29f19d0ac85e626f376cb3148b",
+      "destinationPath": ".agents/skills/hyperframes/product-launch-video",
+      "hashAlgorithm": "sha256-tree-v1",
+      "ref": "1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c",
+      "skillPath": "skills/product-launch-video",
+      "source": "heygen-com/hyperframes",
       "sourceType": "github"
     },
     "python-appservice-deploy": {
@@ -1225,6 +1297,15 @@
         }
       ],
       "license": "MIT"
+    },
+    "heygen-com/hyperframes": {
+      "evidence": [
+        {
+          "label": "LICENSE",
+          "path": "LICENSE"
+        }
+      ],
+      "license": "Apache-2.0"
     },
     "microsoft/azure-skills": {
       "evidence": [

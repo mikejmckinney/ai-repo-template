@@ -45,7 +45,9 @@ values. This skill defines call order, clarification points, and recovery.
 2. Create a project before the first generation when no project exists. Bind
    a selected design system or skill at project creation when appropriate.
 3. Call `start_run` with a focused prompt. Serialize runs that target the same
-   project because they share a working directory.
+   project because they share a working directory. `start_run` already launches
+   Open Design's inner agent; invoke it directly instead of wrapping it in a
+   repository subagent.
 4. Poll `get_run` every 30-60 seconds. A running status with unchanged file
    times normally means the inner agent is still working. Do not cancel unless
    the user asks.

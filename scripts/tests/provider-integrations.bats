@@ -292,10 +292,71 @@ EOF
     "$REPO_ROOT/.opencode/opencode.json" "$REPO_ROOT/.mcp.json"
   [ "$status" -eq 1 ]
   [ -x "$REPO_ROOT/scripts/open-design-mcp.sh" ]
+  [ -x "$REPO_ROOT/scripts/hyperframes.sh" ]
+  [ -x "$REPO_ROOT/scripts/install-media-tools.sh" ]
+  [ -x "$REPO_ROOT/scripts/test-media-tools-live.sh" ]
+  [ -x "$REPO_ROOT/scripts/open-design-mcp-smoke.py" ]
 
   run grep -F 'export COREPACK_ENABLE_DOWNLOAD_PROMPT=0' \
     "$REPO_ROOT/.agents/skills/open-design/scripts/bootstrap.sh"
   [ "$status" -eq 0 ]
+}
+
+@test "OpenDesign bootstrap pins Studio and complete catalogs" {
+  lock="$REPO_ROOT/.agents/skills/open-design/open-design.lock"
+  bootstrap="$REPO_ROOT/.agents/skills/open-design/scripts/bootstrap.sh"
+  skill="$REPO_ROOT/.agents/skills/open-design/SKILL.md"
+
+  run grep -Fx 'ref: open-design-v0.17.0' "$lock"
+  [ "$status" -eq 0 ]
+  run grep -Fx 'commit: 90a660add511da6408464a1bf3d4d5945ad06400' "$lock"
+  [ "$status" -eq 0 ]
+  run grep -Fx 'node: ~24' "$lock"
+  [ "$status" -eq 0 ]
+  run grep -Fx 'pnpm: 10.33.2' "$lock"
+  [ "$status" -eq 0 ]
+
+  for required in \
+    'apps/daemon' 'apps/web' 'design-systems' 'design-templates' \
+    'prompt-templates' 'skills' '@open-design/web^...' \
+    'pnpm --filter @open-design/web run build:sidecar' \
+    'export NEXT_TELEMETRY_DISABLED=1' '${lock_node#\~}' \
+    'git fetch --no-tags origin "$lock_commit"'; do
+    run grep -F "$required" "$bootstrap"
+    [ "$status" -eq 0 ]
+  done
+
+  run grep -F "start_run\` already launches" "$skill"
+  [ "$status" -eq 0 ]
+}
+
+@test "HyperFrames renderer and skills use immutable reviewed pins" {
+  wrapper="$REPO_ROOT/scripts/hyperframes.sh"
+  expected_skills='["hyperframes","hyperframes-animation","hyperframes-cli","hyperframes-core","hyperframes-creative","media-use","motion-graphics","product-launch-video"]'
+
+  run bash "$wrapper" --print-version-pin
+  [ "$status" -eq 0 ]
+  [ "$output" = '0.7.90' ]
+  run grep -F 'export HYPERFRAMES_SKIP_SKILLS=1' "$wrapper"
+  [ "$status" -eq 0 ]
+
+  run jq -e --argjson expected "$expected_skills" '
+    [.skills | to_entries[] | select(.value.source == "heygen-com/hyperframes") | .key] as $names |
+    ($names | sort) == $expected and
+    all(.skills | to_entries[] | select(.value.source == "heygen-com/hyperframes");
+      .value.ref == "1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c" and
+      .value.destinationPath == (".agents/skills/hyperframes/" + .key)
+    ) and
+    .sourceMetadata["heygen-com/hyperframes"] == {
+      license: "Apache-2.0",
+      evidence: [{label: "LICENSE", path: "LICENSE"}]
+    }
+  ' "$REPO_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+
+  for skill in $(jq -r '.[]' <<<"$expected_skills"); do
+    [ -f "$REPO_ROOT/.agents/skills/hyperframes/$skill/SKILL.md" ]
+  done
 }
 
 @test "shared skills have one canonical cross-agent directory" {

@@ -86,6 +86,7 @@ run_installer() {
     (.required_commands | type == "array" and length > 0) and
     (.apt_packages | type == "array" and length > 0) and
     (.profiles.verification == ["uv", "bats"]) and
+    (.profiles.media == ["ffmpeg"]) and
     (.profiles.core | index("shfmt")) and
     (.profiles.core | index("actionlint")) and
     (.profiles.core | index("markdownlint-cli2")) and
@@ -95,6 +96,8 @@ run_installer() {
     (.tools.bats.minimum_version == "1.7.0") and
     (.profiles.core | index("chrome-for-testing")) and
     (.profiles.core | index("open-design")) and
+    (.tools.ffmpeg == {type: "apt", command: "ffmpeg", version: "system", package: "ffmpeg"}) and
+    (.tools["open-design"].version == "90a660add511da6408464a1bf3d4d5945ad06400") and
     (.profiles.core | index("agent-runtime")) and
     (.profiles.agents | index("opencode")) and
     (.profiles.agents | index("claude")) and
@@ -107,6 +110,24 @@ run_installer() {
   ' "$REPO_ROOT/.config/codespace-tools.json"
 
   [ "$status" -eq 0 ]
+}
+
+@test "media profile dispatches apt tools without affecting default profiles" {
+  jq '
+    .profiles.media = ["fake-apt"] |
+    .tools["fake-apt"] = {
+      type: "apt",
+      command: "fake-apt",
+      version: "system",
+      package: "fake-apt"
+    }
+  ' "$TEST_ROOT/manifest.json" >"$TEST_ROOT/media-manifest.json"
+  mv "$TEST_ROOT/media-manifest.json" "$TEST_ROOT/manifest.json"
+
+  run_installer --profile media --verify-only
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"fake-apt is missing"* ]]
 }
 
 @test "Bats declarations match the canonical manifest minimum" {

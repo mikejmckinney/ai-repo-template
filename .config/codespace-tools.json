@@ -32,6 +32,9 @@
       "uv",
       "bats"
     ],
+    "media": [
+      "ffmpeg"
+    ],
     "core": [
       "shfmt",
       "actionlint",
@@ -72,6 +75,12 @@
     ]
   },
   "tools": {
+    "ffmpeg": {
+      "type": "apt",
+      "command": "ffmpeg",
+      "version": "system",
+      "package": "ffmpeg"
+    },
     "shfmt": {
       "type": "binary",
       "command": "shfmt",
@@ -151,7 +160,7 @@
     "open-design": {
       "type": "open-design",
       "command": "od.mjs",
-      "version": "79e257d62c0e6a8d9084f2a6464f08a251a5c0bb",
+      "version": "90a660add511da6408464a1bf3d4d5945ad06400",
       "lock": ".agents/skills/open-design/open-design.lock",
       "bootstrap": ".agents/skills/open-design/scripts/bootstrap.sh"
     },

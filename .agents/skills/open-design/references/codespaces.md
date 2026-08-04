@@ -7,18 +7,17 @@ Open Design uses two local services by default:
 | `5173` | Studio web UI |
 | `7456` | Daemon API |
 
-Forward both ports in the Codespaces **Ports** tab before starting either
-service. Open the Studio through the forwarded `5173` URL in an external
-browser tab, not through your laptop's `127.0.0.1`.
+Keep daemon port `7456` private. Forward Studio port `5173` before opening it in
+an external browser tab; your laptop's `127.0.0.1` is not the Codespace.
 
 ## Start the daemon and UI
 
 Use two terminals for clearer failures and more reliable startup.
 
-Terminal 1, from the Open Design checkout:
+Terminal 1, from the repository root:
 
 ```bash
-pnpm exec od daemon start --headless --port 7456 --no-open
+bash scripts/open-design-mcp.sh --daemon-only
 ```
 
 Wait until the daemon reports that it is listening on port `7456`.
@@ -47,3 +46,7 @@ NODE_OPTIONS="--max-old-space-size=4096" \
 If the daemon starts but the Studio never becomes ready, use the two-terminal
 workflow. See [`troubleshooting.md`](troubleshooting.md) for health checks,
 stale runtime cleanup, and logs.
+
+The MCP launcher starts the same loopback-only daemon on demand. It rejects a
+non-loopback `OPEN_DESIGN_DAEMON_URL` rather than exposing the local control
+plane.
