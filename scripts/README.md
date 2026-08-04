@@ -14,6 +14,10 @@
 | `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
 | `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile default` |
 | `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
+| `install-media-tools.sh` | Install pinned Open Design and provision pinned HyperFrames | `./scripts/install-media-tools.sh` |
+| `hyperframes.sh` | Run the pinned renderer without mutable global skills | `./scripts/hyperframes.sh <command>` |
+| `open-design-mcp.sh` | Start the loopback daemon and serve the Open Design MCP | Called by generated MCP configuration |
+| `test-media-tools-live.sh` | Smoke-test Open Design MCP and render a temporary MP4 | `./scripts/test-media-tools-live.sh` |
 | `elevenlabs-mcp.sh` | Launch pinned ElevenLabs MCP with repository-local ignored audio output | Called by generated MCP configuration |
 | `mureka-mcp.sh` | Launch pinned Mureka MCP with generation timeout defaults | Called by generated MCP configuration |
 | `suno-mcp.sh` | Launch pinned third-party Ace Data Cloud Suno MCP | Called by generated MCP configuration |
@@ -62,6 +66,12 @@ agent profile preserves the same core-plus-agent union as the default:
 ```bash
 ./scripts/install-codespace-tools.sh --profile agents
 ```
+
+The core profile installs Open Design Studio and its full generic catalogs.
+Run `./scripts/install-media-tools.sh` once to install the separate `media`
+profile (FFmpeg) and provision the pinned HyperFrames browser. The renderer
+wrapper disables mutable global skill installation; its eight committed skill
+packages remain governed by `skills-lock.json`.
 
 Preview package and build caches when a Codespace approaches its storage limit:
 

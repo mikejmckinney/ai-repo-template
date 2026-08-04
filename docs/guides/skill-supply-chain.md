@@ -238,6 +238,7 @@ changes; this table is not a substitute for complying with the linked terms.
 | `aws/agent-toolkit-for-aws` | 19 | Apache-2.0 | [LICENSE](https://github.com/aws/agent-toolkit-for-aws/blob/b4416dddac9b6a0cc5412136e6dbf8f07ffdb31c/LICENSE) |
 | `cloudflare/skills` | 2 | Apache-2.0 | [LICENSE](https://github.com/cloudflare/skills/blob/70215303d44a81a0db3219428f4825b604fc6061/LICENSE) |
 | `elevenlabs/skills` | 2 | MIT | [LICENSE](https://github.com/elevenlabs/skills/blob/37c0f2a682a8953cb9f09b152a0e1624d234193e/LICENSE) |
+| `heygen-com/hyperframes` | 8 | Apache-2.0 | [LICENSE](https://github.com/heygen-com/hyperframes/blob/1e51eaec2cb6c058fbb5349c8c3dae9770d7f30c/LICENSE) |
 | `microsoft/azure-skills` | 26 | MIT | [LICENSE](https://github.com/microsoft/azure-skills/blob/1b592c63641049ff33e4952c4021c63b4507f147/LICENSE) |
 | `microsoft/playwright` | 1 | Apache-2.0 | [LICENSE](https://github.com/microsoft/playwright/blob/0edafe4baab7fd20122939d3cfe1acabd8ed84a9/LICENSE) |
 | `netlify/context-and-tools` | 3 | MIT | [LICENSE](https://github.com/netlify/context-and-tools/blob/b4ac277e6795f90e6a1d163c001c0d7667ff9143/LICENSE) |
