@@ -49,11 +49,12 @@ sys.argv = [sys.argv[1]]
 try:
     module.main()
 except KeyboardInterrupt:
-    pass
+    print("injected asset replacement failure")
 finally:
     Path.rename = real_rename
 PY
 	[ "${status}" -eq 0 ]
+	[[ "${output}" == *'injected asset replacement failure'* ]]
 	[ -f "${fixture_assets}/marker.txt" ]
 }
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import argparse
 import hashlib
 import json
 import os
@@ -199,11 +198,6 @@ def validate_structure() -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--validate-structure", action="store_true")
-    args = parser.parse_args()
-    if not args.validate_structure:
-        parser.error("--validate-structure is required outside the isolated launcher")
     return validate_structure()
 
 

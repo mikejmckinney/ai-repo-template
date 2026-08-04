@@ -59,7 +59,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "bash -n ${TASK_PARALLELISM_RUNNER}/run-preflight.sh"
   fi
 
-  if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/preflight.py" --validate-structure >/dev/null; then
+  if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/preflight.py" >/dev/null; then
     pass "tracked Phase 0A campaign and assets validate"
   else
     fail "tracked Phase 0A campaign or assets are invalid"
