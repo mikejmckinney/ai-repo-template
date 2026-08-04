@@ -9,6 +9,10 @@ setup() {
 	REPORT="${REPO_ROOT}/.artifacts/task-parallelism/preflight-report.json"
 }
 
+isolation_available() {
+	unshare -Urn true 2>/dev/null
+}
+
 @test "Phase 0A tracks the production campaign and declared schemas" {
 	required=(
 		"${PROTOCOL}/campaign.schema.json"
@@ -31,6 +35,17 @@ setup() {
 	run python3 "${RUNNER}/preflight.py" --validate-structure
 	[ "${status}" -eq 0 ]
 	[[ "${output}" == *'Draft 2020-12 campaign and asset schemas structurally valid'* ]]
+
+	fixture="${BATS_TEST_TMPDIR}/passing-campaign.json"
+	fixture_report="${BATS_TEST_TMPDIR}/preflight-report.json"
+	cp "${PROTOCOL}/campaign.phase-0a.json" "${fixture}"
+	run env \
+		REPO_ROOT="${REPO_ROOT}" \
+		REPORT_PATH="${fixture_report}" \
+		python3 "${RUNNER}/preflight_launcher.py" --fixture "${fixture}"
+	[ "${status}" -ne 0 ]
+	[[ "${output}" == *'usage: run-preflight.sh [--fixtures PATH ...]'* ]]
+	[ ! -e "${fixture_report}" ]
 }
 
 @test "placeholder assets reproduce byte-for-byte" {
@@ -46,6 +61,13 @@ setup() {
 		OPENAI_API_KEY='fixture-openai-secret' \
 		CLOUDFLARE_API_TOKEN='fixture-cloudflare-secret' \
 		make -C "${RUNNER}" preflight
+
+	if ! isolation_available; then
+		[ "${status}" -eq 2 ]
+		[[ "${output}" == *'unshare -Urn is unavailable'* ]]
+		[ ! -e "${REPORT}" ]
+		return 0
+	fi
 
 	[ "${status}" -eq 0 ]
 	[ -f "${REPORT}" ]
@@ -66,17 +88,7 @@ setup() {
 }
 
 @test "negative campaign fixtures fail closed with redacted reasons" {
-	fixture="${BATS_TEST_TMPDIR}/passing-campaign.json"
-	fixture_report="${BATS_TEST_TMPDIR}/preflight-report.json"
-	cp "${PROTOCOL}/campaign.phase-0a.json" "${fixture}"
-
-	run env \
-		REPO_ROOT="${REPO_ROOT}" \
-		REPORT_PATH="${fixture_report}" \
-		python3 "${RUNNER}/preflight_launcher.py" --fixture "${fixture}"
-	[ "${status}" -ne 0 ]
-	[[ "${output}" == *'usage: run-preflight.sh [--fixtures PATH ...]'* ]]
-	[ ! -e "${fixture_report}" ]
+	isolation_available || skip "unshare -Urn unavailable; fail-closed path covered by argument-free preflight"
 
 	fixtures=(
 		"${RUNNER}/fixtures/unresolved-freeze.json"
@@ -97,6 +109,8 @@ setup() {
 }
 
 @test "socket control succeeds outside isolation and is blocked inside" {
+	isolation_available || skip "unshare -Urn unavailable"
+
 	port_file="${BATS_TEST_TMPDIR}/listener.port"
 	python3 - "${port_file}" <<'PY' &
 import socket
@@ -137,6 +151,8 @@ PY
 }
 
 @test "child process creation is blocked inside the production launcher" {
+	isolation_available || skip "unshare -Urn unavailable"
+
 	run "${RUNNER}/run-preflight.sh" --probe-subprocess
 	[ "${status}" -ne 0 ]
 	[[ "${output}" == *'child process blocked inside isolation'* ]]
