@@ -142,7 +142,6 @@ remote_ref_commit="$(git ls-remote origin "refs/tags/$lock_ref" | awk 'NR == 1 {
 [[ "$remote_ref_commit" == "$lock_commit" ]] \
   || die "remote tag '$lock_ref' does not resolve to locked commit '$lock_commit'"
 git fetch --no-tags origin "$lock_commit"
-git checkout --detach "$lock_commit"
 
 # Keep the checkout bounded while exposing every generic design catalog.
 git sparse-checkout init --cone
@@ -155,6 +154,7 @@ git sparse-checkout set \
   prompt-templates \
   scripts \
   skills
+git checkout --detach "$lock_commit"
 
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 export NEXT_TELEMETRY_DISABLED=1

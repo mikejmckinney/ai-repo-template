@@ -277,6 +277,8 @@ EOF
 }
 
 @test "OpenDesign MCP uses the portable project launcher" {
+  launcher="$REPO_ROOT/scripts/open-design-mcp.sh"
+
   run jq -e '
     .mcp["open-design"].command == ["bash", "scripts/open-design-mcp.sh"]
   ' "$REPO_ROOT/.opencode/opencode.json"
@@ -291,7 +293,7 @@ EOF
   run grep -R "/Applications/Open Design.app" \
     "$REPO_ROOT/.opencode/opencode.json" "$REPO_ROOT/.mcp.json"
   [ "$status" -eq 1 ]
-  [ -x "$REPO_ROOT/scripts/open-design-mcp.sh" ]
+  [ -x "$launcher" ]
   [ -x "$REPO_ROOT/scripts/hyperframes.sh" ]
   [ -x "$REPO_ROOT/scripts/install-media-tools.sh" ]
   [ -x "$REPO_ROOT/scripts/test-media-tools-live.sh" ]
@@ -299,6 +301,19 @@ EOF
 
   run grep -F 'export COREPACK_ENABLE_DOWNLOAD_PROMPT=0' \
     "$REPO_ROOT/.agents/skills/open-design/scripts/bootstrap.sh"
+  [ "$status" -eq 0 ]
+
+  run python3 - "$launcher" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+source_fallback = text.index('if [[ ! -f "$source_cli" ]]; then')
+mac_fallback = text.index('if [[ -f "$mac_cli" ]]; then', source_fallback)
+health_check = text.index('health_url=', mac_fallback)
+assert source_fallback < mac_fallback < health_check
+assert 'if [[ "$daemon_only" == true ]]; then' in text[source_fallback:mac_fallback]
+PY
   [ "$status" -eq 0 ]
 }
 
@@ -327,6 +342,15 @@ EOF
   done
 
   run grep -F "If the current task prohibits subagents, do not call it" "$skill"
+  [ "$status" -eq 0 ]
+
+  run python3 - "$bootstrap" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+assert text.index("git sparse-checkout init --cone") < text.index('git checkout --detach "$lock_commit"')
+PY
   [ "$status" -eq 0 ]
 }
 

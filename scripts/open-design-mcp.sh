@@ -18,15 +18,19 @@ if (($# > 0)); then
   exit 2
 fi
 
-if [[ -f "$mac_cli" ]]; then
-  exec node "$mac_cli" mcp --daemon-url "$daemon_url"
-fi
-
-[[ -f "$source_cli" ]] || {
+if [[ ! -f "$source_cli" ]]; then
+  if [[ "$daemon_only" == true ]]; then
+    printf 'error: --daemon-only requires the pinned Open Design source installation\n' >&2
+    printf 'error: run bash scripts/install-media-tools.sh\n' >&2
+    exit 1
+  fi
+  if [[ -f "$mac_cli" ]]; then
+    exec node "$mac_cli" mcp --daemon-url "$daemon_url"
+  fi
   printf 'error: Open Design is not installed at %s or in the macOS application bundle\n' "$source_root" >&2
   printf 'error: run bash scripts/install-media-tools.sh\n' >&2
   exit 1
-}
+fi
 
 health_url="${daemon_url%/}/api/health"
 if ! curl --fail --silent --show-error --max-time 2 "$health_url" >/dev/null 2>&1; then
