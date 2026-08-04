@@ -1,0 +1,175 @@
+{
+  "atlases": [
+    {
+      "frame_height": 64,
+      "frame_width": 64,
+      "frames": 4,
+      "json_path": "visuals/effects/explosion-atlas.json",
+      "path": "visuals/effects/explosion-atlas.webp"
+    },
+    {
+      "frame_height": 64,
+      "frame_width": 64,
+      "frames": 4,
+      "json_path": "visuals/effects/impact-atlas.json",
+      "path": "visuals/effects/impact-atlas.webp"
+    }
+  ],
+  "audio": [
+    {
+      "duration_ms": 2000,
+      "frequency_hz": 110,
+      "path": "audio/menu-theme.mp3",
+      "volume": 0.16
+    },
+    {
+      "duration_ms": 2000,
+      "frequency_hz": 165,
+      "path": "audio/gameplay-loop.mp3",
+      "volume": 0.16
+    },
+    {
+      "duration_ms": 120,
+      "frequency_hz": 880,
+      "path": "audio/shoot.wav",
+      "volume": 0.22
+    },
+    {
+      "duration_ms": 140,
+      "frequency_hz": 330,
+      "path": "audio/enemy-hit.wav",
+      "volume": 0.22
+    },
+    {
+      "duration_ms": 180,
+      "frequency_hz": 220,
+      "path": "audio/player-hit.wav",
+      "volume": 0.24
+    },
+    {
+      "duration_ms": 240,
+      "frequency_hz": 132,
+      "path": "audio/enemy-defeat.wav",
+      "volume": 0.24
+    },
+    {
+      "duration_ms": 300,
+      "frequency_hz": 440,
+      "path": "audio/wave-start.wav",
+      "volume": 0.2
+    },
+    {
+      "duration_ms": 500,
+      "frequency_hz": 82.5,
+      "path": "audio/game-over.wav",
+      "volume": 0.25
+    }
+  ],
+  "palette": {
+    "accent": "#49dcb1",
+    "background": "#08111f",
+    "danger": "#ff4f78",
+    "highlight": "#f6c453",
+    "muted": "#61728b"
+  },
+  "visuals": [
+    {
+      "accent": "#49dcb1",
+      "height": 256,
+      "opaque": false,
+      "path": "visuals/logo.webp",
+      "width": 512
+    },
+    {
+      "accent": "#49dcb1",
+      "height": 720,
+      "opaque": true,
+      "path": "visuals/menu-background.webp",
+      "width": 1280
+    },
+    {
+      "accent": "#61728b",
+      "height": 720,
+      "opaque": true,
+      "path": "visuals/arena-background.webp",
+      "width": 1280
+    },
+    {
+      "accent": "#49dcb1",
+      "height": 128,
+      "opaque": false,
+      "path": "visuals/player.webp",
+      "width": 128
+    },
+    {
+      "accent": "#ff4f78",
+      "height": 128,
+      "opaque": false,
+      "path": "visuals/enemies/chaser.webp",
+      "width": 128
+    },
+    {
+      "accent": "#f6c453",
+      "height": 128,
+      "opaque": false,
+      "path": "visuals/enemies/tank.webp",
+      "width": 128
+    },
+    {
+      "accent": "#61728b",
+      "height": 128,
+      "opaque": false,
+      "path": "visuals/enemies/striker.webp",
+      "width": 128
+    },
+    {
+      "accent": "#ff4f78",
+      "height": 64,
+      "opaque": false,
+      "path": "visuals/pickups/health.webp",
+      "width": 64
+    },
+    {
+      "accent": "#f6c453",
+      "height": 64,
+      "opaque": false,
+      "path": "visuals/pickups/rapid-fire.webp",
+      "width": 64
+    },
+    {
+      "accent": "#ff4f78",
+      "height": 48,
+      "opaque": false,
+      "path": "visuals/ui/heart.webp",
+      "width": 48
+    },
+    {
+      "accent": "#f6c453",
+      "height": 48,
+      "opaque": false,
+      "path": "visuals/ui/score.webp",
+      "width": 48
+    },
+    {
+      "accent": "#49dcb1",
+      "height": 48,
+      "opaque": false,
+      "path": "visuals/ui/wave.webp",
+      "width": 48
+    },
+    {
+      "accent": "#f6c453",
+      "height": 64,
+      "opaque": false,
+      "path": "visuals/effects/explosion-atlas.webp",
+      "width": 256
+    },
+    {
+      "accent": "#ff4f78",
+      "height": 64,
+      "opaque": false,
+      "path": "visuals/effects/impact-atlas.webp",
+      "width": 256
+    }
+  ]
+}
