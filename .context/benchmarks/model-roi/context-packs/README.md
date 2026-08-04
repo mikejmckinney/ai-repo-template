@@ -18,11 +18,11 @@ duration of a run only (skip-worktree + restore before diff capture).
 
 | Pack ID | Intended use |
 |---|---|
-| `core-min` | Smallest lazy-load floor: index, ownership map, latest session lessons |
-| `class-a-process` | Class A operational-fit: core-min + process/doc/PR completion rules |
-| `class-b-implementation` | Class B reasoning/code: core-min + code quality and doc-sync rules |
+| `core-min` | Smallest current-policy floor: index, agent guide, ADR-031 |
+| `class-a-process` | Class A operational-fit: current commands, outcome evidence, and workflow lifecycle |
+| `class-b-implementation` | Class B reasoning/code: current commands, review lenses, and outcome evidence |
 | `workflow-risk` | High verification-risk workflow changes: core-min + ADR-016 + sandbox guide |
-| `adr-docs` | ADR/docs work: core-min + ADR index/template + model tier + orchestration patterns |
+| `adr-docs` | ADR/docs work: current guide + ADR index/template/policy + orchestration patterns |
 
 ## Harness usage
 

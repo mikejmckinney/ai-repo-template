@@ -47,7 +47,7 @@ regrade_parse_config() {
   IFS='|' read -r SCORE_SET STAGE_FLAG GRADER_ID_LEGACY RESPONSES_SUBDIR RUBRIC_FILE TASKS_CSV MODE <<<"${REGRADE_CFG}"
   REPO_ROOT="$(regrade_repo_root)"
   MAKE="make -C ${REPO_ROOT}/scripts/benchmark"
-  RESULTS_MD="${REPO_ROOT}/.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md"
+  RESULTS_MD="${REPO_ROOT}/docs/benchmarks/agent-roi-benchmark-results.md"
   RESPONSES_DIR="${REPO_ROOT}/scripts/benchmark/${RESPONSES_SUBDIR}"
   MANIFEST_DIR="${REPO_ROOT}/scripts/benchmark/grade-bundles/${SCORE_SET}-manifests"
   # shellcheck disable=SC2034  # STAGE_TASKS consumed by regrade-stage.sh after init

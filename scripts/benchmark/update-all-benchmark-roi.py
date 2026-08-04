@@ -9,7 +9,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 RESULTS = Path(sys.argv[1]) if len(sys.argv) > 1 else (
-    HERE.parents[1] / ".context/benchmarks/model-roi/results/agent-roi-benchmark-results.md"
+    HERE.parents[1] / "docs/benchmarks/agent-roi-benchmark-results.md"
 )
 
 

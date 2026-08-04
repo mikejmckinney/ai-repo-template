@@ -14,7 +14,7 @@ Class A and Class B tasks?
 
 This run intentionally does **not** rerun the monolithic baselines. The baseline
 evidence is the completed Stage 1 / Stage 1C result set in
-`results/agent-roi-benchmark-results.md`.
+`docs/benchmarks/agent-roi-benchmark-results.md`.
 
 ## Scope
 
@@ -114,7 +114,7 @@ or more robust solution.
 
 ## Comparison Output
 
-Add the final results to `results/agent-roi-benchmark-results.md` in a new
+Add the final results to `docs/benchmarks/agent-roi-benchmark-results.md` in a new
 issue 376 pipeline section. Report:
 
 - Alias

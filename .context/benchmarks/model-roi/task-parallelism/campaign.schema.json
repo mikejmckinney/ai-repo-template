@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-campaign.v1.json",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "task-parallelism-campaign.v1"
+    },
+    "campaign_id": {
+      "const": "vector-siege-phase-0a"
+    },
+    "phase": {
+      "const": "0A"
+    },
+    "freeze_state": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "resolved",
+            "unresolved"
+          ]
+        },
+        "benchmark_base_sha": {
+          "pattern": "^[0-9a-f]{40}$",
+          "type": "string"
+        },
+        "skills_lock_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        "jsonschema_version": {
+          "const": "4.26.0"
+        },
+        "json_schema_draft": {
+          "const": "2020-12"
+        },
+        "ffmpeg_version": {
+          "const": "6.1.1-3ubuntu5"
+        }
+      },
+      "required": [
+        "status",
+        "benchmark_base_sha",
+        "skills_lock_sha256",
+        "jsonschema_version",
+        "json_schema_draft",
+        "ffmpeg_version"
+      ],
+      "type": "object"
+    },
+    "assets": {
+      "additionalProperties": false,
+      "properties": {
+        "manifest": {
+          "const": "assets/manifest.json"
+        },
+        "provenance": {
+          "const": "repository-owned-primitives"
+        }
+      },
+      "required": [
+        "manifest",
+        "provenance"
+      ],
+      "type": "object"
+    },
+    "external_operations": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "phase_0b": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "blocked",
+            "approved"
+          ]
+        },
+        "approval_source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "approval_source"
+      ],
+      "type": "object"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "campaign_id",
+    "phase",
+    "freeze_state",
+    "assets",
+    "external_operations",
+    "phase_0b"
+  ],
+  "title": "Task parallelism Phase 0A campaign",
+  "type": "object"
+}

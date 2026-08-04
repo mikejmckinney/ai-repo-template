@@ -16,6 +16,7 @@ path.
 | `onboarding-advisory-policy.bats` | Onboarding lifecycle, LSP, and advisory policy invariants |
 | `postmerge-retro-batch.bats` | Daily retro evidence and lifecycle behavior |
 | `shell-tooling-policy.bats` | Bounded production shell command policy |
+| `task-parallelism-preflight.bats` | No-spend campaign, exact assets, isolation, credential, and approval controls |
 | `verify-env.bats` | Environment checks |
 | `verify-pr.bats` | Change-class classifier fixtures (ADR-016) |
 | `weekly-classifier.bats` | Weekly review classifier behavior |

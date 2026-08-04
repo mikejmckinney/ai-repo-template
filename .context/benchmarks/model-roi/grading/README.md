@@ -138,8 +138,8 @@ Class B rows for the same alias (e.g. `cand-05-pipe` at `r2`) do not collide.
 
 ## Regrading Stage 1E under a canonical score set
 
-**Recommended:** `scripts/benchmark/regrade-stage-1e.sh` (documented in
-[`benchmark-runbook.md`](../benchmark-runbook.md) § "Regrade Stage 1E (CP-1)").
+**Recommended:** `scripts/benchmark/regrade-stage-1e.sh` (documented in the
+canonical [`model-roi-benchmark-runbook.md`](../../../../docs/guides/model-roi-benchmark-runbook.md)).
 
 ```bash
 ./scripts/benchmark/regrade-stage-1e.sh prepare
@@ -184,7 +184,7 @@ fixtures only.
 **Fixture location after Phase A merge:** `stage-*-llm-responses-v1/` trees are not
 on `main` (gitignored). Check out tag `benchmark/phase-a-artifacts-20260608` or
 branch `benchmark/roi` before `record` / `compile` re-runs. Published canonical
-columns in `results/agent-roi-benchmark-results.md` on `main` are the operator
+columns in [`docs/benchmarks/agent-roi-benchmark-results.md`](../../../../docs/benchmarks/agent-roi-benchmark-results.md) on `main` are the operator
 source of truth without restoring fixtures.
 
 ## Cost accounting

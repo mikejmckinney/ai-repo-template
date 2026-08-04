@@ -17,6 +17,8 @@ CONTEXT_FILES=(
   "docs/benchmarks/agent-roi-benchmark-results.md"
   "docs/benchmarks/retro-execution-447-results.md"
   "docs/guides/model-roi-benchmark-runbook.md"
+  ".context/benchmarks/model-roi/task-parallelism/README.md"
+  ".context/benchmarks/model-roi/task-parallelism/campaign.phase-0a.json"
 )
 
 for file in "${CONTEXT_FILES[@]}"; do

@@ -70,7 +70,7 @@ combined planner-plus-implementer cost improves ROI.
 ## Grading Notes
 
 Use the same 100-point Class A/Class B rubric already used in
-`results/agent-roi-benchmark-results.md`:
+`docs/benchmarks/agent-roi-benchmark-results.md`:
 
 - Correctness /30
 - Code/doc quality /25

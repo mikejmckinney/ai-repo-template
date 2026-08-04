@@ -1,8 +1,6 @@
 # path	reason
 .context/00_INDEX.md	Map of available context surfaces and lazy-load expectations.
-.context/rules/agent_ownership.md	Required before touching files.
-.context/sessions/latest_summary.md	Durable lessons from recent work.
-.context/rules/process_work_style.md	Work style, testing, and validation expectations.
-.context/rules/process_doc_maintenance.md	Doc-sync triggers for companion file updates.
+AI_REPO_GUIDE.md	Current workflow verification and authentication boundaries.
 docs/decisions/adr-016-pre-merge-verification-gate.md	Pre-merge verification and sandbox evidence gate.
 docs/guides/sandbox-verification.md	Sandbox dogfood verification procedure.
+docs/guides/outcome-validation.md	Representative user-outcome evidence contract.

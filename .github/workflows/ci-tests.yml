@@ -106,6 +106,14 @@ jobs:
           scripts/install-codespace-tools.sh --profile verification
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Install task-parallelism preflight dependencies
+        env:
+          TASK_PARALLELISM_VENV: ${{ runner.temp }}/task-parallelism-venv
+        run: |
+          uv venv "$TASK_PARALLELISM_VENV"
+          uv pip install --python "$TASK_PARALLELISM_VENV/bin/python" --requirement scripts/benchmark/task-parallelism/requirements.txt
+          echo "$TASK_PARALLELISM_VENV/bin" >> "$GITHUB_PATH"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:

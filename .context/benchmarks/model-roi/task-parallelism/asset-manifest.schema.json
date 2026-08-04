@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-assets.v1.json",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "task-parallelism-assets.v1"
+    },
+    "generator": {
+      "const": "generate-placeholder-assets.py"
+    },
+    "ffmpeg_version": {
+      "const": "6.1.1-3ubuntu5"
+    },
+    "provenance": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "assets": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "pattern": "^(audio|source|visuals)/",
+            "type": "string"
+          },
+          "media_type": {
+            "enum": [
+              "application/json",
+              "audio/mpeg",
+              "audio/wav",
+              "image/webp"
+            ]
+          },
+          "bytes": {
+            "minimum": 1,
+            "type": "integer"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "media_type",
+          "bytes",
+          "sha256"
+        ],
+        "type": "object"
+      },
+      "maxItems": 27,
+      "minItems": 27,
+      "uniqueItems": true,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "generator",
+    "ffmpeg_version",
+    "provenance",
+    "assets"
+  ],
+  "title": "Task parallelism deterministic asset manifest",
+  "type": "object"
+}

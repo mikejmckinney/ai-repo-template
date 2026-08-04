@@ -22,6 +22,10 @@ invoke Bats. The derived-repository lifecycle module validates classification,
 onboarding, and structural repository checks; full Bats runs once at the top
 level through `scripts/verify-local.sh --full`.
 
+Check `169-task-parallelism-preflight.sh` validates the tracked Phase 0A files,
+JSON, schemas, and exact asset checksums. Its network, credential, subprocess,
+negative-fixture, and regeneration behaviors remain in the focused Bats suite.
+
 Modules expect:
 
 - CWD == repo root (orchestrator guarantees this).

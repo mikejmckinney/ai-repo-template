@@ -36,6 +36,8 @@ python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock skills-
 python3 scripts/skill-supply-chain.py render-license-inventory --repo "$PWD" --lock skills-lock.json --check
 scripts/diagnose-opencode-session.sh
 scripts/archive-opencode-database.sh
+make -C scripts/benchmark/task-parallelism assets-check
+make -C scripts/benchmark/task-parallelism preflight
 git diff --check
 ```
 
@@ -155,6 +157,8 @@ provider cascade instead of consuming the 90- or 120-minute workflow budget.
 | `scripts/workflows/lib/` | Shared provider, evidence, priority, and lifecycle helpers |
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
+| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 tracked Phase 0A campaign, schemas, task, and exact placeholder assets |
+| `scripts/benchmark/task-parallelism/` | Deterministic asset generator and isolated no-spend preflight |
 | `.devcontainer/devcontainer.json` | Canonical repository-owned Codespaces lifecycle |
 | `.config/codespace-tools.json` | Canonical Codespaces tool versions, release integrity, and profiles |
 | `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |

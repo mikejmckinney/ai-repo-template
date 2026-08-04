@@ -30,12 +30,32 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${RUNNER}/adjudicate-grades.py"
     "${RUNNER}/grading_lib.py"
   )
+  canonical_results_consumers=(
+    "${RUNNER}/regrade-stage-lib.sh"
+    "${RUNNER}/regrade_results_lib.py"
+    "${RUNNER}/update-all-benchmark-roi.py"
+    "${RUNNER}/update-benchmark-results.py"
+    "${RUNNER}/update-results-canonical-scores.py"
+    "${RUNNER}/update-stage-1-pipeline-roi.py"
+    "${RUNNER}/update-stage-1-roi.py"
+    "${RUNNER}/update-stage-1c-roi.py"
+    "${RUNNER}/update-stage-1d-roi.py"
+    "${RUNNER}/update-stage-1e-roi.py"
+  )
 
   for f in "${required[@]}"; do
     if [[ -f "${f}" ]]; then
       pass "${f} exists"
     else
       fail "${f} is missing"
+    fi
+  done
+
+  for path in "${canonical_results_consumers[@]}"; do
+    if grep -Fq 'docs/benchmarks/agent-roi-benchmark-results.md' "${path}"; then
+      pass "${path} targets the canonical benchmark results"
+    else
+      fail "${path} targets a retired benchmark results path"
     fi
   done
 

@@ -17,7 +17,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
-DEFAULT_RESULTS = REPO / ".context/benchmarks/model-roi/results/agent-roi-benchmark-results.md"
+DEFAULT_RESULTS = REPO / "docs/benchmarks/agent-roi-benchmark-results.md"
 
 
 def cmd_scores(path: Path) -> None:

@@ -47,9 +47,9 @@ Before editing, read:
 - `.context/rules/process_session_start.md`
 - `.context/rules/README.md`
 - `.context/benchmarks/model-roi/README.md`
-- `.context/benchmarks/model-roi/benchmark-runbook.md`
+- `docs/guides/model-roi-benchmark-runbook.md`
 - `.context/benchmarks/model-roi/grading/README.md`
-- `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md`
+- `docs/benchmarks/agent-roi-benchmark-results.md`
 - `.github/prompts/05-implement-benchmark-grading-standardization.md`
 - `scripts/benchmark/Makefile`
 - `scripts/benchmark/lib.sh`
@@ -106,8 +106,8 @@ If existing helpers only accept `A-operational` or `B-reasoning`, update validat
 Update:
 
 - `.context/benchmarks/model-roi/README.md`
-- `.context/benchmarks/model-roi/benchmark-runbook.md`
-- `.context/benchmarks/model-roi/results/agent-roi-benchmark-results.md` only if this repo keeps benchmark plans/results in one file; otherwise create a focused Stage 1F protocol doc.
+- `docs/guides/model-roi-benchmark-runbook.md`
+- `docs/benchmarks/agent-roi-benchmark-results.md` only if the Stage 1F work publishes decision evidence; otherwise create a focused Stage 1F protocol doc on the lab branch.
 
 Required content:
 

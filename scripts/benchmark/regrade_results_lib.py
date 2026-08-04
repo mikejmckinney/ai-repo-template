@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-RESULTS_MD = REPO_ROOT / ".context/benchmarks/model-roi/results/agent-roi-benchmark-results.md"
+RESULTS_MD = REPO_ROOT / "docs/benchmarks/agent-roi-benchmark-results.md"
 RUNNER = REPO_ROOT / "scripts/benchmark"
 
 RUBRIC_PROFILES = {

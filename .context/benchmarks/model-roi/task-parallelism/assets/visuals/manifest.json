@@ -1,0 +1,91 @@
+{
+  "assets": [
+    {
+      "bytes": 4072,
+      "path": "arena-background.webp",
+      "sha256": "35056b8597379e7c9d2e35e3535be4b2f67ffc5b31782953f2026244d1f66ae7"
+    },
+    {
+      "bytes": 797,
+      "path": "effects/explosion-atlas.json",
+      "sha256": "2bbf90caf3d8927de0d647f067f0ab0c29a338687dae6598043fb5dc13684d65"
+    },
+    {
+      "bytes": 702,
+      "path": "effects/explosion-atlas.webp",
+      "sha256": "27c0a8e16f436303b06553391e3ebfac59bed7594ce56e164c190fcfb842abed"
+    },
+    {
+      "bytes": 794,
+      "path": "effects/impact-atlas.json",
+      "sha256": "7be8ba861d04a1dc63d7cd5cc505b7f86c1cf1b693700b2dbfd2a56309c3f845"
+    },
+    {
+      "bytes": 618,
+      "path": "effects/impact-atlas.webp",
+      "sha256": "f4c71029c1de548c5fef771b715151b5f739f2b002ed1165e8abb342c2b68454"
+    },
+    {
+      "bytes": 922,
+      "path": "enemies/chaser.webp",
+      "sha256": "7c80a2f1fed148833440dabf21e6bbacb0c9b7c597bbe93e51563cf2de8b9561"
+    },
+    {
+      "bytes": 646,
+      "path": "enemies/striker.webp",
+      "sha256": "4202cfaaf4c7a613e66f8f86559e16b300dbbcbb8026996aba646570cf13f65e"
+    },
+    {
+      "bytes": 958,
+      "path": "enemies/tank.webp",
+      "sha256": "a8e46c8cf78746f326d598e0a50cdecee7abd05ca603bb2c861c90e20d8cdeb6"
+    },
+    {
+      "bytes": 1662,
+      "path": "logo.webp",
+      "sha256": "5aa1c56ae5d3e43e47d87dc9182bd58afaf538e9f9ff2ce16a493e8fe8cdb85d"
+    },
+    {
+      "bytes": 5072,
+      "path": "menu-background.webp",
+      "sha256": "0901c89875224bda913d4ca6a110ac436cdcae739c45c20d1fd0f9665a194916"
+    },
+    {
+      "bytes": 124,
+      "path": "palette.json",
+      "sha256": "7e7990e9eaa8915c17a8eccd8f7a01899c9a5cb1de43b820c8498a1952eb9267"
+    },
+    {
+      "bytes": 552,
+      "path": "pickups/health.webp",
+      "sha256": "e8a2ccf8333d52ad900b154b7d2482bdd504cf531575b40ca02823cd30af3c45"
+    },
+    {
+      "bytes": 620,
+      "path": "pickups/rapid-fire.webp",
+      "sha256": "64d76ef4464d529e1af3cfede7c4a280796012efcf35278de23cbe39907e0e3f"
+    },
+    {
+      "bytes": 852,
+      "path": "player.webp",
+      "sha256": "91dec99bf58d056547e83212ecc90b4a5dec2a7377ebf6bff6bd508a09b8935d"
+    },
+    {
+      "bytes": 422,
+      "path": "ui/heart.webp",
+      "sha256": "b1af460ee966ab87f118c533cfeb2a4d42f8bdbd4021b0e45fea054312760723"
+    },
+    {
+      "bytes": 478,
+      "path": "ui/score.webp",
+      "sha256": "19a3d9d9de88a07435a881868703f7c96e434186744636f6133e29f2969232a0"
+    },
+    {
+      "bytes": 406,
+      "path": "ui/wave.webp",
+      "sha256": "b710eeb6c306643da76da8eaa3f8f2e180df55ba685a31a6f8bdbfff241bcecf"
+    }
+  ],
+  "provenance": "repository-owned programmatic placeholder shapes; no model or provider call",
+  "schema_version": "vector-siege-visual-manifest.v1"
+}
