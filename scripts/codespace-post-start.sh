@@ -43,7 +43,9 @@ if [[ "${ENSURE_GH_PAT_AUTH_UPGRADED:-false}" == "true" ]]; then
 elif [[ "${ENSURE_GH_PAT_AUTH_LIMITED:-false}" == "true" ]]; then
   log_warn "gh is using the Codespaces-injected GITHUB_TOKEN (limited to current repo)."
   log_warn "Add GH_PAT as a Codespaces user secret: https://github.com/settings/codespaces"
-  log_warn "Scope: repo + workflow on upstream and sandbox repos, then rebuild this Codespace."
+  log_warn "Use a fine-grained PAT restricted to the upstream and sandbox repositories."
+  log_warn "Grant Issues, Variables, Contents, and Pull requests R/W; Metadata R; Workflows R/W if needed."
+  log_warn "Classic repo + workflow scopes are a broader fallback covering every accessible repository."
 else
   log_info "gh auth does not need PAT upgrade (or gh is not authenticated)."
 fi
@@ -74,8 +76,9 @@ if git -C "$REPO_ROOT" rev-parse --is-inside-work-tree &>/dev/null; then
   else
     log_warn "Sandbox git remote still missing after post-start."
     log_warn "One-time maintainer bootstrap (if sandbox repo does not exist yet):"
-    log_warn "  export BOOTSTRAP_GH_TOKEN=\"\${GH_PAT}\"   # classic PAT: repo + workflow"
+    log_warn "  export BOOTSTRAP_GH_TOKEN=\"<owner-level bootstrap token>\""
     log_warn "  ./scripts/sandbox-bootstrap.sh"
+    log_warn "Repository creation needs owner-level access; see the guide before using the broader classic fallback."
     log_warn "See docs/guides/sandbox-verification.md § One-time setup."
   fi
 else

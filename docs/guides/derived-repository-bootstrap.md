@@ -89,6 +89,32 @@ When `OPENCODE_OPENAI_AUTH` is absent from the environment in a local run, the
 script can delegate to `sync-opencode-oauth-secret.sh` to upload an access-only
 bundle; it never uploads the real refresh token.
 
+Entries marked `codespaces: true` and `actions: false` in the canonical manifest
+are Codespaces-only credentials for interactive provider tooling. The manifest
+is the authoritative name list; the bootstrap does not publish those entries as
+Actions secrets. A missing user secret is reported and skipped.
+
+`GH_PAT` is injected into every derived Codespace covered by its user-secret
+visibility and becomes the interactive `gh`, Git, and existing-sandbox token.
+Use a dedicated fine-grained PAT restricted to the required upstream and sandbox
+repositories. Grant Issues, Variables, Contents, and Pull requests read/write;
+Metadata read; and Workflows read/write when editing workflow files. If an
+endpoint cannot use a fine-grained PAT, a classic PAT with `repo` and `workflow`
+is the broader fallback: those scopes cover every repository the user can
+access, not only the upstream and sandbox repositories. Any granted access is
+available to code running in each covered Codespace, so do not reuse an
+account-administration token. Creating a new sandbox repository requires the
+separate owner-level credential documented in
+`docs/guides/sandbox-verification.md`.
+
+`CLOUDFLARE_GLOBAL_API_KEY` is an account-wide, unscoped legacy credential
+retained for explicitly requested interactive legacy API authentication.
+Cloudflare documents that it can access all of a user's resources with the
+user's full permissions and recommends scoped API tokens instead. Prefer
+`CLOUDFLARE_API_KEY`, and do not configure the global key as a Codespaces user
+secret when no legacy consumer requires it. See [Cloudflare's Global API key
+limitations](https://developers.cloudflare.com/fundamentals/api/get-started/keys/#limitations).
+
 ## Visibility behavior
 
 For a Codespaces user secret with `selected` visibility, the script calls the
@@ -97,15 +123,33 @@ list, so prior grants remain intact. Secrets with `all` visibility need no
 change. `private` visibility already covers a private default destination;
 review visibility manually before using a public destination.
 
+Dry-run remains offline: it reports the allowlisted names but does not query
+GitHub to resolve whether each existing user secret is `selected`, `all`,
+`private`, or missing. Those dispositions are resolved and printed only after
+`--apply` authenticates with `REPO_BOOTSTRAP_TOKEN`. For selected secrets, the
+script reports `repository granted` after the additive mutation; no mode previews
+the resolved grant set before mutation.
+
 If the bootstrap token lacks Codespaces scope, the script fails before creating
 the repository. Missing required environment values also fail before any GitHub
 operation. Optional absent values are reported by name and skipped. Secret
 values are never printed.
 
+The script does not create Codespaces user secrets or copy their values. It only
+changes repository access for an existing secret whose visibility is `selected`.
+
 ## Recovery
 
 - If creation succeeded but a later secret write failed, fix the named
   permission or missing value and rerun with `--reuse --apply`.
+- To revoke an accidental selected-secret grant without deleting the repository,
+  retrieve its numeric ID with `gh api repos/OWNER/PROJECT --jq .id`, then run
+  `gh api --method DELETE
+  user/codespaces/secrets/NAME/repositories/REPOSITORY_ID` for each affected
+  secret. Reverting a manifest entry prevents future grants but does not revoke
+  grants already applied.
+- Deleting a temporary repository removes it from selected-secret access lists;
+  verify both repository absence and grant removal after cleanup.
 - If an unrelated repository already owns the destination name, choose another
   name. Do not use `--reuse` unless synchronizing that repository is intended.
 - Run `scripts/setup.sh` inside a derived repository to report its current
