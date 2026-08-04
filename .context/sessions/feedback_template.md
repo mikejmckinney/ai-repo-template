@@ -1,4 +1,3 @@
-<!-- TEMPLATE_PLACEHOLDER: Copy this file to create a new feedback record -->
 <!-- Usage: cp .context/sessions/feedback_template.md .context/sessions/feedback_<iteration-or-feature>.md -->
 
 # Feedback: [Iteration/Feature Title]
@@ -34,9 +33,9 @@
 
 - [ ] Continue as planned
 - [ ] Pivot: <describe pivot>
-- [ ] Re-run Analyst with new constraints
+- [ ] Re-run problem analysis with new constraints
 - [ ] Stop / deprioritize
 
 ## Next Iteration Input
 
-**Feed to**: Analyst (if assumptions changed) / Architect (if design feedback only)
+**Feed to**: implementing agent (if assumptions changed) / architecture review (if design feedback only)

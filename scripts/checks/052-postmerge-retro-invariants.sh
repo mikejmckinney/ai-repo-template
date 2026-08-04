@@ -1,0 +1,403 @@
+#!/usr/bin/env bash
+# scripts/checks/052-postmerge-retro-invariants.sh — post-merge retro v2 wiring.
+
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+  echo "Checking post-merge retro invariants..."
+
+  RETRO_WORKFLOW=".github/workflows/agent-postmerge-retro.yml"
+  RETRO_PROMPT=".github/prompts/post-merge-retro.md"
+  RETRO_FIX_PROMPT=".github/prompts/post-merge-retro-fix.md"
+  RETRO_DIR="scripts/workflows/postmerge-retro"
+  COLLECT_SCRIPT="${RETRO_DIR}/collect-postmerge-evidence.sh"
+  RUN_SCRIPT="${RETRO_DIR}/run-postmerge-retro.sh"
+  DAILY_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily.sh"
+  DAILY_DISPATCH_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily-dispatch.sh"
+  DAILY_SELECT_SCRIPT="${RETRO_DIR}/daily-retro-select-prs.sh"
+  FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
+  CLASSIFIER_SCRIPT="${RETRO_DIR}/classify-finding-priority.py"
+  COVERAGE_SCRIPT="${RETRO_DIR}/compute-evidence-coverage.py"
+  BOUNDED_SCRIPT="${RETRO_DIR}/run-postmerge-retro-bounded.sh"
+  FULL_CURSOR_SCRIPT="${RETRO_DIR}/run-postmerge-retro-full-cursor.mjs"
+  ANTIGRAVITY_RETRO_SCRIPT="${RETRO_DIR}/run-postmerge-retro-antigravity.py"
+  ASSEMBLE_PROMPT_SCRIPT="${RETRO_DIR}/assemble-retro-prompt.sh"
+  COVERAGE_META_SCRIPT="${RETRO_DIR}/render-evidence-coverage-meta.py"
+  DAILY_SCHEMA=".github/schemas/postmerge-retro-daily.schema.json"
+  PARALLEL_SCRIPT="${RETRO_DIR}/run-postmerge-retro-parallel.sh"
+  UMBRELLA_LINK_SCRIPT="${RETRO_DIR}/update-umbrella-fix-link.sh"
+  RESOLVE_UMBRELLA_SCRIPT="${RETRO_DIR}/resolve-umbrella-issue.sh"
+  WRITE_UMBRELLA_REF_SCRIPT="${RETRO_DIR}/write-umbrella-issue-ref.sh"
+  UMBRELLA_SCRIPT="${RETRO_DIR}/create-umbrella-issue.sh"
+  UMBRELLA_TABLE_SCRIPT="${RETRO_DIR}/umbrella-findings-table.py"
+  LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
+  SCHEMA=".github/schemas/postmerge-retro.schema.json"
+  BOUNDED_SCHEMA=".github/schemas/postmerge-retro-bounded.schema.json"
+  LINK_SCRIPT="scripts/workflows/lib/link-fix-pr-to-issue.sh"
+  CHECKOUT_FIX_BRANCH_SCRIPT="scripts/workflows/lib/checkout-fix-branch.sh"
+  UMBRELLA_TEMPLATE=".github/templates/postmerge-retro-umbrella.md"
+  FIX_PR_TEMPLATE=".github/templates/postmerge-retro-fix-pr.md"
+  LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
+  ENSURE_LABELS_SCRIPT="scripts/setup/ensure-pipeline-labels.sh"
+  FEEDBACK_COLLECTOR="scripts/workflows/lib/collect-pr-evidence.sh"
+  OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
+  OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
+  FIX_PROVIDER_CASCADE="scripts/workflows/lib/run-fix-provider-cascade.sh"
+  FIX_VERIFICATION_VALIDATOR="scripts/workflows/lib/validate-fix-verification.py"
+  MONOLITHIC_SCHEMA=".github/schemas/postmerge-retro-monolithic.schema.json"
+  MONOLITHIC_SCRIPT="${RETRO_DIR}/run-postmerge-retro-monolithic.sh"
+  PROVIDER_TIMEOUT_SCRIPT="scripts/workflows/lib/postmerge-provider-timeout.sh"
+
+  for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
+    "$DAILY_SCRIPT" "$DAILY_DISPATCH_SCRIPT" "$DAILY_SELECT_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
+    "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" "$BOUNDED_SCHEMA" \
+    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$CHECKOUT_FIX_BRANCH_SCRIPT" \
+    "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
+    "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA" \
+    "$BOUNDED_SCRIPT" "$FULL_CURSOR_SCRIPT" "$ANTIGRAVITY_RETRO_SCRIPT" "$ASSEMBLE_PROMPT_SCRIPT" \
+    "$OPENCODE_RUNNER" "$OPENCODE_FIX_RUNNER" "$FIX_PROVIDER_CASCADE" "$FIX_VERIFICATION_VALIDATOR" \
+    "$MONOLITHIC_SCHEMA" "$PROVIDER_TIMEOUT_SCRIPT"; do
+    if [[ -f "$f" ]]; then
+      pass "$f exists"
+    else
+      fail "$f missing (post-merge retro)"
+    fi
+  done
+
+  if grep -q 'full-evidence-opencode' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'OPENCODE_OUTPUT_SCHEMA' "$BOUNDED_SCRIPT" 2>/dev/null \
+    && grep -q 'run_fix_provider_cascade' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'OPENCODE_FIX_MODE=true' "$FIX_PROVIDER_CASCADE" 2>/dev/null \
+    && grep -q 'OPENCODE_GITHUB_TOKEN' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'npm ci --prefix .github/agent-runtime' "$RETRO_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'AGENT_RUNTIME_IMAGE' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "postmerge retro routes scan/fix through locked OpenCode runtime on Ubuntu"
+  else
+    fail "postmerge retro missing OpenCode install or scan/fix isolation wiring"
+  fi
+
+  if grep -q 'schedule:' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q '0 6 \* \* \*' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow scheduled at 06:00 UTC"
+  else
+    fail "retro workflow missing 06:00 UTC schedule"
+  fi
+
+  if grep -q 'workflow_dispatch' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow supports manual workflow_dispatch (daily pipeline)"
+  else
+    fail "retro workflow must support workflow_dispatch"
+  fi
+
+  if ! grep -q 'pull_request:' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow has no pull_request close trigger (Option C)"
+  else
+    fail "retro workflow must not use pull_request close trigger in v2"
+  fi
+
+  if grep -q 'daily-pipeline:' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-daily-dispatch.sh' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-fix.sh' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "workflow uses single daily-pipeline job with retro + fix scripts"
+  else
+    fail "workflow must use daily-pipeline job invoking retro and fix scripts"
+  fi
+
+  if ! grep -q 'daily-retro:' "$RETRO_WORKFLOW" 2>/dev/null \
+    && ! grep -q 'daily-fix:' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "workflow consolidated to single job (no daily-retro/daily-fix split)"
+  else
+    fail "workflow must not define separate daily-retro and daily-fix jobs (#446)"
+  fi
+
+  if grep -q 'force_re_retro_prs' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_IGNORE_RETRO_DEDUPE' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'list-indexed-merge-shas.sh' "$DAILY_SELECT_SCRIPT" 2>/dev/null \
+    && grep -q 'merge_commit_sha' "$RUN_SCRIPT" 2>/dev/null; then
+    pass "merge_commit_sha dedupe + operator overrides wired"
+  else
+    fail "postmerge retro missing merge_commit_sha dedupe wiring"
+  fi
+
+  if grep -q 'Suggested fix' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'trigger_likelihood' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'fix_cost' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'regression_guard' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'umbrella-findings-table.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'extract-suggested-fix.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'migrate_findings_table' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'trigger_likelihood' "$UMBRELLA_TABLE_SCRIPT" 2>/dev/null \
+    && grep -q 'Current main (HEAD)' "$ASSEMBLE_PROMPT_SCRIPT" 2>/dev/null \
+    && grep -q 'mark-superseded-findings.py' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "layers B–D: HEAD lens, superseded helper, triage umbrella columns + Suggested fix"
+  else
+    fail "postmerge retro missing layers B–D wiring"
+  fi
+
+  if grep -q 'impact' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'impact_magnitude' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'trigger_likelihood' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'affected_scope' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'reversibility' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'fix_cost' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'confidence' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'uncertainty' "$RETRO_PROMPT" 2>/dev/null \
+    && ! grep -q '"severity"' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'triage_version' "$SCHEMA" 2>/dev/null \
+    && grep -q 'classify-finding-priority.py' "$RETRO_DIR/validate-postmerge-retro.py" 2>/dev/null \
+    && grep -q 'derive_priority_band_v2' "$CLASSIFIER_SCRIPT" 2>/dev/null; then
+    pass "finding classifier schema + prompt + validator wired (#456)"
+  else
+    fail "postmerge retro missing finding classifier contract (#456)"
+  fi
+
+  if grep -q 'compute-evidence-coverage.py' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'pr_evidence_coverage' "$RETRO_DIR/merge-daily-retro-json.py" 2>/dev/null \
+    && grep -q 'pr_evidence_coverage' "$RETRO_DIR/validate-postmerge-retro-daily.py" 2>/dev/null \
+    && grep -q 'render-evidence-coverage-meta.py' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'EVIDENCE_COVERAGE' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'EVIDENCE_TRUNCATION_SUMMARY' "$UMBRELLA_TEMPLATE" 2>/dev/null \
+    && grep -q 'compute-evidence-coverage.py' "$RETRO_DIR/run-postmerge-retro-monolithic.sh" 2>/dev/null; then
+    pass "evidence coverage pre-check + Meta render wired (#460)"
+  else
+    fail "postmerge retro missing evidence coverage truncation visibility (#460)"
+  fi
+
+  if grep -q 'full-evidence-cursor' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-bounded.sh' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-full-cursor.mjs' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'run-postmerge-retro-antigravity.py' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_ADAPTIVE_EVIDENCE' "$COVERAGE_SCRIPT" 2>/dev/null \
+    && grep -q 'default=True' "$COVERAGE_SCRIPT" 2>/dev/null \
+    && grep -q 'postmerge-retro:merge-index:start' "${RETRO_DIR}/append-merge-index-markers.sh" 2>/dev/null \
+    && ! grep -q 'Indexed merge commits (automation)' "${RETRO_DIR}/append-merge-index-markers.sh" 2>/dev/null; then
+    pass "adaptive evidence routing wired (#461)"
+  else
+    fail "postmerge retro missing adaptive evidence routing (#461)"
+  fi
+
+  if grep -q 'POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS=' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'ADVISORY_CANDIDATE_TIMEOUT_SECONDS=' "$MONOLITHIC_SCRIPT" 2>/dev/null \
+    && grep -q 'run_postmerge_provider_with_timeout.*cursor bounded' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'run_postmerge_provider_with_timeout.*cursor full-evidence' "$RUN_SCRIPT" 2>/dev/null \
+    && grep -q 'process.exit(0)' "$FULL_CURSOR_SCRIPT" 2>/dev/null; then
+    pass "Claude and Cursor retro attempts have bounded timeouts and explicit successful exit"
+  else
+    fail "Claude and Cursor retro attempts must time out into fallback and exit after output"
+  fi
+
+  if grep -q 'POSTMERGE_RETRO_PARALLEL_MAX:-6' "$PARALLEL_SCRIPT" 2>/dev/null \
+    && grep -q 'parallel_max' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_PARALLEL_MAX' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "parallel retro defaults POSTMERGE_RETRO_PARALLEL_MAX to 6 + workflow dispatch input"
+  else
+    fail "run-postmerge-retro-parallel.sh must default POSTMERGE_RETRO_PARALLEL_MAX to 6 and workflow must expose parallel_max"
+  fi
+
+  if grep -q 'issues: write' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow grants issues: write"
+  else
+    fail "retro workflow missing issues: write"
+  fi
+
+  if grep -q 'contents: write' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'pull-requests: write' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "daily-pipeline job grants contents and pull-requests write"
+  else
+    fail "daily-pipeline job missing write permissions"
+  fi
+
+  if grep -q 'postmerge-retro-umbrella.md' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_create_issue.*agent-suggested' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'gh issue create' "scripts/workflows/lib/umbrella-lifecycle.sh" 2>/dev/null \
+    && grep -q 'existing-body.md' "$UMBRELLA_SCRIPT" 2>/dev/null; then
+    pass "umbrella creator uses template + resilient agent-suggested label + body file append"
+  else
+    fail "create-umbrella-issue.sh missing template/resilient label/body-file append wiring"
+  fi
+
+  if grep -q 'write-umbrella-issue-ref.sh' "$UMBRELLA_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_write_issue_ref' "$WRITE_UMBRELLA_REF_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_issue' "scripts/workflows/lib/umbrella-lifecycle.sh" 2>/dev/null \
+    && [[ -f "${RETRO_DIR}/post-daily-retro-json-comment.sh" ]] \
+    && [[ -f "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" ]]; then
+    pass "umbrella step records umbrella_issue ref + JSON snapshot comment + fix-only restore"
+  else
+    fail "postmerge retro missing umbrella_issue ref / daily JSON snapshot wiring"
+  fi
+
+  if grep -q 'resolve-umbrella-issue.sh' "$UMBRELLA_LINK_SCRIPT" 2>/dev/null \
+    && grep -q 'resolve-umbrella-issue.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'umbrella_issue_num' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'UMBRELLA_ISSUE_NUM' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "fix step resolves umbrella issue from JSON/env (search fallback only)"
+  else
+    fail "postmerge retro missing resolve-umbrella-issue wiring in fix path"
+  fi
+
+  if grep -q 'attempt-\${GITHUB_RUN_ATTEMPT}' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q "has_daily_json == 'true'" "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'fix_only' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro workflow uses attempt-scoped artifacts + fix-only dispatch"
+  else
+    fail "agent-postmerge-retro.yml missing attempt artifact / fix-only wiring"
+  fi
+
+  if grep -q 'Pin RUN_DATE' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'GITHUB_ENV' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'RUN_DATE=\${RUN_DATE' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "RUN_DATE pinned to GITHUB_ENV before pipeline steps"
+  else
+    fail "agent-postmerge-retro.yml must pin RUN_DATE to GITHUB_ENV"
+  fi
+
+  if grep -q 'artifact_run_id' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'gh run download' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'fetch-daily-retro-json-from-issue.sh' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "fix_only downloads artifact_run_id before issue snapshot restore"
+  else
+    fail "fix_only must prefer artifact_run_id over issue snapshot restore"
+  fi
+
+  if [[ -f "${RETRO_DIR}/parse-daily-json-snapshot.py" ]] \
+    && grep -q 'parse-daily-json-snapshot.py' "${RETRO_DIR}/fetch-daily-retro-json-from-issue.sh" 2>/dev/null; then
+    pass "issue snapshot restore validates JSON via parse-daily-json-snapshot.py"
+  else
+    fail "fetch-daily-retro-json-from-issue.sh must validate snapshots with parse-daily-json-snapshot.py"
+  fi
+
+  if grep -q 'FIX_REEXEC_DIR' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'has_diff' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'leaving draft PR' "scripts/workflows/lib/run-batch-fix.sh" 2>/dev/null; then
+    pass "fix script uses artifact re-exec dir + skips PR edit on no-op rerun"
+  else
+    fail "run-postmerge-retro-fix.sh missing re-exec workdir / no-op PR edit guard"
+  fi
+
+  if grep -q 'postmerge-retro-fix-pr.md' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'checkout-fix-branch.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'update-umbrella-fix-link.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'link-fix-pr-to-issue.sh' "$FIX_SCRIPT" 2>/dev/null \
+    && grep -q 'Fixes #' ".github/templates/postmerge-retro-fix-pr.md" 2>/dev/null \
+    && grep -q 'POSTMERGE_RETRO_FIX_REEXEC' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "fix script uses postmerge-retro-fix-pr template + umbrella link update + native issue link + re-exec guard"
+  else
+    fail "run-postmerge-retro-fix.sh must render fix PR, update umbrella link, link issue, and re-exec from temp copy"
+  fi
+
+  if grep -q 'batch_fix_publish' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "postmerge fix delegates publication to shared batch helper"
+  else
+    fail "run-postmerge-retro-fix.sh must call batch_fix_publish"
+  fi
+
+  if grep -q 'validate-fix-verification.py' "$FIX_PROVIDER_CASCADE" 2>/dev/null \
+    && grep -q 'validate-fix-verification.py' "scripts/workflows/lib/run-batch-fix.sh" 2>/dev/null \
+    && ! grep -q 'batch_fix_write_verify_stub\|creating minimal stub' "$FIX_SCRIPT" 2>/dev/null; then
+    pass "retro fixes require verification before provider promotion and publication"
+  else
+    fail "retro fixes must fail closed without valid per-finding verification"
+  fi
+
+  if grep -q 'ensure-pipeline-labels.sh' "scripts/sandbox-bootstrap.sh" 2>/dev/null; then
+    pass "sandbox bootstrap ensures pipeline labels"
+  else
+    fail "sandbox-bootstrap.sh must call ensure-pipeline-labels.sh"
+  fi
+
+  if grep -q 'collect-pr-evidence.sh' "$COLLECT_SCRIPT" 2>/dev/null; then
+    pass "postmerge collector wraps collect-pr-evidence.sh"
+  else
+    fail "collect-postmerge-evidence.sh must wrap collect-pr-evidence.sh"
+  fi
+
+  if grep -q 'follow_up_issues' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'dedupe_key' "$RETRO_PROMPT" 2>/dev/null \
+    && grep -q 'repro_steps' "$RETRO_PROMPT" 2>/dev/null; then
+    pass "retro prompt defines JSON output shape with repro_steps"
+  else
+    fail "retro prompt missing required JSON contract (repro_steps)"
+  fi
+
+  if grep -q 'fix-verify' "$RETRO_FIX_PROMPT" 2>/dev/null \
+    && grep -q 'cant_reproduce' "$RETRO_FIX_PROMPT" 2>/dev/null; then
+    pass "retro fix prompt defines per-finding verification (ADR-029 §1.1)"
+  else
+    fail "post-merge-retro-fix prompt missing fix-verify / cant_reproduce rules"
+  fi
+
+  if grep -q 'FIX_JOB_SANDBOX_VERIFY' "$RETRO_WORKFLOW" 2>/dev/null \
+    && grep -q 'SANDBOX_BOOTSTRAP_TOKEN' "$RETRO_WORKFLOW" 2>/dev/null; then
+    pass "retro fix job wires sandbox verify env + token"
+  else
+    fail "agent-postmerge-retro.yml fix job missing FIX_JOB_SANDBOX_VERIFY / SANDBOX_BOOTSTRAP_TOKEN"
+  fi
+
+  for lib in pick-advisory-provider.sh invoke-advisory-llm.sh run-opencode.mjs run-opencode-fix.sh fix-phase-log.sh \
+    sandbox-sync-fix-branch.sh finalize-fix-pr.sh render-fix-pr-sections.py \
+    run-batch-fix.sh umbrella-lifecycle.sh finding_priority.py superseded_findings.py \
+    postmerge-provider-timeout.sh; do
+    if [[ -f "scripts/workflows/lib/$lib" ]]; then
+      pass "workflow lib $lib exists"
+    else
+      fail "missing scripts/workflows/lib/$lib"
+    fi
+  done
+
+  if grep -q 'merged_at' "$RUN_SCRIPT" 2>/dev/null; then
+    pass "run-postmerge-retro uses merged_at gate"
+  else
+    fail "run-postmerge-retro.sh must gate on merged_at"
+  fi
+
+  if grep -q 'select-context' scripts/workflows/lib/prompt_helpers.py 2>/dev/null \
+    && grep -qE 'prompt_helpers\.py.*select-context' "$ASSEMBLE_PROMPT_SCRIPT" 2>/dev/null; then
+    pass "post-merge retro uses catalog-driven context selection"
+  else
+    fail "assemble-retro-prompt.sh must use prompt_helpers select-context"
+  fi
+
+  if grep -q 'POSTMERGE_RETRO_CONTEXT_PROFILE' .github/workflows/agent-postmerge-retro.yml 2>/dev/null; then
+    pass "retro workflow exposes POSTMERGE_RETRO_CONTEXT_PROFILE"
+  else
+    fail "agent-postmerge-retro.yml missing POSTMERGE_RETRO_CONTEXT_PROFILE env"
+  fi
+
+  if grep -q '^agent-suggested|' "$LABELS_SCRIPT" 2>/dev/null; then
+    pass "agent-suggested follow-up label declared in setup"
+  else
+    fail "agent-suggested label missing from $LABELS_SCRIPT"
+  fi
+
+  for label in retro-review retro:adr retro:context-pack adr:update context-pack; do
+    if grep -q "^${label}|" "$LABELS_SCRIPT" 2>/dev/null; then
+      fail "retired label ${label} remains in $LABELS_SCRIPT"
+    else
+      pass "retired label ${label} is absent from setup"
+    fi
+  done
+
+  fixture_dir="scripts/tests/fixtures/postmerge-retro"
+  llm_fixture="${fixture_dir}/sample-llm-output.txt"
+  retro_fixture="${fixture_dir}/sample-retro.json"
+  if [[ -f "$llm_fixture" && -f "$retro_fixture" ]]; then
+    tmp="$(mktemp -d)"
+    if python3 "$RETRO_DIR/extract-retro-json.py" "$llm_fixture" 382 "$tmp/retro.json" \
+      && python3 "$RETRO_DIR/validate-postmerge-retro.py" "$tmp/retro.json" \
+      && python3 "$RETRO_DIR/merge-daily-retro-json.py" 2026-06-11 "$tmp/retro.json" \
+        >"$tmp/daily.json" \
+      && python3 "$RETRO_DIR/validate-postmerge-retro-daily.py" "$tmp/daily.json"; then
+      pass "extract + validate + daily merge on fixture"
+    else
+      fail "retro JSON fixture extraction/validation/daily merge failed"
+    fi
+    rm -rf "$tmp"
+  else
+    warn "postmerge-retro fixtures missing under $fixture_dir"
+  fi
+
+  echo ""
+  return 0
+fi
+
+echo "052-postmerge-retro-invariants.sh is sourced by test.sh only" >&2
+exit 1

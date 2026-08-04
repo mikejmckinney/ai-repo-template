@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/.github/schemas/postmerge-retro.schema.json",
+  "title": "Post-merge retrospective output",
+  "type": "object",
+  "required": ["pr", "summary", "evidence_complete", "follow_up_issues"],
+  "additionalProperties": true,
+  "properties": {
+    "pr": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "summary": {
+      "type": "string"
+    },
+    "evidence_complete": {
+      "const": true,
+      "description": "True only after every required full-evidence source has been read."
+    },
+    "follow_up_issues": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/followUpIssue" }
+    },
+    "adr_updates": false,
+    "context_pack_updates": false
+  },
+  "$defs": {
+    "triageFields": {
+      "type": "object",
+      "required": ["triage_version", "impact", "impact_magnitude", "trigger_likelihood", "affected_scope", "reversibility", "fix_cost", "confidence", "uncertainty"],
+      "properties": {
+        "triage_version": { "const": 2 },
+        "impact": {
+          "type": "string",
+          "enum": ["incorrect-behavior", "dx-perf-doc", "meta-harness"]
+        },
+        "trigger_likelihood": {
+          "type": "string",
+          "enum": ["common", "edge", "fringe"]
+        },
+        "impact_magnitude": {
+          "type": "string",
+          "enum": ["bounded", "material", "critical"]
+        },
+        "affected_scope": {
+          "type": "string",
+          "enum": ["isolated", "limited", "broad"]
+        },
+        "reversibility": {
+          "type": "string",
+          "enum": ["easy", "moderate", "hard"]
+        },
+        "fix_cost": {
+          "type": "string",
+          "enum": ["trivial", "moderate", "large"]
+        },
+        "regression_guard": {
+          "type": "boolean"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "uncertainty": { "type": "string", "minLength": 1 },
+        "priority_band": {
+          "type": "string",
+          "enum": ["fix-now", "should-fix", "defer"],
+          "description": "Derived by automation at validate/merge time; LLM must not emit."
+        }
+      }
+    },
+    "followUpIssue": {
+      "type": "object",
+      "required": [
+        "title",
+        "body",
+        "dedupe_key",
+        "repro_steps",
+        "triage_version",
+        "impact",
+        "impact_magnitude",
+        "trigger_likelihood",
+        "affected_scope",
+        "reversibility",
+        "fix_cost"
+        ,"confidence",
+        "uncertainty"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "body": { "type": "string", "minLength": 1 },
+        "labels": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "repro_steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "verification_capability": { "$ref": "#/$defs/verificationCapability" },
+        "dedupe_key": { "type": "string", "minLength": 1 },
+        "triage_version": { "$ref": "#/$defs/triageFields/properties/triage_version" },
+        "impact": { "$ref": "#/$defs/triageFields/properties/impact" },
+        "impact_magnitude": { "$ref": "#/$defs/triageFields/properties/impact_magnitude" },
+        "trigger_likelihood": { "$ref": "#/$defs/triageFields/properties/trigger_likelihood" },
+        "affected_scope": { "$ref": "#/$defs/triageFields/properties/affected_scope" },
+        "reversibility": { "$ref": "#/$defs/triageFields/properties/reversibility" },
+        "fix_cost": { "$ref": "#/$defs/triageFields/properties/fix_cost" },
+        "confidence": { "$ref": "#/$defs/triageFields/properties/confidence" },
+        "uncertainty": { "$ref": "#/$defs/triageFields/properties/uncertainty" },
+        "regression_guard": { "$ref": "#/$defs/triageFields/properties/regression_guard" },
+        "priority_band": { "$ref": "#/$defs/triageFields/properties/priority_band" }
+      },
+      "not": {
+        "anyOf": [
+          { "required": ["severity"] },
+          { "required": ["priority_band"] }
+        ]
+      }
+    },
+    "verificationCapability": {
+      "type": "object",
+      "required": ["environment", "harness_id", "reason"],
+      "additionalProperties": false,
+      "properties": {
+        "environment": {
+          "enum": ["isolated-worktree", "codespaces", "external-state", "unsupported-runtime"]
+        },
+        "harness_id": { "type": ["string", "null"] },
+        "reason": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "environment": { "const": "isolated-worktree" } } },
+          "then": { "properties": { "harness_id": { "const": "repository-test-suite" } } },
+          "else": { "properties": { "harness_id": { "type": "null" } } }
+        }
+      ]
+    }
+  }
+}

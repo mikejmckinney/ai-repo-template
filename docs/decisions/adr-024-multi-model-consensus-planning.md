@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR-031](./adr-031-agent-model-roi-benchmark-policy.md)
 
 ## Date
 

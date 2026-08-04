@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR-031](./adr-031-agent-model-roi-benchmark-policy.md)
 
 ## Date
 
@@ -60,7 +60,7 @@ candidate for a fallback that completes Copilot's intent.
 ADR-008 makes two coupled changes that supersede the corresponding
 parts of ADR-007:
 
-### 1. Drop the `auto-resolve-threads` label. Phase 4 runs by default.
+### 1. Drop the `auto-resolve-threads` label; Phase 4 runs by default
 
 Whenever `pr-resolve-all.md` is invoked (Claude path or Copilot path),
 Phase 4 runs unconditionally. The per-thread gate from ADR-007 is
@@ -73,7 +73,7 @@ unconditional too: there is no longer a "Label `auto-resolve-threads`
 not present — skipping thread resolution." variant. Every Phase 3
 report includes the Phase 4 table.
 
-### 2. Relay-side fallback for the Copilot path.
+### 2. Relay-side fallback for the Copilot path
 
 `agent-relay-reviews.yml` gains a second job, `phase4-fallback`,
 triggered by `issue_comment.created`. Job-level guards (`if:`):
@@ -318,7 +318,7 @@ structure. `phase4-fallback` only parses Copilot's Phase 3 Resolution
 Report for the Phase 4 table — without that table, the fallback
 no-ops, the bot-authored thread that motivated the delegation stays
 open, and auto-merge stalls indefinitely. Observed end-to-end on PR
-#169 (the dog-food PR for #168): see the
+PR #169 (the dog-food PR for #168): see the
 [claude-fix delegation comment](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316786637)
 and [Copilot's unstructured "Done in" response](https://github.com/mikejmckinney/ai-repo-template/pull/169#issuecomment-4316791298).
 

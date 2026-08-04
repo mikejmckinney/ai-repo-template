@@ -9,34 +9,23 @@ In `ai-repo-template`, it serves two jobs at once:
 
 1. It is the live source of truth for the template repo itself.
 2. It shows downstream repos what a populated context pack should look like before
-   Mode B onboarding restores the generic stubs.
+   `template-seed` onboarding adapts only what their project evidence requires.
 
 ### priority order (when conflicts arise)
 
 See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
-`.context/**` > `docs/**` > codebase.
+current issue/PR > `AGENTS.md` > `.context/**` > `docs/**` > codebase.
 
 ## Directory Structure
 
 ```text
 .context/
 |-- 00_INDEX.md          # This file - start here (The Map)
-|-- backlog.yaml         # Machine-readable task list dispatched into issues
-|-- backlog.schema.json  # JSON Schema for backlog.yaml
-|-- benchmarks/          # Durable benchmark protocols, schemas, and grading templates
-|   `-- model-roi/       # Issue #374 model ROI benchmark apparatus
-|       |-- results/     # Scored agent ROI benchmark records and cost source register
-|       `-- tasks/       # Candidate-safe task injections + sealed reference metadata
-|-- roadmap.md           # Template-development phases and current hardening track
-|-- rules/               # Immutable constraints and process rules
-|   |-- agent_ownership.md            # Canonical role -> owned paths map (read before editing)
-|   |-- domain_code_quality.md        # Built-in language-neutral SOLID/TDD/clean-code floor
-|   |-- process_doc_maintenance.md    # Doc-sync trigger table
-|   |-- process_subagent_bootstrap.md # ADR-026 dispatch packet + subagent return contract
-|   `-- process_*.md                  # Additional process rules by concern
-|-- sessions/            # Durable retrospectives and feedback records
+|-- onboarding-state.json # Versioned template-seed/complete lifecycle state
+|-- roadmap.md           # Completed template phases and issue-backed future work
+|-- sessions/            # Historical retrospectives and feedback records
 |   |-- feedback_template.md # Stakeholder feedback capture template
-|   `-- latest_summary.md   # Durable retrospective lessons
+|   `-- YYYY-MM-DD_*.md    # Historical retrospective archives
 |-- state/               # GitHub-first live-state guidance and comment template
 |   |-- README.md        # ADR-025 state-surface guide
 |   `-- agent_state_comment_template.md # GitHub live-state comment template
@@ -44,43 +33,42 @@ See `AGENTS.md` §"Truth hierarchy" for the canonical definition. Summary:
     |-- README.md
     |-- mockups/         # Reserved for downstream product/UI work
     `-- architecture/
-        |-- multi-agent-flow.md # Mermaid view of the current workflow
         `-- state-surfaces.md  # Mermaid view of ADR-025 live-state hierarchy
 ```
 
 ## Quick Start for Agents (Lazy Load Pattern)
 
 1. Read `AGENTS.md`, then this file.
-2. Read your role file (for example, `.agents/<your-role>.md`).
-3. Read the assigned GitHub issue body, linked PR, latest `agent-state:v1` comment, and labels.
-4. Read `rules/agent_ownership.md` before touching files.
-5. Treat `state/` as the GitHub-first live-state reference surface; use `state/agent_state_comment_template.md` when updating the latest `agent-state:v1` baton.
-6. Read `sessions/latest_summary.md` for durable lessons from recent work.
-7. Read `roadmap.md` for the current template phase and open hardening track.
-8. Pull additional `rules/` and `vision/` files only when their domain intersects your change.
-9. Read `benchmarks/` when the assigned issue or PR works on benchmark protocol, scoring, or grading surfaces.
+2. Read the assigned GitHub issue body and linked PR when a durable task exists.
+3. Use one monolithic implementing agent; use local consensus only when justified.
+4. Treat `state/` as the GitHub-first live-state reference surface.
+5. Read `roadmap.md`, vision files, or dated session archives only when their
+   domain intersects the task or a specific historical investigation.
+6. For benchmark work, use `docs/guides/model-roi-benchmark-runbook.md` and
+   published evidence under `docs/benchmarks/`.
 
-**Multi-agent workflow**: See [docs/guides/multi-agent-coordination.md](../docs/guides/multi-agent-coordination.md) for the end-to-end Analyst -> Architect -> plan-gate (Critic notes + Judge approval) -> PM -> implementers -> QA -> Critic -> Judge flow.
-
-**Compliance contracts**: See `docs/compliance_schemas.md` and `docs/decisions/adr-026-compliance-contracts.md` for the ADR-026 evidence blocks (`plan_compliance`, `parent_compliance`, `subagent_compliance`) and role-contract versioning model.
+**Execution model**: one implementing agent, blocking CI, normal parallel
+advisory review, recurring retro, and opt-in local consensus. See ADR-031.
 
 ## Project Summary
 
 **Project Name**: `ai-repo-template`
 
-**Description**: A Codespaces-first repository template for AI-assisted software delivery. It ships the process rules, role contracts, prompts, workflow scaffolding, and validation helpers needed to run a multi-agent issue -> merge pipeline in this repo and in downstream repos created from it.
+**Description**: A Codespaces-first repository template for monolithic AI-assisted software delivery with parallel advisory review and recurring retro automation.
 
-**Current Phase**: Phase 7 - template dogfooding, overlay extension, and process hardening.
+**Program status**: Initial Phases 1-7 are complete. Current work is tracked by
+assigned GitHub issues rather than duplicated phase state in this index.
 
 **Primary Stack**: Markdown docs and prompts, shell automation, GitHub Actions workflow scaffolding, Python validation helpers, and VS Code/Codespaces bootstrap configuration.
 
 **What ships from this repo**:
 
-- Canonical role definitions under `.agents/` plus first-class Copilot, Claude, Cursor, and Codex overlays.
-- Process rules under `.context/rules/` and reference diagrams under `.context/vision/architecture/`.
-- Durable benchmark protocols and grading templates under `.context/benchmarks/`.
+- Shared advisory/daily/weekly review lenses and workflow scaffolding.
+- The always-loaded operating contract in `AGENTS.md` and reference diagrams under `.context/vision/architecture/`.
+- Canonical benchmark guidance and decision evidence under `docs/`; evaluation
+  apparatus lives on `benchmark/roi`.
 - GitHub prompts, issue/PR templates, and workflow scaffolding under `.github/`.
-- Bootstrap and verification helpers under `install.sh`, `test.sh`, and `scripts/**`.
+- Bootstrap and verification helpers under `.devcontainer/`, `test.sh`, and `scripts/**`.
 
 ## Key Decisions Log
 
@@ -95,32 +83,34 @@ For the full ADR index, see [docs/decisions/README.md](../docs/decisions/README.
 | [ADR-005](../docs/decisions/adr-005-analyst-preflight-gate.md) | Analyst pre-flight gate | Established the original pre-implementation research gate. |
 | [ADR-006](../docs/decisions/adr-006-auto-merge-opt-in-model.md) | Auto-merge opt-in | Kept merge automation explicitly label-gated instead of default-on. |
 | [ADR-007](../docs/decisions/adr-007-auto-resolve-review-threads.md) | Bot-thread auto-resolution v1 | Started the review-thread automation path later replaced by ADR-008. |
-| [ADR-008](../docs/decisions/adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 default plus Copilot fallback | Locked in the current relay-side fallback for review-resolution work. |
-| [ADR-009](../docs/decisions/adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution | Defined role-specialized parallel work plus overlap safeguards. |
-| [ADR-010](../docs/decisions/adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge | Added the soft-overlap rebase path for open parallel PRs. |
+| [ADR-008](../docs/decisions/adr-008-phase4-default-and-copilot-fallback.md) | Phase 4 default plus Copilot fallback | Historical review-resolution fallback; superseded by ADR-031. |
+| [ADR-009](../docs/decisions/adr-009-parallel-multi-agent-execution.md) | Parallel multi-agent execution | Historical role-specialized pipeline; superseded by ADR-031. |
+| [ADR-010](../docs/decisions/adr-010-auto-rebase-on-merge.md) | Auto-rebase on merge | Deprecated historical mechanism; branch owners update their own branches. |
 | [ADR-011](../docs/decisions/adr-011-plan-as-comment-requirement.md) | Plan-as-comment requirement | Made issue comments the required plan artifact before implementation. |
 | [ADR-012](../docs/decisions/adr-012-explicit-workflow-preconditions.md) | Explicit workflow preconditions | Codified branch-first, commit cadence, and other non-implicit rules. |
-| [ADR-013](../docs/decisions/adr-013-pre-commit-on-main-default.md) | Derived-repo pre-commit stance | Kept heavy pre-commit optional for downstream repos by default. |
-| [ADR-014](../docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md) | Wider Analyst gate | Extended pre-flight coverage beyond only feature-style issues. |
+| [ADR-013](../docs/decisions/adr-013-pre-commit-on-main-default.md) | Derived-repo pre-commit stance | Deprecated generic scaffolding; onboarding selects stack-specific tools. |
+| [ADR-014](../docs/decisions/adr-014-extend-preflight-to-adhoc-deliverables.md) | Wider Analyst gate | Historical pre-flight policy; superseded by ADR-031. |
 | [ADR-015](../docs/decisions/adr-015-postmortem-feedback-loop.md) | Postmortem feedback loop | Added the downstream-project capture -> mirror -> promote path. |
 | [ADR-016](../docs/decisions/adr-016-pre-merge-verification-gate.md) | Pre-merge verification gate | Bound plans and PRs to explicit change-class and sandbox evidence. |
-| [ADR-017](../docs/decisions/adr-017-template-repo-pre-commit-default.md) | Template repo pre-commit default | Turned on shellcheck and actionlint for this repo itself. |
+| [ADR-017](../docs/decisions/adr-017-template-repo-pre-commit-default.md) | Template repo pre-commit default | Deprecated dormant hooks in favor of explicit local fixes and CI. |
 | [ADR-018](../docs/decisions/adr-018-multi-task-active-md-schema.md) | Multi-task active-state schema | Added owner-keyed repo-local state before ADR-025 moved live state to GitHub. |
-| [ADR-019](../docs/decisions/adr-019-per-role-model-tiering.md) | Per-role model tiering | Bound each role overlay to an allowed model tier by platform. |
+| [ADR-019](../docs/decisions/adr-019-per-role-model-tiering.md) | Per-role model tiering | Historical model-tier policy; superseded by ADR-031. |
 | [ADR-020](../docs/decisions/adr-020-orchestration-patterns-reference.md) | Orchestration patterns reference | Gave Critic and Judge shared pattern/anti-pattern vocabulary. |
 | [ADR-021](../docs/decisions/adr-021-agents-md-decomposition.md) | AGENTS decomposition | Split the monolithic contract into focused `process_*.md` rules. |
 | [ADR-022](../docs/decisions/adr-022-top-level-md-scope-split.md) | Top-level markdown scope split | Separated README, AI_REPO_GUIDE, and AGENTS responsibilities. |
-| [ADR-023](../docs/decisions/adr-023-shared-subagent-canonical.md) | Canonical role bodies plus thin overlays | Made `.agents/<role>.md` the shared source for Copilot, Claude, Cursor, and Codex overlays. |
-| [ADR-024](../docs/decisions/adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning | Added the optional three-candidate planning workflow. |
+| [ADR-023](../docs/decisions/adr-023-shared-subagent-canonical.md) | Canonical role bodies plus thin overlays | Historical role registry; superseded by ADR-031. |
+| [ADR-024](../docs/decisions/adr-024-multi-model-consensus-planning.md) | Multi-model consensus planning | Historical planning workflow; superseded by ADR-031. |
 | [ADR-025](../docs/decisions/adr-025-github-issues-pr-comments-as-live-state.md) | GitHub as live state | Moved normal coordination to issue/PR bodies, comments, and labels. |
-| [ADR-026](../docs/decisions/adr-026-compliance-contracts.md) | Compliance contracts | Added receipt/evidence schemas for parent and subagent work. |
+| [ADR-026](../docs/decisions/adr-026-compliance-contracts.md) | Compliance contracts | Structured evidence schemas retired by the 2026-07-13 amendment. |
 | [ADR-027](../docs/decisions/adr-027-opportunity-feedback-channel.md) | Opportunity feedback channel | Added an out-of-scope observation path without widening task scope. |
-| [ADR-029](../docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Sandbox dogfood evidence | Requires sandbox proof for behavior/process claims on every PR. |
+| [ADR-029](../docs/decisions/adr-029-sandbox-dogfood-evidence-and-canary-placeholder.md) | Historical sandbox evidence + active fix/canary semantics | Partially superseded by ADR-034. |
+| [ADR-031](../docs/decisions/adr-031-agent-model-roi-benchmark-policy.md) | Agent/model ROI and execution lifecycle policy | Makes monolithic implementation the default, retires role registries, and uses normal non-blocking advisory plus recurring retro. |
+| [ADR-032](../docs/decisions/adr-032-canonical-governance-sources.md) | Canonical governance sources and layered enforcement | Uses one authored source with pointers, symlinks, or deterministic generated consumers and blocks only encoded contract violations. |
+| [ADR-034](../docs/decisions/adr-034-outcome-equivalent-verification.md) | Outcome-equivalent verification | Requires representative environments and auditable material-claim artifacts. |
 
-## Next Steps
+## Issue-Backed Future Work
 
-- [ ] Finish the active cleanup and hardening umbrella in issue #327, including the remaining overlay and coordination follow-ups.
-- [ ] Land issue #321 so `pr-resolve-all` rounds are non-silent, settle-gated, and human-approved before merge.
-- [ ] Remove or archive any lingering repo-local `_active.md` compatibility references now that ADR-025 and issue #368 moved live state to GitHub.
-- [ ] Continue issue #279 to extract more machine-readable manifests and shrink workflow/business-logic drift.
-- [ ] Ship issue #322 so downstream repos get a clearer new-project and parent/phase issue playbook.
+- [ ] Issue #163 - automate derived-repository credential and variable bootstrap.
+- [ ] Issue #299 - define session archive retention and downstream reset policy.
+- [ ] Issue #316 - folded into issue #517; close after the sandbox-local walkthrough lands.
+- [ ] Issue #322 - add an optional cross-repository project bootstrap skill.

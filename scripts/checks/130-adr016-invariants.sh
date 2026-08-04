@@ -20,12 +20,32 @@ else
   fail "docs/decisions/README.md missing ADR-016 row"
 fi
 
-# Plan template carries the Change class + Verification target lines.
-if grep -q 'Change class' .github/PLAN_TEMPLATE.md 2>/dev/null \
-  && grep -q 'Verification target' .github/PLAN_TEMPLATE.md 2>/dev/null; then
-  pass ".github/PLAN_TEMPLATE.md exposes Change class + Verification target (issue #227)"
+if [[ -f scripts/validate-verification-evidence.py ]] \
+  && grep -q 'Evidence contract: 1' .github/pull_request_template.md \
+  && grep -q 'Default-branch constrained' .github/PLAN_TEMPLATE.md \
+  && grep -q 'Execution-constraint routing' "$ADR016_PATH"; then
+  pass "versioned execution-constraint evidence is wired into planning and ADR-016"
 else
-  fail ".github/PLAN_TEMPLATE.md missing Change class / Verification target (issue #227)"
+  fail "verification evidence validator, planning fields, or ADR-016 amendment missing"
+fi
+
+if [[ -f .github/workflows/agent-workflow-pr-smoke.yml ]] \
+  && [[ -f .github/workflows/agent-workflow-smoke.yml ]] \
+  && grep -q 'uses: ./.github/workflows/agent-workflow-smoke.yml' .github/workflows/agent-workflow-pr-smoke.yml \
+  && grep -q 'validate-pr-workflow-fixtures.py' .github/workflows/agent-workflow-smoke.yml \
+  && grep -q 'validate-postmerge-retro-daily.py' scripts/workflows/validate-pr-workflow-fixtures.py \
+  && grep -q 'validate-weekly-review-batch.py' scripts/workflows/validate-pr-workflow-fixtures.py; then
+  pass "same-commit PR harness exercises daily and weekly core scripts"
+else
+  fail "same-commit daily/weekly PR fixture harness is incomplete"
+fi
+
+# Plan template carries the Change class + outcome-environment lines.
+if grep -q 'Change class' .github/PLAN_TEMPLATE.md 2>/dev/null \
+  && grep -q 'Outcome environments' .github/PLAN_TEMPLATE.md 2>/dev/null; then
+  pass ".github/PLAN_TEMPLATE.md exposes Change class + outcome environments"
+else
+  fail ".github/PLAN_TEMPLATE.md missing Change class / outcome environments"
 fi
 
 # Sandbox playbook lives at the documented path.
@@ -35,35 +55,29 @@ else
   fail "docs/guides/sandbox-verification.md missing (issue #227 Phase 2)"
 fi
 
-# Trigger-event matrix lives in agent-pipeline.md.
-if grep -q 'Workflow verifiability matrix' docs/guides/agent-pipeline.md 2>/dev/null; then
-  pass "agent-pipeline.md documents the Workflow verifiability matrix (issue #227)"
+# The guide points to the executable classifier instead of repeating triggers.
+if grep -q 'scripts/verify-pr.sh.*canonical classifier' docs/guides/agent-pipeline.md 2>/dev/null \
+  && ! grep -q '| `schedule`, `workflow_dispatch`, `push`' docs/guides/agent-pipeline.md 2>/dev/null; then
+  pass "agent-pipeline.md points to the canonical executable classifier"
 else
-  fail "agent-pipeline.md missing Workflow verifiability matrix (issue #227)"
+  fail "agent-pipeline.md must point to verify-pr.sh without a trigger mirror"
 fi
 
-# PR completion criteria mentions pre-merge verification (now in process_pr_completion.md per ADR-021).
-if grep -q 'pre-merge verification' .context/rules/process_pr_completion.md 2>/dev/null \
-  || grep -q 'sandbox-verification.md' .context/rules/process_pr_completion.md 2>/dev/null; then
-  pass "process_pr_completion.md references pre-merge verification (issue #227)"
+# PR completion / outcome evidence lives in the PR template.
+if grep -q '^## User outcome evidence' .github/pull_request_template.md 2>/dev/null \
+  && grep -q 'Implementation SHA:' .github/pull_request_template.md 2>/dev/null; then
+  pass "PR template requires auditable user outcome evidence"
 else
-  fail "process_pr_completion.md missing pre-merge verification reference (issue #227)"
+  fail "pull_request_template.md missing auditable outcome evidence"
 fi
 
-# pr-resolve-all.md Phase 2 calls out the sandbox path.
-if grep -q 'sandbox-verification.md' .github/prompts/pr-resolve-all.md 2>/dev/null \
-  || grep -q 'default-branch-only workflow' .github/prompts/pr-resolve-all.md 2>/dev/null; then
-  pass "pr-resolve-all.md Phase 2 references the sandbox verification path (issue #227)"
+# AGENTS.md preserves outcome evidence and the specialized adapter.
+if grep -q 'outcome-validation.md' AGENTS.md 2>/dev/null \
+  && grep -q 'sandbox-verification.md' AGENTS.md 2>/dev/null \
+  && ! grep -q 'Sandbox issue:' AGENTS.md 2>/dev/null; then
+  pass "AGENTS.md requires outcome evidence and conditional sandbox use"
 else
-  fail "pr-resolve-all.md missing sandbox-verification callout (issue #227)"
-fi
-
-# process_doc_maintenance.md ties PLAN_TEMPLATE + verify-pr.sh + matrix together.
-if grep -q 'verify-pr.sh' .context/rules/process_doc_maintenance.md 2>/dev/null \
-  && grep -q 'sandbox-verification.md' .context/rules/process_doc_maintenance.md 2>/dev/null; then
-  pass "process_doc_maintenance.md links verify-pr.sh + sandbox-verification.md (issue #227)"
-else
-  fail "process_doc_maintenance.md missing issue-#227 doc-sync row (issue #227)"
+  fail "AGENTS.md missing outcome evidence or adapter guidance"
 fi
 
 echo ""

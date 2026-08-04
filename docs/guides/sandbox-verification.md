@@ -1,12 +1,32 @@
-# Sandbox Verification Playbook
+# Sibling Repository Sandbox Verification
 
-> **Audience**: Maintainers and agents shipping a change that touches a
-> **default-branch-only workflow** (any `.github/workflows/*.yml` whose
-> triggers include `pull_request_review`, `pull_request_review_comment`,
-> `pull_request_target`, `issue_comment`, `push`, `schedule`, or
-> `workflow_run`). See the
-> [Workflow verifiability matrix](agent-pipeline.md#workflow-verifiability-matrix)
-> for the canonical trigger list. ADR-016 is the durable rationale.
+> **Audience**: Maintainers and agents shipping a change that
+> [`scripts/verify-pr.sh`](../../scripts/verify-pr.sh) classifies as a
+> **default-branch-only workflow**. This includes dispatch-only workflows.
+> See [Workflow verifiability classes](agent-pipeline.md#workflow-verifiability-classes)
+> for the verification outcomes. ADR-016 is the durable rationale.
+
+This is a specialized environment adapter. Select environments and record
+material-claim artifacts with [Outcome Validation](outcome-validation.md).
+
+For mixed changes, first separate the workflow file's structural trigger class
+from the changed behavior's execution constraint. Use deterministic fixtures,
+`actionlint`, ShellCheck, and a read-only same-commit `pull_request` reusable
+workflow as the correction loop. The reusable path must use synthetic inputs,
+verify the candidate SHA, receive no production provider or publisher secrets,
+and perform no repository or external mutation.
+
+Sandbox remains required when the changed behavior depends on real
+default-branch event delivery, token permissions, secret propagation,
+concurrency, environments, repository controls, provider execution, or publisher
+mutation. Record the decision with evidence contract `1`,
+`default-branch-constrained: yes|no`, the selected target, and a specific reason.
+Run one final sandbox integration canary after local and PR-native checks pass,
+unless that canary reveals a default-branch-specific defect that requires a
+second run.
+
+Editing the upstream PR body reruns the PR-native harness and revalidates its
+live verification declarations before the final sandbox result is accepted.
 
 ## Why this exists
 
@@ -38,20 +58,10 @@ a round trip.
 ### Bootstrap script
 
 The procedure is automated in [`scripts/sandbox-bootstrap.sh`](../../scripts/sandbox-bootstrap.sh).
-Set the required environment variables and run it from your upstream
-checkout:
+Run it from your upstream checkout. When the current `gh` identity cannot
+create and mirror repositories, provide the optional bootstrap token:
 
 ```bash
-# Required: a fine-grained PAT scoped to the sandbox repo only.
-# Do NOT reuse production CLAUDE_PAT — see "Secrets hygiene" below.
-# Required scopes: Contents R/W, Pull requests R/W, Issues R/W,
-# Actions R, Variables R, Metadata R.
-export SANDBOX_PAT="<sandbox-scoped PAT value>"
-
-# Optional: separate sandbox-budget Anthropic key. Skip to defer
-# claude.yml / agent-fix-reviews.yml exercise in sandbox.
-export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
-
 # Optional: override the default sandbox slug
 # (defaults to "<upstream-owner>/<upstream-name>-sandbox").
 # export SANDBOX_REPO_NAME="my-org/my-custom-sandbox"
@@ -74,13 +84,27 @@ export SANDBOX_ANTHROPIC_KEY="<sandbox-scoped Anthropic API key>"
 
 The script is idempotent: re-running on an already-bootstrapped sandbox
 is safe (existing repo, existing remote, and existing secrets are
-detected and skipped with a log line).
+detected and skipped with a log line). Step 7 ensures pipeline labels
+(including `agent-suggested`) exist on the sandbox — required for
+post-merge retro umbrella issues. Re-run `./scripts/setup/ensure-pipeline-labels.sh "$SANDBOX_REPO"` anytime labels drift.
 
 > **Codespaces note**: the auto-provisioned `GITHUB_TOKEN` in a
 > Codespace is scoped to the current repo only and cannot create new
 > repos. You will hit `Resource not accessible by integration
 > (createRepository)` unless you set `BOOTSTRAP_GH_TOKEN` to a
 > classic PAT with `repo` AND `workflow` scopes (see above).
+>
+> On every Codespace start, the repository-owned
+> [Dev Container configuration](../../.devcontainer/devcontainer.json) runs
+> [`scripts/codespace-post-start.sh`](../../scripts/codespace-post-start.sh),
+> which upgrades `gh` to a Codespaces user PAT (`GH_PAT`, etc.) when set,
+> installs a shell hook so new terminals prefer that PAT over
+> `GITHUB_TOKEN`, and **adds the `sandbox` git remote** when missing (same
+> `SANDBOX_REPO_NAME` / `SANDBOX_REMOTE` defaults as bootstrap). It also
+> attempts a non-fatal access-only OpenCode OAuth sync when the current
+> repository is verified as private. It does **not** create the sandbox repo or
+> set sandbox secrets — run
+> `sandbox-bootstrap.sh` once for those.
 
 ### What the script does (for reference)
 
@@ -104,16 +128,11 @@ git clone --bare "$UPSTREAM_URL" "$MIRROR_DIR"
 git -C "$MIRROR_DIR" push --mirror "https://github.com/${SANDBOX_REPO}.git"
 rm -rf "$(dirname "$MIRROR_DIR")"
 
-# 4. Set the sandbox CLAUDE_PAT secret from $SANDBOX_PAT.
-printf '%s' "$SANDBOX_PAT" | gh secret set CLAUDE_PAT \
-  --repo "$SANDBOX_REPO"
-
-# 5. (Optional) Set ANTHROPIC_API_KEY from $SANDBOX_ANTHROPIC_KEY.
-printf '%s' "$SANDBOX_ANTHROPIC_KEY" | gh secret set ANTHROPIC_API_KEY \
-  --repo "$SANDBOX_REPO"
-
-# 6. Add the sandbox remote on this checkout.
+# 4. Add the sandbox remote on this checkout.
 git remote add "${SANDBOX_REMOTE:-sandbox}" "https://github.com/${SANDBOX_REPO}.git"
+
+# 5. Ensure active pipeline labels on sandbox.
+./scripts/setup/ensure-pipeline-labels.sh "$SANDBOX_REPO"
 ```
 
 The sandbox is intentionally private: failed runs will produce noisy
@@ -122,10 +141,33 @@ that aren't worth surfacing publicly.
 
 ## Per-PR verification flow
 
-Use this when your Implementation Plan declares
-`Change class: default-branch-only workflow` (or `mixed`) and
-`Verification target: sandbox repo` (or `both`). The verbs follow the
-plan template's Verification section verbatim.
+Use this when the classifier reports `default-branch-only workflow`, or when a
+`mixed` change declares that its changed behavior is default-branch constrained,
+and the outcome plan selects the sibling GitHub repository adapter. A mixed
+classification alone does not force this route. Record the adapter under
+`Outcome environments` and capture each material claim with the canonical
+evidence record.
+
+### OpenCode runtime prerequisite
+
+For changes to advisory, retro, or weekly OpenCode automation:
+
+1. Configure sandbox-only `OPENCODE_GITHUB_TOKEN` with read-only repository
+   access plus a non-production `OPENROUTER_API_KEY`.
+2. Verify `npm ci` installs the locked OpenCode runtime on `ubuntu-latest` and
+   record the runner image release from the job setup log.
+3. Verify the agent cannot create or update an issue through hosted MCP, then verify the
+   deterministic publisher still creates the expected comment, umbrella issue,
+   or draft PR.
+4. Force the primary model to fail and capture ordered fallback telemetry. For a
+   fix run, also capture worktree paths and the final patch to prove the failed
+   attempt was discarded.
+5. Exercise Sol eligibility with synthetic access-only fixtures unless the
+   maintainer explicitly approves a short-lived sandbox credential. Never copy
+   a production ChatGPT refresh token into the sandbox; the expected fixture
+   refresh value is `ci-refresh-disabled`.
+
+Never reuse a production write PAT as `OPENCODE_GITHUB_TOKEN`.
 
 > **Authentication**: the `git push` and `gh` commands below require a
 > token with `repo` + `workflow` scopes on the sandbox repo. In a
@@ -135,6 +177,14 @@ plan template's Verification section verbatim.
 > classic PAT as `BOOTSTRAP_GH_TOKEN` and use the `GIT_ASKPASS` + `-c
 > credential.helper=` bypass shown in `scripts/sandbox-bootstrap.sh`
 > Step 3 (mirror push), or run `gh auth login` with that token first.
+>
+> **Codespaces fallback**: `SANDBOX_BOOTSTRAP_TOKEN` is a **repo Actions
+> secret** — it is **not** exported into Codespace shells and
+> `scripts/setup.sh` does not set it. If `SANDBOX_BOOTSTRAP_TOKEN` is
+> unset in your session, use a Codespaces **user secret** such as
+> `GH_PAT` (see `scripts/diag-sandbox.sh`) as the bootstrap token:
+> `export BOOTSTRAP_GH_TOKEN="${SANDBOX_BOOTSTRAP_TOKEN:-$GH_PAT}"`.
+> Run `./scripts/diag-sandbox.sh` first when auth is unclear.
 > **Portability note**: examples below reference `$SANDBOX_REPO` (set
 > during the bootstrap above as `<owner>/<repo>-sandbox`). Either keep
 > that variable exported in your working shell, or substitute the
@@ -143,6 +193,12 @@ plan template's Verification section verbatim.
 > resolve their own owner/repo from the bootstrap step.
 
 ### 1. Prepare sandbox state — fresh test branches (default)
+
+For durability-policy changes, first prove that an empty bootstrap commit can
+open a draft PR. Then push a known-red checkpoint, record it in
+`agent-state:v1`, and resume from a second session. Verify issue-plan edits
+preserve all text outside the v2 delimiters and squash output excludes WIP
+checkpoint messages.
 
 The sandbox `main` ref is shared across PRs and may carry head-branch
 references from prior merged sandbox PRs (e.g. PR descriptions in this
@@ -187,7 +243,7 @@ git push --force sandbox origin/main:main
 
 This is the only force-push the playbook authorizes. It runs against
 the sandbox remote only, never against `origin`. Document the choice
-in the PR body's `parent_compliance.deviations[]` so a future Judge
+in the PR body's risks or deviations prose so a future reviewer
 can see why the safer default was overridden.
 
 ### 2. Push your PR branch to sandbox
@@ -224,6 +280,14 @@ exercise (step 4). Triggers like `pull_request_review` /
 for trigger reproduction; leaving a sandbox PR open is also fine and
 is useful as a test artifact reviewers can inspect.
 
+**Do not commit one-time smoke artifacts to upstream `main`.** Ephemeral
+canary files (for example a throwaway markdown file merged only to
+exercise a workflow) belong in the **sandbox repo** for that smoke run,
+not as permanent files under upstream `.sandbox/` or `.github/prompts/`.
+Record the sandbox PR, actual trigger run, implementation SHA, redaction, and
+retention in the upstream PR's `## User outcome evidence` claim record per
+ADR-034. A sandbox issue is optional unless it improves the walkthrough.
+
 ```bash
 # Only when the trigger requires it:
 gh pr merge --repo "$SANDBOX_REPO" \
@@ -236,21 +300,29 @@ Now reproduce the trigger that the workflow depends on. Examples:
 
 | Workflow under test | Trigger to fire in sandbox |
 |---|---|
-| `agent-relay-reviews.yml` | Open a sandbox PR, post a `pull_request_review` (`gh api`) carrying inline comments. |
-| `agent-fix-reviews.yml` | Same; submit a `changes_requested` review. |
-| `auto-rebase-on-merge.yml` | Merge any PR; the workflow fires on `pull_request.closed`. |
-| `keep-warm.yml` / scheduled jobs | Trigger via `gh workflow run <name>` (`workflow_dispatch` is also wired). |
-| `backlog-to-issues.yml` | Edit `.context/backlog.yaml` on sandbox `main`. |
+| `agent-advisory-review.yml` | Open a draft PR, apply `ai-review:live`, then push another commit while review runs. |
+| Scheduled jobs | Trigger via `gh workflow run <name>` (`workflow_dispatch` is also wired). |
 
 Watch the run in the sandbox repo's Actions tab. The whole point of
 sandbox is that a real failure surfaces *here*, in logs you can read,
 without leaving any artifact in this repo's `main`.
 
+## Automated fix-job sandbox sync (ADR-029 §1.1)
+
+When `FIX_JOB_SANDBOX_VERIFY=true` on the **upstream** repo (default
+`false`), daily/weekly **fix** jobs may push the fix branch to sandbox
+once at end-of-job via
+[`scripts/workflows/lib/sandbox-sync-fix-branch.sh`](../../scripts/workflows/lib/sandbox-sync-fix-branch.sh)
+using `SANDBOX_BOOTSTRAP_TOKEN`. Branch names:
+`test/fix-retro-<RUN_DATE>` or `test/fix-weekly-<RUN_WEEK>`. Jobs on
+`*-sandbox` repos skip automatically. Run `./scripts/diag-sandbox.sh`
+before manual or agent-driven sandbox operations.
+
 ### 5. Decide
 
-- **Green** — paste a one-line link to the green sandbox run into a
-  comment on the real PR (`Sandbox verification: <run URL> — green`).
-  The maintainer / Judge can now merge here with confidence.
+- **Green** — record the green sandbox run in the real PR's material-claim
+  evidence, including the tested SHA and actual event.
+  The maintainer can now merge here with confidence.
 - **Red** — fix the change on your PR branch, push the new tip to
   `sandbox` under the same `test/sandbox-<short-slug>` name (or to your
   PR branch under the override flow), and re-run from step 3 if the
@@ -279,17 +351,12 @@ git push --force sandbox origin/main:main
 
 ## Secrets hygiene
 
-- **Use a sandbox-only PAT.** Do not reuse the production `CLAUDE_PAT`.
-  If sandbox is ever compromised (it's lower-trust by design — anyone
-  who needs to verify a default-branch-only workflow has push access),
-  the blast radius stops at the sandbox.
-- **Sandbox PAT scope** matches production CLAUDE_PAT (Contents R/W,
-  Pull requests R/W, Issues R/W, Actions R, Variables R, Metadata R)
-  but is fine-grained to the sandbox repo only.
-- **No copy of `ANTHROPIC_API_KEY` if you can avoid it.** If the
-  workflow under test calls Anthropic, mint a separate API key on a
-  sandbox-budget account so a sandbox runaway can't drain production
-  budget.
+- **Use a sandbox-only PAT for `SANDBOX_BOOTSTRAP_TOKEN`.** If sandbox is
+  ever compromised (it's lower-trust by design), the blast radius stops at
+  the sandbox. Repository workflows use their automatic `GITHUB_TOKEN` for
+  ordinary publication and do not need a copied upstream publication secret.
+- **Sandbox token scope** is Contents R/W, Pull requests R/W, Issues R/W,
+  Actions R, Variables R, and Metadata R, fine-grained to the sandbox repo.
 - **Don't mirror SSH keys, deploy keys, or personal tokens** into the
   sandbox. The two repos are independent; cross-pollination
   re-introduces the blast-radius risk this playbook is trying to
@@ -303,27 +370,8 @@ git push --force sandbox origin/main:main
   production `main`, not a stale snapshot.
 - **Garbage collection** — once a quarter, prune merged sandbox
   branches and closed PRs. None of them carry semantic value.
-- **Secret rotation** — rotate the sandbox PAT at the same cadence as
-  the production `CLAUDE_PAT` (or sooner if there's any reason to
-  suspect leakage).
-
-## When sandbox is *not* required
-
-The matrix in `agent-pipeline.md` is authoritative; in practice:
-
-- Code-only PRs (no `.github/workflows/*.yml` touched) — sandbox is
-  not required. Default verification on the PR branch is sufficient.
-- Workflows whose only triggers are `pull_request` or
-  `workflow_dispatch` — sandbox is not required. CI on the PR branch
-  already runs the new workflow file. (Note: `pull_request_target`
-  does **not** belong in this set — it loads the workflow from the
-  base branch, so PR-branch changes are unverifiable.)
-- Pure docs / ADRs / role-file edits (no scripts, no workflows) —
-  sandbox is not required.
-
-If you're unsure, run `bash scripts/verify-pr.sh` locally — it will
-print the detected class and tell you whether the sandbox playbook
-applies.
+- **Secret rotation** — rotate the sandbox token on its configured cadence or
+  sooner if there is any reason to suspect leakage.
 
 ## Sandbox Doctor (`diag-sandbox.sh`)
 

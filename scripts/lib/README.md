@@ -7,8 +7,9 @@ top-level shell entry points. See issue #255 for the modularization plan.
 
 | File | Provides | Sourced by |
 |---|---|---|
-| `logging.sh` | Color vars (`RED`/`GREEN`/`YELLOW`/`BLUE`/`NC`) and `log_info`/`log_warn`/`log_error`/`log_step` printf helpers. | `scripts/setup.sh`, `scripts/db-reset.sh`, `scripts/sandbox-bootstrap.sh`, `scripts/verify-env.sh` |
+| `logging.sh` | Color vars (`RED`/`GREEN`/`YELLOW`/`BLUE`/`NC`) and `log_info`/`log_warn`/`log_error`/`log_step` printf helpers. | `scripts/setup.sh`, `scripts/sandbox-bootstrap.sh`, `scripts/verify-env.sh` |
 | `assertions.sh` | `PASS`/`FAIL`/`WARN` counters and `pass`/`fail`/`warn` helpers used by verification scripts. Depends on `logging.sh` color vars. | `test.sh`, `scripts/verify-env.sh` |
+| `versions.sh` | Portable dotted-version extraction and minimum comparison. | `scripts/verify-env.sh` |
 | `jq/` | Standalone jq filter scripts and their fixtures (issue #229). | Workflows + `scripts/test-jq-filters.sh`. |
 
 ## Conventions
@@ -25,10 +26,8 @@ top-level shell entry points. See issue #255 for the modularization plan.
   source. Inherited `PASS`/`FAIL`/`WARN` values from the caller
   environment are deliberately discarded so the verified-pass tally is
   never poisoned by the parent shell.
-- `log_error` always writes to stderr. (One deliberate semantic shift
-  from extraction — the pre-extraction `setup.sh` and `db-reset.sh`
-  inline `log_error` wrote to stdout, which was inconsistent with
-  `sandbox-bootstrap.sh` and with Unix convention.)
+- `log_error` always writes to stderr, matching Unix convention and
+  `sandbox-bootstrap.sh`.
 
 ## Out of scope (future phases)
 

@@ -1,4 +1,4 @@
-# TEMPLATE_PLACEHOLDER: Customize for your project's build/test/lint commands
+# Extend with project-specific build/test commands while retaining template checks.
 #
 # Self-Healing CI Pipeline with Retry Budget
 # -------------------------------------------
@@ -13,6 +13,22 @@
 name: CI Tests
 
 on:
+  workflow_call:
+    inputs:
+      reusable_call:
+        description: Confirms the event SHA belongs to the caller workflow
+        required: true
+        type: boolean
+      head_sha:
+        description: Exact generated refresh head
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      head_sha:
+        description: Exact generated refresh head
+        required: true
+        type: string
   push:
     branches: [main, develop]
   pull_request:
@@ -20,7 +36,7 @@ on:
 
 # Cancel in-progress runs for the same branch
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-tests-${{ inputs.head_sha || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -42,6 +58,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ inputs.head_sha || '' }}
+
+      - name: Verify dispatched head
+        if: github.event_name == 'workflow_dispatch' || github.event_name == 'workflow_call'
+        env:
+          EXPECTED_HEAD: ${{ inputs.head_sha }}
+          DISPATCHED_HEAD: ${{ github.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+          REUSABLE_CALL: ${{ inputs.reusable_call || false }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$REUSABLE_CALL" != "true" ]]; then
+            test "$EXPECTED_HEAD" = "$DISPATCHED_HEAD"
+          fi
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
 
       # =====================================================
       # RETRY BUDGET TRACKING
@@ -62,100 +92,55 @@ jobs:
             2>/dev/null || echo "0")
           
           echo "Recent failures in last hour: $RECENT_FAILURES"
-          echo "failure_count=$RECENT_FAILURES" >> $GITHUB_OUTPUT
+          echo "failure_count=$RECENT_FAILURES" >> "$GITHUB_OUTPUT"
           
           if [[ "$RECENT_FAILURES" -ge "$MAX_RETRIES" ]]; then
-            echo "exceeded=true" >> $GITHUB_OUTPUT
+            echo "exceeded=true" >> "$GITHUB_OUTPUT"
             echo "::warning::Retry budget exceeded ($RECENT_FAILURES failures in last hour)"
           else
-            echo "exceeded=false" >> $GITHUB_OUTPUT
+            echo "exceeded=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # =====================================================
-      # CUSTOMIZE THIS SECTION FOR YOUR TECH STACK
-      # =====================================================
-      
-      # Node.js example:
-      # - name: Setup Node.js
-      #   uses: actions/setup-node@v4
-      #   with:
-      #     node-version: '20'
-      #     cache: 'npm'
-      #
-      # - name: Install dependencies
-      #   run: npm ci
-      #
-      # - name: Run linter
-      #   run: npm run lint
-      #
-      # - name: Run type check
-      #   run: npm run typecheck
-      #
-      # - name: Run tests
-      #   id: tests
-      #   run: npm test 2>&1 | tee test-output.log
-      #   continue-on-error: true
-      #
-      # - name: Build
-      #   run: npm run build
+      - name: Install verification prerequisites
+        run: |
+          scripts/install-codespace-tools.sh --profile verification
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      # Python example:
-      # - name: Setup Python
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: '3.11'
-      #     cache: 'pip'
-      #
-      # - name: Install dependencies
-      #   run: pip install -r requirements.txt
-      #
-      # - name: Run linter
-      #   run: ruff check .
-      #
-      # - name: Run type check
-      #   run: mypy .
-      #
-      # - name: Run tests
-      #   id: tests
-      #   run: pytest --cov 2>&1 | tee test-output.log
-      #   continue-on-error: true
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
 
-      # =====================================================
-      # PLACEHOLDER: Remove after customizing
-      # =====================================================
-      - name: Install bats (issue #255 Phase 4b)
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq bats parallel
+      - name: Install OpenCode test dependencies
+        run: npm ci --prefix .github/agent-runtime
 
-      - name: Install Python dependencies
-        run: python3 -m pip install --user -r requirements.txt
+      - name: Verify environment prerequisites
+        run: scripts/verify-env.sh
 
-      - name: Run bats suite (issue #255 Phase 4b)
+      - name: Run full Bats suite (issue #255 Phase 4b)
         id: bats
         continue-on-error: true
         run: |
           if [ -d scripts/tests ]; then
             set -o pipefail
-            bats scripts/tests/ 2>&1 | tee bats-output.log
+            bats --jobs 12 scripts/tests/ 2>&1 | tee bats-output.log
           else
             echo "scripts/tests/ not present — skipping bats step"
           fi
 
-      - name: Run tests (placeholder)
+      - name: Run full repository checks
         id: tests
         # Always run so the legacy ./test.sh parity gate executes even if
         # the bats step above failed (PR #274 review feedback). The final
         # gate step below fails the job if either suite failed.
         if: always()
         run: |
-          echo "CI pipeline placeholder - customize for your project"
-          echo "See comments in this file for Node.js and Python examples"
-          
-          # Verify template files exist (useful for template repo itself)
           if [ -f "./test.sh" ]; then
             set -o pipefail
             ./test.sh 2>&1 | tee test-output.log
           else
-            echo "No test.sh found - add project-specific tests"
+            echo "::error::Required repository check entrypoint ./test.sh is missing"
+            exit 1
           fi
 
       - name: Gate on combined test results
@@ -179,23 +164,18 @@ jobs:
       - name: Capture failure logs
         if: failure()
         id: capture_logs
+        env:
+          CI_WORKFLOW: ${{ github.workflow }}
+          CI_RUN_NUMBER: ${{ github.run_number }}
+          CI_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CI_BRANCH: ${{ github.ref_name }}
+          CI_COMMIT: ${{ github.sha }}
+          CI_RETRY_COUNT: ${{ steps.retry_check.outputs.failure_count }}
+          CI_MAX_RETRIES: ${{ env.MAX_RETRIES }}
         run: |
-          echo "## CI Failure Report" > failure-report.md
-          echo "" >> failure-report.md
-          echo "**Workflow:** ${{ github.workflow }}" >> failure-report.md
-          echo "**Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> failure-report.md
-          echo "**Branch:** ${{ github.ref_name }}" >> failure-report.md
-          echo "**Commit:** ${{ github.sha }}" >> failure-report.md
-          echo "**Retry Count:** ${{ steps.retry_check.outputs.failure_count }}/${{ env.MAX_RETRIES }}" >> failure-report.md
-          echo "" >> failure-report.md
-          echo "### Error Output" >> failure-report.md
-          echo '```' >> failure-report.md
-          if [[ -f "test-output.log" ]]; then
-            tail -100 test-output.log >> failure-report.md
-          else
-            echo "No test output captured" >> failure-report.md
-          fi
-          echo '```' >> failure-report.md
+          scripts/render-ci-failure-report.sh failure-report.md \
+            "${{ steps.bats.outcome }}" "${{ steps.tests.outcome }}" \
+            bats-output.log test-output.log
 
       - name: Post failure comment on PR
         if: failure() && github.event_name == 'pull_request'

@@ -28,25 +28,16 @@ _legacy_body() {
   # ===== inlined body of scripts/test-verify-env.sh (issue #280) =====
   # Unit tests for scripts/verify-env.sh (issue #229 Phase 1.5a).
   #
-  # Tests the TEMPLATE_PLACEHOLDER detection logic in verify-env.sh using
-  # isolated fixture directories (minimal git repos). Covers the four
-  # failure-mode classes identified from PR #228 R5/R7/R8:
+  # Proves legacy marker text is inert in verify-env.sh using isolated fixture
+  # directories (minimal git repos). Covers empty, bootstrap-like, overlapping,
+  # and mixed paths so no filename can restore marker-based onboarding behavior.
   #
-  #   FIXTURE-01  empty        — no TEMPLATE_PLACEHOLDER files → clean pass
-  #   FIXTURE-02  bootstrap    — only bootstrap files contain the marker
-  #                              (excluded by _PLACEHOLDER_EXCLUDE) → bootstrap
-  #                              warning, no unexpected-files warning
-  #   FIXTURE-03  overlap      — filename that shares a common prefix with an
-  #                              excluded path but does NOT match the anchored
-  #                              ($) pattern (e.g. latest_summary.md.bak). Tests
-  #                              that the regex anchor prevents false exclusion.
-  #   FIXTURE-04  mixed        — unexpected file + bootstrap file → both
-  #                              warning classes fire independently
+  #   FIXTURE-01  empty        — no marker text
+  #   FIXTURE-02  bootstrap    — marker in a historical archive path
+  #   FIXTURE-03  overlap      — marker in similarly named paths
+  #   FIXTURE-04  mixed        — marker in session and ordinary files
   #
-  # Why these matter: The regex logic in verify-env.sh uses `$`-anchored
-  # alternatives in _PLACEHOLDER_EXCLUDE and _PLACEHOLDER_LEGIT. A missing
-  # anchor (the PR #228 R7→R8 lesson) would cause FIXTURE-03 to wrong-classify
-  # 'latest_summary.md.bak' as an excluded file, making the test fail.
+  # Every fixture must produce identical marker-independent verification output.
   #
   # Run: bats --tap scripts/tests/verify-env.bats
 
@@ -121,8 +112,8 @@ _legacy_body() {
   echo "FIXTURE-01: empty tree"
   D=$(make_fixture "empty")
   out=$(run_in_fixture "$D")
-  assert_contains "empty: pass message present" \
-    "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
+  assert_not_contains "empty: no marker scan output" \
+    "TEMPLATE_PLACEHOLDER" "$out"
   assert_not_contains "empty: no unexpected-file warning" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
   assert_not_contains "empty: no bootstrap warning" \
@@ -133,13 +124,13 @@ _legacy_body() {
   echo "FIXTURE-02: only bootstrap files contain marker"
   D=$(make_fixture "bootstrap")
   mkdir -p "$D/.context/sessions"
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md"
   out=$(run_in_fixture "$D")
-  assert_contains "bootstrap: pass message (excluded don't count)" \
-    "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
+  assert_not_contains "bootstrap: no marker scan output" \
+    "TEMPLATE_PLACEHOLDER" "$out"
   assert_not_contains "bootstrap: no unexpected-file warning" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
-  assert_contains "bootstrap: bootstrap warning fires" \
+  assert_not_contains "bootstrap: no bootstrap warning" \
     "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
   echo ""
 
@@ -147,19 +138,15 @@ _legacy_body() {
   echo "FIXTURE-03: substring-overlap filename tests \$-anchor"
   D=$(make_fixture "overlap")
   mkdir -p "$D/.context/sessions"
-  # latest_summary.md matches _PLACEHOLDER_EXCLUDE → excluded bootstrap file
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
-  # latest_summary.md.bak does NOT match the anchored pattern → unexpected
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md.bak"
-  # latest_summaryXmd would match if the '.' characters in the exclude regex
-  # were left unescaped, so it must remain unexpected.
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summaryXmd"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md.bak"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixtureXmd"
   out=$(run_in_fixture "$D")
-  assert_not_contains "overlap: clean pass (unexpected file exists)" \
+  assert_not_contains "overlap: no marker pass output" \
     "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
-  assert_contains "overlap: unexpected-file warning (latest_summary.md.bak / latest_summaryXmd not excluded)" \
+  assert_not_contains "overlap: no unexpected-file warning" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
-  assert_contains "overlap: bootstrap warning fires for latest_summary.md" \
+  assert_not_contains "overlap: no bootstrap warning" \
     "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
   echo ""
 
@@ -167,16 +154,14 @@ _legacy_body() {
   echo "FIXTURE-03b: literal-dot near-match stays unexpected"
   D=$(make_fixture "overlap-dot")
   mkdir -p "$D/.context/sessions"
-  # latest_summary.md matches _PLACEHOLDER_EXCLUDE → excluded bootstrap file
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
-  # latest_summaryXmd would be wrongly excluded if '.' stayed unescaped.
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summaryXmd"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixtureXmd"
   out=$(run_in_fixture "$D")
-  assert_not_contains "overlap-dot: no clean pass (unexpected file exists)" \
+  assert_not_contains "overlap-dot: no marker pass output" \
     "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
-  assert_contains "overlap-dot: unexpected-file warning (latest_summaryXmd not excluded)" \
+  assert_not_contains "overlap-dot: no unexpected-file warning" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
-  assert_contains "overlap-dot: bootstrap warning fires for latest_summary.md" \
+  assert_not_contains "overlap-dot: no bootstrap warning" \
     "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
   echo ""
 
@@ -185,15 +170,15 @@ _legacy_body() {
   D=$(make_fixture "mixed")
   mkdir -p "$D/.context/sessions"
   # Bootstrap (excluded → does NOT count as unexpected)
-  printf '%s\n' "# $marker" >"$D/.context/sessions/latest_summary.md"
+  printf '%s\n' "# $marker" >"$D/.context/sessions/marker-fixture.md"
   # Unexpected (not matched by either exclusion list)
   printf '%s\n' "# $marker" >"$D/some-real-file.md"
   out=$(run_in_fixture "$D")
-  assert_not_contains "mixed: no clean pass (unexpected file exists)" \
+  assert_not_contains "mixed: no marker pass output" \
     "No unexpected TEMPLATE_PLACEHOLDER markers found" "$out"
-  assert_contains "mixed: unexpected-file warning" \
+  assert_not_contains "mixed: no unexpected-file warning" \
     "files still contain TEMPLATE_PLACEHOLDER" "$out"
-  assert_contains "mixed: bootstrap warning also fires" \
+  assert_not_contains "mixed: no bootstrap warning" \
     "Bootstrap files retain TEMPLATE_PLACEHOLDER" "$out"
   echo ""
 
@@ -264,11 +249,10 @@ _build_fix_env() {
   #   dirname — SCRIPT_DIR computation in verify-env.sh, lib/logging.sh, lib/assertions.sh
   #   chmod   — used inside apt-get/brew stub bodies to make the created rg stub executable
   #   git, head — git checks
-  #   grep, find — template-placeholder scan
-  #   wc, tr — placeholder counting
+  #   grep — command availability checks
   #   python3, pip, pip3 — python checks
-  #   shellcheck, jq — required-tool checks (present so only rg triggers fix mode)
-  local needed=(bash dirname chmod git head grep find wc tr python3 pip pip3 shellcheck jq apt-get)
+  #   shellcheck, jq, uvx, bats — required-tool checks
+  local needed=(bash dirname chmod git head grep python3 pip pip3 shellcheck jq uvx bats apt-get)
   local excl=("$@")
   for t in "${needed[@]}"; do
     local skip=false
@@ -278,6 +262,29 @@ _build_fix_env() {
     rp=$(command -v "$t" 2>/dev/null || true)
     [[ -n "$rp" ]] && ln -sf "$rp" "$stub_bin/$t" 2>/dev/null || true
   done
+}
+
+@test "verify-env: missing uvx reports the managed uv prerequisite" {
+  stub_bin=$(_make_stub_bin)
+  _build_fix_env "$stub_bin" uvx
+
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" 2>&1
+
+  rm -rf "$stub_bin"
+  [[ "$output" == *"uvx is not installed; install the pinned uv tool profile"* ]]
+  [ "$status" -ne 0 ]
+}
+
+@test "verify-env: Bats below the canonical floor reports required and observed versions" {
+  stub_bin=$(_make_stub_bin)
+  _build_fix_env "$stub_bin" bats
+  _add_stub "$stub_bin" "bats" 'printf "Bats 1.6.0\n"'
+
+  run env PATH="$stub_bin" bash "$VERIFY_SCRIPT" 2>&1
+
+  rm -rf "$stub_bin"
+  [[ "$output" == *"bats 1.6.0 is below required version 1.7.0"* ]]
+  [ "$status" -ne 0 ]
 }
 
 @test "verify-env: --fix: non-allowlisted tool rejected with advisory and non-zero exit" {

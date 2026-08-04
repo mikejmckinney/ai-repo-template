@@ -8,6 +8,13 @@ Accepted
 
 2026-04-21
 
+## Amendment 2026-07-15 — Retire Copilot queue draining
+
+The unused Copilot assignment queue and its drain step are retired. The opt-in
+`auto-merge` decision remains active; only the queue-specific behavior in this
+ADR is deprecated. Existing queue labels remain as historical metadata, but the
+template no longer provisions or acts on them.
+
 ## Context
 
 Issue [#50](https://github.com/mikejmckinney/ai-repo-template/issues/50) asked

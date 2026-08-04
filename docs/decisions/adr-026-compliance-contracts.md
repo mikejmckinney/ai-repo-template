@@ -2,11 +2,63 @@
 
 ## Status
 
-Accepted
+Accepted (amended 2026-07-14: startup handshake retired)
 
 ## Date
 
 2026-05-13
+
+## Amendment 2026-07-13 — Retire structured compliance contracts
+
+ADR-031's benchmark evidence found no favorable ROI crossover for the
+multi-role pipeline on the benchmarked task classes. In production use, the
+structured `plan_compliance`, `parent_compliance`, and `subagent_compliance`
+blocks added ceremony, duplicated prose evidence, and repeatedly drifted when
+`AGENTS_MD_VERSION` changed. The repository now prefers a monolithic
+implementing agent for routine work and evaluates observable outcomes directly.
+
+Effective with this amendment:
+
+- Retire the three structured compliance blocks and their schema validators,
+  fixtures, templates, and checks.
+- Retire `role_contract_version` and mandatory subagent receipt blocks.
+- Preserve the `Session handshake v<N>` line as a lightweight freshness canary,
+  independent of compliance-schema enforcement.
+- Keep plans, PR links, user-outcome validation, test evidence, ADR discipline,
+  and documentation synchronization as ordinary prose contracts.
+- Keep role files as optional specialty guidance rather than mandatory dispatch
+  or path-ownership boundaries.
+- Retire P1-P9/AP1-AP9 as standalone blocking gates while preserving the catalog
+  in `AGENTS.md` as advisory design and review vocabulary. Concrete findings must
+  still map to an active rule, observable regression, or unmet user outcome.
+
+This is an explicit maintainer-approved amendment to the ADR that introduced
+the mechanism. It preserves the original rationale below as historical context
+instead of creating a replacement ADR. ADR-011's plan-as-comment decision and
+ADR-023's canonical-role decision remain accepted without ADR-026's structured
+evidence extensions.
+
+## Amendment 2026-07-14 — Retire the startup handshake
+
+The session handshake no longer provides enough freshness evidence to justify a
+mandatory user-facing token. Current repository state, exact-session recovery
+receipts, live issue/PR state, and CI provide stronger evidence without adding a
+preamble to every task boundary.
+
+Effective with this amendment:
+
+- Retire the required `Session handshake v<N>` output from agents, prompts,
+  recovery tools, and checks.
+- Retain `AGENTS_MD_VERSION` as file metadata; it no longer implies a matching
+  user-facing token.
+- Keep exact-session recovery receipts and current-source rereads after import
+  or compaction.
+- Treat handshake references in older ADR rationale, postmortems, transcripts,
+  and benchmark results as historical evidence.
+
+This supersedes the handshake-preservation clause in the 2026-07-13 amendment
+and the active handshake/canary requirements in ADR-021, ADR-022, and ADR-029.
+It does not restore the structured compliance contracts retired above.
 
 ## Context
 

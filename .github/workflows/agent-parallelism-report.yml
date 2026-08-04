@@ -1,12 +1,9 @@
 name: Parallelism Report
 
 # Posts a "Parallelism Report" comment on every PR listing every other
-# open PR and classifying the path overlap with the current PR as:
+# open PR and classifying exact path overlap with the current PR as:
 #
 #   hard — the two PRs touch at least one identical file path.
-#   soft — different files but inside the same top-level owned-path
-#          glob from .context/rules/agent_ownership.md (so they're in
-#          the same role's territory and merge-order may matter).
 #   none — disjoint paths.
 #
 # Comment-only and non-blocking (see ADR-009 §Decision 2 for rationale).
@@ -20,13 +17,11 @@ name: Parallelism Report
 #   - PRs from forks (mutation token isn't available there)
 #   - draft PRs that aren't being marked ready
 #
-# Requires:
-#   - CLAUDE_PAT repo secret (pull-requests:write to upsert the comment)
+# Authentication uses the job-scoped GITHUB_TOKEN with pull-requests:write.
 #
 # Related:
 #   - ADR-009 — design rationale and dispatch reality matrix
-#   - .context/rules/agent_ownership.md — parsed for owned-path globs
-#   - scripts/tests/parallelism-report-parser.bats — unit test for the parser
+#   - scripts/multi-dispatch-safety.sh — dispatch-side overlap classifier
 
 on:
   pull_request:
@@ -46,8 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     # Skip:
-    #   - Fork PRs: CLAUDE_PAT is not exposed to forks; the comment
-    #     write would fail with a misleading error.
+    #   - Fork PRs: their GITHUB_TOKEN is read-only, so comment writes are
+    #     intentionally skipped.
     #   - Draft PRs that aren't being explicitly marked ready: avoids
     #     spamming the report on every WIP push. The first run will
     #     happen on the `ready_for_review` event.
@@ -60,27 +55,15 @@ jobs:
       contents: read
 
     steps:
-      - name: Verify required secrets
-        env:
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
-        run: |
-          if [[ -z "$CLAUDE_PAT" ]]; then
-            echo "::error::Missing required secret: CLAUDE_PAT"
-            echo "::error::Per-repo:  Settings → Secrets and variables → Actions → New repository secret"
-            echo "::error::Org-wide:  Org settings → Secrets and variables → Actions → New organization secret (then grant this repo access)"
-            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
-            exit 1
-          fi
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # Just need agent_ownership.md and ADR — shallow is fine.
+          # Only changed-file metadata is needed; shallow checkout is fine.
           fetch-depth: 1
 
       - name: Build and upsert Parallelism Report
         env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
@@ -92,51 +75,22 @@ jobs:
           # Marker for the upsert: exactly one report comment per PR.
           MARKER='<!-- parallelism-report -->'
 
-          # ── 1. Parse owned-path globs from agent_ownership.md ──
-          # Delegated to scripts/parse-ownership-table.sh (single source
-          # of truth for the parser; the unit test
-          # scripts/tests/parallelism-report-parser.bats calls the same
-          # script). The script emits one `role<TAB>top-level-prefix`
-          # line per (role, glob) pair, sorted unique. Top-level prefix
-          # is what we use for soft-overlap matching: two PRs are "soft"
-          # if they touch *different* files but share at least one
-          # top-level prefix.
-          #
-          # Fail-soft: if parsing produces zero prefixes, the report
-          # still posts but skips soft classification and logs a
-          # warning (per ADR-009: do not block on parser failure).
-          OWNERSHIP_FILE='.context/rules/agent_ownership.md'
-          parse_warning=""
-          if [[ ! -f "$OWNERSHIP_FILE" ]]; then
-            parse_warning="ownership map ($OWNERSHIP_FILE) not found; soft-overlap classification disabled"
-            echo "::warning::$parse_warning"
-            ROLE_PREFIXES=""
-          else
-            ROLE_PREFIXES=$(./scripts/parse-ownership-table.sh < "$OWNERSHIP_FILE")
-
-            if [[ -z "$ROLE_PREFIXES" ]]; then
-              parse_warning="ownership table parsed to zero prefixes; soft-overlap classification disabled"
-              echo "::warning::$parse_warning"
-            fi
-          fi
-
-          # ── 2. Get the current PR's changed file paths. ──
+          # ── 1. Get the current PR's changed file paths. ──
           gh pr view "$PR_NUMBER" --repo "$REPO" --json files \
             --jq '.files[].path' > /tmp/me_files.txt
           me_count=$(wc -l < /tmp/me_files.txt)
           echo "Current PR ($PR_NUMBER) touches $me_count file(s)."
 
-          # ── 3. List other open PRs (not me, not drafts). ──
+          # ── 2. List other open PRs (not me, not drafts). ──
           others=$(gh pr list --repo "$REPO" --state open --limit 100 \
             --json number,headRefName,isDraft,author \
             --jq "[.[] | select(.number != $PR_NUMBER and .isDraft == false)]")
           other_count=$(printf '%s' "$others" | jq 'length')
           echo "Comparing against $other_count other open PR(s)."
 
-          # ── 4. For each other PR, classify overlap. ──
+          # ── 3. For each other PR, classify exact file overlap. ──
           rows=""
           hard_total=0
-          soft_total=0
 
           for i in $(seq 0 $((other_count - 1))); do
             other_num=$(printf '%s' "$others" | jq -r ".[$i].number")
@@ -152,7 +106,6 @@ jobs:
 
             classification="none"
             evidence=""
-            matched_roles=""
 
             if [[ -n "$hard_files" ]]; then
               classification="hard"
@@ -160,42 +113,18 @@ jobs:
               first=$(printf '%s\n' "$hard_files" | head -1)
               evidence="$hard_count shared file(s); first: \`$first\`"
               hard_total=$((hard_total + 1))
-            elif [[ -n "$ROLE_PREFIXES" ]]; then
-              # Soft overlap = different files, but at least one prefix
-              # in ROLE_PREFIXES is a top-level prefix of at least one
-              # file in BOTH PRs.
-              soft_prefixes=""
-              while IFS=$'\t' read -r role prefix; do
-                [[ -z "$prefix" ]] && continue
-                me_hit=$(awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {found=1; exit} END{exit !found}' /tmp/me_files.txt && echo y || echo n)
-                ot_hit=$(awk -v p="$prefix" 'index($0, p"/")==1 || $0==p {found=1; exit} END{exit !found}' /tmp/other_files.txt && echo y || echo n)
-                if [[ "$me_hit" == "y" && "$ot_hit" == "y" ]]; then
-                  soft_prefixes="$soft_prefixes $role:$prefix"
-                fi
-              done <<< "$ROLE_PREFIXES"
-
-              if [[ -n "$soft_prefixes" ]]; then
-                classification="soft"
-                # Take the first matched role for the column.
-                first_match=$(echo "$soft_prefixes" | awk '{print $1}')
-                matched_roles=$(echo "$first_match" | cut -d: -f1)
-                first_prefix=$(echo "$first_match" | cut -d: -f2)
-                evidence="shared owned-path: \`$first_prefix\` (role: $matched_roles)"
-                soft_total=$((soft_total + 1))
-              fi
             fi
 
             # Action recommendation per classification.
             case "$classification" in
-              hard) action="Sequence (decide which merges first), or capture a PM shared-edit claim." ;;
-              soft) action="Likely fine; verify merge order if one renames or changes a shared interface." ;;
+              hard) action="Sequence the PRs or coordinate the shared file explicitly." ;;
               none) action="No coordination needed." ;;
             esac
 
             rows+="| [#$other_num]($GITHUB_SERVER_URL/$REPO/pull/$other_num) | \`$other_head\` | $other_author | **$classification** | $evidence | $action |"$'\n'
           done
 
-          # ── 5. Build the report body. ──
+          # ── 4. Build the report body. ──
           {
             echo "$MARKER"
             echo ""
@@ -203,28 +132,24 @@ jobs:
             echo ""
             echo "_Cross-PR overlap classification against the $other_count other open PR(s) at the time of this report. **Comment-only — does not block this PR.** See [ADR-009]($GITHUB_SERVER_URL/$REPO/blob/main/docs/decisions/adr-009-parallel-multi-agent-execution.md) for rationale._"
             echo ""
-            if [[ -n "$parse_warning" ]]; then
-              echo "> ⚠️ **Parser warning**: $parse_warning. Hard overlap is still detected; soft overlap is unavailable for this run."
-              echo ""
-            fi
             if [[ "$other_count" -eq 0 ]]; then
               echo "_No other open PRs to compare against. ✅_"
             elif [[ -z "$rows" ]]; then
               echo "_No overlaps detected with any other open PR. ✅_"
             else
-              echo "**Summary:** $hard_total hard, $soft_total soft, $((other_count - hard_total - soft_total)) none."
+              echo "**Summary:** $hard_total hard, $((other_count - hard_total)) none."
               echo ""
               echo "| PR | Branch | Author | Overlap | Evidence | Suggested action |"
               echo "|----|--------|--------|---------|----------|------------------|"
               printf '%s' "$rows"
               echo ""
-              echo "**Legend:** **hard** = same file path. **soft** = same owned-path glob, different files. **none** = disjoint paths."
+              echo "**Legend:** **hard** = same file path. **none** = no identical changed path."
             fi
             echo ""
             echo "<sub>This PR touches $me_count file(s). Re-runs on every push.</sub>"
           } > /tmp/report_body.md
 
-          # ── 6. Upsert: find existing comment by marker; edit or create. ──
+          # ── 5. Upsert: find existing comment by marker; edit or create. ──
           # `per_page=100` is large enough for any realistic PR comment
           # count, so `--paginate` (and the SIGPIPE-prone `head -1`)
           # aren't needed. The jq already collapses to at most one value.
@@ -243,4 +168,4 @@ jobs:
               --body-file /tmp/report_body.md > /dev/null
           fi
 
-          echo "Done. Hard: $hard_total, Soft: $soft_total, Compared: $other_count."
+          echo "Done. Hard: $hard_total, Compared: $other_count."

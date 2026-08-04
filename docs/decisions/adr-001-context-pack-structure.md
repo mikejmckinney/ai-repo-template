@@ -80,7 +80,8 @@ Priority order when conflicts arise:
 
 ### Neutral
 
-- Structure uses `TEMPLATE_PLACEHOLDER` markers for easy identification of stub content
+- Historical implementation used marker comments to identify stub content; the
+  versioned onboarding lifecycle introduced in 2026-07 retires that behavior.
 - Works alongside existing `AI_REPO_GUIDE.md` (which provides quick reference)
 
 ## Implementation

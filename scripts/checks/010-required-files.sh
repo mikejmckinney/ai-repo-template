@@ -3,96 +3,54 @@
 # Sourced by test.sh; relies on $PASS/$FAIL/$WARN, pass()/fail()/warn() from
 # scripts/lib/{logging,assertions}.sh and CWD == repo root.
 
-# --- Required Files Check ---
-echo "Checking required files..."
+# --- Public Entrypoints Check ---
+echo "Checking public entrypoints..."
 
 REQUIRED_FILES=(
   "AI_REPO_GUIDE.md"
   "AGENTS.md"
   "AGENT.md"
   "CLAUDE.md"
-  "GEMINI.md"
   "README.md"
-  "install.sh"
-  ".cursor/BUGBOT.md"
-  ".gemini/styleguide.md"
-  ".gemini/config.yaml"
-  ".github/copilot-instructions.md"
-  ".agents/README.md"
-  ".agents/_TEMPLATE.md"
-  ".agents/judge.md"
-  ".agents/critic.md"
-  ".agents/architect.md"
-  ".agents/pm.md"
-  ".agents/frontend.md"
-  ".agents/backend.md"
-  ".agents/qa.md"
-  ".agents/devops.md"
-  ".agents/docs.md"
-  ".agents/analyst.md"
-  ".github/agents/judge.agent.md"
-  ".github/agents/critic.agent.md"
-  ".github/agents/architect.agent.md"
-  ".github/agents/pm.agent.md"
-  ".github/agents/frontend.agent.md"
-  ".github/agents/backend.agent.md"
-  ".github/agents/qa.agent.md"
-  ".github/agents/devops.agent.md"
-  ".github/agents/docs.agent.md"
-  ".github/agents/analyst.agent.md"
-  ".github/agents/consensus-candidate-claude.agent.md"
-  ".github/agents/consensus-candidate-gpt.agent.md"
-  ".github/agents/consensus-candidate-gemini.agent.md"
-  ".claude/agents/architect.md"
-  ".claude/agents/judge.md"
-  ".claude/agents/critic.md"
-  ".claude/agents/pm.md"
-  ".claude/agents/frontend.md"
-  ".claude/agents/backend.md"
-  ".claude/agents/qa.md"
-  ".claude/agents/devops.md"
-  ".claude/agents/docs.md"
-  ".claude/agents/analyst.md"
-  ".cursor/agents/architect.md"
-  ".cursor/agents/judge.md"
-  ".cursor/agents/critic.md"
-  ".cursor/agents/pm.md"
-  ".cursor/agents/frontend.md"
-  ".cursor/agents/backend.md"
-  ".cursor/agents/qa.md"
-  ".cursor/agents/devops.md"
-  ".cursor/agents/docs.md"
-  ".cursor/agents/analyst.md"
-  ".codex/agents/architect.toml"
-  ".codex/agents/judge.toml"
-  ".codex/agents/critic.toml"
-  ".codex/agents/pm.toml"
-  ".codex/agents/frontend.toml"
-  ".codex/agents/backend.toml"
-  ".codex/agents/qa.toml"
-  ".codex/agents/devops.toml"
-  ".codex/agents/docs.toml"
-  ".codex/agents/analyst.toml"
+  ".devcontainer/devcontainer.json"
+  "test.sh"
+  ".cursorignore"
   ".github/prompts/README.md"
-  ".github/prompts/repo-onboarding.md"
-  ".github/prompts/pr-resolve-all.md"
-  ".github/prompts/op-issue-workflow.md"
-  ".github/prompts/expand-backlog-entry.md"
   ".github/prompts/capture-postmortem.md"
   ".github/prompts/mirror-postmortem.md"
-  ".github/prompts/pre-push-review.md"
-  ".github/prompts/multi-model-consensus-plan.md"
-  ".github/prompts/instruction-compliance-smoke.md"
-  ".github/prompts/outcome-validation-smoke.md"
-  ".github/prompts/judge-mode-smoke.md"
-  ".github/prompts/handshake-and-shape-smoke.md"
+  ".github/prompts/shared-review-lenses.md"
+  ".github/CODEOWNERS"
   ".github/pull_request_template.md"
   ".github/PLAN_TEMPLATE.md"
+  ".github/ISSUE_TEMPLATE/bug_report.md"
+  ".github/ISSUE_TEMPLATE/feature_request.md"
+  ".github/ISSUE_TEMPLATE/agent_init.md"
+  ".github/ISSUE_TEMPLATE/config.yml"
+  ".github/workflows/agent-advisory-review.yml"
+  ".github/workflows/agent-auto-merge.yml"
+  ".github/workflows/agent-postmerge-retro.yml"
+  ".github/workflows/agent-weekly-review.yml"
+  ".github/workflows/agent-workflow-pr-smoke.yml"
+  ".github/workflows/agent-workflow-smoke.yml"
+  ".github/workflows/ci-tests.yml"
+  ".github/workflows/lint-and-format.yml"
+  "scripts/setup.sh"
+  "scripts/codespace-post-create.sh"
+  "scripts/codespace-post-start.sh"
+  "scripts/verify-env.sh"
+  "scripts/verify-pr.sh"
   "scripts/diag-hang-snapshot.sh"
   "scripts/diag-sandbox.sh"
-  "scripts/lib/compliance_schema.py"
-  "scripts/validate-compliance-examples.py"
-  "scripts/validate-compliance-fixtures.py"
+  "scripts/archive-opencode-database.sh"
+  "scripts/cleanup-codespace-caches.sh"
+  "scripts/diagnose-opencode-session.sh"
+  "scripts/render-ci-failure-report.sh"
+  "scripts/validate-outcome-evidence.py"
+  "scripts/validate-verification-evidence.py"
+  "scripts/workflows/validate-pr-workflow-fixtures.py"
+  "scripts/format.sh"
+  "scripts/check-markdown-links.py"
+  "docs/guides/outcome-validation.md"
 )
 
 for file in "${REQUIRED_FILES[@]}"; do
@@ -100,6 +58,41 @@ for file in "${REQUIRED_FILES[@]}"; do
     pass "$file exists"
   else
     fail "$file is missing"
+  fi
+done
+
+if [[ -f "DESIGN.md" ]]; then
+  pass "DESIGN.md exists for a project with an explicit design contract"
+else
+  pass "DESIGN.md is absent (optional until verified UI work requires it)"
+fi
+
+if [[ -f ".context/onboarding-state.json" ]]; then
+  pass ".context/onboarding-state.json exists"
+elif onboarding_result=$(".agents/skills/repo-onboarding/scripts/classify-mode.sh" --repo "$PWD" 2>&1); then
+  if jq -e '
+    .mode == "complete" and
+    any(.warnings[]; contains("legacy derived repository"))
+  ' <<<"$onboarding_result" >/dev/null; then
+    warn "legacy derived repository has no onboarding state; backfill complete state after orientation"
+  else
+    fail ".context/onboarding-state.json is missing"
+  fi
+else
+  fail ".context/onboarding-state.json is missing and onboarding classification failed: $onboarding_result"
+fi
+
+if printf '@AGENTS.md\n' | cmp -s - CLAUDE.md; then
+  pass "CLAUDE.md is the exact AGENTS.md pointer"
+else
+  fail "CLAUDE.md must contain exactly @AGENTS.md followed by a newline"
+fi
+
+for retired_file in .pre-commit-config.yaml .pre-commit-config.yaml.template; do
+  if [[ -e "$retired_file" ]]; then
+    fail "$retired_file is retired but still present"
+  else
+    pass "$retired_file is absent"
   fi
 done
 

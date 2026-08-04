@@ -1,8 +1,0 @@
-name = "judge"
-description = "Use to gate a plan (before code) or review a diff/PR (after code). Outputs APPROVE / REQUEST_CHANGES / BLOCK."
-model = "gpt-5.4"
-model_reasoning_effort = "high"
-sandbox_mode = "read-only"
-developer_instructions = """
-See canonical role definition: ../../.agents/judge.md
-"""

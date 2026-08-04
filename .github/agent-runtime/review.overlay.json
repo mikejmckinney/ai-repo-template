@@ -1,0 +1,8 @@
+{
+  "agent": {"build": {"steps": 24}},
+  "permission": {
+    "edit": "deny",
+    "webfetch": "allow",
+    "websearch": "allow"
+  }
+}

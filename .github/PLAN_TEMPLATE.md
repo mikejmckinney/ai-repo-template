@@ -1,8 +1,10 @@
 <!--
 Implementation Plan template (#164).
 
-Copy the block below into a comment on the issue you're about to work on.
-Post it BEFORE writing implementation code.
+New issue templates include the block below in the issue body. Before writing
+implementation code, fill it in and edit only between its v2 delimiters. For an
+untemplated new issue, append the block once. Existing issues with a canonical
+`implementation-plan:v1` comment are grandfathered and remain comment-based.
 
 When this template applies:
   - Default: every issue you're about to implement.
@@ -22,26 +24,22 @@ v1 has no formal approval gate (see ADR-011). The plan is a documented
 artifact reviewed at PR-time. Approval-gating, expiry rules, and
 automated CI enforcement are deferred to issue #155.
 
-If your actual diff diverges from the plan by more than ~30% in file count
-or scope, post a "Plan revision" comment on the same issue before pushing
-the divergent code, so reviewers see what changed and why.
+When the plan changes, fetch the current issue body, preserve everything outside
+the delimiters byte-for-byte, merge the new current state into the block, and
+append one bounded entry to `Revision history`. Re-fetch after writing and verify
+requester-owned content survived. Do not post separate plan-revision comments.
 
-After posting the plan comment (or any revision), copy the comment's
-permalink into the PR's `## Plan` section and refresh the
-"Latest in 1–2 sentences" line. The PR body is the breadcrumb that
-sends reviewers to the canonical version on the issue; an out-of-date
-breadcrumb is the failure mode this template is here to prevent.
-
-If the revision happens after a PR is already open, do that refresh in
-the same push as the divergent code and tick the matching box in the
-PR template's `## Plan revision sync` section, so re-runs don't
-evaluate stale intent.
+Copy the canonical issue URL into the PR's `## Plan` section and refresh
+the current summary whenever the plan changes. Link addressable GitHub resources
+on first mention rather than writing bare issue, PR, commit, branch, run, ADR, or
+repository-file references.
 -->
+
+<!-- implementation-plan:v2:begin -->
 
 ## 📋 Implementation Plan
 
 **Issue:** #<number>
-**Role:** <analyst | architect | backend | frontend | devops | docs | qa | pm>
 
 ### Outcome
 
@@ -55,73 +53,16 @@ issue, write "Direct implementation per issue.">
 
 ### Files to change
 
-- `path/to/file1` — <one phrase: what change>
-- `path/to/file2` — <one phrase: what change>
+- [`README.md`](../blob/main/README.md) — <one phrase: what change>
+- [`scripts/tests/`](../tree/main/scripts/tests) — <one phrase: what change>
 
-<!-- List every file you expect to touch. If the actual diff exceeds this
-list by more than ~30%, post a revised plan before pushing. -->
-
-### Model tier
-
-**Tier**: <top | mid | cheap>
-**Justification (required when `top`)**: <one line: why this task warrants High-tier dispatch above the role default>
-
-<!-- Per-task override on top of the role defaults set in ADR-019.
-     Default is `mid`. Use `top` only when the task genuinely needs Opus-class
-     reasoning (novel architecture, irreversible decision, complex review
-     gate). Use `cheap` only for trivial mechanical work (typo fixes,
-     dependency bumps, generated-file regeneration). When in doubt, leave
-     at `mid`. The role default still applies if the dispatcher honors it;
-     this field is the implementer's signal to a human or PM about whether
-     to upshift before dispatching. -->
-
-### Compliance evidence (ADR-026)
-
-```yaml
-plan_compliance:
-     applicable_roles:
-          - <role>
-     instruction_resources:
-          -
-               resource: AGENTS.md
-               why_applicable: Canonical startup, truth hierarchy, and process-rule index.
-               evidence: AGENTS_MD_VERSION <N>; Session handshake v<N> emitted.
-               decision_affected: <specific plan choice affected by this resource>
-          -
-               resource: .context/rules/<rule>.md
-               why_applicable: <why this rule applies to the work>
-               evidence: <what was loaded or checked>
-               decision_affected: <specific plan choice affected by this resource>
-     role_dispatch:
-          decision: "<staged-dispatch | monolithic | exempt>"
-          planned_subagents:
-               - <role>
-          monolithic_justification: <null or one-sentence justification>
-     plan_gate:
-          status: "<pending | linked | exempt>"
-          link: <URL or null>
-          gate_status:
-               triggered: <true | false>
-               applied: <true | false>
-     adr_required:
-          required: "<true | false>"
-          link: <path/URL or null>
-          supersession_notes:
-               - <ADR status update or N/A>
-     doc_sync:
-          triggered: "<true | false>"
-          companions:
-               - <path or N/A>
-          no_change_justifications:
-               - "<path>: <reason>"
-     verification:
-          - <exact command or manual check>
-```
-
-<!-- Keep this block specific. Generic evidence such as "read all docs" is
-           not useful; name the resource, why it applied, and what decision it
-           changed. Use `role_contract_version` only in subagent returns, never
-           `overlay_version`. See `docs/compliance_schemas.md`. -->
+<!-- Replace the examples and list every file or directory you expect to touch.
+Existing files and directories must be clickable: use ../blob/main/<path> for a
+file and ../tree/main/<path> for a directory. For a planned new path, link its
+nearest existing parent and label the new path in the description. For a glob,
+link its containing directory and keep the glob in the link text or description.
+If the actual diff exceeds this list by more than ~30%, post a revised plan
+before pushing. -->
 
 ### User outcome validation plan — PRIMARY
 
@@ -133,9 +74,31 @@ plan_compliance:
 2. <step from issue>
 3. <step from issue>
 
-**Evidence to capture in PR:**
+**Material claim evidence to capture in PR:**
 
-- <artifact, citation, screenshot, command transcript, review checklist, etc.>
+```text
+Material claim:
+Environment:
+Why representative:
+Implementation SHA:
+Action performed:
+Expected result:
+Observed result:
+Artifact:
+Artifact type:
+Redaction:
+Retention:
+Evidence reuse: <none, or Paths: <later path analysis>; Conditions: <load-bearing condition analysis>>
+Result: pass | fail | blocked
+```
+
+<!-- Repeat the record for each material claim. Choose the most representative
+     practical environment and attach an inspectable artifact. Cost and speed
+     may distinguish equally representative options but cannot replace the
+     affected user's action or required result. Paid or destructive actions
+     require explicit approval and remain blocked until performed. External-
+     state and runtime claims cannot be prose-only. Mixed changes may require
+     multiple environments. See docs/guides/outcome-validation.md. -->
 
 **Pass condition:**
 
@@ -149,31 +112,36 @@ plan_compliance:
      section below covers regression/hygiene evidence (./test.sh, lint,
      CI, schema checks, sandbox runs). A green CI run with no
      user-outcome evidence is not ready for review. See
-     `.context/rules/process_work_style.md` § Validation. -->
+     `AGENTS.md` § Testing and validation. -->
 
 ### Supporting verification
 
 **Change class**: <code-or-docs | pull_request-triggered workflow | default-branch-only workflow | mixed>
-**Verification target**: <PR branch | sandbox repo | both>
+**Verification evidence contract**: 1
+**Default-branch constrained**: <yes | no>
+**Verification target**: <PR branch | preview | dogfood | sandbox repo | both>
+**Outcome environments**: <PR branch, sibling GitHub sandbox, fresh Codespace, fresh repository, provider preview, disposable infrastructure, etc.>
 
 <!-- Pick the most-restrictive class your diff touches. The classifier in
      `scripts/verify-pr.sh` will compare your declaration against the
-     actual changed paths and flag mismatches. The full trigger-event
-     matrix lives in `docs/guides/agent-pipeline.md` § "Workflow
-     verifiability matrix" — use it when you're unsure which bucket
-     applies. Default-branch-only changes MUST be verified in the
-     sandbox sibling repo before merging here (see ADR-016 and
-     `docs/guides/sandbox-verification.md`). -->
+     actual changed paths and flag mismatches. It is the canonical trigger
+     classifier; `docs/guides/agent-pipeline.md` explains the resulting
+     verification classes without duplicating its trigger rules.
+     Select environments with `docs/guides/outcome-validation.md`.
+     For mixed changes, structural classification does not select the route:
+     record whether the changed behavior itself depends on default-branch event,
+     permission, secret, concurrency, environment, provider, or publication
+     semantics. Default-branch-constrained behavior uses the sibling repository
+     adapter in `docs/guides/sandbox-verification.md` (ADR-016/ADR-034). -->
 
 <How a reviewer can prove this works. Specific commands, specific assertions,
 specific test names. "Tests pass" is not sufficient — name them.>
 
 <!-- Each command listed here must have a matching result entry in the
      PR's `## Supporting verification results` section before the PR enters review.
-     Sandbox-deferred items (where Verification target is `sandbox repo`
-     or `both` and the change can't be exercised from the PR branch) are
-     marked `⏭️ sandbox-deferred — see Phase 2` per ADR-016. Judge
-     enforces this mapping at diff-gate. -->
+     Environment-deferred items that cannot run from the PR branch are marked
+     `⏭️ environment-deferred — <adapter + reason>`. Reviewers enforce this
+     mapping and inspect the captured outcome artifacts. -->
 
 ### Risks / out-of-scope
 
@@ -186,8 +154,13 @@ explicit acknowledgment, not silent omission.>
 
 <Optional. Surface up to 3 out-of-scope improvement opportunities
 you noticed during planning (toil patterns, stale docs, adjacent
-risks). Each note uses the 9-field shape defined in
-`.context/rules/process_opportunity_feedback.md` § "Required fields
-(9 total)". Cap is ≤3 per session per agent. Omit this section or
+risks). Each note uses the eight-field shape defined in
+`AGENTS.md` § "Opportunity feedback". Cap is ≤3 per session per agent. Omit this section or
 write "None" if nothing to surface; do not fold opportunities into
 the plan scope.>
+
+### Revision history
+
+- YYYY-MM-DD: Initial plan.
+
+<!-- implementation-plan:v2:end -->

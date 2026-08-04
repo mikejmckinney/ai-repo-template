@@ -1,0 +1,182 @@
+# Model ROI Benchmark Runbook
+
+This guide is the canonical operator entry point for the repository's occasional
+agent/model ROI campaigns. Benchmark apparatus is an evaluation lab, not part of
+the reusable template shipped from `main`.
+
+## Canonical Surfaces
+
+| Surface | Location | Purpose |
+|---|---|---|
+| Operator guide | This file on `main` | Campaign preparation, execution, and publication |
+| Model-ROI results | [`docs/benchmarks/agent-roi-benchmark-results.md`](../benchmarks/agent-roi-benchmark-results.md) | Published score sets, costs, and conclusions |
+| Retro results | [`docs/benchmarks/retro-execution-447-results.md`](../benchmarks/retro-execution-447-results.md) | Published retro execution comparison |
+| Evaluation workspace | [`benchmark/roi`](https://github.com/mikejmckinney/ai-repo-template/tree/benchmark/roi) | Harness, tasks, prompts, schemas, graders, and local run inputs |
+| Completed apparatus snapshot | [`8c296458`](https://github.com/mikejmckinney/ai-repo-template/tree/8c2964583af04b3352561410e22511304001ec21) | Immutable reference for the last mainline apparatus state |
+| Locked Phase A artifacts | [`benchmark/phase-a-artifacts-20260608`](https://github.com/mikejmckinney/ai-repo-template/tree/benchmark/phase-a-artifacts-20260608) | Subjective grader output and raw retained evidence |
+
+ADR-031 owns benchmark policy and current execution recommendations. Results on
+`main` are decision evidence; the mutable lab branch is never itself a published
+result citation.
+
+## Prerequisites
+
+- A clean clone with `origin` pointing to this repository.
+- Git, Bash, Python 3, `jq`, and the agent CLIs selected for the campaign.
+- Authentication for each selected provider.
+- An approved issue and plan defining task classes, candidate matrix, spending
+  limit, frozen bases, grading rubric, and user-outcome test.
+- Explicit maintainer approval before any paid candidate invocation.
+
+Never commit provider credentials, unsealed candidate mappings, generated
+worktrees, raw prompts containing secrets, or local billing exports.
+
+## Synchronize The Lab
+
+Synchronize `benchmark/roi` immediately before a campaign. A normal merge would
+apply `main`'s deliberate apparatus deletions to the lab branch, so preserve the
+lab-owned paths from the branch tip while accepting all other `main` changes.
+
+```bash
+git fetch origin --tags
+git switch benchmark/roi
+git pull --ff-only origin benchmark/roi
+
+lab_tip="$(git rev-parse HEAD)"
+git merge --no-commit --no-ff origin/main
+
+git restore --source="$lab_tip" -- \
+  .context/benchmarks/model-roi \
+  .github/prompts/06-implement-class-c-framework-benchmark.md \
+  .github/prompts/model-roi-adjudicator-v1.md \
+  .github/prompts/model-roi-benchmark-candidate.md \
+  .github/prompts/model-roi-duo-implementer.md \
+  .github/prompts/model-roi-duo-planner.md \
+  .github/prompts/model-roi-grader-v1.md \
+  .github/prompts/model-roi-orchestration-pipeline-candidate.md \
+  .github/prompts/model-roi-pairwise-grader-v1.md \
+  scripts/benchmark \
+  scripts/checks/165-verify-benchmark-candidate.sh \
+  scripts/checks/166-benchmark-ignores.sh \
+  scripts/checks/167-context-pack-manifests.sh \
+  scripts/checks/168-benchmark-grading.sh
+
+git add -f \
+  .context/benchmarks/model-roi \
+  .github/prompts/06-implement-class-c-framework-benchmark.md \
+  .github/prompts/model-roi-*.md \
+  scripts/benchmark \
+  scripts/checks/165-verify-benchmark-candidate.sh \
+  scripts/checks/166-benchmark-ignores.sh \
+  scripts/checks/167-context-pack-manifests.sh \
+  scripts/checks/168-benchmark-grading.sh
+
+git commit -m "Merge main into benchmark/roi for campaign"
+```
+
+If the merge reports conflicts outside the listed lab paths, stop and resolve
+them as normal repository changes. Do not use `git merge -s ours`: that would
+hide rather than integrate `main` changes.
+
+After synchronization, update stale protocol references on `benchmark/roi` to
+point to this guide and `docs/benchmarks/`. The old branch-local runbook is not a
+second canonical copy. Before the next campaign, update any harness paths that
+still target branch-local results, then remove the old runbook and result copies
+from `benchmark/roi` in that campaign's preparation commit.
+
+## Prepare A Campaign
+
+1. Create a feature branch from the synchronized `benchmark/roi` tip.
+2. Select committed task specs and record their task class.
+3. Freeze or explicitly reuse base SHAs. Never mix rows from different bases
+   without a comparability warning.
+4. Copy an example candidate manifest to its ignored local filename and keep
+   alias-to-model mappings sealed until grading is locked.
+5. Verify requested model identifiers against observed runtime telemetry.
+6. Run the non-spending doctor gate before invoking a candidate.
+
+Typical preflight:
+
+```bash
+make -C scripts/benchmark doctor STAGE=1 BASE=<base-sha>
+```
+
+The doctor must validate the task, prompt, manifest, base, required binaries,
+authentication heuristics, writable artifact directories, and remote state.
+
+## Run Candidates
+
+Use the same candidate prompt, task body, frozen base, effort policy, and run
+index convention for every comparable row.
+
+```bash
+make -C scripts/benchmark suite \
+  TASK=<task-id> \
+  BASE=<base-sha> \
+  STAGE=1
+```
+
+Run one alias while diagnosing an adapter:
+
+```bash
+make -C scripts/benchmark run \
+  TASK=<task-id> \
+  BASE=<base-sha> \
+  ALIAS=<candidate-alias>
+```
+
+Prefer sequential execution when wall-clock comparisons matter. Parallel runs
+introduce host-load and provider-rate-limit noise. Record manual fallbacks as
+manual; never relabel a blocked automated run as automated success.
+
+## Collect And Grade
+
+Keep grader-facing and sealed artifacts separate. Blind bundles use neutral
+evaluation IDs and must not expose provider, model, framework condition, or
+candidate aliases.
+
+```bash
+make -C scripts/benchmark collect TASK=<task-id>
+./scripts/benchmark/regrade-stage.sh <stage> prepare
+./scripts/benchmark/regrade-stage.sh <stage> grade <grader-id>
+./scripts/benchmark/regrade-stage.sh <stage> record <grader-id> <responses-dir>
+./scripts/benchmark/regrade-stage.sh <stage> compile <grader-id>
+```
+
+Scores are comparable only within the same `score_set_id`, rubric version,
+grader prompt version, task, and frozen base. Separate candidate execution cost
+from grading-model cost.
+
+Unseal only after scores are locked:
+
+```bash
+make -C scripts/benchmark unseal TASK=<task-id>
+```
+
+## Publish Results
+
+1. Update the appropriate file under `docs/benchmarks/` on a normal feature
+   branch from current `main`.
+2. Record task, base SHA, apparatus commit, artifact tag, candidate alias,
+   requested and observed model, score set, rubric, grader, cost source, wall
+   time, and caveats.
+3. Cite immutable commits, tags, Actions runs, issues, and PRs. Do not cite the
+   mutable `benchmark/roi` head as evidence.
+4. Amend ADR-031 only when the new evidence changes repository policy.
+5. Run the normal repository verification and sandbox user-outcome process for
+   the publication PR.
+
+Raw run directories, worktrees, response bundles, manifests that reveal model
+identity, and local logs remain off `main`. Preserve evidence needed to reproduce
+published conclusions in an immutable tag.
+
+## Known Boundaries
+
+- Class A/B evidence does not establish universal model quality.
+- Class C greenfield comparison remains incomplete until a planned campaign runs.
+- Pricing, model aliases, and routed backends change; refresh rate cards and
+  record observed models for every campaign.
+- Context-pack conclusions must be revalidated after material `AGENTS.md` or
+  repository-process changes.
+- Production code and tests promoted from benchmark findings stay on `main`; do
+  not move them back into the evaluation lab.

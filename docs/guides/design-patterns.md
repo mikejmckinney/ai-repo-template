@@ -1,16 +1,16 @@
 # Design Patterns — Code-Layer Reference (Lead / Index)
 
-> **Purpose**: shared vocabulary for downstream code-layer reviews. Reviewers in projects derived from this template (CMMC enclave, Cloud Migration PoC, FedRAMP OSCAL, NIST 800-171, future forks) cite entries from this file and its sibling files by stable ID (`CP1`–`CP34`, `CAP1`–`CAP2`, `CCP1`–`CCP8`, `CDP1`–`CDP14`, `CIP1`–`CIP11`) when flagging a code-level pattern or anti-pattern. The orchestration layer of *this* template uses `.context/rules/repo_orchestration_patterns.md` (`P1`–`P9`, `AP1`–`AP8`) for the same purpose. The two surfaces are complementary, not overlapping.
+> **Purpose**: shared vocabulary for downstream code-layer reviews. Reviewers in projects derived from this template cite entries from this file and its sibling files by stable ID (`CP1`–`CP34`, `CAP1`–`CAP2`, `CCP1`–`CCP8`, `CDP1`–`CDP14`, `CIP1`–`CIP11`) when flagging a code-level pattern or anti-pattern. Advisory orchestration vocabulary is summarized in `AGENTS.md` with detail in [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md).
 >
-> **Scope**: code-layer patterns for downstream projects derived from this template — application code, libraries, services, infrastructure-as-code constructs. NOT the orchestration / multi-agent / governance layer of this template (that lives in [`repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md)).
+> **Scope**: code-layer patterns for downstream projects derived from this template: application code, libraries, services, and infrastructure-as-code constructs. Not the orchestration or governance layer.
 >
-> **Status**: advisory. Critic cites entries as `CRAFT NOTES`; Judge does NOT block at diff-gate on a citation from this file. Tightening any entry to block-on-sight requires an ADR. See [ADR-020 §"Block-vs-advisory designation"](../decisions/adr-020-orchestration-patterns-reference.md#block-vs-advisory-designation) for the parallel decision on the orchestration file — the same logic applies here (this file ships everything advisory by default; the orchestration file ships a per-entry mix).
+> **Status**: advisory. Reviewers may cite entries as `CRAFT NOTES`, but a citation from this file is not independently blocking. Tightening any entry to block-on-sight requires an ADR. See [ADR-020 §"Block-vs-advisory designation"](../decisions/adr-020-orchestration-patterns-reference.md#block-vs-advisory-designation) for the parallel decision on the orchestration file - the same logic applies here (this file ships everything advisory by default; the orchestration file ships a per-entry mix).
 
 ## Read this first — descriptive vocabulary, not prescription
 
 This guide is a vocabulary, not a rulebook. Recognizing a pattern in existing code is more valuable than forcing one into new code. Three commitments make this real:
 
-1. **Citing a pattern is the start of a conversation, not the end of one.** A reviewer writing "this is becoming a God Object — see [`AP1`](../../.context/rules/repo_orchestration_patterns.md#ap1--god-object)" must say *which detection signals fired* and *what the code-layer remediation looks like for this case*. The pattern name is a handle; the argument is the work. Reviewers who cite pattern names without justification are doing the thing the [§"Goal Substitution"](#cap1--goal-substitution) entry warns against — substituting a deliverable (a citation) for the outcome (a clearer review). (`AP1` lives in the orchestration patterns file because God Object's clearest manifestation in this template is at the orchestration layer; downstream code-layer reviewers may cite it for the analogous code-layer failure mode until a `CAP<N>` entry is added here.)
+1. **Citing a pattern is the start of a conversation, not the end of one.** A reviewer must say *which detection signals fired* and *what the code-layer remediation looks like for this case*. The pattern name is a handle; the argument is the work.
 2. **Novel designs beat named patterns when the named pattern doesn't fit.** If a code change is a better fit for an unnamed shape than for any pattern in this guide, the unnamed shape wins. This guide does not enumerate every good design. Calling out "this isn't in the guide, and it should be" is itself a useful review comment.
 3. **Most GoF patterns are 1994 C++/Smalltalk workarounds for missing language features.** In Python, JavaScript, Go, or any modern language with first-class functions and dynamic dispatch, several patterns collapse to a function or a decorator. Don't write Java-style ceremony when the language gives you the shape for free. Affected entries flag this explicitly.
 
@@ -18,7 +18,7 @@ The biggest active risk for this guide is **prescriptive drift** — reviewers l
 
 ## Why this guide exists (dogfood-demand provenance)
 
-This guide is itself a dogfood deliverable. The orchestration-layer counterpart ([`repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md)) was added under epic [#251](https://github.com/mikejmckinney/ai-repo-template/issues/251) after a sequence of structural refactors (sub-issues 1–4) repeatedly required reviewers and authors to argue patterns and anti-patterns in vague terms — the absence of named handles was visible cost. The same shape of cost is already starting to appear in downstream code projects bootstrapped from this template, two of which generated [`postmortem-001`](../postmortems/postmortem-001-workflow-bypass.md) and [`postmortem-002`](../postmortems/postmortem-002-poc-outcome-mismatch.md). The lessons in those postmortems generalize cleanly to the code layer; the entries in [§"Anti-patterns generalized from this template's postmortems"](#anti-patterns-generalized-from-this-templates-postmortems) below carry them across.
+This guide is itself a dogfood deliverable. Epic [#251](https://github.com/mikejmckinney/ai-repo-template/issues/251) showed that unnamed design concerns produced vague review arguments. The same cost appears in downstream projects, including the incidents captured by [`postmortem-001`](../postmortems/postmortem-001-workflow-bypass.md) and [`postmortem-002`](../postmortems/postmortem-002-poc-outcome-mismatch.md).
 
 Demand here is read inclusively: this template's own dogfooding *counts as demand* for downstream projects, because patterns named here propagate through every fork. Waiting for a downstream PR review to cite a missing handle before adding the handle is a slower feedback loop than carrying lessons forward proactively from existing postmortems.
 
@@ -48,19 +48,19 @@ Cite from any file by ID alone — the prefix and range tell the reader which fi
 1. **The list isn't exhaustive.** Functional (Functor, Monad, Lens, Reader) and frontend-specific (Hooks, Container/Presenter, Compound Components) patterns still sit outside it. Concurrency now has a live sibling catalog at [`design-patterns-concurrency.md`](design-patterns-concurrency.md), but Actor, Reactor, and structured concurrency stay there as external pointers rather than internal IDs; cite an external authority for those instead of inventing a local handle.
 2. **GoF reflects 1994 constraints.** Singleton, Visitor, and Interpreter are particularly likely to be anti-patterns today. Use the per-entry "When NOT" notes in [`design-patterns-gof.md`](design-patterns-gof.md) before reaching for them.
 3. **Language matters.** Iterator, Strategy, Command, Observer, and Template Method are mostly language features in modern languages. The per-entry notes flag this where it applies.
-4. **No backing ADR.** This guide is Docs-owned and advisory. Adding new patterns needs a Docs PR; tightening an entry to block-on-sight needs an ADR (because that changes the Critic/Judge contract). New entries go into the appropriate namespace without renumbering existing IDs; postmortem-derived entries use the next available `CAP<N>` / `CP<N>` number, concurrency entries use `CCP<N>`, data / persistence entries use `CDP<N>`, and integration / messaging entries use `CIP<N>`.
+4. **No backing ADR.** This guide is Docs-owned and advisory. Adding new patterns needs a Docs PR; tightening an entry to block-on-sight needs an ADR because that changes the review contract. New entries go into the appropriate namespace without renumbering existing IDs; postmortem-derived entries use the next available `CAP<N>` / `CP<N>` number, concurrency entries use `CCP<N>`, data / persistence entries use `CDP<N>`, and integration / messaging entries use `CIP<N>`.
 
 ---
 
 ## Anti-patterns generalized from this template's postmortems
 
-These are the highest-leverage entries in this guide. Each is an orchestration-layer lesson translated to the code layer — the postmortems documented an *orchestration-layer* incident, but the underlying failure mode applies just as cleanly to code. Each entry links back to (a) the originating postmortem and (b) the orchestration-layer counterpart in [`repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md), so a reader who wants the full provenance can trace the lesson end-to-end.
+These are the highest-leverage entries in this guide. Each translates an orchestration-layer incident into an analogous code-layer failure mode and links to the originating postmortem.
 
 Important framing: the originating incidents were *not* code-layer bugs. The entries below are the code-layer *analog* of the orchestration-layer pattern, not a re-derivation from a code-layer postmortem.
 
 ### CAP1 — Goal Substitution
 
-**Generalized from**: [PM-002](../postmortems/postmortem-002-poc-outcome-mismatch.md) ("Prompts 1–6 produced architecture instead of working demo"). Orchestration-layer counterpart: [`AP4` in `repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md#ap4--goal-substitution).
+**Generalized from**: [PM-002](../postmortems/postmortem-002-poc-outcome-mismatch.md) ("Prompts 1–6 produced architecture instead of working demo").
 
 **Code-layer description**: a feature is defined as a list of artifacts (endpoints, classes, files, tables) and the implementation produces exactly those, satisfying the spec but missing what the user actually needed to do. The architectural equivalent of building all the requested files but never enabling the workflow they were supposed to support. APIs that match the IDL but can't be composed into the user journey. Database schemas that store the requested fields but make the canonical query path expensive. Microservices split by the lines named in the design doc instead of the lines that match real call patterns.
 
@@ -77,7 +77,7 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 
 ### CAP2 — Implicit Contract
 
-**Generalized from**: [PM-001](../postmortems/postmortem-001-workflow-bypass.md) ("Workflow bypass on Phases 2–7"). Orchestration-layer counterpart: [`AP3` in `repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md#ap3--implicit-contract).
+**Generalized from**: [PM-001](../postmortems/postmortem-001-workflow-bypass.md) ("Workflow bypass on Phases 2–7").
 
 **Code-layer description**: a load-bearing precondition exists only in the author's head, not in the type system, in a runtime check, in a test, or in documentation that a future maintainer will encounter. The function works when called correctly; "called correctly" is unwritten. Common code-layer manifestations: undocumented invariants on input ranges, runtime checks that should be type checks, "this works as long as you call `init()` first," ordering dependencies between mutator calls, mutex acquisition order that prevents deadlock only if you remember which one to grab first, configuration values that must agree across two files but aren't validated to.
 
@@ -94,7 +94,7 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 
 ### CP1 — Owner-Keyed Concurrent State
 
-**Generalized from**: [PM-003](../postmortems/postmortem-003-active-md-merge-conflict.md) ("repo-local working-memory merge conflict between parallel agent PRs"). Orchestration-layer counterpart: [`P7` in `repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md#p7--owner-keyed-concurrent-state). This is a *positive* pattern — a recommended shape — not an anti-pattern. The corresponding anti-pattern is `AP6` Single-Writer Shared State in the orchestration file; the code-layer reverse of `CP1` is the absence of `CP1` where it was needed.
+**Generalized from**: [PM-003](../postmortems/postmortem-003-active-md-merge-conflict.md) ("repo-local working-memory merge conflict between parallel agent PRs"). This is a *positive* pattern, not an anti-pattern.
 
 **Code-layer description**: when multiple writers share state, partition by an owner identifier (process ID, thread ID, request ID, tenant ID, region) with a multi-section schema rather than single-writer rewrite. Each writer owns its own section; readers merge. Direct application to multi-process, multi-thread, distributed, and multi-tenant code. Examples: per-tenant rows in a shared table keyed by `tenant_id`; per-shard counters in a key-value store rather than a single contended counter; per-region state files in S3 keyed by region prefix; per-worker queues that a coordinator drains rather than a single queue with N workers contending; per-connection state in a server rather than shared mutable state guarded by a global lock.
 
@@ -113,7 +113,7 @@ Important framing: the originating incidents were *not* code-layer bugs. The ent
 - [`design-patterns-concurrency.md`](design-patterns-concurrency.md) — sibling file, concurrency entries `CCP1`–`CCP8`; Actor, Reactor, and structured concurrency remain pointer-only there.
 - [`design-patterns-data.md`](design-patterns-data.md) — sibling file, data / persistence entries `CDP1`–`CDP14`.
 - [`design-patterns-integration.md`](design-patterns-integration.md) — sibling file, integration / messaging entries `CIP1`–`CIP11`.
-- [`.context/rules/repo_orchestration_patterns.md`](../../.context/rules/repo_orchestration_patterns.md) — orchestration-layer patterns (`P1`–`P9`, `AP1`–`AP8`) for *this* template, not for downstream code projects. The two files are complementary; reviewers cite from one or the other depending on what layer the change touches.
-- [`.context/rules/domain_code_quality.md`](../../.context/rules/domain_code_quality.md) — code-layer Hard/Soft rules (`H1`–`H8`, `S1`–`S6`). Patterns here parallel those rules at a higher level of abstraction; rules say "do this," patterns say "this is what we call this shape."
+- [`repo-orchestration-patterns-reference.md`](repo-orchestration-patterns-reference.md) — detailed advisory orchestration vocabulary.
+- [`AGENTS.md`](../../AGENTS.md) — active language-neutral code-quality requirements.
 - [`docs/postmortems/README.md`](../postmortems/README.md) — index of postmortems, including the three (PM-001, PM-002, PM-003) that the entries above generalize from.
 - [`docs/decisions/adr-020-orchestration-patterns-reference.md`](../decisions/adr-020-orchestration-patterns-reference.md) — ADR ratifying the orchestration-layer patterns file; this file is the parallel code-layer addition under sub-issue 5 of parent epic #251.

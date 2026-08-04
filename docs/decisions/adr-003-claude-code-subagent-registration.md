@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (per-role `model:` choice superseded by [ADR-019](./adr-019-per-role-model-tiering.md); the "Claude shim points back to `.github/agents/<role>.agent.md` for the canonical body" claim superseded in part by [ADR-023](./adr-023-shared-subagent-canonical.md) — both vendor folders now point at `.agents/<role>.md`)
+Superseded by [ADR-031](./adr-031-agent-model-roi-benchmark-policy.md)
 
 ## Date
 

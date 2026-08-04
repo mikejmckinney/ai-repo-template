@@ -31,18 +31,12 @@
 #   - Uses squash merge for clean history
 #   - Branch protection rules still apply
 #
-# Setup:
-#   - CLAUDE_PAT repo secret is required for the merge and post-merge
-#     issue/comment steps. A merge performed with the built-in
-#     GITHUB_TOKEN does NOT fire downstream workflow_run events on main,
-#     which would break any post-merge automation that depends on them.
-#     CLAUDE_PAT needs:
-#     `contents: write` + `pull-requests: write` + `issues: write`.
-#   - All READ operations (gh pr view, GraphQL reviewThreads, etc.) use
-#     the built-in GITHUB_TOKEN with scopes declared in this workflow's
-#     `permissions:` block. This keeps CLAUDE_PAT's blast radius narrow
-#     and avoids the trap where the PAT silently lacks Checks/Statuses
-#     read — `statusCheckRollup` requires both.
+# Authentication:
+#   - The job-scoped GITHUB_TOKEN performs reads and writes with the explicit
+#     permissions below. Merges performed with it do not trigger new push
+#     workflows. This is intentional: the strict main ruleset already requires
+#     current CI and lint results before merge, and no post-merge automation
+#     consumes duplicate main-branch runs.
 #   - If you have branch protection requiring reviews, either:
 #     (a) Add github-actions[bot] to bypass list, OR
 #     (b) Count the bot reviewers (Gemini/Claude/Copilot) as approvals
@@ -60,7 +54,6 @@ on:
   # The three names below must match the `name:` fields in:
   #   - ci-tests.yml              → "CI Tests"
   #   - lint-and-format.yml       → "Lint and Format"
-  #   - agent-fix-reviews.yml     → "Auto-Fix Reviews (Claude)"
   #
   # If ANY of those names are changed, update here too — an exact string
   # match is required for `workflow_run` to fire. Without the match,
@@ -111,14 +104,9 @@ jobs:
     timeout-minutes: 10
 
     permissions:
-      # GITHUB_TOKEN is only used by the read-only eligibility step —
-      # all write operations (merge, linked-issue close, drain queue,
-      # post-merge comment) explicitly use CLAUDE_PAT. Keeping
-      # GITHUB_TOKEN read-only shrinks the blast radius of
-      # pull_request_target runs on label events.
-      contents: read
-      pull-requests: read
-      issues: read
+      contents: write
+      pull-requests: write
+      issues: write
       # statusCheckRollup aggregates both Check Runs (checks:) and
       # Commit Statuses (statuses:). Declare both so GITHUB_TOKEN can
       # read it without needing a PAT. `actions: read` is also required
@@ -131,25 +119,10 @@ jobs:
       actions: read
 
     steps:
-      - name: Verify required secrets
-        env:
-          CLAUDE_PAT: ${{ secrets.CLAUDE_PAT }}
-        run: |
-          if [[ -z "$CLAUDE_PAT" ]]; then
-            echo "::error::Missing required secret: CLAUDE_PAT"
-            echo "::error::Per-repo:  Settings → Secrets and variables → Actions → New repository secret"
-            echo "::error::Org-wide:  Org settings → Secrets and variables → Actions → New organization secret (then grant this repo access)"
-            echo "::error::See docs/guides/agent-pipeline.md → Required secrets for required PAT scopes."
-            exit 1
-          fi
-
       - name: Find PRs ready to merge
         id: find
         env:
-          # Read-only step: use the built-in GITHUB_TOKEN with the
-          # workflow-declared permissions. Do NOT use CLAUDE_PAT here —
-          # fine-grained PATs frequently lack Checks/Statuses read,
-          # which silently breaks the statusCheckRollup query.
+          # statusCheckRollup requires Checks, Statuses, and Actions read.
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           # Pass event data via env vars (not inline interpolation) to
@@ -371,7 +344,7 @@ jobs:
 
           # Slow-bot settle window (issue #182): on fast PRs, CI can finish
           # before Gemini/Copilot reviewers post. Give them a bounded chance
-          # to weigh in before merge so findings can flow through claude-fix.
+          # to finish before merge when formal reviews are configured externally.
           # Settle is anchored on the PR's head SHA — a review only counts
           # toward "settled" if it was submitted against the current head
           # commit. This closes the rebase/cherry-pick gap where an older
@@ -481,7 +454,7 @@ jobs:
       - name: Squash and merge
         if: steps.find.outputs.eligible == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.find.outputs.number }}
           REPO: ${{ github.repository }}
         run: |
@@ -501,7 +474,7 @@ jobs:
       - name: Close linked issues
         if: steps.find.outputs.eligible == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.find.outputs.number }}
           PR_BODY: ${{ steps.find.outputs.body }}
           REPO: ${{ github.repository }}
@@ -519,32 +492,9 @@ jobs:
       - name: Post merge confirmation
         if: steps.find.outputs.eligible == 'true'
         env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.find.outputs.number }}
           REPO: ${{ github.repository }}
         run: |
           gh pr comment "$PR_NUMBER" --repo "$REPO" \
             --body "🎉 **Auto-merged.** All CI checks passed, all review comments resolved."
-
-      - name: Drain Copilot queue
-        # NOTE: this drain logic is intentionally duplicated from agent-release-slot.yml.
-        # Per issue #51 authoritative decisions: do NOT extract to a composite action
-        # (YAGNI until a fourth trigger needs it).
-        #
-        # Only drain when the merged branch was copilot/*. A non-copilot PR
-        # doesn't consume a Copilot slot, so draining on its merge would
-        # promote a queued issue without freeing a slot (off-by-one).
-        if: steps.find.outputs.eligible == 'true' && startsWith(steps.find.outputs.branch, 'copilot/')
-        env:
-          GH_TOKEN: ${{ secrets.CLAUDE_PAT }}
-          REPO: ${{ github.repository }}
-        run: |
-          next=$(gh issue list --repo "$REPO" --state open \
-            --label "copilot:queued" --json number,createdAt \
-            --jq 'sort_by(.createdAt) | .[0].number // empty')
-          if [[ -n "$next" ]]; then
-            echo "Promoting issue #$next from queued to ready"
-            gh issue edit "$next" --repo "$REPO" \
-              --remove-label "copilot:queued" \
-              --add-label "copilot:ready"
-          fi

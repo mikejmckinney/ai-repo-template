@@ -1,0 +1,229 @@
+#!/usr/bin/env bash
+# Create or append the daily umbrella issue from daily-retro.json.
+# Usage: create-umbrella-issue.sh <daily-retro.json>
+set -euo pipefail
+
+usage() {
+  echo "Usage: create-umbrella-issue.sh <daily-retro.json>" >&2
+  exit 2
+}
+
+DAILY_JSON="${1:-}"
+[[ -n "$DAILY_JSON" && -f "$DAILY_JSON" ]] || usage
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/umbrella-lifecycle.sh
+source "$REPO_ROOT/scripts/workflows/lib/umbrella-lifecycle.sh"
+python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/validate-postmerge-retro-daily.py" "$DAILY_JSON"
+
+REPO="${GITHUB_REPOSITORY:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
+RUN_DATE="$(jq -r .run_date "$DAILY_JSON")"
+WINDOW_HOURS="$(jq -r '.window_hours // 24' "$DAILY_JSON")"
+MARKER="<!-- postmerge-retro:daily:${RUN_DATE} -->"
+WINDOW_END="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+FIX_PR_LINK="(pending — fix job)"
+
+WORKDIR="$(mktemp -d)"
+trap 'rm -rf "$WORKDIR"' EXIT
+
+FINDINGS_COUNT="$(python3 "$REPO_ROOT/scripts/workflows/postmerge-retro/count-daily-retro-findings.py" "$DAILY_JSON")"
+python3 "$SCRIPT_DIR/render-evidence-coverage-meta.py" --section meta "$DAILY_JSON" >"$WORKDIR/evidence-coverage-block.txt" 2>/dev/null \
+  || : >"$WORKDIR/evidence-coverage-block.txt"
+python3 "$SCRIPT_DIR/render-evidence-coverage-meta.py" --section summary "$DAILY_JSON" >"$WORKDIR/evidence-summary-block.txt" 2>/dev/null \
+  || : >"$WORKDIR/evidence-summary-block.txt"
+if [[ "$FINDINGS_COUNT" -eq 0 ]]; then
+  echo "Zero findings in daily retro; skipping umbrella issue"
+  exit 0
+fi
+
+python3 - "$DAILY_JSON" "$WORKDIR/rows.txt" "$SCRIPT_DIR" <<'PY'
+import importlib.util
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+def _load_table():
+    path = Path(sys.argv[3]) / "umbrella-findings-table.py"
+    spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+data = json.loads(Path(sys.argv[1]).read_text())
+script_dir = Path(sys.argv[3])
+extract = script_dir / "extract-suggested-fix.py"
+table = _load_table()
+rows = []
+for f in data.get("findings") or []:
+    body = f.get("body") or ""
+    suggested = subprocess.check_output(
+        [sys.executable, str(extract), "-"],
+        input=body,
+        text=True,
+    ).strip()
+    capability = f.get("verification_capability") or {}
+    environment = capability.get("environment")
+    if environment and environment != "isolated-worktree":
+        suggested = f"Human follow-up required ({environment} verification): {suggested}"
+    elif not environment:
+        suggested = f"Human follow-up required (verification capability missing): {suggested}"
+    rows.append(table.format_row(f, suggested_fix=suggested))
+Path(sys.argv[2]).write_text("\n".join(rows) + ("\n" if rows else ""))
+PY
+
+PR_LIST="$(jq -r '[.prs[] | "#" + (.|tostring)] | join(", ")' "$DAILY_JSON")"
+
+find_issue() {
+  bash "$SCRIPT_DIR/find-umbrella-issue.sh" "$RUN_DATE" 2>/dev/null || true
+}
+
+update_issue_evidence_blocks() {
+  local issue_num="$1"
+  if [[ ! -s "$WORKDIR/evidence-coverage-block.txt" && ! -s "$WORKDIR/evidence-summary-block.txt" ]]; then
+    return 0
+  fi
+  local body merged_coverage
+  body="$(gh issue view "$issue_num" -R "$REPO" --json body --jq .body)"
+  merged_coverage="$(
+    python3 - "$body" "$DAILY_JSON" "$REPO_ROOT" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+body = sys.argv[1]
+data = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
+repo_root = Path(sys.argv[3])
+path = repo_root / "scripts/workflows/postmerge-retro/render-evidence-coverage-meta.py"
+spec = importlib.util.spec_from_file_location("render_evidence_coverage_meta", path)
+mod = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+records = data.get("pr_evidence_coverage") or []
+body = mod.merge_summary_into_body(body, records)
+body = mod.append_coverage_into_body(body, records)
+print(body, end="")
+PY
+  )"
+  if [[ "$merged_coverage" != "$body" ]]; then
+    printf '%s' "$merged_coverage" >"$WORKDIR/merged-coverage.md"
+    umbrella_edit_issue_body "$REPO" "$issue_num" "$WORKDIR/merged-coverage.md"
+    echo "Updated evidence summary/coverage on umbrella issue #${issue_num}" >&2
+  fi
+}
+
+append_to_issue() {
+  local issue_num="$1"
+  local body merged
+  body="$(gh issue view "$issue_num" -R "$REPO" --json body --jq .body)"
+  umbrella_require_marker "$body" "$MARKER" "$issue_num"
+
+  new_rows=""
+  while IFS= read -r row; do
+    [[ -z "$row" ]] && continue
+    key="$(sed -n 's/.*`\([^`]*\)`.*/\1/p' <<<"$row")"
+    [[ -z "$key" ]] && continue
+    if grep -Fq "\`${key}\`" <<<"$body"; then
+      echo "Skip append (exists): ${key}" >&2
+      continue
+    fi
+    new_rows+="${row}"$'\n'
+  done <"$WORKDIR/rows.txt"
+
+  if [[ -z "${new_rows//[$'\t\r\n ']/}" ]]; then
+    echo "No new rows to append to issue #${issue_num}" >&2
+    update_issue_evidence_blocks "$issue_num"
+    return 0
+  fi
+
+  printf '%s' "$new_rows" >"$WORKDIR/new-rows.txt"
+  printf '%s' "$body" >"$WORKDIR/existing-body.md"
+  merged="$(
+    python3 - "$WORKDIR/existing-body.md" "$WORKDIR/new-rows.txt" "$SCRIPT_DIR" <<'PY'
+import importlib.util
+import re
+import sys
+from pathlib import Path
+
+def _load_table():
+    path = Path(sys.argv[3]) / "umbrella-findings-table.py"
+    spec = importlib.util.spec_from_file_location("umbrella_findings_table", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+table = _load_table()
+body = open(sys.argv[1], encoding="utf-8").read()
+body, migrated = table.migrate_findings_table(body)
+if migrated:
+    print("Migrated legacy umbrella findings table header", file=sys.stderr)
+new_rows = [ln for ln in open(sys.argv[2], encoding="utf-8").read().splitlines() if ln.strip()]
+if "## Meta" in body:
+    head, tail = body.split("## Meta", 1)
+    print(head.rstrip() + "\n" + "\n".join(new_rows) + "\n\n## Meta" + tail)
+else:
+    print(body.rstrip() + "\n" + "\n".join(new_rows) + "\n")
+PY
+  )"
+  printf '%s' "$merged" >"$WORKDIR/merged-body.md"
+  umbrella_edit_issue_body "$REPO" "$issue_num" "$WORKDIR/merged-body.md"
+  update_issue_evidence_blocks "$issue_num"
+  echo "Appended findings to umbrella issue #${issue_num}" >&2
+}
+
+create_new_issue() {
+  local title body_file issue_num
+  title="Post-merge retro daily: ${RUN_DATE} (${PR_LIST})"
+  body_file="$WORKDIR/umbrella.md"
+  cp "$REPO_ROOT/.github/templates/postmerge-retro-umbrella.md" "$body_file"
+  sed -i \
+    -e "s/{{RUN_DATE}}/${RUN_DATE}/g" \
+    -e "s/{{WINDOW_HOURS}}/${WINDOW_HOURS}/g" \
+    -e "s/{{WINDOW_END}}/${WINDOW_END}/g" \
+    -e "s/{{PR_LIST}}/${PR_LIST}/g" \
+    -e "s|{{REPO}}|${REPO}|g" \
+    -e "s|{{FIX_PR_LINK}}|${FIX_PR_LINK}|g" \
+    "$body_file"
+  python3 - "$body_file" "$WORKDIR/rows.txt" "$WORKDIR/evidence-coverage-block.txt" "$WORKDIR/evidence-summary-block.txt" <<'PY'
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+text = p.read_text().replace(
+    "{{FINDING_ROWS}}",
+    Path(sys.argv[2]).read_text(encoding="utf-8").rstrip()
+    + ("\n" if Path(sys.argv[2]).read_text(encoding="utf-8").strip() else ""),
+)
+coverage = Path(sys.argv[3]).read_text(encoding="utf-8") if Path(sys.argv[3]).exists() else ""
+summary = Path(sys.argv[4]).read_text(encoding="utf-8") if Path(sys.argv[4]).exists() else ""
+text = text.replace("{{EVIDENCE_COVERAGE}}", coverage)
+text = text.replace("{{EVIDENCE_TRUNCATION_SUMMARY}}", summary)
+p.write_text(text)
+PY
+  issue_num="$(umbrella_create_issue "$REPO" "$title" "$body_file" agent-suggested)"
+  printf '%s' "$issue_num" >"$WORKDIR/issue-num.txt"
+}
+
+normalize_issue_num() {
+  tr -d '[:space:]' <<<"${1:-}"
+}
+
+UMBRELLA_ISSUE="$(normalize_issue_num "$(find_issue)")"
+if [[ -n "$UMBRELLA_ISSUE" ]]; then
+  append_to_issue "$UMBRELLA_ISSUE"
+else
+  create_new_issue
+  UMBRELLA_ISSUE="$(normalize_issue_num "$(cat "$WORKDIR/issue-num.txt")")"
+fi
+
+[[ "$UMBRELLA_ISSUE" =~ ^[0-9]+$ ]] || {
+  echo "::error::Umbrella issue number invalid after create/find: '${UMBRELLA_ISSUE}'" >&2
+  exit 1
+}
+
+bash "$SCRIPT_DIR/write-umbrella-issue-ref.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
+bash "$SCRIPT_DIR/post-daily-retro-json-comment.sh" "$DAILY_JSON" "$UMBRELLA_ISSUE"
+bash "$SCRIPT_DIR/append-merge-index-markers.sh" "$UMBRELLA_ISSUE" "$DAILY_JSON"
+
+echo "Umbrella issue step complete for ${RUN_DATE} (#${UMBRELLA_ISSUE})"

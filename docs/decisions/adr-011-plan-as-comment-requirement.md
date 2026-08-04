@@ -2,11 +2,26 @@
 
 ## Status
 
-Accepted (superseded in part by ADR-026)
+Accepted
 
 ## Date
 
 2026-04-24
+
+## Amendment 2026-07-19 — New plans move into issue bodies
+
+New issues store one delimited `implementation-plan:v2` block in the issue body.
+Agents edit only that block, preserve requester-owned content outside it, and
+maintain one current plan plus bounded material revision history. Existing v1
+plan comments are grandfathered; all other planning rationale remains active.
+
+## Amendment 2026-07-15 — One mutable canonical plan
+
+New work uses one issue comment marked `implementation-plan:v1`. Material changes
+are merged into that comment and recorded in its bounded `Revision history`
+section; agents do not append separate plan-revision comments. The PR keeps one
+canonical permalink and a current summary. Existing multi-comment plan histories
+are grandfathered and are not rewritten.
 
 ## Context
 
@@ -49,9 +64,9 @@ issue #155 to avoid bundling unresolved design questions into v1.
 
 We will require:
 
-1. **Plan as a comment** — every implementer (human or agent) posts an
-   Implementation Plan as a comment on the issue before writing code,
-   using the template at `.github/PLAN_TEMPLATE.md`.
+1. **Plan as a comment** — every implementer (human or agent) posts one mutable
+   Implementation Plan comment on the issue before writing code, using the
+   marker and template at `.github/PLAN_TEMPLATE.md`.
 2. **PR-must-link-issue** — every PR body must reference an issue or
    parent PR (`Closes #NN`, `Refs #NN`, `Implements ADR-NNN`, etc.).
 3. **Single template, no tiering.** The template scales with the work
