@@ -23,8 +23,10 @@ onboarding, and structural repository checks; full Bats runs once at the top
 level through `scripts/verify-local.sh --full`.
 
 Check `169-task-parallelism-preflight.sh` validates the tracked Phase 0A files,
-JSON, schemas, and exact asset checksums. Its network, credential, subprocess,
-negative-fixture, and regeneration behaviors remain in the focused Bats suite.
+JSON, schemas, and exact asset checksums plus the blocked Phase 0B preparation,
+scaffold, prompts, and run policy. Network, credential, subprocess,
+negative-fixture, regeneration, drift, plan, and Gate 0 behaviors remain in the
+focused Bats suites.
 
 Modules expect:
 

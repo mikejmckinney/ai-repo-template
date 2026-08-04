@@ -17,6 +17,7 @@ path.
 | `postmerge-retro-batch.bats` | Daily retro evidence and lifecycle behavior |
 | `shell-tooling-policy.bats` | Bounded production shell command policy |
 | `task-parallelism-preflight.bats` | No-spend campaign, exact assets, isolation, credential, and approval controls |
+| `task-parallelism-phase-0b.bats` | Blocked Phase 0B scaffold, run-plan, drift, and Gate 0 behavior |
 | `verify-env.bats` | Environment checks |
 | `verify-pr.bats` | Change-class classifier fixtures (ADR-016) |
 | `weekly-classifier.bats` | Weekly review classifier behavior |

@@ -1,4 +1,4 @@
-# Task-Parallelism Benchmark: Phase 0A
+# Task-Parallelism Benchmark Preparation
 
 Phase 0A is the deterministic, no-spend readiness boundary for issue #545. It
 validates the tracked Vector Siege campaign record and exact placeholder assets;
@@ -40,3 +40,33 @@ Passing Phase 0A means the local apparatus is reproducible and fail-closed. It
 does not approve candidate invocations, paid generation, network access,
 Cloudflare changes, deployment, publication, A2A, portability tests, or an
 ADR-031 policy change. Phase 0B requires a separate explicit maintainer approval.
+
+## Phase 0B Preparation
+
+The tracked Phase 0B preparation contract freezes the candidate runtime,
+scaffold, prompts, ten-run order, retry limits, and Gate 0 thresholds without
+creating a candidate worktree or starting Codex:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-validate
+make -C scripts/benchmark/task-parallelism phase-0b-plan
+jq '{execution_status, candidate_processes_started, assignments, gate_0}' \
+  .artifacts/task-parallelism/phase-0b-run-plan.json
+bats --tap scripts/tests/task-parallelism-phase-0b.bats
+```
+
+Three completed Codex contexts verified `gpt-5.6-luna` with reasoning effort
+`max` on `codex-cli 0.146.0`; the bounded evidence record is under `evidence/`.
+The candidate command repeats model and effort explicitly and overrides the
+repository default with `--sandbox workspace-write`.
+
+The frozen scaffold uses Node 24.14.0, npm 11.9.0, Phaser 4.2.1, Vite 8.2.0,
+TypeScript 7.0.2, Vitest 4.1.10, Playwright 1.62.1, and Node types 26.1.2. It
+retains empty game, shared-simulation, API, migration, evaluator-visible asset,
+unit-test, and end-to-end-test surfaces. Its package lock and every tracked
+source/configuration file are hash-checked before a run plan is emitted.
+
+The preparation manifest remains `execution.status: blocked`. A later approval
+must create and record the frozen base before any of the five Arm A and five Arm
+B assignments can execute. This preparation approval does not authorize those
+candidate runs.

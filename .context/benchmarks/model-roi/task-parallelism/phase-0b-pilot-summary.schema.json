@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-summary.v1.json",
+  "title": "Task parallelism Phase 0B pilot summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "assigned_runs",
+    "terminal_runs",
+    "required_telemetry_fraction",
+    "harness_reliability_fraction",
+    "arm_b_fanout_elections"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-summary.v1" },
+    "assigned_runs": { "const": 10 },
+    "terminal_runs": { "type": "integer", "minimum": 0, "maximum": 10 },
+    "required_telemetry_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+    "harness_reliability_fraction": { "type": "number", "minimum": 0, "maximum": 1 },
+    "arm_b_fanout_elections": { "type": "integer", "minimum": 0, "maximum": 5 }
+  }
+}

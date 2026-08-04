@@ -38,6 +38,8 @@ scripts/diagnose-opencode-session.sh
 scripts/archive-opencode-database.sh
 make -C scripts/benchmark/task-parallelism assets-check
 make -C scripts/benchmark/task-parallelism preflight
+make -C scripts/benchmark/task-parallelism phase-0b-validate
+make -C scripts/benchmark/task-parallelism phase-0b-plan
 git diff --check
 ```
 
@@ -157,8 +159,8 @@ provider cascade instead of consuming the 90- or 120-minute workflow budget.
 | `scripts/workflows/lib/` | Shared provider, evidence, priority, and lifecycle helpers |
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
-| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 tracked Phase 0A campaign, schemas, task, and exact placeholder assets |
-| `scripts/benchmark/task-parallelism/` | Deterministic asset generator and isolated no-spend preflight |
+| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 Phase 0A preflight plus blocked Phase 0B scaffold, runtime evidence, prompts, schemas, and run policy |
+| `scripts/benchmark/task-parallelism/` | Deterministic asset generator, isolated Phase 0A preflight, and non-executing Phase 0B planner |
 | `.devcontainer/devcontainer.json` | Canonical repository-owned Codespaces lifecycle |
 | `.config/codespace-tools.json` | Canonical Codespaces tool versions, release integrity, and profiles |
 | `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |

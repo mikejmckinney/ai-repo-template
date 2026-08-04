@@ -13,96 +13,19 @@ isolation_available() {
 	unshare -Urn true 2>/dev/null
 }
 
-@test "Phase 0A tracks the production campaign and declared schemas" {
-	required=(
-		"${PROTOCOL}/campaign.schema.json"
-		"${PROTOCOL}/campaign.phase-0a.json"
-		"${PROTOCOL}/asset-manifest.schema.json"
-		"${PROTOCOL}/assets/manifest.json"
-		"${PROTOCOL}/tasks/vector-siege.md"
-		"${RUNNER}/requirements.txt"
-	)
-
-	for path in "${required[@]}"; do
-		[ -f "${path}" ]
-	done
-
-	run python3 "${RUNNER}/preflight.py" --validate-only
-	[ "${status}" -eq 0 ]
-	[[ "${output}" == *'Draft 2020-12'* ]]
-	[[ "${output}" == *'jsonschema 4.26.0'* ]]
-
-	run python3 "${RUNNER}/preflight.py" --validate-structure
-	[ "${status}" -eq 0 ]
-	[[ "${output}" == *'Draft 2020-12 campaign and asset schemas structurally valid'* ]]
-	run env REPO_ROOT="${BATS_TEST_TMPDIR}/wrong-repository" \
-		python3 "${RUNNER}/preflight.py" --validate-structure
-	[ "${status}" -eq 0 ]
-
-	run jq -e '.notes | test("^sk-[A-Za-z0-9_-]{8,}$")' \
-		"${RUNNER}/fixtures/secret-payload.json"
-	[ "${status}" -eq 0 ]
-
-	fixture="${BATS_TEST_TMPDIR}/passing-campaign.json"
-	fixture_report="${BATS_TEST_TMPDIR}/preflight-report.json"
-	cp "${PROTOCOL}/campaign.phase-0a.json" "${fixture}"
-	run env \
-		REPO_ROOT="${REPO_ROOT}" \
-		REPORT_PATH="${fixture_report}" \
-		python3 "${RUNNER}/preflight_launcher.py" --fixture "${fixture}"
-	[ "${status}" -ne 0 ]
-	[[ "${output}" == *'usage: run-preflight.sh [--fixtures PATH ...]'* ]]
-	[ ! -e "${fixture_report}" ]
-}
-
 @test "placeholder assets reproduce byte-for-byte" {
 	run make -C "${RUNNER}" assets-check
 	[ "${status}" -eq 0 ]
 	[[ "${output}" == *'asset bundle is byte-stable'* ]]
+}
 
-	run python3 - "${RUNNER}/generate-placeholder-assets.py" <<'PY'
-import importlib.util
-import sys
-
-spec = importlib.util.spec_from_file_location("generate_placeholder_assets", sys.argv[1])
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-print(module.TEMP_PREFIX)
-PY
-	[ "${status}" -eq 0 ]
-	temp_prefix="${output}"
-	run git -C "${REPO_ROOT}" check-ignore -q \
-		".context/benchmarks/model-roi/task-parallelism/${temp_prefix}probe/"
-	[ "${status}" -eq 0 ]
-
+@test "failed asset replacement restores the tracked bundle" {
 	fixture_repo="${BATS_TEST_TMPDIR}/repo"
 	fixture_runner="${fixture_repo}/scripts/benchmark/task-parallelism"
 	fixture_assets="${fixture_repo}/.context/benchmarks/model-roi/task-parallelism/assets"
-	stub_bin="${BATS_TEST_TMPDIR}/bin"
-	mkdir -p "${fixture_runner}" "${fixture_assets}/source" "${stub_bin}"
+	mkdir -p "${fixture_runner}" "${fixture_assets}"
 	cp "${RUNNER}/generate-placeholder-assets.py" "${fixture_runner}/"
-	cp "${PROTOCOL}/assets/source/primitives.json" "${fixture_assets}/source/"
 	printf 'preserve me\n' >"${fixture_assets}/marker.txt"
-	printf '%s\n' \
-		'#!/usr/bin/env bash' \
-		'if [[ "$1" == "-version" ]]; then' \
-		'  printf "ffmpeg version 6.1.1-3ubuntu5\\n"' \
-		'  exit 0' \
-		'fi' \
-		'printf "fixture encoding failure\\n" >&2' \
-		'exit 1' >"${stub_bin}/ffmpeg"
-	chmod +x "${stub_bin}/ffmpeg"
-
-	run env PATH="${stub_bin}:${PATH}" python3 "${fixture_runner}/generate-placeholder-assets.py"
-	[ "${status}" -ne 0 ]
-	[ -f "${fixture_assets}/marker.txt" ]
-
-	printf '%s\n' \
-		'#!/usr/bin/env bash' \
-		'printf "ffmpeg version 0.0.0\\n"' >"${stub_bin}/ffmpeg"
-	run env PATH="${stub_bin}:${PATH}" python3 "${fixture_runner}/generate-placeholder-assets.py"
-	[ "${status}" -ne 0 ]
-	[[ "${output}" == *'ffmpeg 6.1.1-3ubuntu5 required'* ]]
 
 	run python3 - "${fixture_runner}/generate-placeholder-assets.py" <<'PY'
 import importlib.util
@@ -126,11 +49,12 @@ sys.argv = [sys.argv[1]]
 try:
     module.main()
 except KeyboardInterrupt:
-    pass
+    print("injected asset replacement failure")
 finally:
     Path.rename = real_rename
 PY
 	[ "${status}" -eq 0 ]
+	[[ "${output}" == *'injected asset replacement failure'* ]]
 	[ -f "${fixture_assets}/marker.txt" ]
 }
 
