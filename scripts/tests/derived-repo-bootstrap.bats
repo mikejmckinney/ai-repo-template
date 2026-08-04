@@ -136,6 +136,23 @@ run_bootstrap() {
   done
 }
 
+@test "credential guidance distinguishes Actions destinations and warns about the global Cloudflare key" {
+  run python3 - "$REPO_ROOT/AI_REPO_GUIDE.md" \
+    "$REPO_ROOT/docs/guides/derived-repository-bootstrap.md" <<'PY'
+import sys
+from pathlib import Path
+
+repo_guide = " ".join(Path(sys.argv[1]).read_text(encoding="utf-8").split())
+bootstrap_guide = " ".join(Path(sys.argv[2]).read_text(encoding="utf-8").split())
+
+assert "without publishing provider keys to Actions" not in repo_guide
+assert "entries marked `codespaces: true` and `actions: false` are never published to Actions" in repo_guide
+assert "`CLOUDFLARE_GLOBAL_API_KEY` is an account-wide, unscoped legacy credential" in bootstrap_guide
+PY
+
+  [ "$status" -eq 0 ]
+}
+
 @test "setup secret check resolves the canonical manifest from the repository root" {
   run grep -F '_credential_manifest="$SCRIPT_DIR/../../.config/derived-repo-secrets.json"' \
     "$REPO_ROOT/scripts/setup/60-check-secrets.sh"

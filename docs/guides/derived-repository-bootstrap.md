@@ -102,6 +102,14 @@ with the `repo` and `workflow` scopes reported by
 running in each covered Codespace, so do not reuse an account-administration
 token.
 
+`CLOUDFLARE_GLOBAL_API_KEY` is an account-wide, unscoped legacy credential
+retained for explicitly requested interactive legacy API authentication.
+Cloudflare documents that it can access all of a user's resources with the
+user's full permissions and recommends scoped API tokens instead. Prefer
+`CLOUDFLARE_API_KEY`, and do not configure the global key as a Codespaces user
+secret when no legacy consumer requires it. See [Cloudflare's Global API key
+limitations](https://developers.cloudflare.com/fundamentals/api/get-started/keys/#limitations).
+
 ## Visibility behavior
 
 For a Codespaces user secret with `selected` visibility, the script calls the
