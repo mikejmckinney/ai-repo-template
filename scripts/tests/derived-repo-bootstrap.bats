@@ -136,18 +136,22 @@ run_bootstrap() {
   done
 }
 
-@test "credential guidance distinguishes Actions destinations and warns about the global Cloudflare key" {
+@test "credential guidance records destination and least-privilege boundaries" {
   run python3 - "$REPO_ROOT/AI_REPO_GUIDE.md" \
-    "$REPO_ROOT/docs/guides/derived-repository-bootstrap.md" <<'PY'
+    "$REPO_ROOT/docs/guides/derived-repository-bootstrap.md" \
+    "$REPO_ROOT/scripts/codespace-post-start.sh" <<'PY'
 import sys
 from pathlib import Path
 
 repo_guide = " ".join(Path(sys.argv[1]).read_text(encoding="utf-8").split())
 bootstrap_guide = " ".join(Path(sys.argv[2]).read_text(encoding="utf-8").split())
+post_start = " ".join(Path(sys.argv[3]).read_text(encoding="utf-8").split())
 
-assert "without publishing provider keys to Actions" not in repo_guide
-assert "entries marked `codespaces: true` and `actions: false` are never published to Actions" in repo_guide
-assert "`CLOUDFLARE_GLOBAL_API_KEY` is an account-wide, unscoped legacy credential" in bootstrap_guide
+assert "entries marked `codespaces: true` and `actions: false`" in repo_guide, "destination flags missing"
+assert "`CLOUDFLARE_GLOBAL_API_KEY`" in bootstrap_guide, "global key warning missing"
+assert "https://developers.cloudflare.com/fundamentals/api/get-started/keys/#limitations" in bootstrap_guide, "Cloudflare limitation source missing"
+assert "fine-grained PAT restricted to the required upstream and sandbox repositories" in bootstrap_guide, "fine-grained GH_PAT guidance missing"
+assert "fine-grained PAT restricted to the upstream and sandbox repositories" in post_start, "startup GH_PAT guidance missing"
 PY
 
   [ "$status" -eq 0 ]

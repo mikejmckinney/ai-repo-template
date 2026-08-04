@@ -95,12 +95,17 @@ is the authoritative name list; the bootstrap does not publish those entries as
 Actions secrets. A missing user secret is reported and skipped.
 
 `GH_PAT` is injected into every derived Codespace covered by its user-secret
-visibility and becomes the interactive `gh`, Git, and sandbox bootstrap token.
-Use a dedicated classic PAT limited to the required upstream and sandbox access,
-with the `repo` and `workflow` scopes reported by
-`scripts/codespace-post-start.sh`. Any broader scopes are available to code
-running in each covered Codespace, so do not reuse an account-administration
-token.
+visibility and becomes the interactive `gh`, Git, and existing-sandbox token.
+Use a dedicated fine-grained PAT restricted to the required upstream and sandbox
+repositories. Grant Issues, Variables, Contents, and Pull requests read/write;
+Metadata read; and Workflows read/write when editing workflow files. If an
+endpoint cannot use a fine-grained PAT, a classic PAT with `repo` and `workflow`
+is the broader fallback: those scopes cover every repository the user can
+access, not only the upstream and sandbox repositories. Any granted access is
+available to code running in each covered Codespace, so do not reuse an
+account-administration token. Creating a new sandbox repository requires the
+separate owner-level credential documented in
+`docs/guides/sandbox-verification.md`.
 
 `CLOUDFLARE_GLOBAL_API_KEY` is an account-wide, unscoped legacy credential
 retained for explicitly requested interactive legacy API authentication.
