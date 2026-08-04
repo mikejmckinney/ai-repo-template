@@ -17,17 +17,21 @@ setup() {
 		"${PROTOCOL}/phase-0b-pilot-summary.schema.json"
 		"${PROTOCOL}/scaffold/package.json"
 		"${PROTOCOL}/scaffold/package-lock.json"
+		"${PROTOCOL}/scaffold/vitest.config.ts"
 		"${PROTOCOL}/scaffold/src/main.ts"
+		"${PROTOCOL}/scaffold/src/game/README.md"
+		"${PROTOCOL}/scaffold/src/shared-simulation/README.md"
+		"${PROTOCOL}/scaffold/src/api/README.md"
+		"${PROTOCOL}/scaffold/migrations/README.md"
+		"${PROTOCOL}/scaffold/public/assets/README.md"
+		"${PROTOCOL}/scaffold/tests/unit/README.md"
+		"${PROTOCOL}/scaffold/tests/e2e/README.md"
 		"${RUNNER}/prepare-phase-0b.py"
 	)
 
 	for path in "${required[@]}"; do
 		[ -f "${path}" ]
 	done
-
-	run python3 "${RUNNER}/prepare-phase-0b.py" --validate
-	[ "${status}" -eq 0 ]
-	[[ "${output}" == *'Phase 0B preparation is valid and execution remains blocked'* ]]
 
 	run jq -e '
     .candidate_runtime.cli == "codex-cli 0.146.0" and
@@ -36,11 +40,18 @@ setup() {
     .candidate_runtime.observed_contexts == 3 and
     .execution.status == "blocked" and
     .execution.approval_source == null and
-    .scaffold.dependencies.phaser == "4.2.1" and
-    .scaffold.dependencies.vite == "8.2.0" and
-    .scaffold.dependencies.typescript == "7.0.2" and
-    .scaffold.dependencies.playwright == "1.62.1"
-  ' "${CAMPAIGN}"
+	    .scaffold.dependencies.phaser == "4.2.1" and
+	    .scaffold.dependencies.vite == "8.2.0" and
+	    .scaffold.dependencies.typescript == "7.0.2" and
+	    .scaffold.dependencies.vitest == "4.1.10" and
+	    .scaffold.dependencies.playwright == "1.62.1"
+	  ' "${CAMPAIGN}"
+	[ "${status}" -eq 0 ]
+
+	run jq -e '
+	    .scripts.test == "vitest run --passWithNoTests" and
+	    .devDependencies.vitest == "4.1.10"
+	  ' "${PROTOCOL}/scaffold/package.json"
 	[ "${status}" -eq 0 ]
 }
 

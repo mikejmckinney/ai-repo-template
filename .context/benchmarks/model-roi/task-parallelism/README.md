@@ -61,8 +61,10 @@ The candidate command repeats model and effort explicitly and overrides the
 repository default with `--sandbox workspace-write`.
 
 The frozen scaffold uses Node 24.14.0, npm 11.9.0, Phaser 4.2.1, Vite 8.2.0,
-TypeScript 7.0.2, Playwright 1.62.1, and Node types 26.1.2. Its package lock and
-every source/configuration file are hash-checked before a run plan is emitted.
+TypeScript 7.0.2, Vitest 4.1.10, Playwright 1.62.1, and Node types 26.1.2. It
+retains empty game, shared-simulation, API, migration, evaluator-visible asset,
+unit-test, and end-to-end-test surfaces. Its package lock and every tracked
+source/configuration file are hash-checked before a run plan is emitted.
 
 The preparation manifest remains `execution.status: blocked`. A later approval
 must create and record the frozen base before any of the five Arm A and five Arm

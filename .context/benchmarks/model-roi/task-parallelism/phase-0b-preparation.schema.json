@@ -66,13 +66,14 @@
         "dependencies": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["node", "npm", "phaser", "vite", "typescript", "playwright", "node_types"],
+          "required": ["node", "npm", "phaser", "vite", "typescript", "vitest", "playwright", "node_types"],
           "properties": {
             "node": { "const": "24.14.0" },
             "npm": { "const": "11.9.0" },
             "phaser": { "const": "4.2.1" },
             "vite": { "const": "8.2.0" },
             "typescript": { "const": "7.0.2" },
+            "vitest": { "const": "4.1.10" },
             "playwright": { "const": "1.62.1" },
             "node_types": { "const": "26.1.2" }
           }

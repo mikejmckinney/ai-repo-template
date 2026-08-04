@@ -104,7 +104,6 @@ def validate_preparation(manifest_path: Path, scaffold_root: Path) -> dict:
     manifest = load_json(manifest_path)
     validate_execution_boundary(manifest)
     validate_schema(manifest, PREPARATION_SCHEMA)
-    validate_schema_definition(CANDIDATE_RESULT_SCHEMA)
     validate_runtime(manifest)
     validate_files(manifest, scaffold_root)
     validate_run_policy(manifest)
@@ -195,6 +194,8 @@ def main() -> int:
         default_scaffold = PROTOCOL_ROOT / manifest.get("scaffold", {}).get("path", "scaffold")
         scaffold_root = (args.scaffold_root or default_scaffold).resolve()
         manifest = validate_preparation(manifest_path, scaffold_root)
+        if args.validate or args.plan:
+            validate_schema_definition(CANDIDATE_RESULT_SCHEMA)
         if args.validate:
             print("Phase 0B preparation is valid and execution remains blocked")
             return 0

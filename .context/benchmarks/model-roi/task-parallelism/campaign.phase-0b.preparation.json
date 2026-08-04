@@ -33,17 +33,23 @@
       "phaser": "4.2.1",
       "vite": "8.2.0",
       "typescript": "7.0.2",
+      "vitest": "4.1.10",
       "playwright": "1.62.1",
       "node_types": "26.1.2"
     },
     "files": {
-      "package.json": "2230d4fc3a59bc7a5f56aaff323c076c0c33c5a2404d09dfaf92d34f12bfffa9",
-      "package-lock.json": "d33b4159c06c7d75baa776d02840fa795df416d739d1eb88f6b92c68289a96d0",
+      "package.json": "376959722ab6d9cf6e1c962b12e99c85bcab015e5b3961d6d58f26959e4dc6e9",
+      "package-lock.json": "65ea30bc674ae52a25de4ec0f44a7046357e511e8ca4362675e5409128a329f4",
       "index.html": "aad23ef9da795616761d70efcae82e24e0cc8542b00ca979bc13b0b2c3e0767f",
-      "tsconfig.json": "5e532d8fbfe5473e8ad316e5730289e4ac0ca29f279b44f939674a002b8f2ab8",
+      "tsconfig.json": "acb1ea1f40cb97b3380645ae7ed30d25e01016a13742d1d4cd7940e7922b5130",
       "playwright.config.ts": "d4ac7f6dcd8519a352befcabf69ebd0b09f615c187476db996d872796f7a2449",
+      "vitest.config.ts": "2a252b11ec1a6d9b6c65b7b155c762831b072917c7f636d3f43cf54244c2af58",
       "src/main.ts": "7fe28f2cb877daadcd6e6165d2e9a77af04ae53839d675376c311eb68032b986",
       "src/game/README.md": "e1253e242e90debb792ff10e04c7ee2513447d2433e8d2a7fdf127f1b3d78f7e",
+      "src/shared-simulation/README.md": "055cdc1072ed2a2cf755ae4664462f56f8c2abf748bcfd1bb9db6d0213cb608f",
+      "src/api/README.md": "239114ea8fe443c30ff6ecd58eefc5091b4df7399db77ae7c4b00d140e7ac7c6",
+      "migrations/README.md": "89b6cd6a90380096a4a7031775c32642565247d98160829a31685c127239299e",
+      "public/assets/README.md": "42ddbca27838ca08d830c289edc2d58df7e95bfeffd01cda68ba5a927dc3a53e",
       "tests/unit/README.md": "541ac56b907d3a7c40c339825ad89eaf52ff6a53fc18b39a4786573bf13e8006",
       "tests/e2e/README.md": "61b0b1ad4f4c5011da9b41ad758a7b86d4df8cc6aeac7a1aac1c0bec915388fd"
     }
