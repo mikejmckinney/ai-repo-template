@@ -1,0 +1,67 @@
+{
+  "schema_version": "task-parallelism-phase-0c-preflight-fixture-graph.v1",
+  "graph_id": "vector-siege-phase-0c-preflight-fixture-v1",
+  "concurrency_cap": 2,
+  "shared_contracts": [
+    {
+      "id": "vector-siege-game-state",
+      "owner": "parent",
+      "frozen": true
+    }
+  ],
+  "integration_validation": [
+    "npm ci",
+    "npm test",
+    "npm run build",
+    "stage-1-playwright"
+  ],
+  "nodes": [
+    {
+      "id": "combat-engine",
+      "outcome": "Player can complete one deterministic combat round.",
+      "independently_testable": true,
+      "depends_on": [],
+      "dependency_closure": [],
+      "required_contracts": [
+        "vector-siege-game-state"
+      ],
+      "predicted_writes": [
+        "src/engine.ts",
+        "tests/engine.test.ts"
+      ],
+      "child_validation": [
+        "npm test -- engine"
+      ],
+      "substantive_work": {
+        "estimated_minutes": 20,
+        "justification": "Combat state, collision behavior, and deterministic scoring form one independently testable unit."
+      }
+    },
+    {
+      "id": "player-interface",
+      "outcome": "Player can see and control the deterministic combat round.",
+      "independently_testable": true,
+      "depends_on": [
+        "combat-engine"
+      ],
+      "dependency_closure": [
+        "combat-engine"
+      ],
+      "required_contracts": [
+        "vector-siege-game-state"
+      ],
+      "predicted_writes": [
+        "src/engine.ts",
+        "src/main.ts",
+        "tests/interface.test.ts"
+      ],
+      "child_validation": [
+        "npm test -- interface"
+      ],
+      "substantive_work": {
+        "estimated_minutes": 20,
+        "justification": "Controls, HUD, and combat feedback form one independently testable player journey."
+      }
+    }
+  ]
+}

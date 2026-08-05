@@ -288,3 +288,71 @@ terminal state is recorded and is not part of the final retained evidence.
 Recovery records integrity as unknown when no checkout remains. A failed
 publication is retained as terminal harness evidence instead of rerunning
 evaluation.
+
+## Phase 0C Transport Apparatus
+
+Issue #581 adds the isolated `phase-0c-transport/` namespace without changing
+the completed Phase 0B manifests, schemas, runners, or results. Direct
+requirements live in `requirements.in`; `requirements.txt` is the hashed
+transitive lock compiled by `uv 0.11.29` for Python 3.12. Reproduce and install
+it with:
+
+```bash
+uv venv --python 3.12 .artifacts/task-parallelism/phase-0c-venv
+uv pip compile --python-version 3.12 --generate-hashes \
+  scripts/benchmark/task-parallelism/requirements.in \
+  --output-file scripts/benchmark/task-parallelism/requirements.txt
+uv pip install \
+  --python .artifacts/task-parallelism/phase-0c-venv/bin/python \
+  --require-hashes \
+  --requirement scripts/benchmark/task-parallelism/requirements.txt
+PATH="$PWD/.artifacts/task-parallelism/phase-0c-venv/bin:$PATH" \
+  make -C scripts/benchmark/task-parallelism phase-0c-validate
+PATH="$PWD/.artifacts/task-parallelism/phase-0c-venv/bin:$PATH" \
+  make -C scripts/benchmark/task-parallelism phase-0c-preflight
+PATH="$PWD/.artifacts/task-parallelism/phase-0c-venv/bin:$PATH" \
+  bats --tap scripts/tests/task-parallelism-phase-0c-gate.bats \
+  scripts/tests/task-parallelism-phase-0c-transport.bats
+jq '{status, candidate_processes_started, preflight_fixture_graph_decision,
+  a2a, canonical_payload_echo_equivalent, duplicate_events_suppressed,
+  future_paid_topology_limit}' \
+  .artifacts/task-parallelism/phase-0c-preflight.json
+```
+
+The preflight fixture gate deterministically evaluates seven predicates: independently testable
+outcomes; complete transitive dependencies; parent-owned frozen contracts;
+normalized repo-relative POSIX write paths with prefix overlap detection or
+dependency sequencing; child and integration validation; substantive-work
+justification of at least 15 minutes per node; and concurrency cap two. It
+rejects absolute, traversal, glob, empty, and dot paths. Its output has no
+timestamps. Rejection returns before a child callback, and accepted overlapping
+writes are placed in separate dependency waves.
+
+The local fixture reader loads bounded canonical payloads without transport or
+GitHub behavior. The live side uses A2A protocol `1.0` from specification release
+`1.0.0` through `a2a-sdk==1.1.2`, a separate loopback-only HTTP process,
+JSON-RPC, standard `/.well-known/agent-card.json` discovery, and structured
+non-streaming direct `Message` responses. Server middleware rejects POSTs unless
+`A2A-Version: 1.0` is present and records the validated value. The resulting
+claim is only that standard discovery and structured canonical-payload echo
+succeeded. It is not evidence of production-shaped GitHub/A2A transport
+equivalence, A2A task lifecycle, production authentication/security, streaming,
+deployment, or broad protocol conformance.
+
+The C/D treatment files are preflight fixtures only. Their causal-freeze check
+requires fixture graph, fixture gate, fixture prompt, runtime, model, topology,
+timeout, and evaluator bytes to match and permits only `transport.backend` and
+`transport.backend_evidence` to differ. They cannot be cited as a paid planner
+graph, gate, or treatment freeze.
+
+**Paid approval stop:** passing either target authorizes no model process. Before
+any paid run, a separate execution PR must add real GitHub and A2A adapters, task
+lifecycle, child/process/result and matched-summary schemas, and persisted keyed
+state with issue #581's immutable-key/idempotent-retry semantics. Its approved
+planner output and deterministic gate report must be separate execution records,
+frozen before arm order is selected; this fixture and its digests cannot satisfy
+that requirement. Explicit approval must name that future freeze and the maximum
+topology limit: one shared planner plus four processes per arm (one parent
+implementer, at most two writable children, then one integration process), nine
+total across one sequential C/D pair, at most three simultaneous processes, 45
+minutes end-to-end per arm, and zero candidate-defect replacements.

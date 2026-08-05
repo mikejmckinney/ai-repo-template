@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-parallelism-phase-0c-preflight-fixture-gate-report.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "graph_id", "graph_sha256", "decision", "predicate_results", "failed_predicates", "execution_waves", "candidate_processes_started", "gate_sha256"],
+  "properties": {
+    "schema_version": {"const": "task-parallelism-phase-0c-preflight-fixture-gate-report.v1"},
+    "graph_id": {"type": "string", "minLength": 1},
+    "graph_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "decision": {"enum": ["accepted", "rejected"]},
+    "predicate_results": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"type": "object", "additionalProperties": false, "required": ["predicate", "passed"], "properties": {"predicate": {"enum": ["independently-testable-outcomes", "dependency-closure", "parent-owned-frozen-contracts", "write-sets-or-sequencing", "child-and-integration-validation", "substantive-work", "concurrency-cap"]}, "passed": {"type": "boolean"}}}},
+    "failed_predicates": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "execution_waves": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}},
+    "candidate_processes_started": {"const": 0},
+    "gate_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

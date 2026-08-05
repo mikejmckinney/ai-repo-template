@@ -1,0 +1,61 @@
+{
+  "schema_version": "task-parallelism-phase-0c-canonical-event-fixture.v1",
+  "events": [
+    {
+      "event_id": "p0c-event-001",
+      "sequence": 1,
+      "task_id": "combat-engine",
+      "kind": "task-assigned",
+      "payload": {"assignee": "child-1", "outcome": "deterministic combat round"}
+    },
+    {
+      "event_id": "p0c-event-002",
+      "sequence": 2,
+      "task_id": "combat-engine",
+      "kind": "task-status",
+      "payload": {"status": "in-progress"}
+    },
+    {
+      "event_id": "p0c-event-003",
+      "sequence": 3,
+      "task_id": "combat-engine",
+      "kind": "artifact-published",
+      "payload": {"artifact": "engine-result", "digest": "fixture-engine-digest"}
+    },
+    {
+      "event_id": "p0c-event-003",
+      "sequence": 3,
+      "task_id": "combat-engine",
+      "kind": "artifact-published",
+      "payload": {"artifact": "engine-result", "digest": "fixture-engine-digest"}
+    },
+    {
+      "event_id": "p0c-event-004",
+      "sequence": 4,
+      "task_id": "player-interface",
+      "kind": "task-reclassified",
+      "payload": {"from": "parallel", "reason": "shared write set", "to": "sequenced"}
+    },
+    {
+      "event_id": "p0c-event-005",
+      "sequence": 5,
+      "task_id": "combat-engine",
+      "kind": "task-status",
+      "payload": {"status": "completed"}
+    },
+    {
+      "event_id": "p0c-event-006",
+      "sequence": 6,
+      "task_id": "player-interface",
+      "kind": "task-failed",
+      "payload": {"failure_class": "fixture-terminal", "retryable": false}
+    },
+    {
+      "event_id": "p0c-event-007",
+      "sequence": 7,
+      "task_id": "player-interface",
+      "kind": "task-status",
+      "payload": {"status": "failed"}
+    }
+  ]
+}

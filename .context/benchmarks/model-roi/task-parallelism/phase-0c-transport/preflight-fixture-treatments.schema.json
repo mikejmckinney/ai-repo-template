@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-parallelism-phase-0c-preflight-fixture-treatments.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "C", "D"],
+  "properties": {
+    "schema_version": {"const": "task-parallelism-phase-0c-preflight-fixture-treatments.v1"},
+    "C": {"$ref": "#/$defs/treatment"},
+    "D": {"$ref": "#/$defs/treatment"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "treatment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preflight_fixture_graph_sha256", "preflight_fixture_gate_sha256", "preflight_fixture_prompt_sha256", "runtime", "topology", "timeout_seconds", "evaluator", "transport"],
+      "properties": {
+        "preflight_fixture_graph_sha256": {"$ref": "#/$defs/digest"},
+        "preflight_fixture_gate_sha256": {"$ref": "#/$defs/digest"},
+        "preflight_fixture_prompt_sha256": {"$ref": "#/$defs/digest"},
+        "runtime": {"type": "object", "additionalProperties": false, "required": ["model", "effort"], "properties": {"model": {"const": "gpt-5.6-luna"}, "effort": {"const": "max"}}},
+        "topology": {"type": "object", "additionalProperties": false, "required": ["parent", "children", "integration"], "properties": {"parent": {"const": 1}, "children": {"const": 2}, "integration": {"const": 1}}},
+        "timeout_seconds": {"const": 2700},
+        "evaluator": {"const": ["install", "browser", "unit", "build", "stage-1-playwright"]},
+        "transport": {"type": "object", "additionalProperties": false, "required": ["backend", "backend_evidence"], "properties": {"backend": {"enum": ["github-fixture", "a2a-1.0-loopback-jsonrpc"]}, "backend_evidence": {"type": "string", "minLength": 1}}}
+      }
+    }
+  }
+}

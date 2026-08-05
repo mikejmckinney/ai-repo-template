@@ -1,0 +1,45 @@
+{
+  "$schema": "./manifest.schema.json",
+  "schema_version": "task-parallelism-phase-0c-manifest.v1",
+  "campaign_id": "vector-siege-phase-0c-transport",
+  "a2a_protocol_version": "1.0",
+  "a2a_specification_release": "1.0.0",
+  "official_python_sdk": "a2a-sdk==1.1.2",
+  "execution_status": "blocked-pending-explicit-paid-approval",
+  "dependency_input_path": "scripts/benchmark/task-parallelism/requirements.in",
+  "dependency_lock": {
+    "path": "scripts/benchmark/task-parallelism/requirements.txt",
+    "sha256": "5a1677cbce8260536f24a35ca43f766fc46105bca9137d00695a13db3e41aa91",
+    "generated_by": "uv 0.11.29",
+    "python_version": "3.12"
+  },
+  "preflight_fixture_graph": {
+    "path": "preflight-fixture-graph.json",
+    "sha256": "5a9638a257ff4383c5dff9b371aacce899700939fe0e312c346ca6e35da9000a"
+  },
+  "preflight_fixture_gate_report": {
+    "path": "preflight-fixture-gate-report.json",
+    "sha256": "068476917a42188e6c676a3b4f2b096213569e6009edaf5cbe8d948cdb05629a"
+  },
+  "preflight_fixture_treatments_path": "preflight-fixture-treatments.json",
+  "canonical_event_fixture_path": "fixtures/canonical-payload-events.json",
+  "preflight_fixture_prompt": {
+    "path": "prompts/preflight-fixture-shared.md",
+    "sha256": "c07071bd4eeef607902d9fa6c5eb139badadcd93d8410fa4aba5886a3ece6a4d"
+  },
+  "future_paid_directional_pairs": 1,
+  "future_paid_arm_timeout_seconds": 2700,
+  "future_paid_topology_limit": {
+    "shared_planner": 1,
+    "per_arm": {
+      "parent_implementer": 1,
+      "writable_children": 2,
+      "integration": 1,
+      "maximum_processes": 4
+    },
+    "matched_pair_maximum_processes": 9,
+    "maximum_simultaneous_processes": 3,
+    "arms_execute_sequentially": true,
+    "candidate_defect_replacements": 0
+  }
+}

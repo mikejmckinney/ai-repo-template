@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-parallelism-phase-0c-preflight.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "campaign", "candidate_processes_started", "paid_execution", "preflight_fixture_graph_decision", "preflight_fixture_graph_sha256", "preflight_fixture_gate_sha256", "preflight_fixture_execution_waves", "all_seven_issue_predicates_passed", "a2a", "canonical_fixture_adapter", "canonical_payload_echo_equivalent", "duplicate_events_suppressed", "canonical_ledger", "future_paid_topology_limit"],
+  "properties": {
+    "schema_version": {"const": "task-parallelism-phase-0c-preflight.v1"},
+    "status": {"const": "pass"},
+    "campaign": {"const": "vector-siege-phase-0c-transport"},
+    "candidate_processes_started": {"const": 0},
+    "paid_execution": {"const": "blocked-pending-explicit-approval"},
+    "preflight_fixture_graph_decision": {"const": "accepted"},
+    "preflight_fixture_graph_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "preflight_fixture_gate_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "preflight_fixture_execution_waves": {"type": "array", "minItems": 1, "items": {"type": "array", "minItems": 1, "items": {"type": "string"}}},
+    "all_seven_issue_predicates_passed": {"const": true},
+    "a2a": {"type": "object", "additionalProperties": false, "required": ["protocol_version", "specification_release", "sdk_version", "loopback_only", "separate_server_process", "discovery_path", "discovery_succeeded", "version_header_validated", "validated_version_header", "structured_non_streaming_round_trip"], "properties": {"protocol_version": {"const": "1.0"}, "specification_release": {"const": "1.0.0"}, "sdk_version": {"const": "1.1.2"}, "loopback_only": {"const": true}, "separate_server_process": {"const": true}, "discovery_path": {"const": "/.well-known/agent-card.json"}, "discovery_succeeded": {"const": true}, "version_header_validated": {"const": true}, "validated_version_header": {"const": "1.0"}, "structured_non_streaming_round_trip": {"const": true}}},
+    "canonical_fixture_adapter": {"type": "object", "additionalProperties": false, "required": ["fixture_backed", "transport_calls"], "properties": {"fixture_backed": {"const": true}, "transport_calls": {"const": 0}}},
+    "canonical_payload_echo_equivalent": {"const": true},
+    "duplicate_events_suppressed": {"const": 1},
+    "canonical_ledger": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"$ref": "event.schema.json"}},
+    "future_paid_topology_limit": {"$ref": "#/$defs/topology"}
+  },
+  "$defs": {
+    "topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shared_planner", "per_arm", "matched_pair_maximum_processes", "maximum_simultaneous_processes", "arms_execute_sequentially", "candidate_defect_replacements"],
+      "properties": {
+        "shared_planner": {"const": 1},
+        "per_arm": {"type": "object", "additionalProperties": false, "required": ["parent_implementer", "writable_children", "integration", "maximum_processes"], "properties": {"parent_implementer": {"const": 1}, "writable_children": {"const": 2}, "integration": {"const": 1}, "maximum_processes": {"const": 4}}},
+        "matched_pair_maximum_processes": {"const": 9},
+        "maximum_simultaneous_processes": {"const": 3},
+        "arms_execute_sequentially": {"const": true},
+        "candidate_defect_replacements": {"const": 0}
+      }
+    }
+  }
+}

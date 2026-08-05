@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-parallelism-phase-0c-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "campaign_id", "a2a_protocol_version", "a2a_specification_release", "official_python_sdk", "execution_status", "dependency_input_path", "dependency_lock", "preflight_fixture_graph", "preflight_fixture_gate_report", "preflight_fixture_treatments_path", "canonical_event_fixture_path", "preflight_fixture_prompt", "future_paid_directional_pairs", "future_paid_arm_timeout_seconds", "future_paid_topology_limit"],
+  "properties": {
+    "$schema": {"const": "./manifest.schema.json"},
+    "schema_version": {"const": "task-parallelism-phase-0c-manifest.v1"},
+    "campaign_id": {"const": "vector-siege-phase-0c-transport"},
+    "a2a_protocol_version": {"const": "1.0"},
+    "a2a_specification_release": {"const": "1.0.0"},
+    "official_python_sdk": {"const": "a2a-sdk==1.1.2"},
+    "execution_status": {"const": "blocked-pending-explicit-paid-approval"},
+    "dependency_input_path": {"const": "scripts/benchmark/task-parallelism/requirements.in"},
+    "dependency_lock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "generated_by", "python_version"],
+      "properties": {
+        "path": {"const": "scripts/benchmark/task-parallelism/requirements.txt"},
+        "sha256": {"$ref": "#/$defs/digest"},
+        "generated_by": {"const": "uv 0.11.29"},
+        "python_version": {"const": "3.12"}
+      }
+    },
+    "preflight_fixture_graph": {"$ref": "#/$defs/pathDigest"},
+    "preflight_fixture_gate_report": {"$ref": "#/$defs/pathDigest"},
+    "preflight_fixture_treatments_path": {"const": "preflight-fixture-treatments.json"},
+    "canonical_event_fixture_path": {"const": "fixtures/canonical-payload-events.json"},
+    "preflight_fixture_prompt": {"$ref": "#/$defs/pathDigest"},
+    "future_paid_directional_pairs": {"const": 1},
+    "future_paid_arm_timeout_seconds": {"const": 2700},
+    "future_paid_topology_limit": {"$ref": "#/$defs/topology"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "pathDigest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/digest"}}
+    },
+    "topology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shared_planner", "per_arm", "matched_pair_maximum_processes", "maximum_simultaneous_processes", "arms_execute_sequentially", "candidate_defect_replacements"],
+      "properties": {
+        "shared_planner": {"const": 1},
+        "per_arm": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["parent_implementer", "writable_children", "integration", "maximum_processes"],
+          "properties": {"parent_implementer": {"const": 1}, "writable_children": {"const": 2}, "integration": {"const": 1}, "maximum_processes": {"const": 4}}
+        },
+        "matched_pair_maximum_processes": {"const": 9},
+        "maximum_simultaneous_processes": {"const": 3},
+        "arms_execute_sequentially": {"const": true},
+        "candidate_defect_replacements": {"const": 0}
+      }
+    }
+  }
+}
