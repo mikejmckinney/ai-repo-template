@@ -202,8 +202,40 @@ candidate-report schema without the completed pilot v1 schema's two-worker cap.
 Do not treat the rendered plan as an executable campaign state.
 
 The retained-branch diagnostic is explicitly non-confirmatory and does not alter
-the merged pilot scores. Another candidate invocation remains blocked until the
-revision is reviewed and the maintainer separately approves execution.
+the merged pilot scores. The maintainer approved activation and one assignment
+per arm on 2026-08-05. Validate the separate execution state before any process:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-revision-execution-validate
+```
+
+The revision runner requires a frozen activation implementation SHA and creates
+each candidate in a standalone, single-branch clone with no object alternates.
+It disables candidate fetch/push access after cloning, injects and verifies the
+arm-specific root override, then removes that harness-owned file before taking
+the candidate snapshot. Run Arm A first and do not start Arm B until Arm A has a
+terminal final result:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-a
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-b
+make -C scripts/benchmark/task-parallelism phase-0b-revision-summary
+```
+
+Candidate timeout, partial completion, failure, and low quality are terminal
+without retry. At most one verified provider-transient or harness-invalid
+attempt may be replaced, and the original attempt remains durable. Every
+checkout that produced work receives the same independent install, browser,
+unit, build, and end-to-end evaluation regardless of candidate self-report.
+
+Raw model transcripts and temporary clones remain ignored. The bounded tracked
+record under `results/phase-0b-revision/` contains attempt and final results,
+candidate reports, redacted process metadata, evaluator results and transcripts,
+and the paired summary. That summary must state that official pilot scores are
+unchanged and that the pair is directional, non-confirmatory, and not adoption
+evidence.
 
 Typical preflight:
 

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-revision-summary.v1.json",
+  "title": "Task parallelism Phase 0B revision directional summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "campaign_id", "official_pilot_scores_modified",
+    "directional_only", "confirmatory_evidence", "adoption_claim", "assigned_runs",
+    "terminal_runs", "attempts_started", "replacement_processes_started",
+    "candidate_wall_clock_seconds", "evaluator_wall_clock_seconds", "tokens",
+    "arms", "redaction"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-revision-summary.v1" },
+    "campaign_id": { "const": "vector-siege-phase-0b-revision" },
+    "official_pilot_scores_modified": { "const": false },
+    "directional_only": { "const": true },
+    "confirmatory_evidence": { "const": false },
+    "adoption_claim": { "const": false },
+    "assigned_runs": { "const": 2 },
+    "terminal_runs": { "type": "integer", "minimum": 0, "maximum": 2 },
+    "attempts_started": { "type": "integer", "minimum": 0, "maximum": 3 },
+    "replacement_processes_started": { "type": "integer", "minimum": 0, "maximum": 1 },
+    "candidate_wall_clock_seconds": { "type": "integer", "minimum": 0 },
+    "evaluator_wall_clock_seconds": { "type": "integer", "minimum": 0 },
+    "tokens": {
+      "type": "object", "additionalProperties": false,
+      "required": ["input", "cached_input", "output"],
+      "properties": {
+        "input": { "type": "integer", "minimum": 0 },
+        "cached_input": { "type": "integer", "minimum": 0 },
+        "output": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "arms": {
+      "type": "array", "maxItems": 2,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": [
+          "run_id", "arm", "terminal_status", "produced_work", "fanout_elected",
+          "worker_count", "candidate_wall_clock_seconds", "evaluator_wall_clock_seconds",
+          "objective_score", "evaluator_result_path"
+        ],
+        "properties": {
+          "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b"] },
+          "arm": { "enum": ["A", "B"] },
+          "terminal_status": { "enum": ["completed", "candidate-failed", "provider-failed", "harness-failed"] },
+          "produced_work": { "type": "boolean" },
+          "fanout_elected": { "type": "boolean" },
+          "worker_count": { "type": "integer", "minimum": 1 },
+          "candidate_wall_clock_seconds": { "type": "integer", "minimum": 0 },
+          "evaluator_wall_clock_seconds": { "type": "integer", "minimum": 0 },
+          "objective_score": { "type": "number", "minimum": 0 },
+          "evaluator_result_path": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "redaction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["credentials_excluded", "raw_environment_excluded", "raw_model_transcript_excluded"],
+      "properties": {
+        "credentials_excluded": { "const": true },
+        "raw_environment_excluded": { "const": true },
+        "raw_model_transcript_excluded": { "const": true }
+      }
+    }
+  }
+}

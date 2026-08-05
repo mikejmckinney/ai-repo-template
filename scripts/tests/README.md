@@ -19,6 +19,7 @@ path.
 | `task-parallelism-preflight.bats` | No-spend campaign, exact assets, isolation, credential, and approval controls |
 | `task-parallelism-phase-0b.bats` | Historical Phase 0B freeze plus blocked one-A/one-B revision policy |
 | `task-parallelism-phase-0b-execution.bats` | Execution-state, arm-specific instruction injection, objective evaluation, and retained-branch diagnostics |
+| `task-parallelism-phase-0b-revision-execution.bats` | Approved paired execution, standalone clone isolation, replacement limits, uncapped reporting, and directional summary boundaries |
 | `verify-env.bats` | Environment checks |
 | `verify-pr.bats` | Change-class classifier fixtures (ADR-016) |
 | `weekly-classifier.bats` | Weekly review classifier behavior |

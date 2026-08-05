@@ -16,6 +16,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.revision.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-preparation.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-execution.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-candidate-report.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-candidate-result.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-evaluator-result.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-summary.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-diagnostic-summary.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-candidate-reports.json"
     "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-diagnostic-summary.json"
@@ -24,6 +29,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-execution.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-pilot-summary.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.execution.json"
+    "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.revision.execution.json"
     "${TASK_PARALLELISM_PROTOCOL}/candidate-base.gitignore"
     "${TASK_PARALLELISM_PROTOCOL}/scaffold/package-lock.json"
     "${TASK_PARALLELISM_PROTOCOL}/tasks/vector-siege.md"
@@ -37,9 +43,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_RUNNER}/prepare-phase-0b.py"
     "${TASK_PARALLELISM_RUNNER}/diagnose-phase-0b.py"
     "${TASK_PARALLELISM_RUNNER}/run-phase-0b.py"
+    "${TASK_PARALLELISM_RUNNER}/run-phase-0b-revision.py"
     "scripts/tests/task-parallelism-preflight.bats"
     "scripts/tests/task-parallelism-phase-0b.bats"
     "scripts/tests/task-parallelism-phase-0b-execution.bats"
+    "scripts/tests/task-parallelism-phase-0b-revision-execution.bats"
   )
 
   for path in "${required[@]}"; do
@@ -59,6 +67,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.revision.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-preparation.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-execution.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-candidate-report.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-candidate-result.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-evaluator-result.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision-summary.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-diagnostic-summary.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-candidate-reports.json" \
     "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-diagnostic-summary.json" \
@@ -66,6 +79,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-report.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-execution.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.execution.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.revision.execution.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-pilot-summary.schema.json"; do
     if jq -e . "${path}" >/dev/null 2>&1; then
       pass "valid JSON: ${path}"
@@ -111,6 +125,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "retained Phase 0B branch diagnostics validate"
   else
     fail "retained Phase 0B branch diagnostics are invalid"
+  fi
+
+  if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/run-phase-0b-revision.py" \
+    --validate-state --offline >/dev/null; then
+    pass "approved Phase 0B revision execution state validates offline"
+  else
+    fail "approved Phase 0B revision execution state is invalid"
   fi
 
   echo ""

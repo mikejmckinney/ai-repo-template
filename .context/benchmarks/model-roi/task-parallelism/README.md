@@ -203,5 +203,35 @@ make -C scripts/benchmark/task-parallelism phase-0b-revision-validate
 make -C scripts/benchmark/task-parallelism phase-0b-revision-plan
 ```
 
-The rendered plan remains blocked with zero candidate processes. Another model
-run requires separate explicit approval.
+The rendered preparation plan remains the immutable blocked contract. The
+maintainer separately approved activation and exactly one Arm A assignment
+followed by one Arm B assignment on 2026-08-05. Validate the approved state with:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-revision-execution-validate
+```
+
+The activation runner creates a standalone `--no-local --single-branch` clone
+for each attempt, disables its upstream URL before candidate execution, injects
+the arm-specific `AGENTS.override.md`, and removes that evaluator-owned file
+before snapshotting candidate work. Raw Codex output and temporary clones remain
+under ignored `.artifacts/`; bounded candidate reports, attempt records, process
+metadata, evaluator results, evaluator transcripts, and the paired summary live
+under tracked `results/phase-0b-revision/`.
+
+After the activation implementation SHA is frozen, execute only in this order:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-a
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-b
+make -C scripts/benchmark/task-parallelism phase-0b-revision-summary
+```
+
+A candidate timeout, partial completion, failure, or low-quality result is
+terminal. One verified provider-transient or harness-invalid attempt may receive
+the campaign's only replacement; every original attempt remains retained. The
+parent evaluator runs for every checkout that produced work. The resulting pair
+is directional feasibility evidence only: it does not modify the official pilot
+scores, supply confirmatory evidence, or support an adoption claim.

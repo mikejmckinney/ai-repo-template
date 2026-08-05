@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-revision-execution.v1.json",
+  "title": "Task parallelism Phase 0B revision execution state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "campaign_id",
+    "status",
+    "approval_source",
+    "approved_at",
+    "implementation_sha",
+    "official_pilot_scores_modified",
+    "candidate_base",
+    "candidate_processes_started",
+    "replacement_processes_started",
+    "attempts",
+    "completed_runs"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-revision-execution.v1" },
+    "campaign_id": { "const": "vector-siege-phase-0b-revision" },
+    "status": { "enum": ["ready", "running", "interrupted", "completed"] },
+    "approval_source": { "const": "https://github.com/mikejmckinney/ai-repo-template/issues/545" },
+    "approved_at": { "type": "string", "format": "date-time" },
+    "implementation_sha": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      ]
+    },
+    "official_pilot_scores_modified": { "const": false },
+    "candidate_base": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branch", "sha", "source_commit", "task_blob_sha"],
+      "properties": {
+        "branch": { "const": "benchmark/model-roi/base-vector-siege-phase-0b-20260804" },
+        "sha": { "const": "acffeb51f6ba6d16be6872413a0fa9010d2547a2" },
+        "source_commit": { "const": "cf8e1545d688f6880baf21da24bf40a44bd4fc8c" },
+        "task_blob_sha": { "const": "f658eedd0c369d5b0323a098702eb6fd96bc418f" }
+      }
+    },
+    "candidate_processes_started": { "type": "integer", "minimum": 0, "maximum": 3 },
+    "replacement_processes_started": { "type": "integer", "minimum": 0, "maximum": 1 },
+    "attempts": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "attempt_id",
+          "run_id",
+          "attempt_number",
+          "is_replacement",
+          "terminal_status",
+          "replacement_eligible",
+          "replacement_disposition",
+          "started_at",
+          "finished_at",
+          "wall_clock_seconds",
+          "produced_work",
+          "result_path",
+          "candidate_report_path",
+          "process_metadata_path",
+          "evaluator_result_path"
+        ],
+        "properties": {
+          "attempt_id": { "type": "string", "pattern": "^vs-p0b-next-[ab]-attempt-[12]$" },
+          "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b"] },
+          "attempt_number": { "type": "integer", "minimum": 1, "maximum": 2 },
+          "is_replacement": { "type": "boolean" },
+          "terminal_status": {
+            "oneOf": [
+              { "type": "null" },
+              { "enum": ["completed", "candidate-failed", "provider-failed", "harness-failed"] }
+            ]
+          },
+          "replacement_eligible": { "type": "boolean" },
+          "replacement_disposition": {
+            "enum": ["pending", "not-eligible", "eligible", "replacement-consumed"]
+          },
+          "started_at": { "type": "string", "format": "date-time" },
+          "finished_at": { "type": ["string", "null"], "format": "date-time" },
+          "wall_clock_seconds": { "type": ["integer", "null"], "minimum": 0 },
+          "produced_work": { "type": ["boolean", "null"] },
+          "result_path": { "type": ["string", "null"] },
+          "candidate_report_path": { "type": ["string", "null"] },
+          "process_metadata_path": { "type": "string" },
+          "evaluator_result_path": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "completed_runs": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 2,
+      "items": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b"] }
+    }
+  }
+}

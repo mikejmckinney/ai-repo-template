@@ -1,0 +1,19 @@
+{
+  "approval_source": "https://github.com/mikejmckinney/ai-repo-template/issues/545",
+  "approved_at": "2026-08-05T08:48:00Z",
+  "attempts": [],
+  "campaign_id": "vector-siege-phase-0b-revision",
+  "candidate_base": {
+    "branch": "benchmark/model-roi/base-vector-siege-phase-0b-20260804",
+    "sha": "acffeb51f6ba6d16be6872413a0fa9010d2547a2",
+    "source_commit": "cf8e1545d688f6880baf21da24bf40a44bd4fc8c",
+    "task_blob_sha": "f658eedd0c369d5b0323a098702eb6fd96bc418f"
+  },
+  "candidate_processes_started": 0,
+  "completed_runs": [],
+  "implementation_sha": null,
+  "official_pilot_scores_modified": false,
+  "replacement_processes_started": 0,
+  "schema_version": "task-parallelism-phase-0b-revision-execution.v1",
+  "status": "ready"
+}
