@@ -148,6 +148,13 @@ spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
+assert module.plan_attempt({"replacement_processes_started": 0, "attempts": []}, "vs-p0b-next-a") == {
+    "attempt_id": "vs-p0b-next-a-attempt-1",
+    "run_id": "vs-p0b-next-a",
+    "attempt_number": 1,
+    "is_replacement": False,
+}
+
 candidate_failed = {
     "replacement_processes_started": 0,
     "attempts": [{
@@ -177,6 +184,7 @@ harness_failed = {
 }
 assert module.plan_attempt(harness_failed, "vs-p0b-next-a") == {
     "attempt_id": "vs-p0b-next-a-attempt-2",
+    "run_id": "vs-p0b-next-a",
     "attempt_number": 2,
     "is_replacement": True,
 }

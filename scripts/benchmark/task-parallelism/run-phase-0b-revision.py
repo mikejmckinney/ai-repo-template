@@ -114,7 +114,12 @@ def load_state() -> dict:
 def plan_attempt(state: dict, run_id: str) -> dict:
     prior = [item for item in state["attempts"] if item["run_id"] == run_id]
     if not prior:
-        return {"attempt_id": f"{run_id}-attempt-1", "attempt_number": 1, "is_replacement": False}
+        return {
+            "attempt_id": f"{run_id}-attempt-1",
+            "run_id": run_id,
+            "attempt_number": 1,
+            "is_replacement": False,
+        }
     if (
         len(prior) != 1
         or prior[0].get("terminal_status") not in {"provider-failed", "harness-failed"}
@@ -123,7 +128,12 @@ def plan_attempt(state: dict, run_id: str) -> dict:
         raise ValueError("run has no eligible replacement")
     if state["replacement_processes_started"] >= 1:
         raise ValueError("campaign replacement budget is exhausted")
-    return {"attempt_id": f"{run_id}-attempt-2", "attempt_number": 2, "is_replacement": True}
+    return {
+        "attempt_id": f"{run_id}-attempt-2",
+        "run_id": run_id,
+        "attempt_number": 2,
+        "is_replacement": True,
+    }
 
 
 def should_evaluate_candidate(work_produced: bool, completion_status: str | None) -> bool:
@@ -220,7 +230,8 @@ def run_tracked_command(command: list[str], cwd: Path, log_path: Path, timeout: 
     except OSError as error:
         output = f"command could not start: {error}\n"
         exit_code = 127
-    bounded = redact(output)
+    lines = [line.rstrip() for line in redact(output).splitlines()]
+    bounded = "\n".join(lines) + ("\n" if lines else "")
     encoded = bounded.encode("utf-8", errors="replace")
     truncated = len(encoded) > MAX_TRACKED_LOG_BYTES
     if truncated:

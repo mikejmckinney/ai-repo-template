@@ -1,0 +1,16 @@
+{
+  "asset_conflicts": 0,
+  "completion_status": "completed",
+  "coordination_seconds": 0,
+  "dependency_conflicts": 0,
+  "duplicate_or_abandoned_work": 0,
+  "fanout_elected": false,
+  "fanout_reason": "Arm A monolithic execution. Build PASS; unit PASS (5 tests); browser PASS (1 Playwright test, 9.8s). Blocking events: npm ci took 20s; playwright-cli was unavailable, so npx Playwright test was used. Human intervention: none. No provider wait or monetary estimate.",
+  "interface_conflicts": 0,
+  "provider_wait_seconds": 0,
+  "rescue_events": 1,
+  "semantic_conflicts": 0,
+  "skill_context_tokens": 1770,
+  "skill_loads": 1,
+  "worker_count": 1
+}

@@ -1,7 +1,25 @@
 {
   "approval_source": "https://github.com/mikejmckinney/ai-repo-template/issues/545",
   "approved_at": "2026-08-05T08:48:00Z",
-  "attempts": [],
+  "attempts": [
+    {
+      "attempt_id": "vs-p0b-next-a-attempt-1",
+      "attempt_number": 1,
+      "candidate_report_path": "results/phase-0b-revision/candidate-reports/vs-p0b-next-a-attempt-1.json",
+      "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-a-attempt-1.json",
+      "finished_at": "2026-08-05T10:20:18Z",
+      "is_replacement": false,
+      "process_metadata_path": "results/phase-0b-revision/process/vs-p0b-next-a-attempt-1.json",
+      "produced_work": true,
+      "replacement_disposition": "not-eligible",
+      "replacement_eligible": false,
+      "result_path": "results/phase-0b-revision/attempts/vs-p0b-next-a-attempt-1.json",
+      "run_id": "vs-p0b-next-a",
+      "started_at": "2026-08-05T09:54:45Z",
+      "terminal_status": "completed",
+      "wall_clock_seconds": 1532
+    }
+  ],
   "campaign_id": "vector-siege-phase-0b-revision",
   "candidate_base": {
     "branch": "benchmark/model-roi/base-vector-siege-phase-0b-20260804",
@@ -9,8 +27,10 @@
     "source_commit": "cf8e1545d688f6880baf21da24bf40a44bd4fc8c",
     "task_blob_sha": "f658eedd0c369d5b0323a098702eb6fd96bc418f"
   },
-  "candidate_processes_started": 0,
-  "completed_runs": [],
+  "candidate_processes_started": 1,
+  "completed_runs": [
+    "vs-p0b-next-a"
+  ],
   "implementation_sha": "f58808c296e112537b41cd71566ece2b90a3d3d9",
   "official_pilot_scores_modified": false,
   "replacement_processes_started": 0,
