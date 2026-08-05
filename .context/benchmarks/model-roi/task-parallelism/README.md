@@ -181,9 +181,10 @@ instruction bodies. Activation renders the selected body as root
 `AGENTS.override.md` from the repository's normal guidance. Arm A replaces the
 execution-model paragraph with the monolithic treatment. Arm B replaces it with
 instruction to use as many native subagents as needed and integrate their work.
-Both bodies also mark GitHub-only branch, PR, advisory-label, and live-state
-duties as inert in the evaluator-owned checkout; all other repository policy
-remains. Codex discovers the override before `AGENTS.md` at project scope, as
+Both bodies replace the repository entry gate with benchmark-local orientation
+and mark GitHub-only branch, PR, advisory-label, and live-state duties as inert
+in the evaluator-owned checkout; all other applicable repository policy remains.
+Codex discovers the override before `AGENTS.md` at project scope, as
 documented in the
 [Codex instruction guide](https://developers.openai.com/codex/agent-configuration/agents-md).
 

@@ -194,8 +194,7 @@ for rendered in (arm_a_text, arm_b_text):
     assert "checkout-local evidence without querying GitHub" in rendered
     assert "hydrate the active issue" not in rendered
     assert "If no exact session ID is available, ask the user" not in rendered
-    assert "run `session-recovery` first" not in rendered
-    assert "load and run the `repo-onboarding` skill" not in rendered
+    assert "The evaluator provides an oriented benchmark checkout" in rendered
     assert "Recovery takes precedence" not in rendered
 
 PY
