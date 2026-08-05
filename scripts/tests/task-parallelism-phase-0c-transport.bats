@@ -179,6 +179,9 @@ PY
   run python3 "${RUNNER}/phase-0c-preflight.py" \
     --manifest "${PROTOCOL}/phase-0c-transport/manifest.json" \
     --output "${REPORT}"
+  if [ "${status}" -ne 0 ]; then
+    printf '%s\n' "${output}" >&2
+  fi
   [ "${status}" -eq 0 ]
   [ -f "${REPORT}" ]
 

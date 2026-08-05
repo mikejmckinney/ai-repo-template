@@ -183,7 +183,7 @@ def run_a2a_server(
             text=True,
         )
         try:
-            deadline = time.monotonic() + 10
+            deadline = time.monotonic() + 30
             while time.monotonic() < deadline:
                 if process.poll() is not None:
                     error = process.stderr.read() if process.stderr else ""
