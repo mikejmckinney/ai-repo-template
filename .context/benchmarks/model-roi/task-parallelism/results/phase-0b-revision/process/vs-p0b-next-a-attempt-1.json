@@ -1,0 +1,18 @@
+{
+  "arm": "A",
+  "attempt_id": "vs-p0b-next-a-attempt-1",
+  "candidate_branch": "benchmark/vector-siege/vs-p0b-next-a-attempt-1",
+  "candidate_sha": "ef754194cb00b3c43cce775576edec9e1cf4d7ba",
+  "clone_retained": false,
+  "codex_exit_code": 0,
+  "instruction_sha256": "b2a56f3d11c560fdd98633e4f09c201b030ca59f512654be4f10ba0c90c54167",
+  "observed_spawn_agent_calls": 0,
+  "parent_worker_token_split_available": false,
+  "published": true,
+  "raw_artifact_path": ".artifacts/task-parallelism/phase-0b-revision/vs-p0b-next-a-attempt-1",
+  "run_id": "vs-p0b-next-a",
+  "schema_version": "task-parallelism-phase-0b-revision-process.v1",
+  "state_recovery": "post-capture attempt run_id repaired without candidate rerun",
+  "token_usage_scope": "aggregate-candidate-turn",
+  "thread_id": "019fd159-15e8-7932-8e0a-65e940892ac2"
+}

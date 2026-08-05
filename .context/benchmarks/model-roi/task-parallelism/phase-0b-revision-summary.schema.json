@@ -1,0 +1,220 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-revision-summary.v1.json",
+  "title": "Task parallelism Phase 0B revision directional summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "campaign_id", "official_pilot_scores_modified",
+    "directional_only", "confirmatory_evidence", "adoption_claim", "assigned_runs",
+    "terminal_runs", "attempts_started", "replacement_processes_started",
+    "candidate_wall_clock_seconds", "candidate_wall_clock_comparable",
+    "evaluator_wall_clock_seconds", "tokens", "token_usage_complete",
+    "arms_without_terminal_usage",
+    "token_usage_scope", "parent_worker_token_split_available",
+    "pricing", "roi_comparisons", "arms", "redaction"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-revision-summary.v1" },
+    "campaign_id": { "const": "vector-siege-phase-0b-revision" },
+    "official_pilot_scores_modified": { "const": false },
+    "directional_only": { "const": true },
+    "confirmatory_evidence": { "const": false },
+    "adoption_claim": { "const": false },
+    "assigned_runs": { "type": "integer", "minimum": 2, "maximum": 3 },
+    "terminal_runs": { "type": "integer", "minimum": 0, "maximum": 3 },
+    "attempts_started": { "type": "integer", "minimum": 0, "maximum": 4 },
+    "replacement_processes_started": { "type": "integer", "minimum": 0, "maximum": 1 },
+    "candidate_wall_clock_seconds": { "type": ["integer", "null"], "minimum": 0 },
+    "candidate_wall_clock_comparable": { "type": "boolean" },
+    "evaluator_wall_clock_seconds": { "type": "integer", "minimum": 0 },
+    "tokens": {
+      "type": "object", "additionalProperties": false,
+      "required": ["input", "cached_input", "output"],
+      "properties": {
+        "input": { "type": "integer", "minimum": 0 },
+        "cached_input": { "type": "integer", "minimum": 0 },
+        "output": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "token_usage_complete": { "type": "boolean" },
+    "arms_without_terminal_usage": {
+      "type": "array",
+      "items": { "enum": ["A", "B", "C"] },
+      "uniqueItems": true
+    },
+    "token_usage_scope": { "const": "aggregate-candidate-turn" },
+    "parent_worker_token_split_available": { "const": false },
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model", "source", "currency", "unit_tokens", "per_request_context_band_available", "rates"],
+      "properties": {
+        "model": { "const": "gpt-5.6-luna" },
+        "source": { "const": "https://developers.openai.com/api/docs/models/gpt-5.6-luna" },
+        "currency": { "const": "USD" },
+        "unit_tokens": { "const": 1000000 },
+        "per_request_context_band_available": { "const": false },
+        "rates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["short_context", "all_long_context_upper_bound"],
+          "properties": {
+            "short_context": { "$ref": "#/$defs/token_rates" },
+            "all_long_context_upper_bound": { "$ref": "#/$defs/token_rates" }
+          }
+        }
+      }
+    },
+    "roi_comparisons": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": { "$ref": "#/$defs/roi_comparison" }
+    },
+    "arms": {
+      "type": "array", "minItems": 2, "maxItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": [
+          "run_id", "arm", "terminal_status", "produced_work", "fanout_elected",
+          "worker_count", "observed_spawn_agent_calls", "coordination_seconds", "skill_loads", "tokens",
+          "candidate_wall_clock_seconds", "candidate_wall_clock_comparable",
+          "evaluator_wall_clock_seconds", "integrated_wall_clock_seconds",
+          "integrated_wall_clock_comparable", "timing_scope",
+          "candidate_quality_score", "evaluator_objective_score", "evaluator_result_path"
+        ],
+        "properties": {
+          "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b", "vs-p0b-next-c"] },
+          "arm": { "enum": ["A", "B", "C"] },
+          "terminal_status": { "enum": ["completed", "candidate-failed", "provider-failed", "harness-failed"] },
+          "produced_work": { "type": "boolean" },
+          "fanout_elected": { "type": ["boolean", "null"] },
+          "worker_count": { "type": ["integer", "null"], "minimum": 1 },
+          "observed_spawn_agent_calls": { "type": "integer", "minimum": 0 },
+          "coordination_seconds": { "type": ["integer", "null"], "minimum": 0 },
+          "skill_loads": { "type": ["integer", "null"], "minimum": 0 },
+          "tokens": {
+            "type": "object", "additionalProperties": false,
+            "required": ["input", "cached_input", "output"],
+            "properties": {
+              "input": { "type": "integer", "minimum": 0 },
+              "cached_input": { "type": "integer", "minimum": 0 },
+              "output": { "type": "integer", "minimum": 0 }
+            }
+          },
+          "candidate_wall_clock_seconds": { "type": ["integer", "null"], "minimum": 0 },
+          "candidate_wall_clock_comparable": { "type": "boolean" },
+          "evaluator_wall_clock_seconds": { "type": "integer", "minimum": 0 },
+          "integrated_wall_clock_seconds": { "type": ["integer", "null"], "minimum": 0 },
+          "integrated_wall_clock_comparable": { "type": "boolean" },
+          "timing_scope": { "enum": ["candidate-only", "runner-integrated"] },
+          "candidate_quality_score": { "type": "number", "minimum": 0 },
+          "evaluator_objective_score": { "type": "number", "minimum": 0 },
+          "evaluator_result_path": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "redaction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["credentials_excluded", "raw_environment_excluded", "raw_model_transcript_excluded"],
+      "properties": {
+        "credentials_excluded": { "const": true },
+        "raw_environment_excluded": { "const": true },
+        "raw_model_transcript_excluded": { "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "token_rates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input", "cached_input", "output"],
+      "properties": {
+        "input": { "type": "number", "minimum": 0 },
+        "cached_input": { "type": "number", "minimum": 0 },
+        "output": { "type": "number", "minimum": 0 }
+      }
+    },
+    "band_values": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["short_context", "all_long_context_upper_bound"],
+      "properties": {
+        "short_context": { "type": ["number", "null"], "minimum": 0 },
+        "all_long_context_upper_bound": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "arm_values": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline", "candidate"],
+      "properties": {
+        "baseline": { "type": ["number", "null"], "minimum": 0 },
+        "candidate": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "cost_values": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseline_usd", "candidate_usd"],
+      "properties": {
+        "baseline_usd": { "type": ["number", "null"], "minimum": 0 },
+        "candidate_usd": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "weighted_roi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cost_50_time_50", "cost_75_time_25", "cost_25_time_75"],
+      "properties": {
+        "cost_50_time_50": { "type": ["number", "null"], "minimum": 0 },
+        "cost_75_time_25": { "type": ["number", "null"], "minimum": 0 },
+        "cost_25_time_75": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "roi_comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "baseline_arm", "candidate_arm", "quality_ratio", "integrated_time_ratio",
+        "speedup", "parallel_efficiency", "equivalent_model_cost_usd", "cost_ratio",
+        "quality_per_dollar", "quality_per_integrated_hour", "roi_index"
+      ],
+      "properties": {
+        "baseline_arm": { "const": "A" },
+        "candidate_arm": { "enum": ["B", "C"] },
+        "quality_ratio": { "type": "number", "minimum": 0 },
+        "integrated_time_ratio": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "speedup": { "type": ["number", "null"], "minimum": 0 },
+        "parallel_efficiency": { "type": ["number", "null"], "minimum": 0 },
+        "equivalent_model_cost_usd": {
+          "type": "object", "additionalProperties": false,
+          "required": ["short_context", "all_long_context_upper_bound"],
+          "properties": {
+            "short_context": { "$ref": "#/$defs/cost_values" },
+            "all_long_context_upper_bound": { "$ref": "#/$defs/cost_values" }
+          }
+        },
+        "cost_ratio": { "$ref": "#/$defs/band_values" },
+        "quality_per_dollar": {
+          "type": "object", "additionalProperties": false,
+          "required": ["short_context", "all_long_context_upper_bound"],
+          "properties": {
+            "short_context": { "$ref": "#/$defs/arm_values" },
+            "all_long_context_upper_bound": { "$ref": "#/$defs/arm_values" }
+          }
+        },
+        "quality_per_integrated_hour": { "$ref": "#/$defs/arm_values" },
+        "roi_index": {
+          "type": "object", "additionalProperties": false,
+          "required": ["short_context", "all_long_context_upper_bound"],
+          "properties": {
+            "short_context": { "$ref": "#/$defs/weighted_roi" },
+            "all_long_context_upper_bound": { "$ref": "#/$defs/weighted_roi" }
+          }
+        }
+      }
+    }
+  }
+}

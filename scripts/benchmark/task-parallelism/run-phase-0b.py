@@ -309,6 +309,11 @@ def evaluate_candidate(worktree: Path, artifact_dir: Path, work_produced: bool) 
 
 def snapshot_candidate(worktree: Path, base_sha: str, attempt_id: str) -> tuple[list[str], str, int]:
     subprocess.run(["git", "add", "-A"], cwd=worktree, check=True)
+    pending = subprocess.run(
+        ["git", "diff", "--cached", "--quiet", "HEAD"], cwd=worktree, check=False
+    )
+    if pending.returncode not in {0, 1}:
+        raise ValueError("could not inspect candidate index")
     changed = subprocess.run(
         ["git", "diff", "--cached", "--name-only", base_sha],
         cwd=worktree,
@@ -320,7 +325,7 @@ def snapshot_candidate(worktree: Path, base_sha: str, attempt_id: str) -> tuple[
     drift_count = sum(
         path == forbidden[1] or path.startswith((forbidden[0], forbidden[2])) for path in changed
     )
-    if changed:
+    if pending.returncode == 1:
         subprocess.run(
             ["git", "commit", "--no-gpg-sign", "-m", f"candidate: {attempt_id}"],
             cwd=worktree,

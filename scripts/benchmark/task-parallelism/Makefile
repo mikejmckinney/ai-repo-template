@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-.PHONY: help assets assets-check preflight phase-0b-validate phase-0b-plan phase-0b-execution-validate phase-0b-summary phase-0b-revision-validate phase-0b-revision-plan phase-0b-diagnostic-validate
+.PHONY: help assets assets-check preflight phase-0b-validate phase-0b-plan phase-0b-execution-validate phase-0b-summary phase-0b-revision-validate phase-0b-revision-plan phase-0b-revision-execution-validate phase-0b-revision-summary phase-0b-diagnostic-validate
 
 help:
 	@printf '%s\n' 'assets       regenerate tracked Phase 0A placeholder assets' \
@@ -13,6 +13,8 @@ help:
 	  'phase-0b-summary derive Gate 0 inputs from tracked terminal results' \
 	  'phase-0b-revision-validate validate the blocked two-assignment revision' \
 	  'phase-0b-revision-plan render the blocked two-assignment revision plan' \
+	  'phase-0b-revision-execution-validate validate approved revision execution state' \
+	  'phase-0b-revision-summary derive the directional paired revision summary' \
 	  'phase-0b-diagnostic-validate validate retained-branch diagnostics'
 
 assets:
@@ -47,6 +49,12 @@ phase-0b-revision-plan:
 	@python3 "$(HERE)prepare-phase-0b.py" --plan \
 	  "$(HERE)../../../.artifacts/task-parallelism/phase-0b-revision-plan.json" \
 	  --manifest "$(HERE)../../../.context/benchmarks/model-roi/task-parallelism/campaign.phase-0b.revision.json"
+
+phase-0b-revision-execution-validate:
+	@python3 "$(HERE)run-phase-0b-revision.py" --validate-state
+
+phase-0b-revision-summary:
+	@python3 "$(HERE)run-phase-0b-revision.py" --summarize
 
 phase-0b-diagnostic-validate:
 	@python3 "$(HERE)diagnose-phase-0b.py" --validate \

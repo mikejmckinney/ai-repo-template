@@ -1,0 +1,225 @@
+{
+  "adoption_claim": false,
+  "arms": [
+    {
+      "arm": "A",
+      "candidate_quality_score": 100,
+      "candidate_wall_clock_comparable": false,
+      "candidate_wall_clock_seconds": null,
+      "coordination_seconds": 0,
+      "evaluator_objective_score": 100,
+      "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-a-attempt-1.json",
+      "evaluator_wall_clock_seconds": 47,
+      "fanout_elected": false,
+      "integrated_wall_clock_comparable": true,
+      "integrated_wall_clock_seconds": 1532,
+      "observed_spawn_agent_calls": 0,
+      "produced_work": true,
+      "run_id": "vs-p0b-next-a",
+      "skill_loads": 1,
+      "terminal_status": "completed",
+      "timing_scope": "runner-integrated",
+      "tokens": {
+        "cached_input": 8694272,
+        "input": 8914550,
+        "output": 56861
+      },
+      "worker_count": 1
+    },
+    {
+      "arm": "B",
+      "candidate_quality_score": 100,
+      "candidate_wall_clock_comparable": false,
+      "candidate_wall_clock_seconds": null,
+      "coordination_seconds": 86,
+      "evaluator_objective_score": 100,
+      "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-b-attempt-1.json",
+      "evaluator_wall_clock_seconds": 68,
+      "fanout_elected": true,
+      "integrated_wall_clock_comparable": true,
+      "integrated_wall_clock_seconds": 1767,
+      "observed_spawn_agent_calls": 3,
+      "produced_work": true,
+      "run_id": "vs-p0b-next-b",
+      "skill_loads": 10,
+      "terminal_status": "completed",
+      "timing_scope": "runner-integrated",
+      "tokens": {
+        "cached_input": 14519808,
+        "input": 14908719,
+        "output": 45933
+      },
+      "worker_count": 3
+    },
+    {
+      "arm": "C",
+      "candidate_quality_score": 0,
+      "candidate_wall_clock_comparable": false,
+      "candidate_wall_clock_seconds": null,
+      "coordination_seconds": null,
+      "evaluator_objective_score": 90,
+      "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-c-attempt-1.json",
+      "evaluator_wall_clock_seconds": 52,
+      "fanout_elected": null,
+      "integrated_wall_clock_comparable": true,
+      "integrated_wall_clock_seconds": 1857,
+      "observed_spawn_agent_calls": 2,
+      "produced_work": true,
+      "run_id": "vs-p0b-next-c",
+      "skill_loads": null,
+      "terminal_status": "candidate-failed",
+      "timing_scope": "runner-integrated",
+      "tokens": {
+        "cached_input": 0,
+        "input": 0,
+        "output": 0
+      },
+      "worker_count": null
+    }
+  ],
+  "arms_without_terminal_usage": [
+    "C"
+  ],
+  "assigned_runs": 3,
+  "attempts_started": 3,
+  "campaign_id": "vector-siege-phase-0b-revision",
+  "candidate_wall_clock_comparable": false,
+  "candidate_wall_clock_seconds": null,
+  "confirmatory_evidence": false,
+  "directional_only": true,
+  "evaluator_wall_clock_seconds": 167,
+  "official_pilot_scores_modified": false,
+  "parent_worker_token_split_available": false,
+  "pricing": {
+    "currency": "USD",
+    "model": "gpt-5.6-luna",
+    "per_request_context_band_available": false,
+    "rates": {
+      "all_long_context_upper_bound": {
+        "cached_input": 0.04,
+        "input": 0.4,
+        "output": 1.8
+      },
+      "short_context": {
+        "cached_input": 0.02,
+        "input": 0.2,
+        "output": 1.2
+      }
+    },
+    "source": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+    "unit_tokens": 1000000
+  },
+  "redaction": {
+    "credentials_excluded": true,
+    "raw_environment_excluded": true,
+    "raw_model_transcript_excluded": true
+  },
+  "replacement_processes_started": 0,
+  "roi_comparisons": [
+    {
+      "baseline_arm": "A",
+      "candidate_arm": "B",
+      "cost_ratio": {
+        "all_long_context_upper_bound": 1.5217161049620476,
+        "short_context": 1.4791616464151354
+      },
+      "equivalent_model_cost_usd": {
+        "all_long_context_upper_bound": {
+          "baseline_usd": 0.53823188,
+          "candidate_usd": 0.8190361200000001
+        },
+        "short_context": {
+          "baseline_usd": 0.28617423999999997,
+          "candidate_usd": 0.42329796000000003
+        }
+      },
+      "integrated_time_ratio": 1.1533942558746737,
+      "parallel_efficiency": 0.28900207508017356,
+      "quality_per_dollar": {
+        "all_long_context_upper_bound": {
+          "baseline": 185.79352824659884,
+          "candidate": 122.0947374091389
+        },
+        "short_context": {
+          "baseline": 349.437461596823,
+          "candidate": 236.24021244987807
+        }
+      },
+      "quality_per_integrated_hour": {
+        "baseline": 234.98694516971278,
+        "candidate": 203.73514431239389
+      },
+      "quality_ratio": 1.0,
+      "roi_index": {
+        "all_long_context_upper_bound": {
+          "cost_25_time_75": 0.8029067033076142,
+          "cost_50_time_50": 0.7476327067771662,
+          "cost_75_time_25": 0.6994789232578581
+        },
+        "short_context": {
+          "cost_25_time_75": 0.8098240707067832,
+          "cost_50_time_50": 0.7597179601239962,
+          "cost_75_time_25": 0.7154509801412529
+        }
+      },
+      "speedup": 0.8670062252405206
+    },
+    {
+      "baseline_arm": "A",
+      "candidate_arm": "C",
+      "cost_ratio": {
+        "all_long_context_upper_bound": null,
+        "short_context": null
+      },
+      "equivalent_model_cost_usd": {
+        "all_long_context_upper_bound": {
+          "baseline_usd": 0.53823188,
+          "candidate_usd": null
+        },
+        "short_context": {
+          "baseline_usd": 0.28617423999999997,
+          "candidate_usd": null
+        }
+      },
+      "integrated_time_ratio": 1.2121409921671018,
+      "parallel_efficiency": null,
+      "quality_per_dollar": {
+        "all_long_context_upper_bound": {
+          "baseline": 185.79352824659884,
+          "candidate": null
+        },
+        "short_context": {
+          "baseline": 349.437461596823,
+          "candidate": null
+        }
+      },
+      "quality_per_integrated_hour": {
+        "baseline": 234.98694516971278,
+        "candidate": 0.0
+      },
+      "quality_ratio": 0.0,
+      "roi_index": {
+        "all_long_context_upper_bound": {
+          "cost_25_time_75": 0,
+          "cost_50_time_50": 0,
+          "cost_75_time_25": 0
+        },
+        "short_context": {
+          "cost_25_time_75": 0,
+          "cost_50_time_50": 0,
+          "cost_75_time_25": 0
+        }
+      },
+      "speedup": 0.8249865374259558
+    }
+  ],
+  "schema_version": "task-parallelism-phase-0b-revision-summary.v1",
+  "terminal_runs": 3,
+  "token_usage_complete": false,
+  "token_usage_scope": "aggregate-candidate-turn",
+  "tokens": {
+    "cached_input": 23214080,
+    "input": 23823269,
+    "output": 102794
+  }
+}

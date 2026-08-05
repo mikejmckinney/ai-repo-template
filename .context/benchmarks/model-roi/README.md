@@ -15,7 +15,7 @@
 - **Stage 1 effort policy:** target `medium` where selectable; use platform default only where no effort control exists and record the caveat.
 - **Manual fallback:** allowed after a documented headless failure via `make worktree` followed by `make record`; direct GUI agents such as Antigravity need explicit manual-capture evidence.
 - **Phase A merge (issue #374):** **merged** (`eb8fff6`, PR #379). Harness and rubrics remain in the lab; the operator guide and published results are canonical under `docs/` on `main`. Subjective JSON fixtures live on tag `benchmark/phase-a-artifacts-20260608` and branch `benchmark/roi`. Deferred bot-review items: [`FOLLOW_UPS.md`](./FOLLOW_UPS.md).
-- **Task-parallelism preparation:** [`task-parallelism/README.md`](./task-parallelism/README.md) defines the deterministic Phase 0A preflight, blocked Phase 0B scaffold and run plan, and explicit execution approval boundary.
+- **Task-parallelism campaign:** [`task-parallelism/README.md`](./task-parallelism/README.md) defines the deterministic Phase 0A preflight, completed Phase 0B no-go, and approved one-A/one-B directional revision execution.
 - **Follow-on prompts (same PR, run after merge):** `.github/prompts/agent-pr-prompts-combined-v2.md` (five `main` PRs), `07-implement-gemini-free-paid-routing.md` (`main`), `06-implement-class-c-framework-benchmark.md` (`benchmark/roi`).
 
 ## Companion surfaces
@@ -32,7 +32,7 @@ agent must perform, plus sealed reference metadata for evaluators.
 | `.github/prompts/model-roi-duo-implementer.md` | Stage 1D implementer-phase prompt; consumes the plan artifact and produces the scored diff. |
 | `.github/prompts/model-roi-orchestration-pipeline-candidate.md` | Issue #376 pipeline prompt; enables subagents/handoffs while keeping runner-owned push/PR creation. |
 | `docs/guides/model-roi-benchmark-runbook.md` | Canonical setup, synchronization, run, grading, and publication procedure. |
-| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 Phase 0A campaign plus blocked Phase 0B scaffold, runtime evidence, prompts, schemas, and run policy. |
+| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 Phase 0A campaign, completed Phase 0B evidence, revised prompts, approved execution state, schemas, and directional results. |
 | `.context/benchmarks/model-roi/stage-1d-duo-workflow.md` | Stage 1D planner/implementer experiment protocol, candidates, cost view, and commands. |
 | `.context/benchmarks/model-roi/issue-376-orchestration-pipeline.md` | Pipeline experiment protocol, candidate set, overlay policy, and grading notes for issue #376. |
 | `docs/benchmarks/agent-roi-benchmark-results.md` | Canonical scored benchmark record, cost source register, and ROI tables. |

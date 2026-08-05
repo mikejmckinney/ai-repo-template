@@ -202,8 +202,86 @@ candidate-report schema without the completed pilot v1 schema's two-worker cap.
 Do not treat the rendered plan as an executable campaign state.
 
 The retained-branch diagnostic is explicitly non-confirmatory and does not alter
-the merged pilot scores. Another candidate invocation remains blocked until the
-revision is reviewed and the maintainer separately approves execution.
+the merged pilot scores. The maintainer approved one A/B assignment per arm and,
+after both completed, one prompt-gated Arm C assignment on 2026-08-05. Arm C
+self-checks its work graph before autonomous native fan-out; it is not the
+deferred deterministic external-gate treatment. Validate the separate execution
+state before any process:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-revision-execution-validate
+```
+
+The revision runner requires a frozen activation implementation SHA and creates
+each candidate in a standalone, single-branch clone with no object alternates.
+It disables candidate fetch/push access after cloning, injects and verifies the
+arm-specific root override, then removes that harness-owned file before taking
+the candidate snapshot. Run the authorized assignments sequentially:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-a
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-b
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-c
+make -C scripts/benchmark/task-parallelism phase-0b-revision-summary
+```
+
+Candidate timeout, partial completion, failure, and low quality are terminal.
+The prior A/B authorization allowed at most one verified provider-transient or
+harness-invalid replacement; Arm C authorizes no replacement. Every checkout
+that produced work receives the same independent install, browser, unit, build,
+and end-to-end evaluation regardless of candidate self-report.
+
+Interpret timing by its recorded scope. `runner-integrated` values already
+include candidate execution, evaluator work, snapshot, and publication and must
+not receive evaluator time a second time; candidate-only duration is unavailable
+for those retained runs. `candidate-only` values stop when the model process
+returns and receive evaluator time once in the integrated comparison. If no
+candidate report is retained, keep the entire self-reported telemetry block null
+and separately publish harness-observed native spawn calls and process metadata.
+If any process emits no terminal usage event, mark campaign token usage incomplete,
+identify the affected arm, and treat the aggregate as retained usage only.
+
+Raw model transcripts and temporary clones remain ignored. The bounded tracked
+record under `results/phase-0b-revision/` contains attempt and final results,
+candidate reports, redacted process metadata, evaluator results and transcripts,
+and the directional summary. That summary must state that official pilot scores
+are unchanged and that the comparison is directional, non-confirmatory, and not
+adoption evidence. It calculates B/A and C/A quality, integrated time, speedup,
+parallel efficiency, equivalent API cost, quality per dollar/hour, and ROI under
+50/50, 75/25, and 25/75 cost/time weights. Use the official standard
+`gpt-5.6-luna` rates from
+<https://developers.openai.com/api/docs/models/gpt-5.6-luna>. Aggregate usage
+cannot identify which requests exceeded the 272K long-context threshold, so
+report a short-rate estimate and all-long-context upper bound. Mark parent/worker
+token splitting unavailable rather than estimating a split. If a timed-out process
+does not emit terminal usage, record equivalent cost and cost ratio as unavailable;
+zero retained tokens are not evidence of zero spend.
+
+If the runner exits with an in-progress attempt, do not hand-edit execution
+state or launch the run again. Confirm the candidate and evaluator processes have
+stopped, then run:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --recover-interrupted <attempt-id>
+```
+
+Recovery reuses complete retained evidence when available. Otherwise it captures
+and evaluates the retained checkout, records a harness-interrupted result, and
+makes only an eligible first attempt available for the campaign's one replacement.
+The recovered result records zero candidate wall-clock seconds because the
+interrupted process duration is unknown; process metadata separately retains time
+elapsed since the recorded start, while the result and summary mark candidate
+runtime non-comparable. A retained checkout with a missing or modified override
+records failed integrity unless the harness wrote a successful verification to a
+harness-owned integrity record under ignored `.artifacts/` before removing the
+file. This transient record is deleted once terminal state is recorded and is not
+part of the final retained evidence. An absent checkout records unknown integrity.
+A publication failure leaves terminal harness evidence plus the local clone
+instead of forcing evaluation to run again.
 
 Typical preflight:
 

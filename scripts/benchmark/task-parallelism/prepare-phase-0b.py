@@ -30,6 +30,12 @@ ARM_EXECUTION_POLICIES = {
         "- This benchmark treatment replaces the repository's monolithic-agent default.\n"
         "  Use as many native subagents as needed for the task and integrate their work."
     ),
+    "C": (
+        "- This prompt-gated benchmark treatment replaces the monolithic-agent default.\n"
+        "  Before implementation, create and self-check a work graph covering dependencies,\n"
+        "  shared contracts, predicted write sets, child validation, and integration. Use native\n"
+        "  subagents only for packages that pass that check, and keep integration parent-owned."
+    ),
 }
 REPOSITORY_ENTRY_START = "## Repository entry gate"
 EXECUTION_MODEL_START = "## Execution model"

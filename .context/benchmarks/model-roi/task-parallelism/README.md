@@ -203,5 +203,88 @@ make -C scripts/benchmark/task-parallelism phase-0b-revision-validate
 make -C scripts/benchmark/task-parallelism phase-0b-revision-plan
 ```
 
-The rendered plan remains blocked with zero candidate processes. Another model
-run requires separate explicit approval.
+The rendered preparation plan remains the immutable blocked A/B contract. The
+maintainer separately approved activation and exactly one Arm A assignment
+followed by one Arm B assignment on 2026-08-05. After both completed, the
+maintainer authorized one prompt-gated Arm C assignment in the same PR. Arm C
+must autonomously create and self-check a dependency, shared-contract, write-set,
+validation, and integration work graph before using native subagents. It does not
+use the deferred deterministic external gate. Validate the approved state with:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-revision-execution-validate
+```
+
+The activation runner creates a standalone `--no-local --single-branch` clone
+for each attempt, disables its upstream URL before candidate execution, injects
+the arm-specific `AGENTS.override.md`, and removes that evaluator-owned file
+before snapshotting candidate work. Raw Codex output and temporary clones remain
+under ignored `.artifacts/`; bounded candidate reports, attempt records, process
+metadata, evaluator results, evaluator transcripts, and the directional summary live
+under tracked `results/phase-0b-revision/`.
+
+After the activation implementation SHA is frozen, execute only in this order:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-a
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-b
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-c
+make -C scripts/benchmark/task-parallelism phase-0b-revision-summary
+```
+
+A candidate timeout, partial completion, failure, or low-quality result is
+terminal. The prior A/B authorization allowed one verified provider-transient or
+harness-invalid replacement; Arm C authorizes no replacement. Every original
+attempt remains retained, and the parent evaluator runs for every checkout that
+produced work. The resulting three-arm comparison is directional feasibility
+evidence only: it does not modify the official pilot scores, supply confirmatory
+evidence, or support an adoption claim. Codex emits one aggregate usage record
+for a candidate turn, so the summary reports per-arm aggregate tokens and marks
+parent/worker token splitting unavailable.
+
+Each result labels its wall-clock scope. The retained A/B/C runs were captured
+with `runner-integrated` timing, which includes candidate execution, evaluation,
+snapshot, and publication once; their candidate-only duration is unavailable.
+Future runs capture `candidate-only` timing immediately after the model process
+and add evaluator time once for the integrated comparison. Missing candidate
+self-report leaves the entire self-reported telemetry block null while process
+metadata and the summary retain harness-observed native spawn calls. Null means
+unavailable, not a measured zero.
+
+The summary calculates each candidate arm against monolithic Arm A. Equivalent
+API cost uses the official `gpt-5.6-luna` standard rates published at
+<https://developers.openai.com/api/docs/models/gpt-5.6-luna>. Because retained
+usage does not identify per-request context bands, it reports both the short-rate
+estimate and an all-long-context upper bound. Each comparison includes quality
+and integrated-time ratios, speedup, parallel efficiency, cost ratio, quality per
+dollar/hour, and 50/50, 75/25, and 25/75 cost/time ROI sensitivity.
+When a timed-out process emits no terminal usage event, equivalent cost and cost
+ratio remain unavailable rather than treating zero retained tokens as zero spend.
+
+If the runner process exits after recording an in-progress attempt but before
+its terminal state, first confirm that no candidate or evaluator process remains,
+then recover the retained checkout and artifacts with:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --recover-interrupted <attempt-id>
+```
+
+The recovery path reconstructs already-complete terminal evidence when present.
+Otherwise it snapshots and evaluates produced work, classifies the attempt as a
+harness interruption, and applies the existing one-replacement budget. It never
+starts a second candidate process by itself. Because the original candidate
+process duration is unavailable after interruption, the recovered result records
+zero candidate wall-clock seconds and keeps elapsed operator time only in process
+metadata. The result and summary mark that duration non-comparable rather than
+summing it as measured runtime. Recovery records a missing or modified override
+as not intact when the checkout remains available, unless the harness wrote a
+successful verification to a harness-owned integrity record under ignored
+`.artifacts/` before removing that file. This transient record is deleted once
+terminal state is recorded and is not part of the final retained evidence.
+Recovery records integrity as unknown when no checkout remains. A failed
+publication is retained as terminal harness evidence instead of rerunning
+evaluation.

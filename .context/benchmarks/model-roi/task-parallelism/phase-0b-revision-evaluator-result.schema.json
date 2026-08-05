@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-revision-evaluator-result.v1.json",
+  "title": "Task parallelism Phase 0B revision evaluator result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "campaign_id", "run_id", "attempt_id", "candidate_sha",
+    "produced_work", "evaluated", "skip_reason", "wall_clock_seconds",
+    "objective_score", "checks"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-revision-evaluator-result.v1" },
+    "campaign_id": { "const": "vector-siege-phase-0b-revision" },
+    "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b", "vs-p0b-next-c"] },
+    "attempt_id": { "type": "string", "pattern": "^vs-p0b-next-[abc]-attempt-[12]$" },
+    "candidate_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "produced_work": { "type": "boolean" },
+    "evaluated": { "type": "boolean" },
+    "skip_reason": { "type": ["string", "null"] },
+    "wall_clock_seconds": { "type": "integer", "minimum": 0 },
+    "objective_score": { "type": "number", "minimum": 0 },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "install": { "$ref": "#/$defs/check" },
+        "browser": { "$ref": "#/$defs/check" },
+        "unit": { "$ref": "#/$defs/check" },
+        "build": { "$ref": "#/$defs/check" },
+        "e2e": { "$ref": "#/$defs/check" }
+      }
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "timeout_seconds", "exit_code", "points_awarded", "log_path", "log_sha256", "log_truncated"],
+      "properties": {
+        "command": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "timeout_seconds": { "type": "integer", "minimum": 1 },
+        "exit_code": { "type": "integer" },
+        "points_awarded": { "type": "number", "minimum": 0 },
+        "log_path": { "type": "string" },
+        "log_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "log_truncated": { "type": "boolean" }
+      }
+    }
+  }
+}
