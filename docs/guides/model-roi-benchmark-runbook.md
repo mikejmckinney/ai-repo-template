@@ -255,10 +255,10 @@ The recovered result records zero candidate wall-clock seconds because the
 interrupted process duration is unknown; process metadata separately retains time
 elapsed since the recorded start, while the result and summary mark candidate
 runtime non-comparable. A retained checkout with a missing or modified override
-records failed integrity unless the harness persisted its successful verification
-before removing the file; an absent checkout records unknown integrity. A
-publication failure leaves terminal harness evidence plus the local clone instead
-of forcing evaluation to run again.
+records failed integrity unless the harness recorded successful verification in
+its process record before removing the file; an absent checkout records unknown
+integrity. A publication failure leaves terminal harness evidence plus the local
+clone instead of forcing evaluation to run again.
 
 Typical preflight:
 

@@ -75,6 +75,32 @@ def relative_to_protocol(path: Path) -> str:
     return str(path.relative_to(PROTOCOL_ROOT))
 
 
+def process_metadata_path(attempt_id: str) -> Path:
+    return RESULT_ROOT / "process" / f"{attempt_id}.json"
+
+
+def instruction_integrity_path(attempt_id: str) -> Path:
+    return RESULT_ROOT / "process" / f"{attempt_id}.instruction-integrity.json"
+
+
+def record_instruction_integrity(
+    attempt_id: str,
+    expected_sha: str,
+    observed_sha: str | None,
+    intact: bool,
+) -> None:
+    write_json(
+        instruction_integrity_path(attempt_id),
+        {
+            "attempt_id": attempt_id,
+            "instruction_sha256": expected_sha,
+            "observed_instruction_sha256": observed_sha,
+            "instruction_override_intact": intact,
+            "state_recovery": "override integrity recorded before harness removal",
+        },
+    )
+
+
 def validate_state(state: dict) -> None:
     validate_document(state, STATE_SCHEMA)
     completed = state["completed_runs"]
@@ -454,7 +480,7 @@ def execute_run(run_id: str) -> int:
     override_path = checkout / "AGENTS.override.md"
     override_path.write_text(PREPARE.render_candidate_instructions(arm), encoding="utf-8")
     override_sha = sha256_file(override_path)
-    process_path = RESULT_ROOT / "process" / f"{attempt_id}.json"
+    process_path = process_metadata_path(attempt_id)
     state_attempt = {
         **attempt,
         "terminal_status": None,
@@ -524,13 +550,9 @@ def execute_run(run_id: str) -> int:
     if not instruction_override_intact:
         invocation_error = "candidate instruction override was modified or removed"
     else:
-        marker = artifact_dir / "instruction-override-verified.sha256"
-        temporary_marker = marker.with_suffix(".tmp")
-        with temporary_marker.open("w", encoding="utf-8") as handle:
-            handle.write(f"{override_sha}\n")
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary_marker, marker)
+        record_instruction_integrity(
+            attempt_id, override_sha, override_sha, instruction_override_intact
+        )
     if override_path.is_file():
         override_path.unlink()
 
@@ -641,6 +663,7 @@ def execute_run(run_id: str) -> int:
             "token_usage_scope": "aggregate-candidate-turn",
         },
     )
+    instruction_integrity_path(attempt_id).unlink(missing_ok=True)
     if not replacement_eligible:
         final_result_path = RESULT_ROOT / "final" / f"{run_id}.json"
         write_json(final_result_path, result)
@@ -670,11 +693,15 @@ def snapshot_interrupted_candidate(
         PREPARE.render_candidate_instructions(arm).encode("utf-8")
     )
     observed_instruction_sha = sha256_file(override) if override.is_file() else None
-    marker = ARTIFACT_ROOT / attempt_id / "instruction-override-verified.sha256"
-    if observed_instruction_sha is None and marker.is_file():
-        marker_sha = marker.read_text(encoding="utf-8").strip()
-        if marker_sha == instruction_sha:
-            observed_instruction_sha = marker_sha
+    integrity_path = instruction_integrity_path(attempt_id)
+    if observed_instruction_sha is None and integrity_path.is_file():
+        process = load_json(integrity_path)
+        if (
+            process.get("instruction_sha256") == instruction_sha
+            and process.get("observed_instruction_sha256") == instruction_sha
+            and process.get("instruction_override_intact") is True
+        ):
+            observed_instruction_sha = instruction_sha
     instruction_override_intact = observed_instruction_sha == instruction_sha
     if override.is_file():
         override.unlink()
@@ -712,6 +739,7 @@ def recover_interrupted(attempt_id: str) -> int:
             process = load_json(process_path)
             process["state_recovery"] = "terminal state reconstructed from retained evidence"
             write_json(process_path, process)
+        instruction_integrity_path(attempt_id).unlink(missing_ok=True)
         finalize_attempt_state(
             state,
             attempt_id,
@@ -826,7 +854,7 @@ def recover_interrupted(attempt_id: str) -> int:
     }
     validate_document(result, RESULT_SCHEMA)
     write_json(attempt_result_path, result)
-    process_path = RESULT_ROOT / "process" / f"{attempt_id}.json"
+    process_path = process_metadata_path(attempt_id)
     write_json(
         process_path,
         {
@@ -850,6 +878,7 @@ def recover_interrupted(attempt_id: str) -> int:
             "token_usage_scope": "aggregate-candidate-turn",
         },
     )
+    instruction_integrity_path(attempt_id).unlink(missing_ok=True)
     if not replacement_eligible:
         write_json(RESULT_ROOT / "final" / f"{run_id}.json", result)
     finalize_attempt_state(
