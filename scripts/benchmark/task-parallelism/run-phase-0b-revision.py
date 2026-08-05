@@ -650,39 +650,28 @@ def execute_run(run_id: str) -> int:
     return 0
 
 
-def snapshot_interrupted_candidate(checkout: Path, base_sha: str, attempt_id: str) -> tuple[list[str], str, int]:
+def snapshot_interrupted_candidate(
+    checkout: Path, base_sha: str, attempt_id: str, arm: str
+) -> tuple[list[str], str, int, str, str | None, bool]:
     override = checkout / "AGENTS.override.md"
+    instruction_sha = sha256_bytes(
+        PREPARE.render_candidate_instructions(arm).encode("utf-8")
+    )
+    observed_instruction_sha = sha256_file(override) if override.is_file() else None
+    instruction_override_intact = observed_instruction_sha == instruction_sha
     if override.is_file():
         override.unlink()
-    subprocess.run(["git", "add", "-A"], cwd=checkout, check=True)
-    dirty = subprocess.run(["git", "diff", "--cached", "--quiet", "HEAD"], cwd=checkout, check=False)
-    if dirty.returncode not in {0, 1}:
-        raise ValueError("could not inspect interrupted candidate index")
-    if dirty.returncode == 1:
-        subprocess.run(
-            ["git", "commit", "--no-gpg-sign", "-m", f"candidate recovery: {attempt_id}"],
-            cwd=checkout,
-            check=True,
-        )
-    changed = subprocess.run(
-        ["git", "diff", "--name-only", base_sha, "HEAD"],
-        cwd=checkout,
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-    ).stdout.splitlines()
-    candidate_sha = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=checkout,
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-    ).stdout.strip()
-    forbidden = (".agents/", "TASK.md", "public/benchmark-assets/vector-siege/")
-    drift_count = sum(
-        path == forbidden[1] or path.startswith((forbidden[0], forbidden[2])) for path in changed
+    changed, candidate_sha, drift_count = PILOT.snapshot_candidate(
+        checkout, base_sha, attempt_id
     )
-    return changed, candidate_sha, drift_count
+    return (
+        changed,
+        candidate_sha,
+        drift_count,
+        instruction_sha,
+        observed_instruction_sha,
+        instruction_override_intact,
+    )
 
 
 def recover_interrupted(attempt_id: str) -> int:
@@ -726,10 +715,20 @@ def recover_interrupted(attempt_id: str) -> int:
     changed = []
     candidate_sha = base_sha
     drift_count = 0
+    instruction_sha = sha256_bytes(
+        PREPARE.render_candidate_instructions(arm).encode("utf-8")
+    )
+    observed_instruction_sha = None
+    instruction_override_intact = False
     if checkout.is_dir():
-        changed, candidate_sha, drift_count = snapshot_interrupted_candidate(
-            checkout, base_sha, attempt_id
-        )
+        (
+            changed,
+            candidate_sha,
+            drift_count,
+            instruction_sha,
+            observed_instruction_sha,
+            instruction_override_intact,
+        ) = snapshot_interrupted_candidate(checkout, base_sha, attempt_id, arm)
     produced_work = bool(changed)
     report = None
     report_path = artifact_dir / "final-report.json"
@@ -759,16 +758,20 @@ def recover_interrupted(attempt_id: str) -> int:
     write_json(evaluation_path, evaluation)
     candidate_branch = f"benchmark/vector-siege/{attempt_id}"
     published = False
+    publication_failure = None
     if checkout.is_dir():
-        source = subprocess.run(
-            ["git", "remote", "get-url", "origin"],
-            cwd=REPO_ROOT,
-            check=True,
-            text=True,
-            stdout=subprocess.PIPE,
-        ).stdout.strip()
-        publish_candidate(checkout, source, candidate_branch)
-        published = True
+        try:
+            source = subprocess.run(
+                ["git", "remote", "get-url", "origin"],
+                cwd=REPO_ROOT,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
+            ).stdout.strip()
+            publish_candidate(checkout, source, candidate_branch)
+            published = True
+        except (OSError, subprocess.CalledProcessError) as error:
+            publication_failure = f"candidate evidence publication failed: {error}"
     started = datetime.fromisoformat(attempt["started_at"].replace("Z", "+00:00"))
     elapsed = max(0, int((datetime.now(timezone.utc) - started).total_seconds()))
     replacement_eligible = not attempt["is_replacement"]
@@ -784,14 +787,16 @@ def recover_interrupted(attempt_id: str) -> int:
         "arm": arm,
         "terminal_status": "harness-failed",
         "failure_class": "interrupted-harness",
-        "failure_reason": "execution interrupted before terminal state was recorded",
+        "failure_reason": redact(
+            publication_failure or "execution interrupted before terminal state was recorded"
+        )[:500],
         "base_sha": base_sha,
         "candidate_sha": candidate_sha,
         "candidate_branch": candidate_branch,
         "produced_work": produced_work,
         "changed_files": sorted(changed),
         "quality_score": 0,
-        "wall_clock_seconds": elapsed,
+        "wall_clock_seconds": 0,
         "tokens": usage,
         **telemetry,
         "predicted_path_drift_count": drift_count,
@@ -814,11 +819,15 @@ def recover_interrupted(attempt_id: str) -> int:
             "thread_id": thread_id,
             "candidate_branch": candidate_branch,
             "candidate_sha": candidate_sha,
+            "instruction_sha256": instruction_sha,
+            "observed_instruction_sha256": observed_instruction_sha,
+            "instruction_override_intact": instruction_override_intact,
             "observed_spawn_agent_calls": observed_spawn_agent_calls,
             "parent_worker_token_split_available": False,
             "published": published,
             "clone_retained": produced_work and not published,
             "raw_artifact_path": str(artifact_dir.relative_to(REPO_ROOT)),
+            "elapsed_since_start_seconds": elapsed,
             "state_recovery": "interrupted attempt captured and classified harness-failed",
             "token_usage_scope": "aggregate-candidate-turn",
         },

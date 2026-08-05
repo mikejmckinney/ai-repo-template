@@ -328,17 +328,26 @@ PY
 	[ "${status}" -eq 0 ]
 }
 
-@test "interrupted state can be reconstructed from retained terminal evidence" {
-	run python3 - "${RUNNER}" <<'PY'
+@test "interrupted recovery reconstructs retained terminal evidence without reevaluation" {
+	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
 import importlib.util
+import json
 import sys
+from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
+root = Path(sys.argv[2])
+module.PROTOCOL_ROOT = root
+module.RESULT_ROOT = root / "results"
+module.STATE_PATH = root / "state.json"
+module.RESULT_SCHEMA = root / "result.schema.json"
+module.EVALUATOR_SCHEMA = root / "evaluation.schema.json"
 state = {
     "status": "running",
     "completed_runs": [],
+    "candidate_base": {"sha": "0" * 40},
     "attempts": [{
         "attempt_id": "vs-p0b-next-a-attempt-1",
         "run_id": "vs-p0b-next-a",
@@ -353,31 +362,169 @@ state = {
         "produced_work": None,
         "result_path": None,
         "candidate_report_path": None,
-        "process_metadata_path": "results/process.json",
+        "process_metadata_path": "results/process/vs-p0b-next-a-attempt-1.json",
         "evaluator_result_path": None,
     }],
 }
 result = {
+    "attempt_id": "vs-p0b-next-a-attempt-1",
     "run_id": "vs-p0b-next-a",
     "terminal_status": "completed",
     "replacement_eligible": False,
     "replacement_disposition": "not-eligible",
     "wall_clock_seconds": 100,
     "produced_work": True,
+    "candidate_report_path": "results/report.json",
+    "evaluator_result_path": "results/evaluations/vs-p0b-next-a-attempt-1.json",
 }
-module.finalize_attempt_state(
-    state,
-    "vs-p0b-next-a-attempt-1",
-    result,
-    "results/attempt.json",
-    "results/report.json",
-    "results/evaluation.json",
-    "2026-08-05T00:02:00Z",
+module.write_json(module.RESULT_ROOT / "attempts/vs-p0b-next-a-attempt-1.json", result)
+module.write_json(root / result["evaluator_result_path"], {"evaluated": True})
+module.write_json(root / state["attempts"][0]["process_metadata_path"], {"published": True})
+module.load_state = lambda: state
+module.validate_document = lambda value, schema: None
+module.validate_state = lambda value: None
+module.evaluate_candidate = lambda *args: (_ for _ in ()).throw(AssertionError("reevaluated"))
+module.publish_candidate = lambda *args: (_ for _ in ()).throw(AssertionError("republished"))
+assert module.recover_interrupted("vs-p0b-next-a-attempt-1") == 0
+persisted = json.loads(module.STATE_PATH.read_text())
+process = json.loads((root / state["attempts"][0]["process_metadata_path"]).read_text())
+assert persisted["completed_runs"] == ["vs-p0b-next-a"]
+assert persisted["status"] == "ready"
+assert persisted["attempts"][0]["terminal_status"] == "completed"
+assert process["state_recovery"] == "terminal state reconstructed from retained evidence"
+assert (module.RESULT_ROOT / "final/vs-p0b-next-a.json").is_file()
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "interrupted recovery records failed publication and unknown candidate duration" {
+	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
+import importlib.util
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+root = Path(sys.argv[2])
+module.REPO_ROOT = root
+module.PROTOCOL_ROOT = root
+module.RESULT_ROOT = root / "results"
+module.ARTIFACT_ROOT = root / "artifacts"
+module.STATE_PATH = root / "state.json"
+module.RESULT_SCHEMA = root / "result.schema.json"
+module.EVALUATOR_SCHEMA = root / "evaluation.schema.json"
+attempt_id = "vs-p0b-next-a-attempt-1"
+checkout = module.ARTIFACT_ROOT / "clones" / attempt_id
+checkout.mkdir(parents=True)
+state = {
+    "status": "running",
+    "completed_runs": [],
+    "candidate_base": {"sha": "0" * 40},
+    "attempts": [{
+        "attempt_id": attempt_id,
+        "run_id": "vs-p0b-next-a",
+        "attempt_number": 1,
+        "is_replacement": False,
+        "terminal_status": None,
+        "replacement_eligible": False,
+        "replacement_disposition": "pending",
+        "started_at": "2026-08-05T00:00:00Z",
+        "finished_at": None,
+        "wall_clock_seconds": None,
+        "produced_work": None,
+        "result_path": None,
+        "candidate_report_path": None,
+        "process_metadata_path": f"results/process/{attempt_id}.json",
+        "evaluator_result_path": None,
+    }],
+}
+module.load_state = lambda: state
+module.validate_document = lambda value, schema: None
+module.validate_state = lambda value: None
+module.snapshot_interrupted_candidate = lambda *args: (["src/app.js"], "1" * 40, 0, "2" * 64, "3" * 64, False)
+module.evaluate_candidate = lambda *args: {
+    "run_id": "vs-p0b-next-a",
+    "evaluated": True,
+    "wall_clock_seconds": 1,
+    "objective_score": 0,
+}
+module.PILOT.parse_usage = lambda path: ({"input": 0, "cached_input": 0, "output": 0}, None)
+module.subprocess.run = lambda *args, **kwargs: type("Result", (), {"stdout": "origin\n"})()
+module.publish_candidate = lambda *args: (_ for _ in ()).throw(subprocess.CalledProcessError(1, ["git", "push"]))
+assert module.recover_interrupted(attempt_id) == 0
+result = json.loads((module.RESULT_ROOT / f"attempts/{attempt_id}.json").read_text())
+process = json.loads((module.RESULT_ROOT / f"process/{attempt_id}.json").read_text())
+persisted = json.loads(module.STATE_PATH.read_text())
+assert result["terminal_status"] == "harness-failed"
+assert result["failure_class"] == "interrupted-harness"
+assert "publication failed" in result["failure_reason"]
+assert result["replacement_eligible"] is True
+assert result["wall_clock_seconds"] == 0
+assert process["elapsed_since_start_seconds"] > 0
+assert process["published"] is False
+assert process["instruction_sha256"] == "2" * 64
+assert process["observed_instruction_sha256"] == "3" * 64
+assert process["instruction_override_intact"] is False
+assert persisted["status"] == "ready"
+assert persisted["attempts"][0]["terminal_status"] == "harness-failed"
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "recover-interrupted CLI routes to recovery" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+called = []
+module.recover_interrupted = lambda attempt_id: called.append(attempt_id) or 0
+sys.argv = [sys.argv[1], "--recover-interrupted", "vs-p0b-next-a-attempt-1"]
+assert module.main() == 0
+assert called == ["vs-p0b-next-a-attempt-1"]
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "interrupted snapshot checks instructions and delegates drift scoring" {
+	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+checkout = Path(sys.argv[2]) / "checkout"
+checkout.mkdir()
+instructions = "candidate instructions\n"
+override = checkout / "AGENTS.override.md"
+override.write_text(instructions)
+module.PREPARE.render_candidate_instructions = lambda arm: instructions
+delegated = []
+module.PILOT.snapshot_candidate = lambda *args: delegated.append(args) or (["src/app.js"], "1" * 40, 2)
+changed, sha, drift, expected, observed, intact = module.snapshot_interrupted_candidate(
+    checkout, "0" * 40, "vs-p0b-next-a-attempt-1", "A"
 )
-assert state["completed_runs"] == ["vs-p0b-next-a"]
-assert state["status"] == "ready"
-assert state["attempts"][0]["terminal_status"] == "completed"
-assert state["attempts"][0]["result_path"] == "results/attempt.json"
+assert delegated == [(checkout, "0" * 40, "vs-p0b-next-a-attempt-1")]
+assert not override.exists()
+assert changed == ["src/app.js"]
+assert sha == "1" * 40
+assert drift == 2
+assert expected == module.sha256_bytes(instructions.encode())
+assert observed == expected
+assert intact is True
+override.write_text("tampered\n")
+_, _, _, expected, observed, intact = module.snapshot_interrupted_candidate(
+    checkout, "0" * 40, "vs-p0b-next-a-attempt-1", "A"
+)
+assert observed != expected
+assert intact is False
 PY
 	[ "${status}" -eq 0 ]
 }

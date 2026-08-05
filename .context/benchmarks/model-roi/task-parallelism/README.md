@@ -250,4 +250,9 @@ python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
 The recovery path reconstructs already-complete terminal evidence when present.
 Otherwise it snapshots and evaluates produced work, classifies the attempt as a
 harness interruption, and applies the existing one-replacement budget. It never
-starts a second candidate process by itself.
+starts a second candidate process by itself. Because the original candidate
+process duration is unavailable after interruption, the recovered result records
+zero candidate wall-clock seconds and keeps elapsed operator time only in process
+metadata. Recovery also records whether the arm instruction override remained
+intact and retains a failed publication as terminal harness evidence instead of
+rerunning evaluation.

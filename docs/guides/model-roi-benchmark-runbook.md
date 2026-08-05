@@ -251,6 +251,11 @@ python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
 Recovery reuses complete retained evidence when available. Otherwise it captures
 and evaluates the retained checkout, records a harness-interrupted result, and
 makes only an eligible first attempt available for the campaign's one replacement.
+The recovered result records zero candidate wall-clock seconds because the
+interrupted process duration is unknown; process metadata separately retains time
+elapsed since the recorded start. It also records instruction-override integrity,
+and a publication failure leaves terminal harness evidence plus the local clone
+instead of forcing evaluation to run again.
 
 Typical preflight:
 
