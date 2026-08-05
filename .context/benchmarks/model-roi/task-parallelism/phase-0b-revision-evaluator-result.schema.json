@@ -12,8 +12,8 @@
   "properties": {
     "schema_version": { "const": "task-parallelism-phase-0b-revision-evaluator-result.v1" },
     "campaign_id": { "const": "vector-siege-phase-0b-revision" },
-    "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b"] },
-    "attempt_id": { "type": "string", "pattern": "^vs-p0b-next-[ab]-attempt-[12]$" },
+    "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b", "vs-p0b-next-c"] },
+    "attempt_id": { "type": "string", "pattern": "^vs-p0b-next-[abc]-attempt-[12]$" },
     "candidate_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
     "produced_work": { "type": "boolean" },
     "evaluated": { "type": "boolean" },

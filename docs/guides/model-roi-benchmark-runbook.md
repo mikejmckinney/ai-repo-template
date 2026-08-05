@@ -202,8 +202,11 @@ candidate-report schema without the completed pilot v1 schema's two-worker cap.
 Do not treat the rendered plan as an executable campaign state.
 
 The retained-branch diagnostic is explicitly non-confirmatory and does not alter
-the merged pilot scores. The maintainer approved activation and one assignment
-per arm on 2026-08-05. Validate the separate execution state before any process:
+the merged pilot scores. The maintainer approved one A/B assignment per arm and,
+after both completed, one prompt-gated Arm C assignment on 2026-08-05. Arm C
+self-checks its work graph before autonomous native fan-out; it is not the
+deferred deterministic external-gate treatment. Validate the separate execution
+state before any process:
 
 ```bash
 make -C scripts/benchmark/task-parallelism phase-0b-revision-execution-validate
@@ -213,31 +216,37 @@ The revision runner requires a frozen activation implementation SHA and creates
 each candidate in a standalone, single-branch clone with no object alternates.
 It disables candidate fetch/push access after cloning, injects and verifies the
 arm-specific root override, then removes that harness-owned file before taking
-the candidate snapshot. Run Arm A first and do not start Arm B until Arm A has a
-terminal final result:
+the candidate snapshot. Run the authorized assignments sequentially:
 
 ```bash
 python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
   --run-id vs-p0b-next-a
 python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
   --run-id vs-p0b-next-b
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-c
 make -C scripts/benchmark/task-parallelism phase-0b-revision-summary
 ```
 
-Candidate timeout, partial completion, failure, and low quality are terminal
-without retry. At most one verified provider-transient or harness-invalid
-attempt may be replaced, and the original attempt remains durable. Every
-checkout that produced work receives the same independent install, browser,
-unit, build, and end-to-end evaluation regardless of candidate self-report.
+Candidate timeout, partial completion, failure, and low quality are terminal.
+The prior A/B authorization allowed at most one verified provider-transient or
+harness-invalid replacement; Arm C authorizes no replacement. Every checkout
+that produced work receives the same independent install, browser, unit, build,
+and end-to-end evaluation regardless of candidate self-report.
 
 Raw model transcripts and temporary clones remain ignored. The bounded tracked
 record under `results/phase-0b-revision/` contains attempt and final results,
 candidate reports, redacted process metadata, evaluator results and transcripts,
-and the paired summary. That summary must state that official pilot scores are
-unchanged and that the pair is directional, non-confirmatory, and not adoption
-evidence. If the selected runtime emits only aggregate turn usage, record that
-scope and mark parent/worker token splitting unavailable rather than estimating
-a split.
+and the directional summary. That summary must state that official pilot scores
+are unchanged and that the comparison is directional, non-confirmatory, and not
+adoption evidence. It calculates B/A and C/A quality, integrated time, speedup,
+parallel efficiency, equivalent API cost, quality per dollar/hour, and ROI under
+50/50, 75/25, and 25/75 cost/time weights. Use the official standard
+`gpt-5.6-luna` rates from
+<https://developers.openai.com/api/docs/models/gpt-5.6-luna>. Aggregate usage
+cannot identify which requests exceeded the 272K long-context threshold, so
+report a short-rate estimate and all-long-context upper bound. Mark parent/worker
+token splitting unavailable rather than estimating a split.
 
 If the runner exits with an in-progress attempt, do not hand-edit execution
 state or launch the run again. Confirm the candidate and evaluator processes have
@@ -255,10 +264,12 @@ The recovered result records zero candidate wall-clock seconds because the
 interrupted process duration is unknown; process metadata separately retains time
 elapsed since the recorded start, while the result and summary mark candidate
 runtime non-comparable. A retained checkout with a missing or modified override
-records failed integrity unless the harness recorded successful verification in
-its process record before removing the file; an absent checkout records unknown
-integrity. A publication failure leaves terminal harness evidence plus the local
-clone instead of forcing evaluation to run again.
+records failed integrity unless the harness wrote a successful verification to a
+harness-owned integrity record under ignored `.artifacts/` before removing the
+file. This transient record is deleted once terminal state is recorded and is not
+part of the final retained evidence. An absent checkout records unknown integrity.
+A publication failure leaves terminal harness evidence plus the local clone
+instead of forcing evaluation to run again.
 
 Typical preflight:
 

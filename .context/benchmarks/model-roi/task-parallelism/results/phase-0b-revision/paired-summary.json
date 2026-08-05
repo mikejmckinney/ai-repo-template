@@ -11,6 +11,8 @@
       "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-a-attempt-1.json",
       "evaluator_wall_clock_seconds": 47,
       "fanout_elected": false,
+      "integrated_wall_clock_comparable": true,
+      "integrated_wall_clock_seconds": 1579,
       "produced_work": true,
       "run_id": "vs-p0b-next-a",
       "skill_loads": 1,
@@ -32,6 +34,8 @@
       "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-b-attempt-1.json",
       "evaluator_wall_clock_seconds": 68,
       "fanout_elected": true,
+      "integrated_wall_clock_comparable": true,
+      "integrated_wall_clock_seconds": 1835,
       "produced_work": true,
       "run_id": "vs-p0b-next-b",
       "skill_loads": 10,
@@ -54,12 +58,81 @@
   "evaluator_wall_clock_seconds": 115,
   "official_pilot_scores_modified": false,
   "parent_worker_token_split_available": false,
+  "pricing": {
+    "currency": "USD",
+    "model": "gpt-5.6-luna",
+    "per_request_context_band_available": false,
+    "rates": {
+      "all_long_context_upper_bound": {
+        "cached_input": 0.04,
+        "input": 0.4,
+        "output": 1.8
+      },
+      "short_context": {
+        "cached_input": 0.02,
+        "input": 0.2,
+        "output": 1.2
+      }
+    },
+    "source": "https://developers.openai.com/api/docs/models/gpt-5.6-luna",
+    "unit_tokens": 1000000
+  },
   "redaction": {
     "credentials_excluded": true,
     "raw_environment_excluded": true,
     "raw_model_transcript_excluded": true
   },
   "replacement_processes_started": 0,
+  "roi_comparisons": [
+    {
+      "baseline_arm": "A",
+      "candidate_arm": "B",
+      "cost_ratio": {
+        "all_long_context_upper_bound": 1.5217161049620476,
+        "short_context": 1.4791616464151354
+      },
+      "equivalent_model_cost_usd": {
+        "all_long_context_upper_bound": {
+          "baseline_usd": 0.53823188,
+          "candidate_usd": 0.8190361200000001
+        },
+        "short_context": {
+          "baseline_usd": 0.28617423999999997,
+          "candidate_usd": 0.42329796000000003
+        }
+      },
+      "integrated_time_ratio": 1.162127929069031,
+      "parallel_efficiency": 0.2868301544050863,
+      "quality_per_dollar": {
+        "all_long_context_upper_bound": {
+          "baseline": 185.79352824659884,
+          "candidate": 122.0947374091389
+        },
+        "short_context": {
+          "baseline": 349.437461596823,
+          "candidate": 236.24021244987807
+        }
+      },
+      "quality_per_integrated_hour": {
+        "baseline": 227.9924002533249,
+        "candidate": 196.18528610354224
+      },
+      "quality_ratio": 1.0,
+      "roi_index": {
+        "all_long_context_upper_bound": {
+          "cost_25_time_75": 0.7987061133214527,
+          "cost_50_time_50": 0.7451997860680605,
+          "cost_75_time_25": 0.6984122695708593
+        },
+        "short_context": {
+          "cost_25_time_75": 0.8055509819556943,
+          "cost_50_time_50": 0.7572058810073432,
+          "cost_75_time_25": 0.7143350967410818
+        }
+      },
+      "speedup": 0.8604904632152589
+    }
+  ],
   "schema_version": "task-parallelism-phase-0b-revision-summary.v1",
   "terminal_runs": 2,
   "token_usage_scope": "aggregate-candidate-turn",

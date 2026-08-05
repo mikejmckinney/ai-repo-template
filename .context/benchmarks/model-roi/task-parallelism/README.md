@@ -203,9 +203,13 @@ make -C scripts/benchmark/task-parallelism phase-0b-revision-validate
 make -C scripts/benchmark/task-parallelism phase-0b-revision-plan
 ```
 
-The rendered preparation plan remains the immutable blocked contract. The
+The rendered preparation plan remains the immutable blocked A/B contract. The
 maintainer separately approved activation and exactly one Arm A assignment
-followed by one Arm B assignment on 2026-08-05. Validate the approved state with:
+followed by one Arm B assignment on 2026-08-05. After both completed, the
+maintainer authorized one prompt-gated Arm C assignment in the same PR. Arm C
+must autonomously create and self-check a dependency, shared-contract, write-set,
+validation, and integration work graph before using native subagents. It does not
+use the deferred deterministic external gate. Validate the approved state with:
 
 ```bash
 make -C scripts/benchmark/task-parallelism phase-0b-revision-execution-validate
@@ -216,7 +220,7 @@ for each attempt, disables its upstream URL before candidate execution, injects
 the arm-specific `AGENTS.override.md`, and removes that evaluator-owned file
 before snapshotting candidate work. Raw Codex output and temporary clones remain
 under ignored `.artifacts/`; bounded candidate reports, attempt records, process
-metadata, evaluator results, evaluator transcripts, and the paired summary live
+metadata, evaluator results, evaluator transcripts, and the directional summary live
 under tracked `results/phase-0b-revision/`.
 
 After the activation implementation SHA is frozen, execute only in this order:
@@ -226,17 +230,28 @@ python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
   --run-id vs-p0b-next-a
 python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
   --run-id vs-p0b-next-b
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --run-id vs-p0b-next-c
 make -C scripts/benchmark/task-parallelism phase-0b-revision-summary
 ```
 
 A candidate timeout, partial completion, failure, or low-quality result is
-terminal. One verified provider-transient or harness-invalid attempt may receive
-the campaign's only replacement; every original attempt remains retained. The
-parent evaluator runs for every checkout that produced work. The resulting pair
-is directional feasibility evidence only: it does not modify the official pilot
-scores, supply confirmatory evidence, or support an adoption claim. Codex emits
-one aggregate usage record for a candidate turn, so the summary reports per-arm
-aggregate tokens and explicitly marks parent/worker token splitting unavailable.
+terminal. The prior A/B authorization allowed one verified provider-transient or
+harness-invalid replacement; Arm C authorizes no replacement. Every original
+attempt remains retained, and the parent evaluator runs for every checkout that
+produced work. The resulting three-arm comparison is directional feasibility
+evidence only: it does not modify the official pilot scores, supply confirmatory
+evidence, or support an adoption claim. Codex emits one aggregate usage record
+for a candidate turn, so the summary reports per-arm aggregate tokens and marks
+parent/worker token splitting unavailable.
+
+The summary calculates each candidate arm against monolithic Arm A. Equivalent
+API cost uses the official `gpt-5.6-luna` standard rates published at
+<https://developers.openai.com/api/docs/models/gpt-5.6-luna>. Because retained
+usage does not identify per-request context bands, it reports both the short-rate
+estimate and an all-long-context upper bound. Each comparison includes quality
+and integrated-time ratios, speedup, parallel efficiency, cost ratio, quality per
+dollar/hour, and 50/50, 75/25, and 25/75 cost/time ROI sensitivity.
 
 If the runner process exits after recording an in-progress attempt but before
 its terminal state, first confirm that no candidate or evaluator process remains,
@@ -255,7 +270,10 @@ process duration is unavailable after interruption, the recovered result records
 zero candidate wall-clock seconds and keeps elapsed operator time only in process
 metadata. The result and summary mark that duration non-comparable rather than
 summing it as measured runtime. Recovery records a missing or modified override
-as not intact when the checkout remains available, unless the harness recorded
-successful verification in its process record before removing that file. Recovery
-records integrity as unknown when no checkout remains. A failed publication is
-retained as terminal harness evidence instead of rerunning evaluation.
+as not intact when the checkout remains available, unless the harness wrote a
+successful verification to a harness-owned integrity record under ignored
+`.artifacts/` before removing that file. This transient record is deleted once
+terminal state is recorded and is not part of the final retained evidence.
+Recovery records integrity as unknown when no checkout remains. A failed
+publication is retained as terminal harness evidence instead of rerunning
+evaluation.

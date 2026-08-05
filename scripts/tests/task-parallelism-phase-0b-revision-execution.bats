@@ -27,12 +27,13 @@ setup() {
 
 	run jq -e '
     .approval_source == "https://github.com/mikejmckinney/ai-repo-template/issues/545" and
+    .arm_c_authorization.treatment == "prompt-gated-autonomous" and
+    .arm_c_authorization.replacement_authorized == false and
     .official_pilot_scores_modified == false and
     .candidate_processes_started == (.attempts | length) and
     .replacement_processes_started <= 1 and
-    (.completed_runs == [] or
-      .completed_runs == ["vs-p0b-next-a"] or
-      .completed_runs == ["vs-p0b-next-a", "vs-p0b-next-b"])
+    .completed_runs == ["vs-p0b-next-a", "vs-p0b-next-b"] and
+    .status == "ready"
   ' "${STATE}"
 	[ "${status}" -eq 0 ]
 
@@ -42,6 +43,34 @@ setup() {
     ($command | index("multi_agent")) != null and
     ($command | index("project_doc_max_bytes=65536")) != null
   ' "${PROTOCOL}/campaign.phase-0b.revision.json"
+	[ "${status}" -eq 0 ]
+}
+
+@test "Arm C prompt mandates autonomous work-graph gating before fan-out" {
+	run python3 - "${REPO_ROOT}/scripts/benchmark/task-parallelism/prepare-phase-0b.py" \
+		"${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+prepare_spec = importlib.util.spec_from_file_location("phase0b_prepare", sys.argv[1])
+prepare = importlib.util.module_from_spec(prepare_spec)
+prepare_spec.loader.exec_module(prepare)
+runner_spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[2])
+runner = importlib.util.module_from_spec(runner_spec)
+runner_spec.loader.exec_module(runner)
+
+instructions = prepare.render_candidate_instructions("C")
+normalized = " ".join(instructions.split())
+assert "create and self-check a work graph" in normalized
+assert "predicted write sets" in normalized
+assert "Use native subagents" in normalized
+assert runner.ASSIGNMENTS[-1] == ("vs-p0b-next-c", "C")
+prompt = runner.build_candidate_prompt({
+    "prompts": {"common": {"path": "prompts/common-v2.md"}}
+}, "C")
+assert "Prompt-Gated Autonomous Fan-Out" in prompt
+assert "shared contracts" in prompt
+PY
 	[ "${status}" -eq 0 ]
 }
 
@@ -197,6 +226,115 @@ except ValueError as error:
     assert "replacement budget" in str(error)
 else:
     raise AssertionError("second replacement was permitted")
+
+arm_c_failed = {
+    "replacement_processes_started": 0,
+    "attempts": [{
+        "attempt_id": "vs-p0b-next-c-attempt-1",
+        "run_id": "vs-p0b-next-c",
+        "attempt_number": 1,
+        "terminal_status": "harness-failed",
+        "replacement_eligible": True,
+    }],
+}
+try:
+    module.plan_attempt(arm_c_failed, "vs-p0b-next-c")
+except ValueError as error:
+    assert "no eligible replacement" in str(error)
+else:
+    raise AssertionError("Arm C received an unauthorized replacement")
+
+state = {
+    "attempts": [{
+        "attempt_id": "vs-p0b-next-c-attempt-1",
+        "run_id": "vs-p0b-next-c",
+    }],
+    "completed_runs": ["vs-p0b-next-a", "vs-p0b-next-b"],
+    "status": "running",
+}
+module.finalize_attempt_state(
+    state,
+    "vs-p0b-next-c-attempt-1",
+    {
+        "run_id": "vs-p0b-next-c",
+        "terminal_status": "harness-failed",
+        "replacement_eligible": False,
+        "replacement_disposition": "not-eligible",
+        "wall_clock_seconds": 1,
+        "produced_work": False,
+    },
+    "attempt.json",
+    None,
+    "evaluation.json",
+    "2026-08-05T00:00:00Z",
+)
+assert state["completed_runs"] == [
+    "vs-p0b-next-a", "vs-p0b-next-b", "vs-p0b-next-c"
+]
+assert state["status"] == "completed"
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "directional summary calculates official-rate ROI for B and C" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+state = {
+    "attempts": [
+        {"run_id": "vs-p0b-next-a"},
+        {"run_id": "vs-p0b-next-b"},
+        {"run_id": "vs-p0b-next-c"},
+    ],
+    "completed_runs": ["vs-p0b-next-a", "vs-p0b-next-b", "vs-p0b-next-c"],
+    "replacement_processes_started": 0,
+}
+results = [
+    {
+        "run_id": "vs-p0b-next-a", "arm": "A", "terminal_status": "completed",
+        "quality_score": 100, "wall_clock_seconds": 100, "wall_clock_comparable": True,
+        "tokens": {"input": 1000, "cached_input": 500, "output": 100},
+        "coordination_seconds": 0, "skill_loads": 1, "fanout_elected": False,
+        "worker_count": 1, "produced_work": True, "evaluator_result_path": "a.json",
+    },
+    {
+        "run_id": "vs-p0b-next-b", "arm": "B", "terminal_status": "completed",
+        "quality_score": 100, "wall_clock_seconds": 120, "wall_clock_comparable": True,
+        "tokens": {"input": 1500, "cached_input": 750, "output": 100},
+        "coordination_seconds": 20, "skill_loads": 2, "fanout_elected": True,
+        "worker_count": 3, "produced_work": True, "evaluator_result_path": "b.json",
+    },
+    {
+        "run_id": "vs-p0b-next-c", "arm": "C", "terminal_status": "completed",
+        "quality_score": 95, "wall_clock_seconds": 90, "wall_clock_comparable": True,
+        "tokens": {"input": 1200, "cached_input": 600, "output": 90},
+        "coordination_seconds": 15, "skill_loads": 2, "fanout_elected": True,
+        "worker_count": 2, "produced_work": True, "evaluator_result_path": "c.json",
+    },
+]
+evaluations = [
+    {"run_id": "vs-p0b-next-a", "wall_clock_seconds": 20, "objective_score": 100},
+    {"run_id": "vs-p0b-next-b", "wall_clock_seconds": 30, "objective_score": 100},
+    {"run_id": "vs-p0b-next-c", "wall_clock_seconds": 30, "objective_score": 95},
+]
+summary = module.build_summary(state, results, evaluations)
+assert summary["assigned_runs"] == 3
+assert summary["pricing"]["model"] == "gpt-5.6-luna"
+assert summary["pricing"]["per_request_context_band_available"] is False
+assert [item["candidate_arm"] for item in summary["roi_comparisons"]] == ["B", "C"]
+for comparison in summary["roi_comparisons"]:
+    assert comparison["baseline_arm"] == "A"
+    assert comparison["cost_ratio"]["short_context"] > 0
+    assert comparison["cost_ratio"]["all_long_context_upper_bound"] > 0
+    assert comparison["roi_index"]["short_context"]["cost_50_time_50"] > 0
+    assert comparison["roi_index"]["all_long_context_upper_bound"]["cost_75_time_25"] > 0
+assert summary["roi_comparisons"][0]["quality_ratio"] == 1
+assert summary["roi_comparisons"][0]["integrated_time_ratio"] == 1.25
+assert summary["roi_comparisons"][0]["speedup"] == 0.8
 PY
 	[ "${status}" -eq 0 ]
 }
@@ -269,6 +407,7 @@ assert summary["arms"][1]["tokens"] == {"input": 20, "cached_input": 4, "output"
 assert summary["arms"][1]["coordination_seconds"] == 90
 assert summary["arms"][1]["candidate_quality_score"] == 0
 assert summary["arms"][1]["evaluator_objective_score"] == 70
+assert summary["roi_comparisons"][0]["quality_ratio"] == 0
 assert summary["candidate_wall_clock_comparable"] is True
 assert all(item["candidate_wall_clock_comparable"] for item in summary["arms"])
 results[1]["wall_clock_comparable"] = False
@@ -350,6 +489,7 @@ spec.loader.exec_module(module)
 root = Path(sys.argv[2])
 module.PROTOCOL_ROOT = root
 module.RESULT_ROOT = root / "results"
+module.ARTIFACT_ROOT = root / "artifacts"
 module.STATE_PATH = root / "state.json"
 module.RESULT_SCHEMA = root / "result.schema.json"
 module.EVALUATOR_SCHEMA = root / "evaluation.schema.json"
@@ -389,6 +529,9 @@ result = {
 module.write_json(module.RESULT_ROOT / "attempts/vs-p0b-next-a-attempt-1.json", result)
 module.write_json(root / result["evaluator_result_path"], {"evaluated": True})
 module.write_json(root / state["attempts"][0]["process_metadata_path"], {"published": True})
+module.record_instruction_integrity(
+    "vs-p0b-next-a-attempt-1", "1" * 64, "1" * 64, True
+)
 module.load_state = lambda: state
 module.validate_document = lambda value, schema: None
 module.validate_state = lambda value: None
@@ -402,6 +545,7 @@ assert persisted["status"] == "ready"
 assert persisted["attempts"][0]["terminal_status"] == "completed"
 assert process["state_recovery"] == "terminal state reconstructed from retained evidence"
 assert (module.RESULT_ROOT / "final/vs-p0b-next-a.json").is_file()
+assert not module.instruction_integrity_path("vs-p0b-next-a-attempt-1").exists()
 PY
 	[ "${status}" -eq 0 ]
 }
@@ -470,6 +614,7 @@ def fake_subprocess_run(args, **kwargs):
     return type("Result", (), {"stdout": "origin\n", "returncode": 0})()
 module.subprocess.run = fake_subprocess_run
 module.publish_candidate = lambda *args: (_ for _ in ()).throw(subprocess.CalledProcessError(1, ["git", "push"]))
+module.record_instruction_integrity(attempt_id, "2" * 64, "2" * 64, True)
 assert module.recover_interrupted(attempt_id) == 0
 result = json.loads((module.RESULT_ROOT / f"attempts/{attempt_id}.json").read_text())
 process = json.loads((module.RESULT_ROOT / f"process/{attempt_id}.json").read_text())
@@ -488,6 +633,7 @@ assert process["instruction_override_intact"] is False
 assert persisted["status"] == "ready"
 assert persisted["attempts"][0]["terminal_status"] == "harness-failed"
 assert len(subprocess_calls) == 1
+assert not module.instruction_integrity_path(attempt_id).exists()
 PY
 	[ "${status}" -eq 0 ]
 }
@@ -585,7 +731,7 @@ PY
 	[ "${status}" -eq 0 ]
 }
 
-@test "interrupted snapshot trusts harness-owned process verification" {
+@test "interrupted snapshot strictly trusts transient harness integrity verification" {
 	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
 import importlib.util
 import sys
@@ -599,10 +745,12 @@ attempt_id = "vs-p0b-next-a-attempt-1"
 checkout = root / "checkout"
 checkout.mkdir()
 module.RESULT_ROOT = root / "results"
+module.ARTIFACT_ROOT = root / "artifacts"
 instructions = "candidate instructions\n"
 expected = module.sha256_bytes(instructions.encode())
 module.record_instruction_integrity(attempt_id, expected, expected, True)
 integrity_path = module.instruction_integrity_path(attempt_id)
+assert integrity_path == module.ARTIFACT_ROOT / "recovery-state" / f"{attempt_id}.json"
 assert integrity_path.is_file()
 module.PREPARE.render_candidate_instructions = lambda arm: instructions
 module.PILOT.snapshot_candidate = lambda *args: (["candidate.txt"], "1" * 40, 0)
@@ -612,6 +760,20 @@ _, _, _, instruction_sha, observed, intact = module.snapshot_interrupted_candida
 assert instruction_sha == expected
 assert observed == expected
 assert intact is True
+
+module.record_instruction_integrity(attempt_id, expected, "0" * 64, True)
+_, _, _, _, observed, intact = module.snapshot_interrupted_candidate(
+    checkout, "0" * 40, attempt_id, "A"
+)
+assert observed is None
+assert intact is False
+
+module.record_instruction_integrity(attempt_id, expected, expected, False)
+_, _, _, _, observed, intact = module.snapshot_interrupted_candidate(
+    checkout, "0" * 40, attempt_id, "A"
+)
+assert observed is None
+assert intact is False
 PY
 	[ "${status}" -eq 0 ]
 }

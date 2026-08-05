@@ -28,8 +28,22 @@ EVALUATOR_SCHEMA = PROTOCOL_ROOT / "phase-0b-revision-evaluator-result.schema.js
 SUMMARY_SCHEMA = PROTOCOL_ROOT / "phase-0b-revision-summary.schema.json"
 RESULT_ROOT = PROTOCOL_ROOT / "results/phase-0b-revision"
 ARTIFACT_ROOT = REPO_ROOT / ".artifacts/task-parallelism/phase-0b-revision"
-ASSIGNMENTS = (("vs-p0b-next-a", "A"), ("vs-p0b-next-b", "B"))
+ASSIGNMENTS = (
+    ("vs-p0b-next-a", "A"),
+    ("vs-p0b-next-b", "B"),
+    ("vs-p0b-next-c", "C"),
+)
 MAX_TRACKED_LOG_BYTES = 200_000
+ARM_C_PROMPT = PROTOCOL_ROOT / "prompts/arm-c-prompt-gated.md"
+PRICING_SOURCE = "https://developers.openai.com/api/docs/models/gpt-5.6-luna"
+TOKEN_RATES = {
+    "short_context": {"input": 0.20, "cached_input": 0.02, "output": 1.20},
+    "all_long_context_upper_bound": {
+        "input": 0.40,
+        "cached_input": 0.04,
+        "output": 1.80,
+    },
+}
 
 
 def import_script(name: str, path: Path):
@@ -80,7 +94,7 @@ def process_metadata_path(attempt_id: str) -> Path:
 
 
 def instruction_integrity_path(attempt_id: str) -> Path:
-    return RESULT_ROOT / "process" / f"{attempt_id}.instruction-integrity.json"
+    return ARTIFACT_ROOT / "recovery-state" / f"{attempt_id}.json"
 
 
 def record_instruction_integrity(
@@ -104,7 +118,8 @@ def record_instruction_integrity(
 def validate_state(state: dict) -> None:
     validate_document(state, STATE_SCHEMA)
     completed = state["completed_runs"]
-    expected_prefixes = [[], [ASSIGNMENTS[0][0]], [item[0] for item in ASSIGNMENTS]]
+    run_ids = [item[0] for item in ASSIGNMENTS]
+    expected_prefixes = [run_ids[:index] for index in range(len(run_ids) + 1)]
     if completed not in expected_prefixes:
         raise ValueError("completed runs are not a sequential assignment prefix")
     if state["candidate_processes_started"] != len(state["attempts"]):
@@ -128,7 +143,7 @@ def validate_state(state: dict) -> None:
             raise ValueError("replacement marker does not match attempt number")
         seen.add(attempt["attempt_id"])
     if state["status"] == "completed" and completed != [item[0] for item in ASSIGNMENTS]:
-        raise ValueError("completed status requires both terminal assignments")
+        raise ValueError("completed status requires all terminal assignments")
 
 
 def load_state() -> dict:
@@ -162,7 +177,9 @@ def finalize_attempt_state(
     )
     if not result["replacement_eligible"] and result["run_id"] not in state["completed_runs"]:
         state["completed_runs"].append(result["run_id"])
-    state["status"] = "completed" if len(state["completed_runs"]) == 2 else "ready"
+    state["status"] = (
+        "completed" if len(state["completed_runs"]) == len(ASSIGNMENTS) else "ready"
+    )
 
 
 def plan_attempt(state: dict, run_id: str) -> dict:
@@ -175,6 +192,8 @@ def plan_attempt(state: dict, run_id: str) -> dict:
             "is_replacement": False,
         }
     if (
+        run_id == "vs-p0b-next-c"
+        or
         len(prior) != 1
         or prior[0].get("terminal_status") not in {"provider-failed", "harness-failed"}
         or not prior[0].get("replacement_eligible", False)
@@ -376,6 +395,24 @@ def candidate_command(revision: dict, checkout: Path, artifact_dir: Path) -> lis
     ]
 
 
+def build_candidate_prompt(revision: dict, arm: str) -> str:
+    if arm != "C":
+        return PILOT.build_prompt(revision, arm)
+    common = (PROTOCOL_ROOT / revision["prompts"]["common"]["path"]).read_text(
+        encoding="utf-8"
+    )
+    common = common.replace("tasks/vector-siege.md", "TASK.md")
+    task = PILOT.TASK_PATH.read_text(encoding="utf-8")
+    reporting = """## Required Final Report
+
+Return only JSON matching the supplied output schema. Report measured values;
+use zero when no event occurred. Do not estimate monetary cost.
+"""
+    return "\n\n".join(
+        [common, ARM_C_PROMPT.read_text(encoding="utf-8"), task, reporting]
+    )
+
+
 def load_candidate_report(path: Path, arm: str) -> dict:
     report = load_json(path)
     validate_document(report, REPORT_SCHEMA)
@@ -518,7 +555,7 @@ def execute_run(run_id: str) -> int:
             completed = subprocess.run(
                 candidate_command(revision, checkout, artifact_dir),
                 cwd=checkout,
-                input=PILOT.build_prompt(revision, arm),
+                input=build_candidate_prompt(revision, arm),
                 text=True,
                 stdout=stdout,
                 stderr=stderr,
@@ -577,7 +614,6 @@ def execute_run(run_id: str) -> int:
         failure_reason = failure_class
     if attempt["is_replacement"]:
         replacement_eligible = False
-
     evaluation = evaluate_candidate(
         checkout,
         run_id,
@@ -599,6 +635,8 @@ def execute_run(run_id: str) -> int:
         failure_class = "harness-invalid"
         failure_reason = f"candidate evidence publication failed: {error}"
         replacement_eligible = not attempt["is_replacement"]
+    if arm == "C":
+        replacement_eligible = False
 
     tracked_report_path = None
     if report is not None:
@@ -898,12 +936,108 @@ def recover_interrupted(attempt_id: str) -> int:
     return 0
 
 
+def equivalent_model_cost(tokens: dict, rates: dict) -> float:
+    uncached_input = tokens["input"] - tokens["cached_input"]
+    if uncached_input < 0:
+        raise ValueError("cached input exceeds total input")
+    return (
+        uncached_input * rates["input"]
+        + tokens["cached_input"] * rates["cached_input"]
+        + tokens["output"] * rates["output"]
+    ) / 1_000_000
+
+
+def build_roi_comparison(baseline: dict, candidate: dict) -> dict:
+    if baseline["candidate_quality_score"] <= 0:
+        raise ValueError("ROI requires a positive Arm A objective score")
+    quality_ratio = (
+        candidate["candidate_quality_score"] / baseline["candidate_quality_score"]
+    )
+    comparable_time = baseline["integrated_wall_clock_comparable"] and candidate[
+        "integrated_wall_clock_comparable"
+    ]
+    time_ratio = None
+    speedup = None
+    if comparable_time:
+        time_ratio = (
+            candidate["integrated_wall_clock_seconds"]
+            / baseline["integrated_wall_clock_seconds"]
+        )
+        speedup = 1 / time_ratio
+    costs = {
+        band: {
+            "baseline_usd": equivalent_model_cost(baseline["tokens"], rates),
+            "candidate_usd": equivalent_model_cost(candidate["tokens"], rates),
+        }
+        for band, rates in TOKEN_RATES.items()
+    }
+    cost_ratios = {
+        band: values["candidate_usd"] / values["baseline_usd"]
+        for band, values in costs.items()
+    }
+    roi_index = {
+        band: {
+            "cost_50_time_50": (
+                quality_ratio / (0.50 * cost_ratio + 0.50 * time_ratio)
+                if comparable_time
+                else None
+            ),
+            "cost_75_time_25": (
+                quality_ratio / (0.75 * cost_ratio + 0.25 * time_ratio)
+                if comparable_time
+                else None
+            ),
+            "cost_25_time_75": (
+                quality_ratio / (0.25 * cost_ratio + 0.75 * time_ratio)
+                if comparable_time
+                else None
+            ),
+        }
+        for band, cost_ratio in cost_ratios.items()
+    }
+    return {
+        "baseline_arm": baseline["arm"],
+        "candidate_arm": candidate["arm"],
+        "quality_ratio": quality_ratio,
+        "integrated_time_ratio": time_ratio,
+        "speedup": speedup,
+        "parallel_efficiency": speedup / candidate["worker_count"] if speedup else None,
+        "equivalent_model_cost_usd": costs,
+        "cost_ratio": cost_ratios,
+        "quality_per_dollar": {
+            band: {
+                "baseline": baseline["candidate_quality_score"] / values["baseline_usd"],
+                "candidate": candidate["candidate_quality_score"]
+                / values["candidate_usd"],
+            }
+            for band, values in costs.items()
+        },
+        "quality_per_integrated_hour": {
+            "baseline": (
+                baseline["candidate_quality_score"]
+                / (baseline["integrated_wall_clock_seconds"] / 3600)
+                if baseline["integrated_wall_clock_comparable"]
+                else None
+            ),
+            "candidate": (
+                candidate["candidate_quality_score"]
+                / (candidate["integrated_wall_clock_seconds"] / 3600)
+                if candidate["integrated_wall_clock_comparable"]
+                else None
+            ),
+        },
+        "roi_index": roi_index,
+    }
+
+
 def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> dict:
     evaluation_by_run = {item["run_id"]: item for item in evaluations}
     arms = []
     for result in results:
         evaluation = evaluation_by_run[result["run_id"]]
         wall_clock_comparable = result["wall_clock_comparable"]
+        candidate_seconds = result["wall_clock_seconds"] if wall_clock_comparable else None
+        evaluator_seconds = evaluation["wall_clock_seconds"]
         arms.append(
             {
                 "run_id": result["run_id"],
@@ -915,11 +1049,13 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
                 "coordination_seconds": result["coordination_seconds"],
                 "skill_loads": result["skill_loads"],
                 "tokens": result["tokens"],
-                "candidate_wall_clock_seconds": (
-                    result["wall_clock_seconds"] if wall_clock_comparable else None
-                ),
+                "candidate_wall_clock_seconds": candidate_seconds,
                 "candidate_wall_clock_comparable": wall_clock_comparable,
-                "evaluator_wall_clock_seconds": evaluation["wall_clock_seconds"],
+                "evaluator_wall_clock_seconds": evaluator_seconds,
+                "integrated_wall_clock_seconds": (
+                    candidate_seconds + evaluator_seconds if wall_clock_comparable else None
+                ),
+                "integrated_wall_clock_comparable": wall_clock_comparable,
                 "candidate_quality_score": result["quality_score"],
                 "evaluator_objective_score": evaluation["objective_score"],
                 "evaluator_result_path": result["evaluator_result_path"],
@@ -928,6 +1064,7 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
     candidate_wall_clock_comparable = all(
         item["wall_clock_comparable"] for item in results
     )
+    comparisons = [build_roi_comparison(arms[0], candidate) for candidate in arms[1:]]
     return {
         "schema_version": "task-parallelism-phase-0b-revision-summary.v1",
         "campaign_id": "vector-siege-phase-0b-revision",
@@ -935,7 +1072,7 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
         "directional_only": True,
         "confirmatory_evidence": False,
         "adoption_claim": False,
-        "assigned_runs": 2,
+        "assigned_runs": len(results),
         "terminal_runs": len(state["completed_runs"]),
         "attempts_started": len(state["attempts"]),
         "replacement_processes_started": state["replacement_processes_started"],
@@ -952,6 +1089,15 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
         },
         "token_usage_scope": "aggregate-candidate-turn",
         "parent_worker_token_split_available": False,
+        "pricing": {
+            "model": "gpt-5.6-luna",
+            "source": PRICING_SOURCE,
+            "currency": "USD",
+            "unit_tokens": 1_000_000,
+            "per_request_context_band_available": False,
+            "rates": TOKEN_RATES,
+        },
+        "roi_comparisons": comparisons,
         "arms": arms,
         "redaction": {
             "credentials_excluded": True,
@@ -963,11 +1109,12 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
 
 def summarize(output: Path) -> int:
     state = load_state()
-    if state["completed_runs"] != [item[0] for item in ASSIGNMENTS]:
-        raise ValueError("both revision assignments must be terminal before summarization")
+    completed_count = len(state["completed_runs"])
+    if completed_count < 2:
+        raise ValueError("Arm A and Arm B must be terminal before summarization")
     results = []
     evaluations = []
-    for run_id, _ in ASSIGNMENTS:
+    for run_id, _ in ASSIGNMENTS[:completed_count]:
         result = load_json(RESULT_ROOT / "final" / f"{run_id}.json")
         validate_document(result, RESULT_SCHEMA)
         evaluation = load_json(PROTOCOL_ROOT / result["evaluator_result_path"])

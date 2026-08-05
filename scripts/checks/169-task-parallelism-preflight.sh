@@ -34,6 +34,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/scaffold/package-lock.json"
     "${TASK_PARALLELISM_PROTOCOL}/tasks/vector-siege.md"
     "${TASK_PARALLELISM_PROTOCOL}/tasks/vector-siege-stage-1-candidate.md"
+    "${TASK_PARALLELISM_PROTOCOL}/prompts/arm-c-prompt-gated.md"
     "${TASK_PARALLELISM_RUNNER}/Makefile"
     "${TASK_PARALLELISM_RUNNER}/requirements.txt"
     "${TASK_PARALLELISM_RUNNER}/run-preflight.sh"

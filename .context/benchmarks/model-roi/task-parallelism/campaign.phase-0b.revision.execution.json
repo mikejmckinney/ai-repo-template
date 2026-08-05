@@ -1,6 +1,13 @@
 {
   "approval_source": "https://github.com/mikejmckinney/ai-repo-template/issues/545",
   "approved_at": "2026-08-05T08:48:00Z",
+  "arm_c_authorization": {
+    "approved_at": "2026-08-05T14:18:03Z",
+    "prompt_path": "prompts/arm-c-prompt-gated.md",
+    "prompt_sha256": "5710fc8d571955c5e1187d183821b376c7471debf9682fb7979d90e8821aa10e",
+    "replacement_authorized": false,
+    "treatment": "prompt-gated-autonomous"
+  },
   "attempts": [
     {
       "attempt_id": "vs-p0b-next-a-attempt-1",
@@ -53,5 +60,5 @@
   "official_pilot_scores_modified": false,
   "replacement_processes_started": 0,
   "schema_version": "task-parallelism-phase-0b-revision-execution.v1",
-  "status": "completed"
+  "status": "ready"
 }

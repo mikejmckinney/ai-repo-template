@@ -10,6 +10,7 @@
     "status",
     "approval_source",
     "approved_at",
+    "arm_c_authorization",
     "implementation_sha",
     "official_pilot_scores_modified",
     "candidate_base",
@@ -24,6 +25,18 @@
     "status": { "enum": ["ready", "running", "completed"] },
     "approval_source": { "const": "https://github.com/mikejmckinney/ai-repo-template/issues/545" },
     "approved_at": { "type": "string", "format": "date-time" },
+    "arm_c_authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["approved_at", "treatment", "prompt_path", "prompt_sha256", "replacement_authorized"],
+      "properties": {
+        "approved_at": { "type": "string", "format": "date-time" },
+        "treatment": { "const": "prompt-gated-autonomous" },
+        "prompt_path": { "const": "prompts/arm-c-prompt-gated.md" },
+        "prompt_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "replacement_authorized": { "const": false }
+      }
+    },
     "implementation_sha": {
       "oneOf": [
         { "type": "null" },
@@ -42,11 +55,11 @@
         "task_blob_sha": { "const": "f658eedd0c369d5b0323a098702eb6fd96bc418f" }
       }
     },
-    "candidate_processes_started": { "type": "integer", "minimum": 0, "maximum": 3 },
+    "candidate_processes_started": { "type": "integer", "minimum": 0, "maximum": 4 },
     "replacement_processes_started": { "type": "integer", "minimum": 0, "maximum": 1 },
     "attempts": {
       "type": "array",
-      "maxItems": 3,
+      "maxItems": 4,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -68,8 +81,8 @@
           "evaluator_result_path"
         ],
         "properties": {
-          "attempt_id": { "type": "string", "pattern": "^vs-p0b-next-[ab]-attempt-[12]$" },
-          "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b"] },
+          "attempt_id": { "type": "string", "pattern": "^vs-p0b-next-[abc]-attempt-[12]$" },
+          "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b", "vs-p0b-next-c"] },
           "attempt_number": { "type": "integer", "minimum": 1, "maximum": 2 },
           "is_replacement": { "type": "boolean" },
           "terminal_status": {
@@ -96,8 +109,8 @@
     "completed_runs": {
       "type": "array",
       "uniqueItems": true,
-      "maxItems": 2,
-      "items": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b"] }
+      "maxItems": 3,
+      "items": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b", "vs-p0b-next-c"] }
     }
   }
 }
