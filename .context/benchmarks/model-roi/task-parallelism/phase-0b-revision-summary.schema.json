@@ -44,7 +44,7 @@
           "run_id", "arm", "terminal_status", "produced_work", "fanout_elected",
           "worker_count", "coordination_seconds", "skill_loads", "tokens",
           "candidate_wall_clock_seconds", "evaluator_wall_clock_seconds",
-          "objective_score", "evaluator_result_path"
+          "candidate_quality_score", "evaluator_objective_score", "evaluator_result_path"
         ],
         "properties": {
           "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b"] },
@@ -66,7 +66,8 @@
           },
           "candidate_wall_clock_seconds": { "type": "integer", "minimum": 0 },
           "evaluator_wall_clock_seconds": { "type": "integer", "minimum": 0 },
-          "objective_score": { "type": "number", "minimum": 0 },
+          "candidate_quality_score": { "type": "number", "minimum": 0 },
+          "evaluator_objective_score": { "type": "number", "minimum": 0 },
           "evaluator_result_path": { "type": ["string", "null"] }
         }
       }

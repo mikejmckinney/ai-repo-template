@@ -222,6 +222,7 @@ results = [
         "run_id": "vs-p0b-next-a",
         "arm": "A",
         "terminal_status": "completed",
+        "quality_score": 100,
         "wall_clock_seconds": 100,
         "tokens": {"input": 10, "cached_input": 2, "output": 3},
         "coordination_seconds": 0,
@@ -235,6 +236,7 @@ results = [
         "run_id": "vs-p0b-next-b",
         "arm": "B",
         "terminal_status": "candidate-failed",
+        "quality_score": 0,
         "wall_clock_seconds": 120,
         "tokens": {"input": 20, "cached_input": 4, "output": 6},
         "coordination_seconds": 90,
@@ -263,23 +265,43 @@ assert summary["parent_worker_token_split_available"] is False
 assert [item["arm"] for item in summary["arms"]] == ["A", "B"]
 assert summary["arms"][1]["tokens"] == {"input": 20, "cached_input": 4, "output": 6}
 assert summary["arms"][1]["coordination_seconds"] == 90
+assert summary["arms"][1]["candidate_quality_score"] == 0
+assert summary["arms"][1]["evaluator_objective_score"] == 70
 PY
 	[ "${status}" -eq 0 ]
 }
 
-@test "parent evaluation covers every candidate checkout that produced work" {
-	run python3 - "${RUNNER}" <<'PY'
+@test "parent evaluation runs every check for failed candidates that produced work" {
+	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
 import importlib.util
 import sys
+from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
-assert module.should_evaluate_candidate(True, "completed") is True
-assert module.should_evaluate_candidate(True, "partial") is True
-assert module.should_evaluate_candidate(True, "failed") is True
-assert module.should_evaluate_candidate(True, None) is True
-assert module.should_evaluate_candidate(False, "completed") is False
+root = Path(sys.argv[2])
+module.PROTOCOL_ROOT = root
+module.RESULT_ROOT = root / "results"
+commands = []
+def fake_run(command, cwd, log_path, timeout):
+    commands.append(command)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    log_path.write_text("pass\n")
+    return {
+        "exit_code": 0,
+        "elapsed_seconds": 1,
+        "log_sha256": module.sha256_bytes(b"pass\n"),
+        "log_truncated": False,
+    }
+module.run_tracked_command = fake_run
+skipped = module.evaluate_candidate(root, "vs-p0b-next-a", "vs-p0b-next-a-attempt-1", "0" * 40, False, True)
+assert skipped["evaluated"] is False
+assert skipped["skip_reason"] == "no-candidate-work"
+evaluated = module.evaluate_candidate(root, "vs-p0b-next-b", "vs-p0b-next-b-attempt-1", "1" * 40, True, False)
+assert evaluated["evaluated"] is True
+assert evaluated["objective_score"] == 90
+assert len(commands) == 5
 PY
 	[ "${status}" -eq 0 ]
 }
@@ -302,6 +324,60 @@ events = [
 ]
 path.write_text("\n".join(json.dumps(event) for event in events) + "\n")
 assert module.count_spawned_subagents(path) == 2
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "interrupted state can be reconstructed from retained terminal evidence" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+state = {
+    "status": "running",
+    "completed_runs": [],
+    "attempts": [{
+        "attempt_id": "vs-p0b-next-a-attempt-1",
+        "run_id": "vs-p0b-next-a",
+        "attempt_number": 1,
+        "is_replacement": False,
+        "terminal_status": None,
+        "replacement_eligible": False,
+        "replacement_disposition": "pending",
+        "started_at": "2026-08-05T00:00:00Z",
+        "finished_at": None,
+        "wall_clock_seconds": None,
+        "produced_work": None,
+        "result_path": None,
+        "candidate_report_path": None,
+        "process_metadata_path": "results/process.json",
+        "evaluator_result_path": None,
+    }],
+}
+result = {
+    "run_id": "vs-p0b-next-a",
+    "terminal_status": "completed",
+    "replacement_eligible": False,
+    "replacement_disposition": "not-eligible",
+    "wall_clock_seconds": 100,
+    "produced_work": True,
+}
+module.finalize_attempt_state(
+    state,
+    "vs-p0b-next-a-attempt-1",
+    result,
+    "results/attempt.json",
+    "results/report.json",
+    "results/evaluation.json",
+    "2026-08-05T00:02:00Z",
+)
+assert state["completed_runs"] == ["vs-p0b-next-a"]
+assert state["status"] == "ready"
+assert state["attempts"][0]["terminal_status"] == "completed"
+assert state["attempts"][0]["result_path"] == "results/attempt.json"
 PY
 	[ "${status}" -eq 0 ]
 }

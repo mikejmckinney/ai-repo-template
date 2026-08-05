@@ -239,6 +239,19 @@ evidence. If the selected runtime emits only aggregate turn usage, record that
 scope and mark parent/worker token splitting unavailable rather than estimating
 a split.
 
+If the runner exits with an in-progress attempt, do not hand-edit execution
+state or launch the run again. Confirm the candidate and evaluator processes have
+stopped, then run:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --recover-interrupted <attempt-id>
+```
+
+Recovery reuses complete retained evidence when available. Otherwise it captures
+and evaluates the retained checkout, records a harness-interrupted result, and
+makes only an eligible first attempt available for the campaign's one replacement.
+
 Typical preflight:
 
 ```bash

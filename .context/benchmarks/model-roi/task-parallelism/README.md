@@ -237,3 +237,17 @@ is directional feasibility evidence only: it does not modify the official pilot
 scores, supply confirmatory evidence, or support an adoption claim. Codex emits
 one aggregate usage record for a candidate turn, so the summary reports per-arm
 aggregate tokens and explicitly marks parent/worker token splitting unavailable.
+
+If the runner process exits after recording an in-progress attempt but before
+its terminal state, first confirm that no candidate or evaluator process remains,
+then recover the retained checkout and artifacts with:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b-revision.py \
+  --recover-interrupted <attempt-id>
+```
+
+The recovery path reconstructs already-complete terminal evidence when present.
+Otherwise it snapshots and evaluates produced work, classifies the attempt as a
+harness interruption, and applies the existing one-replacement budget. It never
+starts a second candidate process by itself.

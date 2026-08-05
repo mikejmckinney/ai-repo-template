@@ -21,7 +21,7 @@
   "properties": {
     "schema_version": { "const": "task-parallelism-phase-0b-revision-execution.v1" },
     "campaign_id": { "const": "vector-siege-phase-0b-revision" },
-    "status": { "enum": ["ready", "running", "interrupted", "completed"] },
+    "status": { "enum": ["ready", "running", "completed"] },
     "approval_source": { "const": "https://github.com/mikejmckinney/ai-repo-template/issues/545" },
     "approved_at": { "type": "string", "format": "date-time" },
     "implementation_sha": {

@@ -111,6 +111,34 @@ def load_state() -> dict:
     return state
 
 
+def finalize_attempt_state(
+    state: dict,
+    attempt_id: str,
+    result: dict,
+    result_path: str,
+    candidate_report_path: str | None,
+    evaluator_result_path: str,
+    finished_at: str,
+) -> None:
+    attempt = next(item for item in state["attempts"] if item["attempt_id"] == attempt_id)
+    attempt.update(
+        {
+            "terminal_status": result["terminal_status"],
+            "replacement_eligible": result["replacement_eligible"],
+            "replacement_disposition": result["replacement_disposition"],
+            "finished_at": finished_at,
+            "wall_clock_seconds": result["wall_clock_seconds"],
+            "produced_work": result["produced_work"],
+            "result_path": result_path,
+            "candidate_report_path": candidate_report_path,
+            "evaluator_result_path": evaluator_result_path,
+        }
+    )
+    if not result["replacement_eligible"] and result["run_id"] not in state["completed_runs"]:
+        state["completed_runs"].append(result["run_id"])
+    state["status"] = "completed" if len(state["completed_runs"]) == 2 else "ready"
+
+
 def plan_attempt(state: dict, run_id: str) -> dict:
     prior = [item for item in state["attempts"] if item["run_id"] == run_id]
     if not prior:
@@ -134,11 +162,6 @@ def plan_attempt(state: dict, run_id: str) -> dict:
         "attempt_number": 2,
         "is_replacement": True,
     }
-
-
-def should_evaluate_candidate(work_produced: bool, completion_status: str | None) -> bool:
-    del completion_status
-    return work_produced
 
 
 def clone_candidate_base(source: str, branch: str, sha: str, destination: Path) -> None:
@@ -606,30 +629,216 @@ def execute_run(run_id: str) -> int:
             "token_usage_scope": "aggregate-candidate-turn",
         },
     )
-    state_attempt.update(
-        {
-            "terminal_status": terminal,
-            "replacement_eligible": replacement_eligible,
-            "replacement_disposition": replacement_disposition,
-            "finished_at": now(),
-            "wall_clock_seconds": elapsed,
-            "produced_work": produced_work,
-            "result_path": relative_to_protocol(attempt_result_path),
-            "candidate_report_path": tracked_report_path,
-            "evaluator_result_path": relative_to_protocol(evaluation_path),
-        }
-    )
     if not replacement_eligible:
         final_result_path = RESULT_ROOT / "final" / f"{run_id}.json"
         write_json(final_result_path, result)
-        state["completed_runs"].append(run_id)
-    state["status"] = "completed" if len(state["completed_runs"]) == 2 else "ready"
+    finalize_attempt_state(
+        state,
+        attempt_id,
+        result,
+        relative_to_protocol(attempt_result_path),
+        tracked_report_path,
+        relative_to_protocol(evaluation_path),
+        now(),
+    )
     validate_state(state)
     write_json(STATE_PATH, state)
     if published or not produced_work:
         shutil.rmtree(checkout)
     note = " replacement-eligible" if replacement_eligible else ""
     print(f"{attempt_id}: {terminal} quality={result['quality_score']}{note}")
+    return 0
+
+
+def snapshot_interrupted_candidate(checkout: Path, base_sha: str, attempt_id: str) -> tuple[list[str], str, int]:
+    override = checkout / "AGENTS.override.md"
+    if override.is_file():
+        override.unlink()
+    subprocess.run(["git", "add", "-A"], cwd=checkout, check=True)
+    dirty = subprocess.run(["git", "diff", "--cached", "--quiet", "HEAD"], cwd=checkout, check=False)
+    if dirty.returncode not in {0, 1}:
+        raise ValueError("could not inspect interrupted candidate index")
+    if dirty.returncode == 1:
+        subprocess.run(
+            ["git", "commit", "--no-gpg-sign", "-m", f"candidate recovery: {attempt_id}"],
+            cwd=checkout,
+            check=True,
+        )
+    changed = subprocess.run(
+        ["git", "diff", "--name-only", base_sha, "HEAD"],
+        cwd=checkout,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+    ).stdout.splitlines()
+    candidate_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=checkout,
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+    ).stdout.strip()
+    forbidden = (".agents/", "TASK.md", "public/benchmark-assets/vector-siege/")
+    drift_count = sum(
+        path == forbidden[1] or path.startswith((forbidden[0], forbidden[2])) for path in changed
+    )
+    return changed, candidate_sha, drift_count
+
+
+def recover_interrupted(attempt_id: str) -> int:
+    state = load_state()
+    attempts = [item for item in state["attempts"] if item["attempt_id"] == attempt_id]
+    if len(attempts) != 1 or attempts[0]["terminal_status"] is not None:
+        raise ValueError("attempt is not an interrupted in-progress attempt")
+    attempt = attempts[0]
+    run_id = attempt["run_id"]
+    arm = dict(ASSIGNMENTS)[run_id]
+    attempt_result_path = RESULT_ROOT / "attempts" / f"{attempt_id}.json"
+    if attempt_result_path.is_file():
+        result = load_json(attempt_result_path)
+        validate_document(result, RESULT_SCHEMA)
+        evaluation_path = PROTOCOL_ROOT / result["evaluator_result_path"]
+        validate_document(load_json(evaluation_path), EVALUATOR_SCHEMA)
+        if not result["replacement_eligible"]:
+            write_json(RESULT_ROOT / "final" / f"{run_id}.json", result)
+        process_path = PROTOCOL_ROOT / attempt["process_metadata_path"]
+        if process_path.is_file():
+            process = load_json(process_path)
+            process["state_recovery"] = "terminal state reconstructed from retained evidence"
+            write_json(process_path, process)
+        finalize_attempt_state(
+            state,
+            attempt_id,
+            result,
+            relative_to_protocol(attempt_result_path),
+            result["candidate_report_path"],
+            result["evaluator_result_path"],
+            now(),
+        )
+        validate_state(state)
+        write_json(STATE_PATH, state)
+        print(f"recovered terminal state from retained evidence: {attempt_id}")
+        return 0
+
+    checkout = ARTIFACT_ROOT / "clones" / attempt_id
+    artifact_dir = ARTIFACT_ROOT / attempt_id
+    base_sha = state["candidate_base"]["sha"]
+    changed = []
+    candidate_sha = base_sha
+    drift_count = 0
+    if checkout.is_dir():
+        changed, candidate_sha, drift_count = snapshot_interrupted_candidate(
+            checkout, base_sha, attempt_id
+        )
+    produced_work = bool(changed)
+    report = None
+    report_path = artifact_dir / "final-report.json"
+    if report_path.is_file():
+        try:
+            report = load_candidate_report(report_path, arm)
+        except (OSError, ValueError, json.JSONDecodeError, SchemaError, ValidationError):
+            report = None
+    tracked_report_path = None
+    if report is not None:
+        tracked_report = RESULT_ROOT / "candidate-reports" / f"{attempt_id}.json"
+        write_json(tracked_report, report)
+        tracked_report_path = relative_to_protocol(tracked_report)
+    jsonl_path = artifact_dir / "agent-output.jsonl"
+    usage, thread_id = PILOT.parse_usage(jsonl_path)
+    observed_spawn_agent_calls = count_spawned_subagents(jsonl_path) if jsonl_path.is_file() else 0
+    evaluation = evaluate_candidate(
+        checkout,
+        run_id,
+        attempt_id,
+        candidate_sha,
+        produced_work,
+        False,
+    )
+    evaluation_path = RESULT_ROOT / "evaluations" / f"{attempt_id}.json"
+    validate_document(evaluation, EVALUATOR_SCHEMA)
+    write_json(evaluation_path, evaluation)
+    candidate_branch = f"benchmark/vector-siege/{attempt_id}"
+    published = False
+    if checkout.is_dir():
+        source = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            cwd=REPO_ROOT,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+        ).stdout.strip()
+        publish_candidate(checkout, source, candidate_branch)
+        published = True
+    started = datetime.fromisoformat(attempt["started_at"].replace("Z", "+00:00"))
+    elapsed = max(0, int((datetime.now(timezone.utc) - started).total_seconds()))
+    replacement_eligible = not attempt["is_replacement"]
+    replacement_disposition = "eligible" if replacement_eligible else "replacement-consumed"
+    telemetry = blank_telemetry()
+    if report is not None:
+        telemetry.update({key: report[key] for key in telemetry})
+    result = {
+        "schema_version": "task-parallelism-phase-0b-revision-candidate-result.v1",
+        "campaign_id": "vector-siege-phase-0b-revision",
+        "run_id": run_id,
+        "attempt_id": attempt_id,
+        "arm": arm,
+        "terminal_status": "harness-failed",
+        "failure_class": "interrupted-harness",
+        "failure_reason": "execution interrupted before terminal state was recorded",
+        "base_sha": base_sha,
+        "candidate_sha": candidate_sha,
+        "candidate_branch": candidate_branch,
+        "produced_work": produced_work,
+        "changed_files": sorted(changed),
+        "quality_score": 0,
+        "wall_clock_seconds": elapsed,
+        "tokens": usage,
+        **telemetry,
+        "predicted_path_drift_count": drift_count,
+        "candidate_report_path": tracked_report_path,
+        "evaluator_result_path": relative_to_protocol(evaluation_path),
+        "replacement_eligible": replacement_eligible,
+        "replacement_disposition": replacement_disposition,
+        "official_pilot_score_modified": False,
+    }
+    validate_document(result, RESULT_SCHEMA)
+    write_json(attempt_result_path, result)
+    process_path = RESULT_ROOT / "process" / f"{attempt_id}.json"
+    write_json(
+        process_path,
+        {
+            "schema_version": "task-parallelism-phase-0b-revision-process.v1",
+            "run_id": run_id,
+            "attempt_id": attempt_id,
+            "arm": arm,
+            "thread_id": thread_id,
+            "candidate_branch": candidate_branch,
+            "candidate_sha": candidate_sha,
+            "observed_spawn_agent_calls": observed_spawn_agent_calls,
+            "parent_worker_token_split_available": False,
+            "published": published,
+            "clone_retained": produced_work and not published,
+            "raw_artifact_path": str(artifact_dir.relative_to(REPO_ROOT)),
+            "state_recovery": "interrupted attempt captured and classified harness-failed",
+            "token_usage_scope": "aggregate-candidate-turn",
+        },
+    )
+    if not replacement_eligible:
+        write_json(RESULT_ROOT / "final" / f"{run_id}.json", result)
+    finalize_attempt_state(
+        state,
+        attempt_id,
+        result,
+        relative_to_protocol(attempt_result_path),
+        tracked_report_path,
+        relative_to_protocol(evaluation_path),
+        now(),
+    )
+    validate_state(state)
+    write_json(STATE_PATH, state)
+    if published or not produced_work:
+        shutil.rmtree(checkout, ignore_errors=True)
+    print(f"recovered interrupted attempt as harness-failed: {attempt_id}")
     return 0
 
 
@@ -651,7 +860,8 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
                 "tokens": result["tokens"],
                 "candidate_wall_clock_seconds": result["wall_clock_seconds"],
                 "evaluator_wall_clock_seconds": evaluation["wall_clock_seconds"],
-                "objective_score": evaluation["objective_score"],
+                "candidate_quality_score": result["quality_score"],
+                "evaluator_objective_score": evaluation["objective_score"],
                 "evaluator_result_path": result["evaluator_result_path"],
             }
         )
@@ -712,6 +922,7 @@ def main() -> int:
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument("--validate-state", action="store_true")
     action.add_argument("--run-id")
+    action.add_argument("--recover-interrupted")
     action.add_argument("--summarize", action="store_true")
     parser.add_argument("--output", type=Path, default=RESULT_ROOT / "paired-summary.json")
     parser.add_argument("--offline", action="store_true")
@@ -737,6 +948,8 @@ def main() -> int:
             return 0
         if args.run_id:
             return execute_run(args.run_id)
+        if args.recover_interrupted:
+            return recover_interrupted(args.recover_interrupted)
         return summarize(args.output.resolve())
     except (
         OSError,
