@@ -34,7 +34,7 @@ ARM_EXECUTION_POLICIES = {
 PARALLEL_REVIEW_START = "## Parallel advisory review"
 DOMAIN_POLICY_START = "## Domain: Code Quality"
 SESSION_STATE_START = "## Session-state cadence"
-POSTMORTEM_START = "### Postmortem feedback loop"
+RECOVERY_START = "### Post-compaction recovery gate"
 WORKTREE_POLICY = """- **Branch, publish, then checkpoint each changed turn.** Before meaningful edits,
   create a non-default branch, make an empty bootstrap commit, push it, and open
   a linked draft PR. At the end of every turn that changes repository-owned task
@@ -48,6 +48,18 @@ WORKTREE_POLICY = """- **Branch, publish, then checkpoint each changed turn.** B
 BENCHMARK_WORKTREE_POLICY = """- **Keep work in the evaluator-owned checkout.** Do not create branches, commit,
   push, open a pull request, apply labels, or write issue or PR comments. The
   evaluator captures the checkout after the candidate exits."""
+OUTCOME_ARTIFACT_POLICY = """- Perform the issue's user outcome in the most representative practical environment and publish a PR-lifetime redacted artifact for every material claim. External-state and runtime claims cannot be prose-only. Use [the outcome-validation guide](docs/guides/outcome-validation.md); use the [sibling sandbox playbook](docs/guides/sandbox-verification.md) only when GitHub default-branch state is load-bearing."""
+BENCHMARK_OUTCOME_ARTIFACT_POLICY = """- Perform the task's user outcome in the most representative practical environment and retain evidence for every material claim in the evaluator-owned checkout. External-state and runtime claims cannot be prose-only."""
+PRIMARY_OUTCOME_POLICY = """Before marking any non-exempt issue implementation complete, perform the issue's
+`User outcome (15-minute test)` against the actual problem statement and record
+the result with concrete evidence in the PR body."""
+BENCHMARK_PRIMARY_OUTCOME_POLICY = """Before marking the candidate implementation complete, perform the task's user
+outcome against the problem statement and report the result with concrete
+evidence in the final response."""
+OUTCOME_EVIDENCE_SURFACES = """A pragmatic user-outcome test with concrete steps and auditable material-claim
+evidence is required in issues, plans, and PRs."""
+BENCHMARK_OUTCOME_EVIDENCE_SURFACES = """A pragmatic user-outcome test with concrete steps and auditable material-claim
+evidence is required in the candidate checkout and final response."""
 
 
 def load_json(path: Path) -> dict:
@@ -149,13 +161,23 @@ def render_candidate_instructions(arm: str) -> str:
     source = replace_section(
         source,
         SESSION_STATE_START,
-        POSTMORTEM_START,
+        RECOVERY_START,
         "## Session-state cadence\n\n"
         "GitHub issue, PR, and `agent-state:v1` coordination do not apply inside the\n"
         "evaluator-owned candidate checkout. Report progress and results in the final\n"
         "response instead.\n\n",
     )
-    return source.replace(WORKTREE_POLICY, BENCHMARK_WORKTREE_POLICY)
+    replacements = {
+        WORKTREE_POLICY: BENCHMARK_WORKTREE_POLICY,
+        OUTCOME_ARTIFACT_POLICY: BENCHMARK_OUTCOME_ARTIFACT_POLICY,
+        PRIMARY_OUTCOME_POLICY: BENCHMARK_PRIMARY_OUTCOME_POLICY,
+        OUTCOME_EVIDENCE_SURFACES: BENCHMARK_OUTCOME_EVIDENCE_SURFACES,
+    }
+    for policy, replacement in replacements.items():
+        if source.count(policy) != 1:
+            raise ValueError("repository candidate policy is not uniquely replaceable")
+        source = source.replace(policy, replacement)
+    return source
 
 
 def replace_section(source: str, start: str, end: str, replacement: str) -> str:

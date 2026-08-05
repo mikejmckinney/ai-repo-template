@@ -50,6 +50,7 @@
         "additionalProperties": false,
         "required": [
           "run_id",
+          "candidate_ref",
           "arm",
           "official_terminal_status",
           "official_quality_score",
@@ -63,6 +64,10 @@
         ],
         "properties": {
           "run_id": { "type": "string", "pattern": "^vs-p0b-[0-9]{3}$" },
+          "candidate_ref": {
+            "type": "string",
+            "pattern": "^origin/benchmark/vector-siege/vs-p0b-[0-9]{3}(-attempt-[12])?$"
+          },
           "arm": { "enum": ["A", "B"] },
           "official_terminal_status": {
             "enum": ["completed", "candidate-failed", "provider-failed", "harness-failed"]

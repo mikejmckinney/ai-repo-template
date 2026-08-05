@@ -187,7 +187,10 @@ for rendered in (arm_a_text, arm_b_text):
     assert "apply `ai-review:live` immediately" not in rendered
     assert "Update or post the latest `agent-state:v1`" not in rendered
     assert "create a non-default branch" not in rendered
+    assert "PR-lifetime redacted artifact" not in rendered
+    assert "concrete evidence in the PR body" not in rendered
     assert "Keep work in the evaluator-owned checkout" in rendered
+    assert "### Post-compaction recovery gate" in rendered
 
 PY
 	[ "${status}" -eq 0 ]
@@ -236,6 +239,9 @@ for item in diagnostic["runs"]:
     with (protocol / "results/phase-0b" / f"{item['run_id']}.json").open(encoding="utf-8") as handle:
         official = json.load(handle)
     assert item["official_quality_score"] == official["quality_score"]
+assert diagnostic["runs"][0]["candidate_ref"] == (
+    "origin/benchmark/vector-siege/vs-p0b-001-attempt-2"
+)
 PY
 	[ "${status}" -eq 0 ]
 

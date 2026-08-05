@@ -55,6 +55,16 @@ setup() {
 	[[ "${output}" == *'revision candidate command must preserve the full instruction source'* ]]
 }
 
+@test "revised Phase 0B rejects an undersized candidate instruction budget" {
+	undersized_budget="${BATS_TEST_TMPDIR}/undersized-budget.json"
+	jq '(.candidate_runtime.candidate_command[] | select(startswith("project_doc_max_bytes="))) = "project_doc_max_bytes=4096"' \
+		"${REVISION}" >"${undersized_budget}"
+
+	run python3 "${RUNNER}/prepare-phase-0b.py" --manifest "${undersized_budget}" --validate
+	[ "${status}" -ne 0 ]
+	[[ "${output}" == *'candidate instructions exceed project_doc_max_bytes'* ]]
+}
+
 @test "Phase 0B plan is deterministic, counterbalanced, and non-executing" {
 	run python3 "${RUNNER}/prepare-phase-0b.py" --plan "${PLAN}"
 	[ "${status}" -eq 0 ]

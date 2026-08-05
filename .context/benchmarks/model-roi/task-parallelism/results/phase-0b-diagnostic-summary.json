@@ -25,6 +25,7 @@
   "runs": [
     {
       "run_id": "vs-p0b-001",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-001-attempt-2",
       "arm": "A",
       "official_terminal_status": "candidate-failed",
       "official_quality_score": 0,
@@ -38,6 +39,7 @@
     },
     {
       "run_id": "vs-p0b-002",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-002",
       "arm": "B",
       "official_terminal_status": "completed",
       "official_quality_score": 100,
@@ -72,6 +74,7 @@
     },
     {
       "run_id": "vs-p0b-003",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-003",
       "arm": "B",
       "official_terminal_status": "candidate-failed",
       "official_quality_score": 0,
@@ -106,6 +109,7 @@
     },
     {
       "run_id": "vs-p0b-004",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-004",
       "arm": "A",
       "official_terminal_status": "candidate-failed",
       "official_quality_score": 0,
@@ -140,6 +144,7 @@
     },
     {
       "run_id": "vs-p0b-005",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-005",
       "arm": "A",
       "official_terminal_status": "harness-failed",
       "official_quality_score": 0,
@@ -153,6 +158,7 @@
     },
     {
       "run_id": "vs-p0b-006",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-006",
       "arm": "B",
       "official_terminal_status": "candidate-failed",
       "official_quality_score": 0,
@@ -187,6 +193,7 @@
     },
     {
       "run_id": "vs-p0b-007",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-007",
       "arm": "B",
       "official_terminal_status": "candidate-failed",
       "official_quality_score": 0,
@@ -221,6 +228,7 @@
     },
     {
       "run_id": "vs-p0b-008",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-008",
       "arm": "A",
       "official_terminal_status": "candidate-failed",
       "official_quality_score": 0,
@@ -255,6 +263,7 @@
     },
     {
       "run_id": "vs-p0b-009",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-009",
       "arm": "A",
       "official_terminal_status": "candidate-failed",
       "official_quality_score": 0,
@@ -289,6 +298,7 @@
     },
     {
       "run_id": "vs-p0b-010",
+      "candidate_ref": "origin/benchmark/vector-siege/vs-p0b-010",
       "arm": "B",
       "official_terminal_status": "candidate-failed",
       "official_quality_score": 0,

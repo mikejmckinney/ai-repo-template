@@ -93,6 +93,7 @@ def diagnose_run(runner, run_id: str) -> dict:
     report = candidate_report(run_id)
     result = {
         "run_id": run_id,
+        "candidate_ref": ref,
         "arm": official["arm"],
         "official_terminal_status": official["terminal_status"],
         "official_quality_score": official["quality_score"],
