@@ -7,7 +7,62 @@ setup() {
 	RUNNER="${REPO_ROOT}/scripts/benchmark/task-parallelism"
 	PROTOCOL="${REPO_ROOT}/.context/benchmarks/model-roi/task-parallelism"
 	CAMPAIGN="${PROTOCOL}/campaign.phase-0b.preparation.json"
+	REVISION="${PROTOCOL}/campaign.phase-0b.revision.json"
 	PLAN="${BATS_TEST_TMPDIR}/phase-0b-run-plan.json"
+}
+
+@test "revised Phase 0B plan uses one assignment per arm and invalid-attempt-only replacement" {
+	run python3 "${RUNNER}/prepare-phase-0b.py" --manifest "${REVISION}" --plan "${PLAN}"
+	[ "${status}" -eq 0 ]
+	[ -f "${PLAN}" ]
+
+	run jq -e '
+    .execution_status == "blocked" and
+    .candidate_processes_started == 0 and
+    ([.assignments[].arm] == ["A", "B"]) and
+    (.retries.candidate_failure == 0) and
+    (.retries.provider_transient == 1) and
+    (.retries.verified_harness_failure == 1) and
+    (.candidate_command | index("danger-full-access") != null) and
+    (.candidate_command | index("workspace-write") == null) and
+    (.candidate_command | index("multi_agent") != null) and
+    (.candidate_command | index("project_doc_max_bytes=65536") != null) and
+    (.candidate_checkout.location == "standalone-temporary-clone") and
+    (.candidate_checkout.instructions_source == "AGENTS.md") and
+    (.candidate_checkout.instructions_target == "AGENTS.override.md") and
+    (.candidate_instruction_sha256.A | test("^[0-9a-f]{64}$")) and
+    (.candidate_instruction_sha256.B | test("^[0-9a-f]{64}$")) and
+    (.candidate_verification == ["build", "unit", "e2e"]) and
+    (.parent_evaluation | index("e2e") != null)
+  ' "${PLAN}"
+	[ "${status}" -eq 0 ]
+
+	common_prompt="$(jq -r '.prompts.common.path' "${REVISION}")"
+	run grep -F "Use Playwright or Chrome" "${PROTOCOL}/${common_prompt}"
+	[ "${status}" -eq 0 ]
+	run grep -F "Run the scaffold build, unit tests, and browser journey." \
+		"${PROTOCOL}/${common_prompt}"
+	[ "${status}" -eq 0 ]
+}
+
+@test "revised Phase 0B rejects a missing candidate instruction budget" {
+	missing_budget="${BATS_TEST_TMPDIR}/missing-budget.json"
+	jq '.candidate_runtime.candidate_command |= map(select(. != "project_doc_max_bytes=65536"))' \
+		"${REVISION}" >"${missing_budget}"
+
+	run python3 "${RUNNER}/prepare-phase-0b.py" --manifest "${missing_budget}" --validate
+	[ "${status}" -ne 0 ]
+	[[ "${output}" == *'revision candidate command must preserve the full instruction source'* ]]
+}
+
+@test "revised Phase 0B rejects an undersized candidate instruction budget" {
+	undersized_budget="${BATS_TEST_TMPDIR}/undersized-budget.json"
+	jq '(.candidate_runtime.candidate_command[] | select(startswith("project_doc_max_bytes="))) = "project_doc_max_bytes=4096"' \
+		"${REVISION}" >"${undersized_budget}"
+
+	run python3 "${RUNNER}/prepare-phase-0b.py" --manifest "${undersized_budget}" --validate
+	[ "${status}" -ne 0 ]
+	[[ "${output}" == *'candidate instructions exceed project_doc_max_bytes'* ]]
 }
 
 @test "Phase 0B plan is deterministic, counterbalanced, and non-executing" {

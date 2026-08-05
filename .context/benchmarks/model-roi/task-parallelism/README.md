@@ -142,3 +142,66 @@ is a no-go:
 
 The result does not support an adoption claim or confirmatory campaign. The
 observed data instead require harness revision before another feasibility run.
+
+### Retained-Branch Diagnostic
+
+The post-pilot diagnostic evaluates retained candidate branches without changing
+official scores or creating confirmatory evidence:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-diagnostic-validate
+```
+
+Eight candidates produced work, and all eight final reports identified sandbox
+restrictions on browser installation, process launch, or local TCP binding. The
+parent evaluator scored all produced branches outside the candidate sandbox. The
+tracked point observation records three parent E2E passes, including one Arm A
+branch whose E2E result changed across diagnostic passes. Therefore diagnostic
+quality totals are not comparative or adoption evidence. Stable observations are:
+
+- the official pilot scores remain unchanged;
+- three Arm A branches officially scored zero despite passing install, unit, and
+  build checks in the parent evaluator;
+- run 002, the only officially completed Arm B run, declined fan-out;
+- the original candidate sandbox prevented reliable browser or server checks;
+- candidate-authored E2E behavior is not stable enough to act as the sole parent
+  acceptance journey.
+
+### Revised Feasibility Boundary
+
+The blocked revision uses one sequential assignment per arm. Candidate timeout,
+partial, or failed outcomes count as the arm result. Only a verified provider or
+harness-invalid attempt may receive one replacement. Both candidates use normal
+Codespace permissions and run build, unit, and browser checks with Playwright or
+Chrome DevTools; the parent evaluator independently evaluates every branch that
+produced work regardless of the candidate self-report.
+
+The non-executing planner computes deterministic digests for the two candidate
+instruction bodies. Activation renders the selected body as root
+`AGENTS.override.md` from the repository's normal guidance. Arm A replaces the
+execution-model paragraph with the monolithic treatment. Arm B replaces it with
+instruction to use as many native subagents as needed and integrate their work.
+Both bodies replace the repository entry gate with benchmark-local orientation
+and mark GitHub-only branch, PR, advisory-label, and live-state duties as inert
+in the evaluator-owned checkout; all other applicable repository policy remains.
+Codex discovers the override before `AGENTS.md` at project scope, as
+documented in the
+[Codex instruction guide](https://developers.openai.com/codex/agent-configuration/agents-md).
+
+The plan requires a standalone temporary clone rather than a shared Git worktree,
+so normal Git commands cannot read prior candidate refs through the control
+repository's object database. Candidate execution uses explicit
+`--sandbox danger-full-access`; network, browser, localhost, and shell access
+remain available. This PR does not add a revision execution state or parameterize
+the completed pilot runner. Those mutations occur only after separate execution
+approval, when the planner contract is activated. Activation must also use a
+revision-specific candidate-report schema whose `worker_count` permits the
+uncapped Arm B treatment; the completed pilot's v1 report schema remains frozen.
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-revision-validate
+make -C scripts/benchmark/task-parallelism phase-0b-revision-plan
+```
+
+The rendered plan remains blocked with zero candidate processes. Another model
+run requires separate explicit approval.

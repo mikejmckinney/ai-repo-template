@@ -126,6 +126,7 @@ report = {
     "fanout_elected": True,
     "worker_count": 1,
 }
+
 module.apply_report_telemetry(
     result,
     report,
@@ -141,6 +142,123 @@ assert result["skill_loads"] == 6
 assert result["predicted_path_drift_count"] == 2
 assert result["tokens"]["input"] == 100
 PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "diagnostic evaluation scores every branch that produced work" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+assert module.should_diagnose_candidate(True, "completed") is True
+assert module.should_diagnose_candidate(True, "partial") is True
+assert module.should_diagnose_candidate(True, "failed") is True
+assert module.should_diagnose_candidate(False, "completed") is False
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "candidate instructions preserve applicable policy and replace control-repository duties" {
+	run python3 - "${REPO_ROOT}/scripts/benchmark/task-parallelism/prepare-phase-0b.py" \
+		"${REPO_ROOT}/AGENTS.md" <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+source = Path(sys.argv[2]).read_text(encoding="utf-8")
+arm_a_text = module.render_candidate_instructions("A")
+assert "Do not dispatch subagents" in arm_a_text
+assert "Use one monolithic implementing agent" not in arm_a_text
+
+arm_b_text = module.render_candidate_instructions("B")
+assert "Use as many native subagents as needed for the task" in arm_b_text
+assert "Use one monolithic implementing agent" not in arm_b_text
+
+for rendered in (arm_a_text, arm_b_text):
+    normalized = " ".join(rendered.split())
+    assert rendered.startswith("# AGENTS.md\n")
+    assert rendered.count("## Parallel advisory review") == source.count("## Parallel advisory review")
+    assert rendered.count("## Domain: Code Quality") == source.count("## Domain: Code Quality")
+    assert "apply `ai-review:live` immediately" not in normalized
+    assert "Update or post the latest `agent-state:v1`" not in normalized
+    assert "create a non-default branch" not in normalized
+    assert "PR-lifetime redacted artifact" not in normalized
+    assert "concrete evidence in the PR body" not in normalized
+    assert "Keep work in the evaluator-owned checkout" in rendered
+    assert "### Post-compaction recovery gate" in rendered
+    assert "checkout-local evidence without querying GitHub" in rendered
+    assert "hydrate the active issue" not in normalized
+    assert "If no exact session ID is available, ask the user" not in normalized
+    assert "The evaluator provides an oriented benchmark checkout" in rendered
+    assert "load and run the `repo-onboarding` skill" not in normalized
+    assert "run `session-recovery` first" not in normalized
+    assert "Recovery takes precedence" not in normalized
+
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "retained diagnostics select the terminal retry branch" {
+	run python3 - "${REPO_ROOT}/scripts/benchmark/task-parallelism/diagnose-phase-0b.py" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b_diagnostic", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+assert module.candidate_ref("vs-p0b-001") == (
+    "origin/benchmark/vector-siege/vs-p0b-001-attempt-2"
+)
+assert module.candidate_ref("vs-p0b-002") == "origin/benchmark/vector-siege/vs-p0b-002"
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "retained-branch diagnostics preserve official scores and expose sandbox blocking" {
+	summary="${PROTOCOL}/results/phase-0b-diagnostic-summary.json"
+	run jq -e '
+    .official_scores_modified == false and
+    .confirmatory_evidence == false and
+    .aggregate.produced_runs == 8 and
+    .aggregate.parent_e2e_passes >= 2 and
+    .aggregate.candidate_reports_with_sandbox_block == 8 and
+    .aggregate.arms.A.official_quality_total == 0 and
+    .aggregate.arms.A.diagnostic_quality_total >= 210 and
+    .aggregate.arms.B.official_quality_total == 100 and
+    .aggregate.arms.B.diagnostic_quality_total >= 350
+  ' "${summary}"
+	[ "${status}" -eq 0 ]
+
+	run python3 - "${PROTOCOL}" "${summary}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+protocol = Path(sys.argv[1])
+with Path(sys.argv[2]).open(encoding="utf-8") as handle:
+    diagnostic = json.load(handle)
+for item in diagnostic["runs"]:
+    with (protocol / "results/phase-0b" / f"{item['run_id']}.json").open(encoding="utf-8") as handle:
+        official = json.load(handle)
+    assert item["official_quality_score"] == official["quality_score"]
+assert diagnostic["runs"][0]["candidate_ref"] == (
+    "origin/benchmark/vector-siege/vs-p0b-001-attempt-2"
+)
+PY
+	[ "${status}" -eq 0 ]
+
+	run jq -e '
+    (.reports | keys) == [
+      "vs-p0b-002", "vs-p0b-003", "vs-p0b-004", "vs-p0b-006",
+      "vs-p0b-007", "vs-p0b-008", "vs-p0b-009", "vs-p0b-010"
+    ]
+  ' "${PROTOCOL}/results/phase-0b-candidate-reports.json"
 	[ "${status}" -eq 0 ]
 }
 

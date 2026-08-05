@@ -387,6 +387,11 @@ def apply_report_telemetry(result: dict, report: dict, usage: dict, drift_count:
     )
 
 
+def should_diagnose_candidate(work_produced: bool, completion_status: str | None) -> bool:
+    del completion_status
+    return work_produced
+
+
 def execute_run(run_id: str) -> int:
     state, preparation = load_state()
     if state["status"] == "base-pending" or state["candidate_base"]["sha"] is None:

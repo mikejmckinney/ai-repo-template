@@ -117,10 +117,11 @@ launcher, validates exact tracked asset hashes, and leaves Phase 0B blocked.
 Unsupported hosts or version mismatches fail closed; preflight never installs
 packages or invokes a provider.
 
-Passing Phase 0A does not authorize candidate runs. Obtain separate explicit
-maintainer approval before the five matched randomized Stage 1 repetitions for
-each of Arms A and B. Polished media, Cloudflare, deployment, publication, A2A,
-portability, and policy changes remain behind later gates.
+Passing Phase 0A does not authorize candidate runs. The original Phase 0B pilot
+used five Stage 1 repetitions for each arm under a separate approval. That pilot
+is complete and cannot be rerun from this preparation contract. Polished media,
+Cloudflare, deployment, publication, A2A, portability, and policy changes remain
+behind later gates.
 
 ### Task-parallelism Phase 0B preparation
 
@@ -167,6 +168,42 @@ Eight assignments retained candidate-measured coordination telemetry; two
 timeout records used the schema's explicit zero-filled failure fallback. Do not
 start a confirmatory campaign from that result. Revise and separately approve
 the feasibility harness before any rerun.
+
+### Task-parallelism Phase 0B revision
+
+The no-go follow-up is non-executing. Validate and render it with:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-revision-validate
+make -C scripts/benchmark/task-parallelism phase-0b-revision-plan
+make -C scripts/benchmark/task-parallelism phase-0b-diagnostic-validate
+```
+
+The revised plan contains one sequential assignment per arm. Candidate timeout,
+partial, and failed outcomes are retained as results. Only a verified provider or
+harness-invalid attempt may receive one replacement. Do not repeat a candidate
+failure until it succeeds.
+
+The blocked plan gives candidates explicit `--sandbox danger-full-access` and
+requires build, unit, and browser checks with Playwright or Chrome DevTools. The
+parent evaluator independently repeats those checks. The planner records an
+instruction digest for each arm; activation renders the selected body as root
+`AGENTS.override.md`. Arm A remains monolithic, while Arm B may use as many native
+subagents as needed for the task. GitHub-only branch, PR, advisory-label, and
+live-state duties are inert in the evaluator-owned checkout. Codex gives the
+override precedence at project scope; see the
+[Codex instruction guide](https://developers.openai.com/codex/agent-configuration/agents-md).
+
+Activation must create candidates as standalone temporary clones with no shared
+control-repository object database. This non-executing revision does not add an
+execution state or parameterize the completed pilot runner. Those changes require
+the separate candidate-execution approval. Activation must use a revision-specific
+candidate-report schema without the completed pilot v1 schema's two-worker cap.
+Do not treat the rendered plan as an executable campaign state.
+
+The retained-branch diagnostic is explicitly non-confirmatory and does not alter
+the merged pilot scores. Another candidate invocation remains blocked until the
+revision is reviewed and the maintainer separately approves execution.
 
 Typical preflight:
 

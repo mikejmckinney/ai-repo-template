@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-diagnostic-summary.v1.json",
+  "title": "Task parallelism Phase 0B retained-branch diagnostic summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "source_pilot_commit",
+    "official_scores_modified",
+    "confirmatory_evidence",
+    "aggregate",
+    "runs"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-diagnostic-summary.v1" },
+    "source_pilot_commit": { "const": "af1e279866f3e2c9e46c345632a2db32f58254a2" },
+    "official_scores_modified": { "const": false },
+    "confirmatory_evidence": { "const": false },
+    "aggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "produced_runs",
+        "parent_e2e_passes",
+        "candidate_reports_with_sandbox_block",
+        "arms"
+      ],
+      "properties": {
+        "produced_runs": { "type": "integer", "minimum": 0 },
+        "parent_e2e_passes": { "type": "integer", "minimum": 0 },
+        "candidate_reports_with_sandbox_block": { "type": "integer", "minimum": 0 },
+        "arms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["A", "B"],
+          "properties": {
+            "A": { "$ref": "#/$defs/armAggregate" },
+            "B": { "$ref": "#/$defs/armAggregate" }
+          }
+        }
+      }
+    },
+    "runs": {
+      "type": "array",
+      "minItems": 10,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "run_id",
+          "candidate_ref",
+          "arm",
+          "official_terminal_status",
+          "official_quality_score",
+          "produced_work",
+          "changed_file_count",
+          "candidate_completion_status",
+          "fanout_elected",
+          "fanout_reason",
+          "diagnostic_quality_score",
+          "checks"
+        ],
+        "properties": {
+          "run_id": { "type": "string", "pattern": "^vs-p0b-[0-9]{3}$" },
+          "candidate_ref": {
+            "type": "string",
+            "pattern": "^origin/benchmark/vector-siege/vs-p0b-[0-9]{3}(-attempt-[12])?$"
+          },
+          "arm": { "enum": ["A", "B"] },
+          "official_terminal_status": {
+            "enum": ["completed", "candidate-failed", "provider-failed", "harness-failed"]
+          },
+          "official_quality_score": { "type": "number", "minimum": 0 },
+          "produced_work": { "type": "boolean" },
+          "changed_file_count": { "type": "integer", "minimum": 0 },
+          "candidate_completion_status": { "type": ["string", "null"] },
+          "fanout_elected": { "type": "boolean" },
+          "fanout_reason": { "type": ["string", "null"] },
+          "diagnostic_quality_score": { "type": "number", "minimum": 0 },
+          "checks": { "type": "object" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "armAggregate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runs", "produced_runs", "official_quality_total", "diagnostic_quality_total"],
+      "properties": {
+        "runs": { "const": 5 },
+        "produced_runs": { "type": "integer", "minimum": 0 },
+        "official_quality_total": { "type": "number", "minimum": 0 },
+        "diagnostic_quality_total": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -14,8 +14,55 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 PROTOCOL_ROOT = REPO_ROOT / ".context/benchmarks/model-roi/task-parallelism"
 DEFAULT_MANIFEST = PROTOCOL_ROOT / "campaign.phase-0b.preparation.json"
 PREPARATION_SCHEMA = PROTOCOL_ROOT / "phase-0b-preparation.schema.json"
+REVISION_SCHEMA = PROTOCOL_ROOT / "phase-0b-revision.schema.json"
 SUMMARY_SCHEMA = PROTOCOL_ROOT / "phase-0b-pilot-summary.schema.json"
 CANDIDATE_RESULT_SCHEMA = PROTOCOL_ROOT / "phase-0b-candidate-result.schema.json"
+MONOLITHIC_POLICY = (
+    "- Use one monolithic implementing agent. ADR-031 found no favorable ROI crossover\n"
+    "  for the multi-role pipeline and retired the role registry."
+)
+ARM_EXECUTION_POLICIES = {
+    "A": (
+        "- Complete this benchmark with one implementing agent. Do not dispatch subagents,\n"
+        "  child workers, or an independent model."
+    ),
+    "B": (
+        "- This benchmark treatment replaces the repository's monolithic-agent default.\n"
+        "  Use as many native subagents as needed for the task and integrate their work."
+    ),
+}
+REPOSITORY_ENTRY_START = "## Repository entry gate"
+EXECUTION_MODEL_START = "## Execution model"
+PARALLEL_REVIEW_START = "## Parallel advisory review"
+DOMAIN_POLICY_START = "## Domain: Code Quality"
+SESSION_STATE_START = "## Session-state cadence"
+RECOVERY_START = "### Post-compaction recovery gate"
+POSTMORTEM_START = "### Postmortem feedback loop"
+WORKTREE_POLICY = """- **Branch, publish, then checkpoint each changed turn.** Before meaningful edits,
+  create a non-default branch, make an empty bootstrap commit, push it, and open
+  a linked draft PR. At the end of every turn that changes repository-owned task
+  files, stage only task-owned paths, commit and push before updating
+  `agent-state:v1`. Failing tests or incomplete behavior are not reasons to keep
+  work local; record them in the draft PR and state comment. Never checkpoint
+  secrets, unrelated user changes, ignored/generated artifacts, unresolved
+  conflicts, or corrupt/destructive state. No-change turns create no commit.
+  Checkpoint-heavy branches must be squash-merged or cleaned before review.
+  Branch naming: use `feature/<task-id>` or `fix/<slug>`."""
+BENCHMARK_WORKTREE_POLICY = """- **Keep work in the evaluator-owned checkout.** Do not create branches, commit,
+  push, open a pull request, apply labels, or write issue or PR comments. The
+  evaluator captures the checkout after the candidate exits."""
+OUTCOME_ARTIFACT_POLICY = """- Perform the issue's user outcome in the most representative practical environment and publish a PR-lifetime redacted artifact for every material claim. External-state and runtime claims cannot be prose-only. Use [the outcome-validation guide](docs/guides/outcome-validation.md); use the [sibling sandbox playbook](docs/guides/sandbox-verification.md) only when GitHub default-branch state is load-bearing."""
+BENCHMARK_OUTCOME_ARTIFACT_POLICY = """- Perform the task's user outcome in the most representative practical environment and retain evidence for every material claim in the evaluator-owned checkout. External-state and runtime claims cannot be prose-only."""
+PRIMARY_OUTCOME_POLICY = """Before marking any non-exempt issue implementation complete, perform the issue's
+`User outcome (15-minute test)` against the actual problem statement and record
+the result with concrete evidence in the PR body."""
+BENCHMARK_PRIMARY_OUTCOME_POLICY = """Before marking the candidate implementation complete, perform the task's user
+outcome against the problem statement and report the result with concrete
+evidence in the final response."""
+OUTCOME_EVIDENCE_SURFACES = """A pragmatic user-outcome test with concrete steps and auditable material-claim
+evidence is required in issues, plans, and PRs."""
+BENCHMARK_OUTCOME_EVIDENCE_SURFACES = """A pragmatic user-outcome test with concrete steps and auditable material-claim
+evidence is required in the candidate checkout and final response."""
 
 
 def load_json(path: Path) -> dict:
@@ -52,11 +99,23 @@ def validate_execution_boundary(manifest: dict) -> None:
 def validate_runtime(manifest: dict) -> None:
     runtime = manifest["candidate_runtime"]
     command = runtime["candidate_command"]
-    if "danger-full-access" in command:
-        raise ValueError("candidate command must not use danger-full-access")
+    revision = manifest["schema_version"] == "task-parallelism-phase-0b-revision.v1"
+    expected_sandbox = "danger-full-access" if revision else "workspace-write"
     sandbox_index = command.index("--sandbox") if "--sandbox" in command else -1
-    if sandbox_index < 0 or command[sandbox_index + 1] != "workspace-write":
-        raise ValueError("candidate command must explicitly use workspace-write")
+    if sandbox_index < 0 or command[sandbox_index + 1] != expected_sandbox:
+        raise ValueError(f"candidate command must explicitly use {expected_sandbox}")
+    if revision:
+        configured_limits = [
+            value.removeprefix("project_doc_max_bytes=")
+            for value in command
+            if value.startswith("project_doc_max_bytes=")
+        ]
+        if len(configured_limits) != 1 or not configured_limits[0].isdigit():
+            raise ValueError("revision candidate command must preserve the full instruction source")
+        instruction_limit = int(configured_limits[0])
+        for arm in ("A", "B"):
+            if len(render_candidate_instructions(arm).encode()) > instruction_limit:
+                raise ValueError(f"Arm {arm} candidate instructions exceed project_doc_max_bytes")
 
     config_path = REPO_ROOT / ".codex/config.toml"
     if sha256(config_path) != runtime["repository_config_sha256"]:
@@ -87,6 +146,70 @@ def validate_files(manifest: dict, scaffold_root: Path) -> None:
             raise ValueError(f"prompt digest mismatch: {prompt['path']}")
 
 
+def render_candidate_instructions(arm: str) -> str:
+    source = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    source = replace_section(
+        source,
+        REPOSITORY_ENTRY_START,
+        EXECUTION_MODEL_START,
+        "## Repository entry gate\n\n"
+        "The evaluator provides an oriented benchmark checkout with `TASK.md` and all\n"
+        "required instructions. Do not load onboarding or recovery skills, query GitHub,\n"
+        "or pause for repository-orientation input before starting the task.\n\n",
+    )
+    if source.count(MONOLITHIC_POLICY) != 1:
+        raise ValueError("repository monolithic-agent policy is not uniquely replaceable")
+    source = source.replace(MONOLITHIC_POLICY, ARM_EXECUTION_POLICIES[arm])
+    source = replace_section(
+        source,
+        PARALLEL_REVIEW_START,
+        DOMAIN_POLICY_START,
+        "## Parallel advisory review\n\n"
+        "This evaluator-owned benchmark checkout has no task PR. Advisory labeling and\n"
+        "snapshot inspection do not apply to candidate execution.\n\n",
+    )
+    source = replace_section(
+        source,
+        SESSION_STATE_START,
+        RECOVERY_START,
+        "## Session-state cadence\n\n"
+        "GitHub issue, PR, and `agent-state:v1` coordination do not apply inside the\n"
+        "evaluator-owned candidate checkout. Report progress and results in the final\n"
+        "response instead.\n\n",
+    )
+    source = replace_section(
+        source,
+        RECOVERY_START,
+        POSTMORTEM_START,
+        "### Post-compaction recovery gate\n\n"
+        "After runtime context compaction, re-read `TASK.md`, the current checkout diff\n"
+        "and status, this `AGENTS.override.md`, and task-relevant files. Continue from\n"
+        "checkout-local evidence without querying GitHub or pausing for user input.\n\n",
+    )
+    replacements = {
+        "branch-and-publish": (WORKTREE_POLICY, BENCHMARK_WORKTREE_POLICY),
+        "outcome-artifact": (OUTCOME_ARTIFACT_POLICY, BENCHMARK_OUTCOME_ARTIFACT_POLICY),
+        "primary-outcome": (PRIMARY_OUTCOME_POLICY, BENCHMARK_PRIMARY_OUTCOME_POLICY),
+        "outcome-surfaces": (
+            OUTCOME_EVIDENCE_SURFACES,
+            BENCHMARK_OUTCOME_EVIDENCE_SURFACES,
+        ),
+    }
+    for name, (policy, replacement) in replacements.items():
+        if source.count(policy) != 1:
+            raise ValueError(f"repository candidate policy is not uniquely replaceable: {name}")
+        source = source.replace(policy, replacement)
+    return source
+
+
+def replace_section(source: str, start: str, end: str, replacement: str) -> str:
+    if source.count(start) != 1 or source.count(end) != 1:
+        raise ValueError(f"repository policy section is not uniquely replaceable: {start}")
+    before, remainder = source.split(start, 1)
+    _, after = remainder.split(end, 1)
+    return before + replacement + end + after
+
+
 def validate_run_policy(manifest: dict) -> None:
     policy = manifest["run_policy"]
     expected_arms = [arm for block in policy["blocks"] for arm in block]
@@ -94,16 +217,23 @@ def validate_run_policy(manifest: dict) -> None:
     observed_arms = [assignment["arm"] for assignment in assignments]
     if observed_arms != expected_arms:
         raise ValueError("assignment order does not match counterbalanced blocks")
-    if len({assignment["run_id"] for assignment in assignments}) != 10:
+    expected_count = 2 if manifest["schema_version"].endswith("revision.v1") else 10
+    if len({assignment["run_id"] for assignment in assignments}) != expected_count:
         raise ValueError("Phase 0B run identifiers must be unique")
-    if observed_arms.count("A") != 5 or observed_arms.count("B") != 5:
-        raise ValueError("Phase 0B requires five assignments per arm")
+    expected_per_arm = expected_count // 2
+    if observed_arms.count("A") != expected_per_arm or observed_arms.count("B") != expected_per_arm:
+        raise ValueError(f"Phase 0B requires {expected_per_arm} assignment per arm")
 
 
 def validate_preparation(manifest_path: Path, scaffold_root: Path) -> dict:
     manifest = load_json(manifest_path)
     validate_execution_boundary(manifest)
-    validate_schema(manifest, PREPARATION_SCHEMA)
+    schema_path = (
+        REVISION_SCHEMA
+        if manifest.get("schema_version") == "task-parallelism-phase-0b-revision.v1"
+        else PREPARATION_SCHEMA
+    )
+    validate_schema(manifest, schema_path)
     validate_runtime(manifest)
     validate_files(manifest, scaffold_root)
     validate_run_policy(manifest)
@@ -119,7 +249,7 @@ def build_plan(manifest: dict) -> dict:
         {**assignment, "prompt_paths": prompt_paths[assignment["arm"]]}
         for assignment in manifest["run_policy"]["assignments"]
     ]
-    return {
+    plan = {
         "schema_version": "task-parallelism-phase-0b-run-plan.v1",
         "campaign_id": manifest["campaign_id"],
         "execution_status": manifest["execution"]["status"],
@@ -128,8 +258,24 @@ def build_plan(manifest: dict) -> dict:
         "scaffold_base_status": manifest["scaffold"]["base_status"],
         "assignments": assignments,
         "retries": manifest["run_policy"]["retries"],
-        "gate_0": manifest["gate_0"],
     }
+    if "gate_0" in manifest:
+        plan["gate_0"] = manifest["gate_0"]
+    else:
+        instruction_digests = {
+            arm: hashlib.sha256(render_candidate_instructions(arm).encode()).hexdigest()
+            for arm in ("A", "B")
+        }
+        plan.update(
+            {
+                "candidate_checkout": manifest["candidate_checkout"],
+                "candidate_instruction_sha256": instruction_digests,
+                "candidate_verification": manifest["candidate_runtime"]["candidate_verification"],
+                "parent_evaluation": manifest["candidate_runtime"]["parent_evaluation"],
+                "decision_boundary": manifest["decision_boundary"],
+            }
+        )
+    return plan
 
 
 def write_plan(manifest: dict, output_path: Path) -> None:
@@ -196,6 +342,8 @@ def main() -> int:
         manifest = validate_preparation(manifest_path, scaffold_root)
         if args.validate or args.plan:
             validate_schema_definition(CANDIDATE_RESULT_SCHEMA)
+            if manifest["schema_version"] == "task-parallelism-phase-0b-revision.v1":
+                validate_schema_definition(REVISION_SCHEMA)
         if args.validate:
             print("Phase 0B preparation is valid and execution remains blocked")
             return 0

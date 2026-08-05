@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-revision.v1.json",
+  "title": "Task parallelism Phase 0B harness revision",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "campaign_id",
+    "phase",
+    "candidate_runtime",
+    "candidate_checkout",
+    "scaffold",
+    "prompts",
+    "run_policy",
+    "decision_boundary",
+    "execution"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-revision.v1" },
+    "campaign_id": { "const": "vector-siege-phase-0b-revision" },
+    "phase": { "const": "0B-harness-revision" },
+    "candidate_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform",
+        "cli",
+        "model",
+        "reasoning_effort",
+        "observed_contexts",
+        "evidence",
+        "repository_config_sha256",
+        "candidate_command",
+        "candidate_verification",
+        "parent_evaluation"
+      ],
+      "properties": {
+        "platform": { "const": "codex" },
+        "cli": { "const": "codex-cli 0.146.0" },
+        "model": { "const": "gpt-5.6-luna" },
+        "reasoning_effort": { "const": "max" },
+        "observed_contexts": { "const": 3 },
+        "evidence": { "const": "evidence/codex-luna-max-diagnostics.json" },
+        "repository_config_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "candidate_command": {
+          "type": "array",
+          "minItems": 10,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "candidate_verification": { "const": ["build", "unit", "e2e"] },
+        "parent_evaluation": { "const": ["install", "unit", "build", "e2e"] }
+      }
+    },
+    "candidate_checkout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "location",
+        "instructions_source",
+        "instructions_target",
+        "execution_model_replaced"
+      ],
+      "properties": {
+        "location": { "const": "standalone-temporary-clone" },
+        "instructions_source": { "const": "AGENTS.md" },
+        "instructions_target": { "const": "AGENTS.override.md" },
+        "execution_model_replaced": { "const": true }
+      }
+    },
+    "scaffold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_status", "path", "dependencies", "files"],
+      "properties": {
+        "base_status": { "const": "frozen-existing" },
+        "path": { "const": "scaffold" },
+        "dependencies": { "type": "object" },
+        "files": {
+          "type": "object",
+          "minProperties": 9,
+          "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["common", "arm_a", "arm_b"],
+      "properties": {
+        "common": { "$ref": "#/$defs/fileDigest" },
+        "arm_a": { "$ref": "#/$defs/fileDigest" },
+        "arm_b": { "$ref": "#/$defs/fileDigest" }
+      }
+    },
+    "run_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution", "blocks", "assignments", "retries"],
+      "properties": {
+        "execution": { "const": "sequential" },
+        "blocks": { "const": ["AB"] },
+        "assignments": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["run_id", "block", "position", "arm"],
+            "properties": {
+              "run_id": { "enum": ["vs-p0b-next-a", "vs-p0b-next-b"] },
+              "block": { "const": 1 },
+              "position": { "type": "integer", "minimum": 1, "maximum": 2 },
+              "arm": { "enum": ["A", "B"] }
+            }
+          }
+        },
+        "retries": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidate_failure", "provider_transient", "verified_harness_failure"],
+          "properties": {
+            "candidate_failure": { "const": 0 },
+            "provider_transient": { "const": 1 },
+            "verified_harness_failure": { "const": 1 }
+          }
+        }
+      }
+    },
+    "decision_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "adoption_claim"],
+      "properties": {
+        "classification": { "const": "diagnostic-feasibility-only" },
+        "adoption_claim": { "const": false }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "approval_source", "candidate_processes_started"],
+      "properties": {
+        "status": { "const": "blocked" },
+        "approval_source": { "type": "null" },
+        "candidate_processes_started": { "const": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "fileDigest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    }
+  }
+}
