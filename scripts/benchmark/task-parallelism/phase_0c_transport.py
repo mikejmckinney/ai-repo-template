@@ -28,6 +28,12 @@ class CanonicalEventError(ValueError):
     """Raised for malformed or conflicting canonical events."""
 
 
+def require_equal_suppressed(left: int, right: int) -> int:
+    if left != right:
+        raise CanonicalEventError("transport suppression counts differ")
+    return left
+
+
 def normalize_ledger(events: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
     if len(events) > MAX_EVENTS:
         raise CanonicalEventError("event count exceeds bound")
@@ -83,13 +89,19 @@ class GitHubCommentAdapter:
 
     def __init__(self, comments: list[dict[str, Any]]):
         self.comments = comments
+        self.marked_count = 0
 
     def receive(self) -> tuple[list[dict[str, Any]], int]:
         events = []
+        self.marked_count = 0
         for comment in self.comments:
             body = comment.get("body")
-            if not isinstance(body, str) or not body.startswith(GITHUB_EVENT_PREFIX):
+            if not isinstance(body, str):
                 continue
+            body = body.replace("\r\n", "\n")
+            if not body.startswith(GITHUB_EVENT_PREFIX):
+                continue
+            self.marked_count += 1
             if not body.endswith(GITHUB_EVENT_SUFFIX):
                 raise CanonicalEventError("marked GitHub event has invalid framing")
             encoded = body[len(GITHUB_EVENT_PREFIX) : -len(GITHUB_EVENT_SUFFIX)]
@@ -100,4 +112,6 @@ class GitHubCommentAdapter:
             if not isinstance(event, dict):
                 raise CanonicalEventError("marked GitHub event must be an object")
             events.append(event)
+        if self.marked_count == 0:
+            raise CanonicalEventError("no marked GitHub events found")
         return normalize_ledger(events)

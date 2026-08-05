@@ -21,7 +21,11 @@ from referencing import Registry, Resource
 
 from phase_0c_freeze import validate_treatment_pair
 from phase_0c_gate import canonical_bytes, evaluate_graph, sha256
-from phase_0c_transport import CanonicalFixtureAdapter, normalize_ledger
+from phase_0c_transport import (
+    CanonicalFixtureAdapter,
+    normalize_ledger,
+    require_equal_suppressed,
+)
 
 
 SDK_VERSION = "1.1.2"
@@ -96,7 +100,11 @@ def validate_apparatus(manifest_path: Path) -> tuple[dict[str, Any], dict[str, A
         raise ValueError("preflight fixture prompt digest mismatch")
     if treatments["C"]["preflight_fixture_prompt_sha256"] != prompt_digest:
         raise ValueError("preflight treatment fixture prompt digest mismatch")
-    fixture = load_json(namespace / manifest["canonical_event_fixture_path"])
+    fixture_entry = manifest["canonical_event_fixture"]
+    fixture_path = namespace / fixture_entry["path"]
+    if hashlib.sha256(fixture_path.read_bytes()).hexdigest() != fixture_entry["sha256"]:
+        raise ValueError("canonical event fixture digest mismatch")
+    fixture = load_json(fixture_path)
     validate_document(fixture, namespace / "canonical-event-fixture.schema.json")
     normalized, _ = normalize_ledger(fixture["events"])
     for event in normalized:
@@ -210,6 +218,8 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--validate-only", action="store_true")
     args = parser.parse_args()
+    if args.output is None and not args.validate_only:
+        parser.error("--output is required unless --validate-only is used")
     manifest_path = args.manifest.resolve()
     manifest, gate = validate_apparatus(manifest_path)
     if args.validate_only:
@@ -219,7 +229,7 @@ def main() -> int:
         raise ValueError(f"a2a-sdk must be exactly {SDK_VERSION}")
 
     namespace = manifest_path.parent
-    fixture_path = namespace / manifest["canonical_event_fixture_path"]
+    fixture_path = namespace / manifest["canonical_event_fixture"]["path"]
     fixture = load_json(fixture_path)
     fixture_ledger, fixture_suppressed = CanonicalFixtureAdapter(fixture_path).receive()
     a2a_events, validated_version_header = run_a2a_server(
@@ -262,15 +272,13 @@ def main() -> int:
             "transport_calls": 0,
         },
         "canonical_payload_echo_equivalent": True,
-        "duplicate_events_suppressed": min(fixture_suppressed, a2a_suppressed),
+        "duplicate_events_suppressed": require_equal_suppressed(
+            fixture_suppressed, a2a_suppressed
+        ),
         "canonical_ledger": fixture_ledger,
         "future_paid_topology_limit": manifest["future_paid_topology_limit"],
     }
-    if report["future_paid_topology_limit"] != manifest["future_paid_topology_limit"]:
-        raise ValueError("preflight report topology differs from manifest")
     validate_document(report, namespace / "preflight.schema.json")
-    if args.output is None:
-        raise ValueError("--output is required unless --validate-only is used")
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(canonical_bytes(report))
     print("Phase 0C no-spend preflight passed; paid execution remains blocked")

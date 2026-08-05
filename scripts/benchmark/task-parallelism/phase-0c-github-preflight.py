@@ -103,7 +103,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
     manifest_path = args.manifest.resolve()
     namespace = manifest_path.parent
     manifest = load_json(manifest_path)
-    fixture = load_json(namespace / manifest["canonical_event_fixture_path"])
+    fixture = load_json(namespace / manifest["canonical_event_fixture"]["path"])
     run_id = f"{uuid.uuid4().hex[:12]}"
     branch = f"phase-0c-preflight/{run_id}"
     issue_number = None
@@ -173,7 +173,10 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
             comments = gh_api(
                 "GET", f"repos/{args.repo}/issues/{issue_number}/comments?per_page=100"
             )
-            github_ledger, github_suppressed = GitHubCommentAdapter(comments).receive()
+            github_adapter = GitHubCommentAdapter(comments)
+            github_ledger, github_suppressed = github_adapter.receive()
+            if github_adapter.marked_count != len(fixture["events"]):
+                raise ValueError("GitHub marked event count differs from posted fixture")
             if canonical_bytes(github_ledger) != canonical_bytes(a2a_report["canonical_ledger"]):
                 raise ValueError("GitHub and A2A canonical ledgers differ")
             result = {

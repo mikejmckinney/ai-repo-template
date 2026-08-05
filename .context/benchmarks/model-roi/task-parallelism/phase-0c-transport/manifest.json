@@ -22,7 +22,10 @@
     "sha256": "068476917a42188e6c676a3b4f2b096213569e6009edaf5cbe8d948cdb05629a"
   },
   "preflight_fixture_treatments_path": "preflight-fixture-treatments.json",
-  "canonical_event_fixture_path": "fixtures/canonical-payload-events.json",
+  "canonical_event_fixture": {
+    "path": "fixtures/canonical-payload-events.json",
+    "sha256": "522b1e8fbdbe52e3a96287abef99397116594bc216ba6afd20a15574beb3a6e3"
+  },
   "preflight_fixture_prompt": {
     "path": "prompts/preflight-fixture-shared.md",
     "sha256": "c07071bd4eeef607902d9fa6c5eb139badadcd93d8410fa4aba5886a3ece6a4d"

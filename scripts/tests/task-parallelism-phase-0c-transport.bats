@@ -12,8 +12,11 @@ setup() {
 @test "Phase 0C structural validation does not import live transport dependencies" {
   run python3 - "${RUNNER}" "${PROTOCOL}/phase-0c-transport/manifest.json" <<'PY'
 import builtins
+import hashlib
 import importlib.util
+import json
 import sys
+from pathlib import Path
 
 runner, manifest = sys.argv[1:]
 sys.path.insert(0, runner)
@@ -28,6 +31,10 @@ builtins.__import__ = reject_live_dependencies
 spec = importlib.util.spec_from_file_location("phase_0c_preflight", f"{runner}/phase-0c-preflight.py")
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
+manifest_document = json.loads(Path(manifest).read_text(encoding="utf-8"))
+fixture_entry = manifest_document["canonical_event_fixture"]
+fixture_path = Path(manifest).parent / fixture_entry["path"]
+assert hashlib.sha256(fixture_path.read_bytes()).hexdigest() == fixture_entry["sha256"]
 sys.argv = [spec.origin, "--validate-only", "--manifest", manifest]
 raise SystemExit(module.main())
 PY
@@ -79,6 +86,7 @@ from phase_0c_transport import (
     CanonicalEventError,
     GitHubCommentAdapter,
     github_event_body,
+    require_equal_suppressed,
 )
 
 event = {
@@ -90,13 +98,22 @@ event = {
 }
 comments = [
     {"body": "ordinary discussion"},
-    {"body": github_event_body(event)},
+    {"body": github_event_body(event).replace("\n", "\r\n")},
     {"body": github_event_body(event)},
 ]
-ledger, suppressed = GitHubCommentAdapter(comments).receive()
+adapter = GitHubCommentAdapter(comments)
+ledger, suppressed = adapter.receive()
 assert suppressed == 1
+assert adapter.marked_count == 2
 assert len(ledger) == 1
 assert ledger[0]["event_id"] == event["event_id"]
+assert require_equal_suppressed(1, 1) == 1
+try:
+    require_equal_suppressed(1, 0)
+except CanonicalEventError:
+    pass
+else:
+    raise AssertionError("different suppression counts were accepted")
 
 changed = copy.deepcopy(event)
 changed["payload"]["assignee"] = "child-2"
@@ -112,6 +129,13 @@ print("phase-0c GitHub comment adapter contract passed")
 PY
   [ "${status}" -eq 0 ]
   [[ "${output}" == *'phase-0c GitHub comment adapter contract passed'* ]]
+}
+
+@test "local A2A preflight rejects missing output before transport work" {
+  run python3 "${RUNNER}/phase-0c-preflight.py" \
+    --manifest "${PROTOCOL}/phase-0c-transport/manifest.json"
+  [ "${status}" -eq 2 ]
+  [[ "${output}" == *'--output is required unless --validate-only is used'* ]]
 }
 
 @test "live GitHub preflight requires an explicit apply flag" {
