@@ -161,7 +161,7 @@ PY
 	[ "${status}" -eq 0 ]
 }
 
-@test "candidate instructions preserve repository policy and replace only the execution model" {
+@test "candidate instructions preserve applicable policy and replace control-repository duties" {
 	run python3 - "${REPO_ROOT}/scripts/benchmark/task-parallelism/prepare-phase-0b.py" \
 		"${REPO_ROOT}/AGENTS.md" <<'PY'
 import importlib.util
@@ -194,6 +194,9 @@ for rendered in (arm_a_text, arm_b_text):
     assert "checkout-local evidence without querying GitHub" in rendered
     assert "hydrate the active issue" not in rendered
     assert "If no exact session ID is available, ask the user" not in rendered
+    assert "run `session-recovery` first" not in rendered
+    assert "load and run the `repo-onboarding` skill" not in rendered
+    assert "Recovery takes precedence" not in rendered
 
 PY
 	[ "${status}" -eq 0 ]

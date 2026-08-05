@@ -31,6 +31,8 @@ ARM_EXECUTION_POLICIES = {
         "  Use as many native subagents as needed for the task and integrate their work."
     ),
 }
+REPOSITORY_ENTRY_START = "## Repository entry gate"
+EXECUTION_MODEL_START = "## Execution model"
 PARALLEL_REVIEW_START = "## Parallel advisory review"
 DOMAIN_POLICY_START = "## Domain: Code Quality"
 SESSION_STATE_START = "## Session-state cadence"
@@ -146,6 +148,15 @@ def validate_files(manifest: dict, scaffold_root: Path) -> None:
 
 def render_candidate_instructions(arm: str) -> str:
     source = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    source = replace_section(
+        source,
+        REPOSITORY_ENTRY_START,
+        EXECUTION_MODEL_START,
+        "## Repository entry gate\n\n"
+        "The evaluator provides an oriented benchmark checkout with `TASK.md` and all\n"
+        "required instructions. Do not load onboarding or recovery skills, query GitHub,\n"
+        "or pause for repository-orientation input before starting the task.\n\n",
+    )
     if source.count(MONOLITHIC_POLICY) != 1:
         raise ValueError("repository monolithic-agent policy is not uniquely replaceable")
     source = source.replace(MONOLITHIC_POLICY, ARM_EXECUTION_POLICIES[arm])
