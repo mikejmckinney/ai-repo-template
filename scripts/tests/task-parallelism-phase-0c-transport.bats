@@ -12,9 +12,8 @@ setup() {
 @test "Phase 0C structural validation does not import live transport dependencies" {
   run python3 - "${RUNNER}" "${PROTOCOL}/phase-0c-transport/manifest.json" <<'PY'
 import builtins
-import hashlib
+import copy
 import importlib.util
-import json
 import sys
 from pathlib import Path
 
@@ -31,10 +30,23 @@ builtins.__import__ = reject_live_dependencies
 spec = importlib.util.spec_from_file_location("phase_0c_preflight", f"{runner}/phase-0c-preflight.py")
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
-manifest_document = json.loads(Path(manifest).read_text(encoding="utf-8"))
-fixture_entry = manifest_document["canonical_event_fixture"]
-fixture_path = Path(manifest).parent / fixture_entry["path"]
-assert hashlib.sha256(fixture_path.read_bytes()).hexdigest() == fixture_entry["sha256"]
+real_load_json = module.load_json
+
+def load_with_bad_fixture_digest(path):
+    document = real_load_json(path)
+    if path.resolve() == Path(manifest).resolve():
+        document = copy.deepcopy(document)
+        document["canonical_event_fixture"]["sha256"] = "0" * 64
+    return document
+
+module.load_json = load_with_bad_fixture_digest
+try:
+    module.validate_apparatus(Path(manifest))
+except ValueError as error:
+    assert str(error) == "canonical event fixture digest mismatch"
+else:
+    raise AssertionError("changed canonical event fixture digest was accepted")
+module.load_json = real_load_json
 sys.argv = [spec.origin, "--validate-only", "--manifest", manifest]
 raise SystemExit(module.main())
 PY
@@ -102,11 +114,12 @@ comments = [
     {"body": github_event_body(event)},
 ]
 adapter = GitHubCommentAdapter(comments)
-ledger, suppressed = adapter.receive()
+ledger, suppressed = adapter.receive(expected_count=2)
 assert suppressed == 1
 assert adapter.marked_count == 2
 assert len(ledger) == 1
 assert ledger[0]["event_id"] == event["event_id"]
+assert GitHubCommentAdapter([{"body": "ordinary discussion"}]).receive() == ([], 0)
 assert require_equal_suppressed(1, 1) == 1
 try:
     require_equal_suppressed(1, 0)
@@ -114,6 +127,18 @@ except CanonicalEventError:
     pass
 else:
     raise AssertionError("different suppression counts were accepted")
+
+missing_first = copy.deepcopy(event)
+missing_first["event_id"] = "p0c-event-002"
+missing_first["sequence"] = 2
+try:
+    GitHubCommentAdapter([{"body": github_event_body(missing_first)}]).receive(
+        expected_count=2
+    )
+except CanonicalEventError as error:
+    assert str(error) == "GitHub marked event count differs from expected count"
+else:
+    raise AssertionError("missing marked GitHub event was accepted")
 
 changed = copy.deepcopy(event)
 changed["payload"]["assignee"] = "child-2"

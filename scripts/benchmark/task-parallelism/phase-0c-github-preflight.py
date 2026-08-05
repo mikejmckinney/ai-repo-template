@@ -174,9 +174,9 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
                 "GET", f"repos/{args.repo}/issues/{issue_number}/comments?per_page=100"
             )
             github_adapter = GitHubCommentAdapter(comments)
-            github_ledger, github_suppressed = github_adapter.receive()
-            if github_adapter.marked_count != len(fixture["events"]):
-                raise ValueError("GitHub marked event count differs from posted fixture")
+            github_ledger, github_suppressed = github_adapter.receive(
+                expected_count=len(fixture["events"])
+            )
             if canonical_bytes(github_ledger) != canonical_bytes(a2a_report["canonical_ledger"]):
                 raise ValueError("GitHub and A2A canonical ledgers differ")
             result = {

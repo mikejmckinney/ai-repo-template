@@ -91,7 +91,7 @@ class GitHubCommentAdapter:
         self.comments = comments
         self.marked_count = 0
 
-    def receive(self) -> tuple[list[dict[str, Any]], int]:
+    def receive(self, expected_count: int | None = None) -> tuple[list[dict[str, Any]], int]:
         events = []
         self.marked_count = 0
         for comment in self.comments:
@@ -112,6 +112,8 @@ class GitHubCommentAdapter:
             if not isinstance(event, dict):
                 raise CanonicalEventError("marked GitHub event must be an object")
             events.append(event)
-        if self.marked_count == 0:
-            raise CanonicalEventError("no marked GitHub events found")
+        if expected_count is not None and self.marked_count != expected_count:
+            raise CanonicalEventError(
+                "GitHub marked event count differs from expected count"
+            )
         return normalize_ledger(events)
