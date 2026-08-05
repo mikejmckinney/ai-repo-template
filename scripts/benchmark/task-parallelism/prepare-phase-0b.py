@@ -35,6 +35,7 @@ PARALLEL_REVIEW_START = "## Parallel advisory review"
 DOMAIN_POLICY_START = "## Domain: Code Quality"
 SESSION_STATE_START = "## Session-state cadence"
 RECOVERY_START = "### Post-compaction recovery gate"
+POSTMORTEM_START = "### Postmortem feedback loop"
 WORKTREE_POLICY = """- **Branch, publish, then checkpoint each changed turn.** Before meaningful edits,
   create a non-default branch, make an empty bootstrap commit, push it, and open
   a linked draft PR. At the end of every turn that changes repository-owned task
@@ -147,8 +148,6 @@ def render_candidate_instructions(arm: str) -> str:
     source = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
     if source.count(MONOLITHIC_POLICY) != 1:
         raise ValueError("repository monolithic-agent policy is not uniquely replaceable")
-    if source.count(WORKTREE_POLICY) != 1:
-        raise ValueError("repository branch-and-publish policy is not uniquely replaceable")
     source = source.replace(MONOLITHIC_POLICY, ARM_EXECUTION_POLICIES[arm])
     source = replace_section(
         source,
@@ -167,15 +166,27 @@ def render_candidate_instructions(arm: str) -> str:
         "evaluator-owned candidate checkout. Report progress and results in the final\n"
         "response instead.\n\n",
     )
+    source = replace_section(
+        source,
+        RECOVERY_START,
+        POSTMORTEM_START,
+        "### Post-compaction recovery gate\n\n"
+        "After runtime context compaction, re-read `TASK.md`, the current checkout diff\n"
+        "and status, this `AGENTS.override.md`, and task-relevant files. Continue from\n"
+        "checkout-local evidence without querying GitHub or pausing for user input.\n\n",
+    )
     replacements = {
-        WORKTREE_POLICY: BENCHMARK_WORKTREE_POLICY,
-        OUTCOME_ARTIFACT_POLICY: BENCHMARK_OUTCOME_ARTIFACT_POLICY,
-        PRIMARY_OUTCOME_POLICY: BENCHMARK_PRIMARY_OUTCOME_POLICY,
-        OUTCOME_EVIDENCE_SURFACES: BENCHMARK_OUTCOME_EVIDENCE_SURFACES,
+        "branch-and-publish": (WORKTREE_POLICY, BENCHMARK_WORKTREE_POLICY),
+        "outcome-artifact": (OUTCOME_ARTIFACT_POLICY, BENCHMARK_OUTCOME_ARTIFACT_POLICY),
+        "primary-outcome": (PRIMARY_OUTCOME_POLICY, BENCHMARK_PRIMARY_OUTCOME_POLICY),
+        "outcome-surfaces": (
+            OUTCOME_EVIDENCE_SURFACES,
+            BENCHMARK_OUTCOME_EVIDENCE_SURFACES,
+        ),
     }
-    for policy, replacement in replacements.items():
+    for name, (policy, replacement) in replacements.items():
         if source.count(policy) != 1:
-            raise ValueError("repository candidate policy is not uniquely replaceable")
+            raise ValueError(f"repository candidate policy is not uniquely replaceable: {name}")
         source = source.replace(policy, replacement)
     return source
 

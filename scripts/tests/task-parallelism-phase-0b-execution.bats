@@ -191,6 +191,9 @@ for rendered in (arm_a_text, arm_b_text):
     assert "concrete evidence in the PR body" not in rendered
     assert "Keep work in the evaluator-owned checkout" in rendered
     assert "### Post-compaction recovery gate" in rendered
+    assert "checkout-local evidence without querying GitHub" in rendered
+    assert "hydrate the active issue" not in rendered
+    assert "If no exact session ID is available, ask the user" not in rendered
 
 PY
 	[ "${status}" -eq 0 ]
