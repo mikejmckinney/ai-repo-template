@@ -11,7 +11,7 @@
   },
   "candidate_processes_started": 0,
   "completed_runs": [],
-  "implementation_sha": null,
+  "implementation_sha": "f58808c296e112537b41cd71566ece2b90a3d3d9",
   "official_pilot_scores_modified": false,
   "replacement_processes_started": 0,
   "schema_version": "task-parallelism-phase-0b-revision-execution.v1",
