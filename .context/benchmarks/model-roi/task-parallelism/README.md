@@ -250,8 +250,9 @@ with `runner-integrated` timing, which includes candidate execution, evaluation,
 snapshot, and publication once; their candidate-only duration is unavailable.
 Future runs capture `candidate-only` timing immediately after the model process
 and add evaluator time once for the integrated comparison. Missing candidate
-self-report leaves fan-out and worker count null while process metadata and the
-summary retain observed native spawn calls.
+self-report leaves the entire self-reported telemetry block null while process
+metadata and the summary retain harness-observed native spawn calls. Null means
+unavailable, not a measured zero.
 
 The summary calculates each candidate arm against monolithic Arm A. Equivalent
 API cost uses the official `gpt-5.6-luna` standard rates published at

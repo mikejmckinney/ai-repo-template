@@ -459,18 +459,18 @@ def candidate_failure_reason(rc: int, failure_class: str | None) -> str | None:
 
 def blank_telemetry() -> dict:
     return {
-        "skill_loads": 0,
-        "skill_context_tokens": 0,
-        "coordination_seconds": 0,
-        "provider_wait_seconds": 0,
-        "rescue_events": 0,
-        "duplicate_or_abandoned_work": 0,
-        "semantic_conflicts": 0,
-        "interface_conflicts": 0,
-        "asset_conflicts": 0,
-        "dependency_conflicts": 0,
-        "fanout_elected": False,
-        "worker_count": 1,
+        "skill_loads": None,
+        "skill_context_tokens": None,
+        "coordination_seconds": None,
+        "provider_wait_seconds": None,
+        "rescue_events": None,
+        "duplicate_or_abandoned_work": None,
+        "semantic_conflicts": None,
+        "interface_conflicts": None,
+        "asset_conflicts": None,
+        "dependency_conflicts": None,
+        "fanout_elected": None,
+        "worker_count": None,
     }
 
 
@@ -656,9 +656,6 @@ def execute_run(run_id: str) -> int:
     telemetry = blank_telemetry()
     if report is not None:
         telemetry.update({key: report[key] for key in telemetry})
-    else:
-        telemetry["fanout_elected"] = None
-        telemetry["worker_count"] = None
     replacement_disposition = (
         "replacement-consumed"
         if attempt["is_replacement"]
@@ -875,9 +872,6 @@ def recover_interrupted(attempt_id: str) -> int:
     telemetry = blank_telemetry()
     if report is not None:
         telemetry.update({key: report[key] for key in telemetry})
-    else:
-        telemetry["fanout_elected"] = None
-        telemetry["worker_count"] = None
     result = {
         "schema_version": "task-parallelism-phase-0b-revision-candidate-result.v1",
         "campaign_id": "vector-siege-phase-0b-revision",

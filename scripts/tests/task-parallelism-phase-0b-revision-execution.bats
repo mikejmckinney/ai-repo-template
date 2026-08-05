@@ -193,6 +193,14 @@ replacement_state = {
 assert module.terminal_attempt_for_result(
     replacement_state, {"attempt_id": "vs-p0b-next-a-attempt-2"}
 )["process_metadata_path"] == "second.json"
+try:
+    module.terminal_attempt_for_result(
+        replacement_state, {"attempt_id": "vs-p0b-next-a-attempt-3"}
+    )
+except ValueError as error:
+    assert "missing terminal attempt state" in str(error)
+else:
+    raise AssertionError("missing terminal attempt state was accepted")
 
 candidate_failed = {
     "replacement_processes_started": 0,
@@ -339,6 +347,12 @@ processes = [
     {"run_id": "vs-p0b-next-b", "observed_spawn_agent_calls": 3},
     {"run_id": "vs-p0b-next-c", "observed_spawn_agent_calls": 2},
 ]
+try:
+    module.build_summary(state, results, evaluations, processes[:-1])
+except ValueError as error:
+    assert "missing process metadata for vs-p0b-next-c" in str(error)
+else:
+    raise AssertionError("missing process metadata was accepted")
 summary = module.build_summary(state, results, evaluations, processes)
 assert summary["assigned_runs"] == 3
 assert summary["pricing"]["model"] == "gpt-5.6-luna"
@@ -694,6 +708,8 @@ assert result["wall_clock_comparable"] is False
 assert result["wall_clock_scope"] == "runner-integrated"
 assert result["fanout_elected"] is None
 assert result["worker_count"] is None
+assert result["coordination_seconds"] is None
+assert result["skill_loads"] is None
 assert process["elapsed_since_start_seconds"] > 0
 assert process["published"] is False
 assert process["instruction_sha256"] == "2" * 64

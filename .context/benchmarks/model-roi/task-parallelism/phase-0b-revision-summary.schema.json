@@ -85,8 +85,8 @@
           "fanout_elected": { "type": ["boolean", "null"] },
           "worker_count": { "type": ["integer", "null"], "minimum": 1 },
           "observed_spawn_agent_calls": { "type": "integer", "minimum": 0 },
-          "coordination_seconds": { "type": "integer", "minimum": 0 },
-          "skill_loads": { "type": "integer", "minimum": 0 },
+          "coordination_seconds": { "type": ["integer", "null"], "minimum": 0 },
+          "skill_loads": { "type": ["integer", "null"], "minimum": 0 },
           "tokens": {
             "type": "object", "additionalProperties": false,
             "required": ["input", "cached_input", "output"],
