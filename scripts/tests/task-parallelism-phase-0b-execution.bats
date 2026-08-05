@@ -185,20 +185,20 @@ for rendered in (arm_a_text, arm_b_text):
     assert rendered.startswith("# AGENTS.md\n")
     assert rendered.count("## Parallel advisory review") == source.count("## Parallel advisory review")
     assert rendered.count("## Domain: Code Quality") == source.count("## Domain: Code Quality")
-    assert "apply `ai-review:live` immediately" not in rendered
-    assert "Update or post the latest `agent-state:v1`" not in rendered
-    assert "create a non-default branch" not in rendered
-    assert "PR-lifetime redacted artifact" not in rendered
-    assert "concrete evidence in the PR body" not in rendered
+    assert "apply `ai-review:live` immediately" not in normalized
+    assert "Update or post the latest `agent-state:v1`" not in normalized
+    assert "create a non-default branch" not in normalized
+    assert "PR-lifetime redacted artifact" not in normalized
+    assert "concrete evidence in the PR body" not in normalized
     assert "Keep work in the evaluator-owned checkout" in rendered
     assert "### Post-compaction recovery gate" in rendered
     assert "checkout-local evidence without querying GitHub" in rendered
-    assert "hydrate the active issue" not in rendered
-    assert "If no exact session ID is available, ask the user" not in rendered
+    assert "hydrate the active issue" not in normalized
+    assert "If no exact session ID is available, ask the user" not in normalized
     assert "The evaluator provides an oriented benchmark checkout" in rendered
     assert "load and run the `repo-onboarding` skill" not in normalized
     assert "run `session-recovery` first" not in normalized
-    assert "Recovery takes precedence" not in rendered
+    assert "Recovery takes precedence" not in normalized
 
 PY
 	[ "${status}" -eq 0 ]
