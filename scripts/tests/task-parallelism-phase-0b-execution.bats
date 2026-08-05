@@ -241,7 +241,7 @@ PY
 	[[ "${output}" == *'offline structural execution state valid:'* ]]
 	base_sha="$(jq -r '.candidate_base.sha' "${STATE}")"
 	if git -C "${REPO_ROOT}" cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
-		[[ "${output}" == *'local frozen base verified'* ]]
+		[[ "${output}" == *'local frozen base task blob verified'* ]]
 	else
 		[[ "${output}" == *'frozen base unavailable locally'* ]]
 	fi

@@ -645,7 +645,11 @@ def main() -> int:
             state, _ = load_state()
             if args.offline:
                 local_base = verify_local_base_if_available(state)
-                base_note = "local frozen base verified" if local_base else "frozen base unavailable locally"
+                base_note = (
+                    "local frozen base task blob verified"
+                    if local_base
+                    else "frozen base unavailable locally"
+                )
                 print(
                     f"offline structural execution state valid: {state['status']}; "
                     f"candidate processes started: {state['candidate_processes_started']}; {base_note}"
