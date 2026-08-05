@@ -159,9 +159,34 @@ async def a2a_round_trip(base_url: str, events: list[dict[str, Any]]) -> list[di
         return echoed
 
 
+async def validate_a2a_version_rejection(base_url: str) -> bool:
+    import httpx
+    from a2a.helpers import new_data_message
+    from a2a.types import Role, SendMessageRequest
+    from google.protobuf import json_format
+
+    request = SendMessageRequest(
+        message=new_data_message(
+            {"probe": "version"}, media_type="application/json", role=Role.ROLE_USER
+        )
+    )
+    body = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "SendMessage",
+        "params": json_format.MessageToDict(request),
+    }
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        response = await client.post(base_url, json=body)
+    error = response.json().get("error", {})
+    if error.get("code") != -32009:
+        raise ValueError("A2A server accepted the implicit unsupported v0.3 request")
+    return True
+
+
 def run_a2a_server(
     runner: Path, events: list[dict[str, Any]]
-) -> tuple[list[dict[str, Any]], str]:
+) -> tuple[list[dict[str, Any]], str, bool]:
     import httpx
 
     port = available_port()
@@ -212,10 +237,17 @@ def run_a2a_server(
                         "A2A discovery endpoint did not become ready: "
                         f"{stderr_excerpt() or 'no server stderr'}"
                     )
+                version_header_validated = asyncio.run(
+                    validate_a2a_version_rejection(base_url)
+                )
                 echoed = asyncio.run(a2a_round_trip(base_url, events))
                 if not evidence_file.exists():
-                    raise ValueError("server did not validate the A2A-Version header")
-                return echoed, evidence_file.read_text(encoding="utf-8")
+                    raise ValueError("client did not send A2A-Version: 1.0")
+                return (
+                    echoed,
+                    evidence_file.read_text(encoding="utf-8"),
+                    version_header_validated,
+                )
             finally:
                 process.terminate()
                 try:
@@ -245,7 +277,7 @@ def main() -> int:
     fixture_path = namespace / manifest["canonical_event_fixture"]["path"]
     fixture = load_json(fixture_path)
     fixture_ledger, fixture_suppressed = CanonicalFixtureAdapter(fixture_path).receive()
-    a2a_events, validated_version_header = run_a2a_server(
+    a2a_events, validated_version_header, version_header_validated = run_a2a_server(
         Path(__file__).parent, fixture["events"]
     )
     a2a_ledger, a2a_suppressed = normalize_ledger(a2a_events)
@@ -276,7 +308,7 @@ def main() -> int:
             "separate_server_process": True,
             "discovery_path": "/.well-known/agent-card.json",
             "discovery_succeeded": True,
-            "version_header_validated": True,
+            "version_header_validated": version_header_validated,
             "validated_version_header": validated_version_header,
             "structured_non_streaming_round_trip": True,
         },

@@ -354,8 +354,9 @@ transport or GitHub behavior. The opt-in GitHub journey uses real issue/comment,
 branch, commit, and draft-PR APIs. The A2A side uses protocol `1.0` from specification release
 `1.0.0` through `a2a-sdk==1.1.2`, a separate loopback-only HTTP process,
 JSON-RPC, standard `/.well-known/agent-card.json` discovery, and structured
-non-streaming direct `Message` responses. Server middleware rejects POSTs unless
-`A2A-Version: 1.0` is present and records the validated value. The resulting
+non-streaming direct `Message` responses. The official SDK returns JSON-RPC
+`VersionNotSupportedError` for unsupported wire versions; local middleware only
+records the negotiated `A2A-Version: 1.0` value as evidence. The resulting
 claim is only that standard discovery and structured canonical-payload echo
 succeeded. It is not evidence of production-shaped GitHub/A2A transport
 equivalence, A2A task lifecycle, production authentication/security, streaming,
