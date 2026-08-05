@@ -235,6 +235,34 @@ PY
   [ ! -e "${REPORT}" ]
 }
 
+@test "A2A server rejects missing and incorrect wire versions" {
+  run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}/validated-version.txt" <<'PY'
+import asyncio
+import sys
+from pathlib import Path
+
+import httpx
+
+sys.path.insert(0, sys.argv[1])
+from phase_0c_a2a_server import build_app
+
+
+async def main():
+    transport = httpx.ASGITransport(app=build_app(1, Path(sys.argv[2])))
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        missing = await client.post("/", json={})
+        incorrect = await client.post("/", json={}, headers={"A2A-Version": "0.3"})
+    assert missing.status_code == 400
+    assert incorrect.status_code == 400
+    assert missing.text == "A2A-Version must be 1.0"
+    assert incorrect.text == "A2A-Version must be 1.0"
+
+
+asyncio.run(main())
+PY
+  [ "${status}" -eq 0 ]
+}
+
 @test "fixture canonical events survive a real A2A payload echo round trip" {
   run python3 "${RUNNER}/phase-0c-preflight.py" \
     --manifest "${PROTOCOL}/phase-0c-transport/manifest.json" \
