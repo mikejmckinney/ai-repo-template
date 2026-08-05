@@ -72,6 +72,13 @@ def validate_runtime(manifest: dict) -> None:
     sandbox_index = command.index("--sandbox") if "--sandbox" in command else -1
     if sandbox_index < 0 or command[sandbox_index + 1] != expected_sandbox:
         raise ValueError(f"candidate command must explicitly use {expected_sandbox}")
+    if revision:
+        instruction_limit = "project_doc_max_bytes=65536"
+        if instruction_limit not in command:
+            raise ValueError("revision candidate command must preserve the full instruction source")
+        for arm in ("A", "B"):
+            if len(render_candidate_instructions(arm).encode()) > 65536:
+                raise ValueError(f"Arm {arm} candidate instructions exceed project_doc_max_bytes")
 
     config_path = REPO_ROOT / ".codex/config.toml"
     if sha256(config_path) != runtime["repository_config_sha256"]:

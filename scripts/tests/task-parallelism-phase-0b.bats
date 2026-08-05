@@ -26,6 +26,7 @@ setup() {
     (.candidate_command | index("danger-full-access") != null) and
     (.candidate_command | index("workspace-write") == null) and
     (.candidate_command | index("multi_agent") != null) and
+    (.candidate_command | index("project_doc_max_bytes=65536") != null) and
     (.candidate_checkout.location == "standalone-temporary-clone") and
     (.candidate_checkout.instructions_source == "AGENTS.md") and
     (.candidate_checkout.instructions_target == "AGENTS.override.md") and
