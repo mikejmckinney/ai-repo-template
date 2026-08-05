@@ -178,8 +178,8 @@ provider cascade instead of consuming the 90- or 120-minute workflow budget.
 | `scripts/workflows/lib/` | Shared provider, evidence, priority, and lifecycle helpers |
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
-| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 Phase 0A preflight, completed Phase 0B evidence, and issue #581 isolated Phase 0C transport contracts |
-| `scripts/benchmark/task-parallelism/` | Phase 0A/0B tooling plus the Phase 0C fixture graph gate and no-spend A2A canonical-payload preflight |
+| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 Phase 0A preflight, completed Phase 0B no-go and directional A/B/C evidence, and issue #581 isolated Phase 0C transport contracts |
+| `scripts/benchmark/task-parallelism/` | Phase 0A/0B planning and execution tooling plus the Phase 0C fixture graph gate and no-spend A2A canonical-payload preflight |
 | `.devcontainer/devcontainer.json` | Canonical repository-owned Codespaces lifecycle |
 | `.config/codespace-tools.json` | Canonical Codespaces tool versions, release integrity, and profiles |
 | `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |
