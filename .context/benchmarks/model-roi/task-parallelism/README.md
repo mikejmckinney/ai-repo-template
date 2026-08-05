@@ -255,6 +255,7 @@ process duration is unavailable after interruption, the recovered result records
 zero candidate wall-clock seconds and keeps elapsed operator time only in process
 metadata. The result and summary mark that duration non-comparable rather than
 summing it as measured runtime. Recovery records a missing or modified override
-as not intact when the checkout remains available, and records integrity as
-unknown when no checkout remains. A failed publication is retained as terminal
-harness evidence instead of rerunning evaluation.
+as not intact when the checkout remains available, unless the harness durably
+recorded successful verification before removing that file. Recovery records
+integrity as unknown when no checkout remains. A failed publication is retained
+as terminal harness evidence instead of rerunning evaluation.

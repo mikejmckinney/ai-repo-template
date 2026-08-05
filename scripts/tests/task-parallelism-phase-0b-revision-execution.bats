@@ -582,3 +582,34 @@ assert intact is False
 PY
 	[ "${status}" -eq 0 ]
 }
+
+@test "interrupted snapshot trusts the harness override verification marker" {
+	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+root = Path(sys.argv[2])
+attempt_id = "vs-p0b-next-a-attempt-1"
+checkout = root / "checkout"
+checkout.mkdir()
+module.ARTIFACT_ROOT = root / "artifacts"
+marker = module.ARTIFACT_ROOT / attempt_id / "instruction-override-verified.sha256"
+marker.parent.mkdir(parents=True)
+instructions = "candidate instructions\n"
+expected = module.sha256_bytes(instructions.encode())
+marker.write_text(expected + "\n")
+module.PREPARE.render_candidate_instructions = lambda arm: instructions
+module.PILOT.snapshot_candidate = lambda *args: (["candidate.txt"], "1" * 40, 0)
+_, _, _, instruction_sha, observed, intact = module.snapshot_interrupted_candidate(
+    checkout, "0" * 40, attempt_id, "A"
+)
+assert instruction_sha == expected
+assert observed == expected
+assert intact is True
+PY
+	[ "${status}" -eq 0 ]
+}

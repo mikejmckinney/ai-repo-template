@@ -518,8 +518,19 @@ def execute_run(run_id: str) -> int:
             report_error = str(error)
     elif rc == 0:
         report_error = "candidate completed without a final report"
-    if not override_path.is_file() or sha256_file(override_path) != override_sha:
+    instruction_override_intact = (
+        override_path.is_file() and sha256_file(override_path) == override_sha
+    )
+    if not instruction_override_intact:
         invocation_error = "candidate instruction override was modified or removed"
+    else:
+        marker = artifact_dir / "instruction-override-verified.sha256"
+        temporary_marker = marker.with_suffix(".tmp")
+        with temporary_marker.open("w", encoding="utf-8") as handle:
+            handle.write(f"{override_sha}\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_marker, marker)
     if override_path.is_file():
         override_path.unlink()
 
@@ -659,6 +670,11 @@ def snapshot_interrupted_candidate(
         PREPARE.render_candidate_instructions(arm).encode("utf-8")
     )
     observed_instruction_sha = sha256_file(override) if override.is_file() else None
+    marker = ARTIFACT_ROOT / attempt_id / "instruction-override-verified.sha256"
+    if observed_instruction_sha is None and marker.is_file():
+        marker_sha = marker.read_text(encoding="utf-8").strip()
+        if marker_sha == instruction_sha:
+            observed_instruction_sha = marker_sha
     instruction_override_intact = observed_instruction_sha == instruction_sha
     if override.is_file():
         override.unlink()
