@@ -26,9 +26,11 @@ setup() {
     (.candidate_command | index("danger-full-access") != null) and
     (.candidate_command | index("workspace-write") == null) and
     (.candidate_command | index("multi_agent") != null) and
+    (.candidate_checkout.location == "standalone-temporary-clone") and
     (.candidate_checkout.instructions_source == "AGENTS.md") and
-    (.candidate_checkout.instructions_source_sha256 | test("^[0-9a-f]{64}$")) and
     (.candidate_checkout.instructions_target == "AGENTS.override.md") and
+    (.candidate_instruction_sha256.A | test("^[0-9a-f]{64}$")) and
+    (.candidate_instruction_sha256.B | test("^[0-9a-f]{64}$")) and
     (.candidate_verification == ["build", "unit", "e2e"]) and
     (.parent_evaluation | index("e2e") != null)
   ' "${PLAN}"

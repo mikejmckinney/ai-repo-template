@@ -17,6 +17,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-preparation.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-diagnostic-summary.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-candidate-reports.json"
     "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-diagnostic-summary.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-result.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-report.schema.json"
@@ -59,6 +60,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-preparation.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-diagnostic-summary.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-candidate-reports.json" \
     "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-diagnostic-summary.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-result.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-report.schema.json" \

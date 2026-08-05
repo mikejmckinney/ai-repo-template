@@ -29,9 +29,8 @@
     "parent_evaluation": ["install", "unit", "build", "e2e"]
   },
   "candidate_checkout": {
-    "location": "external-temporary-directory",
+    "location": "standalone-temporary-clone",
     "instructions_source": "AGENTS.md",
-    "instructions_source_sha256": "34c150c230dd1af180da6c2a96fe904a0c567fca1357fd6fd80083eb56426a52",
     "instructions_target": "AGENTS.override.md",
     "execution_model_replaced": true
   },

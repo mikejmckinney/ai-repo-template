@@ -15,8 +15,11 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 PROTOCOL_ROOT = REPO_ROOT / ".context/benchmarks/model-roi/task-parallelism"
 RESULT_ROOT = PROTOCOL_ROOT / "results/phase-0b"
 SCHEMA_PATH = PROTOCOL_ROOT / "phase-0b-diagnostic-summary.schema.json"
+REPORTS_PATH = PROTOCOL_ROOT / "results/phase-0b-candidate-reports.json"
+REPORT_SCHEMA = PROTOCOL_ROOT / "phase-0b-candidate-report.schema.json"
 BASE_SHA = "acffeb51f6ba6d16be6872413a0fa9010d2547a2"
 RUN_IDS = [f"vs-p0b-{index:03d}" for index in range(1, 11)]
+REPORT_RUN_IDS = {run_id for run_id in RUN_IDS if run_id not in {"vs-p0b-001", "vs-p0b-005"}}
 
 
 def load_runner():
@@ -35,6 +38,15 @@ def load_json(path: Path) -> dict:
 
 
 def changed_files(ref: str) -> list[str]:
+    present = subprocess.run(
+        ["git", "cat-file", "-e", f"{ref}^{{commit}}"],
+        cwd=REPO_ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if present.returncode != 0:
+        raise ValueError(f"retained candidate ref is unavailable: {ref}")
     completed = subprocess.run(
         ["git", "diff", "--name-only", BASE_SHA, ref],
         cwd=REPO_ROOT,
@@ -46,8 +58,16 @@ def changed_files(ref: str) -> list[str]:
 
 
 def candidate_report(run_id: str) -> dict | None:
-    path = REPO_ROOT / f".artifacts/task-parallelism/phase-0b/{run_id}/final-report.json"
-    return load_json(path) if path.is_file() else None
+    document = load_json(REPORTS_PATH)
+    if document.get("source_pilot_commit") != "af1e279866f3e2c9e46c345632a2db32f58254a2":
+        raise ValueError("retained candidate reports identify the wrong pilot commit")
+    reports = document.get("reports", {})
+    if set(reports) != REPORT_RUN_IDS:
+        raise ValueError("retained candidate report set is incomplete")
+    validator = Draft202012Validator(load_json(REPORT_SCHEMA))
+    for report in reports.values():
+        validator.validate(report)
+    return reports.get(run_id)
 
 
 def diagnose_run(runner, run_id: str) -> dict:
@@ -68,7 +88,7 @@ def diagnose_run(runner, run_id: str) -> dict:
         "diagnostic_quality_score": 0,
         "checks": {},
     }
-    if not runner.should_evaluate_candidate(bool(changed), result["candidate_completion_status"]):
+    if not runner.should_diagnose_candidate(bool(changed), result["candidate_completion_status"]):
         return result
 
     temporary_root = Path(tempfile.mkdtemp(prefix=f"phase-0b-diagnostic-{run_id}-"))
@@ -105,12 +125,16 @@ def main() -> int:
     action.add_argument("--output", type=Path)
     action.add_argument("--validate", type=Path)
     args = parser.parse_args()
-    if args.validate:
-        validate_summary(load_json(args.validate))
-        print(f"retained-branch diagnostic summary valid: {args.validate}")
-        return 0
-    runner = load_runner()
-    results = [diagnose_run(runner, run_id) for run_id in RUN_IDS]
+    try:
+        if args.validate:
+            validate_summary(load_json(args.validate))
+            print(f"retained-branch diagnostic summary valid: {args.validate}")
+            return 0
+        runner = load_runner()
+        results = [diagnose_run(runner, run_id) for run_id in RUN_IDS]
+    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        print(f"Phase 0B diagnostic failed: {error}")
+        return 2
     aggregate = {
         "produced_runs": sum(item["produced_work"] for item in results),
         "parent_e2e_passes": sum(item["checks"].get("e2e", {}).get("exit_code") == 0 for item in results),

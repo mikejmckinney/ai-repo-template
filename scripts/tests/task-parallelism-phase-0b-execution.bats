@@ -145,7 +145,7 @@ PY
 	[ "${status}" -eq 0 ]
 }
 
-@test "parent evaluation scores every branch that produced work" {
+@test "diagnostic evaluation scores every branch that produced work" {
 	run python3 - "${RUNNER}" <<'PY'
 import importlib.util
 import sys
@@ -153,16 +153,17 @@ import sys
 spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
-assert module.should_evaluate_candidate(True, "completed") is True
-assert module.should_evaluate_candidate(True, "partial") is True
-assert module.should_evaluate_candidate(True, "failed") is True
-assert module.should_evaluate_candidate(False, "completed") is False
+assert module.should_diagnose_candidate(True, "completed") is True
+assert module.should_diagnose_candidate(True, "partial") is True
+assert module.should_diagnose_candidate(True, "failed") is True
+assert module.should_diagnose_candidate(False, "completed") is False
 PY
 	[ "${status}" -eq 0 ]
 }
 
 @test "candidate instructions preserve repository policy and replace only the execution model" {
-	run python3 - "${RUNNER}" "${REPO_ROOT}/AGENTS.md" "${BATS_TEST_TMPDIR}" <<'PY'
+	run python3 - "${REPO_ROOT}/scripts/benchmark/task-parallelism/prepare-phase-0b.py" \
+		"${REPO_ROOT}/AGENTS.md" <<'PY'
 import importlib.util
 import sys
 from pathlib import Path
@@ -171,15 +172,11 @@ spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 source = Path(sys.argv[2]).read_text(encoding="utf-8")
-worktree = Path(sys.argv[3])
-
-arm_a = module.write_candidate_instructions(worktree, "A")
-arm_a_text = arm_a.read_text(encoding="utf-8")
+arm_a_text = module.render_candidate_instructions("A")
 assert "Do not dispatch subagents" in arm_a_text
 assert "Use one monolithic implementing agent" not in arm_a_text
 
-arm_b = module.write_candidate_instructions(worktree, "B")
-arm_b_text = arm_b.read_text(encoding="utf-8")
+arm_b_text = module.render_candidate_instructions("B")
 assert "Use as many native subagents as needed for the task" in arm_b_text
 assert "Use one monolithic implementing agent" not in arm_b_text
 
@@ -188,23 +185,6 @@ for rendered in (arm_a_text, arm_b_text):
     assert rendered.count("## Parallel advisory review") == source.count("## Parallel advisory review")
     assert rendered.count("## Domain: Code Quality") == source.count("## Domain: Code Quality")
 
-module.remove_candidate_instructions(worktree)
-assert not arm_b.exists()
-PY
-	[ "${status}" -eq 0 ]
-}
-
-@test "candidate worktrees exclude parent benchmark artifacts from normal traversal" {
-	run python3 - "${RUNNER}" <<'PY'
-import importlib.util
-import sys
-
-spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
-worktree = module.candidate_worktree_path("vs-p0b-next-a-attempt-1")
-assert not worktree.is_relative_to(module.REPO_ROOT)
-assert worktree.name == "vs-p0b-next-a-attempt-1"
 PY
 	[ "${status}" -eq 0 ]
 }
@@ -237,6 +217,14 @@ for item in diagnostic["runs"]:
         official = json.load(handle)
     assert item["official_quality_score"] == official["quality_score"]
 PY
+	[ "${status}" -eq 0 ]
+
+	run jq -e '
+    (.reports | keys) == [
+      "vs-p0b-002", "vs-p0b-003", "vs-p0b-004", "vs-p0b-006",
+      "vs-p0b-007", "vs-p0b-008", "vs-p0b-009", "vs-p0b-010"
+    ]
+  ' "${PROTOCOL}/results/phase-0b-candidate-reports.json"
 	[ "${status}" -eq 0 ]
 }
 

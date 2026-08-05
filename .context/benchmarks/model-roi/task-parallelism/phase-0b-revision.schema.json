@@ -58,14 +58,12 @@
       "required": [
         "location",
         "instructions_source",
-        "instructions_source_sha256",
         "instructions_target",
         "execution_model_replaced"
       ],
       "properties": {
-        "location": { "const": "external-temporary-directory" },
+        "location": { "const": "standalone-temporary-clone" },
         "instructions_source": { "const": "AGENTS.md" },
-        "instructions_source_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "instructions_target": { "const": "AGENTS.override.md" },
         "execution_model_replaced": { "const": true }
       }

@@ -176,14 +176,20 @@ Codespace permissions and run build, unit, and browser checks with Playwright or
 Chrome DevTools; the parent evaluator independently evaluates every branch that
 produced work regardless of the candidate self-report.
 
-The harness injects a root `AGENTS.override.md` copied from the repository's
+The non-executing planner renders a root `AGENTS.override.md` from the repository's
 normal guidance. Arm A replaces only the execution-model paragraph with the
 monolithic treatment. Arm B replaces only that paragraph with instruction to use
-as many native subagents as needed and integrate their work. The injected file is
-removed before the candidate diff is captured. Candidate worktrees remain outside
-the control repository so normal recursive file discovery cannot reuse prior
-candidate implementations; this does not restrict network, browser, localhost, or
-shell access.
+as many native subagents as needed and integrate their work. Codex discovers the
+override before `AGENTS.md` at project scope, as documented in the
+[Codex instruction guide](https://developers.openai.com/codex/agent-configuration/agents-md).
+
+The plan requires a standalone temporary clone rather than a shared Git worktree,
+so normal Git commands cannot read prior candidate refs through the control
+repository's object database. Candidate execution uses explicit
+`--sandbox danger-full-access`; network, browser, localhost, and shell access
+remain available. This PR does not add a revision execution state or parameterize
+the completed pilot runner. Those mutations occur only after separate execution
+approval, when the planner contract is activated.
 
 ```bash
 make -C scripts/benchmark/task-parallelism phase-0b-revision-validate

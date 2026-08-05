@@ -184,16 +184,20 @@ partial, and failed outcomes are retained as results. Only a verified provider o
 harness-invalid attempt may receive one replacement. Do not repeat a candidate
 failure until it succeeds.
 
-Candidates use normal Codespace permissions and run build, unit, and browser
-checks with Playwright or Chrome DevTools. The parent evaluator independently
-evaluates every branch that produced work. The harness injects a root
-`AGENTS.override.md` copied from normal repository guidance and replaces only the
+The blocked plan gives candidates explicit `--sandbox danger-full-access` and
+requires build, unit, and browser checks with Playwright or Chrome DevTools. The
+parent evaluator independently repeats those checks. The planner renders a root
+`AGENTS.override.md` from normal repository guidance and replaces only the
 execution-model paragraph: Arm A remains monolithic, while Arm B may use as many
-native subagents as needed for the task. The harness removes the injected file
-before capturing the candidate diff. Candidate worktrees remain outside the
-control repository to prevent normal recursive discovery from reusing prior
-candidate implementations; browser, network, localhost, and shell access remain
-available.
+native subagents as needed for the task. Codex gives the override precedence at
+project scope; see the
+[Codex instruction guide](https://developers.openai.com/codex/agent-configuration/agents-md).
+
+Activation must create candidates as standalone temporary clones with no shared
+control-repository object database. This non-executing revision does not add an
+execution state or parameterize the completed pilot runner. Those changes require
+the separate candidate-execution approval; do not treat the rendered plan as an
+executable campaign state.
 
 The retained-branch diagnostic is explicitly non-confirmatory and does not alter
 the merged pilot scores. Another candidate invocation remains blocked until the

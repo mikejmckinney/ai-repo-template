@@ -17,6 +17,20 @@ PREPARATION_SCHEMA = PROTOCOL_ROOT / "phase-0b-preparation.schema.json"
 REVISION_SCHEMA = PROTOCOL_ROOT / "phase-0b-revision.schema.json"
 SUMMARY_SCHEMA = PROTOCOL_ROOT / "phase-0b-pilot-summary.schema.json"
 CANDIDATE_RESULT_SCHEMA = PROTOCOL_ROOT / "phase-0b-candidate-result.schema.json"
+MONOLITHIC_POLICY = (
+    "- Use one monolithic implementing agent. ADR-031 found no favorable ROI crossover\n"
+    "  for the multi-role pipeline and retired the role registry."
+)
+ARM_EXECUTION_POLICIES = {
+    "A": (
+        "- Complete this benchmark with one implementing agent. Do not dispatch subagents,\n"
+        "  child workers, or an independent model."
+    ),
+    "B": (
+        "- This benchmark treatment replaces the repository's monolithic-agent default.\n"
+        "  Use as many native subagents as needed for the task and integrate their work."
+    ),
+}
 
 
 def load_json(path: Path) -> dict:
@@ -87,11 +101,12 @@ def validate_files(manifest: dict, scaffold_root: Path) -> None:
         if not path.is_file() or sha256(path) != prompt["sha256"]:
             raise ValueError(f"prompt digest mismatch: {prompt['path']}")
 
-    checkout = manifest.get("candidate_checkout")
-    if checkout:
-        source = REPO_ROOT / checkout["instructions_source"]
-        if not source.is_file() or sha256(source) != checkout["instructions_source_sha256"]:
-            raise ValueError("candidate instruction source digest mismatch")
+
+def render_candidate_instructions(arm: str) -> str:
+    source = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    if source.count(MONOLITHIC_POLICY) != 1:
+        raise ValueError("repository monolithic-agent policy is not uniquely replaceable")
+    return source.replace(MONOLITHIC_POLICY, ARM_EXECUTION_POLICIES[arm])
 
 
 def validate_run_policy(manifest: dict) -> None:
@@ -146,9 +161,14 @@ def build_plan(manifest: dict) -> dict:
     if "gate_0" in manifest:
         plan["gate_0"] = manifest["gate_0"]
     else:
+        instruction_digests = {
+            arm: hashlib.sha256(render_candidate_instructions(arm).encode()).hexdigest()
+            for arm in ("A", "B")
+        }
         plan.update(
             {
                 "candidate_checkout": manifest["candidate_checkout"],
+                "candidate_instruction_sha256": instruction_digests,
                 "candidate_verification": manifest["candidate_runtime"]["candidate_verification"],
                 "parent_evaluation": manifest["candidate_runtime"]["parent_evaluation"],
                 "decision_boundary": manifest["decision_boundary"],
