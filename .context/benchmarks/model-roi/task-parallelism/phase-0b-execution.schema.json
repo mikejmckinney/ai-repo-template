@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mikejmckinney/ai-repo-template/schemas/task-parallelism-phase-0b-execution.v1.json",
+  "title": "Task parallelism Phase 0B execution state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "campaign_id",
+    "status",
+    "approval_source",
+    "approved_at",
+    "candidate_base",
+    "candidate_processes_started",
+    "retry_processes_started",
+    "attempts",
+    "completed_runs"
+  ],
+  "properties": {
+    "schema_version": { "const": "task-parallelism-phase-0b-execution.v1" },
+    "campaign_id": { "const": "vector-siege-phase-0b" },
+    "status": { "enum": ["base-pending", "ready", "running", "completed"] },
+    "approval_source": { "type": "string", "format": "uri", "minLength": 1 },
+    "approved_at": { "type": "string", "format": "date-time" },
+    "candidate_base": {
+      "type": "object",
+      "additionalProperties": false,
+        "required": ["branch", "sha", "source_commit", "task_blob_sha"],
+      "properties": {
+        "branch": { "const": "benchmark/model-roi/base-vector-siege-phase-0b-20260804" },
+        "sha": {
+          "oneOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+          ]
+        },
+        "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "task_blob_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "candidate_processes_started": { "type": "integer", "minimum": 0, "maximum": 11 },
+    "retry_processes_started": { "type": "integer", "minimum": 0, "maximum": 1 },
+    "attempts": {
+      "type": "array",
+      "maxItems": 11,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "attempt_id",
+          "run_id",
+          "attempt_number",
+          "terminal_status",
+          "retry_eligible",
+          "result_path"
+        ],
+        "properties": {
+          "attempt_id": { "type": "string", "pattern": "^vs-p0b-[0-9]{3}-attempt-[12]$" },
+          "run_id": { "type": "string", "pattern": "^vs-p0b-[0-9]{3}$" },
+          "attempt_number": { "type": "integer", "minimum": 1, "maximum": 2 },
+          "terminal_status": {
+            "enum": ["completed", "candidate-failed", "provider-failed", "harness-failed"]
+          },
+          "retry_eligible": { "type": "boolean" },
+          "result_path": {
+            "type": "string",
+            "pattern": "^results/phase-0b/attempts/vs-p0b-[0-9]{3}-attempt-[12]\\.json$"
+          }
+        }
+      }
+    },
+    "completed_runs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^vs-p0b-[0-9]{3}$" },
+      "maxItems": 10
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "base-pending" } } },
+      "then": { "properties": { "candidate_base": { "properties": { "sha": { "type": "null" } } } } }
+    },
+    {
+      "if": { "properties": { "status": { "enum": ["ready", "running", "completed"] } } },
+      "then": {
+        "properties": {
+          "candidate_base": {
+            "properties": { "sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" } }
+          }
+        }
+      }
+    }
+  ]
+}

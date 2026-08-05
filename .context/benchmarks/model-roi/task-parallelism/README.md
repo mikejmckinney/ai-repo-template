@@ -70,3 +70,75 @@ The preparation manifest remains `execution.status: blocked`. A later approval
 must create and record the frozen base before any of the five Arm A and five Arm
 B assignments can execute. This preparation approval does not authorize those
 candidate runs.
+
+## Phase 0B Execution
+
+The maintainer approved the ten-run pilot on 2026-08-04. The separate execution
+state records that authorization while preserving the preparation manifest as a
+blocked, immutable freeze. Validate current progress with:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-execution-validate
+```
+
+This operator check requires the frozen commit locally and verifies its branch
+against `origin`. Repository-copy checks use the runner's `--validate-state
+--offline` structural mode instead; that mode reports whether the frozen commit
+was also available for local task-blob verification and never claims remote
+identity.
+
+Candidate processes start only through an explicit run identifier:
+
+```bash
+python3 scripts/benchmark/task-parallelism/run-phase-0b.py \
+  --run-id vs-p0b-001
+```
+
+The runner enforces frozen-base and task-blob identity, sequential assignment
+order, the exact Luna/max command, a credential-stripped candidate environment,
+schema-backed self-report and result telemetry, and one remote evidence branch
+per attempt. Candidate defects receive no retry. One verified provider or
+harness failure may consume the campaign's single retry; the original attempt,
+elapsed time, and telemetry remain under `results/phase-0b/attempts/`. After all
+ten assignments have terminal results, derive the Gate 0 input:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-summary
+python3 scripts/benchmark/task-parallelism/prepare-phase-0b.py \
+  --evaluate-gate \
+  .context/benchmarks/model-roi/task-parallelism/results/phase-0b-summary.json
+```
+
+The preregistered objective feasibility score awards 10 points for a completed
+Codex turn, 10 for produced work, 10 for dependency installation, 20 for unit
+tests, 20 for the production build, and 30 for the Playwright journey. This
+lower-bound score is not blind product-quality grading and cannot support an
+adoption claim. The evaluator installs the lockfile's Chromium build before the
+Playwright journey so browser-cache state cannot change the score.
+
+### Phase 0B Pilot Outcome
+
+The approved pilot completed all ten assignments from the frozen base. Gate 0
+is a no-go:
+
+- 10 of 10 assignments reached a terminal state and required telemetry is
+  schema-complete for every assignment. Candidate-measured coordination
+  telemetry is retained for 8 assignments; runs 001 and 005 timed out without a
+  final self-report and therefore retain explicit zero-filled fallback fields.
+- 1 assignment completed, 8 were candidate failures, and 1 was a harness
+  failure under intention-to-treat scoring.
+- Arm A recorded 0 total quality points across 5 runs. Arm B recorded 100 total
+  quality points across 5 runs; its one completed candidate passed install,
+  unit, build, and parent-evaluator Playwright checks.
+- Arm B recorded 2 fan-out elections, meeting that Gate 0 threshold.
+- Harness reliability was 9 of 11 retained attempts, or 81.8%, below the 90%
+  threshold. The original schema-rejection attempt and the later timeout
+  evidence-loss failure are both retained.
+- Final assignment records total 15,289 wall-clock seconds. The original
+  18-second harness-failed attempt is additional retained attempt time.
+- Recomputed diffs from every published candidate branch show zero writes to
+  `.agents/`, `TASK.md`, or supplied benchmark assets, matching all tracked
+  `predicted_path_drift_count` values.
+
+The result does not support an adoption claim or confirmatory campaign. The
+observed data instead require harness revision before another feasibility run.

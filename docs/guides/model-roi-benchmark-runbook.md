@@ -144,6 +144,10 @@ rendered plan must report `execution_status: blocked` and
 Before later execution approval, create the candidate base from the tracked
 scaffold and replace `base_status: creation-deferred` with its exact branch and
 commit. Candidate execution is not authorized by preparation or plan rendering.
+During an approved run, retain every attempt separately. Candidate defects are
+terminal without retry; one verified provider or harness failure may consume the
+single bounded retry, and its original elapsed time and telemetry remain part of
+harness-reliability evidence.
 When pilot results exist, evaluate Gate 0 with:
 
 ```bash
@@ -155,6 +159,14 @@ Gate 0 is a feasibility gate, not an adoption claim. It requires ten terminal
 assignments, complete required telemetry, at least 90% harness reliability, and
 at least two Arm B fan-out elections. Confirmatory design and any polished media
 remain separately gated.
+
+The 2026-08-04 Phase 0B pilot reached a no-go: all ten assignments were terminal,
+schema-required telemetry was complete, and Arm B recorded two fan-out
+elections, but harness reliability was 81.8% across eleven retained attempts.
+Eight assignments retained candidate-measured coordination telemetry; two
+timeout records used the schema's explicit zero-filled failure fallback. Do not
+start a confirmatory campaign from that result. Revise and separately approve
+the feasibility harness before any rerun.
 
 Typical preflight:
 

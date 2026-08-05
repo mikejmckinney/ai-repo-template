@@ -1,0 +1,117 @@
+{
+  "approval_source": "https://github.com/mikejmckinney/ai-repo-template/issues/545#issuecomment-5174532437",
+  "approved_at": "2026-08-04T18:20:00Z",
+  "attempts": [
+    {
+      "attempt_id": "vs-p0b-001-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-001-attempt-1.json",
+      "retry_eligible": true,
+      "run_id": "vs-p0b-001",
+      "terminal_status": "harness-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-001-attempt-2",
+      "attempt_number": 2,
+      "result_path": "results/phase-0b/attempts/vs-p0b-001-attempt-2.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-001",
+      "terminal_status": "candidate-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-002-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-002-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-002",
+      "terminal_status": "completed"
+    },
+    {
+      "attempt_id": "vs-p0b-003-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-003-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-003",
+      "terminal_status": "candidate-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-004-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-004-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-004",
+      "terminal_status": "candidate-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-005-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-005-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-005",
+      "terminal_status": "harness-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-006-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-006-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-006",
+      "terminal_status": "candidate-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-007-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-007-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-007",
+      "terminal_status": "candidate-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-008-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-008-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-008",
+      "terminal_status": "candidate-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-009-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-009-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-009",
+      "terminal_status": "candidate-failed"
+    },
+    {
+      "attempt_id": "vs-p0b-010-attempt-1",
+      "attempt_number": 1,
+      "result_path": "results/phase-0b/attempts/vs-p0b-010-attempt-1.json",
+      "retry_eligible": false,
+      "run_id": "vs-p0b-010",
+      "terminal_status": "candidate-failed"
+    }
+  ],
+  "campaign_id": "vector-siege-phase-0b",
+  "candidate_base": {
+    "branch": "benchmark/model-roi/base-vector-siege-phase-0b-20260804",
+    "sha": "acffeb51f6ba6d16be6872413a0fa9010d2547a2",
+    "source_commit": "cf8e1545d688f6880baf21da24bf40a44bd4fc8c",
+    "task_blob_sha": "f658eedd0c369d5b0323a098702eb6fd96bc418f"
+  },
+  "candidate_processes_started": 11,
+  "completed_runs": [
+    "vs-p0b-001",
+    "vs-p0b-002",
+    "vs-p0b-003",
+    "vs-p0b-004",
+    "vs-p0b-005",
+    "vs-p0b-006",
+    "vs-p0b-007",
+    "vs-p0b-008",
+    "vs-p0b-009",
+    "vs-p0b-010"
+  ],
+  "retry_processes_started": 1,
+  "schema_version": "task-parallelism-phase-0b-execution.v1",
+  "status": "completed"
+}

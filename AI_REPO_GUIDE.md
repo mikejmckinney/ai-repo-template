@@ -40,6 +40,8 @@ make -C scripts/benchmark/task-parallelism assets-check
 make -C scripts/benchmark/task-parallelism preflight
 make -C scripts/benchmark/task-parallelism phase-0b-validate
 make -C scripts/benchmark/task-parallelism phase-0b-plan
+make -C scripts/benchmark/task-parallelism phase-0b-execution-validate
+make -C scripts/benchmark/task-parallelism phase-0b-summary
 git diff --check
 ```
 
