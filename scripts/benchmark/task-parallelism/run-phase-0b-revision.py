@@ -450,6 +450,12 @@ def classify_candidate(rc: int, jsonl_path: Path, report: dict | None) -> tuple[
     return terminal, failure_class, replacement
 
 
+def candidate_failure_reason(rc: int, failure_class: str | None) -> str | None:
+    if rc == 124:
+        return "candidate timed out after 1800 seconds"
+    return failure_class
+
+
 def blank_telemetry() -> dict:
     return {
         "skill_loads": 0,
@@ -571,6 +577,7 @@ def execute_run(run_id: str) -> int:
             rc = 127
             invocation_error = f"candidate process could not start: {error}"
             stderr.write(f"{invocation_error}\n")
+    candidate_elapsed = int(time.monotonic() - started)
     usage, thread_id = PILOT.parse_usage(jsonl_path)
     observed_spawn_agent_calls = count_spawned_subagents(jsonl_path)
     report_path = artifact_dir / "final-report.json"
@@ -611,7 +618,7 @@ def execute_run(run_id: str) -> int:
         failure_reason = report_error or invocation_error
         replacement_eligible = True
     elif terminal != "completed":
-        failure_reason = failure_class
+        failure_reason = candidate_failure_reason(rc, failure_class)
     if attempt["is_replacement"]:
         replacement_eligible = False
     evaluation = evaluate_candidate(
@@ -646,7 +653,6 @@ def execute_run(run_id: str) -> int:
     telemetry = blank_telemetry()
     if report is not None:
         telemetry.update({key: report[key] for key in telemetry})
-    elapsed = int(time.monotonic() - started)
     replacement_disposition = (
         "replacement-consumed"
         if attempt["is_replacement"]
@@ -667,8 +673,9 @@ def execute_run(run_id: str) -> int:
         "produced_work": produced_work,
         "changed_files": sorted(changed),
         "quality_score": evaluation["objective_score"] if terminal == "completed" else 0,
-        "wall_clock_seconds": elapsed,
+        "wall_clock_seconds": candidate_elapsed,
         "wall_clock_comparable": True,
+        "wall_clock_scope": "candidate-only",
         "tokens": usage,
         **telemetry,
         "predicted_path_drift_count": drift_count,
@@ -964,10 +971,15 @@ def build_roi_comparison(baseline: dict, candidate: dict) -> dict:
             / baseline["integrated_wall_clock_seconds"]
         )
         speedup = 1 / time_ratio
+    baseline_usage_available = any(baseline["tokens"].values())
     candidate_usage_available = any(candidate["tokens"].values())
     costs = {
         band: {
-            "baseline_usd": equivalent_model_cost(baseline["tokens"], rates),
+            "baseline_usd": (
+                equivalent_model_cost(baseline["tokens"], rates)
+                if baseline_usage_available
+                else None
+            ),
             "candidate_usd": (
                 equivalent_model_cost(candidate["tokens"], rates)
                 if candidate_usage_available
@@ -980,6 +992,7 @@ def build_roi_comparison(baseline: dict, candidate: dict) -> dict:
         band: (
             values["candidate_usd"] / values["baseline_usd"]
             if values["candidate_usd"] is not None
+            and values["baseline_usd"] is not None
             else None
         )
         for band, values in costs.items()
@@ -1016,12 +1029,21 @@ def build_roi_comparison(baseline: dict, candidate: dict) -> dict:
         "quality_ratio": quality_ratio,
         "integrated_time_ratio": time_ratio,
         "speedup": speedup,
-        "parallel_efficiency": speedup / candidate["worker_count"] if speedup else None,
+        "parallel_efficiency": (
+            speedup / candidate["worker_count"]
+            if speedup and candidate["worker_count"] is not None
+            else None
+        ),
         "equivalent_model_cost_usd": costs,
         "cost_ratio": cost_ratios,
         "quality_per_dollar": {
             band: {
-                "baseline": baseline["candidate_quality_score"] / values["baseline_usd"],
+                "baseline": (
+                    baseline["candidate_quality_score"] / values["baseline_usd"]
+                    if values["baseline_usd"] is not None
+                    and values["baseline_usd"] > 0
+                    else None
+                ),
                 "candidate": (
                     candidate["candidate_quality_score"] / values["candidate_usd"]
                     if values["candidate_usd"] is not None
@@ -1049,39 +1071,56 @@ def build_roi_comparison(baseline: dict, candidate: dict) -> dict:
     }
 
 
-def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> dict:
+def build_summary(
+    state: dict,
+    results: list[dict],
+    evaluations: list[dict],
+    processes: list[dict] | None = None,
+) -> dict:
     evaluation_by_run = {item["run_id"]: item for item in evaluations}
+    process_by_run = {item["run_id"]: item for item in processes or []}
     arms = []
     for result in results:
         evaluation = evaluation_by_run[result["run_id"]]
         wall_clock_comparable = result["wall_clock_comparable"]
-        candidate_seconds = result["wall_clock_seconds"] if wall_clock_comparable else None
+        timing_scope = result["wall_clock_scope"]
+        candidate_comparable = wall_clock_comparable and timing_scope == "candidate-only"
+        candidate_seconds = result["wall_clock_seconds"] if candidate_comparable else None
         evaluator_seconds = evaluation["wall_clock_seconds"]
+        integrated_seconds = None
+        if wall_clock_comparable:
+            integrated_seconds = result["wall_clock_seconds"]
+            if timing_scope == "candidate-only":
+                integrated_seconds += evaluator_seconds
+        candidate_report_available = result["candidate_report_path"] is not None
+        process = process_by_run.get(result["run_id"], {})
         arms.append(
             {
                 "run_id": result["run_id"],
                 "arm": result["arm"],
                 "terminal_status": result["terminal_status"],
                 "produced_work": result["produced_work"],
-                "fanout_elected": result["fanout_elected"],
-                "worker_count": result["worker_count"],
+                "fanout_elected": (
+                    result["fanout_elected"] if candidate_report_available else None
+                ),
+                "worker_count": result["worker_count"] if candidate_report_available else None,
+                "observed_spawn_agent_calls": process.get("observed_spawn_agent_calls", 0),
                 "coordination_seconds": result["coordination_seconds"],
                 "skill_loads": result["skill_loads"],
                 "tokens": result["tokens"],
                 "candidate_wall_clock_seconds": candidate_seconds,
-                "candidate_wall_clock_comparable": wall_clock_comparable,
+                "candidate_wall_clock_comparable": candidate_comparable,
                 "evaluator_wall_clock_seconds": evaluator_seconds,
-                "integrated_wall_clock_seconds": (
-                    candidate_seconds + evaluator_seconds if wall_clock_comparable else None
-                ),
+                "integrated_wall_clock_seconds": integrated_seconds,
                 "integrated_wall_clock_comparable": wall_clock_comparable,
+                "timing_scope": timing_scope,
                 "candidate_quality_score": result["quality_score"],
                 "evaluator_objective_score": evaluation["objective_score"],
                 "evaluator_result_path": result["evaluator_result_path"],
             }
         )
     candidate_wall_clock_comparable = all(
-        item["wall_clock_comparable"] for item in results
+        item["candidate_wall_clock_comparable"] for item in arms
     )
     comparisons = [build_roi_comparison(arms[0], candidate) for candidate in arms[1:]]
     return {
@@ -1133,6 +1172,7 @@ def summarize(output: Path) -> int:
         raise ValueError("Arm A and Arm B must be terminal before summarization")
     results = []
     evaluations = []
+    processes = []
     for run_id, _ in ASSIGNMENTS[:completed_count]:
         result = load_json(RESULT_ROOT / "final" / f"{run_id}.json")
         validate_document(result, RESULT_SCHEMA)
@@ -1140,7 +1180,9 @@ def summarize(output: Path) -> int:
         validate_document(evaluation, EVALUATOR_SCHEMA)
         results.append(result)
         evaluations.append(evaluation)
-    summary = build_summary(state, results, evaluations)
+        attempt = next(item for item in state["attempts"] if item["run_id"] == run_id)
+        processes.append(load_json(PROTOCOL_ROOT / attempt["process_metadata_path"]))
+    summary = build_summary(state, results, evaluations, processes)
     validate_document(summary, SUMMARY_SCHEMA)
     write_json(output, summary)
     print(f"wrote Phase 0B revision summary: {output}")

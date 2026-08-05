@@ -34,7 +34,7 @@
   "duplicate_or_abandoned_work": 0,
   "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-c-attempt-1.json",
   "failure_class": "candidate",
-  "failure_reason": "candidate",
+  "failure_reason": "candidate timed out after 1800 seconds",
   "fanout_elected": false,
   "interface_conflicts": 0,
   "official_pilot_score_modified": false,
@@ -57,6 +57,7 @@
     "output": 0
   },
   "wall_clock_comparable": true,
+  "wall_clock_scope": "runner-integrated",
   "wall_clock_seconds": 1857,
   "worker_count": 1
 }

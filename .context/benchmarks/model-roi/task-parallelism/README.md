@@ -245,6 +245,14 @@ evidence, or support an adoption claim. Codex emits one aggregate usage record
 for a candidate turn, so the summary reports per-arm aggregate tokens and marks
 parent/worker token splitting unavailable.
 
+Each result labels its wall-clock scope. The retained A/B/C runs were captured
+with `runner-integrated` timing, which includes candidate execution, evaluation,
+snapshot, and publication once; their candidate-only duration is unavailable.
+Future runs capture `candidate-only` timing immediately after the model process
+and add evaluator time once for the integrated comparison. Missing candidate
+self-report leaves fan-out and worker count null while process metadata and the
+summary retain observed native spawn calls.
+
 The summary calculates each candidate arm against monolithic Arm A. Equivalent
 API cost uses the official `gpt-5.6-luna` standard rates published at
 <https://developers.openai.com/api/docs/models/gpt-5.6-luna>. Because retained

@@ -183,6 +183,7 @@ assert module.plan_attempt({"replacement_processes_started": 0, "attempts": []},
     "attempt_number": 1,
     "is_replacement": False,
 }
+assert module.candidate_failure_reason(124, "candidate") == "candidate timed out after 1800 seconds"
 
 candidate_failed = {
     "replacement_processes_started": 0,
@@ -297,6 +298,7 @@ results = [
     {
         "run_id": "vs-p0b-next-a", "arm": "A", "terminal_status": "completed",
         "quality_score": 100, "wall_clock_seconds": 100, "wall_clock_comparable": True,
+        "wall_clock_scope": "candidate-only", "candidate_report_path": "a-report.json",
         "tokens": {"input": 1000, "cached_input": 500, "output": 100},
         "coordination_seconds": 0, "skill_loads": 1, "fanout_elected": False,
         "worker_count": 1, "produced_work": True, "evaluator_result_path": "a.json",
@@ -304,6 +306,7 @@ results = [
     {
         "run_id": "vs-p0b-next-b", "arm": "B", "terminal_status": "completed",
         "quality_score": 100, "wall_clock_seconds": 120, "wall_clock_comparable": True,
+        "wall_clock_scope": "candidate-only", "candidate_report_path": "b-report.json",
         "tokens": {"input": 1500, "cached_input": 750, "output": 100},
         "coordination_seconds": 20, "skill_loads": 2, "fanout_elected": True,
         "worker_count": 3, "produced_work": True, "evaluator_result_path": "b.json",
@@ -311,6 +314,7 @@ results = [
     {
         "run_id": "vs-p0b-next-c", "arm": "C", "terminal_status": "completed",
         "quality_score": 95, "wall_clock_seconds": 90, "wall_clock_comparable": True,
+        "wall_clock_scope": "candidate-only", "candidate_report_path": "c-report.json",
         "tokens": {"input": 1200, "cached_input": 600, "output": 90},
         "coordination_seconds": 15, "skill_loads": 2, "fanout_elected": True,
         "worker_count": 2, "produced_work": True, "evaluator_result_path": "c.json",
@@ -348,6 +352,13 @@ assert comparison["quality_per_dollar"]["all_long_context_upper_bound"]["candida
 assert comparison["equivalent_model_cost_usd"]["short_context"]["candidate_usd"] is None
 assert comparison["cost_ratio"]["short_context"] is None
 assert comparison["roi_index"]["short_context"]["cost_50_time_50"] == 0
+
+zero_usage_baseline = {**summary["arms"][0], "tokens": {"input": 0, "cached_input": 0, "output": 0}}
+comparison = module.build_roi_comparison(zero_usage_baseline, summary["arms"][1])
+assert comparison["equivalent_model_cost_usd"]["short_context"]["baseline_usd"] is None
+assert comparison["quality_per_dollar"]["short_context"]["baseline"] is None
+assert comparison["cost_ratio"]["short_context"] is None
+assert comparison["roi_index"]["short_context"]["cost_50_time_50"] is None
 PY
 	[ "${status}" -eq 0 ]
 }
@@ -376,12 +387,14 @@ results = [
         "quality_score": 100,
         "wall_clock_seconds": 100,
         "wall_clock_comparable": True,
+        "wall_clock_scope": "candidate-only",
         "tokens": {"input": 10, "cached_input": 2, "output": 3},
         "coordination_seconds": 0,
         "skill_loads": 1,
         "fanout_elected": False,
         "worker_count": 1,
         "produced_work": True,
+        "candidate_report_path": "a-report.json",
         "evaluator_result_path": "results/phase-0b-revision/evaluations/a.json",
     },
     {
@@ -391,12 +404,14 @@ results = [
         "quality_score": 0,
         "wall_clock_seconds": 120,
         "wall_clock_comparable": True,
+        "wall_clock_scope": "candidate-only",
         "tokens": {"input": 20, "cached_input": 4, "output": 6},
         "coordination_seconds": 90,
         "skill_loads": 3,
         "fanout_elected": True,
         "worker_count": 7,
         "produced_work": True,
+        "candidate_report_path": "b-report.json",
         "evaluator_result_path": "results/phase-0b-revision/evaluations/b.json",
     },
 ]
@@ -423,6 +438,25 @@ assert summary["arms"][1]["evaluator_objective_score"] == 70
 assert summary["roi_comparisons"][0]["quality_ratio"] == 0
 assert summary["candidate_wall_clock_comparable"] is True
 assert all(item["candidate_wall_clock_comparable"] for item in summary["arms"])
+
+results[1]["wall_clock_scope"] = "runner-integrated"
+results[1]["candidate_report_path"] = None
+summary = module.build_summary(
+    state,
+    results,
+    evaluations,
+    [{"run_id": "vs-p0b-next-b", "observed_spawn_agent_calls": 2}],
+)
+assert summary["arms"][1]["candidate_wall_clock_seconds"] is None
+assert summary["arms"][1]["integrated_wall_clock_seconds"] == 120
+assert summary["arms"][1]["timing_scope"] == "runner-integrated"
+assert summary["arms"][1]["fanout_elected"] is None
+assert summary["arms"][1]["worker_count"] is None
+assert summary["arms"][1]["observed_spawn_agent_calls"] == 2
+assert summary["roi_comparisons"][0]["parallel_efficiency"] is None
+
+results[1]["wall_clock_scope"] = "candidate-only"
+results[1]["candidate_report_path"] = "b-report.json"
 results[1]["wall_clock_comparable"] = False
 summary = module.build_summary(state, results, evaluations)
 assert summary["candidate_wall_clock_comparable"] is False

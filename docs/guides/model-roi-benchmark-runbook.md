@@ -234,6 +234,14 @@ harness-invalid replacement; Arm C authorizes no replacement. Every checkout
 that produced work receives the same independent install, browser, unit, build,
 and end-to-end evaluation regardless of candidate self-report.
 
+Interpret timing by its recorded scope. `runner-integrated` values already
+include candidate execution, evaluator work, snapshot, and publication and must
+not receive evaluator time a second time; candidate-only duration is unavailable
+for those retained runs. `candidate-only` values stop when the model process
+returns and receive evaluator time once in the integrated comparison. If no
+candidate report is retained, keep self-reported fan-out and worker count null
+and separately publish harness-observed native spawn calls.
+
 Raw model transcripts and temporary clones remain ignored. The bounded tracked
 record under `results/phase-0b-revision/` contains attempt and final results,
 candidate reports, redacted process metadata, evaluator results and transcripts,

@@ -4,19 +4,21 @@
     {
       "arm": "A",
       "candidate_quality_score": 100,
-      "candidate_wall_clock_comparable": true,
-      "candidate_wall_clock_seconds": 1532,
+      "candidate_wall_clock_comparable": false,
+      "candidate_wall_clock_seconds": null,
       "coordination_seconds": 0,
       "evaluator_objective_score": 100,
       "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-a-attempt-1.json",
       "evaluator_wall_clock_seconds": 47,
       "fanout_elected": false,
       "integrated_wall_clock_comparable": true,
-      "integrated_wall_clock_seconds": 1579,
+      "integrated_wall_clock_seconds": 1532,
+      "observed_spawn_agent_calls": 0,
       "produced_work": true,
       "run_id": "vs-p0b-next-a",
       "skill_loads": 1,
       "terminal_status": "completed",
+      "timing_scope": "runner-integrated",
       "tokens": {
         "cached_input": 8694272,
         "input": 8914550,
@@ -27,19 +29,21 @@
     {
       "arm": "B",
       "candidate_quality_score": 100,
-      "candidate_wall_clock_comparable": true,
-      "candidate_wall_clock_seconds": 1767,
+      "candidate_wall_clock_comparable": false,
+      "candidate_wall_clock_seconds": null,
       "coordination_seconds": 86,
       "evaluator_objective_score": 100,
       "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-b-attempt-1.json",
       "evaluator_wall_clock_seconds": 68,
       "fanout_elected": true,
       "integrated_wall_clock_comparable": true,
-      "integrated_wall_clock_seconds": 1835,
+      "integrated_wall_clock_seconds": 1767,
+      "observed_spawn_agent_calls": 3,
       "produced_work": true,
       "run_id": "vs-p0b-next-b",
       "skill_loads": 10,
       "terminal_status": "completed",
+      "timing_scope": "runner-integrated",
       "tokens": {
         "cached_input": 14519808,
         "input": 14908719,
@@ -50,32 +54,34 @@
     {
       "arm": "C",
       "candidate_quality_score": 0,
-      "candidate_wall_clock_comparable": true,
-      "candidate_wall_clock_seconds": 1857,
+      "candidate_wall_clock_comparable": false,
+      "candidate_wall_clock_seconds": null,
       "coordination_seconds": 0,
       "evaluator_objective_score": 90,
       "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-c-attempt-1.json",
       "evaluator_wall_clock_seconds": 52,
-      "fanout_elected": false,
+      "fanout_elected": null,
       "integrated_wall_clock_comparable": true,
-      "integrated_wall_clock_seconds": 1909,
+      "integrated_wall_clock_seconds": 1857,
+      "observed_spawn_agent_calls": 2,
       "produced_work": true,
       "run_id": "vs-p0b-next-c",
       "skill_loads": 0,
       "terminal_status": "candidate-failed",
+      "timing_scope": "runner-integrated",
       "tokens": {
         "cached_input": 0,
         "input": 0,
         "output": 0
       },
-      "worker_count": 1
+      "worker_count": null
     }
   ],
   "assigned_runs": 3,
   "attempts_started": 3,
   "campaign_id": "vector-siege-phase-0b-revision",
-  "candidate_wall_clock_comparable": true,
-  "candidate_wall_clock_seconds": 5156,
+  "candidate_wall_clock_comparable": false,
+  "candidate_wall_clock_seconds": null,
   "confirmatory_evidence": false,
   "directional_only": true,
   "evaluator_wall_clock_seconds": 167,
@@ -124,8 +130,8 @@
           "candidate_usd": 0.42329796000000003
         }
       },
-      "integrated_time_ratio": 1.162127929069031,
-      "parallel_efficiency": 0.2868301544050863,
+      "integrated_time_ratio": 1.1533942558746737,
+      "parallel_efficiency": 0.28900207508017356,
       "quality_per_dollar": {
         "all_long_context_upper_bound": {
           "baseline": 185.79352824659884,
@@ -137,23 +143,23 @@
         }
       },
       "quality_per_integrated_hour": {
-        "baseline": 227.9924002533249,
-        "candidate": 196.18528610354224
+        "baseline": 234.98694516971278,
+        "candidate": 203.73514431239389
       },
       "quality_ratio": 1.0,
       "roi_index": {
         "all_long_context_upper_bound": {
-          "cost_25_time_75": 0.7987061133214527,
-          "cost_50_time_50": 0.7451997860680605,
-          "cost_75_time_25": 0.6984122695708593
+          "cost_25_time_75": 0.8029067033076142,
+          "cost_50_time_50": 0.7476327067771662,
+          "cost_75_time_25": 0.6994789232578581
         },
         "short_context": {
-          "cost_25_time_75": 0.8055509819556943,
-          "cost_50_time_50": 0.7572058810073432,
-          "cost_75_time_25": 0.7143350967410818
+          "cost_25_time_75": 0.8098240707067832,
+          "cost_50_time_50": 0.7597179601239962,
+          "cost_75_time_25": 0.7154509801412529
         }
       },
-      "speedup": 0.8604904632152589
+      "speedup": 0.8670062252405206
     },
     {
       "baseline_arm": "A",
@@ -172,8 +178,8 @@
           "candidate_usd": null
         }
       },
-      "integrated_time_ratio": 1.2089930335655479,
-      "parallel_efficiency": 0.8271346254583551,
+      "integrated_time_ratio": 1.2121409921671018,
+      "parallel_efficiency": null,
       "quality_per_dollar": {
         "all_long_context_upper_bound": {
           "baseline": 185.79352824659884,
@@ -185,7 +191,7 @@
         }
       },
       "quality_per_integrated_hour": {
-        "baseline": 227.9924002533249,
+        "baseline": 234.98694516971278,
         "candidate": 0.0
       },
       "quality_ratio": 0.0,
@@ -201,7 +207,7 @@
           "cost_75_time_25": 0
         }
       },
-      "speedup": 0.8271346254583551
+      "speedup": 0.8249865374259558
     }
   ],
   "schema_version": "task-parallelism-phase-0b-revision-summary.v1",
