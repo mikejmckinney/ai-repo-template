@@ -224,6 +224,7 @@ results = [
         "terminal_status": "completed",
         "quality_score": 100,
         "wall_clock_seconds": 100,
+        "wall_clock_comparable": True,
         "tokens": {"input": 10, "cached_input": 2, "output": 3},
         "coordination_seconds": 0,
         "skill_loads": 1,
@@ -238,6 +239,7 @@ results = [
         "terminal_status": "candidate-failed",
         "quality_score": 0,
         "wall_clock_seconds": 120,
+        "wall_clock_comparable": True,
         "tokens": {"input": 20, "cached_input": 4, "output": 6},
         "coordination_seconds": 90,
         "skill_loads": 3,
@@ -576,7 +578,7 @@ changed, candidate_sha, _, _, observed, intact = module.snapshot_interrupted_can
 assert changed == ["candidate.txt"]
 assert candidate_sha != base_sha
 assert observed is None
-assert intact is None
+assert intact is False
 PY
 	[ "${status}" -eq 0 ]
 }

@@ -659,9 +659,7 @@ def snapshot_interrupted_candidate(
         PREPARE.render_candidate_instructions(arm).encode("utf-8")
     )
     observed_instruction_sha = sha256_file(override) if override.is_file() else None
-    instruction_override_intact = (
-        None if observed_instruction_sha is None else observed_instruction_sha == instruction_sha
-    )
+    instruction_override_intact = observed_instruction_sha == instruction_sha
     if override.is_file():
         override.unlink()
     changed, candidate_sha, drift_count = PILOT.snapshot_candidate(
@@ -860,7 +858,7 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
     arms = []
     for result in results:
         evaluation = evaluation_by_run[result["run_id"]]
-        wall_clock_comparable = result.get("wall_clock_comparable", True)
+        wall_clock_comparable = result["wall_clock_comparable"]
         arms.append(
             {
                 "run_id": result["run_id"],
@@ -883,7 +881,7 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
             }
         )
     candidate_wall_clock_comparable = all(
-        item.get("wall_clock_comparable", True) for item in results
+        item["wall_clock_comparable"] for item in results
     )
     return {
         "schema_version": "task-parallelism-phase-0b-revision-summary.v1",
