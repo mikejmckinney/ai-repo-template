@@ -6,7 +6,87 @@
     <title>Vector Siege</title>
   </head>
   <body>
-    <main id="game"></main>
+    <main id="app" aria-label="Vector Siege game">
+      <div id="game-shell">
+        <div id="game" aria-label="Vector Siege arena"></div>
+
+        <section id="start-screen" class="screen start-screen" aria-labelledby="start-title">
+          <div class="menu-panel">
+            <p class="eyebrow">SIGNAL LOCKED // SECTOR 01</p>
+            <img class="logo" src="/benchmark-assets/vector-siege/visuals/logo.webp" alt="Vector Siege" />
+            <h1 id="start-title">Hold the line.</h1>
+            <p class="lede">A hostile vector swarm is closing in. Steer the core, break the wave, and keep the arena alive.</p>
+            <div class="control-grid" aria-label="Controls">
+              <div class="control-card"><span class="control-key">W A S D</span><span>Move</span></div>
+              <div class="control-card"><span class="control-key">POINTER</span><span>Aim</span></div>
+              <div class="control-card"><span class="control-key">CLICK / SPACE</span><span>Fire</span></div>
+              <div class="control-card"><span class="control-key">ESC</span><span>Pause</span></div>
+            </div>
+            <button id="start-button" class="primary-button" data-testid="start-button" type="button">
+              <span>Start mission</span><span class="button-shortcut">ENTER</span>
+            </button>
+            <p class="seed-line">RUN SEED <span id="menu-seed">20260805</span> <span class="dot">•</span> BEST SCORE <span id="menu-high-score">000000</span></p>
+          </div>
+          <div class="menu-footer"><span>VECTOR SIEGE / STAGE 1</span><span>LOCAL SIMULATION // NO SIGNAL REQUIRED</span></div>
+        </section>
+
+        <section id="hud" class="hud" aria-label="Game status" hidden>
+          <div class="hud-left">
+            <div class="stat-card score-card">
+              <img src="/benchmark-assets/vector-siege/visuals/ui/score.webp" alt="" />
+              <div><span class="stat-label">SCORE</span><strong id="score-value" data-testid="score">000000</strong></div>
+            </div>
+            <div class="stat-card wave-card">
+              <img src="/benchmark-assets/vector-siege/visuals/ui/wave.webp" alt="" />
+              <div><span class="stat-label">WAVE</span><strong id="wave-value" data-testid="wave">01</strong></div>
+            </div>
+            <div class="stat-card health-card">
+              <div><span class="stat-label">CORE INTEGRITY</span><div id="health-hearts" class="health-hearts" aria-label="Player health"></div></div>
+            </div>
+          </div>
+          <div class="hud-right">
+            <span id="run-status" class="run-status">LIVE // 01</span>
+            <button id="sound-button" class="icon-button" type="button" aria-pressed="false" aria-label="Mute sound">SOUND ON</button>
+            <button id="settings-button" class="icon-button" type="button" aria-expanded="false">SETTINGS</button>
+            <button id="pause-button" class="pause-button" data-testid="pause-button" type="button">PAUSE <span>ESC</span></button>
+          </div>
+        </section>
+
+        <section id="audio-settings" class="settings-panel" hidden aria-label="Audio settings">
+          <div class="settings-heading"><span>Audio mix</span><button id="settings-close" type="button" aria-label="Close audio settings">×</button></div>
+          <label for="music-volume">Music <output id="music-volume-output">16%</output></label>
+          <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.16" />
+          <label for="effects-volume">Effects <output id="effects-volume-output">22%</output></label>
+          <input id="effects-volume" type="range" min="0" max="1" step="0.01" value="0.22" />
+        </section>
+
+        <div id="combat-notice" class="combat-notice" aria-live="polite"></div>
+
+        <section id="pause-screen" class="screen modal-screen" hidden aria-labelledby="pause-title">
+          <div class="modal-panel">
+            <p class="eyebrow">SIGNAL HOLD // SAFE WINDOW</p>
+            <h2 id="pause-title">Systems paused.</h2>
+            <p class="modal-copy">The arena is frozen at tick <strong id="pause-tick">0000</strong>. Take a breath, then get back in.</p>
+            <button id="resume-button" class="primary-button" data-testid="resume-button" type="button"><span>Resume mission</span><span class="button-shortcut">ESC</span></button>
+          </div>
+        </section>
+
+        <section id="gameover-screen" class="screen modal-screen gameover-screen" hidden aria-labelledby="gameover-title">
+          <div class="modal-panel">
+            <p class="eyebrow danger-eyebrow">SIGNAL LOST // CORE OFFLINE</p>
+            <h2 id="gameover-title">The swarm broke through.</h2>
+            <p class="modal-copy">The next run starts clean. Your completed simulation is recorded below.</p>
+            <div class="final-grid">
+              <div><span>SCORE</span><strong id="final-score">000000</strong></div>
+              <div><span>WAVE</span><strong id="final-wave">01</strong></div>
+              <div><span>FINAL TICK</span><strong id="final-tick">0000</strong></div>
+            </div>
+            <p class="record-line">SEED <span id="final-seed">20260805</span> <span class="dot">•</span> HIGH SCORE <span id="final-high-score">000000</span></p>
+            <button id="restart-button" class="primary-button" data-testid="restart-button" type="button"><span>Restart mission</span><span class="button-shortcut">ENTER</span></button>
+          </div>
+        </section>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
