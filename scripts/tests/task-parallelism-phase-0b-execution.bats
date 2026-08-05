@@ -300,7 +300,7 @@ try:
         "candidate_base": {"sha": missing_task_sha, "task_blob_sha": "0" * 40}
     })
 except ValueError as error:
-    assert "task does not match" in str(error)
+    assert "missing required path: TASK.md" in str(error)
 else:
     raise AssertionError("missing TASK.md was accepted")
 PY

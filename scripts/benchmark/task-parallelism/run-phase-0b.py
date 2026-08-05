@@ -264,7 +264,7 @@ def verify_local_base_if_available(state: dict) -> bool:
         check=False,
     )
     if task_blob.returncode != 0:
-        raise ValueError("local candidate base task does not match the frozen task blob")
+        raise ValueError("local candidate base is missing required path: TASK.md")
     task_blob_sha = task_blob.stdout.strip()
     if task_blob_sha != base["task_blob_sha"]:
         raise ValueError("local candidate base task does not match the frozen task blob")
