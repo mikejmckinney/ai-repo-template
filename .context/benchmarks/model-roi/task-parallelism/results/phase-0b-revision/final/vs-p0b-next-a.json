@@ -44,6 +44,7 @@
     "input": 8914550,
     "output": 56861
   },
+  "wall_clock_comparable": true,
   "wall_clock_seconds": 1532,
   "worker_count": 1
 }

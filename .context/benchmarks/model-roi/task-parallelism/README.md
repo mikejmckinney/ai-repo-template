@@ -253,6 +253,7 @@ harness interruption, and applies the existing one-replacement budget. It never
 starts a second candidate process by itself. Because the original candidate
 process duration is unavailable after interruption, the recovered result records
 zero candidate wall-clock seconds and keeps elapsed operator time only in process
-metadata. Recovery also records whether the arm instruction override remained
-intact and retains a failed publication as terminal harness evidence instead of
-rerunning evaluation.
+metadata. The result and summary mark that duration non-comparable rather than
+summing it as measured runtime. Recovery also records whether the arm instruction
+override remained intact when the retained file is observable and retains a
+failed publication as terminal harness evidence instead of rerunning evaluation.

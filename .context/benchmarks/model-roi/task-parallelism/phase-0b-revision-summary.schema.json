@@ -8,7 +8,8 @@
     "schema_version", "campaign_id", "official_pilot_scores_modified",
     "directional_only", "confirmatory_evidence", "adoption_claim", "assigned_runs",
     "terminal_runs", "attempts_started", "replacement_processes_started",
-    "candidate_wall_clock_seconds", "evaluator_wall_clock_seconds", "tokens",
+    "candidate_wall_clock_seconds", "candidate_wall_clock_comparable",
+    "evaluator_wall_clock_seconds", "tokens",
     "token_usage_scope", "parent_worker_token_split_available",
     "arms", "redaction"
   ],
@@ -23,7 +24,8 @@
     "terminal_runs": { "type": "integer", "minimum": 0, "maximum": 2 },
     "attempts_started": { "type": "integer", "minimum": 0, "maximum": 3 },
     "replacement_processes_started": { "type": "integer", "minimum": 0, "maximum": 1 },
-    "candidate_wall_clock_seconds": { "type": "integer", "minimum": 0 },
+    "candidate_wall_clock_seconds": { "type": ["integer", "null"], "minimum": 0 },
+    "candidate_wall_clock_comparable": { "type": "boolean" },
     "evaluator_wall_clock_seconds": { "type": "integer", "minimum": 0 },
     "tokens": {
       "type": "object", "additionalProperties": false,
@@ -43,7 +45,8 @@
         "required": [
           "run_id", "arm", "terminal_status", "produced_work", "fanout_elected",
           "worker_count", "coordination_seconds", "skill_loads", "tokens",
-          "candidate_wall_clock_seconds", "evaluator_wall_clock_seconds",
+          "candidate_wall_clock_seconds", "candidate_wall_clock_comparable",
+          "evaluator_wall_clock_seconds",
           "candidate_quality_score", "evaluator_objective_score", "evaluator_result_path"
         ],
         "properties": {
@@ -64,7 +67,8 @@
               "output": { "type": "integer", "minimum": 0 }
             }
           },
-          "candidate_wall_clock_seconds": { "type": "integer", "minimum": 0 },
+          "candidate_wall_clock_seconds": { "type": ["integer", "null"], "minimum": 0 },
+          "candidate_wall_clock_comparable": { "type": "boolean" },
           "evaluator_wall_clock_seconds": { "type": "integer", "minimum": 0 },
           "candidate_quality_score": { "type": "number", "minimum": 0 },
           "evaluator_objective_score": { "type": "number", "minimum": 0 },

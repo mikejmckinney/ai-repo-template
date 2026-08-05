@@ -267,6 +267,13 @@ assert summary["arms"][1]["tokens"] == {"input": 20, "cached_input": 4, "output"
 assert summary["arms"][1]["coordination_seconds"] == 90
 assert summary["arms"][1]["candidate_quality_score"] == 0
 assert summary["arms"][1]["evaluator_objective_score"] == 70
+assert summary["candidate_wall_clock_comparable"] is True
+assert all(item["candidate_wall_clock_comparable"] for item in summary["arms"])
+results[1]["wall_clock_comparable"] = False
+summary = module.build_summary(state, results, evaluations)
+assert summary["candidate_wall_clock_comparable"] is False
+assert summary["candidate_wall_clock_seconds"] is None
+assert summary["arms"][1]["candidate_wall_clock_seconds"] is None
 PY
 	[ "${status}" -eq 0 ]
 }
@@ -452,7 +459,14 @@ module.evaluate_candidate = lambda *args: {
     "objective_score": 0,
 }
 module.PILOT.parse_usage = lambda path: ({"input": 0, "cached_input": 0, "output": 0}, None)
-module.subprocess.run = lambda *args, **kwargs: type("Result", (), {"stdout": "origin\n"})()
+subprocess_calls = []
+def fake_subprocess_run(args, **kwargs):
+    subprocess_calls.append((args, kwargs))
+    assert args == ["git", "remote", "get-url", "origin"]
+    assert kwargs["check"] is True
+    assert kwargs["text"] is True
+    return type("Result", (), {"stdout": "origin\n", "returncode": 0})()
+module.subprocess.run = fake_subprocess_run
 module.publish_candidate = lambda *args: (_ for _ in ()).throw(subprocess.CalledProcessError(1, ["git", "push"]))
 assert module.recover_interrupted(attempt_id) == 0
 result = json.loads((module.RESULT_ROOT / f"attempts/{attempt_id}.json").read_text())
@@ -463,6 +477,7 @@ assert result["failure_class"] == "interrupted-harness"
 assert "publication failed" in result["failure_reason"]
 assert result["replacement_eligible"] is True
 assert result["wall_clock_seconds"] == 0
+assert result["wall_clock_comparable"] is False
 assert process["elapsed_since_start_seconds"] > 0
 assert process["published"] is False
 assert process["instruction_sha256"] == "2" * 64
@@ -470,6 +485,7 @@ assert process["observed_instruction_sha256"] == "3" * 64
 assert process["instruction_override_intact"] is False
 assert persisted["status"] == "ready"
 assert persisted["attempts"][0]["terminal_status"] == "harness-failed"
+assert len(subprocess_calls) == 1
 PY
 	[ "${status}" -eq 0 ]
 }
@@ -525,6 +541,42 @@ _, _, _, expected, observed, intact = module.snapshot_interrupted_candidate(
 )
 assert observed != expected
 assert intact is False
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "interrupted snapshot accepts precommitted work without an override" {
+	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
+import importlib.util
+import subprocess
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+checkout = Path(sys.argv[2]) / "precommitted"
+checkout.mkdir()
+subprocess.run(["git", "init", "--quiet"], cwd=checkout, check=True)
+subprocess.run(["git", "config", "user.name", "Benchmark Test"], cwd=checkout, check=True)
+subprocess.run(["git", "config", "user.email", "benchmark@example.invalid"], cwd=checkout, check=True)
+(checkout / "base.txt").write_text("base\n")
+subprocess.run(["git", "add", "base.txt"], cwd=checkout, check=True)
+subprocess.run(["git", "commit", "--quiet", "-m", "base"], cwd=checkout, check=True)
+base_sha = subprocess.run(
+    ["git", "rev-parse", "HEAD"], cwd=checkout, check=True, text=True, stdout=subprocess.PIPE
+).stdout.strip()
+(checkout / "candidate.txt").write_text("work\n")
+subprocess.run(["git", "add", "candidate.txt"], cwd=checkout, check=True)
+subprocess.run(["git", "commit", "--quiet", "-m", "candidate"], cwd=checkout, check=True)
+module.PREPARE.render_candidate_instructions = lambda arm: "candidate instructions\n"
+changed, candidate_sha, _, _, observed, intact = module.snapshot_interrupted_candidate(
+    checkout, base_sha, "vs-p0b-next-a-attempt-1", "A"
+)
+assert changed == ["candidate.txt"]
+assert candidate_sha != base_sha
+assert observed is None
+assert intact is None
 PY
 	[ "${status}" -eq 0 ]
 }

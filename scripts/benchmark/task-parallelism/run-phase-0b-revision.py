@@ -597,6 +597,7 @@ def execute_run(run_id: str) -> int:
         "changed_files": sorted(changed),
         "quality_score": evaluation["objective_score"] if terminal == "completed" else 0,
         "wall_clock_seconds": elapsed,
+        "wall_clock_comparable": True,
         "tokens": usage,
         **telemetry,
         "predicted_path_drift_count": drift_count,
@@ -652,13 +653,15 @@ def execute_run(run_id: str) -> int:
 
 def snapshot_interrupted_candidate(
     checkout: Path, base_sha: str, attempt_id: str, arm: str
-) -> tuple[list[str], str, int, str, str | None, bool]:
+) -> tuple[list[str], str, int, str, str | None, bool | None]:
     override = checkout / "AGENTS.override.md"
     instruction_sha = sha256_bytes(
         PREPARE.render_candidate_instructions(arm).encode("utf-8")
     )
     observed_instruction_sha = sha256_file(override) if override.is_file() else None
-    instruction_override_intact = observed_instruction_sha == instruction_sha
+    instruction_override_intact = (
+        None if observed_instruction_sha is None else observed_instruction_sha == instruction_sha
+    )
     if override.is_file():
         override.unlink()
     changed, candidate_sha, drift_count = PILOT.snapshot_candidate(
@@ -719,7 +722,7 @@ def recover_interrupted(attempt_id: str) -> int:
         PREPARE.render_candidate_instructions(arm).encode("utf-8")
     )
     observed_instruction_sha = None
-    instruction_override_intact = False
+    instruction_override_intact = None
     if checkout.is_dir():
         (
             changed,
@@ -797,6 +800,7 @@ def recover_interrupted(attempt_id: str) -> int:
         "changed_files": sorted(changed),
         "quality_score": 0,
         "wall_clock_seconds": 0,
+        "wall_clock_comparable": False,
         "tokens": usage,
         **telemetry,
         "predicted_path_drift_count": drift_count,
@@ -856,6 +860,7 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
     arms = []
     for result in results:
         evaluation = evaluation_by_run[result["run_id"]]
+        wall_clock_comparable = result.get("wall_clock_comparable", True)
         arms.append(
             {
                 "run_id": result["run_id"],
@@ -867,13 +872,19 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
                 "coordination_seconds": result["coordination_seconds"],
                 "skill_loads": result["skill_loads"],
                 "tokens": result["tokens"],
-                "candidate_wall_clock_seconds": result["wall_clock_seconds"],
+                "candidate_wall_clock_seconds": (
+                    result["wall_clock_seconds"] if wall_clock_comparable else None
+                ),
+                "candidate_wall_clock_comparable": wall_clock_comparable,
                 "evaluator_wall_clock_seconds": evaluation["wall_clock_seconds"],
                 "candidate_quality_score": result["quality_score"],
                 "evaluator_objective_score": evaluation["objective_score"],
                 "evaluator_result_path": result["evaluator_result_path"],
             }
         )
+    candidate_wall_clock_comparable = all(
+        item.get("wall_clock_comparable", True) for item in results
+    )
     return {
         "schema_version": "task-parallelism-phase-0b-revision-summary.v1",
         "campaign_id": "vector-siege-phase-0b-revision",
@@ -885,7 +896,12 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
         "terminal_runs": len(state["completed_runs"]),
         "attempts_started": len(state["attempts"]),
         "replacement_processes_started": state["replacement_processes_started"],
-        "candidate_wall_clock_seconds": sum(item["wall_clock_seconds"] for item in results),
+        "candidate_wall_clock_seconds": (
+            sum(item["wall_clock_seconds"] for item in results)
+            if candidate_wall_clock_comparable
+            else None
+        ),
+        "candidate_wall_clock_comparable": candidate_wall_clock_comparable,
         "evaluator_wall_clock_seconds": sum(item["wall_clock_seconds"] for item in evaluations),
         "tokens": {
             key: sum(item["tokens"][key] for item in results)

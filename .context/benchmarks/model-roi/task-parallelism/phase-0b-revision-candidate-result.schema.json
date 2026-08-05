@@ -8,7 +8,7 @@
     "schema_version", "campaign_id", "run_id", "attempt_id", "arm",
     "terminal_status", "failure_class", "failure_reason", "base_sha",
     "candidate_sha", "candidate_branch", "produced_work", "changed_files",
-    "quality_score", "wall_clock_seconds", "tokens", "skill_loads",
+    "quality_score", "wall_clock_seconds", "wall_clock_comparable", "tokens", "skill_loads",
     "skill_context_tokens", "coordination_seconds", "provider_wait_seconds",
     "rescue_events", "duplicate_or_abandoned_work", "predicted_path_drift_count",
     "semantic_conflicts", "interface_conflicts", "asset_conflicts",
@@ -32,6 +32,7 @@
     "changed_files": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
     "quality_score": { "type": "number", "minimum": 0 },
     "wall_clock_seconds": { "type": "integer", "minimum": 0 },
+    "wall_clock_comparable": { "type": "boolean" },
     "tokens": {
       "type": "object", "additionalProperties": false,
       "required": ["input", "cached_input", "output"],
