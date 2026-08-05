@@ -224,7 +224,11 @@ def verify_remote_base(state: dict) -> None:
     ]
     for path in required:
         present = subprocess.run(
-            ["git", "cat-file", "-e", f"{sha}:{path}"], cwd=REPO_ROOT, check=False
+            ["git", "cat-file", "-e", f"{sha}:{path}"],
+            cwd=REPO_ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
         )
         if present.returncode != 0:
             raise ValueError(f"candidate base is missing required path: {path}")
@@ -256,9 +260,13 @@ def verify_local_base_if_available(state: dict) -> bool:
         cwd=REPO_ROOT,
         text=True,
         stdout=subprocess.PIPE,
-        check=True,
-    ).stdout.strip()
-    if task_blob != base["task_blob_sha"]:
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if task_blob.returncode != 0:
+        raise ValueError("local candidate base task does not match the frozen task blob")
+    task_blob_sha = task_blob.stdout.strip()
+    if task_blob_sha != base["task_blob_sha"]:
         raise ValueError("local candidate base task does not match the frozen task blob")
     return True
 

@@ -76,7 +76,10 @@ subprocess.run(["git", "-C", str(repo), "config", "user.name", "Benchmark"], che
 subprocess.run(["git", "-C", str(repo), "config", "user.email", "benchmark@example.invalid"], check=True)
 (repo / "base.txt").write_text("base\n")
 subprocess.run(["git", "-C", str(repo), "add", "base.txt"], check=True)
-subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "base"], check=True)
+subprocess.run(
+    ["git", "-C", str(repo), "commit", "--no-gpg-sign", "-q", "-m", "base"],
+    check=True,
+)
 base = subprocess.run(
     ["git", "-C", str(repo), "rev-parse", "HEAD"],
     check=True,
@@ -261,7 +264,10 @@ subprocess.run(["git", "-C", str(repo), "config", "user.name", "Benchmark"], che
 subprocess.run(["git", "-C", str(repo), "config", "user.email", "benchmark@example.invalid"], check=True)
 (repo / "TASK.md").write_text("frozen task\n")
 subprocess.run(["git", "-C", str(repo), "add", "TASK.md"], check=True)
-subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "base"], check=True)
+subprocess.run(
+    ["git", "-C", str(repo), "commit", "--no-gpg-sign", "-q", "-m", "base"],
+    check=True,
+)
 sha = subprocess.run(
     ["git", "-C", str(repo), "rev-parse", "HEAD"],
     check=True,
@@ -277,6 +283,26 @@ except ValueError as error:
     assert "task does not match" in str(error)
 else:
     raise AssertionError("task-blob mismatch was accepted")
+(repo / "TASK.md").unlink()
+subprocess.run(["git", "-C", str(repo), "add", "TASK.md"], check=True)
+subprocess.run(
+    ["git", "-C", str(repo), "commit", "--no-gpg-sign", "-q", "-m", "missing task"],
+    check=True,
+)
+missing_task_sha = subprocess.run(
+    ["git", "-C", str(repo), "rev-parse", "HEAD"],
+    check=True,
+    text=True,
+    stdout=subprocess.PIPE,
+).stdout.strip()
+try:
+    module.verify_local_base_if_available({
+        "candidate_base": {"sha": missing_task_sha, "task_blob_sha": "0" * 40}
+    })
+except ValueError as error:
+    assert "task does not match" in str(error)
+else:
+    raise AssertionError("missing TASK.md was accepted")
 PY
 	[ "${status}" -eq 0 ]
 }
