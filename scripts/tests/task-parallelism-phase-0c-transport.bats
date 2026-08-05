@@ -235,27 +235,42 @@ PY
   [ ! -e "${REPORT}" ]
 }
 
-@test "A2A server rejects missing and incorrect wire versions" {
+@test "A2A server reports unsupported wire versions without validation evidence" {
   run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}/validated-version.txt" <<'PY'
 import asyncio
 import sys
 from pathlib import Path
 
 import httpx
+from a2a.helpers import new_data_message
+from a2a.types import Role, SendMessageRequest
+from google.protobuf import json_format
 
 sys.path.insert(0, sys.argv[1])
 from phase_0c_a2a_server import build_app
 
 
 async def main():
+    request = SendMessageRequest(
+        message=new_data_message(
+            {"probe": "version"}, media_type="application/json", role=Role.ROLE_USER
+        )
+    )
+    body = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "SendMessage",
+        "params": json_format.MessageToDict(request),
+    }
     transport = httpx.ASGITransport(app=build_app(1, Path(sys.argv[2])))
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-        missing = await client.post("/", json={})
-        incorrect = await client.post("/", json={}, headers={"A2A-Version": "0.3"})
-    assert missing.status_code == 400
-    assert incorrect.status_code == 400
-    assert missing.text == "A2A-Version must be 1.0"
-    assert incorrect.text == "A2A-Version must be 1.0"
+        missing = await client.post("/", json=body)
+        incorrect = await client.post(
+            "/", json=body, headers={"A2A-Version": "0.3"}
+        )
+    assert missing.json()["error"]["code"] == -32009
+    assert incorrect.json()["error"]["code"] == -32009
+    assert not Path(sys.argv[2]).exists()
 
 
 asyncio.run(main())

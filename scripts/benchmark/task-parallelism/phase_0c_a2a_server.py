@@ -32,8 +32,8 @@ class EchoExecutor(AgentExecutor):
         raise NotImplementedError("preflight immediate responses cannot be canceled")
 
 
-class A2AVersionMiddleware:
-    """Reject POST requests that do not carry the required A2A wire version."""
+class A2AVersionEvidenceMiddleware:
+    """Record successful v1.0 negotiation while the SDK validates versions."""
 
     def __init__(self, app: Any, evidence_file: Path):
         self.app = app
@@ -43,26 +43,12 @@ class A2AVersionMiddleware:
         if scope["type"] == "http" and scope["method"] == "POST":
             headers = dict(scope["headers"])
             observed = headers.get(b"a2a-version", b"").decode("ascii", errors="replace")
-            if observed != "1.0":
-                await send(
-                    {
-                        "type": "http.response.start",
-                        "status": 400,
-                        "headers": [(b"content-type", b"text/plain")],
-                    }
-                )
-                await send(
-                    {
-                        "type": "http.response.body",
-                        "body": b"A2A-Version must be 1.0",
-                    }
-                )
-                return
-            self.evidence_file.write_text(observed, encoding="utf-8")
+            if observed == "1.0":
+                self.evidence_file.write_text(observed, encoding="utf-8")
         await self.app(scope, receive, send)
 
 
-def build_app(port: int, evidence_file: Path) -> A2AVersionMiddleware:
+def build_app(port: int, evidence_file: Path) -> A2AVersionEvidenceMiddleware:
     card = AgentCard(
         name="Phase 0C Canonical Event Echo",
         description="Loopback-only no-spend structured event preflight.",
@@ -95,7 +81,7 @@ def build_app(port: int, evidence_file: Path) -> A2AVersionMiddleware:
         *create_agent_card_routes(card),
         *create_jsonrpc_routes(handler, "/"),
     ]
-    return A2AVersionMiddleware(Starlette(routes=routes), evidence_file)
+    return A2AVersionEvidenceMiddleware(Starlette(routes=routes), evidence_file)
 
 
 def main() -> int:
