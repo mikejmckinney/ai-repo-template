@@ -231,6 +231,8 @@ def run_tracked_command(command: list[str], cwd: Path, log_path: Path, timeout: 
         output = f"command could not start: {error}\n"
         exit_code = 127
     lines = [line.rstrip() for line in redact(output).splitlines()]
+    while lines and not lines[-1]:
+        lines.pop()
     bounded = "\n".join(lines) + ("\n" if lines else "")
     encoded = bounded.encode("utf-8", errors="replace")
     truncated = len(encoded) > MAX_TRACKED_LOG_BYTES
@@ -335,6 +337,23 @@ def load_candidate_report(path: Path, arm: str) -> dict:
     return report
 
 
+def count_spawned_subagents(jsonl_path: Path) -> int:
+    receiver_ids = set()
+    for line in jsonl_path.read_text(encoding="utf-8", errors="replace").splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        item = event.get("item", {})
+        if (
+            event.get("type") == "item.completed"
+            and item.get("type") == "collab_tool_call"
+            and item.get("tool") == "spawn_agent"
+        ):
+            receiver_ids.update(item.get("receiver_thread_ids", []))
+    return len(receiver_ids)
+
+
 def classify_candidate(rc: int, jsonl_path: Path, report: dict | None) -> tuple[str, str | None, bool]:
     if report is not None and report["completion_status"] != "completed":
         return "candidate-failed", f"candidate reported {report['completion_status']}", False
@@ -363,7 +382,6 @@ def blank_telemetry() -> dict:
 
 
 def publish_candidate(checkout: Path, source: str, branch: str) -> None:
-    subprocess.run(["git", "-C", str(checkout), "remote", "remove", "evaluator-publish"], check=False)
     subprocess.run(
         ["git", "-C", str(checkout), "remote", "add", "evaluator-publish", source], check=True
     )
@@ -468,6 +486,7 @@ def execute_run(run_id: str) -> int:
             invocation_error = f"candidate process could not start: {error}"
             stderr.write(f"{invocation_error}\n")
     usage, thread_id = PILOT.parse_usage(jsonl_path)
+    observed_spawn_agent_calls = count_spawned_subagents(jsonl_path)
     report_path = artifact_dir / "final-report.json"
     if report_path.is_file():
         try:
@@ -579,9 +598,12 @@ def execute_run(run_id: str) -> int:
             "candidate_branch": candidate_branch,
             "candidate_sha": candidate_sha,
             "instruction_sha256": override_sha,
+            "observed_spawn_agent_calls": observed_spawn_agent_calls,
+            "parent_worker_token_split_available": False,
             "published": published,
             "clone_retained": produced_work and not published,
             "raw_artifact_path": str(artifact_dir.relative_to(REPO_ROOT)),
+            "token_usage_scope": "aggregate-candidate-turn",
         },
     )
     state_attempt.update(
@@ -624,6 +646,9 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
                 "produced_work": result["produced_work"],
                 "fanout_elected": result["fanout_elected"],
                 "worker_count": result["worker_count"],
+                "coordination_seconds": result["coordination_seconds"],
+                "skill_loads": result["skill_loads"],
+                "tokens": result["tokens"],
                 "candidate_wall_clock_seconds": result["wall_clock_seconds"],
                 "evaluator_wall_clock_seconds": evaluation["wall_clock_seconds"],
                 "objective_score": evaluation["objective_score"],
@@ -647,6 +672,8 @@ def build_summary(state: dict, results: list[dict], evaluations: list[dict]) -> 
             key: sum(item["tokens"][key] for item in results)
             for key in ("input", "cached_input", "output")
         },
+        "token_usage_scope": "aggregate-candidate-turn",
+        "parent_worker_token_split_available": False,
         "arms": arms,
         "redaction": {
             "credentials_excluded": True,

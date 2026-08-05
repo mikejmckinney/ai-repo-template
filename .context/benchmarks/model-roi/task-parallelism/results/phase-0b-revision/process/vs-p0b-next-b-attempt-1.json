@@ -1,0 +1,17 @@
+{
+  "arm": "B",
+  "attempt_id": "vs-p0b-next-b-attempt-1",
+  "candidate_branch": "benchmark/vector-siege/vs-p0b-next-b-attempt-1",
+  "candidate_sha": "c170d148e9d1a95689b6e3bdeaf6725c60d1c505",
+  "clone_retained": false,
+  "codex_exit_code": 0,
+  "instruction_sha256": "480c33aab1c1ff29600b672781b8ccb7b4254357432179e89c9a1eb9364d5bcd",
+  "observed_spawn_agent_calls": 3,
+  "parent_worker_token_split_available": false,
+  "published": true,
+  "raw_artifact_path": ".artifacts/task-parallelism/phase-0b-revision/vs-p0b-next-b-attempt-1",
+  "run_id": "vs-p0b-next-b",
+  "schema_version": "task-parallelism-phase-0b-revision-process.v1",
+  "token_usage_scope": "aggregate-candidate-turn",
+  "thread_id": "019fd177-ad28-7de1-a481-03f452474663"
+}

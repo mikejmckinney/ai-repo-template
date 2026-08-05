@@ -234,4 +234,6 @@ terminal. One verified provider-transient or harness-invalid attempt may receive
 the campaign's only replacement; every original attempt remains retained. The
 parent evaluator runs for every checkout that produced work. The resulting pair
 is directional feasibility evidence only: it does not modify the official pilot
-scores, supply confirmatory evidence, or support an adoption claim.
+scores, supply confirmatory evidence, or support an adoption claim. Codex emits
+one aggregate usage record for a candidate turn, so the summary reports per-arm
+aggregate tokens and explicitly marks parent/worker token splitting unavailable.

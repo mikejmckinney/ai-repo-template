@@ -9,6 +9,7 @@
     "directional_only", "confirmatory_evidence", "adoption_claim", "assigned_runs",
     "terminal_runs", "attempts_started", "replacement_processes_started",
     "candidate_wall_clock_seconds", "evaluator_wall_clock_seconds", "tokens",
+    "token_usage_scope", "parent_worker_token_split_available",
     "arms", "redaction"
   ],
   "properties": {
@@ -33,13 +34,16 @@
         "output": { "type": "integer", "minimum": 0 }
       }
     },
+    "token_usage_scope": { "const": "aggregate-candidate-turn" },
+    "parent_worker_token_split_available": { "const": false },
     "arms": {
       "type": "array", "maxItems": 2,
       "items": {
         "type": "object", "additionalProperties": false,
         "required": [
           "run_id", "arm", "terminal_status", "produced_work", "fanout_elected",
-          "worker_count", "candidate_wall_clock_seconds", "evaluator_wall_clock_seconds",
+          "worker_count", "coordination_seconds", "skill_loads", "tokens",
+          "candidate_wall_clock_seconds", "evaluator_wall_clock_seconds",
           "objective_score", "evaluator_result_path"
         ],
         "properties": {
@@ -49,6 +53,17 @@
           "produced_work": { "type": "boolean" },
           "fanout_elected": { "type": "boolean" },
           "worker_count": { "type": "integer", "minimum": 1 },
+          "coordination_seconds": { "type": "integer", "minimum": 0 },
+          "skill_loads": { "type": "integer", "minimum": 0 },
+          "tokens": {
+            "type": "object", "additionalProperties": false,
+            "required": ["input", "cached_input", "output"],
+            "properties": {
+              "input": { "type": "integer", "minimum": 0 },
+              "cached_input": { "type": "integer", "minimum": 0 },
+              "output": { "type": "integer", "minimum": 0 }
+            }
+          },
           "candidate_wall_clock_seconds": { "type": "integer", "minimum": 0 },
           "evaluator_wall_clock_seconds": { "type": "integer", "minimum": 0 },
           "objective_score": { "type": "number", "minimum": 0 },

@@ -224,6 +224,8 @@ results = [
         "terminal_status": "completed",
         "wall_clock_seconds": 100,
         "tokens": {"input": 10, "cached_input": 2, "output": 3},
+        "coordination_seconds": 0,
+        "skill_loads": 1,
         "fanout_elected": False,
         "worker_count": 1,
         "produced_work": True,
@@ -235,6 +237,8 @@ results = [
         "terminal_status": "candidate-failed",
         "wall_clock_seconds": 120,
         "tokens": {"input": 20, "cached_input": 4, "output": 6},
+        "coordination_seconds": 90,
+        "skill_loads": 3,
         "fanout_elected": True,
         "worker_count": 7,
         "produced_work": True,
@@ -254,7 +258,11 @@ assert summary["terminal_runs"] == 2
 assert summary["candidate_wall_clock_seconds"] == 220
 assert summary["evaluator_wall_clock_seconds"] == 70
 assert summary["tokens"] == {"input": 30, "cached_input": 6, "output": 9}
+assert summary["token_usage_scope"] == "aggregate-candidate-turn"
+assert summary["parent_worker_token_split_available"] is False
 assert [item["arm"] for item in summary["arms"]] == ["A", "B"]
+assert summary["arms"][1]["tokens"] == {"input": 20, "cached_input": 4, "output": 6}
+assert summary["arms"][1]["coordination_seconds"] == 90
 PY
 	[ "${status}" -eq 0 ]
 }
@@ -272,6 +280,28 @@ assert module.should_evaluate_candidate(True, "partial") is True
 assert module.should_evaluate_candidate(True, "failed") is True
 assert module.should_evaluate_candidate(True, None) is True
 assert module.should_evaluate_candidate(False, "completed") is False
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "process metadata counts unique native subagent threads" {
+	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
+import importlib.util
+import json
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+path = Path(sys.argv[2]) / "events.jsonl"
+events = [
+    {"type": "item.completed", "item": {"type": "collab_tool_call", "tool": "spawn_agent", "receiver_thread_ids": ["worker-a"]}},
+    {"type": "item.completed", "item": {"type": "collab_tool_call", "tool": "spawn_agent", "receiver_thread_ids": ["worker-b"]}},
+    {"type": "item.completed", "item": {"type": "collab_tool_call", "tool": "spawn_agent", "receiver_thread_ids": ["worker-a"]}},
+]
+path.write_text("\n".join(json.dumps(event) for event in events) + "\n")
+assert module.count_spawned_subagents(path) == 2
 PY
 	[ "${status}" -eq 0 ]
 }

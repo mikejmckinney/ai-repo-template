@@ -1,0 +1,79 @@
+{
+  "attempt_id": "vs-p0b-next-b-attempt-1",
+  "campaign_id": "vector-siege-phase-0b-revision",
+  "candidate_sha": "c170d148e9d1a95689b6e3bdeaf6725c60d1c505",
+  "checks": {
+    "browser": {
+      "command": [
+        "npx",
+        "playwright",
+        "install",
+        "chromium"
+      ],
+      "exit_code": 0,
+      "log_path": "results/phase-0b-revision/evaluations/vs-p0b-next-b-attempt-1/browser.txt",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "log_truncated": false,
+      "points_awarded": 0,
+      "timeout_seconds": 300
+    },
+    "build": {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "log_path": "results/phase-0b-revision/evaluations/vs-p0b-next-b-attempt-1/build.txt",
+      "log_sha256": "87e6076bf6db86e7823e514ae1dfe9692b362818c9e2a7f438f09dda56b267fc",
+      "log_truncated": false,
+      "points_awarded": 20,
+      "timeout_seconds": 300
+    },
+    "e2e": {
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "exit_code": 0,
+      "log_path": "results/phase-0b-revision/evaluations/vs-p0b-next-b-attempt-1/e2e.txt",
+      "log_sha256": "38da5d78202aab2e9666abab73159941344dc313fe077b00290590ec2f624587",
+      "log_truncated": false,
+      "points_awarded": 30,
+      "timeout_seconds": 300
+    },
+    "install": {
+      "command": [
+        "npm",
+        "ci",
+        "--ignore-scripts"
+      ],
+      "exit_code": 0,
+      "log_path": "results/phase-0b-revision/evaluations/vs-p0b-next-b-attempt-1/install.txt",
+      "log_sha256": "2a519a1ab644c9899870561c1d8ceda59be30c2b04f5e5d15e4d7358522400a3",
+      "log_truncated": false,
+      "points_awarded": 10,
+      "timeout_seconds": 300
+    },
+    "unit": {
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "log_path": "results/phase-0b-revision/evaluations/vs-p0b-next-b-attempt-1/unit.txt",
+      "log_sha256": "929beb01d00debbbcbbb8890d949a2f36c34cc0fc0a0907d0b02dc7c529c6467",
+      "log_truncated": false,
+      "points_awarded": 20,
+      "timeout_seconds": 300
+    }
+  },
+  "evaluated": true,
+  "objective_score": 100,
+  "produced_work": true,
+  "run_id": "vs-p0b-next-b",
+  "schema_version": "task-parallelism-phase-0b-revision-evaluator-result.v1",
+  "skip_reason": null,
+  "wall_clock_seconds": 68
+}

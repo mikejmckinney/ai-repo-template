@@ -235,7 +235,9 @@ record under `results/phase-0b-revision/` contains attempt and final results,
 candidate reports, redacted process metadata, evaluator results and transcripts,
 and the paired summary. That summary must state that official pilot scores are
 unchanged and that the pair is directional, non-confirmatory, and not adoption
-evidence.
+evidence. If the selected runtime emits only aggregate turn usage, record that
+scope and mark parent/worker token splitting unavailable rather than estimating
+a split.
 
 Typical preflight:
 
