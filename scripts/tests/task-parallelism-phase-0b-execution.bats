@@ -181,6 +181,7 @@ assert "Use as many native subagents as needed for the task" in arm_b_text
 assert "Use one monolithic implementing agent" not in arm_b_text
 
 for rendered in (arm_a_text, arm_b_text):
+    normalized = " ".join(rendered.split())
     assert rendered.startswith("# AGENTS.md\n")
     assert rendered.count("## Parallel advisory review") == source.count("## Parallel advisory review")
     assert rendered.count("## Domain: Code Quality") == source.count("## Domain: Code Quality")
@@ -195,6 +196,8 @@ for rendered in (arm_a_text, arm_b_text):
     assert "hydrate the active issue" not in rendered
     assert "If no exact session ID is available, ask the user" not in rendered
     assert "The evaluator provides an oriented benchmark checkout" in rendered
+    assert "load and run the `repo-onboarding` skill" not in normalized
+    assert "run `session-recovery` first" not in normalized
     assert "Recovery takes precedence" not in rendered
 
 PY
