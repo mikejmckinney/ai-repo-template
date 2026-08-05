@@ -4,9 +4,99 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vector Siege</title>
+    <link rel="icon" type="image/webp" href="/benchmark-assets/vector-siege/visuals/logo.webp" />
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+        --ink: #eef7ff;
+        --muted: #9baec5;
+        --teal: #49dcb1;
+        --gold: #f6c453;
+        --danger: #ff4f78;
+        --panel: rgba(8, 17, 31, 0.88);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #08111f; }
+      body { display: grid; place-items: center; }
+      #game { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+      #game canvas { display: block; }
+      #dom-ui { position: absolute; inset: 0; pointer-events: none; }
+      .screen, .hud, .toast, .pause-overlay, .game-over { pointer-events: none; }
+      button { pointer-events: auto; border: 1px solid rgba(73, 220, 177, 0.7); border-radius: 8px; background: rgba(13, 35, 52, 0.95); color: var(--ink); cursor: pointer; font: inherit; font-weight: 700; letter-spacing: 0.04em; padding: 0.7rem 1rem; transition: transform 120ms ease, background 120ms ease, border-color 120ms ease; }
+      button:hover, button:focus-visible { transform: translateY(-1px); background: rgba(24, 62, 76, 0.98); border-color: var(--teal); outline: none; }
+      button:focus-visible { box-shadow: 0 0 0 3px rgba(73, 220, 177, 0.28); }
+      .hidden { display: none !important; }
+      .screen { position: absolute; inset: 0; display: grid; place-items: center; padding: 2rem; }
+      .menu-card, .game-over-card { width: min(92vw, 540px); padding: 2rem; text-align: center; border: 1px solid rgba(73, 220, 177, 0.45); border-radius: 18px; background: var(--panel); box-shadow: 0 18px 80px rgba(0, 0, 0, 0.45); backdrop-filter: blur(8px); }
+      .menu-card h1 { margin: 0; color: var(--teal); font-size: clamp(2.25rem, 7vw, 4.4rem); letter-spacing: 0.16em; text-shadow: 0 0 28px rgba(73, 220, 177, 0.3); }
+      .menu-card p { margin: 0.8rem 0; color: var(--muted); line-height: 1.5; }
+      .tagline { color: var(--gold) !important; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; }
+      .control-copy { font-size: 0.9rem; }
+      .hud { position: absolute; inset: 0; }
+      .hud-bar { position: absolute; top: 1rem; left: 1rem; right: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; pointer-events: none; }
+      .stats { display: flex; gap: 0.65rem; flex-wrap: wrap; }
+      .stat { min-width: 110px; padding: 0.5rem 0.7rem; border-left: 3px solid var(--teal); background: rgba(8, 17, 31, 0.76); color: var(--ink); font-size: 0.8rem; letter-spacing: 0.05em; }
+      .stat-heading { display: flex; align-items: center; gap: 0.35rem; color: var(--muted); font-size: 0.66rem; letter-spacing: 0.15em; text-transform: uppercase; }
+      .stat-icon { width: 18px; height: 18px; object-fit: contain; }
+      .hud-actions { display: flex; gap: 0.45rem; pointer-events: auto; }
+      .hud-actions button { padding: 0.45rem 0.65rem; font-size: 0.75rem; }
+      .audio-panel { position: absolute; right: 1rem; bottom: 1rem; max-width: 250px; padding: 0.75rem; border: 1px solid rgba(246, 196, 83, 0.55); border-radius: 10px; background: rgba(8, 17, 31, 0.9); color: var(--muted); font-size: 0.78rem; pointer-events: auto; }
+      .audio-panel button { margin-top: 0.5rem; width: 100%; border-color: var(--gold); }
+      .pause-overlay, .game-over { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8, 17, 31, 0.48); }
+      .pause-card { padding: 1rem 1.5rem; border: 1px solid rgba(246, 196, 83, 0.65); border-radius: 12px; background: rgba(8, 17, 31, 0.9); text-align: center; }
+      .pause-card h2, .game-over-card h2 { margin: 0 0 0.35rem; color: var(--gold); letter-spacing: 0.12em; text-transform: uppercase; }
+      .game-over-card h2 { color: var(--danger); }
+      .game-over-card p { color: var(--muted); }
+      @media (max-width: 720px) {
+        .hud-bar { align-items: flex-start; flex-direction: column; }
+        .hud-actions { align-self: flex-end; }
+        .menu-card { padding: 1.4rem; }
+      }
+    </style>
   </head>
   <body>
-    <main id="game"></main>
+    <main id="game" aria-label="Vector Siege game">
+      <div id="dom-ui">
+        <section id="menu-panel" class="screen" aria-labelledby="menu-title">
+          <div class="menu-card">
+            <p class="tagline">Single-player arena // stage 01</p>
+            <h1 id="menu-title">VECTOR SIEGE</h1>
+            <p>Hold the line. Cut through the incoming vectors. Survive the wave.</p>
+            <p class="control-copy"><strong>WASD / arrows</strong> move &nbsp;·&nbsp; <strong>pointer</strong> aim &nbsp;·&nbsp; <strong>click / space</strong> fire</p>
+            <button id="start-game" data-testid="start-game" type="button">Start Game</button>
+            <p id="high-score-copy" class="control-copy" aria-live="polite"></p>
+          </div>
+        </section>
+
+        <section id="hud" class="hud hidden" aria-label="Running game status">
+          <div class="hud-bar">
+            <div class="stats">
+              <div class="stat"><div class="stat-heading"><img class="stat-icon" src="/benchmark-assets/vector-siege/visuals/ui/score.webp" alt="" /><strong>Score</strong></div><span id="score" data-testid="score">Score: 0</span></div>
+              <div class="stat"><div class="stat-heading"><img class="stat-icon" src="/benchmark-assets/vector-siege/visuals/ui/wave.webp" alt="" /><strong>Wave</strong></div><span id="wave" data-testid="wave">Wave: 1</span></div>
+              <div class="stat"><div class="stat-heading"><img class="stat-icon" src="/benchmark-assets/vector-siege/visuals/ui/heart.webp" alt="" /><strong>Hull</strong></div><span id="health" data-testid="health">Hull: 3 / 3</span></div>
+            </div>
+            <div class="hud-actions">
+              <button id="pause-game" data-testid="pause-game" type="button">Pause</button>
+              <button id="resume-game" data-testid="resume-game" class="hidden" type="button">Resume</button>
+              <button id="mute-toggle" data-testid="mute-toggle" type="button" aria-pressed="false">Sound on</button>
+              <button id="restart-game" data-testid="restart-game" type="button">Restart</button>
+            </div>
+          </div>
+          <div id="audio-panel" class="audio-panel hidden" data-testid="audio-panel">
+            <div>Tap once to unlock the Vector Siege audio system.</div>
+            <button id="audio-unlock" data-testid="audio-unlock" type="button">Enable Audio</button>
+          </div>
+          <div id="pause-overlay" class="pause-overlay hidden" data-testid="pause-overlay" aria-live="polite">
+            <div class="pause-card"><h2>Paused</h2><p>Press Resume or P to return to the arena.</p></div>
+          </div>
+          <div id="game-over" class="game-over hidden" data-testid="game-over" aria-live="assertive">
+            <div class="game-over-card"><h2>Game Over</h2><p id="final-score-copy">The vectors got through.</p><button id="game-over-restart" data-testid="game-over-restart" type="button">Restart Run</button></div>
+          </div>
+        </section>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
