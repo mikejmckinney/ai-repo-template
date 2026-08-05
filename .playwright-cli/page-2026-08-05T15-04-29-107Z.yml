@@ -1,0 +1,21 @@
+- main "Vector Siege game" [ref=e2]:
+  - generic:
+    - region "Mission telemetry" [ref=e28]:
+      - generic [ref=e29]:
+        - text: SCORE
+        - strong [ref=e30]: "00000"
+      - generic [ref=e31]:
+        - text: WAVE
+        - strong [ref=e32]: "01"
+      - generic [ref=e33]:
+        - text: HULL
+        - strong [ref=e34]: 5/5
+      - generic [ref=e35]:
+        - button "Pause" [ref=e41] [cursor=pointer]
+        - button "Mute" [ref=e36] [cursor=pointer]
+    - status [ref=e37]: MISSION ACTIVE
+    - generic [ref=e38]:
+      - text: BEST
+      - strong [ref=e39]: "00000"
+    - button "Restart" [ref=e42] [cursor=pointer]
+  - generic "Vector Siege arena" [ref=e40]

@@ -1,0 +1,34 @@
+- main "Vector Siege game" [ref=e2]:
+  - generic:
+    - region [ref=e3]:
+      - paragraph [ref=e4]: ARCADE // SECTOR 01
+      - heading "VECTOR SIEGE" [level=1] [ref=e5]
+      - paragraph [ref=e6]: SURVIVE THE SIGNAL
+      - paragraph [ref=e7]: Hold the arena. Break the wave. Every vector is hostile.
+      - button "Start Mission" [ref=e8] [cursor=pointer]
+      - generic "Controls" [ref=e9]:
+        - generic [ref=e10]:
+          - generic [ref=e11]: MOVE
+          - generic [ref=e12]: WASD / ARROWS
+        - generic [ref=e13]:
+          - generic [ref=e14]: AIM
+          - generic [ref=e15]: POINTER
+        - generic [ref=e16]:
+          - generic [ref=e17]: FIRE
+          - generic [ref=e18]: CLICK / SPACE
+        - generic [ref=e19]:
+          - generic [ref=e20]: PAUSE
+          - generic [ref=e21]: P
+      - generic "Audio settings" [ref=e22]:
+        - generic [ref=e23]:
+          - text: Music
+          - slider "Music" [ref=e24]: "0.42"
+        - generic [ref=e25]:
+          - text: Effects
+          - slider "Effects" [ref=e26]: "0.68"
+      - paragraph [ref=e27]: High score and audio settings persist locally.
+    - status [ref=e28]: READY // AWAITING PILOT
+    - generic [ref=e29]:
+      - text: BEST
+      - strong [ref=e30]: "00000"
+  - generic "Vector Siege arena" [ref=e31]

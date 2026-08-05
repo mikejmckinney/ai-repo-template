@@ -3,10 +3,54 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
     <title>Vector Siege</title>
   </head>
   <body>
-    <main id="game"></main>
+    <main id="game" aria-label="Vector Siege game">
+      <div id="game-ui" class="game-ui">
+        <section id="menu-panel" class="screen-panel menu-panel" aria-labelledby="menu-title">
+          <p class="eyebrow">ARCADE // SECTOR 01</p>
+          <h1 id="menu-title" class="menu-title">VECTOR SIEGE</h1>
+          <p class="menu-kicker">SURVIVE THE SIGNAL</p>
+          <p class="menu-copy">Hold the arena. Break the wave. Every vector is hostile.</p>
+          <button id="start-mission" data-testid="start-mission" class="primary-button" type="button">Start Mission</button>
+          <div class="control-grid" aria-label="Controls">
+            <div><span class="control-label">MOVE</span><kbd>WASD / ARROWS</kbd></div>
+            <div><span class="control-label">AIM</span><kbd>POINTER</kbd></div>
+            <div><span class="control-label">FIRE</span><kbd>CLICK / SPACE</kbd></div>
+            <div><span class="control-label">PAUSE</span><kbd>P</kbd></div>
+          </div>
+          <div class="settings-row" aria-label="Audio settings">
+            <label for="music-volume">Music <input id="music-volume" type="range" min="0" max="1" step="0.01" value="0.42" /></label>
+            <label for="effects-volume">Effects <input id="effects-volume" type="range" min="0" max="1" step="0.01" value="0.68" /></label>
+          </div>
+          <p class="persist-note">High score and audio settings persist locally.</p>
+        </section>
+
+        <section id="game-hud" class="hud" hidden aria-label="Mission telemetry">
+          <div class="telemetry-card"><span class="telemetry-label">SCORE</span><strong id="score-value" data-testid="score-value">00000</strong></div>
+          <div class="telemetry-card"><span class="telemetry-label">WAVE</span><strong id="wave-value" data-testid="wave-value">01</strong></div>
+          <div class="telemetry-card"><span class="telemetry-label">HULL</span><strong id="health-value" data-testid="health-value">5/5</strong></div>
+          <div class="hud-actions">
+            <button id="pause-game" data-testid="pause-game" class="hud-button" type="button">Pause</button>
+            <button id="resume-game" data-testid="resume-game" class="hud-button" type="button" hidden>Resume</button>
+            <button id="mute-audio" data-testid="mute-audio" class="hud-button" type="button" aria-pressed="false">Mute</button>
+          </div>
+        </section>
+
+        <section id="game-over-panel" class="screen-panel game-over-panel" hidden aria-labelledby="game-over-title">
+          <p class="eyebrow">SIGNAL LOST</p>
+          <h2 id="game-over-title">Run complete.</h2>
+          <p class="game-over-score">Final score <strong id="final-score">00000</strong></p>
+          <p class="run-meta">Seed <code id="seed-value">vector-siege-stage-1</code></p>
+        </section>
+
+        <div id="game-status" data-testid="game-status" class="game-status" role="status" aria-live="polite">READY // AWAITING PILOT</div>
+        <div class="high-score-chip">BEST <strong id="high-score-value">00000</strong></div>
+        <button id="restart-game" data-testid="restart-game" class="hud-button restart-control" type="button" hidden>Restart</button>
+      </div>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
