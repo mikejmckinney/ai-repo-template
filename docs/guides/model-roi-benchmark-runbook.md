@@ -241,6 +241,8 @@ for those retained runs. `candidate-only` values stop when the model process
 returns and receive evaluator time once in the integrated comparison. If no
 candidate report is retained, keep the entire self-reported telemetry block null
 and separately publish harness-observed native spawn calls and process metadata.
+If any process emits no terminal usage event, mark campaign token usage incomplete,
+identify the affected arm, and treat the aggregate as retained usage only.
 
 Raw model transcripts and temporary clones remain ignored. The bounded tracked
 record under `results/phase-0b-revision/` contains attempt and final results,

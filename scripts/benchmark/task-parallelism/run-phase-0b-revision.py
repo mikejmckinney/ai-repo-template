@@ -1128,6 +1128,9 @@ def build_summary(
     candidate_wall_clock_comparable = all(
         item["candidate_wall_clock_comparable"] for item in arms
     )
+    arms_without_terminal_usage = [
+        result["arm"] for result in results if not any(result["tokens"].values())
+    ]
     comparisons = [build_roi_comparison(arms[0], candidate) for candidate in arms[1:]]
     return {
         "schema_version": "task-parallelism-phase-0b-revision-summary.v1",
@@ -1151,6 +1154,8 @@ def build_summary(
             key: sum(item["tokens"][key] for item in results)
             for key in ("input", "cached_input", "output")
         },
+        "token_usage_complete": not arms_without_terminal_usage,
+        "arms_without_terminal_usage": arms_without_terminal_usage,
         "token_usage_scope": "aggregate-candidate-turn",
         "parent_worker_token_split_available": False,
         "pricing": {

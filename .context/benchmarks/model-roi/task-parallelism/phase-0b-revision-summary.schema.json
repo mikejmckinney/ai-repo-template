@@ -9,7 +9,8 @@
     "directional_only", "confirmatory_evidence", "adoption_claim", "assigned_runs",
     "terminal_runs", "attempts_started", "replacement_processes_started",
     "candidate_wall_clock_seconds", "candidate_wall_clock_comparable",
-    "evaluator_wall_clock_seconds", "tokens",
+    "evaluator_wall_clock_seconds", "tokens", "token_usage_complete",
+    "arms_without_terminal_usage",
     "token_usage_scope", "parent_worker_token_split_available",
     "pricing", "roi_comparisons", "arms", "redaction"
   ],
@@ -35,6 +36,12 @@
         "cached_input": { "type": "integer", "minimum": 0 },
         "output": { "type": "integer", "minimum": 0 }
       }
+    },
+    "token_usage_complete": { "type": "boolean" },
+    "arms_without_terminal_usage": {
+      "type": "array",
+      "items": { "enum": ["A", "B", "C"] },
+      "uniqueItems": true
     },
     "token_usage_scope": { "const": "aggregate-candidate-turn" },
     "parent_worker_token_split_available": { "const": false },

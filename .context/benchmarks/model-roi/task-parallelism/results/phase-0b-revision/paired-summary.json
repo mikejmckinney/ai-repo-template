@@ -77,6 +77,9 @@
       "worker_count": null
     }
   ],
+  "arms_without_terminal_usage": [
+    "C"
+  ],
   "assigned_runs": 3,
   "attempts_started": 3,
   "campaign_id": "vector-siege-phase-0b-revision",
@@ -212,6 +215,7 @@
   ],
   "schema_version": "task-parallelism-phase-0b-revision-summary.v1",
   "terminal_runs": 3,
+  "token_usage_complete": false,
   "token_usage_scope": "aggregate-candidate-turn",
   "tokens": {
     "cached_input": 23214080,

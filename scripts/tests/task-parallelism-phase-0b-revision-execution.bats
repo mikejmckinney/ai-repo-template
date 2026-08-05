@@ -355,6 +355,8 @@ else:
     raise AssertionError("missing process metadata was accepted")
 summary = module.build_summary(state, results, evaluations, processes)
 assert summary["assigned_runs"] == 3
+assert summary["token_usage_complete"] is True
+assert summary["arms_without_terminal_usage"] == []
 assert summary["pricing"]["model"] == "gpt-5.6-luna"
 assert summary["pricing"]["per_request_context_band_available"] is False
 assert [item["candidate_arm"] for item in summary["roi_comparisons"]] == ["B", "C"]
@@ -370,6 +372,12 @@ assert summary["roi_comparisons"][0]["speedup"] == 0.8
 
 zero_usage_candidate = {**results[2], "quality_score": 0}
 zero_usage_candidate["tokens"] = {"input": 0, "cached_input": 0, "output": 0}
+incomplete_summary = module.build_summary(
+    state, [results[0], results[1], zero_usage_candidate], evaluations, processes
+)
+assert incomplete_summary["token_usage_complete"] is False
+assert incomplete_summary["arms_without_terminal_usage"] == ["C"]
+assert incomplete_summary["tokens"] == {"input": 2500, "cached_input": 1250, "output": 200}
 comparison = module.build_roi_comparison(summary["arms"][0], {
     **summary["arms"][2],
     "candidate_quality_score": 0,
