@@ -17,8 +17,8 @@ path.
 | `postmerge-retro-batch.bats` | Daily retro evidence and lifecycle behavior |
 | `shell-tooling-policy.bats` | Bounded production shell command policy |
 | `task-parallelism-preflight.bats` | No-spend campaign, exact assets, isolation, credential, and approval controls |
-| `task-parallelism-phase-0b.bats` | Blocked Phase 0B scaffold, run-plan, drift, and Gate 0 behavior |
-| `task-parallelism-phase-0b-execution.bats` | Approved execution-state gate and terminal-result summary behavior |
+| `task-parallelism-phase-0b.bats` | Historical Phase 0B freeze plus blocked one-A/one-B revision policy |
+| `task-parallelism-phase-0b-execution.bats` | Execution-state, arm-specific instruction injection, objective evaluation, and retained-branch diagnostics |
 | `verify-env.bats` | Environment checks |
 | `verify-pr.bats` | Change-class classifier fixtures (ADR-016) |
 | `weekly-classifier.bats` | Weekly review classifier behavior |

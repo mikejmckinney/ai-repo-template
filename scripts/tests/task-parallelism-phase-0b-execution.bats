@@ -126,6 +126,7 @@ report = {
     "fanout_elected": True,
     "worker_count": 1,
 }
+
 module.apply_report_telemetry(
     result,
     report,
@@ -140,6 +141,101 @@ assert result["provider_wait_seconds"] == 31
 assert result["skill_loads"] == 6
 assert result["predicted_path_drift_count"] == 2
 assert result["tokens"]["input"] == 100
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "parent evaluation scores every branch that produced work" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+assert module.should_evaluate_candidate(True, "completed") is True
+assert module.should_evaluate_candidate(True, "partial") is True
+assert module.should_evaluate_candidate(True, "failed") is True
+assert module.should_evaluate_candidate(False, "completed") is False
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "candidate instructions preserve repository policy and replace only the execution model" {
+	run python3 - "${RUNNER}" "${REPO_ROOT}/AGENTS.md" "${BATS_TEST_TMPDIR}" <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+source = Path(sys.argv[2]).read_text(encoding="utf-8")
+worktree = Path(sys.argv[3])
+
+arm_a = module.write_candidate_instructions(worktree, "A")
+arm_a_text = arm_a.read_text(encoding="utf-8")
+assert "Do not dispatch subagents" in arm_a_text
+assert "Use one monolithic implementing agent" not in arm_a_text
+
+arm_b = module.write_candidate_instructions(worktree, "B")
+arm_b_text = arm_b.read_text(encoding="utf-8")
+assert "Use as many native subagents as needed for the task" in arm_b_text
+assert "Use one monolithic implementing agent" not in arm_b_text
+
+for rendered in (arm_a_text, arm_b_text):
+    assert rendered.startswith("# AGENTS.md\n")
+    assert rendered.count("## Parallel advisory review") == source.count("## Parallel advisory review")
+    assert rendered.count("## Domain: Code Quality") == source.count("## Domain: Code Quality")
+
+module.remove_candidate_instructions(worktree)
+assert not arm_b.exists()
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "candidate worktrees exclude parent benchmark artifacts from normal traversal" {
+	run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+worktree = module.candidate_worktree_path("vs-p0b-next-a-attempt-1")
+assert not worktree.is_relative_to(module.REPO_ROOT)
+assert worktree.name == "vs-p0b-next-a-attempt-1"
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "retained-branch diagnostics preserve official scores and expose sandbox blocking" {
+	summary="${PROTOCOL}/results/phase-0b-diagnostic-summary.json"
+	run jq -e '
+    .official_scores_modified == false and
+    .confirmatory_evidence == false and
+    .aggregate.produced_runs == 8 and
+    .aggregate.parent_e2e_passes >= 2 and
+    .aggregate.candidate_reports_with_sandbox_block == 8 and
+    .aggregate.arms.A.official_quality_total == 0 and
+    .aggregate.arms.A.diagnostic_quality_total >= 210 and
+    .aggregate.arms.B.official_quality_total == 100 and
+    .aggregate.arms.B.diagnostic_quality_total >= 350
+  ' "${summary}"
+	[ "${status}" -eq 0 ]
+
+	run python3 - "${PROTOCOL}" "${summary}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+protocol = Path(sys.argv[1])
+with Path(sys.argv[2]).open(encoding="utf-8") as handle:
+    diagnostic = json.load(handle)
+for item in diagnostic["runs"]:
+    with (protocol / "results/phase-0b" / f"{item['run_id']}.json").open(encoding="utf-8") as handle:
+        official = json.load(handle)
+    assert item["official_quality_score"] == official["quality_score"]
 PY
 	[ "${status}" -eq 0 ]
 }

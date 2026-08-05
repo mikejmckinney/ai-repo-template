@@ -142,3 +142,53 @@ is a no-go:
 
 The result does not support an adoption claim or confirmatory campaign. The
 observed data instead require harness revision before another feasibility run.
+
+### Retained-Branch Diagnostic
+
+The post-pilot diagnostic evaluates retained candidate branches without changing
+official scores or creating confirmatory evidence:
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-diagnostic-validate
+```
+
+Eight candidates produced work, and all eight final reports identified sandbox
+restrictions on browser installation, process launch, or local TCP binding. The
+parent evaluator scored all produced branches outside the candidate sandbox. The
+tracked point observation records three parent E2E passes, including one Arm A
+branch whose E2E result changed across diagnostic passes. Therefore diagnostic
+quality totals are not comparative or adoption evidence. Stable observations are:
+
+- the official pilot scores remain unchanged;
+- three Arm A branches officially scored zero despite passing install, unit, and
+  build checks in the parent evaluator;
+- run 002, the only officially completed Arm B run, declined fan-out;
+- the original candidate sandbox prevented reliable browser or server checks;
+- candidate-authored E2E behavior is not stable enough to act as the sole parent
+  acceptance journey.
+
+### Revised Feasibility Boundary
+
+The blocked revision uses one sequential assignment per arm. Candidate timeout,
+partial, or failed outcomes count as the arm result. Only a verified provider or
+harness-invalid attempt may receive one replacement. Both candidates use normal
+Codespace permissions and run build, unit, and browser checks with Playwright or
+Chrome DevTools; the parent evaluator independently evaluates every branch that
+produced work regardless of the candidate self-report.
+
+The harness injects a root `AGENTS.override.md` copied from the repository's
+normal guidance. Arm A replaces only the execution-model paragraph with the
+monolithic treatment. Arm B replaces only that paragraph with instruction to use
+as many native subagents as needed and integrate their work. The injected file is
+removed before the candidate diff is captured. Candidate worktrees remain outside
+the control repository so normal recursive file discovery cannot reuse prior
+candidate implementations; this does not restrict network, browser, localhost, or
+shell access.
+
+```bash
+make -C scripts/benchmark/task-parallelism phase-0b-revision-validate
+make -C scripts/benchmark/task-parallelism phase-0b-revision-plan
+```
+
+The rendered plan remains blocked with zero candidate processes. Another model
+run requires separate explicit approval.

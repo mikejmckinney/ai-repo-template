@@ -1,0 +1,325 @@
+{
+  "schema_version": "task-parallelism-phase-0b-diagnostic-summary.v1",
+  "source_pilot_commit": "af1e279866f3e2c9e46c345632a2db32f58254a2",
+  "official_scores_modified": false,
+  "confirmatory_evidence": false,
+  "aggregate": {
+    "produced_runs": 8,
+    "parent_e2e_passes": 3,
+    "candidate_reports_with_sandbox_block": 8,
+    "arms": {
+      "A": {
+        "runs": 5,
+        "produced_runs": 3,
+        "official_quality_total": 0,
+        "diagnostic_quality_total": 240
+      },
+      "B": {
+        "runs": 5,
+        "produced_runs": 5,
+        "official_quality_total": 100,
+        "diagnostic_quality_total": 410
+      }
+    }
+  },
+  "runs": [
+    {
+      "run_id": "vs-p0b-001",
+      "arm": "A",
+      "official_terminal_status": "candidate-failed",
+      "official_quality_score": 0,
+      "produced_work": false,
+      "changed_file_count": 0,
+      "candidate_completion_status": null,
+      "fanout_elected": false,
+      "fanout_reason": null,
+      "diagnostic_quality_score": 0,
+      "checks": {}
+    },
+    {
+      "run_id": "vs-p0b-002",
+      "arm": "B",
+      "official_terminal_status": "completed",
+      "official_quality_score": 100,
+      "produced_work": true,
+      "changed_file_count": 7,
+      "candidate_completion_status": "completed",
+      "fanout_elected": false,
+      "fanout_reason": "One writable worker was sufficient for the coupled simulation, Phaser, audio, UI, and tests. Build and unit tests passed; Playwright was attempted but local TCP binding was blocked by the sandbox (EPERM), and Chromium was unavailable. No human intervention.",
+      "diagnostic_quality_score": 100,
+      "checks": {
+        "install": {
+          "exit_code": 0,
+          "points": 10
+        },
+        "browser": {
+          "exit_code": 0,
+          "points": 0
+        },
+        "unit": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "build": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "e2e": {
+          "exit_code": 0,
+          "points": 30
+        }
+      }
+    },
+    {
+      "run_id": "vs-p0b-003",
+      "arm": "B",
+      "official_terminal_status": "candidate-failed",
+      "official_quality_score": 0,
+      "produced_work": true,
+      "changed_file_count": 6,
+      "candidate_completion_status": "partial",
+      "fanout_elected": false,
+      "fanout_reason": "Implemented Stage 1. Build, unit tests (6/6), and diff checks pass. E2E was blocked after 7.42s by sandbox EPERM on local preview-server listen; direct Chromium fallback was also sandbox-blocked. Human intervention and provider wait: none. Fan-out declined because work was tightly coupled with no clean disjoint boundary.",
+      "diagnostic_quality_score": 70,
+      "checks": {
+        "install": {
+          "exit_code": 0,
+          "points": 10
+        },
+        "browser": {
+          "exit_code": 0,
+          "points": 0
+        },
+        "unit": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "build": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "e2e": {
+          "exit_code": 1,
+          "points": 0
+        }
+      }
+    },
+    {
+      "run_id": "vs-p0b-004",
+      "arm": "A",
+      "official_terminal_status": "candidate-failed",
+      "official_quality_score": 0,
+      "produced_work": true,
+      "changed_file_count": 7,
+      "candidate_completion_status": "partial",
+      "fanout_elected": false,
+      "fanout_reason": "Arm A required monolithic work; no fan-out or human intervention. npm run build passed; npm test passed with 7 tests. npm run test:e2e was blocked because the managed sandbox rejected Vite's 127.0.0.1:4173 listen with EPERM (~7.6s; direct preview check ~5.3s).",
+      "diagnostic_quality_score": 70,
+      "checks": {
+        "install": {
+          "exit_code": 0,
+          "points": 10
+        },
+        "browser": {
+          "exit_code": 0,
+          "points": 0
+        },
+        "unit": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "build": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "e2e": {
+          "exit_code": 1,
+          "points": 0
+        }
+      }
+    },
+    {
+      "run_id": "vs-p0b-005",
+      "arm": "A",
+      "official_terminal_status": "harness-failed",
+      "official_quality_score": 0,
+      "produced_work": false,
+      "changed_file_count": 0,
+      "candidate_completion_status": null,
+      "fanout_elected": false,
+      "fanout_reason": null,
+      "diagnostic_quality_score": 0,
+      "checks": {}
+    },
+    {
+      "run_id": "vs-p0b-006",
+      "arm": "B",
+      "official_terminal_status": "candidate-failed",
+      "official_quality_score": 0,
+      "produced_work": true,
+      "changed_file_count": 7,
+      "candidate_completion_status": "partial",
+      "fanout_elected": false,
+      "fanout_reason": "Single-owner implementation chosen; no human intervention. Build passed and npm test passed (7/7). Playwright was blocked by sandbox EPERM on localhost binding and Chromium startup; no provider wait.",
+      "diagnostic_quality_score": 70,
+      "checks": {
+        "install": {
+          "exit_code": 0,
+          "points": 10
+        },
+        "browser": {
+          "exit_code": 0,
+          "points": 0
+        },
+        "unit": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "build": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "e2e": {
+          "exit_code": 1,
+          "points": 0
+        }
+      }
+    },
+    {
+      "run_id": "vs-p0b-007",
+      "arm": "B",
+      "official_terminal_status": "candidate-failed",
+      "official_quality_score": 0,
+      "produced_work": true,
+      "changed_file_count": 6,
+      "candidate_completion_status": "partial",
+      "fanout_elected": true,
+      "fanout_reason": "Arm B elected one disjoint simulation worker. Build passed; npm test passed with 8 tests; Playwright was attempted but Vite preview could not listen due sandbox EPERM on 127.0.0.1:4173. Wall-clock blocking events: 1. Human intervention: 0. No duplicate, semantic, interface, dependency, asset, or path conflicts.",
+      "diagnostic_quality_score": 100,
+      "checks": {
+        "install": {
+          "exit_code": 0,
+          "points": 10
+        },
+        "browser": {
+          "exit_code": 0,
+          "points": 0
+        },
+        "unit": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "build": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "e2e": {
+          "exit_code": 0,
+          "points": 30
+        }
+      }
+    },
+    {
+      "run_id": "vs-p0b-008",
+      "arm": "A",
+      "official_terminal_status": "candidate-failed",
+      "official_quality_score": 0,
+      "produced_work": true,
+      "changed_file_count": 5,
+      "candidate_completion_status": "partial",
+      "fanout_elected": false,
+      "fanout_reason": "Arm A monolithic execution. Build passed and unit tests passed (7/7); Playwright was attempted but blocked by sandbox listen EPERM. No human intervention.",
+      "diagnostic_quality_score": 70,
+      "checks": {
+        "install": {
+          "exit_code": 0,
+          "points": 10
+        },
+        "browser": {
+          "exit_code": 0,
+          "points": 0
+        },
+        "unit": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "build": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "e2e": {
+          "exit_code": 1,
+          "points": 0
+        }
+      }
+    },
+    {
+      "run_id": "vs-p0b-009",
+      "arm": "A",
+      "official_terminal_status": "candidate-failed",
+      "official_quality_score": 0,
+      "produced_work": true,
+      "changed_file_count": 5,
+      "candidate_completion_status": "partial",
+      "fanout_elected": false,
+      "fanout_reason": "Arm A required monolithic work; no fan-out was elected. Build and unit tests pass; Playwright execution was blocked by sandbox EPERM on local listener creation.",
+      "diagnostic_quality_score": 100,
+      "checks": {
+        "install": {
+          "exit_code": 0,
+          "points": 10
+        },
+        "browser": {
+          "exit_code": 0,
+          "points": 0
+        },
+        "unit": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "build": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "e2e": {
+          "exit_code": 0,
+          "points": 30
+        }
+      }
+    },
+    {
+      "run_id": "vs-p0b-010",
+      "arm": "B",
+      "official_terminal_status": "candidate-failed",
+      "official_quality_score": 0,
+      "produced_work": true,
+      "changed_file_count": 7,
+      "candidate_completion_status": "partial",
+      "fanout_elected": true,
+      "fanout_reason": "One disjoint simulation/test worker was elected and integrated. Build passed; npm test passed 7/7. Playwright was attempted but blocked at Vite preview startup by sandbox EPERM on 127.0.0.1:4173. Wall-clock blocking events: 1. Human intervention: 0. Worker path integration was recovered without abandoned work or conflicts.",
+      "diagnostic_quality_score": 70,
+      "checks": {
+        "install": {
+          "exit_code": 0,
+          "points": 10
+        },
+        "browser": {
+          "exit_code": 0,
+          "points": 0
+        },
+        "unit": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "build": {
+          "exit_code": 0,
+          "points": 20
+        },
+        "e2e": {
+          "exit_code": 1,
+          "points": 0
+        }
+      }
+    }
+  ]
+}

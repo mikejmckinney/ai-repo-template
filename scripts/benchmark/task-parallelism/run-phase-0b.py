@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 
@@ -26,6 +27,21 @@ ARTIFACT_ROOT = REPO_ROOT / ".artifacts/task-parallelism/phase-0b"
 RESULT_ROOT = PROTOCOL_ROOT / "results/phase-0b"
 ATTEMPT_RESULT_ROOT = RESULT_ROOT / "attempts"
 RESULT_NAME = re.compile(r"^vs-p0b-[0-9]{3}\.json$")
+MONOLITHIC_POLICY = (
+    "- Use one monolithic implementing agent. ADR-031 found no favorable ROI crossover\n"
+    "  for the multi-role pipeline and retired the role registry."
+)
+ARM_EXECUTION_POLICIES = {
+    "A": (
+        "- Complete this benchmark with one implementing agent. Do not dispatch subagents,\n"
+        "  child workers, or an independent model."
+    ),
+    "B": (
+        "- This benchmark treatment replaces the repository's monolithic-agent default.\n"
+        "  Use as many native subagents as needed for the task and integrate their work."
+    ),
+}
+INJECTED_INSTRUCTIONS = "AGENTS.override.md"
 CANDIDATE_ENV_KEYS = {
     "CODEX_HOME",
     "HOME",
@@ -308,6 +324,7 @@ def evaluate_candidate(worktree: Path, artifact_dir: Path, work_produced: bool) 
 
 
 def snapshot_candidate(worktree: Path, base_sha: str, attempt_id: str) -> tuple[list[str], str, int]:
+    remove_candidate_instructions(worktree)
     subprocess.run(["git", "add", "-A"], cwd=worktree, check=True)
     changed = subprocess.run(
         ["git", "diff", "--cached", "--name-only", base_sha],
@@ -387,6 +404,29 @@ def apply_report_telemetry(result: dict, report: dict, usage: dict, drift_count:
     )
 
 
+def should_evaluate_candidate(work_produced: bool, completion_status: str | None) -> bool:
+    del completion_status
+    return work_produced
+
+
+def write_candidate_instructions(worktree: Path, arm: str) -> Path:
+    source = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    if source.count(MONOLITHIC_POLICY) != 1:
+        raise ValueError("repository monolithic-agent policy is not uniquely replaceable")
+    rendered = source.replace(MONOLITHIC_POLICY, ARM_EXECUTION_POLICIES[arm])
+    destination = worktree / INJECTED_INSTRUCTIONS
+    destination.write_text(rendered, encoding="utf-8")
+    return destination
+
+
+def remove_candidate_instructions(worktree: Path) -> None:
+    (worktree / INJECTED_INSTRUCTIONS).unlink(missing_ok=True)
+
+
+def candidate_worktree_path(attempt_id: str) -> Path:
+    return Path(tempfile.gettempdir()) / "ai-repo-template-phase-0b-candidates" / attempt_id
+
+
 def execute_run(run_id: str) -> int:
     state, preparation = load_state()
     if state["status"] == "base-pending" or state["candidate_base"]["sha"] is None:
@@ -404,7 +444,7 @@ def execute_run(run_id: str) -> int:
     base_sha = state["candidate_base"]["sha"]
     artifact_name = attempt["attempt_id"] if attempt["is_retry"] else run_id
     artifact_dir = ARTIFACT_ROOT / artifact_name
-    worktree = ARTIFACT_ROOT / "worktrees" / attempt["attempt_id"]
+    worktree = candidate_worktree_path(attempt["attempt_id"])
     final_result_path = RESULT_ROOT / f"{run_id}.json"
     attempt_result_path = ATTEMPT_RESULT_ROOT / f"{attempt['attempt_id']}.json"
     if artifact_dir.exists() or worktree.exists() or attempt_result_path.exists() or final_result_path.exists():
@@ -416,6 +456,7 @@ def execute_run(run_id: str) -> int:
         cwd=REPO_ROOT,
         check=True,
     )
+    write_candidate_instructions(worktree, arm)
     state["status"] = "running"
     state["candidate_processes_started"] += 1
     if attempt["is_retry"]:

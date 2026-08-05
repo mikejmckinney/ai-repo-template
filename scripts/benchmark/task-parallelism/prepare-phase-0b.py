@@ -14,6 +14,7 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 PROTOCOL_ROOT = REPO_ROOT / ".context/benchmarks/model-roi/task-parallelism"
 DEFAULT_MANIFEST = PROTOCOL_ROOT / "campaign.phase-0b.preparation.json"
 PREPARATION_SCHEMA = PROTOCOL_ROOT / "phase-0b-preparation.schema.json"
+REVISION_SCHEMA = PROTOCOL_ROOT / "phase-0b-revision.schema.json"
 SUMMARY_SCHEMA = PROTOCOL_ROOT / "phase-0b-pilot-summary.schema.json"
 CANDIDATE_RESULT_SCHEMA = PROTOCOL_ROOT / "phase-0b-candidate-result.schema.json"
 
@@ -52,11 +53,11 @@ def validate_execution_boundary(manifest: dict) -> None:
 def validate_runtime(manifest: dict) -> None:
     runtime = manifest["candidate_runtime"]
     command = runtime["candidate_command"]
-    if "danger-full-access" in command:
-        raise ValueError("candidate command must not use danger-full-access")
+    revision = manifest["schema_version"] == "task-parallelism-phase-0b-revision.v1"
+    expected_sandbox = "danger-full-access" if revision else "workspace-write"
     sandbox_index = command.index("--sandbox") if "--sandbox" in command else -1
-    if sandbox_index < 0 or command[sandbox_index + 1] != "workspace-write":
-        raise ValueError("candidate command must explicitly use workspace-write")
+    if sandbox_index < 0 or command[sandbox_index + 1] != expected_sandbox:
+        raise ValueError(f"candidate command must explicitly use {expected_sandbox}")
 
     config_path = REPO_ROOT / ".codex/config.toml"
     if sha256(config_path) != runtime["repository_config_sha256"]:
@@ -86,6 +87,12 @@ def validate_files(manifest: dict, scaffold_root: Path) -> None:
         if not path.is_file() or sha256(path) != prompt["sha256"]:
             raise ValueError(f"prompt digest mismatch: {prompt['path']}")
 
+    checkout = manifest.get("candidate_checkout")
+    if checkout:
+        source = REPO_ROOT / checkout["instructions_source"]
+        if not source.is_file() or sha256(source) != checkout["instructions_source_sha256"]:
+            raise ValueError("candidate instruction source digest mismatch")
+
 
 def validate_run_policy(manifest: dict) -> None:
     policy = manifest["run_policy"]
@@ -94,16 +101,23 @@ def validate_run_policy(manifest: dict) -> None:
     observed_arms = [assignment["arm"] for assignment in assignments]
     if observed_arms != expected_arms:
         raise ValueError("assignment order does not match counterbalanced blocks")
-    if len({assignment["run_id"] for assignment in assignments}) != 10:
+    expected_count = 2 if manifest["schema_version"].endswith("revision.v1") else 10
+    if len({assignment["run_id"] for assignment in assignments}) != expected_count:
         raise ValueError("Phase 0B run identifiers must be unique")
-    if observed_arms.count("A") != 5 or observed_arms.count("B") != 5:
-        raise ValueError("Phase 0B requires five assignments per arm")
+    expected_per_arm = expected_count // 2
+    if observed_arms.count("A") != expected_per_arm or observed_arms.count("B") != expected_per_arm:
+        raise ValueError(f"Phase 0B requires {expected_per_arm} assignment per arm")
 
 
 def validate_preparation(manifest_path: Path, scaffold_root: Path) -> dict:
     manifest = load_json(manifest_path)
     validate_execution_boundary(manifest)
-    validate_schema(manifest, PREPARATION_SCHEMA)
+    schema_path = (
+        REVISION_SCHEMA
+        if manifest.get("schema_version") == "task-parallelism-phase-0b-revision.v1"
+        else PREPARATION_SCHEMA
+    )
+    validate_schema(manifest, schema_path)
     validate_runtime(manifest)
     validate_files(manifest, scaffold_root)
     validate_run_policy(manifest)
@@ -119,7 +133,7 @@ def build_plan(manifest: dict) -> dict:
         {**assignment, "prompt_paths": prompt_paths[assignment["arm"]]}
         for assignment in manifest["run_policy"]["assignments"]
     ]
-    return {
+    plan = {
         "schema_version": "task-parallelism-phase-0b-run-plan.v1",
         "campaign_id": manifest["campaign_id"],
         "execution_status": manifest["execution"]["status"],
@@ -128,8 +142,19 @@ def build_plan(manifest: dict) -> dict:
         "scaffold_base_status": manifest["scaffold"]["base_status"],
         "assignments": assignments,
         "retries": manifest["run_policy"]["retries"],
-        "gate_0": manifest["gate_0"],
     }
+    if "gate_0" in manifest:
+        plan["gate_0"] = manifest["gate_0"]
+    else:
+        plan.update(
+            {
+                "candidate_checkout": manifest["candidate_checkout"],
+                "candidate_verification": manifest["candidate_runtime"]["candidate_verification"],
+                "parent_evaluation": manifest["candidate_runtime"]["parent_evaluation"],
+                "decision_boundary": manifest["decision_boundary"],
+            }
+        )
+    return plan
 
 
 def write_plan(manifest: dict, output_path: Path) -> None:
@@ -196,6 +221,8 @@ def main() -> int:
         manifest = validate_preparation(manifest_path, scaffold_root)
         if args.validate or args.plan:
             validate_schema_definition(CANDIDATE_RESULT_SCHEMA)
+            if manifest["schema_version"] == "task-parallelism-phase-0b-revision.v1":
+                validate_schema_definition(REVISION_SCHEMA)
         if args.validate:
             print("Phase 0B preparation is valid and execution remains blocked")
             return 0

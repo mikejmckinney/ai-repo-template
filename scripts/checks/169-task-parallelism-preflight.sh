@@ -13,7 +13,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/asset-manifest.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/assets/manifest.json"
     "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.preparation.json"
+    "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.revision.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-preparation.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-diagnostic-summary.schema.json"
+    "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-diagnostic-summary.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-result.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-report.schema.json"
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-execution.schema.json"
@@ -30,6 +34,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_RUNNER}/preflight.py"
     "${TASK_PARALLELISM_RUNNER}/generate-placeholder-assets.py"
     "${TASK_PARALLELISM_RUNNER}/prepare-phase-0b.py"
+    "${TASK_PARALLELISM_RUNNER}/diagnose-phase-0b.py"
     "${TASK_PARALLELISM_RUNNER}/run-phase-0b.py"
     "scripts/tests/task-parallelism-preflight.bats"
     "scripts/tests/task-parallelism-phase-0b.bats"
@@ -50,7 +55,11 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "${TASK_PARALLELISM_PROTOCOL}/asset-manifest.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/assets/manifest.json" \
     "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.preparation.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.revision.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-preparation.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-revision.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/phase-0b-diagnostic-summary.schema.json" \
+    "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-diagnostic-summary.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-result.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-candidate-report.schema.json" \
     "${TASK_PARALLELISM_PROTOCOL}/phase-0b-execution.schema.json" \
@@ -86,6 +95,20 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "tracked Phase 0B structural execution state validates offline"
   else
     fail "tracked Phase 0B execution state is invalid"
+  fi
+
+  if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/prepare-phase-0b.py" \
+    --validate --manifest "${TASK_PARALLELISM_PROTOCOL}/campaign.phase-0b.revision.json" >/dev/null; then
+    pass "revised Phase 0B two-assignment plan validates and remains blocked"
+  else
+    fail "revised Phase 0B two-assignment plan is invalid"
+  fi
+
+  if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/diagnose-phase-0b.py" \
+    --validate "${TASK_PARALLELISM_PROTOCOL}/results/phase-0b-diagnostic-summary.json" >/dev/null; then
+    pass "retained Phase 0B branch diagnostics validate"
+  else
+    fail "retained Phase 0B branch diagnostics are invalid"
   fi
 
   echo ""
