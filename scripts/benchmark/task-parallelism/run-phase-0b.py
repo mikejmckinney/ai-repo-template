@@ -243,7 +243,11 @@ def verify_local_base_if_available(state: dict) -> bool:
     base = state["candidate_base"]
     sha = base["sha"]
     local = subprocess.run(
-        ["git", "cat-file", "-e", f"{sha}^{{commit}}"], cwd=REPO_ROOT, check=False
+        ["git", "cat-file", "-e", f"{sha}^{{commit}}"],
+        cwd=REPO_ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
     )
     if local.returncode != 0:
         return False

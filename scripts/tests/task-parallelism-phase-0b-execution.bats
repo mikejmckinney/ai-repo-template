@@ -236,6 +236,49 @@ PY
 	run python3 "${RUNNER}" --validate-state --offline
 	[ "${status}" -eq 0 ]
 	[[ "${output}" == *'offline structural execution state valid:'* ]]
+	base_sha="$(jq -r '.candidate_base.sha' "${STATE}")"
+	if git -C "${REPO_ROOT}" cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+		[[ "${output}" == *'local frozen base verified'* ]]
+	else
+		[[ "${output}" == *'frozen base unavailable locally'* ]]
+	fi
+}
+
+@test "offline validation rejects a local task-blob mismatch" {
+	run python3 - "${RUNNER}" "${BATS_TEST_TMPDIR}" <<'PY'
+import importlib.util
+import subprocess
+import sys
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("phase0b", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+repo = Path(sys.argv[2]) / "local-base"
+repo.mkdir()
+subprocess.run(["git", "init", "-q", str(repo)], check=True)
+subprocess.run(["git", "-C", str(repo), "config", "user.name", "Benchmark"], check=True)
+subprocess.run(["git", "-C", str(repo), "config", "user.email", "benchmark@example.invalid"], check=True)
+(repo / "TASK.md").write_text("frozen task\n")
+subprocess.run(["git", "-C", str(repo), "add", "TASK.md"], check=True)
+subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "base"], check=True)
+sha = subprocess.run(
+    ["git", "-C", str(repo), "rev-parse", "HEAD"],
+    check=True,
+    text=True,
+    stdout=subprocess.PIPE,
+).stdout.strip()
+module.REPO_ROOT = repo
+try:
+    module.verify_local_base_if_available({
+        "candidate_base": {"sha": sha, "task_blob_sha": "0" * 40}
+    })
+except ValueError as error:
+    assert "task does not match" in str(error)
+else:
+    raise AssertionError("task-blob mismatch was accepted")
+PY
+	[ "${status}" -eq 0 ]
 }
 
 @test "offline flag is rejected outside structural state validation" {
