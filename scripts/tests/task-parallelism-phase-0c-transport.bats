@@ -163,7 +163,7 @@ PY
   [[ "${output}" == *'--output is required unless --validate-only is used'* ]]
 }
 
-@test "A2A readiness timeout includes bounded server diagnostics" {
+@test "A2A startup failures include bounded server diagnostics" {
   run python3 - "${RUNNER}" <<'PY'
 import importlib.util
 import sys
@@ -176,12 +176,15 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class FakeProcess:
+    poll_result = None
+
     def __init__(self, *args, **kwargs):
+        self.returncode = self.poll_result
         kwargs["stderr"].write("server stalled during startup")
         kwargs["stderr"].flush()
 
     def poll(self):
-        return None
+        return self.poll_result
 
     def terminate(self):
         pass
@@ -206,6 +209,16 @@ except TimeoutError as error:
     assert "server stalled during startup" in str(error)
 else:
     raise AssertionError("readiness timeout was accepted")
+
+FakeProcess.poll_result = 7
+ticks = iter([0, 0])
+try:
+    module.run_a2a_server(module.Path(runner), [])
+except RuntimeError as error:
+    assert "returncode=7" in str(error)
+    assert "server stalled during startup" in str(error)
+else:
+    raise AssertionError("early server exit was accepted")
 PY
   [ "${status}" -eq 0 ]
 }

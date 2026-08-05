@@ -194,7 +194,9 @@ def run_a2a_server(
                 while time.monotonic() < deadline:
                     if process.poll() is not None:
                         raise RuntimeError(
-                            f"A2A server exited before discovery: {stderr_excerpt()}"
+                            "A2A server exited before discovery "
+                            f"(returncode={process.returncode}): "
+                            f"{stderr_excerpt() or 'no server stderr'}"
                         )
                     try:
                         response = httpx.get(
