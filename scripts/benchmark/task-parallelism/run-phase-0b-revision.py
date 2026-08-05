@@ -34,6 +34,7 @@ ASSIGNMENTS = (
     ("vs-p0b-next-c", "C"),
 )
 MAX_TRACKED_LOG_BYTES = 200_000
+CANDIDATE_TIMEOUT_SECONDS = 1800
 ARM_C_PROMPT = PROTOCOL_ROOT / "prompts/arm-c-prompt-gated.md"
 PRICING_SOURCE = "https://developers.openai.com/api/docs/models/gpt-5.6-luna"
 TOKEN_RATES = {
@@ -452,7 +453,7 @@ def classify_candidate(rc: int, jsonl_path: Path, report: dict | None) -> tuple[
 
 def candidate_failure_reason(rc: int, failure_class: str | None) -> str | None:
     if rc == 124:
-        return "candidate timed out after 1800 seconds"
+        return f"candidate timed out after {CANDIDATE_TIMEOUT_SECONDS} seconds"
     return failure_class
 
 
@@ -566,13 +567,15 @@ def execute_run(run_id: str) -> int:
                 stdout=stdout,
                 stderr=stderr,
                 env=PILOT.candidate_environment(os.environ),
-                timeout=1800,
+                timeout=CANDIDATE_TIMEOUT_SECONDS,
                 check=False,
             )
             rc = completed.returncode
         except subprocess.TimeoutExpired:
             rc = 124
-            stderr.write("candidate timed out after 1800 seconds\n")
+            stderr.write(
+                f"candidate timed out after {CANDIDATE_TIMEOUT_SECONDS} seconds\n"
+            )
         except OSError as error:
             rc = 127
             invocation_error = f"candidate process could not start: {error}"
@@ -653,6 +656,9 @@ def execute_run(run_id: str) -> int:
     telemetry = blank_telemetry()
     if report is not None:
         telemetry.update({key: report[key] for key in telemetry})
+    else:
+        telemetry["fanout_elected"] = None
+        telemetry["worker_count"] = None
     replacement_disposition = (
         "replacement-consumed"
         if attempt["is_replacement"]
@@ -869,6 +875,9 @@ def recover_interrupted(attempt_id: str) -> int:
     telemetry = blank_telemetry()
     if report is not None:
         telemetry.update({key: report[key] for key in telemetry})
+    else:
+        telemetry["fanout_elected"] = None
+        telemetry["worker_count"] = None
     result = {
         "schema_version": "task-parallelism-phase-0b-revision-candidate-result.v1",
         "campaign_id": "vector-siege-phase-0b-revision",
@@ -888,6 +897,7 @@ def recover_interrupted(attempt_id: str) -> int:
         "quality_score": 0,
         "wall_clock_seconds": 0,
         "wall_clock_comparable": False,
+        "wall_clock_scope": "runner-integrated",
         "tokens": usage,
         **telemetry,
         "predicted_path_drift_count": drift_count,
@@ -1075,10 +1085,10 @@ def build_summary(
     state: dict,
     results: list[dict],
     evaluations: list[dict],
-    processes: list[dict] | None = None,
+    processes: list[dict],
 ) -> dict:
     evaluation_by_run = {item["run_id"]: item for item in evaluations}
-    process_by_run = {item["run_id"]: item for item in processes or []}
+    process_by_run = {item["run_id"]: item for item in processes}
     arms = []
     for result in results:
         evaluation = evaluation_by_run[result["run_id"]]
@@ -1093,7 +1103,9 @@ def build_summary(
             if timing_scope == "candidate-only":
                 integrated_seconds += evaluator_seconds
         candidate_report_available = result["candidate_report_path"] is not None
-        process = process_by_run.get(result["run_id"], {})
+        if result["run_id"] not in process_by_run:
+            raise ValueError(f"missing process metadata for {result['run_id']}")
+        process = process_by_run[result["run_id"]]
         arms.append(
             {
                 "run_id": result["run_id"],
@@ -1104,7 +1116,7 @@ def build_summary(
                     result["fanout_elected"] if candidate_report_available else None
                 ),
                 "worker_count": result["worker_count"] if candidate_report_available else None,
-                "observed_spawn_agent_calls": process.get("observed_spawn_agent_calls", 0),
+                "observed_spawn_agent_calls": process["observed_spawn_agent_calls"],
                 "coordination_seconds": result["coordination_seconds"],
                 "skill_loads": result["skill_loads"],
                 "tokens": result["tokens"],
@@ -1165,6 +1177,17 @@ def build_summary(
     }
 
 
+def terminal_attempt_for_result(state: dict, result: dict) -> dict:
+    matching_attempts = [
+        item
+        for item in state["attempts"]
+        if item["attempt_id"] == result["attempt_id"]
+    ]
+    if len(matching_attempts) != 1:
+        raise ValueError(f"missing terminal attempt state for {result['attempt_id']}")
+    return matching_attempts[0]
+
+
 def summarize(output: Path) -> int:
     state = load_state()
     completed_count = len(state["completed_runs"])
@@ -1180,7 +1203,7 @@ def summarize(output: Path) -> int:
         validate_document(evaluation, EVALUATOR_SCHEMA)
         results.append(result)
         evaluations.append(evaluation)
-        attempt = next(item for item in state["attempts"] if item["run_id"] == run_id)
+        attempt = terminal_attempt_for_result(state, result)
         processes.append(load_json(PROTOCOL_ROOT / attempt["process_metadata_path"]))
     summary = build_summary(state, results, evaluations, processes)
     validate_document(summary, SUMMARY_SCHEMA)

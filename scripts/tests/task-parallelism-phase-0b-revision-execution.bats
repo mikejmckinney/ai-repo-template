@@ -184,6 +184,15 @@ assert module.plan_attempt({"replacement_processes_started": 0, "attempts": []},
     "is_replacement": False,
 }
 assert module.candidate_failure_reason(124, "candidate") == "candidate timed out after 1800 seconds"
+replacement_state = {
+    "attempts": [
+        {"attempt_id": "vs-p0b-next-a-attempt-1", "process_metadata_path": "first.json"},
+        {"attempt_id": "vs-p0b-next-a-attempt-2", "process_metadata_path": "second.json"},
+    ]
+}
+assert module.terminal_attempt_for_result(
+    replacement_state, {"attempt_id": "vs-p0b-next-a-attempt-2"}
+)["process_metadata_path"] == "second.json"
 
 candidate_failed = {
     "replacement_processes_started": 0,
@@ -325,7 +334,12 @@ evaluations = [
     {"run_id": "vs-p0b-next-b", "wall_clock_seconds": 30, "objective_score": 100},
     {"run_id": "vs-p0b-next-c", "wall_clock_seconds": 30, "objective_score": 95},
 ]
-summary = module.build_summary(state, results, evaluations)
+processes = [
+    {"run_id": "vs-p0b-next-a", "observed_spawn_agent_calls": 0},
+    {"run_id": "vs-p0b-next-b", "observed_spawn_agent_calls": 3},
+    {"run_id": "vs-p0b-next-c", "observed_spawn_agent_calls": 2},
+]
+summary = module.build_summary(state, results, evaluations, processes)
 assert summary["assigned_runs"] == 3
 assert summary["pricing"]["model"] == "gpt-5.6-luna"
 assert summary["pricing"]["per_request_context_band_available"] is False
@@ -419,7 +433,11 @@ evaluations = [
     {"run_id": "vs-p0b-next-a", "evaluated": True, "wall_clock_seconds": 30, "objective_score": 90},
     {"run_id": "vs-p0b-next-b", "evaluated": True, "wall_clock_seconds": 40, "objective_score": 70},
 ]
-summary = module.build_summary(state, results, evaluations)
+processes = [
+    {"run_id": "vs-p0b-next-a", "observed_spawn_agent_calls": 0},
+    {"run_id": "vs-p0b-next-b", "observed_spawn_agent_calls": 7},
+]
+summary = module.build_summary(state, results, evaluations, processes)
 assert summary["official_pilot_scores_modified"] is False
 assert summary["directional_only"] is True
 assert summary["confirmatory_evidence"] is False
@@ -441,12 +459,10 @@ assert all(item["candidate_wall_clock_comparable"] for item in summary["arms"])
 
 results[1]["wall_clock_scope"] = "runner-integrated"
 results[1]["candidate_report_path"] = None
-summary = module.build_summary(
-    state,
-    results,
-    evaluations,
-    [{"run_id": "vs-p0b-next-b", "observed_spawn_agent_calls": 2}],
-)
+summary = module.build_summary(state, results, evaluations, [
+    {"run_id": "vs-p0b-next-a", "observed_spawn_agent_calls": 0},
+    {"run_id": "vs-p0b-next-b", "observed_spawn_agent_calls": 2},
+])
 assert summary["arms"][1]["candidate_wall_clock_seconds"] is None
 assert summary["arms"][1]["integrated_wall_clock_seconds"] == 120
 assert summary["arms"][1]["timing_scope"] == "runner-integrated"
@@ -458,7 +474,7 @@ assert summary["roi_comparisons"][0]["parallel_efficiency"] is None
 results[1]["wall_clock_scope"] = "candidate-only"
 results[1]["candidate_report_path"] = "b-report.json"
 results[1]["wall_clock_comparable"] = False
-summary = module.build_summary(state, results, evaluations)
+summary = module.build_summary(state, results, evaluations, processes)
 assert summary["candidate_wall_clock_comparable"] is False
 assert summary["candidate_wall_clock_seconds"] is None
 assert summary["arms"][1]["candidate_wall_clock_seconds"] is None
@@ -608,6 +624,8 @@ from pathlib import Path
 spec = importlib.util.spec_from_file_location("phase0b_revision", sys.argv[1])
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
+real_result_schema = module.RESULT_SCHEMA
+real_validate = module.validate_document
 root = Path(sys.argv[2])
 module.REPO_ROOT = root
 module.PROTOCOL_ROOT = root
@@ -664,6 +682,7 @@ module.publish_candidate = lambda *args: (_ for _ in ()).throw(subprocess.Called
 module.record_instruction_integrity(attempt_id, "2" * 64, "2" * 64, True)
 assert module.recover_interrupted(attempt_id) == 0
 result = json.loads((module.RESULT_ROOT / f"attempts/{attempt_id}.json").read_text())
+real_validate(result, real_result_schema)
 process = json.loads((module.RESULT_ROOT / f"process/{attempt_id}.json").read_text())
 persisted = json.loads(module.STATE_PATH.read_text())
 assert result["terminal_status"] == "harness-failed"
@@ -672,6 +691,9 @@ assert "publication failed" in result["failure_reason"]
 assert result["replacement_eligible"] is True
 assert result["wall_clock_seconds"] == 0
 assert result["wall_clock_comparable"] is False
+assert result["wall_clock_scope"] == "runner-integrated"
+assert result["fanout_elected"] is None
+assert result["worker_count"] is None
 assert process["elapsed_since_start_seconds"] > 0
 assert process["published"] is False
 assert process["instruction_sha256"] == "2" * 64
