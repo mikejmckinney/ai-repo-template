@@ -600,10 +600,17 @@ def main() -> int:
     action.add_argument("--run-id")
     action.add_argument("--summarize", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--offline", action="store_true")
     args = parser.parse_args()
     try:
         if args.validate_state:
             state, _ = load_state()
+            if args.offline:
+                print(
+                    f"offline execution state valid: {state['status']}; "
+                    f"candidate processes started: {state['candidate_processes_started']}"
+                )
+                return 0
             if state["status"] == "base-pending":
                 print(
                     "authorized; candidate base pending; "

@@ -81,7 +81,8 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "tracked Phase 0B preparation is invalid"
   fi
 
-  if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/run-phase-0b.py" --validate-state >/dev/null; then
+  if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/run-phase-0b.py" \
+    --validate-state --offline >/dev/null; then
     pass "tracked Phase 0B execution state validates"
   else
     fail "tracked Phase 0B execution state is invalid"

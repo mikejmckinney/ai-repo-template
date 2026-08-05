@@ -223,6 +223,12 @@ PY
 	[ "${status}" -eq 0 ]
 }
 
+@test "offline execution validation supports derived repository copies" {
+	run python3 "${RUNNER}" --validate-state --offline
+	[ "${status}" -eq 0 ]
+	[[ "${output}" == *'offline execution state valid:'* ]]
+}
+
 @test "pilot summary derives Gate 0 inputs from terminal result documents" {
 	results="${BATS_TEST_TMPDIR}/results"
 	summary="${BATS_TEST_TMPDIR}/summary.json"
