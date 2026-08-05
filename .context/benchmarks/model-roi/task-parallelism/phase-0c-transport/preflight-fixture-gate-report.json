@@ -1,0 +1,19 @@
+{
+  "schema_version": "task-parallelism-phase-0c-preflight-fixture-gate-report.v1",
+  "graph_id": "vector-siege-phase-0c-preflight-fixture-v1",
+  "graph_sha256": "5a9638a257ff4383c5dff9b371aacce899700939fe0e312c346ca6e35da9000a",
+  "decision": "accepted",
+  "predicate_results": [
+    {"predicate": "independently-testable-outcomes", "passed": true},
+    {"predicate": "dependency-closure", "passed": true},
+    {"predicate": "parent-owned-frozen-contracts", "passed": true},
+    {"predicate": "write-sets-or-sequencing", "passed": true},
+    {"predicate": "child-and-integration-validation", "passed": true},
+    {"predicate": "substantive-work", "passed": true},
+    {"predicate": "concurrency-cap", "passed": true}
+  ],
+  "failed_predicates": [],
+  "execution_waves": [["combat-engine"], ["player-interface"]],
+  "candidate_processes_started": 0,
+  "gate_sha256": "068476917a42188e6c676a3b4f2b096213569e6009edaf5cbe8d948cdb05629a"
+}

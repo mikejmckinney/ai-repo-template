@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-parallelism-phase-0c-ledger.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "events"],
+  "properties": {
+    "schema_version": {"const": "task-parallelism-phase-0c-ledger.v1"},
+    "events": {"type": "array", "maxItems": 64, "items": {"$ref": "event.schema.json"}}
+  }
+}

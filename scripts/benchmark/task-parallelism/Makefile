@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-.PHONY: help assets assets-check preflight phase-0b-validate phase-0b-plan phase-0b-execution-validate phase-0b-summary phase-0b-revision-validate phase-0b-revision-plan phase-0b-revision-execution-validate phase-0b-revision-summary phase-0b-diagnostic-validate
+.PHONY: help assets assets-check preflight phase-0b-validate phase-0b-plan phase-0b-execution-validate phase-0b-summary phase-0b-revision-validate phase-0b-revision-plan phase-0b-revision-execution-validate phase-0b-revision-summary phase-0b-diagnostic-validate phase-0c-validate phase-0c-preflight
 
 help:
 	@printf '%s\n' 'assets       regenerate tracked Phase 0A placeholder assets' \
@@ -15,7 +15,9 @@ help:
 	  'phase-0b-revision-plan render the blocked two-assignment revision plan' \
 	  'phase-0b-revision-execution-validate validate approved revision execution state' \
 	  'phase-0b-revision-summary derive the directional paired revision summary' \
-	  'phase-0b-diagnostic-validate validate retained-branch diagnostics'
+	  'phase-0b-diagnostic-validate validate retained-branch diagnostics' \
+	  'phase-0c-validate validate fixture contracts without live dependencies' \
+	  'phase-0c-preflight exercise canonical payload echo over loopback A2A'
 
 assets:
 	@python3 "$(HERE)generate-placeholder-assets.py"
@@ -59,3 +61,12 @@ phase-0b-revision-summary:
 phase-0b-diagnostic-validate:
 	@python3 "$(HERE)diagnose-phase-0b.py" --validate \
 	  "$(HERE)../../../.context/benchmarks/model-roi/task-parallelism/results/phase-0b-diagnostic-summary.json"
+
+phase-0c-validate:
+	@python3 "$(HERE)phase-0c-preflight.py" --validate-only \
+	  --manifest "$(HERE)../../../.context/benchmarks/model-roi/task-parallelism/phase-0c-transport/manifest.json"
+
+phase-0c-preflight:
+	@python3 "$(HERE)phase-0c-preflight.py" \
+	  --manifest "$(HERE)../../../.context/benchmarks/model-roi/task-parallelism/phase-0c-transport/manifest.json" \
+	  --output "$(HERE)../../../.artifacts/task-parallelism/phase-0c-preflight.json"

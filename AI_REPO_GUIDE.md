@@ -47,6 +47,8 @@ make -C scripts/benchmark/task-parallelism phase-0b-revision-plan
 make -C scripts/benchmark/task-parallelism phase-0b-revision-execution-validate
 make -C scripts/benchmark/task-parallelism phase-0b-revision-summary
 make -C scripts/benchmark/task-parallelism phase-0b-diagnostic-validate
+make -C scripts/benchmark/task-parallelism phase-0c-validate
+make -C scripts/benchmark/task-parallelism phase-0c-preflight
 git diff --check
 ```
 
@@ -63,6 +65,16 @@ performance failure to investigate, not a reason to normalize a longer gate.
 `VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` applies only to `--full`. The Codespace
 toolchain supplies required GNU `timeout` and `setsid`. Direct component commands
 remain available for targeted diagnosis, not as a second completion procedure.
+
+Phase 0C `phase-0c-validate` is structural and does not import A2A, HTTPX, or
+Uvicorn. `phase-0c-preflight` is the explicit live loopback check and requires the
+Python 3.12 hashed lock compiled from `requirements.in`. It proves A2A `1.0`
+discovery, header validation, and canonical payload echo only; task lifecycle,
+persisted keyed state, and execution/result schemas are deferred to a separately
+approved paid-execution PR. `phase-0c-github-preflight.py --apply` is a separate
+explicitly approved external-state journey: it creates disposable issue/comment,
+branch, commit, and draft-PR state, compares its canonical ledger to a fresh A2A
+preflight, closes the issue/PR, and deletes the branch.
 
 The canonical tool manifest pins Bats 1.12.0 with a 1.7.0 minimum contract. Its
 pinned `uv` archive installs both the `uv` and `uvx` executables. Run
@@ -166,8 +178,8 @@ provider cascade instead of consuming the 90- or 120-minute workflow budget.
 | `scripts/workflows/lib/` | Shared provider, evidence, priority, and lifecycle helpers |
 | `scripts/checks/` | Numbered modules sourced by `test.sh` |
 | `scripts/tests/` | Focused Bats tests |
-| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 Phase 0A preflight, completed Phase 0B no-go evidence, retained diagnostics, and approved directional A/B/C revision execution |
-| `scripts/benchmark/task-parallelism/` | Deterministic asset generator, isolated Phase 0A preflight, Phase 0B planners, and revision execution runner |
+| `.context/benchmarks/model-roi/task-parallelism/` | Issue #545 Phase 0A preflight, completed Phase 0B no-go and directional A/B/C evidence, and issue #581 isolated Phase 0C transport contracts |
+| `scripts/benchmark/task-parallelism/` | Phase 0A/0B planning and execution tooling plus the Phase 0C fixture graph gate and no-spend A2A canonical-payload preflight |
 | `.devcontainer/devcontainer.json` | Canonical repository-owned Codespaces lifecycle |
 | `.config/codespace-tools.json` | Canonical Codespaces tool versions, release integrity, and profiles |
 | `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |

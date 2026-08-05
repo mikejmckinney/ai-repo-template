@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-parallelism-phase-0c-preflight-fixture-graph.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "graph_id", "concurrency_cap", "shared_contracts", "integration_validation", "nodes"],
+  "properties": {
+    "schema_version": {"const": "task-parallelism-phase-0c-preflight-fixture-graph.v1"},
+    "graph_id": {"type": "string", "minLength": 1, "maxLength": 64},
+    "concurrency_cap": {"const": 2},
+    "shared_contracts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "object", "additionalProperties": false, "required": ["id", "owner", "frozen"], "properties": {"id": {"type": "string", "minLength": 1}, "owner": {"const": "parent"}, "frozen": {"const": true}}}},
+    "integration_validation": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "nodes": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"$ref": "#/$defs/node"}}
+  },
+  "$defs": {
+    "strings": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "outcome", "independently_testable", "depends_on", "dependency_closure", "required_contracts", "predicted_writes", "child_validation", "substantive_work"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 64},
+        "outcome": {"type": "string", "minLength": 1},
+        "independently_testable": {"const": true},
+        "depends_on": {"$ref": "#/$defs/strings"},
+        "dependency_closure": {"$ref": "#/$defs/strings"},
+        "required_contracts": {"$ref": "#/$defs/strings", "minItems": 1},
+        "predicted_writes": {"$ref": "#/$defs/strings", "minItems": 1},
+        "child_validation": {"$ref": "#/$defs/strings", "minItems": 1},
+        "substantive_work": {"type": "object", "additionalProperties": false, "required": ["estimated_minutes", "justification"], "properties": {"estimated_minutes": {"type": "integer", "minimum": 15}, "justification": {"type": "string", "minLength": 1}}}
+      }
+    }
+  }
+}

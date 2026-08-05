@@ -2,7 +2,7 @@
 # scripts/checks/169-task-parallelism-preflight.sh — task-parallelism preparation checks.
 
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
-  echo "Checking task-parallelism Phase 0A and Phase 0B preparation apparatus..."
+  echo "Checking task-parallelism Phase 0A, Phase 0B, and Phase 0C apparatus..."
 
   TASK_PARALLELISM_PROTOCOL=".context/benchmarks/model-roi/task-parallelism"
   TASK_PARALLELISM_RUNNER="scripts/benchmark/task-parallelism"
@@ -51,6 +51,36 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     "scripts/tests/task-parallelism-phase-0b-revision-execution.bats"
   )
 
+  phase_0c_manifest="${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/manifest.json"
+  if [[ -f "${phase_0c_manifest}" ]]; then
+    required+=(
+      "${phase_0c_manifest}"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/manifest.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-graph.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-graph.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-gate-report.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-gate-report.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/event.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/ledger.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-treatments.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-treatments.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/github-preflight.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/canonical-event-fixture.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/fixtures/canonical-payload-events.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/prompts/preflight-fixture-shared.md"
+      "${TASK_PARALLELISM_RUNNER}/requirements.in"
+      "${TASK_PARALLELISM_RUNNER}/phase_0c_gate.py"
+      "${TASK_PARALLELISM_RUNNER}/phase_0c_freeze.py"
+      "${TASK_PARALLELISM_RUNNER}/phase_0c_transport.py"
+      "${TASK_PARALLELISM_RUNNER}/phase_0c_a2a_server.py"
+      "${TASK_PARALLELISM_RUNNER}/phase-0c-preflight.py"
+      "${TASK_PARALLELISM_RUNNER}/phase-0c-github-preflight.py"
+      "scripts/tests/task-parallelism-phase-0c-gate.bats"
+      "scripts/tests/task-parallelism-phase-0c-transport.bats"
+    )
+  fi
+
   for path in "${required[@]}"; do
     if [[ -f "${path}" ]]; then
       pass "${path} exists"
@@ -88,6 +118,30 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       fail "invalid JSON: ${path}"
     fi
   done
+
+  if [[ -f "${phase_0c_manifest}" ]]; then
+    for path in \
+      "${phase_0c_manifest}" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/manifest.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-graph.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-graph.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-gate-report.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-gate-report.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/event.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/ledger.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-treatments.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-treatments.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/github-preflight.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/canonical-event-fixture.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/fixtures/canonical-payload-events.json"; do
+      if jq -e . "${path}" >/dev/null 2>&1; then
+        pass "valid JSON: ${path}"
+      else
+        fail "invalid JSON: ${path}"
+      fi
+    done
+  fi
 
   if bash -n "${TASK_PARALLELISM_RUNNER}/run-preflight.sh"; then
     pass "bash -n ${TASK_PARALLELISM_RUNNER}/run-preflight.sh"
@@ -133,6 +187,16 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "approved Phase 0B revision execution state validates offline"
   else
     fail "approved Phase 0B revision execution state is invalid"
+  fi
+
+  if [[ -f "${phase_0c_manifest}" ]]; then
+    if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/phase-0c-preflight.py" \
+      --validate-only \
+      --manifest "${phase_0c_manifest}" >/dev/null; then
+      pass "frozen Phase 0C transport apparatus validates and remains blocked"
+    else
+      fail "frozen Phase 0C transport apparatus is invalid"
+    fi
   fi
 
   echo ""
