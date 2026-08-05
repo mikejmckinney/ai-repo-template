@@ -209,6 +209,15 @@ PY
 	[ -f "${PROTOCOL}/candidate-base.gitignore" ]
 	[ -f "${PROTOCOL}/tasks/vector-siege-stage-1-candidate.md" ]
 	[ -f "${RUNNER}" ]
+	base_sha="$(jq -r '.candidate_base.sha' "${STATE}")"
+	base_branch="$(jq -r '.candidate_base.branch' "${STATE}")"
+	if ! git -C "${REPO_ROOT}" cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+		skip "frozen candidate base is unavailable in this repository copy"
+	fi
+	remote_sha="$(git -C "${REPO_ROOT}" ls-remote --heads origin "${base_branch}" 2>/dev/null | cut -f1)"
+	if [ "${remote_sha}" != "${base_sha}" ]; then
+		skip "origin does not expose the frozen candidate base"
+	fi
 
 	run python3 "${RUNNER}" --validate-state
 	[ "${status}" -eq 0 ]
@@ -226,7 +235,16 @@ PY
 @test "offline execution validation supports derived repository copies" {
 	run python3 "${RUNNER}" --validate-state --offline
 	[ "${status}" -eq 0 ]
-	[[ "${output}" == *'offline execution state valid:'* ]]
+	[[ "${output}" == *'offline structural execution state valid:'* ]]
+}
+
+@test "offline flag is rejected outside structural state validation" {
+	results="${BATS_TEST_TMPDIR}/offline-results"
+	mkdir -p "${results}"
+	run python3 "${RUNNER}" --summarize "${results}" \
+		--output "${BATS_TEST_TMPDIR}/offline-summary.json" --offline
+	[ "${status}" -eq 2 ]
+	[[ "${output}" == *'--offline is valid only with --validate-state'* ]]
 }
 
 @test "pilot summary derives Gate 0 inputs from terminal result documents" {

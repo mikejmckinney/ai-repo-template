@@ -195,7 +195,11 @@ def verify_remote_base(state: dict) -> None:
     base = state["candidate_base"]
     sha = base["sha"]
     local = subprocess.run(
-        ["git", "cat-file", "-e", f"{sha}^{{commit}}"], cwd=REPO_ROOT, check=False
+        ["git", "cat-file", "-e", f"{sha}^{{commit}}"],
+        cwd=REPO_ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
     )
     if local.returncode != 0:
         raise ValueError("candidate base commit is unavailable locally")
@@ -233,6 +237,26 @@ def verify_remote_base(state: dict) -> None:
     ).stdout.strip()
     if task_blob != base["task_blob_sha"]:
         raise ValueError("candidate base task does not match the frozen task blob")
+
+
+def verify_local_base_if_available(state: dict) -> bool:
+    base = state["candidate_base"]
+    sha = base["sha"]
+    local = subprocess.run(
+        ["git", "cat-file", "-e", f"{sha}^{{commit}}"], cwd=REPO_ROOT, check=False
+    )
+    if local.returncode != 0:
+        return False
+    task_blob = subprocess.run(
+        ["git", "rev-parse", f"{sha}:TASK.md"],
+        cwd=REPO_ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        check=True,
+    ).stdout.strip()
+    if task_blob != base["task_blob_sha"]:
+        raise ValueError("local candidate base task does not match the frozen task blob")
+    return True
 
 
 def candidate_command(preparation: dict, worktree: Path, artifact_dir: Path) -> list[str]:
@@ -602,13 +626,17 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--offline", action="store_true")
     args = parser.parse_args()
+    if args.offline and not args.validate_state:
+        parser.error("--offline is valid only with --validate-state")
     try:
         if args.validate_state:
             state, _ = load_state()
             if args.offline:
+                local_base = verify_local_base_if_available(state)
+                base_note = "local frozen base verified" if local_base else "frozen base unavailable locally"
                 print(
-                    f"offline execution state valid: {state['status']}; "
-                    f"candidate processes started: {state['candidate_processes_started']}"
+                    f"offline structural execution state valid: {state['status']}; "
+                    f"candidate processes started: {state['candidate_processes_started']}; {base_note}"
                 )
                 return 0
             if state["status"] == "base-pending":

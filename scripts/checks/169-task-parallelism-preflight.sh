@@ -83,7 +83,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
 
   if PYTHONDONTWRITEBYTECODE=1 python3 "${TASK_PARALLELISM_RUNNER}/run-phase-0b.py" \
     --validate-state --offline >/dev/null; then
-    pass "tracked Phase 0B execution state validates"
+    pass "tracked Phase 0B structural execution state validates offline"
   else
     fail "tracked Phase 0B execution state is invalid"
   fi

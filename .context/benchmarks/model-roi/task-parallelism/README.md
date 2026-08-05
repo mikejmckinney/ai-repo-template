@@ -81,6 +81,12 @@ blocked, immutable freeze. Validate current progress with:
 make -C scripts/benchmark/task-parallelism phase-0b-execution-validate
 ```
 
+This operator check requires the frozen commit locally and verifies its branch
+against `origin`. Repository-copy checks use the runner's `--validate-state
+--offline` structural mode instead; that mode reports whether the frozen commit
+was also available for local task-blob verification and never claims remote
+identity.
+
 Candidate processes start only through an explicit run identifier:
 
 ```bash
