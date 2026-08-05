@@ -319,6 +319,27 @@ jq '{status, candidate_processes_started, preflight_fixture_graph_decision,
   .artifacts/task-parallelism/phase-0c-preflight.json
 ```
 
+After explicit approval to create disposable repository state, exercise the
+real GitHub comment adapter against the same A2A ledger:
+
+```bash
+PATH="$PWD/.artifacts/task-parallelism/phase-0c-venv/bin:$PATH" \
+  python scripts/benchmark/task-parallelism/phase-0c-github-preflight.py \
+  --apply \
+  --manifest .context/benchmarks/model-roi/task-parallelism/phase-0c-transport/manifest.json \
+  --repo OWNER/REPOSITORY \
+  --base-ref BRANCH \
+  --base-sha FULL_COMMIT_SHA \
+  --output .artifacts/task-parallelism/phase-0c-github-preflight.json
+```
+
+This opt-in journey creates one disposable issue, eight canonical event
+comments, one temporary branch and commit, and one draft PR. It reads the
+comments back through the GitHub API, compares the normalized ledger with a
+fresh A2A preflight, closes the issue and PR, and deletes the branch. GitHub does
+not support deleting issue or PR records, so the closed records remain as
+auditable evidence. Cleanup attempts every created resource even after failure.
+
 The preflight fixture gate deterministically evaluates seven predicates: independently testable
 outcomes; complete transitive dependencies; parent-owned frozen contracts;
 normalized repo-relative POSIX write paths with prefix overlap detection or
@@ -328,8 +349,9 @@ rejects absolute, traversal, glob, empty, and dot paths. Its output has no
 timestamps. Rejection returns before a child callback, and accepted overlapping
 writes are placed in separate dependency waves.
 
-The local fixture reader loads bounded canonical payloads without transport or
-GitHub behavior. The live side uses A2A protocol `1.0` from specification release
+The default local fixture reader loads bounded canonical payloads without
+transport or GitHub behavior. The opt-in GitHub journey uses real issue/comment,
+branch, commit, and draft-PR APIs. The A2A side uses protocol `1.0` from specification release
 `1.0.0` through `a2a-sdk==1.1.2`, a separate loopback-only HTTP process,
 JSON-RPC, standard `/.well-known/agent-card.json` discovery, and structured
 non-streaming direct `Message` responses. Server middleware rejects POSTs unless
@@ -346,8 +368,8 @@ timeout, and evaluator bytes to match and permits only `transport.backend` and
 graph, gate, or treatment freeze.
 
 **Paid approval stop:** passing either target authorizes no model process. Before
-any paid run, a separate execution PR must add real GitHub and A2A adapters, task
-lifecycle, child/process/result and matched-summary schemas, and persisted keyed
+any paid run, a separate execution PR must add execution-scoped GitHub and A2A
+task lifecycle, child/process/result and matched-summary schemas, and persisted keyed
 state with issue #581's immutable-key/idempotent-retry semantics. Its approved
 planner output and deterministic gate report must be separate execution records,
 frozen before arm order is selected; this fixture and its digests cannot satisfy

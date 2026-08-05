@@ -70,8 +70,11 @@ Phase 0C `phase-0c-validate` is structural and does not import A2A, HTTPX, or
 Uvicorn. `phase-0c-preflight` is the explicit live loopback check and requires the
 Python 3.12 hashed lock compiled from `requirements.in`. It proves A2A `1.0`
 discovery, header validation, and canonical payload echo only; task lifecycle,
-real GitHub/A2A adapters, persisted keyed state, and execution/result schemas are
-deferred to a separately approved paid-execution PR.
+persisted keyed state, and execution/result schemas are deferred to a separately
+approved paid-execution PR. `phase-0c-github-preflight.py --apply` is a separate
+explicitly approved external-state journey: it creates disposable issue/comment,
+branch, commit, and draft-PR state, compares its canonical ledger to a fresh A2A
+preflight, closes the issue/PR, and deletes the branch.
 
 The canonical tool manifest pins Bats 1.12.0 with a 1.7.0 minimum contract. Its
 pinned `uv` archive installs both the `uv` and `uvx` executables. Run

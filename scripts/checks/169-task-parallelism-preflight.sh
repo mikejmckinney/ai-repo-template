@@ -65,6 +65,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-treatments.json"
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-treatments.schema.json"
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight.schema.json"
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/github-preflight.schema.json"
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/canonical-event-fixture.schema.json"
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/fixtures/canonical-payload-events.json"
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/prompts/preflight-fixture-shared.md"
@@ -74,6 +75,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       "${TASK_PARALLELISM_RUNNER}/phase_0c_transport.py"
       "${TASK_PARALLELISM_RUNNER}/phase_0c_a2a_server.py"
       "${TASK_PARALLELISM_RUNNER}/phase-0c-preflight.py"
+      "${TASK_PARALLELISM_RUNNER}/phase-0c-github-preflight.py"
       "scripts/tests/task-parallelism-phase-0c-gate.bats"
       "scripts/tests/task-parallelism-phase-0c-transport.bats"
     )
@@ -130,6 +132,7 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-treatments.json" \
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight-fixture-treatments.schema.json" \
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/preflight.schema.json" \
+      "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/github-preflight.schema.json" \
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/canonical-event-fixture.schema.json" \
       "${TASK_PARALLELISM_PROTOCOL}/phase-0c-transport/fixtures/canonical-payload-events.json"; do
       if jq -e . "${path}" >/dev/null 2>&1; then

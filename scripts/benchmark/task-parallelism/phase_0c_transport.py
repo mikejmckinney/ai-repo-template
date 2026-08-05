@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Canonical event normalization and fixture-backed GitHub transport."""
+"""Canonical event normalization and GitHub comment transport."""
 
 from __future__ import annotations
 
@@ -20,6 +20,8 @@ EVENT_KINDS = (
 )
 MAX_EVENTS = 64
 MAX_PAYLOAD_BYTES = 16_384
+GITHUB_EVENT_PREFIX = "<!-- phase-0c-event:v1 -->\n```json\n"
+GITHUB_EVENT_SUFFIX = "\n```"
 
 
 class CanonicalEventError(ValueError):
@@ -69,3 +71,33 @@ class CanonicalFixtureAdapter:
     def receive(self) -> tuple[list[dict[str, Any]], int]:
         fixture = json.loads(self.fixture_path.read_text(encoding="utf-8"))
         return normalize_ledger(fixture["events"])
+
+
+def github_event_body(event: dict[str, Any]) -> str:
+    payload = canonical_bytes(event).decode("utf-8").rstrip("\n")
+    return f"{GITHUB_EVENT_PREFIX}{payload}{GITHUB_EVENT_SUFFIX}"
+
+
+class GitHubCommentAdapter:
+    """Normalize marked canonical events from GitHub issue comments."""
+
+    def __init__(self, comments: list[dict[str, Any]]):
+        self.comments = comments
+
+    def receive(self) -> tuple[list[dict[str, Any]], int]:
+        events = []
+        for comment in self.comments:
+            body = comment.get("body")
+            if not isinstance(body, str) or not body.startswith(GITHUB_EVENT_PREFIX):
+                continue
+            if not body.endswith(GITHUB_EVENT_SUFFIX):
+                raise CanonicalEventError("marked GitHub event has invalid framing")
+            encoded = body[len(GITHUB_EVENT_PREFIX) : -len(GITHUB_EVENT_SUFFIX)]
+            try:
+                event = json.loads(encoded)
+            except json.JSONDecodeError as error:
+                raise CanonicalEventError("marked GitHub event is invalid JSON") from error
+            if not isinstance(event, dict):
+                raise CanonicalEventError("marked GitHub event must be an object")
+            events.append(event)
+        return normalize_ledger(events)

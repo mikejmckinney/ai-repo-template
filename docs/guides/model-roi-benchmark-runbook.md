@@ -309,6 +309,26 @@ PATH="$PWD/.artifacts/task-parallelism/phase-0c-venv/bin:$PATH" \
   scripts/tests/task-parallelism-phase-0c-transport.bats
 ```
 
+With explicit approval for disposable GitHub mutations, run the real adapter
+journey from the exact implementation commit:
+
+```bash
+PATH="$PWD/.artifacts/task-parallelism/phase-0c-venv/bin:$PATH" \
+  python scripts/benchmark/task-parallelism/phase-0c-github-preflight.py \
+  --apply \
+  --manifest .context/benchmarks/model-roi/task-parallelism/phase-0c-transport/manifest.json \
+  --repo OWNER/REPOSITORY \
+  --base-ref BRANCH \
+  --base-sha FULL_COMMIT_SHA \
+  --output .artifacts/task-parallelism/phase-0c-github-preflight.json
+```
+
+The command creates a disposable issue with eight event comments, a temporary
+branch and marker commit, and a draft PR. It reads the comments through the real
+GitHub API, compares their normalized ledger with a fresh A2A preflight, closes
+the issue and PR, and deletes the branch. Closed issue and PR records remain as
+the durable evidence because GitHub does not support deleting them.
+
 Inspect `.artifacts/task-parallelism/phase-0c-preflight.json`. A pass proves the
 preflight fixture graph's seven deterministic predicates,
 rejection-before-child boundary, dependency waves, official A2A protocol `1.0`
@@ -320,7 +340,7 @@ does not establish production-shaped GitHub/A2A transport equivalence, task
 lifecycle, auth/security, streaming, deployment, or broad conformance.
 
 Stop here. No paid planner, parent, child, or integration process is authorized.
-The paid execution PR must first add real GitHub/A2A adapters, A2A task lifecycle,
+The paid execution PR must first add execution-scoped GitHub/A2A task lifecycle,
 child/process/result and matched-summary schemas, and persisted keyed state with
 immutable records, idempotent identical retries, changed-retry rejection,
 unrelated-key preservation, and duplicate rejection. It must persist its approved

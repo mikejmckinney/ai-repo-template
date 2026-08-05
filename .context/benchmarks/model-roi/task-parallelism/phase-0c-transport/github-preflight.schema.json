@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "task-parallelism-phase-0c-github-preflight.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "repository", "base_ref", "base_sha", "candidate_processes_started", "paid_execution", "github", "a2a_preflight_sha256", "canonical_ledgers_equivalent", "duplicate_events_suppressed", "canonical_ledger"],
+  "properties": {
+    "schema_version": {"const": "task-parallelism-phase-0c-github-preflight.v1"},
+    "status": {"const": "pass"},
+    "repository": {"type": "string", "pattern": "^[^/]+/[^/]+$"},
+    "base_ref": {"type": "string", "minLength": 1},
+    "base_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "candidate_processes_started": {"const": 0},
+    "paid_execution": {"const": "blocked-pending-explicit-approval"},
+    "github": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issue_number", "issue_url", "comments_written", "pull_number", "pull_url", "branch", "fixture_commit_sha", "issue_closed", "pull_closed", "branch_deleted"],
+      "properties": {
+        "issue_number": {"type": "integer", "minimum": 1},
+        "issue_url": {"type": "string", "format": "uri"},
+        "comments_written": {"const": 8},
+        "pull_number": {"type": "integer", "minimum": 1},
+        "pull_url": {"type": "string", "format": "uri"},
+        "branch": {"type": "string", "pattern": "^phase-0c-preflight/[0-9a-f]{12}$"},
+        "fixture_commit_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "issue_closed": {"const": true},
+        "pull_closed": {"const": true},
+        "branch_deleted": {"const": true}
+      }
+    },
+    "a2a_preflight_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "canonical_ledgers_equivalent": {"const": true},
+    "duplicate_events_suppressed": {"const": 1},
+    "canonical_ledger": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"type": "object"}}
+  }
+}

@@ -69,6 +69,63 @@ PY
   [[ "${output}" == *'phase-0c causal freeze contract passed'* ]]
 }
 
+@test "GitHub comments round trip canonical events and reject changed duplicates" {
+  run python3 - "${RUNNER}" <<'PY'
+import copy
+import sys
+
+sys.path.insert(0, sys.argv[1])
+from phase_0c_transport import (
+    CanonicalEventError,
+    GitHubCommentAdapter,
+    github_event_body,
+)
+
+event = {
+    "event_id": "p0c-event-001",
+    "sequence": 1,
+    "task_id": "combat-engine",
+    "kind": "task-assigned",
+    "payload": {"assignee": "child-1"},
+}
+comments = [
+    {"body": "ordinary discussion"},
+    {"body": github_event_body(event)},
+    {"body": github_event_body(event)},
+]
+ledger, suppressed = GitHubCommentAdapter(comments).receive()
+assert suppressed == 1
+assert len(ledger) == 1
+assert ledger[0]["event_id"] == event["event_id"]
+
+changed = copy.deepcopy(event)
+changed["payload"]["assignee"] = "child-2"
+try:
+    GitHubCommentAdapter(
+        [{"body": github_event_body(event)}, {"body": github_event_body(changed)}]
+    ).receive()
+except CanonicalEventError:
+    pass
+else:
+    raise AssertionError("changed duplicate GitHub event was accepted")
+print("phase-0c GitHub comment adapter contract passed")
+PY
+  [ "${status}" -eq 0 ]
+  [[ "${output}" == *'phase-0c GitHub comment adapter contract passed'* ]]
+}
+
+@test "live GitHub preflight requires an explicit apply flag" {
+  run python3 "${RUNNER}/phase-0c-github-preflight.py" \
+    --manifest "${PROTOCOL}/phase-0c-transport/manifest.json" \
+    --repo "example/repository" \
+    --base-ref "feature/example" \
+    --base-sha "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
+    --output "${REPORT}"
+  [ "${status}" -eq 2 ]
+  [[ "${output}" == *'requires --apply'* ]]
+  [ ! -e "${REPORT}" ]
+}
+
 @test "fixture canonical events survive a real A2A payload echo round trip" {
   run python3 "${RUNNER}/phase-0c-preflight.py" \
     --manifest "${PROTOCOL}/phase-0c-transport/manifest.json" \
