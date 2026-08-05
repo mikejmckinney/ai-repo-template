@@ -239,8 +239,8 @@ include candidate execution, evaluator work, snapshot, and publication and must
 not receive evaluator time a second time; candidate-only duration is unavailable
 for those retained runs. `candidate-only` values stop when the model process
 returns and receive evaluator time once in the integrated comparison. If no
-candidate report is retained, keep self-reported fan-out and worker count null
-and separately publish harness-observed native spawn calls.
+candidate report is retained, keep the entire self-reported telemetry block null
+and separately publish harness-observed native spawn calls and process metadata.
 
 Raw model transcripts and temporary clones remain ignored. The bounded tracked
 record under `results/phase-0b-revision/` contains attempt and final results,
