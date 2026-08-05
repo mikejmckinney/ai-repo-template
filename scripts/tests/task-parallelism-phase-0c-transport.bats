@@ -163,6 +163,53 @@ PY
   [[ "${output}" == *'--output is required unless --validate-only is used'* ]]
 }
 
+@test "A2A readiness timeout includes bounded server diagnostics" {
+  run python3 - "${RUNNER}" <<'PY'
+import importlib.util
+import sys
+import types
+
+runner = sys.argv[1]
+sys.path.insert(0, runner)
+spec = importlib.util.spec_from_file_location("phase_0c_preflight", f"{runner}/phase-0c-preflight.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+
+class FakeProcess:
+    def __init__(self, *args, **kwargs):
+        kwargs["stderr"].write("server stalled during startup")
+        kwargs["stderr"].flush()
+
+    def poll(self):
+        return None
+
+    def terminate(self):
+        pass
+
+    def wait(self, timeout):
+        return 0
+
+module.subprocess.Popen = FakeProcess
+module.available_port = lambda: 43123
+ticks = iter([0, 0, 31])
+module.time.monotonic = lambda: next(ticks)
+module.time.sleep = lambda _seconds: None
+fake_httpx = types.SimpleNamespace(
+    HTTPError=RuntimeError,
+    get=lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("not ready")),
+)
+sys.modules["httpx"] = fake_httpx
+
+try:
+    module.run_a2a_server(module.Path(runner), [])
+except TimeoutError as error:
+    assert "server stalled during startup" in str(error)
+else:
+    raise AssertionError("readiness timeout was accepted")
+PY
+  [ "${status}" -eq 0 ]
+}
+
 @test "live GitHub preflight requires an explicit apply flag" {
   run python3 "${RUNNER}/phase-0c-github-preflight.py" \
     --manifest "${PROTOCOL}/phase-0c-transport/manifest.json" \

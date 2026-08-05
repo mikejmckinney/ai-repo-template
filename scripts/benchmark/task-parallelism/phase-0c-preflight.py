@@ -168,48 +168,59 @@ def run_a2a_server(
     base_url = f"http://127.0.0.1:{port}"
     with tempfile.TemporaryDirectory(prefix="phase-0c-a2a-") as temporary_dir:
         evidence_file = Path(temporary_dir) / "validated-version.txt"
-        process = subprocess.Popen(
-            [
-                sys.executable,
-                str(runner / "phase_0c_a2a_server.py"),
-                "--port",
-                str(port),
-                "--header-evidence-file",
-                str(evidence_file),
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        try:
-            deadline = time.monotonic() + 30
-            while time.monotonic() < deadline:
-                if process.poll() is not None:
-                    error = process.stderr.read() if process.stderr else ""
-                    raise RuntimeError(f"A2A server exited before discovery: {error}")
-                try:
-                    response = httpx.get(
-                        f"{base_url}/.well-known/agent-card.json", timeout=0.2
-                    )
-                    if response.status_code == 200:
-                        break
-                except httpx.HTTPError:
-                    pass
-                time.sleep(0.05)
-            else:
-                raise TimeoutError("A2A discovery endpoint did not become ready")
-            echoed = asyncio.run(a2a_round_trip(base_url, events))
-            if not evidence_file.exists():
-                raise ValueError("server did not validate the A2A-Version header")
-            return echoed, evidence_file.read_text(encoding="utf-8")
-        finally:
-            process.terminate()
+        stderr_file = Path(temporary_dir) / "server-stderr.log"
+        with stderr_file.open("w", encoding="utf-8") as stderr_stream:
+            process = subprocess.Popen(
+                [
+                    sys.executable,
+                    str(runner / "phase_0c_a2a_server.py"),
+                    "--port",
+                    str(port),
+                    "--header-evidence-file",
+                    str(evidence_file),
+                ],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=stderr_stream,
+                text=True,
+            )
+
+            def stderr_excerpt() -> str:
+                stderr_stream.flush()
+                return stderr_file.read_text(encoding="utf-8")[-2000:].strip()
+
             try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
+                deadline = time.monotonic() + 30
+                while time.monotonic() < deadline:
+                    if process.poll() is not None:
+                        raise RuntimeError(
+                            f"A2A server exited before discovery: {stderr_excerpt()}"
+                        )
+                    try:
+                        response = httpx.get(
+                            f"{base_url}/.well-known/agent-card.json", timeout=0.2
+                        )
+                        if response.status_code == 200:
+                            break
+                    except httpx.HTTPError:
+                        pass
+                    time.sleep(0.05)
+                else:
+                    raise TimeoutError(
+                        "A2A discovery endpoint did not become ready: "
+                        f"{stderr_excerpt() or 'no server stderr'}"
+                    )
+                echoed = asyncio.run(a2a_round_trip(base_url, events))
+                if not evidence_file.exists():
+                    raise ValueError("server did not validate the A2A-Version header")
+                return echoed, evidence_file.read_text(encoding="utf-8")
+            finally:
+                process.terminate()
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait(timeout=5)
 
 
 def main() -> int:
