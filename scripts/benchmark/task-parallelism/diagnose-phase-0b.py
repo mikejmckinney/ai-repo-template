@@ -17,6 +17,7 @@ RESULT_ROOT = PROTOCOL_ROOT / "results/phase-0b"
 SCHEMA_PATH = PROTOCOL_ROOT / "phase-0b-diagnostic-summary.schema.json"
 REPORTS_PATH = PROTOCOL_ROOT / "results/phase-0b-candidate-reports.json"
 REPORT_SCHEMA = PROTOCOL_ROOT / "phase-0b-candidate-report.schema.json"
+EXECUTION_PATH = PROTOCOL_ROOT / "campaign.phase-0b.execution.json"
 BASE_SHA = "acffeb51f6ba6d16be6872413a0fa9010d2547a2"
 RUN_IDS = [f"vs-p0b-{index:03d}" for index in range(1, 11)]
 REPORT_RUN_IDS = {run_id for run_id in RUN_IDS if run_id not in {"vs-p0b-001", "vs-p0b-005"}}
@@ -70,8 +71,23 @@ def candidate_report(run_id: str) -> dict | None:
     return reports.get(run_id)
 
 
+def candidate_ref(run_id: str) -> str:
+    attempts = [
+        attempt
+        for attempt in load_json(EXECUTION_PATH)["attempts"]
+        if attempt["run_id"] == run_id
+    ]
+    if not attempts:
+        raise ValueError(f"retained candidate attempt is unavailable: {run_id}")
+    terminal_attempt = max(attempts, key=lambda attempt: attempt["attempt_number"])
+    artifact_name = (
+        terminal_attempt["attempt_id"] if terminal_attempt["attempt_number"] > 1 else run_id
+    )
+    return f"origin/benchmark/vector-siege/{artifact_name}"
+
+
 def diagnose_run(runner, run_id: str) -> dict:
-    ref = f"origin/benchmark/vector-siege/{run_id}"
+    ref = candidate_ref(run_id)
     official = load_json(RESULT_ROOT / f"{run_id}.json")
     changed = changed_files(ref)
     report = candidate_report(run_id)

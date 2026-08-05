@@ -186,18 +186,20 @@ failure until it succeeds.
 
 The blocked plan gives candidates explicit `--sandbox danger-full-access` and
 requires build, unit, and browser checks with Playwright or Chrome DevTools. The
-parent evaluator independently repeats those checks. The planner renders a root
-`AGENTS.override.md` from normal repository guidance and replaces only the
-execution-model paragraph: Arm A remains monolithic, while Arm B may use as many
-native subagents as needed for the task. Codex gives the override precedence at
-project scope; see the
+parent evaluator independently repeats those checks. The planner records an
+instruction digest for each arm; activation renders the selected body as root
+`AGENTS.override.md`. Arm A remains monolithic, while Arm B may use as many native
+subagents as needed for the task. GitHub-only branch, PR, advisory-label, and
+live-state duties are inert in the evaluator-owned checkout. Codex gives the
+override precedence at project scope; see the
 [Codex instruction guide](https://developers.openai.com/codex/agent-configuration/agents-md).
 
 Activation must create candidates as standalone temporary clones with no shared
 control-repository object database. This non-executing revision does not add an
 execution state or parameterize the completed pilot runner. Those changes require
-the separate candidate-execution approval; do not treat the rendered plan as an
-executable campaign state.
+the separate candidate-execution approval. Activation must use a revision-specific
+candidate-report schema without the completed pilot v1 schema's two-worker cap.
+Do not treat the rendered plan as an executable campaign state.
 
 The retained-branch diagnostic is explicitly non-confirmatory and does not alter
 the merged pilot scores. Another candidate invocation remains blocked until the

@@ -31,6 +31,23 @@ ARM_EXECUTION_POLICIES = {
         "  Use as many native subagents as needed for the task and integrate their work."
     ),
 }
+PARALLEL_REVIEW_START = "## Parallel advisory review"
+DOMAIN_POLICY_START = "## Domain: Code Quality"
+SESSION_STATE_START = "## Session-state cadence"
+POSTMORTEM_START = "### Postmortem feedback loop"
+WORKTREE_POLICY = """- **Branch, publish, then checkpoint each changed turn.** Before meaningful edits,
+  create a non-default branch, make an empty bootstrap commit, push it, and open
+  a linked draft PR. At the end of every turn that changes repository-owned task
+  files, stage only task-owned paths, commit and push before updating
+  `agent-state:v1`. Failing tests or incomplete behavior are not reasons to keep
+  work local; record them in the draft PR and state comment. Never checkpoint
+  secrets, unrelated user changes, ignored/generated artifacts, unresolved
+  conflicts, or corrupt/destructive state. No-change turns create no commit.
+  Checkpoint-heavy branches must be squash-merged or cleaned before review.
+  Branch naming: use `feature/<task-id>` or `fix/<slug>`."""
+BENCHMARK_WORKTREE_POLICY = """- **Keep work in the evaluator-owned checkout.** Do not create branches, commit,
+  push, open a pull request, apply labels, or write issue or PR comments. The
+  evaluator captures the checkout after the candidate exits."""
 
 
 def load_json(path: Path) -> dict:
@@ -73,11 +90,16 @@ def validate_runtime(manifest: dict) -> None:
     if sandbox_index < 0 or command[sandbox_index + 1] != expected_sandbox:
         raise ValueError(f"candidate command must explicitly use {expected_sandbox}")
     if revision:
-        instruction_limit = "project_doc_max_bytes=65536"
-        if instruction_limit not in command:
+        configured_limits = [
+            value.removeprefix("project_doc_max_bytes=")
+            for value in command
+            if value.startswith("project_doc_max_bytes=")
+        ]
+        if len(configured_limits) != 1 or not configured_limits[0].isdigit():
             raise ValueError("revision candidate command must preserve the full instruction source")
+        instruction_limit = int(configured_limits[0])
         for arm in ("A", "B"):
-            if len(render_candidate_instructions(arm).encode()) > 65536:
+            if len(render_candidate_instructions(arm).encode()) > instruction_limit:
                 raise ValueError(f"Arm {arm} candidate instructions exceed project_doc_max_bytes")
 
     config_path = REPO_ROOT / ".codex/config.toml"
@@ -113,7 +135,35 @@ def render_candidate_instructions(arm: str) -> str:
     source = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
     if source.count(MONOLITHIC_POLICY) != 1:
         raise ValueError("repository monolithic-agent policy is not uniquely replaceable")
-    return source.replace(MONOLITHIC_POLICY, ARM_EXECUTION_POLICIES[arm])
+    if source.count(WORKTREE_POLICY) != 1:
+        raise ValueError("repository branch-and-publish policy is not uniquely replaceable")
+    source = source.replace(MONOLITHIC_POLICY, ARM_EXECUTION_POLICIES[arm])
+    source = replace_section(
+        source,
+        PARALLEL_REVIEW_START,
+        DOMAIN_POLICY_START,
+        "## Parallel advisory review\n\n"
+        "This evaluator-owned benchmark checkout has no task PR. Advisory labeling and\n"
+        "snapshot inspection do not apply to candidate execution.\n\n",
+    )
+    source = replace_section(
+        source,
+        SESSION_STATE_START,
+        POSTMORTEM_START,
+        "## Session-state cadence\n\n"
+        "GitHub issue, PR, and `agent-state:v1` coordination do not apply inside the\n"
+        "evaluator-owned candidate checkout. Report progress and results in the final\n"
+        "response instead.\n\n",
+    )
+    return source.replace(WORKTREE_POLICY, BENCHMARK_WORKTREE_POLICY)
+
+
+def replace_section(source: str, start: str, end: str, replacement: str) -> str:
+    if source.count(start) != 1 or source.count(end) != 1:
+        raise ValueError(f"repository policy section is not uniquely replaceable: {start}")
+    before, remainder = source.split(start, 1)
+    _, after = remainder.split(end, 1)
+    return before + replacement + end + after
 
 
 def validate_run_policy(manifest: dict) -> None:

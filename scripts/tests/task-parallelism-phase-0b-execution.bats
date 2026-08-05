@@ -184,7 +184,27 @@ for rendered in (arm_a_text, arm_b_text):
     assert rendered.startswith("# AGENTS.md\n")
     assert rendered.count("## Parallel advisory review") == source.count("## Parallel advisory review")
     assert rendered.count("## Domain: Code Quality") == source.count("## Domain: Code Quality")
+    assert "apply `ai-review:live` immediately" not in rendered
+    assert "Update or post the latest `agent-state:v1`" not in rendered
+    assert "create a non-default branch" not in rendered
+    assert "Keep work in the evaluator-owned checkout" in rendered
 
+PY
+	[ "${status}" -eq 0 ]
+}
+
+@test "retained diagnostics select the terminal retry branch" {
+	run python3 - "${REPO_ROOT}/scripts/benchmark/task-parallelism/diagnose-phase-0b.py" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("phase0b_diagnostic", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+assert module.candidate_ref("vs-p0b-001") == (
+    "origin/benchmark/vector-siege/vs-p0b-001-attempt-2"
+)
+assert module.candidate_ref("vs-p0b-002") == "origin/benchmark/vector-siege/vs-p0b-002"
 PY
 	[ "${status}" -eq 0 ]
 }

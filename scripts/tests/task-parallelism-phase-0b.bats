@@ -45,6 +45,16 @@ setup() {
 	[ "${status}" -eq 0 ]
 }
 
+@test "revised Phase 0B rejects a missing candidate instruction budget" {
+	missing_budget="${BATS_TEST_TMPDIR}/missing-budget.json"
+	jq '.candidate_runtime.candidate_command |= map(select(. != "project_doc_max_bytes=65536"))' \
+		"${REVISION}" >"${missing_budget}"
+
+	run python3 "${RUNNER}/prepare-phase-0b.py" --manifest "${missing_budget}" --validate
+	[ "${status}" -ne 0 ]
+	[[ "${output}" == *'revision candidate command must preserve the full instruction source'* ]]
+}
+
 @test "Phase 0B plan is deterministic, counterbalanced, and non-executing" {
 	run python3 "${RUNNER}/prepare-phase-0b.py" --plan "${PLAN}"
 	[ "${status}" -eq 0 ]
