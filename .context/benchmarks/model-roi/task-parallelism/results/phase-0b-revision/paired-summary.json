@@ -46,16 +46,39 @@
         "output": 45933
       },
       "worker_count": 3
+    },
+    {
+      "arm": "C",
+      "candidate_quality_score": 0,
+      "candidate_wall_clock_comparable": true,
+      "candidate_wall_clock_seconds": 1857,
+      "coordination_seconds": 0,
+      "evaluator_objective_score": 90,
+      "evaluator_result_path": "results/phase-0b-revision/evaluations/vs-p0b-next-c-attempt-1.json",
+      "evaluator_wall_clock_seconds": 52,
+      "fanout_elected": false,
+      "integrated_wall_clock_comparable": true,
+      "integrated_wall_clock_seconds": 1909,
+      "produced_work": true,
+      "run_id": "vs-p0b-next-c",
+      "skill_loads": 0,
+      "terminal_status": "candidate-failed",
+      "tokens": {
+        "cached_input": 0,
+        "input": 0,
+        "output": 0
+      },
+      "worker_count": 1
     }
   ],
-  "assigned_runs": 2,
-  "attempts_started": 2,
+  "assigned_runs": 3,
+  "attempts_started": 3,
   "campaign_id": "vector-siege-phase-0b-revision",
   "candidate_wall_clock_comparable": true,
-  "candidate_wall_clock_seconds": 3299,
+  "candidate_wall_clock_seconds": 5156,
   "confirmatory_evidence": false,
   "directional_only": true,
-  "evaluator_wall_clock_seconds": 115,
+  "evaluator_wall_clock_seconds": 167,
   "official_pilot_scores_modified": false,
   "parent_worker_token_split_available": false,
   "pricing": {
@@ -131,10 +154,58 @@
         }
       },
       "speedup": 0.8604904632152589
+    },
+    {
+      "baseline_arm": "A",
+      "candidate_arm": "C",
+      "cost_ratio": {
+        "all_long_context_upper_bound": null,
+        "short_context": null
+      },
+      "equivalent_model_cost_usd": {
+        "all_long_context_upper_bound": {
+          "baseline_usd": 0.53823188,
+          "candidate_usd": null
+        },
+        "short_context": {
+          "baseline_usd": 0.28617423999999997,
+          "candidate_usd": null
+        }
+      },
+      "integrated_time_ratio": 1.2089930335655479,
+      "parallel_efficiency": 0.8271346254583551,
+      "quality_per_dollar": {
+        "all_long_context_upper_bound": {
+          "baseline": 185.79352824659884,
+          "candidate": null
+        },
+        "short_context": {
+          "baseline": 349.437461596823,
+          "candidate": null
+        }
+      },
+      "quality_per_integrated_hour": {
+        "baseline": 227.9924002533249,
+        "candidate": 0.0
+      },
+      "quality_ratio": 0.0,
+      "roi_index": {
+        "all_long_context_upper_bound": {
+          "cost_25_time_75": 0,
+          "cost_50_time_50": 0,
+          "cost_75_time_25": 0
+        },
+        "short_context": {
+          "cost_25_time_75": 0,
+          "cost_50_time_50": 0,
+          "cost_75_time_25": 0
+        }
+      },
+      "speedup": 0.8271346254583551
     }
   ],
   "schema_version": "task-parallelism-phase-0b-revision-summary.v1",
-  "terminal_runs": 2,
+  "terminal_runs": 3,
   "token_usage_scope": "aggregate-candidate-turn",
   "tokens": {
     "cached_input": 23214080,

@@ -252,6 +252,8 @@ usage does not identify per-request context bands, it reports both the short-rat
 estimate and an all-long-context upper bound. Each comparison includes quality
 and integrated-time ratios, speedup, parallel efficiency, cost ratio, quality per
 dollar/hour, and 50/50, 75/25, and 25/75 cost/time ROI sensitivity.
+When a timed-out process emits no terminal usage event, equivalent cost and cost
+ratio remain unavailable rather than treating zero retained tokens as zero spend.
 
 If the runner process exits after recording an in-progress attempt but before
 its terminal state, first confirm that no candidate or evaluator process remains,

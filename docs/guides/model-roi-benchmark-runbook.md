@@ -246,7 +246,9 @@ parallel efficiency, equivalent API cost, quality per dollar/hour, and ROI under
 <https://developers.openai.com/api/docs/models/gpt-5.6-luna>. Aggregate usage
 cannot identify which requests exceeded the 272K long-context threshold, so
 report a short-rate estimate and all-long-context upper bound. Mark parent/worker
-token splitting unavailable rather than estimating a split.
+token splitting unavailable rather than estimating a split. If a timed-out process
+does not emit terminal usage, record equivalent cost and cost ratio as unavailable;
+zero retained tokens are not evidence of zero spend.
 
 If the runner exits with an in-progress attempt, do not hand-edit execution
 state or launch the run again. Confirm the candidate and evaluator processes have

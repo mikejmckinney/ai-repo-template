@@ -32,8 +32,8 @@ setup() {
     .official_pilot_scores_modified == false and
     .candidate_processes_started == (.attempts | length) and
     .replacement_processes_started <= 1 and
-    .completed_runs == ["vs-p0b-next-a", "vs-p0b-next-b"] and
-    .status == "ready"
+    ((.completed_runs == ["vs-p0b-next-a", "vs-p0b-next-b"] and .status == "ready") or
+      (.completed_runs == ["vs-p0b-next-a", "vs-p0b-next-b", "vs-p0b-next-c"] and .status == "completed"))
   ' "${STATE}"
 	[ "${status}" -eq 0 ]
 
@@ -335,6 +335,19 @@ for comparison in summary["roi_comparisons"]:
 assert summary["roi_comparisons"][0]["quality_ratio"] == 1
 assert summary["roi_comparisons"][0]["integrated_time_ratio"] == 1.25
 assert summary["roi_comparisons"][0]["speedup"] == 0.8
+
+zero_usage_candidate = {**results[2], "quality_score": 0}
+zero_usage_candidate["tokens"] = {"input": 0, "cached_input": 0, "output": 0}
+comparison = module.build_roi_comparison(summary["arms"][0], {
+    **summary["arms"][2],
+    "candidate_quality_score": 0,
+    "tokens": zero_usage_candidate["tokens"],
+})
+assert comparison["quality_per_dollar"]["short_context"]["candidate"] is None
+assert comparison["quality_per_dollar"]["all_long_context_upper_bound"]["candidate"] is None
+assert comparison["equivalent_model_cost_usd"]["short_context"]["candidate_usd"] is None
+assert comparison["cost_ratio"]["short_context"] is None
+assert comparison["roi_index"]["short_context"]["cost_50_time_50"] == 0
 PY
 	[ "${status}" -eq 0 ]
 }

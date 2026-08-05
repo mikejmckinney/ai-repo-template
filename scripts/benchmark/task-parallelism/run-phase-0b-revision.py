@@ -964,32 +964,47 @@ def build_roi_comparison(baseline: dict, candidate: dict) -> dict:
             / baseline["integrated_wall_clock_seconds"]
         )
         speedup = 1 / time_ratio
+    candidate_usage_available = any(candidate["tokens"].values())
     costs = {
         band: {
             "baseline_usd": equivalent_model_cost(baseline["tokens"], rates),
-            "candidate_usd": equivalent_model_cost(candidate["tokens"], rates),
+            "candidate_usd": (
+                equivalent_model_cost(candidate["tokens"], rates)
+                if candidate_usage_available
+                else None
+            ),
         }
         for band, rates in TOKEN_RATES.items()
     }
     cost_ratios = {
-        band: values["candidate_usd"] / values["baseline_usd"]
+        band: (
+            values["candidate_usd"] / values["baseline_usd"]
+            if values["candidate_usd"] is not None
+            else None
+        )
         for band, values in costs.items()
     }
     roi_index = {
         band: {
             "cost_50_time_50": (
-                quality_ratio / (0.50 * cost_ratio + 0.50 * time_ratio)
-                if comparable_time
+                0
+                if quality_ratio == 0 and comparable_time
+                else quality_ratio / (0.50 * cost_ratio + 0.50 * time_ratio)
+                if comparable_time and cost_ratio is not None
                 else None
             ),
             "cost_75_time_25": (
-                quality_ratio / (0.75 * cost_ratio + 0.25 * time_ratio)
-                if comparable_time
+                0
+                if quality_ratio == 0 and comparable_time
+                else quality_ratio / (0.75 * cost_ratio + 0.25 * time_ratio)
+                if comparable_time and cost_ratio is not None
                 else None
             ),
             "cost_25_time_75": (
-                quality_ratio / (0.25 * cost_ratio + 0.75 * time_ratio)
-                if comparable_time
+                0
+                if quality_ratio == 0 and comparable_time
+                else quality_ratio / (0.25 * cost_ratio + 0.75 * time_ratio)
+                if comparable_time and cost_ratio is not None
                 else None
             ),
         }
@@ -1007,8 +1022,12 @@ def build_roi_comparison(baseline: dict, candidate: dict) -> dict:
         "quality_per_dollar": {
             band: {
                 "baseline": baseline["candidate_quality_score"] / values["baseline_usd"],
-                "candidate": candidate["candidate_quality_score"]
-                / values["candidate_usd"],
+                "candidate": (
+                    candidate["candidate_quality_score"] / values["candidate_usd"]
+                    if values["candidate_usd"] is not None
+                    and values["candidate_usd"] > 0
+                    else None
+                ),
             }
             for band, values in costs.items()
         },

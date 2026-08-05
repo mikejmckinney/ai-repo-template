@@ -132,8 +132,8 @@
       "additionalProperties": false,
       "required": ["short_context", "all_long_context_upper_bound"],
       "properties": {
-        "short_context": { "type": "number", "minimum": 0 },
-        "all_long_context_upper_bound": { "type": "number", "minimum": 0 }
+        "short_context": { "type": ["number", "null"], "minimum": 0 },
+        "all_long_context_upper_bound": { "type": ["number", "null"], "minimum": 0 }
       }
     },
     "arm_values": {
@@ -151,7 +151,7 @@
       "required": ["baseline_usd", "candidate_usd"],
       "properties": {
         "baseline_usd": { "type": "number", "minimum": 0 },
-        "candidate_usd": { "type": "number", "minimum": 0 }
+        "candidate_usd": { "type": ["number", "null"], "minimum": 0 }
       }
     },
     "weighted_roi": {

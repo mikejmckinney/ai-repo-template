@@ -1,0 +1,19 @@
+
+> vector-siege-benchmark-scaffold@0.0.0 build
+> tsc --noEmit && vite build
+
+vite v8.2.0 building client environment for production...
+[2K
+transforming...✓ 14 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                     3.62 kB │ gzip:   1.20 kB
+dist/assets/index-BRgPxTsg.css      4.22 kB │ gzip:   1.54 kB
+dist/assets/index-CZQRv6Wz.js   1,397.61 kB │ gzip: 364.77 kB
+
+✓ built in 2.15s
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
