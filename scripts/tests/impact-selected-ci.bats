@@ -89,6 +89,7 @@ select_paths() {
 @test "CI preserves one required gate while executing the selected plan" {
   workflow="$REPO_ROOT/.github/workflows/ci-tests.yml"
   grep -q 'scripts/select-verification-impact.py' "$workflow"
+  grep -q 'github.event.pull_request.head.sha || github.sha' "$workflow"
   grep -q 'verification-plan.json' "$workflow"
   grep -q 'GITHUB_STEP_SUMMARY' "$workflow"
   grep -q 'bats --jobs 12 "${selected\[@\]}"' "$workflow"
