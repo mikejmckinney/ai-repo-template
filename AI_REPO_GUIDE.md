@@ -20,6 +20,7 @@ ADR-031 defines the active execution model:
 scripts/verify-local.sh
 scripts/verify-local.sh --full
 ./test.sh
+./test.sh scripts/checks/049-advisory-review-invariants.sh
 bats --jobs 12 scripts/tests/
 scripts/install-codespace-tools.sh --profile core --verify-only
 scripts/install-media-tools.sh
@@ -54,6 +55,15 @@ Override timeouts with `VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` and
 performance failure to investigate, not a reason to normalize a longer gate.
 `VERIFY_LOCAL_BATS_TIMEOUT_SECONDS` applies only to `--full`. The Codespace
 toolchain supplies required GNU `timeout` and `setsid`.
+
+Pull-request `CI Tests` uses `.config/verification-impact.json` and
+`scripts/select-verification-impact.py` to select explicitly mapped Bats files
+and numbered check modules. Changed consumers run themselves. Unmapped paths,
+shared infrastructure, invalid manifests, and selector or manifest changes fail
+toward complete verification. Pushes and explicit dispatches always run the
+complete gate. The workflow records its plan in the job summary and retains one
+required `CI Tests` status plus the existing combined-result and failure-report
+handling.
 
 The canonical tool manifest pins Bats 1.12.0 with a 1.7.0 minimum contract. Its
 pinned `uv` archive installs both the `uv` and `uvx` executables. Run

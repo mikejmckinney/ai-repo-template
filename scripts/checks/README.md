@@ -17,6 +17,16 @@ Numbered verification modules sourced by `test.sh` (issue #255 Phase 4d).
    checks and increments the shared counters via `pass`/`fail`/`warn`.
 4. Prints the aggregate `Passed/Warnings/Failed` summary and exits.
 
+Passing repository-relative module paths runs only those modules through the
+same orchestration, counters, and summary, for example:
+
+```bash
+./test.sh scripts/checks/049-advisory-review-invariants.sh
+```
+
+Hosted pull-request CI obtains these paths from the fail-closed canonical impact
+manifest. Unmapped or shared changes use the no-argument complete mode.
+
 Focused behavioral tests are intentionally separate. `./test.sh` modules never
 invoke Bats. The derived-repository lifecycle module validates classification,
 onboarding, and structural repository checks; full Bats runs once at the top

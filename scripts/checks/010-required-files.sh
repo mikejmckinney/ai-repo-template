@@ -47,6 +47,8 @@ REQUIRED_FILES=(
   "scripts/render-ci-failure-report.sh"
   "scripts/validate-outcome-evidence.py"
   "scripts/validate-verification-evidence.py"
+  "scripts/select-verification-impact.py"
+  ".config/verification-impact.json"
   "scripts/workflows/validate-pr-workflow-fixtures.py"
   "scripts/format.sh"
   "scripts/check-markdown-links.py"
