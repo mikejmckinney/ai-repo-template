@@ -6,6 +6,25 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
 }
 
+@test "cloud MCP inventory retains reviewed endpoints pins and deferrals" {
+  run jq -e '
+    .servers.supabase.url == "https://mcp.supabase.com/mcp" and
+    .servers.netlify.url == "https://netlify-mcp.netlify.app/mcp" and
+    .servers.netlify.opencode.command[2] == "mcp-remote@0.1.38" and
+    .servers.vercel.url == "https://mcp.vercel.com" and
+    .servers["cloudflare-api"].url == "https://mcp.cloudflare.com/mcp" and
+    .servers["cloudflare-docs"].url == "https://docs.mcp.cloudflare.com/mcp" and
+    .servers.railway.url == "https://mcp.railway.com" and
+    (.servers.aws.command[2] | contains("mcp-proxy-for-aws@1.6.3")) and
+    .servers.azure.command[2] == "@azure/mcp@2.0.5" and
+    .servers.oci.command == ["uvx", "--python", "3.13", "oracle.oci-cloud-mcp-server@2.1.0"] and
+    .servers.oci.enabled == false and
+    .servers.render.url == "https://mcp.render.com/mcp" and
+    ((.servers | has("gcp") or has("colyseus")) | not)
+  ' "$REPO_ROOT/.config/mcp-inventory.json"
+  [ "$status" -eq 0 ]
+}
+
 @test "locked agent profiles disable account-connected cloud MCPs" {
   for profile in review fix; do
     run jq -e '
@@ -17,6 +36,54 @@ setup() {
     ' "$REPO_ROOT/.github/agent-runtime/$profile.json"
     [ "$status" -eq 0 ]
   done
+}
+
+@test "external provider catalogs retain reviewed sources refs and nesting" {
+  azure_skills='["airunway-aks-setup","appinsights-instrumentation","azure-ai","azure-aigateway","azure-cloud-migrate","azure-compliance","azure-compute","azure-cost","azure-deploy","azure-diagnostics","azure-enterprise-infra-planner","azure-kubernetes","azure-kusto","azure-messaging","azure-prepare","azure-quotas","azure-reliability","azure-resource-lookup","azure-resource-visualizer","azure-storage","azure-upgrade","azure-validate","entra-agent-id","entra-app-registration","microsoft-foundry","python-appservice-deploy"]'
+  phaser_skills='["actions-and-utilities","animations","audio-and-sound","cameras","curves-and-paths","data-manager","events-system","filters-and-postfx","game-object-components","game-setup-and-config","geometry-and-math","graphics-and-shapes","groups-and-containers","input-keyboard-mouse-touch","loading-assets","particles","physics-arcade","physics-matter","render-textures","scale-and-responsive","scenes","sprites-and-images","text-and-bitmaptext","tilemaps","time-and-timers","tweens","v3-to-v4-migration","v4-new-features"]'
+
+  run jq -e --argjson azure "$azure_skills" --argjson phaser "$phaser_skills" '
+    . as $root |
+    ([.skills | to_entries[] | select(.value.source == "aws/agent-toolkit-for-aws")] | length) == 19 and
+    ([.skills | to_entries[] | select(.value.source == "awslabs/agent-plugins")] | length) == 0 and
+    all(.skills | to_entries[] | select(.value.source == "aws/agent-toolkit-for-aws");
+      .value.ref == "b4416dddac9b6a0cc5412136e6dbf8f07ffdb31c" and
+      (.value.destinationPath | startswith(".agents/skills/aws/"))) and
+    ([.skills | to_entries[] | select(.value.source == "microsoft/azure-skills") | .key] | sort) == ($azure | sort) and
+    all($azure[]; . as $key | $root.skills[$key].ref == "1b592c63641049ff33e4952c4021c63b4507f147" and
+      ($root.skills[$key].destinationPath | startswith(".agents/skills/azure/"))) and
+    ([.skills | to_entries[] | select(.value.source == "phaserjs/phaser") | .key] | sort) == ($phaser | sort) and
+    all($phaser[]; . as $key | $root.skills[$key].ref == "41be1e462bc600064e498cba370bfa8c5c055a22" and
+      $root.skills[$key].destinationPath == (".agents/skills/phaser/" + $key)) and
+    all(["frontend-design", "mcp-builder", "skill-creator"][]; . as $key |
+      $root.skills[$key].source == "anthropics/skills" and
+      $root.skills[$key].ref == "fa0fa64bdc967915dc8399e803be67759e1e62b8" and
+      $root.skills[$key].destinationPath == (".agents/skills/anthropic/" + $key))
+  ' "$REPO_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
+}
+
+@test "requested audio and multi-skill provider packages remain declared" {
+  run jq -e '
+    . as $root |
+    .skills["skywork-music-maker"].source == "SkyworkAI/Skywork-Skills" and
+    .skills["skywork-music-maker"].ref == "c8c6aeb742c3d6a2b728992142796702464b6fce" and
+    .skills["skywork-music-maker"].destinationPath == ".agents/skills/skywork/skywork-music-maker" and
+    all(["music", "sound-effects"][]; . as $key |
+      $root.skills[$key].source == "elevenlabs/skills" and
+      $root.skills[$key].ref == "37c0f2a682a8953cb9f09b152a0e1624d234193e" and
+      $root.skills[$key].destinationPath == (".agents/skills/elevenlabs/" + $key)) and
+    all(["deploy-to-vercel", "vercel-composition-patterns", "vercel-react-best-practices", "vercel-react-view-transitions"][]; . as $key |
+      $root.skills[$key].destinationPath == (".agents/skills/vercel/" + $key)) and
+    all(["netlify-config", "netlify-deploy", "netlify-frameworks"][]; . as $key |
+      $root.skills[$key].destinationPath == (".agents/skills/netlify/" + $key)) and
+    all(["supabase", "supabase-postgres-best-practices"][]; . as $key |
+      $root.skills[$key].destinationPath == (".agents/skills/supabase/" + $key)) and
+    all(["workers-best-practices", "wrangler"][]; . as $key |
+      $root.skills[$key].destinationPath == (".agents/skills/cloudflare/" + $key)) and
+    .skills["use-railway"].destinationPath == ".agents/skills/use-railway"
+  ' "$REPO_ROOT/skills-lock.json"
+  [ "$status" -eq 0 ]
 }
 
 @test "script syntax check discovers only lock-declared owned skill scripts" {
