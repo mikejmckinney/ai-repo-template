@@ -24,12 +24,13 @@ def valid_relative(value: str) -> bool:
     return bool(value) and not path.is_absolute() and ".." not in path.parts and "\\" not in value
 
 
-def proves_mapping(text: str, patterns: list[str]) -> bool:
+def proves_mapping(repo: Path, text: str, patterns: list[str]) -> bool:
     raw_tokens = set(re.findall(r"[A-Za-z0-9_./*-]+", text))
     tokens = raw_tokens | {token.rstrip(".-/") for token in raw_tokens}
-    tokens |= {re.sub(r"^[A-Z][A-Z0-9_]*/", "", token) for token in tokens}
+    tokens |= {re.sub(r"^[A-Za-z_][A-Za-z0-9_]*/", "", token) for token in tokens}
+    tokens |= {token.lstrip("/") for token in tokens}
     return any(
-        fnmatch.fnmatchcase(token, pattern)
+        (repo / token).is_file() and fnmatch.fnmatchcase(token, pattern)
         for pattern in patterns
         for token in tokens
         if token and not any(character in token for character in "*?[")
@@ -77,7 +78,7 @@ def load_manifest(repo: Path) -> dict:
             fail("mapping evidence must name only declared consumers")
         for consumer in consumers:
             consumer_text = (repo / consumer).read_text(encoding="utf-8")
-            if proves_mapping(consumer_text, mapping["patterns"]):
+            if proves_mapping(repo, consumer_text, mapping["patterns"]):
                 continue
             evidence_path = evidence.get(consumer)
             if not isinstance(evidence_path, str) or not valid_relative(evidence_path):
@@ -86,7 +87,7 @@ def load_manifest(repo: Path) -> dict:
             if not evidence_file.is_file():
                 fail(f"missing mapping evidence: {evidence_path}")
             evidence_text = evidence_file.read_text(encoding="utf-8")
-            if evidence_path not in consumer_text or not proves_mapping(evidence_text, mapping["patterns"]):
+            if evidence_path not in consumer_text or not proves_mapping(repo, evidence_text, mapping["patterns"]):
                 fail(f"unproven mapping: {consumer} via {evidence_path}")
     return manifest
 

@@ -4,7 +4,9 @@ setup() {
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
   SELECTOR="$REPO_ROOT/scripts/select-verification-impact.py"
   TEST_ROOT="$(mktemp -d)"
-  mkdir -p "$TEST_ROOT/scripts/tests" "$TEST_ROOT/scripts/checks" "$TEST_ROOT/.config"
+  mkdir -p "$TEST_ROOT/scripts/tests" "$TEST_ROOT/scripts/checks" "$TEST_ROOT/.config" \
+    "$TEST_ROOT/policy" "$TEST_ROOT/labels"
+  touch "$TEST_ROOT/policy/rules.md" "$TEST_ROOT/labels/catalog.txt"
   printf '# policy/rules.md\n' >"$TEST_ROOT/scripts/tests/provider.bats"
   printf '# labels/catalog.txt\n' >"$TEST_ROOT/scripts/tests/labels.bats"
   printf '# policy/rules.md\n' >"$TEST_ROOT/scripts/checks/049-policy.sh"
@@ -77,7 +79,7 @@ select_paths() {
 }
 
 @test "glob mappings accept evidence from a matching repository path" {
-  printf '# policy/rules.md.\n' >"$TEST_ROOT/scripts/tests/provider.bats"
+  printf '# ${repo_root}/policy/rules.md.\n' >"$TEST_ROOT/scripts/tests/provider.bats"
   jq '.mappings[0].patterns=["policy/*.md"]' \
     "$TEST_ROOT/.config/verification-impact.json" >"$TEST_ROOT/glob.json"
   mv "$TEST_ROOT/glob.json" "$TEST_ROOT/.config/verification-impact.json"
@@ -85,6 +87,14 @@ select_paths() {
   select_paths policy/rules.md
   [ "$status" -eq 0 ]
   [ "$(jq -r .mode <<<"$output")" = selected ]
+}
+
+@test "mapping evidence must name an existing repository path" {
+  rm "$TEST_ROOT/policy/rules.md"
+
+  select_paths policy/rules.md
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unproven mapping: scripts/tests/provider.bats"* ]]
 }
 
 @test "glob mapping text is not concrete consumer evidence" {
