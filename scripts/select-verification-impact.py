@@ -3,6 +3,7 @@
 import argparse
 import fnmatch
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
@@ -21,6 +22,21 @@ def fail(message: str) -> None:
 def valid_relative(value: str) -> bool:
     path = PurePosixPath(value)
     return bool(value) and not path.is_absolute() and ".." not in path.parts and "\\" not in value
+
+
+def proves_mapping(text: str, patterns: list[str]) -> bool:
+    tokens = set(re.findall(r"[A-Za-z0-9_./*-]+", text))
+    for pattern in patterns:
+        if not any(character in pattern for character in "*?["):
+            if pattern in text:
+                return True
+            continue
+        if any(
+            not any(character in token for character in "*?[") and fnmatch.fnmatchcase(token, pattern)
+            for token in tokens
+        ):
+            return True
+    return False
 
 
 def load_manifest(repo: Path) -> dict:
@@ -64,18 +80,16 @@ def load_manifest(repo: Path) -> dict:
             fail("mapping evidence must name only declared consumers")
         for consumer in consumers:
             consumer_text = (repo / consumer).read_text(encoding="utf-8")
-            if any(pattern in consumer_text for pattern in mapping["patterns"]):
+            if proves_mapping(consumer_text, mapping["patterns"]):
                 continue
             evidence_path = evidence.get(consumer)
             if not isinstance(evidence_path, str) or not valid_relative(evidence_path):
-                fail(f"unproven mapping: {consumer}")
+                fail(f"unproven mapping: {consumer}; reference a mapped path or declare an evidence file")
             evidence_file = repo / evidence_path
             if not evidence_file.is_file():
                 fail(f"missing mapping evidence: {evidence_path}")
             evidence_text = evidence_file.read_text(encoding="utf-8")
-            if evidence_path not in consumer_text or not any(
-                pattern in evidence_text for pattern in mapping["patterns"]
-            ):
+            if evidence_path not in consumer_text or not proves_mapping(evidence_text, mapping["patterns"]):
                 fail(f"unproven mapping: {consumer} via {evidence_path}")
     return manifest
 

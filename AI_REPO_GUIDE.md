@@ -64,6 +64,11 @@ toward complete verification. Pushes and explicit dispatches always run the
 complete gate. The workflow records its plan in the job summary and retains one
 required `CI Tests` status plus the existing combined-result and failure-report
 handling.
+Every mapped consumer must reference a concrete path matched by its mapping. A
+consumer that delegates coverage may instead declare an `evidence` file in the
+manifest, reference that file, and rely on its concrete mapped-path reference;
+missing or stale relationship evidence aborts selection rather than skipping
+coverage.
 
 The canonical tool manifest pins Bats 1.12.0 with a 1.7.0 minimum contract. Its
 pinned `uv` archive installs both the `uv` and `uvx` executables. Run

@@ -76,6 +76,50 @@ select_paths() {
   [[ "$output" == *"unproven mapping"* ]]
 }
 
+@test "glob mappings accept evidence from a matching repository path" {
+  jq '.mappings[0].patterns=["policy/*.md"]' \
+    "$TEST_ROOT/.config/verification-impact.json" >"$TEST_ROOT/glob.json"
+  mv "$TEST_ROOT/glob.json" "$TEST_ROOT/.config/verification-impact.json"
+
+  select_paths policy/rules.md
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .mode <<<"$output")" = selected ]
+}
+
+@test "mapping evidence may name only declared consumers" {
+  jq '.mappings[0].evidence={"scripts/tests/labels.bats":"policy/rules.md"}' \
+    "$TEST_ROOT/.config/verification-impact.json" >"$TEST_ROOT/invalid.json"
+  mv "$TEST_ROOT/invalid.json" "$TEST_ROOT/.config/verification-impact.json"
+
+  select_paths policy/rules.md
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"mapping evidence must name only declared consumers"* ]]
+}
+
+@test "mapping evidence files must exist" {
+  printf '# scripts/missing.py\n' >"$TEST_ROOT/scripts/tests/provider.bats"
+  jq '.mappings[0].evidence={"scripts/tests/provider.bats":"scripts/missing.py"}' \
+    "$TEST_ROOT/.config/verification-impact.json" >"$TEST_ROOT/invalid.json"
+  mv "$TEST_ROOT/invalid.json" "$TEST_ROOT/.config/verification-impact.json"
+
+  select_paths policy/rules.md
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"missing mapping evidence: scripts/missing.py"* ]]
+}
+
+@test "mapping evidence files must reference the mapped path" {
+  mkdir -p "$TEST_ROOT/scripts"
+  printf '# scripts/evidence.py\n' >"$TEST_ROOT/scripts/tests/provider.bats"
+  printf '# unrelated\n' >"$TEST_ROOT/scripts/evidence.py"
+  jq '.mappings[0].evidence={"scripts/tests/provider.bats":"scripts/evidence.py"}' \
+    "$TEST_ROOT/.config/verification-impact.json" >"$TEST_ROOT/invalid.json"
+  mv "$TEST_ROOT/invalid.json" "$TEST_ROOT/.config/verification-impact.json"
+
+  select_paths policy/rules.md
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unproven mapping: scripts/tests/provider.bats via scripts/evidence.py"* ]]
+}
+
 @test "an empty changed-path set cannot succeed with zero coverage" {
   run python3 "$SELECTOR" --repo "$TEST_ROOT"
   [ "$status" -eq 0 ]
@@ -111,4 +155,6 @@ select_paths() {
   run python3 "$SELECTOR" --repo "$REPO_ROOT" --changed-path .config/mcp-inventory.json
   [ "$status" -eq 0 ]
   [ "$(jq -r .mode <<<"$output")" = selected ]
+  [ "$(jq -r '.bats | join("|")' <<<"$output")" = "scripts/tests/generated-mcp-configs.bats|scripts/tests/provider-integrations.bats" ]
+  [ "$(jq -r '.checks | join("|")' <<<"$output")" = scripts/checks/056-generated-governance-surfaces.sh ]
 }
