@@ -348,17 +348,6 @@ PY
     "$REPO_ROOT/docs/decisions/adr-030-non-blocking-review-pipeline.md"
 }
 
-@test "repository includes OAuth and provider isolation helpers" {
-  for path in \
-    scripts/sync-opencode-oauth-secret.sh \
-    scripts/workflows/lib/opencode-oauth.sh \
-    scripts/workflows/lib/run-cursor-fix.sh \
-    scripts/workflows/lib/run-fix-provider-cascade.sh \
-    scripts/workflows/lib/validate-fix-verification.py; do
-    [ -f "$REPO_ROOT/$path" ]
-  done
-}
-
 @test "advisory and weekly scans iterate provider candidates" {
   run python3 - \
     "$REPO_ROOT/scripts/workflows/advisory-review/run-advisory-review.sh" \

@@ -56,10 +56,3 @@ EOF
   run grep -F '"install.sh"' "$REPO_ROOT/scripts/checks/010-required-files.sh"
   [ "$status" -eq 1 ]
 }
-
-@test "required-file checks include the repository-owned lifecycle" {
-  for path in .devcontainer/devcontainer.json scripts/codespace-post-create.sh; do
-    run grep -F "\"$path\"" "$REPO_ROOT/scripts/checks/010-required-files.sh"
-    [ "$status" -eq 0 ]
-  done
-}

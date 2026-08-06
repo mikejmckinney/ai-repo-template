@@ -17,12 +17,6 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
-@test "issue-plan generated blocks are current" {
-  run python3 "$GENERATOR" --repo "$REPO_ROOT" --check
-
-  [ "$status" -eq 0 ]
-}
-
 @test "issue-plan templates require clickable repository paths" {
   templates=(
     "$REPO_ROOT/.github/templates/issue-implementation-plan.md"

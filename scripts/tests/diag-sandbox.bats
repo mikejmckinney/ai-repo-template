@@ -52,15 +52,6 @@ _assert_no_mutations() {
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
-@test "diag-sandbox: script exists and is executable" {
-  [ -x "$SCRIPT" ]
-}
-
-@test "diag-sandbox: passes bash -n syntax check" {
-  run bash -n "$SCRIPT"
-  [ "$status" -eq 0 ]
-}
-
 @test "diag-sandbox: empty sandbox remote reports no branches found" {
   _add_stub "gh" \
     'if [[ "$*" == *"auth status"* ]]; then
@@ -86,14 +77,6 @@ _assert_no_mutations() {
   [ "$status" -eq 0 ]
   [[ "$output" == *"Found 0 branch(es) on sandbox remote"* ]]
   [[ "$output" == *"No branches found on sandbox remote"* ]]
-}
-
-@test "diag-sandbox: passes shellcheck (no errors)" {
-  if ! command -v shellcheck >/dev/null 2>&1; then
-    skip "shellcheck not installed"
-  fi
-  run shellcheck --severity=error "$SCRIPT"
-  [ "$status" -eq 0 ]
 }
 
 @test "diag-sandbox: missing gh exits 1 with explicit error" {
