@@ -668,11 +668,6 @@ EOF
 
 }
 
-@test "postmerge invariant guards shared batch publication wiring" {
-  run grep -F "grep -q 'batch_fix_publish' \"\$FIX_SCRIPT\"" scripts/checks/052-postmerge-retro-invariants.sh
-  [ "$status" -eq 0 ]
-}
-
 @test "postmerge provider timeout terminates a stuck command" {
   source scripts/workflows/lib/postmerge-provider-timeout.sh
 

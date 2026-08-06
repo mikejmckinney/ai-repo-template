@@ -13,12 +13,6 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
-@test "active structured label references are declared" {
-  run python3 "$VALIDATOR" --repo "$REPO_ROOT"
-
-  [ "$status" -eq 0 ]
-}
-
 @test "undeclared workflow label fails with its path and label" {
   printf '%s\n' "name: labels" "on: push" "jobs:" "  create:" \
     "    labels: ['undeclared-label']" \

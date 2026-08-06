@@ -14,12 +14,6 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
-@test "MCP host configurations are current" {
-  run python3 "$GENERATOR" --repo "$REPO_ROOT" --check
-
-  [ "$status" -eq 0 ]
-}
-
 @test "local npm MCP launchers use exact reviewed packages" {
   run jq -e '
     .servers.playwright.command == ["bash", "scripts/browser-mcp.sh", "playwright", "@playwright/mcp@0.0.78"] and

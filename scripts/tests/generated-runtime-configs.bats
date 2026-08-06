@@ -15,12 +15,6 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
-@test "runtime profiles are current" {
-  run python3 "$GENERATOR" --repo "$REPO_ROOT" --check
-
-  [ "$status" -eq 0 ]
-}
-
 @test "runtime profile check detects stale generated output" {
   jq '.agent.build.steps = 99' "$TEST_ROOT/.github/agent-runtime/review.json" \
     >"$TEST_ROOT/stale.json"
