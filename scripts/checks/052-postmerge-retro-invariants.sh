@@ -97,8 +97,9 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "postmerge retro missing layers B–D wiring"
   fi
 
-  if grep -qF 'user: (.user?.login // null)' "$ASSEMBLE_PROMPT_SCRIPT" \
-    && grep -qF 'user: (.user?.login // null)' "$MONOLITHIC_SCRIPT"; then
+  assemble_nullable_authors=$(grep -cF 'user: (.user?.login // null)' "$ASSEMBLE_PROMPT_SCRIPT" || true)
+  monolithic_nullable_authors=$(grep -cF 'user: (.user?.login // null)' "$MONOLITHIC_SCRIPT" || true)
+  if [[ "$assemble_nullable_authors" -eq 2 && "$monolithic_nullable_authors" -eq 2 ]]; then
     pass "retro prompt assembly preserves nullable review authors"
   else
     fail "retro prompt assembly must preserve nullable review authors"
