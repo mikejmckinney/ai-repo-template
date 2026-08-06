@@ -77,6 +77,7 @@ select_paths() {
 }
 
 @test "glob mappings accept evidence from a matching repository path" {
+  printf '# policy/rules.md.\n' >"$TEST_ROOT/scripts/tests/provider.bats"
   jq '.mappings[0].patterns=["policy/*.md"]' \
     "$TEST_ROOT/.config/verification-impact.json" >"$TEST_ROOT/glob.json"
   mv "$TEST_ROOT/glob.json" "$TEST_ROOT/.config/verification-impact.json"
@@ -84,6 +85,25 @@ select_paths() {
   select_paths policy/rules.md
   [ "$status" -eq 0 ]
   [ "$(jq -r .mode <<<"$output")" = selected ]
+}
+
+@test "glob mapping text is not concrete consumer evidence" {
+  printf '# policy/*.md\n' >"$TEST_ROOT/scripts/tests/provider.bats"
+  jq '.mappings[0].patterns=["policy/*.md"]' \
+    "$TEST_ROOT/.config/verification-impact.json" >"$TEST_ROOT/glob.json"
+  mv "$TEST_ROOT/glob.json" "$TEST_ROOT/.config/verification-impact.json"
+
+  select_paths policy/rules.md
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unproven mapping: scripts/tests/provider.bats"* ]]
+}
+
+@test "literal mapping evidence requires an exact path token" {
+  printf '# policy/rules.md.bak\n' >"$TEST_ROOT/scripts/tests/provider.bats"
+
+  select_paths policy/rules.md
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unproven mapping: scripts/tests/provider.bats"* ]]
 }
 
 @test "mapping evidence may name only declared consumers" {

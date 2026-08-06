@@ -25,18 +25,15 @@ def valid_relative(value: str) -> bool:
 
 
 def proves_mapping(text: str, patterns: list[str]) -> bool:
-    tokens = set(re.findall(r"[A-Za-z0-9_./*-]+", text))
-    for pattern in patterns:
-        if not any(character in pattern for character in "*?["):
-            if pattern in text:
-                return True
-            continue
-        if any(
-            not any(character in token for character in "*?[") and fnmatch.fnmatchcase(token, pattern)
-            for token in tokens
-        ):
-            return True
-    return False
+    raw_tokens = set(re.findall(r"[A-Za-z0-9_./*-]+", text))
+    tokens = raw_tokens | {token.rstrip(".-/") for token in raw_tokens}
+    tokens |= {re.sub(r"^[A-Z][A-Z0-9_]*/", "", token) for token in tokens}
+    return any(
+        fnmatch.fnmatchcase(token, pattern)
+        for pattern in patterns
+        for token in tokens
+        if token and not any(character in token for character in "*?[")
+    )
 
 
 def load_manifest(repo: Path) -> dict:
