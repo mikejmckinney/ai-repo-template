@@ -35,7 +35,7 @@ if [[ "${repo_visibility^^}" != "PRIVATE" ]]; then
 fi
 
 if (cd "$REPO_ROOT" && "$SCRIPT_DIR/sync-opencode-oauth-secret.sh" --apply --if-changed); then
-  log_info "OpenCode OAuth access synchronized to Actions."
+  log_info "OpenCode OAuth synchronization check completed."
 else
   log_warn "OpenCode OAuth access synchronization failed; the next Codespace attach will retry."
 fi

@@ -101,7 +101,7 @@ EOF
     bash "$SCRIPT"
 
   [[ "$status" -eq 0 ]]
-  [[ "$output" == *"OpenCode OAuth access synchronized"* ]]
+  [[ "$output" == *"OpenCode OAuth synchronization check completed"* ]]
   [[ "$output" != *"access-secret"* ]]
   [[ "$output" != *"refresh-secret"* ]]
   [ "$(jq -r '.openai.refresh' "$tmp_home/payload.json")" = "ci-refresh-disabled" ]
