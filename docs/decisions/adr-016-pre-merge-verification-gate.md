@@ -38,6 +38,23 @@ and cannot publish repository state. It calls a dedicated reusable fixture
 workflow rather than the write-capable production wrappers, then exercises the
 same validators and renderers those wrappers use.
 
+## Amendment 2026-08-06 — Upstream-owned exact-SHA staging
+
+The upstream issue, implementation PR, review, and agent state are the only
+durable coordination surfaces. For a required sandbox canary, commit and push
+the fix upstream first, then stage that exact upstream branch tip directly on
+sandbox `main` with the guarded `scripts/sandbox-candidate.sh` helper. The helper
+records the prior sandbox `main` in a backup ref, applies compare-and-swap leases,
+and verifies restoration before cleanup.
+
+The earlier branch-copy and sandbox implementation-PR procedure in Decision
+item 4 is superseded. A sandbox PR or issue is now a disposable fixture only
+when the real event requires that object. A failed canary returns the correction
+to the upstream PR branch before another exact-SHA stage. Testing first on
+upstream `main` remains an explicitly justified exception when sandbox cannot
+preserve a load-bearing production-only condition, not the normal correction
+loop.
+
 ## Context
 
 GitHub Actions runs a workflow file from a specific git ref depending on the

@@ -15,6 +15,7 @@ path.
 | `opencode-oauth-actions.bats` | Access-only OAuth sync, expiry routing, and fix isolation |
 | `onboarding-advisory-policy.bats` | Onboarding lifecycle, LSP, and advisory policy invariants |
 | `postmerge-retro-batch.bats` | Daily retro evidence and lifecycle behavior |
+| `sandbox-candidate.bats` | Exact-SHA sandbox stage, lease, restore, and cleanup behavior |
 | `shell-tooling-policy.bats` | Bounded production shell command policy |
 | `verify-env.bats` | Environment checks |
 | `verify-pr.bats` | Change-class classifier fixtures (ADR-016) |

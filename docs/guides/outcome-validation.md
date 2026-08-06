@@ -44,7 +44,7 @@ preserve load-bearing conditions.
 | Ordinary code | PR branch or local integration/E2E fixture |
 | Static documentation | Rendered PR surface plus reader/comprehension procedure |
 | Pull-request workflow | Current PR branch when the real trigger loads candidate code |
-| Default-branch GitHub behavior | Sibling repository with candidate code on the required ref and the real event fired |
+| Default-branch GitHub behavior | Exact upstream candidate SHA on the sibling repository's required ref with the real event fired |
 | Codespaces bootstrap | Newly created Codespace using the candidate startup path |
 | Repository template/onboarding | Fresh disposable repository created from the candidate template |
 | Website, API, or application | Provider preview with representative configuration and exercised user action |
@@ -62,7 +62,9 @@ the execution-constraint declaration states whether the changed behavior needs
 default-branch event, permission, secret, concurrency, environment, provider, or
 publication semantics. Prefer deterministic and read-only same-commit PR
 execution for the correction loop. Add one final sibling-sandbox record only for
-the default-branch conditions the PR environment cannot preserve.
+the default-branch conditions the PR environment cannot preserve. Keep durable
+coordination in the upstream issue and PR; sandbox PRs and issues are disposable
+trigger fixtures only when the real event requires them.
 
 ## Preserve the user journey
 
