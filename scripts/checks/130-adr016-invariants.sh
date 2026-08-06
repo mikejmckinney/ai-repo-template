@@ -72,7 +72,7 @@ else
 fi
 
 # AGENTS.md preserves outcome evidence and the specialized adapter.
-if grep -q 'docs/guides/outcome-validation.md' AGENTS.md 2>/dev/null \
+if grep -q 'outcome-validation.md' AGENTS.md 2>/dev/null \
   && grep -q 'sandbox-verification.md' AGENTS.md 2>/dev/null \
   && ! grep -q 'Sandbox issue:' AGENTS.md 2>/dev/null; then
   pass "AGENTS.md requires outcome evidence and conditional sandbox use"

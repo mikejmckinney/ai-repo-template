@@ -13,8 +13,8 @@
 #   - $RED / $GREEN / $YELLOW / $NC color vars from scripts/lib/logging.sh.
 #
 # Usage:
-#   ./test.sh                                  # run every check
-#   ./test.sh scripts/checks/049-*.sh [...]    # run selected checks
+#   ./test.sh                  # run every check
+#   bash test.sh               # equivalent
 #
 # Exit codes:
 #   0  every check passed (or warnings only)
@@ -56,25 +56,7 @@ glob_pattern='[0-9][0-9][0-9]-*.sh'
 # there's no untrusted-input risk, and nullglob prevents the literal
 # pattern from leaking through if no files match.
 # shellcheck disable=SC2206
-if [[ $# -gt 0 ]]; then
-  modules=()
-  for requested in "$@"; do
-    case "$requested" in
-      scripts/checks/[0-9][0-9][0-9]-*.sh) ;;
-      *)
-        echo -e "${RED}FATAL: invalid selected check '$requested'${NC}" >&2
-        exit 2
-        ;;
-    esac
-    [[ -f "$SCRIPT_DIR/$requested" ]] || {
-      echo -e "${RED}FATAL: selected check '$requested' does not exist${NC}" >&2
-      exit 2
-    }
-    modules+=("$SCRIPT_DIR/$requested")
-  done
-else
-  modules=("$CHECKS_DIR"/$glob_pattern)
-fi
+modules=("$CHECKS_DIR"/$glob_pattern)
 shopt -u nullglob
 if [[ ${#modules[@]} -eq 0 ]]; then
   echo -e "${RED}FATAL: no check modules found in scripts/checks/${NC}" >&2

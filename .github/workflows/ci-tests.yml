@@ -73,29 +73,6 @@ jobs:
           fi
           test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
 
-      - name: Select impacted verification
-        id: impact
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          args=(--repo . --output verification-plan.json)
-          if [[ "$EVENT_NAME" == "pull_request" ]]; then
-            args+=(--base "$BASE_SHA" --head "$HEAD_SHA")
-          else
-            args+=(--force-full "event:$EVENT_NAME" --changed-path .github/workflows/ci-tests.yml)
-          fi
-          python3 scripts/select-verification-impact.py "${args[@]}"
-          echo "mode=$(jq -r .mode verification-plan.json)" >> "$GITHUB_OUTPUT"
-          {
-            echo '## Verification impact plan'
-            echo
-            echo '```json'
-            jq . verification-plan.json
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
       # =====================================================
       # RETRY BUDGET TRACKING
       # =====================================================
@@ -140,27 +117,18 @@ jobs:
       - name: Verify environment prerequisites
         run: scripts/verify-env.sh
 
-      - name: Run Bats verification
+      - name: Run full Bats suite (issue #255 Phase 4b)
         id: bats
         continue-on-error: true
         run: |
           if [ -d scripts/tests ]; then
             set -o pipefail
-            if [[ "${{ steps.impact.outputs.mode }}" == "full" ]]; then
-              bats --jobs 12 scripts/tests/ 2>&1 | tee bats-output.log
-            else
-              mapfile -t selected < <(jq -r '.bats[]' verification-plan.json)
-              if [[ ${#selected[@]} -eq 0 ]]; then
-                echo "No Bats consumers selected" | tee bats-output.log
-              else
-                bats --jobs 12 "${selected[@]}" 2>&1 | tee bats-output.log
-              fi
-            fi
+            bats --jobs 12 scripts/tests/ 2>&1 | tee bats-output.log
           else
             echo "scripts/tests/ not present — skipping bats step"
           fi
 
-      - name: Run repository checks
+      - name: Run full repository checks
         id: tests
         # Always run so the legacy ./test.sh parity gate executes even if
         # the bats step above failed (PR #274 review feedback). The final
@@ -169,16 +137,7 @@ jobs:
         run: |
           if [ -f "./test.sh" ]; then
             set -o pipefail
-            if [[ "${{ steps.impact.outputs.mode }}" == "full" ]]; then
-              ./test.sh 2>&1 | tee test-output.log
-            else
-              mapfile -t selected < <(jq -r '.checks[]' verification-plan.json)
-              if [[ ${#selected[@]} -eq 0 ]]; then
-                echo "No repository-check consumers selected" | tee test-output.log
-              else
-                ./test.sh "${selected[@]}" 2>&1 | tee test-output.log
-              fi
-            fi
+            ./test.sh 2>&1 | tee test-output.log
           else
             echo "::error::Required repository check entrypoint ./test.sh is missing"
             exit 1
