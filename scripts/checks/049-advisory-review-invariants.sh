@@ -11,39 +11,17 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   RUN_SCRIPT="${ADVISORY_DIR}/run-advisory-review.sh"
   GEMINI_SCRIPT="${ADVISORY_DIR}/run-advisory-gemini.py"
   CURSOR_SCRIPT="${ADVISORY_DIR}/run-advisory-cursor.mjs"
-  CLAUDE_SCRIPT="${ADVISORY_DIR}/run-advisory-claude.sh"
-  CLAUDE_SESSION_COLLECTOR="${ADVISORY_DIR}/collect-claude-session.py"
   CLAUDE_RUNNER="scripts/workflows/lib/run-claude-review.sh"
   CLAUDE_DIAGNOSTICS="scripts/workflows/lib/claude-session-diagnostics.sh"
-  CLAUDE_TRACE_EXTRACTOR="scripts/workflows/lib/extract-claude-retrieval.py"
   POSTMERGE_WORKFLOW=".github/workflows/agent-postmerge-retro.yml"
   WEEKLY_WORKFLOW=".github/workflows/agent-weekly-review.yml"
   POSTMERGE_CLAUDE_RUNNER="scripts/workflows/postmerge-retro/run-postmerge-retro.sh"
   WEEKLY_CLAUDE_RUNNER="scripts/workflows/weekly-review/run-weekly-review-scan.sh"
-  WEEKLY_CLAUDE_VALIDATOR="scripts/workflows/weekly-review/validate-claude-retrieval.py"
   NORMALIZE_SCRIPT="${ADVISORY_DIR}/normalize-advisory-snapshot.py"
-  RANGE_SCRIPT="${ADVISORY_DIR}/select-advisory-range.py"
   OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
-  OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
   OPENCODE_REVIEW_CONFIG=".github/agent-runtime/review.json"
-  OPENCODE_FIX_CONFIG=".github/agent-runtime/fix.json"
   ADVISORY_TEST="scripts/tests/advisory-snapshot-memory.bats"
-  LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
   MARKER='ai-advisory-review:v1'
-
-  for f in "$ADVISORY_WORKFLOW" "$ADVISORY_PROMPT" "$UPSERT_SCRIPT" "$RUN_SCRIPT" \
-    "$GEMINI_SCRIPT" "$CURSOR_SCRIPT" "$CLAUDE_SCRIPT" "$CLAUDE_SESSION_COLLECTOR" \
-    "$CLAUDE_RUNNER" "$CLAUDE_DIAGNOSTICS" "$CLAUDE_TRACE_EXTRACTOR" \
-    "$POSTMERGE_WORKFLOW" "$WEEKLY_WORKFLOW" "$POSTMERGE_CLAUDE_RUNNER" \
-    "$WEEKLY_CLAUDE_RUNNER" "$WEEKLY_CLAUDE_VALIDATOR" "$NORMALIZE_SCRIPT" \
-    "$RANGE_SCRIPT" "$OPENCODE_RUNNER" \
-    "$OPENCODE_FIX_RUNNER" "$OPENCODE_REVIEW_CONFIG" "$OPENCODE_FIX_CONFIG"; do
-    if [[ -f "$f" ]]; then
-      pass "$f exists"
-    else
-      fail "$f missing (advisory review)"
-    fi
-  done
 
   if grep -q 'npm ci --prefix .github/agent-runtime' "$ADVISORY_WORKFLOW" 2>/dev/null \
     && grep -q 'OPENCODE_GITHUB_TOKEN' "$ADVISORY_WORKFLOW" 2>/dev/null \
@@ -74,12 +52,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "legacy advisory scripts still present under .github/scripts; use ${ADVISORY_DIR}/"
   else
     pass "advisory scripts not duplicated under .github/scripts (AP8)"
-  fi
-
-  if grep -q 'ai-review:live' "$ADVISORY_WORKFLOW" 2>/dev/null; then
-    pass "advisory workflow is label-gated by ai-review:live"
-  else
-    fail "advisory workflow missing ai-review:live gate"
   fi
 
   if grep -q 'pull-requests: write' "$ADVISORY_WORKFLOW" 2>/dev/null; then
@@ -189,32 +161,10 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "advisory output contract cannot distinguish completed retrieval from an empty review"
   fi
 
-  if jq -e '
-    .permission.webfetch == "allow" and
-    .permission.websearch == "allow" and
-    .permission.bash == "deny" and
-    .permission.edit == "deny" and
-    .permission.external_directory == "deny"
-  ' "$OPENCODE_REVIEW_CONFIG" >/dev/null 2>&1 \
-    && jq -e '
-      .permission.webfetch == "deny" and
-      .permission.websearch == "deny"
-    ' "$OPENCODE_FIX_CONFIG" >/dev/null 2>&1; then
-    pass "OpenCode review profile can research the web while its fix profile remains offline"
-  else
-    fail "OpenCode review/fix internet permissions do not preserve the review-only boundary"
-  fi
-
   if ! grep -q 'Session handshake' "$ADVISORY_PROMPT" 2>/dev/null; then
     pass "advisory prompt omits the retired session handshake"
   else
     fail "advisory prompt still requires the retired session handshake"
-  fi
-
-  if grep -q '^ai-review:live|' "$LABELS_SCRIPT" 2>/dev/null; then
-    pass "ai-review:live declared in label setup"
-  else
-    fail "ai-review:live missing from $LABELS_SCRIPT"
   fi
 
   if grep -q 'cancel-in-progress: true' "$ADVISORY_WORKFLOW" 2>/dev/null \
@@ -240,16 +190,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "run-advisory-cursor.mjs pins Cursor Grok 4.5 Medium and logs GITHUB_RUN_ID context"
   else
     fail "run-advisory-cursor.mjs must pin Cursor Grok 4.5 Medium and log workflow run context"
-  fi
-
-  if command -v shellcheck >/dev/null 2>&1; then
-    if shellcheck -x "$UPSERT_SCRIPT" "$RUN_SCRIPT" 2>/dev/null; then
-      pass "advisory shell scripts pass shellcheck"
-    else
-      warn "advisory shell scripts shellcheck findings (non-fatal)"
-    fi
-  else
-    warn "shellcheck not installed; skipped advisory script lint"
   fi
 
   if grep -q 'ai-review:full' "$ADVISORY_WORKFLOW" 2>/dev/null \

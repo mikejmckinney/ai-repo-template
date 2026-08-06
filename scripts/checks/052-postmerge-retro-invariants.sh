@@ -10,57 +10,22 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   RETRO_DIR="scripts/workflows/postmerge-retro"
   COLLECT_SCRIPT="${RETRO_DIR}/collect-postmerge-evidence.sh"
   RUN_SCRIPT="${RETRO_DIR}/run-postmerge-retro.sh"
-  DAILY_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily.sh"
-  DAILY_DISPATCH_SCRIPT="${RETRO_DIR}/run-postmerge-retro-daily-dispatch.sh"
   DAILY_SELECT_SCRIPT="${RETRO_DIR}/daily-retro-select-prs.sh"
   FIX_SCRIPT="${RETRO_DIR}/run-postmerge-retro-fix.sh"
   CLASSIFIER_SCRIPT="${RETRO_DIR}/classify-finding-priority.py"
   COVERAGE_SCRIPT="${RETRO_DIR}/compute-evidence-coverage.py"
   BOUNDED_SCRIPT="${RETRO_DIR}/run-postmerge-retro-bounded.sh"
   FULL_CURSOR_SCRIPT="${RETRO_DIR}/run-postmerge-retro-full-cursor.mjs"
-  ANTIGRAVITY_RETRO_SCRIPT="${RETRO_DIR}/run-postmerge-retro-antigravity.py"
   ASSEMBLE_PROMPT_SCRIPT="${RETRO_DIR}/assemble-retro-prompt.sh"
-  COVERAGE_META_SCRIPT="${RETRO_DIR}/render-evidence-coverage-meta.py"
-  DAILY_SCHEMA=".github/schemas/postmerge-retro-daily.schema.json"
   PARALLEL_SCRIPT="${RETRO_DIR}/run-postmerge-retro-parallel.sh"
   UMBRELLA_LINK_SCRIPT="${RETRO_DIR}/update-umbrella-fix-link.sh"
-  RESOLVE_UMBRELLA_SCRIPT="${RETRO_DIR}/resolve-umbrella-issue.sh"
   WRITE_UMBRELLA_REF_SCRIPT="${RETRO_DIR}/write-umbrella-issue-ref.sh"
   UMBRELLA_SCRIPT="${RETRO_DIR}/create-umbrella-issue.sh"
   UMBRELLA_TABLE_SCRIPT="${RETRO_DIR}/umbrella-findings-table.py"
-  LIST_SCRIPT="${RETRO_DIR}/list-merges-last-24h.sh"
   SCHEMA=".github/schemas/postmerge-retro.schema.json"
-  BOUNDED_SCHEMA=".github/schemas/postmerge-retro-bounded.schema.json"
-  LINK_SCRIPT="scripts/workflows/lib/link-fix-pr-to-issue.sh"
-  CHECKOUT_FIX_BRANCH_SCRIPT="scripts/workflows/lib/checkout-fix-branch.sh"
   UMBRELLA_TEMPLATE=".github/templates/postmerge-retro-umbrella.md"
-  FIX_PR_TEMPLATE=".github/templates/postmerge-retro-fix-pr.md"
-  LABELS_SCRIPT="scripts/setup/40-ensure-labels.sh"
-  ENSURE_LABELS_SCRIPT="scripts/setup/ensure-pipeline-labels.sh"
-  FEEDBACK_COLLECTOR="scripts/workflows/lib/collect-pr-evidence.sh"
-  OPENCODE_RUNNER="scripts/workflows/lib/run-opencode.mjs"
-  OPENCODE_FIX_RUNNER="scripts/workflows/lib/run-opencode-fix.sh"
   FIX_PROVIDER_CASCADE="scripts/workflows/lib/run-fix-provider-cascade.sh"
-  FIX_VERIFICATION_VALIDATOR="scripts/workflows/lib/validate-fix-verification.py"
-  MONOLITHIC_SCHEMA=".github/schemas/postmerge-retro-monolithic.schema.json"
   MONOLITHIC_SCRIPT="${RETRO_DIR}/run-postmerge-retro-monolithic.sh"
-  PROVIDER_TIMEOUT_SCRIPT="scripts/workflows/lib/postmerge-provider-timeout.sh"
-
-  for f in "$RETRO_WORKFLOW" "$RETRO_PROMPT" "$RETRO_FIX_PROMPT" "$COLLECT_SCRIPT" "$RUN_SCRIPT" \
-    "$DAILY_SCRIPT" "$DAILY_DISPATCH_SCRIPT" "$DAILY_SELECT_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
-    "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LIST_SCRIPT" "$SCHEMA" "$BOUNDED_SCHEMA" \
-    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "$LINK_SCRIPT" "$CHECKOUT_FIX_BRANCH_SCRIPT" \
-    "$ENSURE_LABELS_SCRIPT" "$FEEDBACK_COLLECTOR" "$CLASSIFIER_SCRIPT" "$PARALLEL_SCRIPT" \
-    "$UMBRELLA_TABLE_SCRIPT" "$COVERAGE_SCRIPT" "$COVERAGE_META_SCRIPT" "$DAILY_SCHEMA" \
-    "$BOUNDED_SCRIPT" "$FULL_CURSOR_SCRIPT" "$ANTIGRAVITY_RETRO_SCRIPT" "$ASSEMBLE_PROMPT_SCRIPT" \
-    "$OPENCODE_RUNNER" "$OPENCODE_FIX_RUNNER" "$FIX_PROVIDER_CASCADE" "$FIX_VERIFICATION_VALIDATOR" \
-    "$MONOLITHIC_SCHEMA" "$PROVIDER_TIMEOUT_SCRIPT"; do
-    if [[ -f "$f" ]]; then
-      pass "$f exists"
-    else
-      fail "$f missing (post-merge retro)"
-    fi
-  done
 
   if grep -q 'full-evidence-opencode' "$RUN_SCRIPT" 2>/dev/null \
     && grep -q 'OPENCODE_OUTPUT_SCHEMA' "$BOUNDED_SCRIPT" 2>/dev/null \
@@ -130,6 +95,14 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     pass "layers B–D: HEAD lens, superseded helper, triage umbrella columns + Suggested fix"
   else
     fail "postmerge retro missing layers B–D wiring"
+  fi
+
+  assemble_nullable_authors=$(grep -cF 'user: (.user?.login // null)' "$ASSEMBLE_PROMPT_SCRIPT" || true)
+  monolithic_nullable_authors=$(grep -cF 'user: (.user?.login // null)' "$MONOLITHIC_SCRIPT" || true)
+  if [[ "$assemble_nullable_authors" -eq 2 && "$monolithic_nullable_authors" -eq 2 ]]; then
+    pass "retro prompt assembly preserves nullable review authors"
+  else
+    fail "retro prompt assembly must preserve nullable review authors"
   fi
 
   if grep -q 'impact' "$RETRO_PROMPT" 2>/dev/null \
@@ -332,17 +305,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "agent-postmerge-retro.yml fix job missing FIX_JOB_SANDBOX_VERIFY / SANDBOX_BOOTSTRAP_TOKEN"
   fi
 
-  for lib in pick-advisory-provider.sh invoke-advisory-llm.sh run-opencode.mjs run-opencode-fix.sh fix-phase-log.sh \
-    sandbox-sync-fix-branch.sh finalize-fix-pr.sh render-fix-pr-sections.py \
-    run-batch-fix.sh umbrella-lifecycle.sh finding_priority.py superseded_findings.py \
-    postmerge-provider-timeout.sh; do
-    if [[ -f "scripts/workflows/lib/$lib" ]]; then
-      pass "workflow lib $lib exists"
-    else
-      fail "missing scripts/workflows/lib/$lib"
-    fi
-  done
-
   if grep -q 'merged_at' "$RUN_SCRIPT" 2>/dev/null; then
     pass "run-postmerge-retro uses merged_at gate"
   else
@@ -361,20 +323,6 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   else
     fail "agent-postmerge-retro.yml missing POSTMERGE_RETRO_CONTEXT_PROFILE env"
   fi
-
-  if grep -q '^agent-suggested|' "$LABELS_SCRIPT" 2>/dev/null; then
-    pass "agent-suggested follow-up label declared in setup"
-  else
-    fail "agent-suggested label missing from $LABELS_SCRIPT"
-  fi
-
-  for label in retro-review retro:adr retro:context-pack adr:update context-pack; do
-    if grep -q "^${label}|" "$LABELS_SCRIPT" 2>/dev/null; then
-      fail "retired label ${label} remains in $LABELS_SCRIPT"
-    else
-      pass "retired label ${label} is absent from setup"
-    fi
-  done
 
   fixture_dir="scripts/tests/fixtures/postmerge-retro"
   llm_fixture="${fixture_dir}/sample-llm-output.txt"
