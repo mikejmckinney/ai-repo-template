@@ -25,9 +25,12 @@ def valid_relative(value: str) -> bool:
 
 
 def proves_mapping(repo: Path, text: str, patterns: list[str]) -> bool:
-    raw_tokens = set(re.findall(r"[A-Za-z0-9_./*-]+", text))
+    raw_tokens = set(re.findall(r"[$A-Za-z0-9_{}./*-]+", text))
     tokens = raw_tokens | {token.rstrip(".-/") for token in raw_tokens}
-    tokens |= {re.sub(r"^[A-Za-z_][A-Za-z0-9_]*/", "", token) for token in tokens}
+    tokens |= {
+        re.sub(r"^\$(?:\{[A-Za-z_][A-Za-z0-9_]*\}|[A-Za-z_][A-Za-z0-9_]*)/", "", token)
+        for token in tokens
+    }
     tokens |= {token.lstrip("/") for token in tokens}
     return any(
         (repo / token).is_file() and fnmatch.fnmatchcase(token, pattern)

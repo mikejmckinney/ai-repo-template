@@ -116,6 +116,16 @@ select_paths() {
   [[ "$output" == *"unproven mapping: scripts/tests/provider.bats"* ]]
 }
 
+@test "ordinary path prefixes are not treated as repository-root variables" {
+  mkdir -p "$TEST_ROOT/vendor/policy"
+  touch "$TEST_ROOT/vendor/policy/rules.md"
+  printf '# vendor/policy/rules.md\n' >"$TEST_ROOT/scripts/tests/provider.bats"
+
+  select_paths policy/rules.md
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unproven mapping: scripts/tests/provider.bats"* ]]
+}
+
 @test "mapping evidence may name only declared consumers" {
   jq '.mappings[0].evidence={"scripts/tests/labels.bats":"policy/rules.md"}' \
     "$TEST_ROOT/.config/verification-impact.json" >"$TEST_ROOT/invalid.json"
