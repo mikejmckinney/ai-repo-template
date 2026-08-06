@@ -97,6 +97,13 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
     fail "postmerge retro missing layers B–D wiring"
   fi
 
+  if grep -qF 'user: (.user?.login // null)' "$ASSEMBLE_PROMPT_SCRIPT" \
+    && grep -qF 'user: (.user?.login // null)' "$MONOLITHIC_SCRIPT"; then
+    pass "retro prompt assembly preserves nullable review authors"
+  else
+    fail "retro prompt assembly must preserve nullable review authors"
+  fi
+
   if grep -q 'impact' "$RETRO_PROMPT" 2>/dev/null \
     && grep -q 'impact_magnitude' "$RETRO_PROMPT" 2>/dev/null \
     && grep -q 'trigger_likelihood' "$RETRO_PROMPT" 2>/dev/null \
