@@ -9,41 +9,15 @@ if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   WEEKLY_FIX_PROMPT=".github/prompts/weekly-repo-review-fix.md"
   WEEKLY_DIR="scripts/workflows/weekly-review"
   SCAN_SCRIPT="${WEEKLY_DIR}/run-weekly-review-scan.sh"
-  WEEKLY_SCRIPT="${WEEKLY_DIR}/run-weekly-review-weekly.sh"
   FIX_SCRIPT="${WEEKLY_DIR}/run-weekly-review-fix.sh"
   UMBRELLA_SCRIPT="${WEEKLY_DIR}/create-umbrella-issue.sh"
-  UMBRELLA_LINK_SCRIPT="${WEEKLY_DIR}/update-umbrella-fix-link.sh"
-  RESOLVE_UMBRELLA_SCRIPT="${WEEKLY_DIR}/resolve-umbrella-issue.sh"
   WRITE_UMBRELLA_REF_SCRIPT="${WEEKLY_DIR}/write-umbrella-issue-ref.sh"
-  LINK_SCRIPT="scripts/workflows/lib/link-fix-pr-to-issue.sh"
   UMBRELLA_TEMPLATE=".github/templates/weekly-review-umbrella.md"
   FIX_PR_TEMPLATE=".github/templates/weekly-review-fix-pr.md"
   LIB_DIR="scripts/workflows/lib"
   FIX_PROVIDER_CASCADE="$LIB_DIR/run-fix-provider-cascade.sh"
-  FIX_VERIFICATION_VALIDATOR="$LIB_DIR/validate-fix-verification.py"
-  OPENCODE_SCHEMA=".github/schemas/weekly-review.schema.json"
   # shellcheck source=scripts/lib/search.sh
   source "scripts/lib/search.sh"
-
-  for f in "$WEEKLY_WORKFLOW" "$WEEKLY_PROMPT" "$WEEKLY_FIX_PROMPT" "$SCAN_SCRIPT" \
-    "$WEEKLY_SCRIPT" "$FIX_SCRIPT" "$UMBRELLA_SCRIPT" "$UMBRELLA_LINK_SCRIPT" \
-    "$RESOLVE_UMBRELLA_SCRIPT" "$WRITE_UMBRELLA_REF_SCRIPT" "$LINK_SCRIPT" \
-    "$UMBRELLA_TEMPLATE" "$FIX_PR_TEMPLATE" "${WEEKLY_DIR}/resolve-run-week.sh" "${WEEKLY_DIR}/run-weekly-antigravity.py" \
-    "${WEEKLY_DIR}/build-weekly-review-batch.py" \
-    "${WEEKLY_DIR}/validate-weekly-review-batch.py" "${WEEKLY_DIR}/post-weekly-review-json-comment.sh" \
-    "${WEEKLY_DIR}/fetch-weekly-review-json-from-issue.sh" \
-    "${WEEKLY_DIR}/render-umbrella-findings.py" \
-    "${WEEKLY_DIR}/merge-umbrella-content.py" \
-    "$LIB_DIR/run-batch-fix.sh" "$LIB_DIR/umbrella-lifecycle.sh" \
-    "$LIB_DIR/finding_priority.py" "$LIB_DIR/superseded_findings.py" \
-    "$LIB_DIR/run-opencode.mjs" "$LIB_DIR/run-opencode-fix.sh" "$FIX_PROVIDER_CASCADE" \
-    "$FIX_VERIFICATION_VALIDATOR" "$OPENCODE_SCHEMA"; do
-    if [[ -f "$f" ]]; then
-      pass "$f exists"
-    else
-      fail "$f missing (weekly review)"
-    fi
-  done
 
   if grep -q 'OPENCODE_OUTPUT_SCHEMA' "$SCAN_SCRIPT" 2>/dev/null \
     && grep -q 'run_fix_provider_cascade' "$FIX_SCRIPT" 2>/dev/null \

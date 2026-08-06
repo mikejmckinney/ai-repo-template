@@ -6,6 +6,12 @@
 # --- Workflow Secret Guard Check (issue #162) ---
 echo "Checking workflow secret-presence guards..."
 
+if grep -q '^\.env$' .gitignore 2>/dev/null; then
+  pass ".gitignore excludes the standalone .env secret file"
+else
+  fail ".gitignore must exclude the standalone .env secret file"
+fi
+
 _claude_pat_refs=$(git grep -n 'CLAUDE_PAT' -- \
   .github/workflows scripts docs/guides AGENTS.md AI_REPO_GUIDE.md 2>/dev/null || true)
 _claude_pat_refs=$(printf '%s\n' "$_claude_pat_refs" \
