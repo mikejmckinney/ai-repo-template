@@ -12,15 +12,16 @@
       "patterns": ["scripts/setup/40-ensure-labels.sh"],
       "bats": ["scripts/tests/active-labels.bats", "scripts/tests/check-labels.bats"],
       "checks": [
-        "scripts/checks/049-advisory-review-invariants.sh",
-        "scripts/checks/052-postmerge-retro-invariants.sh",
         "scripts/checks/126-adr025-invariants.sh"
       ]
     },
     {
       "patterns": [".config/mcp-inventory.json"],
       "bats": ["scripts/tests/generated-mcp-configs.bats", "scripts/tests/provider-integrations.bats"],
-      "checks": ["scripts/checks/056-generated-governance-surfaces.sh"]
+      "checks": ["scripts/checks/056-generated-governance-surfaces.sh"],
+      "evidence": {
+        "scripts/checks/056-generated-governance-surfaces.sh": "scripts/generate-mcp-configs.py"
+      }
     },
     {
       "patterns": ["docs/guides/outcome-validation.md"],

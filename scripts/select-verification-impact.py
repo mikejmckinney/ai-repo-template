@@ -9,7 +9,8 @@ from pathlib import Path, PurePosixPath
 
 SELECTOR_PATH = "scripts/select-verification-impact.py"
 MANIFEST_PATH = ".config/verification-impact.json"
-ALLOWED_KEYS = {"patterns", "bats", "checks"}
+REQUIRED_MAPPING_KEYS = {"patterns", "bats", "checks"}
+ALLOWED_MAPPING_KEYS = REQUIRED_MAPPING_KEYS | {"evidence"}
 
 
 def fail(message: str) -> None:
@@ -36,13 +37,18 @@ def load_manifest(repo: Path) -> dict:
         if not isinstance(pattern, str) or not valid_relative(pattern):
             fail(f"invalid full pattern: {pattern!r}")
     for mapping in manifest["mappings"]:
-        if not isinstance(mapping, dict) or set(mapping) != ALLOWED_KEYS:
+        if (
+            not isinstance(mapping, dict)
+            or not REQUIRED_MAPPING_KEYS.issubset(mapping)
+            or not set(mapping).issubset(ALLOWED_MAPPING_KEYS)
+        ):
             fail("mapping has unsupported or missing fields")
         if not mapping["patterns"] or not mapping["bats"] and not mapping["checks"]:
             fail("mapping must contain patterns and consumers")
         for pattern in mapping["patterns"]:
             if not isinstance(pattern, str) or not valid_relative(pattern):
                 fail(f"invalid mapping pattern: {pattern!r}")
+        consumers: list[str] = []
         for kind, prefix, suffix in (("bats", "scripts/tests/", ".bats"), ("checks", "scripts/checks/", ".sh")):
             if not isinstance(mapping[kind], list):
                 fail(f"mapping {kind} must be an array")
@@ -51,6 +57,26 @@ def load_manifest(repo: Path) -> dict:
                     fail(f"invalid {kind} consumer: {consumer!r}")
                 if not (repo / consumer).is_file():
                     fail(f"missing consumer: {consumer}")
+                consumers.append(consumer)
+
+        evidence = mapping.get("evidence", {})
+        if not isinstance(evidence, dict) or not set(evidence).issubset(consumers):
+            fail("mapping evidence must name only declared consumers")
+        for consumer in consumers:
+            consumer_text = (repo / consumer).read_text(encoding="utf-8")
+            if any(pattern in consumer_text for pattern in mapping["patterns"]):
+                continue
+            evidence_path = evidence.get(consumer)
+            if not isinstance(evidence_path, str) or not valid_relative(evidence_path):
+                fail(f"unproven mapping: {consumer}")
+            evidence_file = repo / evidence_path
+            if not evidence_file.is_file():
+                fail(f"missing mapping evidence: {evidence_path}")
+            evidence_text = evidence_file.read_text(encoding="utf-8")
+            if evidence_path not in consumer_text or not any(
+                pattern in evidence_text for pattern in mapping["patterns"]
+            ):
+                fail(f"unproven mapping: {consumer} via {evidence_path}")
     return manifest
 
 

@@ -5,12 +5,14 @@ setup() {
   SELECTOR="$REPO_ROOT/scripts/select-verification-impact.py"
   TEST_ROOT="$(mktemp -d)"
   mkdir -p "$TEST_ROOT/scripts/tests" "$TEST_ROOT/scripts/checks" "$TEST_ROOT/.config"
-  touch "$TEST_ROOT/scripts/tests/labels.bats" "$TEST_ROOT/scripts/tests/provider.bats"
-  touch "$TEST_ROOT/scripts/checks/049-policy.sh" "$TEST_ROOT/scripts/checks/052-labels.sh"
+  printf '# policy/rules.md\n' >"$TEST_ROOT/scripts/tests/provider.bats"
+  printf '# labels/catalog.txt\n' >"$TEST_ROOT/scripts/tests/labels.bats"
+  printf '# policy/rules.md\n' >"$TEST_ROOT/scripts/checks/049-policy.sh"
+  printf '# labels/catalog.txt\n' >"$TEST_ROOT/scripts/checks/052-labels.sh"
   cat >"$TEST_ROOT/.config/verification-impact.json" <<'JSON'
 {"version":1,"fullPatterns":["shared/**"],"mappings":[
-  {"patterns":["policy/**"],"bats":["scripts/tests/provider.bats"],"checks":["scripts/checks/049-policy.sh"]},
-  {"patterns":["labels/**"],"bats":["scripts/tests/labels.bats"],"checks":["scripts/checks/052-labels.sh"]}
+  {"patterns":["policy/rules.md"],"bats":["scripts/tests/provider.bats"],"checks":["scripts/checks/049-policy.sh"]},
+  {"patterns":["labels/catalog.txt"],"bats":["scripts/tests/labels.bats"],"checks":["scripts/checks/052-labels.sh"]}
 ]}
 JSON
 }
@@ -66,6 +68,14 @@ select_paths() {
   [[ "$output" == *"missing consumer"* ]]
 }
 
+@test "manifest consumers must retain evidence of the mapped path" {
+  printf '# unrelated\n' >"$TEST_ROOT/scripts/tests/provider.bats"
+
+  select_paths policy/rules.md
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"unproven mapping"* ]]
+}
+
 @test "an empty changed-path set cannot succeed with zero coverage" {
   run python3 "$SELECTOR" --repo "$TEST_ROOT"
   [ "$status" -eq 0 ]
@@ -95,4 +105,10 @@ select_paths() {
   grep -q 'bats --jobs 12 "${selected\[@\]}"' "$workflow"
   grep -q './test.sh "${selected\[@\]}"' "$workflow"
   grep -q 'Gate on combined test results' "$workflow"
+}
+
+@test "shipped impact mappings retain consumer evidence" {
+  run python3 "$SELECTOR" --repo "$REPO_ROOT" --changed-path .config/mcp-inventory.json
+  [ "$status" -eq 0 ]
+  [ "$(jq -r .mode <<<"$output")" = selected ]
 }
