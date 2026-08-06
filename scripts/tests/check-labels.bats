@@ -21,10 +21,6 @@ _label_declared() {
   grep -qE "^${name}\\|" "$LABEL_SCRIPT"
 }
 
-@test "agent-suggested label is declared in 40-ensure-labels.sh" {
-  _label_declared "agent-suggested"
-}
-
 @test "agent-suggested label has correct color BFD4F2" {
   grep -qE "^agent-suggested\\|BFD4F2\\|" "$LABEL_SCRIPT"
 }

@@ -10,15 +10,37 @@ setup() {
   run jq -e '
     .servers.supabase.url == "https://mcp.supabase.com/mcp" and
     .servers.netlify.url == "https://netlify-mcp.netlify.app/mcp" and
-    .servers.netlify.opencode.command[2] == "mcp-remote@0.1.38" and
     .servers.vercel.url == "https://mcp.vercel.com" and
     .servers["cloudflare-api"].url == "https://mcp.cloudflare.com/mcp" and
     .servers["cloudflare-docs"].url == "https://docs.mcp.cloudflare.com/mcp" and
     .servers.railway.url == "https://mcp.railway.com" and
+    [
+      .servers.supabase.auth_env,
+      .servers.netlify.auth_env,
+      .servers.vercel.auth_env,
+      .servers["cloudflare-api"].auth_env,
+      .servers.railway.auth_env,
+      .servers.render.auth_env
+    ] == [
+      "SUPABASE_API_KEY",
+      "NETLIFY_API_KEY",
+      "VERCEL_API_KEY",
+      "CLOUDFLARE_API_KEY",
+      "RAILWAY_API_KEY",
+      "RENDER_API_KEY"
+    ] and
+    .servers.netlify.opencode.command == [
+      "npx", "-y", "mcp-remote@0.1.38", "https://netlify-mcp.netlify.app/mcp",
+      "--header", "Authorization:Bearer ${NETLIFY_API_KEY}",
+      "--transport", "http-only", "--silent"
+    ] and
+    .servers.netlify.opencode.environment == {NETLIFY_API_KEY: "{env:NETLIFY_API_KEY}"} and
     (.servers.aws.command[2] | contains("mcp-proxy-for-aws@1.6.3")) and
     .servers.azure.command[2] == "@azure/mcp@2.0.5" and
     .servers.oci.command == ["uvx", "--python", "3.13", "oracle.oci-cloud-mcp-server@2.1.0"] and
     .servers.oci.enabled == false and
+    (.servers.oci.generic_command[2] | contains("OCI_MCP_ENABLED:-false")) and
+    .servers.oci.environment == {OCI_CONFIG_PROFILE: "OCI_CONFIG_PROFILE", FASTMCP_LOG_LEVEL: "ERROR"} and
     .servers.render.url == "https://mcp.render.com/mcp" and
     ((.servers | has("gcp") or has("colyseus")) | not)
   ' "$REPO_ROOT/.config/mcp-inventory.json"
