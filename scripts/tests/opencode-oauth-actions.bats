@@ -142,6 +142,80 @@ EOF
   [[ "$sync_output" != *"refresh-secret-value"* ]]
 }
 
+@test "OAuth lifecycle sync uploads changed content once while manual apply still forces" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "secret" && "$2" == "set" ]]; then
+  cat >/dev/null
+  count=0
+  [[ ! -f "$GH_COUNT_FILE" ]] || count="$(cat "$GH_COUNT_FILE")"
+  printf '%s\n' "$((count + 1))" >"$GH_COUNT_FILE"
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+  state_file="$TEST_ROOT/state/ai-repo-template/opencode-oauth-sync/owner--repo.sha256"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --if-changed --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/gh-count")" = 1 ]
+  [[ "$(cat "$state_file")" =~ ^[0-9a-f]{64}$ ]]
+  run grep -qE 'access-secret-value|refresh-secret-value' "$state_file"
+  [ "$status" -ne 0 ]
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --if-changed --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/gh-count")" = 1 ]
+  [[ "$output" == *"unchanged; skipping Actions secret update"* ]]
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/gh-count")" = 2 ]
+}
+
+@test "OAuth lifecycle sync retries after upload failure without recording success" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "secret" && "$2" == "set" ]]; then
+  cat >/dev/null
+  count=0
+  [[ ! -f "$GH_COUNT_FILE" ]] || count="$(cat "$GH_COUNT_FILE")"
+  count="$((count + 1))"
+  printf '%s\n' "$count" >"$GH_COUNT_FILE"
+  [[ "$count" -gt 1 ]]
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+  state_file="$TEST_ROOT/state/ai-repo-template/opencode-oauth-sync/owner--repo.sha256"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --if-changed --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -ne 0 ]
+  [ ! -e "$state_file" ]
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --if-changed --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/gh-count")" = 2 ]
+  [[ "$(cat "$state_file")" =~ ^[0-9a-f]{64}$ ]]
+}
+
 @test "OAuth sync rejects expired access before upload" {
   expired_ms="$((($(date +%s) - 60) * 1000))"
   jq --argjson expires "$expired_ms" '.openai.expires = $expires' "$AUTH_FILE" >"$TEST_ROOT/expired.json"

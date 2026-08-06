@@ -2,5 +2,6 @@
   "name": "AI Repository",
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "postCreateCommand": "bash scripts/codespace-post-create.sh",
-  "postStartCommand": "bash scripts/codespace-post-start.sh"
+  "postStartCommand": "bash scripts/codespace-post-start.sh",
+  "postAttachCommand": "bash scripts/codespace-sync-opencode-oauth.sh"
 }

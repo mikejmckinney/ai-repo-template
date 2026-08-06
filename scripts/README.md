@@ -11,6 +11,7 @@
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
 | `codespace-post-create.sh` | Install the default tool profile when a Dev Container is created | Called by `.devcontainer/devcontainer.json` |
 | `codespace-post-start.sh` | Refresh non-fatal Codespaces auth and sandbox state on each start | Called by `.devcontainer/devcontainer.json` |
+| `codespace-sync-opencode-oauth.sh` | Retry private-repository access-only OAuth synchronization on start and attach | Called by `.devcontainer/devcontainer.json` |
 | `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
 | `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile default` |
 | `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
@@ -95,9 +96,13 @@ Pass `--apply` to update `OPENCODE_OPENAI_AUTH` in the current repository. The
 uploaded JSON contains the current access token, expiration, and account ID, but
 replaces the real refresh token with `ci-refresh-disabled`. Output includes only
 repository and expiration metadata. Expired access is rejected before upload.
-In Codespaces, `codespace-post-start.sh` attempts this update automatically after
-PAT setup only for a repository verified as private and treats skipped or failed
-sync as non-fatal; stale credentials automatically omit Sol in Actions.
+In Codespaces, start and attach lifecycle hooks attempt this update automatically
+after PAT setup only for a repository verified as private. Lifecycle retries use
+a repository-scoped SHA-256 fingerprint under the user state directory to avoid
+rewriting an unchanged bundle. The fingerprint is written only after a successful
+upload; failures remain non-fatal and retry on the next attach. Explicit `--apply`
+forces an update, while lifecycle calls add `--if-changed`. Actions receives no
+refresh token, and stale credentials automatically omit Sol.
 
 Generate and provision the separate Claude Code subscription token annually:
 

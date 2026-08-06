@@ -9,6 +9,16 @@ setup_file() {
   export REPO_ROOT
   SCRIPT="$REPO_ROOT/scripts/codespace-post-start.sh"
   export SCRIPT
+  SYNC_SCRIPT="$REPO_ROOT/scripts/codespace-sync-opencode-oauth.sh"
+  export SYNC_SCRIPT
+}
+
+@test "Codespace lifecycle retries OAuth sync on attach through one entrypoint" {
+  [ -x "$SYNC_SCRIPT" ]
+  [ "$(jq -r .postAttachCommand "$REPO_ROOT/.devcontainer/devcontainer.json")" = \
+    "bash scripts/codespace-sync-opencode-oauth.sh" ]
+  grep -q 'codespace-sync-opencode-oauth.sh' "$SCRIPT"
+  grep -q -- '--apply --if-changed' "$SYNC_SCRIPT"
 }
 
 @test "codespace-post-start: exits 0 outside Codespaces" {
