@@ -72,7 +72,7 @@ def prepare_log(server: str) -> tuple[Path, int]:
     root.mkdir(mode=0o700, parents=True, exist_ok=True)
     root.chmod(0o700)
     path = root / f"{server}.log"
-    if path.exists() and path.stat().st_size >= MAX_LOG_BYTES:
+    if path.exists() and path.stat().st_size > MAX_LOG_BYTES - LIFECYCLE_RESERVE_BYTES:
         previous = path.with_suffix(".log.previous")
         previous.unlink(missing_ok=True)
         path.replace(previous)

@@ -70,6 +70,16 @@ EOF
   [ "$(stat -c '%s' "$TEST_ROOT/logs/noisy-server.log")" -le 1048576 ]
   run grep -F '"event": "exit"' "$TEST_ROOT/logs/noisy-server.log"
   [ "$status" -eq 0 ]
+
+  run env MCP_STARTUP_LOG_DIR="$TEST_ROOT/logs" \
+    python3 "$LOGGER" noisy-server -- "$fake_server"
+
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_ROOT/logs/noisy-server.log.previous" ]
+  run grep -F '"event": "start"' "$TEST_ROOT/logs/noisy-server.log"
+  [ "$status" -eq 0 ]
+  run grep -F '"event": "exit"' "$TEST_ROOT/logs/noisy-server.log"
+  [ "$status" -eq 0 ]
 }
 
 @test "MCP startup logger treats diagnostic write failures as best effort" {
