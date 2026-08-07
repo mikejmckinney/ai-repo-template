@@ -36,6 +36,7 @@ python3 scripts/skill-supply-chain.py validate-lock --repo "$PWD" --lock skills-
 python3 scripts/skill-supply-chain.py render-license-inventory --repo "$PWD" --lock skills-lock.json --check
 scripts/diagnose-opencode-session.sh
 scripts/archive-opencode-database.sh
+scripts/sandbox-candidate.sh stage --candidate "$(git rev-parse HEAD)"
 git diff --check
 ```
 
@@ -347,7 +348,13 @@ are the correction loop; sandbox is one final integration canary when those
 default-branch conditions remain load-bearing.
 Use `docs/guides/outcome-validation.md` to select every required environment and
 record material-claim artifacts. Follow `docs/guides/sandbox-verification.md`
-for the specialized default-branch GitHub adapter and fire the real event.
+for the specialized default-branch GitHub adapter and fire the real event. Keep
+the issue, implementation PR, and live state upstream. Stage the exact upstream
+PR head on sandbox `main` with `scripts/sandbox-candidate.sh`, create a sandbox
+PR or issue only when the trigger itself requires that object, and restore plus
+clean the saved baseline after evidence capture. Do not make implementation
+commits directly in sandbox. The helper accepts only the current branch tip
+already published on `origin`.
 
 Daily post-merge and weekly review JSON persist automation-owned provider
 provenance: resolved provider, requested model, observed model or `unknown`, and

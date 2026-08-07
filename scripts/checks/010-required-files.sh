@@ -42,6 +42,7 @@ REQUIRED_FILES=(
   "scripts/verify-pr.sh"
   "scripts/diag-hang-snapshot.sh"
   "scripts/diag-sandbox.sh"
+  "scripts/sandbox-candidate.sh"
   "scripts/archive-opencode-database.sh"
   "scripts/cleanup-codespace-caches.sh"
   "scripts/diagnose-opencode-session.sh"

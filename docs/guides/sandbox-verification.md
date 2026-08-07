@@ -21,7 +21,8 @@ default-branch event delivery, token permissions, secret propagation,
 concurrency, environments, repository controls, provider execution, or publisher
 mutation. Record the decision with evidence contract `1`,
 `default-branch-constrained: yes|no`, the selected target, and a specific reason.
-Run one final sandbox integration canary after local and PR-native checks pass,
+For default-branch-constrained changes, run one final sandbox integration canary
+after local and PR-native checks pass,
 unless that canary reveals a default-branch-specific defect that requires a
 second run.
 
@@ -37,10 +38,9 @@ PR #225 paid 11 rounds of bot-review for one such change because each
 fix had to be merged to `main` before the bug class could even surface
 in the next iteration.
 
-This playbook describes the surgical workaround: a sibling sandbox
-repository whose `main` is force-pushable, where the breaking change
-can be merged and the trigger event exercised end-to-end before the
-real PR merges here.
+This playbook describes the surgical workaround: a sibling sandbox repository
+whose `main` is force-pushable, where the exact upstream candidate commit can be
+staged and the trigger event exercised end-to-end before the real PR merges.
 
 ## One-time setup (maintainer)
 
@@ -192,120 +192,114 @@ Never reuse a production write PAT as `OPENCODE_GITHUB_TOKEN`.
 > `mikejmckinney/ai-repo-template-sandbox`; derived projects will
 > resolve their own owner/repo from the bootstrap step.
 
-### 1. Prepare sandbox state — fresh test branches (default)
+### 1. Keep coordination and development upstream
 
-For durability-policy changes, first prove that an empty bootstrap commit can
-open a draft PR. Then push a known-red checkpoint, record it in
-`agent-state:v1`, and resume from a second session. Verify issue-plan edits
-preserve all text outside the v2 delimiters and squash output excludes WIP
-checkpoint messages.
+Create and maintain the task issue, implementation plan, draft PR, review, and
+`agent-state:v1` comment only in the upstream repository. Commit every fix to
+the upstream PR branch first. Do not recreate the implementation as a sandbox
+commit: the sandbox must exercise the exact commit that is under review.
 
-The sandbox `main` ref is shared across PRs and may carry head-branch
-references from prior merged sandbox PRs (e.g. PR descriptions in this
-repo's history that link `mikejmckinney/ai-repo-template-sandbox#NNN`
-rely on those head branches still existing). The default per-PR
-workflow therefore creates fresh test branches off `sandbox/main`
-rather than force-resetting `sandbox/main` itself.
+Run local fixtures and the read-only PR-native harness until the candidate is
+stable enough for one real-event integration canary. A red sandbox canary sends
+the correction back to the upstream PR branch before another exact-SHA stage.
 
-```bash
-git fetch origin main
-git fetch sandbox
+### 2. Stage the exact candidate on sandbox `main`
 
-# (Recommended) Tag the current sandbox/main HEAD before any test work,
-# so a force-reset is recoverable if you need it later.
-tag="pre-op-playbook-test-$(date +%Y-%m-%d-%H%M%S)"
-git tag -a "$tag" sandbox/main -m "Pre-test sandbox/main snapshot"
-git push sandbox "$tag"
-
-# Create a per-PR mirror of upstream main as the sandbox base for the test PR.
-git push sandbox origin/main:test/playbook-mainline
-
-# Push your PR branch under a test-prefixed name so it can't collide with
-# any production sandbox branch the upstream history still references.
-git push sandbox HEAD:test/sandbox-<short-slug>
-```
-
-Open the sandbox PR with `--base test/playbook-mainline --head test/sandbox-<short-slug>`
-in step 3 below. `sandbox/main` is left untouched, so PR descriptions
-elsewhere that cite sandbox PR head branches keep resolving.
-
-### 1-alt. Force-reset sandbox `main` (explicit override)
-
-Use this only when the sandbox is genuinely empty (no PR-history
-references worth preserving) or when the maintainer has explicitly
-decided to discard prior sandbox state. The fresh-branches default
-above is safer for any sandbox that has carried a real PR.
+Run the read-only doctor first, then stage the explicit upstream PR head. The
+helper verifies that the candidate is the current branch tip published on
+`origin`, refuses `origin` as the target, validates the configured remote as the
+same-owner sandbox sibling, saves the prior sandbox `main` in a deterministic
+backup ref, and updates `main` with an explicit force-with-lease.
 
 ```bash
-git fetch origin main
-git push --force sandbox origin/main:main
+./scripts/diag-sandbox.sh
+
+candidate=$(git rev-parse HEAD)
+stage_json=$(./scripts/sandbox-candidate.sh stage \
+  --candidate "$candidate" \
+  --remote "${SANDBOX_REMOTE:-sandbox}")
+
+baseline=$(jq -r .baseline <<<"$stage_json")
+backup_ref=$(jq -r .backupRef <<<"$stage_json")
+
+./scripts/sandbox-candidate.sh status \
+  --candidate "$candidate" \
+  --baseline "$baseline" \
+  --backup-ref "$backup_ref" \
+  --remote "${SANDBOX_REMOTE:-sandbox}"
 ```
 
-This is the only force-push the playbook authorizes. It runs against
-the sandbox remote only, never against `origin`. Document the choice
-in the PR body's risks or deviations prose so a future reviewer
-can see why the safer default was overridden.
+The status must be `staged` before firing the event. Keep `stage_json` in the
+redacted operator transcript; it binds the upstream source ref, candidate,
+baseline, backup ref, and target without exposing the remote URL or credentials.
 
-### 2. Push your PR branch to sandbox
+### 3. Create only event-required sandbox fixtures
 
-Already done in step 1 (default flow) under the `test/sandbox-<short-slug>`
-name. If you used the force-reset override path in step 1-alt, push your
-branch now under any name; in that case PR creation in step 3 uses
-`--base main --head <branch>`.
+The sandbox is an execution adapter, not a second planning surface. Do not
+create a sandbox issue or implementation PR unless the GitHub event itself
+requires that object.
 
-```bash
-# Only needed if you used the force-reset override path.
-git push sandbox HEAD
-```
+| Event under test | Disposable sandbox fixture |
+|---|---|
+| `workflow_dispatch`, `schedule`, or `push` | None; dispatch or observe the event with candidate code already on sandbox `main`. |
+| `pull_request` or `pull_request_review` | Minimal trigger branch and PR against sandbox `main`; add only the canary change needed to fire the event. |
+| `pull_request.closed` / merged | Minimal trigger PR, merged or closed only after the required pre-close events complete. |
+| `issues` / `issue_comment` | Minimal sandbox issue only when that event is the behavior under test. |
 
-### 3. Open the sandbox PR (merge optional)
+Trigger-only PRs and issues contain no implementation plan, agent state, or
+independent copy of the fix. Their body links the upstream PR and identifies the
+candidate SHA. Ephemeral canary files belong only on the trigger branch, never
+in upstream `main`.
 
-```bash
-# Default flow (test/playbook-mainline base):
-gh pr create \
-  --repo "$SANDBOX_REPO" \
-  --title "[sandbox] $(git log -1 --pretty=%s)" \
-  --body "Sandbox verification for ai-repo-template PR <link to real PR>." \
-  --base test/playbook-mainline \
-  --head "test/sandbox-<short-slug>"
+### 4. Fire the real event and capture evidence
 
-# Force-reset override flow:
-#   --base main --head "$(git rev-parse --abbrev-ref HEAD)"
-```
+Exercise the trigger while sandbox `main` still points to the candidate. Wait
+for the relevant run to finish before restoration, then record the run URL,
+event, candidate SHA, expected result, observed result, redaction, and retention
+in the upstream PR's material-claim evidence. Add the verified restore and
+backup-cleanup results before marking that claim complete.
 
-Whether to merge the sandbox PR depends on what trigger you need to
-exercise (step 4). Triggers like `pull_request_review` /
-`workflow_dispatch` / `schedule` fire without merge; triggers like
-`pull_request.closed` require it. Only merge sandbox PRs that need it
-for trigger reproduction; leaving a sandbox PR open is also fine and
-is useful as a test artifact reviewers can inspect.
-
-**Do not commit one-time smoke artifacts to upstream `main`.** Ephemeral
-canary files (for example a throwaway markdown file merged only to
-exercise a workflow) belong in the **sandbox repo** for that smoke run,
-not as permanent files under upstream `.sandbox/` or `.github/prompts/`.
-Record the sandbox PR, actual trigger run, implementation SHA, redaction, and
-retention in the upstream PR's `## User outcome evidence` claim record per
-ADR-034. A sandbox issue is optional unless it improves the walkthrough.
-
-```bash
-# Only when the trigger requires it:
-gh pr merge --repo "$SANDBOX_REPO" \
-  --squash --delete-branch <sandbox-pr-number>
-```
-
-### 4. Exercise the trigger event in sandbox
-
-Now reproduce the trigger that the workflow depends on. Examples:
+Examples:
 
 | Workflow under test | Trigger to fire in sandbox |
 |---|---|
-| `agent-advisory-review.yml` | Open a draft PR, apply `ai-review:live`, then push another commit while review runs. |
-| Scheduled jobs | Trigger via `gh workflow run <name>` (`workflow_dispatch` is also wired). |
+| `agent-advisory-review.yml` | Open a draft trigger PR, apply `ai-review:live`, then push another canary commit while review runs. |
+| Scheduled jobs | Invoke their `workflow_dispatch` adapter after staging candidate sandbox `main`. |
+| Dispatch-only workflow | Dispatch it directly; no sandbox issue or PR is needed. |
 
-Watch the run in the sandbox repo's Actions tab. The whole point of
-sandbox is that a real failure surfaces *here*, in logs you can read,
-without leaving any artifact in this repo's `main`.
+The run must identify the staged candidate SHA. A copied branch, a green run
+from the baseline workflow, or prose without an inspectable run artifact is not
+outcome evidence.
+
+### 5. Restore and clean sandbox state
+
+Restore only when sandbox `main` still equals the staged candidate. The helper
+checks that lease and verifies that the backup ref still contains the recorded
+baseline. Keep the backup ref until all critical evidence has been captured,
+then delete it with another explicit lease.
+
+```bash
+./scripts/sandbox-candidate.sh restore \
+  --candidate "$candidate" \
+  --baseline "$baseline" \
+  --backup-ref "$backup_ref" \
+  --remote "${SANDBOX_REMOTE:-sandbox}"
+
+./scripts/sandbox-candidate.sh status \
+  --candidate "$candidate" \
+  --baseline "$baseline" \
+  --backup-ref "$backup_ref" \
+  --remote "${SANDBOX_REMOTE:-sandbox}"
+
+# Run only after evidence capture.
+./scripts/sandbox-candidate.sh cleanup \
+  --baseline "$baseline" \
+  --backup-ref "$backup_ref" \
+  --remote "${SANDBOX_REMOTE:-sandbox}"
+```
+
+Close and delete any trigger-only PR, issue, or branch after its stable URLs and
+critical result excerpts are retained upstream.
 
 ## Automated fix-job sandbox sync (ADR-029 §1.1)
 
@@ -318,23 +312,29 @@ using `SANDBOX_BOOTSTRAP_TOKEN`. Branch names:
 `*-sandbox` repos skip automatically. Run `./scripts/diag-sandbox.sh`
 before manual or agent-driven sandbox operations.
 
-### 5. Decide
+This is a separate opt-in adapter for exercising an automated fix commit under
+the sandbox's existing pull-request checks. It pushes the exact fix-job `HEAD`
+to a disposable trigger branch and opens or updates a trigger PR; it does not
+stage sandbox `main`, prove a changed default-branch workflow definition, or
+replace `sandbox-candidate.sh`. Use it only when the material claim concerns the
+generated fix under existing PR checks.
+
+## Interpret the canary result
 
 - **Green** — record the green sandbox run in the real PR's material-claim
   evidence, including the tested SHA and actual event.
   The maintainer can now merge here with confidence.
-- **Red** — fix the change on your PR branch, push the new tip to
-  `sandbox` under the same `test/sandbox-<short-slug>` name (or to your
-  PR branch under the override flow), and re-run from step 3 if the
-  sandbox PR was merged or step 4 if it's still open. The
-  `test/playbook-mainline` base does not need to be re-pushed unless
-  upstream `origin/main` has moved.
+- **Red** — capture the failure, restore sandbox `main`, fix and push the
+  upstream PR branch, then stage its new exact head and rerun only the required
+  event fixture. Never patch or recommit the implementation in sandbox.
 
 ## Force-reset escape hatch
 
-If sandbox state ever becomes confusing — leftover PRs, leftover
-branches, half-applied secrets — wipe and rebuild rather than try to
-disentangle. The sandbox carries no permanent state worth preserving.
+If sandbox state ever becomes confusing, first retain the current refs and run
+`sandbox-candidate.sh status` with the recorded stage values. Use the normal
+restore path whenever its candidate and backup leases still match. Only a
+maintainer who has decided to discard all sandbox execution state should use
+the reset below.
 
 ```bash
 # Close any open sandbox PRs.
@@ -342,9 +342,12 @@ gh pr list --repo "$SANDBOX_REPO" \
   --state open --json number --jq '.[].number' \
   | xargs -I {} gh pr close --repo "$SANDBOX_REPO" {}
 
-# Force-sync main from production again.
+# Inspect the target, then compare-and-swap main back to production.
+./scripts/diag-sandbox.sh
 git fetch origin main
-git push --force sandbox origin/main:main
+sandbox_main=$(git ls-remote --refs sandbox refs/heads/main | cut -f1)
+git push --force-with-lease="refs/heads/main:${sandbox_main}" \
+  sandbox origin/main:refs/heads/main
 
 # Optionally rotate the sandbox PAT if the prior one may have leaked.
 ```
@@ -364,10 +367,9 @@ git push --force sandbox origin/main:main
 
 ## Cadence
 
-- **Sync** — on demand, immediately before each verification run
-  (step 1 above). The sandbox is not auto-synced; explicit sync
-  guarantees the verification result reflects the *current*
-  production `main`, not a stale snapshot.
+- **Sync** — on demand, immediately before each required canary. Exact candidate
+  staging guarantees that the verification result binds to the upstream PR head
+  rather than a separately reconstructed sandbox commit.
 - **Garbage collection** — once a quarter, prune merged sandbox
   branches and closed PRs. None of them carry semantic value.
 - **Secret rotation** — rotate the sandbox token on its configured cadence or

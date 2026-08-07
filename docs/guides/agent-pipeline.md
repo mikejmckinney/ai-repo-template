@@ -276,13 +276,15 @@ Its fixtures in `scripts/tests/verify-pr.bats` define supported YAML shapes.
 |---|---|
 | Code or documentation only | PR branch tests |
 | Workflow includes `pull_request` and no default-only trigger | PR branch plus event run |
-| Every other workflow, including dispatch-only | Sandbox default branch and relevant trigger event |
-| Mixed paths | PR branch plus the most restrictive workflow target |
+| Every other workflow, including dispatch-only | Exact upstream PR head on sandbox default branch plus the relevant trigger event |
+| Mixed paths | PR branch plus the declared changed-behavior target; add sandbox only when default-branch conditions are load-bearing |
 
 Use `docs/guides/outcome-validation.md` to select all environments and evidence
 required by the user outcome. Use `docs/guides/sandbox-verification.md` when the
-classifier reports `default-branch-only workflow` or a mixed diff with that
-verification floor.
+classifier reports `default-branch-only workflow`, or when a mixed diff declares
+that its changed behavior is default-branch constrained. Upstream owns the issue,
+implementation PR, and agent state; sandbox PRs or issues exist only when the
+event under test requires them.
 
 The read-only candidate harness reruns when relevant PR code changes and when
 the PR body is edited, so live verification declarations cannot rely on an
