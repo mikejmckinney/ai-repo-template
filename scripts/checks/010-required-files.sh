@@ -46,6 +46,7 @@ REQUIRED_FILES=(
   "scripts/archive-opencode-database.sh"
   "scripts/cleanup-codespace-caches.sh"
   "scripts/diagnose-opencode-session.sh"
+  "scripts/mcp-startup-logger.py"
   "scripts/render-ci-failure-report.sh"
   "scripts/validate-outcome-evidence.py"
   "scripts/validate-verification-evidence.py"

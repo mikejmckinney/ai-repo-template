@@ -11,6 +11,7 @@ from pathlib import Path
 INVENTORY = Path(".config/mcp-inventory.json")
 GENERIC = Path(".mcp.json")
 OPENCODE = Path(".opencode/opencode.json")
+OPENCODE_LOCAL_LOGGER = ["python3", "scripts/mcp-startup-logger.py"]
 
 
 def merged(base: dict, override: dict) -> dict:
@@ -44,7 +45,7 @@ def generic_server(spec: dict) -> dict:
     return merged(result, spec.get("generic", {}))
 
 
-def opencode_server(spec: dict, defaults: dict) -> dict:
+def opencode_server(name: str, spec: dict, defaults: dict) -> dict:
     enabled = spec.get("enabled", True)
     if spec["transport"] == "remote":
         result = {"type": "remote", "url": spec["url"], "enabled": enabled}
@@ -58,7 +59,10 @@ def opencode_server(spec: dict, defaults: dict) -> dict:
                 key: value if value == "ERROR" else f"{{env:{value}}}"
                 for key, value in environment.items()
             }
-    return merged(merged(defaults, result), spec.get("opencode", {}))
+    result = merged(merged(defaults, result), spec.get("opencode", {}))
+    if result["type"] == "local" and result.get("enabled", True):
+        result["command"] = OPENCODE_LOCAL_LOGGER + [name, "--"] + result["command"]
+    return result
 
 
 def replace_json_object(text: str, key: str, value: dict) -> str:
@@ -115,7 +119,10 @@ def main() -> int:
         opencode = replace_json_object(
             opencode_text,
             "mcp",
-            {name: opencode_server(spec, opencode_defaults) for name, spec in inventory.items()},
+            {
+                name: opencode_server(name, spec, opencode_defaults)
+                for name, spec in inventory.items()
+            },
         )
         json.loads(opencode)
     except (OSError, KeyError, ValueError, json.JSONDecodeError) as error:

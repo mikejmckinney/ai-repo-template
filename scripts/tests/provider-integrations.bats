@@ -120,7 +120,10 @@ EOF
   launcher="$REPO_ROOT/scripts/open-design-mcp.sh"
 
   run jq -e '
-    .mcp["open-design"].command == ["bash", "scripts/open-design-mcp.sh"]
+    .mcp["open-design"].command == [
+      "python3", "scripts/mcp-startup-logger.py", "open-design", "--",
+      "bash", "scripts/open-design-mcp.sh"
+    ]
   ' "$REPO_ROOT/.opencode/opencode.json"
   [ "$status" -eq 0 ]
 
