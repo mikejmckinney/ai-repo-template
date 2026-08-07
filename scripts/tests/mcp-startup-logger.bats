@@ -104,3 +104,26 @@ PY
 
   [ "$status" -eq 0 ]
 }
+
+@test "MCP startup logger bounds newline-free stderr records" {
+  fake_server="$TEST_ROOT/newline-free-server.py"
+  cat >"$fake_server" <<'EOF'
+#!/usr/bin/env python3
+import sys
+
+print('{"jsonrpc":"2.0","result":"ready"}')
+sys.stderr.write("x" * 2000000)
+EOF
+  chmod +x "$fake_server"
+
+  run env MCP_STARTUP_LOG_DIR="$TEST_ROOT/logs" \
+    python3 "$LOGGER" newline-free-server -- "$fake_server"
+
+  [ "$status" -eq 0 ]
+  [ "$output" = '{"jsonrpc":"2.0","result":"ready"}' ]
+  run grep -F '[TRUNCATED: stderr record exceeds' "$TEST_ROOT/logs/newline-free-server.log"
+  [ "$status" -eq 0 ]
+  run grep -F '"event": "exit"' "$TEST_ROOT/logs/newline-free-server.log"
+  [ "$status" -eq 0 ]
+  [ "$(stat -c '%s' "$TEST_ROOT/logs/newline-free-server.log")" -le 1048576 ]
+}

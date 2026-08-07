@@ -19,6 +19,7 @@ SENSITIVE_ENV_NAME = re.compile(
 SERVER_NAME = re.compile(r"^[A-Za-z0-9._-]+$")
 MAX_LOG_BYTES = 1_048_576
 LIFECYCLE_RESERVE_BYTES = 4096
+MAX_STDERR_RECORD_BYTES = 8192
 LOG_WRITE_LOCK = threading.RLock()
 
 
@@ -89,7 +90,21 @@ def log_stderr(stream: object, log_fd: int, server: str, child_pid: int, started
     secrets = redactions()
     try:
         with stream:
-            for raw_line in stream:
+            while raw_line := stream.readline(MAX_STDERR_RECORD_BYTES):
+                if len(raw_line) == MAX_STDERR_RECORD_BYTES and not raw_line.endswith(b"\n"):
+                    write_record(
+                        log_fd,
+                        reserve_bytes=LIFECYCLE_RESERVE_BYTES,
+                        event="stderr",
+                        server=server,
+                        pid=child_pid,
+                        message=(
+                            f"[TRUNCATED: stderr record exceeds {MAX_STDERR_RECORD_BYTES} bytes]"
+                        ),
+                    )
+                    while raw_line and not raw_line.endswith(b"\n"):
+                        raw_line = stream.readline(MAX_STDERR_RECORD_BYTES)
+                    continue
                 write_record(
                     log_fd,
                     reserve_bytes=LIFECYCLE_RESERVE_BYTES,
