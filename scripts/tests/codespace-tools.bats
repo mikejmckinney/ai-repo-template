@@ -328,6 +328,7 @@ EOF
   printf 'node: ~24\npnpm: 10.33.2\n' >"$lock_path"
   cat >"$TEST_ROOT/nvm.sh" <<'EOF'
 #!/usr/bin/env bash
+[[ -z "${PREFIX:-}" ]] || return 11
 nvm() {
   printf '%s\n' "$*" >>"$NVM_LOG"
   case "$1" in

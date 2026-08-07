@@ -205,7 +205,7 @@ install_archive() {
 }
 
 ensure_open_design_node() {
-  local lock_file required_node current_node nvm_script
+  local lock_file required_node current_node nvm_script tool_prefix
   lock_file="$REPO_ROOT/$(jq -r '.tools["open-design"].lock' "$MANIFEST")"
   [[ -f "$lock_file" ]] || die "Open Design lock not found: $lock_file"
   required_node="$(awk -F: '$1 == "node" {gsub(/^[[:space:]]+/, "", $2); sub(/^~/, "", $2); print $2; exit}' "$lock_file")"
@@ -218,12 +218,15 @@ ensure_open_design_node() {
 
   nvm_script="${NVM_DIR:-}/nvm.sh"
   [[ -s "$nvm_script" ]] || die "Open Design requires Node.js $required_node; NVM script not found: $nvm_script"
+  tool_prefix="$PREFIX"
+  unset PREFIX
   # shellcheck disable=SC1090
   source "$nvm_script"
   command -v nvm >/dev/null 2>&1 || die "Open Design requires Node.js $required_node; nvm is unavailable"
   nvm install "$required_node"
   nvm alias default "$required_node" >/dev/null
   nvm use "$required_node" >/dev/null
+  PREFIX="$tool_prefix"
 
   current_node="$(node --version 2>/dev/null || true)"
   [[ "$current_node" == "v${required_node}."* ]] \
