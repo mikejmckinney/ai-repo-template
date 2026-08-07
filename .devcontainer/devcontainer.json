@@ -1,16 +1,8 @@
 {
   "name": "AI Repository",
   "image": "mcr.microsoft.com/devcontainers/universal:2",
-  "features": {
-    "ghcr.io/devcontainers/features/node:2": {
-      "version": "24",
-      "pnpmVersion": "10.33.2"
-    }
-  },
-  "customizations": {
-    "vscode": {
-      "extensions": ["-dbaeumer.vscode-eslint"]
-    }
+  "containerEnv": {
+    "NVM_SYMLINK_CURRENT": "true"
   },
   "postCreateCommand": "bash scripts/codespace-post-create.sh",
   "postStartCommand": "bash scripts/codespace-post-start.sh",

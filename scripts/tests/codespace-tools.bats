@@ -317,3 +317,60 @@ EOF
   [ "$status" -ne 0 ]
   [ ! -e "$PREFIX/bin/fake-tool" ]
 }
+
+@test "Open Design bootstrap selects its locked Node runtime through NVM" {
+  mkdir -p "$TEST_ROOT/repo" "$TEST_ROOT/home"
+  lock_path="$TEST_ROOT/open-design.lock"
+  bootstrap_path="$TEST_ROOT/open-design-bootstrap.sh"
+  lock_relative="$(realpath --relative-to="$REPO_ROOT" "$lock_path")"
+  bootstrap_relative="$(realpath --relative-to="$REPO_ROOT" "$bootstrap_path")"
+
+  printf 'node: ~24\npnpm: 10.33.2\n' >"$lock_path"
+  cat >"$TEST_ROOT/nvm.sh" <<'EOF'
+#!/usr/bin/env bash
+nvm() {
+  printf '%s\n' "$*" >>"$NVM_LOG"
+  case "$1" in
+    install | use) touch "$HOME/node24" ;;
+  esac
+}
+EOF
+  cat >"$bootstrap_path" <<'EOF'
+#!/usr/bin/env bash
+printf 'node=%s\n' "$(node --version)" >"$BOOTSTRAP_LOG"
+EOF
+  cat >"$BIN_DIR/node" <<'EOF'
+#!/usr/bin/env bash
+if [[ -e "$HOME/node24" ]]; then
+  printf 'v24.14.0\n'
+else
+  printf 'v22.15.0\n'
+fi
+EOF
+  chmod +x "$TEST_ROOT/nvm.sh" "$bootstrap_path" "$BIN_DIR/node"
+
+  jq --arg lock "$lock_relative" --arg bootstrap "$bootstrap_relative" '
+    .profiles = {core: ["open-design"], agents: ["open-design"], default: ["open-design"]} |
+    .tools = {"open-design": {
+      type: "open-design",
+      command: "od.mjs",
+      version: "commit",
+      lock: $lock,
+      bootstrap: $bootstrap
+    }}
+  ' "$TEST_ROOT/manifest.json" >"$TEST_ROOT/open-design-manifest.json"
+
+  run env HOME="$TEST_ROOT/home" NVM_DIR="$TEST_ROOT" NVM_LOG="$TEST_ROOT/nvm.log" \
+    BOOTSTRAP_LOG="$TEST_ROOT/bootstrap.log" PATH="$BIN_DIR:$PREFIX/bin:$PATH" \
+    bash "$INSTALLER" --manifest "$TEST_ROOT/open-design-manifest.json" --prefix "$PREFIX"
+
+  [ "$status" -eq 0 ]
+  run grep -Fx 'install 24' "$TEST_ROOT/nvm.log"
+  [ "$status" -eq 0 ]
+  run grep -Fx 'alias default 24' "$TEST_ROOT/nvm.log"
+  [ "$status" -eq 0 ]
+  run grep -Fx 'use 24' "$TEST_ROOT/nvm.log"
+  [ "$status" -eq 0 ]
+  run grep -Fx 'node=v24.14.0' "$TEST_ROOT/bootstrap.log"
+  [ "$status" -eq 0 ]
+}

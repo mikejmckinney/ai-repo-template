@@ -16,8 +16,9 @@ teardown() {
 @test "repository owns the canonical Codespaces lifecycle" {
   run jq -e '
     .image == "mcr.microsoft.com/devcontainers/universal:2" and
-    .features["ghcr.io/devcontainers/features/node:2"].version == "24" and
-    .features["ghcr.io/devcontainers/features/node:2"].pnpmVersion == "10.33.2" and
+    (has("features") | not) and
+    (has("customizations") | not) and
+    .containerEnv.NVM_SYMLINK_CURRENT == "true" and
     .postCreateCommand == "bash scripts/codespace-post-create.sh" and
     .postStartCommand == "bash scripts/codespace-post-start.sh" and
     ([.postCreateCommand, .postStartCommand] | all(contains("scripts/setup.sh") | not)) and
@@ -27,8 +28,8 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "Dev Container excludes bundled VS Code extensions" {
-  run jq -e '.customizations.vscode.extensions == ["-dbaeumer.vscode-eslint"]' "$DEVCONTAINER"
+@test "Dev Container does not prescribe VS Code extensions" {
+  run jq -e 'has("customizations") | not' "$DEVCONTAINER"
 
   [ "$status" -eq 0 ]
 }

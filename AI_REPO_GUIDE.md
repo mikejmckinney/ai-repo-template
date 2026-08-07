@@ -62,12 +62,11 @@ pinned `uv` archive installs both the `uv` and `uvx` executables. Run
 local MCP servers.
 
 `.devcontainer/devcontainer.json` owns automatic Codespaces setup. Its
-official Node feature pins Node.js 24 and pnpm 10.33.2 for the locked Open Design
-bootstrap. Its
-post-create hook installs the default profile: repository quality tools, enabled
-local MCP prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex, then
-prewarms the pinned local MCP package environments without invoking provider
-tools. Its post-start hook verifies Open Design readiness before refreshing the
+post-create hook selects the Node.js version required by the locked Open Design
+bootstrap through the universal image's NVM, then installs the default profile:
+repository quality tools, enabled local MCP prerequisites, OpenCode, Claude Code,
+Cursor Agent, and Codex, and prewarms the pinned local MCP package environments
+without invoking provider tools. Its post-start hook verifies Open Design readiness before refreshing the
 non-fatal auth and sandbox state. Use
 `scripts/install-codespace-tools.sh --profile core` explicitly for the minimal
 quality/runtime set. Other development environments invoke that installer
