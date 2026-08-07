@@ -7,6 +7,11 @@
       "pnpmVersion": "10.33.2"
     }
   },
+  "customizations": {
+    "vscode": {
+      "extensions": ["-dbaeumer.vscode-eslint"]
+    }
+  },
   "postCreateCommand": "bash scripts/codespace-post-create.sh",
   "postStartCommand": "bash scripts/codespace-post-start.sh",
   "postAttachCommand": "bash scripts/codespace-sync-opencode-oauth.sh"

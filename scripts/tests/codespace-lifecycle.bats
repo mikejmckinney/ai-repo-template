@@ -27,8 +27,8 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
-@test "Dev Container does not prescribe VS Code extensions" {
-  run jq -e 'has("customizations") | not' "$DEVCONTAINER"
+@test "Dev Container excludes bundled VS Code extensions" {
+  run jq -e '.customizations.vscode.extensions == ["-dbaeumer.vscode-eslint"]' "$DEVCONTAINER"
 
   [ "$status" -eq 0 ]
 }
