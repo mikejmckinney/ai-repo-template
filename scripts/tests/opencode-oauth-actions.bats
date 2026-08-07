@@ -250,6 +250,49 @@ EOF
   [ -f "$(oauth_state_file a/b--c)" ]
 }
 
+@test "OAuth lifecycle sync serializes upload and fingerprint state" {
+  mkdir -p "$TEST_ROOT/bin"
+  jq '.openai.access = "new-access-secret"' "$AUTH_FILE" >"$TEST_ROOT/new-auth.json"
+  jq '.openai.access = "old-access-secret"' "$AUTH_FILE" >"$TEST_ROOT/old-auth.json"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "secret" && "$2" == "set" ]]; then
+  payload="$REMOTE_PAYLOAD.$BASHPID"
+  cat >"$payload"
+  access="$(jq -r .openai.access "$payload")"
+  mv -f "$payload" "$REMOTE_PAYLOAD"
+  if [[ "$access" == "new-access-secret" ]]; then
+    touch "$NEW_UPLOAD_STARTED"
+    sleep 1
+  fi
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    REMOTE_PAYLOAD="$TEST_ROOT/remote-payload.json" \
+    NEW_UPLOAD_STARTED="$TEST_ROOT/new-upload-started" \
+    REPO_ROOT="$REPO_ROOT" TEST_ROOT="$TEST_ROOT" bash -c '
+      "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+        --apply --if-changed --auth-file "$TEST_ROOT/new-auth.json" --repo owner/repo &
+      new_pid=$!
+      for _ in {1..100}; do
+        [[ -e "$NEW_UPLOAD_STARTED" ]] && break
+        sleep 0.01
+      done
+      [[ -e "$NEW_UPLOAD_STARTED" ]]
+      "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+        --apply --if-changed --auth-file "$TEST_ROOT/old-auth.json" --repo owner/repo
+      wait "$new_pid"
+    '
+  [ "$status" -eq 0 ]
+
+  remote_fingerprint="$(sha256sum "$TEST_ROOT/remote-payload.json")"
+  [ "$(cat "$(oauth_state_file owner/repo)")" = \
+    "${remote_fingerprint%%[[:space:]]*}" ]
+}
+
 @test "OAuth sync rejects expired access before upload" {
   expired_ms="$((($(date +%s) - 60) * 1000))"
   jq --argjson expires "$expired_ms" '.openai.expires = $expires' "$AUTH_FILE" >"$TEST_ROOT/expired.json"

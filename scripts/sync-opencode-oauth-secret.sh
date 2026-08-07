@@ -137,6 +137,10 @@ command -v sha256sum >/dev/null 2>&1 || {
   echo "sha256sum is required for --apply" >&2
   exit 1
 }
+command -v flock >/dev/null 2>&1 || {
+  echo "flock is required for --apply" >&2
+  exit 1
+}
 
 fingerprint_line="$(printf '%s' "$payload" | sha256sum)"
 fingerprint="${fingerprint_line%%[[:space:]]*}"
@@ -144,6 +148,12 @@ repo_fingerprint_line="$(printf '%s' "$REPO" | sha256sum)"
 repo_fingerprint="${repo_fingerprint_line%%[[:space:]]*}"
 state_dir="${OPENCODE_OAUTH_SYNC_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ai-repo-template/opencode-oauth-sync}"
 state_file="${state_dir}/${repo_fingerprint}.sha256"
+mkdir -p "$state_dir"
+exec {sync_lock_fd}>"${state_file}.lock"
+if ! flock -w 30 "$sync_lock_fd"; then
+  echo "Timed out waiting for the OpenCode OAuth synchronization lock for ${REPO}." >&2
+  exit 1
+fi
 
 if [[ "$IF_CHANGED" == true && -f "$state_file" ]] \
   && [[ "$(<"$state_file")" == "$fingerprint" ]]; then
@@ -152,7 +162,6 @@ if [[ "$IF_CHANGED" == true && -f "$state_file" ]] \
 fi
 
 printf '%s' "$payload" | gh secret set "$SECRET_NAME" --repo "$REPO"
-mkdir -p "$state_dir"
 STATE_TMP="$(mktemp "${state_dir}/.oauth-sync.XXXXXX")"
 printf '%s\n' "$fingerprint" >"$STATE_TMP"
 mv -f -- "$STATE_TMP" "$state_file"
