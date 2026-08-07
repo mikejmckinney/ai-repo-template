@@ -18,15 +18,31 @@ SENSITIVE_ENV_NAME = re.compile(
 )
 SERVER_NAME = re.compile(r"^[A-Za-z0-9._-]+$")
 MAX_LOG_BYTES = 1_048_576
+LIFECYCLE_RESERVE_BYTES = 4096
+LOG_WRITE_LOCK = threading.RLock()
 
 
 def timestamp() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
-def write_record(log_fd: int, **fields: object) -> None:
+def write_record(log_fd: int, *, reserve_bytes: int = 0, **fields: object) -> bool:
     record = {"timestamp": timestamp(), **fields}
-    os.write(log_fd, (json.dumps(record, sort_keys=True) + "\n").encode())
+    data = (json.dumps(record, sort_keys=True) + "\n").encode()
+    limit = MAX_LOG_BYTES - reserve_bytes
+    with LOG_WRITE_LOCK:
+        try:
+            if os.fstat(log_fd).st_size + len(data) > limit:
+                return False
+            view = memoryview(data)
+            while view:
+                written = os.write(log_fd, view)
+                if written == 0:
+                    return False
+                view = view[written:]
+        except OSError:
+            return False
+    return True
 
 
 def redactions() -> list[tuple[str, str]]:
@@ -76,6 +92,7 @@ def log_stderr(stream: object, log_fd: int, server: str, child_pid: int, started
             for raw_line in stream:
                 write_record(
                     log_fd,
+                    reserve_bytes=LIFECYCLE_RESERVE_BYTES,
                     event="stderr",
                     server=server,
                     pid=child_pid,
@@ -147,6 +164,10 @@ def main() -> int:
     )
 
     def forward_signal(signum: int, _frame: object) -> None:
+        try:
+            os.killpg(process.pid, signum)
+        except ProcessLookupError:
+            pass
         write_record(
             log_fd,
             event="signal",
@@ -155,10 +176,6 @@ def main() -> int:
             signal=signal.Signals(signum).name,
             elapsed_ms=round((time.monotonic() - started) * 1000),
         )
-        try:
-            os.killpg(process.pid, signum)
-        except ProcessLookupError:
-            pass
 
     for signum in (signal.SIGHUP, signal.SIGINT, signal.SIGTERM):
         signal.signal(signum, forward_signal)
