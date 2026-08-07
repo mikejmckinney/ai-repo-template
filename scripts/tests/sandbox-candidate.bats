@@ -89,6 +89,19 @@ stage_candidate() {
   [ "$(git --git-dir="$OTHER" rev-parse refs/heads/main)" = "$BASELINE" ]
 }
 
+@test "stage refuses a sandbox remote with an upstream push destination" {
+  git -C "$WORKTREE" push -q origin "$CANDIDATE_REF"
+  git -C "$WORKTREE" remote set-url --add --push sandbox "$UPSTREAM"
+
+  run --separate-stderr bash "$SCRIPT" stage \
+    --repo "$WORKTREE" --remote sandbox --candidate "$CANDIDATE"
+
+  [ "$status" -eq 2 ]
+  [[ "$stderr" == *"push destination is not the sandbox sibling"* ]]
+  [ "$(git --git-dir="$UPSTREAM" rev-parse refs/heads/main)" = "$BASELINE" ]
+  [ "$(git --git-dir="$SANDBOX" rev-parse refs/heads/main)" = "$BASELINE" ]
+}
+
 @test "stage refuses a same-named sandbox under another owner" {
   OTHER_OWNER="$TEST_ROOT/other"
   mkdir "$OTHER_OWNER"

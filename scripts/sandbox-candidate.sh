@@ -130,6 +130,10 @@ origin_url="$(git -C "$repo" remote get-url origin 2>/dev/null)" \
 remote_url="$(git -C "$repo" remote get-url "$remote" 2>/dev/null)" \
   || die 2 "remote '$remote' is not configured"
 [[ "$remote_url" != "$origin_url" ]] || die 2 "refusing remote with the upstream URL"
+mapfile -t origin_push_urls < <(git -C "$repo" remote get-url --push --all origin 2>/dev/null)
+mapfile -t remote_push_urls < <(git -C "$repo" remote get-url --push --all "$remote" 2>/dev/null)
+[[ "${#remote_push_urls[@]}" -eq 1 ]] \
+  || die 2 "remote '$remote' must have exactly one push destination"
 
 upstream_identity="$(remote_identity_from_url "$origin_url")"
 sandbox_identity="$(remote_identity_from_url "$remote_url")"
@@ -137,6 +141,13 @@ expected_sandbox_identity="${SANDBOX_REPO_NAME:-${upstream_identity}-sandbox}"
 expected_sandbox_identity="$(remote_identity_from_url "$expected_sandbox_identity")"
 [[ "$sandbox_identity" == "$expected_sandbox_identity" ]] \
   || die 2 "remote '$remote' is not the sandbox sibling '${expected_sandbox_identity}'"
+remote_push_identity="$(remote_identity_from_url "${remote_push_urls[0]}")"
+[[ "$remote_push_identity" == "$expected_sandbox_identity" ]] \
+  || die 2 "remote '$remote' push destination is not the sandbox sibling '${expected_sandbox_identity}'"
+for origin_destination in "$origin_url" "${origin_push_urls[@]}"; do
+  [[ "$remote_push_identity" != "$(remote_identity_from_url "$origin_destination")" ]] \
+    || die 2 "refusing remote with an upstream push destination"
+done
 
 main_ref="refs/heads/main"
 
