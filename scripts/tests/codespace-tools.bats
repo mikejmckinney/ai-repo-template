@@ -373,4 +373,15 @@ EOF
   [ "$status" -eq 0 ]
   run grep -Fx 'node=v24.14.0' "$TEST_ROOT/bootstrap.log"
   [ "$status" -eq 0 ]
+
+  rm "$TEST_ROOT/home/node24"
+  : >"$TEST_ROOT/nvm.log"
+  run env HOME="$TEST_ROOT/home" NVM_DIR="$TEST_ROOT" NVM_LOG="$TEST_ROOT/nvm.log" \
+    BOOTSTRAP_LOG="$TEST_ROOT/bootstrap.log" PATH="$BIN_DIR:$PREFIX/bin:$PATH" \
+    bash "$INSTALLER" --manifest "$TEST_ROOT/open-design-manifest.json" --prefix "$PREFIX" \
+    --verify-only
+
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"Open Design requires Node.js 24"* ]]
+  [ ! -s "$TEST_ROOT/nvm.log" ]
 }

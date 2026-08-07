@@ -213,6 +213,8 @@ ensure_open_design_node() {
 
   current_node="$(node --version 2>/dev/null || true)"
   [[ "$current_node" == "v${required_node}."* ]] && return
+  [[ "$VERIFY_ONLY" == false ]] \
+    || die "Open Design requires Node.js $required_node (found $current_node)"
 
   nvm_script="${NVM_DIR:-}/nvm.sh"
   [[ -s "$nvm_script" ]] || die "Open Design requires Node.js $required_node; NVM script not found: $nvm_script"
