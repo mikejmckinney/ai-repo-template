@@ -38,6 +38,25 @@ remote_identity_from_url() {
   printf '%s\n' "${path%.git}"
 }
 
+remote_host_from_url() {
+  local url="${1%/}"
+  local authority
+  case "$url" in
+    *://*)
+      authority="${url#*://}"
+      authority="${authority%%/*}"
+      authority="${authority#*@}"
+      authority="${authority%%:*}"
+      ;;
+    *@*:*)
+      authority="${url%%:*}"
+      authority="${authority#*@}"
+      ;;
+    *) authority="" ;;
+  esac
+  printf '%s\n' "${authority,,}"
+}
+
 remote_ref_sha() {
   local remote="$1" ref="$2" line
   line="$(git -C "$repo" ls-remote --refs "$remote" "$ref")"
@@ -137,13 +156,20 @@ mapfile -t remote_push_urls < <(git -C "$repo" remote get-url --push --all "$rem
 
 upstream_identity="$(remote_identity_from_url "$origin_url")"
 sandbox_identity="$(remote_identity_from_url "$remote_url")"
+upstream_host="$(remote_host_from_url "$origin_url")"
+sandbox_host="$(remote_host_from_url "$remote_url")"
 expected_sandbox_identity="${SANDBOX_REPO_NAME:-${upstream_identity}-sandbox}"
 expected_sandbox_identity="$(remote_identity_from_url "$expected_sandbox_identity")"
 [[ "$sandbox_identity" == "$expected_sandbox_identity" ]] \
   || die 2 "remote '$remote' is not the sandbox sibling '${expected_sandbox_identity}'"
+[[ "$sandbox_host" == "$upstream_host" ]] \
+  || die 2 "remote '$remote' is not on the upstream remote host"
 remote_push_identity="$(remote_identity_from_url "${remote_push_urls[0]}")"
+remote_push_host="$(remote_host_from_url "${remote_push_urls[0]}")"
 [[ "$remote_push_identity" == "$expected_sandbox_identity" ]] \
   || die 2 "remote '$remote' push destination is not the sandbox sibling '${expected_sandbox_identity}'"
+[[ "$remote_push_host" == "$upstream_host" ]] \
+  || die 2 "remote '$remote' push destination is not on the upstream remote host"
 for origin_destination in "$origin_url" "${origin_push_urls[@]}"; do
   [[ "$remote_push_identity" != "$(remote_identity_from_url "$origin_destination")" ]] \
     || die 2 "refusing remote with an upstream push destination"

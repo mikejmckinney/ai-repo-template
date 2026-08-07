@@ -89,6 +89,17 @@ stage_candidate() {
   [ "$(git --git-dir="$OTHER" rev-parse refs/heads/main)" = "$BASELINE" ]
 }
 
+@test "stage refuses the expected sandbox path on a different host" {
+  git -C "$WORKTREE" remote set-url origin https://github.com/owner/project.git
+  git -C "$WORKTREE" remote set-url sandbox https://other-host.example/owner/project-sandbox.git
+
+  run --separate-stderr bash "$SCRIPT" stage \
+    --repo "$WORKTREE" --remote sandbox --candidate 0000000000000000000000000000000000000000
+
+  [ "$status" -eq 2 ]
+  [[ "$stderr" == *"is not on the upstream remote host"* ]]
+}
+
 @test "stage refuses a sandbox remote with an upstream push destination" {
   git -C "$WORKTREE" push -q origin "$CANDIDATE_REF"
   git -C "$WORKTREE" remote set-url --add --push sandbox "$UPSTREAM"
