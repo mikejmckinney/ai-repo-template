@@ -115,9 +115,10 @@ Run `scripts/sync-opencode-oauth-secret.sh` from an OAuth-authenticated
 Codespace to preview the local OpenAI access-token expiration. Pass `--apply`
 to replace the private repository's `OPENCODE_OPENAI_AUTH` Actions secret with
 an access-only bundle. Codespace startup attempts that sync after PAT setup only
-when repository visibility is verified as private, and falls back non-fatally
-when visibility, auth, or authorization is unsuitable. The script never uploads
-the real refresh token.
+when repository visibility is verified as private, and attach retries changed
+bundles when startup did not complete. A success-only local SHA-256 fingerprint
+avoids rewriting unchanged credentials. Visibility, auth, and authorization
+failures remain non-fatal. The script never uploads the real refresh token.
 Daily Claude and Cursor attempts use
 `POSTMERGE_RETRO_PROVIDER_TIMEOUT_SECONDS`, defaulting to `900` seconds. Weekly
 Claude attempts use `WEEKLY_REVIEW_PROVIDER_TIMEOUT_SECONDS` with the same

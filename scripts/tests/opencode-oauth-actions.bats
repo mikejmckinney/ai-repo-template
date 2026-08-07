@@ -22,6 +22,13 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
+oauth_state_file() {
+  local repo_hash
+  repo_hash="$(printf '%s' "$1" | sha256sum)"
+  printf '%s/ai-repo-template/opencode-oauth-sync/%s.sha256\n' \
+    "$TEST_ROOT/state" "${repo_hash%%[[:space:]]*}"
+}
+
 prepare_cascade_gate_fixture() {
   CASCADE_REPO="$TEST_ROOT/gate-repo"
   mkdir -p "$CASCADE_REPO" "$TEST_ROOT/bin"
@@ -140,6 +147,150 @@ EOF
   [ "$status" -ne 0 ]
   [[ "$sync_output" != *"access-secret-value"* ]]
   [[ "$sync_output" != *"refresh-secret-value"* ]]
+}
+
+@test "OAuth lifecycle sync uploads changed content once while manual apply still forces" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "secret" && "$2" == "set" ]]; then
+  cat >/dev/null
+  count=0
+  [[ ! -f "$GH_COUNT_FILE" ]] || count="$(cat "$GH_COUNT_FILE")"
+  printf '%s\n' "$((count + 1))" >"$GH_COUNT_FILE"
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+  state_file="$(oauth_state_file owner/repo)"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --if-changed --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/gh-count")" = 1 ]
+  [[ "$(cat "$state_file")" =~ ^[0-9a-f]{64}$ ]]
+  run grep -qE 'access-secret-value|refresh-secret-value' "$state_file"
+  [ "$status" -ne 0 ]
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --if-changed --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/gh-count")" = 1 ]
+  [[ "$output" == *"unchanged; skipping Actions secret update"* ]]
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/gh-count")" = 2 ]
+}
+
+@test "OAuth lifecycle sync retries after upload failure without recording success" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "secret" && "$2" == "set" ]]; then
+  cat >/dev/null
+  count=0
+  [[ ! -f "$GH_COUNT_FILE" ]] || count="$(cat "$GH_COUNT_FILE")"
+  count="$((count + 1))"
+  printf '%s\n' "$count" >"$GH_COUNT_FILE"
+  [[ "$count" -gt 1 ]]
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+  state_file="$(oauth_state_file owner/repo)"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --if-changed --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -ne 0 ]
+  [ ! -e "$state_file" ]
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+    "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+    --apply --if-changed --auth-file "$AUTH_FILE" --repo owner/repo
+  [ "$status" -eq 0 ]
+  [ "$(cat "$TEST_ROOT/gh-count")" = 2 ]
+  [[ "$(cat "$state_file")" =~ ^[0-9a-f]{64}$ ]]
+}
+
+@test "OAuth lifecycle state keys cannot collide across valid repositories" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "secret" && "$2" == "set" ]]; then
+  cat >/dev/null
+  count=0
+  [[ ! -f "$GH_COUNT_FILE" ]] || count="$(cat "$GH_COUNT_FILE")"
+  printf '%s\n' "$((count + 1))" >"$GH_COUNT_FILE"
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+
+  for repo in a--b/c a/b--c; do
+    run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+      GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+      "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+      --apply --if-changed --auth-file "$AUTH_FILE" --repo "$repo"
+    [ "$status" -eq 0 ]
+  done
+
+  [ "$(cat "$TEST_ROOT/gh-count")" = 2 ]
+  [ -f "$(oauth_state_file a--b/c)" ]
+  [ -f "$(oauth_state_file a/b--c)" ]
+}
+
+@test "OAuth lifecycle sync serializes upload and fingerprint state" {
+  mkdir -p "$TEST_ROOT/bin"
+  jq '.openai.access = "new-access-secret"' "$AUTH_FILE" >"$TEST_ROOT/new-auth.json"
+  jq '.openai.access = "old-access-secret"' "$AUTH_FILE" >"$TEST_ROOT/old-auth.json"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "secret" && "$2" == "set" ]]; then
+  payload="$REMOTE_PAYLOAD.$BASHPID"
+  cat >"$payload"
+  access="$(jq -r .openai.access "$payload")"
+  mv -f "$payload" "$REMOTE_PAYLOAD"
+  if [[ "$access" == "new-access-secret" ]]; then
+    touch "$NEW_UPLOAD_STARTED"
+    sleep 1
+  fi
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+
+  run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+    REMOTE_PAYLOAD="$TEST_ROOT/remote-payload.json" \
+    NEW_UPLOAD_STARTED="$TEST_ROOT/new-upload-started" \
+    REPO_ROOT="$REPO_ROOT" TEST_ROOT="$TEST_ROOT" bash -c '
+      "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+        --apply --if-changed --auth-file "$TEST_ROOT/new-auth.json" --repo owner/repo &
+      new_pid=$!
+      for _ in {1..100}; do
+        [[ -e "$NEW_UPLOAD_STARTED" ]] && break
+        sleep 0.01
+      done
+      [[ -e "$NEW_UPLOAD_STARTED" ]]
+      "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+        --apply --if-changed --auth-file "$TEST_ROOT/old-auth.json" --repo owner/repo
+      wait "$new_pid"
+    '
+  [ "$status" -eq 0 ]
+
+  remote_fingerprint="$(sha256sum "$TEST_ROOT/remote-payload.json")"
+  [ "$(cat "$(oauth_state_file owner/repo)")" = \
+    "${remote_fingerprint%%[[:space:]]*}" ]
 }
 
 @test "OAuth sync rejects expired access before upload" {

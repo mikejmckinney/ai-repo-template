@@ -37,6 +37,7 @@ REQUIRED_FILES=(
   "scripts/setup.sh"
   "scripts/codespace-post-create.sh"
   "scripts/codespace-post-start.sh"
+  "scripts/codespace-sync-opencode-oauth.sh"
   "scripts/verify-env.sh"
   "scripts/verify-pr.sh"
   "scripts/diag-hang-snapshot.sh"
