@@ -129,7 +129,21 @@ run_prewarm() {
   [ "$status" -eq 0 ]
 }
 
-@test "prewarm is repeatable and readiness-only mode does not resolve packages" {
+@test "full prewarm is repeatable with stable package arguments" {
+  run_prewarm
+  [ "$status" -eq 0 ]
+  package_runs="$(wc -l <"$TEST_ROOT/home/package.log" | tr -d ' ')"
+
+  run_prewarm
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l <"$TEST_ROOT/home/package.log" | tr -d ' ')" -eq "$((package_runs * 2))" ]
+  [ "$(grep -Fc 'uvx --from mcp-proxy-for-aws@1.6.3 python -c' "$TEST_ROOT/home/package.log")" -eq 2 ]
+  [ "$(grep -Fc 'npx --yes --package @playwright/mcp@0.0.78 -- node --version' "$TEST_ROOT/home/package.log")" -eq 2 ]
+  [ "$(wc -l <"$TEST_ROOT/home/open-design.log" | tr -d ' ')" -eq 2 ]
+}
+
+@test "readiness-only mode does not resolve packages" {
   run_prewarm
   [ "$status" -eq 0 ]
   package_runs="$(wc -l <"$TEST_ROOT/home/package.log" | tr -d ' ')"
