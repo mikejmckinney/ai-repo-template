@@ -19,14 +19,15 @@ authentication and smoke-test boundaries are documented in
 ## Codespaces profiles
 
 The repository-owned Dev Container runs `scripts/codespace-post-create.sh`,
-which installs the `default` profile from `.config/codespace-tools.json`. It
-includes local quality tools and the runtime prerequisites of MCPs that are
-enabled in the generated development config:
+which installs the `default` profile from `.config/codespace-tools.json` and
+then resolves the exact local MCP package dependencies declared in
+`.config/mcp-inventory.json`. It includes local quality tools and the runtime
+prerequisites of MCPs that are enabled in the generated development config:
 checksum-verified Chrome for Testing, its declared Debian dependencies, and the
 locked Open Design daemon checkout. It also installs the locked npm dependencies
 under `.github/agent-runtime` that local quality tests and workflow helpers import.
-Playwright and Chrome DevTools npm packages remain exact, on-demand MCP launcher
-dependencies rather than global installs.
+The prewarm command resolves Playwright, Chrome DevTools, and the other local
+MCP packages without starting provider tools or moving caches to `/tmp`.
 
 The default also installs OpenCode, Claude Code, Cursor Agent, and Codex because
 current workflow development and verification use those CLIs. Exact npm packages are integrity-checked where the vendor

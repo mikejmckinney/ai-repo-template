@@ -36,18 +36,47 @@ teardown() {
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"$POST_CREATE_LOG"
 EOF
-  chmod +x "$TEST_ROOT/install-tools"
+  cat >"$TEST_ROOT/prewarm" <<'EOF'
+#!/usr/bin/env bash
+printf 'prewarm\n' >>"$POST_CREATE_LOG"
+EOF
+  chmod +x "$TEST_ROOT/install-tools" "$TEST_ROOT/prewarm"
 
   run env CODESPACE_POST_CREATE_INSTALLER="$TEST_ROOT/install-tools" \
+    CODESPACE_POST_CREATE_PREWARM="$TEST_ROOT/prewarm" \
     POST_CREATE_LOG="$TEST_ROOT/install.log" bash "$POST_CREATE"
   [ "$status" -eq 0 ]
 
   run env CODESPACE_POST_CREATE_INSTALLER="$TEST_ROOT/install-tools" \
+    CODESPACE_POST_CREATE_PREWARM="$TEST_ROOT/prewarm" \
     POST_CREATE_LOG="$TEST_ROOT/install.log" bash "$POST_CREATE"
   [ "$status" -eq 0 ]
 
-  [ "$(wc -l <"$TEST_ROOT/install.log" | tr -d ' ')" -eq 2 ]
-  [ "$(sort -u "$TEST_ROOT/install.log")" = "--profile default" ]
+  [ "$(wc -l <"$TEST_ROOT/install.log" | tr -d ' ')" -eq 4 ]
+  [ "$(sed -n '1p' "$TEST_ROOT/install.log")" = "--profile default" ]
+  [ "$(sed -n '2p' "$TEST_ROOT/install.log")" = "prewarm" ]
+  [ "$(sed -n '3p' "$TEST_ROOT/install.log")" = "--profile default" ]
+  [ "$(sed -n '4p' "$TEST_ROOT/install.log")" = "prewarm" ]
+}
+
+@test "post-create keeps prewarm failures non-fatal" {
+  cat >"$TEST_ROOT/install-tools" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+  cat >"$TEST_ROOT/prewarm" <<'EOF'
+#!/usr/bin/env bash
+printf 'prewarm failed with secret-value\n' >&2
+exit 7
+EOF
+  chmod +x "$TEST_ROOT/install-tools" "$TEST_ROOT/prewarm"
+
+  run env CODESPACE_POST_CREATE_INSTALLER="$TEST_ROOT/install-tools" \
+    CODESPACE_POST_CREATE_PREWARM="$TEST_ROOT/prewarm" bash "$POST_CREATE"
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"MCP prewarm failed"* ]]
+  [[ "$output" != *"secret-value"* ]]
 }
 
 @test "legacy install entrypoint is removed" {

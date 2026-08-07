@@ -9,6 +9,7 @@ setup_file() {
   export REPO_ROOT
   SCRIPT="$REPO_ROOT/scripts/codespace-post-start.sh"
   export SCRIPT
+  export CODESPACE_POST_START_PREWARM=/bin/true
   SYNC_SCRIPT="$REPO_ROOT/scripts/codespace-sync-opencode-oauth.sh"
   export SYNC_SCRIPT
 }
@@ -19,6 +20,12 @@ setup_file() {
     "bash scripts/codespace-sync-opencode-oauth.sh" ]
   grep -q 'codespace-sync-opencode-oauth.sh' "$SCRIPT"
   grep -q -- '--apply --if-changed' "$SYNC_SCRIPT"
+}
+
+@test "codespace-post-start owns non-fatal Open Design readiness" {
+  grep -q 'mcp-prewarm.sh' "$SCRIPT"
+  grep -q -- '--readiness-only' "$SCRIPT"
+  grep -q 'MCP readiness check failed' "$SCRIPT"
 }
 
 @test "codespace-post-start: exits 0 outside Codespaces" {

@@ -16,7 +16,8 @@
         "headers": null,
         "command": ["npx", "-y", "mcp-remote@0.1.38", "https://netlify-mcp.netlify.app/mcp", "--header", "Authorization:Bearer ${NETLIFY_API_KEY}", "--transport", "http-only", "--silent"],
         "environment": {"NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"}
-      }
+      },
+      "prewarm": {"kind": "npx", "package": "mcp-remote@0.1.38"}
     },
     "vercel": {"transport": "remote", "url": "https://mcp.vercel.com", "auth_env": "VERCEL_API_KEY"},
     "cloudflare-api": {"transport": "remote", "url": "https://mcp.cloudflare.com/mcp", "auth_env": "CLOUDFLARE_API_KEY"},
@@ -24,23 +25,31 @@
     "railway": {"transport": "remote", "url": "https://mcp.railway.com", "auth_env": "RAILWAY_API_KEY"},
     "aws": {
       "transport": "local",
-      "command": ["bash", "-lc", "exec uvx mcp-proxy-for-aws@1.6.3 \"https://aws-mcp.${AWS_REGION:-us-east-1}.api.aws/mcp\" --profile \"${AWS_PROFILE:-default}\" --region \"${AWS_REGION:-us-east-1}\""]
+      "command": ["bash", "-lc", "exec uvx mcp-proxy-for-aws@1.6.3 \"https://aws-mcp.${AWS_REGION:-us-east-1}.api.aws/mcp\" --profile \"${AWS_PROFILE:-default}\" --region \"${AWS_REGION:-us-east-1}\""],
+      "prewarm": {"kind": "uvx", "package": "mcp-proxy-for-aws@1.6.3"}
     },
-    "azure": {"transport": "local", "command": ["npx", "-y", "@azure/mcp@2.0.5", "server", "start"]},
+    "azure": {
+      "transport": "local",
+      "command": ["npx", "-y", "@azure/mcp@2.0.5", "server", "start"],
+      "prewarm": {"kind": "npx", "package": "@azure/mcp@2.0.5"}
+    },
     "elevenlabs": {
       "transport": "local",
       "command": ["bash", "scripts/elevenlabs-mcp.sh"],
-      "environment": {"ELEVENLABS_API_KEY": "ELEVENLABS_API_KEY"}
+      "environment": {"ELEVENLABS_API_KEY": "ELEVENLABS_API_KEY"},
+      "prewarm": {"kind": "uvx", "python": "3.13", "package": "elevenlabs-mcp==0.11.0"}
     },
     "mureka": {
       "transport": "local",
       "command": ["bash", "scripts/mureka-mcp.sh"],
-      "environment": {"MUREKA_API_KEY": "MUREKA_API_KEY"}
+      "environment": {"MUREKA_API_KEY": "MUREKA_API_KEY"},
+      "prewarm": {"kind": "uvx", "python": "3.13", "package": "mureka-mcp==0.0.13", "with": ["mcp==1.29.0"]}
     },
     "suno": {
       "transport": "local",
       "command": ["bash", "scripts/suno-mcp.sh"],
-      "environment": {"ACEDATACLOUD_API_TOKEN": "ACEDATACLOUD_API_TOKEN"}
+      "environment": {"ACEDATACLOUD_API_TOKEN": "ACEDATACLOUD_API_TOKEN"},
+      "prewarm": {"kind": "uvx", "python": "3.13", "package": "mcp-suno==2026.7.4.0", "with": ["mcp==1.29.0"]}
     },
     "oci": {
       "transport": "local",
@@ -50,9 +59,25 @@
       "environment": {"OCI_CONFIG_PROFILE": "OCI_CONFIG_PROFILE", "FASTMCP_LOG_LEVEL": "ERROR"}
     },
     "render": {"transport": "remote", "url": "https://mcp.render.com/mcp", "auth_env": "RENDER_API_KEY"},
-    "open-design": {"transport": "local", "command": ["bash", "scripts/open-design-mcp.sh"]},
-    "playwright": {"transport": "local", "command": ["bash", "scripts/browser-mcp.sh", "playwright", "@playwright/mcp@0.0.78"]},
-    "chrome-devtools": {"transport": "local", "command": ["bash", "scripts/browser-mcp.sh", "chrome-devtools", "chrome-devtools-mcp@1.6.0"]},
-    "shadcn": {"transport": "local", "command": ["npx", "-y", "shadcn@4.13.1", "mcp"]}
+    "open-design": {
+      "transport": "local",
+      "command": ["bash", "scripts/open-design-mcp.sh"],
+      "prewarm": {"kind": "open-design"}
+    },
+    "playwright": {
+      "transport": "local",
+      "command": ["bash", "scripts/browser-mcp.sh", "playwright", "@playwright/mcp@0.0.78"],
+      "prewarm": {"kind": "npx", "package": "@playwright/mcp@0.0.78", "required_commands": ["google-chrome-for-testing"]}
+    },
+    "chrome-devtools": {
+      "transport": "local",
+      "command": ["bash", "scripts/browser-mcp.sh", "chrome-devtools", "chrome-devtools-mcp@1.6.0"],
+      "prewarm": {"kind": "npx", "package": "chrome-devtools-mcp@1.6.0", "required_commands": ["google-chrome-for-testing"]}
+    },
+    "shadcn": {
+      "transport": "local",
+      "command": ["npx", "-y", "shadcn@4.13.1", "mcp"],
+      "prewarm": {"kind": "npx", "package": "shadcn@4.13.1"}
+    }
   }
 }

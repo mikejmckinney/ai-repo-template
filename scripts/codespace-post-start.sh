@@ -18,6 +18,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${CODESPACE_POST_START_REPO_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
+PREWARM="${CODESPACE_POST_START_PREWARM:-$SCRIPT_DIR/mcp-prewarm.sh}"
 
 # shellcheck source=scripts/lib/logging.sh
 source "$SCRIPT_DIR/lib/logging.sh"
@@ -32,6 +33,16 @@ if [[ "${CODESPACES:-}" != "true" ]]; then
 fi
 
 log_step "Codespace post-start (gh PAT auth + sandbox remote)"
+
+if [[ -x "$PREWARM" ]]; then
+  if "$PREWARM" --readiness-only >/dev/null 2>&1; then
+    log_info "Open Design readiness check completed."
+  else
+    log_warn "MCP readiness check failed; OpenCode startup may require a retry."
+  fi
+else
+  log_warn "MCP readiness check skipped; prewarm command is missing: $PREWARM"
+fi
 
 ensure_gh_pat_auth
 

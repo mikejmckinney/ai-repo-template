@@ -63,7 +63,10 @@ local MCP servers.
 
 `.devcontainer/devcontainer.json` owns automatic Codespaces setup. Its
 post-create hook installs the default profile: repository quality tools, enabled
-local MCP prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex. Use
+local MCP prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex, then
+prewarms the pinned local MCP package environments without invoking provider
+tools. Its post-start hook verifies Open Design readiness before refreshing the
+non-fatal auth and sandbox state. Use
 `scripts/install-codespace-tools.sh --profile core` explicitly for the minimal
 quality/runtime set. Other development environments invoke that installer
 directly; this repository has no account-level dotfiles bootstrap.
@@ -164,6 +167,7 @@ provider cascade instead of consuming the 90- or 120-minute workflow budget.
 | `scripts/install-codespace-tools.sh` | Idempotent core/agents profile installer and verifier |
 | `scripts/codespace-post-create.sh` | Dev Container creation hook for the default tool profile |
 | `scripts/codespace-post-start.sh` | Non-fatal per-start PAT, OAuth, and sandbox hook |
+| `scripts/mcp-prewarm.sh` | Inventory-driven local MCP package prewarm and Open Design readiness check |
 
 ### Nested Provider Skills
 
@@ -438,8 +442,9 @@ calls may consume credits and require explicit approval.
 Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
 Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
 remote transport closes the hosted stream unexpectedly. Generated OpenCode MCP
-entries default to a 60-second timeout so cold `npx`/`uvx` package resolution,
-OAuth discovery, and proxy startup have enough headroom. Keep bridge logs silent
+entries default to a 60-second timeout. The Codespaces post-create hook
+prewarms local `npx`/`uvx` package resolution before OpenCode starts; do not
+increase remote timeouts or invoke provider tools as a substitute. Keep bridge logs silent
 because verbose
 diagnostics expand the authorization header. Pass its environment placeholder
 directly to `mcp-remote`; shell expansion would expose the token in process
@@ -456,8 +461,9 @@ least-privilege setup, opt-in boundaries, and non-destructive smoke tests.
 Enabled local browser MCPs use exact npm package versions from
 `.config/mcp-inventory.json` through `scripts/browser-mcp.sh`. The core
 Codespaces profile installs checksum-verified Chrome for Testing and its
-artifact-declared Debian dependencies, then both Playwright and Chrome DevTools
-launch that executable headlessly. Open Design uses its repository-owned lock
+artifact-declared Debian dependencies. The lifecycle prewarm resolves both
+browser package environments before they launch that executable headlessly.
+Open Design uses its repository-owned lock
 and bootstrap under `.agents/skills/open-design/`. The default core profile
 installs its pinned daemon, Studio, and complete generic catalogs. Run
 `scripts/install-media-tools.sh` once to disable HyperFrames telemetry and
