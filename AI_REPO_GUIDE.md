@@ -62,6 +62,8 @@ pinned `uv` archive installs both the `uv` and `uvx` executables. Run
 local MCP servers.
 
 `.devcontainer/devcontainer.json` owns automatic Codespaces setup. Its
+official Node feature pins Node.js 24 and pnpm 10.33.2 for the locked Open Design
+bootstrap. Its
 post-create hook installs the default profile: repository quality tools, enabled
 local MCP prerequisites, OpenCode, Claude Code, Cursor Agent, and Codex, then
 prewarms the pinned local MCP package environments without invoking provider

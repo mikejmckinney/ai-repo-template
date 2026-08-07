@@ -39,6 +39,8 @@ The canonical Codespaces lifecycle will be owned by
 - `postCreateCommand` runs `scripts/codespace-post-create.sh`, which delegates
   to `scripts/install-codespace-tools.sh --profile default` and then runs the
   inventory-driven `scripts/mcp-prewarm.sh` command;
+- the Dev Container declares the official Node feature with Node.js 24 and pnpm
+  10.33.2 so the locked Open Design bootstrap can run on the base image;
 - `postStartCommand` runs the existing non-fatal
   `scripts/codespace-post-start.sh` Open Design readiness, authentication, and
   sandbox hook;

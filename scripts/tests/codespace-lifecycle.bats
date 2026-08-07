@@ -16,6 +16,8 @@ teardown() {
 @test "repository owns the canonical Codespaces lifecycle" {
   run jq -e '
     .image == "mcr.microsoft.com/devcontainers/universal:2" and
+    .features["ghcr.io/devcontainers/features/node:2"].version == "24" and
+    .features["ghcr.io/devcontainers/features/node:2"].pnpmVersion == "10.33.2" and
     .postCreateCommand == "bash scripts/codespace-post-create.sh" and
     .postStartCommand == "bash scripts/codespace-post-start.sh" and
     ([.postCreateCommand, .postStartCommand] | all(contains("scripts/setup.sh") | not)) and
