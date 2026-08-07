@@ -22,6 +22,13 @@ teardown() {
   rm -rf "$TEST_ROOT"
 }
 
+oauth_state_file() {
+  local repo_hash
+  repo_hash="$(printf '%s' "$1" | sha256sum)"
+  printf '%s/ai-repo-template/opencode-oauth-sync/%s.sha256\n' \
+    "$TEST_ROOT/state" "${repo_hash%%[[:space:]]*}"
+}
+
 prepare_cascade_gate_fixture() {
   CASCADE_REPO="$TEST_ROOT/gate-repo"
   mkdir -p "$CASCADE_REPO" "$TEST_ROOT/bin"
@@ -155,7 +162,7 @@ if [[ "$1" == "secret" && "$2" == "set" ]]; then
 fi
 EOF
   chmod +x "$TEST_ROOT/bin/gh"
-  state_file="$TEST_ROOT/state/ai-repo-template/opencode-oauth-sync/owner--repo.sha256"
+  state_file="$(oauth_state_file owner/repo)"
 
   run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
     GH_COUNT_FILE="$TEST_ROOT/gh-count" \
@@ -198,7 +205,7 @@ if [[ "$1" == "secret" && "$2" == "set" ]]; then
 fi
 EOF
   chmod +x "$TEST_ROOT/bin/gh"
-  state_file="$TEST_ROOT/state/ai-repo-template/opencode-oauth-sync/owner--repo.sha256"
+  state_file="$(oauth_state_file owner/repo)"
 
   run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
     GH_COUNT_FILE="$TEST_ROOT/gh-count" \
@@ -214,6 +221,33 @@ EOF
   [ "$status" -eq 0 ]
   [ "$(cat "$TEST_ROOT/gh-count")" = 2 ]
   [[ "$(cat "$state_file")" =~ ^[0-9a-f]{64}$ ]]
+}
+
+@test "OAuth lifecycle state keys cannot collide across valid repositories" {
+  mkdir -p "$TEST_ROOT/bin"
+  cat >"$TEST_ROOT/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$1" == "secret" && "$2" == "set" ]]; then
+  cat >/dev/null
+  count=0
+  [[ ! -f "$GH_COUNT_FILE" ]] || count="$(cat "$GH_COUNT_FILE")"
+  printf '%s\n' "$((count + 1))" >"$GH_COUNT_FILE"
+fi
+EOF
+  chmod +x "$TEST_ROOT/bin/gh"
+
+  for repo in a--b/c a/b--c; do
+    run env PATH="$TEST_ROOT/bin:$PATH" XDG_STATE_HOME="$TEST_ROOT/state" \
+      GH_COUNT_FILE="$TEST_ROOT/gh-count" \
+      "$REPO_ROOT/scripts/sync-opencode-oauth-secret.sh" \
+      --apply --if-changed --auth-file "$AUTH_FILE" --repo "$repo"
+    [ "$status" -eq 0 ]
+  done
+
+  [ "$(cat "$TEST_ROOT/gh-count")" = 2 ]
+  [ -f "$(oauth_state_file a--b/c)" ]
+  [ -f "$(oauth_state_file a/b--c)" ]
 }
 
 @test "OAuth sync rejects expired access before upload" {

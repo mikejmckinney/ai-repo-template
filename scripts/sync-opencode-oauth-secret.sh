@@ -140,8 +140,10 @@ command -v sha256sum >/dev/null 2>&1 || {
 
 fingerprint_line="$(printf '%s' "$payload" | sha256sum)"
 fingerprint="${fingerprint_line%%[[:space:]]*}"
+repo_fingerprint_line="$(printf '%s' "$REPO" | sha256sum)"
+repo_fingerprint="${repo_fingerprint_line%%[[:space:]]*}"
 state_dir="${OPENCODE_OAUTH_SYNC_STATE_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/ai-repo-template/opencode-oauth-sync}"
-state_file="${state_dir}/${REPO//\//--}.sha256"
+state_file="${state_dir}/${repo_fingerprint}.sha256"
 
 if [[ "$IF_CHANGED" == true && -f "$state_file" ]] \
   && [[ "$(<"$state_file")" == "$fingerprint" ]]; then
