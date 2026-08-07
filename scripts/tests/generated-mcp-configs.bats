@@ -129,3 +129,24 @@ EOF
   [ "$(jq -r '.mcp.github.headers.Authorization' "$TEST_ROOT/.opencode/opencode.json")" = 'Bearer {env:GH_PAT}' ]
   [ "$(jq -r '.mcpServers.github.headers.Authorization' "$TEST_ROOT/.mcp.json")" = 'Bearer ${GH_PAT}' ]
 }
+
+@test "OpenCode local MCPs use the startup logger without changing generic clients" {
+  run python3 "$GENERATOR" --repo "$TEST_ROOT"
+
+  [ "$status" -eq 0 ]
+  run jq -e '
+    def wrapped($name):
+      .[0:4] == ["python3", "scripts/mcp-startup-logger.py", $name, "--"];
+    all(.mcp | to_entries[] | select(.value.type == "local" and .value.enabled != false);
+      . as $entry | $entry.value.command | wrapped($entry.key)) and
+    (.mcp.oci.command | wrapped("oci") | not)
+  ' "$TEST_ROOT/.opencode/opencode.json"
+  [ "$status" -eq 0 ]
+
+  run jq -e '
+    .mcpServers.shadcn.command == "npx" and
+    .mcpServers.playwright.command == "bash" and
+    .mcpServers["open-design"].command == "bash"
+  ' "$TEST_ROOT/.mcp.json"
+  [ "$status" -eq 0 ]
+}

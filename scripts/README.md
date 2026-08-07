@@ -15,6 +15,7 @@
 | `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
 | `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile default` |
 | `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
+| `mcp-startup-logger.py` | Record private, redacted startup diagnostics for local OpenCode MCP servers | Called by generated OpenCode MCP configuration |
 | `install-media-tools.sh` | Install pinned Open Design and provision pinned HyperFrames | `./scripts/install-media-tools.sh` |
 | `hyperframes.sh` | Run the pinned renderer without mutable global skills | `./scripts/hyperframes.sh <command>` |
 | `open-design-mcp.sh` | Start the loopback daemon and serve the Open Design MCP | Called by generated MCP configuration |
