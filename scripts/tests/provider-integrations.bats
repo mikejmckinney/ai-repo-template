@@ -194,6 +194,7 @@ PY
     'apps/daemon' 'apps/web' 'design-systems' 'design-templates' \
     'prompt-templates' 'skills' '@open-design/web^...' \
     'pnpm --filter @open-design/web run build:sidecar' \
+    'corepack enable --install-directory "$HOME/.local/bin"' \
     'export NEXT_TELEMETRY_DISABLED=1' '${lock_node#\~}' \
     'git fetch --no-tags origin "$lock_commit"'; do
     run grep -F "$required" "$bootstrap"
