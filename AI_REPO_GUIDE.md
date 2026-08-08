@@ -63,10 +63,12 @@ local MCP servers.
 
 `.devcontainer/devcontainer.json` owns automatic Codespaces setup. Its
 post-create hook selects the Node.js version required by the locked Open Design
-bootstrap through the universal image's NVM, then installs the default profile:
+bootstrap through the Node 24 image's NVM, then installs the default profile:
 repository quality tools, enabled local MCP prerequisites, OpenCode, Claude Code,
 Cursor Agent, and Codex, and prewarms the pinned local MCP package environments
-without invoking provider tools. Its post-start hook verifies Open Design readiness before refreshing the
+without invoking provider tools. The direct Node image is used instead of the
+multi-language universal image because its compressed amd64 layers are about
+586 MB rather than 3.84 GB. Its post-start hook verifies Open Design readiness before refreshing the
 non-fatal auth and sandbox state. Use
 `scripts/install-codespace-tools.sh --profile core` explicitly for the minimal
 quality/runtime set. Other development environments invoke that installer

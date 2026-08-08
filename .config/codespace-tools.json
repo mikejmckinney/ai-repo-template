@@ -18,6 +18,7 @@
     "corepack"
   ],
   "apt_packages": [
+    {"command": "gh", "package": "gh"},
     {"command": "jq", "package": "jq"},
     {"command": "rg", "package": "ripgrep"},
     {"command": "shellcheck", "package": "shellcheck"},

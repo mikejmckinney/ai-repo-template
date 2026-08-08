@@ -85,6 +85,7 @@ run_installer() {
     .schema_version == 1 and
     (.required_commands | type == "array" and length > 0) and
     (.apt_packages | type == "array" and length > 0) and
+    any(.apt_packages[]; .command == "gh" and .package == "gh") and
     (.profiles.verification == ["uv", "bats"]) and
     (.profiles.media == ["ffmpeg"]) and
     (.profiles.core | index("shfmt")) and

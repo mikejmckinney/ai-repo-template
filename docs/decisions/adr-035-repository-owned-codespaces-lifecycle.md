@@ -40,15 +40,20 @@ The canonical Codespaces lifecycle will be owned by
   to `scripts/install-codespace-tools.sh --profile default` and then runs the
   inventory-driven `scripts/mcp-prewarm.sh` command;
 - the post-create installer selects the Node.js version required by the locked
-  Open Design bootstrap through the universal image's NVM and keeps the current
+  Open Design bootstrap through the Node 24 image's NVM and keeps the current
   Node symlink aligned for later lifecycle commands;
+- the Dev Container uses the direct Node 24 Bookworm image rather than the
+  multi-language universal image. The measured amd64 manifests contain about
+  586 MB and 3.84 GB of compressed layers respectively, so the narrower image
+  reduces cold host image transfer while retaining NVM and the required runtime;
 - `postStartCommand` runs the existing non-fatal
   `scripts/codespace-post-start.sh` Open Design readiness, authentication, and
   sandbox hook;
 - `scripts/setup.sh` remains an explicit command after project adaptation.
 
-The template does not prescribe VS Code extensions. Maintainers choose editor
-extensions in each derived project or through their own user settings.
+The template excludes the Node image's bundled ESLint extension. Maintainers
+choose editor extensions in each derived project or through their own user
+settings.
 
 Root `install.sh` is removed. Its tool installation and startup responsibilities
 are owned by the Dev Container lifecycle, while its copy inventory duplicated
