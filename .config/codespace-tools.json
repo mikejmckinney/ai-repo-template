@@ -18,6 +18,8 @@
     "corepack"
   ],
   "apt_packages": [
+    {"path": "/usr/sbin/sshd", "package": "openssh-server"},
+    {"command": "gh", "package": "gh"},
     {"command": "jq", "package": "jq"},
     {"command": "rg", "package": "ripgrep"},
     {"command": "shellcheck", "package": "shellcheck"},

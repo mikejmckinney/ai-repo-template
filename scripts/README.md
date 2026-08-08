@@ -9,12 +9,13 @@
 | `verify-env.sh` | Check environment setup | `./scripts/verify-env.sh` |
 | `verify-local.sh` | Run fast or explicit full local verification | `./scripts/verify-local.sh [--full]` |
 | `setup.sh` | One-command project setup | `./scripts/setup.sh` |
-| `codespace-post-create.sh` | Install the default tool profile when a Dev Container is created | Called by `.devcontainer/devcontainer.json` |
-| `codespace-post-start.sh` | Refresh non-fatal Codespaces auth and sandbox state on each start | Called by `.devcontainer/devcontainer.json` |
+| `codespace-post-create.sh` | Install the default tool profile and prewarm local MCP runtimes when a Dev Container is created | Called by `.devcontainer/devcontainer.json` |
+| `codespace-post-start.sh` | Refresh non-fatal MCP readiness, Codespaces auth, and sandbox state on each start | Called by `.devcontainer/devcontainer.json` |
 | `codespace-sync-opencode-oauth.sh` | Retry private-repository access-only OAuth synchronization on start and attach | Called by `.devcontainer/devcontainer.json` |
 | `format.sh` | Check or apply deterministic shell/Markdown formatting | `./scripts/format.sh --check <files...>` |
 | `install-codespace-tools.sh` | Install or verify pinned Codespaces tool profiles | `./scripts/install-codespace-tools.sh --profile default` |
 | `browser-mcp.sh` | Launch pinned browser MCP packages with pinned Chrome for Testing | Called by generated MCP configuration |
+| `mcp-prewarm.sh` | Resolve pinned local MCP packages and verify Open Design readiness without provider calls | Called by Codespaces lifecycle hooks |
 | `mcp-startup-logger.py` | Record private, redacted startup diagnostics for local OpenCode MCP servers | Called by generated OpenCode MCP configuration |
 | `install-media-tools.sh` | Install pinned Open Design and provision pinned HyperFrames | `./scripts/install-media-tools.sh` |
 | `hyperframes.sh` | Run the pinned renderer without mutable global skills | `./scripts/hyperframes.sh <command>` |

@@ -37,13 +37,23 @@ The canonical Codespaces lifecycle will be owned by
 `.devcontainer/devcontainer.json`:
 
 - `postCreateCommand` runs `scripts/codespace-post-create.sh`, which delegates
-  only to `scripts/install-codespace-tools.sh --profile default`;
+  to `scripts/install-codespace-tools.sh --profile default` and then runs the
+  inventory-driven `scripts/mcp-prewarm.sh` command;
+- the post-create installer selects the Node.js version required by the locked
+  Open Design bootstrap through the Node 24 image's NVM and keeps the current
+  Node symlink aligned for later lifecycle commands;
+- the Dev Container uses the direct Node 24 Bookworm image rather than the
+  multi-language universal image. The measured amd64 manifests contain about
+  586 MB and 3.84 GB of compressed layers respectively, so the narrower image
+  reduces cold host image transfer while retaining NVM and the required runtime;
 - `postStartCommand` runs the existing non-fatal
-  `scripts/codespace-post-start.sh` authentication and sandbox hook;
+  `scripts/codespace-post-start.sh` Open Design readiness, authentication, and
+  sandbox hook;
 - `scripts/setup.sh` remains an explicit command after project adaptation.
 
-The template does not prescribe VS Code extensions. Maintainers choose editor
-extensions in each derived project or through their own user settings.
+The template excludes the Node image's bundled ESLint extension. Maintainers
+choose editor extensions in each derived project or through their own user
+settings.
 
 Root `install.sh` is removed. Its tool installation and startup responsibilities
 are owned by the Dev Container lifecycle, while its copy inventory duplicated
@@ -103,6 +113,8 @@ repository or copy explicitly selected files when adopting only part of the kit.
   account-level `ai-repo-template` clone.
 - Container creation, container startup, and project initialization have
   separate, testable responsibilities.
+- Local MCP package resolution happens before interactive OpenCode startup, and
+  Open Design health is checked before its bridge is exposed.
 - Lifecycle commands travel with the repository.
 
 ### Negative
@@ -122,8 +134,8 @@ repository or copy explicitly selected files when adopting only part of the kit.
 ## Verification
 
 - **V1 contract tests**: validate lifecycle commands, absence of prescribed
-  extensions, default-profile delegation, repeatability, explicit project setup,
-  and removal of the legacy root entrypoint.
+  extensions, default-profile delegation, MCP prewarm/readiness behavior,
+  repeatability, explicit project setup, and removal of the legacy root entrypoint.
 - **V2 repository checks**: run focused and full Bats, `test.sh`, JSON parsing,
   ShellCheck, formatting, Markdown links, generated-surface checks, and
   exact-head CI/lint.
@@ -138,6 +150,8 @@ repository or copy explicitly selected files when adopting only part of the kit.
 - [x] Preserve the non-fatal startup hook and explicit project setup boundary.
 - [x] Remove root `install.sh` and its duplicate copy-inventory contracts.
 - [x] Update setup guidance and lifecycle contracts.
+- [x] Prewarm pinned local MCP dependencies and verify Open Design readiness before
+  the first interactive OpenCode startup.
 - [x] Record approved fresh-Codespace outcome evidence in PR
   [#543](https://github.com/mikejmckinney/ai-repo-template/pull/543).
 

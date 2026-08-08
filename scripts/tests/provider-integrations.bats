@@ -160,6 +160,22 @@ PY
   [ "$status" -eq 0 ]
 }
 
+@test "OpenDesign waits for daemon health before exposing the MCP bridge" {
+  launcher="$REPO_ROOT/scripts/open-design-mcp.sh"
+
+  run python3 - "$launcher" <<'PY'
+import sys
+from pathlib import Path
+
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+assert "wait_for_health()" in text
+assert "OPEN_DESIGN_HEALTH_ATTEMPTS" in text
+assert text.index("if ! wait_for_health") < text.index('exec node "$source_cli" mcp')
+assert text.index('if [[ "$daemon_only" == true ]]; then') < text.index('exec node "$source_cli" mcp')
+PY
+  [ "$status" -eq 0 ]
+}
+
 @test "OpenDesign bootstrap pins Studio and complete catalogs" {
   lock="$REPO_ROOT/.agents/skills/open-design/open-design.lock"
   bootstrap="$REPO_ROOT/.agents/skills/open-design/scripts/bootstrap.sh"
@@ -178,6 +194,7 @@ PY
     'apps/daemon' 'apps/web' 'design-systems' 'design-templates' \
     'prompt-templates' 'skills' '@open-design/web^...' \
     'pnpm --filter @open-design/web run build:sidecar' \
+    'corepack enable --install-directory "$HOME/.local/bin"' \
     'export NEXT_TELEMETRY_DISABLED=1' '${lock_node#\~}' \
     'git fetch --no-tags origin "$lock_commit"'; do
     run grep -F "$required" "$bootstrap"

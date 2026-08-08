@@ -1,6 +1,14 @@
 {
   "name": "AI Repository",
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:5-24-bookworm",
+  "containerEnv": {
+    "NVM_SYMLINK_CURRENT": "true"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["-dbaeumer.vscode-eslint"]
+    }
+  },
   "postCreateCommand": "bash scripts/codespace-post-create.sh",
   "postStartCommand": "bash scripts/codespace-post-start.sh",
   "postAttachCommand": "bash scripts/codespace-sync-opencode-oauth.sh"

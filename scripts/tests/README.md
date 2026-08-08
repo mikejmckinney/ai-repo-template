@@ -11,6 +11,7 @@ path.
 | `generated-governance-surfaces.bats` | Canonical-source generation and stale-output detection |
 | `codespace-cache-cleanup.bats` | Dry-run and bounded Codespaces cache cleanup behavior |
 | `codespace-tools.bats` | Codespaces tool manifest and idempotent installer behavior |
+| `mcp-prewarm.bats` | Inventory-driven MCP package prewarm and Open Design readiness behavior |
 | `orchestration.bats` | Multi-model consensus provider and Fusion behavior |
 | `opencode-oauth-actions.bats` | Access-only OAuth sync, expiry routing, and fix isolation |
 | `onboarding-advisory-policy.bats` | Onboarding lifecycle, LSP, and advisory policy invariants |

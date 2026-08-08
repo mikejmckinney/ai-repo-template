@@ -159,7 +159,8 @@ git checkout --detach "$lock_commit"
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 export NEXT_TELEMETRY_DISABLED=1
 if command -v corepack >/dev/null 2>&1; then
-  corepack enable
+  mkdir -p "$HOME/.local/bin"
+  corepack enable --install-directory "$HOME/.local/bin"
 fi
 command -v pnpm >/dev/null 2>&1 || die "pnpm $lock_pnpm is required"
 [[ "$(pnpm --version)" == "$lock_pnpm" ]] \

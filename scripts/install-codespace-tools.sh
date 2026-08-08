@@ -204,6 +204,35 @@ install_archive() {
   printf 'codespace-tools: installed %s %s\n' "$name" "$version"
 }
 
+ensure_open_design_node() {
+  local lock_file required_node current_node nvm_script tool_prefix
+  lock_file="$REPO_ROOT/$(jq -r '.tools["open-design"].lock' "$MANIFEST")"
+  [[ -f "$lock_file" ]] || die "Open Design lock not found: $lock_file"
+  required_node="$(awk -F: '$1 == "node" {gsub(/^[[:space:]]+/, "", $2); sub(/^~/, "", $2); print $2; exit}' "$lock_file")"
+  [[ "$required_node" =~ ^[0-9]+$ ]] || die "invalid Open Design Node requirement in $lock_file"
+
+  current_node="$(node --version 2>/dev/null || true)"
+  [[ "$current_node" == "v${required_node}."* ]] && return
+  [[ "$VERIFY_ONLY" == false ]] \
+    || die "Open Design requires Node.js $required_node (found $current_node)"
+
+  nvm_script="${NVM_DIR:-}/nvm.sh"
+  [[ -s "$nvm_script" ]] || die "Open Design requires Node.js $required_node; NVM script not found: $nvm_script"
+  tool_prefix="$PREFIX"
+  unset PREFIX
+  # shellcheck disable=SC1090
+  source "$nvm_script"
+  command -v nvm >/dev/null 2>&1 || die "Open Design requires Node.js $required_node; nvm is unavailable"
+  nvm install "$required_node"
+  nvm alias default "$required_node" >/dev/null
+  nvm use "$required_node" >/dev/null
+  PREFIX="$tool_prefix"
+
+  current_node="$(node --version 2>/dev/null || true)"
+  [[ "$current_node" == "v${required_node}."* ]] \
+    || die "Open Design requires Node.js $required_node (found $current_node)"
+}
+
 install_npm() {
   local name="$1" command_name version package expected_integrity actual_integrity
   command_name="$(jq -r --arg name "$name" '.tools[$name].command' "$MANIFEST")"
@@ -224,6 +253,7 @@ install_npm() {
 
 install_open_design() {
   local name="$1" commit lock bootstrap source_root cli
+  ensure_open_design_node
   commit="$(jq -r --arg name "$name" '.tools[$name].version' "$MANIFEST")"
   lock="$REPO_ROOT/$(jq -r --arg name "$name" '.tools[$name].lock' "$MANIFEST")"
   bootstrap="$REPO_ROOT/$(jq -r --arg name "$name" '.tools[$name].bootstrap' "$MANIFEST")"
