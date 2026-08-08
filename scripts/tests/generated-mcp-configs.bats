@@ -124,7 +124,9 @@ EOF
 
   [ "$status" -eq 0 ]
   [ "$before" = "$(jq -S 'del(.mcp)' "$TEST_ROOT/.opencode/opencode.json")" ]
-  [ "$(jq '[.mcp[].timeout == 60000] | all' "$TEST_ROOT/.opencode/opencode.json")" = "true" ]
+  [ "$(jq -r '.mcp.netlify.timeout' "$TEST_ROOT/.opencode/opencode.json")" = "120000" ]
+  [ "$(jq '[.mcp | to_entries[] | select(.key != "netlify") | .value.timeout == 60000] | all' \
+    "$TEST_ROOT/.opencode/opencode.json")" = "true" ]
   [ "$(jq -r '.mcp.oci.enabled' "$TEST_ROOT/.opencode/opencode.json")" = "false" ]
   [ "$(jq -r '.mcp.github.headers.Authorization' "$TEST_ROOT/.opencode/opencode.json")" = 'Bearer {env:GH_PAT}' ]
   [ "$(jq -r '.mcpServers.github.headers.Authorization' "$TEST_ROOT/.mcp.json")" = 'Bearer ${GH_PAT}' ]

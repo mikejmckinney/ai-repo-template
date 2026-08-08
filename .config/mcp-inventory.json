@@ -14,6 +14,7 @@
         "url": null,
         "oauth": null,
         "headers": null,
+        "timeout": 120000,
         "command": ["npx", "-y", "mcp-remote@0.1.38", "https://netlify-mcp.netlify.app/mcp", "--header", "Authorization:Bearer ${NETLIFY_API_KEY}", "--transport", "http-only", "--silent"],
         "environment": {"NETLIFY_API_KEY": "{env:NETLIFY_API_KEY}"}
       },

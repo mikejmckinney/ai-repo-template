@@ -31,7 +31,7 @@
       }
     },
     "netlify": {
-      "timeout": 60000,
+      "timeout": 120000,
       "type": "local",
       "enabled": true,
       "command": [

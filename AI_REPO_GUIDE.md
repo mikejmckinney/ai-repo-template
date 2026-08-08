@@ -445,10 +445,12 @@ calls may consume credits and require explicit approval.
 Railway uses its hosted MCP with `RAILWAY_API_KEY` as a bearer account token.
 Netlify uses pinned `mcp-remote` in OpenCode because OpenCode 1.17.20's native
 remote transport closes the hosted stream unexpectedly. Generated OpenCode MCP
-entries default to a 60-second timeout. The Codespaces post-create hook
-prewarms local `npx`/`uvx` package resolution before OpenCode starts; do not
-increase remote timeouts or invoke provider tools as a substitute. Keep bridge logs silent
-because verbose
+entries default to a 60-second timeout. Netlify's local adapter has a scoped
+120-second timeout because a measured first hosted handshake exceeded 60 seconds
+after npm registry revalidation completed in under one second. The Codespaces
+post-create hook prewarms local `npx`/`uvx` package resolution before OpenCode
+starts; do not increase remote timeouts or invoke provider tools as a substitute.
+Keep bridge logs silent because verbose
 diagnostics expand the authorization header. Pass its environment placeholder
 directly to `mcp-remote`; shell expansion would expose the token in process
 arguments. Cursor reads the direct-HTTP root
