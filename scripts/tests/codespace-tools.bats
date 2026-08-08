@@ -86,6 +86,7 @@ run_installer() {
     (.required_commands | type == "array" and length > 0) and
     (.apt_packages | type == "array" and length > 0) and
     any(.apt_packages[]; .command == "gh" and .package == "gh") and
+    any(.apt_packages[]; .path == "/usr/sbin/sshd" and .package == "openssh-server") and
     (.profiles.verification == ["uv", "bats"]) and
     (.profiles.media == ["ffmpeg"]) and
     (.profiles.core | index("shfmt")) and
